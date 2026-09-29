@@ -1777,6 +1777,139 @@ the per-voice bus/connection creation, `0x9BEB30`, `node->vt+0x90`, `0xA00618`, 
 `0x9CD340` descriptor and the fade-in setup bodies remain unread. M6-025 stays
 `IMPLEMENTATION_GAP`; the live-path wiring is not done.
 
+## Correction C23 (manager, 2026-09-29): the unread bodies between a created voice and audible output; new record M6-026 (the playback-limit walker)
+
+B-M6b-3 stopped on six unread engine bodies. One bounded extraction pass read them (Sonnet, read-only, ARM
+`libcozmoEngine.so`), and B-M6b-4's verifiers re-read every cited address and re-derived the bank facts with
+independent parsers. Two files are the specification and are committed:
+
+- `re-analysis/research/20260929-M6-live-audio-bodies-extraction.md` (items 1 to 7: the report);
+- `re-analysis/research/20260929-B-M6b-4-citation-check.md` (the citation check, with the **corrected facts** for
+  every row that failed or was partial).
+
+**Where the two differ, the citation check wins.** A row the verifier failed is kept only in its corrected
+form. The report's own contradiction items that the verifier found unsupported are dropped (listed under
+"Report claims dropped"). Rows the verifier passed are EXACT_SOURCE as the report states them, with the
+verifier's minor notes.
+
+### What the passes settle (steps the frozen rows did not own)
+
+| area | report item | rows | record |
+|---|---|---|---|
+| voice-to-bus connection creation: `0xA42DEC`, `0xA42C60`, `0xA429F0`, `0xA42210`, `0xA4C280`, connection ctor `0xA6F90C`, `0xA4F664`; device list, listener mask, the `bus+0xCC` bit6 gate | 1 | 1 to 22 (corrected: 3, 12, 14, 15, 16, 21) | M6-025 |
+| the deferred (`AddSrc==0x3F`) pending-voice list, `0xA431A8`, `0xA544BC` | 1, 5 | item 1 rows 1-3; item 5 rows 5.11-5.14 (corrected: 5.13) | M6-025 |
+| voice teardown: `0x9D40C4`, the voice Term `0xA53EA8`, the voice destructor `0xA55F2C` (connections destroyed) | 5 | 5.15-5.20 (5.20 partial) | M6-025 |
+| `0x9BEB30`: the PBI parameter-context init, the pan values, the first CalcEffectiveParams, the volume-threshold reject | 2 | A1-A12 (A9 corrected) | M6-025 |
+| `0xA00618`, and the steps of `0xA379D8` between `vt+0x90` and `0xA00618` (`0xA0285C`, `0xA023D4`, `0xA01918`, the global PBI list `0x108DE78`) | 2 | C1-C6 (C2, C6 corrected) | M6-025 |
+| `0x9CD340`: the RIFF/WAVE chunk parser; the `pbi+0x158..0x163` format word; the `0xA01E24` refinement; the `pbi+0x1DC/+0x1E0` writer | 3 | D1-D9, E1-E6 (D1, D8, E2 corrected) | M6-025 |
+| the fade-in: `0xA0067C`, `0xA36268`, `0xA35D44`, `0xA366F4`, `vt+0x50` (a no-op), the transition tick | 4 | 4.1-4.25 (4.23, 4.25 corrected) | M6-025 |
+| the container `+0x128` PlayInternal bodies: RanSeq `0xA0AFDC`, Switch `0xA2C730`, ActorMixer `0xA667D0` (a stub), Layer `0x9D0758`, the shared `0xA024B8` | 6 | R1-R15, S1-S16, A1-A2, L1-L8, C1.1-C1.4 (R15, L8, C1.3, C1.4 corrected) | M6-025 |
+| the Sound PlayInternal special (MIDI note-on) branch, `params+0x14`, the `params+0x28..+0x6B` block, PBI `+0x1E4`/`+0x14C`/`+0x1F8`, `0x9BC90C` | 7 | A1-A12, B1-B4, C1-C8, D1-D5 (A9, C1, D4 corrected) | M6-025 |
+| **the playback-limit walker: `node->vt+0x90`** = `0x9ED2CC` (Sound, RanSeq, Switch, ActorMixer, Layer), `0x9C4F30` (bus); `0x9FA01C`, `0x9FA6F8`, `0x9FAC54`, `0x9F29E8`, `0x9ED730`, `0xA37100`, `0xA01CA4`, `0x9F3274` | 2 | B1-B15 | **M6-026 (new)** |
+
+### New record M6-026: the playback-limit (max-instances) walker
+
+`node->vt+0x90` is not inert on shipped data. The verifier re-derived, from the six shipped banks, that in
+Cozmo.bnk 1872 of 2231 Sounds sit under ActorMixer 62050212 (max instances 1, global, advanced-settings bytes
+`04 01 01 00 00 00`), 11 under 66225135 (max 5, global); all 14 UI.bnk Sounds sit under 47220736 (max 2, global);
+in SFX.bnk 101 of 101 Sounds are limited (615722439 max 5 per object; 675247210 max 1 global; seven Sounds max 1
+and one max 50). A play under such a mixer can stop the playing instance the limiter picks, or fail with 2.
+
+The rows (report item 2B, all checked): the call site and block `0xA37D2C..0xA37DC4`; the walk order and merge
+`0x9ED2CC`; the global/per-object selector (`node+0x45` bit6 into `[node+0x30]+0x68` bit0, `0x9F29E8`); the
+limiter object (0x70 bytes, pool 0x380C/0x80, `+0x44` max instances with RTPC 0x10, `+0x46` KillNewest,
+`+0x47` virtual, `+0x58/+0x5A/+0x60/+0x62` counters); the advanced-settings reader `0x9ED730`; the global check
+`0x9FA01C` and `0xA37100` (candidate = the last array entry whose priority is <= the new one; reject with 2, or
+0x50 when the virtual flag is set; kill the victim with `0xA01CA4(victim, 1)`); the return handling. **Not
+settled (RECOVERABLE_GAP, named in the record):** the array order and the tie keys `pbi+0x1C4/+0x1C8`
+(`0x9F3274`; descending order is an inference, so "kill oldest" is only a label); the per-object variant
+`0x9FA6F8` internals and `0x9FA410`; the fade-out tail of `0xA01CA4` (`0xA01D64..0xA01DA0`, `0xA35980`,
+`0x9FF7B8`); the global voice-limit check `0xA376C0`/`0xA37880`; the `0x9F29E8` `+0x50/+0x54` fields and the
+`node vt+0x11C` body; `0xA19ECC` called at `0x9F2CCC`.
+
+### Corrections to earlier rows and reports
+
+| # | earlier text | the source says | citation |
+|---|---|---|---|
+| C23.1 | row 2.6 (line 911): when StartStream returns 0x3F, `0xA544BC` compares `+0x1D8` with `round((L+1)*frame*ratio)` | the round comparison happens when `0xA56650` returns **1**: `+0x1D8 >= computed` returns 0x3F, else 1. On 0x3F, `+0x1D8 >= 0` returns 0x3F at once, and `+0x1D8 < 0` runs `0xA54580` (source `+0x10` bit1 clear: `voice+0xE8 \|= 1`, `0xA0428C`) and still returns 0x3F | `0xA544E0..0xA54574`; `0xA54580..0xA545D0` |
+| C23.2 | D2.1 (line 574): an existing matching bus line "gets `+0x1CC` bit0 set" | only the aux path sets it (`0xA43504..0xA4350C`, for a found or a newly created line); the dry path `0xA42C60` -> `0xA4C280` never stores `+0x1CC`, and `0xA42210` clears bits 0 and 1 at creation | `0xA43504..0xA4350C`; `0xA435E0`; `0xA42210` |
+| C23.3 | row 2.4 (line 469): `conn+0x68` = the send entry | the stored value is `[send+0x10]`, ORed with 4 when the two bus bit6 flags differ; not a pointer | `0xA43564`; `0xA43588`; `0xA43590`; `0xA4C2A0`; `0xA6F990` |
+| C23.4 | B10 (line 1731) and D2.1 stop at the call; the connection path is unowned | the connection path (`0xA42DEC` to `0xA6F90C`) and the pending list are read; a 0x3F voice joins `0x108DA2C/0x108DA30`, a separate list the voice pass does not walk (it walks `0x108DF54+0x14`) | `0xA43130..0xA4315C`; `0xA43064..0xA4306C` |
+| C23.5 | Q6 (`20260928-B-M6b-bus-group-callees.md:376`): `0xA4304C` -> `0xA42DEC` is the existing-voice path | it is the new-voice `AddSrc==1` path; the matched-existing branch ends at `0xA43128 mov r0,#5` | `0xA430C8`; `0xA430D0`; `0xA43174`; `0xA43128` |
+| C23.6 | bridge 2a.3 / 2a.4: the Sound special branch skips the normal path when `0x9EE230` returns 1, and applies `vt+8` to a list node | when `0x9EE230` returns 1 the branch jumps to the normal path (`0xA1D5D4 beq 0xA1D464`); otherwise it returns 0x52. `vt+8` (AddRef) is applied to the Sound node | `0xA1D5CC..0xA1D5D4`; `0xA1D598..0xA1D5C8`; `0x9F1CBC` |
+| C23.7 | bridge 2c.10: `pbi+0x1F8` is a voice/chain link | it is the constant -1 in the base ctor (`0xA0021C mvn r7,#0`, `0xA00318`); only the derived music PBI (`0x988218`) lowers it. `pbi+0x1E4` is the 32-bit event dword `params+0x84` (`0xA002F8`/`0xA00304`) | as cited |
+| C23.8 | bridge 2c.11 / B6: `pbi+0x15C/0x15D` are set from `params` bytes | `0xA001F0` stores 0; the value is the `0x00004101` default from `0xA00338..0xA00374` | `0xA001F0..0xA00374` |
+| C23.9 | bridge 2b.2 / B7: `0x9BEB30` is the PBI parameter/source init; bridge 2b.3: `vt+0x90` gets a 0x20-byte block `{params+0x70?, params+0x1ec, ...}` and "the node's own semantics" | `0x9BEB30` touches no source (it is the parameter-context init); the `vt+0x90` block is the 0x12-byte struct at `sp+0x4c`, `+0x1EC` is `pbi+0x1EC`, and all five classes share `0x9ED2CC` | `0x9BEB30..0x9BEF00`; `0xA37D2C..0xA37D94` |
+| C23.10 | B12 / bridge 5.2: `0x9CD340` internals RECOVERABLE_GAP, "the media-format/stream reader" | a RIFF/WAVE chunk walker; `0xA01E24` ignores its return, maps tag 0xFFFE to plugin `0x00010001` and `pbi+0x1E0 >= dataSize+dataOffset` to mode 3 | `0x9CD340..0x9CD6BC`; `0xA01E24..0xA01ED4` |
+| C23.11 | bridge Item 6.1 writes the fade slot as `pbi+0x51` / `pbi+0x5a` and `vt+0x50` as live | the offsets are `pbi+0x144` and `pbi+0x168`; `vt+0x50` is `0x9FF4D0` = `bx lr` in every PBI vtable holding TransitionUpdate | `0xA00774..0xA0082C`; `0x9FF4D0` |
+| C23.12 | M6-025 B7: `0xA379D8` after `vt+0x90` goes straight to `0xA00618` | between them: `pbi vt+0xC` = `0xA0285C`, `0xA023D4`, the second CalcEffectiveParams, `0x9FF368`, `0xA01918`, `0x9E85C8`, then `0xA00618`, `0xA0067C` and the append to the global PBI list `0x108DE78` | `0xA37FE8..0xA380E0` |
+| C23.13 | M9 reports row 15: the `0x009D0774` read is `ctx+0x84` | `fp = this` (`0x9D075C mov fp,r0`): it is the container's own `+0x84` flag; `params+0x84` is read per child on the copied context (`0x9D085C`) and inside `0xA024B8` | `0x9D075C`; `0x9D0774`; `0x9D085C` |
+| C23.14 | M9-014: voice construction copies 0x44 bytes preserving the MIDI status/key/velocity | the 0x44 copy is `params+0x28..+0x6B` to `pbi+0x170` (`0xA00344..0xA00380`); the event is copied separately as the dword at `pbi+0x1E4`. The velocity publication is correct | `0xA00344..0xA00380`; `0xA002F8/0xA00304` |
+| C23.15 | C21 B2 / bridge 1.6: the ActorMixer `+0x128` is a PlayInternal body | it is `mov r0,#0; bx lr` and never selects a child or reaches a Sound | `0xA667D0` |
+| C23.16 | C22.1: `params+0x28..+0x6B` uninitialised stack on every path | only the Play, MIDI and music/switch builders leave it uninitialised beyond `+0x28`; the event-post builder `0xA2E494` and the music-side builder `0xA62ED4` copy 0x48 bytes from their own argument. RanSeq is the only container that fills the block (one u16 and one bit per level); no reader of `pbi+0x170..0x1B3` was found | `0xA2E50C..0xA2E528`; `0xA62FA8..0xA62FBC`; `0xA0A724..0xA0A73C` |
+| C23.17 | inventory 3.3: property-46 default read from global `0x108DB20+0xB4` | the "play on" property is 46 = `+0xB8`, default **1**, stored by the static ctor `0x4DDFF0` (`.init_array`); `+0xB4` (property 45, root note) defaults to 60 | `0x4DE034`; `0x4DE12C`; `0x4DE0F8`; `0x4DE100` |
+
+### The Sound special branch (report item 7) in one paragraph
+
+For a note-on (`params+0x84 == 0x90`, `params+0x87` velocity non-zero) `0xA1D448` publishes RTPC `0x85` = the
+note and RTPC `0x84` = `440 * 2^((note-69)/12)` (`powf`), registers the Sound node on the note-state
+`params+0x88` with the code from `0x9EE174` (1 if the inherited property 46 is 2, else bit4 of the stop node's
+`+0x47`, giving 2 or 0), and then runs the normal path if `0x9EE230` (the inherited property 46 equals 1) is 1,
+otherwise returns 0x52; the registered node runs again at the note-off through the dispatcher `0xA3E688`
+(code 1) or the PBI stop path (`0xA3E920`). Any other status takes the normal path. The velocity-0 case is a
+note-off route and never enters the branch. Shipped: under the MIDI target 110896138, 42 Sounds (Layer
+774902407, property 46 = 2) play at note-off, 42 (Layer 462443456) and 54 (root 62050212) play at note-on.
+
+
+### The main output device (2,0) and its channel-config word (rows C23.18 to C23.24)
+
+Read by a second bounded pass and checked by an independent verifier (12 claims: 9 PASS, 3 corrected below).
+Where the extractor's summary and the check differ, the check wins.
+
+| # | earlier text | the source says | citation |
+|---|---|---|---|
+| C23.18 | the writer and value of the (2,0) device entry's `+0x1C` (the gate of `0xA42210`) were untraced | it is the constant **`0x00003102`** (2 channels, standard config, mask 3). Anki's init wrapper overrides only settings `+8` (`0x8D818A`) and `+0x18` (`0x8D8192`); `+0x2C` comes from `0x99DC68` -> tail `b 0xA571CC` (`0x99DCE4`), which calls `0x9D474C` (payload `{1, cfg, 0}`, plugin id `[+8]` = 0 at `0x9D4768`), then sets byte `+4` = popcount(3) = 2 (`0xA571FC`), the low nibble of `+5` = 1 (`0xA57204`), mask 3 in bits 12+ (`0xA57210`). The no-settings default path (`0x99EA7C` -> `0xA571CC` at `0x99EAE8`) gives the same value | `0x8D8188..0x8D8192`; `0x99DCBC..0x99DCE4`; `0xA571CC..0xA57210`; `0x9D474C..0x9D4768` |
+| C23.19 | -- | Init `0x99E3EC` copies the 0x4C-byte settings to `0x108D90C` (`0x99E458..0x99E464`; base `0x99E414+0x6EF454 = 0x108D868`, so `+0xA4`); `0x99EF80 bl 0x9B0200` (reached only when the queue global `0x108D870` is NULL and `0xA36B00` returned 1, `0x99E674..0x99E680`, `0x99EF3C`) posts message id `0x36` (`0x9B0218`), size 0x10, copying 12 bytes from `0x108D90C+0x2C` (`0x9B0240..0x9B024C`). The drain after it is conditional on settings byte `+0x3D` (`0x108D949`, default 1): set -> `0xA40940(queue+0x54)` (`0x9B029C`); clear -> `0x9D4054` -> `0x9EADE8` (`0x9B0278`). `0xA40940` is not decoded (RECOVERABLE_GAP for "before Init returns") | `0x99E3EC..0x99E464`; `0x9B0200..0x9B02AC` |
+| C23.20 | -- | the audio-thread pump `0x9AE0A8` dispatches id `0x36` to `0x9AE378` -> `bl 0x9EBC50` (`0x9AE37C`); id `0x1B` to `0x9AEA84` -> `bl 0x9EB4C8` (`0x9AEAEC`, skipped when halfword `[r5+0x18]` is 0); id `0x0E` to `0x9AEE88` -> `bl 0xA0CA04` (`0x9AEE9C`). `0x9EBC50` reads three payload words, and with an empty device list and plugin id 0 stores the sink kind **2** as the descriptor's fifth word (`sp+0x24`, `0x9EBDA0..0x9EBDA8`), then calls `0x9EB10C(r0=2, r1=0, desc, 0, [sp]=0xFF, [sp+0xC]=1)` (`0x9EBCD0..0x9EBCF4`). The constants 2 and 0 in r0/r1 are the 64-bit device id (2,0); the sink kind is the fifth descriptor word. A non-zero plugin id gives kind 1 and `0x9EBA54` (`0x9EBDD0`, `0x9EBDE4`); a non-empty list with an existing (2,0) removes and recreates it (`0x9EBD74`) | `0x9AE0B0..0x9AE190`; `0x9EBC58..0x9EBCF4`; `0x9EBDA0..0x9EBDE4` |
+| C23.21 | -- | device ctor `0x9EB10C`: alloc 0x90 (`0x9EB140`), zero `+0x1C` (`0x9EB19C`, `0x9EB1B0..0x9EB1B4`), descriptor words to `entry+0x38..` and the kind to `entry+0x48` (`0x9EB1EC`, `0x9EB204`), state `[+0x88] = 2` (`0x9EB260`), `bl 0x9EAAC8` (`0x9EB268`), fallback `bl 0x9E9564` (`0x9EB310`). If `0x9EA04C` (`0x9EB2C8`) fails the entry is destroyed and freed and it returns **2** (`0x9EB2D4..0x9EB2F4`); allocation failure returns `0x34` (`0x9EB300`); failure of the `0x9E9564` fallback returns **`0x34`** (`0x9EB31C..0x9EB340`). Success **appends** at the list tail (`next` = NULL at `+4`, `0x9EB34C`; head `[list+0x1C]` written only when the list is empty, `0x9EB360`; list base `0x108DAE8`, head `0x108DB04`; count `[+0x14]++`, `0x9EB388..0x9EB390`). The listener mask is zeroed at `entry+0x18` (`0x9EB1C8`) and set from stack arg 5 (`0x9EB35C`, `0x9EB374`), so 0xFF lands at `entry+0x18`; when the mask is non-zero (`bne 0x9EB3F0`) it finds the first list entry with id (2,0) and does `bic r3,r3,r2; str r3,[r0,#0x18]` (`0x9EB450..0x9EB454`), i.e. `main.mask &= ~mask` for a secondary device, and for (2,0) itself the equal-id path restores the mask (`0x9EB48C`, `0x9EB490`), a net 0xFF | `0x9EB140..0x9EB390`; `0x9EB3F0..0x9EB490` |
+| C23.22 | -- | `0x9EAAC8` (kind 2 -> `0x9EACF0`): `0xA1CCFC(entry+0x38, entry, sp+0x18)` (`0x9EAD04`); read back byte `+0x3C`, the nibble of `+0x3D`, `ubfx [+0x3C],12,20` (`0x9EAD08..0x9EAD1C`); the sink's vtable slot 3 must return 1 (`0x9EABF4..0x9EABFC`); the writes `strb sb,[r5,#0x1c]` (`0x9EAC64`, plugin word 0 and kind <= 3; `0x9EACBC`, plugin != 0 or kind > 3), the `+0x1D` nibble, `bfi r4,#12,#20`, `[r5+0x70] = sink` (`0x9EAC78`), `[r5+0x88] = 1` (`0x9EAC94`). `0x9EAD44` is the same store on the `0xA1C8A8` branch for kinds 1 and 3 (reached with `cmp r1,#3`, not from kind 2). `0xA1CCFC` with plugin id 0 goes to `0xA1CEC4` -> `0xA58E48` (OpenSL sink, config copied unchanged, `0xA58E7C`, `0xA58E94`; sink vtable slot 3 `0xA58088` = constant 1) and recomputes `0x3102` (`0xA1CEF8..0xA1CF64`). If `0xA58C38` fails, `0xA58E48` returns NULL (`0xA58F54..0xA58F78`) and `0x9EAAC8` returns 0 | `0x9EAAC8..0x9EAD44`; `0xA1CCFC..0xA1CF64`; `0xA58E48..0xA58F78` |
+| C23.23 | -- | the fallback `0x9E9564` (state `+0x88` != 0) stores `[entry+0x1C] = [sp+0x10]` = the whole requested 32-bit config (`0x9E9698`, `0x9E96B8`; `0xA1C8A8` is a stub `mov r0,#1`), sets `[+0x88] = 0` (`0x9E96A8`). So on the dummy sink the word is also `0x3102`. Whether OpenSL creation succeeds on a phone is HARDWARE_ONLY; it only selects the sink, never the value. Other `+0x1C` writers: the entry destructor `0x9E96CC` (`0x9E9790`, `0x9E97A8`) and `0x9E9C54` zero it; `0x9EA674` (a near-clone of `0x9EAAC8`) has no caller; `0x9EBA54` (non-default plugin) does not run for (2,0); the per-frame re-init `0x9EBE38..0x9EC0F0` rewrites the same value (its trigger is unread) | `0x9E9564..0x9E96B8`; `0x9E9790`; `0x9E9C54`; `0x9EBE38..0x9EC0F0` |
+| C23.24 | -- | `0xA42210` with `parentVpl == 0` returns 0 when the device entry is missing or `entry+0x1C` byte is 0 (`0xA4248C..0xA42590` to `0xA423F0`); `[sp+0x70] == 2` then runs the reuse search `0xA42640..0xA42718`, `== 3` calls `0xA42754` (`0xA425A0..0xA425AC`); `0xA42754` returns 0 when its scan finds nothing and the recursive `0xA42210` for device 2 (parent 0, `0xA42850`) returns 0, and the caller stores 0 as the parent and continues at `0xA4223C` (it does not itself return 0). With a non-zero byte the config word `[entry+0x1C]` becomes the new pipeline's channel config through `0xA4F0EC` (`0xA42304..0xA4252C`); a missed lookup there is a deliberate null dereference (`udf`). Since Init writes `0x3102` before the first Play, the gate passes unless device creation failed (both sinks failing frees the entry and returns `0x34`, so (2,0) would not exist) | `0xA42210..0xA42590`; `0xA42304..0xA4252C`; `0xA42754..0xA42858` |
+
+Corrections to the extractor's summary of this pass (the check wins): the constants 2 and 0 at `0x9EBCE4/0x9EBCE8` are the
+device id, not a sink type (C23.20); `0x9EB2D4..0x9EB2F0` is the failure of `0x9EA04C` returning 2, and the `0x34`
+return on the double failure is at `0x9EB31C..0x9EB340` (C23.21); the list link is an append (C23.21); the post
+`0x9B0200` is reached only when the queue global is NULL and the drain is conditional on settings byte `+0x3D`
+(C23.19). The message-`0x36` repost `0x9B2CE8` -> `0x9B09FC` runs only on the first pass and only if
+`[0x108D90C+0x34]` != 0 (default 0, so it does not run: `0x9B2D7C..0x9B2DA4`, `0x9B09FC..0x9B0A38`).
+
+### Report claims dropped (the verifier did not support them)
+
+- The report's "evidence too weak" bullet on M6-022 / V7-b: the global dword `0x108DE78` is read-modified-written
+  at `+0` by `0xA022E8`/`0xA0228C` as V7-b says; the list fields `+0x48/+0x4C/+0x50` are separate.
+- The report's contradiction item 5 cites bridge row 1.8; the ActorMixer row is bridge 1.6, and neither claims a
+  body (the stub fact stands as C23.15).
+- The report's row C1 (item 7) attributes a "byte" width to bridge 2c.10; only the C# `Field1E4` and
+  `SoundSpecial84` are bytes.
+- The report's item 1 row 3 sentence on the 0x3F comparison (corrected as C23.1) and the statements listed as
+  failed in the citation check are replaced by the corrected text there.
+
+### Residuals (RECOVERABLE_GAP / UNKNOWN / HARDWARE_ONLY), owned by the records
+
+- **The `entry+0x1C` word of the main output device (2,0)** is settled (rows C23.18 to C23.24 below): it is the constant `0x00003102`, written before the first Play, so `0xA42210` does not return 0 on it.
+- Whether Anki code ever posts add-device (`0x9AEAEC` -> `0x9EB4C8`) or SetActiveListeners (`0xA0CA04`): a whole-`.text` scan found no caller of the API bodies `0x9A6124`, `0x9A6200`, `0x99F66C` and none of `0x9B0200` (other than Init), `0x9EBC50`, `0x9EB4C8`, `0xA0CA04` outside the pump handlers; a register-indirect call computed at run time cannot be excluded by a static scan. The default game-object listener mask is 1 and the main device mask 0xFF, so every voice under Master Audio Bus connects to the main device (2,0); Master Secondary Bus (`0x2FFE6EF7`, bit6 = 0) gets a connection only on a non-main device, which is never created.
+- `0xA54A30` (the voice init, `voice+0xCD` bit0 gate) body; `0xA0428C`; `0xA054D8`; `0xA69A38`, `0xA69AC8`,
+  `0xA47360`; the Init.bnk per-bus fields; whether a Cozmo sound is ever `AddSrc==0x3F` (streamed Vorbis
+  `0xAB0B20` return codes unread).
+- The continuous-mode bodies `0x9EE9C4..0x9EEA5C`, `0x9E8940`, `0x9E8FCC`, `0x9E8F10`, `0x9E91F8`; the Switch key
+  precedence `0xA347A8` and last-switch store `0xA0CCF8/0xA0CD78`; the Layer/Switch continuous-validation
+  branches (`vt+0x98/+0x9c`, `0x9D0F3C`): not exercised by shipped data (`cont = 0` in all 21 Switches and 6
+  Layers, no Switch or Layer is a RanSeq child).
+- `params+0x14` (no writer, no reader on any path read) and the `pbi+0x170` consumers: UNKNOWN.
+- The Sound branch's `0x52` consumer, `0x9EE2D8` (no direct caller), `0x9EB4C8`/`0xA0CA04` posters.
+
+M6-025 stays `IMPLEMENTATION_GAP` until built and wired (B-M6b-4); M6-026 is `IMPLEMENTATION_GAP` (to build).
+
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 
 Copied verbatim from `re-analysis/research/20260928-I-M6b-gap1-extraction.md`.
