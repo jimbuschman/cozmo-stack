@@ -2,7 +2,47 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
-## Now
+## Now (2026-09-29)
+
+- **Every layer, M1 to M15, is built once and inventory-approved. None is ACCEPTED yet.** The manifest has 371 records:
+  - 220 EXACT_SOURCE;
+  - 99 IMPLEMENTATION_GAP;
+  - 8 RECOVERABLE_GAP, 7 of them on the live path;
+  - 10 HARDWARE_ONLY;
+  - 2 BLOCKED_EXTERNAL;
+  - 30 COMPATIBILITY_POLICY;
+  - 2 EQUIVALENT_IMPLEMENTATION.
+- **Round 1 of the parallel jobs is DONE** (2026-09-27..29, `re-analysis/jobs/BOARD.md`): X1..X5, I-/B- for M6..M15,
+  with B-M6b split in three.
+  - **M6-002, Vorbis, is bit-exact with the engine end to end.** Nine shipped sounds, mono and stereo, both block-size
+    pairs, match the engine's own decoder sample for sample under emulation (`re-analysis/tools/emu/emu_vorbis.py`,
+    `WwiseVorbisWholeDecodeNativeTests`; 115b002/dd7f398). It stays IMPLEMENTATION_GAP until B-M6b-3 wires it live.
+  - The emulator tools (`re-analysis/tools/emu/`) run the engine's own ARM code under Unicorn. They are the exact oracle
+    for numeric code: IMDCT, window combine and the whole decode so far.
+- **Round 2, running:**
+  - window 1: G-M7, then G-M15;
+  - window 2: B-M6b-3, the live audio wiring. Part 1 is b926d00.
+  - window 3: G-M14.
+  
+  The G jobs fold Codex's checked overnight extractions (M7-021, M15-014, M14-011) into their subsystems and build
+  them. The manager spot-checked each report's key citations in the binary first.
+- **Round 3, queued:** R-BEH → R-VIS (window 1), R-M6 (window 2), R-DEV → R-ANIM (window 3). It triages and closes
+  the 99 IMPLEMENTATION_GAP records ([R.md](re-analysis/jobs/R.md)).
+- **Codex:** the four M9 singing gaps (`re-analysis/research/requests/20260929-M9-singing-gaps.md`), then the review
+  of the 32 COMPATIBILITY_POLICY / EQUIVALENT_IMPLEMENTATION records against "Exact, always"
+  (`20260929-policy-review.md`). The manager decides each review verdict. Operator decisions are flagged, not reversed.
+- **Tooling fixes on 2026-09-29:**
+  - `run-job.ps1` always gives the opencode CLI its own data directory (`%USERPROFILE%\.opencode-cli`);
+  - the push gate refuses at once when origin/main has moved, instead of running the suite first.
+- **Waiting on the operator, once the jobs land:**
+  - the B-M6b-3 listening check (its steps will be in `re-analysis/jobs/status/B-M6b-3.md`);
+  - the freeplay acceptance run (steps in `re-analysis/jobs/status/B-M15.md`);
+  - the control-check run with `--allow-drive` ("Waiting on the operator" below).
+- **After round 3:**
+  - the hardware runs that settle the HARDWARE_ONLY records;
+  - then each layer's acceptance (review state ACCEPTED).
+
+## Earlier (2026-09-23..09-28; history, superseded by "Now" above)
 
 - **Parallel jobs (2026-09-27). This replaces the single-manager Next list below.**
   - The work is split into three unattended chains on `re-analysis/jobs/BOARD.md`, one per opencode window, each in its own clone:
