@@ -36,6 +36,9 @@ $logDir = Join-Path $root '.scratch\runner'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $stopFile = Join-Path $root 'STOP'
 $summary = Join-Path $logDir 'jobs-summary.txt'
+# The opencode CLI can't share the desktop app's database ("Database is not empty and has no session table"),
+# so it gets its own data directory unless the caller already chose one.
+if (-not $env:XDG_DATA_HOME) { $env:XDG_DATA_HOME = Join-Path $env:USERPROFILE '.opencode-cli' }
 $help = (& opencode run --help 2>&1 | Out-String)
 $agentFlag = $help -match '--agent'
 
