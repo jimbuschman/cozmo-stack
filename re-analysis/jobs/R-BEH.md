@@ -24,3 +24,9 @@ Two corrections to that report:
   assets.
 
 What is still open goes to `@cozmo-extractor`: the report's open questions 1, 3 and 5..7.
+
+**A further correction (from `20260929-M6-live-audio-bodies-extraction.md`, item 6, section 4 point 2; manager-checked):**
+at `0x009D0774` the Layer container's `ldrb r4,[fp,#0x84]` reads its own `+0x84` flag (`fp = this`, `0x009D075C
+mov fp,r0`), not the play context's MIDI status. The M9 leftovers report's Part 1 row 15, and the M9-013-014 report,
+say otherwise. The params MIDI status is read per child on the L copy (`0x009D085C`, `0x009D0CA0`) and inside
+`0xA024B8` (`0xA024CC`).
