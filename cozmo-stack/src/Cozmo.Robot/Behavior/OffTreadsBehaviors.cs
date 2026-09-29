@@ -194,29 +194,57 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 /// This is the M7 dispatcher's falling reaction moved under <see cref="BehaviorManager"/>, so the freeplay
 /// stack keeps it and nothing runs two dispatchers over the same robot.
 /// </summary>
+// fidelity: M7-003
 public sealed class ReactToImpactBehavior : SteppedBehavior
 {
-    /// <summary>The engine's 5 s allowance for the post-fall motor recalibration.</summary>
+    /// <summary>The engine's 5 s allowance for the post-fall motor recalibration (0x40a00000 in InitInternal).</summary>
     public const double CalibrationWaitSec = 5.0;
+
+    /// <summary>
+    /// The <c>TriggerAnimationAction</c> timeout the engine passes to <c>TransitionToPlayingAnim</c>:
+    /// 60.0 s (<c>movt r0,#0x4270</c> at 0x0060636e).
+    /// </summary>
+    public const double AnimationTimeoutSec = 60.0;
 
     public ReactToImpactBehavior(string id = "ReactToImpact") : base(id, "ReactToImpact") { }
 
     /// <summary>
-    /// The behaviour with its AlwaysHandle attached to the robot's falling broadcasts (M10 C1, C2): the flag is cleared
-    /// on FallingStarted and set by a FallingStopped with impactIntensity &gt; 1000. The M10 RobotFalling strategy
-    /// latches FallingStarted (C12), and its WantsToRun is asked only while this behaviour is runnable (C14), so the
-    /// reaction fires when a hard landing follows within the 3000 ms window. This gate is the existing M7 candidate,
-    /// moved here from the strategy it used to live in; its source (0x00606408) is not in the M10 inventory.
+    /// <c>BehaviorReactToImpact::AlwaysHandle</c> (0x00606408), transcribed from the three engine-to-game
+    /// tags it switches on:
+    /// <list type="bullet">
+    /// <item>tag <c>0x3a</c> (<c>FallingStarted</c>): clears <c>+0x11e</c> and <c>+0x11c</c>;</item>
+    /// <item>tag <c>0x3b</c> (<c>FallingStopped</c>): sets <c>+0x11d = 1</c>, reads the field at <c>+4</c>
+    /// and sets <c>+0x11e = 1</c> only when it is <c>&gt; 1000.0</c> (constant 0x606470);</item>
+    /// <item>tag <c>0x1e</c> (<c>MotorCalibration</c>): sets <c>+0x11c = 1</c> when
+    /// <c>Robot::IsHeadCalibrated()</c> and <c>Robot::IsLiftCalibrated()</c> are both 1.</item>
+    /// </list>
     /// </summary>
     public ReactToImpactBehavior(CozmoRobot robot, string id = "ReactToImpact") : this(id)
     {
-        robot.Sensors.FallingStarted += _ => _impact = false;
-        robot.Sensors.FallingStopped += r => { if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) _impact = true; };
+        robot.Sensors.FallingStarted += _ => { _impact = false; _calibrated = false; };
+        robot.Sensors.FallingStopped += r =>
+        {
+            _fallingStoppedSeen = true;
+            if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) _impact = true;
+        };
+        robot.Sensors.MotorCalibrationReported += _ =>
+        {
+            if (robot.State.HeadCalibrated && robot.State.LiftCalibrated) _calibrated = true;
+        };
         _gated = true;
     }
 
-    private volatile bool _impact;
+    private volatile bool _impact;             // +0x11e
+    private volatile bool _calibrated;         // +0x11c
+    private volatile bool _fallingStoppedSeen; // +0x11d
     private readonly bool _gated;
+
+    /// <summary>+0x11e: a hard landing has been seen.</summary>
+    public bool ImpactRecorded => _impact;
+    /// <summary>+0x11c: the head and lift both reported calibrated.</summary>
+    public bool CalibratedRecorded => _calibrated;
+    /// <summary>+0x11d: any FallingStopped has been seen.</summary>
+    public bool FallingStoppedSeen => _fallingStoppedSeen;
 
     protected override bool IsRunnableInternal(BehaviorContext context) => !_gated || _impact;
 
@@ -226,16 +254,25 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     protected override void OnStart()
     {
         Scope.DisableReactions();
-        WaitedForCalibration = Context.Robot.State.CalibratingMotors;
-        if (!WaitedForCalibration) { PlayImpact(); return; }
-        Log("landed while the motors are recalibrating: waiting for them (WaitForLambdaAction, 5 s)");
-        WaitUntil(() => !Context.Robot.State.CalibratingMotors, CalibrationWaitSec, _ => PlayImpact(), "the motor recalibration a fall triggers");
+        // InitInternal 0x006061f8: a 5 s wait action, then StartActing(TransitionToPlayingAnim).
+        WaitedForCalibration = !_calibrated;
+        if (_calibrated) { PlayImpact(); return; }
+        Log("landed before the head/lift calibration completed: waiting for it (WaitForLambdaAction, 5 s)");
+        WaitUntil(() => _calibrated, CalibrationWaitSec, _ => PlayImpact(), "the motor recalibration a fall triggers");
     }
 
+    /// <summary>
+    /// <c>TransitionToPlayingAnim</c> 0x00606348: acts only when <c>+0x11e</c> is set, then starts
+    /// <c>TriggerAnimationAction(robot, 0x1a0, 1, true, 0, 60.0f, ...)</c>.
+    /// </summary>
     private void PlayImpact()
     {
-        Log("TransitionToPlayingAnim");
-        PlayTrigger(AnimationTrigger.ReactToImpact, Finish);
+        if (!_gated || _impact)
+        {
+            Log("TransitionToPlayingAnim");
+            PlayTrigger(AnimationTrigger.ReactToImpact, Finish, timeoutSec: AnimationTimeoutSec);
+        }
+        else Finish();
     }
 }
 
@@ -252,7 +289,8 @@ public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToPlacedOnSlope);
         double now = Clock();
         if (now - _lastRunMs < RepeatWithinSec * 1000 && PitchWasHigh)
         {
@@ -350,7 +388,8 @@ public sealed class ReactToRobotShakenBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToRobotShaken);
         CurrentPhase = Phase.Shaking;
         MaxAccelMagnitude = 0;
         ShakenDurationSec = 0;
@@ -490,7 +529,8 @@ public sealed class ReactToMotorCalibrationBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToMotorCalibration);
         var state = Context.Robot.State;
         Completed = false;
         WaitUntil(() => !state.HeadCalibrating && !state.LiftCalibrating && state.HeadCalibrated && state.LiftCalibrated,

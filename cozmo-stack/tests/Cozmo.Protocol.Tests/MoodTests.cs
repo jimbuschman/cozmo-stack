@@ -197,4 +197,34 @@ public class MoodTests
         c.Advance(110);
         Assert.Equal(0, c[EmotionType.Confident], 6);
     }
+
+    /// <summary>
+    /// M7-013: <c>Emotion::Add</c> 0x00679618 resets the decay clock <b>unconditionally on a sign flip</b>
+    /// (<c>teq</c> at 0x006796A8, <c>bne #0x6796bc</c> at 0x006796AC), on top of the kept-sign three-test
+    /// case. Reachable from the shipped events: <c>PickupSucceeded</c> gives Confident +0.2,
+    /// <c>DrivingActionFailedWithAbort</c> gives Confident -0.2, so the second flips the sign at 40 s and
+    /// the clock must restart there.
+    /// </summary>
+    [Fact]
+    public void ASignFlipRestartsTheDecayClock()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        var model = MoodModel.Load(obb);
+        var positive = model.Events.First(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value >= 0.2));
+        var negative = model.Events.First(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value <= -0.2));
+
+        var mood = new MoodState(model);
+        mood.Trigger(positive.Name, 0);
+        Assert.True(mood[EmotionType.Confident] > 0);
+
+        mood.Trigger(negative.Name, 40);
+        double flipped = mood[EmotionType.Confident];
+        Assert.True(flipped < 0, $"the shipped negative event did not flip the sign: {flipped}");
+
+        // The clock was zeroed at the flip, so 30 s later the value is the post-flip value, not decayed
+        // to zero on the schedule it was already on.
+        mood.Advance(70);
+        Assert.Equal(flipped, mood[EmotionType.Confident], 6);
+    }
 }

@@ -13,6 +13,7 @@ namespace Cozmo.Robot.Behavior;
 /// Every animation trigger the shipped engine defines: the names it uses to ask for an animation
 /// without naming a clip. 575 of them, mapped to animation groups by AnimationTriggerMap.json.
 /// </summary>
+// fidelity: M7-001
 public enum AnimationTrigger
 {
     AcknowledgeFaceInitPause,

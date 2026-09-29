@@ -1327,4 +1327,47 @@ public class DerivedStateTests
         Assert.Contains(fired, d => d.Reason.Contains("derived InAir"));   // the flag only reports
         Assert.Contains(fired, d => d.Reason.Contains("no animation assets"));   // InAir fires it
     }
+
+    // fidelity: M7-003
+    /// <summary>
+    /// The three engine-to-game tags <c>BehaviorReactToImpact::AlwaysHandle</c> 0x00606408 switches on:
+    /// FallingStarted (0x3a) clears +0x11e and +0x11c; FallingStopped (0x3b) sets +0x11d and, only above
+    /// impact 1000, +0x11e; MotorCalibration (0x1e) sets +0x11c when the head and lift are both calibrated.
+    /// </summary>
+    [Fact]
+    public void TheImpactBehaviourRecordsTheAlwaysHandleTags()
+    {
+        using var rig = new Rig();
+        var b = new ReactToImpactBehavior(rig.Robot);
+        Assert.False(b.ImpactRecorded);
+        Assert.False(b.CalibratedRecorded);
+        Assert.False(b.FallingStoppedSeen);
+
+        rig.Send(new FallingStarted { Unknown = 1000 });
+        Assert.False(b.ImpactRecorded);
+        Assert.False(b.CalibratedRecorded);
+
+        // impact at or below the 1000 threshold does not set +0x11e
+        rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 1000f });
+        Assert.True(b.FallingStoppedSeen);
+        Assert.False(b.ImpactRecorded);
+
+        rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 1500f });
+        Assert.True(b.ImpactRecorded);
+
+        rig.CalibrateMotors();
+        Assert.True(b.CalibratedRecorded);
+
+        // FallingStarted clears both flags again
+        rig.Send(new FallingStarted { Unknown = 2000 });
+        Assert.False(b.ImpactRecorded);
+        Assert.False(b.CalibratedRecorded);
+    }
+
+    /// <summary>M7-003: the TriggerAnimationAction timeout the engine passes is 60.0 s.</summary>
+    [Fact]
+    public void TheImpactAnimationCarriesTheSixtySecondActionTimeout()
+    {
+        Assert.Equal(60.0, ReactToImpactBehavior.AnimationTimeoutSec);
+    }
 }

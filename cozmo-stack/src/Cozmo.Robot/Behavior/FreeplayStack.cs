@@ -84,6 +84,11 @@ public sealed class FreeplayStack : IDisposable
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
         if (vision is not null) ctx.Map ??= new MemoryMap();
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
+        // fidelity: M7-012
+        // MoodManager::Init 0x0067aebc: StaticMoodData::Init reads the shipped mood_config.json and the
+        // emotion events; MoodState is the stack's runtime for it. Wired here so every Context.Mood?.Trigger
+        // call and FreeplaySystem's per-tick Advance have a live model.
+        ctx.Mood ??= new MoodState(MoodModel.Load(obbRoot));
         var manager = new BehaviorManager(ctx);
         // BehaviorManager::FinishCurrentBehavior switches to the default class-0x16
         // BehaviourRunningAndResumeInfo (0x005a38fe); this stack treats that placeholder as "nothing
@@ -91,7 +96,8 @@ public sealed class FreeplayStack : IDisposable
         manager.DefaultBehavior = new BehaviorRunningAndResumeInfo();
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
-                         bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard))
+                         bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard,
+                         obbRoot, m))
                 manager.AddReaction(reg.Strategy, reg.Behavior);
 
         // one repetition history for the whole stack: the manager records it, every chooser reads it

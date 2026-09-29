@@ -33,6 +33,12 @@ public abstract class SteppedBehavior : IBehavior
     private Action<bool>? _onConditionDone;
     private double _conditionTimeoutMs, _conditionDeadlineMs = double.NaN;
 
+    // TriggerAnimationAction's timeout_s (IAction+0x74, written by the constructor). The engine passes
+    // 60.0 for the reaction animations; null means the engine's "no timeout".
+    private double _actionTimeoutMs = double.NaN;
+    private double _actionDeadlineMs = double.NaN;
+    private Action? _onActionTimeout;
+
     private volatile bool _finished = true;
 
     // The engine's StopActing(false, false) cancels the action without its callback. Each started action
@@ -438,6 +444,24 @@ public abstract class SteppedBehavior : IBehavior
         }
 
         if (!_finished) OnUpdate();
+
+        // TriggerAnimationAction's timeout: IAction::IsDone returns true once now passes +0x74. The
+        // deadline is armed on the first tick after the play starts.
+        if (!_finished && _acting && _onActionTimeout is { } timeoutDone && !double.IsNaN(_actionTimeoutMs))
+        {
+            lock (_gate)
+            {
+                if (double.IsNaN(_actionDeadlineMs)) _actionDeadlineMs = nowMs + _actionTimeoutMs;
+                if (nowMs >= _actionDeadlineMs)
+                {
+                    _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
+                    Log("action timed out");
+                    StopActing();
+                    _pending.Enqueue(timeoutDone);
+                }
+            }
+        }
+
         if (!_finished && !Busy && !KeepsRunningWithoutAction) _finished = true;
         return !_finished;
     }
@@ -513,7 +537,8 @@ public abstract class SteppedBehavior : IBehavior
     /// for the length of the play.
     /// </param>
     // fidelity: M8-007
-    protected void PlayTrigger(AnimationTrigger trigger, Action onDone, AnimationTrack alsoLock = AnimationTrack.None)
+    protected void PlayTrigger(AnimationTrigger trigger, Action onDone, AnimationTrack alsoLock = AnimationTrack.None,
+                               double? timeoutSec = null)
     {
         var lib = Context.Robot.Animations.Library;
         if (lib is null) { Log($"{trigger}: no animation assets are loaded"); _pending.Enqueue(onDone); return; }
@@ -535,7 +560,7 @@ public abstract class SteppedBehavior : IBehavior
             // retried next tick, logging "Action %s [%d] not running because required tracks are locked"
             // (0x005404a8).
             Log($"{trigger} -> {resolved.Selected}: Action not running because required tracks are locked");
-            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock));
+            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock, timeoutSec));
             return;
         }
 
@@ -545,7 +570,7 @@ public abstract class SteppedBehavior : IBehavior
             // A track it needs is owned. The engine waits: IActionRunner::Update leaves the action queued
             // and tries again next tick rather than failing it, so the play is deferred, not skipped.
             Log($"{trigger} -> {resolved.Selected}: a track it needs is owned; waiting for it");
-            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock));
+            _pending.Enqueue(() => PlayTrigger(trigger, onDone, alsoLock, timeoutSec));
             return;
         }
 
@@ -559,6 +584,11 @@ public abstract class SteppedBehavior : IBehavior
             _acting = true;
             _currentAction = true;               // +0x84 set
             epoch = _actionEpoch;
+            // TriggerAnimationAction's timeout_s: the deadline is computed on the first Update after the
+            // play starts, because the engine starts it on the manager's clock.
+            _actionTimeoutMs = timeoutSec is { } t ? t * 1000 : double.NaN;
+            _actionDeadlineMs = double.NaN;
+            _onActionTimeout = timeoutSec is null ? null : onDone;
         }
         ticket.Completion.ContinueWith(_ =>
         {
@@ -566,7 +596,11 @@ public abstract class SteppedBehavior : IBehavior
             lock (_gate)
             {
                 current = epoch == _actionEpoch;
-                if (current) { _owns = false; _acting = false; _currentAction = false; }   // +0x84 cleared on completion
+                if (current)
+                {
+                    _owns = false; _acting = false; _currentAction = false;   // +0x84 cleared on completion
+                    _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
+                }
             }
             if (current) _pending.Enqueue(onDone);
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);

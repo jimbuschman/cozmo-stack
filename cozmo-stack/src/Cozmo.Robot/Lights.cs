@@ -376,6 +376,7 @@ public sealed record CubeLightPattern(LedPattern[] Leds, uint RotationPeriodMs, 
 /// The engine's cube light animations: CubeAnimationTriggerMap.json (trigger → animation name) and the patterns
 /// under config/engine/lights/cubeLights (LC2 (c), LC3).
 /// </summary>
+// fidelity: M7-002
 public sealed class CubeLightAnimations
 {
     private readonly Dictionary<string, string> _triggerToAnim = new(StringComparer.Ordinal);

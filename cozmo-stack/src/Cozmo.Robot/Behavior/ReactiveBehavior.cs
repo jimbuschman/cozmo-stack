@@ -280,3 +280,86 @@ public sealed class ReactiveBehavior : IDisposable
         _work.Dispose();
     }
 }
+
+/// <summary>
+/// One behaviour class's 21-byte reaction-lock table, as the engine ships it in <c>.rodata</c>.
+///
+/// <c>BehaviorManager::DisableReactionsWithLock</c> reads the table at
+/// <c>[table + trigger*2 + 1]</c> and disables only the triggers whose byte is non-zero
+/// (<c>0x005A283E add r0,r0,r8,lsl #1</c>; <c>0x005A2842 ldrb r0,[r0,#1]</c>; <c>0x005A2846 beq</c>),
+/// so a table is a per-class set of triggers, not a boolean for all of them. The tables below are the 13
+/// recovered in the M7 inventory Appendix F; each entry lists the trigger ordinals whose byte is 1.
+/// </summary>
+// fidelity: M7-014
+public sealed record ReactionLockTable(string Name, string TableAddress, IReadOnlyList<int> LockedTriggers)
+{
+    /// <summary>
+    /// The engine's bool[21], indexed by <see cref="ReactionTrigger"/> ordinal, as
+    /// <c>BehaviorManager::DisableReactionsWithLock</c> consumes it.
+    /// </summary>
+    public bool[] ToMask()
+    {
+        var mask = new bool[ReactionLockTables.TriggerCount];
+        foreach (var t in LockedTriggers)
+            if (t >= 0 && t < mask.Length) mask[t] = true;
+        return mask;
+    }
+}
+
+/// <summary>
+/// The 13 concrete reaction-lock tables recovered from the engine (M7 inventory Appendix F). The
+/// behaviour classes acquire their lock through <c>IBehavior::SmartDisableReactionsWithLock</c>, which
+/// appends <c>"_behaviorLock"</c> and calls the manager with the class's table; this is that table data.
+///
+/// Trigger ordinals are <see cref="ReactionTrigger"/> values:
+/// 0 CliffDetected, 1 CubeMoved, 2 FacePositionUpdated, 3 FistBump, 4 Frustration, 5 Hiccup,
+/// 6 MotorCalibration, 7 NoPreDockPoses, 8 ObjectPositionUpdated, 9 PlacedOnCharger,
+/// 10 PetInitialDetection, 11 RobotFalling, 12 RobotPickedUp, 13 RobotPlacedOnSlope,
+/// 14 ReturnedToTreads, 15 RobotOnBack, 16 RobotOnFace, 17 RobotOnSide, 18 RobotShaken,
+/// 19 Sparked, 20 UnexpectedMovement.
+/// </summary>
+// fidelity: M7-014
+public static class ReactionLockTables
+{
+    /// <summary>The engine's table is one entry per reaction trigger.</summary>
+    public const int TriggerCount = 21;
+
+    public static readonly ReactionLockTable ReactToCliff =
+        new("ReactToCliff", "0xC73746", new[] { 1, 2, 8, 20 });
+    public static readonly ReactionLockTable ReactToMotorCalibration =
+        new("ReactToMotorCalibration", "0xC74032", new[] { 0, 5, 12, 14, 15, 16, 17 });
+    public static readonly ReactionLockTable ReactToPlacedOnSlope =
+        new("ReactToPlacedOnSlope", "0xC745E0", new[] { 0, 12, 14 });
+    public static readonly ReactionLockTable ReactToRobotShaken =
+        new("ReactToRobotShaken", "0xC750E0", new[] { 0, 1, 2, 3, 4, 5, 8, 10, 11, 12, 13, 14, 15, 16, 17, 20 });
+    public static readonly ReactionLockTable CubeLiftWorkout =
+        new("CubeLiftWorkout", "0xc6b7e0", new[] { 1, 2, 8, 10, 20 });
+    public static readonly ReactionLockTable PeekABoo =
+        new("PeekABoo", "0xc70960", new[] { 1, 2, 3, 8, 10 });
+    public static readonly ReactionLockTable PutDownBlock =
+        new("PutDownBlock", "0xc68b20", Array.Empty<int>());
+    public static readonly ReactionLockTable FistBump =
+        new("FistBump", "0xc6fdc8", new[] { 1, 2, 8, 10, 11, 12, 14, 20 });
+    public static readonly ReactionLockTable Bouncer =
+        new("Bouncer", "0xc6fb90", new[] { 1, 2, 3, 4, 5, 8, 10, 20 });
+    public static readonly ReactionLockTable GuardDog =
+        new("GuardDog", "0xc6ff06", new[] { 1, 2, 3, 4, 5, 8, 10, 20 });
+    public static readonly ReactionLockTable Dance =
+        new("Dance", "0xc6f1c8", new[] { 1, 2, 3, 8, 10, 20 });
+    public static readonly ReactionLockTable EnrollFace =
+        new("EnrollFace", "0xc71b6c", new[] { 0, 1, 2, 3, 4, 5, 8, 11, 12, 14, 15, 16, 17, 20 });
+    public static readonly ReactionLockTable OnboardingShowCube =
+        new("OnboardingShowCube", "0xc72454", new[] { 1, 2, 3, 4, 5, 8, 10, 20 });
+
+    /// <summary>All 13, in the order Appendix F lists them.</summary>
+    public static readonly IReadOnlyList<ReactionLockTable> All = new[]
+    {
+        ReactToCliff, ReactToMotorCalibration, ReactToPlacedOnSlope, ReactToRobotShaken,
+        CubeLiftWorkout, PeekABoo, PutDownBlock, FistBump, Bouncer, GuardDog, Dance,
+        EnrollFace, OnboardingShowCube,
+    };
+
+    /// <summary>The table for a behaviour class, or null when the class ships no table.</summary>
+    public static ReactionLockTable? For(string behaviorClass) =>
+        All.FirstOrDefault(t => string.Equals(t.Name, behaviorClass, StringComparison.Ordinal));
+}

@@ -37,6 +37,7 @@ public sealed record IdleEvent(IdleAction Action, double AtMs)
 ///
 /// **Nothing runs until autonomy is enabled on the arbiter.**
 /// </summary>
+// fidelity: M7-005, M7-006, M7-007, M7-008, M7-009, M7-010, M7-016
 public sealed class IdleBehavior
 {
     private readonly CozmoRobot _robot;
@@ -70,7 +71,20 @@ public sealed class IdleBehavior
     /// 3000 ticks. It also means an idle event can only happen on a 60 ms boundary, which is why this
     /// class turns the wall clock it is given into whole ticks rather than comparing against it.
     /// </summary>
+    // fidelity: M7-008
     public const double EngineTickMs = 60;
+
+    /// <summary>
+    /// The engine's radians-to-degrees literal at <c>0x0057db2c</c> = <c>0x42652ee1</c> = <b>57.295780f</b>.
+    /// <c>UpdateLiveAnimation</c> multiplies the <c>Robot+0x2fc</c> radian value by it as a <b>float</b>
+    /// (<c>0x0057d838</c>) and truncates toward zero (<c>vcvt.s32.f32</c> at <c>0x0057d84e</c>) into the
+    /// <c>HeadAngleKeyFrame</c> signed-byte <c>angle_deg</c> (<c>+0x10</c>).
+    /// </summary>
+    // fidelity: M7-009
+    public const float HeadAngleDegreesPerRadian = 57.295780f;
+
+    /// <summary>The engine's whole-degree head angle: float multiply by the shipped constant, truncate toward zero.</summary>
+    internal static int HeadAngleDegrees(float radians) => (int)(radians * HeadAngleDegreesPerRadian);
 
     /// <summary>
     /// The most ticks one <see cref="Advance"/> makes up after a stall. The engine never catches up - it
@@ -277,7 +291,8 @@ public sealed class IdleBehavior
         {
             int duration = RandInt(_p.HeadMovementDurationMinMs, _p.HeadMovementDurationMaxMs);
             lock (_gate) _headMs = duration;
-            Raise(done, Do(IdleAction.HeadMove, nowMs, (_robot.State.HeadAngleRad ?? 0f) * 180.0 / Math.PI, duration));
+            // HeadAngleKeyFrame(Robot+0x2fc rad * 57.295780f truncated toward zero, variability, duration)
+            Raise(done, Do(IdleAction.HeadMove, nowMs, HeadAngleDegrees(_robot.State.HeadAngleRad ?? 0f), duration));
             lock (_gate) _headGapMs = RandInt(_p.HeadMovementSpacingMinMs, _p.HeadMovementSpacingMaxMs);
         }
         else if (!headFree)
@@ -386,6 +401,7 @@ public sealed class IdleBehavior
                 case IdleAction.EyeDart:
                     Dart((int)amount, (int)amountY, nowMs, durationMs);
                     break;
+                // fidelity: M7-009
                 case IdleAction.HeadMove when Execute:
                     _robot.Animations.StreamLive(
                         new HeadKeyframe(0, (uint)durationMs,
@@ -398,6 +414,7 @@ public sealed class IdleBehavior
                                          (byte)Math.Clamp((int)amount, byte.MinValue, byte.MaxValue),
                                          (byte)_p.LiftHeightVariabilityMm));
                     break;
+                // fidelity: M7-010
                 case IdleAction.BodyMove when Execute:
                     // on the animation system's clock, not the idle tick's: the keyframe's stop time is
                     // served by the animation tick loop
@@ -426,7 +443,7 @@ public sealed class IdleBehavior
     /// </summary>
     private void TurnEyeShift(short speed, double nowMs)
     {
-        int x = Math.Sign(speed) * _random.Next(0, TurnShiftMaxXPix + 1);
+        int x = TurnShiftSign(speed) * _random.Next(0, TurnShiftMaxXPix + 1);
         int y = _random.Next(-TurnShiftMaxYPix, TurnShiftMaxYPix + 1);
         ShowLayer(IdleAction.BodyMove,
                   (face, _) => LookAt(face, x, y, TurnShiftXRange, TurnShiftYRange, TurnShiftUpMaxScale,
@@ -459,6 +476,14 @@ public sealed class IdleBehavior
     public const int TurnShiftMaxXPix = 21;
     /// <summary>The vertical draw: RandIntInRange(-10, 10) at 0x0057D76C.</summary>
     public const int TurnShiftMaxYPix = 10;
+
+    /// <summary>
+    /// The turn's eye-shift x sign: only a negative drawn speed flips it to -1; speed 0 is <b>positive</b>
+    /// (<c>lsls.w r0,sb,#0x10</c> at 0x0057D790 sets N from the sign bit, <c>vmov.f32 s0,#1.0</c> at
+    /// 0x0057D7A4, <c>it mi</c> / <c>vmovmi.f32 s0,s2</c> at 0x0057D7A8..0x0057D7AA flips only when N is
+    /// set). <c>Math.Sign(0)</c> would wrongly give 0.
+    /// </summary>
+    internal static int TurnShiftSign(short speed) => speed < 0 ? -1 : 1;
     /// <summary>The shift lasts one 33 ms frame.</summary>
     public const uint TurnShiftDurationMs = 33;
     internal const float TurnShiftXRange = 64f;
@@ -523,6 +548,7 @@ public sealed class IdleBehavior
     /// for 100 ms before the base face is restored. Each frame lasts one 33 ms animation frame except the
     /// last.
     /// </summary>
+    // fidelity: M7-005
     public static readonly IReadOnlyList<(float ScaleX, float ScaleY, uint DurationMs)> BlinkFrames = new[]
     {
         (1.05f, 0.85f, 33u),
@@ -551,6 +577,7 @@ public sealed class IdleBehavior
     /// its very first tick, since every timer starts at zero. One slot for one transient dropped whichever
     /// of the two came second.
     /// </summary>
+    // fidelity: M7-016
     private sealed record FaceLayer(IdleAction Kind, Func<ProceduralFacePose, double, ProceduralFacePose> Apply,
                                     double StartMs, double EndsAtMs, double VariesUntilMs);
 
@@ -694,6 +721,7 @@ public sealed class IdleBehavior
     /// hands them to <c>ProceduralFace::LookAt</c> with the shipped scale parameters. The result is a
     /// whole-face move with the eye heights following the gaze; see <see cref="DartPose"/>.
     /// </summary>
+    // fidelity: M7-007
     private void Dart(int xPix, int yPix, double nowMs, double durationMs)
     {
         // The layer is persistent and the shift is a ramp, not a snap: see the summary above.
@@ -739,6 +767,7 @@ public sealed class IdleBehavior
     /// the keep-alive calls it with two different sets: a dart passes 5, 5 and the three
     /// <c>EyeDart*Scale</c> tunables, a turn's eye shift passes 64, 32, 1.1, 0.85 and 0.1.
     /// </summary>
+    // fidelity: M7-006
     internal static ProceduralFacePose LookAt(ProceduralFacePose b, float x, float y, float xMax, float yMax,
                                               float up, float down, float inc) =>
         ApplyGaze(b.Clone(), Gaze(x, y, xMax, yMax, up, down, inc));

@@ -202,6 +202,15 @@ public sealed class BehaviorManager : IDisposable
     public void DisableAllReactionsWithLock(string lockName) =>
         DisableReactionsWithLock(lockName, Enumerable.Repeat(true, TriggerCount).ToArray(), stopCurrent: true);
 
+    // fidelity: M7-014
+    /// <summary>
+    /// The manager side of a behaviour class's lock: <c>BehaviorManager::DisableReactionsWithLock(manager,
+    /// name, table, true)</c> as <c>IBehavior::SmartDisableReactionsWithLock</c> 0x005bce3c calls it. The
+    /// class's own 21-entry table is expanded to the bool mask the manager consumes.
+    /// </summary>
+    public void DisableReactionsWithLock(string lockName, ReactionLockTable table, bool stopCurrent = true) =>
+        DisableReactionsWithLock(lockName, table.ToMask(), stopCurrent);
+
     // fidelity: M10-004
     /// <summary>
     /// RemoveDisableReactionsLock(lock) (gap1 4c, 0x5A3A52..0x5A3B94): "sdk" sets the sticky gate (C3); for each node that
@@ -478,7 +487,7 @@ public sealed class BehaviorManager : IDisposable
             // Actually switch. Without this the method would only ever name a winner, and nothing would
             // become current, so no behaviour would ever be recorded as having run and the repetition
             // penalty would never apply.
-            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
+            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion, this);
             _current = best;
             _scope = scope;
             _startedSec = nowSec;
@@ -526,7 +535,7 @@ public sealed class BehaviorManager : IDisposable
         BehaviorScope scope;
         lock (_gate)
         {
-            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
+            scope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion, this);
             _current = behavior;
             _scope = scope;
             _startedSec = nowSec;
@@ -662,7 +671,7 @@ public sealed class BehaviorManager : IDisposable
         BehaviorScope resumeScope;
         lock (_gate)
         {
-            resumeScope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion);
+            resumeScope = new BehaviorScope(_context.Arbiter, _context.Robot.Motion, this);
             _current = resume;
             _scope = resumeScope;
             _startedSec = nowSec;

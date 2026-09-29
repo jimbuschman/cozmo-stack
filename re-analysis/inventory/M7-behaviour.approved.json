@@ -2,10 +2,10 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-09-28",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "8f78ab6f2d3399364e2e9a37c5d501a8a1d781f7bc066e908f2bf0b43be64d9c",
+  "inventory_sha256": "b9b1b26243aed42e84f325daae04df1a791bfd9cfe4b245e7a71deedf9a0c055",
   "records": {
     "M7-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The shipped AnimationTrigger, ReactionTrigger, BehaviorClass and BehaviorID enums",
       "authority": "decompiled Unity enums checked against the engine EnumToString tables",
       "evidence": [
@@ -18,13 +18,13 @@
       "hardware_required": false
     },
     "M7-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The shipped animation/reaction maps, behaviour configs and activity tree",
       "authority": "shipped OBB configuration plus libcozmoEngine.so loaders",
       "evidence": [
-        "re-analysis/obb/assets/cozmo_resources/assets/AnimationTriggerMap.json (573 pairs)",
-        "re-analysis/obb/assets/cozmo_resources/assets/CubeAnimationTriggerMap.json (40 pairs)",
-        "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json",
+        "re-analysis/obb/assets/cozmo_resources/assets/animationGroupMaps/AnimationTriggerMap.json (573 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/assets/cubeAnimationGroupMaps/CubeAnimationTriggerMap.json (40 pairs)",
+        "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json (22 rows over 21 triggers)",
         "RobotDataLoader::LoadReactionTriggerMap 0x00520bc8",
         "BehaviorManager::InitReactionTriggerMap 0x005a16e4",
         "178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C"
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M7-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ReactToImpact FallingStopped, intensity, recalibration and animation state machine",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -47,7 +47,7 @@
       "hardware_required": false
     },
     "M7-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "All 30 live-idle tunables and defaults",
       "authority": "AnimationStreamer::SetDefaultParams 0x0057db40, read",
       "evidence": [
@@ -57,20 +57,21 @@
       "hardware_required": false
     },
     "M7-005": {
-      "status": "IMPLEMENTATION_GAP",
-      "title": "Blink is a fixed seven-frame squash multiplied onto the base face",
+      "status": "EXACT_SOURCE",
+      "title": "Blink is a fixed seven-frame squash table emitted as an eight-keyframe track",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18",
-        "blink table 0x00c5aad8",
-        "FaceLayerManager::GenerateBlink 0x0058d2ac",
+        "blink table 0x00c5aad8 (7 x 16 bytes: scale-x, scale-y, duration ms, action)",
+        "action byte list 0x00c5ab48 (LowerLidY, LowerLidBend, LowerLidAngle, UpperLidY, UpperLidBend, UpperLidAngle)",
+        "restore frame duration 33 at 0x00586190; FaceLayerManager::GenerateBlink 0x0058d2ac",
         "ProceduralFace::Combine 0x005846a8"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M7-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -81,7 +82,7 @@
       "hardware_required": false
     },
     "M7-007": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The eye dart interpolates to a persistent gaze and does not fade to centre",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -94,7 +95,7 @@
       "hardware_required": false
     },
     "M7-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle timers are integer milliseconds advanced by the engine's 60 ms tick",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -107,33 +108,35 @@
       "hardware_required": false
     },
     "M7-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle head and lift are keyframes of the live animation",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "AnimationStreamer live Animation construction 0x0057a060",
-        "head keyframe 0x0057d85c/append 0x0057d866",
-        "lift keyframe 0x0057d9c0/append 0x0057d9ca",
-        "HeadAngleKeyFrame::GetStreamMessage 0x004f8c08"
+        "head keyframe 0x0057d85c/append 0x0057d866; lift keyframe 0x0057d9c0/append 0x0057d9ca",
+        "head current angle Robot+0x2fc and degrees constant 0x0057db2c = 0x42652ee1 (57.295780); vcvt.s32.f32 truncation 0x0057d84e",
+        "idle params 13/14 lift mean 35.0/variability 8.0, 9/10 duration 50..500, 11/12 gap 250..2000; 19 head variability 6.0, 15/16 duration 50..500, 17/18 gap 250..1000",
+        "HeadAngleKeyFrame ctor 0x004f8be4 / GetStreamMessage 0x004f8c08 (animHeadAngle 0x93)",
+        "LiftHeightKeyFrame ctor 0x004f8f5c / GetStreamMessage 0x004f8f80 (animLiftHeight 0x94)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M7-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle body shuffle and its paired turn eye shift",
       "authority": "AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read",
       "evidence": [
         "body decision and draws 0x0057d6cc..0x0057d8f4",
-        "turn eye layer 0x0057d7fc",
-        "straight removal 0x0057d8d2",
-        "next spacing 0x0057d978"
+        "straight fraction 0.5 (param 8) 0x0057dbba; speed RandIntInRange(-10,10) 0x0057d6f0; duration 250..1500 0x0057d6ce; gap 100..1000 0x0057d95a",
+        "BodyMotionKeyFrame 0x004fb170 radius 0x7fff straight / 0 turn; GetStreamMessage 0x004fba8c (animBodyMotion 0x99)",
+        "turn eye layer 0x0057d7fc; x sign(speed)*RandIntInRange(0,21), y RandIntInRange(-10,10), duration 33 ms, 64/32/1.1/0.85/0.1",
+        "straight removal 0x0057d8d2"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M7-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A reaction is held off only where its own strategy config names a cooldown",
       "authority": "libcozmoEngine.so plus shipped reactionTrigger_behavior_map.json",
       "evidence": [
@@ -157,7 +160,7 @@
       "hardware_required": false
     },
     "M7-013": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Mood clamp, graph evaluation and decay-clock restart arithmetic",
       "authority": "libcozmoEngine.so plus shipped mood graphs",
       "evidence": [
@@ -195,7 +198,7 @@
       "hardware_required": false
     },
     "M7-016": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The idle face composes a stack of named persistent and transient layers",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -207,7 +210,7 @@
       "hardware_required": false
     },
     "M7-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The exact live-animation wire lifecycle used by idle behavior",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

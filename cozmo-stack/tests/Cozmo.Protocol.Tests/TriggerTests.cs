@@ -35,6 +35,22 @@ public class TriggerTests
         return dir;
     }
 
+    // ------------------------------------------------------------------ the shipped identifier sets
+
+    /// <summary>
+    /// M7-001: the four shipped identifier sets. The expected counts are the M7 inventory row 1
+    /// (575 AnimationTrigger, 21 ReactionTrigger, 79 BehaviorClass, 179 BehaviorID), read from the
+    /// decompiled Unity enums; they are not taken from the code under test.
+    /// </summary>
+    [Fact]
+    public void TheShippedIdentifierSetsHaveTheInventoryCounts()
+    {
+        Assert.Equal(575, Enum.GetValues<AnimationTrigger>().Length);
+        Assert.Equal(21, Enum.GetValues<ReactionTrigger>().Length);
+        Assert.Equal(79, Enum.GetValues<BehaviorClass>().Length);
+        Assert.Equal(179, Enum.GetValues<BehaviorID>().Length);
+    }
+
     // ------------------------------------------------------------------ the map itself
 
     [Fact]

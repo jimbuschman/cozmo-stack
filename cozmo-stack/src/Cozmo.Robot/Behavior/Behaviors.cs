@@ -442,8 +442,12 @@ public sealed class ReactBehavior : IBehavior
         if (!resolved.Resolved) { _finished = true; return Task.CompletedTask; }
 
         scope.LockTracks(lib.GetClip(resolved.Selected!).Tracks);
-        // A reaction should not be interrupted by another reaction part way through.
-        scope.DisableReactions();
+        // A reaction should not be interrupted by another reaction part way through. Where the shipped
+        // class has its own 21-byte lock table (M7-014), take exactly that set through the manager; a
+        // class without one falls back to the scope's arbiter-wide lock.
+        var lockTable = ReactionLockTables.For(Class);
+        if (lockTable is not null) scope.SmartDisableReactionsWithLock(Id, lockTable);
+        else scope.DisableReactions();
         LastSelected = resolved.Selected;
         var ticket = context.Robot.Animations.PlayTracked(resolved.Selected!);
         if (ticket is null) { _finished = true; return Task.CompletedTask; }
@@ -621,69 +625,104 @@ public static class ShippedBehaviors
         ReactToFrustrationBehavior.Minor(),
     };
 
-    // fidelity: M10-003, M10-004
+    // fidelity: M10-003, M10-004, M7-002
     /// <summary>
-    /// The shipped reaction map (<c>reactionTrigger_behavior_map.json</c>) as trigger-map entries for a
-    /// <see cref="BehaviorManager"/>: each trigger's engine strategy (C12, gap1 8, gap2) paired with the behaviour the map
-    /// names. A Generic strategy's shouldResumeLast is the map's genericStrategyParams; the purpose-built strategies'
-    /// flags are their classes' (gap1 8). Only triggers whose behaviour this stack has are entered; the cube-moved entry
-    /// needs a world model, the face and pet entries a vision system. Not built: FistBump, Hiccup and Sparked (their
-    /// behaviours and the needs, progression, spark and objective inputs are other layers).
+    /// The reaction registrations for a <see cref="BehaviorManager"/>, driven by the shipped
+    /// <c>reactionTrigger_behavior_map.json</c> (M7-002) when <paramref name="obbRoot"/> is given: each map
+    /// entry's <c>reactionTrigger</c> and <c>behaviorID</c> are looked up in the behaviours and strategies the
+    /// stack builds, so the trigger -> behaviour dispatch comes from the shipped file rather than a hard-coded
+    /// list. An entry whose behaviour class is not built is reported in <paramref name="unbound"/> and not
+    /// registered. Without an OBB the code-built set is used unchanged.
+    ///
+    /// Each trigger's engine strategy (C12, gap1 8, gap2) is paired with the behaviour the map names. The
+    /// cube-moved entry needs a world model, the face and pet entries a vision system. Not built: FistBump,
+    /// Hiccup and Sparked (their behaviours and the needs, progression, spark and objective inputs are other
+    /// layers).
     /// </summary>
     public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
                                                                                 Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null,
-                                                                                RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null)
+                                                                                RamIntoBlockBehavior? ramIntoBlock = null, Cozmo.Robot.Manipulation.AIWhiteboard? whiteboard = null,
+                                                                                string? obbRoot = null, Cozmo.Robot.Manipulation.ManipulationSystem? m = null,
+                                                                                List<string>? unbound = null)
     {
         var strategies = ShippedReactionStrategies.ForRobot(robot, clockSec).ToDictionary(s => s.Trigger);
         var frustration = (FrustrationStrategy)strategies[ReactionTrigger.Frustration];
 
-        var list = new List<BehaviorManager.ReactionRegistration>
+        // behaviourID -> (trigger, behaviour, strategy). One row per shipped config id this stack builds.
+        var built = new List<(string Id, ReactionTrigger Trigger, IBehavior Behavior, IReactionTriggerStrategy Strategy)>
         {
-            new(strategies[ReactionTrigger.CliffDetected],
-                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow)),
-            new(strategies[ReactionTrigger.RobotPickedUp],
-                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction)),
-            new(strategies[ReactionTrigger.RobotOnBack], new ReactToRobotOnBackBehavior()),
-            new(strategies[ReactionTrigger.RobotOnFace], new ReactToRobotOnFaceBehavior()),
-            new(strategies[ReactionTrigger.RobotOnSide], new ReactToRobotOnSideBehavior()),
-            new(strategies[ReactionTrigger.RobotPlacedOnSlope], new ReactToPlacedOnSlopeBehavior()),
-            new(strategies[ReactionTrigger.ReturnedToTreads], new ReactToReturnedToTreadsBehavior()),
-            new(strategies[ReactionTrigger.RobotShaken], new ReactToRobotShakenBehavior()),
-            new(strategies[ReactionTrigger.UnexpectedMovement], new ReactToUnexpectedMovementBehavior()),
-            new(strategies[ReactionTrigger.MotorCalibration], new ReactToMotorCalibrationBehavior()),
-            new(frustration, ReactToFrustrationBehavior.Minor(frustration)),
-            // RobotFalling -> ReactToImpact: the Generic strategy latches FallingStarted with the 3000 ms window (C12).
-            new(strategies[ReactionTrigger.RobotFalling], new ReactToImpactBehavior(robot)),
-            // PlacedOnCharger -> ReactToOnCharger (StrategyPlacedOnCharger, gap2 1).
-            new(strategies[ReactionTrigger.PlacedOnCharger], new ReactToOnChargerBehavior()),
+            ("ReactToCliff", ReactionTrigger.CliffDetected,
+                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow),
+                strategies[ReactionTrigger.CliffDetected]),
+            ("ReactToPickup", ReactionTrigger.RobotPickedUp,
+                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
+                strategies[ReactionTrigger.RobotPickedUp]),
+            ("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]),
+            ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),
+            ("ReactToRobotOnSide", ReactionTrigger.RobotOnSide, new ReactToRobotOnSideBehavior(), strategies[ReactionTrigger.RobotOnSide]),
+            ("ReactToPlacedOnSlope", ReactionTrigger.RobotPlacedOnSlope, new ReactToPlacedOnSlopeBehavior(), strategies[ReactionTrigger.RobotPlacedOnSlope]),
+            ("ReactToReturnedToTreads", ReactionTrigger.ReturnedToTreads, new ReactToReturnedToTreadsBehavior(), strategies[ReactionTrigger.ReturnedToTreads]),
+            ("ReactToRobotShaken", ReactionTrigger.RobotShaken, new ReactToRobotShakenBehavior(), strategies[ReactionTrigger.RobotShaken]),
+            ("ReactToUnexpectedMovement", ReactionTrigger.UnexpectedMovement, new ReactToUnexpectedMovementBehavior(), strategies[ReactionTrigger.UnexpectedMovement]),
+            ("ReactToMotorCalibration", ReactionTrigger.MotorCalibration, new ReactToMotorCalibrationBehavior(), strategies[ReactionTrigger.MotorCalibration]),
+            ("ReactToFrustrationMinor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Minor(frustration), frustration),
+            ("ReactToImpact", ReactionTrigger.RobotFalling, new ReactToImpactBehavior(robot), strategies[ReactionTrigger.RobotFalling]),
+            ("ReactToOnCharger", ReactionTrigger.PlacedOnCharger, new ReactToOnChargerBehavior(), strategies[ReactionTrigger.PlacedOnCharger]),
         };
+        if (m is not null)
+        {
+            var major = new FrustrationStrategy(maxConfidence: -0.9f, cooldownSec: 0f, clockSec);
+            built.Add(("ReactToFrustrationMajor", ReactionTrigger.Frustration, ReactToFrustrationBehavior.Major(m, major), major));
+        }
 
         if (cubes is null && vision is not null) cubes = vision.Locator;
         if (cubes is not null)
         {
             var behavior = new AcknowledgeCubeMovedBehavior(cubes);
-            list.Add(new(new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World), behavior));
+            built.Add((behavior.Id, ReactionTrigger.CubeMoved, behavior,
+                       new CubeMovedReactionStrategy(robot, behavior, cubes, vision?.World)));
         }
         if (vision is not null)
         {
             var ack = new AcknowledgeObjectBehavior(vision.World, vision.Locator);
             // Robot::GetLastImageTimeStamp is the vision system's last raw frame timestamp (M11 interface); the carried and
             // docking object ids are M12's and not attached here.
-            list.Add(new(new ObjectPositionUpdatedStrategy(vision.World, ack, robot)
-            {
-                LastImageTimestamp = () => vision.LastRawFrameTimestamp ?? 0,
-            }, ack));
+            built.Add((ack.Id, ReactionTrigger.ObjectPositionUpdated, ack,
+                       new ObjectPositionUpdatedStrategy(vision.World, ack, robot)
+                       {
+                           LastImageTimestamp = () => vision.LastRawFrameTimestamp ?? 0,
+                       }));
 
             // FacePositionUpdated -> AcknowledgeFace and PetInitialDetection -> ReactToPet. With no face detector the
             // worlds stay empty and neither ever fires (the OKAO boundary).
             var ackFace = new AcknowledgeFaceBehavior(vision);
-            list.Add(new(new FacePositionUpdatedStrategy(vision.Faces, ackFace, () => vision.History.Latest?.RobotPose, clockSec ?? (() => robot.Engine.Timer.Seconds)), ackFace));
+            built.Add((ackFace.Id, ReactionTrigger.FacePositionUpdated, ackFace,
+                       new FacePositionUpdatedStrategy(vision.Faces, ackFace, () => vision.History.Latest?.RobotPose, clockSec ?? (() => robot.Engine.Timer.Seconds))));
             var reactToPet = new ReactToPetBehavior(vision);
-            list.Add(new(new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => robot.Engine.Timer.Seconds)), reactToPet));
+            built.Add((reactToPet.Id, ReactionTrigger.PetInitialDetection, reactToPet,
+                       new PetInitialDetectionStrategy(vision.Pets, reactToPet, clockSec ?? (() => robot.Engine.Timer.Seconds))));
         }
-        // NoPreDockPoses -> RamIntoBlock, the freeplay behaviour instance itself (FindBehaviorByIDAndDowncast)
         if (ramIntoBlock is not null && whiteboard is not null)
-            list.Add(new(new NoPreDockPosesStrategy(whiteboard, ramIntoBlock), ramIntoBlock));
-        return list;
+            built.Add(("RamIntoBlock", ReactionTrigger.NoPreDockPoses, ramIntoBlock,
+                       new NoPreDockPosesStrategy(whiteboard, ramIntoBlock)));
+
+        var map = obbRoot is null ? Array.Empty<ReactionMapEntry>() : ReactionTriggerMap.Load(obbRoot);
+        if (map.Count == 0)
+            return built.Select(x => new BehaviorManager.ReactionRegistration(x.Strategy, x.Behavior)).ToList();
+
+        // Bind from the map: only the entries the stack actually built, in the map's own order.
+        var byId = built.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.ToList());
+        var registrations = new List<BehaviorManager.ReactionRegistration>();
+        foreach (var e in map)
+        {
+            var match = byId.TryGetValue(e.BehaviorId, out var candidates)
+                ? candidates.FirstOrDefault(c => c.Trigger == e.Trigger)
+                : default;
+            if (match.Behavior is not null)
+                registrations.Add(new BehaviorManager.ReactionRegistration(match.Strategy, match.Behavior));
+            else
+                unbound?.Add($"{e.Trigger} -> {e.BehaviorId}");
+        }
+        return registrations;
     }
 }

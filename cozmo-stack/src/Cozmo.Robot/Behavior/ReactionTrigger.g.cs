@@ -12,6 +12,7 @@ namespace Cozmo.Robot.Behavior;
 /// The things the shipped engine treats as worth reacting to. Anki's own set, not ours:
 /// 21 of them. What a reaction then plays is decided by <see cref="ReactionTable"/>.
 /// </summary>
+// fidelity: M7-001
 public enum ReactionTrigger : byte
 {
     CliffDetected,

@@ -97,6 +97,9 @@ public sealed class FreeplaySystem
         // happened to advance it, so an emotion stayed wherever an event left it and everything that
         // reads mood - the scoring, the gating - read a value that should long since have decayed.
         _ctx.Mood?.Advance(nowSec);
+        // MoodManager::Update 0x0067b5d4 ends with SendEmotionsToGame (0x0067b6a4); the stack's seam
+        // raises the nine values. The app-facing wire message is not wired (M7-012 unresolved).
+        _ctx.Mood?.SendEmotionsToGame();
         Inputs.Needs?.Update();
         // The engine's BehaviorManager::Update tick order (0x005a2f70) runs the activity tick first
         // (GetCurrentActivity 0x005a2f78, the activity's vtable+0x20) and CheckReactionTriggerStrategies

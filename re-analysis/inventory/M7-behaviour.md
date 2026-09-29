@@ -1116,3 +1116,58 @@ Acting as `cozmo-verifier`, I opened every existing M7 status-changing citation 
 - G7 is deliberately left RECOVERABLE_GAP because it is a non-live developer test and a full exhaustive reading is still required before claiming its entire state machine.
 - G8 remains a live-path RECOVERABLE_GAP. The inventory must therefore leave `source_investigation_exhausted` false and must not convert those semantic names or helper effects into recovered facts.
 
+## Appendix H - B-M7 inventory correction C1 (2026-09-28)
+
+Built by job B-M7. Three `MISSING` rows from the build were answered by a read-only extraction of the shipped `.so` (`resources/lib/armeabi-v7a/libcozmoEngine.so`, 3.4.0-1204); the report is `.scratch/b-m7-missing/report.md`. These are corrections to the frozen rows, not new behaviour claims. The three records M7-005/009/010 are settled on these values; the code already carries them (the earlier X3/I-M7 passes had the values, the row text did not).
+
+### C1a. M7-005 - the blink table (Appendix A row 5)
+
+The table is a static `.rodata` array at **`0x00c5aad8`**, 7 records x 16 bytes = 0x70 bytes, copied verbatim into a heap vector on the first call (`0x00585f86 movs r0,#0x70`; `0x00585f92 ldr.w lr,[pc,#0x300]` -> `0x00c5aad8`; seven `stm` copies). Field layout per record: `+0x00` f32 scale-y multiplier, `+0x04` f32 scale-x multiplier, `+0x08` u32 duration in whole ms, `+0x0c` u8 action.
+
+| # | scale-x | scale-y | duration ms | action |
+|---:|---:|---:|---:|---:|
+| 0 | 1.05 | 0.85 | 33 | 0 |
+| 1 | 1.20 | 0.60 | 33 | 0 |
+| 2 | 2.50 | 0.10 | 33 | 0 |
+| 3 | 5.00 | 0.05 | 33 | 1 (shut) |
+| 4 | 2.00 | 0.15 | 33 | 2 (reopen) |
+| 5 | 1.20 | 0.70 | 33 | 3 |
+| 6 | 1.00 | 0.90 | 100 | 3 |
+
+Action 1 flips `ProceduralFaceDrawer::_firstScanLine`, sets both eyes' `EyeCenterY` to the mean of the saved centres and zeroes the six lid parameters from the byte list at `0x00c5ab48` = `[16,18,17,13,15,14]` (`0x005861be`, `0x005861e2`, `0x005861f4`). Action 2 restores them. Consumption: `GetNextBlinkFrame 0x00585f18` returns each frame and, on the pass after the last, restores the saved face with duration 33 (`0x00586190 movs r1,#0x21`) and returns false; `GenerateBlink 0x0058d2ac` adds a keyframe for **every** return value, so the emitted track has **eight** keyframes (seven squash + restore), cumulative triggers 33..331 ms. `ProceduralFace::Combine 0x005846a8` multiplies the eye scales (offsets 0xa0/0xa4) and adds the offsets (0xa8/0xac).
+
+**Correction to the record title:** the table is seven frames; the emitted animation is eight keyframes. The manifest title now says so.
+
+### C1b. M7-009 - the idle head and lift draws (Appendix A row 9)
+
+- **Head.** Current angle is `Robot+0x2fc` in radians (`0x0057d83e vldr s2,[r5,#0x2fc]`), converted to degrees by the literal at **`0x0057db2c` = `0x42652ee1` = 57.295780** (`0x0057d838`), then truncated toward zero (`0x0057d84e vcvt.s32.f32`) and stored as a signed byte. Variability is idle parameter 19 `HeadAngleVariability_deg` = 6.0 (`0x40c00000`, read `0x0057d83c`/`0x0057d846`, default `0x0057dc44`). Duration `RandIntInRange(p15, p16)` = `HeadMovementDurationMin_ms` 50 .. `HeadMovementDurationMax_ms` 500 (`0x0057d814`/`0x0057d822`; defaults `0x0057dbca`/`0x0057dbda`). Gap `RandIntInRange(p17, p18)` = `HeadMovementSpacingMin_ms` 250 .. `HeadMovementSpacingMax_ms` 1000 (`0x0057da2c`, defaults `0x0057dc30`/`0x0057dc3a`). Keyframe ctor `HeadAngleKeyFrame::HeadAngleKeyFrame` `0x004f8be4` (`+0x0c` duration, `+0x10` i8 angle_deg, `+0x11` u8 variability_deg); wire `HeadAngleKeyFrame::GetStreamMessage 0x004f8c08` draws `angle +/- variability` and sends **animHeadAngle 0x93** (`u16 durationMs`, `i8 angleDeg`).
+- **Lift.** Mean and variability are idle parameters 13 `LiftHeightMean_mm` = 35.0 (`0x420c0000`, `0x0057dc02`) and 14 `LiftHeightVariability_mm` = 8.0 (`0x41000000`, `0x0057dc10`); read `0x0057d9a4`/`0x0057d9ae`. No current-height input. Duration `RandIntInRange(p9, p10)` = `LiftMovementDurationMin_ms` 50 .. `LiftMovementDurationMax_ms` 500 (`0x0057d980`/`0x0057d98e`). Gap `RandIntInRange(p11, p12)` = `LiftMovementSpacingMin_ms` 250 .. `LiftMovementSpacingMax_ms` 2000 (`0x0057da58`, defaults `0x0057dbea`/`0x0057dbf4`). Keyframe ctor `LiftHeightKeyFrame::LiftHeightKeyFrame` `0x004f8f5c` (`+0x0c` duration, `+0x10` u8 height_mm, `+0x11` u8 variability_mm); wire `LiftHeightKeyFrame::GetStreamMessage 0x004f8f80` draws `height +/- variability` and sends **animLiftHeight 0x94** (`u16 durationMs`, `u8 heightMm`).
+- **Correction to Appendix A row 9's offsets:** the row says "+0x264, +0x3c8"; those offsets do not occur in `UpdateLiveAnimation`. The real streamer state offsets are `+0x198`/`+0x1a4` (body), `+0x19c`/`+0x1a8` (lift), `+0x1a0`/`+0x1ac` (head). The manifest evidence already cites the correct addresses.
+
+### C1c. M7-010 - the idle body shuffle (Appendix A row 10)
+
+- **Straight vs turn:** `BodyMovementStraightFraction` = parameter 8 = 0.5 (`0x3f000000`, `0x0057dbba`); `RandDblInRange(0,1)` (`0x0057d716`) `<= 0.5` -> straight (`0x0057d750 ble 0x57d8c6`), else turn. So P(straight) = P(turn) = 0.5.
+- **Speed:** parameter 7 `BodyMovementSpeedMinMax_mmps` = 10.0 (`0x41200000`, `0x0057dbae`); `RandIntInRange(-10, +10)` (`0x0057d6f0`..`0x0057d70c`). Its sign selects the turn's eye-shift direction.
+- **Duration:** `RandIntInRange(p5, p6)` = `BodyMovementDurationMin_ms` 250 .. `BodyMovementDurationMax_ms` 1500 (`0x0057d6ce`, defaults `0x0057db8e`/`0x0057db9a`), stored at `+0x198`.
+- **Separate gap:** `RandIntInRange(p3, p4)` = `BodyMovementSpacingMin_ms` 100 .. `BodyMovementSpacingMax_ms` 1000 (`0x0057d95a`, defaults `0x0057db76`/`0x0057db84`), stored at `+0x1a4`.
+- **Body keyframe:** `BodyMotionKeyFrame(speed, radius, duration)` `0x004fb170`; radius `0x7fff` straight (`0x0057d8da`) or `0` turn (`0x0057d80e`). Wire `BodyMotionKeyFrame::GetStreamMessage 0x004fba8c` sends **animBodyMotion 0x99** (`i16 speed`, `i16 radius`).
+- **Paired turn eye shift** (`TrackLayerComponent::AddOrUpdateEyeShift` `0x0064f3c8`, call `0x0057d7fc`): x = `sign(speed) * RandIntInRange(0, 21)` (`0x0057d758`, `0x0057d7a8`), y = `RandIntInRange(-10, 10)` (`0x0057d766`), duration **33 ms** (`0x0057d7de movs r0,#0x21`), xMax 64.0 (`0x0057d7da`), yMax 32.0 (`0x0057d7d6`), up 1.1 (`0x0057d7ca`), down 0.85 (`0x0057d7c6`), outer 0.1 (`0x0057d798`). The straight branch removes it (`RemoveEyeShift 0x0057d8d2`). There is no other spacing constant for this layer; the body gap at `+0x1a4` is the only "spacing".
+
+### C1d. M7-002 - the reaction map row count
+
+The shipped `reactionTrigger_behavior_map.json` has **22 rows over the 21 triggers** (the `Frustration` trigger appears twice: `ReactToFrustrationMinor` with `cooldownTime_s 60.0` and `ReactToFrustrationMajor` with none). The loader reads all 22; the record's "21-entry reaction map" means the 21 triggers, not 22 rows. No behaviour changes.
+
+### C1e. Records settled on these values
+
+M7-005, M7-009 and M7-010 are settled EXACT_SOURCE on C1a-C1c. The code (`IdleBehavior.BlinkFrames`/`BlinkPose`, `IdleBehavior.Perform` head/lift, `IdleBehavior.TurnEyeShift` and the body draw) matches the values above; the head-angle conversion must use the shipped constant `0x42652ee1` (57.295780) in float, not a recomputed 180/pi.
+
+### C1f. Post-build record status (job B-M7)
+
+The record table at the top of this inventory is the pre-build state. After the B-M7 build and verify:
+
+- **Settled EXACT_SOURCE:** M7-001, M7-002, M7-003, M7-004, M7-005, M7-006, M7-007, M7-008, M7-009, M7-010, M7-011, M7-013, M7-016, M7-017.
+- **Left IMPLEMENTATION_GAP (cross-layer, SD3):** M7-012 and M7-020 (the app-facing `MoodState` broadcast and the `ActionList` action-ended caller are not built), M7-014 (the 9 M12/M14/M15 call sites and the 5 built classes whose tables are not among the recovered 13), M7-015 (M10 and M7-021), M7-018 (the M12-M15/FistBump/Hiccup/ReactToSparked class implementations), M7-019 (ReactToCliff needs the `0x55b554`/`0x5c0ca8` helpers = M7-021; ReactToPickup needs M14/SayText; ReactToSparked needs the M15 spark source).
+- **Left RECOVERABLE_GAP:** M7-021 (live), M7-022 (non-live).
+
+Two manager-side corrections carried with this pass: M7-005's title now says the table is seven frames and the emitted track eight keyframes; M7-002's manifest evidence now names the correct directories `assets/animationGroupMaps/` and `assets/cubeAnimationGroupMaps/` (Appendix C rows 7-8).
+

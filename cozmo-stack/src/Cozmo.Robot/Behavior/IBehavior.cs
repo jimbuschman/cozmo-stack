@@ -37,7 +37,7 @@ public sealed class BehaviorContext
     public required CozmoRobot Robot { get; init; }
     public required AnimationTriggerMap Triggers { get; init; }
     public BehaviorArbiter? Arbiter { get; init; }
-    public MoodState? Mood { get; init; }
+    public MoodState? Mood { get; set; }
     public Random Random { get; init; } = new();
     /// <summary>
     /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a <c>StrategyGeneric</c> whose
@@ -167,6 +167,7 @@ public sealed class BehaviorScope : IDisposable
     private readonly object _gate = new();
     private readonly BehaviorArbiter? _arbiter;
     private readonly CozmoMotion? _motion;
+    private readonly BehaviorManager? _manager;
     private readonly string _owner = "scope-" + System.Threading.Interlocked.Increment(ref _scopeCounter);
     private static int _scopeCounter;
     private Animation.AnimationTrack _motionLocked;
@@ -178,6 +179,7 @@ public sealed class BehaviorScope : IDisposable
     private readonly Dictionary<string, Animation.AnimationTrack> _trackLocks = new(StringComparer.Ordinal);
     private readonly HashSet<uint> _lightPatterns = new();
     private readonly HashSet<string> _reactionLockNames = new(StringComparer.Ordinal);
+    private bool _arbiterReactionLock;
     private Action? _idleRemove;
     private Action? _motionClear;
 
@@ -185,7 +187,12 @@ public sealed class BehaviorScope : IDisposable
     /// A scope with no arbiter/motion models the locks without enforcing them, which is only useful in
     /// tests. Pass the arbiter for the reaction lock and the motion for the track lock to take effect.
     /// </summary>
-    public BehaviorScope(BehaviorArbiter? arbiter = null, CozmoMotion? motion = null) { _arbiter = arbiter; _motion = motion; }
+    public BehaviorScope(BehaviorArbiter? arbiter = null, CozmoMotion? motion = null, BehaviorManager? manager = null)
+    {
+        _arbiter = arbiter;
+        _motion = motion;
+        _manager = manager;
+    }
 
     /// <summary>Tracks this behaviour has claimed, released when it stops.</summary>
     public Animation.AnimationTrack LockedTracks { get; private set; }
@@ -236,11 +243,13 @@ public sealed class BehaviorScope : IDisposable
     {
         lock (_gate)
         {
-            if (_disposed || ReactionsDisabled) return;
+            if (_disposed || _arbiterReactionLock) return;
+            _arbiterReactionLock = true;
             ReactionsDisabled = true;
             _arbiter?.DisableReactions(this);
             _undo.Add(() =>
             {
+                _arbiterReactionLock = false;
                 ReactionsDisabled = false;
                 _arbiter?.EnableReactions(this);
             });
@@ -429,15 +438,17 @@ public sealed class BehaviorScope : IDisposable
         {
             if (_disposed) return false;
             if (!_reactionLockNames.Add(name)) { Verify($"SmartDisableReactionsWithLock: '{name}' is already held"); return false; }
-            if (!ReactionsDisabled)
+            ReactionsDisabled = true;
+            if (!_arbiterReactionLock)
             {
-                ReactionsDisabled = true;
+                _arbiterReactionLock = true;
                 _arbiter?.DisableReactions(this);
             }
             _undo.Add(() =>
             {
                 if (_reactionLockNames.Remove(name) && _reactionLockNames.Count == 0)
                 {
+                    _arbiterReactionLock = false;
                     ReactionsDisabled = false;
                     _arbiter?.EnableReactions(this);
                 }
@@ -446,15 +457,50 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
-    /// <summary><c>IBehavior::SmartRemoveDisableReactionsLock</c> 0x005bd470: remove the name from +0xa4; the manager side is M7-014.</summary>
+    /// <summary>
+    /// <c>IBehavior::SmartDisableReactionsWithLock(lockName, table)</c> 0x005bce3c: append
+    /// <c>"_behaviorLock"</c>, call <c>BehaviorManager::DisableReactionsWithLock(manager,
+    /// name+"_behaviorLock", table, true)</c> (0x005bce62), then insert the original name into the
+    /// per-behaviour set at +0xa4 (0x005bce7e). The manager disables only the triggers the class's own
+    /// 21-byte table marks, so this takes the manager reference; the original name is what
+    /// <see cref="SmartRemoveDisableReactionsLock"/> removes.
+    /// </summary>
+    // fidelity: M7-014
+    public bool SmartDisableReactionsWithLock(string name, ReactionLockTable table)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            if (!_reactionLockNames.Add(name)) { Verify($"SmartDisableReactionsWithLock: '{name}' is already held"); return false; }
+            ReactionsDisabled = true;
+            string managerName = name + "_behaviorLock";
+            _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
+            _undo.Add(() =>
+            {
+                if (_reactionLockNames.Remove(name))
+                {
+                    _manager?.RemoveDisableReactionsLock(managerName);
+                    if (_reactionLockNames.Count == 0) ReactionsDisabled = false;
+                }
+            });
+            return true;
+        }
+    }
+
+    /// <summary><c>IBehavior::SmartRemoveDisableReactionsLock</c> 0x005bd470: append "_behaviorLock", call
+    /// <c>BehaviorManager::RemoveDisableReactionsLock</c> (0x005bd48c), then erase the original name from
+    /// +0xa4 (0x005bd4a4). The manager side is M7-014.</summary>
+    // fidelity: M7-014
     public bool SmartRemoveDisableReactionsLock(string name)
     {
         lock (_gate)
         {
             if (_disposed) return false;
             if (!_reactionLockNames.Remove(name)) { Verify($"SmartRemoveDisableReactionsLock: '{name}' is not held"); return false; }
+            _manager?.RemoveDisableReactionsLock(name + "_behaviorLock");
             if (_reactionLockNames.Count == 0 && ReactionsDisabled)
             {
+                _arbiterReactionLock = false;
                 ReactionsDisabled = false;
                 _arbiter?.EnableReactions(this);
             }

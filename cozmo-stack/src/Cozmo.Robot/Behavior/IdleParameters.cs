@@ -13,6 +13,7 @@ namespace Cozmo.Robot.Behavior;
 /// These are facts about the shipped engine, not choices made here. A caller may override any of them,
 /// but the defaults are what Cozmo actually does.
 /// </summary>
+// fidelity: M7-004
 public sealed record IdleParameters
 {
     // ---- blinking

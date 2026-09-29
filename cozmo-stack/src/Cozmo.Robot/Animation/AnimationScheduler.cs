@@ -858,6 +858,7 @@ public sealed class AnimationScheduler
     /// animation streams: the engine reaches the live animation only in the no-animation path. Nothing is sent here; the
     /// keyframe goes out in the Updates that follow (A29).
     /// </summary>
+    // fidelity: M7-017
     public bool StreamLive(Keyframe k, double nowMs)
     {
         lock (_gate)

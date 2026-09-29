@@ -509,6 +509,7 @@ public static class ShippedReactionStrategies
     /// The strategies above plus Shaken, PlacedOnSlope and Frustration (the map's Minor entry: maxConfidence −0.6,
     /// cooldown 60 s), for one robot. <paramref name="clockSec"/> is Frustration's BaseStationTimer seconds.
     /// </summary>
+    // fidelity: M7-011
     public static IReadOnlyList<IReactionTriggerStrategy> ForRobot(CozmoRobot robot, Func<double>? clockSec = null) => new IReactionTriggerStrategy[]
     {
         PickedUp(robot), OnBack(robot), OnFace(robot), OnSide(robot),

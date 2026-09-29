@@ -7,10 +7,10 @@ Manifest of **371 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 176 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 190 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 8 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 143 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 129 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -30,7 +30,7 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 24 | 0 | 20 | 0 | 0 | yes | no |
-| M7-behaviour — Idle, mood and reactions | 22 | 1 | 20 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 22 | 1 | 6 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 14 | 0 | 3 | 0 | 0 | yes | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 21 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
@@ -58,7 +58,7 @@ status.
 | M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
-| M7-behaviour | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
+| M7-behaviour | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
@@ -675,105 +675,6 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M7-behaviour — Idle, mood and reactions
 
-**M7-001 — The shipped AnimationTrigger, ReactionTrigger, BehaviorClass and BehaviorID enums** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTrigger.g.cs`
-* effect: trigger, class or behaviour identifiers differ from the shipped app
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: decompiled Unity enums checked against the engine EnumToString tables
-* evidence: unity/scripts/csharp/Anki.Cozmo/AnimationTrigger.cs; unity/scripts/csharp/Anki.Cozmo/ReactionTrigger.cs; unity/scripts/csharp/Anki.Cozmo/BehaviorClass.cs; unity/scripts/csharp/Anki.Cozmo/BehaviorID.cs
-* outstanding: Compare all generated enum values and consumers with the shipped sets.
-
-**M7-002 — The shipped animation/reaction maps, behaviour configs and activity tree** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/AnimationTriggerMap.cs`
-* effect: a trigger resolves to the wrong animation or reaction, or the activity tree selects the wrong configured behaviour
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: shipped OBB configuration plus libcozmoEngine.so loaders
-* evidence: re-analysis/obb/assets/cozmo_resources/assets/AnimationTriggerMap.json (573 pairs); re-analysis/obb/assets/cozmo_resources/assets/CubeAnimationTriggerMap.json (40 pairs); re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json; RobotDataLoader::LoadReactionTriggerMap 0x00520bc8; BehaviorManager::InitReactionTriggerMap 0x005a16e4; 178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C
-* outstanding: Compare the complete shipped map/config corpus and loader behavior with production.
-
-**M7-003 — ReactToImpact FallingStopped, intensity, recalibration and animation state machine** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ReactionTable.cs`
-* effect: impact reactions gate, calibrate, time out or animate differently
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: BehaviorReactToImpact::InitInternal 0x006061f8; TransitionToPlayingAnim 0x00606348; AlwaysHandle 0x00606408; 1000.0 threshold literal at 0x00606470; 5.0 second wait literal 0x40a00000 in InitInternal
-* outstanding: Compare/build the complete cited state machine, including trigger 0x1a0 and its 60 second action argument.
-
-**M7-004 — All 30 live-idle tunables and defaults** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleParameters.cs`
-* effect: idle blink, gaze and motion distributions differ
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: AnimationStreamer::SetDefaultParams 0x0057db40, read
-* evidence: SetDefaultParams 0x0057db40..0x0057dcd0; decoded values in M7 inventory Appendix A row 4
-* outstanding: Compare all 30 production values and their types with the decoded table.
-
-**M7-005 — Blink is a fixed seven-frame squash multiplied onto the base face** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: blink shape, timing or composition differs
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18; blink table 0x00c5aad8; FaceLayerManager::GenerateBlink 0x0058d2ac; ProceduralFace::Combine 0x005846a8
-* outstanding: Compare the complete blink table and compositor call path.
-
-**M7-006 — Eye shift moves the whole face through LookAt with the engine bounds** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: idle gaze displacement or clipping differs
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: FaceLayerManager::GenerateEyeShift 0x0058d100; ProceduralFace::LookAt 0x00584158
-* outstanding: Compare the complete shift and bounds path.
-
-**M7-007 — The eye dart interpolates to a persistent gaze and does not fade to centre** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: the gaze returns early, snaps, or removes the wrong layer
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: ITrackLayerManager::ApplyLayersToFrame 0x0058e644; AddToPersistentLayer 0x0058eaa0; FaceLayerManager::GetFaceHelper 0x0058cd80; KeepFaceAlive persistent dart call 0x0058d3e2
-* outstanding: Compare interpolation, rewind/trim and persistence with the cited path.
-
-**M7-008 — Idle timers are integer milliseconds advanced by the engine's 60 ms tick** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: idle actions fire at different times or are rescheduled when their track is busy
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: CozmoInstanceRunner::Run 0x0065b3a8 uses 0x03938700 ns; UpdateLiveAnimation decrements at 0x0057d650/0x0057d68a/0x0057d6ba; KeepFaceAlive decrements at 0x0058d388; idle clock increments at 0x0057d444
-* outstanding: Compare initialization, inclusive integer draws, counter updates and blocked-track handling.
-
-**M7-009 — Idle head and lift are keyframes of the live animation** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: idle head/lift uses different wire messages or variability
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: AnimationStreamer live Animation construction 0x0057a060; head keyframe 0x0057d85c/append 0x0057d866; lift keyframe 0x0057d9c0/append 0x0057d9ca; HeadAngleKeyFrame::GetStreamMessage 0x004f8c08
-* outstanding: Compare the M7 scheduling interface to M5's live-keyframe path.
-
-**M7-010 — Idle body shuffle and its paired turn eye shift** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: the robot stays still or shuffles/looks with different values
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read
-* evidence: body decision and draws 0x0057d6cc..0x0057d8f4; turn eye layer 0x0057d7fc; straight removal 0x0057d8d2; next spacing 0x0057d978
-* outstanding: Compare the complete body/eye keyframe path with M5 streaming.
-
-**M7-011 — A reaction is held off only where its own strategy config names a cooldown** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorArbiter.cs`
-* effect: a reaction is suppressed or repeated on the wrong schedule
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so plus shipped reactionTrigger_behavior_map.json
-* evidence: reactionTrigger_behavior_map.json: FrustrationMinor cooldownTime_s 60.0; other objective cooldowns remain per-objective; ReactionTriggerStrategyFrustration::ShouldTriggerBehaviorInternal 0x0060ee6e..0x0060eed8
-* outstanding: Compare each configured strategy cooldown and separate objective cooldown behavior.
-
 **M7-012 — Mood schema, decay graphs, action-result events, affectors, update and game output** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs`
@@ -781,16 +682,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: shipped mood_config.json plus libcozmoEngine.so
 * evidence: re-analysis/obb/assets/cozmo_resources/config/engine/mood_config.json; StaticMoodData::ReadFromJson 0x0067ce6c; MoodManager::Update 0x0067b5d4; MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8
-* outstanding: Compare/build the full parser, nine-emotion update and broadcast path.
-
-**M7-013 — Mood clamp, graph evaluation and decay-clock restart arithmetic** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs`
-* effect: emotion magnitude or decay differs at clamps, graph edges or clock resets
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so plus shipped mood graphs
-* evidence: Emotion::Add 0x00679618; Emotion::Update 0x006795a4; old<=1e-5 raw-new multiply at 0x006795ee..0x006795fc; GraphEvaluator2d::EvaluateY 0x00804bd0; mood_config.json decayGraphs
-* outstanding: Correct the prior old<=1e-5 wording and compare every arithmetic branch.
+* outstanding: The decay graphs, affectors, nine-emotion update, actionResultEmotionEvents map and the nine-value SendEmotionsToGame seam are built (MoodModel/MoodState, wired through FreeplayStack/FreeplaySystem). The engine broadcasts a MoodState message to the app (0x0067b724/G1); this stack has no MoodState protocol type and no app-facing consumer of CozmoEngine.PostGameMessage, so the wire broadcast is not wired.
 
 **M7-014 — Reaction-lock manager lifetime and concrete per-class lock tables** (live path)
 
@@ -799,7 +691,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: IBehavior::SmartDisableReactionsWithLock 0x005bce3c; BehaviorManager::DisableReactionsWithLock 0x005a27e8; BehaviorManager::RemoveDisableReactionsLock 0x005a3a48; 13 concrete 21-entry tables in M7 inventory Appendix F
-* outstanding: Compare the manager lock bookkeeping, name suffix and all recovered class tables.
+* outstanding: The manager side (DisableReactionsWithLock/RemoveDisableReactionsLock), the _behaviorLock suffix, the scope helper and the 13 recovered tables are built, and the four M7-owned reaction call sites that use one of those 13 tables are wired (ReactToCliff, ReactToPlacedOnSlope, ReactToRobotShaken, ReactToMotorCalibration). Two groups are not wired: (a) the 9 classes whose table is among the recovered 13 but whose call site lives in an M12/M14/M15-owned behaviour file - CubeLiftWorkout, PeekABoo, PutDownBlock, FistBump, Bouncer, GuardDog, Dance, EnrollFace, OnboardingShowCube; (b) five built behaviours that call SmartDisableReactionsWithLock with a table that is not among the recovered 13 - ReactToImpact, DriveOffCharger, Singing, AcknowledgeCubeMoved, ReactToOnCharger - so those currently take the arbiter-wide Scope.DisableReactions() fallback, which over-suppresses reactions not in their table. Their tables are not recovered.
 
 **M7-015 — Pick-up and off-treads reaction gating follows the engine state path** (live path)
 
@@ -808,25 +700,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Robot::CheckAndUpdateTreadsState 0x00511e00; BehaviorReactToPickup 0x00607750..0x00607d9c
-* outstanding: Compare/build the complete classifier and ReactToPickup gates; do not retain the former equivalence label without a full source path.
-
-**M7-016 — The idle face composes a stack of named persistent and transient layers** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
-* effect: simultaneous blink, dart and turn layers overwrite rather than compose
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: ITrackLayerManager::ApplyLayersToFrame 0x0058e644; ProceduralFace::Combine 0x005846a8; KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be
-* outstanding: Compare the live named-layer stack and ordering with M5's compositor.
-
-**M7-017 — The exact live-animation wire lifecycle used by idle behavior** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
-* effect: idle keyframes open, frame, interleave or close differently on the wire
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: AnimationStreamer::UpdateLiveAnimation 0x0057d5f8; Update 0x0057ce5c; InitStream 0x0057b674; UpdateStream 0x0057c84c; SendStartOfAnimation 0x0057c400; SendBufferedMessages 0x0057bf60
-* outstanding: Compare the M7 caller lifecycle against M5's exact stream; the former equivalence claim is not retained.
+* outstanding: ReactToPickup gates on robot+0x355/+0x338, whose semantic names are M7-021; the derived classifier is M10-owned.
 
 **M7-018 — Shipped behaviour configuration and BehaviorClass factory binding** (live path)
 
@@ -835,7 +709,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: shipped OBB configuration plus libcozmoEngine.so BehaviorContainer
 * evidence: 178-config table in M7 inventory Appendix C; 79-class entry-point table in Appendix B; BehaviorContainer::CreateBehavior 0x0059c888; class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable
-* outstanding: Compare all 178 IDs and 79 class bindings, including the five differently named native classes and BehaviorWait's base defaults.
+* outstanding: BehaviorClass (79) and BehaviorID (179) exist and the 178 shipped configs are enumerated, but there is no config-driven factory binding: the stack binds behaviours by id in code. The class implementations missing for a full binding are the M12/M13/M14/M15-owned ones (their run logic is those layers) and FistBump, Hiccup and ReactToSparked here.
 
 **M7-019 — M7 concrete reaction-behaviour state machines** (live path)
 
@@ -844,7 +718,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: reaction-class rows in M7 inventory Appendices E and F; corrected ReactToCliff mood-event sequence 0x00604d70..0x00604d84; ReactToImpact 0x006061f8..0x0060647c; ReactToOnCharger 0x00606c94..0x00606e86; ReactToPickup 0x00607750..0x00607d9c
-* outstanding: Compare/build every M7-owned reaction row. Cross-layer derived-state and face/object inputs remain owned by M10/M14.
+* outstanding: Built and wired: Frustration, Impact, MotorCalibration, OnCharger, Pet, PlacedOnSlope, Pyramid, ReturnedToTreads, on-back/face/side, Shaken, UnexpectedMovement, and the AcknowledgeFace/AcknowledgeObject interfaces. Not built, with the exact missing piece: (1) ReactToCliff - the 0x55b554 action that TransitionToPlayingStopReaction 0x604f64 starts with 0.55 and the 0x5c0ca8 helper that TransitionToPlayingCliffReaction 0x6050f0 uses for "PlayingCliffReaction" are unread (M7-021 live RECOVERABLE_GAP), and robot+0xD9/+0xD8 (the back-up condition) have no recovered meaning; (2) ReactToPickup - StartAnim 0x607820 chooses its face path (0x1A9/0xE6) from a tracked face, which needs the M14 face detector (the OKAO boundary), and the SayTextAction primitive; the exact +0x11C/+0x120 retry-timer arithmetic ([0x120] + RandDbl(3x,6x)) is not in the row; (3) ReactToSparked - the body (TriggerEmotionEvent "SparkPending", IsRunnableInternal true) is known, but the stack has no ReactionTrigger.Sparked source/strategy: the spark system that broadcasts Sparked (M15) is not built. The existing ReactToCliff/ReactToPickup ReactBehavior stand-ins play one animation and are not replaced.
 
 **M7-020 — Mood event production, repetition penalty and affector application** (live path)
 
@@ -853,7 +727,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: libcozmoEngine.so plus shipped mood_config.json
 * evidence: MoodManager::TriggerEmotionEvent 0x0067b85c; MoodManager::AddToEmotion 0x0067bdca; MoodManager::HandleActionEnded 0x0067c770; EmotionAffector::ReadFromJson 0x00679910; MoodManager::SendEmotionsToGame 0x0067b724
-* outstanding: Compare/build the action-result map, enable set, repetition clocks/graphs and each affector add.
+* outstanding: The actionResultEmotionEvents map, the last-event clock (FLT_MAX first trigger), the event repetition penalty, the completion-enable set at +0x140 and the nine-value output are built. HandleActionEnded has no live caller because the stack has no ActionList action-ended callback; the behaviours raise their named events directly. The app-facing MoodState broadcast is not wired (same seam gap as M7-012).
 
 ### M8-framework — Behaviour framework and scoring
 

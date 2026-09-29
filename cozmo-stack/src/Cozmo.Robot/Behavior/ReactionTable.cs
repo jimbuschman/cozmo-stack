@@ -1,5 +1,132 @@
 namespace Cozmo.Robot.Behavior;
 
+using System.Text.Json;
+
+/// <summary>One <c>behaviorObjectiveTriggerParams</c> entry of a FistBump reaction-map row.</summary>
+public sealed record FistBumpObjectiveParams(string BehaviorObjective, double TriggerCooldownTimeSec,
+                                             double TriggerProbability, double TriggerExpirationSec);
+
+/// <summary>The <c>hiccupParams</c> block of the Hiccup reaction-map row.</summary>
+public sealed record HiccupParams(int MinHiccupOccurrenceFrequencySec, int MaxHiccupOccurrenceFrequencySec,
+                                  int MinNumberOfHiccupsToDo, int MaxNumberOfHiccupsToDo,
+                                  int MinHiccupSpacingMs, int MaxHiccupSpacingMs,
+                                  int HiccupsWontOccurAfterBeingCuredTimeSec, string HiccupsUnlockId);
+
+/// <summary>
+/// One row of the shipped <c>reactionTrigger_behavior_map.json</c>: the reaction trigger, the behaviour id it
+/// dispatches to, and whichever parameter block that row carries.
+/// </summary>
+public sealed record ReactionMapEntry(
+    ReactionTrigger Trigger,
+    string BehaviorId,
+    bool? ShouldResumeLast,
+    string? StrategyType,
+    double? FrustrationMaxConfidence,
+    double? FrustrationCooldownSec,
+    IReadOnlyList<FistBumpObjectiveParams> FistBumpObjectiveParams,
+    HiccupParams? Hiccup);
+
+/// <summary>
+/// The shipped reaction-trigger map, read as data.
+///
+/// <c>RobotDataLoader::LoadReactionTriggerMap</c> 0x00520bc8 reads
+/// <c>config/engine/behaviorSystem/reactionTrigger_behavior_map.json</c> (path string at 0x520ce8) through
+/// <c>DataPlatform::readAsJson</c> (0x00520c2e) and logs <c>"Failed to read '%s'"</c> through
+/// <c>sErrorF</c> (0x00520c54) when it fails; <c>BehaviorManager::InitReactionTriggerMap</c> 0x005a16e4
+/// then iterates the array and builds the trigger -> behaviour dispatch. This class is the file half; the
+/// binding half is <see cref="ShippedBehaviors.Reactions"/>.
+/// </summary>
+// fidelity: M7-002
+public static class ReactionTriggerMap
+{
+    public const string RelativePath = "config/engine/behaviorSystem/reactionTrigger_behavior_map.json";
+    public const string FileName = "reactionTrigger_behavior_map.json";
+
+    /// <summary>Reads the map from an OBB root (or any directory containing the file). Empty when absent.</summary>
+    public static IReadOnlyList<ReactionMapEntry> Load(string root)
+    {
+        var file = FindFile(root);
+        return file is null ? Array.Empty<ReactionMapEntry>() : LoadFromFile(file);
+    }
+
+    private static string? FindFile(string root)
+    {
+        if (File.Exists(root)) return root;
+        if (!Directory.Exists(root)) return null;
+        var direct = Path.Combine(root, RelativePath);
+        if (File.Exists(direct)) return direct;
+        return Directory.EnumerateFiles(root, FileName, SearchOption.AllDirectories).FirstOrDefault();
+    }
+
+    /// <summary>Reads the map from the file itself. The shipped file contains C-style comments.</summary>
+    public static IReadOnlyList<ReactionMapEntry> LoadFromFile(string file)
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(file), new JsonDocumentOptions
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = true,
+        });
+        if (!doc.RootElement.TryGetProperty("reactionTriggerBehaviorMap", out var arr) ||
+            arr.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException($"{file}: no reactionTriggerBehaviorMap array");
+
+        var list = new List<ReactionMapEntry>();
+        foreach (var e in arr.EnumerateArray())
+        {
+            var triggerName = e.TryGetProperty("reactionTrigger", out var t) ? t.GetString() : null;
+            var behaviorId = e.TryGetProperty("behaviorID", out var b) ? b.GetString() : null;
+            if (triggerName is null || behaviorId is null) continue;
+            if (!Enum.TryParse<ReactionTrigger>(triggerName, out var trigger))
+                throw new InvalidDataException($"{file}: unknown reactionTrigger '{triggerName}'");
+
+            bool? resume = null;
+            string? strategyType = null;
+            if (e.TryGetProperty("genericStrategyParams", out var g))
+            {
+                if (g.TryGetProperty("shouldResumeLast", out var sr) &&
+                    (sr.ValueKind == JsonValueKind.True || sr.ValueKind == JsonValueKind.False))
+                    resume = sr.GetBoolean();
+                if (g.TryGetProperty("debugStrategyName", out var ds) && ds.ValueKind == JsonValueKind.String)
+                    strategyType = ds.GetString();
+            }
+            if (e.TryGetProperty("wantsToRunStrategyConfig", out var wtr) &&
+                wtr.TryGetProperty("strategyType", out var st) && st.ValueKind == JsonValueKind.String)
+                strategyType = st.GetString();
+
+            double? maxConf = null, cooldown = null;
+            if (e.TryGetProperty("frustrationParams", out var fp))
+            {
+                if (fp.TryGetProperty("maxConfidence", out var mc) && mc.ValueKind == JsonValueKind.Number)
+                    maxConf = mc.GetDouble();
+                if (fp.TryGetProperty("cooldownTime_s", out var cd) && cd.ValueKind == JsonValueKind.Number)
+                    cooldown = cd.GetDouble();
+            }
+
+            var fist = new List<FistBumpObjectiveParams>();
+            if (e.TryGetProperty("behaviorObjectiveTriggerParams", out var bp) && bp.ValueKind == JsonValueKind.Array)
+                foreach (var p in bp.EnumerateArray())
+                    fist.Add(new FistBumpObjectiveParams(
+                        p.TryGetProperty("behaviorObjective", out var bo) ? bo.GetString() ?? "" : "",
+                        Num(p, "triggerCooldownTime_s"), Num(p, "triggerProbability"), Num(p, "triggerExpiration_s")));
+
+            HiccupParams? hiccup = null;
+            if (e.TryGetProperty("hiccupParams", out var h))
+                hiccup = new HiccupParams(
+                    (int)Num(h, "minHiccupOccurrenceFrequency_s"), (int)Num(h, "maxHiccupOccurrenceFrequency_s"),
+                    (int)Num(h, "minNumberOfHiccupsToDo"), (int)Num(h, "maxNumberOfHiccupsToDo"),
+                    (int)Num(h, "minHiccupSpacing_ms"), (int)Num(h, "maxHiccupSpacing_ms"),
+                    (int)Num(h, "hiccupsWontOccurAfterBeingCuredTime_s"),
+                    h.TryGetProperty("hiccupsUnlockId", out var u) ? u.GetString() ?? "" : "");
+
+            list.Add(new ReactionMapEntry(trigger, behaviorId, resume, strategyType, maxConf, cooldown, fist, hiccup));
+        }
+        return list;
+    }
+
+    private static double Num(JsonElement e, string key) =>
+        e.TryGetProperty(key, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetDouble() : 0;
+}
+
 /// <summary>How well grounded a single mapping is. Recorded per entry, not assumed for the table.</summary>
 public enum ReactionEvidence
 {
@@ -85,6 +212,7 @@ public sealed class ReactionTable
     /// <c>BehaviorReactToImpact::AlwaysHandle</c> at 0x00606408 compares <c>FallingStopped.impactIntensity</c>
     /// against 1000.0 (vldr of 0x447A0000) and only then lets the animation play.
     /// </summary>
+    // fidelity: M7-003
     public const float ImpactIntensityThreshold = 1000f;
 
     private static IEnumerable<ReactionEntry> DefaultEntries()

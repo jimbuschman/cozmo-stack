@@ -108,6 +108,7 @@ public sealed class BehaviorArbiter
     /// which is the case for every reaction this stack drives, so the table is empty until something
     /// loads one in.
     /// </summary>
+    // fidelity: M7-011
     public Dictionary<ReactionTrigger, TimeSpan> TriggerCooldowns { get; } = new();
 
     private TimeSpan CooldownFor(ReactionTrigger t) =>
@@ -141,6 +142,7 @@ public sealed class BehaviorArbiter
     /// Behaviours currently holding the reaction lock, the engine's SmartDisableReactionsWithLock. While
     /// any is held, reactions are suppressed; releasing the last one restores them.
     /// </summary>
+    // fidelity: M7-014
     private readonly HashSet<object> _reactionLocks = new();
 
     /// <summary>Whether anything is currently holding reactions off.</summary>

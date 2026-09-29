@@ -34,6 +34,7 @@ public sealed record TriggerResolution(AnimationTrigger Trigger)
 /// names exists in <see cref="AnimationTrigger"/>. The two triggers with no entry are
 /// <c>ProceduralLive</c> and <c>ReactToMotorCalibration</c>, which the engine handles by other means.
 /// </summary>
+// fidelity: M7-002
 public sealed class AnimationTriggerMap
 {
     private readonly Dictionary<AnimationTrigger, string> _groups = new();
