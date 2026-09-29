@@ -1,4 +1,4 @@
-// fidelity: M6-006, M6-023
+// fidelity: M6-006, M6-023, M6-025
 using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
@@ -124,6 +124,14 @@ public sealed class WwiseEventRuntime
 
     /// <summary>Registers a game object so the lookup at gapD D5.5 finds it.</summary>
     public void RegisterGameObject(uint id) => _registeredGameObjects.Add(id);
+
+    /// <summary>
+    /// The M6-025 Play -> PBI -> voice -> source bridge. When set, a Play whose target resolves is handed
+    /// to <see cref="IWwisePlaybackBridge.OnPlay"/> after the fade-in/initial-delay params are built
+    /// (M6-025 B1); when null the Play stops where M6-006 stopped (the target is recorded, nothing is
+    /// created).
+    /// </summary>
+    public IWwisePlaybackBridge? PlaybackBridge { get; set; }
 
     /// <summary>Removes a game object; a lookup for it then returns null (gapD D5.5).</summary>
     public void UnregisterGameObject(uint id) => _registeredGameObjects.Remove(id);
@@ -326,7 +334,8 @@ public sealed class WwiseEventRuntime
             }
         }
 
-        if (GetNode(action.TargetId) is null)                                 // 0xA6168C → 0x9A7EB0
+        var node = GetNode(action.TargetId);                                  // 0xA6168C → 0x9A7EB0
+        if (node is null)
         {
             Record(action, WwiseActionOutcome.TargetMissing, gameObj, m, launch, frames, delay, remainder);
             return;
@@ -337,13 +346,35 @@ public sealed class WwiseEventRuntime
         // body at 0xA61260), so the ranged draw is not applied. No shipped action carries ranged 0x10
         // (gapA 5.4), so nothing observable is dropped; the property and curve are recorded.
         double fadeMs = action.FloatProp((byte)WwiseProp.TransitionTime) ?? 0;
-        byte curve = action.Params is WwisePlayParams pp ? pp.FadeCurve : (byte)0;
+        byte curve = action.Params is WwisePlayParams wp ? wp.FadeCurve : (byte)0;
 
         // Initial delay (0x9F12E0, gapA 1.11 / gapD D1.9): prop 0x3B is seconds · rate, rounded half away
         // from zero. The RTPC (0xA11590) and ranged terms are not applied.
         double initialDelay = 0;
         if (action.FloatProp((byte)WwiseProp.InitialDelay) is { } seconds)
             initialDelay = Math.Round(seconds * WwiseRuntimeSettings.MixRateHz, MidpointRounding.AwayFromZero);
+
+        // M6-025 B1: the Play helper resolves the target and calls node->vt+0x128(node, params). The
+        // params struct it builds is handed to the bridge; the fields the M6-006 rows did not carry
+        // (the queued action's custom params and the uninitialised 0x44-byte block) stay at their
+        // documented gaps rather than being invented here.
+        if (PlaybackBridge is { } bridge)
+        {
+            var init = new WwisePlayInitParams
+            {
+                TargetNodeId = action.TargetId,                               // params+4 (0xA62B90)
+                GameObjectId = gameObj,                                       // params+8 (0xA62BF0)
+                Transition = new WwiseFadeInTransition                         // params+0xC (0xA62BFC)
+                {
+                    FadeInTime = (float)fadeMs,                               // 0xA62AF0
+                    FadeCurve = curve,                                        // 0xA62A8C
+                },
+                PlayingId = m.PlayingId,                                      // params+0x24 (0xA62B94)
+                InitialDelaySamples = unchecked((uint)initialDelay),          // params+0x74 (0xA62BC8)
+                Flags128 = (byte)(0x04 | (action.IsBus ? 0x08 : 0)),          // 0xA62BCC / 0xA62C04
+            };
+            bridge.OnPlay(node, m.PlayingId, gameObj, init);
+        }
 
         _log.Add(new WwiseActionExecution(action.Id, action.Type, WwiseActionOutcome.Executed,
             m.PlayingId, gameObj, action.TargetId, launch, frames, delay, remainder, fadeMs, curve, initialDelay));

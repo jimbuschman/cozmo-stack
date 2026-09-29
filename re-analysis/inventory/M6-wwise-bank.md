@@ -61,6 +61,7 @@ The earlier repo position was that "Wwise runtime semantics" were BLOCKED_EXTERN
 | M6-022 | IMPLEMENTATION_GAP | **The live voice and bus engine** (new in C11): the `0xA57FF8` wrapper and `0xA44D4C` render body, the voice pass `0xA44948`, the bus pass `0xA44C18`, idle removal `0xA43F64`, voice mix `0xA44630`, mix-in `0xA4FBEC`, the per-voice DSP chain (`0xA54F1C`, `0xA4C60C`->`0xA766B8`, `0xA56E00`->`0xA56A7C`, `0xA548C0`, `0xA53134`, `0xA52D4C`, `0xA03E8C`, `0xA05574`, `0xA56650`, `0xA4F9E0`, `0x9E9E78`, `0x9E9F08`, `0xA55750`, `0xA4AF50`, `0x9D3CC0`), the four Perform group members, the PBI flush `0xA38420`, the `0x108DAE8` output-device state and its three gate bytes with their writers, `0x9EADE8`/`0x9EAF90` init/term, `0x9EBA54`/`0x9EBE6C` device advance, the SetOutputDevice command `0x9EC418`, and the `0xA57D64` Android JNI audio-route poll. | C11, gap1 |
 | M6-023 | IMPLEMENTATION_GAP | **The app audio-input dispatch** (new in C11): Unity `PostAudioEvent` -> `AudioUnityInput` -> `AudioMuxInput` -> `AudioMultiplexer` -> `AudioEngineController::PostAudioEvent` -> Wwise `PostEvent 0x009A6704`. | C11, gap3 |
 | M6-024 | IMPLEMENTATION_GAP | **Bank and scene loading call sites** (new in C11): the `CozmoAudioController` ctor's six-bank list and `InitScene`, `RegisterAudioScene`/`LoadAudioScene 0x008D2EE8` -> `LoadSoundbank 0x008D2FE4`, `AddZipFiles 0x008D1E3E`. | C11, gap3 |
+| M6-025 | IMPLEMENTATION_GAP | **The Play -> PBI -> voice -> source creation bridge** (new in C21): the node `PlayInternal` dispatch (`vt+0x128` per class), the node `vt+0x14` PBI creator `0xA02EC8`/`0xA0B22C`, the base PBI ctor `0xA000E8`, `CalcEffectiveParams 0x9FFAD4`, the voice ctor `0xA54650` and attach `0xA4304C`, `AddSrc 0xA558AC` and the source factory `0xA562B8`, and the PBI start list `0x9D3558` drained by `0x9D3644` via `0x9D3C98`. | C21 |
 
 ## Decisions (the manager's, recorded for audit)
 
@@ -1699,6 +1700,82 @@ found C11's B5/B6 rows did not settle two values. The instructions were re-read.
 The computed flags are not yet delivered into the Wwise core: `WwiseEventRuntime.PostEvent`
 (M6-006) has no flags seam (its third argument is ExecuteEvent's `targetPlayingId`). M6-023's
 `unresolved` records that delivery, and the callback/cookie, as a later M6-006 wiring step.
+
+## Correction C21 (manager, 2026-09-29): the Play -> PBI -> voice -> source creation bridge (new record M6-025)
+
+The B-M6b-3 build stopped with a `MISSING` on the link between the M6-006 control path
+(which resolves a Play target) and the M6-022 live voice/bus engine (which renders voices
+already in the list): the node `PlayInternal` creation path. One bounded extraction pass
+read it. The report is the full specification and is committed:
+
+- `re-analysis/research/20260929-B-M6b-3-bridge-extraction.md`
+
+A citation check (`@cozmo-verifier`, 12 sampled claims plus the four headline premise
+corrections) passed; it found two non-behavioural citation errors in the report, which are
+corrected there (the `+0x6C` row and the `0x103B7C8` note). The rows below are the
+behaviour-changing steps; all are EXACT_SOURCE unless marked.
+
+### M6-025 - the Play -> PBI -> voice -> source creation bridge (new)
+
+| step | what the original does | citation | classification |
+|---|---|---|---|
+| B1 | `0xA62A1C` resolves the target node (`0xA6168C` -> `0x9A7EB0`; null -> error 0x0F), stores it at `params+4` (`0xA62B90 str r6,[sp,#0x20]`), and calls `node->vt+0x128(node,params)` (`0xA62D14/0xA62D20/0xA62D24`). | `0xA62A2C..0xA62D24` | EXACT_SOURCE |
+| B2 | The `+0x128` PlayInternal per shipped class: Sound vtable `0x103BAD0` -> `0xA1D448`; RanSeq `0x103B860` -> `0xA0AFDC`; Switch `0x103BDC8` -> `0xA2C730`; ActorMixer `0x103CF88` -> `0xA667D0`; Layer `0x103B050` -> `0x9D0758`. MusicSegment/MusicTrack (HIRC 10..13) unread (M9). | vtables as cited | EXACT_SOURCE (M9 UNKNOWN) |
+| B3 | Sound PlayInternal `0xA1D448`: the normal path calls `0xA379D8(node, node+0x5c, params)` (`0xA1D468..0xA1D470`); the special `params+0x84==0x90 && +0x87!=0` branch (`0xA1D47C..0xA1D638`) is read but its parameter semantics are UNKNOWN. | `0xA1D448..0xA1D638` | EXACT_SOURCE (special-branch semantics UNKNOWN) |
+| B4 | `0xA379D8` creates the PBI via `node->vt+0x14(node, node, srcBuf, params, gains)` (`0xA37CA0/0xA37CB8/0xA37CC4/0xA37CC8`); all node classes' `vt+0x14` = `0xA02EC8`, RanSeq's = `0xA0B22C` (base vs ContinuousPBI on `params[0]==1`). | `0xA379D8..0xA37D28`; vtables | EXACT_SOURCE |
+| B5 | `0xA02EC8` allocates 0x1FC (`0xA02EDC mov r1,#0x1fc`; `0xA02EEC bl 0xA7A7F4`) and calls `0xA000E8(pbi, params, node, srcBuf, gains, 0)` (`0xA02F00..0xA02F14`). | `0xA02EC8..0xA02F14` | EXACT_SOURCE |
+| B6 | PBI ctor `0xA000E8` stores the base vtable `0x103B768` (`0xA00174`), the interfaces `pbi+8=0x103B7D0`/`pbi+0xC=0x103B7DC`, `pbi+0x140=params+0x24` (`0xA0019C`), `pbi+0x150=param_4` (`0xA00208`), `pbi+0x14C=params+4` (`0xA00204`), `pbi+0x164/+0x168/+0x16C=1.0` (`0xA00228..0xA00230`), `pbi+0x1D8=params+0x74` (`0xA002EC`), the chain id `0xA00334`/`0xA00410`/`0xA00418`, `pbi+0x1BD/0x1BE/0x1BF` (`0xA00288/0xA002B0/0xA002D0`), `pbi+0x1F8` (`0xA00318`), `pbi+0x1E4=params+0x84` (`0xA002FC`), and the source-format placeholders `pbi+0x15C/0x15D` (`0xA001F0/0xA001F8`). `+0x1F8`/`+0x1E4`/`+0x14C` meanings UNKNOWN. | `0xA000E8..0xA00418` | EXACT_SOURCE |
+| B7 | `0xA379D8` then `0x9BEB30(pbi+0xC, gain, uVar5, local_7c, &local_70, params+0x8C, &local_71)` (result must be 1; `0xA37D1C..0xA37D28`), `node->vt+0x90(node,&block,1)` (`0xA37D88/0xA37D94`), `0xA00618(pbi)` (`0xA38078`), `0xA0067C(pbi, params+0xC, (params+0x70==1), 0)` (`0xA3807C..0xA38094`). | `0xA37D1C..0xA38094` | EXACT_SOURCE |
+| B8 | PBI vtable `0x103B768` slots read: `+0x04` delete `0x9FF54C`, `+0x10` Term `0xA029DC`, `+0x14` TransitionUpdate `0x9FF41C`, `+0x44` CalcEffectiveParams `0x9FFAD4`, `+0x50` `0x9FF4D0`. The `pbi+0x154` object's vtable `0x103B748` `+0x6C = 0x9FF6B8`. Class names UNKNOWN. | vtable words as cited | EXACT_SOURCE |
+| B9 | `CalcEffectiveParams 0x9FFAD4`: bus `0x9BDA6C(pbi+0xC)`; reset to 0 and `pbi+0x40=1.0` (`0x9FFB24/0x9FFB48..0x9FFB54`); else `memcpy(pbi+0x3c,param_2,0x5c)` and the ranges (`0x9FFC..`); `0x9FBE74(pbi+0xe0, pbi+0x14, pbi+0xb4, pbi+0xdc)` (`0x9FFC68`); `pbi+0xc4=101.0`; `pbi+0xe0->vt+0xac(...)` GetAudioParameters (`0x9FFCEC/0x9FFCF0`); the compose `0x9FFD14..0x9FFD74`; the mute/fade product (`0x9FFDD0..0x9FFE18`); `0x9F6B94` and the RTPC update (`0x9FFE1C..0x9FFE24`); `pbi+0x1bc|=1`, `pbi+0xe8|=0x20` (`0x9FFE7C`). Fields: `+0x3C` Volume, `+0x44` Pitch, `+0x48` LPF, `+0x4C` HPF, `+0x40` mute/fade. `pbi+0x158` is written by the source StartStream, not here. | `0x9FFAD4..0x9FFE7C` | EXACT_SOURCE |
+| B10 | Voice attach `0xA4304C` (only caller `0x9D36E8` from the `0x9D3644` start-list drain): if `pbi+0x1C8!=0`, walk the live-voice list `0x108DF68` (next `voice+0xD0`) matching `[voice+8]+0x1BC` with `pbi+0x1C8` (`0xA430E8`); match -> `AddSrc(voice,pbi,0)` (`0xA4311C`), `0xA01878(pbi)`, return 5; else alloc 0x540 (`0xA4307C/0xA43088`), `0xA54650(voice)` (`0xA43094`), `0xA548B8(voice,engine)` (`0xA430A8`), `AddSrc(voice,pbi,1)` (`0xA430B8`); return 0x3F -> link (`voice+0xD0=0`, `0x108DA30/0x108DA2C`), return 1; return 1 -> `0xA42DEC`; else `0x9D40C4`. Voice vtable `0x103C790` (`+0x44` Term `0xA53EA8`, `+0x48` Stop `0xA533FC`); class name UNKNOWN. | `0xA4304C..0xA43174` | EXACT_SOURCE |
+| B11 | `AddSrc 0xA558AC`: `0xA01E24(pbi,&mode,&plugin)` (`0xA558CC`), `0xA562B8(mode,plugin,pbi)` (`0xA558D8`), `0xA56650(source, pbi+0x1dc, pbi+0x1e0)` StartStream (`0xA5590C..0xA55914`), then `voice+0xD4`/`voice+0xD8` (`0xA55934`), `voice+8 = [source+0xC]+0xC` (`0xA5593C/0xA55948`), clear `pbi+0x1BE` bit3. | `0xA558AC..0xA55948` | EXACT_SOURCE |
+| B12 | `0xA01E24`: `plugin = [[pbi+0x150]+0x14]` (`0xA01E30`); `mode = ([[pbi+0x150]+0xc] & 0x7f) >> 2` (`0xA01E34/0xA01E3C ubfx r3,r3,#2,#5`); `0x9CD340` may refine the plugin/mode (`0xA01E5C`; internals RECOVERABLE_GAP). | `0xA01E24..0xA01E5C` | EXACT_SOURCE |
+| B13 | Factory `0xA562B8(mode,plugin,pbi)`: `mode==2` -> 0x70 + `0xA78D10`; `plugin>>16==1` PCM -> `0xA76140`/`0xA72D04`; `>>16==2` ADPCM -> `0xA74244`/`0xA72A2C`; `>>16>2` -> registered-plugin list `0x108D9DC`; `mode==0`/unknown -> 0. Shipped: Vorbis `0x00040001`, ADPCM `0x00020001`. | `0xA562B8..0xA56408` | EXACT_SOURCE |
+| B14 | Sound `SetInitialValues 0xA1DA08`: `0x9B9C90(&srcBlock,&reader)` (`0xA1DA24`), `0xA1EA68(node+0x5c,...)` (`0xA1DA30`), `0x9F6EF8` NodeBase (`0xA1DA34`). Source block: `u32 plugin, u8 stream, u32 sourceId, u32 size, u8 bits`; `plugin&0xF in {2,5}` adds `u32 size` + bytes. Stream 0 -> mode 3, stream 1/2 -> mode 1 (codec plugins only). | `0xA1DA08..0xA1DA34`; `0x9B9CC8..0x9B9DC0` | EXACT_SOURCE |
+| B15 | `pbi+0x158` (source format) writers: Vorbis StartStream `0xAB0BF0 str r1,[lr,#0x158]` (`0xAB0BDC ldr r1,[ip,#4]`); ADPCM type-3 `0xA72744`; **ADPCM type-1 `0xA73B78`** (inside `0xA73ABC`, the mode-1 vtable `0x103D840+0x78`, reached from `0xA753C4 bl 0xA74C80` -> `0xA74CD0`; value = the descriptor's `+4`). Vorbis also writes `pbi+0x15C/0x15D` (`0xAB0C20/0xAB0C04`); ADPCM t3 at `0xA72760/0xA72768`. (The type-1 writer was a RECOVERABLE_GAP in C21; closed by C22.) | as cited | EXACT_SOURCE |
+| B16 | `PBI Play 0xA0067C`: fade-in transition when `arg2[0]!=0` (`0xA00800`/`0xA007B0`), `pbi->vt+0x50(pbi,0xe,iVar1)`; `flag==0 && pbi+0x1ba&7!=1` -> enqueue start-list type 0 via `0x9D3558(0,pbi)` (`0xA006C4`); else `pbi+0x1BC|=0x80` and type 1 (`0xA006F0/0xA006F4`). | `0xA0067C..0xA00730` | EXACT_SOURCE |
+| B17 | `0x9D3558(type,pbi)` enqueues a 0x10-byte node `{next,pbi,tick}` into the list head `0x108DA10`/tail `0x108DA14`; count `0x108DA24++`; `type<2` sets gate `0x108DA34=1`. `0x9D3C98` gates on `0x108DA34` (`0x9D3CA4/0x9D3CAC/0x9D3CB0 bl 0x9D3644`). `0x9D3644` calls `0xA4304C` per ready PBI (`0x9D36E4/0x9D36E8`) and keeps the node only on return 1. | `0x9D3558..0x9D3598`; `0x9D3C98..0x9D3CB8`; `0x9D3644..0x9D36EC` | EXACT_SOURCE |
+| B18 | Perform order: `0x9FF308`, `0x9D3C98` (`0x9AFA7C`), `0x9E6D2C`, LEngine `0xA57FF8` (`0x9AFA90`), PBI flush `0xA38420` (`0x9AFA94`), then `mgr+0x4C++`. `0xA38420` is the PBI notification/Term flush (`0x108DE7C`/`0x108DE90`), not the start-list drain. | `0x9AFA78..0x9AFAA8`; `0xA38420..0xA384FC` | EXACT_SOURCE |
+
+### Premise corrections (C11/C12 were wrong)
+
+| # | earlier row said | the source says | citation |
+|---|---|---|---|
+| C21.1 | C11 V21 / the task premise: `0xA38420` creates/attaches the voice | `0xA38420` is the PBI **notification/Term** flush (`0x108DE7C`); the voice attach is `0x9D3644` (start list `0x108DA10`), called by `0x9D3C98` at `0x9D3CB0`, which calls `0xA4304C` at `0x9D36E8` | `0x9D3CB0`; `0x9D36E8`; `0xA38484..0xA384FC` |
+| C21.2 | the PBI creator is an action method | it is the target node's `vt+0x14`: `0xA62B90` stores the node at `params+4`, `0xA37CC4/0xA37CC8` call `[params+4]->vt+0x14` | `0xA62B90`; `0xA37CC4/0xA37CC8` |
+| C21.3 | C11/C15: the base PBI vtable is `0x1039D98` | the base PBI vtable is `0x103B768` (stored at `0xA00174`); `0x1039D98` is a derived class on the container path only | `0xA00174` |
+
+### M6-025 residuals (RECOVERABLE_GAP / UNKNOWN / HARDWARE_ONLY)
+
+The Sound PlayInternal special branch (`params+0x84==0x90`) parameter semantics (UNKNOWN);
+the full play-params struct layout (`0xA62A1C..0xA62D38`, RECOVERABLE_GAP); the PBI
+`+0x1F8`/`+0x1E4`/`+0x14C` meanings and the vtable slot names (UNKNOWN); the `0x9CD340` media-format/stream
+refinement (RECOVERABLE_GAP); the `0x9BC90C` PBI `+0x14` RTPC-key init (RECOVERABLE_GAP);
+MusicSegment/MusicTrack `+0x128` (M9, UNKNOWN); the ContinuousPBI selection/render path
+(M6-008, UNKNOWN here); the four class names and the `0xA38420`-vs-tick ordering (UNKNOWN).
+
+M6-025 stays `IMPLEMENTATION_GAP` until it is built and wired (B-M6b-3). M6-006 and M6-022
+do not own this path; their `unresolved` notes now point here.
+
+## Correction C22 (manager, 2026-09-29): the play-params struct and the ADPCM type-1 source format
+
+The B-M6b-3 build needed two residuals the C21 report left open. One bounded extraction
+pass read them. The report is committed:
+
+- `re-analysis/research/20260929-B-M6b-3-residuals.md`
+
+| # | C21/the report said | The source says | citation |
+|---|---|---|---|
+| C22.1 | the `0xA62A1C` play-params struct is only partly mapped | the full store table into the struct at `sp+0x1c`: `+0x00`=0; `+0x04`=**target node** (`0xA62B90`); `+0x08`=**game object** = queued+0x34 (`0xA62BF0`); `+0x0C`=**transition pointer** `&sp+0x10` (`0xA62BFC`); `+0x10`=**custom-params object** = queued+0x14 (`0xA62BC0`); `+0x18/+0x1C/+0x20`=**custom-param values** = queued+0x1C/0x20/0x24 (`0xA62B88/8C/98`); `+0x24`=**playing id** = queued+0x28 (`0xA62B94`); `+0x28`=0 start of the 0x44-byte block copied to `pbi+0x170` (`0xA62B7C`; `0xA00344/0xA0035C/0xA00380`); `+0x70`=0 (`0xA62BD0`); `+0x74`=**initial delay** = queued+0x0C (`0xA62BC8`); `+0x7C`=0 chain id (`0xA62BF8`); `+0x84`=0 (`0xA62A98`); `+0x85`=0xFF (`0xA62AF4`); `+0x90`=1.0f (`0xA62AF8`); `+0x128`=flags byte (`0xA62B2C/CC/04`). The `sp+0x10` object holds the fade-in time (`0xA62AF0`, from `0xA61110`) and curve (`0xA62A8C`, `action+0x22 & 0x1F`). The Play execute vfunc is called as `action->vt+0x24(action, queuedAction)` (`0x9AA2A8..0x9AA2B8`). `params+0x14` has no store and no reader -> UNKNOWN; `+0x28..+0x6B` (beyond `+0x28`) is uninitialised stack on the Sound path. | `0xA62A1C..0xA62D38`; `0x9AA2A8..0x9AA2B8` |
+| C22.2 | C21 B15: the ADPCM type-1 `pbi+0x158` writer is a RECOVERABLE_GAP | it is `0xA73B78 str lr,[r2,#0x158]`, inside `0xA73ABC` (the mode-1 vtable `0x103D840+0x78`), reached from `0xA753C4 bl 0xA74C80` -> `0xA74CD0 ldr r3,[r3,#0x78]`; the value is the descriptor's `+4` (`0xA73B4C ldr r1,[r7,#0x14]`; `0xA73B58 ldr lr,[r7,#4]`), descriptor from `0x9CD340`, PBI = `[this+0xC]` (`0xA73B40`). **C21 B15 closes; no RECOVERABLE_GAP.** | `0xA73B40..0xA73B78`; `0xA753C4..0xA74CD0` |
+| C22.3 | the report Item 2c.9: `pbi+0x1BE` is re-set from `params+0x128` bits 4..6 | the instruction is `0xA002A8 ubfx r3,r3,#4,#1`; `0xA002AC bfi r1,r3,#6,#1`: **params bit4 -> `pbi+0x1BE` bit6 only**. On the Play path params bit4 is cleared (`0xA62B24 bfi r2,r4,#4,#1`, r4=0). | `0xA002A8/0xA002AC`; `0xA62B24` |
+
+The B-M6b-3 bridge build (`WwisePlaybackBridge.cs` et al.) implements C21 with these
+corrections; it is a partial: only the Sound node's PlayInternal normal path is built, and
+the per-voice bus/connection creation, `0x9BEB30`, `node->vt+0x90`, `0xA00618`, the
+`0x9CD340` descriptor and the fade-in setup bodies remain unread. M6-025 stays
+`IMPLEMENTATION_GAP`; the live-path wiring is not done.
 
 ## Appendix J: C11 gap-1 report (voice-engine residuals)
 

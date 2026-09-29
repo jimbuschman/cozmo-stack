@@ -91,6 +91,14 @@ public interface IWwiseVoiceSource
     /// <summary><c>vt+0x28</c> StartStream (0xA54A30), returns true on success (result 1).</summary>
     bool StartStream();
 
+    /// <summary>
+    /// <c>vt+0x28</c>'s raw result code for <c>0xA56650</c>: 1 or 0x3F. <c>0xA56650</c> returns 1 when
+    /// <see cref="StartStreamSucceeded"/> is already set, else calls <c>vt+0x28</c> and sets that bit only
+    /// when the result is 1. The default is 1 (the interface's <see cref="StartStream"/> success); a source
+    /// whose class returns 0x3F overrides this and leaves <see cref="StartStreamSucceeded"/> clear.
+    /// </summary>
+    int StartStreamCode => 1;
+
     /// <summary><c>vt+0x4C</c>: the <c>[PBI+0x1BE]</c> bit 6 the per-voice machine tests as <c>SRC10</c>.</summary>
     bool StartStreamSucceeded { get; }
 
@@ -405,6 +413,21 @@ public sealed class WwiseLiveVoice
 
     /// <summary>The pending source (<c>+0xD8</c>), attached by the state-0x11 tail (V15).</summary>
     public IWwiseVoiceSource? Pending { get; set; }
+
+    /// <summary>
+    /// <c>voice+8</c> (M6-025 B11): AddSrc sets it to <c>[source+0xC]+0xC</c>, the object the chain-match
+    /// in <c>0xA4304C</c> reads at <c>+0x1BC</c> (<c>0xA430E8</c>). The source class's <c>+0xC</c> identity
+    /// is UNKNOWN, so the bridge supplies it through a seam.
+    /// </summary>
+    // fidelity: M6-025
+    public object? BusOwner8 { get; set; }
+
+    /// <summary>
+    /// <c>voice+0xEC</c> (M6-025 B10): the engine pointer <c>0xA548B8</c> stores
+    /// (<c>0xA548B8 str r1,[r0,#0xec]</c>), set from <c>AttachVoice</c>'s <c>0xA430A8</c> call.
+    /// </summary>
+    // fidelity: M6-025
+    public object? EngineEC { get; set; }
 
     /// <summary>The per-voice buffer (the native <c>params</c>).</summary>
     public WwiseVoiceBuffer Buffer { get; }

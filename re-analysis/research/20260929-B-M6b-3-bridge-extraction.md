@@ -56,8 +56,9 @@ the correction is stated on the row and again in the "contradicted" section.
 | 1.9 | The PBI creator is the node's `vt+0x14` (not `+0x128`). For all node classes except RanSeq it is **`0xA02EC8`**; RanSeq's is **`0xA0B22C`** (which picks base vs ContinuousPBI on `params[0]==1`). | Sound `0x103BAE4: 0x00A02EC8`; RanSeq `0x103B874: 0x00A0B22C`; Switch `0x103BDDC: 0x00A02EC8`; ActorMixer `0x103CF9C: 0x00A02EC8`; Layer `0x103B064: 0x00A02EC8`; `0xA0B22C` decomp | NEW | EXACT_SOURCE |
 
 **Note:** the `+0x128` values are the *stored* vtable slot (`[node]` + 0x128); the class names are
-Wwise labels only. `0x103B7C8` (a nearby vtable) is a different object (its `+0x90` = `0x9ED2CC`,
-the common base method); the Switch container vtable is `0x103BDC8`.
+Wwise labels only. (`0x103B7C8` holds `0xFFFFFFF8`, an adjustor/vcall offset, not a vtable; the
+`+0x90 = 0x9ED2CC` slot belongs to the RanSeq vtable `0x103B860` at `0x103B8F0`. Corrected by the
+B-M6b-3 citation check.) The Switch container vtable is `0x103BDC8`.
 
 ---
 
@@ -93,7 +94,7 @@ the common base method); the Switch container vtable is `0x103BDC8`.
 | 2c.6 | `pbi+0x164` (resampling ratio) = 1.0; `pbi+0x168`/`pbi+0x16C` (fade values) = 1.0. | `0xA00228 str sb,[r4,#0x164]`; `0xA0022C str sb,[r4,#0x168]`; `0xA00230 str sb,[r4,#0x16c]` (sb = 0x3F800000) | gapG 1.3 / 2.5 | EXACT_SOURCE |
 | 2c.7 | `pbi+0x1D8` (start offset) = `params+0x74` (the queued sub-frame remainder / InitialDelay samples). | `0xA002EC str r8,[r4,#0x1d8]` | gapG 1.3 | EXACT_SOURCE |
 | 2c.8 | Chain id: if `params+0x7C == 0`, `pbi+0x1C8 = global 0x1052434++`; else `pbi+0x1C8 = params+0x7C` and `pbi+0x1BE |= 8`. | `0xA00334 str r3,[r4,#0x1c8]`; `0xA00410 str r3,[r4,#0x1c8]`; `0xA00418 strb r2,[r4,#0x1be]`; decomp lines 111..119 | gapG 1.3 | EXACT_SOURCE |
-| 2c.9 | `pbi+0x1BE` cleared to bits 6..7 and re-set from `params+0x128` bits 4..6; `pbi+0x1BD` = `(param_6!=0)<<7 | 0x44`; `pbi+0x1BF` bit2 = `params+0x128` bit2. | `0xA00288 strb r3,[r4,#0x1bd]`; `0xA002B0 strb r1,[r4,#0x1be]`; `0xA002D0 strb r2,[r4,#0x1bf]` | gapG 1.3 (partial) | EXACT_SOURCE |
+| 2c.9 | `pbi+0x1BE` cleared to bits 6..7 and re-set from `params+0x128` bit4 (`0xA002A8 ubfx r3,r3,#4,#1`; `0xA002AC bfi r1,r3,#6,#1`); `pbi+0x1BD` = `(param_6!=0)<<7 | 0x44`; `pbi+0x1BF` bit2 = `params+0x128` bit2. (Corrected by the B-M6b-3 residual pass: C22.3.) | `0xA00288 strb r3,[r4,#0x1bd]`; `0xA002B0 strb r1,[r4,#0x1be]`; `0xA002D0 strb r2,[r4,#0x1bf]`; `0xA002A8/0xA002AC` | gapG 1.3 (partial) | EXACT_SOURCE |
 | 2c.10 | `pbi+0x1F8` (a voice/chain link) written; `pbi+0x1E4` = `params+0x84`; `pbi+0x1F0`/`+0x1F4` zeroed. | `0xA00318 str r7,[r4,#0x1f8]`; `0xA002FC..0xA00314` | NEW | EXACT_SOURCE for the stores; **the meaning of `+0x1F8`/`+0x1E4` is not named** |
 | 2c.11 | Source-format placeholders: `pbi+0x15C`/`pbi+0x15D` set from `params+0x10`/`params+0x11`-like bytes (`0xA001F0`/`0xA001F8`), then overwritten by the source StartStream (Item 5). | `0xA001F0 strb ip,[r4,#0x15c]`; `0xA001F8 strb r2,[r4,#0x15d]`; `0xA0034C`/`0xA00354` | NEW | EXACT_SOURCE |
 | 2c.12 | `pbi+0x18`/`pbi+0x28`/`pbi+0x20`/`pbi+0x24` set from `pbi+0x140` and the RTPC key (`0xA003C8 str r4,[r4,#0x28]`; `0xA003CC str r2,[r4,#0x18]`; `0xA003A4/0xA003A8 strb`). | `0xA003A4..0xA00400` | NEW | EXACT_SOURCE for the stores; the field roles are the RTPC key/game object (gapA 1.11) |
@@ -109,7 +110,7 @@ the common base method); the Switch container vtable is `0x103BDC8`.
 | +0x14 | `0x9FF41C` | TransitionUpdate | `0x103B77C`; gapC 5.3 |
 | +0x44 | `0x9FFAD4` | CalcEffectiveParams | `0x103B7AC` |
 | +0x50 | `0x9FF4D0` | (called from PBI Play with `(0xe, iVar1)`) | `0x103B7B8` |
-| +0x6C | `0x9FF6B8` | (called from CalcEffectiveParams as `node->vt+0x6c`) | `0x103B7D4` |
+| +0x4C | `0x9FF6B8` | `0xA000E8`'s `pbi+0x154` object vtable is `0x103B748`; CalcEffectiveParams calls `[pbi+0x154]->vt+0x6C` = `0x9FF6B8` (`0x9FFC78 ldr r3,[r0]`; `0x9FFC7C ldr r3,[r3,#0x6c]`; `0x9FFC80 blx r3`, `r0=[pbi+0x154]`). (Corrected by the B-M6b-3 citation check: `0x9FF6B8` is at `0x103B7B4` = PBI `+0x4C`, and at `0x103B748+0x6C`; `0x103B7D4` holds `0xFFFFFFF4`.) | `0x103B7B4`; `0x103B748`; `0x9FFC78..0x9FFC80` |
 
 `ContinuousPBI` vtable `0x103D3B0`: `+0x04 = 0xA6A018`, `+0x10 = 0xA6ACC0`, `+0x44 = 0x9FFAD4`
 (M6-022 Q3; confirmed).
@@ -177,7 +178,7 @@ product. `voice+0x100` (pitch node), `voice+0x380` (gain/ramp), `voice+0x1C0` (f
 | 5.7 | The source block layout the reader consumes: `u32 plugin, u8 stream, u32 sourceId, u32 size, u8 bits`; for `plugin&0xF in {2,5}` a `u32 size` + size bytes. | `0x9B9CC8 ldr lr,[r2],#4`; `0x9B9CE0 ldrb lr,[r3,#4]`; `0x9B9CC4 ldr r1,[r3,#5]`; `0x9B9CCC ldr sb,[r3,#9]`; `0x9B9CFC ldrb r1,[r3,#0xd]`; `0x9B9D4C ldr r2,[r3,#0xe]`; `0x9B9D50 add r3,r3,#0x12` | M6-001 gapA 2.4 | EXACT_SOURCE |
 | 5.8 | The stream-byte -> mode mapping: stream 0 -> 3, stream 1/2 -> 1 (only for codec plugins `plugin&0xF==1`); source plugins leave mode 0. | `0x9B9CD0 and ip,lr,#0xf`; `0x9B9CD8 cmp ip,#1`; `0x9B9D80 cmp lr,#0`; `0x9B9DA0 mov r2,#3`; `0x9B9DA8 bfi r3,r2,#2,#5`; `0x9B9DBC bfi r3,ip,#2,#5` | M6-002 gapG 4.3 | EXACT_SOURCE |
 | 5.9 | **`pbi+0x158` (source format word) writes:** Vorbis StartStream `0xAB0BF0 str r1,[lr,#0x158]` (`lr=[source+0xC]` = the PBI; `r1=[fmt+4]`); ADPCM type-3 StartStream `0xA72744 str lr,[sb,#0x158]` (`lr=[fmt+4]`). Vorbis also writes `pbi+0x15C` channels (`0xAB0C20`), `pbi+0x15D` config (`0xAB0C04`); ADPCM t3 writes `+0x15C`/`+0x15D` at `0xA72760`/`0xA72768`. | `0xAB0BDC ldr r1,[ip,#4]`; `0xAB0BF0 str r1,[lr,#0x158]`; `0xA72720 ldr lr,[r3,#4]`; `0xA72744 str lr,[sb,#0x158]` | NEW | EXACT_SOURCE |
-| 5.10 | ADPCM type-1 StartStream `0xA7538C`: no write to `pbi+0x158` found in the body (`0xA7538C..0xA75680`). | scan of `0xA7538C..0xA75680` for `#0x158` = 0 hits | NEW | **RECOVERABLE_GAP**: read where the type-1 class obtains its format (the ctor `0xA74504` and the render `0xA73D34` read `pbi+0x158`) |
+| 5.10 | ADPCM type-1 `pbi+0x158` writer: `0xA73B78 str lr,[r2,#0x158]`, inside `0xA73ABC` (the mode-1 vtable `0x103D840+0x78`), reached from `0xA753C4 bl 0xA74C80` -> `0xA74CD0 ldr r3,[r3,#0x78]`; the value is the descriptor's `+4` (`0xA73B4C ldr r1,[r7,#0x14]`; `0xA73B58 ldr lr,[r7,#4]`). (Settled by the B-M6b-3 residual pass: C22.2; no longer a RECOVERABLE_GAP.) | `0xA73B40..0xA73B78`; `0xA753C4..0xA74CD0` | NEW | EXACT_SOURCE |
 
 ---
 
@@ -191,7 +192,7 @@ product. `voice+0x100` (pitch node), `voice+0x380` (gain/ramp), `voice+0x1C0` (f
 | 6.4 | `0x9D3C98` (Perform group member 3) gates on `0x108DA34`: if set, `0x9D3644`; then always `0x9D3864`. | `0x9D3C9C ldr r3,[pc,#0x18]`; `0x9D3CA4 ldrb r3,[r3,#0x28]`; `0x9D3CAC beq #0x9D3CB4`; `0x9D3CB0 bl #0x9D3644`; `0x9D3CB8 b #0x9D3864` | M6-022 (Perform) | EXACT_SOURCE |
 | 6.5 | `0x9D3644` walks `0x108DA10`; for each node whose PBI `[node+4]` has `+0x154==0`, `[node+0xc]<=1`, and not (`pbi+0x1BC&0x20` and `pbi+0x1F8==-1`): call `0xA4304C(node+4)`; keep the node if it returns 1, else unlink/free and `0xA01800(pbi,1)`. | `0x9D3644`; `0x9D3654 ldr r4,[r3,#4]`; `0x9D36B0 ldr sl,[r4,#4]`; `0x9D36B4 ldr r2,[sl,#0x154]`; `0x9D36C0 ldrb r2,[r4,#0xc]`; `0x9D36E4 add r0,r4,#4`; `0x9D36E8 bl #0xA4304C`; `0x9D36EC cmp r0,#1` | M6-022 Q6 (gap1) | EXACT_SOURCE |
 | 6.6 | Perform order: `0x9FF308`, **`0x9D3C98`** (`0x9AFA7C`), `0x9E6D2C`, LEngine `0xA57FF8` (`0x9AFA90`), PBI flush `0xA38420` (`0x9AFA94`), then `mgr+0x4C++`. | `0x9AFA78 bl #0x9FF308`; `0x9AFA7C bl #0x9D3C98`; `0x9AFA8C bl #0x9E6D2C`; `0x9AFA90 bl #0xA57FF8`; `0x9AFA94 bl #0xA38420`; `0x9AFAA0 ldr r3,[r4,#0x4c]` | M6-017 D1.6 | EXACT_SOURCE |
-| 6.7 | `0xA38420` is **not** the voice-attach drain: it drains the PBI notification queue (`0x108DE7C`/`0x108DE90`) and on code 4 runs `0x9D3470`, `pbi->vt+0x10` (Term), `pbi->vt+4`, `0xA7A988`. | `0xA38420`; `0xA38484` code test; `0xA384CC bl #0x9D3470`; `0xA384DC` Term; `0xA384FC` delete | M6-022 Q3 | EXACT_SOURCE |
+| 6.7 | `0xA38420` is **not** the voice-attach drain: it drains the PBI notification queue (`0x108DE7C`/`0x108DE90`) and on code 4 runs `0x9D3470`, `pbi->vt+0x10` (Term), `pbi->vt+4`, `0xA7A988`. | `0xA38420`; `0xA38488 cmp r3,#4` code test; `0xA384CC bl #0x9D3470`; `0xA384DC` Term; `0xA384FC` delete | M6-022 Q3 | EXACT_SOURCE |
 
 ---
 
@@ -208,9 +209,9 @@ product. `voice+0x100` (pitch node), `voice+0x380` (gain/ramp), `voice+0x1C0` (f
    `0xA62A1C` stack-struct writer in full (`0xA62A1C..0xA62D38`).
 3. **PBI `+0x1F8` / `+0x1E4` / `+0x14C` meanings** (stores at `0xA00318`, `0xA002FC`, `0xA00204`).
    **UNKNOWN**; not named by any reader I read.
-4. **`pbi+0x158` for the ADPCM type-1 class (`0xA7538C`).** No write found in the StartStream body;
-   the render `0xA73D34` reads `[pbi+0x158]`. **RECOVERABLE_GAP**: read the type-1 ctor `0xA74504`
-   and the type-1 prefetch path.
+4. **`pbi+0x158` for the ADPCM type-1 class.** Settled by the B-M6b-3 residual pass (C22.2):
+   the writer is `0xA73B78` inside `0xA73ABC` (mode-1 vtable `0x103D840+0x78`), reached from
+   `0xA753C4 bl 0xA74C80` -> `0xA74CD0`. No longer a RECOVERABLE_GAP.
 5. **The PBI vtable slot names** (`0x103B768`) beyond Term/delete/TransitionUpdate/
    CalcEffectiveParams are labels only; the class name is **UNKNOWN** (no RTTI/symbols).
 6. **MusicSegment/MusicTrack `+0x128`** (M9) not read. **UNKNOWN**.
@@ -256,5 +257,5 @@ product. `voice+0x100` (pitch node), `voice+0x380` (gain/ramp), `voice+0x1C0` (f
    `vt+0xac` (GetAudioParameters, M6-010). Does it belong to the new creation record or to M6-010?
 3. **The `0x90` Sound branch.** If the operator's hardware run can be made to exercise a Sound whose
    `params+0x84 == 0x90`, a capture could name it; otherwise it stays UNKNOWN.
-4. **The ADPCM type-1 `pbi+0x158` writer** is the one field the shipped ADPCM path needs that this
-   pass did not find; it is a RECOVERABLE_GAP.
+4. **The ADPCM type-1 `pbi+0x158` writer** is settled by the B-M6b-3 residual pass (C22.2):
+   `0xA73B78` inside `0xA73ABC`, mode-1 vtable `0x103D840+0x78`. Closed.
