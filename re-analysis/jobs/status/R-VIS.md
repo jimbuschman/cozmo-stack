@@ -44,4 +44,9 @@ Kinds: compare / missing source (MS) / cross-layer wiring (XL) / still blocked (
 | M14-012 | MS | album byte vector serialization (read full unresolved) |
 
 ## Progress
-- [ ] pre-extraction rows verified (@cozmo-verifier)
+- [x] pre-extraction rows verified (6 verifier passes; reports in research/20260929-R-VIS-verify-pre-*.md)
+- [x] M11 gap1 (research/...-M11-gap1-extraction.md) extracted and verified (verify-M11-gap1.md: FAIL on 2 rows, core holds)
+- [x] M11 gap2 QuadTree extracted and verified (verify-M11-gap2.md: 3 wrong statements, rest holds)
+- [x] M12/M13 gap1 extracted and verified (verify-M12-M13-gap1.md: 4 wrong rows, priority checks hold)
+- [ ] fold the checked rows into inventories M11/M12/M13, manifest records, --approve
+- [ ] build per subsystem, verify, settle
