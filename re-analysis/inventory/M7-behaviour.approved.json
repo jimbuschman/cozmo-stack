@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-09-28",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "b9b1b26243aed42e84f325daae04df1a791bfd9cfe4b245e7a71deedf9a0c055",
+  "inventory_sha256": "4473dcf5626bcd86d788c4311b1c6b150123512b88efc4f8f6a75b774fce728a",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -266,12 +266,17 @@
       "hardware_required": false
     },
     "M7-021": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Reaction robot-field meanings and cliff helper bodies remain to be recovered",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Live reaction robot fields and the WaitForLambda/state-name helpers",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "M7 gap1 G8: live reaction rows read offsets robot+0x355, +0x338, +0x300 and +0x37c",
-        "unread helper bodies 0x0055b554 and 0x005c0ca8"
+        "robot+0x355 seven-valued OffTreadsState: parser 0x0078df58, ctor 0x005100ea, commit 0x0051208e",
+        "robot+0x338 on-charger-contacts boolean: init 0x005100c4, SetOnCharger store 0x00511c14, IS_ON_CHARGER extract 0x00512aae, call 0x00512ab4",
+        "robot+0x300 raw lift angle: store 0x0051296a; on-face threshold 45.0f literal 0x00608b54, compare 0x00608af4, select 0x00608b1e/0x00608b20",
+        "robot+0x37c filtered accel magnitude: 0.05 at 0x00512d04, 0.95 at 0x00512d08, store 0x00512a2e",
+        "BehaviorReactToPickup::UpdateInternal 0x00607bc4..0x00607c08 (+0x338 gate, return 2)",
+        "WaitForLambdaAction ctor 0x0055b554, runtime CheckIfDone 0x0055dade, timeout getter 0x0055daf6",
+        "behaviour state-name setter 0x005c0ca8, channel Behaviors 0x00bee2c1, event Behavior.TransitionToState 0x005c0d4c, format 0x005c0d68; M7 callers ReactToCliff 0x00604f90/0x00605110 and DriveOffCharger 0x005c0b74/0x005c0be2/0x005c0de0"
       ],
       "live_path": true,
       "hardware_required": false

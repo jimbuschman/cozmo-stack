@@ -394,6 +394,7 @@ public sealed class ReactBehavior : IBehavior
 {
     private readonly ReactionTable _table;
     private readonly Func<CozmoRobot, bool> _condition;
+    private readonly Func<CozmoRobot, string?>? _preempt;
     private readonly object _gate = new();
     private CozmoAnimations? _animations;
     private long _generation;
@@ -403,8 +404,16 @@ public sealed class ReactBehavior : IBehavior
     /// <param name="score">LOCAL_POLICY, as <see cref="PlayAnimBehavior"/>'s is: 5 keeps a reaction ahead
     /// of ordinary play in this stack's manager. The engine dispatches a reaction by its trigger and never
     /// scores it.</param>
+    /// <param name="preempt">
+    /// M7-021 C2h: the engine's pickup reaction body checks robot+0x338 before starting its animation and,
+    /// when it is set, logs <c>BehaviorReactToPickup.OnCharger</c> and completes without playing even though
+    /// the strategy triggered on InAir. This predicate returns that log line when the gate applies and null
+    /// otherwise; null means the reaction has no such gate. The engine checks each
+    /// <c>UpdateInternal</c>; the stack plays in <see cref="StartAsync"/>, so the gate is applied there.
+    /// </param>
     public ReactBehavior(string id, string behaviorClass, ReactionTrigger trigger,
-                         Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0)
+                         Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0,
+                         Func<CozmoRobot, string?>? preempt = null)
     {
         Id = id;
         Class = behaviorClass;
@@ -412,6 +421,7 @@ public sealed class ReactBehavior : IBehavior
         _condition = condition;
         _table = table ?? ReactionTable.Default;
         Score = score;
+        _preempt = preempt;
     }
 
     public string Id { get; }
@@ -434,6 +444,17 @@ public sealed class ReactBehavior : IBehavior
     {
         _finished = false;
         LastSelected = null;
+        // fidelity: M7-021
+        // C2h: BehaviorReactToPickup::UpdateInternal (0x00607BC4..0x00607C08, 0x00607BCC, 0x00607BE2)
+        // reads robot+0x338 before starting any animation; when it is set the behaviour logs
+        // BehaviorReactToPickup.OnCharger and returns 2 (Status::Complete) without playing. The strategy
+        // still triggers on InAir alone (factory lambda 0x0060DDCE), so the gate is the behaviour's.
+        if (_preempt?.Invoke(context.Robot) is { } reason)
+        {
+            context.Robot.Engine.Log(reason);
+            _finished = true;
+            return Task.CompletedTask;
+        }
         var entry = _table.For(Trigger);
         var lib = context.Robot.Animations.Library;
         if (entry is null || lib is null) { _finished = true; return Task.CompletedTask; }
@@ -502,6 +523,19 @@ public static class ShippedBehaviors
     /// </summary>
     public static bool PickedUpForReaction(CozmoRobot r) =>
         r.Sensors.OffTreadsClassifierEnabled ? r.Sensors.OffTreadsState == OffTreadsState.InAir : r.Sensors.PickedUp;
+
+    // fidelity: M7-021
+    /// <summary>
+    /// C2h: <c>BehaviorReactToPickup::UpdateInternal</c> (0x00607BA8..0x00607CC5) keeps the behaviour alive
+    /// only while robot+0x355 == InAir <b>and</b> robot+0x338 (the on-charger-contacts boolean) is 0; when
+    /// +0x338 != 0 it logs <c>BehaviorReactToPickup.OnCharger</c> and returns 2 (Status::Complete), playing
+    /// no animation. The strategy still triggers on InAir alone (factory lambda 0x0060DDCE); this gate is
+    /// the behaviour's, not the strategy's. Returns the engine's log line when the gate applies, else null.
+    /// </summary>
+    public static string? PickupOnChargerGate(CozmoRobot r) =>
+        r.Sensors.OnChargerContacts
+            ? "info: BehaviorReactToPickup.OnCharger: Stopping behavior because we are on the charger"
+            : null;
 
     /// <summary>
     /// The 13 shipped manipulation behaviours (M12), by their config ids: two PickUpCube, four PutDownBlock,
@@ -611,7 +645,8 @@ public static class ShippedBehaviors
         // Reactions whose cause M4 reports.
         new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected,
                           r => r.Sensors.CliffDetectedNow),
-        new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
+        new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction,
+                          preempt: PickupOnChargerGate),
 
         // M10: reactions to derived robot state, transcribed from the engine's BehaviorReactToX classes.
         new ReactToRobotOnBackBehavior(),
@@ -655,7 +690,8 @@ public static class ShippedBehaviors
                 new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow),
                 strategies[ReactionTrigger.CliffDetected]),
             ("ReactToPickup", ReactionTrigger.RobotPickedUp,
-                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction),
+                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction,
+                                  preempt: PickupOnChargerGate),
                 strategies[ReactionTrigger.RobotPickedUp]),
             ("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]),
             ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),

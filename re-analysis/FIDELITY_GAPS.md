@@ -9,8 +9,8 @@ Manifest of **371 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 220 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 8 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 99 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 7 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 100 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 30 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -30,7 +30,7 @@ remains after both, and they do not go away by working harder on this repository
 | M4-control — Motion, sensors, lights and cubes | 24 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 15 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 24 | 0 | 20 | 0 | 0 | yes | no |
-| M7-behaviour — Idle, mood and reactions | 22 | 1 | 6 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 22 | 0 | 7 | 0 | 0 | yes | no |
 | M8-framework — Behaviour framework and scoring | 14 | 0 | 3 | 0 | 0 | yes | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 3 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 7 | 0 | 0 | yes | no |
@@ -74,15 +74,6 @@ status.
 Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M7-behaviour — Idle, mood and reactions
-
-**M7-021 — Reaction robot-field meanings and cliff helper bodies remain to be recovered** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/OffTreadsBehaviors.cs`
-* effect: reaction variants or cliff recovery may be named or implemented from an unsupported interpretation
-* rests on: the cited source path is only partially recovered; the unresolved field names or branches remain explicit
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: M7 gap1 G8: live reaction rows read offsets robot+0x355, +0x338, +0x300 and +0x37c; unread helper bodies 0x0055b554 and 0x005c0ca8
-* outstanding: Trace every writer/reader of the four robot offsets and disassemble helper bodies 0x0055b554 and 0x005c0ca8 with all callers.
 
 **M7-022 — DockingTestSimple developer-test state machine is not exhaustively recovered** (not on the live path)
 
@@ -728,6 +719,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so plus shipped mood_config.json
 * evidence: MoodManager::TriggerEmotionEvent 0x0067b85c; MoodManager::AddToEmotion 0x0067bdca; MoodManager::HandleActionEnded 0x0067c770; EmotionAffector::ReadFromJson 0x00679910; MoodManager::SendEmotionsToGame 0x0067b724
 * outstanding: The actionResultEmotionEvents map, the last-event clock (FLT_MAX first trigger), the event repetition penalty, the completion-enable set at +0x140 and the nine-value output are built. HandleActionEnded has no live caller because the stack has no ActionList action-ended callback; the behaviours raise their named events directly. The app-facing MoodState broadcast is not wired (same seam gap as M7-012).
+
+**M7-021 — Live reaction robot fields and the WaitForLambda/state-name helpers** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Behaviors.cs`
+* effect: a live reaction reads a differently-meaning field, or the pickup reaction fires while the robot is still on the charger
+* rests on: G-M7 independent extraction 20260929-M7-021-reaction-fields-extraction.md, checked in the shipped binary; corrected rows C2a-C2i in the M7-behaviour inventory | The four fields and the pickup gate are built; the state-name helper is log-only and its live users are M7-019/M13-017.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: robot+0x355 seven-valued OffTreadsState: parser 0x0078df58, ctor 0x005100ea, commit 0x0051208e; robot+0x338 on-charger-contacts boolean: init 0x005100c4, SetOnCharger store 0x00511c14, IS_ON_CHARGER extract 0x00512aae, call 0x00512ab4; robot+0x300 raw lift angle: store 0x0051296a; on-face threshold 45.0f literal 0x00608b54, compare 0x00608af4, select 0x00608b1e/0x00608b20; robot+0x37c filtered accel magnitude: 0.05 at 0x00512d04, 0.95 at 0x00512d08, store 0x00512a2e; BehaviorReactToPickup::UpdateInternal 0x00607bc4..0x00607c08 (+0x338 gate, return 2); WaitForLambdaAction ctor 0x0055b554, runtime CheckIfDone 0x0055dade, timeout getter 0x0055daf6; behaviour state-name setter 0x005c0ca8, channel Behaviors 0x00bee2c1, event Behavior.TransitionToState 0x005c0d4c, format 0x005c0d68; M7 callers ReactToCliff 0x00604f90/0x00605110 and DriveOffCharger 0x005c0b74/0x005c0be2/0x005c0de0
+* outstanding: Built: robot+0x338 is exposed as Sensors.OnChargerContacts and the ReactToPickup ReactBehavior applies the C2h gate (stays alive only while OffTreadsState==InAir and +0x338==0; with +0x338 set it completes without playing and logs BehaviorReactToPickup.OnCharger). The seven-valued OffTreadsState, the lift angle (45.0f comparison) and the filtered accel magnitude are already derived and read; WaitForLambdaAction is the stack's WaitUntil. Open: the state-name helper 0x005c0ca8's +0x58 store and Behavior.TransitionToState Info log line (channel Behaviors) are not reproduced (log-only; a full +0x58 scan found no behaviour-changing reader), and its M7 live users are ReactToCliff (0x00604f90/0x00605110, M7-019) and BehaviorDriveOffCharger (0x005c0b74/0x005c0be2/0x005c0de0, M13-017, built with a phase enum and not the helper).
 
 ### M8-framework — Behaviour framework and scoring
 

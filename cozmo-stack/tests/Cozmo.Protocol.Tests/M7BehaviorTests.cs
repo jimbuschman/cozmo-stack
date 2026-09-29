@@ -263,4 +263,71 @@ public class M7BehaviorTests
         Assert.Equal(1, IdleBehavior.TurnShiftSign(7));
         Assert.Equal(-1, IdleBehavior.TurnShiftSign(-7));
     }
+
+    // ---------------------------------------------------------------- M7-021 (Appendix I C2c, C2h)
+
+    /// <summary>
+    /// M7-021 C2c: robot+0x338 is the on-charger-contacts boolean, distinct from the platform flag
+    /// (+0x34A). It starts 0 from the constructor (0x005100C4) and <c>Robot::SetOnCharger</c> stores
+    /// IS_ON_CHARGER into it (extract 0x00512AAE, call 0x00512AB4, store 0x00511C14). Expected from the
+    /// inventory, not the code.
+    /// </summary>
+    [Fact]
+    public void TheOnChargerContactsFlagTracksIsOnCharger()
+    {
+        using var rig = new Rig();
+        Assert.False(rig.Robot.Sensors.OnChargerContacts);
+        rig.State(flags: (uint)RobotStatusFlag.IsOnCharger);
+        Assert.True(rig.Robot.Sensors.OnChargerContacts);
+        rig.State(flags: 0);
+        Assert.False(rig.Robot.Sensors.OnChargerContacts);
+    }
+
+    /// <summary>
+    /// M7-021 C2h: the pickup reaction stays alive only while OffTreadsState == InAir (robot+0x355 == 1)
+    /// <b>and</b> robot+0x338 (OnChargerContacts) is 0. With both set it completes without playing and logs
+    /// BehaviorReactToPickup.OnCharger (0x00607BC4..0x00607C08, 0x00607BCC, 0x00607BE2); the strategy still
+    /// triggers on InAir alone (factory lambda 0x0060DDCE). With the contacts clear the same InAir state
+    /// plays. Expected from the inventory, not the code.
+    /// </summary>
+    [Fact]
+    public void ThePickupReactionCompletesWithoutPlayingOnTheChargerContacts()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var ctx = new BehaviorContext
+        {
+            Robot = rig.Robot,
+            Triggers = AnimationTriggerMap.Load(obb),
+            Random = new Random(3),
+        };
+
+        // the head must have reported its calibration for the classifier to run (A1), as CorrectionTests does
+        rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = false });
+        for (int i = 0; i < 40; i++) rig.State();
+        for (int i = 0; i < 10; i++) rig.State((uint)(RobotStatusFlag.IsPickedUp | RobotStatusFlag.IsOnCharger));
+        Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
+        Assert.True(rig.Robot.Sensors.OnChargerContacts);
+
+        var gated = (ReactBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
+        Assert.True(gated.IsRunnable(ctx));                    // the strategy's InAir predicate still selects it
+        var lines = new List<string>();
+        rig.Robot.Engine.LogLine += lines.Add;
+        using (var scope = new BehaviorScope())
+            gated.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        Assert.Null(gated.LastSelected);                       // C2h: completed without playing
+        Assert.Contains(lines, l => l.Contains("BehaviorReactToPickup.OnCharger"));
+
+        // the contacts clear but the robot is still InAir: the same reaction plays
+        rig.State((uint)RobotStatusFlag.IsPickedUp);
+        Assert.False(rig.Robot.Sensors.OnChargerContacts);
+        Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
+        var plays = (ReactBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
+        using (var scope = new BehaviorScope())
+            plays.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        Assert.NotNull(plays.LastSelected);                    // an animation was chosen and played
+        plays.Stop(BehaviorStopReason.Cancelled);
+    }
 }

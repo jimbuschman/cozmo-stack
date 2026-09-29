@@ -291,6 +291,16 @@ public sealed class CozmoSensors
     private bool _onChargerPlatform;
     /// <summary>Whether the robot is on the charger platform (+0x34A, C8).</summary>
     public bool OnChargerPlatform { get { lock (_gate) return _onChargerPlatform; } }
+    // fidelity: M7-021
+    /// <summary>
+    /// robot+0x338: the on-charger-contacts boolean, set by <c>Robot::SetOnCharger</c> from the
+    /// IS_ON_CHARGER status bit. It is distinct from <see cref="OnChargerPlatform"/> (+0x34A), which
+    /// <c>SetOnChargerPlatform</c> derives as <c>(arg != 0) || (+0x338 != 0)</c>. C2c: the constructor
+    /// zeroes it (0x005100C4), <c>SetOnCharger</c> is its only runtime writer (store 0x00511C14), the
+    /// status bit is extracted at 0x00512AAE and <c>SetOnCharger</c> is called from
+    /// <c>UpdateFullRobotState</c> at 0x00512AB4. The pickup reaction reads it at 0x00607BCC (C2h).
+    /// </summary>
+    public bool OnChargerContacts { get { lock (_gate) return _onChargerContacts; } }
     /// <summary>RobotOnChargerPlatformEvent (C8 P1): raised with the new value when it changes.</summary>
     public event Action<bool>? OnChargerPlatformChanged;
 
