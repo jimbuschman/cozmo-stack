@@ -1,6 +1,5 @@
-# R-ANIM status
-
 DONE opencode/cozmo-manager 2026-09-29
+# R-ANIM status
 
 ## Summary
 
@@ -149,3 +148,20 @@ whole claimed path is built, the rows were verifier-checked against the binary, 
 - **M5-021** — MathF vs bionic libm in the last ULP; an EQUIVALENT_IMPLEMENTATION candidate.
 - **M10-013** — MD1, already a forced policy.
 - **M10-004** — what the firmware does with a track index instead of a mask is HARDWARE_ONLY.
+
+## Round 2 (2026-09-29)
+
+The job is complete. Round 1 ended DONE (9 records settled EXACT_SOURCE, 13 left IMPLEMENTATION_GAP with a precise
+`unresolved` each, all batches verifier-PASS and pushed). No record in scope is buildable without new source or a
+policy decision: the remaining cross-layer records name pieces that are themselves still gaps in M8 (M10-004,
+M10-008), M6 (M5-018, B-M6b-3 BLOCKED), M12/M13 (M5-022, M5-030) or M11/M4 (M10-007), and M5-013/M10-003 name
+RECOVERABLE bodies; M5-014, M5-020, M5-021 and M10-013 await the policy review.
+
+This round changed nothing but the status file's first line. `scripts/run-job.ps1` reads only line 1 of the status
+file (`Get-Status`, `-TotalCount 1`), and this file had a `# R-ANIM status` title on line 1, so the runner did not
+see `DONE` and started round 2. The DONE line now comes first, as it does in the other status files.
+
+**For the integrator (tooling):** `Get-Status` in `scripts/run-job.ps1` should scan for the first line matching
+`^(DONE|BLOCKED|WAITING)` rather than read line 1 only, or a status file that keeps a title line will loop the
+runner to `MaxRounds`. `R-DEV.md` and the G-job statuses also put a title line first, so they have the same
+exposure. Outside this job's write scope, so it is reported, not changed here.
