@@ -1189,8 +1189,10 @@ public class EngineAppLayerTests
     /// nothing is in flight (0x00645B08..0x00645B26), and the engine Robot constructor queues 12 reads ahead of
     /// the connection's CameraCalib/Lab/Needs reads, so it waits for the whole queue (nv-pass3-connection-queue.md
     /// Q2 2m). CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the streamer
-    /// runs only when synced and ready (0x00513BF2..0x00514470), so streaming opens in the Robot::Update of the tick
-    /// that completes the last read.
+    /// runs only when synced and ready (0x00513BF2..0x00514470). The completion only sets state 0 (0x006437EE), so
+    /// the on-idle callback runs in NVStorage::Update's state-0 path of that tick (0x006456EC), and streaming opens
+    /// on the next Robot::Update: the streamer gate is computed before NVStorage::Update
+    /// (0x0051410C..0x0051411E before 0x0051416A).
     /// </summary>
     [Fact]
     public void M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState()
@@ -1219,9 +1221,13 @@ public class EngineAppLayerTests
         Assert.False(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);
 
-        // the last read completes: the queue drains, and the on-idle callback then sets +0x2A
+        // the last read completes: the queue drains, and the same tick's NVStorage::Update state-0 path runs the
+        // on-idle callback (0x006456EC). The streamer gate was already computed this tick, so streaming is still
+        // closed (0x0051410C..0x0051411E before 0x0051416A).
         rig.AnswerInFlight();
         Assert.True(rig.Engine.Robot!.ReadyToStream);
+        Assert.False(rig.Robot.AnimationStreamingOpen);
+        rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
     }
 
@@ -1624,6 +1630,9 @@ public class EngineAppLayerTests
         // per tick, and ready to stream waits for all of them.
         rig.SendFirstFullState(timestamp: 7);
         while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
+        // the last AnswerInFlight's tick sets ready to stream but computed the streamer gate before NVStorage ran;
+        // the next tick opens streaming (0x0051410C..0x0051411E before 0x0051416A).
+        rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
         Assert.Equal(1, rig.Robot.State.StateCount);
         Assert.Equal(1, vision.History.Count);

@@ -2197,8 +2197,10 @@ public class M3DeviceTests
         Assert.False(rig.Engine.Robot!.ReadyToStream);             // the last read is still in flight
         Assert.Equal(0, updates);
 
-        AnswerInFlight(rig);                                       // the last read completes; the on-idle callback opens ready
+        AnswerInFlight(rig);                                       // the last read completes; the state-0 path opens ready
         Assert.True(rig.Engine.Robot!.ReadyToStream);
+        Assert.Equal(0, updates);                                  // the streamer gate was computed before NVStorage::Update
+        rig.Tick();                                                // the next Update opens streaming and runs the streamer
         Assert.Equal(1, updates);
         rig.Tick();
         Assert.Equal(2, updates);

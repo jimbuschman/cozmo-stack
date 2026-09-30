@@ -1116,11 +1116,12 @@ public sealed class EngineRobot
 
     // fidelity: M1-041
     /// <summary>
-    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32). The callback is appended and runs from
-    /// <see cref="NvStorageComponent.ProcessOnIdle"/> only when the NV request deque is empty and nothing is in
-    /// flight, so the AnimationStreamer (ready to stream) starts only after every queued NV request has drained.
-    /// It is not run at the moment it is added, or the calibration read queued later in the same connection
-    /// broadcast would be missed.
+    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32). The callback is appended and
+    /// <see cref="NvStorageComponent.ProcessOnIdle"/> is called at once, so it runs immediately when the NV request
+    /// deque is empty and nothing is in flight, else it waits for the state-0 path of a later
+    /// <see cref="NvStorageComponent.Update"/>. The AnimationStreamer (ready to stream) therefore starts only after
+    /// every queued NV request has drained; at connection the calibration/Lab/Needs reads queued in the same
+    /// broadcast keep it waiting.
     /// </summary>
     internal void NvOnIdle(Action callback) => Engine.NvStorage?.OnIdle(callback);
 
@@ -1151,8 +1152,10 @@ public sealed class EngineRobot
     /// Robot::Update (CD12): the idle component always runs; then the SyncTimeAck check (CD19: +0x520 &gt; 0 and
     /// now &gt; +0x520 + 5.0 s warns "SyncTimeAckNotReceived" and sets +0x520 = 0; never retried); then, if the first
     /// full state has not been handled, it returns. After that: ActionList (none in this stack), the
-    /// AnimationStreamer only if synced and ready to stream, then NVStorage (its on-idle callbacks run here when
-    /// the request deque is empty and nothing is in flight, CD20, which is what opens ready to stream). The later
+    /// AnimationStreamer only if synced and ready to stream, then NVStorage (its state-0 path sends the queued
+    /// request and then runs its on-idle callbacks when the request deque is empty and nothing is in flight, CD20,
+    /// which is what opens ready to stream). The streamer gate is computed before NVStorage runs, so streaming
+    /// opens on the Update after the queue drains (0x0051410C..0x0051411E before 0x0051416A). The later
     /// components (path, block filter, object connection, map, lights) run in their own layers in this stack.
     /// </summary>
     internal void Update()
@@ -1172,11 +1175,11 @@ public sealed class EngineRobot
         if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
         // fidelity: M1-041, M3-022, M3-026, M3-031
         // CD12: NVStorage::Update runs here, after the animation streamer. M3-026/M3-027: in state 0 it pops and
-        // sends the queued request (the connection reads queue on Read and go out only here); M3-031: in state 2 it
-        // checks the read's 5 s synchronised-clock deadline. Then its on-idle callbacks run now if the request deque
-        // is empty and nothing is in flight, which is what gates ready to stream (CD20).
+        // sends the queued request (the connection reads queue on Read and go out only here) and then runs its
+        // on-idle callbacks (0x006456EC), which is what gates ready to stream (CD20); M3-031: in state 2 it checks
+        // the read's 5 s synchronised-clock deadline. Streaming opens on the next Update: the streamer gate above
+        // is computed before this runs (0x0051410C..0x0051411E before 0x0051416A).
         Engine.NvStorage?.Update();
-        Engine.NvStorage?.ProcessOnIdle();
         // fidelity: M4-010, M4-017, M4-018, M4-023
         // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
         // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).

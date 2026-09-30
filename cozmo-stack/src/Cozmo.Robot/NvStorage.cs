@@ -22,8 +22,10 @@ namespace Cozmo.Robot;
 /// <c>ReadOpFailed</c> (M3-031); a 5 s robot-clock timeout delivers <c>-4</c> with no retry (<see cref="Update"/>,
 /// M3-031);</item>
 /// <item><b>terminal ordering (M3-022 / M1 CD20):</b> on a terminal result the request's own callback runs to
-/// completion first (the calibration is installed and vision enabled there), and only then, with the queue empty
-/// and nothing in flight, does an on-idle callback run (ready to stream);</item>
+/// completion first (the calibration is installed and vision enabled there); the completion then only sets state 0
+/// (0x006437EE; SetState 0x00642B0C runs no callbacks), so the on-idle callback (ready to stream) runs on the
+/// next <see cref="Update"/>'s state-0 path (0x006456EC) or at once from <see cref="OnIdle"/> when idle
+/// (AddOneShotOnIdleCallback, 0x00645C32);</item>
 /// <item>a disconnect discards the queue and the in-flight request without invoking any read callback or timeout
 /// (M3-035).</item>
 /// </list>
@@ -331,16 +333,18 @@ public sealed class NvStorageComponent : IDisposable
     private uint SyncedClock => _robot.Engine.Robot?.StoredState?.Timestamp ?? 0u;
 
     /// <summary>
-    /// Adds a one-shot on-idle callback (M1 CD20, CB22). It is appended and runs on the next
-    /// <see cref="ProcessOnIdle"/> with the queue empty and nothing in flight; it never runs at the moment it is
-    /// added, so a read queued later in the same connection broadcast is waited for.
+    /// Adds a one-shot on-idle callback (M1 CD20, CB22; AddOneShotOnIdleCallback 0x00645C20..0x00645C32). It is
+    /// appended and then <see cref="ProcessOnIdle"/> is called at once, so the callback runs immediately when the
+    /// component is idle (the deque empty and nothing in flight); otherwise it waits for the state-0 path of a
+    /// later <see cref="Update"/>.
     /// </summary>
-    public void OnIdle(Action callback) { lock (_gate) _onIdle.Add(callback); }
+    public void OnIdle(Action callback) { lock (_gate) _onIdle.Add(callback); ProcessOnIdle(); }
 
     /// <summary>
-    /// ProcessOnIdleCallbacks (CD20, 0x00645B10..0x00645B26): runs the pending callbacks only when the queue is
-    /// empty and nothing is in flight. Called from Robot::Update's NVStorage step (CD12), and by the request
-    /// completion path only after the completed request's own callback has run.
+    /// ProcessOnIdleCallbacks (CD20, 0x00645B08..0x00645B26): runs the pending callbacks only when the queue is
+    /// empty and nothing is in flight. Called from <see cref="Update"/>'s state-0 path (0x006456EC) and from
+    /// <see cref="OnIdle"/> (AddOneShotOnIdleCallback, 0x00645C32). A request completion does not run it: 0x006437EE
+    /// calls only SetState(0), and SetState (0x00642B0C) runs no callbacks.
     /// </summary>
     public void ProcessOnIdle()
     {
@@ -356,17 +360,20 @@ public sealed class NvStorageComponent : IDisposable
 
     // fidelity: M3-026, M3-027, M3-030, M3-031
     /// <summary>
-    /// NVStorageComponent::Update (0x6456A4). In state 0 with a queued request it calls ProcessRequest, which pops
-    /// the front and sends it (0x6456BC..0x6456CC). In state 2 (a read pending) it only checks the 5 s deadline:
-    /// when the synchronised clock (robot+0x2C) is strictly greater than <c>+0x74</c> it delivers <c>(-4, empty)</c>
-    /// to the callback only - no broadcast chunk - and clears the pending request (0x64575A..0x6457C0). A
-    /// completion sets state 0; the next queued request goes out on the next Update, not from the completion.
+    /// NVStorageComponent::Update (0x6456A4). In state 0 (nothing in flight) it calls ProcessRequest, which pops
+    /// the front and sends it (0x6456BC..0x6456CC), then ProcessOnIdleCallbacks (0x6456EC); when the queue is empty
+    /// ProcessRequest sends nothing and the on-idle callbacks still run here. In state 2 (a read pending) it only
+    /// checks the 5 s deadline: when the synchronised clock (robot+0x2C) is strictly greater than <c>+0x74</c> it
+    /// delivers <c>(-4, empty)</c> to the callback only - no broadcast chunk - and clears the pending request
+    /// (0x64575A..0x6457C0). A completion sets state 0; the next queued request and the on-idle callbacks run on
+    /// the next Update's state-0 path, not from the completion.
     /// Called from Robot::Update after Gate A (0x0051416A, CozmoEngine).
     /// </summary>
     public void Update()
     {
         Action<NvResult>? timeoutCallback = null;
         NvResult timeoutResult = default;
+        bool runOnIdle = false;
         lock (_gate)
         {
             if (_inFlight is { } req)
@@ -384,13 +391,16 @@ public sealed class NvStorageComponent : IDisposable
                     }
                 }
             }
-            else if (_queue.Count > 0)
+            else
             {
-                StartNextLocked();
+                // State 0 (0x6456BC..0x6456EC): ProcessRequest sends the front, if any, then ProcessOnIdleCallbacks.
+                if (_queue.Count > 0) StartNextLocked();
+                runOnIdle = true;
             }
         }
         // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
         timeoutCallback?.Invoke(timeoutResult);
+        if (runOnIdle) ProcessOnIdle();
     }
 
     /// <summary>
@@ -405,7 +415,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
 
-    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool RunOnIdle);
+    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts);
 
     private void OnResult(NVOpResult r)
     {
@@ -568,10 +578,10 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-030, M3-034
     /// <summary>
     /// M3-030: completes the request, filling the sink, building the broadcast chunks and setting state 0. The
-    /// callback, the broadcasts and the on-idle callbacks run outside the lock, in the engine's order: the request's
-    /// own callback first, then the broadcast, then (when the queue is now empty) the on-idle callbacks. The sink
-    /// (+0x54) was cleared at arm, so this only appends the assembled bytes. The completion does not start the next
-    /// request (SetState(0) only, 0x6437EA); <see cref="Update"/> sends it.
+    /// callback and the broadcasts run outside the lock, in the engine's order: the request's own callback first,
+    /// then the broadcast. The sink (+0x54) was cleared at arm, so this only appends the assembled bytes. The
+    /// completion does not start the next request and does not run the on-idle callbacks (SetState(0) only,
+    /// 0x6437EA; SetState 0x00642B0C runs no callbacks); <see cref="Update"/> sends the next request and runs them.
     /// </summary>
     private Completion CompleteLocked(PendingRequest req, sbyte result, byte[] data)
     {
@@ -580,7 +590,7 @@ public sealed class NvStorageComponent : IDisposable
         if (req.Sink is { } sink) sink.AddRange(data);
         req.Deadline = null;
         _inFlight = null;
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, _queue.Count == 0);
+        return new Completion(req.Callback, new NvResult(result, data), broadcasts);
     }
 
     private void Deliver(Completion c)
@@ -588,7 +598,6 @@ public sealed class NvStorageComponent : IDisposable
         c.Callback?.Invoke(c.Result);
         if (c.Broadcasts is not null)
             foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
-        if (c.RunOnIdle) ProcessOnIdle();
     }
 
     // fidelity: M3-030
