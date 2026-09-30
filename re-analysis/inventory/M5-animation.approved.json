@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-09-29",
+  "approved": "2026-09-30",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "0ac1f83eec98be4c10b7cfd8866e87fb0f7c01ea38ada39b67e6fc16f39dfd1a",
+  "inventory_sha256": "20df2c19421e827341bec79cdf235f8edac1bdba340a1d4e7e5a2d9c61e7a8a5",
   "records": {
     "M5-001": {
       "status": "EXACT_SOURCE",
@@ -55,7 +55,7 @@
       "hardware_required": false
     },
     "M5-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -201,7 +201,7 @@
       "hardware_required": false
     },
     "M5-017": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [

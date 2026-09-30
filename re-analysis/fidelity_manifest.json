@@ -119,7 +119,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M5-animation.md",
-        "approved": "2026-09-29",
+        "approved": "2026-09-30",
         "snapshot": "re-analysis/inventory/M5-animation.approved.json"
       }
     },
@@ -210,7 +210,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M12-manipulation.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-09-29",
+        "approved": "2026-09-30",
         "snapshot": "re-analysis/inventory/M12-manipulation.approved.json"
       }
     },
@@ -1895,7 +1895,7 @@
       "subsystem": "M5-animation",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
@@ -1905,7 +1905,7 @@
       "test": "M5AnimationTests.M5_005_C3_VariabilityIsNotClamped, AnimationGapTests.VariabilityIsAppliedToHeadAndLiftKeyframesAtStreamTime, M5AnimationTests.M5_005_R1_Mt19937AndGetNextDbl",
       "effect": "keyframe values vary differently",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): WithVariability draws RandIntInRange(v - var, v + var) (gap1: a + trunc(u·(b - a + 1)), EngineRandom) on the scheduler's keyframe RNG each time the keyframe's message is built, and the result is cast unchecked (sbyte for the head, byte for the lift): no clamp, so it truncates or wraps (C2, C3). The uniform source behind the draw is System.Random; the engine's mt19937 stream and seed are not in the inventory, so no sequence is claimed. Verify round 1 (2026-09-25, corrections C1..C3, gap4): IKeyFrame::sRNG is a ported std::mt19937 (Mt19937) seeded from OS entropy (RandomNumberGenerator for /dev/urandom, R2, C3); GetNextDbl = (d0 + d1·2^32)·2^-64 (R1). The scheduler's test seam (a given Random) seeds it instead.",
-      "unresolved": "",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): for seed 0 the engine reads /dev/urandom once (0x0082F898) and seeds mt19937 with that word even if it is zero (0x0082F89C..0x0082F8A4); EngineRandom.EntropySeed loops until the word is nonzero. No test covers the production entropy branch.",
       "hardware_required": false
     },
     {
@@ -2124,7 +2124,7 @@
       "subsystem": "M5-animation",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC"
@@ -2134,7 +2134,7 @@
       "id": "M5-017",
       "effect": "a different sound plays",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AudioAnimation.Start draws r = (float)RandDbl(1) on the keyframe RNG and takes ChooseAlternative: the first alternative with lower <= r <= upper over the cumulative probabilities, skipping |p| < 1e-5; none → nothing plays (C14). Loaded keyframes always carry N probabilities summing to at most 1 (C13); ChooseAlternative's 1/N fallback is only for keyframes built in code with other probabilities. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The alternative draw is on sRNG, the entropy-seeded mt19937 (R2).",
-      "unresolved": "",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): the audio-alternative draw uses the entropy-seeded keyframe RNG, so it inherits M5-005's zero-entropy retry defect (EngineRandom.cs vs 0x0082F86A..0x0082F8A4). The named tests inject nonzero seeds.",
       "hardware_required": false
     },
     {
@@ -3789,7 +3789,7 @@
       ],
       "effect": "a pre-action pose is built at the wrong distance or angle, or the drive threshold accepts a pose the engine would reject",
       "provenance": "the current code used 49 for PlaceOnGround and 56.5771 for Flipping as the distance, a planar X/Y threshold, and a guessed floor; none of that is the engine's",
-      "unresolved": "R-VIS: downgraded from EXACT_SOURCE because GetCurrentPreActionPoses' validity filter is owned by M12-036 (an IMPLEMENTATION_GAP with the floorf correction) and a settled record must own its whole path. Built (R-VIS M12 fix round 2): CubePreActionPoses.GetCurrentPreActionPoses = ascending ActionType walk over a per-object cache vector (generated when empty), the withCode filter, the offset-0 b formula (ComposeWorld), the virtual IsPreActionPoseValid push (M12-036) and the return byte sb&1 (a cache vector was generated); DockPreActionPoses.UprightOnly and UprightMinZz are gone everywhere (code and tests). GetPreActionPoses passes an EMPTY withCode set and ignores the result byte (0x00550A1C..0x00550A42, read by the fix-round-2 verifier); CHOICE: the per-object cache is never cleared (the engine's invalidation is not in the inventory; the cached elements are pose-independent, so only the return byte could differ). Fix round 3: the validity filter now uses floorf for the sweep step count (M12-036); the record stays IMPLEMENTATION_GAP until M12-036 is settled. Still open: PreActionPose+0x14 has no reader found (M12-038 RECOVERABLE_GAP); the visualise block is not modelled.",
+      "unresolved": "R-VIS: downgraded from EXACT_SOURCE because GetCurrentPreActionPoses' validity filter is owned by M12-036 (an IMPLEMENTATION_GAP with the floorf correction) and a settled record must own its whole path. Built (R-VIS M12 fix round 2): CubePreActionPoses.GetCurrentPreActionPoses = ascending ActionType walk over a per-object cache vector (generated when empty), the withCode filter, the offset-0 b formula (ComposeWorld), the virtual IsPreActionPoseValid push (M12-036) and the return byte sb&1 (a cache vector was generated); DockPreActionPoses.UprightOnly and UprightMinZz are gone everywhere (code and tests). GetPreActionPoses passes an EMPTY withCode set and ignores the result byte (0x00550A1C..0x00550A42, read by the fix-round-2 verifier); CHOICE: the per-object cache is never cleared (the engine's invalidation is not in the inventory; the cached elements are pose-independent, so only the return byte could differ). Fix round 3: the validity filter now uses floorf for the sweep step count (M12-036); the record stays IMPLEMENTATION_GAP until M12-036 is settled. Still open: PreActionPose+0x14 has no reader found (M12-038 RECOVERABLE_GAP); the visualise block is not modelled. Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): the Flipping corner is binary32 0x42624EEF (0x004E5CB2..0x004E5CBC), the code keeps the double 56.5771 (binary32 0x42624EF3); the close-enough threshold is computed in binary32 (vmul/vadd/vsqrt.f32, sinf, 0x00550102..0x00550164), the code uses double; ManipulationTests copies the same decimal and arithmetic.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests; M12RVisBuildTests.M12_001_*; M12RVisBuildTests.M12_020_*; M12RVisBuildTests.M12_036_*"
@@ -3799,7 +3799,7 @@
       "subsystem": "M12-manipulation",
       "title": "Path segment, ExecutePath and ClearPath packings; the path-motion-profile defaults and their wiring",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204: PathDolerOuter::Dole 0x00507E4C (line send 0x00507FE0, arc 0x00508036, point turn 0x00507F8E); PathComponent::ExecutePath 0x0064A340 (build 0x0064A426/0x0064A42A/0x0064A430, send 0x0064A436/0x0064A442); PathComponent::ClearPath 0x00649220 (0x00649268/0x0064926A) with the id correlation 0x00649234/0x0064923A; SpeedChooser::GetPathMotionProfile 0x0053B798 from the table 0x00C535E0; the consumer path DriveToPoseAction::Init 0x0055A86C -> StartDrivingToPose 0x0055A998 -> 0x0064ADE0 -> [PathComponent+0x4C] -> HandlePlanComplete 0x00649F76/0x00649F82 -> ExecutePath 0x0064A0A4",
       "evidence": [
         "PathDolerOuter::Dole 0x00507E4C: 0x00507F40/0x00507F44/0x00507F48 cmp r1,#1/2/3; line 0x00507FE0 blx 0x4A7234; arc 0x00508036 blx 0x4A7240; point turn 0x00507F8E blx 0x4A7228",
@@ -3813,7 +3813,7 @@
       ],
       "effect": "the robot receives path segments with the wrong fields, or an execute/clear with the wrong id",
       "provenance": "the record's packing citation pointed at the PlaceObjectOnGround builder, and the profile's consumer was misidentified as UpdatePlanning",
-      "unresolved": "compare RobotPath.cs with PathDolerOuter::Dole, ExecutePath, ClearPath and the 0x00C535E0 profile table; DriveToObjectAction's own ctor constants are separate (0x0055850C)",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): PathDolerOuter increments the u16 path id with no zero case (ldrh/adds #1/strh 0x0064A3C2..0x0064A3CA), so 0xFFFF wraps to 0; RobotPath.cs turns 0 into 1. No test covers the rollover. Before: compare RobotPath.cs with PathDolerOuter::Dole, ExecutePath, ClearPath and the 0x00C535E0 profile table; DriveToObjectAction's own ctor constants are separate (0x0055850C)",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests"
@@ -3905,7 +3905,7 @@
       "subsystem": "M12-manipulation",
       "title": "The two timed checks a pick-up is verified against",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
       "evidence": [
         "0x00553BE0 Verify; 0x00553BF8 str.w r5,[r7,#0x10c]; 0x00553C8E blx r2 (IsMoving); 0x00553C98 ldr.w r0,[r7,#0x118]; 0x00553CAA blx 0x4A7B7C",
@@ -3914,7 +3914,7 @@
       ],
       "effect": "a failed pick-up is not detected, or a good one is discarded",
       "provenance": "the record had the checks but the dock-action-dependent timeout selection was incomplete",
-      "unresolved": "compare DockActions.cs with PickupObjectAction::Verify 0x00553BE0",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): PickupObjectAction::Verify is multi-update: still moving and now <= firstVerify+500 returns RUNNING (0x00553C98..0x00553CA0 -> 0x00554056); DockActions.cs calls Verify once and falls through to Success inside the allowance. PickupVerifyTests checks only the constants. Before: compare DockActions.cs with PickupObjectAction::Verify 0x00553BE0",
       "hardware_required": false,
       "live_path": true,
       "test": "PickupVerifyTests.TheVerifyTimeoutsAreTheEngines"
@@ -3970,7 +3970,7 @@
       "subsystem": "M12-manipulation",
       "title": "The search-for-block pattern, built",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/SearchActions.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204: SearchForNearbyObjectAction ctor 0x005469C0 and Init 0x00546C14; SearchForBlockHelper::SearchForBlock 0x005BAF24 (state 0 0x005BAF9A, state 1 0x005BB1AA, state 2 0x005BB066); SearchFinishedWithoutInterruption 0x005BB478 (object+0x24 == 1 at 0x005BB49E/0x005BB4A2); the callers DriveToHelper::RespondToDriveResult (0x005B5D68) and PickupBlockHelper::RespondToPickupResult (0x005B83B6)",
       "evidence": [
         "ctor 0x005469C0: 0x00546A38 0x3F4CCCCD (0.8); 0x00546A6C 0x3F99999A (1.2); 0x00546A52 0x3E860A92 (0.261799); 0x00546A56 0x3EB2B8C2 (0.349066); stores +0x14C/+0x150/+0x154 at 0x00546A68/70/74",
@@ -3986,7 +3986,7 @@
       ],
       "effect": "the robot gives up where the app looks around for the cube",
       "provenance": "the record's state-1 text stopped after the second drive and omitted the last two turns and the second search; the caller site was wrong",
-      "unresolved": "compare SearchActions.cs with the pattern above",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): (1) engine binary32 constants 0x3E860A92, 0x3EB2B8C2, 0x3D8EFA35, 0x3D0EFA35 (0x00546A3E..0x00546A56, 0x00546ED2..0x00546EDA, 0x00546E56..0x00546E60) and 0xBDB2B8C2/0x3F490FDB are replaced by rounded decimal doubles in SearchActions.cs; (2) the engine draws from the action/context RNG via the virtual call at 0x00546C34 etc., the C# uses a private System.Random; (3) state 0 discards the TurnTowardsObjectAction result, while CompoundActionSequential::UpdateInternal 0x0054F70C propagates a child failure. SearchForBlockTests asserts the rounded decimals. Before: compare SearchActions.cs with the pattern above",
       "hardware_required": false,
       "live_path": true,
       "test": "SearchForBlockTests"
@@ -4031,7 +4031,7 @@
       ],
       "effect": "the stack refuses a cube lying on its side that the engine would stack on, or accepts a tilted one",
       "provenance": "the current code tested UpAxisFromPose() == ZPositive; the engine tests acos(|dot|) < 10 deg",
-      "unresolved": "Fix round 3 (fix-round-2 verifier): the unsupported PoseState Known/Dirty check is REMOVED (the helper 0x0063C654..0x0063C794 reads none; its test asserted Unknown -> false from the implementation and now asserts the opposite from the citation) and IsPoseTooHigh is given the object's pose WITH RESPECT TO THE ROBOT pose (0x00877955), disclosed change: with the robot z at 0 the result is the same, a robot z != 0 now differs from the earlier world-z reading; without a robot pose the answer is false (the helper's GetWithRespectTo failure). Built: DockingSystem.CanStackOnTopOfObject = CanInteractWithObjectHelper && !IsPoseTooHigh(1.0, 15.0, 0.5); the helper checks family in {Block, LightCube}, IsRestingFlat(10 deg), not currently carried, GetWithRespectTo (always succeeds in this stack, one pose origin) and nothing found on top within 15.0 (M13-007's search, M13-023 stand-in for tilted/non-cube pairs). CanPickUpObject 0x0063C7F0 and CanPickUpObjectFromGround 0x0063C880 are recorded but have NO C# caller, so they are not built. The record's location file (ManipulationBehaviors.cs) is a caller; the code is in Docking.cs. Stays IMPLEMENTATION_GAP: the on-top search is M13-007/M13-023.",
+      "unresolved": "Fix round 3 (fix-round-2 verifier): the unsupported PoseState Known/Dirty check is REMOVED (the helper 0x0063C654..0x0063C794 reads none; its test asserted Unknown -> false from the implementation and now asserts the opposite from the citation) and IsPoseTooHigh is given the object's pose WITH RESPECT TO THE ROBOT pose (0x00877955), disclosed change: with the robot z at 0 the result is the same, a robot z != 0 now differs from the earlier world-z reading; without a robot pose the answer is false (the helper's GetWithRespectTo failure). Built: DockingSystem.CanStackOnTopOfObject = CanInteractWithObjectHelper && !IsPoseTooHigh(1.0, 15.0, 0.5); the helper checks family in {Block, LightCube}, IsRestingFlat(10 deg), not currently carried, GetWithRespectTo (always succeeds in this stack, one pose origin) and nothing found on top within 15.0 (M13-007's search, M13-023 stand-in for tilted/non-cube pairs). CanPickUpObject 0x0063C7F0 and CanPickUpObjectFromGround 0x0063C880 are recorded but have NO C# caller, so they are not built. The record's location file (ManipulationBehaviors.cs) is a caller; the code is in Docking.cs. Stays IMPLEMENTATION_GAP: the on-top search is M13-007/M13-023. Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): the ten-degree tolerance is binary32 0x3E32B8C2 (0x0063C66C..0x0063C670), the code uses the double 0.174533 (binary32 0x3E32B8C7); RestingFlatTests rounds to degrees.",
       "hardware_required": false,
       "live_path": true,
       "test": "RestingFlatTests.ACubeIsFlatWhenItsZLiesNearAParentAxis; M12RVisBuildTests.M12_012_*"
@@ -4132,7 +4132,7 @@
       ],
       "effect": "the dock action never completes or never sets the squint the engine sets",
       "provenance": "the setup and handler registration had no record",
-      "unresolved": "Built: IDockAction.Init in the 14-step order: the observed-marker choice for [+0xB9]==0 (GetObservedMarkers; none 0x0300001D; one; several by 3-D squared distance, strict <), the join (null marker 0x03000002, [+0x82] = code, [+0x84] = 3), SetupTurnAndVerifyAction (M12-037), InitInternal, then the compound run (only {0, RUNNING} continue). The sub-action bodies (VisuallyVerifyNoObjectAtPoseAction M8, TurnTowardsObjectAction M13) run through IDockSubActionExecutor whose default StandInDockSubActions is a labelled stand-in (verify: counted no-op stub; turn: the existing TurnTowardsObjectAsync with max turn pi plus the earlier 2 s visible-marker wait) FOR THE ENGINE-SHAPED PATH ONLY: the legacy PlaceRelObjectAction(m, id, onTop) keeps the pre-batch flow (no compound, no observed-marker choice, no visible-marker wait, the marker facing the robot, the placement-clear check; M12-028). Handler bodies for tags 0xC5/0xDA (M12-034) and steps 1, 3, 10, 11, 12 stay unmodelled. MISSING: the IDockAction constructor default of [+0xF7] (false chosen; the wire factories store 1) and the per-subclass result of vtbl+0x34 (the null case, [+0x84] = 3, is taken for every subclass). Consequence for every NON-legacy dock run with CheckPreActionPose=false (DockHelper-driven Pickup, Roll, PopAWheelie and engine-shaped PlaceRel actions): the dock marker is now the observed marker nearest the robot, where the earlier code used the visible marker (pickup) or the marker facing the robot (place); the verify-no-object step of pickups is a counted no-op stub.",
+      "unresolved": "Built: IDockAction.Init in the 14-step order: the observed-marker choice for [+0xB9]==0 (GetObservedMarkers; none 0x0300001D; one; several by 3-D squared distance, strict <), the join (null marker 0x03000002, [+0x82] = code, [+0x84] = 3), SetupTurnAndVerifyAction (M12-037), InitInternal, then the compound run (only {0, RUNNING} continue). The sub-action bodies (VisuallyVerifyNoObjectAtPoseAction M8, TurnTowardsObjectAction M13) run through IDockSubActionExecutor whose default StandInDockSubActions is a labelled stand-in (verify: counted no-op stub; turn: the existing TurnTowardsObjectAsync with max turn pi plus the earlier 2 s visible-marker wait) FOR THE ENGINE-SHAPED PATH ONLY: the legacy PlaceRelObjectAction(m, id, onTop) keeps the pre-batch flow (no compound, no observed-marker choice, no visible-marker wait, the marker facing the robot, the placement-clear check; M12-028). Handler bodies for tags 0xC5/0xDA (M12-034) and steps 1, 3, 10, 11, 12 stay unmodelled. MISSING: the IDockAction constructor default of [+0xF7] (false chosen; the wire factories store 1) and the per-subclass result of vtbl+0x34 (the null case, [+0x84] = 3, is taken for every subclass). Consequence for every NON-legacy dock run with CheckPreActionPose=false (DockHelper-driven Pickup, Roll, PopAWheelie and engine-shaped PlaceRel actions): the dock marker is now the observed marker nearest the robot, where the earlier code used the visible marker (pickup) or the marker facing the robot (place); the verify-no-object step of pickups is a counted no-op stub. Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): CheckIfDone calls DockWithObject first (0x005522AE) and AddSquint only on the started-docking branch (0x00552394); DockActions.cs adds the squint before DockAsync. The 0xC5/0xDA handlers are registered by IDockAction::Init (0x005516EA, 0x00551750) for the action, while Docking.cs subscribes once for the DockingSystem's lifetime and raises MovingLiftPostDock with no active action.",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_017_*; M12RVisBuildTests.M12_037_*; M12RVisBuildTests.M12_028_*; ManipulationTests"
@@ -4159,7 +4159,7 @@
       "subsystem": "M12-manipulation",
       "title": "The docking-error-signal clamp is 40 degrees",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194",
       "evidence": [
         "0x0063C182/0x0063C188 form 0x3F32B8C2 (40 deg); 0x0063C194 blx 0x4A6FD0 (ClampPoseToFlat)",
@@ -4167,7 +4167,7 @@
       ],
       "effect": "the error signal's angle is clamped to the wrong range",
       "provenance": "the 40-degree clamp had no record; the 20-degree pose-confirm clamp is M11-006",
-      "unresolved": "compare Docking.cs with the clamp at 0x0063C182/0x0063C188",
+      "unresolved": "Calibration audit (re-analysis/research/20260929-audit-calibration.md, Codex; manager re-checked the cited addresses in the binary 2026-09-30): the clamp is binary32 0x3F32B8C2 (movw/movt 0x0063C182..0x0063C188, passed to ClampPoseToFlat 0x0063C194); Docking.cs uses the double 0.698132 (binary32 0x3F32B8C7). Before: compare Docking.cs with the clamp at 0x0063C182/0x0063C188",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"

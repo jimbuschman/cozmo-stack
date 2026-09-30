@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-09-29",
+  "approved": "2026-09-30",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "4fafc1e0e4fd40a147086958c455b213fae28a1a2a68e408bfb62b9c169b00be",
+  "inventory_sha256": "8ecb92c761139f09f9d11818a012533666b6ad44e5ae744bcc1662e1a6fdce47",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -36,7 +36,7 @@
       "hardware_required": false
     },
     "M12-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Path segment, ExecutePath and ClearPath packings; the path-motion-profile defaults and their wiring",
       "authority": "libcozmoEngine.so 3.4.0-1204: PathDolerOuter::Dole 0x00507E4C (line send 0x00507FE0, arc 0x00508036, point turn 0x00507F8E); PathComponent::ExecutePath 0x0064A340 (build 0x0064A426/0x0064A42A/0x0064A430, send 0x0064A436/0x0064A442); PathComponent::ClearPath 0x00649220 (0x00649268/0x0064926A) with the id correlation 0x00649234/0x0064923A; SpeedChooser::GetPathMotionProfile 0x0053B798 from the table 0x00C535E0; the consumer path DriveToPoseAction::Init 0x0055A86C -> StartDrivingToPose 0x0055A998 -> 0x0064ADE0 -> [PathComponent+0x4C] -> HandlePlanComplete 0x00649F76/0x00649F82 -> ExecutePath 0x0064A0A4",
       "evidence": [
@@ -107,7 +107,7 @@
       "hardware_required": false
     },
     "M12-007": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The two timed checks a pick-up is verified against",
       "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
       "evidence": [
@@ -151,7 +151,7 @@
       "hardware_required": false
     },
     "M12-010": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The search-for-block pattern, built",
       "authority": "libcozmoEngine.so 3.4.0-1204: SearchForNearbyObjectAction ctor 0x005469C0 and Init 0x00546C14; SearchForBlockHelper::SearchForBlock 0x005BAF24 (state 0 0x005BAF9A, state 1 0x005BB1AA, state 2 0x005BB066); SearchFinishedWithoutInterruption 0x005BB478 (object+0x24 == 1 at 0x005BB49E/0x005BB4A2); the callers DriveToHelper::RespondToDriveResult (0x005B5D68) and PickupBlockHelper::RespondToPickupResult (0x005B83B6)",
       "evidence": [
@@ -277,7 +277,7 @@
       "hardware_required": false
     },
     "M12-019": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The docking-error-signal clamp is 40 degrees",
       "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194",
       "evidence": [

@@ -801,3 +801,7 @@ All addresses are in `resources/lib/armeabi-v7a/libcozmoEngine.so`. All 7 items 
 ## Correction A1 (manager audit, 2026-09-29)
 
 The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
+
+## Correction A2 (manager, 2026-09-30, the calibration audit)
+
+Codex's independent re-audit (`re-analysis/research/20260929-audit-calibration.md`) found settled records here that do not hold. The manager re-checked the central addresses in the binary. M5-005 and M5-017 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source.

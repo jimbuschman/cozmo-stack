@@ -911,3 +911,7 @@ writes +0x13C/+0x140), and every direct caller of the 7-arg ctor passes 0 (0x005
 0x005CBE74, 0x00559CF2, 0x0055EB20); only `IDriveToInteractWithObject` 0x0055B1F4 forwards its own
 float argument. So `preDockPoseOffset_mm = 0` on every path this stack builds, and the offset-0
 branch (`b = min(dist2, element+0x18)`) is the one that runs.
+
+## Correction A2 (manager, 2026-09-30, the calibration audit)
+
+Codex's independent re-audit (`re-analysis/research/20260929-audit-calibration.md`) found settled records here that do not hold. The manager re-checked the central addresses in the binary. M12-002, M12-007, M12-010 and M12-019 go back to IMPLEMENTATION_GAP, and M12-001, M12-012 and M12-017 keep their status with the defect added, each with its defect in `unresolved`, to be rebuilt from the cited source. M12-004's one-pose gate (0x005BEE7C..0x005BEE86), which the report also found, was already built by R-VIS (`DriveActions.cs`, the `list.Count <= 1` break) and needs only verification.
