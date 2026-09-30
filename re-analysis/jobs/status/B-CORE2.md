@@ -14,8 +14,14 @@ CLAIMED 2026-09-30 06:38 (DeepSeek, window 3)
   queued from `HandleMfgId` after the Lab read with a buffered result a late NeedsManager adopts; the calibration log
   order fixed. Records M3-022, M3-033 (and M15-014's note) stay IMPLEMENTATION_GAP. Verifier PASS; full suite
   2610/2610.
-- 09:xx **Batch 3 DONE: <hash>.** NV sink filled as blobs arrive (timeout keeps them); the 1000-chunk broadcast bound
+- 09:xx **Batch 3 DONE and pushed: 4d960de.** NV sink filled as blobs arrive (timeout keeps them); the 1000-chunk broadcast bound
   with LoopBoundOverflow; the missing logs (TagIsTooSmall/FactoryTagNotFound, Retry/NumRetriesExceeded, ReadOpFailed
   on every negative, ReadSuccess/ReadEntryNotFound/ReadFailed, the enroll NotFound/Fail); ConnectionFaceAlbumResult
   cleared on removal; the M3-035 test drives removal -> ResetDevices. Records M3-025/M3-030/M3-031/M3-034/M3-035 stay
-  IMPLEMENTATION_GAP. Verifier PASS (citation-only notes fixed); full suite <n>/<n>.
+  IMPLEMENTATION_GAP. Verifier PASS (citation-only notes fixed); full suite 2617/2617.
+- 10:xx **Batch 4 DONE: <hash>.** Head clip uses Radians operator</> with the 1e-5 IsNear; RescaleRadians keeps the
+  vcvt round trip (saturating); the action teardown stops before unlocking, gated on AreAllTracksLockedBy; the lock
+  owner is the per-action tag; the timeout is on the engine clock with 0x03000018, tested before CheckIfDone; the
+  invented FailedToSend log is gone (Robot::SendMessage's own warning). Collateral: M13-028's 5 s LiftWaitStandIn
+  removed (the M4-016 engine-clock timeout covers it), its 5 tests rebuilt. Records M4-001/M4-003/M4-016/M4-020 stay
+  IMPLEMENTATION_GAP. Verifier PASS; full suite <n>/<n>.

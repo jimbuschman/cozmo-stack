@@ -846,7 +846,10 @@ public class EngineAppLayerTests
         rig.Data(new ManufacturingID { SerialNumber = 1, BodyHwVersion = 2, BodyColor = 3 });
         rig.Tick();
 
-        Assert.True(rig.Logged("FailedToSend ImageRequest"));
+        // M4-020: the engine emits only Robot::SendMessage's own warning (0x005134F4): channel "Robot.SendMessage"
+        // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356A), with the robot id and
+        // EngineToRobotTagToString (0x007AF8D0) — "imageRequest" for tag 0x4C.
+        Assert.True(rig.Logged("Robot.SendMessage: Robot 1 failed to send a message type imageRequest"));
         Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);          // the forced failure
         Assert.Contains(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);       // and it still goes out
         Assert.True(rig.Engine.Robot!.SyncTimeSentAt > 0);                             // +0x520 from that send

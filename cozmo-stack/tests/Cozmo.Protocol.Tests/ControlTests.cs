@@ -55,6 +55,16 @@ public class ControlTests
         }
 
         /// <summary>
+        /// Advances the manual engine clock and runs one engine tick on the calling thread (M4-016: the action
+        /// timeout is evaluated on the engine clock, so a test that awaits one must drive the tick).
+        /// </summary>
+        public void Advance(int ms)
+        {
+            _clock.Advance(ms);
+            Robot.Engine.Tick();
+        }
+
+        /// <summary>
         /// Acknowledges everything sent so far, as a robot would. Without this the reliable messages are
         /// never retired and every tick resends them, which is correct behaviour but makes counting what
         /// was sent impossible.
@@ -176,7 +186,9 @@ public class ControlTests
         rig.Send(Rig.StateWith());
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
 
-        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
+        var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
+        rig.Advance(50);                                   // M4-016: the 1 ms timeout is on the engine clock
+        var r = await pending;
         Assert.NotEqual(MotionResult.Refused, r.Result);
         Assert.Single(rig.Sent.OfType<SetHeadAngle>());
     }
@@ -248,8 +260,11 @@ public class ControlTests
     {
         var rig = new Rig();
         rig.MakeReady();
-        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.2f, timeout: TimeSpan.FromMilliseconds(250));
-        Assert.Equal(MotionResult.TimedOut, r.Result);
+        var pending = rig.Robot.Motion.SetHeadAngleAsync(0.2f, timeout: TimeSpan.FromMilliseconds(250));
+        rig.Advance(300);                                  // M4-016: the timeout is on the engine clock
+        var r = await pending;
+        Assert.Equal(MotionResult.Failed, r.Result);       // M4-016: IAction::UpdateInternal fails 0x03000018
+        Assert.Equal(0x03000018u, r.EngineResult);
         Assert.False(r.Ok);
         Assert.Single(rig.Sent.OfType<SetHeadAngle>());     // it was sent; only the outcome is unknown
     }
@@ -265,7 +280,7 @@ public class ControlTests
             _ = rig.Robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(60));
             var sent = await WaitFor(() => rig.LastSent<SetHeadAngle>());
             if (ids.Count == 0 || sent.ActionId != ids[^1]) ids.Add(sent.ActionId);
-            await Task.Delay(70);
+            rig.Advance(70);                                   // M4-016: end the 60 ms action on the engine clock
         }
         Assert.True(ids.Count >= 3, "each action should carry its own id");
         // M4-005 MA8: the counter does reach 0 after 255, so "never zero" is no longer asserted (M4ControlTests).

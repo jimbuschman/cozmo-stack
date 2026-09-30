@@ -969,7 +969,7 @@ public sealed class EngineRobot
     /// only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA 4}; then the log
     /// "Setting pose to (0,0,0)" and AbsoluteLocalizationUpdate {timestamp 0, frameId robot+0x2B0, originId the current
     /// pose origin, x 0, y 0, angle 0} (CD18; M4-020: frameId 0 and originId 1 from the constructor's Delocalize, SC4e,
-    /// SC4g, SC4h). A failed send warns "FailedToSend" and stops, except the ImageRequest: its result is
+    /// SC4g, SC4h). A failed send warns through Robot::SendMessage (0x005134F4) and stops, except the ImageRequest: its result is
     /// discarded (0x0051530C), so the AbsoluteLocalizationUpdate follows it either way. SendSyncTime returns the
     /// AbsoluteLocalizationUpdate send's result (0x005153AE), so +0x520 is set only when that send succeeds.
     /// The history clear reaches this stack's RobotStateHistory (VisionSystem) through
@@ -1079,7 +1079,12 @@ public sealed class EngineRobot
         // one step of SyncTime fail without a real transport. It never runs in production.
         bool sent = SendFault?.Invoke(m) ?? Engine.Handler.SendMessage(m);
         if (sent) return true;
-        Engine.Log($"warning: Robot.SendSyncTime.FailedToSend {what}");
+        // fidelity: M4-020
+        // Robot::SendMessage 0x005134F4 is the only warning a failed send makes: channel "Robot.SendMessage"
+        // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356C), with Robot+0x10 (the
+        // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
+        string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
+        Engine.Log($"warning: Robot.SendMessage: Robot {CozmoEngine.RobotId} failed to send a message type {tag}");
         return false;
     }
 
@@ -1183,6 +1188,11 @@ public sealed class EngineRobot
             SyncTimeSentAt = 0;
         }
         if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
+        // fidelity: M4-016
+        // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
+        // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
+        // (IAction::UpdateInternal 0x00540D4A..0x00540E80).
+        if (Engine.ActionRunnerUpdate is { } actions) Engine.RunIsolated(actions);
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
         // fidelity: M3-013
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
@@ -1670,6 +1680,12 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+    /// <summary>
+    /// M4-016: IActionRunner::Update, run by Robot::Update's ActionList step (CD12) after the first full state and
+    /// before the animation streamer. <see cref="EngineRobot.Update"/> invokes it; <see cref="CozmoMotion"/> sets it
+    /// to its per-tick action timeout/CheckIfDone pass.
+    /// </summary>
+    internal Action? ActionRunnerUpdate;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>

@@ -261,7 +261,7 @@ public class CorrectionTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true, AutoStarted = true });
         Assert.False(state.CalibrationComplete);
         mark = rig.Sent.Count;
-        _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
         rig.Pump();
         Assert.Contains(rig.Sent.Skip(mark), m => m is SetHeadAngle);
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false, AutoStarted = true });

@@ -2279,7 +2279,7 @@ public class M12RVisBuildTests
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         var task = flip.RunAsync(default);
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 400) { rig.Pump(); Thread.Sleep(5); }
+        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 400) { rig.Pump(); Thread.Sleep(5); }
         var lift = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
         Assert.Equal(45f, lift.HeightMm);
         Assert.Empty(rig.Sent.OfType<AppendPathSegmentLine>());                     // the drive waits for the lift
@@ -2398,7 +2398,9 @@ public class M12RVisBuildTests
         LiftReports(rig, Math.Asin(-13.0 / 66));
         var task = flip.RunAsync(default);
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
+        // M4-016: the lift move's timeout is on the engine clock, so stop pumping as soon as the carry lift is queued
+        // rather than letting the engine clock run past the 30 s IAction timeout.
+        while (rig.Sent.OfType<SetLiftHeight>().Count() < 2 && sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
         Assert.False(task.IsCompleted);
         Assert.True(flip.LiftRaised);
         Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));   // both sent: the carry lift was not refused while the track is held
@@ -2408,8 +2410,7 @@ public class M12RVisBuildTests
         var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
         rig.Send(new MotorActionAck { ActionId = lifts[1].ActionId });
         LiftReports(rig, (float)Math.Asin(1.0));                                      // 92 mm
-        sw.Restart();
-        while (sw.ElapsedMilliseconds < 200) { rig.Pump(); Thread.Sleep(5); }
+        rig.Pump();
         Assert.True(rig.Robot.Motion.AreAnyTracksLocked(CozmoMotion.LiftTrack));
         Assert.Empty(rig.Sent.OfType<EnableAnimTracks>());
         rig.HoldLift = false;
@@ -2419,8 +2420,8 @@ public class M12RVisBuildTests
 
     /// <summary>
     /// M13-028, CheckIfDone 0x0055F094 (cmp r5,#0x1000000; bne 0x0055F17A): a compound result that is NOT RUNNING marks the object Unknown (0x0055F186) and is returned WITHOUT queueing the carry lift
-    /// (the retired fallback raised the lift after a failure; it has no source). The 45 mm lift move is never acknowledged: the C# wait (an UNSOURCED 5 s stand-in) ends, the compound ends with
-    /// ActionResult.Timeout (also unsourced), no drive is sent, no carry lift is queued, and the object is Unknown. The cube is 200 mm away, so no RUNNING tick had it within 40 mm either.
+    /// (the retired fallback raised the lift after a failure; it has no source). The 45 mm lift move is never acknowledged: its engine-clock IAction timeout (the 30.0 s default, 0x0052B0C2) fires with
+    /// 0x03000018 (0x00540E80), the compound ends with that code, no drive is sent, no carry lift is queued, and the object is Unknown. The cube is 200 mm away, so no RUNNING tick had it within 40 mm either.
     /// </summary>
     [Fact]
     public void M13_028_AFailedCompoundMarksTheObjectUnknownAndQueuesNoCarryLift()
@@ -2433,9 +2434,11 @@ public class M12RVisBuildTests
         LiftReports(rig, Math.Asin(-13.0 / 66));
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         var task = flip.RunAsync(default);
-        Spin(task, rig, ms: 15000);
+        // M4-016: the timeout is on the engine clock, so tick it (Pump alone stops ticking once the transport has acked
+        // the command); the lift is never acknowledged, so the 30 s IAction timeout fires with 0x03000018.
+        Spin(task, rig, () => rig.Tick(), ms: 15000);
         Assert.True(task.IsCompleted);
-        Assert.Equal(ActionResult.Timeout, task.Result);
+        Assert.Equal((ActionResult)0x03000018u, task.Result);                         // M4-016: IAction timeout, not the retired ActionResult.Timeout stand-in
         Assert.False(flip.LiftRaised);
         Assert.Equal(new[] { 45f }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));
         Assert.Empty(rig.Sent.OfType<AppendPathSegmentLine>());
@@ -2523,8 +2526,10 @@ public class M12RVisBuildTests
         var task = StartFlipAtTheDrive(rig, flip, out _);
         obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(30.0, 0, 22));
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
+        // M4-016: stop pumping as soon as the carry lift is queued, so the engine clock stays well inside the 30 s IAction timeout.
+        while (!flip.LiftRaised && sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
         Assert.True(flip.LiftRaised);
+        rig.Pump();                                                                   // flush the queued carry lift's command
         var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
         Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, lifts.Select(l => l.HeightMm));
         rig.ReleasePath();                                                             // the drive completes; the carry lift (lifts[1]) is never acknowledged
@@ -2552,7 +2557,8 @@ public class M12RVisBuildTests
         LiftReports(rig, Math.Asin(-13.0 / 66));                                       // the 45 mm move waits: the compound is RUNNING
         var task = flip.RunAsync(default);
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 200) { rig.Pump(); Thread.Sleep(5); }
+        // M4-016: stop pumping as soon as the lift command is sent, so the engine clock stays inside the 30 s IAction timeout.
+        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 200) { rig.Pump(); Thread.Sleep(5); }
         Assert.False(task.IsCompleted);
         var lift = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
         obj.PoseState = PoseState.Unknown;
@@ -2565,7 +2571,7 @@ public class M12RVisBuildTests
         // only now does the lift move complete: the compound would go on to its drive
         rig.Send(new MotorActionAck { ActionId = lift.ActionId });
         sw.Restart();
-        while (sw.ElapsedMilliseconds < 500) { LiftReports(rig, 0.0); rig.Pump(); Thread.Sleep(5); }
+        while (!flip.Trace.Any(l => l.Contains("the flip has ended")) && sw.ElapsedMilliseconds < 500) { LiftReports(rig, 0.0); rig.Pump(); Thread.Sleep(5); }
         var after = rig.Sent.Skip(sentAtReturn).ToList();
         Assert.DoesNotContain(after, m => m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn or ExecutePath or ClearPath or SetLiftHeight);
         Assert.Contains(flip.Trace, l => l.Contains("the flip has ended; the embedded compound is not continued"));
