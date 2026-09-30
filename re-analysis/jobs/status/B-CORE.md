@@ -30,3 +30,14 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   - **MISSING (M3-023):** what the stack-only `CozmoRobot.StartCamera` must send — the rows settle the engine's
     `EnableColorImages` and the SyncTime `ImageRequest`, but no row defines `StartCamera`. Code unchanged.
 - Next: Batch 2 (readiness: M1-041, M1-028, M3-033, M3-034).
+- 2026-09-29 **Batch 2 (readiness) done and pushed: ac62741.** The connection-time NV read queue in the engine's
+  order (12 constructor reads, CameraCalib, Lab, Needs) so ready-to-stream waits for the whole queue; the
+  VisionSystem face-album sink resolves at completion (so it works on the live ConnectAsync-then-VisionSystem order);
+  the ImageRequest send result is discarded (M1-041/M4-020); Lab then Needs after SendConnectionResponse (M1-028).
+  Verifier: first pass FAIL on the queue-time VisionSystem hook and a dead `ReferenceEquals` cleanup; fixed and
+  re-verified PASS. Full suite 2118/2118. Records M1-028/M1-041/M3-033/M3-034/M4-020 remain IMPLEMENTATION_GAP with
+  `unresolved` "Built (batch 2)". Missing sinks named: M15 progression/inventory, M12 backup, lab.
+  - **Residual MISSING:** whether `ConnectionFaceAlbumResult`/VC+0x2F4 must be cleared when a new connection arms
+    #3 (a reconnect could let a new VisionSystem adopt the previous connection's album). Batch 4's RemoveRobot reset
+    should cover it.
+- Next: Batch 3 (head and lift actions: M4-001, M4-003, M4-016, M4-020, M4-011, M4-025, M4-008, M4-010).
