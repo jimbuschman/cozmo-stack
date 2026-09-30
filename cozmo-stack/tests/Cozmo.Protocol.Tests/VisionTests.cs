@@ -768,9 +768,16 @@ public class VisionTests
 
     // ------------------------------------------------------------------ world model
 
-    /// <summary>An offline robot with a connected cube 1, a calibration, and a vision system fed synthetic frames.</summary>
+    /// <summary>
+    /// An offline robot with a cube connected in radio slot <see cref="CubeSlot"/>, a calibration, and a vision system fed synthetic frames.
+    /// M11-013 / M11-041: the world's ObjectID for that cube is the value <c>ObservableObject::SetID</c> stores once per unique type in a
+    /// process-wide map, not the slot; the rig seeds that map with <see cref="CubeId"/>, as a session that had already given LIGHTCUBE1 that
+    /// ID would leave it. Tests of the counter itself do not use the rig's seed.
+    /// </summary>
     private sealed class WorldRig : IDisposable
     {
+        public const uint CubeSlot = 1;
+        public const uint CubeId = 7;
         public readonly CozmoRobot Robot = CozmoRobot.CreateOffline();
         public readonly VisionSystem Vision;
         public readonly CameraCalibration Cal = CameraCalibration.Nominal();
@@ -778,13 +785,14 @@ public class VisionTests
         private ushort _seq = 1;
         public readonly List<string> Log = new();
 
-        public WorldRig(bool connectCube = true)
+        public WorldRig(bool connectCube = true, bool seedCubeId = true)
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
             Vision = new VisionSystem(Robot, Cal) { Enabled = false };
             Vision.World.Log += Log.Add;
             Vision.Log += Log.Add;
-            if (connectCube) Send(new ObjectConnectionState { ObjectID = 7, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            if (seedCubeId) ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, CubeId);
+            if (connectCube) Send(new ObjectConnectionState { ObjectID = CubeSlot, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         }
 
         public void Send(RobotMessage m) => Deliver(new SubMessage(ReliableMessageType.SingleReliableMessage, m.ToBytes(), _seq++));
@@ -798,7 +806,8 @@ public class VisionTests
         /// <summary>One robot state at the current time with a pose and head angle.</summary>
         public void State(float x = 0, float y = 0, float angle = 0, float head = 0, RobotStatusFlag flags = 0, float gz = 0)
         {
-            Send(new RobotState { Timestamp = T, Pose = new RobotPose { X = x, Y = y, Angle = angle }, HeadAngle = head, Status = (uint)flags,
+            // M11-004 / H2: WasCameraMoving is (status & 0x8200) != 0x200, so the fake robot reports HEAD_IN_POS (bit 9): its head is in position.
+            Send(new RobotState { Timestamp = T, Pose = new RobotPose { X = x, Y = y, Angle = angle }, HeadAngle = head, Status = (uint)flags | (uint)RobotStatusFlag.HeadInPos,
                                   Accel = new AccelData { Z = 9800 }, Gyro = new GyroData { Z = gz } });
         }
 
@@ -820,6 +829,16 @@ public class VisionTests
             return r;
         }
 
+        /// <summary>
+        /// The same view on two consecutive frames: the first sighting only makes a confirmer entry and the second matching one makes the located object
+        /// (M11-007, <c>AddVisualObservation</c> 0x00506A04..0x00506A32). Returns the second frame's result.
+        /// </summary>
+        public VisionFrameResult Observe(Pose3d? cube, float x = 0, float y = 0, float angle = 0, float head = 0, RobotStatusFlag flags = 0)
+        {
+            Frame(cube, x, y, angle, head, flags);
+            return Frame(cube, x, y, angle, head, flags);
+        }
+
         public void Dispose() { Vision.Dispose(); Robot.Dispose(); }
     }
 
@@ -827,61 +846,70 @@ public class VisionTests
     private static Pose3d CubeAhead(double distanceMm = 150, double yMm = 0, double yawRad = 0) =>
         new(Mat3.AboutZ(yawRad), new Vec3(distanceMm, yMm, CubeGeometry.CubeSizeMm / 2));
 
+    /// <summary>
+    /// M11-007 / M11-013: a marker sighting does not make a located object. <c>AddVisualObservation</c> 0x0050684C adds
+    /// <c>PoseConfirmation(observed, 1, 0)</c> on the first sighting and returns false (0x005068DC..0x00506982), so no located object exists after
+    /// one frame; a matching second sighting makes the count 2 and calls <c>UpdatePoseInInstance</c> then <c>AddLocatedObject</c>
+    /// (0x00506A26..0x00506A32). <c>UpdatePoseInInstance</c> 0x00505DE0 decides the state: <c>closeAndSteady = OnTreads &amp;&amp; (250.0 + 1e-5 &gt;= dist)
+    /// &amp;&amp; !wasCameraMoving &amp;&amp; notMoving</c>, Known when true (0x00505EB4..0x00505EBA). The object's ID is the one <c>SetID</c> stores for the type
+    /// (0x004EF468), which the rig seeded.
+    /// </summary>
     [Fact]
-    public void ASeenConnectedCubeBecomesLocatedAtItsPose()
+    public void ACubeIsLocatedOnlyAfterTwoMatchingSightingsAndIsKnownWhenCloseAndSteady()
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
         var cube = CubeAhead(140, 10, 0.1);
+        var first = rig.Frame(cube, head: -0.15f);
+        Assert.True(first.Markers.Count >= 1, string.Join("; ", rig.Log));
+        Assert.Contains(first.Markers, m => m.Code == MarkerType.LightCubeI_Front);
+        Assert.Empty(first.Objects);                                            // 0x0050689A..0x00506982: the first sighting returns false
+        Assert.Empty(rig.Vision.World.LocatedObjects);
+        Assert.Null(rig.Vision.World.GetLocatedObjectById(WorldRig.CubeId));
+        Assert.False(rig.Vision.Locator.IsLocated(WorldRig.CubeId));
         var r = rig.Frame(cube, head: -0.15f);
-        Assert.True(r.Markers.Count >= 1, string.Join("; ", rig.Log));
-        Assert.Contains(r.Markers, m => m.Code == MarkerType.LightCubeI_Front);
         Assert.Single(r.Objects);
         var o = r.Objects[0].Object;
-        Assert.Equal(7u, o.ObjectId);
+        Assert.Equal(WorldRig.CubeId, o.ObjectId);
         Assert.Equal(PoseState.Known, o.PoseState);
         Assert.True(o.IsLocated);
         Assert.True((o.Pose.Translation - cube.Translation).Length < 5, $"{o.Pose.Translation} vs {cube.Translation} ({string.Join("; ", rig.Log)})");
         Assert.True(Deg(o.Pose.Rotation.AngularDistance(cube.Rotation)) < 3, $"yaw {Deg(o.Pose.AngleAroundZ):F1}");
         Assert.Equal(UpAxis.ZPositive, o.UpAxisFromPose());
-        Assert.NotNull(rig.Vision.World.GetLocatedObjectById(7));
-        Assert.True(rig.Vision.Locator.IsLocated(7));
-        Assert.InRange(rig.Vision.Locator.DistanceFromRobotMm(7)!.Value, 130, 155);
-        Assert.True(rig.Vision.Locator.IsVisibleFromCamera(7));
+        Assert.NotNull(rig.Vision.World.GetLocatedObjectById(WorldRig.CubeId));
+        Assert.True(rig.Vision.Locator.IsLocated(WorldRig.CubeId));
+        Assert.InRange(rig.Vision.Locator.DistanceFromRobotMm(WorldRig.CubeId)!.Value, 130, 155);
+        Assert.True(rig.Vision.Locator.IsVisibleFromCamera(WorldRig.CubeId));
     }
 
     /// <summary>
-    /// M11-004 / H1: the native <c>AddAndUpdateObjects</c> does <b>not</b> drop an observed active object
-    /// with no connected counterpart. It warns ("Observed active object of type %s but it's not connected.
-    /// Is the battery plugged in?", string 0xBF854B at 0x00620E9E) and records a 10 s cooldown in the
-    /// <c>unordered_map&lt;int,float&gt;</c> (0x00620ED2..0x00620EDA), then continues to 0x00620EDE. The
-    /// observation is kept, and the warning is suppressed for ten seconds.
+    /// M11-007 / <c>UpdatePoseInInstance</c> 0x00505E5E..0x00505EBA: the state is Dirty, not Known, when any of the closeAndSteady terms fails. Here the cube is
+    /// 300 mm away (over 250.0 + 1e-5, <c>GetMaxLocalizationDistance_mm</c> 0x004EF461), so the confirming sighting leaves it Dirty.
     /// </summary>
     [Fact]
-    public void AnUnconnectedCubeIsStillObservedAndOnlyWarnsOncePerTenSeconds()
+    public void AConfirmedCubeBeyondTwoHundredAndFiftyMillimetresIsDirty()
     {
         if (NoLibrary) return;
-        using var rig = new WorldRig(connectCube: false);
-        var r = rig.Frame(CubeAhead(), head: -0.15f);
-        Assert.NotEmpty(r.Markers);
+        using var rig = new WorldRig();
+        var r = rig.Observe(CubeAhead(300), head: 0.0f);
         Assert.Single(r.Objects);
-        Assert.Equal(1u, r.Objects[0].Object.ObjectId);        // M11-013 policy: id from the type
-        Assert.Contains(rig.Log, l => l.Contains("not connected"));
-        Assert.Single(rig.Vision.World.Objects);
-        // the next frame is inside the 10 s cooldown (the frames are 33 ms apart), so no second warning
-        int warnings = rig.Log.Count(l => l.Contains("not connected"));
-        rig.Frame(CubeAhead(), head: -0.15f);
-        Assert.Equal(warnings, rig.Log.Count(l => l.Contains("not connected")));
-        // the offline id switch is retained; it no longer gates whether the object is kept
-        rig.Vision.World.AllowUnconnectedObjects = true;
-        var r2 = rig.Frame(CubeAhead(), head: -0.15f);
-        Assert.Single(r2.Objects);
-        Assert.Equal(1u, r2.Objects[0].Object.ObjectId);
-        // after the 10 s cooldown (0x00620B1E, kUnconnectedObservationCooldownDuration_sec 0x00C781EC)
-        // elapses, the warning is emitted again
-        rig.T += 11_000;
-        rig.Frame(CubeAhead(), head: -0.15f);
-        Assert.Equal(warnings + 1, rig.Log.Count(l => l.Contains("not connected")));
+        Assert.Equal(PoseState.Dirty, r.Objects[0].Object.PoseState);
+    }
+
+    /// <summary>
+    /// M11-007 / M11-004 (H2, 0x00642802): <c>WasCameraMoving(ts)</c> is <c>(status &amp; 0x8200) != 0x200</c>, true unless HEAD_IN_POS is set and the
+    /// wheels are still. A confirming sighting while the camera counts as moving leaves the object Dirty (<c>closeAndSteady</c> false).
+    /// </summary>
+    [Fact]
+    public void ACubeConfirmedWhileTheCameraIsMovingIsDirty()
+    {
+        if (NoLibrary) return;
+        using var rig = new WorldRig();
+        var cube = CubeAhead(150);
+        rig.Frame(cube, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
+        var r = rig.Frame(cube, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
+        Assert.Single(r.Objects);
+        Assert.Equal(PoseState.Dirty, r.Objects[0].Object.PoseState);
     }
 
     /// <summary>
@@ -889,16 +917,21 @@ public class VisionTests
     /// misses. This is the first of the two cases in <c>CheckForUnobservedObjects</c>: not visible, with
     /// nothing behind it, and Dirty (the branch at 0x0062211E). An empty view is exactly "nothing
     /// behind" - the occluder list holds only what the camera saw this frame.
+    ///
+    /// M11-007: <c>MarkObjectUnobserved</c> 0x00506FBC zeroes the count and adds one to the miss count (0x00506FE0), and acts only when the miss
+    /// count it read was already 1 (0x00506FDE), so the first miss counts and the second acts. <c>MarkObjectUnknown</c> 0x00507128 writes NO PoseState
+    /// (no store to +0x24 in 0x00507128..0x005075A4) and deletes the object with <c>DeleteLocatedObjects</c> (0x005073F4): the object is gone from the world,
+    /// and its own state byte is untouched.
     /// </summary>
     [Fact]
-    public void ADirtyCubeThatIsNotWhereItShouldBeIsForgottenAfterTwoMisses()
+    public void ADirtyCubeThatIsNotWhereItShouldBeIsDeletedAfterTwoMisses()
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.True(o.IsLocated);
-        rig.Vision.World.MarkDirty(7);                 // as an ObjectMoved from the cube does
+        rig.Vision.World.MarkDirty(WorldRig.CubeId);   // as an ObjectMoved from the cube does
         // same view, cube gone
         var r1 = rig.Frame(null, head: -0.15f);
         Assert.Empty(r1.Forgotten);
@@ -906,9 +939,11 @@ public class VisionTests
         Assert.True(o.IsLocated);
         var r2 = rig.Frame(null, head: -0.15f);
         Assert.Single(r2.Forgotten);
-        Assert.Equal(PoseState.Unknown, o.PoseState);
-        Assert.False(rig.Vision.Locator.IsLocated(7));
-        Assert.Null(rig.Vision.World.GetLocatedObjectById(7));
+        Assert.Same(o, r2.Forgotten[0]);
+        Assert.Equal(PoseState.Dirty, o.PoseState);                                 // MarkObjectUnknown writes no PoseState (M11-007, C-R2)
+        Assert.False(rig.Vision.Locator.IsLocated(WorldRig.CubeId));
+        Assert.Null(rig.Vision.World.GetLocatedObjectById(WorldRig.CubeId));
+        Assert.Null(rig.Vision.World.GetObjectById(WorldRig.CubeId));               // deleted, not merely unknown
     }
 
     /// <summary>
@@ -923,14 +958,14 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.Equal(PoseState.Known, o.PoseState);
 
         for (int i = 0; i < 4; i++) Assert.Empty(rig.Frame(null, head: -0.15f).Forgotten);
         Assert.Equal(PoseState.Known, o.PoseState);
         Assert.Equal(0, o.UnobservedCount);
-        Assert.True(rig.Vision.Locator.IsLocated(7));
+        Assert.True(rig.Vision.Locator.IsLocated(WorldRig.CubeId));
     }
 
     [Fact]
@@ -938,13 +973,13 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
+        rig.Observe(CubeAhead(), head: -0.15f);
         // robot turned 90 degrees away: the cube is behind the field of view, not "should be visible"
         for (int i = 0; i < 5; i++) rig.Frame(null, angle: 1.57f, head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.Equal(0, o.UnobservedCount);
         Assert.True(o.IsLocated);
-        Assert.False(rig.Vision.Locator.IsVisibleFromCamera(7));
+        Assert.False(rig.Vision.Locator.IsVisibleFromCamera(WorldRig.CubeId));
     }
 
     [Fact]
@@ -952,12 +987,12 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         // Make the object eligible for a miss: a Dirty pose with nothing behind it (0x0062211E). A Known
         // object that is merely not visible is skipped by the "should have been seen" test first, so the
         // gate would never be exercised.
-        rig.Vision.World.MarkDirty(7);
+        rig.Vision.World.MarkDirty(WorldRig.CubeId);
         for (int i = 0; i < 4; i++) rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.IsMoving);
         Assert.Equal(0, o.UnobservedCount);            // the moving gate (IS_MOVING) skipped the pass
         // the body gate reads ImuData.rateZ (C3.3), not the robot state's gyro
@@ -978,9 +1013,9 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
-        rig.Vision.World.MarkDirty(7);                 // eligible for a miss (Dirty + nothing behind)
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
+        rig.Vision.World.MarkDirty(WorldRig.CubeId);   // eligible for a miss (Dirty + nothing behind)
         rig.Frame(null, head: -0.15f, imuRateZ: 0.5f); // WorldRig.Frame drives Vision.ProcessImage
         Assert.Equal(0, o.UnobservedCount);            // the gate skipped the pass
         rig.Frame(null, head: -0.15f);                 // still: the miss advances, so the object was eligible
@@ -997,9 +1032,9 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
-        rig.Vision.World.MarkDirty(7);                 // the Dirty-with-nothing-behind case applies
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
+        rig.Vision.World.MarkDirty(WorldRig.CubeId);   // the Dirty-with-nothing-behind case applies
         rig.Frame(null, head: -0.15f, flags: RobotStatusFlag.AreWheelsMoving);
         Assert.Equal(1, o.UnobservedCount);            // AreWheelsMoving alone does not gate
         Assert.True(o.IsLocated);
@@ -1025,9 +1060,11 @@ public class VisionTests
     }
 
     /// <summary>
-    /// M11-007 / C3.4: a new <c>PoseConfirmation</c> starts at count 1, the first sighting does not confirm;
-    /// the second matching sighting makes 2 and <c>IsReferencePoseConfirmed</c> (0x506340) is
-    /// <c>count &gt; 1</c>; a mismatching sighting resets to 1 (0x506A46..0x506A4E).
+    /// M11-007 / C3.4: a new <c>PoseConfirmation</c> starts at count 1, the first sighting does not confirm; the second matching sighting makes 2 and
+    /// <c>IsReferencePoseConfirmed</c> (0x506340) is <c>count &gt; 1</c>. Once the count is 2 and the pose matches, <c>AddAndUpdateObjects</c> does not call
+    /// <c>AddVisualObservation</c> at all (0x00620C5C..0x00620C9E), so the count stays 2. A sighting whose pose is over the tolerance from the entry's is not
+    /// confirmed: <c>AddVisualObservation</c> sets the count to 1 and the entry's pose to the new one (0x506A46..0x506A4E), returns false, and the observation is
+    /// dropped; the next matching sighting at the new place makes 2 and <c>UpdatePoseInInstance</c> moves the object.
     /// </summary>
     [Fact]
     public void TheFirstSightingDoesNotConfirmAndTheSecondDoes()
@@ -1035,23 +1072,33 @@ public class VisionTests
         if (NoLibrary) return;
         using var rig = new WorldRig();
         rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
-        Assert.Equal(1, o.PoseConfirmationCount);
-        Assert.False(o.IsPoseConfirmed);
+        Assert.Empty(rig.Vision.World.LocatedObjects);
         rig.Frame(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         Assert.Equal(2, o.PoseConfirmationCount);
         Assert.True(o.IsPoseConfirmed);
-        Assert.True(rig.Vision.World.IsObjectConfirmedAtObservedPose(o, o.Pose));
-        // a mismatching sighting (70 mm away, over the 35.2 mm extent tolerance) resets the count
-        rig.Frame(CubeAhead(220), head: -0.15f);
+        rig.Frame(CubeAhead(), head: -0.15f);   // confirmed: AddAndUpdateObjects skips AddVisualObservation (flag 0); the cube is not connected (activeID -1), so Insert discards the pair into
+                                                // UseDiscardedObservation, which runs AddVisualObservation and counts it (0x00506A04): 3
+        Assert.Equal(3, o.PoseConfirmationCount);
+        var located = o.Pose;
+        Assert.True(rig.Vision.World.IsObjectConfirmedAtObservedPose(new ObservableObject(ObjectType.Block_LIGHTCUBE1, o.Markers) { ObjectId = o.ObjectId, Pose = o.Pose }, out var match));
+        Assert.Same(o, match);
+        // a mismatching sighting (70 mm away, over the 35.2 mm extent tolerance) resets the count and is dropped
+        var far = rig.Frame(CubeAhead(220), head: -0.15f);
+        Assert.Empty(far.Objects);
         Assert.Equal(1, o.PoseConfirmationCount);
         Assert.False(o.IsPoseConfirmed);
+        Assert.Equal(located, o.Pose);                                          // nothing moved it
+        var again = rig.Frame(CubeAhead(220), head: -0.15f);
+        Assert.Single(again.Objects);
+        Assert.Equal(2, o.PoseConfirmationCount);
+        Assert.True((o.Pose.Translation - CubeAhead(220).Translation).Length < 6);
     }
 
     /// <summary>
     /// M11-004 / C3.3: the object-match tolerance is the object's extent times 0.8 (a cube's 44 mm gives
-    /// 35.2 mm) and the rotation tolerance is pi/4 (thunk 0x4E025C with 0.8 at 0x4E028C, thunk 0x4E0290);
-    /// the primary match is the closest located object within them (predicate 0x6281DA).
+    /// 35.2 mm) and the rotation tolerance is pi/4 (thunk 0x4E025C with 0.8 at 0x4E028C, thunk 0x4E0290).
+    /// <c>IsObjectConfirmedAtObservedPose</c> 0x0050634C compares the instance with the entry's pose by them (0x005063B8).
     /// </summary>
     [Fact]
     public void TheObjectMatchToleranceIsTheExtentTimesZeroPointEightAndFortyFiveDegrees()
@@ -1064,18 +1111,16 @@ public class VisionTests
 
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
-        var near = o.Pose;
-        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1, near));
-        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
-            new Pose3d(near.Rotation, near.Translation + new Vec3(0, 20, 0))));
-        Assert.Null(rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
-            new Pose3d(near.Rotation, near.Translation + new Vec3(0, 40, 0))));
-        Assert.Same(o, rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
-            new Pose3d(Mat3.AboutZ(0.7) * near.Rotation, near.Translation)));
-        Assert.Null(rig.Vision.World.FindObjectMatchForObservation(ObjectType.Block_LIGHTCUBE1,
-            new Pose3d(Mat3.AboutZ(0.9) * near.Rotation, near.Translation)));
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
+        var entryPose = o.ReferencePose;
+        bool ConfirmedAt(Pose3d pose) => rig.Vision.World.IsObjectConfirmedAtObservedPose(
+            new ObservableObject(ObjectType.Block_LIGHTCUBE1, o.Markers) { Pose = pose }, out _);
+        Assert.True(ConfirmedAt(entryPose));
+        Assert.True(ConfirmedAt(new Pose3d(entryPose.Rotation, entryPose.Translation + new Vec3(0, 20, 0))));
+        Assert.False(ConfirmedAt(new Pose3d(entryPose.Rotation, entryPose.Translation + new Vec3(0, 40, 0))));
+        Assert.True(ConfirmedAt(new Pose3d(Mat3.AboutZ(0.7) * entryPose.Rotation, entryPose.Translation)));
+        Assert.False(ConfirmedAt(new Pose3d(Mat3.AboutZ(0.9) * entryPose.Rotation, entryPose.Translation)));
     }
 
     /// <summary>
@@ -1096,22 +1141,39 @@ public class VisionTests
         Assert.Equal(2, calls);
     }
 
+    /// <summary>
+    /// M11-009 / M11-007 / M11-044: <c>HandleActiveObjectMoved</c> 0x00533E30 names the cube by its radio slot, finds the connected object of that slot and calls
+    /// <c>MarkObjectDirty</c> on its ObjectID behind the guards at 0x00534116 (not carried, pose exactly Known); <c>SetIsMoving</c> keeps the connected object moving until
+    /// <c>ObjectStoppedMoving</c>, and <c>UpdatePoseInInstance</c> reads <c>!IsMoving</c> of the connected object (0x00505E36..0x00505E4C) in <c>closeAndSteady</c>. A Dirty cube
+    /// is not usable for localization (<c>ActiveObject::CanBeUsedForLocalization</c> needs Known, 0x004E4A06), so <c>Insert</c> discards the pair and
+    /// <c>UseDiscardedObservation</c> reaches <c>AddVisualObservation</c> for it (0x0050CE88, 0x0050CFE2, 0x0050CDF6): a sighting inside the match tolerance refreshes a cube that is
+    /// still moving without making it Known, and one sighting after it has stopped returns it to Known. A move beyond the tolerance needs two sightings at the new place: the
+    /// first only resets the entry's count (0x506A46..0x506A4E).
+    /// </summary>
     [Fact]
-    public void AMovedReportMakesTheCubeDirtyAndASightingMakesItKnownAgain()
+    public void AMovedReportMakesTheCubeDirtyAndASightingAfterItStopsMakesItKnownAgain()
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
-        var o = rig.Vision.World.GetObjectById(7)!;
+        rig.Observe(CubeAhead(), head: -0.15f);
+        var o = rig.Vision.World.GetObjectById(WorldRig.CubeId)!;
         var changes = new List<(PoseState, PoseState)>();
         rig.Vision.World.PoseStateChanged += (_, a, b) => changes.Add((a, b));
-        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = WorldRig.CubeSlot, AxisOfAccel = UpAxis.ZPositive });
         Assert.Equal(PoseState.Dirty, o.PoseState);
         Assert.True(o.IsLocated);                 // Dirty still counts as located, as the cube-moved strategy needs
-        rig.Frame(CubeAhead(160, 0, 0.3), head: -0.15f);
+        // still moving, seen 10 mm and 10 mm off (inside the 35.2 mm tolerance): the pose follows it, and it stays Dirty
+        rig.Frame(CubeAhead(160, 10, 0.3), head: -0.15f);
+        Assert.True((o.Pose.Translation - CubeAhead(160, 10, 0.3).Translation).Length < 6);
+        Assert.Equal(PoseState.Dirty, o.PoseState);
+        // it stops: the next sighting returns it to Known
+        rig.Send(new ObjectStoppedMoving { Timestamp = rig.T, ObjectID = WorldRig.CubeSlot });
+        rig.Frame(CubeAhead(160, 10, 0.3), head: -0.15f);
         Assert.Equal(PoseState.Known, o.PoseState);
         Assert.Equal(new[] { (PoseState.Known, PoseState.Dirty), (PoseState.Dirty, PoseState.Known) }, changes);
-        Assert.True((o.Pose.Translation - CubeAhead(160, 0, 0.3).Translation).Length < 6);
+        // a move beyond the tolerance: two sightings at the new place, the first dropped
+        rig.Observe(CubeAhead(210, 0, 0.3), head: -0.15f);
+        Assert.True((o.Pose.Translation - CubeAhead(210, 0, 0.3).Translation).Length < 6);
     }
 
     [Fact]
@@ -1121,7 +1183,7 @@ public class VisionTests
         using var rig = new WorldRig();
         // yawed 40 degrees so the front and right faces both face the camera
         var cube = CubeAhead(130, -10, -0.7);
-        var r = rig.Frame(cube, head: -0.2f);
+        var r = rig.Observe(cube, head: -0.2f);
         Assert.True(r.Markers.Count >= 2, $"{r.Markers.Count} markers: {string.Join(",", r.Markers.Select(m => m.Code))} {rig.Vision.Detector.Quads.LastStats}");
         Assert.Single(r.Objects);
         Assert.Equal(2, r.Objects[0].Markers.Count);
@@ -1133,7 +1195,7 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(), head: -0.15f);
+        rig.Observe(CubeAhead(), head: -0.15f);
         var behavior = new AcknowledgeCubeMovedBehavior(rig.Vision.Locator);
         using var strategy = new CubeMovedReactionStrategy(rig.Robot, behavior, rig.Vision.Locator, rig.Vision.World);
         Assert.True(strategy.HasLocator);
@@ -1148,7 +1210,7 @@ public class VisionTests
         // the world model saw the cube: the strategy's record is marked observed
         strategy.ObjectObserved(7);
         // the cube starts moving while the camera is still on it: no reaction (IsVisibleFrom is true)
-        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = 7, AxisOfAccel = UpAxis.ZPositive });
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = WorldRig.CubeSlot, AxisOfAccel = UpAxis.ZPositive });
         rig.T += 1200;
         rig.State(head: -0.15f);
         Assert.True(rig.Vision.Locator.IsVisibleFromCamera(7));
@@ -1231,7 +1293,7 @@ public class VisionTests
     {
         if (NoLibrary) return;
         using var rig = new WorldRig();
-        rig.Frame(CubeAhead(150), head: -0.15f);
+        rig.Observe(CubeAhead(150), head: -0.15f);
         var turns = new List<(uint, double)>();
         rig.Vision.Locator.TurnOverride = (id, max, ct) => { turns.Add((id, max)); return Task.FromResult(true); };
         var behavior = new AcknowledgeObjectBehavior(rig.Vision.World, rig.Vision.Locator) { Clock = () => 0 };

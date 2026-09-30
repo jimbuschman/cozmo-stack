@@ -929,6 +929,12 @@ public sealed class EngineRobot
             // A4: Robot::SetPhysicalRobot's only caller passes json["sim"].isNull() (0x00536980); it writes robot+0x14
             // (0x0051397A), which the Robot constructor zeroed (0x0050FC36).
             IsPhysicalRobot = simIsNull;
+            // fidelity: M11-037
+            // Engine order (0x00536980 before 0x0053698E): Robot::SetPhysicalRobot, which passes the flag on to VisionComponent::SetPhysicalRobot (0x0051397C), then
+            // RobotAudioClient::SetOutputSource. PhysicalRobotRecorded is this stack's own record for a vision system built after the event (not an engine field): the store is a full
+            // fence (Interlocked) and the event's subscribe is one too, so a subscriber either hears the event or finds the record (a double delivery is harmless, the handler is idempotent).
+            Interlocked.Exchange(ref _physicalRobotRecorded, 1);
+            Engine.RaisePhysicalRobotSet(simIsNull);          // VisionComponent::SetPhysicalRobot (0x0051397C)
             AudioOutputSource = simIsNull ? RobotAudioOutputSource.PlayOnRobot : RobotAudioOutputSource.PlayOnDevice;
             // fidelity: M4-011
             // SetPhysicalRobot(true) also calls BlockFilter::Init (0x0051391E..0x00513954); a simulated robot
@@ -936,6 +942,10 @@ public sealed class EngineRobot
             if (simIsNull) Engine.RunIsolated(() => Engine.PhysicalRobotSet?.Invoke());
         }
     }
+
+    private int _physicalRobotRecorded;
+    /// <summary>True once <c>Robot::SetPhysicalRobot</c> ran (this stack's record of it, for a vision system built after the firmware version; M11-037). <see cref="IsPhysicalRobot"/> is the value.</summary>
+    internal bool PhysicalRobotRecorded => Volatile.Read(ref _physicalRobotRecorded) != 0;
 
     // fidelity: M1-041, M4-020
     /// <summary>
@@ -1584,6 +1594,14 @@ public sealed class CozmoEngine : IDisposable
     internal NvStorageComponent? NvStorage { get; set; }
     /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>
     internal Action? RobotStateHistoryClear;
+
+    // fidelity: M11-037
+    /// <summary>
+    /// <c>Robot::SetPhysicalRobot(bool)</c> 0x00513914 passes its argument on to <c>VisionComponent::SetPhysicalRobot</c> (0x0051397C), which writes the
+    /// lift occluder points (M11-037). Raised by <see cref="EngineRobot"/>'s handling of the firmware version, with <c>json["sim"].isNull()</c>.
+    /// </summary>
+    internal event Action<bool>? PhysicalRobotSet;
+    internal void RaisePhysicalRobotSet(bool physical) => PhysicalRobotSet?.Invoke(physical);
     /// <summary>UpdateFullRobotState's storage before the origin check (RS1: the robot clock), for a synced state.</summary>
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>

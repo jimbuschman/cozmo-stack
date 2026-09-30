@@ -61,7 +61,7 @@ public class CorrectionTests
         Assert.Contains(strategy.Tracker.Entries, e => e.ObjectId == cubeId && e.Observed);
 
         // it is picked up and moved for over a second, and the robot is no longer looking at it
-        rig.Send(new ObjectMoved { ObjectID = cubeId, Timestamp = rig.T, AxisOfAccel = UpAxis.ZPositive });
+        rig.Send(new ObjectMoved { ObjectID = rig.ActiveIdOf(cubeId), Timestamp = rig.T, AxisOfAccel = UpAxis.ZPositive });
         rig.T += 2000; rig.State();
         rig.Angle = (float)Math.PI; rig.State();
 
@@ -291,6 +291,8 @@ public class CorrectionTests
         var cam = new CameraModel(rig.Cal, pd.CameraPose);
         MarkerRenderer.DrawCube(image, MarkerLibrary.EmbeddedOrNull, cam, ObjectType.Block_LIGHTCUBE1, rig.Cube.Value);
 
+        // M11-007: the second matching sighting is the one that makes the located object
+        rig.Vision.ProcessCapture(image, imageId: 6, cameraTimestamp: 0);
         var result = rig.Vision.ProcessCapture(image, imageId: 7, cameraTimestamp: 0);
         Assert.NotNull(result);
         Assert.Equal(stateTimestamp, result!.Timestamp);
@@ -340,7 +342,7 @@ public class CorrectionTests
         Assert.True(rig.Vision.Locator.IsLocated(cubeId));
         rig.M.Configurations.Update();
 
-        rig.Send(new ObjectConnectionState { ObjectID = cubeId, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+        rig.Send(new ObjectConnectionState { ObjectID = rig.ActiveIdOf(cubeId), FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
 
         Assert.False(rig.Vision.Locator.IsLocated(cubeId));
         Assert.Null(rig.Vision.World.GetLocatedObjectById(cubeId));

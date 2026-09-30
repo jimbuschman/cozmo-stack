@@ -28,13 +28,18 @@ public sealed record WorkoutConfig(AnimationTrigger PreLift, AnimationTrigger Po
     /// </summary>
     // fidelity: M13-010
     public static double EvaluateEmotionScore(IReadOnlyList<EmotionScorer> entries,
-                                              Func<EmotionType, double> current, Func<EmotionType, double> value60TicksAgo)
+                                              Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo)
     {
         if (entries.Count == 0) return 0.0;
         double sum = 0;
         foreach (var e in entries)
         {
-            double x = e.TrackDelta ? current(e.Emotion) - value60TicksAgo(e.Emotion) : current(e.Emotion);
+            // M13-010 / M7-mood: Emotion::GetHistoryValueTicksAgo 0x006794F8 needs the per-emotion ring buffer
+            // (capacity 0x80, initial {0,0} sample, one sample per Emotion::Update), which this stack's MoodState
+            // does not keep. No caller may pass a stand-in: a trackDelta entry without the source is refused.
+            if (e.TrackDelta && value60TicksAgo is null)
+                throw new NotSupportedException("M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo (0x006794F8), the M7-mood history ring buffer, which is not built");
+            double x = e.TrackDelta ? current(e.Emotion) - value60TicksAgo!(e.Emotion) : current(e.Emotion);
             double y = e.Graph.EvaluateY(x);
             if (Math.Abs(y) < 1e-5) return 0.0;
             sum += y;
@@ -113,11 +118,14 @@ public sealed class WorkoutComponent
     /// at +0x11 (M13-010 / Appendix G R3-1..R3-6).
     ///
     /// <paramref name="current"/> and <paramref name="value60TicksAgo"/> are the emotion values the scorer
-    /// reads; the stack's <c>MoodState</c> keeps no history, so the 60-ticks-ago source is M7 (see the
-    /// report's MISSING).
+    /// reads; the stack's <c>MoodState</c> keeps no history, so the 60-ticks-ago source is M7-mood's ring buffer
+    /// and is null here: a workout whose scorer has <c>trackDelta</c> then throws <see cref="NotSupportedException"/>
+    /// (no shipped workout scorer has it). The engine's two callers - <c>Audio::BehaviorAudioClient::HandleSparkUpdates</c>
+    /// 0x00592416 and <c>BehaviorCubeLiftWorkout::TransitionToPostLiftAnim</c> 0x005D8014 - are not wired: each
+    /// feeds <c>PublicStateBroadcaster::UpdateBroadcastBehaviorStage(3, ...)</c>, which does not exist here.
     /// </summary>
     // fidelity: M13-010
-    public bool ShouldPlayEightiesMusic(Func<EmotionType, double> current, Func<EmotionType, double> value60TicksAgo, Func<double> randDbl)
+    public bool ShouldPlayEightiesMusic(Func<EmotionType, double> current, Func<EmotionType, double>? value60TicksAgo, Func<double> randDbl)
     {
         if (_eightiesEvaluated) return _eightiesAnswer;
         var workout = GetCurrentWorkout();

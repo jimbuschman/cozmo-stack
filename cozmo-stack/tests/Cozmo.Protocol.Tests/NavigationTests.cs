@@ -44,6 +44,24 @@ public class NavigationTests
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
         (bool)typeof(SteppedBehavior).GetMethod("IsRunnableInternal", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { ctx })!;
 
+    /// <summary>
+    /// What the real robot does for a lift move and the rig's fake does not: acknowledge every SetLiftHeight the stack sent (MotorActionAck; repeated each tick, an ack for a finished move is ignored)
+    /// and stream a state with the lift and head in position (the rig's own State() reports both still moving). FlipBlockAction's embedded compound awaits its 45 mm MoveLiftToHeightAction before it
+    /// drives (M13-028).
+    /// </summary>
+    private static void Idle(Rig rig)
+    {
+        var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
+        foreach (var l in lifts) rig.Send(new MotorActionAck { ActionId = l.ActionId });
+        // the fake robot's lift reaches whatever height it was last told to go to (45 mm before any command: angle 0)
+        double angle = lifts.Count == 0 ? 0.0 : Math.Asin((Math.Clamp(lifts[^1].HeightMm, 32f, 92f) - 45.0) / 66.0);
+        rig.Send(new RobotState
+        {
+            Timestamp = rig.T += 33, PoseOriginId = rig.OriginId, Pose = new RobotPose { X = rig.X, Y = rig.Y, Angle = rig.Angle }, HeadAngle = rig.Head,
+            Status = (uint)(RobotStatusFlag.LiftInPos | RobotStatusFlag.HeadInPos), LiftAngle = (float)angle, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData(),
+        });
+    }
+
     private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? frames = null, int ms = 10000, double stepMs = 33)
     {
         double t = 0;
@@ -408,16 +426,16 @@ public class NavigationTests
         rig.Cube = CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
+        Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 20000);   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
         Assert.Equal(ActionResult.Success, task.Result);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
         Assert.Equal(150f, line.Speed.SpeedMmps);
-        // M4-016: the fake robot starts with the lift at 45 mm and reports LIFT_IN_POS, so the approach
-        // command (45) is already in position and sends nothing; only the carry raise (92) goes out.
-        Assert.Equal(new[] { LiftPresets.CarryMm }, rig.LiftHeights);
-        Assert.True(flip.LiftRaised);
+        // the lift already reports 45 mm (angle 0), so the initial MoveLiftToHeightAction sends nothing (M4-016 MA15); whether a carry-height lift was queued depends on a poll tick catching the fake robot
+        // between its instant jump and the path's completion, so only the deterministic CheckIfDoneTick tests (M13_028_*) assert it. The object is marked Unknown when the compound is done (0x0055F186).
+        Assert.DoesNotContain(45f, rig.LiftHeights);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
         // with the check on, a robot away from every flipping pose is refused. The cube is at 300 mm
         // rather than 400: past about 350 mm its marker covers fewer than the hundred pixels
@@ -434,12 +452,12 @@ public class NavigationTests
     [Fact]
     public void StacksBasesAndPyramidsAreRecognisedFromCubePoses()
     {
-        var world = new BlockWorld(() => Array.Empty<(uint, ObjectType)>()) { AllowUnconnectedObjects = true };
+        var world = new BlockWorld(() => Array.Empty<(uint, ObjectType)>());
         var cubes = new[]
         {
             Cube(1, ObjectType.Block_LIGHTCUBE1, CubeAt(200, 0)), Cube(2, ObjectType.Block_LIGHTCUBE2, CubeAt(203, 2, 0.05, 66)), Cube(3, ObjectType.Block_LIGHTCUBE3, CubeAt(198, -1, 0, 110)),
         };
-        var stack = BlockConfigurationManager.FindObjectOnTopOrUnderneath(cubes[0], cubes, onTop: true);
+        var stack = BlockConfigurationManager.FindObjectOnTopOrUnderneath(cubes[0], cubes, onTop: true, BlockConfigurationManager.OnTopPlanarToleranceMm);
         Assert.Equal(2u, stack!.ObjectId);
         var mgr = new BlockConfigurationManager(world, () => 0);
         var built = mgr.BuildTallestStackForObject(cubes[1], cubes);
@@ -631,6 +649,7 @@ public class NavigationTests
         var stack = rig.M.Configurations.GetTallestStack();
         Assert.NotNull(stack); Assert.Equal(3, stack!.StackHeight);
         var ctx = Ctx(rig);
+        Idle(rig);
         var b = new KnockOverCubesBehavior(rig.M, "KnockOverCubes", 3);
         Assert.True(Runnable(b, ctx));
         Assert.False(Runnable(new KnockOverCubesBehavior(rig.M, "x", 4), ctx));
@@ -638,8 +657,9 @@ public class NavigationTests
         // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
         // up-axis change once the flip has started.
         bool tipped = false;
-        RunToEnd(rig, b, ctx, frames: () =>
+        RunToEnd(rig, b, ctx, ms: 30000, frames: () =>
         {
+            rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
             if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
                 && rig.M.World.GetObjectById(7) is { } o7)
             {
@@ -648,12 +668,18 @@ public class NavigationTests
                 o7.Pose = new Pose3d(Mat3.AboutX(Math.PI / 2), prev.Translation);
                 b.OnObserved(new ObjectObservation(o7, 0, o7.LastObservedMarkers, prev, PoseState.Known, false, 0));
             }
-            return true;
+            return false;
         });
         Assert.Contains(b.Trace, l => l.Contains("reach for block 7"));
         Assert.Contains(b.Trace, l => l.Contains("KnockOverGrabAttempt"));
         Assert.Contains(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7)"));
-        Assert.Contains(b.Trace, l => l.Contains("lift to carry height"));
+        // M12-035 / M13-014: the drive inside DriveAndFlipBlockAction ends 0x04000001 (the flip installers leave CheckIfDone's flag 0) but the outer compound ignores it (AddAction(inner, true,
+        // false), 0x0055B370): the flip runs after the FIRST drive, the action's result is the flip's, and the behaviour never sees 0x04000001, so there is no retry and no blind flip.
+        Assert.True(1 == b.Trace.Count(l => l.Contains("start DriveAndFlipBlockAction(7)")), string.Join(" | ", b.Trace));
+        Assert.DoesNotContain(b.Trace, l => l.Contains("DriveAndFlipBlockAction(7) -> DidNotReachPreActionPose"));   // the action's result; the drive's own 0x04000001 is only in the ignored-failure trace line
+        Assert.Contains(b.Trace, l => l.Contains("DriveToObjectAction -> DidNotReachPreActionPose, ignored by the outer compound"));
+        Assert.DoesNotContain(b.Trace, l => l.Contains("start FlipBlockAction (blind)"));
+        Assert.Contains(b.Trace, l => l.Contains("FlipBlockAction.CheckIfDone: compound result Success; object 7 marked Unknown"));   // 0x0055F186; no carry lift is queued without a RUNNING tick within 40 mm
         Assert.True(b.KnockedOver, $"tipped={tipped} | " + string.Join(" | ", b.Trace));
         Assert.Contains(b.Trace, l => l.Contains("KnockOverSuccess"));
         Assert.Contains(b.Trace, l => l.Contains("KnockedOverBlocks"));
@@ -973,15 +999,20 @@ public class NavigationTests
     /// and a <c>TurnTowardsObjectAction</c> when maxTurn &gt; 0 (0x0055B37C..0x0055B43C).
     /// </summary>
     [Fact]
-    public void DriveAndFlipBlockAddsBothTurnsWhenMaxTurnIsPositive()
+    public void DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip()
     {
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
+        // M12-035 / M12-011: the flip installers leave CheckIfDone's in-position bool 0, so the drive ends 0x04000001; IDriveToInteractWithObject 0x0055B370 adds the drive-and-wait compound with
+        // ignoreFailure = 1 (and the two turns too, 0x0055B3D4, 0x0055B438), so the outer compound goes on: both turns run, then the flip; the action's result is the flip's.
         var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
+        Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 20000);   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
+        Assert.NotEqual(0x04000001u, (uint)task.Result);
+        Assert.Contains(flip.Trace, l => l.Contains("ignored by the outer compound"));
         Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsLastFacePose"));
         Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsObjectAction"));
     }

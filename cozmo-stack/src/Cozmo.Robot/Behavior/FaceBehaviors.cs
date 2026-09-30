@@ -246,7 +246,7 @@ public sealed class InteractWithFacesBehavior : FaceBehavior
         TargetFaceId = SelectFaceToTrack();
         if (TargetFaceId is null) { Log("BehaviorInteractWithFaces.Init.NoValidTarget"); Finish(); return; }
         CurrentPhase = Phase.VerifyFace;
-        using var turn = new TurnTowardsFaceAction(V, TargetFaceId.Value, Math.PI, sayName: true) { SayNameTrigger = AnimationTrigger.InteractWithFacesInitialNamed, NoNameTrigger = AnimationTrigger.InteractWithFacesInitialUnnamed };
+        using var turn = new TurnTowardsFaceAction(V, TargetFaceId.Value, Math.PI, sayName: true) { RequireVerifiedFace = true /* fidelity: M13-014, 0x005C229C stores the ctor's sayName bool at +0x193 */, SayNameTrigger = AnimationTrigger.InteractWithFacesInitialNamed, NoNameTrigger = AnimationTrigger.InteractWithFacesInitialUnnamed };
         turn.EmotionEvent += EmotionEvent;
         RunFaceAction($"VerifyFace: TurnTowardsFace({TargetFaceId})", turn.RunAsync, r =>
         {
@@ -723,7 +723,8 @@ public sealed class PyramidThankYouBehavior : FaceBehavior
     {
         var pyramid = _m.Configurations.Pyramids.FirstOrDefault();
         if (pyramid is null) { Finish(); return; }
-        var turn = new TurnTowardsFaceAction(V, SmartFaceID.Invalid);
+        // fidelity: M13-014 (0x005DE160..0x005DE170: a TurnTowardsLastFacePoseAction with +0x193 = 1)
+        var turn = new TurnTowardsLastFacePoseAction(V, Math.PI, sayName: false) { RequireVerifiedFace = true };
         RunFaceAction("TurnTowardsFace(last)", turn.RunAsync, _ =>
             PlayTrigger(AnimationTrigger.BuildPyramidThankUser, () =>
                 RunAction($"TurnTowardsObject({pyramid.TopBlockId})", ct => _m.TurnTowardsObjectAsync(pyramid.TopBlockId, Math.PI, ct), _ =>

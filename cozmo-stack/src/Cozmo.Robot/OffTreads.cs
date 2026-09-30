@@ -133,6 +133,8 @@ public sealed class OffTreadsClassifier
     public Action? UnattachCarriedObjectIfCarrying { get; set; }
     /// <summary>A11: BlockWorld::AnyRemainingLocalizableObjects (M11 seam). Null: no BlockWorld attached and no log.</summary>
     public Func<bool>? AnyRemainingLocalizableObjects { get; set; }
+    /// <summary>A11: called from the same spot when nothing localizable remains, for the BlockWorld's own copy of Robot+0x2C4 = 1 and Robot+0x2B8 = -1 (M11 seam).</summary>
+    public Action? NothingLocalizableRemainsOnTreads { get; set; }
     /// <summary>A13: SetOnChargerPlatform(false) on a commit to anything but OnTreads (M4 C8 P6).</summary>
     public Action? ClearOnChargerPlatform { get; set; }
     /// <summary>A14: FreeplayDataTracker::SetFreeplayPauseFlag(new ≠ 0, flag 2 "OffTreads") (M15 seam).</summary>
@@ -272,10 +274,16 @@ public sealed class OffTreadsClassifier
         // A11
         if (cand == OffTreadsState.OnTreads)
         {
-            if (AnyRemainingLocalizableObjects is { } any && !any())
-                Log?.Invoke("Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects");
-            Robot2C4 = 1;
-            Robot2B8 = -1;
+            // 0x00512112..0x00512188 (M11-044 authority, R-VIS round 3): AnyRemainingLocalizableObjects non-zero SKIPS the log and both stores. With no BlockWorld seam attached
+            // (a classifier on its own) there is nothing located, so nothing remains and the stores run without the log.
+            var any = AnyRemainingLocalizableObjects;
+            if (any is null || !any())
+            {
+                if (any is not null) Log?.Invoke("Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects");
+                Robot2C4 = 1;
+                Robot2B8 = -1;
+                NothingLocalizableRemainsOnTreads?.Invoke();
+            }
         }
         // A13
         else ClearOnChargerPlatform?.Invoke();

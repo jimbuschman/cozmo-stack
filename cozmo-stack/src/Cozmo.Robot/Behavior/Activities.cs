@@ -90,6 +90,11 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         int counted = 0;
         foreach (var scorer in EmotionScorers)
         {
+            // fidelity: M13-010 (second copy of MoodScorer::EvaluateEmotionScore 0x0067C9B8; Workouts.cs is the first)
+            // A trackDelta entry reads Emotion::GetHistoryValueTicksAgo(emotion, 0x3C) 0x006794F8 - the M7-mood ring buffer,
+            // which MoodState does not keep. The earlier LOCAL_POLICY (use the level) is withdrawn: refused, not guessed.
+            if (scorer.TrackDelta)
+                throw new NotSupportedException("M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo (0x006794F8), the M7-mood history ring buffer, which is not built");
             double y = scorer.Graph.EvaluateY(scorer.ValueFor(mood));
             if (Math.Abs(y) < 1e-5) return 0;
             sum += y;
@@ -178,9 +183,10 @@ public static class BehaviorObjectives
 /// is taken as a change rather than a level. <c>EmotionScorer::ReadFromJson</c> 0x0067AABC reads
 /// <c>emotionType</c>, <c>scoreGraph</c> and <c>trackDelta</c>.
 ///
-/// LOCAL_POLICY: with <c>trackDelta</c> set the engine subtracts the emotion's value sixty ticks ago
+/// With <c>trackDelta</c> set the engine subtracts the emotion's value sixty ticks ago
 /// (<c>Emotion::GetHistoryValueTicksAgo(60)</c> at 0x0067C9F4) from its value now. This stack's
-/// <see cref="MoodState"/> keeps no history, so the level is used as it stands. Nothing shipped exercises
+/// <see cref="MoodState"/> keeps no history, so scoring such an entry is refused with
+/// <see cref="NotSupportedException"/> (M13-010; it used to use the level as a stand-in). Nothing shipped exercises
 /// it: not one of the behaviour or activity configs in cozmo_resources carries an <c>emotionScorers</c>
 /// block, so every scored behaviour in the app is scored by its flat score alone.
 /// </summary>

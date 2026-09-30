@@ -43,7 +43,6 @@ public static class VisionTool
         Console.WriteLine($"calibration: {cal}");
         using var robot = CozmoRobot.CreateOffline();
         using var vision = new VisionSystem(robot, cal) { Enabled = false };
-        vision.World.AllowUnconnectedObjects = true;
         vision.World.Log += l => Console.WriteLine("  world: " + l);
         int failures = 0, cases = 0;
         var rnd = new Random(11);
@@ -56,6 +55,8 @@ public static class VisionTool
             var frame = new GrayImage(cal.Columns, cal.Rows);
             for (int i = 0; i < frame.Pixels.Length; i++) frame.Pixels[i] = (byte)(140 + rnd.Next(-6, 6));
             var drawn = MarkerRenderer.DrawCube(frame, lib, new CameraModel(cal, pd.CameraPose), ObjectType.Block_LIGHTCUBE1, cube);
+            // M11-007: the first sighting only makes a confirmer entry; the second matching one makes the object (0x00506A04..0x00506A32)
+            vision.ProcessImage(frame, (uint)cases, pd.Timestamp, pd);
             var r = vision.ProcessImage(frame, (uint)cases, pd.Timestamp, pd);
             var o = r.Objects.FirstOrDefault()?.Object;
             double err = o is null ? double.NaN : (o.Pose.Translation - cube.Translation).Length;
@@ -67,7 +68,7 @@ public static class VisionTool
                               $"detected [{string.Join(",", r.Markers.Select(m => m.Code))}] -> {(o is null ? "NO OBJECT" : $"pose error {err:F1} mm, {ang:F1} deg")} {(ok ? "OK" : "FAIL")} " +
                               $"({r.Elapsed.TotalMilliseconds:F0} ms; {vision.Detector.Quads.LastStats})");
             if (outDir is not null) { Directory.CreateDirectory(outDir); frame.SavePgm(Path.Combine(outDir, $"synthetic-{cases}.pgm")); vision.Detector.Quads.LastMask?.SavePgm(Path.Combine(outDir, $"synthetic-{cases}-mask.pgm")); }
-            vision.World.MarkUnknown(1);
+            if (o is not null) vision.World.MarkUnknown(o.ObjectId);
         }
         Console.WriteLine(failures == 0 ? $"all {cases} synthetic cases OK" : $"{failures} of {cases} synthetic cases FAILED");
         return failures == 0 ? 0 : 2;
@@ -137,7 +138,8 @@ public static class VisionTool
         Say(cal is null ? "camera calibration: NOT READ from NV storage (see vision log above)" : $"camera calibration from robot: {cal}");
         if (cal is null && nominal) { vision.Calibration = CameraCalibration.Nominal(); Say($"using the nominal stand-in: {vision.Calibration} (LOCAL_POLICY; poses will be approximate)"); }
         if (vision.Calibration is null) { Say("no calibration: markers will still be listed, but no object can be localised"); }
-        if (unconnected) { vision.World.AllowUnconnectedObjects = true; Say("objects will be created for unconnected cubes (LOCAL_POLICY switch)"); }
+        // M11-013: the engine has no AllowUnconnectedObjects switch; it keeps an observed cube that is not connected, so this option changes nothing now.
+        if (unconnected) Say("--unconnected changes nothing: the engine keeps an unconnected cube after two matching sightings, warning at most once per 10 s (M11-013)");
 
         // 2. cubes and camera
         robot.StartCamera();

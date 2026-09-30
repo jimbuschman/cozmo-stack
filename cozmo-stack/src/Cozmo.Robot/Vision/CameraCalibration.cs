@@ -107,8 +107,13 @@ public sealed record CameraCalibration
     /// <summary>
     /// A stand-in for offline tests and tools: a 320x240 pinhole camera with a 290 px focal length (about a
     /// 58 degree horizontal field of view). LOCAL_POLICY: the number comes from no Anki source and is never
-    /// used for a real robot, which must supply its own through <see cref="NvEntryTag"/>.
+    /// used for a real robot, which must supply its own through <see cref="NvEntryTag"/>. The library never calls
+    /// it: <see cref="VisionSystem"/> without a calibration refuses to process, as the engine's
+    /// <c>VisionSystem::Update</c> does ("Must be initialized and have calibrated camera to Update", 0x006B4D66..0x006B4FFC);
+    /// the conformance tools call it unconditionally in several paths (VisionTool, CoreChecks, FreeplayTool and the
+    /// hardware runner), not only under <c>--nominal</c> (M11-012).
     /// </summary>
+    // fidelity: M11-012
     public static CameraCalibration Nominal(int columns = 320, int rows = 240) => new()
     {
         FocalLengthX = 290.0 * columns / 320, FocalLengthY = 290.0 * rows / 240,

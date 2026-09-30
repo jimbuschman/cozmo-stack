@@ -136,6 +136,9 @@ public sealed class CozmoSensors
     /// </summary>
     public OffTreadsClassifier OffTreads { get; } = new();
 
+    /// <summary>The last state whose treads commit involved OnTreads (r7 != 0 at 0x00512A94/0x00512A86), which the engine answers with Robot::Delocalize (M11-044); null before any.</summary>
+    internal RobotState? DelocalizeTrigger { get; private set; }
+
     /// <summary>How the robot is sitting, as the engine would classify it.</summary>
     public OffTreadsState OffTreadsState => OffTreads.Current;
 
@@ -684,6 +687,7 @@ public sealed class CozmoSensors
         _lastPickedUp = false;
         _lastOnCharger = false;
         _haveBaseline = false;
+        DelocalizeTrigger = null;
         OffTreads.ResetToConstructed();
         UnexpectedMovement.ResetToConstructed();
     }
@@ -794,6 +798,9 @@ public sealed class CozmoSensors
                 // counter stays 0 for that state.
                 bool treadsChanged = (OffTreads.Current == OffTreadsState.OnTreads) != onTreadsBefore;
                 if (treadsChanged) _frameMismatchCount = 0;
+                // fidelity: M11-044
+                // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (VisionSystem does it, for this state, right after the +0x2BC OR).
+                if (treadsChanged) DelocalizeTrigger = s;
                 // fidelity: M4-019
                 // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
                 SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));

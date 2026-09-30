@@ -196,11 +196,22 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         if (!Handling) return;
         switch (m)
         {
-            case ObjectMoved mv: Tracker.ObjectMoved(mv); break;
-            case ObjectStoppedMoving sm: Tracker.ObjectStopped(sm.ObjectID); break;
-            case ObjectUpAxisChanged ua: Tracker.ObjectUpAxisChanged(ua.ObjectID); break;
+            case ObjectMoved mv:
+                if (WorldObjectId(mv.ObjectID) is { } movedId)
+                    Tracker.ObjectMoved(new ObjectMoved { Timestamp = mv.Timestamp, ObjectID = movedId, Accel = mv.Accel, AxisOfAccel = mv.AxisOfAccel });
+                break;
+            case ObjectStoppedMoving sm: if (WorldObjectId(sm.ObjectID) is { } stoppedId) Tracker.ObjectStopped(stoppedId); break;
+            case ObjectUpAxisChanged ua: if (WorldObjectId(ua.ObjectID) is { } axisId) Tracker.ObjectUpAxisChanged(axisId); break;
         }
     }
+
+    // fidelity: M11-041
+    /// <summary>
+    /// The robot's cube messages name a cube by its radio slot (activeID); the engine's game messages, which this strategy stands in for, carry the
+    /// connected object's ObjectID (<c>GetConnectedActiveObjectByActiveIdHelper</c>). With a world attached the slot is translated and a slot with no
+    /// connected object is ignored; without one the message's own ID is kept.
+    /// </summary>
+    private uint? WorldObjectId(uint activeId) => _world is null ? activeId : _world.ConnectedObjectIdForActiveId(activeId);
 
     private void OnWorldObserved(Cozmo.Robot.Vision.ObjectObservation o) => ObjectObserved(o.Object.ObjectId);
 

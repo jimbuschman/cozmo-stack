@@ -33,12 +33,12 @@ public class PickupVerifyTests
         Assert.Equal(PoseState.Known, obj.PoseState);
         Assert.False(obj.IsMoving);
 
-        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = obj.ObjectId });
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = rig.ActiveIdOf(obj.ObjectId) });
         rig.Pump();
         Assert.True(obj.IsMoving);
         Assert.Equal(PoseState.Dirty, obj.PoseState);
 
-        rig.Send(new ObjectStoppedMoving { Timestamp = rig.T, ObjectID = obj.ObjectId });
+        rig.Send(new ObjectStoppedMoving { Timestamp = rig.T, ObjectID = rig.ActiveIdOf(obj.ObjectId) });
         rig.Pump();
         Assert.False(obj.IsMoving);
     }
@@ -56,7 +56,7 @@ public class PickupVerifyTests
         var obj = Assert.Single(rig.Frame().Objects).Object;
         rig.M.Docking.Carrying.SetCarrying(obj.ObjectId);
 
-        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = obj.ObjectId });
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = rig.ActiveIdOf(obj.ObjectId) });
         rig.Pump();
         Assert.True(obj.IsMoving);                       // the motion is still recorded
         Assert.Equal(PoseState.Known, obj.PoseState);    // but the pose is not dirtied

@@ -135,17 +135,17 @@ public class ManipulationTests
     {
         var obj = new Pose3d(Mat3.Identity, new Vec3(0, 0, 30));     // 30 mm up: a planar threshold would read 0
         var pose = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
-        Assert.True(CubePreActionPoses.DistanceThresholdMm(obj, pose, 0.5, out double twice, out double once));
+        Assert.True(CubePreActionPoses.DistanceThresholdMm(pose, obj, 0.5, out double twice, out double once));
         double s = Math.Sin(0.5);
         Assert.Equal(30.0 * s, once, 6);
         Assert.Equal(2 * 30.0 * s, twice, 6);
 
         // the positivity guard, with operator>'s ~1e-5 rad epsilon
-        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, 1e-5, out double t0, out double t1));
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, 1e-5, out double t0, out double t1));
         Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
-        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, 0.0, out t0, out t1));
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, 0.0, out t0, out t1));
         Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
-        Assert.False(CubePreActionPoses.DistanceThresholdMm(obj, pose, -0.1, out t0, out t1));
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, -0.1, out t0, out t1));
         Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
     }
 

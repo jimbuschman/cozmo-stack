@@ -18,6 +18,7 @@ public sealed class ManipulationSystem : IDisposable
         Docking = new DockingSystem(robot, vision);
         Docking.Log += l => Log?.Invoke(l);
         Configurations = new BlockConfigurationManager(vision.World, () => ClockSec());
+        Docking.Configurations = Configurations;      // SetObjectAsAttachedToLift step 9 sets its dirty flag (M12-008)
         Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
@@ -114,6 +115,32 @@ public sealed class ManipulationSystem : IDisposable
     public Func<TimeSpan, CancellationToken, Task> Wait { get; set; } = (t, c) => Task.Delay(t, c);
 
     public Pose3d? RobotPose() => Vision.History.Latest?.RobotPose;
+
+
+    /// <summary>
+    /// <c>Robot::GetHeight</c> 0x00516F0C = <c>max(66·sin(liftAngle) + 45 + 5, 67.7)</c> (66 at 0x00516F54, 45 at 0x00516F58, 5.0, floor 0x42876666 = 67.7; C-E7/E9). It is the z of the
+    /// <c>Point3</c> tolerance <c>DriveToPoseAction::CheckIfDone</c> passes to <c>IsSameAs</c> (0x0055ACBA, 0x0055ACC2/0x0055ACF8) and <c>maxZ - minZ</c> in <c>BlockWorld::GetObstacles</c> (M12-036).
+    /// </summary>
+    // fidelity: M12-023, M12-036
+    public double RobotHeightMm()
+    {
+        float lift = Robot.State.Latest?.LiftAngle ?? 0f;
+        return Math.Max((double)RobotState.LiftHeightMmFromAngle(lift) + 5.0, 67.7);
+    }
+
+    /// <summary>
+    /// <c>BlockWorld::GetObstacles(vec, 0.0)</c> 0x00626D44 as <c>IDockAction::GetPreActionPoses</c> calls it (M12-036): the ignore-ID set is the result of
+    /// <c>CarryingComponent::GetCarryingObjects</c>, here the carried object and the object resting on it (<c>CarryingComponent+0x14</c>): 0x00633BB0 inserts [this+4] when [this+8] != -1 and [this+0x10] when [this+0x14] != -1
+    /// (fix-round-2 verifier). See <see cref="PreActionValidity.GetObstacles"/>.
+    /// </summary>
+    // fidelity: M12-036
+    public List<PreActionObstacle> GetObstacles(Pose3d robotPose)
+    {
+        var ignore = new List<uint>();
+        if (Docking.Carrying.CarriedObjectId is { } carried) ignore.Add(carried);
+        if (Docking.Carrying.CarriedOnTopId is { } onTop) ignore.Add(onTop);
+        return PreActionValidity.GetObstacles(World.LocatedObjects, ignore, robotPose, RobotHeightMm(), 0f);
+    }
 
     /// <summary><c>TurnTowardsObjectAction</c>: the located object's pose through <see cref="TurnTowardsPose"/>.</summary>
     public Task<bool> TurnTowardsObjectAsync(uint objectId, double maxTurnRad, CancellationToken cancel)

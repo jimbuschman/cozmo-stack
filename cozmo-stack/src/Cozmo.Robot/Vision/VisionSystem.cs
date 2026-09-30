@@ -35,7 +35,6 @@ public sealed class VisionSystem : IDisposable
 {
     private readonly CozmoRobot _robot;
     private readonly object _busy = new();
-    private int _processing;
     private bool _warnedNoCalibration;
     /// <summary>The calibration the constructor was given, which a removal restores.</summary>
     private readonly CameraCalibration? _constructedCalibration;
@@ -56,7 +55,35 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M14-011
         Recognizer = new FaceRecognizer(okaoRecognizer ?? new OkaoFaceRecognizer());
         Recognizer.Log += l => Log?.Invoke(l);
-        World = new BlockWorld(() => robot.Cubes.ConnectedCubes.Where(c => c.ObjectId is not null).Select(c => (c.ObjectId!.Value, c.Type)));
+        // fidelity: M11-041
+        // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
+        // reads the carrying and treads state from the components that own them.
+        World = new BlockWorld();
+        World.IsCarryingObject = id => Carrying(id);
+        World.OnTreads = () => robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
+        // fidelity: M11-037
+        // VisionComponent::SetPhysicalRobot writes the lift occluder points when the firmware version arrives (0x0051397C). The event fires once, so a system built
+        // after the firmware version was handled (the tools build it after connecting) catches up from what the engine robot recorded: PhysicalRobotRecorded is set when the
+        // handler got as far as SetPhysicalRobot, independent of the audio output source.
+        robot.Engine.PhysicalRobotSet += World.SetPhysicalRobot;
+        if (robot.Engine.Robot is { PhysicalRobotRecorded: true } handled) World.SetPhysicalRobot(handled.IsPhysicalRobot);
+        // fidelity: M11-044
+        // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
+        // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
+        World.CurrentRobotPose = () => History.Latest?.RobotPose;
+        World.ComputedRobotPoseAt = ts => History.GetComputedStateAt(ts);
+        World.MovementBytes = () => robot.State.Latest is { } st
+            ? ((st.Status & (uint)RobotStatusFlag.HeadInPos) == 0, (st.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0)
+            : (false, false);
+        // UNSOURCED STAND-IN: Robot::GetLastImageTimeStamp 0x00516EC0 is a Vision::Camera getter ("ldr r0,[r0,#0x258]; b 0x8CAE6C"); no citation shows that the larger of the last received
+        // camera frame's timestamp and the timestamp of the frame being processed is what it returns (M11-037, M11-044).
+        World.LastImageTimestamp = () => Math.Max(robot.Camera.LastFrame?.Timestamp ?? 0u, Volatile.Read(ref _frameTimestamp));
+        // fidelity: M11-044
+        // The commit to OnTreads (0x005120F6..0x00512188): BlockWorld::AnyRemainingLocalizableObjects decides, and only when nothing remains do Robot+0x2C4 = 1 and Robot+0x2B8 = -1 follow.
+        // The classifier (M10 A11) calls these two seams from that spot.
+        robot.Sensors.OffTreads.AnyRemainingLocalizableObjects = World.AnyRemainingLocalizableObjects;
+        robot.Sensors.OffTreads.NothingLocalizableRemainsOnTreads = World.ClearLocalizationOnTreads;
+        World.BaseStationSeconds = () => robot.Engine.Timer.Seconds;
         History = new RobotStateHistory();
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
@@ -73,7 +100,8 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M1-041
         robot.StateHistoryCleared += History.Clear;
         // fidelity: M4-023
-        robot.Cubes.DoubleTapPendingEnded += World.MarkDirty;
+        _doubleTapEnded = OnDoubleTapPendingEnded;
+        robot.Cubes.DoubleTapPendingEnded += _doubleTapEnded;
         // fidelity: M3-033, M3-034
         // VisionComponent::Init's FaceAlbum/Enrollment reads complete after Gate A, i.e. after
         // CozmoRobot.ConnectAsync returns and the caller builds this VisionSystem. The engine raises the result
@@ -82,6 +110,21 @@ public sealed class VisionSystem : IDisposable
         robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
         if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
             _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
+    }
+
+    private readonly Action<uint> _doubleTapEnded;
+
+    /// <summary>The timestamp of the image being processed: what <c>Robot::GetLastImageTimeStamp</c> is at least (M11-037).</summary>
+    private uint _frameTimestamp;
+
+    // fidelity: M4-023, M11-041
+    /// <summary>
+    /// CD10g's MarkObjectDirty on the located copy of a cube whose double-tap window ended. The cube is named by its radio slot (activeID), and the
+    /// world's ObjectID is the connected object's (<see cref="BlockWorld.ConnectedObjectIdForActiveId"/>); a slot with no connected object does nothing.
+    /// </summary>
+    private void OnDoubleTapPendingEnded(uint activeId)
+    {
+        if (World.ConnectedObjectIdForActiveId(activeId) is { } id) World.MarkDirty(id);
     }
 
     // fidelity: M3-022
@@ -195,9 +238,11 @@ public sealed class VisionSystem : IDisposable
     public IReadOnlyList<TrackedFace> LastFaces { get; private set; } = Array.Empty<TrackedFace>();
     /// <summary>
     /// Whether frames from the camera are processed as they arrive. The engine's VisionComponent +0x48 starts 0
-    /// (2a) and is set to 1 only by the NV calibration callback (1j, 2d), so this starts false and the callback
-    /// turns it on; a caller that drives frames directly (offline tools and tests) sets it itself.
+    /// (2a) and is set to 1 only by the NV calibration callback (1j, 2d), on every outcome of that read (M11-049,
+    /// 0x0065AE80), so this starts false and the callback turns it on. A caller that drives frames directly through
+    /// <see cref="ProcessImage(GrayImage, uint, uint, VisionPoseData)"/> (offline tools and tests) does not go through the gate.
     /// </summary>
+    // fidelity: M11-049
     public bool Enabled { get; set; }
 
     // fidelity: M11-021, M11-034
@@ -501,12 +546,27 @@ public sealed class VisionSystem : IDisposable
                 // fidelity: M4-020
                 // The history and the pose are after UpdateFullRobotState's origin check (SC4f, M4 correction C3): a
                 // state the Robot drops before time sync, or whose origin it rejects, does not reach them.
+                // fidelity: M11-044
+                // UpdateFullRobotState ORs into Robot+0x2BC (0x00512B56..0x00512B8E) BEFORE the origin lookup (0x00512C54): a state whose origin is rejected still ORs in.
+                // Only a state that passed the time-sync gate gets that far (StoredState, CozmoEngine.UpdateFullRobotState).
+                if (ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
+                    World.NoteRobotState((s.Status & (uint)RobotStatusFlag.HeadInPos) == 0 || (s.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0,
+                                         _robot.Sensors.OffTreadsState != OffTreadsState.OnTreads);
+                // fidelity: M11-044
+                // The engine's Delocalize trigger (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6): a treads commit that involves OnTreads (CozmoSensors.DelocalizeTrigger). +0x2C0 = 0, Robot::Delocalize,
+                // then a jump to 0x00512FB4 that skips the history and pose steps of UpdateFullRobotState: the history below does not take this state. NOT built: the pose steps outside the history
+                // (the cliff schedule and the rest of the sensor route still see the state), Delocalize's origin allocation and the (status & 2) argument (it only gates a warning, 0x00510C6A..0x00510C98) and the carried move gated by [[+0x284]+8] != -1 (the carried set decides here). RobotDelocalized carries the OLD origin id: AddNewOrigin is not built (M11-053).
+                if (ReferenceEquals(_robot.Sensors.DelocalizeTrigger, s) && ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
+                {
+                    var carriedNow = CarriedObjectIds();
+                    World.DelocalizeOnTreadBoundary(carriedNow);
+                    RobotDelocalized?.Invoke(History.OriginId);
+                    break;
+                }
                 if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
-                // The robot reports which origin its pose is in. A different one means it has been
-                // delocalized - Robot::Delocalize 0x00510A24 allocates the new origin and tells the robot
-                // - and everything located in the old one is in a frame that no longer exists. What the
-                // robot is carrying moves across with it (0x00510CF0); the rest stops being located, and
-                // whoever holds spatial state of their own is told so they can do the same.
+                // STAND-IN (M11-019, not the engine's trigger): the engine has no origin-change trigger for Delocalize. This stack keeps treating a new origin id in the state stream as a
+                // delocalization, because it does not allocate origins itself: the robot's own report of a new origin is the only sign it has. Robot::Delocalize 0x00510A24 (allocates the new
+                // origin, moves what the robot carries across (0x00510CF0), BlockWorld::OnRobotDelocalized) is what the engine does at the tread boundary above.
                 // fidelity: M11-019
                 uint before = History.OriginId;
                 History.Add(s);
@@ -523,25 +583,34 @@ public sealed class VisionSystem : IDisposable
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
             // fidelity: M11-009
             case ObjectMoved mv:
+            {
                 // fidelity: M4-009, M4-023
                 // HandleActiveObjectMoved (CD10a, 0x00533E4C..0x005341BA): an unknown active id, the charger's garbage
                 // moves and a movement inside the double-tap window (step 3) return before SetIsMoving and MarkObjectDirty.
                 if (_robot.Cubes.MovedStopsBeforeTheWorld(mv.ObjectID)) break;
-                World.SetMoving(mv.ObjectID, true);
-                if (!Carrying(mv.ObjectID)) World.MarkDirty(mv.ObjectID);
+                // fidelity: M11-041
+                // The message names the cube by its radio slot; the engine finds the connected object of that slot
+                // (GetConnectedActiveObjectByActiveIdHelper) and works on its ObjectID. No connected object: nothing more.
+                if (World.ConnectedObjectIdForActiveId(mv.ObjectID) is not { } movedId) break;
+                World.SetMoving(movedId, true);
+                if (!Carrying(movedId)) World.MarkDirty(movedId);
                 break;
+            }
             case ObjectStoppedMoving sm:
+            {
                 // fidelity: M4-009
                 // HandleActiveObjectStopped (CD10b, 0x00534636..0x00534AA4): the same lookup and charger filter as Moved;
                 // the double-tap test's result is discarded.
                 if (_robot.Cubes.StoppedStopsBeforeTheWorld(sm.ObjectID)) break;
-                World.SetMoving(sm.ObjectID, false);
+                // fidelity: M11-041
+                if (World.ConnectedObjectIdForActiveId(sm.ObjectID) is not { } stoppedId) break;
+                World.SetMoving(stoppedId, false);
                 break;
-            // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last
-            // pose will go stale the moment someone moves it. The engine drops such an object from the world
-            // model; here its pose goes Unknown, which is what every located-object query already tests
-            // (LOCAL: the engine's ObjectConnectionState handling was not transcribed, only its effect).
-            case ObjectConnectionState cs when !cs.Connected: OnCubeDisconnected(cs.ObjectID); break;
+            }
+            // fidelity: M11-041
+            // HandleActiveObjectConnectionState 0x00533B3C: a connection registers the connected object (AddConnectedActiveObject), a
+            // disconnection erases it (RemoveConnectedActiveObject).
+            case ObjectConnectionState cs: HandleObjectConnectionState(cs); break;
             // fidelity: M11-004
             // HandleImageImuData 0x00535C20 appends every image IMU sample to VisionComponent+0xb0's
             // ImuDataHistory (AddImuData 0x00538B24); the rotating gate reads it back.
@@ -549,6 +618,23 @@ public sealed class VisionSystem : IDisposable
         }
     }
 
+    // fidelity: M11-041, M11-042
+    /// <summary>
+    /// The engine calls <c>AddConnectedActiveObject(activeID, factoryID, type)</c> for a connection and
+    /// <c>RemoveConnectedActiveObject(activeID)</c> for a disconnection (0x00533BD6, 0x00533CA0); <c>Robot::HandleConnectedToObject</c> is
+    /// <see cref="CozmoCubes"/>'s (M4), which sees the same message. An unread body that throws (<c>CreateActiveObjectByType</c> for a type it
+    /// does not build) is logged, not swallowed.
+    /// </summary>
+    private void HandleObjectConnectionState(ObjectConnectionState cs)
+    {
+        uint? worldId = cs.Connected ? null : World.ConnectedObjectIdForActiveId(cs.ObjectID);
+        try { World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected); }
+        catch (NotSupportedException e) { Log?.Invoke($"object {cs.ObjectID}: {e.Message}"); }
+        if (!cs.Connected && worldId is { } id) OnCubeDisconnected(id);
+    }
+
+    // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last pose will go stale the moment someone
+    // moves it. LOCAL: this stack forgets the located object (the engine's disconnection handling does not delete it, M11-042).
     private void OnCubeDisconnected(uint objectId)
     {
         if (World.GetObjectById(objectId) is not { } o || o.PoseState == PoseState.Unknown) return;
@@ -556,21 +642,71 @@ public sealed class VisionSystem : IDisposable
         World.MarkUnknown(objectId);
     }
 
-    private void OnFrame(CameraFrame f)
+    // ------------------------------------------------------------------------------ the mailbox (M11-040, M11-049)
+
+    private readonly object _mailbox = new();
+    /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
+    private (CameraFrame Frame, int Removal)? _next;
+    private bool _processorRunning;
+
+    /// <summary>The Processor thread's sleep between polls: <c>sleep_for(2,000,000 ns)</c> (0x001E8480 built at 0x00651FDA, called at 0x0065225E).</summary>
+    // fidelity: M11-040
+    internal static readonly TimeSpan ProcessorPollInterval = TimeSpan.FromMilliseconds(2);
+
+    private void OnFrame(CameraFrame f) => HandOverFrame(f);
+
+    /// <summary>
+    /// <c>VisionComponent::SetNextImage</c> 0x00652B04 in its asynchronous mode. An image is discarded, with only an info log, while
+    /// <see cref="Enabled"/> is false (0x00652B20..0x00652BEA): that byte (VisionComponent+0x48) has one writer, the NV calibration-read callback,
+    /// which sets it on every outcome of the read (M11-049, 0x0065AE80), so no image is processed before that callback has run once. The
+    /// pause byte (+0x4B) has no writer anywhere (it is only read), so there is no paused state here. Otherwise the image goes into the ONE pending
+    /// slot: a slot still occupied is a dropped frame (DropStats, "SetNextImage.DroppedFrame", 0x00653070..0x006530C8) and the newest image
+    /// replaces it (latest wins, 0x006530CC..0x00653140). The Processor takes the pending image, processes it, and on completion discards the
+    /// current image and any image that arrived meanwhile without counting it (0x00652234..0x0065224C), then sleeps 2 ms and polls again.
+    /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>), the timestamp monotonicity test, the pose capture
+    /// at hand-in (this stack pairs the pose when it processes) and the drop-statistics events.
+    /// </summary>
+    // fidelity: M11-040, M11-049
+    internal void HandOverFrame(CameraFrame f)
     {
-        // fidelity: M11-040 — VisionComponent::SetNextImage 0x00652B04 puts the EncodedImage in the
-        // component; the Processor thread 0x00651F08 pops it and calls UpdateVisionSystem(pose, image)
-        // 0x00653D30. The mailbox holds one image at a time (the M3 per-frame bound): a frame that arrives
-        // while one is being processed is dropped.
         if (!Enabled) return;
-        if (Interlocked.CompareExchange(ref _processing, 1, 0) != 0) { FramesDropped++; return; }
-        int removal = Volatile.Read(ref _removals);
-        Task.Run(() =>
+        lock (_mailbox)
         {
-            try { ProcessFrame(f, removal); }
-            catch (Exception e) { Log?.Invoke($"frame {f.ImageId}: {e.GetType().Name}: {e.Message}"); }
-            finally { Interlocked.Exchange(ref _processing, 0); }
-        });
+            if (_next is { } pending)
+            {
+                FramesDropped++;
+                Log?.Invoke($"VisionComponent.SetNextImage.DroppedFrame: Setting next image with t={f.Timestamp}, but existing next image from t={pending.Frame.Timestamp} not yet processed");
+            }
+            _next = (f, Volatile.Read(ref _removals));
+            if (_processorRunning) return;
+            _processorRunning = true;
+        }
+        Task.Run(Processor);
+    }
+
+    /// <summary>
+    /// <c>VisionComponent::Processor</c> 0x00651F08: while there is a pending image, take it (0x0065201A..0x00652216), run
+    /// <c>UpdateVisionSystem</c> without holding the mailbox lock (0x0065222E), discard the pending slot (0x00652234..0x0065224C), sleep 2 ms
+    /// (0x0065225E). The engine's thread polls for as long as it runs; this worker leaves when the slot is empty at a poll and is started again
+    /// by the next hand-in, which a frame arriving in the sleep still finds (the loop re-checks after it).
+    /// </summary>
+    // fidelity: M11-040
+    private void Processor()
+    {
+        while (true)
+        {
+            (CameraFrame Frame, int Removal) taken;
+            lock (_mailbox)
+            {
+                if (_next is not { } n) { _processorRunning = false; return; }
+                taken = n;
+                _next = null;
+            }
+            try { ProcessFrame(taken.Frame, taken.Removal); }
+            catch (Exception e) { Log?.Invoke($"frame {taken.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
+            lock (_mailbox) _next = null;                        // a frame that arrived meanwhile is discarded, not processed and not counted
+            Thread.Sleep(ProcessorPollInterval);
+        }
     }
 
     /// <summary>
@@ -671,14 +807,14 @@ public sealed class VisionSystem : IDisposable
     {
         var calibration = Calibration ?? throw new InvalidOperationException("no camera calibration");
         pd = WithRotatingGate(pd, timestamp);
-        return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null)
+        return ProcessImage(gray, imageId, timestamp, pd, calibration, Volatile.Read(ref _removals), null, offline: true)
             ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
     }
 
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
-                                            CameraCalibration calibration, int removal, uint? rawTimestamp)
+                                            CameraCalibration calibration, int removal, uint? rawTimestamp, bool offline = false)
     {
         var sw = Stopwatch.StartNew();
         var cal = gray.Width == calibration.Columns && gray.Height == calibration.Rows ? calibration : calibration.Scaled(gray.Width, gray.Height);
@@ -691,6 +827,7 @@ public sealed class VisionSystem : IDisposable
         lock (_busy)
         {
             if (RemovedSince(removal)) return null;
+            Volatile.Write(ref _frameTimestamp, timestamp);
             // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the
             // marker-mode gate; DetectMarkersWithCLAHE picks the original or the CLAHE image from the
             // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
@@ -698,13 +835,31 @@ public sealed class VisionSystem : IDisposable
             var markerImage = SelectMarkerImage(gray);
             markers = ShouldProcessVisionMode(DetectingMarkers) ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
             if (RemovedSince(removal)) return null;
+            // fidelity: M11-044 — UpdateVisionMarkers puts a computed state at the result's timestamp in the history before a result with markers reaches BlockWorld
+            // (RobotStateHistory::ComputeAndInsertStateAt, 0x00654D92); GetComputedStateAt (Insert P5) finds only those.
+            // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
+            bool stateComputed = true;
+            // M11-050 (IMPLEMENTATION_GAP, NOT BUILT): between this call and UpdateObservedMarkers the engine (a) treats 0x06000000 as a silent drop (0x006550A0), (b) drops the frame when
+            // Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56), (c) drops it when WasRotatingTooFast(key, 0.5236, 0.1745, 0) (0x00654E78; this stack only has the (0.1745, 0.1745, 0) gate of
+            // 0x00621C9A), (d) replaces each marker's camera with Robot::GetHistoricalCamera(state, ts) of the computed state (0x00654E8E) and drops markers with a differing timestamp or an invalid key
+            // (0x00654F0C..0x00654FDA), and passes only that new list on. This stack uses the camera built from History.At (the nearest raw state) for the markers and the objects instead.
+            if (markers.Count > 0)
+            {
+                if (offline) History.InsertComputedStateAt(timestamp, pd.RobotPose);   // LOCAL: the caller's pose data stands for the raw state
+                else stateComputed = History.ComputeAndInsertStateAt(timestamp);
+                if (!stateComputed) Log?.Invoke($"frame {imageId}: ComputeAndInsertStateAt failed for timestamp {timestamp}; the markers are not processed");
+            }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
             // frame sequence (M11-037, C3.2) runs inside it: occluders, lift occluder, create/add, then the
             // unobserved check, stacked poses, block configs and markerless objects.
-            var worldFrame = World.UpdateObservedMarkers(markers, camera, timestamp, pd);
-            objects = worldFrame.Objects;
-            forgotten = worldFrame.Forgotten;
+            if (stateComputed)
+            {
+                var worldFrame = World.UpdateObservedMarkers(markers, camera, timestamp, pd);
+                objects = worldFrame.Objects;
+                forgotten = worldFrame.Forgotten;
+            }
+            else { objects = Array.Empty<ObjectObservation>(); forgotten = Array.Empty<ObservableObject>(); }
             if (RemovedSince(removal)) return null;
             // fidelity: M11-035 — VisionComponent::UpdateAllResults 0x006542EC runs the per-mode result handlers in
             // order: markers (UpdateVisionMarkers 0x006544A2), faces (0x00654510), pets (PetWorld::Update
@@ -804,9 +959,10 @@ public sealed class VisionSystem : IDisposable
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
         _robot.RobotRemoved -= ResetToConstructed;
         _robot.StateHistoryCleared -= History.Clear;
-        _robot.Cubes.DoubleTapPendingEnded -= World.MarkDirty;
+        _robot.Cubes.DoubleTapPendingEnded -= _doubleTapEnded;
         // fidelity: M3-033, M3-034
         _robot.Engine.ConnectionFaceAlbumLoaded -= _faceAlbumLoaded;
+        _robot.Engine.PhysicalRobotSet -= World.SetPhysicalRobot;
     }
 }
 

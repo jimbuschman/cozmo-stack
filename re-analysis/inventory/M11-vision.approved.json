@@ -1,11 +1,11 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-09-28",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "629e0054b884dea02b279cecd4329c2023f8379a5c5ec9ed0aca372f87c9a164",
+  "inventory_sha256": "ae98bb953b3fae4850ddf74cffc7f2561862441b124ab0ec343e6e8766cbeaf5",
   "records": {
     "M11-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The marker type table and the nearest-neighbour library, extracted byte for byte",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -17,7 +17,7 @@
       "hardware_required": false
     },
     "M11-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Marker decoder algorithm: probe values, nearest neighbour, extract",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -30,7 +30,7 @@
       "hardware_required": false
     },
     "M11-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Camera pose on the robot, cube size, marker size, face poses and codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -48,19 +48,21 @@
     "M11-004": {
       "status": "IMPLEMENTATION_GAP",
       "title": "BlockWorld connected-object rule, moving and rotating gates, position-update thresholds",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md): FindLocatedObjectHelper 0x0061EB78 copies the filter (layout ignoreIDs +0, allowedIDs +0xC, ignoreTypes +0x18, allowedTypes +0x24, ignoreFamilies +0x30, allowedFamilies +0x3C, ignoreOrigins +0x48, allowedOrigins +0x54, predicates +0x60, onlyLatest byte +0x6C, originMode byte +0x6D); onlyLatest appends the predicate obj[+0x1C] == BlockWorld[+0x90] (0x00627EAA); it walks BlockWorld+0x3C in order origin, family, type, ObjectID ascending; originMode 0 keeps the robot's current origin, 1 everything but it, 2 everything; every passing object becomes the running result and with returnFirstOnly the loop stops at the first, otherwise the result is the LAST passing object; no distance or recency comparison. ObservableObject::IsSameAs 0x008769A8 ignores its Radians tolerance argument (mov r3,r4 at 0x008769D8) and passes Radians(pi) to Pose3d::IsSameAs_WithAmbiguity, so in the fallback match only the translation tolerance narrows. The motion gates on the observation path also include IsMoving on the connected object, WasCameraMoving and OffTreadsState (UpdatePoseInInstance, M11-007), not only WasMoving and WasRotatingTooFast",
       "evidence": [
         "position-update thresholds: 45 deg 0x3F490FDB to [this+0x2c] (ctor 0x00612182), 80 mm 0x42A00000 to [this+0x38] (0x006121A2), 600000 ms 0x000927C0 to [this+0x34] (0x00612198); used at 0x006124C6..0x006124F2 and 0x00612592..0x006125A6",
         "connected-object rule: AddAndUpdateObjects 0x00620AD4 warns and records a 10 s cooldown when the connected counterpart is absent (0x00620E70..0x00620EDA) and continues to 0x00620EDE; it does not drop the object",
         "moving gate: CheckForUnobservedObjects 0x00621C6C skips when MovementComponent::WasMoving(timestamp) != 0 (0x00621C88..0x00621C94); WasMoving is HistRobotState+0x58 & 1 (IS_MOVING), lambda 0x00642672",
         "rotating gate: WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0) 0x00621C9A..0x00621CAE; the ImuDataHistory is VisionComponent+0xb0 (0x656286/0x6562B4/0x6563AC/0x6563D8) filled by HandleImageImuData 0x535C20 -> ImuDataHistory::AddImuData 0x538B24 (ImuData: timestamp +0, rateX +4, rateY +8, rateZ +0xC, u8 +0x10); head uses rateY, body rateZ, |rate| > threshold, a missing IMU bracket returns 1",
-        "object match: ObjectPoseConfirmer::FindObjectMatchForObservation 0x5063CC; tolerances from the observed object's virtuals vptr+0x30 = 0.8*extent (thunk 0x4E025C, 0.8 at 0x4E028C) and vptr+0x34 = pi/4 (thunk 0x4E0290); primary FindLocatedClosestMatchingObjectHelper 0x61FA68 predicate 0x6281DA (ObjectType match + Pose3d::IsSameAs, narrowing the captured tolerance to abs(delta), closest wins); fallback over the confirmer's list with ObservableObject::IsSameAs 0x8769A8 (last match). FindLocatedObjectHelper 0x61EB78's returned object is a RECOVERABLE_GAP"
+        "object match: ObjectPoseConfirmer::FindObjectMatchForObservation 0x5063CC; tolerances from the observed object's virtuals vptr+0x30 = 0.8*extent (thunk 0x4E025C, 0.8 at 0x4E028C) and vptr+0x34 = pi/4 (thunk 0x4E0290); primary FindLocatedClosestMatchingObjectHelper 0x61FA68 predicate 0x6281DA (ObjectType match + Pose3d::IsSameAs, narrowing the captured tolerance to abs(delta), closest wins); fallback over the confirmer's list with ObservableObject::IsSameAs 0x8769A8 (last match). FindLocatedObjectHelper 0x61EB78's returned object is a RECOVERABLE_GAP",
+        "0x0061EB94 filter copy; 0x0061EB98..0x0061EBCE onlyLatest; 0x0061EBD0..0x0061EF1C iteration, origin/family/type/ID tests, predicates, modify function and the last-passing-wins result; 0x008769A8..0x008769D8 IsSameAs",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 1 item 2 rows 2.1-2.9; re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md (all PASS)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The sub-pixel corner refinement",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -76,7 +78,7 @@
       "hardware_required": false
     },
     "M11-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The clustering tolerances and the flat-snap angle",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -92,18 +94,23 @@
     "M11-007": {
       "status": "IMPLEMENTATION_GAP",
       "title": "Two misses before an object pose is forgotten, and two sightings before one is confirmed",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): AddAndUpdateObjects writes no PoseState, whether AddVisualObservation returns false or true (0x00620C98..0x00621238). A newly created instance is Dirty (2). The first sighting adds a confirmer entry PoseConfirmation(observed, 1, 0) and returns false (0x005068DC..0x00506982), so no located object exists; a later matching sighting increments the count, and at count >= 2 UpdatePoseInInstance(stored, ...) runs BEFORE AddLocatedObject (0x00506A26..0x00506A32). UpdatePoseInInstance 0x00505DE0 decides Known or Dirty: closeAndSteady = OnTreads && (250.0 + 1e-5 >= dist) && !wasCameraMoving && notMoving; newState = closeAndSteady ? Known(1) : Dirty(2); it skips the update under the 0x00505E98..0x00505EFA gate, writes through SetPose (or the clamped-pose helper 0x0050609C for the docking object, ClampPoseToFlat 20 degrees), unsets a carried object with a log, and sets the entry's [+0x2C]. Two consecutive misses (MarkObjectUnobserved 0x00506FBC: miss count at node+0x28 >= 1 before the increment, 0x00506FD8..0x00506FE4) call MarkObjectUnknown(obj, true) 0x00507128, which writes NO PoseState: it walks the stack with FindObjectOnTopOrUnderneathHelper (0x00507258), skips carried objects, broadcasts RobotMarkedObjectPoseUnknown per object and deletes the object and its stack with DeleteLocatedObjects (0x005073F4). SetPoseStateHelper 0x0050612C refuses Invalid (0x0050617A). Nothing in LocalizeRobot 0x0050D1CC, Robot::LocalizeToObject 0x005154B0 or UseDiscardedObservation 0x0050CD90 writes a located object's PoseState, pose or ObjectID; UpdateObjectOrigins 0x00620534 does (M11-043); R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): MarkObjectUnknown 0x00507128 in full: with propagate (cmp r4,#1 at 0x00507162) the set starts as {obj ID} (0x0050715E); the loop head 0x005071D2 builds a fresh filter ignoring the current object's ID (0x00507220) and families 6 and 7 (0x00507224..0x00507240) and calls FindObjectOnTopOrUnderneathHelper(r7, 15.0f (movt r2,#0x4170 at 0x00507252), filter, onTop = 1 (movs r1,#1; str r1,[sp] at 0x0050724C/0x0050724E)) at 0x00507258 (the only call of PLT 0x4A7144 in the function); a result that is not carried is inserted into the set (0x005072C6) and becomes the next r7 (bne 0x005071D2 at 0x0050731E); a carried result logs a warning (0x00507288) and the walk continues WITHOUT adding it; the walk goes UPWARD ONLY (nothing underneath is ever looked at); then RobotMarkedObjectPoseUnknown is broadcast per set entry (0x005073B8) with the ORIGINAL object's ID every time (0x005073AA..0x005073B2), DeleteLocatedObjects (0x005073F4) and *objRef = null (0x005073FC); no confirmer entry is erased in the function. So two misses of an upper cube delete the cubes above it, never the cube under it. ActiveObject::CanBeUsedForLocalization (ActiveCube vtable slot 0x101CE04 -> thunk 0x004E4ACC -> body 0x004E49AC): true needs PoseState == Known ([+0x24] == 1), activeID [+0x40] >= 0 and fromDistance [+0x10] >= 0 (0x004E4A06..0x004E4A28) and then calls vtable +0x1C (0x004E4A30). A Known cube marked Dirty and re-seen inside the 35.2 mm confirmation tolerance returns to Known only through PotentialObjectsForLocalizingTo::Insert -> UseDiscardedObservation -> AddVisualObservation (M11-044); without that path it stays Dirty; R-VIS batch-A re-verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA2.md): MarkObjectUnknown's carried case: after the carried-object warning 0x0050728E is mov r7, fp (fp = the carried object, set at 0x00507266), then 0x0050731C cmp r7,#0 and 0x0050731E bne 0x005071D2 re-enter the loop head with r7 = the carried object: the carried object is NOT added to the set but the objects ON TOP of it are still found (the filter ignores r7's ID at 0x00507220) and deleted; the walk does NOT end at a carried cube. CanBeUsedForLocalization 0x004E49AC also calls vptr+8 (the ActiveObject group's IsMoving(uint*), 0x004E3844: cbz r1; ldr r2,[r0,#8]; str r2,[r1]; ldrb r0,[r0,#4]) with (this, 0) at 0x004E49C2..0x004E49CE after the PoseState == Known test: a result of 1 gives sWarningF (0x004E49DE) and returns 0 (a moving cube is not usable; UpdatePoseInInstance calls the same slot on the connected object at 0x00505E36..0x00505E3C). The Charger's slot +0x18 (group vptr 0x0101E1C4, slot 0x0101E1DC -> 0x004EA66E) is 'movs r0,#0; bx lr' = false; other non-cube types hit the ObservableObject default 0x004E024A = false",
       "evidence": [
         "ObjectPoseConfirmer::MarkObjectUnobserved 0x00506FBC reads the miss count at +0x28 and writes count+1 zeroing +0x24 (strd r2,r1,[r0,#0x24] at 0x00506FE0); the forgetting branch is at 0x00506FDE; the confirming side at 0x00506A04 mirrors it",
         "the two counters reset each other, so the misses have to be consecutive",
         "this stack already used two; what was missing was the counter it rests on",
-        "confirming side: AddVisualObservation 0x50684C starts a new entry at count 1; a matching second sighting increments to 2 and calls UpdatePoseInInstance (0x506A04..0x506A26); a mismatching sighting resets the count to 1 (0x506A46..0x506A4E); IsReferencePoseConfirmed is count > 1 (0x506340); IsObjectConfirmedAtObservedPose requires count >= 2 and a matching pose (0x50634C..0x5063B8)"
+        "confirming side: AddVisualObservation 0x50684C starts a new entry at count 1; a matching second sighting increments to 2 and calls UpdatePoseInInstance (0x506A04..0x506A26); a mismatching sighting resets the count to 1 (0x506A46..0x506A4E); IsReferencePoseConfirmed is count > 1 (0x506340); IsObjectConfirmedAtObservedPose requires count >= 2 and a matching pose (0x50634C..0x5063B8)",
+        "0x00506A26..0x00506A32 UpdatePoseInInstance before AddLocatedObject; 0x00505DE0..0x00505FE2 UpdatePoseInInstance; 0x0050609C..0x00506126 the write helper; 0x00506FBC..0x0050702E MarkObjectUnobserved; 0x00507128 MarkObjectUnknown (no store to obj+0x24 in 0x00507128..0x005075A4; 0x0050612C SetPoseStateHelper)",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 1 item 3 rows 3.1-3.11; re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md (objection 1: LocalizeRobot claim now closed by re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1 and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md; row 3.10(a) corrected there: no Invalid state is set)",
+        "0x00507128..0x00507400 MarkObjectUnknown; 0x004E49AC..0x004E4A30 CanBeUsedForLocalization",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA.md objections 1, 3, 11",
+        "0x00507266..0x0050731E, 0x004E49C2..0x004E49DE, 0x004E3844, 0x004EA66E"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The minimum projected marker size for deciding an object should have been seen is 40 pixels",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -114,7 +121,7 @@
       "hardware_required": false
     },
     "M11-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A cube that reports movement is marked Dirty, unless the robot is carrying it",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -126,7 +133,7 @@
       "hardware_required": false
     },
     "M11-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Occlusion, the nine visibility reasons, and the two ways an object is forgotten",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -139,7 +146,7 @@
       "hardware_required": false
     },
     "M11-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The NV CameraCalib read request: tag 0x80000001, length 1, READ, a zero second byte; replies assemble by index",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -155,20 +162,29 @@
       "status": "COMPATIBILITY_POLICY",
       "title": "The nominal camera calibration stand-in",
       "authority": "not applicable: the live path reads the robot own calibration and fails closed without it",
-      "evidence": [],
+      "evidence": [
+        "0x006B4D66..0x006B4FFC VisionSystem::Update(PoseData, ImageCache): the gate tests the VisionSystem init flag (+0x58) and the Camera calibration pointer (+0x64) and logs 'Must be initialized and have calibrated camera to Update' (string 0x00C016DC)",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 2 item 10; re-analysis/research/20260929-R-VIS-verify-pre-items9-10.md (the gate confirmed at 0x006B4D66..0x006B4FFC)"
+      ],
       "live_path": false,
       "hardware_required": false
     },
     "M11-013": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "AllowUnconnectedObjects switch",
-      "authority": "the engine connected-object rule, which is implemented",
-      "evidence": [],
-      "live_path": false,
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Observed-object creation upstream of AddAndUpdateObjects: ObjectID assignment, the confirmation gate and the unconnected cube",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (verified in re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): there is no AllowUnconnectedObjects switch (the string occurs 0 times in the .so). CreateObjectsFromMarkers clones the library prototype per cluster (ActiveCube::Clone 0x004E3954 -> a fresh ActiveCube(type), ObjectID default -1, ActiveID -1, FactoryID 0) and gives it InitPose(pose, PoseState Dirty=2) (0x0062554E..0x00625582). AddAndUpdateObjects: IsObjectConfirmedAtObservedPose fills a match; whether or not it returns true, if match != null then instance ObjectID = match's ObjectID, else instance->SetID() (0x00620C40..0x00620C5A). ObservableObject::SetID 0x004EF468: a non-unique type takes the next value of ObjectID::UniqueIDCounter (ObjectID::Set 0x008412D8); a unique type (ActiveCube, Charger) looks its type up in a process-static map<ObjectType, ObjectID> and copies the stored ID, else takes the next counter value and stores it. So a cube's ObjectID is one stable counter value per type, not the cube number. The counter is in .bss (0 at load, no initialiser); its only references are ResetObjectIDCounter 0x008412C8 (no caller) and ObjectID::Set, so the first ID assigned is 0; IDs are also copied directly at 0x00629176, 0x006292D4, 0x00623470 and 0x006237DE. AddVisualObservation is skipped when the entry is already confirmed and otherwise decides confirmation (two matching sightings); a false return drops the instance with the NonConfirmingObservation log. An active instance whose connected counterpart is missing (GetConnectedActiveObjectByIdHelper 0x00620E78 null) warns NoMatchForActiveObject at most once per 10.0 s (static unordered_map<int,float> at 0x0105B388, 10.0 at 0x00620B1E, store 0x00620ED6..0x00620EDA) and continues at 0x00620EDE: the observation is kept and the located object is created by AddLocatedObject (0x00622ADE..0x00622E4E) with ActiveID -1 and FactoryID 0 when no connected object exists; R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): the unconnected warning's 'now' (s22) comes from BaseStationTimer::getInstance / GetCurrentTimeInSeconds (0x00620E42, 0x00620E46; r5 then s22 at 0x00620E5E), not the frame timestamp; the 'extra predicate' of the unique-type located lookup (0x00620D20..0x00620DE6) is a plain function pointer 0x006215C4 (ldr r1,[r0]; ldr r1,[r1,#0x5c]; bx r1) = IsUnique(), always true there; the non-unique FindObjectMatchForObservation predicate 0x006281DA writes abs(delta) back to BOTH the translation tolerance ([r4+0xC], 0x00628248) and the angle tolerance ([r4+0x10], 0x00628250), and FindLocatedClosestMatchingObjectHelper 0x0061FA68 adds the observed object's own ID to ignoreIDs (0x0061FAA6); the non-unique located lookup calls GetLocatedObjectByIdHelper(id, -1) at 0x00620FE0 with NO not-carried predicate",
+      "evidence": [
+        "0x0062554E..0x00625582 InitPose(pose, 2); 0x004E3954 ActiveCube::Clone; 0x00620C40..0x00620C5A the ObjectID copy or SetID; 0x004EF468..0x004EF526 ObservableObject::SetID; 0x008412C8/0x008412D8 counter",
+        "0x00620C5C..0x00620C9E the confirmation gate; 0x00620D86..0x00620DA4 NonConfirmingObservation; 0x00620DF0..0x00620EDE the unconnected path and the 10 s cooldown; 0x00622ADE..0x00622E4E AddLocatedObject",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 1 item 1 rows 1.0-1.21; re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md (all PASS but the row-1.1 addresses, corrected there); re-analysis/research/20260929-R-VIS-verify-M11-gap1.md Q2 (the counter)",
+        "0x00620E42..0x00620E5E, 0x006215C4, 0x006281DA..0x00628250, 0x0061FA68..0x0061FAA6, 0x00620FE0",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA.md objections 4, 6, 7, 12"
+      ],
+      "live_path": true,
       "hardware_required": false
     },
     "M11-014": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "SetBodyAngle carries an absolute body angle, and the fields that follow say how it was asked for",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -181,7 +197,7 @@
       "hardware_required": false
     },
     "M11-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The body turn speed, acceleration, tolerance and revolution bound",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -207,18 +223,20 @@
     "M11-017": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The memory map's vision-derived content: the overhead edges",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-item6.md and re-analysis/research/20260929-R-VIS-verify-M11-gap2.md): OverheadEdgesDetector::Detect 0x006ABE34 returns 1 only when the lift-pose lookup fails (0x006AC4DE) and otherwise 0; the clear region is the quad from ClampQuad (a triangle or a two-point polygon in the short cases), not the robot-to-ends triangle; the 6.00001 compare (0x40C00015) is on a SQUARED length (0x0067FF5C); the last point of a chain flushes only when the previous run continued: when the last point breaks the run, the old run flushes and the newly started run is DROPPED (0x0067FE6C..0x0067FE70, 0x0067FBD0 b 0x0067FE9C skipping the last-point test 0x0067FE74..0x0067FE92). The remaining map effect of the clear quads, the type-9 lines and the type-10 flags is the quad tree (M11-045, M11-046, M11-047). The engine dereferences a null map in pre-extraction rows 48-49 (it would crash); the stack does not reproduce a crash and the decision is left for the policy review. GroundPlaneROI 0x004F7774 and the four MapComponent entry points (0x0067F7AC, 0x0067F814, 0x0067E6B0, 0x0067E50C) are pre-extraction rows 1-50, 49 of them PASS",
       "evidence": [
         "The detector. GroundPlaneROI is the trapezoid its four statics describe, 40 to 190 mm ahead and 40 to 150 mm wide (0x00C48F60, GetGroundQuad 0x004F7774). Detect projects it, filters the bounding rectangle with the seven-by-five kernel at 0x00C8E020 (identical for the colour and grey paths), masks everything outside the quad away (fillConvexPoly of the quad's corners 0, 2, 3, 1 then SetMaskTo), transposes and walks each column from the bottom up for the first response past the threshold of 50 that VisionSystem constructs it with (0x006B0120). A column with none reports the far end clear, but only between the x of the quad's two far corners (0x006AD23E). Image points become ground points through the homography, refused when its third component is not positive (0x006AE0A8). The lift is a gate rather than a mask: unless the first of two points on it projects below the ROI rectangle, or the second above it, the frame is abandoned (0x006AC4A2..0x006ACDC8). Points join a chain while they are of the same kind and within 5 mm (0x006AE1B0).",
         "The map side. AddVisionOverheadEdges puts each point in world coordinates through the robot's pose at the frame's timestamp, splits the ray at the ROI's near edge and asks HasCollisionRayWithTypes about each half with the two masks at 0x00C8768B and 0x00C876A1, and accumulates runs that hold their direction to within forty degrees (0.766 at 0x0067F980). A run longer than the noise length (the literal 6.00001 at 0x0067FA14) becomes the triangle between the robot and its ends as ClearOfObstacle, or a line to its midpoint when the run is under fifteen millimetres (225 as a squared length at 0x0067FF5C); a run from a border chain also goes in as a two-point InterestingEdge (the type byte 9 at 0x006802AC). Then the border pass, QuadTreeProcessor::FillBorder 0x00689FAC through RefreshBorderCombination: an interesting edge touching one of the masked types - the obstacles and NotInterestingEdge, the table at 0x00C87675 - is written off as NotInterestingEdge.",
         "The two entry points the visit behaviour uses are in as well: FlagQuadAsNotInterestingEdges 0x0067E6B0 inserts the quad as type 10 with the last image's timestamp, and FlagGroundPlaneROIInterestingEdgesAsUncertain 0x0067E50C transforms the content inside the ROI with a lambda (0x00680B54) that turns type 9 into type 0 and leaves the rest alone.",
-        "Two differences, neither observable in what the map answers: the engine carries its regions in a quad tree subdivided to ten millimetres (GetContentPrecisionMM 0x00685000) and this keeps the polygons, which is the same difference M14-007 already records; and the filter response is computed here in double over one channel rather than in 16-bit over three, which moves no threshold decision that a marker-sized step would not pass either way."
+        "Two differences, neither observable in what the map answers: the engine carries its regions in a quad tree subdivided to ten millimetres (GetContentPrecisionMM 0x00685000) and this keeps the polygons, which is the same difference M14-007 already records; and the filter response is computed here in double over one channel rather than in 16-bit over three, which moves no threshold decision that a marker-sized step would not pass either way.",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 2 item 6 (rows 1-50); re-analysis/research/20260929-R-VIS-verify-pre-item6.md (row 38 corrected; rows 40 and 46 cosmetic)",
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md and re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (the QuadTree side)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The dark mask and the quad acceptance test are the engine's",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -230,7 +248,7 @@
       "hardware_required": false
     },
     "M11-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A new pose origin in RobotState delocalizes: located objects are forgotten, carried objects move across",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -242,7 +260,7 @@
       "hardware_required": false
     },
     "M11-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Illumination normalisation of each marker's region before its corners are refined and it is decoded",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -257,18 +275,19 @@
     "M11-021": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The per-frame marker-mode gate",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items7-8.md): the non-divisible CLAHE_Impl::apply 0x00020DAC branch is transcribed (right pad tilesX - w%tilesX unconditional at 0x00020EF8..0x00020F0A; copyMakeBorder via PLT 0x00017434, borderInterpolate 0x00044214, copyMakeBorder 0x0004514C; clip limit float (histSize-1)/tileTotal truncated with vcvt.s32.f64 then max(.,1)); the box filter's ColumnSum<int,uchar> is operator() 0x000AA500 (vtable 0x000FBB30; vector path float multiply, helper 0x000265DC +0.5f and truncating vcvt.u32.f32, vqmovn.u32/u16; scalar tail vcvtr.s32.f64, the FPSCR mode assumed round-to-nearest-even). The 16S body is NOT reused: ColumnSum<int,short> is 0x000AAB44 (vtable 0x000FBB40) with a different rounding helper (0x0007A284) and vqmovn.s32; 0x000AA820 is ColumnSum<int,ushort>",
       "evidence": [
         "ShouldProcessVisionMode 0x006B5AA4: (1<<mode) & [VisionSystem+0xac] then the front schedule's CheckTimeToProcessAndAdvance 0x006AF1F8 (bool vector at schedule+0, wrapping counter at schedule+0xc)",
         "InitDefaultSchedules 0x006AEFDE fills all 16 modes with {true} and counter 0; sDefaultSchedules 0x0105C540",
         "ApplyCLAHE(image, 4, out) 0x006B44EC (tbb table 0x006B44F4; live value 4): enum 4 sets [VisionSystem+0x358]=1, sums every 3rd byte of every 3rd row and clears the flag when sum >= 80*((cols+2)/3)*((rows+2)/3) (0x006B451A..0x006B457E, threshold 80 at 0xC8E14C); lazily CLAHE::setTilesGridSize(4,4) 0x006B4580..0x006B45D8 (0xC8E148) and setClipLimit(32.0) 0x006B45DC..0x006B4636 (0xC8E144); CLAHE::apply via [vptr+0x20] 0x006B4656..0x006B4672; post-CLAHE boxFilter(out,out,-1,(3,3),(-1,-1),true,4) 0x006B4686..0x006B46A8; timestamp copy 0x006B46B4. DetectMarkersWithCLAHE 0x006B4796 (tbh table 0x006B479E) enum 4 picks grey when [VisionSystem+0x358]==0 else the CLAHE image 0x006B47A8..0x006B47B4; the chosen image is copied into the Array<u8> and passed to DetectFiducialMarkers 0x008757AC..0x008757B2. Shipped CLAHE in libopencv_imgproc.so: CLAHE_Impl::apply 0x20DAC, tile LUT CLAHE_CalcLut_Body<uchar,256,0>::operator() 0x20834, bilinear CLAHE_Interpolation_Body<uchar>::operator() 0x203FE; divisible 320x240 -> tileW 80, tileH 60, tileSizeTotal 4800, lutScale 255/4800=0.053125, clipLimit (int)(32.0*4800/256)=600; clip 0x2094E..0x209B8, LUT 0x209BA..0x209F2 (vcvtr.s32.f32 ties-to-even then saturate), per-column tables 0x2129E..0x21370, interpolation 0x204B8..0x20542",
-        "re-analysis/obb/assets/cozmo_resources/config/engine/vision_config.json:5 DetectingMarkers true; InitialModeSchedules has no DetectingMarkers entry"
+        "re-analysis/obb/assets/cozmo_resources/config/engine/vision_config.json:5 DetectingMarkers true; InitialModeSchedules has no DetectingMarkers entry",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 2 item 7; re-analysis/research/20260929-R-VIS-verify-pre-items7-8.md (rows A1-A11, B1-B16 PASS)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-022": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The marker-detector entry and post-processing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -280,7 +299,7 @@
       "hardware_required": false
     },
     "M11-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The front-end orchestration order",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -291,7 +310,7 @@
       "hardware_required": false
     },
     "M11-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The component-extraction filter selector",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -302,7 +321,7 @@
       "hardware_required": false
     },
     "M11-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The characteristic-scale select",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -313,7 +332,7 @@
       "hardware_required": false
     },
     "M11-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The connected-component filters",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -324,7 +343,7 @@
       "hardware_required": false
     },
     "M11-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The exterior boundary trace",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -336,7 +355,7 @@
       "hardware_required": false
     },
     "M11-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The quad construction and acceptance",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -346,7 +365,7 @@
       "hardware_required": false
     },
     "M11-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ExtractLineFitsPeaks and the corner fit",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -359,7 +378,7 @@
       "hardware_required": false
     },
     "M11-030": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ComputeClockwiseCorners and the s16 rounding",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -369,7 +388,7 @@
       "hardware_required": false
     },
     "M11-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The contrast gate (ComputeBrightDarkValues)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -379,7 +398,7 @@
       "hardware_required": false
     },
     "M11-032": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The live component extractor is the ecvcs integral-image variant",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -394,17 +413,19 @@
     "M11-033": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The image hand-off and the two VisionSystem::Update overloads",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items7-8.md and re-analysis/research/20260929-R-VIS-verify-pre-items9-10.md): the RGB2GRAY kernel is cvtColor code 7 through FillGray 0x00872998 (which first copies the timestamp [this+0x3C] to [dst+0x3C]): (4899*src[0] + 9617*src[1] + 1868*src[2] + 8192) >> 14 (kernel 0x00024910, coefficients 0x000E2AB0, tab0/tab1/tab2 per cvtColor's switch at 0x0002BD62), strb. The Processor calls VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68 (decode, reset the cache, then Update(PoseData, ImageCache) 0x006B4D5C only on success); the NotReady gate at 0x006B4D66..0x006B4D70 tests the VisionSystem init flag (+0x58) and the Camera calibration pointer (+0x64), not pose or image. Whether the shipped camera is grey or colour is decided by the encoding byte the robot sends, not by a shipped config (HARDWARE_ONLY: M3)",
       "evidence": [
         "VisionComponent::SetNextImage 0x00652B04; Processor 0x00651F08; UpdateVisionSystem(pose, image) 0x00653D30",
         "VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68: IsColor 0x006B4B7C, DecodeImageRGB 0x006B4B90 or DecodeImageGray 0x006B4C02, then Update(PoseData, ImageCache) 0x006B4C78",
-        "Update(PoseData, ImageCache) 0x006B4D5C: the pose and image guards 0x006B4D66/0x006B4D70, UpdatePoseData 0x006B4D88, GetGray 0x006B4D94. ImageCache layout: grey Image at entry+0x14, RGB ImageRGB at entry+0x54, grey-valid +0x94, RGB-valid +0x95 (ResetHelper<Image> 0x008744F0, ResetHelper<ImageRGB> 0x0087459E, GetImageHelper 0x0087465C). An RGB entry becomes grey via ImageRGB::FillGray 0x00872998 -> cv::cvtColor(rgb,gray,COLOR_RGB2GRAY=7,0) 0x008729CA (libopencv_imgproc.so 0x2BC78). EncodedImage::IsColor 0x4F2100 (encoding byte at +0x20, tbb table 0x4F2110). For the shipped 320x240 grey camera the colour branch is inert: only the grey member is stored, +0x95 stays 0 and FillGray is never called"
+        "Update(PoseData, ImageCache) 0x006B4D5C: the pose and image guards 0x006B4D66/0x006B4D70, UpdatePoseData 0x006B4D88, GetGray 0x006B4D94. ImageCache layout: grey Image at entry+0x14, RGB ImageRGB at entry+0x54, grey-valid +0x94, RGB-valid +0x95 (ResetHelper<Image> 0x008744F0, ResetHelper<ImageRGB> 0x0087459E, GetImageHelper 0x0087465C). An RGB entry becomes grey via ImageRGB::FillGray 0x00872998 -> cv::cvtColor(rgb,gray,COLOR_RGB2GRAY=7,0) 0x008729CA (libopencv_imgproc.so 0x2BC78). EncodedImage::IsColor 0x4F2100 (encoding byte at +0x20, tbb table 0x4F2110). For the shipped 320x240 grey camera the colour branch is inert: only the grey member is stored, +0x95 stays 0 and FillGray is never called",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 2 item 8; re-analysis/research/20260929-R-VIS-verify-pre-items7-8.md (rows C1-C11 PASS)",
+        "re-analysis/research/20260929-R-VIS-verify-pre-items9-10.md (Processor and the Update overloads)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-034": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The vision-mode schedule mechanism",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -419,7 +440,7 @@
     "M11-035": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The VisionComponent per-mode result handlers and the frame broadcast",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (re-analysis/research/20260929-R-VIS-verify-M11-gap1.md and re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md M11-035 section): the UpdateAllResults dispatch (0x00654A74 region) gates each handler on its VisionMode bit in the processed-mode mask (markers 1, faces 2, motion 3, edges 4, tool code 5, calibration 6, quality 7, pets 9, laser 15); it reads the DebugImagesPresent error, updates [+0xE8/+0xEC] and builds RobotProcessedImage (0x006549A2..0x00654A22); the mailbox loop is CheckMailbox (M11-038)",
       "evidence": [
         "VisionComponent::UpdateAllResults 0x006542EC runs markers 0x006544A2, faces 0x00654510, pets 0x0065457E, motion 0x006545E8, overhead edges 0x00654652, tool code 0x006546BC, computed calibration 0x00654726, image quality 0x00654790, laser points 0x006547FA",
         "then CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C"
@@ -428,7 +449,7 @@
       "hardware_required": false
     },
     "M11-036": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "VisionComponent::UpdateVisionMarkers into BlockWorld",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -440,9 +461,13 @@
     "M11-037": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The BlockWorld frame sequence for observed markers",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md, re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): AddLiftOccluder's occluder float is the LENGTH of the translation of GetLiftTransformWrtCamera (sum of squares at 0x00656554..0x00656598, vsqrt), not a 'z scale'; the eight occluder points are written only by Robot::SetPhysicalRobot 0x00657F3C (-28.5 at 0x0065804C, -36.5 at 0x00658050 for a non-zero argument from HandleFirmwareVersion 0x00536980). UpdateObservedMarkers: the empty-list branch (0x00625020..0x00625052) sets this+0x90 = 0 and, only if Robot::GetLastImageTimeStamp is non-zero, runs ClearOccluders, AddLiftOccluder and CheckForUnobservedObjects(ts); it never runs UpdatePoseOfStackedObjects; the r7 == 1 gate (0x006250C0) guards the tail: this+0x74 = 0, the dirty pass (CheckForCollisionWithRobot predicate, MarkObjectDirty(obj,true), skipped when the byte at DockingComponent+4 is non-zero), BlockConfigurationManager::Update 0x0062520C and UpdateMarkerlessObjects 0x0062521A; a non-1 r7 returns the error without clearing this+0x74. CheckForUnobservedObjects 0x00621C6C returns early on Robot+0x355 != 0, WasMoving, WasRotatingTooFast(ts, 0.1745, 0.1745, 0), an empty map or no current-origin entry; candidates need GetLastVisuallyMatchedTime < ts, not carried, not the docking object and not family 4; MarkObjectUnobserved runs iff the object is visible or (not visible, the out flag is 1 and PoseState == Dirty); an empty marker list skips silently (0x00621EE8..0x00621EEC). UpdatePoseOfStackedObjects 0x00621794 is M11 (not M10/M12): per PoseChange node it clones the object at its old pose, finds the stacked object with FindObjectOnTopOrUnderneathHelper(clone, 15.0, filter, true) (M13-007), skips carried or listed objects, composes the found object's pose relative to the old pose with the object's new pose and calls AddObjectRelativeObservation (SetPose Dirty, -1.0). UpdateMarkerlessObjects deletes family 6 type 15 (CliffDetection) objects older than 30000 ms or intersecting the robot quad; R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): GetLastVisuallyMatchedTime 0x00507824..0x0050783A finds the confirmer entry by ID and returns [entry+0x30], or 0 if absent; CheckForUnobservedObjects' candidate test is ONLY GetLastVisuallyMatchedTime(ID) < ts (bl 0x00621D64; cmp r0,r5; bhs skip at 0x00621D68); the getter's [entry+0x30] is written by AddVisualObservation (0x00506A9C..0x00506AA4), which a confirmed object reaches every frame through PotentialObjectsForLocalizingTo::Insert -> UseDiscardedObservation (call at 0x0050CDF6); IsVisibleFrom's pads are readable: xPad and yPad formula at 0x0062206E..0x006220DA uses the camera-to-object translation length, GetMaxLocalizationDistance_mm (0x00621F36), (2.0 - d/max) and the fields at calib+4/+8 and node+0x18/+0x1C; the decision (MarkObjectUnobserved iff visible, or not visible with hasNothingBehind and PoseState Dirty) is at 0x00622106..0x0062218E; AddAndUpdateObjects stores BlockWorld+0x58 = (u32)fmax((double)ts, MemoryMap.vt+0x38()) at 0x00621214 after this+0x54 = 1 (0x006211E6); the engine uses Robot::GetLastImageTimeStamp() for the empty-list branch (0x00625028) and for UpdateMarkerlessObjects (0x0062521A), and Robot::GetPose() (bl 0x004EA398 at 0x00620BE2, the CURRENT pose Robot+0x298) for AddAndUpdateObjects' dist, not the image-time pose",
       "evidence": [
-        "BlockWorld::UpdateObservedMarkers 0x00624EE8: non-empty path is ClearOccluders 0x00624F98, AddLiftOccluder 0x00624FA4, CreateObjectsFromMarkers 0x00624FC4, AddAndUpdateObjects 0x0062505A, then (on its success) CheckForUnobservedObjects 0x006250CA, UpdatePoseOfStackedObjects 0x006250D0, BlockConfigurationManager::Update 0x0062520C, UpdateMarkerlessObjects 0x0062521A; the empty-list branch 0x625020 does ClearOccluders, AddLiftOccluder, CheckForUnobservedObjects 0x0062504E and skips the stacked-pose update. AddLiftOccluder body 0x6564D8 (raw state at the timestamp, Robot::GetLiftTransformWrtCamera, Transform3d::ApplyTo, Camera::Project3dPoints, Camera::AddOccluder with the transform z scale); BlockConfigurationManager::Update body 0x616D7C (DidAnyObjectsMovePastThreshold gate, UpdateAllBlockConfigs, PruneFullPyramids, UpdateLastConfigCheckBlockPoses, NotifyBroadcasterOfConfigurationManagerUpdate). UpdatePoseOfStackedObjects 0x621794 and UpdateMarkerlessObjects 0x625704 are cross-layer entry points (M10/M12)"
+        "BlockWorld::UpdateObservedMarkers 0x00624EE8: non-empty path is ClearOccluders 0x00624F98, AddLiftOccluder 0x00624FA4, CreateObjectsFromMarkers 0x00624FC4, AddAndUpdateObjects 0x0062505A, then (on its success) CheckForUnobservedObjects 0x006250CA, UpdatePoseOfStackedObjects 0x006250D0, BlockConfigurationManager::Update 0x0062520C, UpdateMarkerlessObjects 0x0062521A; the empty-list branch 0x625020 does ClearOccluders, AddLiftOccluder, CheckForUnobservedObjects 0x0062504E and skips the stacked-pose update. AddLiftOccluder body 0x6564D8 (raw state at the timestamp, Robot::GetLiftTransformWrtCamera, Transform3d::ApplyTo, Camera::Project3dPoints, Camera::AddOccluder with the transform z scale); BlockConfigurationManager::Update body 0x616D7C (DidAnyObjectsMovePastThreshold gate, UpdateAllBlockConfigs, PruneFullPyramids, UpdateLastConfigCheckBlockPoses, NotifyBroadcasterOfConfigurationManagerUpdate). UpdatePoseOfStackedObjects 0x621794 and UpdateMarkerlessObjects 0x625704 are cross-layer entry points (M10/M12)",
+        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md (items 4a, 4b PASS)",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q3, Q5; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (objections 2 and 5 corrected)",
+        "0x00507824..0x0050783A, 0x00621D54..0x00621D88, 0x0062206E..0x006220DA, 0x00622106..0x0062218E, 0x006211E6..0x00621214, 0x00625028, 0x0062521A, 0x00620BE2",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA.md objections 2, 5, 8, 9, 10"
       ],
       "live_path": true,
       "hardware_required": false
@@ -450,15 +475,17 @@
     "M11-038": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The BlockWorld game-broadcast entry points",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): BroadcastLocatedObjectStates 0x0061E6C0 builds tag 0x53 (LocatedObjectStates: one count byte, entries of 0x34 bytes, isConnected = 1 ^ ([obj+0x40] >> 31), origin compare against [[robot+0x294]+0x10] at 0x0061EC22); BroadcastConnectedObjects 0x0061E91C builds tag 0x54 (12-byte entries via FindConnectedObjectHelper 0x0061F078); VisionSystem::CheckMailbox 0x006B2AD4 locks the mutex at this+0x35C, moves the 11 result lists (each twice, then 11 clears) out of a deque of 0x9C-byte elements and pops it; BroadcastObjectObservation 0x0061FED8 projects the object with the camera at VisionComponent+0x24, returns 1 with no message for a null ActiveCube cast, and sends RobotObservedObject (Size 69: timestamp [+0x1C], family, type, ID, rect, ToPoseStruct3d, top-face orientation, isActive)",
       "evidence": [
-        "BroadcastObjectObservation 0x0061FED8; BroadcastLocatedObjectStates 0x0061E6C0; BroadcastConnectedObjects 0x0061E91C; VisionSystem::CheckMailbox 0x006B2AD4"
+        "BroadcastObjectObservation 0x0061FED8; BroadcastLocatedObjectStates 0x0061E6C0; BroadcastConnectedObjects 0x0061E91C; VisionSystem::CheckMailbox 0x006B2AD4",
+        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md (items 5a-5c PASS)",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q6; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q6 PASS)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-039": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The calibration-install path into MarkerDetector::Init",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -470,9 +497,157 @@
     "M11-040": {
       "status": "IMPLEMENTATION_GAP",
       "title": "The VisionComponent mailbox and processor thread",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "authority": "libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items9-10.md): the engine's VisionComponent is a ONE-pending-slot, latest-wins mailbox with discard on completion (not 'single-in-flight'): SetNextImage 0x00652B04 discards the frame when not initialised, not enabled (+0x48) or paused (+0x4B), captures the pose (0x00652C16..0x00652D58) and either hands the frame to the Processor synchronously or replaces the pending slot; the Processor (0x00651F08) takes a frame, runs VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68, discards, and sleeps 2 ms (0x001E8480) between polls; Start (0x006517AE..0x006518DE; callers 0x00651766 and 0x00651DC6), SetIsSynchronous 0x00651D6C (second caller 0x006592C6), Stop and the destructor are the thread lifecycle; the result deque is pushed at 0x006B5686. The 'Dropped %u of %u' stats log runs only when [+0x14] is non-zero. The enabled flag is written only by the NV calibration callback (M11-049)",
       "evidence": [
-        "VisionComponent::SetNextImage 0x00652B04; Processor 0x00651F08"
+        "VisionComponent::SetNextImage 0x00652B04; Processor 0x00651F08",
+        "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 2 item 9; re-analysis/research/20260929-R-VIS-verify-pre-items9-10.md (rows PASS with the corrections listed there)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-041": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BlockWorld::AddConnectedActiveObject and its caller HandleActiveObjectConnectionState",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q4a, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): AddConnectedActiveObject 0x0062302C: activeID >= 5 (signed compare, 0x00623040) warns and returns -1; the same slot occupied with the same factoryID and type returns the existing ID, else a ConflictingActiveID error and RemoveConnectedActiveObject; a connected object with the same factoryID only logs; CreateActiveObjectByType null returns -1; then it searches located objects of that type in all origins: with the same activeID it takes the first (same factoryID: new.ID = that ID; factoryID 0: adopt and update activeID/factoryID on every located object of the type; a different nonzero factoryID: MismatchedFactoryID error, DeleteLocatedObjects for that ID, fresh SetID); with none of that activeID: none of the type -> fresh SetID, otherwise every such object is marked Dirty (MarkObjectDirty(o,false)) and updated (activeID -1: set both; factoryID equal: set activeID; else set both if factoryID != 0) and new.ID = the first one's ID; the new object is registered in m_connectedObjects with no pose or PoseState. The caller HandleActiveObjectConnectionState 0x00533B3C (range test unsigned, cmp r7,#4 bhi at 0x00533B58) logs Connected (0x00533BF4) and calls Robot::HandleConnectedToObject(activeID, factoryID, type) at 0x00533C34 after an ID other than -1",
+      "evidence": [
+        "0x0062302C..0x00623B76 AddConnectedActiveObject; 0x00623296 CreateActiveObjectByType call; 0x00623550 MarkObjectDirty; 0x00623804 MismatchedFactoryID; 0x006238D4 DeleteLocatedObjects; 0x00533B3C..0x00533C34 the caller",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q4a; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q4a branch structure PASS; objection 3: the HandleConnectedToObject call)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-042": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unread bodies next to the BlockWorld observation path",
+      "authority": "libcozmoEngine.so 3.4.0-1204: CreateActiveObjectByType (0x00623296 call); the Clone bodies of Charger and the non-active blocks; the virtual SetID users CreateFixedCustomObject and AddMarkerlessObject (vtable +0x24 by pattern only); ObservableObject vtable +0x58; HandleActiveObjectConnectionState error branch 0x00533CB8; RemoveConnectedActiveObject; Robot::HandleConnectedToObject; the full MarkObjectUnknown body 0x00507128 (stack-walk order, message fields); IsVisibleFrom (camera at VisionComponent+0x24, 0.7854 rad, 40.0); the names of the MovementComponent bytes +0xA/+0xC and Robot+0x280 byte +4; the SetCameraParams contents sent at 0x00658414; the BlockConfigurationManager container slot-0 functions (Stack, PyramidBase, Pyramid), PruneFullPyramids and NotifyBroadcaster; the RobotDelocalized emitter (0x00510D88); R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): GetLastVisuallyMatchedTime, the IsVisibleFrom pads, the warning clock and CanBeUsedForLocalization are now READ (see M11-037, M11-013 and M11-007) and no longer belong here; still unread: CreateActiveObjectByType, the error branches 0x00533B58/0x00533CB8, Robot::HandleConnectedToObject, the rest of RemoveConnectedActiveObject, OnObjectPoseChanged between the +0x74 gate and the append, UpdateMarkerObservationTimes 0x0062114A / SetObservationTimes 0x006292DC / DeleteIntersectingObjects 0x00622C84, the Charger IsActive and Clone bodies, UnknownOriginID / FindLocatedObjectClosestToHelper, DockingComponent+4 and ObservableObject vtable +0x58; R-VIS batch-A re-verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA2.md): the Charger CanBeUsedForLocalization slot, the IsMoving virtual and GetLastImageTimeStamp are READ (see M11-007 and M11-044)",
+      "evidence": [
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'",
+        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md 'Stays open'"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-043": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BlockWorld::UpdateObjectOrigins: re-keying located objects between origins",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): Robot::LocalizeToObject 0x005154B0 calls UpdateObjectOrigins 0x00620534 (its only call site 0x00515992) when the object's origin differs from the robot's world origin, after Rejigger. UpdateObjectOrigins clears the ObjectPoseConfirmer (0x00620594), runs a modify function (0x00628E18) on every object in the old origin that looks up a counterpart in the new origin (same ID for unique types, closest for others), sets the counterpart's ID to the moved object's ID (re-keying the shared_ptr if the IDs differ) and calls CopyWithNewPose 0x00506EF8 (copies the pose and the source's PoseState); with no counterpart it clones the object, sets the clone's ID and adds it with AddLocatedObject; the second modify function (0x00629862) is AddInExistingPose (0x00506F48, writes only a confirmer entry); the old origin's map entry is erased only if the last object's result was 0; then BlockConfigurationManager [+0xC] = 1 (0x006206EA) and BroadcastLocatedObjectStates (0x006206E6). LocalizeRobot 0x0050D1CC and UseDiscardedObservation 0x0050CD90 write no object state",
+      "evidence": [
+        "0x00620534..0x006206EA UpdateObjectOrigins; 0x00628E18, 0x00629862 the modify functions; 0x00506EF8 CopyWithNewPose; 0x00515992 the call site",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q1; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q1 PASS)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-044": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PotentialObjectsForLocalizingTo::Insert, UseDiscardedObservation, LocalizeRobot and the confirmed-object pose refresh",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap3-insert.md; read and verified by a cozmo-verifier pass, rows P0..P11, A1..A8): AddAndUpdateObjects creates a stack-local PotentialObjectsForLocalizingTo (ctor 0x50CD70; this+0x10 byte := ([Robot+0x2B8] != -1) ? byte [Robot+0x2BC] : 1 = 'robot not localized OR moved since it last localized', computed once at 0x620B0C); for a confirmed observation (IsObjectConfirmedAtObservedPose true, so AddVisualObservation skipped, Insert flag 0) the refresh happens inside Insert 0x50CE00: discard gate P2 (250.0f + 1e-5f < dist, or this+0x10 == 0, or CouldUseObjectForLocalization == 0; NaN dist does not discard) -> if the matched object is in the world origin UseDiscardedObservation(pair, WasCameraMoving(ts)) and return 0 (0x50CFC4..0x50CFE6); else motion gates P4 (MovementComponent byte +0xA (!HEAD_IN_POS), +0xC (ARE_WHEELS_MOVING) or WasCameraMoving(ts) nonzero -> return 0, no refresh); else the stationary-robot test P5 (robot states at GetLastPoseUpdatedTime and ts compared with IsSameAs (1,1,1) mm / 1 degree; if the robot did not move and observed vs matched poses differ -> UseDiscardedObservation(pair, false), return 0); else one pair per root ID (P6: lower_bound in a libc++ tree keyed by matched root ID; none -> store; new dist >= stored -> keep stored and UseDiscarded(new, false) if in the world origin; new < stored -> UseDiscarded(stored, false) if its key == the current origin ID, then swap; return 1); UseDiscardedObservation 0x50CD90 does nothing if pair byte [+0x18] (the Insert flag) is set, else AddVisualObservation(confirmer [[this]+0x26C], pair, matched, b, dist) (0x50CDF6; the only other caller of AddVisualObservation in the .so than AddAndUpdateObjects 0x620C94); CouldUseObjectForLocalization 0x50D170 = (obj id != DockingComponent+0xC) && CanBeUsedForLocalization (vtable +0x18; ActiveObject body 0x4E49AC) && (obj id != MovementComponent+0x20) && !Robot::WasObjectTappedRecently; after Insert(M) returns 1, AddAndUpdateObjects calls Insert(..., true) for every other-origin object of the same type (0x621168..0x6211A4); after the loop LocalizeRobot 0x50D1CC runs (one entry in the current origin -> LocalizeToObject; several -> a farthest-first multimap, each element attempted; failures 'LocalizeFailure' / 'CrossFrameLocalizeFailure'); LocalizeRobot and LocalizeToObject write no object PoseState. The AddVisualObservation contract for an entry with a null pending pointer: IsSameAs(observed, E reference, tol = 0.8*extent and pi/4); same -> count++ and, if the old count >= 1, UpdatePoseInInstance then ClearRobotToMarkers; not same -> count := 1 and reference := observed with no UpdatePoseInInstance; E[+0x28] := 0, E[+0x30] := observed[+0x1C]; returns count > 1 (0x506AA6..0x506ACA); UpdatePoseInInstance's applied path writes confirmations[C][+0x2C] := observed[+0x1C] (0x505FDC..0x505FE2). Without this path a confirmed cube's pose is never refreshed and a Dirty cube stays Dirty; R-VIS batch-A re-verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA2.md): GetComputedStateAt 0x00531CCC: lower_bound over the computed-state map at this+0x1C (0x00531CDC..0x00531CFC); cmp r6,r1; bhi -> return 1 (0x00531D04..0x00531D06): it FAILS unless a computed state exists with exactly the requested timestamp; on success it stores &node+0x14 and returns 0 (it reads the computed-state map, not raw entries): P5 runs only when computed states exist at exactly lastUpd and ts; Robot::GetLastImageTimeStamp 0x00516EC0 is 'ldr r0,[r0,#0x258]; b 0x8CAE6C' (a Vision::Camera getter); the engine's PoseConfirmation ctor 0x005062E0 stores observed[+0x1C] at temp+0x18 (0x00506310), block-copied to node+0x30 (0x005068BE..0x005068C2, 0x00506990..0x0050699E), so a new or remade confirmer entry has LastVisuallyMatchedTime = observed[+0x1C]; AddAndUpdateObjects' +0x58 store uses its own ts argument (0x00620B9C; str r2,[sp,#0x6c] at 0x00620AE6). LIVE-PATH CONSEQUENCE: nothing in the C# sets Robot+0x2B8 / +0x2BC, so the Insert gate (this+0x10) is 1 forever and a seen cube goes to P5/P6 instead of the engine's steady state X1; P6 stores the pair without refreshing +0x30 or the count, CheckForUnobservedObjects then marks the seen cube unobserved (count 0), the next sighting is non-confirming and dropped: this cycle must not exist. In the engine LocalizeToObject calls SetLocalizedTo(obj) (0x51238C: writes obj[+0x18] to Robot+0x2B8 at 0x00512458 and 0 to Robot+0x2BC at 0x00512468) so the gate becomes 0 for a stationary robot; UpdateFullRobotState (0x00512B56..0x00512B8E) ORs 1 into Robot+0x2BC when MovementComponent +0xA or +0xC is nonzero, otherwise ORs (byte [Robot+0x355] != 0); M11 round-2 verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA3.md): every writer of Robot+0x2B8 / +0x2BC in the .so (whole-.so scan): the Robot ctor 0x0050FEF6 / 0x0050FF0C, Robot::Delocalize 0x00510A46, CheckAndUpdateTreadsState 0x00512184, SetLocalizedTo 0x00512458 / 0x00512468 / 0x005124F6, UpdateFullRobotState 0x00512B8E (a plain OR) and the two Dirty-transition calls below; nothing else clears +0x2BC. (a) CheckAndUpdateTreadsState: after the OffTreadsState commit (0x005120F6 ldrb [sb+0x355]; cbz -> 0x00512112 when OnTreads), 0x00512112..0x0051211A calls BlockWorld::AnyRemainingLocalizableObjects() (0x00626EF4, FindLocatedObjectHelper with one predicate; cbnz r0,0x00512188 SKIPS the writes) and ONLY when nothing remains runs the log (0x0051211C..0x00512138), the VizManager text (0x00512176), strb 1,[sb+0x2C4] (0x0051217C) and str -1,[sb+0x2B8] (0x00512184); (b) Robot::Delocalize 0x00510A24: str -1,[r4+0x2B8] (0x00510A46), [+0x2C4]=0, [+0x2C8]=-1.0f, [+0x2C5]=0; UpdateFullRobotState calls it at 0x00512BA6 right after the +0x2BC OR; (c) ObjectPoseConfirmer WritePoseHelper 0x0050609C with newState == 2 (Dirty, branch 0x005060AC/0x005060AE): 0x005060B2..0x005060C4 loads [[Robot]+0x2B8] and, when it equals the object's ID [obj+0x18], calls Robot::SetLocalizedTo(nullptr); SetPoseStateHelper 0x0050612C does the same (0x0050613C..0x0050614A); (d) SetLocalizedTo 0x0051238C in full: non-null: an object ID of -1 is the IdNotSet error (0x005123A0 -> 0x005124FC, return 1, no writes); a marker loop 0x005123AE..0x00512456: per marker GetWithRespectTo(marker pose, [Robot+0x258]+0x30); a failed call (0x005123FE cmp r0,#0; beq) goes to 0x0051254E: sErrorF, return 1 with NO writes; the loop stores a running minimum into Robot+0x2C8 (0x00512442); then str [obj+0x18] -> +0x2B8 (0x00512458), strb 0 -> +0x2BC (0x00512468), strb 1 -> +0x2C4 (0x0051245E); null: str -1 -> +0x2B8 (0x005124F6), strb 1 -> +0x2C4 (0x005124EE), +0x2BC untouched; (e) UpdateFullRobotState's OR (0x00512B76 ldrb [MC+0xA]; 0x00512B7A ldrb [MC+0xC]; both zero -> 0x00512EB8 ldrb [r4+0x355]; movne #1; 0x00512B84..0x00512B8E ldrb [+0x2BC]; orr; strb) runs BEFORE the origin lookup at 0x00512C54, so a state whose origin is rejected still ORs 1 in; (f) ComputeAndInsertStateAt(t, key&, HistRobotState**, unsigned*, bool = 1) at UpdateVisionMarkers 0x00654D92 runs ComputeStateAt 0x00531785, which uses a vision-only state at exactly t (0x005317BE..0x005317E6) or GetRawStateAt(t, key, state, true) (0x00531431), which with the flag true INTERPOLATES the two bracketing raw states with HistRobotState::Interpolate (0x005314D0..0x00531534; fraction (t - before.key)/(after.key - before.key); key out = t at 0x00531558) and composes the result with the vision-only transforms (0x0053190A..0x00531AC6), then inserts it into the computed-state map (0x00531C18..0x00531C86); GetRawStateAt returns 1 when no raw state at or after t exists (0x0053146A..0x00531472); a non-zero result of ComputeAndInsertStateAt in UpdateVisionMarkers logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers (0x00654DF4) is NEVER reached and the function returns 0; (g) there is no prune in ComputeAndInsertStateAt or GetComputedStateAt; CullToWindowSize 0x005309D1 is called from AddRawOdomState (0x00530EBC) and AddVisionOnlyState (0x005311B2): cutoff = newest RAW key - [this+0x3C] (0x00530A02..0x00530A0E), erasing keys below the cutoff from the raw, vision-only, computed and fourth maps (lower_bound then erase, 0x00530A5E..0x00530BBE); the default window is 3000 ms (movw r2,#0xBB8 at 0x005308BE in the ctor; no SetTimeWindow caller found through the PLT); AddRawOdomState (0x00530CF8) does not clear the computed map and Delocalize does not call the history's Clear, so 'clear the computed map on an origin change' has no source; (h) Robot::SetPhysicalRobot (0x00536980; VisionComponent::SetPhysicalRobot 0x0051397C) is called BEFORE RobotAudioClient::SetOutputSource (0x0053698E)",
+      "evidence": [
+        "0x0050CD70..0x0050CDFC ctor and UseDiscardedObservation; 0x0050CE00..0x0050D170 Insert; 0x0050D170..0x0050D1C6 CouldUseObjectForLocalization; 0x0050D1CC..0x0050D4DA LocalizeRobot; 0x00620AD4..0x00621330 AddAndUpdateObjects (A1..A8)",
+        "re-analysis/research/20260929-R-VIS-M11-gap3-insert.md (whole file)",
+        "0x00531CCC..0x00531D06, 0x00516EC0, 0x005062E0..0x00506310, 0x00512458, 0x00512468, 0x00512B56..0x00512B8E",
+        "0x00512112..0x00512188, 0x00510A24..0x00510A46, 0x0050609C..0x005060C4, 0x0050612C..0x0050614A, 0x0051238C..0x0051254E, 0x00512B56..0x00512BA6, 0x00531785..0x00531C86, 0x005309D1..0x00530BBE, 0x00654D92..0x0065507E (round-2 verifier)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-045": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The memory map's quad tree: Insert, Expand, override rules, subdivision and merging",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md rows 1.x, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap2.md): MemoryMap::Insert 0x006817DE calls QuadTree::Insert(FastPolygon, MemoryMapData, int) 0x00685008 with the int argument 1 = the maximum ShiftRoot attempts after root growth (0x00685110, 0x00685220, 0x006853B2); the root starts at centre (0,0,1.0), side 160.0, level 4 (0x00684C28..0x00684C48), grows up to level 8 (UpgradeRootLevel; quadrant map x>=,y>= Q3; x>=,y< Q2; x<,y< Q0; x<,y>= Q1, 0x006878D2..0x0068791E), and level 0 is 10.0 mm precision (0x00685000, no subdivision below 0x00686D78). CanOverrideSelfWithContent 0x00687E78: newType 8: always; current type 8: only when newType is 2 and overlap is 2; newType 10: only over 9; newType 9: over 0, 1, 2, 5, 6, 9; newType 1 (ClearOfObstacle): mask 0x698 = {3,4,7,9,10} needs full overlap (2), current type 2 is never overridden, everything else yes; newType 5: only over 4; all others yes. Insert_Recursive subdivides partly covered cells above level 0 to 10 mm, TrySet/ForceSet write (ForceSet rewrites a removal type to ClearOfObstacle with both stamps = the new +0xC), and TryAutoMerge folds all FOUR children's stamps (min into +8, max into +0xC, seeded from child 3, 0x00687F56..0x0068805C) into child 0's content. Polygons are clockwise (ImportQuad2d) and FastPolygon::Contains accepts only clockwise polygons. Processor bookkeeping (areas, per-type node sets, InvalidateBorders) is read. An existing cell's timestamp (+0xC) is refreshed even when its type is not overridden",
+      "evidence": [
+        "0x00685008 QuadTree::Insert; 0x00684C28..0x00684C48 root; 0x00687E78..0x00687EEE CanOverrideSelfWithContent; 0x00687F56..0x0068805C TryAutoMerge (child 3 seed; the extractor's 'three children' corrected by the verifier); 0x006878D2..0x0068791E quadrant map",
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (rows 1.2-1.24 PASS, row 1.22 corrected)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-046": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The quad tree's polygon Transform and the collision ray walk",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap2.md): the polygon MemoryMap::TransformContent 0x0068147C (via 0x006814F4) calls QuadTreeNode::Transform 0x00688378 (PLT 0x4BCA8C), not QuadTreeProcessor::Transform 0x0068A414 (the whole-map overload): overlap 0 returns false; every child is transformed then TryAutoMerge runs; the function is called on the node's own content (skipped when the content pointer is null, 0x006883E2); a changed content goes through ForceSet (0x0068846E); every leaf that overlaps the polygon in any way is converted whole (no subdivision, no containment test, no override table); the ground-plane lambda (0x00680B54, identical to 0x00680C2C) turns type 9 into a type-0 object carrying the stamps. HasCollisionRayWithTypes 0x00689D80/0x00689F0A: a two-point polygon walks the tree; a zero flag with no children is false with no overlap test; a non-zero flag returns overlap != 0 without consulting children; a zero flag with children descends children 0..3 in order; an endpoint within 1e-5 of a cell counts as inside; a subdivided parent holds fresh Unknown (type 0) content, so a mask that includes type 0 returns true on any overlap without descending (0x00689F5C)",
+      "evidence": [
+        "0x0068147C..0x006814F4, 0x00688378..0x00688476 Transform; 0x00689D80..0x00689F5C the ray walk",
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (2.1-2.4, 3.1-3.3 PASS)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-047": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The quad tree's border walk (FindBorders, AddBorderWaypoint, FillBorder)",
+      "authority": "libcozmoEngine.so 3.4.0-1204: the border cache key is type<<32|flags, a new entry is dirty (flag byte 1); any node type change or destruction marks every entry dirty; the waypoint is {from, to, dir}, from a type-9 node with a flagged neighbour, walked by a wall-follower; FillBorder inserts a one-point polygon at each de-duplicated from-node centre straight into QuadTreeNode::Insert (0x0068A206; no NaN gate, no Expand), so a level-0 seed becomes one type-10 cell and a merged block four type-10 cells around its centre. FindBorders iterates an unordered_set of node pointers, so the exact waypoint order depends on heap addresses and is not read; kDebugFindBorders (0x00C88160) is unreferenced (the pc-relative pairs at 0x00689AB8, 0x0068ABAC, 0x0068B1EE resolve to 0x00C88161, the empty piecewise_construct_t)",
+      "evidence": [
+        "0x00689AB8, 0x0068ABAC, 0x0068B1EE, 0x0068A206, 0x00689ACC, 0x0068B1F4",
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md rows 4.x; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (4.1, 4.2, 4.5 PASS; 4.7 corrected)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-048": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unread quad-tree, OpenCV-numeric and vision-handler bodies",
+      "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped OpenCV 3.1.0: QuadTree::ShiftRoot branch table, SwapChildrenAndContent 0x00687601, DestroyNodes; LineSegment::IntersectsWith (PLT 0x004BD080); AddSmallestDescendants 0x00688105 and ...DepthFirst 0x00688251 and the CheckedInfo bit indexing; the 3-vector behind AIWhiteboard +0x50's running maximum (0x0067FDE8..0x0067FE38); the uses of the constants 3.0 and 6.0 next to the 6.00001 literal; callers of MemoryMap::TransformContent(fn); OpenCV 3.1.0 filter2D 8U->16S (libopencv_imgproc.so 0x0005705D) and fillConvexPoly (0x00042F59, 0x00042C99), Mat::convertTo 0x000407E9, Mat::setTo 0x0004486D, transpose 0x0008ED6D (libopencv_core.so); kmLine2WithLineIntersection (PLT 0x004D3220); the UpdateAllResults loop head 0x006542EC..0x00654486 and the handler bodies UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795, UpdateOverheadMap 0x00655909; the shipped PerformanceLogging.DropStatsWindowLength_sec value",
+      "evidence": [
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-049": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The enabled flag: images are dropped until the NV calibration read callback has run",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q7, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): VisionComponent+0x48 (enabled) has one writer, movs r0,#1; strb.w r0,[r5,#0x48] at 0x0065AE80, inside the NV read callback at 0x0065AB68 (tag NVEntry_CameraCalib 0x80000001), reached on every path: NV failure, size mismatch and success. The callback is registered by HandleMessage<RobotConnectionResponse> 0x006583A4 only when the response result byte is 0 (Success) (0x006583BA..0x006583FA); that handler also sends SetCameraParams with only the struct byte at +6 set (0x00658414; the other bytes are uninitialised, contents UNKNOWN). SetNextImage 0x00652B04 drops images ('not enabled') until the callback has run once. VisionComponent+0x4B (paused) has no writer (the constructor zeroes both bytes at 0x006500EE); it is only read (0x006517C8, 0x00651874, 0x00652218, 0x0065300E, 0x0065302C)",
+      "evidence": [
+        "0x0065AE80 the enabled write; 0x0065AB68 the callback; 0x006583A4..0x00658414 the registration and SetCameraParams; 0x006500EE the ctor",
+        "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q7; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q7 PASS, own encoding scan)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-050": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "UpdateVisionMarkers steps between ComputeAndInsertStateAt and UpdateObservedMarkers",
+      "authority": "libcozmoEngine.so 3.4.0-1204, UpdateVisionMarkers: result of ComputeAndInsertStateAt (0x00654D92) at 0x00654D96..0x00654D9E: 0 continues at 0x00654E50; 0x06000000 jumps to 0x006550A0 with no log; any other non-zero result logs with the frame timestamp and GetOldestTimeStamp/GetNewestTimeStamp (0x00654DE2) and jumps to 0x0065507E (UpdateObservedMarkers never reached). Success path: 0x00654E56 Robot::IsPoseInWorldOrigin(state pose) false -> 0x00655028 error log then 0x006550A0 (return 0, markers dropped); 0x00654E78 VisionComponent::WasRotatingTooFast(key, 0x3F060A92 = 0.5236, 0x3E32B8C2 = 0.1745, 0) non-zero -> 0x006550A0 skipping everything (the C# only has a (0.1745, 0.1745, 0) gate, 0x00621C9A); 0x00654E8E Robot::GetHistoricalCamera(state, ts); per-marker loop 0x00654E94..0x00655020: a marker whose timestamp differs from the result timestamp (0x00654F0C) is an sErrorF drop; a marker whose camera field equals [VisionComponent+0x24] (0x00654F10..0x00654F16) with RobotStateHistory::IsValidKey(key) false (0x00654F24) is a warning drop (0x00654FDA); otherwise the marker camera is replaced by the historical camera and the marker is pushed to a NEW list (0x00654F88) which alone goes to UpdateObservedMarkers (0x00654DEC..0x00654DF4). So marker camera poses, and object poses, come from the computed state.",
+      "evidence": [
+        "0x00654D92..0x006550A0 UpdateVisionMarkers",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-051": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotStateHistory::AddRawOdomState gates (drop, consecutive-gap reset, parent check, duplicate key)",
+      "authority": "libcozmoEngine.so 3.4.0-1204, AddRawOdomState 0x00530CF8: 0x00530D2C..0x00530DAC if newest key > window and newest - window > t, warn and drop the state (never inserted); 0x00530DB2..0x00530E78 if t - newest > a global double (via the GOT at 0x00530D3A), sErrorF and a counter, and on the 6th consecutive occurrence the whole raw history is destroyed (destroy 0x00530E6C, reset 0x00530E72); 0x00530E82..0x00530EA4 a state whose pose has a parent that is not a root is dropped with a warning (0x00530ED6); 0x00530EB0..0x00530EC4 an emplace failure (duplicate key) warns and does not cull. The engine has no purge of entries of another origin here; RobotStateHistory::Clear 0x005308C8 clears all four maps. CullToWindowSize 0x005309D1 returns when the raw map has fewer than 2 entries (0x005309DC) and when newest < window (0x00530A08..0x00530A0A).",
+      "evidence": [
+        "0x00530CF8..0x00530EC4 AddRawOdomState",
+        "0x005309D1 CullToWindowSize",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-052": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotStateHistory::GetRawStateAt interpolation and HistRobotState::Interpolate",
+      "authority": "libcozmoEngine.so 3.4.0-1204, GetRawStateAt 0x00531431: lower_bound(t); end -> return 1 (0x00531466..0x00531472); first key > t -> return 1 (0x0053146A..0x00531470); exact key copies that state (0x0053147E..0x0053149C); otherwise before = previous node; if the two origin ids ([r6+0x24] != [r7+0x24], 0x005314BA..0x005314C0) differ log (0x00531574) and return 0x06000000; with flag 1 GetWithRespectTo(after pose, before pose, tmp) 0x00531504 (result != 1 -> 0x005315A6 error, 0x06000000); f = (float)(t - before.key) / (float)(after.key - before.key) (0x00531510..0x00531524); Interpolate(out, before, after, tmp, f). Interpolate 0x0053068C..0x00530848: RobotState (0x5C bytes from +0xC) copied from after, or from before when f < 0.49999 (literal 0x00530884; 0x005306A8..0x005306BE); RobotState +4 from before (0x005306C2); floats at RobotState +0x20, +0x24, +0x28 (head angle), +0x2C (lift angle) = before + (after - before) * f (0x005306CA..0x00530766); the u16 at RobotState +0x50 = roundf(before + (int)(after - before) * f) (0x005306FE..0x00530734) with -1,-1 fill from +0x50 (0x005306EE); pose translation = before.t + f * tmp.t, angle = before.angleZ + f * tmp.angleZ, Z_AXIS_3D, parent = before.GetParent(), empty name, built through Pose3d(Radians, axis, translation, parent, name) 0x0053082A and HistRobotState(Pose3d, RobotState) 0x00530848. Not resolved: whether tmp is in the frame of before or its parent (needs PoseBase::GetWithRespectTo, PLT 0x4A40FC).",
+      "evidence": [
+        "0x00531431..0x005315A6 GetRawStateAt",
+        "0x0053068C..0x00530848 Interpolate",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-053": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot::Delocalize callees and the frame-id-mismatch Delocalize trigger (Robot+0x2C0 counter)",
+      "authority": "libcozmoEngine.so 3.4.0-1204, UpdateFullRobotState: state +4 (sl) compared with Robot+0x2B0 (0x00512D7A cmp sl,r7; bne 0x00512F14): mismatch -> 0x00512F14 increments the Robot+0x2C0 counter; at 0x65 (101) sErrorF, +0x2C0 = 0 and Robot::Delocalize at 0x00512F96 with r1 = ([[Robot+0x284]+8] != -1); the matched path zeroes +0x2C0 after the cliff schedule (0x00512EAE). The tread-boundary trigger (0x00512B88..0x00512BA6) stores +0x2C0 = 0 and jumps to 0x00512FB4, skipping the origin check, history add, pose steps and the cliff threshold schedule (0x00512D7A..0x00512EA6 incl. SendCliffDetectThresholdToRobot 0x00512DA2, 0x00512EA0). Robot::Delocalize 0x00510A24 callees: SendAbsLocalizationUpdate 0x00510BF4 (only when [+0x29] != 0), VizManager::EraseAllVizObjects 0x00510C4E, ObjectPoseConfirmer clear 0x00510C56, teq of the argument with ([[+0x284]+8] != -1) 0x00510C6A (mismatch only sWarningF 0x00510C98; carried-object move gated by [[+0x284]+8] != -1, loop 0x00510CF0), BlockWorld::OnRobotDelocalized(newOrigin returned by AddNewOrigin) 0x00510D62, FaceWorld 0x00510D6A, AIComponent 0x00510D72, BehaviorManager 0x00510D78, MovementComponent 0x00510D80 OnRobotDelocalized, the RobotDelocalized broadcast 0x00510D88..0x00510D98.",
+      "evidence": [
+        "0x00512D7A..0x00512F96 UpdateFullRobotState mismatch counter",
+        "0x00510A24..0x00510D98 Robot::Delocalize",
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA5.md"
       ],
       "live_path": true,
       "hardware_required": false

@@ -258,11 +258,19 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     /// <summary>Ten degrees: <c>CanInteractWithObjectHelper</c> 0x0063C670 passes Radians(0.174533).</summary>
     public const double RestingFlatToleranceRad = 0.174533;
 
-    // CanStackOnTopOfObject 0x0063C5C4 = CanInteractWithObjectHelper 0x0063C654 (located, and resting flat
-    // within ten degrees) and !IsPoseTooHigh(pose, 1.0, 15.0, 0.5) (M12-012 C-E4; the 15.0 is M13-007's).
+    // The pick-up target and the runnable test keep the selection this behaviour already had (located, resting flat
+    // within ten degrees, and !IsPoseTooHigh(pose, 1.0, 15.0, 0.5)); the inventory has no row that puts the
+    // CanInteractWithObjectHelper "nothing on top within 15" step on those two (R-VIS M13 fix round, objection 2).
     private ObservableObject? ClosestUpright(uint? except = null) =>
         ClosestCube(o => o.ObjectId != except && o.IsRestingFlat(RestingFlatToleranceRad)
                          && !CubeGeometry.IsPoseTooHigh(o, 1.0, 15.0, 0.5));
+
+    // The bottom block is validated by DockingComponent::CanStackOnTopOfObject 0x0063C5C4 (M12-012), which is
+    // CanInteractWithObjectHelper 0x0063C654 followed by !IsPoseTooHigh(pose, 1.0, 15.0, 0.5); the helper's
+    // FindObjectOnTopOrUnderneath(obj, 15.0, onTop) step (M13-007 caller 0x0063C730) lives in DockingSystem.
+    // fidelity: M12-012, M13-007
+    private ObservableObject? ClosestValidBottom(uint? except) =>
+        ClosestCube(o => o.ObjectId != except && M.Docking.CanStackOnTopOfObject(o));
 
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
@@ -298,7 +306,7 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     {
         CurrentPhase = Phase.StackingBlock;
         if (!M.Docking.Carrying.IsCarryingObject) { Log("BehaviorStackBlocks.FailBackToPickup: wanted to stack, but we aren't carrying a block"); TransitionToPickingUpBlock(); return; }
-        var bottom = ClosestUpright(TopObjectId);
+        var bottom = ClosestValidBottom(TopObjectId);
         if (bottom is null) { Log("no valid bottom block"); CurrentPhase = Phase.Idle; Finish(); return; }
         BottomObjectId = bottom.ObjectId;
         var helper = new DockHelper(M);

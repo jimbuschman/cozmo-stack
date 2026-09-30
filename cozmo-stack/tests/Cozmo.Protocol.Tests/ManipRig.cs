@@ -5,7 +5,17 @@ using Cozmo.Transport;
 
 namespace Cozmo.Protocol.Tests;
 
-/// <summary>An offline robot with a connected cube, a vision system on a nominal calibration and a fake robot side.</summary>
+/// <summary>
+/// An offline robot with connected cubes, a vision system on a nominal calibration and a fake robot side.
+///
+/// Two fixture rules change what every test built on this rig sees, and they are not the tests' own:
+/// (1) <see cref="Frame"/> processes a second image of the same view while some rendered object has no located object of its type or that object's confirmer count is below 2,
+/// because a first sighting only makes a confirmer entry (M11-007, 0x00506A04); an established view is one image. (2) Every state the fake robot sends reports HEAD_IN_POS
+/// (status bit 9), because <c>WasCameraMoving</c> is <c>(status &amp; 0x8200) != 0x200</c> (M11-004, 0x00642802) and a state without it would count the camera as moving and
+/// leave every confirmed cube Dirty. Tests that depend on them: every test that observes a cube or the charger through <see cref="Frame"/> in ManipulationTests, NavigationTests,
+/// M12RVisBuildTests, M13RVisBuildTests, CorrectionTests, PickupVerifyTests, SearchForBlockTests, CoreReviewTests, FaceTests (no objects: unaffected by rule 1) and the other
+/// files that construct a <see cref="Rig"/>. The connected cubes sit in radio slots 1..3 and the type map is seeded with IDs 7, 8, 9 and 100 (M11-013, M11-041).
+/// </summary>
 internal sealed class Rig : IDisposable
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
@@ -96,9 +106,16 @@ internal sealed class Rig : IDisposable
             FaceTurns++;
             return Task.FromResult(true);
         };
-        Send(new ObjectConnectionState { ObjectID = 7, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
-        Send(new ObjectConnectionState { ObjectID = 8, FactoryID = 0xABCE, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
-        Send(new ObjectConnectionState { ObjectID = 9, FactoryID = 0xABCF, ObjectType = ObjectType.Block_LIGHTCUBE3, Connected = true });
+        // M11-013 / M11-041: a connected cube is named by its radio slot (activeID 0..4; AddConnectedActiveObject refuses 5 and up, 0x00623040), and the
+        // world's ObjectID is the value ObservableObject::SetID stores once per unique type in a process-wide map. The fixture states the IDs it wants
+        // (7, 8, 9 and 100 for the charger) by seeding that map, as a session that had already given those types those IDs would leave it.
+        ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, 7);
+        ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE2, 8);
+        ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE3, 9);
+        ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Charger_Basic, 100);
+        Send(new ObjectConnectionState { ObjectID = 1, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        Send(new ObjectConnectionState { ObjectID = 2, FactoryID = 0xABCE, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
+        Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 0xABCF, ObjectType = ObjectType.Block_LIGHTCUBE3, Connected = true });
         State();
     }
 
@@ -117,6 +134,9 @@ internal sealed class Rig : IDisposable
         Robot.Transport.ProcessIncoming(FrameCodec.Encode(f));
     }
 
+    /// <summary>The radio slot (activeID) the cube with a world ObjectID is connected in: what the cube's own messages (moved, stopped) carry.</summary>
+    public uint ActiveIdOf(uint worldObjectId) => (uint)Vision.World.ConnectedObjects.First(o => o.ObjectId == worldObjectId).ActiveId;
+
     public void State(uint? flags = null, float? liftAngle = null)
     {
         T += 33;
@@ -133,8 +153,38 @@ internal sealed class Rig : IDisposable
         Send(new ImageImuData { ImageId = T, RateX = 0, RateY = 0, RateZ = 0, Line2Number = 0 });
     }
 
-    /// <summary>Renders the cube (if any) from the current pose and processes the frame.</summary>
+    /// <summary>
+    /// Renders the cube (if any) from the current pose and processes the view as the camera delivers it: <see cref="SightingsPerFrame"/> consecutive images of the
+    /// same view (two by default) while it holds a marker object the world has not located at that pose yet, and returns the last one's result. M11-007: a marker sighting only makes a confirmer entry, and the second matching
+    /// one makes the located object (<c>AddVisualObservation</c> 0x00506A04..0x00506A32), so a test that wants "the cube has been seen" needs two images.
+    /// </summary>
     public VisionFrameResult Frame()
+    {
+        VisionFrameResult r = OneImage();
+        // only a view holding a marker object that the world has not located at that pose yet has anything left to confirm; every other view is one image
+        for (int i = 1; i < SightingsPerFrame && ViewIsUnconfirmed(); i++) r = OneImage();
+        return r;
+    }
+
+    /// <summary>How many images of the same view <see cref="Frame"/> processes while the view holds an object the world has not located at that pose yet.</summary>
+    public int SightingsPerFrame = 2;
+
+    /// <summary>
+    /// Whether some rendered object still has nothing to confirm against: the world has no located object of its type, or that object's confirmer count is below 2
+    /// (<c>IsReferencePoseConfirmed</c> is count &gt; 1, 0x00506340; a first sighting and a mismatching one leave the count at 1, 0x00506A46..0x00506A4E).
+    /// </summary>
+    private bool ViewIsUnconfirmed()
+    {
+        var inView = new List<ObjectType>();
+        if (Cube is not null) inView.Add(ObjectType.Block_LIGHTCUBE1);
+        inView.AddRange(MoreCubes.Select(m => m.Type));
+        if (Charger is not null) inView.Add(ObjectType.Charger_Basic);
+        var located = Vision.World.LocatedObjects;
+        return inView.Any(t => !located.Any(o => o.Type == t && o.PoseConfirmationCount >= 2));
+    }
+
+    /// <summary>One camera image of the current view.</summary>
+    public VisionFrameResult OneImage()
     {
         State();
         var pd = Vision.History.At(T)!.Value;

@@ -19,7 +19,7 @@ public enum DockAction : byte
 /// are numbered; <c>AlignWithObjectAction</c>, <c>PlaceRelObjectAction</c> and <c>RollObjectAction</c>
 /// each write this field too.
 /// </summary>
-public enum DockingMethod : byte { Default = 0, Method1 = 1, Method2 = 2 }
+public enum DockingMethod : byte { Default = 0, Method1 = 1, Method2 = 2, Method3 = 3 }
 
 // fidelity: M2-014
 /// <summary>
@@ -91,7 +91,29 @@ public sealed class CarryingComponent
         Changed?.Invoke(objectId);
     }
 
-    public void UnsetCarrying() { lock (_gate) { _carried = null; _dockMarker = null; } Changed?.Invoke(null); }
+    /// <summary>
+    /// <c>SetObjectAsAttachedToLift</c>'s state (M12-008): <c>SetCarryingObject</c> plus the object's pose with respect to the lift
+    /// (step 6, rotation kept) and <c>this+0x14</c>, the object resting on the carried one (step 8; null is the engine's -1) with its
+    /// pose with respect to the carried object.
+    /// </summary>
+    // fidelity: M12-008
+    internal void AttachToLift(uint objectId, KnownMarker dockMarker, Pose3d objectWrtLift, uint? onTopId, Pose3d? topWrtCarried)
+    {
+        lock (_gate) { _carried = objectId; _dockMarker = dockMarker; _objectWrtLift = objectWrtLift; _onTopId = onTopId; _topWrtCarried = topWrtCarried; }
+        Changed?.Invoke(objectId);
+    }
+
+    private Pose3d? _objectWrtLift;
+    private uint? _onTopId;
+    private Pose3d? _topWrtCarried;
+    /// <summary>The carried object's pose with respect to the lift pose (translation <c>(L + 4, 0, -12.5)</c>, rotation kept); null before <c>AttachToLift</c>.</summary>
+    public Pose3d? ObjectWrtLift { get { lock (_gate) return _objectWrtLift; } }
+    /// <summary><c>CarryingComponent+0x14</c>: the object found resting on the carried one when it was attached; null is the engine's -1.</summary>
+    public uint? CarriedOnTopId { get { lock (_gate) return _onTopId; } }
+    /// <summary>The on-top object's pose with respect to the carried object: the engine parents it to the carried object (<c>SetParent(obj.pose)</c>, 0x00633006..0x00633010), so it moves with it.</summary>
+    public Pose3d? TopWrtCarried { get { lock (_gate) return _topWrtCarried; } }
+
+    public void UnsetCarrying() { lock (_gate) { _carried = null; _dockMarker = null; _objectWrtLift = null; _onTopId = null; _topWrtCarried = null; } Changed?.Invoke(null); }
 }
 
 /// <summary>
@@ -207,9 +229,70 @@ public sealed class DockingSystem : IDisposable
         if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
         if (_vision.World.GetObjectById(id) is not { } obj) return;
         if (_vision.History.Latest is not { } state) return;
-        _vision.World.SetCarriedPose(id, LiftGeometry.CarriedObjectWorldPose(
-            state.RobotPose, state.LiftAngleRad, marker));
+        // fidelity: M12-008
+        // The pose it was attached at keeps its rotation (SetObjectAsAttachedToLift step 6); an object marked as carried
+        // without an attach has only the marker to go by.
+        var carriedPose = Carrying.ObjectWrtLift is { } wrtLift
+            ? LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, wrtLift)
+            : LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, marker);
+        _vision.World.SetCarriedPose(id, carriedPose);
+        if (Carrying.CarriedOnTopId is { } topId && Carrying.TopWrtCarried is { } topWrt)
+            _vision.World.SetCarriedPose(topId, carriedPose.Compose(topWrt));
     }
+
+    /// <summary>The <see cref="BlockConfigurationManager"/> whose dirty flag (<c>+0xC</c>) <c>SetObjectAsAttachedToLift</c> sets (step 9); wired by <see cref="ManipulationSystem"/>.</summary>
+    public BlockConfigurationManager? Configurations { get; set; }
+
+    /// <summary>
+    /// The value the last pick-up's <c>SetObjectAsAttachedToLift</c> returned (M12-008); 0 is success. The engine discards it (0x00533848..0x00533854); this property only records it.
+    /// </summary>
+    public uint LastAttachResult { get; private set; }
+
+    /// <summary>
+    /// <c>DockingComponent+5</c>: the PickAndPlaceResult <c>success</c> byte <c>HandlePickAndPlaceResult</c> 0x00533780 stores before it branches on blockStatus
+    /// (0x00533790..0x0053379A, M12-008). No reader is in the inventory.
+    /// </summary>
+    // fidelity: M12-008
+    public bool DockingSuccessByte { get; private set; }
+
+    /// <summary>
+    /// <c>DockingComponent::CanStackOnTopOfObject</c> 0x0063C5C4 (M12-012) = <see cref="CanInteractWithObjectHelper"/> 0x0063C654 and then
+    /// <c>!IsPoseTooHigh(pose, 1.0, 15.0, 0.5)</c> (1.0 at 0x0063C614, 15.0 at 0x0063C60E, 0.5 at 0x0063C606, call 0x0063C618); it does not reuse the helper's found-object result.
+    /// <c>IsPoseTooHigh</c> (0x00877955) is given the object's pose WITH RESPECT TO THE ROBOT'S POSE (the helper's out pose), so its z is the height above the robot's z, not the world z;
+    /// the two differ once the robot's z is not 0. Without a robot pose the <c>GetWithRespectTo</c> fails and the answer is false (as the helper's own failure).
+    /// </summary>
+    // fidelity: M12-012
+    public bool CanStackOnTopOfObject(ObservableObject obj)
+    {
+        if (!CanInteractWithObjectHelper(obj)) return false;
+        if (_vision.History.Latest is not { } state) return false;
+        double d = CubeGeometry.DimInParentFrameZ(obj);
+        double zWrtRobot = obj.Pose.WithRespectTo(state.RobotPose).Translation.Z;
+        return !(d * 1.0 + 15.0 + 1e-5 < d * 0.5 + zWrtRobot);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4)
+    }
+
+    /// <summary>
+    /// <c>DockingComponent::CanInteractWithObjectHelper</c> 0x0063C654..0x0063C794 (M12-012; re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q7, corrected by
+    /// 20260929-R-VIS-verify-M12-fix2.md): it reads only the object's family (1 or 2: Block or LightCube), <c>IsRestingFlat(Radians(0x3E32B8C2))</c>, the carried compare
+    /// (<c>[[robot+0x284]+8] != id</c>, 0x0063C686..0x0063C698), <c>GetWithRespectTo(robot pose)</c> (always succeeds with one pose origin) and finally
+    /// <c>FindObjectOnTopOrUnderneathHelper(obj, 15.0, default filter, onTop = 1) == null</c> (0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792; the search is M13-007's over the located
+    /// cubes, with M13-023's stand-in for tilted/non-cube pairs). NO PoseState test exists in the unit. <c>CanPickUpObject</c> 0x0063C7F0 and <c>CanPickUpObjectFromGround</c> 0x0063C880
+    /// are recorded (M12-012) but NO C# caller exists, so they are not built.
+    /// </summary>
+    // fidelity: M12-012
+    public bool CanInteractWithObjectHelper(ObservableObject obj)
+    {
+        if (obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube)) return false;
+        if (!obj.IsRestingFlat(0.174533)) return false;
+        if (Carrying.CarriedObjectId == obj.ObjectId) return false;
+        var cubes = _vision.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
+        return BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, BlockConfigurationManager.RestingOnToleranceMm) is null;
+    }
+
+    /// <summary><c>CarryingComponent::SetObjectAsAttachedToLift</c> 0x00632CC4 (M12-008): see <see cref="LiftGeometry.SetObjectAsAttachedToLift"/>. Returns 0 on success.</summary>
+    // fidelity: M12-008
+    public uint SetObjectAsAttachedToLift(uint? objectId, MarkerType markerCode) =>
+        LiftGeometry.SetObjectAsAttachedToLift(Carrying, _vision.World, Configurations, _vision.History.Latest, objectId, markerCode, Log);
 
     /// <summary>
     /// The engine's message for a dock, field for field.
@@ -363,13 +446,27 @@ public sealed class DockingSystem : IDisposable
             {
                 var result = new DockResult(r.Field0, r.Field1, r.Field2, (BlockStatus)r.Field3);
                 Log?.Invoke($"PickAndPlaceResult: {result}");
-                uint? objectId; KnownMarker? dockMarker;
-                lock (_gate) { objectId = _active?.ObjectId; dockMarker = _active?.Marker; }
-                if (result.Succeeded && result.Status == BlockStatus.BlockPickedUp && objectId is { } id)
+                // HandlePickAndPlaceResult 0x00533780 stores [msg+4] (success) into DockingComponent+5 (0x00533790..0x0053379A) before it branches on blockStatus (M12-008).
+                // Nothing in the inventory reads that byte, so it is stored here and consumed by nothing.
+                // fidelity: M12-008
+                DockingSuccessByte = result.Succeeded;
+                // The dock in progress; a result that arrives with no dock running has neither an object nor a marker, so the attach below cannot
+                // be reached without both (the previous code's "no marker" case was unreachable: object and marker come from the same tuple).
+                (uint ObjectId, KnownMarker Marker)? dock;
+                lock (_gate) dock = _active is { } a ? (a.ObjectId, a.Marker) : null;
+                if (result.Succeeded && result.Status == BlockStatus.BlockPickedUp && dock is { } d)
                 {
-                    // SetObjectAsAttachedToLift 0x00632CC4 also places the object on the lift, so the
-                    // world model stops holding it where it was last seen on the table.
-                    Carrying.SetCarrying(id, dockMarker);
+                    // HandlePickAndPlaceResult 0x00533850 (blockStatus == 2 and success != 0) calls SetDockObjectAsAttachedToLift, i.e.
+                    // SetObjectAsAttachedToLift 0x00632CC4, which places the object on the lift, so the world model stops holding it where it
+                    // was last seen on the table. The engine DISCARDS the return value (0x00533848..0x00533854: r0 is not read, the next
+                    // instruction returns): a failed attach changes nothing (no rollback, message or retry). LastAttachResult and the log line
+                    // are this stack's observation only; nothing acts on them.
+                    // fidelity: M12-008
+                    uint attach = SetObjectAsAttachedToLift(d.ObjectId, d.Marker.Code);
+                    LastAttachResult = attach;
+                    if (attach != 0) Log?.Invoke($"SetObjectAsAttachedToLift returned {attach} (discarded by HandlePickAndPlaceResult, M12-008)");
+                    // The engine parents the object on top of the carried one to it at once (SetParent 0x00633006..0x00633010); the per-tick
+                    // recomposition is this stack's substitute for the pose tree (M12-027), so run it now rather than at the next frame.
                     UpdateCarriedObjectPose();
                 }
                 if (result.Succeeded && result.Status == BlockStatus.BlockPlaced) ReleaseCarriedObject();

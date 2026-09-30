@@ -46,8 +46,14 @@ public static class ChargerGeometry
     public const double PreDockDistanceFromMarkerMm = 250.0;
     /// <summary>−15.5 mm: the z GeneratePreActionPoses gives the pose (0xC1780000 at 0x004EA01A).</summary>
     public const double PreDockZOffsetMm = -15.5;
-    /// <summary>The world-model id of the (single, passive) charger (LOCAL: the engine assigns ids in observation order).</summary>
-    public const uint ObjectId = 100;
+    /// <summary>
+    /// The ObjectID the world gave the (single) charger. The engine assigns it in <c>ObservableObject::SetID</c> 0x004EF468, which hands a unique type
+    /// (Charger is one, 0x004E3883) one stable value from the process-wide counter (M11-013), so this is that value, or
+    /// <see cref="ObservableObject.UnassignedId"/> (-1) before the charger has been given one. It replaces the fixed 100 this stack had, which the
+    /// engine never assigned.
+    /// </summary>
+    // fidelity: M11-013
+    public static uint ObjectId => ObjectIdSpace.UniqueIdOrUnassigned(ObjectType.Charger_Basic);
 
     public static Vec3 Size => new(LengthMm, WidthMm, HeightMm);
 

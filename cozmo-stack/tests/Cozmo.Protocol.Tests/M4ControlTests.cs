@@ -367,6 +367,59 @@ public class M4ControlTests
     }
 
     /// <summary>
+    /// M11-044 / M11-053 (0x00512B88..0x00512BA6, 0x00512FB4): a state that triggers Delocalize (a treads commit involving OnTreads) jumps over 0x00512D7A..0x00512EA6, so it sends no
+    /// SetCliffDetectThreshold (0x00512DA2, 0x00512EA0); the next ordinary state does send the first {50}.
+    /// </summary>
+    [Fact]
+    public void M11_044_ADelocalizingStateSendsNoCliffThresholdAndTheNextOrdinaryOneDoes()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        int mark = rig.Mark();
+        List<byte[]> Thresholds() => rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
+        rig.State(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp);          // OnTreads -> InAir: r7 = 1
+        Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
+        Assert.Empty(Thresholds());
+        rig.State(RobotStatusFlag.IsBodyAccMode);                                        // InAir -> OnTreads: r7 = 1
+        Assert.Equal(OffTreadsState.OnTreads, rig.Robot.Sensors.OffTreadsState);
+        Assert.Empty(Thresholds());
+        rig.State(RobotStatusFlag.IsBodyAccMode);                                        // no commit
+        Assert.Equal(Hex("3200"), Body(Assert.Single(Thresholds())));
+    }
+
+    /// <summary>
+    /// M11-044 (0x00512A62..0x00512A94): a commit where neither the old nor the new state is OnTreads (InAir to OnBack) gives r7 = 0: no Delocalize, the history takes the state and the
+    /// threshold schedule runs (the first accepted ordinary state sends {50}).
+    /// </summary>
+    [Fact]
+    public void M11_044_ACommitBetweenTwoOffTreadsStatesDoesNotDelocalize()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
+        int mark = rig.Mark();
+        rig.State(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp);          // OnTreads -> InAir (a Delocalize state)
+        Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
+        var o = new ObservableObject(42, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1));
+        vision.World.SetLocalizedTo(o);
+        int historyBefore = vision.History.Count;
+        float back = (float)OffTreadsClassifier.OnBackCentrePhysicalRad;
+        int fed = 0;
+        for (; fed < 200 && rig.Robot.Sensors.OffTreadsState != OffTreadsState.OnBack; fed++)
+        {
+            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp);
+            st.Pose = new RobotPose { Pitch = back };
+            rig.Data(st); rig.Tick(60);
+            Assert.Equal(42u, vision.World.LocalizedToObjectId);                           // never delocalized on the way, nor at the commit
+        }
+        Assert.Equal(OffTreadsState.OnBack, rig.Robot.Sensors.OffTreadsState);
+        Assert.Equal(historyBefore + fed, vision.History.Count);                            // every one of those states reached the history
+        Assert.Contains(rig.RawSince(mark), b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold);   // the schedule ran
+    }
+
+    /// <summary>
     /// M4-019 SC4, SC4e, SC4f: the first accepted state of the current frame (robot+0x2B0 = 0) sends
     /// SetCliffDetectThreshold {50}; after more than 50 mm it sends {400} once. A dropped state reaches neither; SC8:
     /// nothing sends EnableStopOnCliff at connection.
@@ -1067,8 +1120,9 @@ public class M4ControlTests
     /// <summary>
     /// M4-023 CD10g (0x006311A2..0x006313D8) and M4-009 CD10a step 3 (0x00533E4C..0x005341BA): a Moved inside the
     /// double-tap window returns before SetIsMoving and MarkObjectDirty, so a located object stays Known; when the
-    /// pending entry ends, BTF Update marks the located copy dirty. (The located object here is a markerless one whose
-    /// id is reused as the cube's slot: this stack's world ids are the slots, and a Known object is what MarkDirty acts on.)
+    /// pending entry ends, BTF Update marks the located copy dirty. (M11-041: the cube is named by its radio slot, and the world's ObjectID
+    /// is the connected object's, which AddConnectedActiveObject gave it; the located object here is a cube with that ID, and a Known object
+    /// is what MarkDirty acts on.)
     /// </summary>
     [Fact]
     public void M4_023_CD10g_TheDoubleTapWindowReachesTheWorld()
@@ -1077,9 +1131,12 @@ public class M4ControlTests
         using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
         rig.ToSynced();
         rig.State();
-        var located = vision.World.AddMarkerlessObject(Pose3d.Identity, ObjectType.CollisionObstacle);
-        uint id = located.ObjectId;
+        const uint id = 1;                                                // the radio slot
         ConnectCube(rig, slot: id);
+        uint worldId = vision.World.ConnectedObjectIdForActiveId(id)!.Value;
+        var located = new ObservableObject(worldId, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        { Pose = Pose3d.Identity, PoseState = PoseState.Known, OriginId = vision.World.CurrentOriginId };
+        vision.World.AddLocatedObject(located);
         Assert.Equal(PoseState.Known, located.PoseState);
         rig.Robot.Cubes.SetBlockTapFilterEnabled(false);
         rig.Data(new ObjectTapped { Timestamp = 1, ObjectID = id, TapNeg = -40, TapPos = 40 }); rig.Tick();

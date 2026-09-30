@@ -281,9 +281,9 @@ public class FaceTests
         Assert.Equal((AnimationTrigger.AcknowledgeFaceNamed, "Jim"), turn.Reaction!.Value);
         Assert.True(rig.Vision.Faces.HasTurnedTowardsFace(7));
         Assert.Contains(turn.Trace, l => l.Contains("Will fine tune"));
-        // no face at all: the action fails as the engine's Init does
+        // no face at all, +0x193 clear: Init sets state 3 and returns 0 (0x0054BEB6..0x0054BEBC), so the action succeeds; it never returns 0x0300000B (M13-014)
         using var empty = FaceRig();
-        Assert.Equal(FaceActionResult.NoFace, new TurnTowardsFaceAction(empty.Vision, SmartFaceID.Invalid).RunAsync(default).GetAwaiter().GetResult());
+        Assert.Equal(FaceActionResult.Success, new TurnTowardsFaceAction(empty.Vision, SmartFaceID.Invalid).RunAsync(default).GetAwaiter().GetResult());
     }
 
     /// <summary>
