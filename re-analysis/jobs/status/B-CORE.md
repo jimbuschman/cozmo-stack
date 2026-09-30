@@ -1,6 +1,7 @@
 # B-CORE status
 
 CLAIMED opencode (cozmo-manager) 2026-09-29 13:05
+DONE opencode (cozmo-manager) 2026-09-30
 
 ## Scope
 
@@ -124,3 +125,27 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   (StbImageSharp in place of OpenCV's libjpeg 9, Part 1 item 3, needs the emulator oracle).
 - Next: M3-021 (vision_config load, IsInitialized, initial exposure), M3-032 (the NV dispatch gate), then the libjpeg 9
   grey path if the emulator oracle is built.
+
+## DONE (2026-09-30)
+
+All six batches are built, verified and pushed; the remaining scope is cross-layer (SD3) or needs a new oracle.
+
+**Commits:** dbdc39d (batch 1, NV queue), ac62741 (batch 2, readiness), afbb769 (batch 3, head/lift), 32216ca (batch 4a),
+99a51f6 (batch 4b), bee7266 (batch 5), 23c65ac (batch 6, M3-001/M3-018 + M3-037), plus the status commits. Full suite
+2144/2144 at batch 6.
+
+**Records built (all still IMPLEMENTATION_GAP, `unresolved` "built, awaiting strong verification"):** M3-022,
+M3-025..M3-031, M3-035, M1-028, M1-041, M3-033, M3-034, M4-020, M4-001, M4-003, M4-011, M4-016, M4-025, M2-003,
+M1-024, M3-010, M1-029, M2-002, M3-001, M3-018. New records: M1-044, M1-045 (batch 4b) and M3-037 (batch 6, a forced
+COMPATIBILITY_POLICY under SD2). A strong verifier settles them.
+
+**What is left, and why (SD3, named in the records' `unresolved`):**
+- **M3-001/M3-018 residual:** the JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg 9 (Part 1 item 3).
+  A bit-exact port needs an emulator oracle for libjpeg 9 (idct_islow, h2v1_fancy_upsample, ycc_rgb_convert) in
+  `re-analysis/tools/emu/`, which does not exist yet; that is its own extraction/port job.
+- **M3-013:** the audio-animation readiness sink is M6's live voice/mixer (B-M6b-4).
+- **M3-021:** the vision_config.json load and IsInitialized failure behaviour belong to M11's VisionSystem::Init.
+- **M3-032:** Gate A and the SyncTimeAck watchdog are built; Gate B needs M11's UpdateAllResults.
+- **M4-009/017/018/019:** M11/M12/M7-dependent (R-DEV's triage).
+
+No robot run is needed from this job. The manager verifies and settles the built records.
