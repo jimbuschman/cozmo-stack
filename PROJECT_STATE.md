@@ -25,14 +25,23 @@ Read first in every session. The manager keeps this file current; the process it
 - **Merged locally, not pushed.** The manager's repo has Sonnet 1's 4b, R-VIS's three commits, a merge fix and A2 on
   top of B-CORE and Codex. The merge fix: B-CORE's BlockFilter hook is renamed `BlockFilterInit`, because R-VIS used
   `PhysicalRobotSet`, and the calls are in `SetPhysicalRobot`'s order.
-  - Suite: 2598 of 2604. The six `M13_028_*` flip tests fail, because R-VIS's FlipBlockAction was built before
-    B-CORE's lift track locks and strict IsNear. This goes back to Sonnet 2, whose clone takes the merged tree with a
-    fetch and a reset. One push follows its fix.
+  - The six `M13_028_*` flip tests failed on the merge (R-VIS was built before B-CORE's track locks). Sonnet 2
+    fixed them from the binary (89a718e): the flip's carry lift sets +0x56 (0x0055F154), and IActionRunner then skips
+    AreAnyTracksLocked/LockTracks (0x00540434) and every unlock (0x005408EC, 0x00540264, 0x0054120C). Opus verifier:
+    PASS.
+  - **Queued (non-blocking):**
+    - `M13_028_TheCarryLiftRunsWhileTheApproachLiftHoldsTheTrackAndTakesNoLock` uses the angle `Asin(1.0)`, which
+      is 111 mm, not 92, so its "releases nothing" half never reaches the carry lift's end. Use `Asin(47.0/66)`.
+      Its lock half cannot tell the old code from the new, because every lock shares one owner key.
+    - M4-003 and M13-028 should also cite the +0x56 gates in Interrupt (0x00540264) and ~IActionRunner (0x0054120C).
+  - **For the B-CORE verification (possible defect, M4-003):** the engine's LockTracks passes the action's name
+    (+0x48) and id (+0x60) as the lock owner (0x00540584..0x0054058A). The C# uses one constant `ActionRunnerWho`
+    for every action, so lock ownership between concurrent actions is lost.
 - **Counts:** 418 records. 166 EXACT_SOURCE, 194 IMPLEMENTATION_GAP (about 60 of them built and awaiting
   verification), 18 RECOVERABLE_GAP, 10 HARDWARE_ONLY, 2 BLOCKED_EXTERNAL, 26 COMPATIBILITY_POLICY,
   2 EQUIVALENT_IMPLEMENTATION.
 - **Next for the manager:**
-  - after the flip fix, run the suite and push once;
+  - run the suite and push once, then Sonnet 2 pulls and starts R-BEH2 (with the pre-extraction check's corrections);
   - Opus verification of B-CORE's batches, then B-M6b-4 and R-VIS, against CHECKLIST.md and the binary;
   - an Opus re-audit of M10, M11, M14 and M15;
   - once the R-BEH2 pre-extraction is pushed, check it and give R-BEH2 to a Sonnet;
