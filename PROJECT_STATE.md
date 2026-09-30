@@ -2,7 +2,41 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
-## Now (2026-09-29)
+## Now (2026-09-29, evening)
+
+- **The complete audit changed the picture.** Every EXACT_SOURCE record (239) was re-checked by independent verifiers:
+  **155 hold**. 84 went back to IMPLEMENTATION_GAP, each with its defect in `unresolved` and a correction A1 in its
+  inventory. 21 of those (M11, M13, M14) are handed to R-VIS, and R-VIS demotes them itself because it is editing
+  those layers. The results, by layer, the five recurring failure patterns and the plan are in
+  `re-analysis/research/20260929-audit-complete.md`; the M7/M8 detail is in `20260929-audit-M7-M8.md`.
+  - Solid: M1, M2, M5, M10, M12, M15, M6. Weak: M3, M4, M11, M14. Badly off: M7, M8, M9, M13.
+  - The Sonnet-audited layers (M5 part A, M10, M11, M12, M14, M15) ran at about half the Opus depth. Codex is
+    re-auditing M12 and M5 part A to calibrate (`requests/20260929-audit-calibration.md`).
+- **The new job format** (`re-analysis/jobs/CHECKLIST.md`, in every agent's instructions):
+  - each job names the production path (the engine function and the C# entry), with no parallel copies;
+  - the gates, order and failure results around every path;
+  - nothing deferred to a comment;
+  - floats as the engine's bits, at the engine's width;
+  - tests from the binary;
+  - **cheap models never settle records.** A DeepSeek job ends "built, awaiting strong verification", and a Claude
+    verifier settles it.
+  - `FidelityLiteralLintTests` fails on new 6-8-digit decimal literals in fidelity-tagged code (437 baselined).
+- **Workers now:**
+  - Sonnet 1 (Claude Code, clone `C:\Users\jbuschman\Downloads\cozmo-stack-r`): B-M6b-4, the live audio. Batch 4a
+    is done. Then R-M9 and R-M6.
+  - Sonnet 2 (clone `cozmo-stack-r2`): R-VIS, then R-BEH2 (the 19 demoted M7/M8 records, Codex pre-extraction).
+  - DeepSeek window 3: B-CORE, the connection and device core (NV queue, readiness, track locks), the first job in the
+    new format. Windows 1 and 2 are idle to save OpenRouter credits.
+  - Codex: the R-BEH2 pre-extraction, then the audit calibration.
+  - Neither Sonnet clone can push. The operator runs `git push origin main` in its window when it asks.
+- **Next for the manager:**
+  - verify B-CORE's batches against the checklist in the binary, and settle what holds;
+  - collect and check the Codex answers;
+  - after B-CORE, a control-check robot run (readiness and track locking change what goes on the wire).
+- **Tooling:** the push gate skips the suite when this clone already passed it on identical code and records, and
+  refuses at once when origin has moved.
+
+## Earlier today (2026-09-29, before the audit; superseded by the section above)
 
 - **Every layer, M1 to M15, is built once and inventory-approved. None is ACCEPTED yet.** The manifest has 371 records:
   - 220 EXACT_SOURCE;
