@@ -1,4 +1,4 @@
-# B-CORE2 status
+DONE 2026-09-30 (DeepSeek, window 3) - all five batches built and pushed; verifier PASS on every batch; full suite 2623/2623; every touched record left IMPLEMENTATION_GAP awaiting strong verification.
 
 CLAIMED 2026-09-30 06:38 (DeepSeek, window 3)
 
@@ -50,7 +50,7 @@ CLAIMED 2026-09-30 06:38 (DeepSeek, window 3)
 - M4-003 the engine's per-action lock-owner tag counter seed is a global with no established value; the stack starts
   at 1 (no wire effect).
 
-## DONE 2026-09-30 (DeepSeek, window 3)
+## Summary (the DONE line at the top is authoritative)
 
 Commits pushed: 218f940 (claim), aeaf977 (batch 1), bd12929 (batch 2), 4d960de (batch 3), e0f4333 (batch 4),
 caaef86 (batch 5). Every record this job touched stays IMPLEMENTATION_GAP with `unresolved` starting
