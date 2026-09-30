@@ -1526,9 +1526,9 @@ public sealed class CozmoEngine : IDisposable
     /// <summary>The engine's log: each line starts with its level (debug, info, warning, error).</summary>
     public event Action<string>? LogLine;
     /// <summary>
-    /// The idle faceOff deadline expired (CC6): the engine queues CreateGoToSleepAnimSequence here.
-    /// MISSING: this stack has no ActionList or go-to-sleep sequence (CC8 is an M5 interface); the request is
-    /// raised for the animation layer and logged, and nothing is sent.
+    /// The idle faceOff deadline expired (CC6): the engine queues CreateGoToSleepAnimSequence here. MISSING
+    /// (M1-045): this stack has no ActionList or animation-sequence action layer, so the request is raised for
+    /// the animation layer and logged, and nothing is queued.
     /// </summary>
     public event Action? GoToSleepRequested;
 

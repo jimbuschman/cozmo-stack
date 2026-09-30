@@ -67,7 +67,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M1-transport.md",
-        "approved": "2026-09-29",
+        "approved": "2026-09-30",
         "snapshot": "re-analysis/inventory/M1-transport.approved.json"
       }
     },
@@ -558,7 +558,7 @@
       ],
       "effect": "a dead link is noticed at a different time, or the game is told the wrong result",
       "provenance": "reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. RemoveRobot destroys the whole Robot (0x0052F2F6) but the stack resets only the devices; the upper-layer reset, VisionSystem.Enabled (UNKNOWN), the local 2 s join bound and the CD21 read sit only in provenance prose with no record.",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. RemoveRobot destroys the whole Robot (0x0052F2F6) but the stack resets only the devices; B-CORE batch 4 gives the upper-layer teardown its own record (M1-044: Robot::~Robot 0x005110D4 destroys behaviour, mood, AI/freeplay, path, map, docking, carrying and vision) and closes the VisionSystem.Enabled UNKNOWN (the engine destroys the VisionComponent and its owned VisionSystem; there is no persistent engine flag). The 2 s join bound is a stack-local policy with no engine counterpart (the engine joins unbounded, 0x0065257C); the CD21 read is M3-022 and CD16's Lab read is M1-028, so the audit's 'no record' is wrong for those.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag, EngineAppLayerTests.M1_015_CB33_AfterTheResponseTheGameGetsRobotDisconnected, EngineAppLayerTests.M1_015_CC23_CC24_ADropDuringTheHandshakeIsAFailureAndATimeoutIsReason1, EngineAppLayerTests.M1_015_CC24_ANeverAnsweredConnectIsRejected, EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed, EngineAppLayerTests.M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot, EngineAppLayerTests.M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind, EngineAppLayerTests.M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames"
@@ -785,7 +785,7 @@
       ],
       "effect": "a second connect, a response at the wrong time, or a local disconnect is handled differently",
       "provenance": "reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the CC27 'everything built afresh' claim is contradicted by its own residual: behaviour, mood, docking, path and freeplay state survive RemoveRobot with no record owning the reset; E7..E9 ExitSdkMode has no counterpart.",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the CC27 'everything built afresh' claim is contradicted by its own residual: behaviour, mood, docking, path and freeplay state survive RemoveRobot with no record owning the reset; E7..E9 ExitSdkMode has no counterpart. B-CORE batch 4: the engine's reset is Robot::~Robot (M1-044), which destroys those components; the stack's counterparts (device reset, VisionSystem, NeedsManager) are built and the upper-layer components are M7/M12-M15 gaps named in M1-044. E7..E9 ExitSdkMode remains unbuilt.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops, EngineAppLayerTests.M1_025_B23_TheConnectionResponseMovesState1To2AndResetsTheReason, EngineAppLayerTests.M1_025_B2_CB36_ASecondConnectToRobotIsIgnoredWhileTheRobotExists, EngineAppLayerTests.M1_025_B2_CB4_ConnectToRobotBuildsTheRobotBeforeAnyExchange, EngineAppLayerTests.M1_025_CB38_AConnectionEventFromAnotherAddressIsHandledAsTheRobots, EngineAppLayerTests.M1_025_CB3_ASimulatedRobotUsesPort5552, EngineAppLayerTests.M1_025_CC18_DisconnectReasonValues, EngineAppLayerTests.M1_025_CC23_ClearResetsTheAddressSoALaterDisconnectCurrentSendsNothing, EngineAppLayerTests.M1_025_CC27_NoAutomaticReconnectAndALaterConnectToRobotBuildsAfresh, EngineAppLayerTests.M1_025_CC29_CC30_DisconnectCurrentDisconnectsOnceAndRemovesTheRobot, EngineAppLayerTests.M1_025_CC30_ArrivalsQueuedAfterTheMarkerAreDropped, EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed, EngineAppLayerTests.M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot, EngineAppLayerTests.M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind, EngineAppLayerTests.M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames"
@@ -910,7 +910,7 @@
       ],
       "effect": "the link is dropped after a pause at a different time, or never",
       "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on the faceOff deadline the engine queues CreateGoToSleepAnimSequence (0x0052CE5A..0x0052CE6A); the stack only logs MISSING and raises an event, deferred to prose.",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on the faceOff deadline the engine queues CreateGoToSleepAnimSequence (0x0052CE5A..0x0052CE6A); B-CORE batch 4 gives the action its own record (M1-045) and the stack names it (CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested), because no ActionList or animation-sequence action layer exists.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_031_CC3_CC6_TheDisconnectDeadline, EngineAppLayerTests.M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate, EngineAppLayerTests.M1_031_CC7_AnExpiredDeadlineBlocksReArmingUntilCancel"
@@ -1129,6 +1129,44 @@
       "hardware_required": true,
       "live_path": true,
       "test": null
+    },
+    {
+      "id": "M1-044",
+      "subsystem": "M1-transport",
+      "title": "RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys the behaviour, mood, AI/freeplay, path, map, docking, carrying and vision components",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "RemoveRobot 0x0052F2F6 calls Robot::~Robot (0x005110D4) then operator delete (0x0052F2FA); RobotManager::RemoveRobot also calls NeedsManager::OnRobotDisconnected 0x0052F2E0, PerfMetric::OnRobotDisconnected 0x0052F2E8, DASPauseUploadingToServer(0) 0x0052F2EE, erases the map/id/RIC (0x0052F2FE..0x0052F350) and clears $session_id 0x0052F2D8, $phys 0x0052F358 and $group 0x0052F360",
+        "Robot::~Robot 0x005110D4: FreeplayDataTracker::ForceUpdate 0x0051111A, Robot::AbortAll 0x00511120; BehaviourManager +0x44 0x0051112C; BehaviourSystemManager +0x48 0x0051113A; ActionList::Clear 0x00511146 then ~ActionList 0x00511156; VisionComponent +0x258 through vtable slot +4 0x0051116C (D0 0x00652794; its D1 0x00652554 joins the processor thread 0x0065257C and destroys the owned VisionSystem 0x0065258E); MoodManager +0x440 0x005111B6; AIComponent +0x264 0x00511276; PathComponent +0x5c 0x00511284; BlockWorld +0x34 0x005112CE; MapComponent +0x25c 0x005114E8; CarryingComponent +0x284 0x00511406 and DockingComponent +0x280 0x00511414; PoseOriginList +0x294 0x005113CC, TouchSensorComponent +0x28c 0x005113E0, CliffSensorComponent +0x288 0x005113F2; AnimationStreamer +0x60 0x0051154A",
+        "the stack's counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers: VisionSystem.ResetToConstructed (VisionSystem.cs) and FreeplayStack's NeedsManager::OnRobotDisconnected (FreeplayStack.cs, M15-016); the upper-layer components themselves (behaviour/freeplay, mood, AI, path, map, docking, carrying) are M7/M12-M15 and not built in this stack"
+      ],
+      "effect": "behaviour, mood, path, docking, map or freeplay state survives a removal the engine would have destroyed",
+      "provenance": "extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)",
+      "unresolved": "B-CORE batch 4: the stack's built counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers (VisionSystem.ResetToConstructed, FreeplayStack's NeedsManager::OnRobotDisconnected), matching the destructor's vision and needs parts; the upper-layer components (BehaviourManager/freeplay, MoodManager, AIComponent, PathComponent, MapComponent, Docking/Carrying) are M7/M12-M15 and not built, so their reset is named, not built. Awaiting strong verification.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M1-045",
+      "subsystem": "M1-transport",
+      "title": "The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A",
+        "CreateGoToSleepAnimSequence 0x0052CEA2..0x0052CFC0: CompoundActionParallel(robot) of a CompoundActionSequential of TriggerAnimationAction(trigger 0xd2, args 1,1,0,60.0f,0; 0x0052CECA..0x0052CEDE), trigger 0xd5 (0x0052CF0E), trigger 0xd4 (0x0052CF44), plus MoveLiftToHeightAction(preset 0, tolerance 5.0f; 0x0052CF8E..0x0052CFA2)",
+        "the only caller of the factory is 0x0052CE5E (the caller lists of 0x004A9A30 and 0x0052CEA2; a BL/BLX scan found one call)"
+      ],
+      "effect": "a faceOff expiry does not put the robot to sleep",
+      "provenance": "extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)",
+      "unresolved": "B-CORE batch 4: named, not built - this stack has no ActionList or animation-sequence action layer, so CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested instead of queuing the action; the engine's exact action tree is in the evidence. An M5/M8 interface; awaiting strong verification.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "EngineAppLayerTests.M1_031_CC3_CC6_TheDisconnectDeadline, EngineAppLayerTests.M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate, EngineAppLayerTests.M1_031_CC7_AnExpiredDeadlineBlocksReArmingUntilCancel"
     },
     {
       "id": "M2-001",

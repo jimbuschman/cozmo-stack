@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-09-29",
+  "approved": "2026-09-30",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "71b0d5221a0550e2a7f013dde7dccebbd06d060364f4e6ced130cdb3b374ab7b",
+  "inventory_sha256": "88f768bb5ac14fd52beafc29506e8db929043d044ce69cf607a11bb0e28d2cb4",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -549,6 +549,30 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M1-044": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys the behaviour, mood, AI/freeplay, path, map, docking, carrying and vision components",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "RemoveRobot 0x0052F2F6 calls Robot::~Robot (0x005110D4) then operator delete (0x0052F2FA); RobotManager::RemoveRobot also calls NeedsManager::OnRobotDisconnected 0x0052F2E0, PerfMetric::OnRobotDisconnected 0x0052F2E8, DASPauseUploadingToServer(0) 0x0052F2EE, erases the map/id/RIC (0x0052F2FE..0x0052F350) and clears $session_id 0x0052F2D8, $phys 0x0052F358 and $group 0x0052F360",
+        "Robot::~Robot 0x005110D4: FreeplayDataTracker::ForceUpdate 0x0051111A, Robot::AbortAll 0x00511120; BehaviourManager +0x44 0x0051112C; BehaviourSystemManager +0x48 0x0051113A; ActionList::Clear 0x00511146 then ~ActionList 0x00511156; VisionComponent +0x258 through vtable slot +4 0x0051116C (D0 0x00652794; its D1 0x00652554 joins the processor thread 0x0065257C and destroys the owned VisionSystem 0x0065258E); MoodManager +0x440 0x005111B6; AIComponent +0x264 0x00511276; PathComponent +0x5c 0x00511284; BlockWorld +0x34 0x005112CE; MapComponent +0x25c 0x005114E8; CarryingComponent +0x284 0x00511406 and DockingComponent +0x280 0x00511414; PoseOriginList +0x294 0x005113CC, TouchSensorComponent +0x28c 0x005113E0, CliffSensorComponent +0x288 0x005113F2; AnimationStreamer +0x60 0x0051154A",
+        "the stack's counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers: VisionSystem.ResetToConstructed (VisionSystem.cs) and FreeplayStack's NeedsManager::OnRobotDisconnected (FreeplayStack.cs, M15-016); the upper-layer components themselves (behaviour/freeplay, mood, AI, path, map, docking, carrying) are M7/M12-M15 and not built in this stack"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-045": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A",
+        "CreateGoToSleepAnimSequence 0x0052CEA2..0x0052CFC0: CompoundActionParallel(robot) of a CompoundActionSequential of TriggerAnimationAction(trigger 0xd2, args 1,1,0,60.0f,0; 0x0052CECA..0x0052CEDE), trigger 0xd5 (0x0052CF0E), trigger 0xd4 (0x0052CF44), plus MoveLiftToHeightAction(preset 0, tolerance 5.0f; 0x0052CF8E..0x0052CFA2)",
+        "the only caller of the factory is 0x0052CE5E (the caller lists of 0x004A9A30 and 0x0052CEA2; a BL/BLX scan found one call)"
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }
