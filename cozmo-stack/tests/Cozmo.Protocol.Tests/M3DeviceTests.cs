@@ -935,7 +935,7 @@ public class M3DeviceTests
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
 
-        public void ToSuccess(string fw = ShippedFw, uint bodyHw = 7)
+        public void ToValidated(string fw = ShippedFw)
         {
             Engine.ConnectToRobot(RobotIp);
             Tick();
@@ -944,6 +944,11 @@ public class M3DeviceTests
             Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
             Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes(fw) });
             Tick();
+        }
+
+        public void ToSuccess(string fw = ShippedFw, uint bodyHw = 7)
+        {
+            ToValidated(fw);
             Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = bodyHw, BodyColor = 2 });
             Tick();
         }
@@ -974,9 +979,10 @@ public class M3DeviceTests
         Assert.DoesNotContain(sent, m => m is EnableColorImages);
         Assert.Single(sent.OfType<SetCameraParams>());
 
-        // After the first synced full state, NVStorage::Update pops and sends it.
-        SendFirstFullState(rig);
-        var read = (NVCommand)rig.Port.Messages().Last(m => m is NVCommand);
+        // M3-033: after the first synced full state NVStorage::Update pops the queued reads one per tick, in the
+        // engine's order; the CameraCalib read follows the 12 constructor reads.
+        SendConnectionReadsUntilCalibration(rig);
+        var read = NvCommands(rig)[^1];
         Assert.Equal(0x80000001u, read.Tag);
         Assert.Equal(1, read.Length);                              // NVEntry_CameraCalib's factory size-table value
         Assert.Equal(NvStorageComponent.OpRead, read.Op);
@@ -1007,7 +1013,7 @@ public class M3DeviceTests
         using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
         rig.ToSuccess();                                            // body hardware 7: distortion kept
         Assert.False(rig.Robot.CameraSettings.VisionEnabled);
-        SendFirstFullState(rig);                                    // M3-026: the queued read goes out from Update
+        SendConnectionReadsUntilCalibration(rig);                   // M3-026/M3-033: the queued reads go out from Update
         var data = Calibration56()[..Math.Min(size, 56)];
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = data });
         rig.Tick();
@@ -1037,7 +1043,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         rig.ToSuccess(bodyHw: 4);
-        SendFirstFullState(rig);                                    // M3-026: the queued read goes out from Update
+        SendConnectionReadsUntilCalibration(rig);                   // M3-026/M3-033: the queued reads go out from Update
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         rig.Tick();
         var cal = rig.Robot.CameraSettings.Calibration!;
@@ -1050,8 +1056,20 @@ public class M3DeviceTests
     private static List<NVCommand> NvCommands(Rig rig) => rig.Port.Messages().OfType<NVCommand>().ToList();
 
     /// <summary>
+    /// The engine's connection-time NV read order (nv-pass3-connection-queue.md Q2 2c..2j): the 12 constructor
+    /// reads (#1 ProgressionUnlock, #2 Inventory, #3/#4 FaceAlbum/Enrollment, #5..#12 the eight ascending RDBM
+    /// backup tags), the CameraCalib read (0x80000001), then the mfgId lambda's Lab 0x196000 and Needs 0x194000.
+    /// </summary>
+    private static readonly uint[] ConnectionReadOrder =
+    {
+        0x182000, 0x195000, 0x184000, 0x183000,
+        0x180000, 0x181000, 0x182000, 0x183000, 0x184000, 0x194000, 0x195000, 0x196000,
+        0x80000001, 0x196000, 0x194000,
+    };
+
+    /// <summary>
     /// Establishes the first synced full state, so Robot::Update passes Gate A and NVStorage::Update runs (M3-026,
-    /// M3-032), then lets the queued connection-time calibration read go out.
+    /// M3-032), then lets the first queued connection-time read go out.
     /// </summary>
     private static void SendFirstFullState(Rig rig, uint timestamp = 1)
     {
@@ -1060,17 +1078,56 @@ public class M3DeviceTests
         rig.Tick();
     }
 
-    /// <summary>
-    /// ToSuccess queues the connection-time calibration read; it goes out only after the first synced full state
-    /// (M3-026: Read only queues, Update sends). Send that state, let the read out, then finish it so the queue is
-    /// empty.
-    /// </summary>
-    private static void DrainCalibrationRead(Rig rig)
+    /// <summary>Answers the in-flight read with <paramref name="result"/> and ticks, which sends the next one.</summary>
+    private static void AnswerInFlight(Rig rig, sbyte result = -1)
     {
-        SendFirstFullState(rig);
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        var cmd = NvCommands(rig)[^1];
+        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
     }
+
+    /// <summary>Answers the in-flight read with <paramref name="result"/> and <paramref name="data"/>.</summary>
+    private static void AnswerInFlight(Rig rig, sbyte result, byte[] data)
+    {
+        var cmd = NvCommands(rig)[^1];
+        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = data });
+        rig.Tick();
+    }
+
+    /// <summary>A version-5 NeedsStateOnRobot payload (the Needs read's terminal data; no rewrite follows).</summary>
+    private static byte[] NeedsV5() =>
+        NonFactoryBlob(Cozmo.Robot.Behavior.NeedsStateOnRobot.Pack(new Cozmo.Robot.Behavior.NeedsStateOnRobot { Version = 5 }));
+
+    /// <summary>
+    /// Establishes the first synced full state and drains the whole connection-time NV queue, one read per tick,
+    /// leaving it idle. The queue is the engine's 12 constructor reads, CameraCalib, Lab 0x196000 and (when a
+    /// NeedsManager is attached) Needs 0x194000; the count is not fixed here so the helper works either way.
+    /// </summary>
+    private static void DrainConnectionQueue(Rig rig)
+    {
+        SendFirstFullState(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int guard = 0;
+        while (!nv.IsIdle && guard++ < 100) AnswerInFlight(rig);
+        Assert.True(nv.IsIdle, "the connection NV queue never drained");
+    }
+
+    /// <summary>
+    /// Establishes the first synced full state and answers the 12 constructor reads, leaving the CameraCalib read
+    /// (0x80000001) in flight so a test can answer it with its own result.
+    /// </summary>
+    private static void SendConnectionReadsUntilCalibration(Rig rig)
+    {
+        SendFirstFullState(rig);
+        for (int i = 0; i < 12; i++) AnswerInFlight(rig);
+        Assert.Equal(0x80000001u, rig.Robot.Engine.NvStorage!.InFlightTag);
+    }
+
+    /// <summary>
+    /// Drains the whole connection-time queue (the old helper's contract: an empty queue before the test's own
+    /// read). M3-033: the queue is the engine's 12 constructor reads, CameraCalib, Lab and Needs.
+    /// </summary>
+    private static void DrainCalibrationRead(Rig rig) => DrainConnectionQueue(rig);
 
     private static byte[] NvHeader(uint total, uint magic)
     {
@@ -1545,6 +1602,166 @@ public class M3DeviceTests
         Assert.True(nv.IsIdle);
     }
 
+    // ================================================================== M3-033/M3-034: the connection-time NV queue
+
+    /// <summary>A non-factory reply: the 16-byte "OMZC" header, whose u32@8 is the payload length, then the payload.</summary>
+    private static byte[] NonFactoryBlob(byte[] payload)
+    {
+        var data = new byte[16 + payload.Length];
+        NvHeader((uint)payload.Length, NvStorageComponent.NonFactoryHeaderMagic).CopyTo(data, 0);
+        payload.CopyTo(data, 16);
+        return data;
+    }
+
+    /// <summary>
+    /// M3-033 (nv-pass3-connection-queue.md Q2 2c..2j): the engine Robot constructor queues 12 reads, then the
+    /// mfgId lambda's CameraCalib, Lab and Needs reads follow, and they go out one per Robot::Update after Gate A
+    /// in that order. The expected order is the extraction's list, not the implementation's. No VisionSystem is
+    /// built: the engine still queues #3/#4 and the queue still drains to ready-to-stream.
+    /// </summary>
+    [Fact]
+    public void M3_033_TheConnectionQueuesTheEngineNvReadsBeforeReadyToStream()
+    {
+        using var rig = new Rig();
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            rig.ToSuccess();
+            SendFirstFullState(rig);
+
+            var tags = new List<uint>();
+            var nv = rig.Robot.Engine.NvStorage!;
+            int i = 0;
+            while (!nv.IsIdle && i < 100)
+            {
+                tags.Add(NvCommands(rig)[^1].Tag);
+                // the last read is the Needs read (0x194000); a version-5 reply leaves no rewrite queued
+                if (i == 14) AnswerInFlight(rig, 0, NeedsV5());
+                else AnswerInFlight(rig);
+                i++;
+            }
+            Assert.Equal(ConnectionReadOrder, tags);
+            Assert.True(rig.Engine.Robot!.ReadyToStream);
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+    }
+
+    /// <summary>
+    /// M3-034: the connection reads' callbacks reach their layers, in the live order. The engine Robot is built
+    /// by ConnectToRobot (AddRobot) and queues #1..#12; <c>CozmoRobot.ConnectAsync</c> returns on the Success
+    /// response and only then does the caller build the VisionSystem, so the FaceAlbum/Enrollment reads (#3/#4)
+    /// complete after it exists and its handler adopts them. The Needs read (#15) reaches the NeedsManager.
+    /// ProgressionUnlock, Inventory, the RDBM backup reads and Lab have no component here, so their reads complete
+    /// with a no-op sink (the record's unresolved names each missing layer).
+    /// </summary>
+    [Fact]
+    public void M3_034_TheConnectionReadCallbacksReachTheirLayers()
+    {
+        using var rig = new Rig();
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            // the live order: ConnectToRobot first (AddRobot queues the reads), then the VisionSystem
+            rig.ToValidated();
+            using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+            rig.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
+            rig.Tick();
+            SendFirstFullState(rig);
+
+            var album = new byte[] { 0x11, 0x22, 0x33 };
+            var enrollment = new byte[] { 0x44, 0x55 };
+            var nv = rig.Robot.Engine.NvStorage!;
+            int i = 0;
+            while (!nv.IsIdle && i < 100)
+            {
+                var cmd = NvCommands(rig)[^1];
+                Assert.Equal(ConnectionReadOrder[i], cmd.Tag);
+                byte[] data = i switch
+                {
+                    2 => NonFactoryBlob(album),       // #3 FaceAlbum 0x184000
+                    3 => NonFactoryBlob(enrollment),  // #4 FaceEnrollment 0x183000
+                    14 => NeedsV5(),                  // #15 Needs 0x194000 (version 5: no rewrite queued)
+                    _ => Array.Empty<byte>(),
+                };
+                rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+                rig.Tick();
+                i++;
+            }
+
+            Assert.Equal(15, i);
+            var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
+            Assert.Equal(album, gotAlbum);
+            Assert.Equal(enrollment, gotEnrollment);
+            Assert.True(needs.RobotReadSucceeded);
+            Assert.True(needs.HasRobotCopy);
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+    }
+
+    /// <summary>
+    /// M3-033/CD20: ready-to-stream is set by the NV on-idle callback only after the whole queue drains. While the
+    /// last read is in flight it is still unset; completing it runs the callback and sets it. No VisionSystem is
+    /// built, so this also proves the engine's reads drain when nothing consumes the FaceAlbum result.
+    /// </summary>
+    [Fact]
+    public void M3_033_ReadyToStreamWaitsForTheWholeConnectionQueue()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        Assert.False(rig.Engine.Robot!.ReadyToStream);
+        while (nv.QueuedTags.Count > 0)
+        {
+            AnswerInFlight(rig);
+            Assert.False(rig.Engine.Robot!.ReadyToStream);   // still reads in the queue or in flight
+        }
+        Assert.NotNull(nv.InFlightTag);                       // the last read is in flight
+        Assert.False(rig.Engine.Robot!.ReadyToStream);
+        AnswerInFlight(rig);                                  // the last read completes: the on-idle callback runs
+        Assert.True(nv.IsIdle);
+        Assert.True(rig.Engine.Robot!.ReadyToStream);
+    }
+
+    /// <summary>
+    /// M3-034: a VisionSystem built after the connection reads already completed adopts the buffered result. This
+    /// is the live order's late edge: the reads complete after Gate A, which can be after the caller builds the
+    /// VisionSystem; the engine keeps ConnectionFaceAlbumResult for it.
+    /// </summary>
+    [Fact]
+    public void M3_034_AVisionSystemBuiltAfterTheReadsAdoptTheBufferedFaceAlbum()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+
+        var album = new byte[] { 0x0A, 0x0B };
+        var enrollment = new byte[] { 0x0C };
+        var nv = rig.Robot.Engine.NvStorage!;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            byte[] data = i switch
+            {
+                2 => NonFactoryBlob(album),       // #3 FaceAlbum 0x184000
+                3 => NonFactoryBlob(enrollment),  // #4 FaceEnrollment 0x183000
+                _ => Array.Empty<byte>(),
+            };
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+            rig.Tick();
+            i++;
+        }
+
+        Assert.NotNull(rig.Engine.ConnectionFaceAlbumResult);   // buffered with no subscriber
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
+        Assert.Equal(album, gotAlbum);
+        Assert.Equal(enrollment, gotEnrollment);
+    }
+
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()
     {
         Field0 = maxGain, Field1 = gain, Field2 = min, Field3 = max,
@@ -1681,13 +1898,16 @@ public class M3DeviceTests
         rig.Tick();
         Assert.Equal(0, updates);                                  // before the first full state, no streamer and no NV send
 
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
-        rig.Tick();                                                // Gate A passes; the calibration read goes out; not ready yet
+        // M3-033: Gate A sends the first connection-time read; ready to stream waits for the whole queue.
+        SendFirstFullState(rig);
+        Assert.Equal(0, updates);
+        var nv = rig.Robot.Engine.NvStorage!;
+        while (nv.QueuedTags.Count > 0) AnswerInFlight(rig);       // drain all but the last read
+        Assert.False(rig.Engine.Robot!.ReadyToStream);             // the last read is still in flight
         Assert.Equal(0, updates);
 
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
-        rig.Tick();                                                // completes; the on-idle callback opens ready to stream
+        AnswerInFlight(rig);                                       // the last read completes; the on-idle callback opens ready
+        Assert.True(rig.Engine.Robot!.ReadyToStream);
         Assert.Equal(1, updates);
         rig.Tick();
         Assert.Equal(2, updates);
@@ -1719,14 +1939,27 @@ public class M3DeviceTests
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is GetManufacturingInfo), 3000), "no GetManufacturingInfo");
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is SyncTime), 3000), "no SyncTime");
-        // M3-026/M3-032: the calibration read is queued at Success but only goes out after Gate A, so establish the
-        // first synced full state and wait for the read to reach the wire before answering it.
+        // M3-026/M3-032: the connection reads are queued at Success but only go out after Gate A, so establish the
+        // first synced full state and answer each read, in the engine's order, until the queue drains and ready to
+        // stream opens (CD20). M3-033: 12 constructor reads, then CameraCalib, Lab and (with no NeedsManager here) no
+        // Needs read.
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
-        Assert.True(SpinWait.SpinUntil(() => Sent(m => m is NVCommand { Tag: 0x80000001 }), 3000), "calibration read never sent");
-        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read now.
-        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
-        Assert.True(SpinWait.SpinUntil(() => robot.AnimationStreamingOpen, 3000), "streaming never opened");
+        int answered = 0;
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (!robot.AnimationStreamingOpen && DateTime.UtcNow < deadline)
+        {
+            if (!SpinWait.SpinUntil(() => port.Messages().OfType<NVCommand>().Count() > answered, 3000)) break;
+            var cmd = port.Messages().OfType<NVCommand>().ElementAt(answered);
+            answered++;
+            bool calibration = cmd.Tag == 0x80000001;
+            Data(new NVOpResult
+            {
+                Tag = cmd.Tag, Op = 0, Result = calibration ? (sbyte)0 : (sbyte)-1, Length = 0,
+                Data = calibration ? Calibration56() : Array.Empty<byte>(),
+            });
+        }
+        Assert.True(robot.AnimationStreamingOpen, "streaming never opened");
 
         int before = port.Messages().Count;
         var clip = new AnimationClip

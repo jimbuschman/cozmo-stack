@@ -696,12 +696,56 @@ public sealed class EngineRobot
     private int? _crashReportIndex;
     private volatile bool _timeSynced, _readyToStream, _firstFullState, _streamGate;
 
-    internal EngineRobot(CozmoEngine engine)
+    internal EngineRobot(CozmoEngine engine, bool queueConnectionReads = false)
     {
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
         ConstructorDelocalize();
+        if (queueConnectionReads) QueueConnectionReads();
     }
+
+    // fidelity: M3-033, M3-034
+    /// <summary>
+    /// Robot::Robot queues the connection-time NV reads (nv-pass3-connection-queue.md Q2 2c..2g): #1
+    /// ProgressionUnlock 0x182000 (0x64BEFA), #2 Inventory 0x195000 (0x63CA52), #3/#4 FaceAlbum/Enrollment
+    /// 0x184000/0x183000 (0x6512F0/0x651330, VisionComponent::Init -> VisionSystem::Init ->
+    /// LoadFaceAlbumFromRobot), then #5..#12 the eight RobotDataBackupManager backup reads in ascending order
+    /// (0x51AD0A; backup_config.json "tagsToBackup": 0x180000, 0x181000, 0x182000, 0x183000, 0x184000,
+    /// 0x194000, 0x195000, 0x196000). The reads sit in the FIFO before the handshake and go out one per
+    /// Robot::Update after Gate A. Only the constructor path (<see cref="RobotManager.AddRobot"/> with a RIC)
+    /// queues them; the offline test seam does not.
+    /// M3-034: #3's empty callback fills the album bytes (the engine's VC+0x2F4); #4's terminal success raises
+    /// <see cref="CozmoEngine.ConnectionFaceAlbumLoaded"/> with the album and the enrollment, and the result is
+    /// kept for a VisionSystem built after ConnectAsync returns (the read completes after Gate A, which is after
+    /// the connection response). ProgressionUnlock, Inventory and the backup reads have no component in this
+    /// stack: they queue and complete with a no-op sink.
+    /// </summary>
+    private void QueueConnectionReads()
+    {
+        var nv = Engine.NvStorage;
+        if (nv is null) return;                                  // no NV component: the offline/test seam
+        nv.Read(0x182000, _ => { });                             // #1 ProgressionUnlock
+        nv.Read(0x195000, _ => { });                             // #2 Inventory
+        // #3 FaceAlbum 0x184000: the empty callback fills VC+0x2F4 (the album bytes).
+        nv.Read(0x184000, _ => { }, _faceAlbum);
+        // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
+        // installs both (0x65A860). Raised at completion, so a VisionSystem built after the response still
+        // adopts it; with none subscribed the result is kept and the read still drains.
+        nv.Read(0x183000, r =>
+        {
+            if (r.Result != 0) return;
+            Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
+        });
+        foreach (uint tag in BackupReadTags) nv.Read(tag, _ => { });       // #5..#12 RDBM backup
+    }
+
+    /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
+    private readonly List<byte> _faceAlbum = new();
+
+    // fidelity: M3-033
+    /// <summary>The eight RobotDataBackupManager tags, ascending (backup_config.json "tagsToBackup", 0x51AD0A).</summary>
+    internal static readonly uint[] BackupReadTags =
+        { 0x180000, 0x181000, 0x182000, 0x183000, 0x184000, 0x194000, 0x195000, 0x196000 };
 
     /// <summary>Robot+0x29: set by SyncTimeAck (CD19), cleared by Robot::SyncTime (CB23).</summary>
     public bool TimeSynced { get => _timeSynced; internal set => _timeSynced = value; }
@@ -799,8 +843,9 @@ public sealed class EngineRobot
     /// only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA 4}; then the log
     /// "Setting pose to (0,0,0)" and AbsoluteLocalizationUpdate {timestamp 0, frameId robot+0x2B0, originId the current
     /// pose origin, x 0, y 0, angle 0} (CD18; M4-020: frameId 0 and originId 1 from the constructor's Delocalize, SC4e,
-    /// SC4g, SC4h). A failed send warns "FailedToSend" and stops. SendSyncTime returns the AbsoluteLocalizationUpdate
-    /// send's result (0x005153AE), so +0x520 is set only when that send succeeds.
+    /// SC4g, SC4h). A failed send warns "FailedToSend" and stops, except the ImageRequest: its result is
+    /// discarded (0x0051530C), so the AbsoluteLocalizationUpdate follows it either way. SendSyncTime returns the
+    /// AbsoluteLocalizationUpdate send's result (0x005153AE), so +0x520 is set only when that send succeeds.
     /// The history clear reaches this stack's RobotStateHistory (VisionSystem) through
     /// <see cref="CozmoEngine.RobotStateHistoryClear"/>.
     /// </summary>
@@ -812,7 +857,11 @@ public sealed class EngineRobot
         // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
         if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")) return;
         if (!Send(new InitController(), "InitController")) return;
-        if (!Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest")) return;
+        // fidelity: M1-041, M4-020
+        // CD18: the ImageRequest send result is discarded (0x0051530C) and SendSyncTime goes on to the
+        // AbsoluteLocalizationUpdate; SendSyncTime returns that send's result (0x005153AE), so +0x520 is set
+        // only when the AbsoluteLocalizationUpdate send succeeds.
+        Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
         Engine.Log("info: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
         SyncTimeSentAt = Engine.Timer.Seconds;
@@ -900,10 +949,16 @@ public sealed class EngineRobot
 
     private bool Send(RobotMessage m, string what)
     {
-        if (Engine.Handler.SendMessage(m)) return true;
+        // A test seam (not a production path): a non-null result forces that send's outcome so a test can make
+        // one step of SyncTime fail without a real transport. It never runs in production.
+        bool sent = SendFault?.Invoke(m) ?? Engine.Handler.SendMessage(m);
+        if (sent) return true;
         Engine.Log($"warning: Robot.SendSyncTime.FailedToSend {what}");
         return false;
     }
+
+    /// <summary>Test seam only (not a production path): a non-null return forces the send result.</summary>
+    internal Func<RobotMessage, bool?>? SendFault;
 
     // fidelity: M1-041
     /// <summary>HandleSyncTimeAck (CD19): +0x520 = 0 and +0x29 = 1; nothing is sent.</summary>
@@ -1213,9 +1268,8 @@ internal sealed class RobotInitialConnection
     /// The mfgId lambda (CB18): +0x24 = serial (word 0); +0x28 = hw (word 1); +0x2C = colour only if the low byte of
     /// word 2 is in {0, 2, 3, 4}, else an error and 0xFF; $session_id = a new UUID; SendConnectionResponse(0, fw);
     /// then ReadLabAssignmentsFromRobot(serial) and ConnectRobotToNeedsManager(serial) (CD16).
-    /// MISSING: the lab-assignment NV read (ReadLabAssignmentsFromRobot(serial)) is still not made; it is the
-    /// separate M3-033 step and precedes the needs connection. The needs connection is the serial edge raised
-    /// here (M15-014, C2 rows 6-9). The robot-level NV component exists (<see cref="NvStorageComponent"/>).
+    /// The needs connection is the serial edge raised here (M15-014, C2 rows 6-9). The robot-level NV component
+    /// exists (<see cref="NvStorageComponent"/>).
     /// </summary>
     private void HandleMfgId(ManufacturingID id, uint fw)
     {
@@ -1226,11 +1280,16 @@ internal sealed class RobotInitialConnection
         else { _engine.Log($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
         SessionId = Guid.NewGuid();
         SendConnectionResponse(RobotConnectionResult.Success, fw);
+        // fidelity: M3-033, M3-034, M1-028
+        // 0x52E3AA: ReadLabAssignmentsFromRobot (CozmoExperiments, 0x6A5B1E) queues NV 0x196000; the lab layer
+        // has no component in this stack, so the read queues and completes with a no-op sink. It precedes the
+        // Needs read (0x52E3B2), which the NeedsManager queues on the serial edge below.
+        _engine.NvStorage?.Read(0x196000, _ => { });
         // fidelity: M15-014
         // C2 row 6: after the response the callback calls ReadLabAssignmentsFromRobot(serial) and then
-        // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The lab-assignment read is the
-        // preceding, separate M3-033 step and is not built here, so the needs edge is raised at this point
-        // (after the synchronous response broadcast, C2 row 8) rather than after a lab read that does not run.
+        // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The needs edge is raised after the
+        // synchronous response broadcast (C2 row 8) and after the lab read, so the NeedsManager's 0x194000 read
+        // follows 0x196000 (M3-033).
         _engine.RaiseSerialNumberAcquired(id.SerialNumber);
     }
 
@@ -1297,7 +1356,10 @@ internal sealed class RobotManager
     public EngineRobot? AddRobot(uint id, bool withRic = true)
     {
         if (RobotExists(id)) { _engine.Log($"warning: RobotManager.AddRobot: robot {id} already exists"); return _robot; }
-        var r = new EngineRobot(_engine);
+        // fidelity: M3-033
+        // The engine's Robot constructor queues the connection-time NV reads; the RIC is the handshake path, so
+        // the offline seam (withRic false) queues none.
+        var r = new EngineRobot(_engine, queueConnectionReads: withRic);
         _robot = r;
         _ric = withRic ? new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime) : null;
         return r;
@@ -1396,6 +1458,24 @@ public sealed class CozmoEngine : IDisposable
     internal Action? AnimationStreamerUpdate;
     /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h). Its argument is the body hardware version (mfgId word 1, the engine Robot's +0x24).</summary>
     internal Action<int>? VisionConnected;
+    // fidelity: M3-033, M3-034
+    /// <summary>
+    /// VisionComponent::Init's FaceAlbum/Enrollment reads (#3 0x184000, #4 0x183000). The reads are queued by
+    /// the engine Robot constructor and complete after Gate A, i.e. after <c>CozmoRobot.ConnectAsync</c> returns;
+    /// #4's terminal success raises this with the album (the engine's VC+0x2F4) and the enrollment. A
+    /// VisionSystem built later subscribes and adopts it.
+    /// </summary>
+    internal event Action<byte[], byte[]>? ConnectionFaceAlbumLoaded;
+    /// <summary>The FaceAlbum/Enrollment result once #4 completed, or null; a later subscriber adopts it.</summary>
+    internal (byte[] Album, byte[] Enrollment)? ConnectionFaceAlbumResult { get; private set; }
+
+    /// <summary>M3-034: raises <see cref="ConnectionFaceAlbumLoaded"/> and keeps the result for a later subscriber.</summary>
+    internal void RaiseConnectionFaceAlbumLoaded(byte[] album, byte[] enrollment)
+    {
+        ConnectionFaceAlbumResult = (album, enrollment);
+        if (ConnectionFaceAlbumLoaded is not { } handler) return;
+        foreach (var t in handler.GetInvocationList()) Isolated(() => ((Action<byte[], byte[]>)t)(album, enrollment));
+    }
     /// <summary>The robot-level NV storage owner (NVStorageComponent), set by CozmoRobot; one queue serves every read.</summary>
     internal NvStorageComponent? NvStorage { get; set; }
     /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>

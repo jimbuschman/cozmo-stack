@@ -90,6 +90,42 @@ public class EngineAppLayerTests
             Tick();
         }
 
+        /// <summary>The NV commands the engine has sent, parsed from the transport's bytes.</summary>
+        public List<NVCommand> NvCommands() => Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<NVCommand>().ToList();
+
+        /// <summary>M3-033: establishes Gate A, so NVStorage::Update sends the first queued connection read.</summary>
+        public void SendFirstFullState(uint timestamp = 1)
+        {
+            Data(new SyncTimeAck());
+            Data(new RobotState { Timestamp = timestamp, PoseOriginId = 1 });
+            Tick();
+        }
+
+        /// <summary>Answers the in-flight NV read with <paramref name="result"/> and ticks, which sends the next one.</summary>
+        public void AnswerInFlight(sbyte result = -1)
+        {
+            var cmd = NvCommands()[^1];
+            Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = Array.Empty<byte>() });
+            Tick();
+        }
+
+        /// <summary>M3-033: establishes Gate A and drains the whole connection-time NV queue, one read per tick.</summary>
+        public void DrainConnectionQueue()
+        {
+            SendFirstFullState();
+            int guard = 0;
+            while (!Engine.NvStorage!.IsIdle && guard++ < 100) AnswerInFlight();
+            Assert.True(Engine.NvStorage!.IsIdle, "the connection NV queue never drained");
+        }
+
+        /// <summary>M3-033: answers the 12 constructor reads, leaving the CameraCalib read (0x80000001) in flight.</summary>
+        public void SendConnectionReadsUntilCalibration()
+        {
+            SendFirstFullState();
+            for (int i = 0; i < 12; i++) AnswerInFlight();
+            Assert.Equal(0x80000001u, Engine.NvStorage!.InFlightTag);
+        }
+
         public bool Logged(string part) { lock (Log) return Log.Any(l => l.Contains(part)); }
         public void Dispose() => Robot.Dispose();
     }
@@ -770,6 +806,28 @@ public class EngineAppLayerTests
     }
 
     /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-041 CD18 / M4-020 (0x00515308..0x0051530C, 0x005153AE): SendSyncTime discards
+    /// the ImageRequest send result and goes on to the AbsoluteLocalizationUpdate; SendSyncTime returns that send's
+    /// result, so +0x520 is set only when the AbsoluteLocalizationUpdate succeeds. A failed ImageRequest therefore
+    /// does not stop the AbsoluteLocalizationUpdate.
+    /// </summary>
+    [Fact]
+    public void M1_041_CD18_AFailedImageRequestSendStillSendsAbsoluteLocalizationUpdate()
+    {
+        using var rig = new Rig();
+        rig.ToValidated();
+        // Force only the ImageRequest send to fail; every other send goes to the real MessageHandler.
+        rig.Engine.Robot!.SendFault = m => m is ImageRequest ? false : null;
+        rig.Data(new ManufacturingID { SerialNumber = 1, BodyHwVersion = 2, BodyColor = 3 });
+        rig.Tick();
+
+        Assert.True(rig.Logged("FailedToSend ImageRequest"));
+        Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);          // the forced failure
+        Assert.Contains(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);       // and it still goes out
+        Assert.True(rig.Engine.Robot!.SyncTimeSentAt > 0);                             // +0x520 from that send
+    }
+
+    /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-028 CB14/G5.9: a firmwareVersion before robotAvailable (not sim) gives
     /// SendConnectionResponse(1, 0) directly, with +0x2D set only around it (0x0052D7B8..0x0052D850); CB34: the link
     /// and robot 1 stay; CB36: a retry ConnectToRobot is then ignored.
@@ -994,13 +1052,13 @@ public class EngineAppLayerTests
     }
 
     /// <summary>
-    /// PRIMARY-SOURCE ORACLE. M1-041 CD20/CB22: RobotEventHandler adds the ready-to-stream callback with
+    /// PRIMARY-SOURCE ORACLE. M1-041 CD20/CB22 and M3-033: RobotEventHandler adds the ready-to-stream callback with
     /// AddOneShotOnIdleCallback (0x00645C20..0x00645C32). It runs only when the NV request deque is empty and
-    /// nothing is in flight (0x00645B08..0x00645B26), so it waits for the connection-time calibration read that
-    /// VisionComponent queues in the same broadcast (CD21); that read's terminal result drains the queue and +0x2A
-    /// is then set. CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the
-    /// streamer runs only when synced and ready (0x00513BF2..0x00514470), so streaming opens in the Robot::Update of
-    /// the tick that handles SyncTimeAck and the first state.
+    /// nothing is in flight (0x00645B08..0x00645B26), and the engine Robot constructor queues 12 reads ahead of
+    /// the connection's CameraCalib/Lab/Needs reads, so it waits for the whole queue (nv-pass3-connection-queue.md
+    /// Q2 2m). CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the streamer
+    /// runs only when synced and ready (0x00513BF2..0x00514470), so streaming opens in the Robot::Update of the tick
+    /// that completes the last read.
     /// </summary>
     [Fact]
     public void M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState()
@@ -1011,20 +1069,26 @@ public class EngineAppLayerTests
         bool? readyInBroadcast = null;
         rig.Robot.Message += m => { if (m is ManufacturingID) readyInBroadcast = rig.Engine.Robot?.ReadyToStream; };
         rig.Tick();
-        Assert.False(readyInBroadcast);                             // the calibration read is only queued here, not in flight (CD20/CD21)
+        Assert.False(readyInBroadcast);                             // the connection reads are only queued here (CD20/CD21)
         Assert.False(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);             // no first full state yet (CD12)
 
-        // M3-026/M3-032: the first synced full state passes Gate A, so NvStorage::Update sends the queued read; it is
-        // in flight now and the queue has not drained.
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
-        rig.Tick();
+        // M3-026/M3-033: the first synced full state passes Gate A, so NvStorage::Update sends the first of the
+        // queued connection reads; the queue has not drained.
+        rig.SendFirstFullState();
         Assert.False(rig.Engine.Robot!.ReadyToStream);
+        var nv = rig.Engine.NvStorage!;
+        while (nv.QueuedTags.Count > 0)
+        {
+            rig.AnswerInFlight();
+            Assert.False(rig.Engine.Robot!.ReadyToStream);          // reads remain in the queue or in flight
+        }
+        Assert.NotNull(nv.InFlightTag);                             // the last read is in flight
+        Assert.False(rig.Engine.Robot!.ReadyToStream);
+        Assert.False(rig.Robot.AnimationStreamingOpen);
 
-        // the read completes: the queue drains, and the on-idle callback then sets +0x2A
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
-        rig.Tick();
+        // the last read completes: the queue drains, and the on-idle callback then sets +0x2A
+        rig.AnswerInFlight();
         Assert.True(rig.Engine.Robot!.ReadyToStream);
         Assert.True(rig.Robot.AnimationStreamingOpen);
     }
@@ -1044,15 +1108,16 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         var cal = Cozmo.Robot.Vision.CameraCalibration.Nominal().ToBytes();
         Assert.Equal(Cozmo.Robot.CameraSettings.CalibrationBytes, cal.Length);
-        // M3-026/M3-032: the calibration read is only queued at Success; the first synced full state makes Update send it.
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
-        rig.Tick();
+        // M3-026/M3-033: the calibration read is queued at Success after the 12 constructor reads; the first synced
+        // full state makes Update send them, and the calibration read is the 13th.
+        rig.SendConnectionReadsUntilCalibration();
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = cal });
         rig.Tick();
         Assert.False(readyWhenInstalled);                    // the calibration callback saw readiness still unset
         Assert.False(readyWhenVisionEnabled);
-        Assert.True(rig.Engine.Robot!.ReadyToStream);        // and it is set once the request is complete and idle
+        Assert.False(rig.Engine.Robot!.ReadyToStream);       // Lab 0x196000 is still queued after the calibration read
+        while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
+        Assert.True(rig.Engine.Robot!.ReadyToStream);        // and it is set once the whole queue is complete and idle
     }
 
     /// <summary>
@@ -1302,9 +1367,9 @@ public class EngineAppLayerTests
         rig.Data(new ObjectAvailable { FactoryId = 0x11223344, ObjectType = ObjectType.Charger_Basic, Rssi = 60 });
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });          // the pool asks for the cube: SetPropSlot
         rig.Tick();                                        // M4-010 CD2: SetPropSlot goes out in Robot::Update, after the messages
-        // CD20/M3-026: the connection-time calibration read only goes out once the first synced full state passes
-        // Gate A (the Tick above); answer it now so the queue drains and ready-to-stream opens. The Tick below drains it.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        // M3-033: the connection-time reads only go out once the first synced full state passes Gate A (the Tick
+        // above); drain the whole queue so ready-to-stream opens.
+        while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         rig.Data(new RobotState { Timestamp = 43, PoseOriginId = 1, Status = (uint)RobotStatusFlag.IsPickedUp });
         rig.Data(new CliffEvent { Timestamp = 44, DetectedFlags = 1, DidStopForCliff = true });
@@ -1423,13 +1488,10 @@ public class EngineAppLayerTests
         Assert.Equal(RobotConnectionResult.Success, rig.Responses[1].Result);
         rig.Tick();                                        // the app defaults again (policy M1-042)
         Assert.True(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
-        // M3-026/M3-032: the second connection queues another calibration read; the first synced full state sends it.
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 7, PoseOriginId = 1 });
-        rig.Tick();
-        // CD20: drain it now that it is in flight, so ready to stream opens.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
-        rig.Tick();
+        // M3-033: the second connection queues another whole read set; the first synced full state sends them, one
+        // per tick, and ready to stream waits for all of them.
+        rig.SendFirstFullState(timestamp: 7);
+        while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
         Assert.True(rig.Robot.AnimationStreamingOpen);
         Assert.Equal(1, rig.Robot.State.StateCount);
         Assert.Equal(1, vision.History.Count);
@@ -1524,13 +1586,10 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         var audio = rig.Robot.Audio;
         rig.ToSuccess();
-        // M3-026/M3-032: the first synced full state sends the queued calibration read.
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
-        rig.Tick();
-        // CD20: answer the read now that it is in flight, so the queue drains and streaming opens; the AnimationState
-        // is the engine's played counters (C10).
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        // M3-033: the first synced full state sends the connection reads; drain the whole queue so streaming opens.
+        rig.SendFirstFullState(timestamp: 10);
+        while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
+        // the AnimationState is the engine's played counters (C10).
         rig.Data(new AnimationState { Timestamp = 11 });
         rig.Tick();                                        // streaming open (CD12), the engine's counters reporting (C10)
         int framesAfterRemoval = 0;

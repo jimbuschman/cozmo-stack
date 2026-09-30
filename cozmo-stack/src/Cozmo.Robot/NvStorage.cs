@@ -2,7 +2,7 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
-// fidelity: M1-041, M3-022, M3-025, M3-026, M3-027, M3-028, M3-029, M3-030, M3-031, M3-035
+// fidelity: M1-041, M3-022, M3-025, M3-026, M3-027, M3-028, M3-029, M3-030, M3-031, M3-033, M3-034, M3-035
 /// <summary>
 /// The robot-level NV storage owner (<c>NVStorageComponent</c>). One component serves every reader, so a read
 /// is a queued request rather than an independent subscription:
@@ -143,6 +143,12 @@ public sealed class NvStorageComponent : IDisposable
 
     /// <summary>True when nothing is queued and nothing is in flight (M1 CD20's idle condition).</summary>
     public bool IsIdle { get { lock (_gate) return _inFlight is null && _queue.Count == 0; } }
+
+    /// <summary>M3-033: the queued (not yet sent) request tags in FIFO order, for tests and diagnostics.</summary>
+    public IReadOnlyList<uint> QueuedTags { get { lock (_gate) return _queue.Select(r => r.Tag).ToArray(); } }
+
+    /// <summary>M3-033: the tag of the in-flight request, or null when none is (tests and diagnostics).</summary>
+    public uint? InFlightTag { get { lock (_gate) return _inFlight?.Tag; } }
 
     // fidelity: M3-025
     /// <summary>
@@ -559,7 +565,7 @@ public sealed class NvStorageComponent : IDisposable
         ArmDeadlineLocked(req);
     }
 
-    // fidelity: M3-030
+    // fidelity: M3-030, M3-034
     /// <summary>
     /// M3-030: completes the request, filling the sink, building the broadcast chunks and setting state 0. The
     /// callback, the broadcasts and the on-idle callbacks run outside the lock, in the engine's order: the request's

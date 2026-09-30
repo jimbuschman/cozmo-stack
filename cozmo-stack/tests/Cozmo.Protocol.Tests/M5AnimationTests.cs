@@ -1637,13 +1637,20 @@ public class M5AnimationTests
         Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is GetManufacturingInfo), 3000));
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
         Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is SyncTime), 3000));
-        // M3-026/M3-032: the calibration read is queued at Success but only goes out after Gate A; establish the first
-        // synced full state, wait for the read, then answer it so the queue drains and ready to stream opens.
+        // M3-026/M3-033: the connection reads are queued at Success but only go out after Gate A; establish the first
+        // synced full state and answer every read, in order, until the queue drains and ready to stream opens.
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
-        Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is NVCommand { Tag: 0x80000001 }), 3000), "calibration read never sent");
-        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
-        Assert.True(SpinWait.SpinUntil(() => robot.AnimationStreamingOpen, 3000));
+        int answered = 0;
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (!robot.AnimationStreamingOpen && DateTime.UtcNow < deadline)
+        {
+            if (!SpinWait.SpinUntil(() => port.Messages().OfType<NVCommand>().Count() > answered, 3000)) break;
+            var cmd = port.Messages().OfType<NVCommand>().ElementAt(answered);
+            answered++;
+            Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        }
+        Assert.True(robot.AnimationStreamingOpen);
 
         int before = port.Messages().Count;
         int Audio() => port.Messages().Skip(before).Count(m => m is AudioSample or AudioSilence);

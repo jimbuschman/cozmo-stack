@@ -43,6 +43,8 @@ public sealed class VisionSystem : IDisposable
     private int _removals;
     /// <summary>How long a removal waits for a frame being processed to reach a point where it can be discarded.</summary>
     internal static readonly TimeSpan RemovalWait = TimeSpan.FromSeconds(2);
+    /// <summary>M3-034: the FaceAlbum/Enrollment consumer, kept so Dispose can unsubscribe it.</summary>
+    private readonly Action<byte[], byte[]> _faceAlbumLoaded;
 
     public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
@@ -72,6 +74,14 @@ public sealed class VisionSystem : IDisposable
         robot.StateHistoryCleared += History.Clear;
         // fidelity: M4-023
         robot.Cubes.DoubleTapPendingEnded += World.MarkDirty;
+        // fidelity: M3-033, M3-034
+        // VisionComponent::Init's FaceAlbum/Enrollment reads complete after Gate A, i.e. after
+        // CozmoRobot.ConnectAsync returns and the caller builds this VisionSystem. The engine raises the result
+        // when #4 completes; subscribe here and adopt a result that already completed.
+        _faceAlbumLoaded = AdoptFaceAlbum;
+        robot.Engine.ConnectionFaceAlbumLoaded += _faceAlbumLoaded;
+        if (robot.Engine.ConnectionFaceAlbumResult is { } loaded)
+            _faceAlbumLoaded(loaded.Album, loaded.Enrollment);
     }
 
     // fidelity: M3-022
@@ -399,9 +409,10 @@ public sealed class VisionSystem : IDisposable
     // fidelity: M14-012
     /// <summary>
     /// <c>VisionComponent::LoadFaceAlbumFromRobot</c> (F24/F25): reads NV <see cref="FaceAlbumNvTag"/>
-    /// first and <see cref="FaceEnrollmentNvTag"/> second, then on the enrollment completion installs
-    /// both under the vision mutex and replays the loaded names. M3-033 owns the connection-time queue
-    /// that calls this; the NV wire itself is M3's.
+    /// first and <see cref="FaceEnrollmentNvTag"/> second, then on the enrollment completion adopts
+    /// both. M3-033 owns the connection-time queue; this direct form remains the M14-012 entry the
+    /// FaceTests drive. The engine's connection path calls <see cref="AdoptFaceAlbum"/> with the bytes
+    /// its #3/#4 reads produced.
     /// </summary>
     public void LoadFaceAlbumFromRobot()
     {
@@ -412,9 +423,21 @@ public sealed class VisionSystem : IDisposable
         nv.Read(FaceEnrollmentNvTag, r =>
         {
             if (r.Result != NvStorageComponent.ResultOkay) return;
-            InstallSerializedFaceData(album.ToArray(), r.Data);
-            BroadcastLoadedNamesAndIDs();
+            AdoptFaceAlbum(album.ToArray(), r.Data);
         });
+    }
+
+    // fidelity: M14-012
+    /// <summary>
+    /// The M14-012 consumer: install the two vectors under the vision mutex
+    /// (<c>SetSerializedFaceData</c>, 0x0065A876) and replay the loaded names
+    /// (<c>BroadcastLoadedNamesAndIDs</c>). Used both by the direct read above and by the engine's
+    /// connection-time <c>ConnectionFaceAlbumLoaded</c>.
+    /// </summary>
+    public void AdoptFaceAlbum(byte[] album, byte[] enrollment)
+    {
+        InstallSerializedFaceData(album, enrollment);
+        BroadcastLoadedNamesAndIDs();
     }
 
     // fidelity: M14-012
@@ -782,6 +805,8 @@ public sealed class VisionSystem : IDisposable
         _robot.RobotRemoved -= ResetToConstructed;
         _robot.StateHistoryCleared -= History.Clear;
         _robot.Cubes.DoubleTapPendingEnded -= World.MarkDirty;
+        // fidelity: M3-033, M3-034
+        _robot.Engine.ConnectionFaceAlbumLoaded -= _faceAlbumLoaded;
     }
 }
 
