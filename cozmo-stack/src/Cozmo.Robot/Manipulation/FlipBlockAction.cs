@@ -74,9 +74,6 @@ public sealed class FlipBlockAction
     // fidelity: M13-028
     public static ActionResult LiftFailureResult(MotionOutcome outcome) => outcome.EngineResult is { } code ? (ActionResult)code : ActionResult.Timeout;
 
-    /// <summary>How many times the queued action's byte +0x56 = 1 (0x0055F152..0x0055F154; role unnamed) was skipped: not modelled (M13-028).</summary>
-    public int QueuedActionField0x56Unmodelled { get; private set; }
-
     /// <summary>
     /// How many queued carry lifts were still unfinished when the flip ended, so the destructor's <c>ActionList::Cancel(id)</c> (0x0055ED6C..0x0055ED7A) should have cancelled them. MISSING: the stack has
     /// no handle to cancel a lift move that <c>CozmoMotion.SetLiftHeightAsync</c> is waiting on (the move ends only by its own completion or its wait ending, which stops a moving lift, M4-015), so the
@@ -137,9 +134,10 @@ public sealed class FlipBlockAction
             if (norm < (float)LiftTriggerDistanceMm)
             {
                 LiftRaised = true;                                                                // [this+0x13C] = the queued action's id
-                QueuedActionField0x56Unmodelled++;                                                // the queued action's byte +0x56 = 1 (0x0055F152) is not modelled
                 _trace.Add($"FlipBlockAction.CheckIfDone: within {LiftTriggerDistanceMm} mm (3-D), lift to carry height ({LiftPresets.CarryMm} mm) queued on the robot's action list; the flip does not wait on it");
-                _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
+                // the queued action's byte +0x56 = 1 (0x0055F152..0x0055F154): IActionRunner::Update neither tests nor takes the lift track lock for it (0x00540428..0x00540434), so it
+                // runs even while the approach lift move of the embedded compound still holds the track, and its end releases nothing (0x005408EC..0x005408F0)
+                _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false, suppressTrackLocking: true);
             }
         }
         return null;

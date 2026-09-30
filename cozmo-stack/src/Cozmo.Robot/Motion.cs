@@ -505,12 +505,16 @@ bool requireCalibration = true)
     /// in-position test and MC+0xB (MA17).
     /// The angular-tolerance clip (≥ 1.5°, MA13) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
     /// makes 1.5° at most 1.73 mm. Its formula is not in the inventory and is not needed for this API.
+    /// <paramref name="suppressTrackLocking"/> is the action's byte +0x56 (M13-028: FlipBlockAction::CheckIfDone sets it to 1 on its queued carry lift, 0x0055F152..0x0055F154):
+    /// IActionRunner::Update 0x00540370 branches over both the AreAnyTracksLocked test and LockTracks when it is non-zero (0x00540428..0x00540434 -> 0x00540592), and the action's
+    /// end skips UnlockTracks (0x005408EC..0x005408F0), so the move runs while another action holds the lift track and sends no Disable/EnableAnimTracks of its own.
     /// </summary>
     public Task<MotionOutcome> SetLiftHeightAsync(float heightMm,
                                                   float maxSpeedRadPerSec = DefaultLiftSpeedRadPerSec,
                                                   float accelRadPerSec2 = DefaultLiftAccelRadPerSec2,
                                                   float durationSec = 0f,
-                                                  TimeSpan? timeout = null, bool requireCalibration = true)
+                                                  TimeSpan? timeout = null, bool requireCalibration = true,
+                                                  bool suppressTrackLocking = false)
     {
         // fidelity: M4-003
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
@@ -527,7 +531,7 @@ bool requireCalibration = true)
         {
             target = NegativeHeightTarget(CurrentLiftHeightMm());
         }
-        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm");
+        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm") { SuppressTrackLocking = suppressTrackLocking };
         return RunAsync(a, id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id), timeout);
     }
 
@@ -687,6 +691,8 @@ bool requireCalibration = true)
         public bool InPositionLatched;
         /// <summary>M4-003: this action holds its track lock (taken at 0x0054058E, released at 0x005408EC).</summary>
         public bool Locked;
+        /// <summary>M13-028: the action's byte +0x56 (non-zero: Update neither tests nor takes the track lock, 0x00540428..0x00540434, and the end does not release it, 0x005408EC..0x005408F0).</summary>
+        public bool SuppressTrackLocking { get; init; }
         public readonly TaskCompletionSource<MotionOutcome> Done = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public MoveAction(CozmoMotion owner, bool isHead, float target, float tolerance, string what)
@@ -722,13 +728,16 @@ bool requireCalibration = true)
             // action with 0x03000019 and sends nothing; otherwise LockTracks(mask) at 0x0054058E sends
             // DisableAnimTracks. The action's end releases the lock (UnlockTracks 0x005408EC), which sends
             // EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
-            if (IsTrackLockedLocked(a.Mask))
+            if (!a.SuppressTrackLocking && IsTrackLockedLocked(a.Mask))
             {
                 Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
                 return new MotionOutcome(MotionResult.Failed, $"{a.What}: required tracks are locked") { EngineResult = ResultTracksLocked };
             }
-            LockTracksLocked(a.Mask, ActionRunnerWho);
-            a.Locked = true;
+            if (!a.SuppressTrackLocking)
+            {
+                LockTracksLocked(a.Mask, ActionRunnerWho);
+                a.Locked = true;
+            }
 
             // MA15, C6 L1: Init clears has-moved and sent/acked (a fresh action), latches in-position and sends nothing
             // when the motor is already in position. CheckIfDone then skips the ack wait (nothing was sent) and, the
@@ -738,8 +747,7 @@ bool requireCalibration = true)
             {
                 if (!MovingLocked(a))
                 {
-                    UnlockTracksLocked(a.Mask, ActionRunnerWho);
-                    a.Locked = false;
+                    if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
                     return new MotionOutcome(MotionResult.Acknowledged, $"{a.What}: already in position, nothing sent");
                 }
                 a.InPositionLatched = true;
@@ -752,8 +760,7 @@ bool requireCalibration = true)
                 if (!_robot.SendMessage(build(a.Id)))
                 {
                     _actions.Remove(a);
-                    UnlockTracksLocked(a.Mask, ActionRunnerWho);
-                    a.Locked = false;
+                    if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
                     return new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed };
                 }
                 a.Sent = true;
@@ -770,8 +777,7 @@ bool requireCalibration = true)
             // MA7: an action that ends while its track is moving stops that track (~IActionRunner 0x0054112E..0x00541192).
             stop = MovingLocked(a);
             // fidelity: M4-003
-            UnlockTracksLocked(a.Mask, ActionRunnerWho);
-            a.Locked = false;
+            if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
         }
         if (stop) { if (a.IsHead) StopHead(); else StopLift(); }
         return new MotionOutcome(MotionResult.TimedOut,

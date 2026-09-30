@@ -51,6 +51,11 @@ internal sealed class Rig : IDisposable
     public Pose3d? Charger;
     public bool OnCharger;
     public float LiftMm = 32f;
+    /// <summary>
+    /// When set the fake robot records a SetLiftHeight but neither moves the lift, reports it in position nor acknowledges it: a lift move that is still RUNNING
+    /// (the engine's action stays RUNNING until the ack and LIFT_IN_POS arrive). The default is a robot that completes the move at once (B-CORE batch 3).
+    /// </summary>
+    public bool HoldLift;
     public int FaceTurns;
     /// <summary>Every absolute (pan, tilt) the stack commanded through PanAndTilt.</summary>
     public readonly List<(double Pan, double Tilt)> PanTilts = new();
@@ -238,26 +243,8 @@ internal sealed class Rig : IDisposable
             switch (m)
             {
                 case ExecutePath ep:
-                    float wasX = X, wasY = Y;
-                    // the fake robot follows the path perfectly: its pose becomes the last segment's end
-                    foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = s.XEndMm; Y = s.YEndMm; }
-                    // arcs end at their sweep's end point, heading tangent
-                    int clearIdx = Sent.IndexOf(Sent.OfType<ClearPath>().Last());
-                    foreach (var seg in Sent.Skip(clearIdx).TakeWhile(x => x != ep))
-                    {
-                        if (seg is AppendPathSegmentArc arc)
-                        {
-                            double cx = arc.XCenterMm, cy = arc.YCenterMm, r = arc.RadiusMm;
-                            double a0 = arc.StartRad, sw = arc.SweepRad;
-                            X = (float)(cx + r * Math.Cos(a0 + sw)); Y = (float)(cy + r * Math.Sin(a0 + sw)); Angle = (float)(a0 + sw + Math.Sign(sw) * Math.PI / 2);
-                        }
-                        else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
-                        else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
-                    }
-                    UpdateChargerContact(wasX, wasY);
-                    State();
-                    Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
-                    Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Completed });
+                    if (HoldPath) { _heldPath = ep; break; }
+                    FollowPath(ep);
                     break;
                 case DockWithObject dw:
                     // the firmware needs error signals to dock: it reports once enough have arrived (see Dock tests)
@@ -297,7 +284,9 @@ internal sealed class Rig : IDisposable
                     break;
                 case SetLiftHeight sl:
                     // Likewise for the lift: the state carries the angle that IsLiftInPosition reads (RS7).
-                    LiftMm = sl.HeightMm; LiftHeights.Add(sl.HeightMm);
+                    LiftHeights.Add(sl.HeightMm);
+                    if (HoldLift) break;
+                    LiftMm = sl.HeightMm;
                     float liftAngle = (float)Math.Asin(Math.Clamp((sl.HeightMm - 45f) / 66f, -1f, 1f));
                     State(liftAngle: liftAngle);
                     Send(new MotorActionAck { ActionId = sl.ActionId });
@@ -308,6 +297,40 @@ internal sealed class Rig : IDisposable
     }
 
     public readonly List<float> LiftHeights = new();
+
+    /// <summary>When set the fake robot records an ExecutePath but does not drive it: the path is still being followed (the drive action stays RUNNING) until <see cref="ReleasePath"/>.</summary>
+    public bool HoldPath;
+    private ExecutePath? _heldPath;
+
+    /// <summary>Lets a held path complete as the fake robot would have completed it.</summary>
+    public void ReleasePath()
+    {
+        if (_heldPath is { } ep) { _heldPath = null; FollowPath(ep); }
+    }
+
+    private void FollowPath(ExecutePath ep)
+    {
+        float wasX = X, wasY = Y;
+        // the fake robot follows the path perfectly: its pose becomes the last segment's end
+        foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = s.XEndMm; Y = s.YEndMm; }
+        // arcs end at their sweep's end point, heading tangent
+        int clearIdx = Sent.IndexOf(Sent.OfType<ClearPath>().Last());
+        foreach (var seg in Sent.Skip(clearIdx).TakeWhile(x => x != ep))
+        {
+            if (seg is AppendPathSegmentArc arc)
+            {
+                double cx = arc.XCenterMm, cy = arc.YCenterMm, r = arc.RadiusMm;
+                double a0 = arc.StartRad, sw = arc.SweepRad;
+                X = (float)(cx + r * Math.Cos(a0 + sw)); Y = (float)(cy + r * Math.Sin(a0 + sw)); Angle = (float)(a0 + sw + Math.Sign(sw) * Math.PI / 2);
+            }
+            else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
+            else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
+        }
+        UpdateChargerContact(wasX, wasY);
+        State();
+        Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
+        Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Completed });
+    }
 
     /// <summary>
     /// The fake robot is on the charger when its origin lies within the charger's footprint (its frame:

@@ -2267,6 +2267,7 @@ public class M12RVisBuildTests
     {
         if (Lib is null) return;
         using var rig = new Rig();
+        rig.HoldLift = true;                                                        // the lift move stays RUNNING until the test acknowledges it
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
         void LiftState(double liftAngle) => rig.Send(new RobotState
@@ -2324,10 +2325,32 @@ public class M12RVisBuildTests
     });
 
     /// <summary>
+    /// Holds the fake robot's lift and path, starts the flip with the cube 200 mm away and takes it to the point where its embedded compound is in the DRIVE: the 45 mm move is acknowledged and
+    /// reported in position (the move's end unlocks the lift track, UnlockTracks 0x005408EC) and the ExecutePath is on the wire but not followed, so the DriveStraightAction is RUNNING.
+    /// </summary>
+    private static Task<ActionResult> StartFlipAtTheDrive(Rig rig, FlipBlockAction flip, out SetLiftHeight approach)
+    {
+        rig.HoldLift = true; rig.HoldPath = true;
+        LiftReports(rig, Math.Asin(-13.0 / 66));                                     // the lift at 32 mm: the 45 mm move is sent and waits
+        var task = flip.RunAsync(default);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 2000) { rig.Pump(); Thread.Sleep(5); }
+        approach = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
+        Assert.Equal(45f, approach.HeightMm);
+        rig.Send(new MotorActionAck { ActionId = approach.ActionId });
+        sw.Restart();
+        while (!rig.Sent.OfType<ExecutePath>().Any() && sw.ElapsedMilliseconds < 5000) { LiftReports(rig, 0.0); rig.Pump(); Thread.Sleep(5); }
+        Assert.NotEmpty(rig.Sent.OfType<ExecutePath>());
+        Assert.False(task.IsCompleted);                                              // the drive is RUNNING
+        return task;
+    }
+
+    /// <summary>
     /// M13-028, CheckIfDone 0x0055F074 (0x0055F0EA..0x0055F130): the carry-height lift is queued only on a tick where the embedded compound is still RUNNING and the norm of the object pose with respect
     /// to the robot pose is below [this+0x138] = 40, the norm being THREE-D ([T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt). The robot stands at the origin and the cube's centre is 22 mm up:
     /// a cube at (39, 0, 22) is 39 away planar but sqrt(39^2 + 22^2) = 44.8 in 3-D: no lift; a cube at (30, 0, 22) is sqrt(30^2 + 22^2) = 37.2: the lift (92 mm) is queued, tolerance 5.0.
-    /// The lift move is held un-acknowledged so the compound stays RUNNING while the robot does not move.
+    /// The tick that queues it is one where the approach lift has ended and released the lift track (M4-003, 0x005408EC): otherwise the queued action fails with 0x03000019 (next test). The path is
+    /// held so the compound stays RUNNING while the cube comes within range.
     /// </summary>
     [Theory]
     [InlineData(39.0, false)]
@@ -2338,23 +2361,60 @@ public class M12RVisBuildTests
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
-        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(cubeX, 0, 22));
-        LiftReports(rig, Math.Asin(-13.0 / 66));                                     // the lift at 32 mm: the 45 mm move is sent and waits
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
-        var task = flip.RunAsync(default);
+        var task = StartFlipAtTheDrive(rig, flip, out _);
+        Assert.False(flip.LiftRaised);                                               // 200 mm away: no tick so far queued it
+        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(cubeX, 0, 22));
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
         Assert.False(task.IsCompleted);
         Assert.Equal(queued, flip.LiftRaised);
         Assert.Equal(queued ? new[] { 45f, LiftPresets.CarryMm } : new[] { 45f }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));
-        // finish: acknowledge the moves and stream states with the lift in position
-        int acked = 0;
+        // finish: the path completes and the moves are acknowledged
+        rig.HoldLift = false;
+        rig.ReleasePath();
+        int acked = 1;
         Spin(task, rig, () =>
         {
             foreach (var l in rig.Sent.OfType<SetLiftHeight>().Skip(acked).ToList()) { rig.Send(new MotorActionAck { ActionId = l.ActionId }); acked++; }
             LiftReports(rig, 0.0);
         }, ms: 20000);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
+    }
+
+    /// <summary>
+    /// M13-028 with M4-003 (IActionRunner::Update 0x00540370): the carry lift FlipBlockAction::CheckIfDone queues has its byte +0x56 set to 1 (0x0055F152..0x0055F154), and Update branches from
+    /// 0x00540434 (bne.w 0x540592) over both AreAnyTracksLocked (0x00540440) and LockTracks (0x0054058E) when that byte is non-zero; the action's end skips UnlockTracks the same way (0x005408EC..0x005408F0).
+    /// So while the approach MoveLiftToHeightAction (the compound's first action) still holds the lift track, the carry lift is sent all the same (no 0x03000019), it takes no lock of its own (the
+    /// track is still held by the approach move, and only that move's end frees it) and sends no DisableAnimTracks/EnableAnimTracks. The cube is within 40 mm from the first tick.
+    /// </summary>
+    [Fact]
+    public void M13_028_TheCarryLiftRunsWhileTheApproachLiftHoldsTheTrackAndTakesNoLock()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        var flip = FlipWithCubeAt(rig, 30.0, out _);
+        rig.HoldLift = true;
+        LiftReports(rig, Math.Asin(-13.0 / 66));
+        var task = flip.RunAsync(default);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
+        Assert.False(task.IsCompleted);
+        Assert.True(flip.LiftRaised);
+        Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));   // both sent: the carry lift was not refused while the track is held
+        Assert.Single(rig.Sent.OfType<DisableAnimTracks>());                          // the approach move's lock only (LockTracks 0x0054058E); the carry lift took none
+        Assert.True(rig.Robot.Motion.AreAnyTracksLocked(CozmoMotion.LiftTrack));
+        // the carry lift ends (ack + in position at 92 mm) while the approach move is still pending: it releases nothing, the approach move's lock stays
+        var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
+        rig.Send(new MotorActionAck { ActionId = lifts[1].ActionId });
+        LiftReports(rig, (float)Math.Asin(1.0));                                      // 92 mm
+        sw.Restart();
+        while (sw.ElapsedMilliseconds < 200) { rig.Pump(); Thread.Sleep(5); }
+        Assert.True(rig.Robot.Motion.AreAnyTracksLocked(CozmoMotion.LiftTrack));
+        Assert.Empty(rig.Sent.OfType<EnableAnimTracks>());
+        rig.HoldLift = false;
+        rig.Send(new MotorActionAck { ActionId = lifts[0].ActionId });
+        Spin(task, rig, () => LiftReports(rig, 0.0), ms: 20000);
     }
 
     /// <summary>
@@ -2367,6 +2427,7 @@ public class M12RVisBuildTests
     {
         if (Lib is null) return;
         using var rig = new Rig();
+        rig.HoldLift = true;                                                          // the 45 mm move is never acknowledged
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         LiftReports(rig, Math.Asin(-13.0 / 66));
@@ -2407,7 +2468,7 @@ public class M12RVisBuildTests
     /// M13-028, CheckIfDone 0x0055F074, the carry lift: queued on a RUNNING tick (compoundResult null) iff the object pose with respect to the robot pose has a 3-D norm below [this+0x138] = 40 and
     /// [this+0x13C] == -1. The robot is at the origin, the cube's centre 22 mm up: a cube at x = 200 is 201.2 away and at x = 39 is sqrt(39^2 + 22^2) = 44.8 (planar 39): no lift; at x = 30 it is
     /// sqrt(30^2 + 22^2) = 37.2: the lift is queued on the robot's action list (a 92 mm SetLiftHeight) and the tick is RUNNING (null); a second RUNNING tick queues nothing more ([+0x13C] != -1).
-    /// The queued action's byte +0x56 = 1 is counted as unmodelled.
+    /// The queued action's byte +0x56 = 1 is modelled as suppressed track locking (see the test above and the one on the held approach lift).
     /// </summary>
     [Theory]
     [InlineData(200.0, false)]
@@ -2422,7 +2483,6 @@ public class M12RVisBuildTests
         Assert.Equal(queued, flip.LiftRaised);
         Assert.Null(flip.CheckIfDoneTick(null));
         Assert.Equal(queued ? new[] { LiftPresets.CarryMm } : Array.Empty<float>(), rig.Pump().OfType<SetLiftHeight>().Select(m => m.HeightMm));
-        Assert.Equal(queued ? 1 : 0, flip.QueuedActionField0x56Unmodelled);
     }
 
     /// <summary>
@@ -2450,24 +2510,24 @@ public class M12RVisBuildTests
     }
 
     /// <summary>
-    /// M13-028: the carry lift is independent of the flip (queued on the ROBOT'S action list, 0x0055F160; cancelled by the destructor, 0x0055ED6C..0x0055ED7A). The cube is at x = 30 so a RUNNING tick
-    /// queues it; only the 45 mm move is acknowledged and the carry lift never is. The flip still ends with the compound's result, Success (not Timeout, 0x04000004 or 0x03000016), without waiting the 5 s a
-    /// lift wait would take, and the unfinished lift is counted as a cancel the stack cannot do (no cancel handle: MISSING).
+    /// M13-028: the carry lift is independent of the flip (queued on the ROBOT'S action list, 0x0055F160; cancelled by the destructor, 0x0055ED6C..0x0055ED7A). The compound is in its drive (the approach
+    /// lift ended and released the lift track) when the cube comes within 40 mm, so a RUNNING tick queues the carry lift and it is sent; the carry lift is never acknowledged. The flip still ends with the
+    /// compound's result, Success (not Timeout, 0x04000004 or 0x03000016), without waiting for that lift, and the unfinished lift is counted as a cancel the stack cannot do (no cancel handle: MISSING).
     /// </summary>
     [Fact]
     public void M13_028_TheFlipNeverWaitsOnTheQueuedCarryLift()
     {
         if (Lib is null) return;
         using var rig = new Rig();
-        var flip = FlipWithCubeAt(rig, 30.0, out _);
-        LiftReports(rig, Math.Asin(-13.0 / 66));                                       // 32 mm: the 45 mm move is sent and waits for its ack
-        var task = flip.RunAsync(default);
+        var flip = FlipWithCubeAt(rig, 200.0, out var obj);
+        var task = StartFlipAtTheDrive(rig, flip, out _);
+        obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(30.0, 0, 22));
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
         Assert.True(flip.LiftRaised);
         var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
         Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, lifts.Select(l => l.HeightMm));
-        rig.Send(new MotorActionAck { ActionId = lifts[0].ActionId });                 // only the 45 mm move
+        rig.ReleasePath();                                                             // the drive completes; the carry lift (lifts[1]) is never acknowledged
         sw.Restart();
         Spin(task, rig, () => LiftReports(rig, 0.0), ms: 4000);
         Assert.True(task.IsCompleted, "the flip must not wait for the carry lift");
@@ -2488,6 +2548,7 @@ public class M12RVisBuildTests
         if (Lib is null) return;
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 200.0, out var obj);
+        rig.HoldLift = true;
         LiftReports(rig, Math.Asin(-13.0 / 66));                                       // the 45 mm move waits: the compound is RUNNING
         var task = flip.RunAsync(default);
         var sw = System.Diagnostics.Stopwatch.StartNew();
