@@ -41,3 +41,18 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
     #3 (a reconnect could let a new VisionSystem adopt the previous connection's album). Batch 4's RemoveRobot reset
     should cover it.
 - Next: Batch 3 (head and lift actions: M4-001, M4-003, M4-016, M4-020, M4-011, M4-025, M4-008, M4-010).
+- 2026-09-30 **Batch 3 (head and lift actions) done and pushed: afbb769.** M4-001: `SetHeadAngleAsync`
+  rescales the command into (−π, π] first (Radians ctor 0x0084C832 → rescale 0x0084C87C, ceil/loop form) then clips
+  against the engine's float bits — min 0xBEDF66F3, max 0x3F46D3F2 (0x00547F44/0x00547FC2), RS6 low 0xBEFA35DD /
+  high 0x3F543B67, tolerance 0x3D0EFA35. M4-003: `Motion.RunAsync` takes the action's track lock through the existing
+  MovementComponent helpers — `AreAnyTracksLocked(mask)` fails with 0x03000019 (0x00540572..0x0054057C), `LockTracks`
+  sends DisableAnimTracks (0x0054058E), the action's end sends EnableAnimTracks (UnlockTracks 0x005408EC); head mask 1
+  (0x00547EAC), lift 2 (0x005489EE); the in-position branch takes and releases the lock too. M4-016: strict
+  `Radians::IsNear` (<, 0x00548528 → 0x0084CC0A) and the 30.0 s default IAction timeout (0x0052B0C2). M4-011:
+  BlockFilter::Init runs from Robot::SetPhysicalRobot(true) (0x0051391E..0x00513954), reached from
+  HandleFirmwareVersion, gated on no "sim", via `CozmoEngine.PhysicalRobotSet`; removed from SendAppDefaults. M4-025:
+  the +0x490 availability gate is enforced on `CubeDiscovered`. M4-020 and M4-008 are record-text only (no code
+  change). Verifier PASS after fixing one blocking finding (M4-020's unresolved claimed "Verified"; restored to
+  "built, awaiting strong verification") plus the stale `AreAnyTracksLocked` comment. Full suite 2123/2123 (0 skipped).
+  Records M4-001/003/011/016/025 remain IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
+- Next: Batch 4 (the small ones: M2-003, M1-015, M1-024, M1-025, M1-031), then R-DEV's M3/M1/M2 remainder.
