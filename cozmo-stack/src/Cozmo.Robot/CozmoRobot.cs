@@ -302,7 +302,7 @@ public sealed class CozmoRobot : IDisposable
         Engine.RobotRemoved = ResetDevices;
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
-        Engine.PhysicalRobotSet = LoadBlockPool;
+        Engine.BlockFilterInit = LoadBlockPool;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
     }

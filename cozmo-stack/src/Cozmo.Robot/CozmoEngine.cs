@@ -925,6 +925,10 @@ public sealed class EngineRobot
                 return;
             }
             bool simIsNull = !root.TryGetProperty("sim", out var sim) || sim.ValueKind == System.Text.Json.JsonValueKind.Null;
+            // fidelity: M4-011
+            // SetPhysicalRobot(true) calls BlockFilter::Init (0x0051391E..0x00513954) before its +0x14 store (0x0051397A) and
+            // VisionComponent::SetPhysicalRobot (0x0051397C); a simulated robot (sim non-null) never takes this branch.
+            if (simIsNull) Engine.RunIsolated(() => Engine.BlockFilterInit?.Invoke());
             // fidelity: M10-010
             // A4: Robot::SetPhysicalRobot's only caller passes json["sim"].isNull() (0x00536980); it writes robot+0x14
             // (0x0051397A), which the Robot constructor zeroed (0x0050FC36).
@@ -936,10 +940,6 @@ public sealed class EngineRobot
             Interlocked.Exchange(ref _physicalRobotRecorded, 1);
             Engine.RaisePhysicalRobotSet(simIsNull);          // VisionComponent::SetPhysicalRobot (0x0051397C)
             AudioOutputSource = simIsNull ? RobotAudioOutputSource.PlayOnRobot : RobotAudioOutputSource.PlayOnDevice;
-            // fidelity: M4-011
-            // SetPhysicalRobot(true) also calls BlockFilter::Init (0x0051391E..0x00513954); a simulated robot
-            // (sim non-null) never takes this branch.
-            if (simIsNull) Engine.RunIsolated(() => Engine.PhysicalRobotSet?.Invoke());
         }
     }
 
@@ -1565,7 +1565,7 @@ public sealed class CozmoEngine : IDisposable
     /// point, for a physical robot only; <see cref="CozmoRobot"/> keeps the stack's Init there rather than in the app
     /// defaults.
     /// </summary>
-    internal Action? PhysicalRobotSet;
+    internal Action? BlockFilterInit;
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
     internal Action<Exception>? Faulted;
     /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>
