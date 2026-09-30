@@ -31,10 +31,10 @@ so that no two windows work on the same layers at once. R-VIS moved to a Sonnet 
 | window | clone | chain |
 | --- | --- | --- |
 | 1 | `cozmo-stack-w1` | [R-BEH](R-BEH.md) (M7, M8), DONE. Paused to save credits; [R-BEH2](R-BEH2.md) goes to the next free Sonnet, with Codex pre-extracting |
-| 4 (Sonnet in Claude Code, on the manager's machine) | `cozmo-stack-r` | [B-M6b-4](B-M6b-4.md) (the M6 live-audio wiring) |
-| 5 (a second Sonnet, on the manager's machine) | `cozmo-stack-r2` | [R-VIS](R-VIS.md) (M11, M12, M13, M14), once G-M14 is DONE |
+| 4 (Sonnet in Claude Code, on the manager's machine) | `cozmo-stack-r` | [B-M6b-4](B-M6b-4.md) (the M6 live-audio wiring): batches 4a and 4b built (2026-09-30), awaiting Opus verification |
+| 5 (a second Sonnet, on the manager's machine) | `cozmo-stack-r2` | [R-VIS](R-VIS.md) (M11, M12, M13, M14): round 1 built (2026-09-30); first the six `M13_028_*` flip tests that fail on top of B-CORE batch 3; then M11 batch B |
 | 2 | `cozmo-stack` (the main clone) | [R-ANIM](R-ANIM.md) (M5, M10), DONE → [R-M15](R-M15.md) (M15) → [R-M9](R-M9.md) and [R-M6](R-M6.md), which wait for B-M6b-4 |
-| 3 | `cozmo-stack-w3` | R-DEV stopped after its M4 batch; superseded by [B-CORE](B-CORE.md) (the connection and device core, first job in the new format: CHECKLIST.md, never settles) |
+| 3 | `cozmo-stack-w3` | R-DEV stopped after its M4 batch; superseded by [B-CORE](B-CORE.md) (the connection and device core, first job in the new format: CHECKLIST.md, never settles), DONE 2026-09-30 (batches 1-6), awaiting Opus verification |
 
 Codex, meanwhile: `re-analysis/research/requests/20260929-M9-singing-gaps.md`, then
 `20260929-policy-review.md` (the 32 COMPATIBILITY_POLICY and EQUIVALENT_IMPLEMENTATION records against "Exact,

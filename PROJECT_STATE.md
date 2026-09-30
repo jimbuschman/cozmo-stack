@@ -2,7 +2,43 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
-## Now (2026-09-29, evening)
+## Now (2026-09-30, morning)
+
+- **Everyone finished overnight.**
+  - **B-CORE (DeepSeek, window 3):** DONE. Six batches, pushed: dbdc39d, ac62741, afbb769, 32216ca, 99a51f6,
+    bee7266, 23c65ac. About 30 M1..M4 records built; each is IMPLEMENTATION_GAP, "built, awaiting strong verification".
+    Named MISSING: M3-027's data vector +0xE8, M3-023's `StartCamera`.
+  - **Sonnet 1:** B-M6b-4 batch 4b (the playback-limit walker, M6-026).
+  - **Sonnet 2:** R-VIS round 1 (M11 batch A, M12, M13; M12-023..039 and M11-050..053 recorded). Nothing raised to
+    EXACT_SOURCE. Its final round of changes had no separate verifier pass. Its open list is in `jobs/status/R-VIS.md`.
+  - **Codex:** the audit calibration (`research/20260929-audit-calibration.md`, 6132f73). Its calibration says the R-BEH2
+    pre-extraction (`research/20260929-R-BEH2-pre-extraction.md`) is complete, but that file is not committed yet;
+    it is still in `cozmo-stack-codex`.
+- **The calibration contradicts the Sonnet audit.** M12: 9 hold, 7 fail, 1 partial, against Sonnet's 17 of 17.
+  M5 part A: 11 hold, 2 partial. The manager re-checked the central addresses in the binary (path-id wrap
+  0x0064A3C2, clamp 0x3F32B8C2, the two-pose gate 0x005BEE80, Verify RUNNING 0x00553CA0, the single urandom read
+  0x0082F898). Correction A2: M12-002/007/010/019 and M5-005/017 go back to IMPLEMENTATION_GAP, and the defects are
+  added to M12-001/012/017. M12-004 was already rebuilt by R-VIS. M12 and M5 are re-approved.
+  - Consequence: the other Sonnet-audited layers (M10, M11, M14, M15) are not trusted until an Opus re-audit.
+  - **Rule change (CHECKLIST.md section 6):** Sonnet never settles, audits or verifies for settlement. Only the Opus
+    manager's verifiers settle.
+- **Merged locally, not pushed.** The manager's repo has Sonnet 1's 4b, R-VIS's three commits, a merge fix and A2 on
+  top of B-CORE and Codex. The merge fix: B-CORE's BlockFilter hook is renamed `BlockFilterInit`, because R-VIS used
+  `PhysicalRobotSet`, and the calls are in `SetPhysicalRobot`'s order.
+  - Suite: 2598 of 2604. The six `M13_028_*` flip tests fail, because R-VIS's FlipBlockAction was built before
+    B-CORE's lift track locks and strict IsNear. This goes back to Sonnet 2, whose clone takes the merged tree with a
+    fetch and a reset. One push follows its fix.
+- **Counts:** 418 records. 166 EXACT_SOURCE, 194 IMPLEMENTATION_GAP (about 60 of them built and awaiting
+  verification), 18 RECOVERABLE_GAP, 10 HARDWARE_ONLY, 2 BLOCKED_EXTERNAL, 26 COMPATIBILITY_POLICY,
+  2 EQUIVALENT_IMPLEMENTATION.
+- **Next for the manager:**
+  - after the flip fix, run the suite and push once;
+  - Opus verification of B-CORE's batches, then B-M6b-4 and R-VIS, against CHECKLIST.md and the binary;
+  - an Opus re-audit of M10, M11, M14 and M15;
+  - once the R-BEH2 pre-extraction is pushed, check it and give R-BEH2 to a Sonnet;
+  - the control-check robot run after B-CORE is verified.
+
+## 2026-09-29, evening (superseded by the section above)
 
 - **The complete audit changed the picture.** Every EXACT_SOURCE record (239) was re-checked by independent verifiers:
   **155 hold**. 84 went back to IMPLEMENTATION_GAP, each with its defect in `unresolved` and a correction A1 in its

@@ -61,7 +61,11 @@ provenance note or another record's `unresolved`, the record isn't settled. Give
 - **A job run by a cheap model (DeepSeek, GLM or similar) never settles a record.** It ends with the records built,
   still IMPLEMENTATION_GAP, with `unresolved` starting "built, awaiting strong verification:", followed by what was
   built and the commits.
-- **Only a strong verifier settles:** the Claude manager's `cozmo-verifier` subagents, or a Sonnet or Opus worker. It
-  checks the batch against this list and the binary, then moves the records to EXACT_SOURCE.
-- **A Sonnet or Opus worker running a job** may settle its own records only after a separate `cozmo-verifier` pass
-  (not the implementer's own session) gives PASS on this checklist.
+- **Only an Opus verifier settles:** the manager's `cozmo-verifier` subagents, run from the Opus manager session. It
+  checks the batch against this list and the binary, then moves the records to EXACT_SOURCE. A Codex re-audit is a
+  cross-check, not a settlement.
+- **A Sonnet worker never settles, audits or verifies for settlement (2026-09-30).** Its jobs end like a cheap
+  model's: built, still IMPLEMENTATION_GAP, "built, awaiting strong verification:". Its own `cozmo-verifier` passes run
+  on Sonnet (the agent pins no model), so they count as the job's internal checks only. Why: Codex's calibration
+  (`re-analysis/research/20260929-audit-calibration.md`) failed 7 and part-failed 1 of the 17 M12 records a Sonnet
+  audit had called clean.
