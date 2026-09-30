@@ -121,10 +121,24 @@ public sealed class NvStorageComponent : IDisposable
             int size = offset + count;
             if (_buffer.Length < size) Array.Resize(ref _buffer, size);
             Array.Copy(source, sourceOffset, _buffer, offset, count);
+            // fidelity: M3-030
+            // 0x00643568..0x00643596: the engine's reassembly buffer is the caller's +0x54 vector, so each applied
+            // blob lands in the sink as it arrives, zero-filled to the write end. The callback is handed this
+            // vector (0x006436B6..0x00643714), so the sink and the buffer stay equal.
+            if (Sink is { } sink)
+            {
+                while (sink.Count < size) sink.Add(0);
+                for (int i = 0; i < count; i++) sink[offset + i] = source[sourceOffset + i];
+            }
         }
 
-        /// <summary>M3-028 (0x643478): TooLittleReadData clears the pending buffer before forcing -3.</summary>
-        public void Clear() => _buffer = Array.Empty<byte>();
+/// <summary>M3-028 (0x643478): TooLittleReadData clears the pending buffer before forcing -3; the engine
+/// clears the same +0x54 vector the sink is (0x00643478).</summary>
+        public void Clear()
+        {
+            _buffer = Array.Empty<byte>();
+            Sink?.Clear();
+        }
     }
 
     private readonly CozmoRobot _robot;
@@ -189,7 +203,7 @@ public sealed class NvStorageComponent : IDisposable
     /// largest <c>_maxSizeTable</c> key at or below it (the tree floor, 0x00644228..0x00644338); anything else
     /// (0x198000 and above, or no key at or below) is the sentinel.
     /// </summary>
-    public static uint GetBaseEntryTag(uint tag)
+    public static uint GetBaseEntryTag(uint tag, Action<string>? log = null)
     {
         if ((tag & 0x80000000u) != 0)                                     // signed <= -1: the factory path
         {
@@ -197,6 +211,8 @@ public sealed class NvStorageComponent : IDisposable
             if ((tag & 0xFFFF0000u) != 0xC0000000u && (tag & 0x7FFF0000u) != 0
                 && IsFactoryEntryTag(tag & 0xFFFF0000u))
                 return tag & 0xFFFF0000u;
+            // 0x006442EC: no factory key matched -> sWarningF(FactoryTagNotFound, "0x%x", tag)
+            log?.Invoke($"warning: NVStorageComponent.GetBaseEntryTag.FactoryTagNotFound: 0x{tag:x}");
             return 0x198000u;
         }
         if (tag < 0x198000u)
@@ -207,6 +223,9 @@ public sealed class NvStorageComponent : IDisposable
                 if (key <= tag && (!found || key > floor)) { floor = key; found = true; }
             if (found) return floor;
         }
+// 0x00644274: the coarse test tag >> 15 < 0x33 failed, or no _maxSizeTable key is at or
+// below the tag -> sWarningF(TagIsTooSmall, "0x%x", tag)
+        log?.Invoke($"warning: NVStorageComponent.GetBaseEntryTag.TagIsTooSmall: 0x{tag:x}");
         return 0x198000u;
     }
 
@@ -218,6 +237,95 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public static int MaxFactorySizeForEntryTag(uint tag) =>
         MaxFactoryEntrySizeTable.TryGetValue(tag, out int value) ? value : 0;
+
+    // fidelity: M3-025
+    /// <summary>
+    /// M3-025: <c>NVStorage::EnumToString(NVEntryTag)</c> (0x007CEE38..0x007CF0A6): the entry-tag name. The
+    /// constants and their strings are the switch arms at 0x7CEE44..0x7CF0A2. GetBaseEntryTag only ever returns a
+    /// table key or the sentinel, so every return is covered; an unrecognised tag yields null in the engine.
+    /// </summary>
+    public static string? NvEntryTagName(uint tag) => tag switch
+    {
+        0x80000000 => "NVEntry_BirthCertificate",
+        0x80000001 => "NVEntry_CameraCalib",
+        0x80000002 => "NVEntry_ToolCodeInfo",
+        0x80000003 => "NVEntry_CalibPose",
+        0x80000004 => "NVEntry_CalibMetaInfo",
+        0x80000005 => "NVEntry_ObservedCubePose",
+        0x80000006 => "NVEntry_IMUInfo",
+        0x80000007 => "NVEntry_CliffValOnDrop",
+        0x80000008 => "NVEntry_CliffValOnGround",
+        0x80000010 => "NVEntry_PlaypenTestResults",
+        0x80000011 => "NVEntry_FactoryLock",
+        0x80000012 => "NVEntry_VersionMagic",
+        0x80010000 => "NVEntry_CalibImage1",
+        0x80020000 => "NVEntry_CalibImage2",
+        0x80030000 => "NVEntry_CalibImage3",
+        0x80040000 => "NVEntry_CalibImage4",
+        0x80050000 => "NVEntry_CalibImage5",
+        0x80060000 => "NVEntry_CalibImage6",
+        0x80100000 => "NVEntry_ToolCodeImageLeft",
+        0x80110000 => "NVEntry_ToolCodeImageRight",
+        0xC0000000 => "NVEntry_PrePlaypenResults",
+        0xC0000001 => "NVEntry_PrePlaypenCentroids",
+        0xC0000004 => "NVEntry_IMUAverages",
+        0xFFFFFFFF => "NVEntry_Invalid",
+        0x180000 => "NVEntry_GameSkillLevels",
+        0x181000 => "NVEntry_OnboardingData",
+        0x182000 => "NVEntry_GameUnlocks",
+        0x183000 => "NVEntry_FaceEnrollData",
+        0x184000 => "NVEntry_FaceAlbumData",
+        0x194000 => "NVEntry_NurtureGameData",
+        0x195000 => "NVEntry_InventoryData",
+        0x196000 => "NVEntry_LabAssignments",
+        0x197000 => "NVEntry_SavedCubeIDs",
+        0x198000 => "NVEntry_NEXT_SLOT",
+        0x1C0000 => "NVEntry_FACTORY_RESERVED1",
+        0x1DE000 => "NVEntry_FACTORY_RESERVED2",
+        0xDE000 => "NVEntry_FactoryBaseTag",
+        0xDE030 => "NVEntry_FactoryBaseTagWithBCOffset",
+        _ => null,
+    };
+
+    // fidelity: M3-030, M3-031
+    /// <summary>
+    /// M3-030/M3-031: <c>NVStorage::EnumToString(NVResult)</c> (0x007CFAB0; table 0x01034B50): the result name.
+    /// The engine's table is indexed by <c>result + 9</c> and the values are the names below (NVResultFromString
+    /// 0x007CFACC confirms each byte: NV_LOOP -8, NV_NO_MEM -7, NV_BAD_ARGS -6, NV_BUSY -5, NV_TIMEOUT -4,
+    /// NV_ERROR -3, NV_NO_ROOM -2, NV_NOT_FOUND -1, NV_OKAY 0, NV_SCHEDULED 1, NV_NO_DO 2, NV_MORE 3).
+    /// </summary>
+    public static string? NvResultName(sbyte result) => result switch
+    {
+        -9 => "NV_CORRUPT",
+        -8 => "NV_LOOP",
+        -7 => "NV_NO_MEM",
+        -6 => "NV_BAD_ARGS",
+        -5 => "NV_BUSY",
+        -4 => "NV_TIMEOUT",
+        -3 => "NV_ERROR",
+        -2 => "NV_NO_ROOM",
+        -1 => "NV_NOT_FOUND",
+        0 => "NV_OKAY",
+        1 => "NV_SCHEDULED",
+        2 => "NV_NO_DO",
+        3 => "NV_MORE",
+        _ => null,
+    };
+
+    // fidelity: M3-031
+    /// <summary>
+    /// M3-031: <c>NVStorage::EnumToString(NVOperation)</c>: NVOP_READ 0, NVOP_WRITE 1, NVOP_ERASE 2,
+    /// NVOP_WIPEALL 3 (NVOperationFromString 0x007D0074 stores 0/1/2/3 for those strings; the strings are at
+    /// 0x00C2179D..0x00C217BD).
+    /// </summary>
+    public static string? NvOpName(byte op) => op switch
+    {
+        OpRead => "NVOP_READ",
+        OpWrite => "NVOP_WRITE",
+        OpErase => "NVOP_ERASE",
+        OpWipeAll => "NVOP_WIPEALL",
+        _ => null,
+    };
 
     // fidelity: M11-011, M3-026, M3-030, M15-014
     /// <summary>
@@ -427,7 +535,7 @@ public sealed class NvStorageComponent : IDisposable
             // M3-028/M3-026 accept check (pass 1 step 10 / pass 4 1e-1): the reply's base tag must be the pending
             // request's tag. A valid reply's base equals its own tag; the base comparison also admits a factory
             // reply whose raw tag differs from the request.
-            uint baseTag = GetBaseEntryTag(r.Tag);
+            uint baseTag = GetBaseEntryTag(r.Tag, _log.Add);
             if (baseTag != req.Tag)
             {
                 _log.Add($"warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x{r.Tag:X8}, BaseTag: 0x{baseTag:X8}, ExpectedBaseTag: 0x{req.Tag:X8}");
@@ -447,18 +555,24 @@ public sealed class NvStorageComponent : IDisposable
             }
             else if (result <= -1)
             {
-                // M3-031: only {-8,-7,-5,-4} are retried; -6 and -1 are not.
+                // fidelity: M3-031
+                // M3-031 (0x006431E6..0x00643234): only {-8,-7,-5,-4} are retried; -6 and -1 are not. On a retry
+                // ResendLastCommand (0x00645C54) logs Retry and sends, then the caller logs ResentFailedRead; when
+                // the counter reaches +0xF5 = 8 it logs NumRetriesExceeded and returns 0, and the caller then logs
+                // ReadOpFailed for every negative result (0x006434E4).
                 if (IsRetryableResult(result))
                 {
                     if (req.Retries < MaxReadResends)
                     {
                         req.Retries++;
-                        _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:X8} resent due to {result}");
+                        _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:X8}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
+                        _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:X8} resent due to {NvResultName(result)}");
                         if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
                         return;
                     }
-                    _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:X8}, result: {result}");
+                    _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:X8}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
                 }
+                _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:X8}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
                 completion = CompleteLocked(req, result, req.Buffer);
             }
             else
@@ -513,8 +627,31 @@ public sealed class NvStorageComponent : IDisposable
                 if (result == ResultMore) return;
                 completion = CompleteLocked(req, result, req.Buffer);
             }
+            // fidelity: M3-030
+            // 0x00643600..0x00643694: after reassembly the engine logs the read outcome by the final result:
+            // ReadSuccess (result 0, 0x00643640), ReadEntryNotFound (-1, 0x0064360E) or ReadFailed (anything else,
+            // 0x0064366E). MORE (3) skips the log (0x00643606 -> 0x0064325A) and never reaches the completion.
+            if (req.Op == OpRead) LogReadResult(r, baseTag, result);
         }
         Deliver(completion.Value);
+    }
+
+    // fidelity: M3-030
+    /// <summary>
+    /// M3-030: the read completion's outcome log (0x00643600..0x00643694). The base tag is named through
+    /// <c>NVStorage::EnumToString(NVEntryTag)</c> (0x7CEE38); ReadSuccess/ReadEntryNotFound are channeled info,
+    /// ReadFailed is a warning. The engine's formats are "BaseTag: %s, result: %s" and, for ReadEntryNotFound,
+    /// "BaseTag: %s, Tag: 0x%x, result: %s".
+    /// </summary>
+    private void LogReadResult(NVOpResult r, uint baseTag, sbyte result)
+    {
+        string baseName = NvEntryTagName(baseTag) ?? $"0x{baseTag:X8}";
+        if (result == 0)
+            _log.Add($"info: NVStorageComponent.HandleNVOpResult.ReadSuccess: BaseTag: {baseName}, result: {NvResultName(0)}");
+        else if (result == -1)
+            _log.Add($"info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: {baseName}, Tag: 0x{r.Tag:X8}, result: {NvResultName(-1)}");
+        else
+            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadFailed: BaseTag: {baseName}, result: {NvResultName(result)}");
     }
 
     // fidelity: M3-031
@@ -577,17 +714,17 @@ public sealed class NvStorageComponent : IDisposable
 
     // fidelity: M3-030, M3-034
     /// <summary>
-    /// M3-030: completes the request, filling the sink, building the broadcast chunks and setting state 0. The
-    /// callback and the broadcasts run outside the lock, in the engine's order: the request's own callback first,
-    /// then the broadcast. The sink (+0x54) was cleared at arm, so this only appends the assembled bytes. The
-    /// completion does not start the next request and does not run the on-idle callbacks (SetState(0) only,
-    /// 0x6437EA; SetState 0x00642B0C runs no callbacks); <see cref="Update"/> sends the next request and runs them.
+    /// M3-030: completes the request, building the broadcast chunks and setting state 0. The callback and the
+    /// broadcasts run outside the lock, in the engine's order: the request's own callback first, then the
+    /// broadcast. The sink (+0x54) was cleared at arm and is filled blob by blob in <see cref="ApplyBlobLocked"/>,
+    /// so nothing is appended here. The completion does not start the next request and does not run the on-idle
+    /// callbacks (SetState(0) only, 0x6437EA; SetState 0x00642B0C runs no callbacks); <see cref="Update"/> sends
+    /// the next request and runs them.
     /// </summary>
     private Completion CompleteLocked(PendingRequest req, sbyte result, byte[] data)
     {
         List<NVStorageOpResult>? broadcasts = null;
         if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
-        if (req.Sink is { } sink) sink.AddRange(data);
         req.Deadline = null;
         _inFlight = null;
         return new Completion(req.Callback, new NvResult(result, data), broadcasts);
@@ -605,8 +742,11 @@ public sealed class NvStorageComponent : IDisposable
     /// M3-030 (0x643718..0x6437D4): re-chunk the buffer into 0x400 blocks; each non-final chunk has result 3 (MORE)
     /// and the final chunk carries the request's actual result (0x0064373C..0x0064375C), with the chunk index in word@4. A
     /// negative result broadcasts once with size 0. A non-negative empty buffer broadcasts nothing.
+    /// 0x00643770..0x00643798: the loop is bounded at 1000 chunks (cmp r4,#0x3e8, blo back to 0x643738); if the
+    /// 1000th broadcast does not exhaust the buffer it stops and logs LoopBoundOverflow via sErrorF with
+    /// "../../../../engine/components/nvStorageComponent.cpp", line 0x4a7.
     /// </summary>
-    private static List<NVStorageOpResult> BuildBroadcasts(uint tag, byte op, sbyte result, byte[] data)
+    private List<NVStorageOpResult> BuildBroadcasts(uint tag, byte op, sbyte result, byte[] data)
     {
         var chunks = new List<NVStorageOpResult>();
         if (result < 0)
@@ -615,17 +755,22 @@ public sealed class NvStorageComponent : IDisposable
             return chunks;
         }
         int offset = 0, index = 0;
-        while (offset < data.Length)
+        while (true)
         {
+            if (offset >= data.Length) return chunks;                     // uVar22 == 0 -> return, no log
             int n = Math.Min(data.Length - offset, 0x400);
-            sbyte chunkResult = offset + n < data.Length ? (sbyte)ResultMore : result;
+            sbyte chunkResult = data.Length - offset > 0x400 ? (sbyte)ResultMore : result;
             var slice = new byte[n];
             Array.Copy(data, offset, slice, 0, n);
             chunks.Add(new NVStorageOpResult(tag, op, chunkResult, index, slice));
             offset += n;
             index++;
+            if (index >= 1000)
+            {
+                _log.Add("error: LoopBoundOverflow: ../../../../engine/components/nvStorageComponent.cpp:1191");
+                return chunks;
+            }
         }
-        return chunks;
     }
 
     /// <summary>

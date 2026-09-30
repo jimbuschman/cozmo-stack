@@ -830,8 +830,15 @@ public sealed class EngineRobot
         // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
         // installs both (0x65A860). Raised at completion, so a VisionSystem built after the response still
         // adopts it; with none subscribed the result is kept and the read still drains.
+        // M3-034: the callback (0x65A85E..0x65A9DE) logs ReadFaceEnrollDataNotFound when the result is -1
+        // (0x0065A8F0, channeled info, no fields) and ReadFaceEnrollDataFail for any other non-zero result
+        // (0x0065A916, warning, "NVResult = %s").
         nv.Read(0x183000, r =>
         {
+            if (r.Result == -1)
+                Engine.Log("info: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound");
+            else if (r.Result != 0)
+                Engine.Log($"warning: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail: NVResult = {NvStorageComponent.NvResultName(r.Result)}");
             if (r.Result != 0) return;
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
@@ -840,6 +847,14 @@ public sealed class EngineRobot
 
     /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
     private readonly List<byte> _faceAlbum = new();
+
+    // fidelity: M3-034
+    /// <summary>
+    /// M3-034: the Robot's VisionComponent (and its VC+0x2F4 album bytes) is destroyed with the Robot
+    /// (0x0051116C, ~VisionComponent 0x0065258E). The removal path calls this before the EngineRobot is dropped,
+    /// so nothing of the old album survives it.
+    /// </summary>
+    internal void ClearFaceAlbum() => _faceAlbum.Clear();
 
     // fidelity: M3-033
     /// <summary>The eight RobotDataBackupManager tags, ascending (backup_config.json "tagsToBackup", 0x51AD0A).</summary>
@@ -1505,6 +1520,8 @@ internal sealed class RobotManager
         // the next mfgId raises it again (the RIC's tag-0xED subscription is persistent).
         _engine.ClearAcquiredSerialNumber();
         if (r is not null) r.AnimationStreamingOpen = false;
+        // M3-034: the removed Robot's VisionComponent takes its album bytes with it (0x0051116C).
+        r?.ClearFaceAlbum();
         _engine.RobotRemoved?.Invoke();
     }
 }
@@ -1956,18 +1973,23 @@ public sealed class CozmoEngine : IDisposable
         FanOut(SerialNumberAcquired, serial);
     }
 
-    // fidelity: M15-014
+    // fidelity: M15-014, M3-034
     /// <summary>
     /// M15-014: end the serial edge on a robot removal, so a stack created after a reconnect does not catch up
     /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again. The
     /// connection Needs read and its buffered result belong to the removed robot too, so they are cleared with
     /// the serial (the engine destroys the Robot and its components on removal).
+    /// M3-034: the FaceAlbum/Enrollment result also belongs to the removed robot. The engine destroys the
+    /// VisionComponent with the Robot (0x0051116C, ~VisionComponent 0x0065258E), freeing VC+0x2F4/VC+0x300, so a
+    /// VisionSystem built after a reconnect must not adopt the old album. <see cref="EngineRobot"/> clears its
+    /// own album bytes as the read's sink.
     /// </summary>
     internal void ClearAcquiredSerialNumber()
     {
         AcquiredSerialNumber = null;
         ConnectionNeedsResult = null;
         ConnectionNeedsReadQueued = false;
+        ConnectionFaceAlbumResult = null;
     }
 
     internal void QueueGoToSleep()

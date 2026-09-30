@@ -1225,6 +1225,8 @@ public class M3DeviceTests
         public Rig() => Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "" });
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
+        /// <summary>The transport's OnDisconnected marker (CB32/CB33), handled at the next tick as RemoveRobot.</summary>
+        public void Disconnected() => Port.Raise(ReceiverMarker.OnDisconnected, RobotEp);
 
         public void ToValidated(string fw = ShippedFw)
         {
@@ -1739,6 +1741,130 @@ public class M3DeviceTests
     }
 
     /// <summary>
+    /// M3-030/3a (0x00643568..0x00643596): the reassembly writes each applied blob straight into the caller's
+    /// +0x54 vector, so after a timeout (Update state 1, 0x006457A8..0x006457C0) the sink still holds the blobs
+    /// already applied. The timeout's own callback gets (nullptr, 0, -4), not the sink.
+    /// </summary>
+    [Fact]
+    public void M3_030_TheSinkKeepsAppliedBlobsAfterATimeout()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        var sink = new List<byte>();
+        NvResult? got = null;
+        nv.Read(0x80010000, r => got = r, sink);                 // factory tag: no 16-byte header
+        rig.Tick();                                              // sent: deadline = 1000 + 5000 = 6000
+        var blob = Enumerable.Range(0, 1024).Select(i => (byte)i).ToArray();
+        rig.Data(new NVOpResult { Tag = 0x80010000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.Equal(blob, sink);                                // applied as it arrived, not at completion
+
+        rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
+        rig.Tick();                                              // 6001 > 6000: the read times out
+        Assert.NotNull(got);
+        Assert.Equal(-4, got!.Value.Result);
+        Assert.Empty(got.Value.Data);                            // the engine's timeout delivers (nullptr, 0, -4)
+        Assert.Equal(blob, sink);                                // the applied blob survives in the sink
+    }
+
+    /// <summary>
+    /// M3-030/3b (0x00643770..0x00643798): the broadcast loop runs at most 1000 chunks (cmp r4,#0x3e8); a buffer
+    /// that still has data after the 1000th broadcast stops there and logs LoopBoundOverflow via sErrorF with
+    /// "../../../../engine/components/nvStorageComponent.cpp", line 0x4a7.
+    /// </summary>
+    [Fact]
+    public void M3_030_TheBroadcastLoopStopsAt1000Chunks()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var chunks = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += chunks.Add;
+
+        nv.Read(0x80010000, null, null, broadcast: true);
+        rig.Tick();
+        // one 1024-byte blob at index 999 grows the buffer to 1000*1024 (zero-filled), so the completion needs
+        // exactly 1000 chunks and the bound fires.
+        rig.Data(new NVOpResult { Tag = 0x80010000, Op = 0, Result = 0, Length = 999, Data = new byte[1024] });
+        rig.Tick();
+
+        Assert.Equal(1000, chunks.Count);
+        Assert.Contains(nv.Log, l => l.Contains("LoopBoundOverflow"));
+        Assert.Contains(nv.Log, l => l.Contains("nvStorageComponent.cpp:1191"));   // 0x4a7 in decimal
+    }
+
+    /// <summary>
+    /// M3-030 (0x00643600..0x00643694): the read completion logs its outcome by the final result: ReadSuccess
+    /// (0, 0x00643640), ReadEntryNotFound (-1, 0x0064360E) or ReadFailed (anything else, 0x0064366E). The base
+    /// tag is named through NVStorage::EnumToString(NVEntryTag) (0x7CEE38). A negative result also logs
+    /// ReadOpFailed first (0x006434E4).
+    /// </summary>
+    [Fact]
+    public void M3_030_TheReadCompletionLogsTheOutcome()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = NonFactoryBlob(new byte[] { 1 }) });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadSuccess") && l.Contains("NVEntry_GameUnlocks") && l.Contains("NV_OKAY"));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_NOT_FOUND"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadEntryNotFound") && l.Contains("NV_NOT_FOUND"));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -6, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_BAD_ARGS"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadFailed") && l.Contains("NV_BAD_ARGS"));
+    }
+
+    /// <summary>
+    /// M3-025 (0x00644274, 0x006442EC): GetBaseEntryTag warns FactoryTagNotFound when the factory path finds no
+    /// key, and TagIsTooSmall when the non-factory coarse test tag >> 15 &lt; 0x33 fails or no table key is at or
+    /// below the tag. Both formats are "0x%x" with the tag. Driven through the reply accept check (OnResult).
+    /// </summary>
+    [Fact]
+    public void M3_025_GetBaseEntryTagLogsTheMissingFactoryTagAndTheTooSmallTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x90000000, Op = 0, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Null(got);                                        // the sentinel base != 0x182000: dropped
+        Assert.Contains(nv.Log, l => l.Contains("GetBaseEntryTag.FactoryTagNotFound") && l.Contains("0x90000000"));
+
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x199000, Op = 0, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Null(got);
+        Assert.Contains(nv.Log, l => l.Contains("GetBaseEntryTag.TagIsTooSmall") && l.Contains("0x199000"));
+    }
+
+    /// <summary>
     /// M3-031/0x645C6A..0x645D7A: a retryable negative result resends the identical command 7 times (8
     /// transmissions; ResendLastCommand increments +0xF4 then compares &lt; +0xF5 = 8), then completes with the
     /// original result (ReadOpFailed).
@@ -1769,7 +1895,13 @@ public class M3DeviceTests
         Assert.NotNull(got);
         Assert.Equal(-8, got!.Value.Result);
         Assert.Equal(afterRead + NvStorageComponent.MaxReadResends, NvCommands(rig).Count);
-        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed"));
+        // M3-031: ResendLastCommand logs Retry (info, 0x00645C6A..0x00645D34) for each of the 7 resends, then
+        // NumRetriesExceeded (error, 0x00645D34) when +0xF4 reaches +0xF5 = 8; the caller then logs ReadOpFailed
+        // (0x006434E4) for the negative result.
+        Assert.Equal(NvStorageComponent.MaxReadResends, nv.Log.Count(l => l.Contains("ResendLastCommand.Retry")));
+        Assert.Contains(nv.Log, l => l.Contains("ResendLastCommand.Retry") && l.Contains("NVOP_READ") && l.Contains("Attempt: 7"));
+        Assert.Contains(nv.Log, l => l.Contains("ResendLastCommand.NumRetriesExceeded") && l.Contains("Attempts: 8"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_LOOP"));
     }
 
     /// <summary>
@@ -1865,7 +1997,11 @@ public class M3DeviceTests
 
     /// <summary>
     /// M3-035/0x643E80..0x643F8C: a disconnect discards the in-flight read with no callback, and the old deadline
-    /// cannot fire afterwards even as the robot clock advances.
+    /// cannot fire afterwards even as the robot clock advances. This drives the live removal path, not
+    /// <c>OnDisconnected</c> directly: the transport's OnDisconnected marker is handled at the next tick as
+    /// <c>RobotManager::RemoveRobot</c> (CB32/CB33 0x0052F248..0x0052F364), which raises
+    /// <c>CozmoEngine.RobotRemoved</c>; <c>CozmoRobot.ResetDevices</c> (CozmoRobot.cs:670) then calls
+    /// <c>NvStorageComponent.OnDisconnected</c>.
     /// </summary>
     [Fact]
     public void M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout()
@@ -1878,18 +2014,31 @@ public class M3DeviceTests
         rig.Tick();
 
         var nv = rig.Robot.Engine.NvStorage!;
-        NvResult? got = null;
+        NvResult? got = null, queued = null;
         nv.Read(0x182000, r => got = r);
-        nv.OnDisconnected();
+        rig.Tick();                                          // the read goes out and is in flight
+        Assert.Equal(0x182000u, nv.InFlightTag);
+        nv.Read(0x183000, r => queued = r);                  // a second read is queued behind it
+        Assert.Single(nv.QueuedTags);
 
+        // the live path: OnDisconnected -> RemoveRobot -> RobotRemoved -> ResetDevices -> OnDisconnected
+        rig.Disconnected();
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.True(nv.IsIdle);
+        Assert.Empty(nv.QueuedTags);                         // the queue is discarded with the in-flight request
+
+        // a late reply and a later clock cannot deliver a callback or fire a timeout
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[20] });
         rig.Tick();
         Assert.Null(got);
+        Assert.Null(queued);
 
         rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
         rig.Tick();
         nv.Update();
         Assert.Null(got);
+        Assert.Null(queued);
         Assert.True(nv.IsIdle);
     }
 
@@ -2053,6 +2202,82 @@ public class M3DeviceTests
         var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
         Assert.Equal(album, gotAlbum);
         Assert.Equal(enrollment, gotEnrollment);
+    }
+
+    /// <summary>
+    /// M3-034 (0x0065A85E..0x0065A9DE): the FaceEnrollment read callback (the engine's VC+0x300 read, #4
+    /// 0x183000) logs <c>ReadFaceEnrollDataNotFound</c> when the result is -1 (0x0065A8F0: sChanneledInfoF,
+    /// channel "Unnamed", no fields) and <c>ReadFaceEnrollDataFail</c> for any other non-zero result (0x0065A916:
+    /// sWarningF, "NVResult = %s" with NVStorage::EnumToString(NVResult)). Result 0 installs the album.
+    /// </summary>
+    [Theory]
+    [InlineData(-1, "ReadFaceEnrollDataNotFound", "NV_NOT_FOUND")]
+    [InlineData(-6, "ReadFaceEnrollDataFail", "NV_BAD_ARGS")]
+    public void M3_034_TheEnrollReadCallbackLogsNotFoundAndFail(sbyte result, string logName, string resultName)
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            // #4 FaceEnrollment 0x183000 is index 3 in ConnectionReadOrder; every other read answers -1.
+            sbyte answer = i == 3 ? result : (sbyte)-1;
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = answer, Length = 0, Data = Array.Empty<byte>() });
+            rig.Tick();
+            i++;
+        }
+
+        Assert.Null(rig.Engine.ConnectionFaceAlbumResult);       // the enroll read did not succeed
+        Assert.Contains(logs, l => l.Contains($"VisionComponent.LoadFaceAlbumFromRobot.{logName}"));
+        if (logName == "ReadFaceEnrollDataFail")
+            Assert.Contains(logs, l => l.Contains("ReadFaceEnrollDataFail") && l.Contains($"NVResult = {resultName}"));
+    }
+
+    /// <summary>
+    /// M3-034/3d (0x0051116C, ~VisionComponent 0x0065258E): the Robot's VisionComponent, and with it the
+    /// FaceAlbum/Enrollment bytes at VC+0x2F4/VC+0x300, is destroyed on removal, so
+    /// <c>CozmoEngine.ConnectionFaceAlbumResult</c> is cleared with the serial (ClearAcquiredSerialNumber,
+    /// called from RobotManager::RemoveRobot). A VisionSystem built after the reconnect does not adopt the old
+    /// album.
+    /// </summary>
+    [Fact]
+    public void M3_034_TheFaceAlbumResultIsClearedOnRemoval()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            byte[] data = i switch
+            {
+                2 => NonFactoryBlob(new byte[] { 0x11 }),   // #3 FaceAlbum 0x184000
+                3 => NonFactoryBlob(new byte[] { 0x22 }),   // #4 FaceEnrollment 0x183000
+                _ => Array.Empty<byte>(),
+            };
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+            rig.Tick();
+            i++;
+        }
+        Assert.NotNull(rig.Engine.ConnectionFaceAlbumResult);
+
+        rig.Disconnected();                                      // the live removal path
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.Null(rig.Engine.ConnectionFaceAlbumResult);
+
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var (album, enrollment) = vision.GetSerializedFaceData();
+        Assert.Empty(album);
+        Assert.Empty(enrollment);
     }
 
     /// <summary>
