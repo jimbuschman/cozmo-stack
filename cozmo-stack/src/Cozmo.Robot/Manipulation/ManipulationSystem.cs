@@ -51,11 +51,12 @@ public sealed class ManipulationSystem : IDisposable
         // fidelity: M4-009
         // CD10a/CD10b: the carried object (CarryingComponent+8) and the dock target (DockingComponent+0xC, C11.1)
         // are excluded from the Moved/Stopped broadcast.
-        robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId is { } id
+        // Cube.ObjectId is the radio slot (activeID); the carried object and the dock target are BlockWorld ObjectIDs (M11-013, M11-041), so the slot is translated to the connected object's ObjectID first.
+        robot.Cubes.ExcludeFromMovedBroadcast = c => c.ObjectId is { } slot && vision.World.ConnectedObjectIdForActiveId(slot) is { } id
             && (Docking.Carrying.IsCarrying(id) || Docking.DockTargetObjectId == id);
-        // LC3: the default-layer choice prefers the carried object over Visible and Connected.
+        // LC3: the default-layer choice prefers the carried object over Visible and Connected (the carried ObjectID is a world ID: its type is the connected object's).
         robot.Lights.Cubes.IsCarried = t => Docking.Carrying.CarriedObjectId is { } id
-            && robot.Cubes.ByObjectId(id)?.Type == t;
+            && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
     }
 
     /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>

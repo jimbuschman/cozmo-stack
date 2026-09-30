@@ -283,7 +283,7 @@ public sealed class DockingSystem : IDisposable
     public bool CanInteractWithObjectHelper(ObservableObject obj)
     {
         if (obj.Family is not (ObjectFamily.Block or ObjectFamily.LightCube)) return false;
-        if (!obj.IsRestingFlat(0.174533)) return false;
+        if (!obj.IsRestingFlat(BitConverter.Int32BitsToSingle(0x3E32B8C2))) return false;   // Radians(0x3E32B8C2), cited above
         if (Carrying.CarriedObjectId == obj.ObjectId) return false;
         var cubes = _vision.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type)).ToList();
         return BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, cubes, onTop: true, BlockConfigurationManager.RestingOnToleranceMm) is null;

@@ -964,9 +964,9 @@ public class M13RVisBuildTests
         var m = new MoveHeadToAngleAction(new FakeRobot(), 1.0f, 0.001f, 0f);
         Assert.Equal((0x12, 1), (MoveHeadToAngleAction.ActionType, MoveHeadToAngleAction.TracksToLock));
         Assert.Equal(0.7766715f, m.Angle0x78);
-        Assert.Equal(0.0349066f, m.Tolerance0x80);
+        Assert.Equal(BitConverter.Int32BitsToSingle(0x3D0EFA35), m.Tolerance0x80);      // the literal at 0x00548338
         Assert.Equal((15.0f, 20.0f, true, false), (m.Speed0x90, m.Accel0x94, m.Byte0x9C, m.Byte0x9D));
-        Assert.Equal(-0.4363323f, new MoveHeadToAngleAction(new FakeRobot(), -1.0f, 0.1f, 0f).Angle0x78);
+        Assert.Equal(BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3)), new MoveHeadToAngleAction(new FakeRobot(), -1.0f, 0.1f, 0f).Angle0x78);   // the engine's -0.4363323 literal
         var ok = new MoveHeadToAngleAction(new FakeRobot(), 0.3f, 0.1f, 0f);
         Assert.Equal((0.3f, 0.1f), (ok.Angle0x78, ok.Tolerance0x80));
         // a variability above 0 draws the engine's RNG, which is unread: it is refused unless one is supplied

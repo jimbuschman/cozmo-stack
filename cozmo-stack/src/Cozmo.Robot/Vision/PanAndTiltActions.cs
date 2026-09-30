@@ -55,14 +55,14 @@ public class PanAndTiltAction
     // +0x158 = [+0x138] = 15.0 and +0x15C = [+0x13C] = 20.0; +0x160 = +0x161 = 0. The setters SetMaxPanSpeed 0x005498A0,
     // SetPanAccel 0x005499AC, SetMaxTiltSpeed 0x00549AE8 and SetTiltAccel 0x00549B0C are not built (the limit SetMaxPanSpeed warns
     // above is not in the inventory); a caller sets the fields and the +0x160/+0x161 flags itself.
-    public const float DefaultToleranceRad = 0.087266460f;    // 0x3DB2B8C2
+    public static readonly float DefaultToleranceRad = BitConverter.Int32BitsToSingle(0x3DB2B8C2);    // 0x3DB2B8C2
     public double PanAngleRad { get; set; }                   // +0x114
     public double HeadAngleRad { get; set; }                  // +0x11C
     public bool PanIsAbsolute { get; init; }                  // +0x124
     public bool HeadIsAbsolute { get; init; }                 // +0x125
     public bool Byte0x126 { get; init; } = true;              // +0x126, copied to tia+0xD8 and mh+0x9C; the constructor's only store (0x005496B2)
     public double PanToleranceRad { get; init; } = DefaultToleranceRad;   // +0x140
-    public double MaxSpeedRadPerSec { get; init; } = 5.2359877f;          // +0x148
+    public double MaxSpeedRadPerSec { get; init; } = BitConverter.Int32BitsToSingle(0x40A78D36);          // +0x148
     public double MaxAccelRadPerSec2 { get; init; } = 10.0;               // +0x14C
     public double HeadToleranceRad { get; init; } = DefaultToleranceRad;  // +0x150
     public uint HeadSpeedAccelWord0 { get; init; } = 0x41700000;          // +0x158..0x15B (15.0f)
@@ -144,8 +144,8 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
 {
     /// <summary>BAD_POSE, the ActionResult Init returns for an unset or unreachable pose.</summary>
     public const uint BadPose = 0x03000005;
-    public const float HeadMinRad = -0.4363323f;          // 0xBEDF66F3
-    public const float HeadMaxRad = 0.7766715f;           // 0x3F46D3F2
+    public static readonly float HeadMinRad = BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));          // 0xBEDF66F3
+    public static readonly float HeadMaxRad = BitConverter.Int32BitsToSingle(0x3F46D3F2);           // 0x3F46D3F2
     public const float SeePoseToleranceRad = 0.01f;       // 0x3C23D70A
 
     public TurnTowardsPoseCompound(double maxTurnRad)
@@ -266,11 +266,11 @@ public sealed class TurnInPlaceAction
 {
     public const int ActionType = 0x28;
     public const int TracksToLock = 4;
-    public const float DefaultMaxSpeed = 5.2359877f;     // +0x78, 0x40A78D36
+    public static readonly float DefaultMaxSpeed = BitConverter.Int32BitsToSingle(0x40A78D36);     // +0x78, 0x40A78D36
     public const float DefaultAccel = 10.0f;             // +0x7C, 0x41200000
     public const float MaxRevolutions = 25.0f;           // +0x80, 0x41C80000
-    public const float MinToleranceRad = 0.034906585f;   // 0x3D0EFA35 (2 degrees)
-    public const float TwoPi = 6.2831855f;               // 0x40C90FDB
+    public static readonly float MinToleranceRad = BitConverter.Int32BitsToSingle(0x3D0EFA35);   // 0x3D0EFA35 (2 degrees)
+    public static readonly float TwoPi = BitConverter.Int32BitsToSingle(0x40C90FDB);               // 0x40C90FDB
     public const int MotorActionAckTag = 0xC4;
 
     private readonly IPanTiltRobot _robot;
@@ -433,9 +433,9 @@ public sealed class MoveHeadToAngleAction
 {
     public const int ActionType = 0x12;
     public const int TracksToLock = 1;
-    public const float MinAngleRad = -0.4363323f;         // 0xBEDF66F3
-    public const float MaxAngleRad = 0.7766715f;          // 0x3F46D3F2
-    public const float MinToleranceRad = 0.0349066f;      // 2 degrees (literal 0x3D0EFA35 at 0x00548338)
+    public static readonly float MinAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));         // 0xBEDF66F3
+    public static readonly float MaxAngleRad = BitConverter.Int32BitsToSingle(0x3F46D3F2);          // 0x3F46D3F2
+    public static readonly float MinToleranceRad = BitConverter.Int32BitsToSingle(0x3D0EFA35);      // 2 degrees (literal 0x3D0EFA35 at 0x00548338)
     public const int MotorActionAckTag = 0xC4;
 
     private readonly IPanTiltRobot _robot;

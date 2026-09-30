@@ -332,8 +332,8 @@ public sealed class Quadrilateral
     public Point2f this[int i] => _p[i];
 
     /// <summary>The two barycentric bounds <c>IsPointWithinTriangleHelper</c> compares with: 0xB4000000 and 0x3F800001 (0x004E0480, 0x004E0484).</summary>
-    public const float BaryLower = -1.1920929e-07f;
-    public const float BaryUpper = 1.0000001f;
+    public static readonly float BaryLower = BitConverter.Int32BitsToSingle(unchecked((int)0xB4000000));
+    public static readonly float BaryUpper = BitConverter.Int32BitsToSingle(0x3F800001);
 
     /// <summary><c>Contains</c>: the triangles (P0,P1,P3) and (P0,P2,P3), each barycentric coordinate strictly inside the widened bounds (0x004DF764..0x004DF7BC).</summary>
     public bool Contains(Point2f pt) => InTriangle(pt, _p[0], _p[1], _p[3]) || InTriangle(pt, _p[0], _p[2], _p[3]);

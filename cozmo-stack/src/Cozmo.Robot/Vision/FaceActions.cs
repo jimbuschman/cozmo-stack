@@ -187,7 +187,7 @@ public class TurnTowardsFaceAction : IDisposable
     }
 
     /// <summary>The fine tune's maximum turn is <c>min(|maxTurn|, 0.7853982)</c>: 0x3F490FDB at 0x0054C4E4.</summary>
-    public const double FineTuneMaxTurnRad = 0.7853982f;
+    public static readonly double FineTuneMaxTurnRad = BitConverter.Int32BitsToSingle(0x3F490FDB);
     // fidelity: M14-002
     /// <summary>
     /// How many frames the action will wait for the face to be seen: 10.
@@ -437,7 +437,7 @@ public class TurnTowardsFaceAction : IDisposable
         Note($"TurnTowardsFaceAction.CreateFinalAction.SawFace: Observed ID={id}. Will fine tune.");
         _needs.Add(NeedsActionSeeFace);                                                  // RegisterNeedsActionCompleted(SeeFace 0x2E)
         EmotionEvent?.Invoke("LookAtFaceVerified");
-        float maxTurn = Math.Min(MathF.Abs((float)MaxTurnAngleRad), 0.7853982f);         // Radians(min([+0x170], 0.7853982))
+        float maxTurn = Math.Min(MathF.Abs((float)MaxTurnAngleRad), (float)FineTuneMaxTurnRad);         // Radians(min([+0x170], 0.7853982))
         _child = new TurnTowardsPoseAction(_v, face.HeadPose, maxTurn);
     }
 

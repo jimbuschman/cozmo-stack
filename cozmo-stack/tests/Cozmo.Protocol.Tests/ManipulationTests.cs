@@ -364,15 +364,16 @@ public class ManipulationTests
 
         int moved = 0;
         rig.Robot.Cubes.CubeMoved += _ => moved++;
-        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = obj.ObjectId });
+        uint slot = rig.ActiveIdOf(obj.ObjectId);                      // the message names the cube by its radio slot; the dock target is a world ObjectID
+        rig.Send(new ObjectMoved { Timestamp = rig.T, ObjectID = slot });
         Assert.Equal(0, moved);                                        // D4: the dock target is excluded
 
         rig.M.Docking.Abort();
         Assert.Equal(obj.ObjectId, rig.M.Docking.DockTargetObjectId);  // D3: AbortDocking does not reset it
-        rig.Send(new ObjectMoved { Timestamp = rig.T + 1, ObjectID = obj.ObjectId });
+        rig.Send(new ObjectMoved { Timestamp = rig.T + 1, ObjectID = slot });
         Assert.Equal(0, moved);                                        // still excluded
 
-        rig.Send(new ObjectMoved { Timestamp = rig.T + 2, ObjectID = 8 });
+        rig.Send(new ObjectMoved { Timestamp = rig.T + 2, ObjectID = rig.ActiveIdOf(8) });   // cube 2 (world ID 8, slot 2)
         Assert.Equal(1, moved);                                        // another cube still broadcasts
     }
 

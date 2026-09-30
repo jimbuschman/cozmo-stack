@@ -492,7 +492,9 @@ public sealed class BlockWorld
     /// instance is active (row 1.6, 0x00625578).
     /// </summary>
     // fidelity: M11-013
-    public const double CreationFlatClampAngleRad = 5.0 * 0.0174533;
+    // NOT SOURCED as a bit pattern: the decimal 0.0174533 as the C# has always evaluated it (double 0x3F91DF4722D4405F); the record cites no literal address for it here.
+    private static readonly double DegToRadDecimal = BitConverter.Int64BitsToDouble(0x3F91DF4722D4405FL);
+    public static readonly double CreationFlatClampAngleRad = 5.0 * DegToRadDecimal;
 
     /// <summary>
     /// M11-004 / C3.3: the object-match translation factor, 0.8 (thunk 0x4E025C, literal 0x3F4CCCCD at
@@ -1596,7 +1598,7 @@ public sealed class BlockWorld
             Log?.Invoke($"ActiveObject.CanBeUsedForLocalization: object {o.ObjectId} is moving");
             return false;
         }
-        return o.ActiveId >= 0 && o.FromDistance >= 0 && o.IsRestingFlat(5.0 * 0.0174533);
+        return o.ActiveId >= 0 && o.FromDistance >= 0 && o.IsRestingFlat(5.0 * DegToRadDecimal);
     }
 
     /// <summary>
@@ -2499,7 +2501,7 @@ internal sealed class PotentialObjectsForLocalizingTo
     public IReadOnlyDictionary<uint, Pair> Pairs => _map;
 
     private static readonly Vec3 SameRobotTolerance = new(1, 1, 1);
-    private const double SameRobotAngle = 0.0174533;         // 0x3C8EFA35
+    private static readonly double SameRobotAngle = BitConverter.Int32BitsToSingle(0x3C8EFA35);         // the engine's float literal, widened
 
     /// <summary>
     /// <c>Insert(observed, matched, dist, flag)</c>; returns 1 when the pair was stored, kept against or replaced another, and 0 otherwise.
