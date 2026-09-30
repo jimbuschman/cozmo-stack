@@ -337,25 +337,34 @@ public sealed class VisionSystem : IDisposable
     /// <summary>Raises the system's log line (used by the face actions' failure paths).</summary>
     internal void LogLine(string line) => Log?.Invoke(line);
 
+    // fidelity: M3-022, M3-033
     /// <summary>
-    /// Reads the calibration from the robot through the shared NV queue (the engine's connection-time
-    /// <c>NVStorageComponent::Read</c>). The camera calibration is a factory entry, so the component computes the
-    /// request length from the tag (M3-027; <see cref="CameraSettings.CalibrationReadLength"/> = 1) and the reply's
-    /// index-0 blob is the 56-byte struct.
+    /// Waits for the connection-time NV calibration read the engine queues once (M3-022, 0x006583FA inside
+    /// <c>SendConnectionResponse</c> 0x006583E2..0x0065842C), and returns the calibration the callback installed
+    /// (0x0065AB68), or null when <paramref name="timeout"/> elapses first. The read is queued before
+    /// <c>CozmoRobot.ConnectAsync</c> returns and completes only after Gate A (M3-026), so a caller that builds
+    /// this system after ConnectAsync subscribes here; the constructor's catch-up at line 96 covers a read that
+    /// already completed. There is no second 0x80000001 read: the engine reads it once.
     /// </summary>
-    public async Task<CameraCalibration?> ReadCalibrationAsync(TimeSpan? timeout = null)
+    public async Task<CameraCalibration?> WaitForConnectionCalibrationAsync(TimeSpan timeout)
     {
-        var nv = _robot.Engine.NvStorage;
-        if (nv is null) return null;
-        var r = await nv.ReadAsync(CameraCalibration.NvEntryTag, timeout).ConfigureAwait(false);
-        foreach (var l in nv.Log) Log?.Invoke(l);
-        if (r.Result != 0 || r.Data.Length != CameraSettings.CalibrationBytes) return null;
-        var cal = CameraCalibration.Unpack(r.Data);
-        // The connection-time callback's rule (1j): a body hardware version <= 6 zeroes the distortion.
-        if (_robot.CameraSettings.BodyHwVersion <= 6) cal = cal with { DistortionCoefficients = new double[8] };
-        // fidelity: M11-039 — the install path is UpdateCameraCalibration (0x006B1E3E), not a bare set.
-        UpdateCameraCalibration(cal);
-        return cal;
+        // The constructor's catch-up sets Calibration but does not run the install (MarkerDetector::Init); the
+        // removed direct read did, so do it here for a read that completed before this system was built.
+        if (Calibration is { } already) { UpdateCameraCalibration(already); return already; }
+        var tcs = new TaskCompletionSource<CameraCalibration>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnInstalled(CameraCalibration c) => tcs.TrySetResult(c);
+        // Subscribe before the second check so a completion between the two is not missed.
+        _robot.CameraSettings.CalibrationInstalled += OnInstalled;
+        try
+        {
+            if (Calibration is { } now) return now;
+            var done = await Task.WhenAny(tcs.Task, Task.Delay(timeout)).ConfigureAwait(false);
+            return done == tcs.Task ? await tcs.Task.ConfigureAwait(false) : null;
+        }
+        finally
+        {
+            _robot.CameraSettings.CalibrationInstalled -= OnInstalled;
+        }
     }
 
     /// <summary>The camera at the latest known robot state, for visibility questions asked now.</summary>

@@ -1392,6 +1392,12 @@ internal sealed class RobotInitialConnection
         // has no component in this stack, so the read queues and completes with a no-op sink. It precedes the
         // Needs read (0x52E3B2), which the NeedsManager queues on the serial edge below.
         _engine.NvStorage?.Read(0x196000, _ => { });
+        // fidelity: M15-014, M3-033
+        // C2 row 10 / 0x0052E3B2 -> 0x006943F8: the Needs read 0x194000 follows the lab read. In the engine the
+        // NeedsManager owns it (StartReadFromRobot 0x006944B4), but this stack builds the NeedsManager after the
+        // handshake, so the engine queues it here and buffers the terminal NvResult for whichever NeedsManager
+        // adopts it (the FaceAlbum pattern); a NeedsManager attached later reads ConnectionNeedsResult.
+        _engine.QueueConnectionNeedsRead();
         // fidelity: M15-014
         // C2 row 6: after the response the callback calls ReadLabAssignmentsFromRobot(serial) and then
         // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The needs edge is raised after the
@@ -1593,6 +1599,44 @@ public sealed class CozmoEngine : IDisposable
         if (ConnectionFaceAlbumLoaded is not { } handler) return;
         foreach (var t in handler.GetInvocationList()) Isolated(() => ((Action<byte[], byte[]>)t)(album, enrollment));
     }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The connection-time Needs read's completion (0x194000). The engine queues it from the mfgId handler
+    /// (because this stack builds the NeedsManager after the handshake) and keeps the terminal result for a
+    /// NeedsManager attached later; the event carries the result to one attached already. Mirrors
+    /// <see cref="ConnectionFaceAlbumLoaded"/> / <see cref="ConnectionFaceAlbumResult"/>.
+    /// </summary>
+    internal event Action<NvResult>? ConnectionNeedsRead;
+    /// <summary>The terminal Needs read result once it completed, or null; a later subscriber adopts it.</summary>
+    internal NvResult? ConnectionNeedsResult { get; private set; }
+    /// <summary>Whether the mfgId handler queued the connection Needs read; a NeedsManager adopts that read instead of queueing its own.</summary>
+    internal bool ConnectionNeedsReadQueued { get; private set; }
+    /// <summary>Bumped by every completion, so an adopter processes each read once.</summary>
+    internal int ConnectionNeedsGeneration { get; private set; }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// Queues the connection Needs read 0x194000 on the shared NV component and records that the engine owns it.
+    /// Called from the mfgId handler after the lab read (0x0052E3B2), exactly once per mfgId.
+    /// </summary>
+    internal void QueueConnectionNeedsRead()
+    {
+        if (NvStorage is not { } nv) return;
+        nv.Read(0x194000, r => RaiseConnectionNeedsRead(r));
+        ConnectionNeedsReadQueued = true;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>M3-034: raises <see cref="ConnectionNeedsRead"/> and keeps the result for a later subscriber.</summary>
+    internal void RaiseConnectionNeedsRead(NvResult r)
+    {
+        ConnectionNeedsResult = r;
+        ConnectionNeedsGeneration++;
+        if (ConnectionNeedsRead is not { } handler) return;
+        foreach (var t in handler.GetInvocationList()) Isolated(() => ((Action<NvResult>)t)(r));
+    }
+
     /// <summary>The robot-level NV storage owner (NVStorageComponent), set by CozmoRobot; one queue serves every read.</summary>
     internal NvStorageComponent? NvStorage { get; set; }
     /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>
@@ -1915,9 +1959,16 @@ public sealed class CozmoEngine : IDisposable
     // fidelity: M15-014
     /// <summary>
     /// M15-014: end the serial edge on a robot removal, so a stack created after a reconnect does not catch up
-    /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again.
+    /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again. The
+    /// connection Needs read and its buffered result belong to the removed robot too, so they are cleared with
+    /// the serial (the engine destroys the Robot and its components on removal).
     /// </summary>
-    internal void ClearAcquiredSerialNumber() => AcquiredSerialNumber = null;
+    internal void ClearAcquiredSerialNumber()
+    {
+        AcquiredSerialNumber = null;
+        ConnectionNeedsResult = null;
+        ConnectionNeedsReadQueued = false;
+    }
 
     internal void QueueGoToSleep()
     {

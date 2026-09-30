@@ -142,13 +142,16 @@ public sealed class FreeplayStack : IDisposable
         stack._unsubscribe.Add(() => robot.Engine.ConnectToRobotHandled -= onConnect);
         if (robot.Engine.Robot is not null) onConnect();
 
-        // fidelity: M15-014
+        // fidelity: M15-014, M3-033
         // C2 rows 5-9: the mfgId tag-0xED callback calls ConnectRobotToNeedsManager(mfgId word 0), whose
-        // wrapper chain ends at NeedsManager::InitAfterSerialNumberAcquired. The engine owns the handshake,
-        // so it exposes the serial-acquired edge and this stack, which owns the NeedsManager, subscribes.
-        // FreeplayTool.OnRobot connects before it creates the stack, so a serial that is already known is
-        // replayed here at creation. The RIC's tag-0xED subscription is persistent and the engine clears its
-        // recorded serial on removal, so every mfgId (including a reconnect) runs the edge again.
+        // wrapper chain ends at NeedsManager::InitAfterSerialNumberAcquired. The engine owns the handshake and
+        // queues the Needs read 0x194000 from that handler; this stack, which owns the NeedsManager, attaches to
+        // that read so InitAfterSerialNumberAcquired adopts it instead of queueing a second one. FreeplayTool.OnRobot
+        // connects before it creates the stack, so a serial that is already known is replayed here at creation.
+        // The RIC's tag-0xED subscription is persistent and the engine clears its recorded serial on removal, so
+        // every mfgId (including a reconnect) runs the edge again.
+        needs.AttachConnectionRead(robot.Engine);
+        stack._unsubscribe.Add(needs.DetachConnectionRead);
         void onSerial(uint serial) => needs.InitAfterSerialNumberAcquired(serial);
         robot.Engine.SerialNumberAcquired += onSerial;
         stack._unsubscribe.Add(() => robot.Engine.SerialNumberAcquired -= onSerial);

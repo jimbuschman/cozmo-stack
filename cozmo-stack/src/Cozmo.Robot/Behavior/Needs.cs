@@ -1009,7 +1009,66 @@ public sealed class NeedsManager
             _robotRewriteNeeded = false;       // +0x1ca
         }
         // The NV read (and the immediate fallback) run outside _gate.
+        // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
+        // because this stack builds the NeedsManager after the handshake); adopt its buffered/streamed result
+        // rather than queueing a second read. When the engine has no such read (the offline seam, or a
+        // NeedsManager used directly), StartReadFromRobot still queues one.
+        if (_connectionEngine is { ConnectionNeedsReadQueued: true } engine)
+        {
+            if (engine.ConnectionNeedsResult is { } buffered) OnConnectionNeedsRead(buffered);
+            return;
+        }
         if (StartReadFromRobot() == 0) InitAfterReadFromRobotAttempt();
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The engine's connection Needs read source, set by <see cref="AttachConnectionRead"/>; null for a
+    /// NeedsManager driven directly (the M15 tests). While it is set and the engine has queued the read,
+    /// <see cref="InitAfterSerialNumberAcquired"/> adopts that read instead of queueing its own.
+    /// </summary>
+    private CozmoEngine? _connectionEngine;
+    private Action<NvResult>? _connectionReadHandler;
+    /// <summary>The engine read generation last applied, so a buffered result and the completion event do not both apply.</summary>
+    private int _adoptedConnectionGeneration;
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// Attaches this manager to the engine-owned connection Needs read (M15-014/M3-033). The engine queues
+    /// 0x194000 from its mfgId handler; the completion event delivers the terminal result here, and a result
+    /// that already completed is adopted from <c>ConnectionNeedsResult</c>. Mirrors the FaceAlbum adoption
+    /// (VisionSystem's <c>ConnectionFaceAlbumLoaded</c>/<c>ConnectionFaceAlbumResult</c>).
+    /// </summary>
+    public void AttachConnectionRead(CozmoEngine engine)
+    {
+        _connectionEngine = engine;
+        _connectionReadHandler = OnConnectionNeedsRead;
+        engine.ConnectionNeedsRead += _connectionReadHandler;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>Unsubscribes <see cref="AttachConnectionRead"/>'s handler (the engine lives on across a stack removal).</summary>
+    public void DetachConnectionRead()
+    {
+        if (_connectionEngine is { } engine && _connectionReadHandler is { } handler)
+            engine.ConnectionNeedsRead -= handler;
+        _connectionEngine = null;
+        _connectionReadHandler = null;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The engine's connection Needs read completion. It carries the same terminal result the manager's own
+    /// <see cref="StartReadFromRobot"/> callback would (OnRobotRead semantics: FinishReadFromRobot, then
+    /// InitAfterReadFromRobotAttempt always); the generation guard applies each engine read once.
+    /// </summary>
+    private void OnConnectionNeedsRead(NvResult r)
+    {
+        if (_connectionEngine is not { } engine) return;
+        int generation = engine.ConnectionNeedsGeneration;
+        if (generation == _adoptedConnectionGeneration) return;
+        _adoptedConnectionGeneration = generation;
+        OnRobotRead(r);
     }
 
     /// <summary>C2 row 10: the NV key <c>StartReadFromRobot</c> queues (the robot's needs item).</summary>

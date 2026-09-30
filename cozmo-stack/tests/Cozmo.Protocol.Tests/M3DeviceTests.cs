@@ -1915,6 +1915,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
         {
@@ -1935,7 +1936,7 @@ public class M3DeviceTests
             Assert.Equal(ConnectionReadOrder, tags);
             Assert.True(rig.Engine.Robot!.ReadyToStream);
         }
-        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }
 
     /// <summary>
@@ -1951,6 +1952,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
         {
@@ -1988,7 +1990,7 @@ public class M3DeviceTests
             Assert.True(needs.RobotReadSucceeded);
             Assert.True(needs.HasRobotCopy);
         }
-        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }
 
     /// <summary>
@@ -2051,6 +2053,137 @@ public class M3DeviceTests
         var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
         Assert.Equal(album, gotAlbum);
         Assert.Equal(enrollment, gotEnrollment);
+    }
+
+    /// <summary>
+    /// M3-033/M15-014: the engine queues the Needs read 0x194000 from its mfgId handler, exactly once, and
+    /// buffers the terminal result. The tag is also one of the eight RDBM backup reads (0x194000), so the
+    /// connection queue legitimately carries it twice: the backup read and the Needs read. A NeedsManager
+    /// attached after the read completed adopts the buffered Needs result through its OnRobotRead path
+    /// (FinishReadFromRobot then the resolver), and attaching does not queue a further read.
+    /// </summary>
+    [Fact]
+    public void M3_033_TheEngineQueuesOneNeedsReadAndALateNeedsManagerAdoptsTheBufferedResult()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        int needsReads = 0;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            bool isNeeds = cmd.Tag == Cozmo.Robot.Behavior.NeedsManager.NeedsNvKey;
+            if (isNeeds) needsReads++;
+            byte[] data = isNeeds ? NeedsV5() : Array.Empty<byte>();
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+            rig.Tick();
+            i++;
+        }
+        // #9 the RDBM backup read and #15 the mfgId Needs read share the tag; no third read exists.
+        Assert.Equal(2, needsReads);
+        Assert.NotNull(rig.Engine.ConnectionNeedsResult);       // buffered with no NeedsManager attached
+
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            // the serial edge replays the already-known serial; the manager adopts the buffered read
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0xABCD);
+            Assert.Equal(0xABCDu, needs.SerialNumber);
+            Assert.True(needs.RobotReadSucceeded);
+            Assert.True(needs.HasRobotCopy);
+
+            // the adoption did not queue a further read (or write) of the tag
+            Assert.Equal(2, NvCommands(rig).Count(c => c.Tag == Cozmo.Robot.Behavior.NeedsManager.NeedsNvKey));
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
+    }
+
+    /// <summary>
+    /// M3-033/M15-014: the engine Needs read's terminal result reaches the NeedsManager's OnRobotRead semantics even
+    /// when it is a failure. A missing item (-1) makes FinishReadFromRobot return false (RobotReadSucceeded false)
+    /// and the resolver still runs (InitAfterReadFromRobotAttempt always does; the read is no longer outstanding).
+    /// </summary>
+    [Fact]
+    public void M3_033_ANegativeNeedsReadStillResolvesThroughTheEnginePath()
+    {
+        using var rig = new Rig();
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            rig.ToSuccess();
+            SendFirstFullState(rig);
+            var nv = rig.Robot.Engine.NvStorage!;
+            int i = 0;
+            while (!nv.IsIdle && i < 100)
+            {
+                var cmd = NvCommands(rig)[^1];
+                // every read, the Needs read included, reports a missing item (-1)
+                rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+                rig.Tick();
+                i++;
+            }
+            Assert.False(needs.RobotReadSucceeded);
+            Assert.False(needs.AwaitingRobotData);          // the callback cleared +0x3d0 and the resolver ran
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
+    }
+
+    /// <summary>
+    /// M3-022/M3-033: the wait helper returns the calibration the engine's single connection read installed
+    /// (0x006583FA queues it; the 0x0065AB68 callback installs it), driven through Camera.OnRobotConnected.
+    /// </summary>
+    [Fact]
+    public async Task M3_022_TheConnectionCalibrationWaitReturnsTheEngineRead()
+    {
+        using var rig = new Rig();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        rig.ToSuccess();
+        var wait = vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(1));
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        var cal = await wait;
+        Assert.NotNull(cal);
+        Assert.Same(rig.Robot.CameraSettings.Calibration, cal);
+    }
+
+    /// <summary>M3-022: a connection calibration read that never completes makes the wait return null (the removed read's contract).</summary>
+    [Fact]
+    public async Task M3_022_TheConnectionCalibrationWaitReturnsNullWhenTheReadNeverCompletes()
+    {
+        using var rig = new Rig();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromMilliseconds(50));
+        Assert.Null(cal);
+    }
+
+    /// <summary>
+    /// M3-022/1j: the callback logs "…Recvd" with the received distortion (0x0065ACE8) before the body
+    /// hardware version's &lt;= 6 check logs "IgnoringDistCoeffs" and zeroes the coefficients (0x0065AD5A..0x0065AD9C).
+    /// </summary>
+    [Fact]
+    public void M3_022_1j_TheRecvdLogCarriesTheReceivedDistortionBeforeIgnoring()
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Robot.CameraSettings.Log += logs.Add;
+        rig.ToSuccess(bodyHw: 4);
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        int recvd = logs.FindIndex(l => l.Contains("ReadCameraCalibration.Recvd"));
+        int ignoring = logs.FindIndex(l => l.Contains("IgnoringDistCoeffs"));
+        Assert.True(recvd >= 0, "no Recvd line");
+        Assert.True(ignoring >= 0, "no IgnoringDistCoeffs line");
+        Assert.True(recvd < ignoring, $"Recvd ({recvd}) must precede IgnoringDistCoeffs ({ignoring})");
+        Assert.Contains("0.01", logs[recvd]);                   // the received distortion, before the <=6 zeroing
     }
 
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()

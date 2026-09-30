@@ -975,10 +975,11 @@ public sealed class CameraSettings
     // fidelity: M3-022
     /// <summary>
     /// The NV callback (1j; 0x0065AB68): NVResult ≠ 0 logs "ReadCameraCalibration.Failed"; a size other than
-    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks, zeroes the distortion coefficients
-    /// when the body hardware version (robot+0x24, mfgId word 1) ≤ 6 ("IgnoringDistCoeffs"), logs "…Recvd" and
-    /// installs the calibration (SetCameraCalibration, which starts processing). All three paths then set vision
-    /// enabled (+0x48 = 1, 0x0065AE7E/0x0065AE80).
+    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks and logs "…Recvd" with the received
+    /// values (0x0065ACE8), then, when the body hardware version (robot+0x24, mfgId word 1) ≤ 6, logs
+    /// "IgnoringDistCoeffs" (0x0065AD5A..0x0065AD9C) and zeroes the distortion coefficients, and installs the
+    /// calibration (SetCameraCalibration, which starts processing). All three paths then set vision enabled
+    /// (+0x48 = 1, 0x0065AE7E/0x0065AE80).
     /// </summary>
     private void OnCalibrationRead(NvResult r)
     {
@@ -991,12 +992,13 @@ public sealed class CameraSettings
             else
             {
                 installed = Vision.CameraCalibration.Unpack(r.Data);
+                // 0x0065ACE8 logs the received struct before the <=6 check zeroes the distortion.
+                Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
                 if (_bodyHwVersion <= 6)
                 {
                     Emit($"info: VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs: body hardware version {_bodyHwVersion} <= 6");
                     installed = installed with { DistortionCoefficients = new double[8] };
                 }
-                Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
                 Calibration = installed;
             }
             VisionEnabled = true;

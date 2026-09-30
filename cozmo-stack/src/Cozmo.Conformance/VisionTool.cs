@@ -134,7 +134,7 @@ public static class VisionTool
         vision.World.Log += l => Say("  world: " + l);
 
         // 1. the calibration, as the engine reads it on connection
-        var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         Say(cal is null ? "camera calibration: NOT READ from NV storage (see vision log above)" : $"camera calibration from robot: {cal}");
         if (cal is null && nominal) { vision.Calibration = CameraCalibration.Nominal(); Say($"using the nominal stand-in: {vision.Calibration} (LOCAL_POLICY; poses will be approximate)"); }
         if (vision.Calibration is null) { Say("no calibration: markers will still be listed, but no object can be localised"); }
