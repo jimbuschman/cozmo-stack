@@ -107,3 +107,20 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   M3-013 (the audio-animation readiness is the M6 stand-in) and M3-032 (the NV dispatch gate). The M4 remainder
   (M4-009/017/018/019) is M11/M12/M7-dependent. Pre-extraction rows: Part 1 items 2 and 3 (M3-001/M3-018), item 4
   (M3-021); Part 2 items 5..10 (M4); re-analysis/research/20260929-R-DEV-pre-extraction.md.
+- 2026-09-30 **Batch 6 (M3-001, M3-018) done and pushed: 23c65ac.** The image-decode dispatch for every encoding value.
+  M3-001 (gray `DecodeImageHelper<Image>` 0x004F287C, tbh 0x004F2898): 1 copies `rows*cols` with no length check, 2
+  converts with cvtColor code 7 `(4899R + 9617G + 1868B + 8192) >> 14` (coefficients 0xE2AB0), 5/6 imdecode(gray), 7
+  plus the 160-column border, 8 the reconstructed gray JPEG, 9 the half-width colour JPEG to gray then INTER_LINEAR,
+  and 0/3/4/10..255 the `EncodedImage.DecodeImageRGB.UnsupportedEncoding` default (the literal says RGB even in the gray
+  helper; the gray tail's BadDecode string is the RGB one too, 0x004F2CF6 -> 0xBE497F). M3-018 (RGB
+  `DecodeImageHelper<ImageRGB>` 0x004F2184, tbh 0x004F21AE): 1 replicates gray to BGR, 2 a straight copy, 5/6/7/8/9
+  imdecode + BGR2RGB, 7 borders, 9 resizes, 0/3/4/10..255 the default; `IsColor(0)` logs
+  `EncodedImage.IsColor.UnsupportedImageEncoding` with `EnumToString(0) = "NoneImageEncoding"` (pointer table
+  0x01034A60) and returns false. New forced policy **M3-037** (SD2): a short raw payload's undefined heap read is
+  zero-filled, a long one truncated. Contradicted record text fixed: case 1 is not a length check, and the
+  out-of-table encodings share the 3/4 error path. Verifier: first pass FAIL on two diagnostic strings (gray BadDecode
+  event name, EnumToString(0)); both fixed and re-verified PASS. Full suite 2144/2144 (0 skipped). M3-001/M3-018 stay
+  IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification"; the residual is the JPEG entropy decode
+  (StbImageSharp in place of OpenCV's libjpeg 9, Part 1 item 3, needs the emulator oracle).
+- Next: M3-021 (vision_config load, IsInitialized, initial exposure), M3-032 (the NV dispatch gate), then the libjpeg 9
+  grey path if the emulator oracle is built.
