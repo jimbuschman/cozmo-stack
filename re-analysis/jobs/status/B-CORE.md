@@ -1,7 +1,8 @@
+DONE opencode (cozmo-manager) 2026-09-30
+
 # B-CORE status
 
 CLAIMED opencode (cozmo-manager) 2026-09-29 13:05
-DONE opencode (cozmo-manager) 2026-09-30
 
 ## Scope
 
