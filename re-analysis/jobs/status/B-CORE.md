@@ -91,3 +91,19 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   behaviour change (one comment). Verifier PASS. Suite 2125/2125.
 - Next: R-DEV's own M3/M1/M2 remainder, including the libjpeg 9 grey path (M3-001) if time allows (needs the emulator
   oracle in re-analysis/tools/emu/).
+- 2026-09-30 **Batch 5 (M3-010, M1-029, M2-002) done and pushed: bee7266.** M3-010: the segment table is the engine's
+  128 bytes ([0]=0,[1]=1,[2..3]=2,[4..7]=3,[8..15]=4,[16..31]=5,[32..63]=6,[64..127]=7), the scaling literal is
+  0x46FFFE00 (32767.0f) in single precision with the truncating cast, the lower clamp tests the original input, and
+  the NaN path now logs the engine's `sWarningF` on the live `AnimationScheduler.PopFrame` path. M1-029: the jsoncpp
+  reader now reproduces the default Features (comments accepted, trailing commas and numeric keys rejected, any root
+  type, depth 1000), the accessor sequence, and `asUInt` (null 0, bool 0/1, string/array/object and a negative or
+  > 4294967295.0 real throw `JsonLogicError`, a real in [0, 4294967295.0] truncates). M2-002: rows 12a..12k checked,
+  no consumer wrong; two tests pin 0x4 and 0x8/0x20. Verifier PASS after fixing one blocking finding (the asUInt real
+  bound was 2^32, must be strictly > 4294967295.0 per 0x008E8E38). Full suite 2134/2134 (0 skipped). Records
+  M3-010/M1-029/M2-002 remain IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
+- **Remaining R-DEV M3/M1/M2 scope:** M3-001 (the libjpeg 9 grey path and the raw/encoding cases; needs the emulator
+  oracle in re-analysis/tools/emu/), M3-018 (the RGB dispatch for encodings other than 9; IsColor of 0; the codec),
+  M3-021 (vision_config.json load failure, initial exposure 16, pending params in VisionSystem::Update, M11),
+  M3-013 (the audio-animation readiness is the M6 stand-in) and M3-032 (the NV dispatch gate). The M4 remainder
+  (M4-009/017/018/019) is M11/M12/M7-dependent. Pre-extraction rows: Part 1 items 2 and 3 (M3-001/M3-018), item 4
+  (M3-021); Part 2 items 5..10 (M4); re-analysis/research/20260929-R-DEV-pre-extraction.md.
