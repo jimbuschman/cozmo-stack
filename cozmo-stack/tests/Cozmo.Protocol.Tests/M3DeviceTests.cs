@@ -222,6 +222,43 @@ public class M3DeviceTests
         Assert.All(f.Skip(10), b => Assert.Equal(0x00, b));
     }
 
+    /// <summary>
+    /// M3-010 row 1i: the segment table at 0x00C5C3F0 is exactly 128 bytes, [0]=0, [1]=1, [2..3]=2, [4..7]=3,
+    /// [8..15]=4, [16..31]=5, [32..63]=6, [64..127]=7. The exponent is the byte's high nibble; each sample
+    /// below has mag = hi &lt;&lt; 8, so hi is the table index. Expected exponents are read from the binary.
+    /// </summary>
+    [Fact]
+    public void M3_010_1i_TheSegmentTableIsTheEngines128Values()
+    {
+        var expected = new (int Hi, int Exp)[]
+        {
+            (0, 0), (1, 1), (2, 2), (3, 2), (4, 3), (7, 3), (8, 4), (15, 4),
+            (16, 5), (31, 5), (32, 6), (63, 6), (64, 7), (127, 7),
+        };
+        foreach (var (hi, exp) in expected)
+        {
+            short sample = (short)(hi << 8);
+            int actual = AnkiMuLaw.Encode(sample) >> 4;
+            Assert.True(actual == exp, $"mag>>8 = {hi}: exponent {actual}, the table says {exp}");
+        }
+        // The table has no entry past index 127: mag <= 32767, so mag>>8 <= 127.
+        Assert.Equal(7, AnkiMuLaw.Encode(short.MaxValue) >> 4);
+    }
+
+    /// <summary>
+    /// M3-010 rows 1b/1d/1c: NaN returns 0 and logs the engine's sWarningF; the scaling literal is 0x46FFFE00
+    /// (32767.0f) and the product is taken in single precision.
+    /// </summary>
+    [Fact]
+    public void M3_010_1b_1d_TheNaNPathLogsAndTheLiteralIs32767_0f()
+    {
+        var log = new List<string>();
+        Assert.Equal(0, AnkiMuLaw.Encode(float.NaN, log.Add));
+        Assert.Contains("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN", log);
+        Assert.Equal(0x46FFFE00, BitConverter.SingleToInt32Bits(AnkiMuLaw.FullScale));
+        Assert.Equal(32767f, AnkiMuLaw.FullScale);
+    }
+
     /// <summary>C3: 22320 Hz and 744 samples per frame; 30 Hz is 22320 / 744.</summary>
     [Fact]
     public void M3_011_C3_22320HzAnd744Samples()

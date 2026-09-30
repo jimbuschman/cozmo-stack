@@ -1607,7 +1607,7 @@ public sealed class AnimationScheduler
             int ready = _s.AudioSource is { } src ? src.ReadySamples(pcm, _pos) : pcm.Length;
             if (Math.Max(0, ready - _pos) < want) return null;
             var samples = new byte[CozmoAudio.SamplesPerFrame];
-            for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_pos + i]);
+            for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_pos + i], _s.Log);
             _pos += want;
             if (_pos >= pcm.Length) { _pcm = null; _pos = 0; _eventId = null; }
             return samples;

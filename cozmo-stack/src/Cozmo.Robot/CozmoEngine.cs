@@ -552,9 +552,8 @@ internal sealed class MessageHandler
 /// thread, parse the JSON in the first 0x800 bytes up to the first NUL, and on success hand "version" and "time"
 /// to the RobotManager. A missing file, a file shorter than 0x800 bytes or a parse failure leave the values as
 /// they are (0/0).
-/// Host mapping: jsoncpp's Reader is stood in for by System.Text.Json reading one value.
-/// MISSING: jsoncpp's grammar (comments, trailing commas, other leniencies) is not in the rows; the reader here
-/// skips comments and allows trailing commas, which may accept or refuse different inputs from the original.
+/// Host mapping: jsoncpp's Reader is stood in for by <see cref="Json"/> (the default Features of row 11d:
+/// comments accepted, trailing commas and numeric keys rejected, any root type, depth over 1000 throws).
 /// </summary>
 public static class FirmwareHeader
 {
@@ -568,7 +567,8 @@ public static class FirmwareHeader
 
     /// <summary>
     /// G5.19/G5.20 on bytes already read: null when the data is shorter than 0x800 or does not parse; otherwise
-    /// the optional "version" and "time" values.
+    /// the optional "version" and "time" values. A <see cref="JsonLogicError"/> from a non-number value propagates
+    /// (row 11n/11q); the loader thread decides what to do with it (row 11o, RECOVERABLE_GAP).
     /// </summary>
     public static (uint? Version, uint? Time)? Parse(byte[] file)
     {
@@ -594,7 +594,15 @@ public static class FirmwareHeader
                 log($"error: FirmwareUpdater.LoadFirmwareFile: {path}: {e.Message}");
                 return;
             }
-            var h = Parse(file);
+            (uint? Version, uint? Time)? h;
+            try { h = Parse(file); }
+            catch (JsonLogicError e)
+            {
+                // The engine throws Json::LogicError out of ParseFirmwareHeader; where it is caught is not
+                // established (row 11o, RECOVERABLE_GAP). The loader thread logs and leaves the values 0/0 (G5.31).
+                log($"error: FirmwareUpdater.LoadHeaderData: {path}: {e.Message} (M1-029: the engine throws here; its capture is RECOVERABLE_GAP 11o)");
+                return;
+            }
             if (h is null) { log($"error: FirmwareUpdater.LoadHeaderData: {path}: no header (size {file.Length} or unparsable)"); return; }
             parsed(h.Value.Version, h.Value.Time);
         }) { IsBackground = true, Name = "cozmo-firmware-header" };
@@ -603,14 +611,29 @@ public static class FirmwareHeader
     }
 }
 
-/// <summary>Reading JSON the way the rows need it (G5.2, G5.5, G5.19).</summary>
+/// <summary>Reading JSON the way the rows need it (G5.2, G5.5, G5.19; M1-029 rows 11a..11r).</summary>
 internal static class Json
 {
+    // fidelity: M1-029
+    /// <summary>
+    /// The engine's default <c>Json::Features</c> (row 11d): allowComments = 1, strictRoot = 0,
+    /// allowDroppedNullPlaceholders = 0, allowNumericKeys = 0. System.Text.Json stands in for jsoncpp:
+    /// <c>//</c> and <c>/* */</c> comments are accepted (11e); a trailing comma in an object or array is an error
+    /// (11f/11g); a numeric object key is rejected (11h); any value type is accepted at the root and text after the
+    /// root is ignored (11i); depth over 1000 throws (11i).
+    /// </summary>
+    private static readonly JsonReaderOptions ReaderOptions = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = false,
+        MaxDepth = 1000,
+    };
+
     public static bool TryParseFirst(byte[] bytes, out JsonDocument doc)
     {
         try
         {
-            var reader = new Utf8JsonReader(bytes, new JsonReaderOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            var reader = new Utf8JsonReader(bytes, ReaderOptions);
             if (JsonDocument.TryParseValue(ref reader, out var d) && d is not null) { doc = d; return true; }
         }
         catch (JsonException) { }
@@ -618,12 +641,88 @@ internal static class Json
         return false;
     }
 
-    /// <summary>GetValueOptional&lt;uint&gt;: the value when the key holds an unsigned number, else nothing (G5.20).</summary>
+    // fidelity: M1-029
+    /// <summary>
+    /// The non-const <c>Value::operator[](char const*)</c> (row 11m): a Null or Object root resolves the key (a Null
+    /// root becomes an object, so a missing key is a null value); any other root type throws. A missing key resolves
+    /// to a null value, as jsoncpp's <c>nullSingleton</c> does.
+    /// </summary>
+    public static JsonElement Member(JsonElement root, string key)
+    {
+        if (root.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null) return default;
+        if (root.ValueKind != JsonValueKind.Object)
+            throw new JsonLogicError("in Json::Value::resolveReference(key, end): requires objectValue");
+        return root.TryGetProperty(key, out var v) ? v : default;
+    }
+
+    /// <summary>A null value, as jsoncpp's <c>nullSingleton</c> (row 11q).</summary>
+    public static bool IsNull(JsonElement v) => v.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null;
+
+    // fidelity: M1-029
+    /// <summary>
+    /// <c>Value::asString</c> (row 11p) for the "build" compare: null gives ""; a string gives the string; a bool
+    /// gives "true"/"false"; a number gives its text; an array or object throws.
+    /// </summary>
+    public static string AsString(JsonElement v) => v.ValueKind switch
+    {
+        JsonValueKind.Undefined or JsonValueKind.Null => "",
+        JsonValueKind.String => v.GetString() ?? "",
+        JsonValueKind.True => "true",
+        JsonValueKind.False => "false",
+        JsonValueKind.Number => v.GetRawText(),
+        _ => throw new JsonLogicError("Value is not convertible to String."),
+    };
+
+    // fidelity: M1-029
+    /// <summary>
+    /// <c>Value::asUInt</c> (row 11n): null gives 0; a bool gives 0 or 1; a string, array or object throws; a
+    /// negative integer throws; a real below zero or strictly above 4294967295.0 throws (the engine's literal at
+    /// 0x008E8E38 with `vcmpe.f64`/`bhi`, so 4294967295.5 throws); any other real truncates toward zero.
+    /// </summary>
+    public static uint AsUInt(JsonElement v)
+    {
+        switch (v.ValueKind)
+        {
+            case JsonValueKind.Undefined:
+            case JsonValueKind.Null: return 0;
+            case JsonValueKind.True: return 1;
+            case JsonValueKind.False: return 0;
+            case JsonValueKind.Number:
+                if (v.TryGetUInt32(out var u)) return u;
+                if (v.TryGetInt64(out var i))
+                {
+                    if (i < 0) throw new JsonLogicError("LargestInt out of UInt range");
+                    throw new JsonLogicError("LargestUInt out of UInt range");
+                }
+                double d = v.GetDouble();
+                if (double.IsNaN(d) || d > 4294967295.0 || d < 0.0) throw new JsonLogicError("double out of UInt range");
+                return (uint)d;                              // vcvt.u32.f64 truncates toward zero (11n)
+            default:
+                throw new JsonLogicError("Value is not convertible to UInt.");
+        }
+    }
+
+    // fidelity: M1-029
+    /// <summary>
+    /// <c>JsonTools::GetValueOptional&lt;uint&gt;</c> (row 11q): a null or absent key returns false and leaves the
+    /// field unchanged; otherwise <see cref="AsUInt"/> is used, which can throw as the engine's does.
+    /// </summary>
     public static uint? OptionalUInt(JsonElement root, string key)
     {
-        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty(key, out var v)) return null;
-        return v.ValueKind == JsonValueKind.Number && v.TryGetUInt32(out var u) ? u : null;
+        var v = Member(root, key);
+        return IsNull(v) ? null : AsUInt(v);
     }
+}
+
+// fidelity: M1-029
+/// <summary>
+/// The engine's <c>Json::LogicError</c> (rows 11m, 11n, 11p). Where the engine catches it is not established
+/// (row 11o, RECOVERABLE_GAP): the robot-message handler is wrapped by <c>CozmoEngine.Isolated</c>, and the
+/// loader thread logs and leaves the expected values as they were (G5.31).
+/// </summary>
+internal sealed class JsonLogicError : Exception
+{
+    public JsonLogicError(string message) : base(message) { }
 }
 
 // fidelity: M1-031
@@ -1173,8 +1272,10 @@ internal sealed class RobotInitialConnection
     ///  - G5.10..G5.12: sim → 0; robotDev (v == t) ≠ appDev (E_v == E_t) → 3; E_v == v → 0; E_v &gt; v → 3; else 4;
     ///  - G5.13: OnNotified(result, v).
     /// Policy M1-040 logs the version on every connection and warns when it is not 2381.
-    /// MISSING: jsoncpp's asUInt of a value that is neither a number nor null is not in the rows (it throws in
-    /// jsoncpp); such a value is read as 0 with a warning here.
+    /// The accessor sequence is row 11l: json["build"].asString(), then json["version"].asUInt() and
+    /// json["time"].asUInt(), and json["sim"].isNull(). A non-object root, or an asUInt/asString of a type the
+    /// engine refuses, throws <see cref="JsonLogicError"/> (11m/11n/11p); <c>CozmoEngine.Isolated</c> catches it,
+    /// as where the engine catches it is not established (11o, RECOVERABLE_GAP).
     /// </summary>
     private void HandleFirmwareVersion(FirmwareVersion f)
     {
@@ -1189,19 +1290,18 @@ internal sealed class RobotInitialConnection
         using (doc)
         {
             var root = doc.RootElement;
-            bool isObject = root.ValueKind == JsonValueKind.Object;
-            if (isObject && root.TryGetProperty("build", out var build) && build.ValueKind == JsonValueKind.String && build.GetString() == "FACTORY")
+            if (Json.AsString(Json.Member(root, "build")) == "FACTORY")
             {
-                bool f0 = root.TryGetProperty("version", out var vs) && vs.ValueKind == JsonValueKind.String && (vs.GetString() ?? "").StartsWith('F');
+                bool f0 = Json.AsString(Json.Member(root, "version")).StartsWith('F');
                 _engine.Log(f0 ? "info: FactoryFirmware" : "info: UnknownVersion");
                 _engine.Log("info: robot.factory_firmware_version");
                 _engine.Log("warning: robot firmware: factory build (policy M1-040: not " + ShippedFirmwareVersion + ")");
                 OnNotified(3, 0);
                 return;
             }
-            uint v = AsUInt(root, "version"), t = AsUInt(root, "time");
+            uint v = Json.AsUInt(Json.Member(root, "version")), t = Json.AsUInt(Json.Member(root, "time"));
             uint ev = ExpectedVersion, et = ExpectedTime;
-            bool sim = (v | t) == 0 && isObject && root.TryGetProperty("sim", out var s) && s.ValueKind != JsonValueKind.Null;
+            bool sim = (v | t) == 0 && !Json.IsNull(Json.Member(root, "sim"));
 
             // G5.7 (telemetry and log only)
             _engine.Log($"info: robot firmware: {v}{(v == t ? " (dev)" : "")}{(sim ? " (SIM)" : "")} (app: {ev}{(ev == et ? " (dev)" : "")})");
@@ -1223,14 +1323,6 @@ internal sealed class RobotInitialConnection
             else result = ev > v ? (byte)3 : (byte)4;
             OnNotified(result, v);
         }
-    }
-
-    private uint AsUInt(JsonElement root, string key)
-    {
-        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty(key, out var v) || v.ValueKind == JsonValueKind.Null) return 0;
-        if (v.ValueKind == JsonValueKind.Number && v.TryGetUInt32(out var u)) return u;
-        _engine.Log($"warning: MISSING: firmwareVersion \"{key}\" is {v.ValueKind}; read as 0 (M1-029)");
-        return 0;
     }
 
     // fidelity: M1-028, M1-040

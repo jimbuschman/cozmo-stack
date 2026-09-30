@@ -1079,6 +1079,86 @@ public class EngineAppLayerTests
         Assert.Equal(1546972025u, rig.Engine.Robots.Ric.ExpectedTime);
     }
 
+    // ---------------------------------------------------------------- M1-029 jsoncpp reader (rows 11d..11n)
+
+    private static bool Parses(string json, out System.Text.Json.JsonDocument doc) =>
+        Json.TryParseFirst(Encoding.UTF8.GetBytes(json), out doc);
+
+    /// <summary>
+    /// M1-029 row 11e: the default Features allow comments (11d, allowComments = 1); both // and /* */ are skipped.
+    /// Row 11i: any value type is accepted at the root and text after the root is ignored.
+    /// </summary>
+    [Fact]
+    public void M1_029_11d_11e_11i_CommentsAnyRootAndTrailingText()
+    {
+        Assert.True(Parses("{\"version\": 1 /* x */, \"time\": 2} // tail", out var doc));
+        using (doc)
+        {
+            Assert.Equal(1u, Json.AsUInt(Json.Member(doc.RootElement, "version")));
+            Assert.Equal(2u, Json.AsUInt(Json.Member(doc.RootElement, "time")));
+        }
+        Assert.True(Parses("5 garbage", out var five));
+        five.Dispose();
+        Assert.True(Parses("\"a string\"", out var str));
+        str.Dispose();
+    }
+
+    /// <summary>
+    /// M1-029 rows 11f/11g: a trailing comma in an object or an array is an error; the default
+    /// allowDroppedNullPlaceholders is 0 (11d), so there is no null substitution.
+    /// </summary>
+    [Theory]
+    [InlineData("{\"version\": 1, \"time\": 2,}")]
+    [InlineData("[1, 2,]")]
+    public void M1_029_11f_11g_TrailingCommasAreAnError(string json)
+    {
+        Assert.False(Parses(json, out var doc));
+        doc?.Dispose();
+    }
+
+    /// <summary>
+    /// M1-029 row 11n: asUInt of null is 0; of a bool is 0 or 1; of a real in [0, 2^32) truncates toward zero.
+    /// The engine's throw cases (row 11n) are a Json::LogicError: a string, array or object; a negative integer;
+    /// a real below zero or at or above 2^32.
+    /// </summary>
+    [Fact]
+    public void M1_029_11n_AsUIntOfANonNumber()
+    {
+        static uint AsUInt(string json)
+        {
+            Assert.True(Json.TryParseFirst(Encoding.UTF8.GetBytes(json), out var doc));
+            using (doc) return Json.AsUInt(doc.RootElement);
+        }
+        Assert.Equal(0u, AsUInt("null"));
+        Assert.Equal(1u, AsUInt("true"));
+        Assert.Equal(0u, AsUInt("false"));
+        Assert.Equal(5u, AsUInt("5"));
+        Assert.Equal(2381u, AsUInt("2381.5"));       // truncates toward zero
+        Assert.Throws<JsonLogicError>(() => AsUInt("-1"));
+        Assert.Throws<JsonLogicError>(() => AsUInt("-0.5"));
+        Assert.Throws<JsonLogicError>(() => AsUInt("4294967296"));
+        // row 11n: the engine's literal at 0x008E8E38 is 4294967295.0 and it throws only for a real strictly
+        // greater (vcmpe.f64/bhi), so 4294967295.5 throws while 4294967295.0 truncates.
+        Assert.Throws<JsonLogicError>(() => AsUInt("4294967295.5"));
+        Assert.Equal(4294967295u, AsUInt("4294967295.0"));
+        Assert.Throws<JsonLogicError>(() => AsUInt("\"x\""));
+        Assert.Throws<JsonLogicError>(() => AsUInt("[]"));
+        Assert.Throws<JsonLogicError>(() => AsUInt("{}"));
+    }
+
+    /// <summary>
+    /// M1-029 row 11n as the firmware reader uses it: a non-number "version" is a Json::LogicError out of
+    /// ParseFirmwareHeader (row 11q, GetValue&lt;uint&gt; is asUInt), not a 0. The loader thread logs it and
+    /// leaves the values 0/0 (row 11o is RECOVERABLE_GAP, so where the engine catches it is not settled).
+    /// </summary>
+    [Fact]
+    public void M1_029_11q_ANonNumberVersionThrows()
+    {
+        var file = new byte[FirmwareHeader.HeaderBytes];
+        Encoding.UTF8.GetBytes("{\"version\": \"x\", \"time\": 2}").CopyTo(file, 0);
+        Assert.Throws<JsonLogicError>(() => FirmwareHeader.Parse(file));
+    }
+
     // ================================================================== M1-041: after Success
 
     /// <summary>

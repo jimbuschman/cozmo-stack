@@ -566,6 +566,41 @@ public class DerivedStateTests
         Assert.Equal(3, d.Count);                  // skipped, not reset
     }
 
+    /// <summary>
+    /// M2-002 rows 12b/12c: bit 0x4 (IS_PICKING_OR_PLACING) is stored in DockingComponent+4 (0x00512A96) and
+    /// read by MovementComponent::CheckForUnexpectedMovement (0x0063E3DE): such a state returns early, so it
+    /// neither counts nor resets. The same stored byte gates AnimationStreamer::UpdateLiveAnimation (0x0057D61C)
+    /// and ObjectPositionUpdated (0x006113FE); the consumers here read the latest handled state.
+    /// </summary>
+    [Fact]
+    public void M2_002_12c_PickingOrPlacingGatesTheUnexpectedMovement()
+    {
+        var d = Mov();
+        for (uint i = 0; i < 5; i++) d.Update(State(i, left: -50, right: 50));
+        Assert.Equal(5, d.Count);
+        d.Update(State(10, left: -50, right: 50, flags: RobotStatusFlag.IsPickingOrPlacing));
+        Assert.Equal(5, d.Count);                  // early return before the 0x5008 reset test
+    }
+
+    /// <summary>
+    /// M2-002 rows 12f/12g: CheckAndUpdateTreadsState reads IS_PICKED_UP (0x8, 0x00511F04) and IS_FALLING
+    /// (0x20, 0x00511EC4) straight from the state word. A picked-up level state commits InAir; the falling
+    /// branch reaches Falling only with the picked-up term (the tail at 0x511F48 otherwise returns to OnTreads).
+    /// </summary>
+    [Fact]
+    public void M2_002_12f_12g_TheClassifierReadsPickedUpAndFalling()
+    {
+        var c = Classifier();
+        uint t = Settle(c, 0);
+        Assert.True(c.Update(State(t, flags: RobotStatusFlag.IsPickedUp), t));
+        Assert.Equal(OffTreadsState.InAir, c.Current);
+
+        var c2 = Classifier();
+        uint t2 = Settle(c2, 0);
+        Assert.True(c2.Update(State(t2, flags: RobotStatusFlag.IsFalling | RobotStatusFlag.IsPickedUp), t2));
+        Assert.Equal(OffTreadsState.Falling, c2.Current);
+    }
+
     /// <summary>The wheel-versus-gyro test only fires when the mismatch exceeds 0.2 rad/s.</summary>
     [Fact]
     public void DrivingStraightWithMatchingGyroIsNotUnexpected()

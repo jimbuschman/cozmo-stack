@@ -121,15 +121,29 @@ public static class AnkiMuLaw
 
     // fidelity: M3-010
     /// <summary>
-    /// <c>Audio::encodeMuLaw(float)</c> (C6, 0x00597AD8..0x00597B8E; 32767.0 at 0x00597C18): NaN gives 0 (the engine
-    /// also warns); <c>s = f &lt;= -1 ? -32767 : trunc(min(f, 1) * 32767)</c>; then <see cref="Encode(short)"/>'s
-    /// segment step. No volume is applied on this path (C7). The product is taken in single precision.
+    /// The scaling literal at 0x00597C18, bytes <c>00 fe ff 46</c>: 0x46FFFE00 = 32767.0f exactly (M3-010 row 1d).
+    /// It is not 32768 and not a double.
     /// </summary>
-    public static byte Encode(float sample)
+    internal const float FullScale = 32767f;
+
+    // fidelity: M3-010
+    /// <summary>
+    /// <c>Audio::encodeMuLaw(float)</c> (C6, 0x00597AD8..0x00597B8E; 32767.0 at 0x00597C18): NaN gives 0 and logs
+    /// the engine's <c>sWarningF</c> (M3-010 row 1b, 0x00597AF2; "RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN" /
+    /// "Audio sample from current stream is NaN"); <c>s = f &lt;= -1 ? -32767 : trunc(min(f, 1) * 32767)</c>; then
+    /// <see cref="Encode(short)"/>'s segment step. No volume is applied on this path (C7). The product is taken in
+    /// single precision (row 1c) and the cast truncates toward zero (row 1e). The lower clamp tests the original input
+    /// (row 1f).
+    /// </summary>
+    public static byte Encode(float sample, Action<string>? log = null)
     {
-        if (float.IsNaN(sample)) return 0;
+        if (float.IsNaN(sample))
+        {
+            log?.Invoke("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN");
+            return 0;
+        }
         if (sample <= -1f) return Encode((short)-32767);
-        return Encode((short)(int)((sample >= 1f ? 1f : sample) * 32767f));
+        return Encode((short)(int)((sample >= 1f ? 1f : sample) * FullScale));
     }
 
     /// <summary>Approximate inverse, for writing a stream out to listen to it locally.</summary>
