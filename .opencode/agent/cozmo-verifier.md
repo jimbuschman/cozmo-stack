@@ -41,3 +41,16 @@ Then give:
 - **Read only.** Never create, modify, move or delete anything in the repo outside `.scratch/`.
 - **No state-changing git.**
 - **Don't propose fixes.**
+
+## The checklist (since the 2026-09-29 audit)
+
+Check every batch against `re-analysis/jobs/CHECKLIST.md`, item by item, in the binary. A failed item is a blocking
+finding. In particular:
+- whether the code is on the live path;
+- the gates and order around it;
+- deferred parts;
+- float literals, compared bit for bit;
+- float or double width;
+- circular tests.
+
+84 of 239 settled records failed exactly these checks.

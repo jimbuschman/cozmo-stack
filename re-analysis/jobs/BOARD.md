@@ -34,11 +34,17 @@ so that no two windows work on the same layers at once. R-VIS moved to a Sonnet 
 | 4 (Sonnet in Claude Code, on the manager's machine) | `cozmo-stack-r` | [B-M6b-4](B-M6b-4.md) (the M6 live-audio wiring) |
 | 5 (a second Sonnet, on the manager's machine) | `cozmo-stack-r2` | [R-VIS](R-VIS.md) (M11, M12, M13, M14), once G-M14 is DONE |
 | 2 | `cozmo-stack` (the main clone) | [R-ANIM](R-ANIM.md) (M5, M10), DONE → [R-M15](R-M15.md) (M15) → [R-M9](R-M9.md) and [R-M6](R-M6.md), which wait for B-M6b-4 |
-| 3 | `cozmo-stack-w3` | [R-DEV](R-DEV.md) (M1, M2, M3, M4) |
+| 3 | `cozmo-stack-w3` | R-DEV stopped after its M4 batch; superseded by [B-CORE](B-CORE.md) (the connection and device core, first job in the new format: CHECKLIST.md, never settles) |
 
 Codex, meanwhile: `re-analysis/research/requests/20260929-M9-singing-gaps.md`, then
 `20260929-policy-review.md` (the 32 COMPATIBILITY_POLICY and EQUIVALENT_IMPLEMENTATION records against "Exact,
 always").
+
+## The new format (2026-09-29)
+
+After the complete audit (`re-analysis/research/20260929-audit-complete.md`), every job follows
+[CHECKLIST.md](CHECKLIST.md): the production path is named, and a cheap-model job never settles a record. A strong
+verifier settles it later.
 
 ## Job types
 

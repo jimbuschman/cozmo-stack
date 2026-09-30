@@ -35,3 +35,16 @@ Then: the hunks you checked and found supported, each with the citation you open
 ## Hard rules
 
 Read only. Never create, modify, move or delete anything under the repo root, and run no state-changing git. Scripts and output go only to the scratch directory the manager names. Don't propose fixes.
+
+## The checklist (since the 2026-09-29 audit)
+
+Check every batch against `re-analysis/jobs/CHECKLIST.md`, item by item, in the binary. A failed item is a blocking
+finding. In particular:
+- whether the code is on the live path;
+- the gates and order around it;
+- deferred parts;
+- float literals, compared bit for bit;
+- float or double width;
+- circular tests.
+
+84 of 239 settled records failed exactly these checks.

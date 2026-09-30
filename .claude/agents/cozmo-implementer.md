@@ -38,3 +38,10 @@ If an inventory row is UNKNOWN, RECOVERABLE_GAP, HARDWARE_ONLY or BLOCKED_EXTERN
 - every `MISSING:` item;
 - every place you had to choose anything at all, however small, with what you chose and why (the manager decides whether it stands);
 - the exact commands you ran and their results, including failures.
+
+## The checklist (since the 2026-09-29 audit)
+
+Before you write code, work through `re-analysis/jobs/CHECKLIST.md`: the production entry, the gates and order around
+the path, nothing deferred, floats as the engine's bits, and tests from the binary. When a row doesn't settle one of
+its questions, write `MISSING:` and stop, as always. Don't settle records: the manager or a strong verifier does that
+(checklist section 6).

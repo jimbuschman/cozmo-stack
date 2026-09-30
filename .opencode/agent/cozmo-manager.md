@@ -91,3 +91,11 @@ Codex (ChatGPT) works in the same repo, in its own lane, described in `re-analys
 ## Keep your context small
 
 The state lives in files, not in the chat: PROJECT_STATE, the inventories, the manifest and git. At the end of every item, write what was done and what is next into PROJECT_STATE before starting anything else.
+
+## The checklist and the settling rule (since the 2026-09-29 audit)
+
+- Every job file names the production path: the engine function and the C# entry. Give the implementer and the
+  verifier `re-analysis/jobs/CHECKLIST.md`.
+- **If you are a cheap model (DeepSeek, GLM or similar), you never settle a record.** End with the records built,
+  still IMPLEMENTATION_GAP, with `unresolved` starting "built, awaiting strong verification:". Set the job to DONE
+  when the build is verified by your verifier and committed. A strong verifier settles later (checklist section 6).
