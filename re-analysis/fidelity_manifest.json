@@ -760,10 +760,10 @@
       ],
       "effect": "handlers see messages at other times or in other batches from the app",
       "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoEngine::Update calls NeedsManager::Update between UpdateRobotConnection and UpdateAllRobots (0x004ED640); the stack runs it from FreeplaySystem.Tick outside the engine tick.",
+      "unresolved": "built, awaiting strong verification: CozmoEngine.TickAt now invokes CozmoEngine.NeedsUpdate after Handler.ProcessMessages and before Robots.Get(RobotId).Update, on Timer.Seconds (0x004ED640); FreeplayStack.Create sets it to NeedsManager.Update and FreeplaySystem.Tick no longer calls it. Tests EngineAppLayerTests.M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate and FreeplayTests.TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick.",
       "hardware_required": false,
       "live_path": true,
-      "test": "EngineAppLayerTests.M1_024_B20_B25_B26_ArrivalsAreHandledInArrivalOrder, EngineAppLayerTests.M1_024_B25_CD10_ArrivalsReachHandlersOnlyInTheTickDrain, EngineAppLayerTests.M1_024_B26_DataFromAnotherAddressIsDropped, EngineAppLayerTests.M1_024_CD1_CD2_CD3_FirstTickAtOnceThenEveryPeriodAndANonzeroResultStops, EngineAppLayerTests.M1_024_CD3_ItSleepsWholeMicrosecondsAndOnlyFrom1us, EngineAppLayerTests.M1_024_CD3_OverrunTicksRunBackToBack, EngineAppLayerTests.M1_024_CD4_OvertimeIsOnlyLogged, EngineAppLayerTests.M1_024_CD5_AFarBehindLoopSkipsWholePeriodsInsteadOfRunningExtraTicks, EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt, EngineAppLayerTests.M1_024_CD9_TheEngineClockIsTheTickStart"
+      "test": "EngineAppLayerTests.M1_024_B20_B25_B26_ArrivalsAreHandledInArrivalOrder, EngineAppLayerTests.M1_024_B25_CD10_ArrivalsReachHandlersOnlyInTheTickDrain, EngineAppLayerTests.M1_024_B26_DataFromAnotherAddressIsDropped, EngineAppLayerTests.M1_024_CD1_CD2_CD3_FirstTickAtOnceThenEveryPeriodAndANonzeroResultStops, EngineAppLayerTests.M1_024_CD3_ItSleepsWholeMicrosecondsAndOnlyFrom1us, EngineAppLayerTests.M1_024_CD3_OverrunTicksRunBackToBack, EngineAppLayerTests.M1_024_CD4_OvertimeIsOnlyLogged, EngineAppLayerTests.M1_024_CD5_AFarBehindLoopSkipsWholePeriodsInsteadOfRunningExtraTicks, EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt, EngineAppLayerTests.M1_024_CD9_TheEngineClockIsTheTickStart, EngineAppLayerTests.M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate, FreeplayTests.TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick"
     },
     {
       "id": "M1-025",
@@ -1188,7 +1188,7 @@
       "live_path": true,
       "test": "SourceFidelityTests.TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes, M2ProtocolTests.M2_003_RS7_AngleToHeightIsNotClamped",
       "provenance": "compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: RobotState.LiftHeightMmFromAngle is 66 sin(angle) + 45 with no clamp (RS7) and CozmoSensors.LiftHeightMm uses it; the 32..92 clamp is only in LiftAngleRadFromHeight (0x005170B0); RobotState reaches the devices only after time sync (RS0, M1-041 CD23).",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the inverse lift constant is 0x3F364D90 against the engine's 0x3F364D93 (0x00517104); NaN keeps 32 in the engine (vcmpe 0x005170BC) but propagates in the stack; the test is circular.",
+      "unresolved": "built, awaiting strong verification: RobotState.LiftAngleRadFromHeight now writes `float h = 32f < heightMm ? heightMm : 32f;` (a NaN input keeps 32) and the 92-boundary ratio as BitConverter.Int32BitsToSingle(unchecked((int)0x3F364D93)); the two named tests take their expected values from the engine's literals and cover the NaN and 92/91.99 edges.",
       "effect": "the lift height is reported differently from the engine",
       "hardware_required": false
     },

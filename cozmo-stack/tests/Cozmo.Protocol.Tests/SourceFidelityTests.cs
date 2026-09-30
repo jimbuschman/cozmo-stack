@@ -302,20 +302,31 @@ public class SourceFidelityTests
     /// RobotState.liftAngle is an angle in radians: Robot::UpdateFullRobotState (0x0051291C) stores the
     /// field at RobotState+0x2C into Robot+0x300, and Robot::GetLiftHeight (0x00516F64) turns that field
     /// into millimetres with sinf(angle) * 66 + 45 (Robot::ConvertLiftAngleToLiftHeightMM 0x00516F9C).
-    /// The inverse (ConvertLiftHeightToLiftAngleRad 0x005170B0) clamps the height to 32..92 first. The
-    /// previous LiftHeightMm returned the raw field, so an angle of 0 rad read as 0 mm instead of 45.
+    /// The inverse (ConvertLiftHeightToLiftAngleRad 0x005170B0) raises the height to 32.0 (0x005170F4) and
+    /// uses the literal 0x3F364D93 (0x00517104) at 92.0 (0x00517100) and above. Every expected value here
+    /// is the engine's own operation on its own literal; none is read back from this stack's constant.
     /// </summary>
     [Fact]
     public void TheLiftAngleIsAnAngleAndConvertsToHeightAsTheEngineDoes()
     {
+        // 66 sin(angle) + 45 (0x00516F64..0x00516F9C; the literals are 66.0f and 45.0f), no clamp
         Assert.Equal(45f, RobotState.LiftHeightMmFromAngle(0f), 4);
         Assert.Equal(45f, new RobotState { LiftAngle = 0f }.LiftHeightMm, 4);        // was 0 before
-        foreach (var mm in new[] { 32f, 45f, 60f, 76f, 92f })
-            Assert.Equal(mm, RobotState.LiftHeightMmFromAngle(RobotState.LiftAngleRadFromHeight(mm)), 3);
-        Assert.Equal(MathF.Asin(-13f / 66f), RobotState.LiftAngleRadFromHeight(32f), 5);
-        Assert.Equal(RobotState.LiftAngleRadFromHeight(32f), RobotState.LiftAngleRadFromHeight(10f), 6);   // raised to 32
-        Assert.Equal(MathF.Asin(0.712121f), RobotState.LiftAngleRadFromHeight(120f), 6);                  // the 92 mm constant
-        Assert.Equal(RobotState.LiftAngleRadFromHeight(92f), RobotState.LiftAngleRadFromHeight(200f), 6);
+        Assert.Equal(111f, RobotState.LiftHeightMmFromAngle(MathF.PI / 2), 3);       // 66 + 45, above 92
+        Assert.Equal(-21f, RobotState.LiftHeightMmFromAngle(-MathF.PI / 2), 3);      // 45 - 66, below 32
+
+        // the inverse (0x005170B0): h = 32.0 when heightMm <= 32.0, so 10 and a NaN both raise to 32.0
+        Assert.Equal(MathF.Asin((32f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(32f));
+        Assert.Equal(MathF.Asin((32f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(10f));
+        // a NaN input fails vcmpe.f32 s2,s0 (unordered), so it gt is false and h stays 32.0
+        Assert.Equal(MathF.Asin((32f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(float.NaN));
+
+        // the 92.0 boundary (0x00517100): 92 and above use the literal 0x3F364D93 (0x00517104); 91.99 divides
+        float engineRatio = BitConverter.Int32BitsToSingle(unchecked((int)0x3F364D93));
+        Assert.Equal(MathF.Asin(engineRatio), RobotState.LiftAngleRadFromHeight(92f));
+        Assert.Equal(MathF.Asin(engineRatio), RobotState.LiftAngleRadFromHeight(200f));
+        Assert.Equal(MathF.Asin((91.99f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(91.99f));
+        Assert.NotEqual(RobotState.LiftAngleRadFromHeight(92f), RobotState.LiftAngleRadFromHeight(91.99f));
     }
 
     /// <summary>

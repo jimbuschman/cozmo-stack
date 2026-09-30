@@ -1,6 +1,5 @@
 # Long decimal literals in fidelity-tagged code when the lint was added (2026-09-29).
 # Each is a candidate engine constant to rewrite as its bit pattern. Remove a line when it is fixed; never add one.
-Cozmo.Protocol/Clad/MessageExtras.cs 0.712121
 Cozmo.Robot/Animation/OpenCv310.cs 0.0174524
 Cozmo.Robot/Animation/OpenCv310.cs 0.0348995
 Cozmo.Robot/Animation/OpenCv310.cs 0.0697565

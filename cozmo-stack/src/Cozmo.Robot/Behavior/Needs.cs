@@ -700,19 +700,24 @@ public sealed class NeedsManager
     /// <c>NeedsManager::Update(now)</c> 0x00695C9C: return at once while paused (+0x1d5, 0x00695CA4);
     /// update the local notifications; when the accumulator (+0x3b0) has reached now, add the decay interval
     /// (+0x130), <c>ApplyDecayAllNeeds(robot != 0)</c> (0x00695CE4), <c>SendNeedsStateToGame(Decay)</c>
-    /// (0x00695CEC), then the tail <c>PossiblyWriteToDevice</c>.
+    /// (0x00695CEC), then the tail <c>PossiblyWriteToDevice</c>. The engine passes
+    /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> (M1-024, 0x004ED632..0x004ED640); the parameterless
+    /// overload keeps the manager's own clock for direct callers.
     /// </summary>
     // fidelity: M15-001
-    public void Update()
+    public void Update() => Update(_clockSec());
+
+    // fidelity: M1-024
+    /// <summary>The engine tick's <c>NeedsManager::Update(now)</c> with the tick's BaseStationTimer seconds.</summary>
+    public void Update(double now)
     {
         lock (_gate)
         {
             if (_paused) return;
             LocalNotificationsUpdate?.Invoke();
-            double now = _clockSec();
             if (_nextDecaySec > now) return;
             _nextDecaySec += Config.DecayPeriodSeconds;
-            ApplyDecayAllNeeds(_robotConnected);
+            ApplyDecayAllNeeds(_robotConnected, now);
             SendNeedsStateToGame(NeedsActionId.Decay);
             PossiblyWriteToDevice();
         }
@@ -732,11 +737,14 @@ public sealed class NeedsManager
     /// a decay.
     /// </summary>
     // fidelity: M15-001
-    public void ApplyDecayAllNeeds(bool connected)
+    public void ApplyDecayAllNeeds(bool connected) => ApplyDecayAllNeeds(connected, _clockSec());
+
+    /// <summary>The engine's decay pass on an explicit now, which <c>Update(now)</c> passes (M1-024).</summary>
+    // fidelity: M1-024
+    public void ApplyDecayAllNeeds(bool connected, double now)
     {
         lock (_gate)
         {
-            double now = _clockSec();
             var multipliers = Decay.DecayMultipliers(n => State.GetNeedLevel(n));
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
@@ -760,7 +768,7 @@ public sealed class NeedsManager
                 }
                 _lastDecaySec[n] = now;
             }
-            DetectBracketChanges();
+            DetectBracketChanges(nowOverride: now);
         }
     }
 
@@ -1647,9 +1655,9 @@ public sealed class NeedsManager
     public bool IsSevereExpressed(NeedId n) => _severeExpressed.Contains(n);
     public void SetSevereExpressed(NeedId n, bool expressed) { if (expressed) _severeExpressed.Add(n); else _severeExpressed.Remove(n); }
 
-    private void DetectBracketChanges(bool force = false)
+    private void DetectBracketChanges(bool force = false, double? nowOverride = null)
     {
-        double now = _clockSec();
+        double now = nowOverride ?? _clockSec();
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
             var b = State.GetNeedBracket(n);

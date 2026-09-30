@@ -120,6 +120,15 @@ public sealed class FreeplayStack : IDisposable
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
 
+        // fidelity: M1-024
+        // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->
+        // MessageHandler::ProcessMessages and UpdateAllRobots -> Robot::Update, with BaseStationTimer::
+        // GetCurrentTimeInSeconds (0x004ED632..0x004ED640). The engine owns the tick and this stack owns the
+        // NeedsManager, so the manager is handed over through the engine hook; FreeplaySystem.Tick no longer
+        // calls it.
+        robot.Engine.NeedsUpdate = needs.Update;
+        stack._unsubscribe.Add(() => robot.Engine.NeedsUpdate = null);
+
         // fidelity: M15-016
         // J13: CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED018..0x004ED11C calls
         // NeedsManager::InitAfterConnection 0x004ED10E unconditionally after AddRobot (the AddRobot-failed

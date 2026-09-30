@@ -1496,6 +1496,15 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+    // fidelity: M1-024
+    /// <summary>
+    /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
+    /// and before <c>UpdateAllRobots</c> → <c>Robot::Update</c>, <c>CozmoEngine::Update</c> takes
+    /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> and calls <c>NeedsManager::Update</c> with it
+    /// (0x004ED632/0x004ED636 → r1, 0x004ED640 <c>blx</c>). The NeedsManager is owned by FreeplayStack, which
+    /// sets this hook; the argument is that same tick clock.
+    /// </summary>
+    internal Action<double>? NeedsUpdate;
 
     // fidelity: M4-019
     /// <summary>
@@ -1600,8 +1609,9 @@ public sealed class CozmoEngine : IDisposable
     ///  1. UiMessageHandler::Update: the queued game messages are dispatched synchronously (CD7);
     ///  2. BaseStationTimer::UpdateTime (CD8, CD9);
     ///  3. UpdateRobotConnection → MessageHandler::ProcessMessages: every robot-message handler runs here (CD10);
-    ///  4. UpdateAllRobots → Robot::Update (CD11).
-    /// NeedsManager::Update, UpdateLatencyInfo, the audio controller and the RobotState broadcast to the game are
+    ///  4. NeedsManager::Update on this tick's BaseStationTimer seconds (CD10/CC10, 0x004ED632..0x004ED640);
+    ///  5. UpdateAllRobots → Robot::Update (CD11).
+    /// UpdateLatencyInfo, the audio controller and the RobotState broadcast to the game are
     /// outside this stack. Engine states 0, 1, 2 and 4 (data loading, firmware update) are not modelled.
     /// </summary>
     private int TickAt(long elapsedNs)
@@ -1614,6 +1624,10 @@ public sealed class CozmoEngine : IDisposable
                 while (_gameMessages.TryDequeue(out var g)) Isolated(g);
                 Timer.UpdateTime(elapsedNs);
                 Handler.ProcessMessages();
+                // fidelity: M1-024
+                // CozmoEngine::Update state 3 calls NeedsManager::Update between ProcessMessages and
+                // UpdateAllRobots, on BaseStationTimer::GetCurrentTimeInSeconds (0x004ED632..0x004ED640).
+                if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.Seconds));
                 if (Robots.Get(RobotId) is { } r) r.Update();
             }
             finally { _inTick = false; }

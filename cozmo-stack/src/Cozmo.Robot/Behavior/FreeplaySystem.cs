@@ -132,7 +132,9 @@ public sealed class FreeplaySystem
         // MoodManager::Update 0x0067b5d4 ends with SendEmotionsToGame (0x0067b6a4); the stack's seam
         // raises the nine values. The app-facing wire message is not wired (M7-012 unresolved).
         _ctx.Mood?.SendEmotionsToGame();
-        Inputs.Needs?.Update();
+        // The NeedsManager is not ticked here: the engine calls NeedsManager::Update from its own tick,
+        // between MessageHandler::ProcessMessages and UpdateAllRobots, on BaseStationTimer seconds
+        // (M1-024, 0x004ED640). FreeplayStack.Create hands the manager to CozmoEngine.NeedsUpdate.
         // The engine's BehaviorManager::Update tick order (0x005a2f70) runs the activity tick first
         // (GetCurrentActivity 0x005a2f78, the activity's vtable+0x20) and CheckReactionTriggerStrategies
         // after it (0x005a3060). The concrete activity tick body is M7/M15 and is not built; the stack's

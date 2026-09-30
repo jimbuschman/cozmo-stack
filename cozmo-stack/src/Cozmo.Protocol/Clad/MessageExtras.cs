@@ -42,15 +42,19 @@ public sealed partial class RobotState
         MathF.Sin(angleRad) * LiftArmLengthMm + LiftBaseHeightMm;
 
     /// <summary>
-    /// <c>Robot::ConvertLiftHeightToLiftAngleRad</c> (0x005170B0): the height is raised to 32 when below it,
-    /// and <c>(height - 45) / 66</c> goes through <c>asinf</c> unless the height is 92 or more, in which case
-    /// the constant 0.712121 (that is, (92 - 45) / 66) is used instead. In effect the height is clamped to
-    /// the 32..92 mm lift range before the inverse.
+    /// <c>Robot::ConvertLiftHeightToLiftAngleRad</c> (0x005170B0): <c>h = (32.0 &lt; heightMm) ? heightMm : 32.0</c>
+    /// (vcmpe.f32 s2,s0 at 0x005170BC, <c>it gt</c>/<c>vmovgt</c> at 0x005170C8..0x005170CA; a NaN input compares
+    /// unordered, so <c>gt</c> is false and <c>h</c> stays 32.0). The ratio is <c>(h - 45.0) / 66.0</c> unless
+    /// <c>h &gt;= 92.0</c> (vcmpe.f32 s0,s4 at 0x005170DE, <c>it mi</c>/<c>vmovmi</c> at 0x005170E6..0x005170E8), in
+    /// which case the literal at 0x00517104, <c>0x3F364D93</c>, stands; then <c>asinf</c> (veneer 0x005170F0). In
+    /// effect the height is clamped to the 32..92 mm lift range before the inverse.
     /// </summary>
     public static float LiftAngleRadFromHeight(float heightMm)
     {
-        float h = Math.Max(heightMm, 32f);
-        float ratio = h < 92f ? (h - LiftBaseHeightMm) / LiftArmLengthMm : 0.712121f;
+        float h = 32f < heightMm ? heightMm : 32f;
+        float ratio = h < 92f
+            ? (h - LiftBaseHeightMm) / LiftArmLengthMm
+            : BitConverter.Int32BitsToSingle(unchecked((int)0x3F364D93));
         return MathF.Asin(ratio);
     }
 

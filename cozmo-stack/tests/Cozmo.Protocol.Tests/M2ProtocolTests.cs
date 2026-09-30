@@ -135,7 +135,9 @@ public class M2ProtocolTests
 
     /// <summary>
     /// M2-003 RS7: GetLiftHeight is 66 sin(angle) + 45 + 0 with no clamp (0x00516F64..0x00516F8E); the 32..92 clamp
-    /// is only on height-to-angle (0x005170B0).
+    /// is only on height-to-angle (0x005170B0). The inverse's literal is 0x3F364D93 (0x00517104), its lower bound
+    /// 32.0 (0x005170F4) and its upper bound 92.0 (0x00517100); a NaN input fails the gt at 0x005170BC and keeps 32.
+    /// Expected values are the engine's own operations on its own literals, not this stack's constant.
     /// </summary>
     [Fact]
     public void M2_003_RS7_AngleToHeightIsNotClamped()
@@ -143,6 +145,15 @@ public class M2ProtocolTests
         Assert.Equal(66f + 45f, RobotState.LiftHeightMmFromAngle(MathF.PI / 2), 3);      // 111 mm, above 92
         Assert.Equal(45f - 66f, RobotState.LiftHeightMmFromAngle(-MathF.PI / 2), 3);     // -21 mm, below 32
         Assert.Equal(111f, new RobotState { LiftAngle = MathF.PI / 2 }.LiftHeightMm, 3);
+
+        // the inverse (0x005170B0): below 32 raises to 32.0, and a NaN compares unordered so it also stays 32.0
+        Assert.Equal(MathF.Asin((32f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(32f));
+        Assert.Equal(MathF.Asin((32f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(float.NaN));
+        // the 92 boundary: 92 and above use the engine's 0x3F364D93; 91.99 takes the division
+        float engineRatio = BitConverter.Int32BitsToSingle(unchecked((int)0x3F364D93));
+        Assert.Equal(MathF.Asin(engineRatio), RobotState.LiftAngleRadFromHeight(92f));
+        Assert.Equal(MathF.Asin(engineRatio), RobotState.LiftAngleRadFromHeight(200f));
+        Assert.Equal(MathF.Asin((91.99f - 45f) / 66f), RobotState.LiftAngleRadFromHeight(91.99f));
     }
 
     // ------------------------------------------------------------------ M2-004

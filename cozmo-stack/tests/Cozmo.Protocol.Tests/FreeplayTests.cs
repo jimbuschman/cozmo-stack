@@ -87,6 +87,37 @@ public class FreeplayTests
     }
 
     /// <summary>
+    /// M1-024 CD6..CD11: <c>CozmoEngine::Update</c> state 3 calls <c>NeedsManager::Update</c> between
+    /// UpdateRobotConnection → MessageHandler::ProcessMessages and UpdateAllRobots → Robot::Update, on
+    /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> (0x004ED632..0x004ED640). <c>FreeplayStack.Create</c>
+    /// hands the manager to the engine, so the decay advances on the engine tick and no longer on
+    /// <c>FreeplaySystem.Tick</c>.
+    /// </summary>
+    [Fact]
+    public void TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick()
+    {
+        var obb = ObbRoot();
+        if (obb is null) return;
+        using var rig = new Rig();
+        LoadAssets(rig, obb);
+        double clock = 0;
+        using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+        var needs = stack.Needs;
+        Assert.NotNull(rig.Robot.Engine.NeedsUpdate);          // FreeplayStack handed it to the engine
+        needs.SetLevel(NeedId.Play, 0.9);
+
+        // the freeplay tick alone does not decay: the needs manager is not ticked from FreeplaySystem.Tick
+        clock = 1000;
+        stack.Freeplay.Tick(1000, 1_000_000);
+        Assert.Equal(0.9, needs.State.GetNeedLevel(NeedId.Play), 6);
+
+        // the engine tick does, on its own BaseStationTimer seconds
+        rig.Clock.Advance(120_000);
+        rig.Tick();
+        Assert.True(needs.State.GetNeedLevel(NeedId.Play) < 0.9);
+    }
+
+    /// <summary>
     /// Needs actions are reported by the behaviours, not by the activity.
     /// <c>IBehavior::NeedActionCompleted</c> 0x005BE40C uses the behaviour's own <c>needsActionID</c>
     /// (+0x68, filled at 0x005BBCAA from <c>ExtractNeedsActionIDFromConfig</c> 0x005BBAE8) when the caller

@@ -345,6 +345,31 @@ public class EngineAppLayerTests
         Assert.Equal(1234u, rig.Engine.Timer.TimeStampMs);
     }
 
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-024 CD6/CD10/CD11: in engine state 3, after UpdateRobotConnection →
+    /// MessageHandler::ProcessMessages and before UpdateAllRobots → Robot::Update, CozmoEngine::Update takes
+    /// BaseStationTimer::GetCurrentTimeInSeconds into r1 and calls NeedsManager::Update with it
+    /// (0x004ED632/0x004ED636, 0x004ED640). The hook runs between the two and on the tick's clock.
+    /// </summary>
+    [Fact]
+    public void M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState();
+        var order = new List<string>();
+        double? needsNow = null;
+        rig.Engine.NeedsUpdate = now => { order.Add("needs"); needsNow = now; };
+        var components = rig.Engine.RobotComponentsUpdate;
+        rig.Engine.RobotComponentsUpdate = () => { components?.Invoke(); order.Add("robot"); };
+        rig.Robot.Message += m => order.Add($"message:{m.Id}");
+        rig.Data(new RobotAvailable { SerialNumberHead = 9 });
+        rig.Tick(60);
+        // the robot message is dispatched in ProcessMessages, then NeedsManager::Update, then Robot::Update
+        Assert.Equal(new[] { "message:RobotAvailable", "needs", "robot" }, order);
+        Assert.Equal(rig.Engine.Timer.Seconds, needsNow);
+    }
+
     // ================================================================== M1-025: connect, response, DisconnectCurrent
 
     /// <summary>
