@@ -93,7 +93,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M3-device.md",
-        "approved": "2026-09-29",
+        "approved": "2026-09-30",
         "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
@@ -1322,10 +1322,10 @@
         "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC"
       ],
       "live_path": true,
-      "test": "M3DeviceTests.M3_001_A13_TheHeaderTablesAreTheEngines, M3DeviceTests.M3_001_A12_TheSizeFieldsAreBigEndian, M3DeviceTests.M3_001_A11_OnlyA240By320DecodeIsAccepted, DeviceTests.CapturedChunksReassembleIntoDecodableQvgaJpegs",
+      "test": "M3DeviceTests.M3_001_A13_TheHeaderTablesAreTheEngines, M3DeviceTests.M3_001_A12_TheSizeFieldsAreBigEndian, M3DeviceTests.M3_001_A11_OnlyA240By320DecodeIsAccepted, M3DeviceTests.M3_001_Y0_TheGrayDispatchTable, M3DeviceTests.M3_001_Y4_ToGrayUsesTheCvtColorFixedPointArithmetic, M3DeviceTests.M3_001_Y2_RawGrayCopiesShortFillsAndLongTruncates, M3DeviceTests.M3_001_Y6_TheGrayBorderMakesTheResult640WideAndBadDecode, M3DeviceTests.M3_001_Y2_TheLiveCameraFrameDecodesRawGray, DeviceTests.CapturedChunksReassembleIntoDecodableQvgaJpegs",
       "effect": "a camera frame is reconstructed or rejected differently",
-      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): the MiniJpeg header tables match the inventory's SHA-256 prefixes; height/width BE at 0x5E..0x61; EncodedImageDecoder.TryDecodeGray dispatches 3/4 (unsupported), 5/6 (JPEG), 7 (JPEG plus 160-column borders), 8, and 9 (the half-width colour JPEG to gray, then INTER_LINEAR to 320 x 240), and rejects anything but 240 x 320 (BadDecode); the frame timestamp is the last chunk's. VisionSystem decodes through it.",
-      "unresolved": "MISSING: A8 case 2 (ToGray of a raw RGB payload; the conversion is not in the rows), case 1 with a payload that is not exactly 320 x 240 bytes, and encodings 0 and above 9 (outside the tbh table): each is reported as a decode failure. The JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (last-bit pixel differences possible); whether that library substitution is EQUIVALENT_IMPLEMENTATION is the manager's call.",
+      "provenance": "built from the 2026-09-29 pre-extraction Part 1 item 2 (20260929-R-DEV-pre-extraction.md) and the M3-device inventory: the MiniJpeg header tables match the inventory's SHA-256 prefixes; height/width BE at 0x5E..0x61; EncodedImageDecoder.TryDecodeGray now dispatches every encoding value (Y0..Y8, tbh 0x004F2898) - 1 copies rows*cols, 2 converts rows*cols*3 with the cvtColor code 7 fixed point (4899R + 9617G + 1868B + 8192) >> 14 (Y4), 5/6 imdecode(flags 0), 7 imdecode(flags 0) plus the 160-column border, 8 the reconstructed gray JPEG, 9 the half-width colour JPEG to gray then INTER_LINEAR to 320 x 240, and 0/3/4/10..255 the EncodedImage.DecodeImageRGB.UnsupportedEncoding default - and rejects anything but 240 x 320 (BadDecode, A11/Y8); the frame timestamp is the last chunk's. The raw cases read rows*cols bytes with no length check (G2, Y2, Y3); this stack applies policy M3-037 (SD2): missing bytes read as 0, extra bytes are ignored. VisionSystem decodes through CameraFrame.TryDecodeGray.",
+      "unresolved": "built, awaiting strong verification: the gray dispatch for every encoding (Y0..Y8) and the ToGray arithmetic (Y4) are in Camera.cs; the raw-payload zero-fill is policy M3-037 (SD2), whose record the manager is adding (the code carries a `// fidelity: M3-037` tag, so `fidelity.py --check` reports one dangling tag until then). Residual: the JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (last-bit pixel differences possible; Part 1 item 3 is not built), so M3-001 stays IMPLEMENTATION_GAP; the empty-vector raw case (the engine's cv::error(-215)) and the NULL-%s rendering for encodings above 9 remain open (Z1, Y2).",
       "hardware_required": false
     },
     {
@@ -1629,7 +1629,7 @@
       "title": "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90",
       "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
       "effect": "a colour frame looks different",
-      "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EncodedImageDecoder: IsColor per the tbb table (2, 3, 4, 6, 7, 9, > 8); encoding 9 decoded from the half-width colour JPEG as RGB and resized to 320 x 240 by ResizeLinear, OpenCV INTER_LINEAR's fixed-point pixel-centre path (exact for the 160 -> 320 / 240 -> 240 case on every OpenCV path); BadDecode unless 240 x 320; CameraFrame.PresentationJpeg/Save write encoding 9 as a quality-90 JPEG, 8 as the rebuilt JPEG, others raw.",
+      "provenance": "built from the 2026-09-29 pre-extraction Part 1 item 2 and the M3-device inventory: EncodedImageDecoder.IsColor now reproduces the tbb table (2, 3, 4, 6, 7, > 8 true; 1, 5, 8 false; 0 logs EncodedImage.IsColor.UnsupportedImageEncoding and returns false, I1/I2). TryDecodeRgb dispatches every encoding (Z0..Z8, tbh 0x004F21AE) - 1 replicates the gray byte into three channels (cvtColor code 8, Z7), 2 copies rows*cols*3 with no channel swap (Z6), 5/6/7/8 imdecode(flags 1) plus cvtColor code 4 BGR2RGB (StbImageSharp's RedGreenBlue is already RGB), 7 adds the 160-column border (Z3), 8 decodes the reconstructed gray JPEG as colour (Z4), 9 decodes the half-width colour JPEG and resizes to 320 x 240 by ResizeLinear (Z5), and 0/3/4/10..255 take the EncodedImage.DecodeImageRGB.UnsupportedEncoding default (Z1). BadDecode unless 240 x 320 (Z8); the raw cases read rows*cols(*3) bytes with no length check, so this stack applies policy M3-037 (SD2): missing bytes read as 0, extra bytes are ignored. CameraFrame.PresentationJpeg/Save write encoding 9 as a quality-90 JPEG, 8 as the rebuilt JPEG, others raw.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
@@ -1638,10 +1638,10 @@
         "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "MISSING: the RGB dispatch for any encoding but 9 (A9 names only 'the JPEG cases'), and IsColor of encoding 0 (a VERIFY failure in the engine; false here). The JPEG codec is StbImageSharp/StbImageWriteSharp in place of OpenCV's libjpeg: decoded pixels may differ in the last bit, and saved files byte for byte; whether that is EQUIVALENT_IMPLEMENTATION is the manager's call.",
+      "unresolved": "built, awaiting strong verification: the RGB dispatch for every encoding (Z0..Z8), the gray-to-RGB replication (Z7), the raw-RGB copy (Z6), the 160-column border (Z3) and the IsColor(0) VERIFY log (I1/I2) are in Camera.cs. Residual: the JPEG codec is StbImageSharp/StbImageWriteSharp in place of OpenCV's libjpeg (Part 1 item 3 is not built): decoded pixels may differ in the last bit and saved files byte for byte, so M3-018 stays IMPLEMENTATION_GAP. The exact rendering of a NULL %s argument for encodings above 9 remains open (Z1).",
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_018_A7_IsColor, M3DeviceTests.M3_018_A10_InterLinear160To320, M3DeviceTests.M3_018_A9_A25_AColourFrameDecodesTo320By240"
+      "test": "M3DeviceTests.M3_018_A7_IsColor, M3DeviceTests.M3_018_I2_IsColorOfZeroIsFalseAndLogsTheVerifyFailure, M3DeviceTests.M3_018_Z0_TheRgbDispatchTable, M3DeviceTests.M3_018_Z6_RawRgbIsACopyWithNoChannelSwap, M3DeviceTests.M3_018_Z7_RawGrayReplicatesIntoThreeChannels, M3DeviceTests.M3_018_Z3_TheRgbBorderMakesTheResult640WideAndBadDecode, M3DeviceTests.M3_018_A10_InterLinear160To320, M3DeviceTests.M3_018_A9_A25_AColourFrameDecodesTo320By240"
     },
     {
       "id": "M4-001",
@@ -6875,6 +6875,24 @@
       "hardware_required": true,
       "live_path": true,
       "test": "M3DeviceTests.M3_036_Hardware"
+    },
+    {
+      "id": "M3-037",
+      "subsystem": "M3-device",
+      "title": "A raw gray/RGB payload shorter than rows*cols (or *3) reads bytes past its end in the engine (undefined); this stack zero-fills the missing bytes",
+      "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "G2 AddChunk does not compare the payload with the geometry: reserve(0x38400) at 0x004F1DA6, no per-chunk total check",
+        "Y2/Z6 the raw cases wrap rows*cols (or *3) bytes of the vector with no length check (0x004F2BC0, 0x004F245A)"
+      ],
+      "provenance": "forced policy (manager, 2026-09-30, SD2): the engine reads stale or uninitialised heap past a short raw payload, which cannot be derived from a shipped artifact. The stack zero-fills the missing bytes and ignores extra ones; a long payload is truncated to rows*cols (*3).",
+      "unresolved": "",
+      "hardware_required": false,
+      "live_path": true,
+      "effect": "a short raw frame decodes with zero padding instead of heap bytes",
+      "test": "M3DeviceTests.M3_001_Y2_RawGrayCopiesShortFillsAndLongTruncates"
     },
     {
       "id": "M6-019",

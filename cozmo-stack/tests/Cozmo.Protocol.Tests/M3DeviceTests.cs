@@ -890,6 +890,260 @@ public class M3DeviceTests
     }
 
     /// <summary>
+    /// I2 (0x004F2120..0x004F2134): encoding 0 takes the VERIFY-failure path, which logs
+    /// <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and leaves the return register 0. The log reaches the
+    /// camera through <see cref="CozmoCamera.Log"/>.
+    /// </summary>
+    [Fact]
+    public void M3_018_I2_IsColorOfZeroIsFalseAndLogsTheVerifyFailure()
+    {
+        var log = new List<string>();
+        Assert.False(EncodedImageDecoder.IsColor(0, log.Add));
+        Assert.Contains(log, l => l.Contains("EncodedImage.IsColor.UnsupportedImageEncoding"));
+        // The engine's EnumToString(ImageEncoding) entry 0 is "NoneImageEncoding" (pointer table 0x01034A60, 0xC20B64).
+        Assert.Contains(log, l => l.Contains("NoneImageEncoding"));
+    }
+
+    /// <summary>
+    /// Y0/Y1 (tbh 0x004F289C, base 0x004F2898): the gray dispatch. 0, 3, 4 and 10..255 all go to the default at
+    /// 0x004F2924 with <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> and write no image; 1 and 2 are the raw
+    /// cases; 5/6/8 decode a JPEG; 7 decodes and borders; 9 decodes the half-width colour JPEG and resizes. The
+    /// dispatch is reached through the live entry <see cref="CameraFrame.TryDecodeGray"/>.
+    /// </summary>
+    [Fact]
+    public void M3_001_Y0_TheGrayDispatchTable()
+    {
+        foreach (byte e in new byte[] { 0, 3, 4, 10, 200, 255 })
+        {
+            var f = new CameraFrame { Encoding = e, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] };
+            Assert.False(f.TryDecodeGray(out var img, out var error), $"encoding {e}");
+            Assert.Null(img);
+            Assert.Contains("EncodedImage.DecodeImageRGB.UnsupportedEncoding", error);
+        }
+        // Y1: EnumToString(0) is "NoneImageEncoding" (pointer table 0x01034A60).
+        Assert.False(new CameraFrame { Encoding = 0, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] }
+            .TryDecodeGray(out _, out var e0));
+        Assert.Contains("NoneImageEncoding", e0);
+
+        var rawGray = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = new byte[320 * 240] };
+        Assert.True(rawGray.TryDecodeGray(out var gray, out _));
+        Assert.Equal((320, 240), (gray!.Width, gray.Height));
+
+        var rawRgb = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = new byte[320 * 240 * 3] };
+        Assert.True(rawRgb.TryDecodeGray(out var toGray, out _));
+        Assert.Equal((320, 240), (toGray!.Width, toGray.Height));
+
+        foreach (byte e in new byte[] { 5, 6 })
+        {
+            var f = new CameraFrame { Encoding = e, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 1, (x, y, c) => 128) };
+            Assert.True(f.TryDecodeGray(out var g, out _), $"encoding {e}");
+            Assert.Equal((320, 240), (g!.Width, g.Height));
+        }
+
+        var eight = new CameraFrame { Encoding = 8, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 1, (x, y, c) => 128) };
+        Assert.True(eight.TryDecodeGray(out var g8, out _));
+        Assert.Equal((320, 240), (g8!.Width, g8.Height));
+
+        var nine = new CameraFrame { Encoding = 9, Width = 320, Height = 240, Jpeg = Jpeg(160, 240, 3, (x, y, c) => 100) };
+        Assert.True(nine.TryDecodeGray(out var g9, out _));
+        Assert.Equal((320, 240), (g9!.Width, g9.Height));
+    }
+
+    /// <summary>
+    /// Z0/Z1 (tbh 0x004F21B2, base 0x004F21AE): the RGB dispatch. 0, 3, 4 and 10..255 take the default at
+    /// 0x004F2256 with the same UnsupportedEncoding log and no image; 1 is gray replicated to RGB; 2 is a raw copy;
+    /// 5/6/8 decode a colour JPEG; 7 decodes and borders; 9 decodes and resizes. The dispatch is reached through the
+    /// live entry <see cref="CameraFrame.TryDecodeRgb"/>.
+    /// </summary>
+    [Fact]
+    public void M3_018_Z0_TheRgbDispatchTable()
+    {
+        foreach (byte e in new byte[] { 0, 3, 4, 10, 200, 255 })
+        {
+            var f = new CameraFrame { Encoding = e, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] };
+            Assert.False(f.TryDecodeRgb(out var rgb, out var error), $"encoding {e}");
+            Assert.Null(rgb);
+            Assert.Contains("EncodedImage.DecodeImageRGB.UnsupportedEncoding", error);
+        }
+        // Z1: EnumToString(0) is "NoneImageEncoding" (pointer table 0x01034A60).
+        Assert.False(new CameraFrame { Encoding = 0, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] }
+            .TryDecodeRgb(out _, out var e0));
+        Assert.Contains("NoneImageEncoding", e0);
+
+        var rawGray = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = new byte[320 * 240] };
+        Assert.True(rawGray.TryDecodeRgb(out var r1, out _));
+        Assert.Equal(320 * 240 * 3, r1!.Length);
+
+        var rawRgb = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = new byte[320 * 240 * 3] };
+        Assert.True(rawRgb.TryDecodeRgb(out var r2, out _));
+        Assert.Equal(320 * 240 * 3, r2!.Length);
+
+        foreach (byte e in new byte[] { 5, 6 })
+        {
+            var f = new CameraFrame { Encoding = e, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 3, (x, y, c) => 128) };
+            Assert.True(f.TryDecodeRgb(out var r, out _), $"encoding {e}");
+            Assert.Equal(320 * 240 * 3, r!.Length);
+        }
+
+        var eight = new CameraFrame { Encoding = 8, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 1, (x, y, c) => 128) };
+        Assert.True(eight.TryDecodeRgb(out var r8, out _));
+        Assert.Equal(320 * 240 * 3, r8!.Length);
+
+        var nine = new CameraFrame { Encoding = 9, Width = 320, Height = 240, Jpeg = Jpeg(160, 240, 3, (x, y, c) => 100) };
+        Assert.True(nine.TryDecodeRgb(out var r9, out _));
+        Assert.Equal(320 * 240 * 3, r9!.Length);
+    }
+
+    /// <summary>
+    /// Y4 (cvtColor code 7, coefficient triple at 0xE2AB0 = {4899, 9617, 1868}):
+    /// <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c>, arithmetic shift, R the payload byte 0. The expected
+    /// values are computed by hand from the formula, not read from the code.
+    /// </summary>
+    [Fact]
+    public void M3_001_Y4_ToGrayUsesTheCvtColorFixedPointArithmetic()
+    {
+        var payload = new byte[320 * 240 * 3];
+        void Set(int pixel, byte r, byte g, byte b)
+        {
+            payload[3 * pixel] = r; payload[3 * pixel + 1] = g; payload[3 * pixel + 2] = b;
+        }
+        Set(0, 255, 0, 0);
+        Set(1, 0, 255, 0);
+        Set(2, 0, 0, 255);
+        Set(3, 255, 255, 255);
+        Set(4, 1, 0, 0);
+        Set(5, 0, 1, 0);
+        Set(6, 0, 0, 1);
+
+        var f = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = payload };
+        Assert.True(f.TryDecodeGray(out var image, out _));
+        Assert.Equal(76, image!.Pixels[0]);     // (4899*255 + 8192) >> 14 = 76
+        Assert.Equal(150, image.Pixels[1]);     // (9617*255 + 8192) >> 14 = 150
+        Assert.Equal(29, image.Pixels[2]);      // (1868*255 + 8192) >> 14 = 29
+        Assert.Equal(255, image.Pixels[3]);     // (16384*255 + 8192) >> 14 = 255
+        Assert.Equal(0, image.Pixels[4]);       // (4899 + 8192) >> 14 = 0
+        Assert.Equal(1, image.Pixels[5]);       // (9617 + 8192) >> 14 = 1
+        Assert.Equal(0, image.Pixels[6]);       // (1868 + 8192) >> 14 = 0
+    }
+
+    /// <summary>
+    /// Y2, M3-037 (SD2): case 1 reads <c>rows*cols</c> bytes from the vector start with no length check. A full
+    /// payload copies through; a short payload's missing bytes read as 0; a long payload's extra bytes are ignored.
+    /// </summary>
+    [Fact]
+    public void M3_001_Y2_RawGrayCopiesShortFillsAndLongTruncates()
+    {
+        var full = new byte[320 * 240];
+        for (int i = 0; i < full.Length; i++) full[i] = (byte)(i * 7);
+        var ff = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = full };
+        Assert.True(ff.TryDecodeGray(out var fimg, out _));
+        Assert.Equal(full, fimg!.Pixels);
+
+        var shortPayload = new byte[100];
+        Array.Fill(shortPayload, (byte)0xAB);
+        var sf = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = shortPayload };
+        Assert.True(sf.TryDecodeGray(out var simg, out _));
+        Assert.Equal(320 * 240, simg!.Pixels.Length);
+        Assert.Equal(0xAB, simg.Pixels[0]);
+        Assert.Equal(0xAB, simg.Pixels[99]);
+        Assert.Equal(0, simg.Pixels[100]);
+        Assert.Equal(0, simg.Pixels[^1]);
+
+        var longPayload = new byte[320 * 240 + 50];
+        for (int i = 0; i < longPayload.Length; i++) longPayload[i] = (byte)(i & 0xFF);
+        var lf = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = longPayload };
+        Assert.True(lf.TryDecodeGray(out var limg, out _));
+        Assert.Equal(320 * 240, limg!.Pixels.Length);
+        for (int i = 0; i < 10; i++) Assert.Equal((byte)(i & 0xFF), limg.Pixels[i]);
+    }
+
+    /// <summary>Z6: case 2 is a straight copy with no channel swap (0x004F245A..0x004F246A).</summary>
+    [Fact]
+    public void M3_018_Z6_RawRgbIsACopyWithNoChannelSwap()
+    {
+        var payload = new byte[320 * 240 * 3];
+        payload[0] = 1; payload[1] = 2; payload[2] = 3;
+        payload[3] = 250; payload[4] = 100; payload[5] = 10;
+        var f = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = payload };
+        Assert.True(f.TryDecodeRgb(out var rgb, out _));
+        Assert.Equal(320 * 240 * 3, rgb!.Length);
+        Assert.Equal(new byte[] { 1, 2, 3, 250, 100, 10 }, rgb[0..6]);
+
+        // M3-037: a short RGB payload zero-fills, a long one is truncated to rows*cols*3.
+        var shortPayload = new byte[6];
+        shortPayload[0] = 9; shortPayload[3] = 8;
+        var sf = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = shortPayload };
+        Assert.True(sf.TryDecodeRgb(out var srgb, out _));
+        Assert.Equal(320 * 240 * 3, srgb!.Length);
+        Assert.Equal(new byte[] { 9, 0, 0, 8, 0, 0, 0, 0, 0 }, srgb[0..9]);
+        var longPayload = new byte[320 * 240 * 3 + 30];
+        var lf = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = longPayload };
+        Assert.True(lf.TryDecodeRgb(out var lrgb, out _));
+        Assert.Equal(320 * 240 * 3, lrgb!.Length);
+    }
+
+    /// <summary>Z7: case 1 replicates the gray byte into all three channels (cvtColor code 8 GRAY2BGR).</summary>
+    [Fact]
+    public void M3_018_Z7_RawGrayReplicatesIntoThreeChannels()
+    {
+        var gray = new byte[320 * 240];
+        gray[0] = 7; gray[1] = 200;
+        var f = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = gray };
+        Assert.True(f.TryDecodeRgb(out var rep, out _));
+        Assert.Equal(new byte[] { 7, 7, 7, 200, 200, 200 }, rep![0..6]);
+    }
+
+    /// <summary>
+    /// Y6 (0x004F2C2C..0x004F2CD6): case 7 decodes, then copyMakeBorder adds 160 zero columns left and right; the
+    /// common tail sees 640 columns and rejects it. The "Got 640x240" proves the border ran.
+    /// </summary>
+    [Fact]
+    public void M3_001_Y6_TheGrayBorderMakesTheResult640WideAndBadDecode()
+    {
+        var f = new CameraFrame { Encoding = 7, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 1, (x, y, c) => 128) };
+        Assert.False(f.TryDecodeGray(out _, out var error));
+        // The gray tail loads the RGB event name (0x004F2CF6 -> 0xBE497F), not a gray one.
+        Assert.Contains("EncodedImage.DecodeImageRGB.BadDecode", error);
+        Assert.Contains("Got 640x240", error);
+    }
+
+    /// <summary>Z3 (0x004F2596..0x004F2654): the colour counterpart of Y6; the result is 640 columns and BadDecode.</summary>
+    [Fact]
+    public void M3_018_Z3_TheRgbBorderMakesTheResult640WideAndBadDecode()
+    {
+        var f = new CameraFrame { Encoding = 7, Width = 320, Height = 240, Jpeg = Jpeg(320, 240, 3, (x, y, c) => 128) };
+        Assert.False(f.TryDecodeRgb(out _, out var error));
+        Assert.Contains("BadDecode", error);
+        Assert.Contains("Got 640x240", error);
+    }
+
+    /// <summary>
+    /// Y2/Z6 through the live entry: a raw frame reassembled by <see cref="CozmoCamera"/> (one chunk per 1000 bytes,
+    /// under the 0x4B0 cap) is handed to <see cref="CameraFrame.TryDecodeGray"/>. The chunks carry encoding 1, which
+    /// AddChunk stores unvalidated (G1).
+    /// </summary>
+    [Fact]
+    public void M3_001_Y2_TheLiveCameraFrameDecodesRawGray()
+    {
+        var cam = new CozmoCamera();
+        CameraFrame? frame = null;
+        cam.FrameReceived += f => frame = f;
+        var payload = new byte[320 * 240];
+        for (int i = 0; i < payload.Length; i++) payload[i] = (byte)(i * 3);
+        const int chunkBytes = 1000;
+        int count = (payload.Length + chunkBytes - 1) / chunkBytes;
+        for (int i = 0; i < count; i++)
+            cam.Handle(Chunk(1, (byte)i, payload.Skip(i * chunkBytes).Take(chunkBytes).ToArray(), total: (byte)count, encoding: 1));
+
+        Assert.NotNull(frame);
+        Assert.Equal(1, frame!.Encoding);
+        Assert.Equal(payload, frame.RawPayload);
+        Assert.True(frame.TryDecodeGray(out var image, out _));
+        Assert.Equal((320, 240), (image!.Width, image.Height));
+        Assert.Equal(payload, image.Pixels);
+    }
+
+    /// <summary>
     /// A10: Resize is cv::resize with INTER_LINEAR. For the engine's 160 → 320 columns and 240 → 240 rows, OpenCV's
     /// pixel-centre mapping gives dst[0] = p[0], dst[2k] = (p[k-1] + 3 p[k] + 2) &gt;&gt; 2, dst[2k+1] = (3 p[k] + p[k+1] +
     /// 2) &gt;&gt; 2 and dst[319] = p[159], every row copied as it is.

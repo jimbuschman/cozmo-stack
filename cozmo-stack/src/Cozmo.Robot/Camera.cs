@@ -105,24 +105,37 @@ public sealed class CameraFrame
 
 // fidelity: M3-001, M3-018, M3-020
 /// <summary>
-/// <c>EncodedImage::DecodeImageGray</c> and <c>DecodeImageRGB</c> (M3 inventory A7..A11).
+/// <c>EncodedImage::DecodeImageGray</c> and <c>DecodeImageRGB</c> (M3 inventory A7..A11; the 2026-09-29
+/// pre-extraction Part 1 item 2 gives every dispatch value, and the manager spot-checked the tbh/tbb tables and the
+/// cvtColor coefficient table).
 ///
 /// <list type="bullet">
-/// <item><b>Gray (A8, tbh 0x004F2898).</b> 1: the payload copied as the image; 3 and 4: UnsupportedEncoding;
-/// 5, 6: decoded as a grayscale JPEG; 7: the same, then a border of 160 zero columns left and right; 8: the
-/// reconstructed JPEG decoded; 9: the colour JPEG (built at half width) decoded to gray, then resized to 320 x 240
-/// by <see cref="ResizeLinear"/>.</item>
-/// <item><b>RGB (A9, tbh 0x004F21AE).</b> 9: the colour JPEG at half width decoded as colour (BGR, then
-/// <c>cvtColor(4)</c> BGR2RGB, which is RGB order), then resized to 320 x 240 by <see cref="ResizeLinear"/>
-/// (<c>ImageBase&lt;RGB&gt;::Resize(h, w, 1)</c>, A10).</item>
-/// <item><b>Check (A11).</b> The result must be 240 rows by 320 columns, otherwise BadDecode.</item>
+/// <item><b>IsColor (I1, I2; tbb 0x004F2110).</b> 1, 5, 8 false; 2, 3, 4, 6, 7 true; above 8 true; encoding 0 takes
+/// the VERIFY-failure path, logs <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and is false.</item>
+/// <item><b>Gray (Y0..Y8; <c>DecodeImageHelper&lt;Image&gt;</c> 0x004F287C, tbh 0x004F289C base 0x004F2898).</b> 1: the payload's
+/// <c>rows*cols</c> bytes copied as the image; 2: <c>rows*cols*3</c> bytes converted to gray with
+/// <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c> (cvtColor code 7, Y4); 5, 6: <c>imdecode(flags 0)</c>;
+/// 7: the same, then 160 zero columns left and right; 8: the reconstructed gray JPEG decoded; 9: the half-width
+/// colour JPEG decoded to gray and resized to 320 x 240 by <see cref="ResizeLinear"/>. 0, 3, 4 and 10..255 take the
+/// <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> default (the literal says DecodeImageRGB even in the gray
+/// helper, Y1) and write no image.</item>
+/// <item><b>RGB (Z0..Z8; <c>DecodeImageHelper&lt;ImageRGB&gt;</c> 0x004F2184, tbh 0x004F21B2 base 0x004F21AE).</b> 1: the gray byte
+/// replicated into three channels (cvtColor code 8, Z7); 2: a straight copy with no channel swap (Z6); 5, 6:
+/// <c>imdecode(flags 1)</c> then cvtColor code 4 BGR2RGB; 7: the same, then the 160-column border; 8: the
+/// reconstructed gray JPEG decoded as colour; 9: the half-width colour JPEG decoded as colour and resized. 0, 3, 4
+/// and 10..255 take the same UnsupportedEncoding default.</item>
+/// <item><b>Check (A11).</b> The result must be 240 rows by 320 columns, otherwise BadDecode. For the raw cases 1 and
+/// 2 it is vacuous: the engine builds the Mat with exactly +0x18 x +0x14, the same constants it checks (Y2, Z6).</item>
 /// </list>
-/// The JPEG entropy decoding is StbImageSharp in place of OpenCV's libjpeg (<c>cv::imdecode</c>): the geometry and
-/// the resize are the engine's; pixel values may differ in the last bit where the two decoders' IDCT, chroma
+/// The raw cases read <c>rows*cols</c> (<c>*3</c>) bytes from the vector start with no length check (G2, Y2, Y3, Z6,
+/// Z7). The engine's missing bytes are stale or uninitialised heap, which no shipped artifact can derive, so this
+/// stack applies policy M3-037 (SD2): a short payload's missing bytes read as 0 and a long payload's extra bytes are
+/// ignored. The JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (<c>cv::imdecode</c>): the geometry
+/// and the resize are the engine's; pixel values may differ in the last bit where the two decoders' IDCT, chroma
 /// upsampling and colour conversion round differently.
-/// MISSING: gray case 2 (ToGray of a raw RGB payload: the conversion is not in the rows), the RGB dispatch for any
-/// encoding but 9 (A9 names only "the JPEG cases" and case 9), a raw case-1 payload that is not exactly 320 x 240
-/// bytes, and encodings 0 and above 9 (outside the tbh table): each is reported as a decode failure.
+/// MISSING: the empty-vector raw case (the engine's <c>Mat</c> constructor calls <c>cv::error(-215)</c> when
+/// <c>data == null</c>; whether that exception is caught above is not in the rows), and the exact rendering of a
+/// NULL <c>%s</c> argument for encodings above 9 (Z1's <c>sErrorF</c> was not read).
 /// </summary>
 public static class EncodedImageDecoder
 {
@@ -137,17 +150,33 @@ public static class EncodedImageDecoder
 
     // fidelity: M3-018
     /// <summary>
-    /// <c>EncodedImage::IsColor</c> (A7, tbb table 0x004F2110): true for 2, 3, 4, 6, 7, 9 and any value above 8; false
-    /// for 1, 5 and 8. MISSING: encoding 0 fails a VERIFY in the engine, and what IsColor then returns is not in the
-    /// rows; false is returned here.
+    /// <c>EncodedImage::IsColor</c> (I1, I2; tbb table 0x004F2110, base 0x004F210C): true for 2, 3, 4, 6, 7 and any
+    /// value above 8; false for 1, 5 and 8. Encoding 0 goes to the VERIFY-failure path at 0x004F2120
+    /// (<c>sVerifyFailedReturnFalse</c>), which logs <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and leaves
+    /// the return register 0. It does not abort or trap. The event name is passed to <paramref name="log"/> when the
+    /// decoder has a log seam.
     /// </summary>
-    public static bool IsColor(byte encoding) => encoding switch
+    public static bool IsColor(byte encoding, Action<string>? log = null)
     {
-        > 8 => true,
-        2 or 3 or 4 or 6 or 7 => true,
-        _ => false,
-    };
+        if (encoding > 8) return true;
+        switch (encoding)
+        {
+            case 0:
+                log?.Invoke("VERIFY: EncodedImage.IsColor.UnsupportedImageEncoding: Encoding NoneImageEncoding is " +
+                            "not a colour encoding; returning false");
+                return false;
+            case 2 or 3 or 4 or 6 or 7:
+                return true;
+            default:                                  // 1, 5, 8
+                return false;
+        }
+    }
 
+    // fidelity: M3-001
+    /// <summary>
+    /// <c>EncodedImage::DecodeImageGray</c> = <c>DecodeImageHelper&lt;Image&gt;</c> (Y0..Y8). See the class summary
+    /// for the dispatch and the raw-payload policy (M3-037).
+    /// </summary>
     public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error)
     {
         image = null;
@@ -156,51 +185,176 @@ public static class EncodedImageDecoder
         int rows, cols;
         switch (f.Encoding)
         {
-            case 1:
-                if (f.RawPayload.Length != w * h)
-                    return Fail($"MISSING: a raw gray payload of {f.RawPayload.Length} bytes for {w}x{h} (M3-001)", out error);
-                pixels = (byte[])f.RawPayload.Clone(); rows = h; cols = w;
+            case 1:                                     // Y2: Image(rows, cols, data); copy rows*cols
+                rows = h; cols = w;
+                pixels = CopyRaw(f.RawPayload, rows * cols);
                 break;
-            case 3 or 4:
-                return Fail($"EncodedImage.DecodeImageGray.UnsupportedEncoding: {f.Encoding}", out error);
-            case 5 or 6 or 7 or 8 or 9:
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error)) return false;
-                if (f.Encoding == 7)
-                {
-                    // copyMakeBorder(0, 0, 160, 160, BORDER_CONSTANT 0)
-                    var padded = new byte[rows * (cols + 320)];
-                    for (int y = 0; y < rows; y++) Array.Copy(pixels, y * cols, padded, y * (cols + 320) + 160, cols);
-                    pixels = padded; cols += 320;
-                }
-                else if (f.Encoding == 9)
-                {
-                    pixels = ResizeLinear(pixels, cols, rows, 1, w, h);
-                    cols = w; rows = h;
-                }
+            case 2:                                     // Y3, Y4: ImageRGB(rows, cols, data) then ToGray (cvtColor 7)
+                rows = h; cols = w;
+                pixels = RgbToGray(CopyRaw(f.RawPayload, rows * cols * 3), rows * cols);
                 break;
-            default:
-                return Fail($"MISSING: gray decode of encoding {f.Encoding} is not in the rows (M3-001)", out error);
+            case 5 or 6:                                // Y5: imdecode(flags 0 = IMREAD_GRAYSCALE)
+                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
+                    return false;
+                break;
+            case 7:                                     // Y6: imdecode(flags 0) then copyMakeBorder(160, 160)
+                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
+                    return false;
+                pixels = AddZeroColumns(pixels, cols, rows, 1, 160);
+                cols += 320;
+                break;
+            case 8:                                     // Y7: MiniToJpegHelper(gray) then imdecode(flags 0)
+                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
+                    return false;
+                break;
+            case 9:                                     // Y7: half-width colour JPEG, imdecode(flags 0), Resize(1)
+                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
+                    return false;
+                pixels = ResizeLinear(pixels, cols, rows, 1, w, h);
+                cols = w; rows = h;
+                break;
+            default:                                    // Y0, Y1: 0, 3, 4, 10..255
+                return Unsupported(f.Encoding, out error);
         }
+        // A11/Y8: the result must be 240 x 320; for cases 1 and 2 this is vacuous (the Mat is built at that size).
+        // The gray tail loads the same "EncodedImage.DecodeImageRGB.BadDecode" string (0x004F2CF6 -> 0xBE497F).
         if (rows != Rows || cols != Columns)
-            return Fail($"EncodedImage.DecodeImageGray.BadDecode: Failed to decode {Columns}x{Rows} image. Got {cols}x{rows}", out error);
+            return Fail($"EncodedImage.DecodeImageRGB.BadDecode: Failed to decode {Columns}x{Rows} image from " +
+                        $"buffer. Got {cols}x{rows}", out error);
         image = new GrayImage(cols, rows, pixels);
         error = null;
         return true;
     }
 
+    // fidelity: M3-018
+    /// <summary>
+    /// <c>EncodedImage::DecodeImageRGB</c> = <c>DecodeImageHelper&lt;ImageRGB&gt;</c> (Z0..Z8). See the class summary
+    /// for the dispatch and the raw-payload policy (M3-037).
+    /// </summary>
     public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error)
     {
         rgb = null;
-        if (f.Encoding != MiniJpeg.EncodingJpegMinimizedColor)
-            return Fail($"MISSING: RGB decode of encoding {f.Encoding} is not in the rows (M3-018)", out error);
-        if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.RedGreenBlue, out var pixels, out int cols, out int rows, out error))
-            return false;
-        pixels = ResizeLinear(pixels, cols, rows, 3, f.Width, f.Height);
-        cols = f.Width; rows = f.Height;
+        int h = f.Height, w = f.Width;
+        byte[] pixels;
+        int rows, cols;
+        switch (f.Encoding)
+        {
+            case 1:                                     // Z7: Image(rows, cols, data) then ImageRGB(const Image&)
+                rows = h; cols = w;                     //     -> SetFromGray, cvtColor code 8 GRAY2BGR
+                pixels = GrayToRgb(CopyRaw(f.RawPayload, rows * cols), rows * cols);
+                break;
+            case 2:                                     // Z6: ImageRGB(rows, cols, data) then CopyTo, no swap
+                rows = h; cols = w;
+                pixels = CopyRaw(f.RawPayload, rows * cols * 3);
+                break;
+            case 5 or 6 or 7 or 8 or 9:
+            {
+                // Z2/Z3/Z4/Z5: imdecode(flags 1 = IMREAD_COLOR), which the engine follows with cvtColor code 4
+                // (BGR2RGB). StbImageSharp's RedGreenBlue is already RGB, so the net order matches.
+                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.RedGreenBlue, out pixels, out cols, out rows, out error))
+                    return false;
+                if (f.Encoding == 7)
+                {
+                    pixels = AddZeroColumns(pixels, cols, rows, 3, 160);
+                    cols += 320;
+                }
+                else if (f.Encoding == 9)
+                {
+                    pixels = ResizeLinear(pixels, cols, rows, 3, w, h);
+                    cols = w; rows = h;
+                }
+                break;
+            }
+            default:                                    // Z0, Z1: 0, 3, 4, 10..255
+                return Unsupported(f.Encoding, out error);
+        }
+        // Z8/A11: the result must be 240 x 320; for cases 1 and 2 this is vacuous.
         if (rows != Rows || cols != Columns)
-            return Fail($"EncodedImage.DecodeImageRGB.BadDecode: Failed to decode {Columns}x{Rows} image. Got {cols}x{rows}", out error);
+            return Fail($"EncodedImage.DecodeImageRGB.BadDecode: Failed to decode {Columns}x{Rows} image from " +
+                        $"buffer. Got {cols}x{rows}", out error);
         rgb = pixels;
+        error = null;
         return true;
+    }
+
+    /// <summary>
+    /// Y1/Z1: the default and unsupported cases (0, 3, 4, 10..255) log
+    /// <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> / "Encoding %s not yet supported for decoding image
+    /// chunks" and return failure with no image. The literal says DecodeImageRGB even in the gray helper.
+    /// <c>EnumToString</c> returns NULL above 9; this stack writes "null" there (Z1 leaves the rendering open).
+    /// </summary>
+    private static bool Unsupported(byte encoding, out string? error)
+        => Fail($"EncodedImage.DecodeImageRGB.UnsupportedEncoding: Encoding {EnumToString(encoding)} not yet " +
+                "supported for decoding image chunks", out error);
+
+    /// <summary>The names in <c>EnumToString(ImageEncoding)</c> for 0..9 (pointer table 0x01034A60); NULL above 9.</summary>
+    private static string EnumToString(byte encoding) => encoding switch
+    {
+        0 => "NoneImageEncoding",
+        1 => "RawGray",
+        2 => "RawRGB",
+        3 => "YUYV",
+        4 => "BAYER",
+        5 => "JPEGGray",
+        6 => "JPEGColor",
+        7 => "JPEGColorHalfWidth",
+        8 => "JPEGMinimizedGray",
+        9 => "JPEGMinimizedColor",
+        _ => "null",
+    };
+
+    // fidelity: M3-037
+    /// <summary>
+    /// SD2 policy M3-037: the engine reads <paramref name="need"/> bytes from the vector start with no length check
+    /// (Y2, Y3, Z6, Z7). A short payload's missing bytes are stale or uninitialised heap, which no shipped artifact
+    /// can derive, so they read as 0 here; a long payload's extra bytes are ignored.
+    /// </summary>
+    private static byte[] CopyRaw(byte[] payload, int need)
+    {
+        var dst = new byte[need];
+        Array.Copy(payload, dst, Math.Min(payload.Length, need));
+        return dst;
+    }
+
+    // fidelity: M3-001
+    /// <summary>
+    /// Y4: cvtColor code 7 (COLOR_RGB2GRAY), 8U, the static coefficient triple at rodata 0xE2AB0 = {4899, 9617,
+    /// 1868}: <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c> with an arithmetic shift, R the source byte 0
+    /// (the payload is RGB order). The sum of three non-negative ints cannot overflow.
+    /// </summary>
+    private static byte[] RgbToGray(byte[] rgb, int pixels)
+    {
+        var gray = new byte[pixels];
+        for (int i = 0; i < pixels; i++)
+        {
+            int r = rgb[3 * i], g = rgb[3 * i + 1], b = rgb[3 * i + 2];
+            gray[i] = (byte)((4899 * r + 9617 * g + 1868 * b + 8192) >> 14);
+        }
+        return gray;
+    }
+
+    // fidelity: M3-018
+    /// <summary>Z7: cvtColor code 8 (COLOR_GRAY2BGR) replicates the gray byte into all three channels.</summary>
+    private static byte[] GrayToRgb(byte[] gray, int pixels)
+    {
+        var rgb = new byte[pixels * 3];
+        for (int i = 0; i < pixels; i++)
+        {
+            byte v = gray[i];
+            rgb[3 * i] = v; rgb[3 * i + 1] = v; rgb[3 * i + 2] = v;
+        }
+        return rgb;
+    }
+
+    /// <summary>Y6/Z3: copyMakeBorder(0, 0, left = right = 160, BORDER_CONSTANT, Scalar zeros).</summary>
+    private static byte[] AddZeroColumns(byte[] src, int cols, int rows, int channels, int each)
+    {
+        int newCols = cols + 2 * each;
+        var dst = new byte[rows * newCols * channels];
+        int rowBytes = cols * channels, newRowBytes = newCols * channels, pad = each * channels;
+        for (int y = 0; y < rows; y++)
+            Array.Copy(src, y * rowBytes, dst, y * newRowBytes + pad, rowBytes);
+        return dst;
     }
 
     private static bool TryJpeg(byte[] jpeg, StbImageSharp.ColorComponents components, out byte[] pixels,
@@ -480,12 +634,14 @@ public sealed class CozmoCamera
         bool toVision = false;
         string? capWarning = null;
         var dropped = new List<(uint Id, string Why)>();
+        var warnings = new List<string>();
         lock (_gate)
         {
-            completed = AddLocked(c, dropped);
+            completed = AddLocked(c, dropped, warnings);
             if (completed is not null) toVision = PassesTickCapLocked(completed, out capWarning);
         }
         foreach (var d in dropped) FrameDropped?.Invoke(d.Id, d.Why);
+        foreach (var w in warnings) Log?.Invoke(w);
         if (completed is null) return;
         FrameReceived?.Invoke(completed);
         if (capWarning is not null) Log?.Invoke(capWarning);
@@ -530,7 +686,7 @@ public sealed class CozmoCamera
     /// the image is valid (R8). The constructor's id 0xFFFFFFFF means a first chunk carrying that id takes the
     /// same-image path with the image invalid (R10).
     /// </summary>
-    private CameraFrame? AddLocked(ImageChunk c, List<(uint Id, string Why)> dropped)
+    private CameraFrame? AddLocked(ImageChunk c, List<(uint Id, string Why)> dropped, List<string> warnings)
     {
         ChunksReceived++;
         if (c.Data.Length > MaxChunkBytes)
@@ -597,7 +753,7 @@ public sealed class CozmoCamera
         {
             ImageId = _imageId, Timestamp = _timestamp, Width = _width, Height = _height,
             Encoding = _encoding, Resolution = (byte)c.ImageResolution,
-            IsColor = EncodedImageDecoder.IsColor(_encoding), JpegWidth = jpegWidth,
+            IsColor = EncodedImageDecoder.IsColor(_encoding, warnings.Add), JpegWidth = jpegWidth,
             StreamMarker = payload.Length > 1 ? payload[1] : (byte)0,
             FrameIndex = FrameIndex, IsWarmUp = FrameIndex < WarmUpFrames,
             ChunkCount = c.ImageChunkCount, RawPayload = payload,

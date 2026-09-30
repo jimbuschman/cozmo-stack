@@ -1,8 +1,8 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-09-29",
+  "approved": "2026-09-30",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "bc39631c8e6b86b82d44d960ba96bece40d032728e9bbe3ad890c84235b0763e",
+  "inventory_sha256": "b4edb8f7d02719f1feeca8a53441b02136859efc34c7fce644f537366564f554",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -415,6 +415,17 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M3-037": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "A raw gray/RGB payload shorter than rows*cols (or *3) reads bytes past its end in the engine (undefined); this stack zero-fills the missing bytes",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "G2 AddChunk does not compare the payload with the geometry: reserve(0x38400) at 0x004F1DA6, no per-chunk total check",
+        "Y2/Z6 the raw cases wrap rows*cols (or *3) bytes of the vector with no length check (0x004F2BC0, 0x004F245A)"
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }

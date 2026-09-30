@@ -3,7 +3,7 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **378 records** over 16 subsystems.
+Manifest of **379 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
@@ -11,7 +11,7 @@ Manifest of **378 records** over 16 subsystems.
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 5 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 157 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 26 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 27 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 45 | 0 | 9 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 2 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 36 | 0 | 17 | 0 | 3 | yes | no |
+| M3-device — Camera, display and audio device layer | 37 | 0 | 17 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 25 | 0 | 12 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 11 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 22 | 0 | 0 | yes | no |
@@ -235,10 +235,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/MiniJpeg.cs`
 * effect: a camera frame is reconstructed or rejected differently
-* rests on: compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): the MiniJpeg header tables match the inventory's SHA-256 prefixes; height/width BE at 0x5E..0x61; EncodedImageDecoder.TryDecodeGray dispatches 3/4 (unsupported), 5/6 (JPEG), 7 (JPEG plus 160-column borders), 8, and 9 (the half-width colour JPEG to gray, then INTER_LINEAR to 320 x 240), and rejects anything but 240 x 320 (BadDecode); the frame timestamp is the last chunk's. VisionSystem decodes through it.
+* rests on: built from the 2026-09-29 pre-extraction Part 1 item 2 (20260929-R-DEV-pre-extraction.md) and the M3-device inventory: the MiniJpeg header tables match the inventory's SHA-256 prefixes; height/width BE at 0x5E..0x61; EncodedImageDecoder.TryDecodeGray now dispatches every encoding value (Y0..Y8, tbh 0x004F2898) - 1 copies rows*cols, 2 converts rows*cols*3 with the cvtColor code 7 fixed point (4899R + 9617G + 1868B + 8192) >> 14 (Y4), 5/6 imdecode(flags 0), 7 imdecode(flags 0) plus the 160-column border, 8 the reconstructed gray JPEG, 9 the half-width colour JPEG to gray then INTER_LINEAR to 320 x 240, and 0/3/4/10..255 the EncodedImage.DecodeImageRGB.UnsupportedEncoding default - and rejects anything but 240 x 320 (BadDecode, A11/Y8); the frame timestamp is the last chunk's. The raw cases read rows*cols bytes with no length check (G2, Y2, Y3); this stack applies policy M3-037 (SD2): missing bytes read as 0, extra bytes are ignored. VisionSystem decodes through CameraFrame.TryDecodeGray.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: A13 header tables 0x00C48C40 (gray, 0x144 B) and 0x00C48D84 (colour, 0x14E B): SOF0 at 0x59, 1 or 3 components (Y 0x21, Cb/Cr 0x11); A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC); A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC
-* outstanding: MISSING: A8 case 2 (ToGray of a raw RGB payload; the conversion is not in the rows), case 1 with a payload that is not exactly 320 x 240 bytes, and encodings 0 and above 9 (outside the tbh table): each is reported as a decode failure. The JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (last-bit pixel differences possible); whether that library substitution is EQUIVALENT_IMPLEMENTATION is the manager's call.
+* outstanding: built, awaiting strong verification: the gray dispatch for every encoding (Y0..Y8) and the ToGray arithmetic (Y4) are in Camera.cs; the raw-payload zero-fill is policy M3-037 (SD2), whose record the manager is adding (the code carries a `// fidelity: M3-037` tag, so `fidelity.py --check` reports one dangling tag until then). Residual: the JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (last-bit pixel differences possible; Part 1 item 3 is not built), so M3-001 stays IMPLEMENTATION_GAP; the empty-vector raw case (the engine's cv::error(-215)) and the NULL-%s rendering for encodings above 9 remain open (Z1, Y2).
 
 **M3-010 — encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded** (live path)
 
@@ -262,10 +262,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
 * effect: a colour frame looks different
-* rests on: compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EncodedImageDecoder: IsColor per the tbb table (2, 3, 4, 6, 7, 9, > 8); encoding 9 decoded from the half-width colour JPEG as RGB and resized to 320 x 240 by ResizeLinear, OpenCV INTER_LINEAR's fixed-point pixel-centre path (exact for the 160 -> 320 / 240 -> 240 case on every OpenCV path); BadDecode unless 240 x 320; CameraFrame.PresentationJpeg/Save write encoding 9 as a quality-90 JPEG, 8 as the rebuilt JPEG, others raw.
+* rests on: built from the 2026-09-29 pre-extraction Part 1 item 2 and the M3-device inventory: EncodedImageDecoder.IsColor now reproduces the tbb table (2, 3, 4, 6, 7, > 8 true; 1, 5, 8 false; 0 logs EncodedImage.IsColor.UnsupportedImageEncoding and returns false, I1/I2). TryDecodeRgb dispatches every encoding (Z0..Z8, tbh 0x004F21AE) - 1 replicates the gray byte into three channels (cvtColor code 8, Z7), 2 copies rows*cols*3 with no channel swap (Z6), 5/6/7/8 imdecode(flags 1) plus cvtColor code 4 BGR2RGB (StbImageSharp's RedGreenBlue is already RGB), 7 adds the 160-column border (Z3), 8 decodes the reconstructed gray JPEG as colour (Z4), 9 decodes the half-width colour JPEG and resizes to 320 x 240 by ResizeLinear (Z5), and 0/3/4/10..255 take the EncodedImage.DecodeImageRGB.UnsupportedEncoding default (Z1). BadDecode unless 240 x 320 (Z8); the raw cases read rows*cols(*3) bytes with no length check, so this stack applies policy M3-037 (SD2): missing bytes read as 0, extra bytes are ignored. CameraFrame.PresentationJpeg/Save write encoding 9 as a quality-90 JPEG, 8 as the rebuilt JPEG, others raw.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440); A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6); A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E); A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)
-* outstanding: MISSING: the RGB dispatch for any encoding but 9 (A9 names only 'the JPEG cases'), and IsColor of encoding 0 (a VERIFY failure in the engine; false here). The JPEG codec is StbImageSharp/StbImageWriteSharp in place of OpenCV's libjpeg: decoded pixels may differ in the last bit, and saved files byte for byte; whether that is EQUIVALENT_IMPLEMENTATION is the manager's call.
+* outstanding: built, awaiting strong verification: the RGB dispatch for every encoding (Z0..Z8), the gray-to-RGB replication (Z7), the raw-RGB copy (Z6), the 160-column border (Z3) and the IsColor(0) VERIFY log (I1/I2) are in Camera.cs. Residual: the JPEG codec is StbImageSharp/StbImageWriteSharp in place of OpenCV's libjpeg (Part 1 item 3 is not built): decoded pixels may differ in the last bit and saved files byte for byte, so M3-018 stays IMPLEMENTATION_GAP. The exact rendering of a NULL %s argument for encodings above 9 remains open (Z1).
 
 **M3-021 — Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send** (live path)
 
@@ -1616,6 +1616,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M2-017 | M2-protocol | COMPATIBILITY_POLICY | A field whose read failed in a kept malformed message holds 0 / false (the engine leaves stale stack bytes) | libcozmoEngine.so 3.4.0-1204 |
 | M3-019 | M3-device | COMPATIBILITY_POLICY | The connection-time SetCameraParams: the engine sends stale stack bytes for f32@0 and u16@4 and bool@6 = 1; this stack sends 0.0, 0, true | libcozmoEngine.so 3.4.0-1204 |
 | M3-020 | M3-device | COMPATIBILITY_POLICY | A payload that is empty or all 0xFF: the engine reads data[-1] (undefined); this stack treats it as a decode failure | libcozmoEngine.so 3.4.0-1204 |
+| M3-037 | M3-device | COMPATIBILITY_POLICY | A raw gray/RGB payload shorter than rows*cols (or *3) reads bytes past its end in the engine (undefined); this stack zero-fills the missing bytes | libcozmoEngine.so 3.4.0-1204 |
 | M6-021 | M6-wwise-bank | COMPATIBILITY_POLICY | The injectable RNG seed seam: WwiseSelection's constructor takes a seed for tests; the live default is Unix seconds, matching the engine's time(NULL) | libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40) |
 | M8-010 | M8-framework | COMPATIBILITY_POLICY | Behaviour inventory classifier rules | not applicable: this is bookkeeping, not robot behaviour |
 
