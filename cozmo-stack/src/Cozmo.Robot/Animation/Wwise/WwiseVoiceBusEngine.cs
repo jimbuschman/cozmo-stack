@@ -70,8 +70,10 @@ public sealed class WwiseVoiceBuffer
 ///
 /// <para><b>Slots.</b> <see cref="Render"/> is <c>vt+0x30</c> (0xA44630 step 6, the render bodies
 /// <c>0xA73D34</c>/<c>0xA72554</c>/<c>0xAB0448</c>/<c>0xAB1550</c>); <see cref="StartStream"/> is
-/// <c>vt+0x28</c> (0xA54A30); <see cref="StartStreamSucceeded"/> is <c>vt+0x4C</c> (the byte at
-/// <c>[PBI+0x1BE]</c> bit 6, C12 source-classes Q2).</para>
+/// <c>vt+0x28</c> (0xA54A30); <see cref="StartStreamSucceeded"/> is the <c>[source+0x10]</c> bit 0 latch
+/// that <c>0xA56650</c> sets when <c>vt+0x28</c> returns 1 (M6-025 C23 item 5 note 4, row 4.25). It is not
+/// source <c>vt+0x4C</c>: native <c>vt+0x4C</c> returns <c>[[source+0xC]+0x1BE]</c> bit 6 (<c>0xA72B14</c>,
+/// <c>0xA566C8</c>), a different fact.</para>
 /// </summary>
 public interface IWwiseVoiceSource
 {
@@ -99,8 +101,20 @@ public interface IWwiseVoiceSource
     /// </summary>
     int StartStreamCode => 1;
 
-    /// <summary><c>vt+0x4C</c>: the <c>[PBI+0x1BE]</c> bit 6 the per-voice machine tests as <c>SRC10</c>.</summary>
+    /// <summary>
+    /// The <c>[source+0x10]</c> bit 0 latch the per-voice machine tests as <c>SRC10</c> and <c>0xA56650</c>
+    /// sets on a <c>vt+0x28</c> result of 1 (M6-025 C23 row 4.25 and its check: this is not source
+    /// <c>vt+0x4C</c>, which is <c>[[source+0xC]+0x1BE]</c> bit 6).
+    /// </summary>
     bool StartStreamSucceeded { get; }
+
+    /// <summary>
+    /// <c>vt+0x6C</c>, the live-voice list ordering key <c>0xA42DEC</c> reads (C23 item 1 row 20 and item 5
+    /// row 5.10): <c>0xA56708</c> (<c>mov r0,#0</c>) in every one of the ten shipped source vtables, so the
+    /// default is 0. A source class outside those ten is not checked.
+    /// </summary>
+    // fidelity: M6-025
+    int OrderKey6C => 0;
 
     /// <summary>
     /// V7 prologue <c>0xA54F70</c>: <c>[source+8]</c>, a pointer to a <c>{+0,+4}</c> gain pair, or null when
@@ -108,6 +122,61 @@ public interface IWwiseVoiceSource
     /// bit0 is set. The source class is UNKNOWN, so this is a caller seam.
     /// </summary>
     (float At0, float At4)? Gain8 => null;
+}
+
+/// <summary>
+/// The connection descriptor <c>conn+0x18..+0x24 = {data, size, ptrA, ptrB}</c> (C24.4), zeroed by the ctor
+/// (<c>0xA6F998..0xA6F9A4</c>). <see cref="Reserve"/> is <c>0xA67B9C(desc, inCh, outCh)</c>, <see cref="Free"/> is
+/// the destructor part <c>0xA67C58</c>, and <see cref="SwapPointers"/> is the per-frame <c>+0x20/+0x24</c> swap
+/// (<c>0xA4BE34..0xA4BE58</c>).
+/// </summary>
+public sealed class WwiseConnectionDescriptor
+{
+    // fidelity: M6-025
+
+    /// <summary><c>+0x18</c> (and <c>+0x20</c> before any swap): the data block; null when unallocated.</summary>
+    public byte[]? Data { get; private set; }
+
+    /// <summary><c>+0x1C</c>: the byte size.</summary>
+    public int Size { get; private set; }
+
+    /// <summary><c>+0x20</c>: offset of the first half (starts at 0 = <c>data</c>).</summary>
+    public int PtrA { get; private set; }
+
+    /// <summary><c>+0x24</c>: offset of the second half (starts at <c>size/2</c> = <c>data + size/2</c>).</summary>
+    public int PtrB { get; private set; }
+
+    /// <summary><c>[conn+0x18] != 0</c>.</summary>
+    public bool IsAllocated => Data is not null;
+
+    /// <summary>
+    /// <c>0xA67B9C</c>: <c>size = ((outCh+3)&gt;&gt;2) * (inCh&lt;&lt;5)</c>; returns 1 at once when equal to
+    /// <c>[desc+4]</c>, else frees and reallocates and stores <c>{data, size, data, data+size/2}</c>, returning 1.
+    /// (The native returns 2 on allocation failure; a managed allocation does not fail here.)
+    /// </summary>
+    public int Reserve(int inCh, int outCh)
+    {
+        int size = ((outCh + 3) >> 2) * (inCh << 5);
+        if (size == Size) return 1;
+        Free();
+        Data = new byte[size];
+        Size = size;
+        PtrA = 0;
+        PtrB = size / 2;
+        return 1;
+    }
+
+    /// <summary><c>0xA67C58</c>: releases the allocation and zeroes the descriptor.</summary>
+    public void Free()
+    {
+        Data = null;
+        Size = 0;
+        PtrA = 0;
+        PtrB = 0;
+    }
+
+    /// <summary>The <c>+0x20</c>/<c>+0x24</c> swap.</summary>
+    public void SwapPointers() => (PtrA, PtrB) = (PtrB, PtrA);
 }
 
 /// <summary>
@@ -129,11 +198,33 @@ public sealed class WwiseVoiceConnection
     /// <summary>The native <c>conn+0x68</c> flag; the V8 walk tests it.</summary>
     public bool HasAux { get; set; }
 
-    /// <summary>The native <c>conn+0x18</c> flag; the V8 walk tests it.</summary>
-    public bool HasDry { get; set; }
+    /// <summary>
+    /// The native <c>[conn+0x18] != 0</c> test the V8 walks make (C24.4): true once the connection descriptor
+    /// (<see cref="Descriptor"/>, <c>conn+0x18..+0x24</c>) holds an allocation.
+    /// </summary>
+    // fidelity: M6-025
+    public bool HasDry => Descriptor.IsAllocated;
+
+    /// <summary>
+    /// <c>conn+0x18..+0x24</c>: the <c>{data, size, ptrA, ptrB}</c> descriptor, zeroed by the ctor
+    /// (<c>0xA6F998..0xA6F9A4</c>) and sized by <c>0xA67B9C</c> in the per-frame pass (C24.4).
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseConnectionDescriptor Descriptor { get; } = new();
 
     /// <summary>The native <c>conn+0x6C</c> bits 1/2 (fade/format state).</summary>
     public byte Flags6C { get; set; }
+
+    /// <summary><c>conn+0x48/+0x4C</c>: the 64-bit output-device id (ctor <c>0xA6F98C strd</c>, C23 row 17).</summary>
+    // fidelity: M6-025
+    public WwiseDeviceId Device { get; set; }
+
+    /// <summary>
+    /// <c>conn+0x68</c>: the ctor's <c>arg5</c> (<c>0xA6F990</c>), 0 for a dry connection and
+    /// <c>[send+0x10]</c> (ORed with 4 when the two bus bit6 flags differ) for an aux one (C23.3).
+    /// </summary>
+    // fidelity: M6-025
+    public uint Arg68 { get; set; }
 
     /// <summary>V7/C1 <c>0xA4B4B0</c> ducking: the per-connection <c>+0x60</c>.</summary>
     public float C60 { get; set; }
@@ -153,9 +244,6 @@ public sealed class WwiseVoiceConnection
     public float C5C { get; set; }
     public int C64 { get; set; }
 
-    /// <summary>V7/C1 <c>0xA4BDDC</c> <c>0xA67C58</c>/<c>0xA67B9C</c> re-init (unread seam).</summary>
-    public Action<int>? ReinitHook { get; set; }
-
     /// <summary>V7/C1 <c>0xA4BEC4</c> <c>0xA5975C</c> per-connection conversion (unread seam).</summary>
     public Action<WwiseVoiceConnection>? Conversion5975C { get; set; }
 
@@ -168,8 +256,13 @@ public sealed class WwiseVoiceConnection
     /// <summary>The composed target gain the next <see cref="Refresh"/> applies (M6-012 gapE 2.1).</summary>
     public float TargetGain { get; set; } = 1f;
 
-    /// <summary>The first-update fade-in flag (M6-012 gapE 2.5).</summary>
-    public bool FadeIn { get; set; }
+    /// <summary>
+    /// The first-update fade-in flag (M6-012 gapE 2.5): the live <c>conn+0x6C</c> bit2, read at <c>0xA4C0C0
+    /// tst r3,#4</c>. Every frame rewrites that bit (<c>0xA4C584..0xA4C598</c>, <see cref="WwiseVoiceBusPass.SetConnectionBit2"/>),
+    /// so this is derived from <see cref="Flags6C"/>, not a copy.
+    /// </summary>
+    // fidelity: M6-025
+    public bool FadeIn => (Flags6C & 0x04) != 0;
 
     /// <summary>Creates a connection to <paramref name="bus"/> with the given input/output channel counts.</summary>
     public WwiseVoiceConnection(WwiseMixBus bus, int inputChannels, int outputChannels)
@@ -415,9 +508,9 @@ public sealed class WwiseLiveVoice
     public IWwiseVoiceSource? Pending { get; set; }
 
     /// <summary>
-    /// <c>voice+8</c> (M6-025 B11): AddSrc sets it to <c>[source+0xC]+0xC</c>, the object the chain-match
-    /// in <c>0xA4304C</c> reads at <c>+0x1BC</c> (<c>0xA430E8</c>). The source class's <c>+0xC</c> identity
-    /// is UNKNOWN, so the bridge supplies it through a seam.
+    /// <c>voice+8</c> (M6-025 B11, C24 header, C25.4): AddSrc sets it to <c>[source+0xC]+0xC</c> = <c>pbi+0xC</c> on the
+    /// new-voice path only (<c>0xA55934..0xA55948</c>), so it holds the owner PBI; the chain match in
+    /// <c>0xA4304C</c> reads <c>[voice+8]+0x1BC</c> = the owner's <c>pbi+0x1C8</c> (<c>0xA430E8</c>).
     /// </summary>
     // fidelity: M6-025
     public object? BusOwner8 { get; set; }
@@ -428,6 +521,15 @@ public sealed class WwiseLiveVoice
     /// </summary>
     // fidelity: M6-025
     public object? EngineEC { get; set; }
+
+    /// <summary>
+    /// <c>voice+0xC</c>: the dry line <c>0xA4C280</c> stores for a connection to the main device (2,0) with
+    /// <c>arg5 == 0</c> (C23 item 1 row 16 (c)); the first line in the <c>+0x1C8</c> chain with
+    /// <c>+0x1CC</c> bit1 set, or null (row 16 (a)). Cleared again when the row-19 format check destroys
+    /// the just-made dry connection (row 19).
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseMixBus? DryLineC { get; set; }
 
     /// <summary>The per-voice buffer (the native <c>params</c>).</summary>
     public WwiseVoiceBuffer Buffer { get; }
@@ -472,8 +574,14 @@ public sealed class WwiseLiveVoice
     /// </summary>
     public byte CountCC { get; set; }
 
-    /// <summary>The voice id (<c>+0xF0</c>).</summary>
-    public uint Id { get; set; }
+    /// <summary>
+    /// <c>voice+0xF0</c> (C25.5): a word, not an id. The voice ctor zeroes it (<c>0xA5470C..0xA54764</c>) and the voice
+    /// init sets it to <c>[pbi+0x15C]</c> (<c>0xA54A64</c>, <c>0xA54B60</c>, <c>0xA54B70</c>; <see cref="WwisePlayingInstance.Word15C"/>).
+    /// Its low byte is the input channel count <c>inCh</c> of the connection descriptor (<c>0xA54F28</c>, <c>0xA55020</c>,
+    /// <c>0xA4BC74</c>).
+    /// </summary>
+    // fidelity: M6-025
+    public uint Word0xF0 { get; set; }
 
     /// <summary>V7-m ramp 1: the 16-byte record at <c>voice+0x340</c> (current/target/rate/flag).</summary>
     public WwiseVoiceRamp Ramp340 { get; } = new();
@@ -561,7 +669,8 @@ public sealed class WwiseLiveVoice
         // connection with ([conn+0x6C]&6)==6.
         foreach (var connection in Connections)
         {
-            if (!connection.HasAux) continue;
+            // C24.4 0xA447EC..0xA4480C: [conn+0x68] != 0, [conn+0x18] != 0, ([conn+0x6C] & 6) != 6.
+            if (!connection.HasAux || !connection.HasDry) continue;
             if ((connection.Flags6C & 6) == 6) continue;
             connection.Mix(Buffer);
         }
@@ -571,7 +680,9 @@ public sealed class WwiseLiveVoice
         bool firstDry = true;
         foreach (var connection in Connections)
         {
-            if (!connection.HasDry) continue;
+            // C24.4 0xA448FC..0xA4491C: [conn+0x68] == 0 and the same two tests.
+            if (connection.HasAux || !connection.HasDry) continue;
+            if ((connection.Flags6C & 6) == 6) continue;
             if (firstDry)
             {
                 FilterB.Process(Buffer.Channels[0]);             // V8 step 8: filter B before the first dry mix
@@ -942,7 +1053,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
                 {
                     bus.BusStart28?.Invoke();                        // [[bus+0xC]]->vt+0x28 on bus+0xC
                     bus.C4 = 101f;                                   // 0x42CA0000
-                    voice.Buffer.Result = (int)voice.Id;             // [params+4] = [voice+0xF0]
+                    voice.Buffer.Result = (int)voice.Word0xF0;             // [params+4] = [voice+0xF0]
                     voice.FlagsCD = (byte)(voice.FlagsCD & ~8);      // clear bit3
                     ApplyDucking(voice, bus);                        // 0xA4B4B0
                     // 0xA5572C (C18 V7-q): the second 0xA4BC58 call passes the same &sp+0x2e/&sp+0x2f but
@@ -1266,20 +1377,25 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             return (cached >> 3) & 0xF;
         }
 
-        bus.NextSource1BB = (byte)(cached | 0x80);
-        var result = bus.NextSourceEda?.Invoke(bus.NextSourceE0) ?? (0, 0);
+        // UNRESOLVED (MISSING for the Extractor): this bus model keeps its own cache field (WwiseMixBus.NextSource1BB),
+        // while the native cache is the single pbi+0x1BB shared by 0xA01768's callers (AddSrc and 0xA37258, 0xA373B4,
+        // 0xA37578, 0xA37650, 0xA37944, 0xA55B54); the bus-to-pbi identity is not settled here, so it is not unified.
+        // fidelity: M6-025
+        var result = (bus.NextSourceEda ?? throw new WwiseMissingBehaviourException(
+            "M6-025 C27: 0x9EEDA4 (inside 0xA01768) is unread; supply WwiseMixBus.NextSourceEda")).Invoke(bus.NextSourceE0);
         int code;
-        if (result.Code == 3)
+        if (result.Code == 3)                                                   // 0xA017A4 cmp r0,#3
         {
-            bus.E0Vt120?.Invoke(bus.E0Arg14C);
-            code = result.Code == 0 ? 1 : 2;
+            int r = (bus.E0Vt120 ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C27: vt+0x120 (0xA017C8..0xA017E4) is unread; supply WwiseMixBus.E0Vt120")).Invoke(bus.E0Arg14C);
+            code = r == 0 ? 1 : 2;                                              // only the mapped value is stored
         }
         else
         {
             code = result.Code & 0xF;
         }
         index = result.Index & 7;
-        bus.NextSource1BB = (byte)((bus.NextSource1BB & 0x80) | (index & 7) | ((code & 0xF) << 3));
+        bus.NextSource1BB = (byte)(0x80 | (index & 7) | ((code & 0xF) << 3));
         return code;
     }
 
@@ -1520,16 +1636,32 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// </summary>
     private static void MainConnectionLoop(WwiseLiveVoice voice, WwiseMixBus bus, float gain, float[] minima)
     {
-        if ((voice.Id & 0xFF) == 0) return;                          // 0xA4BD74 cmp r6,#0; beq 0xA4BFD4
+        if ((voice.Word0xF0 & 0xFF) == 0) return;                          // 0xA4BD74 cmp r6,#0; beq 0xA4BFD4
         for (int i = 0; i < 4; i++) minima[i] = 100f;                // 0x42CA0000
 
         foreach (var c in voice.Connections)
         {
-            // 0xA4BE20: if [conn+0x64] != id re-init via 0xA67C58/0xA67B9C (unread seams).
-            if (c.C64 != (int)(voice.Id & 0xFF))
+            // C24.4 (0xA4BE08..0xA4BE58). inCh = the low byte of [voice+0xF0] (0xA4BC74); outCh = the low byte
+            // of [[conn+0x30]+0x64] (0xA4BE24..0xA4BE2C). A changed [conn+0x64] frees the descriptor (0xA67C58)
+            // and clears +0xC, +0x64, +0x14; 0xA67B9C then sizes it; with [conn+0x18] != 0, [conn+0x64] = inCh
+            // and +0x20/+0x24 swap every frame. The order of these steps inside 0xA4BC58 is not stated by
+            // C24.4 (reported as MISSING).
+            int inCh = (int)(voice.Word0xF0 & 0xFF);
+            int outCh = (int)(c.Bus.Format64 & 0xFF);
+            if (c.C64 != inCh)
             {
-                c.ReinitHook?.Invoke((int)(voice.Id & 0xFF));
-                c.C64 = (int)(voice.Id & 0xFF);
+                c.Descriptor.Free();
+                c.C0C = 0f;
+                c.C14 = 0f;
+                c.C64 = 0;
+                // C26.6: 0xA67B9C only on the reinit path (0xA4BDDC..0xA4BE08). A result other than 1 leaves +0x18 == 0
+                // and moves to the next connection (0xA4BE0C..0xA4BE18, batch4a-missing row 3.3).
+                if (c.Descriptor.Reserve(inCh, outCh) != 1) continue;
+            }
+            if (c.HasDry)
+            {
+                c.C64 = inCh;
+                c.Descriptor.SwapPointers();
             }
 
             c.C0C = voice.OutputGain * gain;                         // 0xA4BE6C [conn+0xc] = [voice+0x1c]*gain

@@ -337,7 +337,7 @@ public sealed class WwiseMixBus
     public Func<object?, (int Code, int Index)>? NextSourceEda { get; set; }
 
     /// <summary>V7-c <c>[[bus+0xE0]]-&gt;vt+0x120([bus+0x14C])</c> when the <c>0x9EEDA4</c> result is 3.</summary>
-    public Action<int>? E0Vt120 { get; set; }
+    public Func<int, int>? E0Vt120 { get; set; }
 
     /// <summary>The per-frame eState (<c>+0x68</c>): 0x2D after mixing, 0x11 after ReleaseBuffer (D2.5).</summary>
     public int EState => _eState;
@@ -380,6 +380,84 @@ public sealed class WwiseMixBus
 
     /// <summary>MarkTouched <c>+0x1CC b0</c>: GetOrCreateMixBus sets it when it reuses this node (D2.1).</summary>
     public void MarkTouched() => _touched = true;
+
+    // ---------------------------------------------------------------- voice-to-bus line fields (M6-025, C23)
+    //
+    // The fields the connection-creation path 0xA42C60/0xA429F0/0xA42210/0xA42754/0xA4C280 reads and writes on
+    // a bus line (a "VPL"). They are plain stores: the behaviour lives in WwiseVoiceLinker.
+
+    /// <summary>
+    /// <c>vpl+0x4C</c> (bus pointer), <c>+0x50</c> (key2) and the default-context byte: what
+    /// <c>0xA42CA8..0xA42D40</c> matches a line on (M6-025 C23 item 1 row 12, corrected: both null bus
+    /// pointers skip the key tests).
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseBusContext Context { get; set; } = WwiseBusContext.None;
+
+    /// <summary><c>vpl+0x28/+0x2C</c>: the 64-bit output-device id the line belongs to (row 12).</summary>
+    // fidelity: M6-025
+    public WwiseDeviceId Device { get; set; }
+
+    /// <summary>
+    /// <c>0xA42210</c> allocation class (row 14): true for the 0x1E8-byte line (ctor <c>0xA41E48</c>, chosen
+    /// when <c>ctx.bus != 0 &amp;&amp; [bus+0x40]&amp;0xE0000</c>), false for the 0x1D0-byte line (<c>0xA4DFB8</c>).
+    /// </summary>
+    // fidelity: M6-025
+    public bool IsExtendedLine { get; set; }
+
+    /// <summary>
+    /// <c>vpl+0x1CC</c> bit1, the bit <c>0xA4C280</c> looks for in the <c>+0x1C8</c> chain (row 16). It is
+    /// cleared at creation (<c>0xA42210</c>); no writer is in the C23 rows, so it stays a caller field.
+    /// </summary>
+    // fidelity: M6-025
+    public bool Bit1OfFlags1CC { get; set; }
+
+    /// <summary>
+    /// <c>vpl+0x64</c>: the line's format word. Its type nibble (bits 8..11) equal to 1 triggers the
+    /// device-table check at <c>0xA4C388..0xA4C3AC</c> (row 19). Written by the line Init <c>0xA4F0EC</c>.
+    /// </summary>
+    // fidelity: M6-025
+    public uint Format64 { get; set; }
+
+    /// <summary>
+    /// <c>vpl+0x44</c>: <c>cfgB</c>, stored by the line Init <c>0xA4F0EC</c> next to <c>+0x64 = cfgA</c> (C24.3:
+    /// <c>cfgB = parent ? W : cfgA</c>).
+    /// </summary>
+    // fidelity: M6-025
+    public uint Config44 { get; set; }
+
+    /// <summary>
+    /// <c>vpl+0x1CC</c> bit3: the <c>flag</c> argument of <c>0xA42210</c>, stored by <c>0xA422DC</c> (C24.3). It is 0
+    /// at every call site and no reader was found.
+    /// </summary>
+    // fidelity: M6-025
+    public bool Bit3OfFlags1CC { get; set; }
+
+    /// <summary>
+    /// <c>[[vpl+0x1A8]+0xC]</c>: the mix object's <c>+0xC</c> member the disconnect <c>0xA4F6F0</c> tests before
+    /// calling <c>mixobj-&gt;vt+0x24(conn)</c> (C24.6). Null with no <see cref="OutputMixObject1A8"/>; in shipped
+    /// data <c>[line+0x1A8]</c> stays 0 (C24.6).
+    /// </summary>
+    // fidelity: M6-025
+    public object? MixObject1A8C { get; set; }
+
+    /// <summary><c>vpl+0xC0</c>; <c>0xA4F664</c> clears bit3 (row 18). The field's meaning is UNKNOWN.</summary>
+    // fidelity: M6-025
+    public byte FlagsC0 { get; set; }
+
+    /// <summary>
+    /// <c>0xA4F664</c> parent link (row 15, <c>vpl+0x1C8</c>): records the parent without another
+    /// <see cref="Connect"/>, because <c>0xA4F664</c> on the parent has already counted the input.
+    /// </summary>
+    // fidelity: M6-025
+    public void SetParentLink(WwiseMixBus parent)
+    {
+        ArgumentNullException.ThrowIfNull(parent);
+        if (Parent is not null)
+            throw new InvalidOperationException("this bus already has a parent (D2.1)");
+        Parent = parent;
+        OutputBus = parent;                                 // vpl+0x1C8 (row 15; V17 C8 names +0x1C8 the output bus)
+    }
 
     /// <summary>
     /// Mixing input (D2.5, <c>0xA4F9E0</c> child bus / <c>0xA4FBEC</c> voice): <c>+0x68 = 0x2D</c>, state
@@ -514,6 +592,29 @@ public sealed class WwiseMixBusHierarchy
         var made = create();
         _buses.Add(made);
         return made;
+    }
+
+    /// <summary>
+    /// Appends a line the way <c>0xA42210</c> does after a successful Init (row 14): the array
+    /// <c>0x108DF54</c> gets the new line at its end.
+    /// </summary>
+    // fidelity: M6-025
+    public void Append(WwiseMixBus bus)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+        _buses.Add(bus);
+    }
+
+    /// <summary>
+    /// <c>0xA42864..0xA428BC</c> (row 15, corrected): the default line was appended by <c>0xA42210</c>; the
+    /// shift (count--, elements up, <c>str r4,[r2]</c> at index 0) leaves it at the front of the array.
+    /// </summary>
+    // fidelity: M6-025
+    public void MoveToFront(WwiseMixBus bus)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+        if (!_buses.Remove(bus)) throw new InvalidOperationException("the line is not in the array");
+        _buses.Insert(0, bus);
     }
 
     /// <summary>

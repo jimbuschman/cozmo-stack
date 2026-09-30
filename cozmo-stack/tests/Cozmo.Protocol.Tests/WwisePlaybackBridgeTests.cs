@@ -177,7 +177,7 @@ public class WwisePlaybackBridgeTests
             NodeVt90 = _ => { },                                // B7 seam (body unread)
             BeforePlayA00618 = _ => { },                        // B7 seam (body unread)
             SetupFadeInTransition = (_, _) => 0,                // B16/F1 seam (body unread)
-        };
+        }.WithTestSeams();
         runtime.PlaybackBridge = bridge;
         runtime.RegisterGameObject(7);
 
@@ -212,7 +212,7 @@ public class WwisePlaybackBridgeTests
     {
         // B6 2c.8: params+0x7C != 0 -> pbi+0x1C8 = params+0x7C and pbi+0x1BE |= 8.
         var p = new WwisePlayInitParams { PlayingId = 9, ChainId = 0x1234, TargetNodeId = 1 };
-        var pbi = new WwisePlayingInstance(p, 1, new object(), new byte[0x44], null, 0, 0, continuous: false);
+        var pbi = new WwisePlayingInstance(p, 1, new object(), new byte[0x44], null, continuous: false);
         Assert.Equal(0x1234u, pbi.ChainId);
         Assert.Equal(8, pbi.Flags1BE & 8);
     }
@@ -290,13 +290,11 @@ public class WwisePlaybackBridgeTests
     [Fact]
     public void AddSrcSetsVoiceSourceAndBusOwnerAndReturnsOne()
     {
-        // B11: on StartStream success store voice+0xD4 (bActive=1) and voice+8 = [source+0xC]+0xC.
-        // 0xA56650: a vt+0x28 result of 1 returns 1 and sets [source+0x10] bit0.
-        var bridge = new WwisePlaybackBridge();
+        // B11: on StartStream success store voice+0xD4 (bActive=1) and voice+8 = [source+0xC]+0xC = pbi+0xC
+        // (C24 header, C25.4). 0xA56650: a vt+0x28 result of 1 returns 1 and sets [source+0x10] bit0.
+        var bridge = new WwisePlaybackBridge().WithTestSeams();
         var synthetic = new SyntheticSource(0.5f, format: 0xABCD);
-        var sentinel = new object();
         bridge.SourceFactory = _ => synthetic;
-        bridge.BusOwnerFor = _ => sentinel;
 
         var pbi = bridge.CreatePbi(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
@@ -307,16 +305,17 @@ public class WwisePlaybackBridgeTests
 
         Assert.Equal(1, r);
         Assert.Same(synthetic, voice.Source);                    // voice+0xD4
-        Assert.Same(sentinel, voice.BusOwner8);                  // voice+8
+        Assert.Same(pbi, voice.BusOwner8);                       // voice+8 = pbi+0xC
         Assert.Same(voice, pbi.Field154);                        // F6: 0xA558F8 before StartStream
-        Assert.Equal(0xABCDu, pbi.SourceFormat158);              // B15 source-format write
+        // C27 further facts: AddSrc stores nothing to pbi+0x158 (its only PBI stores are +0x154 and +0x1BE).
+        Assert.Equal(0u, pbi.SourceFormat158);
     }
 
     [Fact]
     public void AddSrcReturns0x3fWhenTheSourceCodeIs0x3f()
     {
         // 0xA56650: a vt+0x28 result of 0x3F returns 0x3F and leaves [source+0x10] bit0 clear.
-        var bridge = new WwisePlaybackBridge();
+        var bridge = new WwisePlaybackBridge().WithTestSeams();
         var source = new SyntheticSource(0.5f) { StartStreamCode = 0x3F };
         bridge.SourceFactory = _ => source;
         var pbi = bridge.CreatePbi(
@@ -327,15 +326,21 @@ public class WwisePlaybackBridgeTests
         Assert.False(source.StartStreamSucceeded);               // the 0x3F result does not set the bit
     }
 
+    /// <summary>A linker over no output device: 0xA42DEC reaches only the init gate and the list insert.</summary>
+    private static WwiseVoiceLinker EmptyDeviceLinker(WwisePlaybackBridge bridge) =>
+        new(new WwiseMixBusHierarchy(), new WwiseOutputDeviceList(), bridge.Voices,
+            _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 1 } },   // vt+0x88 returns 0: no bus (C24.9)
+            new WwiseVoiceLinkSeams { InitVoiceA54A30 = _ => 1 });
+
     [Fact]
     public void AttachVoiceCreatesAVoiceAndTheDrainKeepsAnAlreadyAttachedNode()
     {
         // B10: no chain match -> allocate 0x540, 0xA548B8 sets voice+0xEC, AddSrc bActive=1.
         // 0x9D36B4/0x9D36A0: a PBI whose +0x154 != 0 is skipped (advanced past), NOT unlinked.
-        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) };
+        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
         var engine = new object();
         bridge.LinkEngineA548B8 = v => v.EngineEC = engine;
-        bridge.LinkVoiceA42DEC = (_, _) => 1;                    // 0xA42DEC return 1 -> node kept
+        bridge.Linker = EmptyDeviceLinker(bridge);               // 0xA42DEC with no output device -> 1, node kept
         var pbi = bridge.CreatePbi(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
@@ -346,49 +351,90 @@ public class WwisePlaybackBridgeTests
         Assert.Same(voice, pbi.Field154);                        // 0xA558F8
 
         bridge.StartList.Enqueue(0, pbi, 0);
-        Assert.Equal(0, bridge.DrainStartList());                // skipped, not counted as kept
+        Assert.Equal(0, bridge.RunStartListPass1());             // pass 1 0x9D3644: skipped, not counted as kept
         Assert.Single(bridge.StartList.Nodes);                   // but retained in the list
     }
 
     [Fact]
-    public void TheDrainGateGatesAndAFreshNodeIsKept()
+    public void TheDrainGateGatesPass1AndAFreshNodeIsAttachedThenDispatchedByPass2()
     {
-        // F9: 0x9D3CA4 ldrb r3,[r3,#0x28]; cmp r3,#0; beq -> the gate must be set before 0x9D3644 runs.
-        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) };
-        bridge.LinkEngineA548B8 = _ => { };
-        bridge.LinkVoiceA42DEC = (_, _) => 1;
+        // F9: 0x9D3CA4 ldrb r3,[r3,#0x28]; cmp r3,#0; beq -> the gate must be set before 0x9D3644 runs, and it is
+        // cleared at its end (0x9D3764..0x9D3770). C24.7 / research 6.6: for a Sound Play (state 0, AddSrc == 1)
+        // pass 1 attaches and 0xA42DEC sets node+0xD bit0, and pass 2 of the same 0x9D3C98 runs 0xA54480(voice),
+        // the source start 0xA56478, then frees the node (0x9D3AD4..0x9D3B4C).
+        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
+        var started = new List<WwiseLiveVoice>();
+        // C25.1: the voice ctor stores [voice+0xDC] = 0 (0xA54798); 0xA548B8 (voice+0xEC = engine) does not touch it.
+        bridge.LinkEngineA548B8 = v => v.EngineEC = new object();
+        bridge.StartSourceA56478 = started.Add;
+        bridge.Linker = EmptyDeviceLinker(bridge);
         var pbi = bridge.CreatePbi(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
-        Assert.Equal(0, bridge.DrainStartList());                // gate clear
+        Assert.Equal(0, bridge.DrainStartList());                // gate clear, empty list
         bridge.StartList.Enqueue(0, pbi, 0);
-        Assert.Equal(1, bridge.DrainStartList());
-        Assert.Single(bridge.StartList.Nodes);
+        Assert.True(bridge.StartList.Gate);
+        Assert.Equal(1, bridge.DrainStartList());                // pass 1 kept the node
+        Assert.False(bridge.StartList.Gate);
+        Assert.Empty(bridge.StartList.Nodes);                    // pass 2 dispatched and freed it
+        var voice = Assert.Single(started);
+        Assert.Equal(1, voice.State);                            // 0xA54480: [voice+0xDC] = 1
+        Assert.Contains(voice, bridge.Voices);                   // linked by 0xA42DEC
     }
 
     [Fact]
     public void TheChainMatchReusesAVoiceAndMarksPbi1Ba()
     {
         // F3: 0xA43120 bl 0xA01878 sets pbi+0x1BA bits 3..6 = 3; the match returns 5.
-        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) };
+        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
         var pbi = bridge.CreatePbi(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x77 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
-        bridge.Voices.Add(new WwiseLiveVoice(1, 16) { BusOwner8 = "owner" });
-        bridge.BusOwnerChainId = _ => 0x77;
+        // C25.4: [voice+8] = the owner's pbi+0xC, so [voice+8]+0x1BC is the owner's pbi+0x1C8 (0xA430E8).
+        var owner = bridge.CreatePbi(
+            new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1, ChainId = 0x77 }, 1,
+            new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
+        var voice = new WwiseLiveVoice(1, 16) { BusOwner8 = owner };
+        bridge.Voices.Add(voice);
 
         Assert.Equal(5, bridge.AttachVoice(pbi));
         Assert.Equal(0x18, pbi.Flags1BA & 0x78);                 // bits 3..6 = 3
         Assert.Single(bridge.Voices);                            // reused, not a new voice
+        Assert.Same(owner, voice.BusOwner8);                     // C25.4: the reuse path leaves voice+8
+        Assert.NotNull(voice.Pending);                           // voice+0xD8
+    }
+
+    [Fact]
+    public void ANonMatchingChainIdCreatesANewVoiceAndALiveVoiceWithoutAnOwnerIsRefused()
+    {
+        // 0xA430E8: no owner chain equals pbi+0x1C8 -> a new voice. A live voice always has [voice+8]; the native
+        // dereferences it, so a live voice with no owner PBI is not skipped silently (C25.4).
+        var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
+        bridge.LinkEngineA548B8 = _ => { };
+        bridge.Linker = EmptyDeviceLinker(bridge);
+        var other = bridge.CreatePbi(
+            new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1, ChainId = 0x11 }, 1,
+            new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
+        var pbi = bridge.CreatePbi(
+            new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x77 }, 1,
+            new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
+        bridge.Voices.Add(new WwiseLiveVoice(1, 16) { BusOwner8 = other });
+
+        Assert.Equal(1, bridge.AttachVoice(pbi));
+        Assert.Equal(2, bridge.Voices.Count);
+        Assert.Same(pbi, bridge.Voices[0].BusOwner8);            // inserted at the head (row 20)
+
+        bridge.Voices.Insert(0, new WwiseLiveVoice(1, 16));
+        Assert.Throws<InvalidOperationException>(() => bridge.AttachVoice(pbi));
     }
 
     [Fact]
     public void TheFadeInBranchRunsTheTransitionSeamAndSetsBit6()
     {
         // F1 / 0xA00694: arg2[0] != 0 -> 0xA366F4/0xA36268, 0xA00814 sets pbi+0x1BE bit6, 0xA00788 zeroes
-        // pbi+0x168, stores pbi+0x144, and calls pbi->vt+0x50(pbi,0xe,arg2[0]) (0xA0081C).
-        var bridge = new WwisePlaybackBridge();
+        // pbi+0x168, stores pbi+0x144, and calls pbi->vt+0x50(pbi,0xe,arg2[0]) (0xA0082C).
+        var bridge = new WwisePlaybackBridge().WithTestSeams();
         bool called = false;
         bridge.SetupFadeInTransition = (_, t) => { called = true; Assert.Equal(250f, t.FadeInTime); return 0xBEEF; };
         var pbi = bridge.CreatePbi(
@@ -413,7 +459,7 @@ public class WwisePlaybackBridgeTests
     public void AddSrcReturnsOneWhenTheSourceWasAlreadyStarted()
     {
         // 0xA5665C: [source+0x10] bit0 set -> 1; the first vt+0x28 result of 1 also returns 1 and sets it.
-        var bridge = new WwisePlaybackBridge();
+        var bridge = new WwisePlaybackBridge().WithTestSeams();
         var source = new SyntheticSource(0.5f);
         bridge.SourceFactory = _ => source;
         var pbi = bridge.CreatePbi(
@@ -439,7 +485,7 @@ public class WwisePlaybackBridgeTests
         // F8: 0xA002A8 ubfx r3,r3,#4,#1; 0xA002AC bfi r1,r3,#6,#1.
         var pbi = new WwisePlayingInstance(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, Flags128 = 0x10 },
-            1, new object(), new byte[0x44], null, 0, 0, continuous: false);
+            1, new object(), new byte[0x44], null, continuous: false);
         Assert.Equal(0x40, pbi.Flags1BE & 0x40);
         Assert.Equal(0, pbi.Flags1BE & 0x30);
     }
@@ -455,7 +501,9 @@ public class WwisePlaybackBridgeTests
         {
             Source = new SyntheticSource(0.5f),
         };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { HasDry = true });
+        var dry = new WwiseVoiceConnection(bus, 1, 1);
+        dry.Descriptor.Reserve(1, 1);                            // [conn+0x18] != 0 (C24.4)
+        voice.Connections.Add(dry);
 
         voice.Render();
 
@@ -463,5 +511,34 @@ public class WwisePlaybackBridgeTests
         Assert.Equal(1, synthetic.RenderCalls);
         Assert.Equal(0x2D, voice.Buffer.Result);
         Assert.Contains(bus.Buffer.Take(WwiseRuntimeSettings.SamplesPerFrame), s => s != 0f);
+    }
+}
+/// <summary>
+/// Test doubles for the bridge's required seams whose bodies the inventory leaves unread (C26.4, C26.5). They are
+/// no-ops: they claim nothing about the source classes or the pre-step bodies. The tests that check a seam is
+/// required build a bridge without this helper.
+/// </summary>
+internal static class WwiseBridgeTestSeams
+{
+    public static WwisePlaybackBridge WithTestSeams(this WwisePlaybackBridge bridge)
+    {
+        bridge.SourceFormatWriter15C ??= (_, _) => { };      // leaves the ctor default 0x4101 (C26.5 gap, not a source claim)
+        // C27 seams with unread bodies. The defaults make no source claim: 0x9EEDA4 returns (0, 0) so [voice+0xE4] = 0 and
+        // the 0x9BCA68 gate is not reached unless a test sets a code; 0x9BCA68 returns 0; the send-table allocation
+        // succeeds; the source close and free do nothing; [pbi+4] bit 0x100000 is clear.
+        bridge.SourceDestructAndPoolFree ??= _ => { };
+        bridge.PbiFlag4Bit100000 ??= _ => false;
+        bridge.CallA054D8 ??= (_, _, _) => { };
+        bridge.A054D8Context ??= new object();               // test double: which global 0xA56454 reads is MISSING
+        // Test double: the routing node [pbi+0xE0] comes from a minimal linker; 0x9EEDA4 returns code 0, so vt+0x120
+        // (NodeVt120, left unset: required) is not reached unless a test sets a code of 3.
+        bridge.Linker ??= new WwiseVoiceLinker(
+            new WwiseMixBusHierarchy(), new WwiseOutputDeviceList(), new List<WwiseLiveVoice>(),
+            _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 1 } }, new WwiseVoiceLinkSeams());
+        bridge.NextSource9EEDA4 ??= (WwiseRoutingNode _, out int index) => { index = 0; return 0; };
+        bridge.NewVoiceAllocSendTable4C ??= _ => new WwiseVoiceSendTable();
+        bridge.Call9BCA68 ??= _ => 0;
+        bridge.CallA0228C ??= _ => { };
+        return bridge;
     }
 }

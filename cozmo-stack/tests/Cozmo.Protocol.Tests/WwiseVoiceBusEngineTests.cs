@@ -87,10 +87,14 @@ public sealed class WwiseVoiceBusEngineTests
         };
         var connection = new WwiseVoiceConnection(bus, inputChannels: 1, outputChannels: 1)
         {
-            HasDry = true,
             HasAux = false,
             TargetGain = 1f,
         };
+        connection.Descriptor.Reserve(1, 1);                          // [conn+0x18] != 0 (C24.4): the descriptor is sized
+        // The frame pass sets conn+0x6C bit2 (vt+0x3C default 1), and FadeIn is that live bit (M6-012 2.5): a first
+        // update would ramp from 0. This test is about the mix, so the connection is past its first update
+        // (the fade-in itself is covered by WwiseVoiceLinkerTests.FadeInIsTheLiveConnectionBit2...).
+        connection.Refresh();
         voice.Connections.Add(connection);
         pass.Voices.Add(voice);
 
@@ -348,7 +352,10 @@ public sealed class WwiseVoiceBusEngineTests
         var pass = new WwiseVoiceBusPass(buses, deviceState);
 
         var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), OutputGain = 1f };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { HasDry = true, TargetGain = 1f });
+        var dry = new WwiseVoiceConnection(bus, 1, 1) { TargetGain = 1f };
+        dry.Descriptor.Reserve(1, 1);                                // [conn+0x18] != 0 (C24.4)
+        dry.Refresh();                                               // past the first update: bit2 is the live fade-in bit
+        voice.Connections.Add(dry);
         pass.Voices.Add(voice);
 
         pass.VoicePass();                                            // V8/V14: source -> bus buffer
@@ -758,7 +765,7 @@ public sealed class WwiseVoiceBusEngineTests
     public void TheBc58ConnectionCopyReadsParam2NotTheVoice()
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f, Param2_40 = 7f };
-        var voice = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 8 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
         var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };  // sb clear
         voice.Connections.Add(connection);
         voice.VoiceRequest3C = () => 1;                              // vt3c != 0 -> main loop + tail
@@ -790,7 +797,7 @@ public sealed class WwiseVoiceBusEngineTests
         bus.Param2_3C = 5f;
         bus.Param2_40 = 7f;
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), Id = 1 };
+        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), Word0xF0 = 1 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });  // bit1 clear
         voice.VoiceRequest3C = () => 0;                              // vt3c == 0 -> Run2E = run = 0
         voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
@@ -846,7 +853,7 @@ public sealed class WwiseVoiceBusEngineTests
     public void TheBc58FirstFrameDefersTheGainsAndSkipsTheTail()
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f };
-        var voice = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 0 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
         bus.ParamsA8B4[0] = 7f;
         bus.Param2_DC = 0x10;                                        // [param_2+0xDC] bit4
         var connection = new WwiseVoiceConnection(bus, 1, 1);
@@ -871,7 +878,7 @@ public sealed class WwiseVoiceBusEngineTests
     public void TheBc58TailRunsOnTheCd8SbClearBranch()
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f };
-        var voice = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 8 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
         bus.ParamsA8B4[0] = 7f;
         bus.Param2_DC = 0x10;
         var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };  // sb clear
@@ -894,7 +901,7 @@ public sealed class WwiseVoiceBusEngineTests
     public void TheBc58TailIsSkippedOnTheCd8SbSetBranch()
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
-        var voice = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 8 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
         bus.ParamsA8B4[0] = 7f;
         bus.Param2_DC = 0x10;
         var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x04 };  // sb set
@@ -917,7 +924,7 @@ public sealed class WwiseVoiceBusEngineTests
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
         // fp == 0: the only connection has bit1 set.
-        var voice = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 0 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
         bus.ParamsA8B4[0] = 7f;
         bus.Param2_DC = 0x10;
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });
@@ -927,7 +934,7 @@ public sealed class WwiseVoiceBusEngineTests
         Assert.Equal(0x10, bus.Param2_DC);
 
         // fp != 0: bit1 clear.
-        var voice2 = new WwiseLiveVoice(1, 8) { Id = 1, FlagsCD = 0 };
+        var voice2 = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
         voice2.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });
         voice2.VoiceRequest3C = () => 0;
         bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice2, bus, 1f);
@@ -1139,5 +1146,48 @@ public sealed class WwiseVoiceBusEngineTests
         public void SetTable(IWwiseV26Table table) => Table = table;
         public void SetBase(float b0, float b1, float b2) { Out0Base = b0; Out1Base = b1; Out2Base = b2; }
         public void SetSlopes(float s0, float s1, float s2) { Out0Slope = s0; Out1Slope = s1; Out2Slope = s2; }
+    }
+}
+
+public class WwiseVoiceBusPassNextSourceTests
+{
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(9, 2)]
+    public void NextSourceCode3IsMappedThroughVt120To1Or2AndTheRawThreeIsNeverStored_C27Step4(int vt120, int stored)
+    {
+        // C27 step 4 further facts (0xA017A4 cmp r0,#3; 0xA017C8..0xA017E4): a 0x9EEDA4 result of 3 is mapped through
+        // vt+0x120: 0 gives 1, otherwise 2; only the mapped value is stored.
+        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8)
+        {
+            NextSourceEda = _ => (3, 4),
+            E0Arg14C = 0x14C,
+        };
+        int? seen = null;
+        bus.E0Vt120 = a => { seen = a; return vt120; };
+
+        int code = WwiseVoiceBusPass.NextSource(bus, out int index);
+
+        Assert.Equal(stored, code);
+        Assert.Equal(4, index);
+        Assert.Equal(0x14C, seen);
+        Assert.Equal(stored, (bus.NextSource1BB >> 3) & 0xF);
+        Assert.NotEqual(3, (bus.NextSource1BB >> 3) & 0xF);
+    }
+
+    [Fact]
+    public void NextSourceSeamsAreRequiredAndAThrowCachesNothing_C27Step4()
+    {
+        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
+        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseVoiceBusPass.NextSource(bus, out _));
+        Assert.Equal(0, bus.NextSource1BB);
+
+        bus.NextSourceEda = _ => (3, 0);
+        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseVoiceBusPass.NextSource(bus, out _));
+        Assert.Equal(0, bus.NextSource1BB);
+
+        bus.NextSourceEda = _ => (2, 1);                                     // code 2: vt+0x120 is not reached
+        Assert.Equal(2, WwiseVoiceBusPass.NextSource(bus, out int index));
+        Assert.Equal(1, index);
     }
 }

@@ -88,17 +88,27 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0x1E4</c>: <c>params+0x84</c> (the Sound special-branch byte; meaning UNKNOWN).</summary>
     public byte Field1E4 { get; }
 
-    /// <summary><c>+0x15C</c>: source-format placeholder, overwritten by the source StartStream.</summary>
-    public byte Placeholder15C { get; set; }
-
-    /// <summary><c>+0x15D</c>: source-format placeholder, overwritten by the source StartStream.</summary>
-    public byte Placeholder15D { get; set; }
+    /// <summary>
+    /// <c>+0x15C</c> (low byte) and <c>+0x15D</c>: the word the voice init copies to <c>[voice+0xF0]</c>
+    /// (<c>0xA54B70</c>, C24.2/C25.5). The ctor stores 0 at <c>0xA001F0</c> and the value is the
+    /// <c>0x00004101</c> default from <c>0xA00338..0xA00374</c> (C23.8) only until the source StartStream classes overwrite
+    /// it (C26.5; the writers are the bridge's required <c>SourceFormatWriter15C</c> seam).
+    /// </summary>
+    // fidelity: M6-025
+    public uint Word15C { get; set; } = 0x00004101;
 
     /// <summary><c>+0x170</c>: the 0x44-byte block copied from <c>params+0x28</c>.</summary>
     public byte[] Block170 { get; }
 
     /// <summary><c>+0x158</c>: the source-format word; written by the source StartStream.</summary>
     public uint SourceFormat158 { get; set; }
+
+    /// <summary>
+    /// <c>+0x1BB</c> (C27, <c>0xA01768</c>): the cache byte. Bits 0..2 are the out value, bits 3..6 the return value,
+    /// bit 7 the "cached" mark set by the first call.
+    /// </summary>
+    // fidelity: M6-025
+    public byte NextSourceCache1BB { get; set; }
 
     /// <summary><c>+0x3C</c>: the effective Volume in dB (CalcEffectiveParams).</summary>
     public float Volume3C { get; private set; }
@@ -117,12 +127,11 @@ public sealed class WwisePlayingInstance
 
     /// <summary>
     /// <c>0xA000E8</c>'s stores (B6). <paramref name="block28"/> is the 0x44-byte block (copied to
-    /// <c>+0x170</c>); <paramref name="rtpcKey14"/> and the two placeholder bytes are the UNKNOWN fields,
-    /// supplied by the caller. <c>+0x1F8</c> is the settled <c>0xFFFFFFFF</c>.
+    /// <c>+0x170</c>); <paramref name="rtpcKey14"/> is the UNKNOWN field, supplied by the caller. <c>+0x1F8</c> is the settled <c>0xFFFFFFFF</c>.
     /// </summary>
     public WwisePlayingInstance(
         WwisePlayInitParams p, uint targetNodeId, object sourceDescriptor, byte[] block28,
-        object? rtpcKey14, byte placeholder15C, byte placeholder15D, bool continuous)
+        object? rtpcKey14, bool continuous)
     {
         ArgumentNullException.ThrowIfNull(p);
         ArgumentNullException.ThrowIfNull(sourceDescriptor);
@@ -136,8 +145,7 @@ public sealed class WwisePlayingInstance
         RtpcKey14 = rtpcKey14;
         Field1F8 = 0xFFFFFFFF;                                            // 0xA0021C/0xA00318
         Field1E4 = p.SoundSpecial84;
-        Placeholder15C = placeholder15C;
-        Placeholder15D = placeholder15D;
+        Word15C = 0x00004101;                                             // C23.8: 0xA00338..0xA00374
         Block170 = (byte[])block28.Clone();
         StartOffset = p.InitialDelaySamples;
         Ratio = 1f;
