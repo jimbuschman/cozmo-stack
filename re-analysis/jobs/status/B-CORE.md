@@ -56,3 +56,27 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   "built, awaiting strong verification") plus the stale `AreAnyTracksLocked` comment. Full suite 2123/2123 (0 skipped).
   Records M4-001/003/011/016/025 remain IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
 - Next: Batch 4 (the small ones: M2-003, M1-015, M1-024, M1-025, M1-031), then R-DEV's M3/M1/M2 remainder.
+- 2026-09-30 **Batch 4a (M2-003, M1-024) done and pushed: 32216ca.** M2-003: `RobotState.LiftAngleRadFromHeight`
+  now writes the engine's float bits — `h = (32.0 < heightMm) ? heightMm : 32.0` (NaN → 32, vcmpe 0x005170BC) and
+  the ratio `(h-45)/66` unless `h >= 92`, which uses 0x3F364D93 (0x00517104); the old `Math.Max` and `0.712121f`
+  (0x3F364D90) are gone; the circular tests are replaced with binary-bit expectations and the NaN/92 edges.
+  M1-024: `CozmoEngine.TickAt` calls `NeedsUpdate` between `Handler.ProcessMessages()` and `Robots.Get(1).Update()`
+  on `Timer.Seconds` (engine 0x004ED632..0x004ED640), wired from `FreeplayStack.Create`; `FreeplaySystem.Tick` no
+  longer calls `Needs.Update`. Verifier PASS (two queued non-blocking notes on M15-001 clock width). Full suite
+  2125/2125 (0 skipped). M2-003 and M1-024 remain IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong
+  verification".
+- 2026-09-30 **Batch 4b in progress (M1-015, M1-025, M1-031).** Extraction (`.scratch/B-CORE-b4/report.md`):
+  RemoveRobot's upper-layer reset is the `Robot::~Robot` teardown at 0x0052F2F6 (0x005110D4): `Robot::AbortAll`,
+  `FreeplayDataTracker::ForceUpdate`, and the destruction of BehaviourManager (0x0051112C), BehaviourSystemManager
+  (0x0051113A), ActionList (0x00511156), VisionComponent (0x0051116C, which also destroys the owned VisionSystem),
+  MoodManager (0x005111B6), AIComponent (0x00511276), PathComponent (0x00511284), BlockWorld (0x005112CE),
+  MapComponent (0x005114E8), Carrying/Docking (0x00511406/0x00511414), PoseOriginList/TouchSensor/CliffSensor,
+  AnimationStreamer (0x0051154A); plus `NeedsManager::OnRobotDisconnected` (0x0052F2E0), `PerfMetric::OnRobotDisconnected`
+  (0x0052F2E8), `DASPauseUploadingToServer(0)` (0x0052F2EE), the map/id/RIC erase and the `$session_id`/`$phys`/`$group`
+  clears. The engine destroys the whole robot; the stack's `ResetDevices` resets only devices. M1-031: the GoToSleep
+  action is `RobotIdleTimeoutComponent::CreateGoToSleepAnimSequence` (0x0052CEA2): a CompoundActionParallel of a
+  CompoundActionSequential of TriggerAnimationAction triggers {0xd2, 0xd5, 0xd4} (60.0 s first) plus a
+  MoveLiftToHeightAction(preset 0, tol 5.0f); queued by `ActionList::QueueAction` (0x0052CE6A); the only caller is
+  the idle Update at 0x0052CE5E. No ActionList/animation-sequence action exists in the stack yet, so the action is
+  named as a gap.
+- Next: finish batch 4b, then R-DEV's M3/M1/M2 remainder.
