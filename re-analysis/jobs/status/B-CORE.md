@@ -80,3 +80,14 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
   the idle Update at 0x0052CE5E. No ActionList/animation-sequence action exists in the stack yet, so the action is
   named as a gap.
 - Next: finish batch 4b, then R-DEV's M3/M1/M2 remainder.
+- 2026-09-30 **Batch 4b (M1-015, M1-025, M1-031) done and pushed: 99a51f6.** Record work from the extraction in
+  `re-analysis/research/20260930-B-CORE-b4-extraction.md`: two new M1 records — **M1-044** (RemoveRobot's upper-layer
+  teardown: `Robot::~Robot` 0x005110D4 destroys behaviour, mood, AI/freeplay, path, map, docking, carrying and vision;
+  the stack's built counterparts are the device reset, `VisionSystem.ResetToConstructed` and the NeedsManager
+  `OnRobotDisconnected`) and **M1-045** (the idle go-to-sleep action `CreateGoToSleepAnimSequence` 0x0052CEA2, a
+  compound of triggers 0xd2/0xd5/0xd4 plus a lift move, queued on the ActionList; named, not built). M1-015, M1-025
+  and M1-031 `unresolved` now name them and close the audit's points (the CD21 read is M3-022, the CD16 Lab read is
+  M1-028, the engine joins unbounded so the 2 s bound is a stack policy). M1-transport inventory re-approved. No
+  behaviour change (one comment). Verifier PASS. Suite 2125/2125.
+- Next: R-DEV's own M3/M1/M2 remainder, including the libjpeg 9 grey path (M3-001) if time allows (needs the emulator
+  oracle in re-analysis/tools/emu/).
