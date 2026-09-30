@@ -99,6 +99,13 @@ internal sealed class Rig : IDisposable
 
     public void Send(RobotMessage m) => Deliver(new SubMessage(ReliableMessageType.SingleReliableMessage, m.ToBytes(), _seq++));
 
+    /// <summary>
+    /// Runs one engine tick on the calling thread. The offline seam does not tick the engine on
+    /// <see cref="Pump"/> alone: a queued NV request (Read/Write now only queue; Update sends, M3-026) needs a tick
+    /// before the transport flush.
+    /// </summary>
+    public void Tick() => Robot.Engine.Tick();
+
     private void Deliver(SubMessage sm)
     {
         var f = new Cozmo.Protocol.Frame { Type = ReliableMessageType.MultipleMixedMessages, SeqMin = sm.Seq, SeqMax = sm.Seq, Ack = 0, Messages = new List<SubMessage> { sm } };

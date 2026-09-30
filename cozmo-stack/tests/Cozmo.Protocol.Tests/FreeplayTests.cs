@@ -1509,6 +1509,7 @@ public class FreeplayTests
             Assert.Equal(0u, needs.PreviousSerialNumber);
             Assert.Equal(0x41D04D9Du, rig.Robot.Engine.AcquiredSerialNumber);
 
+            rig.Tick();                                              // M3-026: Update sends the queued read
             rig.Pump();
             var read = rig.Sent.OfType<NVCommand>().Last();
             Assert.Equal(NeedsManager.NeedsNvKey, read.Tag);
@@ -1564,6 +1565,7 @@ public class FreeplayTests
         var needs = new NeedsManager(() => clock);
         needs.NvStorage = rig.Robot.Engine.NvStorage;
         needs.InitAfterSerialNumberAcquired(7);
+        rig.Tick();                                                  // M3-026: Update sends the queued read
         rig.Pump();
         var read = rig.Sent.OfType<NVCommand>().Last();
         Assert.Equal(NeedsManager.NeedsNvKey, read.Tag);
@@ -1578,6 +1580,7 @@ public class FreeplayTests
 
         // a missing item (-1): +0x1c8 false, and the resolution continues
         needs.InitAfterSerialNumberAcquired(8);
+        rig.Tick();                                                  // M3-026: Update sends the queued read
         rig.Pump();
         ReplyNeedsRead(rig, Array.Empty<byte>(), -1);
         Assert.False(needs.RobotReadSucceeded);
@@ -1752,6 +1755,7 @@ public class FreeplayTests
 
         clock = 1000;
         needs.StartWriteToRobot(clock);
+        rig.Tick();                                                  // M3-026: Update sends the queued write
         rig.Pump();
 
         var write = rig.Sent.OfType<NVCommand>().Last();
@@ -1912,6 +1916,7 @@ public class FreeplayTests
 
             if (hasDevice) needs.Load(DeviceNeedsFile(5, deviceSerial, deviceTime, devicePlay), applyElapsedDecay: false);
             needs.InitAfterSerialNumberAcquired(incomingSerial);
+            rig.Tick();                                              // M3-026: Update sends the queued read
             rig.Pump();
             if (alternateOk is { } ok)
                 needs.AlternateDeviceFilePath = s => s == incomingSerial && ok ? DeviceNeedsFile(5, incomingSerial, deviceTime, 0.9) : null;
@@ -2000,19 +2005,19 @@ public class FreeplayTests
             rig.Pump();
         }
 
-        clock = 600; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(0, WriteCount());
-        clock = 600.999999; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(0, WriteCount());   // not strictly greater
-        clock = 601; needs.PossiblyStartWriteToRobot(false); rig.Pump(); Assert.Equal(1, WriteCount());           // 601 > 600.999999
+        clock = 600; needs.PossiblyStartWriteToRobot(false); rig.Tick(); rig.Pump(); Assert.Equal(0, WriteCount());
+        clock = 600.999999; needs.PossiblyStartWriteToRobot(false); rig.Tick(); rig.Pump(); Assert.Equal(0, WriteCount());   // not strictly greater
+        clock = 601; needs.PossiblyStartWriteToRobot(false); rig.Tick(); rig.Pump(); Assert.Equal(1, WriteCount());           // 601 > 600.999999
         CompleteWrite();
 
         // force writes even when not overdue
-        clock = 601.5; needs.PossiblyStartWriteToRobot(true); rig.Pump();
+        clock = 601.5; needs.PossiblyStartWriteToRobot(true); rig.Tick(); rig.Pump();
         Assert.Equal(2, WriteCount());
         CompleteWrite();
 
         // no connected robot: no write
         needs.Connected = false;
-        clock = 9999; needs.PossiblyStartWriteToRobot(true); rig.Pump();
+        clock = 9999; needs.PossiblyStartWriteToRobot(true); rig.Tick(); rig.Pump();
         Assert.Equal(2, WriteCount());
     }
 
@@ -2031,6 +2036,7 @@ public class FreeplayTests
         {
             sbyte? got = null;
             Assert.Equal(1, nv.Write(NeedsManager.NeedsNvKey, new byte[NeedsStateOnRobot.Size], r => got = r.Result));
+            rig.Tick();                                              // M3-026: Update sends the queued write
             rig.Pump();
             var cmd = rig.Sent.OfType<NVCommand>().Last();
             Assert.Equal(NvStorageComponent.OpWrite, cmd.Op);

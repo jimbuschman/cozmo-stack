@@ -175,24 +175,31 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-025
     /// <summary>
     /// GetBaseEntryTag (M3-025; 0x6441F8..0x6443F4; pass 4 1c-1..1c-3). A tag whose top bit is set takes the
-    /// factory path: an exact factory key is its own base; otherwise, when <c>(tag &amp; ~0xFFFF) == 0xC0000000</c>
+    /// factory path: an exact factory key is its own base; otherwise, when <c>(tag &amp; 0xFFFF0000) != 0xC0000000</c>
     /// and <c>(tag &amp; 0x7FFF0000) != 0</c> and <c>tag &amp; 0xFFFF0000</c> is a factory key, the base is
-    /// <c>tag &amp; 0xFFFF0000</c>; otherwise the sentinel 0x198000. A non-negative exact <c>_maxSizeTable</c> key
-    /// is its own base; anything else is the sentinel. The tree descent's floor/tie-break for an unrecognised
-    /// positive tag was not fully decoded (pass 4 open q2), but every such value returns the sentinel and is
-    /// dropped by the reply-accept check, so no live path differs.
+    /// <c>tag &amp; 0xFFFF0000</c>; otherwise the sentinel 0x198000. A non-negative tag below 0x198000 takes the
+    /// largest <c>_maxSizeTable</c> key at or below it (the tree floor, 0x00644228..0x00644338); anything else
+    /// (0x198000 and above, or no key at or below) is the sentinel.
     /// </summary>
     public static uint GetBaseEntryTag(uint tag)
     {
         if ((tag & 0x80000000u) != 0)                                     // signed <= -1: the factory path
         {
             if (IsFactoryEntryTag(tag)) return tag;
-            if ((tag & 0xFFFF0000u) == 0xC0000000u && (tag & 0x7FFF0000u) != 0
+            if ((tag & 0xFFFF0000u) != 0xC0000000u && (tag & 0x7FFF0000u) != 0
                 && IsFactoryEntryTag(tag & 0xFFFF0000u))
                 return tag & 0xFFFF0000u;
             return 0x198000u;
         }
-        return MaxSizeTable.ContainsKey(tag) ? tag : 0x198000u;
+        if (tag < 0x198000u)
+        {
+            uint floor = 0;
+            bool found = false;
+            foreach (uint key in MaxSizeTable.Keys)
+                if (key <= tag && (!found || key > floor)) { floor = key; found = true; }
+            if (found) return floor;
+        }
+        return 0x198000u;
     }
 
     // fidelity: M3-025, M3-027
@@ -264,12 +271,22 @@ public sealed class NvStorageComponent : IDisposable
         return new NvResult(ResultNoDo, Array.Empty<byte>());
     }
 
+    // fidelity: M3-026
+    /// <summary>
+    /// M3-026: <c>Read</c> only validates and pushes onto the deque (+0xF8, 0x644E82). The request is not sent
+    /// here; <see cref="Update"/> pops the front and sends it in state 0.
+    /// </summary>
     private void Enqueue(PendingRequest r)
     {
-        lock (_gate) { _queue.Enqueue(r); if (_inFlight is null) StartNextLocked(); }
+        lock (_gate) _queue.Enqueue(r);
     }
 
     // fidelity: M3-026, M3-027
+    /// <summary>
+    /// M3-026/M3-027 (ProcessRequest READ, 0x64503E..0x64507C; 0x64536A; 0x645392..0x645484): pop the front
+    /// request, compute a READ's Length from the tag, send it reliable and not hot, clear the caller's sink
+    /// (+0x54, 0x645448..0x64546E) and arm the 5 s deadline. Only <see cref="Update"/> calls this, in state 0.
+    /// </summary>
     private void StartNextLocked()
     {
         if (_queue.Count == 0) { _inFlight = null; return; }
@@ -284,18 +301,28 @@ public sealed class NvStorageComponent : IDisposable
         // M3-027: the command is reliable and not hot. MessageHandler::SendMessage ignores those arguments
         // (M1-026) and the transport frames robot-bound messages reliably, so flush: true is the existing call.
         _robot.SendMessage(command, flush: true);
+        // M3-030 (0x645448..0x64546E): the caller's sink vector (+0x54) is cleared at arm, not at completion.
+        req.Sink?.Clear();
         // M3-027: only the READ path arms the 5 s deadline (+0x74); the write/erase path has its own (out of scope).
         if (read) ArmDeadlineLocked(req);
     }
 
     // fidelity: M3-027, M3-029
     /// <summary>
-    /// M3-027 (pass 1 step 8 / pass 4 1d-5): arm <c>+0x74 = robot+0x2C + 5000</c> unconditionally. Before the first
-    /// RobotState robot+0x2C is 0, so the deadline is 5000; it then fires as soon as a state with a larger clock
-    /// arrives. (The clock still cannot advance without a RobotState, so with no state it never actually fires.)
+    /// M3-027 (pass 1 step 8 / pass 4 1d-5): arm <c>+0x74 = robot+0x2C + 5000</c> unconditionally, where
+    /// robot+0x2C is the synchronised clock (written only once +0x29 is set, 0x0051293C..0x00512954; M3-031).
+    /// Before the first synced state it is 0, so the deadline is 5000.
     /// </summary>
-    private void ArmDeadlineLocked(PendingRequest req) =>
-        req.Deadline = (_robot.State.Latest?.Timestamp ?? 0u) + ReadTimeoutTicks;
+    private void ArmDeadlineLocked(PendingRequest req) => req.Deadline = SyncedClock + ReadTimeoutTicks;
+
+    // fidelity: M3-031
+    /// <summary>
+    /// M3-031: robot+0x2C is the synchronised robot clock, written only when robot+0x29 (time synced) is set
+    /// (0x0051293C..0x00512954). In this stack that is the RobotState stored by
+    /// <c>EngineRobot.UpdateFullRobotState</c> (the state that passed the time-sync gate), not the unfiltered
+    /// <c>State.Latest</c>. Before the first synced state it is 0.
+    /// </summary>
+    private uint SyncedClock => _robot.Engine.Robot?.StoredState?.Timestamp ?? 0u;
 
     /// <summary>
     /// Adds a one-shot on-idle callback (M1 CD20, CB22). It is appended and runs on the next
@@ -321,24 +348,43 @@ public sealed class NvStorageComponent : IDisposable
         foreach (var a in run) a();
     }
 
-    // fidelity: M3-031
+    // fidelity: M3-026, M3-027, M3-030, M3-031
     /// <summary>
-    /// The per-tick NVStorageComponent::Update timeout check (state 2): when the deadline is set and
-    /// <c>robot+0x2C &gt; +0x74</c>, deliver <c>(-4, empty)</c> and complete. There is no retry on a timeout
-    /// (0x64575A..0x6457C0). Called from Robot::Update just before <see cref="ProcessOnIdle"/> (CozmoEngine).
+    /// NVStorageComponent::Update (0x6456A4). In state 0 with a queued request it calls ProcessRequest, which pops
+    /// the front and sends it (0x6456BC..0x6456CC). In state 2 (a read pending) it only checks the 5 s deadline:
+    /// when the synchronised clock (robot+0x2C) is strictly greater than <c>+0x74</c> it delivers <c>(-4, empty)</c>
+    /// to the callback only - no broadcast chunk - and clears the pending request (0x64575A..0x6457C0). A
+    /// completion sets state 0; the next queued request goes out on the next Update, not from the completion.
+    /// Called from Robot::Update after Gate A (0x0051416A, CozmoEngine).
     /// </summary>
     public void Update()
     {
-        Completion? completion;
+        Action<NvResult>? timeoutCallback = null;
+        NvResult timeoutResult = default;
         lock (_gate)
         {
-            var req = _inFlight;
-            if (req?.Deadline is not { } deadline) return;
-            if (_robot.State.Latest is not { } state || state.Timestamp <= deadline) return;
-            _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:X8}");
-            completion = CompleteLocked(req, -4, Array.Empty<byte>());
+            if (_inFlight is { } req)
+            {
+                // State 2 (read pending): only the timeout check. The deadline is only ever set for a READ.
+                if (req.Deadline is { } deadline)
+                {
+                    if (SyncedClock > deadline)
+                    {
+                        _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:X8}");
+                        req.Deadline = null;
+                        _inFlight = null;
+                        timeoutCallback = req.Callback;
+                        timeoutResult = new NvResult(-4, Array.Empty<byte>());
+                    }
+                }
+            }
+            else if (_queue.Count > 0)
+            {
+                StartNextLocked();
+            }
         }
-        Deliver(completion.Value);
+        // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
+        timeoutCallback?.Invoke(timeoutResult);
     }
 
     /// <summary>
@@ -503,29 +549,32 @@ public sealed class NvStorageComponent : IDisposable
         // M3-028 (pass 4b Q3): only on the fits branch is the reply vector resized to total+16 (0x643922), which
         // bounds the index-0 copy at the header total (delivered size == HeaderTotal, no 16-byte zero tail). After
         // a Length = size+16 re-request the engine reassembles each blob with count = size - 16 and no TOT cap.
+        // The resize is one-time (0x00643922): the cap applies only to the blob the header branch sized, so the
+        // flag is cleared after the first apply and cannot cap a later duplicate index-0 blob.
         if (req.HeaderFitsInFirstBlob && offset == 0 && sourceSkip == NvHeaderSize
             && req.HeaderTotal is { } total && count > total)
             count = total;
+        req.HeaderFitsInFirstBlob = false;
         if (count > 0 && offset >= 0) req.Write(offset, r.Data, sourceSkip, count);
         ArmDeadlineLocked(req);
     }
 
     // fidelity: M3-030
     /// <summary>
-    /// M3-030: completes the request, filling the sink, building the broadcast chunks and advancing the queue. The
+    /// M3-030: completes the request, filling the sink, building the broadcast chunks and setting state 0. The
     /// callback, the broadcasts and the on-idle callbacks run outside the lock, in the engine's order: the request's
-    /// own callback first, then the broadcast, then (when this was the last request) the on-idle callbacks.
+    /// own callback first, then the broadcast, then (when the queue is now empty) the on-idle callbacks. The sink
+    /// (+0x54) was cleared at arm, so this only appends the assembled bytes. The completion does not start the next
+    /// request (SetState(0) only, 0x6437EA); <see cref="Update"/> sends it.
     /// </summary>
     private Completion CompleteLocked(PendingRequest req, sbyte result, byte[] data)
     {
         List<NVStorageOpResult>? broadcasts = null;
         if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
-        if (req.Sink is { } sink) { sink.Clear(); sink.AddRange(data); }
+        if (req.Sink is { } sink) sink.AddRange(data);
         req.Deadline = null;
         _inFlight = null;
-        bool startNext = _queue.Count > 0;
-        if (startNext) StartNextLocked();
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, !startNext);
+        return new Completion(req.Callback, new NvResult(result, data), broadcasts, _queue.Count == 0);
     }
 
     private void Deliver(Completion c)
@@ -539,8 +588,8 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-030
     /// <summary>
     /// M3-030 (0x643718..0x6437D4): re-chunk the buffer into 0x400 blocks; each non-final chunk has result 3 (MORE)
-    /// and the final chunk result 0, with the chunk index in word@4. A negative result broadcasts once with size 0.
-    /// A non-negative empty buffer broadcasts nothing.
+    /// and the final chunk carries the request's actual result (0x0064373C..0x0064375C), with the chunk index in word@4. A
+    /// negative result broadcasts once with size 0. A non-negative empty buffer broadcasts nothing.
     /// </summary>
     private static List<NVStorageOpResult> BuildBroadcasts(uint tag, byte op, sbyte result, byte[] data)
     {
@@ -554,7 +603,7 @@ public sealed class NvStorageComponent : IDisposable
         while (offset < data.Length)
         {
             int n = Math.Min(data.Length - offset, 0x400);
-            sbyte chunkResult = offset + n < data.Length ? (sbyte)ResultMore : (sbyte)ResultOkay;
+            sbyte chunkResult = offset + n < data.Length ? (sbyte)ResultMore : result;
             var slice = new byte[n];
             Array.Copy(data, offset, slice, 0, n);
             chunks.Add(new NVStorageOpResult(tag, op, chunkResult, index, slice));

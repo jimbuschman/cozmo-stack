@@ -5800,7 +5800,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "the connection handler (1h), the NV callback (1j) and the +0x48 gate (2a..2f) reproduced in Camera.cs/CameraSettings; the NV wire is the NV component's own, recorded as M3-025..M3-036",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the connection-time calibration read is sent immediately (the dispatch defect in M3-026); SetCameraParams comes before Read, reversing the engine's order (0x006583E2..0x00658414); the test expects an NVCommand before any RobotState.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): the connection-time calibration read is queued first (Camera.OnRobotConnected) and sent from NvStorage::Update after Gate A (M3-026); SetCameraParams is sent after the Read call, in the engine's order (0x006583E2..0x00658414), still policy M3-019 (0.0 / 0 / true).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_022_1j_TheCalibrationCallbackEnablesVisionOnEveryPath, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead, M3DeviceTests.M3_022_1j_BodyHardwareAtMostSixZeroesTheDistortionCoefficients"
@@ -6633,7 +6633,7 @@
         "_maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. GetBaseEntryTag: the negative-tag branch tests == 0xC0000000 where the engine requires != (0x006442B2); positive tags return the sentinel unless an exact key, where the engine returns the largest key <= tag (0x00644228..0x00644338); the reply-accept check uses it (0x0064303C); two tests contradicted.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): GetBaseEntryTag's negative-tag compare is != 0xC0000000 (0x006442B2) and a positive tag below 0x198000 returns the largest _maxSizeTable key <= tag (0x00644228..0x00644338); the reply-accept test uses request 0x80010000 with reply 0x80011234 (accepted) and 0x80021234 (dropped).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_025_TheTagValidityAndSizeTables, M3DeviceTests.M3_025_GetBaseEntryTagFactoriesAndTheSentinel, M3DeviceTests.M3_025_TheReplyAcceptCheckUsesTheBaseTag"
@@ -6651,10 +6651,10 @@
         "ProcessRequest pops the front, one in flight (0x644FF8..0x645022); Robot+0x2C is the clock (pass 2 4a)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. NVStorageComponent::Read only queues (emplace_back 0x00644E82); ProcessRequest sends from NV Update in state 0 (0x006456BC..0x006456CC), called from Robot::Update after Gate A (0x0051416A); the stack sends from Read() and from the reply handler before the callback runs.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): Read only validates and enqueues; NvStorage::Update in state 0 pops the front, sends it, clears the sink at arm, arms the deadline and sets state 2; a completion sets state 0 only, so the next request goes out on the next Update.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_026_AnInvalidTagIsNotSentAndTheCallbackGetsMinusSix"
+      "test": "M3DeviceTests.M3_026_AnInvalidTagIsNotSentAndTheCallbackGetsMinusSix, M3DeviceTests.M3_026_AReadIsNotSentUntilTheNextUpdateAndTheQueueIsOneAtATime"
     },
     {
       "id": "M3-027",
@@ -6669,7 +6669,7 @@
         "send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the deadline is armed at Read() with State.Latest's timestamp; the engine arms it in ProcessRequest after Gate A with the synced robot+0x2C clock; the READ command carries the last written data vector +0xE8 (0x00645386), the stack sends empty data; the test contradicts.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): the READ Length is the factory table value or 0x400, it is sent from Update, the sink is cleared at arm and the 5 s deadline is armed from the synced clock. MISSING: what populates the READ command's Data (+0xE8) - the approved rows name +0xE8 as the source at 0x00645386 but do not settle which path fills it, when, or its initial value; the command still sends empty data and the test still asserts that.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_027_AReadComputesItsLengthFromTheTag"
@@ -6707,10 +6707,10 @@
         "a non-factory entry that fits in one blob delivers exactly the header total (TOT), header skipped, no zero tail: resize reply to TOT+16 (0x643922), copy TOT at offset 0 (0x64356C..0x643596)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the HeaderFitsInFirstBlob cap stays on the request and caps later duplicate index-0 blobs; the engine resizes only on the header branch (0x00643922).",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): the header-fits cap is one-shot, applied only to the blob the header branch sized (0x00643922) and cleared so it cannot cap a later duplicate index-0 blob.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal, M3DeviceTests.M3_028_M3_029_TheReRequestPathDoesNotTrimToTheHeaderTotal, VisionTests.TheCalibrationStructRoundTripsAndIndexedNvResultsAssemble"
+      "test": "M3DeviceTests.M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal, M3DeviceTests.M3_028_M3_029_TheReRequestPathDoesNotTrimToTheHeaderTotal, M3DeviceTests.M3_028_M3_029_TheHeaderTotalCapDoesNotPersistToALaterDuplicateBlob, VisionTests.TheCalibrationStructRoundTripsAndIndexedNvResultsAssemble"
     },
     {
       "id": "M3-030",
@@ -6725,7 +6725,7 @@
         "broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on timeout the stack broadcasts a -4 chunk, the engine only calls the callback (0x006457A8..0x006457C0); the final chunk's result is forced to 0 where the engine sends the actual result (0x0064573C); the sink is cleared at arm, not at completion (0x0064544E).",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): the sink is cleared at arm and filled at completion; the final broadcast chunk carries the request's actual result (0x0064373C..0x0064375C); a timeout runs the callback only, with no broadcast chunk (0x006457A8..0x006457C0).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_030_TheSinkIsFilledAndTheBufferIsBroadcastInChunks"
@@ -6743,10 +6743,10 @@
         "timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the clock is State.Latest (every RobotState); the engine's robot+0x2C is written only when synced (+0x29, 0x0051293C..0x00512954); arm and dispatch timing as M3-027.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): the deadline is armed from the synchronised robot clock (CozmoEngine.Robot.StoredState) when Update sends the read, and the timeout compare uses the same clock, strictly greater. The test is renamed M3_031_TheDeadlineUsesTheSyncedClockAtSend.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M3DeviceTests.M3_031_ARetryableNegativeResultIsResentThenCompletes, M3DeviceTests.M3_031_TheRobotClockTimeoutDeliversMinusFour, M3DeviceTests.M3_031_TheDeadlineIsArmedBeforeTheFirstRobotState"
+      "test": "M3DeviceTests.M3_031_ARetryableNegativeResultIsResentThenCompletes, M3DeviceTests.M3_031_TheRobotClockTimeoutDeliversMinusFour, M3DeviceTests.M3_031_TheDeadlineUsesTheSyncedClockAtSend"
     },
     {
       "id": "M3-032",
@@ -6815,7 +6815,7 @@
         "the timeout needs robot+0x2C to advance (0x64576A), which needs a RobotState with +0x29 and Robot::Update past Gate B (pass 2 4g)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the 'live synced RobotState clock' part fails for the M3-031 clock reason.",
+      "unresolved": "built, awaiting strong verification (Batch 1, uncommitted): OnDisconnected discards the queue and the in-flight request without a callback, and the timeout can no longer fire because the in-flight request is gone.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout"

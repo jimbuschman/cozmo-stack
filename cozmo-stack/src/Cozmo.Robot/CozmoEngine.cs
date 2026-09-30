@@ -1004,10 +1004,11 @@ public sealed class EngineRobot
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
         // Update of the streamer (C15).
         if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
-        // fidelity: M1-041, M3-022, M3-031
-        // CD12: NVStorage::Update runs here, after the animation streamer. M3-031: its per-tick timeout check runs
-        // first (it completes a read whose 5 s robot-clock deadline has passed), then its on-idle callbacks run now
-        // if the request deque is empty and nothing is in flight, which is what gates ready to stream (CD20).
+        // fidelity: M1-041, M3-022, M3-026, M3-031
+        // CD12: NVStorage::Update runs here, after the animation streamer. M3-026/M3-027: in state 0 it pops and
+        // sends the queued request (the connection reads queue on Read and go out only here); M3-031: in state 2 it
+        // checks the read's 5 s synchronised-clock deadline. Then its on-idle callbacks run now if the request deque
+        // is empty and nothing is in flight, which is what gates ready to stream (CD20).
         Engine.NvStorage?.Update();
         Engine.NvStorage?.ProcessOnIdle();
         // fidelity: M4-010, M4-017, M4-018, M4-023

@@ -690,6 +690,7 @@ public class VisionTests
         // 56-byte calibration arrives as exactly 56 bytes (0x80000001 is a factory tag; no header/reassembly shift).
         NvResult? got = null;
         nv.Read(CameraCalibration.NvEntryTag, r => got = r);
+        rig.Robot.Engine.Tick();                                               // M3-026: Update sends the queued read
         rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = bytes });
         Assert.NotNull(got);
         Assert.Equal(0, got!.Value.Result);
@@ -702,6 +703,7 @@ public class VisionTests
         Assert.Equal(1024, NvStorageComponent.BlobStride);                     // 0x643538 lsls r0,r4,#0xa
         NvResult? placed = null;
         nv.Read(CameraCalibration.NvEntryTag, r => placed = r);
+        rig.Robot.Engine.Tick();                                               // M3-026: Update sends the queued read
         var chunk = new byte[] { 9, 8, 7, 6 };
         rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultMore, Length = 3, Data = chunk });
         rig.Send(new NVOpResult { Tag = CameraCalibration.NvEntryTag, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
@@ -729,6 +731,7 @@ public class VisionTests
         robot.Transport.OfflineAcceptConnection();
         robot.Transport.OfflineOutbound.Clear();
         robot.Engine.NvStorage!.Read(CameraCalibration.NvEntryTag, _ => { });
+        robot.Engine.Tick();                                                       // M3-026: Update sends the queued read
         robot.Transport.OfflineTick();
 
         List<NVCommand> Commands() => robot.Transport.OfflineOutbound

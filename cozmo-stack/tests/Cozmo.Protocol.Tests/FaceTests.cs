@@ -697,6 +697,7 @@ public class FaceTests
         Assert.NotNull(rig.Vision.Faces.AddOrUpdateFace(tf, Pose3d.Identity, false));
 
         rig.Vision.LoadFaceAlbumFromRobot();
+        rig.Tick();                                                    // M3-026: Update sends the queued read
         rig.Pump();
         var first = rig.Sent.OfType<NVCommand>().Last();
         Assert.Equal(0x184000u, first.Tag);                               // album first
@@ -724,6 +725,7 @@ public class FaceTests
         using var rig = new Rig();
         rig.Vision.InstallSerializedFaceData(new byte[] { 1, 2, 3 }, new byte[] { 4, 5 });
         rig.Vision.SaveFaceAlbumToRobot();
+        rig.Tick();                                                        // M3-026: Update sends the queued write
         rig.Pump();
 
         var album = rig.Sent.OfType<NVCommand>().Last();
@@ -743,6 +745,7 @@ public class FaceTests
         using var empty = new Rig();
         empty.Vision.InstallSerializedFaceData(Array.Empty<byte>(), Array.Empty<byte>());
         empty.Vision.SaveFaceAlbumToRobot();
+        empty.Tick();                                                      // M3-026: Update sends the queued erase
         empty.Pump();
         var erase = empty.Sent.OfType<NVCommand>().Last();
         Assert.Equal(0x184000u, erase.Tag);

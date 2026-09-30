@@ -1011,18 +1011,21 @@ public class EngineAppLayerTests
         bool? readyInBroadcast = null;
         rig.Robot.Message += m => { if (m is ManufacturingID) readyInBroadcast = rig.Engine.Robot?.ReadyToStream; };
         rig.Tick();
-        Assert.False(readyInBroadcast);                             // the calibration read is in flight (CD20/CD21)
+        Assert.False(readyInBroadcast);                             // the calibration read is only queued here, not in flight (CD20/CD21)
         Assert.False(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);             // no first full state yet (CD12)
+
+        // M3-026/M3-032: the first synced full state passes Gate A, so NvStorage::Update sends the queued read; it is
+        // in flight now and the queue has not drained.
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.False(rig.Engine.Robot!.ReadyToStream);
 
         // the read completes: the queue drains, and the on-idle callback then sets +0x2A
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
         Assert.True(rig.Engine.Robot!.ReadyToStream);
-
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
-        rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
     }
 
@@ -1041,6 +1044,10 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         var cal = Cozmo.Robot.Vision.CameraCalibration.Nominal().ToBytes();
         Assert.Equal(Cozmo.Robot.CameraSettings.CalibrationBytes, cal.Length);
+        // M3-026/M3-032: the calibration read is only queued at Success; the first synced full state makes Update send it.
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
+        rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = cal });
         rig.Tick();
         Assert.False(readyWhenInstalled);                    // the calibration callback saw readiness still unset
@@ -1287,8 +1294,6 @@ public class EngineAppLayerTests
     private static void UseEveryDevice(Rig rig, Cozmo.Robot.Vision.VisionSystem vision)
     {
         var robot = rig.Robot;
-        // CD20: ready to stream waits for the NV queue to drain; answer the calibration read so the streamer runs.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new SyncTimeAck());
         rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
         rig.Data(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
@@ -1297,6 +1302,9 @@ public class EngineAppLayerTests
         rig.Data(new ObjectAvailable { FactoryId = 0x11223344, ObjectType = ObjectType.Charger_Basic, Rssi = 60 });
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });          // the pool asks for the cube: SetPropSlot
         rig.Tick();                                        // M4-010 CD2: SetPropSlot goes out in Robot::Update, after the messages
+        // CD20/M3-026: the connection-time calibration read only goes out once the first synced full state passes
+        // Gate A (the Tick above); answer it now so the queue drains and ready-to-stream opens. The Tick below drains it.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         rig.Data(new RobotState { Timestamp = 43, PoseOriginId = 1, Status = (uint)RobotStatusFlag.IsPickedUp });
         rig.Data(new CliffEvent { Timestamp = 44, DetectedFlags = 1, DidStopForCliff = true });
@@ -1415,10 +1423,12 @@ public class EngineAppLayerTests
         Assert.Equal(RobotConnectionResult.Success, rig.Responses[1].Result);
         rig.Tick();                                        // the app defaults again (policy M1-042)
         Assert.True(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
-        // CD20: the second connection queues another calibration read; drain it so ready to stream opens.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        // M3-026/M3-032: the second connection queues another calibration read; the first synced full state sends it.
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 7, PoseOriginId = 1 });
+        rig.Tick();
+        // CD20: drain it now that it is in flight, so ready to stream opens.
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
         Assert.Equal(1, rig.Robot.State.StateCount);
@@ -1514,10 +1524,13 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         var audio = rig.Robot.Audio;
         rig.ToSuccess();
-        // CD20: ready to stream waits for the NV queue to drain; answer the calibration read so streaming opens.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        // M3-026/M3-032: the first synced full state sends the queued calibration read.
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
+        rig.Tick();
+        // CD20: answer the read now that it is in flight, so the queue drains and streaming opens; the AnimationState
+        // is the engine's played counters (C10).
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Data(new AnimationState { Timestamp = 11 });
         rig.Tick();                                        // streaming open (CD12), the engine's counters reporting (C10)
         int framesAfterRemoval = 0;

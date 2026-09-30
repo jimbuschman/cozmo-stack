@@ -265,7 +265,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the connection handler (1h), the NV callback (1j) and the +0x48 gate (2a..2f) reproduced in Camera.cs/CameraSettings; the NV wire is the NV component's own, recorded as M3-025..M3-036
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21; 1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766); 2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the connection-time calibration read is sent immediately (the dispatch defect in M3-026); SetCameraParams comes before Read, reversing the engine's order (0x006583E2..0x00658414); the test expects an NVCommand before any RobotState.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): the connection-time calibration read is queued first (Camera.OnRobotConnected) and sent from NvStorage::Update after Gate A (M3-026); SetCameraParams is sent after the Read call, in the engine's order (0x006583E2..0x00658414), still policy M3-019 (0.0 / 0 / true).
 
 **M3-023 — EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it** (live path)
 
@@ -283,7 +283,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent keys replies by index and special-cases only the CameraCalib tag (M3-022); it does not model IsValidEntryTag, the size tables or GetMaxSizeForEntryTag
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: IsValidEntryTag 0x644148..0x6441A0: (tag-0x180000)>>14 <= 0x1e; tag != 0x198000; tag a multiple of 0x1000; an exact _maxSizeTable key (descent 0x644160..0x64419E); _maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0; _maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. GetBaseEntryTag: the negative-tag branch tests == 0xC0000000 where the engine requires != (0x006442B2); positive tags return the sentinel unless an exact key, where the engine returns the largest key <= tag (0x00644228..0x00644338); the reply-accept check uses it (0x0064303C); two tests contradicted.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): GetBaseEntryTag's negative-tag compare is != 0xC0000000 (0x006442B2) and a positive tag below 0x198000 returns the largest _maxSizeTable key <= tag (0x00644228..0x00644338); the reply-accept test uses request 0x80010000 with reply 0x80011234 (accepted) and 0x80021234 (dropped).
 
 **M3-026 — NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight** (live path)
 
@@ -292,7 +292,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent queues FIFO, one in flight, and delivers callbacks, but does not validate entry tags or deliver the engine's -6 for an invalid tag
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Read 0x644E2A..0x644EF4: IsValidEntryTag; invalid warns, optionally broadcasts and calls cb(nullptr, 0, -6) (0x644E8A..0x644EEE); valid emplace_back on the deque +0xF8 (0x644E30..0x644E88); ProcessRequest pops the front, one in flight (0x644FF8..0x645022); Robot+0x2C is the clock (pass 2 4a)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. NVStorageComponent::Read only queues (emplace_back 0x00644E82); ProcessRequest sends from NV Update in state 0 (0x006456BC..0x006456CC), called from Robot::Update after Gate A (0x0051416A); the stack sends from Read() and from the reply handler before the callback runs.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): Read only validates and enqueues; NvStorage::Update in state 0 pops the front, sends it, clears the sink at arm, arms the deadline and sets state 2; a completion sets state 0 only, so the next request goes out on the next Update.
 
 **M3-027 — NV ProcessRequest READ: the factory/non-factory Length, the reliable send, and the pending-read arm (5 s robot-clock deadline, retry counter 0)** (live path)
 
@@ -301,7 +301,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent sends the caller's Length verbatim and has no robot-clock timeout; its ReadAsync timeout is a local 3 s task, not the engine's callback
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: READ case 0x64503E..0x64507C: factory tag -> Length = _maxFactoryEntrySizeTable[tag]; non-factory -> mov #0x400 at 0x64536A, stored +0xE0 (0x64536E); op 0 -> +0xE4; byte 9 zero; send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the deadline is armed at Read() with State.Latest's timestamp; the engine arms it in ProcessRequest after Gate A with the synced robot+0x2C clock; the READ command carries the last written data vector +0xE8 (0x00645386), the stack sends empty data; the test contradicts.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): the READ Length is the factory table value or 0x400, it is sent from Update, the sink is cleared at arm and the 5 s deadline is armed from the synced clock. MISSING: what populates the READ command's Data (+0xE8) - the approved rows name +0xE8 as the source at 0x00645386 but do not settle which path fills it, when, or its initial value; the command still sends empty data and the test still asserts that.
 
 **M3-029 — NV reassembly at index*1024 with the 16-byte header skipped, zero-fill, and a re-armed timeout** (live path)
 
@@ -310,7 +310,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent keys blobs by index and takes index 0 only; it does not place at index*1024 or skip the 16-byte header
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: offset = index*1024 - hdr; hdr = 16 for index>0 on a non-factory base, else 0; blob 0 skips the 16-byte header (0x643538..0x643594); resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f); a non-factory entry that fits in one blob delivers exactly the header total (TOT), header skipped, no zero tail: resize reply to TOT+16 (0x643922), copy TOT at offset 0 (0x64356C..0x643596)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the HeaderFitsInFirstBlob cap stays on the request and caps later duplicate index-0 blobs; the engine resizes only on the header branch (0x00643922).
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): the header-fits cap is one-shot, applied only to the blob the header branch sized (0x00643922) and cleared so it cannot cap a later duplicate index-0 blob.
 
 **M3-030 — NV completion: the callback or the caller vector sink, the 0x400-chunk broadcast, and SetState(0)** (live path)
 
@@ -319,7 +319,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent invokes the callback and has an on-idle list, but has no broadcast and no caller-vector sink
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: completion 0x643600..0x643692: MORE(3) waits; -1 ReadEntryNotFound; 0 ReadSuccess; other negatives ReadFailed; the function (+0x58) is invoked only when [+0x68] != 0, else the +0x54 vector is the sink (0x6436B6..0x643714); broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on timeout the stack broadcasts a -4 chunk, the engine only calls the callback (0x006457A8..0x006457C0); the final chunk's result is forced to 0 where the engine sends the actual result (0x0064573C); the sink is cleared at arm, not at completion (0x0064544E).
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): the sink is cleared at arm and filled at completion; the final broadcast chunk carries the request's actual result (0x0064373C..0x0064375C); a timeout runs the callback only, with no broadcast chunk (0x006457A8..0x006457C0).
 
 **M3-031 — NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)** (live path)
 
@@ -328,7 +328,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: NvStorageComponent has no retry and no robot-clock timeout; ReadAsync's 3 s is a local test convenience
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand 0x645C6A..0x645D7A: the counter +0xF4 is 0-based (reset by the send/arm at 0x645484), incremented then compared < +0xF5 = 8 (bhs at 0x645C7C), so 7 resends / 8 transmissions, then ReadOpFailed (0x6431FE..0x643234); the second caller is the write/erase path 0x643194..0x6431A2; timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the clock is State.Latest (every RobotState); the engine's robot+0x2C is written only when synced (+0x29, 0x0051293C..0x00512954); arm and dispatch timing as M3-027.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): the deadline is armed from the synchronised robot clock (CozmoEngine.Robot.StoredState) when Update sends the read, and the timeout compare uses the same clock, strictly greater. The test is renamed M3_031_TheDeadlineUsesTheSyncedClockAtSend.
 
 **M3-032 — NV dispatch is gated in Robot::Update (Running state, a first full state after SyncTimeAck, and a passing UpdateAllResults once calibrated)** (live path)
 
@@ -364,7 +364,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: already built: NvStorageComponent.OnDisconnected clears the queue and the in-flight request without invoking callbacks; this record confirms it against the source
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ~NVStorageComponent frees +0x54 and destroys the +0x58 function without invoking it (0x643E80..0x643F8C); no callback for a queued or pending read on disconnect (pass 2 4e/4f); the timeout needs robot+0x2C to advance (0x64576A), which needs a RobotState with +0x29 and Robot::Update past Gate B (pass 2 4g)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the 'live synced RobotState clock' part fails for the M3-031 clock reason.
+* outstanding: built, awaiting strong verification (Batch 1, uncommitted): OnDisconnected discards the queue and the in-flight request without a callback, and the timeout can no longer fire because the in-flight request is gone.
 
 ### M4-control — Motion, sensors, lights and cubes
 

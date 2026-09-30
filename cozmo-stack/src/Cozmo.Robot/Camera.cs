@@ -800,19 +800,20 @@ public sealed class CameraSettings
     // fidelity: M3-019, M3-022
     /// <summary>
     /// VisionComponent's RobotConnectionResponse subscriber, for response 0 (1h, A17, A18; 0x006583BA..0x0065842C):
-    /// it queues NVStorageComponent::Read(0x80000001, callback) and then sends SetCameraParams, reliable, not hot.
-    /// Policy M3-019 (MD1): the engine's f32 @0 and u16 @4 are stale stack bytes (1i), so this stack sends 0.0 and 0;
+    /// it queues NVStorageComponent::Read(0x80000001, callback) first and then sends SetCameraParams, reliable, not
+    /// hot. Policy M3-019 (MD1): the engine's f32 @0 and u16 @4 are stale stack bytes (1i), so this stack sends 0.0 and 0;
     /// the bool @6 is 1, as in the engine. The read goes through the robot's shared NV queue (M3-022), with
-    /// <see cref="CalibrationReadLength"/> = 1 and READ; its callback runs when the read completes. The engine only
-    /// queues it here, so the request goes out after the SetCameraParams. The component computes
+    /// <see cref="CalibrationReadLength"/> = 1 and READ; its callback runs when the read completes. Read only queues
+    /// the request (M3-026), so the request goes out from NvStorage::Update after Gate A. The component computes
     /// <see cref="CalibrationReadLength"/> = 1 from the tag (M3-027). <paramref name="bodyHwVersion"/> is mfgId
     /// word 1, the engine Robot's +0x24, which the calibration callback's distortion rule reads.
     /// </summary>
     internal void OnRobotConnected(int bodyHwVersion)
     {
         lock (_gate) _bodyHwVersion = bodyHwVersion;
-        _send(new SetCameraParams { Gain = 0.0f, ExposureMs = 0, AutoExposureEnabled = true });
+        // 0x006583E2..0x006583FA queues the read before 0x00658414..0x0065842C sends SetCameraParams.
         _robot.Engine.NvStorage!.Read(Vision.CameraCalibration.NvEntryTag, OnCalibrationRead);
+        _send(new SetCameraParams { Gain = 0.0f, ExposureMs = 0, AutoExposureEnabled = true });
     }
 
     // fidelity: M3-022

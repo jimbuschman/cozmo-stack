@@ -952,10 +952,11 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// 1h, 1i, 1o, A17, A18 (M3-019 policy MD1, M3-022): at a Success response the VisionComponent's subscriber runs after
-    /// Robot::SyncTime's sends and before TracePrinter's: it queues the NV CameraCalib read (tag 0x80000001) and sends
-    /// SetCameraParams {f32 0.0, u16 0, bool 1}, whose request goes out after it. A24/3a (M3-023): no EnableColorImages at
-    /// connection.
+    /// 1h, 1i, 1o, A17, A18 (M3-019 policy MD1, M3-022, M3-026): at a Success response the VisionComponent's
+    /// subscriber runs after Robot::SyncTime's sends and before TracePrinter's: it queues the NV CameraCalib read
+    /// (tag 0x80000001) and sends SetCameraParams {f32 0.0, u16 0, bool 1}. M3-026: Read only queues; the read goes
+    /// out from NVStorage::Update after Gate A, so it is not on the wire until the first synced full state. A24/3a
+    /// (M3-023): no EnableColorImages at connection.
     /// </summary>
     [Fact]
     public void M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead()
@@ -965,18 +966,21 @@ public class M3DeviceTests
         var sent = rig.Port.Messages();
         int sync = sent.FindIndex(m => m is SyncTime);
         int camera = sent.FindIndex(m => m is SetCameraParams);
-        int nv = sent.FindIndex(m => m is NVCommand);
         int trace = sent.FindIndex(m => m is SetAppRunID);
-        Assert.True(sync >= 0 && camera > sync && nv > camera && trace > camera, $"order: sync {sync}, camera {camera}, nv {nv}, trace {trace}");
+        Assert.True(sync >= 0 && camera > sync && trace > camera, $"order: sync {sync}, camera {camera}, trace {trace}");
         Assert.Equal(new byte[] { 0x57, 0, 0, 0, 0, 0, 0, 1 }, sent[camera].ToBytes());
-        var read = (NVCommand)sent[nv];
+        // M3-026: the calibration read is queued, not sent, at connection.
+        Assert.DoesNotContain(sent, m => m is NVCommand);
+        Assert.DoesNotContain(sent, m => m is EnableColorImages);
+        Assert.Single(sent.OfType<SetCameraParams>());
+
+        // After the first synced full state, NVStorage::Update pops and sends it.
+        SendFirstFullState(rig);
+        var read = (NVCommand)rig.Port.Messages().Last(m => m is NVCommand);
         Assert.Equal(0x80000001u, read.Tag);
         Assert.Equal(1, read.Length);                              // NVEntry_CameraCalib's factory size-table value
         Assert.Equal(NvStorageComponent.OpRead, read.Op);
         Assert.Equal(0, read.Unknown);
-        Assert.Empty(read.Data);
-        Assert.DoesNotContain(sent, m => m is EnableColorImages);
-        Assert.Single(sent.OfType<SetCameraParams>());
     }
 
     private static byte[] Calibration56()
@@ -1003,6 +1007,7 @@ public class M3DeviceTests
         using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
         rig.ToSuccess();                                            // body hardware 7: distortion kept
         Assert.False(rig.Robot.CameraSettings.VisionEnabled);
+        SendFirstFullState(rig);                                    // M3-026: the queued read goes out from Update
         var data = Calibration56()[..Math.Min(size, 56)];
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = data });
         rig.Tick();
@@ -1032,6 +1037,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         rig.ToSuccess(bodyHw: 4);
+        SendFirstFullState(rig);                                    // M3-026: the queued read goes out from Update
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         rig.Tick();
         var cal = rig.Robot.CameraSettings.Calibration!;
@@ -1043,9 +1049,25 @@ public class M3DeviceTests
 
     private static List<NVCommand> NvCommands(Rig rig) => rig.Port.Messages().OfType<NVCommand>().ToList();
 
-    /// <summary>ToSuccess queues the connection-time calibration read; finish it so the next read is sent.</summary>
+    /// <summary>
+    /// Establishes the first synced full state, so Robot::Update passes Gate A and NVStorage::Update runs (M3-026,
+    /// M3-032), then lets the queued connection-time calibration read go out.
+    /// </summary>
+    private static void SendFirstFullState(Rig rig, uint timestamp = 1)
+    {
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = timestamp, PoseOriginId = 1 });
+        rig.Tick();
+    }
+
+    /// <summary>
+    /// ToSuccess queues the connection-time calibration read; it goes out only after the first synced full state
+    /// (M3-026: Read only queues, Update sends). Send that state, let the read out, then finish it so the queue is
+    /// empty.
+    /// </summary>
     private static void DrainCalibrationRead(Rig rig)
     {
+        SendFirstFullState(rig);
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
     }
@@ -1096,23 +1118,28 @@ public class M3DeviceTests
 
     /// <summary>
     /// M3-025/GetBaseEntryTag (0x6441F8..0x6443F4): an exact factory key is its own base; a factory-block tag
-    /// (0xC000… with the 0xC0000000 base key) takes tag &amp; 0xFFFF0000; anything unrecognised is the sentinel.
+    /// takes tag &amp; 0xFFFF0000 only when that base is not 0xC0000000 (0x006442B2, the inverted compare); a
+    /// positive tag below 0x198000 takes the largest _maxSizeTable key at or below it (0x00644228..0x00644338);
+    /// anything else is the sentinel 0x198000.
     /// </summary>
     [Fact]
     public void M3_025_GetBaseEntryTagFactoriesAndTheSentinel()
     {
         Assert.Equal(0xC0000004u, NvStorageComponent.GetBaseEntryTag(0xC0000004));   // exact factory key: itself
-        Assert.Equal(0xC0000000u, NvStorageComponent.GetBaseEntryTag(0xC0001234));   // factory block: tag & 0xFFFF0000
+        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0xC0001234));     // (tag & 0xFFFF0000) == 0xC0000000: sentinel (0x006442B2)
         Assert.Equal(0x80000000u, NvStorageComponent.GetBaseEntryTag(0x80000000));   // exact factory key: itself
         Assert.Equal(0x182000u, NvStorageComponent.GetBaseEntryTag(0x182000));       // exact non-factory key: itself
+        Assert.Equal(0x183000u, NvStorageComponent.GetBaseEntryTag(0x183500));       // floor: largest key <= 0x183500
+        Assert.Equal(0x184000u, NvStorageComponent.GetBaseEntryTag(0x190000));       // floor: 0x184000 <= 0x190000 < 0x194000
         Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x90000000));     // top bit, unrecognised -> sentinel
-        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x199000));       // unrecognised positive -> sentinel
+        Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x199000));       // >= 0x198000 -> sentinel
         Assert.Equal(0x198000u, NvStorageComponent.GetBaseEntryTag(0x198000));       // the sentinel key maps to itself
     }
 
     /// <summary>
-    /// M3-028/1e-1: the reply-accept check compares GetBaseEntryTag(reply.tag) with the pending request tag, so a
-    /// reply carrying a tag in the request's factory block is accepted even though the raw tags differ.
+    /// M3-025/1e-1: the reply-accept check compares GetBaseEntryTag(reply.tag) with the pending request tag, so a
+    /// reply carrying a tag in the request's factory block is accepted even though the raw tags differ; a reply
+    /// whose base is a different factory block is dropped.
     /// </summary>
     [Fact]
     public void M3_025_TheReplyAcceptCheckUsesTheBaseTag()
@@ -1120,13 +1147,23 @@ public class M3DeviceTests
         using var rig = new Rig();
         rig.ToSuccess();
         DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
         NvResult? got = null;
-        rig.Robot.Engine.NvStorage!.Read(0xC0000000, r => got = r);
-        rig.Data(new NVOpResult { Tag = 0xC0001234, Op = 0, Result = 0, Length = 0, Data = new byte[1] });
+        nv.Read(0x80010000, r => got = r);                            // base 0x80010000
+        rig.Tick();                                                   // M3-026: Update sends the queued read
+        rig.Data(new NVOpResult { Tag = 0x80011234, Op = 0, Result = 0, Length = 0, Data = new byte[1] });
         rig.Tick();
         Assert.NotNull(got);
         Assert.Equal(0, got!.Value.Result);
         Assert.Single(got.Value.Data);
+
+        NvResult? dropped = null;
+        nv.Read(0x80010000, r => dropped = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80021234, Op = 0, Result = 0, Length = 0, Data = new byte[1] });   // base 0x80020000
+        rig.Tick();
+        Assert.Null(dropped);                                         // the reply's base differs: dropped
     }
 
     /// <summary>M3-026: a READ of an invalid tag is not sent, and the callback gets (-6, empty).</summary>
@@ -1146,7 +1183,10 @@ public class M3DeviceTests
         Assert.Contains(rig.Robot.Engine.NvStorage.Log, l => l.Contains("InvalidTag"));
     }
 
-    /// <summary>M3-027: a non-factory READ computes Length = 0x400 from the tag; the caller no longer passes it.</summary>
+    /// <summary>
+    /// M3-027: a non-factory READ computes Length = 0x400 from the tag; the caller no longer passes it. M3-026: the
+    /// read is queued by Read and sent by the next Update (Tick).
+    /// </summary>
     [Fact]
     public void M3_027_AReadComputesItsLengthFromTheTag()
     {
@@ -1154,13 +1194,14 @@ public class M3DeviceTests
         rig.ToSuccess();
         DrainCalibrationRead(rig);
         rig.Robot.Engine.NvStorage!.Read(0x182000, _ => { });
+        rig.Tick();                                                              // M3-026: Update sends it
         Assert.Equal(0x400, NvStorageComponent.NonFactoryReadLength);            // 0x64536A mov.w r0,#0x400
         var cmd = NvCommands(rig)[^1];
         Assert.Equal(0x182000u, cmd.Tag);
         Assert.Equal(0x400, cmd.Length);
         Assert.Equal(NvStorageComponent.OpRead, cmd.Op);
         Assert.Equal(0, cmd.Unknown);
-        Assert.Empty(cmd.Data);
+        Assert.Empty(cmd.Data);   // MISSING: the engine carries the last written data vector +0xE8 (0x00645386)
     }
 
     /// <summary>
@@ -1179,18 +1220,21 @@ public class M3DeviceTests
         Assert.Equal(0x435A4D4Fu, NvStorageComponent.NonFactoryHeaderMagic);     // 0x643108 movw/movt
 
         nv.Read(0x182000, r => got = r);
+        rig.Tick();                                                              // M3-026: Update sends it
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = new byte[15] });
         rig.Tick();
         Assert.Equal(-3, got!.Value.Result);
 
         got = null;
         nv.Read(0x182000, r => got = r);
+        rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x800, 0xDEADBEEF) });
         rig.Tick();
         Assert.Equal(-1, got!.Value.Result);
 
         got = null;
         nv.Read(0x182000, r => got = r);
+        rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x1000, 0x435A4D4F) });
         rig.Tick();
         Assert.Equal(-1, got!.Value.Result);                                     // 0x1000 > MaxSizeForEntryTag(0x182000)-16 = 0xFF0
@@ -1208,6 +1252,7 @@ public class M3DeviceTests
         DrainCalibrationRead(rig);
         NvResult? got = null;
         rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        rig.Tick();                                                              // M3-026: Update sends it
         var blob = new byte[16 + 100];
         NvHeader(0x800, 0x435A4D4F).CopyTo(blob, 0);
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = blob });
@@ -1232,6 +1277,7 @@ public class M3DeviceTests
         DrainCalibrationRead(rig);
         NvResult? got = null;
         rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        rig.Tick();                                                      // M3-026: Update sends it
         const int total = 100;
         var blob = new byte[200];                                        // larger than header + total
         for (int i = 16; i < blob.Length; i++) blob[i] = (byte)(i + 1);
@@ -1246,6 +1292,38 @@ public class M3DeviceTests
     }
 
     /// <summary>
+    /// M3-028/M3-029: the header-fits resize (0x00643922) happens once, on the header branch. It must not stay on
+    /// the request and cap a later duplicate index-0 blob.
+    /// </summary>
+    [Fact]
+    public void M3_028_M3_029_TheHeaderTotalCapDoesNotPersistToALaterDuplicateBlob()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        NvResult? got = null;
+        rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        rig.Tick();                                                      // M3-026: Update sends it
+        const int total = 100;
+        var first = new byte[200];                                       // fits: total <= 200 - 16
+        for (int i = 16; i < first.Length; i++) first[i] = (byte)(i + 1);
+        NvHeader(total, 0x435A4D4F).CopyTo(first, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = first });
+        rig.Tick();
+        Assert.Null(got);
+
+        // a later duplicate index-0 blob: the resize is one-time, so this one is not capped at total
+        var second = new byte[200];
+        for (int i = 16; i < second.Length; i++) second[i] = (byte)(i + 101);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = second });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Equal(184, got.Value.Data.Length);                        // 200 - 16, not the first blob's total
+        Assert.Equal(second[16..200], got.Value.Data);
+    }
+
+    /// <summary>
     /// M3-028/M3-029 (pass 4b Q3): the total-size trim is only on the fits branch. After a Length = size+16
     /// re-request the engine reassembles each blob with count = size - 16 and no TOT bound.
     /// </summary>
@@ -1257,6 +1335,7 @@ public class M3DeviceTests
         DrainCalibrationRead(rig);
         NvResult? got = null;
         rig.Robot.Engine.NvStorage!.Read(0x182000, r => got = r);
+        rig.Tick();                                                              // M3-026: Update sends it
         const int total = 100;
         // header only: the entry does not fit in the first blob -> re-request
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(total, 0x435A4D4F) });
@@ -1276,8 +1355,8 @@ public class M3DeviceTests
 
     /// <summary>
     /// M3-030: with an empty callback the assembled bytes go into the request's sink; with the broadcast flag the
-    /// completed buffer is re-chunked into 0x400 blocks (result 3 for a non-final chunk, 0 for the final, index in
-    /// word@4).
+    /// completed buffer is re-chunked into 0x400 blocks (result 3 for a non-final chunk, the request's actual result
+    /// for the final one, index in word@4). M3-026: Read queues, Update sends.
     /// </summary>
     [Fact]
     public void M3_030_TheSinkIsFilledAndTheBufferIsBroadcastInChunks()
@@ -1292,17 +1371,19 @@ public class M3DeviceTests
         nv.NVStorageOpResultBroadcast += chunks.Add;
 
         nv.Read(0x80000001, null, sink, broadcast: true);
+        rig.Tick();                                                              // M3-026: Update sends it
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = new byte[1024] });
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultMore, Length = 1, Data = new byte[1024] });
         rig.Tick();
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
+        // the terminal result is not 0, so the final chunk must carry it (0x0064573C), not a forced 0
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = NvStorageComponent.ResultScheduled, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
 
         Assert.Equal(2048, sink.Count);                                          // index 0 and 1, stride 1024
         Assert.Equal(2, chunks.Count);
         Assert.Equal((sbyte)3, chunks[0].Result);                                // non-final chunk is MORE
-        Assert.Equal((sbyte)0, chunks[1].Result);                                // final chunk is OKAY
+        Assert.Equal(NvStorageComponent.ResultScheduled, chunks[1].Result);      // final chunk is the actual result
         Assert.Equal(0, chunks[0].Index);
         Assert.Equal(1, chunks[1].Index);
         Assert.Equal(0x80000001u, chunks[0].Tag);
@@ -1324,6 +1405,7 @@ public class M3DeviceTests
         Assert.Equal(7, NvStorageComponent.MaxReadResends);                      // +0xF5 = 8, 0-based counter -> 7 resends
         NvResult? got = null;
         nv.Read(0x80000001, r => got = r);
+        rig.Tick();                                                              // M3-026: the initial transmission
         int afterRead = NvCommands(rig).Count;                                   // the initial transmission
 
         for (int i = 0; i < NvStorageComponent.MaxReadResends; i++)
@@ -1343,8 +1425,9 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// M3-031/0x64575A..0x6457C0: a read whose deadline (robot+0x2C + 5000) has passed delivers (-4, empty) and is
-    /// not retried. The clock is the RobotState timestamp.
+    /// M3-031/0x64575A..0x6457C0: a read whose deadline (the synchronised robot clock robot+0x2C + 5000) has passed
+    /// delivers (-4, empty) and is not retried. M3-026: the deadline is armed when Update sends the queued read, so
+    /// the read must go out before the later state arrives.
     /// </summary>
     [Fact]
     public void M3_031_TheRobotClockTimeoutDeliversMinusFour()
@@ -1356,10 +1439,12 @@ public class M3DeviceTests
         rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
         rig.Tick();
         Assert.Equal(1000u, rig.Robot.State.Latest!.Timestamp);
+        Assert.Equal(1000u, rig.Engine.Robot!.StoredState!.Timestamp);
 
         var nv = rig.Robot.Engine.NvStorage!;
         NvResult? got = null;
-        nv.Read(0x182000, r => got = r);                                         // deadline = 1000 + 5000 = 6000
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();                                                              // sent now: deadline = 1000 + 5000 = 6000
         rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
         rig.Tick();
         Assert.NotNull(got);
@@ -1368,32 +1453,66 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// M3-027 (pass 1 step 8 / pass 4 1d-5): the deadline is armed unconditionally as robot+0x2C + 5000. Before the
-    /// first RobotState robot+0x2C is 0, so it is 5000; the live connection CameraCalib read (queued from the mfgId
-    /// response, before any state) must therefore time out once a state with a larger clock arrives. It does not
-    /// fire while the clock is still at or below 5000, and it cannot fire at all with no state (the clock cannot
-    /// advance).
+    /// M3-031/M3-027: the deadline is armed from the synchronised robot clock (robot+0x2C) when Update sends the
+    /// queued read, and the timeout compare is strictly greater. This stack's robot+0x2C is
+    /// <c>EngineRobot.StoredState</c>, the state that passed the time-sync gate (0x0051293C..0x00512954), not the
+    /// unfiltered <c>State.Latest</c>.
     /// </summary>
     [Fact]
-    public void M3_031_TheDeadlineIsArmedBeforeTheFirstRobotState()
+    public void M3_031_TheDeadlineUsesTheSyncedClockAtSend()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);                                               // StoredState = 1
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();                                                              // sent: deadline = 1 + 5000 = 5001
+
+        rig.Data(new RobotState { Timestamp = 5001, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.Null(got);                                                        // 5001 is not > 5001
+
+        rig.Data(new RobotState { Timestamp = 5002, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.NotNull(got);
+        Assert.Equal(-4, got!.Value.Result);
+        Assert.Empty(got.Value.Data);
+    }
+
+    /// <summary>
+    /// M3-026: <c>Read</c> only queues; the request goes out from the next <c>Update</c>, and the queue is one at a
+    /// time (the next request waits for the completion, then the next Update).
+    /// </summary>
+    [Fact]
+    public void M3_026_AReadIsNotSentUntilTheNextUpdateAndTheQueueIsOneAtATime()
     {
         using var rig = new Rig();
         rig.ToSuccess();
         DrainCalibrationRead(rig);
         var nv = rig.Robot.Engine.NvStorage!;
-        NvResult? got = null;
-        nv.Read(0x182000, r => got = r);                                         // no state yet: deadline = 0 + 5000 = 5000
+        int before = NvCommands(rig).Count;
+        NvResult? first = null, second = null;
 
-        rig.Data(new SyncTimeAck());
-        rig.Data(new RobotState { Timestamp = 5000, PoseOriginId = 1 });
-        rig.Tick();
-        Assert.Null(got);                                                        // 5000 is not > 5000
+        nv.Read(0x182000, r => first = r);
+        nv.Read(0x183000, r => second = r);
+        Assert.Equal(before, NvCommands(rig).Count);                             // Read sends nothing
 
-        rig.Data(new RobotState { Timestamp = 5001, PoseOriginId = 1 });
+        rig.Tick();                                                              // one Update: the front goes out
+        var sent = NvCommands(rig);
+        Assert.Equal(before + 1, sent.Count);
+        Assert.Equal(0x182000u, sent[^1].Tag);
+        Assert.Null(first);
+        Assert.Null(second);
+
+        // complete the first; the second goes out only on the next Update
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[1] });
         rig.Tick();
-        Assert.NotNull(got);
-        Assert.Equal(-4, got!.Value.Result);
-        Assert.Empty(got.Value.Data);
+        Assert.NotNull(first);
+        sent = NvCommands(rig);
+        Assert.Equal(before + 2, sent.Count);
+        Assert.Equal(0x183000u, sent[^1].Tag);
+        Assert.Null(second);
     }
 
     /// <summary>
@@ -1547,7 +1666,11 @@ public class M3DeviceTests
         Assert.Equal((500, 5), (rig.Engine.Robot.NumAnimBytesPlayed, rig.Engine.Robot.NumAudioFramesPlayed));
     }
 
-    /// <summary>CD12, C15 (M3-013): Robot::Update runs the streamer only while synced and ready to stream, once per tick.</summary>
+    /// <summary>
+    /// CD12, C15 (M3-013): Robot::Update runs the streamer only while synced and ready to stream, once per tick.
+    /// M3-026: the connection-time calibration read only goes out after the first synced full state, and ready to
+    /// stream waits for the queue to drain (CD20).
+    /// </summary>
     [Fact]
     public void M3_013_CD12_TheEngineTickRunsTheStreamerOnlyWhileStreamingIsOpen()
     {
@@ -1555,13 +1678,16 @@ public class M3DeviceTests
         int updates = 0;
         rig.Engine.AnimationStreamerUpdate = () => updates++;
         rig.ToSuccess();
-        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read first.
-        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         rig.Tick();
-        Assert.Equal(0, updates);                                  // not time synced, no full state yet
+        Assert.Equal(0, updates);                                  // before the first full state, no streamer and no NV send
+
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
-        rig.Tick();
+        rig.Tick();                                                // Gate A passes; the calibration read goes out; not ready yet
+        Assert.Equal(0, updates);
+
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();                                                // completes; the on-idle callback opens ready to stream
         Assert.Equal(1, updates);
         rig.Tick();
         Assert.Equal(2, updates);
@@ -1593,10 +1719,13 @@ public class M3DeviceTests
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is GetManufacturingInfo), 3000), "no GetManufacturingInfo");
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
         Assert.True(SpinWait.SpinUntil(() => Sent(m => m is SyncTime), 3000), "no SyncTime");
-        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read first.
-        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        // M3-026/M3-032: the calibration read is queued at Success but only goes out after Gate A, so establish the
+        // first synced full state and wait for the read to reach the wire before answering it.
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
+        Assert.True(SpinWait.SpinUntil(() => Sent(m => m is NVCommand { Tag: 0x80000001 }), 3000), "calibration read never sent");
+        // CD20: ready to stream waits for the NV queue to drain, so answer the calibration read now.
+        Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
         Assert.True(SpinWait.SpinUntil(() => robot.AnimationStreamingOpen, 3000), "streaming never opened");
 
         int before = port.Messages().Count;
