@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "f08cd4950577cc4d9453d1da9ef4792c2fb174e776d08a593c3d619db9eb8f0d",
+  "inventory_sha256": "5745977ef0765d66bd44361677613885da0a3be2d4413c17d4ceb365d9c9ed3c",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -139,7 +139,7 @@
       "hardware_required": false
     },
     "M9-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "MIDI note tracking is disabled on every shipped node",
       "authority": "shipped Wwise banks and libcozmoEngine.so",
       "evidence": [
@@ -197,7 +197,7 @@
       "hardware_required": false
     },
     "M9-017": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -209,7 +209,7 @@
       "hardware_required": false
     },
     "M9-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The shipped singing Stop event ends the three tempo containers",
       "authority": "shipped Wwise banks",
       "evidence": [
@@ -220,7 +220,7 @@
       "hardware_required": false
     },
     "M9-019": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "No shipped blend container has a blend track",
       "authority": "all six shipped Wwise banks",
       "evidence": [
@@ -242,7 +242,7 @@
       "hardware_required": false
     },
     "M9-021": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "A multi-action event dispatches every Play action",
       "authority": "shipped Wwise banks",
       "evidence": [

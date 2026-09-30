@@ -336,3 +336,7 @@ None beyond the above. Open question 3 from the M3 report (VisionComponent defau
 The `// fidelity:` tags for M3-025..M3-036 are added when the build batch settles each record (the checker requires a tag only for a settled record, or at acceptance).
 
 **Status after the batch-A build (2026-09-26).** M3-025, M3-026, M3-027, M3-028, M3-029, M3-030, M3-031 and M3-035 are settled **EXACT_SOURCE**: the NV wire core in `NvStorage.cs` reproduces them, independently verified (verifier PASS on the batch and on the two correction hunks). M3-032 (dispatch gating), M3-033 (the connection queue) and M3-034 (the read callbacks) remain IMPLEMENTATION_GAP for the next batch. M3-036 stays HARDWARE_ONLY.
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

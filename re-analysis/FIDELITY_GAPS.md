@@ -7,10 +7,10 @@ Manifest of **376 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 220 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 176 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 5 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 111 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 155 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 26 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,21 +24,21 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 43 | 0 | 1 | 0 | 2 | yes | no |
-| M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 1 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 36 | 0 | 8 | 0 | 3 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 25 | 0 | 4 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 36 | 0 | 7 | 0 | 1 | yes | no |
+| M1-transport — UDP transport and reliability | 43 | 0 | 7 | 0 | 2 | yes | no |
+| M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 2 | 0 | 0 | yes | no |
+| M3-device — Camera, display and audio device layer | 36 | 0 | 17 | 0 | 3 | yes | no |
+| M4-control — Motion, sensors, lights and cubes | 25 | 0 | 12 | 0 | 3 | yes | no |
+| M5-animation — Animation clips, scheduler and face | 36 | 0 | 11 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 22 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 22 | 0 | 18 | 0 | 0 | yes | no |
 | M8-framework — Behaviour framework and scoring | 14 | 0 | 13 | 0 | 0 | yes | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 3 | 0 | 1 | no | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 13 | 0 | 6 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 40 | 0 | 9 | 1 | 0 | yes | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 22 | 0 | 4 | 0 | 0 | yes | no |
 | M13-navigation — Planning, charger and block configurations | 19 | 0 | 3 | 0 | 0 | yes | no |
 | M14-faces — Face and pet pipeline | 12 | 0 | 5 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 18 | 0 | 5 | 0 | 0 | yes | no |
+| M15-freeplay — Needs, activities and freeplay | 18 | 0 | 7 | 0 | 0 | yes | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -52,21 +52,21 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 31 | 0 | 0 | 3 |
-| M2-protocol | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M3-device | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
-| M4-control | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
-| M5-animation | INVENTORY_APPROVED | 27 | 0 | 0 | 0 |
+| M1-transport | INVENTORY_APPROVED | 25 | 0 | 0 | 3 |
+| M2-protocol | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
+| M3-device | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
+| M4-control | INVENTORY_APPROVED | 9 | 0 | 0 | 0 |
+| M5-animation | INVENTORY_APPROVED | 23 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
-| M9-wwise-music | INVENTORY_APPROVED | 19 | 0 | 0 | 0 |
+| M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
 | M10-derived | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 17 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M14-faces | INVENTORY_APPROVED | 6 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 12 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -128,6 +128,42 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M1-transport — UDP transport and reliability
 
+**M1-015 — Connection timeout 5 s, and how a lost or failed connection is reported** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
+* effect: a dead link is noticed at a different time, or the game is told the wrong result
+* rests on: reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent; B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC); B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244); B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302); this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read; CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A); CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. RemoveRobot destroys the whole Robot (0x0052F2F6) but the stack resets only the devices; the upper-layer reset, VisionSystem.Enabled (UNKNOWN), the local 2 s join bound and the CD21 read sit only in provenance prose with no record.
+
+**M1-024 — Engine tick 60 ms: arrivals drained FIFO and handed up once per tick** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: handlers see messages at other times or in other batches from the app
+* rests on: reproduced by the code; settled after batch 3's read-only verification (2026-09-24)
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B24 CozmoInstanceRunner::Run: 60 ms period 0x3938700 ns (0x0065B3D2/0x0065B3D8), sleep to target, overtime/catchup logs; CozmoEngine::Update state 3 (tbb 0x004ED5D0): UpdateRobotConnection -> MessageHandler::ProcessMessages, then UpdateAllRobots (0x004ED62E, 0x004ED648); B25 ProcessMessages (0x0069D870) -> RobotConnectionManager::Update (0x0062F1FA) -> ProcessArrivedMessages drains the RCD queue FIFO (0x0062F3EA..0x0062F4BC, tbb 0x0062F434); then PopData until empty, no cap (0x0069D8C0); B20 RCD::ReceiveData drops the OnConnectRequest marker (0x0062E4BE); PushArrivedMessage maps OnConnected 2, OnDisconnected 3, else data, under the mutex (0x0062E274..0x0062E2C2); B26 HandleDataMessage: state != 2 drops "Connection not yet valid" (0x0062F728); source != robot address drops (0x0062F744); CD1..CD5: the tick is fixed rate on steady_clock: the first tick runs at once, the next target is the old target + 60 ms, it sleeps only if at least 1 us remains, overrun ticks run back to back, and when 240 ms or more behind it skips whole periods instead of running extra ticks (0x0065B3B8..0x0065B63E); CD6..CD11: the per-tick order: counters zeroed, UiMessageHandler::Update (game messages dispatched synchronously), then in state 3 BaseStationTimer::UpdateTime, UpdateRobotConnection (all robot-message handlers), NeedsManager::Update, UpdateAllRobots (Robot::Update, then the RobotState broadcast), then the audio controller; every engine timestamp in a tick is the tick start (0x004ED4DE..0x004ED6C4; 0x0084BC38..0x0084BCD4)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoEngine::Update calls NeedsManager::Update between UpdateRobotConnection and UpdateAllRobots (0x004ED640); the stack runs it from FreeplaySystem.Tick outside the engine tick.
+
+**M1-025 — Connect request from the game, the connected response, and DisconnectCurrent** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: a second connect, a response at the wrong time, or a local disconnect is handled differently
+* rests on: reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B2 ConnectToRobot handler: robot 1 exists -> "Robot already connected", nothing (0x004ED022, 0x004ED026); else AddRobotConnection (0x004ED074), then AddRobot(1) at once (0x004ED07C); B23 HandleConnectionResponseMessage: state 1 -> 2 and reason 0 (0x0062F954, 0x0062F958, 0x0062F95E); otherwise "Got connection response at unexpected time"; B33 DisconnectCurrent: RT->Disconnect then QueueConnectionDisconnect (0x0062EF38..0x0062EF58); callers RCM dtor 0x0062EE98, fatal robotError 0x0069DACA, MessageHandler::Disconnect 0x0069DCF2, ExitSdkMode lambda 0x0069E1EC..0x0069E1FA [corrected C7]; B35 disconnect reasons: SleepPlacedOnCharger 4 (0x00606D1A), SetRobotDisconnectReason writes the byte (0x0069E01C); CB2/CB6: ConnectToRobot logs "Connected to robot!" before any transport exchange, then NeedsManager::InitAfterConnection and DASPauseUploadingToServer(1); nothing goes to the game (0x004ED074..0x004ED114); CC18/CC19: RobotDisconnectReason values 0..11 (0x00775BEC, table 0x01033970) and every writer of RCM+0x38; its only reader is the DAS disconnect event (0x0062FAAA), so it changes no behaviour; CC27..CC30: a later ConnectToRobot builds everything afresh once robot 1 is gone; DisconnectCurrent queues type 3 + DeleteConnection and pushes one OnDisconnected marker, handled at the next RCM::Update in FIFO order (0x0062EF32..0x0062EF7A; 0x0062F3BC..0x0062F4BC); CB38: the app layer does not filter connection events by address; only data is compared against the robot address (0x0062F434; 0x0062F72C..0x0062F748); E7..E9: ExitSdkMode subscribers run UiMessageHandler, then MessageHandler (reason 6, DisconnectCurrent), then MovementComponent; an EnableAnimTracks it sends is posted behind the Disconnect action, finds no connection and is not sent (0x00660918..0x0063DE96; 0x0069E1DC..0x0069E1FE; CA12, CA14)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the CC27 'everything built afresh' claim is contradicted by its own residual: behaviour, mood, docking, path and freeplay state survive RemoveRobot with no record owning the reset; E7..E9 ExitSdkMode has no counterpart.
+
+**M1-028 — Initial-connection handshake outcomes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the robot is accepted, rejected or reported with a different result from the app
+* rests on: reproduced by the code; settled after batch 3's read-only verification (2026-09-24)
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B29 RobotInitialConnection subscribes to factoryFirmwareVersion 0xD2 (0x0052D1B4), firmwareVersion 0xEE (0x0052D208), robotAvailable 0xC9 (0x0052D260); factoryFirmwareVersion -> 3; firmwareVersion: parse fail or FACTORY build -> 3, no robotAvailable yet -> 1, simulator -> 0 (0x0052D3BE, 0x0052D59E, 0x0052D4F2, 0x0052D7E4); OnNotified 3 -> reason 7, 4 -> reason 8, then SendConnectionResponse (0x0052DDAA..0x0052DDC4, 0x0052DE06); success: filter off (+0x2D), GetManufacturingInfo, then on mfgId 0xED store serial, HW version, colour, $session_id and send RobotConnectionResponse(Success) (0x0052DE6C, 0x0052DE7C, 0x0052E304..0x0052E3A2); CB7..CB21: RIC state and subscriptions (0x0052D184..0x0052D28E); robotAvailable sets +0x2E (0x0052DC64); OnNotified outcomes (0x0052DDAA..0x0052DDFC); on Success +0x2D is set first, mfgId is subscribed, then GetManufacturingInfo is sent reliable with no timer or retry (0x0052DDD0..0x0052DE7C); the mfgId lambda stores serial, hw and colour (colour only if in {0,2,3,4}), sets $session_id and sends RobotConnectionResponse(Success) (0x0052E304..0x0052E3B2); SendConnectionResponse sets +0x10, releases the handles and broadcasts the 14-byte response, engine subscribers running synchronously (0x0052DF2E..0x0052DF64; 0x006625C6..0x006625FA); CB14: with no robotAvailable, SendConnectionResponse(1, 0) is called directly, setting no disconnect reason (0x0052D7B8..0x0052D850); CB31/CB34: there are no handshake timers or retries, and results 1, 3 and 4 keep the link and the Robot (0x0052DD98..0x0052DF80); CD15/CD16: GetManufacturingInfo follows an accepted firmwareVersion; after the response, the mfgId handler also queues ReadLabAssignmentsFromRobot and ConnectRobotToNeedsManager (0x0052E3AA, 0x0052E3B2); E1..E6: a second firmwareVersion before mfgId subscribes a second mfgId lambda and sends a second GetManufacturingInfo, but the first mfgId yields exactly one RobotConnectionResponse, because SendConnectionResponse unlinks both lambdas during the emit; a second mfgId reaches only the Robot's HandleRobotSetBodyID (0x0052DF2E..0x0052DFC8; emit 0x0069E27C..0x0069E2B2; unlink 0x0051D338..0x0051D3A4; 0x00532CD0..0x00532CDA)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CD16's Lab NV read 0x196000 after SendConnectionResponse (0x0052E3AA -> 0x006A5B1E) is deferred to M3-033 and a code comment; the M1-040 override of OnNotified 3/4 is not mentioned.
+
 **M1-029 — Firmware version check against the shipped firmware header** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
@@ -136,6 +172,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: G5.1..G5.6 HandleFirmwareVersion 0x0052D470: guard (0x0052D478..0x0052D484); JSON parse (0x0052D4BA); FACTORY build path (0x0052D4C2..0x0052D506); v = version, t = time (0x0052D51A..0x0052D536); expected E_v/E_t at +0x1C/+0x20 (0x0052D538); sim flag (0x0052D53E..0x0052D5B6); G5.9/G5.10 no robotAvailable and not sim -> result 1 (0x0052D7B8..0x0052D850); sim -> 0 (0x0052D7C6); G5.11 robotDev = v == t, appDev = E_v == E_t; if they differ -> 3 OutdatedFirmware (0x0052D7DE teq.w r0,r1; 0x0052D7E4 movs r0,#3); G5.12 unsigned: E_v == v -> 0; E_v > v -> 3; E_v < v -> 4 OutdatedApp (0x0052D8DA..0x0052D8E0; 0x0052D9A6..0x0052D9AC); time is not compared again; G5.14/G5.15 E_v/E_t are copied from RobotManager+0x84/+0x88 in AddRobot (0x0052EEF2/0x0052EEF8; ctor 0x0052D196); the RobotManager ctor zeroes them (0x0052E512, 0x0052E516); G5.16..G5.20 RobotManager::Init -> FirmwareUpdater::LoadHeader starts a loader thread (0x0052E7F8; pthread_create 0x0067692A) that reads config/engine/firmware/cozmo.safe and parses the JSON header in the first 0x800 bytes (0x00677C44..0x00677D34); ParseFirmwareHeader stores version -> +0x84, time -> +0x88 (0x0052EA36..0x0052EA9A); G5.21/G5.32..G5.37 Scope 1 is DataPlatformResourcesPath = persistentDataPath/cozmo/cozmo_resources (pathToResource 0x0084BE34 table 03 14 22 2f 41; unity/scripts/csharp/PlatformUtil.cs:5-13), extracted from the shipped assets (re-analysis/obb/assets/resources.txt:2075); the shipped header has version 2381, time 1546972025 (re-analysis/obb/assets/cozmo_resources/config/engine/firmware/cozmo.safe offsets 0-445); G5.22..G5.30 nothing orders the header load before AddRobot: the loader starts in cozmo_startup before the engine thread (0x006661EA, 0x0065B14E), and neither the ConnectToRobot handler nor AddRobot checks the load (0x004ED026..0x004ED1EC; loaded flag +0x18 unread on that path); G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28); G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7
 * outstanding: the mechanism is built (batch 3); jsoncpp's grammar (comments, trailing commas) and asUInt of a non-number are not in the rows, so the reader's leniency is MISSING; under M1-040 the outcome never refuses; then EXACT_SOURCE
+
+**M1-031 — Idle-timeout disconnect** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the link is dropped after a pause at a different time, or never
+* rests on: reproduced by the code; settled after batch 3's read-only verification (2026-09-24)
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360; CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98); CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on the faceOff deadline the engine queues CreateGoToSleepAnimSequence (0x0052CE5A..0x0052CE6A); the stack only logs MISSING and raises an event, deferred to prose.
+
+**M1-041 — Robot initialisation after a Success connection response, and the gates it opens** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the robot is not synced or initialised, or is initialised in the wrong order or at the wrong time; state or animations are processed before the engine would
+* rests on: built in batch 3; the two residuals were settled by the M4 batch (2026-09-25, M4 inventory MD5, M4-020): SendSyncTime now sends AbsoluteLocalizationUpdate {timestamp 0, frameId robot+0x2B0 = 0, originId = the current origin 1, 0, 0, 0} after ImageRequest and stamps +0x520 only when that send succeeded (CD18, 0x005153AE), and Robot::SyncTime runs RobotStateHistory::Clear first (CozmoEngine.RobotStateHistoryClear -> CozmoRobot.StateHistoryCleared -> VisionSystem.History.Clear). The earlier "SyncTime stamp without AbsoluteLocalizationUpdate" decision is obsolete. M4 correction C3 (2026-09-25): the first full state (+0x34E) is marked right after the +0x29 gate, before the origin check (0x0051293C..0x00512948).
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA); CD18/CB22/CB23: RobotEventHandler (result 0) calls Robot::SyncTime: +0x29 = 0, history clear, then SyncTime {u32 BaseStationTimer ms, 0xC1A00000} reliable; only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA} and AbsoluteLocalizationUpdate {0, frameId, originId, 0, 0, 0}; a failed send warns and stops (0x005289BA..0x005289D2; 0x0051521E..0x005153AE); CD19: SyncTime is never retried; after 5.0 s without SyncTimeAck it warns "SyncTimeAckNotReceived" (0x00513BF6..0x00513C5A); SyncTimeAck sets +0x29 = 1 (0x005366A4..0x005366AC); CD20: RobotEventHandler then sets ready-to-stream (+0x2A) through an NVStorage on-idle callback, which runs once the NV request queue is empty (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); CD22: TracePrinter sends SetAppRunID (16-byte UUID, 0xFF unless a platform id exists), then RequestCrashReports{0}, each crash report received asking for the next index up to 3 (0x0053D398..0x0053D430; 0x0053CA88..0x0053CA9E); CD23/CD12: robot state is dropped until time sync (0x0051293C..0x0051294E); Robot::Update does nothing past the idle component until the first full state is handled (+0x34E); the AnimationStreamer runs only when synced and ready to stream (0x00513BF2..0x00514470); CD30: nothing sends SendHeadAngleUpdate, setAccessoryDiscovery or SetRobotImageSendMode on this path (BL scan)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. ready-to-stream opens after the single CameraCalib read; the engine waits for the whole NV queue of 15 reads (12 ctor reads, CameraCalib, Lab 0x196000, Needs; 0x0052E3AA, 0x006A5B1E), deferred to M3-033; the engine discards the ImageRequest send result (0x0051530C), the stack returns on it; +0x520 and the 5 s check are float (0x00513BFE..0x00513C14); EngineAppLayerTests.cs:1006 asserts the early readiness.
 
 ### M2-protocol — CLAD messages and protocol helpers
 
@@ -147,6 +201,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: decompiled Unity
 * evidence: EnumToString(RobotStatusFlag) 0x007D57C8: 17 names and values, agreeing with Unity RobotStatusFlag.cs:8-25; RS11 the whole status word -> robot+0x350 (0x00512AD8..0x00512ADC); bit storage: 0x1 MovementComponent+9 (0x0063E30A); 0x2 Delocalize argument (0x00512B98); 0x4 [robot+0x280]+4 (0x00512A96); 0x8 robot+0x349 (0x00512AA2); 0x10 robot+0x34C (0x00512ACE); 0x20 treads classifier (0x00511EC4); 0x100 MovementComponent+0xB = !bit (0x0063E32C); 0x200 +0xA = !bit (0x0063E320); 0x1000 SetOnCharger (0x00512AAC); 0x2000 robot+0x339 (0x00512AB8); 0x4000 CliffSensorComponent+6 (0x00634026); 0x8000 MovementComponent+0xC (0x0063E338); 0x10000 robot+0x33A (0x00512AC2)
 * outstanding: the names and values match. Per-bit storage after the M4 batch (2026-09-25): the M4 consumers now keep what the engine keeps - MC+0xA/+0xB/+0xC from !HEAD_IN_POS, !LIFT_IN_POS and ARE_WHEELS_MOVING (CozmoMotion), CliffSensorComponent+6 from CLIFF_DETECTED (CozmoSensors), the IS_BODY_ACC_MODE count and the stored status word before the origin check (EngineRobot.StoredState, read by BodyLightComponent for IS_ON_CHARGER, IS_CHARGING and IS_CHARGER_OOS); the other bits are read from the latest handled state by their consumers. Since M4 correction C3 an origin-rejected synced state also reaches the devices, as the engine stores these bits before the origin check. Residuals: SetOnCharger (0x1000) has no charger-platform counterpart (M4-019); 0x2 (the treads-path Delocalize), 0x4 ([robot+0x280]+4) and 0x8/0x20 (the treads classifier) belong to M10/M12
+
+**M2-003 — liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: the lift height is reported differently from the engine
+* rests on: compared against re-analysis/inventory/M2-protocol.md on 2026-09-24 and reproduced by the code: RobotState.LiftHeightMmFromAngle is 66 sin(angle) + 45 with no clamp (RS7) and CozmoSensors.LiftHeightMm uses it; the 32..92 clamp is only in LiftAngleRadFromHeight (0x005170B0); RobotState reaches the devices only after time sync (RS0, M1-041 CD23).
+* best authority: libcozmoEngine.so
+* evidence: RS7 liftAngle -> robot+0x300 raw and ComputeLiftPose (0x0051295E..0x0051296E); GetLiftHeight 0x00516F64..0x00516F8E: 66*sinf(+0x300) + 45 + 0 (literals 0x00516F90/94/98), no clamp; ConvertLiftHeightToLiftAngleRad 0x005170B0: height raised to 32 (literal 0x005170F4); height >= 92 (0x00517100) uses 0.712121 (0x00517104); asinf; RS0 UpdateFullRobotState is skipped while robot+0x29 == 0 (0x0051293C..0x00512942)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the inverse lift constant is 0x3F364D90 against the engine's 0x3F364D93 (0x00517104); NaN keeps 32 in the engine (vcmpe 0x005170BC) but propagates in the stack; the test is circular.
 
 ### M3-device — Camera, display and audio device layer
 
@@ -195,6 +258,78 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: 1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658); 1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16; 1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04); 1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166); 1o the engine never requests DefaultCameraParams
 * outstanding: Not reproduced exactly: (1f) the initial exposure is the constant 16 (the .data value and the shipped vision_config.json value), because this stack does not load vision_config.json; (1g) VisionSystem::IsInitialized is taken as always true (there is no config load that can fail); (1d) applying the pending params to the current exposure and gain is VisionSystem::Update's (M11) and is not done.
 
+**M3-022 — At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: vision never starts, or starts without the robot calibration
+* rests on: the connection handler (1h), the NV callback (1j) and the +0x48 gate (2a..2f) reproduced in Camera.cs/CameraSettings; the NV wire is the NV component's own, recorded as M3-025..M3-036
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21; 1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766); 2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the connection-time calibration read is sent immediately (the dispatch defect in M3-026); SetCameraParams comes before Read, reversing the engine's order (0x006583E2..0x00658414); the test expects an NVCommand before any RobotState.
+
+**M3-023 — EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: colour is requested when the engine would not
+* rests on: compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings.EnableColorImages stores the flag (+0x32A; false from construction and after a removal) and sends EnableColorImages {b}; nothing is sent at connection; decoding follows each image's encoding. CozmoRobot.StartCamera (this stack's call) goes through it.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A24 EnableColorImages 0x006582CC..0x00658314; 3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74; 3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoRobot.StartCamera sends EnableColorImages{0} plus an extra ImageRequest, called by every hardware tool; no decision records it.
+
+**M3-025 — NV entry-tag validity and the size tables: a valid non-factory tag is a _maxSizeTable key; factory tags take their table value** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read or erase of a tag the robot does not hold is accepted, or the header bound uses the wrong maximum size
+* rests on: NvStorageComponent keys replies by index and special-cases only the CameraCalib tag (M3-022); it does not model IsValidEntryTag, the size tables or GetMaxSizeForEntryTag
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: IsValidEntryTag 0x644148..0x6441A0: (tag-0x180000)>>14 <= 0x1e; tag != 0x198000; tag a multiple of 0x1000; an exact _maxSizeTable key (descent 0x644160..0x64419E); _maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0; _maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. GetBaseEntryTag: the negative-tag branch tests == 0xC0000000 where the engine requires != (0x006442B2); positive tags return the sentinel unless an exact key, where the engine returns the largest key <= tag (0x00644228..0x00644338); the reply-accept check uses it (0x0064303C); two tests contradicted.
+
+**M3-026 — NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: an invalid-tag read never reports back, or two NV operations are in flight at once
+* rests on: NvStorageComponent queues FIFO, one in flight, and delivers callbacks, but does not validate entry tags or deliver the engine's -6 for an invalid tag
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Read 0x644E2A..0x644EF4: IsValidEntryTag; invalid warns, optionally broadcasts and calls cb(nullptr, 0, -6) (0x644E8A..0x644EEE); valid emplace_back on the deque +0xF8 (0x644E30..0x644E88); ProcessRequest pops the front, one in flight (0x644FF8..0x645022); Robot+0x2C is the clock (pass 2 4a)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. NVStorageComponent::Read only queues (emplace_back 0x00644E82); ProcessRequest sends from NV Update in state 0 (0x006456BC..0x006456CC), called from Robot::Update after Gate A (0x0051416A); the stack sends from Read() and from the reply handler before the callback runs.
+
+**M3-027 — NV ProcessRequest READ: the factory/non-factory Length, the reliable send, and the pending-read arm (5 s robot-clock deadline, retry counter 0)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: the wrong request Length is sent, or a read is never armed with a deadline so it can wedge the queue
+* rests on: NvStorageComponent sends the caller's Length verbatim and has no robot-clock timeout; its ReadAsync timeout is a local 3 s task, not the engine's callback
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: READ case 0x64503E..0x64507C: factory tag -> Length = _maxFactoryEntrySizeTable[tag]; non-factory -> mov #0x400 at 0x64536A, stored +0xE0 (0x64536E); op 0 -> +0xE4; byte 9 zero; send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the deadline is armed at Read() with State.Latest's timestamp; the engine arms it in ProcessRequest after Gate A with the synced robot+0x2C clock; the READ command carries the last written data vector +0xE8 (0x00645386), the stack sends empty data; the test contradicts.
+
+**M3-029 — NV reassembly at index*1024 with the 16-byte header skipped, zero-fill, and a re-armed timeout** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: multi-blob entries are delivered truncated or with holes in the wrong place; a short blob is rejected instead of kept
+* rests on: NvStorageComponent keys blobs by index and takes index 0 only; it does not place at index*1024 or skip the 16-byte header
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: offset = index*1024 - hdr; hdr = 16 for index>0 on a non-factory base, else 0; blob 0 skips the 16-byte header (0x643538..0x643594); resize (zero-fill) only when shorter (0x643574); each applied blob re-arms +0x74 = robot+0x2C + 0x1388 (0x64359A..0x6435AE); the inbound array reader 0x73213C has no cap and a short blob is kept (pass 3 Q3 3a..3f); a non-factory entry that fits in one blob delivers exactly the header total (TOT), header skipped, no zero tail: resize reply to TOT+16 (0x643922), copy TOT at offset 0 (0x64356C..0x643596)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the HeaderFitsInFirstBlob cap stays on the request and caps later duplicate index-0 blobs; the engine resizes only on the header branch (0x00643922).
+
+**M3-030 — NV completion: the callback or the caller vector sink, the 0x400-chunk broadcast, and SetState(0)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read with no callback loses its data, or the game never sees an NVStorageOpResult it requested
+* rests on: NvStorageComponent invokes the callback and has an on-idle list, but has no broadcast and no caller-vector sink
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: completion 0x643600..0x643692: MORE(3) waits; -1 ReadEntryNotFound; 0 ReadSuccess; other negatives ReadFailed; the function (+0x58) is invoked only when [+0x68] != 0, else the +0x54 vector is the sink (0x6436B6..0x643714); broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on timeout the stack broadcasts a -4 chunk, the engine only calls the callback (0x006457A8..0x006457C0); the final chunk's result is forced to 0 where the engine sends the actual result (0x0064573C); the sink is cleared at arm, not at completion (0x0064544E).
+
+**M3-031 — NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a transient NV failure is never retried, or a lost read wedges the queue forever / fails silently
+* rests on: NvStorageComponent has no retry and no robot-clock timeout; ReadAsync's 3 s is a local test convenience
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: retry set {-8,-7,-5,-4} (0x6431E6..0x6431FA); ResendLastCommand 0x645C6A..0x645D7A: the counter +0xF4 is 0-based (reset by the send/arm at 0x645484), incremented then compared < +0xF5 = 8 (bhs at 0x645C7C), so 7 resends / 8 transmissions, then ReadOpFailed (0x6431FE..0x643234); the second caller is the write/erase path 0x643194..0x6431A2; timeout state 2: +0x78 set and robot+0x2C > +0x74 -> Update.ReadTimeout, cb(nullptr, 0, -4), SetState(0), no retry (0x64575A..0x6457C0)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the clock is State.Latest (every RobotState); the engine's robot+0x2C is written only when synced (+0x29, 0x0051293C..0x00512954); arm and dispatch timing as M3-027.
+
 **M3-032 — NV dispatch is gated in Robot::Update (Running state, a first full state after SyncTimeAck, and a passing UpdateAllResults once calibrated)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
@@ -222,7 +357,43 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: ProgressionUnlock 0x102F6B8+0x14 = 0x64CE34 (defaults on -1, SendUnlockStatus); Inventory 0x102EF3C+0x14 = 0x63D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1); FaceAlbum 0x184000 empty callback fills VC+0x2F4; 0x102F914+0x14 = 0x65A860 consumes it via SetSerializedFaceData + BroadcastLoadedNamesAndIDs; RDBM 0x101FD38+0x14 = 0x51DF34 (map store, OnboardingData for 0x181000, WriteBackupFile after the last); Lab 0x10317B8+0x14 = 0x6A6486 -> 0x6A5C34; Needs 0x1031098+0x14 = 0x69BEB2 -> FinishReadFromRobot + InitAfterReadFromRobotAttempt
 * outstanding: wire each connection read's callback to its layer (M15 needs/progression, M11 face album, M12 backup, lab); the consumers' own semantics are those layers' records
 
+**M3-035 — An NV read gets no callback on disconnect or destruction, and its timeout needs a live RobotState clock** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: a read callback runs after the robot is gone, or a disconnected read reports a timeout the original never sends
+* rests on: already built: NvStorageComponent.OnDisconnected clears the queue and the in-flight request without invoking callbacks; this record confirms it against the source
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: ~NVStorageComponent frees +0x54 and destroys the +0x58 function without invoking it (0x643E80..0x643F8C); no callback for a queued or pending read on disconnect (pass 2 4e/4f); the timeout needs robot+0x2C to advance (0x64576A), which needs a RobotState with +0x29 and Robot::Update past Gate B (pass 2 4g)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the 'live synced RobotState clock' part fails for the M3-031 clock reason.
+
 ### M4-control — Motion, sensors, lights and cubes
+
+**M4-001 — Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: the head is commanded or reported outside the engine limits
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): MoveHeadToAngleAction clips a commanded angle to [-0.436332, 0.776672] with the AngleTooLow/AngleTooHigh warnings, the game tolerance 0.0349066 is at least 2 deg and variability is 0 on this (game) path (MA9, MA10); robot+0x2FC starts at -0.436332 and takes the RS6-clamped report only once the head is calibrated (MA22, MA23) - CozmoMotion.SetHeadAngleAsync, CozmoMotion.Handle.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: MA9 MoveHeadToAngleAction ctor clip with warnings 0x00547F44..0x0054803A; MA22 Robot+0x2FC = -0.436332 in the ctor (0x0051007C..0x00510086); MA23 RS6 SetHeadAngle 0x0051335E..0x005133E8 (M2 interface)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the engine rescales the angle to (-pi, pi] first (Radians ctor 0x0084C832 -> rescale 0x0084C87C) and clips with Radians operators; the stack clips the raw float (99 rad: engine -25 deg, stack 44.5 deg); head limits and RS6 thresholds are decimal-rounded (0xBEDF66E8/0x3F46D3FA against 0xBEDF66F3/0x3F46D3F2 at 0x00547F44/0x00547FC2); the test is circular.
+
+**M4-003 — The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: the head or lift moves at a different speed
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the head and lift API is the game path (MD1): the caller's speed, acceleration and duration go into the action, with the app's 10/20/0 (head) and 10/20/0 (lift) as the defaults (MA10, MA11, MA12); engine-internal callers in this stack (behaviours, manipulation) pass the action defaults 15/20 explicitly (MA9). CozmoMotion.SetHeadAngleAsync / SetLiftHeightAsync.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: MA10 game SetHeadAngle overwrites +0x90..+0x98 with the message values (0x0052ABE0..0x0052AC24); MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0); MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E); MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the game-path moves run through IActionRunner, which fails on locked tracks (0x03000019, 0x00540572) and otherwise locks the action's track (mask +0x54: head 1, lift 2; 0x0054058E), sending DisableAnimTracks, and unlocks at the end (0x005408EC); the stack locks nothing; the timeout is the 30.0 default slot (0x0052B0C2), not 5 s; the tolerance is 0x3D0EFA35, not 0x3D0EFA39.
+
+**M4-008 — Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: cliff readings are reported differently
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CozmoSensors stores the four raw cliff values, CLIFF_DETECTED and the timestamp of each handled state (SC2, RS12); the IMU and cube battery are passed through in the engine units.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: SC2 UpdateRobotData 0x00634016..0x00634036; U1 0x0051293C ldrb [r4,#0x29]; beq.w 0x512A8A (the only gate before the work); U3 0x00512986 ldr.w r0,[r4,#0x288]; 0x0051298C blx UpdateRobotData; origin check ContainsOriginID 0x00512C3E..0x00512C4A runs later; U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the title's IMU and cube-battery units are not cited by the evidence.
 
 **M4-009 — Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving** (live path)
 
@@ -232,6 +403,33 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: S1, S2, CD10a..CD10c, LC8a..LC8e as before; C11.1 DockingComponent+0xC is an ObjectID, the object currently being docked with (the dock target): default -1 (0x0063BA1E/0x0063BA2A); only writer DockWithObject (0x0063BAAC/0x0063BAB6); readers include the Moved 0x0053416E/74 and Stopped 0x0053497C/84 exclusions; LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040); LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)
 * outstanding: wire the [robot+0x280]+0xC dock-target exclusion (C11.1) into the Moved/Stopped broadcasts. The slot <= 4 bound is enforced on the connection path but not in Cubes.Handle, which uses the slot as the stack's BlockWorld ObjectID; separating ObjectID from slot is M11 work (LC8e).
+
+**M4-010 — Outbound cube connection: block pool, five slots, SetPropSlot, filter timers, advertisement expiry, slot states, disconnect handling** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
+* effect: cubes connect or disconnect differently
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the connection path (CubeConnections) now runs in Robot::Update after the first full state, in the CD2 order after the tap filter, on BaseStationTimer seconds, with the robot clock set from each synced state before the origin check (RS1); CD3..CD8 and S3 were already reproduced.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: CD1..CD9 as before; D1 0x005101DE robot+0x490 = 0 at the ctor; D2 0x00517DD8 BroadcastAvailableObjects is the whole setter (strb [r0,#0x490]; bx lr); D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine; D5 0x0051419A ObjectUnavailable is broadcast only when +0x490 is set; the node is erased either way (0x00514218); D6 0x0053398E ObjectAvailable is also gated on +0x490 (M4-025)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the only named test exercises none of the claims; the pool-load timing is the M4-011 defect.
+
+**M4-011 — The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
+* effect: the block pool loads on every connection, not only for a physical robot, so cube connection starts from a pool the engine would not have loaded
+* rests on: libcozmoEngine.so, M4-control inventory (BlockFilter); settled by R-DEV, demoted by the 2026-09-29 audit
+* best authority: libcozmoEngine.so
+* evidence: Robot::SetPhysicalRobot(true) 0x00513914 calls BlockFilter::Init 0x0061A1EC with DataPlatform::pathToResource(scope 4, "blockPool.txt") (0x0051394C, the string at 0x005139B0); Robot::Robot only constructs the filter (0x00510184). Init stores the path at +0x60, calls Load, copies the persistent pool (+0x04) to the runtime pool (+0x2C) and calls Robot::ConnectToObjects with its five factory ids (0x0061A278) - before any BlockPoolEnabledMessage. This stack calls Init from CozmoRobot.ConnectAsync with a file under the local application data folder, the platform's equivalent of that data scope; an empty path turns persistence off; Load 0x0061A2DC: ifstream(path, in); a file that will not open leaves the pool as it is. getline on '\n'; an empty line is skipped; a sixth non-empty line is an error that ends the reading (0x0061A41E, sErrorF at 0x0061A5A0); a line whose first two characters are not "0x" is skipped (compare at 0x0061A430); id = stoul(line, &pos, 16) (0x0061A442), skipped when pos reaches the end of the line, stored in the next entry, then type = stoul(line.substr(pos + 1), 0, 10) (0x0061A480) stored beside it and the entry counted. A throwing stoul is caught, logged and the line skipped (0x0061A52C..0x0061A58E) - after the id has been stored when it is the type that fails; Save 0x0061B014: nothing without a path; when all five ids are zero an existing file is removed (stat, remove at 0x0061B058..0x0061B068); then ofstream(path, out) and, for each entry with a non-zero id, "0x" (0x0061B344), the id in hex (basefield cleared to hex at 0x0061B0FE..0x0061B102, lower case), "," (0x0061B348), to_string(type) and "\n" (0x0061B34C). Save is called by AddObjectToPersistentPool on success (0x0061ACE2), RemoveObjectFromPersistentPool (0x0061B410) and the game's block-pool messages in HandleGameEvents (0x00619FC0, 0x0061A0A6, 0x0061A10E); only the first path exists in this stack; The table at Robot+0x47C is std::__ndk1::unordered_map<unsigned, Robot::ActiveObjectInfo> with std::hash<unsigned>, the key its own hash. operator[] 0x00537ABC: bucket = h & (n-1) for a power-of-two count, h % n otherwise; a new key first grows the table when it is empty or n * max_load_factor < size + 1 to max((2n) | (n < 3 || n not a power of two), ceil((size + 1) / mlf)) (0x00537B2C..0x00537B90); rehash 0x00537C80 turns 1 into 2 and a non-power-of-two into __next_prime, so the counts run 2, 5, 11, 23; the node goes after its bucket's head when the bucket is in use, else at the front of the list with the bucket pointing at the list head and the displaced node's bucket at the new node (0x00537BAE..0x00537BF8); __rehash 0x00537D10 rebuilds by walking the list and splicing each node into an in-use bucket after its head; erase (remove 0x00518FDA) unlinks and repairs the bucket pointers; GetClosestDiscoveredObjectsOfType 0x00518314 walks that table in its iteration order and takes a later entry at an equal RSSI byte, so a tie goes to the entry the container visits last. The order is incidental to the container, but it is fully determined by the insertion and erase history, which this stack sees identically (advertisements, the 10001 ms timeout, connections), so it is reproduced exactly by ActiveObjectTable rather than approximated
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. BlockFilter::Init runs only from SetPhysicalRobot(true) (0x0051391E..0x00513954, from HandleFirmwareVersion); the stack calls it in SendAppDefaults with no physical-robot gate, a gap admitted in a code comment.
+
+**M4-016 — Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: a head or lift move completes, fails or is sent differently
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): nothing is sent when the head is within tolerance + 1e-5 of the target, or the lift within 5 mm and not moving (MA15); the id is taken only when the command is sent; the ack counts only for a sent action with that id (MA16); after it the move succeeds once in position and not moving, fails with 0x04000004 when it stops out of position after having moved, and a failed send is 0x03000016 (MA17). Verifier round (2026-09-25, corrections C1..C5): the head completion follows C1: in-position latched at +0xAC (0x005485E4..0x005485F4), +0xAD set whenever MC+0xA is set before the in-position test (0x0054872E..0x00548734), success = latched and not moving, 0x04000004 only when not in position, not moving and having moved (0x00548738..0x005488AC). Re-verify round (2026-09-25, C6..C8): R1: the head latch now comes after the sent-not-acked test (0x005485D8..0x005485E2). C6 (rows L1..L6): the lift follows the same CheckIfDone: sent and not acked Running; the in-position latch (+0x97); has moved (+0x98) := 1 while MC+0xB; in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved 0x04000004, otherwise Running; Init latches in-position and sends only when out of position, a failed send giving 0x03000016. A move already in position succeeds at once when the motor is not moving (always so for the lift). The MA13 lift angular-tolerance clip is omitted (its formula is not in the rows; it cannot bind at the game path's 5 mm), and the IAction timeout is M8.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: MA9, MA13, MA15..MA17, C1, C6, C10.1 as before; C11.3 the lift CheckIfDone body 0x005493F6..0x00549508 contains no eye-shift removal; the head +0xA8 has only three writers, all zero (0x00547F3C, 0x005484B0, 0x00548724), so H4..H6 never execute
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the in-position move still takes and releases the track lock (0x9D/0x9E, see M4-003); IsHeadInPosition uses Radians::IsNear (0x00548528 -> 0x0084CC0A), strict < where the stack uses <=; the 30 s timeout.
 
 **M4-017 — Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight** (live path)
 
@@ -259,6 +457,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: SC1..SC8, SC4a..SC4j, SC6, C2, C7, C8 as before; H1 HandleRobotStopped is subscribed for robot tag 0xD4 (0x00532B6E, GOT 0x0103EA8C); H2 0x0053539C..0x0053542E body: Get_robotStopped, sEventF, EvaluateCliffSuspiciousnessWhenStopped; H3 0x00634840..0x00634846 Evaluate = comp+0x1C := robot+0x2C; H4 0x00535432..0x00535480 if the sensor is enabled: RequestCurrentBehaviorEndImmediately, ActionList::Cancel(-1), broadcast RobotStopped; S1 0x00512FB0..0x00512F22 stats/threshold run for frame-mismatched states for the first 100; S2 0x006343C6..0x006343D6 gates +0x1C != 0 and MC+0xC == 0; S3 0x006343D8..0x00634404 std::map::lower_bound(comp+0x1C) over RobotStateHistory at robot+0x390; S4 0x0063448E..0x006344AA in-order successor walk; S5 0x00634420..0x0063448A min(cliff[0]); Increment when variance > 10000.0f and min+15 < cliff; S6 0x006344AC..0x006344AE clears +0x1C at the end of the walk; S7 0x0063451A..0x006345AA Increment: cache < 151 returns; else cache = max(cache-250,150), send, count=0; S8 senders: 0x00511DA0, 0x00512DA2 (50), 0x00512EA0 (400), 0x006345A4, 0x006347F8; W1 0x00634636..0x00634656 sample gate: moving, robot+0x355 == 0, state+0x50 > cache; W3 0x0063466A/0x006346D0..0x006346FC add-only Welford with n = size; W4 0x0063466C..0x006346CE removal with N = the constant 100.0f (0x00634728), not the deque size; W5 0x00634700..0x0063471E M2 += s0; variance = M2/(size-1) once size >= 2; W6 0x00634668 the window is 100 samples; C12.3 robot+0x2C0 is per-mismatch-run: 0 at the ctor 0x0050FF08, 0 on a frame match 0x00512EAE, 0 on the treads Delocalize 0x00512B9C, old+1 on a mismatch 0x00512F1C, 0 after 0x65 0x00512F88; C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C); C13.2 the treads-change Delocalize stores +0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally; C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it
 * outstanding: the treads-change path must skip the frame logic and run the stats unconditionally with the counter at 0 (C13.2); the +0x2C0 counter resets on a frame match and after 0x65 (C12.3); the stats gate must also see an AddRobotStateToHistory / GetLastStateWithFrameID failure (C12.4, M11). H4's BehaviorManager::RequestCurrentBehaviorEndImmediately and ActionList::Cancel(-1) are M7/M8 interfaces. Robot::Update's charger-platform clearing and the runtime Delocalize callers are M11 geometry.
+
+**M4-020 — RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: robot states are accepted or dropped differently
+* rests on: compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): EngineRobot: the constructor's Delocalize creates origin 1 (PoseOriginList next id 1; 0 is never added) and leaves the frame id at 0; UpdateFullRobotState drops a state until time sync, then (no ramp exists here: +0x316 has no writer) drops one whose origin id is not in the list with the warning "Received RobotState with originID"; the first accepted state sets +0x34E; SyncTime sends AbsoluteLocalizationUpdate {0, frame 0, origin 1, 0, 0, 0} after ImageRequest and stamps +0x520 only when it was sent (SC4e..SC4h, the manager spot-check, M1 CD18). The offline test seam (CozmoRobot.CreateOffline, not a production path) takes any reported origin as known: its fed states were never answered by an AbsoluteLocalizationUpdate exchange. Verifier round (2026-09-25, corrections C1..C5): C3: +0x34E is set right after the time-sync gate, before the origin check (0x0051293C..0x00512948), and an origin-rejected synced state still has the part before the check applied (the stored state and status bits, the RS6 head angle, the lift angle, SC2 cliff data, the IMU filter and treads, MovementComponent::Update, SC10: CozmoRobot.RouteToDevices); only the pose, the history (VisionSystem) and the later steps (the cliff threshold schedule) test EngineRobot.OriginAccepted. R2: the unexpected-movement detector (MovementComponent::CheckForUnexpectedMovement 0x0063E398, tail-called from MovementComponent::Update 0x0063E392, before the origin check) runs on every synced state. Its response (UnexpectedMovementResponse.Apply: the pose-history lookup, the rewind and the collision obstacle) is the M10 interface and has no production caller here; were it run for an origin-rejected state, the history (which such a state does not enter) would have nothing at its timestamp, and Apply logs "PoseHistoryFailure" and does nothing, the engine's own no-history branch. That M10 residual is reported, not claimed. M4-020 itself is limited to the connection-time origin 1 and the acceptance gate (C9).
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A; SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20); Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced; SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE); C3: +0x34E (first full state) is set right after the +0x29 gate, before ContainsOriginID (0x0051293C..0x00512948); RS6, lift, SC2, IMU, treads, status bits, MovementComponent::Update and SC10 all run before the origin check; C9: +0x2C6 set by every AddVisionOnlyStateToHistory, sent by Robot::Update 0x00513CBE..0x00513CCC; treads-path Delocalize 0x00512A62..0x00512BAA (M11 pose-origin interface; the record claims only the connection-time origin 1 and the gate)
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. SendSyncTime ignores the ImageRequest send result (0x00515308 -> 0x0051530C) and always sends AbsoluteLocalizationUpdate; the stack returns on that failure.
+
+**M4-025 — ObjectAvailable and ObjectUnavailable broadcasts are gated on robot+0x490 (0 in this build)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
+* effect: whether the game is told an object became available or unavailable
+* rests on: the engine's behaviour
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: D1 0x005101DE robot+0x490 = 0 at the ctor; D2 0x00517DD8 Robot::BroadcastAvailableObjects is the whole setter; D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine; D6 0x0053398E HandleActiveObjectAvailable gates ObjectAvailable on +0x490; RSSI <= 0x31 logs (0x0053399A); broadcast 0x005339FC/0x00533A04; D5 0x0051419A the expiry ObjectUnavailable broadcast is gated on +0x490
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. no test; Cubes.cs raises a public CubeDiscovered on every new advertisement, an availability notice the engine never gives, with no record.
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -325,6 +541,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58
 * outstanding: PathComponent::Abort and AbortDocking (A37) are M12/M13's and not run at teardown. The extra DriveWheels(0) after StopAllMotors is this stack's (PROJECT_STATE decision note), not the engine's.
 
+**M5-027 — Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: idle behaviour differs
+* rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The idle stack starts {Count 0x23F, "default_anim_lock"} (A1); PushIdleAnimation/RemoveIdleAnimation are A30 (Count clears +0x34/+0x64; the last entry and an unknown lock refused; a removal from the middle warns; a Count top with an idle playing and nothing streaming replays the neutral). The no-animation path is A28/A29: a Count top with layers → StreamLayers; a ProceduralLive top makes the live animation the idle; a non-empty buffer is flushed and then a pending End sent (Q1.9); a non-Count idle is picked through the catalog (HasAnimationForTrigger → GetAnimationForTrigger → GetAnimationNameFromGroup(strict = false) → GetAnimation, an error without popping) and initialised with InitStream(anim, 0xFF) and no frame, otherwise UpdateStream(storeFace = 0); +0x44 += 60. StreamLive (the M7-017 seam) appends to the live animation and puts ProceduralLive on the stack; it is refused while an animation streams. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The no-animation path is now B1: with the stack empty or its top Count, StreamLayers when layers exist, otherwise the flush and a pending End, and nothing more; any other top goes straight to the idle, which neither flushes nor sends an End. The live idle is gap4 L8 (UpdateLiveAnimation first; InitStream(live, 0xFF) when the previous idle was not the live one or it has ended, otherwise UpdateStream); after an idle's or the live idle's UpdateStream +0x88 = now (B3). A failed pick sets the idle to null and returns (Q1); a trigger with no animation goes on to the tail with no error. Verify round 2 (2026-09-25, correction C4): the idle and live-idle tail is C4 (0x0057D3F0..0x0057D412): InitStream(idle, 0xFF) when the previous idle is not this one, +0x64 == 0, or the idle has ended, otherwise UpdateStream; a streaming Update clears +0x64 (A13), so after a clip the idle (the live one included) re-inits with 0xFF; the HasAnimationForTrigger-miss path reaches the same tail (0x0057D218), so a kept idle re-inits there too. Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.
+* best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
+* evidence: A1 0x0057A064..0x0057A0AC; A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2; A29 0x0057D064..0x0057D448; A30 0x0057B914..0x0057BD6E; R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. when a clip's loops run out the engine clears +0x38 and branches past the idle-stack test to HaveLayersToSend/StreamLayers (0x0057D25C..0x0057D260), which can send a new StartOfAnimation; the stack runs the idle that tick, so later tags are off by one; the live-idle entry rests on the invented StreamLive seam (M7-017); the UpdateLiveAnimation error path continues where the engine returns. Earlier note: Settled (C5): +0x64 is set to 1 by an idle's InitStream tail; the Count-top flush refreshes the budgets before the drain; HasAnimationForTrigger is HasResponse.
+
 **M5-030 — Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
@@ -333,6 +558,33 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
 * evidence: A35 0x0057D5F8..0x0057DA82; gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4
 * outstanding: CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.
+
+**M5-031 — Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: glitches look different
+* rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ScanlineDistorter is gap1 G5..G8 and G11 (the ctor's types and control points, Update, GetEyeDistortionAmount with its jitter, GetNextDistortionFrame's 11-entry table, AddOffNoise), on one static RNG seeded with 1; FaceLayerManager.GenerateFaceDistortion is G4; BackpackLayerManager.GenerateGlitchLights is gap2 Q2 G1..G6; DrawFace shifts the kept rows by the face's distorter (G9); Combine and Interpolate carry the distorter (G10). Verify round 1 (2026-09-25, corrections C1..C3, gap4): TrackLayerComponent.AddGlitch is G3 (the face and backpack "Glitch" layers); the backpack layer lambda is gap4 B2/B3 (GetCurrentKeyFrame on the layer's own clock, the whole five LEDs overwritten, the highest tag winning); ScanlineDistorter's RNG is an mt19937 seeded 1 (R4), used by GetNextDistortionFrame's hold draw too. Verify round 2 (2026-09-25, correction C4): a control point's position is drawn before its amount (verified at 0x0053A252..0x0053A3A4). The degree is the M7 interface G2 (DesiredFaceDistortionComponent), unset on this stack.
+* best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
+* evidence: gap1 G1, G3..G11 (0x0064EDE8..0x0064EEFE, 0x0053A9A8..0x0053AB1E, 0x0053A0B0..0x0053A898, 0x00585DFE..0x00585E94); gap2 G1..G7 GenerateGlitchLights 0x0058CB64..0x0058CD2A
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the per-row shift fraction is computed differently (see M5-032); the glitch input is never set on this stack.
+
+**M5-032 — DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFaceRenderer.cs`
+* effect: the face is drawn with different pixels
+* rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFaceRenderer.DrawFace is E1/E2/G9: the 64 x 128 canvas, both eyes; with the identity face transform the row extent from the eye boxes, otherwise GetTransformationMatrix(angle, sx, sy, cx, cy, 64, 32) through OpenCv310.WarpAffineNearest (gap3 C1..C6: in place so the source cloned, the inverse, AB_BITS 10, remapNearest with BORDER_CONSTANT 0) and the extent from the transformed box corners (floor/ceil); rows clamped to 0..63; the rows of the drawer's _firstScanLine parity cleared in [min, max); the kept rows shifted by the distorter. The stream draws with the drawer's _firstScanLine and sends CompressRLE of the canvas (BufferFaceToSend, every frame, no de-duplication). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The rotated row extent uses the 4 corners of each eye rectangle, 8 points, with floor/ceil, the min from 63 and the max from 0 (C2; ProceduralFaceRenderer.TransformedRowExtent). Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.
+* best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
+* evidence: E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94; gap1 D4, D5; gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0); R-ANIM pre-extraction part 1 item 10 10a..10e: GetTransformationMatrix 0x00584FF8, InputArray 0x00585C84, warpAffine imgproc 0x0008193C
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the engine computes 1/(max-min) once and multiplies (0x00585E24..0x00585E34); the stack divides directly, one ulp different in 460 of 2016 cases; bionic cosf/sinf (0x0058503C) are MathF here, an unrecorded substitution; it rests on M5-021 rows. Earlier note: Settled (C5): the face matrix is float 2x3 CV_32FC1; warpAffine converts it to double.
+
+**M5-035 — The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
+* effect: tracks are suppressed that the engine would send
+* rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The streamer has no reference to enabledAnimTracks and no lock check: every track of a frame is buffered (B2, B3); track locks are only DisableAnimTracks/EnableAnimTracks (M4-014). Verify round 1 (2026-09-25, corrections C1..C3, gap4): B4: the only streamer-side lock checks are UpdateLiveAnimation's (AreAnyTracksLocked 4/2/1, gap4 L3), now built (M5-030).
+* best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
+* evidence: B1 0x00537FFC..0x00537FFE; B2 0x00513000..0x0051304E; B3 0x0057C94E..0x0057CA7A; B4 0x0057D636, 0x0057D664, 0x0057D69E
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. B4 (the live idle checks the MovementComponent locks) rests on M5-030 (IMPLEMENTATION_GAP) and is disabled on the only production route by the StreamLive seam.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -828,6 +1080,87 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
+**M9-002 — Singing initialization posts the switch, locks reactions, then runs get-in/tempo/get-out as three TriggerAnimationActions with 60-second per-step timeouts in one sequential compound** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so
+* evidence: 0x005EEB30..0x005EEE9F; 0x005EEDCA (movt r8,#0x4270, per-step 60.0f); 0x00540D1C (IAction timeout, failure 0x3000018); 0x0054F70C (compound fails on a child failure); X4 S5-S6 and S17-S18; Correction C1a
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. TriggerAnimationAction::Init fails 0x0300000C when a trigger resolves to no clip, failing the compound (0x00544444..0x0054445E); the stack skips to the next step; an unrecorded wait holds the tempo step until the render finishes.
+
+**M9-003 — Cube running means, vibrato smoothing/posting, duration log, the +0x84 acting-tag 2/1 return, and stop cleanup** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/SingingBehavior.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so
+* evidence: 0x005EF0C8..0x005EF30F; 0x005EF490..0x005EF4DF; 0x005EF240..0x005EF24A (returns 2 while IBehavior+0x84==0, else 1); 0x005A2F68 (BehaviorManager consumes 0/1/2); 0x005A5CB4 (BehaviorSystemManager consumes 0/1/2); X4 S7 and S11-S16 and S19; Correction C1b
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. StopInternal posts a literal 0 and never writes the smoothed value at +0x140 (0x005EF2C6); the stack's Stop zeroes it, so the next run smooths from 0.
+
+**M9-004 — Music switch containers, decision trees, meters and MIDI target** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMusic.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise banks and approved M6 inventory
+* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk objects 914766641, 139286641, 602865028 and MIDI target 110896138
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. EffectiveMidiTarget starts at the segment and takes the nearest property 56; the runtime starts at the track and walks by the override bit, failing on 0 (0x00A3BDFC..0x00A3BEE4, 0x00A3CC48), and ignores the table-select flag.
+
+**M9-005 — Singing MIDI sources use SMF division 9600 and the effective meter tempo** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseMidi.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise banks
+* evidence: Cozmo.bnk MIDI source plugin 0x00100001 and division 0x2580; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the tick-to-time code (0x00A3F76C..0x00A3FBC0) and property 55 are unread; the header tempo float is dropped because the bank durations fit without it, a data fit rather than a runtime reading.
+
+**M9-006 — HIRC LFO and Envelope payloads and their runtime classes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise banks and libcozmoEngine.so
+* evidence: 0x009D7B6C..0x009D7C97; vtable 0x0103B1E8 and 0x0103B218; re-analysis/research/20260928-I-M9-gap1-extraction.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. property 15 is the trigger selector (0x009D552C..0x009D55F0), not stop-playback; the stop gate is property 1 (0x009D7EA4, default 1), unmodelled; the test keeps the wrong name.
+
+**M9-007 — The note-off envelope binding applies Wwise scaling 2 after its curve** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so and shipped Wwise bank
+* evidence: 0x00A14F88..0x00A15038; re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk object 381606890 and binding 462443456
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the note-off envelope runs from the note-on for the whole note, but with property 15 = 2 the gate refuses it for a note-on; scaling 2 uses Math.Log10 where the engine uses its fast log (0x00A14FD8..0x00A15034); the test is circular.
+
+**M9-008 — The vibrato LFO binding depth is driven by the posted cube-shake parameter** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise bank and libcozmoEngine.so
+* evidence: 0x009D671C..0x009D7727; 0x005EF184..0x005EF18C; Cozmo.bnk objects 528935089 and 110896138
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the depth RTPC is evaluated by the per-voice initializer only; the stack re-reads it every block, an uncited behaviour its test asserts.
+
+**M9-009 — Modulator bindings evaluate their curves and accumulate onto the named property** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so
+* evidence: 0x00A6E848..0x00A6F133; X4 S27
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the evidence is a whole range with no rows; delivery of the evaluator buffer to the voice is UNKNOWN, so per-sample application is an assumption; the named test does not exist.
+
+**M9-010 — Singing note-on and note-off layers determine held-note lifetime** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise banks and media
+* evidence: re-analysis/inventory/M6-wwise-bank.md; Cozmo.bnk singing sampler note-on and note-off layers
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. held-note length depends on PBI vt+0x1C for code-2 entries (unread); the engine replays the Sound recorded at note-on (0x00A3E6A8..0x00A3E728), the stack makes a fresh draw; the fade question is deferred to a comment; the test is circular.
+
 **M9-011 — Singing renders through the shipped Robot_Bus_1 EQ, limiter and Hijack chain** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
@@ -836,6 +1169,51 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: approved M6 inventory and shipped Init.bnk
 * evidence: re-analysis/inventory/M6-wwise-bank.md; 0x00AA257C; 0x00AA18F4
 * outstanding: The exact Robot_Bus_1 chain (two EQs, limiter, Hijack order) and its recovered DSP are built and wired, but the engine runs the bus at the 48000 Hz Wwise mix rate and the Hijack resamples to 22320 (M6-018 / gapC 4.6/4.8), while this stack still renders and runs the chain at 22320. Wiring the Wwise mix rate and the Hijack resample is M6-017/M6-018; this record settles with them.
+
+**M9-015 — Each play draws container selections afresh using Wwise's own LCG** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAudioSource.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so
+* evidence: 0x0098A6D4..0x0098A7B8; re-analysis/inventory/M6-wwise-bank.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the LCG matches, but BuildVoices draws for the whole song at prewarm; the engine draws when each note fires (0x00A3EA3C, 0x00A3DDF0).
+
+**M9-017 — Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CubeAccel.cs`
+* effect: singing behavior, timing, selection or rendered audio differs from the official app
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so
+* evidence: 0x005EECB0..0x005EED6F; 0x00635474..0x006355BF; 0x00636598..0x0063682F
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the first sample only initialises the HPF (prev = x, output 0, 0x00636578..0x0063658C) and is not tested; the stack filters from zero state and can fire on sample 1; the test expects 64 where the engine gives 25.
+
+**M9-020 — A music clip uses BeginTrim and length and releases a held note at clip end** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: the wrong part of a song is sung, or its last note is cut or left hanging
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: shipped Wwise banks
+* evidence: re-analysis/inventory/M6-wwise-bank.md; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. dropping notes outside the clip window and releasing held notes at clip end cite no runtime code; the end-of-PBI release (0x00A3CEB4) is read structurally only; the test is circular.
+
+**M9-022 — Wwise container selection uses the recovered eligibility, blocked-list, random and sequence algorithms** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: the wrong recording, or too many recordings, sound for a note
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so and approved M6 inventory
+* evidence: 0x0098A6D4..0x0098A7B8; 0x00A08A44; 0x00A0A524; re-analysis/inventory/M6-wwise-bank.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the note-off pass reruns every RanSeq PickIndex, moving LCG, avoid and shuffle state; the engine replays the recorded node with no selection (0x00A3E6A8..0x00A3E728).
+
+**M9-026 — The shipped parametric EQ and peak-limiter arithmetic** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBusChain.cs`
+* effect: the EQ curves and the limiter's knee differ in detail from the product's, at the same settings
+* rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
+* best authority: libcozmoEngine.so and approved M6 inventory
+* evidence: 0x00AA257C; 0x00AA2A84; 0x00AA18F4; 0x00AA0EB4; re-analysis/inventory/M6-wwise-bank.md
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. HP/LP coefficient association differs from the engine (0x00AA2870..0x00AA2898), one ulp at the shipped 333 Hz high-pass; the polynomials are self-declared untranscribed; the limiter release is unchecked.
 
 **M9-027 — Robot_Bus_Eq_HiLowPass behavior at 14298 Hz and the robot output rate** (live path)
 
@@ -1127,6 +1505,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so
 * evidence: BSRunnableChooserFactory::CreateBSRunnableChooser 0x00609C88; ScoringBSRunnableChooser::ReloadFromConfig 0x00609F8C; ScoringBSRunnableChooser::GetDesiredActiveBehavior 0x0060A3D8; StrictPriorityBSRunnableChooser::GetDesiredActiveBehavior 0x0060B23E; SelectionBSRunnableChooser::OnSelected 0x0060AF20
 * outstanding: The SelectionBSRunnableChooser inbound MessageGameToEngine dispatch for ExecuteBehaviorByExecutableType (0x93) / ExecuteBehaviorByID (0x94) (0x0060A848..0x0060A93E, handler 0x0060AA58) is unbuilt, so RequestBehavior has no production caller. The chooser factory, scoring and strict-priority choosers are built.
+
+**M15-003 — Activity start/end predicates and cooldown lifecycle** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: an activity becomes eligible, remains active or ends at different times
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: IActivityStrategy constructor 0x005B4EC8; IActivityStrategy::WantsToStart 0x005B529C; IActivityStrategy::RandomizeCooldown 0x005B5408; IActivityStrategy::WantsToEnd 0x005B5444; IActivityStrategy::SetCooldown 0x005B54E4
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. InCooldown uses the same fixed TickSec as M15-005.
+
+**M15-005 — Flat three-second cooldown after an activity ends within two ticks** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
+* effect: an immediately ending activity is delayed before it can restart
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: IActivityStrategy::WantsToStart 0x005B529C; activity times call site 0x005B26FE; IActivityStrategy::RandomizeCooldown 0x005B5408
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. 'two ticks' is 2 x 1/30 s; the engine compares against the last tick's real duration, GetTimeSinceLastTickInSeconds (0x0084BCBC, computed each tick in UpdateTime 0x0084BC38..0x0084BC90), nominally 60 ms; the test is circular.
 
 **M15-006 — Freeplay activity selection and selected/deselected lifecycle** (live path)
 

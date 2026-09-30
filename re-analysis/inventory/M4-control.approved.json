@@ -2,10 +2,10 @@
   "subsystem": "M4-control",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "1d26e85756f5fa53c1de12829c709f9d10c7e68ef3e4ca4f109a9b12394b838f",
+  "inventory_sha256": "ab6563a21b51dd6d1319fc5012a26357e91dea40b32469d73186099c20489c30",
   "records": {
     "M4-001": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Head angle limits -0.436332..0.776672 rad: command clip in MoveHeadToAngleAction, state-side clamp, -25 deg before calibration",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -42,7 +42,7 @@
       "hardware_required": false
     },
     "M4-004": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Direct motion is not gated on calibration (the engine has no gate)",
       "authority": "libcozmoEngine.so 3.4.0-1204: no calibration gate on direct motor commands; MA21 readers, plus the getter callers 0x0052C5AE, 0x00547D40/0x00547D48, 0x00606456/0x00606460, 0x00606748..0x00606936 (policy review 20260929)",
       "evidence": [
@@ -54,7 +54,7 @@
       "hardware_required": false
     },
     "M4-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Action ids: one u8 counter shared by head, lift and body, pre-incremented from 0; ids run 1..255, 0, 1",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -126,7 +126,7 @@
       "hardware_required": false
     },
     "M4-011": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -137,10 +137,10 @@
         "GetClosestDiscoveredObjectsOfType 0x00518314 walks that table in its iteration order and takes a later entry at an equal RSSI byte, so a tie goes to the entry the container visits last. The order is incidental to the container, but it is fully determined by the insertion and erase history, which this stack sees identically (advertisements, the 10001 ms timeout, connections), so it is reproduced exactly by ActiveObjectTable rather than approximated"
       ],
       "live_path": true,
-      "hardware_required": null
+      "hardware_required": false
     },
     "M4-012": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "StartMotorCalibration is never automatic; byte0 head, byte1 lift; MotorCalibration handling",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -185,7 +185,7 @@
       "hardware_required": false
     },
     "M4-016": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -260,7 +260,7 @@
       "hardware_required": false
     },
     "M4-020": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

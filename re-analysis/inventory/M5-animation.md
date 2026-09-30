@@ -797,3 +797,7 @@ All addresses are in `resources/lib/armeabi-v7a/libcozmoEngine.so`. All 7 items 
 1. **Seeds.** The official seeds are entropy (R2/R3). What seed the stack uses is a COMPATIBILITY_POLICY decision; no artifact settles it.
 2. **Stack-garbage fields.** For JSON Head, Lift and Backpack, fields not written by SetMembersFromJson are uninitialised stack memory (J1.2). No shipped JSON leaves one unwritten.
 3. **Loader context (R3).** The streamer reads its containers from [ctx+0x20]+0x48/+0x50, while RobotDataLoader lives at ctx+0x1C with its group container at +0x58/+0x60. Which object ctx+0x20 is was not traced. It does not change R3's conclusion, because the only AnimationGroupContainer ctor call binds context+0x14.
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

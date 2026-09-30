@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-09-24",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "11c9cecea4035a21d4f3b67534397a260c016b43e51e247f84bad7147378486a",
+  "inventory_sha256": "71b0d5221a0550e2a7f013dde7dccebbd06d060364f4e6ced130cdb3b374ab7b",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -310,7 +310,7 @@
       "hardware_required": false
     },
     "M1-024": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Engine tick 60 ms: arrivals drained FIFO and handed up once per tick",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -356,7 +356,7 @@
       "hardware_required": false
     },
     "M1-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Arrived-message filters and the fatal robotError disconnect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -368,7 +368,7 @@
       "hardware_required": false
     },
     "M1-028": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Initial-connection handshake outcomes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -414,7 +414,7 @@
       "hardware_required": false
     },
     "M1-031": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Idle-timeout disconnect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

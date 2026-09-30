@@ -592,3 +592,7 @@ C12.3 and adds the history retention.
 | C13.3 | **The engine's state-history retention is 3000 ms.** `RobotStateHistory::RobotStateHistory` sets a 3000 ms window at history+0x3c. The stack's parallel cliff history (Sensors) uses that window; the walk starts at `+0x1C`, so it only bounds memory. | 0x0053088D..0x005308C6 (`movw r?,#0xbb8` = 3000) | M4-019 | EXACT_SOURCE |
 
 | C13.4 | **`EnableGameLayerOnly` returns without acting when the target is already in the requested state.** All-objects: if `comp+0x22 == enable`, branch to the epilogue (0x00639A16..0x00639A1C). Single-object: if `ObjectInfo+0x1C == enable`, branch to the epilogue (0x006399DC..0x006399E0). | 0x006399DC `ldrbne r0,[r7,#0x1c]; cmpne r8,r0; beq.w 0x639b36`; 0x00639A16 `ldrb.w r0,[sb,#0x22]; cmp r0,r8; beq.w 0x639b36` | M4-018 | EXACT_SOURCE |
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

@@ -824,3 +824,7 @@ and `+0x3AC` is the same clock (written by `Update` 0x00695CA8). The stack's
   Its `unresolved` names the `SetPaused` game-message callers and the unbuilt `+0x1F0`/DAS consumers.
 - **M15-001**'s evidence adds J14 (the Init time threading and the 61 s throttle).
 
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

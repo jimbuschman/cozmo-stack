@@ -1,8 +1,8 @@
 {
   "subsystem": "M2-protocol",
-  "approved": "2026-09-24",
+  "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "f0e29579e1d6be0cf7a5e8f58283fa8c8531c759959507e24b01e54eeeb0843f",
+  "inventory_sha256": "edc4e9936bcc5e05082f41b035dadd3fd0ee17bc2232ddf55381a5eddf6c6e10",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M2-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -185,7 +185,7 @@
       "hardware_required": false
     },
     "M2-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Outbound builders copy caller speed, acceleration, duration and angle values verbatim: no defaults, no unit conversion",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

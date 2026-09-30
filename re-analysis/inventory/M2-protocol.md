@@ -771,3 +771,7 @@ Its claim that the field offsets "match this stack's layout" says nothing about 
 
 - chunkDebug and status: should Unity's generated-CLAD types (i32/i16) decide the M2 type? Unity sits at authority tier 2 and its CLAD twin at tier 4. Or should they stay UNKNOWN? In both the engine and Unity, the choice changes no behaviour.
 - The imageEncoding conclusion rests on the loads and compares plus the AAPCS extension convention. It is not a declared type in a shipped schema; none exists (no .clad file and no reflection string for `chunkDebug` in the .so or the OBB).
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

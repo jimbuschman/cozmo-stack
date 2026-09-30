@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-09-29",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "ba5ecf630c6b162e8e6f891dbd5ac22662e979668ab41fc3839f32bfaf23c62d",
+  "inventory_sha256": "7b18ff30dee7da792c37fadd2748e04fd4e852a9168160b9d329b3e0e54e0d29",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -35,7 +35,7 @@
       "hardware_required": false
     },
     "M15-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Activity start/end predicates and cooldown lifecycle",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -63,7 +63,7 @@
       "hardware_required": false
     },
     "M15-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Flat three-second cooldown after an activity ends within two ticks",
       "authority": "libcozmoEngine.so",
       "evidence": [

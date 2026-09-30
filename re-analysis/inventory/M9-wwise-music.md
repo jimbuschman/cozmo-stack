@@ -389,3 +389,7 @@ M9-002's evidence address is corrected to `0x005EEDCA` and its wording to
 "per-step 60-second TriggerAnimationAction timeout". M9-003's row now names
 `IBehavior+0x84` (the acting action tag). No other row changes.
 
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.

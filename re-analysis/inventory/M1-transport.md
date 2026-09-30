@@ -565,3 +565,7 @@ Rows from the closure pass of 2026-09-24. Where a closure row answers or correct
 | E8 | MessageHandler's lambda: if isExternalSdkMode, reason 6 and DisconnectCurrent, which posts RT Disconnect and enqueues the OnDisconnected marker without changing the RCD state. So MovementComponent still runs in the same emit. | 0x69E1DC..0x69E1FE; 0x62EF20..0x62EF7A; 0x837144..0x83719A | M1-025 | EXACT_SOURCE |
 | E9 | MovementComponent may then send EnableAnimTracks. It passes IsValidConnection (state is still 2) and goes to QueueMessage, which posts after the already-posted Disconnect action. The FIFO queue (CA12) runs the Disconnect first, which deletes the connection (CA14), so the EnableAnimTracks SendMessage finds no connection: an "unconnected destination" warning, and nothing is sent. | 0x64053A..0x640570; 0x63FE92..0x63FFB4; 0x69DCF6; 0x62F694; CA12; CA14 | M1-025 | EXACT_SOURCE (derived from CA12 and CA14) |
 
+
+## Correction A1 (manager audit, 2026-09-29)
+
+The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
