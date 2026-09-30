@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-09-29",
+  "approved": "2026-09-30",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "9021bd57fcae0bec212c2fc8d1ed29e4244b29d41cc8454c6c8ad327b940e14e",
+  "inventory_sha256": "24d52417efd0b0461da7c9e5a128321187be817c365e31896d4c0a70c145f2e0",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -397,7 +397,10 @@
         "selector [node+0x30]+0x68 bit0 from node+0x45 bit6 (0x9ED300..0x9ED308, 0x9F2AF4..0x9F2B10); advanced settings 0x9ED730 (0x9ED748..0x9ED844)",
         "limiter object 0x9F29E8 (0x9F29E8..0x9F2BC4): 0x70 bytes, pool blocks 0x380C/0x80, +0x44 max instances (node+0x44 & 0x3FF, RTPC 0x10), +0x46 KillNewest, +0x47 virtual, +0x58/+0x5A/+0x60/+0x62 counters; 0x9FAC54 counters (0x9FAC58..0x9FAC98)",
         "0x9FA01C global variant (0x9FA01C..0x9FA148, RTPC 0x10 at 0x9FA150..0x9FA198, array grow 0x9FA1A0..0x9FA228); 0xA37100 victim choice (0xA37100..0xA373EC, 101.0 at 0xA373F0); 0xA01CA4 kill (0xA01CA4..0xA01D64)",
-        "shipped data: Cozmo.bnk 1872 of 2231 Sounds under ActorMixer 62050212 (max 1, global), 11 under 66225135 (max 5, global); UI.bnk 14 of 14 under 47220736 (max 2, global); SFX.bnk 101 of 101 limited (615722439 max 5 per object; 675247210 max 1 global; Sounds 25932002, 28055544, 153471530, 242213219, 506971044, 571039165, 852562405 max 1 and 38402831 max 50)"
+        "shipped data: Cozmo.bnk 1872 of 2231 Sounds under ActorMixer 62050212 (max 1, global), 11 under 66225135 (max 5, global); UI.bnk 14 of 14 under 47220736 (max 2, global); SFX.bnk 101 of 101 limited (615722439 max 5 per object; 675247210 max 1 global; Sounds 25932002, 28055544, 153471530, 242213219, 506971044, 571039165, 852562405 max 1 and 38402831 max 50)",
+        "correction C28 (2026-09-29): list order and tie keys 0x9F3274 (0x9F3288..0x9F351C; keys 0xA00324..0xA0037C), kill 0xA01CA4 and voice stop (0xA01CA4..0xA01DA0, 0x9FF7B8, 0xA44A50..0xA44BC8), global checks 0xA376C0/0xA37880, per-object variant 0x9FA6F8/0x9FA410, limiter creation chain 0x9F2D20, removal 0xA029DC/0xA01684/0x9ED428; report re-analysis/research/20260929-B-M6b-4-batch4b-limits.md and its citation check",
+        "production path (checklist 1): engine 0xA379D8 calls node->vt+0x90 (0xA37D94) -> C# WwiseEventRuntime.ExecutePlay -> IWwisePlaybackBridge.OnPlay -> WwisePlaybackBridge.PlaySound -> WwisePlaybackLimiter.Walk; Term 0xA029DC -> WwisePlaybackLimiter.TermPbiA029DC; voice-pass stop 0xA44948 -> WwiseVoiceBusPass.VoicePass; flush 0xA38420 -> NotificationA38600/TerminatePbi",
+        "correction C29 (2026-09-30): removal walk 0x9ED428/0x9C5240/0x9FACD0/0x9FA2EC/0x9FAA70/0x9F4D40, Term 0xA029DC order, 0xA01684, remove-by-keys 0x9F3528, reposition 0x9F36A0/0xA01A08/0x9FFE1C, below byte 0x9BEB30 (threshold 0x37800000), 0xA0285C/0xA0067C/0x9D3558 returns, voice-pass stop 0xA44948..0xA44BFC and flush 0xA38420; report re-analysis/research/20260929-B-M6b-4-batch4b-missing.md and its citation check #2"
       ],
       "live_path": true,
       "hardware_required": false

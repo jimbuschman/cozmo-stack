@@ -363,7 +363,8 @@ public sealed class WwiseEventRuntime
             var init = new WwisePlayInitParams
             {
                 TargetNodeId = action.TargetId,                               // params+4 (0xA62B90)
-                GameObjectId = gameObj,                                       // params+8 (0xA62BF0)
+                // params+8 (0xA62BF0) = [actionctx+0x34]: the registered object for an object-scope action, else 0 (M6-026 5.3, C29.7).
+                GameObjectId = action.ObjectScope ? gameObj : null,
                 Transition = new WwiseFadeInTransition                         // params+0xC (0xA62BFC)
                 {
                     FadeInTime = (float)fadeMs,                               // 0xA62AF0
@@ -452,6 +453,34 @@ public sealed class WwiseEventRuntime
         => _log.Add(new WwiseActionExecution(action.Id, action.Type, outcome, m.PlayingId, gameObj,
             action.TargetId, launch, frames, delay, remainder, 0, 0, 0));
 
+    /// <summary>
+    /// <c>0xA04D48</c> (M6-026 6.2): a PBI takes a reference on its playing-id entry (<c>[entry+0x18]++</c>); nothing changes when the entry is not there.
+    /// </summary>
+    // fidelity: M6-026
+    public void AddPbiPlayingIdReference(uint playingId)
+    {
+        if (_playing.TryGetValue(playingId, out var p)) p.Outstanding++;
+    }
+
+    /// <summary>
+    /// <c>0xA04DE8</c> (M6-026 1.10 step 5): Term releases that reference: <c>[entry+0x18]--</c>, then <c>0xA03618</c> unconditionally. <c>0xA03618</c> does real work when
+    /// <c>[e+0x18] == 0 &amp;&amp; [e+0x1C] == 0</c> (a teardown from <c>0xA03648</c>) and is unread, so reaching zero throws unless <see cref="EntryAtZeroReferencesA03618"/> handles it. The throw is
+    /// conservative: <c>[e+0x1C]</c> is not modelled, and the engine does nothing when it is non-zero.
+    /// </summary>
+    // fidelity: M6-026
+    public void ReleasePbiPlayingIdReference(uint playingId)
+    {
+        if (!_playing.TryGetValue(playingId, out var p)) return;
+        p.Outstanding--;
+        if (p.Outstanding != 0) return;
+        (EntryAtZeroReferencesA03618 ?? throw new WwiseMissingBehaviourException(
+            "M6-026 1.10: 0xA03618..0xA03648 (what the playing-id entry does at [e+0x18] == 0) is unread; supply EntryAtZeroReferencesA03618"))(playingId);
+    }
+
+    /// <summary><c>0xA03618</c>'s zero-reference work (<c>0xA03618..0xA03648</c>): unread, required when a release reaches zero.</summary>
+    // fidelity: M6-026
+    public Action<uint>? EntryAtZeroReferencesA03618 { get; set; }
+
     private void PlayingCountIncrement(uint playingId)
     {
         if (!_playing.TryGetValue(playingId, out var p)) _playing[playingId] = p = new PlayingEvent();
@@ -487,6 +516,13 @@ public sealed class WwiseEventRuntime
         action = parsed!;
         return parsed is not null;
     }
+
+    /// <summary>
+    /// The parsed node (or bus) for an object id, cached; the node graph the playback-limit walker follows (M6-026: <c>[node+0x34]</c> parent,
+    /// <c>[node+0x38]</c> output bus). Same lookup as the Play target resolution (<c>0xA6168C</c> -&gt; <c>0x9A7EB0</c>).
+    /// </summary>
+    // fidelity: M6-026
+    public WwiseNode? FindNode(uint id) => GetNode(id);
 
     private WwiseNode? GetNode(uint id)
     {

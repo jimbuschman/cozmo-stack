@@ -1,4 +1,4 @@
-// fidelity: M6-001, M6-009
+// fidelity: M6-001, M6-009, M6-026
 using System.Buffers.Binary;
 
 namespace Cozmo.Robot.Animation.Wwise;
@@ -142,6 +142,22 @@ public sealed record WwiseNodeParams(
     IReadOnlyList<WwiseRtpc> Rtpcs,
     IReadOnlyList<(uint GroupId, byte SyncType, IReadOnlyList<(uint StateId, uint InstanceId)> States)> StateGroups)
 {
+    // fidelity: M6-026
+    // The advanced-settings block 0x9ED730 (M6-001 2.4, C23 B8): u8, u8, u16, u8, u8. The reader was dropping it; the
+    // playback-limit walker reads it (byte0 bits to node+0x45 bit2/3/4/6 and node+0x47 bit6, byte1 &amp; 7 to node+0x58,
+    // the u16 &amp; 0x3FF to node+0x44, byte3 to node vt+0x130, byte4 to node+0x40 bit20 and node+0x59 bits 5..7).
+
+    /// <summary>Advanced-settings byte 0 (the first byte of the 6-byte block).</summary>
+    public byte AdvancedByte0 { get; init; }
+    /// <summary>Advanced-settings byte 1 (masked with 7 into <c>node+0x58</c>).</summary>
+    public byte AdvancedByte1 { get; init; }
+    /// <summary>The advanced-settings u16 as stored, before the <c>&amp; 0x3FF</c> that gives <c>node+0x44</c>.</summary>
+    public ushort AdvancedMaxInstancesRaw { get; init; }
+    /// <summary>Advanced-settings byte 3 (the <c>vt+0x130</c> argument; the fifth byte of the block).</summary>
+    public byte AdvancedByte3 { get; init; }
+    /// <summary>Advanced-settings byte 4 (the last byte of the block).</summary>
+    public byte AdvancedByte4 { get; init; }
+
     /// <summary>A property as the float most of them are, or null when the node does not set it.</summary>
     public float? Float(WwiseProp p) =>
         Props.TryGetValue((byte)p, out var v) ? BitConverter.Int32BitsToSingle((int)v) : null;
@@ -362,8 +378,8 @@ public static class WwiseHierarchy
         // value is read as one byte; the list is left unresolved.
         byte aux = r.U8();
         if ((aux & 0x08) != 0) for (int i = 0; i < 4; i++) r.U32();
-        // AdvSettingsParams
-        r.U8(); r.U8(); r.U16(); r.U8(); r.U8();
+        // AdvSettingsParams (0x9ED730, M6-026 B8): kept, the playback-limit walker reads it
+        byte adv0 = r.U8(); byte adv1 = r.U8(); ushort advMax = r.U16(); byte adv3 = r.U8(); byte adv4 = r.U8();
         // StateChunk: 32-bit group count in this version
         uint groups = r.U32();
         var stateGroups = new List<(uint, byte, IReadOnlyList<(uint, uint)>)>((int)Math.Min(groups, 64));
@@ -381,7 +397,11 @@ public static class WwiseHierarchy
         // NodeBaseParams: 4 more bytes only when the BKHD feedback flag is set (gapA 2.3). It is 0 in all six
         // shipped banks.
         if (feedback) r.Skip(4);
-        return new WwiseNodeParams(bus, parent, bits, props, ranged, rtpcs, stateGroups);
+        return new WwiseNodeParams(bus, parent, bits, props, ranged, rtpcs, stateGroups)
+        {
+            AdvancedByte0 = adv0, AdvancedByte1 = adv1, AdvancedMaxInstancesRaw = advMax,
+            AdvancedByte3 = adv3, AdvancedByte4 = adv4,
+        };
     }
 
     private static WwiseRtpc ReadRtpc(ref Reader r)
@@ -680,9 +700,12 @@ public static class WwiseHierarchy
             stateGroups.Add((gid, sync, states));
         }
         if (o.FeedbackEnabled) r.Skip(4);                       // only when the BKHD feedback flag is set
-        _ = a; _ = c; _ = maxInst; _ = channelConfig; _ = recoveryMs; _ = maxDuck;
+        _ = a; _ = c; _ = channelConfig; _ = maxDuck;
         var p = new WwiseNodeParams(0, parent, 0, props, new Dictionary<byte, (float, float)>(), rtpcs, stateGroups);
-        return new WwiseBusNode(id, o.Bank, p, effects, ducked);
+        // fidelity: M6-026 - the bus's u16 max instances (bus+0x44) and byte B (D6.1: b0 -> +0x45 bit2, b1 -> +0x45 bit3,
+        // b2 -> +0x47 bit6) are what the bus limiter reads. The reader above refuses a B with bits 0..3 set, so B is 0
+        // for every bus this reader returns.
+        return new WwiseBusNode(id, o.Bank, p, effects, ducked) { MaxInstances = maxInst, ByteB = b, RecoveryMs = recoveryMs };
     }
 
     /// <summary>

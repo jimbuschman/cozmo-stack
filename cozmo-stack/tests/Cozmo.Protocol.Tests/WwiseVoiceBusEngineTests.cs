@@ -79,6 +79,9 @@ public sealed class WwiseVoiceBusEngineTests
         bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var deviceState = new WwiseOutputDeviceState();
         var pass = new WwiseVoiceBusPass(buses, deviceState);
+        pass.PostMixA5495C = _ => { }; pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                  // M6-026 7.2: 0xA55CC4 / 0xA5495C after a mix are unread (test double)
+        var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
+        pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
 
         var voice = new WwiseLiveVoice(channels: 1, maxFrames: 8)
         {
@@ -350,6 +353,9 @@ public sealed class WwiseVoiceBusEngineTests
         var device = new SinkDevice { DeviceKey28 = 7, Sink = sink };
         deviceState.AddDevice(device);
         var pass = new WwiseVoiceBusPass(buses, deviceState);
+        pass.PostMixA5495C = _ => { }; pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                  // M6-026 7.2: 0xA55CC4 / 0xA5495C after a mix are unread (test double)
+        var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
+        pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
 
         var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), OutputGain = 1f };
         var dry = new WwiseVoiceConnection(bus, 1, 1) { TargetGain = 1f };

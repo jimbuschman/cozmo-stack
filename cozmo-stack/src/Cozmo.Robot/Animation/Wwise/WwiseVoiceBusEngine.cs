@@ -727,6 +727,22 @@ public sealed class WwiseLiveVoice
     /// <summary>V7 <c>voice-&gt;vt+0x48</c>: the stop/fail path.</summary>
     public Action? VoiceStop48 { get; set; }
 
+    /// <summary>
+    /// <c>voice vt+0x48</c> = <c>0xA533FC</c> (M6-026 7.6): with a current source, <c>0xA565D0(src)</c> = <c>0xA01840([src+0xC])</c> clears <c>pbi.1BA</c> bits 3..6; then the state is 2 (stopped).
+    /// The owner is the current source's (<c>[src+0xC]</c>), read through <paramref name="ownerOfSource"/>, not <c>voice+8</c>.
+    /// </summary>
+    // fidelity: M6-026
+    public void StopA533FC(Func<IWwiseVoiceSource, WwisePlayingInstance> ownerOfSource)
+    {
+        ArgumentNullException.ThrowIfNull(ownerOfSource);
+        if (Source is { } src)                                       // 0xA565D0([voice+0xD4]): pbi = [src+0xC], then 0xA01840(pbi)
+        {
+            var pbi = ownerOfSource(src);
+            pbi.Flags1BA = (byte)(pbi.Flags1BA & ~0x78);
+        }
+        State = 2;
+    }
+
     /// <summary>V7 <c>voice-&gt;vt+0x58</c>: called at <c>0xA554D8</c> on the E8 return-1 path; its return is
     /// discarded (the bit2 value is the saved <c>bus-&gt;vt+0x3C</c> return).</summary>
     public Func<bool>? VoiceBit58 { get; set; }
@@ -841,7 +857,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     private readonly float[] _sp40 = new float[4];
 
     /// <summary>The voice list (the native container head <c>0x108DF64</c>).</summary>
-    public List<WwiseLiveVoice> Voices { get; } = new();
+    public List<WwiseLiveVoice> Voices { get; set; } = new();
 
     /// <summary>The deferred PBI-notification queue (<c>0x108DE7C</c>; V21).</summary>
     public Queue<WwisePbiNotification> PbiNotifications { get; } = new();
@@ -889,13 +905,104 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         NodeCleanup?.Invoke();
 
         VoicesRendered = 0;
-        foreach (var voice in Voices)                                // V6: head [0x108DF64], next +0xD0
+        int i = 0;
+        while (i < Voices.Count)                                     // V6: head [0x108DF64], next +0xD0
         {
-            if (voice.State != 1) continue;                          // V6: active 1
-            if (!RunVoiceStateMachine(voice)) continue;              // V7: returns 1 when the voice has a live source
-            voice.Render(_notify);                                   // V8: 0xA44630
-            VoicesRendered++;
+            var voice = Voices[i];
+            // fidelity: M6-026 (7.2): per voice the block starts with result 0x2B (AK_DataNeeded) and the mix-result byte 0.
+            voice.Buffer.Result = 0x2B;
+            voice.Buffer.HasBusParam = false;
+            if (voice.State == 1 && RunVoiceStateMachine(voice))     // V7: returns 1 when the voice has a live source
+            {
+                voice.Render(_notify);                               // V8: 0xA44630
+                VoicesRendered++;
+                PostMix(voice);                                      // 7.2: 0xA55CC4 on 0x2E, else 0xA5495C (0xA44B80..0xA44BA8)
+            }
+            StopDecisionA44A58(voice);                                   // 7.3..7.6
+            if (voice.State == 2)                                    // 7.7: unlink, count--, 0x9D40C4
+            {
+                Voices.RemoveAt(i);
+                (DestroyVoiceA9D40C4 ?? throw new WwiseMissingBehaviourException(
+                    "M6-026 7.7: 0x9D40C4 (the voice teardown, WwiseVoiceLinker.TeardownVoice) is needed for a stopped voice; supply DestroyVoiceA9D40C4"))(voice);
+            }
+            else i++;
         }
+    }
+
+    /// <summary>The owner PBI of a source (<c>[source+0xC]</c>), for <c>[[voice+0xD4]+0xC]</c> in the stop decision (7.3) and the stop (7.6). Required; wire it to <see cref="WwisePlaybackBridge.TryOwnerOf"/>.</summary>
+    // fidelity: M6-026
+    public Func<IWwiseVoiceSource, object?>? SourceOwner { get; set; }
+
+    private WwisePlayingInstance OwnerOfSourceRaw(IWwiseVoiceSource source)
+        => (SourceOwner ?? throw new WwiseMissingBehaviourException(
+            "M6-026 7.3: [[voice+0xD4]+0xC] (the current source's owner) needs the source-owner lookup; supply SourceOwner"))(source) as WwisePlayingInstance
+           ?? throw new WwiseMissingBehaviourException("M6-026 7.3: the current source has no owner PBI ([src+0xC]); the engine would dereference it");
+
+    private WwisePlayingInstance OwnerOfSource(WwiseLiveVoice voice)
+        => OwnerOfSourceRaw(voice.Source ?? throw new WwiseMissingBehaviourException(
+            "M6-026 7.3: the voice has no current source ([voice+0xD4] == 0); the engine dereferences it (0xA44A50)"));
+
+    /// <summary><c>0x9D40C4(voice, 0)</c> (7.7): the destroy of a voice the pass stopped. Required when a voice reaches state 2.</summary>
+    // fidelity: M6-026
+    public Action<WwiseLiveVoice>? DestroyVoiceA9D40C4 { get; set; }
+
+    /// <summary><c>voice vt+0x4C</c> = <c>0xA53558</c> (7.5, 7.6: the pause of a paused-and-running PBI). Its state-1 body (<c>0xA565D8</c>, <c>0xA052F4</c>) is unread; required when reached.</summary>
+    // fidelity: M6-026
+    public Action<WwiseLiveVoice>? PauseVoice4C { get; set; }
+
+    /// <summary>
+    /// The <c>NoMoreData</c> continuation with a pending source (7.5): <c>[voice+0xD8] = 0</c>, <c>0xA55D04(voice, 0)</c>, <c>0xA55A84(voice, fp, 1, 0) == 1</c> and <c>0xA54A30(voice) == 1</c> -> <c>0xA56478(fp)</c> and
+    /// continue (true), else stop (false). The bodies are RECOVERABLE_GAP, so it is a required seam.
+    /// </summary>
+    // fidelity: M6-026
+    public Func<WwiseLiveVoice, IWwiseVoiceSource, bool>? ContinueWithPendingSource { get; set; }
+
+    /// <summary><c>0xA55CC4(voice, blk)</c>, run after a mix whose result is <c>0x2E</c> (AK_NoDataReady) (7.2, <c>0xA44B80..0xA44BA8</c>). RECOVERABLE_GAP; required then.</summary>
+    // fidelity: M6-026
+    public Action<WwiseLiveVoice, WwiseVoiceBuffer>? PostMixNoDataReadyA55CC4 { get; set; }
+
+    /// <summary><c>0xA5495C(voice)</c>, run after a mix with any other result (7.2, <c>0xA44B80..0xA44BA8</c>). RECOVERABLE_GAP; required then.</summary>
+    // fidelity: M6-026
+    public Action<WwiseLiveVoice>? PostMixA5495C { get; set; }
+
+    private void PostMix(WwiseLiveVoice voice)
+    {
+        if (voice.Buffer.Result == 0x2E)
+            (PostMixNoDataReadyA55CC4 ?? throw new WwiseMissingBehaviourException(
+                "M6-026 7.2: 0xA55CC4 (after a 0x2E mix) is RECOVERABLE_GAP; supply PostMixNoDataReadyA55CC4"))(voice, voice.Buffer);
+        else
+            (PostMixA5495C ?? throw new WwiseMissingBehaviourException(
+                "M6-026 7.2: 0xA5495C (after a mix) is RECOVERABLE_GAP; supply PostMixA5495C"))(voice);
+    }
+
+    /// <summary>
+    /// The stop decision of <c>0xA44948</c> for one voice (7.3, 7.5, 7.6). <c>sl</c> is <c>(1BC &amp; 0x20) ? ([pbi+0x1F8] == -1) : 0</c> on <c>pbi = [[voice+0xD4]+0xC]</c> (the owner PBI in
+    /// <c>voice+8</c>), forced to 1 by a non-zero mix-result byte. A result of <c>0x11</c> stops on <c>sl</c> or when there is no pending source; any other result stops on <c>2</c> (AK_Fail) or <c>sl</c>,
+    /// and otherwise pauses a paused-and-running PBI. The stop is <c>voice vt+0x48</c> = <c>0xA533FC</c> (<see cref="WwiseLiveVoice.StopA533FC"/>).
+    /// </summary>
+    public void StopDecisionA44A58(WwiseLiveVoice voice)
+    {
+        // 7.3 (0xA44A50..0xA44A54, 0xA44BB4..0xA44BBC): pbi = [[voice+0xD4]+0xC] with no alternative: a voice with no source is a null dereference in the engine.
+        var pbi = OwnerOfSource(voice);
+        bool sl = pbi is not null && (pbi.Flags1BC & 0x20) != 0 && pbi.Field1F8 == 0xFFFFFFFF;
+        if (voice.Buffer.HasBusParam) sl = true;                     // 0xA44BB4..0xA44BC8: [sp+0x38] != 0 forces the stop
+        bool pausedAndRunning = pbi is not null && (pbi.Flags1BC & 0x80) != 0 && voice.State == 1;
+        int result = voice.Buffer.Result;
+        if (result == 0x11)
+        {
+            if (sl) { voice.StopA533FC(OwnerOfSourceRaw); return; }
+            var next = voice.Pending;
+            if (next is null) { voice.StopA533FC(OwnerOfSourceRaw); return; }
+            voice.Pending = null;
+            bool go = (ContinueWithPendingSource ?? throw new WwiseMissingBehaviourException(
+                "M6-026 7.5: 0xA55D04, 0xA55A84, 0xA54A30 and 0xA56478 (the switch to the pending source) are RECOVERABLE_GAP; supply ContinueWithPendingSource"))(voice, next);
+            if (!go) voice.StopA533FC(OwnerOfSourceRaw);
+            return;
+        }
+        if (result == 2 || sl) { voice.StopA533FC(OwnerOfSourceRaw); return; }
+        if (pausedAndRunning)
+            (PauseVoice4C ?? throw new WwiseMissingBehaviourException(
+                "M6-026 7.5: voice vt+0x4C (0xA53558, the pause) is unread; supply PauseVoice4C"))(voice);
     }
 
     /// <summary>V5a: <c>0xA43D24</c>'s unread per-bus/voice callees; caller seam.</summary>

@@ -17,6 +17,15 @@ public sealed record WwiseBusNode(uint Id, string Bank, WwiseNodeParams Params,
 {
     /// <summary>The bus this one sends to, or 0 for a master bus.</summary>
     public uint ParentBusId => Params.ParentId;
+
+    /// <summary>The bus's <c>+0x44</c>: the u16 max instances masked with <c>0x3FF</c> (D6.1, M6-026 W7).</summary>
+    public ushort MaxInstances { get; init; }
+
+    /// <summary>The bus's byte B (D6.1: b0 to <c>+0x45</c> bit2, b1 to <c>+0x45</c> bit3, b2 to <c>+0x47</c> bit6).</summary>
+    public byte ByteB { get; init; }
+
+    /// <summary>The bank's recovery time in ms (D6.1: converted to samples at <c>bus+0x64</c>); <c>0x9C5240</c> tests <c>[bus+0x64] != 0</c> (M6-026 1.3).</summary>
+    public uint RecoveryMs { get; init; }
 }
 
 /// <summary>

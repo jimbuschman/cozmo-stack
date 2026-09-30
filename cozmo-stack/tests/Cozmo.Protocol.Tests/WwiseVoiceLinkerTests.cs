@@ -1498,8 +1498,10 @@ public class WwiseVoiceLinkerTests
         public WwiseLiveVoice? Voice;
         public int Vt120Result;
         public readonly object A054D8Global = new();
-        public readonly WwiseRoutingNode RoutingNode = new() { Id = 77 };
-        public WwiseRoutingNode? SeenNode;
+        public readonly WwiseNode RoutingNode = new WwiseActorMixerNode(77, "t.bnk",
+            new WwiseNodeParams(0, 0, 0, new Dictionary<byte, uint>(), new Dictionary<byte, (float, float)>(), Array.Empty<WwiseRtpc>(),
+                Array.Empty<(uint, byte, IReadOnlyList<(uint, uint)>)>()), Array.Empty<uint>());
+        public WwiseNode? SeenNode;
         public uint? SeenVt120Arg;
 
         public AddSrcRig(int startCode = 1)
@@ -1508,16 +1510,17 @@ public class WwiseVoiceLinkerTests
             Bridge = new WwisePlaybackBridge { SourceFactory = _ => Source }.WithTestSeams();
             Bridge.Linker = new WwiseVoiceLinker(
                 new WwiseMixBusHierarchy(), new WwiseOutputDeviceList(), new List<WwiseLiveVoice>(),
-                _ => new WwisePbiRouting { Node = RoutingNode }, new WwiseVoiceLinkSeams());
+                _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 77 } }, new WwiseVoiceLinkSeams());
             Pbi = BridgePbi(Bridge);
-            Bridge.NextSource9EEDA4 = (WwiseRoutingNode node, out int index) =>
+            Pbi.NodeE0 = RoutingNode;                                  // [pbi+0xE0]: the node 0x9EEDA4 and vt+0x120 receive
+            Bridge.NextSource9EEDA4 = (WwiseNode? node, out int index) =>
             {
                 Log.Add("9EEDA4:154=" + (Pbi.Field154 is not null ? "voice" : "null"));
                 SeenNode = node;
                 index = Eda.Index;
                 return Eda.Code;
             };
-            Bridge.NodeVt120 = (node, arg) => { Log.Add("vt120"); SeenNode = node; SeenVt120Arg = arg; return Vt120Result; };
+            Bridge.NodeVt120A379D8 = (node, arg) => { Log.Add("vt120"); SeenNode = node; SeenVt120Arg = arg; return Vt120Result; };
             Bridge.NewVoiceAllocSendTable4C = _ => { Log.Add("alloc4C"); return Alloc; };
             Bridge.Call9BCA68 = p => { Log.Add("9BCA68"); return Gate; };
             Bridge.CallA0228C = _ => Log.Add("A0228C");
@@ -1632,12 +1635,12 @@ public class WwiseVoiceLinkerTests
     {
         // C27 step 4: vt+0x120 is reached only when the 0x9EEDA4 result is 3; an unread body is a required seam.
         var rig = new AddSrcRig { Eda = (2, 0) };
-        rig.Bridge.NodeVt120 = null;
+        rig.Bridge.NodeVt120A379D8 = null;
         rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true);           // code 2: not reached, no throw
         Assert.Equal(2, (rig.Pbi.NextSourceCache1BB >> 3) & 0xF);
 
         rig = new AddSrcRig { Eda = (3, 0) };
-        rig.Bridge.NodeVt120 = null;
+        rig.Bridge.NodeVt120A379D8 = null;
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
         Assert.Equal(0, rig.Pbi.NextSourceCache1BB);                         // nothing cached on the throw
     }

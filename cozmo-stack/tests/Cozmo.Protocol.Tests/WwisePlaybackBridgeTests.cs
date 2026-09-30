@@ -173,8 +173,8 @@ public class WwisePlaybackBridgeTests
         var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
         var bridge = new WwisePlaybackBridge
         {
-            InitSource9BEB30 = _ => true,                       // B7 seam (body unread)
-            NodeVt90 = _ => { },                                // B7 seam (body unread)
+            InitSource9BEB30 = pbi => { pbi.Word64 = 0f; return true; },   // B7 seam (body unread); double: CalcEffectiveParams' pbi+0x64 value
+            Limiter = WwisePlaybackLimiterTestDoubles.Create(runtime.FindNode),   // M6-026: node->vt+0x90 is the walker, not a seam
             BeforePlayA00618 = _ => { },                        // B7 seam (body unread)
             SetupFadeInTransition = (_, _) => 0,                // B16/F1 seam (body unread)
         }.WithTestSeams();
@@ -535,7 +535,18 @@ internal static class WwiseBridgeTestSeams
         bridge.Linker ??= new WwiseVoiceLinker(
             new WwiseMixBusHierarchy(), new WwiseOutputDeviceList(), new List<WwiseLiveVoice>(),
             _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 1 } }, new WwiseVoiceLinkSeams());
-        bridge.NextSource9EEDA4 ??= (WwiseRoutingNode _, out int index) => { index = 0; return 0; };
+        bridge.NextSource9EEDA4 ??= (WwiseNode? _, out int index) => { index = 0; return 0; };   // test double: an override of the read 0x9EEDA4 body (code 0, index 0)
+        bridge.NodeVt84A9F1F80 ??= _ => (false, 0f);         // test double: 0x9F1F80 is unread (gate clear, out 0.0f)
+        bridge.TailA023D4 ??= (_, _) => { };                 // test doubles: the 0xA37FE8..0xA38070 tail bodies are unread
+        bridge.TailCtxVt24 ??= (_, _) => { };
+        bridge.TailCtxVt28 ??= _ => { };
+        bridge.TailA01918 ??= (_, _, _) => { };
+        bridge.TailA9E85C8 ??= (_, _, _) => { };
+        bridge.SourceStructField16A37C90 ??= _ => 0;         // test double: [node+0x72] is not modelled
+        bridge.SourceClose2C ??= _ => { };                   // test double: src vt+0x2C is unread
+        bridge.TransitionA366AC ??= _ => { };                // test doubles: the 0xA0067C type-1 join bodies are unread
+        bridge.Call9BDA28 ??= _ => { };
+        bridge.Call9E808C ??= _ => { };
         bridge.NewVoiceAllocSendTable4C ??= _ => new WwiseVoiceSendTable();
         bridge.Call9BCA68 ??= _ => 0;
         bridge.CallA0228C ??= _ => { };

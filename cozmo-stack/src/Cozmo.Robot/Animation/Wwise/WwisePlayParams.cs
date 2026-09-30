@@ -88,6 +88,19 @@ public sealed class WwisePlayInitParams
     /// <summary><c>+0x85</c>: 0xFF in the Play helper (<c>0xA62AF4</c>).</summary>
     public byte SoundSpecial85 { get; set; } = 0xFF;
 
+    /// <summary><c>+0x78</c>: a pointer word; <c>0xA37A54..0xA38064</c> test it for zero (<c>0x9E85C8</c> gets <c>[params+0x78]+0x14</c>) and F4 reads <c>[[params+0x78]+8]</c>. The Play helper's
+    /// value is not in the inventory; null is the zero pointer.</summary>
+    public object? Ptr78 { get; set; }
+
+    /// <summary><c>+0x88</c>: the <c>r1</c> of <c>0xA023D4</c> (<c>0xA3800C</c>). Not built by the Play helper's rows; a caller input.</summary>
+    public uint Word88 { get; set; }
+
+    /// <summary><c>+0x8C</c>: the block <c>[[pbi+0xC]+0x24]</c> receives (<c>0xA38130</c>). A caller input.</summary>
+    public object? Block8C { get; set; }
+
+    /// <summary><c>+0x108</c>: the second argument of <c>0xA01918</c> (<c>0xA38038</c>). A caller input.</summary>
+    public object? Block108 { get; set; }
+
     /// <summary><c>+0x90</c>: 1.0f in the Play helper (<c>0xA62AF8</c>); not read by the paths read.</summary>
     public float Field90 { get; set; } = 1f;
 
