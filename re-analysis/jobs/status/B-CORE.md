@@ -17,3 +17,16 @@ Records stay IMPLEMENTATION_GAP; `unresolved` starts "built, awaiting strong ver
 ## Progress log
 
 - 2026-09-29 13:05 CLAIMED.
+- 2026-09-29 **Batch 1 (NV queue) done and pushed: dbdc39d.** Read only validates+enqueues; `NvStorage::Update`
+  (state 0) pops, sends and arms; a completion sets state 0 only; the deadline uses the synchronised clock
+  (`Robot.StoredState`); GetBaseEntryTag's negative branch is `!= 0xC0000000` and positive tags take the size-table
+  floor below 0x198000; the header cap is one-shot; the timeout runs the callback only and the final broadcast chunk
+  carries the actual result; M3-022 queues the calibration read before SetCameraParams. Verifier PASS (3 queued
+  non-blocking nits: one citation fixed, two test-coverage notes). Full suite 1996/1996 (2113/2113 after the rebase).
+  Records M3-022/025/026/027/029/030/031/035 remain IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong
+  verification".
+  - **MISSING (M3-027):** what populates the READ command's data vector `+0xE8` (0x00645386) and its initial value —
+    the row names `+0xE8` but not its writer. The command still sends empty data; the test asserts that.
+  - **MISSING (M3-023):** what the stack-only `CozmoRobot.StartCamera` must send — the rows settle the engine's
+    `EnableColorImages` and the SyncTime `ImageRequest`, but no row defines `StartCamera`. Code unchanged.
+- Next: Batch 2 (readiness: M1-041, M1-028, M3-033, M3-034).
