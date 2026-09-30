@@ -736,7 +736,12 @@ public sealed class VisionSystem : IDisposable
     {
         if (Calibration is null) { WarnNoCalibration(removal); return null; }
         var cache = new ImageCache();
-        if (f.IsColor)
+        // fidelity: M3-018
+        // VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68 calls EncodedImage::IsColor at 0x006B4B7C
+        // (the encoding byte). The engine's VERIFY(false) log for encoding 0 is emitted here, once per
+        // VisionSystem::Update call, not when the frame was assembled.
+        bool isColor = EncodedImageDecoder.IsColor(f.Encoding, Log);
+        if (isColor)
         {
             // colour -> DecodeImageRGB + ImageCache::Reset(ImageRGB const&) (0x0087459E, RGB at +0x54)
             if (!f.TryDecodeRgb(out var rgb, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }

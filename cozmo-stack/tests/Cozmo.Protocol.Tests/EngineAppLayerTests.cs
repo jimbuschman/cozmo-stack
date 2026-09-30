@@ -349,7 +349,9 @@ public class EngineAppLayerTests
     /// PRIMARY-SOURCE ORACLE. M1-024 CD6/CD10/CD11: in engine state 3, after UpdateRobotConnection →
     /// MessageHandler::ProcessMessages and before UpdateAllRobots → Robot::Update, CozmoEngine::Update takes
     /// BaseStationTimer::GetCurrentTimeInSeconds into r1 and calls NeedsManager::Update with it
-    /// (0x004ED632/0x004ED636, 0x004ED640). The hook runs between the two and on the tick's clock.
+    /// (0x004ED632/0x004ED636, 0x004ED640). The hook runs between the two and on the tick's clock, which is
+    /// the f32 at +0x10 (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8; <c>vcvt.f32.f64</c> 0x0084BC80), so the
+    /// argument is a float.
     /// </summary>
     [Fact]
     public void M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate()
@@ -358,7 +360,7 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         rig.SendFirstFullState();
         var order = new List<string>();
-        double? needsNow = null;
+        float? needsNow = null;
         rig.Engine.NeedsUpdate = now => { order.Add("needs"); needsNow = now; };
         var components = rig.Engine.RobotComponentsUpdate;
         rig.Engine.RobotComponentsUpdate = () => { components?.Invoke(); order.Add("robot"); };
@@ -367,7 +369,10 @@ public class EngineAppLayerTests
         rig.Tick(60);
         // the robot message is dispatched in ProcessMessages, then NeedsManager::Update, then Robot::Update
         Assert.Equal(new[] { "message:RobotAvailable", "needs", "robot" }, order);
-        Assert.Equal(rig.Engine.Timer.Seconds, needsNow);
+        // expected from the test's own clock: the engine timer counts from creation and this path makes six
+        // 60 ms ticks before the hook runs, so the f32 the engine passes is 0.36 (0x0084BCA8/0x0084BC80),
+        // not a value read back from the implementation
+        Assert.Equal(0.36f, needsNow);
     }
 
     // ================================================================== M1-025: connect, response, DisconnectCurrent
@@ -1280,6 +1285,28 @@ public class EngineAppLayerTests
         rig.Tick(10_000);
         Assert.Equal(1, rig.Log.Count(l => l.Contains("SyncTimeAckNotReceived")));
         Assert.Equal(syncs, rig.Port.SentIds.Count(i => i == RobotMessageId.SyncTime));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-041 CD19: the deadline is single precision (0x00513C02..0x00513C14:
+    /// <c>vldr s0,[r6]</c> the +0x520 float, <c>vadd.f32 s0,s0,#5.0</c>, <c>vcmpe.f32 s16,s0</c>). At 1e8 s
+    /// the f32 ULP is 8, so +5 rounds up to +8 and a now of 100000006 (which a double compare would call
+    /// past the +5 deadline) is not past it; the warning only comes once now reaches the f32 deadline.
+    /// </summary>
+    [Fact]
+    public void M1_041_CD19_TheSyncTimeAckDeadlineIsComparedInF32()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Engine.Robot!.SyncTimeSentAt = 100000000f;        // +0x520; f32
+        // now = 100000006 s: a double compare would warn (100000006 > 100000005), the f32 deadline is 100000008
+        rig.Tick(100000006000);
+        Assert.False(rig.Logged("SyncTimeAckNotReceived"));
+        Assert.True(rig.Engine.Robot.SyncTimeSentAt > 0);
+        // now = 100000016 s: past the f32 deadline
+        rig.Tick(10_000);
+        Assert.True(rig.Logged("SyncTimeAckNotReceived"));
+        Assert.Equal(0, rig.Engine.Robot.SyncTimeSentAt);
     }
 
     /// <summary>

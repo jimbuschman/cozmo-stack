@@ -867,8 +867,13 @@ public sealed class EngineRobot
     public bool ReadyToStream { get => _readyToStream; internal set => _readyToStream = value; }
     /// <summary>Robot+0x34E: the first full robot state after time sync has been handled (CC4, CD23).</summary>
     public bool FirstFullStateHandled { get => _firstFullState; internal set => _firstFullState = value; }
-    /// <summary>Robot+0x520: when the SyncTime was sent, engine seconds; 0 when none is outstanding (CD18, CD19).</summary>
-    public double SyncTimeSentAt { get; internal set; }
+    // fidelity: M1-041
+    /// <summary>
+    /// Robot+0x520: when the SyncTime was sent, engine seconds; 0 when none is outstanding (CD18, CD19). The
+    /// engine stores it and compares the 5 s deadline in f32 (0x00513C02..0x00513C14: <c>vldr s0,[r6]</c>,
+    /// <c>vadd.f32 s0,s0,#5.0</c>, <c>vcmpe.f32 s16,s0</c>), so it is a float.
+    /// </summary>
+    public float SyncTimeSentAt { get; internal set; }
     /// <summary>
     /// Whether the last Robot::Update ran AnimationStreamer::Update: past the first-full-state return, time synced
     /// and ready to stream (CD12). The stack's animation loop streams only while this is set.
@@ -990,7 +995,7 @@ public sealed class EngineRobot
         Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
         Engine.Log("info: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
-        SyncTimeSentAt = Engine.Timer.Seconds;
+        SyncTimeSentAt = Engine.Timer.SecondsF;
     }
 
     // fidelity: M4-020
@@ -1181,8 +1186,11 @@ public sealed class EngineRobot
     internal void Update()
     {
         Idle.Update();
-        double now = Engine.Timer.Seconds;
-        if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0)
+        // fidelity: M1-041
+        // The deadline is f32 (0x00513C02..0x00513C14): the stored +0x520 is the float at +0x10, and the
+        // engine adds 5.0 and compares in single precision (vcvt.f32.f64 at 0x0084BC80 feeds +0x10).
+        float now = Engine.Timer.SecondsF;
+        if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0f)
         {
             Engine.Log("warning: Robot.Update.SyncTimeAckNotReceived");
             SyncTimeSentAt = 0;
@@ -1692,9 +1700,10 @@ public sealed class CozmoEngine : IDisposable
     /// and before <c>UpdateAllRobots</c> → <c>Robot::Update</c>, <c>CozmoEngine::Update</c> takes
     /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> and calls <c>NeedsManager::Update</c> with it
     /// (0x004ED632/0x004ED636 → r1, 0x004ED640 <c>blx</c>). The NeedsManager is owned by FreeplayStack, which
-    /// sets this hook; the argument is that same tick clock.
+    /// sets this hook; the argument is that same tick clock. The clock is the f32 at +0x10
+    /// (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8), so the hook takes a float (M1-024).
     /// </summary>
-    internal Action<double>? NeedsUpdate;
+    internal Action<float>? NeedsUpdate;
 
     // fidelity: M4-019
     /// <summary>
@@ -1817,7 +1826,7 @@ public sealed class CozmoEngine : IDisposable
                 // fidelity: M1-024
                 // CozmoEngine::Update state 3 calls NeedsManager::Update between ProcessMessages and
                 // UpdateAllRobots, on BaseStationTimer::GetCurrentTimeInSeconds (0x004ED632..0x004ED640).
-                if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.Seconds));
+                if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.SecondsF));
                 if (Robots.Get(RobotId) is { } r) r.Update();
             }
             finally { _inTick = false; }

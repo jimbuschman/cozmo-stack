@@ -863,11 +863,60 @@ public sealed class PlaceObjectOnGroundAction
         Field6 = flag,
     };
 
+    /// <summary>
+    /// <c>PlaceObjectOnGroundAction+0x84</c>: set to 1 by <c>CheckIfDone</c> while the robot's status bit 0x4
+    /// (IS_PICKING_OR_PLACING) is set (0x005549C0), and 0 by <c>Init</c> (0x00554794). <c>CheckIfDone</c> only
+    /// runs its face-and-verify sub-action once this latch is set and the bit has cleared.
+    /// </summary>
+    // fidelity: M2-002
+    public bool StatusLatched { get; private set; }
+
+    // fidelity: M2-002
+    /// <summary>
+    /// <c>PlaceObjectOnGroundAction::CheckIfDone</c> 0x005549B0..0x00554A3B's status gate, in the engine's
+    /// order:
+    /// <list type="number">
+    /// <item>while the robot's status bit 0x4 (IS_PICKING_OR_PLACING, stored at DockingComponent+4,
+    /// 0x00512A96) is set, latch <c>+0x84 = 1</c> (0x005549C0) and stay RUNNING;</item>
+    /// <item>with bit 0x4 clear, a clear latch also stays RUNNING (0x005549D6);</item>
+    /// <item>with the latch set, the MovementComponent+9 byte (status bit 0x1, 0x0063E30A) must also be clear
+    /// (0x005549D8..0x005549E0) before the engine runs its face-and-verify sub-action.</item>
+    /// </list>
+    /// Returns true when the engine would run the sub-action. This stack has no per-tick action list, so
+    /// <see cref="RunAsync"/> polls this while the dock is pending.
+    /// </summary>
+    private bool StatusGateOpen()
+    {
+        bool pickingOrPlacing = _m.Robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) ?? false;
+        if (pickingOrPlacing) { StatusLatched = true; return false; }          // 0x005549C0
+        if (!StatusLatched) return false;                                      // 0x005549D6
+        bool moving = _m.Robot.State.Latest?.Has(RobotStatusFlag.IsMoving) ?? false;
+        return !moving;                                                        // 0x005549E0
+    }
+
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
         if (!_m.Docking.Carrying.IsCarryingObject) { _trace.Add("PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject"); return ActionResult.NotCarryingObjectAbort; }
-        var result = await _m.Docking.PlaceOnGroundAsync(Message(), TimeSpan.FromSeconds(10), cancel);
+        // Init 0x00554794 zeroes +0x84 before sending PlaceObjectOnGround.
+        StatusLatched = false;
+        var dock = _m.Docking.PlaceOnGroundAsync(Message(), TimeSpan.FromSeconds(10), cancel);
+        // fidelity: M2-002
+        // The engine's action list calls CheckIfDone once per tick while the place runs; this stack polls the
+        // same gate, so the +0x84 latch is set when the robot reports IS_PICKING_OR_PLACING (0x005549C0).
+        while (!dock.IsCompleted)
+        {
+            StatusGateOpen();
+            await Task.WhenAny(dock, Task.Delay(1, CancellationToken.None));
+        }
+        StatusGateOpen();
+        var result = await dock;
         if (result is null) return ActionResult.Timeout;
+        // fidelity: M2-002
+        // CheckIfDone does not accept the sub-action result until the gate opens. The engine would stay
+        // RUNNING forever if the robot never reported IS_PICKING_OR_PLACING; this stack has no tick to keep
+        // the action alive, so an unlatched gate completes with the dock result (a LOCAL bridge, M2-002).
+        while (StatusLatched && !StatusGateOpen() && !cancel.IsCancellationRequested)
+            await Task.Delay(1, CancellationToken.None);
         _trace.Add($"PlaceObjectOnGround result {result}");
         return result.Status == BlockStatus.BlockPlaced && !_m.Docking.Carrying.IsCarryingObject ? ActionResult.Success : ActionResult.StillCarryingObject;
     }

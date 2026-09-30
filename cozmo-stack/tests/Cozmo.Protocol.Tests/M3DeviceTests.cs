@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
 using FaceMsg = Cozmo.Protocol.FaceImage;
@@ -180,21 +181,27 @@ public class M3DeviceTests
 
     // ================================================================== audio encoding: M3-010, M3-011
 
-    /// <summary>
-    /// C6: NaN gives 0; f &lt;= -1 gives s = -32767; otherwise s = trunc(min(f, 1) * 32767). So f = 1.5 encodes as 1.0,
-    /// f = -5 as -1, and the float path lands on the same byte as the scaled sample. (The segment table 0x00C5C3F0's
-    /// values are not in the inventory, so every check here is relative to the table.)
+/// <summary>
+    /// C6 (0x00597AD8..0x00597B8E): the byte is <c>sign 0x80 | exp &lt;&lt; 4 | mant</c> with the exponent from
+    /// the segment table 0x00C5C3F0 and the literal 0x46FFFE00 (32767.0f). Every expected byte below is
+    /// hand-derived from that algorithm and table, not read from the encoder: 32767 -&gt; mag 32767, hi 127,
+    /// exp 7, mant 15 = 0x7F; 16383 -&gt; hi 63, exp 6, mant 15 = 0x6F; -16383 -&gt; mag 16382 = 0xEF; -32767
+    /// -&gt; mag 32766 = 0xFF; NaN -&gt; 0. The float path clamps to 1 / -1, truncating toward zero.
     /// </summary>
     [Fact]
     public void M3_010_C6_TheFloatIsClampedScaledAndTruncated()
     {
-        Assert.Equal(0, AnkiMuLaw.Encode(float.NaN));
-        Assert.Equal(AnkiMuLaw.Encode(1f), AnkiMuLaw.Encode(1.5f));
-        Assert.Equal(AnkiMuLaw.Encode((short)32767), AnkiMuLaw.Encode(1f));
-        Assert.Equal(AnkiMuLaw.Encode(-1f), AnkiMuLaw.Encode(-5f));
-        Assert.Equal(AnkiMuLaw.Encode((short)-32767), AnkiMuLaw.Encode(-1f));
-        Assert.Equal(AnkiMuLaw.Encode((short)16383), AnkiMuLaw.Encode(0.5f));          // trunc(16383.5)
-        Assert.Equal(AnkiMuLaw.Encode((short)-16383), AnkiMuLaw.Encode(-0.5f));        // trunc toward zero
+        Assert.Equal(0x00, AnkiMuLaw.Encode(float.NaN));
+        Assert.Equal(0x7F, AnkiMuLaw.Encode(1f));
+        Assert.Equal(0x7F, AnkiMuLaw.Encode(1.5f));            // clamped to 1
+        Assert.Equal(0x7F, AnkiMuLaw.Encode((short)32767));
+        Assert.Equal(0xFF, AnkiMuLaw.Encode(-1f));
+        Assert.Equal(0xFF, AnkiMuLaw.Encode(-5f));             // clamped to -32767
+        Assert.Equal(0xFF, AnkiMuLaw.Encode((short)-32767));
+        Assert.Equal(0x6F, AnkiMuLaw.Encode(0.5f));            // trunc(16383.5)
+        Assert.Equal(0x6F, AnkiMuLaw.Encode((short)16383));
+        Assert.Equal(0xEF, AnkiMuLaw.Encode(-0.5f));           // trunc toward zero
+        Assert.Equal(0xEF, AnkiMuLaw.Encode((short)-16383));
     }
 
     /// <summary>
@@ -257,6 +264,47 @@ public class M3DeviceTests
         Assert.Contains("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN", log);
         Assert.Equal(0x46FFFE00, BitConverter.SingleToInt32Bits(AnkiMuLaw.FullScale));
         Assert.Equal(32767f, AnkiMuLaw.FullScale);
+    }
+
+    /// <summary>A source that returns exactly the given PCM.</summary>
+    private sealed class FixedPcmSource : IAnimationAudioSource
+    {
+        private readonly short[] _pcm;
+        public FixedPcmSource(short[] pcm) => _pcm = pcm;
+        public short[]? GetPcm(long eventId, float volume) => _pcm;
+        public string? NameOf(long eventId) => "fixed";
+    }
+
+    /// <summary>
+    /// C5/C6 through the live entry: the scheduler's <c>PopFrame</c> (AnimationScheduler.cs:1603-1614) encodes
+    /// the source's 16-bit PCM and zero-pads the frame to 744 bytes. The expected byte is hand-derived from the
+    /// segment table: 8000 -&gt; mag 8000, hi 31, exp 5, mant 15 = 0x5F. The engine's NaN warning belongs to
+    /// <c>encodeMuLaw(float)</c>; this short PCM seam never produces NaN, so the log stays empty.
+    /// </summary>
+    [Fact]
+    public void M3_010_C5_C6_PopFrameZeroPadsAndEncodesThroughTheScheduler()
+    {
+        var sink = new RobotSink();
+        var log = new List<string>();
+        var s = new AnimationScheduler(sink, new Random(1))
+        {
+            AudioSource = new FixedPcmSource(Enumerable.Repeat((short)8000, 10).ToArray()),
+            Log = log.Add,
+        };
+        var clip = new AnimationClip
+        {
+            Name = "tone",
+            Keyframes = new List<Keyframe> { new AudioKeyframe(0, new long[] { 1 }, 1.0f, new[] { 1.0f }, false) },
+            Tracks = AnimationTrack.Audio,
+            DurationMs = 1000,
+        };
+        s.Play(clip, 0);
+        s.Advance(0);
+        var frame = sink.AudioFrames.First();
+        Assert.Equal(744, frame.Length);
+        Assert.Equal(0x5F, frame[0]);
+        Assert.All(frame.Skip(10), b => Assert.Equal(0x00, b));
+        Assert.DoesNotContain(log, l => l.Contains("NaN"));
     }
 
     /// <summary>C3: 22320 Hz and 744 samples per frame; 30 Hz is 22320 / 744.</summary>
@@ -379,10 +427,16 @@ public class M3DeviceTests
     {
         public int FramesPlayed, BytesPlayed;
         public readonly List<string> Log = new();
+        /// <summary>Every non-null mu-law frame the scheduler handed out, in order.</summary>
+        public readonly List<byte[]> AudioFrames = new();
         public int? AudioFramesPlayed => FramesPlayed;
         public int? AnimBytesPlayed => BytesPlayed;
         public void Face(FaceBitmap bitmap) => Log.Add("face");
-        public void Audio(byte[]? mulawFrame) => Log.Add(mulawFrame is null ? "silence" : "sample");
+        public void Audio(byte[]? mulawFrame)
+        {
+            if (mulawFrame is not null) AudioFrames.Add(mulawFrame);
+            Log.Add(mulawFrame is null ? "silence" : "sample");
+        }
         public void Head(sbyte angleDeg, uint durationMs) => Log.Add("head");
         public void Lift(byte heightMm, uint durationMs) => Log.Add("lift");
         public void AnimationStarted(byte tag) => Log.Add($"start:{tag}");
@@ -890,18 +944,35 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// I2 (0x004F2120..0x004F2134): encoding 0 takes the VERIFY-failure path, which logs
-    /// <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and leaves the return register 0. The log reaches the
-    /// camera through <see cref="CozmoCamera.Log"/>.
+    /// I2 (0x004F2120..0x004F2134): encoding 0 takes the VERIFY-failure path, which calls
+    /// <c>sVerifyFailedReturnFalse</c> with <c>"VERIFY(%s): %s"</c>, <c>"false"</c> and
+    /// <c>EnumToString(0) = "NoneImageEncoding"</c> (0x004F2130) and leaves the return register 0. The exact
+    /// text is <c>"VERIFY(false): NoneImageEncoding"</c>; it reaches the camera through
+    /// <see cref="CozmoCamera.Log"/> / <see cref="VisionSystem.Log"/>.
     /// </summary>
     [Fact]
     public void M3_018_I2_IsColorOfZeroIsFalseAndLogsTheVerifyFailure()
     {
         var log = new List<string>();
         Assert.False(EncodedImageDecoder.IsColor(0, log.Add));
-        Assert.Contains(log, l => l.Contains("EncodedImage.IsColor.UnsupportedImageEncoding"));
-        // The engine's EnumToString(ImageEncoding) entry 0 is "NoneImageEncoding" (pointer table 0x01034A60, 0xC20B64).
-        Assert.Contains(log, l => l.Contains("NoneImageEncoding"));
+        Assert.Equal(new[] { "VERIFY(false): NoneImageEncoding" }, log);
+    }
+
+    /// <summary>
+    /// I2 at the engine's point: the engine calls <c>EncodedImage::IsColor</c> from
+    /// <c>VisionSystem::Update</c> (0x006B4B7C), so the log for encoding 0 comes from the vision path, not from
+    /// the frame's assembly in <c>CozmoCamera</c>.
+    /// </summary>
+    [Fact]
+    public void M3_018_I2_TheIsColorZeroLogIsEmittedAtTheVisionSystemCall()
+    {
+        using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
+        var log = new List<string>();
+        vision.Log += log.Add;
+        var frame = new CameraFrame { Encoding = 0, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] };
+        Assert.Null(vision.ProcessFrame(frame));
+        Assert.Contains("VERIFY(false): NoneImageEncoding", log);
     }
 
     /// <summary>
