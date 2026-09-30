@@ -51,6 +51,11 @@ internal sealed class Rig : IDisposable
     {
         Robot = CozmoRobot.CreateOffline(clock: Clock);
         Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
+        // The robot calibrates head and lift on connect (M4-004). The fake robot reports both finished, so Motion
+        // stores the reported head angle (MA22/RS6) and a head/lift action can reach its in-position test instead
+        // of only ever timing out.
+        Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
+        Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
         Vision = new VisionSystem(Robot, Cal) { Enabled = false };
         M = new ManipulationSystem(Robot, Vision);
         // the look-around waits are real seconds on a robot; a rig takes them instantly
@@ -112,10 +117,16 @@ internal sealed class Rig : IDisposable
         Robot.Transport.ProcessIncoming(FrameCodec.Encode(f));
     }
 
-    public void State(uint? flags = null)
+    public void State(uint? flags = null, float? liftAngle = null)
     {
         T += 33;
-        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, Status = flags ?? (OnCharger ? (uint)RobotStatusFlag.IsOnCharger : 0u),
+        // The fake robot teleports to whatever head/lift angle it was told, so it is at rest: the default state
+        // reports HEAD_IN_POS and LIFT_IN_POS (a robot at rest). The lift angle defaults to 0 (45 mm), the
+        // constructor's reported angle; a SetLiftHeight carries the angle for its target (RS7). A test that wants
+        // a moving head or lift passes flags explicitly.
+        uint f = flags ?? (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos
+                                 | (OnCharger ? RobotStatusFlag.IsOnCharger : 0));
+        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, LiftAngle = liftAngle ?? 0f, Status = f,
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
         // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
         // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.
@@ -228,10 +239,18 @@ internal sealed class Rig : IDisposable
                     Send(new PickAndPlaceResult { Field0 = T, Field1 = true, Field2 = 0, Field3 = (byte)BlockStatus.BlockPlaced });
                     break;
                 case SetHeadAngle sh:
-                    Head = sh.AngleRad; State();                      // the fake robot's head follows the command at once
+                    // The fake robot follows the command at once, acks it (M4-016 MA16) and reports HEAD_IN_POS,
+                    // so the move completes as it does on a robot instead of waiting out the IAction timeout.
+                    Head = sh.AngleRad;
+                    State();
+                    Send(new MotorActionAck { ActionId = sh.ActionId });
                     break;
                 case SetLiftHeight sl:
+                    // Likewise for the lift: the state carries the angle that IsLiftInPosition reads (RS7).
                     LiftMm = sl.HeightMm; LiftHeights.Add(sl.HeightMm);
+                    float liftAngle = (float)Math.Asin(Math.Clamp((sl.HeightMm - 45f) / 66f, -1f, 1f));
+                    State(liftAngle: liftAngle);
+                    Send(new MotorActionAck { ActionId = sl.ActionId });
                     break;
             }
         }

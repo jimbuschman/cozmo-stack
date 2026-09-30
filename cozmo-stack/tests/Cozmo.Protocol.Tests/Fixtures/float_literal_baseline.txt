@@ -405,12 +405,6 @@ Cozmo.Robot/Manipulation/SearchActions.cs 0.0872665
 Cozmo.Robot/Manipulation/SearchActions.cs 0.261799
 Cozmo.Robot/Manipulation/SearchActions.cs 0.349066
 Cozmo.Robot/Manipulation/SearchActions.cs 0.785398
-Cozmo.Robot/Motion.cs 0.034906585
-Cozmo.Robot/Motion.cs 0.0349066
-Cozmo.Robot/Motion.cs 0.436332
-Cozmo.Robot/Motion.cs 0.488692
-Cozmo.Robot/Motion.cs 0.776672
-Cozmo.Robot/Motion.cs 0.829031
 Cozmo.Robot/OffTreads.cs 0.261799
 Cozmo.Robot/OffTreads.cs 0.785398
 Cozmo.Robot/OffTreads.cs 1.30027

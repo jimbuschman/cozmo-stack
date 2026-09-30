@@ -828,6 +828,33 @@ public class EngineAppLayerTests
     }
 
     /// <summary>
+    /// M4-011 (0x0051391E..0x00513954, from HandleFirmwareVersion 0x00536934..0x0053698E): BlockFilter::Init runs
+    /// only from Robot::SetPhysicalRobot(true), i.e. only when the firmware JSON has no "sim"; it is not an app
+    /// default, and a simulated robot never loads the pool.
+    /// </summary>
+    [Fact]
+    public void M4_011_BlockFilterInitRunsFromSetPhysicalRobotNotTheAppDefaults()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "cozmo-m4011-" + Guid.NewGuid().ToString("N") + ".txt");
+        using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+        rig.Connect();
+        Assert.Equal("", rig.Robot.Cubes.Connections.PoolPath);                    // no firmware handled yet
+        rig.Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
+        rig.Data(Rig.Fw(Rig.ShippedFw));                                            // sim null: SetPhysicalRobot(true)
+        rig.Tick();
+        Assert.Equal(path, rig.Robot.Cubes.Connections.PoolPath);                   // Init ran at firmware handling
+        Assert.False(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);             // and not from the app defaults
+
+        var simPath = Path.Combine(Path.GetTempPath(), "cozmo-m4011-sim-" + Guid.NewGuid().ToString("N") + ".txt");
+        using var sim = new Rig(new CozmoEngineOptions { BlockPoolPath = simPath });
+        sim.Connect();
+        sim.Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
+        sim.Data(Rig.Fw("{\"version\": 2381, \"sim\": true, \"time\": 1546972025, \"build\": \"DEVELOPMENT\"}"));
+        sim.Tick();
+        Assert.Equal("", sim.Robot.Cubes.Connections.PoolPath);                     // a simulated robot never loads it
+    }
+
+    /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-028 CB14/G5.9: a firmwareVersion before robotAvailable (not sim) gives
     /// SendConnectionResponse(1, 0) directly, with +0x2D set only around it (0x0052D7B8..0x0052D850); CB34: the link
     /// and robot 1 stay; CB36: a retry ConnectToRobot is then ignored.

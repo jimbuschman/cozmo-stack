@@ -809,8 +809,6 @@ public sealed class EngineRobot
     /// <c>json["sim"].isNull()</c>, SetPhysicalRobot(true) and SetOutputSource(2 = PlayOnRobot); otherwise source 1.
     /// MISSING: what the handler does when the JSON does not parse, or its root is not an object, is not in the rows;
     /// the source is left as it was and a warning is logged.
-    /// MISSING (M4 interface): SetPhysicalRobot(true) also loads the persistent block pool; this stack still does that
-    /// in the M1-042 app defaults (<see cref="CozmoRobot"/>), not here.
     /// </summary>
     internal void HandleFirmwareVersion(FirmwareVersion f)
     {
@@ -833,6 +831,10 @@ public sealed class EngineRobot
             // (0x0051397A), which the Robot constructor zeroed (0x0050FC36).
             IsPhysicalRobot = simIsNull;
             AudioOutputSource = simIsNull ? RobotAudioOutputSource.PlayOnRobot : RobotAudioOutputSource.PlayOnDevice;
+            // fidelity: M4-011
+            // SetPhysicalRobot(true) also calls BlockFilter::Init (0x0051391E..0x00513954); a simulated robot
+            // (sim non-null) never takes this branch.
+            if (simIsNull) Engine.RunIsolated(() => Engine.PhysicalRobotSet?.Invoke());
         }
     }
 
@@ -1452,6 +1454,16 @@ public sealed class CozmoEngine : IDisposable
     internal Action? ConnectToRobotHandled;
     /// <summary>The game side's reaction to a Success response (policy M1-042), run as a game message.</summary>
     internal Action? AfterSuccessDefaults;
+
+    // fidelity: M4-011
+    /// <summary>
+    /// <c>Robot::SetPhysicalRobot(true)</c> 0x00513914 calls <c>BlockFilter::Init</c> 0x0061A1EC (0x0051391E..0x00513954),
+    /// which loads the persistent block pool and asks for its five factory ids before any BlockPoolEnabledMessage.
+    /// HandleFirmwareVersion is its only caller in the shipped engine (0x00536934..0x0053698E). The hook runs at that
+    /// point, for a physical robot only; <see cref="CozmoRobot"/> keeps the stack's Init there rather than in the app
+    /// defaults.
+    /// </summary>
+    internal Action? PhysicalRobotSet;
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
     internal Action<Exception>? Faulted;
     /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>

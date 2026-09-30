@@ -117,15 +117,17 @@ public sealed class CozmoMotion
 
     // fidelity: M4-001
     /// <summary>
-    /// The engine's head limits: MoveHeadToAngleAction clips a commanded angle to [−0.436332, 0.776672] with warnings
-    /// (MA9, 0x00547F44..0x0054803A), and RS6 clamps a reported one (M2 App. B).
+    /// The engine's head limits, written as the engine's float bits. MoveHeadToAngleAction clips a rescaled commanded
+    /// angle against them with warnings (MA9, 0x00547F44 min / 0x00547FC2 max; the 2026-09-29 audit corrected the
+    /// decimal-rounded 0xBEDF66E8/0x3F46D3FA to 0xBEDF66F3/0x3F46D3F2), and RS6 clamps a reported one (M2 App. B)
+    /// against the OOB thresholds.
     /// </summary>
-    public const float MinHeadAngleRad = -0.436332f;   // -25 degrees
-    public const float MaxHeadAngleRad = 0.776672f;    // +44.5 degrees
-    /// <summary>RS6: a reported head angle below this (−28°) is stored as −25°.</summary>
-    internal const float ReportedHeadLowOob = -0.488692f;
-    /// <summary>RS6: a reported head angle above this (47.5°) is stored as 44.5°.</summary>
-    internal const float ReportedHeadHighOob = 0.829031f;
+    public static readonly float MinHeadAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));   // -25 degrees
+    public static readonly float MaxHeadAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)0x3F46D3F2));   // +44.5 degrees
+    /// <summary>RS6: a reported head angle below this (−28°, 0xBEFA35DD) is stored as −25°.</summary>
+    internal static readonly float ReportedHeadLowOob = BitConverter.Int32BitsToSingle(unchecked((int)0xBEFA35DD));
+    /// <summary>RS6: a reported head angle above this (47.5°, 0x3F543B67) is stored as 44.5°.</summary>
+    internal static readonly float ReportedHeadHighOob = BitConverter.Int32BitsToSingle(unchecked((int)0x3F543B67));
 
     // fidelity: M4-002
     /// <summary>
@@ -237,7 +239,8 @@ public sealed class CozmoMotion
     /// <summary>
     /// <c>MovementComponent::AreAnyTracksLocked(mask)</c> 0x00640098's reader at <c>0x00540440</c>: any bit
     /// of <paramref name="mask"/> whose lock set is non-empty. <c>IActionRunner::Update</c> 0x00540370
-    /// refuses to run an action whose required tracks are locked (0x005404a8) and retries next tick.
+    /// fails an action whose required tracks are locked with 0x03000019 (0x00540572..0x0054057C); it does not
+    /// retry (M8-007, M4-003).
     /// </summary>
     public bool AreAnyTracksLocked(byte mask) { lock (_gate) return IsTrackLockedLocked(mask); }
 
@@ -398,10 +401,11 @@ bool requireCalibration = true)
     /// <summary>MA9: 20 rad/s².</summary>
     public const float ActionDefaultHeadAccelRadPerSec2 = 20f;
 
-    /// <summary>MA10: the game SetHeadAngle builds its action with tolerance 0.0349066 rad.</summary>
-    internal const float GameHeadToleranceRad = 0.0349066f;
-    /// <summary>MA9: the head tolerance minimum, 2° (0x0054803E..0x005480AC).</summary>
-    internal const float MinHeadToleranceRad = 0.034906585f;
+    /// <summary>MA10: the game SetHeadAngle builds its action with tolerance 0.0349066 rad, whose engine float is
+    /// 0x3D0EFA35 (M4-003 unresolved; the old decimal rounded to 0x3D0EFA39).</summary>
+    internal static readonly float GameHeadToleranceRad = BitConverter.Int32BitsToSingle(unchecked((int)0x3D0EFA35));
+    /// <summary>MA9: the head tolerance minimum, 2° (0x0054803E..0x005480AC), the same engine float 0x3D0EFA35.</summary>
+    internal static readonly float MinHeadToleranceRad = BitConverter.Int32BitsToSingle(unchecked((int)0x3D0EFA35));
     /// <summary>MA12: the game SetLiftHeight builds its action with tolerance 5.0 mm.</summary>
     internal const float GameLiftToleranceMm = 5.0f;
 
@@ -421,16 +425,49 @@ bool requireCalibration = true)
     public const uint ResultStoppedMakingProgress = 0x04000004;
     /// <summary>MA17: the send failed.</summary>
     public const uint ResultSendFailed = 0x03000016;
+    /// <summary>M4-003: IActionRunner::Update's required-tracks-locked failure (0x00540572..0x0054057C).</summary>
+    public const uint ResultTracksLocked = 0x03000019;
+    /// <summary>M4-003: the IActionRunner's lock owner entry (the engine locks with the action's id/name; one
+    /// action per track runs at a time, so a fixed owner is equivalent).</summary>
+    private const string ActionRunnerWho = "IActionRunner";
+    /// <summary>M4-016: the IAction timeout slot's default, 30.0 s (0x0052B0C2), not 5 s.</summary>
+    internal static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromSeconds(30);
+
+    // fidelity: M4-001
+    /// <summary>
+    /// <c>Radians::rescale</c> (0x0084C87C), reached from the Radians ctor 0x0084C832: bring an angle into (−π, π].
+    /// The engine uses the <c>ceil(v/2π − 0.5)</c> shortcut at |v| ≥ 10 and a 2π loop below it
+    /// (0x0084C8A2..0x0084C937). The ctor rescales every Radians the engine builds, so MoveHeadToAngleAction clips
+    /// the rescaled angle, not the raw command.
+    /// </summary>
+    internal static float RescaleRadians(float value)
+    {
+        if (value <= -MathF.PI || value > MathF.PI)
+        {
+            if (MathF.Abs(value) >= 10f)
+            {
+                float turns = MathF.Ceiling(value / (2f * MathF.PI) - 0.5f);
+                value -= turns * (2f * MathF.PI);
+            }
+            else
+            {
+                while (value <= -MathF.PI) value += 2f * MathF.PI;
+                while (value > MathF.PI) value -= 2f * MathF.PI;
+            }
+        }
+        return value;
+    }
 
     // fidelity: M4-001, M4-003, M4-016
     /// <summary>
     /// The game SetHeadAngle (MA10): MoveHeadToAngleAction(angle, tolerance 0.0349066, variability 0), whose speed,
-    /// acceleration and duration are the caller's. The angle is clipped to the head limits with a warning (MA9); the
-    /// tolerance is at least 2°; variability 0 leaves the angle as it is. Init sends nothing when the head is already
-    /// within tolerance + 1e-5 of the target (MA15), otherwise MoveHeadToAngle with the next action id. The move
-    /// completes on the matching ack followed by the head in position and stopped; it fails with 0x04000004 if the
-    /// head stops out of position after having moved, and with 0x03000016 if the send fails (MA16, MA17).
-    /// <paramref name="timeout"/> is this stack's: the engine's IAction timeout is M8 and not in the inventory.
+    /// acceleration and duration are the caller's. The Radians ctor rescales the angle into (−π, π] first
+    /// (0x0084C832 → 0x0084C87C); the ctor then clips the rescaled angle to the head limits with a warning (MA9);
+    /// the tolerance is at least 2°; variability 0 leaves the angle as it is. Init sends nothing when the head is
+    /// already within tolerance + 1e-5 of the target (MA15), otherwise MoveHeadToAngle with the next action id. The
+    /// move completes on the matching ack followed by the head in position and stopped; it fails with 0x04000004 if
+    /// the head stops out of position after having moved, and with 0x03000016 if the send fails (MA16, MA17). The
+    /// IAction timeout defaults to the engine's 30.0 s slot (M4-016; 0x0052B0C2).
     /// </summary>
     public Task<MotionOutcome> SetHeadAngleAsync(float radians,
                                                  float maxSpeedRadPerSec = DefaultHeadSpeedRadPerSec,
@@ -438,7 +475,10 @@ bool requireCalibration = true)
                                                  float durationSec = 0f,
                                                  TimeSpan? timeout = null, bool requireCalibration = true)
     {
-        float target = radians;
+        // fidelity: M4-001
+        // Radians ctor 0x0084C832 rescales first (0x0084C87C); so 99 rad → 99 − 16·2π = −1.5310 and clips to the
+        // min with AngleTooLow, and −99 rad → −99 + 16·2π = +1.5310 and clips to the max with AngleTooHigh.
+        float target = RescaleRadians(radians);
         if (target < MinHeadAngleRad)
         {
             Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: {radians:F4} rad, clipped to {MinHeadAngleRad}");
@@ -634,6 +674,8 @@ bool requireCalibration = true)
         public readonly bool IsHead;
         public readonly float Target, Tolerance;
         public readonly string What;
+        /// <summary>M4-003: the action's required track mask (+0x54): head 1 (0x00547EAC), lift 2 (0x005489EE).</summary>
+        public readonly byte Mask;
         public byte Id;
         /// <summary>+0xAA / +0x95: the command was sent.</summary>
         public bool Sent;
@@ -643,17 +685,24 @@ bool requireCalibration = true)
         public bool HasMoved;
         /// <summary>Head +0xAC / lift +0x97: in position, latched (C1, C6).</summary>
         public bool InPositionLatched;
+        /// <summary>M4-003: this action holds its track lock (taken at 0x0054058E, released at 0x005408EC).</summary>
+        public bool Locked;
         public readonly TaskCompletionSource<MotionOutcome> Done = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public MoveAction(CozmoMotion owner, bool isHead, float target, float tolerance, string what)
         {
             Owner = owner; IsHead = isHead; Target = target; Tolerance = tolerance; What = what;
+            Mask = isHead ? HeadTrack : LiftTrack;
         }
     }
 
     // fidelity: M4-016
-    /// <summary>MA15 IsHeadInPosition: IsNear(robot+0x2FC, target, tolerance + 1e-5) (0x005484F4..0x0054852C).</summary>
-    private bool IsHeadInPositionLocked(MoveAction a) => Math.Abs(_headAngle - a.Target) <= a.Tolerance + HeadInPositionSlack;
+    /// <summary>
+    /// MA15 IsHeadInPosition: IsNear(robot+0x2FC, target, tolerance + 1e-5) (0x005484F4..0x0054852C, PLT
+    /// 0x0084CC0A). Radians::IsNear (0x0084CC0A) returns |rescale(this − target)| &lt; |tolerance|, a strict &lt;.
+    /// Both values are inside (−π, π] here, so rescaling the difference cannot change it.
+    /// </summary>
+    private bool IsHeadInPositionLocked(MoveAction a) => Math.Abs(_headAngle - a.Target) < a.Tolerance + HeadInPositionSlack;
 
     // fidelity: M4-016
     /// <summary>MA15 IsLiftInPosition: |target − height| &lt; tolerance and MC+0xB == 0 (0x00548FEA..0x00549034).</summary>
@@ -663,11 +712,24 @@ bool requireCalibration = true)
     private bool InPositionLocked(MoveAction a) => a.IsHead ? IsHeadInPositionLocked(a) : IsLiftInPositionLocked(a);
     private bool MovingLocked(MoveAction a) => a.IsHead ? _headMoving : _liftMoving;
 
-    // fidelity: M4-005, M4-016
+    // fidelity: M4-003, M4-005, M4-016
     private async Task<MotionOutcome> RunAsync(MoveAction a, Func<byte, RobotMessage> build, TimeSpan? timeout)
     {
         lock (_gate)
         {
+            // fidelity: M4-003
+            // IActionRunner::Update (0x00540370): AreAnyTracksLocked(mask) at 0x00540572..0x0054057C fails the
+            // action with 0x03000019 and sends nothing; otherwise LockTracks(mask) at 0x0054058E sends
+            // DisableAnimTracks. The action's end releases the lock (UnlockTracks 0x005408EC), which sends
+            // EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
+            if (IsTrackLockedLocked(a.Mask))
+            {
+                Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
+                return new MotionOutcome(MotionResult.Failed, $"{a.What}: required tracks are locked") { EngineResult = ResultTracksLocked };
+            }
+            LockTracksLocked(a.Mask, ActionRunnerWho);
+            a.Locked = true;
+
             // MA15, C6 L1: Init clears has-moved and sent/acked (a fresh action), latches in-position and sends nothing
             // when the motor is already in position. CheckIfDone then skips the ack wait (nothing was sent) and, the
             // latch being set, succeeds once the motor is not moving: at once when it is not moving now (always so for
@@ -675,7 +737,11 @@ bool requireCalibration = true)
             if (InPositionLocked(a))
             {
                 if (!MovingLocked(a))
+                {
+                    UnlockTracksLocked(a.Mask, ActionRunnerWho);
+                    a.Locked = false;
                     return new MotionOutcome(MotionResult.Acknowledged, $"{a.What}: already in position, nothing sent");
+                }
                 a.InPositionLatched = true;
                 _actions.Add(a);
             }
@@ -686,21 +752,26 @@ bool requireCalibration = true)
                 if (!_robot.SendMessage(build(a.Id)))
                 {
                     _actions.Remove(a);
+                    UnlockTracksLocked(a.Mask, ActionRunnerWho);
+                    a.Locked = false;
                     return new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed };
                 }
                 a.Sent = true;
             }
         }
-        var t = timeout ?? TimeSpan.FromSeconds(5);
+        var t = timeout ?? DefaultActionTimeout;
         var done = await Task.WhenAny(a.Done.Task, Task.Delay(t)).ConfigureAwait(false);
         if (done == a.Done.Task) return a.Done.Task.Result;
         bool stop;
         lock (_gate)
         {
-            if (!_actions.Remove(a)) return a.Done.Task.Result;    // finished just now
+            if (!_actions.Remove(a)) return a.Done.Task.Result;    // finished just now: Handle already unlocked
             // fidelity: M4-015
             // MA7: an action that ends while its track is moving stops that track (~IActionRunner 0x0054112E..0x00541192).
             stop = MovingLocked(a);
+            // fidelity: M4-003
+            UnlockTracksLocked(a.Mask, ActionRunnerWho);
+            a.Locked = false;
         }
         if (stop) { if (a.IsHead) StopHead(); else StopLift(); }
         return new MotionOutcome(MotionResult.TimedOut,
@@ -742,7 +813,13 @@ bool requireCalibration = true)
                 finished.Add((a, new MotionOutcome(MotionResult.Failed,
                     $"{a.What}: action {a.Id} stopped out of position (StoppedMakingProgress)") { EngineResult = ResultStoppedMakingProgress }));
         }
-        foreach (var (a, _) in finished) _actions.Remove(a);
+        foreach (var (a, _) in finished)
+        {
+            _actions.Remove(a);
+            // fidelity: M4-003
+            // The action's end releases its track lock (UnlockTracks 0x005408EC), sending EnableAnimTracks.
+            if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
+        }
     }
 
     // fidelity: M4-001, M4-016, M2-002

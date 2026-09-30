@@ -457,49 +457,58 @@ public class M4ControlTests
     // ------------------------------------------------------------------ M4-001, M4-002, M4-003
 
     /// <summary>
-    /// M4-001 MA9: a commanded head angle is clipped to [−0.436332, 0.776672] with a warning; M4-003 MD1/MA11: the
-    /// defaults are head 10 rad/s, 20 rad/s², duration 0; the action id is the next of the shared counter.
+    /// M4-001 MA9 (2026-09-29 audit): the Radians ctor rescales a commanded angle into (−π, π] first
+    /// (0x0084C832 → 0x0084C87C), then MoveHeadToAngleAction clips the rescaled angle against the engine's float
+    /// limits, 0xBEDF66F3 min and 0x3F46D3F2 max (0x00547F44/0x00547FC2), with a warning. So 99 rad rescales to
+    /// 99 − 16·2π = −1.5310 and clips to the min with AngleTooLow, and −99 rad rescales to +1.5310 and clips to
+    /// the max with AngleTooHigh. M4-003 MD1/MA11: the defaults are head 10 rad/s, 20 rad/s², duration 0.
     /// </summary>
     [Fact]
-    public void M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults()
+    public async Task M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults()
     {
         using var rig = new Rig();
         rig.ToSynced();
-        rig.State();
+        rig.Calibrate();
+        // 0.3 rad with HEAD_IN_POS: not in position for either clipped target, so both moves send.
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
         int mark = rig.Mark();
-        _ = rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        await rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
-        Assert.Equal(0.776672f, h.AngleRad);
+        Assert.Equal(0xBEDF66F3u, BitConverter.SingleToUInt32Bits(h.AngleRad));   // 99 rad → −1.5310 → min, 0xBEDF66F3
         Assert.Equal(10f, h.MaxSpeedRadPerSec);
         Assert.Equal(20f, h.AccelRadPerSec2);
         Assert.Equal(0f, h.DurationSec);
-        Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
+        Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
         mark = rig.Mark();
-        _ = rig.Robot.Motion.SetHeadAngleAsync(-99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
-        // before calibration the head reads −25° (MA22), so a clipped −25° target is already in position: nothing sent
-        Assert.DoesNotContain(rig.SentSince(mark), m => m is SetHeadAngle);
+        await rig.Robot.Motion.SetHeadAngleAsync(-99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
+        Assert.Equal(0x3F46D3F2u, BitConverter.SingleToUInt32Bits(h.AngleRad));   // −99 rad → +1.5310 → max, 0x3F46D3F2
+        Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
     }
 
     /// <summary>
-    /// M4-001 MA22/MA23 (RS6): robot+0x2FC is −0.436332 until the head is calibrated; then a report below −28°
-    /// (−0.488692) is stored as −25°, above 47.5° (0.829031) as 44.5°, anything else as reported.
+    /// M4-001 MA22/MA23 (RS6): robot+0x2FC is the engine float 0xBEDF66F3 (−25°) until the head is calibrated;
+    /// then a report below 0xBEFA35DD (−28°) is stored as −25°, above 0x3F543B67 (47.5°) as 44.5°, anything else
+    /// as reported.
     /// </summary>
     [Fact]
     public void M4_001_MA22_RS6_TheHeadAngleIsMinus25UntilCalibratedThenClamped()
     {
         using var rig = new Rig();
+        float min = BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));
+        float max = BitConverter.Int32BitsToSingle(unchecked((int)0x3F46D3F2));
         rig.ToSynced();
         rig.State(head: 0.3f);
-        Assert.Equal(-0.436332f, rig.Robot.Motion.HeadAngleRad);
+        Assert.Equal(min, rig.Robot.Motion.HeadAngleRad);
         rig.Calibrate();
         rig.State(head: 0.3f);
         Assert.Equal(0.3f, rig.Robot.Motion.HeadAngleRad);
         rig.State(head: 1.0f);
-        Assert.Equal(0.776672f, rig.Robot.Motion.HeadAngleRad);
+        Assert.Equal(max, rig.Robot.Motion.HeadAngleRad);
         rig.State(head: -0.47f);
         Assert.Equal(-0.47f, rig.Robot.Motion.HeadAngleRad);
         rig.State(head: -0.6f);
-        Assert.Equal(-0.436332f, rig.Robot.Motion.HeadAngleRad);
+        Assert.Equal(min, rig.Robot.Motion.HeadAngleRad);
         Assert.True(rig.Logged("HeadAngleOOB"));
     }
 
@@ -508,27 +517,28 @@ public class M4ControlTests
     /// warning; a negative height goes to whichever of 32 and 92 is nearer the current height; defaults 10/20/0 (MA11).
     /// </summary>
     [Fact]
-    public void M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset()
+    public async Task M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset()
     {
         Assert.Equal((32f, 76f, 92f, -1f), (CozmoMotion.LowDockHeightMm, CozmoMotion.HighDockHeightMm,
                                              CozmoMotion.CarryHeightMm, CozmoMotion.OutOfFovHeightMm));
         using var rig = new Rig();
         rig.ToSynced();
-        float SentHeight(float ask, float liftAngle)
+        async Task<float> SentHeight(float ask, float liftAngle)
         {
             rig.State(liftAngle: liftAngle);
             int mark = rig.Mark();
-            _ = rig.Robot.Motion.SetLiftHeightAsync(ask, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+            // M4-003: the action holds the LIFT track lock until it ends, so wait for the 1 ms timeout before the next.
+            await rig.Robot.Motion.SetLiftHeightAsync(ask, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
             var l = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
             Assert.Equal((10f, 20f, 0f), (l.MaxSpeedRadPerSec, l.AccelRadPerSec2, l.DurationSec));
             return l.HeightMm;
         }
         // height = 66 sin(angle) + 45 (RS7): angle −0.1 is about 38.4 mm, angle 0.6 about 82.3 mm
-        Assert.Equal(32f, SentHeight(10f, 0.6f));
+        Assert.Equal(32f, await SentHeight(10f, 0.6f));
         Assert.True(rig.Logged("MoveLiftToHeightAction.Init.InvalidHeight"));
-        Assert.Equal(92f, SentHeight(150f, -0.1f));
-        Assert.Equal(32f, SentHeight(-1f, -0.1f));
-        Assert.Equal(92f, SentHeight(-1f, 0.6f));
+        Assert.Equal(92f, await SentHeight(150f, -0.1f));
+        Assert.Equal(32f, await SentHeight(-1f, -0.1f));
+        Assert.Equal(92f, await SentHeight(-1f, 0.6f));
         // C5 (0x00549104..0x0054913C): 32 only when strictly nearer; at 62 mm, halfway, it is 92
         Assert.Equal(92f, CozmoMotion.NegativeHeightTarget(62f));
         Assert.Equal(32f, CozmoMotion.NegativeHeightTarget(61.99f));
@@ -551,7 +561,7 @@ public class M4ControlTests
     /// 1..255, 0, 1.
     /// </summary>
     [Fact]
-    public void M4_005_MA8_ActionIdsRun1To255Then0AndAreShared()
+    public async Task M4_005_MA8_ActionIdsRun1To255Then0AndAreShared()
     {
         using var rig = new Rig();
         rig.ToSynced();
@@ -559,14 +569,76 @@ public class M4ControlTests
         int mark = rig.Mark();
         for (int i = 0; i < 257; i++)
         {
-            // before calibration the head reads −25° and the lift 45 mm, so neither target is in position
-            if (i % 2 == 0) _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
-            else _ = rig.Robot.Motion.SetLiftHeightAsync(80f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+            // before calibration the head reads −25° and the lift 45 mm, so neither target is in position.
+            // M4-003: each move holds its track lock until it ends, so wait for the 1 ms timeout before the next;
+            // the counter still advances once per accepted action.
+            if (i % 2 == 0) await rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+            else await rig.Robot.Motion.SetLiftHeightAsync(80f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         }
         var ids = rig.SentSince(mark).Select(m => m switch { SetHeadAngle h => (int?)h.ActionId, SetLiftHeight l => l.ActionId, _ => null })
                      .Where(x => x is not null).Select(x => x!.Value).ToList();
         var expected = Enumerable.Range(1, 255).Append(0).Append(1).ToList();
         Assert.Equal(expected, ids);
+    }
+
+    /// <summary>
+    /// M4-003 (0x00540572..0x0054057C): IActionRunner::Update refuses a move whose required track is already
+    /// locked and fails it with the engine result 0x03000019, sending nothing.
+    /// </summary>
+    [Fact]
+    public async Task M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
+        rig.Robot.Motion.LockTracks(CozmoMotion.HeadTrack, "someone");   // DisableAnimTracks 0x9D {1}, before the mark
+        int mark = rig.Mark();
+        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromMilliseconds(50));
+        Assert.Equal(MotionResult.Failed, r.Result);
+        Assert.Equal(0x03000019u, r.EngineResult);
+        Assert.DoesNotContain(rig.SentSince(mark), m => m is SetHeadAngle);
+    }
+
+    /// <summary>
+    /// M4-003 (lock 0x0054058E, unlock 0x005408EC): a head move that runs takes the HEAD track lock, which sends
+    /// DisableAnimTracks 0x9D {1}, before its SetHeadAngle, and releases it at the action's end, which sends
+    /// EnableAnimTracks 0x9E {1}. The in-position move takes and releases it too (M4-016 unresolved).
+    /// </summary>
+    [Fact]
+    public async Task M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
+        int mark = rig.Mark();
+        var pending = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
+        byte setHead = (byte)sent.Id;
+        var ids = rig.RawSince(mark).Select(b => b[0]).ToList();
+        Assert.True(ids.IndexOf(0x9D) < ids.IndexOf(setHead), "DisableAnimTracks must precede SetHeadAngle");
+        Assert.DoesNotContain((byte)0x9E, ids);                       // still locked while the move runs
+        rig.Data(new MotorActionAck { ActionId = sent.ActionId }); rig.Tick();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.5f);
+        var r = await pending.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(r.Ok, r.Detail);
+        ids = rig.RawSince(mark).Select(b => b[0]).ToList();
+        Assert.Equal(1, ids.Count(b => b == 0x9D));
+        Assert.Equal(1, ids.Count(b => b == 0x9E));
+        Assert.True(ids.IndexOf(0x9D) < ids.IndexOf(setHead));
+        Assert.True(ids.IndexOf(setHead) < ids.IndexOf(0x9E), "EnableAnimTracks must follow the completed SetHeadAngle");
+        Assert.Equal(0, rig.Robot.Motion.LockedTracks);
+    }
+
+    /// <summary>
+    /// M4-016 (0x0052B0C2): the IAction timeout slot's default is 30.0 s, used when the caller passes no timeout.
+    /// The old 5 s is wrong.
+    /// </summary>
+    [Fact]
+    public void M4_016_MA17_TheDefaultActionTimeoutIs30Seconds()
+    {
+        Assert.Equal(TimeSpan.FromSeconds(30), CozmoMotion.DefaultActionTimeout);
     }
 
     /// <summary>

@@ -1621,7 +1621,7 @@
       "test": "M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults, M4ControlTests.M4_001_MA22_RS6_TheHeadAngleIsMinus25UntilCalibratedThenClamped",
       "effect": "the head is commanded or reported outside the engine limits",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): MoveHeadToAngleAction clips a commanded angle to [-0.436332, 0.776672] with the AngleTooLow/AngleTooHigh warnings, the game tolerance 0.0349066 is at least 2 deg and variability is 0 on this (game) path (MA9, MA10); robot+0x2FC starts at -0.436332 and takes the RS6-clamped report only once the head is calibrated (MA22, MA23) - CozmoMotion.SetHeadAngleAsync, CozmoMotion.Handle.",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the engine rescales the angle to (-pi, pi] first (Radians ctor 0x0084C832 -> rescale 0x0084C87C) and clips with Radians operators; the stack clips the raw float (99 rad: engine -25 deg, stack 44.5 deg); head limits and RS6 thresholds are decimal-rounded (0xBEDF66E8/0x3F46D3FA against 0xBEDF66F3/0x3F46D3F2 at 0x00547F44/0x00547FC2); the test is circular.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 3): SetHeadAngleAsync rescales the command into (-pi, pi] first (Radians ctor 0x0084C832 -> rescale 0x0084C87C, the ceil/loop form) and then clips with the engine's float bits: min 0xBEDF66F3, max 0x3F46D3F2 (0x00547F44/0x00547FC2), RS6 low 0xBEFA35DD / high 0x3F543B67, tolerance 0x3D0EFA35. So 99 rad clips to the min with AngleTooLow and -99 to the max with AngleTooHigh. Tests: M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults (bit patterns), M4ControlTests.M4_001_MA22_RS6_TheHeadAngleIsMinus25UntilCalibratedThenClamped.",
       "hardware_required": false
     },
     {
@@ -1657,10 +1657,10 @@
         "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the game-path moves run through IActionRunner, which fails on locked tracks (0x03000019, 0x00540572) and otherwise locks the action's track (mask +0x54: head 1, lift 2; 0x0054058E), sending DisableAnimTracks, and unlocks at the end (0x005408EC); the stack locks nothing; the timeout is the 30.0 default slot (0x0052B0C2), not 5 s; the tolerance is 0x3D0EFA35, not 0x3D0EFA39.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 3): Motion.RunAsync takes the action's track lock through the existing MovementComponent helpers - AreAnyTracksLocked(mask) fails the action with 0x03000019 (0x00540572..0x0054057C), LockTracks sends DisableAnimTracks (0x0054058E) and the action's end sends EnableAnimTracks (UnlockTracks 0x005408EC); head mask 1 (0x00547EAC), lift 2 (0x005489EE), and the in-position branch takes and releases the lock too. The default timeout is the engine's 30.0 s slot (0x0052B0C2), not 5 s. Tests: M4ControlTests.M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack, M4ControlTests.M4_016_MA17_TheDefaultActionTimeoutIs30Seconds.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults, M4ControlTests.M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset, ControlTests.TheHeadAndLiftDefaultsAreTheAppsGamePathValues",
+      "test": "M4ControlTests.M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults, M4ControlTests.M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset, ControlTests.TheHeadAndLiftDefaultsAreTheAppsGamePathValues, M4ControlTests.M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack",
       "id": "M4-003"
     },
     {
@@ -1748,7 +1748,7 @@
         "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the title's IMU and cube-battery units are not cited by the evidence.",
+      "unresolved": "Audit 2026-09-29: the record title's 'IMU and cube battery in the engine units' is not cited by the evidence - an overclaim to correct (drop those units from the title, or add their citations). The code is already right: the cliff store (CozmoSensors.Handle / CliffSensorComponent::UpdateRobotData, Sensors.cs) runs for every time-synced state before the origin check (RouteToDevices; only the later cliff threshold schedule tests EngineRobot.OriginAccepted), matching U3 0x00512986 before ContainsOriginID 0x00512C3E..0x00512C4A. No code change (B-CORE batch 3).",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_008_SC2_TheCliffDataOfAHandledStateIsStored, ControlTests.ACliffEventIsRecordedWithWhichSensorsTrippedAndWhetherTheRobotStopped",
@@ -5272,7 +5272,7 @@
       ],
       "effect": "cubes connect or disconnect differently",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the connection path (CubeConnections) now runs in Robot::Update after the first full state, in the CD2 order after the tap filter, on BaseStationTimer seconds, with the robot clock set from each synced state before the origin check (RS1); CD3..CD8 and S3 were already reproduced.",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the only named test exercises none of the claims; the pool-load timing is the M4-011 defect.",
+      "unresolved": "Audit 2026-09-29: the settlement did not hold. the only named test exercises none of the claims; the pool-load timing is the M4-011 defect. B-CORE batch 3: the +0x490 availability gate is now enforced in Cubes.cs (M4-025) and the pool-load timing is fixed under M4-011; no test yet exercises the connection path's full claim.",
       "hardware_required": false,
       "test": "EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed"
     },
@@ -5291,11 +5291,11 @@
       ],
       "status": "IMPLEMENTATION_GAP",
       "live_path": true,
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. BlockFilter::Init runs only from SetPhysicalRobot(true) (0x0051391E..0x00513954, from HandleFirmwareVersion); the stack calls it in SendAppDefaults with no physical-robot gate, a gap admitted in a code comment.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 3): BlockFilter::Init now runs from Robot::SetPhysicalRobot(true) (0x0051391E..0x00513954), reached from HandleFirmwareVersion (0x00536934..0x0053698E) via CozmoEngine.PhysicalRobotSet, and only when the firmware JSON has no 'sim'; it is removed from SendAppDefaults. Test: EngineAppLayerTests.M4_011_BlockFilterInitRunsFromSetPhysicalRobotNotTheAppDefaults.",
       "effect": "the block pool loads on every connection, not only for a physical robot, so cube connection starts from a pool the engine would not have loaded",
       "provenance": "libcozmoEngine.so, M4-control inventory (BlockFilter); settled by R-DEV, demoted by the 2026-09-29 audit",
       "hardware_required": false,
-      "test": "none yet (the 2026-09-29 audit found no test); the rebuild adds one"
+      "test": "EngineAppLayerTests.M4_011_BlockFilterInitRunsFromSetPhysicalRobotNotTheAppDefaults"
     },
     {
       "id": "M4-012",
@@ -6138,10 +6138,10 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): nothing is sent when the head is within tolerance + 1e-5 of the target, or the lift within 5 mm and not moving (MA15); the id is taken only when the command is sent; the ack counts only for a sent action with that id (MA16); after it the move succeeds once in position and not moving, fails with 0x04000004 when it stops out of position after having moved, and a failed send is 0x03000016 (MA17). Verifier round (2026-09-25, corrections C1..C5): the head completion follows C1: in-position latched at +0xAC (0x005485E4..0x005485F4), +0xAD set whenever MC+0xA is set before the in-position test (0x0054872E..0x00548734), success = latched and not moving, 0x04000004 only when not in position, not moving and having moved (0x00548738..0x005488AC). Re-verify round (2026-09-25, C6..C8): R1: the head latch now comes after the sent-not-acked test (0x005485D8..0x005485E2). C6 (rows L1..L6): the lift follows the same CheckIfDone: sent and not acked Running; the in-position latch (+0x97); has moved (+0x98) := 1 while MC+0xB; in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved 0x04000004, otherwise Running; Init latches in-position and sends only when out of position, a failed send giving 0x03000016. A move already in position succeeds at once when the motor is not moving (always so for the lift). The MA13 lift angular-tolerance clip is omitted (its formula is not in the rows; it cannot bind at the game path's 5 mm), and the IAction timeout is M8.",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the in-position move still takes and releases the track lock (0x9D/0x9E, see M4-003); IsHeadInPosition uses Radians::IsNear (0x00548528 -> 0x0084CC0A), strict < where the stack uses <=; the 30 s timeout.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 3): IsHeadInPosition uses Radians::IsNear (0x00548528 -> 0x0084CC0A) with the strict <; the default IAction timeout is the engine's 30.0 s slot (0x0052B0C2); the head/lift action takes and releases the track lock (M4-003). Tests: M4ControlTests.M4_016_MA17_TheDefaultActionTimeoutIs30Seconds, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack.",
       "hardware_required": false,
       "live_path": true,
-      "test": "M4ControlTests.M4_016_MA15_NothingIsSentWhenAlreadyInPosition, M4ControlTests.M4_016_MA16_MA17_CompletionIsTheAckThenInPositionAndStopped, M4ControlTests.M4_016_MA17_StoppingOutOfPositionIsStoppedMakingProgress, ControlTests.SetHeadAngleWaitsForTheRobotToAcknowledgeThatExactAction, M4ControlTests.M4_016_C1_TheHeadInPositionIsLatched, M4ControlTests.M4_016_R1_PassingTheTargetBeforeTheAckDoesNotLatch, M4ControlTests.M4_016_C6_TheLiftCompletion"
+      "test": "M4ControlTests.M4_016_MA15_NothingIsSentWhenAlreadyInPosition, M4ControlTests.M4_016_MA16_MA17_CompletionIsTheAckThenInPositionAndStopped, M4ControlTests.M4_016_MA17_StoppingOutOfPositionIsStoppedMakingProgress, ControlTests.SetHeadAngleWaitsForTheRobotToAcknowledgeThatExactAction, M4ControlTests.M4_016_C1_TheHeadInPositionIsLatched, M4ControlTests.M4_016_R1_PassingTheTargetBeforeTheAckDoesNotLatch, M4ControlTests.M4_016_C6_TheLiftCompletion, M4ControlTests.M4_016_MA17_TheDefaultActionTimeoutIs30Seconds, M4ControlTests.M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack"
     },
     {
       "id": "M4-017",
@@ -6245,7 +6245,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): EngineRobot: the constructor's Delocalize creates origin 1 (PoseOriginList next id 1; 0 is never added) and leaves the frame id at 0; UpdateFullRobotState drops a state until time sync, then (no ramp exists here: +0x316 has no writer) drops one whose origin id is not in the list with the warning \"Received RobotState with originID\"; the first accepted state sets +0x34E; SyncTime sends AbsoluteLocalizationUpdate {0, frame 0, origin 1, 0, 0, 0} after ImageRequest and stamps +0x520 only when it was sent (SC4e..SC4h, the manager spot-check, M1 CD18). The offline test seam (CozmoRobot.CreateOffline, not a production path) takes any reported origin as known: its fed states were never answered by an AbsoluteLocalizationUpdate exchange. Verifier round (2026-09-25, corrections C1..C5): C3: +0x34E is set right after the time-sync gate, before the origin check (0x0051293C..0x00512948), and an origin-rejected synced state still has the part before the check applied (the stored state and status bits, the RS6 head angle, the lift angle, SC2 cliff data, the IMU filter and treads, MovementComponent::Update, SC10: CozmoRobot.RouteToDevices); only the pose, the history (VisionSystem) and the later steps (the cliff threshold schedule) test EngineRobot.OriginAccepted. R2: the unexpected-movement detector (MovementComponent::CheckForUnexpectedMovement 0x0063E398, tail-called from MovementComponent::Update 0x0063E392, before the origin check) runs on every synced state. Its response (UnexpectedMovementResponse.Apply: the pose-history lookup, the rewind and the collision obstacle) is the M10 interface and has no production caller here; were it run for an origin-rejected state, the history (which such a state does not enter) would have nothing at its timestamp, and Apply logs \"PoseHistoryFailure\" and does nothing, the engine's own no-history branch. That M10 residual is reported, not claimed. M4-020 itself is limited to the connection-time origin 1 and the acceptance gate (C9).",
-      "unresolved": "Built (batch 2): SendSyncTime ignores the ImageRequest send result (0x00515308 -> 0x0051530C) and always sends the AbsoluteLocalizationUpdate; the stack no longer returns on the ImageRequest failure. Test: EngineAppLayerTests.M1_041_CD18_AFailedImageRequestSendStillSendsAbsoluteLocalizationUpdate.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 2, commit ac62741): SendSyncTime ignores the ImageRequest send result (0x00515308 -> 0x0051530C) and always sends the AbsoluteLocalizationUpdate; test EngineAppLayerTests.M1_041_CD18_AFailedImageRequestSendStillSendsAbsoluteLocalizationUpdate. No code change in batch 3.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_020_SC4f_SC4g_AStateWithAnUnknownOriginIsDroppedWithAWarning, M4ControlTests.M4_020_CD18_SyncTimeSendsAbsoluteLocalizationUpdateAfterImageRequest, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder, EngineAppLayerTests.M1_041_CD18_AFailedImageRequestSendStillSendsAbsoluteLocalizationUpdate, M4ControlTests.M4_020_C3_AnOriginRejectedStateStillAppliesThePartBeforeTheOriginCheck"
@@ -7700,10 +7700,10 @@
         "D5 0x0051419A the expiry ObjectUnavailable broadcast is gated on +0x490"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. no test; Cubes.cs raises a public CubeDiscovered on every new advertisement, an availability notice the engine never gives, with no record.",
+      "unresolved": "built, awaiting strong verification (B-CORE batch 3): Cubes.cs now gates the public CubeDiscovered on the +0x490 flag (BroadcastsAvailableObjects, false), so it never fires, matching D1..D4/D5/D6; the advertisement is still tracked for the connection path. Test: ControlTests.TheAvailabilityNoticeIsGatedOnRobot490.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "ControlTests.TheAvailabilityNoticeIsGatedOnRobot490"
     }
   ]
 }

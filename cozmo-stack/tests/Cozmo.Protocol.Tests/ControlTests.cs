@@ -278,9 +278,11 @@ public class ControlTests
         var rig = new Rig();
         rig.MakeReady();
 
+        // M4-001 (2026-09-29 audit): the angle is rescaled into (−π, π] first, so 99 rad → 99 − 16·2π = −1.5310,
+        // which clips to the engine's min 0xBEDF66F3 (−25°), not the max.
         _ = rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(60));
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
-        Assert.Equal(CozmoMotion.MaxHeadAngleRad, head.AngleRad, 4);
+        Assert.Equal(CozmoMotion.MinHeadAngleRad, head.AngleRad, 4);
 
         // M4-002 MA13: a height in [0, 32) clamps to 32; a negative one goes to the nearer preset (M4ControlTests).
         _ = rig.Robot.Motion.SetLiftHeightAsync(10f, timeout: TimeSpan.FromMilliseconds(60));
@@ -467,7 +469,11 @@ public class ControlTests
         rig.Send(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = -55 });
         rig.Send(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = -50 });
 
-        var cube = Assert.Single(discovered);                     // the second advertisement is not a new cube
+        // M4-025: the game-side ObjectAvailable broadcast is gated on robot+0x490, which is never set, so the
+        // stack's CubeDiscovered (that availability notice) never fires; the advertisement is still tracked.
+        Assert.Empty(discovered);
+        var cube = Assert.Single(rig.Robot.Cubes.DiscoveredCubes);
+        Assert.Same(cube, rig.Robot.Cubes.ByFactoryId(0xAABBCCDD));
         Assert.Equal(0xAABBCCDDu, cube.FactoryId);
         Assert.Equal((sbyte)-50, cube.Rssi!.Value);
         Assert.Equal(2, cube.Advertisements);
@@ -506,6 +512,23 @@ public class ControlTests
         Assert.Null(rig.Robot.Cubes.ByFactoryId(2));
         Assert.Null(rig.Robot.Cubes.ByFactoryId(4));
         Assert.Equal(3u, rig.Robot.Cubes.Charger!.FactoryId);
+    }
+
+    /// <summary>
+    /// M4-025 (D1..D4, D6): robot+0x490 is 0 at the ctor and has no writer in the shipped engine, so the
+    /// game-side ObjectAvailable/ObjectUnavailable broadcasts never go out. This stack's public CubeDiscovered is
+    /// that availability notice and is gated the same way, while the advertisement is still recorded for the
+    /// connection path.
+    /// </summary>
+    [Fact]
+    public void TheAvailabilityNoticeIsGatedOnRobot490()
+    {
+        var rig = new Rig();
+        var discovered = new List<Cube>();
+        rig.Robot.Cubes.CubeDiscovered += discovered.Add;
+        rig.Send(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = -55 });
+        Assert.Empty(discovered);                                          // +0x490 is 0: no broadcast
+        Assert.NotNull(rig.Robot.Cubes.ByFactoryId(0xAABBCCDD));           // the advertisement is still tracked
     }
 
     /// <summary>

@@ -414,7 +414,9 @@ public class NavigationTests
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
         Assert.Equal(150f, line.Speed.SpeedMmps);
-        Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, rig.LiftHeights);
+        // M4-016: the fake robot starts with the lift at 45 mm and reports LIFT_IN_POS, so the approach
+        // command (45) is already in position and sends nothing; only the carry raise (92) goes out.
+        Assert.Equal(new[] { LiftPresets.CarryMm }, rig.LiftHeights);
         Assert.True(flip.LiftRaised);
         Assert.Equal(PoseState.Unknown, obj.PoseState);
         // with the check on, a robot away from every flipping pose is refused. The cube is at 300 mm

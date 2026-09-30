@@ -300,24 +300,32 @@ public sealed class CozmoRobot : IDisposable
         // PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy - are
         // built by callers here and keep their state across a removal.
         Engine.RobotRemoved = ResetDevices;
+        // fidelity: M4-011
+        // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
+        Engine.PhysicalRobotSet = LoadBlockPool;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
     }
+
+    // fidelity: M4-011
+    /// <summary>
+    /// Robot::SetPhysicalRobot(true) also calls BlockFilter::Init 0x0061A1EC (0x0051391E..0x00513954), reached only
+    /// from HandleFirmwareVersion; it loads the persistent pool from the platform's resource path and asks for its
+    /// five factory ids before any BlockPoolEnabledMessage. A simulated robot never takes that branch.
+    /// </summary>
+    private void LoadBlockPool() => Cubes.Connections.Init(Engine.Options.BlockPoolPath ?? DefaultBlockPoolPath);
 
     // fidelity: M1-042
     /// <summary>
     /// Policy M1-042: after a Success RobotConnectionResponse this stack does what the phone app would: it sends
     /// the stored volume (SetRobotVolume → SetAudioVolume {u16 vol × 65535}, CD27) and enables the block pool the
     /// way BlockPoolEnabledMessage {true, 0} does (CD28; <see cref="CubeConnections.EnableAutoBlockPool"/>). It runs
-    /// as a game message, at the start of the tick after the response.
-    /// MISSING: when the original calls Robot::SetPhysicalRobot(true), which loads the persistent block pool
-    /// (<see cref="CubeConnections.Init"/>), is not in the M1 inventory; this stack keeps doing it here, just
-    /// before the pool is enabled, as it did before (M4 interface).
+    /// as a game message, at the start of the tick after the response. The pool load is not here: the engine loads
+    /// it from Robot::SetPhysicalRobot(true) (M4-011, <see cref="LoadBlockPool"/>).
     /// </summary>
     private void SendAppDefaults()
     {
         Engine.SendRobotVolume(Engine.Options.RobotVolume);
-        Cubes.Connections.Init(Engine.Options.BlockPoolPath ?? DefaultBlockPoolPath);
         Cubes.EnableAutoBlockPool(enabled: true, discoveryTimeSeconds: 0f);
     }
 

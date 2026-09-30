@@ -581,7 +581,12 @@ public sealed class CozmoCubes
                 }
             }
         }
-        if (discovered is not null) CubeDiscovered?.Invoke(discovered);
+        // fidelity: M4-025
+        // D6/D5: HandleActiveObjectAvailable's game-side ObjectAvailable and the expiry ObjectUnavailable are
+        // gated on robot+0x490, which is 0 at the ctor and has no writer in this build (D1..D4), so the engine
+        // never broadcasts either. CubeDiscovered is this stack's availability notice, so it takes the same gate
+        // and never fires in this build; the advertisement is still tracked for the connection path.
+        if (discovered is not null && BroadcastsAvailableObjects) CubeDiscovered?.Invoke(discovered);
         if (connectionChanged is not null) ConnectionChanged?.Invoke(connectionChanged);
         // fidelity: M4-018
         // LC7: the game-side ObjectConnectionState reaches the CubeLightComponent synchronously.
