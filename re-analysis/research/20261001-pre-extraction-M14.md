@@ -1,5 +1,17 @@
 # Q22 — M14 face gaps, with the actual OKAO boundary
 
+## Coverage audit (2026-10-01)
+
+| record/item | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| M14-007, M14-008, M14-009 | PARTIAL | Central Anki-side paths were cited, but wildcard/range endpoints, complete C# path and tests were not fully checked. |
+| M14-010 | NOT DONE | Exact ABI words, output structures, per-point gates and vendor-body behavior remain UNKNOWN; the report contains `0x0086CFxx`. |
+| M14-011 | PARTIAL | Earlier C3/C4/C5 work was summarized rather than rechecked; `UpdateRecognitionData` and the feature carrier remain unread. |
+| M14-012 | PARTIAL | The OKAO album writer/inverse, EngineToGame messages and connection invocation are not fully extracted. |
+| Every scoped OKAO/OMCV body and reachable vendor-to-vendor call | NOT DONE | Presence in the `.so` was proved, but bodies/call graph were not disassembled to an exact runtime boundary. Recoverability is supported; ABI completeness is not. |
+
+Q22 is incomplete and must not be used as an exact boundary specification.
+
 Date: 2026-10-01. Scope: every current `IMPLEMENTATION_GAP` or `RECOVERABLE_GAP` in `M14-faces` at HEAD. There are six, all `IMPLEMENTATION_GAP`: M14-007 through M14-012. This is extraction only; it changes neither code nor manifest.
 
 ## Boundary finding

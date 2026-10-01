@@ -1,7 +1,90 @@
 # Hardware acceptance fidelity-record audit (Q19)
 
+## Coverage audit (2026-10-01)
+
+| test/item | coverage | checked basis |
+| --- | --- | --- |
+| self-contained `M1-LINK` | CHECKED | `LinkCheck.CitedRecords`, result writer, transport-only scope and `LinkCheckFidelityTests` traced. |
+| self-contained `CONTROL/CONNECT` | CHECKED | Check definition, connection run, recorded NV/calibration observations and uncertainty writer traced. |
+| self-contained `CONTROL/STATE` | CHECKED | Check definition, RobotState rate/battery criterion and production state path traced. |
+| self-contained `CONTROL/HEAD` | CHECKED | Check definition, command send and RobotState feedback path traced. |
+| self-contained `CONTROL/LIFT` | CHECKED | Check definition, calibration prerequisite, command send and feedback path traced. |
+| self-contained `CONTROL/DRIVE` | CHECKED | Check definition, stop-on-cliff prerequisite, drive sends and pose/state verdict traced. |
+| self-contained `CONTROL/FACE` | CHECKED | Check definition, face send, counters and human observation traced. |
+| self-contained `CONTROL/AUDIO` | CHECKED | Check definition, audio send and robot counter verdict traced. |
+| self-contained `CONTROL/ANIM` | CHECKED | Check definition, asset load, stream lifecycle and keep-alive observation traced. |
+| self-contained `CONTROL/ANIM_CANCEL` | CHECKED | Check definition, cancel/abort send, buffered-frame allowance and keep-alive observation traced. |
+| self-contained `CONTROL/CUBES` | CHECKED | Check definition, cube connection/stream requests and telemetry verdict traced. |
+| self-contained `CONTROL/CAMERA` | CHECKED | Check definition, stream open, image decode/save and grey-frame verdict traced. |
+| self-contained `CONTROL/DISCONNECT` | CHECKED | Check definition, disconnect send, post-dispose silence and bounded return traced. |
+| catalog `LINK` | CHECKED | Exact `FidelityRecords`, command and fresh-process connection path traced. |
+| catalog `D` | CHECKED | Exact records, sensors command and lift/state live path traced. |
+| catalog `F` | CHECKED | Exact records, animation command and stream live path traced. |
+| catalog `FD` | CHECKED | Exact records, face command and display path traced. |
+| catalog `AUD` | CHECKED | Exact records, tone command and audio path traced. |
+| catalog `A` | CHECKED | Exact records, sing command and selected Wwise/live-audio path traced. |
+| catalog `A2` | CHECKED | Exact records, selected-song command and Wwise/live-audio path traced. |
+| catalog `A3` | CHECKED | Exact records, sustained/vibrato command and Wwise/live-audio path traced. |
+| catalog `MOV` | CHECKED | Exact records, drive command and state/pose path traced. |
+| catalog `CR1` | CHECKED | Exact records, CORE-001 command and live-body stream path traced. |
+| catalog `IDL` | CHECKED | Exact records, behavior command and idle/live-animation path traced. |
+| catalog `CR3` | CHECKED | Exact records, CORE-003 command and cancellation path traced. |
+| catalog `CR2` | CHECKED | Exact records, CORE-002 command and link-loss teardown path traced. |
+| catalog `E` | CHECKED | Exact records, color-camera command and frame path traced. |
+| catalog `B` | CHECKED | Exact records, cubes command and connection/telemetry path traced. |
+| catalog `K` | CHECKED | Exact records, calibration/localization command and camera/world path traced. |
+| catalog `V` | CHECKED | Exact records, mount command and charger/localization path traced. |
+| catalog `W` | CHECKED | Exact records, drive-off command and motion/state path traced. |
+| catalog `G` | CHECKED | Exact records, off-treads command and state-derived path traced. |
+| catalog `C` | CHECKED | Exact records, falling reaction command and state/reaction path traced. |
+| catalog `H` | CHECKED | Exact records, derived-reaction command and state/reaction path traced. |
+| catalog `I` | CHECKED | Exact records, calibration command and robot-side calibration boundary traced. |
+| catalog `J` | CHECKED | Exact records, unexpected-movement command and drive/state path traced. |
+| catalog `M` | CHECKED | Exact records, cube-reaction command and cube/world path traced. |
+| catalog `CR8` | CHECKED | Exact records, CORE-008 command and frame-change path traced. |
+| catalog `CR7` | CHECKED | Exact records, CORE-007 command and ground-map path traced. |
+| catalog `L` | CHECKED | Exact records, body-angle command and motion/state path traced. |
+| catalog `Q` | CHECKED | Exact records, drive-to command and localization/planning path traced. |
+| catalog `CR4` | CHECKED | Exact records, CORE-004 command and action/path lifecycle traced. |
+| catalog `X` | CHECKED | Exact records, obstacle drive-to command and planner/world path traced. |
+| catalog `N` | CHECKED | Exact records, pickup command and cube/world/manipulation path traced. |
+| catalog `O` | CHECKED | Exact records, put-down command and carry/world path traced. |
+| catalog `P` | CHECKED | Exact records, roll command and cube/world path traced. |
+| catalog `R` | CHECKED | Exact records, stack command and cube/world path traced. |
+| catalog `S` | CHECKED | Exact records, flip command and cube/world path traced. |
+| catalog `T` | CHECKED | Exact records, knock-over command and stack/world path traced. |
+| catalog `U` | CHECKED | Exact records, wheelie command and cube/docking path traced. |
+| catalog `Z` | CHECKED | Exact records, freeplay command and reached whole-stack paths traced. |
+| catalog `Z2` | CHECKED | Exact records, long-run freeplay command and time/mood path traced. |
+| catalog `Y` | CHECKED | Exact records and non-runnable `BlockedReason` traced against current manifest status; no live command is executed. |
+| HARDWARE_ONLY `M1-033` | CHECKED | Current scripts' sent/received frame observations compared with the record's exact unresolved question. |
+| HARDWARE_ONLY `M1-043` | CHECKED | No current script induces or records the required zero-byte phone `recvmsg`/errno case. |
+| HARDWARE_ONLY `M3-008` | CHECKED | FACE/FD observables compared with physical-row and playback-period unknowns. |
+| HARDWARE_ONLY `M3-016` | CHECKED | CAMERA/E flags, retained frames and verdict compared with the color-format unknown. |
+| HARDWARE_ONLY `M9-023` | CHECKED | A/A2/A3 output compared with the required stock-app acoustic reference. |
+| HARDWARE_ONLY `M4-013` | CHECKED | Catalog I's post-connect calibration action and observable robot effect traced. |
+| HARDWARE_ONLY `M5-036` | CHECKED | CONTROL animation observations and catalog animation omissions compared with every listed robot-side unknown. |
+| HARDWARE_ONLY `M4-021` | CHECKED | CONNECT's origin/frame capture and every pose-based catalog verdict traced. |
+| HARDWARE_ONLY `M4-024` | CHECKED | CUBES telemetry capture and all cube-dependent catalog checks traced. |
+| HARDWARE_ONLY `M3-036` | CHECKED | CONNECT's NV-read capture compared with the two request/reply cases named by the record. |
+| BLOCKED_EXTERNAL `M11-016` | CHECKED | Catalog Y's cited record and blocked result presentation traced. |
+| BLOCKED_EXTERNAL `M14-006` | CHECKED | No current hardware test reaches or cites the TTS plug-in/model boundary. |
+| bundle `20260924-112412-M1-LINK` | CHECKED | Result, environment, counters and frame/event payload inventory inspected as a historical script snapshot. |
+| bundle `20260924-202748-CONTROL` | CHECKED | Result/environment, frames/events, images and operator-verdict payload inventory inspected. |
+| bundle `20260925-061148-CONTROL` | CHECKED | Result/environment, frames/events and images inspected as a historical script snapshot. |
+| bundle `20260925-165740-CONTROL` | CHECKED | Result/environment, frames/events and images inspected as a historical script snapshot. |
+| bundle `20260925-165815-CONTROL` | CHECKED | Result/environment, frames/events and images inspected as a historical script snapshot. |
+| bundle `20260925-173447-CONTROL` | CHECKED | Result/environment, frames/events and images inspected as a historical script snapshot. |
+| bundle `20260925-180557-CONTROL` | CHECKED | Result/environment, frames/events and images inspected as a historical script snapshot. |
+
+No conclusion below rests on unchecked work.  `CHECKED` means the current
+test definition, command/criterion implementation, result serialization,
+manifest status and reached production entry points were compared.  It does
+not mean a hardware run was repeated or that a hardware observation upgrades
+source provenance.
+
 Date: 2026-10-01  
-Manifest: `re-analysis/fidelity_manifest.json` at `954c092`  
+Manifest: `re-analysis/fidelity_manifest.json` at `415b9e0`
 Code inspected: `Cozmo.Conformance` `LinkCheck`, `ControlCheck`,
 `HardwareCatalog`, runner/evidence writers and their fidelity tests; all seven
 checked-in bundles below `re-analysis/acceptance/hardware/`.
@@ -16,11 +99,12 @@ shallow property.
 The live-path check does **not** pass.  The two self-contained evidence tools
 (`link-check` and `control-check`) are substantially better than the campaign
 catalog, but even `control-check` omits one hardware-only NV contract from its
-connection check.  The 39-check campaign catalog generally names only the
+connection check.  The 40-check campaign catalog generally names only the
 feature at the end of the path.  Each runnable command creates a fresh
 production connection, so a prerequisite on `LINK` does not remove that
 connection from the check's live path.  Consequently 38 runnable catalog
-checks hide the open connection path, and many additionally hide a relevant
+checks other than `LINK` hide the open connection path (`LINK` itself names
+only its narrower handshake rows), and many additionally hide a relevant
 robot-side or blocked boundary.
 
 No hardware PASS can settle source provenance.  A script can settle only the

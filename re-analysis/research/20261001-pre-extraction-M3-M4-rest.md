@@ -1,7 +1,21 @@
 # Pre-extraction: remaining M3/M4 implementation gaps (Q21)
 
+## Coverage audit (2026-10-01)
+
+| record/item | coverage | checked basis |
+| --- | --- | --- |
+| M4-009 | CHECKED | Connection, slot→ObjectID mapping, Moved/Stopped/UpAxis callers, carry/dock filters, failure exits, C# entry and source-derived production tests checked; firmware forwarding and M11 object-creation behavior remain explicit `UNKNOWN`s. |
+| M4-017 | CHECKED | Sole game/native caller, EnableMode queue/apply order, null-component failure, mask mutation, headlight send, C# omission and current tests checked; bit-14 downstream meaning remains `UNKNOWN`. |
+| M4-018 | CHECKED | Connection/reconnect, default choice, delocalize/localize writers and readers, game-layer asymmetry, wire floats, C# hooks and source-derived tests checked; M11 visibility/localization completeness remains explicit. |
+| M4-019 | CHECKED | Every RobotState entry branch, treads shortcut, history/origin failure gates, mismatch counter, thresholds, Welford/stopped scan, delocalize/platform paths, external effects, C# entry and source-derived tests checked. |
+| Exact scope subtraction | CHECKED | All 26 current M3/M4 `IMPLEMENTATION_GAP` IDs were classified against B-CORE, B-CORE2, their status/review scope and `20260930-bcore-extractions.md`; exactly these four remain. |
+
+No conclusion below rests on unchecked work.  The explicit `UNKNOWN`s are
+places where the shipped binary/package does not settle the other component
+or firmware behavior; they are not unread portions of these four records.
+
 Date: 2026-10-01  
-Manifest: `re-analysis/fidelity_manifest.json` at `954c092`  
+Manifest: `re-analysis/fidelity_manifest.json` at `415b9e0`
 Primary source: `libcozmoEngine.so` 3.4.0-1204.
 
 ## Scope reduction
@@ -18,6 +32,20 @@ two build jobs.
 The rows below identify the production C# entry but do not change it.  An
 `UNKNOWN` is retained where the binary rows still do not establish a
 cross-layer input.
+
+The manifest-wide subtraction was performed over these 26 current gaps:
+
+| disposition | exact current IDs |
+|---|---|
+| B-CORE/B-CORE2 job, status or verifier scope | M3-001, M3-010, M3-013, M3-018, M3-021, M3-022, M3-025, M3-026, M3-030, M3-031, M3-032, M3-033, M3-034, M3-035; M4-001, M4-008, M4-010, M4-016, M4-020 |
+| Covered by `20260930-bcore-extractions.md` (some also named by a job) | M3-023, M3-027; M4-003 |
+| Q21 residual | **M4-009, M4-017, M4-018, M4-019** |
+
+The three M3 cross-layer rows that do not appear in a numbered B-CORE2 batch
+are not omissions: `jobs/status/B-CORE.md:147-150` explicitly retains M3-013
+for the M6 live-audio sink, M3-021 for M11 vision initialisation, and M3-032
+for the B-CORE NV/update gate.  They therefore remain inside that job chain,
+not this “rest” extraction.
 
 ## M4-009 — cube tracking and motion events
 
@@ -49,11 +77,22 @@ stack at `ManipulationSystem.cs:54-57`.  This is not the wire slot.
 | Up-axis change | 0x00534D66..0x00534E1E | Maps active id, substitutes engine ObjectID, emits viz and broadcasts `ObjectUpAxisChanged`. Stores no per-object axis. | No charger/carry/dock filter. | Unknown id logs error and returns. | none |
 | Robot-side production of events | outside app package | Firmware decides whether to forward Moved/Stopped/UpAxis/Accel. | **UNKNOWN / M4-024 HARDWARE_ONLY.** No app-side enable send was found for Moved/Stopped/UpAxis. | UNKNOWN | incoming words only |
 
-**Implementation boundary.** M4 can wire `DockTargetObjectId` into both
-broadcast exclusions now.  Slot-to-engine-ObjectID separation must use the
+**Implementation boundary.** The M4 seam is `DockTargetObjectId` in both
+broadcast exclusions.  Slot-to-engine-ObjectID separation must use the
 result of the connected-object/world mapping; it must not relabel a slot as a
 BlockWorld id.  Creation/reuse details still owned by M11-042 stay explicit
 rather than guessed.
+
+**Current C# and tests.** HEAD already contains this M4 seam:
+`ManipulationSystem.cs:51-56` translates the radio slot through
+`ConnectedObjectIdForActiveId`, then excludes either the carried ObjectID or
+`DockTargetObjectId`; `Cubes.cs:538-569` applies that predicate only after
+the internal moving/dirty state changes.  The source-addressed tests
+`M4ControlTests.M4_009_C11_1_DockWithObjectSetsAndAbortKeepsTheDockTarget`
+and `ManipulationTests.TheDockTargetIsExcludedFromTheMovedBroadcast` exercise
+the production mapping, stale-after-abort behavior and a different cube, so
+they are not a model-only circular assertion.  The manifest unresolved text
+is stale with respect to this built seam; M11-042/M4-024 remain boundaries.
 
 ## M4-017 — backpack lights and headlight LimitedExposure side effect
 
@@ -78,6 +117,17 @@ queue at lines 362-368; today it goes directly to the robot send.
 | Change mode mask | 0x006B1A76..0x006B1CC6 | Enable clears Idle bit 0 and sets bit 14; disable clears bit 14 and restores Idle if mask becomes zero. Already-in-state is a no-op. | logs only on an actual change | returns 0 | masks `0x00000001`, `0x00004000`; no floats |
 | Send headlight | 0x00632368..0x00632380 (send call 0x0063237E) | Sends SetHeadlight `{bool enable}`, reliable=1, hot=0. | Always attempted after EnableMode, including its failure. | ordinary Robot::SendMessage result is not used here | none |
 | Downstream meaning of LimitedExposure | whole-text read scan reported in E9 | No direct caller of `VisionComponent::IsModeEnabled`, no constant bit-14 read and no `ShouldProcessVisionMode(14)` were found. | The mask mutation is established; a behavioral consumer is not. | **UNKNOWN (M11 boundary).** Do not invent exposure behavior. | none |
+
+**Current C# and required source test.** `Lights.cs:359-372` still sends the
+headlight immediately and only documents the missing queue.  `VisionSystem`
+has `ModeEnableMask` and `ShouldProcessVisionMode`, but no SetNextMode FIFO.
+The current headlight test checks only the cached bool and wire message, and
+`VisionModeScheduleTests` checks only that enum value 14 is
+`LimitedExposure`; neither proves the source order or next-image delay.  A
+non-circular build test must call the production `SetHeadlight`, observe a
+queued `{14,enable}` with an unchanged mask before the next processed image,
+then observe FIFO apply/pop before the image's mode decisions while the
+headlight send occurs even if the vision component rejects the request.
 
 ## M4-018 — cube-light default selection and localization refresh
 
@@ -111,6 +161,17 @@ wired in `CozmoRobot.cs:278-288`: carried/visible inputs, `IsLocalized`, and
 The already-wired `IsLocalized` hook is the correct M4-side seam; the M11
 work is to make its state transitions source-complete.  Do not replace it with
 “has a visible cube” or another inferred condition.
+
+**Current C# and tests.** `CozmoRobot.cs:275-288` wires delocalization and the
+`OffTreadsClassifier.Robot2C4` localized flag; `Lights.cs:652-712` holds the
+request while false and clears/repicks in the first true update.  The
+source-addressed tests
+`M4ControlTests.M4_018_S7_C11_2_TheDelocalizeRefreshWaitsForRelocalization`
+and `M4ControlTests.M4_018_S7_TheDelocalizePathFeedsTheCubeLightGate` exercise
+that production wiring.  `ManipulationSystem.cs:57-59` supplies the carried
+choice.  No production assignment to `CubeLightComponent.IsVisible` exists;
+that is exactly the stated M11 located-object `+0x24==1` boundary, not an
+unread M4 branch.
 
 ## M4-019 — cliff statistics, threshold schedule and frame gates
 
@@ -147,10 +208,27 @@ clear path (`CozmoEngine.cs:1025-1038`).
 | Charger platform | 0x00511D4C..0x00511DB0; Robot::Update 0x00513C5C..0x00513E2A | Platform transition sends 50 entering, 400 leaving. Off-treads transition clears platform. Robot::Update also clears it when no charger/footprint intersection. | state-change only; contact flag can keep platform true. | Exact charger-footprint predicate belongs to M11 geometry and is **UNKNOWN here**. | geometry inputs not settled by M4 |
 | RobotStopped external effects | 0x0053539C..0x00535480 | Evaluate suspiciousness; when cliff sensor enabled request current behavior end, cancel all actions with `-1`, broadcast RobotStopped. No robot message. | behavior request → cancel → broadcast | M7/M8 return/ordering beyond these calls is **UNKNOWN at the M4 boundary** | none |
 
+**Current C# and tests.** `Sensors.cs:793-866` now implements the special
+treads branch, per-run mismatch reset/0x65 behavior, and stats/threshold
+order.  The source-addressed tests
+`M4ControlTests.M4_019_C13_2_TheTreadsChangeLeavesTheFrameMismatchCounterAtZero`,
+`M4_019_C12_3_TheFrameMismatchCounterResetsOnAFrameMatch`,
+`M4_019_C12_3_TheFrameMismatchCounterResetsAfter0x65`, and
+`M4_019_S1_TheStatsRunForTheFirst100FrameMismatches` cover those rows; the
+Welford, suspicious-walk and delocalize tests cover the other local helpers.
+The still-missing source test cannot be written honestly at M4 alone:
+`RobotStateHistory.Add` exposes no failure and the stack has no
+`GetLastStateWithFrameID`.  When M11 supplies those two results, the test must
+force each false result independently and prove both stats and threshold
+updates are skipped without changing the mismatch counter.  Charger-footprint
+clearing likewise remains an M11 geometry input.
+
 ## Handoff
 
-These four records now have enough app-side rows to build only their named
-M4 seams. Remaining uncertainty is deliberately partitioned:
+These four records now have complete app-side rows for their named M4 seams.
+At HEAD the M4-009 dock filter, M4-018 localization gate and the local
+M4-019 counter/treads logic are already present; M4-017's mode queue is not.
+Remaining uncertainty is deliberately partitioned:
 
 - M4-009: M11 object creation/identity errors; M4-024 firmware forwarding.
 - M4-017: any consumer/meaning of VisionMode 14 after its proven mask update.

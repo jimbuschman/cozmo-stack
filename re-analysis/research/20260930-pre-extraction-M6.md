@@ -1,9 +1,36 @@
 # Q10 pre-extraction: remaining M6 implementation gaps
 
+## Coverage audit (2026-10-01)
+
+| record | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| M6-001 | CHECKED | None. The deliberately unread/unexercised branches are bounded gaps, not treated as recovered. |
+| M6-002 | CHECKED | None. Multichannel/LFE and unshipped-size residuals remain explicit UNKNOWNs. |
+| M6-004 | CHECKED | None. Every implemented kernel and the unread kernels are distinguished. |
+| M6-005 | CHECKED | None. |
+| M6-006 | CHECKED | None. The separate PlayInternal/PBI ownership is M6-025. |
+| M6-007 | CHECKED | None. |
+| M6-008 | CHECKED | None. Unread timing and live Term ownership remain explicit UNKNOWNs. |
+| M6-009 | CHECKED | None. Transition evolution and the partly read validity gate remain explicit UNKNOWNs. |
+| M6-010 | CHECKED | None. Caller-supplied attenuation/fade bundles remain explicit UNKNOWNs. |
+| M6-011 | CHECKED | None. The untranscribed NEON matrix is not claimed bit-exact. |
+| M6-012 | CHECKED | None. General panner/LFE and NEON ordering remain explicit UNKNOWNs. |
+| M6-013 | CHECKED | None. Unread linked/LFE limiter and coefficient details remain explicit UNKNOWNs. |
+| M6-014 | CHECKED | None. Aux policy and hardware gate values remain explicit inputs. |
+| M6-015 | CHECKED | None. |
+| M6-016 | CHECKED | None. The OnDevice and `robot_volume` residuals are called out. |
+| M6-017 | CHECKED | None. Sink pacing is correctly bounded as HARDWARE_ONLY. |
+| M6-018 | CHECKED | None. This is a forced policy; phone-dependent values are not claimed known. |
+| M6-020 | CHECKED | None. Recoverable raw bodies/consumers are included; stripped names remain external. |
+| M6-023 | CHECKED | None. The missing seams and production receiver are explicit. |
+| M6-024 | CHECKED | None. Loader call sites are recovered; internals remain explicit UNKNOWN. |
+
+No conclusion in this report rests on unchecked work. `UNKNOWN`, `HARDWARE_ONLY`, and external-name qualifications below identify where the shipped package does not settle a value; they are not work omitted from this audit.
+
 Date: 2026-10-01  
 Request: Q10 in `requests/20260930-codex-queue.md`  
 Binary: `resources/lib/armeabi-v7a/libcozmoEngine.so` 3.4.0-1204  
-Baseline: `origin/main` / `9e7b4f5` after the required pull
+Baseline: `origin/main` / `415b9e0` after the required pull
 
 ## Scope and central result
 
@@ -13,7 +40,7 @@ The central production-path gap is real. Native production composes:
 
 `Unity/app PostAudioEvent → 0x008D8B74/0x008DED00 → 0x009A6704 → 0x009A0EF8/0x009AA3DC → node PlayInternal → PBI → voice/source → 0x00A44D4C voice and bus render → Robot_Bus FX → Hijack → robot-audio callback`.
 
-C# production instead constructs `CozmoAnimations`' `AnimationScheduler` (`CozmoAnimations.cs:162`); an optional `WwiseAudioSource` constructs `WwiseSongRenderer` (`WwiseAudioSource.cs:43-55`), resolves events directly through `WwisePlayback.Resolve` (`:540`) and decodes/mixes offline. No production constructor binds `WwiseAudioInputDispatch`, `WwiseEventRuntime`, `WwisePlaybackBridge`, `WwiseVoiceLinker`, `WwiseVoiceEngine`, `WwiseFrameDriver`, `WwiseBusLifetime`, `WwiseBusChain`, `WwiseHijackPlugin`, or `WwiseRobotAudioPath` into that entry. Repository-wide construction hits for those types are tests or the types' own declarations. Therefore component-local tests cannot settle any claim that includes the whole live composition.
+C# production instead constructs `CozmoAnimations`' `AnimationScheduler` (`CozmoAnimations.cs:162`); an optional `WwiseAudioSource` constructs `WwiseSongRenderer` (`WwiseAudioSource.cs:43-55`), resolves events directly through `WwisePlayback.Resolve` (`:540`) and decodes/mixes offline. That offline path calls `WwiseBusChain.For`, but no production constructor binds `WwiseAudioInputDispatch`, `WwiseEventRuntime`, `WwisePlaybackBridge`, `WwiseVoiceLinker`, `WwiseVoiceEngine`, `WwiseFrameDriver`, `WwiseBusLifetime`, `WwiseHijackPlugin`, or `WwiseRobotAudioPath` into the native-shaped live graph. Construction hits for those live-graph owners are tests or their own declarations. Therefore component-local tests, and the offline `WwiseBusChain` call, cannot settle the whole live composition.
 
 Common native result words used below are `0x2D` DataReady, `0x2E` DataNeeded, `0x11` NoMoreData, `2` failure, and `0x3F` deferred/not-ready. Common exact float words are `0.0f=0x00000000`, `0.5f=0x3F000000`, `1.0f=0x3F800000`, `2.0f=0x40000000`, `-80.0f=0xC2A00000`, `0.0001f=0x38D1B717`, `0.70710677f=0x3F3504F3`, and `22320.0f=0x46AE6000`.
 
@@ -24,12 +51,15 @@ C# entry: `WwiseSoundLibrary.LoadCore` → `WwiseBank.Load` / `WwiseHierarchy` r
 | step | address | what the engine does | gates/order/failure | floats / unresolved |
 |---:|---|---|---|---|
 | 1 | `0x009B338C` | dispatches HIRC object type to Event, Action, Sound, RanSeq, Switch, ActorMixer, Bus, Layer or NodeBase readers | object header precedes type body; unknown/short data fails the bank load | integer parsing |
-| 2 | `0x009CD01C`, `0x00A613B0`, `0x00A1DA08`, `0x00A0828C`, `0x00A2F1D0`, `0x00A669EC`, `0x009C3FFC`, `0x009D24D4`, `0x009F6EF8` | reads each body in runtime field order | conditional flags control the following fields; no speculative skipping | numeric words remain at file width |
-| 3 | `0x009F7254..0x009F72EC` | reads RTPC entries, including varint parameter id | entry count first | no float conversion at parse |
-| 4 | `0x009B0B14` | reads STMG header and the A/B trailing bodies | trailing count controls body reads | field semantics in M6-020 |
-| 5 | `0x009ECF44` and Bus/Layer conditional branches | positioning, bus A/B and LayerCntr branches are live parser branches | exact bodies are still **UNKNOWN** | **UNKNOWN** |
+| 2 | `0x009CD01C`, `0x00A613B0`, `0x00A1DA08`, `0x00A0828C`, `0x00A2F1D0`, `0x00A669EC`, `0x009C3FFC`, `0x009D24D4`, `0x009F6EF8` | reads each body in runtime field order | conditional flags control following fields | numeric words remain at file width |
+| 3 | `0x009ECF44` | positioning reads beyond the first byte when b0/b3 are set | shipped nodes leave those gates clear | gated body **UNKNOWN**; C# reads only the first byte |
+| 4 | Sound source path under `0x00A1DA08` | plugin low nibble 2 or 5 reads `u32 size` then exactly `size` bytes | all 43 shipped sizes are zero | C# skips size but not a nonzero body |
+| 5 | `0x009F7254..0x009F72EC` | reads RTPC parameter id as a continuation-bit varint | C# one-byte read agrees only for shipped ids `<0x80` | curve points remain binary32 |
+| 6 | `0x009C3FFC..0x009C4308`; `0x009C6420..0x009C6564`, `0x009C0D08..0x009C0E14`, `0x009F6E3C..0x009F6EEC`, `0x009F7364..0x009F7388` | Bus reads props, A/B flags, max instances, channel config, C, recovery/max-duck, ducks, FX/mixer, flag, RTPC, states, then four bytes only when BKHD feedback is on | shipped A/B are zero and feedback is off; C# is shipped-data equivalent only | `maxDuck` raw f32; recovery later uses mix rate |
+| 7 | `0x009D24D4..0x009D2730`; per-layer `0x00A6DD54` | real Layer reader consumes NodeBase, children, layer count/bodies, final byte | all six shipped containers have zero layers | outer order recovered; body **UNKNOWN**. `0x00A67558` is Attenuation, not Layer |
+| 8 | `0x009B0B14`; consumers under M6-020 | reads STMG header, groups, params and both trailing loops | each count controls exact reads; nonzero counts are accepted | raw float/u32 bits preserved |
 
-Implementation target: retain `WwiseHierarchy.cs`, but add the unread conditional bodies before the parser can claim the full HIRC path. `EveryHierarchyObjectInTheShippedBanksConsumesExactly` takes sizes/order from shipped banks, not from C#; it does not exercise unshipped flag combinations.
+Implementation target: retain `WwiseHierarchy.cs`, but add or fail closed on the nonzero positioning, source-plugin, Bus A/B/BKHD, RTPC-varint and Layer-body cases. `EveryHierarchyObjectInTheShippedBanksConsumesExactly` is source/asset-derived for shipped consumption, but cannot exercise absent flag combinations.
 
 ## M6-002 — native Vorbis decoder into the live source
 
@@ -51,10 +81,11 @@ C# entry: `WwiseResampler`; required callers are `WwiseLiveVoice.Resampler` and 
 
 | step | address | what it does | gates/order/failure | floats |
 |---:|---|---|---|---|
-| 1 | `0x00A47038` | initialises format and phase (`+0x2C=0x10000`) | format/channel kernel table selects exact path | Q16 phase |
-| 2 | `0x00A47384` | computes pitch step and ramp | pitch set precedes Execute | binary32 pitch; integer step |
-| 3 | `0x00A47178`, kernels `0x00A48F5C/0x00A4913C/0x00A49E40` | executes int16 bypass/interpolation or float mono interpolation | empty input gives `0x11`; target-full gives `0x2D`, otherwise `0x2E` | bypass scale `1/32768=0x38000000`; Hijack output 22320 Hz |
-| 4 | `0x00A49634`, `0x00A479F4`, `0x00A4A958` | stereo int16 and float bypass/ramp variants | valid native modes | bodies remain **UNKNOWN** and must stay fail-closed |
+| 1 | `0x00A46D80..0x00A46D88` | constructor sets phase `+0x2C=0x10000` | before format/kernel selection | Q16 phase, one sample |
+| 2 | `0x00A47038..0x00A47150`; tables `0x0103C0B8`, `0x00FFD450` | selects int16/float, channel and mode kernel | unsupported combinations fail closed | integer/Q16 state |
+| 3 | `0x00A47384..0x00A4751C` | computes pitch step and 0x400-phase-unit ramp | pitch set precedes Execute | `u32(float(inRate/outRate)*powf(2,cents/1200)*65536+0.5)` |
+| 4 | `0x00A47178`, kernels `0x00A48F5C/0x00A4913C/0x00A49E40` | executes int16 bypass/interpolation or float mono interpolation | empty `0x11`; target-full `0x2D`; otherwise `0x2E` | `1/32768=0x38000000`; `22320.0f=0x46AE6000` |
+| 5 | `0x00A49634`, `0x00A479F4`, `0x00A4A958` | stereo int16 and float bypass/ramp variants are reachable | valid native modes | bodies **UNKNOWN**; no substitute kernel is justified |
 
 The focused tests copy recovered formulas and are source-derived, but they do not prove the production format fields or composition.
 
@@ -230,22 +261,29 @@ C# entry: mix/frame constants used by the live driver and Hijack.
 
 | step | address | behavior | gate | bits |
 |---:|---|---|---|---|
-| 1 | output-device init path | chooses `min(nativeRate,48000)` | native device rate | `48000.0f=0x473B8000` |
-| 2 | device buffer setup | rounds hardware frame count; package path commonly uses 1024 | hardware properties | `1024` integer |
+| 1 | `0x00A56E20`; store `0x00A56E80..0x00A56EA4` to `0x0108DF90` | caches `min(AudioTrack.getNativeOutputSampleRate(3),48000)` | JavaVM/context/native query; missing/zero later falls back to 48000 | integer `48000=0x0000BB80`; only f32 consumers use `0x473B8000` |
+| 2 | `0x00A577C0..0x00A57830`; default `0x0099DC90` | rounds/chooses hardware-buffer-derived frame size | phone properties decide original value | `1024=0x00000400` integer |
+| 3 | `0x00A57834..0x00A57850`; globals `0x0105243C`, `0x01052440` | commits selected rate and u16 frame size for downstream conversions | before consumers | integer/u16, then downstream f32 arithmetic |
 
-The fixed C# values are a compatibility decision unless the live device query is modelled. Tests that assert 48000/1024 copy C# constants and are circular for phone-dependent behavior.
+The fixed C# values are the inventory's forced compatibility decision, not recovery of the original phone. Tests asserting 48000/1024 copy C# constants and are circular for phone-dependent behavior; they protect policy but cannot settle fidelity to an unknown device value.
 
-## M6-020 — STMG trailing bodies
+## M6-020 — STMG group items and trailing bodies
 
-C# entry: `WwiseStmg.Read`.
+C# entry: `WwiseStmg.Parse`.
+
+Current manifest text before correcting its stale title: **“STMG: the group-item field meanings and the two trailing bodies (unread source; unexercised by shipped banks)”**, status `IMPLEMENTATION_GAP`; its current unresolved already incorporates the later extraction: **“Build the C9 raw layouts and consumer behavior in WwiseStmg.cs, including nonzero trailing counts; do not invent names…”**. Thus the title's “unread source” is stale, while the status/unresolved are consistent with the rows below.
 
 | step | address | behavior | gates/order/failure | width |
 |---:|---|---|---|---|
-| 1 | `0x009B0B14` | reads STMG main fields | counts in file order | raw integer/f32 fields |
-| 2 | same body, C9 layouts | reads A body (56 bytes) and B body (40 bytes) for each non-zero trailing count | non-zero is accepted, not rejected | preserve raw words |
-| 3 | downstream consumers | interpret stripped object fields | class/property names and consumer behavior **UNKNOWN** | do not invent labels |
+| 1 | `0x009B0C9C..0x009B0D0C`; `0x00A27CA4..0x00A27D60` | state item is three u32s; manager matches ordered `(field0,field1)` and stores field2 | reader passes false, suppressing reverse-pair update at `0x00A27D78..0x00A27DD0` | exact u32; `{from,to,transitionMs}` are public labels only |
+| 2 | `0x00A325E0..0x00A32914` | switch word 0 becomes curve word 0, `float(index)` word 1, word 2 curve word 2; source word 1 enters parallel id array | count/arrays precede call `0x00A12050` | source word 0 copied bit-for-bit as binary32 |
+| 3 | `0x009B0FBC..0x009B127C`; `0x00A3B84C..0x00A3B998` | trailing A is 56 bytes: u32 id, six u16, ten u32; new object copies all bytes to +0x10 | existing id increments refcount; nonzero count loops | raw widths |
+| 4 | `0x00A3B180..0x00A3B1E8`, `0x00A3B0F8..0x00A3B17C` | A codes 0..5 write small slots (0..2 booleanize); 6..15 write recovered u32 offsets | numeric dispatch; names absent | integer/raw words |
+| 5 | `0x009B12A4..0x009B1410`; `0x00A3BA44..0x00A3BB80` | trailing B is 40 bytes: u32 id plus nine u32; new object copies all bytes to +0x10 | keyed reuse/refcount; nonzero count loops | raw widths |
+| 6 | `0x00A3B1EC..0x00A3B268` | B codes 0x10..0x18 write nine recovered offsets | numeric dispatch; names absent | integer/raw words |
+| 7 | loops `0x009B0FDC..0x009B1298`, `0x009B12C0..0x009B142C` | accepts every counted entry | shipped trailing counts are zero; switch items are shipped | no extra conversion |
 
-The required implementation is exact raw layout/consumption. Shipped banks do not exercise non-zero trailing counts, so parser tests based only on them cannot settle the body.
+Current C# safely keeps group triples raw, but throws on either nonzero trailing count and contradicts steps 3/5/7. It must implement exact raw layout, keyed reuse/copy and numeric setter behavior; stripped names remain `BLOCKED_EXTERNAL` labels only. Shipped-bank parser tests settle only the zero-count path; nonzero tests must derive expectations from these native rows, not `WwiseStmg.Parse`.
 
 ## M6-023 — app audio-input dispatch
 
@@ -266,9 +304,9 @@ C# entry: `WwiseSoundLibrary.LoadScene`; required production owner is audio-engi
 
 | step | address | behavior | gates/order/failure | width |
 |---:|---|---|---|---|
-| 1 | `0x00592BB0` | controller constructor builds the six-bank list unconditionally | fixed order | strings/ids |
-| 2 | InitScene call site | initialises scene then loads banks/assets | init before event use | result propagated |
-| 3 | LoadAudioScene / LoadSoundbank / AddZipFiles call sites | makes OBB/zip media and banks available | loader call order visible | internals **UNKNOWN** |
+| 1 | `0x00592BB0`; calls `0x005933CC`, `0x00593478` | initialises engine/plugins, then constructs `Init, Music, UI, SFX, Cozmo, Dev_Debug` unconditionally | fixed order before scene registration | strings/ids |
+| 2 | `0x005935E2`, `0x005935EA` | registers `InitScene`, then loads it | register before load/event use | deeper result propagation **UNKNOWN** |
+| 3 | `0x008D2EE8` → `0x008D2FE4`; archives `0x008D1E3E` | LoadAudioScene calls LoadSoundbank; AddZipFiles exposes OBB `AudioAssets.zip` | call-site order visible | loader internals **UNKNOWN** |
 
 Current `LoadScene` applies the six-bank order only if all six are found, a test-compatibility fallback not present in the native constructor. Tests use shipped filenames/assets, but no production construction calls the loader.
 

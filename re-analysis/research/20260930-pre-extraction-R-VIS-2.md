@@ -1,14 +1,59 @@
 # Q12 — R-VIS round-2 pre-extraction
 
+## Coverage audit (2026-10-01)
+
+| record/item | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| M11-045 | CHECKED | None. Bounded dependencies M11-047/048 are explicit. |
+| M11-046 | CHECKED | None. Bounded dependency M11-048 is explicit. |
+| M14-007 | CHECKED | None. Its map dependency is explicit. |
+| M11-017 | CHECKED | None. OpenCV/libm dependencies M11-047/048 are explicit. |
+| M11-047 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M11-048 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M13-024 | CHECKED | None. The external-libm policy dependency is explicit. |
+| M13-025 | CHECKED | None. Bounded dependency M13-023 is explicit. |
+| M13-026 | CHECKED | None. Bounded dependency M13-023 is explicit. |
+| M13-027 | CHECKED | None. All four shipped direct callers were checked. |
+| M11-038 | CHECKED | None. Native producers and shipped CLAD packers were both checked; M11-040 owns the separate mailbox producer. |
+| M11-050 | CHECKED | None. Its interpolation dependency is M11-052. |
+| M11-051 | CHECKED | None. The formerly unread global threshold was traced to both initializers. |
+| M11-052 | CHECKED | None. Q4's remaining relative-frame uncertainty was closed by `PoseBase::GetWithRespectTo`. |
+| M11-053 | CHECKED | None. |
+| M11-042 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-024 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-027 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-028 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-032 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-034 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-038 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M12-039 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M13-021 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+| M13-023 | CHECKED | Q4 already supplied its row extraction; this report intentionally does not duplicate it. |
+
+There are no conclusions in this report that rest on unchecked work. `UNKNOWN`
+rows and named record dependencies are extraction results, not unchecked scope.
+
 Date: 2026-10-01  
+Baseline: `origin/main` / `415b9e0`
 Binary set: shipped ARMv7 `libcozmoEngine.so` and shipped OpenCV 3.1.0 libraries.  
-Scope: R-VIS “Left for the next round”, excluding the records already answered row-by-row by Q4 (`20260930-recoverable-gaps.md`): M11-047, M11-048, M11-052, M11-042, M12-024/027/028/032/034/038/039 and M13-021/023. Those Q4 rows remain the extraction source and are not duplicated here.
+Scope: R-VIS “Left for the next round”. Q4 (`20260930-recoverable-gaps.md`)
+already answered M11-047/048/052, M11-042, M12-024/027/028/032/034/038/039
+and M13-021/023 row by row. Those rows remain the extraction source and are not
+duplicated, except that M11-052 is summarized here because it is also explicitly in
+the M11-050..053 batch and its last uncertainty is now closed.
 
 ## Result and dependency order
 
-The buildable order is M11-045 → M11-046 → M14-007/M11-017, then M11-050/051/053; M13-024 → M13-025, while M13-026 and M13-027 can be built independently except for their explicitly named RECOVERABLE_GAP dependencies. M11-038 additionally needs M2 wire types and M11-040's result-deque producer.
+The buildable order is M11-045 → M11-046 → M14-007/M11-017, then
+M11-052 → M11-050; M11-051 and M11-053 can follow independently. M13-024 →
+M13-025, while M13-026 and M13-027 can be built independently except for their
+explicitly named RECOVERABLE_GAP dependencies. M11-038 additionally needs M2 wire
+types and M11-040's result-deque producer.
 
-Every item below remains an `IMPLEMENTATION_GAP` at HEAD. Tests which call the new helper directly can validate isolated arithmetic but cannot settle the record until the native production caller, failure result and ordering are live.
+Every item below remains an `IMPLEMENTATION_GAP` at the baseline except M11-052,
+which is `RECOVERABLE_GAP`. Tests which call a new helper directly can validate
+isolated arithmetic but cannot settle a record until the native production caller,
+failure result and ordering are live.
 
 ## M11-045 — exact memory-map quad tree
 
@@ -58,8 +103,9 @@ Once M11-045/046 own the live query, source-fixed boundary tests must place obst
 |---|---|---|---|
 | ROI/filter | statics `0x00c48f60`; `GetGroundQuad 0x004f7774`; detector `0x006abe34`; kernel `0x00c8e020` | Ground trapezoid 40..190 mm ahead, 40..150 mm wide. Project, bound, run shipped 7×5 kernel, mask outside corner order 0,2,3,1, transpose, scan each column bottom-up for first response >50. Columns without a hit become far-clear only between far-corner x values. | `OverheadEdges.cs` is polygon/double equivalent; replace with shipped integer/OpenCV path or emulation. |
 | Lift gate/project/chain | `0x006ac4a2..0x006acdc8`; `0x006ae0a8`; `0x006ae1b0` | Abandon frame unless the two lift points straddle/outside the ROI rectangle as coded. Homography point rejected unless third component positive. Chain only same-kind points within 5.0f=`0x40A00000`. | Preserve rejection order. |
-| World/map runs | `0x0067f7ac..0x006802ac` | Transform via robot pose at frame timestamp, split ray at near ROI edge, query two masks, keep direction within source constant 0.766f (bit pattern must be copied from the instruction pool during implementation), require run >6.00001f, and choose triangle versus midpoint line by squared length 225.0f=`0x43610000`; border chain adds type 9 line. | Exact float bit for 0.766 and 6.00001 must come from pool, not decimal retyping. |
-| Entry points | `0x0067e6b0`, `0x0067e50c` | `FlagQuadAsNotInterestingEdges`: insert ClampQuad/type 10 with last-image timestamp. `FlagGroundPlaneROIInterestingEdgesAsUncertain`: Transform ROI with lambda `0x00680b54`, type 9→0 only. | Build on M11-045/046; Q4 M11-047/048 remain prerequisites. |
+| World/map runs | `0x0067f7ac..0x006802ac`; pools `0x0067f980`, `0x0067fcd0`, `0x0067fcd4` | Transform via robot pose at frame timestamp, split ray at near ROI edge, query two masks, keep direction within binary32 `0x3F441893` (displayed as 0.766), require squared run length greater than binary32 `0x40C00015` (displayed as 6.00001), and choose triangle versus midpoint line with squared-length threshold binary32 `0x43610001` (225.00001, one ULP above 225); border chain adds the type-9 line. | Use those words directly. The current C# `6.00001` is binary64 (`0x401800029F16B11C`) and is not bit-faithful. |
+| Dispatch/process entries | `VisionComponent::UpdateOverheadEdges 0x006553fc..0x0065541e`; `MapComponent::ProcessVisionOverheadEdges 0x0067f7ac..0x0067f7f8` | Walk frames in result order. A frame flag of 1 with nonempty chains calls `AddVisionOverheadEdges`; flag 1 with no chains does nothing; flag 0 erases the named visualization segment and returns 0. | These are two of the four map-side production entries; do not bypass them with a detector-only test. |
+| Mutating entries | `0x0067e6b0..0x0067e742`, `0x0067e50c..0x0067e61e` | `FlagQuadAsNotInterestingEdges`: find current-origin map, insert imported quad/type 10 with last-image timestamp. `FlagGroundPlaneROIInterestingEdgesAsUncertain`: build the full world-space ROI and Transform with lambda `0x00680b54`, type 9→0 only. Neither checks for a missing current-origin map before dereference. | These complete the four entries. Build on M11-045/046; Q4 M11-047/048 remain prerequisites. A managed null policy must remain explicit rather than be presented as recovered behavior. |
 
 The binary's null-map dereference behavior is a policy item, not license to invent a managed fallback. Detector tests must use shipped-frame fixtures or independently encoded input/output bits; generating expected edges through the C# detector is circular.
 
@@ -71,7 +117,8 @@ The binary's null-map dereference behavior is a policy item, not license to inve
 |---|---|---|---|
 | Hull/calipers | engine `0x004e6490..0x004e67c4`; OpenCV `0x0009c760..0x0009ceac`, hull/Sklansky `0x00039174..0x000395e0` | Convert projected points to `Point2f`, exact OpenCV convexHull/Sklansky ordering, rotating calipers, return `RotatedRect`. Degenerate 0/1/2-point branches must match. | Replace exact-rectangle and planar stand-ins in `BlockConfigurations.cs`. |
 | Points | OpenCV core `0x00086188..0x00086276` | Compute four points from centre/size/angle with separately rounded float ops; no fused multiply-add. Opposite points use `2*center - p`. | Keep all intermediates binary32. |
-| Numeric reference | validated extraction port | Axis-aligned 44 cube yields `(22,22),(-22,22),(-22,-22),(22,-22)` exactly. Yaw 0.3 has residual centre bits and nontrivial corners; tilted case produces a six-point hull and 53.677586×55.203194 rectangle. | Use fixed expected bit patterns from the validated port, not values returned by implementation. |
+| Failure fallback | `0x004e64f4..0x004e6502` call; catch `0x004e65c6`; fallback `0x004e6752..0x004e6778` | A catch-all covers only the `minAreaRect` call. It logs `GetBoundingQuad.CvMinAreaRectFailed.COZMO-1916`, sets the engine error flag and optionally debug-breaks, then runs `Rectangle<float>::InitFromPointContainer`; the exact fallback body remains M13-023. | Preserve the failure boundary and visible fallback dependency. |
+| Numeric reference | `20260929-R-VIS-M13-gap3-extraction.md` and independent verifier rerun | The shipped OpenCV body and a strict-f32 port matched on 264 extraction cases and a fresh 270 verifier cases; `RotatedRect::points` matched 200+200 cases. Axis-aligned 44 cube yields `(22,22),(-22,22),(-22,-22),(22,-22)` exactly; the fixed yaw/tilt vectors and output bits are recorded in that report. | Copy those fixed vectors/bits into tests; never generate expected values through the C# implementation. |
 
 Double `atan2/sin/cos` are Android bionic external behavior; their possible final-float ULP difference remains Q4/M13-023 policy, not EXACT_SOURCE.
 
@@ -107,10 +154,13 @@ GetCameraPose and the fields at +0x2CC/+0x258 remain Q4/M13-023, so live product
 
 | step | address | source behavior | C# entry |
 |---|---|---|---|
-| Construct/order | `0x0054c7dc..0x0054c8bc` | Sequential compound. If bool A: create `TurnTowardsLastFacePoseAction(faceId=0,maxAngle,bool C)` and add `(false,false)`; add wrapped runner `(false,false)`; if bool B add the same turn-after action. Strict order is before → wrapped → after. | `FaceActions.cs`; flag semantic names remain UNKNOWN until callers are read. |
+| Construct/order | `0x0054c7dc..0x0054c8bc` | Sequential compound. If bool A: create `TurnTowardsLastFacePoseAction(faceId=0,maxAngle,bool C)` and add `(false,false)`; add wrapped runner `(false,false)`; if bool B add the same turn-after action. Strict order is before → wrapped → after. The construction itself establishes A=`turnBefore`, B=`turnAfter`; C is passed unchanged to each face-turn action. | `FaceActions.cs`; retain the three independent arguments and exact child order. |
 | Proxy | `0x0054c8c6..0x0054c8ca` | Set compound proxy tag from wrapped action `+0x60`. | Preserve completion/wire identity. |
+| Shipped callers | `0x005eabf8`, `0x005d9598`, `0x005d6d70`, `0x005c8174` (calls through thunk `0x004b3510`) | `BehaviorRequestGameSimple::TransitionToPlayingInitialAnimation`, `BehaviorDriveInDesperation::TransitionToRequest`, `BehaviorFeedingSearchForCube::TransitionToMakeFoodRequest`, and `BehaviorPutDownBlock::CreateLookAfterPlaceAction` are the four direct callers. Every call passes A=1, B=0, C=0: production always turns before, never after, and supplies false to the inner turn. | The live behavior entries, not only a helper-level constructor test, must exercise this before-only form. |
 
-Tests should assert child types, order, flags and proxy tag from literal source rows. Naming A/B as “turnBefore/turnAfter” is a local description, not recovered caller semantics.
+Tests should assert child types, order, flags and proxy tag from literal source rows,
+and route at least one of the four production callers through the wrapper. A test that
+constructs arbitrary A/B combinations establishes the helper but not shipped reachability.
 
 ## M11-038 — BlockWorld broadcasts and mailbox dispatch
 
@@ -119,7 +169,9 @@ Tests should assert child types, order, flags and proxy tag from literal source 
 | step | address | source behavior | C# entry |
 |---|---|---|---|
 | Observed object | `0x0061fed8..0x0061ffe8` | Project object; construct rectangle. Active LightCube must dynamic-cast to ActiveCube or error/return 1/no message. Wire fields in order: timestamp, family, type, ObjectID, rect x/y/w/h, pose, top-face radians, active; size 69. Broadcast, clear current, return 0. | Current `ObjectObserved` event is local and its rectangle source must be the native projection path. |
-| Located/connected | `0x0061e6c0`, `0x0061e91c`; pack bodies `0x00714a10`, `0x00715370`, `0x007153a4` | Build and broadcast tags `0x53` LocatedObjectStates and `0x54` ConnectedObjectStates in native iteration order. Exact pack bodies remain unread in the earlier report and must be opened before claiming wire fidelity. | `BlockWorld.cs` counted stubs at current ~812-815. |
+| Located producer | `0x0061e6c0..0x0061e857`; native pack bodies `0x00714a10`, `0x00715370`; shipped `LocatedObjectStates.cs`, `LocatedObjectState.cs` | Run `FindLocatedObjectHelper`, preserve native iteration order, then broadcast tag `0x53` and clear the temporary. CLAD wire is `u8 count`, then 50 bytes per item: `u32 objectID`, `u32 lastObservedTimestamp`, `s32 objectFamily`, `s32 objectType`, 32-byte `PoseStruct3d`, `u8 PoseState`, `u8 bool isConnected`. | Replace `BlockWorld.cs:813-815` / the counted stub with the real EngineToGame producer. |
+| Connected producer | `0x0061e91c..0x0061eaad`; native pack body `0x007153a4`; shipped `ConnectedObjectStates.cs`, `ConnectedObjectState.cs` | Run `FindConnectedObjectHelper`, preserve native iteration order, then broadcast tag `0x54` and clear the temporary. CLAD wire is `u8 count`, then 12 bytes per item: `u32 objectID`, `s32 objectFamily`, `s32 objectType`. | Add the real EngineToGame producer and consumer path. |
+| Pose-unknown producer | `0x005073aa..0x005073b8`; shipped `RobotMarkedObjectPoseUnknown.cs`, `MessageEngineToGame.cs` | During `DeleteLocatedObjects`, broadcast once per set entry with the **original** object's ID, tag `0x52`, payload exactly one `u32 objectID` (4 bytes), then remove the set in native order. | `BlockWorld.cs:1692` currently documents but does not own this wire event. |
 | Mailbox | `0x006b2ad4` | Drain vision-result deque and dispatch result handlers in engine order; producer belongs to M11-040. | No production producer at HEAD; counter is not a substitute. |
 
 Protocol tests must assert fixed packed bytes from CLAD/native packers and observe the real broadcast consumer. Event-only tests are circular for the absent wire.
@@ -142,10 +194,37 @@ Protocol tests must assert fixed packed bytes from CLAD/native packers and obser
 
 | step | address | source behavior | C# entry |
 |---|---|---|---|
-| Validate/insert | `0x00530cf8..0x00530ec4` | Apply stale timestamp drop before insertion; track consecutive time gaps and reset after the native threshold; require the expected pose-parent relation; reject/handle duplicate map key through the native branch rather than overwrite. Then insert and call `CullToWindowSize`. | `RobotStateHistory.Add`, current `VisionSystem.cs` / `RobotStateHistory.cs:37-66`. |
+| Stale gate | `0x00530cf8..0x00530dac` | If a raw map exists, derive `oldestAllowed = newestTimestamp - window` only when newest is strictly greater than the window; a new `t` strictly below that value warns and returns 1 without changing any map or the gap counter. | `RobotStateHistory.Add`, current `RobotStateHistory.cs:37-66`. |
+| Gap threshold | read `0x01061f48` in `0x00530db0..0x00530df8`; writes in `RobotConnectionManager::Init 0x0062efb0..0x0062f085` and `ConfigureReliableTransport 0x0062f0c8..0x0062f17d` | The two adjacent words are `0x00000000` then `0x40B38800`, i.e. binary64 `0x40B3880000000000` = 5000.0 ms. Clamp negative to zero, saturate above `uint32`, otherwise `floor(x+0.5)` before comparing with unsigned `t-newest`. | Use the exact binary64 threshold and native conversion, not an arbitrary duration. |
+| Consecutive large gaps | `0x00530df8..0x00530e8e` | A delta greater than the rounded threshold logs on the first occurrence. Counts 1 through 5 each return 1. On the sixth consecutive large delta, reset the byte counter to zero, warn, destroy only the raw-history tree, reset its header/size, and return 1. An in-range delta resets the counter before pose validation. | The current comment/stand-in must become live state; test first, fifth and sixth gaps and the intervening-reset case. |
+| Parent gate | `0x00530e8e..0x00530f18` | A pose with no parent is accepted. With a parent, fetch it and require that parent to be a root. A non-root parent logs the named path, marks engine error/debug-break state, and returns 1. | Do not replace this with only an origin-id comparison. |
+| Unique insert | `0x00530f18..0x00530f7c` | `emplace_unique` success calls `CullToWindowSize` and returns 0. A duplicate timestamp warns `AddFailed` and returns 1; it neither overwrites nor culls. | Preserve the existing state at a duplicate key. |
 | Cull | `0x005309d1..0x00530bbe` | If raw size <2 or newest < window, return. Default window 3000 ms (`0xBB8`). Cutoff is newest **raw** timestamp minus window; lower_bound/erase old entries from all four maps. | Remove the unsourced clear/purge of another origin; use 3000 ms and common-map cull. |
 
-The global double used by the consecutive-gap reset remains unread in the cited row; mark that threshold UNKNOWN until its pool/GOT source is opened. Boundary tests must fix literal timestamps and origin/parent IDs from the extracted branches.
+Boundary tests must fix literal timestamps and origin/parent IDs from these rows. A
+test that merely observes the public stand-in counter is circular unless it also asserts
+the raw-map destruction and return results at the source-fixed sixth-gap boundary.
+
+## M11-052 — raw-state interpolation
+
+> Current manifest: `RECOVERABLE_GAP`; `GetRawStateAt` and most of
+> `HistRobotState::Interpolate` were extracted, but the frame of the
+> `GetWithRespectTo` temporary was unresolved and C# still chooses an unblended nearer
+> raw state.
+
+| step | address | source behavior | C# entry |
+|---|---|---|---|
+| Lookup exits | `0x00531431..0x0053149c` | `lower_bound(t)`: end returns 1; first key greater than `t` returns 1; exact key copies the state and returns success. Only the between-two-keys case interpolates. | `RobotStateHistory.cs:137-164`; remove the nearer-state stand-in and its `InterpolationStandIns` outcome. |
+| Origin gate | `0x005314ba..0x005315a6` | If before/after origin IDs differ, log and return `0x06000000`. With interpolation enabled, relative-pose failure has the same result. No output interpolation occurs on either failure. | Expose the distinct mismatch result to M11-050 rather than silently selecting a state. |
+| Relative frame | `PoseBase::GetWithRespectTo 0x00845a34..0x00845cee`; call `0x00531504` | Validate roots, walk both parent chains to their common ancestor, invert before-to-common, then compose after-to-common. Thus `tmp` is the **after pose expressed in the before pose's frame**, not in `before.parent`. Invalid roots, no common root, inverse failure, or the defensive 1000-step overflow return false. | Compose exactly this relative transform before blending. |
+| Fraction | `0x00531510..0x00531524` | Compute binary32 `f = float(t-beforeKey) / float(afterKey-beforeKey)` and pass it to `Interpolate`. | Preserve the integer-to-binary32 conversions and binary32 division. |
+| Raw-state selection/blends | `0x0053068c..0x00530766`; literal pool `0x00530884` | Start from after's 0x5c-byte RobotState, but choose before when `f < 0.49999f` = binary32 `0x3EFFFEB0`; always copy RobotState `+4` from before. Fields `+0x20/+0x24/+0x28/+0x2c` use binary32 `before + (after-before)*f`; u16 `+0x50` uses `roundf(before + int(after-before)*f)`. | Expected values must be fixed source vectors; calling the production interpolation to generate them is circular. |
+| Pose output | `0x00530766..0x00530848` | Translation is `before.t + f*tmp.t`; angle is `before.angleZ + f*tmp.angleZ`; construct Z-axis pose with `before.GetParent()` and empty name, then `HistRobotState(pose,state)`. | This ordering and parent are part of the production result. |
+
+The Q4 uncertainty is closed: the relative transform is in `before`'s frame. The
+remaining use of `0.49999f` is a cited native pool literal, not an unchecked conclusion.
+Tests need exact-key, no-bracket, origin-mismatch, relative-transform-failure, the raw
+selection threshold, scalar/u16 blends and a nontrivial parent-chain pose.
 
 ## M11-053 — mismatch-triggered delocalization and all callees
 
@@ -154,8 +233,10 @@ The global double used by the consecutive-gap reset remains unread in the cited 
 | step | address | source behavior | C# entry |
 |---|---|---|---|
 | Counter | ctor `0x0050ff08`; compare `0x00512d7a`; reset `0x00512eae`; increment/threshold `0x00512f14..0x00512f22` | `Robot+0x2C0` starts 0. Matching frame resets it. Each consecutive mismatch increments; values <101 continue the rest of state processing. At 101, reset counter, log/error, delocalize. Origin-miss/history-failure paths do not change this counter. | Add to full-state production handler, before the same downstream gates as native. |
-| Delocalize fields | `0x00510a24..0x00510d98`; trigger `0x00512f88..0x00512f96` | Allocate/add new origin, clear localized object (`+0x2B8=-1`), localization gate/score/state fields, and propagate the **new** origin through the call chain. | Current event uses old origin; fix allocation before notification. |
-| Callee order | same body | Notify/reset BlockWorld, FaceWorld, AI whiteboard/components, BehaviorManager, MovementComponent, visualization, and send absolute localization update in the binary's order. Cliff-running-stat reset is among Delocalize effects; the frame-mismatch trigger state skips the later cliff schedule because failure flag is set. | `Faces.OnRobotDelocalized` presently has no caller; counted omissions are not production ownership. |
+| Delocalize fields and pose | `0x00510a24..0x00510b18`; trigger `0x00512f88..0x00512f96` | First clear localized object (`+0x2B8=-1`), gate `+0x2C4=0`, score `+0x2C8=-1.0f` (`0xBF800000`) and state `+0x2C5=0`; clear cliff running stats; save old origin ID, allocate/add the new origin; zero the robot pose and secondary pose transforms, parent both to the new origin, then call `SetNewPose`. A nonzero `SetNewPose` result warns but does **not** abort later notifications. | Current event uses old origin; allocate and parent the new origin before notifying. Preserve the warn-and-continue failure. |
+| Localization/viz/carrying order | `0x00510b18..0x00510c9e` | If physical robot byte `+0x29` is set, send absolute localization update first. Then update two viz labels, erase viz objects, clear `ObjectPoseConfirmer`. Compare the supplied carrying bool with actual carrying state and warn on mismatch; actual carrying state controls the branch. For each carried ObjectID call `BlockWorld::UpdateObjectOrigin(id, oldOriginId)`; a failure warns and iteration continues. | Do not gate from the caller's bool after the warning, and do not stop the chain on a carried-object update failure. |
+| Consumer/message order | `0x00510c9e..0x00510db7` | In strict order: `BlockWorld::OnRobotDelocalized(newOrigin)`, `FaceWorld::OnRobotDelocalized`, `AIComponent::OnRobotDelocalized`, `BehaviorManager::OnRobotDelocalized`, `MovementComponent::OnRobotDelocalized`; construct `RobotDelocalized`, broadcast through the external-interface subscriber if present, then `ClearCurrent`. | `Faces.OnRobotDelocalized` presently has no caller; counted omissions are not production ownership. The wire notification carries the new origin. |
+| Trigger tail | `0x00512f22..0x00512f96` | On mismatch 101 the handler sets the frame-failure path, calls `Delocalize`, and therefore skips the later cliff schedule for that state. Matching/mismatch-below-threshold states continue through their native downstream gates. | Test through the full-state entry, not by directly invoking `Delocalize`. |
 
 Tests must deliver 100 then 101 consecutive mismatched full states through the real handler, verify a matching state resets the run, and assert all consumer side effects/new-origin ordering. Directly invoking `Delocalize` does not test the trigger.
 
@@ -163,6 +244,9 @@ Tests must deliver 100 then 101 consecutive mismatched full states through the r
 
 - M11-047: address-dependent unordered-set border order and `AddBorderWaypoint` neighbor/wall-following details.
 - M11-048: ShiftRoot branch table, line intersection, several OpenCV bodies and vision result handlers.
-- M11-052: frame of `GetWithRespectTo` temporary; its field blend is otherwise extracted by Q4.
 - M13-023: bionic libm policy, `cv::Rodrigues`, canonical-corner writers, GetCameraPose and robot camera/origin fields.
 - M11-042 and the M12/M13 RECOVERABLE_GAP list: use Q4's per-record rows; none may be silently filled while integrating this round.
+
+M11-052 is deliberately absent from this remaining-unknown list: its stated native
+uncertainty was resolved above. M11-047/048 and M13-023 remain bounded source gaps,
+not unchecked work in this report.

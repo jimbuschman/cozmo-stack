@@ -1,12 +1,32 @@
 # Q11 — pre-extraction of the M7/M8 records outside R-BEH2's 19-record build set
 
+## Coverage audit (2026-10-01)
+
+| record | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| M7-012 | CHECKED | None. The absent CLAD type/real app consumer is the conclusion. |
+| M7-014 | CHECKED | None. All five missing tables and nine cross-layer installations are enumerated. |
+| M7-015 | CHECKED | None. Its M7 path is built; the classifier is separately M10-owned. |
+| M7-018 | CHECKED | None. Factory gates, three local bodies and cross-layer class ownership are separated. |
+| M7-019 | CHECKED | None. Remaining semantic field name is explicitly UNKNOWN; branch behavior is exact. |
+| M7-020 | CHECKED | None. The real action-watcher caller/lifetime and circular direct-call test are identified. |
+| M7-021 | CHECKED | None. The behavior-changing xref claim remains explicitly unverified and cannot support settlement. |
+| M8-004 | CHECKED | None. Removal remains blocked on tracing each live `ChooseAndSwitch` caller; no replacement is guessed. |
+| M8-008 | CHECKED | None. All four M7 callers discard or ignore the result, so the required observable path is bounded. |
+| M8-011 | CHECKED | None. Component runtime is recovered; six helper subclasses are named cross-layer dependencies, not silently included. |
+| M8-013 | CHECKED | None. Both wire tags, dispatch gates, selection transition and test entry are covered. |
+| M8-014 | CHECKED | None. All three handler bodies and render operations are included; the unidentified pose-base helper stays UNKNOWN. |
+
+No conclusion rests on unchecked work. The explicit UNKNOWNs and cross-layer dependencies below are findings: they prevent settlement or require separate ownership, rather than being omitted Q11 work.
+
 Date: 2026-10-01  
 Binary: shipped ARMv7 `libcozmoEngine.so`  
+Baseline: `origin/main` / `415b9e0` after the required pull
 Scope: the twelve current `IMPLEMENTATION_GAP` records which `R-BEH2.md` explicitly left open, including the unfinished remainders of M8-004 and M8-008. The corrections in `20260930-R-BEH2-pre-extraction-check.md` take precedence over the earlier extraction.
 
 ## Result
 
-The binary settles the missing source for all twelve records. It does **not** make their managed production paths complete. The main seams still absent at HEAD are: the app-facing `MoodState` CLAD message; the all-actions completion callback; five exact reaction-lock tables and nine cross-layer installations; config-driven behavior construction and three local behavior bodies; the cliff/pickup/spark production bodies; the behavior-helper component; ExecuteBehavior message dispatch; and whiteboard message/render consumers. M7-015 and the behavior-changing portion of M7-021 are already built; M8-008's M7 callers provably ignore the action result, so it needs ordinary terminal completion, not a result-specific branch.
+The binary settles the requested central rows for all twelve records. It does **not** make their managed production paths complete. Bounded residuals remain: an unverified M7-021 xref absence, an unidentified M8-014 pose-base helper, M8-004 caller ownership, and six cross-layer helper subclasses. The main seams absent at HEAD are: the app-facing `MoodState` CLAD message; the all-actions completion callback; five exact reaction-lock tables and nine cross-layer installations; config-driven behavior construction and three local behavior bodies; the cliff/pickup/spark production bodies; the behavior-helper component; ExecuteBehavior message dispatch; and whiteboard message/render consumers. M7-015 and the behavior-changing portion of M7-021 are already built; M8-008's M7 callers provably ignore the action result, so it needs ordinary terminal completion, not a result-specific branch.
 
 Float constants below are stated as their native binary32 bit patterns. Integer seconds used as doubles are exact at the stated values.
 
@@ -59,7 +79,9 @@ This record's M7-owned behavior-changing path is built. It can close once the ma
 | Config load | OBB behavior JSON; `0x005bba74..0x005bbab4`; `0x0059c34c..0x0059c428` | Read string `behaviorClass`; empty config warns/skips; nonempty config goes to `CreateBehavior`; null construction is an error; verify executable behaviors after the map. | `BehaviorConfigCatalog` enumerates configs, but `FreeplayStack` still binds IDs in code. Add a factory over the shipped configs. |
 | Factory | `0x0059c89a..0x0059c8a4`; success/failure `0x0059d350..0x0059d3fe` | Reject ordinal > `0x4E`; 79-way dispatch; pass robot and complete JSON to constructor; wrap shared pointer; unknown/unconstructable returns null/error. | Do not silently fall back to a generic behavior. |
 | Relevant cases | `0x0059cc84..0x0059cca2`; `0x0059ce24..0x0059ce44`; `0x0059d2f2..0x0059d310` | `0x19` FistBump (0x158 bytes), `0x26` PlayAnimSequence (0x140), `0x4C` ReactToSparked (0x120). **Hiccup is not a separate class**: its config is PlayAnim with trigger `0xE1`. | Correct the current unresolved wording; implement FistBump and ReactToSparked, reuse PlayAnim for Hiccup. |
-| FistBump gates/order | `0x005f1d98..0x005f2714` | Entry state depends on carried-object ID; >1.0 s persistently off-treads terminates. Face turn result `NO_FACE=0x0300000E` alone enters search. Search angles: `-0.2617994f=0xBE860A92`, `+0.5235988f=0x3F060A92`, tilt corrected to `0x3F1C61AA`; timers 1.0/2.0. Actions: request `0xC7`, idle `0xC6`, success `0xC9`, retry `0xC8`, left-hanging `0xCA`, each 60.0f=`0x42700000`. Bump thresholds are `0x3C0EFA35`, `0x3E32B8C2`, and 4000.0f=`0x457A0000`. First ended idle retries; second fails. Stop always restores motor power and resets trigger. | No production C# FistBump body at HEAD. Use the full state machine, not a one-animation stand-in. |
+| FistBump action gate | `0x005F1F7E..0x005F1F98`; return `0x005F2506` | Dispatch the state switch only in terminal states 5/6 or when `+0x84==0` (no action active); otherwise return without advancing. This gate precedes every state body. | No production C# FistBump body at HEAD; do not advance while an action is live. |
+| FistBump gates/order | `0x005f1d98..0x005f2714` | Entry state depends on carried-object ID; >1.0 s persistently off-treads terminates. Face turn result `NO_FACE=0x0300000E` alone enters search. Search angles: `-0.2617994f=0xBE860A92`, `+0.5235988f=0x3F060A92`, tilt `0x3F1C61AA`; timers 1.0/2.0. Actions: request `0xC7`, idle `0xC6`, success `0xC9`, retry `0xC8`, left-hanging `0xCA`, each 60.0f=`0x42700000`. Bump thresholds are `0x3C0EFA35`, `0x3E32B8C2`, and 4000.0f=`0x457A0000`. First ended idle retries; second fails. Stop always restores motor power and resets trigger. | Use the full state machine, not a one-animation stand-in. |
+| FistBump idle seam | Init push `0x005F1EEE` | `SmartPushIdleAnimation` receives trigger `0x23F`, the enum sentinel `AnimationTrigger::Count`. What the streamer does with this sentinel is **UNKNOWN**. | Preserve as an unresolved required seam; do not replace it with an arbitrary idle trigger. |
 | ReactToSparked | `0x006097e0..0x00609866`; base update `0x005bda56..0x005bda62` | Always runnable; Init triggers mood event exact name `SparkPending` at current seconds; with no action, inherited update returns terminal 2 immediately. | Add body, then M15 spark source must own its trigger. |
 
 The timed hiccup strategy is M10-owned and remains separate. Its shipped ranges are 300..3300 s, 5..10 hiccups, 4500..8000 ms spacing, 600 s cured delay; its 5.0f write is `0x40A00000`. Component semantic names on the `robot+0x264` paths remain UNKNOWN, but the offsets and control flow are settled in the checked extraction.
@@ -133,7 +155,7 @@ Therefore the record can be settled without exposing `0x03000018` to these four 
 | Delegate | `0x0056dad8..0x0056db37` | Clear callbacks, copy success then failure callbacks; only an empty stack accepts the helper. Push and snapshot world-origin ID, return 1; nonempty returns 0. | Build exact Boolean failure and callback ordering. |
 | Push/update | `0x0056db1e`; `0x0056dc0c..0x0056dc62`; `0x0056de74..0x0056e15c` | Initialize helper before append; append at top; update immediately. Each update handles origin change, delegate success/failure, active update and possible sub-helper push; when top stops, stop(true), pop, resume previous. Empty stack copies the appropriate callback, clears maintenance vars, then invokes it. | Needs component-owned vector, callbacks and current origin. |
 | Cancellation/cleanup | `0x0056dcc0..0x0056dcd6`; `0x0056dce6..0x0056dd8c`; `0x0056de26..0x0056de66` | Stop-without-callback succeeds only for bottom helper; clear top down, firstIteration flag only on first stop; 1000-iteration overflow is fatal/logged. Inactive helpers may cancel delegates above them before active update. | Tests must cover nested cancellation and callback non-delivery. |
-| Factory | `0x005b54ec`; create entries `0x005b54f0`, `0x005b553c`, `0x005b5588`, `0x005b55c8`, `0x005b5618`, `0x005b5668` | Factory creates DriveTo, PickupBlock, PlaceBlock, PlaceRelObject, RollBlock, SearchForBlock helpers, then `AddHelperToComponent 0x0056da8a` transfers ownership. Bodies are not read in the earlier extraction. | These helper subclasses remain **UNKNOWN** and must be extracted before implementation; do not stub them. |
+| Factory ownership boundary | `0x005b54ec`; create entries `0x005b54f0`, `0x005b553c`, `0x005b5588`, `0x005b55c8`, `0x005b5618`, `0x005b5668`; transfer `0x0056da8a` | Factory creates DriveTo, PickupBlock, PlaceBlock, PlaceRelObject, RollBlock, SearchForBlock helpers and transfers ownership. Those six state-machine bodies are not owned by any current manifest record; only the component/factory seam belongs to M8-011. | This is an ownership defect, not permission to fold six unread behaviors into M8-011. Add separately evidenced M7/M12/M13/M15 records before settlement; until then their behavior is **UNKNOWN** and delegation must fail closed rather than stub them. |
 
 Layout is factory `+0x00`, vector `+0x04/+0x08/+0x0C`, success `+0x10`, failure `+0x28`, world origin `+0x40`; `+0x44` remains UNKNOWN/padding. No floats in the component runtime.
 
@@ -156,11 +178,19 @@ No floats occur in selection dispatch. Tests should inject literal five-byte mes
 
 | step | address | what it does; gates, order and failure | C# entry / disposition |
 |---|---|---|---|
-| Init | `0x0056a394..0x0056a5c4` | If external interface exists, register tags 68 RobotObservedObject, 69 RobotObservedPossibleObject, 53 RobotOffTreadsStateChanged in that order; otherwise warn. | `AIWhiteboard.cs:69-100` has registrations and tag-53 timestamp seam. |
-| Render | `0x0056aa3c..0x0056abff`; Add call `0x0056c3de` | Erase previous VizManager segments, then for every beacon draw three XY circles. Correct constants: 2500=`0x451C4000`; 10°=`0x3E32B8C2`; 50=`0x42480000`; pi=`0x40490FDB`; 35=`0x420C0000`; 1e-5=`0x3727C5AC`; 30=`0x41F00000`; -0.5=`0xBF000000`; -1=`0xBF800000`. Tilt comparison uses `Anki::operator<(Radians,Radians)`. Pose base returned by `0x004ea398` is UNKNOWN. | `AIWhiteboard.cs:117-126` only raises `BeaconRenderUpdated`; it does not reproduce render output. |
-| Handlers | functors `0x0056cbd6`, `0x0056cc4e`, `0x0056ccf2..0x0056ccf6` | Tag 53 records current seconds at `+0x48`. Object/possible-object handlers mutate whiteboard state used by beacon/object logic; exact bodies must be kept with their native rows. | Current external interface only subscribes; production message delivery and exact object mutations remain absent. |
+| Init | `0x0056a394..0x0056a5c4` | If external interface exists, register tags 68 RobotObservedObject, 69 RobotObservedPossibleObject, 53 RobotOffTreadsStateChanged in that order and retain handles at `+0x08`; otherwise warn and register none. | `AIWhiteboard.cs:69-100` subscribes, but its tag constants are also reused by its test oracle. |
+| Tag 68 adapter | `0x0056a44c..0x0056a466`; `0x0056cbc2..0x0056cbd6` | Select union member 68 and enter `HandleMessage<RobotObservedObject>`. | Production delivery/handler absent. |
+| Observed object | `0x0056c448..0x0056c476`; match/erase `0x0056ad76..0x0056ae12` | Build Pose3d from message pose `+0x20` and origin list; take type from `+0x08`; erase every same-type possible object expressible relative to it with 3-D squared distance `<=2500.0f=0x451C4000`; redraw. Failed pose conversion does not erase. | Current C# has no possible-object list or handler. |
+| Tag 69 adapter | `0x0056a50c..0x0056a526`; `0x0056cc3a..0x0056cc56` → `0x0056c48a` | Select member 69 and enter possible-object handler. | Absent. |
+| Possible initial gates | `0x0056c48a..0x0056c576` | Accept only absolute tilt `<10°=0x3E32B8C2`, pose expressible relative to robot, and robot-relative Z `<=30.0f=0x41F00000`; conversion failure logs and returns. Tilt uses `Anki::operator<(Radians,Radians)`. | Do not replace with raw float compare. Pose base from call `0x004EA398` remains **UNKNOWN**. |
+| Possible dedupe/world gate | `0x0056c57a..0x0056c674` | Remove nearby same-type possible entries; query BlockWorld closest located same type with per-axis `50.0f=0x42480000` and angular `pi=0x40490FDB`; retain only if none exists. | BlockWorld query must be the real production owner. |
+| Possible retention | `0x0056c676..0x0056c692` | Cap list at ten by popping oldest/front, append `{pose,type}`, redraw. | Exact order/cap absent in C#. |
+| Tag 53 | `0x0056a5cc..0x0056a5e6`; `0x0056ccdc..0x0056ccf8` | Read one-byte OffTreadsState; nonzero returns. Zero (OnTreads) stores current seconds at `+0x48`. | C# `RecordOffTreadsStateChanged` currently writes unconditionally; dispatch must apply the zero gate. |
+| Render reset/iteration | `0x0056aa3c..0x0056abff`; Add call `0x0056c3de` | Erase namespace `AIWhiteboard.UpdateBeaconRender`; iterate 20-byte beacons, resolve pose, center Z += `35.0f=0x420C0000`. | `AIWhiteboard.cs:117-126` only raises `BeaconRenderUpdated`. |
+| Render color | `0x0056aad6..0x0056ab02`; writer `0x0059c314..0x0059c322` | Add initializes failure time 0; FailedToFindLocation writes now. `abs(time)<1e-5f=0x3727C5AC` selects DARKGREEN, otherwise ORANGE. | C# counts failures instead of storing their time, so color semantics are absent. |
+| Render circles | `0x0056ab40..0x0056abd8`; callee `0x0056c9d8..0x0056cabd` | Draw radii R, R−`0.5f=0xBF000000` addition, R−`1.0f=0xBF800000` addition; same center/color, false closure, 8 segments, final `0.0f=0x00000000`. | Event-only test cannot settle geometry. |
 
-The pose-base helper is the only binary-unsettled rendering input and must remain UNKNOWN. A test that merely checks that `BeaconRenderUpdated` fired is not evidence for the VizManager geometry.
+The pose-base helper is the only binary-unsettled handler input and must remain UNKNOWN. Existing tag-list assertions take expected tags from the C# constants and are circular; use literal `0x44,0x45,0x35`. A test that merely checks `BeaconRenderUpdated` is not evidence for geometry or handler mutation.
 
 ## Build ordering and ownership
 

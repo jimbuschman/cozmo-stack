@@ -1,6 +1,33 @@
 # Q17 — parallel copies and stand-ins beside production paths
 
-Request: `requests/20261001-codex-queue-2.md`, Q17. Snapshot: `origin/main` / `954c092`, pulled before the scan.
+## Coverage audit (2026-10-01)
+
+| subsystem | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| M1 transport | CHECKED | None. Both socket/manual/offline construction and engine-facing consumers were traced. |
+| M2 protocol | CHECKED | None. The generated/manual codecs and every production serializer/parser entry were searched; no second live codec was found. |
+| M3 device | CHECKED | None. Offline engine/NV omissions and nominal calibration are reported. |
+| M4 control | CHECKED | None. Test clocks/rigs inject the same motion/sensor/cube bodies; no second control implementation was found. |
+| M5 animation | CHECKED | None. `IdleBehavior`, scheduler sink mode, trigger-map/library and cooldown-clock alternatives are reported. |
+| M6 Wwise/audio | CHECKED | None. Live renderer fallbacks, loader compatibility, and standalone recovered components are reported. |
+| M7 behavior | CHECKED | None. Parallel idle/chooser and cooldown consumers are reported. |
+| M8 framework | CHECKED | None. Global chooser and local scope/helper alternatives are reported. |
+| M9 music | CHECKED | None. The live legacy modulator path is reported. |
+| M10 derived state | CHECKED | None. Runnable behavior test doubles are reported. |
+| M11 vision | CHECKED | None. Offline entry, interpolation, pose and map/time alternatives are reported. |
+| M12 manipulation | CHECKED | None. Geometry and default dock sub-action stand-ins are reported. |
+| M13 navigation | CHECKED | None. Planner fallback, async actions, geometry and dock sub-actions are reported. |
+| M14 faces | CHECKED | None. Detector/recognizer fakes are reported. |
+| M15 freeplay | CHECKED | None. Direct helper entries, offline scheduling and asset-skipping tests are reported. |
+
+No conclusion rests on unchecked work. I scanned all 198 production source files and
+119 test files for alternate constructors, implementations of production interfaces,
+offline/direct/helper entry points, fallbacks and explicit stand-in/substitution labels;
+then traced each candidate from the four top-level production owners and from every
+test/tool caller. `CHECKED` does not mean “no issue”: the findings below are the complete
+set of behavior-changing parallel or substitute paths found at this snapshot.
+
+Request: `requests/20261001-codex-queue-2.md`, Q17. Snapshot: `origin/main` / `415b9e0`, pulled before the scan.
 
 I searched production, conformance and test code for duplicate owners, offline/tool paths, labelled stand-ins, fallback selection and direct helper entry points; then traced construction from `CozmoRobot`, `CozmoEngine`, `VisionSystem`, `ManipulationSystem` and `FreeplayStack`. This report lists behavior-changing alternatives, not benign dependency-injection hooks that still execute the same production body.
 
@@ -8,19 +35,19 @@ I searched production, conformance and test code for duplicate owners, offline/t
 
 | subsystem | confirmed parallel/stand-in paths | live stack can run it? |
 |---|---:|---|
-| M1 transport | 1 test/tool robot, production transport body shared | no |
+| M1 transport | fake peer plus the wider offline engine seam; transport body mostly shared | no |
 | M2 protocol | none | — |
 | M3 device | nominal calibration tool path | tools only |
 | M4 control | none separate; offline motion rig shares live sender | — |
-| M5 animation | `IdleBehavior` copy of live idle/face behavior | no (tool/tests only) |
-| M6 audio | song-output limiter fallback; disconnected exact DSP/frame components | yes / no respectively |
+| M5 animation | `IdleBehavior`; no-budget scheduler sink; cooldown-clock fallback | no / no / yes respectively |
+| M6 audio | song-output limiter and bank-loader fallbacks; disconnected exact DSP/frame components | yes / conditional / no respectively |
 | M7 behavior | same `IdleBehavior`; generic global chooser | tool-only / yes |
 | M8 framework | generic `ChooseAndSwitch`, direct Smart-helper scopes | yes / tests |
 | M9 music | old `WwiseModulatorNode.ValueAt` renderer path beside recovered evaluator | yes |
 | M10 derived | runnable-behavior test doubles | tests only |
 | M11 vision | offline `ProcessImage`, interpolation, pose-estimation, map/geometry substitutes | some yes |
-| M12 manipulation | planar footprint/intersection substitutes and direct helpers | yes |
-| M13 navigation | lattice vs straight-line fallback; async action models | yes |
+| M12 manipulation | planar footprint/intersection and default dock sub-action substitutes | yes |
+| M13 navigation | lattice vs straight-line fallback; async action and dock sub-action models | yes |
 | M14 faces | fake detector/recognizer boundary | tests only |
 | M15 freeplay | direct manager/tracker helpers and asset-early-return tests | tests only |
 
@@ -152,6 +179,41 @@ I searched production, conformance and test code for duplicate owners, offline/t
 - **Who relies on it:** M15 helper tests identified in Q13 (needs-action mapping, short-run cooldown, beacon, data tracker).
 - **Live use:** helper objects are live components, but the test entry is parallel; it omits production scheduling and assets. These are not separate production implementations, but they are test-only paths cited as if end-to-end.
 
+### P19 — M1/M3/M4 and all higher layers: the offline robot bypasses production engine gates
+
+- **Parallel path:** `CozmoRobot.CreateOffline` at `CozmoRobot.cs:345-352` constructs an offline peer and calls `CozmoEngine.InitOfflineLink`; that entry adds a robot with `withRic:false`, accepts any pose origin, skips the production engine thread and has no normal connection-owned NV component (`CozmoEngine.cs:825,1047-1052,1500-1508,1765-1792`).
+- **Live path shadowed:** socket/RCD/RIC connection setup → the 60 ms engine thread → origin filtering, connection NV queue, readiness and live counters.
+- **Who relies on it:** it is the base fixture for transport, device, control, animation, behavior, vision, manipulation, navigation and freeplay tests, plus several conformance tools. The search found calls in more than twenty test classes.
+- **Live use:** no. Most downstream production component bodies are shared, so this is a useful integration harness, but it changes behavior-changing gates. A test through `CreateOffline` cannot by itself prove RIC filtering, startup NV/readiness order, real thread timing, origin rejection or robot feedback/budget behavior unless it explicitly reinstates and asserts those edges.
+
+### P20 — M12/M13: the default dock compound runs unread sub-actions as a live stand-in
+
+- **Parallel path:** `StandInDockSubActions` at `Manipulation/DockActions.cs:74-113`; every `DockActionBase` installs it by default at `:170`.
+- **Live path shadowed:** `SetupTurnAndVerifyAction`'s native `VisuallyVerifyNoObjectAtPoseAction` and `TurnTowardsObjectAction` bodies in the IAction/ActionList path.
+- **Who relies on it:** all live dock actions unless a caller replaces `SubActions`, and the docking/manipulation tests. The visual-clear action is a counted success no-op; the turn uses `TurnTowardsObjectAsync(..., Math.PI)` plus an invented two-second marker wait.
+- **Live use:** yes. This is more specific than P14/P16: it is the default production dependency, not only a directly tested action model. A test that reaches a dock compound still traverses this substitute.
+
+### P21 — M5/M7: animation-group cooldown uses the host clock because MoodManager time is never wired
+
+- **Parallel path:** `AnimationLibrary.CooldownTimeSec` is optional at `AnimationLibrary.cs:258-264`; `GetAnimationNameFromGroup` falls back to `Environment.TickCount64 / 1000.0` at `:426`. No production assignment to `CooldownTimeSec` exists at HEAD.
+- **Live path shadowed:** the native group chooser reads `MoodManager+0x130`, its last-update seconds.
+- **Who relies on it:** live `CozmoAnimations` trigger/group selection and direct group/cooldown tests.
+- **Live use:** yes. The fallback usually advances monotonically, but it is a distinct time source and can change cooldown boundary decisions. Tests that inject an explicit `nowSec` or call a group directly do not prove this production edge.
+
+### P22 — M6: the general bank loader keeps arbitrary banks when the six scene banks are incomplete
+
+- **Parallel path:** `WwiseSoundLibrary.Load` calls `ApplySceneBankOrder(sceneOnly:false)`; `WwiseSoundLibrary.cs:211-239` returns without applying the native six-bank list unless all six are present. `LoadAudioScene` forces native selection, but `WwiseAudioSource.Load` uses the general loader at `WwiseAudioSource.cs:292`.
+- **Live path shadowed:** the native audio-scene constructor unconditionally builds the recovered six-bank order at `0x00592BB0`.
+- **Who relies on it:** synthetic/plain-directory Wwise tests and any production caller pointed at an incomplete directory.
+- **Live use:** conditional. The shipped full asset tree takes the native branch; partial deployments and test directories take the compatibility branch. Such tests establish parser/runtime behavior, not native scene membership or duplicate precedence.
+
+### P23 — M5/M3: direct scheduler sinks remove robot budgets and use a different pacing seam
+
+- **Parallel path:** `IAnimationSink`'s default played counters are null, which makes `AnimationScheduler` apply no robot backlog budget and use its local due-frame seam (`AnimationScheduler.cs:19-29,155,381-389,1142+`). Dozens of animation tests construct `new AnimationScheduler(testSink)` directly.
+- **Live path shadowed:** `CozmoRobot` constructs `RobotAnimationSink`; live `AnimationState` feedback supplies bytes/frames played, and `CozmoEngine.AnimationStreamerUpdate` runs the scheduler once per engine tick.
+- **Who relies on it:** `AnimationTests`, `M5AnimationTests`, `AnimationGapTests`, `AnimationStreamLifecycleTests`, `KeepAliveTests`, parts of `M3DeviceTests` and others.
+- **Live use:** no. These tests can establish within-frame order and local state transitions from source literals. They cannot establish backlog gates, number of frames built per real engine update, send failure/retry behavior or the complete wire lifecycle unless they use `RobotAnimationSink` through the offline/live robot route.
+
 ## No separate copy found
 
 - **M2:** serializers/parsers share one generated/manual catalog; round-trip tests may be weak but there is no second live codec.
@@ -165,4 +227,5 @@ I searched production, conformance and test code for duplicate owners, offline/t
 3. Make vision tests enter through mailbox/result dispatch when they support live records.
 4. Fail closed when lattice assets are required; never silently treat `StraightLinePlanner` as the engine planner.
 5. Keep stand-in acceptance tests, but label them gap-visibility and remove them from settlement evidence.
-
+6. Replace the default dock sub-action stand-in before using any dock-compound test as source fidelity evidence.
+7. Separate offline-harness coverage from live RIC/NV/thread/origin/budget coverage in test names and manifest evidence.

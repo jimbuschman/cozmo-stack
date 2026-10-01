@@ -1,7 +1,22 @@
 # Float-literal baseline check (Q9)
 
-Date: 2026-09-30  
-Baseline: `origin/main` / `9e7b4f5` after the required pull  
+## Coverage audit (2026-10-01)
+
+| baseline item(s) | coverage | unchecked basis affecting conclusions |
+| --- | --- | --- |
+| Baseline integrity: all 430 distinct file/literal rows | CHECKED | None. The fixture was reparsed at HEAD; 427 rows are live and the three named rows are absent from their named source files. |
+| 87 OpenCV sine-table rows | CHECKED | None. All 451 C# array words were independently compared with all 451 words in `libopencv_imgproc.so` at `0x000E7910`; the arrays are byte-identical. |
+| 273 Wwise window-table rows | CHECKED | None. All 3,968 C# words in `VWin256` through `VWin4096` were independently compared with `libcozmoEngine.so` at `0x01054490..0x01058290`; the arrays are byte-identical. |
+| 36 live non-table rows detailed by record above “Remaining 31” | CHECKED | None. Each source literal/type, native word/width and result was rechecked; every printed address was re-read in the binary or shipped asset. |
+| Remaining 31 live non-table rows | CHECKED | None. Each source literal/type, native word/width and result was rechecked; every printed address was re-read in the binary. |
+| Three stale rows | CHECKED | None. `DockActions.cs 0.523599`, `DriveActions.cs 0.523599`, and `FaceActions.cs 0.785398` have no live token occurrence. |
+
+No conclusion below rests on unchecked work. “For each literal” means each of the fixture's distinct `(file, decimal-token)` rows, which is what the lint baseline stores; comments and repeated uses of the same token do not create additional baseline rows. The recheck also examined every live code use when a token serves more than one native operation (notably `CornerRefinement.cs 1.4142135`).
+
+Date: 2026-09-30; completeness re-audit 2026-10-01
+
+Baseline: `origin/main` / `415b9e0` after the required pull
+
 Input: `cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/float_literal_baseline.txt`
 
 ## Baseline integrity
@@ -22,8 +37,8 @@ These rows are binary32 (`f` suffix), and their C# parse bits equal the correspo
 
 | Record | Baseline rows | Shipped source | Result |
 |---|---:|---|---|
-| M5-021 / M5-032 | 87 distinct `OpenCv310.cs` sine-table decimals | the 451-entry OpenCV `SinTable` used by `Ellipse2Poly`; shipped `libopencv_imgproc.so`, stock OpenCV 3.1.0 path documented at `OpenCv310.cs:3-19,373-435` | all MATCH, binary32 |
-| M6-002 | 273 distinct `WwiseVorbisNative.Windows.cs` window-table decimals | `libcozmoEngine.so` table family beginning at `0x01054490`; the checked-in arrays are documented and previously byte-compared at `WwiseVorbisNative.Windows.cs:4-16` | all MATCH, binary32 |
+| M5-021 / M5-032 | 87 distinct `OpenCv310.cs` sine-table decimals | all 451 C# `SinTable` words versus the shipped `libopencv_imgproc.so` range `0x000E7910..0x000E801C` | all 451 words byte-identical; every baseline row MATCH, binary32 |
+| M6-002 | 273 distinct `WwiseVorbisNative.Windows.cs` window-table decimals | all 3,968 C# words in `VWin256`, `VWin512`, `VWin1024`, `VWin2048`, and `VWin4096` versus `libcozmoEngine.so` `0x01054490..0x01058290` | all 3,968 words byte-identical; every baseline row MATCH, binary32 |
 
 The repeated literals in those source arrays collapse to one baseline row per file/literal, which is why 360 baseline rows cover more than 360 table elements.
 
@@ -33,7 +48,7 @@ The repeated literals in those source arrays collapse to one baseline row per fi
 
 | C# location/type | C# bits | Engine value | Engine bits/width | Result |
 |---|---|---|---|---|
-| `PreActionPose.cs:84`, `double` | `56.5771` = binary64 `0x404C49EED5119CE0`; converting it to f32 gives `0x42624EF3` | 56.5770835876 at `0x004E5CB2..0x004E5CBC` | `0x42624EEF`, binary32 | **MISMATCH** |
+| `PreActionPose.cs:84`, `double` | `56.5771` = binary64 `0x404C49DE69AD42C4`; converting it to f32 gives `0x42624EF3` | 56.5770835876 at `0x004E5CB2..0x004E5CBC` | `0x42624EEF`, binary32 | **MISMATCH** |
 
 The four-ULP error reaches the live flipping pose before path planning.
 
@@ -41,24 +56,24 @@ The four-ULP error reaches the live flipping pose before path planning.
 
 | Baseline literal / C# location | C# type and effective f32 bits | Engine address | Engine bits/width | Result |
 |---|---|---|---|---|
-| `0.261799`, `SearchActions.cs:34` | double; f32 `0x3E860A85` | `0x00546A3E` | `0x3E860A92`, f32 | **MISMATCH** |
-| `0.349066`, `SearchActions.cs:36` | double; f32 `0x3EB2B8C7` | `0x00546A4E` | `0x3EB2B8C2`, f32 | **MISMATCH** |
-| `0.0698132`, `SearchActions.cs:42` | double; f32 `0x3D8EFA39` | `0x00546ED2` | `0x3D8EFA35`, f32 | **MISMATCH** |
-| `0.0349066`, `SearchActions.cs:44` | double; f32 `0x3D0EFA39` | `0x00546E56` | `0x3D0EFA35`, f32 | **MISMATCH** |
-| `0.0872665`, `SearchActions.cs:168` (negative in use) | double; f32 `0x3DB2B8C7` / `0xBDB2B8C7` | state constant near `0x005BB024` | `0x3DB2B8C2` / `0xBDB2B8C2`, f32 | **MISMATCH** |
-| `0.785398`, `SearchActions.cs:170` | double; f32 `0x3F490FD8` | state constants `0x005BB176/0x005BB34A` | `0x3F490FDB`, f32 | **MISMATCH** |
+| `0.261799`, `SearchActions.cs:34` | double `0x3FD0C15097C80842`; f32 `0x3E860A85` | `0x00546A3E` | `0x3E860A92`, f32 | **MISMATCH** |
+| `0.349066`, `SearchActions.cs:36` | double `0x3FD65718EB895076`; f32 `0x3EB2B8C7` | `0x00546A4E` | `0x3EB2B8C2`, f32 | **MISMATCH** |
+| `0.0698132`, `SearchActions.cs:42` | double `0x3FB1DF4722D4405F`; f32 `0x3D8EFA39` | `0x00546ED2` | `0x3D8EFA35`, f32 | **MISMATCH** |
+| `0.0349066`, `SearchActions.cs:44` | double `0x3FA1DF4722D4405F`; f32 `0x3D0EFA39` | `0x00546E56` | `0x3D0EFA35`, f32 | **MISMATCH** |
+| `0.0872665`, `SearchActions.cs:168` (negative in use) | double magnitude `0x3FB65718EB895076`; f32 `0x3DB2B8C7` / `0xBDB2B8C7` | request constants at `0x005BB13E..0x005BB146` and `0x005BB27E..0x005BB28A` | `0x3DB2B8C2` / `0xBDB2B8C2`, f32 | **MISMATCH** |
+| `0.785398`, `SearchActions.cs:170` | double `0x3FE921FAFC8B007A`; f32 `0x3F490FD8` | action constants at `0x005BB0C4..0x005BB0CE`, `0x005BB204..0x005BB20E`, and `0x005BB33A..0x005BB344` | `0x3F490FDB` (signed as required), f32 | **MISMATCH** |
 
 ### M12-012 — `ManipulationBehaviors.cs 0.174533`
 
 | C# location/type | C# effective bits | Engine address/value | Engine bits/width | Result |
 |---|---|---|---|---|
-| `ManipulationBehaviors.cs:259`, `double` | f32 `0x3E32B8C7` | `0x0063C66C..0x0063C67E`, ten-degree `Radians` argument | `0x3E32B8C2`, f32 | **MISMATCH** |
+| `ManipulationBehaviors.cs:259`, `double` | binary64 `0x3FC65718EB895076`; f32 `0x3E32B8C7` | `0x0063C66C..0x0063C67E`, ten-degree `Radians` argument | `0x3E32B8C2`, f32 | **MISMATCH** |
 
 ### M12-019 — `Docking.cs 0.698132`
 
 | C# location/type | C# effective bits | Engine address/value | Engine bits/width | Result |
 |---|---|---|---|---|
-| `Docking.cs:136`, `double` | f32 `0x3F32B8C7` | `0x0063C182..0x0063C194`, 40-degree ClampPoseToFlat bound | `0x3F32B8C2`, f32 | **MISMATCH** |
+| `Docking.cs:136`, `double` | binary64 `0x3FE65718EB895076`; f32 `0x3F32B8C7` | `0x0063C182..0x0063C194`, 40-degree ClampPoseToFlat bound | `0x3F32B8C2`, f32 | **MISMATCH** |
 
 ### M10-002 — `UnexpectedMovement.cs 0.174533`
 
@@ -68,24 +83,24 @@ The four-ULP error reaches the live flipping pose before path planning.
 
 | Baseline literal / C# location | C# effective f32 | Engine address | Engine f32 | Result |
 |---|---|---|---|---|
-| `0.0872665`, `BlockWorld.cs:480` | `0x3DB2B8C7` | cluster angle `0x00625498..0x006254E0` | `0x3DB2B8C3` | **MISMATCH** |
-| `0.349066`, `BlockWorld.cs:487` | `0x3EB2B8C7` | pose clamp `0x00505F10..0x00505F22` | `0x3EB2B8C2` | **MISMATCH** |
-| `0.785398`, `BlockWorld.cs:511` | `0x3F490FD8` | visibility call `0x006220E2..0x006220EC` | `0x3F490FDB` | **MISMATCH** |
+| `0.0872665`, `BlockWorld.cs:480` | double `0x3FB65718EB895076`; f32 `0x3DB2B8C7` | cluster angle `0x00625498..0x006254E0` | `0x3DB2B8C3`, f32 | **MISMATCH** |
+| `0.349066`, `BlockWorld.cs:487` | double `0x3FD65718EB895076`; f32 `0x3EB2B8C7` | pose clamp `0x00505F10..0x00505F22` | `0x3EB2B8C2`, f32 | **MISMATCH** |
+| `0.785398`, `BlockWorld.cs:511` | double `0x3FE921FAFC8B007A`; f32 `0x3F490FD8` | visibility call `0x006220E2..0x006220EC` | `0x3F490FDB`, f32 | **MISMATCH** |
 
 ### M11-015 — body-turn parameters
 
 | Baseline literal / C# location | C# effective f32 | Engine address | Engine f32 | Result |
 |---|---|---|---|---|
-| `0.0349066`, `VisionSystem.cs:1065` | `0x3D0EFA39` | TurnInPlace tolerance `0x00545A78..0x00545A84` | `0x3D0EFA35` | **MISMATCH** |
-| `5.23599`, `VisionSystem.cs:1068` | `0x40A78D3B` | TurnInPlace max speed `0x00545A28..0x00545A44` | `0x40A78D36` | **MISMATCH** |
+| `0.0349066`, `VisionSystem.cs:1065` | double `0x3FA1DF4722D4405F`; f32 `0x3D0EFA39` | TurnInPlace tolerance `0x00545A78..0x00545A84` | `0x3D0EFA35`, f32 | **MISMATCH** |
+| `5.23599`, `VisionSystem.cs:1068` | double `0x4014F1A75CD0BB6F`; f32 `0x40A78D3B` | TurnInPlace max speed `0x00545A28..0x00545A44` | `0x40A78D36`, f32 | **MISMATCH** |
 
 ### M14-003 — face-tracking parameters
 
 | Baseline literal / C# location | C# effective f32 | Engine address | Engine f32 | Result |
 |---|---|---|---|---|
-| `0.0349066`, `FaceActions.cs:488` | `0x3D0EFA39` | pan/tilt tolerance `0x005646BC..0x005646D8` | `0x3D0EFA35` | **MISMATCH** |
-| `0.776672`, `FaceActions.cs:508` | `0x3F46D3FA` | max head angle `0x005646DC..0x005646E8` | `0x3F46D3F2` | **MISMATCH** |
-| `0.174533`, `FaceActions.cs:514` | `0x3E32B8C7` | sound threshold `0x00564722..0x0056473E` | `0x3E32B8C2` | **MISMATCH** |
+| `0.0349066`, `FaceActions.cs:488` | double `0x3FA1DF4722D4405F`; f32 `0x3D0EFA39` | pan/tilt tolerance `0x005646BC..0x005646D8` | `0x3D0EFA35`, f32 | **MISMATCH** |
+| `0.776672`, `FaceActions.cs:508` | double `0x3FE8DA7F3CF70154`; f32 `0x3F46D3FA` | max head angle `0x005646DC..0x005646E8` | `0x3F46D3F2`, f32 | **MISMATCH** |
+| `0.174533`, `FaceActions.cs:514` | double `0x3FC65718EB895076`; f32 `0x3E32B8C7` | sound threshold `0x00564722..0x0056473E` | `0x3E32B8C2`, f32 | **MISMATCH** |
 
 ### M15-012 — `ManipulationBehaviors.cs 0.349066`
 
@@ -115,11 +130,19 @@ The three rounded literals in `WwiseGain.cs:620` miss the words loaded by the na
 
 ### M6-002 curve evaluator — double-width substitutions
 
-The native SCurve coefficients are binary32 words: `0.0196138397 = 0x3CA0AD34` at `0x00A152A4`, `0.247674793 = 0x3E7D9E76` at `0x00A152A8`, and the clamp is binary32 764.616. `WwiseHierarchy.cs:93-109` instead evaluates in `double`; its baseline literals are unsuffixed binary64. `0.0196138` would narrow to `0x3CA0AD1F` (already different), `0.2476748` happens to narrow to `0x3E7D9E76` but is still evaluated at the wrong width, and `764.616` is likewise a binary64 clamp. All three are **MISMATCH at their C# type**; the first is also a value mismatch before considering width.
+The native SCurve coefficients and scaling clamp are binary32:
+
+| Baseline literal | C# binary64 | Narrowed C# f32 | Native value and evidence | Result |
+|---|---:|---:|---|---|
+| `0.0196138` | `0x3F9415A3D6337DDC` | `0x3CA0AD1F` | `0x3CA0AD34` at `0x00A152A4` | **MISMATCH (value and width)** |
+| `0.2476748` | `0x3FCFB3CECF058C31` | `0x3E7D9E76` | `0x3E7D9E76` at `0x00A152A8` | **MISMATCH (width)** |
+| `764.616` | `0x4087E4ED916872B0` | `0x443F276D` | positive/negative clamps `0x443F2770`/`0xC43F2770` constructed at `0x00A14F98..0x00A14FCC` and `0x00A15060..0x00A15074` | **MISMATCH (value and width)** |
+
+`WwiseHierarchy.cs:93-109` evaluates all three in binary64, whereas the native path is binary32 throughout.
 
 ### M5-020 — neutral-face asset literals
 
-`ProceduralFace.cs:338,344` contains `9.169666f` (`0x4112B6F4`), `1.214333f` (`0x3F9B6F44`), `-10.206374f` (`0xC1234D4F`) and `1.222037f` (`0x3F9C6BB5`). These are parsed from the shipped `anim_neutral_eyes_01` procedural-face asset into binary32 by the native loader and by C#. All four **MATCH** the shipped asset value and width.
+`ProceduralFace.cs:338,344` contains `9.169666f` (`0x4112B6F4`), `1.214333f` (`0x3F9B6F44`), `-10.206374f` (`0xC1234D4F`) and `1.222037f` (`0x3F9C6BB5`). The extracted shipped `anim_singlepose_01.bin` entry `anim_neutral_eyes_01` contains those same little-endian words at file offsets `0xF0`, `0xF8`, `0xA0`, and `0xA8`, respectively. The native loader and C# both consume them as binary32, so all four **MATCH** the shipped asset value and width.
 
 ## Remaining 31 current non-table rows
 
@@ -137,11 +160,11 @@ The table below closes every current non-table row not already detailed above. `
 | M10-003 ObjectPositionUpdated in `ObjectBehaviors.cs`: `0.785398` | f64 `0x3FE921FAFC8B007A` (f32 `0x3F490FD8`) | ctor `0x00612182..0x0061218A`: `0x3F490FDB`, f32 | **MISMATCH** |
 | unowned `AcknowledgeObject` parameter in the M10-003-tagged file: `0.0872665` | f64 `0x3FB65718EB895076` (f32 `0x3DB2B8C7`) | native pan/tilt setup uses `0x3DB2B8C2`, f32 | **MISMATCH** |
 | unowned `AcknowledgeObject` parameter: `0.785398` | f64 `0x3FE921FAFC8B007A` (f32 `0x3F490FD8`) | native maximum turn uses `0x3F490FDB`, f32 | **MISMATCH** |
-| M13-008 `ChargerActions.cs`: `0.0349066` | f64 `0x3FA1DF4722D4405F` (f32 `0x3D0EFA39`) | `ConfigureAlignWithChargerAction` `0x0054E1C4`, head tolerance `0x3D0EFA35`, f32 | **MISMATCH** |
+| M13-008 `ChargerActions.cs`: `0.0349066` | f64 `0x3FA1DF4722D4405F` (f32 `0x3D0EFA39`) | `ConfigureAlignWithChargerAction` begins at `0x0054E1C4`; its head tolerance is constructed at `0x0054E26A..0x0054E276` as `0x3D0EFA35`, f32 | **MISMATCH** |
 | unowned docking rotation gate in the M12-tagged `Docking.cs`: `22.9183` | f64 `0x4036EB15B573EAB3` (f32 `0x41B758AE`) | `WasBodyRotatingTooFast` argument `0x0063BEA6..0x0063BEB8`: `0x41B758B4`, f32 degrees | **MISMATCH** |
 | M12-023 `DriveActions.cs`: `0.174533` | f64 `0x3FC65718EB895076` (f32 `0x3E32B8C7`) | ctor goal tolerance `0x3E32B8C2`, f32 | **MISMATCH** |
 | M12-023 `DriveActions.cs`: `0.261799` (negative in use) | f64 `0x3FD0C15097C80842` | init head target `0xBE860A92`, f32 (magnitude `0x3E860A92`) | **MISMATCH (value and width)** |
-| M13-002 `FlipBlockAction.cs`: `0.0872665` | f64 `0x3FB65718EB895076` (f32 `0x3DB2B8C7`) | request at `0x0055EE10..0x0055EE1C`: `0x3DB2B8C2`, f32 | **MISMATCH** |
+| M13-002 `FlipBlockAction.cs`: `0.0872665` | f64 `0x3FB65718EB895076` (f32 `0x3DB2B8C7`) | request setup at `0x0055EE10..0x0055EE3C`, with `0x3DB2B8C2` constructed at `0x0055EE20..0x0055EE2C`, f32 | **MISMATCH** |
 | local `StraightLinePlanner` parameter in the M12-002-tagged `RobotPath.cs`: `0.0349066` | f64 `0x3FA1DF4722D4405F` (f32 `0x3D0EFA39`) | native `TurnInPlaceAction` tolerance `0x3D0EFA35`, f32 | **MISMATCH** |
 | M10-001 `OffTreads.cs`: `0.261799` | f64 `0x3FD0C15097C80842` | pool `0x005122B0`: f64 `0x3FD0C15240000000` (the exact widening of f32 `0x3E860A92`) | **MISMATCH** |
 | M10-001: `0.785398f` | f32 `0x3F490FD8` | pool `0x005122BC`: `0x3F490FDB`, f32 | **MISMATCH** |
@@ -157,7 +180,7 @@ The table below closes every current non-table row not already detailed above. `
 | M13-020 `FaceActions.cs`: `0.0872665` | f64 `0x3FB65718EB895076` (f32 `0x3DB2B8C7`) | native default pan tolerance `0x3DB2B8C2`, f32 | **MISMATCH** |
 | M14-001 `Faces.cs`: `0.174533` | f64 `0x3FC65718EB895076` (f32 `0x3E32B8C7`) | rotation gate uses `0x3E32B8C2`, f32 | **MISMATCH** |
 | M14-001: `0.523599` | f64 `0x3FE0C152B0A6FC59` (f32 `0x3F060A96`) | rotation gate uses `0x3F060A92`, f32 | **MISMATCH** |
-| M11 map-pose threshold in `MemoryMap.cs`: `0.349066` | f64 `0x3FD65718EB895076` (f32 `0x3EB2B8C7`) | `MapComponent::UpdateRobotPose` `0x0067E23A`, `0x3EB2B8C2`, f32 | **MISMATCH** |
+| M11 map-pose threshold in `MemoryMap.cs`: `0.349066` | f64 `0x3FD65718EB895076` (f32 `0x3EB2B8C7`) | `MapComponent::UpdateRobotPose` constructs `0x3EB2B8C2` at `0x0067E244..0x0067E24E`, f32 | **MISMATCH** |
 | M11-017 `MemoryMap.cs`: `6.00001` | f64 `0x401800029F16B11C` (f32 `0x40C00015`) | compare `0x0067FA14`, pool `0x0067FCD0`: `0x40C00015`, f32 | **MISMATCH (width)** |
 
 The 31 rows therefore add **3 MATCH, 27 MISMATCH, and 1 mixed-use MISMATCH**. They also expose six literals in fidelity-tagged files whose actual behavior is not owned by the nearby manifest record: the two `CantHandleTallStack` angles, `OnConfigSeen` time, `InteractWithFaces` tolerance, `DriveToFace` deceleration, and the docking rotation gate. That is the same “source-backed pieces inside an unowned path” pattern the calibration found.
@@ -167,6 +190,44 @@ The 31 rows therefore add **3 MATCH, 27 MISMATCH, and 1 mixed-use MISMATCH**. Th
 The fixture is not the stated 437-entry set at HEAD. It has 432 physical lines: two comments and **430 data rows**. Of those, **427 still occur in source** and three are stale (`DockActions.cs 0.523599`, `DriveActions.cs 0.523599`, `FaceActions.cs 0.785398`). The live 427 rows divide into 87 OpenCV table rows, 273 Wwise Vorbis table rows, and 67 non-table rows. Every row is accounted for above.
 
 Across the 427 live entries, **374 match**, **52 mismatch**, and **one distinct baseline literal is mixed** (`CornerRefinement.cs 1.4142135`: one native use matches and one does not). Counting that mixed row as a failing baseline entry gives **53 failing entries**. The mismatch groups are: M5-020 none; M6-002/M6-010/M6 curve evaluator; M7-009/M7-020 plus unowned behavior constants; M10-001/M10-002/M10-003; M11-004/M11-005/M11-006/M11-008/M11-015/M11-017 plus the map-pose threshold; M12-001/M12-010/M12-012/M12-019/M12-023; M13-002/M13-008/M13-020 plus the local planner; M14-001/M14-003; and M15-012 plus its unowned tall-stack parameters.
+
+This source-file reconciliation is the completeness check for all 430 fixture rows. “Mixed” is kept separate from “mismatch” so the totals do not conceal the two native uses of that one token.
+
+| Baseline source file | Rows | MATCH | MISMATCH | MIXED | STALE |
+|---|---:|---:|---:|---:|---:|
+| `Animation/OpenCv310.cs` | 87 | 87 | 0 | 0 | 0 |
+| `Animation/ProceduralFace.cs` | 4 | 4 | 0 | 0 | 0 |
+| `Animation/Wwise/WwiseGain.cs` | 3 | 0 | 3 | 0 | 0 |
+| `Animation/Wwise/WwiseHierarchy.cs` | 3 | 0 | 3 | 0 | 0 |
+| `Animation/Wwise/WwiseMixer.cs` | 1 | 1 | 0 | 0 | 0 |
+| `Animation/Wwise/WwiseModulatorEvaluator.cs` | 4 | 4 | 0 | 0 | 0 |
+| `Animation/Wwise/WwiseVoiceBusEngine.cs` | 1 | 1 | 0 | 0 | 0 |
+| `Animation/Wwise/WwiseVorbisNative.cs` | 1 | 1 | 0 | 0 | 0 |
+| `Animation/Wwise/WwiseVorbisNative.Windows.cs` | 273 | 273 | 0 | 0 | 0 |
+| `Behavior/CubeGameBehaviors.cs` | 3 | 0 | 3 | 0 | 0 |
+| `Behavior/FaceBehaviors.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Behavior/IdleBehavior.cs` | 1 | 1 | 0 | 0 | 0 |
+| `Behavior/ManipulationBehaviors.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Behavior/Mood.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Behavior/ObjectBehaviors.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Manipulation/ChargerActions.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Manipulation/DockActions.cs` | 1 | 0 | 0 | 0 | 1 |
+| `Manipulation/Docking.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Manipulation/DriveActions.cs` | 3 | 0 | 2 | 0 | 1 |
+| `Manipulation/FlipBlockAction.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Manipulation/PreActionPose.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Manipulation/RobotPath.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Manipulation/SearchActions.cs` | 6 | 0 | 6 | 0 | 0 |
+| `OffTreads.cs` | 5 | 0 | 5 | 0 | 0 |
+| `UnexpectedMovement.cs` | 1 | 0 | 1 | 0 | 0 |
+| `Vision/BlockWorld.cs` | 4 | 0 | 4 | 0 | 0 |
+| `Vision/CameraModel.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Vision/CornerRefinement.cs` | 3 | 2 | 0 | 1 | 0 |
+| `Vision/FaceActions.cs` | 5 | 0 | 4 | 0 | 1 |
+| `Vision/Faces.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Vision/MemoryMap.cs` | 2 | 0 | 2 | 0 | 0 |
+| `Vision/VisionSystem.cs` | 2 | 0 | 2 | 0 | 0 |
+| **Total** | **430** | **374** | **52** | **1** | **3** |
 
 ## Exhaustive words for the 360 direct-table rows
 
