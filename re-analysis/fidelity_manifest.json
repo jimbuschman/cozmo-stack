@@ -132,7 +132,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-09-30",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -2295,8 +2295,8 @@
         "channel mapping half 0 = channel 0, half 1 = channel 1 (callers 0x00A72618, 0x00A73EA0, 0x00A74100; the 5th argument only sets the interleave stride channels*2 at 0x00A7A1C4)",
         "no source-side channel gate: only wFormatTag == 2 (0x00A72704, 0x00A73B2C); the 7 shipped stereo format-tag-2 media (blockAlign 72, 4 bits) decode and route"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A7 (Codex re-audit re-analysis/research/20261001-reaudit-M5B-M6.md, confirmed by the manager in WwiseAdpcm.cs, 2026-10-02): the decode arithmetic holds (0x00A7A194..0x00A7A3C4, tables 0x00FFD650/0x00FFD708). The engine gates only on format tag 2 (0x00A72704, 0x00A73B2C) and its decoder is generic in the channel count (0x00A72618, 0x00A73EA0, 0x00A74100); WwiseAdpcm.cs:52-53 rejects anything but 1 or 2 channels, and :76 clamps the header step index, which the engine does not. Unreachable in the 227 shipped ADPCM files, but not the engine's path.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseTests.TheAdpcmHeaderPredictorIsOutputSampleZero, WwiseTests.TheAdpcmDiffIsTheWwiseFormulaNotTheImaShiftSum, WwiseTests.AShippedAdpcmBlockDecodesToTheRowsExactSamples, WwiseTests.AStereoAdpcmBlockInterleavesHalfZeroAsChannelZero, WwiseTests.WhatIsDecodableIsDecidedInExactlyOnePlace",

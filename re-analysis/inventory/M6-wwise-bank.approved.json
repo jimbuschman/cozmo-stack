@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-09-30",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "24d52417efd0b0461da7c9e5a128321187be817c365e31896d4c0a70c145f2e0",
+  "inventory_sha256": "30f41f9010108f939694622e4d21d9b9d1a51c032f2957de7d050e18d61172dd",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -61,7 +61,7 @@
       "hardware_required": false
     },
     "M6-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "IMA ADPCM exactly: header predictor is sample 0, 63 nibbles, diff ((2n+1)*step)>>3, interleaved int16, 64 frames per block",
       "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
       "evidence": [

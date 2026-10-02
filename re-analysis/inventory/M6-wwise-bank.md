@@ -2553,3 +2553,7 @@ citation check #2 (`20260929-B-M6b-4-batch4b-citation-check.md`, "Check #2", F1.
 | C29.8 | C28 residual list | O3: Term between steps 12 and 13 (`0xA02B94..0xA02BC4`): `[[pbi+0x150]+0xD]&1` set and `[pbi+0x150] != 0` -> destroy with `0xA1E8F4` and pool-free; O8: `0xA0228C` sets `1BE` bit5, `[list+0x22]++`, `[G]++` and `0xA022E8` undoes it; `0xA0054C`/`0xA00494` re-registration (from `0xA39610`) | `0xA02B18..0xA02BC4`; `0xA0228C`; `0xA022E8`; `0xA00494..0xA0054C` |
 
 Residuals (RECOVERABLE_GAP, named): `0xA1EC54`, `0xA03618`, `0xA054D8`, `0xA53244`, `0xA76608`, `0xA55CC4`, `0xA55D04`, `0xA55A84`, `0xA54A30`, `0xA56478`, `0xA5495C`, `0xA54F1C` body `0xA54F50..0xA5531C`, `0x9C5154`, `0x9BC66C`, `0x9BE898`, `0xA11F98`, `0xA1E8F4`, `0xA1ECBC`, `0xA3E27C`, `0x9BDC8C`, the ten `[rX+0x2C]` byte stores of `0xA3EE9C..0xA407B0`, the callers of `0x9F69B4`/`0x9F6DB4`, and the `ExecuteEvent` caller path for a zero playing id.
+
+## Correction A7 (manager, 2026-10-02)
+
+Codex's re-audit (`re-analysis/research/20261001-reaudit-M5B-M6.md`) found that M6-003's code rejects ADPCM with more than two channels and clamps the header step index, where the engine does neither. The manager confirmed it in the code. M6-003 goes back to IMPLEMENTATION_GAP.
