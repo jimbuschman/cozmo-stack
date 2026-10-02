@@ -2557,3 +2557,21 @@ Residuals (RECOVERABLE_GAP, named): `0xA1EC54`, `0xA03618`, `0xA054D8`, `0xA5324
 ## Correction A7 (manager, 2026-10-02)
 
 Codex's re-audit (`re-analysis/research/20261001-reaudit-M5B-M6.md`) found that M6-003's code rejects ADPCM with more than two channels and clamps the header step index, where the engine does neither. The manager confirmed it in the code. M6-003 goes back to IMPLEMENTATION_GAP.
+
+## Correction C30 (manager, 2026-10-02): the live-audio check
+
+Codex's row-by-row check (`re-analysis/research/20260930-M6-live-audio-check.md`) was verified by an Opus verifier.
+The result is adopted here by reference: `re-analysis/research/20261002-M6-live-audio-verify.md`. Its rows
+C30.1..C30.8 replace or extend C23.1, the check's A9 and A10, C2, 5.7, row 21 and C1.3. They are rows for this
+inventory; where they differ from earlier text, C30 wins.
+
+- **C30.8 (decision):** C24.2's reading of 0xA54A30 has not been checked by Opus. The C29 residuals stand, and
+  0xA54A30 stays RECOVERABLE_GAP until the builder's verifier confirms or corrects C24.2.
+- **C# defects:** the file lists them (StartStream's raw int and arguments, NotReadyCheck's ±0.5f truncation, the
+  linker's Init and device-table ownership, Reserve's failure result 2, the voice pass's required collaborators).
+  Each belongs to M6-022, M6-025 or M6-026. No status changes.
+- **C30.W, production wiring:** none of the Wwise runtime is constructed in production. Every runner uses the
+  direct-decode `WwiseAudioSource`. The robot path must be one `WwiseRobotAudioPath` composition set as
+  `CozmoAnimations.AudioSource`. The file gives the engine's calling path and the C# host. Until then, no test may
+  cite M6-025 or M6-026 as covering the live path.
+- **The music PBI, `0xA381F4`:** not part of M6-026. It belongs to the music path (M9, or a new record).
