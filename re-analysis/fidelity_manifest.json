@@ -184,7 +184,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M10-derived.md",
-        "approved": "2026-09-29",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M10-derived.approved.json"
       }
     },
@@ -236,7 +236,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M14-faces.md",
-        "approved": "2026-09-29",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M14-faces.approved.json"
       }
     },
@@ -249,7 +249,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-09-29",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -3245,7 +3245,7 @@
       "subsystem": "M10-derived",
       "title": "Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10",
       "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426",
@@ -3256,7 +3256,7 @@
       "test": "DerivedStateTests.TheUnexpectedMovementSumsMatchTheAccumulationRule, DerivedStateTests.TheSameSignDecayCannotMakeTheCountNegative",
       "effect": "unexpected movement is detected differently",
       "provenance": "the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C4 (R-ANIM part 2 item 2): the +1 paths' sums and the guarded same-sign decrement are reproduced Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.",
-      "unresolved": "Settled (C4): the +1 paths add l and r to the sums, and the same-sign decrement is guarded by count > 0.",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. The gyro threshold is binary32 0x3E32B8C2 (0x0063DAB0/0x0063DAB6, vcmpe.f32 0x0063E4B6..0x0063E4C2); UnexpectedMovement.cs:136 uses 0.174533f (0x3E32B8C7). The detector structure otherwise matches. Before: Settled (C4): the +1 paths add l and r to the sums, and the same-sign decrement is guarded by count > 0.",
       "hardware_required": false
     },
     {
@@ -3378,7 +3378,7 @@
       "subsystem": "M10-derived",
       "title": "Nothing in this build ever raises the obstacle-detected flag",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4)",
@@ -3392,7 +3392,7 @@
       "test": "DerivedStateTests.NothingRaisesTheObstacleStrategyByItself",
       "id": "M10-009",
       "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
-      "unresolved": null,
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. AIComponent+4 is zeroed (0x00569A80) and never set; the C# exposes a writable BehaviorContext.ObstacleDetected seam (IBehavior.cs:45-59) that a test raises, so the title's claim is false of the C# build.",
       "effect": "the robot reacts to an obstacle that the original never reports",
       "hardware_required": false
     },
@@ -5160,8 +5160,8 @@
         "0x0087DE3C tests the parts-detected byte +0x30; 0x0087DE42..0x0087DE5E takes the eye centres +0x34..+0x40 through GetIntraEyeDistance 0x0087DC68 (sqrt(dx^2+dy^2)/cos(+0xec), divisor 1.0 when |cos|<1e-5, 6.0 when dist<1e-5); 0x0087DE60..0x0087DF1C derives the box eye distance |0.5*w| floored at 6.0; 0x0087DF20..0x0087E068 halves the (zeroed in the box branch) eye-slot sum for the midpoint, scales fx*62.0/eyeDistance (0x42780000) and parents the pose to Camera+0xc.",
         "0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": "Built and tested: the reachable id-keyed match (C2-F7/C2-F7b/C2-F7c: the pose/overlap loop is dead, the rotating-too-fast gate is new-entry-only, and a no-parts observation keeps the entry's translation), the 15 s unnamed-face expiry, and the C2-F23 geometry (parts GetIntraEyeDistance with the signed roll divisor, the box branch midpoint pixel (0,0), and the focalX * 62.0 / eyeDistance tail). The face roll (this+0xec) is the DetectedFace.RollRad seam input; the production detector that must populate it is the M11-016 OKAO boundary recorded by M14-010.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. GetIntraEyeDistance/UpdateTranslation are binary32 (0x0087DC68..0x0087DDB0, 0x0087DE24..0x0087E068; epsilon 0x3727C5AC, 62.0 = 0x42780000); Faces.cs computes in double. Before: Built and tested: the reachable id-keyed match (C2-F7/C2-F7b/C2-F7c: the pose/overlap loop is dead, the rotating-too-fast gate is new-entry-only, and a no-parts observation keeps the entry's translation), the 15 s unnamed-face expiry, and the C2-F23 geometry (parts GetIntraEyeDistance with the signed roll divisor, the box branch midpoint pixel (0,0), and the focalX * 62.0 / eyeDistance tail). The face roll (this+0xec) is the DetectedFace.RollRad seam input; the production detector that must populate it is the M11-016 OKAO boundary recorded by M14-010.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.M14_001_FacesMatchByTrackerIdAndTimestampRegressionsContinue"
@@ -5199,8 +5199,8 @@
         "This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks.",
         "The action list calls CheckIfDone once per basestation tick, and the tick is 60 ms (0x03938700 ns): CozmoInstanceRunner::Run 0x0065B3D2/0x0065B3D8 -> Update 0x0065B420 -> CozmoEngine::Update 0x0065BB16 -> RobotManager::UpdateAllRobots 0x004ED648 -> Robot::Update 0x0052F6E4 -> ActionList::Update 0x005140BC -> ActionQueue::Update 0x0053F598 -> IActionRunner::Update 0x0053F628 -> IAction::UpdateInternal 0x00540592 -> ITrackAction::CheckIfDone (vtable slot 0x01022F1C). 33 ms is the M5 keep-alive cadence, not an action tick."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": "Cadence corrected to the 60 ms basestation tick (C2-F6); the other constants are built and tested.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. Tolerance 0x3D0EFA35, max head 0x3F46D3F2 (0x005646DC..0x005646E8) and sound threshold 0x3E32B8C2 are doubles in FaceActions.cs; tracking runs as a wall-clock loop with Task.Delay(60) (FaceActions.cs:293-327) instead of CheckIfDone on the action tick, and clamps speeds to an invented 0.01. Before: Cadence corrected to the 60 ms basestation tick (C2-F6); the other constants are built and tested.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.TheFaceActionConstantsAreTheEnginesOwn",
@@ -5218,8 +5218,8 @@
         "RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.",
         "This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": "Reachable path built and tested: the reacted-to set (UpdateReactedTo), the >2 observation gate and the 60 s cooldown. InitReactedTo is uncalled (C2-F4).",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. RecentlyReacted keeps a binary32 timestamp and compares last + 60.0f in f32 (0x00611DD0..0x00611E14); FaceBehaviors.cs uses double. Before: Reachable path built and tested: the reacted-to set (UpdateReactedTo), the >2 observation gate and the 60 s cooldown. InitReactedTo is uncalled (C2-F4).",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.ThePetStrategyRemembersWhatItReactedToAndWaitsAMinute",
@@ -5237,8 +5237,8 @@
         "TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns \"TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed\" and turns nowhere.",
         "This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them."
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": "Built: the image-timestamp historical state (History.At(pet.LastObservedTimestamp) from ReactToPetBehavior), the two atan2 angles and the PanAndTilt entry; when the history cannot answer the action warns ComputeTurnTowardsImagePointAnglesFailed and turns nowhere.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. ComputeTurnTowardsImagePointAngles uses f32 deltas, atan2f (0x0051886C, 0x0051888E) and vadd.f32; FaceActions.cs:59-82 uses double and Math.Atan2. Before: Built: the image-timestamp historical state (History.At(pet.LastObservedTimestamp) from ReactToPetBehavior), the two atan2 angles and the PanAndTilt entry; when the history cannot answer the action warns ComputeTurnTowardsImagePointAnglesFailed and turns nowhere.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests.TurnTowardsImagePointIsTheAngleThePixelSubtends",
@@ -5464,8 +5464,8 @@
         "needs_decay_config.json",
         "needs_config.json"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. GetDecayMultipliers and NumDamagedPartsForRepairLevel are binary32 (vcmpe.f32 0x0069C270, vmul.f32 0x0069C2A4, 0x0069CCC4..0x0069CCD2); Needs.cs computes in double.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig"
@@ -5544,8 +5544,8 @@
         "IBehavior::NeedActionCompleted 0x005BE40C",
         "ActivityGatherCubes::Update 0x005AF2F0"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. TransitionToObjectPickedUp takes the stack branch (0x005DF4EA..0x005DF4F2) before the floor-placement PickupCube call (0x005DF59C..0x005DF5A0); the C# reports PickupCube first and no StackCube (CubeGameBehaviors.cs:1030-1055). ActivityGatherCubes registers GatherCubes (0x005AF2EC..0x005AF2F8), and FistBump, PeekABoo, TrackLaser and GuardDog call sites are missing.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity"
@@ -5561,8 +5561,8 @@
       "evidence": [
         "BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The event names and condition hold (0x005E002C..0x005E0096); the route to them uses a LOCAL free-pose search and an invented stand pose (CubeGameBehaviors.cs:1058-1089) that no record owns.",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
@@ -5596,8 +5596,8 @@
         "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C",
         "AIWhiteboard::AddBeacon 0x0056C39C"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. SelectNewBeacon passes the full copied Robot pose to AddBeacon (0x005E5F1A..0x005E5F30); the C# builds a planar pose with Z = 0 (CubeGameBehaviors.cs:961-964).",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
@@ -5614,8 +5614,8 @@
         "BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174",
         "BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. 2 and 0x1B hold; the head angle is 0xBEB2B8C2 (C# -0.349066f = 0xBEB2B8C7, ManipulationBehaviors.cs:135), head and drive are one CompoundActionParallel (0x005C8196..0x005C822A) but the C# does not await the head, and the 0x199 keep-alive in TurnTowardsFaceWrapperAction (0x005C8264..0x005C82CC) is DEFERRED.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests.PutDownBlockBacksUpPlaysThePutDownAndLooksDown"
@@ -5633,8 +5633,8 @@
         "ActivityStrictPriority constructor 0x005B23DC",
         "activities_config.json"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The loader holds (0x005AD5CC..0x005AD69C, 0x005B23DC..0x005B252C); the tagged PickNewActivity (FreeplaySystem.cs:319-345) is INFERRED with an invented KeepsPriority partition.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -5705,8 +5705,8 @@
         "Robot::SetOnChargerPlatform 0x00511DB0",
         "unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. Accumulated and resume times are u64 nanoseconds (0x0056EC50..0x0056EC84, 0x0056EED6..0x0056EF14, 0x0056F082), only the next-send deadline is f32 seconds; the C# uses double seconds. The tracker is not seeded with the current off-treads or on-charger state (FreeplayStack.cs:157-168).",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -7149,9 +7149,9 @@
       ],
       "effect": "physical-only behaviour runs at different times",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
-      "unresolved": null,
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The valid-object path holds (0x0050FC36, 0x0051397A, 0x00536980); the handler's parse-failure and non-object-root branches are MISSING (CozmoEngine.cs:907-925) and unowned.",
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests.OnBackTakesOneSecondAndUsesThePhysicalCentre"
@@ -7167,9 +7167,9 @@
       ],
       "effect": "falls are reported differently",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
-      "unresolved": null,
+      "unresolved": "Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. HandleFallingStopped calls NeedsManager::RegisterNeedsActionCompleted(17) before the broadcast (0x005350AA..0x0053519C); the C# NeedsActionCompleted?.Invoke(17) has no subscriber (Sensors.cs:118-124, 746), so the reward is dropped.",
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests.FallingNeedsTheFlagAndSomethingElse"

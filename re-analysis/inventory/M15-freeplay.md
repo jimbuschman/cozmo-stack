@@ -828,3 +828,7 @@ and `+0x3AC` is the same clock (written by `Update` 0x00695CA8). The stack's
 ## Correction A1 (manager audit, 2026-09-29)
 
 The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
+
+## Correction A3 (manager, 2026-10-02, the Codex re-audit)
+
+Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M15-004, M15-008, M15-009, M15-011, M15-012, M15-013 and M15-015 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.

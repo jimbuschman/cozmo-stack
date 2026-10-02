@@ -7,10 +7,10 @@ Manifest of **418 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 171 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 156 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 18 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 189 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 204 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 26 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -33,12 +33,12 @@ remains after both, and they do not go away by working harder on this repository
 | M7-behaviour — Idle, mood and reactions | 22 | 0 | 18 | 0 | 0 | yes | no |
 | M8-framework — Behaviour framework and scoring | 14 | 0 | 13 | 0 | 0 | yes | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 17 | 0 | 1 | no | no |
-| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 6 | 0 | 0 | yes | no |
+| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 10 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 53 | 4 | 19 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 39 | 7 | 21 | 0 | 0 | no | no |
 | M13-navigation — Planning, charger and block configurations | 28 | 2 | 10 | 0 | 0 | no | no |
-| M14-faces — Face and pet pipeline | 12 | 0 | 6 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 18 | 0 | 7 | 0 | 0 | yes | no |
+| M14-faces — Face and pet pipeline | 12 | 0 | 10 | 1 | 0 | yes | no |
+| M15-freeplay — Needs, activities and freeplay | 18 | 0 | 14 | 0 | 0 | yes | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -61,12 +61,12 @@ status.
 | M7-behaviour | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M8-framework | INVENTORY_APPROVED | 0 | 0 | 0 | 0 |
 | M9-wwise-music | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
-| M10-derived | INVENTORY_APPROVED | 7 | 0 | 0 | 0 |
+| M10-derived | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | M11-vision | INVENTORY_APPROVED | 28 | 0 | 0 | 0 |
 | M12-manipulation | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
 | M13-navigation | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
-| M14-faces | INVENTORY_APPROVED | 5 | 0 | 0 | 0 |
-| M15-freeplay | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
+| M14-faces | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
+| M15-freeplay | INVENTORY_APPROVED | 3 | 0 | 0 | 0 |
 | tools | UNREVIEWED | 1 | 0 | 0 | 0 |
 
 ## Still to read: every RECOVERABLE_GAP
@@ -1358,6 +1358,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: A1..A7 CheckAndUpdateTreadsState 0x511E00..0x5121F8 (thresholds 0x5121FC, 0x5122A0..0x5122BC); A8..A15 consequences: Falling DAS + ActionList::Cancel(-1) (0x511FF0..0x512084; gap1 3a..3e), RobotOffTreadsStateChanged broadcast 0x512092, OnTreads 0x512112..0x512184, carried 0x512100, SetOnChargerPlatform 0x512188, pause flag 0x5121E2; gap1 5a IMU filter state zeroed (0x5100E0..0x5100FE); R-ANIM pre-extraction part 2 item 1 O1..O4: Radians operator> 0x84CC90, IsNear 0x84CC0A, operator< 0x84CD12, rescale 0x84C87C
 * outstanding: The Radians comparisons are settled (C3): operator> tests the raw diff > 0 and wraps inside IsNear. The M11/M12/M15 consequences are seams.
 
+**M10-002 — Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs`
+* effect: unexpected movement is detected differently
+* rests on: the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C4 (R-ANIM part 2 item 2): the +1 paths' sums and the guarded same-sign decrement are reproduced Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426; B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA; R-ANIM pre-extraction part 2 item 2 B7..B11-a: 0x63E474, 0x63E49C, 0x63E588, 0x63E51C..0x63E53E, 0x63E674, 0x63E5B2
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. The gyro threshold is binary32 0x3E32B8C2 (0x0063DAB0/0x0063DAB6, vcmpe.f32 0x0063E4B6..0x0063E4C2); UnexpectedMovement.cs:136 uses 0.174533f (0x3E32B8C7). The detector structure otherwise matches. Before: Settled (C4): the +1 paths add l and r to the sums, and the same-sign decrement is guarded by count > 0.
+
 **M10-003 — Reaction-strategy factory rules and strategy classes (Cliff, Falling, PickedUp, Shaken, Slope, Frustration, PlacedOnCharger, Sparked, NoPreDockPoses, FistBump, Hiccup, Pet, CubeMoved, FacePositionUpdated, ObjectPositionUpdated)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs`
@@ -1393,6 +1402,33 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: C7 0x5A3610..0x5A3682; C9 0x5A25E4..0x5A26DA; C10 flags 0x60F904; C11 0x5A2BB8..0x5A2C3A, 0x5A1BCC..0x5A1D26; R-ANIM pre-extraction part 2 item 4.1..4.8: ctor 0x5A0864..0x5A0A6C, SetDefaultHeadAndLiftState 0x5A1B40, TryToResume 0x5A2B40, MoveLiftToHeightAction 0x54899C
 * outstanding: Settled (C1, C2): CompletelyUnlockAllTracks; the ctor FLT_MAX in +8/+0xC; the restore gate reads +8 only and requires the action list empty; the compound action's parameters. The restore is not reachable in this stack: there is no ActionList (M8) to answer "is the list empty", and SetDefaultHeadAndLiftState has no production caller (the engine's caller is the game message at 0x5A5042, which this stack replaces with a public API). MoveLiftToHeightAction::Init/CheckIfDone (+0x88/+0x8C/+0x90) are RECOVERABLE_GAP, not needed for this path.
+
+**M10-009 — Nothing in this build ever raises the obstacle-detected flag** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs`
+* effect: the robot reacts to an obstacle that the original never reports
+* rests on: the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4); Robot+0x264 is the AIComponent: Robot::Delocalize calls AIComponent::OnRobotDelocalized on it at 0x00510D72; AIComponent+4 is a plain bool the constructor zeroes at 0x00569A80, and that store is the only byte written at +4 anywhere in AIComponent code; no wide strb to +4 exists in the binary outside MemoryMapData_ProxObstacle's constructor, and no function that fetches the component from Robot+0x264 writes a byte at its +4 within forty-five instructions of doing so; so the strategy never becomes true, and ReactToObstacle - listed by hiking, nothingToDo, playAlone and socialize, with reactToObstacle.json giving it this strategy - never runs
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. AIComponent+4 is zeroed (0x00569A80) and never set; the C# exposes a writable BehaviorContext.ObstacleDetected seam (IBehavior.cs:45-59) that a test raises, so the title's claim is false of the C# build.
+
+**M10-010 — The physical flag robot+0x14: 0 until FirmwareVersion, then json["sim"].isNull(); its gates** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: physical-only behaviour runs at different times
+* rests on: the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: A4 ctor 0x50FC36; SetPhysicalRobot 0x51397A from HandleFirmwareVersion 0x536980; B2 0x63E3B4..0x63E3B8
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The valid-object path holds (0x0050FC36, 0x0051397A, 0x00536980); the handler's parse-failure and non-object-root branches are MISSING (CozmoEngine.cs:907-925) and unowned.
+
+**M10-011 — Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: falls are reported differently
+* rests on: the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C1 0x534F4C..0x534F9E; C2 0x5350AA..0x5350C2, 0x535186..0x53519C
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. HandleFallingStopped calls NeedsManager::RegisterNeedsActionCompleted(17) before the broadcast (0x005350AA..0x0053519C); the C# NeedsActionCompleted?.Invoke(17) has no subscriber (Sensors.cs:118-124, 746), so the reward is dropped.
 
 **M10-013 — Raw accel/gyro before the first RobotState: heap contents in the engine; 0 here (forced policy)** (live path)
 
@@ -1861,6 +1897,42 @@ Each of these is a question already answered. The original's behaviour is establ
 
 ### M14-faces — Face and pet pipeline
 
+**M14-001 — TrackedFace geometry, FaceWorld match and forgetting rules** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: face identity matching, expiry and the 3D translation reported for an observed face change
+* rests on: libcozmoEngine.so
+* best authority: FaceWorld::AddOrUpdateFace 0x004F4278, FaceTracker::IsRecognitionSupported 0x0086B244, FaceWorld::Update 0x004F52F8, TrackedFace::UpdateTranslation 0x0087DE24 and TrackedFace::GetIntraEyeDistance 0x0087DC68, read
+* evidence: 0x0086B244 is `movs r0,#1; bx lr`, so 0x004F43D6 `blx IsRecognitionSupported` / 0x004F43DE `cbz r0,#0x004F440C` never branches: the pose/overlap loop 0x004F440C..0x004F4536 is dead, and the reachable match is the map at FaceWorld+4 searched by lower_bound on the TrackedFace id at +0 (0x004F43EC..0x004F4556); an absent id creates an entry keyed by that id (0x004F45EA/0x004F45FC). The 220^2 constant 0x004F4428 and the overlap-0.5 instructions are on the dead branch.; 0x004F5380..0x004F53AC removes an unnamed entry when lastObserved+15000 is behind the last image timestamp.; 0x0087DE3C tests the parts-detected byte +0x30; 0x0087DE42..0x0087DE5E takes the eye centres +0x34..+0x40 through GetIntraEyeDistance 0x0087DC68 (sqrt(dx^2+dy^2)/cos(+0xec), divisor 1.0 when |cos|<1e-5, 6.0 when dist<1e-5); 0x0087DE60..0x0087DF1C derives the box eye distance |0.5*w| floored at 6.0; 0x0087DF20..0x0087E068 halves the (zeroed in the box branch) eye-slot sum for the midpoint, scales fx*62.0/eyeDistance (0x42780000) and parents the pose to Camera+0xc.; 0x004F4596 WasRotatingTooFast is on the new-entry path only; the found path 0x004F4558..0x004F456C is not gated. On the found path, a no-parts observation (TrackedFace+0x30 == 0) replaces the local pose translation with the entry's existing translation (0x004F4784..0x004F47A8) before writing it back to entry+0xf4 (0x004F47BE); the rotation stays from the TrackedFace pose.
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. GetIntraEyeDistance/UpdateTranslation are binary32 (0x0087DC68..0x0087DDB0, 0x0087DE24..0x0087E068; epsilon 0x3727C5AC, 62.0 = 0x42780000); Faces.cs computes in double. Before: Built and tested: the reachable id-keyed match (C2-F7/C2-F7b/C2-F7c: the pose/overlap loop is dead, the rotating-too-fast gate is new-entry-only, and a no-parts observation keeps the entry's translation), the 15 s unnamed-face expiry, and the C2-F23 geometry (parts GetIntraEyeDistance with the signed roll divisor, the box branch midpoint pixel (0,0), and the focalX * 62.0 / eyeDistance tail). The face roll (this+0xec) is the DetectedFace.RollRad seam input; the production detector that must populate it is the M11-016 OKAO boundary recorded by M14-010.
+
+**M14-003 — TrackFaceAction: the durations it turns in, and the flags it starts with** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* effect: face tracking cadence, angular tolerances, motor speeds and optional animation/eye behavior change
+* rests on: ITrackAction's constructor and CheckIfDone, read
+* best authority: ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read
+* evidence: There is no update period. Tracking happens inside CheckIfDone, which the action list calls every basestation tick; the constructor leaves the three times at +0xE4..+0xEC at -1 and the update timeout at +0x7C is not a period either. The 100 ms this stack polled at was invented; it now runs on the 60 ms basestation tick (C2-F6).; What the constructor does set (0x0056465C..0x0056478A): the pan and tilt tolerances at +0x84 and +0x8C to 0.0349066 rad, two degrees; the maximum head angle at +0x94 to 0.776672 rad; the minimum pan and tilt angles for a sound at +0xC0 and +0xC8 to 0.174533 rad, ten degrees; the tilt duration at +0xD0 to 0.15 s and the pan duration at +0xD4 to 0.4 s (strd r1, r0 at 0x00564758, with SetTiltDuration 0x00564ADA writing +0xD0 and SetPanDuration 0x00564AD4 writing +0xD4); the desired time to reach the target at +0xD8 to 0.5 s; and the flags off - move eyes at +0xA1 (SetMoveEyes 0x00564B40), driving animation at +0xA8 (EnableDrivingAnimation 0x00564AEA), clamp small angles at +0xE0.; CheckIfDone 0x00564F08 turns by giving each axis its own duration: MoveHeadToAngle at 0x00565104 takes the speed |delta| / tiltDuration computed at 0x005650F2 and the acceleration 10000 (0x005650EE), and it does not wait for the turn - the next tick recomputes the target. The driving animation's end plays only when +0xA8 is set (0x0056510E).; This stack now turns with those speeds and does not wait, and carries the flags and the limits as named constants; the eye shift and the driving animation are off, as they are in the engine unless a caller asks.; The action list calls CheckIfDone once per basestation tick, and the tick is 60 ms (0x03938700 ns): CozmoInstanceRunner::Run 0x0065B3D2/0x0065B3D8 -> Update 0x0065B420 -> CozmoEngine::Update 0x0065BB16 -> RobotManager::UpdateAllRobots 0x004ED648 -> Robot::Update 0x0052F6E4 -> ActionList::Update 0x005140BC -> ActionQueue::Update 0x0053F598 -> IActionRunner::Update 0x0053F628 -> IAction::UpdateInternal 0x00540592 -> ITrackAction::CheckIfDone (vtable slot 0x01022F1C). 33 ms is the M5 keep-alive cadence, not an action tick.
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. Tolerance 0x3D0EFA35, max head 0x3F46D3F2 (0x005646DC..0x005646E8) and sound threshold 0x3E32B8C2 are doubles in FaceActions.cs; tracking runs as a wall-clock loop with Task.Delay(60) (FaceActions.cs:293-327) instead of CheckIfDone on the action tick, and clamps speeds to an invented 0.01. Before: Cadence corrected to the 60 ms basestation tick (C2-F6); the other constants are built and tested.
+
+**M14-004 — PetInitialDetection: a pet not reacted to, and a minute between reactions** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FaceBehaviors.cs`
+* effect: which pet observations trigger a reaction and the cooldown between reactions change
+* rests on: ReactionTriggerStrategyPetInitialDetection, read
+* best authority: ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0 and ::UpdateReactedTo 0x00611E1C, read; ::InitReactedTo 0x00611FA4 has no caller in libcozmoEngine.so
+* evidence: The strategy keeps the pet ids it has reacted to in a tree at +0x34: UpdateReactedTo 0x00611E1C walks the PetWorld (robot+0x3c) and inserts each pet id (node+0x10), and is called from ShouldTriggerBehaviorInternal 0x00611AE4 and BehaviorDidReact 0x00611E80. InitReactedTo 0x00611FA4 clears and refills the set, but no instruction in the shipped .so calls it (whole-.text BL/BLX, relocation and pointer scan): it is not part of the reachable path.; RecentlyReacted 0x00611DD0 is the cooldown: the last reaction time sits at +0x40 as a float, -1 meaning never, and the answer is true while lastReacted + 60 is still ahead of BaseStationTimer::GetCurrentTimeInSeconds - the 60 is the 0x42700000 loaded at 0x00611DE8.; This stack latched on the first sighting of any pet id and had no cooldown; it now keeps the reacted-to set and the sixty seconds.
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. RecentlyReacted keeps a binary32 timestamp and compares last + 60.0f in f32 (0x00611DD0..0x00611E14); FaceBehaviors.cs uses double. Before: Reachable path built and tested: the reacted-to set (UpdateReactedTo), the >2 observation gate and the 60 s cooldown. InitReactedTo is uncalled (C2-F4).
+
+**M14-005 — TurnTowardsImagePoint turns by the angle the pixel subtends** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/FaceActions.cs`
+* effect: the head/body angles used to turn toward an image point and the failure behavior change
+* rests on: Robot::ComputeTurnTowardsImagePointAngles and TurnTowardsImagePointAction::Init, read
+* best authority: Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read
+* evidence: There is no distance in it. ComputeTurnTowardsImagePointAngles 0x0051879C subtracts the calibration's centre from the point (the two-float loop at 0x005187CC), takes the historical state at the image's timestamp through RobotStateHistory::ComputeStateAt, and computes atan2(-(v - cy), fy) for the head (0x0051886C with the focal length at calibration+8) and atan2(-(u - cx), fx) for the body (0x0051888E, focal length at +4). The head angle is added to the head angle in that state and the body angle to its heading, so both come out absolute.; TurnTowardsImagePointAction 0x0054B59C is a PanAndTiltAction: Init 0x0054B664 asks for those two angles, writes them into the pan and tilt fields at +0x114 and +0x11C, and runs PanAndTiltAction::Init. When the history cannot answer it warns "TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed" and turns nowhere.; This stack aimed at a point 200 mm along the ray through the pixel, a range it invented, and then turned towards that pose. It now computes the same two angles and pans and tilts to them.
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. ComputeTurnTowardsImagePointAngles uses f32 deltas, atan2f (0x0051886C, 0x0051888E) and vadd.f32; FaceActions.cs:59-82 uses double and Math.Atan2. Before: Built: the image-timestamp historical state (History.At(pet.LastObservedTimestamp) from ReactToPetBehavior), the two atan2 angles and the PanAndTilt entry; when the history cannot answer the action warns ComputeTurnTowardsImagePointAnglesFailed and turns nowhere.
+
 **M14-007 — The memory map, and the question the face behaviour asks it before driving in** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
@@ -1944,6 +2016,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: IActivityStrategy constructor 0x005B4EC8; IActivityStrategy::WantsToStart 0x005B529C; IActivityStrategy::RandomizeCooldown 0x005B5408; IActivityStrategy::WantsToEnd 0x005B5444; IActivityStrategy::SetCooldown 0x005B54E4
 * outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. InCooldown uses the same fixed TickSec as M15-005.
 
+**M15-004 — Needs decay modifiers and damaged-part thresholds** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: need decay rates and the reported damaged-part count change
+* rests on: libcozmoEngine.so and shipped needs configuration
+* best authority: libcozmoEngine.so and shipped needs configuration
+* evidence: NeedsState::GetDecayMultipliers 0x0069C214; decay modifier descending sort 0x00691040; NeedsState::NumDamagedPartsForRepairLevel 0x0069CCAC; needs_decay_config.json; needs_config.json
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. GetDecayMultipliers and NumDamagedPartsForRepairLevel are binary32 (vcmpe.f32 0x0069C270, vmul.f32 0x0069C2A4, 0x0069CCC4..0x0069CCD2); Needs.cs computes in double.
+
 **M15-005 — Flat three-second cooldown after an activity ends within two ticks** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/Activities.cs`
@@ -1962,6 +2043,51 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: ActivityFreeplay::PickNewActivityForSpark 0x005ADC44; ActivityFreeplay::GetDesiredActiveBehaviorInternal 0x005AE29C; IActivity::OnSelected 0x005B312C; IActivity::OnDeselected 0x005B33B8; IActivity::GetDesiredActiveBehavior 0x005B387C
 * outstanding: The inbound ActivateSpark message (sets BehaviorManager+0x60/+0x65, 0x005A3C92..0x005A3C9A) and the requested-activity message (+0x90) are unbuilt, so SetRequestedSpark/RequestNewActivity have no production caller. The selection/re-selection, interlude, null-pick, OnSelected/OnDeselected, reward-pending and the reselect logic are built.
 
+**M15-008 — Desired activity from objects and behavior-owned needs-action reporting** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: the chosen freeplay activity and needs rewards change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C; IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8; IBehavior::NeedActionCompleted 0x005BE40C; ActivityGatherCubes::Update 0x005AF2F0
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. TransitionToObjectPickedUp takes the stack branch (0x005DF4EA..0x005DF4F2) before the floor-placement PickupCube call (0x005DF59C..0x005DF5A0); the C# reports PickupCube first and no StackCube (CubeGameBehaviors.cs:1030-1055). ActivityGatherCubes registers GatherCubes (0x005AF2EC..0x005AF2F8), and FistBump, PeekABoo, TrackLaser and GuardDog call sites are missing.
+
+**M15-009 — Emotion event names fired when a cube is placed in a beacon** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the mood events emitted by cube placement change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The event names and condition hold (0x005E002C..0x005E0096); the route to them uses a LOCAL free-pose search and an invented stand pose (CubeGameBehaviors.cs:1058-1089) that no record owns.
+
+**M15-011 — Freeplay beacon is centered on the robot pose** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs`
+* effect: the location used for subsequent cube gathering changes
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C; AIWhiteboard::AddBeacon 0x0056C39C
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. SelectNewBeacon passes the full copied Robot pose to AddBeacon (0x005E5F1A..0x005E5F30); the C# builds a planar pose with Z = 0 (CubeGameBehaviors.cs:961-964).
+
+**M15-012 — Put-down image wait and CantHandleTallStack animation trigger** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs`
+* effect: the post-put-down action sequence and tall-stack reaction animation change
+* rests on: libcozmoEngine.so
+* best authority: libcozmoEngine.so
+* evidence: BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174; BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. 2 and 0x1B hold; the head angle is 0xBEB2B8C2 (C# -0.349066f = 0xBEB2B8C7, ManipulationBehaviors.cs:135), head and drive are one CompoundActionParallel (0x005C8196..0x005C822A) but the C# does not await the head, and the 0x199 keep-alive in TurnTowardsFaceWrapperAction (0x005C8264..0x005C82CC) is DEFERRED.
+
+**M15-013 — Activity tree construction, desired names and discarded activityPriority** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: activity membership and ordering change
+* rests on: libcozmoEngine.so and shipped activity configuration
+* best authority: libcozmoEngine.so and shipped activity configuration
+* evidence: ActivityFreeplay::CreateFromConfig 0x005AD478; ActivityStrictPriority constructor 0x005B23DC; activities_config.json
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): PARTIAL. The loader holds (0x005AD5CC..0x005AD69C, 0x005B23DC..0x005B252C); the tagged PickNewActivity (FreeplaySystem.cs:319-345) is INFERRED with an invented KeepsPriority partition.
+
 **M15-014 — Needs connection and per-serial persistence lifecycle** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
@@ -1970,6 +2096,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so
 * evidence: NeedsManager::InitInternal 0x00693444..0x00693492; NeedsManager::AttemptReadFromDevice 0x00693690..0x00693790; NeedsManager::ReadFromDevice 0x006998B4..0x00699BB8; RobotInitialConnection::OnNotified mfgId registration 0x0052DE04..0x0052DE40; RobotToEngine mfgId tag 0xED callback 0x0052E2F8..0x0052E3B2; ManufacturingID serializer 0x007B1750..0x007B1858; RobotInterface::MessageHandler::ConnectRobotToNeedsManager 0x0069DEE4 -> RobotManager::ConnectRobotToNeedsManager 0x0052FADC (veneer 0x008CDB0C, PLT 0x004BE214; veneer 0x008CB32C, PLT 0x004A9DB4); NeedsManager::InitAfterSerialNumberAcquired 0x006943A0..0x006943F8; NeedsManager::StartReadFromRobot 0x006944B4..0x0069453E; NeedsManager NV read callback 0x0069BEB2..0x0069BED4; FinishReadFromRobot 0x00699DB0..0x0069A1AC; NeedsFilenameFromSerialNumber 0x00695224..0x006952BA; InitAfterReadFromRobotAttempt resolver 0x0069481C..0x00694D06; NeedsManager::WriteToDevice 0x00693BB0; persistence string initializer 0x004D8DDC; NeedsManager::StartWriteToRobot 0x00695494..0x00695763 (call site 0x00694E50..0x00694EE4; NeedsStateOnRobot::Pack 0x0078479E, Size 0x007848C8); NeedsManager::FinishWriteToRobot 0x00699CD8..0x00699D39; NVStorageComponent::Read 0x00644E14..0x00644EF7 (1 = valid tag queued, 0 = invalid tag); NeedsStateOnRobot serialized layout (M15-017): Size 0x007848C8, Pack 0x0078479E, Unpack 0x007846B4; FinishReadFromRobot v1-4 conversion 0x00699E56..0x00699E88; version-0 path 0x00699FFE (M15-018); InitAfterReadFromRobotAttempt write scheduling 0x0069481C..0x00694EE4 (device-write flag 0x00694DA2, robot-write flag 0x00694E50, RobotChangedFromLastSession 0x00694AA8, SendNeedsStateToGame 0x00694B00/0x00694B46); NeedsManager::PossiblyStartWriteToRobot 0x00696ECC..0x00696F0D (600.999999 s throttle 0x00696EE2/0x00696EEA; callers RegisterNeedsActionCompleted 0x006960D0 force=false, UpdateStarsState 0x00696AAC force=true, HandleMessage<RegisterOnboardingComplete> 0x006984CC force=true); NVStorageComponent::HandleNVOpResult 0x00642F8C..0x00643937 (op dispatch 0x0064304A..0x00643052; WRITE terminal 0x00643054..0x00643424, callback result 0x006433F6); NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite 0x00695304..0x00695374 (call sites 0x006936BE and 0x00694AF8 bool=false; 0x006990E8 bool=robot!=0); NeedsManager::ApplyDecayAllNeeds 0x00695CFE (connected table 0x00695D1E, unconnected 0x00695D16); NeedsState::ApplyDecay 0x0069C3C0; NeedsManager::InitReset 0x006934A8..0x006935E0 (per-need loop 0x006935A2..0x006935CC; +0x3B0 = +0x130 + init time 0x0069358A..0x0069359E; memclr 0x006935D6); NeedsManager::DeviceHasNeedsState 0x00699870 (this+0x3C4 + filename 0x00699878..0x00699884); the ctor's DataPlatform::pathToResource("nurture/") 0x006921A6..0x006921D8; NeedsManager::AttemptReadFromDevice success tail 0x006936B0..0x0069371C (+0x1B8/+0x1BC = +8/+0xC, ApplyDecay(false), SendNeedsStateToGame(1), +0x30 += 1, SendTimeSinceBackgroundedDasEvent); NeedsManager::SendTimeSinceBackgroundedDasEvent 0x0069770C..0x006977AA (needs.app_backgrounded_time 0x00697844; reads +0x30 0x0069772E); NeedsManager::ReadFromDevice field/version contract 0x006998C8..0x00699BB2 (out Boolean 0x00699BA0 only when version < 5, v>=5 jumps 0x00699B8E -> 0x00699BA6; version branches 0x00699A0C, 0x00699B18, 0x00699B44, 0x00699B72, 0x00699B74); NeedsManager::WriteToDevice 0x00693BB0..0x00693F18 (refreshDateTime 0x00693BC4; key set 0x00693BD8..0x00693E9C; DataPlatform::writeAsJson 0x00693EE6); LocalNotifications::Generate 0x0068CA9C (feature gate 0xb 0x0068CABC; next-generate +0x18 0x0068CCC4; tail branch 0x00693492); +0x30 OpenAppAfterDisconnect counter 0x006936CE, 0x006990EC, 0x00695922, 0x00699A1C, 0x00693CC6
 * outstanding: built, awaiting strong verification: B-CORE2 batch 2 (connection reads). Engine-vs-stack ownership deviation: the engine queues the connection Needs read 0x194000 from its mfgId handler (0x0052E3B2 -> 0x006943F8 -> 0x006944B4..0x0069453E) instead of NeedsManager::InitAfterSerialNumberAcquired, because this stack builds the NeedsManager (FreeplayStack) after the handshake; the engine buffers the terminal NvResult and a later NeedsManager adopts it (CozmoEngine.ConnectionNeedsResult / ConnectionNeedsRead). InitAfterSerialNumberAcquired keeps the +0x1CC/+0x34/+0x1CA/+0x1C8 bookkeeping and adopts the engine read when the engine queued it; StartReadFromRobot remains the manager's own queue method for the direct tests. Before: Built from corrections C2 (Appendix F), C2 addendum (Appendix G), C3 (Appendix H), C4 (Appendix I) and C5 (Appendix J) of re-analysis/inventory/M15-freeplay.md: the mfgId callback needs connection with mfgId word 0 after the connection response (and before the unbuilt M3-033 lab-assignment read), InitAfterSerialNumberAcquired, the NV read of key 0x194000 with its callback and immediate fallback, the per-serial filename needsState_<serial>.json, the nine-case robot/device resolution (now comparing the +0x1B8 device timestamp snapshot with the robot timeLastWritten) with SendNeedsStateToGame and RobotChangedFromLastSession, the device write, the robot write (StartWriteToRobot/FinishWriteToRobot/PossiblyStartWriteToRobot) with its 116-byte binary NeedsStateOnRobot (layout in M15-017), the NVStorageComponent read-queued and write terminals, and the construction-time device path: InitInternal (InitReset, the fixed-file AttemptReadFromDevice with its +0x1B8 snapshot, the default state on failure, WriteToDevice(true), the app_start DAS event and LocalNotifications::Generate), the +0x30 OpenAppAfterDisconnect counter, SendTimeSinceBackgroundedDasEvent, and the host device directory wired from FreeplayStack/FreeplayTool --state-dir with the WriteToDevice seam. Still unbuilt: the exact J6/J7 JSON shapes and version branches of ReadFromDevice/WriteToDevice (the engine writes CurNeedLevel/PartIsDamaged as objects keyed by EnumToString and ForceNextSong as an UnlockId string, and reads TimeLastDisconnected/TimeLastAppBackgrounded/OpenAppAfterDisconnect/TimeCreated/TimeLastStarAwarded; the stack round-trips its own array shape and so cannot read an app-written file); the UpdateStarsState and RegisterOnboardingComplete PossiblyStartWriteToRobot callers, which belong to the app stars/onboarding economy; and the 61 s throttle anchor (the stack uses its own _lastWriteSec rather than the +8/+0xC DateTime the engine compares against). Whether the robot ever omits RobotToEngine mfgId tag 0xED is firmware behaviour and stays HARDWARE_ONLY; it is not designed around.
+
+**M15-015 — Freeplay active-time tracker and its four pause sources** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: active freeplay telemetry accumulation and reporting change
+* rests on: libcozmoEngine.so plus Unity HighLevelActivity enum
+* best authority: libcozmoEngine.so plus Unity HighLevelActivity enum
+* evidence: FreeplayDataTracker constructor 0x0056EBD4; FreeplayDataTracker::SendData 0x0056EC48; FreeplayDataTracker::SetFreeplayPauseFlag 0x0056EEBC; BehaviorManager::SetCurrentActivity 0x005A106C; Robot::CheckAndUpdateTreadsState 0x005121F4; Robot::SetOnChargerPlatform 0x00511DB0; unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs
+* outstanding: Correction A3 (Codex re-audit re-analysis/research/20260930-reaudit-sonnet-layers.md; the manager re-checked 0x0063DAB0/0x0063DAB6, 0x005646DC/0x005646E4 and the f32 compare at 0x00611DFC in the binary, 2026-10-02): FAILS. Accumulated and resume times are u64 nanoseconds (0x0056EC50..0x0056EC84, 0x0056EED6..0x0056EF14, 0x0056F082), only the next-send deadline is f32 seconds; the C# uses double seconds. The tracker is not seeded with the current off-treads or on-charger state (FreeplayStack.cs:157-168).
 
 **M15-016 — NeedsManager pause and disconnect transitions** (live path)
 

@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-09-29",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "711a84b43f937219bf831054055e6deea91dbd961ab4257b64664702d41ad783",
+  "inventory_sha256": "92a6973e422ffda21f4c6ca44409e991762372831b07538fe28fe4452423995d",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -101,7 +101,7 @@
       "hardware_required": false
     },
     "M10-009": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Nothing in this build ever raises the obstacle-detected flag",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -115,7 +115,7 @@
       "hardware_required": false
     },
     "M10-010": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The physical flag robot+0x14: 0 until FirmwareVersion, then json[\"sim\"].isNull(); its gates",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -126,7 +126,7 @@
       "hardware_required": false
     },
     "M10-011": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

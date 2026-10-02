@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-09-29",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "7b18ff30dee7da792c37fadd2748e04fd4e852a9168160b9d329b3e0e54e0d29",
+  "inventory_sha256": "a7d55fee7e449a2cdbc00b402d1b7c074584a22db59c333321b1f8b9111950a7",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -49,7 +49,7 @@
       "hardware_required": false
     },
     "M15-004": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Needs decay modifiers and damaged-part thresholds",
       "authority": "libcozmoEngine.so and shipped needs configuration",
       "evidence": [
@@ -102,7 +102,7 @@
       "hardware_required": false
     },
     "M15-008": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Desired activity from objects and behavior-owned needs-action reporting",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -115,7 +115,7 @@
       "hardware_required": false
     },
     "M15-009": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Emotion event names fired when a cube is placed in a beacon",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -135,7 +135,7 @@
       "hardware_required": false
     },
     "M15-011": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Freeplay beacon is centered on the robot pose",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -146,7 +146,7 @@
       "hardware_required": false
     },
     "M15-012": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Put-down image wait and CantHandleTallStack animation trigger",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -157,7 +157,7 @@
       "hardware_required": false
     },
     "M15-013": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Activity tree construction, desired names and discarded activityPriority",
       "authority": "libcozmoEngine.so and shipped activity configuration",
       "evidence": [
@@ -211,7 +211,7 @@
       "hardware_required": false
     },
     "M15-015": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Freeplay active-time tracker and its four pause sources",
       "authority": "libcozmoEngine.so plus Unity HighLevelActivity enum",
       "evidence": [

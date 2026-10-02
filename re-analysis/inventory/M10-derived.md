@@ -446,3 +446,7 @@ Two things to know first:
 #### Open questions for the manager
 1. Item 7b: in the original, PlacedOnSlope's gyro input is heap garbage until the first RobotState. The stack has to choose a value for that window. That is a COMPATIBILITY_POLICY decision, not a recovered fact.
 2. The +0x70 writers in 5b are behaviour-helper code (M7/M12). Their exact branch conditions were not read beyond the two NO_PREACTION_POSES sites.
+
+## Correction A3 (manager, 2026-10-02, the Codex re-audit)
+
+Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M10-002, M10-009, M10-010 and M10-011 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.
