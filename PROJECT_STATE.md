@@ -2,7 +2,23 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
-## Now (2026-09-30, morning)
+## Now (2026-10-02)
+
+- **Codex's answers have been checked and applied.** Codex's DEFECT findings were spot-checked in the binary and held,
+  and its HOLDS are not trusted (`research/20261002-B-CORE2-verify.md`). Corrections:
+  - A3 (M10/M15/M14, 15 records), A4 (M11, 14), A5 (M3-024), A6 (13 in M13, which the 09-29 audit flagged but never
+    demoted) and A7 (M6-003) all go back to IMPLEMENTATION_GAP;
+  - M6 correction C30 adopts the Opus-verified live-audio check (`research/20261002-M6-live-audio-verify.md`).
+- **B-CORE2 (DeepSeek):** Opus-verified. M3-025 and M3-035 are settled; the defects on the rest are in `unresolved`.
+- **Counts:** 129 EXACT_SOURCE, 231 IMPLEMENTATION_GAP, 18 RECOVERABLE_GAP, 10 HARDWARE_ONLY, 2 BLOCKED_EXTERNAL,
+  26 COMPATIBILITY_POLICY, 2 EQUIVALENT_IMPLEMENTATION.
+- **Next:**
+  - Sonnet 1 resumes B-M6b-4 with C30, starting with the C# defects and the production wiring (C30.W);
+  - Sonnet 2 starts R-BEH2;
+  - Codex works one task per prompt, each answer opening with a coverage table;
+  - DeepSeek's next job comes from the checked pre-extractions.
+
+## 2026-09-30, morning (superseded by the section above)
 
 - **Everyone finished overnight.**
   - **B-CORE (DeepSeek, window 3):** DONE. Six batches, pushed: dbdc39d, ac62741, afbb769, 32216ca, 99a51f6,
