@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-09-29",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "ae98bb953b3fae4850ddf74cffc7f2561862441b124ab0ec343e6e8766cbeaf5",
+  "inventory_sha256": "4ea0fefbe894a23b4d7cad9d1978272635c37146836bacc17162bd7023cae648",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -17,7 +17,7 @@
       "hardware_required": false
     },
     "M11-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Marker decoder algorithm: probe values, nearest neighbour, extract",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -30,7 +30,7 @@
       "hardware_required": false
     },
     "M11-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Camera pose on the robot, cube size, marker size, face poses and codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -78,7 +78,7 @@
       "hardware_required": false
     },
     "M11-006": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The clustering tolerances and the flat-snap angle",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -110,7 +110,7 @@
       "hardware_required": false
     },
     "M11-008": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The minimum projected marker size for deciding an object should have been seen is 40 pixels",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -133,7 +133,7 @@
       "hardware_required": false
     },
     "M11-010": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Occlusion, the nine visibility reasons, and the two ways an object is forgotten",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -197,7 +197,7 @@
       "hardware_required": false
     },
     "M11-015": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The body turn speed, acceleration, tolerance and revolution bound",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -248,7 +248,7 @@
       "hardware_required": false
     },
     "M11-019": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "A new pose origin in RobotState delocalizes: located objects are forgotten, carried objects move across",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -260,7 +260,7 @@
       "hardware_required": false
     },
     "M11-020": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Illumination normalisation of each marker's region before its corners are refined and it is decoded",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -287,7 +287,7 @@
       "hardware_required": false
     },
     "M11-022": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The marker-detector entry and post-processing",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -299,7 +299,7 @@
       "hardware_required": false
     },
     "M11-023": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The front-end orchestration order",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -365,7 +365,7 @@
       "hardware_required": false
     },
     "M11-029": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ExtractLineFitsPeaks and the corner fit",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -388,7 +388,7 @@
       "hardware_required": false
     },
     "M11-031": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The contrast gate (ComputeBrightDarkValues)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -449,7 +449,7 @@
       "hardware_required": false
     },
     "M11-036": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "VisionComponent::UpdateVisionMarkers into BlockWorld",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -485,7 +485,7 @@
       "hardware_required": false
     },
     "M11-039": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The calibration-install path into MarkerDetector::Init",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
