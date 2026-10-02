@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-09-29",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "9e818c0b5b48a6e200a5539025ce26f358275506d983b33070f016b7a2135f84",
+  "inventory_sha256": "ca1276f673ed5e880d9d773242d3e588f575c7a024f304b5bc0f6670e96dcb97",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -18,7 +18,7 @@
       "hardware_required": false
     },
     "M13-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "FlipBlockAction's constants, their roles and IAction type",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -34,7 +34,7 @@
       "hardware_required": false
     },
     "M13-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Obstacle expansion, per-heading C-space polygons, and the primitive collision test",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -52,7 +52,7 @@
       "hardware_required": false
     },
     "M13-004": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The primitive file's schema, the end/intermediate pose import and the traversal cost",
       "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped asset config/engine/cozmo_mprim.json",
       "evidence": [
@@ -69,7 +69,7 @@
       "hardware_required": false
     },
     "M13-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "A lattice-planner failure sends no path",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -111,7 +111,7 @@
       "hardware_required": false
     },
     "M13-008": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The mount sequence and the reverse onto the charger, with the retry result codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -123,7 +123,7 @@
       "hardware_required": false
     },
     "M13-009": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The charger's dimensions, its docked pose and its one pre-dock pose",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -153,7 +153,7 @@
       "hardware_required": false
     },
     "M13-011": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The three path segment messages are a Planning::PathSegment copied field for field",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -164,7 +164,7 @@
       "hardware_required": false
     },
     "M13-012": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The mount raises the lift to 45 mm when it is below it, not when it is above",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -174,7 +174,7 @@
       "hardware_required": false
     },
     "M13-013": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "DriveOffChargerContactsAction: a drive straight that retries while still on the charger",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -208,7 +208,7 @@
       "hardware_required": false
     },
     "M13-015": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Pop a wheelie: one retry, the realign or retry animation, and what a failure marks",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -219,7 +219,7 @@
       "hardware_required": false
     },
     "M13-016": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "AlignWithObjectAction's alignment-type table and pre-action type",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -232,7 +232,7 @@
       "hardware_required": false
     },
     "M13-017": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorDriveOffCharger: runnable on the charger, the drive distance and the leaving-the-contacts update",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -245,7 +245,7 @@
       "hardware_required": false
     },
     "M13-018": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "LatticePlannerImpl's planning entry and worker, the Replan argument, the heuristic and the result codes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
