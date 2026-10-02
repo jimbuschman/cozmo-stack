@@ -93,7 +93,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M3-device.md",
-        "approved": "2026-09-30",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
@@ -5887,7 +5887,7 @@
       ],
       "status": "EXACT_SOURCE",
       "live_path": true,
-      "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): SETTLED. Init precedes the +0x14 store and VisionComponent::SetPhysicalRobot (0x00513954 -> 0x0051397A/0x0051397C). Not reproduced: the cbz at 0x00513926 that skips Init when [[robot]+8] (DataPlatform) is null; unreachable in the shipped app, because cozmo_startup calls DataPlatform::readAsJson (0x0066603C) before StartRun (0x006661EA).",
+      "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): SETTLED. Init precedes the +0x14 store and VisionComponent::SetPhysicalRobot (0x00513954 -> 0x0051397A/0x0051397C). Not reproduced: the cbz at 0x00513926 that skips Init when [[robot]+8] (DataPlatform) is null; unreachable in the shipped app, because cozmo_startup calls DataPlatform::readAsJson (0x0066603C) before StartRun (0x006661EA). Test gap (Codex re-audit re-analysis/research/20261001-reaudit-M3-M4.md, 2026-10-02; the code holds): the named test covers only Init's placement; blockPool.txt's grammar, save/remove, the rehash order and the equal-RSSI choice have no test.",
       "effect": "the block pool loads on every connection, not only for a physical robot, so cube connection starts from a pool the engine would not have loaded",
       "provenance": "libcozmoEngine.so, M4-control inventory (BlockFilter); settled by R-DEV, demoted by the 2026-09-29 audit",
       "hardware_required": false,
@@ -5908,7 +5908,7 @@
       "live_path": true,
       "effect": "the robot recalibrates when the engine would not",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): StartMotorCalibration {byte0 head, byte1 lift} is sent only by CozmoMotion.RequestMotorCalibration, called by the explicit calibration behaviour and the conformance tool, never automatically (MA18, MA19).",
-      "unresolved": "",
+      "unresolved": " Test gap (Codex re-audit re-analysis/research/20261001-reaudit-M3-M4.md, 2026-10-02; the code holds): the record names no test; one should enter through the public/game calibration action and route MotorCalibration, including the carrying side effect.",
       "hardware_required": false,
       "test": ""
     },
@@ -6433,9 +6433,9 @@
       ],
       "effect": "audio is routed to the wrong output",
       "authority": "libcozmoEngine.so 3.4.0-1204",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EngineRobot.HandleFirmwareVersion runs for every FirmwareVersion in the robot-level broadcast: 'sim' absent or null gives IsPhysicalRobot and PlayOnRobot (2), otherwise PlayOnDevice (1). What the handler does with a JSON that does not parse, or whose root is not an object, is not in the rows: the source is left unset with a MISSING warning. The source's consumer (C2) is M5/M6; this stack streams animation audio to the robot either way.",
-      "unresolved": "",
+      "unresolved": "Correction A5 (Codex M3/M4 re-audit re-analysis/research/20261001-reaudit-M3-M4.md, confirmed by the manager in CozmoEngine.cs:909-915, 2026-10-02): the selector holds (sim null -> source 2, else 1, after SetPhysicalRobot), but the claimed production path does not: CreateAudioAnimation (0x0059A070..0x0059A0B6) constructs the source-specific implementation, and the C# never branches on AudioOutputSource; source 1 (RobotAudioAnimationOnDevice) is not built, so animation audio always streams to the robot. M3DeviceTests.M3_024_C1 tests only the stored selector.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_024_C1_TheAudioOutputSourceComesFromSim"

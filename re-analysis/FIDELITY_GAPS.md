@@ -7,10 +7,10 @@ Manifest of **418 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 144 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 143 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 18 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 216 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 217 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 26 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 45 | 0 | 8 | 0 | 2 | yes | no |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 1 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 37 | 0 | 14 | 0 | 3 | yes | no |
+| M3-device — Camera, display and audio device layer | 37 | 0 | 15 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 25 | 0 | 10 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 36 | 0 | 13 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 22 | 0 | 0 | yes | no |
@@ -54,7 +54,7 @@ status.
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1-transport | INVENTORY_APPROVED | 26 | 0 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
-| M3-device | INVENTORY_APPROVED | 15 | 0 | 0 | 0 |
+| M3-device | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2 | 0 | 0 | 0 |
@@ -398,6 +398,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: A24 EnableColorImages 0x006582CC..0x00658314; 3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74; 3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)
 * outstanding: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-1-2.md): NEEDS EXTRACTION. CozmoRobot.StartCamera (CozmoRobot.cs:529-534) sends EnableColorImages and an ImageRequest, and no row covers it. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoRobot.StartCamera sends EnableColorImages{0} plus an extra ImageRequest, called by every hardware tool; no decision records it.
+
+**M3-024 — The audio output source comes from the firmware version JSON: "sim" null means physical, play on the robot** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: audio is routed to the wrong output
+* rests on: compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EngineRobot.HandleFirmwareVersion runs for every FirmwareVersion in the robot-level broadcast: 'sim' absent or null gives IsPhysicalRobot and PlayOnRobot (2), otherwise PlayOnDevice (1). What the handler does with a JSON that does not parse, or whose root is not an object, is not in the rows: the source is left unset with a MISSING warning. The source's consumer (C2) is M5/M6; this stack streams animation audio to the robot either way.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: C1 HandleFirmwareVersion 0x00536934..0x0053698E ("sim" at 0x00536A4C); C2 CreateAudioAnimation 0x0059A070..0x0059A0B6
+* outstanding: Correction A5 (Codex M3/M4 re-audit re-analysis/research/20261001-reaudit-M3-M4.md, confirmed by the manager in CozmoEngine.cs:909-915, 2026-10-02): the selector holds (sim null -> source 2, else 1, after SetPhysicalRobot), but the claimed production path does not: CreateAudioAnimation (0x0059A070..0x0059A0B6) constructs the source-specific implementation, and the C# never branches on AudioOutputSource; source 1 (RobotAudioAnimationOnDevice) is not built, so animation audio always streams to the robot. M3DeviceTests.M3_024_C1 tests only the stored selector.
 
 **M3-026 — NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight** (live path)
 
