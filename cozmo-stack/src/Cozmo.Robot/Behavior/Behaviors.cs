@@ -3,32 +3,35 @@ using Cozmo.Robot.Animation;
 namespace Cozmo.Robot.Behavior;
 
 /// <summary>
-/// A behaviour that plays one animation, chosen from the shipped trigger map.
+/// The engine's config-driven <c>PlayAnim</c> class (<c>BehaviorPlayAnimSequence</c>), which names its
+/// animations in an <c>animTriggers</c> field rather than in code.
 ///
-/// This is the reconstruction of the engine's config-driven <c>PlayAnim</c> class
-/// (<c>BehaviorPlayAnimSequence</c>), which names its animations in an <c>animTriggers</c> field rather
-/// than in code.
+/// <b>One trigger</b> - <c>StartPlayingAnimations</c> 0x005C0158 tests the vector's byte length against 4
+/// (<c>cmp r1,#4</c> 0x005C0168) - plays it as one <c>TriggerLiftSafeAnimationAction</c>
+/// (<c>trigger, numLoops = num_loops, interruptRunning = 1, tracksToLock = 0, timeout = 60.0f, strictCooldown = 0</c>,
+/// 0x005C0174..0x005C0190), the loop being inside the action: <c>num_loops</c> 0 plays it until it is cancelled.
+/// <b>Any other count</b> goes to <c>StartSequenceLoop</c> 0x005C0294: while the loop index is below
+/// <c>num_loops</c> (signed, 0x005C02A8..0x005C02AE) it builds a <c>CompoundActionSequential</c> with one such
+/// action per trigger - each <c>numLoops = 1</c>, <c>tracksToLock = 0</c>, timeout 60.0f - added with
+/// <c>ignoreFailure = 0</c> (0x005C02F6, 0x005C02FC; <c>AddAction</c> 0x0054EC7C installs the ignore function only
+/// for 1), so a failed child ends the sequence (<c>CompoundActionSequential::UpdateInternal</c> 0x0054F70C,
+/// 0x0054F81A..0x0054F820), and starts it; its completion calls <c>CallToListeners</c> and then
+/// <c>StartSequenceLoop</c> again. A <c>num_loops</c> of 0 or less plays nothing on this path. The
+/// <c>num_loops</c> key defaults to 1 (<c>Json::Value::Value(1)</c> 0x005C001C..0x005C0036). All the actions of
+/// one loop are built when the loop starts; each resolves its trigger to an animation group when built and to a
+/// clip when it starts.
 ///
-/// Every trigger in that list is played, in order, and the list is played <c>num_loops</c> times - the
-/// engine reads that key with a default of 1 (<c>Json::Value::Value(1)</c> then <c>get("num_loops", ...)</c>
-/// at 0x005C001C..0x005C0036). <c>StartPlayingAnimations</c> 0x005C0158 special-cases a list of exactly
-/// one trigger - <c>cmp r1, #4</c> on the vector's byte length - and plays it as a single
-/// <c>TriggerLiftSafeAnimationAction</c>; anything else goes to <c>StartSequenceLoop</c> 0x005C0294, which
-/// builds a <c>CompoundActionSequential</c> with one such action per trigger and runs the whole sequence
-/// again until the loop counter reaches <c>num_loops</c>. Only one shipped config lists more than one
-/// trigger (NothingToDo_BoredAnim, three), and none sets num_loops. This stack used to play the first
-/// trigger that resolved and stop there.
-///
-/// It is <b>not</b> the
+/// <c>ResumeInternal</c> (<c>vtable+0x4c</c>) 0x005BFF1E returns 1: the engine never resumes a PlayAnim.
+/// <c>IsRunnableInternal</c> 0x005C013A is false for an empty trigger list. This is <b>not</b> the
 /// <c>PlayAnimWithFace</c> class: <c>BehaviorPlayAnimSequenceWithFace::InitInternal</c> (0x005C0648) runs a
-/// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation, so that class needs a tracked face and is
-/// left to the vision milestone. An earlier version of this comment claimed both; M10 read the binary.
+/// <c>TurnTowardsFaceAction</c> (0x005C0686) before the animation, so that class needs a tracked face.
 ///
-/// It claims the tracks its clip touches for as long as it runs, through the scope, so the idle layer
-/// yields those tracks and only those, which is what the engine's <c>SmartLockTracks</c> does.
+/// It locks no tracks of its own: the action's mask is 0, except that the lift-safe constructor ORs LIFT in while
+/// the robot is carrying and on its treads (<see cref="SteppedBehavior.RunTriggerAction"/>), so the engine sends
+/// DisableAnimTracks only then.
 /// </summary>
 // fidelity: M8-005
-public sealed class PlayAnimBehavior : IBehavior
+public sealed class PlayAnimBehavior : SteppedBehavior
 {
     /// <summary>
     /// Every shipped <c>PlayAnim</c> config with an <c>animTriggers</c> list, built from the OBB. A trigger
@@ -89,11 +92,8 @@ public sealed class PlayAnimBehavior : IBehavior
     }
 
     private readonly IReadOnlyList<AnimationTrigger> _triggers;
-    private readonly object _gate = new();
-    private CozmoAnimations? _animations;
-    private long _generation;
-    private bool _owns;
-    private volatile bool _finished;
+    /// <summary>BehaviorPlayAnimSequence +0x12c: how many times <c>StartSequenceLoop</c> has built the sequence this run.</summary>
+    private int _loopIndex;
 
     /// <param name="score">
     /// M8-004 gap. The engine has no in-code default score: <c>IBehavior::IBehavior</c> 0x005BBD28 writes
@@ -104,47 +104,39 @@ public sealed class PlayAnimBehavior : IBehavior
     /// </param>
     // fidelity: M8-004
     public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
-                            double score = 1.0)
+                            double score = 1.0) : base(id, behaviorClass)
     {
-        Id = id;
-        Class = behaviorClass;
         _triggers = triggers.ToList();
         Score = score;
     }
-
-    public string Id { get; }
-    public string Class { get; }
-
-    /// <summary>How much this wants to run. Configs carry no score, so a caller sets it.</summary>
-    public double Score { get; set; }
 
     /// <summary>The animation actually selected on the last start, for tracing.</summary>
     public string? LastSelected { get; private set; }
 
     /// <summary>
-    /// The config's <c>wantsToRunStrategyConfig.strategyType</c> (<c>IBehavior::ReadFromJson</c> →
+    /// The config's <c>wantsToRunStrategyConfig.strategyType</c> (<c>IBehavior::ReadFromJson</c> ->
     /// <c>WantsToRunStrategyFactory::CreateWantsToRunStrategy</c> 0x00614710; <c>IsRunnableBase</c>
     /// 0x005BD778 asks it <c>WantsToRun</c>).
     ///
     /// The factory dispatches on <c>WantsToRunStrategyType</c>, whose nine names are the table
     /// <c>EnumToString</c> 0x007716A4 indexes at 0x01033820: Invalid, AlwaysRun, ExpressNeedsTransition,
-    /// Generic, InNeedsBracket, ObstacleDetected, PlacedOnCharger, RobotPlacedOnSlope, RobotShaken. Of
-    /// those, the two that read the needs are settled here:
+    /// Generic, InNeedsBracket, ObstacleDetected, PlacedOnCharger, RobotPlacedOnSlope, RobotShaken. The M8
+    /// inventory gives the bodies of two:
     ///
     /// <list type="bullet">
     /// <item><c>StrategyInNeedsBracket::WantsToRunInternal</c> 0x006141A0 is one call -
     /// <c>NeedsState::IsNeedAtBracket(need, bracket)</c> on the current needs state, with the pair read
     /// from the config's <c>need</c> and <c>needBracket</c>.</item>
     /// <item><c>StrategyExpressNeedsTransition::WantsToRunInternal</c> 0x006136D8 asks
-    /// <c>IsNeedAtBracket(need, Critical)</c> - the literal 3 at 0x006136EC - and then compares the need
-    /// against the one the AI component is already expressing (0x006136FC), so it wants to run only while
-    /// its need is critical and is not the one already being expressed.</item>
+    /// <c>IsNeedAtBracket(need, Critical)</c> - the literal 3 at 0x006136EC - and then is true only if the one
+    /// value <c>[[robot+0x264]+0x30]+0x14</c> (<see cref="BehaviorContext.AiExpressedNeedValue"/>) is not that
+    /// need (0x006136FC..0x00613704).</item>
     /// </list>
     ///
-    /// Of the shipped configs only <c>reactToObstacle.json</c> gives a <i>behaviour</i> a strategy, and it
-    /// is ObstacleDetected. The needs strategies appear on activities, which have their own
-    /// <see cref="ActivityStrategy"/>, and PlacedOnCharger, RobotPlacedOnSlope and RobotShaken appear in
-    /// the reaction trigger map, which the reaction system handles. Null means the default AlwaysRun.
+    /// <c>ObstacleDetected</c> is M10-009's. A behaviour with no <c>wantsToRunStrategyConfig</c> has no
+    /// strategy. Any other type has no body in the inventory, so it throws <see cref="NotSupportedException"/>
+    /// instead of answering; no shipped PlayAnim config names one (the shipped strategy types on behaviours are
+    /// InNeedsBracket and ObstacleDetected).
     /// </summary>
     public string? WantsToRunStrategy { get; init; }
 
@@ -164,11 +156,22 @@ public sealed class PlayAnimBehavior : IBehavior
     public double? RequiredRecentOnTreadsEventSec { get; init; }
     public double? RequiredRecentSwitchToParentSec { get; init; }
 
-    public bool IsRunnable(BehaviorContext context) =>
-        context.Robot.Animations.Library is not null && _triggers.Count > 0 && WantsToRun(context) && RecentEventsAllow(context);
+    /// <summary><c>BehaviorPlayAnimSequence::IsRunnableInternal</c> (<c>vtable+0x50</c>) 0x005C013A: false for an empty trigger vector, else the <c>vtable+0x90</c> tail call (0x005C03B4, 1).</summary>
+    protected override bool IsRunnableInternal(BehaviorContext context) => _triggers.Count > 0;
+
+    /// <summary><c>BehaviorPlayAnimSequence</c>'s <c>vtable+0x20</c> (0x01026940: <c>IBehavior</c>'s 0x005BF04C, <c>movs r0,#0</c>).</summary>
+    protected override bool RunnableGate20(BehaviorContext context) => false;
+
+    /// <summary><c>vtable+0x24</c> (0x01026944: <c>IBehavior</c>'s 0x0059EC12, <c>movs r0,#0</c>).</summary>
+    protected override bool RunnableGate24(BehaviorContext context) => false;
+
+    /// <summary><c>vtable+0x28</c> (0x01026948: <c>BehaviorPlayAnimSequence</c>'s 0x005BFF1A, <c>movs r0,#1</c>).</summary>
+    protected override bool RunnableGate28(BehaviorContext context) => true;
 
     /// <summary>What the behaviour's wants-to-run strategy says right now, on its own.</summary>
     public bool WantsToRunNow(BehaviorContext context) => WantsToRun(context);
+
+    protected override bool RecentTimersAllow(BehaviorContext context) => RecentEventsAllow(context);
 
     private bool RecentEventsAllow(BehaviorContext ctx)
     {
@@ -182,102 +185,127 @@ public sealed class PlayAnimBehavior : IBehavior
     }
 
     // fidelity: M8-006
-    private bool WantsToRun(BehaviorContext context) => WantsToRunStrategy switch
+    protected override bool WantsToRun(BehaviorContext context) => WantsToRunStrategy switch
     {
-        null or "AlwaysRun" => true,
+        null => true,
         "ObstacleDetected" => context.ObstacleDetected?.Invoke() ?? false,
         "InNeedsBracket" => context.Needs is { } needs && StrategyNeed is { } need && StrategyBracket is { } bracket
                             && needs.State.IsNeedAtBracket(need, bracket),
-        "ExpressNeedsTransition" => context.Needs is { } n && StrategyNeed is { } severe
-                                    && n.State.IsNeedAtBracket(severe, NeedBracketId.Critical)
-                                    && !n.IsSevereExpressed(severe),
-        // Generic, PlacedOnCharger, RobotPlacedOnSlope and RobotShaken reach a behaviour only through the
-        // reaction map, which dispatches them itself; a behaviour config that named one here would be
-        // outside anything shipped, so it does not run rather than always running.
-        _ => false,
+        "ExpressNeedsTransition" => ExpressNeedsTransition(context),
+        var other => throw new NotSupportedException(
+            $"M8-006: the wants-to-run strategy '{other}' has no body in the M8 inventory (behaviour {Id}); " +
+            "the engine's WantsToRunStrategyFactory::CreateWantsToRunStrategy 0x00614710 builds it, but nothing here answers for it."),
     };
 
-    public double EvaluateScore(BehaviorContext context) => Score;
+    /// <summary>
+    /// <c>StrategyExpressNeedsTransition::WantsToRunInternal</c> 0x006136D8: <c>IsNeedAtBracket(need, Critical)</c>
+    /// must be 1 (0x006136EA..0x006136F6), and then the result is whether <c>[[robot+0x264]+0x30]+0x14</c> differs
+    /// from the strategy's need (<c>ldr r2,[r5,#0x14]; cmp r2,r1; it ne; movne r0,#1</c> 0x006136FC..0x00613704).
+    /// That value has no source in this stack (MISSING: M8-006), so asking it without the seam throws.
+    /// </summary>
+    private bool ExpressNeedsTransition(BehaviorContext context)
+    {
+        if (context.Needs is not { } needs || StrategyNeed is not { } need) return false;
+        if (!needs.State.IsNeedAtBracket(need, NeedBracketId.Critical)) return false;
+        var expressed = context.AiExpressedNeedValue
+            ?? throw new NotSupportedException(
+                "M8-006: StrategyExpressNeedsTransition compares its need against [[robot+0x264]+0x30]+0x14 " +
+                "(0x006136DC..0x006136FC), which nothing in this stack supplies; set BehaviorContext.AiExpressedNeedValue.");
+        return expressed() != need;
+    }
 
-    /// <summary>How many times the whole list is played: the config's <c>num_loops</c>, default 1.</summary>
+    /// <summary>How many times the loop plays: the config's <c>num_loops</c>, default 1 (BehaviorPlayAnimSequence +0x128).</summary>
     public int NumLoops { get; init; } = 1;
 
     /// <summary>The triggers this behaviour plays, in the order the config lists them.</summary>
     public IReadOnlyList<AnimationTrigger> Triggers => _triggers;
 
-    public Task StartAsync(BehaviorContext context, BehaviorScope scope, CancellationToken cancel)
+    /// <summary><c>BehaviorPlayAnimSequence::ResumeInternal</c> (<c>vtable+0x4c</c>) 0x005BFF1E: <c>movs r0,#1</c>. The engine never resumes a PlayAnim.</summary>
+    protected override int ResumeInternal() => 1;
+
+    /// <summary><c>BehaviorPlayAnimSequence::InitInternal</c> (<c>vtable+0x48</c>) 0x005C014E: <c>StartPlayingAnimations</c>, result always 0.</summary>
+    protected override void OnStart() => StartPlayingAnimations();
+
+    protected override void OnTriggerResolved(AnimationTrigger trigger, string clip) => LastSelected = clip;
+
+    /// <summary>
+    /// <c>StartPlayingAnimations</c> 0x005C0158: exactly one trigger is one lift-safe action with
+    /// <c>numLoops = num_loops</c> (0x005C0174), timeout 60.0f, tracksToLock 0, completed by
+    /// <c>CallToListeners</c> (<c>StartActing</c> with the PMF, 0x005C0190); anything else zeroes the loop index
+    /// (0x005C01AC) and takes <c>StartSequenceLoop</c>.
+    /// </summary>
+    // fidelity: M8-005
+    private void StartPlayingAnimations()
     {
-        _finished = false;
-        LastSelected = null;
-        var lib = context.Robot.Animations.Library;
-        if (lib is null) { _finished = true; return Task.CompletedTask; }
-
-        // Every trigger that resolves, in the config's order. A trigger the library cannot satisfy is
-        // skipped rather than ending the sequence: the engine's action for it would fail and the compound
-        // action would carry on.
-        var clips = new List<string>();
-        foreach (var trigger in _triggers)
+        if (_triggers.Count == 1)
         {
-            var resolved = context.Triggers.Resolve(trigger, lib, context.Random);
-            if (resolved.Resolved) clips.Add(resolved.Selected!);
+            ConstructActions();
+            int handle = StartActing();
+            if (handle == 0) return;
+            RunTriggerAction(handle, _triggers[0], _ => CallToListeners(), AnimationTrack.None,
+                             TriggerAnimationTimeoutSec, NumLoops, liftSafe: true);
+            return;
         }
-        if (clips.Count == 0)
-        {
-            // Nothing resolved. Finishing immediately is the honest outcome; it is not an error and it is
-            // not a reason to play something else.
-            _finished = true;
-            return Task.CompletedTask;
-        }
-
-        // Each clip's tracks are locked for that action's duration by the scheduler (IActionRunner::Update
-        // 0x00540370 / MovementComponent::LockTracks 0x00640098), not pre-claimed on the scope.
-        _ = PlaySequence(context, clips, cancel);
-        return Task.CompletedTask;
+        _loopIndex = 0;
+        StartSequenceLoop();
     }
 
     /// <summary>
-    /// The sequence <c>StartSequenceLoop</c> runs: each clip in turn, the whole list <c>num_loops</c>
-    /// times, stopping as soon as the behaviour is stopped or an animation will not start. Each action's
-    /// tracks are locked by <see cref="CozmoAnimations.PlayTracked"/> for its own play; when they are held
-    /// the action waits and is retried, as <c>IActionRunner::Update</c> does.
+    /// <c>StartSequenceLoop</c> 0x005C0294: nothing while the loop index is at or above <c>num_loops</c>
+    /// (signed <c>bge</c>, 0x005C02A8..0x005C02AE); else one compound sequential action of lift-safe actions
+    /// (numLoops 1, tracksToLock 0, 60.0f; <c>AddAction(.., ignoreFailure 0, 0)</c>), the index incremented
+    /// (0x005C0310..0x005C031A), started with a completion that runs <see cref="CallToListeners"/> and this again.
     /// </summary>
-    private async Task PlaySequence(BehaviorContext context, List<string> clips, CancellationToken cancel)
+    // fidelity: M8-005
+    private void StartSequenceLoop()
     {
-        try
+        if (_loopIndex >= NumLoops) return;
+        ConstructActions();
+        int handle = StartActing();
+        if (handle == 0) return;
+        _loopIndex++;
+        RunSequenceChild(handle, 0);
+    }
+
+    /// <summary>
+    /// Building the lift-safe actions (one for the single-trigger path, one per trigger for a loop, all of them when the loop
+    /// starts - 0x005C02CA..0x005C030E): each constructor resolves its trigger to an animation group
+    /// (<c>SetAnimGroupFromTrigger</c> 0x0054432C: <c>HasAnimationForTrigger</c> 0x0054433E, <c>GetAnimationForTrigger</c>
+    /// 0x00544350) and warns when the group is empty (0x005443AC). The clip is chosen later, when the action starts
+    /// (<c>TriggerAnimationAction::Init</c> 0x0054443C), which is <see cref="SteppedBehavior.RunTriggerAction"/>.
+    /// </summary>
+    private void ConstructActions()
+    {
+        foreach (var trigger in _triggers)
+            if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
+                Log($"TriggerAnimationAction.SetAnimGroupFromTrigger: the animation group for {trigger} is empty");
+    }
+
+    private void RunSequenceChild(int handle, int i)
+    {
+        if (i >= _triggers.Count) { EndSequence(handle); return; }
+        RunTriggerAction(0, _triggers[i], outcome =>
         {
-            var lib = context.Robot.Animations.Library;
-            for (int loop = 0; loop < Math.Max(1, NumLoops); loop++)
-                foreach (var name in clips)
-                {
-                    if (_finished || cancel.IsCancellationRequested) return;
-                    var ticket = lib is null ? null : context.Robot.Animations.PlayTracked(name, lockTracks: lib.GetClip(name).Tracks);
-                    while (ticket is null && !_finished && !cancel.IsCancellationRequested)
-                    {
-                        try { await Task.Delay(10, cancel).ConfigureAwait(false); } catch (OperationCanceledException) { return; }
-                        ticket = lib is null ? null : context.Robot.Animations.PlayTracked(name, lockTracks: lib.GetClip(name).Tracks);
-                    }
-                    if (ticket is null) return;
-                    LastSelected = name;
-                    lock (_gate)
-                    {
-                        _animations = context.Robot.Animations;
-                        _generation = ticket.Generation;
-                        _owns = true;
-                    }
-                    await ticket.Completion.ConfigureAwait(false);
-                    lock (_gate) _owns = false;
-                }
-        }
-        finally { _finished = true; }
+            // ignoreFailure = 0: a failed child ends the sequence, which returns the failure.
+            if (!outcome.Success) { EndSequence(handle); return; }
+            RunSequenceChild(handle, i + 1);
+        }, AnimationTrack.None, TriggerAnimationTimeoutSec, numLoops: 1, liftSafe: true);
     }
 
-    public bool Update(BehaviorContext context, double nowMs) => !_finished;
-
-    public void Stop(BehaviorStopReason reason)
+    /// <summary>The sequence action has ended (the closure at vtable 0x010269C8, operator() 0x005C0552).</summary>
+    private void EndSequence(int handle)
     {
-        _finished = true;
-        StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
+        ActingEnded(handle);
+        CallToListeners();
+        StartSequenceLoop();
     }
+
+    /// <summary>
+    /// <c>BehaviorPlayAnimSequence::CallToListeners</c>: the listener set is at +0x130 and
+    /// <c>AddListener</c> (<c>vtable+0x30</c>) fills it. Nothing in this stack registers a listener, so there is
+    /// none to call.
+    /// </summary>
+    private void CallToListeners() { }
 
     /// <summary>
     /// Ends the animation this behaviour started, and only that one.
@@ -301,22 +329,6 @@ public sealed class PlayAnimBehavior : IBehavior
         }
         target?.StopIfCurrent(gen);
     }
-}
-
-/// <summary>
-/// The engine's default class-<c>0x16</c> <c>BehaviourRunningAndResumeInfo</c>: the placeholder
-/// <c>BehaviorManager::FinishCurrentBehavior</c> switches to (<c>movs r0,#0x16</c> 0x005a38f4;
-/// <c>SwitchToBehaviorBase</c> 0x005a38fe) and the state the scored choice runs from. It never acts and is
-/// not scored, so the chooser replaces it.
-/// </summary>
-// fidelity: M8-012
-public sealed class BehaviorRunningAndResumeInfo : SteppedBehavior
-{
-    public BehaviorRunningAndResumeInfo() : base("BehaviorRunningAndResumeInfo", "0x16") { }
-    protected override bool KeepsRunningWithoutAction => true;
-    public override bool IsRunnable(BehaviorContext context) => true;
-    protected override void OnStart() { }
-    public override double EvaluateScore(BehaviorContext context) => 0;   // class 0x16 is not scored
 }
 
 /// <summary>

@@ -241,9 +241,10 @@ public class FreeplayTests
         var b = new Fake("a");
         var entry = new ScoredBehaviorEntry("a", 3.0, new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) }), null, null, Array.Empty<EmotionScorer>());
 
-        Assert.Equal(3.0 / 30.0, entry.Evaluate(b, ctx, 1, 0, null, null), 4);                        // the graph at 1 s
-        Assert.Equal(3.0, entry.Evaluate(b, ctx, 1, 0, null, null, penaltySuppressed: true), 4);      // inside +0x108
-        Assert.Equal(3.0, entry.Evaluate(b, ctx, 1, 0, null, null, repetitionPenaltyEnabled: false), 4); // +0x110 clear
+        // the last-run stamp is 100 (EvaluateRepetitionPenalty 0x005beee6 returns 1.0 for a stamp <= 0)
+        Assert.Equal(3.0 / 30.0, entry.Evaluate(b, ctx, 101, 100, null, null), 4);                        // the graph at 1 s
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 101, 100, null, null, penaltySuppressed: true), 4);      // inside +0x108
+        Assert.Equal(3.0, entry.Evaluate(b, ctx, 101, 100, null, null, repetitionPenaltyEnabled: false), 4); // +0x110 clear
     }
 
     /// <summary>
@@ -306,12 +307,12 @@ public class FreeplayTests
         Assert.Contains(d.Scores, s => s.Id == "c" && s.Note == "not runnable");
         Assert.Contains(d.Scores, s => s.Id == "missing" && s.Note == "not built");
         // a just ran: its repetition penalty is 0 at 0 s, 0.5 at 15 s; b wins until a recovers past 0.8
-        chooser.Ran("a", 0);
-        Assert.Equal("b", chooser.GetDesiredActiveBehavior(null, 0, ctx, 1).Behavior!.Id);
-        Assert.Equal("b", chooser.GetDesiredActiveBehavior(null, 0, ctx, 20).Behavior!.Id);   // a = 0.67
-        Assert.Equal("a", chooser.GetDesiredActiveBehavior(null, 0, ctx, 29).Behavior!.Id);   // a = 0.97
+        chooser.Ran("a", 100);                                                                // a stamp above zero (0x005beeea..0x005beef8)
+        Assert.Equal("b", chooser.GetDesiredActiveBehavior(null, 0, ctx, 101).Behavior!.Id);
+        Assert.Equal("b", chooser.GetDesiredActiveBehavior(null, 0, ctx, 120).Behavior!.Id);   // a = 0.67
+        Assert.Equal("a", chooser.GetDesiredActiveBehavior(null, 0, ctx, 129).Behavior!.Id);   // a = 0.97
         // while b runs it keeps its place against a's 0.97 thanks to the +1 running bonus
-        var keep = chooser.GetDesiredActiveBehavior(b, 5, ctx, 29);
+        var keep = chooser.GetDesiredActiveBehavior(b, 5, ctx, 129);
         Assert.Equal("b", keep.Behavior!.Id);
         Assert.Contains(keep.Scores, s => s.Id == "b" && s.Score > 1.5 && s.Note == "running");
         // the strict-priority chooser: the first runnable

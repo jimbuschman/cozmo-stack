@@ -1126,8 +1126,12 @@ public class DerivedStateTests
         Assert.Equal(1, idle.Starts);
     }
 
+    /// <summary>
+    /// <c>CheckReactionTriggerStrategies</c> 0x005a3550 gates only on the per-trigger disable-lock count (node+0x28, 0x005a359a..0x005a359e); the engine
+    /// has no global "reactions disabled" test, so an arbiter-wide lock (a behaviour scope's <c>DisableReactions</c>) does not hold a reaction back (M8-012).
+    /// </summary>
     [Fact]
-    public void ADisabledTriggerAndAReactionLockBothHoldReactionsBack()
+    public void ADisabledTriggerHoldsReactionsBackButAnArbiterWideLockDoesNot()
     {
         using var rig = new Rig();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
@@ -1145,9 +1149,8 @@ public class DerivedStateTests
 
         var holder = new object();
         arbiter.DisableReactions(holder);
-        Assert.Null(manager.CheckReactions(0));
+        Assert.NotNull(manager.CheckReactions(0));    // not an engine gate (A2: no global arbiter gate)
         arbiter.EnableReactions(holder);
-        Assert.NotNull(manager.CheckReactions(0));
     }
 
     // ------------------------------------------------------------------ the cube path

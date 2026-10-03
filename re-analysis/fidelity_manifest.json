@@ -158,7 +158,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M8-framework.md",
-        "approved": "2026-09-29",
+        "approved": "2026-10-02",
         "snapshot": "re-analysis/inventory/M8-framework.approved.json"
       }
     },
@@ -8200,7 +8200,7 @@
       ],
       "effect": "the behaviour never starts, stops, resumes or reports runnable the way the engine does",
       "provenance": "the original's IBehavior constructor and lifecycle functions, read at the addresses above",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. vptr+0x48 is InitInternal, not IsRunnableInternal (relocation 0x01026968): the running flag is inverted and InitInternal failure is never detected; StopActing's vptr+0x80 is ScoredActingStateChanged(false), which clears +0x104 (0x5bd35a -> 0x5bf046); Update's early return 2 precedes UpdateInternal (0x5bd074..0x5bd088); the TooManyResumes emotion event (0x5bcf68) is not triggered. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: R-BEH2 batch 1 rebuilt the lifecycle (Init calls InitInternal = vptr+0x48; ScoredActingStateChanged(true/false) at StartActing/StopActing/HandleActionComplete; StartActing refusal gates; the +0x98 callback destroyed by Stop/Init; Update returns 2 before UpdateInternal; resume counter, +0x118 = now+15.0f and the TooManyResumes mood event applied to non-stepped behaviours too; switch order with current null during Init). Still open: the IsRunnableBase gates other than robot+0x355 and [robot+0x284]+8 (0x34a, AI process, +0x70/+0x74 inputs, timers, spark) are seams, and the base vtable+0x20/+0x24/+0x28 default to true although the engine base returns 0/0/pure virtual (about a dozen M10/M15 classes would be refused off treads; list in research/20261002-R-BEH2-verify-batch1.md Round 2); SetRunningAndResumeInfo's ReactionTriggerTransition message, robot+0x2c7/MC+0xD4 writes and cube-light stop are MISSING seams; the Init action-tag guard has no production caller; the normal resume path for non-stepped behaviours is not the engine's; CallToListeners and helper-stop are silent seams. Verifier rounds 1-4 in that report.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8222,7 +8222,7 @@
       ],
       "effect": "a behaviour's score is penalised by the wrong curve, or not at all",
       "provenance": "the shipped config plus the code that reads and consumes it",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. a missing repetitionPenalty is a flat 1.0 (0x5bc55c..0x5bc566), not mood_config's default graph (used only by emotion events, 0x67befe..0x67bf0a); a stamp of 0 is not penalised (0x5beeee..0x5beef8); StopWithoutImmediateRepetitionPenalty calls Stop first (0x5beea4). Earlier note: None",
+      "unresolved": "built, awaiting strong verification: flat (0, 1.0) default graph, stamp <= 0 or NaN gives 1.0, float stamp/subtraction/compare (0x5bef12, 0x5befea), +0x108 = now + 1.0f, StopWithoutImmediateRepetitionPenalty calls Stop first. Still open: no stack behaviour calls StopWithoutImmediateRepetitionPenalty (callers are M7/M15); the internal Stop reason is not in the inventory.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8246,7 +8246,7 @@
       ],
       "effect": "behaviours are chosen by the wrong score",
       "provenance": "ReadFromScoredJson, EvaluateScore, EvaluateScoreInternal, EvaluateRunningPenalty and MoodScorer, read",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the +0x104 bonus is cleared on every Stop (0x5bf046) and a missing penalty graph is a flat 1.0 (see M8-001/M8-002); the trackDelta branch (GetHistoryValueTicksAgo(60), 0x67c9ee..0x67c9fc) is an unrecorded LOCAL_POLICY in a comment. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: scored selection in float with the engine's order (EmotionScore 0x67c9b8, flat score, running bonus, repetition and running penalties). Still open: trackDelta GetHistoryValueTicksAgo(60) needs the Emotion history ring (M7-013) and throws NotSupportedException; MoodState holds emotions as double where the engine loads a float.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore"
@@ -8285,7 +8285,7 @@
       ],
       "effect": "a PlayAnim behaviour plays the wrong set of triggers",
       "provenance": "BehaviorPlayAnimSequence, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. each lift-safe action has a 60 s timeout (0x5c017e/0x5c02de); tracksToLock is 0 (0x5c02d8); ignoreFailure is 0, so a failed child ends the sequence (0x5c02f6, 0x54f81a); num_loops 0 plays nothing (0x5c02a8..0x5c02ae); ResumeInternal returns 1, so PlayAnim never resumes (0x5bff1e). Earlier note: None",
+      "unresolved": "built, awaiting strong verification: PlayAnim as a SteppedBehavior: single trigger numLoops = num_loops (0 loops forever, timeout 60.0f -> FLT_MAX); loop path one action per loop, none for num_loops <= 0; 60.0f (0x42700000) timeout, tracksToLock 0, ignoreFailure 0; ResumeInternal returns 1; slots 0/0/1. Still open: CallToListeners/AddListener is not modelled; group warning wording is not the engine's; an animation that cannot resolve fails with 0x0300000C and a refused stream with 0x03000001 only on the stack's path.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll"
@@ -8305,7 +8305,7 @@
       ],
       "effect": "a behaviour runs when the engine would not run it",
       "provenance": "the factory and the strategy classes, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the needs-expressed input is one engine value [[robot+0x264]+0x30]+0x14 (0x6136dc..0x6136fe), not the stack's per-need set; the other strategy types' `false` has no cited body. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: InNeedsBracket unchanged; ExpressNeedsTransition tests Critical then [[robot+0x264]+0x30]+0x14 != need through the seam BehaviorContext.AiExpressedNeedValue; other strategy types throw. Still open: the name and source of [[robot+0x264]+0x30]+0x14 is UNKNOWN (no value is supplied in production); Activities.cs SevereNeedTransition and ExplorerBehaviors still use the unsourced per-need set (M15).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState"
@@ -8324,7 +8324,7 @@
       ],
       "effect": "a locked track is driven by two actions at once, or an action is dropped instead of retried",
       "provenance": "IActionRunner::Update and MovementComponent::LockTracks, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. a locked track fails the action with 0x03000019 TRACKS_LOCKED (0x540572..0x54057c), it doesn't retry; the action's mask is the constructor's tracksToLock (0x53fe0e/0x53fe14), 0 for PlayAnim; the stack sends DisableAnimTracks for the clip's own tracks, which the engine never does. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: the action mask is its own tracksToLock; LIFT ORed only when carrying and OffTreadsState == OnTreads; a locked track fails with 0x03000019 without retry; the lock is taken before the clip resolves and keyed by the action id; Disable/EnableAnimTracks only from LockTracks/UnlockTracks; the completion callback runs for a failed action. Still open: ReactBehavior and PlayArbitraryAnimBehavior still lock the clip's tracks through scope.LockTracks (no inventory source); an animation's Replaced/Cancelled end is counted a success (MISSING: what the streamer does with a replaced tag).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorHardeningTests"
@@ -8344,7 +8344,7 @@
       ],
       "effect": "what a behaviour does when a recalibration times out",
       "provenance": "CalibrateMotorAction's inherited IAction timeout (30.0 s), IAction::UpdateInternal and its failure result, read; the 30.0 s wait is built, the result delivery is not",
-      "unresolved": "The 30.0 s timeout is built (CalibrationAllowanceSec = 30.0; expiry logs the timeout). Remaining: the engine fails the action with result 0x03000018 through IAction::UpdateInternal 0x00540d1c, which the behaviour action-complete receives; this stack's WaitUntil carries no action result, so the failure result is not delivered. Build that result seam (or establish from source that the M7 callers ignore it, which would close the record) before settling.",
+      "unresolved": "The 30.0 s timeout is built (CalibrationAllowanceSec = 30.0; expiry logs the timeout). Remaining: the engine fails the action with result 0x03000018 through IAction::UpdateInternal 0x00540d1c, which the behaviour action-complete receives; this stack's WaitUntil carries no action result, so the failure result is not delivered. Build that result seam (or establish from source that the M7 callers ignore it, which would close the record) before settling. R-BEH2 (2026-10-02): none of the four M7 CalibrateMotorAction callers (0x00607c9a, 0x0060808c, 0x00608658, 0x00608892) installs a result branch (0x005bf8f4..0x005bf8fc discards it), so the engine's 0x03000018 reaches only the behaviour's completion callback; the callback runs for any result (HandleActionComplete 0x005be1e6).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.TheHeadCalibrationWaitRunsToThirtySeconds"
@@ -8363,7 +8363,7 @@
       ],
       "effect": "locks are released in a different order at behaviour exit",
       "provenance": "IBehavior::Stop, read in full including the light-pattern tail; the built order matches",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. within a category the engine releases reaction locks in std::set name order and walks the track-lock std::map in key order (0x5bd12c/0x5bd130, 0x5bd168..0x5bd196), which is observable on the wire with two or more track locks; the stack releases most-recent-first. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: Dispose releases by category in the engine's order and within a category by key (reaction locks in name order, track locks in map-key order). Still open: SmartLockTracks uses owner scope-N:name rather than the engine's plain name (M8-011).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder"
@@ -8432,7 +8432,7 @@
       ],
       "effect": "the manager ticks, switches or finishes behaviours in the wrong order, or fires a reaction when it should not",
       "provenance": "BehaviorManager::Update and its switch/finish/resume helpers, read at the addresses above",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. 'class 0x16' is the running info's ReactionTrigger (NoneTrigger), not a behaviour (0x5a38f4, 0x5a2c46/0x5a2c68); FinishCurrentBehavior's second argument means try-to-resume (0x5a311e..0x5a3122, 0x5a38d6); TryToResume has no IsRunnable pre-check (0x5a2c5c..0x5a2c76); CheckReactionTriggerStrategies runs every tick (0x5a3060) and before the scored switch (0x5a3068..0x5a3078); the UI request-game paths (0x5a2f8e..0x5a309a) are missing. Earlier note: None",
+      "unresolved": "built, awaiting strong verification: phantom 0x16 behaviour removed (running info = {current, resume, trigger}); tick order per Correction A2 (activity Update, EnsureRequestGameIsClear, UI request, reactions every tick, scored switch behind three gates, IBehavior::Update then FinishCurrentBehavior(trigger != None)); TryToResume with head/lift restore and no manager IsRunnable pre-check; failure switches to empty; running info stored on Init failure; per-trigger disable-count skip. Still open (seams): the meaning of manager+0x20, SelectUIRequestGameBehavior, SwitchToUIGameRequestBehavior and the +0x220 flag (no test for the class-test order before settling), EnsureRequestGameIsClear and SendDasTransitionMessage bodies, ActionList-is-empty is not wired in production, the concrete activity Update bodies (M7/M15); the stack's ChooseAndSwitch is a test-only parallel path.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"

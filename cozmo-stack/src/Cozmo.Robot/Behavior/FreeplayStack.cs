@@ -96,11 +96,9 @@ public sealed class FreeplayStack : IDisposable
         // emotion events; MoodState is the stack's runtime for it. Wired here so every Context.Mood?.Trigger
         // call and FreeplaySystem's per-tick Advance have a live model.
         ctx.Mood ??= new MoodState(MoodModel.Load(obbRoot));
+        // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
+        // (0x005a38f4/0x005a38fe): 0x16 is the ReactionTrigger NoneTrigger, not a behaviour, so nothing is bound here.
         var manager = new BehaviorManager(ctx);
-        // BehaviorManager::FinishCurrentBehavior switches to the default class-0x16
-        // BehaviourRunningAndResumeInfo (0x005a38fe); this stack treats that placeholder as "nothing
-        // running" (BehaviorManager.Current maps it to null).
-        manager.DefaultBehavior = new BehaviorRunningAndResumeInfo();
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
                          bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard,

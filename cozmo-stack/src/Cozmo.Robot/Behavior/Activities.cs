@@ -3,21 +3,43 @@ using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
 
+/// <summary>
+/// <c>Anki::Util::GraphEvaluator2d::EvaluateY(float)</c> 0x00804bd0..0x00804c40 in the engine's arithmetic: everything is <c>float</c>. At or below
+/// the first node (and for a graph of fewer than two nodes) the first node's y; above the last node the last node's y; between two nodes
+/// the <c>vdiv.f32</c> of (x - x0) by the span, then <c>vmul.f32</c> by (y1 - y0), then <c>vadd.f32</c> of y0 - except that a span at or below
+/// 1e-5f (0x3727c5ac, <c>ble</c> 0x00804c14..0x00804c1c) returns the <b>left</b> node's y.
+/// </summary>
+// fidelity: M8-003
+internal static class GraphEvaluator
+{
+    /// <summary>1e-5f, <c>0x3727c5ac</c>.</summary>
+    public static readonly float Epsilon = BitConverter.Int32BitsToSingle(0x3727c5ac);
+
+    public static double EvaluateY(IReadOnlyList<(double X, double Y)> nodes, double xValue, double empty)
+    {
+        if (nodes.Count == 0) return empty;
+        float x = (float)xValue;
+        if (float.IsNaN(x)) return (float)nodes[^1].Y;                       // every compare fails in the engine: the last node's y
+        if (nodes.Count < 2 || x <= (float)nodes[0].X) return (float)nodes[0].Y;
+        for (int i = 1; i < nodes.Count; i++)
+        {
+            float x1 = (float)nodes[i].X;
+            if (x > x1) continue;
+            float x0 = (float)nodes[i - 1].X, y0 = (float)nodes[i - 1].Y, y1 = (float)nodes[i].Y;
+            float span = x1 - x0;
+            if (span <= Epsilon) return y0;
+            float t = (x - x0) / span;
+            float scaled = t * (y1 - y0);
+            return y0 + scaled;
+        }
+        return (float)nodes[^1].Y;
+    }
+}
+
 /// <summary>A piecewise-linear graph (<c>Anki::Util::GraphEvaluator2d</c>) over sorted nodes.</summary>
 public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 {
-    public double EvaluateY(double x)
-    {
-        if (Nodes.Count == 0) return 0;
-        if (x <= Nodes[0].X) return Nodes[0].Y;
-        for (int i = 1; i < Nodes.Count; i++)
-            if (x <= Nodes[i].X)
-            {
-                double dx = Nodes[i].X - Nodes[i - 1].X;
-                return dx <= 0 ? Nodes[i].Y : Nodes[i - 1].Y + (x - Nodes[i - 1].X) / dx * (Nodes[i].Y - Nodes[i - 1].Y);
-            }
-        return Nodes[^1].Y;
-    }
+    public double EvaluateY(double x) => GraphEvaluator.EvaluateY(Nodes, x, empty: 0);
 
     public static Graph2d? FromJson(JsonElement e)
     {
@@ -34,7 +56,8 @@ public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 /// <c>considerThisHasRunForBehaviorObjective</c> into a behaviour objective; the activity configs add
 /// <c>runningPenalty</c> and <c>boredomMultiplier</c>. A behaviour whose config carries no scoring keeps
 /// the constructor's zero (<c>IBehavior::IBehavior</c> writes 0 to +0x100 at 0x005BBD28), so it scores
-/// nothing in a scoring chooser.
+/// nothing in a scoring chooser. A missing <c>repetitionPenalty</c> or <c>runningPenalty</c> is a flat graph,
+/// <c>AddNode(0.0f, 1.0f, true)</c> (0x005bc55c..0x005bc566, 0x005bc666..0x005bc678): no penalty.
 /// </summary>
 // fidelity: M8-003
 public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Graph2d? RepetitionPenalty, Graph2d? RunningPenalty, double? BoredomMultiplier,
@@ -54,17 +77,31 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
     /// <c>MoodScorer::EvaluateEmotionScore(moodManager)</c>, and only an empty list falls through to the
     /// float at +0x100, the flat score.
     /// </summary>
+    /// <param name="defaultPenalty">Unused. It used to supply <c>mood_config.json</c>'s <c>defaultRepetitionPenalty</c> for an entry with
+    /// no graph of its own; the engine gives such a behaviour a flat 1.0 graph (<c>AddNode(0.0f, 1.0f, true)</c>,
+    /// 0x005bc55c..0x005bc566), so there is no default to supply.</param>
+    /// <param name="runningClockSec">The running-penalty clock +0x34 (<c>EvaluateRunningPenalty</c> 0x005bef22 returns 1.0 when it is &lt;= 0).
+    /// Null means the caller has no such stamp and the graph is evaluated at <paramref name="runningSec"/>.</param>
     public double Evaluate(IBehavior b, BehaviorContext ctx, double nowSec, double? lastRunSec, double? runningSec, RepetitionPenalty? defaultPenalty,
-                           double runningBonus = 0, bool repetitionPenaltyEnabled = true, bool runningPenaltyEnabled = true, bool penaltySuppressed = false)
+                           double runningBonus = 0, bool repetitionPenaltyEnabled = true, bool runningPenaltyEnabled = true, bool penaltySuppressed = false,
+                           double? runningClockSec = null)
     {
-        double score = EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore;
+        // The engine computes the score in float: vadd.f32 0x005bef88, vmul.f32 0x005bef98 and 0x005beffe; the penalty inputs are float - float.
+        float score = (float)(EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore);
         if (runningSec is { } r)
         {
             // Running branch: EvaluateScoreInternal + the float at +0x104 (vldr s2,[r4,#0x104]
             // 0x005bef80; vadd.f32 0x005bef88), then multiplied by EvaluateRunningPenalty only when the
             // +0x111 enable byte is set (0x005bef84/0x005bef8c). No IsRunnable gate here.
-            score += runningBonus;
-            if (runningPenaltyEnabled && RunningPenalty is { } rp) score *= rp.EvaluateY(r);
+            score += (float)runningBonus;
+            if (runningPenaltyEnabled)
+            {
+                // EvaluateRunningPenalty 0x005bef22..0x005bef5a: 1.0 when +0x34 <= 0 (or NaN), else the +0xf4 graph at
+                // float(now) - float(+0x34) (vsub.f32 0x005bef4e); a missing runningPenalty key left that graph at its flat (0.0, 1.0) node.
+                float x = runningClockSec is { } clock ? (float)nowSec - (float)clock : (float)r;
+                bool noStamp = runningClockSec is { } c2 && !((float)c2 > 0);
+                if (!noStamp && RunningPenalty is { } rp) score *= (float)rp.EvaluateY(x);
+            }
         }
         else
         {
@@ -72,7 +109,12 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
             // The stack's IBehavior.IsRunnable is that IsRunnableBase + vtable+0x50 combination (M8-001 C1a).
             if (!b.IsRunnable(ctx)) return 0;
             if (repetitionPenaltyEnabled && !penaltySuppressed && lastRunSec is { } last)
-                score *= RepetitionPenalty is { } g2 ? g2.EvaluateY(nowSec - last) : defaultPenalty?.For(BehaviorId, nowSec) ?? 1.0;
+            {
+                // EvaluateRepetitionPenalty 0x005beee6: 1.0 when +0x30 <= 0 (or NaN), else the +0xe8 graph at float(now) - float(+0x30)
+                // (vsub.f32 0x005bef12); a missing repetitionPenalty key left that graph flat at 1.0 (0x005bc55c..0x005bc566).
+                float stamp = (float)last;
+                if (stamp > 0 && RepetitionPenalty is { } g2) score *= (float)g2.EvaluateY((float)nowSec - stamp);
+            }
         }
         return score;
     }
@@ -86,21 +128,28 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
     private double EmotionScore(BehaviorContext ctx)
     {
         if (ctx.Mood is not { } mood) return 0;
-        double sum = 0;
-        int counted = 0;
+        // MoodScorer::EvaluateEmotionScore 0x0067c9b8 is float: the emotion value is loaded as a float, the graph value is float, the veto test is
+        // vcmpe.f32 against the literal 0x3727c5ac (pool 0x0067cab4; 0x0067c9da/0x0067ca50), the sum is vadd.f32 (0x0067ca5a) and the mean is the sum
+        // divided by vcvt.f32.u32(count) (vdiv.f32 0x0067ca6e..0x0067ca72).
+        float sum = 0;
+        uint counted = 0;
         foreach (var scorer in EmotionScorers)
         {
             // fidelity: M13-010 (second copy of MoodScorer::EvaluateEmotionScore 0x0067C9B8; Workouts.cs is the first)
-            // A trackDelta entry reads Emotion::GetHistoryValueTicksAgo(emotion, 0x3C) 0x006794F8 - the M7-mood ring buffer,
-            // which MoodState does not keep. The earlier LOCAL_POLICY (use the level) is withdrawn: refused, not guessed.
+            // fidelity: M8-003
+            // A trackDelta entry subtracts Emotion::GetHistoryValueTicksAgo(emotion, 60) (movs r1,#0x3c 0x0067c9ee; call
+            // 0x0067c9f4; vsub.f32 0x0067c9fc) from the emotion's value; the body is 0x006794f8 (count == 0 or ticks == 0:
+            // the current value; else the ring-buffer entry (+0xc head + count - ticks) mod +0x14). MoodState keeps no such
+            // history, and the inventory gives no writer for it (what pushes the buffer, and when, is M7-013's), so this stays
+            // an explicit refusal, never a stand-in value. MISSING: M8-003 / M7-013 - the emotion history.
             if (scorer.TrackDelta)
-                throw new NotSupportedException("M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo (0x006794F8), the M7-mood history ring buffer, which is not built");
-            double y = scorer.Graph.EvaluateY(scorer.ValueFor(mood));
-            if (Math.Abs(y) < 1e-5) return 0;
+                throw new NotSupportedException("M8-003/M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo(60) (0x006794F8), whose ring buffer MoodState does not keep (M7-013)");
+            float y = (float)scorer.Graph.EvaluateY((float)scorer.ValueFor(mood));
+            if (Math.Abs(y) < GraphEvaluator.Epsilon) return 0;
             sum += y;
             counted++;
         }
-        return counted == 0 ? 0 : sum / counted;
+        return counted == 0 ? 0 : sum / (float)counted;
     }
 
     public static ScoredBehaviorEntry FromJson(JsonElement e)
@@ -269,7 +318,8 @@ public sealed class ScoringChooser : IBehaviorChooser
             // IBehavior +0x104: the running-score bonus IncreaseScoreWhileActing accumulates (M8-003).
             double runningBonus = b is SteppedBehavior sb ? sb.RunningScoreBonus : 0;
             double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
-                                  runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec));
+                                  runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec),
+                                  runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null);
             if (s <= 0) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
             if (running)
             {

@@ -287,7 +287,6 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     public enum Phase { Idle, TurningToLastLocation, PlayingSenseReaction, ReactingToBlockPresence, ReactingToBlockAbsence }
 
     private readonly ICubeLocator? _locator;
-    private bool _turnDone, _waitDone;
     private volatile bool _observed;
     private CancellationTokenSource? _turnCancel;
 
@@ -319,9 +318,11 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     {
         CurrentPhase = Phase.PlayingSenseReaction;
         Log("PlayingSenseReaction");
-        _waitDone = false; _turnDone = false;
-        Wait(0.5, () => { _waitDone = true; if (_turnDone) TransitionToTurningToLastLocationOfBlock(); });
-        PlayTrigger(AnimationTrigger.CubeMovedSense, () => { _turnDone = true; if (_waitDone) TransitionToTurningToLastLocationOfBlock(); });
+        // the animation and the 0.5 s wait are one CompoundActionParallel (0x006022fe..), started with one StartActing and one callback
+        var both = StartParallel(2, TransitionToTurningToLastLocationOfBlock);
+        if (both is null) return;
+        WaitInParallel(both, 0.5);
+        PlayTriggerInParallel(both, AnimationTrigger.CubeMovedSense);
     }
 
     // fidelity: M15-010
@@ -329,7 +330,6 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     {
         CurrentPhase = Phase.TurningToLastLocation;
         Log("TurningToLastLocationOfBlock");
-        _waitDone = false; _turnDone = false;
         if (TargetObjectId is not { } id || _locator is null || !_locator.IsLocated(id))
         {
             // BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270: when
@@ -339,7 +339,10 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
             Finish();
             return;
         }
-        Wait(0.5, () => { _waitDone = true; if (_turnDone) TransitionToReactingToBlockAbsence(); });
+        // the turn and the 0.5 s wait are one CompoundActionParallel (0x0060246e..): one StartActing, one callback
+        var both = StartParallel(2, TransitionToReactingToBlockAbsence);
+        if (both is null) return;
+        WaitInParallel(both, 0.5);
         _turnCancel = new CancellationTokenSource();
         var pending = _locator.TurnTowardsAsync(id, _turnCancel.Token);
         pending.ContinueWith(t =>
@@ -347,9 +350,8 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
             Post(() =>
             {
                 if (CurrentPhase != Phase.TurningToLastLocation) return;
-                _turnDone = true;
                 Log(t.IsCompletedSuccessfully && t.Result ? "turned towards the last location" : "the turn did not complete");
-                if (_waitDone) TransitionToReactingToBlockAbsence();
+                both.ChildDone(t.IsCompletedSuccessfully && t.Result ? ActionOutcome.Succeeded : ActionOutcome.Failed());
             });
         }, TaskScheduler.Default);
     }

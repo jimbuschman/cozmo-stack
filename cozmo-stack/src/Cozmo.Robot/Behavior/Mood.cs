@@ -34,20 +34,8 @@ public sealed record DecayGraph(string EmotionType, IReadOnlyList<(double Second
     /// y whatever the x, and between two nodes it interpolates unless they are closer than 1e-5 apart in
     /// x, in which case it returns the left node's y.
     /// </summary>
-    public double At(double seconds)
-    {
-        if (Nodes.Count == 0) return 1;
-        if (seconds <= Nodes[0].Seconds) return Nodes[0].Multiplier;
-        for (int i = 1; i < Nodes.Count; i++)
-        {
-            var (x1, y1) = Nodes[i];
-            var (x0, y0) = Nodes[i - 1];
-            if (seconds > x1) continue;
-            double span = x1 - x0;
-            return span <= 0 ? y1 : y0 + (y1 - y0) * ((seconds - x0) / span);
-        }
-        return Nodes[^1].Multiplier;
-    }
+    // fidelity: M8-003
+    public double At(double seconds) => GraphEvaluator.EvaluateY(Nodes, seconds, empty: 1);
 }
 
 /// <summary>

@@ -578,9 +578,10 @@ public class CorrectionTests
         b.RandomDraw = () => 0.0;
 
         Assert.Equal(10.0, a.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
-        penalty.Ran("shared", 0);                                   // the manager records it once
-        Assert.Equal(0.0, b.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
-        Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 30).Scores.Single().Score, 3);
+        // the stamp is above zero: EvaluateRepetitionPenalty 0x005beee6 returns 1.0 for a stamp <= 0 (0x005beeea..0x005beef8)
+        penalty.Ran("shared", 100);                                 // the manager records it once
+        Assert.Equal(0.0, b.GetDesiredActiveBehavior(null, 0, ctx, 100).Scores.Single().Score, 3);
+        Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 130).Scores.Single().Score, 3);
     }
 
     /// <summary>
