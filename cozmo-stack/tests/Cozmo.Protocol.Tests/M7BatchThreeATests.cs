@@ -304,7 +304,7 @@ public class M7BatchThreeATests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = AnimationTriggerMap.Load(obb), Random = new Random(5) };
         using var manager = new BehaviorManager(ctx);
-        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision)
+        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb)
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.RobotFalling);
         manager.AddReaction(reg.Strategy, reg.Behavior);
         manager.RemoveDisableReactionsLock("sdk");          // open the C3 sticky gate
@@ -958,7 +958,7 @@ public class M7BatchThreeATests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(5) };
         using var manager = new BehaviorManager(ctx);
-        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision)
+        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb)
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.RobotPickedUp);
         Assert.IsType<ReactToPickupBehavior>(reg.Behavior);
         manager.AddReaction(reg.Strategy, reg.Behavior);

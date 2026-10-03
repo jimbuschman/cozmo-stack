@@ -47,7 +47,7 @@ public class CorrectionTests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
-        var registrations = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision);
+        var registrations = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb);
         var reg = registrations.Single(r => r.Strategy.Trigger == ReactionTrigger.CubeMoved);
         manager.AddReaction(reg.Strategy, reg.Behavior);
         var strategy = (CubeMovedReactionStrategy)reg.Strategy;
@@ -85,7 +85,7 @@ public class CorrectionTests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
-        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision)
+        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb)
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated);
         manager.AddReaction(reg.Strategy, reg.Behavior);
 

@@ -221,17 +221,8 @@ public class M7BehaviorTests
         Assert.Equal(0.0, disabled[EmotionType.Confident], 6);
     }
 
-    /// <summary>M7-020: the nine-value game output raises the stack's seam (gap1 G1).</summary>
-    [Fact]
-    public void SendEmotionsToGameRaisesTheNineValues()
-    {
-        var mood = new MoodState(new MoodModel());
-        IReadOnlyList<double>? seen = null;
-        mood.EmotionsBroadcast += v => seen = v;
-        mood.SendEmotionsToGame();
-        Assert.NotNull(seen);
-        Assert.Equal(9, seen!.Count);
-    }
+    // M7-012 / M7-020: the nine-value MoodState output is tested in M7BatchThreeBTests (the old test here asserted a send with no robot attached,
+    // which MoodManager::SendEmotionsToGame 0x0067b736..0x0067b73c does not do).
 
     // M7-009 / M7-010 head-angle conversion and turn-shift sign: the retired IdleBehavior's helpers are gone (R-BEH2 batch 2);
     // the streamer's UpdateLiveAnimation port is tested through the live entry in KeepAliveTests.

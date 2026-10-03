@@ -34,61 +34,68 @@ namespace Cozmo.Robot.Behavior;
 public sealed class PlayAnimBehavior : SteppedBehavior
 {
     /// <summary>
-    /// Every shipped <c>PlayAnim</c> config with an <c>animTriggers</c> list, built from the OBB. A trigger
-    /// name the generated <see cref="AnimationTrigger"/> enum does not know is skipped and reported in
-    /// <paramref name="problems"/> rather than guessed at.
+    /// Every shipped <c>PlayAnim</c> behaviour, built the engine's way: <c>RobotDataLoader::LoadBehaviors</c> reads the config corpus
+    /// (<see cref="BehaviorConfigLoader"/>) and the <see cref="BehaviorContainer"/> builds each behaviour through
+    /// <see cref="BehaviorFactory"/>; this returns the ones whose class is <c>PlayAnim</c>. Warnings and errors the load logs are added to
+    /// <paramref name="problems"/>. Empty when the OBB is not there.
     /// </summary>
+    // fidelity: M7-018
     public static IReadOnlyList<PlayAnimBehavior> LoadShipped(string obbRoot, List<string>? problems = null)
     {
-        var list = new List<PlayAnimBehavior>();
-        var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem", "behaviors");
-        if (!Directory.Exists(dir)) return list;
-        foreach (var f in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(x => x, StringComparer.Ordinal))
-        {
-            var text = System.Text.RegularExpressions.Regex.Replace(File.ReadAllText(f), "//[^\n\r]*", "");
-            try
+        var ctx = new BehaviorFactoryContext { Log = line => { if (line.StartsWith("warning:") || line.StartsWith("error:")) problems?.Add(line); } };
+        return BehaviorContainer.LoadShipped(obbRoot, ctx).Behaviors.Values.OfType<PlayAnimBehavior>().ToList();
+    }
+
+    /// <summary>
+    /// <c>BehaviorPlayAnimSequence::BehaviorPlayAnimSequence(Robot&amp;, const Json&amp;, bool)</c> 0x005bff24..0x005c004c (<c>CreateBehavior</c> case 0x26): reads
+    /// every <c>animTriggers</c> string, converts it to an <see cref="AnimationTrigger"/> and keeps all values except <c>Count</c>; reads
+    /// <c>num_loops</c> (default 1). A shipped config with no usable trigger is still constructed (<c>IsRunnableInternal</c> 0x005c013a is false for an empty
+    /// list). A trigger name outside the enum takes <c>AnimationTriggerFromString</c>'s miss path (cerr error, value 0), and the constructor keeps the 0. The common <c>IBehavior::ReadFromJson</c> keys this stack reads for PlayAnim are
+    /// <c>wantsToRunStrategyConfig</c> and the three <c>requiredRecent...</c> windows.
+    /// </summary>
+    // fidelity: M7-018, M8-005
+    public static PlayAnimBehavior FromConfig(System.Text.Json.JsonElement root, Action<string>? log = null)
+    {
+        var id = BehaviorConfigLoader.ExtractIdFromConfig(root).ToString();
+        var parsed = new List<AnimationTrigger>();
+        if (root.TryGetProperty("animTriggers", out var triggers) && triggers.ValueKind == System.Text.Json.JsonValueKind.Array)
+            foreach (var t in triggers.EnumerateArray())
             {
-                using var doc = System.Text.Json.JsonDocument.Parse(text);
-                var root = doc.RootElement;
-                if (!root.TryGetProperty("behaviorClass", out var cls) || cls.GetString() != "PlayAnim") continue;
-                if (!root.TryGetProperty("animTriggers", out var triggers) || triggers.ValueKind != System.Text.Json.JsonValueKind.Array) continue;
-                var id = root.GetProperty("behaviorID").GetString()!;
-                var parsed = new List<AnimationTrigger>();
-                foreach (var t in triggers.EnumerateArray())
+                var name = t.ValueKind == System.Text.Json.JsonValueKind.String ? t.GetString() : null;
+                // AnimationTriggerFromString 0x0075E2B0: a miss (0x00764798..0x00764810) writes the cerr error and returns 0; the constructor keeps every
+                // value except 0x23F, Count (0x005BFFE8..0x005BFFEE), so a miss pushes trigger 0.
+                if (name == "Count") continue;
+                if (name is not null && Enum.TryParse<AnimationTrigger>(name, out var trigger) && Enum.IsDefined(trigger)) parsed.Add(trigger);
+                else
                 {
-                    var name = t.GetString();
-                    if (name is not null && Enum.TryParse<AnimationTrigger>(name, out var trigger)) parsed.Add(trigger);
-                    else problems?.Add($"{id}: animTrigger '{name}' is not in the AnimationTrigger enum");
+                    BehaviorClassNames.WriteCerrError(name ?? "", "AnimationTrigger");
+                    parsed.Add((AnimationTrigger)0);
                 }
-                if (parsed.Count == 0) { problems?.Add($"{id}: no usable animTriggers"); continue; }
-                string? strategy = null;
-                NeedId? strategyNeed = null;
-                NeedBracketId? strategyBracket = null;
-                if (root.TryGetProperty("wantsToRunStrategyConfig", out var wtr))
-                {
-                    if (wtr.TryGetProperty("strategyType", out var st)) strategy = st.GetString();
-                    if (wtr.TryGetProperty("need", out var nd) && Enum.TryParse<NeedId>(nd.GetString(), true, out var parsedNeed))
-                        strategyNeed = parsedNeed;
-                    if (wtr.TryGetProperty("needBracket", out var nb) && Enum.TryParse<NeedBracketId>(nb.GetString(), true, out var parsedBracket))
-                        strategyBracket = parsedBracket;
-                }
-                double? Sec(string key) => root.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetDouble() : null;
-                int loops = root.TryGetProperty("num_loops", out var nl) && nl.ValueKind == System.Text.Json.JsonValueKind.Number
-                    ? nl.GetInt32() : 1;
-                list.Add(new PlayAnimBehavior(id, "PlayAnim", parsed)
-                {
-                    NumLoops = loops,
-                    WantsToRunStrategy = strategy,
-                    StrategyNeed = strategyNeed,
-                    StrategyBracket = strategyBracket,
-                    RequiredRecentDriveOffChargerSec = Sec("requiredRecentDriveOffCharger_sec"),
-                    RequiredRecentOnTreadsEventSec = Sec("requiredRecentOnTreadsEventSecs"),
-                    RequiredRecentSwitchToParentSec = Sec("requiredRecentSwitchToParent_sec"),
-                });
             }
-            catch (System.Text.Json.JsonException e) { problems?.Add($"{Path.GetFileName(f)}: {e.Message}"); }
+        string? strategy = null;
+        NeedId? strategyNeed = null;
+        NeedBracketId? strategyBracket = null;
+        if (root.TryGetProperty("wantsToRunStrategyConfig", out var wtr))
+        {
+            if (wtr.TryGetProperty("strategyType", out var st)) strategy = st.GetString();
+            if (wtr.TryGetProperty("need", out var nd) && Enum.TryParse<NeedId>(nd.GetString(), true, out var parsedNeed))
+                strategyNeed = parsedNeed;
+            if (wtr.TryGetProperty("needBracket", out var nb) && Enum.TryParse<NeedBracketId>(nb.GetString(), true, out var parsedBracket))
+                strategyBracket = parsedBracket;
         }
-        return list;
+        double? Sec(string key) => root.TryGetProperty(key, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.Number ? v.GetDouble() : null;
+        int loops = root.TryGetProperty("num_loops", out var nl) && nl.ValueKind == System.Text.Json.JsonValueKind.Number
+            ? nl.GetInt32() : 1;
+        return new PlayAnimBehavior(id, "PlayAnim", parsed)
+        {
+            NumLoops = loops,
+            WantsToRunStrategy = strategy,
+            StrategyNeed = strategyNeed,
+            StrategyBracket = strategyBracket,
+            RequiredRecentDriveOffChargerSec = Sec("requiredRecentDriveOffCharger_sec"),
+            RequiredRecentOnTreadsEventSec = Sec("requiredRecentOnTreadsEventSecs"),
+            RequiredRecentSwitchToParentSec = Sec("requiredRecentSwitchToParent_sec"),
+        };
     }
 
     private readonly IReadOnlyList<AnimationTrigger> _triggers;
@@ -638,16 +645,22 @@ public static class ShippedBehaviors
     // fidelity: M10-003, M10-004, M7-002
     /// <summary>
     /// The reaction registrations for a <see cref="BehaviorManager"/>, driven by the shipped
-    /// <c>reactionTrigger_behavior_map.json</c> (M7-002) when <paramref name="obbRoot"/> is given: each map
+    /// <c>reactionTrigger_behavior_map.json</c> (M7-002): each map
     /// entry's <c>reactionTrigger</c> and <c>behaviorID</c> are looked up in the behaviours and strategies the
     /// stack builds, so the trigger -> behaviour dispatch comes from the shipped file rather than a hard-coded
     /// list. An entry whose behaviour class is not built is reported in <paramref name="unbound"/> and not
-    /// registered. Without an OBB the code-built set is used unchanged.
+    /// registered.
     ///
     /// Each trigger's engine strategy (C12, gap1 8, gap2) is paired with the behaviour the map names. The
-    /// cube-moved entry needs a world model, the face and pet entries a vision system. Not built: FistBump,
-    /// Hiccup and Sparked (their behaviours and the needs, progression, spark and objective inputs are other
-    /// layers).
+    /// cube-moved entry needs a world model, the face and pet entries a vision system. Not registered: FistBump,
+    /// Hiccup and Sparked (their behaviours exist, built from their configs by <see cref="BehaviorFactory"/>, but the trigger strategies
+    /// ReactionTriggerStrategyFistBump, ...Hiccup and ...Sparked are M10's and have no C# counterpart).
+    ///
+    /// A missing or empty map registers nothing (<c>LoadReactionTriggerMap</c> 0x00520bc8 leaves it empty on a failed read, and
+    /// <c>InitReactionTriggerMap</c> 0x005a16e4 walks nothing), so <paramref name="obbRoot"/> is required to register any reaction. The map's
+    /// own parameters (<c>genericStrategyParams</c>, <c>frustrationParams</c>, <c>behaviorObjectiveTriggerParams</c>, <c>hiccupParams</c>) are
+    /// parsed by <see cref="ReactionTriggerMap"/> but the strategies here are still built from literals: which parameter feeds which strategy
+    /// field is not settled by the M7 rows (the strategy classes are M10's), so it is MISSING, not wired.
     /// </summary>
     public static IReadOnlyList<BehaviorManager.ReactionRegistration> Reactions(CozmoRobot robot, ICubeLocator? cubes = null,
                                                                                 Func<double>? clockSec = null, Cozmo.Robot.Vision.VisionSystem? vision = null,
@@ -725,9 +738,16 @@ public static class ShippedBehaviors
             built.Add(("RamIntoBlock", ReactionTrigger.NoPreDockPoses, ramIntoBlock,
                        new NoPreDockPosesStrategy(whiteboard, ramIntoBlock)));
 
+        // RobotDataLoader::LoadReactionTriggerMap 0x00520bc8 reads the map through readAsJson (0x00520c2e); on a failed read it logs sErrorF
+        // "Failed to read '%s'" (0x00520c54), sets the error flag (0x00520c8a) and leaves the map empty, and BehaviorManager::InitReactionTriggerMap
+        // 0x005a16e4 then iterates nothing: a missing or empty map registers NO reaction. There is no fallback that registers every built one.
         var map = obbRoot is null ? Array.Empty<ReactionMapEntry>() : ReactionTriggerMap.Load(obbRoot);
         if (map.Count == 0)
-            return built.Select(x => new BehaviorManager.ReactionRegistration(x.Strategy, x.Behavior)).ToList();
+        {
+            // sErrorF "Failed to read '%s'" (0x00520c54); the engine's event name is not in the inventory, so the line carries none
+            robot.Engine.Log($"error: Failed to read '{ReactionTriggerMap.RelativePath}'");
+            return new List<BehaviorManager.ReactionRegistration>();
+        }
 
         // Bind from the map: only the entries the stack actually built, in the map's own order.
         var byId = built.GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.ToList());

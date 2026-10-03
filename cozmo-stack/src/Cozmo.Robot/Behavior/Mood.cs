@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Cozmo.Protocol;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -426,11 +427,21 @@ public sealed class MoodState
 
     /// <summary>
     /// <c>MoodManager::HandleActionEnded</c> 0x0067b318: an action id in the disabled set at +0x140 is
-    /// erased and produces no event; otherwise the <c>(actionType, resultCategory)</c> map at +0x134 is
-    /// looked up and its event triggered. The stack has no <c>ActionList</c> action-ended callback, so
-    /// nothing calls this yet (the record's unresolved); the behaviours raise their named events directly
-    /// through <see cref="Trigger"/>.
+    /// erased and produces no event (tail call 0x008cd6ac, <c>__tree&lt;unsigned&gt;::erase</c>); otherwise the key is the action type at +4 and the high byte of
+    /// the 32-bit result at +8 (the <c>ActionResultCategory</c>, 0x0067b320..0x0067b354), looked up in the map at +0x134, and its event triggered.
+    ///
+    /// <b>The live caller is MISSING.</b> The engine's <c>MoodManager::Init</c> registers this member function with the robot's <c>ActionList</c>
+    /// (robot +0x250) whenever the robot pointer is non-null (0x0067aee8..0x0067af38, handle stored at +0x158; the destructor unregisters it,
+    /// 0x0067ae18..0x0067ae30) and <c>ActionWatcher::Update</c> (called from <c>ActionList::Update</c>, 0x0053f5dc..0x0053f5e4) invokes it with the
+    /// whole 0x40-byte <c>RobotCompletedAction</c> for every completed action (0x0054187e..0x005418de). This stack has no <c>ActionList</c> or
+    /// <c>ActionWatcher</c>, and its actions (the behaviours' own, <see cref="CozmoMotion"/>'s, the manipulation and vision actions) do not
+    /// produce a completion record with an action tag, a <c>RobotActionType</c> and a 32-bit result, so nothing calls this method on the live
+    /// path (<see cref="FreeplayStack"/> reports it). What would build it: an ActionList with an ActionWatcher that queues a RobotCompletedAction
+    /// ({tag u32, action type, result u32, ...}) at every action's ending (<c>ActionWatcher::ActionEnding</c> 0x00541bd8..0x00541c00) and drains it
+    /// after the queues in <c>ActionList::Update</c>, plus the <c>RobotActionType</c> and <c>ActionResultCategory</c> enums whose names key
+    /// <c>mood_config.json</c>. The string keys here stand for those two enums.
     /// </summary>
+    // fidelity: M7-020
     public bool HandleActionEnded(string actionType, string resultCategory, string actionId, double nowSec)
     {
         if (_completionDisabled.Remove(actionId)) return false;
@@ -439,20 +450,50 @@ public sealed class MoodState
     }
 
     /// <summary>
-    /// <c>MoodManager::SendEmotionsToGame</c> 0x0067b724 / gap1 G1: the nine values at
-    /// <c>+0x18 + 0x20*i</c>, in <see cref="EmotionType"/> order. The engine no-ops when the external
-    /// interface at +0x12c is null and otherwise builds and broadcasts a MoodState message.
-    /// <see cref="EmotionsBroadcast"/> is this stack's local seam; the app-facing wire message is not
-    /// wired (the record's unresolved).
+    /// <c>MoodManager::SendEmotionsToGame</c> 0x0067b724: nothing when the MoodManager's robot pointer at +0x12c is null
+    /// (0x0067b736..0x0067b73c); otherwise the nine floats at <c>+0x18 + 0x20*i</c>, in <see cref="EmotionType"/> order
+    /// (Happy, Calm, Brave, Confident, Charged, Excited, Social, Winning, WantToPlay: 0x0067b73e..0x0067b77c; the order is the
+    /// shipped <c>EmotionTypeFromString</c> table, 0x007740e0..0x007742d0), copied into a <c>MoodState</c>, wrapped in
+    /// <c>MessageEngineToGame</c> and passed to <c>Robot::Broadcast</c> with the robot at +0x12c (0x0067b77e..0x0067b79c).
     /// </summary>
+    // fidelity: M7-012
     public IReadOnlyList<double> EmotionValues() =>
         Enum.GetValues<EmotionType>().Select(e => (double)_values[(int)e]).ToArray();
 
-    /// <summary>Raised with the nine values when <see cref="SendEmotionsToGame"/> is called.</summary>
-    public event Action<IReadOnlyList<double>>? EmotionsBroadcast;
+    /// <summary>
+    /// MoodManager +0x12c: the robot the manager reports to. Null (the constructed state) until <see cref="AttachRobot"/>; with no robot
+    /// <see cref="SendEmotionsToGame"/> sends nothing.
+    /// </summary>
+    // fidelity: M7-012
+    public CozmoRobot? Robot { get; private set; }
 
-    /// <summary>Sends the nine emotion values out through the stack's seam.</summary>
-    public void SendEmotionsToGame() => EmotionsBroadcast?.Invoke(EmotionValues());
+    /// <summary>Sets the robot pointer at MoodManager +0x12c (<c>MoodManager::Init</c>'s argument).</summary>
+    // fidelity: M7-012
+    public void AttachRobot(CozmoRobot? robot) => Robot = robot;
+
+    /// <summary>
+    /// Raised with the <c>MoodState</c> message <see cref="SendEmotionsToGame"/> builds. This is the local stand-in for
+    /// <c>Robot::Broadcast(MessageEngineToGame)</c> (0x0067b79c): this stack has no engine-to-game message sink, so nothing delivers it to an
+    /// app; a host that wants it subscribes here and packs it with <see cref="MoodStateMessage.ToUnionBytes"/>. The gap is reported
+    /// (MISSING) on every send path, once per process.
+    /// </summary>
+    // fidelity: M7-012
+    public event Action<MoodStateMessage>? MoodStateBroadcast;
+
+    /// <summary>
+    /// <c>MoodManager::SendEmotionsToGame</c> 0x0067b724..0x0067b7f8: returns when <see cref="Robot"/> is null; otherwise builds the
+    /// nine-float <c>MoodState</c> and broadcasts it (<see cref="MoodStateBroadcast"/>, the stack's only seam for <c>Robot::Broadcast</c>).
+    /// </summary>
+    // fidelity: M7-012
+    public void SendEmotionsToGame()
+    {
+        if (Robot is null) return;                                           // 0x0067b736..0x0067b73c
+        var nine = new float[_values.Length];
+        for (int i = 0; i < nine.Length; i++) nine[i] = _values[i];          // 0x0067b73e..0x0067b77c: this+0x18, stepping 0x20
+        var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b79c: MoodState -> MessageEngineToGame
+        SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(MoodState)) 0x0067b79c: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the MoodState message is built and raised on MoodState.MoodStateBroadcast only");
+        MoodStateBroadcast?.Invoke(message);
+    }
 
     /// <summary>
     /// <c>MoodManager::Update(float t)</c> 0x0067b5d4, the only place decay happens. The step is <c>t - last</c> (float) when the

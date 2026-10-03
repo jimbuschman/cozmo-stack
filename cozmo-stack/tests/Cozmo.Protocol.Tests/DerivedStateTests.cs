@@ -1358,7 +1358,7 @@ public class DerivedStateTests
         if (obb is null) return;
         var map = ShippedReactionMap(obb);
         using var rig = new Rig();
-        var regs = ShippedBehaviors.Reactions(rig.Robot, new FakeLocator());
+        var regs = ShippedBehaviors.Reactions(rig.Robot, new FakeLocator(), obbRoot: obb);
         // 12 from M10 plus RobotFalling -> ReactToImpact and PlacedOnCharger -> ReactToOnCharger, which the
         // correction pass moved off the standalone M7 dispatcher and under the manager
         Assert.Equal(14, regs.Count);

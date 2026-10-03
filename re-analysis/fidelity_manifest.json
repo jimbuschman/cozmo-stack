@@ -2411,7 +2411,7 @@
         "178 shipped behaviour configs enumerated in re-analysis/inventory/M7-behaviour.md Appendix C"
       ],
       "effect": "a trigger resolves to the wrong animation or reaction, or the activity tree selects the wrong configured behaviour",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the no-map fallback registers every reaction (the engine registers none, 0x520c2e..0x520c8a); the map's parameters are parsed but unused (literals stand in); no counterpart of RobotDataLoader::LoadBehaviors 0x005206bc.",
+      "unresolved": "built, awaiting strong verification: RobotDataLoader::LoadBehaviors (0x005206bc) is built (recursive read of config/engine/behaviorSystem/behaviors/, first duplicate ID wins silently; the shipped corpus loads as 178 configs); a missing or empty reaction map registers nothing (no fallback; LoadReactionTriggerMap 0x00520c2e..0x00520c8a). Still open: the map's parameters (genericStrategyParams, frustrationParams, behaviorObjectiveTriggerParams, hiccupParams) are parsed but the strategies are built from literals (M10 owns the strategies; the rows do not settle which parameter feeds which field); the failure line lacks the engine's event name 'RobotDataLoader.ReactionTriggerMap' (0x00520d48); directory enumeration order is platform-dependent (BLOCKED_EXTERNAL, affects log order and duplicate arbitration only).",
       "hardware_required": false,
       "live_path": true,
       "test": "TriggerTests",
@@ -2608,7 +2608,7 @@
         "MoodManager::SendEmotionsToGame 0x0067b724..0x0067b7f8"
       ],
       "effect": "mood axes, event effects, decay or app-visible state differ",
-      "unresolved": "The decay graphs, affectors, nine-emotion update, actionResultEmotionEvents map and the nine-value SendEmotionsToGame seam are built (MoodModel/MoodState, wired through FreeplayStack/FreeplaySystem). The engine broadcasts a MoodState message to the app (0x0067b724/G1); this stack has no MoodState protocol type and no app-facing consumer of CozmoEngine.PostGameMessage, so the wire broadcast is not wired.",
+      "unresolved": "built, awaiting strong verification: MoodState output: SendEmotionsToGame (0x0067b724..0x0067b7f8) sends nothing when the robot is null, else nine floats in EmotionType order as MoodStateMessage (uint8 count + float32 each, 37 bytes; union tag uint16 0x0061 per MessageEngineToGame.cs:111); wired through FreeplaySystem.Tick; HandleActionEnded's one-shot erase (+0x140 set, tail 0x008cd6ac) and key formation are tested. Still open: the stack has no Robot::Broadcast / engine-to-game sink (MISSING: the message goes out as the local event MoodState.MoodStateBroadcast); the live HandleActionEnded caller is M7-020's.",
       "hardware_required": false,
       "live_path": true,
       "test": "MoodTests",
@@ -5965,7 +5965,7 @@
         "class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable"
       ],
       "effect": "a shipped behaviour ID instantiates the wrong class, animation list or executable behavior",
-      "unresolved": "BehaviorClass (79) and BehaviorID (179) exist and the 178 shipped configs are enumerated, but there is no config-driven factory binding: the stack binds behaviours by id in code. The class implementations missing for a full binding are the M12/M13/M14/M15-owned ones (their run logic is those layers) and FistBump, Hiccup and ReactToSparked here.",
+      "unresolved": "built, awaiting strong verification: the container loop (0x0059c34c..0x0059c428), BehaviorClassFromString (cerr text, 0 = Bouncer), BehaviorIDFromString (cerr text, 0 = AcknowledgeFace; default 'IBeh.NoBehaviorIdSpecified'), AnimationTriggerFromString (cerr text, 0, only Count skipped), AddToFactory, the 79-way table (all 79 rows checked against the binary), FistBump (full state machine incl. the +0x84 gate, state-2 empty-callback turn, wrapped scan index N=2, terminal order, thresholds as bit patterns), ReactToSparked, and Hiccup's PlayAnim half are built. Config-built constructors exist for only PlayAnim, FistBump and ReactToSparked; the other 76 classes report 'class not implemented'. Still open: the second BehaviorContainer (robot+0x48) is not built and its use is UNKNOWN; RequestAllBehaviorsList (0x0059c44c..0x0059c676) is not built; FistBump's seams are MISSING in production (SmartPushIdleAnimation(0x23F = Count), EnableLiftPower/EnableHeadPower bodies, a live PanAndTiltAction (M13-020), BehaviorObjectiveAchieved's body and ordinals 7/8/9, the carry source); SparksFistBump is bound and can run live with those seams unset; ReactionTriggerStrategyFistBump/Hiccup/Sparked (M10) are not built, so the map rows for FistBump, Hiccup and Sparked remain unbound; Implementable() still hand-builds Hiccup, ReactToObstacle and six Feeding* PlayAnim objects that the container also builds (shadowed, dead in production); Behaviors.cs:67 Enum.TryParse is looser than the engine's name map.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests",
@@ -6007,7 +6007,7 @@
         "MoodManager::SendEmotionsToGame 0x0067b724"
       ],
       "effect": "completed actions or repeated events change the wrong emotions or amount",
-      "unresolved": "The actionResultEmotionEvents map, the last-event clock (FLT_MAX first trigger), the event repetition penalty, the completion-enable set at +0x140 and the nine-value output are built. HandleActionEnded has no live caller because the stack has no ActionList action-ended callback; the behaviours raise their named events directly. The app-facing MoodState broadcast is not wired (same seam gap as M7-012).",
+      "unresolved": "built, awaiting strong verification: the one-shot erase and key formation of HandleActionEnded are built and tested. Not built: the live caller. The stack has no ActionList/ActionWatcher and its actions produce no RobotCompletedAction record (the nearest hooks are SteppedBehavior.StartActing/ActingEnded and the RunTriggerAction completion, which cover behaviour-started actions only). It needs an ActionList and ActionWatcher that queue a RobotCompletedAction (tag, RobotActionType, 32-bit result) at every action ending (0x00541bd8..0x00541c00), drain it after the queues in ActionList::Update (0x0053f5dc..0x0053f5e4) calling the registered callbacks in registration order (0x0054187e..0x005418de), registration at MoodManager::Init when the robot is non-null (0x0067aee8..0x0067af38) and unregistration in the destructor (0x0067ae18..0x0067ae30), plus the RobotActionType and ActionResultCategory enums that key mood_config.json.",
       "hardware_required": false,
       "live_path": true,
       "test": "MoodTests",
