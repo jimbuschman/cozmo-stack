@@ -2659,3 +2659,54 @@ No status changes.
 - **Records touched (text only, no status):** M6-025 and M6-026 (C32.1..C32.3), M6-022 (C32.5). Residuals now closed:
   `0x9F1F80`, `0xA37A80`'s dead block, `0xA37C90`, `0x9BEB30` (shipped path), `0xA00618`, `0xA0067C`, `0xA36268`,
   `0x9D3558`, `0x9BDA28`, `0x9E808C`, the media-table writers.
+
+## Correction C33 (manager, 2026-10-03): the streaming layer, the stream bodies and the mix rate, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31 and C32). C33 adopts the rows that
+`re-analysis/research/20261003-B-M6b-4-live-bodies-3.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied**. Where C33 differs from earlier text, C33 wins. No status changes.
+
+- **C33.1, the resolver and the zip index (A1..A11, B, C).** The engine reaches the sound zips through Anki's Thumb
+  resolver and index as the report's sections 2 to 4 describe, with the verifier's corrections: the loose-file branch of
+  the resolver is live (the bound string is the non-empty sound directory; on the shipped artifact the stat fails and the
+  zip is used); `AddZipFiles` `0x8D1E3E` has no caller and the zips are registered by `bl 0x8D8320` at `0x8D8280` (M6-024's
+  evidence is corrected accordingly); the search order is APK then OBB; the index reads size, name, extra, comment and local
+  offset and never the method, compressed size or CRC.
+- **C33.2, the stream manager, the device and the auto stream (D, E, S7).** As the report's sections 5 to 7 with the
+  verifier's table of slots (`vtable 0x10392D0`: `+0x08 -> 0x9654E4`, `+0x14 -> 0x961664`, `+0x18 -> 0x964E4C`,
+  `+0x1C -> 0x965244`, `+0x28 -> 0x961C1C`, `+0x2C -> 0x961AD8`, `+0x30 -> 0x964CB8`, `+0x3C -> 0x9657E0`,
+  `+0x40 -> 0x965B1C`, `+0x44 -> 0x964D64`) and GetBuffer's `0x9656AC` path.
+- **C33.3, the source-class stream bodies (F, G).** `0xA74564`, `0xA7482C`, `0xA74970`, `0xA746A8`, `0xA74E00` (live caller
+  `0xA75610` only), `0xA7538C`, `0xAB22D4`, `0xAB1C04`, `0xAB2088`, `0xAB2BFC`, `0xAB12B4`, `0xAB1550` (control flow),
+  with the vtables of C32.3 confirmed (`0x103E138` is the streamed class). **`0x3F`:** produced at the live sites listed in
+  the report's section 10 minus `0xA74D08`'s non-1 branch and the dead twin `0xA750B0..0xA7538C`; a non-1 `vt+0x78` result
+  is returned unchanged (no forever-retry; callers map other non-0x3F, non-1 results to 2). The real retry is the voice
+  pass: `0xA56650` leaves the latch clear for any result but 1, so the next pass calls StartStream again. `0xA544BC`
+  also yields 0x3F from its result-1 window (`0xA54520..0xA54570`), which depends on the frame count, not the I/O thread.
+  The 0x3F producers are reached only from `0xAB22D4` (Vorbis streamed) and the ADPCM/PCM stream classes; the in-memory
+  Vorbis class (`0xAB0B20`) has none. For every shipped Vorbis DIDX entry (1923; 1891 with a zip counterpart) the prefix
+  covers the seek table and setup packet (minimum margin 30 bytes), so StartStream returns 1 on the first call
+  (`G1`, has != 0); this holds conditional on `[pbi+0x1E0]` = the DIDX size.
+- **C33.4, the I/O-thread timing (operator ruling, 2026-10-03).** The one item that depends on the phone OS's I/O thread
+  is the **timing of stream data becoming available**: GetBuffer's results 0x2E and 0x11 as `0x965B1C` produces them, with
+  the stream cache when `bUseStreamCache = 1` (`0x9656AC`, `0x961800`, `0x9713B4`, `0x96FE70`) and the Query function's
+  stale `*out` when a stream is not opened (`0x961C58..0x961C70`). It is recorded as **EQUIVALENT_IMPLEMENTATION** (not
+  COMPATIBILITY_POLICY, not BLOCKED_EXTERNAL); the manifest record is added when it is built. Everything around it is
+  reproduced exactly: the `0x3F` results, the retry cadence (the audio-thread voice pass), and every check point above.
+- **C33.5, the mix rate and frame count (P1..P8) and the robot path.** The InitSettings default `uNumSamplesPerFrame`
+  is `0x400` (`0x99DC90`); Anki's builder changes only `[P4+8]`, byte `[P4+0x18]` and `[P4+0x14]`; `SoundEngine::Init`
+  copies the settings (`0x99E458`); `0xA570A4` is the platform default (`PS[0x38] = 0`, byte `PS[0x44] = 1`); `0xA57724`
+  runs the logic of P5 and the no-JNI path of P6 (`IS[0x20]` stays 0x400, `PS[0x38] == 0 -> 0xBB80`, no rounding). The
+  derived values are `0xA1C75C`/`0xA1C7D4` (P8). **C31.5's open item is closed:** the source of `[0x108D90C+0x20]` is the
+  InitSettings default. **On the robot path** the output rate 22320 and the chunk 744 are source constants (`0x5942CE`,
+  `0x5942D2`; rows A14, A15, R4, P8; M6-015, M6-004); only the mix-side inputs (`min(AudioTrack native rate, 48000)` and
+  the hardware-rounded frame count, or 48000/1024 with no JNI) are phone values. **Open for the operator:** the PC stack has no phone, so
+  which mix-side values it uses is not settled by the source; the engine's own no-JNI path (48000 Hz, 1024 frames, no
+  rounding, `0xA57724`) is the only fully source-defined configuration and is the candidate, but this is the manager's
+  proposal, not a recovered fact, and no code may rely on it until the operator rules. The link from `PS[0x38]` to the bus format the Hijack receives is not traced (RECOVERABLE_GAP).
+- **Records touched (text only, no status):** M6-018 (C33.5: the no-JNI skip, the `PS[0x44]` gate, the `IS[0x20] == 0`
+  fill), M6-024 (the `AddZipFiles` evidence), M6-002 (its evidence mislabels `0x103E138`), M6-022 and M6-025 (C33.3, the
+  bodies without records). Still open: the I/O memory manager (`0x969E8C`, `0x9713B4`, `0x9716F0`, `0x96FE70`,
+  `0x97161C`, `0x979B98`), the scheduler tie-breaks (`0x962EA8`, `0x962C24`), the codebook cache `0xAB2D74`, the Vorbis
+  block decode `0xAB7E40`, `0xA73490`, `0x9CD340`, the ADPCM stream class (`0xA73ABC`, `0xA73D34`, `0xA739E8`), the PCM
+  decode (`0xA75E34`, `0xA75B1C`, `0xA736D4`), `0xA059D8`, `0x8DA938`, the plug-in source `0xA78D10`.
