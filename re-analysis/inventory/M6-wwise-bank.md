@@ -2712,3 +2712,41 @@ section's corrections applied**. Where C33 differs from earlier text, C33 wins. 
   `0x97161C`, `0x979B98`), the scheduler tie-breaks (`0x962EA8`, `0x962C24`), the codebook cache `0xAB2D74`, the Vorbis
   block decode `0xAB7E40`, `0xA73490`, `0x9CD340`, the ADPCM stream class (`0xA73ABC`, `0xA73D34`, `0xA739E8`), the PCM
   decode (`0xA75E34`, `0xA75B1C`, `0xA736D4`), `0xA059D8`, `0x8DA938`, the plug-in source `0xA78D10`.
+
+## Correction C34 (manager, 2026-10-03): the bus walk, RTPC evaluation, source close paths and bank chunks, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C33). C34 adopts the rows that
+`re-analysis/research/20261003-B-M6b-4-live-bodies-4.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied**. Where C34 differs from earlier text, C34 wins. No status changes.
+
+- **C34.1, the bus walk (B1..B18).** `0x9F4BB8` returns the nearest ancestor-or-self non-zero `[node+0x38]` link; it is
+  set by AddChild `0x981940` (child `vt+0x1C = 0x9F1C40` stores `[+0x34]`) and `vt+0x20 = 0x9F1EE8`. `0x9C54E8` and
+  `0x9C39DC` are fully read (B7, B9). **On shipped data every Sound has a first output bus** (Cozmo.bnk 2211
+  `Cozmo_Robot`, 20 `Cozmo_Robot_External`; SFX.bnk 92 `SFX`, 9 `Priority_SFX`; UI 14 `UI`; Dev_Debug 12 `Cozmo_Robot`,
+  2 `SFX`), reached through RanSeq/Layer/ActorMixer chains that include LayerCntr; none is bus-less. The cached path
+  `0x9FFEE4..0xA00000` (`[r7+0x90] == bus`, `params+0x11C`) is therefore **mechanically reachable but unreachable on
+  shipped data**. CalcEffectiveParams is called twice on the Play path (`0xA37FE8..0xA38010` -> `0xA38130`, then
+  `0xA38038`); the bus-walk results, `s16`, and the `0x9BDA6C` test are as B2, B7, B9, B11.
+- **C34.2, the modulator and RTPC path (R1..R11).** `0xA11590`, the RTPC reader `0xA17280` (R2, R3's control flow; an
+  RTPC id absent from the store returns `0x9E6748`'s result, not a forced 0; param in {0,7} gives 1.0 with a skip flag),
+  `0x9E8224`, `0x9E61B4`/`0x9E62AC` (control flow) are read. `[ctx+0xDC]` starts 0x5D, so bit 6 is set on the first Play and
+  the modulator list is consumed by `0xA01918` (called at `0xA38044`, `r1 = params+0x108`), not by the R8 block;
+  195 shipped Sounds sit under modulator-bound nodes. `0x9BE898` with `[ctx+0xD0] == 0` returns 2 and writes nothing (R10).
+  The modulator callees `0x9DCE44` and `0xA6E848` are unread.
+- **C34.3, the source close paths (S1..S8, S10).** The six `vt+0x2C` slots (`0xA73128`, `0xA72AF4`, `0xA7427C`,
+  `0xA76178`, `0xAB0FC0`, `0xAB2958`) and `vt+0x34 = 0xA72F5C` (S1: `1000.0f`, `vmla`, rate via `0xA72F50`) are read.
+- **C34.4, the bank chunks (K1..K19).** The loader's BKHD dispatch and tag constants, K2 (the 16-byte XOR of the header,
+  version 0x78), K3..K8 (INIT 10 plug-ins, ENVS 6 curves, PLAT "Android"), K9 (a hook result of 3 aborts the load with 3;
+  only 1 continues), K12..K16 (bank object creation, registry, unload: the object is freed whenever `[bank+0x4C] <= 0`,
+  with `0xA68150` when `[+0x34] != 0`), K17/K18 (stream I/O; a direct-read remainder `>= [R+0xC]` returns 2) and the
+  media pool (K16). The two "mode" arguments are distinct (`[sp+0xC0]` selects the DIDX/DATA tables; `r7 == 2` selects the
+  window pointer).
+- **C34.5, the Sound Play gate (G1..G3).** The builder `0xA62A1C` stores `params[0x84] = 0` and `[0x85] = 0xFF`; the 723
+  shipped Actions of type 0x403 carry only properties {15, 16}, so the `0x90` MIDI branch at `0xA1D448` is not reached through
+  the Play builder; whether another path posts `0x90` is UNKNOWN (RECOVERABLE_GAP).
+- **Withdrawn from the report:** the "143 bus-less Sounds", the "cached copy of an all-zero block", "native tests bit 3
+  alone" (it tests bit 3 only when bit 0 is set; the C# `b0 & b3` is right) and the K9/K15 readings.
+- **Records touched (text only, no status):** M6-009 (R3/R4: the not-found case is `0x9E6748`'s result; inventory row 7.3
+  is superseded), M6-025 (C34.1, C34.2, C34.5), M6-022, M6-026. Still open: the mixer record `0x9C0FC0`, `0x9FD8C0`/`0x9FD8D0`,
+  `0x9DCE44`, `0xA6E848`, K11 (STID), K9's per-type creators, `0x9B2B08`/`0x9A6518`, the `[0x108D9A0]` XOR-key writer,
+  the S8 callers.
