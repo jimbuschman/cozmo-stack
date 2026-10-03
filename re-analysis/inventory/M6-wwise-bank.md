@@ -2700,10 +2700,12 @@ section's corrections applied**. Where C33 differs from earlier text, C33 wins. 
   derived values are `0xA1C75C`/`0xA1C7D4` (P8). **C31.5's open item is closed:** the source of `[0x108D90C+0x20]` is the
   InitSettings default. **On the robot path** the output rate 22320 and the chunk 744 are source constants (`0x5942CE`,
   `0x5942D2`; rows A14, A15, R4, P8; M6-015, M6-004); only the mix-side inputs (`min(AudioTrack native rate, 48000)` and
-  the hardware-rounded frame count, or 48000/1024 with no JNI) are phone values. **Open for the operator:** the PC stack has no phone, so
-  which mix-side values it uses is not settled by the source; the engine's own no-JNI path (48000 Hz, 1024 frames, no
-  rounding, `0xA57724`) is the only fully source-defined configuration and is the candidate, but this is the manager's
-  proposal, not a recovered fact, and no code may rely on it until the operator rules. The link from `PS[0x38]` to the bus format the Hijack receives is not traced (RECOVERABLE_GAP).
+  the hardware-rounded frame count, or 48000/1024 with no JNI) are phone values. **Manager decision (2026-10-03, operator-directed):** the PC
+  stack takes the engine's own no-JNI branch of `0xA57724`: 48000 Hz and 1024 frames, no rounding (P6). The phone's JNI
+  query (`AudioTrack.getNativeOutputSampleRate`, the `OUTPUT_FRAMES_PER_BUFFER` property, `0xA56E20..0xA5705C`) is an
+  Android system library that does not ship, so it is recorded as EQUIVALENT_IMPLEMENTATION (the manifest record is added
+  when it is built); the engine logic around it is reproduced exactly. The robot path keeps 22320 Hz and 744 frames from
+  the engine's constants. The link from `PS[0x38]` to the bus format the Hijack receives is not traced (RECOVERABLE_GAP).
 - **Records touched (text only, no status):** M6-018 (C33.5: the no-JNI skip, the `PS[0x44]` gate, the `IS[0x20] == 0`
   fill), M6-024 (the `AddZipFiles` evidence), M6-002 (its evidence mislabels `0x103E138`), M6-022 and M6-025 (C33.3, the
   bodies without records). Still open: the I/O memory manager (`0x969E8C`, `0x9713B4`, `0x9716F0`, `0x96FE70`,
