@@ -278,7 +278,9 @@ public sealed class SingingBehavior : IBehavior
 
         // 2. reactions held off for the duration. InitInternal takes the reaction lock (S6) before it
         //    attaches any listener or builds the animation compound.
-        scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorSinging::InitInternal 0x005EEB5E: SmartDisableReactionsWithLock(own name, table 0x00C6F590).
+        scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.Singing);
         Trace?.Invoke("reactions held off");
 
         // 3. a shake listener per connected cube: ShakeListener(0.5, 2.5, 3.9) on each, and adding the

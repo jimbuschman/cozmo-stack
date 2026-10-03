@@ -207,11 +207,16 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     {
         if (context.Needs is not { } needs || StrategyNeed is not { } need) return false;
         if (!needs.State.IsNeedAtBracket(need, NeedBracketId.Critical)) return false;
-        var expressed = context.AiExpressedNeedValue
-            ?? throw new NotSupportedException(
-                "M8-006: StrategyExpressNeedsTransition compares its need against [[robot+0x264]+0x30]+0x14 " +
-                "(0x006136DC..0x006136FC), which nothing in this stack supplies; set BehaviorContext.AiExpressedNeedValue.");
-        return expressed() != need;
+        // [[robot+0x264]+0x30]+0x14 is the SevereNeedsComponent's current severe NeedId, 3 (none) from its constructor (0x00572A0E); this stack has no component
+        // with the engine's writers, so unset it is 3 and the gap is reported once.
+        NeedId? expressedValue;
+        if (context.AiExpressedNeedValue is { } expressed) expressedValue = expressed();
+        else
+        {
+            SteppedBehavior.ReportMissing("StrategyExpressNeedsTransition [[robot+0x264]+0x30]+0x14 (0x006136DC..0x006136FC): this stack has no SevereNeedsComponent with the engine's writers; the value is its constructed 3 (none)");
+            expressedValue = null;
+        }
+        return expressedValue != need;
     }
 
     /// <summary>How many times the loop plays: the config's <c>num_loops</c>, default 1 (BehaviorPlayAnimSequence +0x128).</summary>
@@ -406,7 +411,6 @@ public sealed class ReactBehavior : IBehavior
 {
     private readonly ReactionTable _table;
     private readonly Func<CozmoRobot, bool> _condition;
-    private readonly Func<CozmoRobot, string?>? _preempt;
     private readonly object _gate = new();
     private CozmoAnimations? _animations;
     private long _generation;
@@ -417,16 +421,8 @@ public sealed class ReactBehavior : IBehavior
     /// ordinary play in this stack's <see cref="BehaviorManager.ChooseAndSwitch"/>. The engine dispatches a
     /// reaction by its trigger and never scores it; the in-code score goes when the chooser path is wired
     /// (M8-013).</param>
-    /// <param name="preempt">
-    /// M7-021 C2h: the engine's pickup reaction body checks robot+0x338 before starting its animation and,
-    /// when it is set, logs <c>BehaviorReactToPickup.OnCharger</c> and completes without playing even though
-    /// the strategy triggered on InAir. This predicate returns that log line when the gate applies and null
-    /// otherwise; null means the reaction has no such gate. The engine checks each
-    /// <c>UpdateInternal</c>; the stack plays in <see cref="StartAsync"/>, so the gate is applied there.
-    /// </param>
     public ReactBehavior(string id, string behaviorClass, ReactionTrigger trigger,
-                         Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0,
-                         Func<CozmoRobot, string?>? preempt = null)
+                         Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0)
     {
         Id = id;
         Class = behaviorClass;
@@ -434,7 +430,6 @@ public sealed class ReactBehavior : IBehavior
         _condition = condition;
         _table = table ?? ReactionTable.Default;
         Score = score;
-        _preempt = preempt;
     }
 
     public string Id { get; }
@@ -457,17 +452,6 @@ public sealed class ReactBehavior : IBehavior
     {
         _finished = false;
         LastSelected = null;
-        // fidelity: M7-021
-        // C2h: BehaviorReactToPickup::UpdateInternal (0x00607BC4..0x00607C08, 0x00607BCC, 0x00607BE2)
-        // reads robot+0x338 before starting any animation; when it is set the behaviour logs
-        // BehaviorReactToPickup.OnCharger and returns 2 (Status::Complete) without playing. The strategy
-        // still triggers on InAir alone (factory lambda 0x0060DDCE), so the gate is the behaviour's.
-        if (_preempt?.Invoke(context.Robot) is { } reason)
-        {
-            context.Robot.Engine.Log(reason);
-            _finished = true;
-            return Task.CompletedTask;
-        }
         var entry = _table.For(Trigger);
         var lib = context.Robot.Animations.Library;
         if (entry is null || lib is null) { _finished = true; return Task.CompletedTask; }
@@ -528,27 +512,6 @@ public static class ShippedBehaviors
     /// <summary>Every shipped PlayAnim config with triggers, from the OBB. Empty when the OBB is not there.</summary>
     public static IReadOnlyList<IBehavior> PlayAnims(string obbRoot, List<string>? problems = null) =>
         PlayAnimBehavior.LoadShipped(obbRoot, problems);
-
-    /// <summary>
-    /// The engine's RobotPickedUp reaction fires on the derived off-treads state being InAir (factory lambda
-    /// 0x0060DDCE), not on the raw IS_PICKED_UP flag. Until the classifier is running (it waits for the head
-    /// calibration report, as the engine's does) the raw flag stands in, and says so (LOCAL_POLICY fallback).
-    /// </summary>
-    public static bool PickedUpForReaction(CozmoRobot r) =>
-        r.Sensors.OffTreadsClassifierEnabled ? r.Sensors.OffTreadsState == OffTreadsState.InAir : r.Sensors.PickedUp;
-
-    // fidelity: M7-021
-    /// <summary>
-    /// C2h: <c>BehaviorReactToPickup::UpdateInternal</c> (0x00607BA8..0x00607CC5) keeps the behaviour alive
-    /// only while robot+0x355 == InAir <b>and</b> robot+0x338 (the on-charger-contacts boolean) is 0; when
-    /// +0x338 != 0 it logs <c>BehaviorReactToPickup.OnCharger</c> and returns 2 (Status::Complete), playing
-    /// no animation. The strategy still triggers on InAir alone (factory lambda 0x0060DDCE); this gate is
-    /// the behaviour's, not the strategy's. Returns the engine's log line when the gate applies, else null.
-    /// </summary>
-    public static string? PickupOnChargerGate(CozmoRobot r) =>
-        r.Sensors.OnChargerContacts
-            ? "info: BehaviorReactToPickup.OnCharger: Stopping behavior because we are on the charger"
-            : null;
 
     /// <summary>
     /// The 13 shipped manipulation behaviours (M12), by their config ids: two PickUpCube, four PutDownBlock,
@@ -655,11 +618,10 @@ public static class ShippedBehaviors
         new PlayAnimBehavior("FeedingReactSeeCharged", "PlayAnim", new[] { AnimationTrigger.FeedingReactToSeeCube_Normal }),
         new PlayAnimBehavior("FeedingReactSeeCharged_Severe", "PlayAnim", new[] { AnimationTrigger.FeedingReactToSeeCube_Severe }),
 
-        // Reactions whose cause M4 reports.
-        new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected,
-                          r => r.Sensors.CliffDetectedNow),
-        new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction,
-                          preempt: PickupOnChargerGate),
+        // fidelity: M7-019, M7-015
+        // The engine's BehaviorReactToCliff and BehaviorReactToPickup state machines (CliffPickupBehaviors.cs), not a one-animation stand-in.
+        new ReactToCliffBehavior(),
+        new ReactToPickupBehavior(),
 
         // M10: reactions to derived robot state, transcribed from the engine's BehaviorReactToX classes.
         new ReactToRobotOnBackBehavior(),
@@ -699,12 +661,20 @@ public static class ShippedBehaviors
         // behaviourID -> (trigger, behaviour, strategy). One row per shipped config id this stack builds.
         var built = new List<(string Id, ReactionTrigger Trigger, IBehavior Behavior, IReactionTriggerStrategy Strategy)>
         {
+            // fidelity: M7-019, M7-015, M7-021
             ("ReactToCliff", ReactionTrigger.CliffDetected,
-                new ReactBehavior("ReactToCliff", "ReactToCliff", ReactionTrigger.CliffDetected, r => r.Sensors.CliffDetectedNow),
+                new ReactToCliffBehavior(robot)
+                {
+                    // M13's DriveStraightAction(robot, distance, speed) runs the back-up drive when a manipulation system is attached.
+                    DriveStraight = m is null ? null : (distance, speed, ct) => new Cozmo.Robot.Manipulation.DriveStraightAction(m, distance, speed).RunAsync(ct),
+                },
                 strategies[ReactionTrigger.CliffDetected]),
             ("ReactToPickup", ReactionTrigger.RobotPickedUp,
-                new ReactBehavior("ReactToPickup", "ReactToPickup", ReactionTrigger.RobotPickedUp, PickedUpForReaction,
-                                  preempt: PickupOnChargerGate),
+                new ReactToPickupBehavior(vision)
+                {
+                    // CarryingComponent::SetCarriedObjectAsUnattached(true): the manipulation system's wiring on the sensors (ManipulationSystem.cs:47)
+                    SetCarriedObjectAsUnattached = () => robot.Sensors.UnattachCarriedObjectIfCarrying?.Invoke(),
+                },
                 strategies[ReactionTrigger.RobotPickedUp]),
             ("ReactToRobotOnBack", ReactionTrigger.RobotOnBack, new ReactToRobotOnBackBehavior(), strategies[ReactionTrigger.RobotOnBack]),
             ("ReactToRobotOnFace", ReactionTrigger.RobotOnFace, new ReactToRobotOnFaceBehavior(), strategies[ReactionTrigger.RobotOnFace]),

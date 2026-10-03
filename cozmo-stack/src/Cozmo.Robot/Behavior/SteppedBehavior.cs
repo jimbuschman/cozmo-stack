@@ -370,7 +370,60 @@ public abstract class SteppedBehavior : IBehavior
     /// The <c>SparkBehaviorDisables</c> lock seam: the engine takes it when the unlock id +0x70 is not 0x55
     /// and equals <c>robot+0x44-&gt;+0x58</c>. The progression/AI-process layer owns those values.
     /// </summary>
-    protected virtual void SparkBehaviorDisables() { }
+    // fidelity: M7-014
+    /// <summary>
+    /// <c>IBehavior::Init</c> 0x005BCD16..0x005BCD44 and <c>IBehavior::Resume</c> 0x005BCFAC..0x005BCFDE: when
+    /// <c>this+0x70</c> (the unlock/spark id, 0x55 = none) is not 0x55 and equals
+    /// <c>[[this+0x2C]+0x44]+0x58</c> (the BehaviorManager's active spark), take the lock
+    /// <c>"SparkBehaviorDisables"</c> (literal 0x00BF2B0A) with table 0x00C65F90 (only ObjectPositionUpdated)
+    /// through <c>SmartDisableReactionsWithLock</c>; <c>IBehavior::Stop</c> releases it with the scope. Both ids
+    /// belong to the spark/progression layer (M15), which this stack does not have, so they are seams
+    /// (<see cref="UnlockIdentifier"/>, <see cref="ActiveSparkIdentifier"/>); without them the test cannot be made
+    /// and the gap is reported, not answered.
+    /// </summary>
+    protected virtual void SparkBehaviorDisables()
+    {
+        if (UnlockIdentifier is not { } unlock || ActiveSparkIdentifier is not { } active)
+        {
+            ReportMissing("IBehavior::Init/Resume 'SparkBehaviorDisables' lock (0x005BCD16..0x005BCD44, 0x005BCFAC..0x005BCFDE): this+0x70 and [[this+0x2C]+0x44]+0x58 (the active spark) have no source in this stack (M15 spark layer); the lock is not taken");
+            return;
+        }
+        int id = unlock();
+        if (id == NoUnlockId) return;                                   // 0x005BCD18 cmp r0,#0x55
+        if (id != active()) return;                                     // 0x005BCD22 cmp r0,r1
+        Scope.SmartDisableReactionsWithLock(ReactionLockTables.SparkBehaviorDisablesName, ReactionLockTables.SparkBehaviorDisables);
+    }
+
+    /// <summary>The "none" value of IBehavior +0x70 and of the manager's active spark +0x58 (0x55).</summary>
+    public const int NoUnlockId = 0x55;
+    /// <summary>IBehavior +0x70: the behaviour's unlock/spark id (config). Null: not supplied (MISSING).</summary>
+    public Func<int>? UnlockIdentifier { get; set; }
+    /// <summary>BehaviorManager +0x58 (read as <c>[[this+0x2C]+0x44]+0x58</c>): the active spark id. Null: not supplied (MISSING).</summary>
+    public Func<int>? ActiveSparkIdentifier { get; set; }
+
+    // fidelity: M7-021
+    private string _stateName = "";            // IBehavior +0x58 (a std::string, empty from the constructor)
+
+    /// <summary>IBehavior +0x58: the state name the last <see cref="SetStateName"/> stored.</summary>
+    public string StateName => _stateName;
+
+    /// <summary>
+    /// The state-name setter 0x005C0CA8 (<c>IBehavior::&lt;setter&gt;(const std::string&amp; newState)</c>), the one
+    /// 175 call sites reach: <c>sChanneledInfoF("Behaviors", "Behavior.TransitionToState", {}, "Behavior:%s,
+    /// FromState:%s ToState:%s", EnumToString(BehaviorID at +0x3C), old +0x58, new)</c> (0x005C0CD6..0x005C0CEC),
+    /// then <c>std::string::assign</c> into +0x58 (0x005C0D12..0x005C0D16). The log shows the previous value as
+    /// FromState; nothing branches on the string. The only readers of +0x58 outside logs are in
+    /// <c>Robot::Update</c> (0x00513F6A..0x00513F9C): it builds <c>robot+0x4C</c> and sends it to
+    /// <c>VizManager::SetText</c> and <c>SetSdkStatus(Behavior)</c>; those are M11/M12 and not built here (MISSING).
+    /// </summary>
+    protected void SetStateName(string newState)
+    {
+        string line = $"info: [Behaviors] Behavior.TransitionToState: Behavior:{Id}, FromState:{_stateName} ToState:{newState}";
+        Log(line);
+        Context?.Robot.Engine.Log(line);
+        _stateName = newState;
+        ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
+    }
 
     /// <summary>
     /// <c>IBehavior::Update</c> 0x005bd074 returns 2 - before <c>UpdateInternal</c> runs - when byte +0xa0 is
@@ -669,7 +722,7 @@ public abstract class SteppedBehavior : IBehavior
     }
 
     /// <summary>The second half of <c>HandleActionComplete</c>: the callback runs only while +0xa1 is set and +0x98 was not destroyed since the action started.</summary>
-    private bool CallbackMayRun(int epochAtStart) => _engineRunning && epochAtStart == Volatile.Read(ref _callbackEpoch);
+    protected bool CallbackMayRun(int epochAtStart) => _engineRunning && epochAtStart == Volatile.Read(ref _callbackEpoch);
 
     /// <summary>
     /// The engine's <c>TriggerAnimationAction</c> as a behaviour starts it with <c>StartActing</c>: resolve the
@@ -867,9 +920,27 @@ public abstract class SteppedBehavior : IBehavior
     /// <summary>The wait child of a parallel action (a <c>WaitAction</c> inside the compound).</summary>
     protected void WaitInParallel(ParallelAction action, double seconds) => WaitCore(seconds, () => action.ChildDone(ActionOutcome.Succeeded));
 
+    /// <summary>
+    /// The <c>WaitForLambdaAction</c> child of a parallel action (<c>WaitForLambdaAction</c> 0x0055B554: the function at +0x78, the timeout at
+    /// +0x90; <c>CheckIfDone</c> 0x0055DADE: true is success, false is still running; the timeout fails it with 0x03000018). When
+    /// <paramref name="ignoreFailure"/> is set (the <c>AddAction(action, ignoreFailure = true, ..)</c> argument, 0x00605044 r3 = 1) a failed child does not
+    /// end the compound. Which of the compound's results an ignored failure yields is not in the inventory; here it counts as the child having ended.
+    /// </summary>
+    protected void WaitUntilInParallel(ParallelAction action, Func<bool> condition, double timeoutSec, bool ignoreFailure)
+    {
+        _waitCondition = condition;
+        _onConditionDone = met => action.ChildDone(met ? ActionOutcome.Succeeded : ActionOutcome.Failed(ActionOutcome.TimedOut), ignoreFailure);
+        _conditionTimeoutMs = timeoutSec * 1000;
+        _conditionDeadlineMs = StartedMs is null ? double.NaN : NowMs + _conditionTimeoutMs;
+        Log($"wait for a condition in parallel (up to {timeoutSec:F2} s)");
+    }
+
+    /// <summary>The +0x98 epoch an action captures when it starts (see <see cref="CallbackMayRun"/>).</summary>
+    protected int CallbackEpoch => Volatile.Read(ref _callbackEpoch);
+
     /// <summary>The animation child of a parallel action (a <c>TriggerAnimationAction</c> inside the compound).</summary>
     protected void PlayTriggerInParallel(ParallelAction action, AnimationTrigger trigger, AnimationTrack alsoLock = AnimationTrack.None, double? timeoutSec = null) =>
-        RunTriggerAction(0, trigger, action.ChildDone, alsoLock, timeoutSec, numLoops: 1, liftSafe: false);
+        RunTriggerAction(0, trigger, o => action.ChildDone(o), alsoLock, timeoutSec, numLoops: 1, liftSafe: false);
 
     /// <summary>Cancels the children of a parallel action that ended early: the wait is cleared and the animation stopped.</summary>
     private void CancelParallelChildren()
@@ -899,9 +970,10 @@ public abstract class SteppedBehavior : IBehavior
         /// <c>HandleActionComplete</c> 0x005be1e6 clears +0x84 and calls the callback for any result. The other children are cancelled here (the wait cleared,
         /// the animation stopped); that the engine's deletion of the compound cancels them the same way is not cited (MISSING). Called on the manager's thread.
         /// </summary>
-        public void ChildDone(ActionOutcome outcome)
+        public void ChildDone(ActionOutcome outcome, bool ignoreFailure = false)
         {
             if (_ended) return;
+            if (!outcome.Success && ignoreFailure) outcome = ActionOutcome.Succeeded;   // ShouldIgnoreFailure (0x0054f171): the child ended, the compound goes on
             bool last = --_remaining <= 0;
             if (outcome.Success && !last) return;
             _ended = true;

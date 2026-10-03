@@ -665,9 +665,10 @@ public class BehaviorFrameworkTests
         needs.SetSevereExpressed(NeedId.Energy, true);
         Assert.True(transition.WantsToRunNow(ctx));
 
-        // with nothing to supply that value the strategy refuses once the Critical test has passed (it needs the value only then)
+        // with nothing to supply that value it is the SevereNeedsComponent's constructed 3 (none, 0x00572A0E), reported once: not the strategy's need, so true
+        // once the Critical test has passed (it reads the value only then); the old throw was the stack refusing, not an engine path
         var unwired = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Needs = needs };
-        Assert.Throws<NotSupportedException>(() => transition.WantsToRunNow(unwired));
+        Assert.True(transition.WantsToRunNow(unwired));
         needs.SetLevel(NeedId.Energy, 1.0);
         Assert.False(transition.WantsToRunNow(unwired));          // not Critical: false before the value is read
 
