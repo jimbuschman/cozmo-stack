@@ -2620,3 +2620,42 @@ section 1 corrects is read as the correction says. Where C31 differs from earlie
   writer of `[0x1052440]`. Still open: the media-table writers, `0xA54A30`'s FX bodies, `0xA0B600`, `0xA05934`,
   `0xA1C660`, `0xA1C65C`, `0x9A6988`, `0xA0C238`, the writer of `[item+0x48]`, the source classes' stream bodies,
   the source of `[0x108D90C+0x20]`.
+
+## Correction C32 (manager, 2026-10-03): the Play path, the media table and the source classes, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31). C32 adopts the rows that
+`re-analysis/research/20261003-B-M6b-4-live-bodies-2.md` lists as HOLDS, **with its Verification section's corrections
+applied**; the rows it lists as corrected are read as the corrections say. Where C32 differs from earlier text, C32 wins.
+No status changes.
+
+- **C32.1, the Play path on shipped data (P1..P12).** Every shipped Sound has Advanced byte 4 = 0, so `0x9EEDA4` returns
+  code 0 (the index is 1, unused on this path) and `0xA37A18` takes `0xA37B9C` (`[sp+0x1C] = 1`). `0x9F1F80` returns 0 with
+  `*out = 0` for every shipped node (positioning byte `0xC0`/`0xC3`, bit 3 never set; `[node+0x2C]` stays 0), so
+  `0xA37A78..0xA37A90`, the code-3 branch (`0xA1D358`, `0x9D0410`, `0xA1E840`, `0xA0B208`, `0xA30768`, `0x9F1C94`) and the
+  `0xA37C90` branch (`plugin>>16` never 8) do not run. `0x9BEB30` runs `0x9FB9B8` then CalcEffectiveParams; ctx `[+0xDC]`
+  starts 0x5D; it returns 1. `0xA00618` stores `[pbi+0x1B8]`; `0xA0067C` fades only for the 6 Play actions with prop 16
+  (500, 100, 300, 200, 200, 1500 ms). The entry gate of `0xA1D448` (`params[0x84] == 0x90` and `params[0x87] != 0` takes the
+  MIDI branch `0x9EE230`) is **not covered**: whether shipped Play actions reach it is RECOVERABLE_GAP.
+- **C32.2, the media table (M1..M9).** `LoadSoundbank` posts command 0, the loader runs in mode 0, DIDX is stored at
+  `[bank+0x18]` and DATA at `[bank+0x14]`, and the writer `0x9B49A4` (called at `0x9B7A34`) fills the hash at `[BM+0x34]`.
+  `0xA1EC54` returns `(DATA + DIDX.offset, DIDX.size)` and `*r3 = bank`. No media id is shared between Cozmo, SFX, UI and
+  Music. **Inventory 4.5 is withdrawn:** the DIDX entry of each of the 2131 streamed Cozmo sounds is a prefix of a longer
+  `.wem` in `AudioAssets.zip` (1826 Vorbis and 305 ADPCM proper prefixes; 28 ADPCM equal; HIRC size = DIDX size); the 18
+  stream-2 Vorbis have no DIDX and only `English(US)/<id>.wem`; the 27 plug-in sources have neither. So `(pbi+0x1DC,
+  pbi+0x1E0)` is the prefetch prefix, not the whole media, for streamed sounds.
+- **C32.3, the source classes (S1..S7).** The factory `0xA562B8` and the codec registry are as S1. **X2's vtable labels
+  are reversed:** `0x103E0B8` is the 0xD0 in-memory class (`vt+0x28 = 0xAB0B20`, `vt+0x30 = 0xAB0448`) and `0x103E138`
+  the 0xFC streamed class (`vt+0x28 = 0xAB22D4`, `vt+0x30 = 0xAB1550`, `vt+0x78 = 0xAB12B4`). `0xAB22D4` ignores its
+  arguments and reads the pair inside `0xA7482C`; its first-call flow is S4. The PBI format writes are
+  `+0x15E = (u32>>16)&0xFF`, `+0x15F = u32>>24` (S3, S5 corrected). The streamed-class bodies `0xAB1C04`, `0xAB2088`,
+  `0xAB2BFC`, `0xAB3244`, `0xAB0448`, `0xAB1550`, `0xA74E00`, `0xA746A8`, `0xA75BC4`, `0xA78D10` and the stream manager
+  are RECOVERABLE_GAP, under extraction (the streaming-layer pass).
+- **C32.4, the frame count (F1..F5).** The engine default is 1024 (`0x99DC88`); Anki's builder `0x8D8158` does not set it;
+  `SoundEngine::Init` copies the settings (call at `0x8D81FC`); `0xA57724` rounds against `[0x108DF94]` (logic as F3, F4's
+  corrected path wording). The robot-path value is under extraction (the operator's ruling: the sink is the robot, not a
+  phone audio property).
+- **C32.5, V28 (V1, V2).** `0x9E2BD0`/`0x9E2AE4` perform no store when the three lists are empty (verified by emulation);
+  that the lists stay empty on shipped data is unproven (V5), and the evaluator bodies are RECOVERABLE_GAP.
+- **Records touched (text only, no status):** M6-025 and M6-026 (C32.1..C32.3), M6-022 (C32.5). Residuals now closed:
+  `0x9F1F80`, `0xA37A80`'s dead block, `0xA37C90`, `0x9BEB30` (shipped path), `0xA00618`, `0xA0067C`, `0xA36268`,
+  `0x9D3558`, `0x9BDA28`, `0x9E808C`, the media-table writers.
