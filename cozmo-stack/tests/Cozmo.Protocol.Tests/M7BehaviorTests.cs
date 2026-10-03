@@ -233,36 +233,8 @@ public class M7BehaviorTests
         Assert.Equal(9, seen!.Count);
     }
 
-    // ---------------------------------------------------------------- M7-009 (Appendix H C1b)
-
-    /// <summary>
-    /// M7-009: the head-angle conversion uses the shipped literal at 0x0057db2c = 0x42652ee1 =
-    /// 57.295780f, as a float multiply truncated toward zero. The expected values are the inventory's.
-    /// </summary>
-    [Fact]
-    public void TheHeadAngleConversionUsesTheShippedConstant()
-    {
-        Assert.Equal(57.295780f, IdleBehavior.HeadAngleDegreesPerRadian);
-        Assert.Equal(57, IdleBehavior.HeadAngleDegrees(1.0f));    // 57.295780 truncates toward zero
-        Assert.Equal(-57, IdleBehavior.HeadAngleDegrees(-1.0f));
-        Assert.Equal(0, IdleBehavior.HeadAngleDegrees(0.0f));
-    }
-
-    // ---------------------------------------------------------------- M7-010 (verifier blocker)
-
-    /// <summary>
-    /// M7-010: the turn eye-shift sign treats a drawn speed of 0 as <b>positive</b>
-    /// (0x0057D7A4 <c>vmov.f32 s0,#1.0</c>, <c>it mi</c> / <c>vmovmi.f32 s0,s2</c> at 0x0057D7A8..0x0057D7AA
-    /// flips only when N is set), so the x draw is <c>+RandIntInRange(0,21)</c> for 0. <c>Math.Sign(0)</c>
-    /// would give 0.
-    /// </summary>
-    [Fact]
-    public void AZeroTurnSpeedTakesThePositiveEyeShiftSign()
-    {
-        Assert.Equal(1, IdleBehavior.TurnShiftSign(0));
-        Assert.Equal(1, IdleBehavior.TurnShiftSign(7));
-        Assert.Equal(-1, IdleBehavior.TurnShiftSign(-7));
-    }
+    // M7-009 / M7-010 head-angle conversion and turn-shift sign: the retired IdleBehavior's helpers are gone (R-BEH2 batch 2);
+    // the streamer's UpdateLiveAnimation port is tested through the live entry in KeepAliveTests.
 
     // ---------------------------------------------------------------- M7-021 (Appendix I C2c, C2h)
 

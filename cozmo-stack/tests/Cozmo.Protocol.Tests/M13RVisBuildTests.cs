@@ -313,19 +313,19 @@ public class M13RVisBuildTests
     }
 
     /// <summary>
-    /// M13-010, the second copy of MoodScorer::EvaluateEmotionScore 0x0067C9B8 (the behaviour chooser's ScoredBehaviorEntry): a trackDelta entry reads
-    /// Emotion::GetHistoryValueTicksAgo (0x006794F8), the unbuilt M7-mood ring buffer, so it is refused there too instead of scoring the level.
+    /// M13-010, the second copy of MoodScorer::EvaluateEmotionScore 0x0067C9B8 (the behaviour chooser ScoredBehaviorEntry): a trackDelta entry reads
+    /// Emotion::GetHistoryValueTicksAgo (0x006794F8) from the M7-013 history ring (R-BEH2 batch 2 built it; it used to be refused). The ring of a fresh
+    /// mood holds only the constructor sample {0.0f, 0.0f}, so 60 ticks ago is 0.0f and x = 0 - 0 = 0 -> the flat-1 graph gives 1.0.
     /// </summary>
     [Fact]
-    public void M13_010_TheChoosersScorerRefusesTrackDeltaToo()
+    public void M13_010_TheChoosersScorerSubtractsTheHistoryRingForTrackDelta()
     {
         if (!NeedsLibrary()) return;
         using var rig = new Rig();
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(new MoodModel()) };
         var graph = new Graph2d(new[] { (0.0, 1.0), (1.0, 1.0) });
         var delta = new ScoredBehaviorEntry("a", 7.0, null, null, null, new[] { new EmotionScorer(EmotionType.Happy, graph, true) });
-        Assert.Contains("GetHistoryValueTicksAgo", Assert.Throws<NotSupportedException>(() => delta.Evaluate(null!, ctx, 0, null, null, null)).Message);
-        // without trackDelta the entry scores as before: the mean of the graphs
+        Assert.Equal(1.0, delta.Evaluate(null!, ctx, 0, null, 0.0, null), 6);
         var level = new ScoredBehaviorEntry("a", 7.0, null, null, null, new[] { new EmotionScorer(EmotionType.Happy, graph, false) });
         Assert.Equal(1.0, level.Evaluate(null!, ctx, 0, null, 0.0, null), 6);
     }

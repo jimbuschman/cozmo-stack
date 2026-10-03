@@ -22,6 +22,35 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class CoreChecks
 {
+    /// <summary>
+    /// A tool/test seam: ProceduralLive on the idle stack through <c>PushIdleAnimation</c> (the engine has no pusher of it), with the
+    /// streamer's own generator held quiet by overriding only what <c>UpdateLiveAnimation</c> reads as locked
+    /// (<c>LiveIdleInputs.LockedTracks</c>). It does NOT call <c>Motion.LockTracks</c>, which would put DisableAnimTracks 0x9D and later
+    /// EnableAnimTracks on the wire; nothing here sends a message the engine would not. Disposing removes the idle and restores the
+    /// production lock reader.
+    /// </summary>
+    public static IDisposable QuietLiveIdle(CozmoRobot robot, string who)
+    {
+        var inputs = robot.Animations.Scheduler.LiveIdleInputs;
+        var previous = inputs.LockedTracks;
+        inputs.LockedTracks = () => 7;
+        robot.Animations.Scheduler.PushIdleAnimation(Cozmo.Robot.Behavior.AnimationTrigger.ProceduralLive, who);
+        return new QuietIdle(robot, who, previous);
+    }
+
+    private sealed class QuietIdle : IDisposable
+    {
+        private readonly CozmoRobot _robot; private readonly string _who; private readonly Func<byte> _previous; private bool _done;
+        public QuietIdle(CozmoRobot robot, string who, Func<byte> previous) { _robot = robot; _who = who; _previous = previous; }
+        public void Dispose()
+        {
+            if (_done) return;
+            _done = true;
+            _robot.Animations.Scheduler.RemoveIdleAnimation(_who, Environment.TickCount64);
+            _robot.Animations.Scheduler.LiveIdleInputs.LockedTracks = _previous;
+        }
+    }
+
     public const string Usage =
         "core <robot-ip> --case <CORE-001|CORE-002|CORE-003|CORE-004|CORE-007|CORE-008> [--obb <dir>] [--seconds N] [--acceptance <file>]";
 
@@ -109,13 +138,24 @@ public static class CoreChecks
             if (robot.State.Latest is { } st) samples.Add((sw.Elapsed.TotalMilliseconds, st.LwheelSpeedMmps, st.RwheelSpeedMmps));
         }
 
-        if (!robot.Animations.StreamLive(new BodyKeyframe(0, durationMs, "STRAIGHT", 40)))
-            return (false, "the scheduler refused the live keyframe (a clip owns the body track)");
-
-        while (sw.Elapsed.TotalMilliseconds < durationMs + 2500)
+        // The live animation streams only as the idle (ProceduralLive on top of the idle stack); the engine has no pusher of it, so
+        // this check pushes it through the streamer's PushIdleAnimation seam (QuietLiveIdle: no wire message, see there).
+        const string Who = "CORE-001";
+        using var quiet = QuietLiveIdle(robot, Who);
+        try
         {
-            Sample();
-            await Task.Delay(33);
+            if (!robot.Animations.StreamLive(new BodyKeyframe(0, durationMs, "STRAIGHT", 40)))
+                return (false, "the scheduler refused the live keyframe (a clip owns the body track)");
+
+            while (sw.Elapsed.TotalMilliseconds < durationMs + 2500)
+            {
+                Sample();
+                await Task.Delay(33);
+            }
+        }
+        finally
+        {
+            quiet.Dispose();
         }
 
         var moving = samples.Where(x => Math.Abs(x.L) > 5 || Math.Abs(x.R) > 5).ToList();

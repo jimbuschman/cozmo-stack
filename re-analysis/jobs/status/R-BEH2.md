@@ -33,3 +33,11 @@ CLAIMED claude-sonnet 2026-09-30
   - Queued (non-blocking): no test for a failed turn child in the parallel compound or for the UI-request class-test order; MoodState holds emotions as double where the engine loads float (M7-013); the base vtable+0x20/+0x24/+0x28 default true (a dozen M10/M15 classes would be refused off treads: blocking once those records settle); the stale "ActionRunnerWho" note in PROJECT_STATE.md (the constant no longer exists).
   - For R-VIS: none (no edits to FaceBehaviors.cs, ManipulationBehaviors.cs, Manipulation/**).
   - Files outside M8 touched: Cozmo.Robot/Animation/CozmoAnimations.cs, Motion.cs, Conformance/Reactions.cs, Behavior/CubeReactions.cs, Mood.cs (DecayGraph.At), and three tests that asserted contradicted behaviour (CorrectionTests, FreeplayTests, DerivedStateTests).
+
+## Batch 1 committed: 603d459 (M8-framework; not pushed)
+
+## Batch 2 (idle/face/mood: M7-005..010, 013, 016, 017), started 2026-10-03
+- Correction A2 written into inventory/M7-behaviour.md (check 2 folded in); M7-behaviour re-approved. Implementer running.
+- Batch 2 verified: round 1 FAIL (2 blocking: SetParam's lazy default-set and clamp; CORE-001's wire lock), round 2 PASS (research/20261002-R-BEH2-verify-batch2.md). Full suite 2679/2679, `fidelity.py --check` clean. M7-005..010, 013, 016, 017 stay IMPLEMENTATION_GAP, "built, awaiting strong verification:". IdleBehavior, IdleParameters and IdleTests are retired; the manifest `location`s of M7-004..010/016 moved to the Animation files.
+  - Queued: Workouts.cs (R-VIS) still refuses trackDelta (its comments are stale, MoodState.GetHistoryValueTicksAgo now exists; it has no production caller); BEHAVIOR_LAYER.md:182-183 and jobs/status/B-M7.md:33-34 still say "no face-only mode"; nothing asserts the QuietLiveIdle delegate is restored; the production clock is Environment.TickCount64, not BaseStationTimer's origin; DesiredFaceDistortion has no source; the ProceduralLive pusher has no record yet (RECOVERABLE_GAP in prose).
+  - For R-VIS: Manipulation/Workouts.cs lines 37-42 and 121-123 (wire `e => mood.GetHistoryValueTicksAgo(e, 60)` when a caller exists).

@@ -137,14 +137,13 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         {
             // fidelity: M13-010 (second copy of MoodScorer::EvaluateEmotionScore 0x0067C9B8; Workouts.cs is the first)
             // fidelity: M8-003
-            // A trackDelta entry subtracts Emotion::GetHistoryValueTicksAgo(emotion, 60) (movs r1,#0x3c 0x0067c9ee; call
-            // 0x0067c9f4; vsub.f32 0x0067c9fc) from the emotion's value; the body is 0x006794f8 (count == 0 or ticks == 0:
-            // the current value; else the ring-buffer entry (+0xc head + count - ticks) mod +0x14). MoodState keeps no such
-            // history, and the inventory gives no writer for it (what pushes the buffer, and when, is M7-013's), so this stays
-            // an explicit refusal, never a stand-in value. MISSING: M8-003 / M7-013 - the emotion history.
+            // A trackDelta entry subtracts Emotion::GetHistoryValueTicksAgo(emotion, 60) from the emotion's value: the value is loaded
+            // first (vldr s22,[r0,#0x18] 0x0067c9f0), then movs r1,#0x3c (0x0067c9ee) and the call (0x0067c9f4), then vsub.f32 (0x0067c9fc).
+            // The graph is evaluated at that float (0x0067ca14).
+            float value = (float)scorer.ValueFor(mood);
             if (scorer.TrackDelta)
-                throw new NotSupportedException("M8-003/M13-010: trackDelta needs Emotion::GetHistoryValueTicksAgo(60) (0x006794F8), whose ring buffer MoodState does not keep (M7-013)");
-            float y = (float)scorer.Graph.EvaluateY((float)scorer.ValueFor(mood));
+                value -= mood.GetHistoryValueTicksAgo(scorer.Emotion, 60);
+            float y = (float)scorer.Graph.EvaluateY(value);
             if (Math.Abs(y) < GraphEvaluator.Epsilon) return 0;
             sum += y;
             counted++;
@@ -233,11 +232,9 @@ public static class BehaviorObjectives
 /// <c>emotionType</c>, <c>scoreGraph</c> and <c>trackDelta</c>.
 ///
 /// With <c>trackDelta</c> set the engine subtracts the emotion's value sixty ticks ago
-/// (<c>Emotion::GetHistoryValueTicksAgo(60)</c> at 0x0067C9F4) from its value now. This stack's
-/// <see cref="MoodState"/> keeps no history, so scoring such an entry is refused with
-/// <see cref="NotSupportedException"/> (M13-010; it used to use the level as a stand-in). Nothing shipped exercises
-/// it: not one of the behaviour or activity configs in cozmo_resources carries an <c>emotionScorers</c>
-/// block, so every scored behaviour in the app is scored by its flat score alone.
+/// (<c>Emotion::GetHistoryValueTicksAgo(60)</c> at 0x0067C9F4) from its value now; <see cref="MoodState.GetHistoryValueTicksAgo"/>
+/// is that ring (M7-013). Nothing shipped exercises it: not one of the behaviour or activity configs in cozmo_resources carries an
+/// <c>emotionScorers</c> block, so every scored behaviour in the app is scored by its flat score alone.
 /// </summary>
 public sealed record EmotionScorer(EmotionType Emotion, Graph2d Graph, bool TrackDelta)
 {

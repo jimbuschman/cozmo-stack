@@ -200,10 +200,74 @@ public sealed class MoodModel
     /// <summary>The named event, or null when the shipped configuration does not define it.</summary>
     public EmotionEvent? Event(string name) => _events.TryGetValue(name, out var e) ? e : null;
 
-    /// <summary>The decay curve for an emotion, falling back to <c>default</c> as the engine's config does.</summary>
-    public DecayGraph? DecayFor(EmotionType emotion) =>
+    /// <summary>
+    /// The engine's built-in decay curve: <c>StaticMoodData</c>'s constructor calls <c>InitDecayGraphs</c> (0x0067CDC3), which fills
+    /// every emotion with (0,1), (15,1), (60,0.9f), (150,0.6f), (300,0); the config's own graphs replace it and its "default"
+    /// graph fills the emotions without one (0x0067D0C6).
+    /// </summary>
+    public static readonly DecayGraph BuiltInDecay = new("builtin",
+        new[] { (0.0, 1.0), (15.0, 1.0), (60.0, (double)0.9f), (150.0, (double)0.6f), (300.0, 0.0) });
+
+    /// <summary>The decay curve for an emotion: its own, else the config's <c>default</c>, else the built-in curve.</summary>
+    public DecayGraph DecayFor(EmotionType emotion) =>
         _decay.TryGetValue(emotion.ToString(), out var g) ? g
-        : _decay.TryGetValue("default", out var d) ? d : null;
+        : _decay.TryGetValue("default", out var d) ? d : BuiltInDecay;
+}
+
+/// <summary>
+/// The ring buffer at the start of each engine <c>Emotion</c> (this+0x00..+0x17: data pointer, end, capacity, head +0x0C, count
+/// +0x10, capacity +0x14): 0x80 eight-byte samples <c>{float value, float dt}</c>. The constructor (0x00679406..0x00679428) sizes it
+/// to 0x80 (0x0067940A, 0x00679438), zeroes head and count, then pushes one <c>{0.0f, 0.0f}</c> sample (0x00679418..0x00679420);
+/// <c>Emotion::Update</c> pushes <c>{value, dt}</c> after every update (0x00679600..0x00679608).
+/// </summary>
+// fidelity: M7-013
+internal sealed class EmotionHistory
+{
+    /// <summary>0x80 (<c>movs r1,#0x80</c> at 0x0067940A).</summary>
+    public const int Capacity = 0x80;
+
+    private readonly (float Value, float Dt)[] _data = new (float, float)[Capacity];
+    private uint _head;      // +0x0C
+    private uint _count;     // +0x10
+
+    public EmotionHistory() => Push(0f, 0f);
+
+    public uint Head => _head;
+    public uint Count => _count;
+
+    /// <summary>
+    /// The append at 0x0067945C..0x00679498: when count &gt;= capacity (0x00679468 <c>blo</c> not taken) count is decremented and head
+    /// advanced, wrapping to 0 at the capacity (0x0067946C..0x0067947A); the slot is <c>(head + count) mod capacity</c> (unsigned
+    /// remainder, 0x0067947C..0x0067947E); the sample is stored there and the count incremented (0x00679492..0x00679496).
+    /// </summary>
+    public void Push(float value, float dt)
+    {
+        uint head = _head, count = _count;
+        if (count >= Capacity)
+        {
+            count -= 1;
+            head += 1;
+            _head = head; _count = count;
+            if (head >= Capacity) { head = 0; _head = 0; }
+        }
+        uint idx = (head + count) % Capacity;
+        _data[idx] = (value, dt);
+        _count += 1;
+    }
+
+    /// <summary>
+    /// <c>Emotion::GetHistoryValueTicksAgo(ticks)</c> 0x006794F8: <paramref name="ticks"/> == 0 or an empty ring (0x006794F8,
+    /// 0x006794FC) gives the emotion's current value (this+0x18, 0x00679520); otherwise the slot is
+    /// <c>(head + (count &gt; ticks ? count - ticks : 0)) mod capacity</c> (unsigned: <c>subs; it hi; addhi</c> 0x00679508..0x0067950C,
+    /// remainder 0x00679510..0x00679512) and the value is the first word of that sample (0x00679516, 0x00679522).
+    /// </summary>
+    public float GetValueTicksAgo(uint ticks, float current)
+    {
+        if (ticks == 0 || _count == 0) return current;
+        uint r2 = _head;
+        if (_count > ticks) r2 += _count - ticks;
+        return _data[r2 % Capacity].Value;
+    }
 }
 
 /// <summary>
@@ -212,45 +276,79 @@ public sealed class MoodModel
 /// Time is taken rather than read, as everywhere else in this stack, so a mood can be wound forward in a
 /// test without waiting. Values are clamped to [-1, 1], which is the range the shipped affectors and the
 /// decompiled <c>CurrentMoodCondition</c> range attribute both imply.
+///
+/// The engine's <c>MoodManager</c> / <c>Emotion</c> arithmetic is <c>float</c> throughout (every <c>vadd.f32</c>, <c>vmul.f32</c>,
+/// <c>vdiv.f32</c> named below), so the values, the decay clocks and the event stamps are held as <c>float</c>; the public
+/// <c>double</c> surface is the exact widening of those floats.
 /// </summary>
 // fidelity: M7-012, M7-013, M7-020
 public sealed class MoodState
 {
     /// <summary>
     /// A change smaller than this does not restart the decay clock. <c>Emotion::Add</c> at 0x00679618
-    /// compares the magnitude of the change against 0.05 (the literal at 0x0067967E).
+    /// compares the magnitude of the change against 0.05f, bits 0x3D4CCCCD (the literal at 0x0067967E).
     /// </summary>
-    public const double DecayResetThreshold = 0.05;
+    public static readonly float DecayResetThreshold = BitConverter.Int32BitsToSingle(0x3D4CCCCD);
 
     /// <summary>
-    /// The elapsed time returned for an event's first trigger: FLT_MAX, <c>3.4028235e38</c>
-    /// (<c>UpdateLatestEventTimeAndGetTimeElapsedInSeconds</c> 0x0067be48).
+    /// The floor of <c>MoodManager::Update</c>'s step: 1e-4f, bits 0x38D1B717 (the literal at 0x0067B5EA). It is the step when the
+    /// stored last time (+0x130) is 0, and no step is ever smaller (0x0067B5E6..0x0067B612).
     /// </summary>
-    public const double NoPreviousEventSec = 3.4028235e38;
+    public static readonly float MinUpdateStepSec = BitConverter.Int32BitsToSingle(0x38D1B717);
+
+    /// <summary>
+    /// <c>Emotion::Update</c>'s "old reading" threshold: 1e-5f, bits 0x3727C5AC (0x006795D6; the literal at 0x00679614).
+    /// </summary>
+    public static readonly float OldReadingFloor = BitConverter.Int32BitsToSingle(0x3727C5AC);
+
+    /// <summary>
+    /// The elapsed time returned for an event's first trigger: FLT_MAX, bits 0x7F7FFFFF
+    /// (<c>UpdateLatestEventTimeAndGetTimeElapsedInSeconds</c> 0x0067be48, the literal at 0x0067BEA4).
+    /// </summary>
+    public const float NoPreviousEventSec = float.MaxValue;
 
     private readonly MoodModel _model;
-    private readonly double[] _values = new double[Enum.GetValues<EmotionType>().Length];
+    private readonly float[] _values = new float[Enum.GetValues<EmotionType>().Length];
 
     /// <summary>
-    /// The engine's own per-emotion decay clock, <c>Emotion</c> this+0x1C. It is not simply the time
+    /// The engine's own per-emotion decay clock, <c>Emotion</c> this+0x1C (float). It is not simply the time
     /// since the last change: see <see cref="Trigger"/>.
     /// </summary>
-    private readonly double[] _decaySec = new double[Enum.GetValues<EmotionType>().Length];
-    private double _lastAdvanceSec;
+    private readonly float[] _decaySec = new float[Enum.GetValues<EmotionType>().Length];
+    private readonly EmotionHistory[] _history = Enumerable.Range(0, Enum.GetValues<EmotionType>().Length)
+        .Select(_ => new EmotionHistory()).ToArray();
 
-    /// <summary>MoodManager+0x120: the last trigger time of each event name, for the repetition penalty.</summary>
-    private readonly Dictionary<string, double> _lastEventSec = new(StringComparer.Ordinal);
+    /// <summary>MoodManager+0x130: the time of the last <see cref="Advance"/> (float seconds; 0 until the first).</summary>
+    private float _lastUpdateSec;
+
+    /// <summary>MoodManager+0x120: the last trigger time of each event name (a float map), for the repetition penalty.</summary>
+    private readonly Dictionary<string, float> _lastEventSec = new(StringComparer.Ordinal);
 
     /// <summary>MoodManager+0x140: action ids whose completion must not raise a mood event.</summary>
     private readonly HashSet<string> _completionDisabled = new(StringComparer.Ordinal);
 
+    /// <summary>The warnings the engine logs (<c>MoodManager::Update</c>'s step below the floor).</summary>
+    public Action<string>? Log { get; set; }
+
     public MoodState(MoodModel model) => _model = model;
 
-    /// <summary>The current value of one axis, after decay up to the last <see cref="Advance"/>.</summary>
+    /// <summary>The current value of one axis (the engine's float, widened), after decay up to the last <see cref="Advance"/>.</summary>
     public double this[EmotionType e] => _values[(int)e];
 
     /// <summary>
+    /// <c>Emotion::GetHistoryValueTicksAgo(ticks)</c> 0x006794F8 on one emotion: its value that many <see cref="Advance"/> updates
+    /// ago (the ring holds the 0x80 most recent), or the current value for 0 ticks or an empty ring.
+    /// </summary>
+    // fidelity: M7-013
+    public float GetHistoryValueTicksAgo(EmotionType e, uint ticks) => _history[(int)e].GetValueTicksAgo(ticks, _values[(int)e]);
+
+    /// <summary>
     /// Applies a named event. Unknown names change nothing and report false.
+    ///
+    /// <c>MoodManager::TriggerEmotionEvent</c> 0x0067b85c: FindEvent, then <c>UpdateLatestEventTimeAndGetTimeElapsedInSeconds</c>,
+    /// <c>EmotionEvent::CalculateRepetitionPenalty</c>, then per affector <c>Emotion::Add(penalty * value)</c> (<c>vmul.f32</c> at
+    /// 0x0067b8f6, call 0x0067b902). It calls no <c>Emotion::Update</c> and decays nothing: decay happens only in
+    /// <see cref="Advance"/> (<c>MoodManager::Update</c>).
     ///
     /// <c>Emotion::Add</c> at 0x00679618 clamps the sum to [-1, 1] and then decides whether to zero the
     /// decay clock at this+0x1C (<c>str.w ip,[r0,#0x1c]</c> at 0x006796BC). The clock is zeroed in two
@@ -267,46 +365,53 @@ public sealed class MoodState
     ///
     /// So a sign flip always restarts the decay, whatever its size; a small nudge, or one that pulls an
     /// emotion back towards neutral without crossing zero, moves the value but leaves it decaying on the
-    /// schedule it was already on. This stack used to restart the clock on every affector.
+    /// schedule it was already on.
     /// </summary>
+    // fidelity: M7-013
     public bool Trigger(string eventName, double nowSec)
     {
         var e = _model.Event(eventName);
         if (e is null) return false;
-        Advance(nowSec);
-        double penalty = RepetitionPenalty(e, eventName, nowSec);
+        float penalty = RepetitionPenalty(e, eventName, (float)nowSec);
         foreach (var a in e.Affectors)
-        {
-            int i = (int)a.Emotion;
-            double delta = penalty * a.Value;
-            double old = _values[i];
-            double updated = Math.Clamp(old + delta, -1, 1);
-            _values[i] = updated;
-
-            bool keptItsSign = old >= 0 == updated >= 0;
-            bool awayFromZero = old >= 0 == delta >= 0;
-            // 0x006796A8/0x006796AC: a sign flip jumps straight to the reset; otherwise the three tests.
-            if (!keptItsSign || (Math.Abs(delta) > DecayResetThreshold && awayFromZero)) _decaySec[i] = 0;
-        }
+            Add((int)a.Emotion, penalty * (float)a.Value);
         return true;
     }
 
     /// <summary>
+    /// <c>Emotion::Add(float d)</c> 0x00679618..0x006796C0: <c>s = value + d</c> (float); the stored value is -1.0f when
+    /// not <c>s &gt; -1.0f</c>, 1.0f when <c>s &gt;= 1.0f</c>, else s (0x00679628..0x0067964E); the decay clock is zeroed when the sign
+    /// of (old &gt;= 0) differs from that of (new &gt;= 0), or when |d| &gt; 0.05f and (old &gt;= 0) == (d &gt;= 0).
+    /// </summary>
+    private void Add(int i, float d)
+    {
+        float old = _values[i];
+        float s = old + d;
+        float updated = s > -1f ? (s >= 1f ? 1f : s) : -1f;
+        _values[i] = updated;
+
+        bool keptItsSign = old >= 0 == updated >= 0;
+        bool awayFromZero = old >= 0 == d >= 0;
+        // 0x006796A8/0x006796AC: a sign flip jumps straight to the reset; otherwise the two tests.
+        if (!keptItsSign || (MathF.Abs(d) > DecayResetThreshold && awayFromZero)) _decaySec[i] = 0f;
+    }
+
+    /// <summary>
     /// <c>MoodManager::TriggerEmotionEvent</c> 0x0067b85c: the elapsed time from
-    /// <c>UpdateLatestEventTimeAndGetTimeElapsedInSeconds</c> 0x0067be48, then the event's own
+    /// <c>UpdateLatestEventTimeAndGetTimeElapsedInSeconds</c> 0x0067be48 (a float map: a new key gives FLT_MAX, an existing one
+    /// <c>now - old</c> by <c>vsub.f32</c> at 0x0067BEB2, and <c>now</c> is stamped), then the event's own
     /// <c>EmotionEvent::CalculateRepetitionPenalty</c> 0x00679bb8 (<c>GraphEvaluator2d::EvaluateY</c> on
     /// the graph at <c>EmotionEvent</c>+0x18). The shipped events carry no repetition graph
-    /// (<c>EmotionEvent::ReadFromJson</c> 0x00679bc0 clears it), and an empty graph evaluates to 1, so
-    /// every shipped event applies its affectors at full strength; a first trigger uses FLT_MAX and so
-    /// also lands on the graph's final value. The elapsed time is stamped on every trigger.
+    /// (<c>EmotionEvent::ReadFromJson</c> 0x00679bc0 clears it); a missing graph gives 1.0 here (that an empty engine graph
+    /// evaluates to 1 is not established: check 2 section D).
     /// </summary>
-    private double RepetitionPenalty(EmotionEvent e, string eventName, double nowSec)
+    private float RepetitionPenalty(EmotionEvent e, string eventName, float now)
     {
-        double elapsed;
-        if (_lastEventSec.TryGetValue(eventName, out var last)) elapsed = nowSec - last;
+        float elapsed;
+        if (_lastEventSec.TryGetValue(eventName, out var last)) elapsed = now - last;
         else elapsed = NoPreviousEventSec;
-        _lastEventSec[eventName] = nowSec;
-        return e.RepetitionPenalty?.At(elapsed) ?? 1.0;
+        _lastEventSec[eventName] = now;
+        return e.RepetitionPenalty is { } g ? (float)g.At(elapsed) : 1f;
     }
 
     /// <summary>
@@ -341,7 +446,7 @@ public sealed class MoodState
     /// wired (the record's unresolved).
     /// </summary>
     public IReadOnlyList<double> EmotionValues() =>
-        Enum.GetValues<EmotionType>().Select(e => _values[(int)e]).ToArray();
+        Enum.GetValues<EmotionType>().Select(e => (double)_values[(int)e]).ToArray();
 
     /// <summary>Raised with the nine values when <see cref="SendEmotionsToGame"/> is called.</summary>
     public event Action<IReadOnlyList<double>>? EmotionsBroadcast;
@@ -350,34 +455,42 @@ public sealed class MoodState
     public void SendEmotionsToGame() => EmotionsBroadcast?.Invoke(EmotionValues());
 
     /// <summary>
-    /// Fades every axis.
+    /// <c>MoodManager::Update(float t)</c> 0x0067b5d4, the only place decay happens. The step is <c>t - last</c> (float) when the
+    /// stored last time (+0x130) is non-zero and 1e-4f when it is zero (<c>vcmp s0,#0</c>, <c>it ne</c>, 0x0067B5EE..0x0067B604);
+    /// a step below 1e-4f is replaced by 1e-4f with a warning (0x0067B608..0x0067B66C); +0x130 = t (0x0067B67E); then
+    /// <c>Emotion::Update(decayGraph, t, dt)</c> for the nine emotions in order (0x0067B682..0x0067B69E). (The call to
+    /// <c>SendEmotionsToGame</c> that follows, 0x0067B6A4, is <see cref="SendEmotionsToGame"/>, made by the caller.)
     ///
-    /// <c>Emotion::Update</c> at 0x006795A4 does not read the curve at the age and multiply the value it
-    /// had when it last changed; it multiplies the current value by the <b>ratio</b> of the curve at the
-    /// new decay time to the curve at the old one when the old reading is above 1e-5, and by the <b>raw
-    /// new reading</b> when it is not (<c>vmul.f32 s0,s2,s0</c> at 0x006795F8 under the <c>it gt</c> at
-    /// 0x006795EE, the 1e-5 literal at 0x006795D6). Over a run of updates that telescopes to the same
-    /// thing while the value is untouched, and differs the moment a change leaves the clock running -
-    /// which is exactly what <see cref="Trigger"/> arranges.
+    /// <c>Emotion::Update</c> 0x006795A4: old = graph(decay); decay += dt; new = graph(decay); the value is multiplied by
+    /// new / old when old &gt; 1e-5f and by the raw new reading when it is not (<c>vdiv.f32</c> 0x006795E6, <c>it gt</c> 0x006795EE,
+    /// <c>vmul.f32</c> 0x006795F8); then <c>{value, dt}</c> is appended to the emotion's history (0x00679600..0x00679608).
     /// </summary>
+    // fidelity: M7-013
     public void Advance(double nowSec)
     {
-        double dt = nowSec - _lastAdvanceSec;
-        _lastAdvanceSec = nowSec;
-        if (dt <= 0) return;
+        float t = (float)nowSec;
+        float last = _lastUpdateSec;
+        float dt = last != 0 ? t - last : MinUpdateStepSec;
+        if (dt < MinUpdateStepSec)
+        {
+            Log?.Invoke($"warning: MoodManager.Update.TimeStepTooSmall: dt {dt}, last {last}, now {t}");
+            dt = MinUpdateStepSec;
+        }
+        _lastUpdateSec = t;
 
         for (int i = 0; i < _values.Length; i++)
         {
             var graph = _model.DecayFor((EmotionType)i);
-            if (graph is null) continue;
-            double before = graph.At(_decaySec[i]);
+            float before = (float)graph.At(_decaySec[i]);
             _decaySec[i] += dt;
-            double after = graph.At(_decaySec[i]);
-            _values[i] *= before > 1e-5 ? after / before : after;
+            float after = (float)graph.At(_decaySec[i]);
+            float f = before > OldReadingFloor ? after / before : after;
+            _values[i] = _values[i] * f;
+            _history[i].Push(_values[i], dt);
         }
     }
 
     /// <summary>Every axis and its current value, for diagnostics.</summary>
     public IReadOnlyDictionary<EmotionType, double> Snapshot() =>
-        Enum.GetValues<EmotionType>().ToDictionary(e => e, e => _values[(int)e]);
+        Enum.GetValues<EmotionType>().ToDictionary(e => e, e => (double)_values[(int)e]);
 }

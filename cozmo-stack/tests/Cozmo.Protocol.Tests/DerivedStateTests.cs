@@ -830,8 +830,9 @@ public class DerivedStateTests
         var model = MoodModel.Load(obb);
         var down = model.Events.FirstOrDefault(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value < 0));
         Assert.NotNull(down);
-        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.6; i++) mood.Trigger(down!.Name, 0);
-        Assert.True(mood[EmotionType.Confident] < -0.6);
+        // the mood is the engine's float (M7-013): six -0.1f steps land on -0.6f exactly, not below the strategy's -0.6f threshold
+        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.7; i++) mood.Trigger(down!.Name, 0);
+        Assert.True(mood[EmotionType.Confident] < -0.7);
         Assert.True(s.ShouldTrigger(ctx, null, 10));
         Assert.False(s.ShouldTrigger(ctx, ReactionTrigger.Frustration, 10));
         s.AnimationComplete(10);

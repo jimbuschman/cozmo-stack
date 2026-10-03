@@ -173,29 +173,49 @@ public class BehaviorHardeningTests
     // ================================================================ idle: face vs motors
 
     /// <summary>
-    /// --allow-motion used to switch off IdleBehavior.Execute altogether, so a no-motion acceptance run
-    /// could not blink and there was nothing to watch. The face and the motors are now gated separately.
+    /// With every track locked (AreAnyTracksLocked, 0x0057D626..) the streamer UpdateLiveAnimation (0x0057D5F8) generates no head,
+    /// lift or body keyframe, however long it runs. The face keep-alive (FaceLayerManager::KeepFaceAlive 0x0058D374) is not gated by
+    /// the locks, but its block needs +0x88 &gt; 0 (0x0057CF6A..0x0057CF76) - something must have streamed - and an empty live
+    /// animation never streams (it is ended from its InitStream), so a fully locked idle has no face keep-alive either; once a
+    /// frame has streamed (here a keyframe appended through the StreamLive seam) it blinks and darts, and the locks still hold the
+    /// motors back.
     /// </summary>
     [Fact]
-    public void IdleStillBlinksWhenMotorsAreNotPermitted()
+    public void LockedTracksGenerateNoMotorKeyframesAndTheFaceKeepAliveNeedsAStreamedFrame()
     {
-        using var robot = SimulatedFacePacing.Use(CozmoRobot.CreateOffline());
-        robot.Transport.OfflineAcceptConnection();
-        var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
-        var idle = new IdleBehavior(robot, arbiter, random: new Random(3))
+        var sink = new IdleSink();
+        var s = new Cozmo.Robot.Animation.AnimationScheduler(sink, new Random(3));
+        s.PushLiveQuietly();                      // ProceduralLive on top, all tracks locked
+        for (int i = 0; i < 100; i++) s.Advance(60.0 * i);
+        Assert.Equal(0, sink.Moves);
+        Assert.Empty(s.FaceLayerNames);           // nothing streamed: gate A of the keep-alive block (+0x88 is still -FLT_MAX)
+
+        Assert.True(s.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 0, 0), 6000));
+        bool blink = false, dart = false;
+        for (int i = 100; i < 500; i++)
         {
-            Execute = true,
-            ExecuteMotors = false,
-        };
+            s.Advance(60.0 * i);
+            blink |= s.FaceLayerNames.Contains("Blink");
+            dart |= s.FaceLayerNames.Contains("KeepAliveEyeDart");
+        }
+        Assert.True(blink && dart);
+        Assert.Equal(1, sink.Moves);              // only the appended keyframe: the locked tracks generated nothing
+    }
 
-        var acted = new List<IdleEvent>();
-        idle.Acted += e => { if (e.Suppressed is null) acted.Add(e); };
-        for (double t = 0; t < 20_000; t += 50) idle.Advance(t);
-
-        Assert.Contains(acted, e => e.Action == IdleAction.Blink);
-        Assert.Contains(acted, e => e.Action == IdleAction.EyeDart);
-        // motor actions are still decided and reported, they simply are not driven
-        Assert.Contains(acted, e => e.Action is IdleAction.HeadMove or IdleAction.LiftMove);
+    private sealed class IdleSink : Cozmo.Robot.Animation.IAnimationSink
+    {
+        public int Moves;
+        public void Face(Cozmo.Robot.FaceBitmap bitmap) { }
+        public void Audio(byte[]? mulawFrame) { }
+        public void Head(sbyte angleDeg, uint durationMs) => Moves++;
+        public void Lift(byte heightMm, uint durationMs) => Moves++;
+        public void Body(Cozmo.Robot.Animation.BodyKeyframe k) => Moves++;
+        public void AnimationStarted(byte tag) { }
+        public void AnimationEnded() { }
+        public void BodyStop() { }
+        public void Lights(Cozmo.Robot.Animation.LightsKeyframe k) { }
+        public void Event(string eventId) { }
+        public void Finished(string clipName, bool completed) { }
     }
 
     // ================================================================ falling

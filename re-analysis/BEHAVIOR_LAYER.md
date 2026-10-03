@@ -119,7 +119,7 @@ base when it expires. What is **not** claimed is the exact native use of `EyeDar
 
 **Body movement is decided and reported but not driven.** 10 mm/s is within the engine's own parameters,
 but sending wheel commands to an unattended robot is not something to switch on without watching it.
-`--allow-motion` on the `behavior` command enables head and lift.
+The `behavior` command starts the idle only with `--allow-motion`: that is the tool's own safety opt-in, not an engine gate (the engine has no such switch; once ProceduralLive is the idle, the streamer's `UpdateLiveAnimation` moves head, lift and wheels, and the face blinks after the first streamed frame).
 
 ## 4. Mood
 
@@ -179,9 +179,8 @@ regression test; three of those tests were checked against the unfixed code to c
 
 ### Behaviour layer
 
-* **Idle could not blink without `--allow-motion`.** The flag drove `IdleBehavior.Execute`, which gated the
-  face as well as the motors, so the documented no-motion acceptance run had nothing visible to watch.
-  `ExecuteMotors` now gates head, lift and body separately; blinks and eye darts always run.
+* **Idle could not blink without `--allow-motion`.** (Historical; `IdleBehavior` was retired in R-BEH2 batch 2.) The idle is now the
+  streamer's own, which has no face-only mode: the tool starts it only with `--allow-motion`.
 * **Falling was claimed but never watched.** `ReactionTable` mapped `RobotFalling`, but nothing subscribed to
   a falling transition, so it could never fire. `Sensors.FallingChanged` is now derived from
   `RobotStatusFlag.IsFalling` exactly as pick-up and charger are, and the dispatcher subscribes to it.

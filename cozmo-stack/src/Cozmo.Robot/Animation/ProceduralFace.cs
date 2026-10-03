@@ -207,45 +207,61 @@ public sealed class ProceduralFacePose
         return (xmin, xmax, ymin, ymax);
     }
 
+    // fidelity: M7-006
     /// <summary>
     /// <c>ProceduralFace::SetFacePosition</c> (C6, gap1 K3, 0x00583B20..0x00583BF8): the centre clamped so the eye box stays
-    /// on the canvas, x ∈ [−xmin, 128 − xmax] and y ∈ [−ymin, 64 − ymax].
+    /// on the canvas. Per axis, in the engine's compare order (vcmpe/it gt/it pl, 0x00583B5C..0x00583BA4 and
+    /// 0x00583BB8..0x00583BF8): lo = -min, hi = 128 - max (64 - max for y); m = (v &gt; lo) ? v : lo; the result is
+    /// (m &lt; hi) ? m : hi. A NaN input gives lo, and lo &gt; hi gives hi, as those instructions do.
     /// </summary>
     public void SetFacePosition(float x, float y)
     {
         var (xmin, xmax, ymin, ymax) = GetEyeBoundingBox();
-        FaceCenterX = MathF.Max(-xmin, MathF.Min(CanvasWidth - xmax, x));
-        FaceCenterY = MathF.Max(-ymin, MathF.Min(CanvasHeight - ymax, y));
+        FaceCenterX = ClampInBox(x, -xmin, CanvasWidth - xmax);
+        FaceCenterY = ClampInBox(y, -ymin, CanvasHeight - ymax);
     }
 
+    private static float ClampInBox(float v, float lo, float hi)
+    {
+        float m = v > lo ? v : lo;
+        return m < hi ? m : hi;
+    }
+
+    // fidelity: M7-006
     /// <summary>
-    /// <c>ProceduralFace::LookAt(x, y, xMax, yMax, up, down, outer)</c> (gap1 K3, 0x00584158..0x0058428A):
-    /// SetFacePosition(x, y); xf = min(|x|/xMax, 1); yf = min((yMax − y)/(2·yMax), 1) with no lower clamp;
-    /// sY = down + (up − down)·yf; looking left (x &lt; 0) the left eye's EyeScaleY = Clip((1 + o·xf)·sY) and the right's
-    /// Clip((1 − o·xf)·sY), the other way round for x ≥ 0; for y &gt; 0 the left EyeCenterX = 2·min(y/yMax, 1) and the right
-    /// the negative of it, otherwise both 0. EyeScaleX is untouched.
+    /// <c>ProceduralFace::LookAt(x, y, xMax, yMax, up, down, outer)</c> (0x00584158..0x0058428A), float32 in the engine's
+    /// association and compare order: SetFacePosition(x, y); yf = (y + yMax) / (yMax * -2.0f) + 1.0f, kept only when &lt; 1.0f
+    /// (else 1.0f; no lower clamp); xf = |x| / xMax, kept only when &lt; 1.0f (else 1.0f); sY = (up - down) * yf + down;
+    /// a = xf * outer + 1.0f. Looking left (x &lt; 0) the left eye's EyeScaleY = Clip(a * sY) and the right's
+    /// Clip(sY * (2.0f - a)); for x &gt;= 0 the left's is Clip((2.0f - a) * sY) and the right's Clip(sY * a). For y &gt; 0 the left
+    /// EyeCenterX is d = 2 * (y / yMax kept only when &lt; 1.0f, else 1.0f) and the right's is -d; otherwise d = 0.0f
+    /// (the word at 0x0058428C) and the right's is its negation, -0.0f (<c>eor r3,r5,#0x80000000</c>, 0x00584272).
+    /// EyeScaleX is untouched.
     /// </summary>
     public void LookAt(float x, float y, float xMax, float yMax, float up, float down, float outer)
     {
         SetFacePosition(x, y);
-        float xf = MathF.Min(MathF.Abs(x) / xMax, 1f);
-        float yf = MathF.Min((yMax - y) / (2f * yMax), 1f);
-        float sY = down + (up - down) * yf;
-        float l = x < 0 ? (1f + outer * xf) * sY : (1f - outer * xf) * sY;
-        float r = x < 0 ? (1f - outer * xf) * sY : (1f + outer * xf) * sY;
+        float yf = (y + yMax) / (yMax * -2f) + 1f;
+        float xfRaw = MathF.Abs(x) / xMax;
+        float xf = xfRaw < 1f ? xfRaw : 1f;
+        float yfc = yf < 1f ? yf : 1f;
+        float sY = (up - down) * yfc + down;
+        float a = xf * outer + 1f;
+        float l, r;
+        if (x < 0) { l = a * sY; r = sY * (2f - a); }
+        else { l = (2f - a) * sY; r = sY * a; }
         Left[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, l, Left[EyeParam.EyeScaleY]);
         Right[EyeParam.EyeScaleY] = Eye.Clip(EyeParam.EyeScaleY, r, Right[EyeParam.EyeScaleY]);
+        float dd;
         if (y > 0)
         {
-            float dd = 2f * MathF.Min(y / yMax, 1f);
-            Left[EyeParam.EyeCenterX] = dd;
-            Right[EyeParam.EyeCenterX] = -dd;
+            float q = y / yMax;
+            float qc = q < 1f ? q : 1f;
+            dd = qc + qc;
         }
-        else
-        {
-            Left[EyeParam.EyeCenterX] = 0f;
-            Right[EyeParam.EyeCenterX] = 0f;
-        }
+        else dd = 0f;
+        Left[EyeParam.EyeCenterX] = dd;
+        Right[EyeParam.EyeCenterX] = -dd;
     }
 
     /// <summary>

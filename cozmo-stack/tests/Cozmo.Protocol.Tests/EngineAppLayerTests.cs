@@ -1552,6 +1552,7 @@ public class EngineAppLayerTests
         _ = robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         lock (rig.Port.Sent) Assert.Contains(rig.Port.Sent, b => b[0] == (byte)new SetHeadAngle(0.1f).Id);
         robot.CubeAccel.AddListener(0, new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { }));
+        robot.Animations.Scheduler.PushLiveQuietly();
         Assert.True(robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
         vision.World.AddMarkerlessObject(Cozmo.Robot.Vision.Pose3d.Identity, ObjectType.CollisionObstacle);
         vision.Faces.AddOrUpdateFace(new Cozmo.Robot.Vision.TrackedFace(new Cozmo.Robot.Vision.DetectedFace(0, new(0, 0, 10, 10)), 50),
@@ -1670,6 +1671,7 @@ public class EngineAppLayerTests
 
         int sent;
         lock (rig.Port.Sent) sent = rig.Port.Sent.Count;
+        rig.Robot.Animations.Scheduler.PushLiveQuietly();
         Assert.True(rig.Robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
         // M5 A29: the live keyframe goes out in the streamer's Updates, which the tick loop runs on this test seam
         List<RobotMessage> after = new();

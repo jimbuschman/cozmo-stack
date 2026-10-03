@@ -653,7 +653,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The idle stack starts {Count 0x23F, "default_anim_lock"} (A1); PushIdleAnimation/RemoveIdleAnimation are A30 (Count clears +0x34/+0x64; the last entry and an unknown lock refused; a removal from the middle warns; a Count top with an idle playing and nothing streaming replays the neutral). The no-animation path is A28/A29: a Count top with layers → StreamLayers; a ProceduralLive top makes the live animation the idle; a non-empty buffer is flushed and then a pending End sent (Q1.9); a non-Count idle is picked through the catalog (HasAnimationForTrigger → GetAnimationForTrigger → GetAnimationNameFromGroup(strict = false) → GetAnimation, an error without popping) and initialised with InitStream(anim, 0xFF) and no frame, otherwise UpdateStream(storeFace = 0); +0x44 += 60. StreamLive (the M7-017 seam) appends to the live animation and puts ProceduralLive on the stack; it is refused while an animation streams. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The no-animation path is now B1: with the stack empty or its top Count, StreamLayers when layers exist, otherwise the flush and a pending End, and nothing more; any other top goes straight to the idle, which neither flushes nor sends an End. The live idle is gap4 L8 (UpdateLiveAnimation first; InitStream(live, 0xFF) when the previous idle was not the live one or it has ended, otherwise UpdateStream); after an idle's or the live idle's UpdateStream +0x88 = now (B3). A failed pick sets the idle to null and returns (Q1); a trigger with no animation goes on to the tail with no error. Verify round 2 (2026-09-25, correction C4): the idle and live-idle tail is C4 (0x0057D3F0..0x0057D412): InitStream(idle, 0xFF) when the previous idle is not this one, +0x64 == 0, or the idle has ended, otherwise UpdateStream; a streaming Update clears +0x64 (A13), so after a clip the idle (the live one included) re-inits with 0xFF; the HasAnimationForTrigger-miss path reaches the same tail (0x0057D218), so a kept idle re-inits there too. Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
 * evidence: A1 0x0057A064..0x0057A0AC; A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2; A29 0x0057D064..0x0057D448; A30 0x0057B914..0x0057BD6E; R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. when a clip's loops run out the engine clears +0x38 and branches past the idle-stack test to HaveLayersToSend/StreamLayers (0x0057D25C..0x0057D260), which can send a new StartOfAnimation; the stack runs the idle that tick, so later tags are off by one; the live-idle entry rests on the invented StreamLive seam (M7-017); the UpdateLiveAnimation error path continues where the engine returns. Earlier note: Settled (C5): +0x64 is set to 1 by an idle's InitStream tail; the Count-top flush refreshes the budgets before the drain; HasAnimationForTrigger is HasResponse.
+* outstanding: R-BEH2 batch 2 (2026-10-03): the StreamLive self-push and short-circuit are removed and the UpdateLiveAnimation S4 error path now returns without the tail; carrying is wired at CozmoAnimations from Motion.IsCarryingObject; GetParam/SetParam run the lazy default-set and SetParam clamps to GetParamRange; DesiredFaceDistortion (S1 step 2) has no source. | earlier: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. when a clip's loops run out the engine clears +0x38 and branches past the idle-stack test to HaveLayersToSend/StreamLayers (0x0057D25C..0x0057D260), which can send a new StartOfAnimation; the stack runs the idle that tick, so later tags are off by one; the live-idle entry rests on the invented StreamLive seam (M7-017); the UpdateLiveAnimation error path continues where the engine returns. Earlier note: Settled (C5): +0x64 is set to 1 by an idle's InitStream tail; the Count-top flush refreshes the budgets before the drain; HasAnimationForTrigger is HasResponse.
 
 **M5-030 — Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks** (live path)
 
@@ -662,7 +662,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The ProceduralLive idle is streamed as A29 says (the live animation as +0x34, InitStream(live, 0xFF), UpdateStream(storeFace = 0)); its keyframes come from the M7 idle behaviour through StreamLive. FaceLayerManager.AddOrUpdateEyeShift and GenerateEyeShift(x, y, xMax, yMax, ...) are gap1 K2/K10 (the caller's xMax/yMax replaced by the default face's 17/12). Verify round 1 (2026-09-25, corrections C1..C3, gap4): AnimationScheduler.UpdateLiveAnimationLocked is gap4 L1..L7: the six timers as duration/spacing pairs zeroed by the ctor and kept across idle changes; the gates (+0x194, +0x44 >= GetParam<int>(2) unsigned, picking or placing) returning with no decrement; per track body → lift → head the countdown (duration -= 60 while the MovementComponent flag, a lock, carrying for the lift, or duration + spacing > 0); the draws in the L4..L6 order on the context RNG (RandIntInRange, RandDblInRange(0, 1) for the straight fraction); the LiveIdleTurn eye shift through AddOrUpdateEyeShift and its removal with RemoveEyeShift(tag, 0); the head angle (s8)trunc(robot+0x2FC·57.2958f); keyframes with trigger 0 appended by AddKeyFrameToBack with no order check (L7, a failure logging LiveUpdateFailed). The robot inputs are wired from the last RobotState (status bit 2, IS_MOVING, LIFT_IN_POS, HEAD_IN_POS), MovementComponent's track locks and the head angle (CozmoAnimations). The live idle's wire lifecycle is L8 (M5-027). Verify round 2 (2026-09-25, correction C4): the head angle is (s8)trunc(robot+0x2FC · 0x42652EE1) ([0x0057DB2C], loaded at 0x0057D838); the LiveIdleTurn x sign is the int16 speed's sign bit, so a speed of 0 gives + (verified at 0x0057D790..0x0057D7AA).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
 * evidence: A35 0x0057D5F8..0x0057DA82; gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4
-* outstanding: CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.
+* outstanding: R-BEH2 batch 2 (2026-10-03): the StreamLive self-push and short-circuit are removed and the UpdateLiveAnimation S4 error path now returns without the tail; carrying is wired at CozmoAnimations from Motion.IsCarryingObject; GetParam/SetParam run the lazy default-set and SetParam clamps to GetParamRange; DesiredFaceDistortion (S1 step 2) has no source. | earlier: CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.
 
 **M5-031 — Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise** (live path)
 
@@ -931,57 +931,57 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M7-005 — Blink is a fixed seven-frame squash table emitted as an eight-keyframe track** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs`
 * effect: blink shape, timing or composition differs
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Blink is the seven-frame squash table (BlinkFrames) combined multiplicatively onto the base face by IdleBehavior.BlinkPose; M5 owns ProceduralFace::Combine.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ProceduralFaceDrawer::GetNextBlinkFrame 0x00585f18; blink table 0x00c5aad8 (7 x 16 bytes: scale-x, scale-y, duration ms, action); action byte list 0x00c5ab48 (LowerLidY, LowerLidBend, LowerLidAngle, UpperLidY, UpperLidBend, UpperLidAngle); restore frame duration 33 at 0x00586190; FaceLayerManager::GenerateBlink 0x0058d2ac; ProceduralFace::Combine 0x005846a8
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. IdleBehavior is not on the production path (only Cozmo.Conformance builds it); it delivers the face outside the stream on the caller's clock (the engine applies layers per streamed frame, 0x58e644/0x58e720); it runs a second blink generator beside M5's KeepFaceAlive; the scanline toggle (0x5861c4) and the RandIntInRange(7500,30000) fallback (0x58d506..0x58d544) are missing.
+* outstanding: built, awaiting strong verification: the blink table (0xC5AAD8), GenerateBlink, the scanline toggle (0x5861c4), the 7500..30000 spacing fallback and per-frame layer application are the streamer port's (M5), reached through AnimationScheduler.Advance with ProceduralLive on top; IdleBehavior's own generator is retired. Still open: the DesiredFaceDistortion glitch source (TrackLayerComponent::Update, 0x57cf7a) has no component here; see M7-017 for the pusher.
 
 **M7-006 — Eye shift moves the whole face through LookAt with the engine bounds** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs`
 * effect: idle gaze displacement or clipping differs
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Eye shift moves the whole face through IdleBehavior.LookAt/Gaze with the engine bounds and the 5/5 xMax/yMax the dart passes.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: FaceLayerManager::GenerateEyeShift 0x0058d100; ProceduralFace::LookAt 0x00584158
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. SetFacePosition's clamp to the eye bounding box (0x583b20..0x583bf8, called at 0x584168) is omitted, justified by an uncomputed assumption; the engine clamps against the layer's default face (0x58d18e).
+* outstanding: built, awaiting strong verification: LookAt rebuilt as the engine's float32 sequence (0x584158..0x58428a), SetFacePosition's clamp order (0x583b20..0x583bfe), GetEyeBoundingBox (0x584568..0x58463a), GenerateEyeShift's 17/12 limits (0x58cfc4); tests pinned to bit patterns. Still open: none known beyond the shared items in M7-017.
 
 **M7-007 — The eye dart interpolates to a persistent gaze and does not fade to centre** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs`
 * effect: the gaze returns early, snaps, or removes the wrong layer
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | The eye-dart layer is persistent: IdleBehavior.Dart adds a layer with EndsAtMs = +infinity that ramps to its gaze and holds; no fade to centre.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ITrackLayerManager::ApplyLayersToFrame 0x0058e644; AddToPersistentLayer 0x0058eaa0; FaceLayerManager::GetFaceHelper 0x0058cd80; KeepFaceAlive persistent dart call 0x0058d3e2
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the first dart shows nothing for the drawn duration and then snaps (0x58d220, 0x58cd9e..0x58ce22); the stack ramps from identity; the ramp runs on the layer clock, not the wall clock (0x58e688, 0x58e71a..0x58e724).
+* outstanding: built, awaiting strong verification: the first dart shows nothing until its drawn duration then snaps; layer clock +33 per streamed frame, frozen while held (0x58cd9e, 0x58ce22, 0x58d220, 0x58e688, 0x58e71a..0x58e724); tests drive the streamer. Still open: none known beyond M7-017.
 
 **M7-008 — Idle timers are integer milliseconds advanced by the engine's 60 ms tick** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
 * effect: idle actions fire at different times or are rescheduled when their track is busy
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Idle timers are whole milliseconds advanced by EngineTickMs = 60; IdleBehavior.Tick decrements each counter and does not reschedule a blocked one.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: CozmoInstanceRunner::Run 0x0065b3a8 uses 0x03938700 ns; UpdateLiveAnimation decrements at 0x0057d650/0x0057d68a/0x0057d6ba; KeepFaceAlive decrements at 0x0058d388; idle clock increments at 0x0057d444
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the idle-motion gates are missing: docking (robot+0x280 +4), in-position (MovementComponent +9/+0xb/+0xa), AreAnyTracksLocked and carrying (0x57d606..0x57d6b8); the 60 ms tick is synthesized from the wall clock, with a catch-up cap no source has; the +0x44 clock resets differ (0x57d444); tests circular.
+* outstanding: built, awaiting strong verification: UpdateLiveAnimation gates and decrements per the check (flag +0x194, picking/placing and +0x44 < GetParam<int>(2) return with no decrement; movement flag, locked tracks, countdown and (lift) carrying decrement by 60), the 60 ms tick, float32 head angle with the s8 wrap, the lazy default-set in GetParam/SetParam, carrying wired at the call site from Motion.IsCarryingObject (set only when a ManipulationSystem is built). Still open: the engine's global error-flag byte at 0x57d0c8..0x57d0e6 is not modelled; the production clock is Environment.TickCount64, not BaseStationTimer's origin, so float32 quantisation differs after long uptime.
 
 **M7-009 — Idle head and lift are keyframes of the live animation** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
 * effect: idle head/lift uses different wire messages or variability
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Idle head and lift are StreamLive keyframes (HeadKeyframe/LiftKeyframe) with the tunable variability, not motor commands.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: head keyframe 0x0057d85c/append 0x0057d866; lift keyframe 0x0057d9c0/append 0x0057d9ca; head current angle Robot+0x2fc and degrees constant 0x0057db2c = 0x42652ee1 (57.295780); vcvt.s32.f32 truncation 0x0057d84e; idle params 13/14 lift mean 35.0/variability 8.0, 9/10 duration 50..500, 11/12 gap 250..2000; 19 head variability 6.0, 15/16 duration 50..500, 17/18 gap 250..1000; HeadAngleKeyFrame ctor 0x004f8be4 / GetStreamMessage 0x004f8c08 (animHeadAngle 0x93); LiftHeightKeyFrame ctor 0x004f8f5c / GetStreamMessage 0x004f8f80 (animLiftHeight 0x94)
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the same missing idle-motion gates as M7-008 (0x57d61c..0x57d6b8); the head/lift test never exercises IdleBehavior.
+* outstanding: built, awaiting strong verification: idle head and lift keyframes (multiplier 0x42652ee1, truncation, 35/8/6, parameter indices, order body, lift, head) through the streamer port with the engine's gates. Still open: none known beyond M7-008.
 
 **M7-010 — Idle body shuffle and its paired turn eye shift** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
 * effect: the robot stays still or shuffles/looks with different values
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Idle body shuffle draws straight/turn, speed, duration and the paired LiveIdleTurn eye layer; IdleBehavior.Perform/TurnEyeShift.
 * best authority: AnimationStreamer::UpdateLiveAnimation 0x0057d5f8, read
 * evidence: body decision and draws 0x0057d6cc..0x0057d8f4; straight fraction 0.5 (param 8) 0x0057dbba; speed RandIntInRange(-10,10) 0x0057d6f0; duration 250..1500 0x0057d6ce; gap 100..1000 0x0057d95a; BodyMotionKeyFrame 0x004fb170 radius 0x7fff straight / 0 turn; GetStreamMessage 0x004fba8c (animBodyMotion 0x99); turn eye layer 0x0057d7fc; x sign(speed)*RandIntInRange(0,21), y RandIntInRange(-10,10), duration 33 ms, 64/32/1.1/0.85/0.1; straight removal 0x0057d8d2
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the turn eye shift is a persistent layer (AddOrUpdateEyeShift 0x64f41a/0x64f472, removed only by RemoveEyeShift 0x57d8d2), not a 33 ms transient; shuffles fire and are dropped while a clip streams (the engine never reaches UpdateLiveAnimation then, 0x57cff6..0x57d000); tests assert the opposite.
+* outstanding: built, awaiting strong verification: body shuffle and the persistent 'LiveIdleTurn' eye shift (AddOrUpdateEyeShift 0x64f3c8, removed by a straight shuffle 0x57d8d2); the dart gate holds while any other layer exists (0x58d3ac..0x58d3c4); the 64/32 arguments are discarded by GenerateEyeShift. Still open: none known beyond M7-008.
 
 **M7-012 — Mood schema, decay graphs, action-result events, affectors, update and game output** (live path)
 
@@ -999,7 +999,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | Emotion clamp to [-1,1], the three decay-clock reset tests, GraphEvaluator2d::EvaluateY and the old<=1e-5 raw-new multiply are in MoodState/DecayGraph; the prior wrong wording is corrected.
 * best authority: libcozmoEngine.so plus shipped mood graphs
 * evidence: Emotion::Add 0x00679618; Emotion::Update 0x006795a4; old<=1e-5 raw-new multiply at 0x006795ee..0x006795fc; GraphEvaluator2d::EvaluateY 0x00804bd0; mood_config.json decayGraphs
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. EvaluateY returns the left node's y when the gap is <= 1e-5 (0x804c0c..0x804c3c), not the right one at <= 0; MoodState.Trigger decays before adding, which TriggerEmotionEvent 0x67b85c never does; double in place of float.
+* outstanding: built, awaiting strong verification: Mood in float32: Emotion::Update/Add, EvaluateY (left-node rule at gap <= 1e-5f), MoodManager::Update's 1e-4f dt floor, no decay in TriggerEmotionEvent, the 128-entry {value, dt} history ring (0x679406..0x679420, 0x67945c, GetHistoryValueTicksAgo 0x6794f8) wired to M8-003's trackDelta, the built-in decay curve (0,1),(15,1),(60,0.9f),(150,0.6f),(300,0) when no graph is configured (InitDecayGraphs 0x67cdc3; not re-read by the verifier of round 1). Still open: MoodState's public surface stays double (exact widening of the engine float); Manipulation/Workouts.cs (R-VIS) still refuses trackDelta and has no production caller to wire.
 
 **M7-014 — Reaction-lock manager lifetime and concrete per-class lock tables** (live path)
 
@@ -1021,21 +1021,21 @@ Each of these is a question already answered. The original's behaviour is establ
 
 **M7-016 — The idle face composes a stack of named persistent and transient layers** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/IdleBehavior.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs`
 * effect: simultaneous blink, dart and turn layers overwrite rather than compose
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | The idle face composes a list of named layers (IdleBehavior.FaceLayer) oldest-first onto a stable base, so a blink and a dart at once compose rather than overwrite.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: ITrackLayerManager::ApplyLayersToFrame 0x0058e644; ProceduralFace::Combine 0x005846a8; KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the composed face goes out as a direct FaceImage on the caller's clock, not per streamed frame (0x58e70a..0x58e724); the keep-alive runs twice (M5's and IdleBehavior's); blinks while a clip streams (the engine gates KeepFaceAlive on +0x38 == 0, 0x57cfb8..0x57cff2).
+* outstanding: built, awaiting strong verification: the idle face is composed per streamed frame by the streamer port (ApplyFaceLayersToAnim), the keep-alive gates are +0x88 > 0, +0x38 == 0 and the idle/timeout gate in float32; the streamer's own generator is the only one. Still open: none known beyond M7-017.
 
 **M7-017 — The exact live-animation wire lifecycle used by idle behavior** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
 * effect: idle keyframes open, frame, interleave or close differently on the wire
-* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | The live-animation caller lifecycle: IdleBehavior.Perform appends keyframes through AnimationScheduler.StreamLive, which pushes ProceduralLive on the idle stack and streams the frames under M5 budgets.
+* rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | The idle is the streamer's UpdateLiveAnimation port with ProceduralLive on the idle stack; IdleBehavior is retired (R-BEH2 batch 2).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: AnimationStreamer::UpdateLiveAnimation 0x0057d5f8; Update 0x0057ce5c; InitStream 0x0057b674; UpdateStream 0x0057c84c; SendStartOfAnimation 0x0057c400; SendBufferedMessages 0x0057bf60
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-M7-M8.md; the manager checked the central claims in the binary): the settlement did not hold. the entry into the live lifecycle is invented: StreamLive pushes ProceduralLive itself with an invented lock and disables the streamer's gated port (AnimationScheduler UpdateLiveAnimationLocked); the engine reaches the live path only with ProceduralLive already on top (0x57d064..0x57d080), on the +0x44 clock (0x57d000, 0x57d442..0x57d446).
+* outstanding: built, awaiting strong verification: StreamLive no longer pushes ProceduralLive and the 'StreamLive' short-circuit is removed; the gated UpdateLiveAnimation port (M5-030) runs whenever ProceduralLive is on top; the S4 error path returns without the tail; the idle clock +0x44 is zeroed while streaming and advances 60 per idle tick. The engine has no pusher of 0x198 (RECOVERABLE_GAP, no record yet: production never reaches the live path with the default Count stack top; tools and tests push through PushIdleAnimation); DesiredFaceDistortion (S1 step 2) has no source (MISSING).
 
 **M7-018 — Shipped behaviour configuration and BehaviorClass factory binding** (live path)
 

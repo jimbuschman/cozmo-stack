@@ -209,8 +209,10 @@ public class CorrectionsTests
         var model = MoodModel.Load(obb);
         var mood = new MoodState(model);
         var down = model.Events.First(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value < 0));
-        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.6; i++) mood.Trigger(down.Name, 0);
-        Assert.True(mood[EmotionType.Confident] < -0.6);
+        // the mood is the engine's float (R-BEH2 batch 2, M7-013): six -0.1f steps land on -0.6f exactly, which is not below the
+        // strategy's -0.6f threshold, so the loop goes clearly past it
+        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.7; i++) mood.Trigger(down.Name, 0);
+        Assert.True(mood[EmotionType.Confident] < -0.7);
         var ctx = Context(robot, mood);
         using var manager = new BehaviorManager(ctx);
 

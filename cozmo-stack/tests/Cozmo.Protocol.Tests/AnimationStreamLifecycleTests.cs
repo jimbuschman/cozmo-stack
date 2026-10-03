@@ -45,6 +45,7 @@ public class AnimationStreamLifecycleTests
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
+        s.PushLiveQuietly();
         Assert.True(s.StreamLive(new BodyKeyframe(0, 1000, "STRAIGHT", 40), 0));
         Assert.Empty(sink.Log);
         s.Advance(0);
@@ -69,6 +70,7 @@ public class AnimationStreamLifecycleTests
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
+        s.PushLiveQuietly();
         s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0);
         s.Play(new AnimationClip { Name = "h", Keyframes = new List<Keyframe> { new HeadKeyframe(0, 100, 10, 0) }, Tracks = AnimationTrack.Head }, 0);
         s.Advance(0);
@@ -91,6 +93,7 @@ public class AnimationStreamLifecycleTests
     {
         var sink = new LogSink();
         var s = new AnimationScheduler(sink, new Random(1));
+        s.PushLiveQuietly();
         s.StreamLive(new BodyKeyframe(0, 100, "STRAIGHT", 40), 0);
         for (int i = 0; i <= 10; i++) s.Advance(60 * i);
         Assert.False(s.LiveBodyRunning);

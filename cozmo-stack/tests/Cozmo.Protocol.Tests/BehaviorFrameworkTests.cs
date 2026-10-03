@@ -1475,19 +1475,36 @@ public class BehaviorFrameworkTests
     }
 
     /// <summary>
-    /// M8-003: <c>MoodScorer::EvaluateEmotionScore</c> 0x0067c9b8 subtracts <c>Emotion::GetHistoryValueTicksAgo(60)</c> (<c>movs r1,#0x3c</c> 0x0067c9ee) for a
-    /// <c>trackDelta</c> scorer. MoodState keeps no emotion history and the inventory gives no writer for it, so the stack refuses, visibly, instead of
-    /// scoring from the current value (MISSING: M8-003 / M7-013).
+    /// M8-003 / M7-013: MoodScorer::EvaluateEmotionScore 0x0067c9b8 loads the value of the emotion (vldr s22,[r0,#0x18] 0x0067c9f0), calls
+    /// Emotion::GetHistoryValueTicksAgo(60) (movs r1,#0x3c 0x0067c9ee, call 0x0067c9f4), subtracts (vsub.f32 0x0067c9fc) and
+    /// evaluates the graph at that float. With the samples numbered s0 (the constructor sample {0,0}) to sN, 60 ticks ago is s(N - 59); a fresh mood
+    /// (N = 0, count 1 not above 60) answers s0 = 0.0f.
     /// </summary>
     [Fact]
-    public void ATrackDeltaScorerIsRefusedNotApproximated()
+    public void ATrackDeltaScorerSubtractsTheValueSixtyTicksAgoFromTheHistoryRing()
     {
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
-        var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(new MoodModel()) };
-        var entry = new ScoredBehaviorEntry("a", 2.0, null, null, null,
-            new[] { new EmotionScorer(EmotionType.Happy, new Graph2d(new[] { (0.0, 1.0), (1.0, 1.0) }), TrackDelta: true) });
-        Assert.Throws<NotSupportedException>(() => entry.Evaluate(new Fake("a", 1), ctx, 50, null, null, null));
+        var model = new MoodModel();
+        model.AddDecayGraph(new DecayGraph("Happy", new[] { (0.0, 1.0), (1000.0, 0.0) }));
+        model.AddEvent(new EmotionEvent("E", new[] { new EmotionAffector(EmotionType.Happy, 0.8) }));
+        var mood = new MoodState(model);
+        var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Mood = mood };
+        // y = x over [-1, 1] (a node pair, EvaluateY 0x00804BD0: t = (x - x0) / gap, y = y0 + t * (y1 - y0), float)
+        var graph = new Graph2d(new[] { (-1.0, -1.0), (1.0, 1.0) });
+        var entry = new ScoredBehaviorEntry("a", 2.0, null, null, null, new[] { new EmotionScorer(EmotionType.Happy, graph, TrackDelta: true) });
+
+        // fresh: current 0 - s0 0 = 0 -> y = -1 + (0 - -1) / 2 * 2 = 0 -> the veto (|y| < 1e-5, 0x0067ca50) makes the score 0
+        Assert.Equal(0.0, entry.Evaluate(new Fake("a", 1), ctx, 50, null, null, null));
+
+        mood.Trigger("E", 0);
+        var vals = new List<float> { 0f };
+        for (int t = 1; t <= 100; t++) { mood.Advance(t); vals.Add((float)mood[EmotionType.Happy]); }
+        float x = vals[100] - vals[100 - 59];
+        Assert.True(x < 0 && x > -1);
+        float tt = (x - -1f) / 2f;                                   // EvaluateY: the division first, then the multiply, then the add
+        float y = -1f + tt * (1f - -1f);
+        Assert.Equal((double)y, entry.Evaluate(new Fake("a", 1), ctx, 50, null, null, null));
     }
 
     // ------------------------------------------------------------------ M8-012: BehaviorManager::Update

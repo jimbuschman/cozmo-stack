@@ -74,6 +74,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
         layer.Track.AddKeyFrameToBack(kf);
     }
 
+    // fidelity: M7-007, M7-016
     /// <summary>
     /// L5 / Q1.4 ApplyLayersToFrame, per layer in ascending tag order: fn(track, start, stream); stream += 33; then, if
     /// the track is at its end: persistent and empty → a warning and the persistent flag cleared; persistent → the
@@ -118,7 +119,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     }
 }
 
-// fidelity: M5-028, M5-029, M5-031
+// fidelity: M5-028, M5-029, M5-031, M7-005, M7-006, M7-007, M7-016
 /// <summary>
 /// <c>FaceLayerManager</c>: the face layers, the keep-alive (KeepFaceAlive, blinks, darts) and the eye shifts
 /// (gap1 K1..K10, L7; gap3 K5; A33).
@@ -149,6 +150,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     public byte AddPersistentLayer(string name, StreamTrack<FaceFrame> track) => AddPersistentLayer(name, track, CopyFrame);
     public void AddToPersistentLayer(byte tag, FaceFrame kf) => AddToPersistentLayer(tag, kf, (k, t) => k.Trigger = t);
 
+    // fidelity: M7-016, M7-008
     /// <summary>
     /// A33 / K4..K6 KeepFaceAlive(params), per Update: both timers lose 60. The dart: when EyeDartMaxDistance &gt; 0, the
     /// dart timer ≤ 0, and there is no layer or only the dart's own: GenerateEyeShift (K1); with a dart tag,
@@ -207,6 +209,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
         return new FaceFrame((uint)dur, face);
     }
 
+    // fidelity: M7-006, M7-010
     /// <summary>
     /// K2 GenerateEyeShift(x, y, xMax, yMax, up, down, outer, dur): the caller's xMax/yMax are replaced by
     /// max(xmin, 128 − xmax) and max(ymin, 64 − ymax) of a default face's eye box (17 and 12), then LookAt with those;
@@ -223,6 +226,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
         return new FaceFrame(dur, face);
     }
 
+    // fidelity: M7-007, M7-010
     /// <summary>
     /// K10 AddOrUpdateEyeShift(tag, name, x, y, dur, xMax, yMax, up, down, outer): the K2 keyframe; with a tag,
     /// AddToPersistentLayer; otherwise a new track, with a default keyframe at trigger 0 first when dur ≠ 0, then the
@@ -278,6 +282,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
 
     private static readonly object BlinkGate = new();
 
+    // fidelity: M7-005
     /// <summary>
     /// K8: the blink table at 0x00C5AAD8, {heightMul, widthMul, dur, action}: (0.85, 1.05, 33, 0), (0.60, 1.20, 33, 0),
     /// (0.10, 2.50, 33, 0), (0.05, 5.00, 33, 1), (0.15, 2.00, 33, 2), (0.70, 1.20, 33, 3), (0.90, 1.00, 100, 3).
@@ -487,19 +492,58 @@ public sealed class LiveIdleParams
 {
     private readonly float[] _p = new float[(int)LiveIdleParam.NumParameters];
 
+    /// <summary>
+    /// The streamer's +0x04 byte: the defaults have been requested. The engine's GetParam&lt;T&gt;, the base SetParam (0x0057C178:
+    /// <c>ldrb [r4,#4]; strb 1; vtable[0]</c>, 0x0057C18E..0x0057C19C) and the keep-alive block (0x0057CFDA..0x0057CFEA) all set it
+    /// and call SetDefaultParams (vtable slot 0) when it is clear (GetParam 0x0057DCE6..0x0057DCF4).
+    /// </summary>
+    internal bool DefaultsSet { get; set; }
+
+    /// <summary>The lazy default-set: when +0x04 is clear, set it and run SetDefaultParams.</summary>
+    internal void EnsureDefaults()
+    {
+        if (DefaultsSet) return;
+        DefaultsSet = true;
+        SetDefaultParams();
+    }
+
+    /// <summary>
+    /// <c>HasSettableParameters::GetParamRange</c> (0x0057F13C): a lookup in the map at this+0x20, and when the parameter is not
+    /// there the static <c>fullRange</c> (0x00C5A380) = {0xFF7FFFFF, 0x7F7FFFFF}, -FLT_MAX..FLT_MAX. Nothing in the binary
+    /// registers a range for this parameter set (no SetParamRange symbol), so every parameter has the full range.
+    /// </summary>
+    internal static readonly float RangeMin = BitConverter.Int32BitsToSingle(unchecked((int)0xFF7FFFFF));
+    internal static readonly float RangeMax = BitConverter.Int32BitsToSingle(0x7F7FFFFF);
+
+    /// <summary>Back to the constructed state: every tunable 0 and +0x04 clear (the streamer is deleted and rebuilt with its Robot).</summary>
+    internal void ResetToConstructed()
+    {
+        Array.Clear(_p);
+        DefaultsSet = false;
+    }
+
     public float this[LiveIdleParam p]
     {
-        get => _p[(int)p];
+        get { EnsureDefaults(); return _p[(int)p]; }      // GetParam: the lazy default-set first (0x0057DCE6)
         set => SetParam(p, value);
     }
 
-    /// <summary>SetParam: BlinkSpacingMaxTime_ms is clamped to 30000 (A34, 0x0057C064..0x0057C0C6).</summary>
+    /// <summary>
+    /// SetParam: <c>AnimationStreamer::SetParam</c> (0x0057C064) replaces a BlinkSpacingMaxTime_ms above 30000 by 30000
+    /// (0x0057C0C6) and calls the base <c>HasSettableParameters::SetParam</c> (0x0057C178), which runs the lazy default-set first
+    /// (0x0057C18E..0x0057C19C), then clamps into GetParamRange (<c>(max &lt;= v) ? max : v</c>, then <c>(min &gt;= that) ? min : that</c>,
+    /// 0x0057C1B4..0x0057C1D6; a NaN gives max) and stores. A value set before the first Update therefore survives the defaults.
+    /// </summary>
     public void SetParam(LiveIdleParam p, float value)
     {
-        if (p == LiveIdleParam.BlinkSpacingMaxTime_ms) value = MathF.Min(value, 30000f);
-        _p[(int)p] = value;
+        if (p == LiveIdleParam.BlinkSpacingMaxTime_ms && 30000f < value) value = 30000f;
+        EnsureDefaults();
+        float v = RangeMax <= value || float.IsNaN(value) ? RangeMax : value;
+        v = RangeMin >= v ? RangeMin : v;
+        _p[(int)p] = v;
     }
 
+    // fidelity: M7-004
     /// <summary>
     /// SetDefaultParams (A34): blink 3000/4000; TimeBeforeWiggle 1000; body spacing 100/1000, duration 250/1500, speed 10,
     /// straight fraction 0.5; lift duration 50/500, spacing 250/2000, mean 35, variability 8; head duration 50/500,
