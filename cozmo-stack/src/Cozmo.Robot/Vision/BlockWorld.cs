@@ -377,54 +377,189 @@ public sealed class ObservableObject
         return false;
     }
 
-    public bool IsVisibleFrom(CameraModel camera, double maxFaceNormalAngleRad = 0.785398, double minMarkerImageSizePx = 10, double pad = 0)
-        => IsVisibleFrom(camera, maxFaceNormalAngleRad, minMarkerImageSizePx, pad, pad, out _);
+    public bool IsVisibleFrom(CameraModel camera, double? maxFaceNormalAngleRad = null, double minMarkerImageSizePx = 10, double pad = 0)
+        => IsVisibleFrom(camera, maxFaceNormalAngleRad ?? BlockWorld.VisibilityNormalAngleRad, minMarkerImageSizePx, pad, pad, out _);
 
     /// <summary>
-    /// <c>KnownMarker::IsVisibleFrom</c> 0x0087E4A8 for one marker, in the engine's own order: pose, then
-    /// the normal (4), then the projected size (5), then the field of view (6), then the occluders (7),
-    /// and finally, when <paramref name="requireSomethingBehind"/> is set and nothing in the camera's
-    /// occluder list lies behind the marker's quad, NOTHING_BEHIND (8, at 0x0087E87A). The depth it asks
-    /// <c>IsAnythingBehind</c> about is the mean of the four corner depths (0x0087E850..0x0087E864).
+    /// <c>KnownMarker::IsVisibleFrom</c> 0x0087E4A8 for one marker, in the engine's own order and in binary32: the marker's
+    /// pose with respect to the camera; behind the camera when its origin's camera-frame Z (<c>Transform3d+0x28</c>, 0x0087E514)
+    /// is not positive (3); the normal <c>(c1-c0).MakeUnitLength() x (c2-c0).MakeUnitLength()</c> of the camera-frame corners
+    /// dotted with <c>Z_AXIS_3D</c> (0x0087E550..0x0087E622): a positive dot, or <c>acosf(-dot)</c> above the angle, is 4
+    /// (0x0087E646); the two projected diagonals <c>|p3-p0|</c> then <c>|p1-p2|</c> against the minimum size (5,
+    /// 0x0087E6F2..0x0087E7B6); <c>IsWithinFieldOfView</c> on p0, p2, p1, p3 (6); <c>IsOccluded</c> on p0, p2, p1, p3 with the
+    /// corners' camera-frame Z (7, 0x0087E800..0x0087E836); and finally, when <paramref name="requireSomethingBehind"/> is set
+    /// and nothing in the camera's occluder list lies behind the quad, NOTHING_BEHIND (8, at 0x0087E87A), asked about the depth
+    /// <c>(((z0+z2)+z1)+z3)*0.25f</c> (0x0087E850..0x0087E864).
+    ///
+    /// Boundaries still in double: the stack's <see cref="Pose3d"/> (the marker pose in the camera frame is composed in double and rounded to
+    /// binary32 per coordinate) and the <see cref="OccluderList"/>, whose bodies (0x00878278, 0x008783C8) are not the engine's. Projection
+    /// (<see cref="ProjectPoint"/>) and the field-of-view test (<see cref="IsWithinFieldOfView"/>) are the engine's, in binary32; a corner with z &lt;= 0
+    /// projects to NaN, which fails the field-of-view test (reason 6), not reason 3.
     /// </summary>
+    // fidelity: M11-008, M11-010
     public NotVisibleReason MarkerVisibility(KnownMarker m, CameraModel camera, double maxFaceNormalAngleRad,
                                              double minMarkerImageSizePx, double xPad, double yPad,
                                              bool requireSomethingBehind = false)
     {
-        var corners = m.CornersInWorld(Pose);
-        var centre = (corners[0] + corners[1] + corners[2] + corners[3]) / 4;
-        var normal = (Pose.Rotation * m.NormalOnObject).Normalized();
-        var toCamera = (camera.Pose.Translation - centre);
-        if (toCamera.Length < 1e-9) return NotVisibleReason.BehindCamera;
-        double cos = normal.Dot(toCamera.Normalized());
-        if (Math.Acos(Math.Clamp(cos, -1, 1)) > maxFaceNormalAngleRad) return NotVisibleReason.NormalNotAligned;
-        var px = new Vec2[4];
+        float maxAngle = (float)maxFaceNormalAngleRad, minSize = (float)minMarkerImageSizePx;
+        var markerWorld = Pose.Compose(m.PoseOnObject);
+        var markerInCamera = camera.Pose.Inverse().Compose(markerWorld);
+        // 0x0087E514..0x0087E520: s0 = Transform3d[+0x28] (translation z); vcmpe s0,#0 / bls: not positive -> 3 (NaN continues).
+        if ((float)markerInCamera.Translation.Z <= 0f) return NotVisibleReason.BehindCamera;
+
+        var local = m.Corners3d();
+        var cx = new float[4]; var cy = new float[4]; var cz = new float[4];
         for (int i = 0; i < 4; i++)
         {
-            var p = camera.Project(corners[i]);
-            if (p is null) return NotVisibleReason.BehindCamera;
-            px[i] = p.Value;
+            var c = markerInCamera.Apply(local[i]);
+            cx[i] = (float)c.X; cy[i] = (float)c.Y; cz[i] = (float)c.Z;
         }
-        // projected size: sqrt of the quad's area (the engine takes sqrt of the projected area)
-        var q = new[] { px[0], px[2], px[3], px[1] };
-        double area = 0;
-        for (int i = 0; i < 4; i++) area += q[i].X * q[(i + 1) % 4].Y - q[(i + 1) % 4].X * q[i].Y;
-        if (Math.Sqrt(Math.Abs(area) / 2) < minMarkerImageSizePx) return NotVisibleReason.TooSmall;
-        foreach (var p in px)
-            if (p.X < -xPad || p.Y < -yPad || p.X > camera.Calibration.Columns + xPad || p.Y > camera.Calibration.Rows + yPad)
-                return NotVisibleReason.OutsideFieldOfView;
+        // 0x0087E550..0x0087E5A0: b = (c2 - c0).MakeUnitLength(), a = (c1 - c0).MakeUnitLength()
+        float bx = cx[2] - cx[0], by = cy[2] - cy[0], bz = cz[2] - cz[0];
+        MakeUnitLength(ref bx, ref by, ref bz);
+        float ax = cx[1] - cx[0], ay = cy[1] - cy[0], az = cz[1] - cz[0];
+        MakeUnitLength(ref ax, ref ay, ref az);
+        // 0x0087E5A8..0x0087E5E4: n = a x b, every product rounded to binary32
+        float nx = ay * bz - by * az;
+        float ny = az * bx - bz * ax;
+        float nz = by * ax - ay * bx;
+        // 0x0087E5E8..0x0087E61C: dot with Z_AXIS_3D = (0, 0, 1) (0x00842CF4..0x00842D08): (nx*0 + ny*0) + nz*1
+        float dot = nx * 0f + ny * 0f;
+        dot = dot + nz * 1f;
+        if (dot > 0f) return NotVisibleReason.NormalNotAligned;                       // 0x0087E622 bgt -> 4
+        // MISSING (libm f32 stand-in): the engine calls bionic acosf (0x0087E634); MathF.Acos is not claimed bit-equal to it.
+        float angle = MathF.Acos(-dot);
+        if (angle > maxAngle) return NotVisibleReason.NormalNotAligned;               // 0x0087E63C vcmpe s0,s18 / ble
 
-        var depths = new double[4];
-        for (int i = 0; i < 4; i++) depths[i] = camera.ToCamera(corners[i]).Z;
+        // Camera::Project3dPoints 0x0085E507: four Project3dPoint calls (0x0085E264), the return value ignored; a corner with z <= 0 is (NaN, NaN)
+        var px = new Vec2[4];
+        var pf = new float[8];
         for (int i = 0; i < 4; i++)
-            if (camera.Occluders.IsOccluded(px[i], depths[i])) return NotVisibleReason.Occluded;
+        {
+            ProjectPoint(camera.Calibration, cx[i], cy[i], cz[i], out pf[2 * i], out pf[2 * i + 1]);
+            px[i] = new Vec2(pf[2 * i], pf[2 * i + 1]);
+        }
+        // 0x0087E6F2..0x0087E730: d = p3 - p0; len = sqrtf((dx*dx) + (dy*dy)); 0x0087E74A vcmpe s0,s16 / bmi -> 5
+        float dx = pf[6] - pf[0], dy = pf[7] - pf[1];
+        float sq = dx * dx; sq = sq + dy * dy;
+        if (MathF.Sqrt(sq) < minSize) return NotVisibleReason.TooSmall;
+        // 0x0087E754..0x0087E792: d = p1 - p2, the same length test
+        dx = pf[2] - pf[4]; dy = pf[3] - pf[5];
+        sq = dx * dx; sq = sq + dy * dy;
+        if (MathF.Sqrt(sq) < minSize) return NotVisibleReason.TooSmall;
+
+        // 0x0087E7BA..0x0087E7FE: IsWithinFieldOfView(p0), (p2), (p1), (p3) with the u16 pads
+        ushort xp = (ushort)xPad, yp = (ushort)yPad;
+        foreach (int i in new[] { 0, 2, 1, 3 })
+            if (!IsWithinFieldOfView(pf[2 * i], pf[2 * i + 1], xp, yp, camera.Calibration.Columns, camera.Calibration.Rows))
+                return NotVisibleReason.OutsideFieldOfView;
+        // 0x0087E800..0x0087E832: IsOccluded(p0, z0), (p2, z2), (p1, z1), (p3, z3)
+        foreach (int i in new[] { 0, 2, 1, 3 })
+            if (camera.Occluders.IsOccluded(px[i], cz[i])) return NotVisibleReason.Occluded;
 
         if (requireSomethingBehind)
         {
-            double mean = (depths[0] + depths[1] + depths[2] + depths[3]) * 0.25;
+            float mean = cz[0] + cz[2] + cz[1] + cz[3];                                // 0x0087E850..0x0087E860: ((z0+z2)+z1)+z3
+            mean = mean * 0.25f;                                                       // 0x0087E864
             if (!camera.Occluders.IsAnythingBehind(px, mean)) return NotVisibleReason.NothingBehind;
         }
         return NotVisibleReason.IsVisible;
+    }
+
+    /// <summary>
+    /// <c>Camera::IsWithinFieldOfView(point, xPad, yPad)</c> 0x0085E13C..0x0085E1C6 (u16 pads, binary32): an INSIDE test with insets. NaN in x (isnanf 0x0085E158) or y
+    /// (0x0085E168) is false; otherwise <c>y &gt;= yPad &amp;&amp; x &gt;= xPad</c> (0x0085E180..0x0085E192), <c>x &lt; (cols - xPad)</c> (the u16 at +2, 0x0085E196..0x0085E1AC) and
+    /// <c>y &lt; (rows - yPad)</c> (the u16 at +0, 0x0085E1AE..0x0085E1C4). The upper bounds are exclusive and a pad shrinks the area.
+    /// </summary>
+    // fidelity: M11-010
+    internal static bool IsWithinFieldOfView(float x, float y, ushort xPad, ushort yPad, int columns, int rows)
+    {
+        if (float.IsNaN(x) || float.IsNaN(y)) return false;
+        if (!(y >= (float)yPad && x >= (float)xPad)) return false;
+        if (!(x < (float)((ushort)columns - xPad))) return false;
+        return y < (float)((ushort)rows - yPad);
+    }
+
+    /// <summary>
+    /// <c>Camera::Project3dPoint</c> 0x0085E264..0x0085E418 in binary32: <c>z &lt;= 0</c> (<c>vcmpe s0,#0 / bls</c>; a NaN z goes on) writes (NaN, NaN); otherwise x/z and y/z, then,
+    /// when the calibration holds distortion coefficients (the engine's vector, normally 8), the OpenCV radial and tangential terms in the engine's operation order
+    /// (0x0085E2AE..0x0085E37C): <c>1 + k0 r2 + k1 r4</c>, plus <c>k4 r6</c> from 5 coefficients, divided (as a multiply by the reciprocal) by <c>1 + k5 r2 + k6 r4 + k7 r6</c> with 8;
+    /// <c>xd = (radial x + 2xy k2) + (r2 + 2x^2) k3</c>, <c>yd = (radial y + (r2 + 2y^2) k2) + 2xy k3</c>; then <c>cx + fx xd</c> and <c>y: fy yd + cy</c>. The skew is not used.
+    /// A coefficient count of 1 to 3 reads past the engine's vector (undefined): reported MISSING once, the missing ones read as 0.
+    /// </summary>
+    // fidelity: M11-010
+    internal static void ProjectPoint(CameraCalibration cal, float x, float y, float z, out float px, out float py)
+    {
+        if (z <= 0f) { px = py = float.NaN; return; }
+        float xp = x / z, yp = y / z;
+        var d = cal.DistortionCoefficients;
+        int n = d.Length;
+        float xd = xp, yd = yp;
+        if (n != 0)
+        {
+            if (n < 4)
+                Behavior.SteppedBehavior.ReportMissing("Camera::Project3dPoint (0x0085E2AE..0x0085E33A) reads distortion coefficients 0..3 whatever the vector's length, i.e. heap past the end of a 1..3 element vector: the engine's value is undefined and not modelled; missing coefficients are read as 0");
+            float k0 = n > 0 ? (float)d[0] : 0f, k1 = n > 1 ? (float)d[1] : 0f, k2 = n > 2 ? (float)d[2] : 0f, k3 = n > 3 ? (float)d[3] : 0f;
+            float x2 = xp * xp, y2 = yp * yp;
+            float twoX = xp + xp, twoXsq = x2 + x2;
+            float r2 = y2 + x2;
+            float twoYsq = y2 + y2;
+            float twoXY = yp * twoX;
+            float num = k0 * r2;
+            float r4 = r2 * r2;
+            twoYsq = twoYsq + r2;
+            num = num + 1.0f;
+            float t = k1 * r4;
+            float rx = r2 + twoXsq;
+            num = num + t;
+            if (n >= 5)
+            {
+                float r6 = r2 * r4;
+                float t4 = r6 * (float)d[4];
+                num = num + t4;
+                if (n == 8)
+                {
+                    float a = r2 * (float)d[5];
+                    float b = r4 * (float)d[6];
+                    float c = r6 * (float)d[7];
+                    a = a + 1.0f;
+                    a = a + b;
+                    a = a + c;
+                    float inv = 1.0f / a;
+                    num = num * inv;
+                }
+            }
+            float sx = num * xp;
+            float sy = num * yp;
+            float tx = twoXY * k2;
+            float ty = rx * k3;
+            sx = sx + tx;
+            sx = sx + ty;
+            float ux = twoYsq * k2;
+            float uy = twoXY * k3;
+            sy = sy + ux;
+            sy = sy + uy;
+            xd = sx; yd = sy;
+        }
+        float fxp = (float)cal.FocalLengthX * xd;
+        float fyp = (float)cal.FocalLengthY * yd;
+        px = (float)cal.CenterX + fxp;
+        py = fyp + (float)cal.CenterY;
+    }
+
+    /// <summary>
+    /// <c>Point&lt;3,float&gt;::MakeUnitLength</c> 0x0050E0C0: <c>s = (x*x + y*y) + z*z</c>; only when <c>s &gt; 0</c> (a NaN or
+    /// non-positive sum leaves the point alone), <c>inv = 1.0f / sqrtf(s)</c> and each component is <c>inv * c</c>.
+    /// </summary>
+    // fidelity: M11-010
+    internal static void MakeUnitLength(ref float x, ref float y, ref float z)
+    {
+        float s = x * x;
+        s = s + y * y;
+        s = s + z * z;
+        if (!(s > 0f)) return;
+        float inv = 1.0f / MathF.Sqrt(s);
+        x = inv * x; y = inv * y; z = inv * z;
     }
 
     public override string ToString() => $"object {ObjectId} {Type} {PoseState} at {Pose.Translation} yaw={Pose.AngleAroundZ * 180 / Math.PI:F0}deg";
@@ -473,18 +608,20 @@ public sealed class BlockWorld
     public const double ClusterDistanceMm = 5.0;
 
     /// <summary>
-    /// 0.0872665 rad, 5 degrees: the angle threshold of the same call, built from <c>0x3DB2B8C3</c> at
+    /// 5 degrees as the engine's binary32: the angle threshold of the same call, built from <c>0x3DB2B8C3</c> at
     /// 0x00625498 through the <c>Radians</c> constructor at 0x006254E0.
     /// </summary>
     // fidelity: M11-006
-    public const double ClusterAngleRad = 0.0872665;
+    public const uint ClusterAngleBits = 0x3DB2B8C3;
+    public static readonly double ClusterAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)ClusterAngleBits));
 
     /// <summary>
-    /// 0.349066 rad, 20 degrees: the angle <c>ObjectPoseConfirmer::UpdatePoseInInstance</c> passes to
-    /// <c>ObservableObject::ClampPoseToFlat</c> (<c>0x3EB2B8C2</c> at 0x00505F16) for the docking object.
+    /// 20 degrees as the engine's binary32: the angle <c>ObjectPoseConfirmer::UpdatePoseInInstance</c> passes to
+    /// <c>ObservableObject::ClampPoseToFlat</c> (<c>0x3EB2B8C2</c>, movw/movt at 0x00505F10/0x00505F16) for the docking object.
     /// </summary>
     // fidelity: M11-006
-    public const double FlatClampAngleRad = 0.349066;
+    public const uint FlatClampAngleBits = 0x3EB2B8C2;
+    public static readonly double FlatClampAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)FlatClampAngleBits));
 
     /// <summary>
     /// The angle <c>CreateObjectsFromMarkers</c> clamps an active instance's pose to: <c>Radians(vtable[+0x1C]() * 0.0174533)</c>
@@ -507,8 +644,13 @@ public sealed class BlockWorld
     /// <summary>M11-004 / C3.3: the object-match rotation tolerance, pi/4 (thunk 0x4E0290, 0x3F490FDB).</summary>
     // fidelity: M11-004
     public const double ObjectMatchAngleRad = Math.PI / 4;
-    /// <summary>The visibility angle the world model and the cube-moved strategy use: 0.785398 rad (45 deg).</summary>
-    public const double VisibilityNormalAngleRad = 0.785398;
+    /// <summary>
+    /// The visibility angle the world model and the cube-moved strategy use: 45 deg as the engine's binary32 <c>0x3F490FDB</c>
+    /// (movw/movt 0x006220E2..0x006220EC in <c>CheckForUnobservedObjects</c>; 0x0060BCF0/0x0060BCFA in the cube-moved strategy).
+    /// </summary>
+    // fidelity: M11-008
+    public const uint VisibilityNormalAngleBits = 0x3F490FDB;
+    public static readonly double VisibilityNormalAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)VisibilityNormalAngleBits));
 
     /// <summary>
     /// <c>ObservableObject::GetMaxLocalizationDistance_mm</c> 0x004EF460: 250.0 (<c>0x437A0000</c>). <c>UpdatePoseInInstance</c> compares
@@ -930,6 +1072,9 @@ public sealed class BlockWorld
     /// recency comparison (0x0061ED82..0x0061ED8E, 0x0061EE12..0x0061EE36, return 0x0061EF1C).
     /// </summary>
     // fidelity: M11-004
+    /// <summary>An object's pose read under the world's lock, so a concurrent update is never seen half written.</summary>
+    internal Pose3d PoseOf(ObservableObject o) { lock (_gate) return o.Pose; }
+
     public ObservableObject? FindLocatedObjectHelper(BlockWorldFilter filter, Action<ObservableObject>? modifyFn, bool returnFirstOnly)
     {
         var f = filter.Clone();
@@ -2013,7 +2158,7 @@ public sealed class BlockWorld
     /// compares that with the angle it was given (0x0087736A..0x0087737E).
     /// </summary>
     // fidelity: M11-006
-    public static Pose3d ClampPoseToFlat(Pose3d pose, double toleranceRad = FlatClampAngleRad)
+    public static Pose3d ClampPoseToFlat(Pose3d pose, double? toleranceRad = null)
     {
         var r = pose.Rotation;
         // find the object axis closest to world Z
@@ -2022,7 +2167,7 @@ public sealed class BlockWorld
         int axis = 0;
         for (int i = 1; i < 3; i++) if (Math.Abs(comps[i]) > Math.Abs(comps[axis])) axis = i;
         double tilt = Math.Acos(Math.Clamp(Math.Abs(comps[axis]), 0, 1));
-        if (tilt > toleranceRad || tilt < 1e-9) return pose;
+        if (tilt > (toleranceRad ?? FlatClampAngleRad) || tilt < 1e-9) return pose;
         // rotate so that axis maps exactly onto ±Z: smallest rotation taking the current up vector to world Z
         var up = r.Column(axis) * Math.Sign(comps[axis]);
         var ez = new Vec3(0, 0, 1);

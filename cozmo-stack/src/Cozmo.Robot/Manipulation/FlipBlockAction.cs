@@ -16,7 +16,7 @@ namespace Cozmo.Robot.Manipulation;
 /// and a <c>DriveStraightAction(distance to the cube's centre + 20, 150, playAnim)</c> are added.
 /// <c>CheckIfDone</c> 0x0055F074 (M13-028): the embedded compound's Update first; when it is not RUNNING the object is marked Unknown and the result returned; when RUNNING and the object
 /// pose with respect to the robot has a 3-D norm below <b>40 mm</b> and +0x13C is still -1 it queues <c>MoveLiftToHeightAction(carry height, tolerance 5.0)</c> IN_PARALLEL
-/// (<c>QueueActionPosition</c> 5) and stores its id at +0x13C. (The "5.0" is the constructor's TOLERANCE, not a speed: see <see cref="LiftSpeedRadPerSec"/>.)
+/// (<c>QueueActionPosition</c> 5) and stores its id at +0x13C. (The "5.0" is the constructor's TOLERANCE, not a speed: 0x40A00000 at 0x0055EF42 / 0x0055F148.)
 /// </summary>
 // fidelity: M13-002
 public sealed class FlipBlockAction
@@ -37,14 +37,24 @@ public sealed class FlipBlockAction
     /// <summary>The tolerance <c>Init</c> passes <c>GetPreActionPoses</c>: the float 0x3DB2B8C2 (5 degrees; M12-031, 0x0055EE10..0x0055EE1C).</summary>
     // fidelity: M12-031
     public static readonly double InitAngleToleranceRad = BitConverter.UInt32BitsToSingle(0x3DB2B8C2);
+    // The MoveLiftToHeightAction(Robot&amp;, height, tolerance, variability) call sites (Init 0x0055EF3A..0x0055EF4A: r2 = [this+0x134] = 45, r3 = 0x40A00000 = 5.0, [sp] = 0; CheckIfDone 0x0055F148
+    // the same shape) pass 5.0 as the TOLERANCE in mm, and <c>CozmoMotion.SetLiftHeightAsync</c> already sends the game tolerance 5.0 (GameLiftToleranceMm, M4-016). The action's own speed, acceleration
+    // and duration are the MoveLiftToHeightAction constructor's defaults +0x8C = 10.0, +0x90 = 20.0, +0x88 = 0 (0x00548A68..0x00548A78, M4 MA13), which is what
+    // <c>SetLiftHeightAsync</c> sends when it is given no speed. M13-002's "speed 5.0" and this stack's 5 rad/s stand-in both misread that tolerance, so no speed is passed here any more.
+
     /// <summary>
-    /// The MoveLiftToHeightAction(Robot&amp;, height, tolerance, variability) call sites (Init 0x0055EF3A..0x0055EF4A: r2 = [this+0x134] = 45, r3 = 0x40A00000 = 5.0, [sp] = 0; CheckIfDone 0x0055F148
-    /// the same shape) pass 5.0 as the TOLERANCE in mm (<c>CozmoMotion.SetLiftHeightAsync</c> already uses the game tolerance 5.0, GameLiftToleranceMm, M4-016; it takes no tolerance argument). M13-002's "speed 5.0" misread that
-    /// tolerance as a speed. The action's own speed and acceleration (its ctor 0x0054899C stores +0x8C = 10.0 and +0x90 = 20.0) have roles that NO record confirms (MISSING), so this stack keeps the
-    /// value it always sent, 5 rad/s, as a visible UNSOURCED STAND-IN.
+    /// The three-D norm <c>FlipBlockAction::Init</c> (0x0055EED6..0x0055EEFA) and <c>CheckIfDone</c> (0x0055F0E6..0x0055F10A) take of the object pose's translation with respect to the robot
+    /// pose, in binary32: <c>vldr s0,[T+0x20]; vmul s0,s0,s0</c>, then <c>s0 + [T+0x24]^2</c>, then <c>+ [T+0x28]^2</c>, <c>vsqrt.f32</c>.
     /// </summary>
-    // fidelity: M13-028
-    public const float LiftSpeedRadPerSec = 5f;
+    // fidelity: M13-002
+    internal static float Norm3(Vec3 t)
+    {
+        float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+        float s = x * x;
+        s = s + y * y;
+        s = s + z * z;
+        return MathF.Sqrt(s);
+    }
 
     private readonly ManipulationSystem _m;
     public FlipBlockAction(ManipulationSystem m, uint objectId) { _m = m; ObjectId = objectId; }
@@ -82,9 +92,9 @@ public sealed class FlipBlockAction
     /// </summary>
     public int QueuedLiftCancelsNotModelled { get; private set; }
 
-    private async Task<ActionResult> RunEmbeddedCompound(double dist, CancellationToken cancel)
+    private async Task<ActionResult> RunEmbeddedCompound(float driveDistance, CancellationToken cancel)
     {
-        var lift = await _m.Robot.Motion.SetLiftHeightAsync((float)ApproachLiftHeightMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
+        var lift = await _m.Robot.Motion.SetLiftHeightAsync((float)ApproachLiftHeightMm, requireCalibration: false);
         if (lift.Result != MotionResult.Acknowledged)
         {
             var failure = LiftFailureResult(lift);
@@ -99,7 +109,7 @@ public sealed class FlipBlockAction
             _trace.Add("FlipBlockAction: the flip has ended; the embedded compound is not continued (stand-in for its destruction in the destructor, 0x0055ED68)");
             return ActionResult.CancelledWhileRunning;
         }
-        return await new DriveStraightAction(_m, dist + DrivePastMm, DriveSpeedMmps).RunAsync(cancel);
+        return await new DriveStraightAction(_m, driveDistance, DriveSpeedMmps).RunAsync(cancel);
     }
 
     /// <summary>
@@ -129,14 +139,14 @@ public sealed class FlipBlockAction
         if (!LiftRaised && _m.RobotPose() is { } now)
         {
             var t = obj.Pose.WithRespectTo(now).Translation;                                      // GetWithRespectTo at 0x0055F0E0
-            float norm = MathF.Sqrt((float)(t.X * t.X + t.Y * t.Y + t.Z * t.Z));                   // [T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt.f32
+            float norm = Norm3(t);                                                                 // [T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt.f32 (binary32)
             if (norm < (float)LiftTriggerDistanceMm)
             {
                 LiftRaised = true;                                                                // [this+0x13C] = the queued action's id
                 _trace.Add($"FlipBlockAction.CheckIfDone: within {LiftTriggerDistanceMm} mm (3-D), lift to carry height ({LiftPresets.CarryMm} mm) queued on the robot's action list; the flip does not wait on it");
                 // the queued action's byte +0x56 = 1 (0x0055F152..0x0055F154): IActionRunner::Update neither tests nor takes the lift track lock for it (0x00540428..0x00540434), so it
                 // runs even while the approach lift move of the embedded compound still holds the track, and its end releases nothing (0x005408EC..0x005408F0)
-                _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false, suppressTrackLocking: true);
+                _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, requireCalibration: false, suppressTrackLocking: true);
             }
         }
         return null;
@@ -166,8 +176,9 @@ public sealed class FlipBlockAction
             // 0x0055EED6..0x0055EEFA: the drive distance is the THREE-D norm of the object pose with respect to the robot pose ([T+0x20]^2, then [T+0x24]^2 and [T+0x28]^2, vsqrt.f32) plus
             // [this+0x130]; the GetWithRespectTo result (0x0055EEAE) is not checked by the engine (a failure leaves the pose default; it cannot fail here).
             var rel = target.Pose.WithRespectTo(robot.Value).Translation;
-            double dist = MathF.Sqrt((float)(rel.X * rel.X + rel.Y * rel.Y + rel.Z * rel.Z));
-            _trace.Add($"FlipBlockAction: driving {dist + DrivePastMm:F1} mm at {DriveSpeedMmps} mm/s with the lift at {ApproachLiftHeightMm} mm");
+            // 0x0055EF14..0x0055EF1C: vadd.f32 s0, norm, [this+0x130] (20.0f): the sum is binary32 too
+            float dist = Norm3(rel) + (float)DrivePastMm;
+            _trace.Add($"FlipBlockAction: driving {dist:F1} mm at {DriveSpeedMmps} mm/s with the lift at {ApproachLiftHeightMm} mm");
             // the embedded CompoundActionSequential at this+0x80 (ctor 0x0055ECE0): MoveLiftToHeightAction FIRST (0x0055EF3A..0x0055EF58), DriveStraightAction SECOND (0x0055EF64..0x0055EF70), both
             // AddAction(..., false, false): the drive starts only after the lift move has completed, and a failed lift move ends the compound with its result (MoveLiftToHeightAction's mapping).
             var compound = RunEmbeddedCompound(dist, compoundCancel.Token);

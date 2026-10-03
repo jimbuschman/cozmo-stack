@@ -5,28 +5,59 @@ using Cozmo.Robot.Vision;
 namespace Cozmo.Robot.Behavior;
 
 /// <summary>
-/// <c>BehaviorDriveOffCharger</c> (0x005C09xx..0x005C0C10; config <c>extraDistanceToDrive_mm</c> 60 freeplay /
-/// 45 hiking): runnable while the robot reports IS_ON_CHARGER. It runs a <see cref="DriveOffChargerContactsAction"/>
-/// for the charger's length (96) plus the extra distance, waits for the robot to be back on its treads
-/// (<c>WaitForOnTreads</c>), and fires the emotion event "DriveOffCharger" (charger_events.json: Confident +0.3).
+/// <c>BehaviorDriveOffCharger</c> (ctor 0x005C0980, <c>IsRunnableInternal</c> 0x005C0B10, <c>InitInternal</c> 0x005C0B18, <c>TransitionToDrivingForward</c> 0x005C0BB8,
+/// <c>UpdateInternal</c> 0x005C0DA8; config <c>extraDistanceToDrive_mm</c> 60 freeplay / 45 hiking).
+///
+/// <b>The gate is robot+0x34A</b>, <c>OnChargerPlatform</c> (<c>SetOnChargerPlatform</c> 0x00511D4C..0x00511D6A: <c>(arg != 0) || robot+0x338</c>), which
+/// <c>Sensors.OnChargerPlatform</c> carries; it is not the +0x338 contact flag (<c>Sensors.OnCharger</c>). <c>IsRunnableInternal</c> returns it (0x005C0B10);
+/// <c>TransitionToDrivingForward</c> drives only while it is set (0x005C0BF4); <c>UpdateInternal</c> ends the behaviour when it clears.
+///
+/// <c>InitInternal</c>: the reaction lock, +0x120 = 0, the driving animations when the animation state is 3 (not built), then the state name
+/// "WaitForOnTreads" when robot+0x355 is set (the off-treads state) else <c>TransitionToDrivingForward</c> ("DrivingForward"). That transition starts a
+/// <c>DriveStraightAction(robot, +0x11C)</c> with <c>StartActing</c> (0x005C0C08..0x005C0C26), +0x11C = <b>96.0f + extraDistanceToDrive_mm</b> in binary32
+/// (<c>vadd.f32</c> at 0x005C09E2), and its completion callback (0x005C0E9C) does, only on result 0: <c>BehaviorObjectiveAchieved(4, true)</c> and
+/// <c>MoodManager::TriggerEmotionEvent("DriveOffCharger", now)</c>, so the mood event is part of the drive's completion, not something that waits for the robot to be on its treads.
+///
+/// <c>UpdateInternal</c>: while on the platform, robot+0x355 set means <c>StopActing(false, false)</c> and the state name "WaitForOnTreads"; clear means
+/// <c>TransitionToDrivingForward</c> when no action is current (+0x84 == 0); either way it returns 1 (running). Off the platform it returns 1 while an action is
+/// current, otherwise it stores the current time at <c>[[robot+0x264]+0x18]+0x44</c> and returns 2 (complete). There is no timeout of the behaviour's own.
 /// </summary>
 // fidelity: M13-017
 public sealed class DriveOffChargerBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, Driving, WaitForOnTreads }
 
+    /// <summary>96.0f: the charger's length, 0x42C00000 (0x005C09D4), the constant the drive distance starts from.</summary>
+    public static readonly float ChargerLengthMm = BitConverter.Int32BitsToSingle(0x42C00000);
+    /// <summary>The <c>BehaviorObjective</c> the completion callback reports: 4 (<c>movs r1,#4</c> at 0x005C0EA8).</summary>
+    public const int ObjectiveDriveOffCharger = 4;
+    /// <summary>The emotion event the completion callback triggers (the 15-byte literal copied at 0x005C0EBC..0x005C0ED0).</summary>
+    public const string EmotionEventName = "DriveOffCharger";
+
     public DriveOffChargerBehavior(ManipulationSystem m, string id = "DriveOffCharger", double extraDistanceToDriveMm = 60)
-        : base(id, "DriveOffCharger", m) => ExtraDistanceMm = extraDistanceToDriveMm;
+        : base(id, "DriveOffCharger", m)
+    {
+        ExtraDistanceMm = extraDistanceToDriveMm;
+        DriveDistanceMm = ChargerLengthMm + (float)extraDistanceToDriveMm;       // Json::Value::asFloat, then vadd.f32 (0x005C09C0..0x005C09E6)
+    }
 
     public double ExtraDistanceMm { get; }
-    public double DistanceMm => ChargerGeometry.LengthMm + ExtraDistanceMm;
+    /// <summary>+0x11C: 96.0f + the config's extra distance, binary32.</summary>
+    public float DriveDistanceMm { get; }
+    public double DistanceMm => DriveDistanceMm;
     public Phase CurrentPhase { get; private set; }
     /// <summary>Terminal action result retained for conformance and callers that need more than phase entry.</summary>
     public ActionResult? DriveResult { get; private set; }
-    /// <summary>Whether the terminal wait observed both on-treads and off-charger.</summary>
+    /// <summary>Whether the behaviour ended on its own (<c>UpdateInternal</c> returned 2) with the robot back on its treads.</summary>
     public bool LeftChargerOnTreads { get; private set; }
+    /// <summary>The time <c>UpdateInternal</c> stored at the whiteboard's +0x44 when the robot was off the platform, or null.</summary>
+    public double? DroveOffAtSec { get; private set; }
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => context.Robot.Sensors.OnCharger;
+    // the behaviour is alive until UpdateInternal returns 2, whether or not an action is running (it returns 1 while waiting for the treads)
+    protected override bool KeepsRunningWithoutAction => true;
+
+    // fidelity: M13-017
+    protected override bool IsRunnableInternal(BehaviorContext context) => context.Robot.Sensors.OnChargerPlatform;      // ldrb robot+0x34A, 0x005C0B10
 
     protected override void OnStart()
     {
@@ -35,29 +66,70 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.DriveOffCharger);
         DriveResult = null;
         LeftChargerOnTreads = false;
-        CurrentPhase = Phase.Driving;
-        // fidelity: M7-021
-        // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward and
-        // "DrivingForward" (0x005C0BE2). The class has no wait-then-drive state machine (M13-017), so only the name is chosen here.
-        SetStateName(Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads ? "WaitForOnTreads" : "DrivingForward");
+        DroveOffAtSec = null;
         SteppedBehavior.ReportMissing("BehaviorDriveOffCharger::InitInternal DrivingAnimationHandler::PushDrivingAnimations (0x005C0B34..0x005C0B50, when the AI value is 3): not built");
-        var act = new DriveOffChargerContactsAction(M, DistanceMm);
-        RunAction($"DriveOffChargerContactsAction({DistanceMm:F0} mm)", act.RunAsync, r =>
+        // fidelity: M7-021, M13-017
+        // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward.
+        if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads) { SetStateName("WaitForOnTreads"); CurrentPhase = Phase.WaitForOnTreads; }
+        else TransitionToDrivingForward();
+    }
+
+    /// <summary><c>TransitionToDrivingForward</c> 0x005C0BB8.</summary>
+    // fidelity: M13-017
+    private void TransitionToDrivingForward()
+    {
+        SetStateName("DrivingForward");                                              // 0x005C0BE2
+        if (!Context.Robot.Sensors.OnChargerPlatform) return;                        // 0x005C0BF4: robot+0x34A
+        CurrentPhase = Phase.Driving;
+        int handle = StartActing();                                                  // IBehavior::StartActing 0x005C0C26
+        if (handle == 0) return;
+        int epoch = CallbackEpoch;
+        SteppedBehavior.ReportMissing("DriveStraightAction(Robot&, float) 0x005C0C08: the two-argument constructor's speed and animation defaults and its Init/CheckIfDone are not in the M13 inventory; this stack's DriveStraightAction default speed is used");
+        RunAction($"DriveStraightAction({DriveDistanceMm:F0} mm)", ct => new DriveStraightAction(M, DriveDistanceMm).RunAsync(ct), r =>
         {
+            ActingEnded(handle);                                                     // HandleActionComplete clears +0x84 first (0x005BE1FC)
+            if (!CallbackMayRun(epoch)) return;
             DriveResult = r;
-            foreach (var l in act.Trace) Log("  " + l);
-            CurrentPhase = Phase.WaitForOnTreads;
-            WaitUntil(() => M.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads && !M.Robot.Sensors.OnCharger, 5.0, ok =>
-            {
-                LeftChargerOnTreads = ok;
-                double nowSec = Clock() / 1000.0;
-                bool known = Context.Mood?.Trigger("DriveOffCharger", nowSec) ?? false;
-                Log($"emotion event DriveOffCharger: {(Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model")}");
-                if (!ok) Log("still not on treads / off the charger after 5 s");
-                CurrentPhase = Phase.Idle;
-                Finish();
-            }, "on treads and off the charger");
+            OnDriveComplete(r);
         });
+    }
+
+    /// <summary>The completion callback 0x005C0E9C: on result 0 only, <c>BehaviorObjectiveAchieved(4, true)</c> then <c>TriggerEmotionEvent("DriveOffCharger", now)</c>.</summary>
+    // fidelity: M13-017
+    private void OnDriveComplete(ActionResult result)
+    {
+        if (result != ActionResult.Success) return;                                  // cbnz r0 at 0x005C0EA4
+        Log($"BehaviorObjectiveAchieved({ObjectiveDriveOffCharger}, true)");
+        SteppedBehavior.ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective, bool) body is not in the inventory; BehaviorDriveOffCharger's completion callback (0x005C0EAC) only traces the call");
+        EmotionEvent(EmotionEventName);                                              // MoodManager::TriggerEmotionEvent 0x005C0EE2
+    }
+
+    /// <summary><c>UpdateInternal</c> 0x005C0DA8.</summary>
+    // fidelity: M13-017
+    protected override void OnUpdate()
+    {
+        var sensors = Context.Robot.Sensors;
+        if (sensors.OnChargerPlatform)                                               // ldrb robot+0x34A (0x005C0DB0)
+        {
+            if (sensors.OffTreadsState != OffTreadsState.OnTreads)                   // robot+0x355 (0x005C0DB6)
+            {
+                CancelAction();                                                      // the host task behind the action
+                StopActing();                                                        // IBehavior::StopActing(false, false) 0x005C0DC4
+                SetStateName("WaitForOnTreads");                                     // 0x005C0DE0
+                CurrentPhase = Phase.WaitForOnTreads;
+                return;
+            }
+            if (!HasCurrentAction) TransitionToDrivingForward();                     // [this+0x84] == 0 (0x005C0E0E..0x005C0E18)
+            return;
+        }
+        if (HasCurrentAction) return;                                                // 0x005C0DF4: still acting, return 1
+        // BaseStationTimer::GetCurrentTimeInSeconds -> [[robot+0x264]+0x18]+0x44 (0x005C0DFA..0x005C0E08), then return 2
+        double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        DroveOffAtSec = now;
+        Context.LastDriveOffChargerSec = (float)now;                                 // [[robot+0x264]+0x18]+0x44: a float (GetCurrentTimeInSeconds), read by IsRunnableBase 0x005BD93C
+        LeftChargerOnTreads = sensors.OffTreadsState == OffTreadsState.OnTreads;
+        CurrentPhase = Phase.Idle;
+        Finish();
     }
 }
 

@@ -1,5 +1,6 @@
 using Cozmo.Protocol;
 using Cozmo.Robot.Behavior;
+using Cozmo.Robot.Manipulation;
 
 namespace Cozmo.Robot.Vision;
 
@@ -94,12 +95,22 @@ public static class TurnTowardsImagePoint
     /// The absolute body and head angles for a point in the image, given the calibration and the robot
     /// state the image was taken in.
     /// </summary>
+    /// <remarks>
+    /// binary32 as <c>Robot::ComputeTurnTowardsImagePointAngles</c> 0x0051879C computes it: <c>du = u - cx</c>, <c>dv = v - cy</c> (<c>vsub.f32</c>,
+    /// 0x005187E2); head = <c>atan2f(-dv, fy) + headAngle</c> (<c>vadd.f32</c> 0x00518878) assigned through <c>Radians::operator=(float)</c>; body =
+    /// <c>operator+(float, Radians)</c> 0x0084C97B: <c>Radians(atan2f(-du, fx))</c> plus the heading, one <c>vadd.f32</c> (0x0084C99C), rescaled.
+    /// MISSING (libm f32 stand-in): the engine calls bionic <c>atan2f</c> (PLT 0x4A4510); <c>MathF.Atan2</c> is not claimed bit-equal to it.
+    /// The rescale is <see cref="EngineRadians.Rescale"/> (double arithmetic on a binary32 value; the engine's 0x0084C87C is binary32).
+    /// </remarks>
     public static (double BodyRad, double HeadRad) Angles(CameraCalibration cal, double u, double v,
                                                           double headingRad, double headAngleRad)
     {
-        double du = u - cal.CenterX, dv = v - cal.CenterY;
-        return (headingRad + Math.Atan2(-du, cal.FocalLengthX),
-                headAngleRad + Math.Atan2(-dv, cal.FocalLengthY));
+        float du = (float)u - (float)cal.CenterX, dv = (float)v - (float)cal.CenterY;
+        float headDelta = MathF.Atan2(-dv, (float)cal.FocalLengthY);       // 0x0051886C
+        float head = headDelta + (float)headAngleRad;                        // 0x00518878
+        float bodyDelta = (float)EngineRadians.Rescale(MathF.Atan2(-du, (float)cal.FocalLengthX));   // 0x0051888E, Radians(float)
+        float body = bodyDelta + (float)headingRad;                          // 0x0084C99C
+        return (EngineRadians.Rescale(body), EngineRadians.Rescale(head));
     }
 
     /// <summary>
@@ -485,7 +496,8 @@ public sealed class TrackFaceAction : IDisposable
     /// The pan and tilt tolerances an <c>ITrackAction</c> starts with, 0.0349066 rad (2 degrees), written
     /// into the action at +0x84 and +0x8C by its constructor (0x005646BC and 0x005646CC).
     /// </summary>
-    public const double MinToleranceRad = 0.0349066;
+    public const uint MinToleranceBits = 0x3D0EFA35;   // movw/movt 0x005646BC..0x005646D4, Radians(float) at 0x005646C8/0x005646D8
+    public static readonly double MinToleranceRad = BitConverter.Int32BitsToSingle(unchecked((int)MinToleranceBits));
 
     /// <summary>
     /// How long the body turn is given, 0.4 s: the constructor's <c>strd r1, r0, [r4, #0xd0]</c> at
@@ -502,16 +514,30 @@ public sealed class TrackFaceAction : IDisposable
     /// </summary>
     public const double TrackAccelRadPerSec2 = 10000;
 
+    /// <summary>The cap on the body turn speed, 0x40A78D36 (the literal at 0x00565676), and the body turn's acceleration 0x436DFFDB (0x005656A8/0x005656AC).</summary>
+    public const uint BodySpeedCapBits = 0x40A78D36, BodyTurnAccelBits = 0x436DFFDB;
+
+    /// <summary>The body speed: <c>min(|pan| / 0.4f, 0x40A78D36)</c> in binary32 (0x00565672..0x00565688; NaN keeps the cap).</summary>
+    // fidelity: M14-003
+    internal static float PanSpeed(double pan)
+    {
+        float panSpeed = (float)Math.Abs(pan) / (float)PanDurationSec;
+        float cap = BitConverter.Int32BitsToSingle(unchecked((int)BodySpeedCapBits));
+        return panSpeed < cap ? panSpeed : cap;
+    }
+
     /// <summary>
     /// How high the head may go while tracking, 0.776672 rad, at +0x94 (0x005646DC).
     /// </summary>
-    public const double MaxHeadAngleRad = 0.776672;
+    public const uint MaxHeadAngleBits = 0x3F46D3F2;   // movw/movt 0x005646DC..0x005646E8 into +0x94
+    public static readonly double MaxHeadAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)MaxHeadAngleBits));
 
     /// <summary>
     /// The turn a sound needs before it plays, 0.174533 rad (10 degrees) for both axes, at +0xC0 and
     /// +0xC8 (0x00564722 and 0x00564732). No sound is set by default.
     /// </summary>
-    public const double MinAngleForSoundRad = 0.174533;
+    public const uint MinAngleForSoundBits = 0x3E32B8C2;   // movw/movt 0x00564722..0x0056472A (+0xC0) and 0x00564732..0x0056473A (+0xC8)
+    public static readonly double MinAngleForSoundRad = BitConverter.Int32BitsToSingle(unchecked((int)MinAngleForSoundBits));
 
     /// <summary>
     /// The time the action aims to reach the target in, 0.5 s, at +0xD8 (0x0056475C);
@@ -557,6 +583,12 @@ public sealed class TrackFaceAction : IDisposable
     /// <summary>Tracks for the duration (or until cancelled); false when the face was lost.</summary>
     public async Task<bool> RunAsync(TimeSpan duration, CancellationToken cancel)
     {
+        // MISSING: the engine runs tracking as ITrackAction::CheckIfDone (0x00564F09..0x0056584B, 2372 bytes) once per ActionList tick (Robot::Update -> ActionList::Update 0x005140BC ->
+        // IAction::UpdateInternal), after ITrackAction::Init (0x00564D35). This stack has no ActionList: CozmoMotion's UpdateActions is the only per-tick action hook (Engine.ActionRunnerUpdate) and
+        // runs head/lift moves only. The wall-clock loop below is therefore NOT the engine's mechanism, and CheckIfDone's other branches are unread and unbuilt: the stop criteria
+        // (StopCriteriaMetAndTimeToStop 0x0056594D), the small-angle clamping with its random periods (UpdateSmallAngleClamping 0x0056584D), the sound with its spacing, the eye shift
+        // (+0xA1, 0x0056529C..0x0056535A), the update timeout, the mode, the driving-animation end and the 0x5654xx result mapping.
+        SteppedBehavior.ReportMissing("TrackFaceAction (M14-003): ITrackAction::CheckIfDone 0x00564F09 on the ActionList tick is not built (no ActionList in this stack); the Task.Delay(60) loop is a stand-in and its stop criteria, small-angle clamping, sound, eye shift and timeout are unread");
         var end = DateTime.UtcNow + duration;
         while (DateTime.UtcNow < end && !cancel.IsCancellationRequested)
         {
@@ -582,10 +614,15 @@ public sealed class TrackFaceAction : IDisposable
                 // has to cover, so the speed is |delta| / duration and the acceleration is the immediate
                 // 10000 (MoveHeadToAngle at 0x00565104 with the speed computed at 0x005650F2). Nothing
                 // waits for the turn to settle - the next tick recomputes the target.
-                double headSpeed = Math.Max(0.01, Math.Abs(targetHead - headNow) / TiltDurationSec);
-                double bodySpeed = Math.Max(0.01, Math.Abs(pan) / PanDurationSec);
+                // Head: 0x005650F2 vdiv.f32 |delta| / [+0xD0] straight into MoveHeadToAngle (PLT 0x4AB188, 0x00565104), no clamp (the 0.01 floor this stack had is removed).
+                double headSpeed = (float)Math.Abs(targetHead - headNow) / (float)TiltDurationSec;
+                // Body: 0x00565672..0x00565688 vdiv.f32 |pan| / [+0xD4], then the SMALLER of that and the literal 0x40A78D36 at 0x00565676 (vcmpe / it mi; a NaN keeps the cap);
+                // MovementComponent::TurnInPlace (PLT 0x4AB020, 0x005656B4) with accel 0x436DFFDB (movw/movt 0x005656A8/0x005656AC), tolerance [+0x84] (0x00565696),
+                // numHalfRevolutions 0 and isAbsolute 1.
+                double bodySpeed = PanSpeed(pan);
                 await PanAndTilt.RunAsync(_v, LastCommand.Value.Pan, LastCommand.Value.Tilt, bodySpeed, cancel,
-                                          headSpeed, TrackAccelRadPerSec2, waitForSettle: false);
+                                          headSpeed, TrackAccelRadPerSec2, waitForSettle: false,
+                                          bodyAccelRadPerSec2: BitConverter.Int32BitsToSingle(unchecked((int)BodyTurnAccelBits)), bodyToleranceRad: (float)PanToleranceRad);
             }
             await Task.Delay(UpdateIntervalMs, CancellationToken.None);
         }

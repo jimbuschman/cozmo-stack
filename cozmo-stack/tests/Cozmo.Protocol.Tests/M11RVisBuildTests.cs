@@ -2039,7 +2039,7 @@ public class M11RVisBuildTests : IDisposable
         Assert.Empty(late!.Objects);
         Assert.Empty(rig.Vision.World.LocatedObjects);
         Assert.Null(rig.Vision.History.GetComputedStateAt(3033));
-        Assert.Contains(log, l => l.Contains("ComputeAndInsertStateAt failed"));
+        Assert.Contains(log, l => l == "VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: 3033, hist: 3000 to 3000");   // 0x00654DE2: the timestamp, GetOldestTimeStamp, GetNewestTimeStamp (R-FIX batch 3, M11-050)
         Assert.Equal(0, rig.Vision.World.UnbuiltLocalizeRobotCalls);                   // AddAndUpdateObjects never ran
         var onTime = rig.Vision.ProcessCapture(frame, 2, 3000);                        // a raw state exactly at the timestamp
         Assert.NotNull(onTime);

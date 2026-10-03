@@ -94,7 +94,7 @@ public sealed class MarkerDetector
     /// <c>InitFromPointContainer</c> 0x006ABB38: the quad's bounding <c>Rectangle&lt;int&gt;</c>
     /// <c>{xmin, ymin, width, height}</c>, each coordinate truncated toward zero.
     /// </summary>
-    private static (int X, int Y, int W, int H) BoundingRect(Vec2[] c)
+    internal static (int X, int Y, int W, int H) BoundingRect(Vec2[] c)
     {
         int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
         foreach (var p in c)
@@ -103,7 +103,8 @@ public sealed class MarkerDetector
             if (x < minX) minX = x; if (x > maxX) maxX = x;
             if (y < minY) minY = y; if (y > maxY) maxY = y;
         }
-        return (minX, minY, maxX - minX + 1, maxY - minY + 1);
+        // 0x006ABBCA..0x006ABBD0: width = maxX - minX, height = maxY - minY (no +1)
+        return (minX, minY, maxX - minX, maxY - minY);
     }
 
     /// <summary>The per-marker refine-then-decode loop (M11-023), run once per pass.</summary>
@@ -137,16 +138,9 @@ public sealed class MarkerDetector
             var m = Decoder.Extract(work, corners, h, Quads.Parameters, timestamp, out var reason);
             results.Add((q, m, reason));
             if (m is null) continue;
-            // a black ring can yield the same marker twice (inner and outer edge components); keep the larger
-            var dup = markers.FindIndex(x => x.Code == m.Code && (x.Center - m.Center).Length < 4);
-            if (dup >= 0)
-            {
-                if (SideLength(m) > SideLength(markers[dup])) markers[dup] = m;
-                continue;
-            }
+            // M11-022: the engine appends every decoded marker to the ObservedMarker list (0x0087555C emplace_back, no comparison
+            // of codes or centres anywhere in Detect 0x008753B6..0x00875566); the same-code merge this stack had is removed.
             markers.Add(m);
         }
     }
-
-    private static double SideLength(ObservedMarker m) => (m.Corners[2] - m.Corners[0]).Length;
 }

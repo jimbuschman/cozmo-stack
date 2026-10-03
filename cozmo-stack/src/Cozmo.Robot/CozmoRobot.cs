@@ -271,6 +271,8 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
         Engine.RobotComponentsUpdate = UpdateComponents;
+        // fidelity: M4-019
+        Engine.ChargerPlatformUpdate = ChargerPlatformStepWithoutWorld;
         Engine.RobotStateHistoryClear = () => StateHistoryCleared?.Invoke();
         // fidelity: M4-019, M4-018
         // SC4d: Robot::Delocalize calls ClearCliffRunningStats. The stack's Delocalize is the constructor's, which runs
@@ -692,6 +694,17 @@ public sealed class CozmoRobot : IDisposable
     /// only after the first full state (CD12), so a state has always been stored by then; the offline test seam forces
     /// that flag, so they wait here for a stored state as well.
     /// </summary>
+    // fidelity: M4-019
+    /// <summary>
+    /// The engine tick's charger-platform step (Robot::Update 0x00513CD8..0x00513E2A) for a robot with no world model (no <c>VisionSystem</c>, which sets the real step): it cannot run, so
+    /// while the platform flag is set it reports MISSING once and the flag is never cleared by it.
+    /// </summary>
+    internal void ChargerPlatformStepWithoutWorld()
+    {
+        if (Sensors.OnChargerPlatform)
+            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513CD8..0x00513E2A (the charger-platform step) needs the BlockWorld, and this robot has no VisionSystem: the step does not run and +0x34A is never cleared by it");
+    }
+
     private void UpdateComponents()
     {
         if (Engine.Robot?.StoredState is not { } stored) return;

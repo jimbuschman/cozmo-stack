@@ -365,22 +365,22 @@ public static class QuadCorners
     // ------------------------------------------------------------------ line fits and intersections
 
     /// <summary>
-    /// One cluster's line. <see cref="Swapped"/> is the engine's flag at the record's +8: false fits
-    /// <c>y = a x + b</c>, true fits <c>x = a y + b</c>, chosen by which extent of the cluster is larger
+    /// One cluster's line, as the engine's 12-byte record: two binary32 words (slope and intercept, the two floats
+    /// <c>solve</c> returns, stored at 0x008A68EE/0x008A68F8) and the <see cref="Swapped"/> byte at +8. <see cref="Swapped"/> is the engine's flag:
+    /// false fits <c>y = a x + b</c>, true fits <c>x = a y + b</c>, chosen by which extent of the cluster is larger
     /// (0x008A6714), so a near-vertical side is fitted the way round that stays finite.
     /// </summary>
-    public readonly record struct LineFit(double A, double B, bool Swapped);
+    public readonly record struct LineFit(float A, float B, bool Swapped);
 
     /// <summary>
-    /// The per-cluster fit at 0x008A667C..0x008A6A1C: gather the cluster's boundary points, measure their
-    /// x and y extents, fit the wider direction with least squares (<c>cv::solve</c> with
-    /// <c>DECOMP_SVD</c> of <c>[u 1]</c> against <c>v</c>) and keep the slope, the intercept and which
-    /// way round it was. A cluster of fewer than two points makes the whole extraction fail
-    /// (0x008A66BA).
-    ///
-    /// The solve is the same least-squares problem, taken here through the normal equations in double
-    /// rather than an SVD in float; where the system is rank deficient - every point sharing one
-    /// coordinate - the minimum-norm solution the SVD would return is formed explicitly.
+    /// The per-cluster fit at 0x008A667C..0x008A68F8: gather the cluster's boundary points, measure their
+    /// x and y extents (0x008A66C0..0x008A6712), pick the wider direction (<c>swapped = xRange &lt; yRange</c>, 0x008A6714..0x008A671A),
+    /// build the three <c>CV_32F</c> matrices (A is count x 2 with rows <c>(float u, 1.0f)</c> and b is count x 1 of <c>float v</c>, the loops at
+    /// 0x008A67CA..0x008A68AC, <c>u</c> the boundary Y when swapped and X otherwise) and call <c>cv::solve(A, b, x, 1)</c>
+    /// (<c>DECOMP_SVD</c>, 0x008A68DE..0x008A68E0), keeping <c>x(0,0)</c> and <c>x(1,0)</c> as the slope and the intercept
+    /// (0x008A68E4..0x008A68F8). A cluster of fewer than two points makes the whole extraction fail
+    /// (<c>cmp r1, #5</c> on the byte size, 0x008A66BA). The solve is <see cref="OpenCvSolveSvd"/>, the shipped
+    /// <c>libopencv_core.so</c> routine; the rank-deficient case is the one it returns, not a formula of this stack's.
     /// </summary>
     public static LineFit? FitCluster(IReadOnlyList<BoundaryPoint> boundary, int[] labels, int cluster)
     {
@@ -399,52 +399,58 @@ public static class QuadCorners
         }
         bool swapped = (maxX - minX) < (maxY - minY);
 
-        double su = 0, sv = 0, suu = 0, suv = 0;
         int n = members.Count;
-        foreach (int i in members)
+        var a = new float[n * 2];
+        var b = new float[n];
+        for (int r = 0; r < n; r++)
         {
-            var p = boundary[i];
-            double u = swapped ? p.Y : p.X, v = swapped ? p.X : p.Y;
-            su += u; sv += v; suu += u * u; suv += u * v;
+            var p = boundary[members[r]];
+            a[r * 2] = swapped ? (float)p.Y : (float)p.X;
+            a[r * 2 + 1] = 1.0f;
+            b[r] = swapped ? (float)p.X : (float)p.Y;
         }
-        double det = suu * n - su * su;
-        double a, b;
-        if (Math.Abs(det) < 1e-12)
-        {
-            // every u the same: the minimum-norm least-squares solution of the rank-one system
-            double c = n > 0 ? su / n : 0;
-            double mean = n > 0 ? sv / n : 0;
-            double scale = mean / (c * c + 1);
-            a = c * scale; b = scale;
-        }
-        else
-        {
-            a = (suv * n - su * sv) / det;
-            b = (suu * sv - su * suv) / det;
-        }
-        return new LineFit(a, b, swapped);
+        var x = OpenCvSolveSvd.Solve(a, b, n, 2);
+        return new LineFit(x[0], x[1], swapped);
     }
 
     /// <summary>
-    /// Where two fitted lines meet, in the engine's arrangement at 0x008A6AA8..0x008A6B64. The result is
+    /// Where two fitted lines meet, in the engine's arrangement at 0x008A6AA8..0x008A6B64, in binary32 with the engine's operation
+    /// order (<c>vsub.f32</c>, <c>vdiv.f32</c>, <c>vmul.f32</c>, <c>vadd.f32</c>; the denominator <c>1.0f - a_i*a_j</c>). The result is
     /// returned the way the engine carries it, y first, because the bounds it is then tested against are
     /// the image height and width in that order.
     /// </summary>
-    public static (double Y, double X) Intersect(LineFit i, LineFit j)
+    public static (float Y, float X) Intersect(LineFit i, LineFit j)
     {
         if (i.Swapped == j.Swapped)
         {
-            double u = (j.B - i.B) / (i.A - j.A);
-            double v = i.A * u + i.B;
+            float d = i.A - j.A;                  // 0x008A6AC2: s0 = s4 - s0
+            float num = j.B - i.B;                // 0x008A6AC6: s2 = s2 - s6
+            float u = num / d;                    // 0x008A6ACA
+            float prod = i.A * u;                 // 0x008A6ACE
+            float v = i.B + prod;                 // 0x008A6AD6
             return i.Swapped ? (u, v) : (v, u);
         }
-        if (i.Swapped)                       // x = a_i y + b_i against y = a_j x + b_j
+        if (i.Swapped)                            // x = a_i y + b_i against y = a_j x + b_j (0x008A6AEC..0x008A6B20)
         {
-            double y = (j.A * i.B + j.B) / (1 - i.A * j.A);
-            return (y, i.A * y + i.B);
+            float aa = j.A * i.A;                 // 0x008A6AF8
+            float ab = j.A * i.B;                 // 0x008A6B00
+            float den = 1.0f - aa;                // 0x008A6B04
+            float num = ab + j.B;                 // 0x008A6B08
+            float y = num / den;                  // 0x008A6B0C
+            float prod = i.A * y;                 // 0x008A6B10
+            float x = i.B + prod;                 // 0x008A6B18
+            return (y, x);
         }
-        double y2 = (i.A * j.B + i.B) / (1 - i.A * j.A);
-        return (y2, j.A * y2 + j.B);
+        {
+            float aa = i.A * j.A;                 // 0x008A6B3A (x = a_j y + b_j against y = a_i x + b_i, 0x008A6B2E..0x008A6B5E)
+            float ab = i.A * j.B;                 // 0x008A6B42
+            float den = 1.0f - aa;                // 0x008A6B46
+            float num = ab + i.B;                 // 0x008A6B4A
+            float y = num / den;                  // 0x008A6B4E
+            float prod = j.A * y;                 // 0x008A6B52
+            float x = j.B + prod;                 // 0x008A6B5A
+            return (y, x);
+        }
     }
 
     // ------------------------------------------------------------------ ordering and rounding
@@ -486,14 +492,17 @@ public static class QuadCorners
 
     /// <summary>
     /// The engine's own rounding of a corner into its <c>Quadrilateral&lt;s16&gt;</c>
-    /// (0x008A6C30..0x008A6CD4): clamp to the range of an s16 first, then round half away from zero -
-    /// <c>ceilf(v - 0.5)</c> at or below zero and <c>floorf(v + 0.5)</c> above it.
+    /// (0x008A6C1E..0x008A6C7C), all in binary32: below -32768.0f (0xC7000000) the result is <c>ceilf(-32768.0f + -0.5f)</c>; above
+    /// 32767.0f (0x46FFFE00) it is <c>floorf(32767.0f + 0.5f)</c>; otherwise at or below zero (or NaN) <c>ceilf(v + -0.5f)</c> and above zero
+    /// <c>floorf(v + 0.5f)</c>. The add is a binary32 add, so 0.49999997f + 0.5f is 1.0f.
     /// </summary>
-    // fidelity: M11-030
-    public static double RoundToS16(double v)
+    // fidelity: M11-029, M11-030
+    public static float RoundToS16(float v)
     {
-        double c = v < -32768.0 ? -32768.0 : v > 32767.0 ? 32767.0 : v;
-        return c > 0 ? Math.Floor(c + 0.5) : Math.Ceiling(c - 0.5);
+        if (v < -32768.0f) return MathF.Ceiling(-32768.0f + -0.5f);
+        if (v > 32767.0f) return MathF.Floor(32767.0f + 0.5f);
+        if (!(v > 0.0f)) return MathF.Ceiling(v + -0.5f);
+        return MathF.Floor(v + 0.5f);
     }
 
     // ------------------------------------------------------------------ the whole chain
@@ -535,20 +544,25 @@ public static class QuadCorners
             fits[c] = fit.Value;
         }
 
+        // 0x008A6A66..0x008A6A82: the image height and width converted to binary32 (vcvt.f32.s32), compared in binary32
+        float height = imageHeight, width = imageWidth;
         var found = new List<Vec2>();
         for (int i = 0; i < Clusters - 1; i++)
             for (int j = i + 1; j < Clusters; j++)
             {
                 var (y, x) = Intersect(fits[i], fits[j]);
-                if (double.IsNaN(x) || double.IsNaN(y)) continue;
-                if (x < 0 || y >= imageHeight || y < 0 || x >= imageWidth) continue;
+                // 0x008A6B6A..0x008A6BA0: x >= 0, y < height, y >= 0, x < width, each a binary32 compare that a NaN fails
+                if (!(x >= 0f)) continue;
+                if (!(y < height)) continue;
+                if (!(y >= 0f)) continue;
+                if (!(x < width)) continue;
                 found.Add(new Vec2(x, y));
             }
         if (found.Count != 4) return null;
 
         var clockwise = ComputeClockwiseCorners(found);
         var rounded = new Vec2[4];
-        for (int i = 0; i < 4; i++) rounded[i] = new Vec2(RoundToS16(clockwise[i].X), RoundToS16(clockwise[i].Y));
+        for (int i = 0; i < 4; i++) rounded[i] = new Vec2(RoundToS16((float)clockwise[i].X), RoundToS16((float)clockwise[i].Y));
         return rounded;
     }
 }

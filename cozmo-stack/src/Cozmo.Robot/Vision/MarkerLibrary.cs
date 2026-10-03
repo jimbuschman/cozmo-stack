@@ -270,7 +270,10 @@ public sealed class MarkerDecoder
         // fidelity: M11-002 — cv::normalize(query, query, 0, 255, NORM_MINMAX) (0x008C09D2)
         var q = NormalizeMinMax(probeValues);
 
-        int best = int.MaxValue, second = int.MaxValue, bestRow = -1, secondRow = -1;
+        // fidelity: M11-002 - 0x008C098C seeds the distance out-parameter with the caller's threshold (str sb,[r0]; sb = r3) and
+        // 0x008C0B72 cmp r1,r0 / bgt takes a row only when its distance is strictly smaller than the current best; the
+        // second best is seeded 0x7FFFFFFF (0x008C0A72 mvn sl,#0x80000000) and replaced on a strictly smaller distance (0x008C0B78 cmp sl,r0).
+        int best = threshold, second = int.MaxValue, bestRow = -1, secondRow = -1;
         for (int r = 0; r < _lib.NumImages; r++)
         {
             var row = _lib.Image(r);
@@ -282,7 +285,9 @@ public sealed class MarkerDecoder
             if (d < best) { second = best; secondRow = bestRow; best = d; bestRow = r; }
             else if (d < second) { second = d; secondRow = r; }
         }
-        if (bestRow < 0) return new Match(MarkerLibrary.InvalidLabel, int.MaxValue, -1, true, "empty library");
+        // 0x008C0BBC adds r0,r2,#1 / beq 0x008C0C9E: no row nearer than the threshold leaves label -1 (stood in for here by
+        // InvalidLabel) and the distance at the threshold it was seeded with.
+        if (bestRow < 0) return new Match(MarkerLibrary.InvalidLabel, threshold, -1, true, $"no library row nearer than {threshold}");
         int label = _lib.Labels[bestRow];
         if (secondRow >= 0 && _lib.Labels[secondRow] != label)
         {
@@ -340,26 +345,17 @@ public sealed class MarkerDecoder
         Extract(img, quadCorners, homography, null, timestamp, out reason);
 
     /// <summary>
-    /// The same, with the detector parameters the engine's brightness gate is given.
+    /// The same, with the detector parameters the caller holds.
     ///
-    /// M11-031 (RECOVERABLE_GAP): the engine's <c>ComputeBrightDarkValues</c> 0x0089F8E8 compares one sampled
-    /// mean against <c>ratio</c> times the other, <c>ratio</c> = <c>Parameters+0x3C</c> = 1.01 (0x0087538E,
-    /// compare 0x0089FD10..0x0089FD30). Which returned mean is the border and which the interior is not
-    /// settled, so this keeps the stack's assignment (dark = border, bright = interior) and applies the ratio
-    /// to it: the gate is <c>bright &gt; ratio · dark</c>, not the old <c>dark &gt;= bright</c>. The direction
-    /// remains the outstanding question.
+    /// M11-031: <c>VisionMarker::Extract</c> 0x008A0078 has no contrast gate of its own: after copying the corners (0x008A007E..0x008A00A8) it goes straight to the
+    /// nearest-neighbour extraction (0x008A00AA..0x008A00D0). The 1.01 contrast gate is <c>ComputeBrightDarkValues</c> 0x0089F8E8 (compare 0x0089FD10..0x0089FD30), which the refinement
+    /// path owns (<see cref="CornerRefinement"/>); the second gate on the restored pixels this method used to apply is removed. <paramref name="parameters"/> is therefore not read here.
     /// </summary>
-    // fidelity: M11-002 — VisionMarker::Extract 0x008A0078: reject label -1 / the ambiguity reject,
-    // distance >= threshold 50, labels 149/150, then labelToCode 0x008A0130, cornerReorder 0x008A0158
-    // and orientationDeg 0x008A0180.
     public ObservedMarker? Extract(GrayImage img, Vec2[] quadCorners, Homography? homography, QuadDetectorParameters? parameters, uint timestamp, out string reason)
     {
         if (_lib is null) { reason = "no marker library on this machine (extract it from libcozmoEngine.so; see VISION.md)"; return null; }
         var h = homography ?? Homography.FromUnitSquare(quadCorners);
-        var (dark, bright) = ThresholdProbes(img, h);
-        // fidelity: M11-031 — ratio 1.01 from Parameters+0x3C (0x0087538E)
-        double contrastRatio = (parameters ?? new QuadDetectorParameters()).MinContrastRatio;
-        if (dark * contrastRatio >= bright) { reason = $"border not darker than interior ({dark:F0} vs {bright:F0})"; return null; }
+        // fidelity: M11-031 — no contrast gate here (0x008A00AA..0x008A00D0 go straight to the nearest-neighbour extraction)
         var probes = GetProbeValues(img, h);
         var m = GetNearestNeighbor(probes);
         if (m.Rejected) { reason = m.Reason; return null; }

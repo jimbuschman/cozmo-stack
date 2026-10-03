@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Manipulation;
 using Cozmo.Robot.Vision;
 
@@ -247,12 +248,20 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     public enum Phase { Idle, ReactingToBlock, PerformingAction, Retrying }
     public const int MaxRetries = 1;
 
+    /// <summary>The <c>BehaviorObjective</c> the success path reports: 0x16 = 22 PoppedWheelie (<c>movs r1,#0x16</c> at 0x005C7E08).</summary>
+    public const int ObjectivePoppedWheelie = 0x16;
+    /// <summary><c>SetFailedToUse(obj, 3)</c>'s failure kind (<c>movs r2,#3</c> at 0x005C7DA2): <see cref="ObjectActionFailure.RollOrPopAWheelie"/>.</summary>
+    public const ObjectActionFailure FailureKind = ObjectActionFailure.RollOrPopAWheelie;
+
     public PopAWheelieBehavior(ManipulationSystem m, string id = "PopAWheelie") : base(id, "PopAWheelie", m) { }
 
     public Phase CurrentPhase { get; private set; }
     public uint? TargetObjectId { get; private set; }
+    /// <summary>The retry count at +0x12C: bumped by <c>TransitionToPerformingAction(robot, true)</c> (0x005C777E), zeroed by the non-retry call (0x005C780C).</summary>
     public int Retries { get; private set; }
     public bool Succeeded { get; private set; }
+    /// <summary>+0x128: the success path stores -1 (0x005C7CF6/0x005C7CFA); its readers are not in the inventory.</summary>
+    public int Field0x128 { get; private set; }
 
     private ObservableObject? Target() => ClosestCube(o => o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative);
 
@@ -265,13 +274,24 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
         if (TargetObjectId is null) { Finish(); return; }
         Retries = 0; Succeeded = false;
         CurrentPhase = Phase.ReactingToBlock;
-        PlayTrigger(AnimationTrigger.PopAWheelieInitial, TransitionToPerformingAction);
+        PlayTrigger(AnimationTrigger.PopAWheelieInitial, () => TransitionToPerformingAction(retry: false));
     }
 
-    private void TransitionToPerformingAction()
+    /// <summary>
+    /// <c>TransitionToPerformingAction(Robot&amp;, bool)</c> 0x005C7758: the retry count is bumped when called as a retry and zeroed otherwise; the action
+    /// runs under <c>StartActing</c> and its completion goes to <see cref="OnActionComplete"/> (the lambda 0x005C7CBC).
+    /// </summary>
+    // fidelity: M13-015
+    private void TransitionToPerformingAction(bool retry)
     {
         CurrentPhase = Phase.PerformingAction;
         uint id = TargetObjectId!.Value;
+        if (retry) { Retries++; Log($"info: BehaviorPopAWheelie.TransitionToPerformingAction.Retrying: Retry {Retries} of {MaxRetries}"); }   // adds r1,#1 at 0x005C777E
+        else Retries = 0;                                                                                           // str.w r0,[r4,#0x12c] at 0x005C780C
+        SteppedBehavior.ReportMissing("BehaviorPopAWheelie::TransitionToPerformingAction (0x005C7758..): the [+0x120] == -1 warning gate, the [+0xD8]/[+0xD9] branch (0x005C7810..0x005C781C), the DriveToPopAWheelieAction's say-name triggers 0x18B/0x18C and the IDriveToInteractWithObject turn-towards-face sub-actions are not in the M13 inventory; the drive and the pop run as this stack's two async actions");
+        int handle = StartActing();
+        if (handle == 0) return;
+        int epoch = CallbackEpoch;
         RunAction($"DriveToPopAWheelieAction({id})", async ct =>
         {
             var drive = new DriveToObjectAction(M, id, PreActionType.Docking);
@@ -284,36 +304,64 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
             return r;
         }, r =>
         {
-            uint category = (uint)r >> 24;
-            if (category == 0)
-            {
-                Succeeded = true;
-                Log("objective achieved: PoppedWheelie");
-                // 0x005C7E14, right after the objective
-                if (NeedActionCompleted() is { } action) Log($"needs action {action}");
-                PlayTrigger(AnimationTrigger.SuccessfulWheelie, Finish);
-                return;
-            }
-            if (category == 4 && Retries < MaxRetries) { /* retry below */ }
-            else
-            {
-                // M13-015: an Abort-category (3) result, or a Retry-category (4) result with the one retry
-                // used, marks the cube failed to use (0x005C7CF0 cmp r1,#3 / 0x005C7D4C -> 0x005C7DAA);
-                // anything else logs BehaviorPopAWheelie.FailedPopAction (0x005C7DB0).
-                if (category is 3 or 4)
-                {
-                    M.Whiteboard.SetFailedToUse(id, ObjectActionFailure.RollOrPopAWheelie);
-                    Log($"giving up: {r}; SetFailedToUse");
-                }
-                else Log($"BehaviorPopAWheelie.FailedPopAction: {r}");
-                Finish();
-                return;
-            }
-            Retries++;
-            Log($"Retry {Retries} of {MaxRetries}");
-            CurrentPhase = Phase.Retrying;
-            PlayTrigger(r == ActionResult.DidNotReachPreActionPose ? AnimationTrigger.PopAWheelieRealign : AnimationTrigger.PopAWheelieRetry, TransitionToPerformingAction);
+            ActingEnded(handle);                                   // HandleActionComplete clears +0x84 before the callback (0x005BE1FC)
+            if (!CallbackMayRun(epoch)) return;
+            OnActionComplete(id, r);
         });
+    }
+
+    /// <summary>
+    /// The completion lambda 0x005C7CBC, in its order: a non-zero result first removes the behaviour's reaction lock (<c>SmartRemoveDisableReactionsLock</c>, 0x005C7CD4..0x005C7CDA);
+    /// then the category byte (<c>result &gt;&gt; 24</c>): 4 with the retry count at most 0 (<c>ble</c> at 0x005C7D4A, signed) goes to <c>SetupRetryAction</c> (0x005C7DFA); 4 with the retry used
+    /// and 3 log "BehaviorPopAWheelie.FailedAbort" and, when the object at +0x11C is still in the world (<c>GetLocatedObjectByIdHelper</c>, family -1), call
+    /// <c>AIWhiteboard::SetFailedToUse(obj, 3)</c>; 0 stores +0x128 = -1, starts the 0x21C animation, THEN reports objective 0x16 and the needs action; any other category logs
+    /// "BehaviorPopAWheelie.FailedPopAction".
+    /// </summary>
+    // fidelity: M13-015
+    private void OnActionComplete(uint id, ActionResult r)
+    {
+        if (r != ActionResult.Success)
+            SteppedBehavior.ReportMissing("BehaviorPopAWheelie completion lambda 0x005C7CD4: SmartRemoveDisableReactionsLock(own name) on a non-zero result is not built (BehaviorScope has no per-lock removal, and the behaviour's lock table is not in the inventory)");
+        uint category = (uint)r >> 24;
+        if (category == 4 && Retries <= 0) { SetupRetryAction(r); return; }
+        if (category is 4 or 3)
+        {
+            Log($"info: BehaviorPopAWheelie.FailedAbort: Failed to pop with {r}, searching for block");
+            if (M.World.GetLocatedObjectById(id) is not null)
+            {
+                M.Whiteboard.SetFailedToUse(id, FailureKind);
+                Log($"giving up: {r}; SetFailedToUse");
+            }
+            Finish();
+            return;
+        }
+        if (category == 0)
+        {
+            Field0x128 = -1;
+            Succeeded = true;
+            PlayTrigger(AnimationTrigger.SuccessfulWheelie, Finish);                 // StartActing(TriggerAnimationAction 0x21C) first (0x005C7D22..0x005C7D30)
+            Log($"objective achieved: PoppedWheelie (BehaviorObjectiveAchieved(0x{ObjectivePoppedWheelie:X}, true))");   // then 0x005C7E0C
+            if (NeedActionCompleted() is { } action) Log($"needs action {action}");                                          // then 0x005C7E14
+            return;
+        }
+        Log($"info: BehaviorPopAWheelie.FailedPopAction: action failed with {r}, behavior ending");
+        Finish();
+    }
+
+    /// <summary>
+    /// <c>SetupRetryAction(Robot&amp;, RobotCompletedAction const&amp;)</c> 0x005C79D0: a virtual call through slot +0x90 first (0x005C79E6..0x005C79EC, not in the inventory), then a
+    /// <c>TriggerLiftSafeAnimationAction(0x18D)</c> when the result is exactly 0x04000001 and <c>(0x18E)</c> otherwise (60.0f timeout), run with <c>StartActing</c> and a callback
+    /// that performs the action again as a retry (0x005C7A5E, then the lambda).
+    /// </summary>
+    // fidelity: M13-015
+    private void SetupRetryAction(ActionResult r)
+    {
+        SteppedBehavior.ReportMissing("BehaviorPopAWheelie::SetupRetryAction 0x005C79E6: the virtual call through vtable slot +0x90 before the animation is not in the M13 inventory; it is not made");
+        CurrentPhase = Phase.Retrying;
+        int handle = StartActing();
+        if (handle == 0) return;
+        var trigger = r == ActionResult.DidNotReachPreActionPose ? AnimationTrigger.PopAWheelieRealign : AnimationTrigger.PopAWheelieRetry;
+        RunTriggerAction(handle, trigger, _ => TransitionToPerformingAction(retry: true), AnimationTrack.None, TriggerAnimationTimeoutSec, numLoops: 1, liftSafe: true);
     }
 
     protected override void OnStop(BehaviorStopReason reason)

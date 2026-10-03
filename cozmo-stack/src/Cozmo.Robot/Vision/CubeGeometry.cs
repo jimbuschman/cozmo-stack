@@ -76,19 +76,28 @@ public static class CubeGeometry
 {
     public const double CubeSizeMm = 44.0;
     public const double MarkerSizeMm = 25.0;
-    private const double Ax = 0.5773502691896258;
+    // Block::AddFace's binary32 literals (0x004E5442..0x004E55D6), each the engine's bit pattern widened exactly.
+    // fidelity: M11-003
+    public const uint MinusHalfPiBits = 0xBFC90FDB;   // movw/movt at 0x004E5442/0x004E5448
+    public const uint HalfPiBits = 0x3FC90FDB;        // 0x004E54EA/0x004E54F0
+    public const uint PiBits = 0x40490FDB;            // 0x004E557C/0x004E5582
+    public const uint TwoPiOverThreeBits = 0x40060A92; // 0x004E5490/0x004E5496 and 0x004E55D6/0x004E55DC
+    public const uint AxisBits = 0x3F13CD3A;          // 0x004E54A0/0x004E54A4 (and 0xBF13CD3A negated)
+    private static double F32(uint bits) => BitConverter.Int32BitsToSingle(unchecked((int)bits));
+    private static readonly double Ax = F32(AxisBits);
+    private static readonly double MinusHalfPi = F32(MinusHalfPiBits), HalfPi = F32(HalfPiBits), Pi = F32(PiBits), TwoPiOver3 = F32(TwoPiOverThreeBits);
 
     // The engine's face-def vector order (Block::LookupBlockInfo 0x004E4C8C; M12-021 H1) is
     // Front, Back, Left, Right, Top, Bottom. The per-face geometry is the same whichever order this list is
     // walked in; it is written in the engine's order so the two line up.
     private static readonly (BlockFace Face, double AngleRad, Vec3 Axis, Vec3 Offset)[] FaceTable =
     {
-        (BlockFace.Front, -Math.PI / 2, new Vec3(0, 0, 1), new Vec3(-0.5, 0, 0)),
-        (BlockFace.Back, Math.PI / 2, new Vec3(0, 0, 1), new Vec3(0.5, 0, 0)),
-        (BlockFace.Left, Math.PI, new Vec3(0, 0, 1), new Vec3(0, 0.5, 0)),
+        (BlockFace.Front, MinusHalfPi, new Vec3(0, 0, 1), new Vec3(-0.5, 0, 0)),
+        (BlockFace.Back, HalfPi, new Vec3(0, 0, 1), new Vec3(0.5, 0, 0)),
+        (BlockFace.Left, Pi, new Vec3(0, 0, 1), new Vec3(0, 0.5, 0)),
         (BlockFace.Right, 0, new Vec3(0, 0, 1), new Vec3(0, -0.5, 0)),
-        (BlockFace.Top, 2.0943951023931953, new Vec3(-Ax, Ax, -Ax), new Vec3(0, 0, 0.5)),
-        (BlockFace.Bottom, 2.0943951023931953, new Vec3(Ax, -Ax, -Ax), new Vec3(0, 0, -0.5)),
+        (BlockFace.Top, TwoPiOver3, new Vec3(-Ax, Ax, -Ax), new Vec3(0, 0, 0.5)),
+        (BlockFace.Bottom, TwoPiOver3, new Vec3(Ax, -Ax, -Ax), new Vec3(0, 0, -0.5)),
     };
 
     /// <summary>Marker code offsets within a cube's six codes: Back=0, Bottom=1, Front=2, Left=3, Right=4, Top=5 (the enum order).</summary>

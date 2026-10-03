@@ -30,6 +30,10 @@ internal sealed class Rig : IDisposable
     public uint T = 1000;
     private ushort _seq = 1;
     public float X, Y, Angle, Head = -0.15f;
+    /// <summary>The robot pose pitch every state reports (RobotPose.Pitch, 0 by default).</summary>
+    public float Pitch;
+    /// <summary>When set, the lift angle every state reports (a lift that is not at 45 mm); the default state reports angle 0 = 45 mm.</summary>
+    public float? LiftAngleReported;
     /// <summary>The origin the fake robot reports its pose in; changing it is a delocalization.</summary>
     public uint OriginId = 1;
     public readonly List<string> Log = new();
@@ -56,6 +60,8 @@ internal sealed class Rig : IDisposable
     /// (the engine's action stays RUNNING until the ack and LIFT_IN_POS arrive). The default is a robot that completes the move at once (B-CORE batch 3).
     /// </summary>
     public bool HoldLift;
+    /// <summary>When set the fake robot records a SetHeadAngle but neither moves the head nor acknowledges it (a head move still RUNNING).</summary>
+    public bool HoldHead;
     public int FaceTurns;
     /// <summary>Every absolute (pan, tilt) the stack commanded through PanAndTilt.</summary>
     public readonly List<(double Pan, double Tilt)> PanTilts = new();
@@ -151,7 +157,7 @@ internal sealed class Rig : IDisposable
         // a moving head or lift passes flags explicitly.
         uint f = flags ?? (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos
                                  | (OnCharger ? RobotStatusFlag.IsOnCharger : 0));
-        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle }, HeadAngle = Head, LiftAngle = liftAngle ?? 0f, Status = f,
+        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle, Pitch = Pitch }, HeadAngle = Head, LiftAngle = liftAngle ?? LiftAngleReported ?? 0f, Status = f,
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
         // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
         // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.
@@ -275,6 +281,16 @@ internal sealed class Rig : IDisposable
                 case PlaceObjectOnGround:
                     Send(new PickAndPlaceResult { Field0 = T, Field1 = true, Field2 = 0, Field3 = (byte)BlockStatus.BlockPlaced });
                     break;
+                case SetBodyAngle sb:
+                    // The fake robot turns to the commanded absolute angle at once and acknowledges it (the body action's ack, MotorActionAck tag 0xC4); its state reports the new angle
+                    // with the wheels not moving, which is what TurnInPlaceAction::IsBodyInPosition reads (M13-022).
+                    BodyAngles.Add(sb);
+                    Angle = sb.AngleRad;
+                    State();
+                    Send(new MotorActionAck { ActionId = sb.ActionId });
+                    break;
+                case SetHeadAngle sh when HoldHead:
+                    break;
                 case SetHeadAngle sh:
                     // The fake robot follows the command at once, acks it (M4-016 MA16) and reports HEAD_IN_POS,
                     // so the move completes as it does on a robot instead of waiting out the IAction timeout.
@@ -288,6 +304,7 @@ internal sealed class Rig : IDisposable
                     if (HoldLift) break;
                     LiftMm = sl.HeightMm;
                     float liftAngle = (float)Math.Asin(Math.Clamp((sl.HeightMm - 45f) / 66f, -1f, 1f));
+                    if (LiftAngleReported is not null) LiftAngleReported = liftAngle;
                     State(liftAngle: liftAngle);
                     Send(new MotorActionAck { ActionId = sl.ActionId });
                     break;
@@ -297,6 +314,8 @@ internal sealed class Rig : IDisposable
     }
 
     public readonly List<float> LiftHeights = new();
+    /// <summary>Every SetBodyAngle the stack sent (the body turn of TurnInPlaceAction).</summary>
+    public readonly List<SetBodyAngle> BodyAngles = new();
 
     /// <summary>When set the fake robot records an ExecutePath but does not drive it: the path is still being followed (the drive action stays RUNNING) until <see cref="ReleasePath"/>.</summary>
     public bool HoldPath;

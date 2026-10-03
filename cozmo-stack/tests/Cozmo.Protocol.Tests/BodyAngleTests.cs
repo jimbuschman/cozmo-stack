@@ -20,9 +20,9 @@ public class BodyAngleTests
                                         TurnTowardsPose.ToleranceRad, 0, isAbsolute: true, actionId: 7).ToBytes();
         Assert.Equal(21, b.Length);                                   // tag + 20
         Assert.Equal(1.0f, BitConverter.ToSingle(b, 1));
-        Assert.Equal(5.23599f, BitConverter.ToSingle(b, 5), 5);       // 300 deg/s, the engine's default
+        Assert.Equal(0x40A78D36u, BitConverter.ToUInt32(b, 5));       // R-FIX M11-015: the constructor's word at 0x00545A28/0x00545A32 (not 0x40A78D3B)
         Assert.Equal(10.0f, BitConverter.ToSingle(b, 9));
-        Assert.Equal(0.0349066f, BitConverter.ToSingle(b, 13), 6);    // 2 degrees
+        Assert.Equal(0x3D0EFA35u, BitConverter.ToUInt32(b, 13));      // 2 degrees: 0x00545A78/0x00545A80 (not 0x3D0EFA39)
         Assert.Equal(0, BitConverter.ToUInt16(b, 17));
         Assert.Equal(1, b[19]);
         Assert.Equal(7, b[20]);
@@ -51,7 +51,7 @@ public class BodyAngleTests
         Assert.Equal(0, b[19]);                                       // relative
         uint speed = BitConverter.ToUInt32(b, 5);
         Assert.Equal(negative, (speed & 0x8000_0000u) != 0);
-        Assert.Equal(5.23599f, Math.Abs(BitConverter.ToSingle(b, 5)), 5);
+        Assert.Equal(0x40A78D36u, speed & 0x7FFF_FFFFu);              // the speed word without the direction bit is the constructor's
     }
 
     /// <summary>
@@ -61,9 +61,13 @@ public class BodyAngleTests
     [Fact]
     public void TheTurnConstantsAreTheOnesTheConstructorHolds()
     {
-        Assert.Equal(5.23599, TurnTowardsPose.MaxSpeedRadPerSec, 5);
+        // R-FIX M11-015: the binary32 words of the constructor 0x005459D4 (0x00545A28..0x00545A84)
+        Assert.Equal(0x40A78D36u, BitConverter.SingleToUInt32Bits((float)TurnTowardsPose.MaxSpeedRadPerSec));
+        Assert.Equal((double)(float)TurnTowardsPose.MaxSpeedRadPerSec, TurnTowardsPose.MaxSpeedRadPerSec);
         Assert.Equal(300.0, TurnTowardsPose.MaxSpeedRadPerSec * 180 / Math.PI, 2);
         Assert.Equal(10.0, TurnTowardsPose.AccelRadPerSec2);
+        Assert.Equal(0x3D0EFA35u, BitConverter.SingleToUInt32Bits((float)TurnTowardsPose.ToleranceRad));
+        Assert.Equal((double)(float)TurnTowardsPose.ToleranceRad, TurnTowardsPose.ToleranceRad);
         Assert.Equal(2.0, TurnTowardsPose.ToleranceRad * 180 / Math.PI, 3);
         Assert.Equal(25.0, TurnTowardsPose.MaxRevolutions);
     }

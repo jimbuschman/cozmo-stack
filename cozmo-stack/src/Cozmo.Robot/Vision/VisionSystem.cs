@@ -84,6 +84,11 @@ public sealed class VisionSystem : IDisposable
         robot.Sensors.OffTreads.AnyRemainingLocalizableObjects = World.AnyRemainingLocalizableObjects;
         robot.Sensors.OffTreads.NothingLocalizableRemainsOnTreads = World.ClearLocalizationOnTreads;
         World.BaseStationSeconds = () => robot.Engine.Timer.Seconds;
+        // fidelity: M4-019
+        // Robot::Update 0x00513CD8..0x00513E2A: while the platform flag is set and the robot is on its treads, no located charger, or a robot footprint that no longer intersects the
+        // charger's, clears it. The world and the robot pose it reads are this system's.
+        _platformStep = () => robot.Sensors.UpdateOnChargerPlatformFromWorld(World, World.CurrentRobotPose?.Invoke());
+        robot.Engine.ChargerPlatformUpdate = _platformStep;
         History = new RobotStateHistory();
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
@@ -93,7 +98,7 @@ public sealed class VisionSystem : IDisposable
         robot.Camera.FrameForVision += OnFrame;
         robot.CameraSettings.CalibrationInstalled += OnCalibrationInstalled;
         robot.CameraSettings.VisionEnabledSet += OnVisionEnabledSet;
-        if (robot.CameraSettings.Calibration is { } read) Calibration = read;
+        if (robot.CameraSettings.Calibration is { } read) UpdateCameraCalibration(read);   // fidelity: M11-039: the callback's install already ran, so the catch-up runs it too
         // A VisionSystem built after the connection's NV callback already fired picks up the enable (2d).
         if (robot.CameraSettings.VisionEnabled) Enabled = true;
         robot.RobotRemoved += ResetToConstructed;
@@ -113,6 +118,7 @@ public sealed class VisionSystem : IDisposable
     }
 
     private readonly Action<uint> _doubleTapEnded;
+    private readonly Action _platformStep;
 
     /// <summary>The timestamp of the image being processed: what <c>Robot::GetLastImageTimeStamp</c> is at least (M11-037).</summary>
     private uint _frameTimestamp;
@@ -133,13 +139,22 @@ public sealed class VisionSystem : IDisposable
 
     // fidelity: M11-039
     /// <summary>
-    /// <c>VisionSystem::UpdateCameraCalibration</c> 0x006B1E3E: install the calibration
-    /// (<c>Camera::SetCalibration</c> 0x006B1E5E) and, on success, call <c>MarkerDetector::Init</c>
-    /// 0x006B1E78, which runs <c>Parameters::Initialize</c> 0x008752F8. The M3 NV callback only raises the
-    /// install event on the success path, so reaching here is the engine's success condition.
+    /// <c>VisionSystem::UpdateCameraCalibration</c> 0x006B1E3E: <c>Camera::SetCalibration</c> (0x006B1E5E, defined at 0x0085DEDC) stores the shared pointer and returns 1,
+    /// except that it returns 0 and stores nothing when the new pointer is null (0x0085DEE6/0x0085DF0C: with a calibration already set it first logs
+    /// <c>Camera.SetCalibration.NullCalibration</c>, "VERIFY(calib != nullptr): Camera already calibrated. Cannot set with nullptr.") or is the very pointer already stored
+    /// (0x0085DEE8..0x0085DEEC, 0x0085DEEE: identity, not value equality). Only a non-zero result (<c>cbz r6</c> 0x006B1E6C) reaches <c>MarkerDetector::Init</c>
+    /// 0x006B1E78, which runs <c>Parameters::Initialize</c> 0x008752F8. The function itself returns 0 always (0x006B1E7C).
     /// </summary>
-    public void UpdateCameraCalibration(CameraCalibration calibration)
+    public void UpdateCameraCalibration(CameraCalibration? calibration)
     {
+        var current = Calibration;
+        if (calibration is null)
+        {
+            if (current is not null)
+                Log?.Invoke("Camera.SetCalibration.NullCalibration: VERIFY(calib != nullptr): Camera already calibrated. Cannot set with nullptr.");
+            return;
+        }
+        if (ReferenceEquals(calibration, current)) return;
         Calibration = calibration;
         Detector.Init();
     }
@@ -348,9 +363,8 @@ public sealed class VisionSystem : IDisposable
     /// </summary>
     public async Task<CameraCalibration?> WaitForConnectionCalibrationAsync(TimeSpan timeout)
     {
-        // The constructor's catch-up sets Calibration but does not run the install (MarkerDetector::Init); the
-        // removed direct read did, so do it here for a read that completed before this system was built.
-        if (Calibration is { } already) { UpdateCameraCalibration(already); return already; }
+        // The constructor's catch-up ran the install (UpdateCameraCalibration, M11-039) for a read that completed before this system was built.
+        if (Calibration is { } already) return already;
         var tcs = new TaskCompletionSource<CameraCalibration>(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnInstalled(CameraCalibration c) => tcs.TrySetResult(c);
         // Subscribe before the second check so a completion between the two is not missed.
@@ -561,31 +575,22 @@ public sealed class VisionSystem : IDisposable
                 if (ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
                     World.NoteRobotState((s.Status & (uint)RobotStatusFlag.HeadInPos) == 0 || (s.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0,
                                          _robot.Sensors.OffTreadsState != OffTreadsState.OnTreads);
-                // fidelity: M11-044
+                // fidelity: M11-044, M11-019
                 // The engine's Delocalize trigger (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6): a treads commit that involves OnTreads (CozmoSensors.DelocalizeTrigger). +0x2C0 = 0, Robot::Delocalize,
                 // then a jump to 0x00512FB4 that skips the history and pose steps of UpdateFullRobotState: the history below does not take this state. NOT built: the pose steps outside the history
                 // (the cliff schedule and the rest of the sensor route still see the state), Delocalize's origin allocation and the (status & 2) argument (it only gates a warning, 0x00510C6A..0x00510C98) and the carried move gated by [[+0x284]+8] != -1 (the carried set decides here). RobotDelocalized carries the OLD origin id: AddNewOrigin is not built (M11-053).
                 if (ReferenceEquals(_robot.Sensors.DelocalizeTrigger, s) && ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
                 {
-                    var carriedNow = CarriedObjectIds();
-                    World.DelocalizeOnTreadBoundary(carriedNow);
-                    RobotDelocalized?.Invoke(History.OriginId);
+                    DelocalizeRobot();
                     break;
                 }
                 if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
-                // STAND-IN (M11-019, not the engine's trigger): the engine has no origin-change trigger for Delocalize. This stack keeps treating a new origin id in the state stream as a
-                // delocalization, because it does not allocate origins itself: the robot's own report of a new origin is the only sign it has. Robot::Delocalize 0x00510A24 (allocates the new
-                // origin, moves what the robot carries across (0x00510CF0), BlockWorld::OnRobotDelocalized) is what the engine does at the tread boundary above.
                 // fidelity: M11-019
-                uint before = History.OriginId;
+                // Robot::Delocalize(bool) 0x00510A24 (PLT 0x4A7804) has three call sites: the Robot constructor (0x00510324, CozmoEngine.ConstructorDelocalize), the tread-boundary path above
+                // (0x00512BA6) and the 101st consecutive pose-frame-id mismatch (0x00512F96, after the state went into the history). A state that merely reports a different pose origin id is filed
+                // in the history and delocalizes nothing: the engine has no origin-change trigger (the stand-in that forgot objects on one is removed).
                 History.Add(s);
-                uint now = History.OriginId;
-                if (now != before && before != 0)
-                {
-                    var carried = CarriedObjectIds();
-                    World.OnRobotDelocalized(carried);
-                    RobotDelocalized?.Invoke(now);
-                }
+                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot();
                 break;
             }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
@@ -625,6 +630,14 @@ public sealed class VisionSystem : IDisposable
             // ImuDataHistory (AddImuData 0x00538B24); the rotating gate reads it back.
             case ImageImuData d: Imu.Add(d.ImageId, d.RateX, d.RateY, d.RateZ, d.Line2Number); break;
         }
+    }
+
+    /// <summary>The delocalization both runtime call sites share (M11-019): carried objects move across, the world forgets the rest, <see cref="RobotDelocalized"/> is raised.</summary>
+    // fidelity: M11-019
+    private void DelocalizeRobot()
+    {
+        World.DelocalizeOnTreadBoundary(CarriedObjectIds());
+        RobotDelocalized?.Invoke(History.OriginId);
     }
 
     // fidelity: M11-041, M11-042
@@ -825,6 +838,15 @@ public sealed class VisionSystem : IDisposable
             ?? throw new OperationCanceledException("the robot was removed while this image was being processed");
     }
 
+    /// <summary>
+    /// <c>Robot::IsPoseInWorldOrigin(pose)</c> 0x0051290C: the pose's root is the world origin (<c>[[robot+0x294]+0x14]</c>, 0x005128FC). The computed state's root is the origin of the raw state it
+    /// came from, so this compares that origin id with the engine robot's current origin. The offline test link accepts whatever origin its states report
+    /// (<see cref="EngineRobot.OfflineSeamAcceptsAnyOrigin"/>), so there the states are in the world origin by construction.
+    /// </summary>
+    // fidelity: M11-050
+    private bool IsPoseInWorldOrigin(uint stateOriginId) =>
+        _robot.Engine.Robot is not { } er || er.OfflineSeamAcceptsAnyOrigin || stateOriginId == er.CurrentOriginId;
+
     // fidelity: M1-025, M1-015
     // The removal checks: a frame started before a removal keeps and raises nothing after it (ResetToConstructed).
     private VisionFrameResult? ProcessImage(GrayImage gray, uint imageId, uint timestamp, VisionPoseData pd,
@@ -853,15 +875,47 @@ public sealed class VisionSystem : IDisposable
             // (RobotStateHistory::ComputeAndInsertStateAt, 0x00654D92); GetComputedStateAt (Insert P5) finds only those.
             // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
             bool stateComputed = true;
-            // M11-050 (IMPLEMENTATION_GAP, NOT BUILT): between this call and UpdateObservedMarkers the engine (a) treats 0x06000000 as a silent drop (0x006550A0), (b) drops the frame when
-            // Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56), (c) drops it when WasRotatingTooFast(key, 0.5236, 0.1745, 0) (0x00654E78; this stack only has the (0.1745, 0.1745, 0) gate of
-            // 0x00621C9A), (d) replaces each marker's camera with Robot::GetHistoricalCamera(state, ts) of the computed state (0x00654E8E) and drops markers with a differing timestamp or an invalid key
-            // (0x00654F0C..0x00654FDA), and passes only that new list on. This stack uses the camera built from History.At (the nearest raw state) for the markers and the objects instead.
+            var keptMarkers = markers;
+            // fidelity: M11-036, M11-050
+            // UpdateVisionMarkers 0x00654D60..0x006550AC, for a result that has markers (an empty list goes straight to UpdateObservedMarkers, 0x00654D76..0x00654DEC): after the computed state
+            // (0x00654D92) the engine (b) drops the frame, logging, when Robot::IsPoseInWorldOrigin(state pose) is false (0x00654E56, log 0x00655028..0x00655074), (c) drops it, silently, when
+            // WasRotatingTooFast(t, body 0x3F060A92, head 0x3E32B8C2, 0) (0x00654E62..0x00654E7E): NOT BUILT, see below, (d) takes Robot::GetHistoricalCamera(state, ts) (0x00654E8E) and drops each marker whose
+            // timestamp differs from the result's (error log, 0x00654F0C), and passes only the kept list to UpdateObservedMarkers (0x00654DEC..0x00654DF4). A drop in (a)..(c) returns without
+            // calling it, so none of the world's per-frame sequence runs for that frame.
+            // NOT BUILT (c): the rotation gate. The engine's ImuDataHistory keys its samples by a timestamp that ImuDataHistory::CalculateTimestampForImageIMU 0x00538C00 computes later, from SetNextImage
+            // (0x00652C16) with the image's own timestamp, the constant 65.0f (0x42820000) and line2Number; GetImuDataBeforeAndAfter 0x00538D82 needs two samples and takes the first sample STRICTLY after t.
+            // This stack keys samples by ImageId (a frame counter on fw2457) and has image timestamp 0 there, so it cannot build the engine's keys: the gate is skipped, never turned into a drop.
+            // (a) the 0x06000000 silent branch (0x00654D9A; the producer, M11-052's origin-mismatch return, is not built, so ComputeAndInsertStateAt cannot return it), the IsValidKey warning
+            // drop (0x00654F24; the key table at RobotStateHistory+0x28 has no counterpart and the check cannot fail right after the insert), the post-call BlockWorldUpdateFailed warning (0x00654DFA; the
+            // world returns no Result) and the DockingComponent::UpdateDockingErrorSignal call for a non-empty kept list (0x00654E4A; M12's DockingSystem runs from FrameProcessed). The historical camera is
+            // the camera built from pd above: History.At is the nearer raw state, which is what the interpolation stand-in of ComputeAndInsertStateAt stores (M11-052).
             if (markers.Count > 0)
             {
+                uint stateOrigin = 0;
+                bool originKnown = false;
                 if (offline) History.InsertComputedStateAt(timestamp, pd.RobotPose);   // LOCAL: the caller's pose data stands for the raw state
-                else stateComputed = History.ComputeAndInsertStateAt(timestamp);
-                if (!stateComputed) Log?.Invoke($"frame {imageId}: ComputeAndInsertStateAt failed for timestamp {timestamp}; the markers are not processed");
+                else { stateComputed = History.ComputeAndInsertStateAt(timestamp, out stateOrigin); originKnown = stateComputed; }
+                if (!stateComputed)
+                    Log?.Invoke($"VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: {timestamp}, hist: {History.OldestTimeStamp} to {History.NewestTimeStamp}");
+                else if (originKnown && !IsPoseInWorldOrigin(stateOrigin))
+                {
+                    stateComputed = false;
+                    Log?.Invoke($"VisionComponent.UpdateVisionMarkers.OldOrigin: Ignoring observed marker from origin {stateOrigin} (robot origin is {_robot.Engine.Robot?.CurrentOriginId})");
+                }
+                else
+                {
+                    var kept = new List<ObservedMarker>(markers.Count);
+                    foreach (var m in markers)
+                    {
+                        if (m.Timestamp != timestamp)
+                        {
+                            Log?.Invoke($"VisionComponent.UpdateVisionMarkers.MismatchedTimestamps: Marker t={m.Timestamp} vs. ProcResult t={timestamp}");
+                            continue;
+                        }
+                        kept.Add(m);
+                    }
+                    keptMarkers = kept;
+                }
             }
             // fidelity: M11-035, M11-036 — UpdateVisionMarkers (0x00654D60) calls
             // BlockWorld::UpdateObservedMarkers (0x00654DF4) first in the per-mode handler order. The whole
@@ -869,7 +923,7 @@ public sealed class VisionSystem : IDisposable
             // unobserved check, stacked poses, block configs and markerless objects.
             if (stateComputed)
             {
-                var worldFrame = World.UpdateObservedMarkers(markers, camera, timestamp, pd);
+                var worldFrame = World.UpdateObservedMarkers(keptMarkers, camera, timestamp, pd);
                 objects = worldFrame.Objects;
                 forgotten = worldFrame.Forgotten;
             }
@@ -977,6 +1031,7 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M3-033, M3-034
         _robot.Engine.ConnectionFaceAlbumLoaded -= _faceAlbumLoaded;
         _robot.Engine.PhysicalRobotSet -= World.SetPhysicalRobot;
+        if (_robot.Engine.ChargerPlatformUpdate == _platformStep) _robot.Engine.ChargerPlatformUpdate = _robot.ChargerPlatformStepWithoutWorld;   // only if it is still the installed one
     }
 }
 
@@ -1006,7 +1061,10 @@ public sealed class CubeLocator : ICubeLocator
         var o = World.GetLocatedObjectById(objectId);
         var cam = _vision.CurrentCamera();
         if (o is null || cam is null) return false;
-        return o.IsVisibleFrom(cam, BlockWorld.VisibilityNormalAngleRad, World.MinVisibleMarkerSizePx, 0, 0, out _);
+        // fidelity: M11-008
+        // The cube-moved strategy's call (0x0060BCF0..0x0060BD08): r3 = 0 (movs r3,#0 at 0x0060BCFE) is the minimum marker size, and the stack words are
+        // requireSomethingBehind = 0, xPad = 0, yPad = 0. The 40 px of World.MinVisibleMarkerSizePx belongs to CheckForUnobservedObjects (0x006220F0) only.
+        return o.IsVisibleFrom(cam, BlockWorld.VisibilityNormalAngleRad, 0, 0, 0, out _);
     }
 
     /// <summary>The turn the behaviours run; replaceable so tests can observe it without a robot.</summary>
@@ -1062,10 +1120,12 @@ public static class TurnTowardsPose
 {
     /// <summary>2 degrees; the <c>TurnInPlaceAction</c> constructor's 0x3D0EFA35 at +0xB0.</summary>
     // fidelity: M11-015
-    public const double ToleranceRad = 0.0349066;
+    public const uint ToleranceBits = 0x3D0EFA35;   // movw/movt 0x00545A78..0x00545A80, Radians(float) at 0x00545A84 into +0xB0
+    public static readonly double ToleranceRad = BitConverter.Int32BitsToSingle(unchecked((int)ToleranceBits));
     /// <summary>300 deg/s: the constructor's 0x40A78D36, copied to the action's max speed at +0xC4.</summary>
     // fidelity: M11-015
-    public const double MaxSpeedRadPerSec = 5.23599;
+    public const uint MaxSpeedBits = 0x40A78D36;    // movw/movt 0x00545A28/0x00545A32, stored to +0x78 at 0x00545A44
+    public static readonly double MaxSpeedRadPerSec = BitConverter.Int32BitsToSingle(unchecked((int)MaxSpeedBits));
     /// <summary>The constructor's 0x41200000 at +0x7C, copied to the action's acceleration at +0xC8.</summary>
     // fidelity: M11-015
     public const double AccelRadPerSec2 = 10.0;

@@ -1212,6 +1212,10 @@ public sealed class EngineRobot
             // reported once per process (ReportMissing de-duplicates), not once per engine robot
             Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: this stack has neither status on the engine tick, so neither gate is applied");
         }
+        // fidelity: M4-019
+        // 0x00513CD8..0x00513E2A: the charger-platform step (the platform flag's clear) follows UpdateAllResults / SendAbsLocalizationUpdate / MapComponent::UpdateRobotPose
+        // and precedes MoodManager::Update (0x00513E84) and so AIComponent::Update; it is owned by the world's owner (the VisionSystem), which sets this hook.
+        if (Engine.ChargerPlatformUpdate is { } platform) Engine.RunIsolated(platform);
         // fidelity: M8-011
         // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
         // (0x0051410C) and NVStorage::Update (0x0051416A).
@@ -1716,6 +1720,11 @@ public sealed class CozmoEngine : IDisposable
     /// </summary>
     internal Action? AIComponentUpdate;
     /// <summary>
+    /// M4-019: <c>Robot::Update</c>'s charger-platform step (0x00513CD8..0x00513E2A), run by <see cref="EngineRobot.Update"/> after the first full state and the
+    /// <c>UpdateAllResults</c> gate, ahead of <see cref="AIComponentUpdate"/>. The <c>VisionSystem</c> (the owner of the <c>BlockWorld</c> it reads) sets it.
+    /// </summary>
+    internal Action? ChargerPlatformUpdate;
+    /// <summary>
     /// The <c>VisionComponent::UpdateAllResults()</c> result as <c>Robot::Update</c> tests it (0x00513C76 <c>blx 0x4a7db0</c>; 0x00513C7C <c>cbz r6</c>): true is the non-zero
     /// result, after which <c>Robot::Update</c> warns and returns (0x00513C92..0x00513C9A). In this stack the vision results are handled inside <c>VisionSystem</c> on the
     /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on.
@@ -1742,9 +1751,8 @@ public sealed class CozmoEngine : IDisposable
     /// <summary>
     /// SC4d: <c>Robot::Delocalize</c> (0x00510A24) begins with <c>ClearCliffRunningStats</c> (0x00510A5A). This hook is
     /// the M4-019 part of the stack's Delocalize path, run by the constructor's Delocalize (M4-020
-    /// <c>ConstructorDelocalize</c>, 0x00510324). The runtime Delocalize callers - the UFRS treads/carry path
-    /// (0x00512BA6) and the ≥101 frame mismatch (0x00512F82..0x00512F96) - are M11's pose-frame interface and are not
-    /// built. Wired by CozmoRobot to <see cref="CozmoSensors.ClearCliffRunningStats"/>.
+    /// <c>ConstructorDelocalize</c>, 0x00510324). The runtime Delocalize callers - the UFRS treads path
+    /// (0x00512BA6) and the 101st frame mismatch (0x00512F82..0x00512F96) - run in VisionSystem (M11-019). Wired by CozmoRobot to <see cref="CozmoSensors.ClearCliffRunningStats"/>.
     /// </summary>
     internal Action? RobotDelocalized;
 

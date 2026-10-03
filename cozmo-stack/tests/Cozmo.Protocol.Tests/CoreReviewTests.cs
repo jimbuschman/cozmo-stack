@@ -800,23 +800,37 @@ public class CoreReviewTests
     // ================================================================ CORE-008
 
     /// <summary>
-    /// CORE-008. The robot reports which origin its pose is in and the stack threw it away.
-    ///
-    /// What the source says happens on an origin change is not a matter of judgement.
-    /// <c>Robot::Delocalize</c> 0x00510A24 allocates a new origin, puts the robot at it, clears the pose
-    /// confirmer and moves <em>only what the robot is carrying</em> into the new origin
-    /// (<c>BlockWorld::UpdateObjectOrigin</c> per carried object at 0x00510CF0);
-    /// <c>BlockWorld::OnRobotDelocalized</c> 0x006249C4 deletes what is left in origins nobody references
-    /// and asks for a fresh memory map for the new origin (<c>CreateLocalizedMemoryMap</c>); and
-    /// <c>Robot::UpdateFullRobotState</c> resolves the reported origin id against its own list
-    /// (0x00512C44) when it files the state in history. So a pose from a previous origin is not stale by
-    /// a little: it is written in a frame that no longer exists.
-    ///
-    /// This populates the world, injects the origin change the way the robot reports it, and shows that
-    /// the stale coordinates cannot drive anything afterwards.
+    /// CORE-008, corrected by R-FIX batch 3 (M11-019). The first version of this test asserted that a RobotState reporting a different pose origin id delocalizes. The engine has no such
+    /// trigger: <c>Robot::Delocalize</c> 0x00510A24 is called from <c>UpdateFullRobotState</c> at 0x00512B88..0x00512BA6 (PLT 0x4A7804), only when <c>CheckAndUpdateTreadsState</c> committed a
+    /// change to or from OnTreads (r7 != 0, 0x00512A62..0x00512A94). A state that merely reports another origin id (one the pose-origin list holds) is filed in the history and forgets nothing.
     /// </summary>
     [Fact]
-    public void CORE008_AnOriginChangeTakesTheOldFramesCoordinatesOutOfPlay()
+    public void CORE008_AnOriginChangeInTheStateStreamAloneDoesNotDelocalize()
+    {
+        using var rig = new Rig();
+        if (rig.NoLibrary) return;
+        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
+        var seen = rig.Frame();
+        var cube = Assert.Single(seen.Objects).Object;
+        Assert.True(cube.IsLocated);
+
+        int delocalized = 0;
+        rig.Vision.RobotDelocalized += _ => delocalized++;
+        Assert.Equal(1u, rig.Vision.OriginId);
+        rig.OriginId = 2;
+        rig.State();
+
+        Assert.Equal(0, delocalized);
+        Assert.Equal(2u, rig.Vision.OriginId);                                // the history files the state under its origin
+        Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));      // and nothing is forgotten
+    }
+
+    /// <summary>
+    /// CORE-008 / M11-019: the engine's trigger, through the live path (the state stream into <c>VisionSystem</c>): a treads commit that involves OnTreads (here OnTreads to InAir on the
+    /// IS_PICKED_UP status bit) runs <c>Robot::Delocalize</c>, and <c>BlockWorld::OnRobotDelocalized</c> 0x006249C4 forgets what is located; a drive to the forgotten object then refuses.
+    /// </summary>
+    [Fact]
+    public void CORE008_ATreadsBoundaryDelocalizesAndTakesTheOldFramesCoordinatesOutOfPlay()
     {
         using var rig = new Rig();
         if (rig.NoLibrary) return;
@@ -826,24 +840,19 @@ public class CoreReviewTests
         Assert.True(cube.IsLocated);
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
 
-        // something in the map too, so both kinds of spatial state are covered
         var map = new MemoryMap();
         map.UpdateRobotPose(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), false, 1);
         Assert.NotEmpty(map.Regions);
-        uint delocalizedTo = 0;
-        rig.Vision.RobotDelocalized += o => { delocalizedTo = o; map.Clear(); };
+        int delocalized = 0;
+        rig.Vision.RobotDelocalized += _ => { delocalized++; map.Clear(); };
 
-        // the robot comes back in a different origin, which is what it reports after a delocalization
-        Assert.Equal(1u, rig.Vision.OriginId);
-        rig.OriginId = 2;
-        rig.State();
+        rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp));
+        Assert.Equal(Cozmo.Robot.OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
 
-        Assert.Equal(2u, delocalizedTo);
-        Assert.Equal(2u, rig.Vision.OriginId);
+        Assert.Equal(1, delocalized);
         Assert.Null(rig.M.World.GetLocatedObjectById(cube.ObjectId));      // cannot be driven to any more
         Assert.Empty(map.Regions);                                        // the map is the new origin's
 
-        // and a drive to it now refuses rather than steering by a pose in a frame that has gone
         var drive = new DriveToObjectAction(rig.M, cube.ObjectId, PreActionType.Docking);
         var result = drive.RunAsync(default).GetAwaiter().GetResult();
         Assert.Equal(ActionResult.BadObject, result);
@@ -851,11 +860,11 @@ public class CoreReviewTests
     }
 
     /// <summary>
-    /// CORE-008, the exception the source names: what the robot is holding moves into the new origin
-    /// rather than being forgotten, because where it is relative to the robot is still known.
+    /// CORE-008, the exception the source names: what the robot is holding moves into the new origin rather than being forgotten (<c>BlockWorld::UpdateObjectOrigin</c> per carried object at
+    /// 0x00510CF0), here at the engine's trigger, the tread boundary.
     /// </summary>
     [Fact]
-    public void CORE008_ACarriedObjectSurvivesTheOriginChange()
+    public void CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization()
     {
         using var rig = new Rig();
         if (rig.NoLibrary) return;
@@ -863,10 +872,8 @@ public class CoreReviewTests
         var cube = Assert.Single(rig.Frame().Objects).Object;
         rig.M.Docking.Carrying.SetCarrying(cube.ObjectId);
 
-        rig.OriginId = 7;
-        rig.State();
+        rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp));
 
-        Assert.Equal(7u, rig.Vision.OriginId);
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
     }
 

@@ -45,8 +45,8 @@ public class MotionPrimitiveTests
         var prim = set.ByAngle[0].First(p => p.ActionIndex == actionIndex);
         Assert.NotNull(prim.Arc);
         var arc = prim.Arc!.Value;
-        Assert.Equal(radius, arc.Radius, 6);
-        Assert.Equal(sweep, arc.SweepRad, 6);
+        Assert.Equal((float)radius, arc.Radius);        // the arc block is read with asFloat (0x008541D4..0x0085421A): the JSON number narrowed to binary32
+        Assert.Equal((float)sweep, arc.SweepRad);
 
         double endAngle = arc.StartRad + arc.SweepRad;
         double ex = arc.CenterX + arc.Radius * Math.Cos(endAngle);
@@ -68,8 +68,8 @@ public class MotionPrimitiveTests
     {
         if (Set is not { } set) return;
         var at90 = set.ByAngle[4].First(p => p.ActionIndex == 2).Arc!.Value;
-        Assert.Equal(-94.72135954999578, at90.CenterX, 6);
-        Assert.Equal(7.639320225002117, at90.CenterY, 6);
+        Assert.Equal((float)-94.72135954999578, at90.CenterX);
+        Assert.Equal((float)7.639320225002117, at90.CenterY);
         Assert.Equal(0.0, at90.StartRad, 6);
     }
 
@@ -136,7 +136,12 @@ public class MotionPrimitiveTests
         if (Set is not { } set) return;
         var prim = set.ByAngle[0].First(p => p.ActionIndex == 2);
         Assert.NotNull(prim.Arc);
-        Assert.Equal(1.0447365786280445, prim.Cost, 9);
+        // the engine adds the two terms in binary32 (0x008540B4..0x008541C4: (float)(d8 * |straight|), then (float)(d8 * (sweep * (radius + 24.0))) added as floats, then * the factor 1.0f)
+        double d8 = BitConverter.Int64BitsToDouble(0x3F91111111111111);
+        float straight = (float)(d8 * 7.639320225002111 + 0.0);
+        float arcTerm = (float)(d8 * (0.4636476090008061 * (94.72135954999578 + 24.0)));
+        Assert.Equal(BitConverter.SingleToUInt32Bits((straight + arcTerm) * 1.0f), BitConverter.SingleToUInt32Bits(prim.Cost));
+        Assert.Equal(1.0447365786280445, prim.Cost, 6);                 // and within float error of the exact value
         Assert.NotEqual(1.23020, prim.Cost, 4);
     }
 }

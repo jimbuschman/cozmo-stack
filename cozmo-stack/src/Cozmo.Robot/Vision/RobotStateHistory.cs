@@ -142,8 +142,16 @@ public sealed class RobotStateHistory
     /// blend is HistRobotState::Interpolate 0x0053068C (see the stand-in below); the frame of the blend's temporary pose is unread.
     /// </summary>
     // fidelity: M11-044
-    public bool ComputeAndInsertStateAt(uint timestamp)
+    public bool ComputeAndInsertStateAt(uint timestamp) => ComputeAndInsertStateAt(timestamp, out _);
+
+    /// <summary>
+    /// The same, also giving the origin id of the raw state the computed state was taken from: the computed pose's parent is that state's origin, which is what
+    /// <c>Robot::IsPoseInWorldOrigin</c> 0x0051290C compares with the world origin (M11-050, 0x00654E56).
+    /// </summary>
+    // fidelity: M11-044, M11-050
+    internal bool ComputeAndInsertStateAt(uint timestamp, out uint originId)
     {
+        originId = 0;
         lock (_gate)
         {
             Entry? before = null, after = null;
@@ -163,9 +171,21 @@ public sealed class RobotStateHistory
                 InterpolationStandIns++;
             }
             _computed[timestamp] = HeadGeometry.RobotPose(use.Pose);
+            originId = use.OriginId;
             return true;
         }
     }
+
+    /// <summary>
+    /// <c>RobotStateHistory::GetOldestTimeStamp</c> 0x00532188: the smallest raw key, 0 when the raw map is empty (0x0053218A..0x0053218E). Logged by <c>UpdateVisionMarkers</c> when
+    /// <c>ComputeAndInsertStateAt</c> fails (0x00654DB4).
+    /// </summary>
+    // fidelity: M11-050
+    internal uint OldestTimeStamp { get { lock (_gate) return _entries.Count == 0 ? 0u : _entries.Min(e => e.Timestamp); } }
+
+    /// <summary><c>RobotStateHistory::GetNewestTimeStamp</c> 0x00532196: the largest raw key, 0 when the raw map is empty (0x00532198..0x005321B8).</summary>
+    // fidelity: M11-050
+    internal uint NewestTimeStamp { get { lock (_gate) return _entries.Count == 0 ? 0u : _entries.Max(e => e.Timestamp); } }
 
     /// <summary>
     /// LOCAL, no engine counterpart: puts a state the caller measured into the computed map, for <see cref="VisionSystem.ProcessImage(GrayImage, uint, uint, VisionPoseData)"/>, whose caller hands
