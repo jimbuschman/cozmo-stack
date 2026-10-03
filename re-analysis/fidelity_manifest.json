@@ -132,7 +132,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-10-02",
+        "approved": "2026-10-03",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },

@@ -2575,3 +2575,48 @@ inventory; where they differ from earlier text, C30 wins.
   `CozmoAnimations.AudioSource`. The file gives the engine's calling path and the C# host. Until then, no test may
   cite M6-025 or M6-026 as covering the live path.
 - **The music PBI, `0xA381F4`:** not part of M6-026. It belongs to the music path (M9, or a new record).
+
+## Correction C31 (manager, 2026-10-03): the live-bodies extraction, checked
+
+**Sonnet-verified; awaiting Opus check.** The manager checks C31 before any record built on it settles.
+
+The extractor's report `re-analysis/research/20261003-B-M6b-4-live-bodies.md` was checked row by row by a verifier
+(`re-analysis/research/20261003-B-M6b-4-live-bodies-verify.md`, FAIL as written). C31 adopts **only the rows that
+verifier lists as HOLDS (its section 2), with its section 1 corrections applied**; a row of the extractor's report that
+section 1 corrects is read as the correction says. Where C31 differs from earlier text, C31 wins. No status changes.
+
+- **C31.1, `0xA1EC54` and the pair `pbi+0x1DC/+0x1E0` (R1.1..R1.14).** Constructor zero stores `0xA002F0/0xA002F4`;
+  writers are the constructor, `0xA0207C` (inside `0xA01EF4`), `0xA02AF0` (Term, 0) and the out-pointers `0xA02928/0xA0292C`.
+  The call `0xA1EC54([pbi+0x150], pbi+0x1DC, pbi+0x1E0, pbi+0x108)` at `0xA02924..0xA02934` runs only after
+  `[pbi+0x140] != 0` and `0xA04D48` returned 1; its result is ignored. For a Sound node `[obj+0x10] == 0`, so the media
+  table path (`0x9BB320`, `0x9BB1F8`) is taken; a lookup miss gives (0, 0). The writers of the media table
+  (`BM+0x34/+0x38`) are unread by this report (RECOVERABLE_GAP; a later extraction reads them). `0xA01EF4` also has the
+  `vt+0x5C`/`vt+0x60` branches and releases the old `+0x1DC` and `+0x108` before storing (verifier section 1, R1.12).
+- **C31.2, `0xA54A30` (R2.1..R2.13, R2.15).** C24.2's FX sentence is **withdrawn**: the registry `0x108D9DC` holds
+  **25** records (23 ARM-registered, including the Compressor `0x006C0003`, plus the two Thumb-registered Anki plugins
+  `0x006412C2` and `0x000112C3`). The Compressor gets an in-place 0x34-byte wrapper (vtable `0x103DB98`); a plugin with
+  `byte[sp48] == 0` gets the 0x9C object. The failing call's stores `[voice+0x1B4/0x1B8/0x1BA]` come first, so a failed
+  init leaves them set. The body is read to the extent of R2.1..R2.13; the wrapper `vt+0x24/0x28/0x2C` bodies, `0xA793D4`,
+  `0x9CF644`, `0xA6C22C` and the Compressor's init and execute remain RECOVERABLE_GAP (R2.15), so `0xA54A30` stays a seam.
+- **C31.3, the AddSrc pre-steps and the sibling (R3.1..R3.8).** `0x9BCA68` runs `CalcEffectiveParams` fully
+  (verifier R3.1: the reset is only its first stage; `[pbi+0x3C]`, `[pbi+0x40]` come from the recompute at
+  `0x9FFD14..0x9FFE18`); its constants are bit reinterpretations, not conversions (R3.2). `0xA0228C`, `0xA55D04`,
+  `0xA53244`, `0xA76608` as R3.3, R3.6, R3.7. `0xA55A84`: a nonzero `0x9BCA68` result with `[voice+0xE4] == 1` falls into the
+  destroy sequence `0xA55B10..0xA55B48` (R3.4).
+- **C31.4, the other seams (R4).** `0xA03618` (R4.1, with the game-object release at `0xA03720`); the play-position
+  repository: `0xA05574` stores the clock when the count is **non-zero** (R4.3 corrected); `0xA05370` first scans for an
+  existing record; `0xA56414`, `0xA55CC4` (stores 101.0f to `pbi+0xC4`), `0xA5495C`, `0xA56478`. `pbi+0x1F8` is a stop
+  offset (-1 = none) read by the getter `0x9CBACC`; the compare is an unsigned 32-bit compare against the zero-extended
+  u16 (R4.8 corrected); writers are `0xA3E920`, `0x988264`, `0xA3EB88` and the constructor.
+- **C31.5, the `0xA56650` callers and the frame count (R5).** Seven callers: `0x9B4354`, `0xA52C18`, `0xA544E0`,
+  `0xA54948`, `0xA554F8`, `0xA55914`, `0xA55AC4`. `0xA52B90` reads as the verifier's section 3. The `0xA44948` prelude is
+  `[G+4] != 0` then `[G+0x20] = (int64)(int32)clock()` (G = `*0x108D8F8`, the play-position repository). The only writer
+  of `u16[0x1052440]` is `0xA1C7D4` (sole caller `0xA57850` inside `0xA57724`, logic as the verifier's section 4; defaults
+  rate 48000, frames `0x400`). The source of `[0x108D90C+0x20]` is not settled by C31 (a later extraction reads it);
+  no runtime value may be stated.
+- **Records touched (text only, no status):** M6-025 (C31.1, C31.2, C31.5), M6-022 (C31.3), M6-013 (the registry now has
+  25 records; its evidence names two), M6-026 (C31.3, C31.4). Residuals now closed: `0xA1EC54`, `0xA03618`,
+  `0xA054D8`, `0xA0228C`, `0xA55CC4`, `0xA5495C`, `0xA53244`, `0xA76608`, `0xA55D04`, `0xA55A84`, `0xA56478`, the
+  writer of `[0x1052440]`. Still open: the media-table writers, `0xA54A30`'s FX bodies, `0xA0B600`, `0xA05934`,
+  `0xA1C660`, `0xA1C65C`, `0x9A6988`, `0xA0C238`, the writer of `[item+0x48]`, the source classes' stream bodies,
+  the source of `[0x108D90C+0x20]`.

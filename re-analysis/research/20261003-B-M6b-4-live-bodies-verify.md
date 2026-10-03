@@ -1,0 +1,66 @@
+# Verification of `20261003-B-M6b-4-live-bodies.md` (R1.1 to R5.10)
+
+- **Date:** 2026-10-03
+- **By:** an Opus `cozmo-verifier` from the manager session. Capstone ARM and Thumb disassembly of `resources/lib/armeabi-v7a/libcozmoEngine.so`; PC-relative literals and GOT slots resolved by hand; static caller scans over `0x95E000..0xAE3000`; a fresh Unicorn run (ARM and Thumb) of all 125 `.init_array` entries and of `0x9CBECC`.
+- **Saved by the manager** from the verifier's hand-back (the verifier may not write files); this is the substance of it, with every correction and every HOLDS row. Adopted as correction C31 in `inventory/M6-wwise-bank.md`.
+- **Verdict:** FAIL as written. The report is mostly sound; the rows below need the stated corrections before they are used.
+
+## 1. Corrections (rows that are PARTIAL or FAIL)
+
+| Row | Verdict | Correct reading |
+| --- | --- | --- |
+| R2.14 count | count FAILS | The registry holds **25** records, not 23. The static `.init_array` constructors create 26 list nodes: 24 ARM nodes (one of them type 1, skipped) plus 2 from **Thumb** constructors. The two Thumb nodes are the Anki plugins, company 300 = `0x12C`: key `0x006412C2` (type 2, create `0x8DDA8D`, params `0x8DDB29`) and key `0x000112C3` (type 3, create `0x8DBC71`, params `0x8DBD11`). The compressor part holds. |
+| R2.14, was C24.2 ever right? | No | C24.2's "holds only the two Anki static plugins" was never true: the two Anki plugins are in the registry beside the 23 ARM-registered records (Peak Limiter `0x006E0003`, Compressor `0x006C0003`, ParametricEQ `0x00690003`, others). The error entered through `research/20260929-B-M6b-4-batch4a-missing.md` line 10 ("filled only from a static list (two entries ...)"). |
+| R2.7 | wording | In `0x9CC2AC(id, out, params, 1)` the third argument (r2 = `&sp40`) **is** used: it goes to `plugin->vt+0x10`. The unused one is the fourth (r3, the constant 1). |
+| R3.1 | PARTIAL | Holds: the ctx dispatch at `0x9BCA68..0x9BCA84`, `0x9BCB7C..0x9BCBA0`, and the body of `0x9FF368..0x9FF410`. Fails: with r1 = 0, `r7 == 0` only skips the cached path (`0x9FFAF8 beq 0x9FFB10`); the `0x9FFB10..0x9FFB84` reset is the **first stage** of `CalcEffectiveParams` (`0x9FFAD4`), not the whole effect. After it: the transition-list prune (`0x9FFBAC..0x9FFBF8`) and the test of `r6 = 0x9BDA6C(ctx)` at `0x9FFBFC`. If `pbi+0xE9` bit2 is set it ends at `0x9FFC30..0x9FFC50` (`[pbi+0x1BC] \|= 1`, `[pbi+0xE8] \|= 0x20`). Otherwise it runs `0x9FBE74`, stores 101.0f to `pbi+0xC4`, calls node `vt+0xAC`, composes `+0x48/+0x4C/+0x44/+0x9C/+0xA4`, and recomputes `[pbi+0x3C]`, `[pbi+0x40]` (clamped by `vmovle`) and `[pbi+0x64]` at `0x9FFD14..0x9FFE18`. The `[pbi+0x3C]` and `[pbi+0x40]` that `0x9BCA68` reads come from that recompute, not from the reset values. |
+| R3.2 | wording | Constants and order exact: `0x3D4CCCCD`, `0xC2140000`, `0x4BD49A78`, `0x4E7E0000`, `0x3EA67F46`, `0x3CAA70DE`, `0x3F272DDB`, limit `[0x1052454] = 0x37800000`; `(lin1 * [pbi+0x40]) * lin2`; non-fused `vmla`; `movls` gives 0 for NaN; the `bmi` below-threshold branch gives 0.0. But `m = float(0x3F800000 + (u & 0x7FFFFF))` and `float((u >> 23) << 23)` are **bit reinterpretations** (`vmov s15, r2` / `vmov s15, r3`), not integer-to-float conversions: use `BitConverter.Int32BitsToSingle`. |
+| R3.4 (`0xA55A84`) | PARTIAL | Holds: structure and callers `0xA41C44` and `0xA44AD0` (both a = 1, b = 0: r4 = 0 at `0xA41C00..0xA41C18`, sl = 0 at `0xA44A9C`). Omitted: a nonzero `0x9BCA68` result with `[voice+0xE4] == 1` goes to `0xA55B0C`, which sets sb = 3 and **falls through into the destroy sequence** `0xA55B10..0xA55B48` (`0xA56414(source, 1)`, destructor, pool free), not a bare "return 3". |
+| R4.1 (`0xA03618`) | PARTIAL | All listed holds. Omitted: when the game-object counter reaches 0 (`0xA03720 cmp r2,#0; beq 0xA03818`) it calls `0xA0B600(...)` and pool-frees the game object with `0xA7A988(pool, obj)` before continuing at `0xA0372C`. |
+| R4.3 (`0xA05574`) | **CONTRADICTED** | The clock is **not** written "when the count is 0": `0xA05694 cmp sb,#0; beq 0xA055E8` skips it when the count is 0. The clock is stored when the count is non-zero (same polarity as R5.7, `0xA44968 bne 0xA44BD0`). In the add path the count is already incremented (`0xA05640`), so the clock is always stored. |
+| R4.3 (`0xA05370`) | PARTIAL | The record fields hold (`[+0x10] = -1`, `[+0x14] = 0x3F800000`, `[+0x18] = -1`, `[+0x1C] = 1`). Omitted: it first scans for an existing `{id, source}` record (`0xA0539C..0xA053B8`) and returns without adding if one exists. |
+| R4.8 (`0x9CBACC`, `+0x1F8`) | PARTIAL | The getter and the consumers `0xA548C0..0xA5492C`, `0xA54F34..0xA54F4C` hold. Fails: "(u16)r0 < u16[mix+0xE]" is really `ldrh r3,[r5,#0xE]; cmp r0,r3; strhlo`: an **unsigned 32-bit** compare of the whole r0 against the zero-extended u16, then a halfword store; r0 of 65536 or more never stores. The writer list is incomplete: `+0x1F8` is also stored at `0x988264` (`strlo`, a min-update from a frame count: r1 divided by `[pbi+0x164]`, rounded half away from zero, stored if lower), `0x9886D0` (a second getter at `0x9886C0` returning -1 when `[+0x20C] & 2`) and `0xA3EB88` (stores -1). It is a stop offset set from a time or frame value. |
+| R5.4 (`0xA52B90`) | resolved | See section 3. |
+| R5.9 (`0xA57724`) | PARTIAL | The writer and caller hold. The logic description omits branches and misnames globals: see section 4. |
+| R1.12 (`0xA01EF4`) | PARTIAL | The path holds. Omitted: `vt+0x5C != 0` goes to `0xA02088`; otherwise `vt+0x60 != 0` runs `[src+8] += old1DC - new` (`0xA02024..0xA02040`). It then releases the old `[pbi+0x1DC]` via `0xA1ECBC` and the old `[pbi+0x108]` via `vt+0`, and only then stores (`0xA02044..0xA02084`). |
+| R1.1 / headline 1 | HOLDS, "NEW" overstated | The manifest's M6-025 evidence already cites "C23: ... pbi+0x1DC/+0x1E0 writer 0xA1EC54 (0xA02924..0xA02934)" and "pbi+0x1F8 (0xA00318)". What is new: the constructor zero stores, the body of `0xA1EC54` and the lookup. |
+
+## 2. Rows verified as HOLDS (safe for C31)
+
+R1.1 (`0xA00180 mov ip,#0`; no `bl` in `0xA00180..0xA002F8`; `0xA002F0`/`0xA002F4` store ip to `+0x1DC`/`+0x1E0`) · R1.2 (PBI writers `0xA002F0`, `0xA002F4`, `0xA0207C`, `0xA02AF0` and the out-pointers `0xA02928`/`0xA0292C`; `0xA35594` stores -1 at `+0x1D8`, not PBI; `0xA41EA0` and `0xA43C78` families are voice-object stores) · R1.3 (`0xA0285C..0xA02938`, grow path `0xA02940..0xA029C4`; `[pbi+0x140] == 0` gives r5 = 2, no call; `0xA04D48` must return 1 first) · R1.4 · R1.5 (`0xA04D48..0xA04DE4`; callers `0x97DA4C`, `0x97E6F4`, `0xA02914`, `0xA37EA0`) · R1.6 · R1.7 (GOT `0x1040078` = `0x108D8D8`) · R1.8 (first lock GOT `0x10400F0` = `0x108E330`) · R1.9 (tail `0x9BB2F0..0x9BB318` is dead) · R1.10 (the alternate embedded-data setter `0xA1EB58` also leaves `[0x10] = 0`) · R1.11 (as a gap) · R1.13 (callers of `0xA1ECBC`: `0xA01FD8`, `0xA02054`, `0xA02AE8`, `0xA3CA70`) · R1.14 · R2.1..R2.6 · R2.3 (`0xA47038..0xA47164`, table `0xFFD450` = `00 01 02 02 / 00000000 / 04 05 06 06`) · R2.7, R2.8 (compressor info struct `{3, 0x7E002, byte8 = 1, byteA = 0}` gives the in-place 0x34-byte wrapper, vtable `0x103DB98`, `+0x28 = 0xA792B0`; `byte[sp48] == 0` gives the 0x9C wrapper, vtable `0x103DC38`, `+0x28 = 0xA79858`; the bank bytes `03 00 6C 00` were not re-derived: no .bnk file is in the repo) · R2.9 · R2.10 · R2.11 · R2.12 · R2.13 · R2.14's compressor part (fresh emulation: `0x9CBECC` registers key `0x006C0003`, create `0xAA0538`, params `0xAA0808`; `0xA40C04` is the only caller of `0x9CBECC`; `0x9CBAE0` has a second caller, `0xA57350`, the DLL path) · R2.15 (as a gap) · R3.3 · R3.5 (no code or data reference to `0xA55C78` or `0xA55CD8`) · R3.6 · R3.7 · R3.8 · R4.2 (the tests) · R4.4 · R4.5 · R4.6 · R4.7 · R5.1 · R5.2 (`0x9B4354` calls `vt+0x2C` and sets r5 = 2 on a non-1 result) · R5.3 (except the u16 compare nuance of R4.8) · R5.5 (arms only; reach conditions at `0xA55210`/`0xA552C4` not re-opened) · R5.6 · R5.7 (sole caller `0xA44DFC`) · R5.8 · R5.9's writer part (`0xA1C7D4`: PC-relative `0x105243C`, `[+4] = frames` as a 32-bit store at `0x1052440`, `[+8] = trunc_u32(frames / (rate/1000))`, `[+0xC] = trunc_u32(0.25 * (frames*1000/rate))` with an f64 multiply, literal 1000.0f; sole caller `0xA57850`; `.data` defaults rate `0xBB80`, frames `0x400`; no other writer in the ARM or Thumb text) · R5.10 (as a gap; the 21 GOT `0x1040098` sites match).
+
+## 3. R5.4: `0xA52B90` correct reading
+
+- **Entry:** `r5 = owner = [[[vpl+0xB0]+0xD8]+0xC]`, the pending source's PBI. The function only **reads** `[vpl+0xB0]`; `0xA5321C` stores `[vpl+0xB4]`.
+- **Branch 1, `[owner+0x1D8] > 0` (signed):**
+  - `s15 = float_u32(u16[vpl+0x94] - u16[vpl+0x96]) * [owner+0x164]`. The conversion is `vcvt.f32.u32` and the subtract is 32-bit, so `0x94 < 0x96` gives a huge unsigned value.
+  - `s14 = +0.5f`, replaced by `-0.5f` when `vcmpe s15,#0` is `le` (NaN included). `s15 += s14`, then `vcvt.s32.f32` truncates: `consumed`.
+  - `rsble r2,r3,r2` gives `remaining - consumed` when `consumed <= remaining`; `rsbgt r2,r2,r2` is `r2 - r2 = 0` when `consumed > remaining`. So `[owner+0x1D8] = consumed > remaining ? 0 : remaining - consumed`.
+  - Returns 0x11 (`mov r0,#0x11` at `0xA52BBC`).
+- **Branch 2, `[owner+0x1D8] <= 0` (`0xA52C08`):**
+  - `0xA56650(pending, [owner+0x1DC], [owner+0x1E0])`: 0x3F returns 0x11; other non-1 returns 2.
+  - On 1 it compares only `[old pbi+0x15C]` with `[owner+0x15C]` as a 32-bit equality (byte 0, the low nibble of byte 1, bits 12..31); `+0x158` and `+0x160` are not compared. Any difference returns 0x11 (`0xA52D30`).
+  - If equal: `0xA549A0(voice)` swaps the sources, then `[vpl+0xB4] = owner` and `[vpl+4] = [voice+0xD4]`. Then the ctx update: bit `[owner+0xE8] & 0x20` clear runs `ctx->vt+0x24(ctx, 0)`; set with `[owner+0xE9] & 1` set runs `ctx->vt+0x28` (`0x9FF368`); set with bit0 clear runs nothing.
+  - Then `src = [vpl+4]`, `r0 = src->vt+0x20(src)`, and `0xA47528(vpl+8, &newfmt(sp+0x14), r0, vpl+0x88, [sp] = [voice+0xEC])`.
+- **Tail `0xA52D10..0xA52D2C`:** `r0 = [vpl+0x48]` (32-bit); `r3 = u16[vpl+0x96]`; `byte[vpl+0xB8] = 0`; returns `0x2B` if `r3 != r0`, else `0x2D`.
+- The only caller is `0xA52F80`.
+
+## 4. R5.9 `0xA57724`: the frame-count logic
+
+- **Globals:** r4 = GOT `0x1040128` = `0x108DA38`, a global struct (`+0x38` rate, `+0x44` byte, `+0x4C` and `+0x50` objects; not "the sink"); r8 = `0x108D90C` (GOT `0x1040098`); `G2` = `0x108DF90`.
+- **Zero frames:** if `[0x108D90C+0x20] == 0`, then `[0x108D90C+0x20] = [0x108DF94]` and r7 = r6 = `[0x108DF94]` (`0xA578D0..0xA578E4`).
+- **Granularity:** r6 = `[0x108DF94]`; `r7 % r6`. Remainder 0: no change. Remainder non-zero with `byte[0x108DA38+0x44] != 0`: round to the nearer multiple, taking `hi` when `r7 - lo >= hi - r7`. Remainder non-zero with that byte 0 (`0xA57924`): **no rounding**; `[0x108DF94] = r7`.
+- **Rate:** `[0x108DA38+0x38] == 0` gives `[+0x38] = [0x108DF90]` (`0xA578E8`); if r5 is non-zero it also calls `[0x108DA38+0x4C]->vt+0x14` (`0xA57900`). Then, if `[+0x38]` is still 0, the rate is `0xBB80` (48000), also stored to `[0x108DF90]` (`0xA578B4..0xA578CC`). Only then: `0xA1C75C(rate)`, `0xA1C7D4([0x108D90C+0x20])`, `0xA40BC0`.
+- The runtime value of the frame count still depends on the unknown source of `[0x108D90C+0x20]` (R5.10) and on `[0x108DF94]`. No runtime value may be stated.
+
+## 5. Manifest quotes (current, at verification)
+
+- **M6-013**, IMPLEMENTATION_GAP: "Robot_Bus FX chain in slot order: two Parametric EQs and the Peak Limiter before the Hijack, with their settings and algorithms". Evidence includes "registration .init_array 0x4DEB18 / 0x4DEB8C"; `0x4DEB18` is key `0x006E0003`, the Peak Limiter. Not contradicted: it names two of the 26 static nodes (25 registry records).
+- **M6-025**, IMPLEMENTATION_GAP. Evidence already includes the `0xA1EC54` writer, `pbi+0x1F8`, "frames global 0xA44970..0xA44974" (C25) and "C24 ... voice init 0xA54A30 (returns 1 or 2)". It carries the C24.2 FX sentence.
+- **C24.2** is an inventory correction row (`M6-wwise-bank.md:1922`), not a manifest record. Its FX sentence is contradicted (25 records). Its other claims (return values 1 or 2, four call sites, `+0x1B4/+0x1B8/+0x1BA`, `+0xF0`, buffers at `voice+0x1D0/0x3A0`, no `+0xCD/+0xE8` stores) are confirmed, and the store order point holds: the stores at `0xA53228..0xA53234` precede the failing call.
+- **M6-022**, IMPLEMENTATION_GAP, lists "0xA55D04 / 0xA55A84 / 0xA54A30" and "0xA54F1C full state machine (0xA54F1C..0xA5574C)". The report's "too weak" point (parts of `0xA54F1C` are residual in C24 to C29) is a wording question; the verifier did not re-read the whole `0xA54F1C` body and makes no ruling.
+- **M6-022 V7-f / Q8:** confirmed that the 0x9C object is only for `byte[sp48] == 0`; with `byte[sp48] != 0`, `0xA54DD0` allocates the 0x34 in-place wrapper, and `0xA764D4` takes `[voice+0xF0]` as its second argument.
+
+## 6. Residual caveats
+
+- The Unicorn run of the init arrays faulted on two Thumb entries (`0x4D6C19`, `0x4D7E39`) because of PLT stubs; they are std-container and atexit setup, and no AK plugin registration was found in them, but they are not proven absent.
+- The per-Sound inheritance census (1872 of 2231) and the bank bytes were not re-derived: no .bnk file is in the repo.
