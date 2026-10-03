@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Cozmo.Robot;
 using Cozmo.Robot.Animation;
+using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
 using FaceMsg = Cozmo.Protocol.FaceImage;
@@ -180,21 +181,27 @@ public class M3DeviceTests
 
     // ================================================================== audio encoding: M3-010, M3-011
 
-    /// <summary>
-    /// C6: NaN gives 0; f &lt;= -1 gives s = -32767; otherwise s = trunc(min(f, 1) * 32767). So f = 1.5 encodes as 1.0,
-    /// f = -5 as -1, and the float path lands on the same byte as the scaled sample. (The segment table 0x00C5C3F0's
-    /// values are not in the inventory, so every check here is relative to the table.)
+/// <summary>
+    /// C6 (0x00597AD8..0x00597B8E): the byte is <c>sign 0x80 | exp &lt;&lt; 4 | mant</c> with the exponent from
+    /// the segment table 0x00C5C3F0 and the literal 0x46FFFE00 (32767.0f). Every expected byte below is
+    /// hand-derived from that algorithm and table, not read from the encoder: 32767 -&gt; mag 32767, hi 127,
+    /// exp 7, mant 15 = 0x7F; 16383 -&gt; hi 63, exp 6, mant 15 = 0x6F; -16383 -&gt; mag 16382 = 0xEF; -32767
+    /// -&gt; mag 32766 = 0xFF; NaN -&gt; 0. The float path clamps to 1 / -1, truncating toward zero.
     /// </summary>
     [Fact]
     public void M3_010_C6_TheFloatIsClampedScaledAndTruncated()
     {
-        Assert.Equal(0, AnkiMuLaw.Encode(float.NaN));
-        Assert.Equal(AnkiMuLaw.Encode(1f), AnkiMuLaw.Encode(1.5f));
-        Assert.Equal(AnkiMuLaw.Encode((short)32767), AnkiMuLaw.Encode(1f));
-        Assert.Equal(AnkiMuLaw.Encode(-1f), AnkiMuLaw.Encode(-5f));
-        Assert.Equal(AnkiMuLaw.Encode((short)-32767), AnkiMuLaw.Encode(-1f));
-        Assert.Equal(AnkiMuLaw.Encode((short)16383), AnkiMuLaw.Encode(0.5f));          // trunc(16383.5)
-        Assert.Equal(AnkiMuLaw.Encode((short)-16383), AnkiMuLaw.Encode(-0.5f));        // trunc toward zero
+        Assert.Equal(0x00, AnkiMuLaw.Encode(float.NaN));
+        Assert.Equal(0x7F, AnkiMuLaw.Encode(1f));
+        Assert.Equal(0x7F, AnkiMuLaw.Encode(1.5f));            // clamped to 1
+        Assert.Equal(0x7F, AnkiMuLaw.Encode((short)32767));
+        Assert.Equal(0xFF, AnkiMuLaw.Encode(-1f));
+        Assert.Equal(0xFF, AnkiMuLaw.Encode(-5f));             // clamped to -32767
+        Assert.Equal(0xFF, AnkiMuLaw.Encode((short)-32767));
+        Assert.Equal(0x6F, AnkiMuLaw.Encode(0.5f));            // trunc(16383.5)
+        Assert.Equal(0x6F, AnkiMuLaw.Encode((short)16383));
+        Assert.Equal(0xEF, AnkiMuLaw.Encode(-0.5f));           // trunc toward zero
+        Assert.Equal(0xEF, AnkiMuLaw.Encode((short)-16383));
     }
 
     /// <summary>
@@ -257,6 +264,47 @@ public class M3DeviceTests
         Assert.Contains("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN", log);
         Assert.Equal(0x46FFFE00, BitConverter.SingleToInt32Bits(AnkiMuLaw.FullScale));
         Assert.Equal(32767f, AnkiMuLaw.FullScale);
+    }
+
+    /// <summary>A source that returns exactly the given PCM.</summary>
+    private sealed class FixedPcmSource : IAnimationAudioSource
+    {
+        private readonly short[] _pcm;
+        public FixedPcmSource(short[] pcm) => _pcm = pcm;
+        public short[]? GetPcm(long eventId, float volume) => _pcm;
+        public string? NameOf(long eventId) => "fixed";
+    }
+
+    /// <summary>
+    /// C5/C6 through the live entry: the scheduler's <c>PopFrame</c> (AnimationScheduler.cs:1603-1614) encodes
+    /// the source's 16-bit PCM and zero-pads the frame to 744 bytes. The expected byte is hand-derived from the
+    /// segment table: 8000 -&gt; mag 8000, hi 31, exp 5, mant 15 = 0x5F. The engine's NaN warning belongs to
+    /// <c>encodeMuLaw(float)</c>; this short PCM seam never produces NaN, so the log stays empty.
+    /// </summary>
+    [Fact]
+    public void M3_010_C5_C6_PopFrameZeroPadsAndEncodesThroughTheScheduler()
+    {
+        var sink = new RobotSink();
+        var log = new List<string>();
+        var s = new AnimationScheduler(sink, new Random(1))
+        {
+            AudioSource = new FixedPcmSource(Enumerable.Repeat((short)8000, 10).ToArray()),
+            Log = log.Add,
+        };
+        var clip = new AnimationClip
+        {
+            Name = "tone",
+            Keyframes = new List<Keyframe> { new AudioKeyframe(0, new long[] { 1 }, 1.0f, new[] { 1.0f }, false) },
+            Tracks = AnimationTrack.Audio,
+            DurationMs = 1000,
+        };
+        s.Play(clip, 0);
+        s.Advance(0);
+        var frame = sink.AudioFrames.First();
+        Assert.Equal(744, frame.Length);
+        Assert.Equal(0x5F, frame[0]);
+        Assert.All(frame.Skip(10), b => Assert.Equal(0x00, b));
+        Assert.DoesNotContain(log, l => l.Contains("NaN"));
     }
 
     /// <summary>C3: 22320 Hz and 744 samples per frame; 30 Hz is 22320 / 744.</summary>
@@ -379,10 +427,16 @@ public class M3DeviceTests
     {
         public int FramesPlayed, BytesPlayed;
         public readonly List<string> Log = new();
+        /// <summary>Every non-null mu-law frame the scheduler handed out, in order.</summary>
+        public readonly List<byte[]> AudioFrames = new();
         public int? AudioFramesPlayed => FramesPlayed;
         public int? AnimBytesPlayed => BytesPlayed;
         public void Face(FaceBitmap bitmap) => Log.Add("face");
-        public void Audio(byte[]? mulawFrame) => Log.Add(mulawFrame is null ? "silence" : "sample");
+        public void Audio(byte[]? mulawFrame)
+        {
+            if (mulawFrame is not null) AudioFrames.Add(mulawFrame);
+            Log.Add(mulawFrame is null ? "silence" : "sample");
+        }
         public void Head(sbyte angleDeg, uint durationMs) => Log.Add("head");
         public void Lift(byte heightMm, uint durationMs) => Log.Add("lift");
         public void AnimationStarted(byte tag) => Log.Add($"start:{tag}");
@@ -890,18 +944,35 @@ public class M3DeviceTests
     }
 
     /// <summary>
-    /// I2 (0x004F2120..0x004F2134): encoding 0 takes the VERIFY-failure path, which logs
-    /// <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and leaves the return register 0. The log reaches the
-    /// camera through <see cref="CozmoCamera.Log"/>.
+    /// I2 (0x004F2120..0x004F2134): encoding 0 takes the VERIFY-failure path, which calls
+    /// <c>sVerifyFailedReturnFalse</c> with <c>"VERIFY(%s): %s"</c>, <c>"false"</c> and
+    /// <c>EnumToString(0) = "NoneImageEncoding"</c> (0x004F2130) and leaves the return register 0. The exact
+    /// text is <c>"VERIFY(false): NoneImageEncoding"</c>; it reaches the camera through
+    /// <see cref="CozmoCamera.Log"/> / <see cref="VisionSystem.Log"/>.
     /// </summary>
     [Fact]
     public void M3_018_I2_IsColorOfZeroIsFalseAndLogsTheVerifyFailure()
     {
         var log = new List<string>();
         Assert.False(EncodedImageDecoder.IsColor(0, log.Add));
-        Assert.Contains(log, l => l.Contains("EncodedImage.IsColor.UnsupportedImageEncoding"));
-        // The engine's EnumToString(ImageEncoding) entry 0 is "NoneImageEncoding" (pointer table 0x01034A60, 0xC20B64).
-        Assert.Contains(log, l => l.Contains("NoneImageEncoding"));
+        Assert.Equal(new[] { "VERIFY(false): NoneImageEncoding" }, log);
+    }
+
+    /// <summary>
+    /// I2 at the engine's point: the engine calls <c>EncodedImage::IsColor</c> from
+    /// <c>VisionSystem::Update</c> (0x006B4B7C), so the log for encoding 0 comes from the vision path, not from
+    /// the frame's assembly in <c>CozmoCamera</c>.
+    /// </summary>
+    [Fact]
+    public void M3_018_I2_TheIsColorZeroLogIsEmittedAtTheVisionSystemCall()
+    {
+        using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
+        var log = new List<string>();
+        vision.Log += log.Add;
+        var frame = new CameraFrame { Encoding = 0, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] };
+        Assert.Null(vision.ProcessFrame(frame));
+        Assert.Contains("VERIFY(false): NoneImageEncoding", log);
     }
 
     /// <summary>
@@ -1225,6 +1296,8 @@ public class M3DeviceTests
         public Rig() => Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "" });
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
+        /// <summary>The transport's OnDisconnected marker (CB32/CB33), handled at the next tick as RemoveRobot.</summary>
+        public void Disconnected() => Port.Raise(ReceiverMarker.OnDisconnected, RobotEp);
 
         public void ToValidated(string fw = ShippedFw)
         {
@@ -1739,6 +1812,130 @@ public class M3DeviceTests
     }
 
     /// <summary>
+    /// M3-030/3a (0x00643568..0x00643596): the reassembly writes each applied blob straight into the caller's
+    /// +0x54 vector, so after a timeout (Update state 1, 0x006457A8..0x006457C0) the sink still holds the blobs
+    /// already applied. The timeout's own callback gets (nullptr, 0, -4), not the sink.
+    /// </summary>
+    [Fact]
+    public void M3_030_TheSinkKeepsAppliedBlobsAfterATimeout()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        var sink = new List<byte>();
+        NvResult? got = null;
+        nv.Read(0x80010000, r => got = r, sink);                 // factory tag: no 16-byte header
+        rig.Tick();                                              // sent: deadline = 1000 + 5000 = 6000
+        var blob = Enumerable.Range(0, 1024).Select(i => (byte)i).ToArray();
+        rig.Data(new NVOpResult { Tag = 0x80010000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.Equal(blob, sink);                                // applied as it arrived, not at completion
+
+        rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
+        rig.Tick();                                              // 6001 > 6000: the read times out
+        Assert.NotNull(got);
+        Assert.Equal(-4, got!.Value.Result);
+        Assert.Empty(got.Value.Data);                            // the engine's timeout delivers (nullptr, 0, -4)
+        Assert.Equal(blob, sink);                                // the applied blob survives in the sink
+    }
+
+    /// <summary>
+    /// M3-030/3b (0x00643770..0x00643798): the broadcast loop runs at most 1000 chunks (cmp r4,#0x3e8); a buffer
+    /// that still has data after the 1000th broadcast stops there and logs LoopBoundOverflow via sErrorF with
+    /// "../../../../engine/components/nvStorageComponent.cpp", line 0x4a7.
+    /// </summary>
+    [Fact]
+    public void M3_030_TheBroadcastLoopStopsAt1000Chunks()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var chunks = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += chunks.Add;
+
+        nv.Read(0x80010000, null, null, broadcast: true);
+        rig.Tick();
+        // one 1024-byte blob at index 999 grows the buffer to 1000*1024 (zero-filled), so the completion needs
+        // exactly 1000 chunks and the bound fires.
+        rig.Data(new NVOpResult { Tag = 0x80010000, Op = 0, Result = 0, Length = 999, Data = new byte[1024] });
+        rig.Tick();
+
+        Assert.Equal(1000, chunks.Count);
+        Assert.Contains(nv.Log, l => l.Contains("LoopBoundOverflow"));
+        Assert.Contains(nv.Log, l => l.Contains("nvStorageComponent.cpp:1191"));   // 0x4a7 in decimal
+    }
+
+    /// <summary>
+    /// M3-030 (0x00643600..0x00643694): the read completion logs its outcome by the final result: ReadSuccess
+    /// (0, 0x00643640), ReadEntryNotFound (-1, 0x0064360E) or ReadFailed (anything else, 0x0064366E). The base
+    /// tag is named through NVStorage::EnumToString(NVEntryTag) (0x7CEE38). A negative result also logs
+    /// ReadOpFailed first (0x006434E4).
+    /// </summary>
+    [Fact]
+    public void M3_030_TheReadCompletionLogsTheOutcome()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = NonFactoryBlob(new byte[] { 1 }) });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadSuccess") && l.Contains("NVEntry_GameUnlocks") && l.Contains("NV_OKAY"));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_NOT_FOUND"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadEntryNotFound") && l.Contains("NV_NOT_FOUND"));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -6, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_BAD_ARGS"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadFailed") && l.Contains("NV_BAD_ARGS"));
+    }
+
+    /// <summary>
+    /// M3-025 (0x00644274, 0x006442EC): GetBaseEntryTag warns FactoryTagNotFound when the factory path finds no
+    /// key, and TagIsTooSmall when the non-factory coarse test tag >> 15 &lt; 0x33 fails or no table key is at or
+    /// below the tag. Both formats are "0x%x" with the tag. Driven through the reply accept check (OnResult).
+    /// </summary>
+    [Fact]
+    public void M3_025_GetBaseEntryTagLogsTheMissingFactoryTagAndTheTooSmallTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        NvResult? got = null;
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x90000000, Op = 0, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Null(got);                                        // the sentinel base != 0x182000: dropped
+        Assert.Contains(nv.Log, l => l.Contains("GetBaseEntryTag.FactoryTagNotFound") && l.Contains("0x90000000"));
+
+        nv.Read(0x182000, r => got = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x199000, Op = 0, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Null(got);
+        Assert.Contains(nv.Log, l => l.Contains("GetBaseEntryTag.TagIsTooSmall") && l.Contains("0x199000"));
+    }
+
+    /// <summary>
     /// M3-031/0x645C6A..0x645D7A: a retryable negative result resends the identical command 7 times (8
     /// transmissions; ResendLastCommand increments +0xF4 then compares &lt; +0xF5 = 8), then completes with the
     /// original result (ReadOpFailed).
@@ -1769,7 +1966,13 @@ public class M3DeviceTests
         Assert.NotNull(got);
         Assert.Equal(-8, got!.Value.Result);
         Assert.Equal(afterRead + NvStorageComponent.MaxReadResends, NvCommands(rig).Count);
-        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed"));
+        // M3-031: ResendLastCommand logs Retry (info, 0x00645C6A..0x00645D34) for each of the 7 resends, then
+        // NumRetriesExceeded (error, 0x00645D34) when +0xF4 reaches +0xF5 = 8; the caller then logs ReadOpFailed
+        // (0x006434E4) for the negative result.
+        Assert.Equal(NvStorageComponent.MaxReadResends, nv.Log.Count(l => l.Contains("ResendLastCommand.Retry")));
+        Assert.Contains(nv.Log, l => l.Contains("ResendLastCommand.Retry") && l.Contains("NVOP_READ") && l.Contains("Attempt: 7"));
+        Assert.Contains(nv.Log, l => l.Contains("ResendLastCommand.NumRetriesExceeded") && l.Contains("Attempts: 8"));
+        Assert.Contains(nv.Log, l => l.Contains("ReadOpFailed") && l.Contains("NV_LOOP"));
     }
 
     /// <summary>
@@ -1865,7 +2068,11 @@ public class M3DeviceTests
 
     /// <summary>
     /// M3-035/0x643E80..0x643F8C: a disconnect discards the in-flight read with no callback, and the old deadline
-    /// cannot fire afterwards even as the robot clock advances.
+    /// cannot fire afterwards even as the robot clock advances. This drives the live removal path, not
+    /// <c>OnDisconnected</c> directly: the transport's OnDisconnected marker is handled at the next tick as
+    /// <c>RobotManager::RemoveRobot</c> (CB32/CB33 0x0052F248..0x0052F364), which raises
+    /// <c>CozmoEngine.RobotRemoved</c>; <c>CozmoRobot.ResetDevices</c> (CozmoRobot.cs:670) then calls
+    /// <c>NvStorageComponent.OnDisconnected</c>.
     /// </summary>
     [Fact]
     public void M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout()
@@ -1878,18 +2085,31 @@ public class M3DeviceTests
         rig.Tick();
 
         var nv = rig.Robot.Engine.NvStorage!;
-        NvResult? got = null;
+        NvResult? got = null, queued = null;
         nv.Read(0x182000, r => got = r);
-        nv.OnDisconnected();
+        rig.Tick();                                          // the read goes out and is in flight
+        Assert.Equal(0x182000u, nv.InFlightTag);
+        nv.Read(0x183000, r => queued = r);                  // a second read is queued behind it
+        Assert.Single(nv.QueuedTags);
 
+        // the live path: OnDisconnected -> RemoveRobot -> RobotRemoved -> ResetDevices -> OnDisconnected
+        rig.Disconnected();
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.True(nv.IsIdle);
+        Assert.Empty(nv.QueuedTags);                         // the queue is discarded with the in-flight request
+
+        // a late reply and a later clock cannot deliver a callback or fire a timeout
         rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[20] });
         rig.Tick();
         Assert.Null(got);
+        Assert.Null(queued);
 
         rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
         rig.Tick();
         nv.Update();
         Assert.Null(got);
+        Assert.Null(queued);
         Assert.True(nv.IsIdle);
     }
 
@@ -1915,6 +2135,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
         {
@@ -1935,7 +2156,7 @@ public class M3DeviceTests
             Assert.Equal(ConnectionReadOrder, tags);
             Assert.True(rig.Engine.Robot!.ReadyToStream);
         }
-        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }
 
     /// <summary>
@@ -1951,6 +2172,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
         {
@@ -1988,7 +2210,7 @@ public class M3DeviceTests
             Assert.True(needs.RobotReadSucceeded);
             Assert.True(needs.HasRobotCopy);
         }
-        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }
 
     /// <summary>
@@ -2051,6 +2273,213 @@ public class M3DeviceTests
         var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
         Assert.Equal(album, gotAlbum);
         Assert.Equal(enrollment, gotEnrollment);
+    }
+
+    /// <summary>
+    /// M3-034 (0x0065A85E..0x0065A9DE): the FaceEnrollment read callback (the engine's VC+0x300 read, #4
+    /// 0x183000) logs <c>ReadFaceEnrollDataNotFound</c> when the result is -1 (0x0065A8F0: sChanneledInfoF,
+    /// channel "Unnamed", no fields) and <c>ReadFaceEnrollDataFail</c> for any other non-zero result (0x0065A916:
+    /// sWarningF, "NVResult = %s" with NVStorage::EnumToString(NVResult)). Result 0 installs the album.
+    /// </summary>
+    [Theory]
+    [InlineData(-1, "ReadFaceEnrollDataNotFound", "NV_NOT_FOUND")]
+    [InlineData(-6, "ReadFaceEnrollDataFail", "NV_BAD_ARGS")]
+    public void M3_034_TheEnrollReadCallbackLogsNotFoundAndFail(sbyte result, string logName, string resultName)
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            // #4 FaceEnrollment 0x183000 is index 3 in ConnectionReadOrder; every other read answers -1.
+            sbyte answer = i == 3 ? result : (sbyte)-1;
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = answer, Length = 0, Data = Array.Empty<byte>() });
+            rig.Tick();
+            i++;
+        }
+
+        Assert.Null(rig.Engine.ConnectionFaceAlbumResult);       // the enroll read did not succeed
+        Assert.Contains(logs, l => l.Contains($"VisionComponent.LoadFaceAlbumFromRobot.{logName}"));
+        if (logName == "ReadFaceEnrollDataFail")
+            Assert.Contains(logs, l => l.Contains("ReadFaceEnrollDataFail") && l.Contains($"NVResult = {resultName}"));
+    }
+
+    /// <summary>
+    /// M3-034/3d (0x0051116C, ~VisionComponent 0x0065258E): the Robot's VisionComponent, and with it the
+    /// FaceAlbum/Enrollment bytes at VC+0x2F4/VC+0x300, is destroyed on removal, so
+    /// <c>CozmoEngine.ConnectionFaceAlbumResult</c> is cleared with the serial (ClearAcquiredSerialNumber,
+    /// called from RobotManager::RemoveRobot). A VisionSystem built after the reconnect does not adopt the old
+    /// album.
+    /// </summary>
+    [Fact]
+    public void M3_034_TheFaceAlbumResultIsClearedOnRemoval()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            byte[] data = i switch
+            {
+                2 => NonFactoryBlob(new byte[] { 0x11 }),   // #3 FaceAlbum 0x184000
+                3 => NonFactoryBlob(new byte[] { 0x22 }),   // #4 FaceEnrollment 0x183000
+                _ => Array.Empty<byte>(),
+            };
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+            rig.Tick();
+            i++;
+        }
+        Assert.NotNull(rig.Engine.ConnectionFaceAlbumResult);
+
+        rig.Disconnected();                                      // the live removal path
+        rig.Tick();
+        Assert.Null(rig.Engine.Robot);
+        Assert.Null(rig.Engine.ConnectionFaceAlbumResult);
+
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var (album, enrollment) = vision.GetSerializedFaceData();
+        Assert.Empty(album);
+        Assert.Empty(enrollment);
+    }
+
+    /// <summary>
+    /// M3-033/M15-014: the engine queues the Needs read 0x194000 from its mfgId handler, exactly once, and
+    /// buffers the terminal result. The tag is also one of the eight RDBM backup reads (0x194000), so the
+    /// connection queue legitimately carries it twice: the backup read and the Needs read. A NeedsManager
+    /// attached after the read completed adopts the buffered Needs result through its OnRobotRead path
+    /// (FinishReadFromRobot then the resolver), and attaching does not queue a further read.
+    /// </summary>
+    [Fact]
+    public void M3_033_TheEngineQueuesOneNeedsReadAndALateNeedsManagerAdoptsTheBufferedResult()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        SendFirstFullState(rig);
+
+        var nv = rig.Robot.Engine.NvStorage!;
+        int needsReads = 0;
+        int i = 0;
+        while (!nv.IsIdle && i < 100)
+        {
+            var cmd = NvCommands(rig)[^1];
+            bool isNeeds = cmd.Tag == Cozmo.Robot.Behavior.NeedsManager.NeedsNvKey;
+            if (isNeeds) needsReads++;
+            byte[] data = isNeeds ? NeedsV5() : Array.Empty<byte>();
+            rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = data.Length > 0 ? (sbyte)0 : (sbyte)-1, Length = 0, Data = data });
+            rig.Tick();
+            i++;
+        }
+        // #9 the RDBM backup read and #15 the mfgId Needs read share the tag; no third read exists.
+        Assert.Equal(2, needsReads);
+        Assert.NotNull(rig.Engine.ConnectionNeedsResult);       // buffered with no NeedsManager attached
+
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            // the serial edge replays the already-known serial; the manager adopts the buffered read
+            rig.Robot.Engine.RaiseSerialNumberAcquired(0xABCD);
+            Assert.Equal(0xABCDu, needs.SerialNumber);
+            Assert.True(needs.RobotReadSucceeded);
+            Assert.True(needs.HasRobotCopy);
+
+            // the adoption did not queue a further read (or write) of the tag
+            Assert.Equal(2, NvCommands(rig).Count(c => c.Tag == Cozmo.Robot.Behavior.NeedsManager.NeedsNvKey));
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
+    }
+
+    /// <summary>
+    /// M3-033/M15-014: the engine Needs read's terminal result reaches the NeedsManager's OnRobotRead semantics even
+    /// when it is a failure. A missing item (-1) makes FinishReadFromRobot return false (RobotReadSucceeded false)
+    /// and the resolver still runs (InitAfterReadFromRobotAttempt always does; the read is no longer outstanding).
+    /// </summary>
+    [Fact]
+    public void M3_033_ANegativeNeedsReadStillResolvesThroughTheEnginePath()
+    {
+        using var rig = new Rig();
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        needs.AttachConnectionRead(rig.Robot.Engine);
+        rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
+        try
+        {
+            rig.ToSuccess();
+            SendFirstFullState(rig);
+            var nv = rig.Robot.Engine.NvStorage!;
+            int i = 0;
+            while (!nv.IsIdle && i < 100)
+            {
+                var cmd = NvCommands(rig)[^1];
+                // every read, the Needs read included, reports a missing item (-1)
+                rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+                rig.Tick();
+                i++;
+            }
+            Assert.False(needs.RobotReadSucceeded);
+            Assert.False(needs.AwaitingRobotData);          // the callback cleared +0x3d0 and the resolver ran
+        }
+        finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
+    }
+
+    /// <summary>
+    /// M3-022/M3-033: the wait helper returns the calibration the engine's single connection read installed
+    /// (0x006583FA queues it; the 0x0065AB68 callback installs it), driven through Camera.OnRobotConnected.
+    /// </summary>
+    [Fact]
+    public async Task M3_022_TheConnectionCalibrationWaitReturnsTheEngineRead()
+    {
+        using var rig = new Rig();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        rig.ToSuccess();
+        var wait = vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(1));
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        var cal = await wait;
+        Assert.NotNull(cal);
+        Assert.Same(rig.Robot.CameraSettings.Calibration, cal);
+    }
+
+    /// <summary>M3-022: a connection calibration read that never completes makes the wait return null (the removed read's contract).</summary>
+    [Fact]
+    public async Task M3_022_TheConnectionCalibrationWaitReturnsNullWhenTheReadNeverCompletes()
+    {
+        using var rig = new Rig();
+        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromMilliseconds(50));
+        Assert.Null(cal);
+    }
+
+    /// <summary>
+    /// M3-022/1j: the callback logs "…Recvd" with the received distortion (0x0065ACE8) before the body
+    /// hardware version's &lt;= 6 check logs "IgnoringDistCoeffs" and zeroes the coefficients (0x0065AD5A..0x0065AD9C).
+    /// </summary>
+    [Fact]
+    public void M3_022_1j_TheRecvdLogCarriesTheReceivedDistortionBeforeIgnoring()
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Robot.CameraSettings.Log += logs.Add;
+        rig.ToSuccess(bodyHw: 4);
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        int recvd = logs.FindIndex(l => l.Contains("ReadCameraCalibration.Recvd"));
+        int ignoring = logs.FindIndex(l => l.Contains("IgnoringDistCoeffs"));
+        Assert.True(recvd >= 0, "no Recvd line");
+        Assert.True(ignoring >= 0, "no IgnoringDistCoeffs line");
+        Assert.True(recvd < ignoring, $"Recvd ({recvd}) must precede IgnoringDistCoeffs ({ignoring})");
+        Assert.Contains("0.01", logs[recvd]);                   // the received distortion, before the <=6 zeroing
     }
 
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()
@@ -2197,8 +2626,10 @@ public class M3DeviceTests
         Assert.False(rig.Engine.Robot!.ReadyToStream);             // the last read is still in flight
         Assert.Equal(0, updates);
 
-        AnswerInFlight(rig);                                       // the last read completes; the on-idle callback opens ready
+        AnswerInFlight(rig);                                       // the last read completes; the state-0 path opens ready
         Assert.True(rig.Engine.Robot!.ReadyToStream);
+        Assert.Equal(0, updates);                                  // the streamer gate was computed before NVStorage::Update
+        rig.Tick();                                                // the next Update opens streaming and runs the streamer
         Assert.Equal(1, updates);
         rig.Tick();
         Assert.Equal(2, updates);

@@ -1363,5 +1363,6 @@ seven `+0x18`/`+0x2c` vtables is unread.
 
 *Read-only extraction. Nothing outside `.scratch/I-M11-gap3/` and this report file was changed.*
 
+## Correction A4 (manager, 2026-10-02, the Codex M11 re-audit)
 
-
+Codex's independent re-audit (`re-analysis/research/20260930-reaudit-M11.md`) found 10 failing and 4 partial settled records. The manager re-checked three of the cited values in the binary. M11-002, 003, 006, 008, 010, 015, 019, 020, 022, 023, 029, 031, 036 and 039 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`. A PARTIAL verdict demotes too: a settled record must own its whole production path.

@@ -111,7 +111,8 @@ public sealed class CameraFrame
 ///
 /// <list type="bullet">
 /// <item><b>IsColor (I1, I2; tbb 0x004F2110).</b> 1, 5, 8 false; 2, 3, 4, 6, 7 true; above 8 true; encoding 0 takes
-/// the VERIFY-failure path, logs <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and is false.</item>
+/// the VERIFY-failure path (<c>sVerifyFailedReturnFalse</c> 0x004F2130) and logs <c>VERIFY(false): NoneImageEncoding</c>
+/// on the <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> channel, and is false.</item>
 /// <item><b>Gray (Y0..Y8; <c>DecodeImageHelper&lt;Image&gt;</c> 0x004F287C, tbh 0x004F289C base 0x004F2898).</b> 1: the payload's
 /// <c>rows*cols</c> bytes copied as the image; 2: <c>rows*cols*3</c> bytes converted to gray with
 /// <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c> (cvtColor code 7, Y4); 5, 6: <c>imdecode(flags 0)</c>;
@@ -152,9 +153,10 @@ public static class EncodedImageDecoder
     /// <summary>
     /// <c>EncodedImage::IsColor</c> (I1, I2; tbb table 0x004F2110, base 0x004F210C): true for 2, 3, 4, 6, 7 and any
     /// value above 8; false for 1, 5 and 8. Encoding 0 goes to the VERIFY-failure path at 0x004F2120
-    /// (<c>sVerifyFailedReturnFalse</c>), which logs <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> and leaves
-    /// the return register 0. It does not abort or trap. The event name is passed to <paramref name="log"/> when the
-    /// decoder has a log seam.
+    /// (<c>sVerifyFailedReturnFalse</c> 0x004F2130), which formats <c>"VERIFY(%s): %s"</c> with <c>"false"</c> and
+    /// <c>EnumToString(0) = "NoneImageEncoding"</c> and leaves the return register 0. It does not abort or trap.
+    /// The exact text the engine logs is <c>"VERIFY(false): NoneImageEncoding"</c>; it is passed to
+    /// <paramref name="log"/> when the decoder has a log seam.
     /// </summary>
     public static bool IsColor(byte encoding, Action<string>? log = null)
     {
@@ -162,8 +164,7 @@ public static class EncodedImageDecoder
         switch (encoding)
         {
             case 0:
-                log?.Invoke("VERIFY: EncodedImage.IsColor.UnsupportedImageEncoding: Encoding NoneImageEncoding is " +
-                            "not a colour encoding; returning false");
+                log?.Invoke("VERIFY(false): NoneImageEncoding");
                 return false;
             case 2 or 3 or 4 or 6 or 7:
                 return true;
@@ -366,13 +367,23 @@ public static class EncodedImageDecoder
         try
         {
             var img = ImageResult.FromMemory(jpeg, components);
+            // fidelity: M3-018
+            // The engine's imdecode (0x004F21DC) returns a cv::Mat that the next call, cv::cvtColor code 4
+            // (0x004F2250), asserts is not empty. The stack has no explicit engine check to port here (the
+            // address is the cvtColor call); an empty decode is rejected instead of reaching the assert. The
+            // exact OpenCV assert text is not in the inventory.
+            if (img.Width == 0 || img.Height == 0)
+                return Fail("EncodedImage.Decode: the JPEG decoded to an empty Mat; the engine's cv::cvtColor (0x004F2250) asserts on it (M3-018)", out error);
             pixels = img.Data; width = img.Width; height = img.Height;
             error = null;
             return true;
         }
         catch (Exception e) when (e is InvalidOperationException or ArgumentException or IndexOutOfRangeException or NullReferenceException)
         {
-            return Fail($"EncodedImage.Decode: the JPEG did not decode ({e.Message})", out error);
+            // The engine's imdecode leaves an empty Mat and cv::cvtColor (0x004F2250) asserts; this stack
+            // rejects the frame rather than reproduce the OpenCV assert (M3-018). The .NET message is not
+            // the engine's.
+            return Fail("EncodedImage.Decode: the JPEG did not decode; the engine's cv::cvtColor (0x004F2250) asserts on the empty Mat (M3-018)", out error);
         }
     }
 
@@ -753,7 +764,10 @@ public sealed class CozmoCamera
         {
             ImageId = _imageId, Timestamp = _timestamp, Width = _width, Height = _height,
             Encoding = _encoding, Resolution = (byte)c.ImageResolution,
-            IsColor = EncodedImageDecoder.IsColor(_encoding, warnings.Add), JpegWidth = jpegWidth,
+            // fidelity: M3-018
+            // The encoding flag is computed here, but the engine's VERIFY log for encoding 0 is emitted at
+            // the IsColor call in VisionSystem::Update (0x006B4B7C), not when the frame is assembled.
+            IsColor = EncodedImageDecoder.IsColor(_encoding), JpegWidth = jpegWidth,
             StreamMarker = payload.Length > 1 ? payload[1] : (byte)0,
             FrameIndex = FrameIndex, IsWarmUp = FrameIndex < WarmUpFrames,
             ChunkCount = c.ImageChunkCount, RawPayload = payload,
@@ -975,10 +989,11 @@ public sealed class CameraSettings
     // fidelity: M3-022
     /// <summary>
     /// The NV callback (1j; 0x0065AB68): NVResult ≠ 0 logs "ReadCameraCalibration.Failed"; a size other than
-    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks, zeroes the distortion coefficients
-    /// when the body hardware version (robot+0x24, mfgId word 1) ≤ 6 ("IgnoringDistCoeffs"), logs "…Recvd" and
-    /// installs the calibration (SetCameraCalibration, which starts processing). All three paths then set vision
-    /// enabled (+0x48 = 1, 0x0065AE7E/0x0065AE80).
+    /// <see cref="CalibrationBytes"/> logs "SizeMismatch"; otherwise it unpacks and logs "…Recvd" with the received
+    /// values (0x0065ACE8), then, when the body hardware version (robot+0x24, mfgId word 1) ≤ 6, logs
+    /// "IgnoringDistCoeffs" (0x0065AD5A..0x0065AD9C) and zeroes the distortion coefficients, and installs the
+    /// calibration (SetCameraCalibration, which starts processing). All three paths then set vision enabled
+    /// (+0x48 = 1, 0x0065AE7E/0x0065AE80).
     /// </summary>
     private void OnCalibrationRead(NvResult r)
     {
@@ -991,12 +1006,13 @@ public sealed class CameraSettings
             else
             {
                 installed = Vision.CameraCalibration.Unpack(r.Data);
+                // 0x0065ACE8 logs the received struct before the <=6 check zeroes the distortion.
+                Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
                 if (_bodyHwVersion <= 6)
                 {
                     Emit($"info: VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs: body hardware version {_bodyHwVersion} <= 6");
                     installed = installed with { DistortionCoefficients = new double[8] };
                 }
-                Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
                 Calibration = installed;
             }
             VisionEnabled = true;

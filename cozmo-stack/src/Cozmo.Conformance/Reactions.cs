@@ -160,7 +160,7 @@ public static class ReactionsTool
         var ctx = new BehaviorContext { Robot = robot, Triggers = map, Arbiter = arbiter, Mood = mood };
         var manager = new BehaviorManager(ctx);
         using var vision = new VisionSystem(robot);
-        var calibration = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var calibration = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         var expect = ParseExpected(Arg(a, "--expect"));
         bool needsCubeVision = expect.Any(x => x is ReactionTrigger.CubeMoved or ReactionTrigger.ObjectPositionUpdated);
         if (needsCubeVision && calibration is null)

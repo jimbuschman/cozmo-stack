@@ -1,11 +1,11 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-09-29",
+  "approved": "2026-10-02",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "4348c55d4cf9894d98c96d2022c665d618c9e5caae19e301f43a24b92f96be48",
+  "inventory_sha256": "4975ee57e5d6e03ce762492ce0609245d0f52fa496ff6f23fb61da5a0b9549d2",
   "records": {
     "M14-001": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "TrackedFace geometry, FaceWorld match and forgetting rules",
       "authority": "FaceWorld::AddOrUpdateFace 0x004F4278, FaceTracker::IsRecognitionSupported 0x0086B244, FaceWorld::Update 0x004F52F8, TrackedFace::UpdateTranslation 0x0087DE24 and TrackedFace::GetIntraEyeDistance 0x0087DC68, read",
       "evidence": [
@@ -30,7 +30,7 @@
       "hardware_required": false
     },
     "M14-003": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "TrackFaceAction: the durations it turns in, and the flags it starts with",
       "authority": "ITrackAction::ITrackAction 0x0056465C and ITrackAction::CheckIfDone 0x00564F08, read",
       "evidence": [
@@ -44,7 +44,7 @@
       "hardware_required": false
     },
     "M14-004": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "PetInitialDetection: a pet not reacted to, and a minute between reactions",
       "authority": "ReactionTriggerStrategyPetInitialDetection::RecentlyReacted 0x00611DD0 and ::UpdateReactedTo 0x00611E1C, read; ::InitReactedTo 0x00611FA4 has no caller in libcozmoEngine.so",
       "evidence": [
@@ -56,7 +56,7 @@
       "hardware_required": false
     },
     "M14-005": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "TurnTowardsImagePoint turns by the angle the pixel subtends",
       "authority": "Robot::ComputeTurnTowardsImagePointAngles 0x0051879C and TurnTowardsImagePointAction::Init 0x0054B664, read",
       "evidence": [

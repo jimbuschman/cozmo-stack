@@ -300,7 +300,7 @@ public static class CoreChecks
     private static async Task<(bool, string)> Core007(CozmoRobot robot, int seconds, Action<string> say)
     {
         using var vision = new VisionSystem(robot);
-        var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         if (cal is null)
         {
             say("camera calibration NOT READ from the robot: an edge put in the map from a made-up geometry would be in the wrong place.");
@@ -361,7 +361,7 @@ public static class CoreChecks
     private static async Task<(bool, string)> Core008(CozmoRobot robot, int seconds, Action<string> say)
     {
         using var vision = new VisionSystem(robot);
-        var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         if (cal is null) return (false, "no camera calibration; run the vision check (K) first");
 
         var map = new MemoryMap();

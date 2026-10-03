@@ -349,7 +349,9 @@ public class EngineAppLayerTests
     /// PRIMARY-SOURCE ORACLE. M1-024 CD6/CD10/CD11: in engine state 3, after UpdateRobotConnection →
     /// MessageHandler::ProcessMessages and before UpdateAllRobots → Robot::Update, CozmoEngine::Update takes
     /// BaseStationTimer::GetCurrentTimeInSeconds into r1 and calls NeedsManager::Update with it
-    /// (0x004ED632/0x004ED636, 0x004ED640). The hook runs between the two and on the tick's clock.
+    /// (0x004ED632/0x004ED636, 0x004ED640). The hook runs between the two and on the tick's clock, which is
+    /// the f32 at +0x10 (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8; <c>vcvt.f32.f64</c> 0x0084BC80), so the
+    /// argument is a float.
     /// </summary>
     [Fact]
     public void M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate()
@@ -358,7 +360,7 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         rig.SendFirstFullState();
         var order = new List<string>();
-        double? needsNow = null;
+        float? needsNow = null;
         rig.Engine.NeedsUpdate = now => { order.Add("needs"); needsNow = now; };
         var components = rig.Engine.RobotComponentsUpdate;
         rig.Engine.RobotComponentsUpdate = () => { components?.Invoke(); order.Add("robot"); };
@@ -367,7 +369,10 @@ public class EngineAppLayerTests
         rig.Tick(60);
         // the robot message is dispatched in ProcessMessages, then NeedsManager::Update, then Robot::Update
         Assert.Equal(new[] { "message:RobotAvailable", "needs", "robot" }, order);
-        Assert.Equal(rig.Engine.Timer.Seconds, needsNow);
+        // expected from the test's own clock: the engine timer counts from creation and this path makes six
+        // 60 ms ticks before the hook runs, so the f32 the engine passes is 0.36 (0x0084BCA8/0x0084BC80),
+        // not a value read back from the implementation
+        Assert.Equal(0.36f, needsNow);
     }
 
     // ================================================================== M1-025: connect, response, DisconnectCurrent
@@ -846,7 +851,10 @@ public class EngineAppLayerTests
         rig.Data(new ManufacturingID { SerialNumber = 1, BodyHwVersion = 2, BodyColor = 3 });
         rig.Tick();
 
-        Assert.True(rig.Logged("FailedToSend ImageRequest"));
+        // M4-020: the engine emits only Robot::SendMessage's own warning (0x005134F4): channel "Robot.SendMessage"
+        // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356A), with the robot id and
+        // EngineToRobotTagToString (0x007AF8D0) — "imageRequest" for tag 0x4C.
+        Assert.True(rig.Logged("Robot.SendMessage: Robot 1 failed to send a message type imageRequest"));
         Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);          // the forced failure
         Assert.Contains(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);       // and it still goes out
         Assert.True(rig.Engine.Robot!.SyncTimeSentAt > 0);                             // +0x520 from that send
@@ -1189,8 +1197,10 @@ public class EngineAppLayerTests
     /// nothing is in flight (0x00645B08..0x00645B26), and the engine Robot constructor queues 12 reads ahead of
     /// the connection's CameraCalib/Lab/Needs reads, so it waits for the whole queue (nv-pass3-connection-queue.md
     /// Q2 2m). CD12: Robot::Update returns before the AnimationStreamer until the first full state, and the streamer
-    /// runs only when synced and ready (0x00513BF2..0x00514470), so streaming opens in the Robot::Update of the tick
-    /// that completes the last read.
+    /// runs only when synced and ready (0x00513BF2..0x00514470). The completion only sets state 0 (0x006437EE), so
+    /// the on-idle callback runs in NVStorage::Update's state-0 path of that tick (0x006456EC), and streaming opens
+    /// on the next Robot::Update: the streamer gate is computed before NVStorage::Update
+    /// (0x0051410C..0x0051411E before 0x0051416A).
     /// </summary>
     [Fact]
     public void M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState()
@@ -1219,9 +1229,13 @@ public class EngineAppLayerTests
         Assert.False(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);
 
-        // the last read completes: the queue drains, and the on-idle callback then sets +0x2A
+        // the last read completes: the queue drains, and the same tick's NVStorage::Update state-0 path runs the
+        // on-idle callback (0x006456EC). The streamer gate was already computed this tick, so streaming is still
+        // closed (0x0051410C..0x0051411E before 0x0051416A).
         rig.AnswerInFlight();
         Assert.True(rig.Engine.Robot!.ReadyToStream);
+        Assert.False(rig.Robot.AnimationStreamingOpen);
+        rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
     }
 
@@ -1271,6 +1285,28 @@ public class EngineAppLayerTests
         rig.Tick(10_000);
         Assert.Equal(1, rig.Log.Count(l => l.Contains("SyncTimeAckNotReceived")));
         Assert.Equal(syncs, rig.Port.SentIds.Count(i => i == RobotMessageId.SyncTime));
+    }
+
+    /// <summary>
+    /// PRIMARY-SOURCE ORACLE. M1-041 CD19: the deadline is single precision (0x00513C02..0x00513C14:
+    /// <c>vldr s0,[r6]</c> the +0x520 float, <c>vadd.f32 s0,s0,#5.0</c>, <c>vcmpe.f32 s16,s0</c>). At 1e8 s
+    /// the f32 ULP is 8, so +5 rounds up to +8 and a now of 100000006 (which a double compare would call
+    /// past the +5 deadline) is not past it; the warning only comes once now reaches the f32 deadline.
+    /// </summary>
+    [Fact]
+    public void M1_041_CD19_TheSyncTimeAckDeadlineIsComparedInF32()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Engine.Robot!.SyncTimeSentAt = 100000000f;        // +0x520; f32
+        // now = 100000006 s: a double compare would warn (100000006 > 100000005), the f32 deadline is 100000008
+        rig.Tick(100000006000);
+        Assert.False(rig.Logged("SyncTimeAckNotReceived"));
+        Assert.True(rig.Engine.Robot.SyncTimeSentAt > 0);
+        // now = 100000016 s: past the f32 deadline
+        rig.Tick(10_000);
+        Assert.True(rig.Logged("SyncTimeAckNotReceived"));
+        Assert.Equal(0, rig.Engine.Robot.SyncTimeSentAt);
     }
 
     /// <summary>
@@ -1624,6 +1660,9 @@ public class EngineAppLayerTests
         // per tick, and ready to stream waits for all of them.
         rig.SendFirstFullState(timestamp: 7);
         while (!rig.Engine.NvStorage!.IsIdle) rig.AnswerInFlight();
+        // the last AnswerInFlight's tick sets ready to stream but computed the streamer gate before NVStorage ran;
+        // the next tick opens streaming (0x0051410C..0x0051411E before 0x0051416A).
+        rig.Tick();
         Assert.True(rig.Robot.AnimationStreamingOpen);
         Assert.Equal(1, rig.Robot.State.StateCount);
         Assert.Equal(1, vision.History.Count);

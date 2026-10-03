@@ -333,15 +333,17 @@ public sealed class NeedsState
 
     public void ApplyDelta(NeedId n, double delta) => SetNeedLevel(n, _levels[(int)n] + delta);
 
-    public void ApplyDecay(DecayConfig decay, double elapsedSec, bool connected)
+    public void ApplyDecay(DecayConfig decay, float elapsedSec, bool connected)
     {
         // GetDecayMultipliers is asked once, from the levels as they stand, and the same three multipliers
-        // are used for the whole pass (ApplyDecayAllNeeds 0x00695CFE).
+        // are used for the whole pass (ApplyDecayAllNeeds 0x00695CFE). The engine divides the elapsed by
+        // 60.0f and multiplies the rate and multiplier in f32 (NeedsState::ApplyDecay 0x0069C48A,
+        // 0x0069C4A8..0x0069C4B0).
         var multipliers = decay.DecayMultipliers(n => _levels[(int)n]);
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
-            double rate = decay.RatePerMinute(n, _levels[(int)n], connected) * multipliers[n];
-            SetNeedLevel(n, _levels[(int)n] - rate * elapsedSec / 60.0);
+            float rate = (float)decay.RatePerMinute(n, _levels[(int)n], connected) * (float)multipliers[n];
+            SetNeedLevel(n, _levels[(int)n] - (rate * elapsedSec / 60f));
         }
     }
 
@@ -486,14 +488,14 @@ public sealed class NeedsManager
     /// (<c>deadline - start</c>) is added to <c>+0x1E4</c> so only the time outside it decays
     /// (0x00695D5A..0x00695D6A, 0x00695D84).
     /// </summary>
-    private readonly Dictionary<NeedId, double> _fullnessStartSec = new();
-    private readonly Dictionary<NeedId, double> _fullnessDeadlineSec = new();
+    private readonly Dictionary<NeedId, float> _fullnessStartSec = new();
+    private readonly Dictionary<NeedId, float> _fullnessDeadlineSec = new();
     /// <summary>
     /// <c>+0x1E4</c>: the clock time each need last decayed. <c>ApplyDecayAllNeeds</c> 0x00695CFE passes
     /// <c>now - this[need].lastDecay</c> to <c>NeedsState::ApplyDecay</c> and stores <c>+0x1E4 = now</c>;
     /// a skipped need keeps its value so the next decay covers the whole gap.
     /// </summary>
-    private readonly Dictionary<NeedId, double> _lastDecaySec = new();
+    private readonly Dictionary<NeedId, float> _lastDecaySec = new();
     /// <summary>
     /// The pause/disconnect state (<c>+0x1D5</c>, <c>+0x3B0</c>, <c>+0x3B4</c>, <c>+0x1D8</c>,
     /// <c>+0x1E4</c>, <c>+0x208</c>, <c>+4</c>) is written by the engine-thread callbacks
@@ -506,10 +508,17 @@ public sealed class NeedsManager
     private readonly Dictionary<NeedId, NeedBracketId> _prevBrackets = new();
     /// <summary><c>+0x1d5</c>: while set, <c>Update</c> returns at once (0x00695CA4).</summary>
     private bool _paused;
+    /// <summary>
+    /// <c>+0x3AC</c>: the tick clock <c>NeedsManager::Update(float)</c> stores before the pause test
+    /// (0x00695CA8 <c>str.w r1,[r4,#0x3ac]</c>, before the <c>ldrb +0x1d5</c>/<c>cbnz</c> at 0x00695CAC).
+    /// <c>ApplyDecayAllNeeds</c> reads it back (0x00695D4C, 0x00695D8A, 0x00695DA8) and
+    /// <c>ApplyDecayForTimeSinceLastDeviceWrite</c> uses it for the <c>+0x1E4</c> rewind (0x00695338).
+    /// </summary>
+    private float _nowSec;
     /// <summary><c>+0x3b0</c>: the next decay time; <c>Update</c> adds the interval <c>+0x130</c> each time it passes.</summary>
-    private double _nextDecaySec;
+    private float _nextDecaySec;
     /// <summary><c>+0x3b4</c>: the time still owed to the decay schedule when paused (0x00695EC2).</summary>
-    private double _pausedRemainingSec;
+    private float _pausedRemainingSec;
     /// <summary><c>+0x1cc</c>/<c>+0x34</c>: the previous and current robot serial (C2 row 9; the current one is <see cref="SerialNumber"/>).</summary>
     private uint _previousSerial, _serial;
     /// <summary><c>+0x1c8</c>: whether the robot NV read produced usable data (<c>FinishReadFromRobot</c>'s Boolean, C2 row 11).</summary>
@@ -603,11 +612,11 @@ public sealed class NeedsManager
     // fidelity: M15-014
     private void InitReset(double nowSec)
     {
-        _nextDecaySec = nowSec + Config.DecayPeriodSeconds;
+        _nextDecaySec = (float)(nowSec + Config.DecayPeriodSeconds);
         // +0x1E4 is initialised here, so the first decay is one period's worth.
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
-            _lastDecaySec[n] = nowSec;
+            _lastDecaySec[n] = (float)nowSec;
             _prevBrackets[n] = State.GetNeedBracket(n);
             _bracketChangedSec[(int)n] = nowSec;   // J10: InitReset seeds +0x214 = +0x3ac; +0x1f0 stays 0
         }
@@ -697,51 +706,61 @@ public sealed class NeedsManager
     }
 
     /// <summary>
-    /// <c>NeedsManager::Update(now)</c> 0x00695C9C: return at once while paused (+0x1d5, 0x00695CA4);
-    /// update the local notifications; when the accumulator (+0x3b0) has reached now, add the decay interval
-    /// (+0x130), <c>ApplyDecayAllNeeds(robot != 0)</c> (0x00695CE4), <c>SendNeedsStateToGame(Decay)</c>
+    /// <c>NeedsManager::Update(float now)</c> 0x00695C9C: store now at <c>+0x3AC</c> (0x00695CA8), then return
+    /// at once while paused (+0x1d5, 0x00695CA4); update the local notifications; when the accumulator
+    /// (+0x3b0) has reached now (<c>vcmpe.f32</c> 0x00695CBE), add the decay interval (+0x130, f32
+    /// 0x00695CD6), <c>ApplyDecayAllNeeds(robot != 0)</c> (0x00695CE4), <c>SendNeedsStateToGame(Decay)</c>
     /// (0x00695CEC), then the tail <c>PossiblyWriteToDevice</c>. The engine passes
-    /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> (M1-024, 0x004ED632..0x004ED640); the parameterless
-    /// overload keeps the manager's own clock for direct callers.
+    /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> (M1-024, 0x004ED632..0x004ED640), the float at +0x10;
+    /// the parameterless overload keeps the manager's own clock for direct callers.
     /// </summary>
     // fidelity: M15-001
-    public void Update() => Update(_clockSec());
+    public void Update() => Update((float)_clockSec());
 
     // fidelity: M1-024
-    /// <summary>The engine tick's <c>NeedsManager::Update(now)</c> with the tick's BaseStationTimer seconds.</summary>
-    public void Update(double now)
+    /// <summary>
+    /// The engine tick's <c>NeedsManager::Update(float now)</c> with the tick's BaseStationTimer seconds. The
+    /// store to +0x3AC happens before the pause test (0x00695CA8), and the comparison and the interval add
+    /// are single precision (0x00695CBE, 0x00695CD6).
+    /// </summary>
+    public void Update(float now)
     {
         lock (_gate)
         {
-            if (_paused) return;
+            _nowSec = now;                                              // +0x3AC (0x00695CA8)
+            if (_paused) return;                                        // +0x1d5 (0x00695CAC)
             LocalNotificationsUpdate?.Invoke();
-            if (_nextDecaySec > now) return;
-            _nextDecaySec += Config.DecayPeriodSeconds;
-            ApplyDecayAllNeeds(_robotConnected, now);
+            if (_nextDecaySec > now) return;                            // 0x00695CBE
+            _nextDecaySec += (float)Config.DecayPeriodSeconds;          // +0x130 (0x00695CD6)
+            ApplyDecayAllNeeds(_robotConnected);
             SendNeedsStateToGame(NeedsActionId.Decay);
             PossiblyWriteToDevice();
         }
     }
 
+    /// <summary><c>+0x3AC</c>: the tick clock the last <see cref="Update(float)"/> stored (M1-024).</summary>
+    // fidelity: M1-024
+    public float NowSec { get { lock (_gate) return _nowSec; } }
+
     /// <summary>
     /// <c>NeedsManager::ApplyDecayAllNeeds(connected)</c> 0x00695CFE: <c>GetDecayMultipliers</c> is asked once
     /// from the levels as they stand and the same three multipliers are used for the whole pass, then each
-    /// need decays by its connected or unconnected rate over <c>now - +0x1E4</c> (its own last decay), not a
+    /// need decays by its connected or unconnected rate over <c>+0x3AC - +0x1E4</c> (its own last decay), not a
     /// fixed period. Two per-need skips run in the loop (C1 §2): the per-need pause flag at <c>+0x1dc</c>
     /// (0x00695D36), written by the <c>SetNeedsPauseStates</c> message (0x00698918), and the fullness-cooldown
     /// deadline at <c>+0x208</c> (0x00695D4C..0x00695D58, 0x00695D84), written by
     /// <c>StartFullnessCooldownForNeed</c> 0x006970AC as <c>now + config value</c> from the fill time
     /// <c>+0x1FC</c>. A need still inside its cooldown is skipped and keeps its <c>+0x1E4</c>; once the
     /// deadline has passed the cooldown window <c>+0x208 - +0x1FC</c> is added to <c>+0x1E4</c> before the
-    /// decay (0x00695D5A..0x00695D6A), so only the time outside the window decays. <c>+0x1E4 = now</c> after
-    /// a decay.
+    /// decay (0x00695D5A..0x00695D6A), so only the time outside the window decays. <c>+0x1E4 = +0x3AC</c> after
+    /// a decay. This overload reads the stored <c>+0x3AC</c> (0x00695D4C, 0x00695D8A, 0x00695DA8).
     /// </summary>
     // fidelity: M15-001
-    public void ApplyDecayAllNeeds(bool connected) => ApplyDecayAllNeeds(connected, _clockSec());
+    public void ApplyDecayAllNeeds(bool connected) => ApplyDecayAllNeeds(connected, _nowSec);
 
-    /// <summary>The engine's decay pass on an explicit now, which <c>Update(now)</c> passes (M1-024).</summary>
+    /// <summary>The engine's decay pass on an explicit now (the test seam; the live path reads +0x3AC) (M1-024).</summary>
     // fidelity: M1-024
-    public void ApplyDecayAllNeeds(bool connected, double now)
+    public void ApplyDecayAllNeeds(bool connected, float now)
     {
         lock (_gate)
         {
@@ -751,22 +770,24 @@ public sealed class NeedsManager
                 if (_needPaused[(int)n]) continue;                                 // 0x00695D36
                 if (_fullnessDeadlineSec.TryGetValue(n, out var deadline))
                 {
-                    if (now <= deadline) continue;                                  // 0x00695D4C..0x00695D58
+                    if (now <= deadline) continue;                                  // 0x00695D4C..0x00695D58 (f32)
                     // 0x00695D5A..0x00695D6A: +0x1E4 += (+0x208 - +0x1FC), so the cooldown window
                     // (the fill time through the deadline) is excluded from the decay; then the passed
                     // deadline and start are cleared (0x00695D84).
-                    double start = _fullnessStartSec.GetValueOrDefault(n, deadline);
+                    float start = _fullnessStartSec.GetValueOrDefault(n, deadline);
                     _lastDecaySec[n] = _lastDecaySec.GetValueOrDefault(n, now) + (deadline - start);
                     _fullnessDeadlineSec.Remove(n);
                     _fullnessStartSec.Remove(n);
                 }
-                double elapsed = now - _lastDecaySec.GetValueOrDefault(n, now);      // 0x00695D8A..0x00695D96
+                float elapsed = now - _lastDecaySec.GetValueOrDefault(n, now);      // 0x00695D8A..0x00695D96 (f32)
                 if (elapsed > 0)
                 {
-                    double rate = Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * multipliers[n];
-                    State.ApplyDelta(n, -rate * elapsed / 60.0);
+                    // 0x00695D9C..0x00695DA4: NeedsState::ApplyDecay takes the elapsed as a float and divides
+                    // it by 60.0f (0x0069C48A); the rate and multiplier multiply in f32.
+                    float rate = (float)Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * (float)multipliers[n];
+                    State.ApplyDelta(n, -(rate * elapsed / 60f));
                 }
-                _lastDecaySec[n] = now;
+                _lastDecaySec[n] = now;                                             // 0x00695DA8
             }
             DetectBracketChanges(nowOverride: now);
         }
@@ -958,7 +979,7 @@ public sealed class NeedsManager
             {
                 _paused = true;
                 _pausedAtSec = now;
-                _pausedRemainingSec = _nextDecaySec - now;        // +0x3b4
+                _pausedRemainingSec = (float)(_nextDecaySec - now);   // +0x3b4
                 SendNeedsStateToGame(NeedsActionId.NoAction);
                 WriteToDevice?.Invoke(true);
             }
@@ -966,7 +987,7 @@ public sealed class NeedsManager
             {
                 _paused = false;
                 double pauseDuration = now - _pausedAtSec;
-                _nextDecaySec = now + _pausedRemainingSec;        // +0x3b0 = now + +0x3b4
+                _nextDecaySec = (float)(now + _pausedRemainingSec);   // +0x3b0 = now + +0x3b4
                 // J11 (0x00695F02..0x00695F6A): the engine adds pauseDuration to each need's +0x1e4 (last
                 // decay) and +0x1f0 (the per-need pause start) always, and to +0x208 (the fullness deadline)
                 // and +0x1fc (the fullness start) only when +0x208 != 0, and to +0x214 (the bracket-change
@@ -976,9 +997,9 @@ public sealed class NeedsManager
                 {
                     _needPauseStartSec[(int)n] += pauseDuration;  // +0x1f0 always (0x00695F40)
                     _bracketChangedSec[(int)n] += pauseDuration;  // +0x214 always (0x00695F66)
-                    if (_lastDecaySec.TryGetValue(n, out var last)) _lastDecaySec[n] = last + pauseDuration;
-                    if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = start + pauseDuration;
-                    if (_fullnessDeadlineSec.TryGetValue(n, out var deadline)) _fullnessDeadlineSec[n] = deadline + pauseDuration;
+                    if (_lastDecaySec.TryGetValue(n, out var last)) _lastDecaySec[n] = (float)(last + pauseDuration);
+                    if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = (float)(start + pauseDuration);
+                    if (_fullnessDeadlineSec.TryGetValue(n, out var deadline)) _fullnessDeadlineSec[n] = (float)(deadline + pauseDuration);
                 }
             }
             LocalNotificationsSetPaused?.Invoke(paused);
@@ -1009,7 +1030,66 @@ public sealed class NeedsManager
             _robotRewriteNeeded = false;       // +0x1ca
         }
         // The NV read (and the immediate fallback) run outside _gate.
+        // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
+        // because this stack builds the NeedsManager after the handshake); adopt its buffered/streamed result
+        // rather than queueing a second read. When the engine has no such read (the offline seam, or a
+        // NeedsManager used directly), StartReadFromRobot still queues one.
+        if (_connectionEngine is { ConnectionNeedsReadQueued: true } engine)
+        {
+            if (engine.ConnectionNeedsResult is { } buffered) OnConnectionNeedsRead(buffered);
+            return;
+        }
         if (StartReadFromRobot() == 0) InitAfterReadFromRobotAttempt();
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The engine's connection Needs read source, set by <see cref="AttachConnectionRead"/>; null for a
+    /// NeedsManager driven directly (the M15 tests). While it is set and the engine has queued the read,
+    /// <see cref="InitAfterSerialNumberAcquired"/> adopts that read instead of queueing its own.
+    /// </summary>
+    private CozmoEngine? _connectionEngine;
+    private Action<NvResult>? _connectionReadHandler;
+    /// <summary>The engine read generation last applied, so a buffered result and the completion event do not both apply.</summary>
+    private int _adoptedConnectionGeneration;
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// Attaches this manager to the engine-owned connection Needs read (M15-014/M3-033). The engine queues
+    /// 0x194000 from its mfgId handler; the completion event delivers the terminal result here, and a result
+    /// that already completed is adopted from <c>ConnectionNeedsResult</c>. Mirrors the FaceAlbum adoption
+    /// (VisionSystem's <c>ConnectionFaceAlbumLoaded</c>/<c>ConnectionFaceAlbumResult</c>).
+    /// </summary>
+    public void AttachConnectionRead(CozmoEngine engine)
+    {
+        _connectionEngine = engine;
+        _connectionReadHandler = OnConnectionNeedsRead;
+        engine.ConnectionNeedsRead += _connectionReadHandler;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>Unsubscribes <see cref="AttachConnectionRead"/>'s handler (the engine lives on across a stack removal).</summary>
+    public void DetachConnectionRead()
+    {
+        if (_connectionEngine is { } engine && _connectionReadHandler is { } handler)
+            engine.ConnectionNeedsRead -= handler;
+        _connectionEngine = null;
+        _connectionReadHandler = null;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The engine's connection Needs read completion. It carries the same terminal result the manager's own
+    /// <see cref="StartReadFromRobot"/> callback would (OnRobotRead semantics: FinishReadFromRobot, then
+    /// InitAfterReadFromRobotAttempt always); the generation guard applies each engine read once.
+    /// </summary>
+    private void OnConnectionNeedsRead(NvResult r)
+    {
+        if (_connectionEngine is not { } engine) return;
+        int generation = engine.ConnectionNeedsGeneration;
+        if (generation == _adoptedConnectionGeneration) return;
+        _adoptedConnectionGeneration = generation;
+        OnRobotRead(r);
     }
 
     /// <summary>C2 row 10: the NV key <c>StartReadFromRobot</c> queues (the robot's needs item).</summary>
@@ -1418,10 +1498,11 @@ public sealed class NeedsManager
     // fidelity: M15-014
     /// <summary>
     /// <c>NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite(bool)</c> 0x00695304..0x00695374 (Appendix I4):
-    /// <c>elapsed = now - the current state's DateTime</c>; for each need, rewind <c>+0x1E4</c> to
-    /// <c>now - elapsed</c> (so <c>ApplyDecayAllNeeds</c> decays each need by this whole gap), and, only when
-    /// that need's fullness deadline <c>+0x208</c> is non-zero, subtract <c>elapsed</c> from the deadline and
-    /// the fullness start <c>+0x1FC</c>; then tail-call <c>ApplyDecayAllNeeds(connected)</c>. The device-read
+    /// <c>elapsed = system_clock::now() - the current state's DateTime</c> (in f32, 0x0069532C); for each need,
+    /// rewind <c>+0x1E4</c> to <c>+0x3AC - elapsed</c> (0x00695338/0x00695340, so <c>ApplyDecayAllNeeds</c>
+    /// decays each need by this whole gap), and, only when that need's fullness deadline <c>+0x208</c> is
+    /// non-zero, subtract <c>elapsed</c> from the deadline and the fullness start <c>+0x1FC</c>; then tail-call
+    /// <c>ApplyDecayAllNeeds(connected)</c>, which reads the same <c>+0x3AC</c>. The device-read
     /// and resolver callers pass <c>false</c> (the unconnected table at <c>this+0x17C</c>); a third caller,
     /// <c>HandleMessage&lt;SetGameBeingPaused&gt;</c> 0x00698F44 (<c>0x006990DE..0x006990E8</c>), passes
     /// <c>robot != 0</c>. That game-message caller is unbuilt (M15-016's named gap).
@@ -1430,18 +1511,18 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            double now = _clockSec();
-            double elapsed = now - _stateDateTimeSec;
+            float now = (float)_clockSec();
+            float elapsed = now - (float)_stateDateTimeSec;              // 0x0069532C
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
-                _lastDecaySec[n] = now - elapsed;                        // [+0x1E4] = [+0x3AC] - elapsed
+                _lastDecaySec[n] = _nowSec - elapsed;                    // [+0x1E4] = [+0x3AC] - elapsed (0x00695338/0x00695340)
                 if (_fullnessDeadlineSec.TryGetValue(n, out var deadline) && deadline != 0)
                 {
                     _fullnessDeadlineSec[n] = deadline - elapsed;
                     if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = start - elapsed;
                 }
             }
-            ApplyDecayAllNeeds(connected);
+            ApplyDecayAllNeeds(connected);                               // reads +0x3AC (0x00695374)
         }
     }
 
@@ -1468,9 +1549,9 @@ public sealed class NeedsManager
             // (StartFullnessCooldownForNeed 0x006970AC).
             if (v > 0 && State.GetNeedBracket(n) == NeedBracketId.Full)
             {
-                double filledAt = _clockSec();
+                float filledAt = (float)_clockSec();
                 _fullnessStartSec[n] = filledAt;
-                _fullnessDeadlineSec[n] = filledAt + Config.FullnessDecayCooldownSec.GetValueOrDefault(n, 0);
+                _fullnessDeadlineSec[n] = (float)(filledAt + Config.FullnessDecayCooldownSec.GetValueOrDefault(n, 0));
             }
             if (v > 0) _severeExpressed.Remove(n);
         }

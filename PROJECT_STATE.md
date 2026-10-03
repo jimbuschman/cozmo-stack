@@ -37,7 +37,19 @@ Read first in every session. The manager keeps this file current; the process it
   - **For the B-CORE verification (possible defect, M4-003):** the engine's LockTracks passes the action's name
     (+0x48) and id (+0x60) as the lock owner (0x00540584..0x0054058A). The C# uses one constant `ActionRunnerWho`
     for every action, so lock ownership between concurrent actions is lost.
-- **Counts:** 418 records. 166 EXACT_SOURCE, 194 IMPLEMENTATION_GAP (about 60 of them built and awaiting
+- **B-CORE verified by Opus (2026-09-30):** 5 of about 35 records settle: M4-011, M4-025, M2-003, M3-029 and M1-028.
+  The rest stay IMPLEMENTATION_GAP, each with its defect in `unresolved`; the reports are
+  `research/20260930-B-CORE-verify-{1-2,3-4,5-6}.md`. The main defects:
+  - on-idle and ready-to-stream open one Update early;
+  - a parallel calibration read, and the Needs read queued late;
+  - the head clip is missing its 1e-5 dead zone;
+  - the timeout sends its stop and unlock in the wrong order, and has the wrong result and clock;
+  - the Needs tick uses double where the engine uses float;
+  - System.Text.Json stands in for the shipped jsoncpp;
+  - M1-044 and M1-045 are not built.
+  Log-only defects block settling too. **For DeepSeek:** its batches were organised and honest about gaps, but most
+  records failed strong verification on gates, order and width, so a DeepSeek build is a first pass, not a finish.
+- **Counts:** 418 records. 171 EXACT_SOURCE, 189 IMPLEMENTATION_GAP (about 60 of them built and awaiting
   verification), 18 RECOVERABLE_GAP, 10 HARDWARE_ONLY, 2 BLOCKED_EXTERNAL, 26 COMPATIBILITY_POLICY,
   2 EQUIVALENT_IMPLEMENTATION.
 - **Next for the manager:**

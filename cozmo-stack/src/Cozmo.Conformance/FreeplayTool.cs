@@ -107,7 +107,7 @@ public static class FreeplayTool
         var log = new List<string>();
         bool nominal = false;
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
-        var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         if (cal is null)
         {
             // Freeplay drives and manipulates cubes on its own. Substituting a made-up camera geometry here

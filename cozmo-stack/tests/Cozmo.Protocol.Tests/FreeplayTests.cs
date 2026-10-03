@@ -97,11 +97,11 @@ public class FreeplayTests
     public void TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick()
     {
         var obb = ObbRoot();
-        if (obb is null) return;
+        Assert.NotNull(obb);                                   // the OBB is required: AssetPresenceTests guards it
         using var rig = new Rig();
-        LoadAssets(rig, obb);
+        LoadAssets(rig, obb!);
         double clock = 0;
-        using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+        using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
         var needs = stack.Needs;
         Assert.NotNull(rig.Robot.Engine.NeedsUpdate);          // FreeplayStack handed it to the engine
         needs.SetLevel(NeedId.Play, 0.9);
@@ -111,9 +111,13 @@ public class FreeplayTests
         stack.Freeplay.Tick(1000, 1_000_000);
         Assert.Equal(0.9, needs.State.GetNeedLevel(NeedId.Play), 6);
 
-        // the engine tick does, on its own BaseStationTimer seconds
+        // the engine tick does, on its own BaseStationTimer seconds. The tick stores the f32 at +0x10
+        // (0x0084BCA8) before the pause test (0x00695CA8); NeedsManager.NowSec is that stored value.
         rig.Clock.Advance(120_000);
         rig.Tick();
+        // expected from the test's own clock: the engine timer counts from creation and this advances 120 s,
+        // so the stored +0x3AC f32 is 120.0 (0x00695CA8), not a value read back from the implementation
+        Assert.Equal(120.0f, needs.NowSec);
         Assert.True(needs.State.GetNeedLevel(NeedId.Play) < 0.9);
     }
 
@@ -583,11 +587,11 @@ public class FreeplayTests
         clock = 30; needs.SetPaused(false);                        // a 20 s pause; fill 0 -> 20, deadline 100 -> 120
         needs.SetLevel(NeedId.Play, 1.0);
 
-        clock = 119; needs.ApplyDecayAllNeeds(true);
+        clock = 119; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // deadline 20 + 100 = 120; now <= deadline skips
         // the deadline has passed: only the time outside the cooldown window decays. The shift put lastDecay
         // at 20, and the excluded window (deadline - start = 100) moves it to 120, so 121 decays one second.
-        clock = 121; needs.ApplyDecayAllNeeds(true);
+        clock = 121; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0 - 0.06 * 1 / 60.0, needs.State.GetNeedLevel(NeedId.Play), 6);
     }
 
@@ -643,12 +647,12 @@ public class FreeplayTests
         needs.SetLevel(NeedId.Play, 0.9);
         Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full at t=0; deadline 100
 
-        clock = 60; needs.ApplyDecayAllNeeds(true);
+        clock = 60; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // still inside the cooldown: skipped
 
         // at 150 the deadline has passed; only 100..150 (50 s) is outside the window. The fixed-period
         // version would have decayed the whole 150 s since the fill.
-        clock = 150; needs.ApplyDecayAllNeeds(true);
+        clock = 150; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0 - 0.06 * 50 / 60.0, needs.State.GetNeedLevel(NeedId.Play), 6);
     }
 
@@ -802,10 +806,10 @@ public class FreeplayTests
             new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         var needs = new NeedsManager(() => clock, cfg, decay);
         needs.SetNeedPaused(NeedId.Play, true);
-        clock = 60; needs.ApplyDecayAllNeeds(true);
+        clock = 60; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);
         needs.SetNeedPaused(NeedId.Play, false);
-        clock = 120; needs.ApplyDecayAllNeeds(true);
+        clock = 120; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.True(needs.State.GetNeedLevel(NeedId.Play) < 1.0);
     }
 

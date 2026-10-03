@@ -15,7 +15,7 @@ public enum MotionResult
     TimedOut,
     /// <summary>Refused before anything was sent, because the robot was not in a state to accept it.</summary>
     Refused,
-    /// <summary>The engine's action failure: see <see cref="MotionOutcome.EngineResult"/> (0x04000004, 0x03000016).</summary>
+    /// <summary>The engine's action failure: see <see cref="MotionOutcome.EngineResult"/> (0x04000004, 0x03000016, 0x03000018).</summary>
     Failed,
 }
 
@@ -47,13 +47,30 @@ public sealed class CozmoMotion
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
 
-    internal CozmoMotion(CozmoRobot robot) => _robot = robot;
+    internal CozmoMotion(CozmoRobot robot)
+    {
+        _robot = robot;
+        // fidelity: M4-016
+        // Robot::Update's ActionList step (CD12) runs IActionRunner::Update, where IAction::UpdateInternal tests
+        // the engine-clock timeout and then CheckIfDone (0x00540D4A..0x00540E80); this is the only per-tick entry
+        // to Motion.
+        robot.Engine.ActionRunnerUpdate = UpdateActions;
+    }
 
     // ------------------------------------------------------------ MovementComponent state
 
     // fidelity: M4-005
     /// <summary>MC+8: 0 at construction (0x0063DA7C).</summary>
     private byte _actionIdCounter;
+
+    // fidelity: M4-003
+    /// <summary>
+    /// The IActionRunner tag at +0x60, assigned at construction from the global tag counter
+    /// (counter 0x0053FE54..0x0053FE68, store to +0x60 0x0053FEC6) before Update. It is the track-lock owner key (LockTracks 0x00540584..0x0054058A,
+    /// to_string(+0x60) via 0x004F0F4C) and the ~IActionRunner stop gate key (0x00541138/0x0054115E). It is
+    /// separate from MC+8, the motor action id on the wire.
+    /// </summary>
+    private int _lockOwnerCounter;
 
     /// <summary>Track bits (M4-014): HEAD 1, LIFT 2, BODY 4.</summary>
     public const byte HeadTrack = 1, LiftTrack = 2, BodyTrack = 4;
@@ -82,9 +99,9 @@ public sealed class CozmoMotion
 
     // fidelity: M1-025, M1-015
     /// <summary>
-    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): the action-id counter at 0,
-    /// no track locks, direct drive holding nothing, the head at −25° and no motor moving. A move in flight ends as
-    /// timed out without anything sent.
+    /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): the action-id and lock-owner
+    /// counters at 0, no track locks, direct drive holding nothing, the head at −25° and no motor moving. A move in
+    /// flight ends as timed out without anything sent.
     /// </summary>
     internal void ResetToConstructed()
     {
@@ -92,6 +109,7 @@ public sealed class CozmoMotion
         lock (_gate)
         {
             _actionIdCounter = 0;
+            _lockOwnerCounter = 0;
             foreach (var s in _trackLocks) s.Clear();
             _ddBody = _ddHead = _ddLift = false;
             _directDriveDisabled = false;
@@ -243,6 +261,22 @@ public sealed class CozmoMotion
     /// retry (M8-007, M4-003).
     /// </summary>
     public bool AreAnyTracksLocked(byte mask) { lock (_gate) return IsTrackLockedLocked(mask); }
+
+    // fidelity: M4-003
+    /// <summary>
+    /// <c>MovementComponent::AreAllTracksLockedBy(mask, owner)</c> (0x0064030C): every bit of
+    /// <paramref name="mask"/> has <paramref name="owner"/> in its lock set. The ~IActionRunner stop gate
+    /// (0x00541138/0x0054115E) only stops a track this action holds.
+    /// </summary>
+    public bool AreAllTracksLockedBy(byte mask, string owner)
+    {
+        lock (_gate)
+        {
+            for (int b = 0; b < 3; b++)
+                if ((mask & (1 << b)) != 0 && !_trackLocks[b].Contains(owner)) return false;
+            return true;
+        }
+    }
 
     /// <summary><c>MovementComponent::LockTracks</c> 0x00640098: one owner entry per bit in the multiset.</summary>
     public void LockTracks(byte mask, string who) { lock (_gate) LockTracksLocked(mask, who); }
@@ -427,18 +461,24 @@ bool requireCalibration = true)
     public const uint ResultSendFailed = 0x03000016;
     /// <summary>M4-003: IActionRunner::Update's required-tracks-locked failure (0x00540572..0x0054057C).</summary>
     public const uint ResultTracksLocked = 0x03000019;
-    /// <summary>M4-003: the IActionRunner's lock owner entry (the engine locks with the action's id/name; one
-    /// action per track runs at a time, so a fixed owner is equivalent).</summary>
-    private const string ActionRunnerWho = "IActionRunner";
+    /// <summary>M4-016: IAction::UpdateInternal's timeout failure (0x00540E80).</summary>
+    public const uint ResultTimedOut = 0x03000018;
     /// <summary>M4-016: the IAction timeout slot's default, 30.0 s (0x0052B0C2), not 5 s.</summary>
     internal static readonly TimeSpan DefaultActionTimeout = TimeSpan.FromSeconds(30);
 
     // fidelity: M4-001
     /// <summary>
     /// <c>Radians::rescale</c> (0x0084C87C), reached from the Radians ctor 0x0084C832: bring an angle into (−π, π].
-    /// The engine uses the <c>ceil(v/2π − 0.5)</c> shortcut at |v| ≥ 10 and a 2π loop below it
-    /// (0x0084C8A2..0x0084C937). The ctor rescales every Radians the engine builds, so MoveHeadToAngleAction clips
-    /// the rescaled angle, not the raw command.
+    /// The engine uses the <c>ceil(v/2π − 0.5)</c> shortcut at |v| ≥ 10 (0x0084C8AE..0x0084C8BA) and a 2π loop
+    /// below it (0x0084C8C4..0x0084C900, 0x0084C88A..0x0084C8A8). The ctor rescales every Radians the engine
+    /// builds, so MoveHeadToAngleAction clips the rescaled angle, not the raw command.
+    ///
+    /// The shortcut keeps the engine's <c>vcvt.s32.f32</c> / <c>vcvt.f32.s32</c> round trip at
+    /// 0x0084C91E..0x0084C922: the ceil result is converted to s32 and back to f32 before the multiply. ARM's
+    /// conversion saturates out-of-range operands to INT_MIN/INT_MAX and maps NaN to 0, so at ±inf the turn count
+    /// is a finite float and the result stays ±inf — which the clip then catches — instead of becoming
+    /// inf − inf = NaN; huge finite values keep their magnitude instead of being reduced by the (unrepresentable)
+    /// turn count. For the small turn counts the game path uses the round trip changes nothing.
     /// </summary>
     internal static float RescaleRadians(float value)
     {
@@ -447,6 +487,7 @@ bool requireCalibration = true)
             if (MathF.Abs(value) >= 10f)
             {
                 float turns = MathF.Ceiling(value / (2f * MathF.PI) - 0.5f);
+                turns = ArmFloatToIntToFloat(turns);
                 value -= turns * (2f * MathF.PI);
             }
             else
@@ -457,6 +498,47 @@ bool requireCalibration = true)
         }
         return value;
     }
+
+    // fidelity: M4-001
+    /// <summary>
+    /// The engine's <c>vcvt.s32.f32</c> then <c>vcvt.f32.s32</c> (0x0084C91E..0x0084C922): round toward zero,
+    /// saturating out of the s32 range to INT_MIN/INT_MAX; NaN becomes 0. Used by <see cref="RescaleRadians"/>.
+    /// </summary>
+    internal static float ArmFloatToIntToFloat(float x)
+    {
+        int i;
+        if (float.IsNaN(x)) i = 0;
+        else if (x >= 2147483648f) i = int.MaxValue;      // 2^31: vcvt saturates
+        else if (x < -2147483648f) i = int.MinValue;
+        else i = (int)x;                                  // vcvt rounds toward zero
+        return i;
+    }
+
+    // fidelity: M4-001
+    /// <summary>The 1e-5 near tolerance, the engine float 0x3727C5AC (0x0084CC64/0x0084CC68).</summary>
+    internal static readonly float NearTolerance = BitConverter.Int32BitsToSingle(unchecked((int)0x3727C5AC));
+
+    // fidelity: M4-001
+    /// <summary>
+    /// <c>Radians::IsNear</c> (0x0084CC0A): <c>|rescale(rescale(a) − b)| &lt; |tolerance|</c>, a strict &lt;
+    /// (0x0084CC3C..0x0084CC58).
+    /// </summary>
+    internal static bool IsNear(float a, float b, float tolerance)
+    {
+        float d = RescaleRadians(RescaleRadians(a) - b);
+        return MathF.Abs(d) < MathF.Abs(tolerance);
+    }
+
+    // fidelity: M4-001
+    /// <summary>
+    /// <c>Anki::operator&gt;</c> (0x0084CC90..0x0084CCD0): <c>a − b &gt; 0 &amp;&amp; !IsNear(a, b, 1e-5)</c>. The clip
+    /// at 0x00547F44/0x00547FC2 calls <c>operator&lt;</c> for the min and <c>operator&gt;</c> for the max.
+    /// </summary>
+    internal static bool RadiansGreaterThan(float a, float b) => a - b > 0f && !IsNear(a, b, NearTolerance);
+
+    // fidelity: M4-001
+    /// <summary><c>Anki::operator&lt;</c> (0x0084CD12): <c>operator&gt;(b, a)</c>.</summary>
+    internal static bool RadiansLessThan(float a, float b) => RadiansGreaterThan(b, a);
 
     // fidelity: M4-001, M4-003, M4-016
     /// <summary>
@@ -478,13 +560,15 @@ bool requireCalibration = true)
         // fidelity: M4-001
         // Radians ctor 0x0084C832 rescales first (0x0084C87C); so 99 rad → 99 − 16·2π = −1.5310 and clips to the
         // min with AngleTooLow, and −99 rad → −99 + 16·2π = +1.5310 and clips to the max with AngleTooHigh.
+        // The clip is Anki::operator< (0x0084CD12) for the min and operator> (0x0084CC90..0x0084CCD0) for the max:
+        // a − b > 0 and !IsNear(a, b, 1e-5), so a target within 1e-5 past a limit is sent unclipped.
         float target = RescaleRadians(radians);
-        if (target < MinHeadAngleRad)
+        if (RadiansLessThan(target, MinHeadAngleRad))
         {
             Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: {radians:F4} rad, clipped to {MinHeadAngleRad}");
             target = MinHeadAngleRad;
         }
-        else if (target > MaxHeadAngleRad)
+        else if (RadiansGreaterThan(target, MaxHeadAngleRad))
         {
             Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: {radians:F4} rad, clipped to {MaxHeadAngleRad}");
             target = MaxHeadAngleRad;
@@ -507,7 +591,7 @@ bool requireCalibration = true)
     /// makes 1.5° at most 1.73 mm. Its formula is not in the inventory and is not needed for this API.
     /// <paramref name="suppressTrackLocking"/> is the action's byte +0x56 (M13-028: FlipBlockAction::CheckIfDone sets it to 1 on its queued carry lift, 0x0055F152..0x0055F154):
     /// IActionRunner::Update 0x00540370 branches over both the AreAnyTracksLocked test and LockTracks when it is non-zero (0x00540428..0x00540434 -> 0x00540592), and the action's
-    /// end skips UnlockTracks (0x005408EC..0x005408F0), so the move runs while another action holds the lift track and sends no Disable/EnableAnimTracks of its own.
+    /// end skips the inline lock release in ~IActionRunner (0x0054120C..0x0054122A; 0x005408EC is IActionRunner::UnlockTracks, called only from the IAction constructor and IAction::Reset), so the move runs while another action holds the lift track and sends no Disable/EnableAnimTracks of its own.
     /// </summary>
     public Task<MotionOutcome> SetLiftHeightAsync(float heightMm,
                                                   float maxSpeedRadPerSec = DefaultLiftSpeedRadPerSec,
@@ -680,7 +764,17 @@ bool requireCalibration = true)
         public readonly string What;
         /// <summary>M4-003: the action's required track mask (+0x54): head 1 (0x00547EAC), lift 2 (0x005489EE).</summary>
         public readonly byte Mask;
+        /// <summary>MA8: the motor action id on the wire (MC+8), taken in MoveHeadToAngle / MoveLiftToHeight.</summary>
         public byte Id;
+        /// <summary>
+        /// M4-003: the IActionRunner tag (+0x60, store 0x0053FEC6) that owns the track lock and the
+        /// ~IActionRunner stop gate. Assigned in <see cref="RunAsync"/> before the lock.
+        /// </summary>
+        public string LockOwner = "";
+        /// <summary>M4-016: IAction +0x74, the engine-clock start time, set at Init (RunAsync).</summary>
+        public float StartTime;
+        /// <summary>M4-016: the IAction timeout slot's value in seconds (+0x74 test, 0x00540E80).</summary>
+        public float TimeoutSeconds;
         /// <summary>+0xAA / +0x95: the command was sent.</summary>
         public bool Sent;
         /// <summary>+0xAB / +0x96: the matching ack arrived.</summary>
@@ -689,9 +783,9 @@ bool requireCalibration = true)
         public bool HasMoved;
         /// <summary>Head +0xAC / lift +0x97: in position, latched (C1, C6).</summary>
         public bool InPositionLatched;
-        /// <summary>M4-003: this action holds its track lock (taken at 0x0054058E, released at 0x005408EC).</summary>
+        /// <summary>M4-003: this action holds its track lock (taken at 0x0054058E, released inline in ~IActionRunner at 0x0054121E..0x0054122A).</summary>
         public bool Locked;
-        /// <summary>M13-028: the action's byte +0x56 (non-zero: Update neither tests nor takes the track lock, 0x00540428..0x00540434, and the end does not release it, 0x005408EC..0x005408F0).</summary>
+        /// <summary>M13-028: the action's byte +0x56 (non-zero: Update neither tests nor takes the track lock, 0x00540428..0x00540434, and the end does not release it, 0x0054120C..0x0054122A).</summary>
         public bool SuppressTrackLocking { get; init; }
         public readonly TaskCompletionSource<MotionOutcome> Done = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -724,10 +818,20 @@ bool requireCalibration = true)
         lock (_gate)
         {
             // fidelity: M4-003
+            // IActionRunner::IActionRunner 0x0053FDB0 assigns the +0x60 tag at construction (counter 0x0053FE54..0x0053FE68, store 0x0053FEC6),
+            // before Update; the lock owner is to_string(+0x60) (LockTracks 0x00540584..0x0054058A via 0x004F0F4C).
+            // The stack assigns it here, before the lock.
+            a.LockOwner = (++_lockOwnerCounter).ToString();
+            // fidelity: M4-016
+            // IAction::UpdateInternal 0x00540D4A..0x00540D64: +0x74 is the start time, set to the engine clock at
+            // the first Update (Init here); 0x00540E80 fails when start + timeout <= now.
+            a.StartTime = _robot.Engine.Timer.SecondsF;
+            a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
+
             // IActionRunner::Update (0x00540370): AreAnyTracksLocked(mask) at 0x00540572..0x0054057C fails the
-            // action with 0x03000019 and sends nothing; otherwise LockTracks(mask) at 0x0054058E sends
-            // DisableAnimTracks. The action's end releases the lock (UnlockTracks 0x005408EC), which sends
-            // EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
+            // action with 0x03000019 and sends nothing; otherwise LockTracks(mask, to_string(id)) at 0x0054058E sends
+            // DisableAnimTracks. The action's end releases the lock inline in ~IActionRunner (0x0054120C..0x0054122A),
+            // which sends EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
             if (!a.SuppressTrackLocking && IsTrackLockedLocked(a.Mask))
             {
                 Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
@@ -735,7 +839,7 @@ bool requireCalibration = true)
             }
             if (!a.SuppressTrackLocking)
             {
-                LockTracksLocked(a.Mask, ActionRunnerWho);
+                LockTracksLocked(a.Mask, a.LockOwner);
                 a.Locked = true;
             }
 
@@ -747,7 +851,7 @@ bool requireCalibration = true)
             {
                 if (!MovingLocked(a))
                 {
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
+                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
                     return new MotionOutcome(MotionResult.Acknowledged, $"{a.What}: already in position, nothing sent");
                 }
                 a.InPositionLatched = true;
@@ -760,29 +864,61 @@ bool requireCalibration = true)
                 if (!_robot.SendMessage(build(a.Id)))
                 {
                     _actions.Remove(a);
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
+                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
                     return new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed };
                 }
                 a.Sent = true;
             }
         }
-        var t = timeout ?? DefaultActionTimeout;
-        var done = await Task.WhenAny(a.Done.Task, Task.Delay(t)).ConfigureAwait(false);
-        if (done == a.Done.Task) return a.Done.Task.Result;
-        bool stop;
+        // M4-016: the timeout is not a host delay; IAction::UpdateInternal tests it on the engine clock from
+        // UpdateActions, run by Robot::Update's ActionList step (CD12), before CheckIfDone.
+        return await a.Done.Task.ConfigureAwait(false);
+    }
+
+    // fidelity: M4-003, M4-016
+    /// <summary>
+    /// The per-tick half of IActionRunner::Update, run from Robot::Update's ActionList step (CD12) once the first
+    /// full state is handled. For each in-flight head/lift action, IAction::UpdateInternal tests the engine-clock
+    /// timeout first (0x00540D4A..0x00540D64; 0x00540E80 fails start + timeout &lt;= now with 0x03000018 and logs
+    /// IAction.Update.TimedOut) and then CheckIfDone. A timed-out action is destroyed: ~IActionRunner stops its
+    /// track only when this action holds it (AreAllTracksLockedBy(mask, to_string(+0x60)) 0x00541138/0x0054115E)
+    /// and before the lock release (0x0054120C..0x0054122A).
+    /// </summary>
+    internal void UpdateActions()
+    {
+        var timedOut = new List<MoveAction>();
+        var finished = new List<(MoveAction, MotionOutcome)>();
         lock (_gate)
         {
-            if (!_actions.Remove(a)) return a.Done.Task.Result;    // finished just now: Handle already unlocked
-            // fidelity: M4-015
-            // MA7: an action that ends while its track is moving stops that track (~IActionRunner 0x0054112E..0x00541192).
-            stop = MovingLocked(a);
-            // fidelity: M4-003
-            if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
+            foreach (var a in _actions.ToArray())
+            {
+                // fidelity: M4-016
+                if (a.StartTime + a.TimeoutSeconds <= _robot.Engine.Timer.SecondsF)
+                {
+                    _actions.Remove(a);
+                    timedOut.Add(a);
+                }
+            }
+            CheckIfDoneLocked(finished);
         }
-        if (stop) { if (a.IsHead) StopHead(); else StopLift(); }
-        return new MotionOutcome(MotionResult.TimedOut,
-            a.Acked ? $"{a.What}: action {a.Id} acknowledged but not in position within {t.TotalSeconds:F1}s"
-                    : $"{a.What}: no acknowledgement of action {a.Id} within {t.TotalSeconds:F1}s");
+        foreach (var a in timedOut)
+        {
+            // fidelity: M4-016
+            Log($"warning: IAction.Update.TimedOut: {a.What} timed out after {a.TimeoutSeconds:F1} seconds.");
+            // fidelity: M4-003
+            // ~IActionRunner 0x0054112E..0x00541192: stop the track only when this action holds its lock, and
+            // before the release at 0x0054120C..0x0054122A.
+            if (MovingLocked(a) && AreAllTracksLockedBy(a.Mask, a.LockOwner))
+            {
+                if (a.IsHead) StopHead(); else StopLift();
+            }
+            if (a.Locked) UnlockTracks(a.Mask, a.LockOwner);
+            a.Done.TrySetResult(new MotionOutcome(MotionResult.Failed,
+                a.Acked ? $"{a.What}: action {a.Id} acknowledged but not in position within {a.TimeoutSeconds:F1}s"
+                        : $"{a.What}: no acknowledgement of action {a.Id} within {a.TimeoutSeconds:F1}s")
+            { EngineResult = ResultTimedOut });
+        }
+        foreach (var (a, o) in finished) a.Done.TrySetResult(o);
     }
 
     // fidelity: M4-016
@@ -823,8 +959,10 @@ bool requireCalibration = true)
         {
             _actions.Remove(a);
             // fidelity: M4-003
-            // The action's end releases its track lock (UnlockTracks 0x005408EC), sending EnableAnimTracks.
-            if (a.Locked) { UnlockTracksLocked(a.Mask, ActionRunnerWho); a.Locked = false; }
+            // The action's end releases its track lock inline in ~IActionRunner (0x0054121E..0x0054122A), sending
+            // EnableAnimTracks; 0x005408EC is IActionRunner::UnlockTracks, called only from the IAction constructor
+            // (0x00540CB0) and IAction::Reset (0x00540D02).
+            if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
         }
     }
 

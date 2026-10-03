@@ -1607,7 +1607,12 @@ public sealed class AnimationScheduler
             int ready = _s.AudioSource is { } src ? src.ReadySamples(pcm, _pos) : pcm.Length;
             if (Math.Max(0, ready - _pos) < want) return null;
             var samples = new byte[CozmoAudio.SamplesPerFrame];
-            for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_pos + i], _s.Log);
+            // fidelity: M3-010
+            // The source hands 16-bit PCM, so this is AnkiMuLaw.Encode(short). The engine's buffer is a
+            // vector<float> (PopRobotAudioMessage 0x00597DB4) and it calls encodeMuLaw(float); the float
+            // overload's NaN warning is therefore not reachable from this short PCM seam. The 744-byte
+            // frame is zero-padded below the samples (C5).
+            for (int i = 0; i < want; i++) samples[i] = AnkiMuLaw.Encode(pcm[_pos + i]);
             _pos += want;
             if (_pos >= pcm.Length) { _pcm = null; _pos = 0; _eventId = null; }
             return samples;

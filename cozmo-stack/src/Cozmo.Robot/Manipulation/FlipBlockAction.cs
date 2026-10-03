@@ -63,29 +63,28 @@ public sealed class FlipBlockAction
     /// <summary>How many M8 calls of <c>Init</c> (DisableReactionsWithLock, IActionRunner::Update) were skipped: they are not modelled (M13-028).</summary>
     public int M8CallsNotModelled { get; private set; }
 
-    /// <summary>The wait the C# lift move gives an acknowledgement (<c>CozmoMotion</c>'s 5 s default): it has NO engine source, an UNSOURCED STAND-IN (the engine's action stays RUNNING). Used for the initial 45 mm move only.</summary>
-    private static readonly TimeSpan LiftWaitStandIn = TimeSpan.FromSeconds(5);
-
     /// <summary>
-    /// The result of the INITIAL lift move when it did not complete: the engine's own code from <see cref="MotionOutcome.EngineResult"/> (0x04000004 StoppedMakingProgress, 0x03000016 send failed;
-    /// M4-016 MA17, 0x005493F6..0x00549508). A wait that simply ran out has no engine code (the engine keeps the action RUNNING): this stack reports <see cref="ActionResult.Timeout"/> for it, an
-    /// UNSOURCED STAND-IN. The queued carry lift never feeds the flip's result.
+    /// The result of the INITIAL lift move when it did not complete: the engine's own code from <see cref="MotionOutcome.EngineResult"/> (0x04000004 StoppedMakingProgress, 0x03000016 send failed,
+    /// 0x03000018 IAction timeout; M4-016 MA17, 0x00540E80/0x005493F6..0x00549508). The engine's MoveLiftToHeightAction carries the default 30.0 s IAction timeout (0x0052B0C2), tested on the
+    /// engine clock; when it fires the action fails with 0x03000018, so the flip returns that code for a timeout. The ActionResult.Timeout fallback remains only for an outcome with no engine code
+    /// (e.g. a robot-removed wait). The queued carry lift never feeds the flip's result.
     /// </summary>
     // fidelity: M13-028
     public static ActionResult LiftFailureResult(MotionOutcome outcome) => outcome.EngineResult is { } code ? (ActionResult)code : ActionResult.Timeout;
 
     /// <summary>
     /// How many queued carry lifts were still unfinished when the flip ended, so the destructor's <c>ActionList::Cancel(id)</c> (0x0055ED6C..0x0055ED7A) should have cancelled them. MISSING: the stack has
-    /// no handle to cancel a lift move that <c>CozmoMotion.SetLiftHeightAsync</c> is waiting on (the move ends only by its own completion or its wait ending, which stops a moving lift, M4-015), so the
-    /// cancel is NOT done and is counted here. This is a limit of this stack, NOT a source gap: the engine's destructor cancels the queued lift promptly at flip end (it is typically still moving, rising
-    /// 45 -> 92 mm after a trigger only 40 mm out), whereas here it runs on toward 92 mm and, if it is still not in position when its 5 s default wait ends (Motion.cs StopLift whenever the lift is moving),
-    /// that late stop could hit a LATER action's lift. An existing Motion stop/cancel API for a pending wait would be the option; none is used because no record supports it.
+    /// no handle to cancel a lift move that <c>CozmoMotion.SetLiftHeightAsync</c> is waiting on (the move ends only by its own completion or its engine-clock IAction timeout, which stops a moving lift,
+    /// M4-015/M4-016), so the cancel is NOT done and is counted here. This is a limit of this stack, NOT a source gap: the engine's destructor cancels the queued lift promptly at flip end (it is
+    /// typically still moving, rising 45 -> 92 mm after a trigger only 40 mm out), whereas here it runs on toward 92 mm and, if it is still not in position when its 30 s engine-clock timeout fires
+    /// (Motion.cs StopLift whenever the lift is moving), that late stop could hit a LATER action's lift. An existing Motion stop/cancel API for a pending wait would be the option; none is used because
+    /// no record supports it.
     /// </summary>
     public int QueuedLiftCancelsNotModelled { get; private set; }
 
     private async Task<ActionResult> RunEmbeddedCompound(double dist, CancellationToken cancel)
     {
-        var lift = await _m.Robot.Motion.SetLiftHeightAsync((float)ApproachLiftHeightMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, timeout: LiftWaitStandIn, requireCalibration: false);
+        var lift = await _m.Robot.Motion.SetLiftHeightAsync((float)ApproachLiftHeightMm, maxSpeedRadPerSec: LiftSpeedRadPerSec, requireCalibration: false);
         if (lift.Result != MotionResult.Acknowledged)
         {
             var failure = LiftFailureResult(lift);

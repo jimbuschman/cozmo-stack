@@ -417,3 +417,6 @@ The track-map writer C5-8 is a residual of M14-011's production path (`UpdateRec
 `+0xac`/`+0x20` erase-key question is open. C5-12's album gate and C5-13's both-empty condition belong to
 M14-012's save flow.
 
+## Correction A3 (manager, 2026-10-02, the Codex re-audit)
+
+Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M14-001, M14-003, M14-004 and M14-005 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.

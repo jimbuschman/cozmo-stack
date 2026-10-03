@@ -1,3 +1,4 @@
+using Cozmo.Protocol;
 using Cozmo.Robot;
 using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Manipulation;
@@ -456,6 +457,30 @@ public class ManipulationTests
         Assert.Equal(200f, BitConverter.ToSingle(b, 17));
         Assert.Equal(500f, BitConverter.ToSingle(b, 21));
         Assert.Equal(0, b[25]);
+    }
+
+    /// <summary>
+    /// M2-002: <c>PlaceObjectOnGroundAction::CheckIfDone</c> 0x005549B0..0x00554A3B's status gate, through
+    /// the live entry. While the robot reports IS_PICKING_OR_PLACING (status bit 0x4, stored at
+    /// DockingComponent+4, 0x00512A96) the action latches its <c>+0x84</c> (0x005549C0) and does not accept
+    /// the dock result; once the bit clears and the robot is not moving (MovementComponent+9, 0x005549E0) it
+    /// completes.
+    /// </summary>
+    [Fact]
+    public void M2_002_PlaceObjectOnGroundWaitsForThePickingOrPlacingStatusGate()
+    {
+        using var rig = new Rig();
+        rig.M.Docking.Carrying.SetCarrying(7);
+        rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);       // the robot is picking/placing
+        var place = new PlaceObjectOnGroundAction(rig.M);
+        var t = place.RunAsync(default);
+        Assert.True(place.StatusLatched);                                // +0x84 set at 0x005549C0
+        SpinUntil(() => rig.M.Docking.Carrying.IsCarryingObject == false, () => rig.Pump());
+        Assert.False(t.IsCompleted);                                     // the result is in; the gate is closed
+        // the place is done: bit 0x4 clear and the robot is not moving
+        rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos));
+        SpinUntil(() => t.IsCompleted, () => rig.Pump());
+        Assert.Equal(ActionResult.Success, t.Result);
     }
 
     // ------------------------------------------------------------------ behaviours

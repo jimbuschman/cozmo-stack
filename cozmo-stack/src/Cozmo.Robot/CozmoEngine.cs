@@ -830,8 +830,15 @@ public sealed class EngineRobot
         // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
         // installs both (0x65A860). Raised at completion, so a VisionSystem built after the response still
         // adopts it; with none subscribed the result is kept and the read still drains.
+        // M3-034: the callback (0x65A85E..0x65A9DE) logs ReadFaceEnrollDataNotFound when the result is -1
+        // (0x0065A8F0, channeled info, no fields) and ReadFaceEnrollDataFail for any other non-zero result
+        // (0x0065A916, warning, "NVResult = %s").
         nv.Read(0x183000, r =>
         {
+            if (r.Result == -1)
+                Engine.Log("info: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound");
+            else if (r.Result != 0)
+                Engine.Log($"warning: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail: NVResult = {NvStorageComponent.NvResultName(r.Result)}");
             if (r.Result != 0) return;
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
@@ -840,6 +847,14 @@ public sealed class EngineRobot
 
     /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
     private readonly List<byte> _faceAlbum = new();
+
+    // fidelity: M3-034
+    /// <summary>
+    /// M3-034: the Robot's VisionComponent (and its VC+0x2F4 album bytes) is destroyed with the Robot
+    /// (0x0051116C, ~VisionComponent 0x0065258E). The removal path calls this before the EngineRobot is dropped,
+    /// so nothing of the old album survives it.
+    /// </summary>
+    internal void ClearFaceAlbum() => _faceAlbum.Clear();
 
     // fidelity: M3-033
     /// <summary>The eight RobotDataBackupManager tags, ascending (backup_config.json "tagsToBackup", 0x51AD0A).</summary>
@@ -852,8 +867,13 @@ public sealed class EngineRobot
     public bool ReadyToStream { get => _readyToStream; internal set => _readyToStream = value; }
     /// <summary>Robot+0x34E: the first full robot state after time sync has been handled (CC4, CD23).</summary>
     public bool FirstFullStateHandled { get => _firstFullState; internal set => _firstFullState = value; }
-    /// <summary>Robot+0x520: when the SyncTime was sent, engine seconds; 0 when none is outstanding (CD18, CD19).</summary>
-    public double SyncTimeSentAt { get; internal set; }
+    // fidelity: M1-041
+    /// <summary>
+    /// Robot+0x520: when the SyncTime was sent, engine seconds; 0 when none is outstanding (CD18, CD19). The
+    /// engine stores it and compares the 5 s deadline in f32 (0x00513C02..0x00513C14: <c>vldr s0,[r6]</c>,
+    /// <c>vadd.f32 s0,s0,#5.0</c>, <c>vcmpe.f32 s16,s0</c>), so it is a float.
+    /// </summary>
+    public float SyncTimeSentAt { get; internal set; }
     /// <summary>
     /// Whether the last Robot::Update ran AnimationStreamer::Update: past the first-full-state return, time synced
     /// and ready to stream (CD12). The stack's animation loop streams only while this is set.
@@ -954,7 +974,7 @@ public sealed class EngineRobot
     /// only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA 4}; then the log
     /// "Setting pose to (0,0,0)" and AbsoluteLocalizationUpdate {timestamp 0, frameId robot+0x2B0, originId the current
     /// pose origin, x 0, y 0, angle 0} (CD18; M4-020: frameId 0 and originId 1 from the constructor's Delocalize, SC4e,
-    /// SC4g, SC4h). A failed send warns "FailedToSend" and stops, except the ImageRequest: its result is
+    /// SC4g, SC4h). A failed send warns through Robot::SendMessage (0x005134F4) and stops, except the ImageRequest: its result is
     /// discarded (0x0051530C), so the AbsoluteLocalizationUpdate follows it either way. SendSyncTime returns the
     /// AbsoluteLocalizationUpdate send's result (0x005153AE), so +0x520 is set only when that send succeeds.
     /// The history clear reaches this stack's RobotStateHistory (VisionSystem) through
@@ -975,7 +995,7 @@ public sealed class EngineRobot
         Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
         Engine.Log("info: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
-        SyncTimeSentAt = Engine.Timer.Seconds;
+        SyncTimeSentAt = Engine.Timer.SecondsF;
     }
 
     // fidelity: M4-020
@@ -1064,7 +1084,12 @@ public sealed class EngineRobot
         // one step of SyncTime fail without a real transport. It never runs in production.
         bool sent = SendFault?.Invoke(m) ?? Engine.Handler.SendMessage(m);
         if (sent) return true;
-        Engine.Log($"warning: Robot.SendSyncTime.FailedToSend {what}");
+        // fidelity: M4-020
+        // Robot::SendMessage 0x005134F4 is the only warning a failed send makes: channel "Robot.SendMessage"
+        // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356C), with Robot+0x10 (the
+        // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
+        string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
+        Engine.Log($"warning: Robot.SendMessage: Robot {CozmoEngine.RobotId} failed to send a message type {tag}");
         return false;
     }
 
@@ -1116,11 +1141,12 @@ public sealed class EngineRobot
 
     // fidelity: M1-041
     /// <summary>
-    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32). The callback is appended and runs from
-    /// <see cref="NvStorageComponent.ProcessOnIdle"/> only when the NV request deque is empty and nothing is in
-    /// flight, so the AnimationStreamer (ready to stream) starts only after every queued NV request has drained.
-    /// It is not run at the moment it is added, or the calibration read queued later in the same connection
-    /// broadcast would be missed.
+    /// NVStorage::AddOneShotOnIdleCallback (CD20; 0x00645C20..0x00645C32). The callback is appended and
+    /// <see cref="NvStorageComponent.ProcessOnIdle"/> is called at once, so it runs immediately when the NV request
+    /// deque is empty and nothing is in flight, else it waits for the state-0 path of a later
+    /// <see cref="NvStorageComponent.Update"/>. The AnimationStreamer (ready to stream) therefore starts only after
+    /// every queued NV request has drained; at connection the calibration/Lab/Needs reads queued in the same
+    /// broadcast keep it waiting.
     /// </summary>
     internal void NvOnIdle(Action callback) => Engine.NvStorage?.OnIdle(callback);
 
@@ -1151,20 +1177,30 @@ public sealed class EngineRobot
     /// Robot::Update (CD12): the idle component always runs; then the SyncTimeAck check (CD19: +0x520 &gt; 0 and
     /// now &gt; +0x520 + 5.0 s warns "SyncTimeAckNotReceived" and sets +0x520 = 0; never retried); then, if the first
     /// full state has not been handled, it returns. After that: ActionList (none in this stack), the
-    /// AnimationStreamer only if synced and ready to stream, then NVStorage (its on-idle callbacks run here when
-    /// the request deque is empty and nothing is in flight, CD20, which is what opens ready to stream). The later
+    /// AnimationStreamer only if synced and ready to stream, then NVStorage (its state-0 path sends the queued
+    /// request and then runs its on-idle callbacks when the request deque is empty and nothing is in flight, CD20,
+    /// which is what opens ready to stream). The streamer gate is computed before NVStorage runs, so streaming
+    /// opens on the Update after the queue drains (0x0051410C..0x0051411E before 0x0051416A). The later
     /// components (path, block filter, object connection, map, lights) run in their own layers in this stack.
     /// </summary>
     internal void Update()
     {
         Idle.Update();
-        double now = Engine.Timer.Seconds;
-        if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0)
+        // fidelity: M1-041
+        // The deadline is f32 (0x00513C02..0x00513C14): the stored +0x520 is the float at +0x10, and the
+        // engine adds 5.0 and compares in single precision (vcvt.f32.f64 at 0x0084BC80 feeds +0x10).
+        float now = Engine.Timer.SecondsF;
+        if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0f)
         {
             Engine.Log("warning: Robot.Update.SyncTimeAckNotReceived");
             SyncTimeSentAt = 0;
         }
         if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
+        // fidelity: M4-016
+        // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
+        // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
+        // (IAction::UpdateInternal 0x00540D4A..0x00540E80).
+        if (Engine.ActionRunnerUpdate is { } actions) Engine.RunIsolated(actions);
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
         // fidelity: M3-013
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
@@ -1172,11 +1208,11 @@ public sealed class EngineRobot
         if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
         // fidelity: M1-041, M3-022, M3-026, M3-031
         // CD12: NVStorage::Update runs here, after the animation streamer. M3-026/M3-027: in state 0 it pops and
-        // sends the queued request (the connection reads queue on Read and go out only here); M3-031: in state 2 it
-        // checks the read's 5 s synchronised-clock deadline. Then its on-idle callbacks run now if the request deque
-        // is empty and nothing is in flight, which is what gates ready to stream (CD20).
+        // sends the queued request (the connection reads queue on Read and go out only here) and then runs its
+        // on-idle callbacks (0x006456EC), which is what gates ready to stream (CD20); M3-031: in state 2 it checks
+        // the read's 5 s synchronised-clock deadline. Streaming opens on the next Update: the streamer gate above
+        // is computed before this runs (0x0051410C..0x0051411E before 0x0051416A).
         Engine.NvStorage?.Update();
-        Engine.NvStorage?.ProcessOnIdle();
         // fidelity: M4-010, M4-017, M4-018, M4-023
         // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
         // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
@@ -1389,6 +1425,12 @@ internal sealed class RobotInitialConnection
         // has no component in this stack, so the read queues and completes with a no-op sink. It precedes the
         // Needs read (0x52E3B2), which the NeedsManager queues on the serial edge below.
         _engine.NvStorage?.Read(0x196000, _ => { });
+        // fidelity: M15-014, M3-033
+        // C2 row 10 / 0x0052E3B2 -> 0x006943F8: the Needs read 0x194000 follows the lab read. In the engine the
+        // NeedsManager owns it (StartReadFromRobot 0x006944B4), but this stack builds the NeedsManager after the
+        // handshake, so the engine queues it here and buffers the terminal NvResult for whichever NeedsManager
+        // adopts it (the FaceAlbum pattern); a NeedsManager attached later reads ConnectionNeedsResult.
+        _engine.QueueConnectionNeedsRead();
         // fidelity: M15-014
         // C2 row 6: after the response the callback calls ReadLabAssignmentsFromRobot(serial) and then
         // RobotManager::ConnectRobotToNeedsManager(serial), with mfgId word 0. The needs edge is raised after the
@@ -1496,6 +1538,8 @@ internal sealed class RobotManager
         // the next mfgId raises it again (the RIC's tag-0xED subscription is persistent).
         _engine.ClearAcquiredSerialNumber();
         if (r is not null) r.AnimationStreamingOpen = false;
+        // M3-034: the removed Robot's VisionComponent takes its album bytes with it (0x0051116C).
+        r?.ClearFaceAlbum();
         _engine.RobotRemoved?.Invoke();
     }
 }
@@ -1590,6 +1634,44 @@ public sealed class CozmoEngine : IDisposable
         if (ConnectionFaceAlbumLoaded is not { } handler) return;
         foreach (var t in handler.GetInvocationList()) Isolated(() => ((Action<byte[], byte[]>)t)(album, enrollment));
     }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// The connection-time Needs read's completion (0x194000). The engine queues it from the mfgId handler
+    /// (because this stack builds the NeedsManager after the handshake) and keeps the terminal result for a
+    /// NeedsManager attached later; the event carries the result to one attached already. Mirrors
+    /// <see cref="ConnectionFaceAlbumLoaded"/> / <see cref="ConnectionFaceAlbumResult"/>.
+    /// </summary>
+    internal event Action<NvResult>? ConnectionNeedsRead;
+    /// <summary>The terminal Needs read result once it completed, or null; a later subscriber adopts it.</summary>
+    internal NvResult? ConnectionNeedsResult { get; private set; }
+    /// <summary>Whether the mfgId handler queued the connection Needs read; a NeedsManager adopts that read instead of queueing its own.</summary>
+    internal bool ConnectionNeedsReadQueued { get; private set; }
+    /// <summary>Bumped by every completion, so an adopter processes each read once.</summary>
+    internal int ConnectionNeedsGeneration { get; private set; }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>
+    /// Queues the connection Needs read 0x194000 on the shared NV component and records that the engine owns it.
+    /// Called from the mfgId handler after the lab read (0x0052E3B2), exactly once per mfgId.
+    /// </summary>
+    internal void QueueConnectionNeedsRead()
+    {
+        if (NvStorage is not { } nv) return;
+        nv.Read(0x194000, r => RaiseConnectionNeedsRead(r));
+        ConnectionNeedsReadQueued = true;
+    }
+
+    // fidelity: M15-014, M3-033
+    /// <summary>M3-034: raises <see cref="ConnectionNeedsRead"/> and keeps the result for a later subscriber.</summary>
+    internal void RaiseConnectionNeedsRead(NvResult r)
+    {
+        ConnectionNeedsResult = r;
+        ConnectionNeedsGeneration++;
+        if (ConnectionNeedsRead is not { } handler) return;
+        foreach (var t in handler.GetInvocationList()) Isolated(() => ((Action<NvResult>)t)(r));
+    }
+
     /// <summary>The robot-level NV storage owner (NVStorageComponent), set by CozmoRobot; one queue serves every read.</summary>
     internal NvStorageComponent? NvStorage { get; set; }
     /// <summary>RobotStateHistory::Clear, run by Robot::SyncTime (CD18).</summary>
@@ -1606,15 +1688,22 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+    /// <summary>
+    /// M4-016: IActionRunner::Update, run by Robot::Update's ActionList step (CD12) after the first full state and
+    /// before the animation streamer. <see cref="EngineRobot.Update"/> invokes it; <see cref="CozmoMotion"/> sets it
+    /// to its per-tick action timeout/CheckIfDone pass.
+    /// </summary>
+    internal Action? ActionRunnerUpdate;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
     /// and before <c>UpdateAllRobots</c> → <c>Robot::Update</c>, <c>CozmoEngine::Update</c> takes
     /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> and calls <c>NeedsManager::Update</c> with it
     /// (0x004ED632/0x004ED636 → r1, 0x004ED640 <c>blx</c>). The NeedsManager is owned by FreeplayStack, which
-    /// sets this hook; the argument is that same tick clock.
+    /// sets this hook; the argument is that same tick clock. The clock is the f32 at +0x10
+    /// (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8), so the hook takes a float (M1-024).
     /// </summary>
-    internal Action<double>? NeedsUpdate;
+    internal Action<float>? NeedsUpdate;
 
     // fidelity: M4-019
     /// <summary>
@@ -1737,7 +1826,7 @@ public sealed class CozmoEngine : IDisposable
                 // fidelity: M1-024
                 // CozmoEngine::Update state 3 calls NeedsManager::Update between ProcessMessages and
                 // UpdateAllRobots, on BaseStationTimer::GetCurrentTimeInSeconds (0x004ED632..0x004ED640).
-                if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.Seconds));
+                if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.SecondsF));
                 if (Robots.Get(RobotId) is { } r) r.Update();
             }
             finally { _inTick = false; }
@@ -1909,12 +1998,24 @@ public sealed class CozmoEngine : IDisposable
         FanOut(SerialNumberAcquired, serial);
     }
 
-    // fidelity: M15-014
+    // fidelity: M15-014, M3-034
     /// <summary>
     /// M15-014: end the serial edge on a robot removal, so a stack created after a reconnect does not catch up
-    /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again.
+    /// on the previous robot's serial. The next mfgId raises <see cref="SerialNumberAcquired"/> again. The
+    /// connection Needs read and its buffered result belong to the removed robot too, so they are cleared with
+    /// the serial (the engine destroys the Robot and its components on removal).
+    /// M3-034: the FaceAlbum/Enrollment result also belongs to the removed robot. The engine destroys the
+    /// VisionComponent with the Robot (0x0051116C, ~VisionComponent 0x0065258E), freeing VC+0x2F4/VC+0x300, so a
+    /// VisionSystem built after a reconnect must not adopt the old album. <see cref="EngineRobot"/> clears its
+    /// own album bytes as the read's sink.
     /// </summary>
-    internal void ClearAcquiredSerialNumber() => AcquiredSerialNumber = null;
+    internal void ClearAcquiredSerialNumber()
+    {
+        AcquiredSerialNumber = null;
+        ConnectionNeedsResult = null;
+        ConnectionNeedsReadQueued = false;
+        ConnectionFaceAlbumResult = null;
+    }
 
     internal void QueueGoToSleep()
     {

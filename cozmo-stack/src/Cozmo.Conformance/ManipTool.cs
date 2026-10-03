@@ -49,7 +49,7 @@ public static class ManipTool
         m.Follower.Event += (id, t) => Say($"  path {id}: {t}");
         robot.Message += msg => { if (msg is PickAndPlaceResult or DockingStatus or MovingLiftPostDock or PathFollowingEvent) Say($"  <- {msg}"); };
 
-        var cal = await vision.ReadCalibrationAsync(TimeSpan.FromSeconds(3));
+        var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         Say(cal is null ? "camera calibration: NOT READ from NV storage" : $"camera calibration from robot: {cal}");
         if (cal is null && a.Contains("--nominal")) { vision.Calibration = CameraCalibration.Nominal(); Say("using the nominal stand-in calibration (LOCAL_POLICY)"); }
         if (vision.Calibration is null) { Say("no calibration: cannot localise a cube, stopping"); robot.Disconnect(); return 2; }
