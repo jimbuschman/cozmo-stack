@@ -970,12 +970,25 @@ public class BehaviorFrameworkTests
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), ClockSec = () => 1 };
+        var ai = new AIComponent(() => 1);
+        ctx.AI = ai;
         var probe = new LifecycleProbe();
         probe.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        probe.DoStopActing(keepAction: false, viaCallback: true);
-        Assert.Equal(0, probe.HelperStops);
+        // 0x005bd364..0x005bd36e: the helper stop is gated on a live weak reference (+0xc8 set, owners left), not on viaCallback alone. With no helper delegated to,
+        // StopActing(false, false) stops nothing.
         probe.DoStopActing(keepAction: false, viaCallback: false);
-        Assert.Equal(1, probe.HelperStops);
+        var helper = new IdleHelper(robot, probe, ai.Helpers);
+        IHelper? raw = helper;
+        var handle = ai.Helpers.AddHelperToComponent(ref raw);
+        Assert.True(probe.DelegateTo(handle));
+        handle.Release();
+        Assert.Equal(0, helper.Stops);
+        probe.DoStopActing(keepAction: false, viaCallback: true);
+        Assert.Equal(0, helper.Stops);
+        Assert.Equal(1, ai.Helpers.StackCount);
+        probe.DoStopActing(keepAction: false, viaCallback: false);
+        Assert.Equal(1, helper.Stops);
+        Assert.Equal(0, ai.Helpers.StackCount);
 
         Assert.NotEqual(0, probe.StartActing());
         probe.DoStopActing(keepAction: true, viaCallback: true);
@@ -1256,6 +1269,17 @@ public class BehaviorFrameworkTests
         Assert.False(robot.Motion.AreAnyTracksLocked(mask));   // released in the stop path, not later
     }
 
+    /// <summary>A helper with no behaviour of its own, for the StopActing helper path (M8-011): it counts its Stop calls.</summary>
+    private sealed class IdleHelper : IHelper
+    {
+        public int Stops;
+        public IdleHelper(CozmoRobot robot, SteppedBehavior behavior, BehaviorHelperComponent component) : base(robot, "idle", behavior, component.Factory) { }
+        public override bool ShouldCancelDelegates(CozmoRobot robot) => false;
+        protected override BehaviorStatus Init(CozmoRobot robot) => BehaviorStatus.Running;
+        protected override BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot) => BehaviorStatus.Running;
+        protected override void OnStopSlot24(bool first) => Stops++;
+    }
+
     private sealed class LifecycleProbe : SteppedBehavior
     {
         public LifecycleProbe(string id = "probe") : base(id, "Probe") { }
@@ -1273,10 +1297,9 @@ public class BehaviorFrameworkTests
         protected override bool IsRunnableInternal(BehaviorContext context) => InternalRunnable;
         public override bool IsRunnable(BehaviorContext context) => InternalRunnable;
         public bool InternalRunnable { get; set; } = true;
-        public int HelperStops;
         public bool Gate20 = true;
         protected override bool RunnableGate20(BehaviorContext context) => Gate20;
-        protected override void StopHelperWithoutCallback() => HelperStops++;
+        public bool DelegateTo(HelperRef helper) => SmartDelegateToHelper(helper, null, null);
         public void DoStopActing(bool keepAction, bool viaCallback) => StopActing(keepAction, viaCallback);
         public void SetHandle(object? handle) => SetSharedHandle(handle);
         public void DoWait(double sec, Action done) => Wait(sec, done);

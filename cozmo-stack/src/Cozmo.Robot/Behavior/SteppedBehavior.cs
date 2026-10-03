@@ -620,17 +620,23 @@ public abstract class SteppedBehavior : IBehavior
         // deadline is armed on the first tick after the play starts.
         if (!_finished && _acting && _onActionTimeout is { } timeoutDone && !double.IsNaN(_actionTimeoutMs))
         {
+            bool timedOut = false;
             lock (_gate)
             {
                 if (double.IsNaN(_actionDeadlineMs)) _actionDeadlineMs = nowMs + _actionTimeoutMs;
                 if (nowMs >= _actionDeadlineMs)
                 {
                     _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
-                    Log("action timed out");
-                    StopActing();
-                    // the action ended with TIMEOUT 0x03000018 (IAction::UpdateInternal 0x00540d1c)
-                    _pending.Enqueue(() => timeoutDone(ActionOutcome.Failed(ActionOutcome.TimedOut)));
+                    timedOut = true;
                 }
+            }
+            if (timedOut)
+            {
+                // outside _gate: StopActing may reach the helper component, whose lock order is component, then _gate (M8-011)
+                Log("action timed out");
+                StopActing();
+                // the action ended with TIMEOUT 0x03000018 (IAction::UpdateInternal 0x00540d1c)
+                _pending.Enqueue(() => timeoutDone(ActionOutcome.Failed(ActionOutcome.TimedOut)));
             }
         }
 
@@ -641,6 +647,10 @@ public abstract class SteppedBehavior : IBehavior
     public void Stop(BehaviorStopReason reason)
     {
         _finished = true;
+        // fidelity: M8-011
+        // IBehavior::Stop's own helper stop, first (0x005bd0f4..0x005bd108: +0xc8 set and [ctl+4]+1 != 0, then IBehavior::StopHelperWithoutCallback, no log), before +0xa1 is
+        // cleared (0x005bd10c), before StopInternal (0x005bd114) and before StopActing(0,0) (0x005bd126), whose own gate then fires only if the helper is still owned.
+        if (HasLiveHelper) StopHelperWithoutCallback();
         _engineRunning = false;                  // IBehavior::Stop clears +0xa1 (0x005bd10c)
         OnStop(reason);                          // vtable+0x54 StopInternal (0x005bd110/0x005bd114)
         StopActing(keepAction: false, viaCallback: false);   // IBehavior::Stop calls StopActing(0,0) 0x005bd126
@@ -670,7 +680,13 @@ public abstract class SteppedBehavior : IBehavior
     protected void StopActing(bool keepAction, bool viaCallback)
     {
         ScoredActingStateChanged(false);                     // vtable+0x80(0)
-        if (!viaCallback) StopHelperWithoutCallback();
+        // fidelity: M8-011
+        // 0x005bd362 cbnz viaCallback; 0x005bd364..0x005bd36e: only a live helper (+0xc8 set, [ctl+4]+1 != 0) is stopped, with the log at 0x005bd376..0x005bd39c.
+        if (!viaCallback && HasLiveHelper)
+        {
+            Context?.Robot.Engine.Log($"info: [Behaviors] {Id}.StopActing.WithoutCallback.StopHelper: Stopping behavior helper because action stopped without callback");
+            StopHelperWithoutCallback();
+        }
         int handle = Volatile.Read(ref _currentActionHandle);
         ClearWaits();
         lock (_gate) _actionEpoch++;
@@ -683,11 +699,68 @@ public abstract class SteppedBehavior : IBehavior
     /// <summary>The parameterless convenience: <c>StopActing(0,0)</c>.</summary>
     protected void StopActing() => StopActing(keepAction: false, viaCallback: false);
 
+    // fidelity: M8-011
+    // IBehavior +0xc4/+0xc8: the weak reference to the helper this behaviour delegated to (SmartDelegateToHelper 0x005bec72/0x005bec7a). It belongs to the behaviour,
+    // not to a run, so a Stop does not clear it (nothing in IBehavior::Stop does).
+    private HelperWeakRef? _helperWeak;
+
+    /// <summary>Whether the weak reference at +0xc8 is set and still has an owner (<c>[ctl+4] + 1 != 0</c>, 0x005bd364..0x005bd36e).</summary>
+    public bool HasLiveHelper => _helperWeak is { IsLive: true };
+
+    /// <summary>The helper's weak reference (+0xc4/+0xc8), or null before any successful delegation.</summary>
+    public HelperWeakRef? HelperWeakReference => _helperWeak;
+
     /// <summary>
-    /// The helper-without-callback seam (0x005bd3d6). The helper component is unowned by any record, so
-    /// the default does nothing; a concrete M7/M15 class that has one overrides it.
+    /// <c>IBehavior::SmartDelegateToHelper(Robot&amp;, shared_ptr&lt;IHelper&gt;, onSuccess, onFailure)</c> 0x005beb10, in the engine's order: (1)/(2) the id is
+    /// the behaviour name plus ".SmartDelegateToHelper" and "Behavior requesting to delegate to helper %s" is logged with the helper's name (0x005beb26..0x005beb6e);
+    /// (3) a weak reference that is set and still live warns "IBehavior.SmartDelegateToHelper: Attempted to start a handler while handle already running, stopping
+    /// running helper" and calls <see cref="StopHelperWithoutCallback"/> (0x005beba4..0x005bebe8); (4) the component is <c>[[[this+0x2c]+0x264]+0x10]</c>
+    /// (0x005bebee..0x005bebf8): <c>Context.AI.Helpers</c>; (5) both callbacks are copied and <c>DelegateToHelper</c> is called (0x005bec2c); (6) on true the helper
+    /// pointer and a weak reference to its control block are stored AFTER that call returns (0x005bec72..0x005bec80), on false the id name + "SmartDelegateToHelper.Failed"
+    /// logs "Failed to delegate to helper" (0x005bec8c..0x005becb0); the bool is returned. The caller still holds its own handle during the call and releases it afterwards,
+    /// as the engine's local <c>shared_ptr</c> is destroyed when the caller returns: a helper that already ran to completion inside the push therefore has no owner once
+    /// the caller lets go, and the next call skips the warn/stop (extraction 5.2).
     /// </summary>
-    protected virtual void StopHelperWithoutCallback() { }
+    protected bool SmartDelegateToHelper(HelperRef helper, Action<CozmoRobot>? onSuccess, Action<CozmoRobot>? onFailure)
+    {
+        var ai = Context?.AI ?? throw new NotSupportedException(
+            "IBehavior::SmartDelegateToHelper 0x005bebee..0x005bebf8 reaches the BehaviorHelperComponent through [[[this+0x2c]+0x264]+0x10]; this behaviour's context has no AIComponent");
+        var robot = Context.Robot;
+        robot.Engine.Log($"info: [Behaviors] {Id}.SmartDelegateToHelper: Behavior requesting to delegate to helper {helper.Pointer.Name}");
+        if (_helperWeak is { IsLive: true })
+        {
+            robot.Engine.Log($"warning: IBehavior.SmartDelegateToHelper: Attempted to start a handler while handle already running, stopping running helper");
+            StopHelperWithoutCallback();
+        }
+        bool delegated = ai.Helpers.DelegateToHelper(robot, helper, onSuccess, onFailure);
+        if (delegated) _helperWeak = new HelperWeakRef(helper);
+        else robot.Engine.Log($"info: [Behaviors] {Id}SmartDelegateToHelper.Failed: Failed to delegate to helper");
+        return delegated;
+    }
+
+    /// <summary>
+    /// <c>IBehavior::StopHelperWithoutCallback()</c> 0x005bd21c: no weak reference (+0xc8 null) returns false (0x005bd228..0x005bd22e); <c>lock()</c> of it (0x005bd230)
+    /// giving nothing returns false; a null helper pointer (+0xc4) returns false (0x005bd23a..0x005bd242); otherwise "Behavior stopping its helper" is logged
+    /// (name + ".SmartStopHelper", 0x005bd24a..0x005bd26e), <c>BehaviorHelperComponent::StopHelperWithoutCallback</c> is called with the locked handle (0x005bd2b0;
+    /// it acts only when that helper is the stack's bottom element) and its bool is returned after the lock is released.
+    /// </summary>
+    internal bool StopHelperWithoutCallback()
+    {
+        if (_helperWeak is not { } weak) return false;
+        var locked = weak.Lock();
+        if (locked is null) return false;
+        try
+        {
+            var ai = Context?.AI ?? throw new NotSupportedException(
+                "IBehavior::StopHelperWithoutCallback 0x005bd2a6..0x005bd2b0 reaches the BehaviorHelperComponent through [[[this+0x2c]+0x264]+0x10]; this behaviour's context has no AIComponent");
+            Context.Robot.Engine.Log($"info: [Behaviors] {Id}.SmartStopHelper: Behavior stopping its helper");
+            return ai.Helpers.StopHelperWithoutCallback(locked);
+        }
+        finally { locked.Release(); }
+    }
+
+    /// <summary><c>IBehavior::StopActing(keepAction, 1)</c> as <c>IHelper::StopActing</c> (0x005b6ec6) and <c>IHelper::Stop</c> (0x005b67e4) call it: viaCallback true.</summary>
+    internal void StopActingFromHelper(bool keepAction) => StopActing(keepAction, viaCallback: true);
 
     /// <summary>
     /// <c>IBehavior::StartActing</c> 0x005bdacc, in its order: with +0xa0 set the action is deleted and it returns 0

@@ -38,6 +38,13 @@ public sealed class BehaviorContext
     public required AnimationTriggerMap Triggers { get; init; }
     public BehaviorArbiter? Arbiter { get; init; }
     public MoodState? Mood { get; set; }
+    /// <summary>
+    /// The engine's <c>AIComponent</c> at <c>[robot+0x264]</c>; its +0x10 is the <c>BehaviorHelperComponent</c> that <c>IBehavior::SmartDelegateToHelper</c> 0x005bebee..0x005bebf8
+    /// and <c>IBehavior::StopHelperWithoutCallback</c> 0x005bd2a6..0x005bd2b0 reach through <c>[[[this+0x2c]+0x264]+0x10]</c>. Set by <see cref="FreeplayStack.Create"/>.
+    /// Null: no helper component, and a behaviour that asks to delegate to a helper throws <see cref="NotSupportedException"/>.
+    /// </summary>
+    // fidelity: M8-011
+    public AIComponent? AI { get; set; }
     public Random Random { get; init; } = new();
     /// <summary>
     /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a <c>StrategyGeneric</c> whose
@@ -543,18 +550,9 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
-    /// <summary>
-    /// <c>IBehavior::SmartDelegateToHelper</c> 0x005beb10 calls
-    /// <c>BehaviorHelperComponent::DelegateToHelper</c> 0x0056dad8 at <c>[robot+0x264]+0x10</c> (an
-    /// <c>AIComponent</c> member) and stores the helper as a weak ref at +0xc4/+0xc8. The callee and its
-    /// helper-stack runtime (<c>PushHelperOntoStackAndUpdate</c>, <c>UpdateActiveHelper</c>,
-    /// <c>ClearStackMaintenanceVars</c>, <c>StopHelperWithoutCallback</c>) are <b>unowned by any record</b>
-    /// (not M7, not M8), so this is an explicit unsupported stub rather than a silent no-op.
-    /// </summary>
-    public bool SmartDelegateToHelper(object helper) =>
-        throw new NotSupportedException(
-            "IBehavior.SmartDelegateToHelper needs BehaviorHelperComponent::DelegateToHelper 0x0056dad8 at " +
-            "[robot+0x264]+0x10, which is unowned by any fidelity record (M8-011 gap).");
+    // fidelity: M8-011
+    // IBehavior::SmartDelegateToHelper 0x005beb10 is SteppedBehavior.SmartDelegateToHelper: the weak reference at +0xc4/+0xc8 belongs to the behaviour, not to a
+    // run's scope, and the call reaches BehaviorHelperComponent::DelegateToHelper through BehaviorContext.AI.
 
     /// <summary>
     /// Releases the scope in the engine's fixed order (<c>IBehavior::Stop</c> 0x005bd08c):

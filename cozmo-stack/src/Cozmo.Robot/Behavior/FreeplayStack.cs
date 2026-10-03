@@ -14,9 +14,9 @@ public sealed class FreeplayStack : IDisposable
 {
     private readonly List<Action> _unsubscribe = new();
 
-    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker)
+    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker, AIComponent ai)
     {
-        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx; DataTracker = tracker;
+        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx; DataTracker = tracker; AI = ai;
     }
 
     public BehaviorManager Manager { get; }
@@ -28,6 +28,8 @@ public sealed class FreeplayStack : IDisposable
     public BehaviorContext Context { get; }
     /// <summary><c>AIComponent</c>'s <c>FreeplayDataTracker</c> (M15-015), created and ticked on this stack's live path.</summary>
     public FreeplayDataTracker DataTracker { get; }
+    /// <summary>The <c>AIComponent</c> hosting the <c>BehaviorHelperComponent</c> (M8-011), ticked by the engine's <c>Robot::Update</c> through <c>CozmoEngine.AIComponentUpdate</c>.</summary>
+    public AIComponent AI { get; }
     public IReadOnlyList<string> Problems { get; private init; } = Array.Empty<string>();
 
     /// <summary>Every behaviour id the shipped activity tree names that no implemented behaviour answers to.</summary>
@@ -137,7 +139,15 @@ public sealed class FreeplayStack : IDisposable
         // M15-015: the AIComponent's FreeplayDataTracker. Created here, ticked in Tick, flushed in Dispose.
         var tracker = new FreeplayDataTracker(clockSec);
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
-        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
+        // fidelity: M8-011
+        // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
+        // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
+        // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
+        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log);
+        ctx.AI = ai;
+        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        robot.Engine.AIComponentUpdate = () => ai.Update(robot);
+        stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
 
         // fidelity: M1-024
         // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->

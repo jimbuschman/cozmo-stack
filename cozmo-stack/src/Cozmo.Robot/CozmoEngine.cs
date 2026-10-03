@@ -1196,6 +1196,26 @@ public sealed class EngineRobot
             SyncTimeSentAt = 0;
         }
         if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
+        // fidelity: M8-011
+        // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
+        // stack (see CozmoEngine.VisionUpdateAllResultsFailed), so with no hook the gate is reported MISSING once and the tick continues.
+        if (Engine.VisionUpdateAllResultsFailed is { } visionGate)
+        {
+            if (visionGate())
+            {
+                Engine.Log("warning: Robot.Update: VisionComponent::UpdateAllResults failed; the rest of the update is skipped");
+                return;
+            }
+        }
+        else
+        {
+            // reported once per process (ReportMissing de-duplicates), not once per engine robot
+            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: this stack has neither status on the engine tick, so neither gate is applied");
+        }
+        // fidelity: M8-011
+        // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
+        // (0x0051410C) and NVStorage::Update (0x0051416A).
+        if (Engine.AIComponentUpdate is { } ai) Engine.RunIsolated(ai);
         // fidelity: M4-016
         // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
         // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
@@ -1688,6 +1708,19 @@ public sealed class CozmoEngine : IDisposable
     internal Action<RobotState>? StateStored;
     /// <summary>The M4 components Robot::Update runs after the animation streamer (CD2, CD12).</summary>
     internal Action? RobotComponentsUpdate;
+    // fidelity: M8-011
+    /// <summary>
+    /// <c>AIComponent::Update</c> as <c>Robot::Update</c> calls it (0x00513ea8..0x00513eac), after the first-full-state gate (+0x34E, 0x00513C5C) and the
+    /// <c>VisionComponent::UpdateAllResults</c> gate (0x00513C76), before <c>ActionList::Update</c> (0x005140BC) and, in the engine, before
+    /// <c>BehaviorManager::Update</c> (0x00513EE6). The <c>AIComponent</c> is owned by <see cref="Behavior.FreeplayStack"/>, which sets this hook.
+    /// </summary>
+    internal Action? AIComponentUpdate;
+    /// <summary>
+    /// The <c>VisionComponent::UpdateAllResults()</c> result as <c>Robot::Update</c> tests it (0x00513C76 <c>blx 0x4a7db0</c>; 0x00513C7C <c>cbz r6</c>): true is the non-zero
+    /// result, after which <c>Robot::Update</c> warns and returns (0x00513C92..0x00513C9A). In this stack the vision results are handled inside <c>VisionSystem</c> on the
+    /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on.
+    /// </summary>
+    internal Func<bool>? VisionUpdateAllResultsFailed;
     /// <summary>
     /// M4-016: IActionRunner::Update, run by Robot::Update's ActionList step (CD12) after the first full state and
     /// before the animation streamer. <see cref="EngineRobot.Update"/> invokes it; <see cref="CozmoMotion"/> sets it
