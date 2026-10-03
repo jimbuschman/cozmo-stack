@@ -351,3 +351,7 @@ The 2026-09-29 pre-extraction (`re-analysis/research/20260929-R-DEV-pre-extracti
 - **New M3-037** (forced policy, SD2): the short raw payload's undefined heap read is zero-filled here.
 
 **The residual for both:** the JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg 9, so decoded pixels may differ in the last bit (Part 1 item 3). Both records stay IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
+
+## Correction A5 (manager, 2026-10-02, the Codex M3/M4 re-audit)
+
+Codex's re-audit (`re-analysis/research/20261001-reaudit-M3-M4.md`) found that M3-024 does not own its production path: the source-1 device-playback branch that CreateAudioAnimation selects is not built. The manager confirmed it in the code. M3-024 goes back to IMPLEMENTATION_GAP.

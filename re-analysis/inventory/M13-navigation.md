@@ -2481,3 +2481,7 @@ It tests **collision penalty along the remaining plan** (plus the `tolerance` di
 3. Residual UNKNOWN (low confidence): whether an indirect caller outside the decompiled call graph passes `false` to `LatticePlanner::ComputeNewPathIfNeeded`. No such caller was found; a full scan of the vtable slot's indirect call sites was not performed.
 
 **Correction C-BM13b (verifier findings, 2026-09-28):** M13-004's cost formula is branched, not a sum: an arc primitive adds the arc term and not the turn term, a point turn adds the turn term. M13-015 marks SetFailedToUse(obj,3) for a category-3 result as well as a category-4 result with the retry used. Both are corrected in the records above.
+
+## Correction A6 (manager, 2026-10-02)
+
+The 2026-09-29 audit found defects in 13 of this subsystem's settled records and handed them to R-VIS, which never demoted them. Codex's re-audit (`re-analysis/research/20261001-reaudit-M7-M8-M9-M13.md`) reproduced them, and the manager re-checked the +0x34A flag in the binary. M13-002, 003, 004, 005, 008, 009, 011, 012, 013, 015, 016, 017 and 018 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`. M13-001's test reference is corrected to the method's current name.
