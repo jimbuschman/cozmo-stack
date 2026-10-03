@@ -56,13 +56,28 @@ public sealed class WwiseStartList
     public int Enqueue(int type, WwisePlayingInstance pbi, long tick)
     {
         ArgumentNullException.ThrowIfNull(pbi);
-        // fidelity: M6-026 (6.6, F6): returns 2 only when the free list is empty and the allocation fails (the cap is 0xFFFFFFFF after init); the node
-        // is {next, pbi, tick} with the flag at +0xC and bit 0 of +0xD cleared (0x9D35C8).
-        if (AllocationFails?.Invoke() == true) return 2;
+        // fidelity: M6-026 (6.6, F6, C32.1 P12): a node comes from the free chain ([B+0xC]); with the chain empty the node count [B+0x18] must be below the cap [B+0x14] (0xFFFFFFFF after init) and the 0x10-byte
+        // allocation must succeed, else the result is 2 (0x9D35E4..0x9D35F8, 0x9D3604..0x9D361C). The node is {next, pbi, tick} with the kind at +0xC and bit 0 of +0xD cleared (0x9D35C8).
+        if (FreeChainCount > 0) FreeChainCount--;                                  // 0x9D356C..0x9D3574: the head of [B+0xC]
+        else
+        {
+            if (Count18 >= Capacity14) return 2;                                   // 0x9D35E4..0x9D35F8
+            if (AllocationFails?.Invoke() == true) return 2;                       // 0x9D3614..0x9D361C
+        }
+        Count18++;                                                                 // 0x9D35BC str r1,[r2,#0x18]
         Nodes.Add(new WwiseStartListNode { Pbi = pbi, Type = type, Tick = tick });
         if (type < 2) Gate = true;                                        // 0x9D3598
         return 1;
     }
+
+    /// <summary><c>[0x108DA0C+0x14]</c>: the node cap (0xFFFFFFFF after init, 6.6).</summary>
+    public uint Capacity14 { get; set; } = 0xFFFFFFFF;
+
+    /// <summary><c>[0x108DA0C+0x18]</c>: the node count. <c>0x9D3558</c> increments it; the removal sites (<c>0x9D3470</c>, <c>0x9D37A0..0x9D3814</c>, <c>0x9D3AD4..0x9D3B4C</c>) are unread and do not decrement it here.</summary>
+    public uint Count18 { get; private set; }
+
+    /// <summary><c>[0x108DA0C+0xC]</c>: the length of the free node chain; nodes are taken from it before the allocator is used.</summary>
+    public int FreeChainCount { get; set; }
 
     /// <summary>The allocation-failure branch of <c>0x9D3558</c> (6.6): true fails the enqueue with 2. Null means it never fails.</summary>
     public Func<bool>? AllocationFails { get; set; }
@@ -163,10 +178,18 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     // ---------------------------------------------------------------- caller seams (unread bodies)
 
     /// <summary>
-    /// B7 <c>0x9BEB30(pbi+0xC, gain, ...)</c>: the source parameter/init; its result must be 1 or the play
-    /// aborts. The body is unread, so it is required; the bridge throws when it is not supplied.
+    /// The shipped Play path (C32.1, C31.3): <c>0x9BEB30</c>, CalcEffectiveParams <c>0x9FFAD4</c>, <c>0x9BCA68</c>, <c>0xA00618</c> and <c>0xA0067C</c> with the transition manager. Required: the bridge throws when a Play reaches
+    /// one of them and it is not supplied.
     /// </summary>
-    public Func<WwisePlayingInstance, bool>? InitSource9BEB30 { get; set; }
+    // fidelity: M6-025, M6-026
+    public WwisePlayPath? PlayPath { get; set; }
+
+    /// <summary>
+    /// <c>0x9BC9FC..0x9BCA1C</c> (the ctx init <c>0x9BC90C</c>, which <c>0xA000E8</c> calls): the walk from the node through the output bus and the parents for a node with <c>[node+0x40] &amp; 0xE0000</c> sets <c>[ctx+0xDD]</c> bit 3. The bits' writers
+    /// (<c>0x9F68D8</c>, <c>0x9F6B44</c>, <c>0x9F627C</c>, <c>0x9F6DB4</c>) are unread, so the test is required.
+    /// </summary>
+    // fidelity: M6-025
+    public Func<WwiseNode, bool>? CtxNodeChainFlag9BC90C { get; set; }
 
     /// <summary>
     /// M6-026: the playback-limit walker. <c>0xA379D8</c> calls <c>node-&gt;vt+0x90</c> = <c>0x9ED2CC</c> at <c>0xA37D94</c> (P4); <see cref="PlaySound"/> is
@@ -186,21 +209,6 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     }
 
     private WwisePlaybackLimiter? _limiter;
-
-    /// <summary>
-    /// B7 <c>0xA00618(pbi)</c>: called before PBI Play. It is not a no-op — <c>0xA00628..0xA0064C</c> writes
-    /// <c>pbi+0x1b8</c>, <c>pbi+0x1bd</c> and calls <c>0x9FB994</c>/<c>0x9FF0D8</c> (unread). Required; the
-    /// bridge throws when it is not supplied.
-    /// </summary>
-    public Action<WwisePlayingInstance>? BeforePlayA00618 { get; set; }
-
-    /// <summary>
-    /// B16 F1: the PBI Play fade-in branch's unread bodies <c>0xA366F4</c> (update) and <c>0xA36268</c>
-    /// (create), plus <c>pbi->vt+0x50(pbi, 0xe, arg2[0])</c> (<c>0xA0082C</c>). Required whenever the Play
-    /// carries a set transition; the bridge throws when it is not supplied. Returns the value stored at
-    /// <c>pbi+0x144</c> (its source instruction was not provided).
-    /// </summary>
-    public Func<WwisePlayingInstance, WwiseFadeInTransition, uint>? SetupFadeInTransition { get; set; }
 
     /// <summary>
     /// B10 <c>0xA430A8 bl 0xA548B8(voice, engine)</c>: sets <c>voice+0xEC = engine</c>
@@ -257,28 +265,20 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     public Action<IWwiseVoiceSource>? SourceDestructAndPoolFree { get; set; }
 
     /// <summary>
-    /// C27 step 8 (<c>0xA56454..0xA56468</c>): whether <c>[pbi+4] &amp; 0x100000</c> is set, the test
-    /// <c>0xA56414</c> makes before <c>0xA054D8</c>. Nothing in the inventory says who writes <c>pbi+4</c>, so the seam is
-    /// REQUIRED.
+    /// The play-position repository (<c>*0x108D8F8</c>, C31.4 R4.3): <c>0xA56414</c> removes a source's record (<c>0xA054D8</c>) when <c>[pbi+4] &amp; 0x100000</c> and <c>0xA56478</c> adds one (<c>0xA05370</c>) under the same test.
+    /// Required when a PBI carries that flag.
     /// </summary>
-    // fidelity: M6-025
-    public Func<WwisePlayingInstance, bool>? PbiFlag4Bit100000 { get; set; }
+    // fidelity: M6-025, M6-026
+    public WwisePlayPositionRepository? PositionRepository { get; set; }
 
     /// <summary>
-    /// C27 step 8 (<c>0xA56454..0xA56468</c>): the native call is <c>0xA054D8(*global, [pbi+0x140], source)</c>
-    /// (<c>0xA56454..0xA56464</c>), run by <c>0xA56414</c> when <c>[pbi+4] &amp; 0x100000</c>. The arguments are the
-    /// global context (<see cref="A054D8Context"/>), the playing id and the source. The body is not read, so the seam is
-    /// REQUIRED.
+    /// <c>source vt+0x34(source)</c> (<c>0xA564A0..0xA56490</c>, S2: <c>0xA72F5C</c> for both Vorbis classes): the source's duration as a float, read by <c>0xA56478</c> when <c>[source+0x10]</c> bit 0 is set. Unread; required then.
     /// </summary>
-    // fidelity: M6-025
-    public Action<object, uint, IWwiseVoiceSource>? CallA054D8 { get; set; }
+    // fidelity: M6-026
+    public Func<IWwiseVoiceSource, float>? SourceDuration34 { get; set; }
 
-    /// <summary>
-    /// The <c>*global</c> first argument of <c>0xA054D8</c> (<c>0xA56454..0xA56464</c>). Which global it is, is not
-    /// settled by the inventory (reported MISSING), so it is REQUIRED: reaching <c>0xA054D8</c> with it unset throws.
-    /// </summary>
-    // fidelity: M6-025
-    public object? A054D8Context { get; set; }
+    /// <summary>The host's <c>powf</c> (<c>0x4D6778</c>, the phone's libm) that <c>0xA56478</c> calls as <c>powf(2.0f, pitch / 1200.0f)</c>. Defaults to <see cref="MathF.Pow"/>.</summary>
+    public Func<float, float, float> Powf { get; set; } = MathF.Pow;
 
     /// <summary>
     /// C27 step 4: <c>0x9EEDA4([pbi+0xE0], out)</c> (<c>0xA01794/0xA017A0</c>), the first-call computation inside <c>0xA01768</c>. The body is read (M6-026 P1a) and lives once, in
@@ -300,20 +300,6 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// </summary>
     // fidelity: M6-025
     public Func<WwiseLiveVoice, WwiseVoiceSendTable?>? NewVoiceAllocSendTable4C { get; set; }
-
-    /// <summary>
-    /// C27 step 5 (<c>0xA55900</c>): <c>0x9BCA68(pbi+0xC, 0)</c>, returning an int. The body is not read (C27 residual),
-    /// so the seam is REQUIRED.
-    /// </summary>
-    // fidelity: M6-025
-    public Func<WwisePlayingInstance, int>? Call9BCA68 { get; set; }
-
-    /// <summary>
-    /// C27 step 5 (<c>0xA55A08..0xA55A3C</c>): <c>0xA0228C(pbi)</c>, run only when <c>[voice+0xCD]</c> bit0 is set. The body
-    /// is not read (C27 residual), so the seam is REQUIRED.
-    /// </summary>
-    // fidelity: M6-025
-    public Action<WwisePlayingInstance>? CallA0228C { get; set; }
 
     // ---- C24.7: the state-dispatch bodies of the start-list pass 2 (0x9D3864). They are unread
     // (RECOVERABLE_GAP), so each is REQUIRED: reaching one without its seam throws
@@ -428,8 +414,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         limiter.Priority9F6B94(sound, out float priority, out float distanceOffset);   // P2: 0xA37A44
         // 0xA37A3C stores 0 to [sp+0x2C]; 0xA37A54..0xA37A6C calls vt+0x84(node, &[sp+0x2C]) (r0 is only a gate); 0xA37A70..0xA37A8C: r0 != 0 -> [sp+0x2C] = [sb+0x64] * [sp+0x2C]
         // (float multiply, sb = [params+8], the game object); 0xA37CEC loads [sp+0x2C] as the r1 of 0x9BEB30.
-        var (gate84, out84) = (NodeVt84A9F1F80 ?? throw new WwiseMissingBehaviourException(
-            "M6-026 P2: node vt+0x84 (0x9F1F80), called at 0xA37A6C on every Play, is unread; supply NodeVt84A9F1F80"))(sound);
+        var (gate84, out84) = (NodeVt84A9F1F80 ?? WwisePlayPath.NodeVt84A9F1F80)(sound);   // 0xA37A6C: node vt+0x84 = 0x9F1F80 (P4); NodeVt84A9F1F80 overrides it
         if (gate84)
         {
             uint objectForField64 = p.GameObjectId ?? throw new WwiseMissingBehaviourException(
@@ -444,35 +429,30 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         if (limiter.CheckMemoryA376C0(priority) == 0) return;                  // P3: 0xA37A9C, no PBI is created
         int voiceCheck = limiter.CheckVoiceCountA37880(priority);              // P3: 0xA37C74
         if (voiceCheck == 2) return;                                           // 0xA37C84 (the function never returns 2, C5)
-        if ((SourceStructField16A37C90 ?? throw new WwiseMissingBehaviourException(
-                "M6-026 0xA37C90: ldrh [node+0x5C+0x16] (the source struct halfword) is not modelled; supply SourceStructField16A37C90"))(sound) == 8)
+        if ((SourceStructField16A37C90 ?? (n => (ushort)(n.PluginId >> 16)))(sound) == 8)   // 0xA37C90: ldrh [node+0x5C+0x16] = plugin >> 16 (P7: 0xA1EA68 stores the plugin at [+0x14])
             throw new WwiseMissingBehaviourException(
                 "M6-026 0xA37C90: [node+0x72] == 8 takes the external-source branch 0xA37E64 (0xA1ED48..0xA38148), which is unread");
 
         var descriptor = WwiseSourceDescriptor.FromSound(sound);               // node+0x5c
-        var pbi = CreatePbi(p, sound.Id, descriptor, continuous: false);      // B4/B5/B6
+        var pbi = CreatePbi(p, sound.Id, descriptor, continuous: false,
+            ctxNodeChainFlag: (CtxNodeChainFlag9BC90C ?? throw new WwiseMissingBehaviourException(
+                "M6-025 0x9BC9FC..0x9BCA1C: the ctx init walks the node chain for [node+0x40] & 0xE0000, whose writers are unread; supply CtxNodeChainFlag9BC90C"))(sound));   // B4/B5/B6
         pbi.Priority1C0 = priority;                                            // 0xA002D4..0xA002E4: the ctor argument block [sp+0x38]
         pbi.NodeE0 = sound;                                                    // [pbi+0xE0]
-        pbi.PriorityBlock = limiter.PriorityRefresh9FFE1C;                     // CalcEffectiveParams priority block (8.4)
         pbi.Field1CC = priority;                                               // 0xA002D4..0xA002E4: the ctor copies the {priority, offset} block
         pbi.Field1D0 = distanceOffset;
         pbi.FieldE4 = BitConverter.SingleToUInt32Bits(out84);                  // 0x9BEB30 r1 = [sp+0x2C] -> this+0xD8 = pbi+0xE4 (A1, 0xA37CEC)
         Instances.Add(pbi);
 
-        if (InitSource9BEB30 is null)
-            throw new NotSupportedException(
-                "M6-025 B7: 0x9BEB30 (the PBI parameter/source init; its result must be 1) is unread; " +
-                "supply the seam rather than skipping it");
-        if (!InitSource9BEB30(pbi))                                            // 0xA37D20 cmp r0,#1; bne 0xA37E78: exit (d)
+        var path = PlayPath ?? throw new WwiseMissingBehaviourException(
+            "M6-025 B7: 0x9BEB30 (the PBI context init) is the shipped Play path (C32.1 P8); supply PlayPath");
+        var init = path.InitContext9BEB30(pbi, out84, flag1C ? 1u : 0u, p, limiter);    // 0xA37D1C bl 0x9BEB30(ctx, [sp+0x2C], .., [sp+0x1C])
+        if (init.Result != 1)                                                  // 0xA37D20 cmp r0,#1; bne 0xA37E78: exit (d)
         {
             FailPlayA37E7C(pbi, 0);                                            // 0xA37E78 mov r6,#0 unconditionally: bit 5 is always preset, Term does no undo
             return;
         }
-        bool below = WwisePlaybackLimiter.Below9BEB30(pbi);                    // [sp+0x27], written by 0x9BEB30 at 0x9BED60 (3.1, 3.2)
-        if (!flag1C && below)
-            throw new WwiseMissingBehaviourException(
-                "M6-026 3.3: with [sp+0x1C] == 0 and below set, 0x9BEB30 returns 3 (code 0x29) when r7 = (flag < r6') && !(ctx+0xDD & 4) (0x9BED50..0x9BED7C); r6' comes from the unread " +
-                "0x9BEB74 / 0x9BEC30 / 0x9BEED8, so the outcome is not decidable. (With below clear r7 is 0 and the Play cannot fail here.)");
+        bool below = init.Below;                                               // [sp+0x27], written by 0x9BEB30 at 0x9BED60 (3.1, 3.2)
 
         // fidelity: M6-026 - P4: node->vt+0x90(node, &block, r2 = 1, r3 = 0) at 0xA37D94, the block at sp+0x4C.
         var block = new WwiseLimitBlock
@@ -500,20 +480,13 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         // 0xA37FE8..0xA38070, in order (C23.12): 0xA023D4, the E8-bit-5 context call, 0xA01918, 0x9E85C8; then 0xA00618.
         (TailA023D4 ?? throw MissingSeam("0xA023D4 (0xA3800C)"))(pbi, p.Word88);                               // 0xA3800C: r1 = [params+0x88]
         if ((pbi.Flags0E8 & 0x20) == 0)                                                                        // 0xA38010..0xA38018: bit 5 clear -> 0xA38130
-            (TailCtxVt24 ?? throw MissingSeam("[[pbi+0xC]+0x24] (0xA38130)"))(pbi, p.Block8C);                  //   vt+0x24(pbi+0xC, params+0x8C), then 0xA38038
+            path.CalcEffectiveParams(pbi, p, limiter);                                                          //   vt+0x24(pbi+0xC, params+0x8C) = CalcEffectiveParams, then 0xA38038
         else if ((pbi.Flags0E9 & 1) != 0)                                                                      // bit 5 set: 0xA3801C..0xA38024 tests [pbi+0xE9] bit 0
-            (TailCtxVt28 ?? throw MissingSeam("[[pbi+0xC]+0x28] (0xA38024)"))(pbi);                             //   vt+0x28(pbi+0xC)
+            WwisePlayPath.Recompute9FF368(pbi);                                                                 //   vt+0x28(pbi+0xC) = 0x9FF368
         (TailA01918 ?? throw MissingSeam("0xA01918 (0xA38038)"))(pbi, p.Block108, 1);                          // 0xA38038: (pbi, params+0x108, 1)
         if (p.Ptr78 is not null && pbi.Field34 != 0)                                                           // 0xA38048..0xA38064
             (TailA9E85C8 ?? throw MissingSeam("0x9E85C8 (0xA38064)"))(pbi, 1, p.Ptr78);                        //   ([pbi+0x34], 1, [params+0x78]+0x14)
-        if (BeforePlayA00618 is null)
-            throw new NotSupportedException(
-                "M6-025 B7/F10: 0xA00618(pbi) is unread (it writes pbi+0x1b8/+0x1bd and calls " +
-                "0x9FB994/0x9FF0D8); supply the seam rather than skipping it");
-        BeforePlayA00618(pbi);                                                // 0xA38078
-
-        // B9 CalcEffectiveParams is PBI vt+0x44, but no cited row places it on the Play path; it may belong
-        // inside the 0x9BEB30 seam. It is not called here (see the record's unresolved).
+        path.BeforePlayA00618(pbi);                                           // 0xA38078 bl 0xA00618 (P9)
 
         // B16: PBI Play 0xA0067C(pbi, params+0xC, (params+0x70==1), 0); a result other than 1 (0xA38098 bne 0xA37AD8) is exit (c).
         if (PbiPlay(pbi, p) != 1) { FailPlayA37E7C(pbi, 1, viaA37E7C: false); return; }
@@ -546,14 +519,6 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     // fidelity: M6-026
     public Action<WwisePlayingInstance, uint>? TailA023D4 { get; set; }
 
-    /// <summary><c>[[pbi+0xC]+0x24](pbi+0xC, params+0x8C)</c> (<c>0xA38130</c>), called when <c>[pbi+0xE8]</c> bit 5 is clear (<c>0xA38010..0xA38018</c>). Unread, required when reached.</summary>
-    // fidelity: M6-026
-    public Action<WwisePlayingInstance, object?>? TailCtxVt24 { get; set; }
-
-    /// <summary><c>[[pbi+0xC]+0x28](pbi+0xC)</c> (<c>0xA38024</c>), called when <c>[pbi+0xE8]</c> bit 5 is set and <c>[pbi+0xE9]</c> bit 0 is set (<c>0xA3801C..0xA38024</c>). Unread, required when reached.</summary>
-    // fidelity: M6-026
-    public Action<WwisePlayingInstance>? TailCtxVt28 { get; set; }
-
     /// <summary><c>0xA01918(pbi, params+0x108, 1)</c> (<c>0xA38038</c>). Unread, required.</summary>
     // fidelity: M6-026
     public Action<WwisePlayingInstance, object?, int>? TailA01918 { get; set; }
@@ -568,20 +533,6 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// </summary>
     // fidelity: M6-026
     public Func<WwiseSoundNode, ushort>? SourceStructField16A37C90 { get; set; }
-
-    /// <summary>
-    /// The type-1 join of <c>0xA0067C</c> after <c>0x9D3558</c> (<c>0xA006F8..0xA00738</c>, O5): <c>0xA366AC(mgr, [pbi+0x144])</c> when <c>[pbi+0x144] != 0</c>. Unread, required when reached.
-    /// </summary>
-    // fidelity: M6-026
-    public Action<WwisePlayingInstance>? TransitionA366AC { get; set; }
-
-    /// <summary><c>0x9BDA28(pbi+0xC, 1)</c> in the type-1 join of <c>0xA0067C</c> (<c>0xA00728</c>). Unread, required.</summary>
-    // fidelity: M6-026
-    public Action<WwisePlayingInstance>? Call9BDA28 { get; set; }
-
-    /// <summary><c>0x9E808C</c> in the type-1 join of <c>0xA0067C</c>, run when <c>[pbi+0x34] != 0</c> (<c>0xA00728</c>). Unread, required when reached.</summary>
-    // fidelity: M6-026
-    public Action<WwisePlayingInstance>? Call9E808C { get; set; }
 
     /// <summary><c>src vt+0x2C</c>, the tail of <c>0xA56414</c> (<c>0xA56440..0xA5644C</c>): the source's close. Unread, required.</summary>
     // fidelity: M6-026
@@ -627,8 +578,8 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// and the base PBI ctor <c>0xA000E8</c>.
     /// </summary>
     public WwisePlayingInstance CreatePbi(
-        WwisePlayInitParams p, uint targetNodeId, object sourceDescriptor, bool continuous)
-        => new(p, targetNodeId, sourceDescriptor, p.Block28, RtpcKey14, continuous);
+        WwisePlayInitParams p, uint targetNodeId, object sourceDescriptor, bool continuous, bool ctxNodeChainFlag = false)
+        => new(p, targetNodeId, sourceDescriptor, p.Block28, RtpcKey14, continuous, ctxNodeChainFlag);
 
     // ---------------------------------------------------------------- B16: PBI Play
 
@@ -639,46 +590,9 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// <c>pbi+0x1BC |= 0x80</c> and type 1.
     /// </summary>
     public int PbiPlay(WwisePlayingInstance pbi, WwisePlayInitParams p)
-    {
-        // F1 / 0xA00694: `cmp r5,#0; bne 0xA00774`. arg2[0] is the transition's first word (the fade-in
-        // time); a non-zero transition runs the fade-in branch before the start-list enqueue.
-        if (p.Transition is { IsSet: true } transition)
-        {
-            if (SetupFadeInTransition is null)
-                throw new NotSupportedException(
-                    "M6-025 B16/F1: the fade-in transition bodies 0xA366F4 (update) and 0xA36268 (create) " +
-                    "and pbi->vt+0x50(pbi,0xe,arg2[0]) (0xA0082C) are unread; supply the seam rather than " +
-                    "silently skipping the branch");
-            uint v144 = SetupFadeInTransition(pbi, transition);          // 0xA007B0/0xA00800/0xA0081C
-            pbi.Fade168 = 0f;                                            // 0xA00788 str r3,[r4,#0x168] (r3=0)
-            pbi.Flags1BE |= 0x40;                                        // 0xA00814 orr r3,r3,#0x40; strb [r4,#0x1be]
-            pbi.Field144 = v144;                                         // pbi+0x144 (value source not cited)
-        }
-
-        bool flag = p.Flag70 == 1;
-        int r5;
-        if (!(flag == false && (pbi.Flags1BA & 7) != 1))
-        {
-            pbi.Flags1BC |= 0x80;                                             // 0xA006EC
-            r5 = StartList.Enqueue(1, pbi, Tick);                             // 0xA006F4
-            // O5 (0xA006F8..0xA00738): the join runs before the r5 == 1 test.
-            if (pbi.Field144 != 0)
-                (TransitionA366AC ?? throw MissingSeam("0xA366AC (0xA00728)"))(pbi);
-            (Call9BDA28 ?? throw MissingSeam("0x9BDA28(pbi+0xC, 1) (0xA00728)"))(pbi);
-            if (pbi.Field34 != 0)
-                (Call9E808C ?? throw MissingSeam("0x9E808C (0xA00728)"))(pbi);
-        }
-        else
-        {
-            r5 = StartList.Enqueue(0, pbi, Tick);                             // 0xA006C4
-        }
-        // fidelity: M6-026 (6.5, 6.6): r5 != 1 returns r5 (0x9D3558 fails only on an allocation failure with an empty free list); then
-        // 1BA & 7 == 2 -> pbi vt+0(pbi,0,0); r3 == 0 at the call site, so r5 is returned without the global increment.
-        if (r5 != 1) return r5;
-        if ((pbi.Flags1BA & 7) == 2)
-            (Limiter ?? throw new NotSupportedException("M6-026 6.5: 1BA & 7 == 2 runs pbi vt+0 (0x9FF7B8), the limiter's mark; supply a WwisePlaybackLimiter")).MarkStopped9FF7B8(pbi, 0, 0);
-        return r5;
-    }
+        => (PlayPath ?? throw new WwiseMissingBehaviourException("M6-025 B16: 0xA0067C is the shipped Play path (C32.1 P10); supply PlayPath"))
+            .PbiPlayA0067C(pbi, p.Transition, p.Flag70 == 1, false, StartList, Tick,
+                Limiter ?? throw new NotSupportedException("M6-026 6.5: PBI Play needs a WwisePlaybackLimiter"));
 
     // ---------------------------------------------------------------- B10/B11: attach and AddSrc
 
@@ -793,7 +707,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         bool shortcut = false;
         if (voice.E4 != 0)                                                       // 0xA55900
         {
-            int gate = (Call9BCA68 ?? throw MissingSeam("0x9BCA68 (0xA55900)"))(pbi);
+            int gate = (PlayPath ?? throw MissingSeam("0x9BCA68 (0xA55900): supply PlayPath")).A9BCA68(pbi, Limiter ?? throw MissingSeam("the limiter (0x9BCA68)"));   // 0xA55900
             if (gate != 0)
             {
                 if (voice.E4 == 1)
@@ -804,7 +718,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
                     // Bit0 set means the Link init gate (0xA42DF4..0xA42E00) runs 0xA54A30, bit0 clear means it is
                     // skipped (C27 further facts); this shortcut is the only place that clears the bit.
                     if ((voice.FlagsCD & 1) != 0)
-                        (CallA0228C ?? throw MissingSeam("0xA0228C (0xA55A08..0xA55A3C)"))(pbi);
+                        (Limiter ?? throw MissingSeam("the limiter (0xA0228C)")).AcquireVirtual0A0228C(pbi);   // 0xA55A08..0xA55A3C bl 0xA0228C
                     voice.FlagsCD = (byte)(voice.FlagsCD & ~1);                  // 0xA55A40..0xA55A6C
                     shortcut = true;
                 }
@@ -963,13 +877,148 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     // fidelity: M6-026
     public void CloseSourceA56414(IWwiseVoiceSource source, int r1)
     {
-        var owner = OwnerOf(source);
-        if ((PbiFlag4Bit100000 ?? throw MissingSeam("[pbi+4] & 0x100000 (0xA56454..0xA56468)"))(owner))
-            (CallA054D8 ?? throw MissingSeam("0xA054D8 (0xA56468)"))(
-                A054D8Context ?? throw MissingSeam("the *global first argument of 0xA054D8 (0xA56454..0xA56464)"),
-                owner.PlayingId, source);
-        DestroyPbiVoiceA01800(owner, r1);
-        (SourceClose2C ?? throw MissingSeam("src vt+0x2C (0xA56440..0xA5644C)"))(source);
+        var owner = TryOwnerOf(source);                                          // 0xA56418..0xA56424: pbi = [source+0xC]; null skips to vt+0x2C
+        if (owner is not null)
+        {
+            if ((owner.Flags4 & 0x100000) != 0)                                  // 0xA56428..0xA56434
+                (PositionRepository ?? throw MissingSeam("the play-position repository (0xA054D8, 0xA56468)")).RemoveA054D8(owner.PlayingId, source);   // 0xA56454..0xA56468
+            DestroyPbiVoiceA01800(owner, r1);                                    // 0xA56438 bl 0xA01800(pbi, r1)
+        }
+        (SourceClose2C ?? throw MissingSeam("src vt+0x2C (0xA56440..0xA5644C)"))(source);   // 0xA5644C bx [vt+0x2C]
+    }
+
+    /// <summary>
+    /// <c>0xA55A84(voice, source, a, b)</c> (C31.3 R3.4): the AddSrc twin for a source that already exists. <c>sb = a &amp; b</c>; <c>pbi+0x154 = voice</c>. With <c>sb != 0</c> the new-voice pre-steps run (<c>0xA01768</c> into <c>[voice+0xE4]</c> / <c>[voice+0xE0]</c>,
+    /// the 0x4C send-table allocation; a failed allocation destroys the source and returns 2); with <c>sb == 0</c> <c>[voice+0xE4]</c> is read. A non-zero <c>E4</c> runs <c>0x9BCA68</c>: a non-zero result with <c>E4 == 1</c> falls into the destroy
+    /// sequence <c>0xA55B10..0xA55B48</c> with 3; otherwise the shortcut runs only when <c>[voice+0xE0] != 0 ? 0 : sb &amp; 1</c> is non-zero (<c>0xA0228C</c> when <c>[voice+0xCD]</c> bit 0 is set, then that bit is cleared and the result is 1).
+    /// Otherwise StartStream <c>0xA56650(source, [owner+0x1DC], [owner+0x1E0])</c>: a result other than 1 or 0x3F destroys the source (<c>0xA56414(source, 1)</c>, the destructor and the free) and returns it. Then <c>a == 0</c> stores
+    /// <c>[voice+0xD8] = source</c>, else <c>[voice+0xD4] = source</c>, <c>[voice+8] = [source+0xC] ? +0xC : 0</c> and clears <c>pbi+0x1BE</c> bit 3. Returns the raw <c>sb</c>.
+    /// </summary>
+    // fidelity: M6-025, M6-022
+    public int AttachSourceA55A84(WwiseLiveVoice voice, IWwiseVoiceSource source, bool a, bool b)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        ArgumentNullException.ThrowIfNull(source);
+        var pbi = OwnerOf(source);                                               // r6 = [source+0xC]
+        bool sbFlag = a && b;                                                    // 0xA55A88 ands sb,r2,r3
+        int sb = sbFlag ? 1 : 0;
+        pbi.Field154 = voice;                                                    // 0xA55AA4
+        if (sbFlag)                                                              // 0xA55AAC bne 0xA55B4C
+        {
+            voice.E4 = NextSourceA01768(pbi, out int index);                     // 0xA55B50..0xA55B60
+            voice.E0 = index;
+            if ((voice.SendTable?.Capacity ?? 0) == 0)                           // [voice+0x18] == 0
+            {
+                var table = (NewVoiceAllocSendTable4C ?? throw MissingSeam("0xA7A7F4 (the 0x4C send-table allocation, 0xA55B78)"))(voice);
+                voice.SendTable = table;                                         // 0xA55B80
+                if (table is null) return DestroySourceA56414(source, pbi, 2);   // 0xA55C00..0xA55C04: sb = 2, then the destroy sequence
+                table.Capacity = 1;                                              // 0xA55B88..0xA55B90
+            }
+        }
+
+        if (voice.E4 != 0)                                                       // 0xA55AB0 cmp r0,#0; bne 0xA55B98
+        {
+            int gate = (PlayPath ?? throw MissingSeam("0x9BCA68 (0xA55B9C): supply PlayPath")).A9BCA68(pbi, Limiter ?? throw MissingSeam("the limiter (0x9BCA68)"));   // 0xA55B98..0xA55BA0
+            if (gate != 0)                                                       // 0xA55BA4 beq 0xA55AB8
+            {
+                if (voice.E4 == 1) return DestroySourceA56414(source, pbi, 3);   // 0xA55BB0 beq 0xA55B0C: sb = 3 and the destroy sequence
+                bool shortcut = voice.E0 != 0 ? false : (sb & 1) != 0;           // 0xA55BB8..0xA55BC4
+                if (shortcut)                                                    // 0xA55BC8 cmp sb,#0; beq 0xA55AB8
+                {
+                    if ((voice.FlagsCD & 1) != 0)                                // 0xA55BD0..0xA55BDC (E4 != 0 holds here)
+                        (Limiter ?? throw MissingSeam("the limiter (0xA0228C)")).AcquireVirtual0A0228C(pbi);   // 0xA55BE8
+                    voice.FlagsCD = (byte)(voice.FlagsCD & ~1);                  // 0xA55BEC..0xA55BFC
+                    return AttachTail(voice, source, pbi, a, 1);                 // 0xA55AD8 with sb = 1
+                }
+            }
+        }
+        // 0xA55AB8: StartStream with the owner's pair.
+        uint a1DC = pbi.Read1DC();                                               // 0xA55ABC ldr r1,[r6,#0x1dc]
+        uint a1E0 = pbi.Read1E0();                                               // 0xA55AC0 ldr r2,[r6,#0x1e0]
+        sb = WwiseVoiceSourceStart.StartA56650(source, a1DC, a1E0, out bool ran);   // 0xA55AC4 bl 0xA56650
+        if (ran)
+            (SourceFormatWriter15C ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C26.5: the source StartStream writers of pbi+0x15C..0x15F (0xA72760..0xAB138C) are not built; supply SourceFormatWriter15C")).Invoke(pbi, source);
+        if (sb != 1 && sb != 0x3F) return DestroySourceA56414(source, pbi, sb);  // 0xA55AC8..0xA55AD4 bne 0xA55B10
+        return AttachTail(voice, source, pbi, a, sb);                            // 0xA55AD8
+    }
+
+    private static int AttachTail(WwiseLiveVoice voice, IWwiseVoiceSource source, WwisePlayingInstance pbi, bool a, int sb)
+    {
+        if (!a) { voice.Pending = source; return sb; }                           // 0xA55AD8..0xA55ADC: [voice+0xD8] = source
+        voice.Source = source;                                                   // 0xA55AE4: [voice+0xD4]
+        voice.BusOwner8 = pbi;                                                   // 0xA55AE8..0xA55AF4: [voice+8] = [source+0xC] ? +0xC : 0
+        pbi.Flags1BE = (byte)(pbi.Flags1BE & ~8);                                // 0xA55AF8..0xA55B00
+        return sb;
+    }
+
+    /// <summary>
+    /// <c>0xA56478(source)</c> (C31.4 R4.7), the source start notification: the duration <c>s16</c> is the source's <c>vt+0x34</c> when <c>[source+0x10]</c> bit 0 is set, else 0.0f; the owner's CalcEffectiveParams (E8 bit 5 clear) or the partial recompute
+    /// (E9 bit 0) runs; <c>ratio = powf(2.0f, pitch / 1200.0f)</c>, <c>s17 = s16 / ratio</c>; <c>0xA01818(pbi, s17)</c> sets <c>1BA</c> bits 3..6 to 3 and sends notification 3; the Duration callback <c>0xA0393C</c> runs with
+    /// <c>{duration s16, estimated s17, node id, media id, streaming}</c>; and with <c>[pbi+4] &amp; 0x100000</c> <c>0xA05370(G, id, source)</c> adds the play-position record.
+    /// </summary>
+    // fidelity: M6-026, M6-025
+    public void StartNotificationA56478(IWwiseVoiceSource source, WwisePlayingIdTable playingIds)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(playingIds);
+        var pbi = OwnerOf(source);                                               // 0xA56498 ldr r3,[r4,#0xc]
+        float s16 = source.StartStreamSucceeded                                   // 0xA56484..0xA56494, 0xA56598..0xA565A4: [source+0x10] bit 0 -> vt+0x34
+            ? (SourceDuration34 ?? throw MissingSeam("source vt+0x34 (0xA56598..0xA565A4)"))(source)
+            : 0f;
+        var path = PlayPath ?? throw MissingSeam("PlayPath (0xA564AC..0xA564BC)");
+        if ((pbi.Flags0E8 & 0x20) == 0) path.CalcEffectiveParams(pbi, null, Limiter ?? throw MissingSeam("the limiter"));   // 0xA564AC beq 0xA565AC: ctx vt+0x24(ctx, 0)
+        else if ((pbi.Flags0E9 & 1) != 0) WwisePlayPath.Recompute9FF368(pbi);    // 0xA564B0..0xA564B8, 0xA56560: ctx vt+0x28
+        float s15 = pbi.Pitch44 / BitConverter.Int32BitsToSingle(0x44960000);     // 0xA564BC..0xA564C8: / 1200.0f
+        float ratio = Powf(BitConverter.Int32BitsToSingle(0x40000000), s15);      // 0xA564D0 bl powf(2.0f, s15)
+        float s17 = s16 / ratio;                                                 // 0xA564DC vdiv.f32
+        pbi.Flags1BA = (byte)((pbi.Flags1BA & ~0x78) | (3 << 3));                // 0xA01820..0xA01834 (0xA01818)
+        (Notify38600 ?? throw new WwiseMissingBehaviourException("M6-025 C25.3: 0xA38600 (the notification) is unread; supply the seam"))(
+            pbi, 3, 0, unchecked((int)BitConverter.SingleToUInt32Bits(s17)));      // 0xA0183C b 0xA38600(pbi, 3, 0, s17)
+        uint nodeId = pbi.NodeE0?.Id ?? throw new InvalidOperationException("M6-026 R4.7: [pbi+0xE0] is null; 0x9BD138 dereferences it");   // 0xA56500 bl 0x9BD138
+        var descriptor = pbi.SourceDescriptor as WwiseSourceDescriptor? ?? throw MissingSeam("the source block [[pbi+0x150]] (0xA56514..0xA56520)");
+        bool streaming = WwiseSourceFactory.ModeForStream(descriptor.PluginId, descriptor.StreamType) == 1;   // 0xA56528..0xA56538: ([+0xC] & 0x7C) == 4
+        playingIds.DurationA0393C(pbi.PlayingId, s16, s17, nodeId, descriptor.SourceId, streaming);   // 0xA56540 bl 0xA0393C
+        if ((pbi.Flags4 & 0x100000) != 0)                                        // 0xA56544..0xA5654C
+            (PositionRepository ?? throw MissingSeam("the play-position repository (0xA05370, 0xA56594)")).AddA05370(pbi.PlayingId, source);   // 0xA56594 b 0xA05370
+    }
+
+    /// <summary>
+    /// The pending-source switch of the voice pass (R3.8; <see cref="WwiseVoiceBusPass.ContinueWithPendingSource"/>): <c>0xA55D04(voice, 0)</c>, <c>0xA55A84(voice, source, 1, 0)</c> must return 1, <c>0xA54A30(voice)</c> must return 1 and then
+    /// <c>0xA56478(source)</c> runs. Any other result stops the voice (the caller's <c>vt+0x48</c>).
+    /// </summary>
+    // fidelity: M6-025, M6-022
+    public bool ContinueWithPendingSourceA44BE4(WwiseLiveVoice voice, IWwiseVoiceSource pending, WwisePlayingIdTable playingIds)
+    {
+        var linker = Linker ?? throw LinkerRequired();
+        linker.DspTeardownA55D04(voice);                                         // 0xA44ABC / 0xA41C30: 0xA55D04(voice, 0)
+        if (AttachSourceA55A84(voice, pending, true, false) != 1) return false;  // 0xA55A84(voice, pending, 1, 0)
+        var init = linker.Seams.InitVoiceA54A30 ?? throw MissingSeam("0xA54A30 (the voice init body)");
+        if (init(voice) != 1) return false;                                      // 0xA54A30(voice)
+        StartNotificationA56478(pending, playingIds);                            // 0xA56478(pending)
+        return true;
+    }
+
+    /// <summary><c>0xA55CC4(voice, mix)</c> (C31.4 R4.5): after a mix whose result is <c>0x2E</c> <c>[[voice+8]+0xB8] = 101.0f</c>, i.e. <c>pbi+0xC4</c> of the voice's owner.</summary>
+    // fidelity: M6-026
+    public static void PostMixNoDataReadyA55CC4(WwiseLiveVoice voice)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        var pbi = voice.BusOwner8 as WwisePlayingInstance ?? throw new InvalidOperationException("M6-026 R4.5: [voice+8] is not the owner PBI; 0xA55CC4 dereferences it");
+        pbi.FieldC4 = BitConverter.Int32BitsToSingle(0x42CA0000);                // 0xA55CC8..0xA55CD0
+    }
+
+    /// <summary>
+    /// <c>0xA5495C(voice)</c> (C31.4 R4.6): <c>[voice+0x1C0]-&gt;vt+0xC</c> (the filter A body, unread: <paramref name="filterAVtC"/>), then for every connection of the voice <c>[conn+0x6C]</c> bit 2 takes the value of bit 1.
+    /// </summary>
+    // fidelity: M6-026
+    public static void PostMixA5495C(WwiseLiveVoice voice, Action<WwiseLiveVoice>? filterAVtC)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        (filterAVtC ?? throw new WwiseMissingBehaviourException(
+            "M6-026 R4.6: [voice+0x1C0]->vt+0xC (0xA54970) is unread; supply the filter A body"))(voice);   // 0xA54964..0xA54970
+        foreach (var conn in voice.Connections)                                  // 0xA54974..0xA54998: the list linked through [conn+0x28]
+            conn.Flags6C = (byte)((conn.Flags6C & ~4) | (((conn.Flags6C >> 1) & 1) << 2));   // 0xA54980..0xA5498C ubfx r1,r3,#1,#1; bfi r3,r1,#2,#1
     }
 
     /// <summary>

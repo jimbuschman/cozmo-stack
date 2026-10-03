@@ -101,6 +101,11 @@ public sealed class WwisePlayInitParams
     /// <summary><c>+0x108</c>: the second argument of <c>0xA01918</c> (<c>0xA38038</c>). A caller input.</summary>
     public object? Block108 { get; set; }
 
+    /// <summary>
+    /// <c>+0x11C</c> (<c>0xA62B74 str r4,[sp,#0x138]</c>): 0 in the Play helper. CalcEffectiveParams reads it as <c>[r7+0x90]</c> with <c>r7 = params+0x8C</c> and compares it with the output bus (<c>0x9FFB04..0x9FFB0C</c>).
+    /// </summary>
+    public uint Word11C { get; set; }
+
     /// <summary><c>+0x90</c>: 1.0f in the Play helper (<c>0xA62AF8</c>); not read by the paths read.</summary>
     public float Field90 { get; set; } = 1f;
 

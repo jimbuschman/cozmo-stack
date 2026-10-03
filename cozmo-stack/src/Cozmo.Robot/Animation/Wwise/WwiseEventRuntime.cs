@@ -88,7 +88,6 @@ public sealed class WwiseEventRuntime
     private readonly Queue<WwiseQueuedEvent> _messages = new();
     private readonly List<PendingAction> _pending = new();
     private readonly List<WwiseActionExecution> _log = new();
-    private readonly Dictionary<uint, PlayingEvent> _playing = new();
     private readonly WwiseRng _rng;
     private long _tick;
 
@@ -152,6 +151,8 @@ public sealed class WwiseEventRuntime
         if (!TryGetEvent(eventId, out _)) return InvalidPlayingId;             // gapA 1.2
         uint playingId = unchecked((uint)Interlocked.Increment(ref s_nextPlayingId));
         PlayingCountIncrement(playingId);                                     // the in-flight message, gapD D3.1
+        var entry = PlayingIds.GetOrCreate(playingId);
+        PlayingItemFieldsWriter?.Invoke(entry, eventId, gameObjectId);        // [item+0x20]/[item+0x24] have no adopted writer (MISSING): left unset without this seam, and 0xA03618's readers throw
         _messages.Enqueue(new WwiseQueuedEvent(playingId, eventId, gameObjectId, targetPlayingId));
         return playingId;
     }
@@ -202,11 +203,23 @@ public sealed class WwiseEventRuntime
     }
 
     /// <summary>Whether a playing id still has an outstanding event or action count (gapD D3.1).</summary>
-    public bool IsPlaying(uint playingId) => _playing.ContainsKey(playingId);
+    public bool IsPlaying(uint playingId) => PlayingIds.Find(playingId) is not null;
 
-    /// <summary>The minimal play count for a playing id (gapD D3.1); 0 when it is finished.</summary>
-    public int OutstandingActionCount(uint playingId) =>
-        _playing.TryGetValue(playingId, out var p) ? p.Outstanding : 0;
+    /// <summary>The outstanding message and action count <c>[item+0x1C]</c> of a playing id (gapD D3.1); 0 when it is finished.</summary>
+    public int OutstandingActionCount(uint playingId) => PlayingIds.Find(playingId)?.Count1C ?? 0;
+
+    /// <summary>
+    /// The playing-id entries of the callback manager (C31.4 R4.1, C31.1 R1.5): <c>[item+0x1C]</c> counts the control path's messages and actions, <c>[item+0x18]</c> the PBIs' references. The PBI's reference and release
+    /// (<see cref="RegisterPbiPlayingId"/>, <see cref="ReleasePbiPlayingIdReference"/>) and the EndOfEvent body <c>0xA03618</c> live in <see cref="WwisePlayingIdTable"/>.
+    /// </summary>
+    // fidelity: M6-026
+    public WwisePlayingIdTable PlayingIds { get; } = new();
+
+    /// <summary>
+    /// The writer of <c>[item+0x20]</c> (event id) and <c>[item+0x24]</c> (game object) of a playing-id entry. No adopted row cites it (C31.4 R4.1 gives only readers), so there is no default:
+    /// unset, the fields stay unset and <see cref="WwisePlayingIdTable.EndOfEventA03618"/> / <see cref="WwisePlayingIdTable.DurationA0393C"/> throw <see cref="WwiseMissingBehaviourException"/>.
+    /// </summary>
+    public Action<WwiseEventItem, uint, uint?>? PlayingItemFieldsWriter { get; set; }
 
     // ---------------------------------------------------------------- the pump
 
@@ -454,43 +467,27 @@ public sealed class WwiseEventRuntime
             action.TargetId, launch, frames, delay, remainder, 0, 0, 0));
 
     /// <summary>
-    /// <c>0xA04D48</c> (M6-026 6.2): a PBI takes a reference on its playing-id entry (<c>[entry+0x18]++</c>); nothing changes when the entry is not there.
+    /// <c>0xA04D48</c> (M6-026 6.2, C31.1 R1.5): a PBI takes a reference on its playing-id entry (<c>[entry+0x18]++</c>) and the entry's callback flags <c>[entry+0x48]</c> are stored to <c>pbi+4</c>; nothing changes when the
+    /// entry is not there.
     /// </summary>
     // fidelity: M6-026
-    public void AddPbiPlayingIdReference(uint playingId)
-    {
-        if (_playing.TryGetValue(playingId, out var p)) p.Outstanding++;
-    }
+    public void RegisterPbiPlayingId(WwisePlayingInstance pbi) => PlayingIds.RegisterPbiA04D48(pbi);
 
     /// <summary>
-    /// <c>0xA04DE8</c> (M6-026 1.10 step 5): Term releases that reference: <c>[entry+0x18]--</c>, then <c>0xA03618</c> unconditionally. <c>0xA03618</c> does real work when
-    /// <c>[e+0x18] == 0 &amp;&amp; [e+0x1C] == 0</c> (a teardown from <c>0xA03648</c>) and is unread, so reaching zero throws unless <see cref="EntryAtZeroReferencesA03618"/> handles it. The throw is
-    /// conservative: <c>[e+0x1C]</c> is not modelled, and the engine does nothing when it is non-zero.
+    /// <c>0xA04DE8</c> (M6-026 1.10 step 5): Term releases that reference: <c>[entry+0x18]--</c>, then <c>0xA03618</c> (<see cref="WwisePlayingIdTable.EndOfEventA03618"/>), whose body does nothing while either counter is non-zero
+    /// and otherwise needs the unread callees of <see cref="WwisePlayingIdTable.Seams"/>.
     /// </summary>
     // fidelity: M6-026
-    public void ReleasePbiPlayingIdReference(uint playingId)
-    {
-        if (!_playing.TryGetValue(playingId, out var p)) return;
-        p.Outstanding--;
-        if (p.Outstanding != 0) return;
-        (EntryAtZeroReferencesA03618 ?? throw new WwiseMissingBehaviourException(
-            "M6-026 1.10: 0xA03618..0xA03648 (what the playing-id entry does at [e+0x18] == 0) is unread; supply EntryAtZeroReferencesA03618"))(playingId);
-    }
+    public void ReleasePbiPlayingIdReference(uint playingId) => PlayingIds.ReleaseA04DE8(playingId);
 
-    /// <summary><c>0xA03618</c>'s zero-reference work (<c>0xA03618..0xA03648</c>): unread, required when a release reaches zero.</summary>
-    // fidelity: M6-026
-    public Action<uint>? EntryAtZeroReferencesA03618 { get; set; }
-
-    private void PlayingCountIncrement(uint playingId)
-    {
-        if (!_playing.TryGetValue(playingId, out var p)) _playing[playingId] = p = new PlayingEvent();
-        p.Outstanding++;
-    }
+    private void PlayingCountIncrement(uint playingId) => PlayingIds.GetOrCreate(playingId).Count1C++;
 
     private void PlayingCountDecrement(uint playingId)
     {
-        if (!_playing.TryGetValue(playingId, out var p)) return;
-        if (--p.Outstanding <= 0) _playing.Remove(playingId);
+        var item = PlayingIds.Find(playingId);
+        if (item is null) return;
+        item.Count1C--;                                                       // 0xA04F54: [item+0x1C]--, then the tail call 0xA03618
+        PlayingIds.EndOfEventA03618(item, playingId);                         // 0xA04F54 always tail-calls 0xA03618; its unread callees are required seams
     }
 
     private bool TryGetEvent(uint id, out WwiseObject ev)
@@ -537,10 +534,6 @@ public sealed class WwiseEventRuntime
     private sealed record PendingAction(WwiseAction Action, uint? GameObjectId, WwiseQueuedEvent Message,
                                         long LaunchTick, long Frames, long DelaySamples, long SubFrameRemainderSamples);
 
-    private sealed class PlayingEvent
-    {
-        public int Outstanding;
-    }
 }
 
 // =====================================================================================================

@@ -215,7 +215,7 @@ public class WwiseEventRuntimeTests
                 (4, EventPayload(900, 103, 104)))),
             "t.bnk");
 
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
         uint playingId = runtime.PostEvent(900, gameObjectId: null);
         Assert.NotEqual(WwiseEventRuntime.InvalidPlayingId, playingId);
 
@@ -246,7 +246,7 @@ public class WwiseEventRuntimeTests
                 (4, EventPayload(900, 100)))),
             "t.bnk");
 
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
         runtime.RegisterGameObject(7);
         uint playingId = runtime.PostEvent(900, 7);
 
@@ -283,7 +283,7 @@ public class WwiseEventRuntimeTests
                 (4, EventPayload(900, 100, 101)))),
             "t.bnk");
 
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
         runtime.RegisterGameObject(7);
         runtime.PostEvent(900, 7);
 
@@ -318,7 +318,7 @@ public class WwiseEventRuntimeTests
                 (4, EventPayload(900, 100)))),
             "t.bnk");
 
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
         runtime.RegisterGameObject(7);
         runtime.PostEvent(900, 7);
 
@@ -372,7 +372,7 @@ public class WwiseEventRuntimeTests
     public void AMissingEventReturnsZeroAndEnqueuesNothing()
     {
         var bank = WwiseBank.Parse(File(1, Hirc((2, SoundPayload(500)))), "t.bnk");
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
 
         uint playingId = runtime.PostEvent(0xDEADBEEF);
 

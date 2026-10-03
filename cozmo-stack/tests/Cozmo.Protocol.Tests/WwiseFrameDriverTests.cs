@@ -189,7 +189,7 @@ public class WwiseFrameDriverTests
 
     private static (WwiseEventRuntime Runtime, StepRecorder Render, TestSink Sink) Posted()
     {
-        var runtime = new WwiseEventRuntime(new[] { OnePlayBank() }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { OnePlayBank() }, new WwiseRng(1));
         runtime.RegisterGameObject(7);
         runtime.PostEvent(900, 7);
         return (runtime, new StepRecorder(runtime), new TestSink());

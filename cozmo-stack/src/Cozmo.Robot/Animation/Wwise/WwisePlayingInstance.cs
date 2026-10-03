@@ -98,9 +98,6 @@ public sealed class WwisePlayingInstance
     /// <summary>See <see cref="Field1CC"/>.</summary>
     public float Field1D0 { get; set; }
 
-    /// <summary>The priority block of CalcEffectiveParams (<c>0x9FFE1C..0x9FFFE4</c>, 8.4): set by the Play path to the limiter's refresh.</summary>
-    public Action<WwisePlayingInstance>? PriorityBlock { get; set; }
-
     /// <summary><c>+0xE4</c> (ctx <c>+0xD8</c>): the <c>r1</c> stored by <c>0x9BEB30</c> (A1), the result of node <c>vt+0x84</c> in <c>0xA379D8</c>.</summary>
     public uint FieldE4 { get; set; }
 
@@ -172,25 +169,37 @@ public sealed class WwisePlayingInstance
 
     /// <summary>
     /// <c>+0x1DC</c> (the media data pointer) and <c>+0x1E0</c> (its size): the <c>r1</c>/<c>r2</c> of every <c>0xA56650</c> call
-    /// (<c>0xA5590C</c>, <c>0xA55910</c>, <c>0xA544D8</c>, <c>0xA544DC</c>; M6-025 C27 step 7, C30.1(d)). Their writer is
-    /// <c>pbi vt+0xC</c> = <c>0xA0285C</c> through <c>0xA1EC54</c> (<see cref="WwisePlaybackLimiter.SourceInfoA1EC54"/>), an unread
-    /// body, so no value is assumed: reading either before that writer has stored it throws.
+    /// (<c>0xA5590C</c>, <c>0xA55910</c>, <c>0xA544D8</c>, <c>0xA544DC</c>; M6-025 C27 step 7, C30.1(d)). The constructor stores 0 in both (<c>0xA00180</c>, <c>0xA002F0</c>, <c>0xA002F4</c>; C31.1 R1.1);
+    /// the other writers are <c>0xA0207C</c> (inside <c>0xA01EF4</c>), Term (<c>0xA02AF0</c>, <c>+0x1DC</c> only) and the out-pointers of <c>0xA1EC54</c> at <c>0xA02928</c> / <c>0xA0292C</c>
+    /// (<see cref="WwisePbiMedia.StoreSourceInfoA02924"/>). For a streamed sound the pair is the prefetch prefix, not the whole media (C32.2).
     /// </summary>
     // fidelity: M6-025
-    public uint? Word1DC { get; set; }
+    public uint Word1DC { get; set; }
 
     /// <summary>See <see cref="Word1DC"/>.</summary>
-    public uint? Word1E0 { get; set; }
-
-    /// <summary>Reads <see cref="Word1DC"/>; unset is a named stop (the writer <c>0xA1EC54</c> is unread).</summary>
     // fidelity: M6-025
-    public uint Read1DC() => Word1DC ?? throw new WwiseMissingBehaviourException(
-        "M6-025 C30.1(d): pbi+0x1DC (the media pointer fed to 0xA56650) is written by 0xA1EC54 through pbi vt+0xC, which is unread; set Word1DC");
+    public uint Word1E0 { get; set; }
 
-    /// <summary>Reads <see cref="Word1E0"/>; see <see cref="Read1DC"/>.</summary>
+    /// <summary>Reads <see cref="Word1DC"/> (<c>ldr r1,[pbi,#0x1dc]</c>).</summary>
     // fidelity: M6-025
-    public uint Read1E0() => Word1E0 ?? throw new WwiseMissingBehaviourException(
-        "M6-025 C30.1(d): pbi+0x1E0 (the media size fed to 0xA56650) is written by 0xA1EC54 through pbi vt+0xC, which is unread; set Word1E0");
+    public uint Read1DC() => Word1DC;
+
+    /// <summary>Reads <see cref="Word1E0"/> (<c>ldr r2,[pbi,#0x1e0]</c>).</summary>
+    // fidelity: M6-025
+    public uint Read1E0() => Word1E0;
+
+    /// <summary>
+    /// <c>+0x108</c>: the bank object <c>0xA1EC54</c> picked (<c>*r3</c>); the constructor stores 0 (<c>0xA00164</c>). Term runs its <c>vt+0</c> and zeroes it (<c>0xA02AF4..0xA02B14</c>).
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseMediaBank? Obj108 { get; set; }
+
+    /// <summary>
+    /// <c>+4</c>: the callback-flag word. The constructor stores 0 (<c>0xA0010C</c>); <c>0xA04D48</c> stores the playing-id item's <c>[item+0x48]</c> here (<c>0xA04DE0</c>, R1.5). Bit <c>0x100000</c> is tested by
+    /// <c>0xA56414</c> and <c>0xA56478</c>.
+    /// </summary>
+    // fidelity: M6-025
+    public uint Flags4 { get; set; }
 
     /// <summary><c>+0x158</c>: the source-format word; written by the source StartStream.</summary>
     public uint SourceFormat158 { get; set; }
@@ -209,13 +218,99 @@ public sealed class WwisePlayingInstance
     public float MuteFade40 { get; set; } = 1f;
 
     /// <summary><c>+0x44</c>: the effective Pitch in cents (CalcEffectiveParams).</summary>
-    public float Pitch44 { get; private set; }
+    public float Pitch44 { get; set; }
 
     /// <summary><c>+0x48</c>: the effective LPF (CalcEffectiveParams).</summary>
-    public float Lpf48 { get; private set; }
+    public float Lpf48 { get; set; }
 
     /// <summary><c>+0x4C</c>: the effective HPF (CalcEffectiveParams).</summary>
-    public float Hpf4C { get; private set; }
+    public float Hpf4C { get; set; }
+
+    // ---- the PBI context and effective-parameter block (C31.3, C32.1): written by CalcEffectiveParams 0x9FFAD4 and 0x9BEB30 (WwisePlayPath)
+
+    /// <summary><c>+0x50</c>, <c>+0x54</c>, <c>+0x5C</c>, <c>+0x68</c>, <c>+0x6C</c>: floats the reset stage <c>0x9FFB10</c> zeroes.</summary>
+    public float Field50 { get; set; }
+
+    /// <summary>See <see cref="Field50"/>.</summary>
+    public float Field54 { get; set; }
+
+    /// <summary>See <see cref="Field50"/>.</summary>
+    public float Field5C { get; set; }
+
+    /// <summary>See <see cref="Field50"/>.</summary>
+    public float Field68 { get; set; }
+
+    /// <summary>See <see cref="Field50"/>.</summary>
+    public float Field6C { get; set; }
+
+    /// <summary><c>+0x58</c> (byte): bits 0..1 cleared by the reset stage.</summary>
+    public byte Byte58 { get; set; }
+
+    /// <summary><c>+0x60</c> (byte): bits 0..1 cleared by the reset stage.</summary>
+    public byte Byte60 { get; set; }
+
+    /// <summary><c>+0x70..+0x7F</c>: 16 bytes the reset stage zeroes (<c>0x9FFB70</c>).</summary>
+    public byte[] Block70 { get; } = new byte[16];
+
+    /// <summary><c>+0x80..+0x8F</c>: 16 bytes the reset stage zeroes (<c>0x9FFB80</c>).</summary>
+    public byte[] Block80 { get; } = new byte[16];
+
+    /// <summary><c>+0x90</c>: zeroed by the reset stage.</summary>
+    public uint Word90 { get; set; }
+
+    /// <summary><c>+0x94..+0x97</c> (bytes): zeroed by the reset stage; <c>+0x95</c> and <c>+0x96</c> again before node <c>vt+0xAC</c> (<c>0x9FFCE0</c>, <c>0x9FFCE8</c>).</summary>
+    public byte Byte94 { get; set; }
+
+    /// <summary>See <see cref="Byte94"/>.</summary>
+    public byte Byte95 { get; set; }
+
+    /// <summary>See <see cref="Byte94"/>.</summary>
+    public byte Byte96 { get; set; }
+
+    /// <summary>See <see cref="Byte94"/>.</summary>
+    public byte Byte97 { get; set; }
+
+    /// <summary><c>+0x98</c>: <c>pbi+0x3C</c> before the randomizer volume is added (<c>0x9FFD60</c>); <c>0x9FF368</c> adds <c>+0x118</c> to it.</summary>
+    public float Field98 { get; set; }
+
+    /// <summary><c>+0x9C</c>: the LPF node-chain term (<c>0x9FFD48</c>).</summary>
+    public float Field9C { get; set; }
+
+    /// <summary><c>+0xA0</c>: added to the LPF (<c>0x9FFD54</c>; M6-011's term).</summary>
+    public float FieldA0 { get; set; }
+
+    /// <summary><c>+0xA4</c>: the HPF node-chain term (<c>0x9FFD58</c>).</summary>
+    public float FieldA4 { get; set; }
+
+    /// <summary><c>+0xA8</c>: added to the HPF (<c>0x9FFD64</c>).</summary>
+    public float FieldA8 { get; set; }
+
+    /// <summary><c>+0xC4</c> (ctx <c>+0xB8</c>): 101.0f from the ctx init <c>0x9BCA48</c> and from CalcEffectiveParams (<c>0x9FFC9C</c>).</summary>
+    public float FieldC4 { get; set; }
+
+    /// <summary><c>+0xB4</c>, <c>+0xB8</c>, <c>+0xBC</c> (ctx <c>+0xA8..+0xB0</c>): properties 0xC, 0xD, 0xE of the top node (<c>0x9FAEE8</c>).</summary>
+    public float PanB4 { get; set; }
+
+    /// <summary>See <see cref="PanB4"/>.</summary>
+    public float PanB8 { get; set; }
+
+    /// <summary>See <see cref="PanB4"/>.</summary>
+    public float PanBC { get; set; }
+
+    /// <summary><c>+0xC0</c> (byte; ctx <c>+0xB4</c>): <c>[top+0x47] &amp; 1</c> (<c>0x9FAFE4</c>).</summary>
+    public byte PanC0 { get; set; }
+
+    /// <summary><c>+0xDC</c> (ctx <c>+0xD0</c>): the context object <c>0x9FB9B8</c> allocates for a node with a 3D positioning object. None is representable, so it is null.</summary>
+    public object? CtxD0 { get; set; }
+
+    /// <summary><c>+0x118..+0x12C</c>: the randomizer ranges (<see cref="WwiseGainRanges"/>: volume <c>+0x118</c>, make-up <c>+0x11C</c>, pitch <c>+0x120</c>, LPF <c>+0x124</c>, HPF <c>+0x128</c>).</summary>
+    public WwiseGainRanges Ranges118 { get; } = new();
+
+    /// <summary><c>+0x10C</c> (data), <c>+0x110</c> (count): the transition records node <c>vt+0xAC</c> fills and CalcEffectiveParams prunes and multiplies.</summary>
+    public List<WwiseTransitionRecord> Transitions10C { get; } = new();
+
+    /// <summary><c>+0x1B8</c> (u16): the loop count <c>0xA00618</c> stores (<c>0xA00634</c>) and the streamed Vorbis source reads (S4).</summary>
+    public ushort LoopCount1B8 { get; set; }
 
     /// <summary>
     /// <c>0xA000E8</c>'s stores (B6). <paramref name="block28"/> is the 0x44-byte block (copied to
@@ -223,7 +318,7 @@ public sealed class WwisePlayingInstance
     /// </summary>
     public WwisePlayingInstance(
         WwisePlayInitParams p, uint targetNodeId, object sourceDescriptor, byte[] block28,
-        object? rtpcKey14, bool continuous)
+        object? rtpcKey14, bool continuous, bool ctxNodeChainFlag = false)
     {
         ArgumentNullException.ThrowIfNull(p);
         ArgumentNullException.ThrowIfNull(sourceDescriptor);
@@ -232,6 +327,11 @@ public sealed class WwisePlayingInstance
             throw new ArgumentException($"the params block is 0x44 bytes, not {block28.Length}", nameof(block28));
 
         PlayingId = p.PlayingId;
+        // 0x9BC90C (the ctx init, C32.1 P8 with the verifier's 0x5D): [ctx+0xDC] = 0x5D, [ctx+0xDD] = bit 0 set, bit 1 clear, bit 2 = the 4th argument (params+0x128 bit 3, 0xA0013C), bit 3 = the node-chain test
+        // 0x9BC9FC..0x9BCA1C; the high nibble is uninitialised pool memory and is taken as 0. [ctx+0xB8] = 101.0f (0x9BCA40..0x9BCA48).
+        Flags0E8 = 0x5D;
+        Flags0E9 = (byte)(1 | (((p.Flags128 >> 3) & 1) << 2) | (ctxNodeChainFlag ? 8 : 0));
+        FieldC4 = BitConverter.Int32BitsToSingle(0x42CA0000);
         GameObject14 = p.GameObjectId;                                    // 0xA00104/0xA00144: [params+8] -> 0x9BC90C -> pbi+0x14 (M6-026 5.2)
         TargetNodeId = targetNodeId;
         SourceDescriptor = sourceDescriptor;
@@ -274,72 +374,4 @@ public sealed class WwisePlayingInstance
     /// </summary>
     public void MarkChainMatchedA01878()
         => Flags1BA = (byte)((Flags1BA & ~0x78) | (3 << 3));
-
-    /// <summary>
-    /// The PBI <c>vt+0x44</c> CalcEffectiveParams (M6-025 B9, <c>0x9FFAD4</c>). <paramref name="gainNode"/>
-    /// is the node chain's M6-010 model (its builder is M6-010's); <paramref name="ranges"/> is the stored
-    /// randomizer draw. A null node is the <c>param_2 == 0</c> reset branch (<c>0x9FFB24/0x9FFB48</c>):
-    /// Volume 0, mute/fade 1.
-    /// </summary>
-    public WwiseGainEffective CalcEffectiveParams(
-        WwiseGainNode? gainNode, WwiseParamSelect paramSelect, WwiseGainRanges? ranges,
-        WwiseRtpcStore? store = null, WwiseGainRtpcKey key = default, WwiseRng? rng = null)
-    {
-        // 0x9FFC28: every path (the param_2 == 0 reset via 0x9FFB10/0x9FFBFC, and both r6 branches) reaches `cmp r5,#0` with r5 = [pbi+0xE9] & 4 after the reset stores. Set: 0x9FFC30 does
-        // 1BC |= 1 and E8 |= 0x20 and returns before the compute (0x9FBE74) and the priority block (0x9FFE1C).
-        if ((Flags0E9 & 4) != 0)
-        {
-            var reset = WwiseCalcEffectiveParams.Reset();
-            Volume3C = reset.VolumeDb;
-            Pitch44 = reset.PitchCents;
-            Lpf48 = reset.LowPass;
-            Hpf4C = reset.HighPass;
-            MuteFade40 = reset.MuteFade;
-            Flags1BC |= 1;
-            Flags0E8 |= 0x20;
-            return reset;
-        }
-        var effective = WwiseCalcEffectiveParams.Calculate(
-            gainNode, paramSelect, ranges, store, key, rng, Fade168, Fade16C);
-        Volume3C = effective.VolumeDb;
-        Pitch44 = effective.PitchCents;
-        Lpf48 = effective.LowPass;
-        Hpf4C = effective.HighPass;
-        MuteFade40 = effective.MuteFade;
-        PriorityBlock?.Invoke(this);                                      // 0x9FFE1C..0x9FFFE4: reached unconditionally after the mute/fade store at 0x9FFE18 (M6-026 8.4)
-        Flags1BC |= 1;                                                    // 0x9FFE7C: pbi+0x1bc |= 1
-        return effective;
-    }
-}
-
-/// <summary>
-/// The PBI <c>vt+0x44</c> CalcEffectiveParams composition (M6-025 B9). The node-chain sum is M6-010's
-/// <see cref="WwiseGain.GetAudioParameters"/> (<c>vt+0xac</c>); the compose (<c>0x9FFD14..0x9FFD74</c>)
-/// and the mute/fade product (<c>0x9FFDD0..0x9FFE18</c>) are M6-010's
-/// <see cref="WwiseGain.Effective"/>.
-/// </summary>
-public static class WwiseCalcEffectiveParams
-{
-    /// <summary>B9: a null node is the reset branch (<c>0x9FFB24/0x9FFB48</c>).</summary>
-    public static WwiseGainEffective Reset() => new(0f, 0f, 0f, 0f, 0f, 1f, 1f);
-
-    /// <summary>
-    /// B9 3.3..3.6: accumulate the node chain, then compose the effective fields. The <c>0x9FBE74</c> bus
-    /// accumulation and the <c>0x9F6B94</c> RTPC update are not read; the node chain passed in is the
-    /// caller's M6-010 graph.
-    /// </summary>
-    public static WwiseGainEffective Calculate(
-        WwiseGainNode? gainNode, WwiseParamSelect paramSelect, WwiseGainRanges? ranges,
-        WwiseRtpcStore? store, WwiseGainRtpcKey key, WwiseRng? rng, float fade168, float fade16C)
-    {
-        if (gainNode is null) return Reset();
-
-        var io = WwiseAudioParameters.Create();
-        // 0x9FFC68 0x9FBE74 / 0x9FFCEC vt+0xac GetAudioParameters: the node chain's sum. The ranged draw
-        // runs only when the pass has the global LCG; the stored ranges are still composed afterwards.
-        var drawRanges = rng is null ? null : ranges;
-        WwiseGain.GetAudioParameters(gainNode, paramSelect, ref io, drawRanges, store, key, rng);
-        // 0x9FFD14..0x9FFD74 compose and 0x9FFDD0..0x9FFE18 mute/fade product.
-        return WwiseGain.Effective(io, ranges ?? new WwiseGainRanges(), fade168, fade16C);
-    }
 }

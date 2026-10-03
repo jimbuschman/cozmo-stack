@@ -240,7 +240,7 @@ public class WwiseAppAudioInputTests
     [Fact]
     public void TheDispatchBuildsTheContextOnlyWhenTheCallbackIdIsNotZero()
     {
-        var runtime = new WwiseEventRuntime(new[] { RoutingBank() }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
         var dispatch = new WwiseAudioInputDispatch(runtime);
 
         var noContext = dispatch.HandleGameEvents(
@@ -267,7 +267,7 @@ public class WwiseAppAudioInputTests
     [Fact]
     public void TheAppPathContextIs0xffAt0x008DED46AndGivesFlags13()
     {
-        var runtime = new WwiseEventRuntime(new[] { RoutingBank() }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
         var dispatch = new WwiseAudioInputDispatch(runtime);
 
         var result = dispatch.HandleGameEvents(
@@ -283,7 +283,7 @@ public class WwiseAppAudioInputTests
     [Fact]
     public void TheDispatchRecognisesTagsOneToSixAndOnlyHandlesPostAudioEvent()
     {
-        var runtime = new WwiseEventRuntime(new[] { RoutingBank() }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
         var dispatch = new WwiseAudioInputDispatch(runtime);
         var body = new WwisePostAudioEvent(900, 7, 0).ToBytes();
 
@@ -307,7 +307,7 @@ public class WwiseAppAudioInputTests
     [Fact]
     public void AnEventPostedThroughTheDispatchReachesTheRuntimeAndReturnsItsPlayingId()
     {
-        var runtime = new WwiseEventRuntime(new[] { RoutingBank() }, new WwiseRng(1));
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
         runtime.RegisterGameObject(7);
         var dispatch = new WwiseAudioInputDispatch(runtime);
 

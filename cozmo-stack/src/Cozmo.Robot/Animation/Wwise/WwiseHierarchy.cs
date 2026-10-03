@@ -158,6 +158,13 @@ public sealed record WwiseNodeParams(
     /// <summary>Advanced-settings byte 4 (the last byte of the block).</summary>
     public byte AdvancedByte4 { get; init; }
 
+    // fidelity: M6-026
+    /// <summary>
+    /// The positioning byte (<c>0x9ECF44</c>, the first byte of PositioningParams). Bit 0 stores <c>[node+0x40]</c> bits 1..11 (<c>0x9F6D94</c>), which the node walks of <c>0x9F1F80</c> / <c>0x9FB9B8</c> / <c>0x9FBE74</c> test
+    /// (<c>[node+0x40] &amp; 0xFFE</c>); with bit 1 set bit 2 is stored to <c>[node+0x47]</c> bit 0 (<c>0x9ECF7C..0x9ECF8C</c>). The reader refuses bits 0 and 3 together (the 3D body), so <c>[node+0x2C]</c> is 0 for every parsed node.
+    /// </summary>
+    public byte PositioningBits { get; init; }
+
     /// <summary>A property as the float most of them are, or null when the node does not set it.</summary>
     public float? Float(WwiseProp p) =>
         Props.TryGetValue((byte)p, out var v) ? BitConverter.Int32BitsToSingle((int)v) : null;
@@ -400,7 +407,7 @@ public static class WwiseHierarchy
         return new WwiseNodeParams(bus, parent, bits, props, ranged, rtpcs, stateGroups)
         {
             AdvancedByte0 = adv0, AdvancedByte1 = adv1, AdvancedMaxInstancesRaw = advMax,
-            AdvancedByte3 = adv3, AdvancedByte4 = adv4,
+            AdvancedByte3 = adv3, AdvancedByte4 = adv4, PositioningBits = posBits,
         };
     }
 

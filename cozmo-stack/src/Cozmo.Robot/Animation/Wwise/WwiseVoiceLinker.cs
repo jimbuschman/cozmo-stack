@@ -1057,7 +1057,23 @@ public sealed class WwiseVoiceLinker
     /// </summary>
     private void TermVoice(WwiseLiveVoice voice)
     {
-        if (voice.Source is { } current)                                   // 0xA53EB0
+        DspTeardownA55D04(voice);                                          // 0xA53EB0..0xA53F98: the same sequence 0xA55D04 runs
+        if (voice.Pending is { } pending)                                  // 0xA53FA8
+        {
+            (Seams.CloseSource56414 ?? throw Missing("0xA56414 (the source close: 0xA054D8, 0xA01800)"))(pending);
+            voice.Pending = null;                                          // 0xA53FE4
+        }
+    }
+
+    /// <summary>
+    /// <c>0xA55D04(voice, 0)</c> (C31.3 R3.6, called with 0 by <c>0xA41C30</c> and <c>0xA44ABC</c>): a current source <c>[voice+0xD4]</c> gets <c>0xA56414(source, 0)</c>, its destructor and the pool free and the field is cleared; each non-null insert-FX
+    /// slot <c>[voice+0x370+4i]</c> gets <c>vt+0x2C</c>, its destructor and the free and is cleared; <c>0xA53244(voice+0x100)</c> and <c>0xA76608(voice+0x1D0)</c> / <c>(voice+0x3A0)</c> release the voice's buffers (pool blocks
+    /// <c>0xA69A38</c> / <c>0xA69AC8</c> / <c>0xA47360</c> free and zero their pointers; <see cref="WwiseVoiceLinkSeams.TermBuffers"/> is the hook for the managed buffers); <c>[voice+0xCD] |= 1</c>.
+    /// </summary>
+    public void DspTeardownA55D04(WwiseLiveVoice voice)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        if (voice.Source is { } current)                                   // 0xA55D0C..0xA55D14
         {
             (Seams.CloseSource56414 ?? throw Missing("0xA56414 (the source close: 0xA054D8, 0xA01800)"))(current);
             voice.Source = null;                                           // 0xA53F04
@@ -1069,13 +1085,8 @@ public sealed class WwiseVoiceLinker
             slot.Teardown();                                               // vt+0x2C
             voice.InsertFxSlots[i] = null!;
         }
-        Seams.TermBuffers?.Invoke(voice);                                  // 0xA53F74..0xA53F88
-        voice.FlagsCD |= 1;                                                // 0xA53F98
-        if (voice.Pending is { } pending)                                  // 0xA53FA8
-        {
-            (Seams.CloseSource56414 ?? throw Missing("0xA56414 (the source close: 0xA054D8, 0xA01800)"))(pending);
-            voice.Pending = null;                                          // 0xA53FE4
-        }
+        Seams.TermBuffers?.Invoke(voice);                                  // 0xA55DC4..0xA55DD8
+        voice.FlagsCD |= 1;                                                // 0xA55DDC..0xA55DE4
     }
 
     /// <summary>

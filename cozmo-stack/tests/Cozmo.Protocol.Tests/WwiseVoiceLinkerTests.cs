@@ -1250,17 +1250,11 @@ public class WwiseVoiceLinkerTests
     [Fact]
     public void AnUnreadOwnerLookupAndAnUnwrittenMediaWordAreRefused()
     {
-        // [source+0xC] has no writer here and pbi+0x1DC/+0x1E0 are written by the unread 0xA1EC54: neither is defaulted.
+        // [source+0xC] has no writer here: it is not defaulted. (pbi+0x1DC/+0x1E0 are written by the constructor and 0xA1EC54, C31.1, so they always have a value.)
         var (rig, voice, pbi) = PendingRig(new Src());
         rig.Seams.SourceOwner = null;
         Assert.Throws<NotSupportedException>(() => rig.Linker.NotReadyCheck(voice, pbi));
 
-        var (rig2, voice2, pbi2) = PendingRig(new Src());
-        pbi2.Word1DC = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig2.Linker.NotReadyCheck(voice2, pbi2));
-        var (rig3, voice3, pbi3) = PendingRig(new Src());
-        pbi3.Word1E0 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig3.Linker.NotReadyCheck(voice3, pbi3));
         var (rig4, voice4, pbi4) = PendingRig(new Src());
         rig4.Owners.Remove(voice4.Source!);
         Assert.Throws<InvalidOperationException>(() => rig4.Linker.NotReadyCheck(voice4, pbi4));
@@ -1772,11 +1766,22 @@ public class WwiseVoiceLinkerTests
         public readonly WwisePlayingInstance Pbi;
         public (int Code, int Index) Eda = (0, 0);
         public int Gate;
-        public bool Flag100000;
+
+        /// <summary><c>[pbi+4] &amp; 0x100000</c> with a play-position record for the pair, so <c>0xA56414</c> removes it (<c>0xA054D8</c>).</summary>
+        public bool Flag100000
+        {
+            get => (Pbi.Flags4 & 0x100000) != 0;
+            set
+            {
+                Pbi.Flags4 = value ? 0x100000u : 0;
+                if (value) Repository.AddA05370(Pbi.PlayingId, Source);
+            }
+        }
+
+        public readonly WwisePlayPositionRepository Repository = new(() => 0);
         public WwiseVoiceSendTable? Alloc = new();
         public WwiseLiveVoice? Voice;
         public int Vt120Result;
-        public readonly object A054D8Global = new();
         public readonly WwiseNode RoutingNode = new WwiseActorMixerNode(77, "t.bnk",
             new WwiseNodeParams(0, 0, 0, new Dictionary<byte, uint>(), new Dictionary<byte, (float, float)>(), Array.Empty<WwiseRtpc>(),
                 Array.Empty<(uint, byte, IReadOnlyList<(uint, uint)>)>()), Array.Empty<uint>());
@@ -1801,16 +1806,11 @@ public class WwiseVoiceLinkerTests
             };
             Bridge.NodeVt120A379D8 = (node, arg) => { Log.Add("vt120"); SeenNode = node; SeenVt120Arg = arg; return Vt120Result; };
             Bridge.NewVoiceAllocSendTable4C = _ => { Log.Add("alloc4C"); return Alloc; };
-            Bridge.Call9BCA68 = p => { Log.Add("9BCA68"); return Gate; };
-            Bridge.CallA0228C = _ => Log.Add("A0228C");
-            Bridge.PbiFlag4Bit100000 = _ => Flag100000;
-            Bridge.A054D8Context = A054D8Global;                       // test double: which global 0xA56454 reads is MISSING
-            Bridge.CallA054D8 = (ctx, id, src) =>
-            {
-                Assert.Same(A054D8Global, ctx);
-                Assert.Same(Source, src);
-                Log.Add("A054D8:" + id);
-            };
+            // 0x9BCA68 is the engine's body now (C31.3): with [pbi+0xE8] bit 5 clear it runs CalcEffectiveParams, whose node vt+0xAC double logs the call and sets the volume the
+            // below-audibility test reads (-100 dB is below 2^-16, 0 dB is not); the result is Gate. 0xA0228C sets pbi+0x1BE bit 5 (the log below records it through that bit).
+            Bridge.Limiter = WwisePlaybackLimiterTestDoubles.Create(_ => null);
+            Bridge.PlayPath!.Seams.NodeVtAC = a => { Log.Add("9BCA68"); a.Pbi.Volume3C = Gate != 0 ? -100f : 0f; };
+            Bridge.PositionRepository = Repository;                    // 0xA056xx (C31.4 R4.3): a flagged PBI's record is removed by 0xA56414
             Bridge.Notify38600 = (p, a, b, c) => Log.Add($"A38600:{a},{b},{c}:154=" + (p.Field154 is null ? "null" : "voice"));
             Bridge.SourceDestructAndPoolFree = s => Log.Add(ReferenceEquals(s, Source) ? "destruct" : "destruct-other");
             Bridge.SourceFormatWriter15C = (_, _) => Log.Add("writer15C");
@@ -2011,7 +2011,7 @@ public class WwiseVoiceLinkerTests
 
         Assert.Equal(1, rig.Bridge.AddSrc(voice, rig.Pbi, bActive: true));
 
-        Assert.Equal(a0228cRuns, rig.Log.Contains("A0228C"));
+        Assert.Equal(a0228cRuns, (rig.Pbi.Flags1BE & 0x20) != 0);               // 0xA0228C sets pbi+0x1BE bit 5 (R3.3)
         Assert.DoesNotContain("writer15C", rig.Log);
         Assert.False(rig.Source.StartStreamSucceeded);
         Assert.Equal(0, voice.FlagsCD & 1);
@@ -2033,7 +2033,7 @@ public class WwiseVoiceLinkerTests
         var voice = rig.NewVoice();
         Assert.Equal(1, rig.Bridge.AddSrc(voice, rig.Pbi, bActive: true));
         Assert.True(rig.Source.StartStreamSucceeded);
-        Assert.DoesNotContain("A0228C", rig.Log);
+        Assert.Equal(0, rig.Pbi.Flags1BE & 0x20);                            // 0xA0228C did not run
         Assert.Equal(1, voice.FlagsCD & 1);
 
         var zero = new AddSrcRig();
@@ -2042,7 +2042,7 @@ public class WwiseVoiceLinkerTests
         var v2 = zero.NewVoice();
         Assert.Equal(1, zero.Bridge.AddSrc(v2, zero.Pbi, bActive: true));
         Assert.True(zero.Source.StartStreamSucceeded);
-        Assert.DoesNotContain("A0228C", zero.Log);
+        Assert.Equal(0, zero.Pbi.Flags1BE & 0x20);
         Assert.Equal(1, v2.FlagsCD & 1);
     }
 
@@ -2108,8 +2108,9 @@ public class WwiseVoiceLinkerTests
         // C27 step 8: 0xA054D8 first (when [pbi+4] & 0x100000), then 0xA01800's notification, then the destructor; the
         // 0x15C writer's position is unasserted (not stated by C27).
         Assert.Equal(
-            new[] { "A054D8:" + flagged.Pbi.PlayingId, "A38600:4,1,0:154=null", "destruct" },
+            new[] { "A38600:4,1,0:154=null", "destruct" },
             flagged.Log.Where(l => l != "writer15C").ToArray());
+        Assert.Empty(flagged.Repository.Records);                            // 0xA054D8 removed the pair's record (R4.3)
     }
 
     [Fact]
@@ -2183,27 +2184,13 @@ public class WwiseVoiceLinkerTests
     }
 
     [Fact]
-    public void AddSrcRefusesAnUnwrittenMediaWordInsteadOfDefaultingIt_C30_1d()
-    {
-        // pbi+0x1DC/+0x1E0 are written by the unread 0xA1EC54; AddSrc reads them before calling 0xA56650 and does not invent values.
-        var rig = new AddSrcRig();
-        rig.Pbi.Word1DC = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
-        Assert.Empty(rig.Source.Calls);
-
-        var rig2 = new AddSrcRig();
-        rig2.Pbi.Word1E0 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig2.Bridge.AddSrc(rig2.NewVoice(), rig2.Pbi, bActive: true));
-        Assert.Empty(rig2.Source.Calls);
-    }
-
-    [Fact]
     public void AddSrcSeamsForUnreadBodiesAreRequiredAndThrowWhenReachedUnset_C27Residuals()
     {
-        // C27 residuals: the bodies of 0x9BCA68, 0xA0228C, 0x9EEDA4, 0xA054D8 and the 0x4C allocation, the source destructor
-        // and pool free, and the [pbi+4] bit are not read, so reaching one unset throws rather than defaulting.
+        // C27 residuals: the 0x9EEDA4 override, the 0x4C allocation and the source destructor and pool free are not read; 0x9BCA68 (the Play path) and 0xA054D8 (the repository) are required
+        // collaborators, so reaching one unset throws rather than defaulting.
         var rig = new AddSrcRig();
         rig.Bridge.NextSource9EEDA4 = null;
+        rig.Bridge.Limiter = null;                                           // the 0x9EEDA4 body lives in the limiter
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
 
         rig = new AddSrcRig();
@@ -2211,23 +2198,11 @@ public class WwiseVoiceLinkerTests
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
 
         rig = new AddSrcRig { Eda = (2, 0) };
-        rig.Bridge.Call9BCA68 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
-
-        rig = new AddSrcRig { Eda = (2, 0), Gate = 1 };
-        rig.Bridge.CallA0228C = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
-
-        rig = new AddSrcRig(startCode: 7);
-        rig.Bridge.PbiFlag4Bit100000 = null;
+        rig.Bridge.PlayPath = null;                                          // 0x9BCA68 is the shipped Play path's body
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
 
         rig = new AddSrcRig(startCode: 7) { Flag100000 = true };
-        rig.Bridge.CallA054D8 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
-
-        rig = new AddSrcRig(startCode: 7) { Flag100000 = true };
-        rig.Bridge.A054D8Context = null;                                     // the *global argument of 0xA054D8
+        rig.Bridge.PositionRepository = null;                                // the play-position repository of 0xA054D8
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
 
         rig = new AddSrcRig(startCode: 7);

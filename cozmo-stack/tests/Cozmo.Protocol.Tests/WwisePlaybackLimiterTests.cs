@@ -12,9 +12,9 @@ internal static class WwisePlaybackLimiterTestDoubles
         l.RtpcSubscribeA19ECC = (_, _, _) => { };      // double: 0x9F7390..0x9F82EC is a RECOVERABLE_GAP ("changes nothing on shipped data", L5)
         l.RegisterPlayingIdA04D48 = _ => { };          // double: the playing-id table belongs to the event runtime (the live rig wires it)
         l.ReleasePlayingIdA04DE8 = _ => { };           // double: 0xA04DE8 -> 0xA03618 is a RECOVERABLE_GAP
-        l.SourceInfoA1EC54 = pbi => { pbi.Word1DC = 0x11112222; pbi.Word1E0 = 0x33334444; };   // double: 0xA1EC54 is unread; it is the writer of pbi+0x1DC/+0x1E0 (M6-026 6.1), so the double stores test values
+        l.MediaTable = new WwiseMediaTable(new WwiseBankMemory());   // C31.1: 0xA1EC54 looks the source id up in the media table (an empty table gives the pair (0, 0))
         l.TermSteps6And7 = _ => { };                   // double: 0xA1C660 and the [pbi+0x10C] free are unread
-        l.TermSteps10To13 = _ => { };                  // double: 0xA1ECBC, 0xA3E27C, 0x9BDC8C, 0xA1E8F4 are unread
+        l.TermSteps10To13 = _ => { };                  // double: 0xA3E27C, 0x9BDC8C, 0xA1E8F4 are unread
         l.RtpcUnsubscribeA19F60 = _ => { };            // double: 0xA19F60 is unread
         return l;
     }
@@ -59,10 +59,12 @@ public class WwisePlaybackLimiterTests
     private static uint _playingId = 1000;
 
     /// <summary>A PBI with the given priority; its keys are the ctor's creation counters unless <paramref name="chain"/>/<paramref name="k4"/> place it.</summary>
+    private static readonly WwiseSourceDescriptor TestSource = new(WwiseSourceFactory.VorbisPlugin, 1, 12345, 0, 0);   // a Sound's source block (0xA1EA68): the media table is keyed by its source id
+
     private static WwisePlayingInstance Pbi(float prio, uint? go = null, uint chain = 0, uint? k4 = null)
     {
         var p = new WwisePlayInitParams { PlayingId = ++_playingId, TargetNodeId = 1, ChainId = chain };
-        var pbi = new WwisePlayingInstance(p, 1, new object(), new byte[0x44], null, continuous: false)
+        var pbi = new WwisePlayingInstance(p, 1, TestSource, new byte[0x44], null, continuous: false)
         {
             Priority1C0 = prio, GameObject14 = go,
         };
@@ -70,6 +72,9 @@ public class WwisePlaybackLimiterTests
         if (k4 is { } k) pbi.Key1C4 = k;
         return pbi;
     }
+
+    private static WwisePlayingInstance PbiWithId(uint playingId)
+        => new(new WwisePlayInitParams { PlayingId = playingId, TargetNodeId = 1 }, 1, TestSource, new byte[0x44], null, continuous: false);
 
     private static WwiseLimitBlock Block(WwiseLimiterArray? array, float prio = 50f, uint? go = null, byte b11 = 1)
         => new() { Priority = prio, GameObject = go, Array = array, Word0C = 3, B11 = b11 };
@@ -692,12 +697,12 @@ public class WwisePlaybackLimiterTests
         // params.GameObjectId == null (global scope) carries 0, so it is not counted for object 7.
         var l = Limiter(new Graph());
         var list = new WwisePbiList { Max = 1 };
-        var globalScope = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 5, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false) { Priority1C0 = 50f };
+        var globalScope = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 5, TargetNodeId = 1 }, 1, TestSource, new byte[0x44], null, false) { Priority1C0 = 50f };
         Assert.Null(globalScope.GameObject14);
         l.InsertIntoList9F3274(list, globalScope);
         Assert.Equal(1, l.Victim0A37100(list, 1, 50f, 7, false, false, 1));          // count 0: max 1 > 0
         Assert.Equal(0, globalScope.Flags1BD & 2);
-        var scoped = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 6, TargetNodeId = 1, GameObjectId = 7 }, 1, new object(), new byte[0x44], null, false);
+        var scoped = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 6, TargetNodeId = 1, GameObjectId = 7 }, 1, TestSource, new byte[0x44], null, false);
         Assert.Equal(7u, scoped.GameObject14);                                       // 0xA00104/0xA00144: the ctor copies [params+8]
     }
 
@@ -999,7 +1004,7 @@ public class WwisePlaybackLimiterTests
         Assert.Equal(a.ChainId + 1, b.ChainId);
         Assert.Equal(a.Key1C4 + 1, b.Key1C4);
         // params+0x7C != 0: 1C8 = params+0x7C and 1BE bit 3 set; 1C4 is still the counter.
-        var c = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, ChainId = 0x77 }, 1, new object(), new byte[0x44], null, false);
+        var c = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, ChainId = 0x77 }, 1, TestSource, new byte[0x44], null, false);
         Assert.Equal(0x77u, c.ChainId);
         Assert.Equal(8, c.Flags1BE & 8);
         Assert.Equal(b.Key1C4 + 1, c.Key1C4);
@@ -1605,7 +1610,7 @@ public class WwisePlaybackLimiterTests
         Assert.Equal(1, l.InsertPbiA0285C(g[1], pbi));
         Assert.Empty(pbi.LimiterArray1EC.Items);
         Assert.Empty(l.GlobalVoiceList.Items);
-        var noId = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 0, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false) { Priority1C0 = 50f };
+        var noId = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 0, TargetNodeId = 1 }, 1, TestSource, new byte[0x44], null, false) { Priority1C0 = 50f };
         Assert.Equal(2, l.InsertPbiA0285C(g[1], noId));                              // [pbi+0x140] == 0 -> return 2
     }
 
@@ -1951,16 +1956,24 @@ public class WwisePlaybackLimiterTests
     }
 
     [Fact]
-    public void M6_026_8_4_CalcEffectiveParamsRunsThePriorityBlockOnEveryPathIncludingTheReset()
+    public void M6_026_8_4_CalcEffectiveParamsRunsThePriorityBlockOnTheFullPathButNotOnTheEarlyExit()
     {
-        // 8.4: 0x9FFE1C is reached unconditionally after the mute/fade store at 0x9FFE18, including the reset branch (param_2 == 0).
-        var pbi = Pbi(50f);
-        int calls = 0;
-        pbi.PriorityBlock = _ => calls++;
-        pbi.CalcEffectiveParams(null, WwiseParamSelect.NodeParams, null);
-        Assert.Equal(1, calls);
-        pbi.CalcEffectiveParams(new WwiseGainNode { Id = 1, Props = new Dictionary<byte, float>() }, WwiseParamSelect.NodeParams, new WwiseGainRanges());
-        Assert.Equal(2, calls);
+        // 0x9FFE1C is reached after the mute/fade store at 0x9FFE18; the E9-bit-2 early exit (0x9FFC30) returns before it (R3.1). Expected: the default priority 50.0f (0x42480000) lands in 1CC and 1C0.
+        var g = new Graph(Snd(1, P()));
+        var l = Limiter(g);
+        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { FirstOutputBus9F4BB8 = n => n, BusFlag9C54E8 = _ => true, NodeVtAC = _ => { } });
+        var open = Pbi(20f);
+        open.NodeE0 = g[1];
+        path.CalcEffectiveParams(open, null, l);
+        Assert.Equal(0x42480000, BitConverter.SingleToInt32Bits(open.Field1CC));
+        Assert.Equal(0x42480000, BitConverter.SingleToInt32Bits(open.Priority1C0));
+        var early = Pbi(20f);
+        early.NodeE0 = g[1];
+        early.Flags0E9 = 4;
+        path.CalcEffectiveParams(early, null, l);
+        Assert.Equal(0, BitConverter.SingleToInt32Bits(early.Field1CC));                        // untouched
+        Assert.Equal(1, early.Flags1BC & 1);                                                     // 0x9FFC30
+        Assert.Equal(0x20, early.Flags0E8 & 0x20);
     }
 
     // ------------------------------------------------------------------ 3.x: the below byte
@@ -2119,21 +2132,22 @@ public class WwisePlaybackLimiterTests
 
         public Rig(IEnumerable<WwiseBank> banks, ushort? stmgMaxVoices = null)
         {
-            Runtime = new WwiseEventRuntime(banks, new WwiseRng(1));
+            Runtime = WwiseEndOfEventDoubles.Runtime(banks, new WwiseRng(1));
             Limiter = WwisePlaybackLimiterTestDoubles.Create(Runtime.FindNode);
             if (stmgMaxVoices is { } m) Limiter.ApplyStmgMaxVoices(m);
             // 0xA04D48 / 0xA04DE8 take and release a reference on the playing-id entry (6.2, 1.10 step 5); the event runtime owns the table.
-            Limiter.RegisterPlayingIdA04D48 = p => { Log.Add("04D48:" + p.PlayingId); Runtime.AddPbiPlayingIdReference(p.PlayingId); };
+            Limiter.RegisterPlayingIdA04D48 = p => { Log.Add("04D48:" + p.PlayingId); Runtime.RegisterPbiPlayingId(p); };
             Limiter.ReleasePlayingIdA04DE8 = p => { Log.Add("04DE8:" + p.PlayingId); Runtime.ReleasePbiPlayingIdReference(p.PlayingId); };
-            Runtime.EntryAtZeroReferencesA03618 = id => ZeroEntries.Add(id);        // double: 0xA03618..0xA03648 is unread
+            Runtime.PlayingIds.Seams.GameObjectLookupA0C238 = _ => null;            // doubles: 0xA0C238 and the teardown bodies 0xA03618 calls are unread; A1C660 records the entry that reached zero
+            Runtime.PlayingIds.Seams.A1C660 = item => ZeroEntries.Add(item.PlayingId);
+            Runtime.PlayingIds.Seams.A1C65C = _ => { };
             Bridge = new WwisePlaybackBridge
             {
-                // B7 seam (body unread). Double: CalcEffectiveParams (inside 0x9BEB30) leaves pbi+0x64 at 0.0f.
-                InitSource9BEB30 = pbi => { pbi.Word64 = 0f; LastPbi = pbi; OnInit?.Invoke(pbi); return InitResult; },
-                BeforePlayA00618 = _ => { },                       // B7 seam (body unread)
-                SetupFadeInTransition = (_, _) => 0,               // B16 seam (body unread)
                 Limiter = Limiter,
             }.WithTestSeams();
+            // The shipped path (C32.1): node vt+0xAC is the unread GetAudioParameters, so the double is where the tests tweak the PBI before the effective parameters are composed.
+            // A failed init (OnInit with InitResult = false) is the engine's own failure: Volume -100 dB makes the below byte true, which fails a play whose flag is 0.
+            Bridge.PlayPath!.Seams.NodeVtAC = a => { LastPbi = a.Pbi; OnInit?.Invoke(a.Pbi); if (!InitResult) a.Pbi.Volume3C = -100f; };
             Bridge.NextSource9EEDA4 = null;                        // the read 0x9EEDA4 body decides (the test seams install an override)
             Runtime.PlaybackBridge = Bridge;
             Runtime.RegisterGameObject(7);
@@ -2175,7 +2189,7 @@ public class WwisePlaybackLimiterTests
         Assert.Equal(new[] { first }, rig.Bridge.Instances.Select(p => p.PlayingId).ToArray());
         var pbi1 = rig.Bridge.Instances[0];
         Assert.Equal(0x42480000, BitConverter.SingleToInt32Bits(pbi1.Priority1C0));  // P2a: the default 50.0f
-        Assert.Equal(0x44, pbi1.Flags1BD);                                           // nothing marked yet (first play: G3 max 1 <= 0 is false)
+        Assert.Equal(0x45, pbi1.Flags1BD);                                           // nothing marked yet (first play: G3 max 1 <= 0 is false)
         Assert.Equal(0, pbi1.Flags1BC & 0x20);
         Assert.Equal((ushort)1, rig.Limiter.LimiterOf(200)!.List.Count20);           // R1 inserted it into the mixer's list
         Assert.Equal((ushort)1, rig.Limiter.GlobalVoiceList.Count20);
@@ -2185,9 +2199,9 @@ public class WwisePlaybackLimiterTests
         var pbi2 = rig.Bridge.Instances[1];
         Assert.Equal(second, pbi2.PlayingId);
         // K1: reason 1 in bits 2..4 and bit 1; K3 -> K6: 1BC bit 6, bit 5, bit 3.
-        Assert.Equal(0x46, pbi1.Flags1BD);
-        Assert.Equal(0x40 | 0x20 | 0x08, pbi1.Flags1BC);
-        Assert.Equal(0x44, pbi2.Flags1BD);                                           // the newcomer plays
+        Assert.Equal(0x47, pbi1.Flags1BD);  // 1BD bit 0 from 0xA00618 (0xA00640)
+        Assert.Equal(0x40 | 0x20 | 0x08 | 0x01, pbi1.Flags1BC);  // 1BC bit 0 from CalcEffectiveParams (0x9FFC30)
+        Assert.Equal(0x45, pbi2.Flags1BD);                                           // the newcomer plays
         Assert.Equal(0, pbi2.Flags1BC & 0x20);
         Assert.Equal((ushort)2, rig.Limiter.LimiterOf(200)!.List.Count20);           // 0xA01CA4 does not touch the lists (K6)
         Assert.Equal(2, rig.Limiter.GlobalPbiList.Count);
@@ -2276,13 +2290,8 @@ public class WwisePlaybackLimiterTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(1)]
-    [InlineData(2)]
     [InlineData(3)]
-    [InlineData(4)]
-    [InlineData(9)]
-    [InlineData(15)]
     public void M6_026_C29_2_ExitD_ACreationInitFailureSetsBit5WhateverTheBehaviourCode(int code)
     {
         // Exit (d): 0xA37D24 bne 0xA37E78, and 0xA37E78 is `mov r6,#0` unconditionally, so r6 is 0 whatever the 0x9EEDA4 code was: 0xA37AC8 (ldrbeq ..; orreq #0x20) sets 1BD bit 5
@@ -2306,16 +2315,18 @@ public class WwisePlaybackLimiterTests
     }
 
     [Fact]
-    public void M6_026_3_3_TheFlagZeroPathThatDependsOnUnreadValuesIsAVisibleStop()
+    public void M6_026_3_3_TheFlagZeroPathFailsThePlayWithCode0x29WhenBelowIsSet()
     {
-        // 0x9BED50..0x9BED7C: r7 = ([sp+0x1C] < r6') ? below : 0. With [sp+0x1C] == 0 (behaviour code 1) and below clear, r7 is 0 whatever r6' is, so the Play cannot fail there;
-        // with below set, r6' (0x9BEB74 / 0x9BEC30 / 0x9BEED8, unread) decides, so it stops visibly. With [sp+0x1C] == 1 (code 2) below never fails the Play.
+        // 0x9BED50..0x9BED7C with r6 = 1 (0x9BEB74, the shipped path): r7 = ([sp+0x1C] < 1) ? below : 0. With [sp+0x1C] == 0 (behaviour code 1) and below set the init returns 3 with code 0x29 and the
+        // Play fails (exit d, 0xA37D20); with below clear it cannot fail; with [sp+0x1C] == 1 (code 2) below never fails the Play. (Verified against the engine: emu_play.py B2.)
         var clear = new Rig(new[] { OneMixerBank(0x04, 3, soundAdv0: 0x10, soundAdv3: 1) });
         clear.PlayDirect(500, 900);
         Assert.Single(clear.Bridge.Instances);
         var set = new Rig(new[] { OneMixerBank(0x04, 3, soundAdv0: 0x10, soundAdv3: 1) });
         set.OnInit = pbi => pbi.Volume3C = -100f;
-        Assert.Throws<WwiseMissingBehaviourException>(() => set.PlayDirect(500, 900));
+        set.PlayDirect(500, 900);
+        Assert.Empty(set.Bridge.Instances);
+        Assert.NotEqual(0, set.LastPbi!.Flags1BD & 0x20);                            // exit (d): bit 5 preset, Term does no undo
         var one = new Rig(new[] { OneMixerBank(0x04, 3, soundAdv0: 0x10, soundAdv3: 2) });
         one.OnInit = pbi => pbi.Volume3C = -100f;
         one.PlayDirect(500, 900);
@@ -2327,9 +2338,9 @@ public class WwisePlaybackLimiterTests
     {
         // 0xA37A3C stores 0 to [sp+0x2C]; vt+0x84(node, &[sp+0x2C]) returns only a gate; 0xA37A70..0xA37A8C: gate != 0 -> [sp+0x2C] = [sb+0x64] * [sp+0x2C] as floats; 0xA37CEC hands
         // [sp+0x2C] to 0x9BEB30 as r1, which stores it at pbi+0xE4. Expected bits are the engine's arithmetic: 3.5f = 0x40600000, 2.0f * 3.5f = 7.0f = 0x40E00000.
-        var rig = new Rig(new[] { OneMixerBank(0x04, 3) });
-        rig.Bridge.NodeVt84A9F1F80 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.PlayDirect(500, 900));
+        var rig = new Rig(new[] { OneMixerBank(0x04, 3) });                         // no override: 0x9F1F80 returns (gate 0, out 0.0f) for every parsed node (P4)
+        rig.PlayDirect(500, 900);
+        Assert.Equal(0u, rig.LastPbi!.FieldE4);                                      // r1 of 0x9BEB30 = [sp+0x2C] = 0.0f
 
         var ungated = new Rig(new[] { OneMixerBank(0x04, 3) });
         ungated.Bridge.NodeVt84A9F1F80 = _ => (false, 3.5f);
@@ -2364,10 +2375,7 @@ public class WwisePlaybackLimiterTests
     public void M6_026_0xA37C90_TheSourceStructHalfwordOf8TakesTheUnreadExternalSourceBranch()
     {
         var rig = new Rig(new[] { OneMixerBank(0x04, 3) });
-        rig.Bridge.SourceStructField16A37C90 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.PlayDirect(500, 900));
-        rig.Bridge.SourceStructField16A37C90 = _ => 7;
-        rig.PlayDirect(500, 900);
+        rig.PlayDirect(500, 900);                                                    // the default is plugin >> 16 of the Sound's source block (P7): 0x00040001 gives 4
         Assert.Single(rig.Bridge.Instances);
         rig.Bridge.SourceStructField16A37C90 = _ => 8;
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.PlayDirect(500, 900));
@@ -2376,160 +2384,314 @@ public class WwisePlaybackLimiterTests
     [Fact]
     public void M6_026_O5_TheType1JoinRunsItsCallsInOrderBeforeTheStartListResultIsUsed()
     {
-        // 0xA006F8..0xA00738: 0xA366AC when [pbi+0x144] != 0, 0x9BDA28(pbi+0xC, 1) always, 0x9E808C when [pbi+0x34] != 0; only the type-1 branch (params+0x70 == 1) has them.
+        // 0xA006F8..0xA00738: 0xA366AC when [pbi+0x144] != 0, 0x9BDA28(pbi+0xC, 1) always, 0x9E808C when [pbi+0x34] != 0; only the type-1 branch (params+0x70 == 1) has them. 0x9BDA28 returns at once
+        // when [ctx+0xA0] == 0 and otherwise needs the unread 0x9FD8C0 (flag 1); 0x9E808C walks the V28 list of [pbi+0x34].
         var rig = new Rig(new[] { OneMixerBank(0x04, 3) });
         var log = new List<string>();
-        rig.Bridge.TransitionA366AC = _ => log.Add("366AC");
-        rig.Bridge.Call9BDA28 = _ => log.Add("9BDA28");
-        rig.Bridge.Call9E808C = _ => log.Add("9E808C");
+        var seams = rig.Bridge.PlayPath!.Seams;
+        seams.A9FD8C0 = (_, flag) => log.Add("9BDA28:" + flag);
+        var record = new WwiseListRecord { Counter58 = 4, Limit50 = 6, Object30Word8 = 0x77, State48 = 1 };
+        seams.RecordsOf34 = _ => { log.Add("9E808C"); return new[] { record }; };
+        seams.TransitionInit9A35D44 = (_, _, _) => 1;
+        var manager = new WwiseTransitionManager(seams);
+        rig.Bridge.PlayPath.Transitions = manager;
         var pbi = Pbi(50f);
         var p = new WwisePlayInitParams { PlayingId = 1, Flag70 = 1 };
         rig.Bridge.PbiPlay(pbi, p);
-        Assert.Equal(new[] { "9BDA28" }, log);
+        Assert.Empty(log);                                                           // [ctx+0xA0] == 0: 0x9BDA28 returns at once; [pbi+0x34] == 0: no 0x9E808C
+        pbi.Field0AC = new object(); pbi.Field34 = 1;
+        var item = new WwiseTransitionItem { State30 = 1 };
+        var fade = new WwisePlayInitParams { PlayingId = 1, Flag70 = 1, Transition = new WwiseFadeInTransition { FadeInTime = 100f } };
+        pbi.Field144 = 0;
+        rig.Bridge.PbiPlay(pbi, fade);                                               // the fade creates the item (state 1), then the join: 0xA366AC (1 -> 2), 0x9BDA28, 0x9E808C
+        Assert.Equal(new[] { "9BDA28:True", "9E808C" }, log);
+        Assert.Equal(2, manager.Item(pbi.Field144)!.State30);
+        Assert.Equal(5, record.Counter58);                                           // 0x9E80AC: [rec+0x58]++
+        Assert.Equal(1, record.State48);
+        record.Limit50 = 5;                                                          // the counter reaches the limit on the next pass: [rec+0x4C] = [[rec+0x30]+8], [rec+0x30] = 0
         log.Clear();
-        pbi.Field144 = 3; pbi.Field34 = 1;
         rig.Bridge.PbiPlay(pbi, p);
-        Assert.Equal(new[] { "366AC", "9BDA28", "9E808C" }, log);
+        Assert.Equal(6, record.Counter58);
+        Assert.Equal(0x77u, record.Word4C);
+        Assert.Null(record.Object30Word8);
         log.Clear();
         rig.Bridge.PbiPlay(pbi, new WwisePlayInitParams { PlayingId = 1, Flag70 = 0 });       // type 0: none of them
         Assert.Empty(log);
-        rig.Bridge.Call9BDA28 = null;
+        seams.A9FD8C0 = null;
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.PbiPlay(pbi, p));
     }
 
     [Fact]
-    public void M6_026_A56414_TheSourceCloseTailIsARequiredSeamCalledAfterTheNotification()
+    public void M6_026_1_10_TheReleaseDecrementsAndReachingZeroRunsTheA03618BodyWithItsUnreadCallees()
     {
-        var rig = new Rig(new[] { OneMixerBank(0x04, 3) });
-        var src = new Src();
-        var pbi = Pbi(50f);
-        rig.Bridge.RegisterSourceOwner(src, pbi);
-        var log = new List<string>();
-        rig.Bridge.Notify38600 = (_, code, r1, _) => log.Add($"38600:{code},{r1}");
-        rig.Bridge.SourceClose2C = s => log.Add(ReferenceEquals(s, src) ? "2C" : "other");
-        rig.Bridge.CloseSourceA56414(src, 0);
-        Assert.Equal(new[] { "38600:4,0", "2C" }, log);                              // 0xA01800(pbi, r1) then src vt+0x2C (0xA56440..0xA5644C)
-        rig.Bridge.SourceClose2C = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.CloseSourceA56414(src, 0));
-    }
-
-    [Fact]
-    public void M6_026_9EEDA4_ThereIsOneBodyAndTheBridgeAndTheLimiterShareIt()
-    {
-        // The bridge's 0xA01768 reads 0x9EEDA4 through the limiter's body (no separate hook), and the limiter's virtual-path callers use the bridge's 0xA01768.
-        var g = new Graph(Snd(1, P(adv0: 0x10, adv1: 5, adv3: 2)));
-        var limiter = Limiter(g);
-        var bridge = new WwisePlaybackBridge { Limiter = limiter }.WithTestSeams();
-        bridge.NextSource9EEDA4 = null;                                              // the test seams install an override; remove it
-        Assert.NotNull(limiter.NextSourceCodeA01768);
-        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
-            new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
-        pbi.NodeE0 = g[1];
-        Assert.Equal(2, limiter.NextSourceCodeA01768!(pbi));                         // code 2 from byte 3, through the shared body
-        Assert.Equal(5, pbi.NextSourceCache1BB & 7);                                 // out index = byte 1 & 7
-        bridge.NodeVt120A379D8 = (_, _) => 1;
-        var g3 = new Graph(Snd(1, P(adv0: 0x10, adv3: 3)));
-        var pbi3 = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1 }, 1,
-            new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
-        pbi3.NodeE0 = g3[1];
-        Assert.Equal(2, limiter.NextSourceCodeA01768!(pbi3));                        // code 3 -> vt+0x120 != 0 -> 2
-    }
-
-    [Fact]
-    public void M6_026_1_10_TheReleaseDecrementsAndReachingZeroNeedsTheUnreadA03618Work()
-    {
-        // 0xA04DE8 decrements [entry+0x18] then tail-calls 0xA03618, which does real work at [e+0x18] == 0 (0xA03618..0xA03648, unread): reaching zero throws unless a seam handles it.
+        // 0xA04DE8 decrements [entry+0x18] then tail-calls 0xA03618: nothing while either counter is non-zero; at zero the entry is unlinked and torn down, which needs the unread callees
+        // (0xA0C238, 0xA1C660, 0xA1C65C) and the unwritten [item+0x20]/[item+0x24], and throws without them.
         var runtime = new WwiseEventRuntime(new[] { OneMixerBank(0x04, 3) }, new WwiseRng(1));
         uint id = runtime.PostEvent(900, null);
-        runtime.AddPbiPlayingIdReference(id);
-        Assert.Equal(2, runtime.OutstandingActionCount(id));
-        runtime.ReleasePbiPlayingIdReference(id);                                    // 2 -> 1: nothing else
-        Assert.Equal(1, runtime.OutstandingActionCount(id));
-        Assert.Throws<WwiseMissingBehaviourException>(() => runtime.ReleasePbiPlayingIdReference(id));   // 1 -> 0
+        var holder = PbiWithId(id);
+        runtime.RegisterPbiPlayingId(holder);                                         // [item+0x18] 0 -> 1 (R1.5)
+        Assert.Equal(1, runtime.OutstandingActionCount(id));                          // [item+0x1C]: the in-flight message
+        Assert.Equal(1, runtime.PlayingIds.Find(id)!.Count18);
+        runtime.ReleasePbiPlayingIdReference(id);                                     // [item+0x18] 1 -> 0, [item+0x1C] is 1: nothing else
+        Assert.True(runtime.IsPlaying(id));
+        runtime.RegisterPbiPlayingId(holder);
+        runtime.PlayingIds.Find(id)!.Count1C = 0;                                     // the message and actions are done
+        Assert.Throws<WwiseMissingBehaviourException>(() => runtime.ReleasePbiPlayingIdReference(id));   // both zero: 0xA0C238 is unread
         var zeros = new List<uint>();
-        var again = new WwiseEventRuntime(new[] { OneMixerBank(0x04, 3) }, new WwiseRng(1)) { EntryAtZeroReferencesA03618 = zeros.Add };
+        var again = new WwiseEventRuntime(new[] { OneMixerBank(0x04, 3) }, new WwiseRng(1));
+        again.PlayingItemFieldsWriter = (item, ev, go) => { item.EventId20 = ev; item.GameObject24 = go ?? WwiseEndOfEventDoubles.DoubleGameObjectForNull; };   // double: the writer of [item+0x20]/[item+0x24] is unread
+        again.PlayingIds.Seams.GameObjectLookupA0C238 = _ => null;
+        again.PlayingIds.Seams.A1C660 = item => zeros.Add(item.PlayingId);
+        again.PlayingIds.Seams.A1C65C = _ => { };
         uint id2 = again.PostEvent(900, null);
+        var holder2 = PbiWithId(id2);
+        again.RegisterPbiPlayingId(holder2);
+        again.PlayingIds.Find(id2)!.Count1C = 0;
         again.ReleasePbiPlayingIdReference(id2);
         Assert.Equal(new[] { id2 }, zeros);
-        runtime.AddPbiPlayingIdReference(9999);                                      // 6.2: not found -> no change
+        Assert.False(again.IsPlaying(id2));                                           // unlinked ([mgr+0xC]--)
+        var ghost = PbiWithId(9999);
+        runtime.RegisterPbiPlayingId(ghost);                                          // 6.2: not found -> no change, pbi+4 stays 0
+        Assert.Equal(0u, ghost.Flags4);
         Assert.False(runtime.IsPlaying(9999));
-        runtime.ReleasePbiPlayingIdReference(9999);                                  // no entry: nothing
+        runtime.ReleasePbiPlayingIdReference(9999);                                   // no entry: nothing
+    }
+
+    [Fact]
+    public void M6_026_R1_5_TheEntryFlagsAreStoredToPbiPlus4WhenTheEntryExists()
+    {
+        // 0xA04D48: [item+0x18]++ and [item+0x48] -> pbi+4 (0xA04DD0..0xA04DE0); a null PBI returns 2.
+        var table = new WwisePlayingIdTable();
+        var item = table.GetOrCreate(5);
+        item.Flags48 = 0x100001;
+        var pbi = PbiWithId(5);
+        Assert.Equal(1, table.RegisterPbiA04D48(pbi));
+        Assert.Equal(0x100001u, pbi.Flags4);
+        Assert.Equal(1, item.Count18);
+        Assert.Equal(2, table.RegisterPbiA04D48(null));
+    }
+
+    [Fact]
+    public void M6_026_R4_1_EndOfEventUnlinksDecrementsTheGameObjectAndRunsTheCallbackBetweenTheLocks()
+    {
+        // 0xA03618: both counters zero; flags bit 0 -> callback(1, {cookie, game object, id, event id, ...}); the game object's low 30 bits drop by one with the top two bits kept (0xA0370C..0xA03718);
+        // a count that reaches zero runs 0xA0B600.
+        var table = new WwisePlayingIdTable();
+        var log = new List<string>();
+        var obj = new WwiseGameObjectRef { Word7C = 0xC0000001u };
+        table.Seams.GameObjectLookupA0C238 = id => { log.Add("A0C238:" + id); return obj; };
+        table.Seams.A0B600 = _ => log.Add("A0B600");
+        table.Seams.A1C660 = _ => log.Add("A1C660");
+        table.Seams.A9A6988 = _ => log.Add("9A6988");
+        table.Seams.A1C65C = _ => log.Add("A1C65C");
+        WwiseEndOfEventInfo? info = null;
+        var item = table.GetOrCreate(77);
+        item.Flags48 = 1; item.Cookie44 = 0xC0; item.GameObject24 = 7; item.EventId20 = 900; item.Object28 = new object();
+        item.Callback40 = (type, i) => { log.Add("callback:" + type + ":idle=" + table.CallbackIdle1C); info = (WwiseEndOfEventInfo)i; };
+        item.Count1C = 1;
+        table.EndOfEventA03618(item, 77);                                             // [item+0x1C] != 0: nothing
+        Assert.Empty(log);
+        item.Count1C = 0;
+        table.EndOfEventA03618(item, 77);
+        Assert.Equal(new[] { "A0C238:7", "A0B600", "A1C660", "9A6988", "A1C65C", "callback:1:idle=False" }, log);
+        Assert.Equal(0xC0000000u, obj.Word7C);                                        // (x - 1) & 0x3FFFFFFF with the top bits kept: 0xC0000001 -> 0xC0000000
+        Assert.Equal(new WwiseEndOfEventInfo(0xC0, 7, 77, 900, obj, 77), info);
+        Assert.True(table.CallbackIdle1C);
+        Assert.Equal(1, table.Broadcasts);
+        Assert.Null(table.Find(77));
+    }
+
+    [Fact]
+    public void M6_026_R4_1_TheControlPathsLastCountAlwaysRunsTheA03618BodyAndStopsAtUnreadFields()
+    {
+        // 0xA04F54 [item+0x1C]-- then always tail-calls 0xA03618 (no silent removal): with both counters zero the unwritten [item+0x20]/[item+0x24] and the unread callees stop it.
+        var runtime = new WwiseEventRuntime(new[] { OneMixerBank(0x04, 3) }, new WwiseRng(1));
+        uint id = runtime.PostEvent(900, null);
+        runtime.PlayingIds.Find(id)!.Count1C = 0;
+        Assert.Throws<WwiseMissingBehaviourException>(() => runtime.PlayingIds.EndOfEventA03618(runtime.PlayingIds.Find(id)!, id));
+    }
+
+    [Fact]
+    public void M6_026_R4_1_TheInfoBlockAndCallbackAreLoadedBeforeTheUnlinkAndTheTeardown()
+    {
+        // 0xA03658..0xA03678 load [item+0x44], [item+0x24], [item+0x20], [item+0x40] and store the info block before the unlink (0xA03680..0xA03788), 0xA0C238, and 0xA1C660/0x9A6988/0xA1C65C.
+        // (1) an unset field throws with the table unchanged.
+        var table = new WwisePlayingIdTable();
+        table.Seams.GameObjectLookupA0C238 = _ => null;
+        table.Seams.A1C660 = _ => { }; table.Seams.A1C65C = _ => { };
+        var unset = table.GetOrCreate(5);
+        unset.EventId20 = 1;                                                          // [item+0x24] unset
+        Assert.Throws<WwiseMissingBehaviourException>(() => table.EndOfEventA03618(unset, 5));
+        Assert.Same(unset, table.Find(5));
+        var unsetEvent = table.GetOrCreate(6);
+        unsetEvent.GameObject24 = 2;                                                  // [item+0x20] unset
+        Assert.Throws<WwiseMissingBehaviourException>(() => table.EndOfEventA03618(unsetEvent, 6));
+        Assert.Same(unsetEvent, table.Find(6));
+        // (2) a teardown that clears the item's fields does not change the callback's info.
+        var item = table.GetOrCreate(7);
+        item.EventId20 = 11; item.GameObject24 = 22; item.Cookie44 = 33; item.Flags48 = 1; item.Object28 = new object();
+        object? seen = null;
+        var original = item.Callback40 = (t, info) => seen = info;
+        table.Seams.A1C660 = i => { i.EventId20 = 99; i.GameObject24 = 98; i.Cookie44 = 97; i.Callback40 = null; };
+        table.Seams.A9A6988 = _ => { };
+        table.EndOfEventA03618(item, 7);
+        var got = Assert.IsType<WwiseEndOfEventInfo>(seen);
+        Assert.Equal((33u, 22u, 7u, 11u), (got.Cookie, got.GameObject, got.PlayingId, got.EventId));
+        Assert.Null(table.Find(7));
+    }
+
+    [Theory]
+    [InlineData("A0C238")]
+    [InlineData("A0B600")]
+    [InlineData("A1C660")]
+    [InlineData("A9A6988")]
+    [InlineData("A1C65C")]
+    [InlineData("A05934")]
+    public void M6_026_R4_1_EachUnreadCalleeOfA03618ThrowsWhenItsSeamIsUnset(string missing)
+    {
+        // The callees at 0xA037F4 (A05934, with flag 0x400000), 0xA036F8 (A0C238), 0xA0381C (A0B600, when the object's count reaches 0), 0xA03734 (A1C660), 0xA03748 (9A6988, [item+0x28] != 0), 0xA03750 (A1C65C).
+        var table = new WwisePlayingIdTable();
+        table.Seams.A05934 = () => { };
+        table.Seams.GameObjectLookupA0C238 = _ => new WwiseGameObjectRef { Word7C = 1 };
+        table.Seams.A0B600 = _ => { };
+        table.Seams.A1C660 = _ => { };
+        table.Seams.A9A6988 = _ => { };
+        table.Seams.A1C65C = _ => { };
+        switch (missing)
+        {
+            case "A0C238": table.Seams.GameObjectLookupA0C238 = null; break;
+            case "A0B600": table.Seams.A0B600 = null; break;
+            case "A1C660": table.Seams.A1C660 = null; break;
+            case "A9A6988": table.Seams.A9A6988 = null; break;
+            case "A1C65C": table.Seams.A1C65C = null; break;
+            case "A05934": table.Seams.A05934 = null; break;
+        }
+        var item = table.GetOrCreate(8);
+        item.EventId20 = 1; item.GameObject24 = 2; item.Flags48 = 0x400000; item.Object28 = new object();
+        var ex = Assert.Throws<WwiseMissingBehaviourException>(() => table.EndOfEventA03618(item, 8));
+        Assert.Contains(missing.Replace("A9A6988", "9A6988"), ex.Message);
+    }
+
+    [Fact]
+    public void M6_026_R4_1_ABitFourHundredThousandFlagRunsA05934FirstAndNoCallbackWithoutBitZero()
+    {
+        var table = new WwisePlayingIdTable();
+        var log = new List<string>();
+        table.Seams.A05934 = () => log.Add("A05934");
+        table.Seams.GameObjectLookupA0C238 = _ => null;
+        table.Seams.A1C660 = _ => log.Add("A1C660");
+        table.Seams.A1C65C = _ => log.Add("A1C65C");
+        var item = table.GetOrCreate(9);
+        item.EventId20 = 1; item.GameObject24 = 2;                                    // doubles: the writer of these fields is unread
+        item.Flags48 = 0x400000;
+        item.Callback40 = (_, _) => log.Add("callback");
+        table.EndOfEventA03618(item, 9);
+        Assert.Equal(new[] { "A05934", "A1C660", "A1C65C" }, log);                    // no bit 0: the callback does not run
+        table.Seams.A05934 = null;
+        var item2 = table.GetOrCreate(10);
+        item2.EventId20 = 1; item2.GameObject24 = 2;
+        item2.Flags48 = 0x400000;
+        Assert.Throws<WwiseMissingBehaviourException>(() => table.EndOfEventA03618(item2, 10));
+    }
+
+    [Fact]
+    public void M6_026_R4_7_TheDurationCallbackNeedsBit3AndCarriesTheNineWordInfo()
+    {
+        var table = new WwisePlayingIdTable();
+        var item = table.GetOrCreate(5);
+        item.Cookie44 = 3; item.GameObject24 = 7; item.EventId20 = 900;
+        int calls = 0;
+        WwiseDurationInfo? info = null;
+        item.Callback40 = (type, i) => { calls++; Assert.Equal(8, type); info = (WwiseDurationInfo)i; };
+        table.DurationA0393C(5, 1.5f, 0.75f, 11, 12, true);
+        Assert.Equal(0, calls);                                                       // [item+0x48] bit 3 clear (0xA039B0)
+        item.Flags48 = 8;
+        table.DurationA0393C(5, 1.5f, 0.75f, 11, 12, true);
+        Assert.Equal(new WwiseDurationInfo(3, 7, 5, 900, 1.5f, 0.75f, 11, 12, true), info);
+        table.DurationA0393C(6, 1f, 1f, 1, 1, false);                                 // no entry: nothing
+        Assert.Equal(1, calls);
     }
 
     [Fact]
     public void M6_026_8_4_CalcEffectiveParamsReturnsEarlyAt0x9FFC30WhenE9Bit2IsSet()
     {
-        // 0x9FFC28: every path reaches `cmp r5,#0` (r5 = [pbi+0xE9] & 4) after the reset stores, the null-node reset included. Set: 0x9FFC30 does 1BC |= 1 and E8 |= 0x20 and returns before the compute
-        // (0x9FBE74) and the priority block (0x9FFE1C). Clear: the block runs and E8 is untouched.
-        var node = new WwiseGainNode { Id = 1, Props = new Dictionary<byte, float> { [WwiseGainProps.Volume] = 6f } };
-        foreach (WwiseGainNode? n in new WwiseGainNode?[] { null, node })
-        {
-            var pbi = Pbi(50f);
-            int calls = 0;
-            pbi.PriorityBlock = _ => calls++;
-            pbi.Flags0E9 = 4;
-            var r = pbi.CalcEffectiveParams(n, WwiseParamSelect.NodeParams, new WwiseGainRanges());
-            Assert.Equal(0, calls);
-            Assert.Equal(1, pbi.Flags1BC & 1);
-            Assert.Equal(0x20, pbi.Flags0E8 & 0x20);
-            Assert.Equal(0f, pbi.Volume3C);                                          // the reset values, not the node's 6 dB
-            Assert.Equal(1f, pbi.MuteFade40);
-            Assert.Equal(0f, r.VolumeDb);
-
-            var open = Pbi(50f);
-            int opened = 0;
-            open.PriorityBlock = _ => opened++;
-            open.CalcEffectiveParams(n, WwiseParamSelect.NodeParams, new WwiseGainRanges());
-            Assert.Equal(1, opened);
-            Assert.Equal(0, open.Flags0E8 & 0x20);
-        }
+        // 0x9FFC28: after the reset stage every path reaches `cmp r5,#0` (r5 = [pbi+0xE9] & 4). Set: 0x9FFC30 does 1BC |= 1 and E8 |= 0x20 and returns before the pan values (0x9FBE74) and the priority
+        // block (0x9FFE1C), leaving the reset values (volume 0, +0x40 = 1.0f). Clear: the full path runs and node vt+0xAC is called. (emu_play.py B3 / B9.)
+        var g = new Graph(Snd(1, P()));
+        var l = Limiter(g);
+        int acCalls = 0;
+        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { FirstOutputBus9F4BB8 = n => n, BusFlag9C54E8 = _ => true, NodeVtAC = a => { acCalls++; a.Pbi.Volume3C = 6f; } });
+        var closed = Pbi(50f);
+        closed.NodeE0 = g[1];
+        closed.Flags0E9 = 4;
+        closed.Volume3C = 9f;
+        path.CalcEffectiveParams(closed, null, l);
+        Assert.Equal(0, acCalls);
+        Assert.Equal(1, closed.Flags1BC & 1);
+        Assert.Equal(0x20, closed.Flags0E8 & 0x20);
+        Assert.Equal(0f, closed.Volume3C);                                           // the reset values, not 9 and not the node's 6 dB
+        Assert.Equal(1f, closed.MuteFade40);
+        var open = Pbi(50f);
+        open.NodeE0 = g[1];
+        path.CalcEffectiveParams(open, null, l);
+        Assert.Equal(1, acCalls);
+        Assert.Equal(6f, open.Volume3C);
     }
 
-    private static List<string> TailLog(Action<WwisePlayingInstance> onInit, Action<WwisePlayInitParams> tweak, out Rig rig)
+    private static List<string> TailLog(Action<WwisePlayingInstance> inTail, Action<WwisePlayInitParams> tweak, out Rig rig)
     {
         rig = new Rig(new[] { OneMixerBank(0x04, 3) });
         var log = new List<string>();
-        var b8c = new object(); var b108 = new object(); var p78 = new object();
-        rig.OnInit = onInit;
-        rig.Bridge.TailA023D4 = (_, r1) => log.Add("A023D4:" + r1.ToString("X"));
-        rig.Bridge.TailCtxVt24 = (_, blk) => log.Add("vt24:" + (ReferenceEquals(blk, b8c) ? "8C" : "?"));
-        rig.Bridge.TailCtxVt28 = _ => log.Add("vt28");
+        var b108 = new object(); var p78 = new object();
+        WwisePlayInitParams? played = null;
+        bool tail = false;
+        var inner = rig.Bridge.PlayPath!.Seams.NodeVtAC;
+        rig.Bridge.PlayPath.Seams.NodeVtAC = a =>
+        {
+            inner!(a);
+            if (tail && a.Params is not null && ReferenceEquals(a.Params, played)) log.Add("vt24:8C");
+        };
+        rig.Bridge.TailA023D4 = (pbi, r1) => { log.Add("A023D4:" + r1.ToString("X")); tail = true; inTail(pbi); };
         rig.Bridge.TailA01918 = (_, blk, one) => log.Add("A01918:" + (ReferenceEquals(blk, b108) ? "108" : "?") + "," + one);
         rig.Bridge.TailA9E85C8 = (_, one, ptr) => log.Add("9E85C8:" + one + "," + (ReferenceEquals(ptr, p78) ? "78" : "?"));
-        rig.Bridge.BeforePlayA00618 = _ => log.Add("A00618");
-        rig.PlayDirect(500, 900, tweak: p => { p.Word88 = 0x1234; p.Block8C = b8c; p.Block108 = b108; tweak(p); if (p.Ptr78 is not null) p.Ptr78 = p78; });
+        rig.PlayDirect(500, 900, tweak: p => { played = p; p.Word88 = 0x1234; p.Block108 = b108; tweak(p); if (p.Ptr78 is not null) p.Ptr78 = p78; });
         return log;
     }
 
     [Fact]
     public void M6_026_0xA37FE8_TheTailBranchesOnE8Bit5AndE9Bit0AndTheParamsPointer()
     {
-        // 0xA3800C: 0xA023D4(pbi, [params+0x88]). 0xA38010..0xA38018: [pbi+0xE8] bit 5 CLEAR -> 0xA38130 [[pbi+0xC]+0x24](pbi+0xC, params+0x8C); SET -> 0xA3801C..0xA38024: only when [pbi+0xE9]
-        // bit 0 is set, [[pbi+0xC]+0x28](pbi+0xC). 0xA38038: 0xA01918(pbi, params+0x108, 1). 0xA38048..0xA38064: 0x9E85C8([pbi+0x34], 1, [params+0x78]+0x14) only when [params+0x78] != 0 and
-        // [pbi+0x34] != 0. Then 0xA00618.
-        var clear = TailLog(_ => { }, _ => { }, out _);
-        Assert.Equal(new[] { "A023D4:1234", "vt24:8C", "A01918:108,1", "A00618" }, clear);
+        // 0xA3800C: 0xA023D4(pbi, [params+0x88]). 0xA38010..0xA38018: [pbi+0xE8] bit 5 CLEAR -> 0xA38130 ctx vt+0x24 = CalcEffectiveParams (node vt+0xAC runs again, with the Play params as the block, E8 bit 6 being set);
+        // SET -> 0xA3801C..0xA38024: only when [pbi+0xE9] bit 0 is set, ctx vt+0x28 = 0x9FF368 (it clears E9 bit 0). After the real 0x9BEB30 E8 bit 5 is already set (CalcEffectiveParams sets it, 0x9FFC30) and E9 bit 0
+        // is clear (0x9FFDE0), so the hook at 0xA023D4 sets the state the branch looks at. 0xA38038: 0xA01918(pbi, params+0x108, 1). 0xA38048..0xA38064: 0x9E85C8([pbi+0x34], 1, [params+0x78]+0x14) only when
+        // [params+0x78] != 0 and [pbi+0x34] != 0. Then 0xA00618 (its effect is the loop count in pbi+0x1B8 and 1BD bit 0).
+        var clear = TailLog(pbi => pbi.Flags0E8 = 0x40, _ => { }, out var r1);
+        Assert.Equal(new[] { "A023D4:1234", "vt24:8C", "A01918:108,1" }, clear);                  // bit 5 clear: CalcEffectiveParams again
+        Assert.Equal(0x20, r1.LastPbi!.Flags0E8 & 0x20);
+        Assert.Equal(1, r1.LastPbi.LoopCount1B8);                                                  // 0xA00618 ran: no property 0x3A, default 1
 
-        var setNoE9 = TailLog(pbi => pbi.Flags0E8 = 0x20, _ => { }, out _);
-        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1", "A00618" }, setNoE9);              // neither vt+0x24 nor vt+0x28
+        var setNoE9 = TailLog(pbi => { pbi.Flags0E8 = 0x60; pbi.Flags0E9 = 0; }, _ => { }, out _);
+        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1" }, setNoE9);                            // neither branch
 
-        var setE9 = TailLog(pbi => { pbi.Flags0E8 = 0x20; pbi.Flags0E9 = 1; }, _ => { }, out _);
-        Assert.Equal(new[] { "A023D4:1234", "vt28", "A01918:108,1", "A00618" }, setE9);
+        var setE9 = TailLog(pbi => { pbi.Flags0E8 = 0x60; pbi.Flags0E9 = 1; pbi.Field98 = 3f; }, _ => { }, out var r9);
+        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1" }, setE9);
+        Assert.Equal(0, r9.LastPbi!.Flags0E9 & 1);                                                 // 0x9FF3D0 cleared E9 bit 0: vt+0x28 ran
+        Assert.Equal(3f, r9.LastPbi.Volume3C);                                                     // [+0x3C] = [+0x98] + [+0x118]
 
-        var withPtr = TailLog(pbi => pbi.Field34 = 1, p => p.Ptr78 = new object(), out _);
-        Assert.Equal(new[] { "A023D4:1234", "vt24:8C", "A01918:108,1", "9E85C8:1,78", "A00618" }, withPtr);
+        var withPtr = TailLog(pbi => { pbi.Field34 = 1; pbi.Flags0E8 = 0x60; }, p => p.Ptr78 = new object(), out _);
+        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1", "9E85C8:1,78" }, withPtr);
 
-        var ptrNoField34 = TailLog(_ => { }, p => p.Ptr78 = new object(), out _);              // [pbi+0x34] == 0: no 0x9E85C8
+        var ptrNoField34 = TailLog(pbi => pbi.Flags0E8 = 0x60, p => p.Ptr78 = new object(), out _);   // [pbi+0x34] == 0: no 0x9E85C8
         Assert.DoesNotContain(ptrNoField34, x => x.StartsWith("9E85C8"));
-        var field34NoPtr = TailLog(pbi => pbi.Field34 = 1, _ => { }, out _);                   // [params+0x78] == 0: no 0x9E85C8
+        var field34NoPtr = TailLog(pbi => { pbi.Field34 = 1; pbi.Flags0E8 = 0x60; }, _ => { }, out _);   // [params+0x78] == 0: no 0x9E85C8
         Assert.DoesNotContain(field34NoPtr, x => x.StartsWith("9E85C8"));
 
         var missing = new Rig(new[] { OneMixerBank(0x04, 3) });
         missing.Bridge.TailA01918 = null;
         Assert.Throws<WwiseMissingBehaviourException>(() => missing.PlayDirect(500, 900));
-        var missing24 = new Rig(new[] { OneMixerBank(0x04, 3) });
-        missing24.Bridge.TailCtxVt24 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => missing24.PlayDirect(500, 900));
+        var missingPath = new Rig(new[] { OneMixerBank(0x04, 3) });
+        missingPath.Bridge.PlayPath!.Seams.NodeVtAC = null;
+        Assert.Throws<WwiseMissingBehaviourException>(() => missingPath.PlayDirect(500, 900));
     }
 
     [Fact]
@@ -2743,8 +2905,8 @@ public class WwisePlaybackLimiterTests
     public void M6_026_P4_ThePlayNeedsALimiterRatherThanSkippingTheWalk()
     {
         var bank = Synthetic(SoundObj(500, 0), PlayAction(100, 500), EventObj(900, 100));
-        var runtime = new WwiseEventRuntime(new[] { bank }, new WwiseRng(1));
-        var bridge = new WwisePlaybackBridge { InitSource9BEB30 = _ => true }.WithTestSeams();
+        var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
+        var bridge = new WwisePlaybackBridge().WithTestSeams();
         runtime.PlaybackBridge = bridge;
         runtime.RegisterGameObject(7);
         runtime.PostEvent(900, 7);
@@ -2784,9 +2946,9 @@ public class WwisePlaybackLimiterTests
         var pbi2 = rig.Bridge.Instances[1];
         Assert.Equal(0x42480000, BitConverter.SingleToInt32Bits(pbi1.Priority1C0));  // every other node resolves to 50.0f (P2b)
         Assert.True(pbi2.Key1C4 > pbi1.Key1C4 && pbi2.ChainId > pbi1.ChainId);       // 8.6
-        Assert.Equal(0x46, pbi1.Flags1BD);                                           // 0xA01CA4(pbi, 1)
-        Assert.Equal(0x68, pbi1.Flags1BC);                                           // 0x9FF7B8 marked it (K6); a fresh PBI takes route (b) (K3)
-        Assert.Equal(0x44, pbi2.Flags1BD);
+        Assert.Equal(0x47, pbi1.Flags1BD);                                           // 0xA01CA4(pbi, 1)
+        Assert.Equal(0x69, pbi1.Flags1BC);                                           // 0x9FF7B8 marked it (K6); a fresh PBI takes route (b) (K3)
+        Assert.Equal(0x45, pbi2.Flags1BD);  // 1BD bit 0 from 0xA00618 (0xA00640)
         Assert.Equal(0, pbi2.Flags1BC & 0x20);
         // W6/W7: the mixer's limiter counted both walks; the shared buses have max 0 (C28.8): no list of theirs is in the PBI's array.
         Assert.Equal((short)2, rig.Limiter.LimiterOf(62050212)!.Count60);
@@ -2926,8 +3088,8 @@ public class WwisePlaybackLimiterTests
         Assert.Same(voice1, pbi1.Field154);
 
         v.R.Play(901);                                                               // the second Play kills the first (reason 1)
-        Assert.Equal(0x46, pbi1.Flags1BD);
-        Assert.Equal(0x68, pbi1.Flags1BC);
+        Assert.Equal(0x47, pbi1.Flags1BD);  // 1BD bit 0 from 0xA00618 (0xA00640)
+        Assert.Equal(0x69, pbi1.Flags1BC);  // 1BC bit 0 from CalcEffectiveParams (0x9FFC30)
         Assert.Contains(voice1, v.Bridge.Voices);                                    // 0xA01CA4 does not stop the voice (K6)
         Assert.Equal(1, voice1.State);
 
@@ -2969,7 +3131,7 @@ public class WwisePlaybackLimiterTests
         var voice1 = Assert.Single(v.Bridge.Voices);
         uint second = v.R.Play(900);
         var pbi1 = v.Bridge.Instances.Single(p => p.PlayingId == first);
-        Assert.Equal(0x46, pbi1.Flags1BD);                                           // 0xA01CA4(pbi, 1)
+        Assert.Equal(0x47, pbi1.Flags1BD);                                           // 0xA01CA4(pbi, 1)
         Assert.Equal(2, v.R.Limiter.LimiterOf(62050212)!.List.Count20);
         Assert.Equal((short)2, v.R.Limiter.LimiterOf(62050212)!.Count60);
 

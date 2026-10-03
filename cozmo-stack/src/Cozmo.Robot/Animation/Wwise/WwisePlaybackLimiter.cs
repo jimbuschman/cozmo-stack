@@ -229,14 +229,21 @@ public sealed class WwisePlaybackLimiter
     /// <summary>Term steps 6 and 7 (1.10): <c>0xA1C660(pbi+0xEC, pbi+0x14)</c> and the <c>[pbi+0x10C]</c> free. Unread, required.</summary>
     public Action<WwisePlayingInstance>? TermSteps6And7 { get; set; }
 
-    /// <summary>Term steps 10 to 13 (1.10, O3): <c>0xA1ECBC([pbi+0x150])</c>, <c>[pbi+0x108]</c> <c>vt+0</c>, the <c>[pbi+0x1E8]</c> list, the <c>[pbi+0x150]</c> destroy (<c>0xA1E8F4</c>) and <c>0x9BDC8C(pbi+0xC, 0)</c>. Unread, required.</summary>
+    /// <summary>
+    /// Term steps 12 and 13 (1.10, O3): the <c>[pbi+0x1E8]</c> list (<c>0xA3E27C</c>), the <c>[pbi+0x150]</c> destroy (<c>0xA1E8F4</c>) and <c>0x9BDC8C(pbi+0xC, 0)</c>. Unread, required. The release of the media pair and the
+    /// <c>[pbi+0x108]</c> bank (<c>0xA02AD8..0xA02B14</c>, <c>0xA1ECBC</c>) that precedes them is <see cref="WwisePbiMedia.ReleaseInTerm"/>, run before this seam.
+    /// </summary>
     public Action<WwisePlayingInstance>? TermSteps10To13 { get; set; }
 
     /// <summary>The <c>[bus+0x64] != 0 &amp;&amp; [bus+0x84] != 0 &amp;&amp; 0x9C5154(bus) == 1</c> gate of <c>0x9C5240</c> (1.3). RECOVERABLE_GAP; required only for a bus with a nonzero recovery time.</summary>
     public Func<WwiseBusNode, bool>? BusRecoveryGateA9C5154 { get; set; }
 
-    /// <summary><c>0xA1EC54([pbi+0x150], pbi+0x1DC, pbi+0x1E0, pbi+0x108)</c> (6.1): run by <c>0xA0285C</c> after <c>0xA04D48</c>. Unread, required.</summary>
-    public Action<WwisePlayingInstance>? SourceInfoA1EC54 { get; set; }
+    /// <summary>
+    /// The media table BM (C31.1, C32.2): <c>0xA1EC54([pbi+0x150], pbi+0x1DC, pbi+0x1E0, pbi+0x108)</c> (6.1, <c>0xA02924..0xA02934</c>), run by <c>0xA0285C</c> after <c>0xA04D48</c>, looks the PBI's source id up in it and stores the
+    /// pair; Term releases it (<c>0xA02AD8..0xA02B14</c>). Required: both reach an unset table by throwing (the release only when the PBI holds a pair).
+    /// </summary>
+    // fidelity: M6-025, M6-026
+    public WwiseMediaTable? MediaTable { get; set; }
 
     /// <summary><c>0xA04DE8(mgr, id, pbi)</c>, the playing-id release Term makes when <c>[pbi+0x140] != 0</c> (1.10 step 5, <c>0xA02C98</c>): decrements the entry's <c>+0x18</c> and tail-calls <c>0xA03618</c> (RECOVERABLE_GAP). Required.</summary>
     public Action<WwisePlayingInstance>? ReleasePlayingIdA04DE8 { get; set; }
@@ -320,6 +327,9 @@ public sealed class WwisePlaybackLimiter
     private WwiseNode Resolve(uint id, string what)
         => _nodeLookup(id) ?? throw new WwiseMissingBehaviourException(
             $"M6-026: the {what} {id} is not in the node graph; the inventory does not say what the engine does with a dangling link");
+
+    /// <summary>The parent node (<c>[node+0x34]</c>), for <see cref="WwisePlayPath"/>'s node walks.</summary>
+    public WwiseNode? ParentNode(WwiseNode node) => ParentOf(node);
 
     /// <summary><c>[node+0x34]</c>: the parent node. A bus has none (its parent bus is <c>[bus+0x38]</c>, W7).</summary>
     private WwiseNode? ParentOf(WwiseNode node)
@@ -1020,8 +1030,8 @@ public sealed class WwisePlaybackLimiter
         }
         if (pbi.PlayingId == 0) return 2;
         RegisterPlayingId(pbi);
-        (SourceInfoA1EC54 ?? throw new WwiseMissingBehaviourException(
-            "M6-026 6.1: 0xA1EC54 (run after 0xA04D48 returns 1) is unread; supply SourceInfoA1EC54"))(pbi);
+        WwisePbiMedia.StoreSourceInfoA02924(pbi, MediaTable ?? throw new WwiseMissingBehaviourException(
+            "M6-026 6.1: 0xA1EC54 looks the source id up in the media table (C31.1); supply MediaTable"));   // 0xA02924..0xA02934
         return 1;
     }
 
@@ -1099,8 +1109,12 @@ public sealed class WwisePlaybackLimiter
             LimiterOf(node.Id)?.Contexts0C.Remove(pbi);                               // (8) 0xA02A84..0xA02BEC
             DestroyIfIdle(node);                                                      // (9) 0xA02C00..0xA02C3C
         }
+        // (10, 11) 0xA02AD8..0xA02B14: the media release, then the [pbi+0x108] bank release (C31.1 R1.13).
+        if (pbi.Word1DC != 0 && MediaTable is null)
+            throw new WwiseMissingBehaviourException("M6-026 1.10: 0xA1ECBC releases the media pair through the media table (C31.1); supply MediaTable");
+        WwisePbiMedia.ReleaseInTerm(pbi, MediaTable);
         (TermSteps10To13 ?? throw new WwiseMissingBehaviourException(
-            "M6-026 1.10: steps 10 to 13 (0xA1ECBC, 0xA3E27C, 0x9BDC8C, 0xA1E8F4) are unread; supply TermSteps10To13"))(pbi);
+            "M6-026 1.10: steps 12 and 13 (0xA3E27C, 0x9BDC8C, 0xA1E8F4) are unread; supply TermSteps10To13"))(pbi);
     }
 
     private static WwiseMissingBehaviourException MissingCancel()
