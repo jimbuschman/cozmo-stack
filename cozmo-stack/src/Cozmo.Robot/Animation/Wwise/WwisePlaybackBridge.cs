@@ -344,6 +344,13 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// <summary>The media resolver for the default factory (M6-001/M6-024).</summary>
     public Func<uint, WwiseMedia?>? MediaFor { get; set; }
 
+    /// <summary>
+    /// The streaming inputs of a streamed source (B-M6b-4 batch 5b, C33.3): the stream manager, the owner PBI, the source block and the seams of the bodies C33 does not adopt. The default factory passes the
+    /// result to <see cref="WwiseSourceFactory.Create"/>; a streamed kind without it throws <see cref="WwiseMissingBehaviourException"/> at StartStream.
+    /// </summary>
+    // fidelity: M6-025
+    public Func<WwisePlayingInstance, WwiseStreamingContext?>? StreamingFor { get; set; }
+
     /// <summary>The packed codebook library for Vorbis (M6-002).</summary>
     public WwiseCodebookLibrary? Codebooks { get; set; }
 
@@ -739,11 +746,12 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
             uint a1DC = owner.Read1DC();                                         // 0xA5590C ldr r1,[r7,#0x1dc]
             uint a1E0 = owner.Read1E0();                                         // 0xA55910 ldr r2,[r7,#0x1e0]
             r6 = WwiseVoiceSourceStart.StartA56650(source, a1DC, a1E0, out bool ran);   // 0xA55914 bl 0xA56650
-            if (ran)
+            if (ran && source is not IWwiseStreamingVoiceSource { WritesSourceFormatInStartStream: true })
             {
                 // UNRESOLVED (C26.5): the StartStream classes write pbi+0x15C..0x15F inside vt+0x28
                 // (0xA72760..0xAB138C). The writer is a required seam called here; its position relative to the
-                // rest of AddSrc is not claimed as native ordering. It runs whenever vt+0x28 ran.
+                // rest of AddSrc is not claimed as native ordering. It runs whenever vt+0x28 ran. A streamed Vorbis
+                // source writes the bytes itself inside StartStream (0xAB12B4, C33.3), so the seam is not asked for it.
                 (SourceFormatWriter15C ?? throw new WwiseMissingBehaviourException(
                     "M6-025 C26.5: the source StartStream writers of pbi+0x15C..0x15F (0xA72760..0xAB138C) are not built; " +
                     "supply SourceFormatWriter15C")).Invoke(pbi, source);
@@ -827,7 +835,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         int mode = WwiseSourceFactory.ModeForStream(descriptor.PluginId, descriptor.StreamType);
         var kind = WwiseSourceFactory.Select(mode, descriptor.PluginId);
         if (kind is null) return null;
-        return WwiseSourceFactory.Create(kind.Value, descriptor, MediaFor, Codebooks);
+        return WwiseSourceFactory.Create(kind.Value, descriptor, MediaFor, Codebooks, StreamingFor?.Invoke(pbi));
     }
 
     /// <summary>
@@ -936,7 +944,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         uint a1DC = pbi.Read1DC();                                               // 0xA55ABC ldr r1,[r6,#0x1dc]
         uint a1E0 = pbi.Read1E0();                                               // 0xA55AC0 ldr r2,[r6,#0x1e0]
         sb = WwiseVoiceSourceStart.StartA56650(source, a1DC, a1E0, out bool ran);   // 0xA55AC4 bl 0xA56650
-        if (ran)
+        if (ran && source is not IWwiseStreamingVoiceSource { WritesSourceFormatInStartStream: true })
             (SourceFormatWriter15C ?? throw new WwiseMissingBehaviourException(
                 "M6-025 C26.5: the source StartStream writers of pbi+0x15C..0x15F (0xA72760..0xAB138C) are not built; supply SourceFormatWriter15C")).Invoke(pbi, source);
         if (sb != 1 && sb != 0x3F) return DestroySourceA56414(source, pbi, sb);  // 0xA55AC8..0xA55AD4 bne 0xA55B10

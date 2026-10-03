@@ -60,6 +60,17 @@ public sealed class WwiseBankMemory
     /// <summary>The block's bytes (the buffer the engine's pointer addresses).</summary>
     public byte[] Block(uint address) => _blocks[address];
 
+    /// <summary>
+    /// The block that contains <paramref name="address"/> and the offset of the address inside it: how a pointer into a block (the engine's <c>DATA + DIDX.offset</c>, <c>[pbi+0x1DC]</c>) is dereferenced. An address
+    /// outside every live block is a named stop, as a wild pointer is in the engine.
+    /// </summary>
+    public (byte[] Block, int Offset) Resolve(uint address)
+    {
+        foreach (var (start, block) in _blocks)
+            if (address >= start && address - start < (uint)block.Length) return (block, (int)(address - start));
+        throw new WwiseMissingBehaviourException($"M6-025: the address 0x{address:X8} is not inside a live allocation of the bank memory");
+    }
+
     /// <summary><c>0xA7AC98(0, size, size, 9, 0x10)</c> (<c>0x9B7C6C..0x9B7C90</c>): the id of a new pool, or -1.</summary>
     public int CreatePool(uint size)
     {

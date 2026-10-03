@@ -204,6 +204,22 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0x158</c>: the source-format word; written by the source StartStream.</summary>
     public uint SourceFormat158 { get; set; }
 
+    // fidelity: M6-025
+    /// <summary><c>+0x160</c> (byte): written by the streamed Vorbis header parse <c>0xAB12B4</c> (<c>0xAB1394</c>, 0x20).</summary>
+    public byte Byte160 { get; set; }
+
+    // fidelity: M6-025
+    /// <summary><c>+0x161</c> (byte): the channel count the header parse stores (<c>0xAB1388</c>).</summary>
+    public byte Byte161 { get; set; }
+
+    // fidelity: M6-025
+    /// <summary><c>+0x162</c> (byte): bits 0 and 1 and bit 2 are written by the header parse (<c>0xAB1354..0xAB1370</c>).</summary>
+    public byte Byte162 { get; set; }
+
+    // fidelity: M6-025
+    /// <summary><c>+0x1B4</c>: the start offset's sample count (<c>0xA74C64</c> stores <c>pos - [S+0x18]</c>; <c>0xAB2284</c> clears it; <c>0xAB227C</c> reads it).</summary>
+    public uint Word1B4 { get; set; }
+
     /// <summary>
     /// <c>+0x1BB</c> (C27, <c>0xA01768</c>): the cache byte. Bits 0..2 are the out value, bits 3..6 the return value,
     /// bit 7 the "cached" mark set by the first call.

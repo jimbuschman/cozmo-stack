@@ -7,13 +7,16 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// </summary>
 public enum WwiseSourceKind
 {
-    /// <summary>Registered plug-in 0x00040001, mode 1: Vorbis streamed, vtable render <c>0xAB0448</c>.</summary>
+    /// <summary>
+    /// Registered plug-in 0x00040001, mode 1: Vorbis streamed, the 0xFC-byte class of vtable <c>0x103E138</c>: <c>vt+0x28 = 0xAB22D4</c> StartStream, <c>vt+0x30 = 0xAB1550</c> decode, <c>vt+0x78 = 0xAB12B4</c>
+    /// (C32.3 corrected the earlier labels, which had the two vtables and their render bodies the other way round).
+    /// </summary>
     VorbisStreamed,
-    /// <summary>Registered plug-in 0x00040001, mode 3: Vorbis in-memory, render <c>0xAB1550</c>.</summary>
+    /// <summary>Registered plug-in 0x00040001, mode 3: Vorbis in-memory, the 0xD0-byte class of vtable <c>0x103E0B8</c>: <c>vt+0x28 = 0xAB0B20</c>, <c>vt+0x30 = 0xAB0448</c> (C32.3).</summary>
     VorbisInMemory,
-    /// <summary>Plug-in class 2, mode 1: IMA ADPCM, <c>0xA74244</c>.</summary>
+    /// <summary>Plug-in class 2, mode 1: IMA ADPCM, <c>0xA74244</c> (the 0x70-byte stream class; its StartStream is <c>0xA7538C</c>).</summary>
     AdpcmMode1,
-    /// <summary>Plug-in class 2, mode 3: IMA ADPCM, <c>0xA72A2C</c>.</summary>
+    /// <summary>Plug-in class 2, mode 3: IMA ADPCM, <c>0xA72A2C</c> (the 0x48-byte in-memory class).</summary>
     AdpcmMode3,
     /// <summary>Plug-in class 1, mode 1: PCM, <c>0xA76140</c>. No shipped bank uses it.</summary>
     PcmMode1,
@@ -89,7 +92,8 @@ public static class WwiseSourceFactory
     /// </summary>
     public static IWwiseVoiceSource Create(
         WwiseSourceKind kind, WwiseSourceDescriptor descriptor,
-        Func<uint, WwiseMedia?> media, WwiseCodebookLibrary? codebooks)
+        Func<uint, WwiseMedia?> media, WwiseCodebookLibrary? codebooks,
+        WwiseStreamingContext? streaming = null)
     {
         ArgumentNullException.ThrowIfNull(media);
 
@@ -118,10 +122,11 @@ public static class WwiseSourceFactory
                         "M6-025 B13: Vorbis needs the packed codebook library (M6-002)");
                 return new WwiseVorbisVoiceSource(
                     kind == WwiseSourceKind.VorbisStreamed ? WwiseVorbisSourceKind.Streamed : WwiseVorbisSourceKind.InMemory,
-                    wem, codebooks);
+                    wem, codebooks, streaming: kind == WwiseSourceKind.VorbisStreamed ? streaming : null);
             case WwiseSourceKind.AdpcmMode1:
             case WwiseSourceKind.AdpcmMode3:
-                return new WwiseAdpcmVoiceSource(wem);
+                return new WwiseAdpcmVoiceSource(wem, streaming: kind == WwiseSourceKind.AdpcmMode1 ? streaming : null,
+                    streamed: kind == WwiseSourceKind.AdpcmMode1);
             default:
                 throw new ArgumentOutOfRangeException(nameof(kind));
         }
@@ -140,37 +145,75 @@ public interface IWwiseVoiceSourceFormat
 }
 
 /// <summary>
-/// The Vorbis <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13, source-classes Q1d): streamed
-/// <c>0xAB0448</c> / in-memory <c>0xAB1550</c> over the existing bit-exact
-/// <see cref="WwiseVorbisSource"/>. The decode is M6-002's; this class only publishes its samples through
-/// the voice source slot.
-///
-/// <para><b>Adapter note.</b> <see cref="WwiseVorbisSource.Render"/> decodes the whole media in one call;
-/// the native streamed class emits block by block. This adapter decodes once at StartStream and serves
-/// <see cref="WwiseVoiceBuffer.MaxFrames"/> at a time, which is what the voice/bus pass consumes.</para>
+/// The inputs a streamed source needs beyond its media (B-M6b-4 batch 5b): the stream manager, the owner PBI (<c>[S+0xC]</c>), the source block (<c>[[S+0xC]+0x150]</c>) and the seams of the bodies that
+/// C33 does not adopt. Without it a streamed source's StartStream throws (<see cref="WwiseMissingBehaviourException"/>); there is no fallback to the offline decode.
 /// </summary>
-public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat
+public sealed class WwiseStreamingContext
+{
+    /// <summary>The stream manager (<c>[0x108D798+0x10]</c>).</summary>
+    public required WwiseStreamManager Manager { get; init; }
+
+    /// <summary>The owner PBI.</summary>
+    public required WwisePlayingInstance Pbi { get; init; }
+
+    /// <summary>The source block fields the stream functions read.</summary>
+    public required WwiseSourceBlock150 Block { get; init; }
+
+    /// <summary>The seams.</summary>
+    public required WwiseStreamSourceSeams Seams { get; init; }
+}
+
+/// <summary>
+/// A source whose <c>vt+0x28</c> writes the PBI's format bytes (<c>pbi+0x158..0x162</c>) itself (the streamed classes, 0xAB12B4): the bridge's <c>SourceFormatWriter15C</c> seam is not needed for it.
+/// </summary>
+public interface IWwiseStreamingVoiceSource
+{
+    /// <summary>True when StartStream's own header parse writes the PBI format bytes.</summary>
+    bool WritesSourceFormatInStartStream { get; }
+}
+
+/// <summary>
+/// The Vorbis <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13, source-classes Q1d). The streamed kind (mode 1, the 0xFC-byte class of vtable <c>0x103E138</c>) runs the engine's own StartStream
+/// <c>0xAB22D4</c> (<see cref="WwiseVorbisStreamSource.StartStreamAB22D4"/>) and returns its raw result (1, 0x3F, 2, 7, 8, 0x34, ...); its decode (<c>vt+0x30 = 0xAB1550</c>) runs the buffering gate of that
+/// body and then the offline decoder <see cref="WwiseVorbisSource"/> (M6-002), which is the named SEAM for the packet decode <c>0xAB7E40</c> and the output hand-off <c>0xA73490</c> (no adopted row reads them).
+/// The in-memory kind (mode 3, class <c>0x103E0B8</c>, <c>vt+0x28 = 0xAB0B20</c>) keeps the earlier behaviour (the body of 0xAB0B20 is not adopted): the media is decoded at StartStream and the result is 1.
+/// </summary>
+public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
 {
     // fidelity: M6-025
     private readonly WwiseVorbisSource _source;
+    private readonly WwiseVorbisSourceKind _kind;
+    private readonly WwiseVorbisStreamSource? _stream;
     private float[]? _samples;
     private int _position;
+    private bool _latch;
 
     /// <summary>The <c>pbi+0x158</c> format word (the descriptor's +4; caller input, see the interface).</summary>
     public uint SourceFormatWord { get; }
 
+    /// <summary>Creates the adapter; <paramref name="streaming"/> is required for the streamed kind to start.</summary>
     public WwiseVorbisVoiceSource(
-        WwiseVorbisSourceKind kind, WwiseMedia media, WwiseCodebookLibrary codebooks, uint sourceFormatWord = 0)
+        WwiseVorbisSourceKind kind, WwiseMedia media, WwiseCodebookLibrary codebooks, uint sourceFormatWord = 0,
+        WwiseStreamingContext? streaming = null)
     {
         ArgumentNullException.ThrowIfNull(media);
         ArgumentNullException.ThrowIfNull(codebooks);
         if (media.Codec != WwiseCodec.Vorbis)
             throw new ArgumentException($"not a Vorbis media: format tag 0x{media.FormatTag:X4}", nameof(media));
+        _kind = kind;
         _source = new WwiseVorbisSource(kind, media, codebooks, media.Channels);
         Channels = media.Channels;
         SampleRate = media.SampleRate;
         SourceFormatWord = sourceFormatWord;
+        if (kind == WwiseVorbisSourceKind.Streamed && streaming is not null)
+            _stream = new WwiseVorbisStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams);
     }
+
+    /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
+    public WwiseVorbisStreamSource? StreamSource => _stream;
+
+    /// <inheritdoc />
+    public bool WritesSourceFormatInStartStream => _stream is not null;
 
     /// <summary>Vorbis <c>src+0x38</c> config: mono 1, stereo 2 (M6-002).</summary>
     public int Channels { get; }
@@ -179,29 +222,56 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
     public int SampleRate { get; }
 
     /// <summary>The <c>[source+0x10]</c> bit 0 latch, written only by <c>0xA56650</c> (<see cref="WwiseVoiceSourceStart.StartA56650"/>).</summary>
-    public bool StartStreamSucceeded { get; set; }
+    public bool StartStreamSucceeded
+    {
+        get => _stream?.StartLatch ?? _latch;
+        set { if (_stream is not null) _stream.StartLatch = value; else _latch = value; }
+    }
 
     /// <summary>
-    /// <c>vt+0x28</c> StartStream: run M6-002's decode and hold the samples; the raw result is 1 on success. The two arguments
-    /// (<c>[owner+0x1DC]</c>, <c>[owner+0x1E0]</c>) are consumed inside the native source class; this adapter decodes the media
-    /// it was given and does not use them. A failed decode has no settled result code (the source classes' failure values are
-    /// unread), so it throws rather than returning a guessed one.
+    /// <c>vt+0x28</c> StartStream. Streamed: <c>0xAB22D4</c> with the PBI's own <c>[pbi+0x1DC]</c> / <c>[pbi+0x1E0]</c> (the two arguments are ignored, as the engine ignores them: C32.3), the raw result.
+    /// In-memory: the offline decode and 1 (unchanged, 0xAB0B20 not adopted).
     /// </summary>
     public int StartStream(uint arg1DC, uint arg1E0)
     {
+        if (_kind == WwiseVorbisSourceKind.Streamed)
+        {
+            var stream = _stream ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C33.3: a streamed Vorbis source needs a WwiseStreamingContext; there is no fallback to the offline decode");
+            return stream.StartStreamAB22D4();
+        }
         var rendered = _source.Render(WwiseRuntimeSettings.SamplesPerFrame);
         _samples = rendered.Data;
         _position = 0;
         if (_samples is null)
             throw new WwiseMissingBehaviourException(
-                "M6-025 C27 step 7: the Vorbis source's vt+0x28 failure result is not settled by the inventory (the source classes 0xAB0448/0xAB1550 are unread); no result code is invented");
+                "M6-025 C27 step 7: the in-memory Vorbis source's vt+0x28 (0xAB0B20) is not adopted; no result code is invented");
         return 1;
     }
 
-    /// <summary><c>vt+0x30</c> render: publish the next block. Returns 0x2D while data remains, else 0x2E.</summary>
+    /// <summary>
+    /// <c>vt+0x30</c> render. Streamed: the buffering gate of <c>0xAB1550</c> (<see cref="WwiseVorbisStreamSource.DecodeGateAB1550"/>), whose status is returned with no frames when it blocks the decode; then the
+    /// offline decode (the named seam), run once. Returns 0x2D while data remains, else 0x2E.
+    /// </summary>
     public int Render(WwiseVoiceBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
+        if (_stream is not null)
+        {
+            var gate = _stream.DecodeGateAB1550();
+            if (!gate.Decode)
+            {
+                buffer.ValidFrames = 0;
+                buffer.Result = gate.Result;
+                return gate.Result;
+            }
+            if (_samples is null)
+            {
+                _samples = _source.Render(WwiseRuntimeSettings.SamplesPerFrame).Data
+                    ?? throw new WwiseMissingBehaviourException("M6-025 G7: the offline decode seam produced no samples");
+                _position = 0;
+            }
+        }
         if (_samples is null) return 0x2E;
         int channels = Channels;
         int frames = Math.Min(buffer.MaxFrames, _samples.Length / channels - _position);
@@ -217,51 +287,82 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
 }
 
 /// <summary>
-/// The IMA ADPCM <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13): mode 1 <c>0xA74244</c> / mode 3
-/// <c>0xA72A2C</c> over <see cref="WwiseAdpcm"/> (M6-003, bit-exact).
+/// The IMA ADPCM <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13): mode 1 <c>0xA74244</c> (the stream class, <c>vt+0x28 = 0xA7538C</c>) / mode 3 <c>0xA72A2C</c> over <see cref="WwiseAdpcm"/> (M6-003, bit-exact).
+/// The streamed kind runs the engine's StartStream (<see cref="WwisePcmAdpcmStreamSource.StartStreamA7538C"/>) and returns its raw result; the header parse it calls (<c>0xA73ABC</c>) is a required seam. The decode
+/// (<c>vt+0x30 = 0xA73D34</c>) is not adopted: the media is decoded offline at the first render. The in-memory kind keeps the earlier behaviour (decode at StartStream, result 1).
 /// </summary>
-public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat
+public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
 {
     // fidelity: M6-025
     private readonly WwiseMedia _media;
+    private readonly bool _streamed;
+    private readonly WwisePcmAdpcmStreamSource? _stream;
     private short[]? _samples;
     private int _position;
+    private bool _latch;
 
     /// <summary>The <c>pbi+0x158</c> format word (the descriptor's +4; caller input).</summary>
     public uint SourceFormatWord { get; }
 
-    public WwiseAdpcmVoiceSource(WwiseMedia media, uint sourceFormatWord = 0)
+    /// <summary>Creates the adapter.</summary>
+    public WwiseAdpcmVoiceSource(WwiseMedia media, uint sourceFormatWord = 0, WwiseStreamingContext? streaming = null, bool streamed = false)
     {
         ArgumentNullException.ThrowIfNull(media);
         if (media.Codec != WwiseCodec.Adpcm)
             throw new ArgumentException($"not an ADPCM media: format tag 0x{media.FormatTag:X4}", nameof(media));
         _media = media;
+        _streamed = streamed;
         Channels = media.Channels;
         SampleRate = media.SampleRate;
         SourceFormatWord = sourceFormatWord;
+        if (streamed && streaming is not null)
+            _stream = new WwisePcmAdpcmStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams);
     }
 
+    /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
+    public WwisePcmAdpcmStreamSource? StreamSource => _stream;
+
+    /// <inheritdoc />
+    public bool WritesSourceFormatInStartStream => false;
+
+    /// <summary>The channel count.</summary>
     public int Channels { get; }
+
+    /// <summary>The sample rate.</summary>
     public int SampleRate { get; }
+
     /// <summary>The <c>[source+0x10]</c> bit 0 latch, written only by <c>0xA56650</c> (<see cref="WwiseVoiceSourceStart.StartA56650"/>).</summary>
-    public bool StartStreamSucceeded { get; set; }
+    public bool StartStreamSucceeded
+    {
+        get => _stream?.StartLatch ?? _latch;
+        set { if (_stream is not null) _stream.StartLatch = value; else _latch = value; }
+    }
 
     /// <summary>
-    /// <c>vt+0x28</c> StartStream: decode through M6-003, hold the interleaved samples and return the raw result 1. The two
-    /// arguments (<c>[owner+0x1DC]</c>, <c>[owner+0x1E0]</c>) are consumed inside the native ADPCM classes; this adapter decodes
-    /// the media it was given and does not use them.
+    /// <c>vt+0x28</c> StartStream. Streamed: <c>0xA7538C</c> and its raw result (the two arguments are the PBI's own pair, read inside). In-memory: the decode through M6-003 and the result 1 (unchanged).
     /// </summary>
     public int StartStream(uint arg1DC, uint arg1E0)
     {
+        if (_streamed)
+        {
+            var stream = _stream ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C33.3: a streamed ADPCM source needs a WwiseStreamingContext; there is no fallback to the offline decode");
+            return stream.StartStreamA7538C();
+        }
         _samples = WwiseAdpcm.Decode(_media);
         _position = 0;
         return 1;
     }
 
-    /// <summary><c>vt+0x30</c> render: publish the next block, int16 scaled by 1/32768.</summary>
+    /// <summary><c>vt+0x30</c> render: publish the next block, int16 scaled by 1/32768 (the streamed class's gate <c>0xA73D34</c> is not adopted: the whole media is decoded offline on first use).</summary>
     public int Render(WwiseVoiceBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
+        if (_streamed && _samples is null)
+        {
+            _samples = WwiseAdpcm.Decode(_media);
+            _position = 0;
+        }
         if (_samples is null) return 0x2E;
         int channels = Channels;
         int frames = Math.Min(buffer.MaxFrames, _samples.Length / channels - _position);
