@@ -158,7 +158,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M8-framework.md",
-        "approved": "2026-10-02",
+        "approved": "2026-10-03",
         "snapshot": "re-analysis/inventory/M8-framework.approved.json"
       }
     },
@@ -8265,7 +8265,7 @@
       ],
       "effect": "behaviours built in code are ranked by an invented score on the stack's ChooseAndSwitch path",
       "provenance": "the engine's zero default read from IBehavior's constructor and EvaluateScoreInternal; the 1.0/5.0 are this stack's",
-      "unresolved": "Remove the invented in-code scores (PlayAnimBehavior 1.0, ReactBehavior 5.0, SteppedBehavior 5.0, PlayArbitraryAnimBehavior 1.0, SingingBehavior 1.0) and their use by BehaviorManager.ChooseAndSwitch, and drive selection from the engine's activity chooser (ScoringChooser/StrictPriorityChooser, already built) or the reaction map. Blocked on M8-013: the chooser path has no production caller until SelectionBSRunnableChooser::HandleExecuteBehavior 0x0060ac2c and the ExecuteBehavior message are built (M2/M10) and the M7/M15 concrete activity bodies exist. Whether the default BehaviorManager can run entirely on the chooser path is UNKNOWN (not traced).",
+      "unresolved": "built, awaiting strong verification: the engine's default score is 0 (IBehavior ctor 0x005bbd1c/0x005bbd28; EvaluateScoreInternal 0x005beec2 returns +0x100 when +0xdc is empty): the invented in-code scores (SteppedBehavior 5.0, PlayAnimBehavior 1.0, ReactBehavior 5.0, PlayArbitraryAnimBehavior 1.0, SingingBehavior 1.0) are removed; the production chooser path scores from ScoredBehaviorEntry.FlatScore (default 0) and the only reader of IBehavior.EvaluateScore, BehaviorManager.ChooseAndSwitch, is a test-only parallel path. Still open: ChooseAndSwitch itself has no engine counterpart; selection in production depends on M8-013's chooser path, which has no production caller for the ExecuteBehavior messages.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorTests"
@@ -8403,7 +8403,7 @@
       ],
       "effect": "a behaviour leaks or double-releases a track lock, idle animation, motion profile, light pattern, helper or reaction lock",
       "provenance": "the eleven Smart* functions, read at the addresses above",
-      "unresolved": "The ten Smart* helpers and the reaction-lock manager side are built; SmartDelegateToHelper is not. Its callee BehaviorHelperComponent::DelegateToHelper 0x0056dad8 and the helper-stack runtime are now read (re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md; C2): AIComponent+0x10 (ctor 0x00569aae, Update 0x0056de26), DelegateToHelper 0x0056dad8, PushHelperOntoStackAndUpdate 0x0056db1e, UpdateActiveHelper 0x0056de74, StopHelperWithoutCallback 0x0056dcc0, ClearStackMaintenanceVars 0x0056db4c, ClearStackFromTopToIter 0x0056dcd0, CheckInactiveStackHelpers 0x0056de26, ClearStackLifetimeVars 0x0056dcdc, AddHelperToComponent 0x0056da8a; layout 0x48 (factory +0x00, vector +0x04/+0x08/+0x0c, callbacks +0x10/+0x28, worldOriginId +0x40). To build: the component and its vector/callback stack runtime, plus the IHelper subclasses and factory Create* methods (M7/M15-owned), which SmartDelegateToHelper needs. IBehavior::SmartDelegateToHelper 0x005beb10 and IBehavior::StopHelperWithoutCallback 0x005bd228 are the call sites.",
+      "unresolved": "R-BEH2 (2026-10-03): the helper runtime is now fully read (research/20261002-R-BEH2-M8-gap1-extraction.md Part 1, inventory Correction A5); the component is not built yet (batch 3d). | earlier: The ten Smart* helpers and the reaction-lock manager side are built; SmartDelegateToHelper is not. Its callee BehaviorHelperComponent::DelegateToHelper 0x0056dad8 and the helper-stack runtime are now read (re-analysis/research/20260929-R-BEH-M8-framework-gap1-extraction.md; C2): AIComponent+0x10 (ctor 0x00569aae, Update 0x0056de26), DelegateToHelper 0x0056dad8, PushHelperOntoStackAndUpdate 0x0056db1e, UpdateActiveHelper 0x0056de74, StopHelperWithoutCallback 0x0056dcc0, ClearStackMaintenanceVars 0x0056db4c, ClearStackFromTopToIter 0x0056dcd0, CheckInactiveStackHelpers 0x0056de26, ClearStackLifetimeVars 0x0056dcdc, AddHelperToComponent 0x0056da8a; layout 0x48 (factory +0x00, vector +0x04/+0x08/+0x0c, callbacks +0x10/+0x28, worldOriginId +0x40). To build: the component and its vector/callback stack runtime, plus the IHelper subclasses and factory Create* methods (M7/M15-owned), which SmartDelegateToHelper needs. IBehavior::SmartDelegateToHelper 0x005beb10 and IBehavior::StopHelperWithoutCallback 0x005bd228 are the call sites.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8456,7 +8456,7 @@
       ],
       "effect": "the activity picks a different behaviour than the engine would",
       "provenance": "the three choosers and the activity dispatch, read at the addresses above",
-      "unresolved": "The choosers are built. SelectionChooser.RequestBehavior has no production caller because SelectionBSRunnableChooser::HandleExecuteBehavior 0x0060ac2c and the ExecuteBehaviorByID/ByExecutableType message are M2/M10 and unbuilt; the concrete activity bodies are M7/M15.",
+      "unresolved": "built, awaiting strong verification: the two GameToEngine messages (union tag uint16 0x0093 ExecuteBehaviorByExecutableType and 0x0094 ExecuteBehaviorByID; payload uint8 + int32 LE, no padding; unpack reads 1 then 4 bytes without a length check) and SelectionChooser's handler per 0x0060aa58..0x0060ac45 (numRuns stored at +0x3C on a hit and a miss, null on a miss, the SetProcessEnabled handoff only when the pointer differs, the unknown-tag path, the constructor subscription gate and order 0x94 then 0x93); RequestBehavior goes through the same tail. Still open: production wiring (the stack has no game-to-engine channel: nothing implements IChooserExternalInterface, so SelectionChooser is built without one); BehaviorManager::FindBehaviorByExecutableType's body and an ExecutableBehaviorType name table (the engine prints the name); the AIInformationAnalyzer enable requests (a MISSING seam); the engine's +0x1C EProcess id (HasProcessField defaults to RequiredProcessRunning != null, which nothing sets); unsubscription handles; the underflow value in the unpack is the stack's M2-017 approximation.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8477,7 +8477,7 @@
       ],
       "effect": "the whiteboard misses events or renders the wrong beacons",
       "provenance": "AIWhiteboard::Init, Update and AddBeacon, read at the addresses above",
-      "unresolved": "Init's three registrations (tags 68/69/53), the no-op Update and AddBeacon are built. AIWhiteboard::UpdateBeaconRender 0x0056aa3c and the three handler bodies are unowned (VizManager / M11/M12 do not record them).",
+      "unresolved": "built, awaiting strong verification: AIWhiteboardHandlers (new file; AIWhiteboard.cs is R-VIS's): tag 68 (squared-distance 2500.0 removal), tag 69 (tilt through Radians operator< against 0x3E32B8C2 using the row-2 component with the largest |value| then acosf as GetRotatedParentAxis<'Z'> 0x5507a0..0x550854 does, robot-relative Z <= 30.0, removal, FindLocatedClosestMatchingType with 50.0/pi and a zero-initialised BlockWorldFilter, the ten-entry cap), tag 53 (stores (float)seconds at +0x48) and UpdateBeaconRender (three circles at z + 35.0, radii R, R-0.5, R-1.0, DARKGREEN/ORANGE by abs(+0x10) < 1e-5). Still open: the whiteboard handlers and the renderer are not attached anywhere in production; the engine's Robot::GetPose() (0x004EA398, ConsiderNewPossibleObject 0x0056c54c), the beacon-pose helper 0x004DF628, BlockWorld::FindLocatedClosestMatchingTypeHelper's body, the beacon's float last-failure time (AIBeacon has an int count) and the VizManager sink (M11/M12) are seams that report MISSING once and skip; the failed-relative-pose log text; R-VIS: hold the possible-object list and the float +0x48 timestamp on the whiteboard, give AIBeacon the +0x10 float, make Init's subscriptions deliver the three handlers; the manifest location still points at AIWhiteboard.cs. UpdatePossibleObjectRender 0x0056a6d4 and RemovePossibleObjectsMatching 0x0056ad68 are unread.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"

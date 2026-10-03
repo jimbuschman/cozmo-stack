@@ -143,10 +143,7 @@ public interface IBehavior
     /// How much this wants to run, before penalties. The engine's <c>EvaluateScoreInternal</c> 0x005BEEC2:
     /// the behaviour's emotion scorers if its config gave it any, otherwise its <c>flatScore</c>, which
     /// <c>IBehavior::IBehavior</c> leaves at zero when the config carries no scoring (0x005BBD28). A
-    /// behaviour built in code here carries a score of its own instead - see
-    /// <see cref="Behavior.ReactBehavior"/> and <see cref="Behavior.PlayAnimBehavior"/> - because this
-    /// stack's simple manager ranks behaviours directly where the engine ranks only what an activity's
-    /// scoring chooser lists. Zero or
+    /// behaviour built in code carries that same zero (M8-004): no in-code score is invented. Zero or
     /// less means it does not want to run at all.
     /// </summary>
     double EvaluateScore(BehaviorContext context);

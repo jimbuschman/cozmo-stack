@@ -366,6 +366,17 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
 }
 
 /// <summary>
+/// The robot's external interface as <c>SelectionBSRunnableChooser</c>'s constructor sees it (0x0060A87A..0x0060A884): the subscription seam for the
+/// game-to-engine <c>MessageGameToEngine</c> tags 0x94 and 0x93. The stack has no game-to-engine channel, so nothing implements it in production.
+/// </summary>
+// fidelity: M8-013
+public interface IChooserExternalInterface
+{
+    /// <summary>Subscribe the chooser's <c>HandleExecuteBehavior</c> for one <c>MessageGameToEngine</c> union tag.</summary>
+    void SubscribeChooserHandler(ushort tag, SelectionChooser chooser);
+}
+
+/// <summary>
 /// The engine's <c>SelectionBSRunnableChooser</c> 0x0060ad64..0x0060ae6f. +0x2c is the behaviour named by
 /// the last <c>ExecuteBehaviorByID</c>/<c>ByExecutableType</c> message (initially null), +0x34 is the
 /// <c>Wait</c> behaviour (BehaviorID 0xb2, resolved once in the ctor), +0x3c is the message's
@@ -378,14 +389,31 @@ public sealed class StrictPriorityChooser : IBehaviorChooser
 public sealed class SelectionChooser : IBehaviorChooser
 {
     private readonly IBehavior? _wait;
+    private readonly IReadOnlyDictionary<string, IBehavior>? _bound;
     private IBehavior? _requested;   // +0x2c
     private int _numRuns = -1;       // +0x3c
     private bool _latch;             // +0x40
 
-    public SelectionChooser(IReadOnlyDictionary<string, IBehavior>? bound = null)
+    /// <summary>The key <c>SetProcessEnabled</c> (0x0060AE84..0x0060AEEA) files the analyzer enable request under.</summary>
+    public const string ProcessKey = "SelectionBSRunnableChooser";
+
+    /// <summary>
+    /// The constructor (0x0060A87C..0x0060A99E): when the robot has an external interface (<paramref name="external"/> non-null,
+    /// 0x0060A87A..0x0060A884) it subscribes the one bound <c>HandleExecuteBehavior</c> to game-to-engine tag 0x94
+    /// (<c>ExecuteBehaviorByID</c>, 0x0060A898..0x0060A8B4) and then 0x93 (<c>ExecuteBehaviorByExecutableType</c>, 0x0060A91C..0x0060A938);
+    /// with none it subscribes nothing. Either way it then resolves <c>Wait</c> (0x0060A984..0x0060A99E). Nothing in this stack
+    /// implements <see cref="IChooserExternalInterface"/> (no game-to-engine channel exists), so production passes none.
+    /// </summary>
+    public SelectionChooser(IReadOnlyDictionary<string, IBehavior>? bound = null, IChooserExternalInterface? external = null)
     {
+        _bound = bound;
         // ctor 0x0060a988/0x0060a99a: BehaviorID 0xb2 = 178 = "Wait" resolved through FindBehaviorByID.
         _wait = bound is not null && bound.TryGetValue("Wait", out var w) ? w : null;
+        if (external is not null)
+        {
+            external.SubscribeChooserHandler(Cozmo.Protocol.ExecuteBehaviorByIDMessage.UnionTag, this);               // 0x0060a898..0x0060a8b4
+            external.SubscribeChooserHandler(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnionTag, this);   // 0x0060a91c..0x0060a938
+        }
     }
 
     public BehaviorChooserType Type => BehaviorChooserType.Selection;
@@ -398,19 +426,140 @@ public sealed class SelectionChooser : IBehaviorChooser
     /// <summary>+0x3c: the remaining runs; -1 is unlimited.</summary>
     public int NumRuns => _numRuns;
 
+    /// <summary>Log lines (the handler's warnings and the unknown-tag error).</summary>
+    public event Action<string>? Log;
+
     /// <summary>
-    /// The ExecuteBehavior message's setter (+0x2c = the resolved behaviour, +0x3c = numRuns, default -1;
-    /// <c>str r7,[r5,#0x2c]</c> 0x0060ac2c, <c>str r0,[r5,#0x3c]</c> 0x0060aa88/0x0060aac8). The caller is
-    /// <c>SelectionBSRunnableChooser::HandleExecuteBehavior</c> 0x0060AA58, reached from the constructor's
-    /// subscription to the RobotInterface/ExternalInterface <c>MessageGameToEngine</c> dispatch for
-    /// <c>ExecuteBehaviorByExecutableType</c> (tag 0x93) and <c>ExecuteBehaviorByID</c> (tag 0x94)
-    /// (0x0060A848..0x0060A93E, C1 §3). That game-message dispatch is unbuilt, so nothing in production
-    /// calls this setter; it stays as the seam that dispatch layer will call.
+    /// <c>BehaviorManager::FindBehaviorByExecutableType</c> (called at 0x0060AA7C). Its body is not in the M8 inventory (the container
+    /// map walk at 0x0059C836 is cited but not read), so there is no default: when unset, an executable-type message reports MISSING once and is skipped
+    /// (nothing is stored or selected). MISSING: M8-013.
+    /// </summary>
+    public Func<byte, IBehavior?>? FindBehaviorByExecutableType { get; set; }
+
+    /// <summary>
+    /// The analyzer enable request <c>SetProcessEnabled</c> 0x0060AE84..0x0060AEEA makes under <see cref="ProcessKey"/>
+    /// (<c>AddEnableRequest</c> 0x4B1DA0 / <c>RemoveEnableRequest</c> 0x4B1DAC): (behaviour, key, enabled). The stack has no <c>AIInformationAnalyzer</c>;
+    /// when unset, a handoff that reaches a behaviour with a process reports MISSING once and makes no request. MISSING: M8-013.
+    /// </summary>
+    public Action<IBehavior, string, bool>? SetAnalyzerEnabled { get; set; }
+
+    /// <summary>
+    /// Whether the behaviour's process field (+0x1C, an <c>EProcess</c> id, 0x005BD7D4) is non-null. This stack has no such field; the default
+    /// treats <see cref="SteppedBehavior.RequiredProcessRunning"/> as it, which nothing in the stack sets, so the default handoff makes no
+    /// request and reports MISSING once when a handoff is attempted for a non-stepped behaviour.
+    /// </summary>
+    public Func<IBehavior, bool> HasProcessField { get; set; } = DefaultHasProcessField;
+
+    private static readonly Func<IBehavior, bool> DefaultHasProcessField = b => b is SteppedBehavior { RequiredProcessRunning: not null };
+
+    private bool _reportedTypeNameMissing, _reportedProcessMissing, _reportedSinkMissing, _reportedFinderMissing;
+
+    /// <summary>
+    /// <c>SetProcessEnabled(behaviour, enabled)</c> 0x0060AE84..0x0060AEEA: only a non-null behaviour whose process field is non-null
+    /// changes the analyzer's enable request, filed under <see cref="ProcessKey"/>.
+    /// </summary>
+    private void SetProcessEnabled(IBehavior? behavior, bool enabled)
+    {
+        if (behavior is null) return;
+        if (!_reportedProcessMissing && ReferenceEquals(HasProcessField, DefaultHasProcessField) && behavior is not SteppedBehavior)
+        {
+            _reportedProcessMissing = true;
+            Log?.Invoke("MISSING: M8-013: the process field (+0x1C, an EProcess id) of a non-stepped behaviour cannot be determined here; SetProcessEnabled is decided by HasProcessField");
+        }
+        if (!HasProcessField(behavior)) return;
+        if (SetAnalyzerEnabled is not { } sink)
+        {
+            if (!_reportedSinkMissing) { _reportedSinkMissing = true; Log?.Invoke("MISSING: M8-013: SetProcessEnabled 0x0060AE84 needs AIInformationAnalyzer enable requests (0x4B1DA0/0x4B1DAC); the stack has none; no request made"); }
+            return;
+        }
+        sink(behavior, ProcessKey, enabled);
+    }
+
+    /// <summary>
+    /// The tail <c>HandleExecuteBehavior</c> shares for every outcome (0x0060ABDC..0x0060AC44): when the selected pointer differs from the
+    /// current +0x2C, <c>SetProcessEnabled(old, false)</c> and <c>SetProcessEnabled(new, true)</c> (0x0060ABDC..0x0060AC24); then the shared
+    /// pointer at +0x2C/+0x30 is replaced (0x0060AC2C..0x0060AC44).
+    /// </summary>
+    private void Select(IBehavior? selected)
+    {
+        if (!ReferenceEquals(selected, _requested))
+        {
+            SetProcessEnabled(_requested, false);
+            SetProcessEnabled(selected, true);
+        }
+        _requested = selected;
+    }
+
+    /// <summary>
+    /// <c>HandleExecuteBehavior</c> 0x0060AA58, tag 0x94 (<c>ExecuteBehaviorByID</c>, 0x0060AA6E..0x0060AA88 / 0x0060AB4E..0x0060AB7A):
+    /// <c>FindBehaviorByID(payload[0])</c>, <c>numRuns</c> stored at +0x3C whether or not the lookup succeeds. A hit logs the Info line
+    /// "selecting behavior name '%s'" (event <c>SelectionBSRunnableChooser.HandleExecuteBehaviorByName.SelectBehavior</c>); a miss warns
+    /// "Unknown behavior %s" with the <c>BehaviorIDToString</c> name (event <c>...HandleExecuteBehaviorByName.UnknownBehavior</c>) and selects null.
+    /// </summary>
+    public void HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByIDMessage message)
+    {
+        // FindBehaviorByID: the container map keyed by BehaviorID (the enum is a byte); an undefined id is a miss.
+        IBehavior? found = null;
+        bool defined = Enum.IsDefined(typeof(BehaviorID), message.BehaviorID);
+        string name = defined ? ((BehaviorID)message.BehaviorID).ToString() : message.BehaviorID.ToString();
+        if (defined && _bound is not null) _bound.TryGetValue(name, out found);
+        _numRuns = message.NumRuns;                                                        // 0x0060AA88 / 0x0060AB7A
+        if (found is null) Log?.Invoke($"warning: SelectionBSRunnableChooser.HandleExecuteBehaviorByName.UnknownBehavior: Unknown behavior {name}");
+        else Log?.Invoke($"info: [Unnamed] SelectionBSRunnableChooser.HandleExecuteBehaviorByName.SelectBehavior: selecting behavior name '{name}'");
+        Select(found);
+    }
+
+    /// <summary>
+    /// <c>HandleExecuteBehavior</c> 0x0060AA58, tag 0x93 (<c>ExecuteBehaviorByExecutableType</c>, 0x0060AAAE..0x0060AAC8):
+    /// <c>FindBehaviorByExecutableType(payload[0])</c>, <c>numRuns</c> stored at +0x3C whether or not the lookup succeeds. A hit logs the Info line
+    /// "selecting behavior '%s' exec type '%s'" (event <c>...ExecuteBehaviorByExecutableType.SelectBehavior</c>), a miss warns
+    /// "No behavior for exec type %s" (event <c>...ExecuteBehaviorByExecutableType.NoBehavior</c>) and selects null. The engine prints the type through
+    /// <c>EnumToString(ExecutableBehaviorType)</c> (PLT 0x4B6CA8, 0x0060AAEC / 0x0060ABA0) and the hit line's first %s is the behaviour's name string (+0x40).
+    /// The stack has no <c>ExecutableBehaviorType</c> name table, so the type's name is MISSING (reported once) and its number is printed in its place.
+    /// </summary>
+    public void HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage message)
+    {
+        if (FindBehaviorByExecutableType is not { } find)
+        {
+            if (!_reportedFinderMissing) { _reportedFinderMissing = true; Log?.Invoke("MISSING: M8-013: BehaviorManager::FindBehaviorByExecutableType's body is not in the inventory; the executable-type message is skipped"); }
+            return;
+        }
+        var found = find(message.ExecutableBehaviorType);
+        _numRuns = message.NumRuns;                                                        // 0x0060AAC8
+        if (!_reportedTypeNameMissing) { _reportedTypeNameMissing = true; Log?.Invoke("MISSING: M8-013: the ExecutableBehaviorType name table (EnumToString, PLT 0x4B6CA8) is not in the stack; the number is logged instead of the name"); }
+        if (found is null) Log?.Invoke($"warning: SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior: No behavior for exec type {message.ExecutableBehaviorType}");
+        else Log?.Invoke($"info: [Unnamed] SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior: selecting behavior '{found.Id}' exec type '{message.ExecutableBehaviorType}'");
+        Select(found);
+    }
+
+    /// <summary>
+    /// The subscription callback: dispatch on the game-to-engine union tag. 0x94 and 0x93 are the two handled above; any other tag logs
+    /// <c>SelectionBSRunnableChooser.HandleMessage.UnknownTag</c> (0x0060AB28..0x0060AB7A) and selects null. The engine's error/debug-break
+    /// path after that log is not modelled; <c>numRuns</c> is not written (there is no payload).
+    /// </summary>
+    public void HandleMessage(ushort tag, ReadOnlyMemory<byte> payload)
+    {
+        switch (tag)
+        {
+            case Cozmo.Protocol.ExecuteBehaviorByIDMessage.UnionTag:
+                HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByIDMessage.UnpackBody(payload)); break;
+            case Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnionTag:
+                HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnpackBody(payload)); break;
+            default:
+                Log?.Invoke("error: SelectionBSRunnableChooser.HandleMessage.UnknownTag: got a tag we didn't subscribe to");   // sErrorF 0x0060AB3A..0x0060AB74
+                Select(null);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// The handler's effect for a caller that already holds the resolved behaviour: +0x3c = numRuns, then the same handoff and store as the
+    /// handler (<see cref="Select"/>). The messages themselves reach the chooser through <see cref="HandleMessage"/>.
     /// </summary>
     public void RequestBehavior(IBehavior? behavior, int numRuns = -1)
     {
-        _requested = behavior;
         _numRuns = numRuns;
+        Select(behavior);
     }
 
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)

@@ -102,19 +102,13 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     /// <summary>BehaviorPlayAnimSequence +0x12c: how many times <c>StartSequenceLoop</c> has built the sequence this run.</summary>
     private int _loopIndex;
 
-    /// <param name="score">
-    /// M8-004 gap. The engine has no in-code default score: <c>IBehavior::IBehavior</c> 0x005BBD28 writes
-    /// zero to +0x100, and selection is by the activity chooser or the reaction map. This stack's
-    /// <see cref="BehaviorManager.ChooseAndSwitch"/> ranks behaviours by <see cref="EvaluateScore"/>
-    /// instead, so a behaviour built in code needs a number here (1 for plain play, 5 for a reaction).
-    /// The engine's zero default replaces this once the chooser path has a production caller (M8-013).
-    /// </param>
     // fidelity: M8-004
-    public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers,
-                            double score = 1.0) : base(id, behaviorClass)
+    // The engine has no in-code score: IBehavior::IBehavior 0x005BBD28 (strd r8,r8,[r4,#0x100], r8 = 0 from
+    // 0x005BBD1C) writes zero to the flat score +0x100, and EvaluateScoreInternal 0x005BEEC2 returns +0x100 when the
+    // mood-scorer vector +0xDC is empty. This behaviour's score is therefore SteppedBehavior's zero default.
+    public PlayAnimBehavior(string id, string behaviorClass, IEnumerable<AnimationTrigger> triggers) : base(id, behaviorClass)
     {
         _triggers = triggers.ToList();
-        Score = score;
     }
 
     /// <summary>The animation actually selected on the last start, for tracing.</summary>
@@ -364,8 +358,9 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
     /// <summary>The clip to play. Nothing runs until this is set.</summary>
     public string? ClipName { get; set; }
 
-    /// <summary>How much this wants to run when it has a clip.</summary>
-    public double Score { get; set; } = 1.0;
+    /// <summary>The flat score (+0x100); zero unless a caller sets it (<c>IBehavior::IBehavior</c> 0x005BBD28).</summary>
+    // fidelity: M8-004
+    public double Score { get; set; }
 
     public bool IsRunnable(BehaviorContext context) =>
         ClipName is not null && context.Robot.Animations.Library?.HasClip(ClipName) == true;
@@ -424,26 +419,24 @@ public sealed class ReactBehavior : IBehavior
     private bool _owns;
     private volatile bool _finished = true;
 
-    /// <param name="score">M8-004 gap, as <see cref="PlayAnimBehavior"/>'s is: 5 keeps a reaction ahead of
-    /// ordinary play in this stack's <see cref="BehaviorManager.ChooseAndSwitch"/>. The engine dispatches a
-    /// reaction by its trigger and never scores it; the in-code score goes when the chooser path is wired
-    /// (M8-013).</param>
+    // fidelity: M8-004
+    // No in-code score: the engine's default is zero (IBehavior::IBehavior 0x005BBD28; EvaluateScoreInternal 0x005BEEC2).
     public ReactBehavior(string id, string behaviorClass, ReactionTrigger trigger,
-                         Func<CozmoRobot, bool> condition, ReactionTable? table = null, double score = 5.0)
+                         Func<CozmoRobot, bool> condition, ReactionTable? table = null)
     {
         Id = id;
         Class = behaviorClass;
         Trigger = trigger;
         _condition = condition;
         _table = table ?? ReactionTable.Default;
-        Score = score;
     }
 
     public string Id { get; }
     public string Class { get; }
     public ReactionTrigger Trigger { get; }
 
-    /// <summary>Reactions outscore ordinary behaviours by default, as the engine's preempt them.</summary>
+    /// <summary>The flat score (+0x100); zero unless a caller sets it, as <c>IBehavior::IBehavior</c> 0x005BBD28 leaves it.</summary>
+    // fidelity: M8-004
     public double Score { get; set; }
 
     public string? LastSelected { get; private set; }

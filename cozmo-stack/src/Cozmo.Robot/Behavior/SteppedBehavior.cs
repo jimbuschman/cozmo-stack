@@ -113,9 +113,12 @@ public abstract class SteppedBehavior : IBehavior
     public string Id { get; }
     public string Class { get; }
 
-    /// <summary>M8-004 gap: the engine's default is zero; this in-code score is used only by
-    /// <see cref="BehaviorManager.ChooseAndSwitch"/> until the chooser path is wired (M8-013).</summary>
-    public double Score { get; set; } = 5.0;
+    /// <summary>
+    /// The flat score (+0x100). The engine's default is zero: <c>IBehavior::IBehavior</c> 0x005BBD28 and
+    /// <c>EvaluateScoreInternal</c> 0x005BEEC2 (M8-004). Only a config's <c>flatScore</c> (0x005BC4E0) or a caller sets it.
+    /// </summary>
+    // fidelity: M8-004
+    public double Score { get; set; }
 
     /// <summary>
     /// The clock used for timings that outlive one run (a behaviour that remembers when it last ran).
