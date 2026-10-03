@@ -216,7 +216,18 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// returned (<c>0xA4317C..0xA43194</c>). Its live-voice list is <see cref="Voices"/>.
     /// </summary>
     // fidelity: M6-025
-    public WwiseVoiceLinker? Linker { get; set; }
+    public WwiseVoiceLinker? Linker
+    {
+        get => _linker;
+        set
+        {
+            _linker = value;
+            // [source+0xC] (the owner PBI) is the bridge's own registry, so the linker's 0xA544BC reaches the same owner AddSrc stored.
+            if (value is not null) value.Seams.SourceOwner ??= TryOwnerOf;
+        }
+    }
+
+    private WwiseVoiceLinker? _linker;
 
     /// <summary>
     /// <c>0xA38600(pbi, 4, 1, 0)</c>, the notification (code 4) <c>0xA01800(pbi, 1)</c> tail-calls after it sets
@@ -806,30 +817,22 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         }
         else
         {
-            // C27 step 7 (0xA55908..0xA55924): 0xA56650 returns 1 when [source+0x10] bit0 is already set; otherwise it
-            // calls vt+0x28 and sets the bit only on 1. The raw vt+0x28 result is r6. UNRESOLVED: the C# source
-            // interface reports StartStream as a bool plus StartStreamCode, so a false result is modelled as 0 and
-            // the native raw value (any non-1/0x3F value goes to step 8 unchanged) is not representable.
-            // UNRESOLVED: native passes ([pbi+0x1DC], [pbi+0x1E0]) as the 2nd and 3rd arguments of 0xA56650
-            // (0xA5590C..0xA55910); they are consumed inside the source vt+0x28 classes and are dropped here until those
-            // classes are built (the manifest M6-025 'unresolved' records this).
-            if (source.StartStreamSucceeded)
-            {
-                r6 = 1;                                                          // 0xA5665C
-            }
-            else if (source.StartStream())                                       // 0xA56664 -> vt+0x28
+            // C27 step 7 / C30 (0xA55908..0xA55924): 0xA56650(source, [owner+0x1DC], [owner+0x1E0]) with owner = [source+0xC]
+            // (r7, 0xA558EC). It returns 1 when [source+0x10] bit0 is already set; otherwise it calls vt+0x28 with those two words and
+            // sets the bit only on a raw result of exactly 1. r6 is the raw vt+0x28 result (mov r6,r0, 0xA55920); any value other than
+            // 1 or 0x3F goes to step 8 unchanged.
+            var owner = OwnerOf(source);                                         // [source+0xC]
+            uint a1DC = owner.Read1DC();                                         // 0xA5590C ldr r1,[r7,#0x1dc]
+            uint a1E0 = owner.Read1E0();                                         // 0xA55910 ldr r2,[r7,#0x1e0]
+            r6 = WwiseVoiceSourceStart.StartA56650(source, a1DC, a1E0, out bool ran);   // 0xA55914 bl 0xA56650
+            if (ran)
             {
                 // UNRESOLVED (C26.5): the StartStream classes write pbi+0x15C..0x15F inside vt+0x28
                 // (0xA72760..0xAB138C). The writer is a required seam called here; its position relative to the
-                // rest of AddSrc is not claimed as native ordering.
+                // rest of AddSrc is not claimed as native ordering. It runs whenever vt+0x28 ran.
                 (SourceFormatWriter15C ?? throw new WwiseMissingBehaviourException(
                     "M6-025 C26.5: the source StartStream writers of pbi+0x15C..0x15F (0xA72760..0xAB138C) are not built; " +
                     "supply SourceFormatWriter15C")).Invoke(pbi, source);
-                r6 = source.StartStreamCode;                                     // 1 (bit set) or 0x3F (bit clear)
-            }
-            else
-            {
-                r6 = 0;
             }
 
             if (r6 != 1 && r6 != 0x3F)

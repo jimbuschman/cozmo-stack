@@ -12,7 +12,7 @@ internal static class WwisePlaybackLimiterTestDoubles
         l.RtpcSubscribeA19ECC = (_, _, _) => { };      // double: 0x9F7390..0x9F82EC is a RECOVERABLE_GAP ("changes nothing on shipped data", L5)
         l.RegisterPlayingIdA04D48 = _ => { };          // double: the playing-id table belongs to the event runtime (the live rig wires it)
         l.ReleasePlayingIdA04DE8 = _ => { };           // double: 0xA04DE8 -> 0xA03618 is a RECOVERABLE_GAP
-        l.SourceInfoA1EC54 = _ => { };                 // double: 0xA1EC54 is unread
+        l.SourceInfoA1EC54 = pbi => { pbi.Word1DC = 0x11112222; pbi.Word1E0 = 0x33334444; };   // double: 0xA1EC54 is unread; it is the writer of pbi+0x1DC/+0x1E0 (M6-026 6.1), so the double stores test values
         l.TermSteps6And7 = _ => { };                   // double: 0xA1C660 and the [pbi+0x10C] free are unread
         l.TermSteps10To13 = _ => { };                  // double: 0xA1ECBC, 0xA3E27C, 0x9BDC8C, 0xA1E8F4 are unread
         l.RtpcUnsubscribeA19F60 = _ => { };            // double: 0xA19F60 is unread
@@ -2422,14 +2422,14 @@ public class WwisePlaybackLimiterTests
         var bridge = new WwisePlaybackBridge { Limiter = limiter }.WithTestSeams();
         bridge.NextSource9EEDA4 = null;                                              // the test seams install an override; remove it
         Assert.NotNull(limiter.NextSourceCodeA01768);
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         pbi.NodeE0 = g[1];
         Assert.Equal(2, limiter.NextSourceCodeA01768!(pbi));                         // code 2 from byte 3, through the shared body
         Assert.Equal(5, pbi.NextSourceCache1BB & 7);                                 // out index = byte 1 & 7
         bridge.NodeVt120A379D8 = (_, _) => 1;
         var g3 = new Graph(Snd(1, P(adv0: 0x10, adv3: 3)));
-        var pbi3 = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1 }, 1,
+        var pbi3 = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         pbi3.NodeE0 = g3[1];
         Assert.Equal(2, limiter.NextSourceCodeA01768!(pbi3));                        // code 3 -> vt+0x120 != 0 -> 2
@@ -2536,7 +2536,7 @@ public class WwisePlaybackLimiterTests
     public void M6_026_7_3_7_6_TheOwnerIsTheCurrentSourcesAndNotVoicePlus8()
     {
         // 7.3 (0xA44A50..0xA44A54, 0xA44BB4..0xA44BBC): pbi = [[voice+0xD4]+0xC]. 7.6: 0xA533FC -> 0xA565D0([voice+0xD4]) loads [src+0xC] and clears ITS 1BA bits 3..6 (0xA01840).
-        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { } };
+        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { } }.WithPrePassDoubles();
         var marked = Pbi(50f); marked.Flags1BC = 0x20; marked.Flags1BA = 0x7F;
         var other = Pbi(50f); other.Flags1BA = 0x7F;
         var src = new Src();
@@ -2553,13 +2553,13 @@ public class WwisePlaybackLimiterTests
     [Fact]
     public void M6_026_7_3_TheOwnerLookupIsRequiredAndAMissingSourceOrOwnerIsANamedStop()
     {
-        var unset = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { } };
+        var unset = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { } }.WithPrePassDoubles();
         unset.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0, Source = new Src() });
         Assert.Throws<WwiseMissingBehaviourException>(() => unset.VoicePass());       // no lookup wired
-        var noSource = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => Pbi(50f) };
+        var noSource = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => Pbi(50f) }.WithPrePassDoubles();
         noSource.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0 });
         Assert.Throws<WwiseMissingBehaviourException>(() => noSource.VoicePass());    // [voice+0xD4] == 0: the engine dereferences it
-        var noOwner = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => null };
+        var noOwner = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => null }.WithPrePassDoubles();
         noOwner.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0, Source = new Src() });
         Assert.Throws<WwiseMissingBehaviourException>(() => noOwner.VoicePass());     // [src+0xC] is not a PBI
         Assert.Throws<ArgumentNullException>(() => new WwiseLiveVoice(1, 16).StopA533FC(null!));
@@ -2869,8 +2869,8 @@ public class WwisePlaybackLimiterTests
         public int Channels => 1;
         public int SampleRate => 48000;
         public int Result { get; set; } = 0x2D;
-        public bool StartStreamSucceeded { get; private set; }
-        public bool StartStream() { StartStreamSucceeded = true; return true; }
+        public bool StartStreamSucceeded { get; set; }
+        public int StartStream(uint arg1DC, uint arg1E0) => 1;
         public int Render(WwiseVoiceBuffer buffer) { buffer.ValidFrames = buffer.MaxFrames; buffer.Result = Result; return Result; }
     }
 
@@ -2898,6 +2898,7 @@ public class WwisePlaybackLimiterTests
             Pass.SourceOwner = src => Bridge.TryOwnerOf(src);                        // [[voice+0xD4]+0xC]
             Pass.NodeCleanup = R.Limiter.PerFrameA39564;                             // 0xA39564 (E1/E2)
             Pass.AdvanceTickCounters = Bridge.WalkPendingVoices;                     // 0x9D3CC0
+            Pass.DuckPrePass = () => { };                                            // 0xA43D24 is unread (test double; the pass requires the collaborator)
             Pass.PostMixA5495C = _ => { }; Pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                                      // 0xA55CC4 / 0xA5495C are unread
             R.Limiter.VoiceAudibleA4B3E8 = _ => true;                                // 0xA4B3E8 is unread
         }
@@ -2995,7 +2996,7 @@ public class WwisePlaybackLimiterTests
         }
         WwiseVoiceBusPass NewPass()
         {
-            var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState());
+            var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()).WithPrePassDoubles();
             pass.DestroyVoiceA9D40C4 = _ => { };
             pass.SourceOwner = src => Owners.TryGetValue(src, out var o) ? o : null;
             return pass;

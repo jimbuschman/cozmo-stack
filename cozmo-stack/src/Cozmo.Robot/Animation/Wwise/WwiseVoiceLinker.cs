@@ -40,6 +40,14 @@ public sealed class WwiseOutputDeviceEntry
     /// </summary>
     // fidelity: M6-025
     public List<WwiseDeviceTableEntry> Table { get; } = new();
+
+    /// <summary>
+    /// <c>[E+0x60]</c>, the table capacity (C24.5). The entry constructor stores 0 in <c>+0x58</c>, <c>+0x5C</c> and <c>+0x60</c>
+    /// (<c>0x9EB168 mov ip,#0</c>, <c>0x9EB230..0x9EB238</c>); <c>0x9EA23C</c> grows it by exactly 1 when the count has reached it
+    /// (<c>0x9EA374 add sb,sb,#1</c>, <c>0x9EA3E4 str sb,[r6,#0x60]</c>) and never shrinks it.
+    /// </summary>
+    // fidelity: M6-025
+    public int TableCapacity { get; set; }
 }
 
 /// <summary>One 8-byte <c>{key, built object}</c> entry of a device entry's table (C24.5, C25.6).</summary>
@@ -300,18 +308,60 @@ public sealed record WwiseLineInitArgs(
 /// </summary>
 public sealed class WwiseVoiceLinkSeams
 {
-    /// <summary><c>0xA54A30(voice)</c>, the voice init (<c>voice+0xCD</c> bit0 gate); body RECOVERABLE_GAP; must return 1.</summary>
+    /// <summary>
+    /// <c>0xA54A30(voice)</c>, the voice init (<c>voice+0xCD</c> bit0 gate). C30.8 (manager decision 2026-10-02): its body stays
+    /// RECOVERABLE_GAP until a verifier confirms or corrects C24.2, so this is a named seam and <see cref="WwiseVoiceLinker.Link"/>
+    /// makes none of C24.2's stores for it (not <c>[voice+0xF0]</c>, not <c>[voice+0x1B4]</c>, not the FX slots). The seam must
+    /// return 1; the caller's reaction to any other value (<c>0x9D40C4</c>, return 2, <c>0xA42FFC..0xA4300C</c>) is C23's.
+    /// </summary>
     public Func<WwiseLiveVoice, int>? InitVoiceA54A30 { get; set; }
 
     /// <summary>
-    /// The bus-line Init <c>0xA4F0EC(line, self, cfgA, cfgB, u16 frames, ctx, device)</c> (C24.3): allocates the
-    /// line, its buffer <c>(cfgA &amp; 0xFF) * frames * 4</c> and the FX holder, and returns 2 when
-    /// <c>bus-&gt;vt+0x98(3) == 0</c>, <c>0x34</c> on a buffer or holder allocation failure, else 1; any other
-    /// result than 1 destroys the line and <c>0xA42210</c> returns 0. On 1 the caller stores
-    /// <c>Format64 = cfgA</c> and <c>+0x44 = cfgB</c> on the returned line. The FX chain and the allocation
-    /// are the seam's (the line class is built there).
+    /// The AddRef <c>bus-&gt;vt+8</c> that <c>0xA4F0EC</c> makes on <c>self</c> before <c>vt+0x98(3)</c> (<c>0xA4F1B4..0xA4F1C0</c>,
+    /// C24.3: "after the AddRef <c>vt+8</c>"). The body is unread. Required when the line's <c>self</c> is non-null.
     /// </summary>
-    public Func<WwiseLineInitArgs, (int Result, WwiseMixBus? Line)>? InitLineA4F0EC { get; set; }
+    public Action<WwiseRoutingNode>? BusAddRefVt8 { get; set; }
+
+    /// <summary>
+    /// <c>bus-&gt;vt+0x98(3)</c> (<c>0xA4F1C4..0xA4F1D8</c>): a zero return makes <c>0xA4F0EC</c> return 2 (C24.3). The body is unread.
+    /// Required when the line's <c>self</c> is non-null.
+    /// </summary>
+    public Func<WwiseRoutingNode, int>? BusVt98Arg3 { get; set; }
+
+    /// <summary>
+    /// The FX holder step of <c>0xA4F0EC</c> (<c>0xA4F2E4..0xA4F354</c>; C24.3: "0x34 on buffer or holder allocation failure
+    /// (<c>[line+0x1A8] = 0</c>)"): the 0x14-byte holder allocated through <c>0xA7A7F4</c> and stored at <c>[line+0x1A8]</c>
+    /// (<see cref="WwiseMixBus.OutputMixObject1A8"/>). Returns false for the allocation failure (Init then returns 0x34 with
+    /// <c>[line+0x1A8] = 0</c>). Whether the step runs at all depends on <c>0xA68B38(ctx+...)</c> and <c>[line+0x28] != 4</c>
+    /// (<c>0xA4F2E4..0xA4F2F8</c>), which C24.3 does not state; those tests live in this seam. Required.
+    /// </summary>
+    public Func<WwiseMixBus, WwiseLineInitArgs, bool>? LineFxHolder { get; set; }
+
+    /// <summary>
+    /// The steps of <c>0xA4F0EC</c> that no inventory row reads (reported MISSING), called at the three places the engine reaches them,
+    /// with the stage number as the third argument. Stage 1, before the AddRef (<c>0xA4F13C..0xA4F1AC</c>): <c>0x9C8108</c>/<c>0x9C817C(global,
+    /// [line+0x48])</c> and the stores to <c>[line+0xC0]</c> bit2 and <c>[line+0xC1]</c> low 5 bits, the <c>+0x1B8</c> bit2/bit3 stores and
+    /// <c>+0x58</c>/<c>+0x5C = 1.0f/(float)frames</c>. Stage 2, after <c>vt+0x98(3)</c> returned non-zero and only when <c>self</c> is
+    /// non-null (<c>0xA4F1F0..0xA4F208</c>): <c>0xA19ECC(line, [line+0x4C], 1, {..})</c>. Stage 3, after the buffer stores and before the
+    /// holder step (<c>0xA4F2A0..0xA4F2E0</c>): <c>[line+0x90] = 0xA68A44(ctx, 0)</c> with <c>+0xC0</c> bit3 cleared and <c>0xA68B28</c>'s
+    /// <c>+0x1B8</c> bit0/bit3. Required: Init throws when it is unset, so none of these steps is silently skipped.
+    /// </summary>
+    public Action<WwiseMixBus, WwiseLineInitArgs, int>? LineInitUnreadSteps { get; set; }
+
+    /// <summary>
+    /// <c>[source+0xC]</c>: the owner PBI of a source (<c>0xA544C4..0xA544D0</c> read it for the arguments of <c>0xA56650</c>). The
+    /// bridge supplies <see cref="WwisePlaybackBridge.TryOwnerOf"/> when the linker is attached to it. A null result is the
+    /// engine's null dereference, so it throws.
+    /// </summary>
+    public Func<IWwiseVoiceSource, WwisePlayingInstance?>? SourceOwner { get; set; }
+
+    /// <summary>
+    /// <c>0xA22A3C(key, [E+0x20], [E+0x2C], &amp;value)</c> (C24.5: <c>0xA22304</c> when <c>key &amp; ~0x63F == 0</c>, else
+    /// <c>0xA22684</c>; both bodies unread): the build <c>0x9EA23C</c> calls. It returns the built object, or null for a zero value.
+    /// <c>[E+0x20]</c> and <c>[E+0x2C]</c> are fields of the device entry the C# entry does not model, so the seam receives the
+    /// entry. Required. The table scan, append, growth and removal around it are <see cref="WwiseVoiceLinker"/>'s.
+    /// </summary>
+    public Func<WwiseOutputDeviceEntry, uint, object?>? BuildDeviceObjectA22A3C { get; set; }
 
     /// <summary>
     /// <c>0x9C39DC(bus, 0, 5)</c>, the Bus Volume param 5 read that <c>0xA68A44</c> makes for a non-null bus
@@ -332,25 +382,19 @@ public sealed class WwiseVoiceLinkSeams
     /// </summary>
     public Action<WwiseMixBus, object>? MixObjectRemoveInput { get; set; }
 
-    /// <summary>
-    /// <c>0x9EA23C(deviceEntry, key)</c> (C24.5, C25.6). The row-19 caller scans the entry's <see cref="WwiseOutputDeviceEntry.Table"/>
-    /// itself first (<c>0xA4C3D8..0xA4C410</c>, <c>0xA4C4D8..0xA4C504</c>) and calls this only when the key is absent, so
-    /// a found key never reaches it. Its own contract (<c>0x9EA25C..0x9EA2C4</c>) is find-or-insert: it rescans and,
-    /// on a hit, zeroes the value and rebuilds; on a miss it appends <c>{key, 0}</c> to the table first; it builds
-    /// through <c>0xA22A3C</c> (<c>0xA22304</c> / <c>0xA22684</c>, unread), returns 1 when the built value is non-zero,
-    /// else removes the entry and returns 2. Any other result than 1 destroys the new connection. The body is the
-    /// seam's (the table mutation included).
-    /// </summary>
-    public Func<WwiseOutputDeviceEntry, uint, int>? DeviceTableFindOrInsert9EA23C { get; set; }
-
     /// <summary>The connection mixer's input/output channel counts (<c>0xA6F90C</c> rows give none).</summary>
     public Func<WwiseLiveVoice, WwiseMixBus, (int Input, int Output)>? ConnectionChannels { get; set; }
 
     /// <summary><c>[source+0x10]</c> bit1 (<c>0xA54584..0xA54588</c>); its writer is not in the rows.</summary>
     public Func<IWwiseVoiceSource, bool>? SourceFlag10Bit1 { get; set; }
 
-    /// <summary><c>0xA0428C</c> (called at <c>0xA545CC</c>); body and arguments unread.</summary>
-    public Action<WwiseLiveVoice, WwisePlayingInstance>? A0428C { get; set; }
+    /// <summary>
+    /// <c>0xA0428C(mgr, [pbi'+0x134], 0x9BD138(pbi'))</c> (<c>0xA545B0..0xA545CC</c>, C30.1(b)) with <c>pbi' = [voice+8]</c> = the owner
+    /// PBI's <c>+0xC</c>: <c>mgr</c> is the global at <c>[GOT+0xFFFFFDD4]</c> (the seam's closure supplies it), the second argument is the
+    /// playing id (<c>pbi'+0x134</c> = <c>pbi+0x140</c>) and the third is <c>0x9BD138(pbi')</c> = <c>[[pbi'+0xD4]+8]</c>, the id of the PBI's node
+    /// (<c>pbi+0xE0</c>, <see cref="WwisePlayingInstance.NodeE0"/>). The body is unread.
+    /// </summary>
+    public Action<uint, uint>? A0428C { get; set; }
 
     /// <summary>
     /// <c>0xA56414(source, 0)</c> then <c>source vt[0]</c> and the pool free (Term, row 5.17): the PBI
@@ -427,6 +471,26 @@ public sealed class WwiseVoiceLinker
     // fidelity: M6-025
     public ushort LineMaxFrames { get; set; } = 0x400;
 
+    /// <summary>
+    /// The u32 at <c>[0x108D90C+0x1C]</c> that <c>0xA544BC</c> adds 1 to before multiplying by <see cref="LineMaxFrames"/>
+    /// (<c>0xA54524..0xA5453C</c>, C30.1(c)). Init copies the 0x4C-byte settings to <c>0x108D90C</c> and the default stores 1 at
+    /// <c>+0x1C</c>; Anki writes only <c>+8</c>, <c>+0x18</c> and <c>+0x14</c> (inventory 2.3, <c>0x99E458..0x99E464</c>, <c>0x99DCA8/0x99DCD4</c>,
+    /// <c>0x8D8184..0x8D8192</c>, <c>0x8D81DC</c>), so it is 1.
+    /// </summary>
+    // fidelity: M6-025
+    public uint ContinuousLookAhead { get; set; } = 1;
+
+    /// <summary>
+    /// The pool allocation-failure branch (<c>0xA7A894</c>/<c>0xA7A7F4</c> returning null) for the allocations the linker owns: the
+    /// line buffer of <c>0xA4F0EC</c> (<c>0xA4F250..0xA4F25C</c>, result 0x34) and the device-table growth of <c>0x9EA23C</c>
+    /// (<c>0x9EA380..0x9EA38C</c>). The same hook as <see cref="WwisePlaybackLimiter.AllocationFails"/>: true fails that one
+    /// allocation, null means it never fails.
+    /// </summary>
+    // fidelity: M6-025
+    public Func<bool>? AllocationFails { get; set; }
+
+    private bool AllocFails() => AllocationFails?.Invoke() == true;
+
     // ---------------------------------------------------------------- 0xA42DEC
 
     /// <summary>
@@ -447,7 +511,8 @@ public sealed class WwiseVoiceLinker
                 TeardownVoice(voice);
                 return 2;
             }
-            voice.Word0xF0 = pbi.Word15C;                                  // C25.5: 0xA54A64 ldm, 0xA54B60, 0xA54B70
+            // C30.8: 0xA54A30's body (C24.2's stores, [voice+0xF0] = [pbi+0x15C] among them, C25.5) is RECOVERABLE_GAP, so this
+            // method stores nothing on its behalf; the seam owns every effect of the init.
         }
 
         var routing = _routingFor(pbi);
@@ -626,15 +691,10 @@ public sealed class WwiseVoiceLinker
         uint cfgB = parent is not null ? w : cfgA;
 
         var key = new WwiseMixBusKey(unchecked((int)ctx.Key), ctx.Key2, unchecked((int)dev.Lo), unchecked((int)dev.Hi));
-        var init = Seams.InitLineA4F0EC ?? throw Missing("0xA4F0EC (the bus-line Init beyond D2.1)");
-        var (result, line) = init(new WwiseLineInitArgs(key, ctx.Bus, cfgA, cfgB, (int)LineMaxFrames, ctx, dev));
+        var (result, line) = InitLine(new WwiseLineInitArgs(key, ctx.Bus, cfgA, cfgB, (int)LineMaxFrames, ctx, dev));   // 0xA4F0EC
         if (result != 1) return null;                                      // 2 / 0x34 / any: destroy, return 0 (C24.3)
-        if (line is null) throw new InvalidOperationException("M6-025 C24.3: the line Init seam returned 1 without a line");
+        if (line is null) throw new InvalidOperationException("M6-025 C24.3: the line Init returned 1 without a line");
 
-        line.Format64 = cfgA;                                              // [line+0x64]
-        line.Config44 = cfgB;                                              // [line+0x44]
-        line.Context = ctx;                                                // vpl+0x4C/+0x50
-        line.Device = dev;                                                 // vpl+0x28/+0x2C
         line.IsExtendedLine = ctx.Bus is not null && (ctx.Bus.Word40 & 0xE0000) != 0;   // 0xA42244..0xA4226C
         line.Bit3OfFlags1CC = flag;                                        // 0xA422DC: flag at +0x1CC bit3 (C24.3)
         // 0xA42210 clears +0x1CC bits 0 and 1 at creation (C23.2): the WwiseMixBus defaults.
@@ -645,6 +705,95 @@ public sealed class WwiseVoiceLinker
             line.SetParentLink(parent);
         }
         return line;
+    }
+
+    /// <summary>
+    /// <c>0xA4F0EC(line, self, cfgA, cfgB, u16 frames, ctx by value, device id u64)</c> (C24.3). It stores <c>[line+0x30] = self</c>,
+    /// the context at <c>+0x4C..+0x54</c> and <c>[line+0x48] = 0xA68A2C(ctx)</c>, the device id at <c>+0x28</c>, <c>[line+0x44] = cfgB</c>; with a
+    /// non-null <c>self</c> it AddRefs it (<c>vt+8</c>) and returns 2 when <c>vt+0x98(3) == 0</c>; it allocates the buffer
+    /// <c>(cfgA &amp; 0xFF) * frames * 4</c> and returns 0x34 when that allocation fails, then stores <c>[line+0x6C] = frames</c> and
+    /// <c>[line+0x64] = cfgA</c>; the FX holder step returns 0x34 on its allocation failure (with <c>[line+0x1A8] = 0</c>); otherwise 1. A
+    /// result other than 1 means the caller destroys the line (<c>0xA42210</c> returns 0). The steps no row reads are
+    /// <see cref="WwiseVoiceLinkSeams.LineInitUnreadSteps"/>; the AddRef, <c>vt+0x98(3)</c> and the holder are seams too.
+    /// </summary>
+    // fidelity: M6-025
+    private (int Result, WwiseMixBus? Line) InitLine(WwiseLineInitArgs a)
+    {
+        if (a.Frames <= 0)
+            throw Missing("0xA4F0EC with frames == 0 (the pool allocation of a 0-byte buffer, 0xA7A894, is unread)");
+        var unread = Seams.LineInitUnreadSteps ?? throw Missing("0xA4F0EC's steps no row reads (0x9C8108/0x9C817C, 0xA19ECC, 0xA68A44/0xA68B28 stores)");
+
+        var line = new WwiseMixBus(a.Key, Array.Empty<WwiseBusFxSlot>(), a.Frames);
+        line.SelfBus30 = line;                                             // 0xA4F0FC str r1,[r0,#0x30]: r0 = r1 = the line (callers 0xA423AC, 0xA42470); ctx.Bus is separate
+        line.Context = a.Context;                                          // 0xA4F12C..0xA4F138: [line+0x4C..+0x54] = ctx; [line+0x48] = 0xA68A2C(ctx) = Context.Key
+        line.Device = a.Device;                                            // 0xA4F188 vstr d8,[r4,#0x28]
+        line.Config44 = a.CfgB;                                            // 0xA4F190 str fp,[r4,#0x44]
+        unread(line, a, 1);                                                // 0xA4F13C..0xA4F1AC
+
+        if (a.Bus is { } self)                                             // 0xA4F180 cmp r5,#0; beq 0xA4F20C
+        {
+            (Seams.BusAddRefVt8 ?? throw Missing("bus->vt+8, the AddRef 0xA4F0EC makes before vt+0x98(3) (0xA4F1B4..0xA4F1C0)"))(self);
+            if ((Seams.BusVt98Arg3 ?? throw Missing("bus->vt+0x98(3) (0xA4F1C4..0xA4F1D8)"))(self) == 0)
+                return (2, null);                                          // 0xA4F1DC moveq r0,#2
+            unread(line, a, 2);                                            // 0xA4F1F0..0xA4F208 0xA19ECC
+        }
+
+        uint size = unchecked((a.CfgA & 0xFF) * (uint)a.Frames * 4);       // 0xA4F20C mul ip,sl,r7; 0xA4F230 lsl ip,ip,#2
+        if (size == 0)
+            throw Missing("0xA4F0EC's buffer allocation of 0 bytes (cfgA low byte or frames is 0; 0xA7A894 with size 0 is unread)");
+        if (AllocFails()) return (0x34, null);                             // 0xA4F250 bl 0xA7A894; 0xA4F25C moveq r0,#0x34
+
+        line.InitFrames6C = unchecked((ushort)a.Frames);                   // 0xA4F28C strh r7,[r4,#0x6c]
+        line.Format64 = a.CfgA;                                            // 0xA4F290 str r8,[r4,#0x64]
+        unread(line, a, 3);                                                // 0xA4F2A0..0xA4F2E0
+
+        if (!(Seams.LineFxHolder ?? throw Missing("the FX holder step of 0xA4F0EC (0xA4F2E4..0xA4F354)"))(line, a))
+        {
+            line.OutputMixObject1A8 = null;                                // 0xA4F350 str r3,[r4,#0x1a8] (r3 = 0)
+            return (0x34, null);                                           // 0xA4F34C mov r0,#0x34
+        }
+        return (1, line);
+    }
+
+    /// <summary>
+    /// <c>0x9EA23C(E, key)</c> (C24.5, C25.6; checked against <c>0x9EA23C..0x9EA40C</c>): scan the device table <c>{key, built}</c> from the
+    /// start for <paramref name="key"/> (<c>0x9EA25C..0x9EA284</c>); a hit keeps its slot, a miss appends <c>{key, 0}</c> after growing the
+    /// capacity by exactly 1 when the count has reached it (<c>0x9EA28C cmp r8,sb; bhs 0x9EA370</c>, <c>0x9EA374 add sb,sb,#1</c>); an
+    /// allocation failure there leaves the table as it was and goes to the removal scan, which finds nothing (<c>0x9EA400</c> to
+    /// <c>0x9EA330</c>: return 2). The slot's value is zeroed (<c>0x9EA2BC str r3,[r5]</c>) and rebuilt through <c>0xA22A3C</c>; a non-zero value
+    /// returns 1; a zero value removes the first entry holding <paramref name="key"/> (<c>0x9EA2EC..0x9EA368</c>, the following entries move
+    /// down, the count drops by 1, the capacity stays) and returns 2.
+    /// </summary>
+    // fidelity: M6-025
+    public int FindOrInsert9EA23C(WwiseOutputDeviceEntry e, uint key)
+    {
+        var slot = e.Table.FirstOrDefault(t => t.Key == key);              // 0x9EA25C..0x9EA284
+        if (slot is null)
+        {
+            bool grown = true;
+            if (e.Table.Count >= e.TableCapacity)                          // 0x9EA28C
+            {
+                if (AllocFails()) grown = false;                           // 0x9EA38C beq 0x9EA400
+                else e.TableCapacity += 1;                                 // 0x9EA3E4 str sb,[r6,#0x60]
+            }
+            if (grown)
+            {
+                slot = new WwiseDeviceTableEntry { Key = key };            // 0x9EA2A8 str r4,[r5],#4 (count already +1 at 0x9EA29C)
+                e.Table.Add(slot);
+            }
+        }
+
+        if (slot is not null)
+        {
+            slot.Built = null;                                             // 0x9EA2BC..0x9EA2C4
+            slot.Built = (Seams.BuildDeviceObjectA22A3C
+                ?? throw Missing("0xA22A3C (the device table build; 0xA22304/0xA22684 are unread)"))(e, key);   // 0x9EA2D4
+            if (slot.Built is not null) return 1;                          // 0x9EA2D8..0x9EA2E4
+        }
+
+        int at = e.Table.FindIndex(t => t.Key == key);                     // 0x9EA2EC..0x9EA330 (a failed growth reaches it with no hit)
+        if (at >= 0) e.Table.RemoveAt(at);                                 // 0x9EA338..0x9EA368
+        return 2;                                                          // 0x9EA364 / 0x9EA330
     }
 
     /// <summary>
@@ -743,9 +892,7 @@ public sealed class WwiseVoiceLinker
     private int EnsureDeviceTableKey(WwiseOutputDeviceEntry entry, uint key)
     {
         if (entry.Table.Any(t => t.Key == key)) return 1;
-        var find = Seams.DeviceTableFindOrInsert9EA23C
-            ?? throw Missing("0x9EA23C (the device table find-or-insert; its build bodies 0xA22304/0xA22684 are unread)");
-        return find(entry, key);
+        return FindOrInsert9EA23C(entry, key);
     }
 
     /// <summary>
@@ -806,46 +953,88 @@ public sealed class WwiseVoiceLinker
     }
 
     /// <summary>
-    /// <c>0xA544BC(voice, pbi)</c> (C23.1 and the check's row 3): re-runs <c>0xA56650</c>. Result 0x3F: a
-    /// non-negative <c>pbi+0x1D8</c> returns 0x3F at once; a negative one runs <c>0xA54580</c> first and still
-    /// returns 0x3F. Result 1: <c>+0x1D8 &gt;= round((L+1)*F*[pbi+0x164])</c> returns 0x3F, else (after
-    /// <c>0xA54580</c> when <c>+0x1D8 &lt; 0</c>) 1. Anything else returns 2. L = 1 (inv 2.3), F is the frame size
-    /// (inv 2.2; the settled policy value).
+    /// <c>0xA544BC(voice, pbi)</c> (C23.1, C30.1; checked against <c>0xA544BC..0xA545DC</c> and run under Unicorn, see
+    /// <c>re-analysis/tools/emu/emu_notready.py</c>). <c>r = 0xA56650([voice+0xD4], [owner+0x1DC], [owner+0x1E0])</c> with
+    /// <c>owner = [[voice+0xD4]+0xC]</c>; a null source (<c>0xA544C4 ldr r0,[r0,#0xd4]</c> then <c>ldr r3,[r0,#0xc]</c>) is a null
+    /// dereference, so it throws. Result 0x3F: <c>[pbi+0x1D8] &gt;= 0</c> (signed) returns 0x3F at once, a negative one runs
+    /// <c>0xA54580</c> first and still returns 0x3F. Result 1: the window is <c>trunc_s32((float)(u32)((L+1) * u16[0x1052440]) *
+    /// [pbi+0x164] + (product &gt; 0 ? 0.5f : -0.5f))</c> (<c>vcvt.f32.u32</c>, <c>vmul.f32</c>, <c>vcmpe</c>/<c>vmovle</c>, <c>vadd.f32</c>,
+    /// <c>vcvt.s32.f32</c>, <c>0xA54524..0xA54564</c>); a signed <c>[pbi+0x1D8] &gt;= window</c> returns 0x3F, otherwise a negative offset
+    /// runs <c>0xA54580</c> and the result is 1. Anything else returns 2.
     /// </summary>
+    // fidelity: M6-025
     public int NotReadyCheck(WwiseLiveVoice voice, WwisePlayingInstance pbi)
     {
-        var source = voice.Source;
-        int r;
-        if (source is null) r = 0;
-        else if (source.StartStreamSucceeded) r = 1;                       // 0xA56650: latch already set
-        else if (!source.StartStream()) r = 0;
-        else r = source.StartStreamCode;
-        int offset = unchecked((int)pbi.StartOffset);                      // [pbi+0x1D8], signed
+        var source = voice.Source ?? throw new InvalidOperationException(
+            "M6-025 C30.1: [voice+0xD4] is null; 0xA544C4 ldr r0,[r0,#0xd4] and 0xA544D0 ldr r3,[r0,#0xc] dereference it, so it is not 'not ready'");
+        var owner = (Seams.SourceOwner ?? throw Missing("[source+0xC], the owner PBI whose +0x1DC/+0x1E0 feed 0xA56650 (0xA544D0)"))(source)
+            ?? throw new InvalidOperationException(
+                "M6-025 C30.1: [[voice+0xD4]+0xC] is null; 0xA544D8 ldr r1,[r3,#0x1dc] dereferences it");
+        int r = WwiseVoiceSourceStart.StartA56650(source, owner.Read1DC(), owner.Read1E0(), out _);   // 0xA544D8..0xA544E0
+        int offset = unchecked((int)pbi.StartOffset);                      // [pbi+0x1D8], signed (0xA54500 ldr; 0xA54504 cmp r3,#0; blt)
 
-        if (r == 0x3F)                                                     // 0xA544EC beq 0xA54500
+        if (r == 0x3F)                                                     // 0xA544E4 cmp r0,#0x3f; beq 0xA54500
         {
-            if (offset < 0) SideEffect54580(voice, pbi, source!);          // 0xA5457C bge fails -> 0xA54580
-            return 0x3F;
+            if (offset < 0) SideEffect54580(voice, source);                // 0xA54508 blt 0xA54580
+            return 0x3F;                                                   // 0xA5450C mov r0,r4
         }
-        if (r == 1)                                                        // 0xA54514
+        if (r == 1)                                                        // 0xA544F0 cmp r0,#1; beq 0xA54514
         {
-            const int L = 1;
-            int window = (int)MathF.Round((L + 1) * WwiseRuntimeSettings.SamplesPerFrame * pbi.Ratio, MidpointRounding.AwayFromZero);
-            if (offset >= window) return 0x3F;                             // 0xA54570
-            if (offset < 0) SideEffect54580(voice, pbi, source!);          // 0xA54580 first, then 1
+            int window = TruncS32(                                         // 0xA54560 vcvt.s32.f32
+                WindowProduct(unchecked((ContinuousLookAhead + 1u) * LineMaxFrames), pbi.Ratio));   // 0xA54538 add r3,r3,#1; 0xA5453C mul r3,r3,r1 (u32 wrap)
+            if (offset >= window) return 0x3F;                             // 0xA54568 cmp r2,r3; blt 0xA54578 not taken -> 0xA54570
+            if (offset < 0) SideEffect54580(voice, source);                // 0xA54578 cmp r2,#0; bge 0xA5450C not taken -> 0xA54580
             return 1;
         }
-        return 2;
+        return 2;                                                          // 0xA544F8 mov r0,#2
     }
 
-    /// <summary><c>0xA54580..0xA545D0</c>: with source <c>+0x10</c> bit1 clear, <c>voice+0xE8 |= 1</c> and <c>0xA0428C</c>.</summary>
-    private void SideEffect54580(WwiseLiveVoice voice, WwisePlayingInstance pbi, IWwiseVoiceSource source)
+    /// <summary>
+    /// <c>(float)(u32)n * ratio</c>, then <c>+ (product &gt; 0 ? 0.5f : -0.5f)</c> in single precision (<c>0xA54540..0xA5455C</c>:
+    /// <c>vmov.f32 s14,#0.5</c>, <c>vmov.f32 s13,#-0.5</c>, <c>vcvt.f32.u32</c>, <c>vmul.f32</c>, <c>vcmpe.f32 s15,#0</c>, <c>vmovle.f32 s14,s13</c>,
+    /// <c>vadd.f32</c>). <c>le</c> after <c>vcmpe</c> also holds for an unordered compare, so a NaN product takes -0.5f.
+    /// 0.5f is <c>0x3F000000</c>, -0.5f is <c>0xBF000000</c>.
+    /// </summary>
+    // fidelity: M6-025
+    private static float WindowProduct(uint n, float ratio)
+    {
+        float product = (float)n * ratio;                                  // vcvt.f32.u32 then vmul.f32
+        float half = product > 0f ? BitConverter.Int32BitsToSingle(0x3F000000) : BitConverter.Int32BitsToSingle(unchecked((int)0xBF000000));
+        return product + half;                                             // vadd.f32
+    }
+
+    /// <summary>
+    /// <c>vcvt.s32.f32</c>: round toward zero, saturating at <c>int.MinValue</c>/<c>int.MaxValue</c>, NaN to 0 (the ARM VFP conversion,
+    /// FPSCR round-to-zero for this opcode).
+    /// </summary>
+    // fidelity: M6-025
+    private static int TruncS32(float v)
+    {
+        if (float.IsNaN(v)) return 0;
+        if (v >= 2147483648f) return int.MaxValue;
+        if (v <= -2147483648f) return int.MinValue;
+        return (int)v;
+    }
+
+    /// <summary>
+    /// <c>0xA54580..0xA545D8</c> (C30.1(b), run under Unicorn): with the source's <c>[+0x10]</c> bit1 set it returns at once; otherwise it
+    /// stores <c>voice+0xE8 |= 1</c> (<c>0xA54594..0xA545A0</c>, before the null test of <c>[voice+8]</c>), and a null <c>[voice+8]</c> reaches the
+    /// deliberate fault (<c>0xA545D8 ldr r3,[r3,#0x140]</c>, <c>0xA545DC udf</c>), so it throws; else it calls
+    /// <c>0xA0428C(mgr, [pbi'+0x134], 0x9BD138(pbi'))</c> with <c>pbi' = [voice+8]</c> (the owner's <c>+0xC</c>): the playing id and the id of
+    /// the PBI's node (<c>[[pbi'+0xD4]+8]</c>).
+    /// </summary>
+    // fidelity: M6-025
+    private void SideEffect54580(WwiseLiveVoice voice, IWwiseVoiceSource source)
     {
         var bit1 = Seams.SourceFlag10Bit1 ?? throw Missing("[source+0x10] bit1 (0xA54584..0xA54588)");
-        if (bit1(source)) return;                                          // bit1 set: returns without side effects
-        voice.FlagE8 = true;                                               // voice+0xE8 |= 1
-        var a = Seams.A0428C ?? throw Missing("0xA0428C (called at 0xA545CC)");
-        a(voice, pbi);
+        if (bit1(source)) return;                                          // 0xA5458C bne 0xA5450C: no side effect
+        voice.FlagE8 = true;                                               // 0xA545A0 strb: voice+0xE8 |= 1
+        var owner = voice.BusOwner8 as WwisePlayingInstance ?? throw new InvalidOperationException(
+            "M6-025 C30.1(b): [voice+8] is null; 0xA545A4 beq 0xA545D8 reaches the deliberate fault (udf at 0xA545DC)");
+        var node = owner.NodeE0 ?? throw new InvalidOperationException(
+            "M6-025 C30.1(b): [pbi+0xE0] is null; 0x9BD138 (0xA545BC) dereferences it ([[pbi'+0xD4]+8])");
+        var call = Seams.A0428C ?? throw Missing("0xA0428C (called at 0xA545CC)");
+        call(owner.PlayingId, node.Id);                                    // 0xA545CC bl 0xA0428C(mgr, [pbi'+0x134], 0x9BD138(pbi'))
     }
 
     // ---------------------------------------------------------------- 0x9D40C4

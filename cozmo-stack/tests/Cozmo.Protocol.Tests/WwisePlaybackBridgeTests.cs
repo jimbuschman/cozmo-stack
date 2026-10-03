@@ -127,16 +127,19 @@ public class WwisePlaybackBridgeTests
         public int SampleRate { get; }
         public uint SourceFormatWord { get; }
 
-        /// <summary>The vt+0x28 raw result (0xA56650): 1 by default, 0x3F for a streamed source.</summary>
+        /// <summary>The vt+0x28 raw result: 1 by default, 0x3F for a streamed source (M6-025 C27 step 7: any int is possible).</summary>
         public int StartStreamCode { get; init; } = 1;
 
-        public bool StartStreamSucceeded { get; private set; }
+        /// <summary>[source+0x10] bit0, written only by 0xA56650 (WwiseVoiceSourceStart), not by the source.</summary>
+        public bool StartStreamSucceeded { get; set; }
 
-        /// <summary>0xA56650: set [source+0x10] bit0 only when vt+0x28 returns 1.</summary>
-        public bool StartStream()
+        /// <summary>The arguments vt+0x28 received (C30.1(d): [owner+0x1DC], [owner+0x1E0]).</summary>
+        public List<(uint, uint)> StartStreamCalls { get; } = new();
+
+        public int StartStream(uint arg1DC, uint arg1E0)
         {
-            StartStreamSucceeded = StartStreamCode == 1;
-            return true;
+            StartStreamCalls.Add((arg1DC, arg1E0));
+            return StartStreamCode;
         }
 
         public int Render(WwiseVoiceBuffer buffer)
@@ -296,7 +299,7 @@ public class WwisePlaybackBridgeTests
         var synthetic = new SyntheticSource(0.5f, format: 0xABCD);
         bridge.SourceFactory = _ => synthetic;
 
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         var voice = new WwiseLiveVoice(1, 16);
@@ -318,7 +321,7 @@ public class WwisePlaybackBridgeTests
         var bridge = new WwisePlaybackBridge().WithTestSeams();
         var source = new SyntheticSource(0.5f) { StartStreamCode = 0x3F };
         bridge.SourceFactory = _ => source;
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
@@ -341,7 +344,7 @@ public class WwisePlaybackBridgeTests
         var engine = new object();
         bridge.LinkEngineA548B8 = v => v.EngineEC = engine;
         bridge.Linker = EmptyDeviceLinker(bridge);               // 0xA42DEC with no output device -> 1, node kept
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
@@ -368,7 +371,7 @@ public class WwisePlaybackBridgeTests
         bridge.LinkEngineA548B8 = v => v.EngineEC = new object();
         bridge.StartSourceA56478 = started.Add;
         bridge.Linker = EmptyDeviceLinker(bridge);
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
@@ -388,11 +391,11 @@ public class WwisePlaybackBridgeTests
     {
         // F3: 0xA43120 bl 0xA01878 sets pbi+0x1BA bits 3..6 = 3; the match returns 5.
         var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x77 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         // C25.4: [voice+8] = the owner's pbi+0xC, so [voice+8]+0x1BC is the owner's pbi+0x1C8 (0xA430E8).
-        var owner = bridge.CreatePbi(
+        var owner = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1, ChainId = 0x77 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         var voice = new WwiseLiveVoice(1, 16) { BusOwner8 = owner };
@@ -413,10 +416,10 @@ public class WwisePlaybackBridgeTests
         var bridge = new WwisePlaybackBridge { SourceFactory = _ => new SyntheticSource(0.25f) }.WithTestSeams();
         bridge.LinkEngineA548B8 = _ => { };
         bridge.Linker = EmptyDeviceLinker(bridge);
-        var other = bridge.CreatePbi(
+        var other = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1, ChainId = 0x11 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x77 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         bridge.Voices.Add(new WwiseLiveVoice(1, 16) { BusOwner8 = other });
@@ -437,7 +440,7 @@ public class WwisePlaybackBridgeTests
         var bridge = new WwisePlaybackBridge().WithTestSeams();
         bool called = false;
         bridge.SetupFadeInTransition = (_, t) => { called = true; Assert.Equal(250f, t.FadeInTime); return 0xBEEF; };
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
@@ -462,7 +465,7 @@ public class WwisePlaybackBridgeTests
         var bridge = new WwisePlaybackBridge().WithTestSeams();
         var source = new SyntheticSource(0.5f);
         bridge.SourceFactory = _ => source;
-        var pbi = bridge.CreatePbi(
+        var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
@@ -520,6 +523,19 @@ public class WwisePlaybackBridgeTests
 /// </summary>
 internal static class WwiseBridgeTestSeams
 {
+    /// <summary>
+    /// <c>CreatePbi</c> and the unread writer of <c>pbi+0x1DC/+0x1E0</c> (<c>0xA1EC54</c> through <c>pbi vt+0xC</c>, M6-026 6.1): the values are
+    /// the test doubles (0x11112222, 0x33334444) of re-analysis/tools/emu/emu_notready.py; they claim nothing about the media.
+    /// </summary>
+    public static WwisePlayingInstance CreatePbiWithMediaWords(
+        this WwisePlaybackBridge bridge, WwisePlayInitParams p, uint targetNodeId, object sourceDescriptor, bool continuous)
+    {
+        var pbi = bridge.CreatePbi(p, targetNodeId, sourceDescriptor, continuous);
+        pbi.Word1DC = 0x11112222;
+        pbi.Word1E0 = 0x33334444;
+        return pbi;
+    }
+
     public static WwisePlaybackBridge WithTestSeams(this WwisePlaybackBridge bridge)
     {
         bridge.SourceFormatWriter15C ??= (_, _) => { };      // leaves the ctor default 0x4101 (C26.5 gap, not a source claim)

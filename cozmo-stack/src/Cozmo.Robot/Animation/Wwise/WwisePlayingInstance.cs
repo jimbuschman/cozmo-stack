@@ -170,6 +170,28 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0x170</c>: the 0x44-byte block copied from <c>params+0x28</c>.</summary>
     public byte[] Block170 { get; }
 
+    /// <summary>
+    /// <c>+0x1DC</c> (the media data pointer) and <c>+0x1E0</c> (its size): the <c>r1</c>/<c>r2</c> of every <c>0xA56650</c> call
+    /// (<c>0xA5590C</c>, <c>0xA55910</c>, <c>0xA544D8</c>, <c>0xA544DC</c>; M6-025 C27 step 7, C30.1(d)). Their writer is
+    /// <c>pbi vt+0xC</c> = <c>0xA0285C</c> through <c>0xA1EC54</c> (<see cref="WwisePlaybackLimiter.SourceInfoA1EC54"/>), an unread
+    /// body, so no value is assumed: reading either before that writer has stored it throws.
+    /// </summary>
+    // fidelity: M6-025
+    public uint? Word1DC { get; set; }
+
+    /// <summary>See <see cref="Word1DC"/>.</summary>
+    public uint? Word1E0 { get; set; }
+
+    /// <summary>Reads <see cref="Word1DC"/>; unset is a named stop (the writer <c>0xA1EC54</c> is unread).</summary>
+    // fidelity: M6-025
+    public uint Read1DC() => Word1DC ?? throw new WwiseMissingBehaviourException(
+        "M6-025 C30.1(d): pbi+0x1DC (the media pointer fed to 0xA56650) is written by 0xA1EC54 through pbi vt+0xC, which is unread; set Word1DC");
+
+    /// <summary>Reads <see cref="Word1E0"/>; see <see cref="Read1DC"/>.</summary>
+    // fidelity: M6-025
+    public uint Read1E0() => Word1E0 ?? throw new WwiseMissingBehaviourException(
+        "M6-025 C30.1(d): pbi+0x1E0 (the media size fed to 0xA56650) is written by 0xA1EC54 through pbi vt+0xC, which is unread; set Word1E0");
+
     /// <summary><c>+0x158</c>: the source-format word; written by the source StartStream.</summary>
     public uint SourceFormat158 { get; set; }
 

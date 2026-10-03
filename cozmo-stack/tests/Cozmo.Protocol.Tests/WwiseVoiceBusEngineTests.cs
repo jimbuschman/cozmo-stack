@@ -27,8 +27,8 @@ public sealed class WwiseVoiceBusEngineTests
         public int Frames { get; }
         public int Channels => 1;
         public int SampleRate => WwiseRuntimeSettings.MixRateHz;
-        public bool StartStreamSucceeded => true;
-        public bool StartStream() => true;
+        public bool StartStreamSucceeded { get; set; } = true;
+        public int StartStream(uint arg1DC, uint arg1E0) => 1;
         public int Render(WwiseVoiceBuffer buffer)
         {
             int n = Math.Min(Frames, buffer.MaxFrames);
@@ -78,7 +78,7 @@ public sealed class WwiseVoiceBusEngineTests
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var deviceState = new WwiseOutputDeviceState();
-        var pass = new WwiseVoiceBusPass(buses, deviceState);
+        var pass = new WwiseVoiceBusPass(buses, deviceState).WithPrePassDoubles();
         pass.PostMixA5495C = _ => { }; pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                  // M6-026 7.2: 0xA55CC4 / 0xA5495C after a mix are unread (test double)
         var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
         pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
@@ -352,7 +352,7 @@ public sealed class WwiseVoiceBusEngineTests
         var sink = new RecordingSink();
         var device = new SinkDevice { DeviceKey28 = 7, Sink = sink };
         deviceState.AddDevice(device);
-        var pass = new WwiseVoiceBusPass(buses, deviceState);
+        var pass = new WwiseVoiceBusPass(buses, deviceState).WithPrePassDoubles();
         pass.PostMixA5495C = _ => { }; pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                  // M6-026 7.2: 0xA55CC4 / 0xA5495C after a mix are unread (test double)
         var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
         pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
@@ -1195,5 +1195,106 @@ public class WwiseVoiceBusPassNextSourceTests
         bus.NextSourceEda = _ => (2, 1);                                     // code 2: vt+0x120 is not reached
         Assert.Equal(2, WwiseVoiceBusPass.NextSource(bus, out int index));
         Assert.Equal(1, index);
+    }
+
+    // ------------------------------------------------------------------ the voice pass's required collaborators (M6-022 V5, C30)
+
+    /// <summary>A source that is never rendered (the voice is in state 0 and is stopped by the pass).</summary>
+    private sealed class StubSource : IWwiseVoiceSource
+    {
+        public int Channels => 1;
+        public int SampleRate => 48000;
+        public int Render(WwiseVoiceBuffer buffer) => 0x2D;
+        public int StartStream(uint arg1DC, uint arg1E0) => 1;
+        public bool StartStreamSucceeded { get; set; } = true;
+    }
+
+    private static WwiseVoiceBusPass PassWithAMarkedVoice(List<string> log, out WwiseLiveVoice voice)
+    {
+        // A state-0 voice whose owner PBI has bit5 of +0x1BC set and +0x1F8 == -1 is stopped by the pass (M6-026 7.3) and destroyed (7.7):
+        // the "destroy" entry marks the point at which the voice walk has run.
+        var marked = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false)
+        { Flags1BC = 0x20 };
+        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState())
+        {
+            SourceOwner = _ => marked,
+            DestroyVoiceA9D40C4 = _ => log.Add("destroy"),
+        };
+        voice = new WwiseLiveVoice(1, 8) { State = 0, Source = new StubSource() };
+        pass.Voices.Add(voice);
+        return pass;
+    }
+
+    [Fact]
+    public void TheVoicePassCallsThe9D3CC0Then0xA43D24Then0xA39564CollaboratorsBeforeAnyVoice()
+    {
+        // The engine's voice pass 0xA44948 calls 0x9D3CC0 (0xA44978), 0xA43D24 (0xA4497C) and 0xA39564 (0xA44980) in this order, then walks the
+        // voices from the head (0xA44984..). Verified by disassembly of 0xA44948..0xA44990.
+        var log = new List<string>();
+        var pass = PassWithAMarkedVoice(log, out var voice);
+        pass.AdvanceTickCounters = () => log.Add("9D3CC0");
+        pass.DuckPrePass = () => log.Add("A43D24");
+        pass.NodeCleanup = () => log.Add("A39564");
+
+        pass.VoicePass();
+
+        Assert.Equal(new[] { "9D3CC0", "A43D24", "A39564", "destroy" }, log);
+        Assert.Equal(2, voice.State);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void AnUnsetCollaboratorThrowsAndNothingAfterItRuns(int unset)
+    {
+        // The engine runs all three on every pass, so an unset one (an unread body, or the unwired walk) is a visible stop, never a skip: the
+        // collaborators before it have run, the ones after it and the voice walk have not.
+        var log = new List<string>();
+        var pass = PassWithAMarkedVoice(log, out var voice);
+        if (unset != 0) pass.AdvanceTickCounters = () => log.Add("9D3CC0");
+        if (unset != 1) pass.DuckPrePass = () => log.Add("A43D24");
+        if (unset != 2) pass.NodeCleanup = () => log.Add("A39564");
+
+        Assert.Throws<WwiseMissingBehaviourException>(() => pass.VoicePass());
+
+        Assert.Equal(new[] { "9D3CC0", "A43D24", "A39564" }.Take(unset).ToArray(), log);   // only the collaborators before the unset one ran
+        Assert.Equal(0, voice.State);                                  // the voice walk did not run
+    }
+
+    [Fact]
+    public void TheEnginesRenderBodyReachesTheRequiredCollaboratorsThroughTheLiveEntry()
+    {
+        // Through the entry the live path uses: WwiseVoiceEngine.RunLEngine -> RenderBody -> IWwiseVoiceBusPass.VoicePass (0xA57FF8 -> 0xA44D4C ->
+        // 0xA44948). With the pass's collaborators unwired the frame throws; with them wired it runs them once per frame, in order.
+        var log = new List<string>();
+        var pass = PassWithAMarkedVoice(log, out _);
+        var state = new WwiseOutputDeviceState();
+        state.Init();
+        var engine = new WwiseVoiceEngine(state, pass);
+        Assert.Throws<WwiseMissingBehaviourException>(() => engine.RunLEngine());
+
+        pass.AdvanceTickCounters = () => log.Add("9D3CC0");
+        pass.DuckPrePass = () => log.Add("A43D24");
+        pass.NodeCleanup = () => log.Add("A39564");
+        pass.Voices.Clear();
+        engine.RunLEngine();
+        Assert.Equal(new[] { "9D3CC0", "A43D24", "A39564" }, log);
+    }
+}
+
+/// <summary>
+/// Test doubles for the three collaborators the voice pass calls on every pass (M6-022 V5 / M6-025 C24.1 / M6-026 E1: <c>0x9D3CC0</c> at
+/// <c>0xA44978</c>, <c>0xA43D24</c> at <c>0xA4497C</c>, <c>0xA39564</c> at <c>0xA44980</c>). The pass requires them (it throws when one is unset);
+/// a test that is about something else supplies no-ops and says so by calling this. Whatever is already set is kept.
+/// </summary>
+internal static class WwisePrePassTestDoubles
+{
+    public static WwiseVoiceBusPass WithPrePassDoubles(this WwiseVoiceBusPass pass)
+    {
+        pass.AdvanceTickCounters ??= () => { };
+        pass.DuckPrePass ??= () => { };
+        pass.NodeCleanup ??= () => { };
+        return pass;
     }
 }

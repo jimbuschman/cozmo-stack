@@ -90,23 +90,23 @@ public interface IWwiseVoiceSource
     /// </summary>
     int Render(WwiseVoiceBuffer buffer);
 
-    /// <summary><c>vt+0x28</c> StartStream (0xA54A30), returns true on success (result 1).</summary>
-    bool StartStream();
+    /// <summary>
+    /// <c>vt+0x28</c> StartStream: the raw <c>int</c> result, returned unchanged by <c>0xA56650</c>
+    /// (<c>0xA56664..0xA56688</c>: <c>ldr r3,[r0]; ldr r3,[r3,#0x28]; blx r3</c>, the result stays in r0) and by AddSrc
+    /// (<c>mov r6,r0</c>, <c>0xA55920</c>). It takes the owner PBI's <c>[owner+0x1DC]</c> and <c>[owner+0x1E0]</c>
+    /// (<c>0xA5590C</c>, <c>0xA55910</c>, <c>0xA544D8</c>, <c>0xA544DC</c>) as <c>r1</c> and <c>r2</c>. 1 and 0x3F are the
+    /// results AddSrc keeps; every other value goes to AddSrc's step 8 unchanged (M6-025 C27 step 7, C30). Call it through
+    /// <see cref="WwiseVoiceSourceStart.StartA56650"/>, which owns the latch.
+    /// </summary>
+    // fidelity: M6-025
+    int StartStream(uint arg1DC, uint arg1E0);
 
     /// <summary>
-    /// <c>vt+0x28</c>'s raw result code for <c>0xA56650</c>: 1 or 0x3F. <c>0xA56650</c> returns 1 when
-    /// <see cref="StartStreamSucceeded"/> is already set, else calls <c>vt+0x28</c> and sets that bit only
-    /// when the result is 1. The default is 1 (the interface's <see cref="StartStream"/> success); a source
-    /// whose class returns 0x3F overrides this and leaves <see cref="StartStreamSucceeded"/> clear.
+    /// The <c>[source+0x10]</c> bit 0 latch the per-voice machine tests as <c>SRC10</c>. <c>0xA56650</c> reads it
+    /// (<c>0xA56650..0xA56660</c>) and sets it when <c>vt+0x28</c> returned exactly 1 (<c>0xA56678..0xA56684</c>); it is not
+    /// source <c>vt+0x4C</c>, which is <c>[[source+0xC]+0x1BE]</c> bit 6 (M6-025 C23 row 4.25 and its check).
     /// </summary>
-    int StartStreamCode => 1;
-
-    /// <summary>
-    /// The <c>[source+0x10]</c> bit 0 latch the per-voice machine tests as <c>SRC10</c> and <c>0xA56650</c>
-    /// sets on a <c>vt+0x28</c> result of 1 (M6-025 C23 row 4.25 and its check: this is not source
-    /// <c>vt+0x4C</c>, which is <c>[[source+0xC]+0x1BE]</c> bit 6).
-    /// </summary>
-    bool StartStreamSucceeded { get; }
+    bool StartStreamSucceeded { get; set; }
 
     /// <summary>
     /// <c>vt+0x6C</c>, the live-voice list ordering key <c>0xA42DEC</c> reads (C23 item 1 row 20 and item 5
@@ -122,6 +122,31 @@ public interface IWwiseVoiceSource
     /// bit0 is set. The source class is UNKNOWN, so this is a caller seam.
     /// </summary>
     (float At0, float At4)? Gain8 => null;
+}
+
+/// <summary><c>0xA56650(source, a, b)</c>, the one caller of a source's <c>vt+0x28</c> that owns the <c>[source+0x10]</c> bit 0 latch.</summary>
+// fidelity: M6-025
+public static class WwiseVoiceSourceStart
+{
+    /// <summary>
+    /// <c>0xA56650(source, a, b)</c>: with the latch set it returns 1 and does not call <c>vt+0x28</c>
+    /// (<c>0xA56650..0xA56660</c>); otherwise it calls <c>vt+0x28(source, a, b)</c> and returns its raw result,
+    /// setting the latch only when that result is 1 (<c>0xA56664..0xA56688</c>).
+    /// </summary>
+    /// <param name="ran">True when <c>vt+0x28</c> was called, false when the latch short-circuited it.</param>
+    public static int StartA56650(IWwiseVoiceSource source, uint a, uint b, out bool ran)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (source.StartStreamSucceeded)                                  // 0xA56650 ldrb ip,[r0,#0x10]; tst ip,#1; beq
+        {
+            ran = false;
+            return 1;                                                    // 0xA5665C
+        }
+        ran = true;
+        int result = source.StartStream(a, b);                           // 0xA56664..0xA56674 vt+0x28
+        if (result == 1) source.StartStreamSucceeded = true;             // 0xA56678..0xA56684 (cmp r0,#1; orreq)
+        return result;
+    }
 }
 
 /// <summary>
@@ -150,15 +175,26 @@ public sealed class WwiseConnectionDescriptor
     public bool IsAllocated => Data is not null;
 
     /// <summary>
+    /// The allocation-failure branch of <c>0xA67B9C</c> (<c>0xA67BE4 bl 0xA7A894</c>, <c>0xA67BE8 cmp r0,#0</c>,
+    /// <c>0xA67BF0 beq 0xA67C40</c>, <c>0xA67C40 mov r0,#2</c>): the same hook as <see cref="WwisePlaybackLimiter.AllocationFails"/>
+    /// and <see cref="WwiseStartList.AllocationFails"/>. True fails the allocation; null means it never fails. It is called once per
+    /// allocation, after the old block is freed, so a failure leaves the four words zero.
+    /// </summary>
+    // fidelity: M6-025
+    public Func<bool>? AllocationFails { get; set; }
+
+    /// <summary>
     /// <c>0xA67B9C</c>: <c>size = ((outCh+3)&gt;&gt;2) * (inCh&lt;&lt;5)</c>; returns 1 at once when equal to
     /// <c>[desc+4]</c>, else frees and reallocates and stores <c>{data, size, data, data+size/2}</c>, returning 1.
-    /// (The native returns 2 on allocation failure; a managed allocation does not fail here.)
+    /// An allocation failure returns 2 with the four words zero (the old block was freed and the words cleared first,
+    /// <c>0xA67C0C..0xA67C3C</c>, then <c>0xA67BEC str r0,[r5]</c> stores the null).
     /// </summary>
     public int Reserve(int inCh, int outCh)
     {
         int size = ((outCh + 3) >> 2) * (inCh << 5);
         if (size == Size) return 1;
         Free();
+        if (AllocationFails?.Invoke() == true) return 2;                 // 0xA67BE8..0xA67C44
         Data = new byte[size];
         Size = size;
         PtrA = 0;
@@ -895,14 +931,15 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// </summary>
     public void VoicePass()
     {
-        // V5 0x9D3CC0: the bus/source tick advance. The tick list object is a caller input (C12).
-        AdvanceTickCounters?.Invoke();
-
-        // V5a 0xA43D24: the ducking/volume pre-pass order. Its unread callees are seams.
-        DuckPrePass?.Invoke();
-
-        // V5b 0xA39564: the node cleanup order. The node objects are a caller seam.
-        NodeCleanup?.Invoke();
+        // fidelity: M6-022, M6-025, M6-026
+        // 0xA44978 bl 0x9D3CC0, 0xA4497C bl 0xA43D24, 0xA44980 bl 0xA39564, unconditionally and in this order (C24.1, C30). Each is a
+        // REQUIRED collaborator: a missing one throws and is never skipped, because the engine runs all three every pass.
+        (AdvanceTickCounters ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V5 / M6-025 C24.1: 0x9D3CC0 (the pending-voice walk, WwisePlaybackBridge.WalkPendingVoices) runs at 0xA44978 on every voice pass; supply AdvanceTickCounters"))();
+        (DuckPrePass ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V5a: 0xA43D24 (the ducking/volume pre-pass, called at 0xA4497C) is unread; supply DuckPrePass rather than skipping it"))();
+        (NodeCleanup ?? throw new WwiseMissingBehaviourException(
+            "M6-026 E1: 0xA39564 (WwisePlaybackLimiter.PerFrameA39564, called at 0xA44980) runs on every voice pass; supply NodeCleanup"))();
 
         VoicesRendered = 0;
         int i = 0;
@@ -1005,13 +1042,16 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
                 "M6-026 7.5: voice vt+0x4C (0xA53558, the pause) is unread; supply PauseVoice4C"))(voice);
     }
 
-    /// <summary>V5a: <c>0xA43D24</c>'s unread per-bus/voice callees; caller seam.</summary>
+    /// <summary>V5a: <c>0xA43D24</c> (<c>0xA4497C</c>); its body is unread, so this is a REQUIRED collaborator (<see cref="VoicePass"/> throws when it is unset).</summary>
+    // fidelity: M6-022
     public Action? DuckPrePass { get; set; }
 
-    /// <summary>V5b: <c>0xA39564</c>'s node/array objects; caller seam.</summary>
+    /// <summary>V5b: <c>0xA39564</c> (<c>0xA44980</c>), <see cref="WwisePlaybackLimiter.PerFrameA39564"/>; a REQUIRED collaborator.</summary>
+    // fidelity: M6-026
     public Action? NodeCleanup { get; set; }
 
-    /// <summary>V5: <c>0x9D3CC0</c>'s tick list; caller seam.</summary>
+    /// <summary>V5: <c>0x9D3CC0</c> (<c>0xA44978</c>), <see cref="WwisePlaybackBridge.WalkPendingVoices"/>; a REQUIRED collaborator.</summary>
+    // fidelity: M6-025
     public Action? AdvanceTickCounters { get; set; }
 
     /// <summary>
@@ -1318,7 +1358,8 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// </summary>
     private static bool Path554F0(WwiseLiveVoice voice, WwiseMixBus bus, ref bool p2f)
     {
-        int r = voice.StartSource56650?.Invoke() ?? 0;               // 0xA554F8
+        int r = (voice.StartSource56650 ?? throw new WwiseMissingBehaviourException(
+            "M6-025 C30: 0xA554F8 calls 0xA56650(source, [bus+0x1DC], [bus+0x1E0]) on the live state machine; supply StartSource56650 rather than defaulting to 0"))();   // 0xA554F8
         if (r == 1) return true;                                     // 0xA55218
         if (r != 0x3F) voice.VoiceStop48?.Invoke();                  // the else path only
         p2f = false;                                                 // [sp+0x2f]=0

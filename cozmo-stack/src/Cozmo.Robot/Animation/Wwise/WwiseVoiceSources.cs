@@ -178,19 +178,24 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
     /// <summary>The media's sample rate, for the voice-stage resampler (M6-004).</summary>
     public int SampleRate { get; }
 
-    /// <summary>Whether <see cref="StartStream"/> decoded the media.</summary>
-    public bool StartStreamSucceeded { get; private set; }
+    /// <summary>The <c>[source+0x10]</c> bit 0 latch, written only by <c>0xA56650</c> (<see cref="WwiseVoiceSourceStart.StartA56650"/>).</summary>
+    public bool StartStreamSucceeded { get; set; }
 
     /// <summary>
-    /// <c>vt+0x28</c> StartStream: run M6-002's decode and hold the samples. Returns true on success.
+    /// <c>vt+0x28</c> StartStream: run M6-002's decode and hold the samples; the raw result is 1 on success. The two arguments
+    /// (<c>[owner+0x1DC]</c>, <c>[owner+0x1E0]</c>) are consumed inside the native source class; this adapter decodes the media
+    /// it was given and does not use them. A failed decode has no settled result code (the source classes' failure values are
+    /// unread), so it throws rather than returning a guessed one.
     /// </summary>
-    public bool StartStream()
+    public int StartStream(uint arg1DC, uint arg1E0)
     {
         var rendered = _source.Render(WwiseRuntimeSettings.SamplesPerFrame);
         _samples = rendered.Data;
         _position = 0;
-        StartStreamSucceeded = _samples is not null;
-        return StartStreamSucceeded;
+        if (_samples is null)
+            throw new WwiseMissingBehaviourException(
+                "M6-025 C27 step 7: the Vorbis source's vt+0x28 failure result is not settled by the inventory (the source classes 0xAB0448/0xAB1550 are unread); no result code is invented");
+        return 1;
     }
 
     /// <summary><c>vt+0x30</c> render: publish the next block. Returns 0x2D while data remains, else 0x2E.</summary>
@@ -238,15 +243,19 @@ public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSource
 
     public int Channels { get; }
     public int SampleRate { get; }
-    public bool StartStreamSucceeded { get; private set; }
+    /// <summary>The <c>[source+0x10]</c> bit 0 latch, written only by <c>0xA56650</c> (<see cref="WwiseVoiceSourceStart.StartA56650"/>).</summary>
+    public bool StartStreamSucceeded { get; set; }
 
-    /// <summary><c>vt+0x28</c> StartStream: decode through M6-003 and hold the interleaved samples.</summary>
-    public bool StartStream()
+    /// <summary>
+    /// <c>vt+0x28</c> StartStream: decode through M6-003, hold the interleaved samples and return the raw result 1. The two
+    /// arguments (<c>[owner+0x1DC]</c>, <c>[owner+0x1E0]</c>) are consumed inside the native ADPCM classes; this adapter decodes
+    /// the media it was given and does not use them.
+    /// </summary>
+    public int StartStream(uint arg1DC, uint arg1E0)
     {
         _samples = WwiseAdpcm.Decode(_media);
         _position = 0;
-        StartStreamSucceeded = true;
-        return true;
+        return 1;
     }
 
     /// <summary><c>vt+0x30</c> render: publish the next block, int16 scaled by 1/32768.</summary>

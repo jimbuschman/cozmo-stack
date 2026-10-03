@@ -19,10 +19,12 @@ public class WwiseVoiceLinkerTests
         public int Channels => 1;
         public int SampleRate => 48000;
         public int Render(WwiseVoiceBuffer buffer) => 0x2D;
-        public bool StartStream() { StartStreamSucceeded = Code == 1; return true; }
+        /// <summary>The raw vt+0x28 result (M6-025 C27 step 7: any int); the arguments it was called with are recorded.</summary>
+        public int StartStream(uint arg1DC, uint arg1E0) { Calls.Add((arg1DC, arg1E0)); return Code; }
         public int Code { get; set; } = 1;
-        public int StartStreamCode => Code;
-        public bool StartStreamSucceeded { get; private set; }
+        public readonly List<(uint, uint)> Calls = new();
+        /// <summary>[source+0x10] bit0: written only by 0xA56650 (WwiseVoiceSourceStart), never by this double.</summary>
+        public bool StartStreamSucceeded { get; set; }
         public int OrderKey6C { get; init; }
     }
 
@@ -36,26 +38,38 @@ public class WwiseVoiceLinkerTests
         public readonly WwiseVoiceLinker Linker;
         public int VoiceInits;
         public readonly List<WwiseLineInitArgs> Inits = new();
+        /// <summary>The stages 0xA4F0EC reached its unread steps at, in order (re-analysis/tools/emu/emu_line_init.py).</summary>
+        public readonly List<int> Stages = new();
+        public int AddRefs;
+        public readonly Dictionary<IWwiseVoiceSource, WwisePlayingInstance> Owners = new();
 
         public Rig(bool mainDevice = true)
         {
             if (mainDevice) Devices.CreateMainDevice();
             Seams.InitVoiceA54A30 = _ => { VoiceInits++; return 1; };
-            Seams.InitLineA4F0EC = args =>
-            {
-                Inits.Add(args);
-                return (1, new WwiseMixBus(args.Key, Array.Empty<WwiseBusFxSlot>(), 8));
-            };
+            // Test doubles for the unread bodies 0xA4F0EC calls (C24.3): the AddRef, vt+0x98(3) (non-zero), the steps no row reads, the
+            // FX holder (allocated). Tests of the failure paths replace them.
+            Seams.BusAddRefVt8 = _ => AddRefs++;
+            Seams.BusVt98Arg3 = _ => 1;
+            Seams.LineInitUnreadSteps = (_, args, stage) => { Stages.Add(stage); if (stage == 1) Inits.Add(args); };
+            Seams.LineFxHolder = (_, _) => true;
             Seams.BusVolumeParam5 = _ => -6.5f;
             // Test double for the unread 0xA22A3C build body behind 0x9EA23C (C24.5): a build that yields a value.
             // Tests of the missing-seam and failure paths replace it.
-            Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
+            Seams.BuildDeviceObjectA22A3C = (_, _) => new object();
             Seams.ConnectionChannels = (_, _) => (1, 1);
             Linker = new WwiseVoiceLinker(Buses, Devices, Live, _ => Routing, Seams);
         }
 
+        /// <summary>
+        /// The PBI's +0x1DC/+0x1E0 are written by 0xA1EC54 (unread); the test values are the ones the emulator runs of 0xA544BC
+        /// and 0xA56650 use (re-analysis/tools/emu/emu_notready.py: vt+0x28 receives 0x11112222 and 0x33334444).
+        /// </summary>
+        public const uint Media1DC = 0x11112222, Media1E0 = 0x33334444;
+
         public static WwisePlayingInstance Pbi() => new(
-            new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
+            new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false)
+        { Word1DC = Media1DC, Word1E0 = Media1E0 };
 
         public static WwiseLiveVoice Voice() => new(1, 8) { FlagsCD = 1 };
     }
@@ -195,7 +209,6 @@ public class WwiseVoiceLinkerTests
         // Row 6 and C23.21: device (3,0) exists; a bus with bit6 = 0 connects to non-main devices only.
         var rig = new Rig();
         rig.Devices.Add(new WwiseDeviceId(3, 0), 1, 0x3102);
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(new WwiseRoutingNode { Id = 9, IsBus = true, Bit6 = false }) };
         var voice = Rig.Voice();
 
@@ -365,7 +378,8 @@ public class WwiseVoiceLinkerTests
         // Row 16 (a)/(c): pbi+0xE9 bit3 walks vpl then +0x1C8 for +0x1CC bit1; found -> ip = 1 (conn+0x6C bit4)
         // and voice+0xC = that line (device (2,0), arg5 = 0).
         var rig = new Rig();
-        rig.Seams.InitLineA4F0EC = a => (1, new WwiseMixBus(a.Key, Array.Empty<WwiseBusFxSlot>(), 8) { Bit1OfFlags1CC = true });
+        // +0x1CC bit1 has no writer in the rows; the holder double (called at the end of 0xA4F0EC with the line) stands for it.
+        rig.Seams.LineFxHolder = (line, _) => { line.Bit1OfFlags1CC = true; return true; };
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()), ChainWalk = true };
         var voice = Rig.Voice();
 
@@ -382,8 +396,8 @@ public class WwiseVoiceLinkerTests
         // Row 19 / C24.5: a line whose +0x64 type nibble is 1 runs the device-table check; a 0x9EA23C result other
         // than 1 unlinks and destroys the connection (voice+0xCD |= 4, voice+0xC = 0 when conn+0x68 == 0).
         var rig = new Rig();
-        rig.Seams.InitLineA4F0EC = a => (1, new WwiseMixBus(a.Key, Array.Empty<WwiseBusFxSlot>(), 8) { Bit1OfFlags1CC = true });
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 2;             // C24.5: non-1 destroys the connection
+        rig.Seams.LineFxHolder = (line, _) => { line.Bit1OfFlags1CC = true; return true; };
+        rig.Seams.BuildDeviceObjectA22A3C = (_, _) => null;                // a zero build value: 0x9EA23C returns 2 (C24.5); non-1 destroys the connection
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()), ChainWalk = true };
         var voice = Rig.Voice();
 
@@ -401,12 +415,11 @@ public class WwiseVoiceLinkerTests
         var rig = new Rig();
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
 
-        // 0x3102 has type nibble 1 (bits 8..11): the check is reached and its build body is not in the rows.
-        rig.Seams.DeviceTableFindOrInsert9EA23C = null;
+        // 0x3102 has type nibble 1 (bits 8..11): the check is reached and its build body 0xA22A3C is not in the rows.
+        rig.Seams.BuildDeviceObjectA22A3C = null;
         Assert.Throws<NotSupportedException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
 
         var rig2 = new Rig();
-        rig2.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig2.Routing = rig.Routing;
         var voice = Rig.Voice();
         rig2.Linker.Link(voice, Rig.Pbi());
@@ -420,14 +433,14 @@ public class WwiseVoiceLinkerTests
         // searches key 3 only; 0x4101 (mask 4) searches key 4 then 0.
         var stereo = new Rig();
         var keys = new List<uint>();
-        stereo.Seams.DeviceTableFindOrInsert9EA23C = (_, k) => { keys.Add(k); return 1; };
+        stereo.Seams.BuildDeviceObjectA22A3C = (_, k) => { keys.Add(k); return new object(); };
         stereo.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         stereo.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new uint[] { 3 }, keys);
 
         var mono = new Rig();
         var keys2 = new List<uint>();
-        mono.Seams.DeviceTableFindOrInsert9EA23C = (_, k) => { keys2.Add(k); return 1; };
+        mono.Seams.BuildDeviceObjectA22A3C = (_, k) => { keys2.Add(k); return new object(); };
         mono.Routing = new WwisePbiRouting { Node = SoundUnder(Master(100, 0x4101)) };
         var voice = Rig.Voice();
         mono.Linker.Link(voice, Rig.Pbi());
@@ -442,9 +455,10 @@ public class WwiseVoiceLinkerTests
         // when the key is absent; a found key is success with no rebuild. 0x4101: mask 4 -> key 1 = 4, key 2 = 0.
         var rig = new Rig();
         var asked = new List<uint>();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, k) => { asked.Add(k); return 1; };
+        rig.Seams.BuildDeviceObjectA22A3C = (_, k) => { asked.Add(k); return new object(); };
         var entry = rig.Devices.Find(WwiseDeviceId.Main)!;
         entry.Table.Add(new WwiseDeviceTableEntry { Key = 4, Built = new object() });
+        entry.TableCapacity = 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master(100, 0x4101)) };
 
         var voice = Rig.Voice();
@@ -453,8 +467,8 @@ public class WwiseVoiceLinkerTests
         Assert.Equal(new uint[] { 0 }, asked);                             // key 1 found; only key 2 (0) was absent
         Assert.Single(voice.Connections);
 
-        // Both keys present: the body is never called and the connection stays.
-        rig.Devices.Find(WwiseDeviceId.Main)!.Table.Add(new WwiseDeviceTableEntry { Key = 0, Built = new object() });
+        // Both keys are present now ({4, 0}; the linker's own 0x9EA23C appended key 0): the body is never called and the connection stays.
+        Assert.Equal(new uint[] { 4, 0 }, entry.Table.Select(t => t.Key).ToArray());
         asked.Clear();
         var voice2 = Rig.Voice();
         rig.Linker.Link(voice2, Rig.Pbi());
@@ -469,12 +483,13 @@ public class WwiseVoiceLinkerTests
         // returning 2 destroys the connection; key 2 is never asked.
         var rig = new Rig();
         var asked = new List<uint>();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, k) => { asked.Add(k); return 2; };
+        rig.Seams.BuildDeviceObjectA22A3C = (_, k) => { asked.Add(k); return null; };
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master(100, 0x4101)) };
         var voice = Rig.Voice();
         rig.Linker.Link(voice, Rig.Pbi());
         Assert.Equal(new uint[] { 4 }, asked);
         Assert.Empty(voice.Connections);
+        Assert.Empty(rig.Devices.Find(WwiseDeviceId.Main)!.Table);        // 0x9EA2EC..0x9EA368: the zero-valued entry was removed again
     }
 
     [Fact]
@@ -487,10 +502,10 @@ public class WwiseVoiceLinkerTests
         var entries = (List<WwiseOutputDeviceEntry>)typeof(WwiseOutputDeviceList)
             .GetField("_entries", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
             .GetValue(rig.Devices)!;
-        rig.Seams.InitLineA4F0EC = a =>
+        rig.Seams.LineFxHolder = (_, _) =>
         {
             entries.Clear();                                               // the entry disappears before the check
-            return (1, new WwiseMixBus(a.Key, Array.Empty<WwiseBusFxSlot>(), 8));
+            return true;
         };
         var ex = Assert.Throws<InvalidOperationException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
         Assert.Contains("C24.5", ex.Message);
@@ -505,7 +520,6 @@ public class WwiseVoiceLinkerTests
     {
         // C24.3: W = [deviceEntry+0x1C] = 0x3102; B = 0 (Word68 unset); cfgA = (B & 0xFF) ? B : W = W; cfgB = parent ? W : cfgA = cfgA.
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new[] { (0x3102u, 0x3102u) }, Words(rig));
@@ -517,7 +531,6 @@ public class WwiseVoiceLinkerTests
         // C24.3: B = [bus+0x68] = 0x4101 (Cozmo_Robot and Robot_Bus_1..4, Init.bnk) has a non-zero low byte, so
         // cfgA = B and, with no parent, cfgB = cfgA. Init stores +0x64 = cfgA and +0x44 = cfgB.
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master(100, 0x4101)) };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new[] { (0x4101u, 0x4101u) }, Words(rig));
@@ -530,7 +543,6 @@ public class WwiseVoiceLinkerTests
     {
         // C24.3: cfgA = (B & 0xFF) != 0 ? B : W; B = 0x4100 has low byte 0.
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master(100, 0x4100)) };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new[] { (0x3102u, 0x3102u) }, Words(rig));
@@ -542,7 +554,6 @@ public class WwiseVoiceLinkerTests
         // C24.3/C24.8 (lo == 2): the parent found by the 0xA42640..0xA42718 search counts as the parent, so
         // W = parent.Format64 (0x3102), not the entry word (changed to 0x2102 below), and cfgB = W.
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = NoBus() };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());                            // creates the default line, Format64 = 0x3102
         var defaultLine = Assert.Single(rig.Buses.Buses);
@@ -563,7 +574,6 @@ public class WwiseVoiceLinkerTests
     {
         // C24.3 with both a parent and B: cfgA = B (0x4101); cfgB = parent ? W : cfgA = W = parent.Format64 (0x3102).
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = NoBus() };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         rig.Devices.Find(WwiseDeviceId.Main)!.ConfigWord = 0x2102;
@@ -582,7 +592,6 @@ public class WwiseVoiceLinkerTests
         // built from the (2,0) entry), not the (3,0) entry word 0x2103. B unset: both words are W.
         var rig = new Rig();
         rig.Devices.Add(new WwiseDeviceId(3, 0), 1, 0x2103);
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(new WwiseRoutingNode { Id = 9, IsBus = true, Bit6 = false }) };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new[] { (0x3102u, 0x3102u), (0x3102u, 0x3102u) }, Words(rig));   // default line, then (3,0)
@@ -590,7 +599,6 @@ public class WwiseVoiceLinkerTests
         // With B = 0x4101 on the bus: cfgA = B and cfgB = W (parent present).
         var rig2 = new Rig();
         rig2.Devices.Add(new WwiseDeviceId(3, 0), 1, 0x2103);
-        rig2.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig2.Routing = new WwisePbiRouting { Node = SoundUnder(new WwiseRoutingNode { Id = 9, IsBus = true, Bit6 = false, Word68 = 0x4101 }) };
         rig2.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(new[] { (0x3102u, 0x3102u), (0x4101u, 0x3102u) }, Words(rig2));
@@ -603,7 +611,6 @@ public class WwiseVoiceLinkerTests
         // from the device word and appended on Init success without 0xA4F664; no exception, no default line.
         var rig = new Rig();
         rig.Devices.Add(new WwiseDeviceId(5, 0), 1, 0x3102);
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(new WwiseRoutingNode { Id = 9, IsBus = true, Bit6 = false }) };
         var voice = Rig.Voice();
 
@@ -618,19 +625,133 @@ public class WwiseVoiceLinkerTests
     }
 
     [Theory]
-    [InlineData(2)]
-    [InlineData(0x34)]
-    public void ALineInitResultOtherThan1DestroysTheLineAndMakesNoConnection(int result)
+    [InlineData("vt98", new[] { 1 })]
+    [InlineData("buffer", new[] { 1, 2 })]
+    [InlineData("holder", new[] { 1, 2, 3 })]
+    public void ALineInitResultOtherThan1DestroysTheLineAndMakesNoConnection(string failure, int[] stagesReached)
     {
-        // C24.3: 0xA4F0EC returns 2 (bus vt+0x98(3) == 0) or 0x34 (allocation failure); non-1 destroys the line and
-        // 0xA42210 returns 0, so nothing is appended and the voice gets no connection.
+        // C24.3: 0xA4F0EC returns 2 (bus vt+0x98(3) == 0) or 0x34 (buffer allocation failure, FX holder allocation failure); non-1
+        // destroys the line and 0xA42210 returns 0, so nothing is appended and the voice gets no connection. The stage lists are the
+        // engine's own call order under Unicorn (re-analysis/tools/emu/emu_line_init.py): vt+0x98 == 0 returns after {0x9C8108,
+        // 0x9C817C} (stage 1); a failed buffer allocation after {.., 0xA19ECC} (stage 2); a failed holder after {.., 0xA68A44,
+        // 0xA68B28, 0xA68B38} (stage 3).
         var rig = new Rig();
-        rig.Seams.InitLineA4F0EC = _ => (result, null);
+        if (failure == "vt98") rig.Seams.BusVt98Arg3 = _ => 0;
+        if (failure == "buffer") rig.Linker.AllocationFails = () => true;
+        if (failure == "holder") rig.Seams.LineFxHolder = (_, _) => false;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         var voice = Rig.Voice();
         Assert.Equal(1, rig.Linker.Link(voice, Rig.Pbi()));
         Assert.Empty(rig.Buses.Buses);
         Assert.Empty(voice.Connections);
+        Assert.Equal(stagesReached, rig.Stages);
+    }
+
+    [Fact]
+    public void TheLineInitStoresMatchTheEnginesOwnRunsUnderUnicorn()
+    {
+        // C24.3, emu_line_init.py (the engine's own 0xA4F0EC): master line cfgA = cfgB = 0x3102 -> [line+0x44] = 0x3102,
+        // [line+0x64] = 0x3102, [line+0x6C] = 0x400, [line+0x30] = self, [line+0x28/2C] = (2, 0); the child line cfgA = 1, cfgB = 0x3102 stores
+        // +0x64 = 1 and +0x44 = 0x3102; the buffer is (cfgA & 0xFF) * frames * 4 bytes (8192 and 4096 for 0x400 frames); the default
+        // context (self null) makes no AddRef and no vt+0x98 call and keeps [line+0x30] = 0, and stage 2 (0xA19ECC) is not reached.
+        var rig = new Rig();
+        var root = Master(100);
+        var child = new WwiseRoutingNode { Id = 200, IsBus = true, OutputBus = root, Byte68 = 1, Bit6 = true };
+        rig.Routing = new WwisePbiRouting { Node = SoundUnder(child) };
+        rig.Linker.Link(Rig.Voice(), Rig.Pbi());
+
+        var rootLine = rig.Buses.Buses[0];
+        var childLine = rig.Buses.Buses[1];
+        Assert.Equal((0x3102u, 0x3102u, (ushort)0x400), (rootLine.Format64, rootLine.Config44, rootLine.InitFrames6C));
+        Assert.Equal((1u, 0x3102u, (ushort)0x400), (childLine.Format64, childLine.Config44, childLine.InitFrames6C));
+        Assert.Same(rootLine, rootLine.SelfBus30);                          // [line+0x30] is the line itself (0xA4F0FC; callers pass r0 = r1 = line)
+        Assert.Same(childLine, childLine.SelfBus30);
+        Assert.Same(root, rootLine.Context.Bus);                           // the bus is ctx.Bus, kept separate
+        Assert.Equal(WwiseDeviceId.Main, rootLine.Device);
+        Assert.Equal(2, rig.AddRefs);                                      // one vt+8 per non-null self
+        Assert.Equal(new[] { 1, 2, 3, 1, 2, 3 }, rig.Stages);
+
+        var def = new Rig();
+        def.Routing = new WwisePbiRouting { Node = NoBus() };
+        def.Linker.Link(Rig.Voice(), Rig.Pbi());
+        var defaultLine = Assert.Single(def.Buses.Buses);
+        Assert.Same(defaultLine, defaultLine.SelfBus30);                    // non-null even for the default ctx (null Bus)
+        Assert.Null(defaultLine.Context.Bus);
+        Assert.Equal(0, def.AddRefs);
+        Assert.Equal(new[] { 1, 3 }, def.Stages);                          // no 0xA19ECC for a null self
+        Assert.Equal(0xFFFFFFFFu, defaultLine.Context.Key);                // [line+0x48] = 0xA68A2C(default ctx) = -byte = 0xFFFFFFFF
+    }
+
+    [Fact]
+    public void TheLineInitBufferAllocationFailureHookAndTheFramesWidthAreTheU16Global()
+    {
+        // C24.3: the frames argument is the u16 [0x1052440]; a frames value that does not fit would not exist in the engine. A zero frames
+        // value makes a 0-byte buffer whose allocation result is unread: refused, not defaulted.
+        var rig = new Rig();
+        rig.Linker.LineMaxFrames = 0;
+        rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
+        Assert.Throws<NotSupportedException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
+    }
+
+    [Fact]
+    public void TheLineInitUnreadStepsAndTheBusSeamsAreRequired()
+    {
+        // 0xA4F0EC steps no row reads (C24.3 does not state them), the AddRef, vt+0x98(3) and the holder: each throws when unset.
+        foreach (var unset in new Action<WwiseVoiceLinkSeams>[]
+        {
+            s => s.LineInitUnreadSteps = null, s => s.BusAddRefVt8 = null, s => s.BusVt98Arg3 = null, s => s.LineFxHolder = null,
+        })
+        {
+            var rig = new Rig();
+            unset(rig.Seams);
+            rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
+            Assert.Throws<NotSupportedException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
+        }
+    }
+
+    // ------------------------------------------------------------------ 0x9EA23C (C24.5, C25.6): oracle = emu_device_table.py
+
+    private static WwiseOutputDeviceEntry TableEntry(IEnumerable<uint> keys, int capacity)
+    {
+        var list = new WwiseOutputDeviceList();
+        var e = list.CreateMainDevice();
+        foreach (var k in keys) e.Table.Add(new WwiseDeviceTableEntry { Key = k, Built = new object() });
+        e.TableCapacity = capacity;
+        return e;
+    }
+
+    [Theory]
+    // (label, keys before, capacity before, key, build yields a value, allocation fails) -> (result, keys after, capacity after, build calls, allocations)
+    // Expected values: the engine's own 0x9EA23C under Unicorn, re-analysis/tools/emu/emu_device_table.py.
+    [InlineData(new uint[0], 0, 3u, true, false, 1, new uint[] { 3 }, 1, 1, 1)]          // miss: capacity 0 -> 1, appended, built
+    [InlineData(new uint[0], 0, 3u, true, true, 2, new uint[0], 0, 0, 1)]                // miss, growth allocation fails: table unchanged, no build
+    [InlineData(new uint[0], 0, 3u, false, false, 2, new uint[0], 1, 1, 1)]              // miss, zero build: appended then removed, capacity stays 1
+    [InlineData(new uint[] { 4 }, 1, 0u, true, false, 1, new uint[] { 4, 0 }, 2, 1, 1)]  // miss at capacity: grows 1 -> 2
+    [InlineData(new uint[] { 4 }, 2, 0u, true, false, 1, new uint[] { 4, 0 }, 2, 1, 0)]  // miss with room: no allocation
+    [InlineData(new uint[] { 4 }, 1, 0u, true, true, 2, new uint[] { 4 }, 1, 0, 1)]      // miss, growth fails: {4} untouched, no build
+    [InlineData(new uint[] { 4 }, 1, 4u, true, false, 1, new uint[] { 4 }, 1, 1, 0)]     // hit: rebuilt in place, no allocation
+    [InlineData(new uint[] { 4, 0 }, 2, 4u, false, false, 2, new uint[] { 0 }, 2, 1, 0)] // hit, zero build: the existing entry is removed
+    [InlineData(new uint[] { 4, 0 }, 3, 9u, false, false, 2, new uint[] { 4, 0 }, 3, 1, 0)] // miss, zero build, others stay in order
+    [InlineData(new uint[] { 4, 0 }, 2, 0u, false, false, 2, new uint[] { 4 }, 2, 1, 0)] // hit on the second entry, zero build: {4} remains
+    public void The9EA23CScanAppendGrowAndRemoveMatchTheEnginesOwnRunUnderUnicorn(
+        uint[] keysBefore, int capacityBefore, uint key, bool buildYields, bool allocFails, int expectedResult,
+        uint[] expectedKeys, int expectedCapacity, int expectedBuilds, int expectedAllocs)
+    {
+        // C24.5, C25.6 and 0x9EA23C itself. The two trailing expectations are (build calls, growth allocations); the data columns above
+        // are from emu_device_table.py. The same hook as the limiter's AllocationFails is used for the growth allocation.
+        var rig = new Rig();
+        int builds = 0, allocs = 0;
+        rig.Seams.BuildDeviceObjectA22A3C = (_, _) => { builds++; return buildYields ? new object() : null; };
+        rig.Linker.AllocationFails = () => { allocs++; return allocFails; };
+        var e = TableEntry(keysBefore, capacityBefore);
+
+        int result = rig.Linker.FindOrInsert9EA23C(e, key);
+
+        Assert.Equal(expectedResult, result);
+        Assert.Equal(expectedKeys, e.Table.Select(t => t.Key).ToArray());
+        Assert.Equal(expectedCapacity, e.TableCapacity);
+        Assert.Equal(expectedBuilds, builds);
+        Assert.Equal(expectedAllocs, allocs);
     }
 
     [Fact]
@@ -639,7 +760,6 @@ public class WwiseVoiceLinkerTests
         // C24.3: u16 frames arg = [0x1052440], .data initial 0x400 (C24 residuals); flag stored at +0x1CC bit3
         // (0xA422DC), 0 at every call site.
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(0x400, Assert.Single(rig.Inits).Frames);
@@ -664,7 +784,6 @@ public class WwiseVoiceLinkerTests
         bus.Seams.BusVolumeParam5 = n => { asked = n; return -12f; };
         var master = Master();
         bus.Routing = new WwisePbiRouting { Node = SoundUnder(master) };
-        bus.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         bus.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Same(master, asked);
         Assert.Equal(-12f, Assert.Single(bus.Buses.Buses).VolumeDb90);
@@ -687,7 +806,6 @@ public class WwiseVoiceLinkerTests
         // C24.6 0xA4F6F0: vpl+0x1C0-- and, when [vpl+0x1A8] and [[vpl+0x1A8]+0xC] are non-null,
         // mixobj->vt+0x24(conn). Covered here through the voice teardown (0xA55F2C).
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 1;
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         var removed = new List<object>();
         rig.Seams.MixObjectRemoveInput = (_, c) => removed.Add(c);
@@ -723,9 +841,8 @@ public class WwiseVoiceLinkerTests
     public void TheMixObjectRemoveSeamIsRequiredWhenTheDisconnectReachesIt()
     {
         var rig = new Rig();
-        rig.Seams.DeviceTableFindOrInsert9EA23C = (_, _) => 2;             // the row-19 destroy path also disconnects
-        rig.Seams.InitLineA4F0EC = a => (1, new WwiseMixBus(a.Key, Array.Empty<WwiseBusFxSlot>(), 8)
-            { OutputMixObject1A8 = () => { }, MixObject1A8C = new object() });
+        rig.Seams.BuildDeviceObjectA22A3C = (_, _) => null;                // the row-19 destroy path also disconnects
+        rig.Seams.LineFxHolder = (line, _) => { line.OutputMixObject1A8 = () => { }; line.MixObject1A8C = new object(); return true; };
         rig.Seams.MixObjectAddInput = (_, _) => { };
         rig.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         Assert.Throws<NotSupportedException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
@@ -809,29 +926,31 @@ public class WwiseVoiceLinkerTests
     // ------------------------------------------------------------------ voice+0xF0 word (C25.5)
 
     [Fact]
-    public void TheVoiceInitSetsWord0xF0FromPbiWord15CAndTheCtorLeavesItZero()
+    public void TheLinkerMakesNoStoreOnBehalfOfTheVoiceInitBody_C30_8()
     {
-        // C25.5: the voice ctor zeroes [voice+0xF0] (0xA5470C..0xA54764); the init sets it to [pbi+0x15C]
-        // (0xA54A64, 0xA54B60, 0xA54B70). C23.8: pbi+0x15C is the 0x00004101 default (0xA00338..0xA00374).
+        // C30.8 (manager decision 2026-10-02): 0xA54A30 stays RECOVERABLE_GAP until C24.2 is verified, so Link calls the named seam and
+        // stores nothing for it: [voice+0xF0] (C25.5, 0xA54A64/0xA54B70) is the seam's. The voice ctor leaves it 0 and Link keeps it 0.
         var rig = new Rig();
         var voice = Rig.Voice();
         Assert.Equal(0u, voice.Word0xF0);
         var pbi = Rig.Pbi();
-        Assert.Equal(0x00004101u, pbi.Word15C);
+        Assert.Equal(0x00004101u, pbi.Word15C);                            // C23.8: the ctor default, only until the source writes it
         rig.Linker.Link(voice, pbi);
-        Assert.Equal(0x00004101u, voice.Word0xF0);
+        Assert.Equal(1, rig.VoiceInits);                                   // the init seam ran once
+        Assert.Equal(0u, voice.Word0xF0);                                  // nothing was stored for it
 
-        // A voice whose +0xCD bit0 is clear does not run the init and keeps 0.
+        // The seam owns the store: a seam that stores the word is what the voice pass then reads.
+        var rig2 = new Rig();
+        rig2.Seams.InitVoiceA54A30 = v => { v.Word0xF0 = 0x00003102; return 1; };
+        var voice2 = Rig.Voice();
+        rig2.Linker.Link(voice2, Rig.Pbi());
+        Assert.Equal(0x00003102u, voice2.Word0xF0);
+
+        // A voice whose +0xCD bit0 is clear does not run the init at all.
         var noInit = new WwiseLiveVoice(1, 8) { FlagsCD = 0 };
         rig.Linker.Link(noInit, Rig.Pbi());
+        Assert.Equal(1, rig.VoiceInits);
         Assert.Equal(0u, noInit.Word0xF0);
-
-        // The word is the PBI's, whatever it holds.
-        var other = Rig.Pbi();
-        other.Word15C = 0x00003102;
-        var voice2 = Rig.Voice();
-        rig.Linker.Link(voice2, other);
-        Assert.Equal(0x00003102u, voice2.Word0xF0);
     }
 
     [Theory]
@@ -890,6 +1009,56 @@ public class WwiseVoiceLinkerTests
         Assert.NotSame(data, conn.Descriptor.Data);
         conn.Descriptor.SwapPointers();
         Assert.Equal((48, 0), (conn.Descriptor.PtrA, conn.Descriptor.PtrB));
+    }
+
+    [Theory]
+    // (prior size, in, out, allocation fails) -> (result, Size, Data allocated, ptrA, ptrB, allocation attempts)
+    // Expected values: the engine's own 0xA67B9C under Unicorn, re-analysis/tools/emu/emu_descriptor_reserve.py.
+    [InlineData(0, 2, 1, false, 1, 64, true, 0, 32, 1)]    // fresh, size ((1+3)>>2)*(2<<5) = 64: {data, 0x40, data, data+0x20}
+    [InlineData(0, 2, 1, true, 2, 0, false, 0, 0, 1)]      // fresh, allocation fails: all four words zero, result 2
+    [InlineData(64, 2, 1, false, 1, 64, true, 0, 32, 0)]   // same size: 1 at once, no allocation
+    [InlineData(64, 1, 9, true, 2, 0, false, 0, 0, 1)]     // different size, allocation fails: old block freed, words zeroed, result 2
+    [InlineData(64, 1, 9, false, 1, 96, true, 0, 48, 1)]   // different size, allocation ok: reallocated to 96
+    [InlineData(0, 0, 5, true, 1, 0, false, 0, 0, 0)]      // size 0 equals the zero descriptor: 1 at once, nothing allocated
+    public void TheDescriptorReserveReturns2OnAnAllocationFailureLikeTheEnginesOwnRun(
+        int priorSize, int inCh, int outCh, bool allocFails, int expectedResult, int expectedSize, bool expectedData, int expectedA, int expectedB, int attempts)
+    {
+        // C24.4: 0xA67B9C returns 2 when the allocation fails (0xA67BE8 cmp r0,#0; 0xA67BF0 beq 0xA67C40 mov r0,#2). The failure hook is the same
+        // Func<bool> the limiter and the start list use.
+        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
+        var conn = new WwiseVoiceConnection(bus, 1, 1);
+        if (priorSize == 64) conn.Descriptor.Reserve(2, 1);               // a prior block of 64 bytes
+        int seen = 0;
+        conn.Descriptor.AllocationFails = () => { seen++; return allocFails; };
+
+        Assert.Equal(expectedResult, conn.Descriptor.Reserve(inCh, outCh));
+
+        Assert.Equal(expectedSize, conn.Descriptor.Size);
+        Assert.Equal(expectedData, conn.Descriptor.IsAllocated);
+        Assert.Equal((expectedA, expectedB), (conn.Descriptor.PtrA, conn.Descriptor.PtrB));
+        Assert.Equal(attempts, seen);
+        Assert.Equal(expectedData, conn.HasDry);                          // [conn+0x18] != 0 only with a block
+    }
+
+    [Fact]
+    public void AConnectionWhoseReserveFailsIsSkippedByTheFramePassThroughTheLiveEntry()
+    {
+        // Through WwiseVoiceBusPass.UpdateConnectionGains (0xA4BC58): a connection whose 0xA67B9C returned 2 stays with [conn+0x18] == 0 and the loop
+        // moves to the next connection (0xA4BE10 beq 0xA4C16C not taken, 0xA4BE14 ldr fp,[fp,#0x28]), so it gets no gain store.
+        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Format64 = 0x3102 };
+        var failing = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
+        failing.Descriptor.AllocationFails = () => true;
+        var ok = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4101, FlagsCD = 8, VoiceRequest3C = () => 1, OutputGain = 1f };
+        voice.Connections.Add(failing);
+        voice.Connections.Add(ok);
+
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 0.5f);
+
+        Assert.False(failing.HasDry);
+        Assert.Equal(0f, failing.C0C);                                    // the gain store 0xA4BE6C was not reached
+        Assert.True(ok.HasDry);
+        Assert.Equal(0.5f, ok.C0C);                                       // [conn+0xC] = [voice+0x1C] * gain
     }
 
     [Fact]
@@ -980,7 +1149,7 @@ public class WwiseVoiceLinkerTests
         Assert.Throws<NotSupportedException>(() => rig.Linker.Link(Rig.Voice(), Rig.Pbi()));
 
         var rig2 = new Rig();
-        rig2.Seams.InitLineA4F0EC = null;
+        rig2.Seams.LineInitUnreadSteps = null;
         rig2.Routing = new WwisePbiRouting { Node = SoundUnder(Master()) };
         Assert.Throws<NotSupportedException>(() => rig2.Linker.Link(Rig.Voice(), Rig.Pbi()));
     }
@@ -993,41 +1162,60 @@ public class WwiseVoiceLinkerTests
         var voice = Rig.Voice();
         voice.Source = source;
         rig.Linker.PendingVoices.Add(voice);
-        return (rig, voice, Rig.Pbi());
+        var pbi = Rig.Pbi();
+        rig.Owners[source] = pbi;                                          // [source+0xC] = the owner PBI
+        rig.Seams.SourceOwner = s => rig.Owners.GetValueOrDefault(s);
+        voice.BusOwner8 = pbi;                                             // [voice+8] = pbi+0xC (AddSrc, C25.4)
+        pbi.NodeE0 = new WwiseActorMixerNode(0xAABBCCDD, "t.bnk",
+            new WwiseNodeParams(0, 0, 0, new Dictionary<byte, uint>(), new Dictionary<byte, (float, float)>(), Array.Empty<WwiseRtpc>(),
+                Array.Empty<(uint, byte, IReadOnlyList<(uint, uint)>)>()), Array.Empty<uint>());   // [[pbi+0xE0]+8] = 0xAABBCCDD
+        return (rig, voice, pbi);
     }
+
+    // All expected values in the NotReady tests are the engine's own 0xA544BC run under Unicorn
+    // (re-analysis/tools/emu/emu_notready.py), not the C#'s output.
 
     [Fact]
     public void ResultThreeFThenANonNegativeOffsetStaysPendingWithoutSideEffects()
     {
-        // C23.1: on 0x3F, +0x1D8 >= 0 returns 0x3F at once.
+        // 0xA544BC under Unicorn: vt+0x28 returns 0x3F, [pbi+0x1D8] = 5 -> 0x3F, voice+0xE8 untouched, no 0xA0428C.
         var (rig, voice, pbi) = PendingRig(new Src { Code = 0x3F });
         pbi.StartOffset = 5;
         Assert.Equal(0x3F, rig.Linker.ProcessPending(pbi, voice));
         Assert.Contains(voice, rig.Linker.PendingVoices);
         Assert.False(voice.FlagE8);
         Assert.Empty(rig.Live);
+        Assert.False(((Src)voice.Source!).StartStreamSucceeded);           // 0xA56650 sets the latch only for a result of exactly 1
+        // vt+0x28 got ([owner+0x1DC], [owner+0x1E0]) = (0x11112222, 0x33334444) in the engine's run.
+        Assert.Equal(new[] { (0x11112222u, 0x33334444u) }, ((Src)voice.Source!).Calls);
     }
 
     [Fact]
-    public void ResultThreeFThenANegativeOffsetRuns0xA54580AndStillReturns3F()
+    public void ResultThreeFThenANegativeOffsetRuns0xA54580WithThePlayingIdAndTheNodeIdAndStillReturns3F()
     {
-        // C23.1: +0x1D8 < 0 runs 0xA54580 (source +0x10 bit1 clear: voice+0xE8 |= 1, 0xA0428C) and still returns 0x3F.
+        // 0xA544BC under Unicorn: result 0x3F with [pbi+0x1D8] = -1 -> voice+0xE8 = 1, one 0xA0428C(mgr, 0xC0FFEE, 0xAABBCCDD) =
+        // ([pbi'+0x134] = the playing id, 0x9BD138(pbi') = the node id), result 0x3F.
         var (rig, voice, pbi) = PendingRig(new Src { Code = 0x3F });
         pbi.StartOffset = 0xFFFFFFFF;
-        int calls = 0;
+        var playingId = new WwisePlayingInstance(
+            new WwisePlayInitParams { PlayingId = 0x00C0FFEE, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false)
+        { Word1DC = Rig.Media1DC, Word1E0 = Rig.Media1E0, NodeE0 = pbi.NodeE0, StartOffset = 0xFFFFFFFF };
+        rig.Owners[voice.Source!] = playingId;
+        voice.BusOwner8 = playingId;
+        var calls = new List<(uint, uint)>();
         rig.Seams.SourceFlag10Bit1 = _ => false;
-        rig.Seams.A0428C = (_, _) => calls++;
+        rig.Seams.A0428C = (id, node) => calls.Add((id, node));
 
-        Assert.Equal(0x3F, rig.Linker.ProcessPending(pbi, voice));
+        Assert.Equal(0x3F, rig.Linker.ProcessPending(playingId, voice));
         Assert.True(voice.FlagE8);
-        Assert.Equal(1, calls);
+        Assert.Equal(new[] { (0x00C0FFEEu, 0xAABBCCDDu) }, calls);
         Assert.Contains(voice, rig.Linker.PendingVoices);
     }
 
     [Fact]
     public void ASourceBit1SetSuppressesTheSideEffects()
     {
-        // Check row 5.13: the 0xA54580 side effects also require [src+0x10] bit1 clear.
+        // 0xA544BC under Unicorn: [source+0x10] bit1 set with [pbi+0x1D8] = -1: voice+0xE8 stays 0, no 0xA0428C, result as without it.
         var (rig, voice, pbi) = PendingRig(new Src { Code = 0x3F });
         pbi.StartOffset = 0xFFFFFFFF;
         rig.Seams.SourceFlag10Bit1 = _ => true;
@@ -1037,12 +1225,103 @@ public class WwiseVoiceLinkerTests
     }
 
     [Fact]
+    public void ANullVoicePlus8ReachesTheDeliberateFaultAfterStoringE8()
+    {
+        // 0xA544BC under Unicorn: a null [voice+8] stores voice+0xE8 |= 1 (0xA545A0) and then faults at the udf (0xA545DC), so the C#
+        // throws, with the E8 store already made.
+        var (rig, voice, pbi) = PendingRig(new Src { Code = 0x3F });
+        pbi.StartOffset = 0xFFFFFFFF;
+        rig.Seams.SourceFlag10Bit1 = _ => false;
+        rig.Seams.A0428C = (_, _) => throw new InvalidOperationException("the engine faults before the call");
+        voice.BusOwner8 = null;
+        Assert.Throws<InvalidOperationException>(() => rig.Linker.NotReadyCheck(voice, pbi));
+        Assert.True(voice.FlagE8);
+    }
+
+    [Fact]
+    public void ANullSourceIsANullDereferenceNotNotReady()
+    {
+        // 0xA544C4 ldr r0,[r0,#0xd4]; 0xA544D0 ldr r3,[r0,#0xc]: a voice with no source faults in the engine, so the C# does not return 0.
+        var (rig, voice, pbi) = PendingRig(new Src());
+        voice.Source = null;
+        Assert.Throws<InvalidOperationException>(() => rig.Linker.NotReadyCheck(voice, pbi));
+    }
+
+    [Fact]
+    public void AnUnreadOwnerLookupAndAnUnwrittenMediaWordAreRefused()
+    {
+        // [source+0xC] has no writer here and pbi+0x1DC/+0x1E0 are written by the unread 0xA1EC54: neither is defaulted.
+        var (rig, voice, pbi) = PendingRig(new Src());
+        rig.Seams.SourceOwner = null;
+        Assert.Throws<NotSupportedException>(() => rig.Linker.NotReadyCheck(voice, pbi));
+
+        var (rig2, voice2, pbi2) = PendingRig(new Src());
+        pbi2.Word1DC = null;
+        Assert.Throws<WwiseMissingBehaviourException>(() => rig2.Linker.NotReadyCheck(voice2, pbi2));
+        var (rig3, voice3, pbi3) = PendingRig(new Src());
+        pbi3.Word1E0 = null;
+        Assert.Throws<WwiseMissingBehaviourException>(() => rig3.Linker.NotReadyCheck(voice3, pbi3));
+        var (rig4, voice4, pbi4) = PendingRig(new Src());
+        rig4.Owners.Remove(voice4.Source!);
+        Assert.Throws<InvalidOperationException>(() => rig4.Linker.NotReadyCheck(voice4, pbi4));
+    }
+
+    [Theory]
+    // (label in emu_notready.py order, vt+0x28 result, latched, [pbi+0x1D8], ratio bits, frames, look-ahead L) -> engine result
+    // Every row is a case of re-analysis/tools/emu/emu_notready.py; the last column is that run's r0.
+    [InlineData(1, true, 2047, 0x3F800000u, 0x400, 1u, 1)]                        // window 2048: offset 2047 -> 1
+    [InlineData(1, true, 2048, 0x3F800000u, 0x400, 1u, 0x3F)]                     // offset == window -> 0x3F
+    [InlineData(1, true, 0, 0x00000000u, 0x400, 1u, 0x3F)]                        // ratio 0: product 0 takes -0.5 -> window 0; 0 >= 0
+    [InlineData(1, true, 0, 0x3EFFFFFFu, 1, 0u, 1)]                               // 0.49999997f: +0.5 rounds up to 1.0f, window 1 (MathF.Round gave 0)
+    [InlineData(1, true, 1, 0x3EFFFFFFu, 1, 0u, 0x3F)]
+    [InlineData(1, true, -2048, 0xBF800000u, 0x400, 1u, 0x3F)]                    // ratio -1.0f: trunc(-2048 - 0.5) = -2048
+    [InlineData(1, true, 9, 0x3FC00000u, 3, 1u, 0x3F)]                            // 1.5f * 6 = 9.0 + 0.5 -> 9
+    [InlineData(1, true, 8, 0x3FC00000u, 3, 1u, 1)]
+    [InlineData(1, true, 0, 0x3F800000u, 0x400, 0xFFFFFFFFu, 0x3F)]               // (L + 1) wraps to 0: window 0
+    [InlineData(1, true, 0, 0x7FC00000u, 0x400, 1u, 0x3F)]                        // NaN product: -0.5 branch, vcvt gives 0
+    [InlineData(1, true, 0x7FFFFFFE, 0x4F32D05Eu, 0x400, 1u, 1)]                  // 3e9f * 2048 saturates to 0x7FFFFFFF: offset below -> 1
+    [InlineData(1, true, 0x7FFFFFFF, 0x4F32D05Eu, 0x400, 1u, 0x3F)]
+    [InlineData(1, true, int.MinValue, 0xCF32D05Eu, 0x400, 1u, 0x3F)]             // -3e9f saturates to INT_MIN: offset == window
+    [InlineData(1, true, 8388609, 0x3F800000u, 3, 2796202u, 1)]                   // product 8388609 (odd, 2^23+1): +0.5 ties to even -> window 8388610
+    [InlineData(1, true, 8388610, 0x3F800000u, 3, 2796202u, 0x3F)]
+    [InlineData(1, true, 8388607, 0x3F800000u, 2, 4194303u, 1)]                   // product 8388608 (even): window 8388608
+    [InlineData(1, true, 8388608, 0x3F800000u, 2, 4194303u, 0x3F)]
+    [InlineData(1, true, 33422851, 0x437F0001u, 0xFFFF, 1u, 1)]                   // 255.00002f * 131070 = 33422852: window 33422852
+    [InlineData(1, true, 33422852, 0x437F0001u, 0xFFFF, 1u, 0x3F)]
+    [InlineData(1, true, 131069, 0x3F800001u, 0xFFFF, 1u, 1)]                     // 131070.015625 + 0.5 -> 131070
+    [InlineData(1, true, 131070, 0x3F800001u, 0xFFFF, 1u, 0x3F)]
+    [InlineData(1, false, 100, 0x3F800000u, 0x400, 1u, 1)]                        // vt+0x28 returns 1 and sets the latch
+    [InlineData(7, false, 0, 0x3F800000u, 0x400, 1u, 2)]                          // any other raw result -> 2
+    [InlineData(0, false, 0, 0x3F800000u, 0x400, 1u, 2)]                          // a raw 0 -> 2 (not the 0x3F or 1 of the C# bool)
+    public void NotReadyCheckMatchesTheEnginesOwnRunUnderUnicorn(
+        int code, bool latched, int offset, uint ratioBits, int frames, uint lookAhead, int expected)
+    {
+        var src = new Src { Code = code, StartStreamSucceeded = latched };
+        var (rig, voice, pbi) = PendingRig(src);
+        pbi.StartOffset = unchecked((uint)offset);
+        pbi.Ratio = BitConverter.Int32BitsToSingle(unchecked((int)ratioBits));
+        rig.Linker.LineMaxFrames = (ushort)frames;
+        rig.Linker.ContinuousLookAhead = lookAhead;
+        rig.Seams.SourceFlag10Bit1 = _ => true;                            // the side effect is checked in its own tests
+
+        Assert.Equal(expected, rig.Linker.NotReadyCheck(voice, pbi));
+    }
+
+    [Fact]
+    public void TheLookAheadAndFramesDefaultsAreTheInventoryValues()
+    {
+        // Inventory 2.3: [0x108D90C+0x1C] = 1; C24 residuals: [0x1052440] .data = 0x400. The window for ratio 1.0 is (1+1)*0x400 = 2048.
+        var rig = new Rig();
+        Assert.Equal(1u, rig.Linker.ContinuousLookAhead);
+        Assert.Equal((ushort)0x400, rig.Linker.LineMaxFrames);
+    }
+
+    [Fact]
     public void ResultOneComparesTheOffsetWithTheWindowAndLinksWhenBelowIt()
     {
-        // C23.1 / row 3: on 1, +0x1D8 >= round((L+1)*F*ratio) returns 0x3F, else 1 and the voice is linked.
-        // inv 2.3: L = 1; inv 2.2: F is the frame size; the ctor sets pbi+0x164 = 1.0 (0xA00228). Window = 2*1024.
-        int window = 2 * WwiseRuntimeSettings.SamplesPerFrame;
-        var (rig, voice, pbi) = PendingRig(new Src());
+        // 0xA544BC under Unicorn (latched source): [pbi+0x1D8] = 2048 -> 0x3F, 2047 -> 1, and 1 tail-calls 0xA42DEC (0xA43248).
+        int window = 2 * 0x400;
+        var (rig, voice, pbi) = PendingRig(new Src { StartStreamSucceeded = true });
         pbi.StartOffset = (uint)window;
         rig.Seams.InitVoiceA54A30 = _ => 1;
         Assert.Equal(0x3F, rig.Linker.ProcessPending(pbi, voice));
@@ -1077,7 +1356,7 @@ public class WwiseVoiceLinkerTests
         var linker = new WwiseVoiceLinker(rig.Buses, rig.Devices, bridge.Voices, _ => rig.Routing, rig.Seams);
         bridge.Linker = linker;
         bridge.LinkEngineA548B8 = _ => { };
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
         Assert.Equal(1, bridge.AttachVoice(pbi));
@@ -1103,7 +1382,7 @@ public class WwiseVoiceLinkerTests
         rig.Seams.CloseSource56414 = _ => { };
         bridge.Linker = new WwiseVoiceLinker(rig.Buses, rig.Devices, bridge.Voices, _ => rig.Routing, rig.Seams);
         bridge.LinkEngineA548B8 = _ => { };
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         bridge.StartList.Enqueue(0, pbi, 0);
 
@@ -1117,7 +1396,7 @@ public class WwiseVoiceLinkerTests
         bridge2.Notify38600 = (p, a, b, c) => notes2.Add((p, a, b, c));
         bridge2.Linker = new WwiseVoiceLinker(rig.Buses, rig.Devices, bridge2.Voices, _ => rig.Routing, rig.Seams);
         bridge2.LinkEngineA548B8 = _ => { };
-        var pbi2 = bridge2.CreatePbi(new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1 }, 1,
+        var pbi2 = bridge2.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 2, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         pbi2.Field154 = new WwiseLiveVoice(1, 8);                          // 0xA558F8 had stored the voice: 0xA01800 clears it
         Assert.Equal(2, bridge2.AttachVoice(pbi2));                        // C26.4: 0xA559A4..0xA559B8 return 2
@@ -1478,7 +1757,7 @@ public class WwiseVoiceLinkerTests
     }
 
     private static WwisePlayingInstance BridgePbi(WwisePlaybackBridge bridge) =>
-        bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
 
     /// <summary>
@@ -1668,7 +1947,7 @@ public class WwiseVoiceLinkerTests
         var unselected = new WwisePlaybackBridge { MediaFor = _ => null }.WithTestSeams();
         var notes = new List<(int, int, int)>();
         unselected.Notify38600 = (_, a, b, c) => notes.Add((a, b, c));
-        var pbi2 = unselected.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi2 = unselected.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(0, 0, 1, 0, 0), continuous: false);    // plug-in 0: mode 0, no class selected
         Assert.Equal(2, unselected.AddSrc(new WwiseLiveVoice(1, 8), pbi2, bActive: true));
         Assert.Equal(new[] { (4, 1, 0) }, notes);
@@ -1846,6 +2125,79 @@ public class WwiseVoiceLinkerTests
     }
 
     [Fact]
+    public void AddSrcCallsStartStreamWithTheOwnerPbiWords1DCAnd1E0_C27Step7()
+    {
+        // C27 step 7 / C30: 0xA56650(source, [owner+0x1DC], [owner+0x1E0]); the native loads r1/r2 from r7 = [source+0xC] (0xA5590C, 0xA55910).
+        var rig = new AddSrcRig();
+        rig.Pbi.Word1DC = 0xDEAD0001;
+        rig.Pbi.Word1E0 = 0xBEEF0002;
+        Assert.Equal(1, rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
+        Assert.Equal(new[] { (0xDEAD0001u, 0xBEEF0002u) }, rig.Source.Calls);
+        Assert.True(rig.Source.StartStreamSucceeded);                        // a raw 1 sets the latch (0xA56678..0xA56684)
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    [InlineData(7)]
+    [InlineData(-1)]
+    [InlineData(0x40)]
+    [InlineData(0x3E)]
+    public void AddSrcPassesAnyRawStartStreamResultOtherThan1Or0x3FToStep8Unchanged_C27Steps7And8(int raw)
+    {
+        // C27 step 7: r6 is the raw vt+0x28 result (mov r6,r0 at 0xA55920); `cmp r0,#1; cmpne r0,#0x3f; bne 0xA55964` sends every other int to step 8,
+        // which returns r6 unchanged (0xA55998 mov r0,r6). The latch is set only by a raw 1.
+        var rig = new AddSrcRig(startCode: raw);
+        var voice = rig.NewVoice();
+        Assert.Equal(raw, rig.Bridge.AddSrc(voice, rig.Pbi, bActive: true));
+        Assert.Contains("destruct", rig.Log);
+        Assert.Null(rig.Pbi.Field154);
+        Assert.Null(voice.Source);
+        Assert.False(rig.Source.StartStreamSucceeded);
+    }
+
+    [Theory]
+    [InlineData(1, true)]
+    [InlineData(0x3F, false)]
+    [InlineData(0, false)]
+    [InlineData(2, false)]
+    [InlineData(7, false)]
+    [InlineData(-1, false)]
+    public void AddSrcSetsTheLatchOnlyForARawResultOf1AndCallsVt28OnceWithTheOwnerWords_C27Step7(int raw, bool latch)
+    {
+        // 0xA56678..0xA56684: cmp r0,#1; orreq sets [source+0x10] bit0 only for exactly 1.
+        var rig = new AddSrcRig(startCode: raw);
+        rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true);
+        Assert.Equal(latch, rig.Source.StartStreamSucceeded);
+        Assert.Equal(new[] { (Rig.Media1DC, Rig.Media1E0) }, rig.Source.Calls);
+    }
+
+    [Fact]
+    public void AddSrcDoesNotCallStartStreamForALatchedSourceAndReturns1_C27Step7()
+    {
+        // 0xA56650: [source+0x10] bit0 set -> r0 = 1 without calling vt+0x28 (0xA56650..0xA56660).
+        var rig = new AddSrcRig(startCode: 7) { };
+        rig.Source.StartStreamSucceeded = true;
+        Assert.Equal(1, rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
+        Assert.Empty(rig.Source.Calls);
+    }
+
+    [Fact]
+    public void AddSrcRefusesAnUnwrittenMediaWordInsteadOfDefaultingIt_C30_1d()
+    {
+        // pbi+0x1DC/+0x1E0 are written by the unread 0xA1EC54; AddSrc reads them before calling 0xA56650 and does not invent values.
+        var rig = new AddSrcRig();
+        rig.Pbi.Word1DC = null;
+        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.AddSrc(rig.NewVoice(), rig.Pbi, bActive: true));
+        Assert.Empty(rig.Source.Calls);
+
+        var rig2 = new AddSrcRig();
+        rig2.Pbi.Word1E0 = null;
+        Assert.Throws<WwiseMissingBehaviourException>(() => rig2.Bridge.AddSrc(rig2.NewVoice(), rig2.Pbi, bActive: true));
+        Assert.Empty(rig2.Source.Calls);
+    }
+
+    [Fact]
     public void AddSrcSeamsForUnreadBodiesAreRequiredAndThrowWhenReachedUnset_C27Residuals()
     {
         // C27 residuals: the bodies of 0x9BCA68, 0xA0228C, 0x9EEDA4, 0xA054D8 and the 0x4C allocation, the source destructor
@@ -1986,7 +2338,7 @@ public class WwiseVoiceLinkerTests
         bridge.Linker = new WwiseVoiceLinker(rig.Buses, rig.Devices, bridge.Voices, _ => rig.Routing, rig.Seams);
         bridge.LinkEngineA548B8 = _ => { };                                 // 0xA548B8 does not touch +0xDC (C25.1)
         bridge.StartSourceA56478 = started.Add;
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         bridge.StartList.Enqueue(0, pbi, 1);
 
@@ -2083,8 +2435,9 @@ public class WwiseVoiceLinkerTests
         var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState());
         pass.AdvanceTickCounters = () => f.Bridge.WalkPendingVoices();
         pass.DuckPrePass = () => f.Calls.Add($"duck@{pbi.StartOffset}");
+        pass.NodeCleanup = () => f.Calls.Add("cleanup");
         pass.VoicePass();
-        Assert.Equal(new[] { "duck@1976" }, f.Calls);                       // the walk ran before the duck pre-pass
+        Assert.Equal(new[] { "duck@1976", "cleanup" }, f.Calls);            // the walk ran first (0xA44978), then 0xA43D24, then 0xA39564
     }
 
     [Fact]
@@ -2092,7 +2445,7 @@ public class WwiseVoiceLinkerTests
     {
         // C24 header: [voice+8] = pbi+0xC, so the pending walk reads the PBI through it (0xA55934..0xA55948).
         var bridge = new WwisePlaybackBridge { SourceFactory = _ => new Src { Code = 0x3F } }.WithTestSeams();
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         var voice = Rig.Voice();
         bridge.AddSrc(voice, pbi, bActive: true);
@@ -2106,7 +2459,7 @@ public class WwiseVoiceLinkerTests
         // (r2 != 0); the reuse path stores [voice+0xD8] and returns at once (0xA5592C streq r5,[r4,#0xd8]; beq 0xA55958).
         var reuseSrc = new Src();
         var bridge = new WwisePlaybackBridge { SourceFactory = _ => reuseSrc }.WithTestSeams();
-        var pbi = bridge.CreatePbi(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x55 }, 1,
+        var pbi = bridge.CreatePbiWithMediaWords(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1, ChainId = 0x55 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
         Assert.Equal(8, pbi.Flags1BE & 8);                                  // set: the chain id came from params+0x7C
         var owner = Rig.Pbi();

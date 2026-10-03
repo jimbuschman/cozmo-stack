@@ -394,6 +394,21 @@ public sealed class WwiseMixBus
     // fidelity: M6-025
     public WwiseBusContext Context { get; set; } = WwiseBusContext.None;
 
+    /// <summary>
+    /// <c>vpl+0x30</c>: the r1 argument of the line Init <c>0xA4F0EC</c> (<c>0xA4F0FC str r1,[r0,#0x30]</c>). Both callers (<c>0xA423AC/B0</c>,
+    /// <c>0xA42470/74</c>) pass r0 = r1 = the new line, so this is the line itself, never the bus (the bus is <c>ctx.Bus</c>,
+    /// <see cref="Context"/>). <see cref="WwiseVoiceLinker"/> stores it in Init.
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseMixBus? SelfBus30 { get; set; }
+
+    /// <summary>
+    /// <c>vpl+0x6C</c>: the u16 frame count the line Init stores (<c>0xA4F28C strh r7,[r4,#0x6c]</c>, C24.3) after the buffer
+    /// allocation succeeded. It is the frames argument as given (<see cref="MaxFrames"/> is the buffer's length).
+    /// </summary>
+    // fidelity: M6-025
+    public ushort InitFrames6C { get; set; }
+
     /// <summary><c>vpl+0x28/+0x2C</c>: the 64-bit output-device id the line belongs to (row 12).</summary>
     // fidelity: M6-025
     public WwiseDeviceId Device { get; set; }
