@@ -38,6 +38,13 @@ public sealed class BehaviorContext
     public required AnimationTriggerMap Triggers { get; init; }
     public BehaviorArbiter? Arbiter { get; init; }
     public MoodState? Mood { get; set; }
+    /// <summary>
+    /// The engine's <c>AIComponent</c> at <c>[robot+0x264]</c>; its +0x10 is the <c>BehaviorHelperComponent</c> that <c>IBehavior::SmartDelegateToHelper</c> 0x005bebee..0x005bebf8
+    /// and <c>IBehavior::StopHelperWithoutCallback</c> 0x005bd2a6..0x005bd2b0 reach through <c>[[[this+0x2c]+0x264]+0x10]</c>. Set by <see cref="FreeplayStack.Create"/>.
+    /// Null: no helper component, and a behaviour that asks to delegate to a helper throws <see cref="NotSupportedException"/>.
+    /// </summary>
+    // fidelity: M8-011
+    public AIComponent? AI { get; set; }
     public Random Random { get; init; } = new();
     /// <summary>
     /// The engine's <c>StrategyObstacleDetected</c> (0x006141F8) is a <c>StrategyGeneric</c> whose
@@ -64,6 +71,17 @@ public sealed class BehaviorContext
     /// which is what a robot with no needs manager would mean.
     /// </summary>
     public NeedsManager? Needs { get; set; }
+
+    /// <summary>
+    /// The one value <c>StrategyExpressNeedsTransition::WantsToRunInternal</c> 0x006136D8 compares its need
+    /// against: <c>[[robot+0x264]+0x30]+0x14</c> (<c>ldr.w r0,[r1,#0x264]</c> 0x006136DC; <c>ldr r5,[r0,#0x30]</c>
+    /// 0x006136E2; <c>ldr r2,[r5,#0x14]</c> 0x006136FC). The inventory records the name of that object and of
+    /// its +0x14 field as UNKNOWN, and nothing in this stack supplies that exact value (the per-need
+    /// <c>NeedsManager.IsSevereExpressed</c> set is not it), so it is a seam: null makes
+    /// <c>ExpressNeedsTransition</c> throw <see cref="NotSupportedException"/> rather than answer. MISSING: M8-006.
+    /// </summary>
+    // fidelity: M8-006
+    public Func<NeedId?>? AiExpressedNeedValue { get; set; }
 
     /// <summary>
     /// The <c>needsActionID</c> each shipped behaviour config carries, by <c>behaviorID</c>
@@ -132,10 +150,7 @@ public interface IBehavior
     /// How much this wants to run, before penalties. The engine's <c>EvaluateScoreInternal</c> 0x005BEEC2:
     /// the behaviour's emotion scorers if its config gave it any, otherwise its <c>flatScore</c>, which
     /// <c>IBehavior::IBehavior</c> leaves at zero when the config carries no scoring (0x005BBD28). A
-    /// behaviour built in code here carries a score of its own instead - see
-    /// <see cref="Behavior.ReactBehavior"/> and <see cref="Behavior.PlayAnimBehavior"/> - because this
-    /// stack's simple manager ranks behaviours directly where the engine ranks only what an activity's
-    /// scoring chooser lists. Zero or
+    /// behaviour built in code carries that same zero (M8-004): no in-code score is invented. Zero or
     /// less means it does not want to run at all.
     /// </summary>
     double EvaluateScore(BehaviorContext context);
@@ -167,10 +182,13 @@ public sealed class BehaviorScope : IDisposable
     // (a) disable-reaction locks (0x005bd12c), (b) the idle animation (0x005bd142), (c) the motion
     // profile (0x005bd150), (d) the track-lock map (0x005bd15c..0x005bd174), then the custom light-pattern
     // vector at +0xcc/+0xd0 (0x005bd1a2..0x005bd1c6). This stack's own OnRelease hooks have no engine
-    // counterpart and run last. M8-009.
+    // counterpart and run last. Within a category the engine's order is the container's: the reaction
+    // locks are a std::set<string> taken lowest key first (0x005bd12c/0x005bd130) and the track locks a
+    // std::map<string, u8> walked in key order (0x005bd15c..0x005bd196), so each undo carries its key and
+    // Dispose sorts by it, ordinal. M8-009.
     private const int OrderReactionLocks = 0, OrderIdle = 1, OrderMotionProfile = 2, OrderTrackLocks = 3,
                       OrderLightPatterns = 4, OrderOther = 5;
-    private readonly List<(int Order, Action Undo)> _undo = new();
+    private readonly List<(int Order, string Key, Action Undo)> _undo = new();
     private readonly object _gate = new();
     private readonly BehaviorArbiter? _arbiter;
     private readonly CozmoMotion? _motion;
@@ -183,7 +201,7 @@ public sealed class BehaviorScope : IDisposable
     private void AddUndo(int order, Action undo)
     {
         if (_disposed) undo();
-        else _undo.Add((order, undo));
+        else _undo.Add((order, "", undo));
     }
 
     // IBehavior's Smart* state: the per-resource flags the engine keeps at +0xb0 (idle), +0xc0
@@ -193,6 +211,10 @@ public sealed class BehaviorScope : IDisposable
     private readonly HashSet<uint> _lightPatterns = new();
     private readonly HashSet<string> _reactionLockNames = new(StringComparer.Ordinal);
     private bool _arbiterReactionLock;
+    // The tracks this scope claimed through the unnamed LockTracks (not an engine Smart* helper); the
+    // named SmartLockTracks claims live in _trackLocks. LockedTracks is derived from both, so no undo has
+    // to restore a saved mask and the release order cannot leave one behind.
+    private Animation.AnimationTrack _unnamedLocked;
     private Action? _idleRemove;
     private Action? _motionClear;
 
@@ -207,8 +229,22 @@ public sealed class BehaviorScope : IDisposable
         _manager = manager;
     }
 
+    /// <summary>Whether <see cref="Dispose"/> has run.</summary>
+    internal bool IsDisposed { get { lock (_gate) return _disposed; } }
+
     /// <summary>Tracks this behaviour has claimed, released when it stops.</summary>
-    public Animation.AnimationTrack LockedTracks { get; private set; }
+    public Animation.AnimationTrack LockedTracks
+    {
+        get
+        {
+            lock (_gate)
+            {
+                var tracks = _unnamedLocked;
+                foreach (var held in _trackLocks.Values) tracks |= held;
+                return tracks;
+            }
+        }
+    }
 
     /// <summary>Whether this behaviour has asked for reactions to be held off.</summary>
     public bool ReactionsDisabled { get; private set; }
@@ -224,8 +260,8 @@ public sealed class BehaviorScope : IDisposable
         lock (_gate)
         {
             if (_disposed) return;
-            var before = LockedTracks;
-            LockedTracks |= tracks;
+            bool first = _unnamedLocked == Animation.AnimationTrack.None;
+            _unnamedLocked |= tracks;
             var newMotion = tracks & ~_motionLocked;
             if (_motion is { } motion && newMotion != Animation.AnimationTrack.None)
             {
@@ -233,9 +269,10 @@ public sealed class BehaviorScope : IDisposable
                 if (mask != 0) motion.LockTracks(mask, _owner);
                 _motionLocked |= newMotion;
             }
-            _undo.Add((OrderTrackLocks, () =>
+            if (!first) return;
+            _undo.Add((OrderTrackLocks, _owner, () =>
             {
-                LockedTracks = before;
+                _unnamedLocked = Animation.AnimationTrack.None;
                 if (_motion is { } m && _motionLocked != Animation.AnimationTrack.None)
                 {
                     byte mask = CozmoMotion.MaskFor(_motionLocked);
@@ -260,7 +297,7 @@ public sealed class BehaviorScope : IDisposable
             _arbiterReactionLock = true;
             ReactionsDisabled = true;
             _arbiter?.DisableReactions(this);
-            _undo.Add((OrderReactionLocks, () =>
+            _undo.Add((OrderReactionLocks, "", () =>
             {
                 _arbiterReactionLock = false;
                 ReactionsDisabled = false;
@@ -306,7 +343,7 @@ public sealed class BehaviorScope : IDisposable
             push();
             IdleAnimationSet = true;
             _idleRemove = remove;
-            _undo.Add((OrderIdle, () => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } }));
+            _undo.Add((OrderIdle, "", () => { if (IdleAnimationSet) { IdleAnimationSet = false; _idleRemove = null; remove(); } }));
             return true;
         }
     }
@@ -339,7 +376,7 @@ public sealed class BehaviorScope : IDisposable
             set();
             MotionProfileSet = true;
             _motionClear = clear;
-            _undo.Add((OrderMotionProfile, () => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } }));
+            _undo.Add((OrderMotionProfile, "", () => { if (MotionProfileSet) { MotionProfileSet = false; _motionClear = null; clear(); } }));
             return true;
         }
     }
@@ -370,15 +407,12 @@ public sealed class BehaviorScope : IDisposable
             if (_disposed) return false;
             if (_trackLocks.ContainsKey(name)) { Verify($"SmartLockTracks: track lock '{name}' already exists"); return false; }
             _trackLocks[name] = tracks;
-            var before = LockedTracks;
-            LockedTracks |= tracks;
             byte mask = CozmoMotion.MaskFor(tracks);
             if (_motion is { } m && mask != 0) m.LockTracks(mask, _owner + ":" + name);
-            _undo.Add((OrderTrackLocks, () =>
+            _undo.Add((OrderTrackLocks, name, () =>
             {
                 if (_trackLocks.Remove(name))
                 {
-                    LockedTracks = before;
                     if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, _owner + ":" + name);
                 }
             }));
@@ -396,7 +430,6 @@ public sealed class BehaviorScope : IDisposable
             if (_disposed) return false;
             if (!_trackLocks.TryGetValue(name, out var tracks)) { Verify($"SmartUnLockTracks: no track lock named '{name}'"); return false; }
             _trackLocks.Remove(name);
-            LockedTracks &= ~tracks;
             byte mask = CozmoMotion.MaskFor(tracks);
             if (_motion is { } m && mask != 0) m.UnlockTracks(mask, _owner + ":" + name);
             return true;
@@ -415,7 +448,7 @@ public sealed class BehaviorScope : IDisposable
             if (_disposed) return false;
             if (!_lightPatterns.Add(objectId)) { Verify($"SmartSetCustomLightPattern: a light pattern is already set for object {objectId}"); return false; }
             play();
-            _undo.Add((OrderLightPatterns, () => _lightPatterns.Remove(objectId)));
+            _undo.Add((OrderLightPatterns, "", () => _lightPatterns.Remove(objectId)));
             return true;
         }
     }
@@ -453,7 +486,7 @@ public sealed class BehaviorScope : IDisposable
                 _arbiterReactionLock = true;
                 _arbiter?.DisableReactions(this);
             }
-            _undo.Add((OrderReactionLocks, () =>
+            _undo.Add((OrderReactionLocks, name, () =>
             {
                 if (_reactionLockNames.Remove(name) && _reactionLockNames.Count == 0)
                 {
@@ -484,7 +517,7 @@ public sealed class BehaviorScope : IDisposable
             ReactionsDisabled = true;
             string managerName = name + "_behaviorLock";
             _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
-            _undo.Add((OrderReactionLocks, () =>
+            _undo.Add((OrderReactionLocks, name, () =>
             {
                 if (_reactionLockNames.Remove(name))
                 {
@@ -517,45 +550,43 @@ public sealed class BehaviorScope : IDisposable
         }
     }
 
-    /// <summary>
-    /// <c>IBehavior::SmartDelegateToHelper</c> 0x005beb10 calls
-    /// <c>BehaviorHelperComponent::DelegateToHelper</c> 0x0056dad8 at <c>[robot+0x264]+0x10</c> (an
-    /// <c>AIComponent</c> member) and stores the helper as a weak ref at +0xc4/+0xc8. The callee and its
-    /// helper-stack runtime (<c>PushHelperOntoStackAndUpdate</c>, <c>UpdateActiveHelper</c>,
-    /// <c>ClearStackMaintenanceVars</c>, <c>StopHelperWithoutCallback</c>) are <b>unowned by any record</b>
-    /// (not M7, not M8), so this is an explicit unsupported stub rather than a silent no-op.
-    /// </summary>
-    public bool SmartDelegateToHelper(object helper) =>
-        throw new NotSupportedException(
-            "IBehavior.SmartDelegateToHelper needs BehaviorHelperComponent::DelegateToHelper 0x0056dad8 at " +
-            "[robot+0x264]+0x10, which is unowned by any fidelity record (M8-011 gap).");
+    // fidelity: M8-011
+    // IBehavior::SmartDelegateToHelper 0x005beb10 is SteppedBehavior.SmartDelegateToHelper: the weak reference at +0xc4/+0xc8 belongs to the behaviour, not to a
+    // run's scope, and the call reaches BehaviorHelperComponent::DelegateToHelper through BehaviorContext.AI.
 
     /// <summary>
     /// Releases the scope in the engine's fixed order (<c>IBehavior::Stop</c> 0x005bd08c):
     /// (a) disable-reaction locks (0x005bd12c), (b) the idle animation (0x005bd142), (c) the motion
     /// profile (0x005bd150), (d) the track locks (0x005bd15c..0x005bd174), then the custom light-pattern
-    /// vector at +0xcc/+0xd0 (0x005bd1a2..0x005bd1c6). Within one category the undos run most-recent-first,
-    /// because the track-lock undos restore a saved mask; the engine unlocks each map entry independently
-    /// and then destroys the map (0x005bd174/0x005bd19e), so only the order of the categories is
-    /// observable. This stack's own OnRelease hooks have no engine counterpart and run last.
+    /// vector at +0xcc/+0xd0 (0x005bd1a2..0x005bd1c6). Within a category the engine's container order
+    /// applies: the reaction locks are a <c>std::set</c> of names, each pass taking the first node
+    /// (0x005bd12c/0x005bd130), lowest key first; the track locks are a <c>std::map</c> from name to mask
+    /// walked in key order, one <c>UnlockTracks</c> (and so possibly one EnableAnimTracks) per entry
+    /// (0x005bd15c..0x005bd196). Both sort by name, ordinal (the byte order of <c>std::less&lt;string&gt;</c>
+    /// for the ASCII names in use). This stack's own OnRelease hooks have no engine counterpart and run last,
+    /// most-recent-first.
     /// </summary>
     // fidelity: M8-009
     public void Dispose()
     {
-        List<(int Order, Action Undo)> undo;
+        List<(int Order, string Key, Action Undo)> undo;
         lock (_gate)
         {
             if (_disposed) return;
             _disposed = true;
-            undo = new List<(int Order, Action Undo)>(_undo);
+            undo = new List<(int Order, string Key, Action Undo)>(_undo);
             _undo.Clear();
         }
         for (int order = OrderReactionLocks; order <= OrderOther; order++)
         {
-            for (int i = undo.Count - 1; i >= 0; i--)
+            if (order == OrderOther)
             {
-                if (undo[i].Order == order) Run(undo[i].Undo);
+                for (int i = undo.Count - 1; i >= 0; i--)
+                    if (undo[i].Order == order) Run(undo[i].Undo);
+                continue;
             }
+            foreach (var item in undo.Where(u => u.Order == order).OrderBy(u => u.Key, StringComparer.Ordinal))
+                Run(item.Undo);
         }
     }
 
@@ -596,44 +627,56 @@ public static class BehaviorInit
 /// <summary>
 /// The repetition penalty: how much a behaviour's score is reduced for having run recently.
 ///
-/// From the shipped <c>mood_config.json</c>, whose <c>defaultRepetitionPenalty</c> is a two-node graph
-/// running from (0 s, 0.0) to (30 s, 1.0). So a behaviour that has just run scores zero and recovers
-/// linearly to its full score after thirty seconds. This is what stops Cozmo doing the same thing twice
-/// in a row without anything having to forbid it.
+/// The engine's graph belongs to the behaviour (<c>IBehavior</c> +0xe8), read from its own
+/// <c>repetitionPenalty</c> key. When the key is missing <c>IBehavior::ReadFromScoredJson</c> leaves the graph
+/// empty and then adds one node, <c>AddNode(0.0f, 1.0f, true)</c> (0x005bc55c..0x005bc566): a flat 1.0, no
+/// penalty at all. <c>mood_config.json</c>'s <c>defaultRepetitionPenalty</c> (0 s to 0.0, 30 s to 1.0) is read
+/// only by the emotion-event fallback in <c>MoodManager::UpdateEventTimeAndCalculateRepetitionPenalty</c>
+/// (0x0067befe..0x0067bf0a), never by a behaviour, so it is not this class's default. This class holds the
+/// per-behaviour history (the +0x30 last-run stamp and the +0x108 suppression window) and evaluates the
+/// graph it is given; with none given it is the flat graph.
 /// </summary>
 // fidelity: M8-002
 public sealed class RepetitionPenalty
 {
+    /// <summary>1.0f, the engine's constant (<c>mov.w r2,#0x3f800000</c> 0x005bc560; <c>vmov.f32 s0,#1.0</c> 0x005beeb0).</summary>
+    public static readonly float One = BitConverter.Int32BitsToSingle(0x3f800000);
+
+    /// <summary>The graph a behaviour gets when its config has no <c>repetitionPenalty</c>: one node, (0.0, 1.0).</summary>
+    public static DecayGraph FlatGraph() => new("flat", new (double, double)[] { (0.0, One) });
+
     private readonly DecayGraph _graph;
     private readonly Dictionary<string, double> _lastRunSec = new();
     // IBehavior +0x108: the repetition-penalty suppression threshold, in seconds. Zero until
     // StopWithoutImmediateRepetitionPenalty sets it to now + 1.0 (0x005beeb0..0x005beebc).
     private readonly Dictionary<string, double> _suppressUntilSec = new();
 
-    public RepetitionPenalty(DecayGraph? graph = null) =>
-        _graph = graph ?? new DecayGraph("defaultRepetitionPenalty",
-            new (double, double)[] { (0, 0), (30, 1) });
+    public RepetitionPenalty(DecayGraph? graph = null) => _graph = graph ?? FlatGraph();
 
     /// <summary>
-    /// The multiplier for a behaviour, 0 immediately after it ran and 1 once recovered.
-    /// <c>IBehavior::EvaluateRepetitionPenalty</c> 0x005beee6: 1.0 when the last-run stamp is &lt;= 0, else
-    /// the graph at <c>now - lastRun</c> (0x005beeea/0x005beef8/0x005bef0e). This is the pure graph
-    /// evaluation only; the <c>+0x108</c> suppression is applied by <c>EvaluateScore</c>'s non-running
-    /// branch, not here (<c>vldr s0,[r4,#0x108]</c> 0x005befe2 is in EvaluateScore).
+    /// The multiplier for a behaviour.
+    /// <c>IBehavior::EvaluateRepetitionPenalty</c> 0x005beee6: 1.0 when the last-run stamp is &lt;= 0 (and for a
+    /// NaN stamp: <c>vcmpe.f32 s0,#0</c>, <c>itt le</c>, <c>movle.w r0,#0x3f800000</c>, 0x005beeea..0x005beef8),
+    /// else the graph at <c>now - lastRun</c> (0x005bef0e). A behaviour that has never been stopped has no
+    /// stamp and is not penalised. This is the pure graph evaluation only; the <c>+0x108</c> suppression is
+    /// applied by <c>EvaluateScore</c>'s non-running branch, not here (<c>vldr s0,[r4,#0x108]</c> 0x005befe2
+    /// is in EvaluateScore).
     /// </summary>
     public double For(string behaviorId, double nowSec)
     {
         lock (_lastRunSec)
         {
-            if (!_lastRunSec.TryGetValue(behaviorId, out var last)) return 1.0;
-            return _graph.At(nowSec - last);
+            if (!_lastRunSec.TryGetValue(behaviorId, out var stored)) return One;
+            float last = (float)stored;
+            if (!(last > 0)) return One;
+            return _graph.At((float)nowSec - last);                     // vsub.f32 now - stamp (0x005bef12)
         }
     }
 
     /// <summary>IBehavior +0x108 read on its own: whether the penalty is suppressed at <paramref name="nowSec"/>.</summary>
     public bool IsSuppressed(string behaviorId, double nowSec)
     {
-        lock (_lastRunSec) return _suppressUntilSec.TryGetValue(behaviorId, out var until) && nowSec < until;
+        lock (_lastRunSec) return _suppressUntilSec.TryGetValue(behaviorId, out var until) && (float)nowSec < (float)until;   // vcmpe.f32 0x005befea: applied when now >= +0x108
     }
 
     /// <summary>
@@ -647,7 +690,7 @@ public sealed class RepetitionPenalty
     }
 
     /// <summary>Records that a behaviour ran.</summary>
-    public void Ran(string behaviorId, double nowSec) { lock (_lastRunSec) _lastRunSec[behaviorId] = nowSec; }
+    public void Ran(string behaviorId, double nowSec) { lock (_lastRunSec) _lastRunSec[behaviorId] = (float)nowSec; }   // the stamp is a float (0x005bd11a)
 
     /// <summary>
     /// The engine's <c>IBehavior::StopWithoutImmediateRepetitionPenalty</c> (0x005beea0): the +0x108
@@ -655,11 +698,14 @@ public sealed class RepetitionPenalty
     /// second while the last-run stamp itself is left in place. The only engine callers are
     /// <c>BehaviorPickUpCube::UpdateInternal</c> 0x005c685c, <c>BehaviorStackBlocks::UpdateInternal</c>
     /// 0x005c991c and <c>BehaviorBuildPyramidBase::UpdateInternal</c> 0x005dd110 (all M7/M15);
-    /// <c>IBehavior::Stop</c> does not call it, and nothing in M8 does.
+    /// <c>IBehavior::Stop</c> does not call it, and nothing in M8 does. This is only the +0x108 half: the
+    /// engine function calls <c>IBehavior::Stop</c> first (0x005beea4), which
+    /// <see cref="SteppedBehavior.StopWithoutImmediateRepetitionPenalty"/> does before it calls this. The sum
+    /// is the engine's <c>vadd.f32</c> on floats (0x005beeb0..0x005beebc).
     /// </summary>
     public void StopWithoutImmediateRepetitionPenalty(string behaviorId, double nowSec)
     {
-        lock (_lastRunSec) _suppressUntilSec[behaviorId] = nowSec + 1.0;
+        lock (_lastRunSec) _suppressUntilSec[behaviorId] = (float)nowSec + One;
     }
 
     /// <summary>

@@ -297,7 +297,7 @@ public sealed class CozmoRobot : IDisposable
         // because callers hold them, so each is put back in its as-constructed state instead (ResetDevices).
         // NOT YET RESET (named residual for M12-M15): the upper-layer Robot components the engine also builds in
         // Robot::Robot 0x0050FBF1 and deletes with it - DockingSystem's Carrying (CarryingComponent), DockingComponent,
-        // PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy - are
+        // PathFollower, BehaviorManager, MoodManager, ReactiveBehavior, CubeMovedReactionStrategy - are
         // built by callers here and keep their state across a removal.
         Engine.RobotRemoved = ResetDevices;
         // fidelity: M4-011

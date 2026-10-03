@@ -38,7 +38,7 @@ public sealed record FreeplayDecision(double AtSec, string? Activity, string? Be
 /// </summary>
 // fidelity: M15-002
 // fidelity: M15-006
-public sealed class FreeplaySystem
+public sealed class FreeplaySystem : IManagedActivity
 {
     private readonly BehaviorManager _manager;
     private readonly BehaviorContext _ctx;
@@ -49,10 +49,21 @@ public sealed class FreeplaySystem
     /// <summary><c>BehaviorManager+0x65</c>: the invalid-spark latch (C1 §1).</summary>
     private bool _requestedSparkInvalid;
 
+    // The tick in progress: the clock it runs on, whether a decision has been recorded in it, and what the
+    // activity pick decided (read back by BehaviorSwitched once the manager has switched).
+    private double _tickNowSec;
+    private bool _recordedThisTick;
+    private string _switchReason = "";
+    private string? _switchedFromId;
+
     public FreeplaySystem(BehaviorManager manager, BehaviorContext ctx, Activity freeplay, IReadOnlyDictionary<string, IBehavior> bound, FreeplayInputs inputs)
     {
         _manager = manager; _ctx = ctx; Freeplay = freeplay; _bound = bound; Inputs = inputs;
         foreach (var b in bound.Values) if (manager.Find(b.Id) is null) manager.Add(b);
+        // BehaviorManager::GetCurrentActivity (0x005a2f78): the manager ticks this activity, asks it for the
+        // desired behaviour behind the reaction check, and reports what a reaction switched to.
+        manager.Activity = this;
+        manager.ReactionTriggered += sw => { Record(_tickNowSec, Current?.Id, sw.Behavior, $"reaction {sw.Trigger}"); _recordedThisTick = true; };
     }
 
     public Activity Freeplay { get; }
@@ -119,7 +130,14 @@ public sealed class FreeplaySystem
         return pick;
     }
 
-    /// <summary>One tick: reactions, activity selection, behaviour selection, behaviour update.</summary>
+    /// <summary>
+    /// One tick: <c>BehaviorManager::Update</c> in the engine's order (0x005a2f68..0x005a31be) - the activity's own tick,
+    /// <c>CheckReactionTriggerStrategies</c> every tick, then <c>ChooseNextScoredBehaviorAndSwitch</c> behind its three
+    /// gates, then the running behaviour's <c>Update</c>. The activity pick and the chooser are this class's
+    /// <see cref="IManagedActivity.GetDesiredActiveBehavior"/>, which the manager calls at that point, so they no longer
+    /// run (with their side effects) before the reaction check.
+    /// </summary>
+    // fidelity: M8-012
     public FreeplayDecision Tick(double nowSec, double nowMs)
     {
         // Mood first, and on this tick's clock. The engine updates it from Robot::Update (0x00513E8A)
@@ -129,21 +147,38 @@ public sealed class FreeplaySystem
         // happened to advance it, so an emotion stayed wherever an event left it and everything that
         // reads mood - the scoring, the gating - read a value that should long since have decayed.
         _ctx.Mood?.Advance(nowSec);
-        // MoodManager::Update 0x0067b5d4 ends with SendEmotionsToGame (0x0067b6a4); the stack's seam
-        // raises the nine values. The app-facing wire message is not wired (M7-012 unresolved).
+        // MoodManager::Update 0x0067b5d4 ends with SendEmotionsToGame (0x0067b6a4): with a robot attached it builds the
+        // nine-float MoodState message and raises it on MoodState.MoodStateBroadcast (no engine-to-game sink exists: M7-012).
         _ctx.Mood?.SendEmotionsToGame();
         // The NeedsManager is not ticked here: the engine calls NeedsManager::Update from its own tick,
         // between MessageHandler::ProcessMessages and UpdateAllRobots, on BaseStationTimer seconds
         // (M1-024, 0x004ED640). FreeplayStack.Create hands the manager to CozmoEngine.NeedsUpdate.
-        // The engine's BehaviorManager::Update tick order (0x005a2f70) runs the activity tick first
-        // (GetCurrentActivity 0x005a2f78, the activity's vtable+0x20) and CheckReactionTriggerStrategies
-        // after it (0x005a3060). The concrete activity tick body is M7/M15 and is not built; the stack's
-        // activity selection + chooser below is the closest seam. A reaction already running still holds
-        // the floor here (the engine would run the activity tick anyway; this is the stated divergence),
-        // and the new-reaction check is placed after the activity selection to match the engine's order.
-        if (_manager.CurrentReactionTrigger is not null) { _manager.Update(nowMs, nowSec); return Record(nowSec, Current?.Id, _manager.Current?.Id, "a reaction is running"); }
+        _tickNowSec = nowSec;
+        _recordedThisTick = false;
+        _manager.Update(nowMs, nowSec);
+        if (!_recordedThisTick)
+            Record(nowSec, Current?.Id, _manager.Current?.Id,
+                   _manager.CurrentReactionTrigger is not null ? "a reaction is running" : "nothing was decided this tick");
+        return _decisions[^1];
+    }
 
-        var current = _manager.Current;
+    /// <summary>
+    /// <c>IActivity::Update</c> (<c>vtable+0x20</c>, 0x005a2f84): <c>ActivityFreeplay::Update</c> 0x005ad9d0 forwards to the
+    /// running sub-activity's own <c>Update</c>, and the sub-activities that override it (BuildPyramid, Feeding,
+    /// GatherCubes, Sparked) are M7/M15 bodies this stack has not built, so there is nothing for it to run.
+    /// </summary>
+    void IManagedActivity.Update(double nowSec) { }
+
+    /// <summary>
+    /// What the freeplay activity answers <c>ChooseNextScoredBehaviorAndSwitch</c> 0x005a2a20 with: the activity pick
+    /// (<c>ActivityFreeplay::GetDesiredActiveBehaviorInternal</c> 0x005AE29C) and then the chosen activity's
+    /// <c>IActivity::GetDesiredActiveBehavior</c> 0x005B387C with its interlude. The manager calls it only after the
+    /// reaction check found nothing, and switches to the answer when it differs from <paramref name="current"/>.
+    /// </summary>
+    // fidelity: M15-002
+    IBehavior? IManagedActivity.GetDesiredActiveBehavior(IBehavior? current, double nowSec)
+    {
+        _switchedFromId = null;
         // The activity that the reselect branch must not let the re-pick choose again (C1 §1): the engine's
         // PickNewActivityForSpark(..., 0) skips the current activity (0x005ADC70..0x005ADC74).
         Activity? barred = null;
@@ -183,7 +218,7 @@ public sealed class FreeplaySystem
             if (Current is null)
             {
                 var picked = PickNewActivity(nowSec, out var pickReason, barred);
-                if (picked is null) return Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})");
+                if (picked is null) { Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})"); _recordedThisTick = true; return null; }
                 Current = picked; Current.OnSelected(nowSec); _ctx.LastActivitySwitchSec = nowSec;
                 // BehaviorManager::SwitchToRequestedSpark 0x005A4220 runs after every pick and clears the
                 // invalid-spark latch at +0x65 (C1 §1), so any new selection clears it.
@@ -228,18 +263,13 @@ public sealed class FreeplaySystem
             break;
         }
 
-        // BehaviorManager::Update's reaction step (0x005a3060 CheckReactionTriggerStrategies): after the
-        // activity tick (0x005a2f78/vtable+0x20) and before the scored choice
-        // (ChooseNextScoredBehaviorAndSwitch 0x005a3078). A non-zero result skips the scored choice
-        // (cbnz r5,#0x5a307c 0x005a3068), so a firing reaction must prevent the switch below.
-        var reaction = _manager.CheckReactions(nowSec);
-        if (reaction is not null) { Record(nowSec, Current?.Id, reaction.Behavior, $"reaction {reaction.Trigger}"); _manager.Update(nowMs, nowSec); return _decisions[^1]; }
 
+        _switchReason = decision.Reason;
         if (desired is not null && (current is null || current.Id != desired.Id))
         {
             // IActivity::ChooseInterludeBehavior: between two different behaviours the interlude chooser gets a turn, once
             string? previous = current?.Id ?? _lastBehaviorId;
-            if (Current.InterludeChooser is not null && _pendingInterlude is null && previous is not null && previous != desired.Id && _interludeAfter != previous)
+            if (Current!.InterludeChooser is not null && _pendingInterlude is null && previous is not null && previous != desired.Id && _interludeAfter != previous)
             {
                 var interlude = Current.InterludeChooser.GetDesiredActiveBehavior(null, 0, _ctx, nowSec).Behavior;
                 if (interlude is not null && interlude.Id != desired.Id && interlude.Id != previous)
@@ -249,31 +279,37 @@ public sealed class FreeplaySystem
                 }
             }
             if (_pendingInterlude is not null && desired.Id == _pendingInterlude.Id) _pendingInterlude = null;
-            bool started = _manager.StartAsync(desired.Id, nowSec).GetAwaiter().GetResult();
-            // The interrupted behaviour is NOT recorded as having run: the engine keeps
-            // StopWithoutImmediateRepetitionPenalty for exactly this case, and the manager records the
-            // repetition only for a behaviour that reached Completed.
-            if (_pendingInterlude is null) _lastBehaviorId = desired.Id;
-            Record(nowSec, Current.Id, started ? desired.Id : null, started ? decision.Reason : $"{desired.Id} refused to start");
+            return desired;
         }
-        else if (desired is null && current is not null)
+        if (desired is null && current is not null)
         {
-            // Only the last pass of the loop above reaches here with nothing chosen: every earlier one ended the
-            // activity and picked again. ChooseNextScoredBehaviorAndSwitch (0x005A2A74) switches whenever the
-            // chooser's pick differs from the running behaviour, a null pick included, so the behaviour stops.
+            // ChooseNextScoredBehaviorAndSwitch (0x005A2A74) switches whenever the chooser's pick differs from the
+            // running behaviour, a null pick included, so the manager stops it.
             Log?.Invoke($"BehaviorManager.ChooseNextScoredBehaviorAndSwitch: '{current.Id}' is no longer runnable and the chooser picked nothing; stopping it");
-            _manager.Stop(BehaviorStopReason.Interrupted, nowSec);
-            if (Current.Chooser is ScoringChooser sc3) sc3.Ran(current.Id, nowSec);
-            Record(nowSec, Current.Id, null, $"{current.Id} no longer runnable");
+            if (Current!.Chooser is ScoringChooser sc3) sc3.Ran(current.Id, nowSec);
+            _switchedFromId = current.Id;
+            return null;
         }
-        else Record(nowSec, Current.Id, current?.Id, current is null ? decision.Reason : "keeps running");
+        Record(nowSec, Current!.Id, current?.Id, current is null ? decision.Reason : "keeps running");
+        _recordedThisTick = true;
+        return current;
+    }
 
-        var before = _manager.Current;
-        _manager.Update(nowMs, nowSec);
-        if (before is not null && _manager.Current is null)
-            // the manager has already recorded the completion in the shared repetition history
-            Log?.Invoke($"BehaviorManager.Update.BehaviorComplete: Behavior '{before.Id}' returned Status::Complete");
-        return _decisions[^1];
+    /// <summary>
+    /// What the manager's switch did, recorded as the activity's decision. The interrupted behaviour is NOT recorded as
+    /// having run here: the engine keeps StopWithoutImmediateRepetitionPenalty for exactly that case, and the manager
+    /// records the repetition for a behaviour it stopped.
+    /// </summary>
+    void IManagedActivity.BehaviorSwitched(IBehavior? desired, bool started, double nowSec)
+    {
+        _recordedThisTick = true;
+        if (desired is null)
+        {
+            Record(nowSec, Current?.Id, null, $"{_switchedFromId} no longer runnable");
+            return;
+        }
+        if (_pendingInterlude is null) _lastBehaviorId = desired.Id;
+        Record(nowSec, Current?.Id, started ? desired.Id : null, started ? _switchReason : $"{desired.Id} refused to start");
     }
 
     /// <summary>

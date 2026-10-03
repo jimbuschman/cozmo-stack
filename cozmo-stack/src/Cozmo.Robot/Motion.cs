@@ -122,6 +122,17 @@ public sealed class CozmoMotion
         foreach (var a in ending) a.Done.TrySetResult(new MotionOutcome(MotionResult.TimedOut, $"{a.What}: the robot was removed"));
     }
 
+    // fidelity: M4-003
+    /// <summary>
+    /// A new IActionRunner tag (+0x60) from the one counter every action draws from, as text: the lock owner key
+    /// <c>to_string(+0x60)</c> (LockTracks 0x00540584..0x0054058a via 0x004f0f4c). An action that is not a head or lift
+    /// move (an animation action, M8-007) takes its owner key here so no two actions share one.
+    /// </summary>
+    internal string NextActionTag()
+    {
+        lock (_gate) return (++_lockOwnerCounter).ToString();
+    }
+
     // fidelity: M4-005
     /// <summary>
     /// MA8: the u8 counter at MC+8 is pre-incremented (MoveHeadToAngle 0x006407D8..0x006407E6, MoveLiftToHeight

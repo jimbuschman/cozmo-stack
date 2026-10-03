@@ -87,14 +87,12 @@ public sealed class SingingBehavior : IBehavior
     /// represented rather than silently dropped.
     /// </param>
     // fidelity: M9-001
-    public SingingBehavior(string id, string switchGroup, string switchName, string? displayNameKey = null,
-                           double score = 1.0)
+    public SingingBehavior(string id, string switchGroup, string switchName, string? displayNameKey = null)
     {
         Id = id;
         SwitchGroupName = switchGroup;
         SwitchName = switchName;
         DisplayNameKey = displayNameKey;
-        Score = score;
         // S2: the tempo-trigger field is written to 0x23f (Count) before the switch resolves. Every branch
         // of the group mapping below overwrites it, so the sentinel never survives construction.
         var (g, s) = EffectiveSwitch(WwiseHash.Of(switchGroup), WwiseHash.Of(switchName));
@@ -114,6 +112,8 @@ public sealed class SingingBehavior : IBehavior
     public uint SwitchId { get; }
     /// <summary>The middle animation of the three: the tempo the song is sung at.</summary>
     public AnimationTrigger TempoTrigger { get; }
+    /// <summary>The flat score (+0x100); zero unless a caller sets it (<c>IBehavior::IBehavior</c> 0x005BBD28; M8-004).</summary>
+    // fidelity: M8-004
     public double Score { get; set; }
 
     /// <summary>The smoothed vibrato value, as the engine would post it. See <see cref="NextVibrato"/>.</summary>
@@ -278,7 +278,9 @@ public sealed class SingingBehavior : IBehavior
 
         // 2. reactions held off for the duration. InitInternal takes the reaction lock (S6) before it
         //    attaches any listener or builds the animation compound.
-        scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorSinging::InitInternal 0x005EEB5E: SmartDisableReactionsWithLock(own name, table 0x00C6F590).
+        scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.Singing);
         Trace?.Invoke("reactions held off");
 
         // 3. a shake listener per connected cube: ShakeListener(0.5, 2.5, 3.9) on each, and adding the

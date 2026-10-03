@@ -14,9 +14,9 @@ public sealed class FreeplayStack : IDisposable
 {
     private readonly List<Action> _unsubscribe = new();
 
-    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker)
+    private FreeplayStack(BehaviorManager manager, FreeplaySystem freeplay, IReadOnlyList<Activity> tree, IReadOnlyDictionary<string, IBehavior> bound, NeedsManager needs, BehaviorContext ctx, FreeplayDataTracker tracker, AIComponent ai)
     {
-        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx; DataTracker = tracker;
+        Manager = manager; Freeplay = freeplay; Tree = tree; Bound = bound; Needs = needs; Context = ctx; DataTracker = tracker; AI = ai;
     }
 
     public BehaviorManager Manager { get; }
@@ -28,6 +28,8 @@ public sealed class FreeplayStack : IDisposable
     public BehaviorContext Context { get; }
     /// <summary><c>AIComponent</c>'s <c>FreeplayDataTracker</c> (M15-015), created and ticked on this stack's live path.</summary>
     public FreeplayDataTracker DataTracker { get; }
+    /// <summary>The <c>AIComponent</c> hosting the <c>BehaviorHelperComponent</c> (M8-011), ticked by the engine's <c>Robot::Update</c> through <c>CozmoEngine.AIComponentUpdate</c>.</summary>
+    public AIComponent AI { get; }
     public IReadOnlyList<string> Problems { get; private init; } = Array.Empty<string>();
 
     /// <summary>Every behaviour id the shipped activity tree names that no implemented behaviour answers to.</summary>
@@ -49,8 +51,22 @@ public sealed class FreeplayStack : IDisposable
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
         var all = new List<IBehavior>();
+        // fidelity: M7-018, M7-002
+        // RobotDataLoader::LoadBehaviors 0x005206bc reads the config corpus and BehaviorContainer 0x0059c324 builds every behaviour whose class the
+        // factory can build from its config (PlayAnim, FistBump, ReactToSparked); the rest is reported MISSING per class and built by hand below. The config-built objects come first: where the code-built set
+        // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
+        var factoryContext = new BehaviorFactoryContext
+        {
+            Vision = vision,
+            Manipulation = m,
+            Log = line =>
+            {
+                robot.Engine.Log(line);
+                if (line.StartsWith("warning:", StringComparison.Ordinal) || line.StartsWith("error:", StringComparison.Ordinal)) problems.Add(line);
+            },
+        };
+        all.AddRange(BehaviorContainer.LoadShipped(obbRoot, factoryContext).Behaviors.Values);
         all.AddRange(ShippedBehaviors.Implementable());
-        all.AddRange(ShippedBehaviors.PlayAnims(obbRoot, problems));
         all.AddRange(ShippedBehaviors.Singing(obbRoot));
         if (m is not null)
         {
@@ -96,11 +112,16 @@ public sealed class FreeplayStack : IDisposable
         // emotion events; MoodState is the stack's runtime for it. Wired here so every Context.Mood?.Trigger
         // call and FreeplaySystem's per-tick Advance have a live model.
         ctx.Mood ??= new MoodState(MoodModel.Load(obbRoot));
+        // The MoodManager's robot pointer (+0x12c): SendEmotionsToGame sends nothing without it (0x0067b736..0x0067b73c).
+        if (ctx.Mood.Robot is null) ctx.Mood.AttachRobot(robot);
+        // fidelity: M7-020
+        // MoodManager::Init registers HandleActionEnded with the robot's ActionList whenever the robot is non-null (0x0067aee8..0x0067af38) and
+        // ActionWatcher::Update invokes it for every completed action (0x0054187e..0x005418de). This stack has no ActionList or ActionWatcher, so the
+        // callback cannot be registered and no action completion reaches MoodState.HandleActionEnded.
+        SteppedBehavior.ReportMissing("MoodManager::Init 0x0067aee8..0x0067af38 registers HandleActionEnded with ActionList (robot+0x250) and ActionWatcher::Update 0x0054187e..0x005418de calls it for every completed RobotCompletedAction: this stack has no ActionList/ActionWatcher and its actions produce no completion record (tag, RobotActionType, 32-bit result), so no action completion reaches MoodState.HandleActionEnded");
+        // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
+        // (0x005a38f4/0x005a38fe): 0x16 is the ReactionTrigger NoneTrigger, not a behaviour, so nothing is bound here.
         var manager = new BehaviorManager(ctx);
-        // BehaviorManager::FinishCurrentBehavior switches to the default class-0x16
-        // BehaviourRunningAndResumeInfo (0x005a38fe); this stack treats that placeholder as "nothing
-        // running" (BehaviorManager.Current maps it to null).
-        manager.DefaultBehavior = new BehaviorRunningAndResumeInfo();
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
                          bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard,
@@ -118,7 +139,15 @@ public sealed class FreeplayStack : IDisposable
         // M15-015: the AIComponent's FreeplayDataTracker. Created here, ticked in Tick, flushed in Dispose.
         var tracker = new FreeplayDataTracker(clockSec);
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
-        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker) { Problems = problems };
+        // fidelity: M8-011
+        // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
+        // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
+        // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
+        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log);
+        ctx.AI = ai;
+        var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        robot.Engine.AIComponentUpdate = () => ai.Update(robot);
+        stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
 
         // fidelity: M1-024
         // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->

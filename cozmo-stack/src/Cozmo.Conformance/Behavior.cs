@@ -51,38 +51,27 @@ public static class BehaviorTool
         arbiter.Decided += d => Console.WriteLine($"  [arbiter] {d}");
 
         using var reactive = new ReactiveBehavior(robot, map, arbiter: arbiter);
-        var idle = new IdleBehavior(robot, arbiter) { Execute = true };
-
-        // Head and lift movements are small, but they are still movement, so they stay opt-in. The face
-        // is not: blinking and eye darts are the only visible sign that keep-alive is running, and
-        // switching them off with the motors left a no-motion acceptance run with nothing to watch.
-        idle.Execute = true;
-        idle.ExecuteMotors = allowMotion;
-        idle.Acted += e =>
-        {
-            if (e.Suppressed is not null) return;
-            bool motor = e.Action is IdleAction.HeadMove or IdleAction.LiftMove or IdleAction.BodyMove;
-            Console.WriteLine(motor && !allowMotion
-                ? $"  [idle] {e.Action} decided but not driven (--allow-motion is off)"
-                : $"  [idle] {e.Action} {e.Amount:F1} over {e.DurationMs:F0} ms");
-        };
+        // The idle is the streamer's own: AnimationStreamer::Update runs UpdateLiveAnimation and the face keep-alive when
+        // ProceduralLive is the top of the idle stack. The engine has no pusher of ProceduralLive (R-BEH2 check 2 section
+        // 1.8, a RECOVERABLE_GAP), so this tool pushes it through the streamer's PushIdleAnimation seam, as a tool must.
+        // --allow-motion is this TOOL's safety opt-in, not an engine gate: the engine has no such switch. Once ProceduralLive is the
+        // idle, UpdateLiveAnimation wiggles the head, lift and wheels as it always does, and the face blinks once anything has streamed
+        // (+0x88 > 0, 0x0057CF6A; an empty live animation never streams, so the first keyframes come about a second in).
+        const string IdleLock = "BehaviorTool";
+        if (idleOn && allowMotion)
+            robot.Animations.Scheduler.PushIdleAnimation(AnimationTrigger.ProceduralLive, IdleLock);
+        else if (idleOn)
+            Console.WriteLine("idle: not started (this tool starts the engine's live idle only with --allow-motion, because it moves the head, lift and wheels)");
 
         if (reactOn) reactive.Start();
         Console.WriteLine($"\nwatching for {seconds}s. " +
                           (reactOn ? "Pick the robot up, put it on a cliff edge, place it on the charger. " : "") +
-                          (idleOn ? "Otherwise leave it alone and watch it blink." : ""));
+                          (idleOn && allowMotion ? "Otherwise leave it alone and watch it blink." : ""));
 
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        int idleActions = 0;
-        idle.Acted += e => { if (e.Suppressed is null) idleActions++; };
-        while (sw.Elapsed.TotalSeconds < seconds)
-        {
-            if (idleOn) idle.Advance(sw.Elapsed.TotalMilliseconds);
-            await Task.Delay(50);
-        }
+        while (sw.Elapsed.TotalSeconds < seconds) await Task.Delay(50);
 
         reactive.Stop();
-        Console.WriteLine($"\nidle actions taken: {idleActions}");
         Console.WriteLine("reaction cooldowns and suppressions are in the [arbiter] lines above.");
         robot.Disconnect();
         return 0;

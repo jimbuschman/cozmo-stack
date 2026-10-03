@@ -608,11 +608,18 @@ public sealed class CozmoSensors
     /// SetOnChargerPlatform(true) (and the ChargerEvent); with it clear the platform flag is left alone; then +0x338 :=
     /// the bit. The located-charger creation and its dock-pose observation (P4 steps 1..4) are M11/M13's.
     /// </summary>
+    /// <summary>The engine's <c>ChargerEvent{onCharger}</c> broadcast (tag 0x39) from <c>SetOnCharger</c>'s edges.</summary>
+    // fidelity: M7-021
+    public event Action<bool>? ChargerEvent;
+
     private void SetOnCharger(bool onContacts)
     {
-        bool rising;
-        lock (_gate) rising = onContacts && !_onChargerContacts;
+        bool rising, falling;
+        lock (_gate) { rising = onContacts && !_onChargerContacts; falling = !onContacts && _onChargerContacts; }
         if (rising) SetOnChargerPlatform(true);
+        // ChargerEvent{1} on the rising edge (0x00511BF4..0x00511C0A), {0} on the falling edge (0x00511AAE..0x00511AC4)
+        if (rising) ChargerEvent?.Invoke(true);
+        else if (falling) ChargerEvent?.Invoke(false);
         lock (_gate) _onChargerContacts = onContacts;
     }
 

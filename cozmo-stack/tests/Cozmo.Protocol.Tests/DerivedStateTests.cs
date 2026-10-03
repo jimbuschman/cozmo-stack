@@ -830,8 +830,9 @@ public class DerivedStateTests
         var model = MoodModel.Load(obb);
         var down = model.Events.FirstOrDefault(e => e.Affectors.Any(a => a.Emotion == EmotionType.Confident && a.Value < 0));
         Assert.NotNull(down);
-        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.6; i++) mood.Trigger(down!.Name, 0);
-        Assert.True(mood[EmotionType.Confident] < -0.6);
+        // the mood is the engine's float (M7-013): six -0.1f steps land on -0.6f exactly, not below the strategy's -0.6f threshold
+        for (int i = 0; i < 500 && mood[EmotionType.Confident] >= -0.7; i++) mood.Trigger(down!.Name, 0);
+        Assert.True(mood[EmotionType.Confident] < -0.7);
         Assert.True(s.ShouldTrigger(ctx, null, 10));
         Assert.False(s.ShouldTrigger(ctx, ReactionTrigger.Frustration, 10));
         s.AnimationComplete(10);
@@ -1126,8 +1127,12 @@ public class DerivedStateTests
         Assert.Equal(1, idle.Starts);
     }
 
+    /// <summary>
+    /// <c>CheckReactionTriggerStrategies</c> 0x005a3550 gates only on the per-trigger disable-lock count (node+0x28, 0x005a359a..0x005a359e); the engine
+    /// has no global "reactions disabled" test, so an arbiter-wide lock (a behaviour scope's <c>DisableReactions</c>) does not hold a reaction back (M8-012).
+    /// </summary>
     [Fact]
-    public void ADisabledTriggerAndAReactionLockBothHoldReactionsBack()
+    public void ADisabledTriggerHoldsReactionsBackButAnArbiterWideLockDoesNot()
     {
         using var rig = new Rig();
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
@@ -1145,9 +1150,8 @@ public class DerivedStateTests
 
         var holder = new object();
         arbiter.DisableReactions(holder);
-        Assert.Null(manager.CheckReactions(0));
+        Assert.NotNull(manager.CheckReactions(0));    // not an engine gate (A2: no global arbiter gate)
         arbiter.EnableReactions(holder);
-        Assert.NotNull(manager.CheckReactions(0));
     }
 
     // ------------------------------------------------------------------ the cube path
@@ -1354,7 +1358,7 @@ public class DerivedStateTests
         if (obb is null) return;
         var map = ShippedReactionMap(obb);
         using var rig = new Rig();
-        var regs = ShippedBehaviors.Reactions(rig.Robot, new FakeLocator());
+        var regs = ShippedBehaviors.Reactions(rig.Robot, new FakeLocator(), obbRoot: obb);
         // 12 from M10 plus RobotFalling -> ReactToImpact and PlacedOnCharger -> ReactToOnCharger, which the
         // correction pass moved off the standalone M7 dispatcher and under the manager
         Assert.Equal(14, regs.Count);
@@ -1491,8 +1495,8 @@ public class DerivedStateTests
     // fidelity: M7-003
     /// <summary>
     /// The three engine-to-game tags <c>BehaviorReactToImpact::AlwaysHandle</c> 0x00606408 switches on:
-    /// FallingStarted (0x3a) clears +0x11e and +0x11c; FallingStopped (0x3b) sets +0x11d and, only above
-    /// impact 1000, +0x11e; MotorCalibration (0x1e) sets +0x11c when the head and lift are both calibrated.
+    /// FallingStarted (0x3a) clears +0x11e, +0x11c and +0x11d; FallingStopped (0x3b) sets +0x11d and stores +0x11e = (impact &gt; 1000.0f);
+    /// MotorCalibration (0x1e) sets +0x11c when the head and lift are both calibrated.
     /// </summary>
     [Fact]
     public void TheImpactBehaviourRecordsTheAlwaysHandleTags()
@@ -1515,13 +1519,20 @@ public class DerivedStateTests
         rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 1500f });
         Assert.True(b.ImpactRecorded);
 
+        // the +0x11e store is unconditional (0x0060643C..0x0060644E): a later soft FallingStopped stores 0
+        rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 999f });
+        Assert.False(b.ImpactRecorded);
+        rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 1500f });
+        Assert.True(b.ImpactRecorded);
+
         rig.CalibrateMotors();
         Assert.True(b.CalibratedRecorded);
 
-        // FallingStarted clears both flags again
+        // FallingStarted zeroes +0x11e (0x00606422) and the halfword at +0x11c (0x00606426): all three bytes
         rig.Send(new FallingStarted { Unknown = 2000 });
         Assert.False(b.ImpactRecorded);
         Assert.False(b.CalibratedRecorded);
+        Assert.False(b.FallingStoppedSeen);
     }
 
     /// <summary>M7-003: the TriggerAnimationAction timeout the engine passes is 60.0 s.</summary>

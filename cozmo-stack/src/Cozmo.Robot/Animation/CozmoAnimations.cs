@@ -173,14 +173,18 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-030
         // UpdateLiveAnimation's robot inputs (gap4 L2..L6, gap1 R2..R4), from the last RobotState the robot stored: status bit
         // 2 (DockingComponent+4), IS_MOVING (+9), !LIFT_IN_POS (+0xB), !HEAD_IN_POS (+0xA); the track locks (M4-014); the head
-        // angle (robot+0x2FC). Before any state they read clear, as the components' constructors leave them. Carrying
-        // (CarryingComponent, M12) is not on this robot and reads clear.
+        // angle (robot+0x2FC). Before any state they read clear, as the components' constructors leave them.
         var live = _scheduler.LiveIdleInputs;
         live.PickingOrPlacing = () => robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) ?? false;
         live.Moving = () => robot.State.Latest?.Has(RobotStatusFlag.IsMoving) ?? false;
         live.LiftNotInPosition = () => robot.State.Latest is { } s && !s.Has(RobotStatusFlag.LiftInPos);
         live.HeadNotInPosition = () => robot.State.Latest is { } s && !s.Has(RobotStatusFlag.HeadInPos);
         live.LockedTracks = () => robot.Motion.LockedTracks;
+        // fidelity: M7-008
+        // [[robot+0x284]+8] + 1 != 0: CarryingComponent's carried-object id is not -1 (0x0057D97E..0x0057D9CA). The M12 carrying
+        // state reaches this robot as Motion.IsCarryingObject, wired by the manipulation system after construction, so it is read
+        // at call time; unwired reads as not carrying.
+        live.Carrying = () => robot.Motion.IsCarryingObject?.Invoke() == true;
         live.HeadAngleRad = () => robot.State.HeadAngleRad ?? 0f;
     }
 
@@ -315,9 +319,11 @@ public sealed class CozmoAnimations : IDisposable
     }
 
     /// <summary>
-    /// Streams one keyframe of the engine's live animation - the keep-alive clip the streamer always has
-    /// open - on the animation system's own clock, and keeps the tick loop running while that keyframe
-    /// still has work outstanding.
+    /// A tool and test seam (R-BEH2 batch 2): appends one keyframe to the engine's live animation (+0xA8) on the
+    /// animation system's own clock, and keeps the tick loop running while that keyframe still has work outstanding.
+    /// It does not push ProceduralLive: the live animation streams only while ProceduralLive is the top of the idle
+    /// stack (the engine has no pusher of it), so a caller pushes it through <c>Scheduler.PushIdleAnimation</c> first.
+    /// The engine's own source of live keyframes is <c>AnimationStreamer::UpdateLiveAnimation</c>.
     ///
     /// Both halves of that matter. <see cref="AnimationScheduler.StreamLive"/> records a body keyframe's
     /// stop time against the clock it is given, and <see cref="AnimationScheduler.Advance"/> is driven on
@@ -326,7 +332,8 @@ public sealed class CozmoAnimations : IDisposable
     /// all and <c>DriveWheels</c> would carry on past its duration. The engine has no such gap: its
     /// streamer updates every tick whether or not a real animation is streaming.
     ///
-    /// Returns false when a running clip owns the keyframe's track, which is the engine's own condition.
+    /// Returns false while any animation is streaming (the streamer reaches the live animation only in its
+    /// no-animation path), whatever track the keyframe is on.
     /// </summary>
     public bool StreamLive(Keyframe k)
     {
@@ -394,10 +401,10 @@ public sealed class CozmoAnimations : IDisposable
     /// Plays a clip and reports which animation it became, so the caller can stop exactly that one.
     /// Returns null when the scheduler refused it.
     /// </summary>
-    public AnimationTicket? PlayTracked(string name, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None)
+    public AnimationTicket? PlayTracked(string name, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None, int numLoops = 1, byte heldLockMask = 0, string? heldLockOwner = null)
     {
         var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
-        return PlayTracked(lib.GetClip(name), replaceRunning, lockTracks);
+        return PlayTracked(lib.GetClip(name), replaceRunning, lockTracks, numLoops, heldLockMask, heldLockOwner);
     }
 
     /// <summary>
@@ -406,27 +413,30 @@ public sealed class CozmoAnimations : IDisposable
     /// running, another caller can have replaced it, and the ticket would then carry their token - so
     /// stopping by it would stop their animation and not this one.
     /// </summary>
-    public AnimationTicket? PlayTracked(AnimationClip clip, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None)
+    public AnimationTicket? PlayTracked(AnimationClip clip, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None, int numLoops = 1, byte heldLockMask = 0, string? heldLockOwner = null)
     {
-        // IActionRunner::Update 0x00540370: AreAnyTracksLocked(mask) at 0x00540440; when a required track is
-        // held the action does not run and is retried next tick (0x005404a8). Otherwise MovementComponent::
-        // LockTracks 0x00640098 takes one owner entry per track, released by UnlockTracks 0x0063fe5c.
-        byte mask = CozmoMotion.MaskFor(lockTracks);
-        string? owner = null;
-        if (mask != 0)
+        // IActionRunner::Update 0x00540370: AreAnyTracksLocked(mask) at 0x00540440; a required track that is held fails the action with
+        // 0x03000019 (0x00540572..0x0054057c) - it is not retried - so this returns null. Otherwise MovementComponent::LockTracks 0x00640098
+        // takes one owner entry per track, released by UnlockTracks 0x0063fe5c. A caller whose action already took the lock (the behaviour's
+        // action locks before its Init, 0x00540584..0x0054058e) passes it in: it is released here when the animation ends.
+        byte mask = heldLockOwner is null ? CozmoMotion.MaskFor(lockTracks) : heldLockMask;
+        string? owner = heldLockOwner;
+        if (mask != 0 && owner is null)
         {
             if (_robot.Motion.AreAnyTracksLocked(mask))
             {
                 _robot.Engine.Log("warning: Action not running because required tracks are locked");
                 return null;
             }
-            owner = "play-" + System.Threading.Interlocked.Increment(ref _playLockCounter);
+            // The lock owner is to_string(IActionRunner +0x60), the action's id from the same tag counter every
+            // action draws from (0x0053fe54..0x0053fe68; LockTracks 0x00540584..0x0054058a via 0x004f0f4c).
+            owner = _robot.Motion.NextActionTag();
             _robot.Motion.LockTracks(mask, owner);
         }
-        var handle = _scheduler.Play(clip, NowMs(), replaceRunning);
+        var handle = _scheduler.Play(clip, NowMs(), replaceRunning, numLoops);
         if (handle is null)
         {
-            if (owner is not null) _robot.Motion.UnlockTracks(mask, owner);
+            if (owner is not null && heldLockOwner is null) _robot.Motion.UnlockTracks(mask, owner);   // a held lock is the caller's to release
             return null;
         }
         StartTicker();
@@ -449,8 +459,6 @@ public sealed class CozmoAnimations : IDisposable
         }
         return new AnimationTicket(handle.Completion, handle.Generation);
     }
-
-    private static int _playLockCounter;
 
     private static double NowMs() => Environment.TickCount64;
 

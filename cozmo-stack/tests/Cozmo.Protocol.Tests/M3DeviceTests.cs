@@ -648,6 +648,7 @@ public class M3DeviceTests
     {
         var sink = new RobotSink();
         var s = new AnimationScheduler(sink, new Random(1));
+        s.PushLiveQuietly();
         Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0));      // ProceduralLive on top
         sink.FramesPlayed = 1;
         s.Play(SilentClip(10_000, new EventKeyframe(9_000, "late")), 0);

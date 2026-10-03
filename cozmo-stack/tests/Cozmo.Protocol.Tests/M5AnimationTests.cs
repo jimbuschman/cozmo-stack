@@ -1515,6 +1515,7 @@ public class M5AnimationTests
     {
         var log = new Log();
         var s = new AnimationScheduler(log);
+        s.PushLiveQuietly();
         Assert.True(s.StreamLive(new HeadKeyframe(0, 100, 5, 0), 0));
         Assert.Empty(log.L);
         s.Advance(0);
@@ -1535,6 +1536,7 @@ public class M5AnimationTests
         var s = new AnimationScheduler(log);
         var aborted = new List<byte>();
         s.AnimationAborted += aborted.Add;
+        s.PushLiveQuietly();
         s.StreamLive(new BodyKeyframe(0, 2_000, "STRAIGHT", 10), 0);
         s.Advance(0);
         s.Advance(60);
@@ -1673,6 +1675,7 @@ public class M5AnimationTests
     public void M5_027_B3_AnIdleStreamSetsTheLastStreamTime()
     {
         var s = new AnimationScheduler(new Log(), new Random(2));
+        s.PushLiveQuietly();
         s.StreamLive(new BodyKeyframe(0, 2_000, "STRAIGHT", 10), 0);
         s.Advance(1_000);                                                 // InitStream(live): no frame, +0x88 not set
         s.Advance(1_033);                                                 // UpdateStream(live): +0x88 = 1.033 s
@@ -1692,6 +1695,7 @@ public class M5AnimationTests
     {
         var log = new Log();
         var s = new AnimationScheduler(log, new Random(3));
+        s.PushLiveQuietly();
         s.StreamLive(new BodyKeyframe(0, 20_000, "STRAIGHT", 10), 0);
         long t = 1_000;
         for (int i = 0; i < 4; i++, t += 33) s.Advance(t);
@@ -1741,7 +1745,6 @@ public class M5AnimationTests
     {
         var log = new Log();
         var s = new AnimationScheduler(log, new Random(8));
-        s.LiveIdleParameters.SetDefaultParams();
         s.LiveIdleParameters[LiveIdleParam.HeadAngleVariability_deg] = 0;
         s.LiveIdleParameters[LiveIdleParam.LiftHeightVariability_mm] = 0;
         s.LiveIdleInputs.HeadAngleRad = () => 0.5f;

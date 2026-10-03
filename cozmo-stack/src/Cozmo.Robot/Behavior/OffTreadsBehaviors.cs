@@ -184,17 +184,23 @@ public sealed class ReactToRobotOnSideBehavior : SteppedBehavior
 /// pitch is still above 10°. The run time is stamped at the end of <c>InitInternal</c> either way.
 /// </summary>
 /// <summary>
-/// <c>BehaviorReactToImpact</c>, the behaviour the shipped map runs for <c>ReactionTrigger.RobotFalling</c>.
-/// <c>AlwaysHandle</c> (0x00606408) clears the flags on <c>FallingStarted</c> and only acts on
-/// <c>FallingStopped</c> with <c>impactIntensity &gt; 1000</c> — the gate lives in the strategy here, as it does
-/// in the engine's handler. <c>InitInternal</c> (0x006061F8) then waits up to 5 s (a <c>WaitForLambdaAction</c>
-/// with timeout 5.0) for the head and lift to finish the recalibration a fall triggers, and
-/// <c>TransitionToPlayingAnim</c> (0x00606348) plays 0x1A0 <see cref="AnimationTrigger.ReactToImpact"/>.
+/// <c>BehaviorReactToImpact</c>, the behaviour the shipped map runs for <c>ReactionTrigger.RobotFalling</c>
+/// (constructor 0x0060617C; subscribes the tags {0x3a, 0x3b, 0x1e} from the table at 0x00C73D30).
 ///
-/// This is the M7 dispatcher's falling reaction moved under <see cref="BehaviorManager"/>, so the freeplay
-/// stack keeps it and nothing runs two dispatchers over the same robot.
+/// It is <b>always runnable</b> (<c>IsRunnableInternal</c> 0x00606486 is <c>movs r0,#1; bx lr</c>): nothing gates it on the
+/// impact. <c>AlwaysHandle</c> (0x00606408) keeps three bytes, in every state: FallingStarted (0x3a) zeroes +0x11e
+/// (0x00606422) and the halfword at +0x11c, i.e. +0x11c and +0x11d (0x00606426); FallingStopped (0x3b) stores +0x11d = 1
+/// and then +0x11e = (impactIntensity &gt; 1000.0f) <b>unconditionally</b>, 0 or 1 (0x0060642c..0x0060644e; the literal is
+/// at 0x00606470); MotorCalibration (0x1e) stores +0x11c = 1 when <c>Robot::IsHeadCalibrated()</c> and
+/// <c>Robot::IsLiftCalibrated()</c> are both 1 (0x00606454..0x0060646a). <c>InitInternal</c> (0x006061F8) takes the lock
+/// table 0x00C73D36 (0x00606200..0x00606216), then <b>always</b> builds a <c>WaitForLambdaAction</c> with timeout 5.0f
+/// (0x40a00000, 0x00606240) whose predicate is <c>+0x11d &amp;&amp; +0x11c</c> (0x006064c6..0x006064dc) and starts it with
+/// <c>StartActing</c> (0x00606254) and <c>TransitionToPlayingAnim</c> (0x00606348) as its completion. That runs whether the
+/// predicate came true or the 5 s passed. <c>TransitionToPlayingAnim</c> acts only when +0x11e is set: then a
+/// <c>TriggerAnimationAction(robot, 0x1a0, 1, true, 0, 60.0f)</c> (0x0060637e, 0x00606384). <c>StopInternal</c> (0x006063fc) clears +0x11c,
+/// +0x11d and +0x11e.
 /// </summary>
-// fidelity: M7-003
+// fidelity: M7-003, M7-014
 public sealed class ReactToImpactBehavior : SteppedBehavior
 {
     /// <summary>The engine's 5 s allowance for the post-fall motor recalibration (0x40a00000 in InitInternal).</summary>
@@ -206,74 +212,75 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     /// </summary>
     public const double AnimationTimeoutSec = 60.0;
 
+    /// <summary>The tags the constructor subscribes (table 0x00C73D30): FallingStarted, FallingStopped, MotorCalibration.</summary>
+    public static readonly int[] SubscribedTags = { 0x3a, 0x3b, 0x1e };
+
     public ReactToImpactBehavior(string id = "ReactToImpact") : base(id, "ReactToImpact") { }
 
     /// <summary>
-    /// <c>BehaviorReactToImpact::AlwaysHandle</c> (0x00606408), transcribed from the three engine-to-game
-    /// tags it switches on:
-    /// <list type="bullet">
-    /// <item>tag <c>0x3a</c> (<c>FallingStarted</c>): clears <c>+0x11e</c> and <c>+0x11c</c>;</item>
-    /// <item>tag <c>0x3b</c> (<c>FallingStopped</c>): sets <c>+0x11d = 1</c>, reads the field at <c>+4</c>
-    /// and sets <c>+0x11e = 1</c> only when it is <c>&gt; 1000.0</c> (constant 0x606470);</item>
-    /// <item>tag <c>0x1e</c> (<c>MotorCalibration</c>): sets <c>+0x11c = 1</c> when
-    /// <c>Robot::IsHeadCalibrated()</c> and <c>Robot::IsLiftCalibrated()</c> are both 1.</item>
-    /// </list>
+    /// Wires <c>AlwaysHandle</c> to the robot's messages: the three tags it switches on, in every state of the behaviour.
     /// </summary>
     public ReactToImpactBehavior(CozmoRobot robot, string id = "ReactToImpact") : this(id)
     {
-        robot.Sensors.FallingStarted += _ => { _impact = false; _calibrated = false; };
-        robot.Sensors.FallingStopped += r =>
-        {
-            _fallingStoppedSeen = true;
-            if (r.ImpactIntensity > ReactionTable.ImpactIntensityThreshold) _impact = true;
-        };
-        robot.Sensors.MotorCalibrationReported += _ =>
-        {
-            if (robot.State.HeadCalibrated && robot.State.LiftCalibrated) _calibrated = true;
-        };
-        _gated = true;
+        robot.Sensors.FallingStarted += _ => HandleFallingStarted();
+        robot.Sensors.FallingStopped += r => HandleFallingStopped(r.ImpactIntensity);
+        robot.Sensors.MotorCalibrationReported += _ => HandleMotorCalibration(robot.State.HeadCalibrated, robot.State.LiftCalibrated);
     }
 
     private volatile bool _impact;             // +0x11e
     private volatile bool _calibrated;         // +0x11c
     private volatile bool _fallingStoppedSeen; // +0x11d
-    private readonly bool _gated;
 
-    /// <summary>+0x11e: a hard landing has been seen.</summary>
+    /// <summary>+0x11e: the last FallingStopped had an impact intensity above 1000.0f.</summary>
     public bool ImpactRecorded => _impact;
     /// <summary>+0x11c: the head and lift both reported calibrated.</summary>
     public bool CalibratedRecorded => _calibrated;
-    /// <summary>+0x11d: any FallingStopped has been seen.</summary>
+    /// <summary>+0x11d: a FallingStopped has been seen.</summary>
     public bool FallingStoppedSeen => _fallingStoppedSeen;
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => !_gated || _impact;
+    /// <summary>AlwaysHandle tag 0x3a: +0x11e = 0 (0x00606422), then the halfword at +0x11c = 0 (0x00606426): +0x11c and +0x11d.</summary>
+    public void HandleFallingStarted() { _impact = false; _calibrated = false; _fallingStoppedSeen = false; }
 
-    /// <summary>Whether the last run waited for a recalibration rather than playing at once.</summary>
-    public bool WaitedForCalibration { get; private set; }
+    /// <summary>AlwaysHandle tag 0x3b: +0x11d = 1, then +0x11e = (intensity &gt; 1000.0f), stored whichever way it came out (0x0060643c..0x0060644e).</summary>
+    public void HandleFallingStopped(float impactIntensity)
+    {
+        _fallingStoppedSeen = true;
+        _impact = impactIntensity > ReactionTable.ImpactIntensityThreshold;
+    }
 
+    /// <summary>AlwaysHandle tag 0x1e: +0x11c = 1 only when both IsHeadCalibrated and IsLiftCalibrated hold (0x00606454..0x0060646a).</summary>
+    public void HandleMotorCalibration(bool headCalibrated, bool liftCalibrated)
+    {
+        if (headCalibrated && liftCalibrated) _calibrated = true;
+    }
+
+    /// <summary><c>IsRunnableInternal</c> 0x00606486: <c>movs r0,#1</c>.</summary>
+    protected override bool IsRunnableInternal(BehaviorContext context) => true;
+
+    /// <summary>Whether the last run's wait ended without both flags (the 5 s ran out).</summary>
+    public bool WaitedOut { get; private set; }
+
+    /// <summary><c>InitInternal</c> 0x006061F8: the lock, then the 5 s <c>WaitForLambdaAction(+0x11d &amp;&amp; +0x11c)</c> whichever the flags say.</summary>
     protected override void OnStart()
     {
-        Scope.DisableReactions();
-        // InitInternal 0x006061f8: a 5 s wait action, then StartActing(TransitionToPlayingAnim).
-        WaitedForCalibration = !_calibrated;
-        if (_calibrated) { PlayImpact(); return; }
-        Log("landed before the head/lift calibration completed: waiting for it (WaitForLambdaAction, 5 s)");
-        WaitUntil(() => _calibrated, CalibrationWaitSec, _ => PlayImpact(), "the motor recalibration a fall triggers");
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToImpact);   // 0x00606216
+        WaitedOut = false;
+        WaitUntil(() => _fallingStoppedSeen && _calibrated, CalibrationWaitSec,
+                  met => { WaitedOut = !met; TransitionToPlayingAnim(); }, "the motor recalibration a fall triggers");
     }
 
     /// <summary>
-    /// <c>TransitionToPlayingAnim</c> 0x00606348: acts only when <c>+0x11e</c> is set, then starts
-    /// <c>TriggerAnimationAction(robot, 0x1a0, 1, true, 0, 60.0f, ...)</c>.
+    /// <c>TransitionToPlayingAnim</c> 0x00606348: acts only when <c>+0x11e</c> is set (0x0060635a), then starts
+    /// <c>TriggerAnimationAction(robot, 0x1a0, 1, true, 0, 60.0f, ...)</c>. The inventory gives no completion callback for it.
     /// </summary>
-    private void PlayImpact()
+    private void TransitionToPlayingAnim()
     {
-        if (!_gated || _impact)
-        {
-            Log("TransitionToPlayingAnim");
-            PlayTrigger(AnimationTrigger.ReactToImpact, Finish, timeoutSec: AnimationTimeoutSec);
-        }
-        else Finish();
+        if (!_impact) return;
+        PlayTrigger(AnimationTrigger.ReactToImpact, () => { }, timeoutSec: AnimationTimeoutSec);
     }
+
+    /// <summary><c>StopInternal</c> 0x006063fc: +0x11c, +0x11d and +0x11e cleared.</summary>
+    protected override void OnStop(BehaviorStopReason reason) { _impact = false; _calibrated = false; _fallingStoppedSeen = false; }
 }
 
 public sealed class ReactToPlacedOnSlopeBehavior : SteppedBehavior

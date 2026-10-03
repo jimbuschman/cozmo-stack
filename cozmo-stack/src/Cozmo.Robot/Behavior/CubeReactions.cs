@@ -287,7 +287,6 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     public enum Phase { Idle, TurningToLastLocation, PlayingSenseReaction, ReactingToBlockPresence, ReactingToBlockAbsence }
 
     private readonly ICubeLocator? _locator;
-    private bool _turnDone, _waitDone;
     private volatile bool _observed;
     private CancellationTokenSource? _turnCancel;
 
@@ -309,7 +308,9 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorAcknowledgeCubeMoved::InitInternal 0x00602236..0x00602242: SmartDisableReactionsWithLock(own name, table 0x00C72BB2).
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.AcknowledgeCubeMoved);
         _observed = false;
         if (CurrentPhase == Phase.TurningToLastLocation) TransitionToTurningToLastLocationOfBlock();
         else TransitionToPlayingSenseReaction();
@@ -319,9 +320,12 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     {
         CurrentPhase = Phase.PlayingSenseReaction;
         Log("PlayingSenseReaction");
-        _waitDone = false; _turnDone = false;
-        Wait(0.5, () => { _waitDone = true; if (_turnDone) TransitionToTurningToLastLocationOfBlock(); });
-        PlayTrigger(AnimationTrigger.CubeMovedSense, () => { _turnDone = true; if (_waitDone) TransitionToTurningToLastLocationOfBlock(); });
+        SetStateName("PlayingSenseReaction");          // fidelity: M7-021 (state-name helper 0x005C0CA8 at 0x0060241C)
+        // the animation and the 0.5 s wait are one CompoundActionParallel (0x006022fe..), started with one StartActing and one callback
+        var both = StartParallel(2, TransitionToTurningToLastLocationOfBlock);
+        if (both is null) return;
+        WaitInParallel(both, 0.5);
+        PlayTriggerInParallel(both, AnimationTrigger.CubeMovedSense);
     }
 
     // fidelity: M15-010
@@ -329,7 +333,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
     {
         CurrentPhase = Phase.TurningToLastLocation;
         Log("TurningToLastLocationOfBlock");
-        _waitDone = false; _turnDone = false;
+        SetStateName("TurningToLastLocationOfBlock");  // fidelity: M7-021 (helper 0x005C0CA8 at 0x00602298, before the located-object lookup 0x006022B8)
         if (TargetObjectId is not { } id || _locator is null || !_locator.IsLocated(id))
         {
             // BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock 0x00602270: when
@@ -339,7 +343,10 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
             Finish();
             return;
         }
-        Wait(0.5, () => { _waitDone = true; if (_turnDone) TransitionToReactingToBlockAbsence(); });
+        // the turn and the 0.5 s wait are one CompoundActionParallel (0x0060246e..): one StartActing, one callback
+        var both = StartParallel(2, TransitionToReactingToBlockAbsence);
+        if (both is null) return;
+        WaitInParallel(both, 0.5);
         _turnCancel = new CancellationTokenSource();
         var pending = _locator.TurnTowardsAsync(id, _turnCancel.Token);
         pending.ContinueWith(t =>
@@ -347,9 +354,8 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
             Post(() =>
             {
                 if (CurrentPhase != Phase.TurningToLastLocation) return;
-                _turnDone = true;
                 Log(t.IsCompletedSuccessfully && t.Result ? "turned towards the last location" : "the turn did not complete");
-                if (_waitDone) TransitionToReactingToBlockAbsence();
+                both.ChildDone(t.IsCompletedSuccessfully && t.Result ? ActionOutcome.Succeeded : ActionOutcome.Failed());
             });
         }, TaskScheduler.Default);
     }
@@ -362,6 +368,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
             _turnCancel?.Cancel();
             CurrentPhase = Phase.ReactingToBlockPresence;
             Log("ReactingToBlockPresence: the cube was seen where expected");
+            SetStateName("ReactingToBlockPresence");   // fidelity: M7-021 (helper 0x005C0CA8 at 0x0060258A)
             PlayTrigger(AnimationTrigger.AcknowledgeObject, () => { CurrentPhase = Phase.Idle; Finish(); });
         }
     }
@@ -371,6 +378,7 @@ public sealed class AcknowledgeCubeMovedBehavior : SteppedBehavior
         if (CurrentPhase == Phase.ReactingToBlockPresence) return;
         CurrentPhase = Phase.ReactingToBlockAbsence;
         Log("ReactingToBlockAbsence");
+        SetStateName("ReactingToBlockAbsence");        // fidelity: M7-021 (helper 0x005C0CA8 at 0x006026D8)
         PlayTrigger(AnimationTrigger.CubeMovedUpset, () =>
         {
             Log("objective achieved (cube moved and not found)");

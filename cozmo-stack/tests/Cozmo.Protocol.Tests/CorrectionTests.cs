@@ -47,7 +47,7 @@ public class CorrectionTests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
-        var registrations = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision);
+        var registrations = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb);
         var reg = registrations.Single(r => r.Strategy.Trigger == ReactionTrigger.CubeMoved);
         manager.AddReaction(reg.Strategy, reg.Behavior);
         var strategy = (CubeMovedReactionStrategy)reg.Strategy;
@@ -85,7 +85,7 @@ public class CorrectionTests
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
-        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision)
+        var reg = ShippedBehaviors.Reactions(rig.Robot, clockSec: () => rig.Clock.NowMs / 1000.0, vision: rig.Vision, obbRoot: obb)
                                   .Single(r => r.Strategy.Trigger == ReactionTrigger.ObjectPositionUpdated);
         manager.AddReaction(reg.Strategy, reg.Behavior);
 
@@ -148,8 +148,9 @@ public class CorrectionTests
         // open it the second way (gap1 4c).
         stack.Manager.RemoveDisableReactionsLock("sdk");
 
-        // a hard landing: FallingStarted latches the RobotFalling strategy (C1, C12); the FallingStopped over the 1000
-        // threshold is what makes ReactToImpact runnable (its AlwaysHandle gate, M10 C2). Its 3000 ms WithTimeout
+        // a hard landing: FallingStarted latches the RobotFalling strategy (C1, C12). ReactToImpact is always runnable
+        // (IsRunnableInternal 0x00606486 returns 1, R-BEH2 A3); the FallingStopped over the 1000 threshold only sets its +0x11e
+        // byte, which TransitionToPlayingAnim reads once the wait is over. The strategy's 3000 ms WithTimeout
         // window compares BaseStationTimer ms, so let the run clock pass 3000 first, as a real robot's would have.
         rig.Clock.Advance(4000);
         rig.Send(new FallingStarted { Unknown = 1000 });
@@ -179,11 +180,12 @@ public class CorrectionTests
     }
 
     /// <summary>
-    /// A fall whose impact is under the 1000 threshold: FallingStarted latches the RobotFalling strategy (C12), but
-    /// ReactToImpact stays not runnable, so the reaction does not fire (M10 C2).
+    /// A fall whose impact is under the 1000 threshold still runs ReactToImpact: IsRunnableInternal (0x00606486) returns 1 and nothing gates it on
+    /// the impact (R-BEH2 A3, M7-003; this test used to assert the reverse). The impact only decides, once its 5 s wait is over, whether the
+    /// animation plays: FallingStopped stores +0x11e = (intensity &gt; 1000.0f), 0 here (0x0060643C..0x0060644E).
     /// </summary>
     [Fact]
-    public void ASoftLandingDoesNotReact()
+    public void ASoftLandingStillRunsTheReactionButItsImpactByteStaysClear()
     {
         var obb = ObbRoot();
         if (obb is null) return;
@@ -196,7 +198,12 @@ public class CorrectionTests
         rig.Send(new FallingStarted { Unknown = 1000 });
         rig.Send(new FallingStopped { DurationMs = 100, ImpactIntensity = 500f });
         clock = 1;
-        Assert.Null(stack.Manager.CheckReactions(clock));
+        var fired = stack.Manager.CheckReactions(clock);
+        Assert.NotNull(fired);
+        Assert.Equal("ReactToImpact", fired!.Behavior);
+        var impact = Assert.IsType<ReactToImpactBehavior>(stack.Manager.Current);
+        Assert.True(impact.FallingStoppedSeen);            // +0x11d
+        Assert.False(impact.ImpactRecorded);               // +0x11e: 500 is not above 1000.0f
     }
 
     /// <summary>The M7 dispatcher stands down when a manager already dispatches over the same arbiter.</summary>
@@ -578,9 +585,10 @@ public class CorrectionTests
         b.RandomDraw = () => 0.0;
 
         Assert.Equal(10.0, a.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
-        penalty.Ran("shared", 0);                                   // the manager records it once
-        Assert.Equal(0.0, b.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
-        Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 30).Scores.Single().Score, 3);
+        // the stamp is above zero: EvaluateRepetitionPenalty 0x005beee6 returns 1.0 for a stamp <= 0 (0x005beeea..0x005beef8)
+        penalty.Ran("shared", 100);                                 // the manager records it once
+        Assert.Equal(0.0, b.GetDesiredActiveBehavior(null, 0, ctx, 100).Scores.Single().Score, 3);
+        Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 130).Scores.Single().Score, 3);
     }
 
     /// <summary>

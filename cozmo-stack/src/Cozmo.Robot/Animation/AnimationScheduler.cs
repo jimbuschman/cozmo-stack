@@ -395,8 +395,6 @@ public sealed class AnimationScheduler
     public const AnimationTrigger IdleCount = (AnimationTrigger)0x23F;
     /// <summary>The idle stack's initial lock name (A1, string 0x00BEF4CF).</summary>
     public const string DefaultAnimLock = "default_anim_lock";
-    /// <summary>The lock name the <see cref="StreamLive"/> seam pushes ProceduralLive under (M7-017, an M7 interface).</summary>
-    public const string StreamLiveLock = "StreamLive";
 
     private readonly IAnimationSink _sink;
     private readonly object _gate = new();
@@ -426,15 +424,14 @@ public sealed class AnimationScheduler
     private bool _abortedToNothing;                      // +0x73
     private long _startMs;                               // +0x80
     private long _streamMs;                              // +0x84
-    private double _lastStreamSec = -float.MaxValue;     // +0x88
+    private float _lastStreamSec = -float.MaxValue;      // +0x88: float32 (str.w r0,[r4,#0x88] at 0x0057D02E, 0x0057D43E; ctor 0xFF7FFFFF)
     private byte _tag;                                   // +0xA0 (not set by the ctors, A open question 2: 0 here)
     private StreamAnimation _live;                       // +0xA8
     private bool _liveFlag;                              // +0x194
     private AudioAnimation? _audio;                      // +0x1B0 RobotAudioClient's current animation
-    private double _keepAliveTimeoutSec = 0.5;           // +0x1C0
+    private float _keepAliveTimeoutSec = 0.5f;           // +0x1C0: float32 (vldr s4,[r4,#0x1c0] at 0x0057CF94; 0x3F000000 at 0x0057A040)
     private string _lastInitName = "";                   // +0x1C8
     private long _lastToggleMs;                          // +0x1D4
-    private bool _defaultParamsSet;
 
     private double _seamDueMs;                           // the test seam's clock
     private double _nowMs;
@@ -561,10 +558,13 @@ public sealed class AnimationScheduler
     public (int Drawer, int FaceAnimation) FirstScanLines => (_scanLines.Drawer, _scanLines.FaceAnimation);
 
     /// <summary>+0x1C0, the keep-alive timeout in seconds (0.5 from the ctor; Hiccup, M7, writes 5.0; A32).</summary>
-    public double KeepAliveTimeoutSec { get { lock (_gate) return _keepAliveTimeoutSec; } set { lock (_gate) _keepAliveTimeoutSec = value; } }
+    public float KeepAliveTimeoutSec { get { lock (_gate) return _keepAliveTimeoutSec; } set { lock (_gate) _keepAliveTimeoutSec = value; } }
+
+    /// <summary>+0x88 as it stands (float32 seconds; -FLT_MAX from the constructor, 0xFF7FFFFF at 0x00579FDE), for tests.</summary>
+    internal float LastStreamSec { get { lock (_gate) return _lastStreamSec; } }
 
     /// <summary>ResetKeepFaceAliveLastStreamTimeout (A32, 0x0057E010): +0x1C0 = 0.5 s.</summary>
-    public void ResetKeepFaceAliveLastStreamTimeout() { lock (_gate) _keepAliveTimeoutSec = 0.5; }
+    public void ResetKeepFaceAliveLastStreamTimeout() { lock (_gate) _keepAliveTimeoutSec = 0.5f; }
 
     /// <summary>The layer-base face (TLC+0x10).</summary>
     public ProceduralFacePose LayerBaseFace { get { lock (_gate) return _tlc.LastFace.Clone(); } }
@@ -869,11 +869,11 @@ public sealed class AnimationScheduler
     // ================================================================== the live animation seam (M7-017)
 
     /// <summary>
-    /// Appends a keyframe to the live animation (+0xA8), as UpdateLiveAnimation's AddKeyFrameToBack does, for the M7
-    /// idle behaviour (the M7-017 seam; the engine's own generator, A35, is not built). The live animation streams only
-    /// as the idle, so the seam puts ProceduralLive on the idle stack when it is not on top. Refused (false) while an
-    /// animation streams: the engine reaches the live animation only in the no-animation path. Nothing is sent here; the
-    /// keyframe goes out in the Updates that follow (A29).
+    /// A test and tool seam: appends a keyframe to the live animation (+0xA8) as UpdateLiveAnimation's AddKeyFrameToBack
+    /// does. It does not push ProceduralLive and does not stand in for the streamer's own generator: the engine has no
+    /// pusher of ProceduralLive (0x198; check 2 section 1.8, a RECOVERABLE_GAP), so a caller that wants the live path
+    /// pushes it through <see cref="PushIdleAnimation"/>, and the keyframe then goes out in the Updates that follow
+    /// (A29). Refused (false) while an animation streams. Nothing is sent here.
     /// </summary>
     // fidelity: M7-017
     public bool StreamLive(Keyframe k, double nowMs)
@@ -882,7 +882,6 @@ public sealed class AnimationScheduler
         {
             _ = nowMs;
             if (_streaming is not null) return false;
-            if (TopTrigger != AnimationTrigger.ProceduralLive) _idleStack.Add((AnimationTrigger.ProceduralLive, StreamLiveLock));
             return _live.AddLive(k);
         }
     }
@@ -895,25 +894,24 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             _nowMs = nowMs;
-            double nowSec = nowMs / 1000.0;
+            // fidelity: M7-016, M7-017
+            // The engine's clock is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
+            float nowSec = (float)(nowMs / 1000.0);
 
-            // A31: the keep-alive block
+            // A31: the keep-alive block (0x0057CF6A..0x0057CFF4): gate A +0x88 > 0, TrackLayerComponent::Update, gate B +0x38
+            // == 0, gate C: now - +0x88 (vsub.f32) is not <= +0x1C0 (vcmpe.f32, it le) unless the idle is the live animation
             if (_lastStreamSec > 0)
             {
                 _tlc.Update();
                 if (_streaming is null
-                    && (ReferenceEquals(_idleAnim, _live) || (_idleAnim is null && nowSec - _lastStreamSec > _keepAliveTimeoutSec)))
+                    && (ReferenceEquals(_idleAnim, _live) || (_idleAnim is null && !((nowSec - _lastStreamSec) <= _keepAliveTimeoutSec))))
                 {
                     if (_abortedToNothing)
                     {
                         SetStreamingAnimationLocked(_neutral, 1, interrupt: true);
                         _abortedToNothing = false;
                     }
-                    if (!_defaultParamsSet)
-                    {
-                        LiveIdleParameters.SetDefaultParams();
-                        _defaultParamsSet = true;
-                    }
+                    EnsureDefaultParamsLocked();
                     _tlc.KeepFaceAlive(LiveIdleParameters);
                 }
             }
@@ -948,6 +946,16 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
+    /// The lazy default-set the engine runs in the keep-alive block (0x0057CFDA..0x0057CFEA) and at the start of every
+    /// GetParam&lt;T&gt; (0x0057DCE6..0x0057DCF4, 0x0057DD32..0x0057DD40): when +0x04 is clear, set it and call vtable slot 0,
+    /// SetDefaultParams.
+    /// </summary>
+    private void EnsureDefaultParamsLocked()
+    {
+        LiveIdleParameters.EnsureDefaults();
+    }
+
+    /// <summary>
     /// A28, A29, A36, gap4 L8: the no-animation path. With the idle stack empty or its top Count: StreamLayers when layers
     /// exist, otherwise a non-empty buffer is flushed and, started, emptied and not ended, EndOfAnimation (Q1.9); nothing
     /// more. Any other top goes straight to the idle (0x0057D03A..0x0057D04C branch to 0x0057D064; the flush at 0x0057D122
@@ -979,7 +987,14 @@ public sealed class AnimationScheduler
             // L8: +0x194 = 1, +0x34 = the live animation, UpdateLiveAnimation first; then the tail below
             _liveFlag = true;
             _idleAnim = _live;
-            if (UpdateLiveAnimationLocked() != 0) Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed");
+            // fidelity: M7-017
+            // 0x0057D086..0x0057D0E6: a nonzero result is an sErrorF and the error flag, then straight to the function's
+            // return (0x0057D032) with that result: no tail (no InitStream, no UpdateStream, no +0x44 change).
+            if (UpdateLiveAnimationLocked() != 0)
+            {
+                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed");
+                return;
+            }
         }
         else
         {
@@ -1015,7 +1030,7 @@ public sealed class AnimationScheduler
             else
             {
                 UpdateStreamLocked(_idleAnim, storeFace: false);
-                _lastStreamSec = _nowMs / 1000.0;         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
+                _lastStreamSec = (float)(_nowMs / 1000.0);         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
             }
         }
         _idleMs += 60;
@@ -1042,10 +1057,13 @@ public sealed class AnimationScheduler
     /// <summary>C4: the engine's rad-to-deg float 0x42652EE1 (180/π), [0x0057DB2C].</summary>
     internal static readonly float RadToDeg = BitConverter.Int32BitsToSingle(0x42652EE1);
 
+    /// <summary>vcvt.s32.f32: truncation toward zero, saturating, NaN to 0 (0x0057D838..0x0057D84E).</summary>
+    internal static int VcvtS32(float f) => float.IsNaN(f) ? 0 : f >= 2147483648f ? int.MaxValue : f <= -2147483648f ? int.MinValue : (int)f;
+
     private int _bodyDurMs, _liftDurMs, _headDurMs, _bodySpacingMs, _liftSpacingMs, _headSpacingMs;
     private byte _liveEyeShiftTag;
 
-    // fidelity: M5-030
+    // fidelity: M5-030, M7-008, M7-009, M7-010
     /// <summary>
     /// UpdateLiveAnimation (gap4 L1..L7). Gates, with no decrement when one fails: +0x194; +0x44 ≥ GetParam&lt;int&gt;(2)
     /// (unsigned); DockingComponent+4 (picking or placing) clear. Then per track, body → lift → head: while the
@@ -1056,13 +1074,13 @@ public sealed class AnimationScheduler
     /// </summary>
     private int UpdateLiveAnimationLocked()
     {
+        // G1 (0x0057D606): the live flag +0x194, set by the ProceduralLive branch of Update before this call
         if (!_liveFlag) return 0;
-        // The M7-017 seam: with ProceduralLive pushed by StreamLive, the M7 idle behaviour appends the live keyframes itself
-        // (an M7 interface until M7 pushes ProceduralLive), so the streamer's own generator does not run on top of it.
-        if (_idleStack.Count > 0 && _idleStack[^1].Lock == StreamLiveLock) return 0;
+        // GetParam<int>(2) runs the lazy default-set first (0x0057DCE6..0x0057DCF4)
+        EnsureDefaultParamsLocked();
         var p = LiveIdleParameters;
         var inputs = LiveIdleInputs;
-        int Pi(LiveIdleParam i) => (int)p[i];                             // GetParam<int>: vcvt.s32.f32
+        int Pi(LiveIdleParam i) => VcvtS32(p[i]);                             // GetParam<int>: vcvt.s32.f32
         byte Pu8(LiveIdleParam i) => unchecked((byte)(uint)Math.Max(0f, p[i]));   // GetParam<u8>: vcvt.u32.f32
         if ((uint)_idleMs < (uint)Pi(LiveIdleParam.TimeBeforeWiggleMotions_ms)) return 0;
         if (inputs.PickingOrPlacing()) return 0;
@@ -1100,7 +1118,7 @@ public sealed class AnimationScheduler
         }
 
         // lift (L3, L5)
-        if (inputs.LiftNotInPosition() || (locked & 2) != 0 || inputs.Carrying() || _liftDurMs + _liftSpacingMs > 0) _liftDurMs -= 60;
+        if (inputs.LiftNotInPosition() || (locked & 2) != 0 || _liftDurMs + _liftSpacingMs > 0 || inputs.Carrying()) _liftDurMs -= 60;
         else
         {
             _liftDurMs = rng.RandIntInRange(Pi(LiveIdleParam.LiftMovementDurationMin_ms), Pi(LiveIdleParam.LiftMovementDurationMax_ms));
@@ -1117,7 +1135,7 @@ public sealed class AnimationScheduler
         else
         {
             _headDurMs = rng.RandIntInRange(Pi(LiveIdleParam.HeadMovementDurationMin_ms), Pi(LiveIdleParam.HeadMovementDurationMax_ms));
-            sbyte angle = unchecked((sbyte)(int)(inputs.HeadAngleRad() * RadToDeg));
+            sbyte angle = unchecked((sbyte)VcvtS32(inputs.HeadAngleRad() * RadToDeg));
             if (!_live.AddLive(new HeadKeyframe(0, unchecked((uint)_headDurMs), angle, Pu8(LiveIdleParam.HeadAngleVariability_deg))))
             {
                 Log?.Invoke("error: AnimationStreamer.UpdateLiveAnimation.AddHeadAngleKeyFrameFailed");
@@ -1711,10 +1729,10 @@ public sealed class AnimationScheduler
             _bodyDurMs = _liftDurMs = _headDurMs = _bodySpacingMs = _liftSpacingMs = _headSpacingMs = 0;
             _liveEyeShiftTag = 0;
             _audio = null;
-            _keepAliveTimeoutSec = 0.5;
+            _keepAliveTimeoutSec = 0.5f;
             _lastInitName = "";
             _lastToggleMs = 0;
-            _defaultParamsSet = false;
+            LiveIdleParameters.ResetToConstructed();
             _seamDueMs = 0;
             _nowMs = 0;
             var neutralFace = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;

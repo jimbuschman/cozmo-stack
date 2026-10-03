@@ -221,48 +221,11 @@ public class M7BehaviorTests
         Assert.Equal(0.0, disabled[EmotionType.Confident], 6);
     }
 
-    /// <summary>M7-020: the nine-value game output raises the stack's seam (gap1 G1).</summary>
-    [Fact]
-    public void SendEmotionsToGameRaisesTheNineValues()
-    {
-        var mood = new MoodState(new MoodModel());
-        IReadOnlyList<double>? seen = null;
-        mood.EmotionsBroadcast += v => seen = v;
-        mood.SendEmotionsToGame();
-        Assert.NotNull(seen);
-        Assert.Equal(9, seen!.Count);
-    }
+    // M7-012 / M7-020: the nine-value MoodState output is tested in M7BatchThreeBTests (the old test here asserted a send with no robot attached,
+    // which MoodManager::SendEmotionsToGame 0x0067b736..0x0067b73c does not do).
 
-    // ---------------------------------------------------------------- M7-009 (Appendix H C1b)
-
-    /// <summary>
-    /// M7-009: the head-angle conversion uses the shipped literal at 0x0057db2c = 0x42652ee1 =
-    /// 57.295780f, as a float multiply truncated toward zero. The expected values are the inventory's.
-    /// </summary>
-    [Fact]
-    public void TheHeadAngleConversionUsesTheShippedConstant()
-    {
-        Assert.Equal(57.295780f, IdleBehavior.HeadAngleDegreesPerRadian);
-        Assert.Equal(57, IdleBehavior.HeadAngleDegrees(1.0f));    // 57.295780 truncates toward zero
-        Assert.Equal(-57, IdleBehavior.HeadAngleDegrees(-1.0f));
-        Assert.Equal(0, IdleBehavior.HeadAngleDegrees(0.0f));
-    }
-
-    // ---------------------------------------------------------------- M7-010 (verifier blocker)
-
-    /// <summary>
-    /// M7-010: the turn eye-shift sign treats a drawn speed of 0 as <b>positive</b>
-    /// (0x0057D7A4 <c>vmov.f32 s0,#1.0</c>, <c>it mi</c> / <c>vmovmi.f32 s0,s2</c> at 0x0057D7A8..0x0057D7AA
-    /// flips only when N is set), so the x draw is <c>+RandIntInRange(0,21)</c> for 0. <c>Math.Sign(0)</c>
-    /// would give 0.
-    /// </summary>
-    [Fact]
-    public void AZeroTurnSpeedTakesThePositiveEyeShiftSign()
-    {
-        Assert.Equal(1, IdleBehavior.TurnShiftSign(0));
-        Assert.Equal(1, IdleBehavior.TurnShiftSign(7));
-        Assert.Equal(-1, IdleBehavior.TurnShiftSign(-7));
-    }
+    // M7-009 / M7-010 head-angle conversion and turn-shift sign: the retired IdleBehavior's helpers are gone (R-BEH2 batch 2);
+    // the streamer's UpdateLiveAnimation port is tested through the live entry in KeepAliveTests.
 
     // ---------------------------------------------------------------- M7-021 (Appendix I C2c, C2h)
 
@@ -284,25 +247,17 @@ public class M7BehaviorTests
     }
 
     /// <summary>
-    /// M7-021 C2h: the pickup reaction stays alive only while OffTreadsState == InAir (robot+0x355 == 1)
-    /// <b>and</b> robot+0x338 (OnChargerContacts) is 0. With both set it completes without playing and logs
-    /// BehaviorReactToPickup.OnCharger (0x00607BC4..0x00607C08, 0x00607BCC, 0x00607BE2); the strategy still
-    /// triggers on InAir alone (factory lambda 0x0060DDCE). With the contacts clear the same InAir state
-    /// plays. Expected from the inventory, not the code.
+    /// M7-021 C2h (as corrected by A3 / gap pass 1 section 4): <c>BehaviorReactToPickup::UpdateInternal</c> evaluates robot+0x355 and robot+0x338 only
+    /// when no action is in flight (<c>this+0x84 == 0</c>, 0x00607BBA). So with the contacts set the first <c>StartAnim</c> (after Init's 0.5 s wait) still
+    /// runs; the behaviour then logs <c>BehaviorReactToPickup.OnCharger</c> (0x00607BE2) and returns 2. With the contacts clear and the robot still
+    /// InAir, it stays alive. (This test used to assert that the reaction "completes without playing"; the engine plays first.) The strategy still
+    /// triggers on InAir alone (factory lambda 0x0060DDCE). Expected from the inventory, not the code.
     /// </summary>
     [Fact]
     public void ThePickupReactionCompletesWithoutPlayingOnTheChargerContacts()
     {
-        var obb = ObbRoot();
-        if (obb is null) return;
         using var rig = new Rig();
-        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
-        var ctx = new BehaviorContext
-        {
-            Robot = rig.Robot,
-            Triggers = AnimationTriggerMap.Load(obb),
-            Random = new Random(3),
-        };
+        var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Random = new Random(3) };
 
         // the head must have reported its calibration for the classifier to run (A1), as CorrectionTests does
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = false });
@@ -311,23 +266,25 @@ public class M7BehaviorTests
         Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
         Assert.True(rig.Robot.Sensors.OnChargerContacts);
 
-        var gated = (ReactBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
-        Assert.True(gated.IsRunnable(ctx));                    // the strategy's InAir predicate still selects it
+        var gated = (ReactToPickupBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
         var lines = new List<string>();
         rig.Robot.Engine.LogLine += lines.Add;
-        using (var scope = new BehaviorScope())
-            gated.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
-        Assert.Null(gated.LastSelected);                       // C2h: completed without playing
+        gated.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        gated.Update(ctx, 0);
+        Assert.DoesNotContain(lines, l => l.Contains("BehaviorReactToPickup.OnCharger"));   // the wait is the action in flight
+        Assert.False(gated.Update(ctx, 600));                                                // StartAnim ran, then gate 3 returned 2
+        Assert.Contains(gated.Trace, l => l.StartsWith("ReactToPickup:"));                   // the fallback 0x1A9 was attempted before the gate
         Assert.Contains(lines, l => l.Contains("BehaviorReactToPickup.OnCharger"));
 
-        // the contacts clear but the robot is still InAir: the same reaction plays
+        // the contacts clear but the robot is still InAir: the same reaction stays alive
         rig.State((uint)RobotStatusFlag.IsPickedUp);
         Assert.False(rig.Robot.Sensors.OnChargerContacts);
         Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
-        var plays = (ReactBehavior)ShippedBehaviors.Implementable().Single(b => b.Id == "ReactToPickup");
-        using (var scope = new BehaviorScope())
-            plays.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
-        Assert.NotNull(plays.LastSelected);                    // an animation was chosen and played
-        plays.Stop(BehaviorStopReason.Cancelled);
+        var stays = new ReactToPickupBehavior(rig.Vision);
+        stays.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        stays.Update(ctx, 0);
+        Assert.True(stays.Update(ctx, 600));
+        Assert.True(stays.Update(ctx, 700));
+        stays.Stop(BehaviorStopReason.Cancelled);
     }
 }

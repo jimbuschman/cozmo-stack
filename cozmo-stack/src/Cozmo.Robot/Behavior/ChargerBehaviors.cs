@@ -30,10 +30,17 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorDriveOffCharger::InitInternal 0x005C0B1C..0x005C0B2A: SmartDisableReactionsWithLock(own name, table 0x00C672F0).
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.DriveOffCharger);
         DriveResult = null;
         LeftChargerOnTreads = false;
         CurrentPhase = Phase.Driving;
+        // fidelity: M7-021
+        // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward and
+        // "DrivingForward" (0x005C0BE2). The class has no wait-then-drive state machine (M13-017), so only the name is chosen here.
+        SetStateName(Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads ? "WaitForOnTreads" : "DrivingForward");
+        SteppedBehavior.ReportMissing("BehaviorDriveOffCharger::InitInternal DrivingAnimationHandler::PushDrivingAnimations (0x005C0B34..0x005C0B50, when the AI value is 3): not built");
         var act = new DriveOffChargerContactsAction(M, DistanceMm);
         RunAction($"DriveOffChargerContactsAction({DistanceMm:F0} mm)", act.RunAsync, r =>
         {
@@ -91,6 +98,9 @@ public sealed class ReactToOnChargerBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
+        // fidelity: M7-014
+        // BehaviorReactToOnCharger::InitInternal 0x00606C9C..0x00606CB0: SmartDisableReactionsWithLock(own name, table 0x00C74182), first.
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToOnCharger);
         Requested = false;
         _broadcasts.Clear();
         _startMs = NowMs;

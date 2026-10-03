@@ -359,6 +359,39 @@ public static class ReactionLockTables
         EnrollFace, OnboardingShowCube,
     };
 
+    // The five tables of the classes this stack builds whose table was not among the 13, and the table
+    // IBehavior::Init/Resume install under "SparkBehaviorDisables" (gap pass 1 section 3.3; each is 21 consecutive
+    // {trigger, bool} pairs, the value byte non-zero = disabled, tested at 0x005A283C..0x005A2846). They are not in
+    // All (the 13 of Appendix F) so For(class) keeps answering for the original 13 only.
+
+    /// <summary>BehaviorReactToImpact::InitInternal 0x00606200..0x00606216: 0x00C73D36, mask 111111111011111111011.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable ReactToImpact =
+        new("ReactToImpact", "0xC73D36", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 19, 20 });
+    /// <summary>BehaviorDriveOffCharger::InitInternal 0x005C0B2A: 0x00C672F0, mask 111001001100000000001.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable DriveOffCharger =
+        new("DriveOffCharger", "0xC672F0", new[] { 0, 1, 2, 5, 8, 9, 20 });
+    /// <summary>BehaviorSinging::InitInternal 0x005EEB5E: 0x00C6F590, mask 011000001010000000001.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable Singing =
+        new("Singing", "0xC6F590", new[] { 1, 2, 8, 10, 20 });
+    /// <summary>BehaviorAcknowledgeCubeMoved::InitInternal 0x00602242: 0x00C72BB2, mask 000000001000000000000.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable AcknowledgeCubeMoved =
+        new("AcknowledgeCubeMoved", "0xC72BB2", new[] { 8 });
+    /// <summary>BehaviorReactToOnCharger::InitInternal 0x00606CB0: 0x00C74182, mask 011111011010000000011.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable ReactToOnCharger =
+        new("ReactToOnCharger", "0xC74182", new[] { 1, 2, 3, 4, 5, 7, 8, 10, 19, 20 });
+    /// <summary>IBehavior::Init 0x005BCD44 and IBehavior::Resume 0x005BCFDE, lock name "SparkBehaviorDisables": 0x00C65F90, mask 000000001000000000000.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable SparkBehaviorDisables =
+        new("SparkBehaviorDisables", "0xC65F90", new[] { 8 });
+
+    /// <summary>The lock name IBehavior::Init/Resume pass (literal 0x00BF2B0A).</summary>
+    public const string SparkBehaviorDisablesName = "SparkBehaviorDisables";
+
     /// <summary>The table for a behaviour class, or null when the class ships no table.</summary>
     public static ReactionLockTable? For(string behaviorClass) =>
         All.FirstOrDefault(t => string.Equals(t.Name, behaviorClass, StringComparison.Ordinal));

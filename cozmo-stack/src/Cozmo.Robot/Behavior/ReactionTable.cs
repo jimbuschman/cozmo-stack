@@ -173,12 +173,13 @@ public sealed record ReactionEntry(
 /// * <b>(d)</b> is Anki's own <c>AnimationTriggerMap.json</c>, read by <see cref="AnimationTriggerMap"/>.
 ///
 /// <b>The falling reaction is not "ReactToFalling".</b> The shipped map sends <c>RobotFalling</c> to the
-/// behaviour <c>ReactToImpact</c>, and <c>BehaviorReactToImpact::TransitionToPlayingAnim</c> plays
-/// <see cref="AnimationTrigger.ReactToImpact"/>, and only after the fall has ended with an impact intensity
-/// above 1000 (see <see cref="ReactiveBehavior"/>). Nothing in the engine plays
+/// behaviour <c>ReactToImpact</c>, which is always runnable; <c>BehaviorReactToImpact::TransitionToPlayingAnim</c>
+/// plays <see cref="AnimationTrigger.ReactToImpact"/> only when its +0x11e byte is set, which a FallingStopped
+/// stores as <c>impactIntensity &gt; 1000.0f</c> (<see cref="ReactToImpactBehavior"/>). Nothing in the engine plays
 /// <c>AnimationTrigger.ReactToFalling</c> from these classes.
 ///
-/// What each behaviour does around its animation is recorded here and not reproduced: ReactToCliff first
+/// ReactToCliff and ReactToPickup are now the engine's state machines (<see cref="ReactToCliffBehavior"/>,
+/// <see cref="ReactToPickupBehavior"/>); the paragraph below describes the same behaviour in prose. What each behaviour does around its animation: ReactToCliff first
 /// plays <c>ReactToCliffDetectorStop</c> while the wheels stop, substitutes the severe-needs cliff
 /// reactions when a Repair or Energy need is being expressed, and backs up 60 mm at 100 mm/s if the cliff
 /// is still under it; ReactToPickup waits 0.5 s, prefers a face or pet acknowledgement when one is in view,
@@ -208,9 +209,10 @@ public sealed class ReactionTable
         _entries.TryGetValue(trigger, out var e) ? e : null;
 
     /// <summary>
-    /// The impact intensity a fall has to end with before the engine reacts to it:
-    /// <c>BehaviorReactToImpact::AlwaysHandle</c> at 0x00606408 compares <c>FallingStopped.impactIntensity</c>
-    /// against 1000.0 (vldr of 0x447A0000) and only then lets the animation play.
+    /// The impact intensity above which <c>BehaviorReactToImpact::AlwaysHandle</c> at 0x00606408 sets its +0x11e byte:
+    /// it stores <c>FallingStopped.impactIntensity &gt; 1000.0f</c> (literal 0x447A0000 at 0x00606470) on every
+    /// FallingStopped, and <c>TransitionToPlayingAnim</c> plays its animation only when +0x11e is set. The behaviour
+    /// itself is always runnable (0x00606486).
     /// </summary>
     // fidelity: M7-003
     public const float ImpactIntensityThreshold = 1000f;

@@ -178,7 +178,7 @@ public static class ReactionsTool
             log.Add(new { t = sw.Elapsed.TotalSeconds, text });
         }
 
-        foreach (var reg in ShippedBehaviors.Reactions(robot, vision.Locator, () => sw.Elapsed.TotalSeconds, vision))
+        foreach (var reg in ShippedBehaviors.Reactions(robot, vision.Locator, () => sw.Elapsed.TotalSeconds, vision, obbRoot: obb))
         {
             manager.AddReaction(reg.Strategy, reg.Behavior);
             if (reg.Behavior is SteppedBehavior stepped) stepped.Step += line => Line($"    {reg.Behavior.Id}: {line}");
@@ -210,8 +210,7 @@ public static class ReactionsTool
             {
                 double nowMs = sw.Elapsed.TotalMilliseconds, nowSec = sw.Elapsed.TotalSeconds;
                 mood.Advance(nowSec);
-                manager.CheckReactions(nowSec);
-                manager.Update(nowMs, nowSec);
+                manager.Update(nowMs, nowSec);             // BehaviorManager::Update runs CheckReactionTriggerStrategies itself (0x005a3062)
                 await Task.Delay(33);
             }
         }
@@ -345,8 +344,7 @@ public static class ReactionsTool
             }
             double nowMs = sw.Elapsed.TotalMilliseconds, nowSec = sw.Elapsed.TotalSeconds;
             mood.Advance(nowSec);
-            manager.CheckReactions(nowSec);
-            manager.Update(nowMs, nowSec);
+            manager.Update(nowMs, nowSec);                 // BehaviorManager::Update runs CheckReactionTriggerStrategies itself (0x005a3062)
             await Task.Delay(33);
         }
         await robot.Motion.StopAllAsync();
