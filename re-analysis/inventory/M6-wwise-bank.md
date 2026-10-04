@@ -2816,3 +2816,44 @@ destructors, P03's vtable fact). Where C36 differs from earlier text, C36 wins. 
 - **Records touched (text only, no status):** M6-002 (the emit; the class labels), M6-003 (the ADPCM stream-class bodies),
   M6-022, M6-025 (`0x9CD340` chunk rules). Still open: V21, A08, the music-track path, `0x9D4BBC`/`0x9D4D30`, the origin of
   the PBI start-offset value (`0xA001D8..0xA00280`), a census of the last-packet n > 0 condition.
+
+## Correction C37 (manager, 2026-10-04): the RTPC set path, modulators, HIRC creators and the bank-load chain, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C36). C37 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-7.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (the `0xA68150` semantics, the PBI activation sites `0x9F7E88`/`0x9F8080` with
+constant `0x127DF`, the `0xA10C84` second caller, `0xA6DD58` type 4, the by-id retry byte, the Music.bnk count). Where
+C37 differs from earlier text, C37 wins. No status changes.
+
+- **C37.1, how a value change reaches the voice (finding 1, L7-01..L7-11).** SetRTPCValue `0x9AF23C -> 0xA1404C`
+  (key `{obj, playingId, 0, 0xFF, 0xFF, 0}`) `-> 0xA13A88 -> 0xA12CA0 -> 0xA114D8` (walks array A only) `-> 0xA10C84`
+  (dispatch on `[e+0x24]`; type 2: delta = curve(new) - curve(old), `vt+0` at `0xA10E6C`) `-> 0x9868E4/0x9868B0 ->
+  0xA1B254`; the keyed branch `0xA1A6A4`/`0xA1AD68` calls the child PBI `vt+8 = 0xA02EC0 -> 0xA02CE4 -> 0x9BDDE0`
+  (paramId 0: `[ctx+0x8C] += delta`, `[ctx+0xDD] |= 1`); the next voice pre-pass `0xA43D24 -> 0xA55750` runs `vt+0x28 =
+  0x9FF414 -> 0x9FF368` and `0xA4B93C` writes voice+0x1C from pbi+0x3C/+0x40. **Dormancy:** a node subscription made at
+  bank load (`0xA1A338`) goes to array B and is moved to A by `0xA1008C` when the first PBI listener registers
+  (`0x9BC5A8 -> 0xA19ECC -> 0x9F7390`, via the non-bus loop `0x9F7DA8..0x9F82D4`, constant `0x127DF`, sites `0x9F7E88`
+  and `0x9F8080`), back by `0xA10220`. A live PBI registers at Init (`0xA37FE8`) before its first CalcEffectiveParams
+  (`0xA38130`), so the A/B split is unobservable on the Play path; a C# store may deliver the delta to every live PBI
+  whose key and mask match (keyed match, delta in the curve's scaling, the dirty bit, registration at Init). robot_volume
+  is not pushed to the PBI when the first bus is not collapsed (the pull path of 1.9).
+- **C37.2, modulators (L7-12..L7-18).** `0xA11D58 -> 0x9E6EDC`, the LFO/Envelope creators and vtables, `0x9D5700`; the
+  instance bodies (`0x9D8100..0x9D8330`, `0x9E266C`, `0x9E2144`, `0x9DBF78`, `0x9E7EA8`), L7-04c value formulas, L7-04e/f/g
+  bodies, L7-16/17/18 interiors are RECOVERABLE_GAP. Whether the 11 shipped Cozmo modulators are live is unproven.
+- **C37.3, the loader chain (L7-20..L7-28).** `LoadSoundbank` (`0x8D894C -> 0x9A33D8`, bank id `0x99D8FC`: dot cut,
+  lowercase, FNV-1) posts command kind 0 (`0x9BA328 -> 0x9B7CD4` with mode 0); kind 6 `0x9BA468` (`bl 0x9B7F0C` at
+  `0x9BA504`) and kind 9 are read, the other kinds (1..5, 7, 8, 10, the unload API `0x8D3504 -> 0x9A4044`, PrepareEvent
+  `0x8D8A02 -> 0x9A48D0`) are RECOVERABLE_GAP. `0xA68150` per the verifier (fn called whenever aux == 0). INIT's plug-in
+  loader `0xA57238` (dlopen/dlsym, "g_pAKPluginList"; dlsym null -> 7, dlopen fail -> 0x42). The hook installed at
+  `0x8D8206 -> 0x97D72C` is `0x984930` (types 10..13 and any other type go to `0x9B3EBC`; the music hook returns 3 for
+  types other than 10..13); the hook's creator and init bodies are RECOVERABLE_GAP and **must not be marked settled**
+  (Cozmo.bnk 141, Music.bnk 463 music objects).
+- **C37.4, the HIRC dispatch and creators (L7-30..L7-36, the creator table).** The jump table `0x9B3394` (23 entries),
+  the creator vptrs and allocation sizes, the Action factory `0xA60C1C`, the bus/mixer-record bodies `0x9C0FC0`, `0x9F402C`,
+  `0xA19F94`, `0x9EDC84`, `0x9F5C30`; the per-class `vt+0x28` and init bodies were not re-derived.
+- **C37.5, shipped data.** Chunk and object counts for the six banks as the Verification section lists; no STID chunk,
+  no HIRC types 14, 15, 16, 17, 20, 23; event_volume `0xD2687048` on ActorMixers 62050212 and 682998829 (Cozmo) and 121198006
+  (Dev_Debug), accumulate 1, param 0; robot_volume `0x637C1240` on Bus 1723505802 (param 5, curve scaling 0, points
+  (0,-200.0,interp 6),(1.0,0.0,interp 4)).
+- **Records touched (text only, no status):** M6-009, M6-010, M6-001 (shipped object types not in its title), M6-025
+  (Init `0xA37FF0` and the live parameter update), M6-024, M6-005 (the dot cut belongs to `0x99D8FC`, which has no record).
