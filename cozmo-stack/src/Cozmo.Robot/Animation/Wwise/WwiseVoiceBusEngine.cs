@@ -18,13 +18,16 @@ public sealed class WwiseVoiceBuffer
     /// <summary>Planar sample data, one array per channel (native <c>+0x00</c>).</summary>
     public float[][] Channels { get; }
 
-    /// <summary><c>+0x04</c>: the rate/format word the emit writes (C13 Q2).</summary>
+    /// <summary><c>+0x04</c>: the AkChannelConfig word the output hand-off <c>0xA73490</c> writes (its 5th argument; C36: not a rate). The live sources fill <see cref="WwiseDecodeState.ChannelConfig"/>; this field is not read.</summary>
     public int Rate { get; set; }
 
-    /// <summary><c>+0x0C</c>: valid frames; the dispatcher sets <c>0x400</c> before the source render (C12 X4).</summary>
+    /// <summary>
+    /// The engine's <c>[state+0xC]</c> (the frames asked of the source: the voice's pull loop writes <c>u16[0x1052440]</c> there before every source call, <c>0xA4478C..0xA4479C</c>; P01). The name is the earlier
+    /// model's; the engine's valid-frames count <c>[state+0xE]</c> is <see cref="WwiseDecodeState.ValidFrames"/> of the source's io state, and is not a field of this buffer.
+    /// </summary>
     public int ValidFrames { get; set; }
 
-    /// <summary><c>+0x0E</c>: max frames.</summary>
+    /// <summary>The C# model's buffer capacity in frames (the planar arrays' length); the engine's <c>[state+0xE]</c> is the valid-frames count (<see cref="WwiseDecodeState.ValidFrames"/>), not a capacity.</summary>
     public int MaxFrames { get; }
 
     /// <summary><c>+0x18</c>: start sample.</summary>
@@ -33,7 +36,7 @@ public sealed class WwiseVoiceBuffer
     /// <summary><c>+0x20</c>: total/end sample.</summary>
     public int Total { get; set; }
 
-    /// <summary><c>+0x24</c>: pitch/step.</summary>
+    /// <summary><c>+0x24</c>: the media sample rate the output hand-off writes (its 4th argument; C36: not a pitch). The live sources fill <see cref="WwiseDecodeState.Rate"/>; this field is not read.</summary>
     public int Pitch { get; set; }
 
     /// <summary><c>+0x28</c>: the DSP result code (0x11/0x2B/0x2D/2).</summary>
@@ -674,51 +677,229 @@ public sealed class WwiseLiveVoice
     }
 
     /// <summary>
-    /// V8 <c>0xA44630</c>: the render + mix dispatcher order, which is settled:
+    /// <c>u16[0x1052440]</c> (.data, 1024 in this build; read by the engine oracle <c>emu_decode_cases.py pull_loop_cases</c>): the frames the voice asks the source for, written to <c>[state+0xC]</c> before every source
+    /// call (<c>0xA4475C..0xA4479C</c>), whatever the voice's own buffer size.
+    /// </summary>
+    // fidelity: M6-022
+    public const int PullFrames1052440 = 1024;
+
+    /// <summary>
+    /// V8 <c>0xA44630</c>. For a source of the engine classes (<see cref="IWwisePitchNodeSource"/> with a pitch node) the order is the engine's (research live-bodies-6 P01/P02, the verifier's read):
     /// <list type="number">
-    /// <item>insert-FX slots <c>vt+0x38</c> 4..1 then <c>vt+0x3c</c> on state 0x2D/0x11 (V12) â€” the slot
-    /// class identity is RECOVERABLE_GAP, so the slots are a seam (<see cref="InsertFx"/>, caller-supplied);</item>
-    /// <item>filter A <c>0xA4C60C(voice+0x1C0)</c>;</item>
-    /// <item>gain/ramp <c>0xA56E00(voice+0x380)</c> (per connection, M6-012);</item>
-    /// <item>source execute <c>0xA548C0</c> (<see cref="IWwiseVoiceSource.Render"/>);</item>
-    /// <item>on 0x11/0x2D pitch <c>0xA53134</c> and resampler execute <c>0xA52D4C</c> (M6-004);</item>
-    /// <item>notify <c>0xA03E8C</c> (a caller callback);</item>
-    /// <item>aux-send walk <c>0xA4FBEC</c> per aux connection;</item>
-    /// <item>filter B <c>0xA4C60C(voice+0x390)</c> before the first dry mix;</item>
-    /// <item>dry-mix walk <c>0xA4FBEC</c> with gain 1.0.</item>
+    /// <item><c>vt+0x38</c> of the insert-FX slots 3..0 (<c>0xA44650..0xA4466C</c>, an empty slot skipped, the result <c>[state+0x28]</c> then tested: 0x2B goes to the next lower slot, 0x2D / 0x11 on, anything else
+    /// returns from the whole function: no notify, no mix); the slot 3 reaching 0x2D / 0x11 goes straight to filter A, a lower one to the <c>vt+0x3C</c> pass from the next slot up;</item>
+    /// <item>the pitch pass <c>0xA53134(voice+0x100)</c> (<c>0xA44730..0xA44738</c>, <see cref="RunPitchPassA53134"/>): the pre-steps, then with frames held (<c>u16[node+0x6E] != 0</c>) the intake <c>0xA52D4C</c> and the source
+    /// is not called, else the result 0x11 when the node's last-buffer byte is set;</item>
+    /// <item>the result 0x2B runs the source loop <c>0xA4475C..0xA44788</c> (<see cref="PullFrames1052440"/> into <c>[state+0xC]</c>, the source's <c>vt+0x30</c>, a 0x2E calling <c>0xA55C14</c>, a result other than 0x11 / 0x2D
+    /// returning, else the intake <c>0xA52D4C</c> and the loop again on 0x2B); a result other than 0x2D / 0x11 after the pass returns;</item>
+    /// <item><c>vt+0x3C</c> of the slots 0..3 (<c>0xA44694..0xA446D8</c>; 0x2B sends the walk back down from the same index, <c>0xA4471C</c>);</item>
+    /// <item>filter A <c>0xA4C60C(voice+0x1C0)</c> (<c>0xA446E0</c>), the ramps <c>0xA56E00(voice+0x380)</c> (<c>0xA446EC</c>);</item>
+    /// <item><c>0xA548C0(voice)</c> (<c>0xA44700</c>; not a decode: it clamps <c>u16[state+0xE]</c> by the PBI's <c>vt+0x58</c> and starts the pending source, <c>0xA548D4..0xA54954</c>: not read,
+    /// <see cref="PendingSourceA548C0"/>, required), then a result other than 0x11 / 0x2D returns (<c>0xA44704..0xA44710</c>);</item>
+    /// <item>the notify <c>0xA03E8C</c> (<c>0xA447D4</c>), then the aux and dry mixes.</item>
     /// </list>
-    /// The native's <c>0xA54A30</c> start/insert-FX build is not read in full; the source is started by the
-    /// caller through <see cref="IWwiseVoiceSource.StartStream"/>.
+    /// A source without a pitch node (a test double, the in-memory ADPCM class whose body is unread) and a voice without a source keep the earlier approximation, NOT the engine's order (MISSING: those classes' pitch nodes):
+    /// filter A and the connection refresh first, the source called once (looped on 0x2B), the resampler step, then the notify and the mixes.
     /// </summary>
     /// <param name="notify">The V8 step 7 <c>0xA03E8C(manager, params)</c> listener notification; caller seam.</param>
     public void Render(Action<WwiseLiveVoice>? notify = null)
     {
-        InsertFx?.Invoke(this);                                  // V8 step 1 (extra caller hook)
-        // V8 step 1: insert-FX slots vt+0x38 from 4..1, then vt+0x3c on state 0x2D/0x11 (C12 voice-callees Q5).
+        InsertFx?.Invoke(this);                                  // an extra caller hook, not an engine step
+        if (Source is IWwisePitchNodeSource { HasPitchNode: true } pitchSource)
+        {
+            if (!RenderEngineOrder(pitchSource)) return;         // 0xA44714: the function returns: no notify, no mix
+        }
+        else
+            RenderLegacyOrder();
+
+        notify?.Invoke(this);                                    // 0xA447D4 bl 0xA03E8C
+
+        MixConnections();
+    }
+
+    /// <summary>The engine's order of <c>0xA44630</c> up to the notify (see <see cref="Render"/>); false where the engine returns early.</summary>
+    // fidelity: M6-022, M6-025
+    private bool RenderEngineOrder(IWwisePitchNodeSource ps)
+    {
+        // The result [state+0x28] is the buffer's Result and the io state's Code28 (one object in the engine).
+        // MISSING (unreachable in production: no non-test code sets the seams PitchNodeConsumeA52DA8, ResamplerSetPitchA47384 or PendingSourceA548C0): the mixes below take Buffer.ValidFrames = [state+0xC] (1024, the request) as
+        // the frame count, while 0xA4FBEC reads u16 [state+0xE] (0xA4FBF4, the frames delivered), so a caller that supplies the seams mixes 1024 frames whatever the consumption delivered.
+        int r4 = 4;                                              // 0xA44634
+        int phase = 0;                                           // 0: the vt+0x38 walk down (0xA4463C), 1: the vt+0x3C walk up (0xA44694), 2: filter A (0xA446E0), 3: the pitch pass (0xA44730)
+        while (true)
+        {
+            switch (phase)
+            {
+                case 0:
+                {
+                    if (r4 == 0) { phase = 3; break; }                              // 0xA4463C..0xA4464C
+                    int r6 = r4 - 1;                                                // 0xA44654
+                    var slot = InsertFxSlots[r4 - 1];                               // 0xA44650..0xA44658 [voice + 4 * r4 + 0x36c]
+                    if (slot is null) { r4 = r6; break; }                           // 0xA4465C..0xA44660 -> 0xA44724
+                    if (slot.Execute38Hook is null) throw new WwiseMissingBehaviourException("M6-022 V8: the insert-FX slot's vt+0x38 (0xA79A2C / the plug-in's) is not read; supply WwiseVoiceInsertFxSlot.Execute38Hook");
+                    slot.Execute38(Buffer);                                         // 0xA44664..0xA44670 vt+0x38
+                    int res = Buffer.Result;                                        // 0xA44674
+                    if (res == 0x2B) { r4 = r6; break; }                            // 0xA44678..0xA4467C -> 0xA44724
+                    if (res != 0x2D && res != 0x11) return false;                   // 0xA44680..0xA44688 -> 0xA44714
+                    phase = r4 == 4 ? 2 : 1;                                        // 0xA4468C..0xA44690
+                    break;
+                }
+                case 1:
+                {
+                    var slot = InsertFxSlots[r4];                                   // 0xA44694..0xA4469C [voice + 4 * r4 + 0x370]
+                    if (slot is not null)
+                    {
+                        if (slot.Execute3CHook is null) throw new WwiseMissingBehaviourException("M6-022 V8: the insert-FX slot's vt+0x3C (0xA79A78 / the plug-in's) is not read; supply WwiseVoiceInsertFxSlot.Execute3CHook");
+                        slot.Execute3C(Buffer);                                     // 0xA446B0..0xA446B8 vt+0x3C
+                        int res = Buffer.Result;                                    // 0xA446BC
+                        if (res == 0x2B) { phase = r4 == 0 ? 3 : 0; break; }        // 0xA446C0..0xA446C4 -> 0xA4471C: r4 == 0 to the pitch pass, else the walk down from r4
+                        if (res != 0x11 && res != 0x2D) return false;               // 0xA446C8..0xA446D0 -> 0xA44714
+                    }
+                    r4++;                                                           // 0xA446D4
+                    if (r4 == 4) phase = 2;                                         // 0xA446D8..0xA446DC
+                    break;
+                }
+                case 2:
+                {
+                    FilterA.Process(Buffer.Channels[0]);                            // 0xA446E0 0xA4C60C(voice+0x1C0, state)
+                    foreach (var connection in Connections)                         // 0xA446EC 0xA56E00(voice+0x380, state): the ramps (M6-012)
+                        connection.Refresh();
+                    (PendingSourceA548C0 ?? throw new WwiseMissingBehaviourException(
+                        "M6-022 V8: 0xA548C0(voice) (0xA44700: clamps u16[state+0xE] by the PBI's vt+0x58 and starts the pending source, 0xA548D4..0xA54954) is not read; supply WwiseLiveVoice.PendingSourceA548C0"))(this);
+                    int res = Buffer.Result;                                        // 0xA44704
+                    return res == 0x11 || res == 0x2D;                              // 0xA44708..0xA44710 beq 0xA447C4 (notify); else 0xA44714
+                }
+                default:
+                {
+                    RunPitchPassA53134(ps);                                         // 0xA44730..0xA44738 0xA53134(voice+0x100, state)
+                    int res = Buffer.Result;                                        // 0xA4473C
+                    if (res == 0x2B)                                                // 0xA44740..0xA44744 -> 0xA4475C
+                    {
+                        if (!PullSourceLoop(ps)) return false;
+                        res = Buffer.Result;
+                    }
+                    if (res != 0x2D && res != 0x11) return false;                   // 0xA44748..0xA44750 -> 0xA44714
+                    r4 = 0;                                                         // 0xA44754
+                    phase = 1;                                                      // 0xA44758 b 0xA44694
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>The source loop <c>0xA4475C..0xA44788</c>; false where the engine returns (<c>0xA44714</c>), true when it reaches <c>0xA44748</c> with the result left in the buffer.</summary>
+    private bool PullSourceLoop(IWwisePitchNodeSource ps)
+    {
+        while (true)
+        {
+            Buffer.ValidFrames = PullFrames1052440;                                 // 0xA4478C..0xA4479C: [state+0xC] = u16[0x1052440]
+            Source!.Render(Buffer);                                                 // 0xA447A4 vt+0x30
+            if (Buffer.Result == 0x2E)                                              // 0xA447A8..0xA447AC
+            {
+                (SourceNotReadyA55C14 ?? throw new WwiseMissingBehaviourException(
+                    "M6-025 P02: a source result of 0x2E calls 0xA55C14(voice) (0xA447B8), which posts 0xA0428C; supply WwiseLiveVoice.SourceNotReadyA55C14"))(this, Source);
+            }
+            int res = Buffer.Result;                                                // 0xA447BC / 0xA447A8
+            if (res != 0x11 && res != 0x2D) return false;                           // 0xA44768..0xA44778 -> 0xA44714
+            RunIntake(ps);                                                          // 0xA4477C bl 0xA52D4C
+            if (Buffer.Result != 0x2B) return true;                                 // 0xA44780..0xA44788 bne 0xA44748
+        }
+    }
+
+    private void RunIntake(IWwisePitchNodeSource ps)
+    {
+        ps.Io.Code28 = Buffer.Result;                                               // the one result word
+        Buffer.Result = ps.PitchNode.IntakeA52D4C(ps.Io, Buffer);
+        ps.Io.Code28 = Buffer.Result;
+    }
+
+    /// <summary>
+    /// The pitch pass <c>0xA53134(node, state)</c> (V10, EXACT_SOURCE, <c>0xA53134..0xA531B0</c>), in the engine's order: <c>byte [node+0xB9] = 0</c> (<c>0xA5314C</c>); <c>[node+0x48] = u16[state+0xC]</c> (<c>0xA53144</c>,
+    /// <c>0xA53154</c>); the source's <c>vt+0x20</c> (<c>0xA53158..0xA5315C</c>, <c>0xA5668C</c>: the owner PBI's <c>+0x44</c>); <c>0xA47384(node+8, that value, (u16[[node+0xB4]+0x1BE] &amp; 0x380) == 0)</c>
+    /// (<c>0xA53160..0xA53180</c>, <see cref="ResamplerSetPitchA47384"/>); then, with <c>u16[node+0x6E] != 0</c>, the tail call to <c>0xA52D4C</c> (<c>0xA531A4..0xA531B0</c>), else, with <c>byte [node+0xB8] != 0</c>,
+    /// <c>[state+0x28] = 0x11</c> (<c>0xA53190..0xA5319C</c>).
+    /// </summary>
+    // fidelity: M6-022
+    private void RunPitchPassA53134(IWwisePitchNodeSource ps)
+    {
+        var node = ps.PitchNode;
+        node.ByteB9 = 0;                                                            // 0xA5314C strb 0,[node+0xB9]
+        node.Word48 = unchecked((ushort)Buffer.ValidFrames);                        // 0xA53144 ldrh [state+0xC]; 0xA53154 str [node+0x48]
+        var owner = ps.Owner ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V10: the pitch pass reads the owner PBI (source vt+0x20 = 0xA5668C returns [[src+0xC]+0x44]; [[node+0xB4]+0x1BE]); the source has none");
+        float pitch = owner.Pitch44;                                                // 0xA53158..0xA5315C vt+0x20 -> 0xA5668C
+        bool interp = (((owner.Flags1BE & 0x80) | ((owner.Flags1BF & 3) << 8)) & 0x380) == 0;   // 0xA53160..0xA53174 u16[pbi+0x1BE] & 0x380 == 0 (bits 7..9)
+        (ResamplerSetPitchA47384 ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V10: 0xA47384 SetPitch(node+8, float pitch, interp) is M6-004's resampler, whose C# SetPitch takes integer cents and none of the engine's fields: supply WwiseLiveVoice.ResamplerSetPitchA47384"))(pitch, interp);   // 0xA53180
+        if (node.HeldFrames6E != 0)                                                 // 0xA53184..0xA5318C ldrh [node+0x6E]; bne 0xA531A4
+            RunIntake(ps);                                                          // 0xA531A4..0xA531B0 tail call 0xA52D4C
+        else if (node.ByteB8 != 0)                                                  // 0xA53190..0xA53194
+        {
+            Buffer.Result = 0x11;                                                   // 0xA53198..0xA5319C str 0x11,[state+0x28]
+            ps.Io.Code28 = 0x11;
+        }
+    }
+
+    /// <summary>
+    /// <c>0xA47384(node+8, float pitch, interp)</c>, the resampler's SetPitch (M6-004, EXACT_SOURCE in the inventory). The C# <see cref="WwiseResampler.SetPitch"/> takes integer cents and none of the engine's fields
+    /// (<c>+0x50</c> last pitch as a float, <c>+0x57</c>, <c>+0x30..+0x48</c>), so it is not used: required by the pitch pass.
+    /// </summary>
+    // fidelity: M6-022
+    public Action<float, bool>? ResamplerSetPitchA47384 { get; set; }
+
+    /// <summary>
+    /// <c>0xA548C0(voice, state)</c> (<c>0xA44700</c>): clamps <c>u16[state+0xE]</c> by the PBI's <c>vt+0x58</c> and starts the pending source (<c>0xA548D4..0xA54954</c>); the body is not read. Required when the engine order reaches it.
+    /// </summary>
+    // fidelity: M6-022
+    public Action<WwiseLiveVoice>? PendingSourceA548C0 { get; set; }
+
+    /// <summary>
+    /// Opt-in to the earlier approximation of the render order (see <see cref="Render"/>) for a voice whose source has no pitch node (a test double, the in-memory ADPCM class whose body is unread) or that has no source.
+    /// It is NOT the engine's order and is MISSING; without this flag such a voice throws <see cref="WwiseMissingBehaviourException"/> at the render instead of running silently. Only tests set it.
+    /// </summary>
+    public bool AllowRenderOrderApproximation { get; set; }
+
+    /// <summary>The earlier approximation for a voice whose source has no pitch node (see <see cref="Render"/>): NOT the engine's order.</summary>
+    private void RenderLegacyOrder()
+    {
+        if (!AllowRenderOrderApproximation)
+            throw new WwiseMissingBehaviourException(
+                "M6-022 V8: this voice's source has no pitch node (or there is no source), so the engine's render order 0xA44630 is not reproduced for it (the in-memory ADPCM class 0xA72A2C is unread); set WwiseLiveVoice.AllowRenderOrderApproximation only for a test that accepts the approximation");
+        // insert-FX slots vt+0x38 from 3..0, then vt+0x3c from 0..3, unconditionally (NOT the engine's gated walk).
         for (int i = 3; i >= 0; i--) InsertFxSlots[i]?.Execute38(Buffer);
         for (int i = 0; i < 4; i++) InsertFxSlots[i]?.Execute3C(Buffer);
 
-        FilterA.Process(Buffer.Channels[0]);                     // V8 step 2: filter A (M6-011)
+        FilterA.Process(Buffer.Channels[0]);                     // filter A (M6-011)
 
-        // V8 step 3: gain/ramp 0xA56E00(voice+0x380) refreshes each connection's ramp (M6-012). The exact
-        // composed gain is gapC; the caller supplies each connection's target matrix/gain.
+        // gain/ramp 0xA56E00(voice+0x380) refreshes each connection's ramp (M6-012).
         foreach (var connection in Connections)
             connection.Refresh();
 
-        // V8 step 4: source execute 0xA548C0 -> source vt+0x30. The decoder is M6-002/M6-003.
-        Buffer.ValidFrames = Buffer.MaxFrames;                   // V8: params+0xC = 0x400 (C12 X4)
         if (Source is not null)
-            Buffer.Result = Source.Render(Buffer);
+        {
+            do
+            {
+                Buffer.ValidFrames = Buffer.MaxFrames;           // the earlier approximation (C12 X4: 0x400), not u16[0x1052440]: the mixes below read it as the frame count
+                Buffer.Result = Source.Render(Buffer);
+                if (Buffer.Result == 0x2E)
+                    (SourceNotReadyA55C14 ?? throw new WwiseMissingBehaviourException(
+                        "M6-025 P02: a source result of 0x2E calls 0xA55C14(voice) (0xA447B8), which posts 0xA0428C; supply WwiseLiveVoice.SourceNotReadyA55C14"))(this, Source);
+            }
+            while (Buffer.Result == 0x2B);
+        }
+        else
+        {
+            Buffer.ValidFrames = Buffer.MaxFrames;               // V8: params+0xC = 0x400 (C12 X4)
+        }
 
-        // V8 step 6: on 0x11/0x2D pitch 0xA53134 and resampler 0xA52D4C (M6-004). The resampler's output
-        // feeds the same buffer; only the mono int16/float kernels are read, so a stereo source is refused.
         if (Buffer.Result is 0x11 or 0x2D && Source is not null && Source.Channels == 1)
             ApplyResampler();
+    }
 
-        notify?.Invoke(this);                                    // V8 step 7: 0xA03E8C
-
-        // V8 step 7: the aux-send walk 0xA4FBEC for the connections whose conn+0x68 is set, skipping a
-        // connection with ([conn+0x6C]&6)==6.
+    /// <summary>The aux-send and dry mix walks after the notify (<c>0xA447D8..</c>).</summary>
+    private void MixConnections()
+    {
+        // the aux-send walk 0xA4FBEC for the connections whose conn+0x68 is set, skipping a connection with ([conn+0x6C]&6)==6.
         foreach (var connection in Connections)
         {
             // C24.4 0xA447EC..0xA4480C: [conn+0x68] != 0, [conn+0x18] != 0, ([conn+0x6C] & 6) != 6.
@@ -727,8 +908,7 @@ public sealed class WwiseLiveVoice
             connection.Mix(Buffer);
         }
 
-        // V8 step 8: filter B 0xA4C60C(voice+0x390) before the first dry mix, then the dry-mix walk with
-        // gain 1.0.
+        // filter B 0xA4C60C(voice+0x390) before the first dry mix, then the dry-mix walk with gain 1.0.
         bool firstDry = true;
         foreach (var connection in Connections)
         {
@@ -737,10 +917,10 @@ public sealed class WwiseLiveVoice
             if ((connection.Flags6C & 6) == 6) continue;
             if (firstDry)
             {
-                FilterB.Process(Buffer.Channels[0]);             // V8 step 8: filter B before the first dry mix
+                FilterB.Process(Buffer.Channels[0]);
                 firstDry = false;
             }
-            connection.Mix(Buffer);                              // V8 step 8: dry mix, gain 1.0
+            connection.Mix(Buffer);
         }
     }
 
@@ -757,6 +937,13 @@ public sealed class WwiseLiveVoice
             "M6-022 V8 step 6 (0xA53134/0xA52D4C): the voice-stage resampler from a non-mix-rate source is " +
             "M6-004's work; only the mono int16 kernel is read, so a rate change is not invented here.");
     }
+
+    /// <summary>
+    /// <c>0xA55C14(voice)</c> (P02, the same body as <c>0xA54580</c>): with bit 1 of <c>[source+0x10]</c> set it returns; else <c>byte [voice+0xE8] |= 1</c> and <c>0xA0428C(mgr, [pbi+0x134], 0x9BD138(pbi))</c> with
+    /// <c>pbi = [voice+8]</c>. Called when the source's result is 0x2E; required then (what <c>0xA0428C</c> posts is unread: <see cref="WwiseVoiceLinker"/> reaches it through the same seams).
+    /// </summary>
+    // fidelity: M6-025
+    public Action<WwiseLiveVoice, IWwiseVoiceSource>? SourceNotReadyA55C14 { get; set; }
 
     /// <summary>
     /// V8 step 1: the insert-FX slot callback. The slot class identity is RECOVERABLE_GAP (V12/V18b), so the

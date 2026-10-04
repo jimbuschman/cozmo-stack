@@ -473,6 +473,7 @@ public class WwisePlaybackBridgeTests
         var voice = new WwiseLiveVoice(1, WwiseRuntimeSettings.SamplesPerFrame)
         {
             Source = new SyntheticSource(0.5f),
+            AllowRenderOrderApproximation = true,   // the test source has no pitch node: the earlier render approximation, NOT the engine's order (MISSING)
         };
         var dry = new WwiseVoiceConnection(bus, 1, 1);
         dry.Descriptor.Reserve(1, 1);                            // [conn+0x18] != 0 (C24.4)

@@ -994,49 +994,8 @@ public class WwiseVorbisNativeTests
         Assert.All(zero, v => Assert.Equal(0f, v));
     }
 
-    /// <summary>
-    /// M6-002 / correction C13 Q2: the emit <c>0xA73490</c> publishes the pointer without copying and writes
-    /// the params fields: <c>+0x00=buf</c>, <c>+0x04=rate</c>, <c>+0x0C</c>/<c>+0x0E</c>=frames,
-    /// <c>+0x18</c>=start, <c>+0x20</c>=total, <c>+0x24</c>=pitch, <c>+0x28</c>=0x2D (0x2E when frames==0),
-    /// and advances the start by the frames. The values are hand-set here, not read back from the code.
-    /// </summary>
-    [Fact]
-    public void TheEmitWritesTheQ2ParamsFields()
-    {
-        var lib = WwiseAssets.Library;
-        if (lib is null || lib.MediaFileCount == 0) return;
-        var cbl = WwiseAudioSource.TryLoadCodebooks();
-        Assert.NotNull(cbl);
-
-        foreach (var mid in lib.AllMediaIds)
-        {
-            var bytes = lib.ReadMedia(mid, out _);
-            if (bytes is null) continue;
-            WwiseMedia parsed;
-            try { parsed = WwiseMedia.Parse(bytes); } catch (InvalidDataException) { continue; }
-            if (parsed.Codec != WwiseCodec.Vorbis || parsed.Vorbis is null) continue;
-
-            var source = new WwiseVorbisSource(WwiseVorbisSourceKind.Streamed, parsed, cbl!, parsed.Channels);
-            var buf = new float[4];
-            source.StartSample = 100;
-            source.TotalSamples = 900;
-            var p = source.Emit(buf, frames: 128, pitch: 7, rate: 48000, @params: null);
-            Assert.Same(buf, p.Data);                                     // +0x00 publishes the pointer
-            Assert.Equal(48000, p.Format);                                // +0x04 = rate
-            Assert.Equal(128, p.ValidFrames);                             // +0x0C
-            Assert.Equal(128, p.MaxFrames);                               // +0x0E
-            Assert.Equal(100, p.StartSample);                             // +0x18 = start before the advance
-            Assert.Equal(900, p.TotalSamples);                            // +0x20
-            Assert.Equal(7, p.Pitch);                                     // +0x24
-            Assert.Equal(0x2D, p.Result);                                 // +0x28
-            Assert.Equal(228, source.StartSample);                        // [src+0x18] += frames
-
-            var zero = source.Emit(Array.Empty<float>(), frames: 0, pitch: 0, rate: 48000, @params: null);
-            Assert.Equal(0x2E, zero.Result);                              // frames==0 -> NoMoreData
-            Assert.Equal(228, source.StartSample);                        // += 0
-            return;
-        }
-    }
+    // The earlier test of the emit (TheEmitWritesTheQ2ParamsFields) asserted that 0xA73490 sets only 0x2D / 0x2E and that +0x04 is a rate and +0x24 a pitch: C36 (live-bodies-6 V05, section 7 items 1 and 2) contradicts both
+    // (the result store at 0xA73514 is the return of vt+0x74, 0x11 or 0x2D; +0x04 is the AkChannelConfig and +0x24 the media sample rate). It is replaced by WwiseVorbisEngineTests, whose expectations are the engine's own.
 
     /// <summary>
     /// M6-002 / correction C13 P27: the stream reset 0x00AB3978 copies the tail of each channel's work

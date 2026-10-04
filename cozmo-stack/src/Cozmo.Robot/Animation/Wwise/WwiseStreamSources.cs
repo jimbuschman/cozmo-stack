@@ -10,9 +10,10 @@ namespace Cozmo.Robot.Animation.Wwise;
 // WwiseVoiceSourceStart.StartA56650 from WwisePlaybackBridge.AddSrc and WwiseVoiceLinker.NotReadyCheck. The voice pass retry is real: 0xA56650 leaves the latch clear for any result but 1, so the
 // next pass calls StartStream again (a 0x3F is the "not ready yet" the pass retries).
 //
-// Not adopted by C33 (named seams that throw WwiseMissingBehaviourException when unset, never a default): the WAVE-header walker 0x9CD340, the codebook cache 0xAB2D74, the Vorbis packet decode
-// 0xAB7E40 and output hand-off 0xA73490, the seek-position function 0xA736D4 and the seek lookup 0xAB1020, the callback 0xA059D8, the ADPCM header parse 0xA73ABC and decode 0xA73D34, the PCM parse
-// 0xA75BC4, the walker's extra output consumer 0xA7596C, and the base constructors' initial values for the fields that no adopted row names (the C# fields start at 0).
+// Batch 5e (C36): the Vorbis packet decode 0xAB7E40, the output hand-off 0xA73490, the setup cache 0xAB2D74, the DSP allocation 0xAB3264 / 0xAB3428, the walker 0x9CD340, the walker's extra output 0xA7596C, the start
+// position 0xA736D4, the Vorbis seek lookup 0xAB1020, the ADPCM / PCM header parses 0xA73ABC / 0xA75BC4, the ADPCM decode 0xA73D34 and the seek lookups 0xA739E8 / 0xA75B1C are built (WwiseVorbisEngine.cs,
+// WwiseWaveWalker.cs, this file, WwiseVorbisStreamSource.cs). Still named seams that throw WwiseMissingBehaviourException when unset, never a default: the buffering callback 0xA059D8 and the PCM decode 0xA75E34
+// (outline only in C36).
 
 /// <summary>A pointer into a byte array (the engine's <c>[S+0x40]</c>, <c>[S+0xEC]</c>, the format pointer). The null pointer has no array.</summary>
 public readonly struct WwiseBytePtr
@@ -75,46 +76,19 @@ public sealed class WwiseBufferingInfo
 }
 
 /// <summary>
-/// What the source stream functions take from the host: the named seams of the bodies C33 does not adopt (each unset one throws <see cref="WwiseMissingBehaviourException"/> when reached) and the
-/// memory the prefetch pointer addresses.
+/// What the source stream functions take from the host: the memory the prefetch pointer addresses, the named seams of the bodies no adopted row reads (each unset one throws
+/// <see cref="WwiseMissingBehaviourException"/> when reached), the pool-free sink and the Vorbis engine's process-wide state (<see cref="Vorbis"/>).
 /// </summary>
 public sealed class WwiseStreamSourceSeams
 {
     /// <summary>The bank memory that <c>[pbi+0x1DC]</c> addresses (the media table's DATA buffers).</summary>
     public WwiseBankMemory? Memory { get; init; }
 
-    /// <summary>
-    /// <c>0x9CD340(data, length, &amp;fmtSize, S+0x2C, S+0x24, S+0x28, S+0x1C, S+0x20, &amp;extra, 0)</c>: the WAVE-header walker. Not read by C33. It returns 1, or another result (7 and 8 are named by the
-    /// verifier), and fills <see cref="WwiseWaveWalk"/>.
-    /// </summary>
-    public Func<WwiseBytePtr, uint, WwiseWaveWalk>? WaveWalker9CD340 { get; init; }
-
-    /// <summary><c>0xAB2D74(globalTable, S+0x60, pbi, &amp;{ptr+2, size, flag})</c>: the codebook / setup cache. Returns the record's <c>[0]</c> handle, or null (the caller returns 2). Not read.</summary>
-    public Func<WwiseVorbisStreamSource, WwiseBytePtr, ushort, byte, object?>? CodebookCacheAB2D74 { get; init; }
+    /// <summary>The Vorbis engine's process-wide state: the setup cache <c>*0x108E638</c>, the shared work record <c>0x108E648</c> and the packed codebook library (host input). One instance per engine: sources that share it share the globals.</summary>
+    public WwiseVorbisEngineContext Vorbis { get; init; } = new();
 
     /// <summary><c>0xA059D8(*0x108D8F8, [pbi+0x140], S, &amp;info)</c>: the buffering callback. Not read; reached only when bit 22 of <c>[pbi+4]</c> is set.</summary>
     public Action<uint, WwiseStreamSourceBase, WwiseBufferingInfo>? BufferingCallbackA059D8 { get; init; }
-
-    /// <summary><c>0xA736D4(S)</c>: the start position in samples for a start offset (reached only when bit 7 of <c>[pbi+0x1BD]</c> is set). Not read.</summary>
-    public Func<WwiseStreamSourceBase, uint>? StartPositionA736D4 { get; init; }
-
-    /// <summary>The seek lookup <c>vt+0x7C</c> (Vorbis <c>0xAB1020</c>): <c>(S, sample) -&gt; (result, sampleBase, byteOffset)</c>. Not read.</summary>
-    public Func<WwiseStreamSourceBase, uint, (int Result, uint SampleBase, uint ByteOffset)>? SeekLookup7C { get; init; }
-
-    /// <summary><c>0xA7596C(S, extra)</c>: the consumer of the walker's extra output. Not read.</summary>
-    public Func<WwiseStreamSourceBase, object, int>? WalkerExtraA7596C { get; init; }
-
-    /// <summary><c>0xAB3264(S+0x70, channels)</c> with <c>channels = byte[S+0xA8]</c>: the output-buffer allocation (memory behaviour only; the allocation sequence is not adopted): true fails it (the caller returns 2). Null never fails.</summary>
-    public Func<byte, bool>? OutputBuffersFailAB3264 { get; init; }
-
-    /// <summary><c>0xAB7E40(S+0x60, u16[S+0xCC], S+0xA4)</c>: the Vorbis packet decode of the streamed class's decode loop (0xAB1550). Not read; it sets <c>[S+0x60]</c>, <c>[S+0x64]</c>, <c>[S+0x6C]</c> and <c>[S+0xA4]</c> (the source's FramesDecoded60, Status64, Consumed6C, OutputA4).</summary>
-    public Action<WwiseVorbisStreamSource, ushort>? PacketDecodeAB7E40 { get; init; }
-
-    /// <summary><c>0xA73490(S, [S+0xA4], u16[S+0x60], [S+0xE0], [S+0xA8], state)</c>: the output hand-off of the decode loop. Not read; it may store a code at <c>[state+0x28]</c>.</summary>
-    public Action<WwiseVorbisStreamSource, WwiseDecodeState>? OutputHandoffA73490 { get; init; }
-
-    /// <summary><c>0xA73ABC</c> (ADPCM) / <c>0xA75BC4</c> (PCM) <c>vt+0x78</c>: the header parse of the PCM / ADPCM stream classes. Not adopted.</summary>
-    public Func<WwisePcmAdpcmStreamSource, WwiseBytePtr, int>? ParseHeaderPcmAdpcm { get; init; }
 
     /// <summary>
     /// The pool free <c>0xA7A988</c> / <c>0xA7A914</c> (C34.3 S10) the close bodies call: the sink receives the field name and the pointer handle (0 for a field the C# holds as an object). The accounting
@@ -122,43 +96,24 @@ public sealed class WwiseStreamSourceSeams
     /// </summary>
     public WwisePoolFree? PoolFree { get; init; }
 
-    /// <summary><c>0xAB3428(S+0x70)</c> (<c>0xAB2964</c>): the Vorbis DSP teardown the streamed Vorbis close calls first. Not adopted; required by <see cref="WwiseVorbisStreamSource.Close2CAB2958"/>.</summary>
-    public Action<WwiseStreamSourceBase>? DspTeardownAB3428 { get; init; }
-}
+    /// <summary>The pitch node's consumption of the delivered block (<c>0xA52DA8..0xA53050</c>; unread, M6-004): required by <see cref="WwisePitchNodeIntake"/> when a source delivers frames.</summary>
+    public WwisePitchNodeConsume? PitchNodeConsumeA52DA8 { get; init; }
 
-/// <summary>The outputs of the WAVE walker <c>0x9CD340</c> as <c>0xAB12B4</c> consumes them.</summary>
-public sealed class WwiseWaveWalk
-{
-    /// <summary>The result (1 is success; the verifier names 7 and 8).</summary>
-    public int Result { get; init; } = 1;
+    /// <summary>The pitch node's last-buffer path <c>0xA52EBC</c> (the result 0x11; unread): required by <see cref="WwisePitchNodeIntake"/> when a source returns 0x11.</summary>
+    public WwisePitchNodeConsume? PitchNodeEndOfStreamA52EBC { get; init; }
 
-    /// <summary>The format chunk payload (<c>[sp+0x1C]</c>): a pointer into the buffer.</summary>
-    public WwiseBytePtr Format { get; init; }
-
-    /// <summary><c>[S+0x2C]</c>.</summary>
-    public uint Word2C { get; init; }
-
-    /// <summary><c>[S+0x24]</c>.</summary>
-    public uint Word24 { get; init; }
-
-    /// <summary><c>[S+0x28]</c>.</summary>
-    public uint Word28 { get; init; }
-
-    /// <summary><c>[S+0x1C]</c>: the data size.</summary>
-    public uint DataSize1C { get; init; }
-
-    /// <summary><c>[S+0x20]</c>: the data payload offset.</summary>
-    public uint DataOffset20 { get; init; }
-
-    /// <summary><c>[sp+0x20]</c>: non-null makes <c>0xAB12B4</c> call <c>0xA7596C</c>.</summary>
-    public object? Extra { get; init; }
+    /// <summary>
+    /// The base destructors the source destructors end with (<c>0xA75A0C</c> for the streamed Vorbis, ADPCM and PCM classes, <c>0xA73304</c> for the in-memory classes; V22 names them, no adopted row reads their
+    /// bodies). Required by the destructors; unset throws.
+    /// </summary>
+    public Action<object>? BaseDestructor { get; init; }
 }
 
 /// <summary>
 /// The common part of the source classes' stream state and functions (the base constructor <c>0xA5627C</c>, <c>0xA74504</c>; F1 to F6). Field names keep the engine's offsets. The numeric fields start
 /// at 0; the base constructors' stores to them are not adopted (see the file remarks).
 /// </summary>
-public abstract class WwiseStreamSourceBase
+public abstract class WwiseStreamSourceBase : IWwiseSourceCommon
 {
     /// <summary>The stream manager (<c>[0x108D798+0x10]</c>).</summary>
     protected WwiseStreamManager Manager { get; }
@@ -193,8 +148,8 @@ public abstract class WwiseStreamSourceBase
     /// <summary><c>[S+0x28]</c>.</summary>
     public uint Word28 { get; set; }
 
-    /// <summary><c>[S+0x2C]</c>.</summary>
-    public uint Word2C { get; set; }
+    /// <summary><c>[S+0x2C]</c>: the marker container's count (<see cref="Container2C"/>).</summary>
+    public uint Word2C => Container2C.Count;
 
     /// <summary>
     /// The chunk container <c>[S+0x2C]</c> (<c>{count, array}</c>, <c>0x9D4B20</c>): the walker <c>0x9CD340</c> fills it (unread, so it is host input) and every close frees it (C34.3 S2). <see cref="Word2C"/> keeps the walker's
@@ -204,6 +159,12 @@ public abstract class WwiseStreamSourceBase
 
     /// <summary><c>[S+0x38]</c> (u16): the loop count.</summary>
     public ushort LoopCount38 { get; set; }
+
+    /// <summary><c>[S+8]</c>: the <c>akd </c> chunk pointer (<c>0xA7596C</c>; borrowed from the prefetch when bit 4 of <c>[S+0x5E]</c> is set, else an owned copy).</summary>
+    public WwiseBytePtr Extra08 { get; set; }
+
+    /// <inheritdoc />
+    public Func<bool> TryAlloc => Manager.TryAlloc;
 
     /// <summary><c>[S+0x3C]</c>: the stream (<c>IAkAutoStream</c>), null before CreateAuto.</summary>
     public WwiseAutoStream? Stream3C;
@@ -250,10 +211,47 @@ public abstract class WwiseStreamSourceBase
     /// <summary>The class's <c>vt+0x78</c> header parse: <c>(S, data) -&gt; result</c>; 1 is success.</summary>
     protected abstract int ParseHeader(WwiseBytePtr data);
 
-    /// <summary>vt+0x7C, the seek lookup of the class (<c>0xAB1020</c> for Vorbis).</summary>
-    protected virtual (int Result, uint SampleBase, uint ByteOffset) SeekLookup(uint sample)
-        => (Seams.SeekLookup7C ?? throw new WwiseMissingBehaviourException(
-            "M6-025 F4: the seek lookup vt+0x7C (Vorbis 0xAB1020) is not read; supply WwiseStreamSourceSeams.SeekLookup7C"))(this, sample);
+    /// <summary>vt+0x7C, the seek lookup of the class (Vorbis <c>0xAB1020</c>, ADPCM <c>0xA739E8</c>, PCM <c>0xA75B1C</c>): <c>(S, sample) -&gt; (result, sampleBase, byteOffset)</c>.</summary>
+    protected abstract (int Result, uint SampleBase, uint ByteOffset) SeekLookup(uint sample);
+
+    /// <summary><c>vt+0x7C(S, sample, &amp;samples, &amp;bytes)</c>: the class's seek lookup (<see cref="SeekLookup"/>) as a public slot.</summary>
+    public (int Result, uint SampleBase, uint ByteOffset) VtSeekLookup7C(uint sample) => SeekLookup(sample);
+
+    /// <inheritdoc />
+    public abstract int LoopOrEnd74(int r1);
+
+    /// <summary>
+    /// The walker <c>0x9CD340(data, length, &amp;fmt, S+0x2C, S+0x24, S+0x28, S+0x1C, S+0x20, &amp;akd, 0)</c> as the four header parses call it: the loop words are stored when the walker wrote them (every result but 0x1F), the data size and
+    /// offset only at the data chunk.
+    /// </summary>
+    protected WwiseWaveWalk RunWalker9CD340(WwiseBytePtr data, uint length)
+    {
+        var w = WwiseWaveWalker.Walk9CD340(data, length, Container2C, wantAkd: true, wantSeek: false, Manager.TryAlloc);
+        if (w.WroteLoops) { Word24 = w.Word24; Word28 = w.Word28; }
+        if (w.WroteData) { DataSize1C = w.DataSize1C; HeaderSize20 = w.DataOffset20; }
+        return w;
+    }
+
+    /// <summary>
+    /// <c>0xA7596C(S, &amp;{size, ptr})</c> (V16): with bit 4 of <c>[S+0x5E]</c> (the prefetch is used) <c>[S+8]</c> borrows the pointer and 1 is returned; else <c>size</c> bytes are allocated from the pool (null: <c>[S+8] = 0</c>, 0x34),
+    /// copied to <c>[S+8]</c>, and 1 is returned. The callers ignore the result.
+    /// </summary>
+    protected int WalkerExtraA7596C(WwiseBytePtr ptr, uint size)
+    {
+        if ((Bits5E & 0x10) != 0)                                               // 0xA7596C..0xA75978
+        {
+            Extra08 = ptr;                                                      // 0xA75980..0xA75988
+            return 1;
+        }
+        if (!Manager.TryAlloc()) { Extra08 = default; return 0x34; }            // 0xA759A8 bl 0xA7A7F4; 0xA759B0; 0xA759CC
+        var copy = new byte[size];
+        Array.Copy(ptr.Array!, ptr.Index, copy, 0, size);                       // 0xA759C0 memcpy
+        Extra08 = new WwiseBytePtr(copy, 0);
+        return 1;
+    }
+
+    /// <summary><c>0xA736D4(S)</c>: the start position in samples for a start offset (V20), shared by every class.</summary>
+    internal uint StartPositionA736D4() => WwiseSourceStart.StartPositionA736D4(this);
 
     private WwiseAutoStream Stream => Stream3C ?? throw new InvalidOperationException("M6-025: [S+0x3C] is null (the engine would dereference it)");
 
@@ -277,19 +275,7 @@ public abstract class WwiseStreamSourceBase
     /// <c>vt+0x34</c> = <c>0xA72F5C(S)</c> (S1): <c>loops = u16[pbi+0x1B8]</c>; 0 returns 0.0f (<c>0xA72F6C..0xA72F80</c>). Otherwise, in single precision, <c>(float)u32[S+0x14] + (float)(loops - 1) * (float)u32([S+0x28] + 1 - [S+0x24])</c> (<c>vmla.f32</c>,
     /// not fused), times <c>1000.0f</c>, divided by <c>(float)u32</c> of <c>vt+0x70(S)</c> = <c>0xA72F50</c> = <c>[pbi+0x158]</c> (<c>0xA72F88..0xA72FE0</c>). A rate of 0 divides to infinity or NaN as the engine does.
     /// </summary>
-    public float Duration34A72F5C()
-    {
-        ushort loops = Pbi.LoopCount1B8;                                        // 0xA72F5C..0xA72F6C
-        if (loops == 0) return 0f;                                              // 0xA72F70..0xA72F80 (the literal 0xA72FE4 is 0)
-        uint span = unchecked(Word28 + 1 - Word24);                             // 0xA72F88..0xA72F9C rsb r1,ip,r1
-        float s15 = (float)(loops - 1);                                         // 0xA72F8C sub r2,r2,#1; vcvt.f32.s32
-        float s14 = (float)span;                                                // 0xA72FB8 vcvt.f32.u32
-        float s16 = (float)TotalSamples14;                                      // 0xA72FBC vcvt.f32.u32
-        s16 = s16 + s15 * s14;                                                  // 0xA72FC0 vmla.f32
-        s16 = s16 * BitConverter.Int32BitsToSingle(0x447A0000);                 // 0xA72FC4: 1000.0f (the literal at 0xA72FE8)
-        float rate = (float)Pbi.SourceFormat158;                                // 0xA72FC8 blx vt+0x70 (0xA72F50: [[S+0xC]+0x158]); vcvt.f32.u32
-        return s16 / rate;                                                      // 0xA72FD4 vdiv.f32
-    }
+    public float Duration34A72F5C() => WwiseSourceStart.Duration34A72F5C(this);
 
     // ---------------------------------------------------------------- D4: 0xA74564
 
@@ -487,8 +473,7 @@ public abstract class WwiseStreamSourceBase
     /// </summary>
     internal int SeekToStartOffsetA74BA0()
     {
-        uint pos = (Seams.StartPositionA736D4 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 F4: 0xA736D4 (the start position for a start offset) is not read; supply WwiseStreamSourceSeams.StartPositionA736D4"))(this);   // 0xA74BAC
+        uint pos = StartPositionA736D4();                                       // 0xA74BAC
         if (pos >= TotalSamples14) return 2;                                    // 0xA74BB4..0xA74BBC
         var (r, sampleBase, byteOffset) = SeekLookup(pos);                      // 0xA74BE8 vt+0x7C
         SampleBase18 = sampleBase;                                              // the out pointer is &[S+0x18]
@@ -572,6 +557,56 @@ public abstract class WwiseStreamSourceBase
             return unchecked(left + avail) >= stream.GetNominalBuffering961AD8() ? 1 : 0x3F;   // 0xAB2D2C..0xAB2D4C
         if (status == 0x11) return 1;                                           // 0xAB2C40..0xAB2C48
         return status;                                                          // 0xAB2C34 mov r5,r0
+    }
+
+    /// <summary>
+    /// The head of the decode slot <c>vt+0x30</c> shared by the streamed Vorbis class (<c>0xAB1550..0xAB15CC</c>, <c>0xAB1A10..0xAB1B0C</c>) and the ADPCM stream class (<c>0xA73D34..0xA73DA8</c>, <c>0xA73F90..0xA7408C</c>; PCM
+    /// <c>0xA75E34</c> is outline only): bit 1 of <c>[S+0x10]</c> set: <c>QueryBufferingStatus</c>; 0x2D / 0x2E with <c>[S+0x44] + avail &lt; nominal</c> gives status code <b>0x2E</b> and no decode (with bit 22 of
+    /// <c>[pbi+4]</c> set the callback block runs first); at or above the nominal, or the status 0x11, bit 1 of <c>[S+0x10]</c> is cleared for good and the decode runs; any other status is the code and returned. Bit 1 clear:
+    /// the decode runs. The callback block runs on every path of bit 22 (with the decode paths' result 0x2D).
+    /// </summary>
+    protected WwiseDecodeGate DecodeGateShared()
+    {
+        int r6 = 1;
+        if ((Flags10 & 2) != 0)                                                 // 0xAB1550..0xAB1558 / 0xA73D34..0xA73D3C
+        {
+            var stream = Stream;
+            uint left = Left44;                                                 // 0xAB157C
+            uint avail = Stale;                                                 // sp+0x18
+            int status = stream.Query961C1C(ref avail);                         // 0xAB158C
+            r6 = status;                                                        // 0xAB1594
+            if (status == 0x2D || status == 0x2E)                               // 0xAB1590..0xAB159C
+            {
+                if (unchecked(left + avail) < stream.GetNominalBuffering961AD8())   // 0xAB1A10..0xAB1A28
+                {
+                    r6 = 0x2E;                                                  // 0xAB1A2C movlo r6,#0x2e
+                    return CallbackThenResult(r6);                              // 0xAB1A30 blo 0xAB15A8
+                }
+                return ClearGate();                                             // fall: at or above nominal (0xAB1A34)
+            }
+            if (status == 0x11) return ClearGate();                             // 0xAB15A0..0xAB15A4 beq 0xAB1A34
+            return CallbackThenResult(r6);                                      // 0xAB15A8..0xAB15B8
+        }
+        if ((Pbi.Flags4 & 0x400000) != 0)                                       // 0xAB15BC..0xAB15C8
+        {
+            BufferingCallback();                                                // 0xAB1A50..0xAB1B00
+            return new WwiseDecodeGate(true, 0x2D);                             // 0xAB1B04 cmp r6,#0x2d; beq 0xAB15CC
+        }
+        return new WwiseDecodeGate(true, 0x2E);                                 // 0xAB15CC (the result is replaced by the decode)
+
+        WwiseDecodeGate ClearGate()
+        {
+            Flags10 = (byte)(Flags10 & ~2);                                     // 0xAB1A38..0xAB1A44 bfc r3,#1,#1
+            if ((Pbi.Flags4 & 0x400000) == 0) return new WwiseDecodeGate(true, 0x2E);   // 0xAB1A48..0xAB1A4C beq 0xAB15CC
+            BufferingCallback();                                                // 0xAB1A50..0xAB1B00 (r6 = 0x2D)
+            return new WwiseDecodeGate(true, 0x2D);                             // 0xAB1B04..0xAB1B08 beq 0xAB15CC
+        }
+
+        WwiseDecodeGate CallbackThenResult(int result)
+        {
+            if ((Pbi.Flags4 & 0x400000) != 0) BufferingCallback();              // 0xAB15AC..0xAB15B8 -> 0xAB1A54
+            return new WwiseDecodeGate(false, result);                          // 0xAB1B0C str r6,[r7,#0x28]
+        }
     }
 
     /// <summary>
@@ -680,8 +715,9 @@ public enum WwisePcmAdpcmClass
 }
 
 /// <summary>
-/// The PCM / ADPCM stream classes (vtables <c>0x103D840</c>, <c>0x103D8C8</c>, <c>0x103D950</c>, all with <c>vt+0x28 = 0xA7538C</c>): F7. The header parse (<c>vt+0x78</c>: <c>0xA73ABC</c> for the ADPCM class,
-/// <c>0xA75BC4</c> for the PCM class, none for <c>0x103D8C8</c>) is not adopted and comes from <see cref="WwiseStreamSourceSeams.ParseHeaderPcmAdpcm"/>.
+/// The PCM / ADPCM stream classes (vtables <c>0x103D840</c>, <c>0x103D8C8</c>, <c>0x103D950</c>, all with <c>vt+0x28 = 0xA7538C</c>): F7. The ADPCM class (<c>0x103D840</c>, constructor <c>0xA74244</c>) has the header parse
+/// <c>vt+0x78 = 0xA73ABC</c>, the decode <c>vt+0x30 = 0xA73D34</c>, the seek lookup <c>vt+0x7C = 0xA739E8</c>, <c>vt+0xC = 0xA73A14</c> and <c>vt+0x74 = 0xA742C8</c> (C36.2, A01..A05). The PCM class (<c>0x103D950</c>) has the header
+/// parse <c>0xA75BC4</c>, the seek lookup <c>0xA75B1C</c> (with <c>vt+0x80 = 0xA75B4C</c>) and <c>vt+0x74 = 0xA742C8</c>; its decode <c>0xA75E34</c> is outline only in C36 and throws. The class <c>0x103D8C8</c> has no header parse.
 /// </summary>
 public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
 {
@@ -692,11 +728,23 @@ public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
     /// <summary>Which of the three vtables the object has (C34.3): the close of each differs. Unspecified is a named stop in <see cref="Close2C"/>.</summary>
     public WwisePcmAdpcmClass Class { get; init; }
 
-    /// <summary><c>[S+0x60]</c> (PCM streamed class): a block the close frees; written by the PCM header parse <c>0xA75BC4</c> (not adopted), so it is host input.</summary>
+    /// <summary><c>[S+0x60]</c> (PCM streamed class): a block the close frees; written by the PCM decode (<c>0xA75E34</c>, outline only), so it is host input.</summary>
     public uint BufferPtr60 { get; set; }
 
-    /// <summary><c>[S+0x64]</c> (ADPCM streamed class: the block <c>0xA73A14</c> frees; PCM streamed: cleared with <see cref="BufferPtr60"/>); written by the unread header parses, so host input.</summary>
+    /// <summary><c>[S+0x64]</c> (PCM streamed class): cleared with <see cref="BufferPtr60"/> by the close; host input.</summary>
     public uint BufferPtr64 { get; set; }
+
+    /// <summary><c>[S+0x60]</c> (ADPCM class): the block alignment (<c>u16[fmt+0xC]</c>, <c>0xA73BB8</c>).</summary>
+    public uint BlockAlign60 { get; private set; }
+
+    /// <summary><c>[S+0x64]</c> (ADPCM class): the output block of the last decode (interleaved int16, <c>bytes per frame * u16[0x1052440]</c> bytes); <c>vt+0xC = 0xA73A14</c> frees it.</summary>
+    public short[]? Output64 { get; set; }
+
+    /// <summary><c>[S+0x68]</c> (ADPCM class): the partial-block carry buffer (<c>channels * 36</c> bytes, allocated at the first need).</summary>
+    public byte[]? Partial68 { get; set; }
+
+    /// <summary><c>u16 [S+0x6C]</c> (ADPCM class): the bytes the carry buffer holds.</summary>
+    public ushort PartialBytes6C { get; set; }
 
     /// <summary>
     /// <c>vt+0x2C</c>: ADPCM streamed <c>0xA7427C</c> (<c>vt+0xC = 0xA73A14</c>: a non-null <c>[S+0x64]</c> is freed and cleared; then <c>0xA759D8</c>, S4); PCM streamed <c>0xA76178</c> (a non-null <c>[S+0x60]</c> is freed and
@@ -707,7 +755,7 @@ public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
         switch (Class)
         {
             case WwisePcmAdpcmClass.AdpcmStream:                                    // vtable 0x103D840
-                if (BufferPtr64 != 0) { Seams.PoolFree?.Invoke("[S+0x64]", BufferPtr64); BufferPtr64 = 0; }   // 0xA73A14..0xA73A40 (vt+0xC)
+                ReleaseOutputA73A14();                                              // 0xA7427C..0xA74290 vt+0xC
                 ReleaseStreamA759D8();                                              // 0xA74298 b 0xA759D8
                 break;
             case WwisePcmAdpcmClass.PcmStream:                                      // vtable 0x103D950
@@ -727,10 +775,278 @@ public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
         }
     }
 
+    /// <summary><c>vt+0xC = 0xA73A14(S)</c> (A04, the ADPCM class): a non-null <c>[S+0x64]</c> is freed (<c>0xA7A914</c>) and cleared.</summary>
+    public void ReleaseOutputA73A14()
+    {
+        if (Output64 is null) return;                                           // 0xA73A14..0xA73A1C
+        Seams.PoolFree?.Invoke("[S+0x64]", 0);                                  // 0xA73A34 bl 0xA7A914
+        Output64 = null;                                                        // 0xA73A3C
+    }
+
+    /// <summary>
+    /// <c>vt+0x0 / +0x4</c> of the ADPCM class (<c>0xA73A48</c>, <c>0xA741C8</c>; A04): a non-null <c>[S+0x64]</c> is freed and cleared, a non-null <c>[S+0x68]</c> freed (<c>0xA7A988</c>), then the base destructor <c>0xA75A0C</c> (a seam:
+    /// its body is not read).
+    /// </summary>
+    public void DestroyA741C8()
+    {
+        ReleaseOutputA73A14();                                                  // 0xA741C8..0xA741FC
+        if (Partial68 is not null) Seams.PoolFree?.Invoke("[S+0x68]", 0);       // 0xA74204..0xA7421C
+        (Seams.BaseDestructor ?? throw new WwiseMissingBehaviourException(
+            "M6-025 A04: the base destructor 0xA75A0C is named by the verifier but its body is not read; supply WwiseStreamSourceSeams.BaseDestructor"))(this);   // 0xA74224 bl 0xA75A0C
+    }
+
+    /// <summary>
+    /// <c>vt+0x74 = 0xA742C8(S, r1)</c> (A05, the ADPCM and PCM classes): <c>r1 != 0</c> decrements <c>u16[S+0x38]</c> when above 1 and returns 0x11; <c>r1 == 0</c> decrements <c>u16[S+0x5C]</c>, then <c>u16[S+0x38]</c> when above 1,
+    /// and returns 0x2D (there is no decoder state to reset).
+    /// </summary>
+    public override int LoopOrEnd74(int r1)
+    {
+        ushort loops = LoopCount38;                                             // 0xA742D0
+        if (r1 != 0)                                                            // 0xA742C8..0xA742D4
+        {
+            if (loops > 1) LoopCount38 = unchecked((ushort)(loops - 1));        // 0xA742FC..0xA74304
+            return 0x11;                                                        // 0xA74308
+        }
+        LoopCounter5C = unchecked((ushort)(LoopCounter5C - 1));                 // 0xA742D8..0xA742E8
+        if (loops > 1) LoopCount38 = unchecked((ushort)(loops - 1));            // 0xA742DC, 0xA742EC..0xA742F4
+        return 0x2D;                                                            // 0xA742E0
+    }
+
+    /// <summary>
+    /// <c>vt+0x7C</c>, A03: ADPCM <c>0xA739E8(S, pos, &amp;samples, &amp;bytes)</c>: <c>samples = (pos &gt;&gt; 6) &lt;&lt; 6</c>, <c>bytes = [S+0x20] + [S+0x60] * (pos &gt;&gt; 6)</c>, 1. PCM <c>0xA75B1C</c>: <c>samples = pos</c>,
+    /// <c>bytes = pos * bpf + [S+0x20]</c> with <c>bpf = vt+0x80 = 0xA75B4C = u16[pbi+0x160] &gt;&gt; 6</c>, 1.
+    /// </summary>
+    protected override (int Result, uint SampleBase, uint ByteOffset) SeekLookup(uint pos)
+    {
+        switch (Class)
+        {
+            case WwisePcmAdpcmClass.AdpcmStream:
+                uint blocks = pos >> 6;                                         // 0xA739E8 lsr r1,r1,#6
+                return (1, blocks << 6, unchecked(HeaderSize20 + BlockAlign60 * blocks));   // 0xA739F4..0xA73A0C lsl; mla r1,lr,r1,r2
+            case WwisePcmAdpcmClass.PcmStream:
+                return (1, pos, unchecked(pos * BytesPerFramePcmA75B4C() + HeaderSize20));   // 0xA75B2C..0xA75B44 mla r4,r4,r0,r6
+            default:
+                throw new WwiseMissingBehaviourException("M6-025 A03: the seek lookup of the class 0x103D8C8 / an unset class is not read");
+        }
+    }
+
+    /// <summary><c>vt+0x80 = 0xA75B4C(S)</c> (the PCM class): <c>u16[pbi+0x160] &gt;&gt; 6</c>.</summary>
+    internal uint BytesPerFramePcmA75B4C() => (uint)((Pbi.Byte160 | (Pbi.Byte161 << 8)) >> 6);
+
     /// <inheritdoc />
     protected override int ParseHeader(WwiseBytePtr data)
-        => (Seams.ParseHeaderPcmAdpcm ?? throw new WwiseMissingBehaviourException(
-            "M6-025 F8: the PCM / ADPCM header parse (vt+0x78: 0xA73ABC, 0xA75BC4) is not adopted; supply WwiseStreamSourceSeams.ParseHeaderPcmAdpcm"))(this, data);
+        => Class switch
+        {
+            WwisePcmAdpcmClass.AdpcmStream => ParseAdpcmA73ABC(data),
+            WwisePcmAdpcmClass.PcmStream => ParsePcmA75BC4(data),
+            _ => throw new WwiseMissingBehaviourException("M6-025 F8: the class 0x103D8C8 / an unset class has no header parse body read (vt+0x78)"),
+        };
+
+    private int HeuristicsAndMinimalBuffer(WwiseStreamHeuristics h, float throughput, uint minimalBufferSize)
+    {
+        h.Throughput = throughput;                                              // 0xA73CC8 vstr s15,[sp,#0x28]
+        if (LoopCount38 != 1) { h.LoopStart = LoopStartByte54; h.LoopEnd = LoopEndByte58; }   // 0xA73CD0..0xA73CE0 vld1.32 d16,[S+0x54]; vst1.32 -> heur+4, heur+8
+        h.Priority = unchecked((byte)TruncS32(Pbi.Priority1C0));                // 0xA73CF0..0xA73D00
+        var stream = Stream3C ?? throw new InvalidOperationException("M6-025: [S+0x3C] is null (the engine would dereference it)");
+        stream.SetHeuristics964E4C(h);                                          // 0xA73D0C vt+0x18
+        return stream.SetMinimalBufferSize965244(minimalBufferSize);            // 0xA73D28 vt+0x1C: its result is returned
+    }
+
+    /// <summary>
+    /// A01 <c>0xA73ABC(S, data)</c> (vt+0x78): the walker with <c>[S+0x44]</c> bytes; a non-1 result is returned; the format tag must be 2 else 7. The PBI: <c>[+0x162] &amp;= 0xF8</c> (int16, interleaved), <c>[+0x158] = rate</c>,
+    /// <c>[+0x15C..0x15F]</c> the four bytes of <c>u32[fmt+0x14]</c>, <c>u16[+0x160] = 0x10 | ((channels * 2) &amp; 0x3FF) &lt;&lt; 6</c>; a non-empty <c>akd </c> chunk runs <c>0xA7596C</c>. <c>[S+0x60] = blockAlign</c>, <c>[S+0x14] = ([S+0x1C] * 64) /
+    /// blockAlign</c>. With <c>[S+0x28] == 0</c> or the loop count 1: <c>[S+0x54] = [S+0x20]</c>, <c>[S+0x58] = [S+0x20] + [S+0x1C]</c> and <c>[S+0x28] = ([S+0x1C] / blockAlign) * 64 - 1</c>; else <c>[S+0x58] = blockAlign * (([S+0x28] + 1) &gt;&gt; 6) +
+    /// [S+0x20]</c>, <c>[S+0x54] = blockAlign * ([S+0x24] &gt;&gt; 6) + [S+0x20]</c> and 7 when the loop end lies below the loop start or the data end lies before either byte offset. Then GetHeuristics; <c>[S+0x28] &gt; [S+0x24]</c> else 2;
+    /// <c>[S+0x24] &gt; total</c> or <c>[S+0x28] &gt;= total</c> gives 2. The heuristics get <c>float(rate) * float(blockAlign) / 64000.0f</c>, the loop bytes when the loop count is not 1, the priority; <c>SetMinimalBufferSize(channels * 36)</c> is returned.
+    /// </summary>
+    private int ParseAdpcmA73ABC(WwiseBytePtr data)
+    {
+        var walk = RunWalker9CD340(data, Left44);                               // 0xA73B10 bl 0x9CD340(data, [S+0x44], ...)
+        if (walk.Result != 1) return walk.Result;                               // 0xA73B14..0xA73B20
+        var fmt = walk.Format;                                                  // 0xA73B24
+        if (fmt.U16(0) != 2) return 7;                                          // 0xA73B28..0xA73B34
+        var pbi = Pbi;
+        ushort channels = fmt.U16(2);                                           // 0xA73B48
+        uint u32 = fmt.U32(0x14);                                               // 0xA73B4C
+        uint rate = fmt.U32(4);                                                 // 0xA73B58
+        pbi.Byte162 = (byte)(pbi.Byte162 & 0xF8);                               // 0xA73B5C and r0,r0,#0xfc; 0xA73B64 bfi r0,r5,#2,#1 (r5 = 0)
+        ushort bpf = (ushort)((channels << 1) & 0x3FF);                         // 0xA73B54 lsl r3,r3,#1; 0xA73B60 ubfx r3,r3,#0,#0xa
+        pbi.SourceFormat158 = rate;                                             // 0xA73B78
+        pbi.Word15C = u32;                                                      // 0xA73B88, 0xA73B98, 0xA73B9C, 0xA73BA0
+        pbi.Byte161 = (byte)(bpf >> 2);                                         // 0xA73B8C, 0xA73BA4
+        pbi.Byte160 = (byte)(0x10 | ((bpf & 3) << 6));                          // 0xA73B94, 0xA73BA8
+        if (walk.AkdSize != 0) WalkerExtraA7596C(walk.Akd, walk.AkdSize);       // 0xA73B7C, 0xA73BAC bne 0xA73C80: the result is ignored
+        uint blockAlign = fmt.U16(0xC);                                         // 0xA73BB0
+        uint dataSize = DataSize1C;                                             // 0xA73BB4
+        BlockAlign60 = blockAlign;                                              // 0xA73BB8
+        if (blockAlign == 0) throw new WwiseMissingBehaviourException("M6-003 A01: u16[fmt+0xC] == 0 divides by zero in the engine's __aeabi_uidiv (0xA73BC4); the libc behaviour is not in the inventory");
+        TotalSamples14 = unchecked((dataSize << 6) / blockAlign);               // 0xA73BC0..0xA73BD8 lsl r0,r6,#6; __aeabi_uidiv
+        uint dataStart = HeaderSize20;                                          // 0xA73BCC
+        uint dataEnd = unchecked(dataStart + dataSize);                         // 0xA73BD4
+        if (Word28 == 0 || LoopCount38 == 1)                                    // 0xA73BDC bne 0xA73C30; 0xA73C34..0xA73C38 beq 0xA73BE0
+        {
+            LoopStartByte54 = dataStart;                                        // 0xA73BE0
+            LoopEndByte58 = dataEnd;                                            // 0xA73BE8
+            Word28 = unchecked(((dataSize / blockAlign) << 6) - 1);             // 0xA73BEC..0xA73BFC: stored for [S+0x28] == 0 and for the loop count 1
+        }
+        else
+        {
+            uint l0 = Word24, l1 = Word28;                                      // 0xA73C3C, 0xA73BC8
+            uint endByte = unchecked(blockAlign * ((l1 + 1) >> 6) + dataStart);   // 0xA73C40..0xA73C4C
+            uint startByte = unchecked(blockAlign * (l0 >> 6) + dataStart);     // 0xA73C48..0xA73C50
+            LoopEndByte58 = endByte;                                            // 0xA73C5C
+            LoopStartByte54 = startByte;                                        // 0xA73C70
+            bool bad = l1 < l0 || dataEnd < startByte;                          // 0xA73C54..0xA73C64
+            if (dataEnd < endByte) bad = true;                                  // 0xA73C68..0xA73C6C
+            if (bad) return 7;                                                  // 0xA73C74..0xA73C78 -> 0xA73B34
+        }
+        var h = new WwiseStreamHeuristics();
+        Stream3C!.GetHeuristics961664(h);                                       // 0xA73C00..0xA73C14 vt+0x14
+        if (!(Word28 > Word24)) return 2;                                       // 0xA73C18..0xA73C28 bhi 0xA73C90; mov r0,#2
+        if (Word24 > TotalSamples14 || Word28 >= TotalSamples14) return 2;      // 0xA73C90..0xA73C9C
+        float throughput = (float)rate * (float)blockAlign / BitConverter.Int32BitsToSingle(0x477A0000);   // 0xA73CA4..0xA73CC8 (64000.0f)
+        return HeuristicsAndMinimalBuffer(h, throughput, (uint)channels * 36);  // 0xA73D10..0xA73D28 u16[fmt+2] * 9 << 2
+    }
+
+    /// <summary>
+    /// A06 <c>0xA75BC4(S, data)</c> (vt+0x78): as A01 with the format tag 0xFFFE else 7; <c>u16[pbi+0x160] = (u16[fmt+0xE] &amp; 0x3F) | ((blockAlign &amp; 3) &lt;&lt; 6)</c>, <c>[pbi+0x161] = (blockAlign &gt;&gt; 2) &amp; 0xFF</c>, <c>[+0x158] = rate</c>,
+    /// <c>[+0x15C..0x15F]</c> the bytes of <c>u32[fmt+0x14]</c>, <c>[+0x162] &amp;= 0xF8</c>; <c>[S+0x14] = [S+0x1C] / blockAlign</c>; with <c>[S+0x28] == 0</c> or the loop count 1 <c>[S+0x54] = [S+0x20]</c>, <c>[S+0x58] = data end</c>,
+    /// <c>[S+0x28] = total - 1</c>; else the loop bytes are <c>blockAlign * (loopEnd + 1) + [S+0x20]</c> and <c>blockAlign * loopStart + [S+0x20]</c> (no shift) with 7 on the same three tests as A01. There is no <c>[S+0x28] &gt; [S+0x24]</c> or
+    /// total check. The heuristics get <c>float(rate * blockAlign) / 1000.0f</c> (an integer product), the loop bytes and the priority; <c>SetMinimalBufferSize(blockAlign)</c> is returned.
+    /// </summary>
+    private int ParsePcmA75BC4(WwiseBytePtr data)
+    {
+        var walk = RunWalker9CD340(data, Left44);                               // 0xA75C18 bl 0x9CD340
+        if (walk.Result != 1) return walk.Result;                               // 0xA75C1C..0xA75C28
+        var fmt = walk.Format;                                                  // 0xA75C2C
+        if (fmt.U16(0) != 0xFFFE) return 7;                                     // 0xA75C30..0xA75C44
+        var pbi = Pbi;
+        uint u32 = fmt.U32(0x14);                                               // 0xA75C50
+        uint blockAlign = fmt.U16(0xC);                                         // 0xA75C54
+        ushort bits = fmt.U16(0xE);                                             // 0xA75C60
+        uint rate = fmt.U32(4);                                                 // 0xA75C6C
+        pbi.Byte162 = (byte)(pbi.Byte162 & 0xF8);                               // 0xA75C68, 0xA75C70 (bfi bit 2 <- 0), 0xA75C74
+        pbi.Byte160 = (byte)((bits & 0x3F) | ((blockAlign & 3) << 6));          // 0xA75C7C, 0xA75C80, 0xA75C8C
+        pbi.Word15C = u32;                                                      // 0xA75C84, 0xA75C98, 0xA75CA0, 0xA75CA8
+        pbi.SourceFormat158 = rate;                                             // 0xA75C90
+        pbi.Byte161 = (byte)((blockAlign >> 2) & 0xFF);                         // 0xA75CA4, 0xA75CAC
+        if (walk.AkdSize != 0) WalkerExtraA7596C(walk.Akd, walk.AkdSize);       // 0xA75C88, 0xA75CB0 bne 0xA75DCC; the result is ignored
+        blockAlign = fmt.U16(0xC);                                              // 0xA75DD8 ldrh r8,[r7,#0xc] (the akd path reloads it)
+        uint dataSize = DataSize1C;                                             // 0xA75CB4
+        if (blockAlign == 0) throw new WwiseMissingBehaviourException("M6-003 A06: u16[fmt+0xC] == 0 divides by zero in the engine's __aeabi_uidiv (0xA75CC0); the libc behaviour is not in the inventory");
+        uint total = dataSize / blockAlign;                                     // 0xA75CBC..0xA75CC0
+        uint dataStart = HeaderSize20;                                          // 0xA75CC8
+        uint dataEnd = unchecked(dataStart + dataSize);                         // 0xA75CD0
+        TotalSamples14 = total;                                                 // 0xA75CD4
+        if (Word28 == 0 || LoopCount38 == 1)                                    // 0xA75CCC bne 0xA75D84; 0xA75D88..0xA75D8C beq 0xA75CDC
+        {
+            LoopStartByte54 = dataStart;                                        // 0xA75CE0
+            Word28 = unchecked(total - 1);                                      // 0xA75CDC, 0xA75CE4
+            LoopEndByte58 = dataEnd;                                            // 0xA75CE8
+        }
+        else
+        {
+            uint l0 = Word24, l1 = Word28;                                      // 0xA75D90, 0xA75CC4
+            uint endByte = unchecked(blockAlign * (l1 + 1) + dataStart);        // 0xA75D94..0xA75D98
+            uint startByte = unchecked(blockAlign * l0 + dataStart);            // 0xA75D9C
+            bool bad = dataEnd < endByte || dataEnd < startByte;                // 0xA75DA0..0xA75DB0
+            LoopEndByte58 = endByte;                                            // 0xA75DA8
+            if (l1 < l0) bad = true;                                            // 0xA75DB4..0xA75DB8
+            LoopStartByte54 = startByte;                                        // 0xA75DBC
+            if (bad) return 7;                                                  // 0xA75DC0..0xA75DC4 -> 0xA75C40
+        }
+        var h = new WwiseStreamHeuristics();
+        Stream3C!.GetHeuristics961664(h);                                       // 0xA75CEC..0xA75D00 vt+0x14
+        float throughput = (float)unchecked(rate * blockAlign) / BitConverter.Int32BitsToSingle(0x447A0000);   // 0xA75D14..0xA75D28 mul; vcvt.f32.u32; vdiv.f32 (1000.0f)
+        return HeuristicsAndMinimalBuffer(h, throughput, blockAlign);           // 0xA75D6C..0xA75D7C vt+0x1C(u16[fmt+0xC])
+    }
+
+    /// <summary>
+    /// A02 <c>0xA73D34(S, state)</c> (vt+0x30, the ADPCM class): the gate of the decode head (<see cref="WwiseStreamSourceBase.DecodeGateShared"/>); with no bytes left <c>0xA74970</c> (not 0x2D is the code and returned). A pool block of
+    /// <c>bytesPerFrame * u16[0x1052440]</c> bytes is the output (null: code 2); a pending partial block (<c>u16[S+0x6C]</c> bytes in <c>[S+0x68]</c>) is completed from the new buffer and decoded as one block per channel; then
+    /// <c>nb = min(maxFrames / 64, left / blockAlign)</c> blocks per channel through the decoder <c>0xA7A194(src + 36 * channel, dst + 2 * channel bytes, nb, blockAlign, channels)</c>; the bytes remaining below one block are copied to the carry
+    /// buffer (<c>channels * 36</c> bytes, allocated on first need; null: code 2) and the buffer is consumed (bit 1 of <c>[S+0x5E]</c> cleared, else ReleaseBuffer); the frames are <c>(64 * bpf * nb + advanced - base) / bpf</c> and
+    /// <c>0xA73490(S, [S+0x64], frames, [pbi+0x158], [pbi+0x15C], state)</c> publishes them.
+    /// </summary>
+    public void DecodeA73D34(WwiseDecodeState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        if (Class != WwisePcmAdpcmClass.AdpcmStream)
+            throw new WwiseMissingBehaviourException("M6-003 A07: the PCM decode 0xA75E34 is outline only in C36 (not built); the class 0x103D8C8 has no decode read");
+        var gate = DecodeGateShared();                                          // 0xA73D3C..0xA73DA4, 0xA73F90..0xA7408C
+        if (!gate.Decode) { state.Code28 = gate.Result; return; }               // 0xA7408C str r5,[sb,#0x28]
+        if (Left44 == 0)                                                        // 0xA73DA8..0xA73DB0
+        {
+            int r = GetBufferWrapperA74970();                                   // 0xA74098 bl 0xA74970
+            if (r != 0x2D) { state.Code28 = r; return; }                        // 0xA740A0..0xA740A4
+        }
+        var pbi = Pbi;
+        int bpf = ((pbi.Byte160 | (pbi.Byte161 << 8)) >> 6) & 0x3FF;            // 0xA73DD0..0xA73DD8 ldrh; ubfx r8,r8,#6,#0xa
+        int channels = (byte)pbi.Word15C;                                       // 0xA73DE0 ldrb r5,[fp,#0x15c]
+        int maxFrames = WwiseRuntimeSettings.SamplesPerFrame & 0xFFFF;          // 0xA73DE4 ldrh r1,[r6]: u16[0x1052440]
+        if (!Manager.TryAlloc())                                                // 0xA73E04 bl 0xA7A894(pool, bpf * maxFrames, 16)
+        {
+            Output64 = null;                                                    // 0xA73E10 str r0,[r4,#0x64]
+            state.Code28 = 2;                                                   // 0xA74184..0xA74188
+            return;
+        }
+        var outBlock = new short[bpf * maxFrames / 2];
+        Output64 = outBlock;                                                    // 0xA73E10
+        int outPos = 0;                                                         // sl, as a byte offset from the block start
+        uint blockAlign = BlockAlign60;                                         // r3
+        int framesMax = maxFrames;                                              // [sp+0xc]
+        if (PartialBytes6C != 0)                                                // 0xA73E18..0xA73E2C bne 0xA740B4
+        {
+            int have = PartialBytes6C;                                          // 0xA740B4 r3
+            int rest = (int)blockAlign - have;                                  // 0xA740B8..0xA740C4
+            Array.Copy(Data40.Array!, Data40.Index, Partial68!, have, rest);    // 0xA740C8 memcpy([S+0x68] + have, [S+0x40], blockAlign - have)
+            for (int i = 0; i < channels; i++)                                  // 0xA740E0..0xA74108
+                WwiseAdpcm.DecodeBlocksA7A194(Partial68.AsSpan(36 * i), outBlock.AsSpan(outPos / 2 + i), 1, (int)blockAlign, channels);   // 0xA74100 bl 0xA7A194(src + 0x24 * i, dst + 2 * i, 1, blockAlign, channels)
+            outPos += 64 * bpf;                                                 // 0xA74128 add sl,sl,r2 ([sp+0x10] = 64 * bpf)
+            framesMax = unchecked((ushort)(framesMax - 0x40));                  // 0xA74118..0xA74134 sub r6,r2,#0x40; uxth
+            Data40 = Data40.Add(rest);                                          // 0xA74140..0xA74148
+            Left44 = unchecked(Left44 - (uint)rest);                            // 0xA74144..0xA74150
+            FileOffset48 = unchecked(FileOffset48 + (uint)rest);                // 0xA7414C..0xA74158
+            PartialBytes6C = 0;                                                 // 0xA7415C
+        }
+        if (blockAlign == 0) throw new WwiseMissingBehaviourException("M6-003 A02: the block alignment is 0: the engine divides by it in __aeabi_uidiv (0xA73E4C); the libc behaviour is not in the inventory");
+        uint availBlocks = Left44 / blockAlign;                                 // 0xA73E3C..0xA73E4C
+        uint nb = Math.Min((uint)(framesMax >> 6), availBlocks);                // 0xA73E58..0xA73E64 lsr r6,r3,#6; cmp; movhs
+        for (int i = 0; i < channels; i++)                                      // 0xA73E68..0xA73EAC
+        {
+            var src = Data40.Array!.AsSpan(Data40.Index + 36 * i);
+            WwiseAdpcm.DecodeBlocksA7A194(src, outBlock.AsSpan(outPos / 2 + i), (int)nb, (int)blockAlign, channels);   // 0xA73EA0 bl 0xA7A194(src + 0x24 * i, dst + 2 * i, nb, blockAlign, channels)
+        }
+        uint frames = unchecked((uint)(64 * bpf * (int)nb + outPos) / (uint)bpf);   // 0xA73EC8..0xA73ED8 mla r0,[sp+0x10],r6,sl; rsb r0,sl0,r0; uidiv by bpf
+        uint consumed = nb * blockAlign;                                        // 0xA73EE4 mul r8,r6,r3
+        FileOffset48 = unchecked(FileOffset48 + consumed);                      // 0xA73EF0, 0xA73EFC
+        uint left = unchecked(Left44 - consumed);                               // 0xA73EEC
+        Left44 = left;                                                          // 0xA73F00
+        Data40 = Data40.Add((int)consumed);                                     // 0xA73EF8, 0xA73F04
+        frames &= 0xFFFF;                                                       // 0xA73F08 uxth r6,r0
+        if (left < blockAlign)                                                  // 0xA73EF4 cmp r2,r3; 0xA73F0C bhs 0xA73F64
+        {
+            if (Partial68 is null)                                              // 0xA73F10..0xA73F18 beq 0xA74190
+            {
+                if (!Manager.TryAlloc())                                        // 0xA741A0 bl 0xA7A7F4(pool, channels * 36)
+                {
+                    Partial68 = null;                                           // 0xA741A8 str r0,[r4,#0x68]
+                    state.Code28 = 2;                                           // 0xA74184..0xA74188
+                    return;
+                }
+                Partial68 = new byte[channels * 36];
+            }
+            PartialBytes6C = unchecked((ushort)left);                           // 0xA73F1C strh r2,[r4,#0x6c]
+            if (left != 0) Array.Copy(Data40.Array!, Data40.Index, Partial68, 0, (ushort)left);   // 0xA73F24 memcpy([S+0x68], [S+0x40], u16 left)
+            uint remaining = Left44;                                            // 0xA73F2C
+            Data40 = Data40.Add((int)remaining);                                // 0xA73F40..0xA73F4C
+            FileOffset48 = unchecked(FileOffset48 + remaining);                 // 0xA73F48, 0xA73F50
+            Left44 = 0;                                                         // 0xA73F44
+            if ((Bits5E & 2) != 0) Bits5E = (byte)(Bits5E & ~2);                // 0xA73F38, 0xA73F54, 0xA73F58..0xA73F60
+            else Stream3C!.ReleaseBuffer964D64();                               // 0xA7416C..0xA74178 vt+0x44
+        }
+        WwiseSourceOutput.HandoffA73490(this, Output64, frames, pbi.SourceFormat158, pbi.Word15C, state);   // 0xA73F64..0xA73F84 bl 0xA73490(S, [S+0x64], frames, [pbi+0x158], [pbi+0x15C], state)
+    }
 
     /// <summary>
     /// F7 <c>0xA7538C(S)</c>: the buffer settings are <c>{0, 0x800, 0}</c> (<c>0xA753A0..0xA753B0</c>). Bit 2 of <c>[S+0x5E]</c> clear: with no stream (<c>[S+0x3C] == 0</c>) <c>0xA74564(S, &amp;settings, 0)</c> (not 1 is
@@ -761,3 +1077,8 @@ public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
         return result;
     }
 }
+
+/// <summary>
+/// The outcome of the gate at the head of a decode slot: <see cref="Result"/> is the code stored in <c>[state+0x28]</c> when <see cref="Decode"/> is false; <see cref="Decode"/> true means the decode of this call runs.
+/// </summary>
+public readonly record struct WwiseDecodeGate(bool Decode, int Result);

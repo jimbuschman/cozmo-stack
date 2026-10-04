@@ -110,6 +110,74 @@ class World:
         em.uc.reg_write(UC_ARM_REG_R3, (r >> 32) & 0xFFFFFFFF)
         return q & 0xFFFFFFFF
 
+    def _hook_libc_thunks(self):
+        """Every PLT thunk of the libc / AEABI helpers the real decode code calls (memcpy / memset / memclr families and the integer divides), by name from the Ghidra index (as emu_vorbis.py does)."""
+        import os
+        index = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'decomp', 'libcozmoEngine', 'index.tsv')
+        e = self.e
+        s32 = lambda v: v - (1 << 32) if v & 0x80000000 else v
+
+        def memcpy(em):
+            if em.reg(2):
+                em.uc.mem_write(em.reg(0), bytes(em.uc.mem_read(em.reg(1), em.reg(2))))
+            return em.reg(0)
+
+        def memset(em):
+            if em.reg(2):
+                em.uc.mem_write(em.reg(0), bytes([em.reg(1) & 0xFF]) * em.reg(2))
+            return em.reg(0)
+
+        def aeabi_memset(em):                                   # (dest, n, c)
+            if em.reg(1):
+                em.uc.mem_write(em.reg(0), bytes([em.reg(2) & 0xFF]) * em.reg(1))
+            return None
+
+        def memclr(em):                                         # (dest, n)
+            if em.reg(1):
+                em.uc.mem_write(em.reg(0), bytes(em.reg(1)))
+            return None
+
+        def idiv(em):
+            a, b = s32(em.reg(0)), s32(em.reg(1))
+            return 0 if b == 0 else (abs(a) // abs(b) * (1 if (a < 0) == (b < 0) else -1)) & 0xFFFFFFFF
+
+        def idivmod(em):
+            a, b = s32(em.reg(0)), s32(em.reg(1))
+            if b == 0:
+                return 0
+            q = abs(a) // abs(b) * (1 if (a < 0) == (b < 0) else -1)
+            em.uc.reg_write(UC_ARM_REG_R1, (a - q * b) & 0xFFFFFFFF)
+            return q & 0xFFFFFFFF
+
+        table = {}
+        for n in ('memcpy', 'memmove', '__aeabi_memcpy', '__aeabi_memcpy4', '__aeabi_memcpy8', '__aeabi_memmove', '__aeabi_memmove4'):
+            table[n] = memcpy
+        table['memset'] = memset
+        for n in ('__aeabi_memset', '__aeabi_memset4', '__aeabi_memset8'):
+            table[n] = aeabi_memset
+        for n in ('__aeabi_memclr', '__aeabi_memclr4', '__aeabi_memclr8'):
+            table[n] = memclr
+        table['__aeabi_idiv'] = idiv
+        table['__aeabi_idivmod'] = idivmod
+        for line in open(index):
+            f = line.rstrip(chr(10)).split(chr(9))
+            if len(f) >= 5 and f[2] == 'THUNK' and f[4].startswith('<EXTERNAL>::') and f[4][12:] in table and int(f[0], 16) < 0x1000000:
+                e.hook(int(f[0], 16), table[f[4][12:]])
+
+    def arm_fail(self, n):
+        """Fail the n-th (1-based) pool allocation from now on (0xA7A7F4 or 0xA7A894)."""
+        self.fail_n = n
+        self.alloc_seen = 0
+
+    def _idiv(self, em):
+        a, b = em.reg(0), em.reg(1)
+        a = a - (1 << 32) if a & 0x80000000 else a
+        b = b - (1 << 32) if b & 0x80000000 else b
+        if b == 0:
+            return 0
+        q = abs(a) // abs(b) * (1 if (a < 0) == (b < 0) else -1)
+        return q & 0xFFFFFFFF
+
     def _callback_a059d8(self, em):
         info = em.reg(3)
         self.callbacks.append({'playing_id': em.reg(1), 'estimate': em.r32(info), 'flag': em.r32(info + 4)})
@@ -552,7 +620,7 @@ class SrcWorld(World):
     """A World with a PBI, a source block and a source object built by the engine's own constructor."""
 
     def __init__(self, wem, prefix_len, cls='vorbis', file_size=None, loop_count=1, flags_1bd=0x44, flags4=0, priority_bits=0x3F800000,
-                 src_bits0c=0x03, src_bits0d=0x02, plugin=0x00040001, name_ptr=0, source_id=99908739):
+                 src_bits0c=0x03, src_bits0d=0x02, plugin=0x00040001, name_ptr=0, source_id=99908739, real_decode=False, parse_setup=True):
         super().__init__(file_size=len(wem) if file_size is None else file_size)
         e = self.e
         self.content = wem
@@ -585,10 +653,51 @@ class SrcWorld(World):
             e.w32(self.pbi + 0x1E0, prefix_len)
         self.setups = []
         self.out_buf_calls = []
-        e.hook(0xAB2D74, self._codebook_cache)
-        e.hook(0xAB3264, self._out_buffers)
+        self.real_decode = real_decode
+        if real_decode:
+            # batch 5e: the engine's own setup cache 0xAB2D74, decoder-state allocation 0xAB3264, frame loop 0xAB7E40 and output hand-off 0xA73490 run (only the pool allocator and the divide stubs are the harness's);
+            # the setup parse inside the cache runs for real unless parse_setup is False (0xAB6380 / 0xAB63E0 then return 0: the cache logic is what the scenario is about)
+            self._hook_libc_thunks()
+            self.fail_n = 0
+            self.alloc_seen = 0
+            self.alloc_log = []
+
+            def maybe_fail():
+                if not self.fail_n:
+                    return False
+                self.alloc_seen += 1
+                if self.alloc_seen == self.fail_n:
+                    self.fail_n = 0
+                    return True
+                return False
+
+            def aligned(em):
+                self.alloc_log.append(('aligned', em.reg(1)))
+                return 0 if maybe_fail() else em.alloc(em.reg(1))
+
+            def plain(em):
+                self.alloc_log.append(('plain', em.reg(1)))
+                return 0 if maybe_fail() else em.alloc(em.reg(1))
+            e.hook(0xA7A894, aligned)
+            e.hook(0xA7A7F4, plain)
+            if not parse_setup:
+                e.hook(0xAB6380, lambda em: 0)
+                e.hook(0xAB63E0, lambda em: 0)
+            # log the setup cache's and the decoder state allocation's arguments without replacing them
+            from unicorn import UC_HOOK_CODE
+
+            def log_cache(uc, addr, size, _):
+                blk = e.reg(3)
+                ptr, sz, flag = e.r32(blk), e.r32(blk + 4), e.r8(blk + 8)
+                data = bytes(uc.mem_read(ptr, sz))
+                self.setups.append({'size': sz, 'flag': flag, 'crc': zlib.crc32(data), 'in_prefix': self.prefix_mem != 0 and self.prefix_mem <= ptr < self.prefix_end})
+            e.uc.hook_add(UC_HOOK_CODE, log_cache, begin=0xAB2D74, end=0xAB2D74)
+            e.uc.hook_add(UC_HOOK_CODE, lambda uc, a, s_, _: self.out_buf_calls.append(e.reg(1) & 0xFF), begin=0xAB3264, end=0xAB3264)
+        else:
+            e.hook(0xAB2D74, self._codebook_cache)
+            e.hook(0xAB3264, self._out_buffers)
         e.w32(CODEBOOK_RECORD, 0xC0DE)
-        ctor = 0xAB1B38 if cls == 'vorbis' else 0xA74244
+        ctor = {'vorbis': 0xAB1B38, 'inmem': 0xAB0930, 'pcm': 0xA76140}.get(cls, 0xA74244)
         e.call(ctor, self.so, self.pbi)
         self.start_fn = 0xAB22D4 if cls == 'vorbis' else 0xA7538C
 
@@ -707,22 +816,6 @@ SCENARIOS['vorbis'] = sc_vorbis
 
 # ---------------------------------------------------------------------- the PCM / ADPCM stream class (F7)
 
-def adpcm_hook(world, wem):
-    """vt+0x78 of the ADPCM class (0xA73ABC) is not adopted: both sides use the same stand-in, which stores the data offset, size and total samples."""
-    e = world.e
-    calls = []
-
-    def parse(em):
-        s, data = em.reg(0), em.reg(1)
-        calls.append({'left': em.r32(s + 0x44)})
-        em.w32(s + 0x20, 64)
-        em.w32(s + 0x1C, len(wem) - 64)
-        em.w32(s + 0x14, 20000)
-        return 1
-    e.hook(0xA73ABC, parse)
-    world.parse_calls = calls
-
-
 def sc_adpcm():
     wem = zip_entry('998061257.wem')
     for name, plen, kw in (
@@ -734,7 +827,6 @@ def sc_adpcm():
         ('start_offset_flag', 600, dict(flags_1bd=0xC4)),
     ):
         w = SrcWorld(wem, plen, cls='adpcm', plugin=0x00020001, source_id=998061257, src_bits0c=kw.pop('src_bits0c', 0x02), **kw)
-        adpcm_hook(w, wem)
         r1 = w.start()
         st1 = w.source_state()
         results = [r1]
@@ -743,10 +835,9 @@ def sc_adpcm():
             results.append(w.start())
             results.append(w.start())
             results.append(w.start())
-        out('adpcm_' + name, results=results, state_after_first=st1, state=w.source_state(), parse=w.parse_calls)
+        out('adpcm_' + name, results=results, state_after_first=st1, state=w.source_state())
     # the callback block and the bit-1 gate with a small buffer
     w = SrcWorld(wem, 0, cls='adpcm', plugin=0x00020001, source_id=998061257, src_bits0c=0x02, flags4=0x400000)
-    adpcm_hook(w, wem)
     r = [w.start()]
     w.io_open_and_deliver(0, 400)
     r += [w.start(), w.start()]
@@ -754,6 +845,44 @@ def sc_adpcm():
 
 
 SCENARIOS['adpcm'] = sc_adpcm
+
+
+def pcm_wem(tag=0xFFFE, channels=2, rate=22050, block_align=4, bits=16, data_bytes=4000, smpl=None, mask=0x3, extra_chunks=()):
+    """A hand-built PCM RIFF (no shipped bank has a PCM source): WAVE_FORMAT_EXTENSIBLE fmt (40 bytes: +0xC block align, +0xE bits, +0x14 the channel mask), optional smpl loop, data."""
+    fmt = struct.pack('<HHIIHHHHI', tag, channels, rate, rate * block_align, block_align, bits, 22, bits, mask) + bytes(16)
+    chunks = [(b'fmt ', fmt)]
+    if smpl:
+        chunks.append((b'smpl', struct.pack('<IIIIIIIII', 0, 0, 0, 60, 0, 0, 0, 1, 0) + struct.pack('<IIIIII', 0, 0, smpl[0], smpl[1], 0, 0)))
+    for c in extra_chunks:
+        chunks.append(c)
+    chunks.append((b'data', bytes((i * 3) & 0xFF for i in range(data_bytes))))
+    body = b'WAVE'
+    for tg, payload in chunks:
+        body += tg + struct.pack('<I', len(payload)) + payload + (b'\0' if len(payload) & 1 else b'')
+    return b'RIFF' + struct.pack('<I', len(body)) + body
+
+
+def sc_pcm():
+    """The PCM stream class (0xA76140; vt+0x78 = 0xA75BC4): the header parse and StartStream with a prefix that covers the whole hand-built file (C36.2 A06)."""
+    for name, wem, kw in (
+        ('basic', pcm_wem(), {}),
+        ('smpl_loop_three_passes', pcm_wem(smpl=(100, 899)), dict(loop_count=3)),
+        ('smpl_loop_infinite', pcm_wem(smpl=(100, 899)), dict(loop_count=0)),
+        ('smpl_loop_but_single_pass', pcm_wem(smpl=(100, 899)), dict(loop_count=1)),
+        ('no_smpl_three_passes', pcm_wem(), dict(loop_count=3)),
+        ('wrong_tag', pcm_wem(tag=2), {}),
+        ('loop_end_beyond_data', pcm_wem(smpl=(100, 5000)), dict(loop_count=3)),
+        ('loop_end_below_start', pcm_wem(smpl=(800, 700)), dict(loop_count=3)),
+        ('mono_8bit', pcm_wem(channels=1, block_align=1, bits=8, data_bytes=1001, mask=0x4), {}),
+        ('stereo_24bit_block_align_6', pcm_wem(block_align=6, bits=24, data_bytes=3000), {}),
+        ('block_align_1024', pcm_wem(block_align=1024, bits=16, data_bytes=8192), {}),
+    ):
+        w = SrcWorld(wem, len(wem), cls='pcm', plugin=0x00010001, source_id=998061257, src_bits0c=0x02, **kw)
+        r = w.start()
+        out('pcm_' + name, results=[r], state=w.source_state(), blob=wem.hex(), loop=kw.get('loop_count', 1))
+
+
+SCENARIOS['pcm'] = sc_pcm
 
 
 def sc_vorbis_gate():
@@ -866,74 +995,6 @@ def sc_create_args():
 
 
 SCENARIOS['create_args'] = sc_create_args
-
-
-def sc_vorbis_decode():
-    """The control flow of the decode body 0xAB1550 after its gate, with the packet decode 0xAB7E40 and the output hand-off 0xA73490 stood in (scripted statuses). Both sides use the same scripts."""
-    wem = vorbis_wem()
-    # (name, buffers delivered [(start, size)], decode script [(status, consumed, frames)], output code (None = leave), mutate)
-    scenarios = (
-        ('one_packet_ready', [(0, 4096)], [(0x2D, 0, 1024)], None, None),
-        ('three_packets_then_ready', [(0, 4096)], [(0x2B, 0, 0), (0x2E, 0, 0), (0x2D, 0, 256)], None, None),
-        ('decode_error', [(0, 4096)], [(2, 0, 0)], None, None),
-        ('decode_status_0x11', [(0, 4096)], [(0x11, 0, 64)], None, None),
-        ('decode_status_other', [(0, 4096)], [(0x2C, 0, 64)], None, None),
-        ('consumed_adjusts_the_pointer', [(0, 4096)], [(0x2D, 40, 512)], None, None),
-        ('output_no_more_data_with_consumed', [(0, 4096)], [(0x2D, 5, 128)], 0x2E, None),
-        ('output_no_more_data_no_consumed', [(0, 4096)], [(0x2D, 0, 128)], 0x2E, None),
-        ('packet_spans_the_end_of_the_buffer', [(0, 380)], [], None, None),
-        ('packet_spans_then_the_next_buffer_arrives', [(0, 380), (380, 4096)], [(0x2D, 0, 300)], None, 'second_call'),
-        ('end_reached', [(0, 4096)], [(0x2D, 0, 1)], None, 'end'),
-        ('size_prefix_split', [(0, 348), (348, 4096)], [(0x2D, 0, 77)], None, 'second_call'),
-    )
-    for name, buffers, script, out_code, mutate in scenarios:
-        w = SrcWorld(wem, 0, flags_1bd=0x04)
-        w.start()
-        s = w.e.r32(w.so + 0x3C) - 0x30
-        w.e.call(0x963890, s)
-        w.deliver(s, buffers[0][0], buffers[0][1])
-        w.start()                                    # the header, from the first buffer
-        decodes, outputs = [], []
-        queue = list(script)
-
-        def decode_stub(em, w=w, queue=queue, decodes=decodes):
-            so = w.so
-            cc = em.reg(1)
-            ec = em.r32(so + 0xEC)
-            decodes.append({'cc': cc, 'b0': em.r32(so + 0xB0), 'b4': em.r8(so + 0xB4), 'left': em.r32(so + 0x44), 'owned': em.r8(so + 0xF8), 'psize': em.r16(ec) if ec else 0})
-            status, consumed, frames = queue.pop(0) if queue else (0x2E, 0, 0)
-            em.w32(so + 0x64, status)
-            em.w32(so + 0x6C, consumed)
-            em.w16(so + 0x60, frames)
-            em.w32(so + 0xA4, 0xA400)
-            return None
-
-        def output_stub(em, w=w, outputs=outputs, out_code=out_code):
-            st = em.r32(em.reg_sp() + 4)
-            outputs.append({'frames': em.reg(2), 'rate': em.reg(3), 'a8': em.r32(em.reg_sp()), 'code_before': em.r32(st + 0x28)})
-            if out_code is not None:
-                em.w32(st + 0x28, out_code)
-            return None
-        w.e.hook(0xAB7E40, decode_stub)
-        w.e.hook(0xA73490, output_stub)
-        if mutate == 'end':
-            w.e.w8(w.so + 0x5E, w.e.r8(w.so + 0x5E) | 1)
-            w.e.w32(w.so + 0x44, 0)
-        state = w.alloc_zero(0x40)
-        w.e.w32(state + 0x28, 0xABCD)
-        w.e.w32(w.so + 0x64, 0x2D)
-        w.e.call(0xAB1550, w.so, state)
-        code1 = w.e.r32(state + 0x28)
-        res = {'code': code1}
-        if mutate == 'second_call':
-            w.deliver(s, buffers[1][0], buffers[1][1])
-            w.e.w32(state + 0x28, 0xABCD)
-            w.e.call(0xAB1550, w.so, state)
-            res['code2'] = w.e.r32(state + 0x28)
-        out('vorbis_decode_' + name, decodes=decodes, outputs=outputs, state=w.source_state(), **res)
-
-
-SCENARIOS['vorbis_decode'] = sc_vorbis_decode
 
 
 def sc_inflight():

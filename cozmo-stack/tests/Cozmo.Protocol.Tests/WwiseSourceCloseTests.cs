@@ -59,21 +59,38 @@ public class WwiseSourceCloseTests
             var callLog = new List<string>();
             WwisePoolFree sink = (f, p) => log.Add(Token(f, p));
             string final;
-            if (kind is "pcm_mem" or "adpcm_mem" or "vorbis_mem")
+            if (kind is "pcm_mem" or "adpcm_mem")
             {
-                var fields0 = new WwiseInMemorySourceFields(kind switch { "pcm_mem" => WwiseInMemoryKind.Pcm, "adpcm_mem" => WwiseInMemoryKind.Adpcm, _ => WwiseInMemoryKind.Vorbis })
+                var fields0 = new WwiseInMemorySourceFields(kind switch { "pcm_mem" => WwiseInMemoryKind.Pcm, _ => WwiseInMemoryKind.Adpcm })
                 {
-                    Ptr44 = st.P44, Ptr80 = st.P80, Word3C = 0x3C3C, PtrC0 = st.PC0, DspTeardownAB3428 = () => callLog.Add("dsp"),
+                    Ptr44 = st.P44,
                 };
                 FillContainer(fields0.Container2C, st);
                 fields0.Close2C(sink);
-                final = Final(fields0.Container2C, fields0.Ptr44, 0, 0, fields0.Ptr80, 0, fields0.PtrC0, 0, 0, 0, 0, 0, false);
-                Assert.True(fields0.Word3C == (st.P80 != 0 ? 0u : 0x3C3Cu), $"{name}: [src+0x3C] is cleared with [src+0x80] only");
+                final = Final(fields0.Container2C, fields0.Ptr44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false);
+            }
+            else if (kind == "vorbis_mem")
+            {
+                // The in-memory Vorbis class is WwiseVorbisInMemorySource now (its state is its own, no longer host input): the DSP teardown 0xAB3428 is the real one, observed through the decoder state.
+                var pbi0 = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new WwiseSourceDescriptor(0, 1, 5, 0, 0), new byte[0x44], null, continuous: false);
+                var ctx = new WwiseVorbisEngineContext();
+                var m = new WwiseVorbisInMemorySource(pbi0, ctx, () => true, sink);
+                m.Frame.Dsp.ArraysAllocated = true;
+                m.Frame.Dsp.OverlapAllocated = true;
+                ctx.Shared.Users = 1;
+                m.OutputBlock80 = st.P80 != 0 ? new float[1] : null;
+                m.Frame.Frames = 0x3C3C;
+                m.SeekCopyC0 = st.PC0 != 0 ? new byte[4] : null;
+                FillContainer(m.Container2C, st);
+                m.Close2CAB0FC0();
+                if (!m.Frame.Dsp.ArraysAllocated && ctx.Shared.Users == 0) callLog.Add("dsp");
+                final = Final(m.Container2C, 0, 0, 0, m.OutputBlock80 is not null ? st.P80 : 0, 0, m.SeekCopyC0 is not null ? st.PC0 : 0, 0, 0, 0, 0, 0, false);
+                Assert.True(m.Frame.Frames == (st.P80 != 0 ? 0u : 0x3C3Cu), $"{name}: [src+0x3C] is cleared with [src+0x80] only");
             }
             else
             {
                 var rig = new StreamRig(fileSize: 4096, content: new byte[4096]);
-                var seams = new WwiseStreamSourceSeams { PoolFree = sink, DspTeardownAB3428 = _ => callLog.Add("dsp") };
+                var seams = new WwiseStreamSourceSeams { PoolFree = sink };
                 var pbi = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new WwiseSourceDescriptor(0, 1, 5, 0, 0), new byte[0x44], null, continuous: false);
                 var block = new WwiseSourceBlock150 { SourceId04 = 5 };
                 WwiseAutoStream? stream = st.Stream ? rig.Create() : null;
@@ -81,13 +98,17 @@ public class WwiseSourceCloseTests
                 {
                     var v = new WwiseVorbisStreamSource(rig.Manager, pbi, block, seams) { Stream3C = stream };
                     FillContainer(v.Container2C, st);
-                    v.OutputA4 = st.PA4 != 0 ? new object() : null;
+                    v.OutputA4 = st.PA4 != 0 ? new float[1] : null;
+                    v.Frame.Dsp.ArraysAllocated = true;
+                    v.Frame.Dsp.OverlapAllocated = true;
+                    seams.Vorbis.Shared.Users = 1;
                     v.SeekTable = st.PE4 != 0 ? new byte[4] : null;
                     v.SetupPacket = st.PEC != 0 ? new WwiseBytePtr(new byte[8], 0) : default;
                     v.SetupOwned = st.BF8 != 0;
                     v.SetupPayloadCollected = st.WF0;
                     v.SetupPrefixCollected = st.WF4;
                     v.Close2CAB2958();
+                    if (!v.Frame.Dsp.ArraysAllocated && seams.Vorbis.Shared.Users == 0) callLog.Add("dsp");     // 0xAB2964 bl 0xAB3428: the real teardown, observed through the decoder state
                     final = Final(v.Container2C, 0, 0, 0, 0, v.OutputA4 is not null ? st.PA4 : 0, 0, v.SeekTable is not null ? st.PE4 : 0, v.SetupPacket.IsNull ? 0u : st.PEC,
                         v.SetupPayloadCollected, v.SetupPrefixCollected, v.SetupOwned ? 1u : 0u, v.Stream3C is not null);
                     if (stream is not null) Assert.True((stream.Flags2D & 8) != 0, $"{name}: [S+0x3C]->vt+8 (Destroy 0x9654E4) ran");
@@ -98,11 +119,12 @@ public class WwiseSourceCloseTests
                     var a = new WwisePcmAdpcmStreamSource(rig.Manager, pbi, block, seams)
                     {
                         Stream3C = stream, Class = kind switch { "adpcm_str" => WwisePcmAdpcmClass.AdpcmStream, "pcm_str" => WwisePcmAdpcmClass.PcmStream, _ => WwisePcmAdpcmClass.Class103D8C8 },
-                        BufferPtr60 = st.P60, BufferPtr64 = st.P64,
+                        BufferPtr60 = kind == "adpcm_str" ? 0 : st.P60, BufferPtr64 = kind == "adpcm_str" ? 0 : st.P64,
+                        Output64 = kind == "adpcm_str" && st.P64 != 0 ? new short[2] : null,
                     };
                     FillContainer(a.Container2C, st);
                     a.Close2C();
-                    final = Final(a.Container2C, 0, a.BufferPtr60, a.BufferPtr64, 0, 0, 0, 0, 0, 0, 0, 0, a.Stream3C is not null);
+                    final = Final(a.Container2C, 0, a.BufferPtr60, kind == "adpcm_str" ? (a.Output64 is not null ? st.P64 : 0) : a.BufferPtr64, 0, 0, 0, 0, 0, 0, 0, 0, a.Stream3C is not null);
                     if (stream is not null) Assert.True((stream.Flags2D & 8) != 0, $"{name}: [S+0x3C]->vt+8 (Destroy 0x9654E4) ran");
                     if (stream is not null) callLog.Add("stream_vt8");
                 }
@@ -141,10 +163,10 @@ public class WwiseSourceCloseTests
     {
         var rig = new StreamRig(fileSize: 100, content: new byte[100]);
         var pbi = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new WwiseSourceDescriptor(0, 1, 5, 0, 0), new byte[0x44], null, continuous: false);
-        // 0xAB3428 is not adopted: both Vorbis closes call it first.
+        // The base destructors 0xA75A0C / 0xA73304 are named but unread (V22): the destructors are a visible stop without the seam.
         var vorbis = new WwiseVorbisStreamSource(rig.Manager, pbi, new WwiseSourceBlock150(), new WwiseStreamSourceSeams());
-        Assert.Throws<WwiseMissingBehaviourException>(() => vorbis.Close2CAB2958());
-        Assert.Throws<WwiseMissingBehaviourException>(() => new WwiseInMemorySourceFields(WwiseInMemoryKind.Vorbis).Close2C(null));
+        Assert.Throws<WwiseMissingBehaviourException>(() => vorbis.DestroyAB11BC());
+        Assert.Throws<WwiseMissingBehaviourException>(() => new WwiseVorbisInMemorySource(pbi, new WwiseVorbisEngineContext(), () => true).DestroyAB02E0());
         // The PCM / ADPCM stream object's class decides its close.
         var unnamed = new WwisePcmAdpcmStreamSource(rig.Manager, pbi, new WwiseSourceBlock150(), new WwiseStreamSourceSeams());
         Assert.Throws<WwiseMissingBehaviourException>(() => unnamed.Close2C());

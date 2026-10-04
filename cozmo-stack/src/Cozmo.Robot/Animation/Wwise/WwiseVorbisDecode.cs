@@ -466,15 +466,15 @@ public static partial class WwiseVorbisNative
     /// </summary>
     internal sealed class DecoderState
     {
-        public required WwiseVorbisSetup Setup { get; init; }
-        public required int Channels { get; init; }
-        public required int Skip { get; set; }
-        public required int Trim { get; init; }
+        public WwiseVorbisSetup Setup { get; set; } = null!;
+        public int Channels { get; set; }
+        public int Skip { get; set; }
+        public int Trim { get; set; }
         /// <summary>dsp+0x14[c], the internal output buffer. Native size bs1/2 floats; over-allocated to bs1
         /// so the built IMDCT's n-float convention is satisfied (memory sizing only).</summary>
-        public float[][] Work { get; init; } = Array.Empty<float[]>();
+        public float[][] Work { get; set; } = Array.Empty<float[]>();
         /// <summary>dsp+0x18[c], the overlap buffer. Native size block_size/4 floats.</summary>
-        public float[][] Overlap { get; init; } = Array.Empty<float[]>();
+        public float[][] Overlap { get; set; } = Array.Empty<float[]>();
         public int Start { get; set; } = -1;
         public int End { get; set; }
         public int PreviousFlag { get; set; }
@@ -482,6 +482,69 @@ public static partial class WwiseVorbisNative
         public int WindowSaved { get; set; }
         public bool LastFlag { get; set; }
         public int Consumed { get; set; }
+
+        // The engine-visible allocation state of the decoder (the stream integration, 0xAB3264 / 0xAB3428 / 0xAB7E40; B-M6b-4 batch 5e).
+        /// <summary><c>[D+0x14] != 0</c> (and <c>[D+0x18]</c>): the two pointer arrays are allocated (<c>0xAB3264</c> stores them, <c>0xAB3428</c> clears them).</summary>
+        public bool ArraysAllocated { get; set; }
+        /// <summary><c>[[D+0x18]] != 0</c>: the overlap block is allocated.</summary>
+        public bool OverlapAllocated { get; set; }
+        /// <summary><c>[[D+0x14]] != 0</c>: the work pointers are assigned (<c>0xAB3780</c> assigns them from the shared block at its start; <c>0xAB3264</c> zeroes the first one).</summary>
+        public bool WorkAssigned { get; set; }
+
+        /// <summary>
+        /// The process-wide record whose work buffer holds this state's per-channel work slices (<c>work[ch] = [R+8] + ch * slice</c>, <c>0xAB37A8..0xAB37E0</c>); null for the offline decode, which keeps private
+        /// <see cref="Work"/> arrays. When set, <see cref="Work"/> is a window onto the shared buffer: it is loaded from the shared buffer at every entry that reads it and stored back after the one that writes it.
+        /// </summary>
+        public WwiseVorbisSharedWork? SharedWork { get; set; }
+
+        /// <summary>The shared buffer the work pointers were last assigned from (<c>0xAB3780</c> assigns them every packet; nothing else moves them): a pointer into a buffer the record has since replaced is a pointer into freed memory.</summary>
+        public float[]? WorkBuffer { get; set; }
+    }
+
+    /// <summary>The per-channel slice of the shared work buffer in floats: <c>(((([setup+4] &gt;&gt; 1) &lt;&lt; 2) * channels + 0xF) &amp; ~0xF) / channels</c> bytes (<c>0xAB3794..0xAB37BC</c>, the divide <c>0x4B3E70</c>), divided by 4.</summary>
+    internal static int WorkSliceFloats(DecoderState dsp)
+    {
+        int ch = dsp.Channels;
+        int bytes = ((((dsp.Setup.BlockSize1 >> 1) << 2) * ch + 0xF) & ~0xF) / ch;
+        return bytes / 4;
+    }
+
+    /// <summary>
+    /// <c>work[ch]</c> from the shared buffer (the engine reads the shared memory in place; another decoder's packet may have written it since): the first slice floats of each channel's array come from
+    /// <c>[R+8] + ch * slice</c>. A no-op for the offline decode.
+    /// </summary>
+    internal static void LoadSharedWork(DecoderState dsp, bool assignPointers = false)
+    {
+        var mem = dsp.SharedWork?.Mem;
+        if (assignPointers) dsp.WorkBuffer = mem;                          // 0xAB37A8..0xAB37E0: the pointers are (re)assigned from [R+8]
+        else if (dsp.SharedWork is not null && !ReferenceEquals(dsp.WorkBuffer, mem))
+            throw new WwiseMissingBehaviourException(
+                "MISSING: engine reads a freed shared work buffer (use-after-free) | 0xAB3978 / 0xAB3830 / 0xAB3520 through work pointers assigned before another decoder's 0xAB3264 reallocated the buffer (need > [R+4], 0xAB3324) | contents undefined");
+        if (mem is null) return;
+        int slice = WorkSliceFloats(dsp);
+        for (int c = 0; c < dsp.Channels; c++)
+        {
+            int at = c * slice;
+            int n = Math.Min(slice, Math.Min(Math.Max(mem.Length - at, 0), dsp.Work[c].Length));
+            if (n > 0) Array.Copy(mem, at, dsp.Work[c], 0, n);
+        }
+    }
+
+    /// <summary>
+    /// The packet inverse wrote <c>work[ch]</c> in the shared buffer (<c>0xAB6B14</c>): only the first <paramref name="floats"/> (the current block's <c>n / 2</c>) floats of each channel's array go back to
+    /// <c>[R+8] + ch * slice</c>; what lies beyond them is not the engine's to write (it stays whatever another decoder left there: the engine oracle's interleave scenarios).
+    /// </summary>
+    internal static void StoreSharedWork(DecoderState dsp, int floats)
+    {
+        var mem = dsp.SharedWork?.Mem;
+        if (mem is null) return;
+        int slice = WorkSliceFloats(dsp);
+        for (int c = 0; c < dsp.Channels; c++)
+        {
+            int at = c * slice;
+            int n = Math.Min(floats, Math.Min(Math.Max(mem.Length - at, 0), dsp.Work[c].Length));
+            if (n > 0) Array.Copy(dsp.Work[c], 0, mem, at, n);
+        }
     }
 
     /// <summary>Creates the decoder state for one media (P9: the stride always uses bs1).</summary>
@@ -511,6 +574,7 @@ public static partial class WwiseVorbisNative
     /// </summary>
     internal static void PacketEntry(DecoderState dsp, ReadOnlyMemory<byte> body, bool endOfFile)
     {
+        LoadSharedWork(dsp, assignPointers: true);                         // 0xAB37A8..0xAB37E0: work[ch] = [R+8] + ch * slice (the shared memory, as the other decoders left it)
         var reader = new BitReader(body);
         int modeNumber = (int)reader.Read(ModeBits);                       // P11: hard-coded 1 bit (V6)
         if (modeNumber >= dsp.Setup.Modes.Length)
@@ -535,20 +599,21 @@ public static partial class WwiseVorbisNative
             dsp.WindowSaved = 1;
         }
 
-        ApplySkipAndTrim(dsp, newBlockSize, oldBlockSize, endOfFile);      // P14
+        if (ApplySkipAndTrim(dsp, newBlockSize, oldBlockSize, endOfFile)) return;   // P14; a dropped packet returns from 0xAB3780 itself (0xAB3958 / 0xAB3970 pop {..pc}): no inverse 0xAB6B14, the shared buffer untouched, [D+0x30] left as it is
 
         PacketInverse(dsp, dsp.Setup.Mappings[mode.Mapping], reader);      // P15 tail call
+        StoreSharedWork(dsp, dsp.Setup.BlockSize(dsp.CurrentFlag) / 2);    // the inverse wrote n / 2 floats of each work[ch] in the shared buffer
         dsp.WindowSaved = 0;                                               // P23
     }
 
-    /// <summary>The start-skip/end-trim state machine (P14, 0x00AB3878..0x00AB3970).</summary>
-    private static void ApplySkipAndTrim(DecoderState dsp, int newBlockSize, int oldBlockSize, bool endOfFile)
+    /// <summary>The start-skip/end-trim state machine (P14, 0x00AB3878..0x00AB3970); true when the packet is dropped (the entry returns).</summary>
+    private static bool ApplySkipAndTrim(DecoderState dsp, int newBlockSize, int oldBlockSize, bool endOfFile)
     {
         if (dsp.Start == -1)                                               // first packet
         {
             dsp.Start = 0;
             dsp.End = 0;
-            if (dsp.Skip >= dsp.Setup.BlockSize1 / 2) return;              // dropped
+            if (dsp.Skip >= dsp.Setup.BlockSize1 / 2) return true;              // dropped (0xAB3958)
         }
         else
         {
@@ -565,13 +630,14 @@ public static partial class WwiseVorbisNative
                 {
                     dsp.Start = dsp.End;
                     dsp.Skip -= dsp.End;
-                    if (dsp.Skip >= dsp.Setup.BlockSize1 / 2) return;      // dropped
+                    if (dsp.Skip >= dsp.Setup.BlockSize1 / 2) return true;      // dropped (0xAB3970)
                 }
             }
         }
 
         if (endOfFile)                                                     // C5 10b
             dsp.End = ApplyEndTrim(dsp.End, dsp.Start, dsp.Trim, endOfFile: true);
+        return false;
     }
 
     /// <summary>
@@ -667,6 +733,7 @@ public static partial class WwiseVorbisNative
     /// </summary>
     internal static void StreamReset(DecoderState dsp)
     {
+        LoadSharedWork(dsp);                                               // 0xAB3984..0xAB39B8 read work[ch] in the shared buffer, whoever wrote it last
         int n = dsp.Setup.BlockSize(dsp.CurrentFlag);                      // R2: setup[dsp+0x28]
         int aligned = (n + 3) & ~3;                                        // R3
         int off = aligned / 4, len = aligned / 4;
@@ -811,6 +878,7 @@ public static partial class WwiseVorbisNative
     {
         int start = dsp.Start, end = dsp.End;
         if (start >= end) return Array.Empty<float>();
+        LoadSharedWork(dsp);                                               // the combine and the overlap save read work[ch] in the shared buffer
         int available = end - start;
         int frames = Math.Min(n, available);
         int bs0 = dsp.Setup.BlockSize0, bs1 = dsp.Setup.BlockSize1;

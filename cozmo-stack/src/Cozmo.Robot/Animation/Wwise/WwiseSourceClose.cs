@@ -30,8 +30,94 @@ public sealed class WwiseChunkContainer
     /// <summary><c>[c+4]</c>: the array's block (0 for the null pointer).</summary>
     public uint ArrayPtr { get; set; }
 
-    /// <summary>The word at <c>+8</c> of each element the array holds (0 for none).</summary>
+    /// <summary>The word at <c>+8</c> of each element the array holds (0 for none): the label pointer of a cue entry.</summary>
     public List<uint> ElementPtrs8 { get; } = new();
+
+    /// <summary>The first two words of each element (the cue entries <c>{dwName, dwPosition}</c> the walker <c>0x9CD340</c> stores; V15).</summary>
+    public List<WwiseCuePoint> Cues { get; } = new();
+
+    /// <summary>
+    /// <c>0x9D4AE0(c, n)</c>: <c>[c+0] = n</c>; <c>n * 12</c> bytes from the pool become the array (<c>[c+4]</c>); a null allocation clears <c>[c+0]</c> and returns 0x34, else 1. The array's words are not written here:
+    /// the walker stores the cue entries. The block's address is not modelled, so a non-null <c>[c+4]</c> is the synthetic handle 1.
+    /// </summary>
+    public int Alloc9D4AE0(uint n, Func<bool> tryAlloc)
+    {
+        ArgumentNullException.ThrowIfNull(tryAlloc);
+        Count = n;                                                                      // 0x9D4AF4 str r1,[r0]
+        if (!tryAlloc())                                                                // 0x9D4B00 bl 0xA7A7F4(pool, n * 12)
+        {
+            ArrayPtr = 0;                                                               // 0x9D4B08
+            Count = 0;                                                                  // 0x9D4B0C
+            Cues.Clear();
+            ElementPtrs8.Clear();
+            return 0x34;                                                                // 0x9D4B10
+        }
+        ArrayPtr = 1;
+        Cues.Clear();
+        ElementPtrs8.Clear();
+        for (uint i = 0; i < n; i++) { Cues.Add(default); ElementPtrs8.Add(0); }
+        return 1;                                                                       // 0x9D4B14
+    }
+
+    /// <summary>
+    /// <c>0x9D4DD0(c, pos)</c>: null (-1) with no entries; else the index of the entry with the smallest <c>abs(position - pos)</c> (the signed difference, compared unsigned), the first on a tie.
+    /// </summary>
+    public int Nearest9D4DD0(uint pos)
+    {
+        if (Count == 0) return -1;                                                      // 0x9D4DD4..0x9D4DDC
+        int best = 0;
+        uint bestDiff = Abs(Cues[0].Position, pos);                                     // 0x9D4DF0..0x9D4DFC
+        for (int i = 1; i < Count; i++)                                                 // 0x9D4E04..0x9D4E28
+        {
+            uint diff = Abs(Cues[i].Position, pos);
+            if (bestDiff > diff) { best = i; bestDiff = diff; }                         // 0x9D4E14 cmp ip,r3; 0x9D4E18 movhi
+        }
+        return best;
+
+        static uint Abs(uint position, uint p)
+        {
+            int d = unchecked((int)(position - p));                                     // rsb ip,r1,ip; cmp ip,#0; rsblt ip,ip,#0
+            return unchecked((uint)(d < 0 ? -d : d));
+        }
+    }
+
+    /// <summary>
+    /// <c>0x9D4C24(c, pbi, state, pos)</c>, the marker window: with no entry array, or bit 2 of <c>[pbi+4]</c> clear, nothing is written. Else <c>[state+0x14] = 0</c>, <c>u16[state+0x10] = 0</c>; with no entries it
+    /// returns; the entries with <c>pos &lt;= position &lt; pos + u16[state+0xE]</c> (unsigned) are counted into <c>u16[state+0x10]</c>; none returns; otherwise <c>count * 20</c> bytes from the pool (null: pointer and count
+    /// cleared) take <c>{pbi, position - pos, id, position, label}</c> per entry in range.
+    /// </summary>
+    internal void BuildWindow9D4C24(WwisePlayingInstance pbi, WwiseDecodeState state, uint pos, Func<bool> tryAlloc)
+    {
+        if (ArrayPtr == 0) return;                                                      // 0x9D4C24..0x9D4C2C
+        if ((pbi.Flags4 & 4) == 0) return;                                              // 0x9D4C34..0x9D4C3C
+        uint frames = state.ValidFrames;                                                // 0x9D4C48 ldrh r6,[r2,#0xe]
+        state.Markers = null;                                                           // 0x9D4C50
+        state.MarkerCount = 0;                                                          // 0x9D4C54
+        if (Count == 0) return;                                                         // 0x9D4C4C, 0x9D4C58
+        uint end = unchecked(pos + frames);                                             // 0x9D4C60
+        ushort count = 0;
+        for (int i = 0; i < Count; i++)                                                 // 0x9D4C68..0x9D4C8C
+        {
+            uint position = Cues[i].Position;
+            if (position >= pos && position < end) { count = unchecked((ushort)(count + 1)); state.MarkerCount = count; }   // 0x9D4C70..0x9D4C84
+        }
+        if (count == 0) return;                                                         // 0x9D4C90..0x9D4C94
+        if (!tryAlloc())                                                                // 0x9D4CBC bl 0xA7A7F4(pool, count * 20)
+        {
+            state.Markers = null;                                                       // 0x9D4CC8
+            state.MarkerCount = 0;                                                      // 0x9D4CCC
+            return;
+        }
+        var list = new List<WwiseMarkerWindowEntry>();
+        for (int i = 0; i < Count; i++)                                                 // 0x9D4CF0..0x9D4D24
+        {
+            var cue = Cues[i];
+            if (pos > cue.Position) continue;                                           // 0x9D4CF4..0x9D4CF8 cmp r5,ip; bhi 0x9D4D1C
+            if (cue.Position < unchecked(pos + frames))                                 // 0x9D4CFC..0x9D4D00 cmp ip,r6; ldmlo
+                list.Add(new WwiseMarkerWindowEntry(pbi, cue.Position - pos, cue.Id, cue.Position, ElementPtrs8[i]));   // 0x9D4D0C..0x9D4D18
+        }
+        state.Markers = list.ToArray();                                                 // 0x9D4CC8 str r0,[sl,#0x14]
+    }
 
     /// <summary>
     /// <c>0x9D4B20(c)</c>: a null array only clears the count (<c>0x9D4B28..0x9D4B2C</c> beq <c>0x9D4B9C</c>). Otherwise for each of <c>count</c> elements a non-null <c>[elem+8]</c> is freed and cleared (<c>0x9D4B54..0x9D4B84</c>; the count is
@@ -53,6 +139,9 @@ public sealed class WwiseChunkContainer
     }
 }
 
+/// <summary>A cue point entry of the marker container: the first two words of its 12-byte element.</summary>
+public readonly record struct WwiseCuePoint(uint Id, uint Position);
+
 /// <summary>Which in-memory source class a <see cref="WwiseInMemorySourceFields"/> belongs to.</summary>
 public enum WwiseInMemoryKind
 {
@@ -62,13 +151,11 @@ public enum WwiseInMemoryKind
     /// <summary>ADPCM in-memory, vptr <c>0x103D6C0</c>: <c>vt+0x2C = 0xA72AF4</c>.</summary>
     Adpcm,
 
-    /// <summary>Vorbis in-memory, vptr <c>0x103E0B8</c>: <c>vt+0x2C = 0xAB0FC0</c>.</summary>
-    Vorbis,
 }
 
 /// <summary>
-/// The fields the in-memory classes' closes read (S2, S3, S6). They are written by the in-memory StartStream bodies, which are unread (C33 batch 5b MISSING), so they are host input: the chunk container, <c>[src+0x44]</c> (ADPCM
-/// decode buffer), <c>[src+0x80]</c> with <c>[src+0x3C]</c> and <c>[src+0xC0]</c> (Vorbis), and the Vorbis DSP teardown seam.
+/// The fields the in-memory ADPCM and PCM classes' closes read (S2, S3). They are written by their StartStream bodies, which are unread, so they are host input: the chunk container and <c>[src+0x44]</c> (ADPCM decode
+/// buffer). The in-memory Vorbis class is <see cref="WwiseVorbisInMemorySource"/> (batch 5e), which owns its state.
 /// </summary>
 public sealed class WwiseInMemorySourceFields
 {
@@ -84,21 +171,8 @@ public sealed class WwiseInMemorySourceFields
     /// <summary><c>[src+0x44]</c> (ADPCM): a block the close frees (<c>0xA72520</c>).</summary>
     public uint Ptr44 { get; set; }
 
-    /// <summary><c>[src+0x80]</c> (Vorbis): a block freed with <c>[src+0x3C]</c> cleared (<c>0xAB032C</c>).</summary>
-    public uint Ptr80 { get; set; }
-
-    /// <summary><c>[src+0x3C]</c> (Vorbis).</summary>
-    public uint Word3C { get; set; }
-
-    /// <summary><c>[src+0xC0]</c> (Vorbis): a block <c>0xAB0FC0</c> frees.</summary>
-    public uint PtrC0 { get; set; }
-
-    /// <summary><c>0xAB3428(src+0x4C)</c> (<c>0xAB0FCC</c>): the Vorbis DSP teardown. Not adopted; required for the Vorbis class.</summary>
-    public Action? DspTeardownAB3428 { get; set; }
-
     /// <summary>
-    /// <c>vt+0x2C</c>: PCM <c>0xA73128</c> (the container, S2); ADPCM <c>0xA72AF4</c> (<c>vt+0xC = 0xA72520</c>: a non-null <c>[src+0x44]</c> is freed and cleared, then the container, S3); Vorbis <c>0xAB0FC0</c> (<c>0xAB3428(src+0x4C)</c>,
-    /// <c>vt+0xC = 0xAB032C</c>: a non-null <c>[src+0x80]</c> is freed with <c>[src+0x3C]</c> and <c>[src+0x80]</c> cleared, a non-null <c>[src+0xC0]</c> freed and cleared, then the container, S6).
+    /// <c>vt+0x2C</c>: PCM <c>0xA73128</c> (the container, S2); ADPCM <c>0xA72AF4</c> (<c>vt+0xC = 0xA72520</c>: a non-null <c>[src+0x44]</c> is freed and cleared, then the container, S3).
     /// </summary>
     public void Close2C(WwisePoolFree? free)
     {
@@ -110,13 +184,6 @@ public sealed class WwiseInMemorySourceFields
             case WwiseInMemoryKind.Adpcm:
                 if (Ptr44 != 0) { free?.Invoke("[src+0x44]", Ptr44); Ptr44 = 0; }      // 0xA72520..0xA72548 (vt+0xC)
                 Container2C.Release9D4B20(free);                                        // 0xA72B10 b 0xA73128
-                break;
-            case WwiseInMemoryKind.Vorbis:
-                (DspTeardownAB3428 ?? throw new WwiseMissingBehaviourException(
-                    "M6-025 S6: the Vorbis DSP teardown 0xAB3428 (0xAB0FCC) is not adopted; supply WwiseInMemorySourceFields.DspTeardownAB3428"))();
-                if (Ptr80 != 0) { free?.Invoke("[src+0x80]", Ptr80); Word3C = 0; Ptr80 = 0; }   // 0xAB032C..0xAB035C (vt+0xC)
-                if (PtrC0 != 0) { free?.Invoke("[src+0xC0]", PtrC0); PtrC0 = 0; }       // 0xAB0FE0..0xAB1000
-                Container2C.Release9D4B20(free);                                        // 0xAB100C b 0xA73128
                 break;
         }
     }

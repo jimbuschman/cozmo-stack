@@ -2,24 +2,26 @@
 namespace Cozmo.Robot.Animation.Wwise;
 
 /// <summary>
-/// The streamed Vorbis source class (vtable <c>0x103E138</c>, 0xFC bytes, constructor <c>0xAB1B38</c>): <c>vt+0x28 = 0xAB22D4</c> StartStream, <c>vt+0x30 = 0xAB1550</c> decode, <c>vt+0x78 = 0xAB12B4</c> header
-/// parse (C32.3: the earlier labels of 0x103E0B8 and 0x103E138 were reversed; <c>0x103E0B8</c> is the 0xD0 in-memory class with <c>vt+0x28 = 0xAB0B20</c>). Header state <c>[S+0x68]</c>: 0 before the header, 1
-/// reading the seek table (<c>[S+0xC4]</c> bytes into <c>[S+0xE4]</c>), 2 reading the setup packet (u16 length prefix; <c>[S+0xEC]</c> the packet, <c>[S+0xF0]</c> payload bytes collected, <c>[S+0xF4]</c> prefix
-/// bytes collected, byte <c>[S+0xF8]</c> the copy buffer is owned), 3 running. The constructor zeroes <c>S+0x60..0xEB</c>, so the state starts at 0 (C33.3). The decode body of vt+0x30
-/// control flow is ported (<see cref="DecodeAB1550"/>); the packet decode <c>0xAB7E40</c> and the output hand-off <c>0xA73490</c> it calls are not read, so they are the seams
-/// <c>WwiseStreamSourceSeams.PacketDecodeAB7E40</c> / <c>OutputHandoffA73490</c>; the voice adapter, which has neither, serves the samples from the offline decoder after the gate (a named seam,
-/// EQUIVALENT only as the decode of a whole media in one piece).
+/// The streamed Vorbis source class (vtable <c>0x103E138</c>, 0xFC bytes, constructor <c>0xAB1B38</c>): <c>vt+0x28 = 0xAB22D4</c> StartStream, <c>vt+0x30 = 0xAB1550</c> decode, <c>vt+0x74 = 0xAB1138</c> loop / end,
+/// <c>vt+0x78 = 0xAB12B4</c> header parse, <c>vt+0x7C = 0xAB1020</c> seek lookup (C32.3: the earlier labels of 0x103E0B8 and 0x103E138 were reversed; <c>0x103E0B8</c> is the 0xD0 in-memory class with <c>vt+0x28 = 0xAB0B20</c>).
+/// Header state <c>[S+0x68]</c>: 0 before the header, 1 reading the seek table (<c>[S+0xC4]</c> bytes into <c>[S+0xE4]</c>), 2 reading the setup packet (u16 length prefix; <c>[S+0xEC]</c> the packet,
+/// <c>[S+0xF0]</c> payload bytes collected, <c>[S+0xF4]</c> prefix bytes collected, byte <c>[S+0xF8]</c> the copy buffer is owned), 3 running; <c>0xAB7E40</c> writes 4 at the last packet. The constructor zeroes
+/// <c>S+0x60..0xEB</c>, so the state starts at 0 (C33.3). The frame block <c>F = S+0x60</c> (<see cref="Frame"/>) holds <c>[S+0x60]</c> frames, <c>[S+0x64]</c> status, <c>[S+0x68]</c> state, <c>[S+0x6C]</c> consumed,
+/// the decoder state <c>D = S+0x70</c>, <c>[S+0xA4]</c> the output block, <c>[S+0xA8]</c> the channel word, <c>[S+0xB0]</c> / <c>[S+0xB4]</c> the bytes available and the ready byte. The decode body of <c>vt+0x30</c>
+/// is <see cref="DecodeAB1550"/>: its packet decode is <c>0xAB7E40</c> (<see cref="WwiseVorbisFraming.FrameLoopAB7E40"/>) and its output hand-off <c>0xA73490</c> (<see cref="WwiseSourceOutput.HandoffA73490"/>).
 /// </summary>
 public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
 {
     private byte[]? _seekTable;                                                 // [S+0xE4]
 
+    /// <summary><c>F = S+0x60</c>: the frame block (<c>0xAB7E40</c>'s argument).</summary>
+    internal WwiseVorbisFrameBlock Frame { get; } = new();
+
     /// <summary><c>[S+0xE4]</c>: the seek-table block (null is the zero pointer). Internal setter: the header parse allocates it; the close tests place one.</summary>
     internal byte[]? SeekTable { get => _seekTable; set => _seekTable = value; }
-    private object? _codebook;                                                  // [S+0x80]
 
-    /// <summary><c>[S+0x68]</c>: the header state (0 to 3).</summary>
-    public int State68 { get; private set; }
+    /// <summary><c>[S+0x68]</c>: the header state (0 to 3; 4 after the last packet).</summary>
+    public int State68 { get => Frame.State; private set => Frame.State = value; }
 
     /// <summary><c>[S+0xE8]</c>: the seek-table bytes collected.</summary>
     public uint SeekCollected { get; private set; }
@@ -36,23 +38,23 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     /// <summary>Byte <c>[S+0xF8]</c>: the setup packet is an owned copy.</summary>
     public bool SetupOwned { get; internal set; }
 
-    /// <summary><c>[S+0x80]</c>: the handle of the setup / codebook cache record (<c>0xAB2D74</c>).</summary>
-    public object? CodebookHandle80 => _codebook;
+    /// <summary><c>[S+0x80]</c>: the setup the cache record holds (<c>0xAB2D74</c>'s result), null for the zero pointer.</summary>
+    public WwiseVorbisSetup? CodebookHandle80 => Frame.Dsp.Setup;
 
     /// <summary><c>[S+0xB8..0xDD]</c>: the 0x26-byte vorb block copied from the format chunk (<c>fmt+0x1C</c>).</summary>
     public byte[] VorbBlock { get; } = new byte[0x26];
 
     /// <summary><c>[S+0xA8]</c>: the channel word (<c>fmt+0x14</c>); its low byte is the channel count (<c>0xAB3264</c>'s argument).</summary>
-    public uint ChannelWordA8 { get; private set; }
+    public uint ChannelWordA8 { get => Frame.ChannelConfig; private set => Frame.ChannelConfig = value; }
 
     /// <summary><c>[S+0xE0]</c>: the sample rate (<c>fmt+4</c>).</summary>
     public uint SampleRateE0 { get; private set; }
 
-    /// <summary><c>[S+0x70+0x2C]</c> (u16): the first argument of <c>0xAB3244</c> (the leading skip in samples).</summary>
-    public ushort LoopStateSkip2C { get; private set; }
+    /// <summary><c>[S+0x70+0x2C]</c> (u16): the leading skip the decoder still has to drop (<c>0xAB3244</c> stores it; the packet entry consumes it).</summary>
+    public ushort LoopStateSkip2C => unchecked((ushort)Frame.Dsp.Skip);
 
-    /// <summary><c>[S+0x70+0x2E]</c> (u16): the second argument of <c>0xAB3244</c>.</summary>
-    public ushort LoopStateWord2E { get; private set; }
+    /// <summary><c>[S+0x70+0x2E]</c> (u16): the end trim (<c>0xAB3244</c>'s second argument).</summary>
+    public ushort LoopStateWord2E => unchecked((ushort)Frame.Dsp.Trim);
 
     /// <summary>True once <c>0xAB3244</c> has run (<c>[L+0x20] = [L+0x1C] = -1</c>).</summary>
     public bool LoopStateInitialised { get; private set; }
@@ -68,14 +70,8 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     /// </summary>
     public void Close2CAB2958()
     {
-        (Seams.DspTeardownAB3428 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 S7: the Vorbis DSP teardown 0xAB3428 (0xAB2964) is not adopted; supply WwiseStreamSourceSeams.DspTeardownAB3428"))(this);
-        if (OutputA4 is not null)                                               // 0xAB1100..0xAB112C (vt+0xC)
-        {
-            Seams.PoolFree?.Invoke("[S+0xA4]", 0);                              // 0xAB1120 bl 0xA7A914
-            FramesDecoded60 = 0;                                                // 0xAB1128 [S+0x60]
-            OutputA4 = null;                                                    // 0xAB112C
-        }
+        WwiseVorbisDsp.TeardownAB3428(Frame.Dsp, Seams.Vorbis.Shared);          // 0xAB2964 bl 0xAB3428(S+0x70)
+        ReleaseOutputAB1100();                                                  // 0xAB2970 vt+0xC
         if (_seekTable is not null)                                             // 0xAB2978..0xAB2998
         {
             Seams.PoolFree?.Invoke("[S+0xE4]", 0);                              // 0xAB2990 bl 0xA7A988
@@ -90,6 +86,33 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
             SetupPayloadCollected = 0;                                          // 0xAB29E4
         }
         ReleaseStreamA759D8();                                                  // 0xAB29EC b 0xA759D8
+    }
+
+    /// <summary>
+    /// <c>vt+0xC = 0xAB1100(S)</c> (V08): a non-null <c>[S+0xA4]</c> is freed (<c>0xA7A914</c>) and <c>[S+0x60]</c>, <c>[S+0xA4]</c> cleared. The pitch node calls it when it has consumed the whole delivered block.
+    /// </summary>
+    public void ReleaseOutputAB1100()
+    {
+        if (Frame.Output is null) return;                                       // 0xAB1100..0xAB1108
+        Seams.PoolFree?.Invoke("[S+0xA4]", 0);                                  // 0xAB1120 bl 0xA7A914
+        Frame.Frames = 0;                                                       // 0xAB1128 [S+0x60]
+        Frame.Output = null;                                                    // 0xAB112C [S+0xA4]
+    }
+
+    /// <summary>
+    /// <c>vt+0x0 / +0x4</c> (<c>0xAB11BC</c> destructor, <c>0xAB1234</c> deleting destructor; V22 with the verifier's correction): a non-null <c>[S+0xA4]</c> is freed and <c>[S+0x60]</c>, <c>[S+0xA4]</c> cleared; a non-null <c>[S+0x80]</c>
+    /// releases the setup record (<c>0xAB3120(*0x108E638, S+0x60)</c>); then the base destructor <c>0xA75A0C</c> (a seam: its body is not read).
+    /// </summary>
+    public void DestroyAB11BC()
+    {
+        ReleaseOutputAB1100();                                                  // 0xAB11C0..0xAB11F8 (the same free and clears)
+        if (Frame.Dsp.Setup is not null)                                        // 0xAB11FC..0xAB1204
+        {
+            Seams.Vorbis.SetupCache.ReleaseAB3120(BitConverter.ToUInt32(VorbBlock, 0x20));   // 0xAB1214 bl 0xAB3120(table, S+0x60): the key is [F+0x78] = [S+0xD8]
+            Frame.Dsp.Setup = null;
+        }
+        (Seams.BaseDestructor ?? throw new WwiseMissingBehaviourException(
+            "M6-025 V22: the base destructor 0xA75A0C is named by the verifier but its body is not read; supply WwiseStreamSourceSeams.BaseDestructor"))(this);   // 0xAB121C bl 0xA75A0C
     }
 
     private WwiseAutoStream St => Stream3C ?? throw new InvalidOperationException("M6-025: [S+0x3C] is null (the engine would dereference it)");
@@ -107,11 +130,7 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     /// </summary>
     protected override int ParseHeader(WwiseBytePtr data)
     {
-        var walker = Seams.WaveWalker9CD340 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 G6: 0x9CD340 (the WAVE-header walker) is not read by C33; supply WwiseStreamSourceSeams.WaveWalker9CD340");
-        var walk = walker(data, Left44);                                        // 0xAB1308 bl 0x9CD340(data, [S+0x44], ...)
-        Word2C = walk.Word2C; Word24 = walk.Word24; Word28 = walk.Word28;       // the callee's stores through S+0x2C, S+0x24, S+0x28
-        DataSize1C = walk.DataSize1C; HeaderSize20 = walk.DataOffset20;         // S+0x1C, S+0x20
+        var walk = RunWalker9CD340(data, Left44);                               // 0xAB1308 bl 0x9CD340(data, [S+0x44], ...): the callee's stores through S+0x2C, S+0x24, S+0x28, S+0x1C, S+0x20
         if (walk.Result != 1) return walk.Result;                               // 0xAB130C..0xAB1318
         var fmt = walk.Format;
         if (fmt.U16(0) != 0xFFFF) return 7;                                     // 0xAB1324..0xAB1330
@@ -128,9 +147,8 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
         pbi.Word15C = (uint)(b15C | (b15D << 8) | (b15E << 16) | (b15F << 24)); // 0xAB1378, 0xAB138C, 0xAB1390, 0xAB1398
         pbi.Byte161 = (byte)channels;                                           // 0xAB1388 strb lr,[r3,#0x161]
         pbi.Byte160 = 0x20;                                                     // 0xAB1394 strb r1,[r3,#0x160]
-        if (walk.Extra is not null)                                             // 0xAB139C bne 0xAB1500
-            (Seams.WalkerExtraA7596C ?? throw new WwiseMissingBehaviourException(
-                "M6-025 G6: 0xA7596C (the consumer of the walker's extra output) is not read; supply WwiseStreamSourceSeams.WalkerExtraA7596C"))(this, walk.Extra);
+        if (walk.AkdSize != 0)                                                  // 0xAB1380 cmp ip,#0; 0xAB139C bne 0xAB1500
+            WalkerExtraA7596C(walk.Akd, walk.AkdSize);                          // 0xAB1508 bl 0xA7596C(S, &akd): the result is ignored
         uint total = fmt.U32(0x18);                                             // 0xAB13A0 ldr sl,[r6,#0x18]
         TotalSamples14 = total;                                                 // 0xAB13B0 str sl,[r4,#0x14]
         for (int i = 0; i < VorbBlock.Length; i++) VorbBlock[i] = fmt[0x1C + i];   // 0xAB13A4..0xAB13E8 (0x26 bytes)
@@ -173,16 +191,72 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     /// <summary><c>0xAB3244(L, a, b)</c>: <c>u16[L+0x2C] = a</c>, <c>u16[L+0x2E] = b</c>, <c>[L+0x20] = [L+0x1C] = -1</c>; returns 0.</summary>
     private void SetLoopStateAB3244(ushort a, ushort b)
     {
-        LoopStateSkip2C = a; LoopStateWord2E = b; LoopStateInitialised = true;
+        WwiseVorbisDsp.ResetAB3244(Frame.Dsp, a, b);
+        LoopStateInitialised = true;
     }
 
     /// <summary>
-    /// <c>0xAB3264(L, channels)</c>: the output-buffer allocation (memory behaviour only: success or failure, -1 on failure); the allocation sequence is not adopted, so it is a seam
-    /// (<see cref="WwiseStreamSourceSeams.OutputBuffersFailAB3264"/>, never failing when unset).
+    /// <c>0xAB3264(S+0x70, byte[S+0xA8])</c> (<see cref="WwiseVorbisDsp.AllocateAB3264"/>): true when it returns non-zero (the caller returns 2).
     /// </summary>
-    private bool OutputBuffersFailAB3264() => Seams.OutputBuffersFailAB3264?.Invoke((byte)ChannelWordA8) == true;   // 0xAB3264(S+0x70, byte[S+0xA8])
+    private bool OutputBuffersFailAB3264()
+    {
+        if (Frame.Dsp.Setup is null) throw new InvalidOperationException("M6-025 G3: [S+0x80] is null at 0xAB3264 (the engine reads [[D+0x10]+4])");
+        Seams.Vorbis.OnDspAllocate?.Invoke((byte)ChannelWordA8);
+        return WwiseVorbisDsp.AllocateAB3264(Frame.Dsp, (byte)ChannelWordA8, Seams.Vorbis.Shared, Manager.TryAlloc) != 0;
+    }
 
     private ushort LoopStateWordForCount() => LoopCount38 != 1 ? BitConverter.ToUInt16(VorbBlock, 0xA) : BitConverter.ToUInt16(VorbBlock, 0x16);   // u16[S+0xC2] or u16[S+0xCE]
+
+    /// <summary>
+    /// <c>vt+0x74 = 0xAB1138(S, r1)</c> (V07): <c>r1 != 0</c> decrements <c>u16[S+0x38]</c> when it is above 1 and returns 0x11. <c>r1 == 0</c> decrements it when above 1, <c>u16[S+0x5C] -= 1</c>, resets the decoder
+    /// (<c>0xAB3244(S+0x70, u16[S+0xC0], loops == 1 ? u16[S+0xCE] : u16[S+0xC2])</c>, so the next packet is a priming packet), <c>[S+0x64] = 0x2D</c>, <c>[S+0x68] = 3</c>, and returns 0x2D.
+    /// </summary>
+    public override int LoopOrEnd74(int r1)
+    {
+        ushort loops = LoopCount38;                                             // 0xAB1140 / 0xAB119C
+        if (r1 != 0)                                                            // 0xAB1138..0xAB113C
+        {
+            if (loops > 1) LoopCount38 = unchecked((ushort)(loops - 1));        // 0xAB11A0..0xAB11A8
+            return 0x11;                                                        // 0xAB11AC
+        }
+        if (loops > 1) { loops = unchecked((ushort)(loops - 1)); LoopCount38 = loops; }   // 0xAB1148..0xAB115C
+        LoopCounter5C = unchecked((ushort)(LoopCounter5C - 1));                 // 0xAB1150, 0xAB1164, 0xAB116C
+        ushort skip = BitConverter.ToUInt16(VorbBlock, 0x8);                    // 0xAB1154 ldrh r1,[r0,#0xc0]
+        ushort trim = loops != 1 ? BitConverter.ToUInt16(VorbBlock, 0xA) : BitConverter.ToUInt16(VorbBlock, 0x16);   // 0xAB1170 [S+0xC2]; 0xAB11B4 [S+0xCE]
+        SetLoopStateAB3244(skip, trim);                                         // 0xAB1180
+        Frame.Status = 0x2D;                                                    // 0xAB118C
+        State68 = 3;                                                            // 0xAB1194
+        return 0x2D;                                                            // 0xAB1188
+    }
+
+    /// <summary>
+    /// <c>vt+0x7C = 0xAB1020(S, pos, &amp;samples, &amp;bytes)</c> (V19): <c>pos == 0</c> gives <c>(0, [S+0xC8] + [S+0x20])</c> and 1. Else with no entries (<c>[S+0xC4] / 4</c>) or no table <c>[S+0xE4]</c> it gives (0, 0) and 2. Else the
+    /// <c>{u16 samples, u16 bytes}</c> entries are walked until <c>pos &lt; cumulative samples</c>: the result is the samples before that entry and <c>bytes before + [S+0xC4] + [S+0x20]</c> (the first entry: 0 and
+    /// <c>[S+0xC8] + [S+0x20]</c>); past the last entry the samples are the table total and the bytes the sum plus the table size plus the header; 1.
+    /// </summary>
+    protected override (int Result, uint SampleBase, uint ByteOffset) SeekLookup(uint pos)
+    {
+        uint c4 = BitConverter.ToUInt32(VorbBlock, 0xC);                        // [S+0xC4]: the seek table size
+        uint c8 = BitConverter.ToUInt32(VorbBlock, 0x10);                       // [S+0xC8]: the first audio packet's offset
+        if (pos == 0) return (1, 0, unchecked(c8 + HeaderSize20));              // 0xAB1020..0xAB1024, 0xAB10BC..0xAB10D4
+        uint entries = c4 >> 2;                                                 // 0xAB1034
+        if (entries == 0 || _seekTable is null) return (2, 0, 0);               // 0xAB1038..0xAB105C
+        uint cumSamples = 0, cumBytes = 0;                                      // r8, r4
+        for (uint i = 0; ;)
+        {
+            uint after = unchecked(cumSamples + BitConverter.ToUInt16(_seekTable, (int)(4 * i)));   // 0xAB106C..0xAB1070
+            if (pos < after)                                                    // 0xAB1074..0xAB1078 blo 0xAB10DC
+            {
+                if (i == 0) return (1, 0, unchecked(c8 + HeaderSize20));        // 0xAB10DC..0xAB10F0
+                return (1, cumSamples, unchecked(cumBytes + c4 + HeaderSize20));   // 0xAB10F8, 0xAB1098..0xAB10B0
+            }
+            i++;                                                                // 0xAB107C
+            cumBytes = unchecked(cumBytes + BitConverter.ToUInt16(_seekTable, (int)(4 * (i - 1) + 2)));   // 0xAB1080, 0xAB108C
+            cumSamples = after;                                                 // 0xAB1090
+            if (entries <= i) break;                                            // 0xAB1084 cmp r6,r5; 0xAB1094 bhi
+        }
+        return (1, cumSamples, unchecked(cumBytes + c4 + HeaderSize20));        // 0xAB1098..0xAB10B0
+    }
 
     // ---------------------------------------------------------------- G1: 0xAB22D4 (vt+0x28)
 
@@ -460,12 +534,15 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     private int FinishSetup()
     {
         ushort size = SetupPacket.U16(0);                                       // 0xAB1EE4 ldrh lr,[ip],#2
-        var cache = Seams.CodebookCacheAB2D74 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 G3: 0xAB2D74 (the codebook / setup cache) is not read by C33; supply WwiseStreamSourceSeams.CodebookCacheAB2D74");
-        object? handle = cache(this, SetupPacket.Add(2), size, 0);              // 0xAB1EF4 bl 0xAB2D74
+        var codebooks = Seams.Vorbis.Codebooks ?? throw new WwiseMissingBehaviourException(
+            "M6-025 G3: the packed codebook library is a host input (the engine's static table behind 0xAB63E0); supply WwiseVorbisEngineContext.Codebooks");
+        var setupBytes = new ReadOnlyMemory<byte>(SetupPacket.Array!, SetupPacket.Index + 2, size);
+        Seams.Vorbis.OnSetupAcquire?.Invoke(setupBytes, 0);
+        var handle = Seams.Vorbis.SetupCache.AcquireAB2D74(                     // 0xAB1EF4 bl 0xAB2D74(*0x108E638, S+0x60, pbi, &{ptr + 2, size, 0})
+            BitConverter.ToUInt32(VorbBlock, 0x20), BitConverter.ToUInt32(VorbBlock, 0x18), (byte)ChannelWordA8, VorbBlock[0x24], VorbBlock[0x25], setupBytes, codebooks, Manager.TryAlloc);
         if (handle is null) return 2;                                           // 0xAB1EF8..0xAB1EFC
         State68 = 3;                                                            // 0xAB1F10
-        _codebook = handle;                                                     // 0xAB1F14 str r3,[r4,#0x80]
+        Frame.Dsp.Setup = handle;                                               // 0xAB1F14 str r3,[r4,#0x80]
         if (SetupOwned && !SetupPacket.IsNull)                                  // 0xAB1F18..0xAB1F3C
         {
             SetupPacket = default;                                              // 0xAB1F58 str r8,[r4,#0xec]
@@ -478,83 +555,29 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     // ---------------------------------------------------------------- G7: 0xAB1550 (vt+0x30), the buffering gate only
 
     /// <summary>
-    /// The outcome of the gate at the head of <c>0xAB1550(S, state)</c>: <see cref="Result"/> is the code stored in <c>[state+0x28]</c> when <see cref="Decode"/> is false; <see cref="Decode"/> true means the
-    /// decode of this call runs (the part that the decode seam stands for).
+    /// G7 head <c>0xAB1550(S, state)</c>: see <see cref="WwiseStreamSourceBase.DecodeGateShared"/> (the same body as the ADPCM / PCM decode's head, <c>0xA73D34..0xA7408C</c>).
     /// </summary>
-    public readonly record struct DecodeGate(bool Decode, int Result);
-
-    /// <summary>
-    /// G7 head <c>0xAB1550(S, state)</c>: bit 1 of <c>[S+0x10]</c> set: <c>QueryBufferingStatus</c>; 0x2D / 0x2E with <c>[S+0x44] + avail &lt; nominal</c> gives status code <b>0x2E</b> and no decode (with bit 22 of
-    /// <c>[pbi+4]</c> set the callback block runs first); at or above the nominal, or the status 0x11, bit 1 of <c>[S+0x10]</c> is cleared for good (<c>0xAB1A34..0xAB1A40</c>) and the decode runs; any other status is the
-    /// code and returned. Bit 1 clear: the decode runs. The callback block runs on every path of bit 22 (with the decode paths' result 0x2D, <c>0xAB1A50</c>). The decode body past this (<c>0xAB15CC..0xAB1BB0</c>:
-    /// the packet loop, <c>0xAB7E40</c>, <c>0xA73490</c>) is not ported.
-    /// </summary>
-    public DecodeGate DecodeGateAB1550()
-    {
-        int r6 = 1;
-        bool decodeIfNoCallback;
-        if ((Flags10 & 2) != 0)                                                 // 0xAB1550..0xAB1558
-        {
-            var stream = St;
-            uint left = Left44;                                                 // 0xAB157C
-            uint avail = Manager.IoSeam.StaleQueryWord;                         // sp+0x18
-            int status = stream.Query961C1C(ref avail);                         // 0xAB158C
-            r6 = status;                                                        // 0xAB1594
-            if (status == 0x2D || status == 0x2E)                               // 0xAB1590..0xAB159C
-            {
-                if (unchecked(left + avail) < stream.GetNominalBuffering961AD8())   // 0xAB1A10..0xAB1A28
-                {
-                    r6 = 0x2E;                                                  // 0xAB1A2C movlo r6,#0x2e
-                    return CallbackThenResult(r6, decodeAfter: false);          // 0xAB1A30 blo 0xAB15A8
-                }
-                return ClearGate();                                             // fall: at or above nominal (0xAB1A34)
-            }
-            if (status == 0x11) return ClearGate();                             // 0xAB15A0..0xAB15A4 beq 0xAB1A34
-            return CallbackThenResult(r6, decodeAfter: false);                  // 0xAB15A8..0xAB15B8
-        }
-        decodeIfNoCallback = true;
-        if ((Pbi.Flags4 & 0x400000) != 0)                                       // 0xAB15BC..0xAB15C8
-        {
-            BufferingCallback();                                                // 0xAB1A50..0xAB1B00
-            _ = decodeIfNoCallback;
-            return new DecodeGate(true, 0x2D);                                  // 0xAB1B04 cmp r6,#0x2d; beq 0xAB15CC
-        }
-        return new DecodeGate(true, 0x2E);                                      // 0xAB15CC (the result is replaced by the decode)
-
-        DecodeGate ClearGate()
-        {
-            Flags10 = (byte)(Flags10 & ~2);                                     // 0xAB1A38..0xAB1A44 bfc r3,#1,#1
-            if ((Pbi.Flags4 & 0x400000) == 0) return new DecodeGate(true, 0x2E);   // 0xAB1A48..0xAB1A4C beq 0xAB15CC
-            BufferingCallback();                                                // 0xAB1A50..0xAB1B00 (r6 = 0x2D)
-            return new DecodeGate(true, 0x2D);                                  // 0xAB1B04..0xAB1B08 beq 0xAB15CC
-        }
-
-        DecodeGate CallbackThenResult(int result, bool decodeAfter)
-        {
-            if ((Pbi.Flags4 & 0x400000) != 0) BufferingCallback();              // 0xAB15AC..0xAB15B8 -> 0xAB1A54
-            return new DecodeGate(decodeAfter, result);                         // 0xAB1B0C str r6,[r7,#0x28]
-        }
-    }
+    public WwiseDecodeGate DecodeGateAB1550() => DecodeGateShared();
 
     // ---------------------------------------------------------------- G7: the decode loop 0xAB15CC..0xAB1B2C
 
-    /// <summary><c>[S+0x60]</c> (u16): the frames the packet decode produced (the third argument of <c>0xA73490</c>); written by the decode seam.</summary>
-    public ushort FramesDecoded60 { get; set; }
+    /// <summary><c>[S+0x60]</c> (u16 as <c>0xA73490</c> reads it): the frames the packet decode produced (<c>[F+0]</c>).</summary>
+    public ushort FramesDecoded60 { get => unchecked((ushort)Frame.Frames); set => Frame.Frames = value; }
 
-    /// <summary><c>[S+0x64]</c>: the decode status (0x2E at the start of every packet, 0x2B, 0x2D, 0x11, 2 ...); written by the decode seam.</summary>
-    public int Status64 { get; set; }
+    /// <summary><c>[S+0x64]</c>: the decode status (0x2E at the start of every packet, 0x2B, 0x2D, 0x11, 2 ...), written by <c>0xAB7E40</c>.</summary>
+    public int Status64 { get => Frame.Status; set => Frame.Status = value; }
 
-    /// <summary><c>[S+0x6C]</c>: the bytes of the packet the decode did not consume (the engine's reading of it is <c>0xAB19AC..0xAB19E8</c>); written by the decode seam.</summary>
-    public uint Consumed6C { get; set; }
+    /// <summary><c>[S+0x6C]</c>: the bytes <c>0xAB7E40</c> consumed from the packet buffer (the engine's reading of it is <c>0xAB19AC..0xAB19E8</c>).</summary>
+    public uint Consumed6C { get => Frame.Consumed; set => Frame.Consumed = value; }
 
     /// <summary><c>[S+0xB0]</c>: the total bytes of the packet the decode sees (<c>size + 2</c>, plus the bytes left in the buffer when it is not an owned copy).</summary>
-    public uint InputB0 { get; private set; }
+    public uint InputB0 { get => Frame.Avail; private set => Frame.Avail = value; }
 
     /// <summary><c>[S+0xB4]</c> (byte): 1, 0, or <c>left == 0</c> (<c>0xAB187C..0xAB19A8</c>).</summary>
-    public byte InputB4 { get; private set; }
+    public byte InputB4 { get => Frame.Ready; private set => Frame.Ready = value; }
 
-    /// <summary><c>[S+0xA4]</c>: the decode's output buffer (written by the decode seam, read by <c>0xA73490</c>).</summary>
-    public object? OutputA4 { get; set; }
+    /// <summary><c>[S+0xA4]</c>: the output block of the last decode (planar floats; <c>0xAB7E40</c> allocates it, <c>0xA73490</c> publishes it, <c>vt+0xC</c> frees it).</summary>
+    public float[]? OutputA4 { get => Frame.Output; set => Frame.Output = value; }
 
     /// <summary>
     /// G7 <c>0xAB1550(S, state)</c> (vt+0x30), the control flow. After the gate (<see cref="DecodeGateAB1550"/>) a blocked call stores its code in <c>[state+0x28]</c>. Otherwise per packet: <c>[S+0x64] = 0x2E</c>, <c>[S+0x60] = [S+0x6C] = 0</c>;
@@ -678,8 +701,7 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
             }
         }
     L1898:
-        (Seams.PacketDecodeAB7E40 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 G7: 0xAB7E40 (the Vorbis packet decode) is not read by C33; supply WwiseStreamSourceSeams.PacketDecodeAB7E40"))(this, BitConverter.ToUInt16(VorbBlock, 0x14));   // 0xAB1898..0xAB18A4
+        WwiseVorbisFraming.FrameLoopAB7E40(Frame, BitConverter.ToUInt16(VorbBlock, 0x14), SetupPacket, Manager.TryAlloc);   // 0xAB1898..0xAB18A4 bl 0xAB7E40(S+0x60, u16[S+0xCC], [S+0xEC], S+0xA4)
         status = Status64;                                                      // 0xAB18A8
         state.Code28 = status;                                                  // 0xAB18B4 str r3,[r7,#0x28]
         if (status != 2 && !SetupOwned)                                         // 0xAB18B0 cmp r3,#2; beq 0xAB1B18; 0xAB18BC beq 0xAB19AC
@@ -710,19 +732,11 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
         state.Code28 = storedCode;                                              // 0xAB193C str r2,[r7,#0x28]
         if (!ok) { state.Code28 = 2; return; }                                  // 0xAB1944 beq 0xAB1924
     L1948:
-        (Seams.OutputHandoffA73490 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 G7: 0xA73490 (the output hand-off) is not read by C33; supply WwiseStreamSourceSeams.OutputHandoffA73490"))(this, state);   // 0xAB1948..0xAB1964
+        WwiseSourceOutput.HandoffA73490(this, Frame.Output, FramesDecoded60, SampleRateE0, ChannelWordA8, state);   // 0xAB1948..0xAB1964 bl 0xA73490(S, [S+0xA4], u16[S+0x60], [S+0xE0], [S+0xA8], state)
         if (state.Code28 != 0x2E) return;                                       // 0xAB1968..0xAB1970
         if (Data40.IsNull) return;                                              // 0xAB1974..0xAB197C
         state.Code28 = Consumed6C != 0 ? 0x2D : 2;                              // 0xAB1980..0xAB198C / 0xAB1924
     }
 
     private void SetupAppendG7(byte b, int index) => SetupPacket.Array![SetupPacket.Index + index] = b;
-}
-
-/// <summary>The voice's per-call state of <c>0xAB1550(S, state)</c>: the code at <c>[state+0x28]</c>.</summary>
-public sealed class WwiseDecodeState
-{
-    /// <summary><c>[state+0x28]</c>: the result code (0x2D data ready, 0x2E no more data, 0x11, 2, 0x34 ...).</summary>
-    public int Code28 { get; set; } = 0xABCD;
 }

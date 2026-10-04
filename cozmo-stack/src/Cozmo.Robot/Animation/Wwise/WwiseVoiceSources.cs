@@ -122,7 +122,7 @@ public static class WwiseSourceFactory
                         "M6-025 B13: Vorbis needs the packed codebook library (M6-002)");
                 return new WwiseVorbisVoiceSource(
                     kind == WwiseSourceKind.VorbisStreamed ? WwiseVorbisSourceKind.Streamed : WwiseVorbisSourceKind.InMemory,
-                    wem, codebooks, streaming: kind == WwiseSourceKind.VorbisStreamed ? streaming : null);
+                    wem, codebooks, streaming: streaming);
             case WwiseSourceKind.AdpcmMode1:
             case WwiseSourceKind.AdpcmMode3:
                 return new WwiseAdpcmVoiceSource(wem, streaming: kind == WwiseSourceKind.AdpcmMode1 ? streaming : null,
@@ -173,25 +173,47 @@ public interface IWwiseStreamingVoiceSource
 }
 
 /// <summary>
-/// The Vorbis <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13, source-classes Q1d). The streamed kind (mode 1, the 0xFC-byte class of vtable <c>0x103E138</c>) runs the engine's own StartStream
-/// <c>0xAB22D4</c> (<see cref="WwiseVorbisStreamSource.StartStreamAB22D4"/>) and returns its raw result (1, 0x3F, 2, 7, 8, 0x34, ...); its decode (<c>vt+0x30 = 0xAB1550</c>) runs the buffering gate of that
-/// body and then the offline decoder <see cref="WwiseVorbisSource"/> (M6-002), which is the named SEAM for the packet decode <c>0xAB7E40</c> and the output hand-off <c>0xA73490</c> (no adopted row reads them).
-/// The in-memory kind (mode 3, class <c>0x103E0B8</c>, <c>vt+0x28 = 0xAB0B20</c>) keeps the earlier behaviour (the body of 0xAB0B20 is not adopted): the media is decoded at StartStream and the result is 1.
+/// A source whose voice owns a pitch node (<c>voice+0x100</c>, linked to the source at <c>[node+4]</c>) that takes its blocks through <c>0xA52D4C</c>: the engine classes (the Vorbis kinds and the streamed ADPCM class).
+/// <see cref="WwiseLiveVoice.Render"/> runs the engine's order for such a source (<c>0xA44630</c>): the source's <c>vt+0x30</c> (<see cref="IWwiseVoiceSource.Render"/>: the decode only) is called inside the
+/// <c>0x2B</c> loop <c>0xA4475C..0xA44788</c>, and the voice (not the source) calls the intake.
 /// </summary>
-public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
+// fidelity: M6-022
+public interface IWwisePitchNodeSource : IWwiseVoiceSource
+{
+    /// <summary>True when the source runs in the engine's order (it has a pitch node and <see cref="IWwiseVoiceSource.Render"/> is the decode only). False for the in-memory ADPCM class, whose body is unread.</summary>
+    bool HasPitchNode { get; }
+
+    /// <summary>The 0x28-byte io state the source fills (the voice's <c>state</c>, P01).</summary>
+    WwiseDecodeState Io { get; }
+
+    /// <summary>The pitch node <c>voice+0x100</c>'s intake (<c>0xA52D4C</c>).</summary>
+    WwisePitchNodeIntake PitchNode { get; }
+
+    /// <summary>The owner PBI <c>[source+0xC]</c>: <c>vt+0x20 = 0xA5668C</c> returns its <c>+0x44</c> (the effective pitch) and the pitch pass reads <c>u16[+0x1BE] &amp; 0x380</c> from it. Null: the pitch pass is a visible stop.</summary>
+    WwisePlayingInstance? Owner { get; }
+}
+
+/// <summary>
+/// The Vorbis <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13, source-classes Q1d). The streamed kind (mode 1, the 0xFC-byte class of vtable <c>0x103E138</c>) runs the engine's StartStream <c>0xAB22D4</c>
+/// (<see cref="WwiseVorbisStreamSource.StartStreamAB22D4"/>) and its decode <c>vt+0x30 = 0xAB1550</c> (<see cref="WwiseVorbisStreamSource.DecodeAB1550"/>: the packet collection, the frame loop <c>0xAB7E40</c> and the output
+/// hand-off <c>0xA73490</c>); the in-memory kind (mode 3, the 0xD0-byte class of vtable <c>0x103E0B8</c>) runs <c>0xAB0B20</c> (<see cref="WwiseVorbisInMemorySource.StartStreamAB0B20"/>) and <c>0xAB0448</c>. Both return the engine's raw
+/// StartStream result (1, 0x3F, 2, 7, 8, 0x34, ...). There is no fallback to an offline decode: a source without a <see cref="WwiseStreamingContext"/> throws <see cref="WwiseMissingBehaviourException"/> at StartStream.
+/// <see cref="Render"/> is <c>vt+0x30</c> only: the decode fills the io state (<see cref="Io"/>, P01) and returns its result. The voice (<see cref="WwiseLiveVoice.Render"/>) calls it inside the <c>0x2B</c> loop and then,
+/// for a result of 0x11 / 0x2D, the pitch node's intake (<see cref="PitchNode"/>, <c>0xA52D4C</c>: a 0x2D with no valid frames becomes 0x2B, the voice then calls the source again). The pitch node's consumption of the
+/// block is a named seam (<see cref="WwiseStreamSourceSeams.PitchNodeConsumeA52DA8"/>).
+/// </summary>
+public sealed class WwiseVorbisVoiceSource : IWwisePitchNodeSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
 {
     // fidelity: M6-025
-    private readonly WwiseVorbisSource _source;
     private readonly WwiseVorbisSourceKind _kind;
     private readonly WwiseVorbisStreamSource? _stream;
-    private float[]? _samples;
-    private int _position;
-    private bool _latch;
+    private readonly WwiseVorbisInMemorySource? _mem;
+    private readonly WwiseStreamingContext? _ctx;
 
     /// <summary>The <c>pbi+0x158</c> format word (the descriptor's +4; caller input, see the interface).</summary>
     public uint SourceFormatWord { get; }
 
-    /// <summary>Creates the adapter; <paramref name="streaming"/> is required for the streamed kind to start.</summary>
+    /// <summary>Creates the adapter; <paramref name="streaming"/> is required for either kind to start.</summary>
     public WwiseVorbisVoiceSource(
         WwiseVorbisSourceKind kind, WwiseMedia media, WwiseCodebookLibrary codebooks, uint sourceFormatWord = 0,
         WwiseStreamingContext? streaming = null)
@@ -201,42 +223,69 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
         if (media.Codec != WwiseCodec.Vorbis)
             throw new ArgumentException($"not a Vorbis media: format tag 0x{media.FormatTag:X4}", nameof(media));
         _kind = kind;
-        _source = new WwiseVorbisSource(kind, media, codebooks, media.Channels);
+        _ctx = streaming;
         Channels = media.Channels;
         SampleRate = media.SampleRate;
         SourceFormatWord = sourceFormatWord;
-        if (kind == WwiseVorbisSourceKind.Streamed && streaming is not null)
-            _stream = new WwiseVorbisStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams);
+        if (streaming is not null)
+        {
+            streaming.Seams.Vorbis.Codebooks ??= codebooks;                     // the packed library is the engine's static table: a host input of the shared context
+            if (kind == WwiseVorbisSourceKind.Streamed)
+                _stream = new WwiseVorbisStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams);
+            else
+                _mem = new WwiseVorbisInMemorySource(streaming.Pbi, streaming.Seams.Vorbis, streaming.Manager.TryAlloc, streaming.Seams.PoolFree, streaming.Seams.BaseDestructor);
+        }
+        Io = new WwiseDecodeState();
+        PitchNode = new WwisePitchNodeIntake(ReleaseOutput)
+        {
+            Consume = streaming?.Seams.PitchNodeConsumeA52DA8,
+            EndOfStream = streaming?.Seams.PitchNodeEndOfStreamA52EBC,
+        };
     }
 
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
     public WwiseVorbisStreamSource? StreamSource => _stream;
 
+    /// <summary>The in-memory class's functions (the in-memory kind with a context), or null.</summary>
+    public WwiseVorbisInMemorySource? InMemorySource => _mem;
+
+    /// <inheritdoc />
+    public bool HasPitchNode => true;
+
+    /// <inheritdoc />
+    public WwisePlayingInstance? Owner => _ctx?.Pbi;
+
+    /// <summary>The io state the decode fills (the voice's <c>params</c>, P01).</summary>
+    public WwiseDecodeState Io { get; }
+
+    /// <summary>The pitch node's intake (<c>0xA52D4C</c>).</summary>
+    public WwisePitchNodeIntake PitchNode { get; }
+
     /// <summary>
-    /// The in-memory class's close state (<c>[src+0x2C]</c>, <c>[src+0x80]</c>, <c>[src+0xC0]</c>): written by the unread in-memory StartStream <c>0xAB0B20</c>, so it is host input. Required to close the in-memory kind.
+    /// <c>vt+0xC</c>: the streamed class's <c>0xAB1100</c> or the in-memory class's <c>0xAB032C</c> (V08): the delivered block is freed.
     /// </summary>
-    public WwiseInMemorySourceFields? InMemoryFields { get; set; }
-
-    /// <summary>The pool free sink the in-memory close reports to (the streamed kind uses its seams').</summary>
-    public WwisePoolFree? PoolFree { get; set; }
+    public void ReleaseOutput()
+    {
+        if (_stream is not null) _stream.ReleaseOutputAB1100();
+        else _mem?.ReleaseOutputAB032C();
+    }
 
     /// <summary>
-    /// <c>vt+0x2C</c>: the streamed kind is <c>0xAB2958</c> (<see cref="WwiseVorbisStreamSource.Close2CAB2958"/>), the in-memory kind <c>0xAB0FC0</c> over <see cref="InMemoryFields"/> (C34.3 S6, S7).
+    /// <c>vt+0x2C</c>: the streamed kind is <c>0xAB2958</c> (<see cref="WwiseVorbisStreamSource.Close2CAB2958"/>), the in-memory kind <c>0xAB0FC0</c> (<see cref="WwiseVorbisInMemorySource.Close2CAB0FC0"/>) (C34.3 S6, S7).
     /// </summary>
     public void Close2C()
     {
         if (_stream is not null) { _stream.Close2CAB2958(); return; }
-        (InMemoryFields ?? throw new WwiseMissingBehaviourException(
-            "M6-025 S6: the in-memory Vorbis class's state is written by the unread StartStream 0xAB0B20; supply WwiseVorbisVoiceSource.InMemoryFields")).Close2C(PoolFree);
+        (_mem ?? throw new WwiseMissingBehaviourException("M6-025 S6: a Vorbis source without a WwiseStreamingContext has no state to close")).Close2CAB0FC0();
     }
 
-    /// <summary><c>vt+0x34</c> = <c>0xA72F5C</c> (S1) for the streamed kind; the in-memory kind's <c>[src+0x14]</c>, <c>[src+0x24]</c>, <c>[src+0x28]</c> come from the unread <c>0xAB0C68..0xAB0CD4</c>, so it throws.</summary>
+    /// <summary><c>vt+0x34</c> = <c>0xA72F5C</c> (S1) for both kinds.</summary>
     public float Duration34()
-        => _stream?.Duration34A72F5C() ?? throw new WwiseMissingBehaviourException(
-            "M6-025 S1: the in-memory Vorbis class's total and loop samples ([src+0x14], [src+0x24], [src+0x28]) are written by the unread 0xAB0C68..0xAB0CD4");
+        => _stream?.Duration34A72F5C() ?? _mem?.Duration34() ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S1: a Vorbis source without a WwiseStreamingContext has no total or loop samples");
 
     /// <inheritdoc />
-    public bool WritesSourceFormatInStartStream => _stream is not null;
+    public bool WritesSourceFormatInStartStream => _stream is not null || _mem is not null;
 
     /// <summary>Vorbis <c>src+0x38</c> config: mono 1, stereo 2 (M6-002).</summary>
     public int Channels { get; }
@@ -247,79 +296,61 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
     /// <summary>The <c>[source+0x10]</c> bit 0 latch, written only by <c>0xA56650</c> (<see cref="WwiseVoiceSourceStart.StartA56650"/>).</summary>
     public bool StartStreamSucceeded
     {
-        get => _stream?.StartLatch ?? _latch;
-        set { if (_stream is not null) _stream.StartLatch = value; else _latch = value; }
+        get => _stream?.StartLatch ?? (_mem is not null && (_mem.Flags10 & 1) != 0);
+        set
+        {
+            if (_stream is not null) _stream.StartLatch = value;
+            else if (_mem is not null) _mem.Flags10 = (byte)((_mem.Flags10 & ~1) | (value ? 1 : 0));
+        }
     }
 
     /// <summary>
-    /// <c>vt+0x28</c> StartStream. Streamed: <c>0xAB22D4</c> with the PBI's own <c>[pbi+0x1DC]</c> / <c>[pbi+0x1E0]</c> (the two arguments are ignored, as the engine ignores them: C32.3), the raw result.
-    /// In-memory: the offline decode and 1 (unchanged, 0xAB0B20 not adopted).
+    /// <c>vt+0x28</c> StartStream. Streamed: <c>0xAB22D4</c> with the PBI's own <c>[pbi+0x1DC]</c> / <c>[pbi+0x1E0]</c> (the two arguments are ignored, as the engine ignores them: C32.3), the raw result. In-memory:
+    /// <c>0xAB0B20(S, data, size)</c> with <paramref name="arg1DC"/> resolved through the bank memory and <paramref name="arg1E0"/> as the size.
     /// </summary>
     public int StartStream(uint arg1DC, uint arg1E0)
     {
-        if (_kind == WwiseVorbisSourceKind.Streamed)
+        if (_stream is not null) return _stream.StartStreamAB22D4();
+        var mem = _mem ?? throw new WwiseMissingBehaviourException(
+            $"M6-025 C33.3: a {_kind} Vorbis source needs a WwiseStreamingContext; there is no fallback to the offline decode");
+        WwiseBytePtr data = default;
+        if (arg1DC != 0)
         {
-            var stream = _stream ?? throw new WwiseMissingBehaviourException(
-                "M6-025 C33.3: a streamed Vorbis source needs a WwiseStreamingContext; there is no fallback to the offline decode");
-            return stream.StartStreamAB22D4();
+            var memory = _ctx!.Seams.Memory ?? throw new WwiseMissingBehaviourException("M6-025 V17: [pbi+0x1DC] is a bank-memory address; supply WwiseStreamSourceSeams.Memory");
+            var (block, offset) = memory.Resolve(arg1DC);
+            data = new WwiseBytePtr(block, offset);
         }
-        var rendered = _source.Render(WwiseRuntimeSettings.SamplesPerFrame);
-        _samples = rendered.Data;
-        _position = 0;
-        if (_samples is null)
-            throw new WwiseMissingBehaviourException(
-                "M6-025 C27 step 7: the in-memory Vorbis source's vt+0x28 (0xAB0B20) is not adopted; no result code is invented");
-        return 1;
+        return mem.StartStreamAB0B20(data, arg1E0);
     }
 
     /// <summary>
-    /// <c>vt+0x30</c> render. Streamed: the buffering gate of <c>0xAB1550</c> (<see cref="WwiseVorbisStreamSource.DecodeGateAB1550"/>), whose status is returned with no frames when it blocks the decode; then the
-    /// offline decode (the named seam), run once. Returns 0x2D while data remains, else 0x2E.
+    /// <c>vt+0x30</c>: the decode (<c>0xAB1550</c> / <c>0xAB0448</c>) fills <see cref="Io"/> (<c>[state+0xC]</c>, <see cref="WwiseVoiceBuffer.ValidFrames"/>, is set by the voice to <c>u16[0x1052440]</c> before the call) and
+    /// returns its result. The 0x2E handler <c>0xA55C14</c>, the intake <c>0xA52D4C</c> and the 0x2B loop are the voice's (<see cref="WwiseLiveVoice.Render"/>, <c>0xA44768..0xA44788</c>).
     /// </summary>
     public int Render(WwiseVoiceBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        if (_stream is not null)
-        {
-            var gate = _stream.DecodeGateAB1550();
-            if (!gate.Decode)
-            {
-                buffer.ValidFrames = 0;
-                buffer.Result = gate.Result;
-                return gate.Result;
-            }
-            if (_samples is null)
-            {
-                _samples = _source.Render(WwiseRuntimeSettings.SamplesPerFrame).Data
-                    ?? throw new WwiseMissingBehaviourException("M6-025 G7: the offline decode seam produced no samples");
-                _position = 0;
-            }
-        }
-        if (_samples is null) return 0x2E;
-        int channels = Channels;
-        int frames = Math.Min(buffer.MaxFrames, _samples.Length / channels - _position);
-        if (frames < 0) frames = 0;
-        for (int f = 0; f < frames; f++)
-            for (int c = 0; c < channels; c++)
-                buffer.Channels[c][f] = _samples[(_position + f) * channels + c];
-        _position += frames;
-        buffer.ValidFrames = frames;
-        buffer.Result = frames == 0 ? 0x2E : 0x2D;
+        Io.MaxFrames = unchecked((ushort)buffer.ValidFrames);                   // 0xA4478C..0xA4479C strh r2,[r5,#0xc]
+        if (_stream is not null) _stream.DecodeAB1550(Io);                      // 0xAB1550
+        else (_mem ?? throw new WwiseMissingBehaviourException("M6-025 G7: a Vorbis source without a WwiseStreamingContext cannot decode")).DecodeAB0448(Io);   // 0xAB0448
+        buffer.Result = Io.Code28;
         return buffer.Result;
     }
 }
 
 /// <summary>
 /// The IMA ADPCM <see cref="IWwiseVoiceSource"/> adapter (M6-025 B13): mode 1 <c>0xA74244</c> (the stream class, <c>vt+0x28 = 0xA7538C</c>) / mode 3 <c>0xA72A2C</c> over <see cref="WwiseAdpcm"/> (M6-003, bit-exact).
-/// The streamed kind runs the engine's StartStream (<see cref="WwisePcmAdpcmStreamSource.StartStreamA7538C"/>) and returns its raw result; the header parse it calls (<c>0xA73ABC</c>) is a required seam. The decode
-/// (<c>vt+0x30 = 0xA73D34</c>) is not adopted: the media is decoded offline at the first render. The in-memory kind keeps the earlier behaviour (decode at StartStream, result 1).
+/// The streamed kind runs the engine's StartStream (<see cref="WwisePcmAdpcmStreamSource.StartStreamA7538C"/>, with the header parse <c>0xA73ABC</c>) and returns its raw result; its decode <c>vt+0x30 = 0xA73D34</c>
+/// (<see cref="WwisePcmAdpcmStreamSource.DecodeA73D34"/>) fills the io state and returns its result (the voice runs the pitch node's intake, as for the Vorbis adapter). The in-memory kind (mode 3, <c>0xA72A2C</c>; no shipped bank reaches it, its body is
+/// unread) keeps the earlier behaviour (decode at StartStream, result 1) unchanged.
 /// </summary>
-public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
+public sealed class WwiseAdpcmVoiceSource : IWwisePitchNodeSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
 {
     // fidelity: M6-025
     private readonly WwiseMedia _media;
     private readonly bool _streamed;
     private readonly WwisePcmAdpcmStreamSource? _stream;
+    private readonly WwiseStreamingContext? _ctx;
     private short[]? _samples;
     private int _position;
     private bool _latch;
@@ -334,16 +365,38 @@ public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSource
         if (media.Codec != WwiseCodec.Adpcm)
             throw new ArgumentException($"not an ADPCM media: format tag 0x{media.FormatTag:X4}", nameof(media));
         _media = media;
+        _ctx = streaming;
         _streamed = streamed;
         Channels = media.Channels;
         SampleRate = media.SampleRate;
         SourceFormatWord = sourceFormatWord;
         if (streamed && streaming is not null)
             _stream = new WwisePcmAdpcmStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams) { Class = WwisePcmAdpcmClass.AdpcmStream };
+        Io = new WwiseDecodeState();
+        PitchNode = new WwisePitchNodeIntake(ReleaseOutput)
+        {
+            Consume = streaming?.Seams.PitchNodeConsumeA52DA8,
+            EndOfStream = streaming?.Seams.PitchNodeEndOfStreamA52EBC,
+        };
     }
 
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
     public WwisePcmAdpcmStreamSource? StreamSource => _stream;
+
+    /// <inheritdoc />
+    public bool HasPitchNode => _streamed;
+
+    /// <inheritdoc />
+    public WwisePlayingInstance? Owner => _ctx?.Pbi;
+
+    /// <summary>The io state the decode fills (the voice's <c>params</c>, P01).</summary>
+    public WwiseDecodeState Io { get; }
+
+    /// <summary>The pitch node's intake (<c>0xA52D4C</c>).</summary>
+    public WwisePitchNodeIntake PitchNode { get; }
+
+    /// <summary><c>vt+0xC = 0xA73A14</c> (the streamed kind): the delivered block is freed.</summary>
+    public void ReleaseOutput() => _stream?.ReleaseOutputA73A14();
 
     /// <summary>The in-memory class's close state (<c>[src+0x2C]</c>, <c>[src+0x44]</c>): written by the unread in-memory StartStream <c>0xA72A2C</c>, so it is host input. Required to close the in-memory kind.</summary>
     public WwiseInMemorySourceFields? InMemoryFields { get; set; }
@@ -365,7 +418,7 @@ public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSource
             "M6-025 S1: the in-memory ADPCM class's total and loop samples ([src+0x14], [src+0x24], [src+0x28]) are written by the unread 0xA7279C..0xA7287C");
 
     /// <inheritdoc />
-    public bool WritesSourceFormatInStartStream => false;
+    public bool WritesSourceFormatInStartStream => _stream is not null;
 
     /// <summary>The channel count.</summary>
     public int Channels { get; }
@@ -396,14 +449,21 @@ public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSource
         return 1;
     }
 
-    /// <summary><c>vt+0x30</c> render: publish the next block, int16 scaled by 1/32768 (the streamed class's gate <c>0xA73D34</c> is not adopted: the whole media is decoded offline on first use).</summary>
+    /// <summary>
+    /// <c>vt+0x30</c> render. Streamed: <c>0xA73D34</c> fills the io state and returns its result (the voice then runs the intake, as for <see cref="WwiseVorbisVoiceSource.Render"/>). In-memory (unchanged, the class is unread:
+    /// MISSING; it has no pitch node here and is not run in the engine's order): publish the next block, int16 scaled by 1/32768.
+    /// </summary>
     public int Render(WwiseVoiceBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        if (_streamed && _samples is null)
+        if (_streamed)
         {
-            _samples = WwiseAdpcm.Decode(_media);
-            _position = 0;
+            var stream = _stream ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C33.3: a streamed ADPCM source needs a WwiseStreamingContext; there is no fallback to the offline decode");
+            Io.MaxFrames = unchecked((ushort)buffer.ValidFrames);               // 0xA4478C..0xA4479C
+            stream.DecodeA73D34(Io);                                            // 0xA73D34
+            buffer.Result = Io.Code28;
+            return buffer.Result;
         }
         if (_samples is null) return 0x2E;
         int channels = Channels;

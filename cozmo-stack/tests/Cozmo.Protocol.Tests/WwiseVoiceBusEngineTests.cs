@@ -87,6 +87,7 @@ public sealed class WwiseVoiceBusEngineTests
         {
             Source = new ConstantSource(0.5f, 8),
             OutputGain = 1f,
+            AllowRenderOrderApproximation = true,   // the test source has no pitch node: the earlier render approximation, NOT the engine's order (MISSING)
         };
         var connection = new WwiseVoiceConnection(bus, inputChannels: 1, outputChannels: 1)
         {
@@ -120,7 +121,7 @@ public sealed class WwiseVoiceBusEngineTests
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8) };
+        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
         var connection = new WwiseVoiceConnection(bus, 1, 1);
         voice.Connections.Add(connection);
         bus.SourceRequest3C = _ => 1;                                // 0xA553A4 accepted
@@ -352,7 +353,7 @@ public sealed class WwiseVoiceBusEngineTests
         var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
         pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
 
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), OutputGain = 1f };
+        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), OutputGain = 1f, AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
         var dry = new WwiseVoiceConnection(bus, 1, 1) { TargetGain = 1f };
         dry.Descriptor.Reserve(1, 1);                                // [conn+0x18] != 0 (C24.4)
         dry.Refresh();                                               // past the first update: bit2 is the live fade-in bit

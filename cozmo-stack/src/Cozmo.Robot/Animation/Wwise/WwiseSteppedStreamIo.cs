@@ -27,7 +27,7 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// <item>The stale word <c>QueryBufferingStatus</c> leaves in its caller's out variable for an unopened stream is <see cref="StaleQueryWord"/>, a constructor argument.</item>
 /// </list>
 /// <para>MISSING (the defaults here are NOT engine facts): <see cref="InitIoMemoryResult"/> (0x969E8C unread; 1 assumed), <see cref="StartThreadResult"/> (0x97CC80 unread; 1 assumed), the
-/// <c>OutputBuffersFailAB3264</c> and <c>AllocationFails</c> defaults (null = success; the allocator 0x9713B4/0x96FE70 is unread), the plan's stop rules above, and the cache (0x961800, 0x9656AC callers). The
+/// <c>AllocationFails</c> default (null = success; the allocator 0x9713B4/0x96FE70 is unread), the plan's stop rules above, and the cache (0x961800, 0x9656AC callers). The
 /// configuration without a JNIEnv (0x592FFE..0x59303C: the zip is <c>soundDir + "AudioAssets.zip"</c> when it exists, else the 'Audio Assets not found' error) is a host input of
 /// <c>WwiseAnkiResolverConfig</c>, not built.</para>
 /// </summary>

@@ -1076,7 +1076,7 @@ public class WwiseVoiceLinkerTests
 
         int Mixed(params WwiseVoiceConnection[] conns)
         {
-            var v = new WwiseLiveVoice(1, 8) { Source = new Src() };
+            var v = new WwiseLiveVoice(1, 8) { Source = new Src(), AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
             v.Connections.AddRange(conns);
             v.Render();
             return conns.Count(c => c.Bus.State == WwiseMixBus.StateActive);

@@ -87,35 +87,41 @@ public static class WwiseAdpcm
 
         for (int c = 0; c < channels; c++)
         {
-            int predictor = 0, index = 0;
             for (int b = 0; b < blocks; b++)
-            {
-                // One sub-block per channel and block, each opening with its own predictor and step index; the output is interleaved, so each
-                // channel writes every channels-th sample.
-                var half = data.Slice(b * blockAlign + c * PerChannelBytes, PerChannelBytes);
-                predictor = (short)(half[0] | (half[1] << 8));
-                index = half[2];                                  // 0x00A7A1F4 ldrb [+2]: 0..255, NOT clamped (the engine does not clamp it)
-
-                int write = (b * SamplesPerBlock * channels) + c;
-                // The header predictor is output sample 0 (0x00A7A208).
-                outBuf[write] = (short)predictor;
-                write += channels;
-
-                // Bytes +4..+0x22 give two samples each, low nibble first (0x00A7A214..0x00A7A324).
-                for (int i = HeaderBytes; i < PerChannelBytes - 1; i++)
-                {
-                    byte v = half[i];
-                    outBuf[write] = Step(v & 0x0F, ref predictor, ref index);
-                    write += channels;
-                    outBuf[write] = Step(v >> 4, ref predictor, ref index);
-                    write += channels;
-                }
-
-                // The last byte gives its low nibble only; the high nibble is unused (0x00A7A334..0x00A7A3B4).
-                outBuf[write] = Step(half[PerChannelBytes - 1] & 0x0F, ref predictor, ref index);
-            }
+                DecodeBlock(data.Slice(b * blockAlign + c * PerChannelBytes, PerChannelBytes), outBuf, (b * SamplesPerBlock * channels) + c, channels);
         }
         return outBuf;
+    }
+
+    /// <summary>
+    /// One 36-byte channel block (the body of <c>0xA7A194</c>'s per-block loop): the header predictor is output sample 0 (<c>0xA7A208</c>), bytes +4..+0x22 give two samples each, low nibble first, byte +0x23 its low
+    /// nibble only. The samples go to <paramref name="outBuf"/> from <paramref name="write"/> at a stride of <paramref name="stride"/> (the channel count). Each block opens with its own predictor and step index.
+    /// </summary>
+    internal static void DecodeBlock(ReadOnlySpan<byte> half, Span<short> outBuf, int write, int stride)
+    {
+        int predictor = (short)(half[0] | (half[1] << 8));
+        int index = half[2];                                  // 0x00A7A1F4 ldrb [+2]: 0..255, NOT clamped (the engine does not clamp it)
+        outBuf[write] = (short)predictor;                     // 0x00A7A208
+        write += stride;
+        for (int i = HeaderBytes; i < PerChannelBytes - 1; i++)
+        {
+            byte v = half[i];
+            outBuf[write] = Step(v & 0x0F, ref predictor, ref index);
+            write += stride;
+            outBuf[write] = Step(v >> 4, ref predictor, ref index);
+            write += stride;
+        }
+        outBuf[write] = Step(half[PerChannelBytes - 1] & 0x0F, ref predictor, ref index);
+    }
+
+    /// <summary>
+    /// <c>0xA7A194(src, dst, nb, blockAlign, channels)</c>: <paramref name="nb"/> blocks of one channel (0 does nothing and returns 1). Block <c>k</c> is at <c>src + k * blockAlign</c> and its 64 samples go to
+    /// <c>dst</c> from sample <c>k * 64 * channels</c> at a stride of <paramref name="channels"/> samples (<c>0xA7A1C4</c>, <c>0xA7A398</c>, <c>0xA7A3A4</c>).
+    /// </summary>
+    internal static void DecodeBlocksA7A194(ReadOnlySpan<byte> src, Span<short> dst, int nb, int blockAlign, int channels)
+    {
+        for (int k = 0; k < nb; k++)
+            DecodeBlock(src.Slice(k * blockAlign, PerChannelBytes), dst, k * SamplesPerBlock * channels, channels);
     }
 
     /// <summary>
