@@ -98,8 +98,11 @@ public sealed class WwisePlayInitParams
     /// <summary><c>+0x8C</c>: the block <c>[[pbi+0xC]+0x24]</c> receives (<c>0xA38130</c>). A caller input.</summary>
     public object? Block8C { get; set; }
 
-    /// <summary><c>+0x108</c>: the second argument of <c>0xA01918</c> (<c>0xA38038</c>). A caller input.</summary>
-    public object? Block108 { get; set; }
+    /// <summary>
+    /// <c>+0x108</c> (data), <c>+0x10C</c> (count), <c>+0x110</c> (capacity): the modulator out vector, the second argument of <c>0xA01918</c> (<c>0xA38040..0xA38044</c>) and the <c>r7</c> CalcEffectiveParams passes to node <c>vt+0xAC</c> once
+    /// <c>[pbi+0xE8]</c> bit 6 is set (<c>0x9FFCB4</c>, <c>0x9FFCB8</c>). The Play builder zeroes <c>+0xE8..+0x110</c> (<c>0xA62A88..0xA62AB4</c>, <c>0xA62B38..0xA62B58</c>), so it starts empty.
+    /// </summary>
+    public WwiseAcLocalBlock Block108 { get; set; } = new();
 
     /// <summary>
     /// <c>+0x11C</c> (<c>0xA62B74 str r4,[sp,#0x138]</c>): 0 in the Play helper. CalcEffectiveParams reads it as <c>[r7+0x90]</c> with <c>r7 = params+0x8C</c> and compares it with the output bus (<c>0x9FFB04..0x9FFB0C</c>).

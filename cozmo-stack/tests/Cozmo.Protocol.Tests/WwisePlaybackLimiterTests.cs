@@ -1961,7 +1961,7 @@ public class WwisePlaybackLimiterTests
         // 0x9FFE1C is reached after the mute/fade store at 0x9FFE18; the E9-bit-2 early exit (0x9FFC30) returns before it (R3.1). Expected: the default priority 50.0f (0x42480000) lands in 1CC and 1C0.
         var g = new Graph(Snd(1, P()));
         var l = Limiter(g);
-        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { FirstOutputBus9F4BB8 = n => n, BusFlag9C54E8 = _ => true, NodeVtAC = _ => { } });
+        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { NodeVtAC = _ => { } }) { RuntimeNodeOf = RuntimeDoubles.NodeWithBus };
         var open = Pbi(20f);
         open.NodeE0 = g[1];
         path.CalcEffectiveParams(open, null, l);
@@ -2620,7 +2620,7 @@ public class WwisePlaybackLimiterTests
         var g = new Graph(Snd(1, P()));
         var l = Limiter(g);
         int acCalls = 0;
-        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { FirstOutputBus9F4BB8 = n => n, BusFlag9C54E8 = _ => true, NodeVtAC = a => { acCalls++; a.Pbi.Volume3C = 6f; } });
+        var path = new WwisePlayPath(l.ParentNode, new WwisePlaySeams { NodeVtAC = a => { acCalls++; a.Pbi.Volume3C = 6f; } }) { RuntimeNodeOf = RuntimeDoubles.NodeWithBus };
         var closed = Pbi(50f);
         closed.NodeE0 = g[1];
         closed.Flags0E9 = 4;
@@ -2642,7 +2642,7 @@ public class WwisePlaybackLimiterTests
     {
         rig = new Rig(new[] { OneMixerBank(0x04, 3) });
         var log = new List<string>();
-        var b108 = new object(); var p78 = new object();
+        var p78 = new object();
         WwisePlayInitParams? played = null;
         bool tail = false;
         var inner = rig.Bridge.PlayPath!.Seams.NodeVtAC;
@@ -2652,9 +2652,9 @@ public class WwisePlaybackLimiterTests
             if (tail && a.Params is not null && ReferenceEquals(a.Params, played)) log.Add("vt24:8C");
         };
         rig.Bridge.TailA023D4 = (pbi, r1) => { log.Add("A023D4:" + r1.ToString("X")); tail = true; inTail(pbi); };
-        rig.Bridge.TailA01918 = (_, blk, one) => log.Add("A01918:" + (ReferenceEquals(blk, b108) ? "108" : "?") + "," + one);
+        rig.Bridge.PlayPath.Modulators = new WwiseModulatorManager { A9DCE44 = (id, _, _, _, _) => { log.Add("9DCE44:" + id); return 1; } };   // 0xA01918 -> 0x9E62AC visits the record's id: the stand-in 0x9DCE44 logs it
         rig.Bridge.TailA9E85C8 = (_, one, ptr) => log.Add("9E85C8:" + one + "," + (ReferenceEquals(ptr, p78) ? "78" : "?"));
-        rig.PlayDirect(500, 900, tweak: p => { played = p; p.Word88 = 0x1234; p.Block108 = b108; tweak(p); if (p.Ptr78 is not null) p.Ptr78 = p78; });
+        rig.PlayDirect(500, 900, tweak: p => { played = p; p.Word88 = 0x1234; p.Block108.Word4 = 1; p.Block108.Records.Add(new WwiseModulatorOutRecord { Ids10 = new uint[] { 108 } }); tweak(p); if (p.Ptr78 is not null) p.Ptr78 = p78; });
         return log;
     }
 
@@ -2666,20 +2666,20 @@ public class WwisePlaybackLimiterTests
         // is clear (0x9FFDE0), so the hook at 0xA023D4 sets the state the branch looks at. 0xA38038: 0xA01918(pbi, params+0x108, 1). 0xA38048..0xA38064: 0x9E85C8([pbi+0x34], 1, [params+0x78]+0x14) only when
         // [params+0x78] != 0 and [pbi+0x34] != 0. Then 0xA00618 (its effect is the loop count in pbi+0x1B8 and 1BD bit 0).
         var clear = TailLog(pbi => pbi.Flags0E8 = 0x40, _ => { }, out var r1);
-        Assert.Equal(new[] { "A023D4:1234", "vt24:8C", "A01918:108,1" }, clear);                  // bit 5 clear: CalcEffectiveParams again
+        Assert.Equal(new[] { "A023D4:1234", "vt24:8C", "9DCE44:108" }, clear);                  // bit 5 clear: CalcEffectiveParams again
         Assert.Equal(0x20, r1.LastPbi!.Flags0E8 & 0x20);
         Assert.Equal(1, r1.LastPbi.LoopCount1B8);                                                  // 0xA00618 ran: no property 0x3A, default 1
 
         var setNoE9 = TailLog(pbi => { pbi.Flags0E8 = 0x60; pbi.Flags0E9 = 0; }, _ => { }, out _);
-        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1" }, setNoE9);                            // neither branch
+        Assert.Equal(new[] { "A023D4:1234", "9DCE44:108" }, setNoE9);                            // neither branch
 
         var setE9 = TailLog(pbi => { pbi.Flags0E8 = 0x60; pbi.Flags0E9 = 1; pbi.Field98 = 3f; }, _ => { }, out var r9);
-        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1" }, setE9);
+        Assert.Equal(new[] { "A023D4:1234", "9DCE44:108" }, setE9);
         Assert.Equal(0, r9.LastPbi!.Flags0E9 & 1);                                                 // 0x9FF3D0 cleared E9 bit 0: vt+0x28 ran
         Assert.Equal(3f, r9.LastPbi.Volume3C);                                                     // [+0x3C] = [+0x98] + [+0x118]
 
         var withPtr = TailLog(pbi => { pbi.Field34 = 1; pbi.Flags0E8 = 0x60; }, p => p.Ptr78 = new object(), out _);
-        Assert.Equal(new[] { "A023D4:1234", "A01918:108,1", "9E85C8:1,78" }, withPtr);
+        Assert.Equal(new[] { "A023D4:1234", "9DCE44:108", "9E85C8:1,78" }, withPtr);
 
         var ptrNoField34 = TailLog(pbi => pbi.Flags0E8 = 0x60, p => p.Ptr78 = new object(), out _);   // [pbi+0x34] == 0: no 0x9E85C8
         Assert.DoesNotContain(ptrNoField34, x => x.StartsWith("9E85C8"));
@@ -2687,8 +2687,8 @@ public class WwisePlaybackLimiterTests
         Assert.DoesNotContain(field34NoPtr, x => x.StartsWith("9E85C8"));
 
         var missing = new Rig(new[] { OneMixerBank(0x04, 3) });
-        missing.Bridge.TailA01918 = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => missing.PlayDirect(500, 900));
+        missing.Bridge.PlayPath!.Modulators = null;                                                // 0xA01918 with a non-empty out vector needs the modulator manager
+        Assert.Throws<WwiseMissingBehaviourException>(() => missing.PlayDirect(500, 900, tweak: p => { p.Block108.Word4 = 1; p.Block108.Records.Add(new WwiseModulatorOutRecord { Ids10 = new uint[] { 1 } }); }));
         var missingPath = new Rig(new[] { OneMixerBank(0x04, 3) });
         missingPath.Bridge.PlayPath!.Seams.NodeVtAC = null;
         Assert.Throws<WwiseMissingBehaviourException>(() => missingPath.PlayDirect(500, 900));
@@ -3028,6 +3028,8 @@ public class WwisePlaybackLimiterTests
 
     private sealed class Src : IWwiseVoiceSource
     {
+        public void Close2C() { }                                                   // test double: no pool blocks
+        public float Duration34() => 0f;
         public int Channels => 1;
         public int SampleRate => 48000;
         public int Result { get; set; } = 0x2D;
@@ -3055,7 +3057,12 @@ public class WwisePlaybackLimiterTests
             Bridge.SourceFactory = _ => new Src();
             Bridge.LinkEngineA548B8 = v => v.EngineEC = new object();
             Bridge.StartSourceA56478 = _ => { };                                     // 0xA56478 is unread
-            Bridge.Notify38600 = (pbi, code, r2, r3) => Pass.PbiNotifications.Enqueue(Bridge.NotificationA38600(pbi, code, r2));
+            var queue = new WwiseNotificationQueue(new WwiseBankMemory(), 4, 8, new[] { 0, 1, 2, 3 });             // Q's init is unread: the test sets it up (WwiseNotificationQueueTests checks the push against the engine)
+            Pass.Notifications = queue;
+            Pass.NotificationHandlerA0188C = (p, code, r2, _) => Bridge.HandleNotificationA0188C((WwisePlayingInstance)p!, code, r2);
+            Pass.TerminateNotifiedPbiA384C8 = p => Bridge.TerminatePbi((WwisePlayingInstance)p!);
+            queue.FlushA38420 = Pass.FlushPbiNotifications;
+            Bridge.Notify38600 = (pbi, code, r2, r3) => queue.Push(pbi, code, r2, r3);                         // 0xA38600
             Pass.DestroyVoiceA9D40C4 = Bridge.Linker.TeardownVoice;
             Pass.SourceOwner = src => Bridge.TryOwnerOf(src);                        // [[voice+0xD4]+0xC]
             Pass.NodeCleanup = R.Limiter.PerFrameA39564;                             // 0xA39564 (E1/E2)

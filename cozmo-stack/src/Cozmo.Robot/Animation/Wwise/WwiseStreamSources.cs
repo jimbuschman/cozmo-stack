@@ -115,6 +115,15 @@ public sealed class WwiseStreamSourceSeams
 
     /// <summary><c>0xA73ABC</c> (ADPCM) / <c>0xA75BC4</c> (PCM) <c>vt+0x78</c>: the header parse of the PCM / ADPCM stream classes. Not adopted.</summary>
     public Func<WwisePcmAdpcmStreamSource, WwiseBytePtr, int>? ParseHeaderPcmAdpcm { get; init; }
+
+    /// <summary>
+    /// The pool free <c>0xA7A988</c> / <c>0xA7A914</c> (C34.3 S10) the close bodies call: the sink receives the field name and the pointer handle (0 for a field the C# holds as an object). The accounting
+    /// (<c>used = used - 4 - 0xA7B6C4(ptr)</c>, the heap's free list) is not modelled. Optional: null reports nothing.
+    /// </summary>
+    public WwisePoolFree? PoolFree { get; init; }
+
+    /// <summary><c>0xAB3428(S+0x70)</c> (<c>0xAB2964</c>): the Vorbis DSP teardown the streamed Vorbis close calls first. Not adopted; required by <see cref="WwiseVorbisStreamSource.Close2CAB2958"/>.</summary>
+    public Action<WwiseStreamSourceBase>? DspTeardownAB3428 { get; init; }
 }
 
 /// <summary>The outputs of the WAVE walker <c>0x9CD340</c> as <c>0xAB12B4</c> consumes them.</summary>
@@ -187,6 +196,12 @@ public abstract class WwiseStreamSourceBase
     /// <summary><c>[S+0x2C]</c>.</summary>
     public uint Word2C { get; set; }
 
+    /// <summary>
+    /// The chunk container <c>[S+0x2C]</c> (<c>{count, array}</c>, <c>0x9D4B20</c>): the walker <c>0x9CD340</c> fills it (unread, so it is host input) and every close frees it (C34.3 S2). <see cref="Word2C"/> keeps the walker's
+    /// first output word as the earlier batch read it.
+    /// </summary>
+    public WwiseChunkContainer Container2C { get; } = new();
+
     /// <summary><c>[S+0x38]</c> (u16): the loop count.</summary>
     public ushort LoopCount38 { get; set; }
 
@@ -241,6 +256,40 @@ public abstract class WwiseStreamSourceBase
             "M6-025 F4: the seek lookup vt+0x7C (Vorbis 0xAB1020) is not read; supply WwiseStreamSourceSeams.SeekLookup7C"))(this, sample);
 
     private WwiseAutoStream Stream => Stream3C ?? throw new InvalidOperationException("M6-025: [S+0x3C] is null (the engine would dereference it)");
+
+    // ---------------------------------------------------------------- C34.3: the close and the duration
+
+    /// <summary>
+    /// <c>0xA759D8(S)</c> (S4, S5, S7; also <c>vt+0x2C</c> of the class <c>0x103D8C8</c>): a non-null <c>[S+0x3C]</c> gets its <c>vt+8</c> (IAkAutoStream Destroy, <c>0x9654E4</c>) and is cleared, then the container (<c>0xA73128</c> =
+    /// <c>0x9D4B20(S+0x2C)</c>) is released (<c>0xA759D8..0xA75A08</c>).
+    /// </summary>
+    protected void ReleaseStreamA759D8()
+    {
+        if (Stream3C is { } stream)                                             // 0xA759E0..0xA759E4
+        {
+            stream.Destroy9654E4();                                             // 0xA759EC..0xA759F4 vt+8
+            Stream3C = null;                                                    // 0xA759F8..0xA759FC
+        }
+        Container2C.Release9D4B20(Seams.PoolFree);                              // 0xA75A08 b 0xA73128
+    }
+
+    /// <summary>
+    /// <c>vt+0x34</c> = <c>0xA72F5C(S)</c> (S1): <c>loops = u16[pbi+0x1B8]</c>; 0 returns 0.0f (<c>0xA72F6C..0xA72F80</c>). Otherwise, in single precision, <c>(float)u32[S+0x14] + (float)(loops - 1) * (float)u32([S+0x28] + 1 - [S+0x24])</c> (<c>vmla.f32</c>,
+    /// not fused), times <c>1000.0f</c>, divided by <c>(float)u32</c> of <c>vt+0x70(S)</c> = <c>0xA72F50</c> = <c>[pbi+0x158]</c> (<c>0xA72F88..0xA72FE0</c>). A rate of 0 divides to infinity or NaN as the engine does.
+    /// </summary>
+    public float Duration34A72F5C()
+    {
+        ushort loops = Pbi.LoopCount1B8;                                        // 0xA72F5C..0xA72F6C
+        if (loops == 0) return 0f;                                              // 0xA72F70..0xA72F80 (the literal 0xA72FE4 is 0)
+        uint span = unchecked(Word28 + 1 - Word24);                             // 0xA72F88..0xA72F9C rsb r1,ip,r1
+        float s15 = (float)(loops - 1);                                         // 0xA72F8C sub r2,r2,#1; vcvt.f32.s32
+        float s14 = (float)span;                                                // 0xA72FB8 vcvt.f32.u32
+        float s16 = (float)TotalSamples14;                                      // 0xA72FBC vcvt.f32.u32
+        s16 = s16 + s15 * s14;                                                  // 0xA72FC0 vmla.f32
+        s16 = s16 * BitConverter.Int32BitsToSingle(0x447A0000);                 // 0xA72FC4: 1000.0f (the literal at 0xA72FE8)
+        float rate = (float)Pbi.SourceFormat158;                                // 0xA72FC8 blx vt+0x70 (0xA72F50: [[S+0xC]+0x158]); vcvt.f32.u32
+        return s16 / rate;                                                      // 0xA72FD4 vdiv.f32
+    }
 
     // ---------------------------------------------------------------- D4: 0xA74564
 
@@ -614,6 +663,22 @@ public abstract class WwiseStreamSourceBase
     public WwiseAutoStream? Stream3CValue => Stream3C;
 }
 
+/// <summary>The three PCM / ADPCM stream classes by vtable.</summary>
+public enum WwisePcmAdpcmClass
+{
+    /// <summary>The class is not named.</summary>
+    Unspecified,
+
+    /// <summary>ADPCM streamed, vptr <c>0x103D840</c>, constructor <c>0xA74244</c>.</summary>
+    AdpcmStream,
+
+    /// <summary>PCM streamed, vptr <c>0x103D950</c>, constructor <c>0xA76140</c>.</summary>
+    PcmStream,
+
+    /// <summary>The third class, vptr <c>0x103D8C8</c> (<c>vt+0x2C = 0xA759D8</c>, no header parse).</summary>
+    Class103D8C8,
+}
+
 /// <summary>
 /// The PCM / ADPCM stream classes (vtables <c>0x103D840</c>, <c>0x103D8C8</c>, <c>0x103D950</c>, all with <c>vt+0x28 = 0xA7538C</c>): F7. The header parse (<c>vt+0x78</c>: <c>0xA73ABC</c> for the ADPCM class,
 /// <c>0xA75BC4</c> for the PCM class, none for <c>0x103D8C8</c>) is not adopted and comes from <see cref="WwiseStreamSourceSeams.ParseHeaderPcmAdpcm"/>.
@@ -623,6 +688,44 @@ public sealed class WwisePcmAdpcmStreamSource : WwiseStreamSourceBase
     /// <summary>Creates the source.</summary>
     public WwisePcmAdpcmStreamSource(WwiseStreamManager manager, WwisePlayingInstance pbi, WwiseSourceBlock150 src, WwiseStreamSourceSeams seams)
         : base(manager, pbi, src, seams) { }
+
+    /// <summary>Which of the three vtables the object has (C34.3): the close of each differs. Unspecified is a named stop in <see cref="Close2C"/>.</summary>
+    public WwisePcmAdpcmClass Class { get; init; }
+
+    /// <summary><c>[S+0x60]</c> (PCM streamed class): a block the close frees; written by the PCM header parse <c>0xA75BC4</c> (not adopted), so it is host input.</summary>
+    public uint BufferPtr60 { get; set; }
+
+    /// <summary><c>[S+0x64]</c> (ADPCM streamed class: the block <c>0xA73A14</c> frees; PCM streamed: cleared with <see cref="BufferPtr60"/>); written by the unread header parses, so host input.</summary>
+    public uint BufferPtr64 { get; set; }
+
+    /// <summary>
+    /// <c>vt+0x2C</c>: ADPCM streamed <c>0xA7427C</c> (<c>vt+0xC = 0xA73A14</c>: a non-null <c>[S+0x64]</c> is freed and cleared; then <c>0xA759D8</c>, S4); PCM streamed <c>0xA76178</c> (a non-null <c>[S+0x60]</c> is freed and
+    /// <c>[S+0x60]</c>, <c>[S+0x64]</c> cleared; then <c>0xA759D8</c>, S5); the class <c>0x103D8C8</c> is <c>0xA759D8</c> itself.
+    /// </summary>
+    public void Close2C()
+    {
+        switch (Class)
+        {
+            case WwisePcmAdpcmClass.AdpcmStream:                                    // vtable 0x103D840
+                if (BufferPtr64 != 0) { Seams.PoolFree?.Invoke("[S+0x64]", BufferPtr64); BufferPtr64 = 0; }   // 0xA73A14..0xA73A40 (vt+0xC)
+                ReleaseStreamA759D8();                                              // 0xA74298 b 0xA759D8
+                break;
+            case WwisePcmAdpcmClass.PcmStream:                                      // vtable 0x103D950
+                if (BufferPtr60 != 0)                                               // 0xA76178..0xA76184
+                {
+                    Seams.PoolFree?.Invoke("[S+0x60]", BufferPtr60);                // 0xA76198 bl 0xA7A988
+                    BufferPtr60 = 0;                                                // 0xA761A0
+                    BufferPtr64 = 0;                                                // 0xA761A4
+                }
+                ReleaseStreamA759D8();                                              // 0xA761B0 b 0xA759D8
+                break;
+            case WwisePcmAdpcmClass.Class103D8C8:                                   // vtable 0x103D8C8: vt+0x2C = 0xA759D8
+                ReleaseStreamA759D8();
+                break;
+            default:
+                throw new WwiseMissingBehaviourException("M6-025 S4/S5: the PCM / ADPCM stream object's class (its vtable) is not set; its close differs per class");
+        }
+    }
 
     /// <inheritdoc />
     protected override int ParseHeader(WwiseBytePtr data)

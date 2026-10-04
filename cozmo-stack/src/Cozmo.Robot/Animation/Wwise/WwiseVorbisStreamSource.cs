@@ -13,6 +13,9 @@ namespace Cozmo.Robot.Animation.Wwise;
 public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
 {
     private byte[]? _seekTable;                                                 // [S+0xE4]
+
+    /// <summary><c>[S+0xE4]</c>: the seek-table block (null is the zero pointer). Internal setter: the header parse allocates it; the close tests place one.</summary>
+    internal byte[]? SeekTable { get => _seekTable; set => _seekTable = value; }
     private object? _codebook;                                                  // [S+0x80]
 
     /// <summary><c>[S+0x68]</c>: the header state (0 to 3).</summary>
@@ -22,16 +25,16 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     public uint SeekCollected { get; private set; }
 
     /// <summary><c>[S+0xEC]</c>: the setup packet pointer (a pointer into a buffer, or an owned copy).</summary>
-    public WwiseBytePtr SetupPacket { get; private set; }
+    public WwiseBytePtr SetupPacket { get; internal set; }
 
     /// <summary><c>[S+0xF0]</c>: the setup payload bytes collected.</summary>
-    public uint SetupPayloadCollected { get; private set; }
+    public uint SetupPayloadCollected { get; internal set; }
 
     /// <summary><c>[S+0xF4]</c>: the setup prefix bytes collected.</summary>
-    public uint SetupPrefixCollected { get; private set; }
+    public uint SetupPrefixCollected { get; internal set; }
 
     /// <summary>Byte <c>[S+0xF8]</c>: the setup packet is an owned copy.</summary>
-    public bool SetupOwned { get; private set; }
+    public bool SetupOwned { get; internal set; }
 
     /// <summary><c>[S+0x80]</c>: the handle of the setup / codebook cache record (<c>0xAB2D74</c>).</summary>
     public object? CodebookHandle80 => _codebook;
@@ -57,6 +60,37 @@ public sealed class WwiseVorbisStreamSource : WwiseStreamSourceBase
     /// <summary>Creates the source.</summary>
     public WwiseVorbisStreamSource(WwiseStreamManager manager, WwisePlayingInstance pbi, WwiseSourceBlock150 src, WwiseStreamSourceSeams seams)
         : base(manager, pbi, src, seams) { }
+
+    /// <summary>
+    /// <c>vt+0x2C</c> = <c>0xAB2958(S)</c> (C34.3 S7): <c>0xAB3428(S+0x70)</c> (the DSP teardown, a required seam); <c>vt+0xC</c> = <c>0xAB1100</c>: a non-null <c>[S+0xA4]</c> is freed and <c>[S+0x60]</c>, <c>[S+0xA4]</c> cleared; a non-null
+    /// <c>[S+0xE4]</c> is freed and cleared; with byte <c>[S+0xF8] != 0</c> and <c>[S+0xEC] != 0</c> the setup copy is freed and <c>[S+0xEC]</c>, <c>[S+0xF8]</c>, <c>[S+0xF4]</c>, <c>[S+0xF0]</c> cleared; then <c>0xA759D8</c> (the stream's
+    /// <c>vt+8</c>, the container).
+    /// </summary>
+    public void Close2CAB2958()
+    {
+        (Seams.DspTeardownAB3428 ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S7: the Vorbis DSP teardown 0xAB3428 (0xAB2964) is not adopted; supply WwiseStreamSourceSeams.DspTeardownAB3428"))(this);
+        if (OutputA4 is not null)                                               // 0xAB1100..0xAB112C (vt+0xC)
+        {
+            Seams.PoolFree?.Invoke("[S+0xA4]", 0);                              // 0xAB1120 bl 0xA7A914
+            FramesDecoded60 = 0;                                                // 0xAB1128 [S+0x60]
+            OutputA4 = null;                                                    // 0xAB112C
+        }
+        if (_seekTable is not null)                                             // 0xAB2978..0xAB2998
+        {
+            Seams.PoolFree?.Invoke("[S+0xE4]", 0);                              // 0xAB2990 bl 0xA7A988
+            _seekTable = null;
+        }
+        if (SetupOwned && !SetupPacket.IsNull)                                  // 0xAB299C..0xAB29BC
+        {
+            Seams.PoolFree?.Invoke("[S+0xEC]", 0);                              // 0xAB29CC bl 0xA7A988
+            SetupPacket = default;                                              // 0xAB29D8
+            SetupOwned = false;                                                 // 0xAB29DC
+            SetupPrefixCollected = 0;                                           // 0xAB29E0
+            SetupPayloadCollected = 0;                                          // 0xAB29E4
+        }
+        ReleaseStreamA759D8();                                                  // 0xAB29EC b 0xA759D8
+    }
 
     private WwiseAutoStream St => Stream3C ?? throw new InvalidOperationException("M6-025: [S+0x3C] is null (the engine would dereference it)");
 

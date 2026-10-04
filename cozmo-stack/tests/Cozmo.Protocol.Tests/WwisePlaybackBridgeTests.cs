@@ -113,6 +113,8 @@ public class WwisePlaybackBridgeTests
     /// <summary>A source that fills every frame with a known value, so the render is observable.</summary>
     private sealed class SyntheticSource : IWwiseVoiceSource, IWwiseVoiceSourceFormat
     {
+        public void Close2C() { }                                                   // test double: this source owns no pool blocks (C34.3 S2..S7 are the real classes' closes)
+        public float Duration34() => 0f;
         public SyntheticSource(float value, int channels = 1, int rate = 48000, uint format = 0x1234)
         {
             Value = value;
@@ -519,18 +521,20 @@ internal static class WwiseBridgeTestSeams
             _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 1 } }, new WwiseVoiceLinkSeams());
         bridge.NextSource9EEDA4 ??= (WwiseNode? _, out int index) => { index = 0; return 0; };   // test double: an override of the read 0x9EEDA4 body (code 0, index 0)
         bridge.TailA023D4 ??= (_, _) => { };                 // test doubles: the 0xA37FE8..0xA38070 tail bodies are unread
-        bridge.TailA01918 ??= (_, _, _) => { };
         bridge.TailA9E85C8 ??= (_, _, _) => { };
-        bridge.SourceClose2C ??= _ => { };                   // test double: src vt+0x2C is unread
-        // The shipped Play path (C32.1) with doubles for the unread callees: every node has an output bus (the node itself), the bus has no
-        // contribution of its own, node vt+0xAC accumulates nothing, and no node has an RTPC the doubles would have to evaluate.
+        // The shipped Play path (C32.1) with doubles for the unread callees: every node has an output bus (a non-collapsed one, so the walk adds nothing), node vt+0xAC accumulates nothing,
+        // and no node has an RTPC the doubles would have to evaluate. The modulator manager answers 1 for every id (0x9DCE44 is not adopted).
         bridge.CtxNodeChainFlag9BC90C ??= _ => false;        // test double: the writers of [node+0x40] bits 17..19 are unread
         bridge.PlayPath ??= new WwisePlayPath(n => bridge.Limiter?.ParentNode(n), new WwisePlaySeams
         {
-            FirstOutputBus9F4BB8 = n => n,
-            BusFlag9C54E8 = _ => true,
             NodeVtAC = _ => { },
-        });
+            ModulatorCtxWords = _ => (0u, 0u, 0u),
+            RecordsOf34 = _ => Array.Empty<WwiseListRecord>(),   // test double: the V28 record list of [pbi+0x34] is not modelled; no records
+        })
+        {
+            RuntimeNodeOf = RuntimeDoubles.NodeWithBus,
+            Modulators = new WwiseModulatorManager { A9DCE44 = (_, _, _, _, _) => 1 },
+        };
         bridge.NewVoiceAllocSendTable4C ??= _ => new WwiseVoiceSendTable();
         return bridge;
     }

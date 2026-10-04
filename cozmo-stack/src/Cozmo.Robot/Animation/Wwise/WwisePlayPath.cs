@@ -11,6 +11,9 @@ namespace Cozmo.Robot.Animation.Wwise;
 // bridge yet (C30.W is parked); the path is exercised by tests, with doubles for the unread seams.
 //
 // Unread bodies are named seams (WwisePlaySeams) that throw WwiseMissingBehaviourException when reached unset.
+//
+// B-M6b-4 batch 5c (C34.1, C34.2): the bus walk (0x9BDA6C, 0x9F4BB8, 0x9C54E8, 0x9C39DC: WwiseBusWalk, WwiseRoutingNode), the RTPC evaluation 0xA11590 (WwiseRtpcStore), the modulator list consumption (0x9E8224, 0x9E62AC,
+// 0x9E61B4, 0xA01918: WwiseModulatorManager) and 0x9BE898 with [ctx+0xD0] == 0 replace the test-double seams FirstOutputBus9F4BB8, BusFlag9C54E8, BusVolume9C39DC, A9E8224, A9E62AC, Rtpc9A11590 and CtxObject9BE898.
 
 /// <summary>One record of the PBI's transition list (<c>pbi+0x10C</c>, 12 bytes): the byte at <c>+4</c> (bit 1 keeps the record across the prune <c>0x9FFBAC..0x9FFBF8</c>) and the float at <c>+8</c> (the multiplier).</summary>
 public sealed class WwiseTransitionRecord
@@ -32,9 +35,15 @@ public sealed class WwiseTransitionRecord
 /// <param name="Ranges">The stack word <c>[sp+4]</c>: <c>pbi+0x118</c> when <c>[pbi+0x1BC]</c> bit 0 is clear, else null.</param>
 /// <param name="Params">The stack word <c>[sp+8]</c> when <c>[pbi+0xE8]</c> bit 6 is set and the Play params exist: <c>params+0x108</c>; null when <paramref name="Local"/> is passed or <c>r7</c> is 0.</param>
 /// <param name="Local">The stack word <c>[sp+8]</c> when <c>[pbi+0xE8]</c> bit 6 is clear: the 12-byte zero block at <c>sp+0x2C</c>.</param>
-public sealed record WwiseVtAcArgs(WwisePlayingInstance Pbi, WwiseNode Node, uint Mask, WwiseGainRanges? Ranges, WwisePlayInitParams? Params, WwiseAcLocalBlock? Local);
+/// <param name="StackWord0C">The stack word <c>[sp+0xC]</c>: the constant 1 (<c>0x9FFD00</c>, <c>0x9FFD08</c>; C34.1 B18).</param>
+/// <param name="StackWord10">The stack word <c>[sp+0x10]</c>: <c>r6</c>, which is 0 on every path (<c>0x9FFC18</c>, <c>0x9FFEB8</c>, <c>0x9FFD04</c>; C34.1 B18).</param>
+public sealed record WwiseVtAcArgs(WwisePlayingInstance Pbi, WwiseNode Node, uint Mask, WwiseGainRanges? Ranges, WwisePlayInitParams? Params, WwiseAcLocalBlock? Local, uint StackWord0C = 1, uint StackWord10 = 0)
+{
+    /// <summary>The out vector <c>r7</c> (<c>[sp+8]</c>): the local block, else <c>params+0x108</c>, else null (<c>0x9FFCAC..0x9FFCBC</c>).</summary>
+    public WwiseAcLocalBlock? OutList => Local ?? Params?.Block108;
+}
 
-/// <summary>The zero block CalcEffectiveParams passes to node <c>vt+0xAC</c> at <c>sp+0x2C</c> (<c>0x9FFCB0</c>, <c>0x9FFCC4</c>, <c>0x9FFCC8</c>) when <c>[pbi+0xE8]</c> bit 6 is clear. Node <c>vt+0xAC</c> may fill it.</summary>
+/// <summary>The 12-byte vector <c>{data, count, capacity}</c>: the zero block CalcEffectiveParams passes to node <c>vt+0xAC</c> at <c>sp+0x2C</c> (<c>0x9FFCB0</c>, <c>0x9FFCC4</c>, <c>0x9FFCC8</c>) when <c>[pbi+0xE8]</c> bit 6 is clear, and the vector at <c>params+0x108</c>. Node <c>vt+0xAC</c> may fill it.</summary>
 public sealed class WwiseAcLocalBlock
 {
     /// <summary><c>[sp+0x2C]</c>: an object the call allocated; CalcEffectiveParams frees it (<c>0x9FFE5C..0x9FFE7C</c>).</summary>
@@ -45,34 +54,30 @@ public sealed class WwiseAcLocalBlock
 
     /// <summary><c>[sp+0x34]</c>.</summary>
     public uint Word8 { get; set; }
+
+    /// <summary>
+    /// The 20-byte records <see cref="Word0"/> points at (the vector's data); the first <see cref="Word4"/> of them are the vector's elements. The producer is node <c>vt+0xAC</c> -&gt; <c>0x9EF258</c> -&gt; <c>0xA6E848</c> (unread). The same shape
+    /// is the vector at <c>params+0x108</c> (<c>+0x108</c> data, <c>+0x10C</c> count, <c>+0x110</c> capacity).
+    /// </summary>
+    public List<WwiseModulatorOutRecord> Records { get; } = new();
+
+    /// <summary>The elements in use: the first <see cref="Word4"/> records (<c>0x9E62B4..0x9E62C8</c>: <c>end = data + 20 * count</c>).</summary>
+    public IReadOnlyList<WwiseModulatorOutRecord> InUse
+        => Word4 <= (uint)Records.Count ? Records.GetRange(0, (int)Word4)
+            : throw new InvalidOperationException("the vector's count exceeds the records its data pointer addresses");
 }
 
 /// <summary>The unread bodies the shipped Play path reaches. Each is required: reaching one unset throws.</summary>
 public sealed class WwisePlaySeams
 {
-    /// <summary><c>0x9F4BB8(node)</c>, the body of the call <c>0x9BDA6C(ctx)</c> tail-calls (<c>0x9BDA78..0x9BDA7C</c>): the bus <c>0x9FFAF4</c> keeps in <c>r6</c>. Unread.</summary>
-    public Func<WwiseNode, WwiseNode?>? FirstOutputBus9F4BB8 { get; set; }
-
-    /// <summary><c>0x9C54E8(bus)</c> (<c>0x9FFC08</c>): zero selects <c>0x9C39DC</c>. Unread.</summary>
-    public Func<WwiseNode, bool>? BusFlag9C54E8 { get; set; }
-
-    /// <summary><c>0x9C39DC(bus, 0, 5)</c> (<c>0x9FFEBC</c>): the Bus Volume read added to <c>pbi+0x64</c>. Unread.</summary>
-    public Func<WwiseNode, float>? BusVolume9C39DC { get; set; }
-
     /// <summary>Node <c>vt+0xAC</c> (<c>0x9FFD0C</c>): GetAudioParameters accumulates into the PBI's parameter block and transition list. Its body is the M6-010 model, not wired to the PBI fields; unread here.</summary>
     public Action<WwiseVtAcArgs>? NodeVtAC { get; set; }
 
-    /// <summary><c>0x9E8224([pbi+0x34])</c> (<c>0x9FFF30</c>), reached when <c>[pbi+0xE8]</c> bit 6 is clear. Unread.</summary>
-    public Action<WwisePlayingInstance>? A9E8224 { get; set; }
-
-    /// <summary><c>0x9E62AC</c> (<c>0x9FFF98</c>), reached when <c>[pbi+0xE8]</c> bit 6 is clear and the block has <c>[block+4] != 0</c>. Unread.</summary>
-    public Action<WwisePlayingInstance>? A9E62AC { get; set; }
-
-    /// <summary><c>0xA11590(*0x108D908, key, id, ..)</c>, the RTPC curve evaluation the node walks take for RTPC parameters 0x12, 0x13, 0x17 and 0x18. Unread.</summary>
-    public Func<WwiseNode, byte, float>? Rtpc9A11590 { get; set; }
-
-    /// <summary><c>0x9BE898</c> (<c>0x9BEBE4</c>): the context-object branch of <c>0x9BEB30</c> taken when <c>[ctx+0xD0] != 0</c>. Unread.</summary>
-    public Func<WwisePlayingInstance, int>? CtxObject9BE898 { get; set; }
+    /// <summary>
+    /// The three words of the modulator context record (<c>0x9FFF38..0x9FFF98</c>, <c>0xA0193C..0xA01998</c>) the C# PBI does not model: <c>[pbi+0x1E4]</c> (the ctor stores the event dword <c>params[0x84..0x87]</c>, whose upper two bytes are
+    /// not stored on the Play path), <c>[pbi+0x1E8]</c> and <c>[pbi+0x1C]</c> (no adopted writer). Required when <c>0x9E62AC</c> runs.
+    /// </summary>
+    public Func<WwisePlayingInstance, (uint Word1E4, uint Word1E8, uint Word1C)>? ModulatorCtxWords { get; set; }
 
     /// <summary><c>0x9FB17C</c> (<c>0x9FBED4</c>): the part of <c>0x9FBE74</c> that runs when <c>[ctx+0xD0] != 0</c>. Unread.</summary>
     public Action<WwisePlayingInstance>? A9FB17C { get; set; }
@@ -102,6 +107,9 @@ public sealed class WwisePlaySeams
 /// <summary>A record of the V28 list <c>0x9E808C</c> walks: <c>[+0x30]</c> an object whose <c>[+8]</c> is copied to <c>[+0x4C]</c>, <c>[+0x48]</c> a state, <c>[+0x50]</c> a limit, <c>[+0x58]</c> a counter.</summary>
 public sealed class WwiseListRecord
 {
+    /// <summary><c>+0xC</c>: cleared for every item by <c>0x9E8224</c> (R6).</summary>
+    public uint Word0C { get; set; }
+
     /// <summary><c>+0x30</c>: the object, or null.</summary>
     public uint? Object30Word8 { get; set; }
 
@@ -286,6 +294,18 @@ public sealed class WwisePlayPath
     /// <summary>The unread callee bodies.</summary>
     public WwisePlaySeams Seams { get; }
 
+    /// <summary>
+    /// The runtime node behind a hierarchy node: the engine's node object, whose <c>[+0x34]</c> parent and <c>[+0x38]</c> output-bus links, bus fields and subscription data the bus walk reads. The C# hierarchy nodes are parsed records without those
+    /// links and no production code builds the runtime graph yet, so the mapping is the host's. Required when CalcEffectiveParams walks to the bus.
+    /// </summary>
+    public Func<WwiseNode, WwiseRoutingNode?>? RuntimeNodeOf { get; set; }
+
+    /// <summary>The RTPC manager <c>*0x108D908</c> that <c>0xA11590</c> reads (<see cref="WwiseRtpcStore.A11590"/>). Required when an RTPC bit is evaluated.</summary>
+    public WwiseRtpcStore? Rtpc { get; set; }
+
+    /// <summary>The modulator manager <c>*0x10400E8</c> that <c>0x9E62AC</c> / <c>0x9E61B4</c> take as <c>r0</c>. Required when a modulator out list is non-empty.</summary>
+    public WwiseModulatorManager? Modulators { get; set; }
+
     /// <summary>The transition manager (<c>*0x108D870</c>) <c>0xA0067C</c> creates items in. Required for a Play with a fade.</summary>
     public WwiseTransitionManager? Transitions { get; set; }
 
@@ -319,9 +339,20 @@ public sealed class WwisePlayPath
         return (false, 0f);                                                           // 0x9F1F8C str r3,[r1]; 0x9F1FC8 beq 0x9F20A0 (r0 = 0)
     }
 
-    private float Rtpc(WwiseNode node, byte id)
-        => (Seams.Rtpc9A11590 ?? throw new WwiseMissingBehaviourException(
-            $"M6-025 P8: RTPC parameter 0x{id:X} of node {node.Id} goes through 0xA11590 (the curve evaluation), which is unread; supply WwisePlaySeams.Rtpc9A11590"))(node, id);
+    /// <summary>
+    /// <c>0xA11590(*0x108D908, node+0x10, id, key)</c> with <c>key = r8</c> of <c>0x9FAEE8</c> = <c>pbi+0x14</c> (<c>0x9FAF6C..0x9FAF80</c>, <c>0x9FB10C..0x9FB11C</c>). The key struct <c>{[pbi+0x14], 0, 0, 0xFF, 0xFF, 0}</c> is built by <c>0x9BC90C</c> and copied by
+    /// <c>0xA19CDC</c> (unread); a PBI whose <c>RtpcKey14</c> is not a <see cref="WwiseGainRtpcKey"/> has no modelled key.
+    /// </summary>
+    private float RtpcValue(WwiseNode node, byte id, WwisePlayingInstance pbi)
+    {
+        var rt = (RuntimeNodeOf ?? throw new WwiseMissingBehaviourException(
+            "M6-025 P8: RTPC evaluation (0xA11590) keys on node+0x10 of the runtime node; supply WwisePlayPath.RuntimeNodeOf"))(node)
+            ?? throw new WwiseMissingBehaviourException($"M6-025 P8: node {node.Id} has no runtime node");
+        var store = Rtpc ?? throw new WwiseMissingBehaviourException("M6-009 R1: RTPC parameter evaluation needs the RTPC manager (*0x108D908); supply WwisePlayPath.Rtpc");
+        var key = pbi.RtpcKey14 is WwiseGainRtpcKey k ? k
+            : throw new WwiseMissingBehaviourException("M6-025 P8: the PBI key [pbi+0x14] (0x9BC90C / 0xA19CDC) is not a WwiseGainRtpcKey; its layout beyond word 0 is unread");
+        return store.A11590(rt.SubscriptionKey10, id, key);
+    }
 
     private static bool HasRtpc(WwiseNode node, int id) => node.Params.Rtpcs.Any(r => r.ParamId == id);
 
@@ -338,8 +369,8 @@ public sealed class WwisePlayPath
         bool b12 = HasRtpc(node, 0x12), b13 = HasRtpc(node, 0x13);
         if (b12 || b13)                                                               // 0x9FAF30..0x9FAF3C, 0x9FAF5C: either pan RTPC replaces both property reads
         {
-            pbi.PanB4 = b12 ? Rtpc(node, 0x12) : 0f;                                  // 0x9FAF80 / 0x9FB11C -> [r5]; 0x9FAF50 stores 0 when only 0x13 is set
-            pbi.PanB8 = b13 ? Rtpc(node, 0x13) : 0f;                                  // 0x9FB134 -> [r5+4]; 0x9FAF8C stores 0 when only 0x12 is set
+            pbi.PanB4 = b12 ? RtpcValue(node, 0x12, pbi) : 0f;                                  // 0x9FAF80 / 0x9FB11C -> [r5]; 0x9FAF50 stores 0 when only 0x13 is set
+            pbi.PanB8 = b13 ? RtpcValue(node, 0x13, pbi) : 0f;                                  // 0x9FB134 -> [r5+4]; 0x9FAF8C stores 0 when only 0x12 is set
             r7 = 1;                                                                   // 0x9FAF74, 0x9FB138
         }
         else
@@ -348,7 +379,7 @@ public sealed class WwisePlayPath
             pbi.PanB8 = BitConverter.UInt32BitsToSingle(PropBits(node, 0xD));         // 0x9FB098: [r5+4] = property 0xD
         }
         pbi.PanBC = HasRtpc(node, 0x18)                                               // 0x9FAF9C..0x9FAFB4
-            ? Rtpc(node, 0x18)                                                        //   0xA11590 -> [r5+8]
+            ? RtpcValue(node, 0x18, pbi)                                               //   0xA11590 -> [r5+8]
             : BitConverter.UInt32BitsToSingle(PropBits(node, 0xE));                   //   0x9FB0A0: property 0xE
         bool bit47 = (node.Params.PositioningBits & 3) == 3 && ((node.Params.PositioningBits >> 2) & 1) != 0;
         pbi.PanC0 = (byte)(bit47 ? 1 : 0);                                            // 0x9FAFD8..0x9FAFE4
@@ -377,7 +408,7 @@ public sealed class WwisePlayPath
         uint b = (0x21u >> 5) & 3;                                                    // 0x9FBA3C ubfx r3,sb,#5,#2
         uint a = (0x21u >> 3) & 3;                                                    // 0x9FBA7C ubfx sb,sb,#3,#2
         if (HasRtpc(top, 0x17))                                                       // 0x9FBA90..0x9FBAA8
-            a = FloatToU32(Rtpc(top, 0x17));                                          // 0x9FBAC8..0x9FBAD0
+            a = FloatToU32(RtpcValue(top, 0x17, pbi));                                          // 0x9FBAC8..0x9FBAD0
         A9FAEE8(top, pbi);                                                            // 0x9FBAE4 b 0x9FAEE8
         return (a, b);
     }
@@ -387,14 +418,16 @@ public sealed class WwisePlayPath
     // ------------------------------------------------------------------ the bus and the effective parameters
 
     /// <summary>
-    /// <c>0x9BDA6C(ctx)</c> (<c>0x9FFAF4</c>): <c>[pbi+0xE9]</c> bit 2 returns 0; otherwise <c>0x9F4BB8([pbi+0xE0])</c> (an unread body).
+    /// <c>0x9BDA6C(ctx)</c> (<c>0x9FFAF4</c>): <c>[pbi+0xE9]</c> bit 2 returns 0; otherwise <c>0x9F4BB8([pbi+0xE0])</c> (<see cref="WwiseBusWalk.FirstOutputBus9BDA6C"/>, B2, B3).
     /// </summary>
-    private WwiseNode? FirstBus(WwisePlayingInstance pbi)
+    private WwiseRoutingNode? FirstBus(WwisePlayingInstance pbi)
     {
         if ((pbi.Flags0E9 & 4) != 0) return null;                                     // 0x9BDA6C..0x9BDA74, 0x9BDA80
         var node = pbi.NodeE0 ?? throw new WwiseMissingBehaviourException("M6-025 R3.1: [pbi+0xE0] is not set (0x9BDA78 ldr r0,[r0,#0xd4] feeds 0x9F4BB8)");
-        return (Seams.FirstOutputBus9F4BB8 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 R3.1: 0x9F4BB8 (the first output bus, called through 0x9BDA6C at 0x9FFAF4) is unread; supply WwisePlaySeams.FirstOutputBus9F4BB8"))(node);
+        var runtime = (RuntimeNodeOf ?? throw new WwiseMissingBehaviourException(
+            "M6-025 B3: 0x9F4BB8 walks the runtime node's [+0x38] / [+0x34] links; supply WwisePlayPath.RuntimeNodeOf"))(node)
+            ?? throw new WwiseMissingBehaviourException($"M6-025 B3: node {node.Id} has no runtime node");
+        return WwiseBusWalk.FirstOutputBus9BDA6C(pbi.Flags0E9, runtime);
     }
 
     /// <summary>
@@ -408,11 +441,12 @@ public sealed class WwisePlayPath
         ArgumentNullException.ThrowIfNull(pbi);
         ArgumentNullException.ThrowIfNull(limiter);
         var bus = FirstBus(pbi);                                                       // 0x9FFAF4 bl 0x9BDA6C
-        if (play is not null && bus is null && play.Word11C == 0)                          // 0x9FFB04..0x9FFB0C: [r7+0x90] (= params+0x11C, 0 from the Play helper) == r6
+        if (play is not null && bus is null && play.Word11C == 0)                          // 0x9FFB04..0x9FFB0C: [r7+0x90] (= params+0x11C, 0 from the Play builder, 0xA62B74) == r6
         {
-            // 0x9FFED4: the cached copy runs only with [pbi+0xE9] bit 2 clear (0x9FFEDC bne 0x9FFB10).
+            // 0x9FFED4: the cached copy runs only with [pbi+0xE9] bit 2 clear (0x9FFEDC bne 0x9FFB10). C34.1: mechanically reachable (first bus null), unreachable on shipped data (every shipped Sound has a first
+            // output bus); its body (B12) is not adopted, so it stays a throwing seam.
             if ((pbi.Flags0E9 & 4) == 0)
-                throw new WwiseMissingBehaviourException("M6-025 R3.1: the cached-block path of CalcEffectiveParams (0x9FFEE4..0xA00000, [r7+0x90] == the bus word) is not adopted");
+                throw new WwiseMissingBehaviourException("M6-025 B12: the cached-block path of CalcEffectiveParams (0x9FFEE4..0xA00000, [r7+0x90] == the first output bus) is mechanically reachable but unreachable on shipped data; its body is not adopted by C34.1");
         }
         Reset9FFB10(pbi);
         PruneTransitions(pbi);
@@ -422,12 +456,13 @@ public sealed class WwisePlayPath
         {
             s16 = 0f;
         }
+        else if (bus.A9C54E8())                                                        // 0x9FFC08 bl 0x9C54E8; 0x9FFC0C subs r1,r0,#0; non-zero -> 0x9FFC14 (s16 = 0.0f)
+        {
+            s16 = 0f;
+        }
         else
         {
-            bool r1 = (Seams.BusFlag9C54E8 ?? throw new WwiseMissingBehaviourException(
-                "M6-025 R3.1: 0x9C54E8 (0x9FFC08) is unread; supply WwisePlaySeams.BusFlag9C54E8"))(bus);
-            s16 = r1 ? 0f : (Seams.BusVolume9C39DC ?? throw new WwiseMissingBehaviourException(
-                "M6-025 R3.1: 0x9C39DC (0x9FFEBC) is unread; supply WwisePlaySeams.BusVolume9C39DC"))(bus);
+            s16 = WwiseBusWalk.A9C39DC(bus, 0, 5, Rtpc);                               // 0x9FFEB0..0x9FFEBC: 0x9C39DC(r6, 0, 5)
         }
         // r6 is 0 from here on (0x9FFC18 mov r6,#0 / 0x9FFEB8 mov r6,r1).
         if ((pbi.Flags0E9 & 4) != 0)                                                   // 0x9FFC28 cmp r5,#0; beq 0x9FFC54
@@ -478,13 +513,7 @@ public sealed class WwisePlayPath
 
         limiter.PriorityRefresh9FFE1C(pbi);                                            // 0x9FFE1C..0x9FFFE4 (8.4)
         if ((pbi.Flags0E8 & 0x40) == 0)                                                // 0x9FFE50..0x9FFE58
-        {
-            if (pbi.Field34 != 0)                                                      // 0x9FFF24..0x9FFF30
-                (Seams.A9E8224 ?? throw new WwiseMissingBehaviourException("M6-025 R3.1: 0x9E8224 (0x9FFF30) is unread"))(pbi);
-            if (local.Word4 != 0)                                                      // 0x9FFF34 ldr r3,[r7,#4]; cmp r3,#0 (r7 = the local block here)
-                (Seams.A9E62AC ?? throw new WwiseMissingBehaviourException("M6-025 R3.1: 0x9E62AC (0x9FFF98) is unread"))(pbi);
-            pbi.Flags0E8 |= 0x40;                                                      // 0x9FFF9C..0x9FFFA4
-        }
+            ConsumeModulatorsA01918(pbi, local);                                       // 0x9FFF24..0x9FFFA4: the body of 0xA01918 on r7 = the local block
         if (local.Word0 != 0) local.Word4 = 0;                                         // 0x9FFE5C..0x9FFE7C: the object node vt+0xAC allocated is freed
         pbi.Flags1BC |= 1;                                                             // 0x9FFC30
         pbi.Flags0E8 |= 0x20;
@@ -627,11 +656,67 @@ public sealed class WwisePlayPath
         return new InitResult(r5, below, 0);                                            // 0x9BED8C
     }
 
-    private InitResult CtxObject(WwisePlayingInstance pbi)
+    private static InitResult CtxObject(WwisePlayingInstance pbi)
+        => throw new WwiseMissingBehaviourException(
+            "M6-025 P8: [ctx+0xD0] != 0 takes 0x9BE898 (0x9BEBE4) with a context object, whose body (0x9BE8D0..) and the branches after it (0x9BEBF0..0x9BEEC4) are unread; no shipped node allocates the context object (positioning bit 3 is never set)");
+
+    /// <summary>
+    /// <c>0x9BE898(ctx, out)</c> with <c>[ctx+0xD0] == 0</c> (C34.2 R10): it always returns 2 and never writes <c>*out</c>. With <c>[ctx+0xDD]</c> bit 2 set it clears <c>[ctx+0xB4]</c> (<c>PanC0</c>), <c>[ctx+0xA8..0xB0]</c> (<c>PanB4..PanBC</c>) and
+    /// <c>[ctx+0xDC] &amp;= ~3</c> (<c>0x9BE948..0x9BE974</c>); with bit 2 clear and <c>[ctx+0xDC] &amp; 3 == 1</c> it runs <c>0x9FB9B8</c> (which sets <c>[ctx+0xDC]</c> bits 2..3 from <c>(byte46 &gt;&gt; 5) &amp; 3</c> and bits 0..1 from
+    /// <c>(byte46 &gt;&gt; 3) &amp; 3</c>, then clears bits 0..1 when <c>[ctx+0xD0]</c> is still 0, <c>0x9BE984..0x9BE9E0</c>); otherwise nothing (<c>0x9BE8C8 -&gt; 0x9BE978</c>). A context object (<c>[ctx+0xD0] != 0</c>) takes <c>0x9BE8D0</c>, which is unread.
+    /// The callers that read its out-pointer (<c>0x9FF904</c>, <c>0xA01A64</c>) are not reached from the C# graph (C34.2 R11: their reach is UNKNOWN).
+    /// </summary>
+    public int A9BE898(WwisePlayingInstance pbi)
     {
-        (Seams.CtxObject9BE898 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 P8: [ctx+0xD0] != 0 takes 0x9BE898 (0x9BEBE4) and the unread branches after it; no shipped node allocates the context object"))(pbi);
-        throw new WwiseMissingBehaviourException("M6-025 P8: the 0x9BEBF0..0x9BEEC4 branches after 0x9BE898 are unread");
+        ArgumentNullException.ThrowIfNull(pbi);
+        if ((pbi.Flags0E9 & 4) != 0)                                                    // 0x9BE8AC tst r3,#4; bne 0x9BE948
+        {
+            pbi.PanC0 = 0;                                                              // 0x9BE95C strb r1,[r0,#0xb4]
+            pbi.Flags0E8 = (byte)(pbi.Flags0E8 & ~3);                                   // 0x9BE960 bfc r2,#0,#2
+            pbi.PanB4 = pbi.PanB8 = pbi.PanBC = 0f;                                     // 0x9BE964..0x9BE970
+            if (pbi.CtxD0 is not null) return CtxObject(pbi).Result;                    // 0x9BE974 bne 0x9BE8D0
+            return 2;                                                                   // 0x9BE978
+        }
+        if ((pbi.Flags0E8 & 3) == 1)                                                    // 0x9BE8BC cmp r3,#1; beq 0x9BE984
+        {
+            if (pbi.CtxD0 is not null) return CtxObject(pbi).Result;                    // 0x9BE984 cmp r4,#0; bne 0x9BE8D0
+            var node = pbi.NodeE0 ?? throw new WwiseMissingBehaviourException("M6-025 R10: [pbi+0xE0] is not set (0x9BE98C ldr r0,[r0,#0xd4])");
+            var (a, b) = A9FB9B8(pbi, node);                                            // 0x9BE9AC bl 0x9FB9B8
+            byte dc = pbi.Flags0E8;                                                     // 0x9BE9B0
+            dc = (byte)((dc & ~0x0C) | (int)((b & 3) << 2));                            // 0x9BE9BC bfi r3,r2,#2,#2
+            dc = (byte)((dc & ~0x03) | (int)(a & 3));                                   // 0x9BE9C8 bfi r3,r2,#0,#2
+            pbi.Flags0E8 = dc;                                                          // 0x9BE9CC
+            if (pbi.CtxD0 is not null) return CtxObject(pbi).Result;                    // 0x9BE9DC bne 0x9BE8D0
+            pbi.Flags0E8 = (byte)(pbi.Flags0E8 & ~3);                                   // 0x9BE9D0..0x9BE9D8 (r4 == 0)
+            return 2;                                                                   // 0x9BE9E0 b 0x9BE978
+        }
+        if (pbi.CtxD0 is not null) return CtxObject(pbi).Result;                        // 0x9BE8C8 cmp r4,#0; beq 0x9BE978
+        return 2;                                                                       // 0x9BE978
+    }
+
+    // ------------------------------------------------------------------ the modulator list (C34.2 R6, R7, 0xA01918)
+
+    /// <summary>
+    /// <c>0xA01918(pbi, outVec, 1)</c> (the third argument is not read), and the identical body CalcEffectiveParams runs at <c>0x9FFF24..0x9FFFA4</c> with <c>r7</c> = the local block: <c>[pbi+0x34] != 0</c> runs <c>0x9E8224([pbi+0x34])</c>; a non-zero
+    /// count <c>[vec+4]</c> builds the 8-word record <c>{[pbi+0x14], [pbi+0x1E4], [pbi+0x1E8], [pbi+0x1C], [pbi+0x140], [pbi+0x1D8], ([pbi+0x1BF] &gt;&gt; 2) &amp; 1, pbi}</c> and calls <c>0x9E62AC(*0x10400E8, vec, rec, pbi+0x34)</c>; then
+    /// <c>[pbi+0xE8] |= 0x40</c>. <c>[pbi+0xE8]</c> starts <c>0x5D</c> (bit 6 set), so on the first Play this runs from <c>0xA38044</c> (<c>r1 = params+0x108</c>), not from the CalcEffectiveParams block (C34.2, verification correction 4).
+    /// </summary>
+    public void ConsumeModulatorsA01918(WwisePlayingInstance pbi, WwiseAcLocalBlock vec)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        ArgumentNullException.ThrowIfNull(vec);
+        if (pbi.Field34 != 0)                                                           // 0xA01920..0xA01934 / 0x9FFF24..0x9FFF30
+            WwiseModulatorManager.A9E8224((Seams.RecordsOf34 ?? throw new WwiseMissingBehaviourException(
+                "M6-025 R6: the list at [pbi+0x34] is not modelled; supply WwisePlaySeams.RecordsOf34"))(pbi));
+        if (vec.Word4 != 0)                                                             // 0xA01938..0xA01940 / 0x9FFF34..0x9FFF3C
+        {
+            var (w1E4, w1E8, w1C) = (Seams.ModulatorCtxWords ?? throw new WwiseMissingBehaviourException(
+                "M6-025 R7: the words [pbi+0x1E4], [pbi+0x1E8], [pbi+0x1C] of the modulator context record have no adopted writer; supply WwisePlaySeams.ModulatorCtxWords"))(pbi);
+            var ctx = new WwiseModulatorCtxRec(pbi.GameObject14 ?? 0u, w1E4, w1E8, w1C, pbi.PlayingId, pbi.StartOffset, (uint)((pbi.Flags1BF >> 2) & 1), pbi);   // 0xA0194C..0xA01998
+            (Modulators ?? throw new WwiseMissingBehaviourException(
+                "M6-025 R7: 0x9E62AC takes the modulator manager *0x10400E8; supply WwisePlayPath.Modulators")).A9E62AC(vec.InUse, ctx, pbi);   // 0xA0199C (r3 = pbi+0x34)
+        }
+        pbi.Flags0E8 |= 0x40;                                                           // 0xA019A0..0xA019A8 / 0x9FFF9C..0x9FFFA4
     }
 
     // ------------------------------------------------------------------ 0xA00618 and 0xA1E280

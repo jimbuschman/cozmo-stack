@@ -168,13 +168,13 @@ public class WwiseMediaTableTests
     [InlineData(3, 0u, 29u, 0u, true)]   // the first items array (0x9B4EE4): the node is removed again (0x9B4FA4..0x9B5094), 0x34, cleanup
     public void S6_AnAllocationFailureOnTheFirstEntryReturns0x34AndReachesTheUnadoptedCleanup(int failing, uint counter, uint buckets, uint nodes, bool cleanup)
     {
-        // emu_media.py S6: ret 0x34 with [bank+0x2C] 0, the table as listed and 0x9B45D8 called once. 0x9B45D8's body is not adopted, so the C# stops there (WwiseMissingBehaviourException) with the same table state.
+        // emu_media.py S6: ret 0x34 with [bank+0x2C] 0, the table as listed and 0x9B45D8 called once; its body (C34.4 K14) is now the C#'s CleanupA9B45D8, which with [bank+0x2C] == 0 changes nothing.
         var (table, memory) = NewTable();
         int calls = 0;
         memory.AllocationFails = () => ++calls == failing;
         var a = Bank((1001, 0, 10), (1002, 10, 20));
         Assert.True(cleanup);
-        Assert.Throws<WwiseMissingBehaviourException>(() => table.WriteBankA9B49A4(a, 0x1000));
+        Assert.Equal(0x34, table.WriteBankA9B49A4(a, 0x1000));
         Assert.Equal(counter, a.Counter2C);
         Assert.Equal(buckets, table.BucketCount);
         Assert.Equal(nodes, table.NodeCount);
@@ -185,7 +185,8 @@ public class WwiseMediaTableTests
     public void S6_AFailureAfterAnEntryWasProcessedReturns1WithoutTheCleanupAndFailingTheItemsOfTheSecondEntryRemovesItsNode()
     {
         // emu_media.py S6: allocation #4 (the second entry's node) fails after the first entry: ret 1 (0x9B4C84 returns [sp+8] = 1, which the first entry stored), [bank+0x2C] 1, one node, no cleanup, node 1001 intact.
-        // Allocation #5 (the second entry's items array): the node is removed again, [sp+8] = 0x34, cleanup (here the unadopted body: an exception), one node left.
+        // Allocation #5 (the second entry's items array): the node is removed again, [sp+8] = 0x34, then the cleanup 0x9B45D8 (C34.4 K14) takes the first entry's node out as well: ret 0x34, [bank+0x2C] 0, no node
+        // (the engine's output for a two-entry bank whose second entry fails: emu_bankload.py two_entries_alloc_fail_4, _5 and _7: result 0x34, "count=0").
         var (t4, m4) = NewTable();
         int c4 = 0;
         m4.AllocationFails = () => ++c4 == 4;
@@ -200,10 +201,11 @@ public class WwiseMediaTableTests
         int c5 = 0;
         m5.AllocationFails = () => ++c5 == 5;
         var a5 = Bank((1001, 0, 10), (1002, 10, 20));
-        Assert.Throws<WwiseMissingBehaviourException>(() => t5.WriteBankA9B49A4(a5, 0x1000));
-        Assert.Equal(1u, a5.Counter2C);
-        Assert.Equal(1u, t5.NodeCount);
+        Assert.Equal(0x34, t5.WriteBankA9B49A4(a5, 0x1000));
+        Assert.Equal(0u, a5.Counter2C);
+        Assert.Equal(0u, t5.NodeCount);
         Assert.Null(t5.Find(1002));
+        Assert.Null(t5.Find(1001));
     }
 
     [Fact]
@@ -214,7 +216,7 @@ public class WwiseMediaTableTests
         table.WriteBankA9B49A4(Bank((5, 0, 10)), 0x1000);
         int calls = 0;
         memory.AllocationFails = () => ++calls == 1;
-        Assert.Throws<WwiseMissingBehaviourException>(() => table.WriteBankA9B49A4(Bank((5, 4, 20)), 0x2000));
+        Assert.Equal(0x34, table.WriteBankA9B49A4(Bank((5, 4, 20)), 0x2000));
         Assert.Equal(0u, table.NodeCount);
         Assert.Null(table.Find(5));
     }
@@ -242,203 +244,6 @@ public class WwiseMediaTableTests
         Assert.Equal(0u, table.NodeCount);
         var (empty, _) = NewTable();
         Assert.Equal((0u, 0u), (empty.LookupA1EC54(1, 0, 0).Data, empty.LookupA1EC54(1, 0, 0).Size));    // an empty table: [BM+0x38] == 0 (0x9BB35C..0x9BB364)
-    }
-
-    // ------------------------------------------------------------------ the loader (emu_loader.py)
-
-    private static byte[] Chunk(string tag, byte[] body)
-    {
-        var b = new List<byte>();
-        b.AddRange(System.Text.Encoding.ASCII.GetBytes(tag));
-        b.AddRange(BitConverter.GetBytes((uint)body.Length));
-        b.AddRange(body);
-        return b.ToArray();
-    }
-
-    private static byte[] Cat(params byte[][] parts) => parts.SelectMany(x => x).ToArray();
-
-    private static readonly byte[] Bkhd = Chunk("BKHD", new byte[16]);
-    private static readonly byte[] Didx3 = Cat(
-        BitConverter.GetBytes(1001u), BitConverter.GetBytes(0u), BitConverter.GetBytes(10u),
-        BitConverter.GetBytes(1002u), BitConverter.GetBytes(10u), BitConverter.GetBytes(20u),
-        BitConverter.GetBytes(1003u), BitConverter.GetBytes(30u), BitConverter.GetBytes(5u));
-    private static readonly byte[] Data35 = Enumerable.Range(0, 35).Select(i => (byte)i).ToArray();
-
-    private sealed class LoaderRig
-    {
-        public readonly WwiseBankMemory Memory = new() { PoolCreateResult = 119, PoolCheckResult = 1, PoolAttributes = 0, PoolBlockSize = 0 };
-        public readonly WwiseMediaTable Table;
-        public readonly WwiseBankLoader Loader;
-        public readonly WwiseMediaBank Bank = new() { Id = 0x1234 };
-        public readonly List<string> Handled = new();
-        public int HandlerResult = 1, BkhdResult = 1;
-        public LoaderRig()
-        {
-            Table = new WwiseMediaTable(Memory);
-            Loader = new WwiseBankLoader(Table)
-            {
-                ReadBkhd = (_, _) => BkhdResult,
-                ChunkHandler = chunk => { Handled.Add(chunk.FourCc); chunk.Stream.Skip(chunk.Size, out _); return HandlerResult; },   // the stand-in consumes the chunk body as the engine's handlers do
-            };
-        }
-
-        public int Run(byte[] file, out WwiseMemoryBankStream stream)
-        {
-            stream = new WwiseMemoryBankStream(file);
-            return Loader.LoadMode0(stream, Bank);
-        }
-
-        public int Run(byte[] file) => Run(file, out _);
-    }
-
-    [Fact]
-    public void L1_TheLoaderReadsDidxAndDataAndRunsTheWriter()
-    {
-        // emu_loader.py L1 (0x9B74D8 type 0 / mode 0): BKHD, DIDX (3 entries), DATA (35 bytes); the pool is created with (0, 35, 35, 9, 0x10) (0x9B7C88), checked and its attributes read (bit 3 clear: the chunk size is
-        // allocated from it); ret 1, the stream closed once, 3 nodes in 29 buckets; bank: id 0x1234, [+4] = 2, DATA and DIDX buffers, [+0x1C] = 35, [+0x24] = the pool id, [+0x28] = 1, [+0x2C] = [+0x30] = 3, [+0x48] = 1,
-        // [+0x50] = 3.
-        var rig = new LoaderRig();
-        Assert.Equal(1, rig.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35)), out var stream));
-        Assert.True(stream.Closed);
-        Assert.Equal(29u, rig.Table.BucketCount);
-        Assert.Equal(3u, rig.Table.NodeCount);
-        var b = rig.Bank;
-        Assert.Equal((2, 35u, 119, 1, 3u, 3u, 1, 3), ((int)b.Flags4, b.DataSize1C, b.PoolId24, (int)b.PoolFlag28, b.Counter2C, b.Count30, b.RefCount48, (int)b.Flags50));
-        Assert.NotEqual(0u, b.DataBuffer14);
-        Assert.NotNull(b.Didx18);
-        var hit = rig.Table.LookupA1EC54(1002, 0, 0);
-        Assert.Equal(b.DataBuffer14 + 10, hit.Data);                                // DATA + offset
-        Assert.Equal(20u, hit.Size);
-        Assert.Equal(Data35.Skip(10).Take(20).ToArray(), rig.Memory.Block(b.DataBuffer14).AsSpan(10, 20).ToArray());   // the bytes read into the DATA buffer
-    }
-
-    [Fact]
-    public void L2_WithPoolAttributesBit3SetTheChunkTakesOneBlockWhenItFits()
-    {
-        // emu_loader.py L2: attributes 8 and a block size of 64 (>= 35): 0xA7AA9C then 0xA7A9FC (one block), ret 1, the same bank and table. L3: block size 16 (< 35): [bank+0x14] stays 0 (0x9B7BF0 bhi 0x9B7C08),
-        // ret 0x34, [bank+0x1C] 0, nothing written, the table empty.
-        var rig = new LoaderRig();
-        rig.Memory.PoolAttributes = 8; rig.Memory.PoolBlockSize = 64;
-        Assert.Equal(1, rig.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal(3u, rig.Table.NodeCount);
-        Assert.Equal(35u, rig.Bank.DataSize1C);
-        var small = new LoaderRig();
-        small.Memory.PoolAttributes = 8; small.Memory.PoolBlockSize = 16;
-        Assert.Equal(0x34, small.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal(0u, small.Bank.DataBuffer14);
-        Assert.Equal((0u, 0u, 0u), (small.Bank.DataSize1C, small.Bank.Counter2C, small.Table.NodeCount));
-        Assert.Equal(3u, small.Bank.Count30);
-    }
-
-    [Fact]
-    public void L4_ADataChunkBeforeTheDidxDoesNotRunTheWriterAndASecondDidxReplacesTheFirst()
-    {
-        // emu_loader.py L4: DATA then DIDX: ret 1, [bank+0x30] = 3 but nothing is written (the writer runs at DATA time, when the count was 0), table empty, [bank+0x2C] 0.
-        // L5: DIDX (3 entries), DIDX (1 entry), DATA: [bank+0x2C] is still 0 when the second DIDX arrives, so it replaces the first (0x9B78EC): [bank+0x30] 1, one node.
-        var late = new LoaderRig();
-        Assert.Equal(1, late.Run(Cat(Bkhd, Chunk("DATA", Data35), Chunk("DIDX", Didx3))));
-        Assert.Equal((0u, 3u, 0u), (late.Bank.Counter2C, late.Bank.Count30, late.Table.NodeCount));
-        var twice = new LoaderRig();
-        Assert.Equal(1, twice.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DIDX", Didx3.Take(12).ToArray()), Chunk("DATA", Data35))));
-        Assert.Equal((1u, 1u, 1u), (twice.Bank.Counter2C, twice.Bank.Count30, twice.Table.NodeCount));
-    }
-
-    [Fact]
-    public void L6_OtherChunksGoToTheirHandlersAndAnUnknownOneIsSkippedBySize()
-    {
-        // emu_loader.py L6: an unknown 'ABCD' chunk is skipped (0x9B78B8), HIRC then INIT reach their handlers (0x9B7AB0, 0x9B7AA0) and the loader goes on: ret 1, handled [HIRC, INIT], 3 nodes.
-        // L7: a zero-size STMG is skipped without a handler (0x9B7AC8). L8: a handler result of 9 is returned (0x9B79E8).
-        var rig = new LoaderRig();
-        Assert.Equal(1, rig.Run(Cat(Bkhd, Chunk("ABCD", new byte[3]), Chunk("HIRC", new byte[4]), Chunk("INIT", new byte[2]), Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal(new[] { "HIRC", "INIT" }, rig.Handled);
-        Assert.Equal(3u, rig.Table.NodeCount);
-        var stmg = new LoaderRig();
-        Assert.Equal(1, stmg.Run(Cat(Bkhd, Chunk("STMG", Array.Empty<byte>()), Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Empty(stmg.Handled);
-        var failing = new LoaderRig { HandlerResult = 9 };
-        Assert.Equal(9, failing.Run(Cat(Bkhd, Chunk("HIRC", new byte[4]), Chunk("DIDX", Didx3))));
-        Assert.Equal(new[] { "HIRC" }, failing.Handled);
-        Assert.Equal(0u, failing.Table.NodeCount);
-    }
-
-    [Fact]
-    public void L9_PoolFailuresAndShortReadsReturnTheEnginesCodes()
-    {
-        // emu_loader.py: L9 the pool create returns -1: 0x34 (0x9B7C90..0x9B7C94), [bank+0x24] stays -1; L10 the pool check returns 5: ret 5, [bank+0x24] = 119 and [bank+0x28] = 1 are already stored;
-        // L11 BKHD returns 9: ret 9; L12 a 5-byte header: 7 (0x9B7810); L13 a DATA chunk with 20 of its 35 bytes: 7 (0x9B7C48), the buffer and size stored; L17 the file ends after BKHD: 1; every run closes the stream.
-        var create = new LoaderRig();
-        create.Memory.PoolCreateResult = -1;
-        Assert.Equal(0x34, create.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35)), out var s9));
-        Assert.True(s9.Closed);
-        Assert.Equal(-1, create.Bank.PoolId24);
-        var check = new LoaderRig();
-        check.Memory.PoolCheckResult = 5;
-        Assert.Equal(5, check.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal((119, 1), (check.Bank.PoolId24, (int)check.Bank.PoolFlag28));
-        var bkhd = new LoaderRig { BkhdResult = 9 };
-        Assert.Equal(9, bkhd.Run(Cat(Bkhd, Chunk("DIDX", Didx3)), out var s11));
-        Assert.True(s11.Closed);
-        Assert.Equal(7, new LoaderRig().Run(Cat(Bkhd, new byte[] { (byte)'D', (byte)'I', (byte)'D', (byte)'X', (byte)'1' })));
-        var shortData = new LoaderRig();
-        Assert.Equal(7, shortData.Run(Cat(Bkhd, Chunk("DIDX", Didx3), System.Text.Encoding.ASCII.GetBytes("DATA"), BitConverter.GetBytes(35u), new byte[20])));
-        Assert.Equal((35u, 0u), (shortData.Bank.DataSize1C, shortData.Bank.Counter2C));
-        Assert.Equal(1, new LoaderRig().Run(Bkhd));
-    }
-
-    [Fact]
-    public void L14_ADataChunkOfSizeZeroStillRunsTheWriterAndADidxOfSizeNotAMultipleOf12LeavesItsRemainderUnread()
-    {
-        // emu_loader.py L14: DATA size 0: nothing is read, the writer runs on [bank+0x14] = 0 (0x9B7A08..0x9B7A34): ret 1, 3 nodes, [bank+0x2C] 3, no DATA buffer. L18: one DIDX entry with id 0 then a 4-byte DATA: ret 1, no node,
-        // [bank+0x2C] = [bank+0x30] = 1. L15: a DIDX chunk of 30 bytes reads only 2 entries (n = 30 / 12, 0x9B78FC) and leaves 6 bytes: the next header read straddles them and the loader returns 7.
-        var zero = new LoaderRig();
-        Assert.Equal(1, zero.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Array.Empty<byte>()))));
-        Assert.Equal((3u, 3u, 0u), (zero.Table.NodeCount, zero.Bank.Counter2C, zero.Bank.DataBuffer14));
-        var idZero = new LoaderRig();
-        Assert.Equal(1, idZero.Run(Cat(Bkhd, Chunk("DIDX", Cat(BitConverter.GetBytes(0u), BitConverter.GetBytes(0u), BitConverter.GetBytes(4u))), Chunk("DATA", System.Text.Encoding.ASCII.GetBytes("abcd")))));
-        Assert.Equal((0u, 1u, 1u), (idZero.Table.NodeCount, idZero.Bank.Counter2C, idZero.Bank.Count30));
-        var odd = new LoaderRig();
-        Assert.Equal(7, odd.Run(Cat(Bkhd, Chunk("DIDX", Cat(Didx3.Take(24).ToArray(), new byte[6])), Chunk("DATA", Data35))));
-        Assert.Equal(2u, odd.Bank.Count30);
-    }
-
-    [Theory]
-    [InlineData(1, 0x34, false)]    // the DIDX allocation (oracle allocation #2; #1 there is the bank object, which the caller makes): 0x34, [bank+0x18] = 0
-    [InlineData(2, 0x34, true)]     // the DATA buffer from the pool (oracle #3): 0x34, [bank+0x14] = 0
-    public void L16_AnAllocationFailureReturns0x34(int failing, int expected, bool didxLoaded)
-    {
-        var rig = new LoaderRig();
-        int calls = 0;
-        rig.Memory.AllocationFails = () => ++calls == failing;
-        Assert.Equal(expected, rig.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal(didxLoaded, rig.Bank.Didx18 is not null);
-        Assert.Equal(0u, rig.Bank.DataBuffer14);
-        Assert.Equal(0u, rig.Table.NodeCount);
-    }
-
-    [Fact]
-    public void L16_AWriterAllocationFailureInsideTheLoaderReachesTheUnadoptedCleanup()
-    {
-        // emu_loader.py L16 #4: the first allocation of the writer (the bucket array) fails: ret 0x34 and the cleanup 0x9B45D8 runs once; the C# stops at that unadopted body.
-        var rig = new LoaderRig();
-        int calls = 0;
-        rig.Memory.AllocationFails = () => ++calls == 3;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
-        Assert.Equal(0u, rig.Table.BucketCount);
-    }
-
-    [Fact]
-    public void TheLoaderNeedsItsUnreadBodiesAndOnlyReadsTypeZeroModeZero()
-    {
-        // BKHD (0x9B21F4), the chunk bodies and the pool functions are not adopted: reaching one unset throws, never defaults.
-        var rig = new LoaderRig();
-        rig.Loader.ReadBkhd = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => rig.Run(Bkhd));
-        var chunk = new LoaderRig();
-        chunk.Loader.ChunkHandler = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => chunk.Run(Cat(Bkhd, Chunk("HIRC", new byte[4]))));
-        var pool = new LoaderRig();
-        pool.Memory.PoolAttributes = null;
-        Assert.Throws<WwiseMissingBehaviourException>(() => pool.Run(Cat(Bkhd, Chunk("DIDX", Didx3), Chunk("DATA", Data35))));
     }
 
     // ------------------------------------------------------------------ the PBI side (0xA02924, Term)
@@ -494,9 +299,10 @@ public class WwiseMediaTableTests
     }
 
     [Fact]
-    public void TheBankObjectsVt0DecrementsAndStopsAtTheUnreadUnloadPath()
+    public void TheBankObjectsVt0DecrementsAndNeedsItsMediaTableForTheUnload()
     {
-        // 0x9B47D8 (the word at 0x101C028): [bank+0x48]-- (0x9B4800..0x9B4814); a result above 0 returns (0x9B481C ble not taken); zero or below continues at 0x9B4830, which no row reads.
+        // 0x9B47D8 (the word at 0x101C028): [bank+0x48]-- (0x9B4800..0x9B4814); a result above 0 returns (0x9B481C ble not taken); zero or below continues at 0x9B4830 (C34.4 K15), which needs the BM the loader created the bank under:
+        // a bank the loader did not create has none, so the unload stops with WwiseMissingBehaviourException (the full release is covered by WwiseBankLoaderTests.TheBankReleaseGivesTheEnginesResults).
         var bank = new WwiseMediaBank { RefCount48 = 2 };
         bank.ReleaseVt0A9B47D8();
         Assert.Equal(1, bank.RefCount48);

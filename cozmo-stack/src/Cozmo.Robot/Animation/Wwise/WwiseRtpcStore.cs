@@ -12,11 +12,8 @@ public enum WwiseRtpcValueKind
     StmgDefault,
 
     /// <summary>
-    /// The RTPC id is not in the store. The native branch is on the subscription type (gapF 1.8, 1.10,
-    /// <c>0xA172EC..0xA17304</c>): <c>type == 1</c> reads a different manager at <c>0x9E6748</c> (whose
-    /// identity the rows leave unlabelled), and <c>type != 1</c> gives param 0 or 7 1.0 with a skip flag
-    /// and otherwise nothing. Either way it is unreachable for any STMG-listed RTPC, because STMG creates
-    /// every entry on the live path; it is surfaced rather than defaulted.
+    /// The RTPC id is not in the store. <c>0xA17280</c> branches on the subscription type and parameter (C34.2, <c>0xA172EC..0xA17330</c>, <c>0xA17410..0xA17428</c>): type 1, or a parameter other than 0 and 7, returns the result of
+    /// <c>0x9E6748</c> (unread); type other than 1 with parameter 0 or 7 returns 1 with the skip flag set and the value 1.0f (the subscription's curve then adds nothing). <see cref="WwiseRtpcStore.A11590"/> follows that flow.
     /// </summary>
     NotInStore,
 }
@@ -365,6 +362,9 @@ public sealed class WwiseRtpcStore
     /// Evaluates a subscription's curves for a key: each curve's stored value is looked up, its curve is
     /// evaluated and scaled, and the results are accumulated (gapA 5.4, gapE 7.2). An id not in the store
     /// throws rather than contributing a default.
+    /// <para>QUEUED / MISSING, resolve at wiring: this legacy path (used by WwiseGain) is a NON-FAITHFUL PARALLEL COPY of 0xA17878 / 0xA17724. It evaluates the curve in double width
+    /// (the engine's 0xA14E28 is single-precision), falls back to the raw id when <c>ParamId</c> is not below 64 (the engine has no such fallback), and uses the per-curve <c>SourceType</c> where the
+    /// engine uses the entry's <c>[e+0x24]</c>. Its behaviour is exactly HEAD's (a NotInStore id throws NotSupportedException; the engine's R3 flow is only in <see cref="A11590"/>, the engine-shaped path).</para>
     /// </summary>
     public double Evaluate(byte accumulate, IReadOnlyList<WwiseRtpc> curves,
                            uint gameObject, uint playingId, out bool reduced)
@@ -396,6 +396,84 @@ public sealed class WwiseRtpcStore
         ArgumentNullException.ThrowIfNull(curves);
         byte accumulate = curves.Count > 0 ? curves[0].Accumulate : (byte)1;
         return Evaluate(accumulate, curves, gameObject, playingId, out reduced);
+    }
+
+    // ---------------------------------------------------------------- the subscription table and 0xA11590 (C34.2 R1, R2)
+
+    private readonly Dictionary<(uint Key1, uint Param), WwiseRtpcSubscription> _subscriptions = new();
+
+    /// <summary>
+    /// Adds a subscription to the table <c>0xA11590</c> reads (<c>[mgr+0x10]</c> buckets, <c>[mgr+0x14]</c> count). The engine's registrar <c>0xA19ECC</c> (the limiter's <c>RtpcSubscribeA19ECC</c> seam) is not adopted, so this is the host's way
+    /// to fill the table; the hash's chain order and growth are not modelled, and a second subscription with the same (key, parameter) is refused (the engine's chain would find the first).
+    /// </summary>
+    public void AddSubscription(WwiseRtpcSubscription subscription)
+    {
+        ArgumentNullException.ThrowIfNull(subscription);
+        if (!_subscriptions.TryAdd((subscription.Key1, subscription.Param), subscription))
+            throw new InvalidOperationException("M6-009 R1: a subscription for this (key, parameter) exists; the engine's chain order for duplicates is not modelled");
+    }
+
+    /// <summary>
+    /// The curve evaluation <c>0xA14E28(curve, x, 0, &amp;idx)</c> that <c>0xA17878</c> / <c>0xA17724</c> call per curve (<c>0xA17990..0xA179A0</c>, <c>0xA1783C..0xA1784C</c>). Its body is unread
+    /// (the engine works in single-precision polynomial approximations, e.g. 0xA14ED4..0xA14F2C for scaling 3; the double-width <see cref="WwiseRtpc.EvaluateScaled"/> is NOT the engine's curve), so there is no default: the host or
+    /// test must supply it, and a test double is a double, not engine numerics.
+    /// </summary>
+    public Func<WwiseRtpc, float, float>? CurveA14E28 { get; set; }
+
+    private float Curve(WwiseRtpc curve, float x)
+        => (CurveA14E28 ?? throw new WwiseMissingBehaviourException(
+            "MISSING 0xA14E28 curve evaluation | RTPC accumulate (0xA179A0, 0xA1784C) | unread; the double-width EvaluateScaled is not the engine's float curve"))(curve, x);
+
+    /// <summary>
+    /// <c>0xA11590(mgr, key1, param, key)</c> (R1): an empty table (<c>[mgr+0x14] == 0</c>) returns 0.0f; the subscription with <c>[e] == key1 &amp;&amp; [e+4] == param</c> is found by the hash <c>(key1 + param) % n</c> (a dictionary here); not found
+    /// returns 0.0f; found with <c>[e+0x28] == 2</c> tail-calls the product <c>0xA17724</c>, else the sum <c>0xA17878</c> (<c>0xA11590..0xA11620</c>). The result is a single-precision float.
+    /// </summary>
+    public float A11590(uint key1, uint param, WwiseGainRtpcKey key)
+    {
+        if (_subscriptions.Count == 0) return 0f;                                         // 0xA11598..0xA115A0
+        if (!_subscriptions.TryGetValue((key1, param), out var e)) return 0f;             // 0xA1161C
+        return e.Accumulate == 2 ? Accumulate0A17724(e, key) : Accumulate0A17878(e, key); // 0xA115F0..0xA11618
+    }
+
+    /// <summary>
+    /// <c>0xA17878(mgr, e, key)</c> (R2): the sum of the subscription's curves, single precision from 0.0f (an empty curve list returns the literal 0.0f at <c>0xA179CC</c>). Per curve <c>0xA17280(mgr, [c+4], [e+4], [e+0x24], ...)</c> on a copy of the
+    /// key decides: a stored value (or the entry's STMG default, <c>[entry+8]</c>, which is the second lookup of <c>0xA17924..0xA179AC</c>) is <c>x</c>; an id absent from the store follows R3 (<see cref="CurveInput"/>); the curve
+    /// evaluated at <c>x</c> is added unless the skip flag is set (<c>0xA178C0..0xA178CC</c>).
+    /// </summary>
+    private float Accumulate0A17878(WwiseRtpcSubscription e, WwiseGainRtpcKey key)
+    {
+        float s16 = 0f;                                                                   // 0xA178A8 vldr s16,[pc,#0x11c]
+        foreach (var curve in e.Curves)                                                   // 0xA178E8..0xA178E0
+        {
+            if (!CurveInput(e, curve, key, out float x)) continue;                        // skip flag set: 0xA178CC
+            s16 = s16 + Curve(curve, x);                                            // 0xA179A4..0xA179A8 vadd.f32 s16,s16,s15
+        }
+        return s16;
+    }
+
+    /// <summary><c>0xA17724(mgr, e, key)</c> (R2): the same with <c>vmul.f32</c> from 1.0f (an empty list returns 1.0f, <c>0xA17864</c>).</summary>
+    private float Accumulate0A17724(WwiseRtpcSubscription e, WwiseGainRtpcKey key)
+    {
+        float s16 = 1f;                                                                   // 0xA17754 vmov.f32 s16,#1.0
+        foreach (var curve in e.Curves)
+        {
+            if (!CurveInput(e, curve, key, out float x)) continue;                        // 0xA1776C..0xA17774
+            s16 = s16 * Curve(curve, x);                                            // 0xA17850..0xA17854 vmul.f32 s16,s16,s15
+        }
+        return s16;
+    }
+
+    /// <summary>
+    /// The per-curve input of <c>0xA17878</c> / <c>0xA17724</c> (R2, R3). <c>0xA17280</c> finds the id in the store: the stored value, or when none is valid the entry's default (<c>[entry+8]</c>) is <c>x</c>. Absent from the store: type 1
+    /// (<c>[e+0x24]</c>) or a parameter (<c>[e+4]</c>) other than 0 and 7 returns <c>0x9E6748</c>'s result (unread: throws); type other than 1 with parameter 0 or 7 sets the skip flag (<c>0xA17410..0xA17424</c>: flag 1, value 1.0f), so the curve adds nothing.
+    /// </summary>
+    private bool CurveInput(WwiseRtpcSubscription e, WwiseRtpc curve, WwiseGainRtpcKey key, out float x)
+    {
+        var v = Lookup(curve.SourceId, key.GameObject, key.PlayingId);
+        if (v.Kind != WwiseRtpcValueKind.NotInStore) { x = v.Value; return true; }
+        if (e.Type != 1 && (e.Param == 0 || e.Param == 7)) { x = 1f; return false; }      // 0xA172EC..0xA172F8, 0xA17304 beq 0xA17410
+        throw new WwiseMissingBehaviourException(
+            $"M6-009 R3: RTPC 0x{curve.SourceId:X8} is not in the store (type {e.Type}, parameter {e.Param}); 0xA17280 returns the result of 0x9E6748 (a locked hash lookup in the manager at *0x10400E8), whose body is not adopted");
     }
 
     // ---------------------------------------------------------------- the entry tree
@@ -476,4 +554,26 @@ public sealed class WwiseRtpcStore
         public float Value;                   // +4
         public bool Valid;                    // +8
     }
+}
+
+/// <summary>
+/// A subscription entry of the table <c>0xA11590</c> reads (C34.2 R1, R2): <c>[e]</c> the key (the address <c>node+0x10</c>), <c>[e+4]</c> the parameter (the bank parameter mapped through <see cref="WwiseBusWalk.ParamBitTable"/>), <c>[e+0x24]</c> the
+/// type (1 is the MIDI parameter kind; the bank's source type), <c>[e+0x28]</c> the accumulate word (2 multiplies), and the curves (<c>[e+0x2C]</c>, 20 bytes each; <c>[c+4]</c> the RTPC id).
+/// </summary>
+public sealed class WwiseRtpcSubscription
+{
+    /// <summary><c>[e+0]</c>.</summary>
+    public uint Key1 { get; init; }
+
+    /// <summary><c>[e+4]</c>.</summary>
+    public uint Param { get; init; }
+
+    /// <summary><c>[e+0x24]</c>.</summary>
+    public uint Type { get; init; }
+
+    /// <summary><c>[e+0x28]</c>.</summary>
+    public uint Accumulate { get; init; }
+
+    /// <summary>The curves, in order; <see cref="WwiseRtpc.SourceId"/> is <c>[c+4]</c>.</summary>
+    public IReadOnlyList<WwiseRtpc> Curves { get; init; } = Array.Empty<WwiseRtpc>();
 }

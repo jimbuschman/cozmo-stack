@@ -174,29 +174,24 @@ public sealed class WwiseVoiceBusEngineTests
     [Fact]
     public void ThePbiFlushTerminatesOnlyCodeFourNotifications()
     {
-        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState());
+        // The queue Q is the engine's (its push is checked against the engine in WwiseNotificationQueueTests); its init is unread, so the test sets it up.
+        var queue = new WwiseNotificationQueue(new WwiseBankMemory(), 2, 8, new[] { 0, 1 });
         var handled = new List<int>();
         var terminated = new List<int>();
+        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState())
+        {
+            Notifications = queue,
+            NotificationHandlerA0188C = (_, _, r2, _) => handled.Add(r2),
+            TerminateNotifiedPbiA384C8 = p => terminated.Add((int)p!),
+        };
 
-        pass.PbiNotifications.Enqueue(new WwisePbiNotification
-        {
-            Code = WwisePbiNotification.TermCode,
-            Reason = 7,
-            Handle = n => handled.Add(n.Reason),
-            Terminate = n => terminated.Add(n.Reason),
-        });
-        pass.PbiNotifications.Enqueue(new WwisePbiNotification
-        {
-            Code = 9,
-            Reason = 3,
-            Handle = n => handled.Add(n.Reason),
-            Terminate = n => terminated.Add(n.Reason),
-        });
+        queue.Push(1, WwisePbiNotification.TermCode, 7, 0);
+        queue.Push(2, 9, 3, 0);
 
         pass.FlushPbiNotifications();
 
         Assert.Equal(new[] { 7, 3 }, handled);
-        Assert.Equal(new[] { 7 }, terminated);                       // only code 4
+        Assert.Equal(new[] { 1 }, terminated);                       // only code 4
     }
 
     // ---------------------------------------------------------------- V26: the three-component interpolation

@@ -142,6 +142,7 @@ class Emu:
         for i, v in enumerate(reversed(stack)):
             pass
         sp -= 4 * len(stack)
+        sp &= ~7  # AAPCS: sp is 8-aligned at the call (the engine's 0x9B2B08 stack buffer relies on it)
         for i, v in enumerate(stack):
             uc.mem_write(sp + 4 * i, struct.pack('<I', v & 0xFFFFFFFF))
         for i, v in enumerate(args[:4]):

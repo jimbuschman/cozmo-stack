@@ -110,6 +110,7 @@ public class WwiseRtpcStoreTests
         Assert.Equal(WwiseRtpcValueKind.NotInStore, lookup.Kind);
         Assert.False(lookup.Found);
 
+        // the legacy Evaluate (used by WwiseGain) keeps its HEAD behaviour; the engine's R3 flow (skip for type != 1 with parameter 0 / 7, 0x9E6748 otherwise) is in A11590 (WwiseBusWalkTests).
         Assert.Throws<NotSupportedException>(() =>
             store.Evaluate(1, new[] { LinearCurve(0xDEADBEEF) }, 7, 0, out _));
     }

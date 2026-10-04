@@ -122,6 +122,22 @@ public interface IWwiseVoiceSource
     /// bit0 is set. The source class is UNKNOWN, so this is a caller seam.
     /// </summary>
     (float At0, float At4)? Gain8 => null;
+
+    /// <summary>
+    /// <c>vt+0x2C</c>, the source's close (<c>0xA5644C</c> in <c>0xA56414</c>): the six classes' bodies are <c>0xA73128</c>, <c>0xA72AF4</c>, <c>0xA7427C</c>, <c>0xA76178</c>, <c>0xAB0FC0</c>, <c>0xAB2958</c> (C34.3 S2..S7). A source class
+    /// that has not built its body throws (it replaces the bridge's <c>SourceClose2C</c> seam).
+    /// </summary>
+    // fidelity: M6-025
+    void Close2C() => throw new WwiseMissingBehaviourException(
+        $"M6-025 S2..S7: {GetType().Name} has no source close (vt+0x2C) body");
+
+    /// <summary>
+    /// <c>vt+0x34</c>, the source's duration (<c>0xA56598..0xA565A4</c>): <c>0xA72F5C</c> for the six codec classes (C34.3 S1), read by <c>0xA56478</c> when <c>[source+0x10]</c> bit 0 is set. A class that has not built it throws
+    /// (it replaces the bridge's <c>SourceDuration34</c> seam).
+    /// </summary>
+    // fidelity: M6-025
+    float Duration34() => throw new WwiseMissingBehaviourException(
+        $"M6-025 S1: {GetType().Name} has no source duration (vt+0x34) body");
 }
 
 /// <summary><c>0xA56650(source, a, b)</c>, the one caller of a source's <c>vt+0x28</c> that owns the <c>[source+0x10]</c> bit 0 latch.</summary>
@@ -895,8 +911,19 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// <summary>The voice list (the native container head <c>0x108DF64</c>).</summary>
     public List<WwiseLiveVoice> Voices { get; set; } = new();
 
-    /// <summary>The deferred PBI-notification queue (<c>0x108DE7C</c>; V21).</summary>
-    public Queue<WwisePbiNotification> PbiNotifications { get; } = new();
+    /// <summary>
+    /// The deferred PBI-notification queue <c>Q</c> (<c>0x108DE78</c>; V21, C34.3 S8) the flush <c>0xA38420</c> drains. Its init is unread, so the host supplies it; <see cref="FlushPbiNotifications"/> needs it.
+    /// Replaces the old <c>Queue&lt;WwisePbiNotification&gt;</c>.
+    /// </summary>
+    public WwiseNotificationQueue? Notifications { get; set; }
+
+    /// <summary>
+    /// <c>0xA0188C(pbi, code, r2, r3)</c>, the per-item handler the flush calls first (<c>0xA38480</c>, V21). Its body is the bridge's <see cref="WwisePlaybackBridge.HandleNotificationA0188C"/>; required by the flush.
+    /// </summary>
+    public Action<object?, int, int, int>? NotificationHandlerA0188C { get; set; }
+
+    /// <summary>The code-4 teardown of the flush (<c>0xA384C8..0xA38508</c>: unlink, <c>0x9D3470</c>, <c>vt+0x10</c>, <c>vt+4</c>, free): the bridge's <see cref="WwisePlaybackBridge.TerminatePbi"/>; required for a code-4 item.</summary>
+    public Action<object?>? TerminateNotifiedPbiA384C8 { get; set; }
 
     /// <param name="buses">The on-demand mix-bus table (M6-014).</param>
     /// <param name="deviceState">The output-device state/gates (M6-022 G1..G10).</param>
@@ -1450,18 +1477,23 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     public Action<WwiseMixBus>? BusMeter { get; set; }
 
     /// <summary>
-    /// V21 <c>0xA38420</c>: the deferred PBI-notification flush. Each item's code 4 (Term) unlinks the PBI,
-    /// calls <c>0x9D3470</c>, its <c>vt+0x10</c> Term, its <c>vt+4</c> destructor and frees it. The PBI
-    /// object is a caller seam (the PBI classes are M6-006/M6-008).
+    /// V21 <c>0xA38420</c>: the deferred PBI-notification flush (C34.3 S8). While the queue's count (<c>[Q+0x18]</c>) is not 0 the head item <c>{pbi, code, r2, r3}</c> goes to <c>0xA0188C</c> (<c>0xA38480</c>); a code 4 (Term,
+    /// <c>[item+8] == 4</c>) then runs the teardown (<c>0xA384C8..0xA38508</c>); the item is removed (<c>0xA38518..0xA3856C</c>, <see cref="WwiseNotificationQueue.PopHeadA38518"/>) when the queue still has a head.
     /// </summary>
     public void FlushPbiNotifications()
     {
-        while (PbiNotifications.Count > 0)
+        var queue = Notifications ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V21: the notification queue Q (0x108DE78) is initialised by an unread init; supply WwiseVoiceBusPass.Notifications");
+        while (queue.Count != 0)                                     // 0xA3846C cmp r3,#0; beq 0xA385A0
         {
-            var item = PbiNotifications.Dequeue();
-            item.Handle?.Invoke(item);                               // V21: 0xA0188C generic handler
-            if (item.Code == WwisePbiNotification.TermCode)          // V21: [item+8] == 4
-                item.Terminate?.Invoke(item);                        // V21: unlink, 0x9D3470, vt+0x10, vt+4, free
+            var item = queue.Head ?? throw new InvalidOperationException("the notification queue has a count but no head: the flush dereferences it (0xA38474..0xA38478)");   // 0xA38474 ldr r4,[r6,#4]
+            (NotificationHandlerA0188C ?? throw new WwiseMissingBehaviourException(
+                "M6-022 V21: 0xA0188C is not wired; supply WwiseVoiceBusPass.NotificationHandlerA0188C"))(item.Pbi, item.Code, item.R2, item.R3);   // 0xA38480 bl 0xA0188C
+            if (item.Code == WwisePbiNotification.TermCode)          // 0xA38484..0xA38488 cmp r3,#4
+                (TerminateNotifiedPbiA384C8 ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 V21: the code-4 teardown is not wired; supply WwiseVoiceBusPass.TerminateNotifiedPbiA384C8"))(item.Pbi);   // 0xA384C8..0xA38508
+            if (queue.Head is not null)                              // 0xA3845C / 0xA3850C ldr r1,[r5,#4]; cmp r1,#0; bne 0xA38518
+                queue.PopHeadA38518();
         }
     }
 
@@ -1879,27 +1911,11 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     public static float DuckingThreshold { get; set; } = 0.0001f;
 }
 
-/// <summary>
-/// V21 <c>0x9D3470</c>/<c>0xA38600</c>/<c>0xA01800</c>: one queued PBI notification. The native node is
-/// <c>{next, obj, code, reason, extra}</c>; code 4 is Term (C12 X6). The object is a caller seam (the PBI
-/// classes are M6-006/M6-008).
-/// </summary>
-public sealed class WwisePbiNotification
+/// <summary>The notification codes of the queue <c>0xA38600</c> fills (V21, C12 X6).</summary>
+public static class WwisePbiNotification
 {
     /// <summary>V21: the Term message code <c>[item+8]==4</c> (C12 X6).</summary>
     public const int TermCode = 4;
-
-    /// <summary>The message code (<c>[item+8]</c>).</summary>
-    public int Code { get; init; }
-
-    /// <summary>The reason (<c>[item+0xC]</c>; the field the old row mislabelled "reason" as the code).</summary>
-    public int Reason { get; init; }
-
-    /// <summary>The generic handler <c>0xA0188C</c>; caller seam.</summary>
-    public Action<WwisePbiNotification>? Handle { get; init; }
-
-    /// <summary>The Term path: unlink, <c>0x9D3470</c>, <c>vt+0x10</c>, <c>vt+4</c>, free; caller seam.</summary>
-    public Action<WwisePbiNotification>? Terminate { get; init; }
 }
 
 /// <summary>

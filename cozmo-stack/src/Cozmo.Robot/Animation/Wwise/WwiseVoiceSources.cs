@@ -212,6 +212,29 @@ public sealed class WwiseVorbisVoiceSource : IWwiseVoiceSource, IWwiseVoiceSourc
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
     public WwiseVorbisStreamSource? StreamSource => _stream;
 
+    /// <summary>
+    /// The in-memory class's close state (<c>[src+0x2C]</c>, <c>[src+0x80]</c>, <c>[src+0xC0]</c>): written by the unread in-memory StartStream <c>0xAB0B20</c>, so it is host input. Required to close the in-memory kind.
+    /// </summary>
+    public WwiseInMemorySourceFields? InMemoryFields { get; set; }
+
+    /// <summary>The pool free sink the in-memory close reports to (the streamed kind uses its seams').</summary>
+    public WwisePoolFree? PoolFree { get; set; }
+
+    /// <summary>
+    /// <c>vt+0x2C</c>: the streamed kind is <c>0xAB2958</c> (<see cref="WwiseVorbisStreamSource.Close2CAB2958"/>), the in-memory kind <c>0xAB0FC0</c> over <see cref="InMemoryFields"/> (C34.3 S6, S7).
+    /// </summary>
+    public void Close2C()
+    {
+        if (_stream is not null) { _stream.Close2CAB2958(); return; }
+        (InMemoryFields ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S6: the in-memory Vorbis class's state is written by the unread StartStream 0xAB0B20; supply WwiseVorbisVoiceSource.InMemoryFields")).Close2C(PoolFree);
+    }
+
+    /// <summary><c>vt+0x34</c> = <c>0xA72F5C</c> (S1) for the streamed kind; the in-memory kind's <c>[src+0x14]</c>, <c>[src+0x24]</c>, <c>[src+0x28]</c> come from the unread <c>0xAB0C68..0xAB0CD4</c>, so it throws.</summary>
+    public float Duration34()
+        => _stream?.Duration34A72F5C() ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S1: the in-memory Vorbis class's total and loop samples ([src+0x14], [src+0x24], [src+0x28]) are written by the unread 0xAB0C68..0xAB0CD4");
+
     /// <inheritdoc />
     public bool WritesSourceFormatInStartStream => _stream is not null;
 
@@ -316,11 +339,30 @@ public sealed class WwiseAdpcmVoiceSource : IWwiseVoiceSource, IWwiseVoiceSource
         SampleRate = media.SampleRate;
         SourceFormatWord = sourceFormatWord;
         if (streamed && streaming is not null)
-            _stream = new WwisePcmAdpcmStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams);
+            _stream = new WwisePcmAdpcmStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams) { Class = WwisePcmAdpcmClass.AdpcmStream };
     }
 
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
     public WwisePcmAdpcmStreamSource? StreamSource => _stream;
+
+    /// <summary>The in-memory class's close state (<c>[src+0x2C]</c>, <c>[src+0x44]</c>): written by the unread in-memory StartStream <c>0xA72A2C</c>, so it is host input. Required to close the in-memory kind.</summary>
+    public WwiseInMemorySourceFields? InMemoryFields { get; set; }
+
+    /// <summary>The pool free sink the in-memory close reports to (the streamed kind uses its seams').</summary>
+    public WwisePoolFree? PoolFree { get; set; }
+
+    /// <summary><c>vt+0x2C</c>: the streamed kind is <c>0xA7427C</c> (<see cref="WwisePcmAdpcmStreamSource.Close2C"/>), the in-memory kind <c>0xA72AF4</c> over <see cref="InMemoryFields"/> (C34.3 S3, S4).</summary>
+    public void Close2C()
+    {
+        if (_stream is not null) { _stream.Close2C(); return; }
+        (InMemoryFields ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S3: the in-memory ADPCM class's state is written by the unread StartStream 0xA72A2C; supply WwiseAdpcmVoiceSource.InMemoryFields")).Close2C(PoolFree);
+    }
+
+    /// <summary><c>vt+0x34</c> = <c>0xA72F5C</c> (S1) for the streamed kind; the in-memory kind's fields come from the unread <c>0xA7279C..0xA7287C</c>, so it throws.</summary>
+    public float Duration34()
+        => _stream?.Duration34A72F5C() ?? throw new WwiseMissingBehaviourException(
+            "M6-025 S1: the in-memory ADPCM class's total and loop samples ([src+0x14], [src+0x24], [src+0x28]) are written by the unread 0xA7279C..0xA7287C");
 
     /// <inheritdoc />
     public bool WritesSourceFormatInStartStream => false;

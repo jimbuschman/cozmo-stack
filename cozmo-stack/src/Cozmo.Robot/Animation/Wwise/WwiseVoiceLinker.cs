@@ -139,15 +139,23 @@ public sealed class WwiseRoutingNode
     /// <summary><c>[node+0x34]</c>: the parent node.</summary>
     public WwiseRoutingNode? Parent { get; set; }
 
-    /// <summary>Bus: any FX entry at <c>[bus+0x28]+{4,0xC,0x14,0x1C}</c> is non-zero.</summary>
-    public bool AnyFxEntryNonZero { get; set; }
+    /// <summary>Bus: the FX chunk <c>[bus+0x28]</c> (0x28 bytes, allocated by <c>0x9F5760</c>); null is the zero pointer.</summary>
+    public WwiseFxChunk? Fx28 { get; set; }
 
-    /// <summary>Bus: <c>bus-&gt;vt+0x44() == 0xC</c> (the meaning of the value is UNKNOWN).</summary>
-    public bool Vt44Is0C { get; set; }
+    /// <summary>Bus: any FX entry at <c>[bus+0x28]+{4,0xC,0x14,0x1C}</c> is non-zero (<c>0x9C54F0..0x9C5524</c>); computed from <see cref="Fx28"/> (it replaces the settable flag of the C23 batch).</summary>
+    public bool AnyFxEntryNonZero => Fx28 is { AnyId: true };
 
     /// <summary>
-    /// Bus: <c>[bus+0x68]</c>, the bus channel-config word <c>0xA68A94</c> returns (C24.3). The value per shipped
-    /// bus comes from Init.bnk (Cozmo_Robot and Robot_Bus_1..4 hold <c>0x4101</c>); the caller fills it.
+    /// The node's <c>vt+0x44</c> result (C34.1 B5): Bus 0, audio-device bus 0xC, ActorMixer 1, RanSeq 2, Sound 3, Switch 4, Layer 5 (<see cref="WwiseNodeCategory44"/>). The predicates test <c>== 0xC</c>.
+    /// </summary>
+    public int Category44 { get; set; }
+
+    /// <summary>Bus: <c>bus-&gt;vt+0x44() == 0xC</c> (the audio-device bus, <c>0xA67C98</c>).</summary>
+    public bool Vt44Is0C => Category44 == WwiseNodeCategory44.AudioDeviceBus;
+
+    /// <summary>
+    /// Bus: <c>[bus+0x68]</c>, the bus channel-config word <c>0xA68A94</c> returns (C24.3): byte 0 the channel count, byte 1's low nibble the kind, bits 12..31 the channel mask (C34.1 B6). The value per shipped
+    /// bus comes from Init.bnk (Cozmo_Robot and Robot_Bus_1..4 hold <c>0x4101</c> as the config word the reader takes, which stores a channel count of 1); the caller fills it, or <see cref="WwiseBusWalk.ApplyChannelConfig"/> does.
     /// </summary>
     public uint Word68 { get; set; }
 
@@ -158,7 +166,7 @@ public sealed class WwiseRoutingNode
         set => Word68 = (Word68 & ~0xFFu) | value;
     }
 
-    /// <summary>Bus: <c>[bus+0x46]</c>; bit7 is tested here and bit7/bits3..4 by <c>0xA689B8</c>.</summary>
+    /// <summary>Bus: <c>[bus+0x46]</c>; bit7 is tested here and bit7/bits3..4 by <c>0xA689B8</c>; bit 0 gates the state list <c>0x9F9CDC</c>.</summary>
     public byte Byte46 { get; set; }
 
     /// <summary>Bus: <c>[bus+0x40]</c>; <c>&amp; 0xE0000</c> is tested here, at <c>0xA42210</c> and <c>0x9BC9FC</c>.</summary>
@@ -167,8 +175,47 @@ public sealed class WwiseRoutingNode
     /// <summary>Bus: <c>[bus+0x54]</c>.</summary>
     public uint Word54 { get; set; }
 
+    /// <summary>Bus: <c>[bus+0xCC]</c> (the bus constructor stores 0x30, <c>0x9C36DC..0x9C36F8</c>).</summary>
+    public byte ByteCC { get; set; }
+
     /// <summary>Bus: <c>[bus+0xCC]</c> bit6, the main-vs-secondary flag (C23 row 11).</summary>
-    public bool Bit6 { get; set; }
+    public bool Bit6
+    {
+        get => (ByteCC & 0x40) != 0;
+        set => ByteCC = (byte)(value ? ByteCC | 0x40 : ByteCC & ~0x40);
+    }
+
+    /// <summary><c>[node+0x3C]</c>: the base property bundle (<c>0x9C39DC</c> step 2); null is the zero pointer.</summary>
+    public WwiseParamBundle? BaseBundle3C { get; set; }
+
+    /// <summary><c>[[node+0x14]]</c>: the u64 set of subscribed parameter bits (<c>0x9C3ADC..0x9C3B00</c>); null is <c>[node+0x14] == 0</c>.</summary>
+    public ulong? SubscriptionMask14 { get; set; }
+
+    /// <summary><c>node+0x10</c>: the address that keys the node's subscriptions in the RTPC manager (<c>0xA11590</c>'s second argument; <see cref="WwiseRtpcStore.AddSubscription"/>).</summary>
+    public uint SubscriptionKey10 { get; init; }
+
+    /// <summary><c>[[node+0x24]+0xC]</c>: the ranged bundle whose FIRST float <c>0x9C39DC</c> adds (step 4); null when either pointer is zero.</summary>
+    public WwiseParamBundle? RangedBundle24 { get; set; }
+
+    /// <summary><c>[node+0x18]</c>: the state list <c>0x9F9CDC</c> walks (gated by <see cref="Byte46"/> bit 0); null is the zero pointer.</summary>
+    public List<WwiseStateListItem>? States18 { get; set; }
+
+    /// <summary><c>[node+0x8C]</c>: the head of the list whose floats at <c>+0x14</c> <c>0x9C39DC</c> sums for <c>p == 0</c>, in list order.</summary>
+    public List<float> Duck8C { get; } = new();
+
+    /// <summary><c>[node+0xA8]</c>: the same for <c>p == 5</c>.</summary>
+    public List<float> DuckA8 { get; } = new();
+
+    /// <summary><c>[node+0x6C]</c>: the max-duck floor; the bus constructor stores <c>0xC2C0999A</c> (-96.3f, <c>0x9C3658</c>).</summary>
+    public float MaxDuck6C { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0xC2C0999A));
+
+    /// <summary>
+    /// <c>0x9C54E8(bus)</c> (C34.1 B7), true when the engine returns 1: <c>[bus+0x28] != 0</c> with one of the four FX ids non-zero, <c>vt+0x44 == 0xC</c>, byte <c>[bus+0x68] != 0</c>, <c>[bus+0x46] &amp; 0x80</c>, <c>[bus+0x38] == 0</c>,
+    /// <c>[bus+0x40] &amp; 0xE0000</c>, else <c>[bus+0x54] != 0</c> (<c>0x9C54E8..0x9C5584</c>). False is "collapsed". It is also the body of the <c>0x9C2A30</c> predicate <see cref="Vt88"/> tests (the same seven tests in the same order).
+    /// </summary>
+    public bool A9C54E8()
+        => AnyFxEntryNonZero || Vt44Is0C || Byte68 != 0 || (Byte46 & 0x80) != 0
+           || OutputBus is null || (Word40 & 0xE0000) != 0 || Word54 != 0;
 
     /// <summary>
     /// <c>vt+0x88</c> (C23 item 1 row 10). A bus returns itself when any predicate holds
@@ -179,8 +226,7 @@ public sealed class WwiseRoutingNode
     {
         if (IsBus)
         {
-            if (AnyFxEntryNonZero || Vt44Is0C || Byte68 != 0 || (Byte46 & 0x80) != 0
-                || OutputBus is null || (Word40 & 0xE0000) != 0 || Word54 != 0)
+            if (A9C54E8())
                 return this;
         }
         if (OutputBus is not null) return OutputBus.Vt88();       // 0x9F1E3C: [node+0x38]
@@ -364,10 +410,10 @@ public sealed class WwiseVoiceLinkSeams
     public Func<WwiseOutputDeviceEntry, uint, object?>? BuildDeviceObjectA22A3C { get; set; }
 
     /// <summary>
-    /// <c>0x9C39DC(bus, 0, 5)</c>, the Bus Volume param 5 read that <c>0xA68A44</c> makes for a non-null bus
-    /// (C24.6); body unread. A null bus never reaches it (<c>0xA68A44</c> returns 0.0f).
+    /// The RTPC manager <c>*0x108D908</c> that <c>0x9C39DC(bus, 0, 5)</c> (the Bus Volume param 5 read <c>0xA68A44</c> makes for a non-null bus, C24.6) passes to <c>0xA11590</c> when the bus has a subscription bit set
+    /// (<see cref="WwiseBusWalk.A9C39DC"/>, C34.1 B9). It replaces the earlier <c>BusVolumeParam5</c> seam (the body of <c>0x9C39DC</c> is read). Needed only for a bus whose bit <c>T[5]</c> is set.
     /// </summary>
-    public Func<WwiseRoutingNode, float>? BusVolumeParam5 { get; set; }
+    public WwiseRtpcStore? RtpcManager { get; set; }
 
     /// <summary>
     /// <c>[[vpl+0x1A8]+0xC]</c> create (<c>0xA4E324</c>) and <c>mixbus-&gt;vt+0x20(conn)</c> (row 18); bodies
@@ -907,7 +953,7 @@ public sealed class WwiseVoiceLinker
             // C24.6 0xA68A44(vpl+0x4C, 0): 0.0f for a null bus (0xA68A60), else 0x9C39DC(bus, 0, 5).
             vpl.VolumeDb90 = vpl.Context.Bus is null
                 ? 0f
-                : (Seams.BusVolumeParam5 ?? throw Missing("0x9C39DC (Bus Volume param 5)"))(vpl.Context.Bus);   // vpl+0x90
+                : WwiseBusWalk.A9C39DC(vpl.Context.Bus, 0, 5, Seams.RtpcManager);   // vpl+0x90; 0x9C39DC(bus, 0, 5) (0xA68A54)
             vpl.FlagsC0 = (byte)(vpl.FlagsC0 & ~8);                        // clear vpl+0xC0 bit3
         }
         if (vpl.OutputMixObject1A8 is not null)                            // [vpl+0x1A8] non-null

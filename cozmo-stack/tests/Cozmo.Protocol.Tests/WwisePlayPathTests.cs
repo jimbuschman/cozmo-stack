@@ -6,7 +6,8 @@ namespace Cozmo.Protocol.Tests;
 /// <summary>
 /// M6-025 / M6-026 (C31.3, C32.1): the shipped Play path. Every expected value is the engine's own output from re-analysis/tools/emu/emu_play.py (0x9BEB30, CalcEffectiveParams 0x9FFAD4, 0x9FF368, 0x9BCA68,
 /// 0x9FB9B8 / 0x9FAEE8 / 0x9FBE74, 0x9F6B94, 0x9EEDA4, 0x9F1F80, 0xA1E280, 0xA00618, 0xA36268, 0xA358EC, 0xA366AC / 0xA366D0 run under Unicorn on a PBI, nodes and a params block); the Python stand-ins
-/// are the bodies the inventory does not adopt (node vt+0xAC, 0x9C54E8, 0x9C39DC, 0xA11590, 0x9E8224, 0x9E62AC, 0xA35D44, expf), and the C# seams stand in the same way. Floats are compared as bits. Each
+/// are the bodies the inventory does not adopt (node vt+0xAC, 0xA35D44, expf, and in emu_play.py the bus bodies 0x9C54E8 / 0x9C39DC and 0xA11590, 0x9E8224, 0x9E62AC, which the C# runs for real since batch 5c: their values are
+/// checked against the real functions by WwiseBusWalkTests and WwiseModulatorListTests, and the bus values here are chosen so the real C# walk returns the oracle's stand-in value). Floats are compared as bits. Each
 /// test names the oracle scenario (W, B, L, P, T) and the addresses it checks.
 /// </summary>
 public class WwisePlayPathTests
@@ -35,27 +36,67 @@ public class WwisePlayPathTests
         public bool BusFlag = true;
         public float BusVolume;
         public float Rtpc;
+        public bool HasBus = true;
+        public readonly WwiseRtpcStore Store = new();
+        public readonly WwiseModulatorManager Modulators = new();
+        public readonly List<WwiseListRecord> Records34 = new();
+        private readonly Dictionary<uint, WwiseRoutingNode> _runtime = new();
+        private WwiseRoutingNode? _bus;
         public WwisePlayingInstance Pbi = null!;
         public WwisePlayInitParams Play = new() { PlayingId = 5, TargetNodeId = 1 };
 
         public Rig()
         {
             Limiter = new WwisePlaybackLimiter(id => Nodes.TryGetValue(id, out var n) ? n : null);
-            Seams.FirstOutputBus9F4BB8 = n => n;                                      // double: the node itself stands for the first output bus (non-null)
-            Seams.BusFlag9C54E8 = n => { Log.Add("9C54E8"); return BusFlag; };
-            Seams.BusVolume9C39DC = n => { Log.Add("9C39DC"); return BusVolume; };
             Seams.NodeVtAC = a => { LastAc = a; Log.Add("AC"); Accumulate?.Invoke(a); };
-            Seams.A9E8224 = _ => Log.Add("9E8224");
-            Seams.A9E62AC = _ => Log.Add("9E62AC");
-            Seams.Rtpc9A11590 = (n, id) => { Log.Add("A11590:" + id.ToString("X")); return Rtpc; };
-            Path = new WwisePlayPath(Limiter.ParentNode, Seams);
+            Seams.RecordsOf34 = _ => Records34;
+            Seams.ModulatorCtxWords = _ => (0x11u, 0x22u, 0x33u);
+            Modulators.A9DCE44 = (id, rec, ctx, w10, list) => { Log.Add("9DCE44:" + id); return 1; };      // 0x9DCE44 is not adopted: a stand-in
+            Store.CurveA14E28 = (c, x) => { Log.Add("A11590:" + c.ParamId.ToString("X")); return x; };      // TEST-ONLY DOUBLE (identity) for the unread curve 0xA14E28, not engine numerics; the curve body is the M6-009 model: the identity here
+            Path = new WwisePlayPath(Limiter.ParentNode, Seams) { RuntimeNodeOf = RuntimeOf, Rtpc = Store, Modulators = Modulators };
+        }
+
+        /// <summary>The engine's node object behind a hierarchy node: every node's [+0x38] is the test's bus, a non-collapsed one (byte [+0x68] = 1, 0x9C54E8 returns 1) or a collapsed one whose 0x9C39DC is the Bus Volume (property 5).</summary>
+        public WwiseRoutingNode? RuntimeOf(WwiseNode n)
+        {
+            if (_runtime.TryGetValue(n.Id, out var existing)) return existing;
+            var node = new WwiseRoutingNode { Id = n.Id, SubscriptionKey10 = 0x1000 + n.Id * 0x10 };
+            if (HasBus)
+            {
+                if (_bus is null)
+                {
+                    if (BusFlag) _bus = new WwiseRoutingNode { Id = 900, IsBus = true, Byte68 = 1 };
+                    else
+                    {
+                        var master = new WwiseRoutingNode { Id = 901, IsBus = true, Byte68 = 1 };
+                        _bus = new WwiseRoutingNode
+                        {
+                            Id = 900, IsBus = true, OutputBus = master,
+                            BaseBundle3C = new WwiseParamBundle(new byte[] { 5 }, new[] { BitConverter.SingleToUInt32Bits(BusVolume) }),
+                        };
+                    }
+                }
+                node.OutputBus = _bus;
+            }
+            _runtime[n.Id] = node;
+            uint serial = 700;
+            foreach (var r in n.Params.Rtpcs)                                                                                  // the node's subscriptions: one curve per RTPC, the identity on the STMG default
+            {
+                Store.Apply(new WwiseStmgParam(serial, Rtpc, 0, 0f, 0f, false));
+                Store.AddSubscription(new WwiseRtpcSubscription
+                {
+                    Key1 = node.SubscriptionKey10, Param = r.ParamId, Type = 0, Accumulate = 1,
+                    Curves = new[] { new WwiseRtpc(serial++, 0, 1, r.ParamId, 0, 0, Array.Empty<(float, float, uint)>()) },
+                });
+            }
+            return node;
         }
 
         public WwiseSoundNode Add(uint id, WwiseNodeParams p) { var n = new WwiseSoundNode(id, "t.bnk", p, WwiseSourceFactory.VorbisPlugin, 1, 12345, 0, 0); Nodes[id] = n; return n; }
 
         public WwisePlayingInstance NewPbi(WwiseNode node, byte e8 = 0x5D, byte e9 = 0x01)
         {
-            Pbi = new WwisePlayingInstance(Play, node.Id, Source, new byte[0x44], null, continuous: false) { NodeE0 = node, Flags0E8 = e8, Flags0E9 = e9, FieldC4 = 0, Word64 = 0f };   // the oracle starts from zeroed memory
+            Pbi = new WwisePlayingInstance(Play, node.Id, Source, new byte[0x44], WwiseGainRtpcKey.Empty, continuous: false) { NodeE0 = node, Flags0E8 = e8, Flags0E9 = e9, FieldC4 = 0, Word64 = 0f };   // the oracle starts from zeroed memory
             return Pbi;
         }
 
@@ -158,11 +199,13 @@ public class WwisePlayPathTests
         Assert.Equal((0x74, 0, 1), (pbi.Flags0E8 & 0xFF, pbi.Flags0E9 & 0xFF, pbi.Flags1BC & 0xFF));
         Assert.Equal((0x42480000, 0, 0x42480000), (Bits(pbi.Field1CC), Bits(pbi.Field1D0), Bits(pbi.Priority1C0)));
         Assert.Equal((0, 0, 0), (Bits(pbi.PanB4), Bits(pbi.PanB8), Bits(pbi.PanBC)));
-        Assert.Equal(new[] { "9C54E8", "AC" }, rig.Log);
+        Assert.Equal(new[] { "AC" }, rig.Log);
         Assert.Equal(0xFFFFFFDFu, rig.LastAc!.Mask);
         Assert.Same(pbi.Ranges118, rig.LastAc.Ranges);
         Assert.Same(rig.Play, rig.LastAc.Params);
         Assert.Null(rig.LastAc.Local);
+        Assert.Equal((1u, 0u), (rig.LastAc.StackWord0C, rig.LastAc.StackWord10));              // C34.1 B18: the stack words [sp+0xC] = 1 and [sp+0x10] = r6 = 0 (0x9FFD00..0x9FFD08)
+        Assert.Same(rig.Play.Block108, rig.LastAc.OutList);                                      // r7 = params+0x108 once E8 bit 6 is set (0x9FFCB4)
     }
 
     [Theory]
@@ -234,12 +277,13 @@ public class WwisePlayPathTests
     public void B5_TheBusVolumeIsAddedToPbi64OnlyWhen0x9C54E8ReturnsZero(bool busFlag, float busVolume, int unused)
     {
         // emu_play.py B5 (0x9FFC08..0x9FFEBC, 0x9FFDFC): 0x9C54E8(bus) == 0 calls 0x9C39DC(bus, 0, 5) and adds the result to pbi+0x64 (-3.5f = 0xC0600000); a non-zero result adds 0.0f. r6 is 0 afterwards, so vt+0xAC gets bus 0.
+        // Since batch 5c both bodies are the C# ports (WwiseBusWalk), run for real: the collapsed bus carries Bus Volume -3.5f in its base bundle (emu_bus.py p5_base returns 0xC0600000 for it); the other bus has byte [+0x68] = 1.
         var rig = new Rig { BusFlag = busFlag, BusVolume = busVolume };
         Build(rig, out var leaf);
         var pbi = rig.NewPbi(leaf);
         rig.Path.InitContext9BEB30(pbi, 20f, 1, rig.Play, rig.Limiter);
         Assert.Equal(busFlag ? 0 : unchecked((int)0xC0600000), Bits(pbi.ReadWord64()));
-        Assert.Equal(busFlag ? new[] { "9C54E8", "AC" } : new[] { "9C54E8", "9C39DC", "AC" }, rig.Log);
+        Assert.Equal(new[] { "AC" }, rig.Log);
         Assert.Equal(0x42CA0000, Bits(pbi.FieldC4));
     }
 
@@ -276,7 +320,7 @@ public class WwisePlayPathTests
         Assert.Equal((b4, b8, bc), (Bits(pbi.PanB4), Bits(pbi.PanB8), Bits(pbi.PanBC)));
         Assert.Equal(calls, rig.Log.Count(l => l.StartsWith("A11590")));
         Assert.Equal(0x74, pbi.Flags0E8);
-        rig.Seams.Rtpc9A11590 = null;
+        rig.Path.Rtpc = null;                                                         // the RTPC manager is required once a bit is evaluated
         var again = rig.NewPbi(rig.Nodes[10]);
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Path.InitContext9BEB30(again, 20f, 1, rig.Play, rig.Limiter));
     }
@@ -325,7 +369,7 @@ public class WwisePlayPathTests
             _ => new[] { (1u, (byte)2, 3f), (2u, (byte)2, 5f) },
         };
         Assert.Equal(kept, pbi.Transitions10C.Select(t => (t.Word0, t.Flags4, t.Value8)).ToArray());
-        Assert.Equal(new[] { "9C54E8", "AC" }, rig.Log);
+        Assert.Equal(new[] { "AC" }, rig.Log);
         Assert.Null(rig.LastAc!.Params);                                              // r1 = 0: no params block
         Assert.Null(rig.LastAc.Local);                                                // E8 0x5D has bit 6 set: no local block (oracle B1/B9 pass the pbi's own block)
     }
@@ -375,16 +419,19 @@ public class WwisePlayPathTests
     public void B11_TheFirstTimeBlockRunsOnlyWithE8Bit6ClearAndSetsIt(uint field34, bool e8224, bool e62ac)
     {
         // emu_play.py B11 (E8 = 0x1D, bit 6 clear): 0x9E8224 runs when [pbi+0x34] != 0; 0x9E62AC when the zero block vt+0xAC received (the local block at sp+0x2C, E8 bit 6 clear) has its word at +4 set by the call;
-        // E8 ends 0x74 (bit 6 set, 0x9FFF9C..0x9FFFA4). The vt+0xAC stand-in receives the local block, not params+0x108.
+        // E8 ends 0x74 (bit 6 set, 0x9FFF9C..0x9FFFA4). The vt+0xAC stand-in receives the local block, not params+0x108. Since batch 5c 0x9E8224 and 0x9E62AC are the C# ports (WwiseModulatorManager): the first clears
+        // [item+0xC] of every list item, the second visits the ids of the local block's records through the stand-in 0x9DCE44 (WwiseModulatorListTests checks them against the real functions).
         var rig = new Rig();
         Build(rig, out var leaf);
         var pbi = rig.NewPbi(leaf, e8: 0x1D);
         pbi.Field34 = field34;
-        rig.Accumulate = a => { Assert.NotNull(a.Local); Assert.Null(a.Params); if (e62ac) a.Local!.Word4 = 1; };
+        var item = new WwiseListRecord { Word0C = 7 };
+        rig.Records34.Add(item);
+        rig.Accumulate = a => { Assert.NotNull(a.Local); Assert.Null(a.Params); if (e62ac) { a.Local!.Word4 = 1; a.Local.Records.Add(new WwiseModulatorOutRecord { Word4 = 5, WordC = 6, Ids10 = new uint[] { 41, 42 } }); } };
         rig.Path.InitContext9BEB30(pbi, 20f, 1, rig.Play, rig.Limiter);
         Assert.Equal(0x74, pbi.Flags0E8);
-        Assert.Equal(e8224, rig.Log.Contains("9E8224"));
-        Assert.Equal(e62ac, rig.Log.Contains("9E62AC"));
+        Assert.Equal(e8224 ? 0u : 7u, item.Word0C);
+        Assert.Equal(e62ac ? new[] { "AC", "9DCE44:41", "9DCE44:42" } : new[] { "AC" }, rig.Log);
     }
 
     [Fact]
@@ -393,7 +440,7 @@ public class WwisePlayPathTests
         // emu_play.py B6: with no output bus (r6 = 0) and [params+0x11C] == 0 the compare at 0x9FFB04 selects the cached-block path 0x9FFED4.. (not adopted: it throws here); a non-zero word runs the normal path; with E9 bit 2
         // the cached path's own test sends it to the reset (0x9FFEDC bne 0x9FFB10), which is the normal flow.
         var rig = new Rig();
-        rig.Seams.FirstOutputBus9F4BB8 = _ => null;
+        rig.HasBus = false;                                                            // 0x9F4BB8 finds no [+0x38] link on the chain: r6 = 0
         Build(rig, out var leaf);
         var pbi = rig.NewPbi(leaf);
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Path.InitContext9BEB30(pbi, 20f, 1, rig.Play, rig.Limiter));
@@ -415,17 +462,13 @@ public class WwisePlayPathTests
         var pbi = rig.NewPbi(leaf);
         pbi.CtxD0 = new object();
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Path.InitContext9BEB30(pbi, 20f, 1, rig.Play, rig.Limiter));
-        foreach (var unset in new Action<WwisePlaySeams>[] { s => s.FirstOutputBus9F4BB8 = null, s => s.BusFlag9C54E8 = null, s => s.NodeVtAC = null })
+        foreach (var unset in new Action<Rig>[] { r => r.Path.RuntimeNodeOf = null, r => r.Path.RuntimeNodeOf = _ => null, r => r.Seams.NodeVtAC = null })
         {
             var r = new Rig();
             Build(r, out var l);
-            unset(r.Seams);
+            unset(r);
             Assert.Throws<WwiseMissingBehaviourException>(() => r.Path.InitContext9BEB30(r.NewPbi(l), 20f, 1, r.Play, r.Limiter));
         }
-        var noVolume = new Rig { BusFlag = false };
-        noVolume.Seams.BusVolume9C39DC = null;
-        Build(noVolume, out var nl);
-        Assert.Throws<WwiseMissingBehaviourException>(() => noVolume.Path.InitContext9BEB30(noVolume.NewPbi(nl), 20f, 1, noVolume.Play, noVolume.Limiter));
     }
 
     // ------------------------------------------------------------------ 0x9BCA68 and 0x9FF368

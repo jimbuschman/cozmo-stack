@@ -16,6 +16,8 @@ public class WwiseVoiceLinkerTests
 
     private sealed class Src : IWwiseVoiceSource
     {
+        public void Close2C() { }                                                   // test double: no pool blocks
+        public float Duration34() => 0f;
         public int Channels => 1;
         public int SampleRate => 48000;
         public int Render(WwiseVoiceBuffer buffer) => 0x2D;
@@ -53,7 +55,6 @@ public class WwiseVoiceLinkerTests
             Seams.BusVt98Arg3 = _ => 1;
             Seams.LineInitUnreadSteps = (_, args, stage) => { Stages.Add(stage); if (stage == 1) Inits.Add(args); };
             Seams.LineFxHolder = (_, _) => true;
-            Seams.BusVolumeParam5 = _ => -6.5f;
             // Test double for the unread 0xA22A3C build body behind 0x9EA23C (C24.5): a build that yields a value.
             // Tests of the missing-seam and failure paths replace it.
             Seams.BuildDeviceObjectA22A3C = (_, _) => new object();
@@ -75,7 +76,11 @@ public class WwiseVoiceLinkerTests
     }
 
     /// <summary>A Master-like bus: bit6 = 1 (row 11), returns itself from vt+0x88 because [bus+0x38] is null.</summary>
-    private static WwiseRoutingNode Master(uint id = 100, uint word68 = 0) => new() { Id = id, IsBus = true, Bit6 = true, Word68 = word68 };
+    private static WwiseRoutingNode Master(uint id = 100, uint word68 = 0, float busVolume = -6.5f) => new()
+    {
+        Id = id, IsBus = true, Bit6 = true, Word68 = word68,
+        BaseBundle3C = new WwiseParamBundle(new byte[] { 5 }, new[] { BitConverter.SingleToUInt32Bits(busVolume) }),   // Bus Volume (property 5): what 0x9C39DC(bus, 0, 5) reads (C34.1 B9)
+    };
 
     /// <summary>A node whose vt+0x88 returns 0 ("no bus", C24.9): no output bus and no parent.</summary>
     private static WwiseRoutingNode NoBus() => new() { Id = 1, IsBus = false };
@@ -123,11 +128,11 @@ public class WwiseVoiceLinkerTests
         var passThrough = new WwiseRoutingNode { Id = 2, IsBus = true, OutputBus = root };   // no predicate holds
         Assert.Same(root, passThrough.Vt88());                                          // tail-jumps to 0x9F1E3C
 
-        var withFx = new WwiseRoutingNode { Id = 3, IsBus = true, OutputBus = root, AnyFxEntryNonZero = true };
+        var withFx = new WwiseRoutingNode { Id = 3, IsBus = true, OutputBus = root, Fx28 = new WwiseFxChunk { Ids = { [2] = 7 } } };
         Assert.Same(withFx, withFx.Vt88());
         foreach (var setter in new Action<WwiseRoutingNode>[]
         {
-            n => n.Vt44Is0C = true, n => n.Byte68 = 1, n => n.Byte46 = 0x80, n => n.Word40 = 0x20000, n => n.Word54 = 1,
+            n => n.Category44 = WwiseNodeCategory44.AudioDeviceBus, n => n.Byte68 = 1, n => n.Byte46 = 0x80, n => n.Word40 = 0x20000, n => n.Word54 = 1,
         })
         {
             var bus = new WwiseRoutingNode { Id = 4, IsBus = true, OutputBus = root };
@@ -769,32 +774,27 @@ public class WwiseVoiceLinkerTests
     // ------------------------------------------------------------------ 0xA68A44, 0xA4F6F0 (C24.6)
 
     [Fact]
-    public void ANullBusLineTakesVolume0WithoutTheSeamAndABusLineTakesTheParam5Read()
+    public void ANullBusLineTakesVolume0AndABusLineTakesTheParam5Read()
     {
-        // C24.6: 0xA68A44 returns 0.0f for a null bus; only a non-null bus goes to 0x9C39DC(bus, 0, 5).
+        // C24.6: 0xA68A44 returns 0.0f for a null bus; only a non-null bus goes to 0x9C39DC(bus, 0, 5) (WwiseBusWalk.A9C39DC, C34.1 B9: the base bundle's property 5, emu_bus.py p5_base).
         var rig = new Rig();
-        rig.Seams.BusVolumeParam5 = _ => throw new InvalidOperationException("must not be read for a null bus");
         rig.Routing = new WwisePbiRouting { Node = NoBus() };
         var voice = Rig.Voice();
         rig.Linker.Link(voice, Rig.Pbi());
         Assert.Equal(0f, Assert.Single(rig.Buses.Buses).VolumeDb90);
 
         var bus = new Rig();
-        WwiseRoutingNode? asked = null;
-        bus.Seams.BusVolumeParam5 = n => { asked = n; return -12f; };
-        var master = Master();
+        var master = Master(busVolume: -12f);
         bus.Routing = new WwisePbiRouting { Node = SoundUnder(master) };
         bus.Linker.Link(Rig.Voice(), Rig.Pbi());
-        Assert.Same(master, asked);
         Assert.Equal(-12f, Assert.Single(bus.Buses.Buses).VolumeDb90);
     }
 
     [Fact]
     public void ADefaultLineAlwaysTakesTheNullBusVolumePath()
     {
-        // C24.6: the default context has no bus, so 0xA68A44 returns 0.0f and the seam is not needed.
+        // C24.6: the default context has no bus, so 0xA68A44 returns 0.0f and no walk runs.
         var rig = new Rig();
-        rig.Seams.BusVolumeParam5 = null;
         rig.Routing = new WwisePbiRouting { Node = NoBus() };
         rig.Linker.Link(Rig.Voice(), Rig.Pbi());
         Assert.Equal(0f, Assert.Single(rig.Buses.Buses).VolumeDb90);
