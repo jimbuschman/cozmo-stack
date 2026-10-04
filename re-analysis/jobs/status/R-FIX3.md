@@ -32,3 +32,6 @@ Round 3 candidates: M7-014's 11 classes' lock tables (the extraction research/20
 Lock tables (KnockOverCubes, BuildPyramid, RamIntoBlock, PopAWheelie, MountCharger 'Docking test simple', dockActions with the first-Update gate, FlipBlock), SmartDisable/SmartRemove always asking the manager, the integer-ms BaseStationTimer clock for the animation streamer, IncreaseScoreWhileActing(10.0f). Three verifier rounds: round 3 PASS (no blocking). Queued: the take-back by lock name has no run identity (theoretical window); the concurrent-stop stress test asserts no minimum false-count; several tests return silently without the needs library.
 Records stay IMPLEMENTATION_GAP, "R-FIX3 round 3 ... built, awaiting strong verification:".
 Remaining candidates (not done): other system_clock sites in Needs, the write terminal's broadcast order, SparkBehaviorDisables inputs, 6 classes still on Scope.DisableReactions().
+
+### DONE (2026-10-04)
+Rounds 1-3 committed (44ce654, d19c104, 4d4c7cb). Stopped by the manager, not because nothing is left: the remaining candidates above (6 classes still on Scope.DisableReactions(), SparkBehaviorDisables inputs, other Needs system_clock sites, write terminal broadcast order) each need a fresh extraction or a new job.
