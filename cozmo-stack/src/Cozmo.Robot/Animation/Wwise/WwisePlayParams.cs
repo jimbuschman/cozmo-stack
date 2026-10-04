@@ -88,6 +88,9 @@ public sealed class WwisePlayInitParams
     /// <summary><c>+0x85</c>: 0xFF in the Play helper (<c>0xA62AF4</c>).</summary>
     public byte SoundSpecial85 { get; set; } = 0xFF;
 
+    /// <summary><c>+0x86</c>: read by the PBI ctor only when <c>+0x84</c> is 0x80, 0x90 or 0xA0 (<c>0xA003E0</c>), as byte@0x10 of the listener key. Not set by the Play helper; null is unset, and the listener key stops visibly when it is needed and unset.</summary>
+    public byte? SoundSpecial86 { get; set; }
+
     /// <summary><c>+0x78</c>: a pointer word; <c>0xA37A54..0xA38064</c> test it for zero (<c>0x9E85C8</c> gets <c>[params+0x78]+0x14</c>) and F4 reads <c>[[params+0x78]+8]</c>. The Play helper's
     /// value is not in the inventory; null is the zero pointer.</summary>
     public object? Ptr78 { get; set; }

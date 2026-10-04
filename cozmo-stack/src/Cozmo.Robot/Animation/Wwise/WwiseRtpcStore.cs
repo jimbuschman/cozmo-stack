@@ -454,7 +454,7 @@ public sealed class WwiseRtpcStore
     private readonly Dictionary<(uint Key1, uint Param), WwiseRtpcSubscription> _subscriptions = new();
 
     /// <summary>
-    /// Adds a subscription to the table <c>0xA11590</c> reads (<c>[mgr+0x10]</c> buckets, <c>[mgr+0x14]</c> count). The engine's registrar <c>0xA19ECC</c> (the limiter's <c>RtpcSubscribeA19ECC</c> seam) is not adopted, so this is the host's way
+    /// Adds a subscription to the table <c>0xA11590</c> reads (<c>[mgr+0x10]</c> buckets, <c>[mgr+0x14]</c> count). The subscription creator <c>0xA1A338</c> (bank load) is not adopted, so this is the host's way
     /// to fill the table; the hash's chain order and growth are not modelled, and a second subscription with the same (key, parameter) is refused (the engine's chain would find the first).
     /// </summary>
     public void AddSubscription(WwiseRtpcSubscription subscription)
@@ -547,113 +547,309 @@ public sealed class WwiseRtpcStore
     // fidelity: M6-009
     public byte Byte108D7D8_0C { get; private set; }
 
-    private readonly Dictionary<uint, List<WwiseRtpcListener>> _registries = new();
+    /// <summary>
+    /// The registry behind each holder address (<c>[holder+4]</c>): the manager-side view the fan-out <c>0xA1B254</c> reads. A node's own registry objects (<see cref="WwiseRoutingNode.Registry14"/>, <see cref="WwiseRoutingNode.Registry20"/>,
+    /// <see cref="WwiseRoutingNode.RegistryC8"/>) are linked here when a registration or removal first touches them, so the node and the store always see the same registry object.
+    /// </summary>
+    private readonly Dictionary<uint, WwiseRtpcRegistry> _registries = new();
+
+    private const ulong C127DF = 0x127DFUL;                                               // 0x9F7E1C/0x9F7E24, 0x9F82A0/0x9F82A8, 0x9F9368
+    private const ulong C1003F = 0x1003FUL;                                               // 0x9F73E0/0x9F73E8, 0x9F9360
+    private const ulong BusLoopBase = 0x0000001FFFFD003FUL;                               // 0x9F744C..0x9F7454: r8 = 0xFFFD003F (mov #0x3f; movt #0xfffd), sb = 0x1F
 
     /// <summary>
-    /// <c>0xA19ECC(ctx, node, {mask}, 1)</c> -> <c>0x9F7390(node, ctx, mask, 1)</c> (the PBI Init <c>0xA0285C</c> -> <c>0x9BC5A8</c> at <c>0xA02868</c>), the non-bus loop <c>0x9F7DA8..0x9F82D4</c> as the verifier read it. Per node <c>sb</c>, from the PBI's node up
-    /// <c>sb = [sb+0x34]</c> (<see cref="WwiseRoutingNode.Parent"/>): <c>W = ~satisfied &amp; listener</c> (<c>0x9F7E30</c>); <c>n40 = (u64)[node+0x40] &lt;&lt; 17</c> (<see cref="WwiseRoutingNode.Node40"/>), with <c>0x7E3FFFE0000</c> ORed in for the top node (no
-    /// parent, <c>0x9F8758</c>); <c>allowed = W &amp; (0x127DF | n40)</c> (<c>0x9F7E1C..0x9F7E48</c>). The first holder <c>node+0x10</c> registers only if its registry exists (<c>[node+0x14] != 0</c>, <see cref="WwiseRoutingNode.SubscriptionMask14"/> not null; <c>0x9F7E4C</c>):
-    /// <c>inter = allowed &amp; mask A</c> (<c>0x9F7E50..0x9F7E5C</c>); a zero <c>inter</c> removes the context from that registry (<c>0xA198A4</c>, <c>0x9F86F8</c>), otherwise the child record stores <b>inter</b> (<c>0xA1973C</c>, <c>0x9F7E9C</c>). Then <c>satisfied |= n40</c>
-    /// (<c>0x9F8248..0x9F8258</c>); while no bus has been found the node's output bus <c>[node+0x38]</c> is taken and a non-zero <c>0x9C54E8(bus)</c> (<see cref="WwiseRoutingNode.A9C54E8"/>, C34.1 B7) ORs <c>0x20</c> into <c>satisfied</c> (<c>0x9F8260..0x9F8288</c>); the loop goes on to the
-    /// parent while <c>(~satisfied | 0x127DF) &amp; listener != 0</c> (<c>0x9F82B4..0x9F82D0</c>) and the parent exists. The child's key is the PBI's key (the pull path's <see cref="WwiseGainRtpcKey"/>, see the report: its words beyond A are unread) and <c>[ctx+0x20] = node</c> when it was zero (<c>0xA19EF4</c>).
-    /// <para>UNREAD, so a visible stop (<see cref="WwiseMissingBehaviourException"/>): a node whose <see cref="WwiseRoutingNode.Node40"/> is not supplied; the second holder <c>node+0x1C</c> when it has a registry (<see cref="WwiseRoutingNode.SecondHolderMask20"/>); and the bus branch
-    /// <c>0x9F73DC..</c> (constant <c>0x1003F</c>, sites <c>0x9F74CC</c>, <c>0x9F76A8</c>), which the engine enters after the loop with the first output bus found: it is not read, so when that bus or one of its parent buses (<c>[bus+0x38]</c>) has a registry (a subscription targets a bus, e.g.
-    /// robot_volume on Bus 1723505802) the registration throws. A bus chain with no registry is let through on the INFERENCE that the bus branch shares the registry-exists gate of the non-bus loop (<c>0x9F7484 cmp r4,#0; beq</c> mirrors <c>0x9F7E28/0x9F7E4C</c>); that is not a read.
-    /// Not modelled and unobservable on the Play path: the first-holder activation (<c>0x9F7E68..0x9F7E88</c>: with <c>[registry+0x14] == 0</c> the engine calls <c>0xA1008C(*mgr, node+0x10, n40 | 0x127DF)</c>, moving array B to A), the dormant array B and the registry's mask B and the registry's mask B (<c>[registry+8]</c>, the AND of the child masks), which the fan-out does not need.</para>
+    /// The calls <c>0x9F7390</c> and <c>0x9F9064</c> make into the RTPC manager <c>*0x108D908</c>: <c>0xA1008C</c> (<see cref="WwiseRtpcManagerCall.ToArrayA"/> true: the holder's subscriptions of the mask's parameters move from array B to array A) and
+    /// <c>0xA10220</c> (the mirror). This model does not keep the A/B arrays: a delivery reaches every subscription whose registry has a child (C37.1: unobservable on the Play path); the observer is how a host or test sees the calls.
     /// </summary>
     // fidelity: M6-009
-    public void RegisterListenerA19ECC(WwisePlayingInstance pbi, WwiseRoutingNode node, ulong mask)
+    public Action<WwiseRtpcManagerCall>? ManagerCallObserver { get; set; }
+
+    /// <summary>
+    /// The engine's pool allocator <c>0xA7A7F4(pool, size)</c> at the registry's array growth (<c>0x9F8408</c>, <c>0x9F8518</c>, <c>0x9F8858</c>, ...). The argument is the 1-based number of the allocation attempt since the store was created; returning true makes it
+    /// return 0, and the registration at that holder is silently skipped (<c>0x9F888C beq 0x9F8038</c>, <c>0x9F842C</c>, ...) with nothing else undone. Null: every allocation succeeds.
+    /// </summary>
+    // fidelity: M6-009
+    public Func<int, bool>? AllocationFailsA7A7F4 { get; set; }
+
+    /// <summary>The number of <c>0xA7A7F4</c> calls the registry growth has made.</summary>
+    public int AllocationCount { get; private set; }
+
+    /// <summary>An observer of every <c>0x9C54E8(bus)</c> the registration makes, in call order (a test seam; it does not change the result).</summary>
+    public Action<WwiseRoutingNode>? CollapseCallObserver { get; set; }
+
+    private bool CollapsedA9C54E8(WwiseRoutingNode bus)
+    {
+        CollapseCallObserver?.Invoke(bus);
+        return bus.A9C54E8();
+    }
+
+    private void ManagerCall(bool toArrayA, uint holder, ulong mask) => ManagerCallObserver?.Invoke(new WwiseRtpcManagerCall(toArrayA, holder, mask));
+
+    /// <summary>
+    /// <c>0xA19ECC(ctx, node, {mask}, flag)</c> -> <c>0x9F7390(node, ctx, mask, flag)</c> (C39.1; the PBI Init <c>0xA0285C</c> -> <c>0x9BC5A8</c> at <c>0xA02868</c> passes flag 1 and the mask {0xFFFE67BD, 0x3FE3}): a null node returns doing nothing
+    /// (<c>0xA19ECC cmp r1,#0; bxeq lr</c>); then <c>[ctx+0x20] = node</c> only if it was zero (<c>0xA19EEC..0xA19EF4</c>, after <c>0x9F7390</c> returns).
+    /// </summary>
+    // fidelity: M6-009
+    public void RegisterListenerA19ECC(WwisePlayingInstance pbi, WwiseRoutingNode? node, ulong mask, uint flag = 1)
     {
         ArgumentNullException.ThrowIfNull(pbi);
-        ArgumentNullException.ThrowIfNull(node);
-        var key = pbi.RtpcKey14 is WwiseGainRtpcKey k ? k
-            : throw new WwiseMissingBehaviourException("M6-009 C37.1: the PBI key [pbi+0x14] (0x9BC90C / 0xA19CDC) is not a WwiseGainRtpcKey; its layout beyond word 0 is unread");
-        if ((node.Byte46 & 4) != 0)                                         // 0x9F73AC..0x9F73C4 ldrb r1,[r0,#0x46]; and r3,r1,#4; beq 0x9F7DA8: bit 2 takes the bus-category loop 0x9F73C8.. (constant 0x1003F)
-            throw new WwiseMissingBehaviourException(
-                $"M6-009 C37.1: the start node {node.Id} has bit 2 of [node+0x46] set; the bus-category loop 0x9F73C8.. is not read");
-        const ulong C127DF = 0x127DFUL;
-        ulong satisfied = 0;
-        WwiseRoutingNode? bus = null;
-        if (mask == 0) return;                                                            // 0x9F7DA8..0x9F7DB4: a zero listener returns
-        for (var sb = node; sb is not null;)
-        {
-            ulong w = ~satisfied & mask;                                                  // 0x9F7E30 and sl,sl,r6 (sl = ~satisfied)
-            ulong n40 = (ulong)(sb.Node40 ?? throw new WwiseMissingBehaviourException(
-                $"M6-009 C37.1: the listener walk reads [node+0x40] (0x9F7DF8) of node {sb.Id}, which the routing node cannot give; set WwiseRoutingNode.Node40")) << 17;   // 0x9F7E00..0x9F7E10
-            if (sb.Parent is null) n40 |= 0x7E3FFFE0000UL;                                // 0x9F7E14 beq 0x9F8758: orr (0xFFFE0000, 0x7E3)
-            ulong allowed = w & (C127DF | n40);                                           // 0x9F7E1C..0x9F7E48
-            if (sb.SubscriptionMask14 is { } regA)                                        // 0x9F7E28 cmp r4,#0; 0x9F7E4C beq 0x9F8038
-            {
-                ulong inter = allowed & regA;                                             // 0x9F7E50..0x9F7E5C
-                if (inter == 0) RemoveChildA198A4(sb.SubscriptionKey10, pbi);             // 0x9F7E64 beq 0x9F86F8 -> 0xA198A4
-                else AddChildA1973C(sb.SubscriptionKey10, pbi, key, inter);               // 0x9F7E9C ldrd r2,r3,[sp,#0x30]; 0xA1973C
-            }
-            if (sb.SecondHolderMask20 is not null)                                        // 0x9F8038 ldr r4,[sb,#0x20]; cmp r4,#0; bne 0x9F8044
-                throw new WwiseMissingBehaviourException(
-                    $"M6-009 C37.1: node {sb.Id} has a second holder registry [node+0x20] (0x9F8038..0x9F8098, activation site 0x9F8080); its registration is not modelled");
-            satisfied |= n40;                                                             // 0x9F8248..0x9F8258 orr [sp+8],[sp+0x10]
-            if (bus is null && sb.OutputBus is { } ob)                                    // 0x9F8230..0x9F8264 (flag & 1, no bus yet), [sb+0x38]
-            {
-                bus = ob;
-                if (ob.A9C54E8()) satisfied |= 0x20;                                      // 0x9F8274..0x9F8284 0x9C54E8(bus) != 0
-            }
-            sb = sb.Parent;                                                               // 0x9F8290 ldr sb,[sb,#0x34]
-            if (sb is null) break;                                                        // 0x9F8298 beq 0x9F82D4
-            if (((~satisfied | C127DF) & mask) == 0) break;                               // 0x9F82B4..0x9F82D0
-        }
-        if (bus is not null)                                                              // 0x9F82D4: a bus was found -> 0x9F73DC (the bus branch), unread
-        {
-            if (!AllowBusBranchRegistryInference)
-                throw new WwiseMissingBehaviourException(
-                    $"M6-009 C37.1: the listener walk found output bus {bus.Id} and the engine then enters the bus branch 0x9F73DC.. (constant 0x1003F, activation sites 0x9F74CC, 0x9F76A8), which is not read; a separate extraction will read it");
-            for (var b = bus; b is not null; b = b.OutputBus)                             // the inference only: a bus chain with a registry still stops
-                if (b.SubscriptionMask14 is not null || b.SecondHolderMask20 is not null)
-                    throw new WwiseMissingBehaviourException(
-                        $"M6-009 C37.1: the bus branch 0x9F73DC.. with bus {b.Id}, whose holder has a registry (a subscription targets this bus), is not read");
-        }
-        if (pbi.Ctx20Node is null) pbi.Ctx20Node = node;                                  // 0xA19EEC..0xA19EF4 ldr r3,[r4,#0x20]; streq r5,[r4,#0x20] (after 0x9F7390 returns)
+        if (node is null) return;                                                         // 0xA19ECC cmp r1,#0; bxeq lr
+        RegisterA9F7390(node, pbi, mask, flag);
+        if (pbi.Ctx20Node is null) pbi.Ctx20Node = node;                                  // 0xA19EEC..0xA19EF4 ldr r3,[r4,#0x20]; cmp r3,#0; streq r5,[r4,#0x20]
     }
 
     /// <summary>
-    /// NOT engine-derived: a test/host opt-in (default false; nothing production-constructed may set it). It lets <see cref="RegisterListenerA19ECC"/> pass the unread bus branch <c>0x9F73DC..</c> on the assumption that the branch shares the registry-exists gate
-    /// (<c>0x9F7484</c> vs <c>0x9F7E28/0x9F7E4C</c>), so that the shipped event_volume shape reaches a PBI; a bus chain with a registry still stops. Without it any found output bus stops the registration.
+    /// <c>0x9F7390(node, ctx, maskptr, flag)</c> (C39.1), the whole function. Entry: <c>[node+0x46] &amp; 4</c> clear takes the non-bus loop <c>0x9F7DA8..0x9F82D4</c>, set the bus branch <c>0x9F73C8</c> with the node as the first bus.
+    /// <para>Non-bus loop (a zero mask returns, <c>0x9F7DB4</c>): per node <c>sb</c> from the start node up <c>[sb+0x34]</c>: <c>m = (u64)[sb+0x40] &lt;&lt; 17</c> (the top node, <c>[sb+0x34] == 0</c>, adds <c>0x7E3FFFE0000</c>, <c>0x9F8758..0x9F8770</c>);
+    /// <c>M = (~satisfied &amp; L) &amp; (m | 0x127DF)</c> (<c>0x9F7E1C..0x9F7E48</c>); holder 1 (<c>node+0x10</c>, registry <c>[node+0x14]</c>) then holder 2 (<c>node+0x1C</c>, registry <c>[node+0x20]</c>), each with <c>x = M &amp; mask A</c> (holder 2 uses the
+    /// unnarrowed <c>M</c>); then <c>satisfied |= m</c> (<c>0x9F8248..0x9F8258</c>); while no bus candidate is held (<c>[sp+0x18] == 0</c>) and <c>flag &amp; 1</c> the candidate is <c>[sb+0x38]</c> (stored even when 0, <c>0x9F8268</c>) and a non-zero
+    /// <c>0x9C54E8(bus)</c> (<see cref="WwiseRoutingNode.A9C54E8"/>) ORs <c>0x20</c> into <c>satisfied</c> and sets <c>[sp+0x44]</c> (<c>0x9F8274..0x9F828C</c>); the loop goes to the parent while <c>((~satisfied) | 0x127DF) &amp; L != 0</c> (<c>0x9F82A0..0x9F82D0</c>);
+    /// at its end a held bus enters the bus branch (<c>0x9F82D4..0x9F82DC</c>).</para>
+    /// <para>Bus branch (<c>0x9F73DC..0x9F7A74</c>): <c>((~satisfied) | 0x1003F) &amp; L == 0</c> returns; per bus <c>fp</c>: <c>m = 0</c> when <c>[fp+0x38] == 0</c> else <c>(u64)[fp+0x40] &lt;&lt; 17</c>, <c>M = (~satisfied &amp; L) &amp; (m | 0x1FFFFD003F)</c>
+    /// (<c>0x9F7448..0x9F7488</c>, <c>0x9F7C34..0x9F7C48</c>: the high word of the constant is 0x1F); holders 1 (<c>[fp+0x14]</c>, target <c>fp+0x10</c>, site <c>0x9F74CC</c>), 3 (<c>[fp+0xC8]</c>, target <c>fp+0xC4</c>, <c>0x9F76A8</c>) and 2 (<c>[fp+0x20]</c>, target
+    /// <c>fp+0x1C</c>, <c>0x9F7884</c>); then <c>fp = [fp+0x38]</c>, <c>satisfied |= m</c>, a null <c>fp</c> returns, while <c>[sp+0x44] == 0</c> a non-zero <c>0x9C54E8(fp)</c> ORs <c>0x20</c> (<c>0x9F7BA0..0x9F7BC4</c>), and the loop continues while
+    /// <c>((~satisfied) | 0x1003F) &amp; L != 0</c> (<c>0x9F7A44..0x9F7A70</c>).</para>
+    /// <para>One holder (<see cref="HolderRegisterA9F7390"/>): <c>x == 0</c> removes the context (<c>0xA198A4</c>, cache <c>~0</c> when the count reaches 0, no <c>0xA10220</c>); <c>x != 0</c> activates (<c>0xA1008C(mgr, holder, mask A)</c> when the count is 0,
+    /// before the allocation), inserts at the lower_bound slot of <c>0xA19778</c> or overwrites the mask of an entry with the same six key fields and the same context, grows the array by exactly one entry at a time, and <c>[reg+8] &amp;= x</c> on a new insert.</para>
+    /// <para>UNREAD or not modelled: <c>[node+0x40]</c> of a non-bus node that is not supplied (<see cref="WwiseMissingBehaviourException"/>); the A/B arrays of the manager (see <see cref="ManagerCallObserver"/>).</para>
     /// </summary>
-    public bool AllowBusBranchRegistryInference { get; set; }
-
-    /// <summary>The child insertion <c>0xA1973C</c> (<c>0x9F7E9C</c>): the PBI's context becomes a child of the holder's registry with <paramref name="mask"/> (the intersected mask). Hosts and tests may call it directly to place a child with a chosen mask. A second record for the same PBI at the same holder (the engine's find <c>0xA19778</c> and its update) is not read: a visible stop.</summary>
     // fidelity: M6-009
-    public void AddChildA1973C(uint holderKey10, WwisePlayingInstance pbi, WwiseGainRtpcKey key, ulong mask)
+    public void RegisterA9F7390(WwiseRoutingNode node, WwisePlayingInstance ctx, ulong mask, uint flag)
     {
-        if (!_registries.TryGetValue(holderKey10, out var list)) _registries[holderKey10] = list = new List<WwiseRtpcListener>();
-        if (list.Any(l => ReferenceEquals(l.Pbi, pbi)))
-            throw new WwiseMissingBehaviourException("M6-009 C37.1: a second registration of one PBI at one holder takes the find/update path of 0xA19778 (0x9F7EC0..), which is not read");
-        list.Add(new WwiseRtpcListener(pbi, key, mask));
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(ctx);
+        ulong satisfied = 0;
+        WwiseRoutingNode? bus;
+        bool collapsedSeen = false;                                                       // [sp+0x44]
+        if ((node.Byte46 & 4) == 0)                                                       // 0x9F73AC..0x9F73C4 ldrb r1,[r0,#0x46]; and r3,r1,#4; beq 0x9F7DA8
+        {
+            if (mask == 0) return;                                                        // 0x9F7DA8..0x9F7DB4
+            bus = null;                                                                   // [sp+0x18]
+            for (var sb = node; ;)
+            {
+                ulong w = ~satisfied & mask;                                              // 0x9F7E30 and sl,sl,r6 (sl = ~satisfied; ~0 on the first node, 0x9F7DC8)
+                ulong m = (ulong)Field40(sb, "the listener walk 0x9F7390 reads [node+0x40] (0x9F7DF8)") << 17;   // 0x9F7E00..0x9F7E10
+                if (sb.Parent is null) m |= 0x7E3FFFE0000UL;                              // 0x9F7E14 beq 0x9F8758: orr (0xFFFE0000, 0x7E3)
+                ulong bigM = w & (m | C127DF);                                            // 0x9F7E1C..0x9F7E48
+                if (sb.Registry14 is { } h1) HolderRegisterA9F7390(h1, sb.SubscriptionKey10, bigM, ctx);   // 0x9F7E28/0x9F7E4C, site 0x9F7E88
+                if (sb.Registry20 is { } h2) HolderRegisterA9F7390(h2, sb.HolderKey20, bigM, ctx);        // 0x9F8038..0x9F8098, site 0x9F8080
+                satisfied |= m;                                                           // 0x9F8248..0x9F8258
+                if (bus is null && (flag & 1) != 0)                                       // 0x9F8230..0x9F8244 ([sp+0x18] == 0 ? flag & 1 : 0)
+                {
+                    bus = sb.OutputBus;                                                   // 0x9F8260..0x9F8268 ldr r3,[sb,#0x38]; str r3,[sp,#0x18] (even when 0)
+                    if (bus is not null && CollapsedA9C54E8(bus))                         // 0x9F8274 bl 0x9C54E8; 0x9F8280 orrne r2,r2,#0x20
+                    {
+                        satisfied |= 0x20;
+                        collapsedSeen = true;                                             // 0x9F828C strne r3,[sp,#0x44]
+                    }
+                }
+                var parent = sb.Parent;                                                   // 0x9F8290 ldr sb,[sb,#0x34]
+                if (parent is null) break;                                                // 0x9F8298 beq 0x9F82D4
+                sb = parent;
+                if (((~satisfied | C127DF) & mask) == 0) break;                           // 0x9F82B4..0x9F82D0
+            }
+            if (bus is null) return;                                                      // 0x9F82D4..0x9F82DC
+        }
+        else
+        {
+            bus = node;                                                                   // 0x9F73D0 str r0,[sp,#0x18]; [sp+0x44] = 0; satisfied = 0
+        }
+
+        // the bus branch 0x9F73DC
+        if (((~satisfied | C1003F) & mask) == 0) return;                                  // 0x9F73F4..0x9F7410
+        for (var fp = bus; ;)
+        {
+            ulong m = fp.OutputBus is null ? 0UL : (ulong)Field40(fp, "the bus branch of 0x9F7390 reads [fp+0x40] (0x9F7448)") << 17;   // 0x9F743C beq 0x9F7C34 (m = 0); 0x9F7448..0x9F7464
+            ulong bigM = (~satisfied & mask) & (m | BusLoopBase);                         // 0x9F7478..0x9F7488
+            if (fp.Registry14 is { } b1) HolderRegisterA9F7390(b1, fp.SubscriptionKey10, bigM, ctx);   // 0x9F7484/0x9F74A8, site 0x9F74CC
+            if (fp.RegistryC8 is { } b3) HolderRegisterA9F7390(b3, fp.HolderKeyC4, bigM, ctx);        // 0x9F7660..0x9F76A8
+            if (fp.Registry20 is { } b2) HolderRegisterA9F7390(b2, fp.HolderKey20, bigM, ctx);        // 0x9F783C..0x9F7884
+            var next = fp.OutputBus;                                                      // 0x9F7A18 ldr fp,[fp,#0x38]
+            satisfied |= m;                                                               // 0x9F7A20..0x9F7A30
+            if (next is null) return;                                                     // 0x9F7A34
+            fp = next;
+            if (!collapsedSeen && CollapsedA9C54E8(fp))                                 // 0x9F7A38..0x9F7A40, 0x9F7BA0..0x9F7BC4
+            {
+                satisfied |= 0x20;
+                collapsedSeen = true;
+            }
+            if (((~satisfied | C1003F) & mask) == 0) return;                              // 0x9F7A44..0x9F7A70
+        }
     }
-
-    /// <summary>The removal <c>0xA198A4(registry+0x10, ctx)</c> (<c>0x9F86F8</c>): the PBI's record at the holder, if any, is dropped.</summary>
-    private void RemoveChildA198A4(uint holderKey10, WwisePlayingInstance pbi)
-    {
-        if (_registries.TryGetValue(holderKey10, out var list)) list.RemoveAll(l => ReferenceEquals(l.Pbi, pbi));
-    }
-
-    /// <summary>The mask stored in the PBI's child record at a holder (the intersected mask of <c>0x9F7E5C</c>), or null when it is not a child there.</summary>
-    public ulong? ListenerMask(uint holderKey10, WwisePlayingInstance pbi)
-        => _registries.TryGetValue(holderKey10, out var l) && l.FirstOrDefault(c => ReferenceEquals(c.Pbi, pbi)) is { } c ? c.Mask : null;
-
-    /// <summary>Whether the PBI is a child of any registry (it registered a listener at Init and has not been removed).</summary>
-    public bool HasListener(WwisePlayingInstance pbi) => _registries.Values.Any(l => l.Any(c => ReferenceEquals(c.Pbi, pbi)));
 
     /// <summary>
-    /// HOST / TEST implementation of the removal the engine performs at the listener's destruction (listener dtor <c>0xA19D44</c> via <c>0x9F9064</c> to <c>0xA198A4</c>, with <c>[ctx+0x20]</c>): it drops the PBI's child records from every registry. It is NOT engine-derived
-    /// (<c>0xA198A4</c> and the destructor are unread); <see cref="WwisePlaybackLimiter.RemoveRtpcListenerA198A4"/> is the required seam a host points at it explicitly.
+    /// One holder of <c>0x9F7390</c> (C39.1): <paramref name="holderAddress"/> is the manager-side address (<c>node+0x10</c>, <c>node+0x1C</c> or <c>bus+0xC4</c>). <c>x = M &amp; mask A</c> (<c>0x9F7E50..0x9F7E5C</c>); zero removes the context from the registry
+    /// (<c>0xA198A4</c>) and resets the cache to <c>~0</c> when that leaves the count 0 (<c>0x9F86F8..0x9F8724</c>, no <c>0xA10220</c>). Otherwise: with count 0 the activation <c>0xA1008C(mgr, holder, mask A)</c> runs first (<c>0x9F7E68..0x9F7E88</c>), then <see cref="InsertA1973C"/>.
     /// </summary>
-    public void UnregisterListener(WwisePlayingInstance pbi)
+    // fidelity: M6-009
+    private void HolderRegisterA9F7390(WwiseRtpcRegistry reg, uint holderAddress, ulong bigM, WwisePlayingInstance ctx)
     {
-        foreach (var list in _registries.Values) list.RemoveAll(l => ReferenceEquals(l.Pbi, pbi));
+        _registries[holderAddress] = reg;
+        var key = ctx.ListenerKey;                                                        // read where the engine reads it, from the ctx (a PBI without a modelled key stops visibly only when a registry is reached)
+        ulong x = bigM & reg.MaskA;
+        if (x == 0)
+        {
+            if (reg.RemoveA198A4(key, ctx) && reg.Count == 0) reg.Cache = ulong.MaxValue;   // 0x9F86F8..0x9F8724: vstreq d9,[r4,#8] / ldreq [sp+0x60..0x64]
+            return;
+        }
+        if (reg.Count == 0) ManagerCall(true, holderAddress, reg.MaskA);                  // 0x9F7E68..0x9F7E88 bl 0xA1008C, before the allocation
+        InsertA1973C(reg, x, ctx, key, orderStop: ctx.ListenerKeyIsDerived);
     }
 
-    /// <summary>The number of children registered at a holder (<c>node+0x10</c>); the engine's <c>[registry+0x14]</c>.</summary>
-    public int ListenerCount(uint holderKey10) => _registries.TryGetValue(holderKey10, out var l) ? l.Count : 0;
+    /// <summary>
+    /// The insertion of <c>0x9F7390</c>'s holder step (<c>0x9F7E90..0x9F8034</c>): the entry <c>{key, x, ctx}</c> (<c>0xA1973C</c>) goes to the lower_bound slot (<c>0xA19778</c>); if the slot's entry, or a following one while all six key fields stay raw-equal, has the same
+    /// context, only its mask is overwritten (<c>0x9F7EF0..0x9F7EF8</c>, <c>0x9F8688..0x9F86E4</c>, <c>0x9F8AC0</c>); else a full array grows by exactly one entry (<c>0x9F8858..0x9F8984</c>: <c>0xA7A7F4</c> of <c>(capacity+1)*0x28</c>; a failure skips the registration),
+    /// the entry is inserted, and <c>[reg+8] &amp;= x</c> (<c>0x9F801C..0x9F802C</c>).
+    /// </summary>
+    private void InsertA1973C(WwiseRtpcRegistry reg, ulong x, WwisePlayingInstance ctx, WwiseListenerKey key, bool orderStop)
+    {
+        int slot = reg.LowerBoundA19778(key);                                             // 0x9F7EA4..0x9F7EAC
+        for (int i = slot; i < reg.Count; i++)                                            // 0x9F7EF0..0x9F7EF8, 0x9F8688..0x9F86E4: scan while all six key fields are raw-equal
+        {
+            var e = reg.Entries[i];
+            if (e.Key != key) break;
+            if (ReferenceEquals(e.Pbi, ctx)) { e.Mask = x; return; }                      // 0x9F8AC0..0x9F8ACC: only the mask
+        }
+        if (orderStop)
+            foreach (var e in reg.Entries)
+                if (!ReferenceEquals(e.Pbi, ctx) && e.Pbi.ListenerKeyIsDerived && e.Key.W0 == key.W0 && e.Key.W4 == key.W4 && e.Key.W8 == key.W8 && e.Key.B0C == key.B0C && e.Key.B10 == key.B10)
+                    throw new WwiseMissingBehaviourException("MISSING: engine orders equal-key listeners by the PBI heap address (word@0x14 of the key, 0xA003C8); not modelled (M6-009 C39.1: two PBIs with equal (w0, w4, w8, byte@0xC, byte@0x10) at one holder)");
+        if (reg.Count >= reg.Capacity)                                                    // 0x9F7F04..0x9F7F10 cmp fp,r3; bhs 0x9F8858
+        {
+            AllocationCount++;
+            if (AllocationFailsA7A7F4?.Invoke(AllocationCount) == true) return;           // 0xA7A7F4 returned 0: 0x9F888C beq 0x9F8038 (nothing else changed)
+            reg.Capacity = reg.Capacity + 1;                                              // 0x9F8858 add r3,r3,#1; 0x9F8964 str r2,[r4,#0x18]
+        }
+        reg.Entries.Insert(slot, new WwiseRtpcListener(ctx, key, x));                     // 0x9F7F28..0x9F8034
+        reg.Cache &= x;                                                                   // 0x9F801C..0x9F802C
+    }
+
+    /// <summary>
+    /// The entry insertion as a HOST / TEST helper (not an engine entry point): the holder step of <see cref="RegisterA9F7390"/> without the activation, for the registry linked at <paramref name="holderKey"/>, created with mask A all ones when none is linked there.
+    /// The key is the pull path's {game object, playing id} with the other four fields {0, 0xFF, 0xFF, 0}.
+    /// </summary>
+    // fidelity: M6-009
+    public void AddChildA1973C(uint holderKey, WwisePlayingInstance pbi, WwiseGainRtpcKey key, ulong mask)
+    {
+        if (!_registries.TryGetValue(holderKey, out var reg)) _registries[holderKey] = reg = new WwiseRtpcRegistry { MaskA = ulong.MaxValue };
+        InsertA1973C(reg, mask, pbi, WwiseListenerKey.FromGainKey(key), orderStop: false);
+    }
+
+    /// <summary>
+    /// <c>0xA19F60(ctx, maskptr, flag)</c> (C39.2; Term's last step <c>0x9BDC8C(ctx, 0)</c> passes {0xFFFE67BD, 0x3FE3} and 1, <c>0x9BDCD8..0x9BDCF4</c>): with <c>[ctx+0x20] != 0</c> it calls <c>0x9F9064([ctx+0x20], ctx, mask, flag)</c> and sets
+    /// <c>[ctx+0x20] = 0</c> (<c>0xA19F60..0xA19F90</c>); with zero it returns.
+    /// </summary>
+    // fidelity: M6-009
+    public void RemoveListenerA19F60(WwisePlayingInstance ctx, ulong mask, uint flag)
+    {
+        ArgumentNullException.ThrowIfNull(ctx);
+        if (ctx.Ctx20Node is not { } node) return;                                        // 0xA19F60 ldr ip,[r0,#0x20]; cmp ip,#0; bxeq lr
+        UnregisterA9F9064(node, ctx, mask, flag);                                         // 0xA19F84
+        ctx.Ctx20Node = null;                                                             // 0xA19F8C
+    }
+
+    /// <summary>
+    /// The listener destructor's removal (<c>0xA19D44</c>, called through the PBI destructor <c>0x9FF54C -> 0x9BC554 -> 0x9BC594</c>): with <c>[ctx+0x20] != 0</c> it calls <c>0x9F9064(node, ctx, &amp;~0, 1)</c> and zeroes it (<c>0xA19D4C..0xA19D88</c>); with zero it does
+    /// nothing here (after Term the destructor only unlinks the ctx from the global list <c>0x108DC44</c>, which is not modelled).
+    /// </summary>
+    // fidelity: M6-009
+    public void RemoveListenerInDestructorA19D44(WwisePlayingInstance ctx)
+    {
+        ArgumentNullException.ThrowIfNull(ctx);
+        if (ctx.Ctx20Node is not { } node) return;                                        // 0xA19D5C cmp r0,#0; beq 0xA19D8C
+        UnregisterA9F9064(node, ctx, ulong.MaxValue, 1);                                  // 0xA19D74..0xA19D80: r3 = 1, r2 = &(~0)
+        ctx.Ctx20Node = null;                                                             // 0xA19D88
+    }
+
+    /// <summary>
+    /// <c>0xA1A0B4(holder)</c> (C39.2, the node destructor's step at <c>0x9FC7EC</c>): for every listener context of the global list (head <c>0x108DC44</c>, supplied by the host in list order; the list itself is not modelled) whose <c>[ctx+0x20]+0x10</c> equals the
+    /// holder address, <c>0x9F9064([ctx+0x20], ctx, &amp;~0, 1)</c> and <c>[ctx+0x20] = 0</c> (<c>0xA1A0F4..0xA1A124</c>). A zero holder walks the list and does nothing (<c>0xA1A140</c>).
+    /// </summary>
+    // fidelity: M6-009
+    public void UnregisterHolderA1A0B4(uint holderAddress, IEnumerable<WwisePlayingInstance> globalList)
+    {
+        ArgumentNullException.ThrowIfNull(globalList);
+        if (holderAddress == 0) return;
+        foreach (var ctx in globalList.ToArray())
+        {
+            if (ctx.Ctx20Node is not { } node) continue;                                  // 0xA1A0F8 beq 0xA1A0E8
+            if (node.SubscriptionKey10 != holderAddress) continue;                        // 0xA1A104 cmp r5,r3 (r3 = [ctx+0x20] + 0x10)
+            UnregisterA9F9064(node, ctx, ulong.MaxValue, 1);
+            ctx.Ctx20Node = null;
+        }
+    }
+
+    /// <summary>
+    /// <c>0x9F9064(node, ctx, maskptr, flag)</c> (C39.2), the removal. Non-bus node (<c>[node+0x46] &amp; 4</c> clear, <c>0x9F9224..0x9F9334</c>): a zero mask returns; per node from <paramref name="node"/> up: holder 1 then holder 2, each only when its registry exists, with
+    /// no mask test: <c>0xA198A4</c> (found with count 0 afterwards: cache <c>~0</c>), then <c>0xA10220(mgr, holder, mask A)</c> whenever the count is 0, found or not (sites <c>0x9F9290</c>, <c>0x9F92E0</c>); <c>accum |= (u64)[node+0x40] &lt;&lt; 17</c>; while no bus is held
+    /// and <c>flag &amp; 1</c> the bus is <c>[node+0x38]</c> (no <c>0x9C54E8</c> here); the loop goes up while <c>((~accum) | 0x127DF) &amp; mask != 0</c>; a held bus enters the bus loop. Bus loop (<c>0x9F9094</c>; a bus passed as the node enters at <c>0x9F908C</c>):
+    /// <c>((~accum) | 0x1003F) &amp; mask == 0</c> returns; per bus holder 1, holder 3, holder 2 as above (sites <c>0x9F910C</c>, <c>0x9F915C</c>, <c>0x9F91AC</c>), then <c>accum |= (u64)[bus+0x40] &lt;&lt; 17</c> and <c>bus = [bus+0x38]</c>.
+    /// </summary>
+    // fidelity: M6-009
+    public void UnregisterA9F9064(WwiseRoutingNode node, WwisePlayingInstance ctx, ulong mask, uint flag)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(ctx);
+        ulong accum = 0;
+        WwiseRoutingNode? bus;
+        if ((node.Byte46 & 4) == 0)                                                       // 0x9F906C..0x9F9088
+        {
+            if (mask == 0) return;                                                        // 0x9F9228..0x9F9230
+            bus = null;                                                                   // r4
+            for (var r5 = node; ;)
+            {
+                if (r5.Registry14 is { } h1) HolderRemoveA9F9064(h1, r5.SubscriptionKey10, ctx);   // 0x9F9244..0x9F9290
+                if (r5.Registry20 is { } h2) HolderRemoveA9F9064(h2, r5.HolderKey20, ctx);        // 0x9F9294..0x9F92E0
+                ulong m = (ulong)Field40(r5, "the removal walk 0x9F9064 reads [node+0x40] (0x9F92E4)") << 17;
+                if (bus is null && (flag & 1) != 0) bus = r5.OutputBus;                   // 0x9F92E8..0x9F92FC
+                accum |= m;                                                               // 0x9F9310
+                var parent = r5.Parent;                                                   // 0x9F9300
+                if (parent is null) break;                                                // 0x9F9314
+                r5 = parent;
+                if (((~accum | C127DF) & mask) == 0) break;                               // 0x9F9318..0x9F9330
+            }
+            if (bus is null) return;                                                      // 0x9F9334..0x9F933C
+        }
+        else bus = node;                                                                  // 0x9F908C
+        for (var r4 = bus; ;)                                                             // 0x9F9094
+        {
+            if (((~accum | C1003F) & mask) == 0) return;                                  // 0x9F9098..0x9F90B0
+            if (r4.Registry14 is { } b1) HolderRemoveA9F9064(b1, r4.SubscriptionKey10, ctx);   // 0x9F90C0..0x9F910C
+            if (r4.RegistryC8 is { } b3) HolderRemoveA9F9064(b3, r4.HolderKeyC4, ctx);        // 0x9F9110..0x9F915C
+            if (r4.Registry20 is { } b2) HolderRemoveA9F9064(b2, r4.HolderKey20, ctx);        // 0x9F9160..0x9F91AC
+            var next = r4.OutputBus;                                                      // 0x9F91B4
+            if (next is null) return;                                                     // 0x9F91B8
+            accum |= (ulong)Field40(r4, "the removal bus loop 0x9F9064 reads [bus+0x40] (0x9F91B0)") << 17;   // 0x9F91C0..0x9F91D0
+            r4 = next;
+        }
+    }
+
+    /// <summary>One holder of <c>0x9F9064</c>: <c>0xA198A4</c> (found with count 0: cache <c>~0</c>, <c>0x9F91F4</c>/<c>0x9F9350</c>), then <c>0xA10220(mgr, holder, mask A)</c> whenever the count is 0 (found or not, <c>0x9F90D8 bne 0x9F9214</c> rejoins <c>0x9F90E0</c>).</summary>
+    // fidelity: M6-009
+    private void HolderRemoveA9F9064(WwiseRtpcRegistry reg, uint holderAddress, WwisePlayingInstance ctx)
+    {
+        _registries[holderAddress] = reg;
+        var key = ctx.ListenerKey;
+        if (reg.RemoveA198A4(key, ctx) && reg.Count == 0) reg.Cache = ulong.MaxValue;
+        if (reg.Count == 0) ManagerCall(false, holderAddress, reg.MaskA);                 // 0x9F90E0..0x9F910C
+    }
+
+    /// <summary>
+    /// <c>(u64)[node+0x40]</c> source: <see cref="WwiseRoutingNode.Node40"/>; for a bus whose Node40 is unsupplied the same engine field, <see cref="WwiseRoutingNode.Word40"/>. A non-bus node without it is a visible stop.
+    /// </summary>
+    private static uint Field40(WwiseRoutingNode node, string where)
+        => node.Node40 ?? (node.IsBus ? node.Word40
+            : throw new WwiseMissingBehaviourException($"M6-009 C39.1: {where} of node {node.Id}, which the routing node cannot give; set WwiseRoutingNode.Node40"));
+
+    /// <summary>The mask stored in the PBI's entry at a holder (the intersected mask of <c>0x9F7E5C</c>), or null when it is not an entry there.</summary>
+    public ulong? ListenerMask(uint holderKey, WwisePlayingInstance pbi)
+        => _registries.TryGetValue(holderKey, out var r) && r.Entries.FirstOrDefault(c => ReferenceEquals(c.Pbi, pbi)) is { } c ? c.Mask : null;
+
+    /// <summary>Whether the PBI is an entry of any registry the store knows (it registered a listener at Init and has not been removed).</summary>
+    public bool HasListener(WwisePlayingInstance pbi) => _registries.Values.Any(r => r.Entries.Any(c => ReferenceEquals(c.Pbi, pbi)));
+
+    /// <summary>The number of entries at a holder; the engine's <c>[registry+0x14]</c>.</summary>
+    public int ListenerCount(uint holderKey) => _registries.TryGetValue(holderKey, out var r) ? r.Count : 0;
 
     /// <summary>
     /// Whether delivering a set of <paramref name="rtpcId"/> is observable: a type-2 subscription whose holder's registry has a child (a PBI that would receive the delta), or a subscription whose type is not adopted (it would act on something this model has
@@ -697,8 +893,8 @@ public sealed class WwiseRtpcStore
             // The engine's array A is sorted by ([e+0x24], pointer); this store uses insertion order. Float addition is not associative, so two subscriptions feeding one PBI parameter in one delivery are a visible stop.
             var seen = new HashSet<(WwisePlayingInstance, uint)>();
             foreach (var e in inArrayA)
-                if (e.Type == 2 && _registries.TryGetValue(e.Key1, out var kids))
-                    foreach (var child in kids)
+                if (e.Type == 2 && _registries.TryGetValue(e.Key1, out var kidsReg))
+                    foreach (var child in kidsReg.Entries)
                         if (ReceivesDelta(child, e.Param, key) && !seen.Add((child.Pbi, e.Param)))
                             throw new WwiseMissingBehaviourException(
                                 "M6-009 C37.1: two subscriptions would add to one PBI parameter in this delivery; the engine's array A order ([e+0x24], pointer) is not modelled and float addition is not associative; set AllowSubscriptionOrderApproximation to accept insertion order");
@@ -719,8 +915,8 @@ public sealed class WwiseRtpcStore
         if ((child.Mask & bit) == 0) return false;
         bool keyed = key.GameObject != 0 || key.PlayingId != 0;
         if (!keyed) return true;
-        if (child.Key.GameObject != key.GameObject) return false;
-        return key.PlayingId == 0 || child.Key.PlayingId == key.PlayingId;
+        if (child.Key.W0 != key.GameObject) return false;
+        return key.PlayingId == 0 || child.Key.W4 == key.PlayingId;
     }
 
     /// <summary>
@@ -819,7 +1015,8 @@ public sealed class WwiseRtpcStore
     // fidelity: M6-009
     private void FanOutA1B254(uint holder, uint paramId, WwiseGainRtpcKey key, float value, float delta, bool groupG)
     {
-        if (!_registries.TryGetValue(holder, out var children) || children.Count == 0) return;     // [registry+0x14] == 0: no child is called
+        if (!_registries.TryGetValue(holder, out var registry) || registry.Count == 0) return;     // [registry+0x14] == 0: no child is called
+        var children = registry.Entries;
         int shift = (sbyte)(paramId & 0xFF);                                              // 0xA1B314 vmov.32 d17[0],lr: the shift count is the low byte of the lane, signed
         ulong bit = shift >= 0 && shift < 64 ? 1UL << shift : 0UL;                        // 0xA1B31C vshl.u64 d16,d16,d17
         bool keyed = key.GameObject != 0 || key.PlayingId != 0;                           // 0xA1B26C..0xA1B2EC (the other key fields are wild)
@@ -829,13 +1026,12 @@ public sealed class WwiseRtpcStore
                       : "M6-009 L7-08: G != 0 with an all-wild set takes 0xA1AC40, which asks G->vt+0(G, child) (0xA1AC94..0xA1ACA4); G's body (vptr 0x101C2E8) is not read");
         if (keyed && key.GameObject == 0)
             throw new WwiseMissingBehaviourException("M6-009 L7-08: a keyed set with F.A == 0 and F.B != 0 is not a key 0xA1404C builds; the scan 0xA1A6A4 over it is not modelled");
-        var ordered = children.OrderBy(c => c.Key.GameObject).ThenBy(c => c.Key.PlayingId).ToArray();   // the registry is kept sorted by key (the binary search 0xA1A6C8..0xA1A820)
-        foreach (var child in ordered)
+        foreach (var child in children.ToArray())                                         // the registry's array order: sorted by the six-field key (0xA19778, kept by 0xA1973C's insert)
         {
             if (keyed)
             {
-                if (child.Key.GameObject != key.GameObject) continue;                     // 0xA1A844..0xA1A84C (the scan only reaches the run with this A)
-                if (key.PlayingId != 0 && child.Key.PlayingId != key.PlayingId) continue; // 0xA1A858..0xA1A86C
+                if (child.Key.W0 != key.GameObject) continue;                     // 0xA1A844..0xA1A84C (the scan only reaches the run with this A)
+                if (key.PlayingId != 0 && child.Key.W4 != key.PlayingId) continue; // 0xA1A858..0xA1A86C
             }
             if ((child.Mask & bit) == 0) continue;                                        // 0xA1B360..0xA1B370 / 0xA1AAD8..0xA1AAE8
             WwisePlayPath.DeliverRtpcA02CE4(child.Pbi, paramId, value, delta);            // 0xA1B38C blx [vt+8] -> 0xA02EC0 -> 0xA02CE4
@@ -957,5 +1153,108 @@ public readonly record struct WwiseRtpcScopeKey(uint A, uint B, uint C, byte D, 
     public static WwiseRtpcScopeKey Wild { get; } = new(0, 0, 0, 0xFF, 0xFF, 0);
 }
 
-/// <summary>A child record of a node holder's registry (0x28 bytes natively): the PBI context, its key and its listener mask (C37.1).</summary>
-public sealed record WwiseRtpcListener(WwisePlayingInstance Pbi, WwiseGainRtpcKey Key, ulong Mask);
+/// <summary>The six fields of a listener key (<c>[ctx+8..0x20)</c>, copied to <c>[entry+0..0x18)</c> by <c>0xA1973C</c>): <c>w0</c>, <c>w4</c>, <c>w8</c>, <c>byte@0xC</c>, <c>byte@0x10</c>, <c>w@0x14</c> (the layout of <c>0xA19CE0..0xA19D24</c>).</summary>
+public readonly record struct WwiseListenerKey(uint W0, uint W4, uint W8, byte B0C, byte B10, uint W14)
+{
+    /// <summary>The pull path's {game object, playing id} with the other four fields {0, 0xFF, 0xFF, 0} (the stores of <c>0x9BC934..0x9BC948</c> and the set key of <c>0xA1404C</c>).</summary>
+    public static WwiseListenerKey FromGainKey(WwiseGainRtpcKey key) => new(key.GameObject, key.PlayingId, 0, 0xFF, 0xFF, 0);
+}
+
+/// <summary>An entry of a holder's registry (0x28 bytes natively, C39.1): the six-field key copy at <c>+0</c>, the mask <c>x</c> at <c>+0x18</c> and the listener context at <c>+0x20</c> (a PBI).</summary>
+public sealed class WwiseRtpcListener
+{
+    /// <summary>Builds the entry <c>0xA1973C</c> builds.</summary>
+    public WwiseRtpcListener(WwisePlayingInstance pbi, WwiseListenerKey key, ulong mask)
+    {
+        Pbi = pbi;
+        Key = key;
+        Mask = mask;
+    }
+
+    /// <summary><c>[entry+0x20]</c>: the context; the identity the duplicate rule and the removal compare.</summary>
+    public WwisePlayingInstance Pbi { get; }
+
+    /// <summary><c>[entry+0..0x18)</c>.</summary>
+    public WwiseListenerKey Key { get; }
+
+    /// <summary><c>[entry+0x18]</c>: <c>x = M &amp; mask A</c> at the registration.</summary>
+    public ulong Mask { get; set; }
+
+    /// <summary>The key's first two words as the pull path's key.</summary>
+    public WwiseGainRtpcKey GainKey => new(Key.W0, Key.W4);
+}
+
+/// <summary>A call the registration or removal makes into the RTPC manager (<c>0xA1008C</c> when <paramref name="ToArrayA"/>, else <c>0xA10220</c>): the holder address and the mask argument (the registry's whole mask A).</summary>
+public readonly record struct WwiseRtpcManagerCall(bool ToArrayA, uint Holder, ulong Mask);
+
+/// <summary>
+/// The holder's registry (0x20 bytes natively, C39.1; created by <c>0xA1A42C..0xA1A474</c>): <c>+0</c> mask A (the parameters with a subscription here), <c>+8</c> the cache (the AND of the entry masks, initially <c>~0</c>), <c>+0x10</c> the entry array (sorted by
+/// <see cref="LowerBoundA19778"/>'s order), <c>+0x14</c> the count, <c>+0x18</c> the capacity, and the byte at <c>+0x1C</c>.
+/// </summary>
+public sealed class WwiseRtpcRegistry
+{
+    /// <summary><c>[reg+0]</c>.</summary>
+    public ulong MaskA { get; set; }
+
+    /// <summary><c>[reg+8]</c>.</summary>
+    public ulong Cache { get; set; } = ulong.MaxValue;
+
+    /// <summary><c>[reg+0x10]</c> and <c>[reg+0x14]</c>: the entries in array order; the count is <see cref="Count"/>.</summary>
+    public List<WwiseRtpcListener> Entries { get; } = new();
+
+    /// <summary><c>[reg+0x14]</c>.</summary>
+    public int Count => Entries.Count;
+
+    /// <summary><c>[reg+0x18]</c>: the capacity; it only grows (by exactly one at a time) and is never reduced.</summary>
+    public int Capacity { get; set; }
+
+    /// <summary><c>[reg+0x1C]</c>: set to 1 when the creating subscription is of type 2 (<c>0xA1A410..0xA1A418</c>); not read by the registration.</summary>
+    public byte Byte1C { get; set; }
+
+    internal WwiseRtpcRegistry WithMaskA(ulong maskA)
+    {
+        MaskA = maskA;
+        return this;
+    }
+
+    /// <summary>
+    /// <c>0xA19778(array, ctx)</c> (C39.1): the lower_bound over the entries by the six-field key (<c>0xA19778..0xA198A0</c>): the first index whose entry is not less than the key. An entry is less when its word 0, word 4 and word 8 compare below the key's (unsigned);
+    /// then byte@0xC as <c>(b+1) &amp; 0x1F</c> below, a raw-different byte with equal such values is not less; then byte@0x10 as <c>(b+1) &amp; 0xFF</c> likewise; then word@0x14 below (<c>bhs</c> is not less).
+    /// </summary>
+    public int LowerBoundA19778(WwiseListenerKey key)
+    {
+        int lo = 0, hi = Entries.Count;                                                  // 0xA19790 mov r4,#0; r2 = [array+4]
+        while (lo < hi)
+        {
+            int mid = (lo + hi) >> 1;
+            if (Less(Entries[mid].Key, key)) lo = mid + 1; else hi = mid;
+        }
+        return hi;                                                                        // 0xA19898..0xA1989C
+    }
+
+    private static bool Less(WwiseListenerKey e, WwiseListenerKey k)
+    {
+        if (e.W0 != k.W0) return e.W0 < k.W0;                                             // 0xA197B4 cmp r5,ip; bhi / 0xA197C8 beq
+        if (e.W4 != k.W4) return e.W4 < k.W4;                                             // 0xA19808 cmp r7,ip; blo / bne
+        if (e.W8 != k.W8) return e.W8 < k.W8;                                             // 0xA1981C
+        if (((e.B0C + 1) & 0x1F) < ((k.B0C + 1) & 0x1F)) return true;                     // 0xA19830..0xA19844
+        if (e.B0C != k.B0C) return false;                                                 // 0xA19848 cmp sb,r8; bne
+        if (((e.B10 + 1) & 0xFF) < ((k.B10 + 1) & 0xFF)) return true;                     // 0xA19858..0xA1986C (uxtb)
+        if (e.B10 != k.B10) return false;                                                 // 0xA19870
+        return e.W14 < k.W14;                                                             // 0xA19880 cmp lr,ip; bhs (not less)
+    }
+
+    /// <summary>
+    /// <c>0xA198A4(array, ctx)</c> (C39.1, R1): the lower_bound by the ctx's current key, then the scan from there: an entry any of whose six key fields is raw-different from the key ends the scan (not found); an entry with the same ctx is removed, the later entries
+    /// shift down and the count falls by one (<c>0xA19A44..0xA19A9C</c>; the capacity is never reduced). Returns whether an entry was removed.
+    /// </summary>
+    public bool RemoveA198A4(WwiseListenerKey key, WwisePlayingInstance ctx)
+    {
+        for (int i = LowerBoundA19778(key); i < Entries.Count; i++)                       // 0xA19918..0xA199AC
+        {
+            if (Entries[i].Key != key) return false;                                      // 0xA19934..0xA19990 -> 0xA1993C
+            if (ReferenceEquals(Entries[i].Pbi, ctx)) { Entries.RemoveAt(i); return true; }   // 0xA19994 cmp r1,[r3+0x20]; 0xA19A44..0xA19A9C
+        }
+        return false;
+    }
+}

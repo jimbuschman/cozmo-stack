@@ -123,11 +123,48 @@ public sealed class WwisePlayingInstance
     public byte Flags1BE { get; set; }
 
     /// <summary><c>+0x1BF</c>: bit2 from <c>params+0x128</c> bit2.</summary>
-    public byte Flags1BF { get; }
+    public byte Flags1BF { get; set; }
 
     /// <summary><c>[ctx+0x20]</c> (<c>pbi+0x2C</c>): the node <c>0xA19ECC</c> stores when it was zero (<c>0xA19EEC..0xA19EF4</c>); the listener's removal uses it. Null is zero.</summary>
     // fidelity: M6-009
     public WwiseRoutingNode? Ctx20Node { get; set; }
+
+    private WwiseListenerKey? _listenerKey;
+    private static long s_nextListenerIdentity;
+
+    /// <summary>A unique value per PBI standing for the PBI's heap address, which the ctor stores as word@0x14 of its listener key (<c>0xA003C8</c>, <c>0xA003FC</c>: <c>str r4,[r4,#0x28]</c>).</summary>
+    public uint ListenerIdentity { get; } = unchecked((uint)Interlocked.Increment(ref s_nextListenerIdentity));
+
+    /// <summary><c>[pbi+0x1E5]</c> (<c>params+0x85</c>): byte@0xC of the listener key. The Play helper sets 0xFF (<c>0xA62AF4</c>).</summary>
+    public byte Field1E5 { get; }
+
+    /// <summary><c>[pbi+0x1E6]</c> (<c>params+0x86</c>): byte@0x10 of the listener key when <see cref="Field1E4"/> is 0x80, 0x90 or 0xA0 (<c>0xA00390..0xA003EC</c>); null is unset.</summary>
+    public byte? Field1E6 { get; }
+
+    /// <summary>Whether the key is the one derived from the PBI fields (no host override); the engine orders equal-key listeners by the PBI heap address, which the C# cannot reproduce (see the store's visible stop).</summary>
+    public bool ListenerKeyIsDerived => _listenerKey is null;
+
+    /// <summary>
+    /// <c>[ctx+8..0x20)</c> (<c>pbi+0x14..0x2C</c>): the six-field key the listener registration copies into its entries and the removal looks up (<c>0xA19CE0..0xA19D24</c>, C39.1). Unless a host sets it, it is built as the ctor leaves it: <c>0x9BC90C</c> writes
+    /// {[params+8], 0, 0, 0xFF, 0xFF, 0} (<c>0x9BC924..0x9BC948</c>), then <c>0xA000E8</c> overwrites after it returns (<c>0xA00384..0xA00408</c>): byte@0xC = <see cref="Field1E5"/>; byte@0x10 = <see cref="Field1E6"/> when <see cref="Field1E4"/> is 0x80, 0x90 or 0xA0
+    /// (<c>(b &amp; 0xEF) == 0x80 || b == 0xA0</c>) else 0xFF; word@0x14 = the PBI address (<see cref="ListenerIdentity"/>); w4 = the playing id (<c>[pbi+0x140]</c>); w8 = <c>[[pbi+0x14C]+8]</c> (the target node id) when <see cref="Field1E4"/> != 0 and the target node is
+    /// set, else 0. Verified against the engine's own ctor under Unicorn (emu_listener.py, <c>WwiseListenerOracle.KeyCases</c>). Whether the key can change after registration is not traced (C39: open). An unset input needed here stops visibly.
+    /// </summary>
+    // fidelity: M6-009
+    public WwiseListenerKey ListenerKey
+    {
+        get
+        {
+            if (_listenerKey is { } host) return host;
+            bool special = Field1E4 == 0xA0 || (Field1E4 & 0xEF) == 0x80;                // 0xA00390..0xA00398
+            byte b10 = special
+                ? Field1E6 ?? throw new WwiseMissingBehaviourException("M6-009 C39.1: the listener key reads [pbi+0x1E6] (params+0x86) when [pbi+0x1E4] is 0x80, 0x90 or 0xA0 (0xA003E0); WwisePlayInitParams.SoundSpecial86 is unset")
+                : (byte)0xFF;
+            uint w8 = Field1E4 != 0 && TargetNodeId != 0 ? TargetNodeId : 0;           // 0xA003B0..0xA003BC (the node's [node+8] is its id)
+            return new WwiseListenerKey(GameObject14 ?? 0, PlayingId, w8, Field1E5, b10, ListenerIdentity);
+        }
+        set => _listenerKey = value;
+    }
 
     /// <summary>
     /// <c>+0x1F8</c>: the ctor stores <c>0xFFFFFFFF</c> (<c>0xA0021C mvn r7,#0</c>; <c>0xA00318
@@ -370,6 +407,8 @@ public sealed class WwisePlayingInstance
         RtpcKey14 = rtpcKey14;
         Field1F8 = 0xFFFFFFFF;                                            // 0xA0021C/0xA00318
         Field1E4 = p.SoundSpecial84;
+        Field1E5 = p.SoundSpecial85;                                      // 0xA00304 str r3,[r4,#0x1e4] stores the whole word params+0x84
+        Field1E6 = p.SoundSpecial86;
         Word15C = 0x00004101;                                             // C23.8: 0xA00338..0xA00374
         Block170 = (byte[])block28.Clone();
         StartOffset = p.InitialDelaySamples;

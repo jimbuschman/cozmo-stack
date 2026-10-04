@@ -188,21 +188,57 @@ public sealed class WwiseRoutingNode
     /// <summary><c>[node+0x3C]</c>: the base property bundle (<c>0x9C39DC</c> step 2); null is the zero pointer.</summary>
     public WwiseParamBundle? BaseBundle3C { get; set; }
 
-    /// <summary><c>[[node+0x14]]</c>: the u64 set of subscribed parameter bits (<c>0x9C3ADC..0x9C3B00</c>); null is <c>[node+0x14] == 0</c>.</summary>
-    public ulong? SubscriptionMask14 { get; set; }
+    /// <summary>
+    /// <c>[node+0x14]</c>: the registry of holder 1 (<c>node+0x10</c>, C39.1: the 0x20-byte <see cref="WwiseRtpcRegistry"/>), or null when <c>[node+0x14] == 0</c>. The engine's bank loader creates it at the first subscription (<c>0xA1A160</c>, not built here).
+    /// </summary>
+    // fidelity: M6-009
+    public WwiseRtpcRegistry? Registry14 { get; set; }
+
+    /// <summary><c>[[node+0x14]]</c>: the u64 set of subscribed parameter bits (<c>0x9C3ADC..0x9C3B00</c>), mask A of <see cref="Registry14"/>; null is <c>[node+0x14] == 0</c>. Setting a value creates the registry (count 0, capacity 0, cache ~0) when there is none, else changes its mask A.</summary>
+    public ulong? SubscriptionMask14
+    {
+        get => Registry14?.MaskA;
+        set => Registry14 = value is { } v ? (Registry14 ?? new WwiseRtpcRegistry()).WithMaskA(v) : null;
+    }
 
     /// <summary>
-    /// <c>[node+0x40]</c> of any node (a word whose bits 1..11 come from positioning, <c>0x9F6D94</c>; the other writers are unread): the listener walk <c>0x9F7DA8..0x9F82D4</c> reads it as <c>(u64)[node+0x40] &lt;&lt; 17</c> (<c>0x9F7DF8..0x9F7E10</c>) for the
-    /// bits a node may take and for the bits it satisfies. The C# routing node cannot derive it, so null is "not supplied" and the registration stops visibly.
+    /// <c>[node+0x40]</c> of any node (a word whose bits 1..11 come from positioning, <c>0x9F6D94</c>; the other writers are unread): the listener walks <c>0x9F7390</c> / <c>0x9F9064</c> read it as <c>(u64)[node+0x40] &lt;&lt; 17</c> (<c>0x9F7DF8..0x9F7E10</c>,
+    /// <c>0x9F7448..0x9F7460</c>) for the bits a node may take and for the bits it satisfies. For a non-bus node the C# routing node cannot derive it, so null is "not supplied" and the walk stops visibly; for a bus an unsupplied value reads <see cref="Word40"/> (the same engine field). Writers of the engine field that no C# model carries: <c>0x9F6D5C</c> and <c>0x9F6F74</c> (bit 0), <c>0x9F6D94</c> (bits 1..11), <c>0x9F1258</c> / <c>0x9F11EC</c> / <c>0x9F1230</c> (bits 20..25); the bus fallback is only as good as the caller's <see cref="Word40"/>.
     /// </summary>
     // fidelity: M6-009
     public uint? Node40 { get; set; }
 
     /// <summary>
-    /// The mask word <c>[[node+0x20]]</c> of the node's SECOND holder (<c>node+0x1C</c>, registry <c>[node+0x20]</c>, <c>0x9F8038..0x9F8098</c>), or null when <c>[node+0x20] == 0</c>. The registration into that holder is not modelled: a non-null value is a visible stop.
+    /// <c>[node+0x20]</c>: the registry of holder 2 (<c>node+0x1C</c>, <c>0x9F8038..0x9F8098</c>; for a bus the property-add holder <c>0xA1D1E0</c>), or null when it is zero.
     /// </summary>
     // fidelity: M6-009
-    public ulong? SecondHolderMask20 { get; set; }
+    public WwiseRtpcRegistry? Registry20 { get; set; }
+
+    /// <summary>The mask A of <see cref="Registry20"/> (<c>[[node+0x20]]</c>), null when there is no registry; setting it creates the registry as <see cref="SubscriptionMask14"/> does.</summary>
+    // fidelity: M6-009
+    public ulong? SecondHolderMask20
+    {
+        get => Registry20?.MaskA;
+        set => Registry20 = value is { } v ? (Registry20 ?? new WwiseRtpcRegistry()).WithMaskA(v) : null;
+    }
+
+    /// <summary><c>[bus+0xC8]</c>: the registry of a bus's holder 3 (<c>bus+0xC4</c>, the ducking creation <c>0x9C3F1C</c>, site <c>0x9F76A8</c>), or null.</summary>
+    // fidelity: M6-009
+    public WwiseRtpcRegistry? RegistryC8 { get; set; }
+
+    /// <summary>The mask A of <see cref="RegistryC8"/>, null when there is no registry; setting it creates the registry as <see cref="SubscriptionMask14"/> does.</summary>
+    // fidelity: M6-009
+    public ulong? ThirdHolderMaskC8
+    {
+        get => RegistryC8?.MaskA;
+        set => RegistryC8 = value is { } v ? (RegistryC8 ?? new WwiseRtpcRegistry()).WithMaskA(v) : null;
+    }
+
+    /// <summary>The manager-side address of holder 2, <c>node+0x1C</c> (<see cref="SubscriptionKey10"/> is <c>node+0x10</c>).</summary>
+    public uint HolderKey20 => SubscriptionKey10 + 0xC;
+
+    /// <summary>The manager-side address of a bus's holder 3, <c>bus+0xC4</c>.</summary>
+    public uint HolderKeyC4 => SubscriptionKey10 + 0xB4;
 
     /// <summary><c>node+0x10</c>: the address that keys the node's subscriptions in the RTPC manager (<c>0xA11590</c>'s second argument; <see cref="WwiseRtpcStore.AddSubscription"/>).</summary>
     public uint SubscriptionKey10 { get; init; }
