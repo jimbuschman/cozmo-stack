@@ -2857,3 +2857,51 @@ C37 differs from earlier text, C37 wins. No status changes.
   (0,-200.0,interp 6),(1.0,0.0,interp 4)).
 - **Records touched (text only, no status):** M6-009, M6-010, M6-001 (shipped object types not in its title), M6-025
   (Init `0xA37FF0` and the live parameter update), M6-024, M6-005 (the dot cut belongs to `0x99D8FC`, which has no record).
+
+## Correction C38 (manager, 2026-10-04): the pitch node, the resampler, the voice consumers and the bus pass to the Hijack, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C37). C38 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-8.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (1..11). Where C38 differs from earlier text, C38 wins. No status changes.
+
+- **C38.1, the pitch node (P1-01..P1-15, corrections 1, 5, 9).** `0xA53134` (stores `u16[state+0xC]` to `[node+0x48]`,
+  clears byte `[node+0xB9]`, source `vt+0x20` = `0xA5668C`, `0xA47384` SetPitch, then the intake tail or the 0x11 result),
+  the intake `0xA52D4C`, the start-offset skip `0xA52DB8..0xA52E10`, the Execute call `0xA52E10..0xA52EB8` (R, IN = N+0x60,
+  OUT = N+0x88), the last-buffer path `0xA52EBC`, the marker carry `0xA52F0C..0xA52F84`, the first-buffer fill
+  (`n = trunc_s32(((D + P*F)/P) + -0.5)` in float32), the pending-source arm `0xA52B90` including the format-compat gate
+  (`0xA52C58..0xA52C94`) and the post-match order. The failure arm of the marker allocation frees OUT's markers
+  (`0xA527D0..0xA527DC -> 0xA69A38`). A Python model of the whole node agrees with the real engine code on 3000 random
+  scenarios.
+- **C38.2, the resampler (P1-12..P1-14, P1-16, P1-18, P1-20; corrections 4, 10).** SetPitch `0xA47384` (float cents; the
+  sibling `0xA4776C` gate; four powf call sites `0xA46DE0`, `0xA473FC`, `0xA47488`, `0xA477B4`; no expf in the range),
+  `0xA47528` (the int16/float history conversions, `[R+0x56]`, `[R+0x57]`), the kernels (modes 0, 1, 2; float/int16 mono and
+  stereo; the int16-stereo +1 LSB quirk; the NEON/scalar split) bit-exact on 3600+ cases; the Hijack stage step 140938 for
+  22320 Hz from 48000 (`0x2268A`, ratio bits `0x4009A269`, mode 1, limit 744) and the real Thumb Init/Execute (the Hijack
+  returns without touching the buffer when `[core+0x90] == 0`). **Host powf:** the step is `u32(double(f32(f32(ratio *
+  powf(2, c/1200)) * 65536.0)) + 0.5)` with `c/1200` in float32; the Hijack stage calls powf with c = 0.0 and does not
+  depend on libm; for the voice stage a one-ulp difference in the phone's powf changes the step by 1 LSB only for 84 of 4801
+  integer cents (sensitive cents inside [-800,-100] U [-250,250] U [100,600]: -795, -759, -149, -94, -80, 16, 20, 172, 218,
+  316, 411, 455, 486, 507, 525; the listed shipped values -800, -750, -600, -500, -230 are not sensitive). The engine's
+  powf is the phone's libm (not shipped): **EQUIVALENT_IMPLEMENTATION** (the manifest record is added when it is built),
+  with float32 `MathF.Pow`/the correctly rounded float32 as the host function and those cents listed.
+- **C38.3, the pull loop and the mixes (V2-01, V2-05..V2-09; corrections 3, 6).** The voice order `0xA44630..0xA44938`, the
+  insert-FX `vt+0x3C` body `0xA791A8` (own buffer `u16[S+0xC]*byte[S+4]*4`, allocated for every state, `0xA79264`), the mix
+  `0xA4FBEC` (the frames mixed is the bus frame count; `[state+0xE]` gates and pads; the `[S+0xE] == 0` early return at
+  `0xA4FBF4..0xA4FBF8`), the ramp `0xA45E9C` and the lane-accumulated gain kernel `0xA46668`, `0xA548C0`, filter A `0xA4C60C`,
+  `0xA56E00`. The C# mixer already mixes `Bus.MaxFrames`; the discrepancy is the pad/gate input (`[state+0xC]`, not
+  `[state+0xE]`), the missing `[S+0xE] == 0` return and the bus-state update left to the caller. `WwiseMixer.cs:214`
+  accumulates `start + k*delta`, the engine accumulates in lanes (`0xA46668`).
+- **C38.4, the bus pass (B-01..B-07; correction 2).** `0xA44C18`'s common tail (the `0x9E9F08` device walk, `[g] = [g+4]`,
+  `0xA43F64`) runs for flag 0 and after the bus walk for flag != 0; `0xA4FD84`/`0xA4FEF8`, the release `0xA4F36C`,
+  `0xA4F754` (fmt `{[0x105243C], [bus+0x64], 0x20 | (cfg byte*4) << 6}`), Robot_Bus (Init.bnk id 2678428985: FX
+  `0x6767FC1F`, `0x174901C6`, `0xDF2230FF`, the custom `0x04FC11BD`), the Hijack vtable `0x10387F4`, ctor `0x8DBF44`, Reset
+  `0x8DBFC2`. The effective-FX shape of the shipped Sounds: Cozmo.bnk Sound slot 0 Compressor 1872, none 161, Harmonizer
+  139 bypassed and 34 active, four-slot 15; SFX.bnk 96 none and 5 Compressor.
+- **C38.5, the source-to-voice contract (P1-19, correction 8).** `0xA55C14`/`0xA0428C` read; the Anki wrapper `0x8D8CE4`
+  builds the mask `1 | (ctx&2 ? 4 : 0) | (ctx&1 ? 8 : 0)` (0x20 never in it); the flag storage `0x9A0EF8` is untraced.
+- **Records touched (text only, no status):** M6-004 (the node, SetPitch, the kernels, the gate), M6-012 (the lane-accumulated
+  gain), M6-014, M6-015 (`[core+0x90]`), M6-022. Still open: P1-17 (node `vt+0x14/0x18/0x1C`), the LFE branch of `0xA45E9C`,
+  the 3+ channel kernels, the plug-in registry map and the shareset-to-plug-in ids, `0xA56A7C`, and the producers of
+  `[pbi+0x164]` and `[play+0x74]`. The C# `WwiseResampler.SetPitch(int cents, ...)` is not faithful (float cents, fields
+  `+0x30..+0x50`, `+0x57`); `WwiseHijackPlugin` has no `[core+0x90]` gate; the 0x11-branch comment in `WwisePitchNodeIntake`
+  is wrong (`0xA52EBC..0xA52ED0` copies when held == 0).
