@@ -225,40 +225,40 @@ public sealed class WwiseRtpcStore
     {
         var entry = GetOrCreate(rtpcId);
 
+        // The read half (no element is created): the exact written slot's valid flag before the write (the 0xA13948 gate input) and the old value the transition starts from. The write half is below, after the 0xA1B5FC gate.
         float oldValue;
-        bool slotValid;   // the exact written slot's valid flag before the write: the 0xA13948 gate input
+        bool slotValid;
+        bool groupG;      // 0xA13A88's byte [sp+0x1a] (C37.1): the functor G of 0xA114D8 exists when the written scope already has children (0xA13CF0, 0xA13DEC, 0xA13E40)
+        GameObjectElement? element = null;
         if (gameObject == 0)
         {
             // gapF 1.4: gameObj = 0 and an empty key marks the root.
             slotValid = entry.RootValid;
             oldValue = entry.RootValid ? entry.RootValue : entry.Default;
-            entry.RootValue = value;
-            entry.RootValid = true;
+            groupG = entry.GameObjects.Count != 0;                                       // 0xA13DEC ldr r3,[r4,#0x28]; adds sl,r3,#0; movne sl,#1
         }
         else
         {
-            var element = GetOrCreateGameObject(entry, gameObject);
+            element = FindGameObject(entry, gameObject);
             if (playingId != 0)
             {
                 // gapF 1.4: a non-zero playing id inserts a sub-element and marks only that valid.
-                var sub = GetOrCreatePlayingId(element, playingId);
-                slotValid = sub.Valid;
-                oldValue = sub.Valid ? sub.Value
-                    : element.Valid ? element.Value
+                var sub = element is null ? null : FindPlayingId(element, playingId);
+                slotValid = sub is { Valid: true };
+                oldValue = sub is { Valid: true } ? sub.Value
+                    : element is { Valid: true } ? element.Value
                     : entry.RootValid ? entry.RootValue
                     : entry.Default;
-                sub.Value = value;
-                sub.Valid = true;
+                groupG = false;                                                          // 0xA13E40: the sub-element's own child count, which this store has none of
             }
             else
             {
                 // gapF 1.4: playingID = 0 marks the game-object element itself.
-                slotValid = element.Valid;
-                oldValue = element.Valid ? element.Value
+                slotValid = element is { Valid: true };
+                oldValue = element is { Valid: true } ? element.Value
                     : entry.RootValid ? entry.RootValue
                     : entry.Default;
-                element.Value = value;
-                element.Valid = true;
+                groupG = element is not null && element.PlayingIds.Count != 0;           // 0xA13CF0 ldr sl,[r2,#0x10]
             }
         }
 
@@ -272,6 +272,55 @@ public sealed class WwiseRtpcStore
         var kind = duration <= 0 ? WwiseRtpcSetKind.Immediate
             : slotValid ? WwiseRtpcSetKind.Transition
             : WwiseRtpcSetKind.GatedTransition;
+
+        // C37.1: an immediate set reaches 0xA12CA0 and from it 0xA114D8 (the array A walk) when the entry has subscribers. What 0xA137D8 / 0xA12CA0 do around that call and the inventory does not settle is a visible stop, but only where
+        // it changes something an observer can see: a PBI child that would receive a delta, or a subscription of a type whose body is not adopted. With neither, the engine's 0xA114D8 evaluates curves and calls an empty fan-out.
+        bool deliver = kind == WwiseRtpcSetKind.Immediate && HasSubscribers(rtpcId);
+        if (deliver && ObservableDelivery(rtpcId))
+        {
+            if (timeMs != 0 || bypass || explicitTime)
+                throw new WwiseMissingBehaviourException(
+                    "M6-009 C37.1: the value-change delivery is adopted for the shipped set path 0xA1404C (caller time 0, no bypass, explicit-time byte 0, key {object, playing id, 0, 0xFF, 0xFF, 0}); the type-3 message path 0x9AF158 with its caller struct is not read");
+            if (slotValid && oldValue == value)
+                throw new WwiseMissingBehaviourException(
+                    "M6-009 C37.1: 0xA137D8 returns without calling 0xA12CA0 when the exact slot already holds the new value (0xA13808..0xA13914, which also unlinks a pending transition); that branch is not adopted");
+            if (!slotValid && !(TransitionGateA1B5FC ?? throw new WwiseMissingBehaviourException(
+                    "M6-009 C37.1: 0xA12CA0 with no exact cell (the first set of a game object or playing id) stores the value and calls 0xA114D8 only when 0xA1B5FC(entry id, key) returns 1 (0xA12E80..0xA12E98); 0xA1B5FC is not read: supply WwiseRtpcStore.TransitionGateA1B5FC"))(rtpcId, gameObject, playingId))
+            {
+                // 0xA12E90 cmp r0,#1; bne 0xA12CE8: no store, no delivery, return 1.
+                return new WwiseRtpcSetResult(kind, duration, oldValue, value, curve, interpolated);
+            }
+        }
+        else if (kind != WwiseRtpcSetKind.Immediate && HasSubscribers(rtpcId) && ObservableDelivery(rtpcId))
+            throw new WwiseMissingBehaviourException(
+                "M6-009 C37.1: a positive-duration set creates a transition (0xA13948..0xA13968 -> 0xA0E5E4) whose per-frame deliveries to the registered PBI are not read; only immediate sets are delivered");
+        else if (deliver && (timeMs != 0 || bypass || explicitTime || (slotValid && oldValue == value)))
+            deliver = false;                                                             // the engine's 0xA137D8 / type-3 path never reaches 0xA114D8 here, and nothing observable depends on it
+
+        // The write half (gapF 1.4).
+        if (gameObject == 0)
+        {
+            entry.RootValue = value;
+            entry.RootValid = true;
+        }
+        else
+        {
+            element ??= GetOrCreateGameObject(entry, gameObject);
+            if (playingId != 0)
+            {
+                var sub = GetOrCreatePlayingId(element, playingId);
+                sub.Value = value;
+                sub.Valid = true;
+            }
+            else
+            {
+                element.Value = value;
+                element.Valid = true;
+            }
+        }
+
+        if (deliver)
+            DeliverValueChangeA114D8(rtpcId, oldValue, value, new WwiseGainRtpcKey(gameObject, playingId), groupG);   // 0xA12CE4 bl 0xA114D8(entry, [cell before], new, key, byte)
         return new WwiseRtpcSetResult(kind, duration, oldValue, value, curve, interpolated);
     }
 
@@ -411,6 +460,9 @@ public sealed class WwiseRtpcStore
     public void AddSubscription(WwiseRtpcSubscription subscription)
     {
         ArgumentNullException.ThrowIfNull(subscription);
+        if (ListenerCount(subscription.Key1) != 0)
+            throw new WwiseMissingBehaviourException(
+                "M6-009 C37.1: a subscription added while listeners are registered at its holder is applied once through 0xA11624 (0xA11B3C..0xA11B48; type 2: node vt+4 -> vt+0xC8), which is not read; add subscriptions before listeners register");
         if (!_subscriptions.TryAdd((subscription.Key1, subscription.Param), subscription))
             throw new InvalidOperationException("M6-009 R1: a subscription for this (key, parameter) exists; the engine's chain order for duplicates is not modelled");
     }
@@ -473,6 +525,321 @@ public sealed class WwiseRtpcStore
         if (e.Type != 1 && (e.Param == 0 || e.Param == 7)) { x = 1f; return false; }      // 0xA172EC..0xA172F8, 0xA17304 beq 0xA17410
         throw new WwiseMissingBehaviourException(
             $"M6-009 R3: RTPC 0x{curve.SourceId:X8} is not in the store (type {e.Type}, parameter {e.Param}); 0xA17280 returns the result of 0x9E6748 (a locked hash lookup in the manager at *0x10400E8), whose body is not adopted");
+    }
+
+    // ---------------------------------------------------------------- the value-change delivery (C37.1)
+
+    /// <summary>
+    /// <c>0xA1B5FC(entry id, key)</c> (<c>0xA12E88..0xA12E98</c>, <c>0xA13A10..0xA13A24</c>), the gate <c>0xA12CA0</c> consults when the exact written slot has no cell: only a result of 1 stores the value and calls <c>0xA114D8</c>. The body is not read
+    /// (C2 describes only part of it), so it is a required seam when a delivery depends on it: the arguments are the RTPC id, the game object and the playing id of the key.
+    /// </summary>
+    // fidelity: M6-009
+    public Func<uint, uint, uint, bool>? TransitionGateA1B5FC { get; set; }
+
+    /// <summary>
+    /// The two bytes <c>0x97E570(0)</c> writes (<c>0x97E570..0x97E584</c>): <c>byte [0x108D7D8+0xC] = 0</c> and <c>byte [0x108D7D8] = 1</c>, the whole effect of a node subscription of parameter 0xD (<c>0x9868B0</c>: <c>cmp r1,#0xd</c>, no fan-out).
+    /// What those bytes mean is not read.
+    /// </summary>
+    // fidelity: M6-009
+    public byte Byte108D7D8 { get; private set; }
+
+    /// <summary>See <see cref="Byte108D7D8"/>: <c>byte [0x108D7D8+0xC]</c>.</summary>
+    // fidelity: M6-009
+    public byte Byte108D7D8_0C { get; private set; }
+
+    private readonly Dictionary<uint, List<WwiseRtpcListener>> _registries = new();
+
+    /// <summary>
+    /// <c>0xA19ECC(ctx, node, {mask}, 1)</c> -> <c>0x9F7390(node, ctx, mask, 1)</c> (the PBI Init <c>0xA0285C</c> -> <c>0x9BC5A8</c> at <c>0xA02868</c>), the non-bus loop <c>0x9F7DA8..0x9F82D4</c> as the verifier read it. Per node <c>sb</c>, from the PBI's node up
+    /// <c>sb = [sb+0x34]</c> (<see cref="WwiseRoutingNode.Parent"/>): <c>W = ~satisfied &amp; listener</c> (<c>0x9F7E30</c>); <c>n40 = (u64)[node+0x40] &lt;&lt; 17</c> (<see cref="WwiseRoutingNode.Node40"/>), with <c>0x7E3FFFE0000</c> ORed in for the top node (no
+    /// parent, <c>0x9F8758</c>); <c>allowed = W &amp; (0x127DF | n40)</c> (<c>0x9F7E1C..0x9F7E48</c>). The first holder <c>node+0x10</c> registers only if its registry exists (<c>[node+0x14] != 0</c>, <see cref="WwiseRoutingNode.SubscriptionMask14"/> not null; <c>0x9F7E4C</c>):
+    /// <c>inter = allowed &amp; mask A</c> (<c>0x9F7E50..0x9F7E5C</c>); a zero <c>inter</c> removes the context from that registry (<c>0xA198A4</c>, <c>0x9F86F8</c>), otherwise the child record stores <b>inter</b> (<c>0xA1973C</c>, <c>0x9F7E9C</c>). Then <c>satisfied |= n40</c>
+    /// (<c>0x9F8248..0x9F8258</c>); while no bus has been found the node's output bus <c>[node+0x38]</c> is taken and a non-zero <c>0x9C54E8(bus)</c> (<see cref="WwiseRoutingNode.A9C54E8"/>, C34.1 B7) ORs <c>0x20</c> into <c>satisfied</c> (<c>0x9F8260..0x9F8288</c>); the loop goes on to the
+    /// parent while <c>(~satisfied | 0x127DF) &amp; listener != 0</c> (<c>0x9F82B4..0x9F82D0</c>) and the parent exists. The child's key is the PBI's key (the pull path's <see cref="WwiseGainRtpcKey"/>, see the report: its words beyond A are unread) and <c>[ctx+0x20] = node</c> when it was zero (<c>0xA19EF4</c>).
+    /// <para>UNREAD, so a visible stop (<see cref="WwiseMissingBehaviourException"/>): a node whose <see cref="WwiseRoutingNode.Node40"/> is not supplied; the second holder <c>node+0x1C</c> when it has a registry (<see cref="WwiseRoutingNode.SecondHolderMask20"/>); and the bus branch
+    /// <c>0x9F73DC..</c> (constant <c>0x1003F</c>, sites <c>0x9F74CC</c>, <c>0x9F76A8</c>), which the engine enters after the loop with the first output bus found: it is not read, so when that bus or one of its parent buses (<c>[bus+0x38]</c>) has a registry (a subscription targets a bus, e.g.
+    /// robot_volume on Bus 1723505802) the registration throws. A bus chain with no registry is let through on the INFERENCE that the bus branch shares the registry-exists gate of the non-bus loop (<c>0x9F7484 cmp r4,#0; beq</c> mirrors <c>0x9F7E28/0x9F7E4C</c>); that is not a read.
+    /// Not modelled and unobservable on the Play path: the first-holder activation (<c>0x9F7E68..0x9F7E88</c>: with <c>[registry+0x14] == 0</c> the engine calls <c>0xA1008C(*mgr, node+0x10, n40 | 0x127DF)</c>, moving array B to A), the dormant array B and the registry's mask B and the registry's mask B (<c>[registry+8]</c>, the AND of the child masks), which the fan-out does not need.</para>
+    /// </summary>
+    // fidelity: M6-009
+    public void RegisterListenerA19ECC(WwisePlayingInstance pbi, WwiseRoutingNode node, ulong mask)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        ArgumentNullException.ThrowIfNull(node);
+        var key = pbi.RtpcKey14 is WwiseGainRtpcKey k ? k
+            : throw new WwiseMissingBehaviourException("M6-009 C37.1: the PBI key [pbi+0x14] (0x9BC90C / 0xA19CDC) is not a WwiseGainRtpcKey; its layout beyond word 0 is unread");
+        if ((node.Byte46 & 4) != 0)                                         // 0x9F73AC..0x9F73C4 ldrb r1,[r0,#0x46]; and r3,r1,#4; beq 0x9F7DA8: bit 2 takes the bus-category loop 0x9F73C8.. (constant 0x1003F)
+            throw new WwiseMissingBehaviourException(
+                $"M6-009 C37.1: the start node {node.Id} has bit 2 of [node+0x46] set; the bus-category loop 0x9F73C8.. is not read");
+        const ulong C127DF = 0x127DFUL;
+        ulong satisfied = 0;
+        WwiseRoutingNode? bus = null;
+        if (mask == 0) return;                                                            // 0x9F7DA8..0x9F7DB4: a zero listener returns
+        for (var sb = node; sb is not null;)
+        {
+            ulong w = ~satisfied & mask;                                                  // 0x9F7E30 and sl,sl,r6 (sl = ~satisfied)
+            ulong n40 = (ulong)(sb.Node40 ?? throw new WwiseMissingBehaviourException(
+                $"M6-009 C37.1: the listener walk reads [node+0x40] (0x9F7DF8) of node {sb.Id}, which the routing node cannot give; set WwiseRoutingNode.Node40")) << 17;   // 0x9F7E00..0x9F7E10
+            if (sb.Parent is null) n40 |= 0x7E3FFFE0000UL;                                // 0x9F7E14 beq 0x9F8758: orr (0xFFFE0000, 0x7E3)
+            ulong allowed = w & (C127DF | n40);                                           // 0x9F7E1C..0x9F7E48
+            if (sb.SubscriptionMask14 is { } regA)                                        // 0x9F7E28 cmp r4,#0; 0x9F7E4C beq 0x9F8038
+            {
+                ulong inter = allowed & regA;                                             // 0x9F7E50..0x9F7E5C
+                if (inter == 0) RemoveChildA198A4(sb.SubscriptionKey10, pbi);             // 0x9F7E64 beq 0x9F86F8 -> 0xA198A4
+                else AddChildA1973C(sb.SubscriptionKey10, pbi, key, inter);               // 0x9F7E9C ldrd r2,r3,[sp,#0x30]; 0xA1973C
+            }
+            if (sb.SecondHolderMask20 is not null)                                        // 0x9F8038 ldr r4,[sb,#0x20]; cmp r4,#0; bne 0x9F8044
+                throw new WwiseMissingBehaviourException(
+                    $"M6-009 C37.1: node {sb.Id} has a second holder registry [node+0x20] (0x9F8038..0x9F8098, activation site 0x9F8080); its registration is not modelled");
+            satisfied |= n40;                                                             // 0x9F8248..0x9F8258 orr [sp+8],[sp+0x10]
+            if (bus is null && sb.OutputBus is { } ob)                                    // 0x9F8230..0x9F8264 (flag & 1, no bus yet), [sb+0x38]
+            {
+                bus = ob;
+                if (ob.A9C54E8()) satisfied |= 0x20;                                      // 0x9F8274..0x9F8284 0x9C54E8(bus) != 0
+            }
+            sb = sb.Parent;                                                               // 0x9F8290 ldr sb,[sb,#0x34]
+            if (sb is null) break;                                                        // 0x9F8298 beq 0x9F82D4
+            if (((~satisfied | C127DF) & mask) == 0) break;                               // 0x9F82B4..0x9F82D0
+        }
+        if (bus is not null)                                                              // 0x9F82D4: a bus was found -> 0x9F73DC (the bus branch), unread
+        {
+            if (!AllowBusBranchRegistryInference)
+                throw new WwiseMissingBehaviourException(
+                    $"M6-009 C37.1: the listener walk found output bus {bus.Id} and the engine then enters the bus branch 0x9F73DC.. (constant 0x1003F, activation sites 0x9F74CC, 0x9F76A8), which is not read; a separate extraction will read it");
+            for (var b = bus; b is not null; b = b.OutputBus)                             // the inference only: a bus chain with a registry still stops
+                if (b.SubscriptionMask14 is not null || b.SecondHolderMask20 is not null)
+                    throw new WwiseMissingBehaviourException(
+                        $"M6-009 C37.1: the bus branch 0x9F73DC.. with bus {b.Id}, whose holder has a registry (a subscription targets this bus), is not read");
+        }
+        if (pbi.Ctx20Node is null) pbi.Ctx20Node = node;                                  // 0xA19EEC..0xA19EF4 ldr r3,[r4,#0x20]; streq r5,[r4,#0x20] (after 0x9F7390 returns)
+    }
+
+    /// <summary>
+    /// NOT engine-derived: a test/host opt-in (default false; nothing production-constructed may set it). It lets <see cref="RegisterListenerA19ECC"/> pass the unread bus branch <c>0x9F73DC..</c> on the assumption that the branch shares the registry-exists gate
+    /// (<c>0x9F7484</c> vs <c>0x9F7E28/0x9F7E4C</c>), so that the shipped event_volume shape reaches a PBI; a bus chain with a registry still stops. Without it any found output bus stops the registration.
+    /// </summary>
+    public bool AllowBusBranchRegistryInference { get; set; }
+
+    /// <summary>The child insertion <c>0xA1973C</c> (<c>0x9F7E9C</c>): the PBI's context becomes a child of the holder's registry with <paramref name="mask"/> (the intersected mask). Hosts and tests may call it directly to place a child with a chosen mask. A second record for the same PBI at the same holder (the engine's find <c>0xA19778</c> and its update) is not read: a visible stop.</summary>
+    // fidelity: M6-009
+    public void AddChildA1973C(uint holderKey10, WwisePlayingInstance pbi, WwiseGainRtpcKey key, ulong mask)
+    {
+        if (!_registries.TryGetValue(holderKey10, out var list)) _registries[holderKey10] = list = new List<WwiseRtpcListener>();
+        if (list.Any(l => ReferenceEquals(l.Pbi, pbi)))
+            throw new WwiseMissingBehaviourException("M6-009 C37.1: a second registration of one PBI at one holder takes the find/update path of 0xA19778 (0x9F7EC0..), which is not read");
+        list.Add(new WwiseRtpcListener(pbi, key, mask));
+    }
+
+    /// <summary>The removal <c>0xA198A4(registry+0x10, ctx)</c> (<c>0x9F86F8</c>): the PBI's record at the holder, if any, is dropped.</summary>
+    private void RemoveChildA198A4(uint holderKey10, WwisePlayingInstance pbi)
+    {
+        if (_registries.TryGetValue(holderKey10, out var list)) list.RemoveAll(l => ReferenceEquals(l.Pbi, pbi));
+    }
+
+    /// <summary>The mask stored in the PBI's child record at a holder (the intersected mask of <c>0x9F7E5C</c>), or null when it is not a child there.</summary>
+    public ulong? ListenerMask(uint holderKey10, WwisePlayingInstance pbi)
+        => _registries.TryGetValue(holderKey10, out var l) && l.FirstOrDefault(c => ReferenceEquals(c.Pbi, pbi)) is { } c ? c.Mask : null;
+
+    /// <summary>Whether the PBI is a child of any registry (it registered a listener at Init and has not been removed).</summary>
+    public bool HasListener(WwisePlayingInstance pbi) => _registries.Values.Any(l => l.Any(c => ReferenceEquals(c.Pbi, pbi)));
+
+    /// <summary>
+    /// HOST / TEST implementation of the removal the engine performs at the listener's destruction (listener dtor <c>0xA19D44</c> via <c>0x9F9064</c> to <c>0xA198A4</c>, with <c>[ctx+0x20]</c>): it drops the PBI's child records from every registry. It is NOT engine-derived
+    /// (<c>0xA198A4</c> and the destructor are unread); <see cref="WwisePlaybackLimiter.RemoveRtpcListenerA198A4"/> is the required seam a host points at it explicitly.
+    /// </summary>
+    public void UnregisterListener(WwisePlayingInstance pbi)
+    {
+        foreach (var list in _registries.Values) list.RemoveAll(l => ReferenceEquals(l.Pbi, pbi));
+    }
+
+    /// <summary>The number of children registered at a holder (<c>node+0x10</c>); the engine's <c>[registry+0x14]</c>.</summary>
+    public int ListenerCount(uint holderKey10) => _registries.TryGetValue(holderKey10, out var l) ? l.Count : 0;
+
+    /// <summary>
+    /// Whether delivering a set of <paramref name="rtpcId"/> is observable: a type-2 subscription whose holder's registry has a child (a PBI that would receive the delta), or a subscription whose type is not adopted (it would act on something this model has
+    /// no object for, and <see cref="ApplySubscriptionA10C84"/> stops there). A type-0 subscription is adopted only with its context (<see cref="WwiseRtpcSubscription.TargetPbi"/>).
+    /// </summary>
+    private bool ObservableDelivery(uint rtpcId)
+    {
+        foreach (var e in _subscriptions.Values)
+        {
+            bool onId = false;
+            foreach (var c in e.Curves) if (c.SourceId == rtpcId) { onId = true; break; }
+            if (!onId) continue;
+            if (e.Type == 2) { if (ListenerCount(e.Key1) != 0) return true; }
+            else if (e.Type != 0 || e.TargetPbi is null) return true;
+        }
+        return false;
+    }
+
+    private bool HasSubscribers(uint rtpcId)
+    {
+        foreach (var e in _subscriptions.Values)
+            foreach (var c in e.Curves)
+                if (c.SourceId == rtpcId) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// <c>0xA114D8(entry, oldX, newX, key, byte)</c> (C37.1 L7-03): <c>count = [entry+0x38]</c> zero returns; otherwise every subscription of array A (<c>[entry+0x34]</c>; array B is never walked, and the A/B split is unobservable on the
+    /// Play path) gets <c>0xA10C84(e, rtpcId, oldX, newX, key, G, entry+0x18)</c>. A subscription belongs to the array of every RTPC id one of its curves names. The engine's array order (sorted by <c>[e+0x24]</c>, then the pointer) is not
+    /// modelled: the order is the order the subscriptions were added (MISSING: it only matters when two subscriptions feed one PBI parameter, where float addition is not associative). <paramref name="groupG"/> is whether the byte argument was non-zero (the functor G).
+    /// </summary>
+    // fidelity: M6-009
+    private void DeliverValueChangeA114D8(uint rtpcId, float oldX, float newX, WwiseGainRtpcKey key, bool groupG)
+    {
+        var inArrayA = new List<WwiseRtpcSubscription>();
+        foreach (var e in _subscriptions.Values)                                          // the engine's memcpy of [entry+0x34] first (0xA11550), then the loop 0xA1155C..0xA11580
+            foreach (var c in e.Curves)
+                if (c.SourceId == rtpcId) { inArrayA.Add(e); break; }
+        if (!AllowSubscriptionOrderApproximation)
+        {
+            // The engine's array A is sorted by ([e+0x24], pointer); this store uses insertion order. Float addition is not associative, so two subscriptions feeding one PBI parameter in one delivery are a visible stop.
+            var seen = new HashSet<(WwisePlayingInstance, uint)>();
+            foreach (var e in inArrayA)
+                if (e.Type == 2 && _registries.TryGetValue(e.Key1, out var kids))
+                    foreach (var child in kids)
+                        if (ReceivesDelta(child, e.Param, key) && !seen.Add((child.Pbi, e.Param)))
+                            throw new WwiseMissingBehaviourException(
+                                "M6-009 C37.1: two subscriptions would add to one PBI parameter in this delivery; the engine's array A order ([e+0x24], pointer) is not modelled and float addition is not associative; set AllowSubscriptionOrderApproximation to accept insertion order");
+        }
+        foreach (var e in inArrayA) ApplySubscriptionA10C84(e, rtpcId, oldX, newX, key, groupG);
+    }
+
+    /// <summary>
+    /// A host's opt-in to the delivery order of insertion where the engine's array A is sorted by <c>([e+0x24], pointer)</c> (pool addresses, not reproducible). Without it two subscriptions feeding one PBI parameter in one delivery stop visibly. The store is single-threaded:
+    /// the engine takes a lock on the RTPC manager around the set (<c>0xA13A88</c>) and its readers; this class has none.
+    /// </summary>
+    public bool AllowSubscriptionOrderApproximation { get; set; }
+
+    private static bool ReceivesDelta(WwiseRtpcListener child, uint paramId, WwiseGainRtpcKey key)
+    {
+        int shift = (sbyte)(paramId & 0xFF);
+        ulong bit = shift >= 0 && shift < 64 ? 1UL << shift : 0UL;
+        if ((child.Mask & bit) == 0) return false;
+        bool keyed = key.GameObject != 0 || key.PlayingId != 0;
+        if (!keyed) return true;
+        if (child.Key.GameObject != key.GameObject) return false;
+        return key.PlayingId == 0 || child.Key.PlayingId == key.PlayingId;
+    }
+
+    /// <summary>
+    /// <c>0xA10C84(e, rtpcId, oldX, newX, F, G, ...)</c> (L7-04a): <c>[e] == 0</c> returns; the dispatch on <c>[e+0x24]</c> (2 -> <c>0xA10CF0</c>, 1 -> <c>0xA10E80</c>, 0 -> <c>0xA10CC8</c>, 3 -> <c>0xA11348</c>, 5 -> <c>0xA110E8</c>, every
+    /// other value <c>0xA10DAC</c>). Types 2 and 0 are adopted (L7-04b, L7-04d); the others are RECOVERABLE_GAP or only dispatch-verified and throw.
+    /// </summary>
+    // fidelity: M6-009
+    private void ApplySubscriptionA10C84(WwiseRtpcSubscription e, uint rtpcId, float oldX, float newX, WwiseGainRtpcKey key, bool groupG)
+    {
+        switch (e.Type)
+        {
+            case 2:
+                ApplyNodeType2A10CF0(e, rtpcId, oldX, newX, key, groupG);
+                return;
+            case 0:
+                ApplyContextType0A10CC8(e, rtpcId, newX, key, groupG);
+                return;
+            case 1:
+                throw new WwiseMissingBehaviourException("M6-009 L7-04c: a type-1 (FX and plug-in parameter) subscription's value formulas (0xA10E80..0xA114D4) were only spot-checked, not adopted");
+            case 3:
+                throw new WwiseMissingBehaviourException("M6-009 L7-04e: a type-3 (modulator-owned parameter) subscription calls 0x9DBF78, whose body (0x9DBF78..0x9DCDC8) is RECOVERABLE_GAP");
+            case 5:
+                throw new WwiseMissingBehaviourException("M6-009 L7-04f: a type-5 subscription calls 0xA32D24, whose body (0xA32D24..0xA32DE8) is RECOVERABLE_GAP");
+            default:
+                throw new WwiseMissingBehaviourException($"M6-009 L7-04g: a type-{e.Type} subscription (0xA10DAC: 0xA6D434 / 0xA6CE3C / 0xA6DFE8) is not adopted (0xA6DFE8 and the child vt+0x5C class are RECOVERABLE_GAP)");
+        }
+    }
+
+    /// <summary>
+    /// Type 2 (nodes and buses, L7-04b, <c>0xA10CF0..0xA10E7C</c>, <c>0xA11340</c>): no key filter. <c>s16</c> is the sum, from 0.0f, over the curve slots whose <c>[slot+4]</c> is the RTPC id of <c>0xA14E28(curve, oldX, 0, &amp;idx)</c>; <c>s17</c> the same at
+    /// <c>newX</c> (<c>vadd.f32</c>, one slot at a time: old first, then new). Then <c>target-&gt;vt+0(target, [e+4], F, s17, s17 - s16, G)</c> (<c>0xA10E6C</c>): the node subscriber's thunk <c>0x9868E4</c> -> <c>0x9868B0</c>. With no matching slot
+    /// both sums are 0.0f and the call still happens.
+    /// </summary>
+    // fidelity: M6-009
+    private void ApplyNodeType2A10CF0(WwiseRtpcSubscription e, uint rtpcId, float oldX, float newX, WwiseGainRtpcKey key, bool groupG)
+    {
+        float s16 = 0f;                                                                   // 0xA10CF8 vldr s16,[pc]
+        float s17 = 0f;                                                                   // 0xA10D14 vmov.f32 s17,s16 (0xA11340 for an empty slot list)
+        foreach (var c in e.Curves)                                                       // 0xA10D34..0xA10D3C [slot+4] == rtpcId
+        {
+            if (c.SourceId != rtpcId) continue;
+            s16 = s16 + Curve(c, oldX);                                                   // 0xA10D60 bl 0xA14E28 (hint 0); 0xA10D7C vadd.f32 s16,s16,s15
+            s17 = s17 + Curve(c, newX);                                                   // 0xA10D80 bl 0xA14E28; 0xA10D94 vadd.f32 s17,s17,s15
+        }
+        float delta = s17 - s16;                                                          // 0xA10E44 vsub.f32 s16,s17,s16
+        NodeSetRtpcA9868B0(e.Key1, e.Param, key, s17, delta, groupG);                     // 0xA10E6C ldr ip,[ip]; blx ip
+    }
+
+    /// <summary>
+    /// Type 0 (context level, L7-04d, <c>0xA10CC8</c>, <c>0xA10FF4..0xA110C8</c>): the subscription's scope key must match the set key in every non-wild field, <c>G != 0</c> and <c>G-&gt;vt+0(G, e+0xC)</c> non-zero returns (G's body is unread: a stop);
+    /// otherwise <c>s = 0xA0E81C(e, rtpcId, newX)</c> (the sum of the matching slots' curves at <c>newX</c>, from 0.0f) and <c>0x9BD100(target, (int16)[e+4], &amp;s, 4)</c>, which stores only into the <c>[target+0xD0]</c> object (for parameters 0x1A, 0x1B, 0x1C).
+    /// The subscription's scope key words <c>[e+0xC..0x20]</c> are {A, B, C, D, E, F} (<see cref="WwiseRtpcSubscription.ScopeKey"/>); the target is <see cref="WwiseRtpcSubscription.TargetPbi"/>. The context object at <c>[ctx+0xD0]</c> is null in this model
+    /// (<see cref="WwisePlayingInstance.CtxD0"/>): with it the engine's call changes nothing, and a non-null one is a visible stop.
+    /// </summary>
+    // fidelity: M6-009
+    private void ApplyContextType0A10CC8(WwiseRtpcSubscription e, uint rtpcId, float newX, WwiseGainRtpcKey key, bool groupG)
+    {
+        var sk = e.ScopeKey;
+        if (key.GameObject != 0 && key.GameObject != sk.A) return;                        // 0xA10CC8..0xA10CE0 (F.A != 0 must equal [e+0xC])
+        if (key.PlayingId != 0 && key.PlayingId != sk.B) return;                          // 0xA110CC..0xA110D8 (F.B != 0 must equal [e+0x10])
+        // F.C == 0, F.D == F.E == 0xFF, F.F == 0 for every key this store builds (0xA1404C): wild, no compare (0xA11004..0xA11074).
+        if (groupG)
+            throw new WwiseMissingBehaviourException("M6-009 L7-04d: G != 0 asks G->vt+0(G, e+0xC) (0xA11074..0xA11098, the functor vptr 0x101C2E8) whose body is not read");
+        float s = 0f;                                                                     // 0xA0E84C vldr s16,[pc]
+        foreach (var c in e.Curves)                                                       // 0xA0E81C..0xA0E8C8
+            if (c.SourceId == rtpcId) s = s + Curve(c, newX);                             // 0xA0E89C bl 0xA14E28; 0xA0E8B0 vadd.f32
+        var target = e.TargetPbi ?? throw new WwiseMissingBehaviourException("M6-009 L7-04d: a type-0 subscription's target [e] is a context (PBI); WwiseRtpcSubscription.TargetPbi is not set");
+        if (target.CtxD0 is not null)                                                     // 0x9BD100: ldr r3,[r0,#0xd0]; cmp r3,#0; beq 0x9BD130
+            throw new WwiseMissingBehaviourException("M6-009 L7-04d: 0x9BD100 stores s into the [ctx+0xD0] object (+0xC, +0x10, +0x14 for parameters 0x1A, 0x1B, 0x1C); that object is not modelled");
+        _ = s;                                                                            // [ctx+0xD0] == 0: returns 1 with nothing stored
+    }
+
+    /// <summary>
+    /// The node subscriber's <c>vt+0</c> (<c>0x9868E4</c>: <c>sub r0,r0,#0x10; b 0x9868B0</c>), <c>0x9868B0(this, paramId, F, value, delta, G)</c> (L7-08): parameter 0xD (<c>cmp r1,#0xd</c>) runs <c>0x97E570(0)</c> and nothing else; otherwise the
+    /// fan-out <c>0xA1B254(sub, paramId, F, value, delta, G)</c>.
+    /// </summary>
+    // fidelity: M6-009
+    private void NodeSetRtpcA9868B0(uint holder, uint paramId, WwiseGainRtpcKey key, float value, float delta, bool groupG)
+    {
+        if (paramId == 0xD)                                                               // 0x9868B0 cmp r1,#0xd; beq 0x9868D8
+        {
+            Byte108D7D8_0C = 0;                                                           // 0x97E57C strb r0,[r3,#0xc] (r0 = 0)
+            Byte108D7D8 = 1;                                                              // 0x97E580 strb r2,[r3] (r2 = 1)
+            return;
+        }
+        FanOutA1B254(holder, paramId, key, value, delta, groupG);                         // 0x9868D4 b 0xA1B254 with r0 + 0x10
+    }
+
+    /// <summary>
+    /// <c>0xA1B254(sub, paramId, F, value, delta, G)</c> (L7-08): the registry <c>[sub+4]</c> holds 0x28-byte child records {key 0x18, u64 mask <c>+0x18</c>, object <c>+0x20</c>}. A child is called <c>child-&gt;vt+8(child, paramId, value, delta)</c> when its mask has
+    /// bit <c>paramId</c> (the NEON <c>vshl.u64</c> of 1 by the low byte of <c>paramId</c> as a signed count: 0 outside 0..63). F keyed (any of F.A, F.B, F.C non-zero, F.D or F.E not 0xFF, F.F non-zero): with <c>G == 0</c> the keyed scan <c>0xA1A6A4</c>: the children
+    /// sorted by key from the first not below F, each tested field by field, the first mismatch ending the scan, those whose mask lacks the bit skipped; with <c>G != 0</c> <c>0xA1AD68</c>. F all wild: <c>G != 0</c> <c>0xA1AC40</c>, else the loop
+    /// <c>0xA1B308..0xA1B3C8</c> over every child. The keyed scan is modelled for the keys <c>0xA1404C</c> builds (F.A != 0; F.C == 0, F.D == F.E == 0xFF, F.F == 0; F.B any), where the matching children are the contiguous run with the same A (and the same B when F.B != 0).
+    /// MISSING (visible stops): <c>G != 0</c> with a child to consider (G's body is unread) and a key with F.A == 0 and F.B != 0 (the scan's lower bound then starts at the first child; not a shape any adopted entry builds).
+    /// </summary>
+    // fidelity: M6-009
+    private void FanOutA1B254(uint holder, uint paramId, WwiseGainRtpcKey key, float value, float delta, bool groupG)
+    {
+        if (!_registries.TryGetValue(holder, out var children) || children.Count == 0) return;     // [registry+0x14] == 0: no child is called
+        int shift = (sbyte)(paramId & 0xFF);                                              // 0xA1B314 vmov.32 d17[0],lr: the shift count is the low byte of the lane, signed
+        ulong bit = shift >= 0 && shift < 64 ? 1UL << shift : 0UL;                        // 0xA1B31C vshl.u64 d16,d16,d17
+        bool keyed = key.GameObject != 0 || key.PlayingId != 0;                           // 0xA1B26C..0xA1B2EC (the other key fields are wild)
+        if (groupG)
+            throw new WwiseMissingBehaviourException(
+                keyed ? "M6-009 L7-08: G != 0 with a keyed set takes 0xA1AD68, which asks G->vt+0(G, child) (0xA1B1F8..0xA1B20C); G's body (vptr 0x101C2E8) is not read"
+                      : "M6-009 L7-08: G != 0 with an all-wild set takes 0xA1AC40, which asks G->vt+0(G, child) (0xA1AC94..0xA1ACA4); G's body (vptr 0x101C2E8) is not read");
+        if (keyed && key.GameObject == 0)
+            throw new WwiseMissingBehaviourException("M6-009 L7-08: a keyed set with F.A == 0 and F.B != 0 is not a key 0xA1404C builds; the scan 0xA1A6A4 over it is not modelled");
+        var ordered = children.OrderBy(c => c.Key.GameObject).ThenBy(c => c.Key.PlayingId).ToArray();   // the registry is kept sorted by key (the binary search 0xA1A6C8..0xA1A820)
+        foreach (var child in ordered)
+        {
+            if (keyed)
+            {
+                if (child.Key.GameObject != key.GameObject) continue;                     // 0xA1A844..0xA1A84C (the scan only reaches the run with this A)
+                if (key.PlayingId != 0 && child.Key.PlayingId != key.PlayingId) continue; // 0xA1A858..0xA1A86C
+            }
+            if ((child.Mask & bit) == 0) continue;                                        // 0xA1B360..0xA1B370 / 0xA1AAD8..0xA1AAE8
+            WwisePlayPath.DeliverRtpcA02CE4(child.Pbi, paramId, value, delta);            // 0xA1B38C blx [vt+8] -> 0xA02EC0 -> 0xA02CE4
+        }
     }
 
     // ---------------------------------------------------------------- the entry tree
@@ -575,4 +942,20 @@ public sealed class WwiseRtpcSubscription
 
     /// <summary>The curves, in order; <see cref="WwiseRtpc.SourceId"/> is <c>[c+4]</c>.</summary>
     public IReadOnlyList<WwiseRtpc> Curves { get; init; } = Array.Empty<WwiseRtpc>();
+
+    /// <summary>The scope key <c>[e+0xC..0x23]</c> {A, B, C, D, E, F}; the node subscriptions made at bank load carry <c>{0, 0, 0, 0xFF, 0xFF, 0}</c> (<c>0xA1A3E8</c>, C37.1). Only a type-0 subscription's filter reads it (L7-04d).</summary>
+    public WwiseRtpcScopeKey ScopeKey { get; init; } = WwiseRtpcScopeKey.Wild;
+
+    /// <summary>For a type-0 (context) subscription: the context <c>[e]</c>, as the PBI that owns it; null for the node subscriptions (their <see cref="Key1"/> is the holder address).</summary>
+    public WwisePlayingInstance? TargetPbi { get; init; }
 }
+
+/// <summary>The six words of a scope key <c>[e+0xC..0x23]</c> (<c>A</c> u32, <c>B</c> u32, <c>C</c> u32, <c>D</c> u8, <c>E</c> u8, <c>F</c> u32).</summary>
+public readonly record struct WwiseRtpcScopeKey(uint A, uint B, uint C, byte D, byte E, uint F)
+{
+    /// <summary>The wild key <c>{0, 0, 0, 0xFF, 0xFF, 0}</c>.</summary>
+    public static WwiseRtpcScopeKey Wild { get; } = new(0, 0, 0, 0xFF, 0xFF, 0);
+}
+
+/// <summary>A child record of a node holder's registry (0x28 bytes natively): the PBI context, its key and its listener mask (C37.1).</summary>
+public sealed record WwiseRtpcListener(WwisePlayingInstance Pbi, WwiseGainRtpcKey Key, ulong Mask);

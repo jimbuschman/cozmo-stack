@@ -510,8 +510,20 @@ public sealed class WwiseDecodeState
     /// <summary><c>[state+0x08]</c>: the plug-in result scratch (no adopted source body writes it).</summary>
     public uint Scratch08 { get; set; }
 
-    /// <summary><c>[state+0x1C]</c>: a float word (1.0f in the plug-in source's default state; no adopted source body writes it).</summary>
-    public uint Word1C { get; set; }
+    private uint _word1C;
+
+    /// <summary>
+    /// <c>[state+0x1C]</c>: a float word (1.0f in the plug-in source's default state; no adopted source body writes it). The voice pass block the engine builds per voice (<c>0xA44A00..0xA44A48</c>) stores
+    /// <c>[state+0x00..0x14]</c>, <c>+0x28</c>, <c>+0x2C</c> and not <c>+0x1C</c>, so unless a source writes it the word is uninitialised stack; <see cref="Word1CWritten"/> tells whether anything did.
+    /// </summary>
+    public uint Word1C
+    {
+        get => _word1C;
+        set { _word1C = value; Word1CWritten = true; }
+    }
+
+    /// <summary>True once <see cref="Word1C"/> has been assigned. The engine's word is otherwise uninitialised stack (the play-position update <c>0xA05574</c> copies it, <c>0xA548C0</c>).</summary>
+    public bool Word1CWritten { get; private set; }
 
     /// <summary><c>u16 [state+0x0C]</c>: the maximum frames, then the delivered count.</summary>
     public ushort MaxFrames { get; set; }

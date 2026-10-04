@@ -125,11 +125,27 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0x1BF</c>: bit2 from <c>params+0x128</c> bit2.</summary>
     public byte Flags1BF { get; }
 
+    /// <summary><c>[ctx+0x20]</c> (<c>pbi+0x2C</c>): the node <c>0xA19ECC</c> stores when it was zero (<c>0xA19EEC..0xA19EF4</c>); the listener's removal uses it. Null is zero.</summary>
+    // fidelity: M6-009
+    public WwiseRoutingNode? Ctx20Node { get; set; }
+
     /// <summary>
     /// <c>+0x1F8</c>: the ctor stores <c>0xFFFFFFFF</c> (<c>0xA0021C mvn r7,#0</c>; <c>0xA00318
     /// str r7,[r4,#0x1f8]</c>). The drain tests it as the -1 sentinel (<c>0x9D36C0</c>).
     /// </summary>
-    public uint Field1F8 { get; } = 0xFFFFFFFF;
+    public uint Field1F8 { get; set; } = 0xFFFFFFFF;
+
+    /// <summary>
+    /// PBI <c>vt+0x58</c> = <c>0x9CBACC</c> (C31.4 R4.8, <c>0x9CBACC..0x9CBAD8</c>): returns <c>[pbi+0x1F8]</c> and stores <c>-1</c> there (<c>mvn r2,#0</c>; <c>ldr r0,[r0,#0x1f8]</c>; <c>str r2,[r3,#0x1f8]</c>): the stop offset
+    /// is read once and consumed. <c>0xA548C0</c> is the caller (<c>0xA54910</c>).
+    /// </summary>
+    // fidelity: M6-022
+    public uint TakeStopOffset9CBACC()
+    {
+        uint r0 = Field1F8;                                               // 0x9CBAD4 ldr r0,[r0,#0x1f8]
+        Field1F8 = 0xFFFFFFFF;                                            // 0x9CBAD0 mvn r2,#0; 0x9CBAD8 str r2,[r3,#0x1f8]
+        return r0;
+    }
 
     /// <summary><c>+0x1BA</c>: read by <c>0xA0067C</c> (<c>&amp;7 != 1</c> chooses start-list type 0).</summary>
     public byte Flags1BA { get; set; }

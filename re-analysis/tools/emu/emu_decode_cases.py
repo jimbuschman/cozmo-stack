@@ -171,34 +171,61 @@ def run_interleave_cases():
 
 
 def pull_cases():
-    """name -> spec. slots: {index: (vt+0x38 results, vt+0x3C results)} (consumed one per call, the last repeated); node: u16[node+0x6E]; src: [(result, valid frames)] per vt+0x30 call; s548: the result 0xA548C0 leaves."""
+    """name -> spec. slots: {index: (vt+0x38 results, vt+0x3C results)} (consumed one per call, the last repeated); node: u16[node+0x6E]; src: [(result, valid frames)] per vt+0x30 call. The REAL 0xA548C0 runs (batch 5f, C31 R5.3):
+    valid: u16[state+0xE] on entry; f1f8: [pbi+0x1F8] (default -1); flags4: [pbi+4]; pos, w1c, total, rate: [state+0x18], +0x1C, +0x20, +0x24; pend: the pending source [voice+0xD8] as (result of its vt+0x28, latch byte [src+0x10], [pbi'+0x1DC], [pbi'+0x1E0]);
+    repo: a play-position record already in the repository for (playing id, the current source) with this stamp."""
     D, B, C = 0x2D, 0x2B, 0x2E
     cases = {}
-    cases['p_loop_2d_none_then_frames'] = dict(slots={}, node=0, src=[(D, 0), (D, 0), (D, 128)], s548=D)
-    cases['p_loop_2e_calls_the_handler_and_returns'] = dict(slots={}, node=0, src=[(C, 0)], s548=D)
-    cases['p_loop_other_result_returns'] = dict(slots={}, node=0, src=[(2, 0)], s548=D)
-    cases['p_loop_2d_none_then_2e'] = dict(slots={}, node=0, src=[(D, 0), (C, 0)], s548=D)
-    cases['p_node_holds_frames_the_source_is_not_called'] = dict(slots={}, node=50, src=[(D, 128)], s548=D)
-    cases['p_all_slots_2b_down_then_the_loop'] = dict(slots={i: ([B], [D]) for i in range(4)}, node=0, src=[(D, 128)], s548=D)
-    cases['p_slot3_ok_goes_to_filter_a'] = dict(slots={i: ([D], [D]) for i in range(4)}, node=0, src=[(D, 128)], s548=D)
-    cases['p_slot2_ok_then_the_up_walk'] = dict(slots={3: ([B], [D]), 2: ([D], [D]), 1: ([D], [D]), 0: ([D], [D])}, node=0, src=[(D, 128)], s548=D)
-    cases['p_slot1_other_result_returns'] = dict(slots={3: ([B], [D]), 2: ([B], [D]), 1: ([5], [D]), 0: ([D], [D])}, node=0, src=[(D, 128)], s548=D)
-    cases['p_up_walk_2b_goes_back_down'] = dict(slots={3: ([B], [D]), 2: ([B], [B, D]), 1: ([D, B], [D]), 0: ([B], [D])}, node=0, src=[(D, 128)], s548=D)
-    cases['p_up_walk_other_result_returns'] = dict(slots={3: ([B], [5]), 2: ([D], [D]), 1: ([B], [D]), 0: ([B], [D])}, node=0, src=[(D, 128)], s548=D)
-    cases['p_after_the_loop_the_up_walk_runs_from_slot_0'] = dict(slots={i: ([B], [D]) for i in range(4)}, node=0, src=[(D, 128)], s548=D)
-    cases['p_pitch_args_1200_cents_interp_on'] = dict(slots={}, node=0, src=[(D, 128)], s548=D, pitch=1200.0)
-    cases['p_pitch_args_bit7_set_interp_off'] = dict(slots={}, node=0, src=[(D, 128)], s548=D, pitch=-350.5, f1be=0x80)
-    cases['p_empty_node_last_buffer_byte_gives_0x11'] = dict(slots={}, node=0, src=[(D, 128)], s548=D, b8=1)
-    cases['p_held_frames_with_last_buffer_byte'] = dict(slots={}, node=50, src=[(D, 128)], s548=D, b8=1, pitch=24.0)
-    cases['p_548_result_ok_notifies'] = dict(slots={3: ([D], [D])}, node=0, src=[], s548=D)
-    cases['p_548_result_0x11_notifies'] = dict(slots={3: ([D], [D])}, node=0, src=[], s548=0x11)
-    cases['p_548_result_other_returns'] = dict(slots={3: ([D], [D])}, node=0, src=[], s548=C)
+    cases['p_loop_2d_none_then_frames'] = dict(slots={}, node=0, src=[(D, 0), (D, 0), (D, 128)])
+    cases['p_loop_2e_calls_the_handler_and_returns'] = dict(slots={}, node=0, src=[(C, 0)])
+    cases['p_loop_other_result_returns'] = dict(slots={}, node=0, src=[(2, 0)])
+    cases['p_loop_2d_none_then_2e'] = dict(slots={}, node=0, src=[(D, 0), (C, 0)])
+    cases['p_node_holds_frames_the_source_is_not_called'] = dict(slots={}, node=50, src=[(D, 128)])
+    cases['p_all_slots_2b_down_then_the_loop'] = dict(slots={i: ([B], [D]) for i in range(4)}, node=0, src=[(D, 128)])
+    cases['p_slot3_ok_goes_to_filter_a'] = dict(slots={i: ([D], [D]) for i in range(4)}, node=0, src=[(D, 128)])
+    cases['p_slot2_ok_then_the_up_walk'] = dict(slots={3: ([B], [D]), 2: ([D], [D]), 1: ([D], [D]), 0: ([D], [D])}, node=0, src=[(D, 128)])
+    cases['p_slot1_other_result_returns'] = dict(slots={3: ([B], [D]), 2: ([B], [D]), 1: ([5], [D]), 0: ([D], [D])}, node=0, src=[(D, 128)])
+    cases['p_up_walk_2b_goes_back_down'] = dict(slots={3: ([B], [D]), 2: ([B], [B, D]), 1: ([D, B], [D]), 0: ([B], [D])}, node=0, src=[(D, 128)])
+    cases['p_up_walk_other_result_returns'] = dict(slots={3: ([B], [5]), 2: ([D], [D]), 1: ([B], [D]), 0: ([B], [D])}, node=0, src=[(D, 128)])
+    cases['p_after_the_loop_the_up_walk_runs_from_slot_0'] = dict(slots={i: ([B], [D]) for i in range(4)}, node=0, src=[(D, 128)])
+    cases['p_pitch_args_1200_cents_interp_on'] = dict(slots={}, node=0, src=[(D, 128)], pitch=1200.0)
+    cases['p_pitch_args_bit7_set_interp_off'] = dict(slots={}, node=0, src=[(D, 128)], pitch=-350.5, f1be=0x80)
+    cases['p_empty_node_last_buffer_byte_gives_0x11'] = dict(slots={}, node=0, src=[(D, 128)], b8=1)
+    cases['p_held_frames_with_last_buffer_byte'] = dict(slots={}, node=50, src=[(D, 128)], b8=1, pitch=24.0)
+    # 0xA548C0 (R5.3, R4.8): the slot-3 result 0x2D / 0x11 goes straight to filter A, the ramps and 0xA548C0
+    S = {3: ([D], [D])}
+    cases['p_548_nothing_to_do_notifies'] = dict(slots=S, node=0, src=[])
+    cases['p_548_result_0x11_from_the_slot_notifies'] = dict(slots={3: ([0x11], [D])}, node=0, src=[])
+    cases['p_548_stop_offset_below_valid_clamps'] = dict(slots=S, node=0, src=[], valid=800, f1f8=300)
+    cases['p_548_stop_offset_equal_to_valid'] = dict(slots=S, node=0, src=[], valid=800, f1f8=800)
+    cases['p_548_stop_offset_above_valid_keeps'] = dict(slots=S, node=0, src=[], valid=800, f1f8=1000)
+    cases['p_548_stop_offset_zero_clamps_to_zero'] = dict(slots=S, node=0, src=[], valid=800, f1f8=0)
+    cases['p_548_stop_offset_zero_with_no_valid_frames'] = dict(slots=S, node=0, src=[], valid=0, f1f8=0)
+    cases['p_548_stop_offset_65536_is_a_32_bit_compare'] = dict(slots=S, node=0, src=[], valid=800, f1f8=65536)
+    cases['p_548_stop_offset_65535_with_65535_valid'] = dict(slots=S, node=0, src=[], valid=65535, f1f8=65535)
+    cases['p_548_stop_offset_65534_with_65535_valid'] = dict(slots=S, node=0, src=[], valid=65535, f1f8=65534)
+    cases['p_548_stop_offset_0x7fffffff'] = dict(slots=S, node=0, src=[], valid=800, f1f8=0x7FFFFFFF)
+    cases['p_548_stop_offset_0xfffffffe'] = dict(slots=S, node=0, src=[], valid=800, f1f8=0xFFFFFFFE)
+    cases['p_548_pending_start_ok_sets_the_latch'] = dict(slots=S, node=0, src=[], pend=(1, 0, 11, 22))
+    cases['p_548_pending_already_started_is_not_started_again'] = dict(slots=S, node=0, src=[], pend=(1, 1, 11, 22))
+    cases['p_548_pending_start_2_stores_the_result_and_returns'] = dict(slots=S, node=0, src=[], pend=(2, 0, 5, 6))
+    cases['p_548_pending_start_0x3f_leaves_the_result'] = dict(slots=S, node=0, src=[], pend=(0x3F, 0, 7, 8))
+    cases['p_548_pending_start_7_leaves_the_result'] = dict(slots=S, node=0, src=[], pend=(7, 0, 9, 10))
+    cases['p_548_pending_with_a_stop_offset'] = dict(slots=S, node=0, src=[], pend=(1, 0, 1, 2), valid=500, f1f8=100)
+    cases['p_548_pending_start_2_with_a_stop_offset'] = dict(slots=S, node=0, src=[], pend=(2, 0, 3, 4), valid=500, f1f8=900)
+    cases['p_548_position_update_without_the_flag'] = dict(slots=S, node=0, src=[], flags4=0, pos=1234, w1c=0x3F800000, total=44100, rate=22050)
+    cases['p_548_position_update_with_no_position'] = dict(slots=S, node=0, src=[], flags4=0x100000, pos=0xFFFFFFFF, w1c=0x3F800000, total=44100, rate=22050)
+    cases['p_548_position_update_adds_a_record'] = dict(slots=S, node=0, src=[], flags4=0x100000, pos=1234, w1c=0x3F800000, total=44100, rate=22050)
+    cases['p_548_position_update_position_zero'] = dict(slots=S, node=0, src=[], flags4=0x100000, pos=0, w1c=0x40000000, total=1, rate=48000)
+    cases['p_548_position_update_other_flag_bits'] = dict(slots=S, node=0, src=[], flags4=0xFFEFFFFF, pos=1234, w1c=0x3F800000, total=44100, rate=22050)
+    cases['p_548_position_update_existing_record_takes_the_stamp'] = dict(slots=S, node=0, src=[], flags4=0x100000, pos=77, w1c=0x3F000000, total=9000, rate=11025, repo=777)
+    cases['p_548_position_update_then_stop_offset_then_pending'] = dict(slots=S, node=0, src=[], flags4=0x100000, pos=5, w1c=0x3F800000, total=100, rate=8000, valid=64, f1f8=32, pend=(1, 0, 40, 50))
     return cases
 
 
 def run_pull_cases():
-    """The engine's own 0xA44630 on a hand-built voice (the slot, source and callee bodies named below are the harness's: they log the call and leave the scripted result). 0xA53134 and 0xA52D4C are the engine's code; a
-    consumption reached (0xA52DA8, unread) ends the run."""
+    """The engine's own 0xA44630 on a hand-built voice (the slot, source and callee bodies named below are the harness's: they log the call and leave the scripted result). 0xA53134, 0xA52D4C, 0xA548C0, 0x9CBACC, 0xA56650 and
+    0xA05574 are the engine's code (the pending source's vt+0x28 is the harness's: it logs its two arguments and returns the scripted result); a consumption reached (0xA52DA8, unread) ends the run."""
     from unicorn import UC_HOOK_CODE
     out = {}
     for name, spec in pull_cases().items():
@@ -218,6 +245,10 @@ def run_pull_cases():
         pbi = BASE + 0xA000
         e.w32(src, vt)
         e.w32(src + 0xC, pbi)                                      # [src+0xC]: the owner PBI
+        e.w32(pbi, 0x103B768)                                      # the PBI's vptr: +0x58 = 0x9CBACC (the engine's own vtable)
+        e.w32(pbi + 4, spec.get('flags4', 0))
+        e.w32(pbi + 0x140, 0x4321)                                 # the playing id
+        e.w32(pbi + 0x1F8, spec.get('f1f8', 0xFFFFFFFF))
         e.wf(pbi + 0x44, spec.get('pitch', 0.0))
         e.w16(pbi + 0x1BE, spec.get('f1be', 0))
         e.w32(voice + 0x1B4, pbi)                                  # [node+0xB4]
@@ -225,9 +256,35 @@ def run_pull_cases():
         e.uc.mem_write(voice + 0x100 + 0xB9, bytes([0xEE]))
         e.w32(voice + 0x100 + 0x48, 0x7777)
         e.w16(state + 0xC, 0x1234)
-        FAKE = {'s30': BASE + 0x8000, 's20': BASE + 0x8010, 'slot38': BASE + 0x8020, 'slot3c': BASE + 0x8030}
+        e.w16(state + 0xE, spec.get('valid', 0))
+        e.w32(state + 0x18, spec.get('pos', 0))
+        e.w32(state + 0x1C, spec.get('w1c', 0))
+        e.w32(state + 0x20, spec.get('total', 0))
+        e.w32(state + 0x24, spec.get('rate', 0))
+        G = BASE + 0xC000
+        e.uc.mem_write(G, bytes(0x40))
+        e.w32(0x108D8F8, G)                                        # *[GOT 0x1040150]: the play-position repository
+        if 'repo' in spec:                                         # one record for (playing id, the current source)
+            arr = BASE + 0xC100
+            e.w32(arr, 0x4321); e.w32(arr + 4, src)
+            e.w32(G, arr); e.w32(G + 4, 1); e.w32(G + 8, 1)
+            e.w32(G + 0x20, spec['repo'])
+        e.hook(0x4D3658, lambda em: 1000)                          # clock(): 0xA05574 stamps a new record with it
+        pend = spec.get('pend')
+        src2 = BASE + 0x6400
+        vt2 = BASE + 0x6500
+        pbi2 = BASE + 0xB000
+        if pend:
+            e.w32(voice + 0xD8, src2)
+            e.w32(src2, vt2)
+            e.w32(src2 + 0xC, pbi2)
+            e.uc.mem_write(src2 + 0x10, bytes([pend[1]]))
+            e.w32(pbi2 + 0x1DC, pend[2])
+            e.w32(pbi2 + 0x1E0, pend[3])
+        FAKE = {'s30': BASE + 0x8000, 's20': BASE + 0x8010, 'slot38': BASE + 0x8020, 'slot3c': BASE + 0x8030, 's28': BASE + 0x8040}
         e.w32(vt + 0x30, FAKE['s30'])
         e.w32(vt + 0x20, 0xA5668C)                                 # the engine's own vt+0x20
+        e.w32(vt2 + 0x28, FAKE['s28'])
         slots = {}
         for i, (r38, r3c) in spec['slots'].items():
             obj = BASE + 0x9000 + 0x100 * i
@@ -262,15 +319,14 @@ def run_pull_cases():
             events.append('handler')
             return None
 
-        def s548(em):
-            events.append('548')
-            em.w32(state + 0x28, spec['s548'])
-            return None
+        def s28(em):
+            events.append('start(%d,%d)' % (em.reg(1), em.reg(2)))
+            return pend[0]
         e.svc_hook(FAKE['s30'], s30)
         e.svc_hook(FAKE['slot38'], slot_hook('38'))
         e.svc_hook(FAKE['slot3c'], slot_hook('3C'))
+        e.svc_hook(FAKE['s28'], s28)
         e.svc_hook(0xA55C14, handler)
-        e.svc_hook(0xA548C0, s548)
         e.svc_hook(0xA03E8C, lambda em: events.append('notify'))
         e.svc_hook(0xA4C60C, lambda em: None)
         e.svc_hook(0xA56E00, lambda em: None)
@@ -288,8 +344,18 @@ def run_pull_cases():
             uc.emu_stop()
         e.uc.hook_add(UC_HOOK_CODE, consume, begin=0xA52DA8, end=0xA52DA8)
         e.call(0xA44630, state)
-        out[name] = {'spec': {'slots': {str(k): v for k, v in spec['slots'].items()}, 'node': spec['node'], 'src': spec['src'], 's548': spec['s548'], 'pitch': spec.get('pitch', 0.0), 'f1be': spec.get('f1be', 0), 'b8': spec.get('b8', 0)},
-                     'steps': ['%s | end=%s res=%x n48=%d b9=%d' % (','.join(events), ended[0] if ended else 'ret', e.r32(state + 0x28), e.r32(voice + 0x100 + 0x48), e.uc.mem_read(voice + 0x100 + 0xB9, 1)[0])]}
+        # the repository after the run: records as id/is-the-current-source/stamp/info words
+        recs = []
+        arr, cnt = e.r32(G), e.r32(G + 4)
+        for k in range(cnt):
+            r = arr + 0x20 * k
+            stamp = e.r32(r + 8) | (e.r32(r + 12) << 32)
+            recs.append('%d/%d/%d/%d.%d.%d.%d' % (e.r32(r), 1 if e.r32(r + 4) == src else 0, stamp, e.r32(r + 0x10), e.r32(r + 0x14), e.r32(r + 0x18), e.r32(r + 0x1C)))
+        extra = ' v=%d b2c=%d s1f8=%x lat=%d repo=[%s]' % (e.r16(state + 0xE), e.uc.mem_read(state + 0x2C, 1)[0], e.r32(pbi + 0x1F8), (e.uc.mem_read(src2 + 0x10, 1)[0] & 1) if pend else -1, ';'.join(recs))
+        spec_out = {'slots': {str(k): v for k, v in spec['slots'].items()}, 'node': spec['node'], 'src': spec['src'], 'pitch': spec.get('pitch', 0.0), 'f1be': spec.get('f1be', 0), 'b8': spec.get('b8', 0),
+                    'extra': ';'.join('%s=%s' % (k, ('%d/%d/%d/%d' % tuple(v)) if k == 'pend' else v) for k, v in spec.items() if k in ('valid', 'f1f8', 'flags4', 'pos', 'w1c', 'total', 'rate', 'pend', 'repo'))}
+        out[name] = {'spec': spec_out,
+                     'steps': ['%s | end=%s res=%x n48=%d b9=%d%s' % (','.join(events), ended[0] if ended else 'ret', e.r32(state + 0x28), e.r32(voice + 0x100 + 0x48), e.uc.mem_read(voice + 0x100 + 0xB9, 1)[0], extra)]}
         print('pull', name, out[name]['steps'][0], file=sys.stderr, flush=True)
     return out
 

@@ -590,6 +590,63 @@ public sealed class WwisePlayPath
     }
 
     /// <summary>
+    /// The PBI context's <c>vt+8</c> = <c>0xA02EC0</c> (<c>sub r0,r0,#0xc; b 0xA02CE4</c>) -> <c>0xA02CE4(pbi, paramId, value, delta)</c> -> <c>0x9BDDE0(ctx = pbi+0xC, paramId, value, delta)</c> (C37.1 L7-09), the child call of the RTPC fan-out
+    /// <c>0xA1B254</c>. Adopted: the first-level table <c>0x9BDDF0</c> (<c>0x9BDDE4 cmp r1,#0x2d</c>): parameter 0: <c>[ctx+0x8C] += delta</c> and <c>[ctx+0xDD] |= 1</c> (<see cref="WwisePlayingInstance.Field98"/>, the dirty bit
+    /// <see cref="WwisePlayingInstance.Flags0E9"/> bit 0); 2: <c>[ctx+0x38] += delta</c> (<c>pbi+0x44</c>); 3: <c>[ctx+0x90] = delta + [ctx+0x90]</c> and <c>[ctx+0x3C] = that + [ctx+0x94]</c>; 4: <c>[ctx+0x98]</c> and <c>[ctx+0x40] = that + [ctx+0x9C]</c>;
+    /// 5: <c>[ctx+0x58] += delta</c> (<c>pbi+0x64</c>); 7: <c>[ctx+0x48] += delta</c> (<c>pbi+0x54</c>). Single-precision adds, the old value first. The next voice pre-pass (<c>0xA43D24 -> 0xA55750</c>) turns the dirty bit into <c>0x9FF368</c>.
+    /// <para>MISSING (visible stops, not adopted): the ids <c>0x11..0x21</c> that <c>0xA02CE4</c> handles itself (the jump table at <c>0xA02CF8</c>), and every id the first-level table sends to <c>0x9BDFAC</c> (the second and third level tables
+    /// <c>0x9BDFD4</c>, <c>0x9BE1B8</c>, and the first-level entries 0x25..0x2D that the verifier did not list as adopted).</para>
+    /// </summary>
+    // fidelity: M6-009, M6-010
+    public static void DeliverRtpcA02CE4(WwisePlayingInstance pbi, uint paramId, float value, float delta)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        if (unchecked(paramId - 0x11) <= 0x10)                                                    // 0xA02CE4 sub ip,r1,#0x11; cmp ip,#0x10; addls pc,... (unsigned): ids 0x11..0x21
+            throw new WwiseMissingBehaviourException($"M6-009 L7-09: parameter 0x{paramId:X} is handled by 0xA02CE4's own table (0xA02CF8: 0x11 the running value, 0x1D..0x20 the vt+0x68 calls, 0x21 byte [pbi+0x97]); not adopted");
+        switch (paramId)                                                               // 0x9BDDE4 cmp r1,#0x2d; addls pc,pc,r1,lsl #2 (table 0x9BDDF0)
+        {
+            case 0:                                                                    // 0x9BDEC8
+            {
+                float s14 = pbi.Field98;                                               // 0x9BDEC8 vldr s14,[r0,#0x8c]
+                pbi.Flags0E9 = (byte)(pbi.Flags0E9 | 1);                               // 0x9BDECC..0x9BDED4 orr r3,r3,#1; strb r3,[r0,#0xdd]
+                pbi.Field98 = s14 + delta;                                             // 0x9BDED8 vadd.f32 s15,s14,s15; 0x9BDEDC vstr s15,[r0,#0x8c]
+                return;
+            }
+            case 2:                                                                    // 0x9BDEE4
+                pbi.Pitch44 = pbi.Pitch44 + delta;                                     // [ctx+0x38]
+                return;
+            case 3:                                                                    // 0x9BDEF4
+            {
+                float s13 = pbi.Field9C;                                               // [ctx+0x90]
+                float s14 = pbi.FieldA0;                                               // [ctx+0x94]
+                float s15 = delta + s13;                                               // 0x9BDEFC vadd.f32 s15,s15,s13
+                s14 = s15 + s14;                                                       // 0x9BDF00 vadd.f32 s14,s15,s14
+                pbi.Field9C = s15;                                                     // 0x9BDF04
+                pbi.Lpf48 = s14;                                                       // 0x9BDF08 vstr s14,[r0,#0x3c]
+                return;
+            }
+            case 4:                                                                    // 0x9BDF10
+            {
+                float s13 = pbi.FieldA4;                                               // [ctx+0x98]
+                float s14 = pbi.FieldA8;                                               // [ctx+0x9C]
+                float s15 = delta + s13;                                               // 0x9BDF18
+                s14 = s15 + s14;                                                       // 0x9BDF1C
+                pbi.FieldA4 = s15;                                                     // 0x9BDF20
+                pbi.Hpf4C = s14;                                                       // 0x9BDF24 vstr s14,[r0,#0x40]
+                return;
+            }
+            case 5:                                                                    // 0x9BDEA8
+                pbi.Word64 = pbi.ReadWord64() + delta;                                 // [ctx+0x58] (an unset word is a visible stop)
+                return;
+            case 7:                                                                    // 0x9BDF3C
+                pbi.Field54 = pbi.Field54 + delta;                                     // [ctx+0x48]
+                return;
+            default:
+                throw new WwiseMissingBehaviourException($"M6-009 L7-09: parameter 0x{paramId:X} is not one of the first-level 0x9BDDF0 rows C37.1 adopts (0, 2, 3, 4, 5, 7); the other first-level rows and the 0x9BDFAC tables are not adopted");
+        }
+    }
+
+    /// <summary>
     /// <c>0x9BCA68(ctx, r1)</c> (R3.1, R3.2, C29.4): with <c>[pbi+0xE8]</c> bit 5 clear the ctx <c>vt+0x24</c> (CalcEffectiveParams, <c>r1 = 0</c> from AddSrc); with bit 5 set and <c>[pbi+0xE9]</c> bit 0 set <c>vt+0x28</c>
     /// (<see cref="Recompute9FF368"/>). Then the below-audibility test: <c>(lin(pbi+0x3C) * pbi+0x40) * lin(pbi+0x64) &lt;= [0x1052454]</c> (0x37800000), 1 when so, 0 otherwise (also for NaN, <c>movls</c> / <c>movhi</c>).
     /// </summary>

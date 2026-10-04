@@ -191,6 +191,19 @@ public sealed class WwiseRoutingNode
     /// <summary><c>[[node+0x14]]</c>: the u64 set of subscribed parameter bits (<c>0x9C3ADC..0x9C3B00</c>); null is <c>[node+0x14] == 0</c>.</summary>
     public ulong? SubscriptionMask14 { get; set; }
 
+    /// <summary>
+    /// <c>[node+0x40]</c> of any node (a word whose bits 1..11 come from positioning, <c>0x9F6D94</c>; the other writers are unread): the listener walk <c>0x9F7DA8..0x9F82D4</c> reads it as <c>(u64)[node+0x40] &lt;&lt; 17</c> (<c>0x9F7DF8..0x9F7E10</c>) for the
+    /// bits a node may take and for the bits it satisfies. The C# routing node cannot derive it, so null is "not supplied" and the registration stops visibly.
+    /// </summary>
+    // fidelity: M6-009
+    public uint? Node40 { get; set; }
+
+    /// <summary>
+    /// The mask word <c>[[node+0x20]]</c> of the node's SECOND holder (<c>node+0x1C</c>, registry <c>[node+0x20]</c>, <c>0x9F8038..0x9F8098</c>), or null when <c>[node+0x20] == 0</c>. The registration into that holder is not modelled: a non-null value is a visible stop.
+    /// </summary>
+    // fidelity: M6-009
+    public ulong? SecondHolderMask20 { get; set; }
+
     /// <summary><c>node+0x10</c>: the address that keys the node's subscriptions in the RTPC manager (<c>0xA11590</c>'s second argument; <see cref="WwiseRtpcStore.AddSubscription"/>).</summary>
     public uint SubscriptionKey10 { get; init; }
 

@@ -364,6 +364,32 @@ def cmd_scenarios(args):
     json.dump(run_all_scenarios(), open(args[0], 'w'))
 
 
+def pull_block(pull):
+    """The `Pull` member of WwiseVorbisEngineOracle (the voice render order 0xA44630 with the real 0xA548C0), as source lines."""
+    o = []
+    o.append('    /// <summary>The voice render order 0xA44630 on a hand-built voice with the REAL 0xA548C0 (slots: index:vt+0x38 results:vt+0x3C results, results joined by /, slots joined by ;; node frames; source script result:valid joined by ;; the owner PBI pitch +0x44, its u16 +0x1BE, the node byte +0xB8; extra: valid, f1f8, flags4, pos, w1c, total, rate, pend = (vt+0x28 result/latch/+0x1DC/+0x1E0), repo = the stamp of a record already in the repository), steps.</summary>')
+    o.append('    public static readonly Dictionary<string, (string Slots, int Node, string Src, double Pitch, int F1be, int B8, string Extra, string Step)> Pull = new()')
+    o.append('    {')
+    for k, v in pull.items():
+        sp = v['spec']
+        slots = ';'.join('%s:%s:%s' % (i, '/'.join(str(x) for x in a), '/'.join(str(x) for x in b)) for i, (a, b) in sorted(sp['slots'].items()))
+        src = ';'.join('%d:%d' % tuple(x) for x in sp['src'])
+        o.append('        [%s] = (%s, %d, %s, %r, %d, %d, %s, %s),' % (cs_str(k), cs_str(slots), sp['node'], cs_str(src), float(sp['pitch']), sp['f1be'], sp['b8'], cs_str(sp['extra']), cs_str(v['steps'][0])))
+    o.append('    };')
+    return o
+
+
+def cmd_patch_pull(args):
+    """patch-pull <WwiseVorbisEngineOracle.cs>: re-runs only the pull group and rewrites the `Pull` member of an existing generated file (the rest of the file is unchanged; a full emit-cs gives the same text)."""
+    import emu_decode_cases as cases
+    path = args[0]
+    text = open(path, encoding='utf-8').read()
+    start = text.index('    /// <summary>The voice render order 0xA44630')
+    end = text.index('    };\n', start) + len('    };\n')
+    block = '\n'.join(pull_block(cases.run_pull_cases())) + '\n'
+    open(path, 'w', encoding='utf-8').write(text[:start] + block + text[end:])
+
+
 def cmd_emit(args):
     """emit-cs [--scenarios file.json] <census json> ...: writes WwiseVorbisEngineOracle.cs to stdout (running the scenario groups itself unless a saved file is given)."""
     saved = None
@@ -426,15 +452,8 @@ def cmd_emit(args):
         p('        [%s] = (%s, %s, %s, %d, %d, %s, %s),' % (cs_str(k), cs_str(v['files'][0]), cs_str(v['files'][1]), cs_str(';'.join('%d:%d' % tuple(c) for c in v['calls'])), v['skips'][0], v['skips'][1], 'true' if v['sentinel'] else 'false', cs_arr(v['steps'])))
     p('    };')
     p('')
-    p('    /// <summary>The voice render order 0xA44630 on a hand-built voice (slots: index:vt+0x38 results:vt+0x3C results, results joined by /, slots joined by ;; node frames; source script result:valid joined by ;; the result 0xA548C0 leaves; the owner PBI pitch +0x44, its u16 +0x1BE, the node byte +0xB8), steps.</summary>')
-    p('    public static readonly Dictionary<string, (string Slots, int Node, string Src, int S548, double Pitch, int F1be, int B8, string Step)> Pull = new()')
-    p('    {')
-    for k, v in pull.items():
-        sp = v['spec']
-        slots = ';'.join('%s:%s:%s' % (i, '/'.join(str(x) for x in a), '/'.join(str(x) for x in b)) for i, (a, b) in sorted(sp['slots'].items()))
-        src = ';'.join('%d:%d' % tuple(x) for x in sp['src'])
-        p('        [%s] = (%s, %d, %s, %d, %r, %d, %d, %s),' % (cs_str(k), cs_str(slots), sp['node'], cs_str(src), sp['s548'], float(sp['pitch']), sp['f1be'], sp['b8'], cs_str(v['steps'][0])))
-    p('    };')
+    for line in pull_block(pull):
+        p(line)
     for name, group, doc in (('Dsp', dsp, 'The decoder-state allocation and teardown (ops: alloc:slot:channels:failAt, free:slot).'), ('Cache', cache, 'The setup cache (ops: acq:key:failAt:parseFail, rel:key).')):
         p('')
         p('    /// <summary>%s</summary>' % doc)
@@ -486,7 +505,7 @@ def cmd_emit(args):
     print('\n'.join(o))
 
 
-COMMANDS = {'census': cmd_census, 'scenarios': cmd_scenarios, 'emit-cs': cmd_emit}
+COMMANDS = {'census': cmd_census, 'scenarios': cmd_scenarios, 'emit-cs': cmd_emit, 'patch-pull': cmd_patch_pull}
 
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'census'

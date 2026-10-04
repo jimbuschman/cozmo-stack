@@ -214,6 +214,24 @@ public sealed class WwisePlaybackLimiter
     /// </summary>
     public Action<string, WwiseNode, ulong>? RtpcSubscribeA19ECC { get; set; }
 
+    /// <summary>
+    /// The RTPC manager <c>*0x108D908</c> the PBI's context registers with at Init (C37.1: <c>0xA0285C -> 0x9BC5A8 -> 0xA19ECC -> 0x9F7390</c>, <see cref="WwiseRtpcStore.RegisterListenerA19ECC"/>). When set it replaces the required
+    /// <see cref="RtpcSubscribeA19ECC"/> for the <c>"context"</c> call (the limiter and object calls <c>0x9F4D40</c> / <c>0xA19F60</c> still use the seam); <see cref="RuntimeNodeOf"/> is then required.
+    /// </summary>
+    // fidelity: M6-009
+    public WwiseRtpcStore? RtpcListeners { get; set; }
+
+    /// <summary>The runtime node behind a hierarchy node (the engine's node object with its <c>[+0x34]</c> parent link and <c>[+0x10]</c> holder), as <see cref="WwisePlayPath.RuntimeNodeOf"/>. Required by <see cref="RtpcListeners"/>.</summary>
+    // fidelity: M6-009
+    public Func<WwiseNode, WwiseRoutingNode?>? RuntimeNodeOf { get; set; }
+
+    /// <summary>
+    /// The removal of a PBI's RTPC listener at Term's last step (<see cref="RemoveListenerA19F60"/>: <c>0x9BDC8C</c> -> <c>0xA19F60</c> -> <c>0x9F9064</c> -> <c>0xA198A4</c>; also <see cref="DestroyPbiVt4"/> when Term never ran, which uses <c>[ctx+0x20]</c>, <see cref="WwisePlayingInstance.Ctx20Node"/>). Unread: REQUIRED when <see cref="RtpcListeners"/> holds the PBI. A host or test
+    /// may point it at <see cref="WwiseRtpcStore.UnregisterListener"/>, which is not engine-derived.
+    /// </summary>
+    // fidelity: M6-009
+    public Action<WwisePlayingInstance>? RemoveRtpcListenerA198A4 { get; set; }
+
     /// <summary><c>0xA01768</c> (C27 step 4, 8.x V2/C5/E3): the PBI's next-source code. <see cref="WwisePlaybackBridge.Limiter"/> sets it to the bridge's own <c>0xA01768</c> when the limiter is attached (unless already set); a limiter used without a bridge must supply it for the virtual paths.</summary>
     public Func<WwisePlayingInstance, int>? NextSourceCodeA01768 { get; set; }
 
@@ -230,7 +248,7 @@ public sealed class WwisePlaybackLimiter
     public Action<WwisePlayingInstance>? TermSteps6And7 { get; set; }
 
     /// <summary>
-    /// Term steps 12 and 13 (1.10, O3): the <c>[pbi+0x1E8]</c> list (<c>0xA3E27C</c>), the <c>[pbi+0x150]</c> destroy (<c>0xA1E8F4</c>) and <c>0x9BDC8C(pbi+0xC, 0)</c>. Unread, required. The release of the media pair and the
+    /// Term steps 12 and 13 (1.10, O3): the <c>[pbi+0x1E8]</c> list (<c>0xA3E27C</c>), the <c>[pbi+0x150]</c> destroy (<c>0xA1E8F4</c>) and <c>0x9BDC8C(pbi+0xC, 0)</c>, whose listener removal is split out as <see cref="RemoveListenerA19F60"/> and runs after this seam. Unread, required. The release of the media pair and the
     /// <c>[pbi+0x108]</c> bank (<c>0xA02AD8..0xA02B14</c>, <c>0xA1ECBC</c>) that precedes them is <see cref="WwisePbiMedia.ReleaseInTerm"/>, run before this seam.
     /// </summary>
     public Action<WwisePlayingInstance>? TermSteps10To13 { get; set; }
@@ -1020,8 +1038,17 @@ public sealed class WwisePlaybackLimiter
     {
         if (LimiterOf(node.Id) is { } l)                                              // 0x9BC5A8 beq 0x9BC5D8: only the push is conditional (0x9BC5C0..0x9BC5D4)
             l.Contexts0C.Insert(0, pbi);                                              // ctx+0x24 = old head
-        (RtpcSubscribeA19ECC ?? throw new WwiseMissingBehaviourException(
-            "M6-026 R1: 0xA19ECC -> 0x9F7390..0x9F82EC is unread; supply RtpcSubscribeA19ECC"))("context", node, 0x3FE3FFFE67BDUL);   // 0x9BC5D8..0x9BC5F0, unconditional
+        if (RtpcListeners is { } listeners)                                           // C37.1: 0x9BC5D8..0x9BC5F0 -> 0xA19ECC -> 0x9F7390, as far as adopted: the PBI becomes a child of the node's and its ancestors' holders
+        {
+            var runtime = (RuntimeNodeOf ?? throw new WwiseMissingBehaviourException(
+                "M6-009 C37.1: the listener registration walks the runtime node's parent links [node+0x34]; supply WwisePlaybackLimiter.RuntimeNodeOf"))(node)
+                ?? throw new WwiseMissingBehaviourException($"M6-009 C37.1: node {node.Id} has no runtime node");
+            listeners.RegisterListenerA19ECC(pbi, runtime, 0x3FE3FFFE67BDUL);          // {0xFFFE67BD, 0x3FE3}: 0x9BC5DC..0x9BC5EC
+            RtpcSubscribeA19ECC?.Invoke("context", node, 0x3FE3FFFE67BDUL);           // an optional observer once the store registers
+        }
+        else
+            (RtpcSubscribeA19ECC ?? throw new WwiseMissingBehaviourException(
+                "M6-026 R1: 0xA19ECC -> 0x9F7390..0x9F82EC is unread; supply RtpcSubscribeA19ECC (or RtpcListeners, C37.1)"))("context", node, 0x3FE3FFFE67BDUL);   // 0x9BC5D8..0x9BC5F0, unconditional
         if ((pbi.Flags0E9 & 4) == 0)
         {
             AppendList(pbi.LimiterArray1EC, GlobalVoiceList);
@@ -1088,8 +1115,38 @@ public sealed class WwisePlaybackLimiter
     }
 
     /// <summary>
+    /// The PBI destructor, <c>vt+4 = 0x9FF54C</c> (calls <c>0xA7A988</c>, <c>0x9A6988</c>, <c>0xA1C65C</c>, then <c>0x9BC554</c> -> the context base destructor <c>0x9BC560..0x9BC59C</c>, which calls the listener destructor <c>0xA19D44</c> at <c>0x9BC594</c>). Term already removed the
+    /// listener and zeroed <c>[ctx+0x20]</c> (<see cref="RemoveListenerA19F60"/>, <c>0x9BDC8C</c>), so <c>0xA19D44</c> skips <c>0x9F9064</c> (<c>0xA19D4C ldr [ctx+0x20]; 0xA19D5C cmp; 0xA19D70 beq 0xA19D8C</c>) and nothing is removed here. Only a PBI destroyed with
+    /// <c>[ctx+0x20] != 0</c> (Term never ran) takes <c>0x9F9064</c> there: the same required seam, <see cref="RemoveRtpcListenerA198A4"/>. Here: <c>[pbi+0x1F0] = 0</c> (the array free).
+    /// MISSING (unmodelled): the <c>[pbi+0x12C]</c> refcount release <c>0x9A6988</c> (<c>0x9FF598..0x9FF5A4</c>), the ctx <c>[+0xC8]</c> pool free <c>0x9BC584</c>, <c>0x9E8738(ctx+0x28)</c> at <c>0x9BC58C</c>, the unlink of the listener object from the global
+    /// singly linked list (<c>0xA19D8C..0xA19DF0</c>), and the destructor's callers after Term other than the bridge's two sites.
+    /// </summary>
+    // fidelity: M6-009, M6-026
+    public void DestroyPbiVt4(WwisePlayingInstance pbi)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        pbi.LimiterArray1EC.Items.Clear();                                            // 0x9FF54C: the array free
+        RemoveListenerA19F60(pbi);                                                    // 0xA19D44: a no-op when [ctx+0x20] == 0
+    }
+
+    /// <summary>
+    /// <c>0xA19F60(ctx, {0xFFFE67BD, 0x3FE3}, 1)</c> as Term's last step <c>0x9BDC8C(ctx, 0)</c> reaches it (<c>0x9BDCD8..0x9BDCF4</c>): with <c>[ctx+0x20] != 0</c> (<see cref="WwisePlayingInstance.Ctx20Node"/>) <c>0x9F9064([ctx+0x20], ctx, &amp;mask, 1)</c> removes the PBI
+    /// from the registries of the start node and its parent chain through <c>0xA198A4</c> (non-bus path <c>0x9F9224</c>, sites <c>0x9F9258</c>, <c>0x9F92A8</c>), then <c>[ctx+0x20] = 0</c> (<c>0xA19F8C</c>). The removal is the REQUIRED seam
+    /// <see cref="RemoveRtpcListenerA198A4"/> (unread); it throws when unset and <see cref="RtpcListeners"/> is set.
+    /// </summary>
+    // fidelity: M6-009
+    public void RemoveListenerA19F60(WwisePlayingInstance pbi)
+    {
+        if (RtpcListeners is null || pbi.Ctx20Node is null) return;                   // 0xA19F60 ldr ip,[r0,#0x20]; cmp ip,#0; bxeq lr
+        (RemoveRtpcListenerA198A4 ?? throw new WwiseMissingBehaviourException(
+            "M6-009 C37.1: Term's last step 0x9BDC8C -> 0xA19F60 -> 0x9F9064 removes the listener through 0xA198A4, which is unread: supply WwisePlaybackLimiter.RemoveRtpcListenerA198A4"))(pbi);
+        pbi.Ctx20Node = null;                                                         // 0xA19F8C
+    }
+
+
+    /// <summary>
     /// <c>pbi vt+0x10</c> = <c>0xA029DC</c> (1.10), in order: (1) <see cref="UndoCounts0A01684"/>; (2, 3) cancel <c>+0x144</c> and <c>+0x148</c> (<c>0xA36618</c>); (4) <c>1BC &amp;= ~2</c>; (5) <c>[pbi+0x140] != 0</c>
-    /// -> <c>0xA04DE8</c>; (6, 7) <see cref="TermSteps6And7"/>; (8) the limiter context list removal; (9) the idle test on the PBI node's limiter; (10..13) <see cref="TermSteps10To13"/>.
+    /// -> <c>0xA04DE8</c>; (6, 7) <see cref="TermSteps6And7"/>; (8) the limiter context list removal; (9) the idle test on the PBI node's limiter; (10..13) <see cref="TermSteps10To13"/>; last, the listener removal of <c>0x9BDC8C(ctx, 0)</c> (<see cref="RemoveListenerA19F60"/>). MISSING (pre-existing): <c>0xA029DC</c> is called with <c>r1 = 0</c> by <see cref="WwisePlaybackBridge.TerminatePbi"/> and <c>r1 = 1</c> by the failed-Play path; the argument is not modelled.
     /// </summary>
     public void TermPbiA029DC(WwisePlayingInstance pbi)
     {
@@ -1115,6 +1172,7 @@ public sealed class WwisePlaybackLimiter
         WwisePbiMedia.ReleaseInTerm(pbi, MediaTable);
         (TermSteps10To13 ?? throw new WwiseMissingBehaviourException(
             "M6-026 1.10: steps 12 and 13 (0xA3E27C, 0x9BDC8C, 0xA1E8F4) are unread; supply TermSteps10To13"))(pbi);
+        RemoveListenerA19F60(pbi);                                                    // the listener part of the tail 0x9BDC8C(pbi+0xC, 0), after the other steps
     }
 
     private static WwiseMissingBehaviourException MissingCancel()

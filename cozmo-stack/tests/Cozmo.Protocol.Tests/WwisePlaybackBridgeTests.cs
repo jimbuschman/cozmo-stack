@@ -305,10 +305,13 @@ public class WwisePlaybackBridgeTests
         var pbi = bridge.CreatePbiWithMediaWords(
             new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1,
             new WwiseSourceDescriptor(WwiseSourceFactory.AdpcmPlugin, 1, 1, 0, 0), continuous: false);
+        var repository = bridge.PositionRepository = new WwisePlayPositionRepository(() => 0);
 
         Assert.Equal(1, bridge.AttachVoice(pbi));                // 0xA430BC/0xA43194 -> 1
         var voice = Assert.Single(bridge.Voices);
         Assert.Same(engine, voice.EngineEC);                     // 0xA548B8
+        Assert.Same(repository, voice.PositionRepository);       // C31 R5.3: the voice's 0xA548C0 hands G = *0x108D8F8 to 0xA05574
+        Assert.NotNull(voice.StartStreamFormatWriter);           // and starts a pending source through the bridge's format writer (C26.5)
         Assert.Same(voice, pbi.Field154);                        // 0xA558F8
 
         bridge.StartList.Enqueue(0, pbi, 0);

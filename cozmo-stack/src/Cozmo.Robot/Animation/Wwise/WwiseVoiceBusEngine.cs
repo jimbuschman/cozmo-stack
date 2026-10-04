@@ -694,8 +694,8 @@ public sealed class WwiseLiveVoice
     /// returning, else the intake <c>0xA52D4C</c> and the loop again on 0x2B); a result other than 0x2D / 0x11 after the pass returns;</item>
     /// <item><c>vt+0x3C</c> of the slots 0..3 (<c>0xA44694..0xA446D8</c>; 0x2B sends the walk back down from the same index, <c>0xA4471C</c>);</item>
     /// <item>filter A <c>0xA4C60C(voice+0x1C0)</c> (<c>0xA446E0</c>), the ramps <c>0xA56E00(voice+0x380)</c> (<c>0xA446EC</c>);</item>
-    /// <item><c>0xA548C0(voice)</c> (<c>0xA44700</c>; not a decode: it clamps <c>u16[state+0xE]</c> by the PBI's <c>vt+0x58</c> and starts the pending source, <c>0xA548D4..0xA54954</c>: not read,
-    /// <see cref="PendingSourceA548C0"/>, required), then a result other than 0x11 / 0x2D returns (<c>0xA44704..0xA44710</c>);</item>
+    /// <item><c>0xA548C0(voice, state)</c> (<c>0xA44700</c>, <see cref="RunA548C0"/>: not a decode: the play-position update, the clamp of <c>u16[state+0xE]</c> by the PBI's stop offset <c>vt+0x58</c> and the start of the
+    /// pending source, <c>0xA548C0..0xA54954</c>), then a result other than 0x11 / 0x2D returns (<c>0xA44704..0xA44710</c>);</item>
     /// <item>the notify <c>0xA03E8C</c> (<c>0xA447D4</c>), then the aux and dry mixes.</item>
     /// </list>
     /// A source without a pitch node (a test double, the in-memory ADPCM class whose body is unread) and a voice without a source keep the earlier approximation, NOT the engine's order (MISSING: those classes' pitch nodes):
@@ -722,7 +722,7 @@ public sealed class WwiseLiveVoice
     private bool RenderEngineOrder(IWwisePitchNodeSource ps)
     {
         // The result [state+0x28] is the buffer's Result and the io state's Code28 (one object in the engine).
-        // MISSING (unreachable in production: no non-test code sets the seams PitchNodeConsumeA52DA8, ResamplerSetPitchA47384 or PendingSourceA548C0): the mixes below take Buffer.ValidFrames = [state+0xC] (1024, the request) as
+        // MISSING (unreachable in production: no non-test code sets the seams PitchNodeConsumeA52DA8 or ResamplerSetPitchA47384): the mixes below take Buffer.ValidFrames = [state+0xC] (1024, the request) as
         // the frame count, while 0xA4FBEC reads u16 [state+0xE] (0xA4FBF4, the frames delivered), so a caller that supplies the seams mixes 1024 frames whatever the consumption delivered.
         int r4 = 4;                                              // 0xA44634
         int phase = 0;                                           // 0: the vt+0x38 walk down (0xA4463C), 1: the vt+0x3C walk up (0xA44694), 2: filter A (0xA446E0), 3: the pitch pass (0xA44730)
@@ -764,8 +764,7 @@ public sealed class WwiseLiveVoice
                     FilterA.Process(Buffer.Channels[0]);                            // 0xA446E0 0xA4C60C(voice+0x1C0, state)
                     foreach (var connection in Connections)                         // 0xA446EC 0xA56E00(voice+0x380, state): the ramps (M6-012)
                         connection.Refresh();
-                    (PendingSourceA548C0 ?? throw new WwiseMissingBehaviourException(
-                        "M6-022 V8: 0xA548C0(voice) (0xA44700: clamps u16[state+0xE] by the PBI's vt+0x58 and starts the pending source, 0xA548D4..0xA54954) is not read; supply WwiseLiveVoice.PendingSourceA548C0"))(this);
+                    RunA548C0(ps);                                                  // 0xA44700 bl 0xA548C0(voice, state)
                     int res = Buffer.Result;                                        // 0xA44704
                     return res == 0x11 || res == 0x2D;                              // 0xA44708..0xA44710 beq 0xA447C4 (notify); else 0xA44714
                 }
@@ -848,10 +847,62 @@ public sealed class WwiseLiveVoice
     public Action<float, bool>? ResamplerSetPitchA47384 { get; set; }
 
     /// <summary>
-    /// <c>0xA548C0(voice, state)</c> (<c>0xA44700</c>): clamps <c>u16[state+0xE]</c> by the PBI's <c>vt+0x58</c> and starts the pending source (<c>0xA548D4..0xA54954</c>); the body is not read. Required when the engine order reaches it.
+    /// The play-position repository <c>G = *0x108D8F8</c> (GOT <c>0x1040150</c>) that <c>0xA548C0</c> hands to <c>0xA05574</c> (<c>0xA548EC..0xA54900</c>). Required when a PBI with the callback flag <c>0x100000</c> is mixed.
     /// </summary>
     // fidelity: M6-022
-    public Action<WwiseLiveVoice>? PendingSourceA548C0 { get; set; }
+    public WwisePlayPositionRepository? PositionRepository { get; set; }
+
+    /// <summary>
+    /// The writer of the format bytes <c>pbi+0x158..0x162</c> that the non-streamed source classes' <c>vt+0x28</c> (StartStream) perform (<c>0xA72760..0xAB138C</c>, C26.5; the bridge's <c>SourceFormatWriter15C</c>); required by
+    /// <see cref="RunA548C0"/> when it starts a pending source of such a class. A streamed Vorbis source writes the bytes itself.
+    /// </summary>
+    // fidelity: M6-025
+    public Action<WwisePlayingInstance, IWwiseVoiceSource>? StartStreamFormatWriter { get; set; }
+
+    /// <summary>
+    /// <c>0xA548C0(voice, mix)</c> (C31 R5.3 with the verifier's R4.8 correction; <c>0xA548C0..0xA54954</c>, called at <c>0xA44700</c>): <c>pbi = [[voice+0xD4]+0xC]</c> (the current source's owner); with <c>[pbi+4] &amp; 0x100000</c> and
+    /// <c>[mix+0x18] != -1</c> the play-position update <c>0xA05574(G, [pbi+0x140], mix+0x18, [voice+0xD4])</c>; then <c>r0 = pbi vt+0x58()</c> (<c>0x9CBACC</c>: <c>[pbi+0x1F8]</c>, stored back as -1), and when <c>r0 != -1</c>: an UNSIGNED 32-bit compare
+    /// of the whole <c>r0</c> against the zero-extended <c>u16[mix+0xE]</c> followed by a halfword store of <c>r0</c> when lower, and byte <c>[mix+0x2C] = 1</c> whenever <c>r0 != -1</c>; then with <c>[voice+0xD8] != 0</c>
+    /// <c>0xA56650([voice+0xD8], [pbi'+0x1DC], [pbi'+0x1E0])</c> (<c>0xA54948</c>, pbi' the pending source's owner), a result of 2 storing <c>[mix+0x28] = 2</c>. The mix block is the source's io state (<see cref="IWwisePitchNodeSource.Io"/>, the
+    /// voice's <c>state</c>) whose result word is also <see cref="WwiseVoiceBuffer.Result"/>; <c>[mix+0x2C]</c> is <see cref="WwiseVoiceBuffer.HasBusParam"/>.
+    /// <para>MISSING (visible stops): <c>[state+0x1C]</c> (<c>0xA05574</c>'s second info word) is uninitialised stack in the engine unless a source writes it (<see cref="WwiseDecodeState.Word1CWritten"/>); the owner of a pending source that is not a
+    /// pitch-node source; the format writer of a non-streamed pending source (<see cref="StartStreamFormatWriter"/>).</para>
+    /// </summary>
+    // fidelity: M6-022, M6-025
+    private void RunA548C0(IWwisePitchNodeSource ps)
+    {
+        var pbi = ps.Owner ?? throw new WwiseMissingBehaviourException(
+            "M6-022 R5.3: 0xA548C0 reads pbi = [[voice+0xD4]+0xC] (0xA548C0..0xA548CC); the current source has no owner PBI");
+        var io = ps.Io;                                                             // r5 = the mix block (state)
+        if ((pbi.Flags4 & 0x100000) != 0 && io.Position != 0xFFFFFFFF)              // 0xA548D4..0xA548E8 tst [pbi+4],#0x100000; cmn [mix+0x18],#1
+        {
+            if (!io.Word1CWritten)
+                throw new WwiseMissingBehaviourException(
+                    "M6-022 R5.3: 0xA05574 copies the 16 bytes at mix+0x18; [mix+0x1C] is uninitialised stack in the voice pass block (0xA44A00..0xA44A48 never store it) and no adopted source writes it");
+            (PositionRepository ?? throw new WwiseMissingBehaviourException(
+                "M6-022 R5.3: 0xA05574(G = *0x108D8F8, ...) (0xA548EC..0xA54900) needs the play-position repository; supply WwiseLiveVoice.PositionRepository"))
+                .UpdateA05574(pbi.PlayingId, io.Position, io.Word1C, io.Total, io.Rate, ps);   // 0xA548F4 ldr r1,[r4,#0x140]; 0xA548F0 add r2,r5,#0x18; r3 = [voice+0xD4]
+        }
+        uint r0 = pbi.TakeStopOffset9CBACC();                                       // 0xA54904..0xA54910 vt+0x58 = 0x9CBACC
+        if (r0 != 0xFFFFFFFF)                                                       // 0xA54914 cmn r0,#1; beq 0xA54930
+        {
+            ushort r3 = io.ValidFrames;                                             // 0xA5491C ldrh r3,[r5,#0xe]
+            if (r0 < r3) io.ValidFrames = unchecked((ushort)r0);                    // 0xA54920 cmp r0,r3 (unsigned, 32 bit); 0xA54928 strhlo r0,[r5,#0xe]
+            Buffer.HasBusParam = true;                                              // 0xA54924 mov r3,#1; 0xA5492C strb r3,[r5,#0x2c] (unconditional here)
+        }
+        if (Pending is not { } pending) return;                                     // 0xA54930..0xA54938 ldr r0,[r6,#0xd8]; cmp r0,#0
+        var owner = (pending as IWwisePitchNodeSource)?.Owner ?? throw new WwiseMissingBehaviourException(
+            "M6-022 R5.3: the pending source's owner [[voice+0xD8]+0xC] (0xA5493C) is only available for a pitch-node source");
+        int result = WwiseVoiceSourceStart.StartA56650(pending, owner.Read1DC(), owner.Read1E0(), out bool ran);   // 0xA54940..0xA54948
+        if (ran && pending is not IWwiseStreamingVoiceSource { WritesSourceFormatInStartStream: true })
+            (StartStreamFormatWriter ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C26.5: the StartStream writers of pbi+0x158..0x162 (0xA72760..0xAB138C) are not built for the pending source's class; supply WwiseLiveVoice.StartStreamFormatWriter")).Invoke(owner, pending);
+        if (result == 2)                                                            // 0xA5494C cmp r0,#2; 0xA54950 streq r0,[r5,#0x28]
+        {
+            Buffer.Result = 2;
+            io.Code28 = 2;
+        }
+    }
 
     /// <summary>
     /// Opt-in to the earlier approximation of the render order (see <see cref="Render"/>) for a voice whose source has no pitch node (a test double, the in-memory ADPCM class whose body is unread) or that has no source.
@@ -1135,9 +1186,9 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// V5 pre-pass then the V6..V16 voice walk.
     /// <list type="number">
     /// <item><b>0x9D3CC0</b> advances bus/source tick counters (V5, C12); the tick list is a caller input.</item>
-    /// <item><b>0xA43D24</b> the ducking/volume pre-pass (V5a): <c>0xA55750</c> per active voice, the per-bus
-    /// <c>+0x88/+0x8C</c> dB/linear, <c>0xA4AF50</c> per voice, <c>0xA437E0</c> flagged buses descending,
-    /// <c>0xA4B4B0</c> per voice. Those callees are unread; this models the call order with seams.</item>
+    /// <item><b>0xA43D24</b> the ducking/volume pre-pass (V5a): <c>0xA55750</c> per active voice (built since batch 5f, C37.1: <see cref="PrePassVoicesA43D24"/>, <see cref="PrePassVoiceA55750"/>,
+    /// <see cref="RefreshVoiceGainA4B93C"/>), then the per-bus <c>+0x88/+0x8C</c> dB/linear, <c>0xA4AF50</c> per voice, <c>0xA437E0</c> flagged buses descending,
+    /// <c>0xA4B4B0</c> per voice, which are not adopted: the required <see cref="DuckPrePassTailA43D6C"/> seam.</item>
     /// <item><b>0xA39564</b> the node cleanup (V5b): clear bit 2 of <c>[node+0x1BE]</c> on the list
     /// <c>0x108DEC8</c>, optionally <c>0xA00494</c> per node, then <c>0x9F3BA4</c> per array element. The
     /// node/array objects are a caller seam.</item>
@@ -1150,8 +1201,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         // REQUIRED collaborator: a missing one throws and is never skipped, because the engine runs all three every pass.
         (AdvanceTickCounters ?? throw new WwiseMissingBehaviourException(
             "M6-022 V5 / M6-025 C24.1: 0x9D3CC0 (the pending-voice walk, WwisePlaybackBridge.WalkPendingVoices) runs at 0xA44978 on every voice pass; supply AdvanceTickCounters"))();
-        (DuckPrePass ?? throw new WwiseMissingBehaviourException(
-            "M6-022 V5a: 0xA43D24 (the ducking/volume pre-pass, called at 0xA4497C) is unread; supply DuckPrePass rather than skipping it"))();
+        PrePassA43D24();                                             // 0xA4497C bl 0xA43D24
         (NodeCleanup ?? throw new WwiseMissingBehaviourException(
             "M6-026 E1: 0xA39564 (WwisePlaybackLimiter.PerFrameA39564, called at 0xA44980) runs on every voice pass; supply NodeCleanup"))();
 
@@ -1256,9 +1306,96 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
                 "M6-026 7.5: voice vt+0x4C (0xA53558, the pause) is unread; supply PauseVoice4C"))(voice);
     }
 
-    /// <summary>V5a: <c>0xA43D24</c> (<c>0xA4497C</c>); its body is unread, so this is a REQUIRED collaborator (<see cref="VoicePass"/> throws when it is unset).</summary>
+    /// <summary>
+    /// V5a: an override of the whole of <c>0xA43D24</c> (<c>0xA4497C</c>) for a host or test that runs the pre-pass itself; when set, <see cref="PrePassA43D24"/> calls it and nothing else. When unset the pass runs
+    /// <see cref="PrePassVoicesA43D24"/> (C37.1) and then the required <see cref="DuckPrePassTailA43D6C"/>.
+    /// </summary>
     // fidelity: M6-022
     public Action? DuckPrePass { get; set; }
+
+    /// <summary>
+    /// The part of <c>0xA43D24</c> after the voice walk (<c>0xA43D6C..0xA43EFC</c>: the per-bus <c>+0x88 / +0x8C</c> ducking sums, <c>0xA4AF50</c> per voice, <c>0xA437E0</c> on the buses with <c>[bus+0x1CC] &amp; 2</c> and <c>0xA4B4B0</c> per voice;
+    /// V5a). C37.1 adopts only the voice walk, so this is a REQUIRED collaborator (a missing one throws and is never skipped).
+    /// </summary>
+    // fidelity: M6-022
+    public Action? DuckPrePassTailA43D6C { get; set; }
+
+    /// <summary>
+    /// CalcEffectiveParams as <c>0xA55750</c> reaches it (<c>0xA55888..0xA55894</c>: the PBI context's <c>vt+0x24(ctx, 0)</c>, <see cref="WwisePlayPath.CalcEffectiveParams"/> with no Play params). Required when a voice's PBI has bit 5 of
+    /// <c>[pbi+0xE8]</c> clear at the pre-pass.
+    /// </summary>
+    // fidelity: M6-022
+    public Action<WwisePlayingInstance>? CalcEffectiveParamsVt24 { get; set; }
+
+    /// <summary>
+    /// The part of <c>0xA4B93C</c> after the voice gain store (<c>0xA4B9BC..0xA4BC30</c>: <c>0x9BE28C</c>, <c>0x9BF8E4</c>, <c>0xA5E694</c>, the send table lazy allocation, <c>0x9BDA88</c>, <c>0x9BD368</c>, <c>0x9D4228</c> and the latch of bit 1 of
+    /// <c>[voice+0xCD]</c>); C37.1 adopts only the gain, so this is a REQUIRED collaborator of <see cref="RefreshVoiceGainA4B93C"/>.
+    /// </summary>
+    // fidelity: M6-022
+    public Action<WwiseLiveVoice>? VoiceRefreshTailA4B9BC { get; set; }
+
+    /// <summary>
+    /// <c>0xA43D24</c> (C37.1 L7-10, V5a): with <see cref="DuckPrePass"/> set the override; otherwise the voice walk <see cref="PrePassVoicesA43D24"/> and the required tail <see cref="DuckPrePassTailA43D6C"/>.
+    /// </summary>
+    // fidelity: M6-022
+    private void PrePassA43D24()
+    {
+        if (DuckPrePass is { } whole) { whole(); return; }
+        PrePassVoicesA43D24();                                       // 0xA43D24..0xA43D6C
+        (DuckPrePassTailA43D6C ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V5a: 0xA43D6C..0xA43EFC (the per-bus ducking sums, 0xA4AF50, 0xA437E0, 0xA4B4B0) is not adopted by C37.1; supply DuckPrePassTailA43D6C (or DuckPrePass for the whole pre-pass)"))();
+    }
+
+    /// <summary>
+    /// The voice walk of <c>0xA43D24</c> (<c>0xA43D24..0xA43D6C</c>, C37.1 L7-10): the voice list (<c>[0x108DF54+0x14]</c>, link <c>[+0xD0]</c>) in order, and for every voice with <c>[voice+0xDC] == 1</c> <c>0xA55750(voice)</c>.
+    /// </summary>
+    // fidelity: M6-022
+    public void PrePassVoicesA43D24()
+    {
+        for (int i = 0; i < Voices.Count; i++)                       // 0xA43D30..0xA43D68
+        {
+            var voice = Voices[i];
+            if (voice.State == 1) PrePassVoiceA55750(voice);         // 0xA43D4C ldr r3,[r4,#0xdc]; cmp r3,#1; 0xA43D5C bl 0xA55750
+        }
+    }
+
+    /// <summary>
+    /// <c>0xA55750(voice)</c> (C37.1 L7-10, <c>0xA55750..0xA55890</c>): <c>pbi = [[voice+0xD4]+0xC]</c>. <c>[pbi+0xE8] &amp; 0x20</c> clear: the context's <c>vt+0x24</c> (CalcEffectiveParams, <see cref="CalcEffectiveParamsVt24"/>); set with
+    /// <c>[pbi+0xE9]</c> bit 0 set: <c>vt+0x28 = 0x9FF414 -> 0x9FF368</c> (<see cref="WwisePlayPath.Recompute9FF368"/>: <c>[pbi+0x3C] = [pbi+0x98] + [pbi+0x118]</c>, <c>[pbi+0x40]</c> from the factors, the dirty bit cleared); set with the bit clear: nothing.
+    /// Then <c>[pbi+0x1BE] &amp; 0x14 == 0</c>: <c>0xA4B93C(voice)</c> (<see cref="RefreshVoiceGainA4B93C"/>); otherwise <c>0xA55790</c> (<c>0xA0275C</c> and the stop path <c>0xA557A0..0xA55850</c>), which is not adopted (RECOVERABLE_GAP, a visible stop).
+    /// </summary>
+    // fidelity: M6-022
+    public void PrePassVoiceA55750(WwiseLiveVoice voice)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        var pbi = OwnerOfSource(voice);                              // 0xA55750..0xA5575C ldr r3,[r0,#0xd4]; ldr r5,[r3,#0xc]
+        if ((pbi.Flags0E8 & 0x20) == 0)                              // 0xA55768..0xA55774 ands r1,r1,#0xff; beq 0xA55888
+            (CalcEffectiveParamsVt24 ?? throw new WwiseMissingBehaviourException(
+                "M6-022 L7-10: 0xA55888..0xA55894 calls the context's vt+0x24 (CalcEffectiveParams, r1 = 0); supply WwiseVoiceBusPass.CalcEffectiveParamsVt24"))(pbi);
+        else if ((pbi.Flags0E9 & 1) != 0)                            // 0xA55778..0xA55780 tst r3,#1; bne 0xA5585C
+            WwisePlayPath.Recompute9FF368(pbi);                      // 0xA55860..0xA55868 ctx vt+0x28 = 0x9FF414 -> 0x9FF368
+        if ((pbi.Flags1BE & 0x14) != 0)                              // 0xA55784..0xA5578C (and 0xA5586C..0xA55874 after the vt+0x28 call)
+            throw new WwiseMissingBehaviourException(
+                "M6-022 L7-10: [pbi+0x1BE] & 0x14 != 0 takes 0xA55790 (0xA0275C, then the stop path 0xA557A0..0xA55850); not adopted (RECOVERABLE_GAP)");
+        RefreshVoiceGainA4B93C(voice);                               // 0xA55878..0xA5587C bl 0xA4B93C(voice)
+    }
+
+    /// <summary>
+    /// <c>0xA4B93C(voice)</c>'s gain store (C37.1 L7-10, <c>0xA4B93C..0xA4B9B8</c>): <c>ctx = [voice+8]</c> (the owner PBI); <c>y = [ctx+0x30] * 0.05f</c> (<c>[pbi+0x3C]</c>); <c>y &lt; -37.0f</c> gives 0.0f, else the engine's fast pow of <c>0xA4B94C..0xA4B9A8</c>
+    /// (binary32, non-fused, the constants as bits: <see cref="WwisePlaybackLimiter.Lin9BEB30"/> is the same code); <c>[voice+0x1C] = [ctx+0x34] * lin</c> (<c>[pbi+0x40]</c> times it). The rest of the function (<c>0xA4B9BC..</c>) is
+    /// <see cref="VoiceRefreshTailA4B9BC"/>, required.
+    /// </summary>
+    // fidelity: M6-022, M6-010
+    public void RefreshVoiceGainA4B93C(WwiseLiveVoice voice)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        var pbi = voice.BusOwner8 as WwisePlayingInstance ?? throw new WwiseMissingBehaviourException(
+            "M6-022 L7-10: 0xA4B93C reads ctx = [voice+8] (0xA4B944); the voice has no owner PBI in BusOwner8");
+        float lin = WwisePlaybackLimiter.Lin9BEB30(pbi.Volume3C);   // 0xA4B94C..0xA4B9A8 (0xA4BAA8 for y < -37.0f)
+        voice.OutputGain = pbi.MuteFade40 * lin;                     // 0xA4B9AC vldr s15,[r5,#0x34]; 0xA4B9B4 vmul.f32; 0xA4B9B8 vstr s14,[r4,#0x1c]
+        (VoiceRefreshTailA4B9BC ?? throw new WwiseMissingBehaviourException(
+            "M6-022 L7-10: 0xA4B9BC..0xA4BC30 (0x9BE28C, 0x9BF8E4, 0xA5E694, the send table, 0x9BDA88, 0x9BD368, 0x9D4228) follows the gain store and is not adopted; supply WwiseVoiceBusPass.VoiceRefreshTailA4B9BC"))(voice);
+    }
 
     /// <summary>V5b: <c>0xA39564</c> (<c>0xA44980</c>), <see cref="WwisePlaybackLimiter.PerFrameA39564"/>; a REQUIRED collaborator.</summary>
     // fidelity: M6-026

@@ -545,7 +545,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
             if (r6 == 0) pbi.Flags1BD |= 0x20;                                // 0xA37AC8 ldrbeq ..; orreq #0x20
         }
         limiter.TermPbiA029DC(pbi);                                           // vt+0x10
-        pbi.LimiterArray1EC.Items.Clear();                                    // vt+4 (0x9FF54C) frees pbi+0x1EC
+        limiter.DestroyPbiVt4(pbi);                                           // vt+4 (0x9FF54C) frees pbi+0x1EC (and removes the RTPC listener)
         Instances.Remove(pbi);                                                // pool free
     }
 
@@ -562,7 +562,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
         limiter.RemoveFromGlobalPbiList(pbi);                                 // 0xA38570..0xA38598
         StartList.Nodes.RemoveAll(n => ReferenceEquals(n.Pbi, pbi));          // 0x9D3470
         limiter.TermPbiA029DC(pbi);                                           // vt+0x10
-        pbi.LimiterArray1EC.Items.Clear();                                    // vt+4 (0x9FF54C)
+        limiter.DestroyPbiVt4(pbi);                                           // vt+4 (0x9FF54C)
         Instances.Remove(pbi);                                                // pool free
     }
 
@@ -625,6 +625,9 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
             FlagsCD = 1,                                                         // 0xA54650: +0xCD bit0
             State = 0,                                                           // C25.1: [voice+0xDC] = 0 (0xA54798)
             OutputGain = 0f,                                                     // C25.1: [voice+0x1C] = 0 (0xA54678)
+            PositionRepository = PositionRepository,                             // G = *0x108D8F8, which 0xA548C0 hands to 0xA05574 (C31 R5.3)
+            StartStreamFormatWriter = (pbi, source) => (SourceFormatWriter15C ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C26.5: the source StartStream writers of pbi+0x15C..0x15F (0xA72760..0xAB138C) are not built; supply SourceFormatWriter15C")).Invoke(pbi, source),   // 0xA54948 -> 0xA56650 -> vt+0x28
         };
         // [voice+0xF0] stays 0 (C25.5: the ctor zeroes it, 0xA5470C..0xA54764); the voice init sets it from pbi+0x15C.
         // 0xA54650 (0xA43094): the voice ctor sets voice+0xCD bit0 (0xA54674 mov r7,#1; 0xA54710 orr r2,r2,r7;

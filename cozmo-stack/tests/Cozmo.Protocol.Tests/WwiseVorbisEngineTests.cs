@@ -446,16 +446,19 @@ public class WwiseVorbisEngineTests
     [Fact]
     public void P02_TheVoicesRenderOrderMatchesTheEngineThroughTheLiveRenderEntry()
     {
-        // 0xA44630 (research P02 and the verifier's read), expected values from the engine itself (emu_decode_cases.py pull_cases: the real 0xA44630, 0xA53134 and 0xA52D4C on a hand-built voice; the slot, source and
-        // callee bodies the harness names log the call and leave the scripted result): the vt+0x38 walk down the slots (an empty one skipped, 0x2B to the next lower, other than 0x2D / 0x11 returns), the pitch pass (with
-        // frames held it calls the intake and not the source), the source loop (u16[0x1052440] into [state+0xC] before every call, a 0x2E calling the not-ready handler and returning, the intake converting a 0x2D with no
-        // frames to 0x2B so the source is called again), the vt+0x3C walk up, 0xA548C0 and the early return before the notify. The consumption 0xA52DA8 is unread: reaching it ends the run (a stop in both).
+        // 0xA44630 (research P02 and the verifier's read), expected values from the engine itself (emu_decode_cases.py pull_cases: the real 0xA44630, 0xA53134, 0xA52D4C, and since batch 5f the real 0xA548C0 with its callees
+        // 0x9CBACC, 0xA56650 and 0xA05574 on a hand-built voice; the slot, source and callee bodies the harness names log the call and leave the scripted result): the vt+0x38 walk down the slots (an empty one skipped, 0x2B to the
+        // next lower, other than 0x2D / 0x11 returns), the pitch pass (with frames held it calls the intake and not the source), the source loop (u16[0x1052440] into [state+0xC] before every call, a 0x2E calling the not-ready
+        // handler and returning, the intake converting a 0x2D with no frames to 0x2B so the source is called again), the vt+0x3C walk up, 0xA548C0 (C31 R5.3: the play-position update, the stop offset clamp with an unsigned 32-bit
+        // compare and the byte [state+0x2C], the pending source's start through 0xA56650 and its result 2) and the early return before the notify. The consumption 0xA52DA8 is unread: reaching it ends the run (a stop in both).
         // 0xA53134 (V10) is implemented in full: its pre-steps (byte [node+0xB9] = 0, [node+0x48], vt+0x20 = 0xA5668C, 0xA47384 with the flag from u16[pbi+0x1BE] & 0x380) and the 0x11 on the node's last-buffer byte are in the expected events.
-        // TEST DOUBLES: the not-ready handler 0xA55C14, 0xA548C0 and 0xA47384 SetPitch (M6-004's resampler is not faithful to it: it logs its arguments).
+        // TEST DOUBLES: the not-ready handler 0xA55C14, 0xA47384 SetPitch (M6-004's resampler is not faithful to it: it logs its arguments), the pending source's StartStream body (it logs its two arguments and returns the scripted
+        // result) and its format writer (the engine's stub writes none).
         Assert.NotEmpty(WwiseVorbisEngineOracle.Pull);
-        foreach (var (name, (slotSpec, node, srcSpec, s548, pitch, f1be, b8, step)) in WwiseVorbisEngineOracle.Pull)
+        foreach (var (name, (slotSpec, node, srcSpec, pitch, f1be, b8, extraSpec, step)) in WwiseVorbisEngineOracle.Pull)
         {
             var events = new List<string>();
+            var extra = extraSpec.Length == 0 ? new Dictionary<string, string>() : extraSpec.Split(';').Select(x => x.Split('=', 2)).ToDictionary(x => x[0], x => x[1]);
             var src = new PitchScriptSource(events, srcSpec.Length == 0 ? Array.Empty<(int, int)>() : srcSpec.Split(';').Select(x => (int.Parse(x.Split(':')[0]), int.Parse(x.Split(':')[1]))).ToArray());
             var voice = new WwiseLiveVoice(1, 64) { Source = src };
             voice.Buffer.Result = 0x2B;
@@ -474,8 +477,10 @@ public class WwiseVorbisEngineTests
                     };
                 }
             voice.SourceNotReadyA55C14 = (_, _) => events.Add("handler");
-            voice.PendingSourceA548C0 = v => { events.Add("548"); v.Buffer.Result = s548; };
             voice.ResamplerSetPitchA47384 = (pt, interp) => events.Add($"pitch({(pt % 1 == 0 ? pt.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) : pt.ToString("R", System.Globalization.CultureInfo.InvariantCulture))},{(interp ? 1 : 0)})");   // TEST DOUBLE of 0xA47384 (M6-004): logs its arguments
+            voice.StartStreamFormatWriter = (_, _) => { };                                       // TEST DOUBLE: the harness's StartStream stub writes no format bytes
+            var repo = new WwisePlayPositionRepository(() => 1000);                              // the harness's clock() returns 1000
+            voice.PositionRepository = repo;
             src.Pbi.Pitch44 = (float)pitch;
             src.Pbi.Flags1BE = (byte)f1be;
             src.PitchNode.ByteB8 = (byte)b8;
@@ -484,10 +489,32 @@ public class WwiseVorbisEngineTests
             voice.Buffer.ValidFrames = 0x1234;
             src.PitchNode.Held60.ValidFrames = (ushort)node;
             src.PitchNode.Consume = (_, _, _) => { events.Add("consume"); throw new RunStopped(); };
+            if (extra.TryGetValue("valid", out var v)) src.Io.ValidFrames = ushort.Parse(v);
+            if (extra.TryGetValue("f1f8", out v)) src.Pbi.Field1F8 = uint.Parse(v);
+            if (extra.TryGetValue("flags4", out v)) src.Pbi.Flags4 = uint.Parse(v);
+            if (extra.TryGetValue("pos", out v)) src.Io.Position = uint.Parse(v);
+            if (extra.TryGetValue("w1c", out v)) src.Io.Word1C = uint.Parse(v);
+            if (extra.TryGetValue("total", out v)) src.Io.Total = uint.Parse(v);
+            if (extra.TryGetValue("rate", out v)) src.Io.Rate = uint.Parse(v);
+            PitchScriptSource? pending = null;
+            if (extra.TryGetValue("pend", out v))
+            {
+                var pp = v.Split('/').Select(int.Parse).ToArray();
+                pending = new PitchScriptSource(events, Array.Empty<(int, int)>()) { StartResult = pp[0], LogStart = true, StartStreamSucceeded = pp[1] != 0 };
+                pending.Pbi.Word1DC = (uint)pp[2]; pending.Pbi.Word1E0 = (uint)pp[3];
+                voice.Pending = pending;
+            }
+            if (extra.TryGetValue("repo", out v))
+            {
+                repo.Records.Add(new WwisePlayPositionRecord { PlayingId = 0x4321, Source = src });
+                repo.Capacity = 1;
+                repo.Stamp20 = long.Parse(v);
+            }
             bool stopped = false;
             try { voice.Render(_ => events.Add("notify")); }
             catch (RunStopped) { stopped = true; }
-            string got = $"{string.Join(",", events)} | end={(stopped ? "stop" : "ret")} res={voice.Buffer.Result:x} n48={src.PitchNode.Word48} b9={src.PitchNode.ByteB9}";
+            string recs = string.Join(";", repo.Records.Select(r => $"{r.PlayingId}/{(ReferenceEquals(r.Source, src) ? 1 : 0)}/{r.Stamp8}/{r.Word10}.{r.Word14}.{r.Word18}.{r.Word1C}"));
+            string got = $"{string.Join(",", events)} | end={(stopped ? "stop" : "ret")} res={voice.Buffer.Result:x} n48={src.PitchNode.Word48} b9={src.PitchNode.ByteB9} v={src.Io.ValidFrames} b2c={(voice.Buffer.HasBusParam ? 1 : 0)} s1f8={src.Pbi.Field1F8:x} lat={(pending is null ? -1 : pending.StartStreamSucceeded ? 1 : 0)} repo=[{recs}]";
             Assert.True(step == got, $"{name}: engine [{step}] C# [{got}]");
         }
     }
@@ -495,7 +522,8 @@ public class WwiseVorbisEngineTests
     [Fact]
     public void P02_TheEngineOrderNeedsItsUnreadBodiesAsVisibleSeams()
     {
-        // 0xA548C0, 0xA47384 (the engine's SetPitch, not the C# resampler's) and 0xA55C14 are not available: reaching one without its seam throws (MISSING), never a default; an insert-FX slot with no body for vt+0x38 / vt+0x3C is the same.
+        // 0xA47384 (the engine's SetPitch, not the C# resampler's) and 0xA55C14 are not available: reaching one without its seam throws (MISSING), never a default; an insert-FX slot with no body for vt+0x38 / vt+0x3C is the same.
+        // 0xA548C0 is built (C31 R5.3); what it needs and the inventory does not settle is a visible stop too: the repository, the uninitialised [state+0x1C], a pending source with no owner or no format writer.
         WwiseLiveVoice Rig(out PitchScriptSource src, params (int, int)[] script)
         {
             src = new PitchScriptSource(new List<string>(), script);
@@ -515,9 +543,72 @@ public class WwiseVorbisEngineTests
         var v4 = Rig(out _, (0x2D, 128));
         v4.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot();
         Assert.Throws<WwiseMissingBehaviourException>(() => v4.Render());                          // the slot's vt+0x38
-        var v5 = Rig(out _);
+        // 0xA548C0 on its own through the live entry (slot 3 hands over to filter A): nothing to do runs without any seam ...
+        var v5 = Rig(out var s5);
         v5.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
-        Assert.Throws<WwiseMissingBehaviourException>(() => v5.Render());                          // 0xA548C0
+        v5.Render();
+        Assert.Equal(0x2D, v5.Buffer.Result);
+        // ... the position update needs the repository and [state+0x1C] (uninitialised stack in the engine unless a source writes it)
+        var v6 = Rig(out var s6);
+        v6.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
+        s6.Pbi.Flags4 = 0x100000; s6.Io.Position = 5;
+        Assert.Throws<WwiseMissingBehaviourException>(() => v6.Render());                          // no repository
+        v6.PositionRepository = new WwisePlayPositionRepository(() => 0);
+        Assert.Throws<WwiseMissingBehaviourException>(() => v6.Render());                          // [state+0x1C] never written
+        s6.Io.Word1C = 0x3F800000;
+        v6.Render();
+        Assert.Single(v6.PositionRepository.Records);
+        // ... a pending source needs its owner (only a pitch-node source has one here) and, for a class that does not write the format bytes in StartStream, the writer
+        var v7 = Rig(out _);
+        v7.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
+        v7.Pending = new OwnerlessSource();
+        Assert.Throws<WwiseMissingBehaviourException>(() => v7.Render());
+        var v8 = Rig(out _);
+        v8.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
+        v8.Pending = new PitchScriptSource(new List<string>(), Array.Empty<(int, int)>());
+        Assert.Throws<WwiseMissingBehaviourException>(() => v8.Render());                          // StartStream ran, its format writer is unwired
+        // the current source with no owner PBI
+        var v9 = new WwiseLiveVoice(1, 64) { Source = new OwnerlessPitchSource() };
+        v9.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
+        v9.Buffer.Result = 0x2B;
+        v9.ResamplerSetPitchA47384 = (_, _) => { };
+        Assert.Throws<WwiseMissingBehaviourException>(() => v9.Render());
+    }
+
+    /// <summary>The 0xA548C0 / PBI vt+0x58 getter 0x9CBACC on its own: returns [pbi+0x1F8] and stores -1 (R4.8).</summary>
+    [Fact]
+    public void R4_8_TheStopOffsetGetterReturnsTheOffsetAndStoresMinusOne()
+    {
+        var pbi = NewPbi();
+        Assert.Equal(0xFFFFFFFFu, pbi.TakeStopOffset9CBACC());                                     // the constructor stores -1 (0xA00318)
+        pbi.Field1F8 = 1234;
+        Assert.Equal(1234u, pbi.TakeStopOffset9CBACC());                                           // 0x9CBAD4 ldr r0,[r0,#0x1f8]
+        Assert.Equal(0xFFFFFFFFu, pbi.Field1F8);                                                   // 0x9CBAD8 str r2,[r3,#0x1f8] with r2 = -1
+        Assert.Equal(0xFFFFFFFFu, pbi.TakeStopOffset9CBACC());
+    }
+
+    /// <summary>A pending source that is not a pitch-node source: it has no owner PBI to read (R5.3: pbi' = [[voice+0xD8]+0xC]).</summary>
+    private sealed class OwnerlessSource : IWwiseVoiceSource
+    {
+        public int Channels => 1;
+        public int SampleRate => WwiseRuntimeSettings.MixRateHz;
+        public int Render(WwiseVoiceBuffer buffer) => 0x2D;
+        public int StartStream(uint arg1DC, uint arg1E0) => 1;
+        public bool StartStreamSucceeded { get; set; }
+    }
+
+    /// <summary>A current source whose owner is unavailable.</summary>
+    private sealed class OwnerlessPitchSource : IWwisePitchNodeSource
+    {
+        public int Channels => 1;
+        public int SampleRate => WwiseRuntimeSettings.MixRateHz;
+        public bool HasPitchNode => true;
+        public WwiseDecodeState Io { get; } = new();
+        public WwisePitchNodeIntake PitchNode { get; } = new(() => { });
+        public WwisePlayingInstance? Owner => null;
+        public int Render(WwiseVoiceBuffer buffer) => 0x2D;
+        public int StartStream(uint arg1DC, uint arg1E0) => 1;
+        public bool StartStreamSucceeded { get; set; }
     }
 
     private sealed class RunStopped : Exception { }
@@ -527,8 +618,10 @@ public class WwiseVorbisEngineTests
     {
         private readonly List<string> _events;
         private readonly Queue<(int Code, int Valid)> _script;
-        public WwisePlayingInstance Pbi { get; } = NewPbi();
+        public WwisePlayingInstance Pbi { get; } = new(new WwisePlayInitParams { PlayingId = 0x4321, TargetNodeId = 1 }, 1, new WwiseSourceDescriptor(0, 1, 5, 0, 0), new byte[0x44], null, continuous: false);   // the harness's playing id [pbi+0x140] = 0x4321
         public WwisePlayingInstance? Owner => Pbi;
+        public int StartResult { get; set; } = 1;
+        public bool LogStart { get; set; }
         public PitchScriptSource(List<string> events, (int Code, int Valid)[] script)
         {
             _events = events;
@@ -550,7 +643,11 @@ public class WwiseVorbisEngineTests
             buffer.Result = code;
             return code;
         }
-        public int StartStream(uint arg1DC, uint arg1E0) => 1;
+        public int StartStream(uint arg1DC, uint arg1E0)
+        {
+            if (LogStart) _events.Add($"start({arg1DC},{arg1E0})");
+            return StartResult;
+        }
         public bool StartStreamSucceeded { get; set; }
     }
 

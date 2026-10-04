@@ -113,7 +113,7 @@ public class WwiseRtpcCurveTests
                 store.Apply(new WwiseStmgParam(s.Rtpc, 0f, 0, 0f, 0f, false));
                 store.AddSubscription(new WwiseRtpcSubscription
                 {
-                    Key1 = s.Key, Param = s.Param, Type = 0, Accumulate = acc,
+                    Key1 = s.Key, Param = s.Param, Type = 2, Accumulate = acc,       // [e+0x24] = 2: a node subscription (C37.1); with no listener registered a set delivers nothing
                     Curves = new[] { new WwiseRtpc(s.Rtpc, 0, acc, s.Param, 0, (byte)scaling, Points(WwiseCurveOracle.Curves[curve])) },
                 });
             }
