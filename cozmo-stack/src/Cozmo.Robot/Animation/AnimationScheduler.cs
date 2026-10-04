@@ -469,6 +469,18 @@ public sealed class AnimationScheduler
     /// <summary>Where the sound for an audio keyframe comes from (M6); null leaves audio keyframes silent.</summary>
     public IAnimationAudioSource? AudioSource { get; set; }
 
+    // fidelity: M3-024
+    /// <summary>
+    /// <c>RobotAudioClient</c>'s output source byte (<c>[client+0x3c]</c>), which <c>CreateAudioAnimation</c> 0x00599FF0 switches on (0x0059A070..0x0059A0B6) when
+    /// InitStream asks for the animation's audio (A12). The client constructor leaves it 0 (None, 0x005994BC/0x005994E6) until HandleFirmwareVersion sets it
+    /// (<see cref="CozmoEngine"/> robot: sim null gives 2 = PlayOnRobot, else 1 = PlayOnDevice). The live robot's <c>CozmoAnimations</c> wires this to that value
+    /// (a null value is the constructor's 0). Null here means a scheduler with no <c>RobotAudioClient</c> at all (a standalone scheduler driven by a tool or a
+    /// test): it keeps the on-robot stand-in and does not branch.
+    /// </summary>
+    public Func<RobotAudioOutputSource?>? OutputSource { get; set; }
+
+    private bool _reportedDeviceAudio;
+
     /// <summary>The idle and neutral animations' source (A2, A29). Null: no idle animation can be picked.</summary>
     public IAnimationCatalog? Catalog { get; set; }
 
@@ -815,9 +827,54 @@ public sealed class AnimationScheduler
         }
         _endSent = anim.IsEmpty;
         _startSent = false;
-        _audio = anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
+        _audio = CreateAudioAnimationLocked(anim);
         if (!anim.IsLive) _tlc.RemoveKeepFaceAlive(99);
         _seamDueMs = _nowMs;
+    }
+
+    // fidelity: M3-024
+    /// <summary>
+    /// <c>RobotAudioClient::CreateAudioAnimation(anim)</c> 0x00599FF0, the call InitStream makes (A12). An audio animation that is still current is aborted and cleared first
+    /// (0x00599FF8..0x0059A06C; the engine also logs "CurrentAnimation '%s' state: %s is NOT Null when creating a new animation", which needs the engine's
+    /// state names and is not built for this stand-in). Then the output source byte decides (0x0059A070..0x0059A0B6):
+    /// <list type="bullet">
+    /// <item>2 (PlayOnRobot) constructs <c>RobotAudioAnimationOnRobot</c> (game object 7): the stand-in <see cref="AudioAnimation"/> streams its frames to the robot.</item>
+    /// <item>1 (PlayOnDevice) constructs <c>RobotAudioAnimationOnDevice</c> (game object 6), whose <c>PopRobotAudioMessage</c> 0x00597514 stores a null result first (0x00597530),
+    /// so no audio message ever goes to the robot (silence in every frame); its base <c>InitAnimation</c> 0x00596814 runs the RobotAudio track to its end
+    /// (<c>MoveToNextKeyFrame</c> until the iterator is the end, 0x00596898..0x00596914). The device-side playback it schedules (the keyframe events posted through
+    /// <c>Dispatch::After</c>, 0x00597562..0x005975A2) has no device audio output in this stack and is reported MISSING once per process (ReportMissing dedupes by message); the audio-reference draws InitAnimation
+    /// makes per keyframe are not made.</item>
+    /// <item>0 (None) clears the animation's RobotAudio track and creates nothing (0x0059A11C..0x0059A12E).</item>
+    /// <item>any other value creates nothing and leaves the track (0x0059A07E, 0x0059A130).</item>
+    /// </list>
+    /// A scheduler with no client (<see cref="OutputSource"/> null) keeps the on-robot stand-in.
+    /// </summary>
+    private static void SteppedBehavior_ReportPostConstruction() =>
+        Behavior.SteppedBehavior.ReportMissing("RobotAudioClient::CreateAudioAnimation post-construction check 0x0059A0BA: a constructed animation whose state byte is 4 or 5 (AnimationCompleted / AnimationError, set by InitAnimation 0x00596948 / 0x00596972) is deleted, logged and [client+0x38] set to 0; the stand-in has no state byte, so the check is not made");
+
+    private AudioAnimation? CreateAudioAnimationLocked(StreamAnimation anim)
+    {
+        if (_audio is not null) { _audio.Abort(); _audio = null; }
+        SteppedBehavior_ReportPostConstruction();
+        if (OutputSource is not { } provider) return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
+        switch ((byte)(provider() ?? RobotAudioOutputSource.None))
+        {
+            case 2:
+                return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
+            case 1:
+                anim.RobotAudio.MoveToEnd();
+                if (!_reportedDeviceAudio)
+                {
+                    _reportedDeviceAudio = true;
+                    Log?.Invoke("warning: MISSING: RobotAudioClient::CreateAudioAnimation: the output source is 1 (PlayOnDevice): RobotAudioAnimationOnDevice (0x005974B0..0x00597687) posts the keyframe events on the device through Dispatch::After (0x00597562..0x005975A2); this stack has no device audio output, so no sound plays, and no audio is streamed to the robot (M3-024)");
+                }
+                return null;
+            case 0:
+                anim.RobotAudio.Clear();
+                return null;
+            default:
+                return null;
+        }
     }
 
     // ================================================================== idle stack (A30)

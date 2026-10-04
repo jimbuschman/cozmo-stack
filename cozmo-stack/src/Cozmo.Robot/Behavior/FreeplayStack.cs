@@ -197,7 +197,30 @@ public sealed class FreeplayStack : IDisposable
         void onCharger(bool on) => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger, on);
         robot.Sensors.OnChargerPlatformChanged += onCharger;
         stack._unsubscribe.Add(() => robot.Sensors.OnChargerPlatformChanged -= onCharger);
+        // fidelity: M15-015
+        // The engine's tracker exists from AIComponent construction, so its pause set already reflects the robot when the freeplay activity starts:
+        // BehaviorManager::InitConfiguration pauses GameControl (0x005A0E48..0x005A0E56, inventory M15 row 37), the robot's own OffTreads and OnCharger
+        // transitions (0x005121F4, 0x00511DB0) have set or cleared their flags as they happened, and SetCurrentActivity(Freeplay) (0x005A120A..0x005A1220)
+        // clears GameControl. This stack is created after the robot's state may already be off treads or on the charger, so those two flags are seeded
+        // from the robot's current state between the GameControl pause and its clear. Clearing GameControl last also stamps the resume time when the set
+        // becomes empty (ClearFreeplayPauseFlag 0x0056EFF8), which the earlier never-paused GameControl left at zero.
+        tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl, true);
+        if (robot.Sensors.OffTreads.Current != OffTreadsState.OnTreads) tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, true);
+        if (robot.Sensors.OnChargerPlatform) tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger, true);
         tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.GameControl, false);
+
+        // fidelity: M10-011
+        // RobotToEngineImplMessaging::HandleFallingStopped 0x00535040: intensity > 1000.0f calls NeedsManager::RegisterNeedsActionCompleted(NeedsActionId 17)
+        // (0x005350AA..0x005350C2) before the DAS event and the FallingStopped broadcast (0x00535186..0x0053519C). The engine's NeedsManager is the stack's;
+        // Sensors raises NeedsActionCompleted(17) at that point in the handler and this stack's manager takes it. The ordinal's name is the Unity
+        // Anki.Cozmo.NeedsActionId[17] = Fall (the engine's enum-name pool at 0x00C1C690 lists ... DizzySoft, Fall, FistBump_Sparked ... in that order) and the
+        // shipped needs_action_config.json row "Fall".
+        void onNeedsAction(int ordinal)
+        {
+            if (ordinal == CozmoSensors.FallNeedsActionId) needs.RegisterNeedsActionCompleted("Fall");
+        }
+        robot.Sensors.NeedsActionCompleted += onNeedsAction;
+        stack._unsubscribe.Add(() => robot.Sensors.NeedsActionCompleted -= onNeedsAction);
 
         // M15-016: the live removal path drives the NeedsManager's disconnect transition.
         // fidelity: M15-016
@@ -267,7 +290,7 @@ public sealed class FreeplayStack : IDisposable
                 map.UpdateRobotPose(here, robot.Sensors.CliffDetectedNow, robot.State.Latest?.Timestamp ?? 0);
         }
         Freeplay.RefreshInputs(robot, vision, m, nowSec);
-        DataTracker.Update(nowSec);
+        DataTracker.Update();   // reads its own clock (0x0056EC1E..0x0056EC22)
         return Freeplay.Tick(nowSec, nowMs);
     }
 

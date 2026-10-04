@@ -344,43 +344,51 @@ public sealed class FreeplaySystem : IManagedActivity
         // The engine only touches the Spark pause flag (flag 1) after a pick (row 20), never here.
     }
 
+    /// <summary>The names of <c>Anki.Cozmo.ActivityID</c> (unity/scripts/csharp/Anki.Cozmo/ActivityID.cs), Invalid (0) excluded: what <c>ActivityIDFromString</c> 0x00766C68 knows.</summary>
+    private static readonly HashSet<string> KnownActivityIds = new(StringComparer.Ordinal)
+    {
+        "BuildPyramid", "Feeding", "Freeplay", "GatherCubes", "Hiking", "MeetCozmo", "NeedsSevereLowEnergy", "NeedsSevereLowRepair", "NeedsSevereLowPlayGetIn", "NothingToDo",
+        "PlayAlone", "PlayWithHumans", "PutDownDispatch", "Selection", "Singing", "Socialize", "SparksBuildPyramid", "SparksCozmoSings", "SparksFistBump", "SparksGatherCubes",
+        "SparksKnockOverCubes", "SparksPeekABoo", "SparksPickUpCube", "SparksPopAWheelie", "SparksPounceOnMotion", "SparksRollBlock", "SparksStackBlock", "SparksWorkout",
+        "StrictPriorityFreeplay", "SparksTrackLaser", "SparksFireTruckAlarm",
+    };
+
+    private static string? ActivityIdOrNull(string? name) => name is not null && KnownActivityIds.Contains(name) ? name : null;
+
     /// <summary>
-    /// <c>ActivityFreeplay::PickNewActivity</c>: child order. On the first pick and after a put-down the
-    /// desired-from-objects activity is tried ahead of the freeplay chain (<c>CalculateDesiredActivityFromObjects</c>
-    /// runs from the off-treads handler and on start; the config calls its names "parameters to decide between
-    /// activities on put down"); the sparks and the needs activities keep their priorities ahead of it
-    /// (INFERRED: the exact interleaving was not traced). <c>activityPriority</c> is dead data (M15-013), so
-    /// the order is the JSON array order the loader preserved.
+    /// <c>ActivityFreeplay::PickNewActivityForSpark(now, spark, askCurrent)</c> 0x005ADC44, the selection (the engine's <c>OnDeselected</c>/<c>OnSelected</c> and the pick log
+    /// stay with the caller): the activities are bucketed by the spark they require (<c>CreateFromConfig</c> 0x005AD478 files each at <c>[activity+0x4C]</c> in the config's
+    /// order, 0x005AD676..0x005AD69E), and the bucket for <paramref name="spark"/> is walked in that order (0x005ADC4E..0x005ADC68); a spark with no bucket warns and picks nothing
+    /// (0x005ADCD8). When the debug-forced id (+0x91, <see cref="ForcedActivity"/>) or the desired-from-objects id (+0x90, <c>CalculateDesiredActivityFromObjects</c> 0x005ADF4C: the
+    /// activity <c>desiredActivityNames</c> names for the faces and cubes known) is set, the only activity taken is the one with that id, +0x91 first (0x005ADC6A..0x005ADC7E): no
+    /// strategy is asked. Otherwise an activity other than the current one is taken when its strategy <c>WantsToStart</c> (0x005ADC8C..0x005ADC9E). The engine's fourth argument (askCurrent) is not a
+    /// parameter here: with it false the current activity is skipped (0x005ADCA2..0x005ADCA4), which is <paramref name="barred"/>; the true case (the current activity kept when its strategy does not
+    /// <c>WantsToEnd</c>, 0x005ADCA6..0x005ADCB0) is decided by the caller's keep/end logic before it asks for a pick. The chooser is not consulted: its null pick is the caller's "chose no behaviour" branch. The desired-from-objects id is computed here on the first
+    /// pick and after a put-down and cleared by the pick (0x005AE5E0..0x005AE5E8).
     /// </summary>
     // fidelity: M15-013
     public Activity? PickNewActivity(double nowSec, out string reason, Activity? barred = null)
     {
-        var order = Freeplay.SubActivities.ToList();
-        if (ForcedActivity is { } forced && order.FirstOrDefault(a => a.Id == forced) is { } f) { reason = $"debug is forcing '{forced}'"; return f; }
         var desiredId = _pickDesiredFirst ? DesiredActivityFromObjects() : null;
         _pickDesiredFirst = false;
-        var candidates = new List<Activity>();
-        if (desiredId is not null && order.FirstOrDefault(a => a.Id == desiredId) is { } d)
-        {
-            static bool KeepsPriority(Activity a) => a.RequireSpark is not null || a.Strategy.Type is "Needs" or "SevereNeedTransition" or "Spark";
-            candidates.AddRange(order.Where(a => a != d && KeepsPriority(a)));
-            candidates.Add(d);
-        }
-        candidates.AddRange(order.Where(a => !candidates.Contains(a)));
+        var bucket = Freeplay.SubActivities.Where(a => a.Type != "Missing" && a.RequireSpark == Inputs.RequestedSpark).ToList();
+        if (bucket.Count == 0) { reason = $"no activities for the requested spark '{Inputs.RequestedSpark ?? "none"}'"; return null; }
         var notes = new List<string>();
-        foreach (var a in candidates)
+        // +0x91 first, then +0x90 (0x005ADC6A..0x005ADC76); a name the ActivityID enum does not know is 0 and forces nothing (ActivityIDFromString 0x0076706C..0x007670D4)
+        string? wanted = ActivityIdOrNull(ForcedActivity) ?? ActivityIdOrNull(desiredId);
+        foreach (var a in bucket)
         {
+            if (wanted is not null)
+            {
+                if (a.Id == wanted) { reason = (ForcedActivity is not null ? $"debug is forcing '{wanted}'" : "desired from faces and cubes") + "; " + string.Join(", ", notes); return a; }
+                continue;
+            }
             if (a == barred) { notes.Add($"{a.Id}: chose no behaviour and may not be repicked"); continue; }
-            if (a.Type == "Missing") { notes.Add($"{a.Id}: config missing"); continue; }
-            if (a.RequireSpark is not null && a.RequireSpark != Inputs.RequestedSpark) { notes.Add($"{a.Id}: needs spark {a.RequireSpark}"); continue; }
             if (!a.Strategy.WantsToStart(Inputs, nowSec, out var why)) { notes.Add($"{a.Id}: {why}"); continue; }
-            if (a.Chooser is null) { notes.Add($"{a.Id}: no chooser"); continue; }
-            var pick = a.Chooser.GetDesiredActiveBehavior(null, 0, _ctx, nowSec);
-            if (pick.Behavior is null) { notes.Add($"{a.Id}: picked no behavior ({pick.Reason})"); continue; }
-            reason = (a.Id == desiredId ? "desired from faces and cubes; " : $"priority {a.Priority}; ") + why + "; " + string.Join(", ", notes);
+            reason = $"priority {a.Priority}; " + why + "; " + string.Join(", ", notes);
             return a;
         }
-        reason = string.Join("; ", notes);
+        reason = wanted is not null ? $"the wanted activity '{wanted}' is not in the bucket for the requested spark" : string.Join("; ", notes);
         return null;
     }
 

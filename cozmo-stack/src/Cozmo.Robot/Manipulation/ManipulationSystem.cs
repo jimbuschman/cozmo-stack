@@ -59,6 +59,12 @@ public sealed class ManipulationSystem : IDisposable
             && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
     }
 
+    /// <summary>
+    /// The same seam as <c>BehaviorContext.AiExpressedNeedValue</c>: <c>[[[robot+0x264]+0x30]+0x14]</c>, the SevereNeedsComponent's severe NeedId (3 = none when unset or null).
+    /// <c>ShouldApplyDockingSquint</c> 0x005524AC reads it.
+    /// </summary>
+    public Func<Cozmo.Robot.Behavior.NeedId?>? AiExpressedNeedValue { get; set; }
+
     /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>
     public Func<double> ClockSec { get; set; } = () => Environment.TickCount64 / 1000.0;
 

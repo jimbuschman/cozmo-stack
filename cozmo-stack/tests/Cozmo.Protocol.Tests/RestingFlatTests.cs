@@ -33,7 +33,21 @@ public class RestingFlatTests
     [Fact]
     public void TheToleranceIsTenDegrees()
     {
-        Assert.Equal(10.0, StackBlocksBehavior.RestingFlatToleranceRad * 180 / Math.PI, 2);
+        // M12-012, 0x0063C66C..0x0063C670: movw r1,#0xb8c2 / movt r1,#0x3e32 -> binary32 0x3E32B8C2 exactly (not 0.174533 = 0x3E32B8C7)
+        Assert.Equal(0x3E32B8C2u, BitConverter.SingleToUInt32Bits((float)StackBlocksBehavior.RestingFlatToleranceRad));
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3E32B8C2), StackBlocksBehavior.RestingFlatToleranceRad);
+    }
+
+    /// <summary>
+    /// M12-012 boundary at the engine's float tolerance (0x0063C670): a cube tilted by the float one ulp below 0x3E32B8C2 is flat, one ulp above
+    /// is not (the old decimal 0.174533, 0x3E32B8C7, would have called 0x3E32B8C3..C6 flat).
+    /// </summary>
+    [Fact]
+    public void TheToleranceBoundaryIsTheBinary32TenDegrees()
+    {
+        float below = BitConverter.UInt32BitsToSingle(0x3E32B8C1), above = BitConverter.UInt32BitsToSingle(0x3E32B8C4);
+        Assert.True(CubeWith(Mat3.AboutY(below)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
+        Assert.False(CubeWith(Mat3.AboutY(above)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
     }
 
     /// <summary>

@@ -30,9 +30,12 @@ public class M12RVisBuildTests
         var goal = At(0, 0, 0, 0.3);
         var obj = At(30, 40, 12);
         Assert.True(CubePreActionPoses.DistanceThresholdMm(goal, obj, 0.5, out double twice, out double once));
-        double d = Math.Sqrt(30 * 30 + 40 * 40 + 12 * 12);          // 51.4198..: the z counts
-        Assert.Equal(d * Math.Sin(0.5), once, 9);
-        Assert.Equal(2 * d * Math.Sin(0.5), twice, 9);
+        // binary32 emulation of 0x00550102..0x00550164 (the z counts: 51.4198..); the relative translation of the identity-rotated goal at the origin is exact
+        float d = MathF.Sqrt(30f * 30f + 40f * 40f + 12f * 12f);
+        float eOnce = d * MathF.Sin(0.5f);
+        // the goal is yawed 0.3, so the double relative components differ from (30, 40, 12) in the last place before they become float: 2 ulp
+        Assert.True(Math.Abs(eOnce - (float)once) <= 2 * MathF.BitIncrement(eOnce) - 2 * eOnce);
+        Assert.Equal((float)once + (float)once, (float)twice);
         // the second pose expressed in the first: a goal 10 mm along the world X, object at the goal's own origin
         Assert.True(CubePreActionPoses.DistanceThresholdMm(At(10, 0, 0), At(10, 0, 0), 0.5, out _, out double zero));
         Assert.Equal(0.0, zero, 12);

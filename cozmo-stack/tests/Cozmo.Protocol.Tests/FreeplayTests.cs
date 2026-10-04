@@ -360,9 +360,9 @@ public class FreeplayTests
                 // the unconnected table: the engine's Load/robot-apply path passes connected=false (Appendix I4)
                 [NeedId.Play] = new[] { (0.0, 0.3) }, [NeedId.Repair] = new[] { (0.0, 0.0) }, [NeedId.Energy] = new[] { (0.0, 0.0) },
             },
-            new Dictionary<NeedId, IReadOnlyList<(double, NeedId, double)>>
+            new Dictionary<NeedId, IReadOnlyList<DecayModifierEntry>>
             {
-                [NeedId.Repair] = new[] { (0.5, NeedId.Play, 1.0), (0.3, NeedId.Play, 2.0) },
+                [NeedId.Repair] = new[] { new DecayModifierEntry(0.5, new[] { (NeedId.Play, 1.0) }), new DecayModifierEntry(0.3, new[] { (NeedId.Play, 2.0) }) },
             });
 
         var state = new NeedsState(cfg);
@@ -386,10 +386,10 @@ public class FreeplayTests
 
         // the damaged parts follow the repair level against 0.98, 0.6, 0.3
         Assert.Equal(new[] { 0.98, 0.6, 0.3 }, cfg.BrokenPartThresholds);
-        Assert.Equal(0, state.NumDamagedPartsForRepairLevel(1.0));
-        Assert.Equal(1, state.NumDamagedPartsForRepairLevel(0.7));
-        Assert.Equal(2, state.NumDamagedPartsForRepairLevel(0.5));
-        Assert.Equal(3, state.NumDamagedPartsForRepairLevel(0.1));
+        Assert.Equal(0, state.NumDamagedPartsForRepairLevel(1.0f));
+        Assert.Equal(1, state.NumDamagedPartsForRepairLevel(0.7f));
+        Assert.Equal(2, state.NumDamagedPartsForRepairLevel(0.5f));
+        Assert.Equal(3, state.NumDamagedPartsForRepairLevel(0.1f));
 
         // and the file round-trips, decaying for the time between the write and the read through the engine's
         // unconnected path (ApplyDecayForTimeSinceLastDeviceWrite(false), Appendix I4)
@@ -448,21 +448,23 @@ public class FreeplayTests
         var reports = new List<double>();
         tracker.ActiveFreeplayTime += reports.Add;
 
-        // Update alone only checks the send time; nothing accumulates until a send is due
-        tracker.Update(0); tracker.Update(10); tracker.Update(20);
+        // Update alone only checks the send time (it reads its own clock); nothing accumulates until a send is due
+        tracker.Update(); clock = 10; tracker.Update(); clock = 20; tracker.Update();
         Assert.Empty(reports);
         Assert.Equal(0, tracker.ActiveSeconds, 6);
-        tracker.Update(30);                                   // next send was now + 30
+        clock = 30;
+        tracker.Update();                                     // next send was 0 + 30.0f, and 30.0f >= 30.0f
         Assert.Single(reports);
-        Assert.Equal(30, reports[0], 6);                      // the accumulated 30 s, rounded
+        Assert.Equal(30, reports[0], 6);                      // the accumulated 30e9 ns, rounded
         Assert.Equal(0, tracker.ActiveSeconds, 6);
-        Assert.Equal(60, tracker.NextSendSec, 6);
+        Assert.Equal(60f, tracker.NextSendSec);
 
         // OffTreads pauses accumulation; pausing flushes the running segment 30..40 into the accumulator
         clock = 40;
         tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, true);
         Assert.Equal(10, tracker.ActiveSeconds, 6);
-        tracker.Update(60);                                   // the next send is due; paused, so only the flushed 10 is reported
+        clock = 60;
+        tracker.Update();                                     // the next send is due; paused, so only the flushed 10 is reported
         Assert.Equal(2, reports.Count);
         Assert.Equal(10, reports[1], 6);
 
@@ -470,12 +472,159 @@ public class FreeplayTests
         clock = 70;
         tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, false);
         clock = 80;
-        tracker.Update(80);                                   // next send is 90, so no report yet
+        tracker.Update();                                     // next send is 90, so no report yet
         Assert.Equal(2, reports.Count);
         Assert.Equal(0, tracker.ActiveSeconds, 6);        // Update does not accumulate; only SendData does
         tracker.ForceUpdate();                            // flushes the 70..80 segment
         Assert.Equal(3, reports.Count);
         Assert.Equal(10, reports[^1], 6);
+    }
+
+    /// <summary>
+    /// M15-015: the stack's tracker starts as the engine's would at this point. AIComponent's tracker exists before the activity starts;
+    /// BehaviorManager::InitConfiguration pauses GameControl (0x005A0E48..0x005A0E56) and SetCurrentActivity(Freeplay) clears it (0x005A120A..0x005A1220),
+    /// and the robot's own transitions have set OffTreads (0x005121F4) and OnCharger (0x00511DB0) as they happened. A robot already on the charger or off
+    /// its treads when the stack is created therefore starts with that flag set; one that is neither starts unpaused with the resume time stamped by the
+    /// GameControl clear (0x0056EFF8), not left at zero (which would make the first report the whole clock).
+    /// </summary>
+    [Fact]
+    public void M15_015_TheStackTrackerIsSeededWithTheRobotsChargerAndTreadsState()
+    {
+        var obb = ObbRoot();
+        Assert.NotNull(obb);
+        // on the charger
+        using (var rig = new Rig())
+        {
+            LoadAssets(rig, obb!);
+            rig.Robot.Sensors.SetOnChargerPlatform(true);
+            double clock = 12.5;
+            using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+            Assert.Equal(new[] { FreeplayPauseFlag.OnCharger }, stack.DataTracker.PausedFlags);
+        }
+        // off its treads (on its back for a second, 0x00511FBE..0x00511FD0)
+        using (var rig = new Rig())
+        {
+            LoadAssets(rig, obb!);
+            var c = rig.Robot.Sensors.OffTreads;
+            c.HeadCalibrated = true; c.IsPhysical = true;
+            uint t = 0;
+            RobotState S(uint ts, float ax, float az, float pitch, RobotStatusFlag fl) => new()
+            {
+                Timestamp = ts, Status = (uint)fl, Accel = new AccelData { X = ax, Y = 0, Z = az }, Gyro = new GyroData(), Pose = new RobotPose { Pitch = pitch },
+            };
+            for (int i = 0; i < 120; i++, t += 33) c.Update(S(t, 0, 9800, 0, 0), t);
+            float pitch = (float)OffTreadsClassifier.OnBackCentrePhysicalRad;
+            for (uint dt = 0; dt <= 1000; dt += 33) c.Update(S(t + dt, 9800, 0, pitch, RobotStatusFlag.IsPickedUp), t + dt);
+            c.Update(S(t + 1000, 9800, 0, pitch, RobotStatusFlag.IsPickedUp), t + 1000);
+            Assert.Equal(OffTreadsState.OnBack, c.Current);
+            double clock = 12.5;
+            using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+            Assert.Equal(new[] { FreeplayPauseFlag.OffTreads }, stack.DataTracker.PausedFlags);
+        }
+        // neither: unpaused, and the resume time is the creation time (12.5 s) rather than zero
+        using (var rig = new Rig())
+        {
+            LoadAssets(rig, obb!);
+            double clock = 12.5;
+            using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+            Assert.Empty(stack.DataTracker.PausedFlags);
+            Assert.Equal(12_500_000_000UL, stack.DataTracker.LastResumeNanos);
+            clock = 20;
+            stack.DataTracker.ForceUpdate();
+            Assert.Equal(0UL, stack.DataTracker.AccumulatedNanos);
+            Assert.Equal(20_000_000_000UL, stack.DataTracker.LastResumeNanos);
+        }
+    }
+
+    private static FreeplaySystem PickRig(Rig rig, Activity tree, IReadOnlyDictionary<string, IBehavior> bound, FreeplayInputs? inputs = null)
+    {
+        var ctx = Ctx(rig);
+        return new FreeplaySystem(new BehaviorManager(ctx), ctx, tree, bound, inputs ?? new FreeplayInputs());
+    }
+
+    private static Activity Act(string id, int priority, string behavior, IReadOnlyDictionary<string, IBehavior> bound, string? spark = null, ActivityStrategy? strategy = null) =>
+        new() { Id = id, Priority = priority, Strategy = strategy ?? new ActivityStrategy(), RequireSpark = spark, Chooser = new StrictPriorityChooser(new[] { behavior }, bound) };
+
+    /// <summary>
+    /// M15-013, PickNewActivityForSpark 0x005ADC44: the activities are bucketed by the spark they require (CreateFromConfig files each at [activity+0x4C], 0x005AD676..0x005AD69E) and only the
+    /// bucket for the requested spark is walked, in config order (0x005ADC4E..0x005ADC68), the first whose strategy WantsToStart (0x005ADC98) taking it. With no spark requested the activity
+    /// that requires a spark is not considered; with a spark requested the activity that requires none is not.
+    /// </summary>
+    [Fact]
+    public void M15_013_OnlyTheRequestedSparksBucketIsWalkedInConfigOrder()
+    {
+        using var rig = new Rig();
+        var plain = new Fake("plain"); var sparked = new Fake("sparked");
+        var bound = new Dictionary<string, IBehavior> { ["plain"] = plain, ["sparked"] = sparked };
+        // the sparked activity comes FIRST in the config order and its strategy would start: the unrequested spark still excludes it
+        var tree = Fp(Act("SparksFistBump", 1, "sparked", bound, spark: "FistBump"), Act("PlayAlone", 2, "plain", bound));
+        var fp = PickRig(rig, tree, bound);
+        Assert.Equal("PlayAlone", fp.Tick(0, 0).Activity);
+
+        using var rig2 = new Rig();
+        var fp2 = PickRig(rig2, Fp(Act("PlayAlone", 1, "plain", bound), Act("SparksFistBump", 2, "sparked", bound, spark: "FistBump")), bound, new FreeplayInputs { RequestedSpark = "FistBump" });
+        Assert.Equal("SparksFistBump", fp2.Tick(0, 0).Activity);                       // PlayAlone (no spark) is not in the FistBump bucket
+    }
+
+    /// <summary>
+    /// M15-013: when the desired-from-objects id (+0x90, CalculateDesiredActivityFromObjects 0x005ADF4C) is non-zero the only activity taken is the one with that id, and no strategy is asked
+    /// (0x005ADC6A..0x005ADC7E): Hiking, still in its cooldown (its strategy would refuse), is picked ahead of NothingToDo, which would start. The ActivityID the names map to is 0 for a name
+    /// the enum does not know (ActivityIDFromString 0x0076706C..0x007670D4), which forces nothing. There is no partition that keeps the needs and spark activities ahead of the desired one.
+    /// </summary>
+    [Fact]
+    public void M15_013_TheDesiredActivityIsTheOnlyOneTakenWithNoStrategyAsked()
+    {
+        var hike = new Fake("hike"); var nothing = new Fake("nothing");
+        var bound = new Dictionary<string, IBehavior> { ["hike"] = hike, ["nothing"] = nothing };
+        Activity[] Subs() => new[]
+        {
+            Act("NothingToDo", 1, "nothing", bound),
+            Act("Hiking", 2, "hike", bound, strategy: new ActivityStrategy { StartInCooldown = true, CooldownBaseSec = 1000 }),
+        };
+        using var rig = new Rig();
+        var forced = PickRig(rig, FpNamed(("Hiking", "Hiking", "Hiking", "Hiking"), Subs()), bound);
+        Assert.Equal("Hiking", forced.Tick(0, 0).Activity);                              // the desired id, though its strategy refuses
+
+        using var rig2 = new Rig();
+        var unknown = PickRig(rig2, FpNamed(("NoSuchActivity", "x", "y", "z"), Subs()), bound);
+        Assert.Equal("NothingToDo", unknown.Tick(0, 0).Activity);                        // an unknown name is ActivityID 0: nothing forced, the normal walk
+
+        using var rig3 = new Rig();
+        var absent = PickRig(rig3, FpNamed(("PlayAlone", "PlayAlone", "PlayAlone", "PlayAlone"), Subs()), bound);
+        Assert.Null(absent.Tick(0, 0).Activity);                                         // a known id with no activity in the bucket picks nothing (0x005ADE26)
+    }
+
+    /// <summary>
+    /// M10-011: HandleFallingStopped 0x00535040 calls NeedsManager::RegisterNeedsActionCompleted(17) when the intensity is above 1000.0f
+    /// (0x005350AA..0x005350BA, ble skips) and does it before the game broadcast (0x00535186..0x0053519C). Action 17 is "Fall"
+    /// (needs_action_config.json: repair -0.15, energy -0.001, play -0.1 +- 0.03). Driven through the live robot message path with the stack's manager.
+    /// </summary>
+    [Fact]
+    public void M10_011_AHardFallRegistersTheFallNeedsActionBeforeTheBroadcast()
+    {
+        var obb = ObbRoot();
+        Assert.NotNull(obb);
+        using var rig = new Rig();
+        LoadAssets(rig, obb!);
+        double clock = 0;
+        using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+        var needs = stack.Needs;
+        needs.SetLevel(NeedId.Repair, 1.0); needs.SetLevel(NeedId.Energy, 1.0); needs.SetLevel(NeedId.Play, 1.0);
+        double repairAtBroadcast = double.NaN;
+        int broadcasts = 0;
+        rig.Robot.Sensors.FallingStopped += _ => { broadcasts++; repairAtBroadcast = needs.State.GetNeedLevel(NeedId.Repair); };
+
+        rig.Send(new FallingStopped { Timestamp = 1000, DurationMs = 100, ImpactIntensity = 1000f });   // not above 1000.0f
+        Assert.Equal(1, broadcasts);
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Repair), 6);
+        Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);
+
+        rig.Send(new FallingStopped { Timestamp = 2000, DurationMs = 100, ImpactIntensity = 1000.5f });
+        Assert.Equal(2, broadcasts);
+        Assert.Equal(0.85, repairAtBroadcast, 5);                       // the reward was applied before the broadcast
+        Assert.Equal(0.85, needs.State.GetNeedLevel(NeedId.Repair), 5);
+        Assert.Equal(0.999, needs.State.GetNeedLevel(NeedId.Energy), 5);
+        Assert.InRange(needs.State.GetNeedLevel(NeedId.Play), 0.9 - 0.03 - 1e-6, 0.9 + 0.03 + 1e-6);
     }
 
     /// <summary>
@@ -1097,10 +1246,17 @@ public class FreeplayTests
 
     // ------------------------------------------------------------------ the freeplay system
 
-    private static Activity Fp(params Activity[] subs) => new()
+    /// <summary>
+    /// A freeplay tree of the given sub-activities. Its desired-activity names map to no ActivityID (<c>ActivityIDFromString</c> 0x00766C68 returns 0 for a name it does not know,
+    /// 0x0076706C..0x007670D4), so the first pick is not forced to any activity (<c>PickNewActivityForSpark</c> takes the +0x90 id only when it is non-zero, 0x005ADC72..0x005ADC76).
+    /// </summary>
+    private static Activity Fp(params Activity[] subs) => FpNamed(("", "", "", ""), subs);
+
+    /// <summary>A freeplay tree whose <c>desiredActivityNames</c> are the shipped ones (faces and cube, face, cube, neither).</summary>
+    private static Activity FpNamed((string, string, string, string) names, params Activity[] subs) => new()
     {
         Id = "Freeplay", Type = "Freeplay", Strategy = new ActivityStrategy(), SubActivities = subs.OrderBy(s => s.Priority).ToList(),
-        DesiredActivityNames = ("Socialize", "Socialize", "PlayAlone", "Hiking"),
+        DesiredActivityNames = names,
     };
 
     [Fact]
@@ -1124,7 +1280,7 @@ public class FreeplayTests
                                        Chooser = new ScoringChooser(new[] { new ScoredBehaviorEntry("playA", 1, null, null, null, Array.Empty<EmotionScorer>()) }, bound, penalty: penalty) };
         var nothing = new Activity { Id = "NothingToDo", Priority = 17, Strategy = new ActivityStrategy(), Chooser = new StrictPriorityChooser(new[] { "hikeB" }, bound) };
         var inputs = new FreeplayInputs();
-        var fp = new FreeplaySystem(manager, ctx, Fp(hiking, playAlone, nothing), bound, inputs);
+        var fp = new FreeplaySystem(manager, ctx, FpNamed(("Socialize", "Socialize", "PlayAlone", "Hiking"), hiking, playAlone, nothing), bound, inputs);
         var log = new List<string>(); fp.Log += log.Add;
 
         // no face, no cube: Hiking is the desired activity; hikeA (2) runs first
@@ -1206,8 +1362,9 @@ public class FreeplayTests
         c.Runnable = true;
         fp.Tick(4, 4000);
         Assert.True(log.Any(l => l.Contains("NewBehaviorChosenWhileRunning") && l.Contains("'Second'")), string.Join(" | ", log));
-        Assert.Null(fp.Current);                                               // nothing else can be picked
-        Assert.Equal(0, c.Started);
+        // (the former 'nothing else can be picked' assertion rested on the pick consulting First's chooser, which PickNewActivityForSpark 0x005ADC44 does not do: First's strategy starts it)
+        // c.Started is not asserted: what runs after the end depends on the second gate's re-pick loop (GetDesiredActiveBehaviorInternal 0x005AE40C..0x005AE762 re-picks at most once per tick,
+        // the stack's tick loops over the tree: M15-002's, not this record's)
     }
 
     [Fact]
@@ -1453,7 +1610,7 @@ public class FreeplayTests
         tracker.ForceUpdate();                          // 0 s accumulated: nothing to report
         Assert.Empty(reports);
         Assert.Empty(logs);
-        Assert.Equal(30, tracker.NextSendSec, 6);       // the next-send stamp still ran
+        Assert.Equal(30f, tracker.NextSendSec);        // the next-send stamp still ran
 
         clock = 30;
         tracker.ForceUpdate();                          // a non-zero segment still reports

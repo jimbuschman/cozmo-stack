@@ -9,6 +9,12 @@ public enum ActionResult : uint
     Success = 0, Running = 0x01000000, CancelledWhileRunning = 0x02000000, Abort = 0x03000000,
     BadObject = 0x03000004, BadPose = 0x03000005, NoPreActionPoses = 0x03000010, NotCarryingObjectAbort = 0x03000011,
     PathPlanningFailedAbort = 0x03000013, StillCarryingObject = 0x03000017, Timeout = 0x03000018, VisualObservationFailed = 0x0300001D,
+    /// <summary>0x03000014: <c>PickupObjectAction::Verify</c> "ObjectStillMoving" (r4 = 0x03000004 + 0x10 at 0x00553CEA).</summary>
+    PickupObjectStillMoving = 0x03000014,
+    /// <summary>0x03000015: <c>PickupObjectAction::Verify</c> not seen recently enough (r4 + 0x11 at 0x00553D6E).</summary>
+    PickupObjectNotSeenRecently = 0x03000015,
+    /// <summary>0x04000005: <c>PickupObjectAction::Verify</c> "expected carrying" (0x00553FC8..0x00554004, r5 = 0x04000005 at 0x00553DE8) and "seeing the object in its original pose" (0x00554116).</summary>
+    PickupRetry = 0x04000005,
     Retry = 0x04000000, DidNotReachPreActionPose = 0x04000001, FailedTraversingPath = 0x04000002,
     /// <summary>0x03000008 (<c>0x0055AB7A/0x0055AB7C</c>): <c>DriveToPoseAction::CheckIfDone</c>'s initial result, kept when the arrival test fails while the path ids differ (M12-023).</summary>
     FollowingPathButNotTraversing = 0x03000008,

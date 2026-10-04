@@ -19,6 +19,29 @@ public sealed class AIBeacon
         return Math.Sqrt(d.X * d.X + d.Y * d.Y) <= RadiusMm;
     }
     public void FailedToFindLocation() => FailedToFindLocationCount++;
+
+    /// <summary>binary32 0x3727C5AC (1.0e-5f), the literal <c>IsLocWithinBeacon</c> adds (<c>vldr s4, [pc]</c> 0x0059C2C2).</summary>
+    private static readonly float WithinEpsilon = BitConverter.Int32BitsToSingle(unchecked((int)0x3727C5AC));
+
+    // fidelity: M15-008
+    /// <summary>
+    /// <c>AIBeacon::IsLocWithinBeacon(pose, margin)</c> 0x0059C24C as <c>FindFreeCubeToStackOn</c> calls it (0x005E1D38): the pose with respect to the beacon pose
+    /// (<c>GetWithRespectTo</c> 0x0059C288; a failure answers false, which cannot occur with one pose origin), its translation squared in three dimensions in binary32
+    /// (<c>vmul.f32 x*x</c>, then <c>+ y*y</c> and <c>+ z*z</c>, 0x0059C2A0..0x0059C2B2), against <c>(radius - margin)^2 + 1.0e-5f</c> (<c>vsub</c>, <c>vmul</c>, <c>vadd</c>, 0x0059C2BE..0x0059C2CA):
+    /// within when the right side is at least the left (<c>vcmpe.f32 s2, s0; it ge</c>, 0x0059C2CE..0x0059C2D8).
+    /// </summary>
+    public bool IsLocWithinBeacon(Pose3d pose, float margin)
+    {
+        var t = pose.WithRespectTo(Pose).Translation;
+        float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+        float d2 = x * x;
+        d2 += y * y;
+        d2 += z * z;
+        float r = (float)RadiusMm - margin;
+        float limit = r * r;
+        limit += WithinEpsilon;
+        return limit >= d2;
+    }
 }
 
 /// <summary>What a behaviour failed to do with an object (<c>AIWhiteboard::ObjectActionFailure</c>).</summary>

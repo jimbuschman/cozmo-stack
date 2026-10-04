@@ -86,7 +86,7 @@ public sealed class PathSender
     /// Zero is not a path the robot could be holding. <c>PathComponent::_currentPathID</c> (+0x42) is
     /// zero-initialised in the constructor (0x00648B2C) and <em>pre</em>-incremented in
     /// <c>ExecutePath</c> (0x0064A3C2..0x0064A3CA) before it is sent, so the first path the engine ever
-    /// executes is id 1 and no live path is ever id 0. The engine does correlate path ids, but against its
+    /// executes is id 1 (the u16 wraps from 0xFFFF to 0 with no skip, so a later path can be id 0). The engine does correlate path ids, but against its
     /// own record rather than anything it puts in this message: it copies the current id into
     /// <c>_lastSentPathID</c> (+0x4A) on the way into the clear (0x00649234) and checks the robot's
     /// <c>PathFollowingEvent.pathID</c> against it - the VERIFY strings at 0x00BFCBAC..0x00BFCCC1,
@@ -128,8 +128,9 @@ public sealed class PathSender
         // id it is installed under - is taken together.
         lock (_gate)
         {
-            _pathId++;
-            if (_pathId == 0) _pathId = 1;
+            // fidelity: M12-002 - PathComponent::ExecutePath 0x0064A3C2..0x0064A3CA: ldrh r1,[r4,#0x42]; adds r1,#1; strh r1,[r4,#0x42]. A plain u16
+            // increment with no zero case: 0xFFFF wraps to 0 and 0 is a path id the engine sends (it skips nothing).
+            unchecked { _pathId++; }
             reserve?.Invoke(_pathId);
             Send(new ClearPath { Unknown = ClearPathField });
             foreach (var s in path)

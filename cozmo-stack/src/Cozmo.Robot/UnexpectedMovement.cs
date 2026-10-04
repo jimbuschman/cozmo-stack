@@ -111,7 +111,7 @@ public static class UnexpectedMovementResponse
 /// (AnimationState.tag) ≠ 0 the BODY track must be locked, otherwise return; IS_PICKING_OR_PLACING returns with no
 /// reset; status &amp; 0x5008 resets +0x94..+0xA0 and returns.
 ///
-/// <b>Rules (M10-002, B6..B11, C4):</b> |l|+|r| &lt; 20 decays; quiet gyro (&lt; 0.174533): opposite wheel signs, or
+/// <b>Rules (M10-002, B6..B11, C4):</b> |l|+|r| &lt; 20 decays; quiet gyro (&lt; binary32 0x3E32B8C2): opposite wheel signs, or
 /// |0.5·|(r−l)/46| − |gz|| &gt; 0.2, adds 1 with type 0 and adds l and r to the sums (+0x98/+0x9C); active gyro with
 /// the opposite sign adds 2 with type 2 (sums += 2l, 2r); the same sign decays and returns, its decrement guarded by
 /// count &gt; 0 as B7's is. The first increment stamps +0x94 with the state timestamp; it fires at count &gt; 10. The
@@ -132,8 +132,11 @@ public sealed class UnexpectedMovementDetector
     public const float WheelDistanceMm = 46f;
     /// <summary>B6: +0xB0 = 20.0.</summary>
     public const float MinWheelSpeedSumMmps = 20f;
-    /// <summary>B6: +0xA4 = 0.174533 rad/s.</summary>
-    public const float GyroTurnThresholdRadps = 0.174533f;
+    /// <summary>
+    /// B6: +0xA4 = binary32 0x3E32B8C2 (movw/movt 0x0063DAB0/0x0063DAB6; compared with vcmpe.f32 at 0x0063E4B6..0x0063E4C2),
+    /// not the decimal 0.174533f (0x3E32B8C7).
+    /// </summary>
+    public static readonly float GyroTurnThresholdRadps = BitConverter.Int32BitsToSingle(unchecked((int)0x3E32B8C2)); // fidelity: M10-002
     /// <summary>B6: +0xB4 = 0.2.</summary>
     public const float RotationMismatchToleranceRadps = 0.2f;
     /// <summary>B6: +0xAC = 10 (u8); B11 fires at count &gt; 10.</summary>

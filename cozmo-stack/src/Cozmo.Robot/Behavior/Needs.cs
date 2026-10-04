@@ -153,29 +153,36 @@ public sealed record NeedsConfig(double MaximumNeedLevel, double MinimumNeedLeve
 /// and 0 (Play x1): at a Repair level of 0.03 the Play entry with multiplier 2 is the first threshold at or
 /// below the level, and below that the trailing 0 entry wins instead.
 /// </summary>
+/// <summary>One <c>DecayModifiers</c> JSON entry as the engine holds it (16 bytes at 0x0069C27C): a threshold and the vector of (affected need, multiplier) pairs.</summary>
+public sealed record DecayModifierEntry(double Threshold, IReadOnlyList<(NeedId Other, double Multiplier)> Affected);
+
 public sealed record DecayConfig(IReadOnlyDictionary<NeedId, IReadOnlyList<(double Threshold, double PerMinute)>> Connected,
                                  IReadOnlyDictionary<NeedId, IReadOnlyList<(double Threshold, double PerMinute)>> Unconnected,
-                                 IReadOnlyDictionary<NeedId, IReadOnlyList<(double Threshold, NeedId Other, double Multiplier)>>? Modifiers = null)
+                                 IReadOnlyDictionary<NeedId, IReadOnlyList<DecayModifierEntry>>? Modifiers = null)
 {
     /// <summary>
-    /// The three multipliers <c>GetDecayMultipliers</c> works out from the current levels: one per need,
-    /// each from the single first modifier entry (in descending threshold order) whose threshold is at or
-    /// below the source need's level. An entry with threshold 0 always matches when nothing larger does.
+    /// The three multipliers <c>GetDecayMultipliers</c> 0x0069C214 works out from the current levels, in binary32 as the engine does:
+    /// the out array starts at 1.0f (0x0069C222), and per need the level (a float, <c>GetNeedLevel</c>) is compared with each entry's float
+    /// threshold in descending order (<c>vcmpe.f32</c> 0x0069C270, <c>bge</c> 0x0069C278: the first entry with level &gt;= threshold wins);
+    /// that entry's affected-need pairs are then all applied as <c>out[other] = multiplier * out[other]</c> in f32 (<c>vmul.f32</c> 0x0069C2A4,
+    /// loop 0x0069C294..0x0069C2AE). An entry with threshold 0 always matches when nothing larger does.
     /// </summary>
     // fidelity: M15-004
-    public IReadOnlyDictionary<NeedId, double> DecayMultipliers(Func<NeedId, double> level)
+    public IReadOnlyDictionary<NeedId, float> DecayMultipliers(Func<NeedId, double> level)
     {
-        var result = new Dictionary<NeedId, double> { [NeedId.Repair] = 1, [NeedId.Energy] = 1, [NeedId.Play] = 1 };
+        var result = new Dictionary<NeedId, float> { [NeedId.Repair] = 1f, [NeedId.Energy] = 1f, [NeedId.Play] = 1f };
         if (Modifiers is null) return result;
         foreach (var (source, entries) in Modifiers)
         {
-            double l = level(source);
-            // 0x00691040 sorts the modifier list descending by threshold; 0x0069C270/0x0069C278 stop at the
-            // first entry whose threshold is <= the level and apply only that entry.
-            foreach (var (threshold, other, multiplier) in entries.OrderByDescending(e => e.Threshold))
+            float l = (float)level(source);
+            // 0x00691040 sorts the modifier list descending by threshold (16-byte entries: a float threshold and a vector of affected-need pairs, 0x0069C26C..0x0069C280);
+            // 0x0069C270/0x0069C278 stop at the FIRST entry whose threshold is <= the level and only that entry's pairs are applied (0x0069C28A..0x0069C2AE).
+            // Two entries that share a threshold are two entries: the second never applies.
+            foreach (var entry in entries.OrderByDescending(e => e.Threshold))
             {
-                if (threshold > l) continue;
-                result[other] *= multiplier;
+                if (l < (float)entry.Threshold) continue;           // vcmpe s0(level), s2(threshold); bge ends the scan
+                foreach (var (other, multiplier) in entry.Affected)
+                    result[other] = (float)multiplier * result[other];
                 break;
             }
         }
@@ -194,19 +201,21 @@ public sealed record DecayConfig(IReadOnlyDictionary<NeedId, IReadOnlyList<(doub
     {
         using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         var rates = doc.RootElement.GetProperty("DecayRates");
-        var modifiers = new Dictionary<NeedId, IReadOnlyList<(double, NeedId, double)>>();
+        var modifiers = new Dictionary<NeedId, IReadOnlyList<DecayModifierEntry>>();
         if (doc.RootElement.TryGetProperty("DecayModifiers", out var mods))
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
                 if (!mods.TryGetProperty($"ConnectedDecayModifiers{n}", out var arr)) continue;
-                var list = new List<(double, NeedId, double)>();
+                var list = new List<DecayModifierEntry>();
                 foreach (var e in arr.EnumerateArray())
                 {
                     double threshold = e.GetProperty("Threshold").GetDouble();
-                    if (!e.TryGetProperty("OtherNeedsAffected", out var others)) continue;
-                    foreach (var o in others.EnumerateArray())
-                        if (Enum.TryParse<NeedId>(o.GetProperty("OtherNeedID").GetString(), true, out var other))
-                            list.Add((threshold, other, o.GetProperty("Multiplier").GetDouble()));
+                    var affected = new List<(NeedId, double)>();
+                    if (e.TryGetProperty("OtherNeedsAffected", out var others))
+                        foreach (var o in others.EnumerateArray())
+                            if (Enum.TryParse<NeedId>(o.GetProperty("OtherNeedID").GetString(), true, out var other))
+                                affected.Add((other, o.GetProperty("Multiplier").GetDouble()));
+                    list.Add(new DecayModifierEntry(threshold, affected));      // one JSON entry is one engine entry, whatever it affects
                 }
                 if (list.Count > 0) modifiers[n] = list;
             }
@@ -342,7 +351,7 @@ public sealed class NeedsState
         var multipliers = decay.DecayMultipliers(n => _levels[(int)n]);
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
-            float rate = (float)decay.RatePerMinute(n, _levels[(int)n], connected) * (float)multipliers[n];
+            float rate = (float)decay.RatePerMinute(n, _levels[(int)n], connected) * multipliers[n];
             SetNeedLevel(n, _levels[(int)n] - (rate * elapsedSec / 60f));
         }
     }
@@ -355,19 +364,21 @@ public sealed class NeedsState
     /// <c>BrokenPartThreshold0..2</c>, 0.98, 0.6 and 0.3 in the shipped file, so a full robot has none
     /// damaged, one below 0.98 has one, below 0.6 two and below 0.3 all three.
     /// </summary>
-    public int NumDamagedPartsForRepairLevel(double repairLevel)
+    // fidelity: M15-004
+    public int NumDamagedPartsForRepairLevel(float repairLevel)
     {
+        // 0x0069CCC4..0x0069CCD2: binary32 throughout, vcmpe.f32 s2(threshold), s0(level); 'mi' (threshold < level) returns the count.
         int count = 0;
         foreach (var threshold in _cfg.BrokenPartThresholds)
         {
-            if (threshold < repairLevel) break;
+            if ((float)threshold < repairLevel) break;
             count++;
         }
         return count;
     }
 
     /// <summary>How many parts are damaged now, from the Repair level.</summary>
-    public int NumDamagedParts() => NumDamagedPartsForRepairLevel(GetNeedLevel(NeedId.Repair));
+    public int NumDamagedParts() => NumDamagedPartsForRepairLevel((float)GetNeedLevel(NeedId.Repair));
 }
 
 // fidelity: M15-017
@@ -784,7 +795,7 @@ public sealed class NeedsManager
                 {
                     // 0x00695D9C..0x00695DA4: NeedsState::ApplyDecay takes the elapsed as a float and divides
                     // it by 60.0f (0x0069C48A); the rate and multiplier multiply in f32.
-                    float rate = (float)Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * (float)multipliers[n];
+                    float rate = (float)Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * multipliers[n];
                     State.ApplyDelta(n, -(rate * elapsed / 60f));
                 }
                 _lastDecaySec[n] = now;                                             // 0x00695DA8
@@ -1606,7 +1617,7 @@ public sealed class NeedsManager
     {
         long now = unixTimeSec ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var levels = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.GetNeedLevel(n)).ToArray();
-        var damaged = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.NumDamagedPartsForRepairLevel(State.GetNeedLevel(n)) > 0).ToArray();
+        var damaged = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.NumDamagedPartsForRepairLevel((float)State.GetNeedLevel(n)) > 0).ToArray();
         var doc = new Dictionary<string, object>
         {
             ["_StateFileVersion"] = CurrentStateFileVersion,

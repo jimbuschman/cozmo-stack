@@ -582,8 +582,13 @@ public class NavigationTests
         Assert.Equal(0x1B, (int)AnimationTrigger.CantHandleTallStack);
     }
 
+    /// <summary>
+    /// M15-011 / M15-009 / M15-008: the beacon is added at the robot's pose (0x005E5F1A..0x005E5F30); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 then finds no free
+    /// cube to stack on (FindFreeCubeToStackOn, 0x005DF46A, takes the stack branch first when it finds one), reports PickupCube and goes to the floor placement, whose pose search
+    /// (FindFreePoseInBeacon 0x005E0378) and action (PlaceObjectOnGroundAtPoseAction) are not built: reported MISSING, and nothing is placed by an invented path.
+    /// </summary>
     [Fact]
-    public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()
+    public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field); the test now asserts the engine's path: pick up, then MISSING, nothing placed
     {
         if (Lib is null) return;
         using var rig = new Rig();
@@ -597,14 +602,128 @@ public class NavigationTests
         RunToEnd(rig, think, ctx);
         var beacon = rig.M.Whiteboard.GetActiveBeacon()!;
         Assert.Equal(175, beacon.RadiusMm);
+        Assert.Equal(rig.M.RobotPose()!.Value.Translation, beacon.Pose.Translation);  // M15-011: the full robot pose, AddBeacon(copy, radius)
         Assert.Contains(think.Trace, l => l.Contains("HikingReactToNewArea"));
         Assert.False(Runnable(think, ctx));
         Assert.True(Runnable(bring, ctx));                                           // the cube at 330 mm is outside the 175 mm beacon
+        var missing = new List<string>();
+        void OnMissing(string s) => missing.Add(s);
+        SteppedBehavior.ResetMissingForTests();
+        SteppedBehavior.MissingReported += OnMissing;
+        try { RunToEnd(rig, bring, ctx, frames: () => !rig.M.Docking.Carrying.IsCarryingObject); }
+        finally { SteppedBehavior.MissingReported -= OnMissing; }
+        Assert.Contains(missing, m => m.Contains("FindFreePoseInBeacon 0x005E0378"));
+        Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);              // no invented stand pose, no placement
+        Assert.True(rig.M.Docking.Carrying.IsCarryingObject);                        // the cube is still carried: the floor branch is not built
+    }
+
+    /// <summary>
+    /// M15-011, SelectNewBeacon 0x005E5F0C..0x005E5F30: Robot::GetPose is copied (Pose3d::Pose3d 0x005E5F1A) and handed to AddBeacon with the radius at [this+0x128]: the beacon sits at the
+    /// whole robot pose, z included. A robot state whose pose has z = 25 and yaw 0.5 gives a beacon at (100, 50, 25) with that yaw (a planar rebuild would give z = 0).
+    /// </summary>
+    [Fact]
+    public void M15_011_TheBeaconIsAddedAtTheFullRobotPose()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Send(new RobotState
+        {
+            Timestamp = rig.T += 33, PoseOriginId = rig.OriginId, Pose = new RobotPose { X = 100, Y = 50, Z = 25, Angle = 0.5f }, HeadAngle = rig.Head,
+            Status = (uint)(RobotStatusFlag.LiftInPos | RobotStatusFlag.HeadInPos), Accel = new AccelData { Z = 9800 }, Gyro = new GyroData(),
+        });
+        var ctx = Ctx(rig);
+        var think = new ThinkAboutBeaconsBehavior(rig.M, "Hiking_ThinkAboutBeacons", 175);
+        think.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        var beacon = rig.M.Whiteboard.GetActiveBeacon()!;
+        Assert.Equal(100, beacon.Pose.Translation.X, 3);
+        Assert.Equal(50, beacon.Pose.Translation.Y, 3);
+        Assert.Equal(25, beacon.Pose.Translation.Z, 3);
+        Assert.Equal(0.5f, (float)beacon.Pose.AngleAroundZ, 5);
+        Assert.Equal(175, beacon.RadiusMm);
+        think.Stop(BehaviorStopReason.Cancelled);
+    }
+
+    /// <summary>
+    /// M15-008, TransitionToObjectPickedUp 0x005DF3E4: FindFreeCubeToStackOn (0x005DF46A) comes BEFORE the floor branch's NeedActionCompleted(PickupCube) (0x005DF59C). With a second cube
+    /// already inside the beacon (within radius - (carried X dimension + 10) = 121 mm of its centre, 0x0059C2BE..0x0059C2D8) the stack branch is taken: "Decided to place '..' on top of '..'"
+    /// (0x005DF4AA), no PickupCube report, and when the stack action succeeds StackCube (0x2A, 0x005E14B6) is reported then FireEmotionEvents (0x005E14BE).
+    /// </summary>
+    [Fact]
+    public void M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube()
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Cube = CubeAt(300, -30);
+        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(230, 22, 22))));
+        rig.Frame();
+        Assert.True(rig.Vision.World.LocatedObjects.Count == 2, $"located {rig.Vision.World.LocatedObjects.Count}");       // both cubes are seen from the origin; the beacon is then made where the robot stands next, 120 mm ahead
+        rig.X = 120; rig.State();
+        var ctx = Ctx(rig);
+        ctx.Needs = new NeedsManager(() => 0);
+        var think = new ThinkAboutBeaconsBehavior(rig.M, "Hiking_ThinkAboutBeacons", 175);
+        RunToEnd(rig, think, ctx);
+        var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
+        Assert.True(Runnable(bring, ctx));
+        SteppedBehavior.ResetMissingForTests();
         RunToEnd(rig, bring, ctx, frames: () => !rig.M.Docking.Carrying.IsCarryingObject);
-        Assert.NotNull(bring.PlacedAt);
-        Assert.True(beacon.IsLocWithinBeacon(bring.PlacedAt!.Value), $"placed at {bring.PlacedAt}");
-        Assert.Contains(rig.Sent, m => m is PlaceObjectOnGround);
-        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
+        Assert.Contains(bring.Trace, l => l.Contains("Decided to place") && l.Contains("on top of"));
+        Assert.DoesNotContain(bring.Trace, l => l == "needs action PickupCube");
+        Assert.Contains(bring.Trace, l => l.Contains("PlaceRelObjectHelper") || l.Contains("TryToStackOn"));
+    }
+
+    /// <summary>
+    /// M15-008, the TryToStackOn completion lambda 0x005E142C (category = top byte of the result, 0x005E1434..0x005E144A): 0 -> StackCube + FireEmotionEvents; 3 -> log and
+    /// SetFailedToUse(target, StackOnObject) (0x005E156E -> 0x005E1660); 4 with the cube not carried (the retry test fails) -> the same failure (0x005E15D8); 1 (running) and 2 (cancelled) branch to
+    /// 0x005E1684 and return: no log, no SetFailedToUse.
+    /// </summary>
+    [Theory]
+    [InlineData(0x00000000u, "success")]
+    [InlineData(0x01000000u, "none")]
+    [InlineData(0x02000000u, "none")]
+    [InlineData(0x03000000u, "failed")]
+    [InlineData(0x04000000u, "failed")]
+    [InlineData(0x04000001u, "failed")]
+    public void M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(uint result, string expected)
+    {
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.Cube = CubeAt(300, -30);
+        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(230, 22, 22))));
+        rig.Frame();
+        Assert.Equal(2, rig.Vision.World.LocatedObjects.Count);
+        var ctx = Ctx(rig);
+        ctx.Needs = new NeedsManager(() => 0);
+        var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
+        rig.M.Whiteboard.AddBeacon(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), 175);
+        bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        uint target = rig.Vision.World.LocatedObjects.Select(o => o.ObjectId).First(i => i != bring.Candidate);
+        bring.StackCompleted((ActionResult)result, target, 1);
+        bool marked = rig.M.Whiteboard.DidFailToUse(target, ObjectActionFailure.StackOnObject, 1e9);
+        Assert.Equal(expected == "failed", marked);
+        Assert.Equal(expected == "success", bring.Trace.Any(l => l == "needs action StackCube"));
+        Assert.Equal(expected == "failed", bring.Trace.Any(l => l.Contains("stacking failed")));
+        bring.Stop(BehaviorStopReason.Cancelled);
+    }
+
+    /// <summary>
+    /// M15-008, AIBeacon::IsLocWithinBeacon(pose, margin) 0x0059C24C: the pose in the beacon's frame, its translation squared in THREE dimensions in binary32 (x*x, then + y*y, then + z*z),
+    /// against (radius - margin)^2 + 1.0e-5f; within when the right side is at least the left. Radius 175, margin 54: limit 121^2 = 14641 (the 1e-5 is below a binary32 ulp of 14641).
+    /// </summary>
+    [Fact]
+    public void M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced()
+    {
+        var beacon = new AIBeacon(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), 175);
+        Pose3d At(double x, double y, double z) => new(Mat3.Identity, new Vec3(x, y, z));
+        Assert.True(beacon.IsLocWithinBeacon(At(121, 0, 0), 54f));                 // d2 = 14641 >= 14641 (limit)
+        Assert.False(beacon.IsLocWithinBeacon(At(121.001, 0, 0), 54f));            // 14641.242 > 14641
+        Assert.False(beacon.IsLocWithinBeacon(At(70, 0, 100), 54f));               // 4900 + 10000 = 14900 > 14641: z counts (a planar test says 70 <= 121)
+        Assert.True(beacon.IsLocWithinBeacon(At(70, 0, 90), 54f));                 // 4900 + 8100 = 13000
+        Assert.True(beacon.IsLocWithinBeacon(At(174, 0, 0), 0f));                  // margin 0: radius itself
+        Assert.False(beacon.IsLocWithinBeacon(At(176, 0, 0), 0f));
+        // the pose is taken with respect to the beacon's pose: a rotated, offset beacon sees the same distance
+        var rotated = new AIBeacon(new Pose3d(Mat3.AboutZ(1.0), new Vec3(500, -200, 10)), 175);
+        Assert.True(rotated.IsLocWithinBeacon(new Pose3d(Mat3.Identity, new Vec3(500 + 100, -200, 10)), 54f));
+        Assert.False(rotated.IsLocWithinBeacon(new Pose3d(Mat3.Identity, new Vec3(500 + 130, -200, 10)), 54f));
     }
 
     [Fact]

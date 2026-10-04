@@ -1,3 +1,4 @@
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Manipulation;
@@ -30,36 +31,46 @@ namespace Cozmo.Robot.Manipulation;
 /// </summary>
 public sealed class SearchForNearbyObjectAction
 {
-    /// <summary>0.261799 rad, 15 degrees (0x3E860A92 at 0x00546A52).</summary>
-    public const double SearchAngleMinRad = 0.261799;
-    /// <summary>0.349066 rad, 20 degrees (0x3EB2B8C2).</summary>
-    public const double SearchAngleMaxRad = 0.349066;
-    /// <summary>0.8 s (0x3F4CCCCD).</summary>
-    public const double WaitMinSec = 0.8;
-    /// <summary>1.2 s (0x3F99999A).</summary>
-    public const double WaitMaxSec = 1.2;
-    /// <summary>0.0698132 rad, 4 degrees: the tolerance on each look-around turn.</summary>
-    public const double TurnToleranceRad = 0.0698132;
-    /// <summary>0.0349066 rad, 2 degrees: the head move's tolerance.</summary>
-    public const double HeadToleranceRad = 0.0349066;
+    // Every constant is the engine's binary32 (checklist section 4), widened exactly; none is a rounded decimal.
+    private static double Bits(uint b) => BitConverter.UInt32BitsToSingle(b);
+
+    // fidelity: M12-010
+    /// <summary>15 degrees as binary32 0x3E860A92 (movw/movt 0x00546A3E, 0x00546A52; the ctor's default stored at +0x144).</summary>
+    public static readonly double SearchAngleMinRad = Bits(0x3E860A92);
+    /// <summary>20 degrees as binary32 0x3EB2B8C2 (0x00546A4E, 0x00546A56; +0x148).</summary>
+    public static readonly double SearchAngleMaxRad = Bits(0x3EB2B8C2);
+    /// <summary>0.8 s as binary32 0x3F4CCCCD (0x00546A20, 0x00546A38; +0x13C).</summary>
+    public static readonly double WaitMinSec = Bits(0x3F4CCCCD);
+    /// <summary>1.2 s as binary32 0x3F99999A (0x00546A60, 0x00546A6C; +0x140).</summary>
+    public static readonly double WaitMaxSec = Bits(0x3F99999A);
+    /// <summary>The look-around turns' tolerance, binary32 0x3D8EFA35 (0x00546ED2..0x00546EDA and 0x00546F20..0x00546F28; Radians ctor, then SetTolerance).</summary>
+    public static readonly double TurnToleranceRad = Bits(0x3D8EFA35);
+    /// <summary>The head move's tolerance, binary32 0x3D0EFA35 (0x00546E56..0x00546E60, MoveHeadToAngleAction's tolerance argument).</summary>
+    public static readonly double HeadToleranceRad = Bits(0x3D0EFA35);
     /// <summary>The speed at which the constructor uses DriveStraightAction's default-speed form.</summary>
     public const float DefaultDriveSpeedMmps = 100f;
 
     private readonly ManipulationSystem _m;
-    private readonly Random _random;
+    private readonly EngineRandom _random;
 
     /// <summary>How the waits are taken. Replaced in tests so a search does not sit out its own seconds.</summary>
     public Func<TimeSpan, CancellationToken, Task> Wait { get; init; } = (t, c) => Task.Delay(t, c);
 
+    /// <summary>
+    /// <paramref name="random"/> is the generator <c>Init</c> draws from: <c>IAction::GetRNG</c> 0x00540D10 is <c>Robot::GetRNG</c> 0x005126B6
+    /// (<c>[[robot]+0x14]</c>), the CONTEXT RNG (M5 inventory R3: context+0x14), which this stack holds as <c>Animations.Scheduler.ContextRandom</c>.
+    /// The default is that one; a test passes a seeded <see cref="EngineRandom"/>.
+    /// </summary>
+    // fidelity: M12-010
     public SearchForNearbyObjectAction(ManipulationSystem m, uint objectId, double distanceMm,
-                                       float speedMmps, double headAngleRad, Random? random = null)
+                                       float speedMmps, double headAngleRad, EngineRandom? random = null)
     {
         _m = m;
         ObjectId = objectId;
         DistanceMm = distanceMm;
         SpeedMmps = speedMmps;
         HeadAngleRad = headAngleRad;
-        _random = random ?? new Random();
+        _random = random ?? m.Robot.Animations.Scheduler.ContextRandom;
     }
 
     public uint ObjectId { get; }
@@ -75,13 +86,24 @@ public sealed class SearchForNearbyObjectAction
 
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        double w1 = Between(WaitMinSec, WaitMaxSec);
-        double coin = _random.NextDouble();
-        double a1 = Between(SearchAngleMinRad, SearchAngleMaxRad);
-        double w2 = Between(WaitMinSec, WaitMaxSec);
-        double a2 = Between(SearchAngleMinRad, SearchAngleMaxRad);
-        double w3 = Between(WaitMinSec, WaitMaxSec);
+        // Init 0x00546C14: each draw is IAction::GetRNG() then RandDblInRange / RandDbl (0x00546C34, 0x00546C5C, 0x00546C72.. in this order):
+        // w1 (0x00546C3A..0x00546C52), the coin RandDbl(1.0) (0x00546C68), a1 (0x00546C76..0x00546C8E), w2 (0x00546C9C..0x00546CC0),
+        // a2 (0x00546CDA..0x00546D00) and w3 (0x00546D16..0x00546D42). The bounds are the binary32 members widened to double
+        // (vcvt.f64.f32); RandDblInRange 0x0082FA48 is (max - min) * u + min.
+        double w1d = _random.RandDblInRange(WaitMinSec, WaitMaxSec);
+        double coin = _random.RandDbl(1.0);
+        double a1d = _random.RandDblInRange(SearchAngleMinRad, SearchAngleMaxRad);
+        double w2d = _random.RandDblInRange(WaitMinSec, WaitMaxSec);
+        double a2d = _random.RandDblInRange(SearchAngleMinRad, SearchAngleMaxRad);
+        double w3d = _random.RandDblInRange(WaitMinSec, WaitMaxSec);
+        // 0x00546CCE vcmpe.f64 coin, 0.5 (gt -> +1.0, else -1.0); then in binary32/binary64 exactly as the engine stores them:
+        // s20 = (float)(sign * a1) (0x00546CF8..0x00546CFC), s16 = -s20, d2 = (double)s16 - sign*a2 -> s18 (0x00546D0A..0x00546D36),
+        // the waits are (float)w (0x00546D4E, 0x00546D6A, 0x00546D66)
         double sign = coin > 0.5 ? 1.0 : -1.0;
+        float w1 = (float)w1d, w2 = (float)w2d, w3 = (float)w3d;
+        float turn1 = (float)(sign * a1d);
+        float turn2 = (float)((double)(-turn1) - sign * a2d);
+        double a1 = a1d, a2 = a2d;
         Draw = (w1, w2, w3, a1, a2, sign);
         _trace.Add($"SearchForNearbyObjectAction: {(sign > 0 ? "left" : "right")} {a1 * 180 / Math.PI:F1} deg " +
                    $"then {-(a1 + a2) * 180 / Math.PI:F1} deg, waits {w1:F2}/{w2:F2}/{w3:F2} s");
@@ -90,15 +112,19 @@ public sealed class SearchForNearbyObjectAction
 
         // the drive and the head move run together
         var head = _m.Robot.Motion.SetHeadAngleAsync((float)HeadAngleRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
-        var back = new DriveStraightAction(_m, DistanceMm, SpeedMmps).RunAsync(cancel);
+        // 0x00546DDE..0x00546E34: |100.0 - speed| < 1e-5 (0x3727C5AC, 0x00547048) selects the TWO-argument DriveStraightAction(robot, distance) (0x4AB098), whose speed is the literal pair at
+        // 0x00547268/0x0054726C picked by `it ge; addge r1,#4` at 0x00547174: 0xC2A00000 (-80 mm/s) for a distance < 0, 0x42C80000 (+100) otherwise; any other speed uses the 4-argument form.
+        float driveSpeed = MathF.Abs(DefaultDriveSpeedMmps - SpeedMmps) < BitConverter.UInt32BitsToSingle(0x3727C5AC)
+            ? (float)DistanceMm >= 0f ? 100f : 80f : SpeedMmps;
+        var back = new DriveStraightAction(_m, DistanceMm, driveSpeed).RunAsync(cancel);
         var r = await back;
         try { await head; } catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
         if (r != ActionResult.Success) { _trace.Add($"the backing-off drive: {r}"); return r; }
 
         await Wait(TimeSpan.FromSeconds(w1), cancel);
-        if (await TurnAsync(sign * a1, cancel) is { } bad1) return bad1;
+        if (await TurnAsync(turn1, cancel) is { } bad1) return bad1;
         await Wait(TimeSpan.FromSeconds(w2), cancel);
-        if (await TurnAsync(-sign * (a1 + a2), cancel) is { } bad2) return bad2;
+        if (await TurnAsync(turn2, cancel) is { } bad2) return bad2;
         await Wait(TimeSpan.FromSeconds(w3), cancel);
         return ActionResult.Success;
     }
@@ -121,8 +147,6 @@ public sealed class SearchForNearbyObjectAction
             ? ActionResult.CancelledWhileRunning
             : ActionResult.FailedTraversingPath;
     }
-
-    private double Between(double a, double b) => a + _random.NextDouble() * (b - a);
 }
 
 /// <summary>
@@ -164,21 +188,24 @@ public sealed class SearchForBlockHelper
     public const float SearchSpeedMmps = 100f;
     /// <summary>20 mm/s for the drives that bracket states 1 and 2 (0x41A00000).</summary>
     public const float StageSpeedMmps = 20f;
-    /// <summary>-0.0872665 rad, -5 degrees: the head angle the nearby search drops to.</summary>
-    public const double SearchHeadAngleRad = -0.0872665;
-    /// <summary>0.785398 rad, 45 degrees: each of the two turns in states 1 and 2.</summary>
-    public const double StageTurnRad = 0.785398;
+    /// <summary>-5 degrees as binary32 0xBDB2B8C2 (movw/movt 0x005BAFA4..0x005BAFAC): the head angle the nearby search drops to.</summary>
+    public static readonly double SearchHeadAngleRad = BitConverter.UInt32BitsToSingle(0xBDB2B8C2);
+    /// <summary>45 degrees as binary32 0x3F490FDB (0x005BB214/0x005BB24C; negated 0xBF490FDB at 0x005BB0C4..0x005BB0FC, 0x005BB34A): each of the two turns in states 1 and 2.</summary>
+    public static readonly double StageTurnRad = BitConverter.UInt32BitsToSingle(0x3F490FDB);
+    /// <summary>-3pi/4 as binary32 0xC016CBE4 (0x005BB312): state 1's first tail turn; NOT 3 * the 45 degree double.</summary>
+    public static readonly double StageTailTurnRad = BitConverter.UInt32BitsToSingle(0xC016CBE4);
     /// <summary>Three states, and the helper gives up when the counter passes the last.</summary>
     public const int StateCount = 3;
 
     private readonly ManipulationSystem _m;
-    private readonly Random _random;
+    private readonly EngineRandom? _random;
 
-    public SearchForBlockHelper(ManipulationSystem m, uint objectId, Random? random = null)
+    /// <summary><paramref name="random"/> is passed to each nearby search; null leaves the search on the context RNG (the engine's helper owns no generator).</summary>
+    public SearchForBlockHelper(ManipulationSystem m, uint objectId, EngineRandom? random = null)
     {
         _m = m;
         ObjectId = objectId;
-        _random = random ?? new Random();
+        _random = random;
     }
 
     public uint ObjectId { get; }
@@ -232,7 +259,11 @@ public sealed class SearchForBlockHelper
     /// </summary>
     private async Task<ActionResult> LookAroundAsync(CancellationToken cancel)
     {
-        await _m.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
+        // The turn's result is discarded on purpose: 0x005BB020 (movs r3, #1) / 0x005BB024 (blx [vtbl+0x20] = ICompoundAction::AddAction(action,
+        // bool ignoreFailure, bool emit), vt.CompoundActionSequential+0x28) adds the TurnTowardsObjectAction with ignoreFailure = 1 (the nearby
+        // search at 0x005BB038 has ignoreFailure = 0), and CompoundActionSequential::UpdateInternal 0x0054F70C asks ShouldIgnoreFailure 0x0054F171
+        // for a failed child and moves on when it is set. So a failed turn does not end the compound.
+        await _m.TurnTowardsObjectAsync(ObjectId, EngineRadians.Pi, cancel);
         return await NearbySearchAsync(cancel);
     }
 
@@ -241,22 +272,35 @@ public sealed class SearchForBlockHelper
     /// second <c>DriveStraight</c>, <c>TurnInPlace(-3pi/4)</c> (0x005BB312), <c>TurnInPlace(-0.785398)</c>
     /// (0x005BB34A) and a second nearby search (0x005BB39A) (C-E3/G7.8).
     /// </summary>
+    // fidelity: M12-010
     private async Task<ActionResult> SweepState1Async(CancellationToken cancel)
     {
-        if (await DriveAsync(cancel) is { } d1) return d1;
+        // Every one of the eight children is added with ICompoundAction::AddAction(action, ignoreFailure = 1, ..): movs r3,#1 at 0x005BB1E6, 0x005BB21E, 0x005BB256,
+        // 0x005BB2AA, 0x005BB2E4, 0x005BB31C, 0x005BB354, 0x005BB3A8 ([vtbl+0x20] is AddAction, the CompoundActionSequential vtable relocation). CompoundActionSequential::UpdateInternal
+        // 0x0054F70C on a failed child runs RunCallbacks, ShouldIgnoreFailure 0x0054F171 and, when it holds, MoveToNextAction (0x0054F808..0x0054F822): the compound goes on after
+        // ANY failed child. An ignored child with ANY failed result, a cancel category included, continues: the tbb table at 0x0054F802 sends categories 2 and 3 to 0x0054F808, 4 (Retry) to 0x0054F904 (RetriesRemain(), falling to 0x0054F808 when none remain), and ShouldIgnoreFailure 0x0054F171 finds the ignoreFailure=1 functor (`movs r0,#1; bx lr` at 0x0054FE4E), true for any result, so MoveToNextAction 0x004AB86C runs; only ignoreFailure=0 ends the compound (0x0054F88A). The helper ends early only when its own token is cancelled (CHOICE: a cancelled token ends this stack's run).
+        async Task<bool> Step(Func<Task<ActionResult?>> child, string what)
+        {
+            var failed = await child();
+            if (failed is { } bad) _trace.Add($"{what}: {bad} (ignored: AddAction ignoreFailure = 1)");
+            return !cancel.IsCancellationRequested;
+        }
+        if (!await Step(() => DriveAsync(cancel), "the sweep's drive 1")) return ActionResult.CancelledWhileRunning;
         for (int i = 0; i < 2; i++)
-            if (await TurnAsync(+StageTurnRad, cancel) is { } bad) { _trace.Add($"the sweep's turn {i + 1}: {bad}"); return bad; }
-        var s1 = await NearbySearchAsync(cancel);
-        if (s1 != ActionResult.Success) return s1;
-        if (await DriveAsync(cancel) is { } d2) return d2;
-        if (await TurnAsync(-3 * StageTurnRad, cancel) is { } b1) { _trace.Add($"the sweep's tail turn 1: {b1}"); return b1; }
-        if (await TurnAsync(-StageTurnRad, cancel) is { } b2) { _trace.Add($"the sweep's tail turn 2: {b2}"); return b2; }
-        return await NearbySearchAsync(cancel);
+            if (!await Step(() => TurnAsync(+StageTurnRad, cancel), $"the sweep's turn {i + 1}")) return ActionResult.CancelledWhileRunning;
+        if (!await Step(NearbyAsChild, "the first nearby search")) return ActionResult.CancelledWhileRunning;
+        if (!await Step(() => DriveAsync(cancel), "the sweep's drive 2")) return ActionResult.CancelledWhileRunning;
+        if (!await Step(() => TurnAsync(StageTailTurnRad, cancel), "the sweep's tail turn 1")) return ActionResult.CancelledWhileRunning;
+        if (!await Step(() => TurnAsync(-StageTurnRad, cancel), "the sweep's tail turn 2")) return ActionResult.CancelledWhileRunning;
+        if (!await Step(NearbyAsChild, "the second nearby search")) return ActionResult.CancelledWhileRunning;
+        return ActionResult.Success;
+
+        async Task<ActionResult?> NearbyAsChild() { var r = await NearbySearchAsync(cancel); return r == ActionResult.Success ? null : r; }
     }
 
     /// <summary>
     /// State 2: a <b>two-iteration loop</b> (r8 = -1 at 0x005BB078, add r8,#1 at 0x005BB16E, blt at
-    /// 0x005BB176) of <c>DriveStraight(-20, 20)</c>, <c>TurnInPlace(-0.785398)</c>,
+    /// 0x005BB176; all four children ignoreFailure = 0: r3 = 0 at 0x005BB0A8, 0x005BB0D8, 0x005BB10C, 0x005BB15E, so the first failure ends the compound) of <c>DriveStraight(-20, 20)</c>, <c>TurnInPlace(-0.785398)</c>,
     /// <c>TurnInPlace(-0.785398)</c>, the nearby search. It has no state-1 tail (C-E3/E5).
     /// </summary>
     private async Task<ActionResult> SweepState2Async(CancellationToken cancel)

@@ -910,8 +910,9 @@ public sealed class EngineRobot
     /// <summary>
     /// The audio output source HandleFirmwareVersion sets (C1): <see cref="RobotAudioOutputSource.PlayOnRobot"/> when the
     /// firmware JSON's "sim" is null, else <see cref="RobotAudioOutputSource.PlayOnDevice"/>. Null until a firmware
-    /// version has been handled. What source 1 plays through (C2's RobotAudioAnimationOnDevice) is not built: this
-    /// stack's animation audio always streams to the robot.
+    /// version has been handled. <c>CreateAudioAnimation</c> 0x00599FF0 switches on it (the live robot's scheduler reads it through
+    /// <c>AnimationScheduler.OutputSource</c>): source 2 streams the animation's audio to the robot; source 1 (C2's RobotAudioAnimationOnDevice) streams none and
+    /// its device playback is reported MISSING (not built); the client's initial 0 clears the animation's audio track.
     /// </summary>
     public RobotAudioOutputSource? AudioOutputSource { get; private set; }
     // fidelity: M10-010
@@ -922,29 +923,35 @@ public sealed class EngineRobot
     /// </summary>
     public bool IsPhysicalRobot { get; private set; }
 
-    // fidelity: M3-024
+    // fidelity: M3-024, M10-010
     /// <summary>
-    /// RobotToEngineImplMessaging::HandleFirmwareVersion (C1, 0x00536934..0x0053698E; "sim" at 0x00536A4C): if
-    /// <c>json["sim"].isNull()</c>, SetPhysicalRobot(true) and SetOutputSource(2 = PlayOnRobot); otherwise source 1.
-    /// MISSING: what the handler does when the JSON does not parse, or its root is not an object, is not in the rows;
-    /// the source is left as it was and a warning is logged.
+    /// RobotToEngineImplMessaging::HandleFirmwareVersion 0x005368F4 (C1, 0x00536934..0x0053698E; "sim" at 0x00536A4C): the signature bytes are parsed with
+    /// <c>Json::Reader::parse(doc, root, true)</c> (0x0053692E); <b>a parse failure ends the handler with nothing done</b> (<c>cbz r0, 0x00536992</c>
+    /// at 0x00536932 skips to the destructors: no log, no SetPhysicalRobot, no SetOutputSource). On success <c>root["sim"].isNull()</c> (non-const
+    /// <c>Value::operator[]</c>, 0x00536938..0x0053693C) feeds <c>Robot::SetPhysicalRobot</c> (0x00536980) and <c>RobotAudioClient::SetOutputSource</c>
+    /// (0x0053698E: 2 = PlayOnRobot when it is null, else 1). A <b>null root</b> is turned into an object by <c>resolveReference</c> (type 0 at 0x008EACCE),
+    /// so "sim" is a null entry: the robot is physical. Any other non-object root (array, string, number, bool) takes <c>resolveReference</c>'s
+    /// <c>Json::throwLogicError</c> (0x008EADC2..0x008EAE64) out of the handler; where the engine catches that is not established
+    /// (inventory M1-029 row 11o), so this stack, which never throws on a live path, reports it once as MISSING and does nothing (the effect the throw has
+    /// inside this handler: the SetPhysicalRobot / SetOutputSource calls after it never run).
     /// </summary>
     internal void HandleFirmwareVersion(FirmwareVersion f)
     {
-        if (!Json.TryParseFirst(f.Signature, out var doc))
-        {
-            Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON did not parse; the audio output source is not set (M3-024)");
-            return;
-        }
+        if (!Json.TryParseFirst(f.Signature, out var doc)) return;          // 0x00536932: nothing happens
         using (doc)
         {
             var root = doc.RootElement;
-            if (root.ValueKind != System.Text.Json.JsonValueKind.Object)
+            bool simIsNull;
+            try { simIsNull = Json.IsNull(Json.Member(root, "sim")); }
+            catch (JsonLogicError)
             {
-                Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object; the audio output source is not set (M3-024)");
+                if (!_reportedFirmwareRootThrow)
+                {
+                    _reportedFirmwareRootThrow = true;
+                    Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object or null, so Json::Value::operator[] throws Json::LogicError (0x008EADC2..0x008EAE64) out of the handler; where the engine catches it is not established (M10-010, M1-029 row 11o); nothing is set");
+                }
                 return;
             }
-            bool simIsNull = !root.TryGetProperty("sim", out var sim) || sim.ValueKind == System.Text.Json.JsonValueKind.Null;
             // fidelity: M4-011
             // SetPhysicalRobot(true) calls BlockFilter::Init (0x0051391E..0x00513954) before its +0x14 store (0x0051397A) and
             // VisionComponent::SetPhysicalRobot (0x0051397C); a simulated robot (sim non-null) never takes this branch.
@@ -963,6 +970,7 @@ public sealed class EngineRobot
         }
     }
 
+    private bool _reportedFirmwareRootThrow;
     private int _physicalRobotRecorded;
     /// <summary>True once <c>Robot::SetPhysicalRobot</c> ran (this stack's record of it, for a vision system built after the firmware version; M11-037). <see cref="IsPhysicalRobot"/> is the value.</summary>
     internal bool PhysicalRobotRecorded => Volatile.Read(ref _physicalRobotRecorded) != 0;

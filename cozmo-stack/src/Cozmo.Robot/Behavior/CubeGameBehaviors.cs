@@ -1008,7 +1008,10 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
     {
         var robot = M.RobotPose();
         if (robot is null) { Finish(); return; }
-        Selected = M.Whiteboard.AddBeacon(new Pose3d(Mat3.AboutZ(robot.Value.AngleAroundZ), robot.Value.Translation with { Z = 0 }), BeaconRadiusMm);
+        // fidelity: M15-011
+        // SelectNewBeacon 0x005E5F0C: Robot::GetPose, copied (Pose3d::Pose3d 0x005E5F1A), and AddBeacon(copy, [this+0x128]) (0x005E5F28..0x005E5F30): the whole robot pose, rotation and
+        // translation including z, not a planar pose rebuilt from the yaw.
+        Selected = M.Whiteboard.AddBeacon(robot.Value, BeaconRadiusMm);
         Log($"SelectNewBeacon: beacon at {Selected.Pose.Translation} radius {BeaconRadiusMm}");
         PlayTrigger(NewAreaAnim, Finish);
     }
@@ -1020,16 +1023,19 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 /// <c>TryToPlaceAt</c>, <c>FireEmotionEvents</c>; config <c>recentFailureCooldown_sec</c> 45 hiking / 5 sparks):
 /// runnable with an active beacon and a usable cube outside every beacon (<c>FindUsableCubesOutOfBeacons</c>,
 /// excluding cubes that failed within the cooldown). Pick the cube up (pick-up helper; failure →
-/// <c>SetFailedToUse</c>), then either stack it on a free upright cube already in the beacon
-/// (<c>PlaceRelObjectHelper</c>) or place it at a free pose inside the beacon (drive there, <c>PlaceObjectOnGround</c>).
-/// The free-pose search is LOCAL: the beacon centre, then a ring of candidates at half the radius, keeping
-/// 60 mm from every located cube.
+/// <c>SetFailedToUse</c>), then <c>TransitionToObjectPickedUp</c> 0x005DF3E4 decides: <c>FindFreeCubeToStackOn</c> first; a cube found
+/// is stacked on (<c>TryToStackOn</c>), otherwise <c>PickupCube</c> is reported and the cube is to be put on the floor at the pose
+/// <c>FindFreePoseInBeacon</c> picks (<c>TryToPlaceAt</c>).
+///
+/// MISSING (not built; each is reported through SteppedBehavior.ReportMissing, once per message per process, not once per behaviour instance): <c>FindFreePoseInBeacon</c> 0x005E0378..0x005E139F (about 580 instructions of pose, quaternion and
+/// <c>acosf</c> arithmetic; not extracted), <c>PlaceObjectOnGroundAtPoseAction</c> (constructed at 0x005DFF14; no record owns it) behind <c>TryToPlaceAt</c>, and
+/// <c>DriveToPlaceOnObjectAction</c> (0x005DFE0E; no record owns it) behind <c>TryToStackOn</c>. The earlier local free-pose search and the invented stand pose are
+/// gone; the stack action below is the stand-in for <c>DriveToPlaceOnObjectAction</c> alone and is labelled as such.
 /// </summary>
-// fidelity: M15-009
+// fidelity: M15-009, M15-008
 public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, PickingUp, StackingOn, PlacingAt }
-    public const double FreePoseClearanceMm = 60.0;
 
     public BringCubeToBeaconBehavior(ManipulationSystem m, string id = "Hiking_BringCubeToBeacon", double recentFailureCooldownSec = 45)
         : base(id, "BringCubeToBeacon", m) => RecentFailureCooldownSec = recentFailureCooldownSec;
@@ -1037,7 +1043,6 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     public double RecentFailureCooldownSec { get; }
     public Phase CurrentPhase { get; private set; }
     public uint? Candidate { get; private set; }
-    public Vec3? PlacedAt { get; private set; }
 
     private ObservableObject? GetCandidate()
     {
@@ -1075,79 +1080,139 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
         });
     }
 
+    /// <summary>The unlock id <c>FindFreeCubeToStackOn</c> asks for (0x005E0108..0x005E010C: <c>IsUnlocked(robot+0x448, 10, true)</c>): Anki.Cozmo.UnlockId.StackTwoCubes.</summary>
+    public const int StackTwoCubesUnlockId = 0xA;
+
+    /// <summary>The ProgressionUnlockComponent seam (<c>IsUnlocked(StackTwoCubes, true)</c>); null: no component in this stack, treated as unlocked and reported MISSING.</summary>
+    public Func<int, bool>? IsUnlocked { get; set; }
+
+    /// <summary>The distance <c>FindFreeCubeToStackOn</c> adds to the carried cube's X dimension before the beacon test (<c>vmov.f32 s2, #10.0</c> 0x005E01F2, <c>vadd.f32</c> 0x005E0210).</summary>
+    public const float StackBeaconMarginMm = 10.0f;
+
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::TransitionToObjectPickedUp</c> 0x005DF3E4, in the engine's order (the VizManager::EraseSegments at the top, 0x005DF412, is not drawn):
+    /// the carried object must be the candidate (<c>[[robot+0x284]+8] == [this+0x12C]</c>, 0x005DF424..0x005DF436), else the <c>NotPickedUp</c> error (0x005DF4F8..0x005DF548); the candidate
+    /// is looked up (<c>GetLocatedObjectByIdHelper</c> 0x005DF440), else the <c>ObjectIsNull</c> error (0x005DF556..0x005DF59A); with no active beacon nothing is done (0x005DF460);
+    /// <b><c>FindFreeCubeToStackOn</c> comes next</b> (0x005DF46A): a cube found takes the stack branch, <c>TryToStackOn(target, 1)</c> (0x005DF4F2), and nothing else runs;
+    /// otherwise <c>NeedActionCompleted(PickupCube 0x1F)</c> (0x005DF59C..0x005DF5A0) and then the floor placement.
+    /// The engine returns without ending the behaviour on its error and no-beacon branches; this stack ends it (a stepped behaviour with no action pending would never end otherwise).
+    /// </summary>
     private void TransitionToObjectPickedUp()
     {
-        // 0x005DF5A0 names the action outright: PickupCube (0x1F), whatever the config says
-        if (NeedActionCompleted("PickupCube") is { } action) Log($"needs action {action}");
+        if (Candidate is not { } candidate || !M.Docking.Carrying.IsCarrying(candidate))
+        {
+            Log("error: BehaviorExploreBringCubeToBeacon.TransitionToObjectPickedUp.NotPickedUp: We do not have the cube picked up, we should not have transitioned here.");
+            Finish(); return;
+        }
+        var carried = M.World.GetLocatedObjectById(candidate);
+        if (carried is null)
+        {
+            Log($"error: BehaviorExploreBringCubeToBeacon.TransitionToObjectPickedUp.ObjectIsNull: Could not obtain obj from ID '{candidate}'");
+            Finish(); return;
+        }
         var beacon = M.Whiteboard.GetActiveBeacon();
         if (beacon is null) { Finish(); return; }
-        var stackOn = M.Whiteboard.FindCubesInBeacon(beacon)
-            .FirstOrDefault(o => o.ObjectId != Candidate && o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative
-                                 && !M.Configurations.IsObjectPartOfConfigurationType(o.ObjectId, BlockConfigurationType.StackOfCubes));
-        if (stackOn is not null) { TryToStackOn(stackOn.ObjectId); return; }
-        var pose = FindFreePoseInBeacon(beacon);
-        if (pose is null) { beacon.FailedToFindLocation(); Log("FindFreePoseInBeacon: none free"); Finish(); return; }
-        TryToPlaceAt(pose.Value);
+        var stackOn = FindFreeCubeToStackOn(carried, beacon);
+        if (stackOn is not null)
+        {
+            Log($"info: Behaviors.{Id}.TransitionToObjectPickedUp: Decided to place '{candidate}' on top of '{stackOn.ObjectId}'");
+            TryToStackOn(stackOn.ObjectId, 1);
+            return;
+        }
+        // 0x005DF59C..0x005DF5A0 names the action outright: PickupCube (0x1F), whatever the config says
+        if (NeedActionCompleted("PickupCube") is { } action) Log($"needs action {action}");
+        // 0x005DF5E0: FindFreePoseInBeacon(carried, beacon, robot, &pose, [this+0x130]); its result decides TryToPlaceAt (0x005DF696) or the NoFreePoses branch (0x005DF69C..0x005DF73A:
+        // AIWhiteboard::FailedToFindLocationInBeacon, the "Could not decide where to drop the cube in the beacon (all poses failed)" log and the HikingNoLocationAtBeacon emotion event).
+        SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon 0x005E0378..0x005E139F and PlaceObjectOnGroundAtPoseAction (constructed by TryToPlaceAt 0x005DFF14) are not built (M15-009): the carried cube is not placed on the floor, and neither the NoFreePoses branch nor the placement callback (FireEmotionEvents 0x005E002C) is reached");
+        CurrentPhase = Phase.Idle;
+        Finish();
     }
 
-    private void TryToStackOn(uint target)
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::FindFreeCubeToStackOn(carried, beacon, robot)</c> 0x005E00EC: returns null unless <c>ProgressionUnlockComponent::IsUnlocked(StackTwoCubes, true)</c>
+    /// (0x005E0108..0x005E0114). Otherwise the first located object (<c>BlockWorld::FindLocatedObjectHelper</c> 0x005E0246, returnFirst = true) of family Block or LightCube (the table at
+    /// 0x00C6D6A8, words 1 and 2) that the filter lambda 0x005E1CC6 accepts, in order: not the carried object itself; pose state Known (<c>[+0x24] == 1</c>); not <c>DidFailToUse</c> (reason 1
+    /// StackOnObject, the behaviour's cooldown, its pose, 20.0 mm and Radians 0x3EC90FDB); <c>AIBeacon::IsLocWithinBeacon(its pose, carried X dimension + 10.0f)</c>; and
+    /// <c>DockingComponent::CanStackOnTopOfObject</c>. The whiteboard's <c>DidFailToUse</c> here has no pose arguments (the stack's whiteboard keeps failures without poses, M8-014); the
+    /// pose/threshold arguments the engine passes are therefore not applied. The iteration order of <c>FindLocatedObjectHelper</c> is taken as the ordered maps' (family, type, id).
+    /// </summary>
+    public ObservableObject? FindFreeCubeToStackOn(ObservableObject carried, AIBeacon beacon)
+    {
+        if (IsUnlocked is { } unlocked) { if (!unlocked(StackTwoCubesUnlockId)) return null; }
+        else SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreeCubeToStackOn 0x005E010C: ProgressionUnlockComponent::IsUnlocked(StackTwoCubes) has no component in this stack; live-path default: treated as unlocked");
+        float margin = (float)RotatedParentAxis.DimInParentFrame(carried, 0) + StackBeaconMarginMm;
+        SteppedBehavior.ReportMissing("AIWhiteboard::DidFailToUse 0x0056BA04.. as FindFreeCubeToStackOn calls it (0x005E1D24) takes the failure pose, 20.0 mm and Radians(0x3EC90FDB); this stack's whiteboard keeps no failure poses (M8-014), so only the object, reason and cooldown are tested");
+        return M.World.LocatedObjects
+            .Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
+            .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
+            .FirstOrDefault(o => !ReferenceEquals(o, carried)
+                                 && o.PoseState == PoseState.Known
+                                 && !M.Whiteboard.DidFailToUse(o.ObjectId, ObjectActionFailure.StackOnObject, RecentFailureCooldownSec)
+                                 && beacon.IsLocWithinBeacon(o.Pose, margin)
+                                 && M.Docking.CanStackOnTopOfObject(o));
+    }
+
+    /// <summary>
+    /// <c>TryToStackOn(robot, target, attempt)</c> 0x005DFDD4 starts <c>DriveToPlaceOnObjectAction(robot, target, ...)</c> (0x005DFE0E; not built, no record owns it) with the completion
+    /// lambda 0x005E142C. This stack runs the pre-batch <c>PlaceRelObjectHelper</c> action as the labelled stand-in for that action alone. The lambda's branches are the engine's: result
+    /// category 0 (success): <c>NeedActionCompleted(StackCube 0x2A)</c> (0x005E14B6) then <c>FireEmotionEvents</c> (0x005E14BE); category 4 (retry) while the cube is still the carried one and
+    /// the attempt number is at most 2 (0x005E14DC..0x005E14EA): <c>TryToStackOn(target, attempt + 1)</c> (0x005E1568); category 3, and category 4 when the retry test fails: <c>SetFailedToUse(target, StackOnObject)</c> (0x005E1680) when the
+    /// target is still located (0x005E166C..0x005E1672); every other category does nothing (<see cref="StackCompleted"/>).
+    /// </summary>
+    private void TryToStackOn(uint target, int attempt)
     {
         CurrentPhase = Phase.StackingOn;
+        SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::TryToStackOn 0x005DFDD4 starts DriveToPlaceOnObjectAction (0x005DFE0E), which is not built; the stack runs PlaceRelObjectHelper as a labelled stand-in (M15-008)");
         var helper = new DockHelper(M);
-        RunAction($"PlaceRelObjectHelper({target}, on top)", ct => helper.RunAsync(target, PreActionType.PlaceRelative, () => new PlaceRelObjectAction(M, target, onTop: true), ct), r =>
+        RunAction($"PlaceRelObjectHelper({target}, on top; stand-in for DriveToPlaceOnObjectAction)", ct => helper.RunAsync(target, PreActionType.PlaceRelative, () => new PlaceRelObjectAction(M, target, onTop: true), ct), r =>
         {
             foreach (var l in helper.Trace) Log("  " + l);
-            if (r != ActionResult.Success) M.Whiteboard.SetFailedToUse(target, ObjectActionFailure.StackOnObject);
-            Log(r == ActionResult.Success ? "stacked in the beacon" : $"stacking failed: {r}");
-            CurrentPhase = Phase.Idle; Finish();
+            StackCompleted(r, target, attempt);
         });
     }
 
-    /// <summary>A pose inside the beacon at least <see cref="FreePoseClearanceMm"/> from every located cube (LOCAL search).</summary>
-    public Vec3? FindFreePoseInBeacon(AIBeacon beacon)
+    /// <summary>
+    /// The completion lambda 0x005E142C by result category (the top byte of the result, 0x005E1434..0x005E144A): 0 success; 4 retry; 3 abort; every other category (1 running,
+    /// 2 cancelled, ...) branches to 0x005E1684 and returns: no log, no SetFailedToUse, and the behaviour is not ended here.
+    /// </summary>
+    internal void StackCompleted(ActionResult r, uint target, int attempt)
     {
-        var cubes = M.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type) && !M.Docking.Carrying.IsCarrying(o.ObjectId)).ToList();
-        bool Free(Vec3 p) => cubes.All(o => { var d = o.Pose.Translation - p; return Math.Sqrt(d.X * d.X + d.Y * d.Y) >= FreePoseClearanceMm; });
-        var centre = beacon.Pose.Translation with { Z = 0 };
-        if (Free(centre)) return centre;
-        for (int i = 0; i < 8; i++)
+        uint category = (uint)r >> 24;
+        bool failed;
+        if (category == 0)
         {
-            double a = i * Math.PI / 4;
-            var p = centre + new Vec3(Math.Cos(a), Math.Sin(a), 0) * (beacon.RadiusMm / 2);
-            if (Free(p)) return p;
+            Log($"info: Behaviors.{Id}.TryToStackOn: stacked on '{target}'");
+            if (NeedActionCompleted("StackCube") is { } action) Log($"needs action {action}");             // 0x005E14B6: StackCube (0x2A)
+            FireEmotionEvents();                                                                           // 0x005E14BE
+            CurrentPhase = Phase.Idle; Finish();
+            return;
         }
-        return null;
+        if (category == 4)
+        {
+            if (Candidate is { } c && M.Docking.Carrying.IsCarrying(c) && attempt <= 2)                    // 0x005E14DC..0x005E14EA
+            {
+                Log($"info: Behaviors.{Id}.TryToStackOn: retrying ({attempt + 1})");
+                TryToStackOn(target, attempt + 1);                                                         // 0x005E1568
+                return;
+            }
+            failed = true;                                                                                 // 0x005E15D8
+        }
+        else failed = category == 3;                                                                       // 0x005E156E
+        if (!failed) return;                                                                               // 0x005E1684
+        Log($"info: Behaviors.{Id}.TryToStackOn: stacking failed: {r}");
+        if (M.World.GetLocatedObjectById(target) is not null) M.Whiteboard.SetFailedToUse(target, ObjectActionFailure.StackOnObject);   // 0x005E1660..0x005E1680
+        CurrentPhase = Phase.Idle; Finish();
     }
 
-    private void TryToPlaceAt(Vec3 target)
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::FireEmotionEvents(robot)</c> 0x005E002C: <c>AIWhiteboard::AreAllCubesInBeacons</c> (0x005E0038) picks the 29-character
+    /// "HikingBroughtLastCubeToBeacon" (0x005E004A, string 0x005E00CC) when every cube is in a beacon, else the 25-character "HikingBroughtCubeToBeacon" (0x005E006C, 0x005E00B0), triggered on
+    /// the mood manager at Robot+0x440 with <c>MoodManager::GetCurrentTimeInSeconds</c>.
+    /// </summary>
+    private void FireEmotionEvents()
     {
-        CurrentPhase = Phase.PlacingAt;
-        RunAction($"drive to {target} and place", async ct =>
-        {
-            var robot = M.RobotPose();
-            if (robot is null) return ActionResult.Abort;
-            // stand so the carried cube (about one cube ahead of the robot's origin) lands on the target
-            var dir = (target - robot.Value.Translation) with { Z = 0 };
-            double heading = Math.Atan2(dir.Y, dir.X);
-            var stand = target - new Vec3(Math.Cos(heading), Math.Sin(heading), 0) * (CubeGeometry.CubeSizeMm + FlipBlockAction.DrivePastMm);
-            var drive = new DriveToPoseAction(M) { Goal = new Pose3d(Mat3.AboutZ(heading), stand), IgnoreObstacleIds = Candidate is { } c ? new[] { c } : null };
-            var d = await drive.RunAsync(ct);
-            foreach (var l in drive.Trace) Log("  " + l);
-            if (d != ActionResult.Success) return d;
-            return await new PlaceObjectOnGroundAction(M).RunAsync(ct);
-        }, r =>
-        {
-            if (r == ActionResult.Success)
-            {
-                PlacedAt = target;
-                // FireEmotionEvents 0x005E002C: one name or the other, on the mood manager at Robot+0x440.
-                string ev = M.Whiteboard.AreAllCubesInBeacons() ? LastCubeEmotionEvent : CubeEmotionEvent;
-                bool known = Context.Mood?.Trigger(ev, Clock() / 1000.0) ?? false;
-                Log($"placed in the beacon; emotion event {ev}: " +
-                    (Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model"));
-            }
-            else if (Candidate is { } c) { M.Whiteboard.SetFailedToUse(c, ObjectActionFailure.PlaceObjectAt); Log($"placing failed: {r}"); }
-            CurrentPhase = Phase.Idle; Finish();
-        });
+        string ev = M.Whiteboard.AreAllCubesInBeacons() ? LastCubeEmotionEvent : CubeEmotionEvent;
+        bool known = Context.Mood?.Trigger(ev, Clock() / 1000.0) ?? false;
+        Log($"emotion event {ev}: " + (Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model"));
     }
 }

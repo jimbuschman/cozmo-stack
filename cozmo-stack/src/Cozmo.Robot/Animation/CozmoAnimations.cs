@@ -162,6 +162,10 @@ public sealed class CozmoAnimations : IDisposable
         _scheduler = new AnimationScheduler(_sink);
         _scheduler.Stream.Log = robot.Engine.Log;
         _scheduler.Log = robot.Engine.Log;
+        // fidelity: M3-024
+        // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
+        // a robot with no firmware version yet has the client constructor's 0 (None).
+        _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
         _sink.AnimationEvent += e => Event?.Invoke(e);
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
         _scheduler.NotImplemented += w => NotImplemented?.Invoke(w);

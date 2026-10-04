@@ -119,7 +119,7 @@ public sealed class CozmoSensors
     /// <summary>
     /// C2: NeedsManager::RegisterNeedsActionCompleted(17) when the intensity is &gt; 1000.0. The needs manager is the M15
     /// interface (MD2); 17 is the engine's NeedsActionId ordinal ("Fall" by the Unity ordinal; the engine name was not
-    /// checked). Nothing in this stack subscribes yet.
+    /// checked). FreeplayStack subscribes and registers the "Fall" action on its NeedsManager (M10-011).
     /// </summary>
     public event Action<int>? NeedsActionCompleted;
 

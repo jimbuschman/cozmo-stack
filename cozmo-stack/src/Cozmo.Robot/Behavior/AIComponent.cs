@@ -22,6 +22,17 @@ public sealed class AIComponent
         Helpers = new BehaviorHelperComponent(worldOriginId, log);
     }
 
+    // fidelity: M10-009
+    /// <summary>
+    /// <c>AIComponent+4</c>, the byte <c>StrategyObstacleDetected</c>'s predicate returns (<c>[[robot+0x264]+4]</c>, 0x006143CA; the strategy is
+    /// <c>StrategyObstacleDetected</c> 0x006141F8, shipped as <c>ReactToObstacle</c>'s wants-to-run strategy). The component's constructor zeroes it (0x00569A80)
+    /// and <b>nothing in this build ever writes it</b> (no store to +4 anywhere in AIComponent code and no function that fetches the component from
+    /// Robot+0x264 writes it; M10 inventory). So it is false for the life of the component, and <c>ReactToObstacle</c>, which four freeplay activities list, never runs.
+    /// The setter is internal and exists only so a test of the strategy's read can put a value there (the engine has no such writer; nothing in the stack's
+    /// production code calls it).
+    /// </summary>
+    public bool ObstacleDetected { get; internal set; }
+
     /// <summary><c>AIComponent+0x10</c>.</summary>
     public BehaviorHelperComponent Helpers { get; }
 
