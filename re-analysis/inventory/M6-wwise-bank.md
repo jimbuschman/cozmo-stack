@@ -2750,3 +2750,30 @@ section's corrections applied**. Where C34 differs from earlier text, C34 wins. 
   is superseded), M6-025 (C34.1, C34.2, C34.5), M6-022, M6-026. Still open: the mixer record `0x9C0FC0`, `0x9FD8C0`/`0x9FD8D0`,
   `0x9DCE44`, `0xA6E848`, K11 (STID), K9's per-type creators, `0x9B2B08`/`0x9A6518`, the `[0x108D9A0]` XOR-key writer,
   the S8 callers.
+
+## Correction C35 (manager, 2026-10-04): the RTPC curve evaluation 0xA14E28, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C34). C35 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-5.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (C1..C5 and the shipped-data census of the verifier's own HIRC walk; the extractor's
+heuristic census is withdrawn). Where C35 differs from earlier text, C35 wins. No status changes.
+
+- **C35.1, the evaluation (L5-22..L5-30).** `0xA14E28(curve, x, hint, &idx)` is a leaf (no calls) working in binary32
+  with non-fused VFP operations; curve = `{pts*, count, scaling}`, a point = `{f32 x, f32 y, u32 interp}`, the LEFT
+  point's interp selects the shape. Segment search, the interp dispatch table `0xA14F64..0xA14F84`, every shape formula
+  and constant (pool `0xA15248..0xA152C0`), interp >= 10 (y = 0 then the scaling stage), the scaling stage (2: the signed
+  2-term-log dB, clamps +-764.6162109375, y == 0 gives -0.0; 3: pow10core with the `y < -37.0` cut; 4: 10^(0.05 y);
+  others unchanged), bit-exact against the engine on 56,000+ emulator cases. `m` and `k` of pow10core are bit
+  reinterpretations; above y ~ 38.83 the result's sign bit is set (C5).
+- **C35.2, the loader (L5-01..L5-08 with C1..C4).** The bank RTPC entry layout, node `vt+0xF0 = 0x9F1DE0`,
+  `0xA1A338`/`0xA11F98`/`0xA117C8` (key1 = `node+0x10`), the 0x38-byte entry, the 20-byte curve slot at `[e+0x2C]`
+  (points copied unsorted), the curve-add gate and the 0x1F error, duplicate-curve replace-and-append, the 0x34 failure
+  path (C4). Unread: `0xA1A160`, `0xA0F990`, `0xA0F07C`, `0x9E6EDC`, `0xA11624`, `0xA10C98`, `0xA12244`.
+- **C35.3, the accumulators (L5-10..L5-13)** agree with C34.2 R2; the hint is 0 at all 12 call sites (L5-21).
+- **C35.4, shipped data.** 64 RTPC entries: scalings 0 and 2 only, accumulate byte 1 (sum) for 61 and 0 for 3 (the
+  product path ships unused), 2..6 points, sorted, finite, no interp >= 10; shipped segment shapes (left interp,
+  scaling): (1,2), (4,0), (4,2), (6,0), (7,2), (9,0), (9,2). event_volume `0xD2687048` has scaling 2 and points
+  (0,-1,interp 1),(1,0,interp 4).
+- **Records touched (text only, no status):** M6-009 (the curve: IMPLEMENTATION_GAP stays; the C# `WwiseRtpc` /
+  `WwiseRtpcStore` curve is double width and differs on D1..D9), M6-001 (L5-01). The C# is to be rebuilt to binary32 from
+  L5-22..L5-30; `WwiseAudioSource.cs:398` (unscaled `Evaluate`) is outside the live path.
