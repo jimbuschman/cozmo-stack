@@ -820,8 +820,8 @@ public class M13RVisBuildTests
     }
 
     /// <summary>
-    /// M13-021 (RECOVERABLE_GAP): Robot::ComputeHeadAngleToSeePose and GetAbsoluteHeadAngleToLookAtPose 0x0054B428 are unread, so with no seam supplied
-    /// Init refuses instead of choosing an angle.
+    /// M13-021 (RECOVERABLE_GAP): Robot::ComputeHeadAngleToSeePose is unread, so with no seam supplied Init refuses instead of choosing an angle. GetAbsoluteHeadAngleToLookAtPose 0x0054B428 is built
+    /// (R-FIX2): when the see-pose lookup fails (0x0054AB1A), Init falls back to it with the robot-relative translation (400, 0, 0): its binary32 result 0xBD45C00E (emulate_head_angle.py), inside the head range.
     /// </summary>
     [Fact]
     public void M13_021_TheUnreadHeadAngleLookupsAreRefusedWhenNoSeamIsSupplied()
@@ -830,7 +830,9 @@ public class M13RVisBuildTests
         var noSee = new TurnTowardsPoseEnv(Pose3d.Identity, 0, null, null);
         Assert.Contains("M13-021", Assert.Throws<NotSupportedException>(() => new TurnTowardsPoseCompound(target, Math.PI).InitPose(noSee, out _)).Message);
         var failingSee = new TurnTowardsPoseEnv(Pose3d.Identity, 0, _ => null, null);
-        Assert.Contains("M13-021", Assert.Throws<NotSupportedException>(() => new TurnTowardsPoseCompound(target, Math.PI).InitPose(failingSee, out _)).Message);
+        var compound = new TurnTowardsPoseCompound(target, Math.PI);
+        Assert.Equal(0u, compound.InitPose(failingSee, out _));
+        Assert.Equal(0xBD45C00Eu, BitConverter.SingleToUInt32Bits((float)compound.HeadAngleRad));
     }
 
     /// <summary>

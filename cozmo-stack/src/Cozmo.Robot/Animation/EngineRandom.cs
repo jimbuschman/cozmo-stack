@@ -20,8 +20,12 @@ public sealed class EngineRandom
     private readonly Mt19937 _mt;
     private readonly object _gate = new();
 
-    /// <summary>A generator seeded as <c>SetSeed(seed)</c> does: 0 takes an entropy seed (R1).</summary>
-    public EngineRandom(uint seed) => _mt = new Mt19937(seed == 0 ? EntropySeed() : seed);
+    /// <summary>
+    /// A generator seeded as <c>SetSeed(seed)</c> does: 0 takes an entropy seed (R1). <paramref name="entropy"/> stands for the
+    /// <c>std::random_device</c> word (0x0082F898) and exists so the production branch can be tested; it is read exactly once and the word is
+    /// the seed even when it is zero (0x0082F89C..0x0082F8A4: <c>mov r5, r0</c> straight into the seeding loop), M5-005.
+    /// </summary>
+    public EngineRandom(uint seed, Func<uint>? entropy = null) => _mt = new Mt19937(seed == 0 ? (entropy ?? EntropySeed)() : seed);
 
     /// <summary>An entropy-seeded generator (SetSeed(0), R1..R3).</summary>
     public EngineRandom() : this(0) { }
@@ -29,14 +33,8 @@ public sealed class EngineRandom
     /// <summary>A test seam: an mt19937 seeded from a caller's <see cref="Random"/>, so a timeline can be reproduced.</summary>
     public EngineRandom(Random seedSource) : this(unchecked((uint)seedSource.Next(1, int.MaxValue))) { }
 
-    /// <summary>std::random_device("/dev/urandom")(): one 32-bit entropy word.</summary>
-    private static uint EntropySeed()
-    {
-        uint s;
-        do s = BitConverter.ToUInt32(RandomNumberGenerator.GetBytes(4));
-        while (s == 0);
-        return s;
-    }
+    /// <summary>std::random_device("/dev/urandom")(): one 32-bit entropy word, taken once and never retried (0x0082F898); zero is a valid seed.</summary>
+    private static uint EntropySeed() => BitConverter.ToUInt32(RandomNumberGenerator.GetBytes(4));
 
     /// <summary>R1: (d0 + d1·2^32)·2^−64.</summary>
     public double GetNextDbl()

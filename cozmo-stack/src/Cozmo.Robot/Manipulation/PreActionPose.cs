@@ -18,7 +18,7 @@ public sealed record PreActionPose(PreActionType Type, KnownMarker Marker, Pose3
     /// <summary>
     /// The built <c>Pose3d(angle, Z_AXIS, translation)</c>'s translation, in the marker's frame (C-E7):
     /// Docking/Rolling <c>(0, -65, -size.z/2)</c>; PlaceRelative <c>(0, -100, -size.z/2)</c>; PlaceOnGround
-    /// <c>(0, -49, -size.z/2)</c>; Flipping <c>(size.x/2 + 56.5771, -56.5771, -size.z/2)</c>. The <c>sb</c>
+    /// <c>(0, -49, -size.z/2)</c>; Flipping <c>(size.y/2 + 56.5771, -56.5771, -size.z/2)</c>. The <c>sb</c>
     /// Y rotation is applied on top of it (see <see cref="CubePreActionPoses.RotateBy"/>); it is a different
     /// thing from <see cref="DistanceMm"/>.
     /// </summary>
@@ -80,8 +80,13 @@ public static class CubePreActionPoses
     public const double PlaceRelativeOffsetMm = -100.0;
     /// <summary>The built PlaceOnGround pose translation's Y: -49.0 (0xC2440000 at 0x004E5B0C).</summary>
     public const double PlaceOnGroundOffsetMm = -49.0;
-    /// <summary>The Flipping corner's 56.5771 (0xC2624EEF at 0x004E5CB8).</summary>
-    public const double FlippingCornerMm = 56.5771;
+    /// <summary>
+    /// The Flipping corner's 56.5771 as the engine's binary32: 0x42624EEF in the rodata float at 0x004E5C60 (added to size.x/2 with
+    /// <c>vadd.f32</c> at 0x004E5934) and 0xC2624EEF built by <c>movw/movt</c> at 0x004E5CB2..0x004E5CBC (the Y). NOT the double 56.5771
+    /// (binary32 0x42624EF3).
+    /// </summary>
+    // fidelity: M12-001
+    public static readonly double FlippingCornerMm = BitConverter.UInt32BitsToSingle(0x42624EEF);
     /// <summary>The built pose's Z rotation for Docking/PlaceRelative/PlaceOnGround/Rolling: pi/2 (C-E7).</summary>
     public const double DockingAngleRad = Math.PI / 2;
     /// <summary>The built pose's Z rotation for Flipping: 3pi/4 (C-E7).</summary>
@@ -91,11 +96,11 @@ public static class CubePreActionPoses
     /// <c>operator&gt;(angleTolerance, Radians(0))</c> (0x0084CC90) uses the ~1e-5 rad epsilon 0x3727C5AC,
     /// so the positivity guard is <c>angleTolerance &gt; 1e-5</c>.
     /// </summary>
-    public const double DistanceThresholdEpsilonRad = 1e-5;
+    public static readonly double DistanceThresholdEpsilonRad = BitConverter.UInt32BitsToSingle(0x3727C5AC);
     /// <summary>The -1.0f the threshold writes when the guard fails (0x005501AE).</summary>
     public const double DistanceThresholdSentinel = -1.0;
     /// <summary>The 1e-5 (0x3727C5AC) the <c>GetCurrentPreActionPoses</c> offset geometry compares dx/dy against (E1).</summary>
-    public const double OffsetEpsilon = 1e-5;
+    public static readonly double OffsetEpsilon = BitConverter.UInt32BitsToSingle(0x3727C5AC);
 
     // ------------------------------------------------------------------ M12-021 face-def records
     // The engine copies these verbatim from rodata into LookupBlockInfo's per-object vector. The vector order
@@ -184,7 +189,8 @@ public static class CubePreActionPoses
             PreActionType.PlaceRelative => (new Vec3(0, PlaceRelativeOffsetMm, z), DockingAngleRad),
             PreActionType.PlaceOnGround => (new Vec3(0, PlaceOnGroundOffsetMm, z), DockingAngleRad),
             PreActionType.Rolling => (new Vec3(0, -65, z), DockingAngleRad),
-            PreActionType.Flipping => (new Vec3(size.X / 2 + FlippingCornerMm, -FlippingCornerMm, z), FlippingAngleRad),
+            // 0x004E583A (vldr s16,[r0,#4] = the SECOND size component) / 0x004E592C/0x004E5934: s18 = size.y * 0.5f (vmul.f32) then + 56.577f (vadd.f32): float arithmetic, then the stored float
+            PreActionType.Flipping => (new Vec3((double)((float)size.Y * 0.5f + (float)FlippingCornerMm), -FlippingCornerMm, z), FlippingAngleRad),
             _ => (new Vec3(0, 0, 0), 0),
         };
     }
@@ -379,16 +385,26 @@ public static class CubePreActionPoses
     public static bool DistanceThresholdMm(Pose3d preActionPose, Pose3d objectPose, double angleToleranceRad,
                                            out double thresholdTwice, out double thresholdOnce)
     {
-        if (!(angleToleranceRad > DistanceThresholdEpsilonRad))
+        // 0x005500B8..0x005500C2: operator>(Radians tol, Radians(0)) 0x0084CC90 = (tol - 0 > 0) && !IsNear(tol, 0, 0x3727C5AC); binary32 throughout
+        float tol = (float)angleToleranceRad;
+        if (!(tol > 0f && !EngineRadians.IsNear(tol, 0.0, DistanceThresholdEpsilonRad)))
         {
             thresholdTwice = DistanceThresholdSentinel;
             thresholdOnce = DistanceThresholdSentinel;
             return false;
         }
         var d = objectPose.WithRespectTo(preActionPose).Translation;
-        double dist = Math.Sqrt(d.X * d.X + d.Y * d.Y + d.Z * d.Z);
-        thresholdOnce = dist * Math.Sin(angleToleranceRad);
-        thresholdTwice = 2 * thresholdOnce;
+        // 0x00550102..0x00550122: vmul.f32 / vadd.f32 in the order ((x*x + y*y) + z*z), then vsqrt.f32 (NaN: sqrtf)
+        float fx = (float)d.X, fy = (float)d.Y, fz = (float)d.Z;
+        float sum = fx * fx;
+        sum = sum + fy * fy;
+        sum = sum + fz * fz;
+        float dist = MathF.Sqrt(sum);
+        // 0x00550140..0x0055014E: sinf(tol) then vmul.f32; 0x00550164: out0 = s16 + s16 (vadd.f32); 0x005501A8: out1 = s16
+        float once = dist * MathF.Sin(tol);
+        float twice = once + once;
+        thresholdOnce = once;
+        thresholdTwice = twice;
         return true;
     }
 

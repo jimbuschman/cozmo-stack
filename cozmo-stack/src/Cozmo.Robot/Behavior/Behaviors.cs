@@ -204,7 +204,7 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     protected override bool WantsToRun(BehaviorContext context) => WantsToRunStrategy switch
     {
         null => true,
-        "ObstacleDetected" => context.ObstacleDetected?.Invoke() ?? false,
+        "ObstacleDetected" => context.AI?.ObstacleDetected ?? false,   // fidelity: M10-009 - AIComponent+4 (0x006143CA)
         "InNeedsBracket" => context.Needs is { } needs && StrategyNeed is { } need && StrategyBracket is { } bracket
                             && needs.State.IsNeedAtBracket(need, bracket),
         "ExpressNeedsTransition" => ExpressNeedsTransition(context),

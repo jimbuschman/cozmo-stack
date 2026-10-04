@@ -518,8 +518,8 @@ public class M8BatchThreeCTests
         Assert.DoesNotContain("circle", viz.Calls);
         renderer.ResolveBeaconPose = b => b.Pose;
         renderer.Render(new[] { new AIBeacon(Pose3d.Identity, 10) });
-        Assert.Equal(2, log.Count);
-        Assert.DoesNotContain("circle", viz.Calls);
+        Assert.Single(log);                                                   // the +0x10 time defaults to AIBeacon.FailedToFindLocationTimeSec (M15-023): nothing else is missing
+        Assert.Contains("circle", viz.Calls);
     }
 
     // ------------------------------------------------------------------ M8-004

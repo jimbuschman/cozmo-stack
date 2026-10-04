@@ -1008,7 +1008,10 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
     {
         var robot = M.RobotPose();
         if (robot is null) { Finish(); return; }
-        Selected = M.Whiteboard.AddBeacon(new Pose3d(Mat3.AboutZ(robot.Value.AngleAroundZ), robot.Value.Translation with { Z = 0 }), BeaconRadiusMm);
+        // fidelity: M15-011
+        // SelectNewBeacon 0x005E5F0C: Robot::GetPose, copied (Pose3d::Pose3d 0x005E5F1A), and AddBeacon(copy, [this+0x128]) (0x005E5F28..0x005E5F30): the whole robot pose, rotation and
+        // translation including z, not a planar pose rebuilt from the yaw.
+        Selected = M.Whiteboard.AddBeacon(robot.Value, BeaconRadiusMm);
         Log($"SelectNewBeacon: beacon at {Selected.Pose.Translation} radius {BeaconRadiusMm}");
         PlayTrigger(NewAreaAnim, Finish);
     }
@@ -1018,18 +1021,26 @@ public sealed class ThinkAboutBeaconsBehavior : ManipulationBehavior
 /// <c>BehaviorExploreBringCubeToBeacon</c> (exports: <c>GetCandidate</c>, <c>TransitionToPickUpObject</c>,
 /// <c>TransitionToObjectPickedUp</c>, <c>FindFreeCubeToStackOn</c>, <c>TryToStackOn</c>, <c>FindFreePoseInBeacon</c>,
 /// <c>TryToPlaceAt</c>, <c>FireEmotionEvents</c>; config <c>recentFailureCooldown_sec</c> 45 hiking / 5 sparks):
-/// runnable with an active beacon and a usable cube outside every beacon (<c>FindUsableCubesOutOfBeacons</c>,
-/// excluding cubes that failed within the cooldown). Pick the cube up (pick-up helper; failure →
-/// <c>SetFailedToUse</c>), then either stack it on a free upright cube already in the beacon
-/// (<c>PlaceRelObjectHelper</c>) or place it at a free pose inside the beacon (drive there, <c>PlaceObjectOnGround</c>).
-/// The free-pose search is LOCAL: the beacon centre, then a ring of candidates at half the radius, keeping
-/// 60 mm from every located cube.
+/// runnable with an active beacon, not inside the failure cooldown of <c>AIBeacon::FailedToFindLocation</c> (M15-023) and a usable cube outside every beacon
+/// (<c>FindUsableCubesOutOfBeacons</c>, excluding cubes that failed within the cooldown). Pick the cube up (<c>TransitionToPickUpObject</c> and its completion lambda: retry up to three
+/// attempts, <c>SetFailedToUse</c> on an abort), then <c>TransitionToObjectPickedUp</c> 0x005DF3E4 decides: <c>FindFreeCubeToStackOn</c> first; a cube found
+/// is stacked on (<c>TryToStackOn</c>), otherwise <c>NeedActionCompleted(PickupCube)</c> (M15-025) and the floor: <c>FindFreePoseInBeacon</c> (M15-019, M15-020), then
+/// <c>TryToPlaceAt</c> (M15-021, M15-022) or the NoFreePoses branch (M15-023); the whiteboard's failure memory is M15-024.
+///
+/// MISSING (not built; each is reported through SteppedBehavior.ReportMissing, once per message per process, not once per behaviour instance):
+/// <list type="bullet">
+/// <item><c>DriveToPickupObjectAction</c> (ctor PLT 0x004A93B8, 0x100 bytes, ObjectID at this+0x128, trigger 0x23F; started by <c>TransitionToPickUpObject</c> 0x005DF95E..0x005DF98A through
+/// <c>IBehavior::StartActing</c> PLT 0x004B01C8): this stack runs ONE attempt of its drive-to-pre-action-pose plus <c>PickupObjectAction</c> (<c>DockHelper</c> with an attempt limit of 1 and no search) in its
+/// place, so the <c>IDriveToInteractWithObject</c> extras (the face turn, the name animation and the 0x23F trigger) are not played. The completion lambda 0x005E0FD8 and the retry path 0x005DF8E6 ARE
+/// built (<see cref="PickUpCompleted"/>, <see cref="TransitionToPickUpObject"/>);</item>
+/// <item><c>DriveToPlaceOnObjectAction</c> (0x005DFE0E; no record owns it) behind <c>TryToStackOn</c>; the stack action in <see cref="TryToStackOn"/> is the stand-in for it alone and is labelled as such;</item>
+/// <item>the unread bodies the floor path reaches: <c>BlockWorld::ClearLocatedObjectByIDInCurOrigin</c> (after a failed verify) and <c>RotationMatrix3d::Renormalize</c> in the candidate pose's matrix.</item>
+/// </list>
 /// </summary>
-// fidelity: M15-009
+// fidelity: M15-009, M15-008, M15-019, M15-020, M15-021, M15-022, M15-023, M15-024, M15-025
 public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
 {
     public enum Phase { Idle, PickingUp, StackingOn, PlacingAt }
-    public const double FreePoseClearanceMm = 60.0;
 
     public BringCubeToBeaconBehavior(ManipulationSystem m, string id = "Hiking_BringCubeToBeacon", double recentFailureCooldownSec = 45)
         : base(id, "BringCubeToBeacon", m) => RecentFailureCooldownSec = recentFailureCooldownSec;
@@ -1037,15 +1048,36 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     public double RecentFailureCooldownSec { get; }
     public Phase CurrentPhase { get; private set; }
     public uint? Candidate { get; private set; }
-    public Vec3? PlacedAt { get; private set; }
 
-    private ObservableObject? GetCandidate()
-    {
-        var robot = M.RobotPose();
-        return M.Whiteboard.FindUsableCubesOutOfBeacons(ObjectActionFailure.Any, RecentFailureCooldownSec)
-            .Where(o => !M.Docking.Carrying.IsCarrying(o.ObjectId))
-            .OrderBy(o => robot is null ? 0 : (o.Pose.Translation - robot.Value.Translation).Length).FirstOrDefault();
-    }
+    /// <summary>
+    /// The failure kinds <c>IsRunnableInternal</c> filters candidates by: the set built from the first two words of the table at 0x00C6D6A0 (= {0, 3, 1, 2}), i.e. {PickUpObject, RollOrPopAWheelie}
+    /// (0x005DF1BA..0x005DF21C). The engine never filters candidates on PlaceObjectAt or StackOnObject.
+    /// </summary>
+    // fidelity: M15-024
+    public static readonly ObjectActionFailure[] CandidateFailureSet = { ObjectActionFailure.PickUpObject, ObjectActionFailure.RollOrPopAWheelie };
+
+    /// <summary>
+    /// The candidate cubes of <c>IsRunnableInternal</c> 0x005DF1AA..0x005DF296: <c>AIWhiteboard::FindUsableCubesOutOfBeacons</c> (M15-020), each kept unless
+    /// <c>DidFailToUse(id, {PickUpObject, RollOrPopAWheelie}, [this+0x130], its pose, 20.0f 0x41A00000, Radians 0x3EC90FDB)</c> (0x005DF250): only the failures recorded for that cube's id are consulted
+    /// (id = [ObjectInfo+4], 0x005DF24E), and one matches by age and by POSE (within 20 mm and pi/8 of the cube's current pose).
+    /// </summary>
+    // fidelity: M15-020, M15-024
+    private List<ObservableObject> UsableCandidates() =>
+        M.Whiteboard.FindUsableCubesOutOfBeacons()
+            .Where(o => !M.Whiteboard.DidFailToUse(unchecked((int)o.ObjectId), CandidateFailureSet, (float)RecentFailureCooldownSec, o.Pose, StackFilterDistMm, StackFilterAngleRad))
+            .ToList();
+
+    /// <summary>
+    /// The vector at <c>[this+0x11C]</c>: cleared at the top of every <c>IsRunnableInternal</c> (0x005DF10C..0x005DF132) and filled by its candidate loop (0x005DF1AA..0x005DF296); <c>InitInternal</c> and
+    /// <c>TransitionToPickUpObject</c> read the vector the latest runnable test built.
+    /// </summary>
+    // fidelity: M15-020
+    private List<ObservableObject> _candidates = new();
+
+    /// <summary><c>GetCandidate(blockWorld, index)</c> 0x005DFDA4: the located object of the vector's entry <paramref name="index"/> (null past the end or when the lookup fails).</summary>
+    // fidelity: M15-020
+    private ObservableObject? GetCandidate(uint index) =>
+        index < _candidates.Count ? M.World.GetLocatedObjectById(_candidates[(int)index].ObjectId) : null;
 
     /// <summary>
     /// The emotion event a placed cube fires when others are still out:
@@ -1057,97 +1089,676 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     /// <summary>And the one it fires when that was the last cube (0x005E0046).</summary>
     public const string LastCubeEmotionEvent = "HikingBroughtLastCubeToBeacon";
 
-    protected override bool IsRunnableInternal(BehaviorContext context) => M.Whiteboard.GetActiveBeacon() is not null && !M.Docking.Carrying.IsCarryingObject && GetCandidate() is not null;
+    /// <summary>
+    /// <c>IsRunnableInternal</c> 0x005DF0FC: no active beacon is not runnable (0x005DF144); with <c>t = [beacon+0x10]</c> (the f32 stamp of <c>AIBeacon::FailedToFindLocation</c>) and <c>|t| &gt;= 1e-5f</c>
+    /// (0x005DF14C..0x005DF16E), the behaviour is not runnable while <c>(t + [this+0x130]) + (-1e-5f) &gt; now</c> (0x005DF170..0x005DF194, f32). M15-023.
+    /// </summary>
+    // fidelity: M15-023, M15-020
+    protected override bool IsRunnableInternal(BehaviorContext context)
+    {
+        _candidates = new List<ObservableObject>();                                                           // 0x005DF10C..0x005DF132: the vector is cleared first
+        var beacon = M.Whiteboard.GetActiveBeacon();
+        if (beacon is null) return false;
+        float t = beacon.FailedToFindLocationTimeSec;
+        if (!(MathF.Abs(t) < BeaconFloorGeometry.OneEm5))
+        {
+            float now = (float)M.ClockSec();
+            float limit = t + (float)RecentFailureCooldownSec;
+            limit += BitConverter.Int32BitsToSingle(unchecked((int)0xB727C5AC));
+            if (limit > now) return false;
+        }
+        // 0x005DF1A4..0x005DF2A6: FindUsableCubesOutOfBeacons, then the failure filter over its vector; runnable iff the filtered vector is non-empty. There is NO carrying test: while a cube is carried the
+        // usable set is that cube (FindUsableCubesOutOfBeacons 0x0056AEA6..0x0056AEF2) and InitInternal resumes at the placement phase.
+        _candidates = UsableCandidates();
+        return _candidates.Count > 0;
+    }
 
+    /// <summary>
+    /// <c>InitInternal</c> 0x005DF348 (M15-020): <c>[this+0x12C] = -1</c>; when <c>[[robot+0x284]+8] != -1</c> the target is <c>vector[0].id</c> (0x005DF364..0x005DF36C) and
+    /// <c>TransitionToObjectPickedUp</c> runs DIRECTLY (0x005DF372): the behaviour resumes at the placement phase with no pick-up; otherwise <c>TransitionToPickUpObject(robot, 1)</c> (0x005DF37C). The result
+    /// (0x005DF382..0x005DF3DA) is non-zero (the manager's InitFailed) when no action was started and the active beacon was not stamped by <c>FailedToFindLocation</c> just now
+    /// (<c>|now - [beacon+0x10]| &gt;= 1e-5f</c>); a started action, or a NoFreePoses stamp made in this very call, is 0.
+    /// </summary>
     protected override void OnStart()
     {
         Scope.DisableReactions();
-        var c = GetCandidate();
-        if (c is null) { Finish(); return; }
-        Candidate = c.ObjectId;
-        CurrentPhase = Phase.PickingUp;
-        var helper = new DockHelper(M);
-        RunAction($"PickupBlockHelper({c.ObjectId})", ct => helper.RunAsync(c.ObjectId, PreActionType.Docking, () => new PickupObjectAction(M, c.ObjectId), ct), r =>
+        Candidate = null;                                                                                    // [this+0x12C] = -1
+        int startedBefore = _actionsStarted;
+        if (_candidates.Count == 0) _candidates = UsableCandidates();                                          // CHOICE: the engine's vector is the runnable test's; a start without a non-empty one rebuilds it
+        if (M.Docking.Carrying.CarriedObjectId is not null)
         {
-            foreach (var l in helper.Trace) Log("  " + l);
-            if (r != ActionResult.Success) { M.Whiteboard.SetFailedToUse(c.ObjectId, ObjectActionFailure.PickUpObject); Log($"pick-up failed: {r}; SetFailedToUse"); Finish(); return; }
-            TransitionToObjectPickedUp();
-        });
-    }
-
-    private void TransitionToObjectPickedUp()
-    {
-        // 0x005DF5A0 names the action outright: PickupCube (0x1F), whatever the config says
-        if (NeedActionCompleted("PickupCube") is { } action) Log($"needs action {action}");
-        var beacon = M.Whiteboard.GetActiveBeacon();
-        if (beacon is null) { Finish(); return; }
-        var stackOn = M.Whiteboard.FindCubesInBeacon(beacon)
-            .FirstOrDefault(o => o.ObjectId != Candidate && o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative
-                                 && !M.Configurations.IsObjectPartOfConfigurationType(o.ObjectId, BlockConfigurationType.StackOfCubes));
-        if (stackOn is not null) { TryToStackOn(stackOn.ObjectId); return; }
-        var pose = FindFreePoseInBeacon(beacon);
-        if (pose is null) { beacon.FailedToFindLocation(); Log("FindFreePoseInBeacon: none free"); Finish(); return; }
-        TryToPlaceAt(pose.Value);
-    }
-
-    private void TryToStackOn(uint target)
-    {
-        CurrentPhase = Phase.StackingOn;
-        var helper = new DockHelper(M);
-        RunAction($"PlaceRelObjectHelper({target}, on top)", ct => helper.RunAsync(target, PreActionType.PlaceRelative, () => new PlaceRelObjectAction(M, target, onTop: true), ct), r =>
-        {
-            foreach (var l in helper.Trace) Log("  " + l);
-            if (r != ActionResult.Success) M.Whiteboard.SetFailedToUse(target, ObjectActionFailure.StackOnObject);
-            Log(r == ActionResult.Success ? "stacked in the beacon" : $"stacking failed: {r}");
-            CurrentPhase = Phase.Idle; Finish();
-        });
-    }
-
-    /// <summary>A pose inside the beacon at least <see cref="FreePoseClearanceMm"/> from every located cube (LOCAL search).</summary>
-    public Vec3? FindFreePoseInBeacon(AIBeacon beacon)
-    {
-        var cubes = M.World.LocatedObjects.Where(o => CubeGeometry.IsCube(o.Type) && !M.Docking.Carrying.IsCarrying(o.ObjectId)).ToList();
-        bool Free(Vec3 p) => cubes.All(o => { var d = o.Pose.Translation - p; return Math.Sqrt(d.X * d.X + d.Y * d.Y) >= FreePoseClearanceMm; });
-        var centre = beacon.Pose.Translation with { Z = 0 };
-        if (Free(centre)) return centre;
-        for (int i = 0; i < 8; i++)
-        {
-            double a = i * Math.PI / 4;
-            var p = centre + new Vec3(Math.Cos(a), Math.Sin(a), 0) * (beacon.RadiusMm / 2);
-            if (Free(p)) return p;
+            if (_candidates.Count > 0)
+            {
+                Candidate = _candidates[0].ObjectId;                                                          // 0x005DF364..0x005DF36C
+                TransitionToObjectPickedUp();                                                                // 0x005DF372
+            }
+            else Finish();
         }
-        return null;
+        else TransitionToPickUpObject(1);                                                                    // 0x005DF37C
+        // 0x005DF382..0x005DF3DA
+        if (_actionsStarted == startedBefore)
+        {
+            float stamp = M.Whiteboard.GetActiveBeacon()?.FailedToFindLocationTimeSec ?? float.NaN;
+            float diff = MathF.Abs((float)M.ClockSec() - stamp);
+            if (!(diff < BeaconFloorGeometry.OneEm5)) InitFailed = true;
+        }
     }
 
-    private void TryToPlaceAt(Vec3 target)
+    private int _actionsStarted;
+
+    /// <summary>
+    /// <c>TransitionToPickUpObject(robot, attempt)</c> 0x005DF8C0 (M15-020): an empty vector is the "NoCandidates" error (0x005DF9C6). With the target already set (<c>[this+0x12C] != -1</c>, the retry from
+    /// the completion lambda, 0x005DF8E6) it logs ".TransitionToPickUpObject.Retry" "Trying to pick up '%d' again" (0x005DF8F2..0x005DF92A) and starts the action again. Otherwise (as <c>InitInternal</c> calls
+    /// it with the target unset) the nearest candidate by the pose with respect to the robot's pose, <c>(x*x + y*y) + z*z</c> in f32 with no square root (0x005DFB3A..0x005DFB5E), starting from FLT_MAX
+    /// (0x005DFCDC = 0x7F7FFFFF) and replacing when <c>best + (-1e-5f) &gt; d2</c> (0x005DFB66..0x005DFB84; a failed lookup or pose gives FLT_MAX); when nothing beat FLT_MAX (<c>vcmpe; bpl</c> 0x005DFB94) it
+    /// is the "InvalidCandidates" error (0x005DFA18); else <c>[this+0x12C]</c> is that candidate's id ("Going to pick up '%d'", 0x005DFBB0). The action is then started with the completion lambda 0x005E0FD8
+    /// (<see cref="PickUpCompleted"/>); see the class header for the unbuilt <c>DriveToPickupObjectAction</c>.
+    /// </summary>
+    private void TransitionToPickUpObject(int attempt)
     {
-        CurrentPhase = Phase.PlacingAt;
-        RunAction($"drive to {target} and place", async ct =>
+        if (_candidates.Count == 0)
+        {
+            Log($"error: BehaviorExploreBringCubeToBeacon.TransitionToPickUpObject.NoCandidates: Can't run with no selected objects");
+            Finish(); return;
+        }
+        uint id;
+        if (Candidate is { } already)
+        {
+            id = already;
+            Log($"info: Behaviors.{Id}.TransitionToPickUpObject.Retry: Trying to pick up '{id}' again");
+        }
+        else
         {
             var robot = M.RobotPose();
-            if (robot is null) return ActionResult.Abort;
-            // stand so the carried cube (about one cube ahead of the robot's origin) lands on the target
-            var dir = (target - robot.Value.Translation) with { Z = 0 };
-            double heading = Math.Atan2(dir.Y, dir.X);
-            var stand = target - new Vec3(Math.Cos(heading), Math.Sin(heading), 0) * (CubeGeometry.CubeSizeMm + FlipBlockAction.DrivePastMm);
-            var drive = new DriveToPoseAction(M) { Goal = new Pose3d(Mat3.AboutZ(heading), stand), IgnoreObstacleIds = Candidate is { } c ? new[] { c } : null };
-            var d = await drive.RunAsync(ct);
-            foreach (var l in drive.Trace) Log("  " + l);
-            if (d != ActionResult.Success) return d;
-            return await new PlaceObjectOnGroundAction(M).RunAsync(ct);
+            float best = BeaconFloorGeometry.FltMax;
+            int bestIndex = 0;
+            for (uint i = 0; i < _candidates.Count; i++)
+            {
+                float d2 = BeaconFloorGeometry.FltMax;
+                if (GetCandidate(i) is { } o && robot is { } r)
+                {
+                    var t = o.Pose.WithRespectTo(r).Translation;
+                    float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+                    d2 = x * x;
+                    d2 += y * y;
+                    d2 += z * z;
+                }
+                float limit = best + BitConverter.Int32BitsToSingle(unchecked((int)0xB727C5AC));
+                if (limit > d2) { best = d2; bestIndex = (int)i; }
+            }
+            if (!(best < BeaconFloorGeometry.FltMax))
+            {
+                Log("error: BehaviorExploreBringCubeToBeacon.TransitionToPickUpObject.InvalidCandidates: Could not pick candidate");
+                Finish(); return;
+            }
+            id = _candidates[bestIndex].ObjectId;
+            Candidate = id;
+            Log($"info: Behaviors.{Id}.TransitionToPickUpObject.Selected: Going to pick up '{id}'");
+        }
+        CurrentPhase = Phase.PickingUp;
+        _actionsStarted++;
+        SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::TransitionToPickUpObject 0x005DF95E..0x005DF98A: DriveToPickupObjectAction (ctor PLT 0x004A93B8, trigger 0x23F, started through IBehavior::StartActing PLT 0x004B01C8) is not built; one attempt of this stack's drive-to-pre-action-pose plus PickupObjectAction (DockHelper, attempt limit 1, no search) runs in its place and its result goes to the completion lambda 0x005E0FD8");
+        var helper = new DockHelper(M) { AttemptLimit = 1, SearchOnFailure = false };
+        RunAction($"DriveToPickupObject({id}) attempt {attempt}", ct => helper.RunAsync(id, PreActionType.Docking, () => new PickupObjectAction(M, id), ct), r =>
+        {
+            foreach (var l in helper.Trace) Log("  " + l);
+            PickUpCompleted(r, attempt);
+        });
+    }
+
+    /// <summary>
+    /// The completion lambda 0x005E0FD8 of the pick-up action, by result category (the top byte, 0x005E0FE6..0x005E0FF6; the closure holds the behaviour, the robot and the attempt): 0 logs
+    /// ".onPickUpActionResult.Done" "Picked up '%d'" and runs <c>TransitionToObjectPickedUp</c> (0x005E0FFA..0x005E10F4). 4 (RETRY): with the carried id equal to the target (strict [+8], not -1) it logs
+    /// ".RetryOk" "We do have '%d' picked up, so pretend we are fine" and goes on to <c>TransitionToObjectPickedUp</c> (0x005E1086..0x005E10F4); else with <c>attempt &lt;= 2</c> (0x005E118E, signed) it logs
+    /// ".RetryMaybe" "Let's try to pick up '%d' again (%d tries out of %d)" (3 is the limit) and calls <c>TransitionToPickUpObject(attempt + 1)</c> (0x005E1210); with the attempts spent it logs ".Fail"
+    /// "Not trying to pick up '%d' again. Failing". 3 (ABORT) logs ".NoRetry" "Failed to pick up '%d', action does not retry." (0x005E10FA..0x005E1160). Both failures end in
+    /// <c>SetFailedToUse(obj, PickUpObject = 0)</c> when the target is still located (0x005E1166..0x005E1186, the 2-argument form: the cube's own pose). Categories 1 and 2 do nothing (0x005E0FF4 -> 0x005E1214).
+    /// </summary>
+    // fidelity: M15-020, M15-024
+    internal void PickUpCompleted(ActionResult r, int attempt)
+    {
+        uint category = (uint)r >> 24;
+        uint? target = Candidate;
+        if (category == 0)
+        {
+            Log($"info: Behaviors.{Id}.onPickUpActionResult.Done: Picked up '{target}'");
+            TransitionToObjectPickedUp();
+            return;
+        }
+        if (category == 4)
+        {
+            uint? carried = M.Docking.Carrying.CarriedObjectId;
+            if (carried is not null && carried == target)
+            {
+                Log($"info: Behaviors.{Id}.onPickUpActionResult.RetryOk: We do have '{target}' picked up, so pretend we are fine");
+                TransitionToObjectPickedUp();
+                return;
+            }
+            if (attempt <= 2)
+            {
+                Log($"info: Behaviors.{Id}.onPickUpActionResult.RetryMaybe: Let's try to pick up '{target}' again ({attempt} tries out of 3)");
+                TransitionToPickUpObject(attempt + 1);
+                return;
+            }
+            Log($"info: Behaviors.{Id}.onPickUpActionResult.Fail: Not trying to pick up '{target}' again. Failing");
+        }
+        else if (category == 3) Log($"info: Behaviors.{Id}.onPickUpActionResult.NoRetry: Failed to pick up '{target}', action does not retry.");
+        else return;                                                                                          // categories 1 and 2: nothing (0x005E1214); this stack's behaviour is then not acting
+        if (target is { } id && M.World.GetLocatedObjectById(id) is { } obj) M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PickUpObject);       // 0x005E1166..0x005E1186
+        CurrentPhase = Phase.Idle; Finish();
+    }
+
+    /// <summary>The unlock id <c>FindFreeCubeToStackOn</c> asks for (0x005E0108..0x005E010C: <c>IsUnlocked(robot+0x448, 10, true)</c>): Anki.Cozmo.UnlockId.StackTwoCubes.</summary>
+    public const int StackTwoCubesUnlockId = 0xA;
+
+    /// <summary>The ProgressionUnlockComponent seam (<c>IsUnlocked(StackTwoCubes, true)</c>); null: no component in this stack, treated as unlocked and reported MISSING.</summary>
+    public Func<int, bool>? IsUnlocked { get; set; }
+
+    /// <summary>The distance <c>FindFreeCubeToStackOn</c> adds to the carried cube's X dimension before the beacon test (<c>vmov.f32 s2, #10.0</c> 0x005E01F2, <c>vadd.f32</c> 0x005E0210).</summary>
+    public const float StackBeaconMarginMm = 10.0f;
+
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::TransitionToObjectPickedUp</c> 0x005DF3E4, in the engine's order (the VizManager::EraseSegments at the top, 0x005DF412, is not drawn):
+    /// the carried object must be the candidate (<c>[[robot+0x284]+8] == [this+0x12C]</c>, 0x005DF424..0x005DF436), else the <c>NotPickedUp</c> error (0x005DF4F8..0x005DF548); the candidate
+    /// is looked up (<c>GetLocatedObjectByIdHelper</c> 0x005DF440), else the <c>ObjectIsNull</c> error (0x005DF556..0x005DF59A); with no active beacon nothing is done (0x005DF460);
+    /// <b><c>FindFreeCubeToStackOn</c> comes next</b> (0x005DF46A): a cube found takes the stack branch, <c>TryToStackOn(target, 1)</c> (0x005DF4F2), and nothing else runs;
+    /// otherwise <c>NeedActionCompleted(PickupCube 0x1F)</c> (0x005DF59C..0x005DF5A0) and then the floor placement.
+    /// The engine returns without ending the behaviour on its error and no-beacon branches; this stack ends it (a stepped behaviour with no action pending would never end otherwise).
+    /// </summary>
+    private void TransitionToObjectPickedUp()
+    {
+        if (Candidate is not { } candidate || M.Docking.Carrying.CarriedObjectId != candidate)       // [[robot+0x284]+8] == [this+0x12C], strict
+        {
+            Log("error: BehaviorExploreBringCubeToBeacon.TransitionToObjectPickedUp.NotPickedUp: We do not have the cube picked up, we should not have transitioned here.");
+            Finish(); return;
+        }
+        var carried = M.World.GetLocatedObjectById(candidate);
+        if (carried is null)
+        {
+            Log($"error: BehaviorExploreBringCubeToBeacon.TransitionToObjectPickedUp.ObjectIsNull: Could not obtain obj from ID '{candidate}'");
+            Finish(); return;
+        }
+        var beacon = M.Whiteboard.GetActiveBeacon();
+        if (beacon is null) { Finish(); return; }
+        var stackOn = FindFreeCubeToStackOn(carried, beacon);
+        if (stackOn is not null)
+        {
+            Log($"info: Behaviors.{Id}.TransitionToObjectPickedUp: Decided to place '{candidate}' on top of '{stackOn.ObjectId}'");
+            TryToStackOn(stackOn.ObjectId, 1);
+            return;
+        }
+        // 0x005DF59C..0x005DF5A0 names the action outright: PickupCube (0x1F), whatever the config says; it runs BEFORE the pose search, whatever the search returns (M15-025)
+        // fidelity: M15-025
+        if (NeedActionCompleted("PickupCube") is { } action) Log($"needs action {action}");
+        // 0x005DF5D0..0x005DF5E0: FindFreePoseInBeacon(carried, beacon, robot, &pose, [this+0x130])
+        // fidelity: M15-019, M15-023
+        if (M.RobotPose() is not { } robotPose)
+        {
+            SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::TransitionToObjectPickedUp 0x005DF5D0: invented gate: the engine always has Robot::GetPose(); this stack has no robot pose yet, so the search is skipped and the behaviour ends without placing");
+            CurrentPhase = Phase.Idle; Finish(); return;
+        }
+        if (FindFreePoseInBeacon(carried, beacon, robotPose, (float)RecentFailureCooldownSec, out var pose))      // 0x005DF5E4 cmp r0,#1
+        {
+            Log(FormattableString.Invariant($"info: Behaviors.{Id}.TransitionToObjectPickedUp: Decided to place '{candidate}' on the floor at [{pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}]"));
+            TryToPlaceAt(pose, 1);                                                                                // 0x005DF694 movs r3,#1
+            return;
+        }
+        // NoFreePoses, 0x005DF69C..0x005DF73A, in this order: the stamp on the beacon (AIWhiteboard::FailedToFindLocationInBeacon -> AIBeacon::FailedToFindLocation + UpdateBeaconRender), the log, the
+        // mood event; no action is started.
+        // fidelity: M15-023
+        M.Whiteboard.FailedToFindLocationInBeacon(beacon);
+        Log($"info: Behaviors.{Id}.TransitionToObjectPickedUp.NoFreePoses: Could not decide where to drop the cube in the beacon (all poses failed)");
+        TriggerEmotion(NoLocationEmotionEvent);
+        CurrentPhase = Phase.Idle;
+        Finish();
+    }
+
+    /// <summary>The emotion event the NoFreePoses branch triggers (24 characters, <c>movs r2,#0x18</c> 0x005DF718, string at 0x005DF87C).</summary>
+    // fidelity: M15-023
+    public const string NoLocationEmotionEvent = "HikingNoLocationAtBeacon";
+
+    /// <summary><c>MoodManager([robot+0x440])-&gt;TriggerEmotionEvent(name, MoodManager::GetCurrentTimeInSeconds())</c>.</summary>
+    private void TriggerEmotion(string ev)
+    {
+        bool known = Context.Mood?.Trigger(ev, Clock() / 1000.0) ?? false;
+        Log($"emotion event {ev}: " + (Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model"));
+    }
+
+    /// <summary>The distance (20.0f = 0x41A00000, 0x005E1D14) and angle (Radians 0x3EC90FDB, 0x005E1CFC..0x005E1D0C) <c>FindFreeCubeToStackOn</c>'s filter passes to <c>DidFailToUse</c> (M15-024).</summary>
+    // fidelity: M15-024
+    public static readonly float StackFilterDistMm = BitConverter.Int32BitsToSingle(0x41A00000), StackFilterAngleRad = BitConverter.Int32BitsToSingle(0x3EC90FDB);
+
+    /// <summary>Test seam: the <see cref="PlaceObjectOnGroundAction"/> the latest <c>TryToPlaceAt</c> ran (not engine behaviour).</summary>
+    internal PlaceObjectOnGroundAction? LastPlaceAction { get; private set; }
+
+    /// <summary>Test seam: when set, every candidate <c>(i, j)</c> the search tests is appended in the order tested (not engine behaviour).</summary>
+    internal List<(int I, int J)>? CandidateLog { get; set; }
+
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon(carried, beacon, robot, &amp;out, cooldown)</c> 0x005E0378..0x005E0666 (static; M15-019, M15-020), every number in binary32 in the
+    /// engine's operation order. The frame <c>rot</c> (a <c>Rotation3d</c>, a double quaternion) is, in order: <c>Rotation3d(Radians(0), Z)</c> (0x005E038A..0x005E03A2); when
+    /// <c>FindCubesInBeacon</c> finds cubes, the rotation about Z of the nearest one (<c>CalculateDirectionalityClosest</c> 0x005E07D8, called at 0x005E03C6); otherwise the heading from the robot to the
+    /// beacon centre (0x005E03D0..0x005E0512: <c>v = B - R</c>, z = 0, <c>MakeUnitLength</c>, kept at angle 0 when <c>|len| &lt; 1e-5f</c>, else <c>acosf(v.X)</c> negated when <c>v.(-Y) &gt;= 0</c>).
+    /// Then <c>S = size.x + 10.0f</c>, <c>N = (int)(radius / S)</c> (negative: no candidate), and the candidates in the engine's order (phase A: i = 0, -1, ..., -N; phase B: i = 1..N; per i: j = 0, then
+    /// -1, +1, -2, +2, ..., -N, +N), the first accepted one wins. <c>*out</c> holds the last candidate tested, accepted or not.
+    /// </summary>
+    // fidelity: M15-019, M15-020
+    internal bool FindFreePoseInBeacon(ObservableObject carried, AIBeacon beacon, Pose3d robotPose, float cooldown, out Pose3d result)
+    {
+        Pose3d last = default;
+        SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon libm: MathF.Cos/MathF.Sin/MathF.Acos/MathF.Atan2 stand in for bionic cosf 0x004A415C, sinf 0x004A4168, acosf 0x004ACC4C and atan2f 0x004A4510, and re-analysis/evidence/m15-floor-placement/emulate_candidates.py takes the expected bits (e.g. 0x42380001) from Python's libm, not bionic, so a last-bit difference in those functions is not excluded. 0x005E0A96: the candidate pose's rotation matrix is the quaternion-to-matrix of Rotation3d::GetRotationMatrix 0x0084AAE0 WITHOUT its closing RotationMatrix3d::Renormalize 0x008494E0 (unread: its tolerances and RenormalizeUnconditional 0x004CE3C0), and Pose3d::GetWithRespectTo is the stack's double composition narrowed to f32; both can differ from the engine in the last bits");
+        var rot = BeaconFloorGeometry.RotationAboutAxis(0.0f, 0.0f, 0.0f, 1.0f);                                  // 0x005E038A..0x005E03A2
+        bool haveFrame = false;
+        var cubes = M.Whiteboard.FindCubesInBeacon(beacon);                                                        // 0x005E03AC..0x005E03B6
+        if (cubes.Count > 0 && BeaconFloorGeometry.CalculateDirectionalityClosest(cubes, beacon) is { } closest) { rot = closest; haveFrame = true; }     // 0x005E03BA..0x005E03CC
+        float bx = (float)beacon.Pose.Translation.X, by = (float)beacon.Pose.Translation.Y, bz = (float)beacon.Pose.Translation.Z;
+        if (!haveFrame) rot = BeaconFloorGeometry.FrameFromRobot(bx, by, bz, (float)robotPose.Translation.X, (float)robotPose.Translation.Y, (float)robotPose.Translation.Z, rot);
+        float radius = (float)beacon.RadiusMm;                                                                      // 0x005E0538 vldr s16,[r7,#0xc]
+        float radius2 = radius * radius;                                                                            // 0x005E0542
+        float size = (float)CubeGeometry.SizeOf(carried.Type).X;                                                    // vtable[0x2C]()[0] (Block +0x88; 44.0f for LIGHTCUBE1..3, 0x004E4CD6..)
+        float spacing = size + BeaconFloorGeometry.Ten;                                                             // 0x005E0564..0x005E056C
+        int n = BeaconFloorGeometry.TruncToInt(radius / spacing);                                                   // 0x005E0570..0x005E0578
+        bool Candidate(int i, int j)
+        {
+            CandidateLog?.Add((i, j));
+            // 0x005E09E0..0x005E0DF2
+            var (tx, ty, tz, rotated) = BeaconFloorGeometry.CandidateTranslation(rot, spacing, i, j, bx, by, bz);
+            var pose = last = new Pose3d(BeaconFloorGeometry.RotationMatrix(rot), new Vec3(tx, ty, tz));                      // *out = Pose3d(rot, t, origin, ""), BEFORE any test (0x005E0A96..0x005E0A9E)
+            float d2 = rotated.X * rotated.X;
+            d2 += rotated.Y * rotated.Y;
+            d2 += rotated.Z * rotated.Z;
+            if (d2 > radius2) return false;                                                                         // 0x005E0ADE..0x005E0AE6 ble: NaN passes
+            // 0x005E0B4A..0x005E0B7E: DidFailToUse(-1, PlaceObjectAt = 2, cooldown, *out, 100.0f, Radians(pi))
+            if (M.Whiteboard.DidFailToUse(-1, ObjectActionFailure.PlaceObjectAt, cooldown, pose, BeaconFloorGeometry.FarDistance, BeaconFloorGeometry.Pi)) return false;
+            // 0x005E0B84..0x005E0C32: FindLocatedIntersectingObjects(quad of the carried object at *out, padding 10.0f), the carried id ignored; free iff empty
+            return DriveToPlaceCarriedObjectAction.StaticFindLocatedIntersectingObjectsIsEmpty(M, carried, pose, BeaconFloorGeometry.Ten, null);
+        }
+        bool Row(int i)
+        {
+            if (Candidate(i, 0)) return true;                                                                       // 0x005E0594 / 0x005E05E6
+            if (n == 0) return false;                                                                               // 0x005E059C cmp r8,#0; beq
+            for (int k = 1; k <= n; k++)                                                                            // 0x005E05A2..0x005E05CA: j = -1, +1, -2, +2, ..., -N, +N
+            {
+                if (Candidate(i, -k)) return true;
+                if (Candidate(i, k)) return true;
+            }
+            return false;
+        }
+        bool Search()
+        {
+            if (n < 0) return false;                                                                                // 0x005E0580 blt 0x005E0628
+            for (int i = 0; i >= -n; i--) if (Row(i)) return true;                                                  // phase A 0x005E0588..0x005E05D2
+            for (int i = 1; i <= n; i++) if (Row(i)) return true;                                                   // phase B 0x005E05D4..0x005E0626 (skipped for N < 1)
+            return false;                                                                                           // 0x005E0628 / 0x005E062E
+        }
+        bool found = Search();
+        result = last;
+        return found;
+    }
+
+    /// <summary>
+    /// <c>TryToPlaceAt(robot, pose, attempt)</c> 0x005DFEF4..0x005DFF80 (M15-021): <c>StartActing(new PlaceObjectOnGroundAtPoseAction(robot, pose, false, false, true, 10.0f), callback)</c> (the return
+    /// value is ignored); the callback 0x005E188C is <see cref="PlaceCompleted"/>. <c>PlaceObjectOnGroundAtPoseAction</c> (ctor 0x00554AFC, M15-022) is a <c>CompoundActionSequential</c> of
+    /// <c>DriveToPlaceCarriedObjectAction(robot, pose, true, 0, 0, 1, 10.0f)</c> (0x00554B22..0x00554B56: <c>+0x178 = 0</c>, <c>useManualSpeed = 0</c>, <c>+0x179 = 1</c>, padding 0x41200000) and then
+    /// <c>PlaceObjectOnGroundAction</c> (0x00554B76..0x00554B96). <c>CompoundActionSequential::UpdateInternal</c> 0x0054F70C moves on after a sub-action's success and ends with the failing
+    /// sub-action's result otherwise (a category-4 result takes the retry path only when the compound's own <c>RetriesRemain()</c> is 1; the default byte is 0, 0x0053FDD8, so it never does).
+    /// </summary>
+    // fidelity: M15-021, M15-022
+    private void TryToPlaceAt(Pose3d pose, int attempt)
+    {
+        CurrentPhase = Phase.PlacingAt;
+        _actionsStarted++;
+        var trace = new List<string>();
+        RunAction(FormattableString.Invariant($"PlaceObjectOnGroundAtPose({pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}) attempt {attempt}"), async ct =>
+        {
+            var drive = new DriveToPlaceCarriedObjectAction(M, pose, true, false, false, true, BeaconFloorGeometry.Ten);
+            var r = await drive.RunAsync(ct);
+            trace.AddRange(drive.Trace.Select(l => "  " + l));
+            if (r != ActionResult.Success) { trace.Add($"Current action DriveToPlaceCarriedObject[0] failed with {r}"); return r; }       // 0x0054F7F2..0x0054F8F4
+            var place = new PlaceObjectOnGroundAction(M) { ReactionLocks = Scope.Manager };
+            LastPlaceAction = place;
+            r = await place.RunAsync(ct);
+            trace.AddRange(place.Trace.Select(l => "  " + l));
+            if (r != ActionResult.Success) trace.Add($"Current action PlaceObjectOnGround[1] failed with {r}");
+            return r;
         }, r =>
         {
-            if (r == ActionResult.Success)
-            {
-                PlacedAt = target;
-                // FireEmotionEvents 0x005E002C: one name or the other, on the mood manager at Robot+0x440.
-                string ev = M.Whiteboard.AreAllCubesInBeacons() ? LastCubeEmotionEvent : CubeEmotionEvent;
-                bool known = Context.Mood?.Trigger(ev, Clock() / 1000.0) ?? false;
-                Log($"placed in the beacon; emotion event {ev}: " +
-                    (Context.Mood is null ? "no mood attached" : known ? "applied" : "not in the loaded mood model"));
-            }
-            else if (Candidate is { } c) { M.Whiteboard.SetFailedToUse(c, ObjectActionFailure.PlaceObjectAt); Log($"placing failed: {r}"); }
-            CurrentPhase = Phase.Idle; Finish();
+            foreach (var l in trace) Log(l);
+            PlaceCompleted(r, pose, attempt);
         });
+    }
+
+    /// <summary>
+    /// The completion callback 0x005E188C by result category (the top byte, 0x005E18A0..0x005E18A8). 0 (success): "Successfully placed cube" and <c>FireEmotionEvents</c> (0x005E1916), with NO
+    /// <c>NeedActionCompleted</c> and no <c>SetFailedToUse</c> (M15-025). 4 (retry): with the carried id equal to the target (not -1) and <c>attempt &lt;= 2</c> (0x005E193E, signed) the SAME pose is
+    /// tried again with <c>attempt + 1</c> (no new <c>FindFreePoseInBeacon</c>); otherwise "CannotRetry" (max 3). Every other non-zero category: "NoRetryAllowed". Both failures end in the tail
+    /// 0x005E1B32..0x005E1B56: when the target is still located, <c>SetFailedToUse(obj, PlaceObjectAt = 2, pose)</c> with the CANDIDATE pose.
+    /// </summary>
+    // fidelity: M15-021, M15-024, M15-025
+    internal void PlaceCompleted(ActionResult r, Pose3d pose, int attempt)
+    {
+        uint category = (uint)r >> 24;
+        if (category == 0)
+        {
+            Log($"info: Behaviors.{Id}.onPlaceActionResult.Done: Successfully placed cube");
+            FireEmotionEvents();
+            CurrentPhase = Phase.Idle; Finish();
+            return;
+        }
+        if (category == 4)
+        {
+            uint? carried = M.Docking.Carrying.CarriedObjectId;                                                     // [[robot+0x284]+8]; null = -1
+            bool carryingTarget = carried is not null && carried == Candidate;                                      // 0x005E1928..0x005E1944
+            if (carryingTarget && attempt <= 2)
+            {
+                Log(FormattableString.Invariant($"info: Behaviors.{Id}.onPlaceActionResult.Done.CanRetry: Failed to place '{Candidate}' at pose [{pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}]"));
+                TryToPlaceAt(pose, attempt + 1);                                                                    // 0x005E19F8 adds r3,r0,#1
+                return;
+            }
+            Log(FormattableString.Invariant($"info: Behaviors.{Id}.onPlaceActionResult.CannotRetry: Failed to place '{Candidate}' at pose [{pose.Translation.X:F2},{pose.Translation.Y:F2},{pose.Translation.Z:F2}] (attempt={attempt}/3) (carrying={(carryingTarget ? "yes" : "no")})"));
+        }
+        else Log($"info: Behaviors.{Id}.onPlaceActionResult.NoRetryAllowed: Failed to place (no retry allowed by action)");
+        if (Candidate is { } id && M.World.GetLocatedObjectById(id) is { } obj) M.Whiteboard.SetFailedToUse(obj, ObjectActionFailure.PlaceObjectAt, pose);   // 0x005E1B32..0x005E1B56
+        CurrentPhase = Phase.Idle; Finish();
+    }
+
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::FindFreeCubeToStackOn(carried, beacon, robot)</c> 0x005E00EC: returns null unless <c>ProgressionUnlockComponent::IsUnlocked(StackTwoCubes, true)</c>
+    /// (0x005E0108..0x005E0114). Otherwise the first located object (<c>BlockWorld::FindLocatedObjectHelper</c> 0x005E0246, returnFirst = true) of family Block or LightCube (the table at
+    /// 0x00C6D6A8, words 1 and 2) that the filter lambda 0x005E1CC6 accepts, in order: not the carried object itself; pose state Known (<c>[+0x24] == 1</c>); not <c>DidFailToUse</c> (reason 1
+    /// StackOnObject, the behaviour's cooldown, its pose, 20.0f and Radians 0x3EC90FDB: the pose-aware whiteboard memory, M15-024); <c>AIBeacon::IsLocWithinBeacon(its pose, carried X dimension + 10.0f)</c>; and
+    /// <c>DockingComponent::CanStackOnTopOfObject</c>. The iteration order of <c>FindLocatedObjectHelper</c> is taken as the ordered maps' (family, type, id).
+    /// </summary>
+    public ObservableObject? FindFreeCubeToStackOn(ObservableObject carried, AIBeacon beacon)
+    {
+        if (IsUnlocked is { } unlocked) { if (!unlocked(StackTwoCubesUnlockId)) return null; }
+        else SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::FindFreeCubeToStackOn 0x005E010C: ProgressionUnlockComponent::IsUnlocked(StackTwoCubes) has no component in this stack; live-path default: treated as unlocked");
+        float margin = (float)RotatedParentAxis.DimInParentFrame(carried, 0) + StackBeaconMarginMm;
+        return M.World.LocatedObjects
+            .Where(o => o.Family is ObjectFamily.Block or ObjectFamily.LightCube)
+            .OrderBy(o => (int)o.Family).ThenBy(o => (int)o.Type).ThenBy(o => o.ObjectId)
+            .FirstOrDefault(o => !ReferenceEquals(o, carried)
+                                 && o.PoseState == PoseState.Known
+                                 && !M.Whiteboard.DidFailToUse(unchecked((int)o.ObjectId), ObjectActionFailure.StackOnObject, (float)RecentFailureCooldownSec, o.Pose, StackFilterDistMm, StackFilterAngleRad)    // 0x005E1D24: (id, 1, cooldown, pose, 20.0f, Radians(pi/8))
+                                 && beacon.IsLocWithinBeacon(o.Pose, margin)
+                                 && M.Docking.CanStackOnTopOfObject(o));
+    }
+
+    /// <summary>
+    /// <c>TryToStackOn(robot, target, attempt)</c> 0x005DFDD4 starts <c>DriveToPlaceOnObjectAction(robot, target, ...)</c> (0x005DFE0E; not built, no record owns it) with the completion
+    /// lambda 0x005E142C. This stack runs the pre-batch <c>PlaceRelObjectHelper</c> action as the labelled stand-in for that action alone. The lambda's branches are the engine's: result
+    /// category 0 (success): <c>NeedActionCompleted(StackCube 0x2A)</c> (0x005E14B6) then <c>FireEmotionEvents</c> (0x005E14BE); category 4 (retry) while the cube is still the carried one and
+    /// the attempt number is at most 2 (0x005E14DC..0x005E14EA): <c>TryToStackOn(target, attempt + 1)</c> (0x005E1568); category 3, and category 4 when the retry test fails: <c>SetFailedToUse(target, StackOnObject)</c> (0x005E1680) when the
+    /// target is still located (0x005E166C..0x005E1672); every other category does nothing (<see cref="StackCompleted"/>).
+    /// </summary>
+    private void TryToStackOn(uint target, int attempt)
+    {
+        CurrentPhase = Phase.StackingOn;
+        _actionsStarted++;
+        SteppedBehavior.ReportMissing("BehaviorExploreBringCubeToBeacon::TryToStackOn 0x005DFDD4 starts DriveToPlaceOnObjectAction (0x005DFE0E), which is not built; the stack runs PlaceRelObjectHelper as a labelled stand-in (M15-008)");
+        var helper = new DockHelper(M);
+        RunAction($"PlaceRelObjectHelper({target}, on top; stand-in for DriveToPlaceOnObjectAction)", ct => helper.RunAsync(target, PreActionType.PlaceRelative, () => new PlaceRelObjectAction(M, target, onTop: true), ct), r =>
+        {
+            foreach (var l in helper.Trace) Log("  " + l);
+            StackCompleted(r, target, attempt);
+        });
+    }
+
+    /// <summary>
+    /// The completion lambda 0x005E142C by result category (the top byte of the result, 0x005E1434..0x005E144A): 0 success; 4 retry; 3 abort; every other category (1 running,
+    /// 2 cancelled, ...) branches to 0x005E1684 and returns: no log, no SetFailedToUse, and the behaviour is not ended here.
+    /// </summary>
+    internal void StackCompleted(ActionResult r, uint target, int attempt)
+    {
+        uint category = (uint)r >> 24;
+        bool failed;
+        if (category == 0)
+        {
+            Log($"info: Behaviors.{Id}.TryToStackOn: stacked on '{target}'");
+            if (NeedActionCompleted("StackCube") is { } action) Log($"needs action {action}");             // 0x005E14B6: StackCube (0x2A)
+            FireEmotionEvents();                                                                           // 0x005E14BE
+            CurrentPhase = Phase.Idle; Finish();
+            return;
+        }
+        if (category == 4)
+        {
+            if (Candidate is { } c && M.Docking.Carrying.CarriedObjectId == c && attempt <= 2)                    // 0x005E14DC..0x005E14EA
+            {
+                Log($"info: Behaviors.{Id}.TryToStackOn: retrying ({attempt + 1})");
+                TryToStackOn(target, attempt + 1);                                                         // 0x005E1568
+                return;
+            }
+            failed = true;                                                                                 // 0x005E15D8
+        }
+        else failed = category == 3;                                                                       // 0x005E156E
+        if (!failed) return;                                                                               // 0x005E1684
+        Log($"info: Behaviors.{Id}.TryToStackOn: stacking failed: {r}");
+        if (M.World.GetLocatedObjectById(target) is not null) M.Whiteboard.SetFailedToUse(target, ObjectActionFailure.StackOnObject);   // 0x005E1660..0x005E1680
+        CurrentPhase = Phase.Idle; Finish();
+    }
+
+    /// <summary>
+    /// <c>BehaviorExploreBringCubeToBeacon::FireEmotionEvents(robot)</c> 0x005E002C: <c>AIWhiteboard::AreAllCubesInBeacons</c> (0x005E0038) picks the 29-character
+    /// "HikingBroughtLastCubeToBeacon" (0x005E004A, string 0x005E00CC) when every cube is in a beacon, else the 25-character "HikingBroughtCubeToBeacon" (0x005E006C, 0x005E00B0), triggered on
+    /// the mood manager at Robot+0x440 with <c>MoodManager::GetCurrentTimeInSeconds</c>.
+    /// </summary>
+    private void FireEmotionEvents()
+    {
+        string ev = M.Whiteboard.AreAllCubesInBeacons() ? LastCubeEmotionEvent : CubeEmotionEvent;
+        TriggerEmotion(ev);
+    }
+}
+
+
+/// <summary>
+/// The binary32 geometry of <c>BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon</c> (M15-019) and <c>CalculateDirectionalityClosest</c> (M15-020), in the engine's operation order.
+/// A <c>Rotation3d</c> is a double quaternion (w, x, y, z): the constructor from (Radians, axis) 0x0084A506 is <c>half = angle * 0.5f; q = (cosf(half), axis * sinf(half))</c> (f32 products widened) and
+/// <c>UnitQuaternion_&lt;double&gt;::Normalize</c> 0x00849DB8; <c>Rotation3d::operator*(Point3f)</c> 0x0084ACA6 narrows the quaternion to f32 and runs <c>UnitQuaternion_&lt;float&gt;::operator*</c> 0x00849C1C.
+/// </summary>
+// fidelity: M15-019, M15-020
+public static class BeaconFloorGeometry
+{
+    private static float F(uint bits) => BitConverter.Int32BitsToSingle(unchecked((int)bits));
+
+    /// <summary>10.0f = 0x41200000 (<c>vmov.f32 s0,#10.0</c> 0x005E0564, 0x005E09F8; the intersect padding 0x005E0C1C; TryToPlaceAt's padding 0x005DFF02).</summary>
+    public static readonly float Ten = F(0x41200000);
+    /// <summary>1.0e-5f = 0x3727C5AC (<c>vldr s2,[pc]</c> 0x005E0446 and 0x0059C2C2).</summary>
+    public static readonly float OneEm5 = F(0x3727C5AC);
+    /// <summary>100.0f = 0x42C80000 (<c>movt r0,#0x42c8</c> 0x005E0B68): the distance of the floor path's <c>DidFailToUse</c>.</summary>
+    public static readonly float FarDistance = F(0x42C80000);
+    /// <summary>pi = 0x40490FDB (<c>movw/movt</c> 0x005E0B4A..0x005E0B4E): the angle of the floor path's <c>DidFailToUse</c>.</summary>
+    public static readonly float Pi = F(0x40490FDB);
+    /// <summary>FLT_MAX = 0x7F7FFFFF (0x005E0998): the start of the closest-cube search.</summary>
+    public static readonly float FltMax = F(0x7F7FFFFF);
+    /// <summary>The "already unit length" tolerance of <c>UnitQuaternion_&lt;double&gt;::Normalize</c> (the double literal at 0x00849E58 = 0x3E56A09E19D672B6).</summary>
+    public static readonly double NormalizeTolerance = BitConverter.Int64BitsToDouble(0x3E56A09E19D672B6);
+
+    /// <summary>A <c>Rotation3d</c>: the double quaternion at +0..+0x1F.</summary>
+    public readonly record struct Quat(double W, double X, double Y, double Z);
+
+    /// <summary><c>vcvt.s32.f32</c> (round toward zero, saturating, NaN to 0).</summary>
+    public static int TruncToInt(float v)
+    {
+        if (float.IsNaN(v)) return 0;
+        if (v >= 2147483648.0f) return int.MaxValue;
+        if (v <= -2147483648.0f) return int.MinValue;
+        return (int)v;
+    }
+
+    /// <summary><c>Rotation3d::Rotation3d(Radians, Point3f const&amp;)</c> 0x0084A506..0x0084A596 (cosf and sinf are <see cref="MathF"/>, the stack's libm policy).</summary>
+    public static Quat RotationAboutAxis(float angle, float ax, float ay, float az)
+    {
+        float half = angle * 0.5f;                       // vmov.f32 s0,#0.5; vmul.f32 0x0084A526..0x0084A52E
+        float c = MathF.Cos(half), s = MathF.Sin(half);  // 0x0084A538, 0x0084A540
+        double w = c, x = s * ax, y = s * ay, z = s * az; // vmul.f32 s6 * axis, 0x0084A558..0x0084A562; vcvt.f64.f32 0x0084A568..0x0084A574
+        return Normalize(w, x, y, z);
+    }
+
+    /// <summary><c>UnitQuaternion_&lt;double&gt;::Normalize</c> 0x00849DB8..0x00849E52.</summary>
+    public static Quat Normalize(double w, double x, double y, double z)
+    {
+        double n2 = w * w;
+        n2 += x * x;
+        n2 += y * y;
+        n2 += z * z;
+        if (Math.Abs(1.0 - n2) < NormalizeTolerance)    // vcmpe d3,d4; bpl -> the sqrt path (so NaN takes it)
+        {
+            double scale = 2.0 / (n2 + 1.0);             // vadd, vdiv 0x00849DF4..0x00849DFE
+            return new Quat(scale * w, scale * x, scale * y, scale * z);
+        }
+        double len = Math.Sqrt(n2);
+        return new Quat(w / len, x / len, y / len, z / len);
+    }
+
+    /// <summary><c>Rotation3d::operator*(Point3f const&amp;)</c> 0x0084ACA6 into <c>UnitQuaternion_&lt;float&gt;::operator*(Point3f)</c> 0x00849C1C, each f32 operation in the listed order.</summary>
+    public static (float X, float Y, float Z) Rotate(Quat q, float px, float py, float pz)
+    {
+        float a = (float)q.W, b = (float)q.X, c = (float)q.Y, d = (float)q.Z;     // vcvt.f32.f64 0x0084ACCC
+        float aa = a * a, bb = b * b, ab = a * b, ac = a * c, ad = a * d, bd = b * d, bc = b * c, cd = c * d;   // 0x00849C24..0x00849C54
+        float aa_bb = aa - bb;
+        float aa_pl_bb = aa + bb;
+        float cc = c * c;
+        float ad2 = ad + ad;
+        float dd = d * d;
+        float bc2 = bc + bc;
+        float cd2 = cd + cd;
+        float ab2 = ab + ab;
+        float ac2 = ac + ac;
+        float bd2 = bd + bd;
+        float m3 = aa_bb + cc;
+        float m8 = aa_pl_bb - cc;
+        float m4 = aa_bb - cc;
+        float s5 = bc2 + ad2;
+        float s0 = bc2 - ad2;
+        float s7 = ab2 + cd2;
+        float s9 = bd2 - ac2;
+        m3 = m3 - dd;
+        float s2 = m8 - dd;
+        m4 = m4 + dd;
+        float s6 = cd2 - ab2;
+        float t10 = px * s5;
+        float t8 = py * s7;
+        float t7 = px * s9;
+        float t12 = m3 * py;
+        float t14 = ac2 + bd2;
+        float t0 = py * s0;
+        float t2 = px * s2;
+        float t4 = m4 * pz;
+        float t6 = s6 * pz;
+        t8 = t7 + t8;
+        t10 = t12 + t10;
+        t12 = t14 * pz;
+        t0 = t2 + t0;
+        t2 = t4 + t8;
+        t4 = t6 + t10;
+        t0 = t12 + t0;
+        return (t0, t4, t2);                                                     // stored [r0], [r0+4], [r0+8]
+    }
+
+    /// <summary><c>Rotation3d::GetRotationMatrix</c> 0x0084AAE0 (the matrix entries; the closing <c>RotationMatrix3d::Renormalize</c> 0x008494E0 is NOT applied: unread, MISSING).</summary>
+    public static Mat3 RotationMatrix(Quat q)
+    {
+        double w = q.W, x = q.X, y = q.Y, z = q.Z;
+        float zz = (float)(z * z), yy = (float)(y * y), zw = (float)(z * w), xx = (float)(x * x), xy = (float)(x * y), xw = (float)(x * w), yz = (float)(y * z);
+        float yw = (float)(y * w), xz = (float)(x * z);
+        float s3 = yy + zz;
+        float s4 = xx + zz;
+        float s6 = xx + yy;
+        float s12 = xz + yw;
+        float s14 = xz - yw;
+        float s7 = xy - zw;
+        float s8 = xy + zw;
+        float s10 = yz - xw;
+        float s0 = yz + xw;
+        float s1 = s3 * -2.0f;
+        s4 = s4 + s4;
+        s6 = s6 + s6;
+        float m01 = s7 + s7;
+        float m02 = s12 + s12;
+        float m10 = s8 + s8;
+        float m12 = s10 + s10;
+        float m20 = s14 + s14;
+        float m21 = s0 + s0;
+        float m00 = s1 + 1.0f;
+        float m11 = 1.0f - s4;
+        float m22 = 1.0f - s6;
+        return new Mat3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+    }
+
+    /// <summary><c>Rotation3d::GetAngleAroundZaxis</c> 0x0084AA1C from the matrix entries (f32): <c>atan2f(R10, R00)</c> when <c>R10^2 + R00^2 &gt; R01^2 + R11^2</c>, else <c>atan2f(-R01, R11)</c>; then <c>Radians(float)</c>.</summary>
+    public static float AngleAroundZ(Mat3 r)
+    {
+        float r00 = (float)r[0, 0], r10 = (float)r[1, 0], r01 = (float)r[0, 1], r11 = (float)r[1, 1];
+        float s8 = r01 * r01;
+        s8 = s8 + r11 * r11;
+        float s10 = r10 * r10;
+        s10 = s10 + r00 * r00;
+        float angle = s10 > s8 ? MathF.Atan2(r10, r00) : MathF.Atan2(-r01, r11);
+        return EngineRadians32.Rescale(angle);
+    }
+
+    /// <summary>
+    /// <c>CalculateDirectionalityClosest(vec, blockWorld, beacon, &amp;rot)</c> 0x005E07D8..0x005E0948: of the cubes (in the vector's order) the one whose pose with respect to the beacon has the strictly smallest
+    /// <c>x*x + y*y + z*z</c> (f32, the sum in that order, from FLT_MAX; NaN never wins); none found returns null; else <c>Rotation3d(Radians(GetAngleAroundZaxis(closest pose)), Z)</c>.
+    /// The pose with respect to the beacon is the stack's double composition narrowed to f32 (the engine composes in f32).
+    /// </summary>
+    public static Quat? CalculateDirectionalityClosest(IReadOnlyList<ObservableObject> cubes, AIBeacon beacon)
+    {
+        float best = FltMax;
+        ObservableObject? closest = null;
+        foreach (var o in cubes)
+        {
+            var t = o.Pose.WithRespectTo(beacon.Pose).Translation;
+            float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+            float d2 = x * x;
+            d2 += y * y;
+            d2 += z * z;
+            if (d2 < best) { best = d2; closest = o; }                                  // 0x005E0886 vcmpe s0,s16; itt mi
+        }
+        if (closest is null) return null;
+        return RotationAboutAxis(AngleAroundZ(closest.Pose.Rotation), 0.0f, 0.0f, 1.0f);
+    }
+
+    /// <summary>
+    /// The frame from the robot, 0x005E03D0..0x005E0512: <c>v = B - R</c> per axis, <c>v.z = 0</c>, <c>len = MakeUnitLength(v)</c> (0x0050E0C0: <c>s2 = x*x; s2 += y*y; s2 += z*z</c>; for <c>s2 &gt; 0</c> <c>len = sqrtf(s2)</c>
+    /// and every component is multiplied by <c>1.0f / len</c>, else 0); <c>|len| &lt; 1e-5f</c> keeps <paramref name="current"/>; else <c>a = acosf(((v.x*X.x) + v.y*X.y) + v.z*X.z)</c>, negated when
+    /// <c>((v.x*(-Y.x)) + v.y*(-Y.y)) + v.z*(-Y.z) &gt;= 0</c>, and <c>Rotation3d(Radians(a), Z)</c>. X_AXIS_3D = (1,0,0), Y_AXIS_3D = (0,1,0).
+    /// </summary>
+    public static Quat FrameFromRobot(float bx, float by, float bz, float rx, float ry, float rz, Quat current)
+    {
+        float vx = bx - rx, vy = by - ry, vz = bz - rz;
+        vz = 0.0f;                                                                      // 0x005E0424 str r0,[sp,#0x48]
+        float s2 = vx * vx;
+        s2 += vy * vy;
+        s2 += vz * vz;
+        float len;
+        if (s2 > 0f)
+        {
+            len = MathF.Sqrt(s2);
+            float inv = 1.0f / len;
+            vx = inv * vx; vy = inv * vy; vz = inv * vz;
+        }
+        else len = 0.0f;
+        if (MathF.Abs(len) < OneEm5) return current;                                    // 0x005E0446..0x005E0452 bmi 0x005E0514
+        float dotX = vx * 1.0f;
+        dotX += vy * 0.0f;
+        dotX += vz * 0.0f;
+        float dotNegY = vx * -0.0f;
+        dotNegY += vy * -1.0f;
+        dotNegY += vz * -0.0f;
+        float a = MathF.Acos(dotX);                                                     // 0x005E04D6
+        if (dotNegY >= 0f) a = -a;                                                      // 0x005E04DA..0x005E04EC
+        return RotationAboutAxis(EngineRadians32.Rescale(a), 0.0f, 0.0f, 1.0f);
+    }
+
+    /// <summary>
+    /// The candidate position, 0x005E09E0..0x005E0A66: <c>off = (S*(float)i, S*(float)j, 0)</c>, <c>p = rot * off</c>, <c>t = p + B</c> (f32 per axis). Returns <c>t</c> and <c>p</c> (the radius test reads <c>p</c>).
+    /// </summary>
+    public static (float X, float Y, float Z, (float X, float Y, float Z) Rotated) CandidateTranslation(Quat rot, float spacing, int i, int j, float bx, float by, float bz)
+    {
+        float ox = spacing * (float)i;
+        float oy = spacing * (float)j;
+        var p = Rotate(rot, ox, oy, 0.0f);
+        return (p.X + bx, p.Y + by, p.Z + bz, p);
     }
 }

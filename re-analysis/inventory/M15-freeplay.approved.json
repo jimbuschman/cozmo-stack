@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-02",
+  "approved": "2026-10-04",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "a7d55fee7e449a2cdbc00b402d1b7c074584a22db59c333321b1f8b9111950a7",
+  "inventory_sha256": "e31da5c15a4bec6d50c47082e388bf6360b7b822648dcb7663717be753b13888",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -264,6 +264,101 @@
       "evidence": [
         "FinishReadFromRobot version-0 path: no Unpack, log 0x00699FFE..0x0069A01A, zero 0x0069A03E..0x0069A04E, +0x1CA set 0x00699E64, return 1 0x0069A176",
         "no shipped writer emits version 0 (StartWriteToRobot writes 5: 0x00695614/0x00695616)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-019": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "FindFreePoseInBeacon: the candidate frame, grid, order and the three tests",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon 0x005E0378..0x005E0666 (static: r0 object, r1 beacon, r2 robot, r3 &out, float on the stack; the rest of 0x005E0378..0x005E139F is helpers and lambdas); frame = rotation about Z from the nearest cube in the beacon (CalculateDirectionalityClosest 0x005E07D8), else the robot-to-beacon heading via acosf, else angle 0",
+        "grid S = size.x + 10.0f (0x41200000), N = trunc(radius / S); order i = 0, -1..-N, then 1..N; for each i, j = 0, -1, +1, ..., -N, +N; candidate = beacon translation + R*(S*i, S*j, 0), parent = world origin; *out is written before any test",
+        "tests in order: (1) squared distance of the rotated offset > radius^2 rejects (strict; AIBeacon::IsLocWithinBeacon is not used here); (2) DidFailToUse(-1, PlaceObjectAt = 2, cooldown, pose, 100.0f 0x42C80000, pi 0x40490FDB) (call 0x005E0B78); (3) FindLocatedIntersectingObjects with the carried id ignored, padding 0x41200000, no Z test; returns 1 on the first free candidate",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-020": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CalculateDirectionalityClosest, the FindCubesInBeacon predicate and AIBeacon::IsLocWithinBeacon's formula",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "CalculateDirectionalityClosest 0x005E07D8: the rotation about Z from the nearest cube in the beacon; AIBeacon::IsLocWithinBeacon 0x0059C24C: x*x + y*y + z*z in f32 against (radius - margin)^2 plus 0x3727C5AC, `ge`; used only by FindCubesInBeacon (with extra 0)",
+        "the function at 0x005E06D8..0x005E07B0 (an averaging function) has no caller found (extraction section 8 item 6)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-021": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "TryToPlaceAt and its callback: arguments, attempt counter, the same-pose retry and the failure tail",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "TryToPlaceAt builds a CompoundActionSequential of DriveToPlaceCarriedObjectAction(placeOnGround = 1, +0x178 = 0, +0x179 = 1, padding 10.0f) and PlaceObjectOnGroundAction; callback 0x005E188C: success -> FireEmotionEvents (no NeedActionCompleted); a RETRY category retries with the same pose only while still carrying the target and attempt <= 2 (3 attempts); categories 1, 2, 3 or a non-retryable RETRY end in SetFailedToUse(obj, 2, candidate pose) (0x005E1B56)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-022": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "PlaceObjectOnGroundAction Init sends message 0x44 (0, 0, 0, 100, 200, 500 as raw bits), builds a TurnTowardsObject verify action and calls StopAllMotors; CheckIfDone never reads DockingComponent+5, its result is the verify action's (extraction sections 2.3..2.8; construction of PlaceObjectOnGroundAtPoseAction at 0x005DFF14)",
+        "M12-015 owns only the wire message of PlaceObjectOnGround (its evidence does not cover the action)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-023": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The NoFreePoses branch: FailedToFindLocationInBeacon stamp, the log, the 'HikingNoLocationAtBeacon' event and the IsRunnable cooldown",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x005DF69C..0x005DF73A: AIBeacon::FailedToFindLocation (0x0059C314..0x0059C322) stamps [beacon+0x10] (an f32 time) with BaseStationTimer::GetCurrentTimeInSeconds(); then the 'all poses failed' log, then the mood event 'HikingNoLocationAtBeacon' (24 chars), no action started; IsRunnableInternal (vldr s16,[r0,#0x10] 0x005DF148) then blocks for recentFailureCooldown_sec (45.0f hiking, 5.0f sparks)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-024": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The whiteboard failure memory: tables, caps, FailureInfo and EntryMatches",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "AIWhiteboard::DidFailToUse / SetFailedToUse with a pose: per-object-id tables with caps {1, 1, 10, 1} (PlaceObjectAt keeps the last 10); EntryMatches expiry is strict with 1e-5f slack; id -1 means any object; the floor path's DidFailToUse is 0x005E0B78 (failure 2, id -1, 100.0f, pi) and the stack-on filter's is 0x005E1D24 (failure 1, 20.0f, pi/8)",
+        "Pose3d::IsSameAs_WithAmbiguity 0x00846F3C (the per-axis and angle test) is unread: RECOVERABLE_GAP",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-025": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "NeedActionCompleted(0x1F) before the pose search, and the floor callback's lack of any needs call",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorExploreBringCubeToBeacon floor branch: IBehavior::NeedActionCompleted(NeedsActionId 0x1F) BEFORE the pose search, whatever the search returns (0x005DF59C movs r1,#0x1f, 0x005DF5A0; 0x005DF59C..0x005DF5E0)",
+        "the floor callback's category 0 path: log 'Successfully placed cube', FireEmotionEvents, no NeedActionCompleted, no SetFailedToUse (0x005E18AC..0x005E191A)",
+        "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-026": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorExploreBringCubeToBeacon's pick-up phase: InitInternal, TransitionToPickUpObject, DriveToPickupObjectAction and the completion lambda",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorExploreBringCubeToBeacon::InitInternal 0x005DF348: [this+0x12C] = -1; carrying ([[robot+0x284]+8] != -1) -> [this+0x12C] = vector[0].id (0x005DF364..0x005DF36C) and TransitionToObjectPickedUp directly (0x005DF372), else TransitionToPickUpObject(robot, 1) (0x005DF37C); the result is non-zero when no action started and |now - [beacon+0x10]| >= 1e-5f (0x005DF382..0x005DF3DA)",
+        "TransitionToPickUpObject 0x005DF8C0..0x005DFBB0: with [this+0x12C] != -1 the retry path 0x005DF8E6 logs '.TransitionToPickUpObject.Retry'; otherwise the selection (GetCandidate 0x005DFDA4; pose with respect to the robot; f32 (x*x + y*y) + z*z with no sqrt, FLT_MAX 0x005DFCDC, replace when best + (-1e-5f 0xB727C5AC) > d2; best >= FLT_MAX takes the error path 0x005DFA18, an empty vector 0x005DF9C6); the action: 0x100-byte DriveToPickupObjectAction (ctor PLT 0x004A93B8, ObjectID at this+0x128, trigger 0x23F) started through IBehavior::StartActing (0x4B01C8) with the completion lambda 0x005E0FD8..0x005E1220: category 0 'Picked up' -> TransitionToObjectPickedUp; category 4 with the target carried -> RetryOk; category 4 attempt <= 2 (signed, 0x005E118E) -> RetryMaybe 'tries out of 3' -> TransitionToPickUpObject(attempt + 1) (0x005E1210); category 4 spent -> Fail; category 3 -> NoRetry; failures -> SetFailedToUse(obj, PickUpObject) 2-argument form (0x005E1166..0x005E1186); categories 1 and 2 do nothing",
+        "re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
       ],
       "live_path": true,
       "hardware_required": false

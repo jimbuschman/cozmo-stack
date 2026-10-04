@@ -117,6 +117,86 @@ public sealed class StandInDockSubActions : IDockSubActionExecutor
 }
 
 /// <summary>
+/// <c>TurnTowardsObjectAction(robot, ObjectID, short markerCode, Radians maxTurn, bool, bool)</c> (ctor 0x00549DC0, vtable 0x01021A24, name "TurnTowardsObject", type 0x2C) as
+/// <c>PlaceObjectOnGroundAction</c> builds it (M15-022): maxTurn <c>Radians(0.0f)</c> (the <c>TurnTowardsPoseAction</c> base's +0x170), the first bool (<see cref="TurnTowardsObject.BoolArgument5"/>) at +0x180
+/// and the second (<see cref="TurnTowardsObject.BoolArgument6"/>) at +0x192, the "verify visually" flag; the ctor also sets +0x193 = 1 and the pan tolerance +0x194 = 0x3DB2B8C2.
+/// <para><c>Init</c> 0x0054A1F0: an object that <c>GetLocatedObjectByIdHelper</c> does not find is 0x03000004 (BAD_OBJECT, 0x0054A44A: the base value 0x03000002 + 2); with the marker code equal to
+/// <c>*Marker::ANY_CODE</c> the pose is <c>ObservableObject::GetClosestMarkerPose(robot pose, planar = 1)</c> (0x0054A27C), a failure being the base value 0x03000002 (BAD_MARKER, 0x0054A2F6 -> 0x0054A6FE);
+/// otherwise the object's markers with that code (0x0054A372), none being 0x03000002, and of those the one nearest the robot by <c>x*x + y*y + z*z</c> of its pose with respect to the robot (strictly
+/// smaller, 0x0054A3C4..0x0054A438). The pose goes to <c>+0x164</c> (<c>+0x178 = 1</c>, 0x0054A6D8..0x0054A6E4) and the result is <c>TurnTowardsPoseAction::Init</c> (0x0054A6EA, the stack's
+/// <see cref="Cozmo.Robot.Vision.TurnTowardsPoseAction"/>, M13-020).</para>
+/// <para><c>CheckIfDone</c> 0x0054ADD4: the first call runs the pose turn (the compound at +0x78) to its result; a non-zero result is the action's. Then, with the visual-verify byte +0x192 clear, the action ends
+/// with 0 (0x0054ADF2..0x0054ADF8 -> 0x0054AF60): the <c>PlaceObjectOnGroundAction</c> case (+0x180 = 1, +0x192 = 0). With +0x192 SET and an object ID ([+0x188] != -1) the engine instead builds a
+/// <c>TrackObjectAction</c> (0x130 bytes at 0x0054AE08, ctor PLT 0x004A952C) and queues it with <c>QueueAction(3)</c> (0x0054AE2C): not built, MISSING. A <c>VisuallyVerifyObjectAction</c> (0x9C bytes, ctor
+/// PLT 0x004A9688, 0x0054AED8) is built only when +0x180 is set AND +0x193 was 0 on entry to that phase; the ctor sets +0x193 = 1 and the first tick clears it, so the +0x180 / +0x193 branch is not reachable
+/// from this construction and is not built.</para>
+/// <para><c>[verify+0x56] = 1</c> set by <c>PlaceObjectOnGroundAction::Init</c> is <c>IActionRunner</c>'s suppress-track-lock byte (<c>UnlockTracks</c> 0x005408EC skips it, M8-009); this stack's actions take no
+/// track locks, so it has no effect here.</para>
+/// </summary>
+// fidelity: M15-022
+public sealed class TurnTowardsObjectExecutor : IDockSubActionExecutor
+{
+    private readonly ManipulationSystem _m;
+    public TurnTowardsObjectExecutor(ManipulationSystem m) { _m = m; }
+
+    public async Task<ActionResult> RunAsync(DockSubAction action, List<string> trace, CancellationToken cancel)
+    {
+        if (action is not TurnTowardsObject t) throw new NotSupportedException($"TurnTowardsObjectExecutor runs only TurnTowardsObject, not {action}");
+        // Init 0x0054A1F0
+        var obj = _m.World.GetLocatedObjectById(t.ObjectId);                                                  // 0x0054A21C GetLocatedObjectByIdHelper(id, -1)
+        if (obj is null) { trace.Add($"TurnTowardsObjectAction.Init: object {t.ObjectId} not found"); return ActionResult.BadObject; }
+        if (_m.Vision.History.Latest is not { } latest) { trace.Add("TurnTowardsObjectAction.Init: no robot pose"); return ActionResult.BadPose; }     // the engine always has Robot::GetPose(); the stack's TurnTowardsPoseAction answers BAD_POSE the same way
+        var robot = latest.RobotPose;
+        Pose3d markerPose;
+        if (t.Code.IsAny)
+        {
+            if (ObjectPoseQueries.GetClosestMarkerPose(obj, robot, planar: true, out var wrt) is null)
+            { trace.Add("TurnTowardsObjectAction.Init: GetClosestMarkerPose failed"); return ActionResult.BadMarker; }       // 0x03000002
+            markerPose = robot.Compose(wrt);
+        }
+        else
+        {
+            float best = Cozmo.Robot.Behavior.BeaconFloorGeometry.FltMax;                                        // 0x0054A3B8 vldr s16 (0x0054A744 = 0x7F7FFFFF)
+            Pose3d? chosen = null;
+            foreach (var m in obj.Markers.Where(k => unchecked((short)(int)k.Code) == t.Code.Code))
+            {
+                var world = obj.Pose.Compose(m.PoseOnObject);
+                var rel = world.WithRespectTo(robot).Translation;
+                float x = (float)rel.X, y = (float)rel.Y, z = (float)rel.Z;
+                float d2 = x * x;
+                d2 += y * y;
+                d2 += z * z;
+                float dist = MathF.Sqrt(d2);                                                                    // vsqrt.f32 0x0054A402 (sqrtf for a NaN, 0x0054A410)
+                if (dist < best) { best = dist; chosen = world; }                                               // vcmpe s18,s16; bpl skips (0x0054A41C..0x0054A424)
+                // a marker whose pose cannot be taken with respect to the robot ends Init with 0x03000005 (0x0054A65C..0x0054A6B8); the stack's one origin makes that impossible here
+            }
+            if (chosen is null) { trace.Add($"TurnTowardsObjectAction.Init: object {t.ObjectId} has no marker with code {t.Code}"); return ActionResult.BadMarker; }
+            markerPose = chosen.Value;
+        }
+        var turn = new Cozmo.Robot.Vision.TurnTowardsPoseAction(_m.Vision, markerPose, t.RadiansArgument);
+        ActionResult r;
+        try
+        {
+            uint init = turn.Init();                                                                            // 0x0054A6EA
+            if (init != 0) return (ActionResult)init;
+            // CheckIfDone 0x0054ADD4
+            r = (ActionResult)(uint)await turn.ExecuteAsync(cancel);
+        }
+        catch (NotSupportedException e)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TurnTowardsObjectAction -> TurnTowardsPoseAction: an unread engine function was reached: " + e.Message + "; the verify action fails with Abort 0x03000000");
+            return ActionResult.Abort;
+        }
+        if (r != ActionResult.Success) return r;
+        if (t.BoolArgument6)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TurnTowardsObjectAction::CheckIfDone 0x0054AE08..0x0054AE30: with the byte [+0x192] set the engine builds a TrackObjectAction (0x130 bytes, ctor PLT 0x004A952C) and queues it with QueueAction(3); it is not built here and the action ends after the turn");
+        }
+        return ActionResult.Success;
+    }
+}
+
+/// <summary>
 /// <c>RotationMatrix3d::GetRotatedParentAxis&lt;'Z'&gt;</c> 0x005507A0..0x00550852 (M12-030, verified in 20260929-R-VIS-verify-M12-gap3.md Q6): it reads the row
 /// <c>v = (R(2,0), R(2,1), R(2,2))</c> and returns +-1 (X), +-2 (Y) or +-3 (Z), the sign being + when the dominant component is strictly &gt; 0 and - otherwise, the dominant
 /// axis chosen with strict &gt; comparisons (ties prefer X, then Y, over Z); 0 is never returned. The 'X' and 'Y' instantiations that
@@ -353,7 +433,7 @@ public abstract class DockActionBase
     /// <item>(3) <c>IsValidLightCube</c> - NOT MODELLED (feeds the cube light, M10);</item>
     /// <item>(4) only if <c>[+0xB9]</c> (<see cref="CheckPreActionPose"/>): <c>GetPreActionPoses</c> with flag A set (M12-031), a non-zero result returned;</item>
     /// <item>(5) <c>SelectDockAction</c>, a non-zero result returned;</item>
-    /// <item>(6) subscribe to tags 0xC5 and 0xDA and the external interface - the bodies are unread (M12-034); DockingSystem receives the messages;</item>
+    /// <item>(6) subscribe to tags 0xC5 and 0xDA and the external interface - the bodies are unread (M12-034); <see cref="DockingSystem.RegisterActionHandlers"/> scopes the delivery to this action;</item>
     /// <item>(7) <c>[+0x82]</c>/<c>[+0x84]</c> := 3 (<see cref="Field0x82"/>, <see cref="Field0x84"/>);</item>
     /// <item>(8) the marker: with <c>[+0xB9]</c> the closest pose's marker, without it <see cref="ChooseObservedMarker"/>; both join at 0x00551844: a null marker is 0x03000002
     ///   (NullDockMarker), otherwise <c>[+0x82]</c> is the marker's code and <c>[+0x84]</c> is 3;</item>
@@ -364,8 +444,11 @@ public abstract class DockActionBase
     /// </list>
     /// </summary>
     // fidelity: M12-017, M12-031, M12-037
+    private double _actionStartSec;
+
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        _actionStartSec = M.ClockSec();
         _trace.Add("IDockAction.Init: not modelled: reaction locks (1),(10) M8; IsValidLightCube and the cube light (3),(11) M10; handler bodies (6) and RemoveSquint (12) M12-034; slot vtbl+0x34 of every subclass (MISSING)");
         // (2)
         var target = M.World.GetLocatedObjectById(ObjectId);
@@ -386,6 +469,9 @@ public abstract class DockActionBase
         var selection = SelectDockActionResult(target, out var action);
         if (selection != ActionResult.Success) { _trace.Add("IDockAction.Init.DockActionSelectionFailure"); return selection; }
         SelectedDockAction = action;
+        // (6) 0x005516EA / 0x00551750: the action's own 0xC5 and 0xDA handlers, registered here and gone with the action (the bodies are M12-034, unbuilt)
+        // fidelity: M12-017
+        using var handlerRegistration = M.Docking.RegisterActionHandlers(action);
         // (7)
         Field0x82 = 3; Field0x84 = 3;
         KnownMarker? marker = null;
@@ -432,18 +518,51 @@ public abstract class DockActionBase
             if (compound != ActionResult.Success) return compound;
         }
 
-        // IDockAction::CheckIfDone 0x005521AC: the docking squint (0x00552394; AddDockSquint below installs it), then DockWithObject.
-        DockSquintAdded = AddDockSquint();
+        // IDockAction::CheckIfDone 0x005521AC: DockWithObject is called first (0x005522AE). The docking squint (0x00552394; AddDockSquint below installs it) is added on the
+        // first tick on which the robot reports IS_PICKING_OR_PLACING (byte [[+0xCC]+4], +0x94 the previous value; DockingSystem.OnMessage) and only while
+        // ShouldApplyDockingSquint 0x005524AC holds: [[[robot+0x264]+0x30]+0x14] (the severe-need id) != 1.
         _trace.Add($"IDockAction.DockWithObjectHelper.BeginDocking: Docking with marker {marker.Code} using action {action}.");
         var (ox, oy, oa) = PlacementOffset;
         var result = await M.Docking.DockAsync(target, marker, action, Profile, ox, oy, oa,
-                                               unlockLiftTrack: DockFlag95, method: DockingMethod, flag8: DockFlag8, cancel: cancel);
+                                               unlockLiftTrack: DockFlag95, method: DockingMethod, flag8: DockFlag8, cancel: cancel,
+                                               onPickingOrPlacingRise: () => { if (ShouldApplyDockingSquint()) DockSquintAdded = AddDockSquint(); });
         if (result is null) return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout;
         Result = result;
         _trace.Add($"dock result {result}");
         var verified = Verify(M.World.GetObjectById(ObjectId), result);
         _trace.Add($"Verify -> {verified}");
+        // fidelity: M12-007
+        // A Verify that returns RUNNING (0x01000000, 0x00554056) is called again on the next update (PickupObjectAction::Verify 0x00553BE0 keeps its
+        // first-call stamp at +0x10C across the calls). CHOICE (not in the inventory): an "update" here is the next RobotState message with a new timestamp,
+        // which is the clock Verify reads ([robot+0x2C]); the engine's 30.0 s IAction timeout (below) and the cancel token end the wait.
+        // The IAction timeout slot (vtable+0x2C, 0x0052B0C3 = 30.0f, IAction::UpdateInternal 0x00540D1C: start at the first Update, fail 0x03000018 "IAction.Update.TimedOut")
+        // bounds the whole action; here the clock (ManipulationSystem.ClockSec) is taken at RunAsync entry and applied while Verify keeps returning RUNNING.
+        while (verified == ActionResult.Running)
+        {
+            if (M.ClockSec() >= _actionStartSec + 30.0) { _trace.Add("IAction.Update.TimedOut: the action timed out after 30.0 seconds."); return ActionResult.Timeout; }
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("IDockAction::CheckIfDone re-entry while Verify returns RUNNING: the engine calls it on every action update; this stack waits for the next RobotState message with a new timestamp (not itemised)");
+            if (!await NextRobotStateAsync(cancel)) return ActionResult.CancelledWhileRunning;
+            verified = Verify(M.World.GetObjectById(ObjectId), result);
+            _trace.Add($"Verify -> {verified}");
+        }
         return verified;
+    }
+
+    /// <summary>Completes (true) when the robot reports a state with a timestamp different from the latest one now; false when cancelled.</summary>
+    private async Task<bool> NextRobotStateAsync(CancellationToken cancel)
+    {
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        uint? before = M.Robot.State.Latest?.Timestamp;
+        void OnMessage(RobotMessage m) { if (m is RobotState st && st.Timestamp != before) tcs.TrySetResult(); }
+        M.Robot.Message += OnMessage;
+        try
+        {
+            using var reg = cancel.Register(() => tcs.TrySetCanceled());
+            await tcs.Task;
+            return true;
+        }
+        catch (OperationCanceledException) { return false; }
+        finally { M.Robot.Message -= OnMessage; }
     }
 
     /// <summary>
@@ -453,6 +572,18 @@ public abstract class DockActionBase
     /// clips <c>EyeScaleY = 0.35</c>, <c>EyeScaleX = 1.05</c> and <c>UpperLidAngle = -10.0</c> on both eyes,
     /// with a reset keyframe at 250 ms. The engine stores the returned bool at <c>IDockAction+0xF4</c>.
     /// </summary>
+    /// <summary>
+    /// <c>ShouldApplyDockingSquint</c> 0x005524AC: <c>[[[robot+0x264]+0x30]+0x14] != 1</c>, the SevereNeedsComponent's severe NeedId (3, none, from its constructor 0x00572A0E;
+    /// this stack has no component with the engine's writers, as in StrategyExpressNeedsTransition). 3 != 1, so the gate passes; the gap is reported once.
+    /// </summary>
+    // fidelity: M12-017
+    private bool ShouldApplyDockingSquint()
+    {
+        if (M.AiExpressedNeedValue is { } expressed) return (expressed() is { } need ? (int)need : 3) != 1;
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("ShouldApplyDockingSquint 0x005524AC [[[robot+0x264]+0x30]+0x14]: this stack has no SevereNeedsComponent with the engine's writers; the value is its constructed 3 (none), so the squint gate passes");
+        return true;
+    }
+
     // fidelity: M12-017
     private bool AddDockSquint()
     {
@@ -507,6 +638,8 @@ public sealed class PickupObjectAction : DockActionBase
 
     private Pose3d _originalPose;
     private uint _verifyStartedAt;
+    /// <summary>The first-call stamp at +0x10C (0x00553BF8), for tests.</summary>
+    internal uint VerifyStartedAt => _verifyStartedAt;
 
     public PickupObjectAction(ManipulationSystem m, uint objectId) : base(m, objectId) { }
     protected override PreActionType PreActionType => PreActionType.Docking;
@@ -522,46 +655,55 @@ public sealed class PickupObjectAction : DockActionBase
 
     protected override ActionResult Verify(ObservableObject? target, DockResult result)
     {
-        if (!result.Succeeded) return ActionResult.Retry;
-        if (!M.Docking.Carrying.IsCarrying(ObjectId)) { _trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject"); return ActionResult.Retry; }
-
-        // 0x00553BEE: the first Verify stamps the time and every later one measures against that stamp.
+        // The order of PickupObjectAction::Verify 0x00553BE0 (no 0x04000000 is returned anywhere in it):
+        // (1) 0x00553BEE..0x00553BF8: the first call stamps +0x10C.
         uint now = M.Robot.State.Latest?.Timestamp ?? result.Timestamp;
         if (_verifyStartedAt == 0) _verifyStartedAt = now;
 
-        if (target is { IsLocated: true })
+        // (2) 0x00553C06: byte [[+0xCC]+5] is PickAndPlaceResult.didSucceed (written 0x00533790..0x0053379A); 0 branches to 0x00553D72, past the moving/seen-recently block.
+        // The [+0xC1]/[+0xC2] state test in front of it (0x00553C0E..0x00553C2E, with a deadline at [+0x114]) is not itemised: MISSING; taken as the 0x00553C72 branch.
+        if (result.Succeeded)
         {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PickupObjectAction::Verify 0x00553C72..0x00553C86: the engine tests the located-object lookup (null is 0x03000004, 0x00553CEE/0x00554008) and `[obj+0x40] < 0` (skips the moving block, 0x00553C82..0x00553C86); this stack maps both to IsLocated and has no [obj+0x40]");
+            if (target is not { IsLocated: true })
+            {
+                _trace.Add("PickupObjectAction.Verify: the dock object is not located");
+                return ActionResult.BadObject;                       // 0x00553CEE: the lookup is null, r4 = 0x03000004 (movs r4,#4; movt r4,#0x300 at 0x00553C00)
+            }
             if (target.IsMoving)
             {
-                // 0x00553C98: still moving past the allowance, so nothing was picked up.
+                // 0x00553C98..0x00553CA0: still moving past the allowance, so nothing was picked up; inside it (now <= stamp + 500, unsigned, `bls`) Verify
+                // returns RUNNING (0x00553CA0 -> 0x00554056, r4 = 0x01000000) and is called again on the next update.
                 if (now > _verifyStartedAt + StillMovingAllowanceMs)
                 {
                     _trace.Add("PickupObjectAction.Verify.ObjectStillMoving");
-                    M.Docking.ReleaseCarriedObject(forget: true);
-                    return ActionResult.Retry;
+                    M.Docking.ReleaseCarriedObject(forget: true);        // SetCarriedObjectAsUnattached(true), 0x00553CAA
+                    return ActionResult.PickupObjectStillMoving;         // 0x03000014: r4 (0x03000004) + 0x10 at 0x00553CEA
                 }
+                return ActionResult.Running;
             }
-            else
+            // 0x00553D0A: the sighting the verify rests on has to be recent enough, and how recent depends on which dock this was.
+            uint timeout = SelectedDockAction == DockAction.PickupLow ? LowDockObservationTimeoutMs : HighDockObservationTimeoutMs;
+            if (_verifyStartedAt > target.LastObservedTimestamp + timeout)
             {
-                // 0x00553D0A: the sighting the verify rests on has to be recent enough, and how recent
-                // depends on which dock this was.
-                uint timeout = SelectedDockAction == DockAction.PickupLow
-                    ? LowDockObservationTimeoutMs : HighDockObservationTimeoutMs;
-                if (_verifyStartedAt > target.LastObservedTimestamp + timeout)
-                {
-                    _trace.Add($"PickupObjectAction.Verify.ObjectNotSeenRecentlyEnough: last seen " +
-                               $"{target.LastObservedTimestamp}, verify began {_verifyStartedAt}, allowed {timeout} ms");
-                    M.Docking.ReleaseCarriedObject(forget: true);
-                    return ActionResult.Retry;
-                }
+                _trace.Add($"PickupObjectAction.Verify.ObjectNotSeenRecentlyEnough: last seen " +
+                           $"{target.LastObservedTimestamp}, verify began {_verifyStartedAt}, allowed {timeout} ms");
+                M.Docking.ReleaseCarriedObject(forget: true);            // SetCarriedObjectAsUnattached(true), 0x00553D2A
+                return ActionResult.PickupObjectNotSeenRecently;         // 0x03000015: r4 + 0x11 at 0x00553D6E
             }
+        }
 
-            if (target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
-            {
-                _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
-                M.Docking.ReleaseCarriedObject(forget: true);
-                return ActionResult.Retry;
-            }
+        // (3) 0x00553D72..0x00553DD8: the TurnTowardsPoseAction sub-action at [+0x104] (RUNNING until it ends) is not built here.
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PickupObjectAction::Verify 0x00553D72..0x00553DD8: the [+0x104] TurnTowardsPoseAction sub-action (RUNNING until done) is not built; the early [+0xC1]/[+0xC2] state test (0x00553C0E..0x00553C2E) is not modelled");
+        // (4) 0x00553DDA: a dock action above 1 is 0x0300001A (0x00553F82..0x00553FC4); a pickup selects 0 or 1.
+        // (5) 0x00553DE4..0x00553DF2 and 0x00553FC8: [[+0xD0]+8] == -1 (not carrying) is 0x04000005.
+        if (!M.Docking.Carrying.IsCarryingObject) { _trace.Add("PickupObjectAction.Verify.ExpectedCarryingObject"); return ActionResult.PickupRetry; }
+
+        if (target is { IsLocated: true } && target.LastObservedTimestamp > result.Timestamp && target.Pose.IsSameAs(_originalPose, 20, 0.35))
+        {
+            _trace.Add("PickupObjectAction.Verify.SeeingCarriedObjectInOrigPose: Object pick-up FAILED! (Still seeing object in same place.)");
+            M.Docking.Carrying.UnsetCarrying();                          // 0x005542BC..0x005542C4: UnSetCarryingObjects(false), reached via 0x00554114
+            return ActionResult.PickupRetry;                             // 0x00554116: r4 = 0x04000005
         }
         _trace.Add("PickupObjectAction.Verify.Success: Object pick-up SUCCEEDED!");
         return ActionResult.Success;
@@ -827,13 +969,22 @@ public sealed class PopAWheelieAction : DockActionBase
 }
 
 /// <summary>
-/// <c>PlaceObjectOnGroundAction</c> (0x00554638): not a dock. "executing PlaceObjectOnGroundAction but not
-/// carrying object" aborts; otherwise <c>CarryingComponent::PlaceObjectOnGround</c> sends
-/// <c>PlaceObjectOnGround</c> (0x44) and the action waits for the robot's <c>PickAndPlaceResult</c> with
-/// <c>BlockPlaced</c>; a following face-and-verify failure just clears the object from the world. Message
-/// field order INFERRED from the packing at 0x00632BAE..0x00632BEE: {speed, accel, decel, rel_x, rel_y,
-/// rel_angle, useApproachAngle} (hardware item O).
+/// <c>PlaceObjectOnGroundAction</c> (ctor 0x00554638, vtable 0x010222B8; M15-022, M12-015, M2-002): an <c>IAction</c> that is not a dock.
+/// <para><c>Init</c> 0x00554794: <c>+0x84 = 0</c>; no carried id is "PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject" and 0x03000011; else <c>+0x7C</c> = the carried id and
+/// <c>CarryingComponent::PlaceObjectOnGround(false)</c> (0x00632A88: <c>DockingComponent+5 = 0</c>, then the <c>PlaceObjectOnGround</c> message 0x44); a non-zero return is
+/// "...SendPlaceObjectOnGroundFailed" and 0x03000016. In both of those cases a <c>TurnTowardsObjectAction(robot, id, short [carrying+0xC], Radians(0), true, false)</c> is stored as the verify
+/// action (<c>[verify+0x56] = 1</c>); in every case <c>MovementComponent::StopAllMotors</c> runs (0x00554894) and <c>+0x84 = 0</c> again; with result 0 only,
+/// <c>BehaviorManager::DisableReactionsWithLock("placeOnGroundAction", table 0x00C55A21, true)</c> (0x005548C6: of the 21 triggers only index 8, ObjectPositionUpdated, is set).</para>
+/// <para><c>CheckIfDone</c> 0x005549B0: while the robot's IS_PICKING_OR_PLACING status bit is set the action latches <c>+0x84 = 1</c> and is RUNNING; with the bit clear it stays RUNNING while
+/// the latch is clear or while the robot is moving (<c>MovementComponent+9</c>); then its result is the verify action's: 0 or RUNNING is returned as it is, any failure logs
+/// "PlaceObjectOnGroundAction.CheckIfDone.FaceAndVerifyFailed" and clears the object (<c>BlockWorld::ClearLocatedObjectByIDInCurOrigin</c>, MISSING) and returns that result. It never reads
+/// <c>DockingComponent+5</c> or the carry state: the carried object is released only by <c>HandlePickAndPlaceResult</c> 0x00533780 (BLOCK_PLACED with success), when the robot's message arrives.</para>
+/// <para>The <c>IAction</c> frame (<c>UpdateInternal</c> 0x00540D1C): the start is stamped at the first update, and a tick at or after <c>start + 30.0f</c> (the default slot 0x2C, 0x0052B0C2:
+/// 0x41F00000) ends the action with 0x03000018. This stack has no action list, so <see cref="RunAsync"/> is its tick loop (a 1 ms poll, which is not the engine's).</para>
+/// <para>HARDWARE_ONLY: whether the robot's firmware raises IS_PICKING_OR_PLACING for the 0x44 message at all (and in which order against its <c>PickAndPlaceResult</c>) is not in the engine. If the bit never
+/// rises the action stays RUNNING until the 30.0 s timeout fails it with 0x03000018; the stack neither bridges that nor shortens the timeout.</para>
 /// </summary>
+// fidelity: M12-015, M2-002, M15-022
 public sealed class PlaceObjectOnGroundAction
 {
     // fidelity: M12-015
@@ -863,9 +1014,39 @@ public sealed class PlaceObjectOnGroundAction
         Field6 = flag,
     };
 
+    /// <summary>The reaction lock <c>Init</c> takes: the 19-character name <c>movs r2,#0x13</c> (0x005548A8) of the string the <c>Init</c> literal points at.</summary>
+    // fidelity: M15-022
+    public const string ReactionLockName = "placeOnGroundAction";
+
+    /// <summary>The IAction timeout (vtable slot 0x2C default, 0x0052B0C2: <c>movt r0,#0x41f0</c> = 0x41F00000).</summary>
+    // fidelity: M2-002
+    public const float TimeoutSec = 30.0f;
+
+    /// <summary>The 21-entry table at 0x00C55A21: (trigger, bool) pairs for triggers 0..20, only trigger 8 (ObjectPositionUpdated) set.</summary>
+    // fidelity: M15-022
+    public static readonly Cozmo.Robot.Behavior.ReactionLockTable ReactionLockTable = new(ReactionLockName, "0xC55A21", new[] { 8 });
+
+    /// <summary>
+    /// The manager <c>Init</c> asks (<c>[robot+0x44]</c>). Null: this stack's caller did not attach one; the lock is then not taken (reported MISSING) and nothing is removed.
+    /// </summary>
+    // fidelity: M15-022
+    public Cozmo.Robot.Behavior.BehaviorManager? ReactionLocks { get => _reactionLocks ?? _m.ReactionLocks; set => _reactionLocks = value; }
+    private Cozmo.Robot.Behavior.BehaviorManager? _reactionLocks;
+
+    /// <summary>Runs the verify action (<c>TurnTowardsObjectAction</c>); default <see cref="TurnTowardsObjectExecutor"/> (0x0054A1F0 Init, 0x0054ADD4 CheckIfDone).</summary>
+    // fidelity: M15-022
+    public IDockSubActionExecutor? SubActions { get; set; }
+
+    /// <summary>The verify action <c>Init</c> stored at +0x80; null until <c>Init</c> has run with a carried object.</summary>
+    // fidelity: M15-022
+    public TurnTowardsObject? VerifyAction { get; private set; }
+
+    /// <summary><c>[+0x7C]</c>: the carried id saved by <c>Init</c> (-1, here null, until then).</summary>
+    public uint? SavedObjectId { get; private set; }
+
     /// <summary>
     /// <c>PlaceObjectOnGroundAction+0x84</c>: set to 1 by <c>CheckIfDone</c> while the robot's status bit 0x4
-    /// (IS_PICKING_OR_PLACING) is set (0x005549C0), and 0 by <c>Init</c> (0x00554794). <c>CheckIfDone</c> only
+    /// (IS_PICKING_OR_PLACING) is set (0x005549C0), and 0 by <c>Init</c> (0x00554794, 0x0055489E). <c>CheckIfDone</c> only
     /// runs its face-and-verify sub-action once this latch is set and the bit has cleared.
     /// </summary>
     // fidelity: M2-002
@@ -882,8 +1063,7 @@ public sealed class PlaceObjectOnGroundAction
     /// <item>with the latch set, the MovementComponent+9 byte (status bit 0x1, 0x0063E30A) must also be clear
     /// (0x005549D8..0x005549E0) before the engine runs its face-and-verify sub-action.</item>
     /// </list>
-    /// Returns true when the engine would run the sub-action. This stack has no per-tick action list, so
-    /// <see cref="RunAsync"/> polls this while the dock is pending.
+    /// Returns true when the engine would run the sub-action.
     /// </summary>
     private bool StatusGateOpen()
     {
@@ -894,31 +1074,87 @@ public sealed class PlaceObjectOnGroundAction
         return !moving;                                                        // 0x005549E0
     }
 
+    /// <summary><c>Init</c> 0x00554794..0x005548DC; returns its result.</summary>
+    // fidelity: M15-022, M12-015
+    private ActionResult Init()
+    {
+        StatusLatched = false;                                                         // 0x005547AC strb [r5,#0x84] = 0
+        ActionResult result;
+        if (_m.Docking.Carrying.CarriedObjectId is not { } id)
+        {
+            _trace.Add("PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject");   // 0x005547FE
+            result = ActionResult.NotCarryingObjectAbort;                                  // 0x03000011
+            SavedObjectId = null;
+        }
+        else
+        {
+            SavedObjectId = id;                                                            // 0x005547BA str r2,[r5,#0x7C]
+            if (_m.Docking.PlaceObjectOnGround(false))                                    // 0x005547BE CarryingComponent::PlaceObjectOnGround(false)
+            {
+                _trace.Add("PlaceObjectOnGroundAction.CheckPreconditions.SendPlaceObjectOnGroundFailed");
+                result = ActionResult.SendPlaceObjectOnGroundFailed;                       // 0x03000016
+            }
+            else result = ActionResult.Success;
+            // 0x00554836..0x00554888: TurnTowardsObjectAction(robot, ObjectID(+0x7C), short [carrying+0xC], Radians(0.0f), true, false), then [verify+0x56] = 1
+            short code = _m.Docking.Carrying.DockMarker is { } marker ? unchecked((short)(int)marker.Code) : (short)3;       // CarryingComponent+0xC, initial value 3
+            VerifyAction = new TurnTowardsObject(id, new DockTurnCode(code));
+        }
+        _m.Robot.Motion.StopAllMotors();                                                   // 0x00554894 MovementComponent::StopAllMotors
+        StatusLatched = false;                                                             // 0x0055489E
+        if (result == ActionResult.Success)                                                // 0x0055489A cmp r8,#0; bne 0x005548D8
+        {
+            if (ReactionLocks is { } manager) manager.DisableReactionsWithLock(ReactionLockName, ReactionLockTable.ToMask(), stopCurrent: true);   // 0x005548C6
+            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PlaceObjectOnGroundAction::Init 0x005548C6: BehaviorManager::DisableReactionsWithLock(\"placeOnGroundAction\", table 0x00C55A21) has no BehaviorManager attached to this action in this caller (PlaceObjectOnGroundAction.ReactionLocks), so the lock on ObjectPositionUpdated is not taken");
+        }
+        return result;
+    }
+
+    /// <summary>The destructor 0x005546D0: with the action started (state != NOT_STARTED 0x02000001) the lock "placeOnGroundAction" is removed (0x00554708).</summary>
+    // fidelity: M15-022
+    private void Destruct()
+    {
+        ReactionLocks?.RemoveDisableReactionsLock(ReactionLockName);
+    }
+
+    /// <summary>
+    /// <c>CheckIfDone</c> 0x005549B0..0x00554A3A after the status gate: <c>r = verify-&gt;Update()</c>; 0 or RUNNING is returned as it is, else the failure is logged and the object cleared.
+    /// </summary>
+    // fidelity: M15-022, M2-002
+    private async Task<ActionResult> CheckIfDoneAsync(CancellationToken cancel)
+    {
+        if (!StatusGateOpen()) return ActionResult.Running;
+        var exec = SubActions ?? new TurnTowardsObjectExecutor(_m);
+        ActionResult r;
+        try { r = await exec.RunAsync(VerifyAction!, _trace, cancel); }
+        catch (OperationCanceledException) { return ActionResult.CancelledWhileRunning; }
+        if (r == ActionResult.Success || r == ActionResult.Running) return r;             // (r | 0x01000000) == 0x01000000, 0x005549EC..0x005549F4
+        _trace.Add($"PlaceObjectOnGroundAction.CheckIfDone.FaceAndVerifyFailed: FaceAndVerify action reported failure, just clearing object {SavedObjectId}");   // 0x005549F6..0x00554A06
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("PlaceObjectOnGroundAction::CheckIfDone 0x00554A36: BlockWorld::ClearLocatedObjectByIDInCurOrigin(+0x78) after a failed verify is not built (its body is unread); the object is not cleared");
+        return r;
+    }
+
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        if (!_m.Docking.Carrying.IsCarryingObject) { _trace.Add("PlaceObjectOnGroundAction.CheckPreconditions.NotCarryingObject"); return ActionResult.NotCarryingObjectAbort; }
-        // Init 0x00554794 zeroes +0x84 before sending PlaceObjectOnGround.
-        StatusLatched = false;
-        var dock = _m.Docking.PlaceOnGroundAsync(Message(), TimeSpan.FromSeconds(10), cancel);
-        // fidelity: M2-002
-        // The engine's action list calls CheckIfDone once per tick while the place runs; this stack polls the
-        // same gate, so the +0x84 latch is set when the robot reports IS_PICKING_OR_PLACING (0x005549C0).
-        while (!dock.IsCompleted)
+        float start = (float)_m.ClockSec();                                               // IAction::UpdateInternal stamps its start at the first update (0x00540D52..0x00540D68)
+        var init = Init();                                                                // 0x00540F2E: Init on the first tick
+        try
         {
-            StatusGateOpen();
-            await Task.WhenAny(dock, Task.Delay(1, CancellationToken.None));
+            if (init != ActionResult.Success) return init;                                // a non-zero Init result is the action's result (0x00540DFA, 0x00540EEA)
+            while (true)
+            {
+                // IAction::UpdateInternal 0x00540DA2..0x00540DAA: now >= start + timeout (slot 0x2C) -> 0x03000018
+                if ((float)_m.ClockSec() >= start + TimeoutSec)
+                {
+                    _trace.Add("IAction.Update.TimedOut: the action timed out after 30.0 seconds.");
+                    return ActionResult.Timeout;
+                }
+                var r = await CheckIfDoneAsync(cancel);
+                if (r != ActionResult.Running) { _trace.Add($"PlaceObjectOnGroundAction result {r}"); return r; }
+                if (cancel.IsCancellationRequested) return ActionResult.CancelledWhileRunning;
+                await Task.Delay(1, CancellationToken.None);
+            }
         }
-        StatusGateOpen();
-        var result = await dock;
-        if (result is null) return ActionResult.Timeout;
-        // fidelity: M2-002
-        // CheckIfDone does not accept the sub-action result until the gate opens. The engine would stay
-        // RUNNING forever if the robot never reported IS_PICKING_OR_PLACING; this stack has no tick to keep
-        // the action alive, so an unlatched gate completes with the dock result (a LOCAL bridge, M2-002).
-        while (StatusLatched && !StatusGateOpen() && !cancel.IsCancellationRequested)
-            await Task.Delay(1, CancellationToken.None);
-        _trace.Add($"PlaceObjectOnGround result {result}");
-        return result.Status == BlockStatus.BlockPlaced && !_m.Docking.Carrying.IsCarryingObject ? ActionResult.Success : ActionResult.StillCarryingObject;
+        finally { Destruct(); }
     }
 }
 

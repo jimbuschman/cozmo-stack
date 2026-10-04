@@ -7,7 +7,7 @@ namespace Cozmo.Robot.Vision;
 /// <c>Robot::GetCameraPose(float headAngle)</c> (0x004A7870 PLT), all NATIVE:
 ///
 /// * the neck joint "RobotNeck" is at (−13.0, 0, 49.0) mm in the robot frame (X forward, Y left, Z up);
-/// * the camera "RobotHeadCam" is at (17.52, 0, 17.52) mm from the neck, rotated by
+/// * the camera "RobotHeadCam" is at (17.52, 0, 17.52) mm from the neck in this vision model (the engine's is (17.52, 0, -8.0), see EngineHeadCamPositionMm), rotated by
 ///   <c>Robot::_kDefaultHeadCamRotation</c>, the nine floats at 0x00C4A854:
 ///   <c>[0, −0.0698, 0.9976; −1, 0, 0; 0, −0.9976, −0.0698]</c>, which maps the camera's optical frame
 ///   (X right, Y down, Z forward) into the head frame with the optical axis 4 degrees below the head's X axis;
@@ -20,7 +20,11 @@ namespace Cozmo.Robot.Vision;
 public static class HeadGeometry
 {
     public static readonly Vec3 NeckPositionMm = new(-13.0, 0.0, 49.0);
+    // The vision model keeps the older (17.52, 0, 17.52). The engine's value is (17.52, 0, -8.0) = 0x418C28F6 / 0xC1000000
+    // (Robot::Robot 0x0050FF7C..0x0050FFBA); applying it here is blocked on M11's exact solvePnP/corner pipeline (the stand-in estimator is ill-conditioned).
     public static readonly Vec3 HeadCamPositionMm = new(17.52, 0.0, 17.52);
+    /// <summary>The engine's RobotHeadCam translation from the neck, as bits (Robot::Robot 0x0050FF7C..0x0050FFBA). Used only by ComputeHeadAngleToSeePose.</summary>
+    public static readonly Vec3 EngineHeadCamPositionMm = new(BitConverter.Int32BitsToSingle(0x418C28F6), 0.0, BitConverter.Int32BitsToSingle(unchecked((int)0xC1000000)));
     public static readonly Mat3 DefaultHeadCamRotation = new(
         0.0, -0.0697999969124794, 0.9976000189781189,
         -1.0, 0.0, 0.0,

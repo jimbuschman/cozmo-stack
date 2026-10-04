@@ -403,8 +403,9 @@ public class DerivedStateTests
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
-        Assert.Null(ctx.ObstacleDetected);
-        Assert.False(ctx.ObstacleDetected?.Invoke() ?? false);
+        // M10-009: the flag is AIComponent+4 (0x006143CA), zeroed by the constructor (0x00569A80) and never written; no context seam exists
+        Assert.False(new AIComponent(() => 1).ObstacleDetected);
+        Assert.Null(ctx.AI);
     }
 
     /// <summary>
@@ -1444,7 +1445,7 @@ public class DerivedStateTests
         // the gated configs: ReactToObstacle (ObstacleDetected), Hiking_FirstLookWakeUp (1 s off the charger), Hiking_FirstLookIntro (0.25 s into the activity)
         foreach (var gated in new[] { "ReactToObstacle", "Hiking_FirstLookWakeUp", "Hiking_FirstLookIntro" })
             Assert.False(built.Single(b => b.Id == gated).IsRunnable(ctx), gated);
-        ctx.ObstacleDetected = () => true; ctx.ClockSec = () => 10; ctx.LastDriveOffChargerSec = 9.5f; ctx.LastActivitySwitchSec = 9.9;
+        ctx.AI = new AIComponent(() => 1) { ObstacleDetected = true }; ctx.ClockSec = () => 10; ctx.LastDriveOffChargerSec = 9.5f; ctx.LastActivitySwitchSec = 9.9;
         foreach (var b in built)
         {
             Assert.True(b.IsRunnable(ctx), b.Id);

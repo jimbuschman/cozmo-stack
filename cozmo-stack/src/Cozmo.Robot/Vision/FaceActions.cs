@@ -23,10 +23,10 @@ public enum FaceActionResult : uint { Success = 0, Cancelled = 0x02000000, Abort
 /// MoveHeadToAngleAction under a CompoundActionParallel) is not connected (M13-020/M13-022): this stack sends the body and head
 /// through <see cref="FaceTurns"/> and <see cref="TurnTowardsPose"/> (M11-014/M11-015), and waits for the pose to settle.
 ///
-/// CHOICES, not in the inventory: the head angle comes from <see cref="TurnTowardsPose.HeadAngleToSee"/> (a bisection with LOCAL
-/// numerics, not the engine's unread <c>ComputeHeadAngleToSeePose</c>, M13-021) and never fails; the unread
-/// <c>GetAbsoluteHeadAngleToLookAtPose</c> has no seam here, so reaching it (no calibration) throws
-/// <see cref="NotSupportedException"/>. With no robot pose yet the result is BAD_POSE (the engine always has one).
+/// The head angle is <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;rad, 0.01f)</c> (0x00518344, <see cref="TurnTowardsPose.ComputeHeadAngleToSeePose"/>: the engine's 25-iteration loop in binary32 over this
+/// stack's double pose algebra, MISSING for the last bits). When it returns non-zero (no calibration, a projected z at or behind the camera, a loop that ends on its 25th pass) Init logs
+/// "TurnTowardsPoseAction.Init.FailedToComputedHeadAngle" (0x0054AB66) and falls back to <c>GetAbsoluteHeadAngleToLookAtPose</c> (0x0054B428, <see cref="TurnTowardsPoseCompound.AbsoluteHeadAngleToLookAtPose"/>)
+/// with the robot-frame translation. With no robot pose yet the result is BAD_POSE (the engine always has one).
 /// </summary>
 // fidelity: M13-020
 public sealed class TurnTowardsPoseAction
@@ -51,7 +51,7 @@ public sealed class TurnTowardsPoseAction
         if (latest is null) return TurnTowardsPoseCompound.BadPose;
         var robot = latest.Value.RobotPose;
         var env = new TurnTowardsPoseEnv(robot, latest.Value.HeadAngleRad,
-            p => _v.Calibration is { } cal ? TurnTowardsPose.HeadAngleToSee(cal, robot, p.Translation) : null,
+            p => TurnTowardsPose.ComputeHeadAngleToSeePose(_v.Calibration, p, TurnTowardsPoseCompound.SeePoseToleranceRad, out var seen, _v.LogLine) == 0 ? seen : null,   // Robot::ComputeHeadAngleToSeePose(pose, &rad, 0.01f); non-zero is the engine's failure result
             null, null, _v.LogLine);
         uint r = _compound.InitPose(env, out _);
         RelativeTurnRad = _compound.PanAngleRad;

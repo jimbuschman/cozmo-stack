@@ -32,6 +32,15 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     /// <summary>Animation::Init: the iterator back to the first keyframe (A10).</summary>
     public void Init() => _cur = 0;
 
+    /// <summary>
+    /// The list cleared and the iterator back on the head (the end of an empty list): CreateAudioAnimation's None branch (<c>__list_imp::clear</c> 0x0059A12A, then the
+    /// iterator store 0x0059A12E).
+    /// </summary>
+    public void Clear() { _frames.Clear(); _cur = 0; }
+
+    /// <summary>MoveToNextKeyFrame until the iterator is the end (RobotAudioAnimation::InitAnimation's loop, 0x00596898..0x00596914).</summary>
+    public void MoveToEnd() { while (!AtEnd) MoveToNext(); }
+
     /// <summary>MoveToNextKeyFrame (L4).</summary>
     public void MoveToNext()
     {

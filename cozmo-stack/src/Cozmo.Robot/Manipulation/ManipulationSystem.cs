@@ -24,6 +24,11 @@ public sealed class ManipulationSystem : IDisposable
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
         // stack has no external interface registered, so the warning path is the live one.
         Whiteboard.Init();
+        // fidelity: M15-020
+        // The FindCubesInBeacon predicate's first test, CarryingComponent::IsCarryingObject(id) (0x0056D142).
+        Whiteboard.IsCarryingObject = Docking.Carrying.IsCarryingObjectId;
+        Whiteboard.CarriedObjectId = () => Docking.Carrying.CarriedObjectId;
+        Whiteboard.CanPickUpObject = Docking.CanPickUpObject;
         // M11-037 / C3.2: the engine runs BlockConfigurationManager::Update from
         // BlockWorld::UpdateObservedMarkers (0x62520C). The per-frame hook is wired here (M12); the existing
         // observation events are kept because the M12 gate (0x616D7C's [this+0x24]/[this+0xc]) is MISSING.
@@ -59,6 +64,12 @@ public sealed class ManipulationSystem : IDisposable
             && vision.World.ConnectedObjects.FirstOrDefault(o => o.ObjectId == id)?.Type == t;
     }
 
+    /// <summary>
+    /// The same seam as <c>BehaviorContext.AiExpressedNeedValue</c>: <c>[[[robot+0x264]+0x30]+0x14]</c>, the SevereNeedsComponent's severe NeedId (3 = none when unset or null).
+    /// <c>ShouldApplyDockingSquint</c> 0x005524AC reads it.
+    /// </summary>
+    public Func<Cozmo.Robot.Behavior.NeedId?>? AiExpressedNeedValue { get; set; }
+
     /// <summary>Seconds on the clock the components stamp with (the robot's clock by default; tests inject theirs).</summary>
     public Func<double> ClockSec { get; set; } = () => Environment.TickCount64 / 1000.0;
 
@@ -78,6 +89,13 @@ public sealed class ManipulationSystem : IDisposable
         Planner = new LatticePlanner(new LatticeEnvironment(prims));
         return true;
     }
+
+    /// <summary>
+    /// The BehaviorManager the actions take reaction locks through (<c>[robot+0x44]</c>): <c>PlaceObjectOnGroundAction::Init</c> 0x005548C6 takes "placeOnGroundAction" for EVERY action. Set by
+    /// <see cref="Cozmo.Robot.Behavior.FreeplayStack.Create"/>; null (a tool or a motion path with no manager): the lock is not taken and that is reported MISSING once.
+    /// </summary>
+    // fidelity: M15-022
+    public Cozmo.Robot.Behavior.BehaviorManager? ReactionLocks { get; set; }
 
     /// <summary>The block configurations (stacks, pyramid bases, pyramids) over the world model, rebuilt on every observation.</summary>
     public BlockConfigurationManager Configurations { get; }

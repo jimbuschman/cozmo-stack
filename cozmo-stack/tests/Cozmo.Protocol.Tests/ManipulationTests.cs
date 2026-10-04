@@ -79,7 +79,11 @@ public class ManipulationTests
         Assert.Equal(new Vec3(0, -65, -22), ro.LocalOffsetMm);
         Assert.Equal(Math.PI / 2, ro.LocalAngleRad, 6);
         var fl = CubePreActionPoses.For(cube, PreActionType.Flipping, robot).First(p => p.Marker.Face == BlockFace.Front);
-        Assert.Equal(new Vec3(CubeGeometry.CubeSizeMm / 2 + 56.5771, -56.5771, -22), fl.LocalOffsetMm);
+        // M12-001 / 0x004E5C60, 0x004E5CB2..0x004E5CBC: the corner is binary32 0x42624EEF (0xC2624EEF for the Y), added to size.x*0.5f in float (0x004E5934)
+        Assert.Equal(0x42624EEFu, BitConverter.SingleToUInt32Bits((float)CubePreActionPoses.FlippingCornerMm));
+        float cornerEngine = BitConverter.UInt32BitsToSingle(0x42624EEF);
+        Assert.NotEqual(0x42624EEFu, BitConverter.SingleToUInt32Bits((float)56.5771));   // the old decimal rounds to 0x42624EF3, a different float from the engine's
+        Assert.Equal(new Vec3((double)(44f * 0.5f + cornerEngine), -(double)cornerEngine, -22), fl.LocalOffsetMm);
         Assert.Equal(3 * Math.PI / 4, fl.LocalAngleRad, 6);
 
         // the face-def tables are the four rodata vectors in the engine's vector order
@@ -137,12 +141,17 @@ public class ManipulationTests
         var obj = new Pose3d(Mat3.Identity, new Vec3(0, 0, 30));     // 30 mm up: a planar threshold would read 0
         var pose = new Pose3d(Mat3.Identity, new Vec3(0, 0, 0));
         Assert.True(CubePreActionPoses.DistanceThresholdMm(pose, obj, 0.5, out double twice, out double once));
-        double s = Math.Sin(0.5);
-        Assert.Equal(30.0 * s, once, 6);
-        Assert.Equal(2 * 30.0 * s, twice, 6);
+        // M12-001: binary32 emulation of 0x00550102..0x00550164 (vmul.f32/vadd.f32/vsqrt.f32, sinf, vmul.f32, vadd.f32); 30 mm up, tol 0.5
+        float eDist = MathF.Sqrt(0f * 0f + 0f * 0f + 30f * 30f);
+        float eOnce = eDist * MathF.Sin(0.5f);
+        Assert.Equal(BitConverter.SingleToUInt32Bits(eOnce), BitConverter.SingleToUInt32Bits((float)once));
+        Assert.Equal(BitConverter.SingleToUInt32Bits(eOnce + eOnce), BitConverter.SingleToUInt32Bits((float)twice));
 
         // the positivity guard, with operator>'s ~1e-5 rad epsilon
-        Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, 1e-5, out double t0, out double t1));
+        // operator>(a, Radians(0)) 0x0084CC90 = (a > 0) && !IsNear(a, 0, 0x3727C5AC) (IsNear 0x0084CC0A is the strict |d| < eps, vcmpe+movmi):
+        // exactly 0x3727C5AC passes, the float below it does not
+        Assert.True(CubePreActionPoses.DistanceThresholdMm(pose, obj, BitConverter.UInt32BitsToSingle(0x3727C5AC), out _, out _));
+        Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, BitConverter.UInt32BitsToSingle(0x3727C5AB), out double t0, out double t1));
         Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
         Assert.False(CubePreActionPoses.DistanceThresholdMm(pose, obj, 0.0, out t0, out t1));
         Assert.Equal(-1.0, t0); Assert.Equal(-1.0, t1);
@@ -434,15 +443,39 @@ public class ManipulationTests
         Assert.Equal(DockAction.PickupHigh, pickup.SelectedDockAction);
     }
 
+    /// <summary>The verify action's executor with a fixed answer (TurnTowardsObjectAction's body is unread; M15-022).</summary>
+    private sealed class FixedVerify : IDockSubActionExecutor
+    {
+        public Task<ActionResult> RunAsync(DockSubAction action, List<string> trace, CancellationToken cancel) => Task.FromResult(ActionResult.Success);
+    }
+
+    /// <summary>The robot's side of a put-down: IS_PICKING_OR_PLACING rises once the message is in and clears 400 ms later.</summary>
+    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool>? latched = null)
+    {
+        if (!rig.Sent.Any(m => m is PlaceObjectOnGround)) return;
+        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = Environment.TickCount; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
+        else if (!cleared && Environment.TickCount - raisedAt > 100 && (latched?.Invoke() ?? Environment.TickCount - raisedAt > 400)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
+        else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
+    }
+
+    /// <summary>
+    /// M12-015 / M15-022: PlaceObjectOnGroundAction::Init (0x00554794): not carrying is 0x03000011 (and StopAllMotors still runs); carrying sends PlaceObjectOnGround (0x44) with the builder's words
+    /// (0x00632B88: three zeros, then the raw words 0x42C80000, 0x43480000, 0x43FA0000 at 0x00C7CD90, then the bool) and the robot's BLOCK_PLACED result releases the carried object
+    /// (HandlePickAndPlaceResult 0x00533780); CheckIfDone ends with the verify action's result once the status gate has opened.
+    /// </summary>
     [Fact]
     public void PlaceOnGroundNeedsACarriedObjectAndReleasesIt()
     {
         using var rig = new Rig();
         var place = new PlaceObjectOnGroundAction(rig.M);
         Assert.Equal(ActionResult.NotCarryingObjectAbort, place.RunAsync(default).GetAwaiter().GetResult());
+        rig.Pump();
+        Assert.Contains(rig.Sent, m => m is StopAllMotors);                                   // 0x00554894 runs in every case
         rig.M.Docking.Carrying.SetCarrying(7);
-        var t = new PlaceObjectOnGroundAction(rig.M).RunAsync(default);
-        SpinUntil(() => t.IsCompleted, () => rig.Pump());
+        var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
+        var t = action.RunAsync(default);
+        int raised = 0; bool cleared = false;
+        SpinUntil(() => t.IsCompleted, () => { rig.Pump(); PlacingFirmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
         Assert.Equal(ActionResult.Success, t.Result);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
         // The three offsets come first and are always zero; the speeds are the engine's constant
@@ -450,21 +483,21 @@ public class ManipulationTests
         var msg = rig.Sent.OfType<PlaceObjectOnGround>().Single();
         var b = msg.ToBytes();
         Assert.Equal(26, b.Length);                        // tag + 25
-        Assert.Equal(0f, BitConverter.ToSingle(b, 1));
-        Assert.Equal(0f, BitConverter.ToSingle(b, 5));
-        Assert.Equal(0f, BitConverter.ToSingle(b, 9));
-        Assert.Equal(100f, BitConverter.ToSingle(b, 13));
-        Assert.Equal(200f, BitConverter.ToSingle(b, 17));
-        Assert.Equal(500f, BitConverter.ToSingle(b, 21));
+        Assert.Equal(0u, BitConverter.ToUInt32(b, 1));
+        Assert.Equal(0u, BitConverter.ToUInt32(b, 5));
+        Assert.Equal(0u, BitConverter.ToUInt32(b, 9));
+        Assert.Equal(0x42C80000u, BitConverter.ToUInt32(b, 13));
+        Assert.Equal(0x43480000u, BitConverter.ToUInt32(b, 17));
+        Assert.Equal(0x43FA0000u, BitConverter.ToUInt32(b, 21));
         Assert.Equal(0, b[25]);
     }
 
     /// <summary>
     /// M2-002: <c>PlaceObjectOnGroundAction::CheckIfDone</c> 0x005549B0..0x00554A3B's status gate, through
     /// the live entry. While the robot reports IS_PICKING_OR_PLACING (status bit 0x4, stored at
-    /// DockingComponent+4, 0x00512A96) the action latches its <c>+0x84</c> (0x005549C0) and does not accept
-    /// the dock result; once the bit clears and the robot is not moving (MovementComponent+9, 0x005549E0) it
-    /// completes.
+    /// DockingComponent+4, 0x00512A96) the action latches its <c>+0x84</c> (0x005549C0) and does not run its verify
+    /// action; once the bit clears and the robot is not moving (MovementComponent+9, 0x005549E0) it
+    /// completes with the verify action's result.
     /// </summary>
     [Fact]
     public void M2_002_PlaceObjectOnGroundWaitsForThePickingOrPlacingStatusGate()
@@ -472,10 +505,11 @@ public class ManipulationTests
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);       // the robot is picking/placing
-        var place = new PlaceObjectOnGroundAction(rig.M);
+        var place = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
         var t = place.RunAsync(default);
         Assert.True(place.StatusLatched);                                // +0x84 set at 0x005549C0
         SpinUntil(() => rig.M.Docking.Carrying.IsCarryingObject == false, () => rig.Pump());
+        Thread.Sleep(30);
         Assert.False(t.IsCompleted);                                     // the result is in; the gate is closed
         // the place is done: bit 0x4 clear and the robot is not moving
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos));
@@ -538,9 +572,10 @@ public class ManipulationTests
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
         Assert.Contains(b.Trace, l => l.Contains("PutDownBlockPutDown"));          // "play X" with assets, "X: no animation assets" without
         Assert.Contains(b.Trace, l => l.Contains("PutDownBlockKeepAlive"));
-        // two straight drives: the random back-up and the 30 mm look-down drive, both as line paths
+        // M15-012: LookDownAtBlock runs with the carried id still set (InitInternal 0x005C7FD0 -> animation -> StartActing(LookDownAtBlock)), so the gate 0x005C818C..0x005C8194 builds
+        // the head+drive parallel: the random back-up and the -30 drive (2 paths), the head bits; the release (0x005C84CE) comes after the action
         Assert.Equal(2, rig.Sent.OfType<ExecutePath>().Count());
-        Assert.Contains(rig.Sent, m => m is SetHeadAngle sh && Math.Abs(sh.AngleRad + 0.349066f) < 1e-4);
+        Assert.Contains(rig.Sent, m => m is SetHeadAngle sh && BitConverter.SingleToUInt32Bits(sh.AngleRad) == 0xBEB2B8C2u);
         // a behaviour that only makes sense while carrying
         var again = new PutDownBlockBehavior(rig.M);
         Assert.False(again.IsRunnable(ctx));

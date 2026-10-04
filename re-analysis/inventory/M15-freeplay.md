@@ -832,3 +832,19 @@ The complete audit (`re-analysis/research/20260929-audit-complete.md`) found tha
 ## Correction A3 (manager, 2026-10-02, the Codex re-audit)
 
 Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M15-004, M15-008, M15-009, M15-011, M15-012, M15-013 and M15-015 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.
+
+## Correction A4 (job R-FIX2, 2026-10-03): the floor-placement path, seven new records
+
+M15-008 and M15-009 depended on a path no record owned (the verifier of R-FIX2 stream B named it). A Claude extractor read it (`research/20261003-R-FIX2-M15-gap1-extraction.md`; every address re-read in the `.so`). New records, all IMPLEMENTATION_GAP (to build), rows in that report:
+- **M15-019** FindFreePoseInBeacon (0x005E0378..0x005E0666: frame, grid S = size.x + 10.0f 0x41200000, order, the radius, recent-failure (0x005E0B78: -1, PlaceObjectAt = 2, 100.0f 0x42C80000, pi 0x40490FDB) and obstacle tests). The code comments that call the function "0x005E0378..0x005E139F, about 580 instructions" are wrong: it is about 290; the rest of the range is helpers and lambdas.
+- **M15-020** CalculateDirectionalityClosest (0x005E07D8), the FindCubesInBeacon predicate and AIBeacon::IsLocWithinBeacon (0x0059C24C).
+- **M15-021** TryToPlaceAt and its callback 0x005E188C (three attempts, the same-pose retry, SetFailedToUse(obj, 2, pose) 0x005E1B56).
+- **M15-022** PlaceObjectOnGroundAtPoseAction composition (0x005DFF14) and PlaceObjectOnGroundAction Init/CheckIfDone (message 0x44, a TurnTowardsObject verify action, StopAllMotors). M12-015's evidence covers only the wire message.
+- **M15-023** the NoFreePoses branch (0x005DF69C..0x005DF73A) and the IsRunnable cooldown (45.0f hiking, 5.0f sparks).
+- **M15-024** the whiteboard failure memory (caps {1, 1, 10, 1}, EntryMatches, the two DidFailToUse call sites: the stack-on filter's 0x005E1D24 uses failure 1, 20.0f, pi/8; Pose3d::IsSameAs_WithAmbiguity 0x00846F3C is unread).
+- **M15-025** NeedActionCompleted(0x1F) before the pose search and the floor callback's lack of a needs call.
+Other facts from the report: the carried id is released only by HandlePickAndPlaceResult 0x00533780 (BLOCK_PLACED and success) through SetCarriedObjectAsUnattached(false); `AIBeacon+0x10` is an f32 timestamp (M13-006 calls it an int); the 0x005C8190 gate belongs to BehaviorPutDownBlock, not BringCubeToBeacon. Still UNKNOWN (RECOVERABLE_GAP): LightCube's BlockInfo size entry (Block::LookupBlockInfo 0x004E4C8C), Pose3d::IsSameAs_WithAmbiguity, TurnTowardsObjectAction's body, the IAction timeout for the compound.
+
+## Correction A5 (job R-FIX2, 2026-10-04): the pick-up phase, one new record
+
+The floor-placement batch's verifiers found that the pick-up phase of BringCubeToBeacon (InitInternal 0x005DF348, TransitionToPickUpObject 0x005DF8C0..0x005DFBB0, DriveToPickupObjectAction, the completion lambda 0x005E0FD8..0x005E1220) also has no record. **M15-026** owns it (rows in the record's evidence; reads by the verifier and the implementer). M15-020's evidence additionally covers FindUsableCubesOutOfBeacons 0x0056AE58, AreAllCubesInBeacons 0x0056B450, CanPickUpObject 0x0063C7F0 and IsCarryingObject 0x00633F88. The unbuilt part (DriveToPickupObjectAction's body) stays a MISSING in the code.

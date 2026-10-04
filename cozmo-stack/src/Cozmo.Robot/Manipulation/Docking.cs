@@ -83,7 +83,12 @@ public sealed class CarryingComponent
     public KnownMarker? DockMarker { get { lock (_gate) return _dockMarker; } }
     public event Action<uint?>? Changed;
 
+    /// <summary>The carried id equals <paramref name="objectId"/> (the stack's own test: [+8] only; its callers' engine counterparts are not read).</summary>
     public bool IsCarrying(uint objectId) { lock (_gate) return _carried == objectId; }
+
+    /// <summary><c>CarryingComponent::IsCarryingObject(ObjectID)</c> 0x00633F88: true for the carried id ([+8]) and for the id of the object resting on it ([+0x14]). Used where the engine call is read (the <c>FindCubesInBeacon</c> predicate, 0x0056D142).</summary>
+    // fidelity: M15-020
+    public bool IsCarryingObjectId(uint objectId) { lock (_gate) return _carried == objectId || _onTopId == objectId; }
 
     public void SetCarrying(uint objectId, KnownMarker? dockMarker = null)
     {
@@ -133,7 +138,12 @@ public sealed class CarryingComponent
 /// </summary>
 public sealed class DockingSystem : IDisposable
 {
-    public const double ClampToFlatAngleRad = 0.698132;
+    /// <summary>
+    /// The docking error signal's ClampPoseToFlat tolerance: binary32 0x3F32B8C2 (movw/movt 0x0063C182..0x0063C188, passed to
+    /// <c>ClampPoseToFlat</c> 0x0063C194), 40 degrees. NOT the double 0.698132 (binary32 0x3F32B8C7).
+    /// </summary>
+    // fidelity: M12-019
+    public static readonly double ClampToFlatAngleRad = BitConverter.UInt32BitsToSingle(0x3F32B8C2);
     public const double RotatingTooFastRadPerSec = 22.9183 * Math.PI / 180;
 
     private readonly CozmoRobot _robot;
@@ -179,14 +189,44 @@ public sealed class DockingSystem : IDisposable
     public List<RobotMessage> Sent { get; } = new();
     public int ErrorSignalsSent { get; private set; }
     public event Action<string>? Log;
-    /// <summary>Raised when the robot reports it is moving the lift after a dock (<c>MovingLiftPostDock</c>).</summary>
+    /// <summary>
+    /// Raised when the robot reports it is moving the lift after a dock (<c>MovingLiftPostDock</c>, tag 0xC5) to a dock action that has registered
+    /// its handler (<see cref="RegisterActionHandlers"/>): <c>IDockAction::Init</c> registers it (0x005516EA), so no action means no delivery.
+    /// </summary>
     public event Action<bool>? MovingLiftPostDock;
     /// <summary>
-    /// Raised when the robot reports a <c>LiftLoad</c> (0xDA) while a dock is running. The engine registers a
-    /// handler for this tag in <c>IDockAction::Init</c> 0x00551750; its body is the action's own state machine,
-    /// so the stack only receives it (M12-017).
+    /// Raised when the robot reports a <c>LiftLoad</c> (0xDA) to a dock action that has registered its handler (<c>IDockAction::Init</c> 0x00551750);
+    /// its body is the action's own state machine (M12-034, unbuilt), so the stack only receives it (M12-017).
     /// </summary>
     public event Action<bool>? LiftLoad;
+
+    private readonly object _handlerGate = new();
+    private readonly Dictionary<int, DockAction> _actionHandlers = new();
+    private int _nextHandlerId;
+
+    /// <summary>
+    /// <c>IDockAction::Init</c> step 6 (0x005516EA tag 0xC5, 0x00551750 tag 0xDA; M12-017): the action registers its two message handlers and keeps them for its
+    /// own lifetime, so the 0xC5/0xDA messages reach a handler only while a dock action is registered. <paramref name="action"/> is the action's
+    /// <c>IDockAction+0x80</c>, which the 0xC5 handler compares the received byte with (M12-005). Dispose is the action's destruction (the registration goes with it).
+    /// </summary>
+    // fidelity: M12-017
+    public IDisposable RegisterActionHandlers(DockAction action)
+    {
+        int id;
+        lock (_handlerGate) { id = _nextHandlerId++; _actionHandlers[id] = action; }
+        return new HandlerRegistration(this, id);
+    }
+
+    private sealed class HandlerRegistration : IDisposable
+    {
+        private readonly DockingSystem _owner; private readonly int _id; private int _disposed;
+        public HandlerRegistration(DockingSystem owner, int id) { _owner = owner; _id = id; }
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            lock (_owner._handlerGate) _owner._actionHandlers.Remove(_id);
+        }
+    }
 
     private void Send(RobotMessage m) { Sent.Add(m); _robot.SendMessage(m, flush: true); }
 
@@ -266,9 +306,22 @@ public sealed class DockingSystem : IDisposable
     {
         if (!CanInteractWithObjectHelper(obj)) return false;
         if (_vision.History.Latest is not { } state) return false;
-        double d = CubeGeometry.DimInParentFrameZ(obj);
-        double zWrtRobot = obj.Pose.WithRespectTo(state.RobotPose).Translation.Z;
-        return !(d * 1.0 + 15.0 + 1e-5 < d * 0.5 + zWrtRobot);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4)
+        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        return !CubeGeometry.IsPoseTooHigh(obj, wrt, 1.0f, 15.0f, 0.5f);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4), binary32
+    }
+
+    /// <summary>
+    /// <c>DockingComponent::CanPickUpObject(obj)</c> 0x0063C7F0..0x0063C850 (M15-020 as <c>FindUsableCubesOutOfBeacons</c>'s predicate uses it): <see cref="CanInteractWithObjectHelper"/> (with an out pose, the object's
+    /// pose with respect to the robot) and then NOT <c>ObservableObject::IsPoseTooHigh(poseWrtRobot, 2.0f 0x40000000, 15.0f 0x41700000, 0.5f 0x3F000000)</c> (0x0063C832..0x0063C848, 0x00877954:
+    /// <c>D*f1 + f2 + 1e-5 &lt; D*f3 + pose.z</c>), the same shape as <see cref="CanStackOnTopOfObject"/> with f1 = 2.0.
+    /// </summary>
+    // fidelity: M15-020, M12-012
+    public bool CanPickUpObject(ObservableObject obj)
+    {
+        if (!CanInteractWithObjectHelper(obj)) return false;
+        if (_vision.History.Latest is not { } state) return false;
+        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        return !CubeGeometry.IsPoseTooHigh(obj, wrt, 2.0f, 15.0f, 0.5f);
     }
 
     /// <summary>
@@ -349,7 +402,8 @@ public sealed class DockingSystem : IDisposable
     public async Task<DockResult?> DockAsync(ObservableObject target, KnownMarker marker, DockAction action, PathMotionProfile profile,
                                              double placementOffsetX = 0, double placementOffsetY = 0, double placementOffsetAngle = 0,
                                              bool unlockLiftTrack = false, DockingMethod method = DockingMethod.Default,
-                                             bool flag8 = false, TimeSpan? timeout = null, CancellationToken cancel = default)
+                                             bool flag8 = false, TimeSpan? timeout = null, CancellationToken cancel = default,
+                                             Action? onPickingOrPlacingRise = null)
     {
         // fidelity: M12-003
         TaskCompletionSource<DockResult> tcs;
@@ -362,15 +416,21 @@ public sealed class DockingSystem : IDisposable
             // C11.1 D2 (0x0063BAAC/0x0063BAB6): DockWithObject copies the docked object's ObjectID into +0xC.
             DockTargetObjectId = target.ObjectId;
             ErrorSignalsSent = 0;
+            // 0x0055233E: after DockWithObject succeeds CheckIfDone stores 0 in IDockAction+0x94, the previous value of the IS_PICKING_OR_PLACING mirror
+            _prevPickingOrPlacing = false;
+            _onPickingOrPlacingRise = onPickingOrPlacingRise;
         }
         _vision.World.MarkDirty(target.ObjectId);                          // ObjectPoseConfirmer::MarkObjectDirty in DockWithObject
         Log?.Invoke($"Docking with marker {marker.Code} using action {action}.");
         Send(Message(profile.DockSpeedMmps, profile.DockAccelMmps2, profile.DockDecelMmps2, action, unlockLiftTrack, method, flag8));
         // the error signal for the current frame, if the marker is in it right now
         if (_vision.LastResult is { } last) OnFrame(last);
+        // fidelity: M12-017
+        // The squint is NOT added here: CheckIfDone adds it on the first tick on which the robot reports IS_PICKING_OR_PLACING (see OnMessage, RobotState).
+        Task done;
         using var reg = cancel.Register(() => tcs.TrySetCanceled());
-        var done = await Task.WhenAny(tcs.Task, Task.Delay(timeout ?? TimeSpan.FromSeconds(20), CancellationToken.None));
-        lock (_gate) { _pending = null; _active = null; }
+        try { done = await Task.WhenAny(tcs.Task, Task.Delay(timeout ?? TimeSpan.FromSeconds(20), CancellationToken.None)); }
+        finally { lock (_gate) { _pending = null; _active = null; _onPickingOrPlacingRise = null; } }
         if (done != tcs.Task || tcs.Task.IsCanceled)
         {
             Log?.Invoke("dock did not report a result in time; aborting");
@@ -398,6 +458,25 @@ public sealed class DockingSystem : IDisposable
         var done = await Task.WhenAny(tcs.Task, Task.Delay(timeout, CancellationToken.None));
         lock (_gate) _pending = null;
         return done == tcs.Task && !tcs.Task.IsCanceled ? tcs.Task.Result : null;
+    }
+
+    /// <summary>
+    /// <c>CarryingComponent::PlaceObjectOnGround(bool)</c> 0x00632A88 as <c>PlaceObjectOnGroundAction::Init</c> calls it (M15-022): no carried object logs "Robot.PlaceObjectOnGround.NotCarryingObject"
+    /// and returns 1 (0x00632A88..); otherwise <c>DockingComponent+5 = 0</c> (<c>strb r2,[r1,#5]</c> 0x00632A9E), then the <c>PlaceObjectOnGround</c> message (builder 0x00632B88) is sent and 0 is
+    /// returned. Nothing waits for the robot's <c>PickAndPlaceResult</c>: <c>HandlePickAndPlaceResult</c> 0x00533780 handles it when it arrives (<see cref="OnMessage"/>).
+    /// </summary>
+    // fidelity: M15-022, M12-015
+    public bool PlaceObjectOnGround(bool flag)
+    {
+        if (Carrying.CarriedObjectId is null)
+        {
+            Log?.Invoke("error: Robot.PlaceObjectOnGround.NotCarryingObject");
+            return true;
+        }
+        DockingSuccessByte = false;
+        Log?.Invoke("PlaceObjectOnGround sent");
+        Send(PlaceObjectOnGroundAction.Message(flag));
+        return false;
     }
 
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>
@@ -438,10 +517,35 @@ public sealed class DockingSystem : IDisposable
         ErrorSignalsSent++;
     }
 
+    private bool _prevPickingOrPlacing;
+    private Action? _onPickingOrPlacingRise;
+
     private void OnMessage(RobotMessage m)
     {
         switch (m)
         {
+            // fidelity: M12-017
+            // IDockAction::CheckIfDone 0x005521AC (0x0055234A..0x00552398): byte [[IDockAction+0xCC]+4] is the IS_PICKING_OR_PLACING mirror of the RobotState status word
+            // (ubfx r1,r6,#2,#1; strb r1,[r0,#4] at 0x00512A9C..0x00512AA0); IDockAction+0x94 holds its previous value. When the bit is set and the previous value was 0 the
+            // squint is added (the second gate, ShouldApplyDockingSquint 0x005524AC, is the action's callback); a bit that stays set is only RUNNING.
+            case RobotState rs:
+            {
+                Action? rise = null;
+                lock (_gate)
+                {
+                    if (_active is null || _onPickingOrPlacingRise is null) break;
+                    bool bit = (rs.Status & (uint)RobotStatusFlag.IsPickingOrPlacing) != 0;
+                    // +0x94 is stored only on the prev == 0 path (0x005522C4 `cbz r1,0x0055234A` -> 0x0055234C strb); with prev != 0 and the bit set CheckIfDone returns RUNNING at
+                    // 0x005522CE without a store, and with the bit clear it takes the finish path: +0x94 never returns to 0 within a dock, so at most ONE squint is added.
+                    if (!_prevPickingOrPlacing)
+                    {
+                        _prevPickingOrPlacing = bit;
+                        if (bit) rise = _onPickingOrPlacingRise;
+                    }
+                }
+                rise?.Invoke();
+                break;
+            }
             case PickAndPlaceResult r:
             {
                 var result = new DockResult(r.Field0, r.Field1, r.Field2, (BlockStatus)r.Field3);
@@ -476,18 +580,18 @@ public sealed class DockingSystem : IDisposable
             }
             // M12-005 / R-P4: the engine compares the received byte for equality with IDockAction+0x80
             // (the DockAction this dock was started with), not for non-zero.
+            // M12-017: IDockAction::Init registers the 0xC5 handler (0x005516EA) and the 0xDA handler (0x00551750) for the action; with no action registered
+            // nothing receives the message (the earlier code raised MovingLiftPostDock(false) with no dock action at all).
             case MovingLiftPostDock ml:
             {
-                DockAction? activeAction; lock (_gate) activeAction = _active?.Action;
-                MovingLiftPostDock?.Invoke(activeAction is { } a && ml.Field0 == (byte)a);
+                DockAction[] registered; lock (_handlerGate) registered = _actionHandlers.Values.ToArray();
+                foreach (var a in registered) MovingLiftPostDock?.Invoke(ml.Field0 == (byte)a);
                 break;
             }
-            // M12-017: IDockAction::Init 0x00551750 registers a handler for tag 0xDA (LiftLoad); it is
-            // action-scoped, so only while a dock is active.
             case LiftLoad ll:
             {
-                bool activeDock; lock (_gate) activeDock = _active is not null;
-                if (activeDock) LiftLoad?.Invoke(ll.Field0);
+                int registered; lock (_handlerGate) registered = _actionHandlers.Count;
+                for (int i = 0; i < registered; i++) LiftLoad?.Invoke(ll.Field0);
                 break;
             }
         }
