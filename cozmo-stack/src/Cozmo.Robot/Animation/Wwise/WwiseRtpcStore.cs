@@ -359,19 +359,21 @@ public sealed class WwiseRtpcStore
     }
 
     /// <summary>
-    /// Evaluates a subscription's curves for a key: each curve's stored value is looked up, its curve is
-    /// evaluated and scaled, and the results are accumulated (gapA 5.4, gapE 7.2). An id not in the store
+    /// Evaluates a subscription's curves for a key: each curve's stored value is looked up, its curve is evaluated and scaled, and the results are accumulated (gapA 5.4, gapE 7.2). An id not in the store
     /// throws rather than contributing a default.
-    /// <para>QUEUED / MISSING, resolve at wiring: this legacy path (used by WwiseGain) is a NON-FAITHFUL PARALLEL COPY of 0xA17878 / 0xA17724. It evaluates the curve in double width
-    /// (the engine's 0xA14E28 is single-precision), falls back to the raw id when <c>ParamId</c> is not below 64 (the engine has no such fallback), and uses the per-curve <c>SourceType</c> where the
-    /// engine uses the entry's <c>[e+0x24]</c>. Its behaviour is exactly HEAD's (a NotInStore id throws NotSupportedException; the engine's R3 flow is only in <see cref="A11590"/>, the engine-shaped path).</para>
+    /// <para>Batch 5d (C35): the per-curve step is the engine's <c>0xA14E28</c> in binary32 (<see cref="CurveA14E28"/>, the exact port; the double-width <see cref="WwiseRtpc.EvaluateScaled"/> is no longer used here) and the
+    /// accumulation is the engine's binary32 sum from <c>0.0f</c> / product from <c>1.0f</c> (<c>0xA17878</c> / <c>0xA17724</c>, <c>vadd.f32</c> / <c>vmul.f32</c> in curve order); the result is widened to <c>double</c> for the existing signature.
+    /// <c>reduced</c> is always false: the engine has no such notion (an interp code of 10 or more is y = 0 then the scaling stage, L5-25).</para>
+    /// <para>QUEUED / MISSING, resolve at wiring: this legacy path (used by WwiseGain; nothing in production constructs a <see cref="WwiseRtpcStore"/>) is still a NON-FAITHFUL PARALLEL COPY of 0xA17878 / 0xA17724 in its lookups: it falls back
+    /// to the raw id when <c>ParamId</c> is not below 64 (the engine has no such fallback), and it uses the per-curve <c>SourceType</c> where the engine uses the entry's <c>[e+0x24]</c>. A NotInStore id throws NotSupportedException
+    /// (the engine's R3 flow is only in <see cref="A11590"/>, the engine-shaped path). A curve with no points throws (the engine would read past the buffer; the loader refuses such a curve).</para>
     /// </summary>
     public double Evaluate(byte accumulate, IReadOnlyList<WwiseRtpc> curves,
                            uint gameObject, uint playingId, out bool reduced)
     {
         ArgumentNullException.ThrowIfNull(curves);
         reduced = false;
-        var values = new List<double>(curves.Count);
+        float acc = accumulate == 2 ? 1f : 0f;                                            // 0xA17754 vmov.f32 s16,#1.0 / 0xA178A8 vldr s16,[pc]
         foreach (var curve in curves)
         {
             var v = Lookup(curve.SourceId, gameObject, playingId);
@@ -380,10 +382,10 @@ public sealed class WwiseRtpcStore
                     $"M6-009: RTPC 0x{curve.SourceId:X8} is not in the store. gapF 1.8/1.10's not-in-store " +
                     "branches are type == 1 -> 0x9E6748 and type != 1 -> param 0/7 1.0 + skip; both are " +
                     "unreachable for STMG-listed RTPCs and are not modelled here.");
-            values.Add(curve.EvaluateScaled(v.Value, out bool r));
-            reduced |= r;
+            float y = Curve(curve, v.Value);
+            acc = accumulate == 2 ? acc * y : acc + y;                                    // 0xA17854 vmul.f32 / 0xA179A8 vadd.f32
         }
-        return Accumulate(accumulate, values);
+        return acc;
     }
 
     /// <summary>
@@ -414,15 +416,12 @@ public sealed class WwiseRtpcStore
     }
 
     /// <summary>
-    /// The curve evaluation <c>0xA14E28(curve, x, 0, &amp;idx)</c> that <c>0xA17878</c> / <c>0xA17724</c> call per curve (<c>0xA17990..0xA179A0</c>, <c>0xA1783C..0xA1784C</c>). Its body is unread
-    /// (the engine works in single-precision polynomial approximations, e.g. 0xA14ED4..0xA14F2C for scaling 3; the double-width <see cref="WwiseRtpc.EvaluateScaled"/> is NOT the engine's curve), so there is no default: the host or
-    /// test must supply it, and a test double is a double, not engine numerics.
+    /// The curve evaluation <c>0xA14E28(curve, x, 0, &amp;idx)</c> that <c>0xA17878</c> / <c>0xA17724</c> call per curve (<c>0xA17990..0xA179A0</c>, <c>0xA1783C..0xA1784C</c>; hint 0 at every call site, C35.3). The default is the
+    /// engine's function ported in binary32, <see cref="WwiseRtpcCurveA14E28.Evaluate(WwiseRtpc, float)"/> (C35.1). The property stays settable only as a seam for a host or test that wants to observe or wrap the evaluation.
     /// </summary>
-    public Func<WwiseRtpc, float, float>? CurveA14E28 { get; set; }
+    public Func<WwiseRtpc, float, float> CurveA14E28 { get; set; } = static (curve, x) => WwiseRtpcCurveA14E28.Evaluate(curve, x);
 
-    private float Curve(WwiseRtpc curve, float x)
-        => (CurveA14E28 ?? throw new WwiseMissingBehaviourException(
-            "MISSING 0xA14E28 curve evaluation | RTPC accumulate (0xA179A0, 0xA1784C) | unread; the double-width EvaluateScaled is not the engine's float curve"))(curve, x);
+    private float Curve(WwiseRtpc curve, float x) => CurveA14E28(curve, x);
 
     /// <summary>
     /// <c>0xA11590(mgr, key1, param, key)</c> (R1): an empty table (<c>[mgr+0x14] == 0</c>) returns 0.0f; the subscription with <c>[e] == key1 &amp;&amp; [e+4] == param</c> is found by the hash <c>(key1 + param) % n</c> (a dictionary here); not found

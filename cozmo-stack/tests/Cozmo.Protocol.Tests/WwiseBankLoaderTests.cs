@@ -267,9 +267,11 @@ public class WwiseBankLoaderTests
     }
 
     [Fact]
-    public void TheRtpcCurveBodyHasNoDefault()
+    public void TheRtpcCurveBodyDefaultsToTheEnginesBinary32Function()
     {
-        // 0xA14E28 is unread: the accumulate paths stop rather than use the double-width model.
-        Assert.Null(new WwiseRtpcStore().CurveA14E28);
+        // C35.1: 0xA14E28 is adopted; the store's default IS the binary32 port (it no longer throws MISSING). event_volume 0xD2687048's curve (0,-1,interp 1)->(1,0,interp 4), scaling 2, at x = 0.5
+        // is 0xC040B146 (-3.0108199) from the engine under Unicorn (re-analysis/tools/emu/emu_curve.py; research live-bodies-5 section 3).
+        var curve = new WwiseRtpc(0xD2687048, 0, 1, 0, 0x0622369A, 2, new[] { (0f, -1f, 1u), (1f, 0f, 4u) });
+        Assert.Equal(0xC040B146u, BitConverter.SingleToUInt32Bits(new WwiseRtpcStore().CurveA14E28(curve, 0.5f)));
     }
 }

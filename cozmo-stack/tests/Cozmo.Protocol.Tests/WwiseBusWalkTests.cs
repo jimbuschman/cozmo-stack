@@ -26,12 +26,12 @@ internal static class RuntimeDoubles
 
 internal sealed record RtpcValueSpec(uint Id, uint DefaultBits, bool RootValid, uint RootBits);
 
-internal sealed record RtpcSubSpec(int Node, uint Param, uint Type, uint Accum, (uint Id, uint A, uint B)[] Curves);
+internal sealed record RtpcSubSpec(int Node, uint Param, uint Type, uint Accum, (uint Id, byte Scaling, (uint X, uint Y, uint Interp)[] Points)[] Curves);
 
 /// <summary>
 /// M6-025 / M6-010 / M6-009 (C34.1 B2, B3, B7, B8, B9, B4; C34.2 R1, R2, R3): the bus walk and the RTPC evaluation. Every expected value is the engine's own output from re-analysis/tools/emu/emu_bus.py (the real
 /// 0x9F4BB8, 0x9BDA6C, 0x9C54E8 with the shipped vt+0x44 slots, 0x9F9CDC, 0x9C39DC, 0xA11590 with 0xA17878 / 0xA17724 / 0xA17280, and the bus constructor 0x9C3620 run under Unicorn on nodes and an RTPC manager built in
-/// emulated memory); the generated WwiseBusWalkOracle.cs holds the inputs and the outputs. The Python stand-ins are the bodies C34 does not adopt: the curve evaluation 0xA14E28 (a * x + b) and 0x9E6748. Floats are
+/// emulated memory); the generated WwiseBusWalkOracle.cs holds the inputs and the outputs. The curve evaluation 0xA14E28 is the engine's real code in the oracle (batch 5d, C35) and the real port in the C#; the Python stand-in is the body C34 does not adopt, 0x9E6748. Floats are
 /// compared as bits. A scenario whose engine run reached the stand-in 0x9E6748 is asserted to stop in the C# (WwiseMissingBehaviourException), not to return a value.
 /// </summary>
 public class WwiseBusWalkTests
@@ -81,19 +81,17 @@ public class WwiseBusWalkTests
             store.Apply(new WwiseStmgParam(v.Id, BitConverter.UInt32BitsToSingle(v.DefaultBits), 0, 0f, 0f, false));
             if (v.RootValid) store.SetParameter(v.Id, BitConverter.UInt32BitsToSingle(v.RootBits), 0);
         }
-        var coeff = new Dictionary<uint, (float A, float B)>();
         foreach (var s in subs)
         {
             var curves = new List<WwiseRtpc>();
-            foreach (var (id, a, b) in s.Curves)
-            {
-                curves.Add(new WwiseRtpc(id, 0, 0, 0, 0, 0, Array.Empty<(float, float, uint)>()));
-                coeff[id] = (BitConverter.UInt32BitsToSingle(a), BitConverter.UInt32BitsToSingle(b));
-            }
+            foreach (var (id, scaling, pts) in s.Curves)
+                curves.Add(new WwiseRtpc(id, 0, 0, 0, 0, scaling,
+                    pts.Select(p => (BitConverter.UInt32BitsToSingle(p.X), BitConverter.UInt32BitsToSingle(p.Y), p.Interp)).ToArray()));
             store.AddSubscription(new WwiseRtpcSubscription { Key1 = nodes[s.Node].SubscriptionKey10, Param = s.Param, Type = s.Type, Accumulate = s.Accum, Curves = curves });
         }
         var log = new List<string>();
-        store.CurveA14E28 = (c, x) => { log.Add("A14E28"); var (a, b) = coeff[c.SourceId]; return a * x + b; };   // TEST-ONLY DOUBLE for the unread curve 0xA14E28 (the same a*x+b as emu_bus.py's stand-in): curve results are not engine numerics, only the surrounding control flow is
+        // the REAL port of 0xA14E28 (the store's default); the wrapper only records each call, as the oracle's code hook does
+        store.CurveA14E28 = (c, x) => { log.Add("A14E28"); return WwiseRtpcCurveA14E28.Evaluate(c, x); };
         return (store, log);
     }
 

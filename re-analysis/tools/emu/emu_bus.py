@@ -1,7 +1,7 @@
 """Run the engine's own bus-walk and RTPC-evaluation bodies under Unicorn, for WwiseBusWalkTests (M6-025 / M6-010 / M6-009, C34.1 and C34.2).
 
 0x9F4BB8, 0x9BDA6C, 0x9C54E8 (with the real vt+0x44 slots of the shipped vtables), 0x9F9CDC, 0x9C39DC, 0xA11590 with 0xA17878 / 0xA17724 / 0xA17280, and the bus constructor 0x9C3620 run on nodes, bundles and
-an RTPC manager built in emulated memory. Python stand-ins (bodies the inventory does not adopt): the curve evaluation 0xA14E28 (UNREAD: a test-only double, not engine numerics; value = a * x + b with the curve's two floats), 0x9E6748 (the not-in-store
+an RTPC manager built in emulated memory. The curve evaluation 0xA14E28 is the REAL engine code since batch 5d (C35; only a logging code hook records each call). Python stand-ins (bodies the inventory does not adopt): 0x9E6748 (the not-in-store
 branch of 0xA17280; its result is chosen per case and logged), and for the constructor 0x9F402C / 0xA19F94 / 0x9F40F4. The expected values in WwiseBusWalkTests are this script's output, not the C#'s:
 
     python re-analysis/tools/emu/emu_bus.py > cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseBusWalkOracle.cs
@@ -10,7 +10,7 @@ branch of 0xA17280; its result is chosen per case and logged), and for the const
 """
 import struct
 import sys
-import numpy as np
+from unicorn import UC_HOOK_CODE
 from emu_common import *
 
 MGR_PTR_VAR = 0x108D908              # *[GOT 0x1040088]: the RTPC manager pointer
@@ -27,9 +27,17 @@ class Node:
         assert not kw, kw
 
 
+def lin(rid, a, b):
+    """A curve (rid, scaling 0, points) that is the straight line y = a * x + b between x = 0 and x = 100 (interp 4 linear on both points)."""
+    y1 = struct.unpack('<f', struct.pack('<f', struct.unpack('<f', struct.pack('<f', a * 100.0))[0] + b))[0]
+    return (rid, 0, [(0.0, struct.unpack('<f', struct.pack('<f', b))[0], 4), (100.0, y1, 4)])
+
+
 class Sub:
     def __init__(self, node, param, typ, accum, curves):
-        self.node, self.param, self.typ, self.accum, self.curves = node, param, typ, accum, curves     # curves: [(rtpc id, a, b)]
+        # curves: [(rtpc id, scaling, [(x, y, interp)])]; a legacy (rtpc id, a, b) triple is the line of lin()
+        self.node, self.param, self.typ, self.accum = node, param, typ, accum
+        self.curves = [lin(*c) if not isinstance(c[2], list) else c for c in curves]
 
 
 class World:
@@ -54,8 +62,10 @@ class World:
         e.w32(self.mgr + 4, 1)
         e.w32(self.mgr + 0x10, self.sbuckets)
         e.w32(self.mgr + 0x14, 1 if subs else 0)
+        self.vaddr = {}
         for (rid, default, root_valid, root) in values:
             v = e.alloc(0x4C)
+            self.vaddr[rid] = v
             e.w32(v, rid)
             e.w32(v + 8, bits(default))
             e.w32(v + 0x1C, bits(root))
@@ -69,22 +79,24 @@ class World:
             e.w32(en + 0x24, s.typ)
             e.w32(en + 0x28, s.accum)
             cv = e.alloc(20 * max(len(s.curves), 1))
-            for j, (rid, a, b) in enumerate(s.curves):
-                e.w32(cv + 20 * j + 4, rid)
-                e.wf(cv + 20 * j + 8, a)
-                e.wf(cv + 20 * j + 12, b)
+            for j, (rid, scaling, pts) in enumerate(s.curves):
+                pb = e.alloc(12 * max(len(pts), 1))
+                for k, (px, py, pi_) in enumerate(pts):
+                    e.wf(pb + 12 * k, px)
+                    e.wf(pb + 12 * k + 4, py)
+                    e.w32(pb + 12 * k + 8, pi_)
+                e.w32(cv + 20 * j + 4, rid)          # [c+4] the RTPC id
+                e.w32(cv + 20 * j + 8, pb)           # [c+8] the curve object {points*, count, scaling} that 0xA14E28 takes
+                e.w32(cv + 20 * j + 12, len(pts))
+                e.w32(cv + 20 * j + 16, scaling)
             e.w32(en + 0x2C, cv)
             e.w32(en + 0x30, len(s.curves))
             e.w32(en + 8, e.r32(self.sbuckets))
             e.w32(self.sbuckets, en)
 
-        def curve(emu):                   # TEST-ONLY DOUBLE for the unread 0xA14E28(c+8, x, hint, &idx): a*x+b, curve results here are NOT engine numerics
-            a, b = emu.rf(emu.reg(0)), emu.rf(emu.reg(0) + 4)
-            x = f32(emu.reg(1))
-            r = np.float32(np.float32(a) * np.float32(x)) + np.float32(b)
-            e.log.append(('A14E28', emu.reg(1)))
-            return bits(float(np.float32(r)))
-        e.hook(0xA14E28, curve)
+        def curve_log(uc, address, size, _):          # the REAL 0xA14E28 runs; this hook only records that it was called (and with which x)
+            e.log.append(('A14E28', uc.reg_read(UC_ARM_REG_R1)))
+        e.uc.hook_add(UC_HOOK_CODE, curve_log, begin=0xA14E28, end=0xA14E28)
 
         def e6748(emu):                   # 0x9E6748(mgr, id, key, &out)
             ret, x = self.e6748
@@ -295,6 +307,7 @@ def case_9c39dc():
     run('p5_rtpc_two_curves_sum', [Node(mask=1 << 5)], 5, values=((900, 0.0, True, 50.0), (901, 0.0, True, 1.0)), subs=[sub(0, 5, 0, 1, [(900, 2.0, 0.5), (901, 1.0, 0.0)])])
     run('p5_rtpc_two_curves_product', [Node(mask=1 << 5)], 5, values=((900, 0.0, True, 50.0), (901, 0.0, True, 1.0)), subs=[sub(0, 5, 0, 2, [(900, 2.0, 0.5), (901, 1.0, 0.0)])])
     run('p5_rtpc_stmg_default', [Node(mask=1 << 5)], 5, values=((900, 4.0, False, 0.0),), subs=[sub(0, 5, 0, 1, [(900, 2.0, 0.5)])])
+    run('p5_rtpc_real_event_volume_curve', [Node(mask=1 << 5)], 5, values=((900, 0.0, True, 0.5),), subs=[sub(0, 5, 0, 1, [(900, 2, [(0.0, -1.0, 1), (1.0, 0.0, 4)])])])
     run('p5_rtpc_absent_id_param5_calls_9e6748', [Node(mask=1 << 5)], 5, subs=[sub(0, 5, 0, 1, [(900, 2.0, 0.5)])], e6748=(1, 7.0))
     run('p5_rtpc_absent_id_9e6748_zero_result', [Node(mask=1 << 5)], 5, subs=[sub(0, 5, 0, 1, [(900, 2.0, 0.5)])], e6748=(0, 7.0))
     run('p0_rtpc_absent_id_param0_skips', [Node(mask=1)], 0, subs=[sub(0, 0, 0, 1, [(900, 2.0, 0.5)])], e6748=(1, 7.0))
@@ -332,6 +345,16 @@ def case_a11590():
     run('absent_param2_calls_9e6748_result1', n, 0, 2, subs=[sub(2, 0, 0, [(900, 2.0, 0.5)])], e6748=(1, 9.0))
     run('absent_param2_calls_9e6748_result0', n, 0, 2, subs=[sub(2, 0, 0, [(900, 2.0, 0.5)])], e6748=(0, 9.0))
     run('absent_type1_param0_calls_9e6748', n, 0, 0, subs=[sub(0, 1, 0, [(900, 2.0, 0.5)])], e6748=(1, 9.0))
+    # real shipped-shape curves (batch 5d, C35): event_volume (scaling 2, (0,-1,interp 1)->(1,0,interp 4)) and others, the engine's own 0xA14E28 inside the accumulators
+    ev = (900, 2, [(0.0, -1.0, 1), (1.0, 0.0, 4)])
+    scurve = (901, 0, [(0.0, 0.0, 5), (1.0, 1.0, 4)])
+    pw = (902, 3, [(0.0, -60.0, 4), (100.0, 0.0, 4)])
+    run('real_event_volume_half', n, 0, 3, values=((900, 0.0, True, 0.5),), subs=[sub(3, 0, 1, [ev])])
+    run('real_event_volume_stmg_default_zero', n, 0, 3, values=((900, 0.0, False, 0.0),), subs=[sub(3, 0, 1, [ev])])
+    run('real_sum_two_curves_scaling2_and_scurve', n, 0, 3, values=((900, 0.0, True, 0.75), (901, 0.0, True, 0.3)), subs=[sub(3, 0, 1, [ev, scurve])])
+    run('real_product_scaling3', n, 0, 3, values=((902, 0.0, True, 50.0), (901, 0.0, True, 0.999)), subs=[sub(3, 0, 2, [pw, scurve])])
+    run('real_sum_three_curves_float_order', n, 0, 3, values=((900, 0.0, True, 0.995), (901, 0.0, True, 0.5), (902, 0.0, True, 10.0)), subs=[sub(3, 0, 1, [ev, scurve, pw])])
+    run('real_nan_value_gives_last_point', n, 0, 3, values=((901, 0.0, True, float('nan')),), subs=[sub(3, 0, 1, [scurve])])
     return out
 
 
@@ -612,9 +635,13 @@ def cs_values(values):
     return 'new RtpcValueSpec[] { ' + ', '.join('new(%d, %s, %s, %s)' % (rid, cs_bits(b(d)), 'true' if rv else 'false', cs_bits(b(r))) for (rid, d, rv, r) in values) + ' }'
 
 
+def cs_pts(pts):
+    return 'new (uint, uint, uint)[] { ' + ', '.join('(%s, %s, %d)' % (cs_bits(b(px)), cs_bits(b(py)), pi_) for px, py, pi_ in pts) + ' }'
+
+
 def cs_subs(subs):
-    return 'new RtpcSubSpec[] { ' + ', '.join('new(%d, %d, %d, %d, new (uint, uint, uint)[] { %s })' % (
-        s.node, s.param, s.typ, s.accum, ', '.join('(%d, %s, %s)' % (rid, cs_bits(b(a_)), cs_bits(b(b_))) for rid, a_, b_ in s.curves)) for s in subs) + ' }'
+    return 'new RtpcSubSpec[] { ' + ', '.join('new(%d, %d, %d, %d, new (uint, byte, (uint, uint, uint)[])[] { %s })' % (
+        s.node, s.param, s.typ, s.accum, ', '.join('(%d, %d, %s)' % (rid, scaling, cs_pts(pts)) for rid, scaling, pts in s.curves)) for s in subs) + ' }'
 
 
 def cs_logs(log):

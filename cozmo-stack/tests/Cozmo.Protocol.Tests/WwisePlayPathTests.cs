@@ -52,7 +52,7 @@ public class WwisePlayPathTests
             Seams.RecordsOf34 = _ => Records34;
             Seams.ModulatorCtxWords = _ => (0x11u, 0x22u, 0x33u);
             Modulators.A9DCE44 = (id, rec, ctx, w10, list) => { Log.Add("9DCE44:" + id); return 1; };      // 0x9DCE44 is not adopted: a stand-in
-            Store.CurveA14E28 = (c, x) => { Log.Add("A11590:" + c.ParamId.ToString("X")); return x; };      // TEST-ONLY DOUBLE (identity) for the unread curve 0xA14E28, not engine numerics; the curve body is the M6-009 model: the identity here
+            Store.CurveA14E28 = (c, x) => { Log.Add("A11590:" + c.ParamId.ToString("X")); return WwiseRtpcCurveA14E28.Evaluate(c, x); };      // the REAL port of 0xA14E28 (C35); the wrapper only records the call. The curves below are one-point curves, for which the engine returns y_0 for every x
             Path = new WwisePlayPath(Limiter.ParentNode, Seams) { RuntimeNodeOf = RuntimeOf, Rtpc = Store, Modulators = Modulators };
         }
 
@@ -80,13 +80,13 @@ public class WwisePlayPathTests
             }
             _runtime[n.Id] = node;
             uint serial = 700;
-            foreach (var r in n.Params.Rtpcs)                                                                                  // the node's subscriptions: one curve per RTPC, the identity on the STMG default
+            foreach (var r in n.Params.Rtpcs)                                                                                  // the node's subscriptions: one curve per RTPC: a one-point curve whose y is the scenario value (0xA14E28 returns y_0 for any x, L5-22)
             {
                 Store.Apply(new WwiseStmgParam(serial, Rtpc, 0, 0f, 0f, false));
                 Store.AddSubscription(new WwiseRtpcSubscription
                 {
                     Key1 = node.SubscriptionKey10, Param = r.ParamId, Type = 0, Accumulate = 1,
-                    Curves = new[] { new WwiseRtpc(serial++, 0, 1, r.ParamId, 0, 0, Array.Empty<(float, float, uint)>()) },
+                    Curves = new[] { new WwiseRtpc(serial++, 0, 1, r.ParamId, 0, 0, new[] { (0f, Rtpc, 4u) }) },
                 });
             }
             return node;
