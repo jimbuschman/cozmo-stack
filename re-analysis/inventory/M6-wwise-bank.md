@@ -2777,3 +2777,42 @@ heuristic census is withdrawn). Where C35 differs from earlier text, C35 wins. N
 - **Records touched (text only, no status):** M6-009 (the curve: IMPLEMENTATION_GAP stays; the C# `WwiseRtpc` /
   `WwiseRtpcStore` curve is double width and differs on D1..D9), M6-001 (L5-01). The C# is to be rebuilt to binary32 from
   L5-22..L5-30; `WwiseAudioSource.cs:398` (unscaled `Evaluate`) is outside the live path.
+
+## Correction C36 (manager, 2026-10-04): the Vorbis, ADPCM and PCM decode bodies, the output hand-off and the source-to-voice contract, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C35). C36 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-6.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (the 1024 frame value, the end-of-data 2 vs 0x2E rule, the n > 0 precondition of the
+0x11, the unconditional bit-7 clear, the A01/A06 `[S+0x28]` store condition, A02's frame count, V22's streamed
+destructors, P03's vtable fact). Where C36 differs from earlier text, C36 wins. No status changes.
+
+- **C36.1, the Vorbis data path (V01..V20, V23).** `0xAB7E40` (the block decode and frame loop: planar floats,
+  `channels*frames*4` bytes 16-aligned from the pool, frames per call 128/576/1024 at 256/2048 and 256/384/512 at 512/1024),
+  the output hand-off `0xA73490` (state `+0x04` = AkChannelConfig, `+0x24` = media sample rate, `[S+0x18]` advanced,
+  the result 0x2D or the return of `vt+0x74`, which is 0x11 at the end of a single play when the last packet yields n > 0
+  and 0x2D after a loop restart), the packet-collection tails `0xAB1550` (streamed) and `0xAB0448` (in-memory), the setup
+  cache `0xAB2D74`/`0xAB3120`, the DSP allocation and teardown `0xAB3264`/`0xAB3428`/`0xAB3244`, the header walker
+  `0x9CD340` (chunk rules V15), the in-memory StartStream `0xAB0B20`/`0xAB0A30`, the seek lookups `0xAB1020`/`0xAB04F0`,
+  the start position `0xA736D4`, the loop/end slot `vt+0x74` (`0xAB1138`, `0xAB0374`, `0xA742C8`). **End of data:** with
+  `[S+0x40] == 0` the dry stream reports 0x2E; on the end-of-data path with a stale non-zero `[S+0x40]` the voice sees 2
+  (`0xAB1974..0xAB1994`). After `0xAB0B20` bit 7 of `[pbi+0x1BD]` is cleared in every case; the skip is the post-lookup
+  leftover.
+- **C36.2, the ADPCM and PCM stream classes (A03..A05, A07 outline).** `0xA739E8`, `0xA75B1C`/`0xA75B4C`, `0xA73A14`,
+  `0xA73A48`, `0xA741C8`, `0xA74244` (vptr `0x103D840`), `0xA742C8`, with A01/A02/A06 as corrected. The plug-in sources
+  (A08; Sine, Silence, Tone, the Anki `0x6412C2`) and the music-track plug-in `0x100001` are unread.
+- **C36.3, the source-to-voice contract (P01, P02).** `0xA52D4C..0xA52DA4` (0x2D with 0 valid frames becomes 0x2B; the
+  state is copied to node `+0x60`), `0xA447A8..0xA447BC`, `0xA55C14..0xA55C70`; the lifecycle slots (V21) and the
+  voice-side `vt+0x88` call sites (`0xA43260`) are unread.
+- **C36.4, the offline decode (section 5, adopted).** The C# `WwiseVorbisNative`/`WwiseVorbisDecode`/`WwiseVorbisImdct`
+  is a transliteration of `0xAB6380`, `0xAB63E0`, `0xAB3780`, `0xAB6B14`, `0xAB3520`, `0xAB5A94`, `0xAB3978` and an offline
+  whole-buffer form of `0xAB7E40`; whole-buffer and one-packet-per-call drives give identical bytes (5 shipped files). It does
+  **not** cover the stream integration (the hand-off, `vt+0x74`, the packet protocol, the setup cache, seek and the DSP
+  allocation); M6-002's "bit-exact end to end" holds for the whole-buffer drive only. The emit of M6-002 C13/C14.3 is
+  corrected: the store at `0xA73514` writes `vt+0x74`'s return (0x11 or 0x2D).
+- **C36.5, shipped reach (section 1).** Streamed Vorbis 1826 + 18 Cozmo, 73 + 23 SFX, 9 + 4 UI, 213 Music; in-memory
+  27 + 1 + 4; ADPCM stream 333; PCM none; plug-in sources Cozmo 27, SFX 4, UI 1, Dev_Debug 14, MusicTrack `0x100001` 46;
+  57 Sounds with a loop count (0 = infinite on 55, 2 on 2); Vorbis media 1987, all with `audio_off = seekTableSize + 2 +
+  setupSize`.
+- **Records touched (text only, no status):** M6-002 (the emit; the class labels), M6-003 (the ADPCM stream-class bodies),
+  M6-022, M6-025 (`0x9CD340` chunk rules). Still open: V21, A08, the music-track path, `0x9D4BBC`/`0x9D4D30`, the origin of
+  the PBI start-offset value (`0xA001D8..0xA00280`), a census of the last-packet n > 0 condition.
