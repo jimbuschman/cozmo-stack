@@ -46,7 +46,7 @@ public static class CoreChecks
         {
             if (_done) return;
             _done = true;
-            _robot.Animations.Scheduler.RemoveIdleAnimation(_who, Environment.TickCount64);
+            _robot.Animations.Scheduler.RemoveIdleAnimation(_who, _robot.Animations.ClockMs);
             _robot.Animations.Scheduler.LiveIdleInputs.LockedTracks = _previous;
         }
     }

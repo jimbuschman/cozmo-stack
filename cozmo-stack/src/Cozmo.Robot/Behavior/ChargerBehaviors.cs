@@ -217,12 +217,29 @@ public sealed class MountChargerBehavior : ManipulationBehavior
     public MountChargerBehavior(ManipulationSystem m, string id = "DockingTestSimple") : base(id, "DockingTestSimple", m) { }
     public ActionResult? Result { get; private set; }
 
+    /// <summary>The lock name literal at 0x00BF358C (0x13 characters), used as is: no "_behaviorLock" suffix.</summary>
+    public const string DockingTestSimpleLockName = "Docking test simple";
+
+    // fidelity: M7-014
+    /// <summary>StopInternal 0x005CDA38: <c>RemoveDisableReactionsLock("Docking test simple")</c> (0x005CDA5E), unconditionally.</summary>
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        Scope.Manager?.RemoveDisableReactionsLock(DockingTestSimpleLockName);
+        base.OnStop(reason);
+    }
+
     protected override bool IsRunnableInternal(BehaviorContext context) =>
         !context.Robot.Sensors.OnCharger && M.World.GetLocatedObjectById(ChargerGeometry.ObjectId) is not null;
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // The shipped devBehaviors/dockingTestSimple.json (class DockingTestSimple) is this behaviour's config. BehaviorDockingTestSimple::InitInternal 0x005CB394 calls
+        // BehaviorManager::DisableReactionsWithLock directly (0x005CB434, not the Smart helper): lock name "Docking test simple" (literal 0x00BF358C, 0x13 characters), the table returned by
+        // ReactionTriggerHelpers::GetAffectAllArray (PLT 0x4B3780 -> 0x005A0404 = 0x00C60D40, all 21 bytes set) and stopCurrent = 1 (movs r3,#1 0x005CB432): the manager's
+        // DisableAllReactionsWithLock. StopInternal 0x005CDA38 removes it (0x005CDA5E); StopInternal 0x005CDA70..0x005CDAE6 also cancels the actions in the map at +0x120 and calls PrintStats and VizManager::SendSaveImages, which this wrapper (a stand-in for the docking-statistics class) does not. It is taken after InitInternal's own setup (0x005CB394..0x005CB40A), which this wrapper has none of.
+        Scope.Manager?.DisableAllReactionsWithLock(DockingTestSimpleLockName);
+        SteppedBehavior.ReportMissing("MountChargerBehavior is a stand-in for BehaviorDockingTestSimple: its StopInternal 0x005CDA70..0x005CDAE6 also cancels the actions in the map at +0x120 and calls PrintStats and VizManager::SendSaveImages; none of that is modelled (only the lock and its removal)");
         var act = new MountChargerAction(M, ChargerGeometry.ObjectId);
         RunAction("MountChargerAction", act.RunAsync, r => { foreach (var l in act.Trace) Log("  " + l); Result = r; Finish(); });
     }

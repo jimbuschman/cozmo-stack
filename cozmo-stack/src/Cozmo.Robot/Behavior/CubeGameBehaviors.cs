@@ -71,9 +71,13 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
         TargetStack = Tallest();
         if (TargetStack is null) { Log("no stack"); Finish(); return; }
+        // fidelity: M7-014
+        // BehaviorKnockOverCubes::InitInternal 0x005C31A2 calls InitializeMemberVars (0x005C31D8) first. When the target stack is there (the weak pointer at +0x120 locks and +0x11C is non-null,
+        // 0x005C31DC..0x005C31EE) it takes SmartDisableReactionsWithLock(own name, table 0x00C67CB2) at 0x005C31FA, before it resets the tipped set (0x005C3206..0x005C3214); with no stack it returns 0
+        // with no lock and InitInternal reports failure. The former arbiter-wide Scope.DisableReactions() had no engine counterpart.
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.KnockOverCubes);
         _tipped.Clear(); KnockedOver = null; KnockOverAttempts = 0;
         M.World.ObjectObserved += OnObserved;
         // InitInternal 0x005C31A2: run the reach unless +0xD9 (alwaysStreamline) or +0xD8 (soft spark
@@ -183,7 +187,17 @@ public sealed class KnockOverCubesBehavior : ManipulationBehavior
     /// into <c>TransitionToPlayingReaction</c>, or it would report success where the engine reports failure.
     /// </summary>
     // fidelity: M13-014
-    private void PrepareForKnockOverAttempt() => _tipped.Clear();
+    private void PrepareForKnockOverAttempt()
+    {
+        _tipped.Clear();
+        // fidelity: M7-014
+        // 0x005C37A8: IncreaseScoreWhileActing(10.0f) (PLT 0x4B01BC, r1 = 0x41200000 = 10.0f exactly), after the tipped set is cleared (0x005C378A..0x005C37A4).
+        // fidelity: M8-003
+        IncreaseScoreWhileActing(10.0);
+        // 0x005C37AE..0x005C37F0: SmartRemoveDisableReactionsLock("preparingToKnockOverDisable", 0x005C37C2) and then SmartDisableReactionsWithLock of the same name with the all-zero table 0x00C67CDC (0x005C37F0).
+        Scope.SmartRemoveDisableReactionsLock(ReactionLockTables.KnockOverCubesPreparingName);
+        Scope.SmartDisableReactionsWithLock(ReactionLockTables.KnockOverCubesPreparingName, ReactionLockTables.KnockOverCubesPreparing);
+    }
 
     private void TransitionToPlayingReaction()
     {
@@ -269,7 +283,9 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorPopAWheelie::InitInternal 0x005C7496 takes no reaction lock (it is [+0xD8]/[+0xD9]/[+0x120]/[+0x128] tests and a tail call, 0x005C7496..0x005C74BC); the lock is taken by the
+        // pre-dock callback, PreDockCallback below. The arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         TargetObjectId = Target()?.ObjectId;
         if (TargetObjectId is null) { Finish(); return; }
         Retries = 0; Succeeded = false;
@@ -292,12 +308,17 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
         int handle = StartActing();
         if (handle == 0) return;
         int epoch = CallbackEpoch;
+        var scope = Scope;                       // the run this action belongs to: a stale action must not reach the next run's scope
+        int run;
+        lock (_cliffGate) run = _run;
         RunAction($"DriveToPopAWheelieAction({id})", async ct =>
         {
             var drive = new DriveToObjectAction(M, id, PreActionType.Docking);
             var d = await drive.RunAsync(ct);
             foreach (var l in drive.Trace) Log("  " + l);
             if (d != ActionResult.Success) return d;
+            if (ct.IsCancellationRequested) return ActionResult.CancelledWhileRunning;     // a cancelled list never runs the WaitForLambdaAction
+            PreDockCallback(scope, run, ct);
             var pop = new PopAWheelieAction(M, id) { CheckPreActionPose = false };
             var r = await pop.RunAsync(ct);
             foreach (var l in pop.Trace) Log("  " + l);
@@ -311,6 +332,36 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     }
 
     /// <summary>
+    /// The std::function body 0x005C7BC8 that TransitionToPerformingAction stores at the DriveToPopAWheelieAction's +0xE0 (0x005C786C..0x005C7880). Its invoker is the lambda $_3 of
+    /// IDriveToInteractWithObject::AddDockAction (operator() 0x0055E068: it calls the function at +0xE0 with the robot at 0x0055E0C8..0x0055E0D4 and returns true), which AddDockAction
+    /// (0x0055B7AC) wraps in a WaitForLambdaAction (constructor via 0x0055B554) and adds to the sequence BEFORE the dock action (0x0055B7F2..0x0055B802, then the dock action at 0x0055B838): it
+    /// runs after the drive and before the pop. The body: SmartDisableReactionsWithLock(own name, table 0x00C6883D) (0x005C7BE8), [+0x130] = 1 (0x005C7BF0), then
+    /// <c>EnableStopOnCliff(false)</c> through Robot::SendMessage(msg, 1, 0) (0x005C7BF4..0x005C7C0A).
+    /// </summary>
+    // fidelity: M7-014, M13-015
+    private void PreDockCallback(BehaviorScope scope, int run, CancellationToken ct)
+    {
+        // The engine runs this inside the tick-driven action list: a stop or a cancel means it never runs. Here it runs on the action's pool thread, so the run is checked and the
+        // +0x130 flag is set together with the send, under one monitor that OnStop also takes: a stop either sees the flag and restores, or has already ended the run and nothing is sent.
+        lock (_cliffGate)
+        {
+            if (ct.IsCancellationRequested || run != _run) return;
+            _stopOnCliffDisabled = true;
+            M.Robot.SendMessage(new EnableStopOnCliff { Enable = false }, flush: true);
+            Log("EnableStopOnCliff(false)");
+        }
+        // The engine body (0x005C7BC8) takes the lock first, then sets the flag and sends; here the flag and send come first, because the lock goes through the manager OUTSIDE that monitor (the manager's stop path holds its monitor and then calls OnStop); the captured scope is disposed with its run, which
+        // takes the lock back if the stop came in between.
+        scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.PopAWheelie);
+    }
+
+    private readonly object _cliffGate = new();
+    private int _run;
+
+    /// <summary>BehaviorPopAWheelie +0x130: set by <see cref="PreDockCallback"/>, cleared (with EnableStopOnCliff(true)) by ResetBehavior 0x005C76B0 at StopInternal.</summary>
+    private bool _stopOnCliffDisabled;
+
+    /// <summary>
     /// The completion lambda 0x005C7CBC, in its order: a non-zero result first removes the behaviour's reaction lock (<c>SmartRemoveDisableReactionsLock</c>, 0x005C7CD4..0x005C7CDA);
     /// then the category byte (<c>result &gt;&gt; 24</c>): 4 with the retry count at most 0 (<c>ble</c> at 0x005C7D4A, signed) goes to <c>SetupRetryAction</c> (0x005C7DFA); 4 with the retry used
     /// and 3 log "BehaviorPopAWheelie.FailedAbort" and, when the object at +0x11C is still in the world (<c>GetLocatedObjectByIdHelper</c>, family -1), call
@@ -320,8 +371,8 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
     // fidelity: M13-015
     private void OnActionComplete(uint id, ActionResult r)
     {
-        if (r != ActionResult.Success)
-            SteppedBehavior.ReportMissing("BehaviorPopAWheelie completion lambda 0x005C7CD4: SmartRemoveDisableReactionsLock(own name) on a non-zero result is not built (BehaviorScope has no per-lock removal, and the behaviour's lock table is not in the inventory)");
+        // 0x005C7CD4..0x005C7CDA: a non-zero result removes the callback's lock (SmartRemoveDisableReactionsLock, own name).
+        if (r != ActionResult.Success) Scope.SmartRemoveDisableReactionsLock(Id);
         uint category = (uint)r >> 24;
         if (category == 4 && Retries <= 0) { SetupRetryAction(r); return; }
         if (category is 4 or 3)
@@ -366,8 +417,17 @@ public sealed class PopAWheelieBehavior : ManipulationBehavior
 
     protected override void OnStop(BehaviorStopReason reason)
     {
-        M.Robot.SendMessage(new EnableStopOnCliff { Enable = true }, flush: true);
-        Log("EnableStopOnCliff(true)");
+        // StopInternal 0x005C76AC tail-calls ResetBehavior 0x005C76B0: only when +0x130 is set (0x005C76C8..0x005C76D0) is it cleared and EnableStopOnCliff(true) sent (0x005C76DA..0x005C76F0).
+        lock (_cliffGate)
+        {
+            _run++;                                          // ends this run for any callback still in flight
+            if (_stopOnCliffDisabled)
+            {
+                _stopOnCliffDisabled = false;
+                M.Robot.SendMessage(new EnableStopOnCliff { Enable = true }, flush: true);
+                Log("EnableStopOnCliff(true)");
+            }
+        }
         CurrentPhase = Phase.Idle;
         base.OnStop(reason);
     }
@@ -402,7 +462,9 @@ public sealed class RamIntoBlockBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorRamIntoBlock::InitInternal 0x00604764 only picks TransitionToPuttingDownBlock (carrying) or TransitionToTurningToBlock, with no lock; the engine's lock is the first call of
+        // TransitionToRammingIntoBlock (0x00604A44), taken in Ram() below.
         var pending = PendingTarget; PendingTarget = null;
         var t = (pending is { } p ? M.World.GetLocatedObjectById(p) : null) ?? ClosestCube();
         if (t is null) { Finish(); return; }
@@ -427,6 +489,9 @@ public sealed class RamIntoBlockBehavior : ManipulationBehavior
 
     private void Ram()
     {
+        // fidelity: M7-014
+        // BehaviorRamIntoBlock::TransitionToRammingIntoBlock 0x00604A20: SmartDisableReactionsWithLock(own name, table 0x00C73520) is its first call (0x00604A44), before anything else.
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.RamIntoBlock);
         CurrentPhase = Phase.Ramming;
         var obj = M.World.GetLocatedObjectById(TargetObjectId!.Value); var robot = M.RobotPose();
         if (obj is null || robot is null) { Finish(); return; }
@@ -610,7 +675,9 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorBuildPyramidBase has no SmartDisableReactionsWithLock call site (the full caller list of IBehavior::SmartDisableReactionsWithLock has only BehaviorBuildPyramid::
+        // TransitionToPlacingTopBlock 0x005DC0D6 for this pair), so Start takes no lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         var (s, b, t) = Targets();
         StaticBlockId = s; BaseBlockId = b; TopBlockId = t;
         if (BuildTop && M.Configurations.PyramidBases.Count > 0)
@@ -681,6 +748,10 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     private void TransitionToPlacingTopBlock()
     {
         CurrentPhase = Phase.PlacingTopBlock;
+        // fidelity: M7-014
+        // BehaviorBuildPyramid::TransitionToPlacingTopBlock 0x005DC08C: SetState_internal(5, state name) (0x005DC0BA), then SmartDisableReactionsWithLock(own name, table 0x00C6C691) (0x005DC0D6).
+        // Only the BuildPyramid class (buildTop) reaches this method.
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.BuildPyramid);
         var pyramidBase = M.Configurations.PyramidBases.FirstOrDefault();
         if (pyramidBase is null) { Log("BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject"); Finish(); return; }
         // the top block goes over the base's interior midpoint: place relative to the nearer base block, offset half a block sideways towards the midpoint
@@ -739,7 +810,9 @@ public sealed class RespondPossiblyRollBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorRespondPossiblyRoll has no SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in
+        // this class), so it takes no lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         var t = Target();
         if (t is null) { Finish(); return; }
         TargetObjectId = t.ObjectId;
@@ -1123,7 +1196,9 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
     /// </summary>
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorExploreBringCubeToBeacon has no IBehavior::SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in this class),
+        // so it takes no reaction lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         Candidate = null;                                                                                    // [this+0x12C] = -1
         int startedBefore = _actionsStarted;
         if (_candidates.Count == 0) _candidates = UsableCandidates();                                          // CHOICE: the engine's vector is the runnable test's; a start without a non-empty one rebuilds it

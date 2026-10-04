@@ -384,6 +384,31 @@ public static class ReactionLockTables
     // fidelity: M7-014
     public static readonly ReactionLockTable ReactToOnCharger =
         new("ReactToOnCharger", "0xC74182", new[] { 1, 2, 3, 4, 5, 7, 8, 10, 19, 20 });
+    // R-FIX3 round 3 (the tables were read from libcozmoEngine.so: 21 consecutive {ordinal, value} pairs, the first byte of pair i is i; the value byte non-zero = disabled, 0x005A283C..0x005A2846).
+
+    /// <summary>BehaviorKnockOverCubes::InitializeMemberVars 0x005C31FA (its InitInternal's first call, 0x005C31A2..0x005C31A8): 0x00C67CB2, mask 010001001000000000000.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable KnockOverCubes =
+        new("KnockOverCubes", "0xC67CB2", new[] { 1, 5, 8 });
+    /// <summary>BehaviorKnockOverCubes::PrepareForKnockOverAttempt 0x005C37F0, lock name "preparingToKnockOverDisable" (literal 0x005C3820): 0x00C67CDC, mask 000000000000000000000.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable KnockOverCubesPreparing =
+        new("KnockOverCubesPreparing", "0xC67CDC", Array.Empty<int>());
+    /// <summary>The lock name PrepareForKnockOverAttempt removes and installs (literal 0x005C3820, 27 characters).</summary>
+    public const string KnockOverCubesPreparingName = "preparingToKnockOverDisable";
+    /// <summary>BehaviorPopAWheelie's pre-dock callback 0x005C7BC8 (SmartDisableReactionsWithLock at 0x005C7BE8): 0x00C6883D, mask 110100000001101100001.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable PopAWheelie =
+        new("PopAWheelie", "0xC6883D", new[] { 0, 1, 3, 11, 12, 14, 15, 20 });
+    /// <summary>BehaviorBuildPyramid::TransitionToPlacingTopBlock 0x005DC0D6: 0x00C6C691, mask 000000001000000000000.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable BuildPyramid =
+        new("BuildPyramid", "0xC6C691", new[] { 8 });
+    /// <summary>BehaviorRamIntoBlock::TransitionToRammingIntoBlock 0x00604A44: 0x00C73520, mask 101000001000000000001.</summary>
+    // fidelity: M7-014
+    public static readonly ReactionLockTable RamIntoBlock =
+        new("RamIntoBlock", "0xC73520", new[] { 0, 2, 8, 20 });
+
     /// <summary>IBehavior::Init 0x005BCD44 and IBehavior::Resume 0x005BCFDE, lock name "SparkBehaviorDisables": 0x00C65F90, mask 000000001000000000000.</summary>
     // fidelity: M7-014
     public static readonly ReactionLockTable SparkBehaviorDisables =

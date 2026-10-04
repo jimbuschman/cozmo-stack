@@ -56,6 +56,13 @@ public sealed class FlipBlockAction
         return MathF.Sqrt(s);
     }
 
+    /// <summary>The action's name (the constructor's 9-character literal at 0x0055ED3C), which Init uses as the lock name.</summary>
+    // fidelity: M7-014
+    public const string ReactionLockName = "FlipBlock";
+    /// <summary>The table 0x00C56AE0 (Init 0x0055EEC6): CubeMoved and UnexpectedMovement, mask 010000000000000000001.</summary>
+    // fidelity: M7-014
+    public static readonly Cozmo.Robot.Behavior.ReactionLockTable ReactionLockTable = new(ReactionLockName, "0xC56AE0", new[] { 1, 20 });
+
     private readonly ManipulationSystem _m;
     public FlipBlockAction(ManipulationSystem m, uint objectId) { _m = m; ObjectId = objectId; }
 
@@ -165,11 +172,15 @@ public sealed class FlipBlockAction
         var pre = DockPreActionPoses.Get(new PreActionPoseInput(target, PreActionType.Flipping, FlagA: CheckPreActionPose, InitAngleToleranceRad, 0.0, UseApproachAngle: false, 0.0),
                                          robot.Value, _m.Docking.Carrying.CarriedObjectId, () => _m.GetObstacles(robot.Value), _trace);
         if (pre.Result != ActionResult.Success) { _trace.Add($"FlipBlockAction.Init: GetPreActionPoses -> {pre.Result}"); return pre.Result; }
-        // fidelity: M13-028
-        // 0x0055EEC6 DisableReactionsWithLock and 0x0055EF7E IActionRunner::Update are M8's: NOT modelled here (a counted trace, not a claim). The Update is replaced by awaiting the compound.
-        // The destructor's BehaviorManager::RemoveDisableReactionsLock (0x0055ED88) is counted at the end (below).
-        M8CallsNotModelled += 2;
-        _trace.Add("FlipBlockAction.Init: DisableReactionsWithLock (0x0055EEC6) and IActionRunner::Update (0x0055EF7E) are not modelled (M8); the embedded compound is awaited instead");
+        // fidelity: M13-028, M7-014
+        // 0x0055EF7E IActionRunner::Update is M8's: NOT modelled here (a counted trace, not a claim); the Update is replaced by awaiting the compound.
+        // 0x0055EEC6: BehaviorManager::DisableReactionsWithLock(robot's manager, the action's name [this+0x48] = "FlipBlock" (the constructor's 9-character literal, 0x0055EC92), table 0x00C56AE0,
+        // stopCurrent = 1 (movs r3,#1, 0x0055EEC4)) is taken after the pre-action pose check and before the compound is built. With no manager attached to the manipulation system it is not
+        // taken and counted, as before.
+        M8CallsNotModelled += 1;
+        if (_m.ReactionLocks is { } locks) locks.DisableReactionsWithLock(ReactionLockName, ReactionLockTable.ToMask(), stopCurrent: true);
+        else { M8CallsNotModelled += 1; _trace.Add("FlipBlockAction.Init: DisableReactionsWithLock (0x0055EEC6) is not modelled: no BehaviorManager is attached to the manipulation system"); }
+        _trace.Add("FlipBlockAction.Init: IActionRunner::Update (0x0055EF7E) is not modelled (M8); the embedded compound is awaited instead");
         using var compoundCancel = CancellationTokenSource.CreateLinkedTokenSource(cancel);
         try
         {
@@ -202,7 +213,10 @@ public sealed class FlipBlockAction
                 QueuedLiftCancelsNotModelled++;
                 _trace.Add("FlipBlockAction destructor: the queued carry lift is unfinished; ActionList::Cancel(id) is not modelled (no cancel handle, MISSING)");
             }
-            M8CallsNotModelled++;
+            // 0x0055ED7E..0x0055ED88: when the robot's manager exists, RemoveDisableReactionsLock([this+0x48]).
+            // no taken-flag in the engine: the lock is removed whenever the manager exists
+            if (_m.ReactionLocks is { } manager) manager.RemoveDisableReactionsLock(ReactionLockName);
+            else M8CallsNotModelled++;
         }
     }
 }

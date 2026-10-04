@@ -54,7 +54,9 @@ public sealed class PickUpCubeBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorPickUpCube has no IBehavior::SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in this class),
+        // so it takes no reaction lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         TargetObjectId = ClosestCube()?.ObjectId;
         if (TargetObjectId is null) { Log("no target cube"); Finish(); return; }
         CurrentPhase = Phase.DoingInitialReaction;
@@ -248,7 +250,9 @@ public sealed class RollBlockBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorRollBlock has no IBehavior::SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in this class),
+        // so it takes no reaction lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         var target = PickTarget();
         if (target is null) { Log("BehaviorRollBlock.NoBlockID"); Finish(); return; }
         TargetObjectId = target.ObjectId;
@@ -352,7 +356,9 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorStackBlocks has no IBehavior::SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in this class),
+        // so it takes no reaction lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         StackedSuccessfully = false;
         if (M.Docking.Carrying.IsCarryingObject) { TopObjectId = M.Docking.Carrying.CarriedObjectId; TransitionToStackingBlock(); }
         else TransitionToPickingUpBlock();

@@ -428,7 +428,7 @@ public abstract class DockActionBase
     /// <c>IDockAction::Init</c> 0x005514FC..0x00551C8A in the engine's order (M12-017; research Q6.1-Q6.15, verified in 20260929-R-VIS-verify-M12-gap2.md and
     /// 20260929-R-VIS-verify-M12-gap3.md Q10), then <c>IDockAction::CheckIfDone</c> 0x005521AC's dock:
     /// <list type="number">
-    /// <item>(1) remove the reaction locks - NOT MODELLED (M8);</item>
+    /// <item>(1) remove the lock "dockActions" (<see cref="RunAsync"/>; "reactionsToSuppress" is dead);</item>
     /// <item>(2) look the object up: missing is 0x03000004 ("IDockAction.NullDockObject");</item>
     /// <item>(3) <c>IsValidLightCube</c> - NOT MODELLED (feeds the cube light, M10);</item>
     /// <item>(4) only if <c>[+0xB9]</c> (<see cref="CheckPreActionPose"/>): <c>GetPreActionPoses</c> with flag A set (M12-031), a non-zero result returned;</item>
@@ -438,18 +438,52 @@ public abstract class DockActionBase
     /// <item>(8) the marker: with <c>[+0xB9]</c> the closest pose's marker, without it <see cref="ChooseObservedMarker"/>; both join at 0x00551844: a null marker is 0x03000002
     ///   (NullDockMarker), otherwise <c>[+0x82]</c> is the marker's code and <c>[+0x84]</c> is 3;</item>
     /// <item>(9) <see cref="SetupTurnAndVerifyAction"/> builds the compound (M12-037);</item>
-    /// <item>(10) <c>DisableReactionsWithLock</c>, (11) the cube light, (12) <c>RemoveSquint(250)</c> when <c>[+0xF4]</c> - NOT MODELLED;</item>
+    /// <item>(10) <c>DisableReactionsWithLock</c> with the dead [+0xC4] table (never taken), (11) the cube light, (12) <c>RemoveSquint(250)</c> when <c>[+0xF4]</c> - NOT MODELLED;</item>
     /// <item>(13) <c>InitInternal</c>, a non-zero result returned;</item>
-    /// <item>(14) the compound's <c>Update</c> (0x00551C16..0x00551C1A): here it runs to completion; only {0, RUNNING} continue (to <c>DisableReactionsWithLock('dockActions')</c>, not modelled), any other result is returned.</item>
+    /// <item>(14) the compound's <c>Update</c> (0x00551C16..0x00551C1A): here it runs to completion; only {0, RUNNING} continue (to <c>DisableReactionsWithLock('dockActions')</c>, taken after InitInternal), any other result is returned.</item>
     /// </list>
     /// </summary>
     // fidelity: M12-017, M12-031, M12-037
     private double _actionStartSec;
 
+    /// <summary>The reaction lock <c>IDockAction::Init</c> takes once its compound's first Update is 0 or RUNNING (0x00551C4C): the 11-character literal at 0x00BEC4D6.</summary>
+    // fidelity: M7-014, M12-017
+    public const string DockActionsLockName = "dockActions";
+
+    /// <summary>The table 0x00C55A21 (0x00551C42): only ObjectPositionUpdated (trigger 8), mask 000000001000000000000.</summary>
+    // fidelity: M7-014, M12-017
+    public static readonly Cozmo.Robot.Behavior.ReactionLockTable DockActionsLockTable = new(DockActionsLockName, "0xC55A21", new[] { 8 });
+
+    /// <summary>The manager the lock goes through (<c>[robot+0x44]</c>): the one attached to the manipulation system. Null: not attached, the lock is reported MISSING and nothing is removed.</summary>
+    // fidelity: M7-014
+    public Cozmo.Robot.Behavior.BehaviorManager? ReactionLocks { get => _reactionLocks ?? M.ReactionLocks; set => _reactionLocks = value; }
+    private Cozmo.Robot.Behavior.BehaviorManager? _reactionLocks;
+
+    /// <summary>
+    /// <c>IDockAction::Init</c>'s reaction locks and their lifetime (M7-014). The first statements of Init remove the lock "dockActions" (0x00551540, unconditional) and, when the table pointer
+    /// at +0xC4 is non-null, "reactionsToSuppress" (0x00551578); the constructor stores 0 there (0x005503B6) and nothing in the engine writes it, so that name and its install
+    /// (0x0055189A, the table [+0xC4]) never run and are not modelled. After InitInternal succeeds and the compound's first Update returns 0 or RUNNING, "dockActions" is taken with the
+    /// table 0x00C55A21, stopCurrent = 1 (0x00551C16..0x00551C4C). The destructor ~IDockAction 0x00557448 (shared with every subclass: PickupObjectAction 0x00553750 and the others tail into it)
+    /// removes "dockActions" again when the action had started (state != NOT_STARTED, 0x0055751C..0x0055753C), which is here the end of the run.
+    /// </summary>
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
+        ReactionLocks?.RemoveDisableReactionsLock(DockActionsLockName);                    // 0x00551540
+        try { return await RunCoreAsync(cancel); }
+        finally { ReactionLocks?.RemoveDisableReactionsLock(DockActionsLockName); }         // 0x0055753C
+    }
+
+    // fidelity: M7-014
+    private void TakeDockActionsLock()
+    {
+        if (ReactionLocks is { } locks) locks.DisableReactionsWithLock(DockActionsLockName, DockActionsLockTable.ToMask(), stopCurrent: true);       // 0x00551C4C
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("IDockAction::Init 0x00551C4C: BehaviorManager::DisableReactionsWithLock(\"dockActions\", table 0x00C55A21) has no BehaviorManager attached to the manipulation system (ManipulationSystem.ReactionLocks), so the lock on ObjectPositionUpdated is not taken");
+    }
+
+    private async Task<ActionResult> RunCoreAsync(CancellationToken cancel)
+    {
         _actionStartSec = M.ClockSec();
-        _trace.Add("IDockAction.Init: not modelled: reaction locks (1),(10) M8; IsValidLightCube and the cube light (3),(11) M10; handler bodies (6) and RemoveSquint (12) M12-034; slot vtbl+0x34 of every subclass (MISSING)");
+        _trace.Add("IDockAction.Init: not modelled: reaction lock 'reactionsToSuppress' (dead: [+0xC4] is only ever 0), IsValidLightCube and the cube light (3),(11) M10; IsValidLightCube and the cube light (3),(11) M10; handler bodies (6) and RemoveSquint (12) M12-034; slot vtbl+0x34 of every subclass (MISSING)");
         // (2)
         var target = M.World.GetLocatedObjectById(ObjectId);
         if (target is null) { _trace.Add("IDockAction.NullDockObject: Dock object is null"); return ActionResult.BadObject; }
@@ -504,6 +538,7 @@ public abstract class DockActionBase
         {
             // the legacy place callers keep the pre-batch stand-in (see UsesLegacyTurnAndVerify): turn (result ignored as before), the marker facing the robot, and the placement-clear check, no wait
             _trace.Add("SetupTurnAndVerifyAction: legacy PlaceRelObjectAction keeps the pre-batch stand-in (M12-028)");
+            TakeDockActionsLock();                                                         // no compound to ask: the nearest equivalent is to take it before the stand-in's run
             await M.TurnTowardsObjectAsync(ObjectId, Math.PI, cancel);
             var robotNow = M.RobotPose() ?? robot.Value;
             marker = MarkerFacing(target, robotNow);
@@ -513,8 +548,17 @@ public abstract class DockActionBase
         }
         else
         {
-            // (14)
-            var compound = await TurnAndVerify!.RunAsync(SubActions, _trace, cancel);
+            // (14) fidelity: M7-014
+            // 0x00551C10..0x00551C28: after InitInternal returns 0 the compound's Update (IActionRunner::Update at [+0x98]) runs once, and only a result of 0 or RUNNING (the test is
+            // (result | 0x01000000) == 0x01000000) takes DisableReactionsWithLock("dockActions", table 0x00C55A21, true) at 0x00551C4C; any other result is returned with no lock (the destructor's
+            // removal is then a no-op). The compound is started here and runs to its first await: that is its first Update. A compound that has already FAILED at that point takes no lock; one that is
+            // still running, or has succeeded, takes it before the run is awaited. MISSING (reported): a compound whose first await does not coincide with the engine's first Update (the engine's first
+            // Update may run further than the stand-in's first await), so a failure between the two is not distinguished.
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("IDockAction::Init 0x00551C16..0x00551C28: the compound's first IActionRunner::Update result is approximated by the stand-in compound's state at its first await; a failure that the engine's first Update would return after that point is not distinguished (the lock is taken)");
+            var compoundTask = TurnAndVerify!.RunAsync(SubActions, _trace, cancel);
+            bool failedAtOnce = compoundTask.IsCompleted && !(compoundTask.IsCompletedSuccessfully && compoundTask.Result == ActionResult.Success);
+            if (!failedAtOnce) TakeDockActionsLock();
+            var compound = await compoundTask;
             if (compound != ActionResult.Success) return compound;
         }
 

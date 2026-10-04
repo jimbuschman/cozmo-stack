@@ -235,7 +235,9 @@ public sealed class AcknowledgeObjectBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorAcknowledgeObject has no IBehavior::SmartDisableReactionsWithLock call site in the engine (every call to its PLT stub 0x004B28EC was listed: IBehavior::Init/Resume and 27 class sites, none in this class),
+        // so it takes no reaction lock; the arbiter-wide Scope.DisableReactions() that stood here had no engine counterpart.
         BeginIteration();
     }
 

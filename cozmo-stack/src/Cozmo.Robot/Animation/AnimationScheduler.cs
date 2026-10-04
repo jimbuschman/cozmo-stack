@@ -435,6 +435,8 @@ public sealed class AnimationScheduler
 
     private double _seamDueMs;                           // the test seam's clock
     private double _nowMs;
+    /// <summary>The float32 seconds of this Update (BaseStationTimer::GetCurrentTimeInSeconds, 0x0057D02A..0x0057D02E): the keep-alive gate and the +0x88 stamps.</summary>
+    private float _nowSecF;
     private long _generation;
 
     /// <param name="random">
@@ -946,14 +948,17 @@ public sealed class AnimationScheduler
     // ================================================================== Update
 
     /// <summary>One engine Update of the streamer (see the class summary).</summary>
-    public void Advance(double nowMs)
+    /// <param name="nowMs">The stream timeline's time: integer milliseconds on a production engine (<c>GetCurrentTimeStamp</c>, used by InitStream 0x0057B696 and UpdateStream 0x0057C87A).</param>
+    /// <param name="nowSecF">The engine's float seconds (<c>GetCurrentTimeInSeconds</c>); null derives it from <paramref name="nowMs"/> (the offline clock).</param>
+    public void Advance(double nowMs, float? nowSecF = null)
     {
         lock (_gate)
         {
             _nowMs = nowMs;
             // fidelity: M7-016, M7-017
-            // The engine's clock is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
-            float nowSec = (float)(nowMs / 1000.0);
+            // The engine's clock for the keep-alive gate and the +0x88 stamps is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
+            float nowSec = nowSecF ?? (float)(nowMs / 1000.0);
+            _nowSecF = nowSec;
 
             // A31: the keep-alive block (0x0057CF6A..0x0057CFF4): gate A +0x88 > 0, TrackLayerComponent::Update, gate B +0x38
             // == 0, gate C: now - +0x88 (vsub.f32) is not <= +0x1C0 (vcmpe.f32, it le) unless the idle is the live animation
@@ -1087,7 +1092,7 @@ public sealed class AnimationScheduler
             else
             {
                 UpdateStreamLocked(_idleAnim, storeFace: false);
-                _lastStreamSec = (float)(_nowMs / 1000.0);         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
+                _lastStreamSec = _nowSecF;         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
             }
         }
         _idleMs += 60;
@@ -1792,6 +1797,7 @@ public sealed class AnimationScheduler
             LiveIdleParameters.ResetToConstructed();
             _seamDueMs = 0;
             _nowMs = 0;
+            _nowSecF = 0;
             var neutralFace = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.Reset();
             _tlc.SetResetData(neutralFace);

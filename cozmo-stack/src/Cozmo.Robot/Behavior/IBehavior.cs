@@ -241,6 +241,9 @@ public sealed class BehaviorScope : IDisposable
     /// <summary>Whether this behaviour has asked for reactions to be held off.</summary>
     public bool ReactionsDisabled { get; private set; }
 
+    /// <summary>The names in the per-behaviour reaction-lock set at +0xa4, in the set's (ordinal) order: a test and diagnostic view, it changes nothing.</summary>
+    internal IReadOnlyList<string> HeldReactionLocks { get { lock (_gate) return _reactionLockNames.OrderBy(n => n, StringComparer.Ordinal).ToList(); } }
+
     /// <summary>
     /// The engine's <c>IBehavior::SmartLockTracks</c> 0x005be5bc: claim tracks for as long as this behaviour
     /// runs. The claim is taken on the robot's <c>MovementComponent</c> (one owner per track in the multiset,
@@ -249,9 +252,10 @@ public sealed class BehaviorScope : IDisposable
     /// </summary>
     public void LockTracks(Animation.AnimationTrack tracks)
     {
-        // The engine has no unnamed lock: IBehavior::SmartLockTracks (0x005be5bc) always takes a key name. This overload has no counterpart; its remaining callers (ReactBehavior,
-        // PlayArbitraryAnimBehavior) lock the clip's tracks with no inventory source. Reported MISSING (once), the lock is still taken.
-        SteppedBehavior.ReportMissing("M8-009: BehaviorScope.LockTracks(tracks) has no engine counterpart (IBehavior::SmartLockTracks 0x005be5bc takes a key name); the callers' track locks (ReactBehavior, PlayArbitraryAnimBehavior) are unsourced");
+        // The engine has no unnamed lock: IBehavior::SmartLockTracks (0x005be5bc) always takes a key name. This overload has no counterpart; its one remaining caller (ReactBehavior, which nothing
+        // constructs in production) locks the clip's tracks with no inventory source. Reported MISSING (once), the lock is still taken. PlayArbitraryAnimBehavior no longer calls it: the engine's
+        // BehaviorPlayArbitraryAnim::InitInternal 0x005C0896 takes no track lock.
+        SteppedBehavior.ReportMissing("M8-009: BehaviorScope.LockTracks(tracks) has no engine counterpart (IBehavior::SmartLockTracks 0x005be5bc takes a key name); its remaining caller's track lock (ReactBehavior, never constructed in production) is unsourced");
         lock (_gate)
         {
             if (_disposed) return;
@@ -508,23 +512,36 @@ public sealed class BehaviorScope : IDisposable
     // fidelity: M7-014
     public bool SmartDisableReactionsWithLock(string name, ReactionLockTable table)
     {
+        string managerName = name + "_behaviorLock";
+        bool added;
         lock (_gate)
         {
             if (_disposed) return false;
-            if (!_reactionLockNames.Add(name)) { Verify($"SmartDisableReactionsWithLock: '{name}' is already held"); return false; }
+            // 0x005bce3c..0x005bce7e has no held test and no VERIFY: the manager is always asked (0x005bce62), then the name is emplaced into the set (a no-op when held).
+            added = _reactionLockNames.Add(name);
             ReactionsDisabled = true;
-            string managerName = name + "_behaviorLock";
-            _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
-            _undo.Add((OrderReactionLocks, name, () =>
-            {
-                if (_reactionLockNames.Remove(name))
+            if (added)
+                _undo.Add((OrderReactionLocks, name, () =>
                 {
+                    bool had, none;
+                    lock (_gate) { had = _reactionLockNames.Remove(name); none = _reactionLockNames.Count == 0; }
+                    if (!had) return;
                     _manager?.RemoveDisableReactionsLock(managerName);
-                    if (_reactionLockNames.Count == 0) ReactionsDisabled = false;
-                }
-            }));
-            return true;
+                    if (none) lock (_gate) ReactionsDisabled = false;
+                }));
         }
+        // The manager is called OUTSIDE the scope's monitor: the manager's own stop path holds its monitor and then takes this scope's (Dispose), so holding ours across the manager call would
+        // invert the order.
+        _manager?.DisableReactionsWithLock(managerName, table, stopCurrent: true);
+        bool disposed;
+        lock (_gate) disposed = _disposed;
+        if (disposed)
+        {
+            // the scope was released between the bookkeeping and the manager call: its undo ran before the lock existed, so take it back
+            _manager?.RemoveDisableReactionsLock(managerName);
+            return false;
+        }
+        return added;
     }
 
     /// <summary><c>IBehavior::SmartRemoveDisableReactionsLock</c> 0x005bd470: append "_behaviorLock", call
@@ -533,19 +550,28 @@ public sealed class BehaviorScope : IDisposable
     // fidelity: M7-014
     public bool SmartRemoveDisableReactionsLock(string name)
     {
+        bool held;
         lock (_gate)
         {
             if (_disposed) return false;
-            if (!_reactionLockNames.Remove(name)) { Verify($"SmartRemoveDisableReactionsLock: '{name}' is not held"); return false; }
-            _manager?.RemoveDisableReactionsLock(name + "_behaviorLock");
+            held = _reactionLockNames.Remove(name);
+        }
+        // 0x005bd470..0x005bd4aa has no VERIFY and no held test: it always asks the manager to remove name + "_behaviorLock" (0x005bd48c) and then erases the name from the set (0x005bd4a4,
+        // a no-op when absent). PrepareForKnockOverAttempt (0x005C37C2) relies on that: its first call removes a lock nothing has taken. Outside the scope's monitor (see SmartDisableReactionsWithLock).
+        _manager?.RemoveDisableReactionsLock(name + "_behaviorLock");
+        if (!held) return false;
+        bool enable = false;
+        lock (_gate)
+        {
             if (_reactionLockNames.Count == 0 && ReactionsDisabled)
             {
                 _arbiterReactionLock = false;
                 ReactionsDisabled = false;
-                _arbiter?.EnableReactions(this);
+                enable = true;
             }
-            return true;
         }
+        if (enable) _arbiter?.EnableReactions(this);
+        return true;
     }
 
     // fidelity: M8-011

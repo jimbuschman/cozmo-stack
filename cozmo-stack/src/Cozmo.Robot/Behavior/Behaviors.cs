@@ -397,7 +397,12 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
             _finished = true;
             return Task.CompletedTask;
         }
-        scope.LockTracks(lib.GetClip(ClipName).Tracks);
+        // fidelity: M8-007, M8-009
+        // The engine's BehaviorPlayArbitraryAnim (derived from BehaviorPlayAnimSequence: constructor 0x005C0784 calls the PlayAnimSequence constructor 0x4B2BF8 through its PLT) takes no track lock in
+        // the behaviour: InitInternal 0x005C0896 is [this+0x13C] = 0, then BehaviorPlayAnimSequence::StartPlayingAnimations (PLT 0x4B2B38), return 0. The clip's tracks were locked here through the
+        // unnamed scope.LockTracks, which has no engine counterpart, so that call is removed. What the engine does lock comes from the action (M8-007: the lift-safe constructor ORs LIFT in while the
+        // robot is carrying and on its treads, taken by IActionRunner::Update under the action's tag); this clip-based class has no action to hang that mask on.
+        SteppedBehavior.ReportMissing("PlayArbitraryAnim: the action's lift-safe track mask (LIFT locked while carrying and on the treads, M8-007) is not taken, because this class plays a clip directly and has no action; the engine's behaviour itself locks no tracks (InitInternal 0x005C0896)");
         var ticket = context.Robot.Animations.PlayTracked(ClipName);
         if (ticket is null) { _finished = true; return Task.CompletedTask; }
         lock (_gate)

@@ -246,7 +246,7 @@ public sealed class CozmoAnimations : IDisposable
     internal void EngineUpdate()
     {
         if (!EngineDriven) return;
-        try { _scheduler.Advance(NowMs()); }
+        try { _scheduler.Advance(NowMs(), _robot.Engine.Timer.SecondsF); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
         {
             try { Faulted?.Invoke(ex); } catch { }
@@ -464,7 +464,17 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation);
     }
 
-    private static double NowMs() => Environment.TickCount64;
+    // fidelity: M7-008
+    /// <summary>
+    /// The stream timeline's clock in milliseconds. On a production engine it is the engine's <c>BaseStationTimer::GetCurrentTimeStamp</c> (PLT 0x4A7B58 -> 0x0084BCC0: (u32)(double seconds * 1000),
+    /// whole milliseconds, fixed for the 60 ms tick = <see cref="BaseStationTimer.TimeStampMs"/>), which AnimationStreamer::InitStream 0x0057B696 and UpdateStream 0x0057C87A store at +0x80.
+    /// The float seconds (<c>GetCurrentTimeInSeconds</c>, <see cref="BaseStationTimer.SecondsF"/>) feed only the keep-alive gate and the +0x88 stamps in Update (0x0057D02E, 0x0057D43E, 0x0057CF86);
+    /// <see cref="EngineUpdate"/> passes them separately. The offline seams have no engine tick (the timer never advances), so there the process clock stands in, as before.
+    /// </summary>
+    private double NowMs() => EngineDriven ? (double)_robot.Engine.Timer.TimeStampMs : Environment.TickCount64;
+
+    /// <summary>The clock <see cref="Scheduler"/> is driven by (<see cref="NowMs"/>), for callers that hand the scheduler a time themselves.</summary>
+    public double ClockMs => NowMs();
 
     private void StartTicker()
     {
