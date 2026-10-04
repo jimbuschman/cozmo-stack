@@ -128,7 +128,9 @@ public static class FreeplayTool
         var arbiter = new BehaviorArbiter { AutonomyEnabled = true };
         var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(obb), Arbiter = arbiter, Mood = new MoodState(MoodModel.Load(obb)) };
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m, needsDirectory: Arg(a, "--state-dir"));
+        // fidelity: M15-014
+        // The tick clock is a stopwatch (the BaseStationTimer analogue); the needs DateTime is the engine's system_clock::now(), so the manager is given the real wall clock for it.
+        using var stack = FreeplayStack.Create(obb, robot, ctx, () => sw.Elapsed.TotalSeconds, vision, m, needsDirectory: Arg(a, "--state-dir"), needsDateClockSec: NeedsManager.SystemClockSec);
         bool noActivityError = false;
         var behaviorStarts = new List<(double AtSec, string Behavior)>();
         var moodSamples = new List<(double AtSec, Dictionary<EmotionType, double> Values)>();

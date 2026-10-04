@@ -223,12 +223,14 @@ public class ControlTests
         var rig = new Rig();
         rig.MakeReady();
         _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
+        rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
         Assert.Equal(10f, head.MaxSpeedRadPerSec);
         Assert.Equal(20f, head.AccelRadPerSec2);
         Assert.Equal(0f, head.DurationSec);
 
         _ = rig.Robot.Motion.SetLiftHeightAsync(60f, timeout: TimeSpan.FromMilliseconds(200));
+        rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         var lift = await WaitFor(() => rig.LastSent<SetLiftHeight>());
         Assert.Equal(10f, lift.MaxSpeedRadPerSec);
         Assert.Equal(20f, lift.AccelRadPerSec2);
@@ -242,6 +244,7 @@ public class ControlTests
         rig.MakeReady();
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromSeconds(5));
+        rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         var sent = await WaitFor(() => rig.LastSent<SetHeadAngle>());
         Assert.Equal(0.3f, sent.AngleRad, 3);
 
@@ -280,10 +283,11 @@ public class ControlTests
         for (int i = 0; i < 6; i++)
         {
             _ = rig.Robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(60));
+            rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
             var sent = await WaitFor(() => rig.LastSent<SetHeadAngle>());
             if (ids.Count == 0 || sent.ActionId != ids[^1]) ids.Add(sent.ActionId);
-            rig.Advance(70);                                   // M4-016: the first update stamps the start time
-            rig.Advance(70);                                   // M4-016: end the 60 ms action on the engine clock
+            rig.Advance(70);                                   // M4-016: the 60 ms timeout (stamped at the first update, Advance(1) above) passes on the engine clock
+            rig.Advance(70);                                   // M4-016: and the action has ended
         }
         Assert.True(ids.Count >= 3, "each action should carry its own id");
         // M4-005 MA8: the counter does reach 0 after 255, so "never zero" is no longer asserted (M4ControlTests).
@@ -299,11 +303,13 @@ public class ControlTests
         // M4-001 (2026-09-29 audit): the angle is rescaled into (−π, π] first, so 99 rad → 99 − 16·2π = −1.5310,
         // which clips to the engine's min 0xBEDF66F3 (−25°), not the max.
         _ = rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(60));
+        rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
         Assert.Equal(CozmoMotion.MinHeadAngleRad, head.AngleRad, 4);
 
         // M4-002 MA13: a height in [0, 32) clamps to 32; a negative one goes to the nearer preset (M4ControlTests).
         _ = rig.Robot.Motion.SetLiftHeightAsync(10f, timeout: TimeSpan.FromMilliseconds(60));
+        rig.Advance(1);  // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         var lift = await WaitFor(() => rig.LastSent<SetLiftHeight>());
         Assert.Equal(CozmoMotion.MinLiftHeightMm, lift.HeightMm, 4);
     }

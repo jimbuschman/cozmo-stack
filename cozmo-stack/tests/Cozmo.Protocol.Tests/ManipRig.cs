@@ -219,6 +219,10 @@ internal sealed class Rig : IDisposable
         var fresh = new List<RobotMessage>();
         for (int round = 0; round < 50; round++)
         {
+            // M4-016: a head or lift move is sent by Init inside the action's first IAction::UpdateInternal (0x00540F2E), on the engine tick's ActionList
+            // step (Robot::Update, CD12). The rig has no engine thread, so each round runs that step (the actions' pass only, not the whole tick); a
+            // move queued by the completion of another is then started by the next round.
+            Robot.Motion.UpdateActions();
             var frames = Robot.Transport.OfflineOutbound;
             int before = fresh.Count;
             ushort lastSeq = 0; bool anyReliable = false;

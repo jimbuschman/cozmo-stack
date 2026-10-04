@@ -2768,17 +2768,29 @@ public class M3DeviceTests
         }
         Assert.NotNull(got);
 
-        var expected = new List<string> { "info: NVStorageComponent.Read.QueueingReadRequest: NVEntry_CameraCalib" };
+        // The engine's whole line list, in call order: Read.QueueingReadRequest (0x00644E3A), ProcessRequest.SendingRead "StartTag: 0x%x,
+        // Length: %u" (0x006453D2, factory length 1 from _maxFactoryEntrySizeTable) and SetState "PrevState: %d, NewState: %d"
+        // (0x00645476 -> 0x00642B2C); every reply logs HandleNVOpResult.Recvd "Tag: 0x%x, Op: %s, Result: %s" (0x00642FFE) first; the
+        // exhausted read then logs NumRetriesExceeded, ReadOpFailed, ReadFailed, ExecutingReadCallback and, after the callback, SetState.
+        var expected = new List<string>
+        {
+            "info: NVStorageComponent.Read.QueueingReadRequest: NVEntry_CameraCalib",
+            "debug: NVStorageComponent.ProcessRequest.SendingRead: StartTag: 0x80000001, Length: 1",
+            "debug: NVStorageComponent.SetState: PrevState: 0, NewState: 2",
+        };
         for (int i = 1; i <= 7; i++)
         {
+            expected.Add("debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x80000001, Op: NVOP_READ, Result: NV_LOOP");
             expected.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x80000001, Op: NVOP_READ, Attempt: {i}");
             expected.Add("info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x80000001 resent due to NV_LOOP");
         }
+        expected.Add("debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x80000001, Op: NVOP_READ, Result: NV_LOOP");
         expected.Add("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x80000001, Op: NVOP_READ, Attempts: 8");
         expected.Add("warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x80000001, op: NVOP_READ, result: NV_LOOP");
         expected.Add("warning: NVStorageComponent.HandleNVOpResult.ReadFailed: BaseTag: NVEntry_CameraCalib, result: NV_LOOP");
         expected.Add("debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: NVEntry_CameraCalib");
-        var actual = nv.Log.Skip(mark).Where(l => !l.StartsWith("NV request") && !l.StartsWith("NVOpResult")).ToList();
+        expected.Add("debug: NVStorageComponent.SetState: PrevState: 2, NewState: 0");
+        var actual = nv.Log.Skip(mark).ToList();
         Assert.Equal(expected, actual);
     }
 
@@ -2853,15 +2865,253 @@ public class M3DeviceTests
             rig.Tick();
         }
         Assert.NotNull(got);
-        var actual = nv.Log.Skip(mark).Where(l => !l.StartsWith("NV request") && !l.StartsWith("NVOpResult")).ToList();
+        var actual = nv.Log.Skip(mark).ToList();
         var expected = new List<string>();
         for (int i = 1; i <= 7; i++)
         {
+            expected.Add("debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: NVOP_WRITE, Result: NV_LOOP");
             expected.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x194000, Op: NVOP_WRITE, Attempt: {i}");
             expected.Add("info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x194000 resent due to NV_LOOP, op: NVOP_WRITE");
         }
+        expected.Add("debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: NVOP_WRITE, Result: NV_LOOP");
         expected.Add("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x194000, Op: NVOP_WRITE, Attempts: 8");
         expected.Add("warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x194000, op: NVOP_WRITE, result: NV_LOOP");
+        // 0x00643312: a non-zero result also logs WriteFailed "BaseTag: %s, lastTag: 0x%x, op: %s, result: %s" (0xBFB81C), then
+        // ExecutingWriteCallback "%s" with the base tag name (0x006433A8..0x006433C6) before the callback runs.
+        expected.Add("warning: NVStorageComponent.HandleNVOpResult.WriteFailed: BaseTag: NVEntry_NurtureGameData, lastTag: 0x194000, op: NVOP_WRITE, result: NV_LOOP");
+        expected.Add("debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_NurtureGameData");
         Assert.Equal(expected, actual);
+    }
+
+    // ================================================================== R-FIX3 round 2 (stream Z): the remaining NvStorage log lines
+
+    private static List<string> Lines(NvStorageComponent nv, int mark) => nv.Log.Skip(mark).ToList();
+
+    /// <summary>
+    /// M3-028/M3-029 (R-FIX3 round 2). The accept check logs by the REPLY's op, after Recvd (0x00642FFE): op 0 with no read pending is
+    /// AckdTagNeverRequested "Tag recvd: 0x%x, BaseTag: 0x%x, ExpectedBaseTag: 0x%x (pending %d), BlobSize: %u, result: %s"
+    /// (0xBFB8B6, 0x00643176..0x0064318E; +0x50 holds the last armed read tag, here the last read armed, and +0x78 is 0); ops 1..3 with
+    /// no write pending are AckdTagBaseTagWasNeverSent "BaseTag: 0x%x, Tag: 0x%x" (0xBFB72A, 0x0064308A..0x00643090), WIPEALL taking
+    /// 0x198000 for both (0x0064302C); an op above 3 is UnhandledOperation "%s" (0x00643146..0x00643162).
+    /// </summary>
+    [Fact]
+    public void M3_028_RFix3_TheAcceptCheckLogsTheEnginesLinePerReplyOp()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        // +0x50 is the tag of the last read armed (0x0064542A): arm one, finish it, then answer with an unrelated tag.
+        nv.Read(0x183000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x183000, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.True(nv.IsIdle);
+
+        int mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[3] });
+        rig.Tick();
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x182000, Op: NVOP_READ, Result: NV_OKAY",
+            "warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x182000, BaseTag: 0x182000, ExpectedBaseTag: 0x183000 (pending 0), BlobSize: 3, result: NV_OKAY",
+        }, Lines(nv, mark));
+
+        mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = NvStorageComponent.OpWrite, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: NVOP_WRITE, Result: NV_OKAY",
+            "warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x194000, Tag: 0x194000",
+        }, Lines(nv, mark));
+
+        mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = NvStorageComponent.OpWipeAll, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: NVOP_WIPEALL, Result: NV_OKAY",
+            "warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x198000, Tag: 0x198000",
+        }, Lines(nv, mark));
+
+        mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = 7, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: (null), Result: NV_OKAY",
+            "warning: NVStorageComponent.HandleNVOpResult.UnhandledOperation: (null)",
+        }, Lines(nv, mark));
+    }
+
+    /// <summary>
+    /// M3-028 (R-FIX3 round 2). The header gate's lines: TooLittleReadData warning "Tag 0x%x, Got %u, Expected %u" (0xBFBB3F) whose
+    /// third argument is the constant 0x400 (mov.w r1, #0x400, 0x00643440), not the header size; InvalidHeader is a channeled
+    /// DEBUG "Tag: 0x%x, Got 0x%x, Expected 0x%x" (0xBFB9C5, sChanneledDebugF 0x006434AE) with the first u32 of the blob and
+    /// 0x435A4D4F; InvalidDataSize is a warning "Tag 0x%x, size %u, maxSizeAllowed %u" (0xBFBA1C) with GetMaxSizeForEntryTag.
+    /// </summary>
+    [Fact]
+    public void M3_028_RFix3_TheHeaderGateLinesUseLowercaseHexAndTheEnginesLevels()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        int mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = new byte[15] });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.TooLittleReadData: Tag 0x182000, Got 15, Expected 1024", Lines(nv, mark));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x800, 0xDEADBEEF) });
+        rig.Tick();
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.InvalidHeader: Tag: 0x182000, Got 0xdeadbeef, Expected 0x435a4d4f", Lines(nv, mark));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        mark = nv.Log.Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = NvHeader(0x1000, 0x435A4D4F) });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 4096, maxSizeAllowed 4096", Lines(nv, mark));
+    }
+
+    /// <summary>
+    /// M3-028/M3-029 (R-FIX3 round 2). The re-request path: ReadingRestOfData debug "Tag: 0x%x, TotalSize: %u" (0xBFBABA); each applied blob
+    /// then logs "NVStorageComponent.HandelNVData.ReceivedBlob" (the engine's spelling) "BaseEntryTag: 0x%x, Tag: 0x%x, BlobSize %d,
+    /// offset %d, StartWriteIndex: %d" (0xBFBB8A, 0x006435D4) with the full blob size, the reply's index word and index*1024 - hdr (hdr = 16 for
+    /// index > 0 on a non-factory base). A header whose total fits the blob logs ResizeBlobToValidData with the same format as
+    /// ReadingRestOfData (0x006438FC).
+    /// </summary>
+    [Fact]
+    public void M3_028_RFix3_ReadingRestOfDataResizeBlobAndReceivedBlobAreLogged()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        int mark = nv.Log.Count;
+        var first = new byte[1024];
+        NvHeader(2000, 0x435A4D4F).CopyTo(first, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = first });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 1, Data = new byte[1000] });
+        rig.Tick();
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x182000, Op: NVOP_READ, Result: NV_MORE",
+            "debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x182000, TotalSize: 2000",
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x182000, Op: NVOP_READ, Result: NV_OKAY",
+            "debug: NVStorageComponent.HandelNVData.ReceivedBlob: BaseEntryTag: 0x182000, Tag: 0x182000, BlobSize 1000, offset 1, StartWriteIndex: 1008",
+            "info: NVStorageComponent.HandleNVOpResult.ReadSuccess: BaseTag: NVEntry_GameUnlocks, result: NV_OKAY",
+            "debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: NVEntry_GameUnlocks",
+            "debug: NVStorageComponent.SetState: PrevState: 2, NewState: 0",
+        }, Lines(nv, mark));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        mark = nv.Log.Count;
+        var small = new byte[16 + 10];
+        NvHeader(10, 0x435A4D4F).CopyTo(small, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = small });
+        rig.Tick();
+        var lines = Lines(nv, mark);
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ResizeBlobToValidData: Tag: 0x182000, TotalSize: 10", lines);
+        Assert.Contains("debug: NVStorageComponent.HandelNVData.ReceivedBlob: BaseEntryTag: 0x182000, Tag: 0x182000, BlobSize 26, offset 0, StartWriteIndex: 0", lines);
+    }
+
+    /// <summary>
+    /// M3-031 (R-FIX3 round 2). WriteSuccess/WriteFailed share the format "BaseTag: %s, lastTag: 0x%x, op: %s, result: %s" (0xBFB81C); the
+    /// engine takes the WriteSuccess branch only for result 0 (cbz on the result byte, 0x006432F0) and logs WriteFailed for any other
+    /// result, 1 (NV_SCHEDULED) included; ExecutingWriteCallback "%s" precedes the callback (0x006433C6).
+    /// </summary>
+    [Fact]
+    public void M3_031_RFix3_WriteSuccessAndWriteFailedUseTheEnginesFormatAndSplit()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        int mark = nv.Log.Count;
+        NvResult? got = null;
+        Assert.Equal(1, nv.Write(0x194000, new byte[4], r => got = r));
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = NvStorageComponent.OpWrite, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(0, got!.Value.Result);
+        Assert.Equal(new List<string>
+        {
+            "debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x194000, Op: NVOP_WRITE, Result: NV_OKAY",
+            "info: NVStorageComponent.HandleNVOpResult.WriteSuccess: BaseTag: NVEntry_NurtureGameData, lastTag: 0x194000, op: NVOP_WRITE, result: NV_OKAY",
+            "debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_NurtureGameData",
+        }, Lines(nv, mark));
+
+        mark = nv.Log.Count;
+        got = null;
+        Assert.Equal(1, nv.Write(0x194000, new byte[4], r => got = r));
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = NvStorageComponent.OpWrite, Result = NvStorageComponent.ResultScheduled, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(NvStorageComponent.ResultScheduled, got!.Value.Result);
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.WriteFailed: BaseTag: NVEntry_NurtureGameData, lastTag: 0x194000, op: NVOP_WRITE, result: NV_SCHEDULED", Lines(nv, mark));
+        Assert.DoesNotContain(Lines(nv, mark), l => l.Contains("WriteSuccess"));
+    }
+
+    /// <summary>
+    /// M15-014 (R-FIX3 round 2): Write.InvalidTag is "Tag: %s (0x%x)" (0xBFB49F, 0x00644546) with EnumToString(NVEntryTag) of the tag
+    /// ("(null)" for an unnamed tag) and the tag in lowercase hex.
+    /// </summary>
+    [Fact]
+    public void M15_014_RFix3_WriteInvalidTagUsesTheNameAndLowercaseHex()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        Assert.Equal(0, nv.Write(0xABCDE, new byte[1], null));
+        Assert.Contains("warning: NVStorageComponent.Write.InvalidTag: Tag: (null) (0xabcde)", nv.Log);
+    }
+
+    /// <summary>
+    /// M3-027 / M3-031 (R-FIX3 round 2): the +0xE8 data vector (0x00645386, 0x00645CE2, 0x006438AC) and the sErrorF tail's global error byte
+    /// (0x00645D62..0x00645D76) are unbuilt and are reported MISSING instead of being silently skipped.
+    /// </summary>
+    [Fact]
+    public void M3_027_RFix3_TheDataVectorAndTheErrorGlobalsAreReportedMissing()
+    {
+        var seen = new List<string>();
+        void On(string m) { lock (seen) seen.Add(m); }
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += On;
+        try
+        {
+            using var rig = new Rig();
+            rig.ToSuccess();
+            DrainCalibrationRead(rig);
+            var nv = rig.Robot.Engine.NvStorage!;
+            nv.Read(0x182000, _ => { });
+            rig.Tick();
+            for (int i = 0; i < 8; i++)
+            {
+                rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -8, Length = 0, Data = Array.Empty<byte>() });
+                rig.Tick();
+            }
+            string[] snapshot;
+            lock (seen) snapshot = seen.ToArray();
+            Assert.Contains(snapshot, m => m.Contains("M3-027") && m.Contains("0x00645386"));
+            Assert.Contains(snapshot, m => m.Contains("M3-027") && m.Contains("0x00645CE2"));
+            Assert.Contains(snapshot, m => m.Contains("0x00645D62") && m.Contains("debug-break"));
+        }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= On; }
     }
 }

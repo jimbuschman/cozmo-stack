@@ -41,11 +41,15 @@ public sealed class FreeplayStack : IDisposable
     /// registered when <paramref name="withReactions"/>.
     /// </summary>
     public static FreeplayStack Create(string obbRoot, CozmoRobot robot, BehaviorContext ctx, Func<double> clockSec, VisionSystem? vision = null, ManipulationSystem? m = null,
-                                       NeedsManager? needs = null, bool withReactions = true, Random? random = null, string? needsDirectory = null)
+                                       NeedsManager? needs = null, bool withReactions = true, Random? random = null, string? needsDirectory = null,
+                                       Func<double>? needsDateClockSec = null)
     {
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
-        needs ??= NeedsManager.FromObb(obbRoot, clockSec, random, needsDirectory);
+        // fidelity: M15-014
+        // The needs DateTime reads are the engine's system_clock::now() (0x00695DCC, 0x0069530E, 0x00693BC4), not the BaseStationTimer tick
+        // clock: a host whose clockSec is a stopwatch passes NeedsManager.SystemClockSec as needsDateClockSec; null keeps the one clock.
+        needs ??= NeedsManager.FromObb(obbRoot, clockSec, random, needsDirectory, needsDateClockSec);
         // fidelity: M15-014
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).

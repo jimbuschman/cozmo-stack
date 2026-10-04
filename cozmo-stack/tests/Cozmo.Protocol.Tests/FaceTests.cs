@@ -737,7 +737,10 @@ public class FaceTests
         Assert.Equal(4, album.Length);                                    // 3 rounded to a four-byte boundary
         Assert.Equal(new byte[] { 1, 2, 3, 0 }, album.Data);
 
-        ReplyNonFactoryRead(rig, 0x184000, Array.Empty<byte>());           // complete the first write
+        // HandleNVOpResult dispatches on the REPLY's op (0x0064304A..0x00643052): a pending write is completed by an op-1 reply with result 0 (0x00643054..0x00643424),
+        // not by an op-0 (read) reply, which would be AckdTagNeverRequested (0x00643166).
+        rig.Send(new NVOpResult { Tag = 0x184000, Op = NvStorageComponent.OpWrite, Result = NvStorageComponent.ResultOkay, Length = 0, Data = Array.Empty<byte>() });
+        rig.Pump();                                                        // complete the first write
         var enrollment = rig.Sent.OfType<NVCommand>().Last();
         Assert.Equal(0x183000u, enrollment.Tag);                          // enrollment second
         Assert.Equal(NvStorageComponent.OpWrite, enrollment.Op);

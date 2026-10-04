@@ -1550,6 +1550,7 @@ public class EngineAppLayerTests
         robot.Face.ShowExpression(Cozmo.Robot.Animation.Expression.Neutral);
         robot.Audio.SendSilence();
         _ = robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();                                        // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick
         lock (rig.Port.Sent) Assert.Contains(rig.Port.Sent, b => b[0] == (byte)new SetHeadAngle(0.1f).Id);
         robot.CubeAccel.AddListener(0, new CubeShakeListener(0.5f, 2.5f, 3.9f, _ => { }));
         robot.Animations.Scheduler.PushLiveQuietly();

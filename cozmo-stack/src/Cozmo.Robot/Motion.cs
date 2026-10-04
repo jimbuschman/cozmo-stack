@@ -630,19 +630,11 @@ bool requireCalibration = true)
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
         if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && PlaceObjectOnGroundAsync is not null)
             return PlaceObjectOnGroundAsync();
-        float target = heightMm;
-        if (target >= 0f && (target < LowDockHeightMm || target > CarryHeightMm))
-        {
-            float c = Math.Clamp(target, LowDockHeightMm, CarryHeightMm);
-            Log($"warning: MoveLiftToHeightAction.Init.InvalidHeight: {heightMm:F1} mm, clamped to {c:F1}");
-            target = c;
-        }
-        else if (target < 0f)
-        {
-            target = NegativeHeightTarget(CurrentLiftHeightMm());
-        }
-        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm") { SuppressTrackLocking = suppressTrackLocking };
-        return RunAsync(a, id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id), timeout);
+        // fidelity: M4-016
+        // The height checks (the clamp with its warning, the negative-height preset) are MoveLiftToHeightAction::Init's, which the action's FIRST
+        // IAction::UpdateInternal runs (vtable +0x1C, 0x00540F2E), so they run in the first update pass (InitLocked), not here.
+        var a = new MoveAction(this, isHead: false, heightMm, GameLiftToleranceMm, $"lift to {heightMm:F1} mm") { SuppressTrackLocking = suppressTrackLocking, InitLiftHeight = true };
+        return RunAsync(a, id => new SetLiftHeight(a.Target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id), timeout);
     }
 
     // fidelity: M4-002
@@ -786,8 +778,20 @@ bool requireCalibration = true)
     {
         public readonly CozmoMotion Owner;
         public readonly bool IsHead;
-        public readonly float Target, Tolerance;
-        public readonly string What;
+        public float Target;
+        public readonly float Tolerance;
+        public string What;
+        /// <summary>
+        /// M4-016: builds the wire command with the action id (MoveHeadToAngle / MoveLiftToHeight take the id when they send). Set by
+        /// <see cref="RunAsync"/>; called by <see cref="InitLocked"/> in the action's first update pass.
+        /// </summary>
+        public Func<byte, RobotMessage>? Build;
+        /// <summary>M4-016: IActionRunner::Update's first pass has run (the track-lock test and LockTracks, 0x00540428..0x0054058E).</summary>
+        public bool Started;
+        /// <summary>M4-016: the action's Init (vtable +0x1C, 0x00540F2E) has run, which sets +0x70 (0x00540F98).</summary>
+        public bool Initialized;
+        /// <summary>M4-016: a lift action whose Init still has the height checks to run (MA13).</summary>
+        public bool InitLiftHeight;
         /// <summary>M4-003: the action's required track mask (+0x54): head 1 (0x00547EAC), lift 2 (0x005489EE).</summary>
         public readonly byte Mask;
         /// <summary>MA8: the motor action id on the wire (MC+8), taken in MoveHeadToAngle / MoveLiftToHeight.</summary>
@@ -842,6 +846,11 @@ bool requireCalibration = true)
     private bool MovingLocked(MoveAction a) => a.IsHead ? _headMoving : _liftMoving;
 
     // fidelity: M4-003, M4-005, M4-016
+    /// <summary>
+    /// QueueAction for a head or lift move: constructing the action (the IActionRunner tag, +0x60) and queueing it. Nothing is sent and no
+    /// track is locked here: IActionRunner::Update's first call does both (0x00540370 -> LockTracks 0x0054058E, then IAction::UpdateInternal
+    /// 0x00540D4A -> Init through vtable +0x1C, 0x00540F2E), on the engine tick that stamps +0x74 (<see cref="UpdateActions"/>).
+    /// </summary>
     private async Task<MotionOutcome> RunAsync(MoveAction a, Func<byte, RobotMessage> build, TimeSpan? timeout)
     {
         lock (_gate)
@@ -856,52 +865,78 @@ bool requireCalibration = true)
             // by the action's first UpdateInternal (UpdateActions below), not here; 0x00540E80 fails when
             // start + timeout <= now.
             a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
-
-            // IActionRunner::Update (0x00540370): AreAnyTracksLocked(mask) at 0x00540572..0x0054057C fails the
-            // action with 0x03000019 and sends nothing; otherwise LockTracks(mask, to_string(id)) at 0x0054058E sends
-            // DisableAnimTracks. The action's end releases the lock inline in ~IActionRunner (0x0054120C..0x0054122A),
-            // which sends EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
-            if (!a.SuppressTrackLocking && IsTrackLockedLocked(a.Mask))
-            {
-                Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
-                return new MotionOutcome(MotionResult.Failed, $"{a.What}: required tracks are locked") { EngineResult = ResultTracksLocked };
-            }
-            if (!a.SuppressTrackLocking)
-            {
-                LockTracksLocked(a.Mask, a.LockOwner);
-                a.Locked = true;
-            }
-
-            // MA15, C6 L1: Init clears has-moved and sent/acked (a fresh action), latches in-position and sends nothing
-            // when the motor is already in position. CheckIfDone then skips the ack wait (nothing was sent) and, the
-            // latch being set, succeeds once the motor is not moving: at once when it is not moving now (always so for
-            // the lift, whose in-position test includes MC+0xB == 0); a head in position but moving waits in the list.
-            if (InPositionLocked(a))
-            {
-                if (!MovingLocked(a))
-                {
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
-                    return new MotionOutcome(MotionResult.Acknowledged, $"{a.What}: already in position, nothing sent");
-                }
-                a.InPositionLatched = true;
-                _actions.Add(a);
-            }
-            else
-            {
-                _actions.Add(a);
-                a.Id = unchecked(++_actionIdCounter);      // MA8: the id is taken in MoveHeadToAngle / MoveLiftToHeight
-                if (!_robot.SendMessage(build(a.Id)))
-                {
-                    _actions.Remove(a);
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
-                    return new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed };
-                }
-                a.Sent = true;
-            }
+            a.Build = build;
+            _actions.Add(a);
         }
-        // M4-016: the timeout is not a host delay; IAction::UpdateInternal tests it on the engine clock from
-        // UpdateActions, run by Robot::Update's ActionList step (CD12), before CheckIfDone.
+        // M4-016: the lock test, the send and the timeout are the engine tick's (UpdateActions, Robot::Update's ActionList step, CD12).
         return await a.Done.Task.ConfigureAwait(false);
+    }
+
+    // fidelity: M4-003, M4-016
+    /// <summary>
+    /// IActionRunner::Update's first pass for a new action, then IAction::UpdateInternal's Init (0x00540F2E, vtable +0x1C), in the engine's
+    /// order. AreAnyTracksLocked(mask) (0x00540572..0x0054057C) fails the action with 0x03000019 and nothing is sent; otherwise
+    /// LockTracks(mask, to_string(id)) (0x0054058E) sends DisableAnimTracks. The action's end releases the lock inline in ~IActionRunner
+    /// (0x0054120C..0x0054122A), which sends EnableAnimTracks.
+    /// </summary>
+    private bool StartLocked(MoveAction a, List<(MoveAction, MotionOutcome)> finished)
+    {
+        a.Started = true;
+        if (!a.SuppressTrackLocking && IsTrackLockedLocked(a.Mask))
+        {
+            Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
+            _actions.Remove(a);
+            finished.Add((a, new MotionOutcome(MotionResult.Failed, $"{a.What}: required tracks are locked") { EngineResult = ResultTracksLocked }));
+            return false;
+        }
+        if (!a.SuppressTrackLocking)
+        {
+            LockTracksLocked(a.Mask, a.LockOwner);
+            a.Locked = true;
+        }
+        return true;
+    }
+
+    // fidelity: M4-016, M4-002
+    /// <summary>
+    /// MoveHeadToAngleAction::Init / MoveLiftToHeightAction::Init (vtable +0x1C), which IAction::UpdateInternal calls once, after the timeout test
+    /// (0x00540F2E..0x00540F98, sets +0x70). MA13 (lift): a height in [0, inf) outside [32, 92] is clamped with a warning; a negative height goes
+    /// to the nearer of 32 and 92 to the current height. MA15, C6 L1: Init clears has-moved and sent/acked (a fresh action), latches in-position and
+    /// sends nothing when the motor is already in position; otherwise it takes the next action id and sends MoveHeadToAngle / MoveLiftToHeight,
+    /// a failed send giving 0x03000016. CheckIfDone follows in the same UpdateInternal call (0x00540DCE..0x00540DF6).
+    /// </summary>
+    private void InitLocked(MoveAction a, List<(MoveAction, MotionOutcome)> finished)
+    {
+        a.Initialized = true;
+        if (a.InitLiftHeight)
+        {
+            float requested = a.Target;
+            if (requested >= 0f && (requested < LowDockHeightMm || requested > CarryHeightMm))
+            {
+                float c = Math.Clamp(requested, LowDockHeightMm, CarryHeightMm);
+                Log($"warning: MoveLiftToHeightAction.Init.InvalidHeight: {requested:F1} mm, clamped to {c:F1}");
+                a.Target = c;
+            }
+            else if (requested < 0f)
+            {
+                a.Target = NegativeHeightTarget(CurrentLiftHeightMm());
+            }
+            a.What = $"lift to {a.Target:F1} mm";
+        }
+        if (InPositionLocked(a))
+        {
+            a.InPositionLatched = true;                // no send; CheckIfDone (the same call) completes it once the motor is not moving
+            return;
+        }
+        a.Id = unchecked(++_actionIdCounter);          // MA8: the id is taken in MoveHeadToAngle / MoveLiftToHeight
+        if (!_robot.SendMessage(a.Build!(a.Id)))
+        {
+            _actions.Remove(a);
+            if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
+            finished.Add((a, new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed }));
+            return;
+        }
+        a.Sent = true;
     }
 
     // fidelity: M4-003, M4-016
@@ -922,6 +957,10 @@ bool requireCalibration = true)
             foreach (var a in _actions.ToArray())
             {
                 // fidelity: M4-016
+                // IActionRunner::Update (0x00540370): the first call tests and takes the track lock (0x00540428..0x0054058E), then runs
+                // IAction::UpdateInternal, in this order within the one tick.
+                if (!a.Started && !StartLocked(a, finished)) continue;
+                // fidelity: M4-016
                 // 0x00540D4A..0x00540D68: now = BaseStationTimer seconds (f32); a start time still below zero (vcmpe, mi) is
                 // set to now before the timeout test. The test's "second gate" (0x00540DAC..0x00540DC0, now < start +
                 // slot 0x24 + slot 0x28) is dead for these actions: slots 0x24 and 0x28 return 0.0 (0x0052B0BA, 0x0052B0BE)
@@ -932,7 +971,12 @@ bool requireCalibration = true)
                 {
                     _actions.Remove(a);
                     timedOut.Add(a);
+                    continue;
                 }
+                // fidelity: M4-016
+                // 0x00540F0C..0x00540F98: when +0x70 is still 0 the update calls Init (vtable +0x1C) here, after the timeout test and before
+                // CheckIfDone (0x00540DF2), so the SetHeadAngle / SetLiftHeight send happens in the same tick that stamps +0x74.
+                if (!a.Initialized) InitLocked(a, finished);
             }
             CheckIfDoneLocked(finished);
         }
@@ -976,6 +1020,7 @@ bool requireCalibration = true)
     {
         foreach (var a in _actions.ToArray())
         {
+            if (!a.Initialized) continue;                // M4-016: CheckIfDone runs after Init, in the same UpdateInternal call
             if (a.Sent && !a.Acked) continue;
             if (InPositionLocked(a)) a.InPositionLatched = true;
             bool moving = MovingLocked(a);
@@ -984,7 +1029,8 @@ bool requireCalibration = true)
             {
                 if (!moving)
                     finished.Add((a, new MotionOutcome(MotionResult.Acknowledged,
-                        $"{a.What}: robot acknowledged action {a.Id} and reports it in position")));
+                        a.Sent ? $"{a.What}: robot acknowledged action {a.Id} and reports it in position"
+                               : $"{a.What}: already in position, nothing sent")));
             }
             else if (!moving && a.HasMoved)
                 finished.Add((a, new MotionOutcome(MotionResult.Failed,

@@ -225,6 +225,7 @@ public class HardeningTests
         Assert.False(rig.Robot.State.CalibratingMotors);   // nothing is running, but nothing has finished
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromSeconds(5));
+        rig.Robot.Motion.UpdateActions();                      // M4-016: Init sends in the first UpdateInternal (0x00540F2E), on the engine tick's ActionList step
         await Task.Delay(50);                                  // the transport executor posts the frame asynchronously
         Assert.Contains(rig.Sent(), m => m is SetHeadAngle);   // the command is sent
         Assert.False(pending.IsCompleted);                     // not refused: it waits for an ack the rig never sends

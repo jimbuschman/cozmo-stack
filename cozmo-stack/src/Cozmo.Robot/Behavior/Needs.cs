@@ -535,6 +535,22 @@ public sealed record NeedsCopy(double[] Levels, uint SerialNumber, long DateTime
 public sealed class NeedsManager
 {
     private readonly Func<double> _clockSec;
+
+    // fidelity: M15-014
+    /// <summary>
+    /// The seam for the engine's <c>std::chrono::system_clock::now()</c> reads in whole seconds since the epoch: the clock that stamps
+    /// the state's <c>DateTime</c> (<c>+8/+0xC</c>) and the file's <c>_DateTime</c>, 0x00693BC4 (<c>WriteToDevice(true)</c>), and that
+    /// <c>PossiblyWriteToDevice</c> (0x00695DCC), <c>ApplyDecayForTimeSinceLastDeviceWrite</c> (0x0069530E),
+    /// <c>PossiblyStartWriteToRobot</c> (0x00696EDA), the resolver (0x00694D9E) and the disconnect (+0x18, 0x00695910) read. It is NOT the
+    /// <c>BaseStationTimer</c> tick clock (<see cref="_clockSec"/>: <c>+0x3AC</c>, the decay accumulators), so a host whose tick clock is a
+    /// stopwatch cannot compare it with a stored <c>DateTime</c>. Defaults to the tick clock when none is given (tests that run both on
+    /// one fake clock); <see cref="SystemClockSec"/> is the real source.
+    /// </summary>
+    private readonly Func<double> _dateClockSec;
+
+    // fidelity: M15-014
+    /// <summary><c>system_clock::now()</c> as seconds since the Unix epoch: the source of the engine's DateTime reads.</summary>
+    public static double SystemClockSec() => (DateTime.UtcNow - DateTime.UnixEpoch).TotalSeconds;
     /// <summary>
     /// <c>+0x1FC</c>: the clock time a need was filled to Full, and <c>+0x208</c> its fullness-cooldown
     /// deadline (<c>fill + cooldown</c>). While the deadline is in the future <c>ApplyDecayAllNeeds</c>
@@ -639,9 +655,11 @@ public sealed class NeedsManager
     /// </summary>
     private double _deviceTimestampSnapshotSec;
 
-    public NeedsManager(Func<double> clockSec, NeedsConfig? config = null, DecayConfig? decay = null, IReadOnlyDictionary<string, NeedsActionDelta>? actions = null, Random? random = null)
+    public NeedsManager(Func<double> clockSec, NeedsConfig? config = null, DecayConfig? decay = null, IReadOnlyDictionary<string, NeedsActionDelta>? actions = null, Random? random = null,
+                        Func<double>? dateClockSec = null)
     {
         _clockSec = clockSec;
+        _dateClockSec = dateClockSec ?? clockSec;
         Config = config ?? NeedsConfig.Default;
         Decay = decay ?? new DecayConfig(new Dictionary<NeedId, IReadOnlyList<(double, double)>>(), new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         Actions = actions ?? new Dictionary<string, NeedsActionDelta>();
@@ -738,14 +756,14 @@ public sealed class NeedsManager
     public event Action<string>? Log;
 
     // fidelity: M15-014
-    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null)
+    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, Func<double>? dateClockSec = null)
     {
         var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine");
         string? Read(string name) { var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
         var cfg = Read("needs_config.json") is { } c ? NeedsConfig.Parse(c) : null;
         var decay = Read("needs_decay_config.json") is { } d ? DecayConfig.Parse(d) : null;
         var actions = Read("needs_action_config.json") is { } a ? NeedsActionDelta.Parse(a) : null;
-        var needs = new NeedsManager(clockSec, cfg, decay, actions, random);
+        var needs = new NeedsManager(clockSec, cfg, decay, actions, random, dateClockSec);
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
         // J7: InitInternal's forced WriteToDevice(true) (0x0069347E) must reach a real file when the host
@@ -896,7 +914,8 @@ public sealed class NeedsManager
         // 0x00695DC4..0x00695DFA: the throttle's anchor is the state's own DateTime at this+8/+0xC (the field WriteToDevice(true)
         // refreshes, 0x00693BC4, and the resolver stores, J4), not a private counter: `now - [+8] >= 61,000,000` falls through to
         // `strd now,[+8]` (0x00695DF2) and WriteToDevice(false); a smaller difference returns (blt 0x00695DF0).
-        double now = _clockSec();
+        // 0x00695DCC: now is system_clock::now() (the date clock), the same clock the anchor +8/+0xC holds, not the BaseStationTimer tick clock.
+        double now = _dateClockSec();
         if (now - _stateDateTimeSec < WriteThrottleSec) return;
         _stateDateTimeSec = now;
         WriteToDevice?.Invoke(false);
@@ -974,7 +993,7 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            _lastDisconnectSec = _clockSec();
+            _lastDisconnectSec = _dateClockSec();                 // system_clock::now() into +0x18 (0x00695910..0x0069591A)
             _openAppAfterDisconnect = 0;                          // reset the +0x30 counter (J5, 0x00695922)
             if (!_paused) WriteToDevice?.Invoke(true);            // forced write (0x00695924..0x0069592A)
             _robotConnected = false;                              // clear the robot pointer (+4)
@@ -1343,7 +1362,7 @@ public sealed class NeedsManager
 
         if (deviceWrite || robotWrite)
         {
-            long now = (long)_clockSec();                 // one system_clock::now() for both writes (0x00694D9C)
+            long now = (long)_dateClockSec();             // one system_clock::now() for both writes (0x00694D9C)
             if (deviceWrite)
             {
                 lock (_gate)
@@ -1448,7 +1467,7 @@ public sealed class NeedsManager
         {
             if (!_robotConnected) return;                            // the connected robot +4 is null
             last = _lastWriteToRobotSec;
-            now = _clockSec();
+            now = _dateClockSec();                                   // system_clock::now() (0x00696EDA), the clock +0x1C0 was stamped with
         }
         bool overdue = now - last > RobotWriteIntervalSec;           // strictly greater
         if (overdue || force) StartWriteToRobot(now);
@@ -1563,8 +1582,9 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            float now = (float)_clockSec();
-            float elapsed = now - (float)_stateDateTimeSec;              // 0x0069532C
+            // 0x0069530E..0x00695330: elapsed = (system_clock::now() - DateTime) / 1,000,000 as a signed 64-bit division (__aeabi_ldivmod,
+            // truncating toward zero: whole seconds), then __aeabi_l2f. The subtraction is in the 64-bit date clock, not in f32.
+            float elapsed = (float)Math.Truncate(_dateClockSec() - _stateDateTimeSec);
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
                 _lastDecaySec[n] = _nowSec - elapsed;                    // [+0x1E4] = [+0x3AC] - elapsed (0x00695338/0x00695340)
@@ -1691,7 +1711,7 @@ public sealed class NeedsManager
     public void WriteDeviceFile(bool refreshDateTime)
     {
         if (FixedDeviceFilePath is not { } path) return;
-        if (refreshDateTime) _stateDateTimeSec = _clockSec();    // 0x00693BC4
+        if (refreshDateTime) _stateDateTimeSec = _dateClockSec();    // 0x00693BC4 (system_clock::now() into +8/+0xC)
         Save(path, unixTimeSec: (long)_stateDateTimeSec, serialNumber: _serial);   // 0x00693BB0 (+0x34)
     }
 
