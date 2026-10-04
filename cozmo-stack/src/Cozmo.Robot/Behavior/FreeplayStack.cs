@@ -50,6 +50,16 @@ public sealed class FreeplayStack : IDisposable
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
+        // fidelity: M7-017
+        // D07/D08/D18: AnimationStreamer::Update (0x0057CE5C) calls TrackLayerComponent::Update (0x0064EDE8) when
+        // the last-stream seconds +0x88 > 0; that reads context+0x34 (this NeedsManager) -> +0x3D4 ->
+        // GetCurrentDesiredDistortion (0x0063B760) and, when the degree is above 0x3727C5AC, tail-calls
+        // AddGlitch. Wire the live path: the component's tick cache is the engine timer's tick count, its
+        // samples use the context RNG, and the streamer's seam calls the manager. FromObb has already run the
+        // component's Init (the config parse) before this.
+        needs.TickCount = () => robot.Engine.Timer.TickCount;
+        needs.DistortionRng ??= robot.Animations.Scheduler.ContextRandom;
+        robot.Animations.Scheduler.DesiredFaceDistortion = needs.GetCurrentDesiredDistortion;
         var all = new List<IBehavior>();
         // fidelity: M7-018, M7-002
         // RobotDataLoader::LoadBehaviors 0x005206bc reads the config corpus and BehaviorContainer 0x0059c324 builds every behaviour whose class the

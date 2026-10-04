@@ -1047,9 +1047,15 @@ public sealed class AnimationScheduler
             // fidelity: M7-017
             // 0x0057D086..0x0057D0E6: a nonzero result is an sErrorF and the error flag, then straight to the function's
             // return (0x0057D032) with that result: no tail (no InitStream, no UpdateStream, no +0x44 change).
+            // P05 (0x0057D084..0x0057D0E6): a nonzero generator result is an sErrorF
+            // ("AnimationStreamer.Update.LiveUpdateFailed", "Failed updating live animation from current robot
+            // state."), it sets the process-global error flag _errG (GOT 0x0103E790 = 0x0105DD34), then returns
+            // straight to the function's epilogue (0x0057D032) with that result: no idle tail (no InitStream, no
+            // UpdateStream, no +0x44 change).
             if (UpdateLiveAnimationLocked() != 0)
             {
-                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed");
+                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed: Failed updating live animation from current robot state.");
+                DesiredFaceDistortionComponent.ErrorFlagSet = true;
                 return;
             }
         }
