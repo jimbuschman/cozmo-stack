@@ -2449,10 +2449,10 @@
         "SetDefaultParams 0x0057db40..0x0057dcd0; decoded values in M7 inventory Appendix A row 4"
       ],
       "effect": "idle blink, gaze and motion distributions differ",
-      "unresolved": "",
+      "unresolved": " Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): holds: all 30 values match SetDefaultParams 0x57DB40..0x57DCD6; test reference updated (IdleTests was deleted in R-BEH2 batch 2).",
       "hardware_required": false,
       "live_path": true,
-      "test": "IdleTests",
+      "test": "IdleFaceTests.M7_004_TheThirtyDefaultsAreTheEnginesBitPatterns",
       "provenance": "the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset | All 30 IdleParameters defaults match the decoded SetDefaultParams table (inventory Appendix A row 4); IdleTests.TheDefaultsAreTheEnginesOwn pins them."
     },
     {
@@ -2470,7 +2470,7 @@
         "ProceduralFace::Combine 0x005846a8"
       ],
       "effect": "blink shape, timing or composition differs",
-      "unresolved": "built, awaiting strong verification: the blink table (0xC5AAD8), GenerateBlink, the scanline toggle (0x5861c4), the 7500..30000 spacing fallback and per-frame layer application are the streamer port's (M5), reached through AnimationScheduler.Advance with ProceduralLive on top; IdleBehavior's own generator is retired. Still open: the DesiredFaceDistortion glitch source (TrackLayerComponent::Update, 0x57cf7a) has no component here; see M7-017 for the pusher.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. TrackLayerComponent::Update reads DesiredFaceDistortion every tick in the keep-alive (0x57CF7A; AnimationScheduler.cs:905); unset, the C# silently uses 0 (TrackLayers.cs:609-612). Before: built, awaiting strong verification: the blink table (0xC5AAD8), GenerateBlink, the scanline toggle (0x5861c4), the 7500..30000 spacing fallback and per-frame layer application are the streamer port's (M5), reached through AnimationScheduler.Advance with ProceduralLive on top; IdleBehavior's own generator is retired. Still open: the DesiredFaceDistortion glitch source (TrackLayerComponent::Update, 0x57cf7a) has no component here; see M7-017 for the pusher.",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests",
@@ -2481,14 +2481,14 @@
       "subsystem": "M7-behaviour",
       "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "FaceLayerManager::GenerateEyeShift 0x0058d100",
         "ProceduralFace::LookAt 0x00584158"
       ],
       "effect": "idle gaze displacement or clipping differs",
-      "unresolved": "built, awaiting strong verification: LookAt rebuilt as the engine's float32 sequence (0x584158..0x58428a), SetFacePosition's clamp order (0x583b20..0x583bfe), GetEyeBoundingBox (0x584568..0x58463a), GenerateEyeShift's 17/12 limits (0x58cfc4); tests pinned to bit patterns. Still open: none known beyond the shared items in M7-017.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): SETTLED. LookAt 0x584158..0x58428A, SetFacePosition 0x583B20..0x583BF8, GetEyeBoundingBox 0x584568..0x58463A, GenerateEyeShift 0x58D100 and 0x58CFC4 match ProceduralFace.cs:217-262 and TrackLayers.cs:200-210, including compare order, NaN and -0.0f; the tests' expected bits match an independent float32 emulation; live through the keep-alive. The provenance still cites the retired IdleBehavior (cleanup).",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests",
@@ -2508,7 +2508,7 @@
         "KeepFaceAlive persistent dart call 0x0058d3e2"
       ],
       "effect": "the gaze returns early, snaps, or removes the wrong layer",
-      "unresolved": "built, awaiting strong verification: the first dart shows nothing until its drawn duration then snaps; layer clock +33 per streamed frame, frozen while held (0x58cd9e, 0x58ce22, 0x58d220, 0x58e688, 0x58e71a..0x58e724); tests drive the streamer. Still open: none known beyond M7-017.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. runs inside the keep-alive layering with DesiredFaceDistortion defaulted; defers to unsettled M7-017. Before: built, awaiting strong verification: the first dart shows nothing until its drawn duration then snaps; layer clock +33 per streamed frame, frozen while held (0x58cd9e, 0x58ce22, 0x58d220, 0x58e688, 0x58e71a..0x58e724); tests drive the streamer. Still open: none known beyond M7-017.",
       "hardware_required": false,
       "live_path": true,
       "test": "IdleFaceTests, KeepAliveTests",
@@ -2528,7 +2528,7 @@
         "idle clock increments at 0x0057d444"
       ],
       "effect": "idle actions fire at different times or are rescheduled when their track is busy",
-      "unresolved": "built, awaiting strong verification: UpdateLiveAnimation gates and decrements per the check (flag +0x194, picking/placing and +0x44 < GetParam<int>(2) return with no decrement; movement flag, locked tracks, countdown and (lift) carrying decrement by 60), the 60 ms tick, float32 head angle with the s8 wrap, the lazy default-set in GetParam/SetParam, carrying wired at the call site from Motion.IsCarryingObject (set only when a ManipulationSystem is built). Still open: the engine's global error-flag byte at 0x57d0c8..0x57d0e6 is not modelled; the production clock is Environment.TickCount64, not BaseStationTimer's origin, so float32 quantisation differs after long uptime.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. the streamer's error-flag byte (strb 0x57D0DC) is not modelled; the clock is Environment.TickCount64, not BaseStationTimer's float seconds; nothing pushes ProceduralLive in production, so UpdateLiveAnimation never runs (a RECOVERABLE_GAP with no record). Before: built, awaiting strong verification: UpdateLiveAnimation gates and decrements per the check (flag +0x194, picking/placing and +0x44 < GetParam<int>(2) return with no decrement; movement flag, locked tracks, countdown and (lift) carrying decrement by 60), the 60 ms tick, float32 head angle with the s8 wrap, the lazy default-set in GetParam/SetParam, carrying wired at the call site from Motion.IsCarryingObject (set only when a ManipulationSystem is built). Still open: the engine's global error-flag byte at 0x57d0c8..0x57d0e6 is not modelled; the production clock is Environment.TickCount64, not BaseStationTimer's origin, so float32 quantisation differs after long uptime.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2549,7 +2549,7 @@
         "LiftHeightKeyFrame ctor 0x004f8f5c / GetStreamMessage 0x004f8f80 (animLiftHeight 0x94)"
       ],
       "effect": "idle head/lift uses different wire messages or variability",
-      "unresolved": "built, awaiting strong verification: idle head and lift keyframes (multiplier 0x42652ee1, truncation, 35/8/6, parameter indices, order body, lift, head) through the streamer port with the engine's gates. Still open: none known beyond M7-008.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. reachable only through UpdateLiveAnimation; defers to M7-008 and M7-017. Before: built, awaiting strong verification: idle head and lift keyframes (multiplier 0x42652ee1, truncation, 35/8/6, parameter indices, order body, lift, head) through the streamer port with the engine's gates. Still open: none known beyond M7-008.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2570,7 +2570,7 @@
         "straight removal 0x0057d8d2"
       ],
       "effect": "the robot stays still or shuffles/looks with different values",
-      "unresolved": "built, awaiting strong verification: body shuffle and the persistent 'LiveIdleTurn' eye shift (AddOrUpdateEyeShift 0x64f3c8, removed by a straight shuffle 0x57d8d2); the dart gate holds while any other layer exists (0x58d3ac..0x58d3c4); the 64/32 arguments are discarded by GenerateEyeShift. Still open: none known beyond M7-008.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. reachable only through UpdateLiveAnimation; defers to M7-008 and M7-017. Before: built, awaiting strong verification: body shuffle and the persistent 'LiveIdleTurn' eye shift (AddOrUpdateEyeShift 0x64f3c8, removed by a straight shuffle 0x57d8d2); the dart gate holds while any other layer exists (0x58d3ac..0x58d3c4); the 64/32 arguments are discarded by GenerateEyeShift. Still open: none known beyond M7-008.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests",
@@ -2629,7 +2629,7 @@
         "mood_config.json decayGraphs"
       ],
       "effect": "emotion magnitude or decay differs at clamps, graph edges or clock resets",
-      "unresolved": "built, awaiting strong verification: Mood in float32: Emotion::Update/Add, EvaluateY (left-node rule at gap <= 1e-5f), MoodManager::Update's 1e-4f dt floor, no decay in TriggerEmotionEvent, the 128-entry {value, dt} history ring (0x679406..0x679420, 0x67945c, GetHistoryValueTicksAgo 0x6794f8) wired to M8-003's trackDelta, the built-in decay curve (0,1),(15,1),(60,0.9f),(150,0.6f),(300,0) when no graph is configured (InitDecayGraphs 0x67cdc3; not re-read by the verifier of round 1). Still open: MoodState's public surface stays double (exact widening of the engine float); Manipulation/Workouts.cs (R-VIS) still refuses trackDelta and has no production caller to wire.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. the engine logs sWarningF(\"MoodManager.BadTimeStep\", \"TimeStep %f (%f-%f) is < %f - clamping!\", dt, t, last, 1e-4) (0x67B62E..0x67B644); Mood.cs:517 logs other text, and the test only counts lines. For a NaN sum Emotion::Add keeps NaN (0x67965A); Mood.cs:391 stores -1. Update, Add, EvaluateY, the history ring, the dt floor and the live caller hold. Before: built, awaiting strong verification: Mood in float32: Emotion::Update/Add, EvaluateY (left-node rule at gap <= 1e-5f), MoodManager::Update's 1e-4f dt floor, no decay in TriggerEmotionEvent, the 128-entry {value, dt} history ring (0x679406..0x679420, 0x67945c, GetHistoryValueTicksAgo 0x6794f8) wired to M8-003's trackDelta, the built-in decay curve (0,1),(15,1),(60,0.9f),(150,0.6f),(300,0) when no graph is configured (InitDecayGraphs 0x67cdc3; not re-read by the verifier of round 1). Still open: MoodState's public surface stays double (exact widening of the engine float); Manipulation/Workouts.cs (R-VIS) still refuses trackDelta and has no production caller to wire.",
       "hardware_required": false,
       "live_path": true,
       "test": "MoodTests",
@@ -2686,7 +2686,7 @@
         "KeepFaceAlive dart 0x0058d3e2 and blink 0x0058d4be"
       ],
       "effect": "simultaneous blink, dart and turn layers overwrite rather than compose",
-      "unresolved": "built, awaiting strong verification: the idle face is composed per streamed frame by the streamer port (ApplyFaceLayersToAnim), the keep-alive gates are +0x88 > 0, +0x38 == 0 and the idle/timeout gate in float32; the streamer's own generator is the only one. Still open: none known beyond M7-017.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. the keep-alive gates hold (0x57CF6A..0x57CFF2), but the composition runs with DesiredFaceDistortion defaulted and defers to M7-017. Before: built, awaiting strong verification: the idle face is composed per streamed frame by the streamer port (ApplyFaceLayersToAnim), the keep-alive gates are +0x88 > 0, +0x38 == 0 and the idle/timeout gate in float32; the streamer's own generator is the only one. Still open: none known beyond M7-017.",
       "hardware_required": false,
       "live_path": true,
       "test": "KeepAliveTests, IdleFaceTests",
@@ -5945,7 +5945,7 @@
         "SendBufferedMessages 0x0057bf60"
       ],
       "effect": "idle keyframes open, frame, interleave or close differently on the wire",
-      "unresolved": "built, awaiting strong verification: StreamLive no longer pushes ProceduralLive and the 'StreamLive' short-circuit is removed; the gated UpdateLiveAnimation port (M5-030) runs whenever ProceduralLive is on top; the S4 error path returns without the tail; the idle clock +0x44 is zeroed while streaming and advances 60 per idle tick. The engine has no pusher of 0x198 (RECOVERABLE_GAP, no record yet: production never reaches the live path with the default Count stack top; tools and tests push through PushIdleAnimation); DesiredFaceDistortion (S1 step 2) has no source (MISSING).",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. ProceduralLive has no pusher (RECOVERABLE_GAP in prose, no record); DesiredFaceDistortion is MISSING; the engine logs AnimationStreamer.Update.LiveUpdateFailed \"Failed updating live animation from current robot state.\" (0xBEF148/0xBEF172), dropped at AnimationScheduler.cs:995; the error-flag write (0x57D0C8..0x57D0E6) is not modelled. Before: built, awaiting strong verification: StreamLive no longer pushes ProceduralLive and the 'StreamLive' short-circuit is removed; the gated UpdateLiveAnimation port (M5-030) runs whenever ProceduralLive is on top; the S4 error path returns without the tail; the idle clock +0x44 is zeroed while streaming and advances 60 per idle tick. The engine has no pusher of 0x198 (RECOVERABLE_GAP, no record yet: production never reaches the live path with the default Count stack top; tools and tests push through PushIdleAnimation); DesiredFaceDistortion (S1 step 2) has no source (MISSING).",
       "hardware_required": false,
       "live_path": true,
       "test": "AnimationStreamLifecycleTests.TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed",
@@ -8200,7 +8200,7 @@
       ],
       "effect": "the behaviour never starts, stops, resumes or reports runnable the way the engine does",
       "provenance": "the original's IBehavior constructor and lifecycle functions, read at the addresses above",
-      "unresolved": "built, awaiting strong verification: R-BEH2 batch 1 rebuilt the lifecycle (Init calls InitInternal = vptr+0x48; ScoredActingStateChanged(true/false) at StartActing/StopActing/HandleActionComplete; StartActing refusal gates; the +0x98 callback destroyed by Stop/Init; Update returns 2 before UpdateInternal; resume counter, +0x118 = now+15.0f and the TooManyResumes mood event applied to non-stepped behaviours too; switch order with current null during Init). Still open: the IsRunnableBase gates other than robot+0x355 and [robot+0x284]+8 (0x34a, AI process, +0x70/+0x74 inputs, timers, spark) are seams, and the base vtable+0x20/+0x24/+0x28 default to true although the engine base returns 0/0/pure virtual (about a dozen M10/M15 classes would be refused off treads; list in research/20261002-R-BEH2-verify-batch1.md Round 2); SetRunningAndResumeInfo's ReactionTriggerTransition message, robot+0x2c7/MC+0xD4 writes and cube-light stop are MISSING seams; the Init action-tag guard has no production caller; the normal resume path for non-stepped behaviours is not the engine's; CallToListeners and helper-stop are silent seams. Verifier rounds 1-4 in that report.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. the base vtable (0x010264E0) slot +0x20 is 0x5BF04C (returns 0) and +0x28 is __cxa_pure_virtual, while RunnableGate20/24/28 return true with MISSING (SteppedBehavior.cs:232-236); ReactionTriggerTransition, UpdateRobotPropertiesForReaction and the cube-light stop are MISSING (BehaviorManager.cs:788-792). Before: built, awaiting strong verification: R-BEH2 batch 1 rebuilt the lifecycle (Init calls InitInternal = vptr+0x48; ScoredActingStateChanged(true/false) at StartActing/StopActing/HandleActionComplete; StartActing refusal gates; the +0x98 callback destroyed by Stop/Init; Update returns 2 before UpdateInternal; resume counter, +0x118 = now+15.0f and the TooManyResumes mood event applied to non-stepped behaviours too; switch order with current null during Init). Still open: the IsRunnableBase gates other than robot+0x355 and [robot+0x284]+8 (0x34a, AI process, +0x70/+0x74 inputs, timers, spark) are seams, and the base vtable+0x20/+0x24/+0x28 default to true although the engine base returns 0/0/pure virtual (about a dozen M10/M15 classes would be refused off treads; list in research/20261002-R-BEH2-verify-batch1.md Round 2); SetRunningAndResumeInfo's ReactionTriggerTransition message, robot+0x2c7/MC+0xD4 writes and cube-light stop are MISSING seams; the Init action-tag guard has no production caller; the normal resume path for non-stepped behaviours is not the engine's; CallToListeners and helper-stop are silent seams. Verifier rounds 1-4 in that report.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8222,7 +8222,7 @@
       ],
       "effect": "a behaviour's score is penalised by the wrong curve, or not at all",
       "provenance": "the shipped config plus the code that reads and consumes it",
-      "unresolved": "built, awaiting strong verification: flat (0, 1.0) default graph, stamp <= 0 or NaN gives 1.0, float stamp/subtraction/compare (0x5bef12, 0x5befea), +0x108 = now + 1.0f, StopWithoutImmediateRepetitionPenalty calls Stop first. Still open: no stack behaviour calls StopWithoutImmediateRepetitionPenalty (callers are M7/M15); the internal Stop reason is not in the inventory.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. an unreadable repetitionPenalty warns IScoredBehavior.BadRepetitionPenalty \"Behavior '%s': %s failed to read\" (0x5BC524..0x5BC52E); Graph2d.FromJson returns null silently (Activities.cs:162). StopWithoutImmediateRepetitionPenalty uses an unsourced BehaviorStopReason.Interrupted (SteppedBehavior.cs:341). The arithmetic (0x5BEEE6, 0x5BEEA0) holds. Before: built, awaiting strong verification: flat (0, 1.0) default graph, stamp <= 0 or NaN gives 1.0, float stamp/subtraction/compare (0x5bef12, 0x5befea), +0x108 = now + 1.0f, StopWithoutImmediateRepetitionPenalty calls Stop first. Still open: no stack behaviour calls StopWithoutImmediateRepetitionPenalty (callers are M7/M15); the internal Stop reason is not in the inventory.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
@@ -8246,7 +8246,7 @@
       ],
       "effect": "behaviours are chosen by the wrong score",
       "provenance": "ReadFromScoredJson, EvaluateScore, EvaluateScoreInternal, EvaluateRunningPenalty and MoodScorer, read",
-      "unresolved": "built, awaiting strong verification: scored selection in float with the engine's order (EmotionScore 0x67c9b8, flat score, running bonus, repetition and running penalties). Still open: trackDelta GetHistoryValueTicksAgo(60) needs the Emotion history ring (M7-013) and throws NotSupportedException; MoodState holds emotions as double where the engine loads a float.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. EvaluateScore calls virtual slots +0x84/+0x88 (0x5BEF72, 0x5BEFC6), which five classes override (BehaviorPounceOnMotion::EvaluateScoreInternal 0x5F83BE, used by socialize.json); ScoredBehaviorEntry.Evaluate hardcodes the base (Activities.cs:84-120). The runningPenalty bad-read warning (0x5BC638..0x5BC640) is missing (Activities.cs:163). The text saying trackDelta throws is stale. Before: built, awaiting strong verification: scored selection in float with the engine's order (EmotionScore 0x67c9b8, flat score, running bonus, repetition and running penalties). Still open: trackDelta GetHistoryValueTicksAgo(60) needs the Emotion history ring (M7-013) and throws NotSupportedException; MoodState holds emotions as double where the engine loads a float.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.AScoredEntryUsesItsEmotionScorersInsteadOfItsFlatScore"
@@ -8285,7 +8285,7 @@
       ],
       "effect": "a PlayAnim behaviour plays the wrong set of triggers",
       "provenance": "BehaviorPlayAnimSequence, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "built, awaiting strong verification: PlayAnim as a SteppedBehavior: single trigger numLoops = num_loops (0 loops forever, timeout 60.0f -> FLT_MAX); loop path one action per loop, none for num_loops <= 0; 60.0f (0x42700000) timeout, tracksToLock 0, ignoreFailure 0; ResumeInternal returns 1; slots 0/0/1. Still open: CallToListeners/AddListener is not modelled; group warning wording is not the engine's; an animation that cannot resolve fails with 0x0300000C and a refused stream with 0x03000001 only on the stack's path.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. CallToListeners/AddListener is not modelled; the group warning text is not the engine's; 0x0300000C/0x03000001 exist only on the stack's path. Before: built, awaiting strong verification: PlayAnim as a SteppedBehavior: single trigger numLoops = num_loops (0 loops forever, timeout 60.0f -> FLT_MAX); loop path one action per loop, none for num_loops <= 0; 60.0f (0x42700000) timeout, tracksToLock 0, ignoreFailure 0; ResumeInternal returns 1; slots 0/0/1. Still open: CallToListeners/AddListener is not modelled; group warning wording is not the engine's; an animation that cannot resolve fails with 0x0300000C and a refused stream with 0x03000001 only on the stack's path.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.APlayAnimBehaviourWithSeveralTriggersTakesThemAll"
@@ -8305,7 +8305,7 @@
       ],
       "effect": "a behaviour runs when the engine would not run it",
       "provenance": "the factory and the strategy classes, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "built, awaiting strong verification: InNeedsBracket unchanged; ExpressNeedsTransition tests Critical then [[robot+0x264]+0x30]+0x14 != need through the seam BehaviorContext.AiExpressedNeedValue; other strategy types throw. Still open: the name and source of [[robot+0x264]+0x30]+0x14 is UNKNOWN (no value is supplied in production); Activities.cs SevereNeedTransition and ExplorerBehaviors still use the unsourced per-need set (M15).",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. [[robot+0x264]+0x30]+0x14 is UNKNOWN with no production supply (0x6136FC); the other strategy types throw NotSupportedException (Behaviors.cs:211). Before: built, awaiting strong verification: InNeedsBracket unchanged; ExpressNeedsTransition tests Critical then [[robot+0x264]+0x30]+0x14 != need through the seam BehaviorContext.AiExpressedNeedValue; other strategy types throw. Still open: the name and source of [[robot+0x264]+0x30]+0x14 is UNKNOWN (no value is supplied in production); Activities.cs SevereNeedTransition and ExplorerBehaviors still use the unsourced per-need set (M15).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.TheNeedsWantsToRunStrategiesFollowTheNeedsState"
@@ -8324,7 +8324,7 @@
       ],
       "effect": "a locked track is driven by two actions at once, or an action is dropped instead of retried",
       "provenance": "IActionRunner::Update and MovementComponent::LockTracks, read; the bodies were not re-read in the M8 passes",
-      "unresolved": "built, awaiting strong verification: the action mask is its own tracksToLock; LIFT ORed only when carrying and OffTreadsState == OnTreads; a locked track fails with 0x03000019 without retry; the lock is taken before the clip resolves and keyed by the action id; Disable/EnableAnimTracks only from LockTracks/UnlockTracks; the completion callback runs for a failed action. Still open: ReactBehavior and PlayArbitraryAnimBehavior still lock the clip's tracks through scope.LockTracks (no inventory source); an animation's Replaced/Cancelled end is counted a success (MISSING: what the streamer does with a replaced tag).",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. Replaced/Cancelled animation ends count as success (MISSING); Behaviors.cs:394/477 lock tracks through the unsourced unnamed scope.LockTracks. Before: built, awaiting strong verification: the action mask is its own tracksToLock; LIFT ORed only when carrying and OffTreadsState == OnTreads; a locked track fails with 0x03000019 without retry; the lock is taken before the clip resolves and keyed by the action id; Disable/EnableAnimTracks only from LockTracks/UnlockTracks; the completion callback runs for a failed action. Still open: ReactBehavior and PlayArbitraryAnimBehavior still lock the clip's tracks through scope.LockTracks (no inventory source); an animation's Replaced/Cancelled end is counted a success (MISSING: what the streamer does with a replaced tag).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorHardeningTests"
@@ -8344,7 +8344,7 @@
       ],
       "effect": "what a behaviour does when a recalibration times out",
       "provenance": "CalibrateMotorAction's inherited IAction timeout (30.0 s), IAction::UpdateInternal and its failure result, read; the 30.0 s wait is built, the result delivery is not",
-      "unresolved": "built, awaiting strong verification: The 30.0 s timeout is built (CalibrationAllowanceSec = 30.0; expiry logs the timeout). Remaining: the engine fails the action with result 0x03000018 through IAction::UpdateInternal 0x00540d1c, which the behaviour action-complete receives; this stack's WaitUntil carries no action result, so the failure result is not delivered. Build that result seam (or establish from source that the M7 callers ignore it, which would close the record) before settling. R-BEH2 (2026-10-02): none of the four M7 CalibrateMotorAction callers (0x00607c9a, 0x0060808c, 0x00608658, 0x00608892) installs a result branch (0x005bf8f4..0x005bf8fc discards it), so the engine's 0x03000018 reaches only the behaviour's completion callback; the callback runs for any result (HandleActionComplete 0x005be1e6).",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. CalibrateHead (SteppedBehavior.cs:1084-1100) bypasses the action runner: the engine's done test is IsHeadCalibrated && +0x7A (0x547D40..0x547D80), logs CalibrateMotorAction.CheckIfDone.Done (0x547D9C) or IAction.Update.TimedOut \"%s timed out after %.1f seconds.\", and its deadline is float start + 30.0f (0x540D94..0x540DAA); the C# watches HeadCalibrating, writes its own trace and waits in double milliseconds. Before: built, awaiting strong verification: The 30.0 s timeout is built (CalibrationAllowanceSec = 30.0; expiry logs the timeout). Remaining: the engine fails the action with result 0x03000018 through IAction::UpdateInternal 0x00540d1c, which the behaviour action-complete receives; this stack's WaitUntil carries no action result, so the failure result is not delivered. Build that result seam (or establish from source that the M7 callers ignore it, which would close the record) before settling. R-BEH2 (2026-10-02): none of the four M7 CalibrateMotorAction callers (0x00607c9a, 0x0060808c, 0x00608658, 0x00608892) installs a result branch (0x005bf8f4..0x005bf8fc discards it), so the engine's 0x03000018 reaches only the behaviour's completion callback; the callback runs for any result (HandleActionComplete 0x005be1e6).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.TheHeadCalibrationWaitRunsToThirtySeconds"
@@ -8363,7 +8363,7 @@
       ],
       "effect": "locks are released in a different order at behaviour exit",
       "provenance": "IBehavior::Stop, read in full including the light-pattern tail; the built order matches",
-      "unresolved": "built, awaiting strong verification: Dispose releases by category in the engine's order and within a category by key (reaction locks in name order, track locks in map-key order). Still open: SmartLockTracks uses owner scope-N:name rather than the engine's plain name (M8-011).",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. the engine unlocks under the map key's plain name (0x5BD16E..0x5BD174); the C# under scope-N:name (IBehavior.cs:415, 429). The unnamed LockTracks (IBehavior.cs:262-286) has no engine counterpart. The order (0x5BD12C..0x5BD1C6) holds. Before: built, awaiting strong verification: Dispose releases by category in the engine's order and within a category by key (reaction locks in name order, track locks in map-key order). Still open: SmartLockTracks uses owner scope-N:name rather than the engine's plain name (M8-011).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests.AScopeReleasesInTheEnginesFixedCategoryOrder"
@@ -8432,7 +8432,7 @@
       ],
       "effect": "the manager ticks, switches or finishes behaviours in the wrong order, or fires a reaction when it should not",
       "provenance": "BehaviorManager::Update and its switch/finish/resume helpers, read at the addresses above",
-      "unresolved": "built, awaiting strong verification: phantom 0x16 behaviour removed (running info = {current, resume, trigger}); tick order per Correction A2 (activity Update, EnsureRequestGameIsClear, UI request, reactions every tick, scored switch behind three gates, IBehavior::Update then FinishCurrentBehavior(trigger != None)); TryToResume with head/lift restore and no manager IsRunnable pre-check; failure switches to empty; running info stored on Init failure; per-trigger disable-count skip. Still open (seams): the meaning of manager+0x20, SelectUIRequestGameBehavior, SwitchToUIGameRequestBehavior and the +0x220 flag (no test for the class-test order before settling), EnsureRequestGameIsClear and SendDasTransitionMessage bodies, ActionList-is-empty is not wired in production, the concrete activity Update bodies (M7/M15); the stack's ChooseAndSwitch is a test-only parallel path.",
+      "unresolved": "Opus verification of R-BEH2 batches 1-2 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-1-2.md): NOT YET. NotSupportedException seams (BehaviorManager.cs:632/649); no ActionList (MISSING at :311, :414, :873); the sends at :788-792 are MISSING. Before: built, awaiting strong verification: phantom 0x16 behaviour removed (running info = {current, resume, trigger}); tick order per Correction A2 (activity Update, EnsureRequestGameIsClear, UI request, reactions every tick, scored switch behind three gates, IBehavior::Update then FinishCurrentBehavior(trigger != None)); TryToResume with head/lift restore and no manager IsRunnable pre-check; failure switches to empty; running info stored on Init failure; per-trigger disable-count skip. Still open (seams): the meaning of manager+0x20, SelectUIRequestGameBehavior, SwitchToUIGameRequestBehavior and the +0x220 flag (no test for the class-test order before settling), EnsureRequestGameIsClear and SendDasTransitionMessage bodies, ActionList-is-empty is not wired in production, the concrete activity Update bodies (M7/M15); the stack's ChooseAndSwitch is a test-only parallel path.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests"
