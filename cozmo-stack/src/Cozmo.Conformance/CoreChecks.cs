@@ -416,7 +416,7 @@ public static class CoreChecks
             delocalizations++;
             origins.Add(origin);
             map.Clear();
-            say($"  DELOCALIZED: the robot is now in origin {origin}; the map has been cleared");
+            say($"  DELOCALIZED at the treads boundary (the engine's trigger; the origin id is the history's, no new origin is allocated); the map has been cleared");
         };
         vision.World.PoseStateChanged += (o, was, now) =>
         {
@@ -448,14 +448,14 @@ public static class CoreChecks
         }
         robot.StopCamera();
 
-        say($"origin changes seen: {delocalizations} ({string.Join(" -> ", origins)})");
-        say($"cubes located before the origin change: {(locatedBeforeDelocalization.Count == 0 ? "none" : string.Join(", ", locatedBeforeDelocalization))}");
+        say($"delocalizations seen: {delocalizations} ({string.Join(" -> ", origins)})");
+        say($"cubes located before the delocalization: {(locatedBeforeDelocalization.Count == 0 ? "none" : string.Join(", ", locatedBeforeDelocalization))}");
         say($"objects that stopped being located: {(forgotten.Count == 0 ? "none" : string.Join("; ", forgotten))}");
-        if (delocalizations == 0) return (false, "the robot never reported a new origin: he may not have been lifted far enough");
-        if (locatedBeforeDelocalization.Count == 0) return (false, "no cube was located before the origin changed, so object invalidation was not exercised");
+        if (delocalizations == 0) return (false, "the robot never delocalized (no treads change to or from OnTreads, M11-019): he may not have been lifted far enough");
+        if (locatedBeforeDelocalization.Count == 0) return (false, "no cube was located before the delocalization, so object invalidation was not exercised");
         int invalidated = locatedBeforeDelocalization.Count(forgottenIds.Contains);
-        if (invalidated == 0) return (false, "the origin changed but the previously located cube did not become unlocated");
-        return (true, $"{delocalizations} origin change(s); {invalidated} previously located cube(s) became unlocated");
+        if (invalidated == 0) return (false, "the robot delocalized but the previously located cube did not become unlocated");
+        return (true, $"{delocalizations} delocalization(s); {invalidated} previously located cube(s) became unlocated");
     }
 
     // ------------------------------------------------------------------ plumbing

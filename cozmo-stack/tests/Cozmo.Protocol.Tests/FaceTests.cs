@@ -162,8 +162,8 @@ public class FaceTests
             new Vec2(px.X - eyePx / 2, px.Y), new Vec2(px.X + eyePx / 2, px.Y), RollRad: 0.0), 1000);
         Assert.True(parts.HasEyeParts);
         parts.UpdateTranslation(cam);
-        Assert.Equal(eyePx, TrackedFace.GetIntraEyeDistance(parts.Detection.LeftEye!.Value, parts.Detection.RightEye!.Value, 0.0), 6);
-        Assert.Equal(TrackedFace.InterPupilDistanceMm * f / eyePx, parts.DistanceMm, 6);
+        Assert.Equal(eyePx, TrackedFace.GetIntraEyeDistance(parts.Detection.LeftEye!.Value, parts.Detection.RightEye!.Value, 0.0), 4);   // binary32 (M14-001): the eye slots are floats
+        Assert.Equal(TrackedFace.InterPupilDistanceMm * f / eyePx, parts.DistanceMm, 3);
         Assert.InRange((parts.HeadPose.Translation - target).Length, 0, 0.05);   // range along the ray through px
 
         // C2-F23 box branch: the zeroed eye slots make the midpoint pixel (0,0); the engine's invK*(0,0,1)
@@ -182,11 +182,11 @@ public class FaceTests
         // C2-F23 GetIntraEyeDistance: dist / divisor, divisor = 1.0 when |cos| < 1e-5 else the signed cos;
         // dist < 1e-5 returns 6.0 / divisor.
         Assert.Equal(62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), 0.0), 6);
-        Assert.Equal(62.0 / Math.Cos(0.5), TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), 0.5), 6);
+        Assert.Equal(70.64863, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), 0.5), 4);   // 62 / cosf(0.5f) in binary32 (numpy float32 emulation of 0x0087DD8A)
         Assert.Equal(-62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), Math.PI), 6);
         Assert.Equal(62.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(162, 100), Math.PI / 2), 6);   // |cos| < 1e-5 -> divisor 1.0
         Assert.Equal(6.0, TrackedFace.GetIntraEyeDistance(new Vec2(100, 100), new Vec2(100, 100), 0.0), 6);            // dist < 1e-5 -> 6.0 / 1.0
-        Assert.Equal(1e-5, TrackedFace.MinCosOrDistance);
+        Assert.Equal(0x3727C5ACu, BitConverter.SingleToUInt32Bits((float)TrackedFace.MinCosOrDistance));   // R-FIX M14-001: the literal at 0x0087DDC4, not the double 1e-5
 
         // MISSING: a parts face (eyes present) with no roll is an incomplete detector input; it is not defaulted.
         var noRoll = new TrackedFace(new DetectedFace(6, new FaceRect(0, 0, 10, 10), new Vec2(100, 100), new Vec2(162, 100)), 1000);
@@ -301,9 +301,11 @@ public class FaceTests
         Assert.Equal(0.4, TrackFaceAction.PanDurationSec, 6);
         Assert.Equal(0.15, TrackFaceAction.TiltDurationSec, 6);
         Assert.Equal(0.5, TrackFaceAction.DesiredTimeToReachTargetSec, 6);
-        Assert.Equal(0.0349066, TrackFaceAction.MinToleranceRad, 6);
-        Assert.Equal(0.776672, TrackFaceAction.MaxHeadAngleRad, 6);
-        Assert.Equal(0.174533, TrackFaceAction.MinAngleForSoundRad, 6);
+        // R-FIX M14-003: the binary32 words the constructor 0x00564xxx stores (0x005646BC..0x0056473A), not rounded decimals
+        Assert.Equal(0x3D0EFA35u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MinToleranceRad));
+        Assert.Equal(0x3F46D3F2u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MaxHeadAngleRad));
+        Assert.Equal(0x3E32B8C2u, BitConverter.SingleToUInt32Bits((float)TrackFaceAction.MinAngleForSoundRad));
+        Assert.Equal((double)(float)TrackFaceAction.MinToleranceRad, TrackFaceAction.MinToleranceRad);
         Assert.Equal(10000, TrackFaceAction.TrackAccelRadPerSec2);
         Assert.Equal(60, TrackFaceAction.UpdateIntervalMs);   // the 60 ms basestation tick, not the M5 33 ms keep-alive
 
@@ -326,8 +328,8 @@ public class FaceTests
     {
         var cal = CameraCalibration.Nominal();
         var (body, head) = TurnTowardsImagePoint.Angles(cal, cal.CenterX, cal.CenterY, 0.5, 0.2);
-        Assert.Equal(0.5, body, 9);
-        Assert.Equal(0.2, head, 9);
+        Assert.Equal(0.5, body, 6);       // R-FIX M14-005: binary32 (atan2f(-0, fx) + 0.5f, vadd.f32)
+        Assert.Equal(0.2, head, 6);
 
         // a point to the right of centre turns the body right (negative), one above centre lifts the head
         var (right, _) = TurnTowardsImagePoint.Angles(cal, cal.CenterX + cal.FocalLengthX, cal.CenterY, 0, 0);
@@ -563,7 +565,7 @@ public class FaceTests
     /// <summary>
     /// The constants the inventory records, exactly (SD4): an unnamed face expires after 15000 ms
     /// (0x004F5380 loads 0x3A98), the eye-distance floor is 6.0 (0x0087DF0A vmov.f32 s0,#6.0), and the
-    /// 62.0 factor is at 0x0087E014. The 220^2 match distance (0x004F4428 loads 0x473D1000) and the
+    /// 62.0 factor's literal is at 0x0087E084 (vldr 0x0087E014). The 220^2 match distance (0x004F4428 loads 0x473D1000) and the
     /// overlap score are present but on the dead C2-F7 branch, since IsRecognitionSupported 0x0086B244
     /// returns 1 unconditionally.
     /// </summary>
@@ -572,8 +574,9 @@ public class FaceTests
     {
         Assert.Equal(15000u, FaceWorld.UnnamedFaceLifetimeMs);
         Assert.Equal(6.0, TrackedFace.MinIntraEyeDistancePx, 6);
-        Assert.Equal(1e-5, TrackedFace.MinCosOrDistance);
+        Assert.Equal(0x3727C5ACu, BitConverter.SingleToUInt32Bits((float)TrackedFace.MinCosOrDistance));   // R-FIX M14-001: 0x0087DDC4
         Assert.Equal(62.0, TrackedFace.InterPupilDistanceMm, 6);
+        Assert.Equal(0x42780000u, BitConverter.SingleToUInt32Bits((float)TrackedFace.InterPupilDistanceMm));   // literal 0x0087E084
         // the 220^2 / overlap constants are present but on the dead C2-F7 branch
         Assert.Equal(48400.0, FaceWorld.MatchDistanceSquaredMm, 6);
         Assert.Equal(0.5, FaceWorld.MatchOverlapScore, 6);

@@ -85,22 +85,26 @@ public class NavigationTests
     {
         var prims = Prims();
         if (prims is null) return;
-        Assert.Equal(10.0, prims.ResolutionMm);
+        // the asset's own values (cozmo_mprim.json), read by asFloat (M13-004): resolution_mm 10.0, num_angles 16, angle_definitions[1] 0.4636476090008061
+        Assert.Equal(10.0f, prims.ResolutionMm);
+        Assert.Equal(1.0f / 10.0f, prims.InverseResolution);
         Assert.Equal(16, prims.NumAngles);
         Assert.Equal(16, prims.Angles.Count);
-        Assert.Equal(Math.Atan2(1, 2), prims.Angles[1], 9);
+        Assert.Equal((float)0.4636476090008061, prims.Angles[1]);
         Assert.Equal(9, prims.Actions.Count);
-        Assert.Equal("short straight", prims.Actions[0].Name); Assert.Equal(1.0001, prims.Actions[0].ExtraCostFactor);
-        Assert.True(prims.Actions[8].Reverse); Assert.Equal(1.2, prims.Actions[8].ExtraCostFactor);
-        Assert.Equal(2.0, prims.Actions[6].ExtraCostFactor);                     // in-place turns cost double
+        Assert.Equal("short straight", prims.Actions[0].Name); Assert.Equal(1.0001f, prims.Actions[0].ExtraCostFactor);
+        Assert.True(prims.Actions[8].Reverse); Assert.Equal(1.2f, prims.Actions[8].ExtraCostFactor);
+        Assert.Equal(2.0f, prims.Actions[6].ExtraCostFactor);                    // in-place turns cost double
         Assert.Equal(16, prims.ByAngle.Count);
         var longStraight = prims.ByAngle[0].Single(p => p.ActionIndex == 1);
-        Assert.Equal((5, 0, 0), (longStraight.EndX, longStraight.EndY, longStraight.EndTheta));
-        Assert.Equal(50.0, longStraight.LengthMm, 6);
+        Assert.Equal((5, 0, 0), ((int)longStraight.EndX, (int)longStraight.EndY, longStraight.EndTheta));
+        Assert.Equal(50.0f, longStraight.StraightLengthMm);
+        Assert.Equal(101, longStraight.Intermediate.Count);                      // the asset lists 101 poses for the long straight
         var slightLeft = prims.ByAngle[0].Single(p => p.ActionIndex == 2);
-        Assert.Equal((5, 1, 1), (slightLeft.EndX, slightLeft.EndY, slightLeft.EndTheta));
-        Assert.Equal(4, prims.ThetaIndex(Math.PI / 2));
-        Assert.Equal(15, prims.ThetaIndex(-0.4));
+        Assert.Equal((5, 1, 1), ((int)slightLeft.EndX, (int)slightLeft.EndY, slightLeft.EndTheta));
+        // the engine's heading index is round(theta * (1 / float(2pi/16))) % 16 (0x00853F7E..0x00853FB4)
+        Assert.Equal(4, prims.ThetaIndex((float)(Math.PI / 2)));
+        Assert.Equal(15, prims.ThetaIndex(-0.4f));
     }
 
     [Fact]
@@ -109,15 +113,18 @@ public class NavigationTests
         var prims = Prims();
         if (prims is null) return;
         var planner = new LatticePlanner(new LatticeEnvironment(prims));
-        var plan = planner.ComputePath(new LatticeState(0, 0, 0), new[] { new LatticeState(30, 0, 0) });
+        var plan = planner.ComputePath(new StateC(0, 0, 0), new[] { new StateC(300, 0, 0) });
         Assert.NotNull(plan);
         Assert.All(plan!.Actions, a => Assert.Equal(1, a.ActionIndex));            // six long straights, ties broken by the 1.0001 factor
         Assert.Equal(6, plan.Actions.Count);
-        // M13-004: each long straight is 1.0 * (1/60) * 50 = 0.8333; six of them are 5.0
-        Assert.Equal(5.0, plan.Cost, 3);
+        // M13-004: each long straight costs (float)(1/60.0 * 50.0) * 1.0f = 0.8333333f (0x00854050..0x00854378 with the file's 50 mm); the planner adds them in float
+        float c = (float)(0.016666666666666666 * 50.0);
+        float g = 0f;
+        for (int i = 0; i < 6; i++) g = 0f + (g + c);                                // soft (0) + (g + prim.cost), 0x0085151A..0x0085151E
+        Assert.Equal(g, plan.Cost);
         var path = planner.ToPath(plan, At(300, 0, 0), PathMotionProfile.Default);
         var line = Assert.IsType<PathSegment.Line>(Assert.Single(path));
-        Assert.Equal((0, 0, 300, 0), (line.FromX, line.FromY, line.ToX, line.ToY));
+        Assert.Equal((0f, 0f, 300f, 0f), (line.FromX, line.FromY, line.ToX, line.ToY));
     }
 
     [Fact]
@@ -134,11 +141,11 @@ public class NavigationTests
         Assert.Equal(2, path.Count);
         var line = Assert.IsType<PathSegment.Line>(path[0]);
         var arc = Assert.IsType<PathSegment.Arc>(path[1]);
-        Assert.Equal(prims.Angles[1], arc.SweepRad, 6);
+        Assert.Equal(prims.Angles[1], arc.SweepRad);
         // following the line then the arc lands exactly on the primitive's end cell with its heading
         double ex = arc.CenterX + arc.RadiusMm * Math.Cos(arc.StartAngleRad + arc.SweepRad), ey = arc.CenterY + arc.RadiusMm * Math.Sin(arc.StartAngleRad + arc.SweepRad);
         Assert.Equal(50.0, ex, 3); Assert.Equal(10.0, ey, 3);
-        Assert.Equal(line.ToX, arc.CenterX + arc.RadiusMm * Math.Cos(arc.StartAngleRad), 6);
+        Assert.Equal(line.ToX, arc.CenterX + arc.RadiusMm * Math.Cos(arc.StartAngleRad), 4);          // the arc words are binary32: startRad -pi/2 rounds to -1.5707964, 4e-6 mm off
         // and a plan to a goal with a heading off the lattice ends with a point turn to it
         var full = planner.PlanTo(At(0, 0, 0), new[] { At(200, 100, 0.3) }, PathMotionProfile.Default);
         Assert.NotNull(full);
@@ -156,24 +163,24 @@ public class NavigationTests
         Assert.Equal(1, env.ObstacleCount);
         // the obstacle is expanded by the obstacle padding and then into configuration space with the
         // robot's own quad at that heading, so the point tested is the robot's origin. Its penalty is the
-        // shipped 0.1, so it is soft: IsInSoftCollision sees it and IsInCollision (hard, >= 1000) does not.
-        Assert.True(env.IsInSoftCollision(150, 0, 0));
-        Assert.True(env.IsInSoftCollision(150, 60, 0));
-        Assert.False(env.IsInSoftCollision(150, 90, 0));
-        Assert.False(env.IsInCollision(150, 0, 0));
-        Assert.Equal(LatticeEnvironment.ObstaclePenalty, env.PenaltyAt(150, 0, 0), 6);
-        Assert.Equal(0.0, env.PenaltyAt(150, 90, 0), 6);
+        // shipped 0.1f, so it is soft: IsInSoftCollision sees it and IsInCollision (hard, >= 1000) does not.
+        Assert.True(env.IsInSoftCollision(new LatticeState(15, 0, 0)));
+        Assert.True(env.IsInSoftCollision(new LatticeState(15, 6, 0)));
+        Assert.False(env.IsInSoftCollision(new LatticeState(15, 9, 0)));
+        Assert.False(env.IsInCollision(150f, 0f, 0f));
+        Assert.Equal(0.1f, env.PenaltyAt(new LatticeState(15, 0, 0)));
+        Assert.Equal(0.0f, env.PenaltyAt(new LatticeState(15, 9, 0)));
         var planner = new LatticePlanner(env);
         var res = planner.PlanTo(At(0, 0, 0), new[] { At(300, 0, 0) }, PathMotionProfile.Default);
         Assert.NotNull(res);
         var (plan, path, _) = res!.Value;
-        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s.X * 10, s.Y * 10, s.Theta), $"state {s} in hard collision");
+        foreach (var s in plan.States()) Assert.False(env.IsInCollision(s), $"state {s} in hard collision");
         Assert.Contains(plan.Actions, a => a.EndTheta != a.StartTheta);            // it had to turn
         Assert.True(path.Count >= 3);
         // a hard obstacle (penalty >= 1000) rejects a goal inside it
         var hard = new LatticeEnvironment(prims);
-        hard.AddObstacle(new[] { new Vec2(140, -20), new Vec2(160, -20), new Vec2(160, 20), new Vec2(140, 20) }, "hard", 1000.0);
-        Assert.True(hard.IsInCollision(150, 0, 0));
+        hard.AddRectangleObstacle(At(150, 0, 0), 20, 40, "hard", 1000.0f);
+        Assert.True(hard.IsInCollision(150f, 0f, 0f));
         Assert.Null(new LatticePlanner(hard).PlanTo(At(0, 0, 0), new[] { At(150, 0, 0) }, PathMotionProfile.Default));
     }
 
@@ -255,7 +262,10 @@ public class NavigationTests
 
         var pre = ChargerGeometry.PreDockPose(At(200, 0, 0));
         Assert.Equal(200 - 164.0, pre.Translation.X, 6);
-        Assert.Equal(0.0, pre.Translation.Y, 6);
+        // the marker pose is -pi/2 as the engine's float (0xBFC90FDB), so the 250 mm offset rotates to y = -250 * cosf(-1.5707964f) = 1.09278e-5 (not exactly 0): 0x004E9BBC and 0x004E9FE4..0x004EA018
+        float markerAngle = BitConverter.UInt32BitsToSingle(0xBFC90FDB);
+        float expectedY = 0.0f * MathF.Sin(markerAngle) + -250.0f * MathF.Cos(markerAngle);          // RotationMatrix2d: y' = x*sin + y*cos with the pose-local (0, -250)
+        Assert.Equal(expectedY, pre.Translation.Y, 9);
         Assert.Equal(6.5, pre.Translation.Z, 6);
         Assert.Equal(0.0, pre.AngleAroundZ, 6);            // facing along the charger's +X, into it
 
@@ -272,20 +282,22 @@ public class NavigationTests
     [Fact]
     public void TheMountCarriesTheEnginesOwnNumbers()
     {
-        Assert.Equal(120.0, MountChargerAction.AlignDistanceMm);
-        Assert.Equal(30f, MountChargerAction.AlignSpeedMmps);
-        Assert.Equal(0.0349066, MountChargerAction.HeadToleranceRad, 6);
-        Assert.Equal(45.0, MountChargerAction.LiftHeightForMountMm);
-        Assert.Equal(5f, MountChargerAction.LiftSpeedRadPerSec);
-        Assert.Equal(-120.0, MountChargerAction.MountDriveMm);
-        Assert.Equal(30f, MountChargerAction.MountSpeedMmps);
-        // M13-008: 0x3FDF66F3 = 1.7453292608261108, 0x40A78D36 = 5.235987663269043
-        Assert.Equal(1.7453292608261108, MountChargerAction.TurnMaxSpeedRadPerSec, 12);
-        Assert.Equal(5.235987663269043, MountChargerAction.TurnAccelRadPerSec2, 12);
-        Assert.Equal(-0.2617993950843811, MountChargerAction.MaxBackupPitchRad, 12);
-        Assert.Equal(120.0, MountChargerAction.RetryDriveMm);
-        Assert.Equal(100f, MountChargerAction.RetrySpeedMmps);
-        Assert.Equal(Math.PI / 2, MountChargerAction.RetryHeadingWindowRad, 6);
+        static uint Bits(float f) => BitConverter.SingleToUInt32Bits(f);
+        // every constant is the engine's binary32 word (M13-008, M13-012), asserted by its bits
+        Assert.Equal(0x42F00000u, Bits(MountChargerAction.AlignDistanceMm));        // 120.0f, 0x0054E21C
+        Assert.Equal(0x41F00000u, Bits(MountChargerAction.AlignSpeedMmps));         // 30.0f, 0x0054E22A
+        Assert.Equal(0x3D0EFA35u, Bits(MountChargerAction.HeadToleranceRad));       // 0x0054E26A..0x0054E270 (not the rounded 0.0349066 = 0x3D0EFA39)
+        Assert.Equal(0x42340000u, Bits(MountChargerAction.LiftHeightForMountMm));   // 45.0f, 0x0054E592
+        Assert.Equal(0x40A00000u, Bits(MountChargerAction.LiftToleranceMm));        // 5.0f: the MoveLiftToHeightAction's tolerance, not a speed (0x0054E5BE)
+        Assert.Equal(0xC2F00000u, Bits(MountChargerAction.MountDriveMm));           // -120.0f, 0x0054E5FC
+        Assert.Equal(0x41F00000u, Bits(MountChargerAction.MountSpeedMmps));         // 30.0f, 0x0054E600
+        Assert.Equal(0x3FDF66F3u, Bits(MountChargerAction.TurnMaxSpeedRadPerSec));  // 0x0054E550/0x0054E55A
+        Assert.Equal(0x40A78D36u, Bits(MountChargerAction.TurnAccelRadPerSec2));    // 0x0054E55E/0x0054E568
+        Assert.Equal(0xBE860A92u, Bits(MountChargerAction.MaxBackupPitchRad));      // 0x0054E7CC
+        Assert.Equal(0x42F00000u, Bits(MountChargerAction.RetryDriveMm));           // 120.0f, 0x0054E742
+        Assert.Equal(0x42C80000u, Bits(MountChargerAction.RetrySpeedMmps));         // 100.0f, 0x0054E748
+        Assert.Equal(0x3FC90FDBu, Bits(MountChargerAction.RetryHeadingWindowRad));  // pi/2, 0x0054E374
+        Assert.Equal(0x41F00000u, Bits(MountChargerAction.DockPointXMm));           // 30.0f, 0x0054E4C6
         // M13-008: the result codes
         Assert.Equal(0x04000006u, (uint)ActionResult.RetryDriveDone);
         Assert.Equal(0x0400000Au, (uint)ActionResult.BackupPitchedTooFar);
@@ -364,9 +376,15 @@ public class NavigationTests
         // does not drive the rest of the 120 mm. The pi/2 heading test is on the failure path only.
         Assert.Contains(mount.Trace, l => l.Contains("the contacts"));
         Assert.DoesNotContain(mount.Trace, l => l.Contains("retry"));
-        Assert.Contains(rig.Sent, m => m is AppendPathSegmentPointTurn);
+        // the charger turn is TurnInPlaceAction -> SetBodyAngle (absolute, speed 0x3FDF66F3, accel 0x40A78D36, tolerance 0x3D0EFA35), not a path point turn (M13-008)
+        Assert.DoesNotContain(rig.Sent, m => m is AppendPathSegmentPointTurn);
+        var turn = Assert.Single(rig.Sent.OfType<SetBodyAngle>());
+        Assert.True(turn.IsAbsolute);
+        Assert.Equal(0x3FDF66F3u, BitConverter.SingleToUInt32Bits(turn.MaxSpeedRadPerSec));
+        Assert.Equal(0x40A78D36u, BitConverter.SingleToUInt32Bits(turn.AccelRadPerSec2));
+        Assert.Equal(0x3D0EFA35u, BitConverter.SingleToUInt32Bits(turn.ToleranceRad));
         var back = rig.Sent.OfType<AppendPathSegmentLine>().Last();
-        Assert.Equal(-30f, back.Speed.SpeedMmps);                                  // backwards at 30 mm/s
+        Assert.Equal(-30f, back.Speed.SpeedMmps);                                  // backwards at 30 mm/s (0xC2F00000 mm at 0x41F00000 mm/s)
         Assert.Equal(1, mount.Attempts);
     }
 
@@ -379,14 +397,28 @@ public class NavigationTests
         rig.OnCharger = true; rig.State();
         var ctx = Ctx(rig);
         var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60);
-        Assert.True(Runnable(b, ctx));
-        Assert.Equal(156.0, b.DistanceMm);
-        RunToEnd(rig, b, ctx);
+        Assert.True(Runnable(b, ctx));                                               // robot+0x34A: SetOnCharger's rising edge set the platform flag
+        Assert.Equal(156f, b.DriveDistanceMm);                                       // 96.0f + 60.0f in binary32 (0x005C09E2)
+        double t = 0;
+        b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (b.Update(ctx, t))
+        {
+            rig.Pump();
+            // Robot::Update clears +0x34A when no charger is located or the footprint leaves the charger (0x00513CD8..0x00513E2A, M4-019): the engine tick runs that step
+            rig.Tick();
+            t += 33;
+            if (sw.ElapsedMilliseconds > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+        }
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.Equal(156f, Math.Abs(line.XEndMm - line.XStartMm), 0);
-        Assert.Equal(20f, line.Speed.SpeedMmps);
+        Assert.Equal(100f, line.Speed.SpeedMmps);                                    // this stack's DriveStraightAction default (the engine's two-argument constructor's is MISSING)
         Assert.False(rig.OnCharger);
+        // the mood event belongs to the drive's own completion callback (0x005C0E9C), on result 0 only
         Assert.Contains(b.Trace, l => l.Contains("emotion event DriveOffCharger"));
+        Assert.Contains(b.Trace, l => l.Contains("BehaviorObjectiveAchieved(4, true)"));
+        Assert.True(b.LeftChargerOnTreads);
+        Assert.NotNull(b.DroveOffAtSec);                                             // UpdateInternal's whiteboard stamp (0x005C0DFA..0x005C0E08)
         Assert.False(Runnable(b, ctx));
     }
 
@@ -894,15 +926,20 @@ public class NavigationTests
     [Fact]
     public void AlignWithObjectUsesTheEnginesAlignmentTypeTable()
     {
-        Assert.Equal(6.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.LiftFinger).DockDistanceMm, 12);
-        Assert.Equal(0.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.LiftPlate).DockDistanceMm, 12);
-        Assert.Equal(-15.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.Body).DockDistanceMm, 12);
-        Assert.Equal(123.0 - 27.0, new AlignWithObjectAction(null!, 0, 123.0, AlignmentType.Custom).DockDistanceMm, 12);
+        static uint Bits(float f) => BitConverter.SingleToUInt32Bits(f);
+        // every distance is the engine's binary32 value (the table 0x005533E6; the stored word at +0x9C)
+        Assert.Equal(0x40C00000u, Bits(new AlignWithObjectAction(null!, 0, 123.0f, AlignmentType.LiftFinger).DockDistanceMm));   // 6.0f
+        Assert.Equal(0x00000000u, Bits(new AlignWithObjectAction(null!, 0, 123.0f, AlignmentType.LiftPlate).DockDistanceMm));    // 0.0f
+        Assert.Equal(0xC1700000u, Bits(new AlignWithObjectAction(null!, 0, 123.0f, AlignmentType.Body).DockDistanceMm));          // -15.0f
+        Assert.Equal(0x42C00000u, Bits(new AlignWithObjectAction(null!, 0, 123.0f, AlignmentType.Custom).DockDistanceMm));        // 123.0f + -27.0f = 96.0f (vadd.f32)
 
-        // the clamp: below -16.000009536743164 the distance becomes 0.0. Type 3 with a large negative
-        // argument is the only way to reach it.
-        Assert.Equal(0.0, new AlignWithObjectAction(null!, 0, -100.0, AlignmentType.Custom).DockDistanceMm, 12);
-        Assert.Equal(-16.000009536743164, AlignWithObjectAction.ClampThresholdMm, 12);
+        // the clamp: below the float 0xC1800005 (-16.000009536743164) the distance becomes 0.0f; the compare is strict float less-than, so -15.9999 stays
+        Assert.Equal(0u, Bits(new AlignWithObjectAction(null!, 0, -100.0f, AlignmentType.Custom).DockDistanceMm));                // -127.0f -> 0.0f
+        Assert.Equal(0xC1800005u, Bits(AlignWithObjectAction.ClampThresholdMm));
+        // an argument whose float sum is exactly the threshold (10.999990463256836f + -27.0f = -16.000009536743164f) is NOT below it: the strict compare keeps it
+        Assert.Equal(0xC1800005u, Bits(new AlignWithObjectAction(null!, 0, 10.999990463256836f, AlignmentType.Custom).DockDistanceMm));
+        // an invalid type leaves the distance 0.0f (bhi at 0x005533E4)
+        Assert.Equal(0u, Bits(new AlignWithObjectAction(null!, 0, 55.0f, (AlignmentType)9).DockDistanceMm));
 
         // +0xBB: type 1 writes DockingMethod.Method2 (2), the others leave it 0.
         Assert.Equal(DockingMethod.Method2, new AlignWithObjectAction(null!, 0, 0, AlignmentType.LiftPlate).AlignmentDockingMethod);
@@ -946,20 +983,20 @@ public class NavigationTests
 
         // failure: no goals at all -> ComputePath returns null -> Replan == 0
         Assert.Equal(LatticePlanner.PlanningResult.Failure,
-            planner.DoPlanning(new LatticeState(0, 0, 0), Array.Empty<LatticeState>(), out var none));
+            planner.DoPlanning(new StateC(0, 0, 0), Array.Empty<StateC>(), out var none));
         Assert.Null(none);
         Assert.Equal(0, (int)LatticePlanner.PlanningResult.Failure);
 
         // empty plan: the start is already a goal -> segment list empty -> 3
         Assert.Equal(LatticePlanner.PlanningResult.EmptyPlan,
-            planner.DoPlanning(new LatticeState(0, 0, 0), new[] { new LatticeState(0, 0, 0) }, out var empty));
+            planner.DoPlanning(new StateC(0, 0, 0), new[] { new StateC(0, 0, 0) }, out var empty));
         Assert.NotNull(empty);
         Assert.Equal(0, empty!.Actions.Count);
         Assert.Equal(3, (int)LatticePlanner.PlanningResult.EmptyPlan);
 
         // success -> 2
         Assert.Equal(LatticePlanner.PlanningResult.Success,
-            planner.DoPlanning(new LatticeState(0, 0, 0), new[] { new LatticeState(30, 0, 0) }, out var plan));
+            planner.DoPlanning(new StateC(0, 0, 0), new[] { new StateC(300, 0, 0) }, out var plan));
         Assert.NotNull(plan);
         Assert.NotEmpty(plan!.Actions);
         Assert.Equal(2, (int)LatticePlanner.PlanningResult.Success);
@@ -973,21 +1010,23 @@ public class NavigationTests
     [Fact]
     public void DriveOffChargerContactsActionFailsWhileStillOnTheContacts()
     {
-        Assert.Equal(10.0, DriveOffChargerContactsAction.ConstructorDistanceMm);
-        Assert.Equal(20f, DriveOffChargerContactsAction.ConstructorSpeedMmps);
+        static uint Bits(float f) => BitConverter.SingleToUInt32Bits(f);
+        Assert.Equal(0x41200000u, Bits(DriveOffChargerContactsAction.ConstructorDistanceMm));   // 10.0f, 0x00558232
+        Assert.Equal(0x41A00000u, Bits(DriveOffChargerContactsAction.ConstructorSpeedMmps));    // 20.0f, 0x00558236
         Assert.Equal(7, DriveOffChargerContactsAction.RobotActionTypeDriveOffChargerContacts);
         Assert.Equal(0x04000009u, (uint)ActionResult.StillOnCharger);
 
         using var rig = new Rig();
-        // not on the contacts at Init -> returns 0 (Success) without driving
+        // not on the contacts at Init -> Init returns 0 and CheckIfDone returns 0 without driving
         rig.OnCharger = false; rig.State();
-        var notOn = new DriveOffChargerContactsAction(rig.M, 10, 20);
+        var notOn = new DriveOffChargerContactsAction(rig.M);
         Assert.Equal(ActionResult.Success, notOn.RunAsync(default).GetAwaiter().GetResult());
         Assert.False(notOn.WasOnContactsAtInit);
+        Assert.DoesNotContain(rig.Sent, m => m is AppendPathSegmentLine);
 
         // on the contacts at Init and still there after the drive -> 0x04000009
         rig.OnCharger = true; rig.State();
-        var on = new DriveOffChargerContactsAction(rig.M, 10, 20);
+        var on = new DriveOffChargerContactsAction(rig.M);
         var task = on.RunAsync(default);
         SpinUntil(() => task.IsCompleted, () => rig.Pump());
         Assert.True(on.WasOnContactsAtInit);

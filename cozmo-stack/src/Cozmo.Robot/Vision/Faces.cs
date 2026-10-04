@@ -73,8 +73,12 @@ public sealed class TrackedFace
     public const double InterPupilDistanceMm = 62.0;
     /// <summary>The parts-branch fallback and the box-branch floor, 6.0 px (0x0087DD86 / 0x0087DF0A).</summary>
     public const double MinIntraEyeDistancePx = 6.0;
-    /// <summary>The 1e-5 literal (0x3727C5AC): the |cos| divisor threshold, and the distance fallback.</summary>
-    public const double MinCosOrDistance = 1e-5;
+    /// <summary>The binary32 literal 0x3727C5AC (1e-5 as the engine holds it): the |cos| divisor threshold, and the distance fallback.</summary>
+    // fidelity: M14-001
+    public const uint MinCosOrDistanceBits = 0x3727C5AC;   // literal at 0x0087DDC4 (vldr s4, 0x0087DCDE)
+    public static readonly double MinCosOrDistance = BitConverter.Int32BitsToSingle(unchecked((int)MinCosOrDistanceBits));
+    /// <summary>The binary32 literal 0x42780000 = 62.0 at 0x0087E084, loaded by the vldr at 0x0087E014 (<see cref="InterPupilDistanceMm"/>).</summary>
+    public const uint InterPupilBits = 0x42780000;
 
     public TrackedFace(DetectedFace d, uint timestamp) { Detection = d; Timestamp = timestamp; }
 
@@ -90,18 +94,30 @@ public sealed class TrackedFace
     public bool HasEyeParts => Detection.LeftEye is { } && Detection.RightEye is { };
 
     /// <summary>
-    /// <c>TrackedFace::GetIntraEyeDistance</c> 0x0087DC68 (C2-F23): the two eye centres' distance divided
-    /// by the signed cosine of the roll at +0xec, except that the divisor is 1.0 when <c>|cos| &lt; 1e-5</c>
-    /// (the absolute value is only the threshold test). A distance under 1e-5 warns and returns
-    /// <c>6.0 / divisor</c>.
+    /// <c>TrackedFace::GetIntraEyeDistance</c> 0x0087DC68 (C2-F23), binary32 throughout: the two eye centres' distance
+    /// <c>sqrtf((dx*dx) + (dy*dy))</c> (0x0087DC9C..0x0087DCB0) divided by <c>cosf(roll)</c> (0x0087DCD6), except that the divisor is
+    /// 1.0 when <c>|cos| &lt; 0x3727C5AC</c> (0x0087DD08..0x0087DD20; the absolute value is only the threshold test). A distance under
+    /// the same epsilon (<c>|dist|</c>, 0x0087DD1A) warns and uses 6.0 (0x0087DD86) in its place. The quotient is <c>vdiv.f32</c> (0x0087DD8A).
+    /// MISSING (libm f32 stand-in): the engine calls bionic <c>cosf</c> (PLT 0x4A415C); <c>MathF.Cos</c> is not claimed bit-equal to it.
     /// </summary>
-    public static double GetIntraEyeDistance(Vec2 left, Vec2 right, double rollRad)
+    // fidelity: M14-001
+    public static double GetIntraEyeDistance(Vec2 left, Vec2 right, double rollRad) =>
+        GetIntraEyeDistanceF((float)left.X, (float)left.Y, (float)right.X, (float)right.Y, (float)rollRad);
+
+    internal static float GetIntraEyeDistanceF(float ax, float ay, float bx, float by, float roll)
     {
-        double dx = right.X - left.X, dy = right.Y - left.Y;
-        double dist = Math.Sqrt(dx * dx + dy * dy);
-        double c = Math.Cos(rollRad);
-        double divisor = Math.Abs(c) < MinCosOrDistance ? 1.0 : c;
-        return dist < MinCosOrDistance ? MinIntraEyeDistancePx / divisor : dist / divisor;
+        float epsilon = BitConverter.Int32BitsToSingle(unchecked((int)MinCosOrDistanceBits));
+        float dx = ax - bx, dy = ay - by;               // 0x0087DC82..0x0087DC96: [this+0x34] - [this+0x3C]
+        float sq = dx * dx;
+        sq = sq + dy * dy;
+        float dist = MathF.Sqrt(sq);                    // vsqrt.f32 (0x0087DCB0)
+        float cos = MathF.Cos(roll);                    // cosf: libm f32 stand-in
+        float absCos = cos < 0f ? -cos : cos;           // 0x0087DCE6..0x0087DCFC: negated only when strictly negative
+        float absDist = dist < 0f ? -dist : dist;
+        float divisor = cos;
+        if (absCos < epsilon) divisor = 1.0f;           // 0x0087DD08..0x0087DD20
+        if (absDist < epsilon) dist = 6.0f;             // 0x0087DD1A..0x0087DD86
+        return dist / divisor;
     }
 
     /// <summary><c>GetMaxExpression</c>: the highest-scoring expression, Unknown without scores.</summary>
@@ -115,38 +131,75 @@ public sealed class TrackedFace
 
     // fidelity: M14-001
     /// <summary>
-    /// <c>TrackedFace::UpdateTranslation(camera)</c> 0x0087DE24 (C2-F23).
+    /// <c>TrackedFace::UpdateTranslation(camera)</c> 0x0087DE24 (C2-F23), binary32 in the engine's operation order.
     /// The face roll (this+0xec) is the <see cref="DetectedFace.RollRad"/> seam input. A parts face (eye
     /// centres present) with no roll is an incomplete detector input and is not defaulted: it throws,
     /// because the engine always has the parts roll (the production detector is the M11-016 OKAO boundary
     /// recorded by M14-010).
+    ///
+    /// Parts branch (flag +0x30): <see cref="GetIntraEyeDistanceF"/>. Box branch (0x0087DE60..0x0087DF1C), with x, y, w, h = this+0x20/0x24/0x28/0x2C:
+    /// <c>xm = x + w*0.5</c>, <c>ym = y + h*0.5</c>, <c>xA = xm - w*0.25</c>, <c>xB = w*0.25 + xm</c>, <c>y = ym + h*-0.125</c> for both, the distance
+    /// <c>sqrtf((xB - xA)^2 + 0^2)</c> floored at 6.0 (<c>vcmpe s16,s0 / it mi</c>), and the two eye slots stay zero.
+    /// Tail (0x0087DF20..0x0087E068): the midpoint <c>((B + A) * 0.5)</c> per component, <c>invK * (mx, my, 1)</c> with
+    /// <c>GetInvCalibrationMatrix&lt;float&gt;</c> 0x0085EF3A (no distortion model), <c>MakeUnitLength</c>, scaled by <c>(fx * 62.0f) / eyeDistance</c>,
+    /// and the result is the translation of a pose parented to the camera pose (this+0xF4, <c>SetParent</c> 0x0087E064).
+    /// Boundary still in double: the camera pose composition that turns the camera-frame translation into the world pose.
     /// </summary>
     public void UpdateTranslation(CameraModel camera)
     {
-        double eyePx;
-        Vec2 rayPoint;
+        float eyeDistance;
+        float ax = 0f, ay = 0f, bx = 0f, by = 0f;          // [sp+0x58] and [sp+0x50]: the eye slots, zero in the box branch
         if (HasEyeParts)
         {
             var l = Detection.LeftEye!.Value;
             var r = Detection.RightEye!.Value;
             if (Detection.RollRad is not { } roll)
                 throw new NotSupportedException("TrackedFace::UpdateTranslation: the parts branch needs the face roll (this+0xec), which IFaceDetector does not carry (M14-010/M11-016)");
-            eyePx = GetIntraEyeDistance(l, r, roll);
-            rayPoint = new Vec2((l.X + r.X) / 2, (l.Y + r.Y) / 2);
+            ax = (float)l.X; ay = (float)l.Y; bx = (float)r.X; by = (float)r.Y;
+            eyeDistance = GetIntraEyeDistanceF(ax, ay, bx, by, (float)roll);
         }
         else
         {
-            // A=(x+0.25w, y+0.375h), B=(x+0.75w, y+0.375h): the x difference is 0.5w, the y difference 0.
-            double w = Rect.Width;
-            eyePx = Math.Max(MinIntraEyeDistancePx, Math.Abs(0.5 * w));
-            // C2-F23: the box branch writes A/B only to scratch slots for the distance and leaves its eye
-            // slots zeroed, so the midpoint is pixel (0,0); the engine's invK*(0,0,1) is Ray(pixel (0,0)).
-            rayPoint = new Vec2(0, 0);
+            float x = (float)Rect.X, y = (float)Rect.Y, w = (float)Rect.Width, h = (float)Rect.Height;
+            float s12 = w * 0.5f;                           // 0x0087DE86
+            float s0 = h * 0.5f;                            // 0x0087DE8A
+            float s6 = w * 0.25f;                           // 0x0087DE8E
+            float s8 = h * -0.125f;                         // 0x0087DE92
+            float s2 = x + s12;                             // 0x0087DE96
+            s0 = y + s0;                                    // 0x0087DE9A
+            float s4 = s2 - s6;                             // 0x0087DE9E: A.x
+            s2 = s6 + s2;                                   // 0x0087DEA2: B.x
+            s0 = s0 + s8;                                   // 0x0087DEA6: both y
+            float dx = s2 - s4;                             // 0x0087DEAA
+            float dy = s0 - s0;                             // 0x0087DED2: [sp+0x3C] - [sp+8], the same value
+            float sq = dx * dx;
+            sq = sq + dy * dy;
+            eyeDistance = MathF.Sqrt(sq);                   // 0x0087DEF0
+            if (eyeDistance < 6.0f) eyeDistance = 6.0f;     // 0x0087DF12..0x0087DF1C
         }
-        DistanceMm = InterPupilDistanceMm * camera.Calibration.FocalLengthX / eyePx;
-        var (origin, dir) = camera.Ray(rayPoint);
-        var head = origin + dir.Normalized() * DistanceMm;
-        HeadPose = new Pose3d(camera.Pose.Rotation, head);
+        float mx = (bx + ax) * 0.5f, my = (by + ay) * 0.5f; // 0x0087DF2E..0x0087DF5C
+
+        var cal = camera.Calibration;
+        float fx = (float)cal.FocalLengthX, fy = (float)cal.FocalLengthY, cx = (float)cal.CenterX, cy = (float)cal.CenterY, skew = (float)cal.Skew;
+        // GetInvCalibrationMatrix<float> 0x0085EF3A..0x0085EF9E: [1/fx, -skew/fy, cy*skew/fy - cx/fx; 0, 1/fy, -cy/fy; 0, 0, 1]
+        float a0 = 1.0f / fx;
+        float a1 = (-skew) / fy;
+        float a2 = (cy * skew) / fy - cx / fx;
+        float a4 = 1.0f / fy;
+        float a5 = (-cy) / fy;
+        // 0x0087DF84..0x0087DFEE: the matrix times (mx, my, 1), each product rounded, then the last column added
+        float rx = a0 * mx + a1 * my;
+        rx = rx + a2;
+        float ry = 0f * mx + a4 * my;
+        ry = ry + a5;
+        float rz = 0f * mx + 0f * my;
+        rz = rz + 1.0f;
+        ObservableObject.MakeUnitLength(ref rx, ref ry, ref rz);                                   // 0x0087E004
+        float scale = fx * BitConverter.Int32BitsToSingle(unchecked((int)InterPupilBits));        // vldr 0x0087E014 (literal 0x0087E084)..0x0087E01E
+        scale = scale / eyeDistance;                                                              // 0x0087E022
+        float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
+        DistanceMm = scale;
+        HeadPose = new Pose3d(camera.Pose.Rotation, camera.Pose.Apply(new Vec3(tx, ty, tz)));
     }
 }
 

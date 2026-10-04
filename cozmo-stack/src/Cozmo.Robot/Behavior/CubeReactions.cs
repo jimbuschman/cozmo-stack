@@ -18,7 +18,7 @@ public interface ICubeLocator
     float? DistanceFromRobotMm(uint objectId);
 
     /// <summary>
-    /// The engine's <c>ObservableObject::IsVisibleFrom(camera, 0.785398 rad, ...)</c>: whether the camera should
+    /// The engine's <c>ObservableObject::IsVisibleFrom(camera, 0x3F490FDB, minSize 0, false, 0, 0)</c> (0x0060BCF0..0x0060BD08): whether the camera should
     /// be seeing the object where the world model has it.
     /// </summary>
     bool IsVisibleFromCamera(uint objectId);

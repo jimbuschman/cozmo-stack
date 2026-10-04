@@ -174,13 +174,28 @@ public sealed class PlayAnimBehavior : SteppedBehavior
 
     protected override bool RecentTimersAllow(BehaviorContext context) => RecentEventsAllow(context);
 
+    /// <summary>
+    /// The drive-off-charger part of <c>IsRunnableBase</c> 0x005BD826..0x005BD962 in float: a window below -1e-5f (0xB727C5AC) passes; otherwise a never-stamped whiteboard (-1.0f, here null) or a
+    /// stamp below -1e-5f fails, and the rest passes when <c>(window + stamp) + 1e-5f (0x3727C5AC) &gt;= now</c>.
+    /// </summary>
+    private static bool DriveOffWithin(double? window, float? stamp, double now)
+    {
+        if (window is not { } w) return true;
+        float wf = (float)w;
+        if (wf < BitConverter.Int32BitsToSingle(unchecked((int)0xB727C5AC))) return true;
+        if (stamp is not { } s || s < BitConverter.Int32BitsToSingle(unchecked((int)0xB727C5AC))) return false;
+        float sum = wf + s;
+        sum = sum + BitConverter.Int32BitsToSingle(0x3727C5AC);
+        return sum >= (float)now;
+    }
+
     private bool RecentEventsAllow(BehaviorContext ctx)
     {
         if (RequiredRecentDriveOffChargerSec is null && RequiredRecentOnTreadsEventSec is null && RequiredRecentSwitchToParentSec is null) return true;
         if (ctx.ClockSec is null) return false;
         double now = ctx.ClockSec();
         static bool Within(double? window, double? stamp, double now) => window is not { } w || w < 0 || (stamp is { } s && now - s <= w + 1e-5);
-        return Within(RequiredRecentDriveOffChargerSec, ctx.LastDriveOffChargerSec, now)
+        return DriveOffWithin(RequiredRecentDriveOffChargerSec, ctx.LastDriveOffChargerSec, now)
             && Within(RequiredRecentOnTreadsEventSec, ctx.LastOnTreadsEventSec, now)
             && Within(RequiredRecentSwitchToParentSec, ctx.LastActivitySwitchSec, now);
     }

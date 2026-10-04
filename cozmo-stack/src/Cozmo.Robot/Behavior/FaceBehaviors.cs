@@ -601,7 +601,9 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
     private readonly object _gate = new();
     private readonly ReactToPetBehavior? _behavior;
     private readonly Func<double>? _clockSec;
-    private double _lastReactedSec = -1;
+    // M14-004: [this+0x40] is a binary32 time (ctor -1.0f); RecentlyReacted 0x00611DD0..0x00611E14 compares (last + 60.0f) with the
+    // binary32 clock in float: vmov.f32 s2,#-1.0 / vcmpe / ble (not recently reacted if last <= -1), vadd.f32 s16, last, 0x42700000, vcmpe s16, now / gt.
+    private float _lastReactedSec = -1f;
     private IReadOnlyCollection<int> _targets = Array.Empty<int>();
 
     public PetInitialDetectionStrategy(PetWorld world) { _world = world; }
@@ -623,7 +625,15 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
     /// <summary>ReactToPet+0x11C as the strategy last set it.</summary>
     public IReadOnlyCollection<int> Targets { get { lock (_gate) return _targets; } }
 
-    public bool RecentlyReacted(double nowSec) { lock (_gate) return _lastReactedSec > -1 && _lastReactedSec + RecentlyReactedSec > nowSec; }
+    public bool RecentlyReacted(double nowSec) { lock (_gate) return RecentlyReactedF(_lastReactedSec, (float)nowSec); }
+
+    // fidelity: M14-004
+    internal static bool RecentlyReactedF(float last, float now)
+    {
+        if (!(last > -1f)) return false;                       // 0x00611DD4..0x00611DE0: ble (NaN too) returns false
+        float limit = last + (float)RecentlyReactedSec;        // 0x00611DEC vadd.f32 with 0x42700000
+        return limit > now;                                    // 0x00611DFC vcmpe / itt gt
+    }
 
     private void OnReacted(int petId) => BehaviorDidReact(new[] { petId }, _clockSec?.Invoke() ?? 0);
 
@@ -635,7 +645,7 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
             _reactedTo.Clear();
             foreach (var p in _world.Pets) _reactedTo.Add(p.Id);
             foreach (var id in reacted) _reactedTo.Add(id);
-            _lastReactedSec = nowSec;
+            _lastReactedSec = (float)nowSec;
         }
     }
 
@@ -645,7 +655,7 @@ public sealed class PetInitialDetectionStrategy : ReactionTriggerStrategy, IDisp
         List<int> targets;
         lock (_gate)
         {
-            if (_lastReactedSec > -1 && _lastReactedSec + RecentlyReactedSec > rc.NowSec)
+            if (RecentlyReactedF(_lastReactedSec, (float)rc.NowSec))
             {
                 foreach (var p in pets) _reactedTo.Add(p.Id);                                     // UpdateReactedTo
                 return false;

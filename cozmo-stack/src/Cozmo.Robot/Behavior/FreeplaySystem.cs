@@ -397,8 +397,7 @@ public sealed class FreeplaySystem : IManagedActivity
     /// </summary>
     public void RefreshInputs(CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m, double nowSec)
     {
-        // the drive-off-charger stamp for requiredRecentDriveOffCharger_sec: the IS_ON_CHARGER flag falling (LOCAL source)
-        if (Inputs.OnCharger && !robot.Sensors.OnCharger) _ctx.LastDriveOffChargerSec = nowSec;
+        // (the drive-off-charger stamp is written only by BehaviorDriveOffCharger::UpdateInternal 0x005C0E08; the former LOCAL stamp on the contacts flag falling had no engine counterpart)
         Inputs.OnCharger = robot.Sensors.OnCharger;
         if (vision is not null)
         {

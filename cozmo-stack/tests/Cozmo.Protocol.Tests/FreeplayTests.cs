@@ -1270,6 +1270,8 @@ public class FreeplayTests
             clock = i * 0.25;
             decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M));
             rig.Pump(); rig.Frame(); Thread.Sleep(2);
+            // BehaviorDriveOffCharger ends on robot+0x34A (OnChargerPlatform), which Robot::Update clears (0x00513CD8..0x00513E2A, M4-019): the engine tick runs that step
+            rig.Tick();
             if (decisions.Any(d => d.Behavior == "RollBlockOnSide") && rig.Sent.OfType<DockWithObject>().Any()) break;
         }
         var summary = string.Join(" | ", decisions.Where((d, i) => i == 0 || decisions[i - 1].Behavior != d.Behavior).Select(d => $"{d.AtSec}:{d.Activity}/{d.Behavior}"));

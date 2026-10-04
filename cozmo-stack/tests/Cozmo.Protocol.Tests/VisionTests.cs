@@ -122,16 +122,34 @@ public class VisionTests
         }
     }
 
+    /// <summary>
+    /// A blank quad has no marker: its probes are all equal, <c>cv::normalize(NORM_MINMAX)</c> of a constant vector is all zeros (scale 0, 0x008C09D2), so the query is the zero vector. The
+    /// expectation comes from the shipped library rows themselves: the only rows whose mean absolute value is below the threshold 50 (the best distance is seeded with the threshold and a row
+    /// must be strictly smaller, 0x008C098A/0x008C0B72) are INVALID-label rows, and <c>VisionMarker::Extract</c> turns labels 149 and 150 into an invalid marker (0x008A0108..0x008A0116:
+    /// <c>label - 0x95 &gt; 1</c> is the valid test). M11-031: there is no border/interior contrast gate in Extract (0x008A0078), so the rejection is the nearest-neighbour one.
+    /// </summary>
     [Fact]
     public void ABlankQuadIsRejected()
     {
         if (NoLibrary) return;
+        int near = 0;
+        for (int row = 0; row < Lib.NumImages; row++)
+        {
+            int sum = 0;
+            for (int i = 0; i < MarkerLibrary.NumProbes; i++) sum += Lib.Image(row)[i];
+            if (sum / MarkerLibrary.NumProbes < 50)
+            {
+                near++;
+                Assert.True(Lib.Labels[row] == 149 || Lib.Labels[row] == 150, $"library row {row} (label {Lib.Labels[row]}) would match an all-zero query");
+            }
+        }
+        Assert.True(near > 0);
         var img = new GrayImage(100, 100);
         img.Fill(200);
         var dec = new MarkerDecoder(Lib);
         var m = dec.Extract(img, new[] { new Vec2(0, 0), new Vec2(0, 99), new Vec2(99, 0), new Vec2(99, 99) }, 1, out var reason);
         Assert.Null(m);
-        Assert.Contains("border", reason);
+        Assert.DoesNotContain("border not darker", reason);
     }
 
     /// <summary>
@@ -183,26 +201,26 @@ public class VisionTests
     }
 
     /// <summary>
-    /// M11-031: <c>ComputeBrightDarkValues</c> uses <c>Parameters+0x3C</c> = 1.01 (0x0087538E,
-    /// 0x0089FD10..0x0089FD30), not a 1.0 <c>dark &gt;= bright</c>. With the border at 100 and the interior
-    /// at 101 the 1.0 gate would pass; 100 × 1.01 = 101 does not. The border/interior assignment itself is
-    /// still a RECOVERABLE_GAP (M11-031), kept as the stack had it.
+    /// M11-031: <c>VisionMarker::Extract</c> 0x008A0078 has no contrast gate (0x008A00AA..0x008A00D0 go straight to the nearest-neighbour extraction); the 1.01 gate is
+    /// <c>ComputeBrightDarkValues</c> 0x0089F8E8 (0x0089FD10..0x0089FD30), which the refinement path runs. A marker whose interior is only one grey level above its border (200 and 201: a
+    /// 1.01 ratio gate on the restored pixels would reject it, 200 * 1.01 = 202 >= 201) is still decoded, because <c>cv::normalize</c> stretches the probe values to 0..255 first. The
+    /// two-level image is made from a shipped library row, and the expected code is that row's label.
     /// </summary>
     [Fact]
-    public void TheDecoderContrastGateUsesTheEnginesOnePointZeroOneRatio()
+    public void TheDecoderHasNoContrastGateOfItsOwn()
     {
         if (NoLibrary) return;
         Assert.Equal(1.01, new QuadDetectorParameters().MinContrastRatio);
 
-        var img = new GrayImage(200, 200);
-        for (int y = 0; y < 200; y++)
-            for (int x = 0; x < 200; x++)
-                img[x, y] = (byte)((x < 20 || x >= 180 || y < 20 || y >= 180) ? 100 : 101);
-        var corners = new[] { new Vec2(0, 0), new Vec2(0, 200), new Vec2(200, 0), new Vec2(200, 200) };
+        int row = MarkerRenderer.RowForCode(Lib, MarkerType.LightCubeI_Front, 0);
+        var src = MarkerRenderer.Render(Lib, row, 160);
+        var img = new GrayImage(160, 160);
+        for (int i = 0; i < img.Pixels.Length; i++) img.Pixels[i] = (byte)(src.Pixels[i] >= 128 ? 201 : 200);
+        var corners = new[] { new Vec2(0, 0), new Vec2(0, 160), new Vec2(160, 0), new Vec2(160, 160) };
         var dec = new MarkerDecoder(Lib);
         var m = dec.Extract(img, corners, 1, out var reason);
-        Assert.Null(m);
-        Assert.Contains("border not darker", reason);
+        Assert.True(m is not null, reason);
+        Assert.Equal(MarkerType.LightCubeI_Front, m!.Code);
     }
 
     // ------------------------------------------------------------------ front end
@@ -526,11 +544,11 @@ public class VisionTests
         Assert.Equal(new Vec2(90, 90), cw[2]);
         Assert.Equal(new Vec2(10, 90), cw[3]);
 
-        Assert.Equal(3.0, QuadCorners.RoundToS16(2.5));
-        Assert.Equal(-3.0, QuadCorners.RoundToS16(-2.5));
-        Assert.Equal(0.0, QuadCorners.RoundToS16(0.4));
-        Assert.Equal(32767.0, QuadCorners.RoundToS16(40000.0));
-        Assert.Equal(-32768.0, QuadCorners.RoundToS16(-40000.0));
+        Assert.Equal(3.0f, QuadCorners.RoundToS16(2.5f));
+        Assert.Equal(-3.0f, QuadCorners.RoundToS16(-2.5f));
+        Assert.Equal(0.0f, QuadCorners.RoundToS16(0.4f));
+        Assert.Equal(32767.0f, QuadCorners.RoundToS16(40000.0f));
+        Assert.Equal(-32768.0f, QuadCorners.RoundToS16(-40000.0f));
     }
 
     [Fact]
@@ -1392,8 +1410,11 @@ public class VisionTests
     public void TheClusteringAndFlatSnapTolerancesAreTheEngines()
     {
         Assert.Equal(5.0, BlockWorld.ClusterDistanceMm);
-        Assert.Equal(0.0872665, BlockWorld.ClusterAngleRad, 6);
-        Assert.Equal(0.349066, BlockWorld.FlatClampAngleRad, 6);
+        // R-FIX M11-006: the engine's binary32 words (movw/movt 0x00625498/0x006254A6 = 0x3DB2B8C3; 0x00505F10/0x00505F16 = 0x3EB2B8C2), not the decimals 0.0872665 / 0.349066
+        Assert.Equal(0x3DB2B8C3u, BitConverter.SingleToUInt32Bits((float)BlockWorld.ClusterAngleRad));
+        Assert.Equal(0x3EB2B8C2u, BitConverter.SingleToUInt32Bits((float)BlockWorld.FlatClampAngleRad));
+        Assert.Equal((double)(float)BlockWorld.ClusterAngleRad, BlockWorld.ClusterAngleRad);
+        Assert.Equal((double)(float)BlockWorld.FlatClampAngleRad, BlockWorld.FlatClampAngleRad);
 
         // a pose tilted by 15 degrees snaps, one tilted by 25 does not
         var flat = new Pose3d(Mat3.AboutZ(0.3), new Vec3(100, 0, 22));

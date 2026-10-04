@@ -113,7 +113,11 @@ public sealed class BehaviorContext
     /// <c>requiredRecentOnTreadsEventSecs</c> and <c>requiredRecentSwitchToParent_sec</c> (the engine reads them off robot
     /// components; the freeplay layer stamps them here). Null: the event has not happened.
     /// </summary>
-    public double? LastDriveOffChargerSec { get; set; }
+    /// <summary>
+    /// <c>[[robot+0x264]+0x18]+0x44</c>, a float: written only by <c>BehaviorDriveOffCharger::UpdateInternal</c> 0x005C0E08 (<c>BaseStationTimer::GetCurrentTimeInSeconds</c> is a float), read by
+    /// <c>IBehavior::IsRunnableBase</c> 0x005BD93C; the whiteboard constructor stores -1.0f (0x0056A2B6), here null.
+    /// </summary>
+    public float? LastDriveOffChargerSec { get; set; }
     public double? LastOnTreadsEventSec { get; set; }
     public double? LastActivitySwitchSec { get; set; }
 }

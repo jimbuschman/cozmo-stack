@@ -248,13 +248,14 @@ public static class PanAndTilt
     /// </param>
     public static async Task<bool> RunAsync(VisionSystem v, double absoluteBodyRad, double headRad, double bodySpeedRadPerSec,
                                             CancellationToken cancel, double headSpeedRadPerSec = 10,
-                                            double headAccelRadPerSec2 = 10, bool waitForSettle = true)
+                                            double headAccelRadPerSec2 = 10, bool waitForSettle = true,
+                                            double? bodyAccelRadPerSec2 = null, double? bodyToleranceRad = null)
     {
         if (v.PanTiltOverride is not null) return await v.PanTiltOverride(absoluteBodyRad, headRad, cancel);
         var t = v.Robot;   // M1-026: through the app send path (B28, CB26, CB29)
         // fidelity: M4-005
         // MA8: TurnInPlace (SetBodyAngle) and the direct SetHeadAngle take the shared u8 counter (MC+8).
-        t.SendMessage(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, TurnTowardsPose.AccelRadPerSec2, TurnTowardsPose.ToleranceRad, 0, true, t.Motion.NextActionId()), flush: true);
+        t.SendMessage(TurnTowardsPose.Message(absoluteBodyRad, bodySpeedRadPerSec, bodyAccelRadPerSec2 ?? TurnTowardsPose.AccelRadPerSec2, bodyToleranceRad ?? TurnTowardsPose.ToleranceRad, 0, true, t.Motion.NextActionId()), flush: true);
         t.SendMessage(new SetHeadAngle
         {
             AngleRad = (float)headRad, MaxSpeedRadPerSec = (float)headSpeedRadPerSec,

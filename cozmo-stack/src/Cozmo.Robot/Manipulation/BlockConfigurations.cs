@@ -419,11 +419,276 @@ public static class Footprint
         foreach (double si in new[] { -0.5, 0.5 })
             foreach (double sj in new[] { -0.5, 0.5 })
                 corners.Add(new Point2f((float)(r[0, i] * si * dim[i] + r[0, j] * sj * dim[j]), (float)(r[1, i] * si * dim[i] + r[1, j] * sj * dim[j])));
-        float cx = (corners[0].X + corners[1].X + corners[2].X + corners[3].X) / 4f, cy = (corners[0].Y + corners[1].Y + corners[2].Y + corners[3].Y) / 4f;
+        // Quadrilateral::ComputeCentroid 0x004DF7BE..0x004DF84A: ((c0 + c2) + c1) + c3, then * 0.25f
+        float cx = (((corners[0].X + corners[2].X) + corners[1].X) + corners[3].X) * 0.25f, cy = (((corners[0].Y + corners[2].Y) + corners[1].Y) + corners[3].Y) * 0.25f;
         var s = corners.OrderBy(p => MathF.Atan2(p.Y - cy, p.X - cx)).ToArray();                   // SortCornersClockwise: ascending atan2
         float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
         Point2f T(Point2f p) => new(p.X + tx, p.Y + ty);
         quad = new Quadrilateral(T(s[0]), T(s[3]), T(s[1]), T(s[2]));                             // stored [0]=s0, [1]=s3, [2]=s1, [3]=s2
         return true;
+    }
+}
+
+/// <summary>
+/// <c>cv::minAreaRect</c> for float points, as the inventory's M13-024 describes it and its validated float32 port
+/// (<c>re-analysis/evidence/m13-minarearect/port.py</c>, bit for bit against the real code on 270 fresh inputs) transliterated: the clockwise convex hull
+/// (<c>CHullCmpPoints</c> order, <c>Sklansky_&lt;float&gt;</c> with pprev = stack[ss-4]), then the rotating calipers with every float operation separate, then
+/// <c>RotatedRect::points</c> (0x00086188). The libm calls (cos, sin, atan2, sqrt) are <see cref="Math"/>'s, the stack's libm policy.
+///
+/// NOT built, visible: a hull of fewer than three points (the engine's n &lt;= 2 paths at 0x0009CDFE / 0x0009CE82) throws <see cref="NotSupportedException"/>
+/// naming them; the <c>GetBoundingQuad</c> catch-all that falls back to the axis-aligned box when cv::minAreaRect throws (0x004E65C6) is not reproduced.
+/// </summary>
+// fidelity: M13-024
+public static class MinAreaRectF
+{
+    /// <summary>cv::RotatedRect: centre, size and the angle in degrees.</summary>
+    public readonly record struct RotatedRect(float Cx, float Cy, float W, float H, float AngleDeg);
+
+    private static int Sign(float v) => (v > 0f ? 1 : 0) - (v < 0f ? 1 : 0);
+    private static bool Lt(Point2f a, Point2f b) => a.X < b.X || (a.X == b.X && a.Y < b.Y);
+    private static bool Same(Point2f a, Point2f b) => a.X == b.X && a.Y == b.Y;
+
+    private static List<int> Sklansky(Point2f[] a, int start, int end, int nsign, int sign2)
+    {
+        int incr = end > start ? 1 : -1;
+        var stack = new int[a.Length + 3];
+        int pprev = start, pcur = pprev + incr, pnext = pcur + incr, ss = 3;
+        if (start == end || Same(a[start], a[end])) return new List<int> { start };
+        stack[0] = pprev; stack[1] = pcur; stack[2] = pnext;
+        end += incr;
+        while (pnext != end)
+        {
+            float cury = a[pcur].Y, nexty = a[pnext].Y;
+            float by = nexty - cury;
+            if (Sign(by) != nsign)
+            {
+                float ax = a[pcur].X - a[pprev].X;
+                float bx = a[pnext].X - a[pcur].X;
+                float ay = cury - a[pprev].Y;
+                float t1 = ay * bx, t2 = ax * by;
+                float conv = t1 - t2;
+                if (Sign(conv) == sign2 && (ax != 0f || ay != 0f))
+                {
+                    pprev = pcur; pcur = pnext; pnext += incr; stack[ss] = pnext; ss++;
+                }
+                else if (pprev == start)
+                {
+                    pcur = pnext; stack[1] = pcur; pnext += incr; stack[2] = pnext;
+                }
+                else
+                {
+                    stack[ss - 2] = pnext; pcur = pprev; pprev = stack[ss - 4]; ss--;
+                }
+            }
+            else { pnext += incr; stack[ss - 1] = pnext; }
+        }
+        ss--;
+        return stack.Take(ss).ToList();
+    }
+
+    /// <summary><c>cv::convexHull(points, hull, clockwise = true, returnPoints = true)</c> 0x00039174.</summary>
+    public static List<Point2f> ConvexHull(IReadOnlyList<Point2f> points)
+    {
+        var arr = points.ToArray();
+        int total = arr.Length;
+        Array.Sort(arr, (p, q) => Lt(p, q) ? -1 : (Lt(q, p) ? 1 : 0));
+        int miny = 0, maxy = 0;
+        for (int i = 1; i < total; i++)
+        {
+            float y = arr[i].Y;
+            if (arr[miny].Y > y) miny = i;
+            if (arr[maxy].Y < y) maxy = i;
+        }
+        var outp = new List<Point2f>();
+        if (Same(arr[0], arr[total - 1])) return new List<Point2f> { arr[0] };
+        var tl = Sklansky(arr, 0, maxy, -1, 1);
+        var tr = Sklansky(arr, total - 1, maxy, -1, -1);
+        for (int i = 0; i < tl.Count - 1; i++) outp.Add(arr[tl[i]]);
+        for (int i = tr.Count - 1; i > 0; i--) outp.Add(arr[tr[i]]);
+        int stop = tr.Count > 2 ? tr[1] : (tl.Count > 2 ? tl[tl.Count - 2] : -1);
+        var bl = Sklansky(arr, 0, miny, 1, -1);
+        var br = Sklansky(arr, total - 1, miny, 1, 1);
+        (bl, br) = (br, bl);                                                         // clockwise
+        if (stop >= 0)
+        {
+            int chk = bl.Count > 2 ? bl[1] : (bl.Count + br.Count > 2 ? br[2 - bl.Count] : -1);
+            if (chk == stop || (chk >= 0 && Same(arr[chk], arr[stop]))) { bl = bl.Take(2).ToList(); br = br.Take(2).ToList(); }
+        }
+        for (int i = 0; i < bl.Count - 1; i++) outp.Add(arr[bl[i]]);
+        for (int i = br.Count - 1; i > 0; i--) outp.Add(arr[br[i]]);
+        return outp;
+    }
+
+    /// <summary><c>cv::minAreaRect</c> 0x0009C760 (the rotating calipers inlined).</summary>
+    public static RotatedRect Compute(IReadOnlyList<Point2f> points)
+    {
+        var h = ConvexHull(points);
+        int n = h.Count;
+        if (n <= 2) throw new NotSupportedException("M13-024: cv::minAreaRect's n <= 2 hull paths (0x0009CDFE, 0x0009CE82) are not ported");
+        int left = 0, right = 0, top = 0, bottom = 0;
+        float leftX = h[0].X, rightX = h[0].X, topY = h[0].Y, bottomY = h[0].Y;
+        var vx = new float[n]; var vy = new float[n]; var inv = new float[n];
+        var p0 = h[0];
+        for (int i = 0; i < n; i++)
+        {
+            if (p0.X < leftX) { leftX = p0.X; left = i; }
+            if (p0.X > rightX) { rightX = p0.X; right = i; }
+            if (p0.Y > topY) { topY = p0.Y; top = i; }
+            if (p0.Y < bottomY) { bottomY = p0.Y; bottom = i; }
+            var pt = h[i + 1 < n ? i + 1 : 0];
+            float dx = pt.X - p0.X, dy = pt.Y - p0.Y;
+            vx[i] = dx; vy[i] = dy;
+            double s = (double)dy * dy + (double)dx * dx;
+            inv[i] = (float)(1.0 / Math.Sqrt(s));
+            p0 = pt;
+        }
+        double ax = vx[n - 1], ay = vy[n - 1];
+        float orient = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            double bx = vx[i], by = vy[i];
+            double c = ax * by - ay * bx;
+            if (c != 0) { orient = c > 0 ? 1f : -1f; break; }
+            ax = bx; ay = by;
+        }
+        if (orient == 0f) throw new NotSupportedException("M13-024: a hull with no non-zero convexity is not a case the port covers");
+        float baseA = orient, baseB = 0f;
+        var seq = new[] { bottom, right, top, left };
+        float minarea = float.MaxValue;
+        (int li, float a1, float width, float b1, float height, int bi) buf = default;
+        for (int k = 0; k < n; k++)
+        {
+            float t0 = baseB * vy[seq[0]]; float u0 = baseA * vx[seq[0]]; float dp0 = t0 + u0;
+            float t1 = baseA * vy[seq[1]]; float u1 = baseB * vx[seq[1]]; float dp1 = t1 - u1;
+            float t2 = baseB * vy[seq[2]]; float u2 = baseA * vx[seq[2]]; float dp2 = -t2 - u2;
+            float t3 = baseA * vy[seq[3]]; float u3 = baseB * vx[seq[3]]; float dp3 = -t3 + u3;
+            var cs = new float[4];
+            cs[0] = dp0 * inv[seq[0]]; cs[1] = dp1 * inv[seq[1]]; cs[2] = dp2 * inv[seq[2]]; cs[3] = dp3 * inv[seq[3]];
+            int main = 0; float mx = cs[0];
+            for (int i = 1; i < 4; i++) if (cs[i] > mx) { main = i; mx = cs[i]; }
+            int s = seq[main];
+            float lx = inv[s] * vx[s], ly = inv[s] * vy[s];
+            switch (main)
+            {
+                case 0: baseA = lx; baseB = ly; break;
+                case 1: baseA = ly; baseB = -lx; break;
+                case 2: baseA = -lx; baseB = -ly; break;
+                default: baseA = -ly; baseB = lx; break;
+            }
+            seq[main] = seq[main] + 1 == n ? 0 : seq[main] + 1;
+            float dx = h[seq[1]].X - h[seq[3]].X, dy = h[seq[1]].Y - h[seq[3]].Y;
+            float wa = dy * baseB, wb = dx * baseA; float w = wa + wb;
+            dx = h[seq[2]].X - h[seq[0]].X; dy = h[seq[2]].Y - h[seq[0]].Y;
+            float ha = dy * baseA, hb = dx * baseB; float hh = ha - hb;
+            float area = w * hh;
+            if (!(area > minarea)) { minarea = area; buf = (seq[3], baseA, w, baseB, hh, seq[0]); }
+        }
+        float A1 = buf.a1, B1 = buf.b1, wid = buf.width, hei = buf.height;
+        float A2 = -B1, B2 = A1;
+        var L = h[buf.li]; var B = h[buf.bi];
+        float c1a = B1 * L.Y, c1b = A1 * L.X; float C1 = c1a + c1b;
+        float c2a = A1 * B.Y, c2b = A2 * B.X; float C2 = c2a + c2b;
+        float d0 = A2 * B1, d1 = A1 * A1; float den = -d0 + d1; float idet = 1f / den;
+        float e0 = C2 * B1, e1 = C1 * A1; float pxn = -e0 + e1; float px = pxn * idet;
+        float f0 = A2 * C1, f1 = A1 * C2; float pyn = -f0 + f1; float py = pyn * idet;
+        float o1x = A1 * wid, o1y = B1 * wid, o2x = A2 * hei, o2y = B2 * hei;
+        float sx = o1x + o2x; float sxh = sx * 0.5f; float cx = px + sxh;
+        float sy = o1y + o2y; float syh = sy * 0.5f; float cy = py + syh;
+        float w2 = (float)Math.Sqrt((double)o1y * o1y + (double)o1x * o1x);
+        float h2 = (float)Math.Sqrt((double)o2y * o2y + (double)o2x * o2x);
+        float ang = (float)Math.Atan2(o1y, o1x);
+        float angScaled = ang * 180f;
+        float angDeg = (float)((double)angScaled / Math.PI);
+        return new RotatedRect(cx, cy, w2, h2, angDeg);
+    }
+
+    /// <summary><c>cv::RotatedRect::points</c> 0x00086188: _a = (double)angle * pi / 180; b = (float)cos(_a) * 0.5f, a = (float)sin(_a) * 0.5f; each corner a separate float operation.</summary>
+    public static Point2f[] Points(RotatedRect r)
+    {
+        double ad = (double)r.AngleDeg * Math.PI / 180.0;
+        float b = (float)Math.Cos(ad) * 0.5f, a = (float)Math.Sin(ad) * 0.5f;
+        float ah = a * r.H, bw = b * r.W, bh = b * r.H, aw = a * r.W;
+        float p0x = (r.Cx - ah) - bw, p0y = (r.Cy + bh) - aw;
+        float p1x = (r.Cx + ah) - bw, p1y = (r.Cy - bh) - aw;
+        float c2x = r.Cx + r.Cx, c2y = r.Cy + r.Cy;
+        return new[] { new Point2f(p0x, p0y), new Point2f(p1x, p1y), new Point2f(c2x - p0x, c2y - p0y), new Point2f(c2x - p1x, c2y - p1y) };
+    }
+}
+
+/// <summary>
+/// The bounding quads <c>Robot::Update</c>'s charger-platform test intersects (M13-025; M4-019 rows P7..P9), in the engine's float32.
+///
+/// <b>The charger's</b>: its vtable slot +0x50 is <c>Vision::ObservableObject::GetBoundingQuadXY(pose, padding)</c> 0x0087713A (M13-025's authority), which takes the corners
+/// from the slot +0x54, <c>Charger::GetCanonicalCorners</c> 0x004E9A50 (x in {0, 96}, y in {-40, 40}, z in {0, 31}), adds (signbit(p) ? -padding : +padding) to each
+/// coordinate, rotates with the pose's rotation matrix as x' = (x*m0 + y*m1) + z*m2, y' = (x*m3 + y*m4) + z*m5 (z' discarded), builds <c>GetBoundingQuad&lt;float&gt;</c> 0x004E6490
+/// (<see cref="MinAreaRectF"/>, <c>RotatedRect::points</c>, <c>SortCornersClockwise</c>) and adds the pose's x, y (0x004E68CC).
+/// CHOICE (M13-023 stays open for the numbers): the pose's rotation matrix is this stack's double matrix rounded to float32; the engine rebuilds it from its quaternion
+/// (<c>Rotation3d::GetRotationMatrix</c>), whose last-bit behaviour is not read.
+///
+/// <b>The robot's</b>: <c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74, the canonical quad rotated by <c>RotationMatrix2d(GetAngleAroundZaxis)</c> and translated by
+/// the pose's x, y (the rotation itself is <see cref="LatticeEnvironment.RobotQuad"/>).
+/// </summary>
+// fidelity: M13-025, M13-024
+public static class ObjectFootprint
+{
+    /// <summary><c>Charger::GetCanonicalCorners</c> 0x004E9A50: the eight points the function stores (x, y, z), in its order.</summary>
+    public static readonly IReadOnlyList<(float X, float Y, float Z)> ChargerCanonicalCorners = BuildChargerCorners();
+
+    private static IReadOnlyList<(float X, float Y, float Z)> BuildChargerCorners()
+    {
+        float x96 = BitConverter.UInt32BitsToSingle(0x42C00000), yn = BitConverter.UInt32BitsToSingle(0xC2200000), yp = BitConverter.UInt32BitsToSingle(0x42200000), z31 = BitConverter.UInt32BitsToSingle(0x41F80000);
+        return new (float X, float Y, float Z)[]
+        {
+            (x96, yn, 0f), (0f, yn, 0f), (0f, yp, 0f), (x96, yp, 0f),
+            (x96, yn, z31), (0f, yn, z31), (0f, yp, z31), (x96, yp, z31),
+        };
+    }
+
+    private static bool SignBit(float v) => BitConverter.SingleToInt32Bits(v) < 0;
+
+    /// <summary><c>Vision::ObservableObject::GetBoundingQuadXY</c> 0x0087713A over a corner list.</summary>
+    public static Quadrilateral ObservableObjectBoundingQuadXY(IReadOnlyList<(float X, float Y, float Z)> corners, Pose3d atPose, float padding)
+    {
+        var r = atPose.Rotation;
+        float m0 = (float)r[0, 0], m1 = (float)r[0, 1], m2 = (float)r[0, 2], m3 = (float)r[1, 0], m4 = (float)r[1, 1], m5 = (float)r[1, 2];
+        float negPad = -padding;
+        var pts = new List<Point2f>(corners.Count);
+        foreach (var (cx, cy, cz) in corners)
+        {
+            float x = cx + (SignBit(cx) ? negPad : padding);
+            float y = cy + (SignBit(cy) ? negPad : padding);
+            float z = cz + (SignBit(cz) ? negPad : padding);
+            float xa = x * m0, xb = y * m1, xc = z * m2;
+            float rx = (xa + xb) + xc;
+            float ya = x * m3, yb = y * m4, yc = z * m5;
+            float ry = (ya + yb) + yc;
+            pts.Add(new Point2f(rx, ry));
+        }
+        var rect = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
+        var sorted = SortCornersClockwise(rect);
+        float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
+        Point2f T(Point2f p) => new(tx + p.X, ty + p.Y);
+        return new Quadrilateral(T(sorted[0]), T(sorted[3]), T(sorted[1]), T(sorted[2]));
+    }
+
+    /// <summary>The charger's quad at a pose (<c>GetBoundingQuadXY(pose, padding)</c> through slot +0x50).</summary>
+    public static Quadrilateral ChargerBoundingQuadXY(Pose3d atPose, float padding) => ObservableObjectBoundingQuadXY(ChargerCanonicalCorners, atPose, padding);
+
+    /// <summary><c>Quadrilateral::SortCornersClockwise</c> as <see cref="Footprint"/> reads it (0x004E7EFC..0x004E7F9A): ascending atan2 about the centroid.</summary>
+    private static Point2f[] SortCornersClockwise(Point2f[] c)
+    {
+        // Quadrilateral::ComputeCentroid 0x004DF7BE..0x004DF84A: ((c0 + c2) + c1) + c3, each float add, then * 0.25f
+        float cx = (((c[0].X + c[2].X) + c[1].X) + c[3].X) * 0.25f, cy = (((c[0].Y + c[2].Y) + c[1].Y) + c[3].Y) * 0.25f;
+        return c.OrderBy(p => MathF.Atan2(p.Y - cy, p.X - cx)).ToArray();
+    }
+
+    /// <summary><c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74.</summary>
+    public static Quadrilateral RobotBoundingQuadXY(Pose3d robotPose, float padding)
+    {
+        float heading = (float)EngineRadians.GetAngleAroundZaxis(robotPose.Rotation);
+        var q = LatticeEnvironment.RobotQuad(heading, padding);
+        float tx = (float)robotPose.Translation.X, ty = (float)robotPose.Translation.Y;
+        Point2f T(P2f p) => new(tx + p.X, ty + p.Y);
+        return new Quadrilateral(T(q[0]), T(q[1]), T(q[2]), T(q[3]));
     }
 }

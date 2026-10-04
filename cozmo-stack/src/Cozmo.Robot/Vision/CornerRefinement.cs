@@ -13,6 +13,11 @@ namespace Cozmo.Robot.Vision;
 /// </summary>
 public static class CornerRefinement
 {
+    /// <summary>The illumination-normalisation kernel factor: the binary32 literal 0x3FB50481 at 0x00899258 (vldr 0x00898F98), 1.4142 (not sqrt 2).</summary>
+    // fidelity: M11-020
+    public const uint KernelFactorBits = 0x3FB50481;
+    private static readonly float KernelFactor = BitConverter.Int32BitsToSingle(unchecked((int)KernelFactorBits));
+
     /// <summary>What <c>RefineCorners</c> reports.</summary>
     public enum Outcome
     {
@@ -104,14 +109,7 @@ public static class CornerRefinement
         var saved = new byte[w * h];
         for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) saved[y * w + x] = img[left + x, top + y];
 
-        // S26: k = round((params+0x60 + params+0x64) * 0.5 * sqrt2 * (|p0-p3| + |p2-p1|)); the shipped
-        // sqrt2 is 1.4142135 (0x00898F98). The engine does not clamp k; k < 1 is an OpenCV error, so under
-        // SD2 the clamp is a LOCAL GUARD (the safest deterministic value), not the engine's behaviour.
-        float d1x = (float)(corners[0].X - corners[3].X), d1y = (float)(corners[0].Y - corners[3].Y);
-        float d2x = (float)(corners[2].X - corners[1].X), d2y = (float)(corners[2].Y - corners[1].Y);
-        float scale = ((float)p.RefineInnerFraction + (float)p.RefineInnerFraction) * 0.5f * 1.4142135f;
-        int k = (int)MathF.Round(scale * (MathF.Sqrt(d1x * d1x + d1y * d1y) + MathF.Sqrt(d2x * d2x + d2y * d2y)));
-        if (k < 1) k = 1;   // LOCAL GUARD (SD2): the engine has no clamp; k <= 0 would abort in OpenCV.
+        int k = KernelSize(corners, p);
 
         // S1..S10: cv::boxFilter(region CV_8U -> CV_16S, ksize k x k, anchor centre, normalize, REFLECT_101),
         // with the border mapped against the parent image (BORDER_ISOLATED not set).
@@ -126,6 +124,42 @@ public static class CornerRefinement
             for (int x = 0; x < w; x++)
                 img[left + x, top + y] = normalised[y * w + x];
         return (left, top, w, h, saved);
+    }
+
+    /// <summary>
+    /// The illumination box-filter kernel size, <c>(int)roundf(((fx + fy) * 0.5f * K) * (|p0 - p3| + |p2 - p1|))</c> in binary32 (0x008992BA..0x0089938E),
+    /// passed to <c>cv::boxFilter</c> unclamped.
+    /// </summary>
+    // fidelity: M11-020
+    internal static int KernelSize(Vec2[] corners, QuadDetectorParameters p)
+    {
+        // 0x008992BA..0x0089938E (M11-020), all binary32: s22 = sqrtf((p0.x-p3.x)^2 + (p0.y-p3.y)^2); s24 = ((fx + fy) * 0.5f) * K with
+        // K = 0x3FB50481 (literal 0x00899258, loaded at 0x00898F98); s0 = s22 + sqrtf((p2.x-p1.x)^2 + (p2.y-p1.y)^2);
+        // k = (int)roundf(s24 * s0) (0x00899376..0x0089938E, vcvt.s32.f32 truncating the rounded value).
+        float c0x = (float)corners[0].X, c0y = (float)corners[0].Y, c1x = (float)corners[1].X, c1y = (float)corners[1].Y;
+        float c2x = (float)corners[2].X, c2y = (float)corners[2].Y, c3x = (float)corners[3].X, c3y = (float)corners[3].Y;
+        float d1x = c0x - c3x, d1y = c0y - c3y;
+        float d2x = c2x - c1x, d2y = c2y - c1y;
+        float sqA = d1x * d1x; sqA = sqA + d1y * d1y;
+        float len1 = MathF.Sqrt(sqA);
+        float scale = ((float)p.RefineInnerFraction + (float)p.RefineInnerFraction) * 0.5f;
+        scale = scale * KernelFactor;
+        float sqB = d2x * d2x; sqB = sqB + d2y * d2y;
+        float len2 = MathF.Sqrt(sqB);
+        float sum = len1 + len2;
+        float product = scale * sum;
+        // roundf: half away from zero (0x0089937A blx roundf, PLT 0x4A6688).
+        int k = (int)MathF.Round(product, MidpointRounding.AwayFromZero);
+        // The engine passes k to cv::boxFilter unclamped (0x008993D2). For k = 0 OpenCV 3.1's boxFilter asserts anchor < ksize (libopencv_imgproc.so 0x00053512..0x00053548, per the
+        // verifier), i.e. cv::Exception; what the engine does with that exception (and for k < 0) is not in the inventory, so it is neither clamped nor guessed: it stops visibly.
+        if (k < 1)
+        {
+            const string why = "M11-020: the illumination kernel size is < 1 and the engine passes it unclamped to cv::boxFilter (0x008993D2), where OpenCV 3.1 asserts anchor < ksize " +
+                               "(libopencv_imgproc.so 0x00053512..0x00053548); the engine's handling of that exception is not recovered";
+            Behavior.SteppedBehavior.ReportMissing(why);
+            throw new NotSupportedException($"MISSING: {why} (kernel size {k})");
+        }
+        return k;
     }
 
     /// <summary>Puts back the pixels <see cref="NormalizeIllumination"/> overwrote.</summary>

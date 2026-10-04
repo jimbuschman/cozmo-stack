@@ -31,6 +31,38 @@ namespace Cozmo.Robot.Vision;
 // fidelity: M13-009
 public static class ChargerGeometry
 {
+    private static float F(uint bits) => BitConverter.UInt32BitsToSingle(bits);
+
+    // The engine's literals, as the bit patterns the instructions load (M13-009). The stack's poses are double, so each value is
+    // widened from its binary32 pattern at the engine's own points: the angles are the engine's Radians(float) values (the f32
+    // pi/2 and pi, not the double ones), and nothing else is rounded further.
+    /// <summary>96.0f (0x42C00000 at 0x004E9B9A).</summary>
+    public const uint LengthBits = 0x42C00000;
+    /// <summary>80.0f (0x42A00000 at 0x004E9BAC).</summary>
+    public const uint WidthBits = 0x42A00000;
+    /// <summary>31.0f (0x41F80000 at 0x004E9BB0).</summary>
+    public const uint HeightBits = 0x41F80000;
+    /// <summary>-pi/2 as the engine's float: 0xBFC90FDB (movw 0xFDB / movt 0xBFC9 at 0x004E9BBC..0x004E9BC2).</summary>
+    public const uint MarkerAngleBits = 0xBFC90FDB;
+    /// <summary>86.0f (0x42AC0000 at 0x004E9BD6).</summary>
+    public const uint MarkerXBits = 0x42AC0000;
+    /// <summary>22.0f (0x41B00000 at 0x004E9BE2).</summary>
+    public const uint MarkerZBits = 0x41B00000;
+    /// <summary>The marker size's y = 20.0f (0x41A00000 at 0x004E9C22), stored at sp+0x18.</summary>
+    public const uint MarkerHeightBits = 0x41A00000;
+    /// <summary>The marker size's x = 27.0f (0x41D80000 at 0x004E9C2C), stored at sp+0x14, the pointer AddMarker receives.</summary>
+    public const uint MarkerWidthBits = 0x41D80000;
+    /// <summary>pi as the engine's float: 0x40490FDB (movw 0xFDB / movt 0x4049 at 0x004EA1AC..0x004EA1B2).</summary>
+    public const uint DockedAngleBits = 0x40490FDB;
+    /// <summary>The docked pose's x = 30.0f (0x41F00000 at 0x004EA1C6).</summary>
+    public const uint DockedXBits = 0x41F00000;
+    /// <summary>The file-static Pose2d's y = 250.0f (0x437A0000 at 0x004D6BD6).</summary>
+    public const uint PreDockDistanceBits = 0x437A0000;
+    /// <summary>pi/2 as the engine's float, added to the Pose2d's angle (vldr at 0x004E9FE4).</summary>
+    public const uint PreDockAngleAddBits = 0x3FC90FDB;
+    /// <summary>-15.5f (0xC1780000 at 0x004EA018/0x004EA01A).</summary>
+    public const uint PreDockZBits = 0xC1780000;
+
     public const double LengthMm = 96.0;
     public const double WidthMm = 80.0;
     public const double HeightMm = 31.0;
@@ -44,8 +76,18 @@ public static class ChargerGeometry
     public const double DockedXMm = 30.0;
     /// <summary>250 mm out from the marker: the y of the file-static Pose2d at 0x004D6BC4.</summary>
     public const double PreDockDistanceFromMarkerMm = 250.0;
-    /// <summary>−15.5 mm: the z GeneratePreActionPoses gives the pose (0xC1780000 at 0x004EA01A).</summary>
+    /// <summary>-15.5 mm: the z GeneratePreActionPoses gives the pose (0xC1780000 at 0x004EA01A).</summary>
     public const double PreDockZOffsetMm = -15.5;
+
+    /// <summary>The marker's pose angle, -pi/2 as the engine's float (0xBFC90FDB).</summary>
+    public static readonly double MarkerAngleRad = F(MarkerAngleBits);
+    /// <summary>The docked pose's angle, pi as the engine's float (0x40490FDB).</summary>
+    public static readonly double DockedAngleRad = F(DockedAngleBits);
+    /// <summary>
+    /// <c>Radians(p.angle + pi/2)</c> of <c>GeneratePreActionPoses</c> (<c>vadd.f32 s0, s2, s0</c> at 0x004E9FF2 with p.angle = Radians(0) from the
+    /// initialiser 0x004D6BC4): the float sum 0 + 0x3FC90FDB.
+    /// </summary>
+    public static readonly double PreDockAngleRad = 0f + F(PreDockAngleAddBits);
     /// <summary>
     /// The ObjectID the world gave the (single) charger. The engine assigns it in <c>ObservableObject::SetID</c> 0x004EF468, which hands a unique type
     /// (Charger is one, 0x004E3883) one stable value from the process-wide counter (M11-013), so this is that value, or
@@ -55,30 +97,39 @@ public static class ChargerGeometry
     // fidelity: M11-013
     public static uint ObjectId => ObjectIdSpace.UniqueIdOrUnassigned(ObjectType.Charger_Basic);
 
-    public static Vec3 Size => new(LengthMm, WidthMm, HeightMm);
+    public static Vec3 Size => new(F(LengthBits), F(WidthBits), F(HeightBits));
 
     public static readonly IReadOnlyList<KnownMarker> Markers = new[]
     {
-        new KnownMarker(MarkerType.Charger, BlockFace.Front, new Pose3d(-Math.PI / 2, new Vec3(0, 0, 1), new Vec3(MarkerXMm, 0, MarkerZMm)), MarkerWidthMm) { HeightMm = MarkerHeightMm },
+        new KnownMarker(MarkerType.Charger, BlockFace.Front,
+                        new Pose3d(F(MarkerAngleBits), new Vec3(0, 0, 1), new Vec3(F(MarkerXBits), 0, F(MarkerZBits))), F(MarkerWidthBits)) { HeightMm = F(MarkerHeightBits) },
     };
 
-    /// <summary>The pose of a robot sitting on the charger, in the world (<c>Charger::GetRobotDockedPose</c>).</summary>
+    /// <summary>The pose of a robot sitting on the charger, in the world (<c>Charger::GetRobotDockedPose</c> 0x004EA1A0): <c>Pose3d(Radians(pi), Z_AXIS, (30, 0, 0), parent = the charger's pose)</c>.</summary>
+    // fidelity: M13-009
     public static Pose3d DockedRobotPose(Pose3d chargerPose) =>
-        chargerPose.Compose(new Pose3d(Mat3.AboutZ(Math.PI), new Vec3(DockedXMm, 0, 0)));
+        chargerPose.Compose(new Pose3d(Mat3.AboutZ(DockedAngleRad), new Vec3(F(DockedXBits), 0, 0)));
 
     /// <summary>
-    /// The one pre-action pose <c>Charger::GeneratePreActionPoses</c> makes, in the world: on the
-    /// charger's axis, <see cref="PreDockDistanceFromMarkerMm"/> out from the marker, facing into the
-    /// charger, <see cref="PreDockZOffsetMm"/> below the marker.
+    /// <c>Charger::GeneratePreActionPoses(actionType, ...)</c> 0x004E9FB0: it clears the output, then emits ONE pose for action types 0 and 1 only
+    /// (<c>cmp r5,#1; bhi</c> at 0x004E9FD4/0x004E9FD6, an unsigned compare) and nothing for any other type.
     /// </summary>
-    public static Pose3d PreDockPose(Pose3d chargerPose) =>
-        chargerPose.Compose(new Pose3d(Mat3.Identity,
-                                       new Vec3(MarkerXMm - PreDockDistanceFromMarkerMm, 0,
-                                                MarkerZMm + PreDockZOffsetMm)));
+    // fidelity: M13-009
+    public static IReadOnlyList<Pose3d> GeneratePreActionPoses(uint actionType, Pose3d chargerPose) =>
+        actionType > 1 ? Array.Empty<Pose3d>() : new[] { PreDockPose(chargerPose) };
 
-    /// <summary>The same pose at a distance of the caller's choosing, for an align that stops short.</summary>
-    public static Pose3d PreDockPose(Pose3d chargerPose, double distanceFromMarkerMm) =>
-        chargerPose.Compose(new Pose3d(Mat3.Identity,
-                                       new Vec3(MarkerXMm - distanceFromMarkerMm, 0,
-                                                MarkerZMm + PreDockZOffsetMm)));
+    /// <summary>
+    /// The one pose, in the world: <c>Pose3d(Radians(p.angle + pi/2), Z_AXIS, (p.x, -p.y, -15.5), parent = the marker's pose)</c> (0x004E9FE4..0x004EA058)
+    /// with p the file-static Pose2d(Radians(0), 0.0, 250.0) (0x004D6BC4/0x004D6BD6). The marker's own pose is -pi/2 at (86, 0, 22) on the charger, so the
+    /// parent chain is charger, marker, this pose.
+    /// </summary>
+    // fidelity: M13-009
+    public static Pose3d PreDockPose(Pose3d chargerPose) => PreDockPose(chargerPose, F(PreDockDistanceBits));
+
+    /// <summary>The same pose at a distance of the caller's choosing (the Pose2d's y), for an align that stops short.</summary>
+    public static Pose3d PreDockPose(Pose3d chargerPose, double distanceFromMarkerMm)
+    {
+        var onMarker = new Pose3d(Mat3.AboutZ(PreDockAngleRad), new Vec3(0f, -(float)distanceFromMarkerMm, F(PreDockZBits)));
+        return chargerPose.Compose(Markers[0].PoseOnObject).Compose(onMarker);
+    }
 }

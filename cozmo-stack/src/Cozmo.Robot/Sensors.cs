@@ -139,6 +139,13 @@ public sealed class CozmoSensors
     /// <summary>The last state whose treads commit involved OnTreads (r7 != 0 at 0x00512A94/0x00512A86), which the engine answers with Robot::Delocalize (M11-044); null before any.</summary>
     internal RobotState? DelocalizeTrigger { get; private set; }
 
+    /// <summary>
+    /// The state whose pose-frame-id mismatch reached 101 (0x00512F20 <c>cmp r0,#0x65; blo</c>): the engine logs, clears robot+0x2C0 and calls <c>Robot::Delocalize</c> (0x00512F96) after the state went into the
+    /// history (M11-019). VisionSystem runs the delocalization for this state.
+    /// </summary>
+    // fidelity: M11-019
+    internal RobotState? FrameMismatchDelocalizeTrigger { get; private set; }
+
     /// <summary>How the robot is sitting, as the engine would classify it.</summary>
     public OffTreadsState OffTreadsState => OffTreads.Current;
 
@@ -585,10 +592,9 @@ public sealed class CozmoSensors
     /// SetOnChargerPlatform(b) (C8 P1, 0x00511D4C..0x00511DB0): new = b, or the contacts flag when b is false; on a change
     /// RobotOnChargerPlatformEvent{new}, then SendCliffDetectThresholdToRobot(new ? 50 : 400). (The FreeplayDataTracker
     /// pause flag 3 that follows is M15's.)
-    /// MISSING: Robot::Update also sets it false when no charger is located or the robot footprint no longer intersects
-    /// the charger quad (C8 P7..P9, 0x00513C5C..0x00513E2A); that is M11 geometry and not built.
+    /// Robot::Update's own writer of the clear is <see cref="UpdateOnChargerPlatformFromWorld"/> (C8 P7..P9, 0x00513CD8..0x00513E2A).
     /// </summary>
-    private void SetOnChargerPlatform(bool b)
+    internal void SetOnChargerPlatform(bool b)
     {
         bool changed, now;
         lock (_gate)
@@ -600,6 +606,52 @@ public sealed class CozmoSensors
         if (!changed) return;
         OnChargerPlatformChanged?.Invoke(now);
         SendCliffDetectThresholdToRobot(now ? StartCliffThreshold : DefaultCliffThreshold);
+    }
+
+    // fidelity: M4-019, M13-025
+    /// <summary>
+    /// Robot::Update's charger-platform step (0x00513CD8..0x00513E2A), which runs on the engine tick after UpdateRobotPose and before the mood, inventory and AIComponent updates:
+    /// it runs only while the platform flag (+0x34A) is set and the off-treads byte (+0x355) is OnTreads (0x00513CD8..0x00513CEA; otherwise it jumps to 0x00513E84).
+    /// It then asks the world for the first located object of family Charger (a default BlockWorldFilter whose allowed families are {4}, FindLocatedObjectHelper with returnFirstOnly = 1,
+    /// no modify function: 0x00513D5C..0x00513D96). With none, SetOnChargerPlatform(false) (0x00513E26..0x00513E2A). With one, the charger's
+    /// GetBoundingQuadXY(its pose, 0) (vtable +0x50, 0x00513DFC..0x00513E04) and the robot's GetBoundingQuadXY(robot pose, 0) (0x00513E0E) are intersected
+    /// (Quadrilateral::Intersects 0x00514800), and SetOnChargerPlatform(false) follows only when they do not intersect (0x00513E1A..0x00513E20).
+    /// <paramref name="robotPose"/> is the robot's pose (robot+0x298): when the charger is found and no pose exists the test cannot be evaluated and the flag is left alone, reported
+    /// MISSING once. A footprint the port cannot compute (<see cref="NotSupportedException"/> from <see cref="Manipulation.MinAreaRectF"/>) leaves the flag alone the same way.
+    /// </summary>
+    internal void UpdateOnChargerPlatformFromWorld(Vision.BlockWorld world, Vision.Pose3d? robotPose)
+    {
+        if (!OnChargerPlatform) return;                                                    // 0x00513CD8 ldrb [+0x34A]; beq 0x00513E84
+        if (OffTreadsState != OffTreadsState.OnTreads) return;                             // 0x00513CE2 ldrb [+0x355]; bne 0x00513E84
+        var filter = new Vision.BlockWorldFilter();
+        filter.AllowedFamilies.Add(Vision.ObjectFamily.Charger);                           // 0x00513D5C..0x00513D74: the tree {4} assigned to +0x3C
+        var charger = world.FindLocatedObjectHelper(filter, null, true);                   // 0x00513D92
+        if (charger is null)
+        {
+            // MISSING (reported once): the engine holds the platform flag after the contacts drop until the robot footprint leaves the located charger's quad; this stack never
+            // creates the located charger on SetOnCharger's rising edge (the charger enters the world only when the camera sights it), so on a robot that has not seen its charger this
+            // branch clears the flag as soon as the contacts drop.
+            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513E26 clears the platform flag when no charger is located: this stack never creates the located charger on SetOnCharger's rising edge, so live the flag clears as soon as the contacts drop where the engine holds it until the robot footprint leaves the charger quad");
+            SetOnChargerPlatform(false); return;                                           // 0x00513E26
+        }
+        if (robotPose is not { } pose)
+        {
+            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513E0E takes Robot::GetBoundingQuadXY(robot+0x298): this stack has no robot pose yet, so the charger-platform test cannot be evaluated and the platform flag is left alone");
+            return;
+        }
+        bool intersects;
+        try
+        {
+            var chargerQuad = Manipulation.ObjectFootprint.ChargerBoundingQuadXY(world.PoseOf(charger), 0f);   // 0x00513DFC..0x00513E04: vtable +0x50 (GetBoundingQuadXY(pose, 0))
+            var robotQuad = Manipulation.ObjectFootprint.RobotBoundingQuadXY(pose, 0f);               // 0x00513E0E
+            intersects = chargerQuad.Intersects(robotQuad);                                           // 0x00513E16 (this = the charger quad)
+        }
+        catch (NotSupportedException e)
+        {
+            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513E0E..0x00513E16: " + e.Message);
+            return;
+        }
+        if (!intersects) SetOnChargerPlatform(false);                                      // 0x00513E1A cbnz skips; else 0x00513E20
     }
 
     // fidelity: M4-019
@@ -695,6 +747,7 @@ public sealed class CozmoSensors
         _lastOnCharger = false;
         _haveBaseline = false;
         DelocalizeTrigger = null;
+        FrameMismatchDelocalizeTrigger = null;
         OffTreads.ResetToConstructed();
         UnexpectedMovement.ResetToConstructed();
     }
@@ -858,7 +911,14 @@ public sealed class CozmoSensors
                         {
                             _frameMismatchCount++;
                             statsAllowed = _frameMismatchCount < 0x65;
-                            if (_frameMismatchCount >= 0x65) _frameMismatchCount = 0;
+                            if (_frameMismatchCount >= 0x65)
+                            {
+                                _frameMismatchCount = 0;
+                                // fidelity: M11-019
+                                // 0x00512F24..0x00512F96: sErrorF "Robot.UpdateFullRobotState.MismatchedFrameIDs" (state frame id, then robot+0x2B0), +0x2C0 = 0, Robot::Delocalize.
+                                _robot.Engine.Log($"Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing");
+                                FrameMismatchDelocalizeTrigger = s;
+                            }
                         }
                         else
                         {

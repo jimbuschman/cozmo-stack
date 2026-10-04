@@ -28,15 +28,33 @@ public sealed record PathMotionProfile
     public static readonly PathMotionProfile Default = new();
 }
 
-/// <summary>One segment of a robot path, as <c>Anki::Planning::PathSegment</c> holds it.</summary>
+/// <summary>
+/// One segment of a robot path, as <c>Anki::Planning::PathSegment</c> holds it: every field is a binary32 word, and
+/// <c>PathDolerOuter::Dole</c> 0x00507E4C copies those words into the wire message (line: +4, +8, +0xC, +0x10; arc: +4, +8, +0xC, +0x10, +0x14; point turn: +4, +8, +0xC,
+/// +0x10 and the byte at +0x14; then the speed profile at +0x1C, +0x20, +0x24; 0x00507F40..0x00508028). The fields here are therefore <see cref="float"/>; the
+/// <see cref="double"/> constructors round at the call site, which is where a stand-in producer that works in double hands its values over.
+/// </summary>
+// fidelity: M13-011
 public abstract record PathSegment
 {
     /// <summary>A straight drive; negative speed drives it backwards.</summary>
-    public sealed record Line(double FromX, double FromY, double ToX, double ToY, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment;
+    public sealed record Line(float FromX, float FromY, float ToX, float ToY, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment
+    {
+        public Line(double fromX, double fromY, double toX, double toY, float speedMmps, float accelMmps2, float decelMmps2)
+            : this((float)fromX, (float)fromY, (float)toX, (float)toY, speedMmps, accelMmps2, decelMmps2) { }
+    }
     /// <summary>A circular arc about a centre.</summary>
-    public sealed record Arc(double CenterX, double CenterY, double RadiusMm, double StartAngleRad, double SweepRad, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment;
+    public sealed record Arc(float CenterX, float CenterY, float RadiusMm, float StartAngleRad, float SweepRad, float SpeedMmps, float AccelMmps2, float DecelMmps2) : PathSegment
+    {
+        public Arc(double centerX, double centerY, double radiusMm, double startAngleRad, double sweepRad, float speedMmps, float accelMmps2, float decelMmps2)
+            : this((float)centerX, (float)centerY, (float)radiusMm, (float)startAngleRad, (float)sweepRad, speedMmps, accelMmps2, decelMmps2) { }
+    }
     /// <summary>A turn in place at (x, y) to an absolute heading.</summary>
-    public sealed record PointTurn(double X, double Y, double TargetAngleRad, double AngleToleranceRad, float SpeedRadPerSec, float AccelRadPerSec2, float DecelRadPerSec2, bool UseShortestDirection) : PathSegment;
+    public sealed record PointTurn(float X, float Y, float TargetAngleRad, float AngleToleranceRad, float SpeedRadPerSec, float AccelRadPerSec2, float DecelRadPerSec2, bool UseShortestDirection) : PathSegment
+    {
+        public PointTurn(double x, double y, double targetAngleRad, double angleToleranceRad, float speedRadPerSec, float accelRadPerSec2, float decelRadPerSec2, bool useShortestDirection)
+            : this((float)x, (float)y, (float)targetAngleRad, (float)angleToleranceRad, speedRadPerSec, accelRadPerSec2, decelRadPerSec2, useShortestDirection) { }
+    }
 }
 
 /// <summary><c>PathEventType</c> (UNITY): the robot's <c>PathFollowingEvent</c> kinds.</summary>
@@ -119,18 +137,18 @@ public sealed class PathSender
                 switch (s)
                 {
                     case PathSegment.Line l:
-                        Send(new AppendPathSegmentLine { XStartMm = (float)l.FromX, YStartMm = (float)l.FromY,
-                                                         XEndMm = (float)l.ToX, YEndMm = (float)l.ToY,
+                        Send(new AppendPathSegmentLine { XStartMm = l.FromX, YStartMm = l.FromY,
+                                                         XEndMm = l.ToX, YEndMm = l.ToY,
                                                          Speed = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
                         break;
                     case PathSegment.Arc a:
-                        Send(new AppendPathSegmentArc { XCenterMm = (float)a.CenterX, YCenterMm = (float)a.CenterY,
-                                                        RadiusMm = (float)a.RadiusMm, StartRad = (float)a.StartAngleRad, SweepRad = (float)a.SweepRad,
+                        Send(new AppendPathSegmentArc { XCenterMm = a.CenterX, YCenterMm = a.CenterY,
+                                                        RadiusMm = a.RadiusMm, StartRad = a.StartAngleRad, SweepRad = a.SweepRad,
                                                         Speed = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
                         break;
                     case PathSegment.PointTurn t:
-                        Send(new AppendPathSegmentPointTurn { XMm = (float)t.X, YMm = (float)t.Y,
-                                                              TargetAngleRad = (float)t.TargetAngleRad, AngleToleranceRad = (float)t.AngleToleranceRad,
+                        Send(new AppendPathSegmentPointTurn { XMm = t.X, YMm = t.Y,
+                                                              TargetAngleRad = t.TargetAngleRad, AngleToleranceRad = t.AngleToleranceRad,
                                                               Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
                                                               UseShortestDirection = t.UseShortestDirection });
                         break;
@@ -177,7 +195,8 @@ public sealed class PathSender
 public static class StraightLinePlanner
 {
     public const double MinLineMm = 5.0;
-    public const double PointTurnToleranceRad = 0.0349066;
+    /// <summary>Radians(0x3D0EFA35): <c>TurnInPlaceAction</c>'s 2 degrees (+0xB0, 0x00545A78..0x00545A84) and the tolerance argument of <c>Path::AppendPointTurn</c> in <c>MotionPrimitive::Create</c> (0x008542FC..0x00854302).</summary>
+    public static readonly double PointTurnToleranceRad = BitConverter.UInt32BitsToSingle(0x3D0EFA35);
 
     public static IReadOnlyList<PathSegment> Plan(Pose3d robot, Pose3d goal, PathMotionProfile? profile = null, bool allowReverse = false)
     {
