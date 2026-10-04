@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-02",
+  "approved": "2026-10-04",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "4ea0fefbe894a23b4d7cad9d1978272635c37146836bacc17162bd7023cae648",
+  "inventory_sha256": "c5ec52d349bd119e0122d2e4c8cd0028b2044e083ce593abbd88986f9cc9fe39",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -648,6 +648,16 @@
         "0x00512D7A..0x00512F96 UpdateFullRobotState mismatch counter",
         "0x00510A24..0x00510D98 Robot::Delocalize",
         "re-analysis/research/20260929-R-VIS-verify-M11-batchA5.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-054": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The head camera's translation on the robot: RobotHeadCam at (17.52, 0, -8.0) under the neck (-13, 0, 49)",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Robot::Robot 0x0050FF7C..0x0050FFBA builds RobotHeadCam: x = movw/movt 0x418C28F6 (17.52) at 0x0050FF7C, z = `mov.w r1,#0xC1000000` (-8.0) at 0x0050FF8A stored at 0x0050FF8E, passed as r2 = sp+0x48 at 0x0050FFB2 to the Pose3d constructor (PLT 0x4A6C40) with the neck pose at robot+0x2CC as parent; the neck is x = 0xC1500000 (-13.0), z = 0x42440000 (49.0) at 0x0050FF36 and 0x0050FF40 (a Unicorn run of 0x0050FF7C..0x0050FFBA confirmed (17.52, 0, -8.0))"
       ],
       "live_path": true,
       "hardware_required": false

@@ -1185,6 +1185,57 @@ public static class TurnTowardsPose
     }
 
     /// <summary>
+    /// <c>Robot::ComputeHeadAngleToSeePose(pose, &amp;angle, tolerance)</c> 0x00518344..0x00518620 (M13-021), the engine's own iteration. The pose (already in the robot frame) is taken with respect to the neck pose ([robot+0x2CC]:
+    /// (-13, 0, 49) in the robot frame, 0x0051838E; a failure is "Robot.ComputeHeadAngleToSeePose.OriginMismatch" and 0x06000000, impossible with one pose origin); <c>dist = sqrtf(x*x + y*y)</c>,
+    /// <c>P = (dist, 0, z)</c> (0x005183A6..0x005183E4). Without a camera calibration: "NullCamera" and 1 (0x0051851E). The threshold is <c>(float)rows * tolerance + 1e-5f</c> (0x00518432..0x00518436),
+    /// the angle starts at 0.0f and the loop runs while the counter <c>k</c> (from 1) is below 25: the camera pose for the angle is the head-cam pose pre-multiplied by a rotation about Y of -angle
+    /// (<c>Robot::GetCameraPose</c> 0x00510FFC), <c>Q = inverse * P</c> (0x00518448..0x00518480); <c>Q.z &lt;= 1e-5f</c> is "BadProjectedZ" and 1 (0x00518494); <c>dv = fy * (Q.y / Q.z)</c>; when
+    /// <c>threshold &gt;= |dv|</c> (0x005184AE) the angle is the answer (0x005185B2) unless k is 25, which is "MaxIterations" and 1 (0x005185C6..0x00518600); otherwise <c>angle += atan2f(dv, fy) * -0.8f</c>
+    /// (0x005184BC..0x005184DA, -0.8f = 0xBF4CCCCD). After the 25th non-converged iteration the function returns 0 with the angle UNASSIGNED (the counter compared at 0x005185C6 is then 26): the caller's
+    /// Radians local, 0, is the result.
+    /// <para>Scalar operations are binary32 in the engine's order. The pose algebra (the neck pose, <c>GetCameraPose</c>'s pre-multiply, <c>GetInverse</c>, the quaternion rotation of P) is this stack's double
+    /// <see cref="Pose3d"/>, narrowed to binary32 for Q: the engine's own Transform3d/Rotation3d operations were not read here, MISSING (reported once) for the last bits.</para>
+    /// </summary>
+    // fidelity: M13-021
+    public static uint ComputeHeadAngleToSeePose(CameraCalibration? cal, Pose3d poseInRobotFrame, float tolerance, out float angle, Action<string>? log = null)
+    {
+        angle = 0.0f;
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Robot::ComputeHeadAngleToSeePose 0x00518344: the neck-pose composition, GetCameraPose's pre-multiply, GetInverse and the rotation of P (0x004A4864, 0x004A8194, Transform3d) are this stack's double Pose3d algebra narrowed to binary32, not the engine's quaternion operations; the loop's scalar operations are binary32");
+        var wrt = poseInRobotFrame.WithRespectTo(new Pose3d(Mat3.Identity, HeadGeometry.NeckPositionMm)).Translation;     // 0x0051838E GetWithRespectTo(pose, [robot+0x2CC]); the pose arrives in the robot frame (0x0054A94C)
+        float tx = (float)wrt.X, ty = (float)wrt.Y, tz = (float)wrt.Z;
+        float sq = tx * tx;
+        sq = sq + ty * ty;
+        float dist = MathF.Sqrt(sq);                                                          // vsqrt.f32 0x005183BA
+        var p = new Vec3(dist, 0.0, tz);
+        if (cal is null) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.NullCamera"); return 1; }
+        float fy = (float)cal.FocalLengthY;
+        float threshold = (float)(ushort)cal.Rows * tolerance;
+        threshold += BitConverter.Int32BitsToSingle(0x3727C5AC);
+        float eps = BitConverter.Int32BitsToSingle(0x3727C5AC);
+        float a = 0.0f;
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("vision model head-cam z differs from the engine's (-8.0): blocked on M11 solvePnP");
+        var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA); the vision model still uses the older z
+        for (int k = 1; k <= 25; k++)
+        {
+            var cam = new Pose3d(Mat3.AboutY(-(double)a), Vec3.Zero).Compose(camInNeck);           // GetCameraPose(a) relative to the neck
+            var q = cam.Inverse().Apply(p);
+            float qy = (float)q.Y, qz = (float)q.Z;
+            if (qz <= eps) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.BadProjectedZ"); return 1; }
+            float dv = fy * (qy / qz);
+            if (threshold >= MathF.Abs(dv))
+            {
+                if (k == 25) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.MaxIterations"); return 1; }
+                angle = (float)Cozmo.Robot.Manipulation.EngineRadians32.Rescale(a);               // Radians::operator= 0x005185B6
+                return 0;
+            }
+            float step = MathF.Atan2(dv, fy);
+            step = step * BitConverter.Int32BitsToSingle(unchecked((int)0xBF4CCCCD));
+            a = a + step;
+        }
+        return 0;                                                                              // 0x005185C6: the counter is 26, not 25
+    }
+
+    /// <summary>
     /// <c>Robot::ComputeHeadAngleToSeePose</c> (0x00518344), iterated to put the target at the image centre's
     /// row (LOCAL numerics: bisection over the head range; the engine iterates with its own step). Null when the
     /// target cannot be centred within the head's range.

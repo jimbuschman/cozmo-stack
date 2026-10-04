@@ -193,8 +193,8 @@ public interface IBeaconVizSink
 /// and ORANGE otherwise (0x0056aad6..0x0056ab02). It only draws; it changes no behaviour.
 ///
 /// <b>Seams, none defaulted (MISSING, M8-014).</b> The beacon pose is resolved by the local helper 0x004DF628 (called at 0x0056aada: an empty Pose3d, then
-/// <c>IsRoot</c> 0x4a40d8: root copies it, else <c>GetWithRespectTo(beacon, FindRoot(beacon))</c>; <see cref="ResolveBeaconPose"/>); <see cref="AIBeacon"/> has no
-/// +0x10 last-failure time (R-VIS: <see cref="LastFailureTimeOf"/>); the sink is the VizManager. An unset seam reports MISSING once and that beacon is not drawn.
+/// <c>IsRoot</c> 0x4a40d8: root copies it, else <c>GetWithRespectTo(beacon, FindRoot(beacon))</c>; <see cref="ResolveBeaconPose"/>); the +0x10 last-failure
+/// time defaults to <see cref="AIBeacon.FailedToFindLocationTimeSec"/> (M15-023); the sink is the VizManager. An unset seam reports MISSING once and that beacon is not drawn.
 /// <see cref="Attach"/> hooks <see cref="AIWhiteboard.BeaconRenderUpdated"/>.
 /// </summary>
 // fidelity: M8-014
@@ -220,8 +220,8 @@ public sealed class AIWhiteboardBeaconRenderer
     /// <summary>The beacon's resolved pose (local helper 0x004DF628, see the class remarks). MISSING: M8-014.</summary>
     public Func<AIBeacon, Pose3d>? ResolveBeaconPose { get; set; }
 
-    /// <summary>The beacon's +0x10 float: the time <c>AIBeacon::FailedToFindLocation</c> (0x0059c314..0x0059c322) last recorded, 0 until then. MISSING: M8-014 (R-VIS adds it to <see cref="AIBeacon"/>).</summary>
-    public Func<AIBeacon, float>? LastFailureTimeOf { get; set; }
+    /// <summary>The beacon's +0x10 float: the time <c>AIBeacon::FailedToFindLocation</c> (0x0059c314..0x0059c322) last recorded, 0 until then. Defaults to <see cref="AIBeacon.FailedToFindLocationTimeSec"/> (M15-023).</summary>
+    public Func<AIBeacon, float>? LastFailureTimeOf { get; set; } = b => b.FailedToFindLocationTimeSec;
 
     /// <summary>MISSING reports (once per seam).</summary>
     public event Action<string>? Log;

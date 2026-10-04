@@ -1366,3 +1366,7 @@ seven `+0x18`/`+0x2c` vtables is unread.
 ## Correction A4 (manager, 2026-10-02, the Codex M11 re-audit)
 
 Codex's independent re-audit (`re-analysis/research/20260930-reaudit-M11.md`) found 10 failing and 4 partial settled records. The manager re-checked three of the cited values in the binary. M11-002, 003, 006, 008, 010, 015, 019, 020, 022, 023, 029, 031, 036 and 039 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`. A PARTIAL verdict demotes too: a settled record must own its whole production path.
+
+## Correction A5 (job R-FIX2, 2026-10-04): the head camera's translation, one new record
+
+**M11-054** records that `Robot::Robot` builds RobotHeadCam at (17.52, 0, -8.0) (0x0050FF7C..0x0050FFBA) while the stack's vision model uses (17.52, 0, 17.52); it is blocked on M11's exact solvePnP and corner pipeline (the stand-in estimator is ill-conditioned with the corrected camera). The engine's value is used only inside ComputeHeadAngleToSeePose (M13-021).

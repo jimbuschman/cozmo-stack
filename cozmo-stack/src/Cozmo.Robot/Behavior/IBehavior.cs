@@ -218,6 +218,9 @@ public sealed class BehaviorScope : IDisposable
         _manager = manager;
     }
 
+    /// <summary>The manager this scope's reaction locks go through (<c>[robot+0x44]</c>), or null in a scope built without one. <c>PlaceObjectOnGroundAction::Init</c> takes its own lock on it (M15-022).</summary>
+    internal BehaviorManager? Manager => _manager;
+
     /// <summary>Whether <see cref="Dispose"/> has run.</summary>
     internal bool IsDisposed { get { lock (_gate) return _disposed; } }
 

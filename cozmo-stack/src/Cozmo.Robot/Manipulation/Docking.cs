@@ -83,7 +83,12 @@ public sealed class CarryingComponent
     public KnownMarker? DockMarker { get { lock (_gate) return _dockMarker; } }
     public event Action<uint?>? Changed;
 
+    /// <summary>The carried id equals <paramref name="objectId"/> (the stack's own test: [+8] only; its callers' engine counterparts are not read).</summary>
     public bool IsCarrying(uint objectId) { lock (_gate) return _carried == objectId; }
+
+    /// <summary><c>CarryingComponent::IsCarryingObject(ObjectID)</c> 0x00633F88: true for the carried id ([+8]) and for the id of the object resting on it ([+0x14]). Used where the engine call is read (the <c>FindCubesInBeacon</c> predicate, 0x0056D142).</summary>
+    // fidelity: M15-020
+    public bool IsCarryingObjectId(uint objectId) { lock (_gate) return _carried == objectId || _onTopId == objectId; }
 
     public void SetCarrying(uint objectId, KnownMarker? dockMarker = null)
     {
@@ -301,9 +306,22 @@ public sealed class DockingSystem : IDisposable
     {
         if (!CanInteractWithObjectHelper(obj)) return false;
         if (_vision.History.Latest is not { } state) return false;
-        double d = CubeGeometry.DimInParentFrameZ(obj);
-        double zWrtRobot = obj.Pose.WithRespectTo(state.RobotPose).Translation.Z;
-        return !(d * 1.0 + 15.0 + 1e-5 < d * 0.5 + zWrtRobot);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4)
+        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        return !CubeGeometry.IsPoseTooHigh(obj, wrt, 1.0f, 15.0f, 0.5f);      // ObservableObject::IsPoseTooHigh 0x00877954 (M12-012 C-E4), binary32
+    }
+
+    /// <summary>
+    /// <c>DockingComponent::CanPickUpObject(obj)</c> 0x0063C7F0..0x0063C850 (M15-020 as <c>FindUsableCubesOutOfBeacons</c>'s predicate uses it): <see cref="CanInteractWithObjectHelper"/> (with an out pose, the object's
+    /// pose with respect to the robot) and then NOT <c>ObservableObject::IsPoseTooHigh(poseWrtRobot, 2.0f 0x40000000, 15.0f 0x41700000, 0.5f 0x3F000000)</c> (0x0063C832..0x0063C848, 0x00877954:
+    /// <c>D*f1 + f2 + 1e-5 &lt; D*f3 + pose.z</c>), the same shape as <see cref="CanStackOnTopOfObject"/> with f1 = 2.0.
+    /// </summary>
+    // fidelity: M15-020, M12-012
+    public bool CanPickUpObject(ObservableObject obj)
+    {
+        if (!CanInteractWithObjectHelper(obj)) return false;
+        if (_vision.History.Latest is not { } state) return false;
+        var wrt = obj.Pose.WithRespectTo(state.RobotPose);
+        return !CubeGeometry.IsPoseTooHigh(obj, wrt, 2.0f, 15.0f, 0.5f);
     }
 
     /// <summary>
@@ -440,6 +458,25 @@ public sealed class DockingSystem : IDisposable
         var done = await Task.WhenAny(tcs.Task, Task.Delay(timeout, CancellationToken.None));
         lock (_gate) _pending = null;
         return done == tcs.Task && !tcs.Task.IsCanceled ? tcs.Task.Result : null;
+    }
+
+    /// <summary>
+    /// <c>CarryingComponent::PlaceObjectOnGround(bool)</c> 0x00632A88 as <c>PlaceObjectOnGroundAction::Init</c> calls it (M15-022): no carried object logs "Robot.PlaceObjectOnGround.NotCarryingObject"
+    /// and returns 1 (0x00632A88..); otherwise <c>DockingComponent+5 = 0</c> (<c>strb r2,[r1,#5]</c> 0x00632A9E), then the <c>PlaceObjectOnGround</c> message (builder 0x00632B88) is sent and 0 is
+    /// returned. Nothing waits for the robot's <c>PickAndPlaceResult</c>: <c>HandlePickAndPlaceResult</c> 0x00533780 handles it when it arrives (<see cref="OnMessage"/>).
+    /// </summary>
+    // fidelity: M15-022, M12-015
+    public bool PlaceObjectOnGround(bool flag)
+    {
+        if (Carrying.CarriedObjectId is null)
+        {
+            Log?.Invoke("error: Robot.PlaceObjectOnGround.NotCarryingObject");
+            return true;
+        }
+        DockingSuccessByte = false;
+        Log?.Invoke("PlaceObjectOnGround sent");
+        Send(PlaceObjectOnGroundAction.Message(flag));
+        return false;
     }
 
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>

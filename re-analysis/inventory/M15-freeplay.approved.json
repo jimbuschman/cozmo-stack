@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-04",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "d4c662fb21cd29c0a80dfe17232c30643316f4bc15c2b432e42a25a4451c8f6f",
+  "inventory_sha256": "e31da5c15a4bec6d50c47082e388bf6360b7b822648dcb7663717be753b13888",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -347,6 +347,18 @@
         "BehaviorExploreBringCubeToBeacon floor branch: IBehavior::NeedActionCompleted(NeedsActionId 0x1F) BEFORE the pose search, whatever the search returns (0x005DF59C movs r1,#0x1f, 0x005DF5A0; 0x005DF59C..0x005DF5E0)",
         "the floor callback's category 0 path: log 'Successfully placed cube', FireEmotionEvents, no NeedActionCompleted, no SetFailedToUse (0x005E18AC..0x005E191A)",
         "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-026": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorExploreBringCubeToBeacon's pick-up phase: InitInternal, TransitionToPickUpObject, DriveToPickupObjectAction and the completion lambda",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "BehaviorExploreBringCubeToBeacon::InitInternal 0x005DF348: [this+0x12C] = -1; carrying ([[robot+0x284]+8] != -1) -> [this+0x12C] = vector[0].id (0x005DF364..0x005DF36C) and TransitionToObjectPickedUp directly (0x005DF372), else TransitionToPickUpObject(robot, 1) (0x005DF37C); the result is non-zero when no action started and |now - [beacon+0x10]| >= 1e-5f (0x005DF382..0x005DF3DA)",
+        "TransitionToPickUpObject 0x005DF8C0..0x005DFBB0: with [this+0x12C] != -1 the retry path 0x005DF8E6 logs '.TransitionToPickUpObject.Retry'; otherwise the selection (GetCandidate 0x005DFDA4; pose with respect to the robot; f32 (x*x + y*y) + z*z with no sqrt, FLT_MAX 0x005DFCDC, replace when best + (-1e-5f 0xB727C5AC) > d2; best >= FLT_MAX takes the error path 0x005DFA18, an empty vector 0x005DF9C6); the action: 0x100-byte DriveToPickupObjectAction (ctor PLT 0x004A93B8, ObjectID at this+0x128, trigger 0x23F) started through IBehavior::StartActing (0x4B01C8) with the completion lambda 0x005E0FD8..0x005E1220: category 0 'Picked up' -> TransitionToObjectPickedUp; category 4 with the target carried -> RetryOk; category 4 attempt <= 2 (signed, 0x005E118E) -> RetryMaybe 'tries out of 3' -> TransitionToPickUpObject(attempt + 1) (0x005E1210); category 4 spent -> Fail; category 3 -> NoRetry; failures -> SetFailedToUse(obj, PickUpObject) 2-argument form (0x005E1166..0x005E1186); categories 1 and 2 do nothing",
+        "re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
       ],
       "live_path": true,
       "hardware_required": false

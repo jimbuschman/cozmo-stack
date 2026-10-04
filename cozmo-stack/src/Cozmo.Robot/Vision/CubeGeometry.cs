@@ -163,9 +163,11 @@ public static class CubeGeometry
     /// largest-magnitude component of the object's Z in the parent frame); a cube is 44 on every axis.
     /// </summary>
     // fidelity: M12-012
-    public static double DimInParentFrameZ(ObservableObject o)
+    public static double DimInParentFrameZ(ObservableObject o) => DimInParentFrameZ(o, o.Pose.Rotation);
+
+    /// <summary>The same with an explicit rotation: <c>IsPoseTooHigh</c> reads the PASSED pose's rotation (<c>GetRotationMatrix(GetTransform(pose))</c>, 0x00877968..0x0087797A), not the object's own.</summary>
+    public static double DimInParentFrameZ(ObservableObject o, Mat3 r)
     {
-        var r = o.Pose.Rotation;
         double x = Math.Abs(r[0, 2]), y = Math.Abs(r[1, 2]), z = Math.Abs(r[2, 2]);
         var size = SizeOf(o.Type);
         if (z >= x && z >= y) return size.Z;
@@ -180,9 +182,22 @@ public static class CubeGeometry
     /// <c>pose.z &gt; 0.5*D + 15.0 + 1e-5</c> (M12-012 C-E4). The 15.0 is M13-007's.
     /// </summary>
     // fidelity: M12-012
-    public static bool IsPoseTooHigh(ObservableObject o, double f1, double f2, double f3)
+    public static bool IsPoseTooHigh(ObservableObject o, double f1, double f2, double f3) => IsPoseTooHigh(o, o.Pose, (float)f1, (float)f2, (float)f3);
+
+    /// <summary>
+    /// <c>ObservableObject::IsPoseTooHigh(pose, f1, f2, f3)</c> 0x00877954..0x008779BC in binary32, in the engine's operation order: <c>D = GetDimInParentFrame&lt;'Z'&gt;</c> (float); <c>s0 = D*f1</c>
+    /// (<c>vmul.f32</c> 0x00877990); <c>s16 = D*f3</c> (0x00877994); <c>s18 = s0 + f2</c> (0x00877998); <c>s0 = s16 + pose.z</c> (0x008779AA); <c>s2 = s18 + 1e-5f</c> (literal 0x008779C8 = 0x3727C5AC,
+    /// 0x008779AE); true when <c>s2 &lt; s0</c> (<c>vcmpe.f32</c>, <c>mi</c>: ordered).
+    /// </summary>
+    // fidelity: M12-012, M15-020
+    public static bool IsPoseTooHigh(ObservableObject o, Pose3d pose, float f1, float f2, float f3)
     {
-        double d = DimInParentFrameZ(o);
-        return d * f1 + f2 + 1e-5 < d * f3 + o.Pose.Translation.Z;
+        float d = (float)DimInParentFrameZ(o, pose.Rotation);                 // 0x00877968..0x0087797A
+        float s0 = d * f1;
+        float s16 = d * f3;
+        float s18 = s0 + f2;
+        float high = s16 + (float)pose.Translation.Z;
+        float low = s18 + BitConverter.Int32BitsToSingle(0x3727C5AC);
+        return low < high;
     }
 }

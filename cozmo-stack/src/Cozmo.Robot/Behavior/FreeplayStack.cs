@@ -122,6 +122,7 @@ public sealed class FreeplayStack : IDisposable
         // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
         // (0x005a38f4/0x005a38fe): 0x16 is the ReactionTrigger NoneTrigger, not a behaviour, so nothing is bound here.
         var manager = new BehaviorManager(ctx);
+        if (m is not null) m.ReactionLocks = manager;       // M15-022: PlaceObjectOnGroundAction::Init takes its reaction lock on the robot's BehaviorManager for every caller; the newest stack's manager is the robot's
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
                          bound.TryGetValue("RamIntoBlock", out var ram) ? ram as RamIntoBlockBehavior : null, m?.Whiteboard,
@@ -147,6 +148,7 @@ public sealed class FreeplayStack : IDisposable
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
+        if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
 
         // fidelity: M1-024

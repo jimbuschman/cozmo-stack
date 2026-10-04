@@ -32,6 +32,8 @@ public enum ActionResult : uint
     StillOnCharger = 0x04000009,
     /// <summary>0x0400000A: <c>BackupOntoChargerAction::CheckIfDone</c>'s pitch-below result (0x0054E7DE, M13-008).</summary>
     BackupPitchedTooFar = 0x0400000A,
+    /// <summary>0x03000016: <c>PlaceObjectOnGroundAction::Init</c> when <c>CarryingComponent::PlaceObjectOnGround</c> fails ("...SendPlaceObjectOnGroundFailed", <c>add.w r8,r8,#5</c> 0x005547F8, M15-022).</summary>
+    SendPlaceObjectOnGroundFailed = 0x03000016,
 }
 
 /// <summary>
@@ -736,11 +738,19 @@ public sealed class DriveToPlaceCarriedObjectAction
     /// <see cref="BlockConfigurationManager.PlanarStandIn"/> with its height test neutralised (this query has none): centres within half a cube in x, y. That differs from the engine.
     /// </summary>
     // fidelity: M12-030, M13-007, M13-023
-    public bool EngineFindLocatedIntersectingObjectsIsEmpty(ObservableObject carried, Pose3d placementPose, double padding)
+    public bool EngineFindLocatedIntersectingObjectsIsEmpty(ObservableObject carried, Pose3d placementPose, double padding) =>
+        StaticFindLocatedIntersectingObjectsIsEmpty(_m, carried, placementPose, padding, _trace);
+
+    /// <summary>
+    /// The same query as a static: <c>FindFreePoseInBeacon</c>'s obstacle test (0x005E0BEA..0x005E0C32, M15-019) is the same <c>vtable[0x50](carried, pose, 0.0f)</c> quad, a default filter ignoring the
+    /// carried id, and <c>FindLocatedIntersectingObjects(quad, vec, 10.0f, filter)</c>, empty or not.
+    /// </summary>
+    // fidelity: M12-030, M15-019
+    public static bool StaticFindLocatedIntersectingObjectsIsEmpty(ManipulationSystem m, ObservableObject carried, Pose3d placementPose, double padding, List<string>? trace)
     {
         bool refOk = Footprint.TryGetBoundingQuadXY(carried, placementPose, 0f, out var refQuad);
         var atPlacement = new ObservableObject(carried.ObjectId, carried.Type, carried.Markers) { Pose = placementPose, PoseState = PoseState.Known };
-        foreach (var o in _m.World.LocatedObjects)
+        foreach (var o in m.World.LocatedObjects)
         {
             if (o.ObjectId == carried.ObjectId) continue;                       // ignoreIDs {carried id}
             bool hit;
@@ -748,7 +758,7 @@ public sealed class DriveToPlaceCarriedObjectAction
             else
             {
                 hit = BlockConfigurationManager.PlanarStandIn(atPlacement, o, onTop: true, double.PositiveInfinity);
-                _trace.Add($"IsPlacementGoalFree: object {o.ObjectId} decided by the M13-023 planar stand-in ({(hit ? "intersects" : "clear")})");
+                trace?.Add($"IsPlacementGoalFree: object {o.ObjectId} decided by the M13-023 planar stand-in ({(hit ? "intersects" : "clear")})");
             }
             if (hit) return false;
         }

@@ -583,18 +583,37 @@ public class NavigationTests
     }
 
     /// <summary>
-    /// M15-011 / M15-009 / M15-008: the beacon is added at the robot's pose (0x005E5F1A..0x005E5F30); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 then finds no free
-    /// cube to stack on (FindFreeCubeToStackOn, 0x005DF46A, takes the stack branch first when it finds one), reports PickupCube and goes to the floor placement, whose pose search
-    /// (FindFreePoseInBeacon 0x005E0378) and action (PlaceObjectOnGroundAtPoseAction) are not built: reported MISSING, and nothing is placed by an invented path.
+    /// The robot's side of a put-down: IS_PICKING_OR_PLACING (status bit 0x4) is reported while it lowers the lift once it has the PlaceObjectOnGround message, then it clears (firmware output order is
+    /// HARDWARE_ONLY; the engine's PlaceObjectOnGroundAction::CheckIfDone waits for exactly this edge).
+    /// </summary>
+    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool>? latched = null)
+    {
+        if (!rig.Sent.Any(m => m is PlaceObjectOnGround)) return;
+        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = Environment.TickCount; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
+        else if (!cleared && Environment.TickCount - raisedAt > 100 && (latched?.Invoke() ?? Environment.TickCount - raisedAt > 400)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
+        else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
+    }
+
+    /// <summary>
+    /// M15-011 / M15-009 / M15-008 / M15-019..M15-025 end to end: the beacon is added at the robot's pose (0x005E5F1A..0x005E5F30); the cube is picked up; TransitionToObjectPickedUp 0x005DF3E4 finds no free
+    /// cube to stack on (FindFreeCubeToStackOn, 0x005DF46A, takes the stack branch first when it finds one), reports PickupCube (0x005DF59C, BEFORE the pose search), FindFreePoseInBeacon (0x005E0378) picks
+    /// a pose, TryToPlaceAt (0x005DFEF4) runs the compound DriveToPlaceCarriedObjectAction + PlaceObjectOnGroundAction: the drive's path, then the message PlaceObjectOnGround (0x44) with StopAllMotors after it;
+    /// the robot's BLOCK_PLACED result releases the carried cube (HandlePickAndPlaceResult 0x00533780 is the only release), the status bit rises and clears, the verify action ends the action, and the
+    /// callback 0x005E188C logs "Successfully placed cube" and fires FireEmotionEvents with NO NeedActionCompleted.
     /// </summary>
     [Fact]
-    public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field); the test now asserts the engine's path: pick up, then MISSING, nothing placed
+    public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field)
     {
-        if (Lib is null) return;
+        if (Lib is null)
+        {
+            if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
+            throw new Xunit.Sdk.XunitException("the marker library is missing, so this live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
+        }
         using var rig = new Rig();
         rig.Cube = CubeAt(330, -20);
         Assert.Single(rig.Frame().Objects);
         var ctx = Ctx(rig);
+        ctx.Needs = new NeedsManager(() => 0);
         var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
         Assert.False(Runnable(bring, ctx));                                          // no beacon yet
         var think = new ThinkAboutBeaconsBehavior(rig.M, "Hiking_ThinkAboutBeacons", 175);
@@ -606,15 +625,32 @@ public class NavigationTests
         Assert.Contains(think.Trace, l => l.Contains("HikingReactToNewArea"));
         Assert.False(Runnable(think, ctx));
         Assert.True(Runnable(bring, ctx));                                           // the cube at 330 mm is outside the 175 mm beacon
-        var missing = new List<string>();
-        void OnMissing(string s) => missing.Add(s);
-        SteppedBehavior.ResetMissingForTests();
-        SteppedBehavior.MissingReported += OnMissing;
-        try { RunToEnd(rig, bring, ctx, frames: () => !rig.M.Docking.Carrying.IsCarryingObject); }
-        finally { SteppedBehavior.MissingReported -= OnMissing; }
-        Assert.Contains(missing, m => m.Contains("FindFreePoseInBeacon 0x005E0378"));
-        Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);              // no invented stand pose, no placement
-        Assert.True(rig.M.Docking.Carrying.IsCarryingObject);                        // the cube is still carried: the floor branch is not built
+        int raised = 0; bool cleared = false;
+        double t = 0;
+        bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+        uint target = bring.Candidate!.Value;
+        try { SpinUntil(() => !bring.Update(ctx, t += 33), () => { rig.Pump(); if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); PlacingFirmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false); }, 20000); }
+        catch (TimeoutException) { throw new TimeoutException("the placement did not finish: " + string.Join(" | ", bring.Trace) + " || sent: " + string.Join(",", rig.Sent.Select(m => m.GetType().Name).Where(n => !n.StartsWith("Backpack")))); }
+        bring.Stop(BehaviorStopReason.Completed);
+        var trace = bring.Trace.ToList();
+        int needs = trace.FindIndex(l => l == "needs action PickupCube");
+        int decided = trace.FindIndex(l => l.Contains("TransitionToObjectPickedUp: Decided to place '") && l.Contains("on the floor at ["));
+        int placed = trace.FindIndex(l => l.Contains("onPlaceActionResult.Done: Successfully placed cube"));
+        int emotion = trace.FindIndex(l => l.Contains("emotion event HikingBrought"));
+        Assert.True(needs >= 0 && decided > needs && placed > decided && emotion > placed, string.Join(" | ", trace));
+        Assert.Equal(1, trace.Count(l => l.StartsWith("needs action")));              // none after the pose search: the floor callback has no needs call (M15-025)
+        // wire order: the pickup's DockWithObject, the drive's ExecutePath, then PlaceObjectOnGround and, after it, StopAllMotors
+        int dock = rig.Sent.FindIndex(m => m is DockWithObject);
+        int place = rig.Sent.FindIndex(m => m is PlaceObjectOnGround);
+        Assert.True(dock >= 0 && place > dock);
+        int stop = rig.Sent.FindIndex(place, m => m is StopAllMotors);
+        Assert.True(stop > place);
+        Assert.Contains(rig.Sent.Skip(dock).Take(place - dock), m => m is ExecutePath);
+        Assert.Single(rig.Sent.OfType<PlaceObjectOnGround>());
+        Assert.False(rig.M.Docking.Carrying.IsCarryingObject);                       // released by the robot's BLOCK_PLACED result
+        Assert.Equal(target, bring.Candidate);
+        Assert.Empty(rig.M.Whiteboard.GetObjectFailureTable(ObjectActionFailure.PlaceObjectAt));
+        Assert.Equal(0u, BitConverter.SingleToUInt32Bits(beacon.FailedToFindLocationTimeSec));    // no NoFreePoses
     }
 
     /// <summary>

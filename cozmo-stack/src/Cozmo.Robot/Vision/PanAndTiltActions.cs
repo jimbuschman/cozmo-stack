@@ -167,6 +167,48 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     /// <summary>The byte at +0x179.</summary>
     public bool Byte0x179 { get; private set; }
 
+    /// <summary>
+    /// <c>TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose(Point3f)</c> 0x0054B428..0x0054B564 (M13-021), binary32 in the engine's operation order, for a point relative to the robot: <c>h = z + (-49.0f)</c>,
+    /// <c>D = sqrtf(x*x + y*y) + 13.0f</c>, <c>t = (300.0f - D) / 150.0f</c>, <c>u = (0.0f - h) / -10.0f</c>, <c>a = atan2f(h, D)</c>; then the conditional picks of the <c>it pl / it gt</c> pairs at
+    /// 0x0054B4C4..0x0054B54A (each condition is the latest <c>vcmpe</c> before its <c>vmrs</c>: <c>pl</c> is "not less than", NaN included; <c>gt</c> is ordered greater) between 0.0f, 0.0872665f (0x3DB2B8C2),
+    /// 0.1308997f (0x3E060A92), <c>t*0.0872665f</c> and <c>u*0.1308997f</c>, and the result <c>(s24 + (a + s16)) + 0.0698132f (0x3D8EFA35)</c> as <c>Radians(float)</c>.
+    /// </summary>
+    // fidelity: M13-021
+    public static double AbsoluteHeadAngleToLookAtPose(Vec3 p)
+    {
+        float x = (float)p.X, y = (float)p.Y, z = (float)p.Z;
+        float L1 = -49.0f, L2 = 150.0f, L4 = 300.0f;
+        float L5 = BitConverter.Int32BitsToSingle(0x3DB2B8C2), L6 = BitConverter.Int32BitsToSingle(0x3E060A92), L7 = BitConverter.Int32BitsToSingle(0x3D8EFA35);
+        float s16 = z + L1;
+        float sum = x * x;
+        sum = sum + y * y;
+        float d = MathF.Sqrt(sum);
+        float s8 = 0.0f - s16;
+        float dd = d + 13.0f;
+        float u = s8 / -10.0f;
+        float t = (L4 - dd) / L2;
+        float s6 = 0.0f, s0 = 0.0f, s8b = 0.0f, s18 = 0.0f;
+        bool Pl(float a, float b) => !(a < b);
+        if (Pl(t, 1.0f)) s6 = L5;
+        float s4 = t * L5;
+        if (t > 0f) s0 = s6;
+        float s6b = L6;
+        float s16b = s0;
+        if (Pl(u, 1.0f)) s8b = s6b;
+        if (u > 0f) s18 = s8b;
+        float s24 = s18;
+        if (t > 0f) s16b = s4;
+        float u6 = u * s6b;
+        if (u > 0f) s24 = u6;
+        if (Pl(t, 1.0f)) s16b = s0;
+        float a = MathF.Atan2(s16, dd);
+        float r = a + s16b;
+        if (Pl(u, 1.0f)) s24 = s18;
+        r = s24 + r;
+        r = r + L7;
+        return Cozmo.Robot.Manipulation.EngineRadians32.Rescale(r);
+    }
+
     /// <summary><c>SetPose</c> 0x0054A8E8: +0x164 = pose, +0x178 = 1.</summary>
     public void SetPose(Pose3d pose) { Pose = pose; PoseSet = true; }
 
@@ -178,12 +220,17 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
         PanAngleRad = 0;
         if (!PoseSet || Pose is not { } pose) { env.Log?.Invoke("TurnTowardsPoseAction.Init: no pose set"); return BadPose; }   // (2) 0x0054A9B8
         Vec3 rel;
+        // NOTE (test-only branch): with PoseHasParent = false (no production caller sets it; the default is true) the engine keeps the pose in the world-origin frame (0x0054AA4E) and
+        // GetWithRespectTo(neck) in ComputeHeadAngleToSeePose does the full transform from there; this port passes such a pose to ComputeHeadAngleToSeePose as if it were robot-frame, which differs
+        // from the engine whenever the robot is not at the origin.
+        Pose3d inRobot = pose;                                                // the pose after the in-place conversion at 0x0054A94C: this is what ComputeHeadAngleToSeePose and the fallback receive
         if (!PoseHasParent) { env.Log?.Invoke("TurnTowardsPoseAction.Init: pose has no parent, using the world origin"); rel = pose.Translation; }   // (3) 0x0054AA4E
         else
         {
             var r = env.WithRespectToRobot is { } f ? f(pose) : pose.WithRespectTo(env.RobotPose);
             if (r is not { } wrt) { env.Log?.Invoke("TurnTowardsPoseAction.Init: pose is not in the robot's origin"); return BadPose; }   // 0x0054A952
             rel = wrt.Translation;
+            inRobot = wrt;
         }
         if (MaxTurnAbsRad > 0)                                                // (4) 0x0054AC8A
         {
@@ -192,11 +239,11 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
             else { env.Log?.Invoke($"TurnTowardsPoseAction.Init: turn angle {pan * 180 / Math.PI:F1} deg exceeds the maximum {MaxTurnAbsRad * 180 / Math.PI:F1} deg"); Byte0x179 = true; return 0; }
         }
         // (5) 0x0054ABA6..0x0054ACBC
-        double? head = (env.ComputeHeadAngleToSeePose ?? throw new NotSupportedException("M13-021: Robot::ComputeHeadAngleToSeePose is unread")).Invoke(pose);
+        double? head = (env.ComputeHeadAngleToSeePose ?? throw new NotSupportedException("M13-021: Robot::ComputeHeadAngleToSeePose is unread")).Invoke(inRobot);
         if (head is null)
         {
-            env.Log?.Invoke($"TurnTowardsPoseAction.Init: ComputeHeadAngleToSeePose failed for ({pose.Translation.X:F1}, {pose.Translation.Y:F1}, {pose.Translation.Z:F1})");
-            head = (env.GetAbsoluteHeadAngleToLookAtPose ?? throw new NotSupportedException("M13-021: GetAbsoluteHeadAngleToLookAtPose 0x0054B428 is unread")).Invoke(pose.Translation);
+            env.Log?.Invoke(FormattableString.Invariant($"TurnTowardsPoseAction.Init.FailedToComputedHeadAngle: PoseWrtRobot translation=({rel.X:F6},{rel.Y:F6},{rel.Z:F6})"));       // 0x0054AB66
+            head = (env.GetAbsoluteHeadAngleToLookAtPose ?? AbsoluteHeadAngleToLookAtPose).Invoke(rel);       // 0x0054AB8C..0x0054AB9A: the pose was converted in place to the robot frame (0x0054A94C), so the argument is robot-relative
         }
         HeadAngleRad = Math.Min(Math.Max((float)head.Value, HeadMinRad), HeadMaxRad);
         callPanAndTiltInit = true;
