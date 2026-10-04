@@ -2905,3 +2905,54 @@ section's corrections applied** (1..11). Where C38 differs from earlier text, C3
   `[pbi+0x164]` and `[play+0x74]`. The C# `WwiseResampler.SetPitch(int cents, ...)` is not faithful (float cents, fields
   `+0x30..+0x50`, `+0x57`); `WwiseHijackPlugin` has no `[core+0x90]` gate; the 0x11-branch comment in `WwisePitchNodeIntake`
   is wrong (`0xA52EBC..0xA52ED0` copies when held == 0).
+
+## Correction C39 (manager, 2026-10-04): the listener registration (non-bus and bus branches), its removal and what a Sound listener reaches, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C38). C39 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-9.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (1..9). Where C39 differs from earlier text, C39 wins (it closes the C28/C29/M6-026
+residual "subscription `0x9F7390..0x9F82EC`" and "`0x9BDC8C`"). No status changes.
+
+- **C39.1, the registration `0xA19ECC -> 0x9F7390(node, ctx, maskptr, flag)`.** The mask is `{0xFFFE67BD, 0x3FE3}` =
+  `0x3FE3FFFE67BD`; node `[+0x46] & 4` clear takes the non-bus loop `0x9F7DA8..0x9F82D4`, set takes the bus branch. Non-bus
+  loop per node: `m = u64([sb+0x40]) << 17` (the top node adds `0x7E3FFFE0000`), `M = (~satisfied & L) & (m | 0x127DF)`;
+  holder 1 (`node+0x10`, registry `[node+0x14]`) and holder 2 (`node+0x1C`, registry `[node+0x20]`) with `x = M & [reg]`
+  (holder 2 uses the unnarrowed mask): `x == 0` removes via `0xA198A4` (cache `[reg+8] = ~0` when the count reaches 0, no
+  `0xA10220`); `x != 0` activates (`0xA1008C(*0x108D908, node+0x10, whole mask A)` when the count is 0, **before** the
+  allocation, so an allocation failure skips the registration but leaves the subscription moved to A), inserts at the
+  lower_bound slot of `0xA19778` (key order: words unsigned, byte@0xC as (b+1)&0x1F, byte@0x10 as (b+1)&0xFF, the last word
+  bhs as not less; a duplicate is an entry whose six key fields are all raw-equal and whose ctx is the same: overwrite its
+  mask only), capacity grows by exactly 1, `[reg+8] &= x` on a new insert; the bus candidate is taken while none is found
+  and `flag & 1` (stored even when `[sb+0x38]` is 0), `0x9C54E8(bus) != 0` ORs 0x20 into satisfied; the loop continues while
+  `(~satisfied | 0x127DF) & L != 0` and always reaches the top node for the real L. **Bus branch** (entered at `0x9F73DC` from
+  the end of the non-bus loop or directly for a bus start node): `((~satisfied) | 0x1003F) & L == 0` returns; `M = (~satisfied
+  & L) & r8:sb` with `r8:sb = 0x1FFFFD003F` when `[fp+0x38] == 0` or `u64([fp+0x40]) << 17 | 0x1FFFFD003F` (the constant has
+  high word 0x1F: bit 33 is kept; the activation constant stays `0x1003F`); three holders in order: holder 1 `[fp+0x14]`
+  (site `0x9F74CC`, target `fp+0x10`), holder 3 `[fp+0xC8]` (site `0x9F76A8`, target `fp+0xC4`), holder 2 `[fp+0x20]` (site
+  `0x9F7884`, target `fp+0x1C`); advance `fp = [fp+0x38]`, `satisfied |= m`, and while `[sp+0x44] == 0` a non-zero
+  `0x9C54E8(fp)` ORs 0x20.
+- **C39.2, the removal.** Term's last step `0x9BDC8C(ctx, 0)` (the tail call at `0xA02BC8`) calls `0xA19F60(ctx,
+  &mask, 1)`, which, when `[ctx+0x20] != 0`, calls `0x9F9064(node, ctx, &mask, 1)` and sets `[ctx+0x20] = 0`; the destructor
+  `0x9FF54C -> 0x9BC554 -> 0xA19D44` then only unlinks the ctx from the global list (head `0x108DC44`) because `[ctx+0x20]`
+  is already 0. `0x9F9064` (non-bus loop, then the bus loop `0x9F9094` in the order holder 1, 3, 2; no mask test per
+  holder; `0xA10220` runs whenever the registry exists and its count is 0 afterwards, found or not) has a fourth caller
+  `0xA1A0B4` (from the node destructor at `0x9FC7EC`: mask ~0, flag 1: unregisters every ctx of the holder). `0xA198A4`
+  removes by lower_bound and the ctx identity; capacity is never reduced.
+- **C39.3, re-registration.** `0xA1A160(holder, paramId)` (a new mask-A bit: allocate the registry, re-run `0x9F7390` for
+  every live ctx with `[ctx+0x20] != 0`, recompute `[reg+8]`; `2` on allocation failure) and `0xA1A490` (a cleared bit:
+  re-run for all live ctx; the array and registry are freed only when A == 0 **and** count == 0).
+- **C39.4, what a Sound listener reaches (shipped).** event_volume (`0xD2687048`, ActorMixers 62050212 and 682998829 in
+  Cozmo.bnk, 121198006 in Dev_Debug, param 0) **does** reach a Sound PBI: 2206 of 2231 Cozmo.bnk Sounds and 12 of 14
+  Dev_Debug Sounds register at the root ActorMixer's holder 1 with mask bit 0; it does not reach the 25 Switch-rooted Cozmo
+  Sounds (20 under Switch 677877281, 5 under 229678261), the SFX (101) and UI (14) Sounds or the 2 Dev_Debug SFX-bus Sounds.
+  robot_volume (`0x637C1240`, Bus 1723505802, param 5) does **not** reach any Sound PBI: the first bus of every Sound that
+  touches Cozmo_Robot is Cozmo_Robot or Cozmo_Robot_External, `0x9C54E8` is 1 (`[bus+0x68] = 1` from cfg `0x4101`), 0x20 is
+  set before Cozmo_Robot's holders, so `x = M & A = 0` and the listener is never inserted; the subscription stays in array B,
+  and only the pull path (1.9) delivers it. Duck targets are Music and Music_System only, so no Sound chain has a
+  holder-3 registry. SFX bus 393239870 (RTPC `0x5D3B9143` param 0) and UI bus 1551306167 (`0x667B2280` param 0) register
+  PBIs at their holder 1 (bit 0 passes); whether those bus-level sources also reach PBIs by push depends on the game-side
+  set key and is untraced. Every node RTPC param in all shipped banks is 0, 2 or 3.
+- **Records touched (text only, no status):** M6-026 (its residuals "subscription `0x9F7390..0x9F82EC`" and `0x9BDC8C`
+  are closed by C39.1/C39.2), M6-009, M6-010, M6-022, M6-025. Still open: the loader that writes `[node+0x38]`,
+  `0xA19FB4`'s holder destructor, `0xA1A0B4`'s other callers, the PBI Term callers other than the flush `0xA38420`, whether
+  the ctx key can change after registration, `0xA0FD6C`'s interior, `0xA0EAF4`, the duck creation `0x9C3E94`.
