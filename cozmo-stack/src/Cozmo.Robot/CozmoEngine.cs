@@ -994,14 +994,23 @@ public sealed class EngineRobot
         if (Engine.RobotStateHistoryClear is { } clear) Engine.RunIsolated(clear);
         // fidelity: M2-004
         // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
-        if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")) return;
-        if (!Send(new InitController(), "InitController")) return;
+        // fidelity: M1-041, M4-020
+        // 0x00515292 / 0x005152B2 -> 0x005152C4: when the SyncTime send, or (only if that was sent) the InitController
+        // send, fails, SendSyncTime logs sWarningF("Robot.SendSyncTime.FailedToSend", "" (0x00BE3F00)) after
+        // Robot::SendMessage's own warning, and returns the failed result: no ImageRequest, no pose, no +0x520.
+        if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")
+            || !Send(new InitController(), "InitController"))
+        {
+            Engine.Log("warning: Robot.SendSyncTime.FailedToSend");
+            return;
+        }
         // fidelity: M1-041, M4-020
         // CD18: the ImageRequest send result is discarded (0x0051530C) and SendSyncTime goes on to the
         // AbsoluteLocalizationUpdate; SendSyncTime returns that send's result (0x005153AE), so +0x520 is set
         // only when the AbsoluteLocalizationUpdate send succeeds.
         Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
-        Engine.Log("info: Setting pose to (0,0,0)");
+        // 0x0051531E..0x00515324: sChanneledInfoF("Unnamed", "Robot.SendSyncTime", {}, "Setting pose to (0,0,0)").
+        Engine.Log("info: Robot.SendSyncTime: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
         SyncTimeSentAt = Engine.Timer.SecondsF;
     }
@@ -1106,7 +1115,13 @@ public sealed class EngineRobot
 
     // fidelity: M1-041
     /// <summary>HandleSyncTimeAck (CD19): +0x520 = 0 and +0x29 = 1; nothing is sent.</summary>
-    internal void HandleSyncTimeAck() { SyncTimeSentAt = 0; TimeSynced = true; }
+    internal void HandleSyncTimeAck()
+    {
+        // 0x0053667A..0x0053667E: sChanneledInfoF("Unnamed", "Robot.HandleSyncTimeAck", {}, "") first, then the stores
+        // (0x005366A4..0x005366AC).
+        Engine.Log("info: Robot.HandleSyncTimeAck");
+        SyncTimeSentAt = 0; TimeSynced = true;
+    }
 
     // fidelity: M1-041, M4-020, M4-022
     /// <summary>
@@ -2019,11 +2034,26 @@ public sealed class CozmoEngine : IDisposable
     {
         FanOut(ConnectionResponse, resp);
         if (resp.Result != RobotConnectionResult.Success) return;
-        if (Robots.Get(RobotId) is not { } robot) return;
+        // fidelity: M1-041
+        // RobotEventHandler::HandleRobotConnectionResponse 0x005289AC: GetFirstRobot null (0x005289CE) ->
+        // sWarningF("RobotEventHandler.HandleRobotConnectionResponse.InvalidRobotID", "Failed to find robot.") (0x00528A90).
+        if (Robots.Get(RobotId) is not { } robot)
+        {
+            Log("warning: RobotEventHandler.HandleRobotConnectionResponse.InvalidRobotID: Failed to find robot.");
+            return;
+        }
         Isolated(() =>
         {
             robot.SyncTime();
-            robot.NvOnIdle(() => robot.ReadyToStream = true);
+            // 0x005289E8..0x005289EC and 0x00528A1E..0x00528A34: two channeled infos ("Unnamed", empty message), then
+            // AddOneShotOnIdleCallback (0x00528A6E); the lambda sets +0x2A and then logs (0x0052C3A6..0x0052C3B6).
+            Log("info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime");
+            Log("info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims");
+            robot.NvOnIdle(() =>
+            {
+                robot.ReadyToStream = true;
+                Log("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims");
+            });
         });
         // fidelity: M3-019, M3-022
         if (VisionConnected is { } vision) Isolated(() => vision(resp.BodyHWVersion));

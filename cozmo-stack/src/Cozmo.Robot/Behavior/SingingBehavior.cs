@@ -248,7 +248,9 @@ public sealed class SingingBehavior : IBehavior
     public static float NextVibrato(float previous, float maxShake) =>
         0.5f * previous + 0.5f * Math.Clamp(maxShake / 3000f, 0f, 1f);
 
-    public bool IsRunnable(BehaviorContext context) => context.Robot.Animations.Library is not null;
+    // fidelity: M8-001
+    // IsRunnableBase's three gates first (Singing's slots are 0, 0, 0), then this class's own test.
+    public bool IsRunnable(BehaviorContext context) => EngineRunnableGates.Allows(context, Class, running: !_finished) && context.Robot.Animations.Library is not null;
 
     public double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
 

@@ -147,13 +147,16 @@ public class KeepAliveTests
         var (s, r) = Live();
         int now = 0;
         var errorTicks = new List<int>();
-        s.Log = e => { if (e.Contains("LiveUpdateFailed")) errorTicks.Add(now); };
+        var errorTexts = new List<string>();
+        s.Log = e => { if (e.Contains("LiveUpdateFailed")) { errorTicks.Add(now); errorTexts.Add(e); } };
         for (int i = 0; i < 1100; i++) Assert.True(s.StreamLive(new BodyKeyframe(0, 100_000, "STRAIGHT", 0), 0) || i > 1000);
         for (int i = 0; i < 17; i++) { now = i; Tick(s, r, i); }
         Assert.Empty(errorTicks);
         Assert.Equal(0x3F75C28Fu, Bits(s.LastStreamSec));                          // 16 x 60 ms = 0.96f: the last UpdateStream
         now = 17; Tick(s, r, 17);
         Assert.Equal(new[] { 17 }, errorTicks);
+        // M7-017 (R-FIX3): the sErrorF's channel string 0x00bef148 and format 0x00bef172 (0x0057d08c..0x0057d0a2), not the name alone.
+        Assert.Equal("error: AnimationStreamer.Update.LiveUpdateFailed: Failed updating live animation from current robot state.", Assert.Single(errorTexts));
         Assert.Equal(0x3F75C28Fu, Bits(s.LastStreamSec));                          // not stored: the tail did not run
         now = 18; Tick(s, r, 18);
         Assert.Equal(0x3F8A3D71u, Bits(s.LastStreamSec));                          // 18 x 60 ms = 1.08f: the tail ran again

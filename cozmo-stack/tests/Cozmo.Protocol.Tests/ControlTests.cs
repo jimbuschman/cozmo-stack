@@ -187,6 +187,7 @@ public class ControlTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
+        rig.Advance(50);                                   // M4-016: the first update stamps the start time (0x00540D52..0x00540D64)
         rig.Advance(50);                                   // M4-016: the 1 ms timeout is on the engine clock
         var r = await pending;
         Assert.NotEqual(MotionResult.Refused, r.Result);
@@ -261,6 +262,7 @@ public class ControlTests
         var rig = new Rig();
         rig.MakeReady();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.2f, timeout: TimeSpan.FromMilliseconds(250));
+        rig.Advance(300);                                  // M4-016: the first update stamps the start time
         rig.Advance(300);                                  // M4-016: the timeout is on the engine clock
         var r = await pending;
         Assert.Equal(MotionResult.Failed, r.Result);       // M4-016: IAction::UpdateInternal fails 0x03000018
@@ -280,6 +282,7 @@ public class ControlTests
             _ = rig.Robot.Motion.SetHeadAngleAsync(0.1f, timeout: TimeSpan.FromMilliseconds(60));
             var sent = await WaitFor(() => rig.LastSent<SetHeadAngle>());
             if (ids.Count == 0 || sent.ActionId != ids[^1]) ids.Add(sent.ActionId);
+            rig.Advance(70);                                   // M4-016: the first update stamps the start time
             rig.Advance(70);                                   // M4-016: end the 60 ms action on the engine clock
         }
         Assert.True(ids.Count >= 3, "each action should carry its own id");

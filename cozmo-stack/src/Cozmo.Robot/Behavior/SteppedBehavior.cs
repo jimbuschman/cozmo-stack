@@ -98,6 +98,7 @@ public abstract class SteppedBehavior : IBehavior
     public static event Action<string>? MissingReported;
     private static readonly HashSet<string> MissingSeen = new();
     internal static void ResetMissingForTests() { lock (MissingSeen) MissingSeen.Clear(); }
+    private static string ReportMissingAndReturn(string value, string what) { ReportMissing(what); return value; }
     internal static void ReportMissing(string what)
     {
         lock (MissingSeen) if (!MissingSeen.Add(what)) return;
@@ -191,12 +192,13 @@ public abstract class SteppedBehavior : IBehavior
         // The three robot-byte gates and their behaviour virtuals (decomp 0x005bd864..0x005bd89c):
         // robot+0x355 -> vtable+0x20, robot+0x34a -> vtable+0x24, robot+0x284->+8 != -1 -> vtable+0x28.
         // robot+0x355 is the off-treads state and [robot+0x284]+8 != -1 is "carrying" (CarryingComponent, wired through
-        // Motion.IsCarryingObject); the seams override them. robot+0x34a, the AI process, the +0x74 state, the +0x70 unlock, the
+        // Motion.IsCarryingObject) and robot+0x34a is Sensors.OnChargerPlatform; the seams override them. The AI process, the +0x74 state, the +0x70 unlock, the
         // +0x78/+0x7c timers and the spark gate have no source in this stack: with no seam they are reported MISSING, not allowed.
         bool notOnTreads = RobotState355?.Invoke() ?? context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads;
         if (notOnTreads && !RunnableGate20(context)) return false;
-        if (RobotState34a is null) ReportMissing("IBehavior::IsRunnableBase robot+0x34a (0x005bd876): no source for the byte; the vtable+0x24 gate is not consulted");
-        else if (RobotState34a() && !RunnableGate24(context)) return false;
+        // robot+0x34a is OnChargerPlatform (SetOnChargerPlatform 0x00511d4c..0x00511d6a), which Sensors.OnChargerPlatform carries.
+        bool onChargerPlatform = RobotState34a?.Invoke() ?? context.Robot.Sensors.OnChargerPlatform;
+        if (onChargerPlatform && !RunnableGate24(context)) return false;
         bool carrying = RobotComponent284?.Invoke() ?? context.Robot.Motion.IsCarryingObject?.Invoke() == true;
         if (carrying && !RunnableGate28(context)) return false;
         if (RequiredProcessRunning is null || RobotStateAllowsRun is null || UnlockAllowsRun is null)
@@ -224,16 +226,47 @@ public abstract class SteppedBehavior : IBehavior
     public Func<bool>? WantsToRunAllowsRun { get; set; }
     /// <summary>Robot byte <c>+0x355</c> (0x005bd864); when true the <c>vtable+0x20</c> gate must pass. Null = not modelled.</summary>
     public Func<bool>? RobotState355 { get; set; }
-    /// <summary>Robot byte <c>+0x34a</c> (0x005bd876); when true the <c>vtable+0x24</c> gate must pass. Null = not modelled.</summary>
+    /// <summary>Robot byte <c>+0x34a</c> (0x005bd876); when true the <c>vtable+0x24</c> gate must pass. Null = <c>Sensors.OnChargerPlatform</c>.</summary>
     public Func<bool>? RobotState34a { get; set; }
     /// <summary>Robot component <c>+0x284</c> whose <c>+8</c> is checked (0x005bd888); when true the <c>vtable+0x28</c> gate must pass. Null = not modelled.</summary>
     public Func<bool>? RobotComponent284 { get; set; }
-    /// <summary>The <c>vtable+0x20</c> runnable gate; the engine calls it when robot+0x355 is set.</summary>
-    protected virtual bool RunnableGate20(BehaviorContext context) { ReportMissing($"{GetType().Name}: vtable+0x20 gate - the engine base slot returns 0 (0x005bf04c) and the class's own slot is in its vtable (relocation at vptr+0x20) but is not transcribed here; this class answers true, so it runs off treads where the engine's may refuse (M10 classes whose slot is 0: ReactToImpact, ReactToUnexpectedMovement, ReactToMotorCalibration, ReactToFrustration, AcknowledgeCubeMoved, AcknowledgeObject, PlayAnimOnNeedsChange, EarnedSparks, BuildPyramid, BuildPyramidBase, ExpressNeeds, PickUpAndPutDownCube, FindFaces, ExploreLookAroundInPlace)"); return true; }
-    /// <summary>The <c>vtable+0x24</c> runnable gate; the engine calls it when robot+0x34a is set.</summary>
-    protected virtual bool RunnableGate24(BehaviorContext context) { ReportMissing($"{GetType().Name}: vtable+0x24 gate - the engine base slot returns 0 (0x0059ec12); the class's own slot (relocation at vptr+0x24) is not transcribed; this class answers true (unwired anyway: robot+0x34a has no source)"); return true; }
-    /// <summary>The <c>vtable+0x28</c> runnable gate; the engine calls it when robot+0x284->+8 is not -1.</summary>
-    protected virtual bool RunnableGate28(BehaviorContext context) { ReportMissing($"{GetType().Name}: vtable+0x28 gate - pure virtual in the engine base; the class's own slot is in its vtable but not transcribed; this class answers true, so it runs while carrying where the engine's may refuse (M10/M15 classes whose slot is 0: ReactToImpact, ExpressNeeds, PickUpAndPutDownCube, DriveInDesperation)"); return true; }
+    /// <summary>
+    /// The <c>vtable+0x20</c> runnable gate; the engine calls it when robot+0x355 is set. The engine's base slot is 0x005bf04c (<c>movs r0,#0</c>); each class's own vtable
+    /// (relocation at vtable start + 8 + 0x20) gives its value, tabulated in <see cref="EngineRunnableGates"/>. A class that is not in the table keeps the base's 0 and
+    /// reports MISSING once.
+    /// </summary>
+    // fidelity: M8-001
+    protected virtual bool RunnableGate20(BehaviorContext context)
+    {
+        if (EngineRunnableGates.Table.TryGetValue(Class, out var g)) return g.Slot20;
+        ReportMissing($"{GetType().Name} (class '{Class}'): vtable+0x20 gate - the class is not in the table of the 79 engine vtables; the engine's base slot 0x005bf04c returns 0 and that is what is answered");
+        return false;
+    }
+    /// <summary>The <c>vtable+0x24</c> runnable gate; the engine calls it when robot+0x34a is set. The base slot is 0x0059ec12 (<c>movs r0,#0</c>); the class's own value is in <see cref="EngineRunnableGates"/>.</summary>
+    // fidelity: M8-001
+    protected virtual bool RunnableGate24(BehaviorContext context)
+    {
+        if (EngineRunnableGates.Table.TryGetValue(Class, out var g)) return g.Slot24;
+        ReportMissing($"{GetType().Name} (class '{Class}'): vtable+0x24 gate - the class is not in the table of the 79 engine vtables; the engine's base slot 0x0059ec12 returns 0 and that is what is answered");
+        return false;
+    }
+    /// <summary>
+    /// The <c>vtable+0x28</c> runnable gate; the engine calls it when robot+0x284->+8 is not -1. The engine's base slot is <c>__cxa_pure_virtual</c> (every concrete class overrides it);
+    /// a class that is not in <see cref="EngineRunnableGates"/> has no value to give, reports MISSING once and answers false (the engine's call would terminate). FindFaces and
+    /// ExploreLookAroundInPlace read a config byte (+0x120, <c>behavior_CanCarryCube</c>, 0x005e1efe) and override this.
+    /// </summary>
+    // fidelity: M8-001
+    protected virtual bool RunnableGate28(BehaviorContext context)
+    {
+        if (EngineRunnableGates.Table.TryGetValue(Class, out var g))
+        {
+            if (g.Slot28 is { } v) return v;
+            ReportMissing($"{GetType().Name} (class '{Class}'): vtable+0x28 gate is a function (0x005c1d76, ldrb r0,[r0,#0x120]) that this class does not override");
+            return false;
+        }
+        ReportMissing($"{GetType().Name} (class '{Class}'): vtable+0x28 gate - the class is not in the table of the 79 engine vtables and the engine's base slot is __cxa_pure_virtual; answered false");
+        return false;
+    }
 
     /// <summary>IBehavior +0xa1: the engine's running flag, as Init/Stop/Resume set it.</summary>
     public bool EngineRunning => _engineRunning;
@@ -338,6 +371,8 @@ public abstract class SteppedBehavior : IBehavior
     public void StopWithoutImmediateRepetitionPenalty()
     {
         double now = Context.ClockSec?.Invoke() ?? Clock() / 1000.0;
+        // IBehavior::Stop() (0x005beea4) takes no reason in the engine; BehaviorStopReason is this stack's own notion and the inventory gives none for this internal Stop.
+        ReportMissing("M8-002: the stop reason of StopWithoutImmediateRepetitionPenalty's internal IBehavior::Stop() (0x005beea4) is not in the inventory (the engine's Stop takes none); BehaviorStopReason.Interrupted is the stack's own name");
         Stop(BehaviorStopReason.Interrupted);               // IBehavior::Stop 0x005beea4
         Context.Penalty?.Ran(Id, now);                      // Stop's +0x30 = now (0x005bd11e)
         Scope?.Dispose();                                   // Stop's undo (a)-(d) (0x005bd12c..0x005bd1c6)
@@ -421,7 +456,12 @@ public abstract class SteppedBehavior : IBehavior
     /// </summary>
     protected void SetStateName(string newState)
     {
-        string line = $"info: [Behaviors] Behavior.TransitionToState: Behavior:{Id}, FromState:{_stateName} ToState:{newState}";
+        // fidelity: M7-021
+        // The "Behavior:%s" argument is EnumToString(BehaviorID at +0x3C) (0x005c0cb8/0x005c0cbc), not a free string: the BehaviorID's own name. A behaviour whose id is not one of the
+        // BehaviorID names has no such value here (the engine's +0x3C is parsed from the config's behaviorID): the id string is printed and that is reported MISSING (once).
+        string behaviorIdName = Enum.TryParse<BehaviorID>(Id, out var behaviorId) && Enum.IsDefined(behaviorId) ? behaviorId.ToString()
+            : ReportMissingAndReturn(Id, $"IBehavior state-name log: behaviour id '{Id}' is not a BehaviorID name, so the engine's EnumToString(BehaviorID at +0x3C) (0x005c0cb8) has no value; the id string is printed");
+        string line = $"info: [Behaviors] Behavior.TransitionToState: Behavior:{behaviorIdName}, FromState:{_stateName} ToState:{newState}";
         Log(line);
         Context?.Robot.Engine.Log(line);
         _stateName = newState;
@@ -1083,6 +1123,8 @@ public abstract class SteppedBehavior : IBehavior
     // fidelity: M8-008
     protected void CalibrateHead(Action onDone)
     {
+        // fidelity: M8-008
+        ReportMissing("M8-008: CalibrateMotorAction (0x00547a9c, IAction) is not hosted by an action runner here: the stack's action tick (Motion.UpdateActions) hosts only head/lift MoveActions, so the head recalibration is a behaviour-side wait. The engine's done test is IsHeadCalibrated && +0x7A (0x00547d40..0x00547d80), this wait watches HeadCalibrating; the timeout is not an IAction deadline (float start + 30.0f, 0x00540d94..0x00540daa) and the 0x03000018 result is not delivered");
         var state = Context.Robot.State;
         bool started = false;
         Context.Robot.Motion.RequestMotorCalibration(head: true, lift: false);
@@ -1093,8 +1135,11 @@ public abstract class SteppedBehavior : IBehavior
             return started && !state.HeadCalibrating;
         }, CalibrationAllowanceSec, ok =>
         {
-            Log(ok ? "head calibration reported complete"
-                   : $"head calibration timed out after {CalibrationAllowanceSec:F1} seconds");
+            // CalibrateMotorAction::CheckIfDone 0x00547d38 on completion: sChanneledInfoF("Unnamed", "CalibrateMotorAction.CheckIfDone.Done", {}, "") (0x00547d98..0x00547d9c).
+            // IAction::UpdateInternal on expiry (0x00540e80..0x00540eb6): sWarningF("IAction.Update.TimedOut", "%s timed out after %.1f seconds.", the action's name, the 0x2c slot's 30.0f);
+            // the name is "CalibrateMotor-" + "Head" for (head, !lift) (0x00547aaa..0x00547aca).
+            Log(ok ? "info: [Unnamed] CalibrateMotorAction.CheckIfDone.Done"
+                   : $"warning: IAction.Update.TimedOut: CalibrateMotor-Head timed out after {CalibrationAllowanceSec.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)} seconds.");
             onDone();
         }, "head calibration");
     }
@@ -1129,4 +1174,114 @@ public abstract class SteppedBehavior : IBehavior
         _acting = false;
         PlayAnimBehavior.StopOwnAnimation(ref _animations, ref _generation, ref _owns, _gate);
     }
+}
+
+/// <summary>
+/// The three runnable-gate slots of every behaviour class's vtable (<c>IsRunnableBase</c> 0x005bd864..0x005bd89c calls <c>[vptr+0x20]</c> when robot+0x355 is set, <c>[vptr+0x24]</c>
+/// when robot+0x34a is set and <c>[vptr+0x28]</c> when [robot+0x284]+8 != -1). Read from each class's vtable (<c>_ZTVN4Anki5Cozmo..Behavior..E</c>; slot = (relocation - vtable start - 8) / 4
+/// with the relocation at vtable start + 8 + 0x20/0x24/0x28): each slot is a two-instruction <c>movs r0,#N; bx lr</c> (N = 0 or 1), except FindFaces and ExploreLookAroundInPlace whose +0x28 is
+/// 0x005c1d76, <c>ldrb.w r0,[r0,#0x120]</c> (null here: the class supplies it). The base <c>IBehavior</c> vtable (0x010264e0) has 0x005bf04c (0), 0x0059ec12 (0) and
+/// <c>__cxa_pure_virtual</c>. Keyed by <see cref="BehaviorClass"/> name (BehaviorWait is <c>Wait</c>'s vptr overwrite, GOT 0x0103EDF0).
+/// </summary>
+// fidelity: M8-001
+internal static class EngineRunnableGates
+{
+    /// <summary>
+    /// The three gate tests of <c>IBehavior::IsRunnableBase</c> (0x005bd864..0x005bd89c) for a behaviour that does not derive from <see cref="SteppedBehavior"/>, from the production
+    /// sources: robot+0x355 (<c>Sensors.OffTreadsState</c> != OnTreads) -> slot +0x20, robot+0x34a (<c>Sensors.OnChargerPlatform</c>) -> +0x24, carrying (<c>Motion.IsCarryingObject</c>) -> +0x28.
+    /// A running behaviour (its own +0xa1 flag, <paramref name="running"/>) is runnable before any gate. A class outside the table has the base's 0, 0 and a pure-virtual +0x28: refused, MISSING once.
+    /// </summary>
+    public static bool Allows(BehaviorContext context, string behaviorClass, bool running = false)
+    {
+        if (running) return true;                                                // IsRunnableBase's first test, +0xa1 (0x005bd780), before any gate (0x005bd864..0x005bd89c)
+        bool known = Table.TryGetValue(behaviorClass, out var g);
+        if (!known) SteppedBehavior.ReportMissing($"IsRunnableBase gates: class '{behaviorClass}' is not in the table of the 79 engine vtables; the base slots (0, 0, pure virtual) are answered, so it is refused wherever a gate is consulted");
+        if (context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads && !(known && g.Slot20)) return false;
+        if (context.Robot.Sensors.OnChargerPlatform && !(known && g.Slot24)) return false;
+        if (context.Robot.Motion.IsCarryingObject?.Invoke() == true && !(known && g.Slot28 == true)) return false;
+        return true;
+    }
+
+    public static readonly IReadOnlyDictionary<string, (bool Slot20, bool Slot24, bool? Slot28)> Table = new Dictionary<string, (bool, bool, bool?)>
+    {
+        ["Bouncer"] = (false, false, false),
+        ["BringCubeToBeacon"] = (false, false, true),
+        ["BuildPyramid"] = (false, false, true),
+        ["BuildPyramidBase"] = (false, false, true),
+        ["CantHandleTallStack"] = (false, false, false),
+        ["CheckForStackAtInterval"] = (false, false, false),
+        ["CubeLiftWorkout"] = (false, false, true),
+        ["Dance"] = (false, false, true),
+        ["DevTurnInPlaceTest"] = (false, false, false),
+        ["DockingTestSimple"] = (false, false, false),
+        ["DriveInDesperation"] = (true, false, false),
+        ["DriveOffCharger"] = (true, true, false),
+        ["DrivePath"] = (false, false, false),
+        ["DriveToFace"] = (false, false, false),
+        ["EarnedSparks"] = (false, false, true),
+        ["EnrollFace"] = (false, false, false),
+        ["ExploreLookAroundInPlace"] = (false, false, null),
+        ["ExploreVisitPossibleMarker"] = (false, false, false),
+        ["ExpressNeeds"] = (false, false, false),
+        ["FactoryCentroidExtractor"] = (false, false, true),
+        ["FactoryTest"] = (false, false, true),
+        ["FeedingEat"] = (false, false, false),
+        ["FeedingSearchForCube"] = (false, false, false),
+        ["FindFaces"] = (false, false, null),
+        ["FireTruckAlarm"] = (false, false, false),
+        ["FistBump"] = (false, false, true),
+        ["GuardDog"] = (false, false, false),
+        ["InteractWithFaces"] = (false, false, false),
+        ["KnockOverCubes"] = (false, false, false),
+        ["LiftLoadTest"] = (false, false, false),
+        ["LookAround"] = (false, false, false),
+        ["LookForFaceAndCube"] = (false, false, false),
+        ["LookInPlaceMemoryMap"] = (false, false, false),
+        ["OnConfigSeen"] = (false, false, false),
+        ["OnboardingShowCube"] = (false, true, true),
+        ["PeekABoo"] = (false, false, false),
+        ["PickUpAndPutDownCube"] = (false, false, false),
+        ["PickUpCube"] = (false, false, false),
+        ["PlayAnim"] = (false, false, true),
+        ["PlayAnimOnNeedsChange"] = (false, false, true),
+        ["PlayAnimWithFace"] = (false, false, true),
+        ["PlayArbitraryAnim"] = (false, false, true),
+        ["PopAWheelie"] = (false, false, false),
+        ["PounceOnMotion"] = (false, false, false),
+        ["PutDownBlock"] = (false, false, true),
+        ["PyramidThankYou"] = (false, false, false),
+        ["RequestGameSimple"] = (false, false, true),
+        ["RespondPossiblyRoll"] = (false, false, false),
+        ["RespondToRenameFace"] = (false, false, false),
+        ["RollBlock"] = (false, false, true),
+        ["SearchForFace"] = (false, false, false),
+        ["Singing"] = (false, false, false),
+        ["StackBlocks"] = (false, false, true),
+        ["ThinkAboutBeacons"] = (false, false, false),
+        ["TrackLaser"] = (false, false, false),
+        ["TurnToFace"] = (false, false, false),
+        ["VisitInterestingEdge"] = (false, false, false),
+        ["Wait"] = (true, false, true),
+        ["AcknowledgeFace"] = (false, false, false),
+        ["AcknowledgeObject"] = (false, false, true),
+        ["RamIntoBlock"] = (false, false, true),
+        ["ReactToCliff"] = (false, false, true),
+        ["ReactToCubeMoved"] = (false, false, true),
+        ["ReactToFrustration"] = (false, false, true),
+        ["ReactToImpact"] = (false, false, false),
+        ["ReactToMotorCalibration"] = (false, false, true),
+        ["ReactToOnCharger"] = (true, true, true),
+        ["ReactToPet"] = (false, false, false),
+        ["ReactToPickup"] = (true, false, true),
+        ["ReactToPlacedOnSlope"] = (true, false, true),
+        ["ReactToPyramid"] = (false, false, false),
+        ["ReactToReturnedToTreads"] = (true, false, true),
+        ["ReactToRobotOnBack"] = (true, false, true),
+        ["ReactToRobotOnFace"] = (true, false, true),
+        ["ReactToRobotOnSide"] = (true, false, true),
+        ["ReactToRobotShaken"] = (true, false, true),
+        ["ReactToSparked"] = (true, false, false),
+        ["ReactToStackOfCubes"] = (false, false, false),
+        ["ReactToUnexpectedMovement"] = (false, false, true),
+    };
 }

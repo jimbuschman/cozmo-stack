@@ -260,7 +260,10 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     /// <summary>Whether the last run's wait ended without both flags (the 5 s ran out).</summary>
     public bool WaitedOut { get; private set; }
 
-    /// <summary><c>InitInternal</c> 0x006061F8: the lock, then the 5 s <c>WaitForLambdaAction(+0x11d &amp;&amp; +0x11c)</c> whichever the flags say.</summary>
+    /// <summary>
+    /// <c>InitInternal</c> 0x006061F8: the lock, then the 5 s <c>WaitForLambdaAction(+0x11d &amp;&amp; +0x11c)</c> whichever the flags say. It returns <b>0</b> (<c>moveq r0,#0</c> at
+    /// 0x0060627A, after the stack-guard compare 0x00606276): never an Init failure, so <see cref="SteppedBehavior.InitFailed"/> is never set here.
+    /// </summary>
     protected override void OnStart()
     {
         Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.ReactToImpact);   // 0x00606216

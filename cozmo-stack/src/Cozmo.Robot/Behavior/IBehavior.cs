@@ -249,6 +249,9 @@ public sealed class BehaviorScope : IDisposable
     /// </summary>
     public void LockTracks(Animation.AnimationTrack tracks)
     {
+        // The engine has no unnamed lock: IBehavior::SmartLockTracks (0x005be5bc) always takes a key name. This overload has no counterpart; its remaining callers (ReactBehavior,
+        // PlayArbitraryAnimBehavior) lock the clip's tracks with no inventory source. Reported MISSING (once), the lock is still taken.
+        SteppedBehavior.ReportMissing("M8-009: BehaviorScope.LockTracks(tracks) has no engine counterpart (IBehavior::SmartLockTracks 0x005be5bc takes a key name); the callers' track locks (ReactBehavior, PlayArbitraryAnimBehavior) are unsourced");
         lock (_gate)
         {
             if (_disposed) return;
@@ -392,6 +395,9 @@ public sealed class BehaviorScope : IDisposable
     /// existing key warns "Attempted to lock tracks with key named %s but key already exists" and returns
     /// false without locking twice.
     /// </summary>
+    // fidelity: M8-009
+    // The lock is taken on the MovementComponent under the plain key name (0x005be618..0x005be624: LockTracks(tracks, name, ...)) and released under the map key's plain name
+    // (0x005bd16e..0x005bd174 in the destructor path, 0x005be6fc..0x005be706 in SmartUnLockTracks): no owner prefix.
     public bool SmartLockTracks(string name, Animation.AnimationTrack tracks)
     {
         lock (_gate)
@@ -400,12 +406,12 @@ public sealed class BehaviorScope : IDisposable
             if (_trackLocks.ContainsKey(name)) { Verify($"SmartLockTracks: track lock '{name}' already exists"); return false; }
             _trackLocks[name] = tracks;
             byte mask = CozmoMotion.MaskFor(tracks);
-            if (_motion is { } m && mask != 0) m.LockTracks(mask, _owner + ":" + name);
+            if (_motion is { } m && mask != 0) m.LockTracks(mask, name);
             _undo.Add((OrderTrackLocks, name, () =>
             {
                 if (_trackLocks.Remove(name))
                 {
-                    if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, _owner + ":" + name);
+                    if (_motion is { } mm && mask != 0) mm.UnlockTracks(mask, name);
                 }
             }));
             return true;
@@ -423,7 +429,7 @@ public sealed class BehaviorScope : IDisposable
             if (!_trackLocks.TryGetValue(name, out var tracks)) { Verify($"SmartUnLockTracks: no track lock named '{name}'"); return false; }
             _trackLocks.Remove(name);
             byte mask = CozmoMotion.MaskFor(tracks);
-            if (_motion is { } m && mask != 0) m.UnlockTracks(mask, _owner + ":" + name);
+            if (_motion is { } m && mask != 0) m.UnlockTracks(mask, name);
             return true;
         }
     }

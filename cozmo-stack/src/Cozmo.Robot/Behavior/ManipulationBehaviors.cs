@@ -105,8 +105,11 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
-        BackUpMm = -(45 + Context.Random.NextDouble() * 30);
+        // fidelity: M7-014
+        // BehaviorPutDownBlock::InitInternal 0x005c7fd0: SmartDisableReactionsWithLock(name, table 0x00c68b20) is its first call (0x005c7fe0..0x005c7fe2); the table has no trigger set.
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.PutDownBlock);
+        // IBehavior::GetRNG()->RandDblInRange(-45.0, -75.0) (literals 0xC0468000 / 0xC052C000, vldr at 0x005c7fec; 0x005c80d0) on the robot's context RNG, a + u*(b - a).
+        BackUpMm = (float)Context.Robot.Animations.Scheduler.ContextRandom.RandDblInRange(-45.0, -75.0);   // vcvt.f32.f64 s0,d0 (0x005c801e): the float goes to DriveStraightAction
         CurrentPhase = Phase.BackingUp;
         RunAction($"DriveStraight({BackUpMm:F0} mm)", ct => new DriveStraightAction(M, BackUpMm, 100f).RunAsync(ct), _ =>
         {

@@ -65,7 +65,9 @@ public sealed class PlayAnimBehavior : SteppedBehavior
                 // AnimationTriggerFromString 0x0075E2B0: a miss (0x00764798..0x00764810) writes the cerr error and returns 0; the constructor keeps every
                 // value except 0x23F, Count (0x005BFFE8..0x005BFFEE), so a miss pushes trigger 0.
                 if (name == "Count") continue;
-                if (name is not null && Enum.TryParse<AnimationTrigger>(name, out var trigger) && Enum.IsDefined(trigger)) parsed.Add(trigger);
+                // fidelity: M7-018
+                // AnimationTriggerFromString is a lookup in the engine's name table: exactly the enum's names (case-sensitive), not numbers or comma lists, which Enum.TryParse also accepts.
+                if (name is not null && Enum.IsDefined(typeof(AnimationTrigger), name) && Enum.TryParse<AnimationTrigger>(name, out var trigger)) parsed.Add(trigger);
                 else
                 {
                     BehaviorClassNames.WriteCerrError(name ?? "", "AnimationTrigger");
@@ -297,9 +299,12 @@ public sealed class PlayAnimBehavior : SteppedBehavior
     /// </summary>
     private void ConstructActions()
     {
+        // fidelity: M8-005
+        // 0x0054433E: HasAnimationForTrigger must be true (bne 0x005443d2 otherwise: no log); then the group name 0x00544350 is assigned and an EMPTY name (0x00544390 cbnz) logs
+        // sWarningF("TriggerAnimationAction.EmptyAnimGroupNameForTrigger", "Event: %s", EnumToString(trigger)) (0x005443a8, 0x005443a6). A trigger the map does not name is silent here.
         foreach (var trigger in _triggers)
-            if (string.IsNullOrEmpty(Context.Triggers.GroupFor(trigger)))
-                Log($"TriggerAnimationAction.SetAnimGroupFromTrigger: the animation group for {trigger} is empty");
+            if (Context.Triggers.GroupFor(trigger) is { Length: 0 })
+                Log($"warning: TriggerAnimationAction.EmptyAnimGroupNameForTrigger: Event: {trigger}");
     }
 
     private void RunSequenceChild(int handle, int i)
@@ -377,8 +382,9 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
     // fidelity: M8-004
     public double Score { get; set; }
 
+    // fidelity: M8-001 (IsRunnableBase's gates first; PlayArbitraryAnim's slots are 0, 0, 1)
     public bool IsRunnable(BehaviorContext context) =>
-        ClipName is not null && context.Robot.Animations.Library?.HasClip(ClipName) == true;
+        EngineRunnableGates.Allows(context, Class, running: !_finished) && ClipName is not null && context.Robot.Animations.Library?.HasClip(ClipName) == true;
 
     public double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
 
@@ -456,8 +462,10 @@ public sealed class ReactBehavior : IBehavior
 
     public string? LastSelected { get; private set; }
 
+    // fidelity: M8-001 (IsRunnableBase's gates first, by this class's own vtable slots)
     public bool IsRunnable(BehaviorContext context) =>
-        _table.For(Trigger) is not null
+        EngineRunnableGates.Allows(context, Class, running: !_finished)
+        && _table.For(Trigger) is not null
         && context.Robot.Animations.Library is not null
         && _condition(context.Robot);
 
@@ -475,12 +483,12 @@ public sealed class ReactBehavior : IBehavior
         if (!resolved.Resolved) { _finished = true; return Task.CompletedTask; }
 
         scope.LockTracks(lib.GetClip(resolved.Selected!).Tracks);
-        // A reaction should not be interrupted by another reaction part way through. Where the shipped
-        // class has its own 21-byte lock table (M7-014), take exactly that set through the manager; a
-        // class without one falls back to the scope's arbiter-wide lock.
+        // fidelity: M7-014
+        // Where the shipped class has its own lock table (M7-014), take exactly that set through the manager (IBehavior::SmartDisableReactionsWithLock 0x005bce3c). The engine has no
+        // arbiter-wide fallback: a class without a recovered table takes no lock here, and that is reported MISSING (once per class).
         var lockTable = ReactionLockTables.For(Class);
         if (lockTable is not null) scope.SmartDisableReactionsWithLock(Id, lockTable);
-        else scope.DisableReactions();
+        else SteppedBehavior.ReportMissing($"M7-014: class '{Class}' has no recovered reaction-lock table; the engine only calls SmartDisableReactionsWithLock (0x005bce3c) with a class's own table, so no reaction lock is taken for it (the former arbiter-wide DisableReactions() fallback is removed)");
         LastSelected = resolved.Selected;
         var ticket = context.Robot.Animations.PlayTracked(resolved.Selected!);
         if (ticket is null) { _finished = true; return Task.CompletedTask; }

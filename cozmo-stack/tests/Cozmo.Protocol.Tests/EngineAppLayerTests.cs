@@ -1803,4 +1803,77 @@ public class EngineAppLayerTests
         Assert.Null(robot.Engine.Robot);
         Assert.False(robot.SendMessage(new DriveWheels(1, 1, 0, 0)));
     }
+
+    // ================================================================== R-FIX3 (M1-041, M4-020): log lines from the binary
+
+    /// <summary>
+    /// M1-041 / M4-020 (R-FIX3). The success path's log lines, read from the binary: RobotEventHandler::HandleRobotConnectionResponse
+    /// logs channeled info "...SendingSyncTime" after Robot::SyncTime (0x005289D2..0x005289EC) and "...QueueingSetReadyToStreamAnims"
+    /// (0x00528A1E..0x00528A34) before AddOneShotOnIdleCallback (0x00528A6E); the on-idle lambda sets +0x2A and then logs
+    /// "...SettingReadyToStreamAnims" (0x0052C3A6..0x0052C3B6). Robot::SendSyncTime logs "Setting pose to (0,0,0)" under the event name
+    /// "Robot.SendSyncTime" (0x0051531E..0x00515324). HandleSyncTimeAck logs "Robot.HandleSyncTimeAck" (0x0053667A..0x0053667E).
+    /// </summary>
+    [Fact]
+    public void M1_041_RFix3_TheSuccessPathLogsTheEnginesInfoLinesInOrder()
+    {
+        using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = "" });
+        rig.ToSuccess();
+        List<string> log;
+        lock (rig.Log) log = rig.Log.ToList();
+        int sync = log.IndexOf("info: Robot.SendSyncTime: Setting pose to (0,0,0)");
+        int sending = log.IndexOf("info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime");
+        int queueing = log.IndexOf("info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims");
+        Assert.True(sync >= 0 && sending > sync && queueing > sending, string.Join(" | ", log));
+        // the one-shot on-idle callback has not run: the connection reads are queued
+        Assert.DoesNotContain("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims", log);
+        Assert.DoesNotContain("info: Robot.HandleSyncTimeAck", log);
+
+        rig.DrainConnectionQueue();                      // SyncTimeAck, then the queue drains and the on-idle callback runs
+        lock (rig.Log) log = rig.Log.ToList();
+        int ack = log.IndexOf("info: Robot.HandleSyncTimeAck");
+        int setting = log.IndexOf("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims");
+        Assert.True(ack > queueing && setting > ack, string.Join(" | ", log));
+        Assert.True(rig.Engine.Robot!.ReadyToStream);
+    }
+
+    /// <summary>
+    /// M1-041 / M4-020 (R-FIX3). 0x00515292 / 0x005152B2 -> 0x005152C4: when the SyncTime send (or, if that was sent, the InitController
+    /// send) fails, Robot::SendMessage's own warning is followed by sWarningF("Robot.SendSyncTime.FailedToSend", ""): no ImageRequest, no
+    /// pose line, no AbsoluteLocalizationUpdate, and +0x520 is not stamped. An ImageRequest or AbsoluteLocalizationUpdate failure gets
+    /// only the SendMessage warning (0x0051530C, 0x005153AE).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void M1_041_M4_020_RFix3_ASyncTimeOrInitControllerFailureLogsFailedToSend(bool failSyncTime)
+    {
+        using var rig = new Rig();
+        rig.ToValidated();
+        rig.Engine.Robot!.SendFault = m => failSyncTime ? (m is SyncTime ? false : null) : (m is InitController ? false : null);
+        rig.Data(new ManufacturingID { SerialNumber = 1, BodyHwVersion = 2, BodyColor = 3 });
+        rig.Tick();
+
+        List<string> log;
+        lock (rig.Log) log = rig.Log.ToList();
+        int failed = log.IndexOf("warning: Robot.SendSyncTime.FailedToSend");
+        Assert.True(failed > 0, string.Join(" | ", log));
+        Assert.StartsWith("warning: Robot.SendMessage: Robot 1 failed to send a message type ", log[failed - 1]);
+        Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);
+        Assert.DoesNotContain(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);
+        Assert.DoesNotContain("info: Robot.SendSyncTime: Setting pose to (0,0,0)", log);
+        Assert.Equal(0f, rig.Engine.Robot!.SyncTimeSentAt);
+    }
+
+    /// <summary>
+    /// M1-041 (R-FIX3). 0x005289CE..0x00528A90: with no robot the response handler warns
+    /// "...HandleRobotConnectionResponse.InvalidRobotID" "Failed to find robot." and does nothing else.
+    /// </summary>
+    [Fact]
+    public void M1_041_RFix3_AResponseWithNoRobotWarnsInvalidRobotID()
+    {
+        using var rig = new Rig();
+        rig.Engine.BroadcastConnectionResponse(new RobotConnectionResponse(RobotConnectionResult.Success, 0, 0, 0, 0));
+        Assert.True(rig.Logged("warning: RobotEventHandler.HandleRobotConnectionResponse.InvalidRobotID: Failed to find robot."));
+        Assert.DoesNotContain(RobotMessageId.SyncTime, rig.Port.SentIds);
+    }
 }

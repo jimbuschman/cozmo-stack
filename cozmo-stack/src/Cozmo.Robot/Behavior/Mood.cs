@@ -388,7 +388,9 @@ public sealed class MoodState
     {
         float old = _values[i];
         float s = old + d;
-        float updated = s > -1f ? (s >= 1f ? 1f : s) : -1f;
+        // 0x0067963C..0x0067965C: the sum is compared with 1.0f (vmovge -> 1.0f) and, separately, with -1.0f: the stored value is the (clamped) sum under "hi" (sum > -1.0f OR unordered),
+        // else -1.0f. A NaN sum is unordered on both compares and is stored as NaN (0x0067965A vmovhi s8,s6; 0x0067967A vstr s8).
+        float updated = s <= -1f ? -1f : (s >= 1f ? 1f : s);
         _values[i] = updated;
 
         bool keptItsSign = old >= 0 == updated >= 0;
@@ -514,7 +516,10 @@ public sealed class MoodState
         float dt = last != 0 ? t - last : MinUpdateStepSec;
         if (dt < MinUpdateStepSec)
         {
-            Log?.Invoke($"warning: MoodManager.Update.TimeStepTooSmall: dt {dt}, last {last}, now {t}");
+            // fidelity: M7-013
+            // sWarningF("MoodManager.BadTimeStep", "TimeStep %f (%f-%f) is < %f - clamping!", (double)dt, (double)t, (double)last, (double)1e-4f) 0x0067b62e..0x0067b644; %f is six decimals.
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            Log?.Invoke($"warning: MoodManager.BadTimeStep: TimeStep {((double)dt).ToString("F6", inv)} ({((double)t).ToString("F6", inv)}-{((double)last).ToString("F6", inv)}) is < {((double)MinUpdateStepSec).ToString("F6", inv)} - clamping!");
             dt = MinUpdateStepSec;
         }
         _lastUpdateSec = t;

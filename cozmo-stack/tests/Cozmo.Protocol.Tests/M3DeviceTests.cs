@@ -2718,4 +2718,150 @@ public class M3DeviceTests
         var ticker = typeof(CozmoAnimations).GetField("_ticker", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
         Assert.Null(ticker.GetValue(robot.Animations));                                        // no 30 Hz tick loop
     }
+
+    // ================================================================== R-FIX3: NV log texts and formats (expected from the binary)
+
+    /// <summary>
+    /// M3-026 (R-FIX3). The engine's formats, read from the binary: Read.InvalidTag "Tag: 0x%x" (0xBFB539, call
+    /// 0x00644E96..0x00644E9C), so the tag prints lowercase and unpadded; a valid Read logs, before the emplace_back
+    /// (0x00644E3A..0x00644E4C), channeled info Read.QueueingReadRequest with "%s" (0x00644F7C) and
+    /// NVStorage::EnumToString(NVEntryTag) of the tag (0x007CEE38; a null return for an unnamed tag, which %s prints "(null)").
+    /// </summary>
+    [Fact]
+    public void M3_026_RFix3_ReadLogsQueueingReadRequestWithTheTagNameAndTheInvalidTagInLowercaseHex()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        Assert.Equal(1, nv.Read(0x182000, _ => { }));
+        Assert.Contains("info: NVStorageComponent.Read.QueueingReadRequest: NVEntry_GameUnlocks", nv.Log);
+
+        Assert.Equal(0, nv.Read(0xABCDE, _ => { }));                // not a valid tag (IsValidEntryTag false)
+        Assert.Contains("warning: NVStorageComponent.Read.InvalidTag: Tag: 0xabcde", nv.Log);
+        Assert.DoesNotContain(nv.Log, l => l.Contains("QueueingReadRequest") && l.Contains("0xabcde"));
+    }
+
+    /// <summary>
+    /// M3-031 (R-FIX3). ResendLastCommand's formats (0x00645E54 "Tag: 0x%x, Op: %s, Attempt: %d", 0x00645E24 "Tag: 0x%x,
+    /// Op: %s, Attempts: %d" with +0xF5 = 8), the caller's ResentFailedRead "Tag 0x%x resent due to %s" (0xBFB948,
+    /// logged after the resend's send, 0x00643232..0x00643234), ReadOpFailed "Tag: 0x%x, op: %s, result: %s" (0xBFB7CD),
+    /// each with the tag in lowercase %x, and the callback log ExecutingReadCallback "%s" (0x00643AF0) after the outcome
+    /// log and before the callback (0x006436DA). The order is the call order in the binary.
+    /// </summary>
+    [Fact]
+    public void M3_031_RFix3_TheReadRetryLogsAreTheEnginesLinesInTheEnginesOrder()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int mark = nv.Log.Count;
+        NvResult? got = null;
+        nv.Read(0x80000001, r => got = r);
+        rig.Tick();
+        for (int i = 0; i < 8; i++)
+        {
+            rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -8, Length = 0, Data = Array.Empty<byte>() });
+            rig.Tick();
+        }
+        Assert.NotNull(got);
+
+        var expected = new List<string> { "info: NVStorageComponent.Read.QueueingReadRequest: NVEntry_CameraCalib" };
+        for (int i = 1; i <= 7; i++)
+        {
+            expected.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x80000001, Op: NVOP_READ, Attempt: {i}");
+            expected.Add("info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x80000001 resent due to NV_LOOP");
+        }
+        expected.Add("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x80000001, Op: NVOP_READ, Attempts: 8");
+        expected.Add("warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x80000001, op: NVOP_READ, result: NV_LOOP");
+        expected.Add("warning: NVStorageComponent.HandleNVOpResult.ReadFailed: BaseTag: NVEntry_CameraCalib, result: NV_LOOP");
+        expected.Add("debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: NVEntry_CameraCalib");
+        var actual = nv.Log.Skip(mark).Where(l => !l.StartsWith("NV request") && !l.StartsWith("NVOpResult")).ToList();
+        Assert.Equal(expected, actual);
+    }
+
+    /// <summary>
+    /// M3-031 (R-FIX3): the timeout log is "Tag: 0x%x" (0xBFB539) with the pending read's tag (+0x50, 0x0064577C) in lowercase hex
+    /// (0x0064577A..0x00645782).
+    /// </summary>
+    [Fact]
+    public void M3_031_RFix3_TheReadTimeoutLogsTheTagInLowercaseHex()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+        var nv = rig.Robot.Engine.NvStorage!;
+        nv.Read(0x184000, _ => { });
+        rig.Tick();
+        rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x184000", nv.Log);
+    }
+
+    /// <summary>
+    /// M3-030 (R-FIX3): ReadEntryNotFound's format is "BaseTag: %s, Tag: 0x%x, result: %s" (0xBFBC0B), the tag in lowercase hex;
+    /// ExecutingReadCallback is logged only when the callback function is non-empty (+0x68 != 0, 0x006436B6..0x006436BA): a
+    /// read whose result goes only to the caller's vector sink logs no callback line.
+    /// </summary>
+    [Fact]
+    public void M3_030_RFix3_ReadEntryNotFoundUsesLowercaseHexAndTheCallbackLogNeedsACallback()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+
+        int mark = nv.Log.Count;
+        nv.Read(0x182000, null, new List<byte>());
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains("info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: NVEntry_GameUnlocks, Tag: 0x182000, result: NV_NOT_FOUND", nv.Log);
+        Assert.DoesNotContain(nv.Log.Skip(mark), l => l.Contains("ExecutingReadCallback"));
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: NVEntry_GameUnlocks", nv.Log);
+    }
+
+    /// <summary>
+    /// M3-031 (R-FIX3): the write/erase caller of ResendLastCommand (0x006431A2) logs Retry (1..7) and, at the eighth failure,
+    /// NumRetriesExceeded; a retry then logs ResentFailedWrite "Tag 0x%x resent due to %s, op: %s" (0xBFB779, 0x006431C4..0x006431E0)
+    /// and the exhausted write logs WriteOpFailed "Tag: 0x%x, op: %s, result: %s" (0xBFB7CD, 0x006432AC..0x006432BA).
+    /// </summary>
+    [Fact]
+    public void M3_031_RFix3_TheWriteRetryLogsRetryAndNumRetriesExceeded()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int mark = nv.Log.Count;
+        NvResult? got = null;
+        Assert.Equal(1, nv.Write(0x194000, new byte[4], r => got = r));
+        rig.Tick();
+        for (int i = 0; i < 8; i++)
+        {
+            rig.Data(new NVOpResult { Tag = 0x194000, Op = NvStorageComponent.OpWrite, Result = -8, Length = 0, Data = Array.Empty<byte>() });
+            rig.Tick();
+        }
+        Assert.NotNull(got);
+        var actual = nv.Log.Skip(mark).Where(l => !l.StartsWith("NV request") && !l.StartsWith("NVOpResult")).ToList();
+        var expected = new List<string>();
+        for (int i = 1; i <= 7; i++)
+        {
+            expected.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x194000, Op: NVOP_WRITE, Attempt: {i}");
+            expected.Add("info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x194000 resent due to NV_LOOP, op: NVOP_WRITE");
+        }
+        expected.Add("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x194000, Op: NVOP_WRITE, Attempts: 8");
+        expected.Add("warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x194000, op: NVOP_WRITE, result: NV_LOOP");
+        Assert.Equal(expected, actual);
+    }
 }

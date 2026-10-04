@@ -1049,7 +1049,7 @@ public sealed class AnimationScheduler
             // return (0x0057D032) with that result: no tail (no InitStream, no UpdateStream, no +0x44 change).
             if (UpdateLiveAnimationLocked() != 0)
             {
-                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed");
+                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed: Failed updating live animation from current robot state.");   // sErrorF 0x0057d0a2: name 0x00bef148, text 0x00bef172
                 return;
             }
         }

@@ -579,16 +579,16 @@ public class CorrectionTests
         var graph = new Graph2d(new[] { (0.0, 0.0), (30.0, 1.0) });
         var a = new ScoringChooser(new[] { Entry("shared", 10, graph) }, bound, penalty: penalty);
         var b = new ScoringChooser(new[] { Entry("shared", 10, graph) }, bound, penalty: penalty);
-        // ScoringBSRunnableChooser adds RandomGenerator::RandDbl to a non-running behaviour's score
-        // (0x0060a4a8); pin it to zero so the assertion is the shared-history rule alone.
-        a.RandomDraw = () => 0.0;
-        b.RandomDraw = () => 0.0;
+        // ScoringBSRunnableChooser adds GetRNG()->RandDbl(0.1f as double) to a non-running behaviour's score (0x0060a49e..0x0060a4bc): a draw in [0, 0.1), so a score of 10.0 comes out in
+        // [10.0, 10.1) (R-FIX3 M8-013 / M8-004); the assertions are the shared-history rule within that band, not a pinned draw.
+        a.Rng = new EngineRandom(1u);
+        b.Rng = new EngineRandom(2u);
 
-        Assert.Equal(10.0, a.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 3);
+        Assert.InRange(a.GetDesiredActiveBehavior(null, 0, ctx, 0).Scores.Single().Score, 10.0, 10.1);
         // the stamp is above zero: EvaluateRepetitionPenalty 0x005beee6 returns 1.0 for a stamp <= 0 (0x005beeea..0x005beef8)
         penalty.Ran("shared", 100);                                 // the manager records it once
         Assert.Equal(0.0, b.GetDesiredActiveBehavior(null, 0, ctx, 100).Scores.Single().Score, 3);
-        Assert.Equal(10.0, b.GetDesiredActiveBehavior(null, 0, ctx, 130).Scores.Single().Score, 3);
+        Assert.InRange(b.GetDesiredActiveBehavior(null, 0, ctx, 130).Scores.Single().Score, 10.0, 10.1);
     }
 
     /// <summary>

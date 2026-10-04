@@ -471,7 +471,9 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
 
     protected override void OnStart()
     {
-        Scope.DisableReactions();
+        // fidelity: M7-014
+        // BehaviorCubeLiftWorkout::InitInternal 0x005d7eb8: SmartDisableReactionsWithLock(name, table 0x00c6b7e0) first (0x005d7ec6..0x005d7ec8), then SmartPushIdleAnimation(Count 0x23f).
+        Scope.SmartDisableReactionsWithLock(Id, ReactionLockTables.CubeLiftWorkout);
         Workout = M.Workouts?.GetCurrentWorkout();
         var target = ClosestCube(o => o.UpAxisFromPose() is UpAxis.ZPositive or UpAxis.ZNegative);
         if (Workout is null || target is null) { Finish(); return; }

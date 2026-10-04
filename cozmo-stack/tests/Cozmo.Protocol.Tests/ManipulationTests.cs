@@ -567,7 +567,13 @@ public class ManipulationTests
         var ctx = Ctx(rig);
         var b = new PutDownBlockBehavior(rig.M);
         Assert.True(b.IsRunnable(ctx) || rig.Robot.Animations.Library is null);   // runnable gates on the animation library offline
+        // R-FIX3: GetRNG()->RandDblInRange(-45.0, -75.0) (0x005c7fec, 0x005c80d0) on the context RNG, then vcvt.f32.f64 (0x005c801e): the float is the back-up distance
+        typeof(Cozmo.Robot.Animation.AnimationScheduler).GetField("_contextRng", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(rig.Robot.Animations.Scheduler, new Cozmo.Robot.Animation.EngineRandom(77u));
+        float expectedBackUp = (float)new Cozmo.Robot.Animation.EngineRandom(77u).RandDblInRange(-45.0, -75.0);
         RunToEnd(rig, b, ctx, frames: () => true);
+        Assert.Equal(BitConverter.SingleToInt32Bits(expectedBackUp), BitConverter.SingleToInt32Bits((float)b.BackUpMm));
+        Assert.Equal((double)expectedBackUp, b.BackUpMm);                          // already a float: no double residue
         Assert.InRange(b.BackUpMm, -75, -45);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
         Assert.Contains(b.Trace, l => l.Contains("PutDownBlockPutDown"));          // "play X" with assets, "X: no animation assets" without

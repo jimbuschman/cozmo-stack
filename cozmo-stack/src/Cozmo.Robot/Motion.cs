@@ -526,6 +526,14 @@ bool requireCalibration = true)
     }
 
     // fidelity: M4-001
+    /// <summary>
+    /// <c>Radians::getDegrees</c> (0x0084CD40..0x0084CD50): <c>vmul.f32</c> of the radians by the float 0x42652EE1,
+    /// returned as a float; the clip warnings widen it with <c>vcvt.f64.f32</c> for the "%.1f".
+    /// </summary>
+    internal static double RadiansToDegreesF32(float radians) =>
+        radians * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+
+    // fidelity: M4-001
     /// <summary>The 1e-5 near tolerance, the engine float 0x3727C5AC (0x0084CC64/0x0084CC68).</summary>
     internal static readonly float NearTolerance = BitConverter.Int32BitsToSingle(unchecked((int)0x3727C5AC));
 
@@ -576,12 +584,19 @@ bool requireCalibration = true)
         float target = RescaleRadians(radians);
         if (RadiansLessThan(target, MinHeadAngleRad))
         {
-            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: {radians:F4} rad, clipped to {MinHeadAngleRad}");
+            // fidelity: M4-001
+            // 0x00547F6C..0x00547F8C: sWarningF("MoveHeadToAngleAction.Constructor.AngleTooLow", "Requested head angle
+            // (%.1fdeg) less than min head angle (%.1fdeg). Clipping." (0xBEA11C), getDegrees() of the rescaled angle
+            // (Radians::getDegrees 0x0084CD40: float * 0x42652EE1, widened by vcvt.f64.f32), -25.0 (0xC0390000'00000000)).
+            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle ({RadiansToDegreesF32(target):F1}deg) less than min head angle ({-25.0:F1}deg). Clipping.");
             target = MinHeadAngleRad;
         }
         else if (RadiansGreaterThan(target, MaxHeadAngleRad))
         {
-            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: {radians:F4} rad, clipped to {MaxHeadAngleRad}");
+            // fidelity: M4-001
+            // 0x00547FE6..0x00548004: the max counterpart, "Requested head angle (%.1fdeg) more than max head angle
+            // (%.1fdeg). Clipping." (0xBEA169) with 44.5 (0x4046400000000000).
+            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle ({RadiansToDegreesF32(target):F1}deg) more than max head angle ({44.5:F1}deg). Clipping.");
             target = MaxHeadAngleRad;
         }
         float tolerance = Math.Max(GameHeadToleranceRad, MinHeadToleranceRad);
@@ -782,8 +797,11 @@ bool requireCalibration = true)
         /// ~IActionRunner stop gate. Assigned in <see cref="RunAsync"/> before the lock.
         /// </summary>
         public string LockOwner = "";
-        /// <summary>M4-016: IAction +0x74, the engine-clock start time, set at Init (RunAsync).</summary>
-        public float StartTime;
+        /// <summary>
+        /// M4-016: IAction +0x74, the engine-clock start time. It is negative (-1.0f, the value 0x00540E64 stores) until the
+        /// action's first <c>IAction::UpdateInternal</c> stamps it with the tick clock (0x00540D52..0x00540D64).
+        /// </summary>
+        public float StartTime = -1f;
         /// <summary>M4-016: the IAction timeout slot's value in seconds (+0x74 test, 0x00540E80).</summary>
         public float TimeoutSeconds;
         /// <summary>+0xAA / +0x95: the command was sent.</summary>
@@ -834,9 +852,9 @@ bool requireCalibration = true)
             // The stack assigns it here, before the lock.
             a.LockOwner = (++_lockOwnerCounter).ToString();
             // fidelity: M4-016
-            // IAction::UpdateInternal 0x00540D4A..0x00540D64: +0x74 is the start time, set to the engine clock at
-            // the first Update (Init here); 0x00540E80 fails when start + timeout <= now.
-            a.StartTime = _robot.Engine.Timer.SecondsF;
+            // IAction::UpdateInternal 0x00540D4A..0x00540D64: +0x74 starts negative and is stamped with the engine clock
+            // by the action's first UpdateInternal (UpdateActions below), not here; 0x00540E80 fails when
+            // start + timeout <= now.
             a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
 
             // IActionRunner::Update (0x00540370): AreAnyTracksLocked(mask) at 0x00540572..0x0054057C fails the
@@ -904,7 +922,13 @@ bool requireCalibration = true)
             foreach (var a in _actions.ToArray())
             {
                 // fidelity: M4-016
-                if (a.StartTime + a.TimeoutSeconds <= _robot.Engine.Timer.SecondsF)
+                // 0x00540D4A..0x00540D68: now = BaseStationTimer seconds (f32); a start time still below zero (vcmpe, mi) is
+                // set to now before the timeout test. The test's "second gate" (0x00540DAC..0x00540DC0, now < start +
+                // slot 0x24 + slot 0x28) is dead for these actions: slots 0x24 and 0x28 return 0.0 (0x0052B0BA, 0x0052B0BE)
+                // and the unset-precondition literal at 0x00540FDC is 0.0, so now < start never holds.
+                float now = _robot.Engine.Timer.SecondsF;
+                if (a.StartTime < 0f) a.StartTime = now;
+                if (a.StartTime + a.TimeoutSeconds <= now)
                 {
                     _actions.Remove(a);
                     timedOut.Add(a);

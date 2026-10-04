@@ -872,7 +872,7 @@ public static class PlacementApproachAngle
 public sealed class DriveStraightAction
 {
     private readonly ManipulationSystem _m;
-    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f) { _m = m; DistanceMm = distanceMm; SpeedMmps = speedMmps; }
+    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f) { _m = m; DistanceMm = (float)distanceMm; SpeedMmps = speedMmps; }   // the engine's distance_mm is a float
     public double DistanceMm { get; }
     public float SpeedMmps { get; }
 

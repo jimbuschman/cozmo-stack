@@ -130,7 +130,7 @@ public sealed class FreeplayStack : IDisposable
                 manager.AddReaction(reg.Strategy, reg.Behavior);
 
         // one repetition history for the whole stack: the manager records it, every chooser reads it
-        var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random);
+        var tree = ActivityTreeLoader.Load(obbRoot, bound, manager.Penalty, random, factoryContext.Log);
         foreach (var s in tree.SelectMany(a => a.SubActivities.Prepend(a)).Select(a => a.Strategy)) s.NeedLevels ??= n => needs.State.GetNeedLevel(n);
         var freeplayActivity = tree.FirstOrDefault(a => a.Id == "Freeplay") ?? throw new InvalidOperationException("activities_config.json has no Freeplay activity");
         // config/features.json, which WantsToStart consults before anything else when an activity names a

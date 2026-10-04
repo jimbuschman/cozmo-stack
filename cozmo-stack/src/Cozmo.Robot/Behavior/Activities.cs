@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Behavior;
@@ -41,12 +42,104 @@ public sealed record Graph2d(IReadOnlyList<(double X, double Y)> Nodes)
 {
     public double EvaluateY(double x) => GraphEvaluator.EvaluateY(Nodes, x, empty: 0);
 
-    public static Graph2d? FromJson(JsonElement e)
+    public static Graph2d? FromJson(JsonElement e) => Read(e, null, out _);
+
+    /// <summary>
+    /// <c>GraphEvaluator2d::ReadFromJson</c> 0x00804dac, tests exactly as the binary does (only <c>isNull</c>, 0x004a5f8c, then <c>asFloat</c>): <c>json["nodes"]</c> null (absent or null) logs
+    /// sWarningF "GraphEvaluator2d.ReadFromJson.NoNodes" "Missing entry for 'nodes' key" (0x00804dca) and fails; the node vector is cleared (0x00804e0c..0x00804e2c); <c>size()</c> of a scalar is 0, so a
+    /// non-null scalar <c>nodes</c> and an empty array succeed (0x00804eb0..0x00804eb8). Each node is <c>nodes.get(i, null)</c> (0x004b0e34): null logs "...BadNode" "Node %u failed to read" (0x00804ebc);
+    /// then <c>node["x"]</c> null logs "...BadX" "Node %u failed to read '%s'" with 'x' (0x00804ed4) and <c>node["y"]</c> null "...BadY" with 'y' (0x00804eee); then <c>asFloat</c> of both (0x004a7264) and
+    /// <c>AddNode(x, y, true)</c> (0x004b1ecc). A failure returns false and <b>keeps the nodes read before it</b>. <c>asFloat</c> of null is 0, of a bool 1/0, of a number its value; of a string, array or object
+    /// jsoncpp's body is not read here (MISSING, reported once): the read stops as a failure without a further log. A non-object <c>e</c>, a non-array object <c>nodes</c> with members and a non-object
+    /// node reach jsoncpp's assert paths (also MISSING): they fail the same way. Returns the graph read so far, or null when no node was kept.
+    /// </summary>
+    // fidelity: M8-002, M8-003
+    internal static Graph2d? Read(JsonElement e, Action<string>? log, out bool ok)
     {
-        if (e.ValueKind != JsonValueKind.Object || !e.TryGetProperty("nodes", out var nodes)) return null;
-        var list = nodes.EnumerateArray().Select(n => (n.GetProperty("x").GetDouble(), n.GetProperty("y").GetDouble())).ToList();
-        return list.Count == 0 ? null : new Graph2d(list);
+        ok = false;
+        if (e.ValueKind != JsonValueKind.Object)
+        {
+            SteppedBehavior.ReportMissing("GraphEvaluator2d::ReadFromJson 0x00804dac: operator[](\"nodes\") on a non-object, non-null JSON value is a jsoncpp assert path whose result is not read; treated as a failed read with no nodes");
+            return null;
+        }
+        if (!e.TryGetProperty("nodes", out var nodes) || nodes.ValueKind == JsonValueKind.Null)
+        {
+            log?.Invoke("warning: GraphEvaluator2d.ReadFromJson.NoNodes: Missing entry for 'nodes' key");     // 0x00804dca..0x00804de0
+            return null;
+        }
+        var list = new List<(double X, double Y)>();
+        Graph2d? Done() => list.Count == 0 ? null : new Graph2d(list);
+        if (nodes.ValueKind != JsonValueKind.Array)
+        {
+            if (nodes.ValueKind == JsonValueKind.Object && nodes.EnumerateObject().Any())
+            {
+                SteppedBehavior.ReportMissing("GraphEvaluator2d::ReadFromJson 0x00804dac: nodes is a JSON object with members: size() is its member count and get(i, null) on an object is a jsoncpp assert path whose result is not read; treated as a failed read with no nodes");
+                return null;
+            }
+            ok = true;                                   // size() of a scalar or an empty object is 0 (0x00804e0c; 0x00804e32 beq 0x00804eb0)
+            return null;
+        }
+        uint i = 0;
+        foreach (var node in nodes.EnumerateArray())
+        {
+            if (node.ValueKind == JsonValueKind.Null) { log?.Invoke($"warning: GraphEvaluator2d.ReadFromJson.BadNode: Node {i} failed to read"); return Done(); }    // 0x00804ebc
+            if (node.ValueKind != JsonValueKind.Object)
+            {
+                SteppedBehavior.ReportMissing("GraphEvaluator2d::ReadFromJson 0x00804dac: a node that is neither null nor an object reaches jsoncpp's operator[](const char*) assert path, which is not read; treated as a failed read");
+                return Done();
+            }
+            if (!node.TryGetProperty("x", out var x) || x.ValueKind == JsonValueKind.Null) { log?.Invoke($"warning: GraphEvaluator2d.ReadFromJson.BadX: Node {i} failed to read 'x'"); return Done(); }   // 0x00804ed4
+            if (!node.TryGetProperty("y", out var y) || y.ValueKind == JsonValueKind.Null) { log?.Invoke($"warning: GraphEvaluator2d.ReadFromJson.BadY: Node {i} failed to read 'y'"); return Done(); }   // 0x00804eee
+            if (!AsFloat(x, out float fx) || !AsFloat(y, out float fy)) return Done();
+            // GraphEvaluator2d::AddNode(x, y, true) 0x00804a60: appended when the vector is empty or last.x <= x (vcmpe 0x00804a8e, ble 0x00804b18); otherwise sErrorF
+            // "GraphEvaluator2d.AddNode.OORange" "new node (%f, %f) has x <= than last node %zu = (%f, %f)" (0x00804ad6), the debug-break flag, return false and no node. ReadFromJson ignores the
+            // result (0x00804ea2), so the read goes on.
+            if (list.Count == 0 || list[^1].X <= fx) list.Add((fx, fy));
+            else
+            {
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                var last = list[^1];
+                log?.Invoke($"error: GraphEvaluator2d.AddNode.OORange: new node ({((double)fx).ToString("F6", inv)}, {((double)fy).ToString("F6", inv)}) has x <= than last node {list.Count - 1} = ({last.X.ToString("F6", inv)}, {last.Y.ToString("F6", inv)})");
+            }
+            i++;
+        }
+        ok = true;
+        return Done();
     }
+
+    /// <summary>jsoncpp <c>asFloat</c> (0x004a7264): a number is its value (as float), a bool 1 or 0; a string, array or object is not read (MISSING once) and fails.</summary>
+    private static bool AsFloat(JsonElement v, out float f)
+    {
+        f = 0;
+        switch (v.ValueKind)
+        {
+            case JsonValueKind.Number: f = (float)v.GetDouble(); return true;
+            case JsonValueKind.True: f = 1f; return true;
+            case JsonValueKind.False: f = 0f; return true;
+            default:
+                SteppedBehavior.ReportMissing("jsoncpp Value::asFloat (0x004a7264) of a string, array or object: its body (an exception or assert) is not read; treated as a failed node read");
+                return false;
+        }
+    }
+}
+
+/// <summary>
+/// The classes whose vtable overrides the score slots <c>+0x84</c> (<c>EvaluateRunningScoreInternal</c>) and/or <c>+0x88</c> (<c>EvaluateScoreInternal</c>), read from the 79
+/// behaviour vtables (relocation at vtable start + 8 + slot; every other class points both at <c>IBehavior</c>'s 0x005beedf / 0x005beec3). The override bodies are unbuilt:
+/// DrivePath +0x88 0x005c0f73, LookAround +0x84 0x005c40a1, PounceOnMotion +0x88 0x005f83bf (socialize.json), RequestGameSimple +0x84 0x005eb397 and +0x88 0x005eb361,
+/// LookInPlaceMemoryMap +0x84 0x005e4f2d (addresses with the Thumb bit).
+/// </summary>
+// fidelity: M8-003
+internal static class EngineScoreOverrides
+{
+    public static readonly IReadOnlyDictionary<string, string> Table = new Dictionary<string, string>
+    {
+        ["DrivePath"] = "EvaluateScoreInternal (+0x88, 0x005c0f73)",
+        ["LookAround"] = "EvaluateRunningScoreInternal (+0x84, 0x005c40a1)",
+        ["PounceOnMotion"] = "EvaluateScoreInternal (+0x88, 0x005f83bf)",
+        ["RequestGameSimple"] = "EvaluateRunningScoreInternal (+0x84, 0x005eb397) and EvaluateScoreInternal (+0x88, 0x005eb361)",
+        ["LookInPlaceMemoryMap"] = "EvaluateRunningScoreInternal (+0x84, 0x005e4f2d)",
+    };
 }
 
 /// <summary>
@@ -86,6 +179,12 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
                            double runningBonus = 0, bool repetitionPenaltyEnabled = true, bool runningPenaltyEnabled = true, bool penaltySuppressed = false,
                            double? runningClockSec = null)
     {
+        // fidelity: M8-003
+        // EvaluateScore calls the virtual slots +0x84 (EvaluateRunningScoreInternal, 0x005bef72) and +0x88 (EvaluateScoreInternal, 0x005befc6); the base +0x84 is a tail call to +0x88
+        // (0x005beede). Five classes override one or both (EngineScoreOverrides); none of them has a C# class here, so a behaviour of one of those classes is scored by the base body
+        // below and that is reported MISSING (once), not hidden.
+        if (b?.Class is { } behaviorClass && EngineScoreOverrides.Table.TryGetValue(behaviorClass, out var overridden))
+            SteppedBehavior.ReportMissing($"M8-003: class '{b.Class}' overrides {overridden} in its own vtable; the override body is not built, so the base IBehavior score (emotion scorers or flat score) is used");
         // The engine computes the score in float: vadd.f32 0x005bef88, vmul.f32 0x005bef98 and 0x005beffe; the penalty inputs are float - float.
         float score = (float)(EmotionScorers.Count > 0 ? EmotionScore(ctx) : FlatScore);
         if (runningSec is { } r)
@@ -151,7 +250,7 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         return counted == 0 ? 0 : sum / (float)counted;
     }
 
-    public static ScoredBehaviorEntry FromJson(JsonElement e)
+    public static ScoredBehaviorEntry FromJson(JsonElement e, Action<string>? log = null)
     {
         string id = e.GetProperty("behaviorID").GetString()!;
         double flat = 0; Graph2d? rep = null, run = null; double? boredom = null;
@@ -159,8 +258,20 @@ public sealed record ScoredBehaviorEntry(string BehaviorId, double FlatScore, Gr
         if (e.TryGetProperty("scoring", out var sc))
         {
             if (sc.TryGetProperty("flatScore", out var f)) flat = f.GetDouble();
-            if (sc.TryGetProperty("repetitionPenalty", out var r)) rep = Graph2d.FromJson(r);
-            if (sc.TryGetProperty("runningPenalty", out var rn)) run = Graph2d.FromJson(rn);
+            // fidelity: M8-002, M8-003
+            // IBehavior::ReadFromScoredJson 0x005bc488: a repetitionPenalty (0x005bc4ee..0x005bc50a) or runningPenalty (0x005bc602..0x005bc61c) member that is present and whose
+            // GraphEvaluator2d::ReadFromJson (0x00804dac) fails logs a warning on the channel IScoredBehavior.BadRepetitionPenalty (0x005bc524) / IBehavior.BadRunningPenalty (0x005bc638)
+            // with the text "Behavior '%s': %s failed to read" (0x005bc718): the behaviour's name, then the key. The graph then stays flat (AddNode(0, 1) 0x005bc55c, 0x005bc666).
+            if (sc.TryGetProperty("repetitionPenalty", out var r) && r.ValueKind != JsonValueKind.Null)
+            {
+                rep = Graph2d.Read(r, log, out bool repOk);
+                if (!repOk) log?.Invoke($"warning: IScoredBehavior.BadRepetitionPenalty: Behavior '{id}': repetitionPenalty failed to read");
+            }
+            if (sc.TryGetProperty("runningPenalty", out var rn) && rn.ValueKind != JsonValueKind.Null)
+            {
+                run = Graph2d.Read(rn, log, out bool runOk);
+                if (!runOk) log?.Invoke($"warning: IBehavior.BadRunningPenalty: Behavior '{id}': runningPenalty failed to read");
+            }
             if (sc.TryGetProperty("boredomMultiplier", out var bm)) boredom = bm.GetDouble();
             if (sc.TryGetProperty("emotionScorers", out var es))
                 foreach (var s in es.EnumerateArray())
@@ -282,13 +393,19 @@ public sealed class ScoringChooser : IBehaviorChooser
     public Graph2d? ScoreBonusForCurrent { get; }
     public IReadOnlyList<string> BehaviorIds => Entries.Select(e => e.BehaviorId).ToList();
     public IReadOnlyList<string> Unbound => Entries.Where(e => !_bound.ContainsKey(e.BehaviorId)).Select(e => e.BehaviorId).ToList();
-    public Random Random { get; set; } = new();
-
     /// <summary>
-    /// The <c>RandomGenerator::RandDbl</c> draw (0x0060a4a8) added to a non-running challenger's score.
-    /// Null uses <see cref="Random"/>; a test can pin it.
+    /// A generator that replaces the robot's context RNG: a test seam. Null (production) draws from <c>Robot::GetRNG()</c> (0x0060a49e..0x0060a4a8: <c>mov r0,r6</c>, the robot
+    /// argument, then 0x004aa6a8), which this stack holds as <c>Robot.Animations.Scheduler.ContextRandom</c> (M5 R3).
     /// </summary>
-    public Func<double>? RandomDraw { get; set; }
+    // fidelity: M8-013, M8-004
+    public EngineRandom? Rng { get; set; }
+
+    /// <summary><c>0x0060a422: vldr d9</c> = 0x3FB99999A0000000, the bound of the <c>RandDbl</c> draw: (double)0.1f, [0, 0.1) after the draw (not [0, 1)).</summary>
+    public static readonly double DrawBound = BitConverter.Int64BitsToDouble(0x3FB99999A0000000);
+    /// <summary>0.1f, <c>0x3DCCCCCD</c> (0x0060a428 vldr s20): the running behaviour's bonus.</summary>
+    public static readonly float RunningBonus = BitConverter.Int32BitsToSingle(0x3DCCCCCD);
+    /// <summary>0.01f, <c>0x3C23D70A</c> (0x0060a42c vldr s22): the floor of the running behaviour's score.</summary>
+    public static readonly float RunningFloor = BitConverter.Int32BitsToSingle(0x3C23D70A);
 
     /// <summary>
     /// Records a completed run in the shared repetition history. The manager already does this for every
@@ -307,33 +424,63 @@ public sealed class ScoringChooser : IBehaviorChooser
     public ChooserDecision GetDesiredActiveBehavior(IBehavior? current, double currentRunningSec, BehaviorContext ctx, double nowSec)
     {
         var scores = new List<(string, double, string)>();
-        IBehavior? best = null; double bestScore = 0; double currentScore = 0;
+        // fidelity: M8-013, M8-004
+        // The whole loop is f32 (vldr s16 = s24 = 0.0f 0x0060a3fc; vcmpe.f32 0x0060a4ee): the best score starts at 0.0f and a challenger must be strictly greater.
+        IBehavior? best = null; float bestScore = 0f; float currentScore = 0f;
+        IBehavior? runningFound = null;                                                          // [sp+0x38]
         foreach (var e in Entries)
         {
             if (!_bound.TryGetValue(e.BehaviorId, out var b)) { scores.Add((e.BehaviorId, 0, "not built")); continue; }
-            bool running = current is not null && current.Id == b.Id;
+            // The behaviour's own is-running flag +0xa1 (0x0060a466, 0x0060a524): SteppedBehavior.EngineRunning; a behaviour without it is running when it is the caller's current one.
+            bool running = b is SteppedBehavior flagged ? flagged.EngineRunning : current is not null && current.Id == b.Id;
             // IBehavior +0x104: the running-score bonus IncreaseScoreWhileActing accumulates (M8-003).
             double runningBonus = b is SteppedBehavior sb ? sb.RunningScoreBonus : 0;
-            double s = e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
-                                  runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec),
-                                  runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null);
-            if (s <= 0) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
+            float s = (float)e.Evaluate(b, ctx, nowSec, _penalty.LastRunSec(b.Id), running ? currentRunningSec : null, _penalty,
+                                        runningBonus: runningBonus, penaltySuppressed: _penalty.IsSuppressed(b.Id, nowSec),
+                                        runningClockSec: b is SteppedBehavior clocked ? clocked.RunningPenaltyClockSec : null);
+            // vcmpe.f32 s0,#0 then ble (0x0060a452..0x0060a462): a NaN score is unordered and takes the same branch, so it is skipped too.
+            if (!(s > 0f)) { scores.Add((b.Id, s, b.IsRunnable(ctx) ? "scored 0" : "not runnable")); continue; }
             if (running)
             {
-                // 0x0060a466 ldrb +0xa1; 0x0060a474 GraphEvaluator2d::EvaluateY(chooser+0x28, running duration);
-                // 0x0060a486 vadd the 0.1 constant; 0x0060a48a floor at 0.01.
-                s += ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0;   // 0x0060a474
-                s += 0.1;                                                       // 0x0060a486
-                if (s < 0.01) s = 0.01;                                         // 0x0060a48a
-                currentScore = s;
+                // 0x0060a466 ldrb +0xa1; 0x0060a474 GraphEvaluator2d::EvaluateY(chooser+0x28, running duration); 0x0060a482 vadd.f32 (bonus + score);
+                // 0x0060a486 vadd.f32 0.1f; 0x0060a48a..0x0060a498: the result is the 0.01f floor unless the sum is greater (a NaN sum keeps 0.01f).
+                float bonus = (float)(ScoreBonusForCurrent?.EvaluateY(currentRunningSec) ?? 0);   // 0x0060a474
+                float sum = bonus + s;                                                           // 0x0060a482
+                float s2 = sum + RunningBonus;                                                   // 0x0060a486
+                s = RunningFloor;
+                if (s2 > RunningFloor) s = s2;                                                   // 0x0060a48e..0x0060a498
             }
-            else s += RandomDraw?.Invoke() ?? Random.NextDouble();                               // 0x0060a4a8
+            else
+            {
+                // 0x0060a49e..0x0060a4bc: GetRNG()->RandDbl(0.1f as double); the sum is added in double against (double)score (vadd.f64 0x0060a4b8) and
+                // narrowed to float (vcvt.f32.f64 0x0060a4bc).
+                var rng = Rng ?? ctx.Robot.Animations.Scheduler.ContextRandom;
+                double draw = rng.RandDbl(DrawBound);
+                s = (float)(draw + (double)s);
+            }
             scores.Add((b.Id, s, running ? "running" : ""));
-            if (s > bestScore) { bestScore = s; best = b; }
+            if (s > bestScore) { bestScore = s; best = b; }                                      // vcmpe.f32 s0,s16; ble 0x0060a4ee..0x0060a4f6
+            if (running)
+            {
+                // 0x0060a524..0x0060a594: a second running behaviour with a positive score warns sWarningF("BehaviorChooser.MultipleRunningBehaviors",
+                // "Looks like more than one behavior returned IsRunning(). One of them is '%s'", the later one's name), then the later one is the remembered running behaviour and score.
+                if (runningFound is not null)
+                    ctx.Robot.Engine.Log($"warning: BehaviorChooser.MultipleRunningBehaviors: Looks like more than one behavior returned IsRunning(). One of them is '{b.Id}'");
+                runningFound = b; currentScore = s;
+            }
+        }
+        // 0x0060a5c2..0x0060a61c: when a behaviour is running and it is not the best, sChanneledInfoF("Unnamed", "BehaviorChooser.SwitchBehaviors", "behavior '%s' has score of %f, so is
+        // interrupting running behavior '%s' which scored %f", the best's name or "null", best score, running name, running score); %f is six decimals.
+        string? switchText = null;
+        if (runningFound is not null && !ReferenceEquals(best, runningFound))
+        {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            switchText = $"behavior '{best?.Id ?? "null"}' has score of {((double)bestScore).ToString("F6", inv)}, so is interrupting running behavior '{runningFound.Id}' which scored {((double)currentScore).ToString("F6", inv)}";
+            ctx.Robot.Engine.Log("info: [Unnamed] BehaviorChooser.SwitchBehaviors: " + switchText);
         }
         if (best is null) return new ChooserDecision(null, "no listed behaviour is runnable and wants to run", scores);
-        if (current is not null && current.Id == best.Id) return new ChooserDecision(best, "already running", scores);
-        return new ChooserDecision(best, current is null ? $"highest score {bestScore:F2}" : $"behavior '{best.Id}' has score of {bestScore:F2}, so is interrupting running behavior '{current.Id}' which scored {currentScore:F2}", scores);
+        if (ReferenceEquals(best, runningFound)) return new ChooserDecision(best, "already running", scores);
+        return new ChooserDecision(best, switchText ?? $"highest score {((double)bestScore).ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}", scores);
     }
 }
 
@@ -973,7 +1120,7 @@ public static class ActivityTreeLoader
 {
     public static string ActivitiesDir(string obbRoot) => Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine", "behaviorSystem");
 
-    public static IReadOnlyList<Activity> Load(string obbRoot, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty = null, Random? random = null)
+    public static IReadOnlyList<Activity> Load(string obbRoot, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty = null, Random? random = null, Action<string>? log = null)
     {
         var dir = ActivitiesDir(obbRoot);
         var byId = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
@@ -987,11 +1134,11 @@ public static class ActivityTreeLoader
         var top = JsonDocument.Parse(File.ReadAllText(Path.Combine(dir, "activities_config.json")), new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
         docs.Add(top);
         var result = new List<Activity>();
-        foreach (var a in top.RootElement.EnumerateArray()) result.Add(Build(a, byId, bound, penalty, random, 0));
+        foreach (var a in top.RootElement.EnumerateArray()) result.Add(Build(a, byId, bound, penalty, random, 0, log));
         return result;
     }
 
-    private static Activity Build(JsonElement e, Dictionary<string, JsonElement> byId, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, int priority)
+    private static Activity Build(JsonElement e, Dictionary<string, JsonElement> byId, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, int priority, Action<string>? log)
     {
         string id = e.GetProperty("activityID").GetString()!;
         var subs = new List<Activity>();
@@ -1001,7 +1148,7 @@ public static class ActivityTreeLoader
                 string sid = s.GetProperty("activityID").GetString()!;
                 // activityPriority is parsed with ParseUint8 and discarded (0x005AD63C/0x005AD640); the
                 // child order is the JSON array order, not a priority sort (M15-013).
-                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0));
+                if (byId.TryGetValue(sid, out var se)) subs.Add(Build(se, byId, bound, penalty, random, 0, log));
                 else subs.Add(new Activity { Id = sid, Type = "Missing", Priority = 0, Strategy = new ActivityStrategy { Type = "Missing" } });
             }
         AnimationTrigger? Trig(string k) => e.TryGetProperty(k, out var t) && Enum.TryParse<AnimationTrigger>(t.GetString(), out var tr) ? tr : null;
@@ -1016,8 +1163,8 @@ public static class ActivityTreeLoader
         return new Activity
         {
             Id = id, Type = e.TryGetProperty("activityType", out var ty) ? ty.GetString() ?? "BehaviorsOnly" : "BehaviorsOnly", Priority = priority, Strategy = strategy,
-            Chooser = e.TryGetProperty("behaviorChooser", out var bc) ? BuildChooser(bc, bound, penalty, random) : e.TryGetProperty("universalChooser", out var uc) ? BuildChooser(uc, bound, penalty, random) : null,
-            InterludeChooser = e.TryGetProperty("interludeBehaviorChooser", out var ic) ? BuildChooser(ic, bound, penalty, random) : null,
+            Chooser = e.TryGetProperty("behaviorChooser", out var bc) ? BuildChooser(bc, bound, penalty, random, log) : e.TryGetProperty("universalChooser", out var uc) ? BuildChooser(uc, bound, penalty, random, log) : null,
+            InterludeChooser = e.TryGetProperty("interludeBehaviorChooser", out var ic) ? BuildChooser(ic, bound, penalty, random, log) : null,
             DriveStartAnim = Trig("driveStartAnimTrigger"), DriveLoopAnim = Trig("driveLoopAnimTrigger"), DriveEndAnim = Trig("driveEndAnimTrigger"), IdleAnim = Trig("idleAnimTrigger"),
             RequireSpark = e.TryGetProperty("requireSpark", out var rs) ? rs.GetString() : null,
             NeedsActionId = e.TryGetProperty("needsActionID", out var na) ? na.GetString() : null,
@@ -1025,7 +1172,7 @@ public static class ActivityTreeLoader
         };
     }
 
-    public static IBehaviorChooser BuildChooser(JsonElement c, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random)
+    public static IBehaviorChooser BuildChooser(JsonElement c, IReadOnlyDictionary<string, IBehavior> bound, RepetitionPenalty? penalty, Random? random, Action<string>? log = null)
     {
         string type = c.TryGetProperty("type", out var t) ? t.GetString() ?? "Scoring" : "Scoring";
         switch (type)
@@ -1035,10 +1182,10 @@ public static class ActivityTreeLoader
             case "Selection":
                 return new SelectionChooser(bound);
             default:
-                var entries = c.TryGetProperty("behaviors", out var bs) ? bs.EnumerateArray().Select(ScoredBehaviorEntry.FromJson).ToList() : new List<ScoredBehaviorEntry>();
+                var entries = c.TryGetProperty("behaviors", out var bs) ? bs.EnumerateArray().Select(x => ScoredBehaviorEntry.FromJson(x, log)).ToList() : new List<ScoredBehaviorEntry>();
                 var bonus = c.TryGetProperty("scoreBonusForCurrentBehavior", out var sb) ? Graph2d.FromJson(sb) : null;
                 var sc = new ScoringChooser(entries, bound, bonus, penalty);
-                if (random is not null) sc.Random = random;
+                if (random is not null) sc.Rng = new EngineRandom(random);   // a test seed; production draws from the robot's context RNG
                 return sc;
         }
     }

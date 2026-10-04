@@ -599,7 +599,7 @@ public class M7BatchThreeBTests
         f.Fist.PlaceObjectOnGround = ct => { placed++; return Task.CompletedTask; };
         f.Start();
         Assert.Equal(0, f.Fist.State);
-        f.Step();
+        Assert.True(f.StepUntil(() => placed == 1));              // the action starts on a manager tick: wait for it, not one fixed step
         Assert.Equal(1, placed);
         Assert.Equal(1, f.Fist.State);                              // written right after the action starts (0x005F2364)
     }

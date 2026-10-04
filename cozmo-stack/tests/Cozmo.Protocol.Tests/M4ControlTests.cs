@@ -532,14 +532,14 @@ public class M4ControlTests
         Assert.Equal(20f, h.AccelRadPerSec2);
         Assert.Equal(0f, h.DurationSec);
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
-        rig.Tick();                                                    // M4-016: the 1 ms timeout fires on the engine clock
+        rig.Tick(); rig.Tick();                                                    // M4-016: the 1 ms timeout fires on the engine clock
         await first;
         mark = rig.Mark();
         var second = rig.Robot.Motion.SetHeadAngleAsync(-99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(0x3F46D3F2u, BitConverter.SingleToUInt32Bits(h.AngleRad));   // −99 rad → +1.5310 → max, 0x3F46D3F2
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
-        rig.Tick();
+        rig.Tick(); rig.Tick();
         await second;
     }
 
@@ -561,19 +561,19 @@ public class M4ControlTests
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min - 1e-6f), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.False(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
-        rig.Tick(); await a;
+        rig.Tick(); rig.Tick(); await a;
         mark = rig.Mark();
         var b = rig.Robot.Motion.SetHeadAngleAsync(max + 1e-6f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max + 1e-6f), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.False(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
-        rig.Tick(); await b;
+        rig.Tick(); rig.Tick(); await b;
         mark = rig.Mark();
         var c = rig.Robot.Motion.SetHeadAngleAsync(min - 1e-4f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
-        rig.Tick(); await c;
+        rig.Tick(); rig.Tick(); await c;
     }
 
     /// <summary>
@@ -594,19 +594,19 @@ public class M4ControlTests
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
-        rig.Tick(); await a;
+        rig.Tick(); rig.Tick(); await a;
         mark = rig.Mark();
         var b = rig.Robot.Motion.SetHeadAngleAsync(float.NegativeInfinity, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
-        rig.Tick(); await b;
+        rig.Tick(); rig.Tick(); await b;
         mark = rig.Mark();
         var c = rig.Robot.Motion.SetHeadAngleAsync(1e30f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
-        rig.Tick(); await c;
+        rig.Tick(); rig.Tick(); await c;
     }
 
     /// <summary>
@@ -655,7 +655,7 @@ public class M4ControlTests
             var pending = rig.Robot.Motion.SetLiftHeightAsync(ask, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
             var l = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
             Assert.Equal((10f, 20f, 0f), (l.MaxSpeedRadPerSec, l.AccelRadPerSec2, l.DurationSec));
-            rig.Tick();
+            rig.Tick(); rig.Tick();
             await pending;
             return l.HeightMm;
         }
@@ -701,7 +701,7 @@ public class M4ControlTests
             Task<MotionOutcome> pending;
             if (i % 2 == 0) pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
             else pending = rig.Robot.Motion.SetLiftHeightAsync(80f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
-            rig.Tick();
+            rig.Tick(); rig.Tick();
             await pending;
         }
         var ids = rig.SentSince(mark).Select(m => m switch { SetHeadAngle h => (int?)h.ActionId, SetLiftHeight l => l.ActionId, _ => null })
@@ -1973,5 +1973,53 @@ public class M4ControlTests
         rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp, frame: 1)); rig.Tick();
         Assert.Equal(OffTreadsState.InAir, s.OffTreadsState);   // the commit
         Assert.Equal(0, s.FrameMismatchCount);                  // C13.2: the mismatch increment is skipped
+    }
+
+    // ================================================================== R-FIX3 (M4-001, M4-016)
+
+    /// <summary>
+    /// M4-001 (R-FIX3). The clip warnings, read from the binary: "Requested head angle (%.1fdeg) less than min head angle (%.1fdeg). Clipping."
+    /// (0xBEA11C, 0x00547F74) with getDegrees() of the rescaled angle (Radians::getDegrees 0x0084CD40: float x 0x42652EE1) widened to a double and -25.0
+    /// (0xC0390000 high word, 0x00547F7C); and "... more than max head angle (%.1fdeg). Clipping." (0xBEA169) with 44.5 (0x40464000, 0x00547FFA).
+    /// 99 rad rescales to -1.5310 rad = -87.7 deg; -99 rad to +87.7 deg.
+    /// </summary>
+    [Fact]
+    public async Task M4_001_RFix3_TheClipWarningsAreTheEnginesTexts()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
+        var first = rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        Assert.True(rig.Logged("warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle (-87.7deg) less than min head angle (-25.0deg). Clipping."));
+        rig.Tick(); rig.Tick(); await first;
+        var second = rig.Robot.Motion.SetHeadAngleAsync(-99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        Assert.True(rig.Logged("warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle (87.7deg) more than max head angle (44.5deg). Clipping."));
+        rig.Tick(); rig.Tick(); await second;
+    }
+
+    /// <summary>
+    /// M4-016 (R-FIX3). IAction::UpdateInternal 0x00540D4A..0x00540D68 stamps +0x74 with the tick clock at the action's FIRST update (it starts
+    /// negative); the timeout test is now >= start + 30.0f (slot 0x2C, 0x0052B0C2 = 0x41F00000; slots 0x24/0x28 return 0.0, 0x0052B0BA/0x0052B0BE,
+    /// so the second gate, now &lt; start + slot24 + slot28 at 0x00540DB0..0x00540DC0, never holds). The action is queued at tick T and first
+    /// updated at tick T+60 ms (RunAsync adds it, UpdateActions runs once per tick), so it times out when a tick reaches (T+60 ms) + 30 s, not
+    /// at T + 30 s.
+    /// </summary>
+    [Fact]
+    public async Task M4_016_RFix3_TheStartTimeIsStampedAtTheFirstUpdateAndTheTimeoutIsThirtySecondsLater()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
+        var pending = rig.Robot.Motion.SetHeadAngleAsync(0.9f, requireCalibration: false);     // default timeout: 30.0 s
+        rig.Tick(60);                                                                           // the first update: stamps the start
+        // 29.9 s later: not yet
+        rig.Tick(29_900);
+        Assert.False(pending.IsCompleted);
+        rig.Tick(200);                                                                          // now >= start + 30 s (T+30.16 s >= T+30.06 s)
+        var r = await pending;
+        Assert.Equal(MotionResult.Failed, r.Result);
+        Assert.Equal(0x03000018u, r.EngineResult);
     }
 }

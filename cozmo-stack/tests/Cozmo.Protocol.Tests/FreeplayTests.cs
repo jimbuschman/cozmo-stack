@@ -298,9 +298,9 @@ public class FreeplayTests
             new ScoredBehaviorEntry("missing", 9.0, null, null, null, Array.Empty<EmotionScorer>()),
         };
         var chooser = new ScoringChooser(entries, bound, scoreBonusForCurrent: new Graph2d(new[] { (0.0, 1.0) }));
-        // ScoringBSRunnableChooser adds RandomGenerator::RandDbl (0x0060a4a8) to every non-running score;
-        // pin it to zero so the ordering assertions are the engine's score rule and not the draw.
-        chooser.RandomDraw = () => 0.0;
+        // ScoringBSRunnableChooser adds GetRNG()->RandDbl(0.1f as double) (0x0060a49e..0x0060a4bc) to every non-running score: a draw in [0, 0.1). Every ordering below has a margin
+        // above 0.1, so the engine's own draw (a seeded generator here) does not decide any of them.
+        chooser.Rng = new Cozmo.Robot.Animation.EngineRandom(1u);
         Assert.Equal(new[] { "missing" }, chooser.Unbound);
         var d = chooser.GetDesiredActiveBehavior(null, 0, ctx, 0);
         Assert.Equal("a", d.Behavior!.Id);                                            // c is not runnable, missing is not built
@@ -368,20 +368,20 @@ public class FreeplayTests
         var state = new NeedsState(cfg);
         state.SetNeedLevel(NeedId.Repair, 1.0);
         state.SetNeedLevel(NeedId.Play, 1.0);
-        state.ApplyDecay(decay, 60, connected: true);
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, decay.DecayMultipliers(n => state.GetNeedLevel(n)), connected: true);
         Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);      // 0.6 a minute; the 0.5 entry is first
 
         // Repair 0.3: the 0.3 entry is the first threshold at or below the level, so Play's multiplier is 2
         state.SetNeedLevel(NeedId.Repair, 0.3);
         state.SetNeedLevel(NeedId.Play, 1.0);
-        state.ApplyDecay(decay, 60, connected: true);
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, decay.DecayMultipliers(n => state.GetNeedLevel(n)), connected: true);
         Assert.Equal(cfg.MinimumNeedLevel, state.GetNeedLevel(NeedId.Play), 3);   // 1.2 a minute, clamped
 
         // Repair 0.03: no entry's threshold is at or below the level, so the multiplier stays 1 and Play
         // decays at its base rate; the old implementation multiplied every matching entry instead.
         state.SetNeedLevel(NeedId.Repair, 0.03);
         state.SetNeedLevel(NeedId.Play, 1.0);
-        state.ApplyDecay(decay, 60, connected: true);
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, decay.DecayMultipliers(n => state.GetNeedLevel(n)), connected: true);
         Assert.Equal(0.4, state.GetNeedLevel(NeedId.Play), 3);
 
         // the damaged parts follow the repair level against 0.98, 0.6, 0.3
@@ -2484,5 +2484,99 @@ public class FreeplayTests
             Assert.True(File.Exists(path));
         }
         finally { Directory.Delete(dir, true); }
+    }
+
+    // ================================================================== R-FIX3 (M1-024): NeedsState::ApplyDecay, piecewise per minute
+
+    private static NeedsState DecayState(out DecayConfig decay, params (double Threshold, double Rate)[] playRows)
+    {
+        var none = new (double, double)[] { (0.0, 0.0) };
+        decay = new DecayConfig(
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            { [NeedId.Play] = playRows, [NeedId.Repair] = none, [NeedId.Energy] = none },
+            new Dictionary<NeedId, IReadOnlyList<(double, double)>>
+            { [NeedId.Play] = playRows, [NeedId.Repair] = none, [NeedId.Energy] = none });
+        var state = new NeedsState(NeedsConfig.Default);
+        state.SetNeedLevel(NeedId.Play, 1.0);
+        return state;
+    }
+
+    private static readonly IReadOnlyDictionary<NeedId, float> OneMultipliers =
+        new Dictionary<NeedId, float> { [NeedId.Repair] = 1f, [NeedId.Energy] = 1f, [NeedId.Play] = 1f };
+
+    /// <summary>
+    /// M1-024 (R-FIX3). NeedsState::ApplyDecay 0x0069C3C0 integrates piecewise across the rate rows, per minute: minutes = elapsed / 60.0f
+    /// (0x0069C48A); from the first row whose threshold is at or below the level (0x0069C46C..0x0069C474), rate = row rate x multiplier
+    /// (0x0069C4B0), minutes to the row's threshold = (level - threshold) / rate (0x0069C4C2..0x0069C4C6); while minutes remain after it the level
+    /// becomes the threshold and the next row applies (0x0069C4D4..0x0069C4EE), otherwise level = level - minutes x rate (0x0069C544..0x0069C548).
+    /// Rows (0.8, 0.5/min), (0.4, 0.1/min), (0.0, 0.02/min) at level 1.0 for 60 s: 0.4 min bring the level to 0.8, then the remaining 0.6 min at
+    /// 0.1/min give 0.8 - 0.06 = 0.74 (a single rate at the level, the old reading, gives 0.5).
+    /// </summary>
+    [Fact]
+    public void M1_024_RFix3_TheDecayIsIntegratedPiecewisePerMinute()
+    {
+        var state = DecayState(out var decay, (0.8, 0.5), (0.4, 0.1), (0.0, 0.02));
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, OneMultipliers, connected: true);
+        Assert.Equal(0.74, state.GetNeedLevel(NeedId.Play), 5);
+    }
+
+    /// <summary>
+    /// M1-024 (R-FIX3). The multiplier scales the row's rate (vmul.f32 0x0069C4B0): one row (0.0, 0.1/min) x 2.0 at level 1.0 for 60 s is 0.8.
+    /// A rate that is not above zero ends the walk with the level as it stands (bls 0x0069C4BC -> 0x0069C4F2): rows (0.8, 0.5), (0.4, 0.0) leave
+    /// 0.8. When the rows run out with minutes left the level is the last row's threshold (0x0069C4F0 -> 0x0069C4F6): one row (0.8, 0.5) for
+    /// 10 minutes leaves 0.8, not the minimum. Below every threshold the function returns with nothing changed (0x0069C480..0x0069C484): level 0.3
+    /// against one row at 0.5. The single clamp is the minimum (0x0069C512..0x0069C51C): rows (0.0, 1.0) for 2 minutes end at the threshold 0.0,
+    /// stored as the minimum 0.03.
+    /// </summary>
+    [Fact]
+    public void M1_024_RFix3_TheMultiplierTheStopsAndTheMinimumClamp()
+    {
+        var state = DecayState(out var decay, (0.0, 0.1));
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, new Dictionary<NeedId, float> { [NeedId.Play] = 2f }, connected: true);
+        Assert.Equal(0.8, state.GetNeedLevel(NeedId.Play), 5);
+
+        state = DecayState(out decay, (0.8, 0.5), (0.4, 0.0));
+        state.ApplyDecay(decay, (int)NeedId.Play, 60f, OneMultipliers, connected: true);
+        Assert.Equal(0.8, state.GetNeedLevel(NeedId.Play), 5);
+
+        state = DecayState(out decay, (0.8, 0.5));
+        state.ApplyDecay(decay, (int)NeedId.Play, 600f, OneMultipliers, connected: true);
+        Assert.Equal(0.8, state.GetNeedLevel(NeedId.Play), 5);
+
+        state = DecayState(out decay, (0.5, 0.5));
+        state.SetNeedLevel(NeedId.Play, 0.3);
+        state.ApplyDecay(decay, (int)NeedId.Play, 600f, OneMultipliers, connected: true);
+        Assert.Equal(0.3, state.GetNeedLevel(NeedId.Play), 5);
+
+        state = DecayState(out decay, (0.0, 1.0));
+        state.SetNeedLevel(NeedId.Play, 0.5);
+        state.ApplyDecay(decay, (int)NeedId.Play, 120f, OneMultipliers, connected: true);
+        Assert.Equal(NeedsConfig.Default.MinimumNeedLevel, state.GetNeedLevel(NeedId.Play), 6);
+    }
+
+    /// <summary>
+    /// M1-024 (R-FIX3). ApplyDecay logs the channeled info "Decaying need index %d with elapsed time of %f seconds" (0x0069C594) for every call
+    /// (0x0069C3E8..0x0069C3F4), and runs with no elapsed &gt; 0 gate (the caller at 0x00695DA4 has none): a zero or negative elapsed gives no
+    /// minutes (ble 0x0069C496), the level is stored unchanged, never raised. Driven through the live NeedsManager.ApplyDecayAllNeeds: a
+    /// zero elapsed on every need still produces the three log lines.
+    /// </summary>
+    [Fact]
+    public void M1_024_RFix3_ApplyDecayLogsEveryCallAndHasNoElapsedGate()
+    {
+        var state = DecayState(out var decay, (0.0, 0.1));
+        var log = new List<string>();
+        state.Warn += log.Add;
+        state.ApplyDecay(decay, (int)NeedId.Play, 0f, OneMultipliers, connected: true);
+        state.ApplyDecay(decay, (int)NeedId.Play, -60f, OneMultipliers, connected: true);
+        Assert.Equal(1.0, state.GetNeedLevel(NeedId.Play), 6);
+        Assert.Contains("info: NeedsState.ApplyDecay: Decaying need index 2 with elapsed time of 0.000000 seconds", log);
+        Assert.Contains("info: NeedsState.ApplyDecay: Decaying need index 2 with elapsed time of -60.000000 seconds", log);
+
+        double clock = 0;
+        var needs = new NeedsManager(() => clock);
+        var lines = new List<string>();
+        needs.Log += lines.Add;
+        needs.ApplyDecayAllNeeds(true, 0f);
+        Assert.Equal(3, lines.Count(l => l.StartsWith("info: NeedsState.ApplyDecay: Decaying need index ")));
     }
 }

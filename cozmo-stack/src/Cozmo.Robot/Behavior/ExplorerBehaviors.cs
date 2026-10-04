@@ -106,6 +106,13 @@ public class ExploreLookAroundInPlaceBehavior : ActionBehavior
     private readonly List<(double, double)> _turns = new();
     protected override bool KeepsRunningWithoutAction => true;
 
+    /// <summary>
+    /// <c>vtable+0x28</c> of BehaviorExploreLookAroundInPlace and BehaviorFindFaces (both 0x005c1d76): <c>ldrb.w r0,[r0,#0x120]</c>, the byte the constructor stores from
+    /// <c>behavior_CanCarryCube</c> (0x005e1efe).
+    /// </summary>
+    // fidelity: M8-001
+    protected override bool RunnableGate28(BehaviorContext context) => Params.CanCarryCube;
+
     protected override bool IsRunnableInternal(BehaviorContext context)
     {
         if (!Params.CanCarryCube && M is not null && M.Docking.Carrying.IsCarryingObject) return false;

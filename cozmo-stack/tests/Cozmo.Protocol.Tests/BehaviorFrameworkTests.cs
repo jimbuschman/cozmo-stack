@@ -462,10 +462,34 @@ public class BehaviorFrameworkTests
         int second = b.Trace.Count(l => l.StartsWith("NothingToDoBoredEvent:"));
         Assert.Equal(3, first);                                  // one failed first child per loop, num_loops = 3
         Assert.Equal(0, second);                                 // ignoreFailure = 0: the second child never starts
-        // but every loop built both actions when it started (0x005C02CA..0x005C030E), and each constructor warned about its empty group
-        Assert.Equal(3, b.Trace.Count(l => l.EndsWith("the animation group for Hiccup is empty")));
-        Assert.Equal(3, b.Trace.Count(l => l.EndsWith("the animation group for NothingToDoBoredEvent is empty")));
+        // every loop built both actions when it started (0x005C02CA..0x005C030E); the constructor's SetAnimGroupFromTrigger (0x0054432C) warns only when HasAnimationForTrigger is true
+        // and the group name is empty (0x00544344 bne -> end; 0x00544390 cbnz), so triggers the map does not name are silent (R-FIX3 M8-005: the former invented text is gone)
+        Assert.DoesNotContain(b.Trace, l => l.Contains("EmptyAnimGroupNameForTrigger") || l.Contains("animation group for"));
         Assert.False(b.Update(ctx, 1000));                       // the behaviour completed
+    }
+
+    /// <summary>
+    /// M8-005 (R-FIX3): a trigger the map names with an EMPTY group logs sWarningF("TriggerAnimationAction.EmptyAnimGroupNameForTrigger", "Event: %s") (0x005443a8, 0x005443a6:
+    /// the strings at 0x00544408 and 0x00be9cdc), once per constructed action: three loops build the action three times.
+    /// </summary>
+    // fidelity: M8-005
+    [Fact]
+    public void AMappedTriggerWithAnEmptyGroupNameWarnsWithTheEnginesEventAndText()
+    {
+        var file = Path.Combine(Path.GetTempPath(), "rfix3-" + Guid.NewGuid().ToString("N") + ".json");
+        File.WriteAllText(file, "{\"Pairs\":[{\"CladEvent\":\"Hiccup\",\"AnimName\":\"\"}]}");
+        try
+        {
+            using var robot = CozmoRobot.CreateOffline();
+            robot.Transport.OfflineAcceptConnection();
+            var ctx = new BehaviorContext { Robot = robot, Triggers = AnimationTriggerMap.Load(file), Random = new Random(1) };
+            var b = PlayAnimOf(3, AnimationTrigger.Hiccup, AnimationTrigger.NothingToDoBoredEvent);
+            b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
+            for (int tick = 0; tick < 12 && b.Update(ctx, tick * 33); tick++) { }
+            Assert.Equal(3, b.Trace.Count(l => l == "warning: TriggerAnimationAction.EmptyAnimGroupNameForTrigger: Event: Hiccup"));
+            Assert.DoesNotContain(b.Trace, l => l.Contains("NothingToDoBoredEvent") && l.Contains("EmptyAnimGroupName"));   // unmapped: silent
+        }
+        finally { File.Delete(file); }
     }
 
     /// <summary>

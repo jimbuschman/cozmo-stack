@@ -189,14 +189,6 @@ public sealed record DecayConfig(IReadOnlyDictionary<NeedId, IReadOnlyList<(doub
         return result;
     }
 
-    public double RatePerMinute(NeedId need, double level, bool connected)
-    {
-        var table = (connected ? Connected : Unconnected).GetValueOrDefault(need);
-        if (table is null || table.Count == 0) return 0;
-        foreach (var (t, rate) in table) if (level > t) return rate;
-        return table[^1].PerMinute;
-    }
-
     public static DecayConfig Parse(string json)
     {
         using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
@@ -342,19 +334,70 @@ public sealed class NeedsState
 
     public void ApplyDelta(NeedId n, double delta) => SetNeedLevel(n, _levels[(int)n] + delta);
 
-    public void ApplyDecay(DecayConfig decay, float elapsedSec, bool connected)
+    // fidelity: M1-024
+    /// <summary>
+    /// <c>NeedsState::ApplyDecay(decayConfig, need, elapsedSeconds, multipliers)</c> 0x0069C3C0..0x0069C53C, one need per
+    /// call, all in binary32 (the levels are a <c>map&lt;NeedId, float&gt;</c>). It logs the channeled info "Decaying need
+    /// index %d with elapsed time of %f seconds" (0x0069C594; the float widened to a double), finds the first row of the
+    /// need's table whose threshold is at or below the level (<c>vcmpe s0,s2; bge</c> 0x0069C46C..0x0069C474) and returns
+    /// with nothing changed when there is none (0x0069C480..0x0069C484). Otherwise minutes = elapsed / 60.0f
+    /// (<c>vdiv.f32</c> 0x0069C48A) and, from that row on, the level falls piecewise: rate = row rate * multiplier
+    /// (<c>vmul.f32</c> 0x0069C4B0); a rate that is not above zero (<c>bls</c> 0x0069C4BC) ends the walk with the level as
+    /// it is; the minutes to reach the row's threshold are (level - threshold) / rate (0x0069C4C2..0x0069C4C6) and when the
+    /// remaining minutes do not exceed them (<c>ble</c> 0x0069C4D2, which a NaN also takes) the level is
+    /// <c>level - minutes * rate</c> (0x0069C544..0x0069C548) and the walk ends; otherwise the minutes are reduced by them
+    /// (0x0069C4D4), the level becomes the threshold, and the walk ends there when no minutes remain (0x0069C4DC..0x0069C4E0)
+    /// or goes on to the next row while one exists (0x0069C4EA..0x0069C4EE). There is no elapsed &gt; 0 gate: an elapsed that
+    /// gives no minutes (<c>ble</c> 0x0069C496) skips the walk but still stores. The only clamp is the minimum level
+    /// (config +0, <c>vcmpe s16,s18; it mi</c> 0x0069C512..0x0069C51C; ApplyDelta 0x0069C93E..0x0069C962 reads +0 as the
+    /// minimum and +4 as the maximum), there is no upper clamp. The result is stored, the bracket cache is dirtied
+    /// (+0x88 = 1, 0x0069C528) and the Repair need (index 0) runs <c>PossiblyDamageParts(Decay)</c> (0x0069C530..0x0069C536).
+    /// </summary>
+    public void ApplyDecay(DecayConfig decay, int need, float elapsedSec, IReadOnlyDictionary<NeedId, float> multipliers, bool connected)
     {
-        // GetDecayMultipliers is asked once, from the levels as they stand, and the same three multipliers
-        // are used for the whole pass (ApplyDecayAllNeeds 0x00695CFE). The engine divides the elapsed by
-        // 60.0f and multiplies the rate and multiplier in f32 (NeedsState::ApplyDecay 0x0069C48A,
-        // 0x0069C4A8..0x0069C4B0).
-        var multipliers = decay.DecayMultipliers(n => _levels[(int)n]);
-        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+        Warn?.Invoke($"info: NeedsState.ApplyDecay: Decaying need index {need} with elapsed time of {PrintfF((double)elapsedSec)} seconds");
+        var table = (connected ? decay.Connected : decay.Unconnected).GetValueOrDefault((NeedId)need);
+        int count = table?.Count ?? 0;
+        float level = (float)_levels[need];
+        int i = 0;
+        while (i < count && !(level >= (float)table![i].Threshold)) i++;
+        if (i >= count) return;
+        float minutes = elapsedSec / 60.0f;
+        float result = level;
+        if (minutes > 0f)                                                    // ble 0x0069C496 takes NaN too
         {
-            float rate = (float)decay.RatePerMinute(n, _levels[(int)n], connected) * multipliers[n];
-            SetNeedLevel(n, _levels[(int)n] - (rate * elapsedSec / 60f));
+            float multiplier = multipliers[(NeedId)need];
+            float current = level;
+            for (int j = i; j < count; j++)
+            {
+                float rate = (float)table![j].PerMinute * multiplier;
+                if (rate <= 0f) { result = current; break; }                  // bls 0x0069C4BC (false for NaN)
+                float threshold = (float)table[j].Threshold;
+                float toThreshold = (current - threshold) / rate;
+                if (!(minutes > toThreshold)) { result = current - minutes * rate; break; }
+                minutes -= toThreshold;
+                result = threshold;
+                if (!(minutes > 0f)) break;
+                current = threshold;
+            }
+        }
+        float min = (float)_cfg.MinimumNeedLevel;
+        if (result < min) result = min;
+        _levels[need] = result;
+        _bracketsDirty = true;
+        if (need == 0 && !_reportedPossiblyDamageParts)
+        {
+            _reportedPossiblyDamageParts = true;
+            Warn?.Invoke("warning: MISSING: NeedsState::PossiblyDamageParts(Decay) 0x0069C5D8, called after the Repair decay (0x0069C536), is not built; the damaged-part flags are not updated (M1-024)");
         }
     }
+
+    private bool _reportedPossiblyDamageParts;
+
+    /// <summary>C's "%f" of a double: six decimals, "inf" / "-inf" / "nan" for the non-finite values.</summary>
+    internal static string PrintfF(double v) =>
+        double.IsNaN(v) ? "nan" : double.IsPositiveInfinity(v) ? "inf" : double.IsNegativeInfinity(v) ? "-inf"
+        : v.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
     /// How many of Cozmo's parts count as damaged at a repair level.
@@ -588,8 +631,6 @@ public sealed class NeedsManager
     /// (0x00695F66).
     /// </summary>
     private readonly double[] _bracketChangedSec = new double[3];
-    /// <summary><c>this+8/+0xc</c>: the stored write time for the 61 s rate limiter (0x00695DD2; J14).</summary>
-    private double _lastWriteSec;
     /// <summary>
     /// <c>+0x1b8/+0x1bc</c> (J4): the <c>NeedsState</c> <c>DateTime</c> (<c>+8/+0xC</c>) snapshotted at a
     /// successful device read (0x006936B6) and at disconnect (0x00695934). The resolver compares the robot
@@ -791,13 +832,9 @@ public sealed class NeedsManager
                     _fullnessStartSec.Remove(n);
                 }
                 float elapsed = now - _lastDecaySec.GetValueOrDefault(n, now);      // 0x00695D8A..0x00695D96 (f32)
-                if (elapsed > 0)
-                {
-                    // 0x00695D9C..0x00695DA4: NeedsState::ApplyDecay takes the elapsed as a float and divides
-                    // it by 60.0f (0x0069C48A); the rate and multiplier multiply in f32.
-                    float rate = (float)Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * multipliers[n];
-                    State.ApplyDelta(n, -(rate * elapsed / 60f));
-                }
+                // 0x00695D9C..0x00695DA4: NeedsState::ApplyDecay is called with no elapsed > 0 gate; it takes the elapsed
+                // as a float and integrates the need's rate table piecewise in f32 (see NeedsState.ApplyDecay).
+                State.ApplyDecay(Decay, (int)n, elapsed, multipliers, connected);
                 _lastDecaySec[n] = now;                                             // 0x00695DA8
             }
             DetectBracketChanges(nowOverride: now);
@@ -855,9 +892,13 @@ public sealed class NeedsManager
     // fidelity: M15-001
     public void PossiblyWriteToDevice()
     {
+        // fidelity: M15-014
+        // 0x00695DC4..0x00695DFA: the throttle's anchor is the state's own DateTime at this+8/+0xC (the field WriteToDevice(true)
+        // refreshes, 0x00693BC4, and the resolver stores, J4), not a private counter: `now - [+8] >= 61,000,000` falls through to
+        // `strd now,[+8]` (0x00695DF2) and WriteToDevice(false); a smaller difference returns (blt 0x00695DF0).
         double now = _clockSec();
-        if (now - _lastWriteSec < WriteThrottleSec) return;
-        _lastWriteSec = now;
+        if (now - _stateDateTimeSec < WriteThrottleSec) return;
+        _stateDateTimeSec = now;
         WriteToDevice?.Invoke(false);
     }
 

@@ -648,8 +648,13 @@ internal sealed class TrackLayerComponent
     /// <summary>
     /// G1 TrackLayerComponent::Update: a DesiredFaceDistortion above 1e-5 calls AddGlitch(degree).
     /// </summary>
+    // fidelity: M7-005, M7-007, M7-016, M7-017
     public void Update()
     {
+        // TrackLayerComponent::Update reads DesiredFaceDistortion on every keep-alive tick (0x0057cf7a). This stack has no component that supplies it (its source is UNKNOWN), so
+        // an unset seam is reported MISSING (once) instead of defaulting to 0 without a word; the glitch is skipped.
+        if (DesiredFaceDistortion is null)
+            Behavior.SteppedBehavior.ReportMissing("TrackLayerComponent::Update 0x0057cf7a: the DesiredFaceDistortion degree (DesiredFaceDistortionComponent) has no source in this stack (M7-017); no glitch layer is added");
         float degree = DesiredFaceDistortion?.Invoke() ?? 0f;
         if (degree > 1e-5f) AddGlitch(degree);
     }

@@ -875,7 +875,7 @@ public class DerivedStateTests
             Assert.True(tilted.Update(ctx, 600));
             rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = false });
             Assert.False(tilted.Update(ctx, 700));
-            Assert.Contains(tilted.Trace, l => l.Contains("reported complete"));
+            Assert.Contains(tilted.Trace, l => l.Contains("CalibrateMotorAction.CheckIfDone.Done"));   // R-FIX3 M8-008: 0x00547d98..0x00547d9c
         }
     }
 
