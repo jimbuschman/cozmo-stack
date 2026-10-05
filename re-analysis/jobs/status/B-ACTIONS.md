@@ -121,3 +121,15 @@ Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
 3b (replace the stack's async sequences in FlipBlockAction, ChargerActions and DockActions with compounds) and
 4 (completion to the game: RobotCompletedAction and ActionWatcher). Records stay IMPLEMENTATION_GAP until a
 strong verifier settles them.
+
+### Follow-up fix (same batch): global tag-counter race
+
+The push gate's full suite failed `NavigationTests.KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates`
+(NavigationTests.cs:869; the trace showed `DriveAndFlipBlockAction(7) -> 0x02000001 NOT_STARTED`). The test passes
+in isolation, so it was parallel-order-dependent: `ActionRunnerTagCounter.Global` (C1) is a process-wide static
+whose `HashSet<uint>`/`uint` were not thread-safe, and xUnit runs test classes in parallel. The counter now locks
+`NextIdTag`/`TryReserve`/`Release`/`IsInUse`; seed, increment, wrap and collision rules are unchanged, and the
+engine is single-threaded so no engine behaviour changes. Full suite after the fix: **3852 passed, 0 failed**.
+- Queued (test-only): `BehaviorFrameworkTests.AnAnimationActionLocksItsMaskUnderItsActionId` asserts
+  `(before+1)` after `NextActionTag()`; with a shared counter another parallel test can draw between the calls.
+  Make the test observe the action's actual tag, or serialise it. Production is correct.

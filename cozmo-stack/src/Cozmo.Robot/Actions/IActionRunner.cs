@@ -91,6 +91,10 @@ internal sealed class ActionRunnerTagCounter
 
     private uint _next;
     private readonly HashSet<uint> _inUse = new();
+    // The engine is single-threaded (C1: one global sTagCounter 0x01051020 and sInUseTagSet 0x0105A8F4), so this
+    // lock changes no engine behaviour. It only keeps the process-wide static from being corrupted when xUnit runs
+    // test classes in parallel and several tests drive ActionRunner ctors/tags at once.
+    private readonly object _gate = new();
 
     public ActionRunnerTagCounter() : this(Seed) { }
 
@@ -100,21 +104,33 @@ internal sealed class ActionRunnerTagCounter
     /// <summary>C1: return the old counter, then increment; a wrapped 0 becomes the seed.</summary>
     public uint NextIdTag()
     {
-        uint id = _next;
-        uint next = unchecked(_next + 1);
-        if (next == 0) next = Seed;
-        _next = next;
-        return id;
+        lock (_gate)
+        {
+            uint id = _next;
+            uint next = unchecked(_next + 1);
+            if (next == 0) next = Seed;
+            _next = next;
+            return id;
+        }
     }
 
     /// <summary>C1: ctor collision check / C2 uniqueness check.</summary>
-    public bool TryReserve(uint id) => id != 0 && _inUse.Add(id);
+    public bool TryReserve(uint id)
+    {
+        lock (_gate) return id != 0 && _inUse.Add(id);
+    }
 
     /// <summary>C2: erase a prior changed tag (the original stays reserved).</summary>
-    public void Release(uint id) => _inUse.Remove(id);
+    public void Release(uint id)
+    {
+        lock (_gate) _inUse.Remove(id);
+    }
 
     /// <summary>Whether an id is currently reserved (C2 collision).</summary>
-    public bool IsInUse(uint id) => _inUse.Contains(id);
+    public bool IsInUse(uint id)
+    {
+        lock (_gate) return _inUse.Contains(id);
+    }
 
     /// <summary>The one global counter every IActionRunner draws from (C1).</summary>
     internal static readonly ActionRunnerTagCounter Global = new();
