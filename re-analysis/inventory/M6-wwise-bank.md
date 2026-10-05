@@ -3059,3 +3059,28 @@ No status changes.
 - **C42.5, `VoicePass`** takes the pass argument: V7's result is ANDed with it (`0xA44B54..5C`); the argument is `BusPassArg` (`0xA44DE0..0xA44DF4`: byte A == 0 ? 1 : byte B); when it is 0 V7 still runs and the render and `0xA5495C/0xA55CC4` are skipped.
 - **C42.6, `0x9CF644` for the shipped Compressor shareset:** `0x9CF3A4` is called with zero records and its only other work is `key->vt+0x20` (ctx slot `0x103B7FC` = `0x9FF53C` -> `0x9FF4E0`, stores to the caller's out frame only); no behaviour-changing work for shareset `0x89DDC03B`.
 - **C42.7, `0x9882E0`** clears bits 0 and 1 of `[pbi+0x1BE]` (`and r3,#0xfe`; `bfc r3,#1,#1`); C41.3's description ("clears bit 1") is amended.
+
+## Correction C43 (manager, 2026-10-05): the voice filter A/B, checked
+
+**Sonnet-verified; awaiting Opus check.** C43 adopts the rows that `re-analysis/research/20261005-B-M6b-4-voice-filter-13.md`
+lists as HOLDS in its Verification section, **with that section's corrections applied** (1..8, P1, the ctor, the Reset caller, the
+S2E/S2F truth table and the build spec). Where C43 differs from earlier text, C43 wins. No status changes.
+
+- **C43.1, the targets.** The four writes of `0xA54F1C` (A-LPF, B-LPF, A-HPF, B-HPF, in that order) hit the filter band records
+  themselves (`voice+0x340/0x510/0x350/0x520` = node+0x170/0x180 of `voice+0x1D0` / `voice+0x3A0`); the C# `Ramp340/510/350/520`
+  objects are the same memory in the engine. Clamp, compare, setter fold, B-band floors, the S2E/S2F table and the Reset on the
+  S2F 1->0 transition are as the verification's build spec states.
+- **C43.2, the band process** (`0xA766F0` / `0xA77480`, rows A1..A9): frame count `u16[S+0xE]`, channels `byte[S+4]`, plane
+  stride `u16[S+0xC]*4`, per-channel history, the first/dirty/steps/countdown/bypass state machine, the ramp over chunks of
+  `u32[0x105244C]`, the bypass history copy (none for frames <= 1), no redesign on steady state, `cur` untouched on the
+  both-<= 0.1 immediate bypass.
+- **C43.3, the design and kernel.** `a = (fc / (float)u32[0x105243C]) * pi` (each op rounded), `t = tanf(a)`, the LPF/HPF
+  coefficient association of rows A5/A5h, the NEON block matrix rows of section 5, the aligned block path with flush-to-zero
+  (P1: every channel pointer in the engine path is 16-byte aligned, so the scalar head is never reached), the scalar VFP tail.
+  `tanf` is the phone's libm: EQUIVALENT_IMPLEMENTATION (host stand-in = correctly rounded float32 tan), exactness on a given
+  phone BLOCKED_EXTERNAL; the NEON flush-to-zero is the instruction semantics, the VFP FPSCR state is BLOCKED_EXTERNAL.
+- **C43.4, the shipped Sound.** LPF 15.0 -> 13500.0 Hz, engaged at the first pull (S2F=1, S2E=0); HPF 0 -> bypassed; filter B
+  bypassed; coefficients B0 0x3EB4A7B9, B1 0x3F34A7B9, A1n 0xBE6BECFA, A2n 0xBE3950CB.
+- **C43.5, the ctor `0xA76280`** initial F contents (unity matrix, `-0` lanes) have no output effect (every use follows a design).
+- **Records touched (text only, no status):** M6-011 (the block form, frame count, channels, targets, design association),
+  M6-022. Still open: the 3D path `0xA4C138`, NaN cur/target against the real function, pause/stop triggers of `[pbi+0x1BE]`.

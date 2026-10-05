@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "6852cb394457894a33dfe5495aca4c3f739df9261889ee0280327a367812edf6",
+  "inventory_sha256": "ce4d3a8a2c788f67c78ba38f9d919f0b42e71c3f331e51f15b9800f99272dd2c",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
