@@ -336,12 +336,13 @@ public sealed class WwiseVoiceStateTests
         var pbi = Pbi();
         var (voice, plugin, _) = Rig(pbi);
         pbi.Word15C = 0x00003102;
-        pbi.Flags0E8 = 0x5D;
+        pbi.Flags0E8 = 0x5C;                                          // bit 5 clear as with 0x5D; bits 0-1 clear: the 2D path (the 3D branch of 0xA4BC58 is a required stop)
         pbi.StartOffset = 0xFFFFFFFF;
         pbi.Flags1BE = 0;
-        int hits = 0;
+        voice.SendTable = new WwiseVoiceSendTable { Capacity = 1 };    // AddSrc's table: 0xA5975C reads entry 0 for a dry connection
+        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry());
         var conn = new WwiseVoiceConnection(new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8), 1, 1) { Flags6C = 0 };
-        conn.Conversion5975C = _ => hits++;                           // the 0xA4BC58 main loop runs only with a non-zero low byte of [voice+0xF0]
+        Assert.Equal(101f, pbi.FieldC4);                              // the ctx ctor's [P+0xB8] = 101.0f (0x9BCA48); the first 0xA4BC58 call (a zero low byte of [voice+0xF0]) skips the loop AND the B14 copy
         voice.Connections.Add(conn);
         var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { SourceOwner = _ => pbi, CalcEffectiveParamsVt24 = _ => { } };
         Assert.Equal(0u, voice.Word0xF0);
@@ -353,7 +354,7 @@ public sealed class WwiseVoiceStateTests
         Assert.Equal(0x00003102u, voice.FilterB.Word190);
         Assert.Same(pbi, voice.Pbi388);                               // 0xA5676C
         Assert.Equal(0x00003102u, voice.Buffer.State.ChannelConfig);  // the tail's S+4 (0xA55634)
-        Assert.Equal(1, hits);                                        // the second 0xA4BC58 call's main loop ran (the first, before the build, had a zero word)
+        Assert.Equal(0f, pbi.FieldC4);                                // the second 0xA4BC58 call's loop ran to the B14 tail (0xA4BFC4: [P+0xB8] <- [P+0xA8] = 0); the first call, before the build, had a zero word
         var buf = voice.Buffer;
         buf.State.Data = null; buf.State.MaxFrames = 8; buf.State.ChannelConfig = voice.Word0xF0;
         voice.InsertFxSlots[0]!.Execute3C(buf);                       // 0xA791A8: u16[S+0xC] * byte[S+4] * 4 bytes

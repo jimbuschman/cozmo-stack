@@ -967,9 +967,12 @@ public class WwiseVoiceLinkerTests
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Format64 = lineWord };
         var conn = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = word, FlagsCD = 8 };
+        voice.SendTable = new WwiseVoiceSendTable { Capacity = 1 };      // AddSrc's table (0xA5975C reads entry 0 for a dry connection)
+        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry());
         voice.Connections.Add(conn);
         var owner = Rig.Pbi();
         owner.Flags1BE = 0x04;                                              // vt3c != 0 (0xA55E90, gapE 3.3): main loop
+        owner.Flags0E8 = 0x5C;                                              // the 2D path ([P+0xDC] & 3 == 0 after 0x9BEB30, pass-16 F6)
 
         WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 1f, 0);
 
@@ -1056,10 +1059,13 @@ public class WwiseVoiceLinkerTests
         failing.Descriptor.AllocationFails = () => true;
         var ok = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4101, FlagsCD = 8, OutputGain = 1f };
+        voice.SendTable = new WwiseVoiceSendTable { Capacity = 1 };      // AddSrc's table (0xA5975C reads entry 0 for a dry connection)
+        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry());
         voice.Connections.Add(failing);
         voice.Connections.Add(ok);
         var owner = Rig.Pbi();
         owner.Flags1BE = 0x04;
+        owner.Flags0E8 = 0x5C;                                              // the 2D path ([P+0xDC] & 3 == 0 after 0x9BEB30, pass-16 F6)
 
         WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 0.5f, 0);
 

@@ -182,6 +182,7 @@ public class WwisePitchNodeTests
                 if (cf[0] == "1") { bus.MixInput(); bus.ReleaseBuffer(); }
                 var dd = new Xs(Convert.ToUInt32(cf[5], 16));
                 for (int i = 0; i < 1024; i++) bus.Buffer[i] = dd.F32();
+                bus.Format64 = 0x4101;                                                                       // the mono line: u8 [bus+0x64] = 1 (A45E9C's destination rows)
                 var conn = new WwiseVoiceConnection(bus, ch, 1)
                 {
                     C08 = Bits(cf[1]), C0C = Bits(cf[2]), C10 = Bits(cf[3]), C14 = Bits(cf[4]),
@@ -191,9 +192,8 @@ public class WwisePitchNodeTests
                 var mb = new float[ch];
                 for (int i = 0; i < ch; i++) ma[i] = WwiseMixKernelTests.GainValue(mm);
                 for (int i = 0; i < ch; i++) mb[i] = WwiseMixKernelTests.GainValue(mm);
-                conn.Mixer.Refresh(ma, 1f);
-                conn.Mixer.Refresh(mb, 1f);
                 conn.Descriptor.Reserve(ch, 1);                                                          // [conn+0x18] != 0
+                for (int i = 0; i < ch; i++) { conn.Descriptor.PrevMatrix[i * 4] = ma[i]; conn.Descriptor.NextMatrix[i * 4] = mb[i]; }   // prev = [conn+0x24] = ma, next = [conn+0x20] = mb (rows padded to 4 floats)
                 voice.Connections.Add(conn);
             }
             int allocs = 0;

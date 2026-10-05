@@ -265,6 +265,30 @@ public sealed class WwiseConnectionDescriptor
 
     /// <summary>The <c>+0x20</c>/<c>+0x24</c> swap.</summary>
     public void SwapPointers() => (PtrA, PtrB) = (PtrB, PtrA);
+
+    // The matrix halves (pass 16 B3, C44.3): the allocation (0xA67B9C) holds two matrices of size/2 bytes, each numIn rows of ((outCh + 3) >> 2) * 4 floats. [conn+0x20] (PtrA) is the NEXT matrix
+    // (0xA5975C writes it, 0xA25FF8's matrix argument), [conn+0x24] (PtrB) is the PREVIOUS one (0xA45E9C reads prev = [conn+0x24], next = [conn+0x20]). The allocation is NOT zeroed (the pool's
+    // memory is uninitialised): half B holds whatever the pool held, and the engine writes it before it reads it (the zero fill of 0xA4C16C clears only half A); this model starts it at zero.
+
+    /// <summary>The next matrix <c>[conn+0x20]</c>: the whole half, <c>size / 2</c> bytes as floats (empty when unallocated).</summary>
+    public Span<float> NextMatrix => Data is null ? default : System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(Data.AsSpan(PtrA, Size / 2));
+
+    /// <summary>The previous matrix <c>[conn+0x24]</c>: the whole half (empty when unallocated).</summary>
+    public Span<float> PrevMatrix => Data is null ? default : System.Runtime.InteropServices.MemoryMarshal.Cast<byte, float>(Data.AsSpan(PtrB, Size / 2));
+
+    /// <summary><c>memcpy(dst = [conn+0x20] (next), src = [conn+0x24] (prev), floats * 4)</c> (0xA4C088..0xA4C0B8, 0xA59878..0xA598B0); a count of 0 copies nothing (<c>cmp r2,#0; beq</c>).</summary>
+    public void CopyPrevToNext(int floats)
+    {
+        if (floats == 0) return;
+        PrevMatrix[..floats].CopyTo(NextMatrix);
+    }
+
+    /// <summary><c>memcpy(dst = [conn+0x24] (prev), src = [conn+0x20] (next), floats * 4)</c> (0xA4BF6C..0xA4BF9C, 0xA4C0D8..0xA4C130); a count of 0 copies nothing.</summary>
+    public void CopyNextToPrev(int floats)
+    {
+        if (floats == 0) return;
+        NextMatrix[..floats].CopyTo(PrevMatrix);
+    }
 }
 
 /// <summary>
@@ -317,11 +341,8 @@ public sealed class WwiseVoiceConnection
     /// <summary>V7/C1 <c>0xA4B4B0</c> ducking: the per-connection <c>+0x60</c>.</summary>
     public float C60 { get; set; }
 
-    /// <summary>V7/C1 <c>0xA4BE6C</c>: the per-connection gain <c>[conn+0xC] = [voice+0x1C]*gain</c>.</summary>
-    public float ConnectionGain { get; set; } = 1f;
-
-    /// <summary>V7/C1 <c>0xA4BC58</c> per-connection fields: <c>+0x08/+0x0C/+0x10/+0x14</c> and the four
-    /// min inputs <c>+0x50/+0x54/+0x58/+0x5C</c>; <c>+0x64</c> is the re-init id.</summary>
+    /// <summary>V7/C1 <c>0xA4BC58</c> per-connection fields: <c>+0x08/+0x0C/+0x10/+0x14</c> (the engine's ctor sets all four to 1.0f, <c>0xA6F918</c>) and the four
+    /// min inputs <c>+0x50/+0x54/+0x58/+0x5C</c>; <c>+0x64</c> is the re-init id. <c>+0xC</c> is <c>[voice+0x1C]*gain</c>, <c>+0x14</c> the send gain 0xA5975C writes.</summary>
     public float C0C { get; set; }
     public float C08 { get; set; }
     public float C10 { get; set; }
@@ -332,16 +353,13 @@ public sealed class WwiseVoiceConnection
     public float C5C { get; set; }
     public int C64 { get; set; }
 
-    /// <summary>V7/C1 <c>0xA4BEC4</c> <c>0xA5975C</c> per-connection conversion (unread seam).</summary>
-    public Action<WwiseVoiceConnection>? Conversion5975C { get; set; }
-
-    /// <summary>V7/C1 <c>0xA4BF4C</c> <c>0xA5D70C</c> per-connection step (unread seam); it also receives <c>param_12</c> (<c>0xA4BF38</c>, X2).</summary>
-    public Action<WwiseVoiceConnection, WwiseGainArg12?>? Conversion5D70C { get; set; }
-
-    /// <summary>The pan matrix the next <see cref="Refresh"/> applies (M6-012 gapE 2.1; caller-supplied).</summary>
+    /// <summary>
+    /// The earlier model's pan matrix for <see cref="Refresh"/> (M6-012 gapE 2.1; caller-supplied): used ONLY by the legacy render order (<see cref="WwiseLiveVoice.AllowRenderOrderApproximation"/>), never on the engine path, where the
+    /// matrices are the descriptor's halves that <c>0xA4BC58</c> -&gt; <c>0xA5975C</c> -&gt; <c>0xA25FF8</c> produce (<see cref="Descriptor"/>).
+    /// </summary>
     public float[]? TargetMatrix { get; set; }
 
-    /// <summary>The composed target gain the next <see cref="Refresh"/> applies (M6-012 gapE 2.1).</summary>
+    /// <summary>The earlier model's composed target gain for <see cref="Refresh"/> (legacy render order only).</summary>
     public float TargetGain { get; set; } = 1f;
 
     /// <summary>
@@ -360,8 +378,8 @@ public sealed class WwiseVoiceConnection
     }
 
     /// <summary>
-    /// V8 step 3 <c>0xA56E00</c> (M6-012 gapE 2.5): promote the last end gain/matrix to the start and take
-    /// the new target. <see cref="TargetMatrix"/> must be set; the identity diagonal is used when null.
+    /// LEGACY render order only (<see cref="WwiseLiveVoice.AllowRenderOrderApproximation"/>; NOT the engine path, which never calls it): the earlier model's promote-and-take of the last end gain/matrix
+    /// (M6-012 gapE 2.5). <see cref="TargetMatrix"/> must be set; the identity diagonal is used when null.
     /// </summary>
     public void Refresh()
     {
@@ -381,7 +399,7 @@ public sealed class WwiseVoiceConnection
     /// <c>0xA4FBEC(bus, state, conn, {g0, g1})</c> (V2-05, C38.3): with <c>u16 [state+0xE] == 0</c> it returns and nothing is touched (<c>0xA4FBF4..0xA4FBF8</c>). Otherwise <c>[bus+0x68] = 0x2D</c> and a bus state of 4 becomes 1
     /// (<see cref="WwiseMixBus.MixInput"/>), the channels of the voice's block are zero-padded from <c>u16 [state+0xE]</c> to <c>u16 [state+0xC]</c> (planar stride <c>u16 [state+0xC]</c>; the padding is skipped with no pad or no channels),
     /// <c>u16 [state+0xE] = u16 [state+0xC]</c>, and unless the bus has a mixer plug-in (<c>[bus+0x1A8] != 0 &amp;&amp; [[bus+0x1A8]+0xC] != 0</c>: none on shipped data, the plug-in's <c>vt+0x28</c> is not adopted, so it throws) the matrix mixer
-    /// <see cref="WwiseMixerConnection.MatrixMixA45E9C"/> runs with <c>start = (conn[0x10] * conn[8]) * g0</c> and <c>end = (conn[0x14] * conn[0xC]) * g1</c> (float32, in that order) over the BUS frame count (not the voice's valid count: that
+    /// <see cref="WwiseMixKernels.MatrixMixA45E9C"/> runs (prev = <c>[conn+0x24]</c>, next = <c>[conn+0x20]</c>, the descriptor's halves) with <c>start = (conn[0x10] * conn[8]) * g0</c> and <c>end = (conn[0x14] * conn[0xC]) * g1</c> (float32, in that order) over the BUS frame count (not the voice's valid count: that
     /// only gates and pads); then <c>u16 [bus+0x6E] = u16 [bus+0x58]</c>. An LFE configuration (bit 15 of the channel word, <c>0xA45FD0</c> unread) throws.
     /// </summary>
     // fidelity: M6-022, M6-012
@@ -404,13 +422,19 @@ public sealed class WwiseVoiceConnection
             throw new WwiseMissingBehaviourException("M6-022 V2-05: the bus has a mixer plug-in ([bus+0x1A8] and [[bus+0x1A8]+0xC] set): its vt+0x28 (0xA4FCD0) is not adopted (none on shipped data, C37.4)");
         if ((state.ChannelConfig & 0x8000u) != 0)
             throw new WwiseMissingBehaviourException("M6-012 V2-06: the LFE branch of the matrix mixer (0xA45FD0..0xA46078) is not adopted (no shipped configuration has it)");
-        if (channels != Mixer.InputChannels)
-            throw new InvalidOperationException($"the voice's block has {channels} channels, the connection mixes {Mixer.InputChannels}");
+        // A45E9C reads the destination row count from the bus buffer's cfg word [bus+0x64] and the input rows from the block's cfg [S+4]; the model's bus buffer is one mono float[], so another count is a visible stop.
+        int outChannels = (int)(Bus.Format64 & 0xFFu);
+        if (outChannels != 1)
+            throw new WwiseMissingBehaviourException($"M6-012 V2-06: the bus buffer's cfg 0x{Bus.Format64:X} has {outChannels} channels; the model's bus buffer is one mono float[] (the Master line's cfg is UNKNOWN, C44.3 9.3)");
         float start = (C10 * C08) * g0;                                              // 0xA4FD58..0xA4FD60 vmul.f32 s15,s15,s11; vmul.f32 s15,s15,s13
         float end = (C14 * C0C) * g1;                                                // 0xA4FD44, 0xA4FD5C
         var sources = new ReadOnlyMemory<float>[channels];
         for (int c = 0; c < channels; c++) sources[c] = data.AsMemory(c * max, max);
-        Mixer.MatrixMixA45E9C(sources, new[] { Bus.Buffer }, start, end, Bus.MaxFrames);   // 0xA4FD6C bl 0xA45E9C(S, bus+0x60, &{start, end}, [conn+0x24], [conn+0x20], [bus+0x5C], u16 [bus+0x58])
+        // 0xA4FD6C bl 0xA45E9C(S, bus+0x60, &{start, end}, prev = [conn+0x24], [sp] = next = [conn+0x20], [sp+4] = [bus+0x5C], [sp+8] = u16 [bus+0x58]); the rows are the engine's padded ones (D3/D4).
+        int stride = WwiseChannelMatrix.Rows(Bus.Format64);
+        if (Descriptor.PrevMatrix.Length < channels * stride)
+            throw new InvalidOperationException($"the connection's matrices hold {Descriptor.PrevMatrix.Length} floats; {channels} channels x {stride} are read (the engine reads past its allocation)");
+        WwiseMixKernels.MatrixMixA45E9C(Descriptor.PrevMatrix, Descriptor.NextMatrix, stride, sources, new[] { Bus.Buffer }, channels, outChannels, start, end, Bus.InvFrames5C, Bus.MaxFrames);
         Bus.SetFramesA4FD74();                                                       // 0xA4FD70..0xA4FD74 u16 [bus+0x6E] = u16 [bus+0x58]
     }
 
@@ -1694,7 +1718,7 @@ public delegate bool WwiseConnectionGainsA4BC58(WwiseLiveVoice voice, WwisePlayi
 /// <item><b>The per-voice state machine <c>0xA54F1C</c> (V7)</b> is built on the owner PBI (C41, <see cref="RunVoiceStateMachine"/>, checked against the engine in <c>WwiseVoiceStateOracleTests</c>); what C41 does not give (<c>0xA370E4</c>, voice <c>vt+0x58</c>, the pitch node's chain slots, <c>0xA7666C</c>, <c>0x99CC40</c>,
 /// the FX resolver, registry and <c>&amp;fmt</c>) is a required seam that throws <see cref="WwiseMissingBehaviourException"/>.</item>
 /// <item><b>The insert-FX slot</b> is the in-place wrapper <see cref="WwiseVoiceInsertFxSlot"/> (C41.4); the out-of-place class <c>0x103DC38</c> is not extracted (a required stop).</item>
-/// <item><b>The bus mix kernel <c>0xA4F9E0</c>/<c>0xA45E9C</c></b> is M6-012's <see cref="WwiseMixerConnection"/>.</item>
+/// <item><b>The bus-to-bus mix <c>0xA4F9E0</c></b> is <see cref="MixOutputBus"/> (C44.3 G10) over M6-012's <see cref="WwiseMixKernels"/> (<c>0xA45E9C</c> / <c>0xA46668</c>) with the bus gain stage <see cref="WwiseMixBus.GainStageA4D994"/>; <see cref="WwiseMixerConnection"/> is the EARLIER model (legacy render order only).</item>
 /// </list></para>
 /// </summary>
 public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
@@ -2419,26 +2443,63 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     }
 
     /// <summary>
-    /// V17 <c>0xA4F9E0(outputBus, out, bus)</c> (C7): the bus-to-output-bus mix, called when the bus has an
-    /// output bus at <c>+0x1C8</c>. It sets the output bus's mix state (<c>[bus+0x1BC]==4 -&gt; 1</c>,
-    /// <c>[bus+0x68]=0x2D</c>), zero-pads the source past its valid frames, then either calls
-    /// <c>[outputBus+0x1A8]-&gt;vt+0x28</c> or the <c>0xA45E9C</c> mixer with the source's
-    /// <c>[voice+0x3C]/[voice+0x40]</c> gains. The kernel itself is M6-012's; the built default performs the
-    /// same mono accumulation.
+    /// V17 <c>0xA4F9E0(parent, S, child)</c> (pass 16 G10, C44.3): the bus-to-output-bus mix, called when the bus has an output bus at <c>+0x1C8</c>. It returns when <c>u16 [S+0xE] == 0</c>; sets the parent's mix state (<c>[parent+0x1BC] 4 -&gt; 1</c>,
+    /// <c>[parent+0x68] = 0x2D</c>); zero-pads each channel of S from <c>u16 [S+0xE]</c> to <c>u16 [S+0xC]</c> and sets <c>u16 [S+0xE] = u16 [S+0xC]</c> (<c>0xA4FA68</c>); forwards to the parent's mixer object (<c>[[parent+0x1A8]+0xC]</c>, <c>vt+0x28</c>: none on shipped data) when it has one;
+    /// returns without mixing when the child has no matrix descriptor (<c>[child+0x34] == 0</c>); else, when <c>[child+0xC0] &amp; 6</c> is set or the cfg words <c>[S+4]</c> and <c>[parent+0x64]</c> differ, runs <c>0xA45E9C(S, parent+0x60, {S[0x10], S[0x14]}, prev = [child+0x40], next = [child+0x3C], [parent+0x5C], u16 [parent+0x58])</c>;
+    /// otherwise (identical cfgs) ramps each channel with <c>0xA46668(S row, parent row, start = S[0x10], inc = (S[0x14] - S[0x10]) * [parent+0x5C], u16 [parent+0x58])</c> (no matrix). Both mixing paths end with <c>u16 [parent+0x6E] = u16 [parent+0x58]</c>.
+    /// <c>S[0x10]</c>/<c>S[0x14]</c> are the pair <c>0xA4FEF8</c> copied from <c>{[child+0x80], [child+0x84]}</c> after <c>0xA4D994</c>. The model's bus buffers are one mono <c>float[]</c> each: another channel count is a visible stop (the Master line's cfg is UNKNOWN).
+    /// Which two cfg words the engine compares is read from the oracle's engine run, not stated by C44.3 (reported).
     /// </summary>
+    // fidelity: M6-022, M6-012
     public void MixOutputBus(WwiseMixBus outputBus, float[] source, WwiseMixBus sourceBus)
     {
         ArgumentNullException.ThrowIfNull(outputBus);
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(sourceBus);
 
-        // 0xA4F9E0: ldrh ip,[r1,#0xe]; cmp ip,#0; bxeq lr -- a source buffer with no valid frames
-        // returns before the mix state, the [outputBus+0x1A8] object and the 0xA45E9C kernel.
+        // 0xA4F9E0: ldrh ip,[r1,#0xe]; cmp ip,#0; bxeq lr -- a source buffer with no valid frames returns before anything is touched.
         if (sourceBus.Frames == 0) return;
 
         if (OutputBusMix is { } hook) { hook(outputBus, source, sourceBus); return; }
-        if (outputBus.OutputMixObject1A8 is { } obj) { outputBus.MixInput(); obj(); return; }
-        outputBus.MixBuffer(source, sourceBus.Frames, sourceBus.Gain3C, sourceBus.Gain40);   // 0xA45E9C
+
+        outputBus.MixStateA4F9EC();                                          // 0xA4F9EC..0xA4FA1C: [parent+0x1BC] == 4 -> 1; [parent+0x68] = 0x2D
+        int channels = (int)(sourceBus.Format64 & 0xFFu);                    // 0xA4FA24 ldrb sb,[r1,#4]
+        int max = sourceBus.MaxFrames, valid = sourceBus.Frames;             // u16 [S+0xC], u16 [S+0xE]
+        if (valid < max && channels != 0)                                    // 0xA4FA20 beq 0xA4FA64; 0xA4FA28 cmp sb,#0
+            for (int c = 0; c < channels; c++)
+                Array.Clear(source, valid + c * max, max - valid);           // 0xA4FA3C..0xA4FA5C memset(S.data + (valid + c * max) * 4, 0, (max - valid) * 4)
+        sourceBus.SetFramesA4FD74();                                         // 0xA4FA68 strh r7,[r6,#0xe]: u16 [S+0xE] = u16 [S+0xC]
+
+        if (outputBus.OutputMixObject1A8 is { } obj && outputBus.MixObject1A8C is not null)   // 0xA4FA64..0xA4FAC0: [parent+0x1A8], [[+0x1A8]+0xC] -> vt+0x28
+        {
+            obj();
+            return;
+        }
+        if (!sourceBus.MatrixDescriptor34.IsAllocated) return;               // 0xA4FAD0..0xA4FAD8 ldr r3,[r2,#0x34]; beq 0xA4FAC4
+
+        if (channels != 1 || (int)(outputBus.Format64 & 0xFFu) != 1)
+            throw new WwiseMissingBehaviourException($"M6-012 G10: the model's bus buffers are one mono float[] each; the mix of cfg 0x{sourceBus.Format64:X} into cfg 0x{outputBus.Format64:X} needs another layout (the Master line's cfg is UNKNOWN, C44.3 9.3)");
+        if (source.Length < max || outputBus.Buffer.Length < outputBus.MaxFrames)
+            throw new InvalidOperationException("the bus buffers are shorter than their frame counts");
+        float g0 = sourceBus.OutGain10, g1 = sourceBus.OutGain14;            // S[0x10], S[0x14]
+        bool matrixPath = (sourceBus.FlagsC0 & 6) != 0 || sourceBus.Format64 != outputBus.Format64;   // 0xA4FADC..0xA4FB18 (tst r3,#6; the two cfg words)
+        int frames = outputBus.MaxFrames;                                    // u16 [parent+0x58]
+        if (matrixPath)
+        {
+            int stride = WwiseChannelMatrix.Rows(outputBus.Format64);
+            var d = sourceBus.MatrixDescriptor34;
+            if ((sourceBus.Format64 & 0x8000u) != 0 || (outputBus.Format64 & 0x8000u) != 0)
+                throw new WwiseMissingBehaviourException("M6-012 V2-06: the LFE branch of the matrix mixer (0xA45FD0..0xA46078) is not adopted");
+            if (frames > source.Length) throw new InvalidOperationException("the child's buffer is shorter than the parent's frame count");
+            var sources = new ReadOnlyMemory<float>[] { source.AsMemory(0, max) };
+            WwiseMixKernels.MatrixMixA45E9C(d.PrevMatrix, d.NextMatrix, stride, sources, new[] { outputBus.Buffer }, channels, 1, g0, g1, outputBus.InvFrames5C, frames);   // 0xA4FB44 bl 0xA45E9C
+        }
+        else
+        {
+            float inc = (g1 - g0) * outputBus.InvFrames5C;                   // 0xA4FB9C vsub.f32 s15,s15,s13; 0xA4FBA0 vmul.f32 s15,s15,s14
+            WwiseMixKernels.RampAccumulateA46668(source.AsSpan(0, frames), outputBus.Buffer, g0, inc, frames);   // 0xA4FBDC bl 0xA46668(S row, parent row, start, inc, frames)
+        }
+        outputBus.SetFramesA4FD74();                                         // 0xA4FB48 u16 [parent+0x6E] = u16 [parent+0x58]
     }
 
     /// <summary>
@@ -2457,7 +2518,8 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     public float[] GetBusOutput(WwiseMixBus bus)
     {
         ArgumentNullException.ThrowIfNull(bus);
-        bus.GetResultingBuffer(_updateBuffer ?? (_ => { }));         // V18: 0xA4F754/0xA4FD84/0xA4D994
+        bus.GetResultingBuffer(_updateBuffer ?? (_ => { }));         // V18: 0xA4F754/0xA4FD84
+        bus.GainStageA4D994();                                       // V18: 0xA4D994 after the FX loop (G1; the conditions of the four call sites are MISSING: once per call here)
         WwiseBusMetering.Run(bus);                                   // V18 tail: 0xA50044..0xA50FD0 (C12 X1)
         BusMeter?.Invoke(bus);                                       // optional extra caller hook
         return bus.Buffer;                                           // 0xA4FEF8's *out (0xA4FD84 -> bus+0x60)
@@ -2612,13 +2674,14 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// <param name="pbi">The owner PBI <c>[source+0xC]</c>; <c>param_2</c> is <c>pbi+0xC</c>.</param>
     /// <param name="gain">The <c>param_4</c> gain.</param>
     /// <param name="arg5">The <c>param_5</c> byte: <c>src-&gt;vt+0x4C</c> (<see cref="SourceVt4C"/>).</param>
-    /// <param name="arg12">The <c>param_12</c> pointer: <c>{[pbi+0x140], word}</c> or none; the per-connection step <c>0xA5D70C</c> is its reader (<c>0xA4BF38</c>, X2).</param>
+    /// <param name="arg12">The <c>param_12</c> pointer: <c>{[pbi+0x140], word}</c> or none; <c>0xA5D70C</c> is its reader (<c>0xA4BF38</c>, X2); a non-null value is a required stop (dead on Cozmo, C44.3).</param>
     /// <param name="floatOutputs">
     /// The <c>param_8..11</c> destination, in order. The first call passes <see cref="WwiseLiveVoice.OutputMin50"/> (the caller's <c>sp+0x30..0x3c</c>); the second call at <c>0xA5572C</c> passes a scratch because its outputs go to <c>sp+0x40</c> and are never read (C18 V7-q).
     /// </param>
     /// <returns>The <c>P2F</c> byte the state machine reads at <c>0xA55248</c>/<c>0xA5526C</c>.</returns>
     /// <remarks>
-    /// The conversion sub-callees <c>0xA5975C</c>, <c>0xA67C58</c>, <c>0xA67B9C</c> and <c>0xA5D70C</c> are unread and stay explicit seams (finding 5). The four output floats <c>[sp+0x5c..0x68]</c> carry the min of the connection fields <c>+0x50/+0x54/+0x58/+0x5C</c>.
+    /// The exact engine body (pass 16 + the pass-13 truth table, C44.3): the prelude (<c>sb</c>/<c>fp</c>/<c>r5</c>), the three S2E/S2F outcomes, the per-connection loop <see cref="ConnectionLoopA4BD74"/> (B1..B15) with <c>0xA5975C</c> (<see cref="ConnectionMatrixA5975C"/>) and
+    /// <c>0xA25FF8</c> (<see cref="WwiseChannelMatrix"/>); a non-null <paramref name="arg12"/> (<c>0xA5D70C</c>, dead on Cozmo) and the 3D branch are required stops. The four output floats <c>[sp+0x5c..0x68]</c> carry the running minima of the connection fields <c>+0x50/+0x54/+0x58/+0x5C</c> (100.0f start, only when the loop is entered).
     /// </remarks>
     // fidelity: M6-022
     public static bool UpdateConnectionGains(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, byte arg5, WwiseGainArg12? arg12 = null, float[]? floatOutputs = null)
@@ -2627,156 +2690,210 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         ArgumentNullException.ThrowIfNull(pbi);
         float[] minima = floatOutputs ?? voice.OutputMin50;
 
-        // 0xA4BC90..0xA4BCAC: the four output floats start at 0.
+        // 0xA4BC90..0xA4BCAC: the four float outputs are zeroed at entry. They become 100.0f only at 0xA4BD84 (the loop's entry); a call that does not reach it leaves them 0 (pass-13 verification item 2).
         for (int i = 0; i < minima.Length; i++) minima[i] = 0f;
 
-        // 0xA4BCB4..0xA4BCF0: the aggregate flags sb (bit2 AND) and fp (bit1).
-        bool sb = true, fp = true, run = true;
-        if (voice.Connections.Count == 0)
+        // 0xA4BCB4..0xA4BCF0 (pass-16 verification item 1): sb = the AND of bit 2 over the connections (the value of the last iteration while it still holds); r5 is a latch set once and cleared at the first connection whose bit 1 is clear; fp is
+        // reset to 1 at every iteration head and is 0 only when the latch is still set after a connection with bit 1 set. With no connection (0xA4C198): fp = 0, r5 = sb = 1.
+        bool sb = true, r5 = true, fp = false;
+        foreach (var c in voice.Connections)
         {
-            fp = false;                                              // 0xA4C198 mov fp,r0 (r0=0)
-            run = true;                                              // 0xA4C19C mov r5,sb (sb=1)
-        }
-        else
-        {
-            foreach (var c in voice.Connections)
+            fp = true;                                                   // 0xA4BCBC mov fp,#1
+            if (sb) sb = (c.Flags6C & 0x04) != 0;                        // 0xA4BCB8 cmp sb,#0; 0xA4BCC0 ldrbne sb,[r0,#0x6c]; 0xA4BCC4 ubfxne sb,sb,#2,#1
+            if (r5)                                                      // 0xA4BCC8 cmp r5,#0; beq 0xA4BCE8
             {
-                if (sb) sb = (c.Flags6C & 0x04) != 0;                // 0xA4BCC0/CC4
-                if (run)
-                {
-                    if ((c.Flags6C & 0x02) == 0) { run = false; fp = true; }  // 0xA4BCDC/E0
-                    else fp = false;                                 // 0xA4BCE4
-                }
+                if ((c.Flags6C & 0x02) == 0) { r5 = false; fp = true; }  // 0xA4BCDC moveq r5,#0; 0xA4BCE0 moveq fp,#1
+                else fp = false;                                         // 0xA4BCE4 movne fp,#0
             }
         }
 
-        int vt3c = (pbi.Flags1BE & 0x14) != 0 ? 1 : 0;               // 0xA4BCF4 voice->vt+0x3C = 0xA55E90 (gapE 3.3)
-        bool cd8 = (voice.FlagsCD & 8) != 0;
+        int vt3c = (pbi.Flags1BE & 0x14) != 0 ? 1 : 0;                   // 0xA4BCF4..0xA4BD00 blx [voice vt+0x3C] = 0xA55E90: ([[[voice+0xD4]+0xC]+0x1BE] & 0x14) != 0 (pass 13: 0 for a fresh, unpaused, unstopped PBI)
+        bool cd8 = (voice.FlagsCD & 8) != 0;                             // 0xA4BD04 ldrb r3,[sl,#0xcd] (bit 3: clear at the first update, set at 0xA55294)
 
-        bool p2f;
-        bool runTail;
-        if (vt3c != 0)
+        // The S2E/S2F truth table (pass-13 verification), 0xA4BD08..0xA4C080. s2f is the byte stored through the outC pointer ([sp+0x58]); the S2E byte stored at 0xA4BFEC is r5 (see the end).
+        bool s2f;
+        bool loop;                                                       // reaches 0xA4BD74 (the min-init, the per-connection loop and the B14 tail)
+        if (vt3c == 0 && !cd8)
         {
-            if (!cd8)
-            {
-                // 0xA4C058: set bit2 (to vt3c&1) on every connection. The native overwrites fp with
-                // cd8 & 8 (=0) at 0xA4C05C, so 0xA4BD6C skips the main loop and the tail: only SetBit2.
-                if (voice.Connections.Count != 0)
-                    SetBit2(voice, vt3c & 1);
-                p2f = false;
-                runTail = false;
-            }
-            else
-            {
-                // 0xA4BD1C: sb==0 -> 0xA4C010 -> main loop + tail; else 0xA4C080 end (skip tail).
-                if (!sb) { p2f = true; MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
-                else { p2f = false; runTail = false; }
-            }
+            s2f = fp;                                                    // 0xA4C03C strb fp,[r4]
+            if (!fp) { SetBit2(voice, 1); loop = false; }                // 0xA4C04C beq 0xA4BD40: bit 2 := 1 on every connection (0xA4BD4C movne r0,#1), then 0xA4BD6C fp == 0 -> 0xA4BFEC
+            else { SetBit2(voice, arg5); loop = true; }                  // 0xA4C054 b 0xA4C024: bit 2 := argA byte (r8), then 0xA4BD6C fp != 0 -> 0xA4BD74
         }
-        else
+        else if (vt3c == 0)                                              // bit 3 set
         {
-            if (!cd8)
-            {
-                // 0xA4C03C: p2f = fp; fp==0 -> 0xA4BD40 bit2=1 only, 0xA4BD6C skips the tail;
-                // fp!=0 -> 0xA4C024 bit2=r8 + main loop + tail.
-                p2f = fp;
-                if (!fp) { SetBit2(voice, 1); runTail = false; }
-                else { SetBit2(voice, arg5); MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
-            }
-            else if (run)
-            {
-                // 0xA4BD1C: sb==0 -> 0xA4C010 -> main loop + tail; else 0xA4C080 end (skip tail).
-                if (!sb) { p2f = true; MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
-                else { p2f = false; runTail = false; }
-            }
-            else
-            {
-                // 0xA4C010: p2f=1, then the 0xA4BD74 main loop + tail.
-                p2f = true;
-                MainConnectionLoop(voice, pbi, gain, minima, arg12);
-                runTail = true;
-            }
+            if (r5) { if (!sb) { s2f = true; loop = true; } else { s2f = false; loop = false; r5 = true; } }   // 0xA4C00C bne 0xA4BD1C: sb == 0 -> 0xA4C010 (S2F = 1, then 0xA4BD74); else 0xA4BD28 (S2F = 0) -> 0xA4C080 (r5 = 1, exit)
+            else { s2f = true; loop = true; }                            // 0xA4C010: S2F = 1, bit 3 set -> 0xA4BD74
+        }
+        else if (!cd8)                                                   // vt3c != 0, bit 3 clear
+        {
+            s2f = false;                                                 // 0xA4C058 strb r3(0),[r4]
+            r5 = true;                                                   // 0xA4C070 mov r5,#1
+            SetBit2(voice, vt3c);                                        // 0xA4BD54 bfi r3,r0,#2,#1 with r0 = the vt+0x3C result; fp = bit 3 of cd = 0 (0xA4C05C..0xA4C064), so 0xA4BD6C exits
+            loop = false;
+        }
+        else                                                             // vt3c != 0, bit 3 set
+        {
+            if (!sb) { r5 = true; s2f = true; loop = true; }             // 0xA4BD1C cmp sb,#0; 0xA4BD20 moveq r5,#1; 0xA4BD24 beq 0xA4C010
+            else { s2f = false; loop = false; r5 = true; }               // 0xA4BD28 strb 0 -> 0xA4BD38 bne 0xA4C080: r5 = 1
         }
 
-        // 0xA4BFC4/0xA4BFD4: the tail runs only on the branches that reach 0xA4BFD4; 0xA4C080
-        // (vt3c!=0 && cd8 && sb, and vt3c==0 && cd8 && run && sb) and 0xA4BD6C (the !cd8 paths whose fp
-        // is 0) skip it. Propagate [param_2+0xA8..0xB4] to [param_2+0xB8..0xC4] ([pbi+0xB4..0xC0] to [pbi+0xC4..0xD0]), then clear [voice+0xCD]
-        // bit2 and [param_2+0xDC] bit4 ([pbi+0xE8] bit 4) (C18 X3).
-        if (runTail)
-        {
-            pbi.PropagateParamsA4BFC4();
-            voice.FlagsCD = (byte)(voice.FlagsCD & ~0x04);
-            pbi.Flags0E8 = (byte)(pbi.Flags0E8 & ~0x10);
-        }
+        // 0xA4BD74: the per-connection loop and the B14 tail (only on the branches that reach it).
+        if (loop) ConnectionLoopA4BD74(voice, pbi, gain, minima, arg12);
 
-        // 0xA4BFEC/0xA4BFF0: the epilogue writes param_6 = r5. r5 is 0 iff the list is non-empty, some
-        // connection has bit1 clear, and voice->vt+0x3C returned 0; every vt3c!=0 sub-path forces r5=1
-        // (0xA4BD20, 0xA4C070, 0xA4C080). param_7 = p2f is the byte this method returns.
-        voice.Run2E = vt3c != 0 || run;
-        voice.P2F = p2f;
-        return p2f;
+        // 0xA4BFEC/0xA4BFF0: the S2E byte is r5 (0 iff the list is non-empty, some connection has bit 1 clear and vt+0x3C returned 0); every vt3c != 0 path leaves r5 = 1 (0xA4BD20, 0xA4C070, 0xA4C080).
+        voice.Run2E = r5;
+        voice.P2F = s2f;
+        return s2f;
     }
 
-    /// <summary>0xA4BD54: set bit2 of every connection's <c>[conn+0x6C]</c> to the low bit of <paramref name="bit"/>.</summary>
+    /// <summary>0xA4BD54: set bit2 of every connection's <c>[conn+0x6C]</c> to the low bit of <paramref name="bit"/> (<c>bfi r3,r0,#2,#1</c>).</summary>
     private static void SetBit2(WwiseLiveVoice voice, int bit)
     {
         foreach (var c in voice.Connections)
             c.Flags6C = (byte)((c.Flags6C & ~0x04) | ((bit & 1) << 2));
     }
 
+    private static readonly float Float100 = BitConverter.Int32BitsToSingle(0x42C80000);   // 0xA4BD8C movt r3,#0x42c8: the minima start at 100.0f (NOT 101.0f)
+
+    /// <summary>The running minimum of the four outputs (0xA4BEC8..0xA4BF34): <c>vcmpe out,conn; vmovpl out,conn</c> replaces the output unless <c>out &lt; conn</c> (an unordered compare replaces it, a NaN included).</summary>
+    private static float MinStep(float output, float conn) => output < conn ? output : conn;
+
     /// <summary>
-    /// 0xA4BD74..0xA4BFB8: the per-connection gain/format loop. It sets the four output floats to 100.0,
-    /// then per connection copies <c>[param_2+0x3C]/[param_2+0x40]</c> (<c>[pbi+0x48]/[pbi+0x4C]</c>, C18
-    /// X3) to <c>+0x50/+0x58</c>, zeros <c>+0x54/+0x5C</c>, runs the <c>0xA5975C</c> conversion (seam) and
-    /// keeps the minimum in the four output floats. It runs only when the id low byte is non-zero.
+    /// <c>0xA4BD74..0xA4BFE8</c> (pass 16 B1..B15): the per-connection state machine and the tail. The gate: a zero low byte of <c>[voice+0xF0]</c> (inCh) skips the loop AND the P copy (<c>0xA4BD74 beq 0xA4BFD4</c>); the outputs stay 0.
+    /// Per connection: the descriptor re-init on an inCh change (B2..B4), the UNPREDICATED <c>[conn+8] = [conn+0xC]</c> and <c>[conn+0x10] = [conn+0x14]</c> at the START (B5, <c>0xA4BE4C</c>, <c>0xA4BE64</c>) after the guarded
+    /// <c>[conn+0x64] = inCh</c> and the next/prev swap, the bit-1 branch (B6), the gain store, the 3D/2D split (B8/B9), the running minima (B10), the dead <c>0xA5D70C</c> (B11) and the bit-2/ramp/flat endings (B11/B12).
     /// </summary>
-    private static void MainConnectionLoop(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, float[] minima, WwiseGainArg12? arg12)
+    // fidelity: M6-022, M6-012
+    private static void ConnectionLoopA4BD74(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, float[] minima, WwiseGainArg12? arg12)
     {
-        if ((voice.Word0xF0 & 0xFF) == 0) return;                          // 0xA4BD74 cmp r6,#0; beq 0xA4BFD4
-        for (int i = 0; i < 4; i++) minima[i] = 100f;                // 0x42CA0000
-
-        foreach (var c in voice.Connections)
+        uint id = voice.Word0xF0;                                        // 0xA4BC88 str r2,[sp,#0x10]: the whole word is the A25FF8 / A5975C id argument
+        int inCh = (int)(id & 0xFFu);                                    // 0xA4BC74 uxtb r6,r2
+        if (inCh == 0)                                                   // 0xA4BD74 cmp r6,#0; 0xA4BD7C beq 0xA4BFD4
         {
-            // C24.4 (0xA4BE08..0xA4BE58). inCh = the low byte of [voice+0xF0] (0xA4BC74); outCh = the low byte
-            // of [[conn+0x30]+0x64] (0xA4BE24..0xA4BE2C). A changed [conn+0x64] frees the descriptor (0xA67C58)
-            // and clears +0xC, +0x64, +0x14; 0xA67B9C then sizes it; with [conn+0x18] != 0, [conn+0x64] = inCh
-            // and +0x20/+0x24 swap every frame. The order of these steps inside 0xA4BC58 is not stated by
-            // C24.4 (reported as MISSING).
-            int inCh = (int)(voice.Word0xF0 & 0xFF);
-            int outCh = (int)(c.Bus.Format64 & 0xFF);
-            if (c.C64 != inCh)
-            {
-                c.Descriptor.Free();
-                c.C0C = 0f;
-                c.C14 = 0f;
-                c.C64 = 0;
-                // C26.6: 0xA67B9C only on the reinit path (0xA4BDDC..0xA4BE08). A result other than 1 leaves +0x18 == 0
-                // and moves to the next connection (0xA4BE0C..0xA4BE18, batch4a-missing row 3.3).
-                if (c.Descriptor.Reserve(inCh, outCh) != 1) continue;
-            }
-            if (c.HasDry)
-            {
-                c.C64 = inCh;
-                c.Descriptor.SwapPointers();
-            }
-
-            c.C0C = voice.OutputGain * gain;                         // 0xA4BE6C [conn+0xc] = [voice+0x1c]*gain
-            c.ConnectionGain = c.C0C;
-            c.C50 = pbi.Lpf48;                                       // 0xA4BE80 [r7+0x3c], r7 = param_2 = pbi+0xC: [pbi+0x48]
-            c.C58 = pbi.Hpf4C;                                       // 0xA4BE88 [r7+0x40]: [pbi+0x4C]
-            c.C54 = 0f;
-            c.C5C = 0f;
-            c.Conversion5975C?.Invoke(c);                            // 0xA4BEC4 (seam)
-
-            minima[0] = MathF.Min(minima[0], c.C50);                 // 0xA4BEC8..0xA4BF34
-            minima[1] = MathF.Min(minima[1], c.C54);
-            minima[2] = MathF.Min(minima[2], c.C58);
-            minima[3] = MathF.Min(minima[3], c.C5C);
-
-            c.Conversion5D70C?.Invoke(c, arg12);                     // 0xA4BF38 (param_12), 0xA4BF4C (seam)
-            c.C08 = c.C0C;                                           // 0xA4BFA8 [conn+8]=[conn+0xc]
-            c.C10 = c.C14;                                           // 0xA4BFAC [conn+0x10]=[conn+0x14]
+            TailA4BFD4(voice, pbi);                                      // no P[0xA8..] copy on this path
+            return;
         }
+        float voiceGain = voice.OutputGain;                              // 0xA4BD78 vldr s17,[sl,#0x1c]
+        for (int i = 0; i < 4; i++) minima[i] = Float100;                // 0xA4BD84..0xA4BDAC
+        bool cd8 = (voice.FlagsCD & 8) != 0;                             // 0xA4BF5C ldr r3,[sp,#0xc]; ldrb r3,[r3,#0xcd]: re-read per connection (nothing in the loop changes it)
+
+        foreach (var c in voice.Connections)                             // 0xA4BE20 .. 0xA4BE14 ldr fp,[fp,#0x28]
+        {
+            int outCh = (int)(c.Bus.Format64 & 0xFFu);                   // 0xA4BE24..0xA4BE2C ldr r3,[fp,#0x30]; ldrb r5,[r3,#0x64]
+            if (c.C64 != inCh)                                           // 0xA4BE20..0xA4BE30 ldr r2,[fp,#0x64]; cmp r2,r6; bne 0xA4BDDC
+            {
+                c.Descriptor.Free();                                     // 0xA4BDEC bl 0xA67C58 (conn+0x18)
+                c.C0C = 0f;                                              // 0xA4BDF4 str sb,[fp,#0xc]
+                c.C64 = 0;                                               // 0xA4BDFC str r8,[fp,#0x64]
+                c.C14 = 0f;                                              // 0xA4BE04 str sb,[fp,#0x14]
+                if (c.Descriptor.Reserve(inCh, outCh) != 1) continue;    // 0xA4BE08 bl 0xA67B9C; 0xA4BE0C cmp r0,#1; 0xA4BE10 beq 0xA4C16C; else the next connection (0xA4BE14)
+                // 0xA4C16C..0xA4C190: zero-fill [conn+0x20] (half A) with ((outCh + 3) >> 2) * inCh * 4 floats; half B stays as the pool left it.
+                int zero = ((outCh + 3) >> 2) * inCh * 4;
+                if (zero != 0) c.Descriptor.NextMatrix[..zero].Clear();
+            }
+
+            // 0xA4BE34..0xA4BE68 (B5).
+            bool alloc = c.HasDry;                                       // 0xA4BE34 ldr r3,[fp,#0x18]; cmp r3,#0
+            float oldNextGain = c.C0C;                                   // 0xA4BE38 ldr r1,[fp,#0xc]
+            if (alloc)
+            {
+                c.C64 = inCh;                                            // 0xA4BE40 strne r6,[fp,#0x64]
+                c.Descriptor.SwapPointers();                             // 0xA4BE44..0xA4BE58: [conn+0x20] <-> [conn+0x24]
+            }
+            c.C08 = oldNextGain;                                         // 0xA4BE4C str r1,[fp,#8]: unpredicated
+            c.C10 = c.C14;                                               // 0xA4BE5C ldr r2,[fp,#0x14]; 0xA4BE64 str r2,[fp,#0x10]: unpredicated
+            int copy = ((outCh + 3) >> 2) * c.C64 * 4;                   // the memcpy length in floats: ((u8[line+0x64] + 3) >> 2) * [conn+0x64] * 4 (0xA4BF6C..0xA4BF9C, 0xA4C08C..0xA4C0B8, 0xA4C0D8..0xA4C130)
+
+            bool bit1 = (c.Flags6C & 0x02) != 0;                         // 0xA4BE54 ldrb r3,[fp,#0x6c]; 0xA4BE60 tst r3,#2; 0xA4BE68 bne 0xA4C088
+            bool runMinima = true;
+            if (bit1)
+            {
+                c.Descriptor.CopyPrevToNext(copy);                       // 0xA4C088..0xA4C0B8: memcpy([conn+0x20] <- [conn+0x24]); 0xA5975C is NOT called
+                c.C0C = 0f;                                              // 0xA4C0C4 str sb,[fp,#0xc]
+                runMinima = (c.Flags6C & 0x04) == 0 && cd8;              // 0xA4C0C8 beq 0xA4C10C / 0xA4C10C..0xA4C118 bne 0xA4BEC8 (the minima step with the stale conn+0x50..0x5C); a set bit 2 goes to 0xA4C0CC / 0xA4C0D8 with no minima step
+            }
+            else
+            {
+                c.C0C = voiceGain * gain;                                // 0xA4BE6C vmul.f32 s15,s17,s16; 0xA4BE70 vstr s15,[fp,#0xc]
+                if ((pbi.Flags0E8 & 0x03) != 0)                          // 0xA4BE74 ldrb r3,[r7,#0xdc]; 0xA4BE78 tst r3,#3; 0xA4BE7C bne 0xA4C138
+                    throw new WwiseMissingBehaviourException("M6-012 B8: the 3D positioning branch of 0xA4BC58 ([P+0xDC] & 3 != 0) calls 0xA5B9D0 and 0xA5993C (0xA4C138..0xA4C164), which C44.3 does not adopt (RECOVERABLE_GAP); the shipped chain is 2D (pass-16 F6)");
+                c.C50 = pbi.Lpf48;                                       // 0xA4BE80 ldr r2,[r7,#0x3c]; 0xA4BE94 str r2,[fp,#0x50]
+                c.C58 = pbi.Hpf4C;                                       // 0xA4BE88 ldr r3,[r7,#0x40]; 0xA4BE9C str r3,[fp,#0x58]
+                c.C54 = 0f;                                              // 0xA4BE90 str sb,[fp,#0x54]
+                c.C5C = 0f;                                              // 0xA4BEA0 str sb,[fp,#0x5c]
+                int flag = (pbi.Flags0E8 & 0x10) != 0 ? 1 : ((voice.FlagsCD >> 2) & 1);   // 0xA4BEA4..0xA4BEC0: ([P+0xDC] & 0x10) ? 1 : ((voice[0xCD] >> 2) & 1)
+                ConnectionMatrixA5975C(pbi, voice, id, flag, c);         // 0xA4BEC4 bl 0xA5975C(P, &voice+0x10, id, flag, conn)
+            }
+
+            if (runMinima)
+            {
+                minima[0] = MinStep(minima[0], c.C50);                   // 0xA4BEC8..0xA4BF34
+                minima[1] = MinStep(minima[1], c.C54);
+                minima[2] = MinStep(minima[2], c.C58);
+                minima[3] = MinStep(minima[3], c.C5C);
+            }
+
+            if (arg12 is not null)                                       // 0xA4BF38..0xA4BF4C: 0xA5D70C(param_12, conn) only for a non-null param_12
+                throw new WwiseMissingBehaviourException("M6-012 B11: param_12 is non-null, so 0xA4BF4C calls 0xA5D70C(param_12, conn) (-> 0xA03DA0, the callback of type 0x10, 'speaker volume matrix'); C44.3: the only PostEvent site passes the flags {0,1,5,9,13}, so [pbi+4] & 0x10 is never set (other writers of [pbi+4] not enumerated)");
+
+            if ((c.Flags6C & 0x04) != 0)                                 // 0xA4BF50 ldrb r3,[fp,#0x6c]; tst r3,#4; bne 0xA4C0D8
+            {
+                c.Descriptor.CopyNextToPrev(copy);                       // 0xA4C0D8..0xA4C130: memcpy([conn+0x24] <- [conn+0x20])
+                c.C08 = 0f;                                              // 0xA4C104 str sb,[fp,#8]: [conn+0x10] is left as set at the start
+            }
+            else if (!cd8)                                               // 0xA4BF5C..0xA4BF68: voice[0xCD] bit 3 set is the ramping case (no copy, no gain change)
+            {
+                c.Descriptor.CopyNextToPrev(copy);                       // 0xA4BF6C..0xA4BF9C: the flat case, memcpy([conn+0x24] <- [conn+0x20])
+                c.C08 = c.C0C;                                           // 0xA4BFA0 ldr r2,[fp,#0xc]; 0xA4BFA8 str r2,[fp,#8]
+                c.C10 = c.C14;                                           // 0xA4BFA4 ldr r3,[fp,#0x14]; 0xA4BFAC str r3,[fp,#0x10]
+            }
+        }
+
+        pbi.PropagateParamsA4BFC4();                                     // 0xA4BFC4..0xA4BFD0 ldm [P+0xA8..0xB4]; stm [P+0xB8..0xC4]
+        TailA4BFD4(voice, pbi);
+    }
+
+    /// <summary>0xA4BFD4..0xA4BFE8 (B14): <c>voice[0xCD]</c> bit 2 and <c>[P+0xDC]</c> bit 4 cleared.</summary>
+    private static void TailA4BFD4(WwiseLiveVoice voice, WwisePlayingInstance pbi)
+    {
+        voice.FlagsCD = (byte)(voice.FlagsCD & ~0x04);                   // 0xA4BFD4..0xA4BFDC
+        pbi.Flags0E8 = (byte)(pbi.Flags0E8 & ~0x10);                     // 0xA4BFE0..0xA4BFE8
+    }
+
+    /// <summary>
+    /// <c>0xA5975C(P, &amp;voice+0x10, id, flag, conn)</c> (pass 16 F1..F6, C44.3): the per-connection send gain and the pan matrix. F1 (the device-record scan of <c>[0x108DAFC + 8]</c> for <c>[conn+0x48/+0x4C]</c>) only finds the record
+    /// <c>0xA25FF8</c> passes to the ambisonic tail <c>0xA234FC</c> (a required stop, <see cref="WwiseChannelMatrix"/>), so it is not run. F2: <c>[conn+0x14] = ([conn+0x68] != 0) ? 1.0f : [[voice+0x10]+0x34]</c> (entry 0's dry gain).
+    /// F3: with bit 0 of <c>[conn+0x6C]</c> clear (never, C4) only the copy; otherwise the pan fields <c>P[0xA8]/0xAC/0xB0</c> are compared (float compares: a NaN differs, -0 equals 0) with the previous frame's <c>P[0xB8]/0xBC/0xC0</c>,
+    /// then the bytes <c>P[0xB4]</c>/<c>P[0xC4]</c>; any difference, or <paramref name="flag"/> != 0, or bit 2 of <c>[conn+0x6C]</c>, recomputes (F4) with the byte <c>P[0xB4]</c> as the A25FF8 flag; otherwise F5 copies the previous matrix to the next one.
+    /// </summary>
+    // fidelity: M6-012, M6-022
+    private static void ConnectionMatrixA5975C(WwisePlayingInstance p, WwiseLiveVoice voice, uint id, int flag, WwiseVoiceConnection c)
+    {
+        // 0xA597A4..0xA597BC: ldr lr,[ip,#0x68]; cmp lr,#0; ldreq r4,[r8,#0x34]; movne r4,#0x3f800000; str r4,[ip,#0x14] (the table is dereferenced only for a dry connection)
+        c.C14 = c.Arg68 != 0 ? 1.0f
+            : (voice.SendTable?.Entries is { Count: > 0 } entries ? entries[0].SendGain
+                : throw new WwiseMissingBehaviourException("M6-012 F2: [voice+0x10] has no entry 0; 0xA5975C reads [[voice+0x10]+0x34] for a dry connection (0xA59768, 0xA597B0)"));
+        int outCh = (int)(c.Bus.Format64 & 0xFFu);
+        int floats = ((outCh + 3) >> 2) * c.C64 * 4;                     // F5's memcpy length: ((u8[line+0x64] + 3) >> 2) * [conn+0x64] * 16 bytes
+
+        byte flagByte;
+        if ((c.Flags6C & 1) == 0) { c.Descriptor.CopyPrevToNext(floats); return; }   // 0xA597B8 tst lr,#1; beq 0xA59878 (never: bit 0 is never cleared, C4)
+        if (p.PanB4 != p.FieldC4)                                      // 0xA597C4..0xA597D4: P[0xA8] vs P[0xB8]
+            flagByte = p.PanC0;
+        else if (p.PanB8 != p.FieldC8)                                 // 0xA598B4..0xA598C4: P[0xAC] vs P[0xBC]
+            flagByte = p.PanC0;
+        else if (p.PanBC != p.FieldCC)                                 // 0xA598C8..0xA598D8: P[0xB0] vs P[0xC0]
+            flagByte = p.PanC0;
+        else if (p.PanC0 != p.FieldD0)                                   // 0xA598DC..0xA598EC: ldrb P[0xB4], ldrb P[0xC4]; cmp r4,r5; movne r3,r5
+            flagByte = p.PanC0;
+        else if (flag != 0 || (c.Flags6C & 0x04) != 0)                   // 0xA598F0..0xA59904: cmp r3,#0 (the flag argument); tst lr,#4 -> r3 = P[0xC4]
+            flagByte = p.FieldD0;
+        else { c.Descriptor.CopyPrevToNext(floats); return; }            // 0xA598F8 beq 0xA59878: F5, new = prev
+
+        float p1 = WwiseChannelMatrix.PanClamp((p.PanB4 + WwiseChannelMatrix.PanBias) * WwiseChannelMatrix.PanScale);             // 0xA597EC vadd.f32 s14,s14,s11; 0xA597F0 vmul.f32 s14,s14,s12 (+ the clamp)
+        float p2 = WwiseChannelMatrix.PanClamp((p.PanB8 + WwiseChannelMatrix.PanBias) * WwiseChannelMatrix.PanScale);             // 0xA59818, 0xA5981C
+        float p3 = p.PanBC / WwiseChannelMatrix.PanBias;                                    // 0xA59848 vdiv.f32 s13,s13,s12
+        WwiseChannelMatrix.A25FF8(p1, p2, p3, flagByte, id, c.Bus.Format64, c.Descriptor.NextMatrix);   // 0xA5986C bl 0xA25FF8 ([sp] = id, [sp+4] = [[conn+0x30]+0x64], [sp+8] = [conn+0x20], [sp+0xC] = the device record)
     }
 
     /// <summary>

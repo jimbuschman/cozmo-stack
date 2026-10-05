@@ -134,9 +134,10 @@ public class WwiseMixKernelTests
             var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), frames);
             if (state == 1) { bus.MixInput(); bus.ReleaseBuffer(); }                  // eState 0x11, state 1, frames 0 (the engine row starts the same)
             Array.Copy(ddata, bus.Buffer, frames);
+            bus.Format64 = 0x4101;                                                    // the mono line: u8 [bus+0x64] = 1
             var conn = new WwiseVoiceConnection(bus, sch, 1) { C08 = c8, C0C = cC, C10 = c10, C14 = c14 };
-            conn.Mixer.Refresh(a, 1f);
-            conn.Mixer.Refresh(b, 1f);
+            conn.Descriptor.Reserve(sch, 1);
+            for (int i = 0; i < sch; i++) { conn.Descriptor.PrevMatrix[i * 4] = a[i]; conn.Descriptor.NextMatrix[i * 4] = b[i]; }   // prev = [conn+0x24] = a, next = [conn+0x20] = b (the engine's rows are padded to 4 floats)
             uint scfg = sch == 1 ? 0x4101u : 0x3102u;
             var S = new WwiseDecodeState { Data = flat, ChannelConfig = scfg, MaxFrames = (ushort)smax, ValidFrames = (ushort)valid };
             conn.MixA4FBEC(S, g0, g1);

@@ -413,6 +413,14 @@ public sealed class WwiseVoiceBusEngineTests
     private static WwiseVoiceConnection LineConnection(byte flags6C)
         => new(new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8), 1, 1) { Flags6C = flags6C };
 
+    /// <summary>The voice's table <c>[voice+0x10]</c> with its entry 0 (AddSrc allocates it, 0xA4BB00): 0xA5975C reads <c>[[voice+0x10]+0x34]</c> for a dry connection.</summary>
+    private static WwiseLiveVoice WithTable(WwiseLiveVoice voice)
+    {
+        voice.SendTable = new WwiseVoiceSendTable { Capacity = 1 };
+        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry());
+        return voice;
+    }
+
     /// <summary>
     /// M6-022 V7-o (C18 V7-o/X3, <c>0xA4BE80..0xA4BF34</c>; C41.1: <c>param_2 = [source+0xC]+0xC = pbi+0xC</c>): the four float minima are zeroed at entry, set to 100.0 when <c>id != 0</c>, then reduced to the running minima of
     /// <c>[conn+0x50/+0x54/+0x58/+0x5C]</c>. The per-connection copy reads <c>[param_2+0x3C]/[param_2+0x40]</c> = <c>[pbi+0x48]/[pbi+0x4C]</c>, not the voice: <c>[conn+0x50]=[pbi+0x48]</c>, <c>[conn+0x58]=[pbi+0x4C]</c>, <c>[conn+0x54]=[conn+0x5C]=0</c>.
@@ -423,7 +431,8 @@ public sealed class WwiseVoiceBusEngineTests
         var pbi = OwnerPbi();
         pbi.Lpf48 = 5f; pbi.Hpf4C = 7f;
         pbi.Flags1BE = 0x04;                                         // voice->vt+0x3C = 0xA55E90 = ([pbi+0x1BE] & 0x14) != 0 (gapE 3.3): vt3c != 0 -> main loop + tail
-        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
+        pbi.Flags0E8 = 0x5C;                                         // the 2D path: [P+0xDC] & 3 == 0 after 0x9BEB30 (pass-16 F6, B8); the ctx ctor's 0x5D has bit 0 set until 0x9BEB30 runs
+        var voice = WithTable(new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 });
         var connection = LineConnection(0);                          // sb clear
         voice.Connections.Add(connection);
 
@@ -470,7 +479,7 @@ public sealed class WwiseVoiceBusEngineTests
     {
         var pbi = OwnerPbi();
         pbi.Lpf48 = 5f; pbi.PanB4 = 7f; pbi.PanB8 = 8f; pbi.PanBC = 9f; pbi.PanC0 = 3; pbi.Flags0E8 = 0x10; pbi.Flags1BE = 0x04;
-        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
+        var voice = WithTable(new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 });
         var connection = LineConnection(0);                          // sb clear
         voice.Connections.Add(connection);
 
@@ -521,7 +530,7 @@ public sealed class WwiseVoiceBusEngineTests
         Assert.Equal(0x04, held.Flags6C & 0x04);                     // 0xA4BD40: bit 2 = 1
 
         // fp != 0: bit1 clear; bit 2 takes arg5.
-        var voice2 = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
+        var voice2 = WithTable(new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 });
         var open = LineConnection(0);
         voice2.Connections.Add(open);
         bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice2, pbi, 1f, 0);
@@ -529,7 +538,7 @@ public sealed class WwiseVoiceBusEngineTests
         Assert.Equal(7f, pbi.FieldC4);                               // tail ran
         Assert.Equal(0, pbi.Flags0E8);
         Assert.Equal(0, open.Flags6C & 0x04);                        // 0xA4C024: bit 2 = arg5 = 0
-        var voice3 = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
+        var voice3 = WithTable(new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 });
         var open3 = LineConnection(0);
         voice3.Connections.Add(open3);
         WwiseVoiceBusPass.UpdateConnectionGains(voice3, pbi, 1f, 1);
