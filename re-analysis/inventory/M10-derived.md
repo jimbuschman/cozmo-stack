@@ -450,3 +450,14 @@ Two things to know first:
 ## Correction A3 (manager, 2026-10-02, the Codex re-audit)
 
 Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M10-002, M10-009, M10-010 and M10-011 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M10-014 — BlockFilter and gyro-drift lifetime effects | 0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. | MISSING: BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

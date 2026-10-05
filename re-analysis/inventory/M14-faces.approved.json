@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-02",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "4975ee57e5d6e03ce762492ce0609245d0f52fa496ff6f23fb61da5a0b9549d2",
+  "inventory_sha256": "cb2d70c00c0abc1bf8253f54f141a1aa91a8fa605080fbed832217b135c7c7bc",
   "records": {
     "M14-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -154,6 +154,17 @@
         "0x00651594..0x00651612 broadcasts RobotErasedAllEnrolledFaces before each LoadedKnownFace.",
         "0x00657180..0x0065720E obtains and size-checks both vectors; 0x006573A0..0x006573EA writes album then enrollment after four-byte padding, with erase paths for empty data.",
         "0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M14-013": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Pet/face-world and speech lifetime recipients",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

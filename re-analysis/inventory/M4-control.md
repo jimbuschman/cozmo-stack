@@ -596,3 +596,16 @@ C12.3 and adds the history retention.
 ## Correction A1 (manager audit, 2026-09-29)
 
 The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M4-026 — Robot AbortAll ordered control and wire effects | 0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. | MISSING: Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+| M4-027 — Sensor/light/movement/CubeAccel teardown and retained host reset candidate | 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN. | MISSING: Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+| M4-028 — Go-to-sleep lift child construction and motor effects | 0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. | MISSING: MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

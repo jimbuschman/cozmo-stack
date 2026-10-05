@@ -1,8 +1,8 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-02",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "92caef7429caf9d2f7a4ffc5c62b669947921724e1ce7b5dfe939320de174177",
+  "inventory_sha256": "4464068e808e0013b3cfa3abf8dce95d964b6025eec8c61cfcb05d55835135b4",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -423,6 +423,17 @@
       "evidence": [
         "G2 AddChunk does not compare the payload with the geometry: reserve(0x38400) at 0x004F1DA6, no per-chunk total check",
         "Y2/Z6 the raw cases wrap rows*cols (or *3) bytes of the vector with no length check (0x004F2BC0, 0x004F245A)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "NV component destruction and pending callback lifetime",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

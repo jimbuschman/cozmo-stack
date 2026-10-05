@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-04",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "2fd2efab8fdaf8eb18a4cd1bbaf36773f17876da25cf1d3c68c963dfca84403c",
+  "inventory_sha256": "f78bc9ca9e1d0609a0c03865748b471bd6780a9681c8ae9aeca1dbd966d8458d",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -293,6 +293,17 @@
         "M7 gap1 G7"
       ],
       "live_path": false,
+      "hardware_required": false
+    },
+    "M7-023": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Mood destruction with already-null ActionList dependency",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
       "hardware_required": false
     }
   }

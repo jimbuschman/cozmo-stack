@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-09-30",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "8ecb92c761139f09f9d11818a012533666b6ad44e5ae744bcc1662e1a6fdce47",
+  "inventory_sha256": "b1d81e6adb4dc4621477c4e6962c2d96f7d0ac441515fb82ea86dd72f5707ba4",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -540,6 +540,17 @@
       "evidence": [
         "0x005504A0, 0x00550858..0x005508C4, PLT 0x004AB914, 0x004AB908",
         "re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objection 6"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-040": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Carrying/docking lifetime after preceding control abort",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0063BE10..0x0063BE5C; 0x005113FA..0x00511414; Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

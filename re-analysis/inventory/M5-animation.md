@@ -805,3 +805,15 @@ The complete audit (`re-analysis/research/20260929-audit-complete.md`) found tha
 ## Correction A2 (manager, 2026-09-30, the calibration audit)
 
 Codex's independent re-audit (`re-analysis/research/20260929-audit-calibration.md`) found settled records here that do not hold. The manager re-checked the central addresses in the binary. M5-005 and M5-017 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M5-037 — Driving-animation and AnimationStreamer teardown | 0x00511524..0x0051154A; 0x0057AF48..0x0057AFDA; 0x0057B044..0x0057B0C2; Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred. | MISSING: Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+| M5-038 — CreateGoToSleepAnimSequence animation factory boundary | 0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. | MISSING: Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

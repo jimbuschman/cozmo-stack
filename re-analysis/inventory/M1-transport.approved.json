@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-09-30",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "88f768bb5ac14fd52beafc29506e8db929043d044ce69cf607a11bb0e28d2cb4",
+  "inventory_sha256": "330d5959dc310124af2f81edf5188e6b2d1860cb07a0d125e7fcc2e784f1c825",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -186,13 +186,14 @@
       "title": "Connection timeout 5 s, and how a lost or failed connection is reported",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt",
         "R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent",
         "B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC)",
         "B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244)",
         "B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302)",
-        "this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read",
         "CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A)",
-        "CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)"
+        "CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)",
+        "T1–T5: strict timeout/marker/report selection and ordered lifetime handoff only. Component destruction effects belong to the new higher-layer lifetime records in inventory correction A2."
       ],
       "live_path": true,
       "hardware_required": false
@@ -368,7 +369,7 @@
       "hardware_required": false
     },
     "M1-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Initial-connection handshake outcomes",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -418,9 +419,11 @@
       "title": "Idle-timeout disconnect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt",
         "B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360",
         "CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98)",
-        "CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3"
+        "CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3",
+        "M1 boundary is deadline trigger/timing and factory handoff; action tree/execution belongs to new M5/M4/M8 sleep records in correction A2."
       ],
       "live_path": true,
       "hardware_required": false
@@ -552,24 +555,35 @@
     },
     "M1-044": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys the behaviour, mood, AI/freeplay, path, map, docking, carrying and vision components",
+      "title": "RemoveRobot ordered lifetime interfaces, owner nulling and post-destruction membership cleanup",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "RemoveRobot 0x0052F2F6 calls Robot::~Robot (0x005110D4) then operator delete (0x0052F2FA); RobotManager::RemoveRobot also calls NeedsManager::OnRobotDisconnected 0x0052F2E0, PerfMetric::OnRobotDisconnected 0x0052F2E8, DASPauseUploadingToServer(0) 0x0052F2EE, erases the map/id/RIC (0x0052F2FE..0x0052F350) and clears $session_id 0x0052F2D8, $phys 0x0052F358 and $group 0x0052F360",
-        "Robot::~Robot 0x005110D4: FreeplayDataTracker::ForceUpdate 0x0051111A, Robot::AbortAll 0x00511120; BehaviourManager +0x44 0x0051112C; BehaviourSystemManager +0x48 0x0051113A; ActionList::Clear 0x00511146 then ~ActionList 0x00511156; VisionComponent +0x258 through vtable slot +4 0x0051116C (D0 0x00652794; its D1 0x00652554 joins the processor thread 0x0065257C and destroys the owned VisionSystem 0x0065258E); MoodManager +0x440 0x005111B6; AIComponent +0x264 0x00511276; PathComponent +0x5c 0x00511284; BlockWorld +0x34 0x005112CE; MapComponent +0x25c 0x005114E8; CarryingComponent +0x284 0x00511406 and DockingComponent +0x280 0x00511414; PoseOriginList +0x294 0x005113CC, TouchSensorComponent +0x28c 0x005113E0, CliffSensorComponent +0x288 0x005113F2; AnimationStreamer +0x60 0x0051154A",
-        "the stack's counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers: VisionSystem.ResetToConstructed (VisionSystem.cs) and FreeplayStack's NeedsManager::OnRobotDisconnected (FreeplayStack.cs, M15-016); the upper-layer components themselves (behaviour/freeplay, mood, AI, path, map, docking, carrying) are M7/M12-M15 and not built in this stack"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "RemoveRobot T2–T5/T9 0x0052F1BE..0x0052F364: lookup includes null values, external notification/report/session-clear selection, Needs/Perf/DAS before nullable destructor and storage release; map/first-id/RIC erase then $phys/$group clears. C# RobotManager.RemoveRobot and CozmoEngine.NotifyDisconnectServices/DestroyRobot.",
+        "Robot lifetime T6–T8 0x005110D4..0x005115F8: destructor event, ForceUpdate, AbortAll; checked ordered nullable owner interfaces, null stores and repeated cleanup predicates; final base/member interface. C# EngineRobot.Lifetime/RobotLifetime.Destroy. Recursive effects are the higher-layer records in inventory correction A2, not ResetDevices."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M1-045": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList",
+      "title": "Idle-timeout go-to-sleep factory handoff and queue submission",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt",
         "RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A",
-        "CreateGoToSleepAnimSequence 0x0052CEA2..0x0052CFC0: CompoundActionParallel(robot) of a CompoundActionSequential of TriggerAnimationAction(trigger 0xd2, args 1,1,0,60.0f,0; 0x0052CECA..0x0052CEDE), trigger 0xd5 (0x0052CF0E), trigger 0xd4 (0x0052CF44), plus MoveLiftToHeightAction(preset 0, tolerance 5.0f; 0x0052CF8E..0x0052CFA2)",
-        "the only caller of the factory is 0x0052CE5E (the caller lists of 0x004A9A30 and 0x0052CEA2; a BL/BLX scan found one call)"
+        "0x0052CE54..0x0052CE6A: factory result goes to existing Robot ActionList QueueAction position0 NOW, retries byte0; return discarded. C# CozmoEngine.QueueGoToSleep required higher factory interface. Factory and child execution are new M5/M4/M8 sleep records in correction A2."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-046": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Channel/member subscription retirement recipients",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x005112F2..0x00511308; Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

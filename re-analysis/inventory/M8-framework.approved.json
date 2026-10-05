@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-10-03",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "851352c8ed0da42da7033659218cc8fd5c8718d588c3bf5920fb2f3ee98b5d0f",
+  "inventory_sha256": "2849885f7db6ef315306204d7d91ad8417203f0f3e2972bb6898065c17a0b96e",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -206,6 +206,39 @@
         "AIWhiteboard::AddBeacon(pose, radius) 0x0056c39c appends an AIBeacon (Pose3d plus a float at +0xc) to the vector at +0x60 (vstr s16,[r0,#0xc] 0x0056c3c0; str r0,[r4,#0x64] 0x0056c3ce) and calls UpdateBeaconRender 0x0056c3de.",
         "AIWhiteboard::Init's three registrations are MessageEngineToGame subscriptions: tag 0x44=68 RobotObservedObject (0x0056a44c; handler functor 0x0056cbd6 -> AIWhiteboard::HandleMessage<RobotObservedObject>), tag 0x45=69 RobotObservedPossibleObject (0x0056a50c; 0x0056cc4e), and tag 0x35=53 RobotOffTreadsStateChanged (0x0056a5cc; records BaseStationTimer::GetCurrentTimeInSeconds at whiteboard+0x48, 0x0056ccf2/0x0056ccf6).",
         "AIWhiteboard::UpdateBeaconRender 0x0056aa3c..0x0056abff is a real 452-byte body, not a bare interface: it erases the previous segments through VizManager::EraseSegments (PLT 0x004acb20) and draws each beacon at +0x60 as three XY circles (VizManager::DrawXYCircleAsSegments<float>, PLT 0x004acb50), loop bound whiteboard+0x64. VizManager and the three handler bodies are not recorded by M11/M12 either; they are unowned."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-015": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Queue/action cancellation and destruction during Robot teardown",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-016": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Behavior-container destruction and virtual children",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0051112C; 0x0051113A; 0x005A0D22..0x005A0DF6; 0x005A5886..0x005A58D2; BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-017": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Go-to-sleep compound execution ordering and failure propagation",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

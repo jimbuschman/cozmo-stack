@@ -420,3 +420,14 @@ M14-012's save flow.
 ## Correction A3 (manager, 2026-10-02, the Codex re-audit)
 
 Codex's independent re-audit (`re-analysis/research/20260930-reaudit-sonnet-layers.md`) found settled records here that do not hold. The manager re-checked the cited constants in the binary. M14-001, M14-003, M14-004 and M14-005 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. A PARTIAL verdict demotes too: a settled record must own its whole production path.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M14-013 — Pet/face-world and speech lifetime recipients | 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. | MISSING: World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

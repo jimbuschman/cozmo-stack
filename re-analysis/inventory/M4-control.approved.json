@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-09-29",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "ab6563a21b51dd6d1319fc5012a26357e91dea40b32469d73186099c20489c30",
+  "inventory_sha256": "70ca403bd0084859edc5e5611d50886d600d05eb43e1ab82462ffa4753eb2fad",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -126,7 +126,7 @@
       "hardware_required": false
     },
     "M4-011": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -322,7 +322,7 @@
       "hardware_required": true
     },
     "M4-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ObjectAvailable and ObjectUnavailable broadcasts are gated on robot+0x490 (0 in this build)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -331,6 +331,39 @@
         "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
         "D6 0x0053398E HandleActiveObjectAvailable gates ObjectAvailable on +0x490; RSSI <= 0x31 logs (0x0053399A); broadcast 0x005339FC/0x00533A04",
         "D5 0x0051419A the expiry ObjectUnavailable broadcast is gated on +0x490"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-026": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Robot AbortAll ordered control and wire effects",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-027": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Sensor/light/movement/CubeAccel teardown and retained host reset candidate",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-028": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Go-to-sleep lift child construction and motor effects",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

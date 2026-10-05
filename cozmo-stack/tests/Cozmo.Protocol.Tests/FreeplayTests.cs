@@ -845,14 +845,10 @@ public class FreeplayTests
     }
 
     /// <summary>
-    /// The needs manager's disconnect transition is wired to the always-fired removal edge.
-    /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 is called from
-    /// <c>RobotManager::RemoveRobot</c> 0x0052F2DC..0x0052F2E0 in <b>both</b> branches, but the engine's
-    /// <c>RobotDisconnected</c> broadcast is sent only when the connection manager did not answer the
-    /// disconnect (CozmoEngine.cs:1315). The stack therefore wires the transition to
-    /// <c>CozmoRobot.RobotRemoved</c>, raised by <c>ResetDevices</c> from <c>CozmoEngine.RemoveRobot</c> on
-    /// every removal. Invoking the engine's removal step here raises <c>RobotRemoved</c> without the
-    /// <c>RobotDisconnected</c> broadcast, which is the branch the broadcast edge would miss.
+    /// The checked T4 removal interface calls NeedsManager::OnRobotDisconnected
+    /// (0x00695908) before the Robot destructor (0x0052F2E0 before 0x0052F2F6).
+    /// Drive the live disconnect entry, rather than the later host-reference cleanup
+    /// event. Pending-handshake/report selection is covered by CheckedRemoval tests.
     /// </summary>
     [Fact]
     public void TheFreeplayStackDisconnectsTheNeedsManagerOnTheAlwaysFiredRemovalEdge()
@@ -867,9 +863,16 @@ public class FreeplayTests
         using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
         Assert.True(needs.Connected);
 
-        // RemoveRobot's removal step, without Engine.RobotDisconnected being raised.
         clock = 5;
-        rig.Robot.Engine.RobotRemoved?.Invoke();
+        bool destructorReached = false;
+        rig.Robot.Engine.Robot!.Lifetime.Bind(-1, _ =>
+        {
+            destructorReached = true;
+            Assert.False(needs.Connected);
+            Assert.Equal(new[] { true }, writes);
+        });
+        rig.Robot.Engine.DisconnectCurrent(); // offline seam drains the queued live entry
+        Assert.True(destructorReached);
 
         Assert.False(needs.Connected);
         Assert.Equal(5, needs.LastDisconnectSec, 6);

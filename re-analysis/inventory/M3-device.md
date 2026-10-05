@@ -355,3 +355,14 @@ The 2026-09-29 pre-extraction (`re-analysis/research/20260929-R-DEV-pre-extracti
 ## Correction A5 (manager, 2026-10-02, the Codex M3/M4 re-audit)
 
 Codex's re-audit (`re-analysis/research/20261001-reaudit-M3-M4.md`) found that M3-024 does not own its production path: the source-1 device-playback branch that CreateAudioAnimation selects is not built. The manager confirmed it in the code. M3-024 goes back to IMPLEMENTATION_GAP.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M3-038 — NV component destruction and pending callback lifetime | 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. | MISSING: Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

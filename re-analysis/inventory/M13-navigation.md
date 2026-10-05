@@ -2485,3 +2485,12 @@ It tests **collision penalty along the remaining plan** (plus the `tolerance` di
 ## Correction A6 (manager, 2026-10-02)
 
 The 2026-09-29 audit found defects in 13 of this subsystem's settled records and handed them to R-VIS, which never demoted them. Codex's re-audit (`re-analysis/research/20261001-reaudit-M7-M8-M9-M13.md`) reproduced them, and the manager re-checked the +0x34A flag in the binary. M13-002, 003, 004, 005, 008, 009, 011, 012, 013, 015, 016, 017 and 018 go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`. M13-001's test reference is corrected to the method's current name.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M13-029 — Path/planner abort and destruction | 0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. | MISSING: Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |

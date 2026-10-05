@@ -575,3 +575,127 @@ Rows from the closure pass of 2026-09-24. Where a closure row answers or correct
 ## Correction A1 (manager audit, 2026-09-29)
 
 The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
+
+
+## Correction A2: checked B-M1M2 cross-layer lifetime/sleep split (2026-10-05)
+
+Authorized by the operator and manager-adopted Rows checked in jobs/B-M1M2.md. Research report T1–T9 and ownership table in research/20261005-B-M1M2-blockers-extraction.md, with its native companion, are the checked boundary. No record settles. PARTIAL descendants remain RECOVERABLE_GAP/MISSING.
+
+Current records quoted before narrowing (the full values at the start of this batch):
+
+```json
+{
+  "id": "M1-015",
+  "subsystem": "M1-transport",
+  "title": "Connection timeout 5 s, and how a lost or failed connection is reported",
+  "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+  "status": "IMPLEMENTATION_GAP",
+  "authority": "libcozmoEngine.so 3.4.0-1204",
+  "evidence": [
+    "R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent",
+    "B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC)",
+    "B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244)",
+    "B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302)",
+    "this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read",
+    "CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A)",
+    "CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)"
+  ],
+  "effect": "a dead link is noticed at a different time, or the game is told the wrong result",
+  "provenance": "reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).",
+  "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Its path defers to M1-044, which is not built. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. RemoveRobot destroys the whole Robot (0x0052F2F6) but the stack resets only the devices; B-CORE batch 4 gives the upper-layer teardown its own record (M1-044: Robot::~Robot 0x005110D4 destroys behaviour, mood, AI/freeplay, path, map, docking, carrying and vision) and closes the VisionSystem.Enabled UNKNOWN (the engine destroys the VisionComponent and its owned VisionSystem; there is no persistent engine flag). The 2 s join bound is a stack-local policy with no engine counterpart (the engine joins unbounded, 0x0065257C); the CD21 read is M3-022 and CD16's Lab read is M1-028, so the audit's 'no record' is wrong for those.",
+  "hardware_required": false,
+  "live_path": true,
+  "test": "TransportRepairTests.M1_015_R19_B22_ATimeoutDeletesTheConnectionSetsTheFlagAndTheTransportGoesOn, TransportRepairTests.M1_015_R19_InSyncModeTheUpdateReportsTheTimeoutButOnlyTheTickSetsTheFlag, EngineAppLayerTests.M1_015_CB33_AfterTheResponseTheGameGetsRobotDisconnected, EngineAppLayerTests.M1_015_CC23_CC24_ADropDuringTheHandshakeIsAFailureAndATimeoutIsReason1, EngineAppLayerTests.M1_015_CC24_ANeverAnsweredConnectIsRejected, EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed, EngineAppLayerTests.M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot, EngineAppLayerTests.M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind, EngineAppLayerTests.M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames"
+}
+```
+
+```json
+{
+  "id": "M1-031",
+  "subsystem": "M1-transport",
+  "title": "Idle-timeout disconnect",
+  "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+  "status": "IMPLEMENTATION_GAP",
+  "authority": "libcozmoEngine.so 3.4.0-1204",
+  "evidence": [
+    "B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360",
+    "CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98)",
+    "CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3"
+  ],
+  "effect": "the link is dropped after a pause at a different time, or never",
+  "provenance": "reproduced by the code; settled after batch 3's read-only verification (2026-09-24)",
+  "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Its path defers to M1-045, which is not built. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on the faceOff deadline the engine queues CreateGoToSleepAnimSequence (0x0052CE5A..0x0052CE6A); B-CORE batch 4 gives the action its own record (M1-045) and the stack names it (CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested), because no ActionList or animation-sequence action layer exists.",
+  "hardware_required": false,
+  "live_path": true,
+  "test": "EngineAppLayerTests.M1_031_CC3_CC6_TheDisconnectDeadline, EngineAppLayerTests.M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate, EngineAppLayerTests.M1_031_CC7_AnExpiredDeadlineBlocksReArmingUntilCancel"
+}
+```
+
+```json
+{
+  "id": "M1-044",
+  "subsystem": "M1-transport",
+  "title": "RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys the behaviour, mood, AI/freeplay, path, map, docking, carrying and vision components",
+  "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+  "status": "IMPLEMENTATION_GAP",
+  "authority": "libcozmoEngine.so 3.4.0-1204",
+  "evidence": [
+    "RemoveRobot 0x0052F2F6 calls Robot::~Robot (0x005110D4) then operator delete (0x0052F2FA); RobotManager::RemoveRobot also calls NeedsManager::OnRobotDisconnected 0x0052F2E0, PerfMetric::OnRobotDisconnected 0x0052F2E8, DASPauseUploadingToServer(0) 0x0052F2EE, erases the map/id/RIC (0x0052F2FE..0x0052F350) and clears $session_id 0x0052F2D8, $phys 0x0052F358 and $group 0x0052F360",
+    "Robot::~Robot 0x005110D4: FreeplayDataTracker::ForceUpdate 0x0051111A, Robot::AbortAll 0x00511120; BehaviourManager +0x44 0x0051112C; BehaviourSystemManager +0x48 0x0051113A; ActionList::Clear 0x00511146 then ~ActionList 0x00511156; VisionComponent +0x258 through vtable slot +4 0x0051116C (D0 0x00652794; its D1 0x00652554 joins the processor thread 0x0065257C and destroys the owned VisionSystem 0x0065258E); MoodManager +0x440 0x005111B6; AIComponent +0x264 0x00511276; PathComponent +0x5c 0x00511284; BlockWorld +0x34 0x005112CE; MapComponent +0x25c 0x005114E8; CarryingComponent +0x284 0x00511406 and DockingComponent +0x280 0x00511414; PoseOriginList +0x294 0x005113CC, TouchSensorComponent +0x28c 0x005113E0, CliffSensorComponent +0x288 0x005113F2; AnimationStreamer +0x60 0x0051154A",
+    "the stack's counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers: VisionSystem.ResetToConstructed (VisionSystem.cs) and FreeplayStack's NeedsManager::OnRobotDisconnected (FreeplayStack.cs, M15-016); the upper-layer components themselves (behaviour/freeplay, mood, AI, path, map, docking, carrying) are M7/M12-M15 and not built in this stack"
+  ],
+  "effect": "behaviour, mood, path, docking, map or freeplay state survives a removal the engine would have destroyed",
+  "provenance": "extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)",
+  "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Named, not built (upper layers, AbortAll, ForceUpdate, PerfMetric, DAS); no test. Before: B-CORE batch 4: the stack's built counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers (VisionSystem.ResetToConstructed, FreeplayStack's NeedsManager::OnRobotDisconnected), matching the destructor's vision and needs parts; the upper-layer components (BehaviourManager/freeplay, MoodManager, AIComponent, PathComponent, MapComponent, Docking/Carrying) are M7/M12-M15 and not built, so their reset is named, not built. Awaiting strong verification.",
+  "hardware_required": false,
+  "live_path": true,
+  "test": ""
+}
+```
+
+```json
+{
+  "id": "M1-045",
+  "subsystem": "M1-transport",
+  "title": "The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList",
+  "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+  "status": "IMPLEMENTATION_GAP",
+  "authority": "libcozmoEngine.so 3.4.0-1204",
+  "evidence": [
+    "RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A",
+    "CreateGoToSleepAnimSequence 0x0052CEA2..0x0052CFC0: CompoundActionParallel(robot) of a CompoundActionSequential of TriggerAnimationAction(trigger 0xd2, args 1,1,0,60.0f,0; 0x0052CECA..0x0052CEDE), trigger 0xd5 (0x0052CF0E), trigger 0xd4 (0x0052CF44), plus MoveLiftToHeightAction(preset 0, tolerance 5.0f; 0x0052CF8E..0x0052CFA2)",
+    "the only caller of the factory is 0x0052CE5E (the caller lists of 0x004A9A30 and 0x0052CEA2; a BL/BLX scan found one call)"
+  ],
+  "effect": "a faceOff expiry does not put the robot to sleep",
+  "provenance": "extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)",
+  "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Named, not built; evidence holds (0x0052CE54..0x0052CE6A, QueueAction position 0; triggers 0xd2/0xd5/0xd4; MoveLift preset 0, tolerance 5.0f). Its tests are M1-031's and never exercise the action. Before: B-CORE batch 4: named, not built - this stack has no ActionList or animation-sequence action layer, so CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested instead of queuing the action; the engine's exact action tree is in the evidence. An M5/M8 interface; awaiting strong verification.",
+  "hardware_required": false,
+  "live_path": true,
+  "test": "EngineAppLayerTests.M1_031_CC3_CC6_TheDisconnectDeadline, EngineAppLayerTests.M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate, EngineAppLayerTests.M1_031_CC7_AnExpiredDeadlineBlocksReArmingUntilCancel"
+}
+```
+
+M1-015 owns timeout/marker/report selection and the lifetime handoff; M1-031 owns the deadline/trigger; M1-044 owns T2–T9 ordered lifetime interfaces, owner nulling, membership and service call orchestration; M1-045 owns factory-result submission NOW/retries0. None claims recursive component teardown, a bounded Vision join, or the sleep tree execution. Retained managed reset behavior is a higher-layer implementation candidate and stays unverified.
+
+| New record | Layer | Boundary / citation |
+| --- | --- | --- |
+| M1-046 | M1-transport | 0x005112F2..0x00511308; Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN. |
+| M3-038 | M3-device | 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. |
+| M4-026 | M4-control | 0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. |
+| M4-027 | M4-control | 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN. |
+| M4-028 | M4-control | 0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. |
+| M5-037 | M5-animation | 0x00511524..0x0051154A; 0x0057AF48..0x0057AFDA; 0x0057B044..0x0057B0C2; Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred. |
+| M5-038 | M5-animation | 0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. |
+| M7-023 | M7-behaviour | 0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. |
+| M8-015 | M8-framework | 0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants. |
+| M8-016 | M8-framework | 0x0051112C; 0x0051113A; 0x005A0D22..0x005A0DF6; 0x005A5886..0x005A58D2; BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN. |
+| M8-017 | M8-framework | 0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission. |
+| M10-014 | M10-derived | 0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. |
+| M11-055 | M11-vision | 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. |
+| M12-040 | M12-manipulation | 0x0063BE10..0x0063BE5C; 0x005113FA..0x00511414; Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. |
+| M13-029 | M13-navigation | 0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. |
+| M14-013 | M14-faces | 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. |
+| M15-027 | M15-freeplay | 0x00695908..0x0069594A; 0x0056EEB8; 0x0056EC48..0x0056EDE2; 0x00569CB2..0x00569DAC; 0x005111BE..0x005111EA; 0x00511314..0x00511338; Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown. |
+| M15-028 | M15-freeplay | 0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

@@ -848,3 +848,15 @@ Other facts from the report: the carried id is released only by HandlePickAndPla
 ## Correction A5 (job R-FIX2, 2026-10-04): the pick-up phase, one new record
 
 The floor-placement batch's verifiers found that the pick-up phase of BringCubeToBeacon (InitInternal 0x005DF348, TransitionToPickUpObject 0x005DF8C0..0x005DFBB0, DriveToPickupObjectAction, the completion lambda 0x005E0FD8..0x005E1220) also has no record. **M15-026** owns it (rows in the record's evidence; reads by the verifier and the implementer). M15-020's evidence additionally covers FindUsableCubesOutOfBeacons 0x0056AE58, AreAllCubesInBeacons 0x0056B450, CanPickUpObject 0x0063C7F0 and IsCarryingObject 0x00633F88. The unbuilt part (DriveToPickupObjectAction's body) stays a MISSING in the code.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M15-027 — Disconnect persistence, ForceUpdate and AI/progression/inventory destruction | 0x00695908..0x0069594A; 0x0056EEB8; 0x0056EC48..0x0056EDE2; 0x00569CB2..0x00569DAC; 0x005111BE..0x005111EA; 0x00511314..0x00511338; Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown. | MISSING: Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+| M15-028 — App telemetry/context/member lifetime recipients | 0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only. | MISSING: Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

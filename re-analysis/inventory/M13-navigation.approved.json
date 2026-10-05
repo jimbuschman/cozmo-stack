@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-02",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "ca1276f673ed5e880d9d773242d3e588f575c7a024f304b5bc0f6670e96dcb97",
+  "inventory_sha256": "162710971c489fa735e7f7dff7d6656f11f4e6b4f68a19d0256632d600e2d33c",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -381,6 +381,17 @@
         "re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objections 2, 3, 9",
         "0x0055F074..0x0055F17A FlipBlockAction::CheckIfDone; 0x0055EF3A..0x0055EF4A; 0x00548A54..0x00548A78 (fix-round-3 verifier)",
         "0x0055F074..0x0055F208 CheckIfDone; 0x0055ED54..0x0055EDA0 destructor (round-4 verifier, .scratch/m12v5_cid.txt)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Path/planner abort and destruction",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

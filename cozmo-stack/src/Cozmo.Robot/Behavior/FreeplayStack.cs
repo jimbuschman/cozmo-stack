@@ -236,18 +236,11 @@ public sealed class FreeplayStack : IDisposable
         robot.Sensors.NeedsActionCompleted += onNeedsAction;
         stack._unsubscribe.Add(() => robot.Sensors.NeedsActionCompleted -= onNeedsAction);
 
-        // M15-016: the live removal path drives the NeedsManager's disconnect transition.
         // fidelity: M15-016
-        // OnRobotDisconnected 0x00695908 is reached from RobotManager::RemoveRobot 0x0052F2DC..0x0052F2E0 in
-        // both branches - whether or not the connection manager answered the disconnect - not only from the
-        // RobotDisconnected game broadcast (CozmoEngine.cs raises that broadcast only when it was not
-        // answered). CozmoRobot.RobotRemoved is raised by ResetDevices from CozmoEngine.RemoveRobot on every
-        // removal (CozmoEngine.cs:1320), so it is the stack's always-fired removal edge. It fires after the
-        // device reset, which is after the RobotDisconnected broadcast the engine sends before deleting the
-        // Robot, matching the engine's order (broadcast, then RemoveRobot's OnRobotDisconnected).
-        void onRemoved() => needs.OnRobotDisconnected();
-        robot.RobotRemoved += onRemoved;
-        stack._unsubscribe.Add(() => robot.RobotRemoved -= onRemoved);
+        // T4: Needs disconnect precedes Perf/DAS and the Robot destructor, including
+        // when RIC::HandleDisconnect already answered. Recipient effects stay M15.
+        robot.Engine.NeedsRobotDisconnected = needs.OnRobotDisconnected;
+        stack._unsubscribe.Add(() => robot.Engine.NeedsRobotDisconnected = null);
         // M15-016: the ConnectToRobot -> InitAfterConnection edge is now wired above (J13): CozmoEngine
         // exposes ConnectToRobotHandled and this stack subscribes, with a replay when Robot 1 already exists
         // at creation. What remains unbuilt, so the record stays IMPLEMENTATION_GAP: the SetPaused

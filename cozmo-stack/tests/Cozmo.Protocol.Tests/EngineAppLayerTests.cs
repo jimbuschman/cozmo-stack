@@ -1971,4 +1971,138 @@ public class EngineAppLayerTests
         else Assert.Equal(expectedMask, Assert.Single(enables).Field0);
         if (locks == 2) Assert.Equal((byte)7, rig.Robot.Motion.LockedTracks);
     }
+
+    [Fact]
+    public void CheckedRemoval_ReportsServicesLifetimeAndBookkeepingOrder()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var robot = rig.Engine.Robot!;
+        var calls = new List<string>();
+        rig.Engine.ExternalRobotDisconnected = id => { Assert.Same(robot, rig.Engine.Robot); calls.Add($"external:{id}"); };
+        rig.Engine.RobotDisconnected += _ => calls.Add("report");
+        rig.Engine.ClearDasGlobal = name =>
+        {
+            if (name == "$session_id") Assert.Same(robot, rig.Engine.Robot);
+            else { Assert.Null(rig.Engine.Robot); Assert.Null(rig.Engine.Robots.Ric); }
+            calls.Add(name);
+        };
+        rig.Engine.NeedsRobotDisconnected = () => calls.Add("needs");
+        rig.Engine.PerfRobotDisconnected = () => calls.Add("perf");
+        rig.Engine.DasPauseUploading = paused => { Assert.False(paused); calls.Add("das:0"); };
+        robot.Lifetime.Bind(-1, address => { Assert.Equal(0x005110EEu, address); calls.Add("dtor-event"); });
+        robot.Lifetime.Bind(-2, address => { Assert.Equal(0x0051111Au, address); calls.Add("force-update"); });
+        robot.Lifetime.Bind(-3, address => { Assert.Equal(0x00511120u, address); calls.Add("abort-all"); });
+        robot.Lifetime.Bind(0x44, address =>
+        {
+            Assert.Equal(0x0051112Cu, address);
+            Assert.True(robot.Lifetime.IsKnownNull(0x44));
+            calls.Add("behavior");
+        });
+        var actions = robot.ActionList;
+        robot.Lifetime.Bind(0x250, address =>
+        {
+            Assert.Equal(0x00511156u, address);
+            Assert.Null(robot.ActionListOwner);
+            Assert.True(actions.IsEmpty);
+            calls.Add("actions");
+            actions.Dispose();
+        });
+        robot.Lifetime.Bind(0x440, address =>
+        {
+            Assert.Equal(0x005111B6u, address);
+            Assert.Null(robot.ActionListOwner); // Mood skips unregister against a dead queue.
+            Assert.False(robot.Lifetime.IsKnownNull(0x440)); // null store occurs later at 111C4.
+            calls.Add("mood");
+        });
+        robot.Lifetime.Bind(0x448, address =>
+        {
+            Assert.Equal(0x005111CEu, address);
+            Assert.True(robot.Lifetime.IsKnownNull(0x440));
+            Assert.False(robot.Lifetime.IsKnownNull(0x448));
+            calls.Add("progression");
+        });
+        robot.Lifetime.Bind(4, address => { Assert.Equal(0x005115F0u, address); calls.Add("base"); });
+        rig.Engine.RobotStorageFreed = id => { Assert.Same(robot, rig.Engine.Robot); calls.Add("free"); };
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Equal(new[] { "external:1", "report", "$session_id", "needs", "perf", "das:0",
+            "dtor-event", "force-update", "abort-all", "behavior", "actions", "mood", "progression", "base", "free", "$phys", "$group" }, calls);
+        Assert.Null(rig.Engine.Robot);
+        Assert.Contains(rig.Log, line => line.Contains("MISSING: Robot lifetime owner +0x258"));
+    }
+
+    [Fact]
+    public void CheckedRemoval_PendingHandshakeSkipsExternalReportAndSessionClear()
+    {
+        using var rig = new Rig();
+        rig.Connect();
+        var calls = new List<string>();
+        rig.Engine.ConnectionResponse += response => calls.Add($"response:{(byte)response.Result}");
+        rig.Engine.ExternalRobotDisconnected = _ => calls.Add("external");
+        rig.Engine.RobotDisconnected += _ => calls.Add("report");
+        rig.Engine.ClearDasGlobal = calls.Add;
+        rig.Engine.NeedsRobotDisconnected = () => calls.Add("needs");
+        rig.Engine.PerfRobotDisconnected = () => calls.Add("perf");
+        rig.Engine.DasPauseUploading = _ => calls.Add("das");
+        rig.Engine.Robot!.Lifetime.Bind(-1, _ => calls.Add("dtor"));
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Equal(new[] { "response:1", "needs", "perf", "das", "dtor", "$phys", "$group" }, calls);
+    }
+
+    [Fact]
+    public void CheckedRemoval_NullMapValueStillCleansMembership()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Engine.Robots.RobotEntries[1] = null;
+        rig.Engine.Robots.RobotIds.Clear();
+        rig.Engine.Robots.RobotIds.AddRange(new uint[] { 1, 9, 1, 8 });
+        var calls = new List<string>();
+        rig.Engine.NeedsRobotDisconnected = () => calls.Add("needs");
+        rig.Engine.PerfRobotDisconnected = () => calls.Add("perf");
+        rig.Engine.DasPauseUploading = _ => calls.Add("das");
+        rig.Engine.RobotStorageFreed = _ => calls.Add("free");
+        rig.Engine.ClearDasGlobal = calls.Add;
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Equal(new[] { "$session_id", "needs", "perf", "das", "$phys", "$group" }, calls);
+        Assert.False(rig.Engine.Robots.RobotExists(1));
+        Assert.Equal(new uint[] { 9, 1, 8 }, rig.Engine.Robots.RobotIds);
+        Assert.Null(rig.Engine.Robots.Ric);
+        calls.Clear();
+        rig.Engine.Robots.RemoveRobot(1, false);
+        Assert.Empty(calls);
+        Assert.Contains(rig.Log, line => line.Contains("Robot 1 does not exist. Ignoring."));
+    }
+
+    private sealed class SleepProbe : ActionRunner
+    {
+        public SleepProbe() : base(type: 0, requiredTrackMask: 0) { }
+        public override uint Update() => State = 0x01000000;
+        public override bool CanInterrupt() => true;
+        public override uint CheckIfDone() => 0x01000000;
+    }
+
+    [Fact]
+    public void CheckedSleep_FactoryResultSubmittedNowWithZeroRetries()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState();
+        var robot = rig.Engine.Robot!;
+        var prior = new SleepProbe();
+        robot.ActionList.QueueAction(QueueActionPosition.AtEnd, prior, 3);
+        rig.Tick();
+        var sleep = new SleepProbe { RetriesRemain = 9 };
+        int factories = 0;
+        rig.Engine.CreateGoToSleepSequence = owner => { Assert.Same(robot, owner); factories++; return sleep; };
+        rig.Engine.StartIdleTimeout(0, -1);
+        rig.Tick();
+        Assert.Equal(1, factories);
+        Assert.Same(sleep, robot.ActionList.QueueAt(0)!.Current);
+        Assert.Equal((byte)0, sleep.RetriesRemain);
+        Assert.NotSame(prior, robot.ActionList.QueueAt(0)!.Current);
+    }
 }

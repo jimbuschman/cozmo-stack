@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **427 records** over 16 subsystems.
+Manifest of **445 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 130 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 18 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 36 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 239 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 26 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -24,21 +24,21 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 45 | 0 | 8 | 0 | 2 | yes | no |
+| M1-transport — UDP transport and reliability | 46 | 1 | 8 | 0 | 2 | no | no |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 1 | 0 | 0 | yes | no |
-| M3-device — Camera, display and audio device layer | 37 | 0 | 15 | 0 | 3 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 25 | 0 | 10 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 36 | 0 | 13 | 0 | 1 | yes | no |
+| M3-device — Camera, display and audio device layer | 38 | 1 | 15 | 0 | 3 | no | no |
+| M4-control — Motion, sensors, lights and cubes | 28 | 3 | 10 | 0 | 3 | no | no |
+| M5-animation — Animation clips, scheduler and face | 38 | 2 | 13 | 0 | 1 | no | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 23 | 0 | 0 | yes | no |
-| M7-behaviour — Idle, mood and reactions | 22 | 0 | 17 | 0 | 0 | yes | no |
-| M8-framework — Behaviour framework and scoring | 14 | 0 | 13 | 0 | 0 | yes | no |
+| M7-behaviour — Idle, mood and reactions | 23 | 1 | 17 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 17 | 3 | 13 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 17 | 0 | 1 | no | no |
-| M10-derived — Derived robot state and reaction strategies | 13 | 0 | 10 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 54 | 4 | 34 | 1 | 0 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 39 | 7 | 21 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 28 | 2 | 23 | 0 | 0 | no | no |
-| M14-faces — Face and pet pipeline | 12 | 0 | 10 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 26 | 0 | 22 | 0 | 0 | yes | no |
+| M10-derived — Derived robot state and reaction strategies | 14 | 1 | 10 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 55 | 5 | 34 | 1 | 0 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 40 | 8 | 21 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 29 | 3 | 23 | 0 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 28 | 2 | 22 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -73,6 +73,77 @@ status.
 
 Each of these is a question the original can answer and nobody has asked it yet.
 
+### M1-transport — UDP transport and reliability
+
+**M1-046 — Channel/member subscription retirement recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x005112F2..0x00511308; Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M3-device — Camera, display and audio device layer
+
+**M3-038 — NV component destruction and pending callback lifetime** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M4-control — Motion, sensors, lights and cubes
+
+**M4-026 — Robot AbortAll ordered control and wire effects** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M4-027 — Sensor/light/movement/CubeAccel teardown and retained host reset candidate** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M4-028 — Go-to-sleep lift child construction and motor effects** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Motion.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M5-animation — Animation clips, scheduler and face
+
+**M5-037 — Driving-animation and AnimationStreamer teardown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x00511524..0x0051154A; 0x0057AF48..0x0057AFDA; 0x0057B044..0x0057B0C2; Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M5-038 — CreateGoToSleepAnimSequence animation factory boundary** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
 ### M7-behaviour — Idle, mood and reactions
 
 **M7-022 — DockingTestSimple developer-test state machine is not exhaustively recovered** (not on the live path)
@@ -83,6 +154,44 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f; M7 gap1 G7
 * outstanding: Enumerate every +0x11c state, callback transition, random range and action argument in 0x005cbc10..0x005ccc3f.
+
+**M7-023 — Mood destruction with already-null ActionList dependency** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Mood.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M8-framework — Behaviour framework and scoring
+
+**M8-015 — Queue/action cancellation and destruction during Robot teardown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Actions/ActionList.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M8-016 — Behavior-container destruction and virtual children** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051112C; 0x0051113A; 0x005A0D22..0x005A0DF6; 0x005A5886..0x005A58D2; BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M8-017 — Go-to-sleep compound execution ordering and failure propagation** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Actions/ActionList.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
@@ -122,6 +231,17 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813
 * outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
 
+### M10-derived — Derived robot state and reaction strategies
+
+**M10-014 — BlockFilter and gyro-drift lifetime effects** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
 ### M11-vision — Markers, camera geometry and BlockWorld
 
 **M11-042 — Unread bodies next to the BlockWorld observation path** (live path)
@@ -159,6 +279,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204, GetRawStateAt 0x00531431: lower_bound(t); end -> return 1 (0x00531466..0x00531472); first key > t -> return 1 (0x0053146A..0x00531470); exact key copies that state (0x0053147E..0x0053149C); otherwise before = previous node; if the two origin ids ([r6+0x24] != [r7+0x24], 0x005314BA..0x005314C0) differ log (0x00531574) and return 0x06000000; with flag 1 GetWithRespectTo(after pose, before pose, tmp) 0x00531504 (result != 1 -> 0x005315A6 error, 0x06000000); f = (float)(t - before.key) / (float)(after.key - before.key) (0x00531510..0x00531524); Interpolate(out, before, after, tmp, f). Interpolate 0x0053068C..0x00530848: RobotState (0x5C bytes from +0xC) copied from after, or from before when f < 0.49999 (literal 0x00530884; 0x005306A8..0x005306BE); RobotState +4 from before (0x005306C2); floats at RobotState +0x20, +0x24, +0x28 (head angle), +0x2C (lift angle) = before + (after - before) * f (0x005306CA..0x00530766); the u16 at RobotState +0x50 = roundf(before + (int)(after - before) * f) (0x005306FE..0x00530734) with -1,-1 fill from +0x50 (0x005306EE); pose translation = before.t + f * tmp.t, angle = before.angleZ + f * tmp.angleZ, Z_AXIS_3D, parent = before.GetParent(), empty name, built through Pose3d(Radians, axis, translation, parent, name) 0x0053082A and HistRobotState(Pose3d, RobotState) 0x00530848. Not resolved: whether tmp is in the frame of before or its parent (needs PoseBase::GetWithRespectTo, PLT 0x4A40FC).
 * evidence: 0x00531431..0x005315A6 GetRawStateAt; 0x0053068C..0x00530848 Interpolate; re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md
 * outstanding: the frame of tmp (PoseBase::GetWithRespectTo body) is unread; the code uses the nearer raw state unblended (InterpolationStandIns counts each use), and has no origin-mismatch 0x06000000 result or GetWithRespectTo failure
+
+**M11-055 — Vision/history/world/pose/map lifetime recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -225,6 +354,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: 0x005504A0, 0x00550858..0x005508C4, PLT 0x004AB914, 0x004AB908; re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objection 6
 * outstanding: read ComputePlacementApproachAngle 0x005504A0 and GetAngleAroundXaxis/Yaxis and build them; until then the +0x178 case and the X/Y arms throw NotSupportedException tagged 'M12-039 RECOVERABLE_GAP' (visible stubs; nothing is built or guessed; the Z arms and the axis rule are built, M12-030).
 
+**M12-040 — Carrying/docking lifetime after preceding control abort** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0063BE10..0x0063BE5C; 0x005113FA..0x00511414; Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
 ### M13-navigation — Planning, charger and block configurations
 
 **M13-021 — Unread MovementComponent and TrackLayerComponent bodies next to the turn and head actions** (live path)
@@ -245,6 +383,46 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: 0x00502DD8, 0x004EF78A the corner getters; 0x0084AAE0, 0x008494E0, 0x008499B0 the rotation-matrix path; 0x004E7EFC SortCornersClockwise; 0x004E6778 InitFromPointContainer; re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'
 * outstanding: read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics).
 
+**M13-029 — Path/planner abort and destruction** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M14-faces — Face and pet pipeline
+
+**M14-013 — Pet/face-world and speech lifetime recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+### M15-freeplay — Needs, activities and freeplay
+
+**M15-027 — Disconnect persistence, ForceUpdate and AI/progression/inventory destruction** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x00695908..0x0069594A; 0x0056EEB8; 0x0056EC48..0x0056EDE2; 0x00569CB2..0x00569DAC; 0x005111BE..0x005111EA; 0x00511314..0x00511338; Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
+**M15-028 — App telemetry/context/member lifetime recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+* outstanding: MISSING: Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.
+
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
@@ -255,10 +433,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs`
 * effect: a dead link is noticed at a different time, or the game is told the wrong result
-* rests on: reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).
+* rests on: Manager-adopted checked T1–T9/ownership split (2026-10-05); narrowed M1 interface contract. Higher effects are explicit new records; no settlement.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent; B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC); B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244); B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302); this record was a COMPATIBILITY_POLICY saying the engine connect timeout had not been read; it has now been read; CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A); CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364)
-* outstanding: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Its path defers to M1-044, which is not built. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. RemoveRobot destroys the whole Robot (0x0052F2F6) but the stack resets only the devices; B-CORE batch 4 gives the upper-layer teardown its own record (M1-044: Robot::~Robot 0x005110D4 destroys behaviour, mood, AI/freeplay, path, map, docking, carrying and vision) and closes the VisionSystem.Enabled UNKNOWN (the engine destroys the VisionComponent and its owned VisionSystem; there is no persistent engine flag). The 2 s join bound is a stack-local policy with no engine counterpart (the engine joins unbounded, 0x0065257C); the CD21 read is M3-022 and CD16's Lab read is M1-028, so the audit's 'no record' is wrong for those.
+* evidence: Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt; R19 ReliableConnection::HasConnectionTimedOut: now > lastRecv (+0x50) + ConnectionTimeoutInMS (0x00836080..0x0083608C); on timeout ReceiveData(OnDisconnected, 0, addr), delete, Update false (0x00837BCC..0x00837C74); no frame sent; B22 0x00837C50..0x00837C56 OnDisconnected to the receiver; tick lambda sets +0xA1 (0x008383D4..0x008383DC); B31 HandleDisconnectMessage: +0xA1 -> reason 1 WifiTimeout (0x0062FA34 ldrb.w r0,[r1,#0xa1]); RemoveRobot(id, wasConnecting) -> 2 ConnectionRejected when RCD state was 1 (the transport connect was never answered), else 1 ConnectionFailure, including a drop during the handshake [corrected C6] (0x0062FAEE..0x0062FAF8, 0x0052F23E..0x0052F244); B32 pending handshake: RobotConnectionResponse(result) and no RobotDisconnected; else RobotDisconnected and $session_id cleared; Robot deleted; the engine does not reconnect (0x0052DCC0..0x0052DD16, 0x0052F248..0x0052F302); CC23/CB32: HandleDisconnectMessage ignores the message fields, captures the RCD state, writes reason 1 if the timed-out flag is set, emits DAS, resets the reason to 0, clears RCD, then RemoveRobot(id, state == 1) (0x0062FA2E..0x0062FAF8); RIC::HandleDisconnect answers with RobotConnectionResponse {result, 0, 0, -1, -1} unless the response was already sent (0x0052DCC0..0x0052DD1A); CB33/CC26: RemoveRobot skips the RobotDisconnected broadcast and the $session_id clear when HandleDisconnect answered; either way it deletes the Robot and its RIC (0x0052F248..0x0052F364); T1–T5: strict timeout/marker/report selection and ordered lifetime handoff only. Component destruction effects belong to the new higher-layer lifetime records in inventory correction A2.
+* outstanding: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.
 
 **M1-024 — Engine tick 60 ms: arrivals drained FIFO and handed up once per tick** (live path)
 
@@ -276,7 +454,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: B2 ConnectToRobot handler: robot 1 exists -> "Robot already connected", nothing (0x004ED022, 0x004ED026); else AddRobotConnection (0x004ED074), then AddRobot(1) at once (0x004ED07C); B23 HandleConnectionResponseMessage: state 1 -> 2 and reason 0 (0x0062F954, 0x0062F958, 0x0062F95E); otherwise "Got connection response at unexpected time"; B33 DisconnectCurrent: RT->Disconnect then QueueConnectionDisconnect (0x0062EF38..0x0062EF58); callers RCM dtor 0x0062EE98, fatal robotError 0x0069DACA, MessageHandler::Disconnect 0x0069DCF2, ExitSdkMode lambda 0x0069E1EC..0x0069E1FA [corrected C7]; B35 disconnect reasons: SleepPlacedOnCharger 4 (0x00606D1A), SetRobotDisconnectReason writes the byte (0x0069E01C); CB2/CB6: ConnectToRobot logs "Connected to robot!" before any transport exchange, then NeedsManager::InitAfterConnection and DASPauseUploadingToServer(1); nothing goes to the game (0x004ED074..0x004ED114); CC18/CC19: RobotDisconnectReason values 0..11 (0x00775BEC, table 0x01033970) and every writer of RCM+0x38; its only reader is the DAS disconnect event (0x0062FAAA), so it changes no behaviour; CC27..CC30: a later ConnectToRobot builds everything afresh once robot 1 is gone; DisconnectCurrent queues type 3 + DeleteConnection and pushes one OnDisconnected marker, handled at the next RCM::Update in FIFO order (0x0062EF32..0x0062EF7A; 0x0062F3BC..0x0062F4BC); CB38: the app layer does not filter connection events by address; only data is compared against the robot address (0x0062F434; 0x0062F72C..0x0062F748); E7..E9: ExitSdkMode subscribers run UiMessageHandler, then MessageHandler (reason 6, DisconnectCurrent), then MovementComponent; an EnableAnimTracks it sends is posted behind the Disconnect action, finds no connection and is not sent (0x00660918..0x0063DE96; 0x0069E1DC..0x0069E1FE; CA12, CA14)
-* outstanding: built, awaiting strong verification: manager-checked E1–E14 in research/20261005-B-M1M2-blockers-extraction.md: live ExitSdkMode game-drain entry, UI edu/unpause and SDK status handoffs, independent communication byte/virtual interface, external-only RCM disconnect before charger-only Movement unlock. Track trees preserve duplicates and erase one owner; existing MA3 outgoing empty-tree mask retained including missing owner. MISSING: nested SDK message recipients, EnterSdkMode/state writers, concrete SDK connection callbacks, telemetry fields and PrintLockState. Teardown split remains in the next batch; this does not settle the complete path. Previous Opus verification: M1-044 dependency unbuilt.
+* outstanding: built, awaiting strong verification: manager-checked E1–E14 in research/20261005-B-M1M2-blockers-extraction.md: live ExitSdkMode game-drain entry, UI edu/unpause and SDK status handoffs, independent communication byte/virtual interface, external-only RCM disconnect before charger-only Movement unlock. Track trees preserve duplicates and erase one owner; existing MA3 outgoing empty-tree mask retained including missing owner. MISSING: nested SDK message recipients, EnterSdkMode/state writers, concrete SDK connection callbacks, telemetry fields and PrintLockState. Teardown lower interfaces are built under correction A2; higher effects are explicit new lifetime gap records; this does not settle the complete path. Previous Opus verification: M1-044 dependency unbuilt.
 
 **M1-029 — Firmware version check against the shipped firmware header** (live path)
 
@@ -291,10 +469,10 @@ Each of these is a question already answered. The original's behaviour is establ
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: the link is dropped after a pause at a different time, or never
-* rests on: reproduced by the code; settled after batch 3's read-only verification (2026-09-24)
+* rests on: Manager-adopted checked T1–T9/ownership split (2026-10-05); narrowed M1 interface contract. Higher effects are explicit new records; no settlement.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360; CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98); CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3
-* outstanding: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Its path defers to M1-045, which is not built. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. on the faceOff deadline the engine queues CreateGoToSleepAnimSequence (0x0052CE5A..0x0052CE6A); B-CORE batch 4 gives the action its own record (M1-045) and the stack names it (CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested), because no ActionList or animation-sequence action layer exists.
+* evidence: Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt; B34 StartIdleTimeout: deadline = now + disconnectTime_s if >= 0, keeping an earlier deadline (0x0052D030..0x0052D066); Cancel sets -1 (0x0052D06C); on expiry Update clears it and calls MessageHandler::Disconnect (0x0052CE6E..0x0052CE98); the reason is not set; driven from unity/scripts/csharp/PauseManager.cs:219, :289, :360; CC1..CC7: the idle component has two deadlines: faceOff (armed only after the first full robot state, robot+0x34E) and disconnect; earliest wins; Cancel sets both to -1; expiry sets 0.0, which blocks re-arming until a Cancel; sleep fires before disconnect in one Update (0x0052CC64..0x0052D0C4; 0x0052CE3C..0x0052CE98); CC8: the sleep half queues a go-to-sleep animation sequence (0x0052CEA2..0x0052CFBE), an interface to the animation layer (M5); CC10: deadlines are checked once per 60 ms tick in engine state 3; M1 boundary is deadline trigger/timing and factory handoff; action tree/execution belongs to new M5/M4/M8 sleep records in correction A2.
+* outstanding: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.
 
 **M1-041 — Robot initialisation after a Success connection response, and the gates it opens** (live path)
 
@@ -305,23 +483,23 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: CD17/CB21: the Success RobotConnectionResponse reaches, synchronously and in this order: RobotEventHandler, VisionComponent, TracePrinter (0x006625C6..0x006625FA; 0x00663C74..0x00663CA8; 0x005259AC, 0x006501E4, 0x0053BCBA); CD18/CB22/CB23: RobotEventHandler (result 0) calls Robot::SyncTime: +0x29 = 0, history clear, then SyncTime {u32 BaseStationTimer ms, 0xC1A00000} reliable; only if that was sent, InitController; only if that was sent, ImageRequest {Stream, QVGA} and AbsoluteLocalizationUpdate {0, frameId, originId, 0, 0, 0}; a failed send warns and stops (0x005289BA..0x005289D2; 0x0051521E..0x005153AE); CD19: SyncTime is never retried; after 5.0 s without SyncTimeAck it warns "SyncTimeAckNotReceived" (0x00513BF6..0x00513C5A); SyncTimeAck sets +0x29 = 1 (0x005366A4..0x005366AC); CD20: RobotEventHandler then sets ready-to-stream (+0x2A) through an NVStorage on-idle callback, which runs once the NV request queue is empty (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); CD22: TracePrinter sends SetAppRunID (16-byte UUID, 0xFF unless a platform id exists), then RequestCrashReports{0}, each crash report received asking for the next index up to 3 (0x0053D398..0x0053D430; 0x0053CA88..0x0053CA9E); CD23/CD12: robot state is dropped until time sync (0x0051293C..0x0051294E); Robot::Update does nothing past the idle component until the first full state is handled (+0x34E); the AnimationStreamer runs only when synced and ready to stream (0x00513BF2..0x00514470); CD30: nothing sends SendHeadAngleUpdate, setAccessoryDiscovery or SetRobotImageSendMode on this path (BL scan)
 * outstanding: built, awaiting strong verification: B-M1M2 trial batch 1 (2026-10-05). Restored Robot.SendSyncTime.FailedToSend for SyncTime or InitController failure only (Opus checked 0x005152C4); short-circuit preserves the send order. Restored the four checked info logs in the live connection-response / NV-idle / SyncTimeAck entries. Self-review reopened the cited addresses: SendingSyncTime is AFTER Robot::SyncTime (0x005289D2 then 0x005289EC); QueueingSetReadyToStreamAnims is before callback registration (0x00528A34 then 0x00528A6E); the callback stores +0x2A BEFORE SettingReadyToStreamAnims (0x0052C3A6 then 0x0052C3B6); HandleSyncTimeAck logs before its two stores (0x0053667E then 0x005366A6/AC). No wire, clock or readiness changes. EngineAppLayerTests exercises the live mfgId and NV drain, both early failure branches, and the negative ImageRequest/AbsoluteLocalizationUpdate branches. No settlement. Prior verifier text: Opus verification of B-CORE2 (2026-10-02, re-analysis/research/20261002-B-CORE2-verify.md): NOT YET. The on-idle tick and the f32 deadline are fixed. Defects: Robot.SendSyncTime.FailedToSend (0x005152C4, name 0x00515458) is emitted when the SyncTime or InitController send fails, and B-CORE2 batch 4 deleted it (CozmoEngine.cs:989-990); the info logs RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime (0x005289EC), ...QueueingSetReadyToStreamAnims (0x00528A34), ...SettingReadyToStreamAnims in the on-idle lambda (0x0052C3B6) and Robot.HandleSyncTimeAck (0x0053667E) are missing. Before: built, awaiting strong verification: B-CORE2 batch 5 (width and smaller items). The SyncTime-ack deadline is f32: SyncTimeSentAt is the +0x520 float, set from Timer.SecondsF, and Robot.Update compares now > SyncTimeSentAt + 5.0f in single precision (0x00513C02..0x00513C14: vldr s0,[r6]; vadd.f32 s0,s0,#5.0; vcmpe.f32 s16,s0). CozmoEngine.cs; EngineAppLayerTests.M1_041_CD19_TheSyncTimeAckDeadlineIsComparedInF32. The on-idle/ready-to-stream residual stays as recorded for batch 1.
 
-**M1-044 — RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys the behaviour, mood, AI/freeplay, path, map, docking, carrying and vision components** (live path)
+**M1-044 — RemoveRobot ordered lifetime interfaces, owner nulling and post-destruction membership cleanup** (live path)
 
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
 * effect: behaviour, mood, path, docking, map or freeplay state survives a removal the engine would have destroyed
-* rests on: extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)
+* rests on: Manager-adopted checked T1–T9/ownership split (2026-10-05); narrowed M1 interface contract. Higher effects are explicit new records; no settlement.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: RemoveRobot 0x0052F2F6 calls Robot::~Robot (0x005110D4) then operator delete (0x0052F2FA); RobotManager::RemoveRobot also calls NeedsManager::OnRobotDisconnected 0x0052F2E0, PerfMetric::OnRobotDisconnected 0x0052F2E8, DASPauseUploadingToServer(0) 0x0052F2EE, erases the map/id/RIC (0x0052F2FE..0x0052F350) and clears $session_id 0x0052F2D8, $phys 0x0052F358 and $group 0x0052F360; Robot::~Robot 0x005110D4: FreeplayDataTracker::ForceUpdate 0x0051111A, Robot::AbortAll 0x00511120; BehaviourManager +0x44 0x0051112C; BehaviourSystemManager +0x48 0x0051113A; ActionList::Clear 0x00511146 then ~ActionList 0x00511156; VisionComponent +0x258 through vtable slot +4 0x0051116C (D0 0x00652794; its D1 0x00652554 joins the processor thread 0x0065257C and destroys the owned VisionSystem 0x0065258E); MoodManager +0x440 0x005111B6; AIComponent +0x264 0x00511276; PathComponent +0x5c 0x00511284; BlockWorld +0x34 0x005112CE; MapComponent +0x25c 0x005114E8; CarryingComponent +0x284 0x00511406 and DockingComponent +0x280 0x00511414; PoseOriginList +0x294 0x005113CC, TouchSensorComponent +0x28c 0x005113E0, CliffSensorComponent +0x288 0x005113F2; AnimationStreamer +0x60 0x0051154A; the stack's counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers: VisionSystem.ResetToConstructed (VisionSystem.cs) and FreeplayStack's NeedsManager::OnRobotDisconnected (FreeplayStack.cs, M15-016); the upper-layer components themselves (behaviour/freeplay, mood, AI, path, map, docking, carrying) are M7/M12-M15 and not built in this stack
-* outstanding: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Named, not built (upper layers, AbortAll, ForceUpdate, PerfMetric, DAS); no test. Before: B-CORE batch 4: the stack's built counterpart is CozmoRobot.ResetDevices (device ResetToConstructed) plus the RobotRemoved subscribers (VisionSystem.ResetToConstructed, FreeplayStack's NeedsManager::OnRobotDisconnected), matching the destructor's vision and needs parts; the upper-layer components (BehaviourManager/freeplay, MoodManager, AIComponent, PathComponent, MapComponent, Docking/Carrying) are M7/M12-M15 and not built, so their reset is named, not built. Awaiting strong verification.
+* evidence: Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt; RemoveRobot T2–T5/T9 0x0052F1BE..0x0052F364: lookup includes null values, external notification/report/session-clear selection, Needs/Perf/DAS before nullable destructor and storage release; map/first-id/RIC erase then $phys/$group clears. C# RobotManager.RemoveRobot and CozmoEngine.NotifyDisconnectServices/DestroyRobot.; Robot lifetime T6–T8 0x005110D4..0x005115F8: destructor event, ForceUpdate, AbortAll; checked ordered nullable owner interfaces, null stores and repeated cleanup predicates; final base/member interface. C# EngineRobot.Lifetime/RobotLifetime.Destroy. Recursive effects are the higher-layer records in inventory correction A2, not ResetDevices.
+* outstanding: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.
 
-**M1-045 — The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList** (live path)
+**M1-045 — Idle-timeout go-to-sleep factory handoff and queue submission** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
 * effect: a faceOff expiry does not put the robot to sleep
-* rests on: extracted 2026-09-30 (B-CORE batch 4; re-analysis/research/20260930-B-CORE-b4-extraction.md)
+* rests on: Manager-adopted checked T1–T9/ownership split (2026-10-05); narrowed M1 interface contract. Higher effects are explicit new records; no settlement.
 * best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A; CreateGoToSleepAnimSequence 0x0052CEA2..0x0052CFC0: CompoundActionParallel(robot) of a CompoundActionSequential of TriggerAnimationAction(trigger 0xd2, args 1,1,0,60.0f,0; 0x0052CECA..0x0052CEDE), trigger 0xd5 (0x0052CF0E), trigger 0xd4 (0x0052CF44), plus MoveLiftToHeightAction(preset 0, tolerance 5.0f; 0x0052CF8E..0x0052CFA2); the only caller of the factory is 0x0052CE5E (the caller lists of 0x004A9A30 and 0x0052CEA2; a BL/BLX scan found one call)
-* outstanding: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): NOT YET. Named, not built; evidence holds (0x0052CE54..0x0052CE6A, QueueAction position 0; triggers 0xd2/0xd5/0xd4; MoveLift preset 0, tolerance 5.0f). Its tests are M1-031's and never exercise the action. Before: B-CORE batch 4: named, not built - this stack has no ActionList or animation-sequence action layer, so CozmoEngine.QueueGoToSleep logs MISSING and raises GoToSleepRequested instead of queuing the action; the engine's exact action tree is in the evidence. An M5/M8 interface; awaiting strong verification.
+* evidence: Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt; RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A; 0x0052CE54..0x0052CE6A: factory result goes to existing Robot ActionList QueueAction position0 NOW, retries byte0; return discarded. C# CozmoEngine.QueueGoToSleep required higher factory interface. Factory and child execution are new M5/M4/M8 sleep records in correction A2.
+* outstanding: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.
 
 ### M2-protocol — CLAD messages and protocol helpers
 

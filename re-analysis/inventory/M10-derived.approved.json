@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-02",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "92a6973e422ffda21f4c6ca44409e991762372831b07538fe28fe4452423995d",
+  "inventory_sha256": "618c54249698511e04c6bcab35a7b573808f84ac76178ed1bc3de38dbb676b94",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -153,6 +153,17 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "gap2 7b: no ctor store to +0x35C..+0x377; operator new(0x530) without memset (0x52EE8E..0x52EE9C)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M10-014": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BlockFilter and gyro-drift lifetime effects",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4.",
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

@@ -788,7 +788,7 @@ internal sealed class IdleTimeoutComponent
 /// (+0x2A), the first full state (+0x34E), the SyncTime sent time (+0x520), the idle component (+0x51C), and
 /// TracePrinter's crash-report requests.
 /// </summary>
-public sealed class EngineRobot
+public sealed partial class EngineRobot
 {
     internal CozmoEngine Engine { get; }
     internal IdleTimeoutComponent Idle { get; }
@@ -799,7 +799,8 @@ public sealed class EngineRobot
     {
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
-        ActionList = new ActionList(engine.Log);
+        _actionList = new ActionList(engine.Log);
+        InitLifetime();
         ConstructorDelocalize();
         if (queueConnectionReads) QueueConnectionReads();
     }
@@ -885,7 +886,7 @@ public sealed class EngineRobot
     /// Robot+0x250: the ActionList (20261004-actionlist-extraction.md A/T/Q/C, B-ACTIONS batch 1). Robot::Update
     /// ticks it at 0x005140BC, after the AIComponent step and before the animation streamer.
     /// </summary>
-    internal ActionList ActionList { get; }
+    internal ActionList ActionList => _actionList ?? throw new ObjectDisposedException(nameof(EngineRobot));
 
     // fidelity: M3-012
     private volatile int _animBytesPlayed, _audioFramesPlayed;
@@ -1529,16 +1530,18 @@ internal sealed class RobotManager
 {
     private readonly CozmoEngine _engine;
     private uint _expectedVersion, _expectedTime;     // +0x84, +0x88: 0 from the ctor (G5.15)
-    private volatile EngineRobot? _robot;
-    private volatile RobotInitialConnection? _ric;
+    private readonly object _membershipGate = new();
+    internal readonly Dictionary<uint, EngineRobot?> RobotEntries = new();
+    internal readonly List<uint> RobotIds = new();
+    private readonly Dictionary<uint, RobotInitialConnection> _rics = new();
 
     public RobotManager(CozmoEngine engine) => _engine = engine;
 
     public uint ExpectedVersion => Volatile.Read(ref _expectedVersion);
     public uint ExpectedTime => Volatile.Read(ref _expectedTime);
-    public EngineRobot? Get(uint id) => id == CozmoEngine.RobotId ? _robot : null;
-    public bool RobotExists(uint id) => Get(id) is not null;
-    public RobotInitialConnection? Ric => _ric;
+    public EngineRobot? Get(uint id) { lock (_membershipGate) return RobotEntries.GetValueOrDefault(id); }
+    public bool RobotExists(uint id) { lock (_membershipGate) return RobotEntries.ContainsKey(id); }
+    public RobotInitialConnection? Ric { get { lock (_membershipGate) return _rics.GetValueOrDefault(CozmoEngine.RobotId); } }
 
     // fidelity: M1-029
     /// <summary>ParseFirmwareHeader (G5.20): "version" → +0x84, "time" → +0x88 when present; a warning if either is 0.</summary>
@@ -1557,20 +1560,28 @@ internal sealed class RobotManager
     /// </summary>
     public EngineRobot? AddRobot(uint id, bool withRic = true)
     {
-        if (RobotExists(id)) { _engine.Log($"warning: RobotManager.AddRobot: robot {id} already exists"); return _robot; }
+        if (RobotExists(id)) { _engine.Log($"warning: RobotManager.AddRobot: robot {id} already exists"); return Get(id); }
         // fidelity: M3-033
         // The engine's Robot constructor queues the connection-time NV reads; the RIC is the handshake path, so
         // the offline seam (withRic false) queues none.
         var r = new EngineRobot(_engine, queueConnectionReads: withRic);
-        _robot = r;
-        _ric = withRic ? new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime) : null;
+        lock (_membershipGate)
+        {
+            RobotEntries.Add(id, r);
+            RobotIds.Add(id);
+            if (withRic) _rics.Add(id, new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime));
+        }
         return r;
     }
 
     // fidelity: M1-030
     /// <summary>RM::ShouldFilterMessage (CB27, CC33): the RIC is looked up by robot id; with no RIC nothing is filtered.</summary>
     public bool ShouldFilterMessage(uint id, byte tag, bool robotToEngine)
-        => id == CozmoEngine.RobotId && _ric is { } ric && ric.ShouldFilter(tag, robotToEngine);
+    {
+        RobotInitialConnection? ric;
+        lock (_membershipGate) ric = _rics.GetValueOrDefault(id);
+        return ric?.ShouldFilter(tag, robotToEngine) ?? false;
+    }
 
     // fidelity: M1-015
     /// <summary>
@@ -1578,24 +1589,49 @@ internal sealed class RobotManager
     /// connect was never answered (RCD state 1) and 1 ConnectionFailure otherwise; if RIC::HandleDisconnect
     /// answered, OnRobotDisconnected, the RobotDisconnected broadcast and the $session_id clear are skipped,
     /// otherwise all three run. Either way the Robot is deleted and the map, id and RIC erased. No reconnect.
-    /// The NeedsManager, PerfMetric and DAS notifications are outside this stack.
+    /// T2–T9: the ordered Needs/Perf/DAS and lifetime interfaces run before membership cleanup;
+    /// their higher-layer recipients remain explicit gaps in the cited ownership split.
     /// </summary>
+    // fidelity: M1-044
     public void RemoveRobot(uint id, bool wasConnecting)
     {
-        if (!RobotExists(id)) return;
+        EngineRobot? robot;
+        RobotInitialConnection? ric;
+        lock (_membershipGate)
+        {
+            if (!RobotEntries.TryGetValue(id, out robot))
+            {
+                _engine.Log($"RobotManager.RemoveRobot: Robot {id} does not exist. Ignoring.");
+                return;
+            }
+            ric = _rics.GetValueOrDefault(id);
+        }
+        _engine.Log($"RobotManager.RemoveRobot: Removing robot with ID={id}");
         var result = wasConnecting ? RobotConnectionResult.ConnectionRejected : RobotConnectionResult.ConnectionFailure;
-        bool answered = _ric?.HandleDisconnect(result) ?? false;
-        if (!answered) _engine.RaiseRobotDisconnected(new RobotDisconnectedMessage(0.0f));
-        var r = _robot;
-        _robot = null;
-        _ric = null;
-        // fidelity: M15-014
-        // A removal ends the serial edge, so a stack created after a reconnect does not replay the old serial;
-        // the next mfgId raises it again (the RIC's tag-0xED subscription is persistent).
+        bool answered = ric?.HandleDisconnect(result) ?? false;
+        if (!answered)
+        {
+            _engine.NotifyExternalRobotDisconnected(id);
+            _engine.RaiseRobotDisconnected(new RobotDisconnectedMessage(BitConverter.Int32BitsToSingle(0x00000000)));
+            _engine.ClearGlobal("$session_id");
+        }
+        _engine.NotifyDisconnectServices();
+        if (robot is not null) _engine.DestroyRobot(robot);
+        // T9: erase map, first id only (List.Remove preserves survivor order), RIC,
+        // then clear the telemetry globals. No component reset substitutes for Destroy.
+        lock (_membershipGate)
+        {
+            RobotEntries.Remove(id);
+            RobotIds.Remove(id);
+            _rics.Remove(id);
+        }
+        _engine.ClearGlobal("$phys");
+        _engine.ClearGlobal("$group");
         _engine.ClearAcquiredSerialNumber();
-        if (r is not null) r.AnimationStreamingOpen = false;
-        // M3-034: the removed Robot's VisionComponent takes its album bytes with it (0x0051116C).
-        r?.ClearFaceAlbum();
+        // Existing host-reference cleanup is an unverified higher-layer candidate,
+        // retained under the split records; it is not the native lifetime interface.
+        if (robot is not null) robot.AnimationStreamingOpen = false;
+        robot?.ClearFaceAlbum();
         _engine.RobotRemoved?.Invoke();
     }
 }
@@ -1793,7 +1829,7 @@ public sealed partial class CozmoEngine : IDisposable
     public event Action<string>? LogLine;
     /// <summary>
     /// The idle faceOff deadline expired (CC6): the engine queues CreateGoToSleepAnimSequence here. MISSING
-    /// (M1-045): this stack has no ActionList or animation-sequence action layer, so the request is raised for
+    /// (M1-045): when the required higher-layer factory is missing, the diagnostic request is raised for
     /// the animation layer and logged, and nothing is queued.
     /// </summary>
     public event Action? GoToSleepRequested;
@@ -2090,9 +2126,16 @@ public sealed partial class CozmoEngine : IDisposable
         ConnectionFaceAlbumResult = null;
     }
 
+    // fidelity: M1-045
     internal void QueueGoToSleep()
     {
-        Log("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
+        if (Robot is { } robot && CreateGoToSleepSequence is { } factory)
+        {
+            var action = factory(robot);
+            _ = robot.ActionList.QueueAction(QueueActionPosition.Now, action, 0);
+            return;
+        }
+        else Log("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
         var h = GoToSleepRequested;
         if (h is null) return;
         foreach (var t in h.GetInvocationList()) Isolated((Action)t);

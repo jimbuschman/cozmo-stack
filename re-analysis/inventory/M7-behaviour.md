@@ -1293,3 +1293,14 @@ No fixed engine producer pushes `0x198` (PARTIAL in the extraction): it arrives 
 
 - **M7-005, M7-007, M7-008, M7-009, M7-010, M7-016, M7-017** had `unresolved` naming the defaulted `DesiredFaceDistortion` (and M7-008 the unmodelled `_errG`). Those clauses are corrected: the component is built and wired; M7-017's "DesiredFaceDistortion has no source (MISSING)" is contradicted by D01-D18. All stay IMPLEMENTATION_GAP, "built, awaiting strong verification:".
 - M7-017 gains the D01-D18 and failure-path citations in its evidence.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M7-023 — Mood destruction with already-null ActionList dependency | 0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. | MISSING: Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.

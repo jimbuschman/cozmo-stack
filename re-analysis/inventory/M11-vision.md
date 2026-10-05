@@ -1370,3 +1370,12 @@ Codex's independent re-audit (`re-analysis/research/20260930-reaudit-M11.md`) fo
 ## Correction A5 (job R-FIX2, 2026-10-04): the head camera's translation, one new record
 
 **M11-054** records that `Robot::Robot` builds RobotHeadCam at (17.52, 0, -8.0) (0x0050FF7C..0x0050FFBA) while the stack's vision model uses (17.52, 0, 17.52); it is blocked on M11's exact solvePnP and corner pipeline (the stand-in estimator is ill-conditioned with the corrected camera). The engine's value is used only inside ComputeHeadAngleToSeePose (M13-021).
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M11-055 — Vision/history/world/pose/map lifetime recipients | 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. | MISSING: Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |

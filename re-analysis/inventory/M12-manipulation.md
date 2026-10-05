@@ -915,3 +915,12 @@ branch (`b = min(dist2, element+0x18)`) is the one that runs.
 ## Correction A2 (manager, 2026-09-30, the calibration audit)
 
 Codex's independent re-audit (`re-analysis/research/20260929-audit-calibration.md`) found settled records here that do not hold. The manager re-checked the central addresses in the binary. M12-002, M12-007, M12-010 and M12-019 go back to IMPLEMENTATION_GAP, and M12-001, M12-012 and M12-017 keep their status with the defect added, each with its defect in `unresolved`, to be rebuilt from the cited source. M12-004's one-pose gate (0x005BEE7C..0x005BEE86), which the report also found, was already built by R-VIS (`DriveActions.cs`, the `list.Count <= 1` break) and needs only verification.
+
+
+## Cited B-M1M2 lifetime/sleep split (2026-10-05)
+
+Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/20261005-B-M1M2-blockers-extraction.md T1–T9/ownership table. New higher-layer obligations only, not builds or settlements.
+
+| Record | Boundary and citation | Remaining work |
+| --- | --- | --- |
+| M12-040 — Carrying/docking lifetime after preceding control abort | 0x0063BE10..0x0063BE5C; 0x005113FA..0x00511414; Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. | MISSING: Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
