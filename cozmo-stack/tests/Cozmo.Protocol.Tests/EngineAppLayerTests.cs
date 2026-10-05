@@ -1152,7 +1152,7 @@ public class EngineAppLayerTests
 
     // ---------------------------------------------------------------- M1-029 jsoncpp reader (rows 11d..11n)
 
-    private static bool Parses(string json, out System.Text.Json.JsonDocument doc) =>
+    private static bool Parses(string json, out FirmwareJsonDocument doc) =>
         Json.TryParseFirst(Encoding.UTF8.GetBytes(json), out doc);
 
     /// <summary>
@@ -1188,9 +1188,9 @@ public class EngineAppLayerTests
     }
 
     /// <summary>
-    /// M1-029 row 11n: asUInt of null is 0; of a bool is 0 or 1; of a real in [0, 2^32) truncates toward zero.
+    /// M1-029 row 11n: asUInt of null is 0; of a bool is 0 or 1; of a real in [0, 4294967295] truncates toward zero.
     /// The engine's throw cases (row 11n) are a Json::LogicError: a string, array or object; a negative integer;
-    /// a real below zero or at or above 2^32.
+    /// a real below zero or strictly above 4294967295. Typed real tests do not claim decimal conversion.
     /// </summary>
     [Fact]
     public void M1_029_11n_AsUIntOfANonNumber()
@@ -1204,14 +1204,14 @@ public class EngineAppLayerTests
         Assert.Equal(1u, AsUInt("true"));
         Assert.Equal(0u, AsUInt("false"));
         Assert.Equal(5u, AsUInt("5"));
-        Assert.Equal(2381u, AsUInt("2381.5"));       // truncates toward zero
         Assert.Throws<JsonLogicError>(() => AsUInt("-1"));
-        Assert.Throws<JsonLogicError>(() => AsUInt("-0.5"));
+        Assert.Throws<JsonLogicError>(() => Json.AsUInt(FirmwareJsonValue.FromReal(BitConverter.Int64BitsToDouble(unchecked((long)0xBFE0000000000000)))));
         Assert.Throws<JsonLogicError>(() => AsUInt("4294967296"));
         // row 11n: the engine's literal at 0x008E8E38 is 4294967295.0 and it throws only for a real strictly
         // greater (vcmpe.f64/bhi), so 4294967295.5 throws while 4294967295.0 truncates.
-        Assert.Throws<JsonLogicError>(() => AsUInt("4294967295.5"));
-        Assert.Equal(4294967295u, AsUInt("4294967295.0"));
+        Assert.Equal(2381u, Json.AsUInt(FirmwareJsonValue.FromReal(BitConverter.Int64BitsToDouble(0x40A29B0000000000)))); // 2381.5
+        Assert.Throws<JsonLogicError>(() => Json.AsUInt(FirmwareJsonValue.FromReal(BitConverter.Int64BitsToDouble(0x41EFFFFFFFF00000)))); // 4294967295.5
+        Assert.Equal(4294967295u, Json.AsUInt(FirmwareJsonValue.FromReal(BitConverter.Int64BitsToDouble(0x41EFFFFFFFE00000)))); // 4294967295
         Assert.Throws<JsonLogicError>(() => AsUInt("\"x\""));
         Assert.Throws<JsonLogicError>(() => AsUInt("[]"));
         Assert.Throws<JsonLogicError>(() => AsUInt("{}"));
@@ -1219,8 +1219,7 @@ public class EngineAppLayerTests
 
     /// <summary>
     /// M1-029 row 11n as the firmware reader uses it: a non-number "version" is a Json::LogicError out of
-    /// ParseFirmwareHeader (row 11q, GetValue&lt;uint&gt; is asUInt), not a 0. The loader thread logs it and
-    /// leaves the values 0/0 (row 11o is RECOVERABLE_GAP, so where the engine catches it is not settled).
+    /// ParseFirmwareHeader (row 11q, GetValue&lt;uint&gt; is asUInt), not a 0. Final exception destination is MISSING.
     /// </summary>
     [Fact]
     public void M1_029_11q_ANonNumberVersionThrows()
@@ -1228,6 +1227,105 @@ public class EngineAppLayerTests
         var file = new byte[FirmwareHeader.HeaderBytes];
         Encoding.UTF8.GetBytes("{\"version\": \"x\", \"time\": 2}").CopyTo(file, 0);
         Assert.Throws<JsonLogicError>(() => FirmwareHeader.Parse(file));
+    }
+
+    // Checked Item 6 corrections: these expectations come from the cited native branches.
+    [Theory]
+    [InlineData("truex", true)]
+    [InlineData("5garbage", true)]
+    [InlineData("1/*", true)]
+    [InlineData("// EOF", false)]
+    [InlineData("/* missing", false)]
+    [InlineData("{\"\":1,}", true)]
+    [InlineData("{\"a\":1,\"\":2,}", true)]
+    [InlineData("{\"a\":1,}", false)]
+    [InlineData("{/*x*/}", true)]
+    [InlineData("[/*x*/]", false)]
+    [InlineData("{\"a\"/*x*/:1}", false)]
+    [InlineData("{\"a\":/*x*/1}", true)]
+    [InlineData("{1:2}", false)]
+    [InlineData("[1,,2]", false)]
+    [InlineData("\uFEFF{}", false)]
+    [InlineData("\t\n\r {}", true)]
+    [InlineData("\v{}", false)]
+    [InlineData("\f{}", false)]
+    public void M1_029_CheckedReaderBranches(string input, bool success)
+    {
+        Assert.Equal(success, Parses(input, out var doc));
+        doc.Dispose();
+    }
+
+    [Theory]
+    [InlineData("-", (byte)1, "0")]
+    [InlineData("-0", (byte)1, "0")]
+    [InlineData("0005", (byte)1, "5")]
+    [InlineData("2147483647", (byte)1, "2147483647")]
+    [InlineData("2147483648", (byte)2, "2147483648")]
+    [InlineData("18446744073709551615", (byte)2, "18446744073709551615")]
+    [InlineData("-9223372036854775808", (byte)1, "-9223372036854775808")]
+    public void M1_029_CheckedIntegerTyping(string input, byte kind, string decimalText)
+    {
+        Assert.True(Parses(input, out var doc));
+        using (doc)
+        {
+            Assert.Equal(kind, (byte)doc.RootElement.Kind);
+            Assert.Equal(Encoding.ASCII.GetBytes(decimalText), Json.AsStringBytes(doc.RootElement));
+        }
+    }
+
+    [Theory]
+    [InlineData("1.5")]
+    [InlineData("1e3")]
+    [InlineData("18446744073709551616")]
+    [InlineData("-9223372036854775809")]
+    public void M1_029_RealConversionStaysMissing(string input) =>
+        Assert.Throws<JsonMissingSource>(() => Parses(input, out _));
+
+    [Theory]
+    [InlineData("\"\\uDC00\"", "EDB080")]
+    [InlineData("\"\\uD800\\u0041\"", "F0908181")]
+    [InlineData("\"\\u0000\"", "00")]
+    [InlineData("\"\\b\\f\\n\\r\\t\\/\\\\\\\"\"", "080C0A0D092F5C22")]
+    public void M1_029_CheckedUnicodeBytes(string input, string expectedHex)
+    {
+        Assert.True(Parses(input, out var doc));
+        using (doc) Assert.Equal(Convert.FromHexString(expectedHex), Json.AsStringBytes(doc.RootElement));
+    }
+
+    [Fact]
+    public void M1_029_RawBytesAndDuplicateReplacement()
+    {
+        Assert.True(Json.TryParseFirst(new byte[] { 0x22, 0xFF, 0x01, 0x22 }, out var raw));
+        using (raw) Assert.Equal(new byte[] { 0xFF, 0x01 }, Json.AsStringBytes(raw.RootElement));
+        Assert.True(Parses("{\"a\":{\"old\":1},\"\\u0061\":{\"new\":2}}", out var duplicate));
+        using (duplicate)
+        {
+            var member = Json.Member(duplicate.RootElement, "a");
+            Assert.Equal(2u, Json.AsUInt(Json.Member(member, "new")));
+            Assert.True(Json.IsNull(Json.Member(member, "old")));
+        }
+        Assert.False(Parses("{\"a\":1,\"b\":", out var partial));
+        using (partial) Assert.Equal(1u, Json.AsUInt(Json.Member(partial.RootElement, "a")));
+    }
+
+    [Fact]
+    public void M1_029_RootCountsTowardsDepthLimit()
+    {
+        // 8E0886 pushes root; 8E09AC allows 1000 active values, rejects 1001.
+        Assert.True(Parses(new string('[', 999) + "0" + new string(']', 999), out var allowed));
+        allowed.Dispose();
+        Assert.Throws<JsonRuntimeError>(() => Parses(new string('[', 1000) + "0" + new string(']', 1000), out _));
+        Assert.True(Parses(new string('[', 1000) + new string(']', 1000), out var empty));
+        empty.Dispose();
+    }
+
+    [Fact]
+    public void M1_029_CheckedReaderDrivesFirmwareHandshake()
+    {
+        // G5 live entry: leading zero grammar, -0 typing, and empty-last-key close all feed validation.
+        using var rig = new Rig();
+        rig.ToValidated("{\"version\":0002381,\"time\":1546972025,\"build\":\"DEVELOPMENT\",\"\":-0,}/*");
+        Assert.Contains((RobotMessageId)0x25, rig.Port.SentIds);
     }
 
     // ================================================================== M1-041: after Success
