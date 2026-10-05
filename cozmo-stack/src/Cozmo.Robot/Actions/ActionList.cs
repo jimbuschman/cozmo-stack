@@ -13,6 +13,11 @@ internal sealed class ActionList : IDisposable
     private readonly ActionWatcher _watcher = new();
     private readonly Action<string>? _log;
     private bool _clearing;
+    // The engine is single-threaded, so this lock changes no engine behaviour: it only keeps a caller that queues
+    // from another thread (the stack's async FlipBlockAction drives SetLiftHeightAsync off the pump thread) from
+    // mutating _queues while ActionList::Update enumerates it. A SortedDictionary modification during enumeration
+    // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
+    private readonly object _gate = new();
 
     public ActionList(Action<string>? log = null) => _log = log;
 
@@ -45,11 +50,14 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public void Clear()
     {
-        if (_clearing) return;
-        _clearing = true;
-        foreach (var q in _queues.Values) q.Dispose();
-        _queues.Clear();
-        _clearing = false;
+        lock (_gate)
+        {
+            if (_clearing) return;
+            _clearing = true;
+            foreach (var q in _queues.Values) q.Dispose();
+            _queues.Clear();
+            _clearing = false;
+        }
     }
 
     /// <summary>A6: the destructor Clears before the watcher is destroyed; it does not Update/drain the events.</summary>
@@ -69,24 +77,27 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int Update()
     {
-        int result = 0;
-        var erase = new List<int>();
-        foreach (var kv in _queues)
+        lock (_gate)
         {
-            int r = kv.Value.Update(_watcher);
-            if (result == 0 && r != 0) result = r;
-            if (kv.Value.Current is null && kv.Value.PendingCount == 0) erase.Add(kv.Key);
-        }
-        foreach (int key in erase)
-        {
-            if (_queues.TryGetValue(key, out var q))
+            int result = 0;
+            var erase = new List<int>();
+            foreach (var kv in _queues)
             {
-                _queues.Remove(key);
-                q.Dispose();
+                int r = kv.Value.Update(_watcher);
+                if (result == 0 && r != 0) result = r;
+                if (kv.Value.Current is null && kv.Value.PendingCount == 0) erase.Add(kv.Key);
             }
+            foreach (int key in erase)
+            {
+                if (_queues.TryGetValue(key, out var q))
+                {
+                    _queues.Remove(key);
+                    q.Dispose();
+                }
+            }
+            _watcher.Update();
+            return result;
         }
-        _watcher.Update();
-        return result;
     }
 
     /// <summary>
@@ -97,66 +108,75 @@ internal sealed class ActionList : IDisposable
     /// </summary>
     public int QueueAction(QueueActionPosition position, IActionRunner? incoming, byte retries = 0)
     {
-        if (incoming is null)
+        lock (_gate)
         {
-            _log?.Invoke("warning: ActionList.QueueAction.NullAction");
-            return 1;
-        }
-        if ((int)position > (int)QueueActionPosition.InParallel)
-        {
-            _log?.Invoke("warning: ActionList.QueueAction.BadPosition");
-            return 1;
-        }
-        // Q2: the disabled gate (robot+0x2C7) tests the incoming +0x60 Tag against the external ranges. The
-        // BAD_TAG 0x03000006 is the action's STATE +0x18 and is checked outside the gate (the native cbz at
-        // 0x0053D972 runs the state compare with the byte zero).
-        if ((ExternalActionsDisabled && IsExternalTag(incoming.Tag)) || incoming.State == EngineActionResult.BadTag)
-        {
-            Discard(incoming);
-            return 0;
-        }
-        if (DuplicateOrClearingGuard(incoming)) return 1;
-        incoming.RetriesRemain = retries;
-
-        switch (position)
-        {
-            case QueueActionPosition.Now:
-                return QueueNowMain(incoming);
-            case QueueActionPosition.NowAndClearRemaining:
-                // Q9: A9 guard, then Cancel(type=-1) across ALL queues, then QueueNext on key 0.
-                Cancel(-1);
-                return QueueNextMain(incoming);
-            case QueueActionPosition.NowAndResume:
-                // Q13: no current and no pending -> QueueAtEnd; no current but pending -> QueueNow; current -> Q14.
-                return QueueAtFrontMain(incoming);
-            case QueueActionPosition.Next:
-                return QueueNextMain(incoming);
-            case QueueActionPosition.AtEnd:
-                return QueueAtEndMain(incoming);
-            case QueueActionPosition.InParallel:
-                return AddConcurrent(incoming);
-            default:
+            if (incoming is null)
+            {
+                _log?.Invoke("warning: ActionList.QueueAction.NullAction");
+                return 1;
+            }
+            if ((int)position > (int)QueueActionPosition.InParallel)
+            {
                 _log?.Invoke("warning: ActionList.QueueAction.BadPosition");
                 return 1;
+            }
+            // Q2: the disabled gate (robot+0x2C7) tests the incoming +0x60 Tag against the external ranges. The
+            // BAD_TAG 0x03000006 is the action's STATE +0x18 and is checked outside the gate (the native cbz at
+            // 0x0053D972 runs the state compare with the byte zero).
+            if ((ExternalActionsDisabled && IsExternalTag(incoming.Tag)) || incoming.State == EngineActionResult.BadTag)
+            {
+                Discard(incoming);
+                return 0;
+            }
+            if (DuplicateOrClearingGuard(incoming)) return 1;
+            incoming.RetriesRemain = retries;
+
+            switch (position)
+            {
+                case QueueActionPosition.Now:
+                    return QueueNowMain(incoming);
+                case QueueActionPosition.NowAndClearRemaining:
+                    // Q9: A9 guard, then Cancel(type=-1) across ALL queues, then QueueNext on key 0.
+                    Cancel(-1);
+                    return QueueNextMain(incoming);
+                case QueueActionPosition.NowAndResume:
+                    // Q13: no current and no pending -> QueueAtEnd; no current but pending -> QueueNow; current -> Q14.
+                    return QueueAtFrontMain(incoming);
+                case QueueActionPosition.Next:
+                    return QueueNextMain(incoming);
+                case QueueActionPosition.AtEnd:
+                    return QueueAtEndMain(incoming);
+                case QueueActionPosition.InParallel:
+                    return AddConcurrent(incoming);
+                default:
+                    _log?.Invoke("warning: ActionList.QueueAction.BadPosition");
+                    return 1;
+            }
         }
     }
 
     /// <summary>C6 ActionList::Cancel(type) 0x0053DE10..0x0053DE5E: clearing returns true; otherwise OR the queues' results; no erase/tick.</summary>
     public bool Cancel(int type)
     {
-        if (_clearing) return true;
-        bool any = false;
-        foreach (var q in _queues.Values) if (q.Cancel(type)) any = true;
-        return any;
+        lock (_gate)
+        {
+            if (_clearing) return true;
+            bool any = false;
+            foreach (var q in _queues.Values) if (q.Cancel(type)) any = true;
+            return any;
+        }
     }
 
     /// <summary>C6 ActionList::Cancel(idTag) 0x0053E704..0x0053E83A: as the type overload, comparing current +0x60.</summary>
     public bool Cancel(uint idTag)
     {
-        if (_clearing) return true;
-        bool any = false;
-        foreach (var q in _queues.Values) if (q.Cancel(idTag)) any = true;
-        return any;
+        lock (_gate)
+        {
+            if (_clearing) return true;
+            bool any = false;
+            foreach (var q in _queues.Values) if (q.Cancel(idTag)) any = true;
+            return any;
+        }
     }
 
     /// <summary>Q3: the main queue (map key 0), emplaced when missing.</summary>

@@ -146,6 +146,8 @@ public sealed class FlipBlockAction
                 _trace.Add($"FlipBlockAction.CheckIfDone: within {LiftTriggerDistanceMm} mm (3-D), lift to carry height ({LiftPresets.CarryMm} mm) queued on the robot's action list; the flip does not wait on it");
                 // the queued action's byte +0x56 = 1 (0x0055F152..0x0055F154): IActionRunner::Update neither tests nor takes the lift track lock for it (0x00540428..0x00540434), so it
                 // runs even while the approach lift move of the embedded compound still holds the track, and its end releases nothing (0x005408EC..0x005408F0)
+                // 0x0055F15C str.w r1,[r4,#0x13c] stores the queued action's id to [this+0x13C] BEFORE 0x0055F160 ldr r0,[r0,#0x250] (the robot's ActionList),
+                // 0x0055F164 position 5 (IN_PARALLEL) and 0x0055F16A blx ActionList::QueueAction.
                 _raise = _m.Robot.Motion.SetLiftHeightAsync(LiftPresets.CarryMm, requireCalibration: false, suppressTrackLocking: true,
                                                             position: QueueActionPosition.InParallel);
             }

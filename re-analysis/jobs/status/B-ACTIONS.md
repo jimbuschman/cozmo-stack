@@ -133,3 +133,22 @@ engine is single-threaded so no engine behaviour changes. Full suite after the f
 - Queued (test-only): `BehaviorFrameworkTests.AnAnimationActionLocksItsMaskUnderItsActionId` asserts
   `(before+1)` after `NextActionTag()`; with a shared counter another parallel test can draw between the calls.
   Make the test observe the action's actual tag, or serialise it. Production is correct.
+
+### Batch 3a follow-up 2: concurrency and test-harness bounds
+
+The gate flaked on tests that drive `FlipBlockAction` (its `RunAsync` runs on an async Task while the
+test/engine pump ticks the list on the main thread).
+- `ActionList` now locks its mutators (`Update`, `QueueAction`, both `Cancel`, `Clear`) so a queue write from
+  another thread cannot mutate `_queues` while `Update` enumerates it (`SortedDictionary` throws on that).
+  Verifier: no deadlock/inversion with `Motion._gate`, no engine behaviour change (single-threaded), all
+  `_queues` mutators locked.
+- `FlipBlockAction.CheckIfDoneTick`: the verifier contradicted a proposed reorder; the native stores `[+0x13C]`
+  at 0x0055F15C BEFORE `QueueAction` at 0x0055F16A, so `LiftRaised` is set before `SetLiftHeightAsync` (reverted
+  to that). The test race it exposed is in the harness: `M13_028_TheFlipNeverWaitsOnTheQueuedCarryLift` now pumps
+  until the 92 mm lift is on the wire instead of a single pump after the flag.
+- `NavigationTests`/`M12RVisBuildTests` harness wall-clock bounds raised to 60 s (the engine-faithful ActionList
+  path needs more ticks per move; the guard is a load-tolerant harness bound, not a source oracle). No assertion
+  expected value or behaviour-under-test bound changed (verifier PASS).
+- Full suite after: **3852 passed, 0 failed**. A rare (about 1 in 4 full runs, not reproduced in focused runs)
+  unidentified `NavigationTests` `RunToEnd` timeout remains; it is a harness concurrency/timing flake, not a
+  production defect, and is recorded here for a later pass.

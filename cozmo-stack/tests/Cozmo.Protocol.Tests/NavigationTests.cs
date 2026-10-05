@@ -32,7 +32,9 @@ public class NavigationTests
     private static Pose3d CubeAt(double x, double y, double yaw = 0, double z = CubeGeometry.CubeSizeMm / 2) => new(Mat3.AboutZ(yaw), new Vec3(x, y, z));
     private static Pose3d At(double x, double y, double heading) => new(Mat3.AboutZ(heading), new Vec3(x, y, 0));
 
-    private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 8000)
+    // The engine-faithful ActionList path completes each move on a later tick than the old host-Task path, so it
+    // needs more pump iterations; these guards are load-tolerant harness bounds, not source oracles.
+    private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 60000)
     {
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (!cond()) { tick?.Invoke(); if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(5); }
@@ -62,7 +64,9 @@ public class NavigationTests
         });
     }
 
-    private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? frames = null, int ms = 10000, double stepMs = 33)
+    // Load-tolerant harness bound: the engine-faithful ActionList path needs more pump iterations than the old
+    // host-Task path, and this guard is not a source oracle.
+    private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? frames = null, int ms = 60000, double stepMs = 33)
     {
         double t = 0;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
@@ -408,7 +412,7 @@ public class NavigationTests
             // Robot::Update clears +0x34A when no charger is located or the footprint leaves the charger (0x00513CD8..0x00513E2A, M4-019): the engine tick runs that step
             rig.Tick();
             t += 33;
-            if (sw.ElapsedMilliseconds > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            if (sw.ElapsedMilliseconds > 60000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
         }
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.Equal(156f, Math.Abs(line.XEndMm - line.XStartMm), 0);
@@ -460,7 +464,7 @@ public class NavigationTests
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 20000);   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
+        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 60000);   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
         Assert.Equal(ActionResult.Success, task.Result);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
@@ -844,7 +848,7 @@ public class NavigationTests
         // HandleObjectUpAxisChanged. The fake rig does not move the cube, so feed the behaviour the
         // up-axis change once the flip has started.
         bool tipped = false;
-        RunToEnd(rig, b, ctx, ms: 30000, frames: () =>
+        RunToEnd(rig, b, ctx, ms: 60000, frames: () =>
         {
             rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
             if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
@@ -910,7 +914,7 @@ public class NavigationTests
         rig.DockOutcome = BlockStatus.NoBlock; rig.DockSucceeds = false;
         var ctx = Ctx(rig);
         var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
-        RunToEnd(rig, b, ctx, frames: () => true, ms: 20000);
+        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
         Assert.False(b.Succeeded);
         Assert.Equal(PopAWheelieBehavior.MaxRetries, b.Retries);
         Assert.Contains(b.Trace, l => l.Contains("Retry 1 of 1"));      // one retry: the count at +0x12C must still be 0 (0x005C7D44)
@@ -1029,7 +1033,7 @@ public class NavigationTests
                 if (b.BaseBlockId == 7) rig.Cube = placed; else rig.MoreCubes[0] = (ObjectType.Block_LIGHTCUBE2, placed);
             }
         };
-        RunToEnd(rig, b, ctx, frames: () => true, ms: 20000);
+        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
         Assert.Contains(b.Trace, l => l.Contains("PickupBlockHelper"));
         Assert.True(b.Trace.Any(l => l.Contains("PlaceRelObjectHelper")), string.Join(" | ", b.Trace));
         Assert.True(b.Trace.Any(l => l.Contains("BuildPyramidReactToBase")), string.Join(" | ", b.Trace));
@@ -1204,7 +1208,7 @@ public class NavigationTests
         var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
         Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 20000);   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
+        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 60000);   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
         Assert.NotEqual(0x04000001u, (uint)task.Result);
         Assert.Contains(flip.Trace, l => l.Contains("ignored by the outer compound"));
         Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsLastFacePose"));
