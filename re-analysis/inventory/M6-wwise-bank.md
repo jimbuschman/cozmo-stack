@@ -2956,3 +2956,57 @@ residual "subscription `0x9F7390..0x9F82EC`" and "`0x9BDC8C`"). No status change
   are closed by C39.1/C39.2), M6-009, M6-010, M6-022, M6-025. Still open: the loader that writes `[node+0x38]`,
   `0xA19FB4`'s holder destructor, `0xA1A0B4`'s other callers, the PBI Term callers other than the flush `0xA38420`, whether
   the ctx key can change after registration, `0xA0FD6C`'s interior, `0xA0EAF4`, the duck creation `0x9C3E94`.
+
+## Correction C40 (manager, 2026-10-04): the shipped-play audit: PostEvent writer, aux-send route, V7 identity, limiter subscription, ctx init, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C39). C40 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-10.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (1..11). Where C40 differs from earlier text, C40 wins. No status changes.
+
+- **C40.1, PostEvent and the playing-id entry (T-E1..T-E4).** Anki's wrapper `0x8D8CE4` passes flags only from the set
+  {0,1,5,9,13} to `0x9A6704 -> 0x9A0EF8`, which calls `0xA03108` to write the entry: `[item+0x20]` event id, `[+0x24]` game
+  object id, `[+0x28]` external-source holder (refcounted), `[+0x3C]` playing id, `[+0x40]` callback, `[+0x44]` cookie,
+  `[+0x48]` flags (masked when the callback is null), `[+0x18] = 0`, `[+0x1C] = 1`. `[pbi+4]` never has `0x100000`, so on the
+  Cozmo path `[state+0x1C]`, `0xA05574` and the play-position repository are unreachable and `0xA0428C` never calls
+  anything (no 0x20 bit). The dispatch table `0x9AE0B8`: type 1 `0x9AF244`, 3 `0x9AF158`, 0x11 `0x9AEE04`, 0x12 `0x9AEDE0`,
+  0x13 `0x9AEDBC`.
+- **C40.2, the limiter subscription (T-L1, T-L2, T-L3).** `0x9F29E8` creates the limiter for a node with a limit; the engine
+  stores `[node+0x30] = limiter` at `0x9F2AD0` **before** it calls `0xA19ECC(limiter+0x10, node, &{0x10000,0}, 1)` at
+  `0x9F2CE8` (the node is the argument; key block `{0,0,0,0xFF,0xFF,0}` by `0xA19CDC`). Shipped: only two Cozmo.bnk nodes have
+  a limit: root ActorMixer 62050212 (max 1, global bit; 1872 Sounds: 1862 direct, 10 under RanSeq 461334142) and ActorMixer
+  66225135 (max 5, under 682998829, 11 Sounds).
+- **C40.3, the PBI context init (T-N1 and correction 6).** `0x9BC90C` walks `[node+0x38]` else `[node+0x34]` testing
+  `[x+0x40] & 0xE0000`, clears or keeps `[ctx+0xDD]` bit 3, **increments `[GO+0x7C]` (low 30 bits)** and calls the node's
+  `vt+8` (the AddRef `0x9F1CBC`); the only writer of `0xE0000` is the Bus loader (`0x9C6540/44`), all 15 shipped buses have
+  byte C = 2, so the chain flag is false for every shipped chain.
+- **C40.4, the aux-send route (T-A1..T-A8).** Anki posts `SetGameObjectAuxSendValues` and `SetGameObjectOutputBusVolume`
+  (the dry path muted) as queued messages 0x12 and 0x13; the handlers store `[GO+0x24..0x40]`; per voice `0xA4B93C` ->
+  `0x9BDA88` -> `0x9BD368` (sends: `{busId, linear gain, kind}`; the zero-id terminator is written only for count <= 7; the
+  game pairs stop at the first zero id, the user entries are independent) -> `0x9D4228` (merge into `voice+0x2C`, 0x14-byte
+  entries, count `[voice+0xCC]`; the flag bytes of appended entries are uninitialised stack: BLOCKED_EXTERNAL for that
+  sub-case) -> `0x9D4108` (bit 6 of `[bus+0xCC]` selects the devices) -> `0xA43434` (find or create the Robot_Bus line, make
+  an aux connection) -> the aux walk `0xA447D8..0xA44898` (`g[1] += [e+0]`, `g[0] += [e+4]`, then `0xA4FBEC`; `0xA68A2C` =
+  `bus ? [bus+8] : -(u8)byte`) and the dry walk `0xA448B8..0xA44938` with {1.0,1.0}. Verified by 3800 + 1000 emulator
+  cases. The C# has only the test-only `WwiseAuxSendBuilder` and unwired `GatherAndDispatch`/`InitSendTable`.
+- **C40.5, the V7 state machine (T-V2..T-V7).** `0xA54F1C` loads `r6 = [[voice+0xD4]+0xC]` = the **owner PBI** (not a bus) and
+  reads `[r6+0x1F8]`, `[r6+0x54]`, `[r6+0x11C]`, `[r6+0x140]`, `[r6+0x164]`, `[r6+0x1D8]` and calls `[r6]->vt+0x3C`; the C#
+  `RunVoiceStateMachine` takes the voice's first bus and is the wrong model. `0xA549A0` (only caller `0xA52C9C`), `0xA54480`,
+  `0xA43D24` (its tail bodies `0xA4AF50`, `0xA437E0`, `0xA4B4B0` unread), `0xA766F0` (gates and pads on `u16 [S+0xE]`), the
+  gain stage `0xA56E00` (gate `[[voice+0x388]+0x34]`, `0xA56A7C` unread).
+- **C40.6, the Compressor (T-F1, T-F4..T-F7).** Vptr `0x103DF28` (the slots), the block `-23.3, 2.5, 0.001, 0.21, 7.0, 1, 1`,
+  Init `0xA9FB28` (`[this+0x28] = P2`, `[this+0x2C] = expf(-2.2f/(rate*P2))`, mono worker `0xAA0298`, state 8 bytes) and the
+  wrapper `0xA9FC70` with its NEON lane ramp verified on 2400+ emulator cases (the expf is shared by both sides: the phone's
+  expf is EQUIVALENT_IMPLEMENTATION to be recorded when built); the linked worker (stereo) is RECOVERABLE_GAP.
+- **C40.7, the Hijack parameters (T-H1).** Init stores its 4th argument at `[obj+0xA0]` (`0x8DBD82`); the trampolines read
+  `[[obj+0xA0]+4]` and pass it to the create, process and destroy callbacks; the 8-byte parameter object `0x8DC090..0x8DC110`
+  holds the block value 1..4 matching the bus ids.
+- **C40.8, the shipped data (corrected).** Concrete Sound: event 188399711 (`Play__Robot_VO__QA_React_Pickup_Angry_2`) -> Sound
+  957475640 (Vorbis `0x40001`, stream 1, media 456005573, prefetch 2786 B) -> ActorMixer 13023553 -> root 62050212
+  (Compressor slot 0, LPF 15.0, volume -2.0, event_volume on param 0, positioning `0xC3`, max 1 global, aux 2). The aux
+  use flag is 1 for **2221** of the 2231 Cozmo.bnk Sounds and 0 for 10 (the RanSeq 461334142 group); SFX and UI give 0 for
+  every Sound.
+- **Records touched (text only, no status):** M6-016/M6-006 (the PostEvent body `0xA03108` is new evidence), M6-017, M6-022
+  (V7 identity; the title's "per-voice DSP chain"), M6-025, M6-026 (the limiter's own subscription), M6-010 (the aux
+  sends), M6-013/014/015 (the Hijack parameters). Still open: the bodies `0xA4AF50`, `0xA437E0`, `0xA4B4B0`, `0xA5975C`,
+  `0xA25FF8`, `0xA1F79C`, `0xA22304`, `0xA22684`, `0xA6C25C`, `0xA9FEEC`, `0xA56A7C`, the linked Compressor worker, T-V1,
+  T-V8, T-E3b, T-E4d, T-F2, T-F3, and Anki's start-time posting of the aux-send and output-bus messages (A11).
