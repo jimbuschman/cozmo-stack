@@ -2,6 +2,42 @@
 
 Read first in every session. The manager keeps this file current; the process it follows is the Process section of `AGENTS.md`.
 
+## The plan (operator, 2026-10-05): one layer at a time
+
+**Why:** five workers in parallel produced merge conflicts, a long checking queue and no finish line. Nothing has been
+ACCEPTED yet.
+
+**The order**, bottom-up. Each layer is finished all the way to ACCEPTED before the next starts:
+1. M1 + M2: connecting and protocol.
+2. M3 + M4: devices and motor control.
+3. M5: animation and the face.
+4. The sound layers, M6 + M9, here by default. The operator may move them last.
+5. M10–M15 and M7/M8: vision, cubes, navigation, behaviours.
+
+**Done for a layer means:**
+- every record is EXACT_SOURCE, or a policy record that the manager has confirmed legitimate (COMPATIBILITY_POLICY,
+  EQUIVALENT_IMPLEMENTATION), or HARDWARE_ONLY settled by a robot run;
+- the layer's hardware script has been run by the operator;
+- the review state is ACCEPTED.
+
+**The cross-layer rule.** A lower-layer record whose path runs into a higher layer is split. The lower-layer part is
+finished and accepted now. The higher-layer part becomes a record in that higher layer, with its own citation, and is
+finished when that layer's turn comes. Examples: M1-044 destroys the behaviour layer; M1-045's go-to-sleep runs on the
+ActionList.
+
+**Two lanes at a time:**
+- **one builder** (DeepSeek, or a Sonnet when the allowance allows);
+- **one checker:** Codex finds defects, then a single Opus pass settles the layer.
+
+Work already in flight (B-ACTIONS, B-FACE, B-M6b-4, R-FIX3 and the parked branches) is finished or parked as it
+stands. Nothing new starts outside the current layer.
+
+**Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 22 records:
+- 9 built, with the defects in their `unresolved`;
+- 10 policy records to confirm;
+- 2 HARDWARE_ONLY;
+- 3 to split under the cross-layer rule.
+
 ## Now (2026-10-02)
 
 - **Codex's answers have been checked and applied.** Codex's DEFECT findings were spot-checked in the binary and held,
