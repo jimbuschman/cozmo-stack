@@ -1,5 +1,12 @@
 CLAIMED opencode-deepseek 2026-10-05 00:00
 
+**STATUS: BLOCKED on batch 3b** (2026-10-05, second session). Batches 1, 2, 3a and **4 are built, verified and
+committed** (batch 4 = 8e6c719, full suite 3892 passed). Batch 3b cannot be built from this job's rows: each of the
+three compounds needs child `IActionRunner`s that do not exist in this stack, and their engine `Init`/`CheckIfDone`
+bodies are not in the approved P/S/R/D/W rows (the 3b extraction says the concrete payloads "remain separately
+inventoried manipulation methods"). See "Batch 3b is blocked" below for the exact list and the resume path. No
+stand-in was written. A strong verifier settles records; M7-020 and the rest stay IMPLEMENTATION_GAP.
+
 # B-ACTIONS status
 
 Job file: `re-analysis/jobs/B-ACTIONS.md`. Rows: `re-analysis/research/20261004-actionlist-extraction.md`
@@ -156,6 +163,34 @@ Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
 ## Remaining batch
 3b (replace the stack's async sequences in FlipBlockAction, ChargerActions and DockActions with compounds).
 Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
+
+### Batch 3b is blocked
+Every one of the three compounds ticks `ActionRunner` children, but none of the three has all of its children
+ported onto the `ActionList`. The engine children and their stack state:
+
+- **FlipBlock embedded compound** (`this+0x80`): `MoveLiftToHeightAction` (already a runner: `MoveAction`,
+  `Motion.cs`) **and `DriveStraightAction`** (engine type 8, mask 4; 0x00547278). The stack's
+  `Manipulation/DriveActions.cs:872` `DriveStraightAction` is a host `RunAsync` over `_m.StartPath`, not the
+  engine's odometry `IAction`; its engine `Init`/`CheckIfDone` are not in the M13 inventory (only the fields
+  +0x78 distance and +0x7C speed are). Porting it is a prerequisite.
+- **Charger align compound** (`MountChargerAction+0x84`): `AlignWithObjectAction` (a `DockActionBase`, not a
+  runner) and `MoveHeadToAngleAction` (a runner).
+- **Charger turn/mount compound** (`MountChargerAction+0x88`): `TurnInPlaceAction`, `MoveLiftToHeightAction`
+  (a runner) and `BackupOntoChargerAction` (a `DriveStraightAction` subclass) — two non-runners.
+- **Dock `SetupTurnAndVerifyAction` compound** (`IDockAction+0x98`): `VisuallyVerifyNoObjectAtPoseAction` and
+  `TurnTowardsObjectAction` — both non-runners.
+
+The engine bodies needed first (each a separate extraction + port, out of this job's rows): `DriveStraightAction`
+(0x005470F0; Init 0x00547278 family, CheckIfDone), `AlignWithObjectAction` (0x00553370), `TurnInPlaceAction`
+(0x005459D4), `TurnTowardsObjectAction` (0x00549DC0), `VisuallyVerifyNoObjectAtPoseAction` (0x00569014), and
+`BackupOntoChargerAction` (0x0054E780). The 3b extraction (`20261004-actionlist-extraction.md`'s follow-up,
+reproduced above) gives each child's concrete ctor arguments/order/ignore-failure bools, so the port is
+well-defined once those `Init`/`CheckIfDone` bodies are extracted.
+
+**Resume path for a future session:** dispatch `cozmo-extractor` for the six child actions' `Init`/`CheckIfDone`
+and wire; approve the new rows; then port `DriveStraightAction` onto the `ActionList` first, and build the flip
+compound (highest value: M13-002/M13-028), then the charger and dock compounds. Do not substitute the stack's
+`RunAsync` drives for the engine actions.
 
 ### Batch 3b extraction (done, not yet built)
 `cozmo-extractor` recovered the concrete compound constructions (address-cited): FlipBlockAction's embedded
