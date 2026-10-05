@@ -30,6 +30,24 @@ public sealed record WwiseBusNode(uint Id, string Bank, WwiseNodeParams Params,
     // fidelity: M6-025
     public byte ByteC { get; init; }
 
+    // fidelity: M6-001, M6-025
+    /// <summary>The bus reader's A byte (<c>0x9C6458..0x9C6464</c>: bit 0 to <c>[+0x46]</c> bit 7, bit 1 to <c>[+0x47]</c> bit 0).</summary>
+    public byte ByteA { get; init; }
+    /// <summary>The channel-config word (<c>0x9C64C4..0x9C665C</c>).</summary>
+    public uint ChannelConfig { get; init; }
+    /// <summary>The bank's max-duck float, stored to <c>[bus+0x6C]</c> by the bus init (<c>0x9C40D8</c>).</summary>
+    public float MaxDuck { get; init; }
+    /// <summary>The duck entries with the curve and target-property bytes (<c>0x9C4138</c> -> <c>0x9C3E94</c>); <see cref="WwiseBusNode.Ducks"/> keeps the first four fields.</summary>
+    public IReadOnlyList<WwiseDuckEntry> DuckEntries { get; init; } = Array.Empty<WwiseDuckEntry>();
+    /// <summary>The FX bypass byte (present only when the FX entry count is non-zero), the argument of <c>0x9F5C30(bus, bypass, -1)</c>.</summary>
+    public byte FxBypass { get; init; }
+    /// <summary>The mixer id read after the FX list (<c>vt+0xE0</c> = <c>0x9C0FC0</c> argument).</summary>
+    public uint MixerId { get; init; }
+    /// <summary>The mixer flag byte after the mixer id.</summary>
+    public byte MixerFlag { get; init; }
+    /// <summary>The byte stored to <c>[bus+0x45]</c> bit 5 (<c>0x9C41FC..0x9C4204</c>).</summary>
+    public byte AttachByte { get; init; }
+
     /// <summary>The bank's recovery time in ms (D6.1: converted to samples at <c>bus+0x64</c>); <c>0x9C5240</c> tests <c>[bus+0x64] != 0</c> (M6-026 1.3).</summary>
     public uint RecoveryMs { get; init; }
 }

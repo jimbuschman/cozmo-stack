@@ -7,12 +7,14 @@ namespace Cozmo.Robot.Animation.Wwise;
 // Production entry. Engine: CalcEffectiveParams 0x9FFAD4 (the ctx vt+0x24 = 0xA000E0 the Play path calls at 0x9BEB9C / 0xA38140) calls 0x9BDA6C (0x9FFAF4), 0x9C54E8 (0x9FFC08) and 0x9C39DC (0x9FFEBC);
 // the voice linker's 0xA68A44 calls 0x9C39DC for a line's bus (0xA68A54). The C# counterparts are WwisePlayPath.CalcEffectiveParams (-> WwiseBusWalk.FirstOutputBus9BDA6C, WwiseRoutingNode.A9C54E8,
 // WwiseBusWalk.A9C39DC) and WwiseVoiceLinker.AddInput (-> WwiseBusWalk.A9C39DC). The node graph is the host's (WwiseRoutingNode, [node+0x34] parent / [node+0x38] output bus); no production code builds
-// one yet (the bank-load and Play wiring, C30.W, is parked), so these functions are exercised by tests, with emu_bus.py as the oracle.
+// one yet (the bank-load and Play wiring, C30.W, is parked), so these functions are exercised by tests, with emu_bus.py as the oracle. Since B-M6b-4 batch 6c the graph has a producer: WwiseRuntimeGraph (WwiseRuntimeGraphLoader.cs)
+// builds the nodes and buses as the engine's HIRC loaders do (C44.1), with emu_graph.py (the real walker under Unicorn) as its oracle; this file holds the pieces it shares with the bus constructor and the FX setters.
 //
 // Replaces: the test-double seams WwisePlaySeams.FirstOutputBus9F4BB8 / BusFlag9C54E8 / BusVolume9C39DC and WwiseVoiceLinkSeams.BusVolumeParam5 (two seams for the one body 0x9C39DC).
 //
-// Unread, named (throw WwiseMissingBehaviourException when reached): the bus constructor's callees 0x9F402C / 0xA19F94 / 0x9F40F4, the FX slot change callees (bus vt+0xC4, vt+0x8C), 0x9F5C30, the
-// mixer record 0x9C0FC0 (not adopted by C34.1), 0xA4454C, 0x9C62AC.
+// Unread, named (throw WwiseMissingBehaviourException when reached): the FX slot change callees (bus vt+0xC4, vt+0x8C) and 0x9F5C30's vt+0xE4 / vt+0x7C when no seam is supplied, the mixer record 0x9C0FC0 for any
+// id but 0 (C44.1 D9), 0xA4454C, 0x9C62AC. The bus constructor's callees 0x9F402C, 0xA19F94 and 0x9F40F4 are now the real BaseCtor9F402C, InitHolderA19F94 and WwiseRuntimeRegistry.Register9F40F4 (the seams remain for the
+// original oracle's test doubles), and 0x9F5C30 / 0x9F5B24 are FxBypass9F5C30 / RenderedChange9F5B24.
 
 /// <summary>
 /// A bundle as the node stores it: <c>u8 count</c>, <c>count</c> id bytes, then the entries from <c>(count + 4) &amp; ~3</c> (4-byte entries for the base bundle <c>[node+0x3C]</c>, 8-byte entries for the ranged
@@ -22,18 +24,35 @@ public sealed class WwiseParamBundle
 {
     private readonly byte[] _ids;
     private readonly uint[] _firstWords;
+    private readonly uint[]? _secondWords;
 
     /// <param name="ids">The id bytes, in the bundle's order.</param>
     /// <param name="firstWords">The first 32-bit word of each entry (a float's bits), in the same order.</param>
-    public WwiseParamBundle(IReadOnlyList<byte> ids, IReadOnlyList<uint> firstWords)
+    public WwiseParamBundle(IReadOnlyList<byte> ids, IReadOnlyList<uint> firstWords) : this(ids, firstWords, null) { }
+
+    /// <param name="ids">The id bytes, in the bundle's order.</param>
+    /// <param name="firstWords">The first 32-bit word of each entry, in the same order.</param>
+    /// <param name="secondWords">For an 8-byte-entry (ranged) bundle, the second word of each entry (the max of a ranged property); null for a 4-byte-entry bundle.</param>
+    public WwiseParamBundle(IReadOnlyList<byte> ids, IReadOnlyList<uint> firstWords, IReadOnlyList<uint>? secondWords)
     {
         ArgumentNullException.ThrowIfNull(ids);
         ArgumentNullException.ThrowIfNull(firstWords);
         if (ids.Count != firstWords.Count) throw new ArgumentException("one entry per id");
+        if (secondWords is not null && secondWords.Count != ids.Count) throw new ArgumentException("one second word per id");
         if (ids.Count > 255) throw new ArgumentException("the count is a byte");
         _ids = ids.ToArray();
         _firstWords = firstWords.ToArray();
+        _secondWords = secondWords?.ToArray();
     }
+
+    /// <summary>The id bytes in the bundle's order (for tests and the graph loader's comparisons).</summary>
+    public IReadOnlyList<byte> Ids => _ids;
+
+    /// <summary>The first word of each entry, in the bundle's order.</summary>
+    public IReadOnlyList<uint> FirstWords => _firstWords;
+
+    /// <summary>The second word of each entry of an 8-byte-entry bundle; null for a 4-byte-entry bundle.</summary>
+    public IReadOnlyList<uint>? SecondWords => _secondWords;
 
     /// <summary>The bundle's count byte.</summary>
     public int Count => _ids.Length;
@@ -81,6 +100,12 @@ public sealed class WwiseFxChunk
     /// <summary><c>+9 + 8 * slot</c>.</summary>
     public byte[] Share { get; } = new byte[4];
 
+    /// <summary><c>+8 + 8 * slot</c>: the rendered byte (<c>0x9F5B24</c>, C44.1 C1 and the FX reader <c>0x9ECAD8</c>).</summary>
+    public byte[] Rendered { get; } = new byte[4];
+
+    /// <summary><c>+0x24</c>: the bypass byte <c>0x9F5C30</c> stores (<c>(bits &amp; mask) | (old &amp; ~mask)</c>, C44.1 C1). The bytes <c>+0x25..0x27</c> are not zeroed by the engine (host pool bytes) and are not modelled.</summary>
+    public byte Bypass { get; set; }
+
     /// <summary>The test <c>0x9C54F8..0x9C5524</c>: one of the four ids (<c>+4</c>, <c>+0xC</c>, <c>+0x14</c>, <c>+0x1C</c>) is non-zero.</summary>
     public bool AnyId => Ids[0] != 0 || Ids[1] != 0 || Ids[2] != 0 || Ids[3] != 0;
 }
@@ -125,13 +150,13 @@ public static class WwiseNodeCategory44
 /// <summary>The unread callees of the bus constructor <c>0x9C3620</c> (named, required).</summary>
 public sealed class WwiseBusCtorSeams
 {
-    /// <summary>The base constructor <c>0x9F402C(bus, id)</c> (<c>0x9C364C</c>): node base fields. Not adopted.</summary>
+    /// <summary>The base constructor <c>0x9F402C(bus, id)</c> (<c>0x9C364C</c>): node base fields. The real implementation is <see cref="WwiseBusWalk.BaseCtor9F402C"/>.</summary>
     public Action<WwiseRoutingNode>? BaseCtor9F402C { get; set; }
 
-    /// <summary><c>0xA19F94(bus+0xC4)</c> (<c>0x9C36D8</c>). Not adopted.</summary>
-    public Action<WwiseRoutingNode>? Init9A19F94 { get; set; }
+    /// <summary><c>0xA19F94(bus+0xC4)</c> (<c>0x9C36D8</c>; the function is at <c>0x00A19F94</c>, there is none at <c>0x9A19F94</c>, C44.1 section 0). The real implementation is <see cref="WwiseBusWalk.InitHolderA19F94"/>.</summary>
+    public Action<WwiseRoutingNode>? InitA19F94 { get; set; }
 
-    /// <summary><c>0x9F40F4(bus)</c> (<c>0x9C3730</c>). Not adopted.</summary>
+    /// <summary><c>0x9F40F4(bus)</c> (<c>0x9C3730</c>), the registration. The real implementation is <see cref="WwiseRuntimeRegistry.Register9F40F4"/>.</summary>
     public Action<WwiseRoutingNode>? Post9F40F4 { get; set; }
 }
 
@@ -150,8 +175,16 @@ public sealed class WwiseBusReaderSeams
     /// <summary>Bus <c>vt+0x8C(bus, slot)</c> (<c>0x9F57E8..0x9F57EC</c>): run after <see cref="FxSlotChangedVtC4"/>. Not adopted.</summary>
     public Action<WwiseRoutingNode, int>? FxSlotChangedVt8C { get; set; }
 
-    /// <summary><c>0x9F5C30(bus, bypass, -1)</c> (<c>0x9C0DF8</c>, <c>0x9C0E0C</c>). Not adopted.</summary>
+    /// <summary>
+    /// <c>0x9F5C30(bus, bypass, -1)</c> (<c>0x9C0DF8</c>, <c>0x9C0E0C</c>). When null the real <see cref="WwiseBusWalk.FxBypass9F5C30"/> runs (the chunk byte store, then <see cref="VtE4"/> and <see cref="Vt7C"/>); a non-null value replaces the whole call (the test double of the original B-M6b-4 oracle).
+    /// </summary>
     public Action<WwiseRoutingNode, byte>? FxBypassA9F5C30 { get; set; }
+
+    /// <summary>Node <c>vt+0xE4(node)</c> (<c>0x9F5C30</c>'s first callback; a bus's is <c>0x9C0A70</c>, a Sound's/ActorMixer's <c>0x9EC67C</c> which does nothing while <c>[+0x24]</c> and <c>[+0x48]</c> are null). Required for a bus (C44.1 V3 reads only its address).</summary>
+    public Action<WwiseRoutingNode>? VtE4 { get; set; }
+
+    /// <summary>Node <c>vt+0x7C(node)</c> (<c>0x9F5C30</c>'s second callback; a bus's is <c>0x9C0C2C</c>, which tail-calls <c>0xA40FF8([bus+8])</c>). Required for a bus.</summary>
+    public Action<WwiseRoutingNode>? Vt7C { get; set; }
 
     /// <summary>Bus <c>vt+0xE0(bus, id, flag, 0)</c> = <c>0x9C0FC0</c> (<c>0x9C0D5C..0x9C0D60</c>): the mixer record. C34.1 lists its body as open, so it is a required seam; its result is the list reader's.</summary>
     public Func<WwiseRoutingNode, uint, bool, int>? MixerVtE0 { get; set; }
@@ -285,20 +318,20 @@ public static class WwiseBusWalk
     /// <c>and #0xF0; orr #0x30; and #0xBF; bfi bit7 = 0</c>), <c>[+0x46]</c> bit 2 = (<c>vt+0x44</c> in {0xA, 0xC}) or <c>vt+0x44 == 0</c>, <c>0x9F40F4(bus)</c>, and the lists <c>+0x70..+0xC0</c> 0 with <c>[+0x80] = [+0x9C] = [+0xB8] = 0x64</c>
     /// (<c>0x9C3650..0x9C377C</c>). Only the fields <see cref="WwiseRoutingNode"/> models are stored.
     /// </summary>
-    public static WwiseRoutingNode ConstructBus9C3620(uint id, int category44, WwiseBusCtorSeams seams)
+    public static WwiseRoutingNode ConstructBus9C3620(uint id, int category44, WwiseBusCtorSeams seams, uint subscriptionKey10 = 0)
     {
         ArgumentNullException.ThrowIfNull(seams);
-        var bus = new WwiseRoutingNode { Id = id, IsBus = true, Category44 = category44 };
-        (seams.BaseCtor9F402C ?? throw new WwiseMissingBehaviourException("M6-025 B4: the base constructor 0x9F402C (0x9C364C) is not adopted"))(bus);
+        var bus = new WwiseRoutingNode { Id = id, IsBus = true, Category44 = category44, SubscriptionKey10 = subscriptionKey10 };
+        (seams.BaseCtor9F402C ?? throw new WwiseMissingBehaviourException("M6-025 B4: the base constructor 0x9F402C (0x9C364C) is not supplied"))(bus);
         bus.Word68 = 0;                                                                   // 0x9C3654 byte 0; 0x9C365C nibble 0; 0x9C3680 bits 12..31 0
         bus.MaxDuck6C = BitConverter.Int32BitsToSingle(unchecked((int)0xC2C0999A));       // 0x9C3658, 0x9C3668, 0x9C3678
         bus.Word54 = 0;                                                                   // 0x9C36A0
         bus.Duck8C.Clear(); bus.DuckA8.Clear();                                           // 0x9C3758, 0x9C376C (the lists are empty)
-        (seams.Init9A19F94 ?? throw new WwiseMissingBehaviourException("M6-025 B4: 0xA19F94 (0x9C36D8) is not adopted"))(bus);
+        (seams.InitA19F94 ?? throw new WwiseMissingBehaviourException("M6-025 B4: 0xA19F94 (0x9C36D8) is not supplied"))(bus);
         bus.ByteCC = (byte)((((bus.ByteCC & 0xF0) | 0x30) & 0xBF) & 0x7F);                // 0x9C36DC..0x9C36F8
         bool bit2 = category44 is 0xA or 0xC || category44 == 0;                          // 0x9C3708..0x9C3724
         bus.Byte46 = (byte)((bus.Byte46 & ~4) | (bit2 ? 4 : 0));                          // 0x9C3728..0x9C372C
-        (seams.Post9F40F4 ?? throw new WwiseMissingBehaviourException("M6-025 B4: 0x9F40F4 (0x9C3730) is not adopted"))(bus);
+        (seams.Post9F40F4 ?? throw new WwiseMissingBehaviourException("M6-025 B4: 0x9F40F4 (0x9C3730) is not supplied"))(bus);
         return bus;
     }
 
@@ -391,46 +424,169 @@ public static class WwiseBusWalk
     /// <summary>
     /// The FX list of the bus reader <c>0x9C0D08(bus, &amp;cursor)</c> (B6): <c>u8 count</c>; a non-zero count is followed by a bypass byte and <c>count</c> entries of 7 bytes <c>{u8 slot, u32 id, u8 share, u8}</c>; an entry with id 0 is skipped, any
     /// other goes to <c>0x9F5760(bus, slot, id, share != 0, version 0)</c> and a result other than 1 runs <c>0x9F5C30(bus, bypass, -1)</c> and ends with that result; after the loop <c>0x9F5C30(bus, bypass, -1)</c> runs. Then the mixer: <c>u32 id</c>, <c>u8 flag</c>
-    /// to the bus <c>vt+0xE0 = 0x9C0FC0(bus, id, flag != 0, 0)</c>, whose body C34.1 does not adopt (the seam <see cref="WwiseBusReaderSeams.MixerVtE0"/>). Every exit sets <c>[bus+0x40] |= 0x1F000</c> and returns the result (<c>0x9C0D08..0x9C0E14</c>).
+    /// to the bus <c>vt+0xE0 = 0x9C0FC0(bus, id, flag != 0, 0)</c> (<see cref="WwiseBusReaderSeams.MixerVtE0"/>, else <see cref="MixerRecord9C0FC0"/>). Every exit sets <c>[bus+0x40] |= 0x1F000</c> and returns the result (<c>0x9C0D08..0x9C0E14</c>).
+    /// This is the byte reader over bank bytes; the same body over parsed values is <see cref="ApplyFxList9C0D08"/>.
     /// </summary>
     public static int ReadFxList9C0D08(WwiseRoutingNode bus, ReadOnlySpan<byte> data, ref int pos, WwiseBusReaderSeams seams)
     {
         ArgumentNullException.ThrowIfNull(bus);
         ArgumentNullException.ThrowIfNull(seams);
         int count = data[pos++];                                                          // 0x9C0D1C ldrb r6,[r2],#1
+        byte bypass = 0;
+        if (count != 0) bypass = data[pos++];                                             // 0x9C0D84 ldrb r8,[r3,#1]; 0x9C0D8C add r3,r3,#2
+        int start = pos;
+        int cursor = pos;
+        var bytes = data.ToArray();                                                       // the closures below cannot capture the span
+        int result = ApplyFxList9C0D08(bus, count, bypass,
+            i =>
+            {
+                int o = start + 7 * i;
+                cursor = o + 7;                                                           // 0x9C0DB8, 0x9C0DC4: +5, +7
+                return new WwiseFxEntry(bytes[o], BitConverter.ToUInt32(bytes, o + 1), bytes[o + 5], bytes[o + 6]);   // 0x9C0DAC, 0x9C0DA4, 0x9C0DC0
+            },
+            () =>
+            {
+                int o = cursor;
+                cursor = o + 5;                                                           // 0x9C0D34, 0x9C0D4C
+                return (BitConverter.ToUInt32(bytes, o), bytes[o + 4]);                   // 0x9C0D38 ldr r1,[ip],#4; 0x9C0D48 ldrb r2,[r2,#4]
+            }, seams);
+        pos = cursor;
+        return result;
+    }
+
+    /// <summary>
+    /// The body of <c>0x9C0D08</c> over parsed values (the graph loader's form; <see cref="ReadFxList9C0D08"/> is the same over bytes). <paramref name="entryAt"/> yields entry <c>i</c> when the loop reaches it and
+    /// <paramref name="mixer"/> the mixer <c>{id, flag}</c> only when the loop did not fail, so a byte cursor advances exactly as the engine's does.
+    /// </summary>
+    public static int ApplyFxList9C0D08(WwiseRoutingNode bus, int count, byte bypass, Func<int, WwiseFxEntry> entryAt, Func<(uint Id, byte Flag)> mixer, WwiseBusReaderSeams seams)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+        ArgumentNullException.ThrowIfNull(seams);
         int result = 1;
         bool failed = false;
         if (count != 0)
         {
-            byte bypass = data[pos++];                                                    // 0x9C0D84 ldrb r8,[r3,#1]; 0x9C0D8C add r3,r3,#2
             for (int i = 0; i < count; i++)                                               // 0x9C0D98 cmp r6,r5
             {
-                int slot = data[pos];                                                     // 0x9C0DAC ldrb r1,[r3]
-                uint id = BitConverter.ToUInt32(data.Slice(pos + 1, 4));                  // 0x9C0DA4 ldr r2,[r3,#1]
-                byte share = data[pos + 5];                                               // 0x9C0DC0 ldrb r3,[r3,#5]
-                pos += 7;                                                                 // 0x9C0DB8, 0x9C0DC4: +5, +7
-                if (id == 0) continue;                                                    // 0x9C0DB4 cmp r2,#0; beq 0x9C0D98
-                int r = RegisterFx9F5760(bus, slot, id, (byte)(share != 0 ? 1 : 0), 0, seams);   // 0x9C0DCC..0x9C0DDC
+                var e = entryAt(i);
+                if (e.Id == 0) continue;                                                  // 0x9C0DB4 cmp r2,#0; beq 0x9C0D98
+                int r = RegisterFx9F5760(bus, e.Slot, e.Id, (byte)(e.Share != 0 ? 1 : 0), 0, seams);   // 0x9C0DCC..0x9C0DDC
                 if (r != 1)                                                               // 0x9C0DE0..0x9C0DE8
                 {
-                    (seams.FxBypassA9F5C30 ?? throw new WwiseMissingBehaviourException("M6-025 B6: 0x9F5C30 (0x9C0DF8) is not adopted"))(bus, bypass);
+                    FxBypassCall(bus, bypass, seams);                                     // 0x9C0DF8
                     result = r;
                     failed = true;
                     break;
                 }
             }
             if (!failed)
-                (seams.FxBypassA9F5C30 ?? throw new WwiseMissingBehaviourException("M6-025 B6: 0x9F5C30 (0x9C0E0C) is not adopted"))(bus, bypass);
+                FxBypassCall(bus, bypass, seams);                                         // 0x9C0E0C
         }
         if (!failed)
         {
-            uint mixerId = BitConverter.ToUInt32(data.Slice(pos, 4));                     // 0x9C0D38 ldr r1,[ip],#4
-            byte flag = data[pos + 4];                                                    // 0x9C0D48 ldrb r2,[r2,#4]
-            pos += 5;                                                                     // 0x9C0D34, 0x9C0D4C
-            result = (seams.MixerVtE0 ?? throw new WwiseMissingBehaviourException(
-                "M6-025 B6: the bus mixer record vt+0xE0 = 0x9C0FC0 (0x9C0D60) is not adopted by C34.1 (listed open); supply WwiseBusReaderSeams.MixerVtE0"))(bus, mixerId, flag != 0);   // 0x9C0D60 blx ip
+            var (mixerId, flag) = mixer();
+            result = (seams.MixerVtE0 ?? new Func<WwiseRoutingNode, uint, bool, int>(MixerRecord9C0FC0))(bus, mixerId, flag != 0);     // 0x9C0D60 blx ip
         }
         bus.Word40 |= 0x1F000;                                                            // 0x9C0D68..0x9C0D74
         return result;
+    }
+
+    private static void FxBypassCall(WwiseRoutingNode node, byte bypass, WwiseBusReaderSeams seams)
+    {
+        if (seams.FxBypassA9F5C30 is { } replaced) replaced(node, bypass);
+        else FxBypass9F5C30(node, bypass, 0xFFFFFFFFu, seams);
+    }
+
+    /// <summary>
+    /// The bus mixer record <c>vt+0xE0 = 0x9C0FC0(bus, id, flag, 0)</c>: with id 0 and <c>[bus+0x54] == 0</c> it returns 1 with no effect (<c>0x9C0FD8..0x9C0FDC</c>, <c>0x9C106C</c>, C44.1 D9). Any other case is not read: a visible stop.
+    /// </summary>
+    public static int MixerRecord9C0FC0(WwiseRoutingNode bus, uint id, bool flag)
+    {
+        if (id == 0 && bus.Word54 == 0) return 1;
+        throw new WwiseMissingBehaviourException($"M6-025 D9: bus mixer record 0x9C0FC0 with id {id:X8} flag {flag} and [bus+0x54] {bus.Word54:X}: only id 0 with [+0x54] == 0 (a no-op, 0x9C0FD8..0x9C0FDC) is read; supply WwiseBusReaderSeams.MixerVtE0");
+    }
+
+    /// <summary>
+    /// <c>0x9F5C30(node, bits, mask)</c> (C44.1 C1): <c>[chunk+0x24] = (bits &amp; mask) | (old &amp; ~mask)</c> (<c>0x9F5C64..0x9F5C80</c>), then node <c>vt+0xE4</c> and <c>vt+0x7C</c> (<see cref="WwiseBusReaderSeams.VtE4"/>, <see cref="WwiseBusReaderSeams.Vt7C"/>).
+    /// With no chunk the row does not say what the engine does; the engine allocates the chunk (observed under emu_graph.py: a bus whose only FX entry has id 0 ends with a zero chunk whose bypass byte is the list's), so
+    /// the chunk is allocated here, zero-filled, exactly as <see cref="RegisterFx9F5760"/> allocates it (a failed allocation is not modelled for this call).
+    /// </summary>
+    public static void FxBypass9F5C30(WwiseRoutingNode node, byte bits, uint mask, WwiseBusReaderSeams seams)
+    {
+        if (node.Fx28 is null && bits == 0) return;                                       // 0x9F5CC0..0x9F5CC8: no chunk and bits 0 returns without allocating and without the callbacks
+        var chunk = node.Fx28 ??= new WwiseFxChunk();
+        chunk.Bypass = (byte)((bits & mask) | (chunk.Bypass & ~mask));                    // 0x9F5C64..0x9F5C80
+        (seams.VtE4 ?? throw new WwiseMissingBehaviourException("M6-025 C1: node vt+0xE4 (called by 0x9F5C30) is not supplied"))(node);
+        (seams.Vt7C ?? throw new WwiseMissingBehaviourException("M6-025 C1: node vt+0x7C (called by 0x9F5C30) is not supplied"))(node);
+    }
+
+    /// <summary>
+    /// <c>0x9F5B24(node, slot, rendered)</c> (C44.1 C1, 0x9F5B24..0x9F5B98): with no chunk and <paramref name="rendered"/> false it returns 1 without allocating; with <paramref name="rendered"/> it allocates the chunk. The rendered byte
+    /// <c>+8+8*slot</c> is stored; with <paramref name="rendered"/> and a non-zero id the share and the id are cleared and node <c>vt+0xC4</c>, <c>vt+0x8C</c> run. A slot above 3, which the row does not settle, is a visible stop.
+    /// </summary>
+    public static int RenderedChange9F5B24(WwiseRoutingNode node, int slot, bool rendered, WwiseBusReaderSeams seams)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(seams);
+        if ((uint)slot > 3) throw new WwiseMissingBehaviourException($"M6-025 C1: 0x9F5B24 with slot {slot} (above 3) is not in the inventory");
+        var chunk = node.Fx28;
+        if (chunk is null)
+        {
+            if (!rendered) return 1;                                                      // returns 1 without allocating
+            if (seams.AllocationFails?.Invoke() == true) return 0x34;                     // the same 0x28-byte allocation as 0x9F5760 (0x9F5810)
+            chunk = node.Fx28 = new WwiseFxChunk();
+        }
+        chunk.Rendered[slot] = (byte)(rendered ? 1 : 0);
+        if (rendered && chunk.Ids[slot] != 0)                                             // 0x9F5B54..0x9F5B98
+        {
+            chunk.Share[slot] = 0;
+            chunk.Ids[slot] = 0;
+            (seams.FxSlotChangedVtC4 ?? throw new WwiseMissingBehaviourException("M6-025 C1: node vt+0xC4 (0x9F5B54..0x9F5B98) is not supplied"))(node);
+            (seams.FxSlotChangedVt8C ?? throw new WwiseMissingBehaviourException("M6-025 C1: node vt+0x8C (0x9F5B54..0x9F5B98) is not supplied"))(node, slot);
+        }
+        return 1;
+    }
+
+    // ------------------------------------------------------------------ the real constructor pieces (C44.1 B2, B3, D6)
+
+    /// <summary>
+    /// The base constructor <c>0x9F402C</c> (C44.1 B2 with the verifier's V1): after the object base (<c>0x9D0418</c>: id, count 1) the words <c>+0x24..+0x40</c> are 0, the u16 at <c>+0x44</c> is <c>0x4000</c> (bits 0..9 cleared by
+    /// <c>bfi</c> before <c>lsr</c> reads it, so <c>[+0x45] = 0x40</c> exactly), <c>[+0x46] = 0x21</c>, and <c>[+0x47] = old &amp; 0x80</c>: the only base bit that is the pool's. <paramref name="poolFill"/> is that pool byte
+    /// (<see cref="WwiseGraphHostInputs.PoolFillByte"/>).
+    /// </summary>
+    public static void BaseCtor9F402C(WwiseRoutingNode node, byte poolFill)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        node.Word40 = 0;                                                                  // 0x9F40C0..: [+0x24..0x40] = 0
+        node.Dword44 = 0x4000u | (0x21u << 16) | ((uint)(poolFill & 0x80) << 24);         // 0x9F4084..0x9F40E0
+        node.Parent = null; node.OutputBus = null; node.Fx28 = null; node.Node30 = null; node.BaseBundle3C = null; node.States18 = null;
+        node.Registry14 = null; node.Registry20 = null;                                   // 0xA19F94(node+0x10), 0xA19F94(node+0x1C)
+    }
+
+    /// <summary>
+    /// <c>0xA19F94(holder)</c> (C44.1 section 0: the function is at <c>0x00A19F94</c>): <c>[H] = vptr 0x101C3F8</c>, <c>[H+4] = 0</c>, the registry-holder init. The holder's registry pointer is the model's <c>Registry14</c> /
+    /// <c>Registry20</c> / <c>RegistryC8</c>; for the bus's own <c>bus+0xC4</c> holder (called at <c>0x9C36D8</c>) that is <see cref="WwiseRoutingNode.RegistryC8"/>.
+    /// </summary>
+    public static void InitHolderA19F94(WwiseRoutingNode bus)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+        bus.RegistryC8 = null;
+    }
+
+    /// <summary>
+    /// The bus constructor <c>0x9C3620(id)</c> with the real callees: the base constructor <see cref="BaseCtor9F402C"/>, the holder init <see cref="InitHolderA19F94"/> and the registration <see cref="WwiseRuntimeRegistry.Register9F40F4"/>
+    /// (table B, because the constructor's category sets <c>[+0x46]</c> bit 2).
+    /// </summary>
+    public static WwiseRoutingNode ConstructBus9C3620(uint id, WwiseRuntimeRegistry registry, WwiseGraphHostInputs host, uint subscriptionKey10)
+    {
+        ArgumentNullException.ThrowIfNull(registry);
+        ArgumentNullException.ThrowIfNull(host);
+        var seams = new WwiseBusCtorSeams
+        {
+            BaseCtor9F402C = n => BaseCtor9F402C(n, host.PoolFillByte),
+            InitA19F94 = InitHolderA19F94,
+            Post9F40F4 = registry.Register9F40F4,
+        };
+        return ConstructBus9C3620(id, WwiseNodeCategory44.Bus, seams, subscriptionKey10);
     }
 }

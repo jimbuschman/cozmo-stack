@@ -125,7 +125,8 @@ public sealed class WwiseBank
                 version = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body, 4));
                 bankId = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body + 4, 4));
                 // dword 3 is the feedback flag that adds four bytes to a node's NodeBaseParams (gapA 2.3).
-                if (size >= 16) feedback = BinaryPrimitives.ReadUInt32LittleEndian(span.Slice(body + 12, 4)) != 0;
+                // the engine reads a u16 at +0xC (0x9B2224, 0x9B2288), not a dword
+                if (size >= 14) feedback = BinaryPrimitives.ReadUInt16LittleEndian(span.Slice(body + 12, 2)) != 0;
             }
             else if (Match(tag, "DIDX")) didx = data.Slice(body, (int)size);
             else if (Match(tag, "DATA")) dataChunk = data.Slice(body, (int)size);

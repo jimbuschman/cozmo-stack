@@ -134,6 +134,12 @@ public sealed record WwiseRtpc(uint SourceId, byte SourceType, byte Accumulate, 
 /// or a root note, and none does (M6 gapE 3.3).
 /// </para>
 /// </summary>
+/// <summary>One 7-byte FX entry of a node's or bus's FX list (<c>0x9ECAD8</c>, <c>0x9C0D08</c>): slot, plug-in instance id, share flag and the 7th byte (rendered for a node; ignored by the engine for a bus, <c>0x9C0D08</c>).</summary>
+public readonly record struct WwiseFxEntry(byte Slot, uint Id, byte Share, byte Rendered);
+
+/// <summary>One 0x12-byte duck entry of a bus (<c>0x9C4138</c> -> <c>0x9C3E94</c>): target bus id, volume, fade out, fade in, curve byte and target-property byte.</summary>
+public readonly record struct WwiseDuckEntry(uint TargetBusId, float Volume, uint FadeOutMs, uint FadeInMs, byte Curve, byte TargetProperty);
+
 // fidelity: M9-012
 public sealed record WwiseNodeParams(
     uint BusId, uint ParentId, byte Bits,
@@ -164,6 +170,28 @@ public sealed record WwiseNodeParams(
     /// (<c>[node+0x40] &amp; 0xFFE</c>); with bit 1 set bit 2 is stored to <c>[node+0x47]</c> bit 0 (<c>0x9ECF7C..0x9ECF8C</c>). The reader refuses bits 0 and 3 together (the 3D body), so <c>[node+0x2C]</c> is 0 for every parsed node.
     /// </summary>
     public byte PositioningBits { get; init; }
+
+    // fidelity: M6-001
+    // What the engine's NodeBase readers keep and the parse used to discard (B-M6b-4 batch 6c, C44.1 C1, C3, C9): the node's FX block
+    // (0x9ECAD8: overrideFX byte, bypass byte, 7-byte entries {slot, id, share, rendered}), the override-attachment byte (0x9F6F3C..0x9F6F4C)
+    // and the aux byte with its four ids (0x9ED84C).
+
+    /// <summary>The first byte of the FX block (<c>0x9ECAD8</c>): overrideFX, stored to <c>[node+0x40]</c> bits 12..16 (<c>0x9ECAF8..0x9ECB0C</c>).</summary>
+    public byte OverrideFxByte { get; init; }
+    /// <summary>The FX bypass byte (present only when the entry count is non-zero), the argument of <c>0x9F5C30(node, bypass, -1)</c>.</summary>
+    public byte FxBypass { get; init; }
+    /// <summary>The 7-byte FX entries <c>{slot u8, id u32, share u8, rendered u8}</c> (empty when the count byte is 0).</summary>
+    public IReadOnlyList<WwiseFxEntry> FxEntries { get; init; } = Array.Empty<WwiseFxEntry>();
+    /// <summary>The override-attachment byte after the FX block (<c>0x9F6F3C..0x9F6F4C</c>, stored to <c>[node+0x45]</c> bit 5).</summary>
+    public byte OverrideAttach { get; init; }
+    /// <summary>The aux byte (<c>0x9ED84C</c>): bit 0 to <c>[+0x40]</c> bit 21, bit 1 to <c>[+0x59]</c> bit 4, bit 2 to <c>[+0x40]</c> bits 22..25, bit 3 = four aux ids follow.</summary>
+    public byte AuxBits { get; init; }
+    /// <summary>The four u32 aux ids that follow the aux byte when its bit 3 is set (the block <c>[node+0x54]</c>); empty otherwise.</summary>
+    public IReadOnlyList<uint> AuxIds { get; init; } = Array.Empty<uint>();
+    /// <summary>The property entries in bank order, duplicates kept (the engine's bundle <c>[node+0x3C]</c> is an array: <c>0x9ED51C</c> reads ids first, then values). <see cref="Props"/> keeps the last value per id.</summary>
+    public IReadOnlyList<(byte Id, uint Value)> PropEntries { get; init; } = Array.Empty<(byte, uint)>();
+    /// <summary>The ranged property entries in bank order, duplicates kept (the bundle <c>[node+0x4C]</c>); a bus has none.</summary>
+    public IReadOnlyList<(byte Id, float Min, float Max)> RangedEntries { get; init; } = Array.Empty<(byte, float, float)>();
 
     /// <summary>A property as the float most of them are, or null when the node does not set it.</summary>
     public float? Float(WwiseProp p) =>
@@ -310,8 +338,13 @@ public sealed record WwiseMusicPlaylistNode(uint Id, string Bank, WwiseNodeParam
 /// </summary>
 public static class WwiseHierarchy
 {
-    /// <summary>Parses an object into a node, or returns null with the reason when its type is not read here or it does not consume exactly.</summary>
-    public static WwiseNode? TryRead(WwiseObject o, out string? problem)
+    /// <summary>
+    /// Parses an object into a node, or returns null with the reason when its type is not read here or it does not consume exactly.
+    /// <para>Whole-body consumption is a STRICTER check than the engine's: the engine's walker does not test that a loader consumed the object (0x9B3260..0x9B3684,
+    /// C44.1 A1), it advances by the object's size. The default keeps the strict check (it caught every wrong layout while the readers were recovered); the graph
+    /// loader passes <paramref name="requireWholeBody"/> false so that it applies what the engine would apply.</para>
+    /// </summary>
+    public static WwiseNode? TryRead(WwiseObject o, out string? problem, bool requireWholeBody = true)
     {
         problem = null;
         try
@@ -334,7 +367,7 @@ public static class WwiseHierarchy
                 _ => null,
             };
             if (node is null) { problem = $"type {(byte)o.Type} is not read"; return null; }
-            if (r.Remaining != 0)
+            if (requireWholeBody && r.Remaining != 0)
             {
                 problem = $"{o.Bank} object {o.Id} type {(byte)o.Type}: {r.Remaining} bytes left of {o.Payload.Length}";
                 return null;
@@ -352,15 +385,17 @@ public static class WwiseHierarchy
 
     private static WwiseNodeParams ReadNodeParams(ref Reader r, bool feedback)
     {
-        // NodeInitialFxParams
-        r.U8();
+        // NodeInitialFxParams (0x9ECAD8): overrideFX byte, entry count, then bypass byte and 7-byte entries when the count is non-zero
+        byte overrideFx = r.U8();
         int numFx = r.U8();
+        byte fxBypass = 0;
+        var fxEntries = new List<WwiseFxEntry>(numFx);
         if (numFx > 0)
         {
-            r.U8();                                             // bypass bits
-            for (int i = 0; i < numFx; i++) { r.U8(); r.U32(); r.U8(); r.U8(); }
+            fxBypass = r.U8();                                  // bypass bits
+            for (int i = 0; i < numFx; i++) fxEntries.Add(new WwiseFxEntry(r.U8(), r.U32(), r.U8(), r.U8()));
         }
-        r.U8();                                                 // bOverrideAttachmentParams
+        byte overrideAttach = r.U8();                           // bOverrideAttachmentParams
         uint bus = r.U32();
         uint parent = r.U32();
         byte bits = r.U8();
@@ -369,12 +404,14 @@ public static class WwiseHierarchy
         var ids = new byte[n];
         for (int i = 0; i < n; i++) ids[i] = r.U8();
         var props = new Dictionary<byte, uint>(n);
-        for (int i = 0; i < n; i++) props[ids[i]] = r.U32();
+        var propEntries = new List<(byte, uint)>(n);
+        for (int i = 0; i < n; i++) { uint v = r.U32(); props[ids[i]] = v; propEntries.Add((ids[i], v)); }
         n = r.U8();
         ids = new byte[n];
         for (int i = 0; i < n; i++) ids[i] = r.U8();
         var ranged = new Dictionary<byte, (float, float)>(n);
-        for (int i = 0; i < n; i++) ranged[ids[i]] = (r.F32(), r.F32());
+        var rangedEntries = new List<(byte, float, float)>(n);
+        for (int i = 0; i < n; i++) { float lo = r.F32(), hi = r.F32(); ranged[ids[i]] = (lo, hi); rangedEntries.Add((ids[i], lo, hi)); }
         // PositioningParams (gapA 2.4): one byte; more follows only when b0 and b3 are both set. No shipped
         // node has that, and the body past the attenuation is not in the rows, so it fails rather than
         // silently realigning.
@@ -384,7 +421,8 @@ public static class WwiseHierarchy
         // AuxParams (gapA 2.4): u8 bits; b3 begins an aux list whose length is not in the rows. The shipped
         // value is read as one byte; the list is left unresolved.
         byte aux = r.U8();
-        if ((aux & 0x08) != 0) for (int i = 0; i < 4; i++) r.U32();
+        var auxIds = new List<uint>(4);
+        if ((aux & 0x08) != 0) for (int i = 0; i < 4; i++) auxIds.Add(r.U32());
         // AdvSettingsParams (0x9ED730, M6-026 B8): kept, the playback-limit walker reads it
         byte adv0 = r.U8(); byte adv1 = r.U8(); ushort advMax = r.U16(); byte adv3 = r.U8(); byte adv4 = r.U8();
         // StateChunk: 32-bit group count in this version
@@ -408,6 +446,8 @@ public static class WwiseHierarchy
         {
             AdvancedByte0 = adv0, AdvancedByte1 = adv1, AdvancedMaxInstancesRaw = advMax,
             AdvancedByte3 = adv3, AdvancedByte4 = adv4, PositioningBits = posBits,
+            OverrideFxByte = overrideFx, FxBypass = fxBypass, FxEntries = fxEntries, OverrideAttach = overrideAttach,
+            AuxBits = aux, AuxIds = auxIds, PropEntries = propEntries, RangedEntries = rangedEntries,
         };
     }
 
@@ -651,9 +691,9 @@ public static class WwiseHierarchy
 
     /// <summary>
     /// An audio bus. The field order is the runtime's own (gapD D6.1): no ranged bundle, then the A/B/C bit
-    /// bytes, instance limits, channel config, recovery, duck list, FX chain, mixer id and RTPCs. The
-    /// conditional A/B/C bodies are not in the frozen rows; the shipped buses leave them clear, and a set
-    /// bit fails rather than guessing a body length. See <see cref="WwiseBusNode"/>.
+    /// bytes, instance limits, channel config, recovery, duck list, FX chain, mixer id and RTPCs. Only B bit 3 has
+    /// a body (0x9C62AC, C44.1 D8, not read: no shipped bus sets it); a set bit 3 fails rather than guessing a body
+    /// length. B bits 0..2 are plain stores (0x9F627C, 0x9F68D8, [+0x47] bit 6) and are kept. See <see cref="WwiseBusNode"/>.
     /// </summary>
     private static WwiseBusNode ReadBus(ref Reader r, WwiseObject o)
     {
@@ -663,13 +703,14 @@ public static class WwiseHierarchy
         var ids = new byte[n];
         for (int i = 0; i < n; i++) ids[i] = r.U8();
         var props = new Dictionary<byte, uint>(n);
-        for (int i = 0; i < n; i++) props[ids[i]] = r.U32();
+        var busPropEntries = new List<(byte, uint)>(n);
+        for (int i = 0; i < n; i++) { uint v = r.U32(); props[ids[i]] = v; busPropEntries.Add((ids[i], v)); }
         // A bus has no ranged-property bundle.
 
         byte a = r.U8();                                        // A: b0 → +0x46 b7, b1 → +0x47 b0
         byte b = r.U8();                                        // B: b0..b3 → virtual-voice / aux handling
-        if ((b & 0x0F) != 0)
-            throw new InvalidDataException("bus B conditional body is not recovered in the frozen rows");
+        if ((b & 0x08) != 0)
+            throw new InvalidDataException("bus B bit 3 body (0x9C62AC) is not recovered in the frozen rows");
         ushort maxInst = (ushort)(r.U16() & 0x3FF);
         uint channelConfig = r.U32();
         byte c = r.U8();                                        // C: b0 → +0x40, b1 → +0xCC
@@ -677,23 +718,26 @@ public static class WwiseHierarchy
         float maxDuck = r.F32();
         uint ducks = r.U32();
         var ducked = new List<(uint, float, uint, uint)>((int)Math.Min(ducks, 32));
+        var duckEntries = new List<WwiseDuckEntry>((int)Math.Min(ducks, 32));
         for (uint i = 0; i < ducks; i++)
         {
             uint bus = r.U32(); float volume = r.F32(); uint fadeOut = r.U32(); uint fadeIn = r.U32();
-            r.U8(); r.U8();                                     // fade curve and the property it ducks
+            byte curve = r.U8(); byte targetProp = r.U8();      // fade curve and the property it ducks (0x9C3E94 arguments 6 and 7)
             ducked.Add((bus, volume, fadeOut, fadeIn));
+            duckEntries.Add(new WwiseDuckEntry(bus, volume, fadeOut, fadeIn, curve, targetProp));
         }
 
         int numFx = r.U8();
         var effects = new List<WwiseBusEffect>(numFx);
+        byte fxBypass = 0;
         if (numFx > 0)
         {
-            r.U8();                                             // bypass bits
+            fxBypass = r.U8();                                  // bypass bits
             for (int i = 0; i < numFx; i++)
                 effects.Add(new WwiseBusEffect(r.U8(), r.U32(), r.U8() != 0, r.U8() != 0));
         }
-        r.U32(); r.U8();                                        // mixer id + byte (vt+0xE0)
-        r.U8();                                                 // +0x45 b5
+        uint mixerId = r.U32(); byte mixerFlag = r.U8();        // mixer id + byte (vt+0xE0)
+        byte attach = r.U8();                                   // +0x45 b5
         int curves = r.U16();
         var rtpcs = new List<WwiseRtpc>(curves);
         for (int i = 0; i < curves; i++) rtpcs.Add(ReadRtpc(ref r));
@@ -707,12 +751,19 @@ public static class WwiseHierarchy
             stateGroups.Add((gid, sync, states));
         }
         if (o.FeedbackEnabled) r.Skip(4);                       // only when the BKHD feedback flag is set
-        _ = a; _ = channelConfig; _ = maxDuck;
-        var p = new WwiseNodeParams(0, parent, 0, props, new Dictionary<byte, (float, float)>(), rtpcs, stateGroups);
+        var p = new WwiseNodeParams(0, parent, 0, props, new Dictionary<byte, (float, float)>(), rtpcs, stateGroups) { PropEntries = busPropEntries };
         // fidelity: M6-026 - the bus's u16 max instances (bus+0x44) and byte B (D6.1: b0 -> +0x45 bit2, b1 -> +0x45 bit3,
         // b2 -> +0x47 bit6) are what the bus limiter reads. The reader above refuses a B with bits 0..3 set, so B is 0
         // for every bus this reader returns.
-        return new WwiseBusNode(id, o.Bank, p, effects, ducked) { MaxInstances = maxInst, ByteB = b, ByteC = c, RecoveryMs = recoveryMs };
+        // fidelity: M6-001, M6-025
+        // The engine keeps the A byte (0x9C6458..0x9C6464), the channel config (0x9C64C4..0x9C665C), the max duck (stored to [bus+0x6C] at 0x9C40D8), the whole duck entries
+        // (0x9C3E94 takes the curve and target-property bytes), the FX bypass byte, the mixer id and flag (0x9C0FC0) and the attach byte ([+0x45] bit 5): all are retained now.
+        return new WwiseBusNode(id, o.Bank, p, effects, ducked)
+        {
+            MaxInstances = maxInst, ByteB = b, ByteC = c, RecoveryMs = recoveryMs,
+            ByteA = a, ChannelConfig = channelConfig, MaxDuck = maxDuck, DuckEntries = duckEntries,
+            FxBypass = fxBypass, MixerId = mixerId, MixerFlag = mixerFlag, AttachByte = attach,
+        };
     }
 
     /// <summary>

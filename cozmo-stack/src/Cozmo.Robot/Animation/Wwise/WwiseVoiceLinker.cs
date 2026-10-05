@@ -123,15 +123,17 @@ public sealed class WwiseOutputDeviceList
 /// values for the shipped buses are RECOVERABLE_GAP (Init.bnk bus fields <c>+0x28/+0x40/+0x46/+0x54/+0x68</c>),
 /// so the caller fills them; this class owns only the predicate and the walk.
 /// </summary>
-public sealed class WwiseRoutingNode
+public sealed class WwiseRoutingNode : WwiseRegistryObject
 {
-    // fidelity: M6-025
-
-    /// <summary><c>[node+8]</c>: the object id (a bus's id is what <c>0xA68A2C</c> keys on).</summary>
-    public uint Id { get; init; }
+    // fidelity: M6-025, M6-001
+    // <c>[node+8]</c> (the object id; a bus's id is what <c>0xA68A2C</c> keys on) and <c>[node+0xC]</c> (the reference count, one field for every AddRef/Release) are the
+    // base class's (WwiseRegistryObject, 0x9D0418): the graph loader and the PBI table (WwiseNodeRefTable) read and write the same count.
 
     /// <summary>True for a bus (vtable slot <c>0x9C2A30</c>); false for Sound/RanSeq/Switch/ActorMixer/Layer (<c>0x9F1E3C</c>).</summary>
     public bool IsBus { get; init; }
+
+    /// <summary>The registry table of the node: <c>[node+0x46]</c> bit 2 (<c>0x9A80B8</c>) clear is table A, set is table B (C44.1 B4).</summary>
+    public override WwiseRegistryTable Table => (Byte46 & 4) != 0 ? WwiseRegistryTable.B : WwiseRegistryTable.A;
 
     /// <summary><c>[node+0x38]</c>: the output bus (for a bus, its parent bus, C23 row 10).</summary>
     public WwiseRoutingNode? OutputBus { get; set; }
@@ -166,8 +168,76 @@ public sealed class WwiseRoutingNode
         set => Word68 = (Word68 & ~0xFFu) | value;
     }
 
-    /// <summary>Bus: <c>[bus+0x46]</c>; bit7 is tested here and bit7/bits3..4 by <c>0xA689B8</c>; bit 0 gates the state list <c>0x9F9CDC</c>.</summary>
-    public byte Byte46 { get; set; }
+    /// <summary>
+    /// <c>[node+0x44..0x47]</c> of any node as one little-endian word: the u16 at <c>+0x44</c> (bits 0..9 the max instances, <c>0x9ED77C..0x9ED784</c>), then bytes <c>+0x45</c>, <c>+0x46</c>, <c>+0x47</c>.
+    /// The base constructor <c>0x9F402C</c> leaves <c>0x4000 | 0x21 &lt;&lt; 16 | (pool &amp; 0x80) &lt;&lt; 24</c> (C44.1 B2 with V1).
+    /// </summary>
+    public uint Dword44 { get; set; }
+
+    /// <summary><c>[node+0x44]</c> as a u16 (bits 0..9: max instances).</summary>
+    public ushort Word44 { get => (ushort)Dword44; set => Dword44 = (Dword44 & 0xFFFF0000u) | value; }
+
+    /// <summary><c>[node+0x45]</c>.</summary>
+    public byte Byte45 { get => (byte)(Dword44 >> 8); set => Dword44 = (Dword44 & 0xFFFF00FFu) | ((uint)value << 8); }
+
+    /// <summary>Bus: <c>[bus+0x46]</c>; bit7 is tested here and bit7/bits3..4 by <c>0xA689B8</c>; bit 0 gates the state list <c>0x9F9CDC</c>. Any node: byte 2 of <see cref="Dword44"/>.</summary>
+    public byte Byte46 { get => (byte)(Dword44 >> 16); set => Dword44 = (Dword44 & 0xFF00FFFFu) | ((uint)value << 16); }
+
+    /// <summary><c>[node+0x47]</c>.</summary>
+    public byte Byte47 { get => (byte)(Dword44 >> 24); set => Dword44 = (Dword44 & 0x00FFFFFFu) | ((uint)value << 24); }
+
+    /// <summary><c>[node+0x58..0x59]</c> (Sound, ActorMixer, RanSeq, Switch, Layer): written by <c>0x9EDC84</c> (bits 3..5, <c>[+0x59]</c> bit 7) and <c>0x9ED730</c>.</summary>
+    public ushort Word58 { get; set; }
+
+    /// <summary><c>[node+0x58]</c>.</summary>
+    public byte Byte58 { get => (byte)Word58; set => Word58 = (ushort)((Word58 & 0xFF00) | value); }
+
+    /// <summary><c>[node+0x59]</c>.</summary>
+    public byte Byte59 { get => (byte)(Word58 >> 8); set => Word58 = (ushort)((Word58 & 0x00FF) | (value << 8)); }
+
+    /// <summary><c>[node+0x30]</c>: the limiter object (<c>0x9F45C4</c>); zero for every node the loader builds (<c>0x9F402C</c> zeroes <c>+0x24..0x40</c>), and the engine's load-time callbacks do nothing while it is zero (C44.1 V3, V4). Non-null is not modelled.</summary>
+    public object? Node30 { get; set; }
+
+    /// <summary><c>[node+0x4C]</c>: a non-bus node's ranged property bundle (<c>0x9ED638</c>, 8-byte entries); null when the count byte is 0.</summary>
+    public WwiseParamBundle? RangedBundle4C { get; set; }
+
+    /// <summary><c>[node+0x54]</c> of a non-bus node: the four aux ids (<c>0x9ED910..0x9ED998</c>); null is the zero pointer. (A bus's <c>[+0x54]</c> is <see cref="Word54"/>.)</summary>
+    public uint[]? AuxIds54 { get; set; }
+
+    /// <summary>ActorMixer: the id-sorted child array <c>[+0x5C]</c> (count <c>[+0x60]</c>, capacity <c>[+0x64]</c>, <c>0x981A54..0x981AC0</c>).</summary>
+    public List<WwiseRoutingNode> Children5C { get; } = new();
+
+    /// <summary>ActorMixer: <c>[+0x64]</c>, the child array capacity (<c>0xA66A74</c> stores the child count).</summary>
+    public int ChildCapacity64 { get; set; }
+
+    /// <summary>Bus: the sorted array of non-bus children <c>[bus+0x48]</c> (count <c>+0x4C</c>, capacity <c>+0x50</c>, <c>0x9C1968..0x9C1A00</c>).</summary>
+    public List<WwiseRoutingNode> NonBusChildren48 { get; } = new();
+
+    /// <summary>Bus: <c>[bus+0x50]</c>, the capacity of <see cref="NonBusChildren48"/>. Not modelled (0): the growth policy of the bus arrays is not in the inventory.</summary>
+    public int NonBusCapacity50 { get; set; }
+
+    /// <summary>Bus: the sorted array of bus children <c>[bus+0x58]</c> (count <c>+0x5C</c>, capacity <c>+0x60</c>, <c>0x9C18F4..0x9C1934</c>).</summary>
+    public List<WwiseRoutingNode> BusChildren58 { get; } = new();
+
+    /// <summary>Bus: <c>[bus+0x60]</c>, the capacity of <see cref="BusChildren58"/>. Not modelled (0): the growth policy of the bus arrays is not in the inventory.</summary>
+    public int BusCapacity60 { get; set; }
+
+    /// <summary>Bus: <c>[bus+0x64]</c>, the recovery time in samples: the bank's recovery ms times the host rate over 1000, or 0 when at or below the host floor (<c>0x9C4094..0x9C40EC</c>).</summary>
+    public uint RecoverySamples64 { get; set; }
+
+    /// <summary>Bus: the duck entries <c>[bus+0x70]</c> (tail <c>+0x74</c>, count <c>+0x84</c>, capacity <c>+0x80</c> = 0x64 from the constructor), appended by <c>0x9C3E94</c> in bank order.</summary>
+    public List<WwiseDuckEntry> DuckList70 { get; } = new();
+
+    /// <summary>Sound: <c>[+0x5C]</c> (the member's source id, <c>0xA1EA68</c> / <c>0xA1EB58</c>).</summary>
+    public uint SourceId5C { get; set; }
+    /// <summary>Sound: <c>[+0x60]</c> (the source id again; -1 for a source-plug-in Sound).</summary>
+    public uint SourceId60 { get; set; }
+    /// <summary>Sound: <c>[+0x64]</c> (the in-memory size).</summary>
+    public uint InMemorySize64 { get; set; }
+    /// <summary>Sound: <c>[+0x6C]</c>.</summary>
+    public uint Field6C { get; set; }
+    /// <summary>Sound: <c>[+0x70]</c> (the plug-in id; -1 for a source-plug-in Sound).</summary>
+    public uint Plugin70 { get; set; }
 
     /// <summary>Bus: <c>[bus+0x40]</c>; <c>&amp; 0xE0000</c> is tested here, at <c>0xA42210</c> and <c>0x9BC9FC</c>.</summary>
     public uint Word40 { get; set; }
@@ -243,7 +313,11 @@ public sealed class WwiseRoutingNode
     /// <summary><c>node+0x10</c>: the address that keys the node's subscriptions in the RTPC manager (<c>0xA11590</c>'s second argument; <see cref="WwiseRtpcStore.AddSubscription"/>).</summary>
     public uint SubscriptionKey10 { get; init; }
 
-    /// <summary><c>[[node+0x24]+0xC]</c>: the ranged bundle whose FIRST float <c>0x9C39DC</c> adds (step 4); null when either pointer is zero.</summary>
+    /// <summary>
+    /// <c>[[node+0x24]+0xC]</c>: the ranged bundle whose FIRST float <c>0x9C39DC</c> adds (step 4); null when either pointer is zero. For a BUS this is a field of the 0x14-byte block
+    /// <c>0x9C2ADC</c> allocates; its <c>+0xC</c> is stored 0 at <c>0x9C2BF4</c> and the writer that makes it non-zero is unread (C44.1 section 4), so the graph loader leaves it null for buses.
+    /// A non-bus node's ranged bundle is <see cref="RangedBundle4C"/> (<c>0x9ED638</c>), NOT this field.
+    /// </summary>
     public WwiseParamBundle? RangedBundle24 { get; set; }
 
     /// <summary><c>[node+0x18]</c>: the state list <c>0x9F9CDC</c> walks (gated by <see cref="Byte46"/> bit 0); null is the zero pointer.</summary>
@@ -255,7 +329,10 @@ public sealed class WwiseRoutingNode
     /// <summary><c>[node+0xA8]</c>: the same for <c>p == 5</c>.</summary>
     public List<float> DuckA8 { get; } = new();
 
-    /// <summary><c>[node+0x6C]</c>: the max-duck floor; the bus constructor stores <c>0xC2C0999A</c> (-96.3f, <c>0x9C3658</c>).</summary>
+    /// <summary>
+    /// <c>[node+0x6C]</c>: the max-duck floor. The bus constructor stores <c>0xC2C0999A</c> (<c>0x9C3658</c>), and the bus init then OVERWRITES it with the bank's max-duck float
+    /// (<c>0x9C40D8</c>; <c>0xC2C00000</c> = -96.0 on all 15 shipped buses, C44.1 D7 and V-section): the constructor value is what an unloaded bus has, not what a loaded one has.
+    /// </summary>
     public float MaxDuck6C { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0xC2C0999A));
 
     /// <summary>
@@ -300,6 +377,12 @@ public sealed class WwiseMasterBusRegistry
     /// <summary><c>[0x108D9B0+0x10]</c>: the second parentless bus.</summary>
     public WwiseRoutingNode? Secondary { get; private set; }
 
+    /// <summary><c>[0x108D9B0+8]</c>: stored -1 when a bus becomes the master (<c>0x9C4314..0x9C432C</c>) and by the reset <see cref="Reset9C5DB4"/>.</summary>
+    public uint MasterField8 { get; private set; }
+
+    /// <summary><c>[0x108D9B0+0x14]</c>: stored -1 when a bus becomes the second parentless bus (<c>0x9C4034..0x9C4064</c>) and by the reset.</summary>
+    public uint SecondaryField14 { get; private set; }
+
     /// <summary>Registers a parentless bus (<c>[r1+4] == 0</c>).</summary>
     public void RegisterParentless(WwiseRoutingNode bus)
     {
@@ -307,13 +390,24 @@ public sealed class WwiseMasterBusRegistry
         if (Master is null)                                      // 0x9C4314..0x9C4328
         {
             Master = bus;
+            MasterField8 = 0xFFFFFFFFu;                          // 0x9C4314..0x9C432C: [g+8] = -1
             bus.Bit6 = true;
         }
         else if (!ReferenceEquals(bus, Master) && Secondary is null)   // 0x9C4038..0x9C4064
         {
             Secondary = bus;
+            SecondaryField14 = 0xFFFFFFFFu;                      // [g+0x14] = -1
             bus.Bit6 = false;
         }
+    }
+
+    /// <summary><c>0x9C5DB4</c> (C44.1 A6): zeroes the master <c>[g+4]</c> and the second <c>[g+0x10]</c> and stores -1 to <c>[g+8]</c> and <c>[g+0x14]</c>; run by the HIRC walker before the first absent bus of a load (<c>0x9B2E44</c>).</summary>
+    public void Reset9C5DB4()
+    {
+        Master = null;
+        Secondary = null;
+        MasterField8 = 0xFFFFFFFFu;
+        SecondaryField14 = 0xFFFFFFFFu;
     }
 
     /// <summary>

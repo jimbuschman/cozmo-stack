@@ -10,10 +10,18 @@ public sealed class WwiseNodeRefTable
 {
     private readonly Dictionary<uint, int> _extra = new();
 
+    /// <summary>
+    /// The registry whose runtime node holds the real <c>[node+0xC]</c> (B-M6b-4 batch 6c, C44.1 B1/B6). When set, <see cref="AddRef9F1CBC"/> increments THAT field, the one the HIRC loader, the links and the bus AddRef
+    /// (<see cref="WwiseRuntimeRegistry.BusAddRef"/>) also write, so there is one count per node and not two tables; <see cref="ReferencesOf"/> still reports the PBIs' own references. Null keeps the PBI-only count.
+    /// </summary>
+    // fidelity: M6-001
+    public WwiseRuntimeRegistry? Registry { get; set; }
+
     /// <summary><c>0x9F1CBC(node)</c>: <c>[node+0xC]++</c>; returns the references held by PBIs on that node after it.</summary>
     public int AddRef9F1CBC(WwiseNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        Registry?.Find(WwiseRegistryTable.A, node.Id)?.AddRef9F1CBC();                 // the shared [node+0xC]
         _extra[node.Id] = _extra.GetValueOrDefault(node.Id) + 1;
         return _extra[node.Id];
     }

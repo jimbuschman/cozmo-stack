@@ -2224,7 +2224,7 @@
         "conditional branches the shipped banks never exercise (3D positioning 0x9ECF44, bus A/B bits, the LayerCntr layer body): the rows are partial and the code fails closed (throws) rather than guessing"
       ],
       "live_path": true,
-      "test": "WwiseTests.EveryHierarchyObjectInTheShippedBanksConsumesExactly",
+      "test": "WwiseTests.EveryHierarchyObjectInTheShippedBanksConsumesExactly; WwiseRuntimeGraphTests (oracle emu_graph.py scope: the real chunk loop 0x9B74D8 and HIRC walker 0x9B3260 under Unicorn over the six shipped banks fed as BKHD and HIRC only (no INIT chunk), with the music hook null (815 music objects skipped) and test doubles for RanSeq/Switch/Layer; stubs: pool allocator with a fill byte, mutexes no-op, 0xA27B20->1, 0xA28198->0, 0x9F24C8->1, 0xA11F98->1, 0xA2BCC8->1, 0xA40E6C/0xA4131C/0xA40FF8/0xA4454C/0xA443E0 return at once, STMG/STID/streamed DATA hooked, zeroed GOT blocks so 0x9B09FC is never called, zeroed RTPC manager; plus 54 synthetic banks), WwiseRuntimeGraphChainTests (the verification table of the shipped chain and the 15 buses, the abort codes, the required seams, the shared reference count)",
       "effect": "a bank object is read with different fields",
       "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
       "unresolved": "compare the code against the inventory rows; the unread conditional branches (positioning, bus A/B bits, the LayerCntr layer body) stay gaps",

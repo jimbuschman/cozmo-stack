@@ -289,7 +289,7 @@ public class WwiseBusWalkTests
         var seams = new WwiseBusCtorSeams
         {
             BaseCtor9F402C = n => { log.Add("9F402C"); n.Word68 = 0xAAAAAAAA; n.Word54 = 0xAAAAAAAA; n.Byte46 = 0xAA; n.ByteCC = 0xAA; n.MaxDuck6C = BitConverter.UInt32BitsToSingle(0xAAAAAAAA); n.Duck8C.Add(1f); n.DuckA8.Add(2f); },
-            Init9A19F94 = _ => log.Add("A19F94"),
+            InitA19F94 = _ => log.Add("A19F94"),
             Post9F40F4 = _ => log.Add("9F40F4"),
         };
         var bus = WwiseBusWalk.ConstructBus9C3620(0x1234ABCD, category, seams);
@@ -387,10 +387,15 @@ public class WwiseBusWalkTests
                 Assert.Equal(chunk.Value.Share, bus.Fx28.Share);
             }
         }
-        // The mixer record's body is open: unset it is a visible stop.
+        // The mixer record 0x9C0FC0 (C44.1 D9, [R] 0x9C0FD8..0x9C0FDC, 0x9C106C): with id 0 and [bus+0x54] == 0 it returns 1 with no effect (the previous version of this test, from before C44.1,
+        // expected a stop here); any other id is not read: unset it is a visible stop.
         var b = new WwiseRoutingNode { Id = 1, IsBus = true };
         int p = 0;
-        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseBusWalk.ReadFxList9C0D08(b, new byte[] { 0, 0, 0, 0, 0, 0 }, ref p, new WwiseBusReaderSeams()));
+        Assert.Equal(1, WwiseBusWalk.ReadFxList9C0D08(b, new byte[] { 0, 0, 0, 0, 0, 0 }, ref p, new WwiseBusReaderSeams()));
+        Assert.Equal(6, p);
+        Assert.Equal(0x1F000u, b.Word40);
+        p = 0;
+        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseBusWalk.ReadFxList9C0D08(b, new byte[] { 0, 7, 0, 0, 0, 0 }, ref p, new WwiseBusReaderSeams()));
     }
 
     // ------------------------------------------------------------------ R10

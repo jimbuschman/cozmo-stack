@@ -298,7 +298,7 @@ public class WwiseRuntimeTests
         U32(b, 0);                  // parent
         b.Add(0);                   // property count
         b.Add(0);                   // A
-        b.Add(0x01);                // B: b0 set, body not recovered
+        b.Add(0x08);                // B: b3 set, body not recovered (C44.1 D8: only bit 3 calls 0x9C62AC, 0x9C6560; bits 0..2 are the plain stores 0x9F627C, 0x9F68D8 and [+0x47] bit 6, so a B with bit 0 set is no longer refused)
         var bank = WwiseBank.Parse(File(1, false, Hirc(((byte)8, b.ToArray()))), "t.bnk");
         Assert.Null(WwiseHierarchy.TryRead(bank.Objects[60], out var problem));
         Assert.Contains("not recovered", problem);
