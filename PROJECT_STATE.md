@@ -32,6 +32,8 @@ ActionList.
 Work already in flight (B-ACTIONS, B-FACE, B-M6b-4, R-FIX3 and the parked branches) is finished or parked as it
 stands. Nothing new starts outside the current layer.
 
+**Audio (operator, 2026-10-05):** ADP-1 in AGENTS.md. Exact decisions, equivalent per-sample DSP, with thresholds measured against the emulator (`jobs/B-ADP-HARNESS.md`). No bulk reclassification.
+
 **Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 22 records:
 - 9 built, with the defects in their `unresolved`;
 - 10 policy records to confirm;

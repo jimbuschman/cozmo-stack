@@ -393,3 +393,7 @@ M9-002's evidence address is corrected to `0x005EEDCA` and its wording to
 ## Correction A1 (manager audit, 2026-09-29)
 
 The complete audit (`re-analysis/research/20260929-audit-complete.md`) found that some of this subsystem's settled records do not hold. The manager re-checked the central findings in the binary. Those records go back to IMPLEMENTATION_GAP, each with its defect in `unresolved`, to be rebuilt from the cited source. The report's findings are the rows for the rebuild, subject to the rebuilding job's own citation check.
+
+## ADP-1 (operator decision, 2026-10-05)
+
+The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample DSP arithmetic may become EQUIVALENT_IMPLEMENTATION; every decision stays exact. No record is reclassified by this note. Each mixed record states its boundary in `unresolved`, and moves only when its equivalent part passes the equivalence test (`jobs/B-ADP-HARNESS.md`).

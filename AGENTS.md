@@ -8,6 +8,42 @@ The goal is source-faithful app-side behavior, not merely behavior that appears 
 
 The goal is exact reproduction (operator, 2026-09-27). Whatever ships in the APK or the OBB is reproduced exactly, however much extraction it takes. EQUIVALENT_IMPLEMENTATION is only for behaviour whose code doesn't ship at all, such as the phone's system libraries. Never ask the operator whether "equivalent" would do.
 
+### Audio DSP policy ADP-1 (operator, 2026-10-05): the one exception
+
+In the audio layers (M6, M9), **per-sample DSP arithmetic** may be EQUIVALENT_IMPLEMENTATION, although its code ships
+in the Wwise runtime inside `libcozmoEngine.so`. Nothing else may.
+
+**Still exact:**
+- bank parsing and the object graph;
+- event and action order;
+- the RNG, random/sequence choice, shuffle, avoid-repeat and weights;
+- switches, states and RTPC values;
+- voice limits, ducking decisions and routing;
+- the plug-in and FX selection, parameters, enable/bypass state and slot order;
+- start, stop, seek and pause, and all timing and scheduling;
+- WEM decoding (Vorbis and ADPCM);
+- MIDI, note and singing decisions;
+- the robot output stream's framing: 22320 Hz, 744-byte chunks, chunk boundaries, start and end positions.
+
+**May be equivalent, and nothing more:**
+- the floating-point arithmetic of mixing, gain application, filters (LPF/HPF/biquad), EQ, compressor and limiter
+  bodies, and the resampler;
+- NEON lane order;
+- the phone's libm rounding.
+
+**Rules:**
+1. **A record that mixes both** states its boundary in `unresolved`: which steps are exact, and which per-sample
+   arithmetic is EQUIVALENT_IMPLEMENTATION under ADP-1. It is never reclassified in bulk. It moves only when its
+   equivalent part passes the equivalence test.
+2. **The equivalence test** uses the engine's own audio code run under `re-analysis/tools/emu/` as the reference, over
+   a corpus that exercises each DSP path.
+   - Structure is checked first, pass/fail: frame counts, chunk boundaries, start and end sample positions,
+     silent/non-silent regions, no timing offset.
+   - Only then is PCM error measured: RMS/SNR and maximum absolute error.
+   - The thresholds are set from measurement on that corpus, written down, and then enforced.
+3. **External tools** (wwiser, vgmstream, PyCozmo) are authority 6: cross-checks only. They run locally; the shipped
+   banks are not uploaded anywhere.
+
 ## Primary rule
 
 NEVER fill an unknown behavior with a plausible implementation and then treat it as recovered.

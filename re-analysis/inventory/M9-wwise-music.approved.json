@@ -1,8 +1,8 @@
 {
   "subsystem": "M9-wwise-music",
-  "approved": "2026-09-29",
+  "approved": "2026-10-05",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "5745977ef0765d66bd44361677613885da0a3be2d4413c17d4ceb365d9c9ed3c",
+  "inventory_sha256": "df3d7ba51923d02d038900c3f80f28d07c36c02b5e3b1d4aff83120f6cdd4c66",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",

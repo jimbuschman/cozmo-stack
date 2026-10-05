@@ -171,7 +171,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M9-wwise-music.md",
-        "approved": "2026-09-29",
+        "approved": "2026-10-05",
         "snapshot": "re-analysis/inventory/M9-wwise-music.approved.json"
       }
     },

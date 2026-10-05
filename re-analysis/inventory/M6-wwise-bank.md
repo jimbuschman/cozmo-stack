@@ -3150,3 +3150,7 @@ fast-pow `DbToLinear` is not used by the output-gain stage, which is `powf(10.0f
 - **Records touched (text only, no status):** M6-013 (the DSP of the unlinked path is source-complete; slot resolution/holder/ctx
   steps are pass 14), M6-014, M6-015, M6-022. Still open: P1/P3 limiter variants, EQ type > 6, the callers of bus `vt+0x118`,
   `0xAE3090`.
+
+## ADP-1 (operator decision, 2026-10-05)
+
+The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample DSP arithmetic may become EQUIVALENT_IMPLEMENTATION; every decision stays exact. No record is reclassified by this note. Each mixed record states its boundary in `unresolved`, and moves only when its equivalent part passes the equivalence test (`jobs/B-ADP-HARNESS.md`).
