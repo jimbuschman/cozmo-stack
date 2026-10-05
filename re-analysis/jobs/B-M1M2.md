@@ -66,3 +66,16 @@ The manager re-read in the binary:
   - The M1 parts are built.
   - Each higher-layer obligation becomes a new record in its own layer, with its citation. That inventory correction
     is approved with `fidelity.py --approve` under the operator's standing authorisation for cited corrections.
+
+## M1-029 unblocked (manager, 2026-10-05)
+
+**The rows:** item 6 of `research/20260930-bcore-extractions.md`, with the corrections in
+`research/20261005-B-M1M2-rows-check.md` ("Item 6"). A correction wins over the original row. The manager re-read the
+three corrected rows in the binary:
+- the INT32_MAX intValue cutoff (`0x008E1E50..0x008E1E5A`);
+- the object close accepted when the last decoded key is empty (`0x008E0FA6..0x008E0FBA`);
+- the whitespace mask 0x00800013 relative to byte 9, which is exactly tab, newline, carriage return and space
+  (`0x008E166E..0x008E168C`).
+
+**What to build:** M1-029 as an exact port of the shipped jsoncpp reader for the firmware JSON. It replaces
+System.Text.Json on that path. The exception destination stays UNVERIFIABLE: record it as MISSING; don't invent it.
