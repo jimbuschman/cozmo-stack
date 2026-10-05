@@ -8,7 +8,7 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// for a voice-stage ratio of 1.0; inside [-800,-100] U [-250,250] U [100,600] those are -795, -759, -149, -94, -80, 16, 20, 172, 218, 316, 411, 455, 486, 507 and 525. The shipped values -800, -750, -600, -500 and -230 are not
 /// sensitive. The Hijack stage calls it with 0.0 cents, so <c>powf(2, 0) = 1</c> exactly and its step does not depend on libm.</para>
 /// </summary>
-public static class WwiseHostMath
+public static partial class WwiseHostMath
 {
     /// <summary>The binary32 correctly rounded <c>x^y</c> (the host stand-in for the phone's <c>powf</c>).</summary>
     public static float Powf(float x, float y) => (float)Math.Pow(x, y);
