@@ -84,8 +84,8 @@ public sealed class WwiseEventRuntime
     private readonly Dictionary<uint, WwiseObject> _objects = new();
     private readonly Dictionary<uint, WwiseAction?> _actionCache = new();
     private readonly Dictionary<uint, WwiseNode?> _nodeCache = new();
-    private readonly HashSet<uint> _registeredGameObjects = new();
-    private readonly Queue<WwiseQueuedEvent> _messages = new();
+    private readonly Dictionary<uint, WwiseGameObjectRef> _gameObjects = new();
+    private readonly Queue<WwiseQueuedMessage> _messages = new();
     private readonly List<PendingAction> _pending = new();
     private readonly List<WwiseActionExecution> _log = new();
     private readonly WwiseRng _rng;
@@ -102,8 +102,11 @@ public sealed class WwiseEventRuntime
         _rng = rng ?? new WwiseRng();
     }
 
-    /// <summary>Type-1 queue messages posted but not yet pumped (gapA 1.2).</summary>
-    public int QueuedEventCount => _messages.Count;
+    /// <summary>Type-1 queue messages (event posts) posted but not yet pumped (gapA 1.2).</summary>
+    public int QueuedEventCount => _messages.Count(m => m is WwiseQueuedEvent);
+
+    /// <summary>Every queue message not yet pumped: the type-1 event posts and the type 0x12 / 0x13 game-object messages (C40.4).</summary>
+    public int QueuedMessageCount => _messages.Count;
 
     /// <summary>Delayed actions waiting in the pending list (gapA 1.5).</summary>
     public int PendingActionCount => _pending.Count;
@@ -121,8 +124,23 @@ public sealed class WwiseEventRuntime
     /// <summary>The global LCG this runtime draws from (delay ranges, probability, fade-in).</summary>
     public WwiseRng Rng => _rng;
 
-    /// <summary>Registers a game object so the lookup at gapD D5.5 finds it.</summary>
-    public void RegisterGameObject(uint id) => _registeredGameObjects.Add(id);
+    /// <summary>
+    /// Registers a game object so the lookup at gapD D5.5 finds it. The object is the constructor's <c>0xA0B340..0xA0B420</c> (<see cref="WwiseGameObjectRef.Create0A0B340"/>) with the listener mask the registration stores through <c>0xA0BA28</c>
+    /// (<see cref="WwiseGameObjectRef.SetListenerMaskA0BA28"/>); Anki's registration passes mask 1 (<c>0x8D8CA0 movs r2,#1</c>, C40.4 correction 5), the default here. The registration message handler <c>0xA0C2B8</c> itself (its hash insert and what it does for an id that is already registered)
+    /// is read only for the two <c>0xA0BA28</c> call sites, so registering an id twice keeps the first object and does not store the mask again.
+    /// </summary>
+    // fidelity: M6-010
+    public WwiseGameObjectRef RegisterGameObject(uint id, byte listenerMask = 1)
+    {
+        if (_gameObjects.TryGetValue(id, out var existing)) return existing;
+        var go = WwiseGameObjectRef.Create0A0B340(id);
+        go.SetListenerMaskA0BA28(listenerMask);
+        _gameObjects[id] = go;
+        return go;
+    }
+
+    /// <summary>The registered game object, or null (the lookup <c>0xA0CAFC</c> / <c>0xA0CB78</c> make: a miss returns 2 and the message does nothing).</summary>
+    public WwiseGameObjectRef? FindGameObject(uint id) => _gameObjects.GetValueOrDefault(id);
 
     /// <summary>
     /// The M6-025 Play -> PBI -> voice -> source bridge. When set, a Play whose target resolves is handed
@@ -133,41 +151,94 @@ public sealed class WwiseEventRuntime
     public IWwisePlaybackBridge? PlaybackBridge { get; set; }
 
     /// <summary>Removes a game object; a lookup for it then returns null (gapD D5.5).</summary>
-    public void UnregisterGameObject(uint id) => _registeredGameObjects.Remove(id);
+    public void UnregisterGameObject(uint id) => _gameObjects.Remove(id);
 
     /// <summary>Whether a game object id is registered.</summary>
-    public bool IsGameObjectRegistered(uint id) => _registeredGameObjects.Contains(id);
+    public bool IsGameObjectRegistered(uint id) => _gameObjects.ContainsKey(id);
 
     /// <summary>
-    /// Queued PostEvent (gapA 1.1/1.2). Looks the event up; not found → <see cref="InvalidPlayingId"/>
-    /// and nothing enqueued. Otherwise assigns a playing id with an atomic increment of the global counter
-    /// and reserves a type-1 message holding the event. Nothing executes on this thread.
+    /// Queued PostEvent (<c>0x9A6704 -> 0x9A0EF8</c>, gapA 1.1/1.2, C40.1). Looks the event up; not found → <see cref="InvalidPlayingId"/> and nothing enqueued. Otherwise assigns a playing id with an atomic increment of the global counter, writes the playing-id entry
+    /// with <c>0xA03108</c> (<see cref="WwisePlayingIdTable.CreateEntryA03108"/>: the event id, the game object id, the callback, the cookie and the flags, <c>[+0x1C] = 1</c> for the in-flight message) and reserves a type-1 message holding the event. Nothing executes on this thread. An entry whose
+    /// creation fails (<c>0xA03108</c> returns 2) drops the message and returns 0 (<c>0x9A1040..0x9A1058</c>). Only the <c>numExternals == 0</c> path of <c>0x9A6704</c> is built (it tail-calls <c>0x9A0EF8</c>, <c>0x9A6704..0x9A6714</c>): with external sources it first builds a holder with
+    /// <c>0x9A65C0</c>, which is unread, so the C# has no external-source parameter. The Anki callback context is <paramref name="callback"/> and <paramref name="cookie"/>; the playing-id counter's start value (<c>[g+0xF8]</c>) is not in any row (it starts at 0 here).
     /// </summary>
     /// <param name="eventId">The event to post.</param>
-    /// <param name="gameObjectId">The game object, or null; the pump resolves it (gapD D5.5).</param>
+    /// <param name="gameObjectId">The game object, or null; the pump resolves it (gapD D5.5). Stored raw at <c>[item+0x24]</c> (a null leaves it unset).</param>
     /// <param name="targetPlayingId">ExecuteEvent's fourth argument (msg+0x10; gapD D5.1).</param>
-    public uint PostEvent(uint eventId, uint? gameObjectId = null, uint targetPlayingId = 0)
+    /// <param name="flags">The Wwise callback flags (<c>[item+0x48]</c>). Anki's wrapper <c>0x8D8CE4</c> passes only 0, 1, 5, 9 or 13 (C40.1 correction 11).</param>
+    /// <param name="callback">The callback (<c>[item+0x40]</c>; Anki's is <c>0x8D8D41</c>); null clears the callback-less flag bits.</param>
+    /// <param name="cookie">The cookie (<c>[item+0x44]</c>; Anki's is the callback context pointer).</param>
+    // fidelity: M6-006, M6-016
+    public uint PostEvent(uint eventId, uint? gameObjectId = null, uint targetPlayingId = 0,
+                          uint flags = 0, Action<int, object>? callback = null, object? cookie = null)
     {
-        if (!TryGetEvent(eventId, out _)) return InvalidPlayingId;             // gapA 1.2
-        uint playingId = unchecked((uint)Interlocked.Increment(ref s_nextPlayingId));
-        PlayingCountIncrement(playingId);                                     // the in-flight message, gapD D3.1
-        var entry = PlayingIds.GetOrCreate(playingId);
-        PlayingItemFieldsWriter?.Invoke(entry, eventId, gameObjectId);        // [item+0x20]/[item+0x24] have no adopted writer (MISSING): left unset without this seam, and 0xA03618's readers throw
+        if (!TryGetEvent(eventId, out _)) return InvalidPlayingId;             // gapA 1.2: 0x9A0F30..0x9A0F40
+        uint playingId = unchecked((uint)Interlocked.Increment(ref s_nextPlayingId));   // 0x9A0FE4..0x9A1008
+        if (PlayingIds.CreateEntryA03108(playingId, eventId, gameObjectId, callback, cookie, flags) != 1)   // 0x9A103C bl 0xA03108; 0x9A1040 cmp r0,#1
+            return InvalidPlayingId;                                           // 0x9A1048..0x9A1058: the refs dropped, [msg+2] = 0x38, return 0
         _messages.Enqueue(new WwiseQueuedEvent(playingId, eventId, gameObjectId, targetPlayingId));
         return playingId;
     }
 
     /// <summary>
-    /// The message pass (0x9ADFD8, gapA 1.3): each type-1 message resolves its game object and runs
-    /// ExecuteEvent. Returns how many messages were pumped.
+    /// <c>0x9A0354(goId, pairs, n)</c> (C40.4 T-A1): <c>n &gt; 4</c> returns 0x1F and queues nothing; otherwise it queues message type 0x12 (<c>[msg+4] = goId</c>, <c>[msg+0xC] = n</c>, the pairs copied) and returns 1. Anki's <c>0x8D913E</c> reports success only for 1 (and 0 when its engine flag
+    /// <c>this[0]</c> is clear). The queued message is handled in the pump (<c>0x9AEDE0 -> 0xA0CAFC -> 0xA0BA3C</c>).
     /// </summary>
+    // fidelity: M6-010
+    public int SetGameObjectAuxSendValuesA9A0354(uint gameObjectId, IReadOnlyList<(uint BusId, float Gain)> pairs)
+    {
+        ArgumentNullException.ThrowIfNull(pairs);
+        if (pairs.Count > 4) return 0x1F;                                      // 0x9A0354 cmp r2,#4; bls; mov r0,#0x1f
+        _messages.Enqueue(new WwiseQueuedAuxSendValues(gameObjectId, pairs.ToArray()));   // 0x9A037C mov r1,#0x12; 0x9A039C..0x9A03A8
+        return 1;
+    }
+
+    /// <summary>
+    /// The Anki wrapper <c>0x8D913E</c> (tail-called by <c>0x8D290C</c>, which first tests its own byte at <c>[this+4]</c>; C40.4 T-A1): <paramref name="engineReady"/> is the byte <c>[this]</c>, which when zero returns 0 (<c>0x8D9142..0x8D914A</c>, <c>0x8D91B4</c>); otherwise it passes the pairs to
+    /// <c>0x9A0354</c> (an empty list as a null pointer and a count of 0, <c>0x8D91A2..0x8D91A8</c>) and returns 1 only for the engine's result 1 (<c>0x8D91AE cmp r5,#1; movne r5,#0</c>), so 5 pairs (0x1F) give 0.
+    /// </summary>
+    // fidelity: M6-010, M6-016
+    public bool SetGameObjectAuxSendValuesA8D913E(bool engineReady, uint gameObjectId, IReadOnlyList<(uint BusId, float Gain)> pairs)
+        => engineReady && SetGameObjectAuxSendValuesA9A0354(gameObjectId, pairs) == 1;
+
+    /// <summary>The Anki wrapper <c>0x8D91BA</c> (<c>SetGameObjectOutputBusVolume</c>): <paramref name="engineReady"/> (<c>[this]</c>) zero returns 0 (<c>0x8D91D0</c>); otherwise <c>0x9A044C(goId, v)</c> and 1 only for the engine's result 1 (<c>0x8D91C8..0x8D91CC</c>).</summary>
+    // fidelity: M6-010, M6-016
+    public bool SetGameObjectOutputBusVolumeA8D91BA(bool engineReady, uint gameObjectId, float volume)
+        => engineReady && SetGameObjectOutputBusVolumeA9A044C(gameObjectId, volume) == 1;
+
+    /// <summary><c>0x9A044C(goId, v)</c> (C40.4 T-A2b): queues message type 0x13 (<c>[msg+4] = goId</c>, <c>[msg+0x14] = v</c>, <c>[msg+0xC] = -1</c>) and returns 1. Its handler is <c>0x9AEDBC -> 0xA0CB78</c>.</summary>
+    // fidelity: M6-010
+    public int SetGameObjectOutputBusVolumeA9A044C(uint gameObjectId, float volume)
+    {
+        _messages.Enqueue(new WwiseQueuedOutputBusVolume(gameObjectId, volume));   // 0x9A0460 mov r1,#0x13; 0x9A0480..0x9A0488
+        return 1;
+    }
+
+    /// <summary>
+    /// The message pass (0x9ADFD8, gapA 1.3, dispatch table <c>0x9AE0B8</c>): in queue order, type 1 resolves its game object and runs ExecuteEvent, type 0x12 stores the game object's aux send values (<c>0x9AEDE0 -> 0xA0CAFC -> 0xA0BA3C</c>) and type 0x13 its output bus volume
+    /// (<c>0x9AEDBC -> 0xA0CB78</c>) (C40.1, C40.4). Returns how many messages were pumped.
+    /// </summary>
+    // fidelity: M6-006, M6-010
     public int PumpMessages()
     {
         int n = 0;
         while (_messages.Count > 0)
         {
             var m = _messages.Dequeue();
-            ExecuteMessage(m);
+            switch (m)
+            {
+                case WwiseQueuedEvent e: ExecuteMessage(e); break;
+                case WwiseQueuedAuxSendValues a:                                  // 0x9AEDE0: 0xA0CAFC(mgr, [msg+4], msg+0x10, [msg+0xC]); a miss returns 2 and the handler ignores it
+                    FindGameObject(a.GameObjectId)?.SetAuxValuesA0BA3C(a.Pairs, a.Pairs.Length);
+                    break;
+                case WwiseQueuedOutputBusVolume v:                                // 0x9AEDBC: 0xA0CB78(mgr, [msg+4], [msg+0x14], [msg+0xC])
+                    if (FindGameObject(v.GameObjectId) is { } go)
+                    {
+                        go.Volume60 = v.Volume;                                   // 0xA0CBE8 str r7,[r5,#0x60]
+                        go.Key78 = -1;                                            // 0xA0CBEC str r6,[r5,#0x78] (r6 = [msg+0xC] = -1)
+                    }
+                    break;
+            }
             n++;
         }
         return n;
@@ -215,12 +286,6 @@ public sealed class WwiseEventRuntime
     // fidelity: M6-026
     public WwisePlayingIdTable PlayingIds { get; } = new();
 
-    /// <summary>
-    /// The writer of <c>[item+0x20]</c> (event id) and <c>[item+0x24]</c> (game object) of a playing-id entry. No adopted row cites it (C31.4 R4.1 gives only readers), so there is no default:
-    /// unset, the fields stay unset and <see cref="WwisePlayingIdTable.EndOfEventA03618"/> / <see cref="WwisePlayingIdTable.DurationA0393C"/> throw <see cref="WwiseMissingBehaviourException"/>.
-    /// </summary>
-    public Action<WwiseEventItem, uint, uint?>? PlayingItemFieldsWriter { get; set; }
-
     // ---------------------------------------------------------------- the pump
 
     private void ExecuteMessage(WwiseQueuedEvent m)
@@ -232,7 +297,7 @@ public sealed class WwiseEventRuntime
 
     /// <summary>The game-object lookup (0xA0C238, gapD D5.5): registered → the object, else null.</summary>
     private uint? ResolveGameObject(uint? raw) =>
-        raw is { } id && _registeredGameObjects.Contains(id) ? id : null;
+        raw is { } id && _gameObjects.ContainsKey(id) ? id : null;
 
     /// <summary>
     /// ExecuteEvent (0x9AA3DC, gapA 1.4): walk the event's actions in bank order. An object-scope action
@@ -378,6 +443,7 @@ public sealed class WwiseEventRuntime
                 TargetNodeId = action.TargetId,                               // params+4 (0xA62B90)
                 // params+8 (0xA62BF0) = [actionctx+0x34]: the registered object for an object-scope action, else 0 (M6-026 5.3, C29.7).
                 GameObjectId = action.ObjectScope ? gameObj : null,
+                GameObjectRef = action.ObjectScope && gameObj is { } registered ? FindGameObject(registered) : null,   // the registered object 0xA0C238 found (C40.3: 0x9BC90C takes a reference on it)
                 Transition = new WwiseFadeInTransition                         // params+0xC (0xA62BFC)
                 {
                     FadeInTime = (float)fadeMs,                               // 0xA62AF0
@@ -529,7 +595,16 @@ public sealed class WwiseEventRuntime
         return cached;
     }
 
-    private sealed record WwiseQueuedEvent(uint PlayingId, uint EventId, uint? RawGameObjectId, uint TargetPlayingId);
+    private abstract record WwiseQueuedMessage;
+
+    /// <summary>Message type 1 (<c>0x9AF244</c>).</summary>
+    private sealed record WwiseQueuedEvent(uint PlayingId, uint EventId, uint? RawGameObjectId, uint TargetPlayingId) : WwiseQueuedMessage;
+
+    /// <summary>Message type 0x12 (<c>0x9AEDE0</c>).</summary>
+    private sealed record WwiseQueuedAuxSendValues(uint GameObjectId, (uint BusId, float Gain)[] Pairs) : WwiseQueuedMessage;
+
+    /// <summary>Message type 0x13 (<c>0x9AEDBC</c>).</summary>
+    private sealed record WwiseQueuedOutputBusVolume(uint GameObjectId, float Volume) : WwiseQueuedMessage;
 
     private sealed record PendingAction(WwiseAction Action, uint? GameObjectId, WwiseQueuedEvent Message,
                                         long LaunchTick, long Frames, long DelaySamples, long SubFrameRemainderSamples);
@@ -700,6 +775,18 @@ public readonly record struct WwiseAudioCallbackContext(ushort CallbackId, byte 
     public byte PostEventFlags => PostEventFlagsFor(ContextBits);
 }
 
+/// <summary>
+/// The callback context as an identity: the engine passes the context's pointer as the cookie (<c>0x8D8CF4</c>, <c>0x8D8D18..0x8D8D32</c>), so the playing-id entry's <c>[+0x44]</c> holds this object, not a number derived from it.
+/// </summary>
+public sealed class WwiseAudioCallbackContextObject
+{
+    /// <summary>The context's values (row B5).</summary>
+    public WwiseAudioCallbackContext Context { get; }
+
+    /// <summary>Creates the identity for a context.</summary>
+    public WwiseAudioCallbackContextObject(WwiseAudioCallbackContext context) => Context = context;
+}
+
 /// <summary>What the engine's audio-input dispatch did with one envelope.</summary>
 public enum WwiseAudioInputOutcome
 {
@@ -728,6 +815,13 @@ public sealed class WwiseAudioInputDispatch
 
     public WwiseAudioInputDispatch(WwiseEventRuntime runtime)
         => _runtime = runtime ?? throw new ArgumentNullException(nameof(runtime));
+
+    /// <summary>
+    /// The Wwise callback the wrapper <c>0x8D8CE4</c> registers when the Post carries a context (<c>0x8D8D41</c>, the Anki trampoline: M6-016 6.2 queues <c>{ctx, info}</c> for the drain and calls <c>0x9A206C</c> for EndOfEvent). Its body is the Anki callback side, which this dispatch
+    /// does not build: the callback is a host input and a Post with a context throws without it (a null callback would silently clear the EndOfEvent flag, <c>0xA031C8</c>).
+    /// </summary>
+    // fidelity: M6-023
+    public Action<int, object>? Callback8D8D41 { get; set; }
 
     /// <summary>The envelope tags AudioUnityInput's ctor subscribes to (row B1): 1..6.</summary>
     public static IReadOnlyList<WwiseGameToEngineTag> SubscribedTags { get; } = new[]
@@ -768,13 +862,23 @@ public sealed class WwiseAudioInputDispatch
             ? new WwiseAudioCallbackContext(ev.CallbackId, callbackContextBits)
             : null;
         // FUN_008D8CE4: the null-context branch sets the flags to 0 (0x008D8D30); only a non-null context
-        // runs the formula (row B6). The flags are computed but not delivered (M6-006 has no flags seam).
+        // runs the formula (row B6). The flags reach the entry (C40.1): 0, 1, 5, 9 or 13.
         byte flags = WwiseAudioCallbackContext.PostEventFlagsFor(ctx);                  // row B6 / 0x008D8CEC
+
+        // A context carries the Wwise callback 0x008D8D41 and the cookie ctx (0x008D8D0C..0x008D8D32); no context passes a null callback and cookie 0 (0x008D8CEC..0x008D8D30).
+        Action<int, object>? callback = null;
+        object? cookie = null;
+        if (ctx is not null)
+        {
+            callback = Callback8D8D41 ?? throw new WwiseMissingBehaviourException(
+                "M6-023 B6: a callback context makes the wrapper register the Anki trampoline 0x8D8D41 as the Wwise callback (the entry keeps the EndOfEvent flag only with a callback, 0xA031C8); supply WwiseAudioInputDispatch.Callback8D8D41");
+            cookie = new WwiseAudioCallbackContextObject(ctx.Value);                   // 0x8D8CF4 strd r3,lr,[sp]; 0x8D8D18..0x8D8D32: the cookie is the context pointer itself
+        }
 
         // AudioMuxInput::HandleMessage(PostAudioEvent) -> AudioMultiplexer::ProcessMessage ->
         // AudioEngineController::PostAudioEvent -> Wwise PostEvent. ExecuteEvent's fourth argument
         // (WwiseEventRuntime.PostEvent's targetPlayingId) is not set by this path, so it is 0.
-        uint playingId = _runtime.PostEvent(ev.AudioEvent, ev.GameObject, 0);           // M6-006
+        uint playingId = _runtime.PostEvent(ev.AudioEvent, ev.GameObject, 0, flags, callback, cookie);   // M6-006
         return new WwiseAudioInputResult(WwiseAudioInputOutcome.Posted, envelopeTag, playingId,
                                          ev.CallbackId, ctx, flags);
     }

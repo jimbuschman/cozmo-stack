@@ -185,11 +185,46 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     public WwisePlayPath? PlayPath { get; set; }
 
     /// <summary>
-    /// <c>0x9BC9FC..0x9BCA1C</c> (the ctx init <c>0x9BC90C</c>, which <c>0xA000E8</c> calls): the walk from the node through the output bus and the parents for a node with <c>[node+0x40] &amp; 0xE0000</c> sets <c>[ctx+0xDD]</c> bit 3. The bits' writers
-    /// (<c>0x9F68D8</c>, <c>0x9F6B44</c>, <c>0x9F627C</c>, <c>0x9F6DB4</c>) are unread, so the test is required.
+    /// <c>0x9BC9FC..0x9BCA1C</c> (the ctx init <c>0x9BC90C</c>, which <c>0xA000E8</c> calls): the walk from the node through the output bus (else the parent) for a node with <c>[node+0x40] &amp; 0xE0000</c> sets <c>[ctx+0xDD]</c> bit 3, no such node clears it. The only writer of
+    /// <c>0xE0000</c> is the Bus loader (<c>0x9C6540/44</c>, from bit 0 of byte C; C40.3 T-N1: the advanced-settings setters <c>0x9F68D8</c>, <c>0x9F6B44</c>, <c>0x9F627C</c>, <c>0x9F6DB4</c> write <c>[node+0x45]</c> / <c>[node+0x47]</c> bits, not these), and all 15 shipped buses have byte C = 2, so the
+    /// flag is false for every shipped chain. Unset, the walk <see cref="WwisePbiContextInit.ChainFlag9BC9FC"/> runs over the runtime graph (<see cref="WwisePlaybackLimiter.RuntimeNodeOf"/> or <see cref="WwisePlayPath.RuntimeNodeOf"/>: the node graph whose loader is unread, so a Play without it
+    /// throws); setting this overrides the walk for a host or test that has the answer.
     /// </summary>
     // fidelity: M6-025
     public Func<WwiseNode, bool>? CtxNodeChainFlag9BC90C { get; set; }
+
+    /// <summary>
+    /// The references <c>0x9BC90C</c> takes on a node (<c>[ctx+0xD4]-&gt;vt+8 = 0x9F1CBC</c>, C40.3). The release at Term (<c>0x9BDD20..0x9BDD2C</c>) is not adopted, so nothing lowers these counts yet.
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseNodeRefTable NodeRefs { get; } = new();
+
+    private bool ChainFlagOf(WwiseNode node)
+    {
+        if (CtxNodeChainFlag9BC90C is { } over) return over(node);
+        var runtimeOf = Limiter?.RuntimeNodeOf ?? PlayPath?.RuntimeNodeOf ?? throw new WwiseMissingBehaviourException(
+            "M6-025 0x9BC9FC..0x9BCA1C: the ctx init walks the runtime node graph ([node+0x38] / [node+0x34], [node+0x40] & 0xE0000), whose loader is unread; supply WwisePlaybackLimiter.RuntimeNodeOf, WwisePlayPath.RuntimeNodeOf or CtxNodeChainFlag9BC90C");
+        var start = runtimeOf(node) ?? throw new WwiseMissingBehaviourException(
+            $"M6-025 0x9BC9FC: the runtime graph has no node for {node.Id}");
+        return WwisePbiContextInit.ChainFlag9BC9FC(start);
+    }
+
+    /// <summary>
+    /// The stores of the PBI context init <c>0x9BC90C</c> that follow the chain test (<c>0x9BCA0C..0x9BCA38</c>, C40.3): <c>[ctx+8]</c> is the game object (<see cref="WwisePlayingInstance.GameObjectRef14"/>) and its <c>[+0x7C]</c> low 30 bits are incremented, then the node's
+    /// <c>vt+8</c> (<c>0x9F1CBC</c>, the AddRef) runs (<see cref="NodeRefs"/>). A Play with no game object reference stops: the engine dereferences <c>[ctx+8]</c> at <c>0x9BCA20</c> (a null is a crash, and a global-scope action's object is 0, M6-026 5.3).
+    /// </summary>
+    // fidelity: M6-025
+    public void ContextInit9BC90C(WwisePlayingInstance pbi, WwiseNode node, WwisePlayInitParams p)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(p);
+        var go = p.GameObjectRef ?? throw new WwiseMissingBehaviourException(
+            "M6-025 C40.3: 0x9BC90C increments [[ctx+8]+0x7C] (0x9BCA20..0x9BCA2C); the Play has no game object reference (WwisePlayInitParams.GameObjectRef): a null object is a native null dereference and the engine's object for a global-scope action is 0");
+        pbi.GameObjectRef14 = go;                                                    // [ctx+8] (0xA19CDC copies the key block {GO, ...} to ctx+8)
+        WwisePbiContextInit.AddGameObjectReference(go);                              // 0x9BCA20..0x9BCA2C
+        NodeRefs.AddRef9F1CBC(node);                                                 // 0x9BCA30..0x9BCA38 ldr r3,[r6]; ldr r3,[r3,#8]; blx r3
+    }
 
     /// <summary>
     /// M6-026: the playback-limit walker. <c>0xA379D8</c> calls <c>node-&gt;vt+0x90</c> = <c>0x9ED2CC</c> at <c>0xA37D94</c> (P4); <see cref="PlaySound"/> is
@@ -266,13 +301,18 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
 
     /// <summary>
     /// The play-position repository (<c>*0x108D8F8</c>, C31.4 R4.3): <c>0xA56414</c> removes a source's record (<c>0xA054D8</c>) when <c>[pbi+4] &amp; 0x100000</c> and <c>0xA56478</c> adds one (<c>0xA05370</c>) under the same test.
-    /// Required when a PBI carries that flag.
+    /// Required when a PBI carries that flag. On the Cozmo path no PBI does: Anki's wrapper <c>0x8D8CE4</c> passes flags only from {0, 1, 5, 9, 13} and <c>0xA03108</c> stores them at <c>[item+0x48]</c> for <c>0xA04D48</c> to copy to <c>pbi+4</c>, so <c>[pbi+4] &amp; 0x100000</c> is never set
+    /// (C40.1, T-E4b): <c>0xA05574</c>, <c>[state+0x1C]</c> and this repository are unreachable from the shipped game; the code stays as it is for a caller that does set the flag.
     /// </summary>
     // fidelity: M6-025, M6-026
     public WwisePlayPositionRepository? PositionRepository { get; set; }
 
-    /// <summary>The host's <c>powf</c> (<c>0x4D6778</c>, the phone's libm) that <c>0xA56478</c> calls as <c>powf(2.0f, pitch / 1200.0f)</c>. Defaults to <see cref="MathF.Pow"/>.</summary>
-    public Func<float, float, float> Powf { get; set; } = MathF.Pow;
+    /// <summary>
+    /// The host's <c>powf</c> (<c>0x4D6778</c>, the phone's libm) that <c>0xA56478</c> calls as <c>powf(2.0f, pitch / 1200.0f)</c>. It defaults to the stack's one host function, <see cref="WwiseHostMath.Powf"/> (the float32 correctly rounded result of the double
+    /// <c>pow</c>; EQUIVALENT_IMPLEMENTATION per C38.2: the phone's libm is not shipped), not <see cref="MathF.Pow"/>, whose last bit is the host runtime's.
+    /// </summary>
+    // fidelity: M6-025
+    public Func<float, float, float> Powf { get; set; } = WwiseHostMath.Powf;
 
     /// <summary>
     /// C27 step 4: <c>0x9EEDA4([pbi+0xE0], out)</c> (<c>0xA01794/0xA017A0</c>), the first-call computation inside <c>0xA01768</c>. The body is read (M6-026 P1a) and lives once, in
@@ -436,10 +476,10 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
 
         var descriptor = WwiseSourceDescriptor.FromSound(sound);               // node+0x5c
         var pbi = CreatePbi(p, sound.Id, descriptor, continuous: false,
-            ctxNodeChainFlag: (CtxNodeChainFlag9BC90C ?? throw new WwiseMissingBehaviourException(
-                "M6-025 0x9BC9FC..0x9BCA1C: the ctx init walks the node chain for [node+0x40] & 0xE0000, whose writers are unread; supply CtxNodeChainFlag9BC90C"))(sound));   // B4/B5/B6
+            ctxNodeChainFlag: ChainFlagOf(sound));                             // B4/B5/B6: 0x9BC9FC..0x9BCA1C (C40.3)
         pbi.Priority1C0 = priority;                                            // 0xA002D4..0xA002E4: the ctor argument block [sp+0x38]
         pbi.NodeE0 = sound;                                                    // [pbi+0xE0]
+        ContextInit9BC90C(pbi, sound, p);                                      // 0x9BCA0C..0x9BCA38: [GO+0x7C]++ and the node AddRef (C40.3)
         pbi.Field1CC = priority;                                               // 0xA002D4..0xA002E4: the ctor copies the {priority, offset} block
         pbi.Field1D0 = distanceOffset;
         pbi.FieldE4 = BitConverter.SingleToUInt32Bits(out84);                  // 0x9BEB30 r1 = [sp+0x2C] -> this+0xD8 = pbi+0xE4 (A1, 0xA37CEC)

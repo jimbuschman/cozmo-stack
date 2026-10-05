@@ -102,3 +102,14 @@ Built from C40.6 (T-F1, T-F4..T-F7): vtable 0x103DF28, creators, param object 0x
 MISSING / stops: linked worker 0xA9FEEC (RECOVERABLE_GAP, throws); wrapper 0x103DB98 (vt+0x28 0xA792B0, 0xA793D4, 0x9CF644, 0xA6C22C) not built, unwired; Execute r0 return; member-pointer branch ([+0xC]&1); wrapper slot labelled "no plug-in" in WwiseVoiceInsertFxSlot disagrees with C31.2/T-F2 (check in 5i/next).
 Queued: M6-013/M6-022 `unresolved` text (built-unwired, linked-worker stop, "awaiting strong verification"); manifest record for the phone libm expf/powf EQUIVALENT_IMPLEMENTATION; a Compressor record of its own.
 Verification: full suite in private copy 3664/3666 (two unrelated load-flaky pass alone); fidelity --check clean.
+
+## Batch 5i - PostEvent writer, ctx init, limiter order, aux-send route (Sonnet-built; Opus-verified over 3 rounds)
+
+Built from C40.1-C40.4: PostEvent 0xA03108/0x9A0EF8 (PlayingItemFieldsWriter removed), pump 0x12/0x13 + Anki wrappers 0x8D913E/0x8D91BA, Thumb 0x8D8CE4 flag set {0,1,5,9,13}, ctx init 0x9BC90C (GO+0x7C, node AddRef 0x9F1CBC, chain flag 0x9BC9FC walk), limiter order + RTPC max 0x9F2C7C, aux route 0x9BD368/0x9BDA88/0x9D4228/0x9D4108/0xA43434 + walk 0xA447D8..0xA44938, WwiseArmFloat NaN rules, send globals via the real setter 0x9A080C (WwiseSendGlobals.AfterInitBnkStmg = setter(-80,2) -> 0x38D2306A; the old 0x38D1B717 in C10/C40.4 T-A5b is contradicted), cookie = context object. Oracle emu_aux.py (14 kinds) regenerates byte-identical.
+Verifier rounds: FAIL (default threshold, cookie) -> FAIL (default was the pre-Init state) -> fixed. Full suite 3690/3690; fidelity --check clean.
+Corrections to research: device list head is 0x108DAFC (not 0x108DAE8); 0xA0428C reads two args.
+MISSING (visible stops/seams): 0x9A65C0 external-source holder; global-scope Play; [item+0x24] without game object; Term-time releases ([GO+0x7C]--, node vt+0xC 0x9F500C, 0x9BDB18, [ctx+0xA0]); 0xA0C2B8 body; Anki start-time aux posting (A11); 0x9BF8E4, 0xA5E694, 3D body of 0x9BE28C; STMG reader 0x9B0B14 (seam throws); node-registry fill behind 0x9A7EB0; wiring of AuxDispatch9D4108 / BusLookup9A7EB0 (nothing in src constructs the pass or linker).
+Queued: WwiseVoiceBusPass tail override test-only; NodeNotificationA0428C not hooked to linker Seams.A0428C; wrapper gate this[0]==0 in HandleGameEvents; M6-025/026 unresolved text.
+
+## Pass 11 extraction (V7 on owner PBI, linked compressor worker, in-place FX wrapper)
+Saved as research/20261004-B-M6b-4-live-bodies-11.md, UNVERIFIED. Next: verifier on rows, correction C41, batch 5k (V7 on owner PBI; WwiseVoiceInsertFxSlot 0x103DB98 in-place wrapper vs 0x103DC38; linked worker 0xA9FEEC with emu_comp oracle).

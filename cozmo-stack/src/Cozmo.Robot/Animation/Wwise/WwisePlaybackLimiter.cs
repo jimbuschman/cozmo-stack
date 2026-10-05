@@ -121,6 +121,12 @@ public sealed class WwiseNodeLimiter
     /// <summary>The subscriber's <c>[this+0x20]</c> at <c>obj+0x10+0x20</c> (<c>0xA19ECC</c>, L5).</summary>
     public uint? SubscriberNode20 { get; set; }
 
+    /// <summary>
+    /// The listener key the limiter's context at <c>obj+0x10</c> holds, copied by <c>0xA19CDC(obj+0x10, {0, 0, 0, byte 0xFF, byte 0xFF, 0}, 1)</c> (<c>0x9F2A58..0x9F2A70</c>, C40.2): the zero block with both key bytes <c>0xFF</c>. It differs from a PBI's key (<see cref="WwisePlayingInstance.ListenerKey"/>).
+    /// </summary>
+    // fidelity: M6-026
+    public WwiseListenerKey Key10 { get; } = new(0, 0, 0, 0xFF, 0xFF, 0);
+
 }
 
 /// <summary>
@@ -430,18 +436,31 @@ public sealed class WwisePlaybackLimiter
     {
         if (!Alloc()) { _limiters.Remove(node.Id); return 0; }                        // L1
         var f = Facts(node);
-        if (f.Rtpc16 && f.Max != 0) throw RtpcMissing();                             // L4 gate
-        var lim = new WwiseNodeLimiter { NodeId = node.Id, Global68 = f.GlobalFlag };  // +0x68 bit0 = node+0x45 bit6
-        lim.List.Max = f.Max;                                                         // +0x44
-        lim.List.KillNewest = f.KillNewest;                                           // +0x46 = node+0x45 bit2
-        lim.List.Virtual = f.Virtual;                                                 // +0x47 = node+0x45 bit3
-        if (f.Max != 0)                                                               // L5: 0x9F2AF8 cmp r3,#0; bne 0x9F2CCC
+        var lim = new WwiseNodeLimiter { NodeId = node.Id, Global68 = true };         // 0x9F2A88 orr r2,r2,#1; 0x9F2A90 strb r2,[r4,#0x68]: bit 0 is 1 until the bfi at 0x9F2B8C
+        _limiters[node.Id] = lim;                                                     // 0x9F2AD0 str r4,[r6,#0x30]: BEFORE the max read and the subscription (C40.2 correction 10)
+        ushort max = f.Max;                                                           // 0x9F2AA8 ubfx r3,r3,#0,#0xa (u16 [node+0x44] & 0x3FF)
+        if (RuntimeNodeOf?.Invoke(node) is { } runtimeNode)
+        {
+            // 0x9F2A94..0x9F2AF0: [node+0x14] non-null and bit 16 of mask A (the max-instances parameter) takes 0x9F2C7C: with a non-zero static max the RTPC value replaces it.
+            if (runtimeNode.SubscriptionMask14 is { } maskA && ((maskA >> 16) & 1) != 0 && max != 0)
+            {
+                var store = RtpcListeners ?? throw new WwiseMissingBehaviourException(
+                    "M6-026 L4: the node's registry subscribes the max-instances parameter (mask A bit 16); 0x9F2C7C reads it through 0xA11590 (WwisePlaybackLimiter.RtpcListeners)");
+                float value = store.A11590(runtimeNode.SubscriptionKey10, 0x10, WwiseGainRtpcKey.Empty);   // 0x9F2CB4 bl 0xA11590(mgr, node+0x10, 0x10, {0,0,0,FF,FF,0})
+                max = unchecked((ushort)FloatToU32(value));                           // 0x9F2CB8..0x9F2CC4 vcvt.u32.f32; vstr [sp+4]; ldrh r3,[sp,#4]
+            }
+        }
+        else if (f.Rtpc16 && f.Max != 0) throw RtpcMissing();                        // L4 gate without the runtime graph: the registry that holds mask A is not there
+        lim.List.Max = max;                                                           // 0x9F2B00 strh r3,[r4,#0x44]
+        lim.List.KillNewest = f.KillNewest;                                           // +0x46 = node+0x45 bit2 (0x9F2B0C)
+        lim.List.Virtual = f.Virtual;                                                 // +0x47 = node+0x45 bit3 (0x9F2B14)
+        if (max != 0)                                                                 // L5: 0x9F2AF8 cmp r3,#0; 0x9F2B34 bne 0x9F2CCC
         {
             (RtpcSubscribeA19ECC ?? throw new WwiseMissingBehaviourException(
-                "M6-026 L5: the limiter's own 0xA19ECC subscription (a ctx class other than the PBI, mask 0x10000; its node argument is unread, C39.1 T5) is not modelled; supply RtpcSubscribeA19ECC"))("limiter", node, 0x10000UL);
-            lim.SubscriberNode20 ??= node.Id;                                         // 0xA19ECC: if [this+0x20]==0, [this+0x20] = node
+                "M6-026 L5: the limiter's own 0xA19ECC(limiter+0x10, node, &{0x10000, 0}, 1) (0x9F2CCC..0x9F2CE8, C40.2) needs the registration for a ctx class other than the PBI, which is not built; supply RtpcSubscribeA19ECC"))("limiter", node, 0x10000UL);
+            lim.SubscriberNode20 ??= node.Id;                                         // 0xA19ECC: if [this+0x20]==0, [this+0x20] = node (0xA19EE8..0xA19EF4)
         }
-        _limiters[node.Id] = lim;                                                     // [node+0x30] = obj
+        lim.Global68 = f.GlobalFlag;                                                  // 0x9F2B8C bfi r2,r5,#0,#1: +0x68 bit 0 = node+0x45 bit 6
         var (lo, hi) = KeyFor(node);                                                  // L3
         lim.List.KeyLo = lo;
         lim.List.KeyHi = hi;
@@ -1194,10 +1213,10 @@ public sealed class WwisePlaybackLimiter
     /// <summary>
     /// The <c>below</c> byte <c>0x9BEB30</c> writes at <c>0x9BED60</c> (3.2): <c>product &lt;= 0x37800000</c> (2^-16) with <c>product = lin(pbi+0x3C) * pbi+0x40 * lin(pbi+0x64)</c>; unordered is false.
     /// </summary>
-    public static bool Below9BEB30(WwisePlayingInstance pbi)
+    public static bool Below9BEB30(WwisePlayingInstance pbi, WwiseSendGlobals? globals = null)
     {
         float product = Lin9BEB30(pbi.Volume3C) * pbi.MuteFade40 * Lin9BEB30(pbi.ReadWord64());
-        return product <= BitConverter.Int32BitsToSingle(0x37800000);
+        return product <= (globals ?? WwiseSendGlobals.Shared).GameLinear;                        // [0x1052454]: 0x38D2306A after the Init.bnk STMG setter (0x37800000 only in the pre-load image)
     }
 
     // ------------------------------------------------------------------ C1..C6: the global checks

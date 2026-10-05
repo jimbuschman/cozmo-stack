@@ -426,28 +426,37 @@ public sealed class WwiseVoiceConnection
 }
 
 /// <summary>
-/// V7-d/e: one 0x4C-byte entry of the voice's send/connection table <c>[voice+0x10]</c> (C15 V7-d/V7-e).
-/// The table's semantic identity is UNKNOWN; the fields the settled rows read are the per-target byte
-/// <c>+0x44</c>, the send gain <c>+0x34</c> and the gathered value used by the <c>value &gt; 0</c> test.
+/// One 0x4C-byte entry of the voice's table <c>[voice+0x10]</c> (C40.4 T-A4: <c>0xA4B93C</c> initialises entry 0 at <c>0xA4BB00..0xA4BB50</c> and refreshes its byte <c>+0x44</c> and float <c>+0x34</c> on every call). The table is NOT the array <c>0x9D4228</c> merges into
+/// (that is <c>voice+0x2C</c>, <see cref="WwiseAuxEntry"/>). The fields no adopted row names are not modelled.
 /// </summary>
 public sealed class WwiseVoiceSendEntry
 {
     // fidelity: M6-022
 
-    /// <summary>The gathered value; <c>0x9D4228</c> keeps only entries with <c>value &gt; 0</c>.</summary>
-    public float Value { get; set; }
+    /// <summary><c>+0x0</c>, <c>+0x4</c>, <c>+0x8</c>, <c>+0x30</c>: zero from the entry's initialisation (<c>0xA4BB28..0xA4BB4C</c>).</summary>
+    public uint Word0 { get; set; }
+    public uint Word4 { get; set; }
+    public uint Word8 { get; set; }
+    public uint Word30 { get; set; }
 
-    /// <summary><c>+0x44</c>: the per-target byte copied from <c>[[r5+8]+0x22]</c>.</summary>
+    /// <summary><c>+0x38</c>, <c>+0x3C</c>, <c>+0x48</c>: 1.0f from the initialisation (<c>0xA4BB38..0xA4BB44</c>).</summary>
+    public float Gain38 { get; set; } = 1f;
+    public float Gain3C { get; set; } = 1f;
+    public float Gain48 { get; set; } = 1f;
+
+    /// <summary><c>+0x40</c>: -1 from the initialisation (<c>0xA4BB20</c>, <c>0xA4BB28</c>).</summary>
+    public int Word40 { get; set; } = -1;
+
+    /// <summary><c>+0x44</c>: the game object's listener mask byte <c>[[ctx+8]+0x22]</c>, stored at every <c>0xA4B93C</c> (<c>0xA4B9D4..0xA4B9E8</c>).</summary>
     public byte PerTargetByte { get; set; }
 
-    /// <summary><c>+0x34</c>: the bus send gain <c>dBToLin([r5+0x58]*0.05)</c>.</summary>
+    /// <summary><c>+0x34</c>: the dry send gain <c>lin([ctx+0x58]) * [[ctx+8]+0x60]</c> (the PBI's <c>+0x64</c> through the fast power, times the game object's output bus volume), stored at every <c>0xA4B93C</c> (<c>0xA4BA4C..0xA4BA54</c>).</summary>
     public float SendGain { get; set; } = 1f;
 }
 
 /// <summary>
-/// V7-d <c>0xA4B93C</c>: the voice's send/connection table (array <c>[voice+0x10]</c>, count
-/// <c>[voice+0x14]</c>, capacity <c>[voice+0x18]</c>, 0x4C-byte entries). The native allocates it lazily on
-/// the first call; the sub-callees that gather the entries are RECOVERABLE_GAP seams.
+/// The voice's table <c>[voice+0x10]</c> (count <c>[voice+0x14]</c>, capacity <c>[voice+0x18]</c>, 0x4C-byte entries): <c>AddSrc</c> allocates it with capacity 1; <c>0xA4B93C</c> (<see cref="WwiseVoiceBusPass.RefreshTailA4B9BC"/>) initialises entry 0 when the count is 0
+/// (allocating a table first when the capacity is 0, <c>0xA4BB54..0xA4BC30</c>) and keeps entry 0's byte <c>+0x44</c> and float <c>+0x34</c> current.
 /// </summary>
 public sealed class WwiseVoiceSendTable
 {
@@ -470,14 +479,16 @@ public sealed class WwiseVoiceSendTable
     public float SendGain { get; set; } = 1f;
 
     /// <summary>
-    /// The native's lazy 0x4C-byte array allocation at <c>[voice+0x10]</c> (0xA4B9C8): it runs only when
-    /// <c>[voice+0x14]==0</c>, sizing the array by the capacity <c>[voice+0x18]</c>. The writers of those two
-    /// fields are not settled by the report, so both are caller inputs.
+    /// <c>0xA4BAF0..0xA4BB50</c> (the capacity is non-zero, so the table AddSrc allocated is used): <c>[voice+0x14] = 1</c> and entry 0 is initialised (<c>[+0x40] = -1</c>, byte <c>[+0x44] = 0</c>, <c>[+0x30] = 0</c>, <c>[+0]</c>, <c>[+4]</c>, <c>[+8] = 0</c>, <c>[+0x34]</c>, <c>[+0x38]</c>, <c>[+0x3C]</c>, <c>[+0x48] = 1.0f</c>). A table with
+    /// no entry 0 (a null entry pointer: <c>0xA4BB14 adds r6,r8,r6,lsl#2; beq 0xA4BAA0</c>) returns false and the caller stops.
     /// </summary>
-    public void AllocateLazily()
+    public bool InitEntry0A4BB00()
     {
-        if (Count != 0) return;
-        while (Entries.Count < Capacity) Entries.Add(new WwiseVoiceSendEntry());
+        Count = 1;                                                                  // 0xA4BB08 str r2,[r4,#0x14]
+        if (Capacity == 0) return false;
+        if (Entries.Count == 0) Entries.Add(new WwiseVoiceSendEntry());             // the 0x4C-byte entry the table holds (a fresh entry has the initialisation's values)
+        Entries[0] = new WwiseVoiceSendEntry();                                     // 0xA4BB18..0xA4BB4C
+        return true;
     }
 }
 
@@ -727,6 +738,12 @@ public sealed class WwiseLiveVoice
     /// <c>0xA4BA90 bl 0x9D4228</c>). It is not <c>[voice+0x14]</c>.
     /// </summary>
     public byte CountCC { get; set; }
+
+    /// <summary>
+    /// <c>voice+0x2C..voice+0xCC</c> (C40.4 T-A6): the eight 0x14-byte entries <c>0x9D4228</c> merges the aux sends into; <see cref="CountCC"/> of them are live. The aux walk of the voice pass sums them (<c>0xA447D8..0xA44898</c>).
+    /// </summary>
+    // fidelity: M6-010, M6-022
+    public WwiseAuxEntry[] AuxEntries2C { get; } = Enumerable.Range(0, 8).Select(_ => new WwiseAuxEntry()).ToArray();
 
     /// <summary>
     /// <c>voice+0xF0</c> (C25.5): a word, not an id. The voice ctor zeroes it (<c>0xA5470C..0xA54764</c>) and the voice
@@ -1070,41 +1087,64 @@ public sealed class WwiseLiveVoice
 
     /// <summary>
     /// The aux-send and dry mix walks after the notify (<c>0xA447D8..0xA44938</c>). The engine order mixes the voice's pass block through <see cref="WwiseVoiceConnection.MixA4FBEC"/>: the aux walk (<c>[conn+0x68] != 0</c>,
-    /// <c>[conn+0x18] != 0</c>, <c>([conn+0x6C] &amp; 6) != 6</c>) passes the gains <c>{0.0f, 0.0f}</c> plus the sums of the matching send-table entries (<c>0xA44850..0xA44894</c>: the matching key <c>0xA68A2C</c> is unread, so a voice with send entries,
+    /// <c>[conn+0x18] != 0</c>, <c>([conn+0x6C] &amp; 6) != 6</c>) passes the gains <c>{g0, g1}</c>, which start at 0.0f and sum, over the <c>[voice+0xCC]</c> entries of <c>voice+0x2C</c> whose id equals <c>0xA68A2C(line+0x4C)</c>, the entry's current (g0) and target (g1) in float32 (C40.4 T-A8,
+    /// <c>0xA44850..0xA44894</c>; the matching key is the line context's <see cref="WwiseBusContext.Key"/>),
     /// <c>[voice+0xCC] != 0</c>, throws); the dry walk (<c>[conn+0x68] == 0</c>) passes <c>{1.0f, 1.0f}</c> and runs filter B once before the first dry mix (<c>0xA4492C</c>).
     /// </summary>
-    private void MixConnections(bool engineOrder)
+    internal void MixConnections(bool engineOrder)
     {
+        if (engineOrder && CountCC > 8)
+            throw new WwiseMissingBehaviourException("M6-010 T-A8: [voice+0xCC] above 8 makes the aux walk read past the 8 entries of voice+0x2C (0xA44850..0xA44894); nothing writes it above 8");
         // the aux-send walk 0xA4FBEC for the connections whose conn+0x68 is set, skipping a connection with ([conn+0x6C]&6)==6.
-        foreach (var connection in Connections)
+        for (int ci = 0; ci < Connections.Count; ci++)
         {
+            var connection = Connections[ci];
             // C24.4 0xA447EC..0xA4480C: [conn+0x68] != 0, [conn+0x18] != 0, ([conn+0x6C] & 6) != 6.
             if (!connection.HasAux || !connection.HasDry) continue;
             if ((connection.Flags6C & 6) == 6) continue;
             if (!engineOrder) { connection.Mix(Buffer); continue; }
-            if (CountCC != 0)
-                throw new WwiseMissingBehaviourException("M6-022 V2-01: the aux walk sums the send-table entries whose key matches 0xA68A2C(bus+0x4C) (0xA44850..0xA44894); that key compare is not read, and this voice has send entries ([voice+0xCC] != 0)");
-            connection.MixA4FBEC(Buffer.State, 0f, 0f);                              // 0xA44814..0xA448A8: g = {0.0f, 0.0f} with no entries
+            // C40.4 T-A8, 0xA44814..0xA44898: g = {0.0f, 0.0f}; for each of [voice+0xCC] entries of voice+0x2C whose id [e+0xC] equals 0xA68A2C(line+0x4C) (the line's context key: the bus id, or -(byte) without a bus):
+            // g[1] += [e+0] (the target), g[0] += [e+4] (the current), float32 adds in entry order; then 0xA4FBEC(line, S, conn, &g).
+            uint key = connection.Bus.Context.Key;                                   // 0xA68A2C(line+0x4C) = [bus+8], or -(u8)byte
+            float g0 = 0f, g1 = 0f;                                                  // 0xA44814 vldr s15,[pc,#0x120] (0.0f); vstr [sp+8], [sp+0xC]
+            for (int i = 0; i < CountCC; i++)                                        // 0xA44828..0xA44894 (the count byte is re-read each pass, 0xA4488C)
+            {
+                var e = AuxEntries2C[i];
+                if (e.Id != key) continue;                                           // 0xA44860 cmp sl,r0; bne 0xA44840
+                g1 = WwiseArmFloat.Add(g1, e.Target);                                // 0xA44878 vadd.f32 s14,s14,s13 -> [sp+0xC] (VFP NaN rules)
+                g0 = WwiseArmFloat.Add(g0, e.Current);                               // 0xA44884 vadd.f32 s15,s15,s14 -> [sp+8]
+            }
+            WalkTrace?.Invoke($"M {ci} {BitConverter.SingleToUInt32Bits(g0):x} {BitConverter.SingleToUInt32Bits(g1):x}");
+            connection.MixA4FBEC(Buffer.State, g0, g1);                              // 0xA44898..0xA448A8 bl 0xA4FBEC(sb, r5, r6, &g)
         }
 
         // filter B 0xA4C60C(voice+0x390) before the first dry mix, then the dry-mix walk with gain 1.0.
         bool firstDry = true;
-        foreach (var connection in Connections)
+        for (int ci = 0; ci < Connections.Count; ci++)
         {
+            var connection = Connections[ci];
             // C24.4 0xA448FC..0xA4491C: [conn+0x68] == 0 and the same two tests.
             if (connection.HasAux || !connection.HasDry) continue;
             if ((connection.Flags6C & 6) == 6) continue;
             if (firstDry)
             {
+                if (engineOrder) WalkTrace?.Invoke("F");                            // 0xA4492C add r0,r7,#0x390; 0xA44934 bl 0xA4C60C (the trace is called before the filter runs)
                 if (!engineOrder) FilterB.Process(Buffer.Channels[0]);
                 else if (Buffer.State.Data is float[] filterBData)                  // 0xA4C60C returns when [state] == 0
                     FilterB.Process(filterBData.AsSpan(0, Math.Min(Buffer.State.MaxFrames, filterBData.Length)));
                 firstDry = false;
             }
             if (!engineOrder) connection.Mix(Buffer);
-            else connection.MixA4FBEC(Buffer.State, 1f, 1f);                         // 0xA448C4, 0xA448E0..0xA448EC: g = {1.0f, 1.0f}
+            else
+            {
+                WalkTrace?.Invoke($"M {ci} {BitConverter.SingleToUInt32Bits(1f):x} {BitConverter.SingleToUInt32Bits(1f):x}");
+                connection.MixA4FBEC(Buffer.State, 1f, 1f);                         // 0xA448C4, 0xA448E0..0xA448EC: g = {1.0f, 1.0f}
+            }
         }
     }
+
+    /// <summary>A test hook: <see cref="MixConnections"/> reports each mix it makes (<c>M &lt;connection index&gt; &lt;g0 bits&gt; &lt;g1 bits&gt;</c>) and filter B's one call (<c>F</c>), in the engine's call order.</summary>
+    internal Action<string>? WalkTrace { get; set; }
 
     /// <summary>
     /// V8 step 6 <c>0xA53134</c>/<c>0xA52D4C</c> (M6-004): the voice-stage resampler converts the source
@@ -1187,9 +1227,6 @@ public sealed class WwiseLiveVoice
     /// <summary>V7 <c>0xA56650(source, [bus+0x1DC], [bus+0x1E0])</c>: 1 already set, else start; default 0.</summary>
     public Func<int>? StartSource56650 { get; set; }
 
-    /// <summary>V7 <c>0xA4B93C(voice)</c>; see <see cref="WwiseVoiceBusPass.InitSendTable"/>.</summary>
-    public Action? InitSendTable { get; set; }
-
     /// <summary>V7 <c>[voice+0x1B4]</c>: when non-zero the insert-FX/start build is skipped.</summary>
     public bool Has1B4 { get; set; }
 
@@ -1227,20 +1264,11 @@ public sealed class WwiseLiveVoice
     /// <summary>V7 <c>source-&gt;vt+0x4C</c>: the per-source request; class identity UNKNOWN.</summary>
     public Action<WwiseVoiceBuffer>? SourceRequest4C { get; set; }
 
-    /// <summary>V7 <c>0xA4B93C</c> sub-callee <c>0x9BDA88(r5)</c>; RECOVERABLE_GAP, returns true to continue.</summary>
-    public Func<bool>? SendTableContinue9BDA88 { get; set; }
-
-    /// <summary>V7 <c>0xA4B93C</c> sub-callee <c>0x9BD368(r5, sp+0x10)</c>; RECOVERABLE_GAP.</summary>
-    public Action? SendTableGather9BD368 { get; set; }
-
     /// <summary>V7 <c>0xA4B4B0(voice)</c> ducking apply; see <see cref="WwiseVoiceBusPass.ApplyDucking"/>.</summary>
     public Action? ApplyDuckingHook { get; set; }
 
-    /// <summary>V7-d/e: the send/connection table (<c>[voice+0x10]</c>).</summary>
+    /// <summary>The table <c>[voice+0x10]</c> (<see cref="WwiseVoiceSendTable"/>).</summary>
     public WwiseVoiceSendTable? SendTable { get; set; }
-
-    /// <summary>V7-e <c>0x9D4108</c>: the per-entry dispatch; the registry/object identity is UNKNOWN.</summary>
-    public Action<WwiseVoiceSendEntry>? DispatchEntryHook { get; set; }
 
     /// <summary>V7/C1 <c>0xA4BC58</c> the four output-float minima <c>[sp+0x5c..0x68]</c>.</summary>
     public float[] OutputMin50 { get; } = new float[4];
@@ -1474,7 +1502,32 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// <c>[voice+0xCD]</c>); C37.1 adopts only the gain, so this is a REQUIRED collaborator of <see cref="RefreshVoiceGainA4B93C"/>.
     /// </summary>
     // fidelity: M6-022
+    // TEST-ONLY override: production leaves it null and runs the engine's tail (RefreshTailA4B9BC); a test sets it to isolate the voice pre-pass from the aux route.
     public Action<WwiseLiveVoice>? VoiceRefreshTailA4B9BC { get; set; }
+
+    /// <summary>The two globals <c>0x9BD368</c> compares against (<see cref="WwiseSendGlobals"/>: the shared process state after the Init.bnk STMG setter 0x9A080C).</summary>
+    // fidelity: M6-010
+    public WwiseSendGlobals AuxThresholds { get; set; } = WwiseSendGlobals.Shared;
+
+    /// <summary>
+    /// <c>0x9D4108(voice, entry, mask)</c> (C40.4 T-A7a): the per-entry dispatch <c>0x9D4228</c> makes, <see cref="WwiseVoiceLinker.DispatchAuxEntry9D4108"/>. REQUIRED: the pass has no linker of its own, so a merge that has entries to dispatch throws
+    /// <see cref="WwiseMissingBehaviourException"/> while it is unset (no entry is silently dropped).
+    /// </summary>
+    // fidelity: M6-010, M6-025
+    public Action<WwiseLiveVoice, WwiseAuxEntry, byte>? AuxDispatch9D4108 { get; set; }
+
+    /// <summary>
+    /// The 8 uninitialised stack bytes <c>sp+0..7</c> of <c>0x9D4228</c> whose value an old entry reads when it meets an APPENDED entry of the same id (BLOCKED_EXTERNAL, T-A6). Null: that read throws. A host that must run past it gives the bytes.
+    /// </summary>
+    // fidelity: M6-010
+    public byte[]? UninitialisedStackFlags9D4228 { get; set; }
+
+    /// <summary>
+    /// <c>0xA4BB54..0xA4BC30</c> (the table is absent or has capacity 0): the 0x4C-byte table the pool allocation <c>0xA7A7F4</c> gives, stored at <c>[voice+0x10]</c> with capacity 1 (the old table, when there is one and its count is 0, is freed). REQUIRED when the tail reaches it:
+    /// <c>AddSrc</c> allocates the table first (<see cref="WwisePlaybackBridge.NewVoiceAllocSendTable4C"/>), so this only happens after a failed allocation there. Return null for the allocation failure (<c>0xA4BB74 beq 0xA4BAA0</c>: the tail returns).
+    /// </summary>
+    // fidelity: M6-022
+    public Func<WwiseLiveVoice, WwiseVoiceSendTable?>? AllocateSendTableA4BB54 { get; set; }
 
     /// <summary>
     /// <c>0xA43D24</c> (C37.1 L7-10, V5a): with <see cref="DuckPrePass"/> set the override; otherwise the voice walk <see cref="PrePassVoicesA43D24"/> and the required tail <see cref="DuckPrePassTailA43D6C"/>.
@@ -1535,8 +1588,59 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             "M6-022 L7-10: 0xA4B93C reads ctx = [voice+8] (0xA4B944); the voice has no owner PBI in BusOwner8");
         float lin = WwisePlaybackLimiter.Lin9BEB30(pbi.Volume3C);   // 0xA4B94C..0xA4B9A8 (0xA4BAA8 for y < -37.0f)
         voice.OutputGain = pbi.MuteFade40 * lin;                     // 0xA4B9AC vldr s15,[r5,#0x34]; 0xA4B9B4 vmul.f32; 0xA4B9B8 vstr s14,[r4,#0x1c]
-        (VoiceRefreshTailA4B9BC ?? throw new WwiseMissingBehaviourException(
-            "M6-022 L7-10: 0xA4B9BC..0xA4BC30 (0x9BE28C, 0x9BF8E4, 0xA5E694, the send table, 0x9BDA88, 0x9BD368, 0x9D4228) follows the gain store and is not adopted; supply WwiseVoiceBusPass.VoiceRefreshTailA4B9BC"))(voice);
+        if (VoiceRefreshTailA4B9BC is { } over) over(voice);                    // a host's or test's whole-tail override
+        else RefreshTailA4B9BC(voice, pbi);                                     // 0xA4B9BC..0xA4BC30
+    }
+
+    /// <summary>
+    /// <c>0xA4B9BC..0xA4BAA0</c> (C40.4 T-A4), the part of <c>0xA4B93C</c> after the voice gain store, for the ctx <paramref name="pbi"/> = <c>[voice+8]</c>:
+    /// <list type="number">
+    /// <item><c>0x9BE28C(ctx)</c>: with <c>[ctx+0xDD]</c> bit 1 clear it returns <c>[ctx+0xDC] &amp; 3</c> (0 for a non-3D sound after <c>0x9BEB30</c>); a non-zero result takes <c>0xA4BAB8</c> (<c>0x9BF8E4</c>, <c>0xA5E694</c>) and bit 1 set takes <c>0x9BDB18</c> and the 3D body: those bodies are unread, so both throw.</item>
+    /// <item>Entry 0 of <c>[voice+0x10]</c>: a count of 0 initialises it (<see cref="WwiseVoiceSendTable.InitEntry0A4BB00"/>; with capacity 0 a table is allocated first, <see cref="AllocateSendTableA4BB54"/>), then its byte <c>+0x44</c> = <c>[[ctx+8]+0x22]</c> and its float <c>+0x34</c> = <c>lin([ctx+0x58]) * [[ctx+8]+0x60]</c>.</item>
+    /// <item><c>0x9BDA88(ctx)</c> zero ends the call. Otherwise <c>0x9BD368</c> builds the sends (<see cref="WwiseAuxRoute.Build9BD368"/>), <c>0x9D4228</c> merges them into <c>voice+0x2C</c> with <c>flag</c> = bit 1 of <c>[voice+0xCD]</c> (<see cref="WwiseAuxRoute.Merge9D4228"/>), and
+    /// <c>[voice+0xCD] |= 2</c>.</item>
+    /// </list>
+    /// </summary>
+    // fidelity: M6-010, M6-022
+    public void RefreshTailA4B9BC(WwiseLiveVoice voice, WwisePlayingInstance pbi)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        ArgumentNullException.ThrowIfNull(pbi);
+        if ((pbi.Flags0E9 & 2) != 0)                                            // 0x9BE28C ldrb r3,[r0,#0xdd]; tst r3,#2; bne 0x9BE2B4
+            throw new WwiseMissingBehaviourException("M6-022 T-A4: 0x9BE28C with [ctx+0xDD] bit 1 set calls 0x9BDB18 and runs the 3D body 0x9BE2B8..; unread");
+        if ((pbi.Flags0E8 & 3) != 0)                                            // 0x9BE2A4..0x9BE2A8 ldrb r0,[r4,#0xdc]; and r0,r0,#3; 0xA4B9C0 cmp r0,#0; bne 0xA4BAB8
+            throw new WwiseMissingBehaviourException("M6-022 T-A4: a non-zero 0x9BE28C result takes 0xA4BAB8 (0x9BF8E4, 0xA5E694), which are unread; a non-3D sound has bits 0..1 of [ctx+0xDC] cleared by 0x9BEB30");
+        var go = pbi.GameObjectRef14 ?? throw new WwiseMissingBehaviourException(
+            "M6-010 T-A4: 0xA4B9D4 reads [[ctx+8]+0x22] and [[ctx+8]+0x60]; the PBI has no game object reference (WwisePlayingInstance.GameObjectRef14, set by the context init)");
+
+        var table = voice.SendTable;
+        if (table is null || table.Count == 0)                                  // 0xA4B9C8 ldr r6,[r4,#0x14]; cmp r6,#0; beq 0xA4BAF0
+        {
+            if (table is null || table.Capacity == 0)                           // 0xA4BAF0 ldr sb,[r4,#0x18]; cmp sb,#0; beq 0xA4BB54
+            {
+                table = (AllocateSendTableA4BB54 ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 T-A4: 0xA4BB54 allocates the 0x4C-byte table (0xA7A7F4); supply WwiseVoiceBusPass.AllocateSendTableA4BB54"))(voice);
+                if (table is null) return;                                      // 0xA4BB74 beq 0xA4BAA0
+                table.Capacity = 1;                                             // 0xA4BC28..0xA4BC2C str r3,[r4,#0x18] (r3 = 1)
+                voice.SendTable = table;                                        // 0xA4BC20 str r3,[r4,#0x10]
+            }
+            if (!table.InitEntry0A4BB00()) return;                              // 0xA4BB00..0xA4BB50 (a null entry returns, 0xA4BB14)
+        }
+        var entry0 = table.Entries[0];
+        entry0.PerTargetByte = go.Mask22;                                       // 0xA4B9D4..0xA4B9E8 ldr r2,[r5,#8]; ldrb r2,[r2,#0x22]; strb r2,[r3,#0x44]
+        entry0.SendGain = WwiseArmFloat.Mul(go.Volume60, WwiseAuxRoute.Lin(pbi.ReadWord64()));    // 0xA4B9F0..0xA4BA54: s13 = [GO+0x60]; s14 = lin(pbi+0x64); vmul.f32 s14,s13,s14; vstr [table+0x34]
+
+        if (!WwiseAuxRoute.Continue9BDA88(pbi)) return;                         // 0xA4BA58..0xA4BA64 bl 0x9BDA88; beq 0xA4BAA0
+        var block = WwiseAuxRoute.Build9BD368(pbi, go, AuxThresholds);          // 0xA4BA74 bl 0x9BD368(ctx, sp+0x10)
+        var dispatch = AuxDispatch9D4108;
+        byte mask = go.Mask22;                                                  // 0x9D45F8..0x9D4600 ldrb r8,[[[voice+8]+8]+0x22]
+        int n = WwiseAuxRoute.Merge9D4228(block, voice.AuxEntries2C, voice.CountCC, (voice.FlagsCD & 2) != 0,   // 0xA4BA78..0xA4BA90: flag = ubfx [voice+0xCD],#1,#1; count = [voice+0xCC]
+            UninitialisedStackFlags9D4228);
+        voice.CountCC = (byte)n;                                                // 0x9D45F0 strb r4,[r3] (before the dispatches)
+        for (int i = 0; i < n; i++)                                             // 0x9D4608..0x9D462C
+            (dispatch ?? throw new WwiseMissingBehaviourException(
+                "M6-010 T-A7a: 0x9D4228 dispatches every entry through 0x9D4108 (the bus lookup, the device list and 0xA43434); supply WwiseVoiceBusPass.AuxDispatch9D4108 (WwiseVoiceLinker.DispatchAuxEntry9D4108)"))(voice, voice.AuxEntries2C[i], mask);
+        voice.FlagsCD = (byte)(voice.FlagsCD | 2);                              // 0xA4BA94..0xA4BA9C
     }
 
     /// <summary>V5b: <c>0xA39564</c> (<c>0xA44980</c>), <see cref="WwisePlaybackLimiter.PerFrameA39564"/>; a REQUIRED collaborator.</summary>
@@ -1553,8 +1657,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// <c>E0=[voice+0xE0]</c>, <c>A=[voice+0xCD]&amp;1</c>, <c>E8=[voice+0xE8]&amp;1</c>,
     /// <c>SRC10=[source+0x10]&amp;1</c>; the named callees are <see cref="SetConnectionBit2"/> (<c>0xA4C584</c>),
     /// <see cref="ReleaseBusRef"/> / <see cref="AcquireBusRef"/> (<c>0xA022E8</c>/<c>0xA0228C</c>),
-    /// <see cref="NextSource"/> (<c>0xA01768</c>), <see cref="InitSendTable"/> (<c>0xA4B93C</c>),
-    /// <see cref="GatherAndDispatch"/> (<c>0x9D4228</c>) and
+    /// <see cref="NextSource"/> (<c>0xA01768</c>), <see cref="RefreshTailA4B9BC"/> (<c>0xA4B93C</c>, <c>0x9D4228</c>) and
     /// <see cref="StartStreamAndBuildInsertFx"/> (<c>0xA54A30</c>).
     ///
     /// <para><b>Order.</b> The <c>P2F!=0</c> path runs the four parameter ramps (<see cref="RunParameterRamps"/>,
@@ -2046,73 +2149,6 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     }
 
     /// <summary>
-    /// V7-d <c>0xA4B93C(voice)</c> (C15 V7-d): initialise the voice's send/connection table
-    /// (<c>[voice+0x10]</c> array, <c>[voice+0x14]</c> count, <c>[voice+0x18]</c> capacity, 0x4C-byte
-    /// entries), copy the per-target byte and bus send gain into entry 0, gather via <c>0x9BD368</c> then
-    /// dispatch <c>0x9D4228</c>, and latch bit1 of <c>[voice+0xCD]</c>. The sub-callees <c>0x9BE28C</c>,
-    /// <c>0x9BDA88</c>, <c>0x9BD368</c>, <c>0x9BF8E4</c>, <c>0xA5E694</c> are RECOVERABLE_GAP and are seams.
-    /// </summary>
-    public static void InitSendTable(WwiseLiveVoice voice)
-    {
-        ArgumentNullException.ThrowIfNull(voice);
-        voice.SendTable ??= new WwiseVoiceSendTable();
-        // 0xA4B9C8: r6 = [voice+0x14]; the lazy allocation runs only when it is 0, sized by [voice+0x18].
-        // The count source is [voice+0x14], NOT the connection-list count [voice+0x28] (missing-bodies 1.7).
-        voice.SendTable.AllocateLazily();
-        if (voice.SendTable.Entries.Count > 0)
-        {
-            // 0xA4B9D4: copy [[r5+8]+0x22] to [[voice+0x10]+0x44] and the bus send gain to +0x34.
-            var entry0 = voice.SendTable.Entries[0];
-            entry0.PerTargetByte = voice.SendTable.PerTargetByte;
-            entry0.SendGain = voice.SendTable.SendGain;
-        }
-
-        // 0xA4BA5C: 0x9BDA88(r5); if 0 return.
-        if (voice.SendTableContinue9BDA88?.Invoke() == false) return;
-
-        // 0xA4BA74/0xA4BA90: 0x9BD368(r5, sp+0x10) then 0x9D4228(sp+0x10, voice+0x2C, ...).
-        voice.SendTableGather9BD368?.Invoke();
-        GatherAndDispatch(voice);
-
-        // 0xA4BA98: latch bit1 of [voice+0xCD].
-        voice.FlagsCD = (byte)(voice.FlagsCD | 0x02);
-    }
-
-    /// <summary>
-    /// V7-e <c>0x9D4228(paramBlock,outArray,flag,&amp;countByte,obj)</c> (C15 V7-e): gather the active
-    /// entries (<c>value &gt; 0</c>) into the output array and dispatch <c>0x9D4108(obj,entry,mask)</c> per
-    /// entry. The count byte is <c>[voice+0xCC]</c>, not <c>[voice+0x14]</c> (missing-bodies item 1.5
-    /// step 4/6: <c>0xA4BA7C add r3,r4,#0xcc</c>; <c>0xA4BA90 bl 0x9D4228</c>). The block/entry semantic
-    /// identity is UNKNOWN; the gather/dispatch order is the row's.
-    /// </summary>
-    public static int GatherAndDispatch(WwiseLiveVoice voice)
-    {
-        ArgumentNullException.ThrowIfNull(voice);
-        voice.SendTable ??= new WwiseVoiceSendTable();
-        int count = 0;
-        foreach (var entry in voice.SendTable.Entries)
-        {
-            if (entry.Value <= 0f) continue;
-            count++;
-            DispatchEntry(voice, entry);
-        }
-        voice.CountCC = (byte)count;                                 // 0xA4BA90: 0x9D4228 writes [voice+0xCC]
-        return count;
-    }
-
-    /// <summary>
-    /// V7-e <c>0x9D4108(obj,entry,mask)</c>: look up <c>0x9A7EB0</c> and call <c>0xA43434</c> for nodes
-    /// matching the mask, then <c>found-&gt;vt+0xC</c>. The registry/object identity is UNKNOWN, so the
-    /// per-entry update is a caller seam.
-    /// </summary>
-    public static void DispatchEntry(WwiseLiveVoice voice, WwiseVoiceSendEntry entry)
-    {
-        ArgumentNullException.ThrowIfNull(voice);
-        ArgumentNullException.ThrowIfNull(entry);
-        voice.DispatchEntryHook?.Invoke(entry);
-    }
-
-    /// <summary>
     /// V7-f <c>0xA54A30(voice)</c> (C15 V7-f): start the source/resampler, resolve up to four bus insert-FX
     /// slots via <c>0xA019B8</c>/<c>0x9CC2AC</c>/<c>0x9CC4D8</c>, build the 0x9C-byte voice slot objects
     /// (<see cref="WwiseVoiceInsertFxSlot"/>, vtables <c>0x103DC38</c>/<c>0x103DB98</c>, init
@@ -2332,9 +2368,8 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// <summary>
     /// V7/C11 <c>0xA4B4B0(voice)</c> (C12 voice-callees Q4): apply the bus ducking to the voice output gain
     /// and each connection's <c>+0x60</c>, setting <c>[conn+0x6C]</c> bit1 when <c>s15 &lt;= threshold</c>.
-    /// The threshold is settled: <c>0xA4B4B0</c> reads <c>[[0x10400AC]] = [0x1052454]</c> = binary32
-    /// <c>0x38D1B717 = 0.0001f</c>, the Init.bnk -80 dB linear threshold (inventory M6-wwise-bank.md row
-    /// 3.3 line ~846, C10). <see cref="DuckingThreshold"/> carries that default and stays overridable.
+    /// The threshold: <c>0xA4B4B0</c> reads <c>[[0x10400AC]] = [0x1052454]</c>, which after the Init.bnk STMG setter (<c>0x9A080C(-80, 2)</c>) is binary32 <c>0x38D2306A</c>
+    /// (the earlier 0x38D1B717 = 0.0001f was contradicted). <see cref="DuckingThreshold"/> is <see cref="WwiseSendGlobals.Shared"/>'s value and stays overridable.
     /// </summary>
     /// <param name="voice">The voice (the native <c>r0</c>).</param>
     /// <param name="bus">The bus (<c>[voice+0xC]</c> in the native; the caller's primary bus).</param>
@@ -2356,7 +2391,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         s14 = WwiseGain.DbToLinear(s15);                             // 0.05 / -37 / fast-pow
         s12 = s14 * voice.OutputGain;                                // [voice+0x1C]
 
-        float g = DuckingThreshold;                                  // [0x1052454] = 0x38D1B717 = 0.0001f
+        float g = DuckingThreshold;                                  // [0x1052454]
         foreach (var connection in voice.Connections)                // [voice+0x28]
         {
             float sv = s14 * connection.C60;
@@ -2370,11 +2405,14 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     }
 
     /// <summary>
-    /// V7/C11 <c>0xA4B4B0</c>: the ducking threshold global <c>[[0x10400AC]] = [0x1052454]</c>, the Init.bnk
-    /// -80 dB linear threshold, binary32 <c>0x38D1B717 = 0.0001f</c> (inventory M6-wwise-bank.md row 3.3,
-    /// C10). It is a settable property so tests can override it.
+    /// V7/C11 <c>0xA4B4B0</c>: the ducking threshold global <c>[[0x10400AC]] = [0x1052454]</c>: <see cref="WwiseSendGlobals.Shared"/>'s game threshold (0x38D2306A, the state after the Init.bnk STMG setter 0x9A080C(-80, 2); the earlier
+    /// 0x38D1B717 = 0.0001f was contradicted).
     /// </summary>
-    public static float DuckingThreshold { get; set; } = 0.0001f;
+    public static float DuckingThreshold
+    {
+        get => WwiseSendGlobals.Shared.GameLinear;
+        set => WwiseSendGlobals.Shared.GameLinear = value;
+    }
 }
 
 /// <summary>The notification codes of the queue <c>0xA38600</c> fills (V21, C12 X6).</summary>

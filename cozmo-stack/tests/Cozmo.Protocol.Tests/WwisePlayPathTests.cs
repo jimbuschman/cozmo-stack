@@ -516,7 +516,7 @@ public class WwisePlayPathTests
         Build(rig, out var leaf);
         var pbi = rig.NewPbi(leaf, 0x7D, 0);
         pbi.Volume3C = v3c; pbi.MuteFade40 = f40; pbi.Word64 = v64;
-        Assert.Equal(expected, rig.Path.A9BCA68(pbi, rig.Limiter));
+        Assert.Equal(expected, rig.Path.A9BCA68(pbi, rig.Limiter, new WwiseSendGlobals()));   // the oracle ran with the image [0x1052454] (pre-load state)
     }
 
     // ------------------------------------------------------------------ L, P: 0xA1E280 and 0xA00618

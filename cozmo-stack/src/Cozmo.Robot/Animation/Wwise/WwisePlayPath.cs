@@ -650,13 +650,13 @@ public sealed class WwisePlayPath
     /// <c>0x9BCA68(ctx, r1)</c> (R3.1, R3.2, C29.4): with <c>[pbi+0xE8]</c> bit 5 clear the ctx <c>vt+0x24</c> (CalcEffectiveParams, <c>r1 = 0</c> from AddSrc); with bit 5 set and <c>[pbi+0xE9]</c> bit 0 set <c>vt+0x28</c>
     /// (<see cref="Recompute9FF368"/>). Then the below-audibility test: <c>(lin(pbi+0x3C) * pbi+0x40) * lin(pbi+0x64) &lt;= [0x1052454]</c> (0x37800000), 1 when so, 0 otherwise (also for NaN, <c>movls</c> / <c>movhi</c>).
     /// </summary>
-    public int A9BCA68(WwisePlayingInstance pbi, WwisePlaybackLimiter limiter)
+    public int A9BCA68(WwisePlayingInstance pbi, WwisePlaybackLimiter limiter, WwiseSendGlobals? globals = null)
     {
         if ((pbi.Flags0E8 & 0x20) == 0)                                                 // 0x9BCA70..0x9BCA78
             CalcEffectiveParams(pbi, null, limiter);                                    // 0x9BCB94..0x9BCB9C: vt+0x24(ctx, r1)
         else if ((pbi.Flags0E9 & 1) != 0)                                               // 0x9BCA7C..0x9BCA84
             Recompute9FF368(pbi);                                                       // 0x9BCB7C..0x9BCB84: vt+0x28
-        return WwisePlaybackLimiter.Below9BEB30(pbi) ? 1 : 0;                           // 0x9BCA88..0x9BCB6C
+        return WwisePlaybackLimiter.Below9BEB30(pbi, globals) ? 1 : 0;                           // 0x9BCA88..0x9BCB6C
     }
 
     // ------------------------------------------------------------------ 0x9BEB30

@@ -216,7 +216,8 @@ public class WwiseEventRuntimeTests
             "t.bnk");
 
         var runtime = WwiseEndOfEventDoubles.Runtime(new[] { bank }, new WwiseRng(1));
-        uint playingId = runtime.PostEvent(900, gameObjectId: null);
+        // The Post carries a game object id that is not registered, so the pump's lookup (0xA0C238, D5.5) finds none: the same as no object for the actions. (A Post with no id leaves [item+0x24] unwritten, C40.1, and EndOfEvent then stops.)
+        uint playingId = runtime.PostEvent(900, gameObjectId: WwiseEndOfEventDoubles.DoubleGameObjectForNull);
         Assert.NotEqual(WwiseEventRuntime.InvalidPlayingId, playingId);
 
         runtime.AdvanceFrame();

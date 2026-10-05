@@ -178,7 +178,11 @@ public sealed class WwiseMixBus
     }
 
     /// <summary>The bus state (<c>+0x1BC</c>): 4 at creation, 1 while input is mixed (D2.1/D2.5).</summary>
-    public int State => _state;
+    public int State
+    {
+        get => _state;
+        internal set => _state = value;                       // the oracle tests place a line in a given +0x1BC state (1, 2, 4)
+    }
 
     /// <summary>
     /// V18c <c>0xA4D994</c>: the bus output gain <c>+0x84</c>, written from <c>dBToLin(bus+0x90)</c>; the

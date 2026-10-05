@@ -707,12 +707,12 @@ public static class WwiseHierarchy
             stateGroups.Add((gid, sync, states));
         }
         if (o.FeedbackEnabled) r.Skip(4);                       // only when the BKHD feedback flag is set
-        _ = a; _ = c; _ = channelConfig; _ = maxDuck;
+        _ = a; _ = channelConfig; _ = maxDuck;
         var p = new WwiseNodeParams(0, parent, 0, props, new Dictionary<byte, (float, float)>(), rtpcs, stateGroups);
         // fidelity: M6-026 - the bus's u16 max instances (bus+0x44) and byte B (D6.1: b0 -> +0x45 bit2, b1 -> +0x45 bit3,
         // b2 -> +0x47 bit6) are what the bus limiter reads. The reader above refuses a B with bits 0..3 set, so B is 0
         // for every bus this reader returns.
-        return new WwiseBusNode(id, o.Bank, p, effects, ducked) { MaxInstances = maxInst, ByteB = b, RecoveryMs = recoveryMs };
+        return new WwiseBusNode(id, o.Bank, p, effects, ducked) { MaxInstances = maxInst, ByteB = b, ByteC = c, RecoveryMs = recoveryMs };
     }
 
     /// <summary>

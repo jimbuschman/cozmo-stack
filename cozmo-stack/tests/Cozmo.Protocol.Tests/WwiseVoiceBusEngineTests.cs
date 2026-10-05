@@ -953,25 +953,37 @@ public sealed class WwiseVoiceBusEngineTests
     // ---------------------------------------------------------------- V7: the settled ducking threshold
 
     /// <summary>
-    /// M6-022 V7/C11 (0xA4B4B0, inventory M6-wwise-bank.md row 3.3/C10): the ducking threshold is the
-    /// Init.bnk -80 dB linear value <c>0x38D1B717 = 0.0001f</c>, not an unset input. A connection gain
-    /// above it clears <c>[conn+0x6C]</c> bit1; one at or below it sets bit1.
+    /// M6-022 V7/C11 (0xA4B4B0): the ducking threshold is the shared global [0x1052454], which at every Play is the state after the Init.bnk STMG setter 0x9A080C(-80, 2): <c>0x38D2306A</c> (engine value, emu_aux.py kind S).
+    /// A connection gain above it clears <c>[conn+0x6C]</c> bit1; one at or below it sets bit1.
     /// </summary>
     [Fact]
-    public void TheDuckingThresholdDefaultsToTheInitBnkValue()
+    public void TheDuckingThresholdDefaultsToTheStateAfterTheInitBnkStmgSetter()
     {
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
         var voice = new WwiseLiveVoice(1, 8) { OutputDb = 0f, OutputGain = 1f };
         var loud = new WwiseVoiceConnection(bus, 1, 1) { C60 = 1f };
-        var quiet = new WwiseVoiceConnection(bus, 1, 1) { C60 = 0.00005f };
+        var between = new WwiseVoiceConnection(bus, 1, 1) { C60 = 0.00005f };     // above 2^-16 (the image value) but below 0x38D2306A
+        var quiet = new WwiseVoiceConnection(bus, 1, 1) { C60 = 0.000001f };
         voice.Connections.Add(loud);
+        voice.Connections.Add(between);
         voice.Connections.Add(quiet);
 
         WwiseVoiceBusPass.ApplyDucking(voice, bus);
 
-        Assert.Equal(0.0001f, WwiseVoiceBusPass.DuckingThreshold);
-        Assert.False((loud.Flags6C & 0x02) != 0);                    // 1.0 > 0.0001
-        Assert.True((quiet.Flags6C & 0x02) != 0);                    // 5e-5 <= 0.0001
+        Assert.Equal(0x38D2306Au, BitConverter.SingleToUInt32Bits(WwiseVoiceBusPass.DuckingThreshold));
+        Assert.False((loud.Flags6C & 0x02) != 0);
+        Assert.True((between.Flags6C & 0x02) != 0);
+        Assert.True((quiet.Flags6C & 0x02) != 0);
+    }
+
+    /// <summary>The pre-load image state (<c>new WwiseSendGlobals()</c>): 0x37800000 / 0xC2C0999A, type gate 3; the engine never plays in it.</summary>
+    [Fact]
+    public void ThePreLoadImageStateIsAvailableExplicitly()
+    {
+        var image = new WwiseSendGlobals();
+        Assert.Equal(0x37800000u, BitConverter.SingleToUInt32Bits(image.GameLinear));
+        Assert.Equal(0xC2C0999Au, BitConverter.SingleToUInt32Bits(image.UserDb));
+        Assert.Equal(3, image.TypeGate);
     }
 
     // ---------------------------------------------------------------- V17/C7: the silent-bus gates
@@ -1025,22 +1037,24 @@ public sealed class WwiseVoiceBusEngineTests
     // ---------------------------------------------------------------- V7-e: the count byte
 
     /// <summary>
-    /// M6-022 V7-e (0x9D4228, missing-bodies item 1.5 step 4/6): the gathered count is written to
-    /// <c>[voice+0xCC]</c>, not to <c>[voice+0x14]</c> (<c>0xA4BA7C add r3,r4,#0xcc</c>).
+    /// M6-022 V7-e (0x9D4228, C40.4 T-A4/T-A6): the merged count is written to <c>[voice+0xCC]</c>, not to <c>[voice+0x14]</c> (<c>0xA4BA7C add r3,r4,#0xcc</c>); the table's count (here 99, so entry 0 is not re-initialised) stays. The earlier test of this name asserted the
+    /// <c>GatherAndDispatch</c> model (a gather over the 0x4C-byte table, which is not the array <c>0x9D4228</c> merges into: it merges into <c>voice+0x2C</c>); the engine's values are in <c>WwiseAuxRouteTests</c>.
     /// </summary>
     [Fact]
-    public void TheGatherWritesTheCountToVoiceCcNotTheSendTable()
+    public void TheMergeWritesTheCountToVoiceCcNotTheSendTable()
     {
-        var voice = new WwiseLiveVoice(1, 8)
+        var go = new WwiseGameObjectRef { Mask22 = 1 };
+        go.Aux24[0] = (0xAA, 1f);
+        var pbi = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, continuous: false)
         {
-            SendTable = new WwiseVoiceSendTable { Count = 99 },
+            Flags0E8 = 0x5C, GameObjectRef14 = go, Byte94 = 1, Volume3C = 0f, Word64 = 0f,
         };
-        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry { Value = 1f });
-        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry { Value = 0f });
+        var voice = new WwiseLiveVoice(1, 8) { BusOwner8 = pbi, SendTable = new WwiseVoiceSendTable { Count = 99, Capacity = 1 } };
+        voice.SendTable.Entries.Add(new WwiseVoiceSendEntry());
+        var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { AuxDispatch9D4108 = (_, _, _) => { } };
 
-        int n = WwiseVoiceBusPass.GatherAndDispatch(voice);
+        pass.RefreshVoiceGainA4B93C(voice);
 
-        Assert.Equal(1, n);
         Assert.Equal(1, voice.CountCC);                              // [voice+0xCC]
         Assert.Equal(99, voice.SendTable.Count);                     // [voice+0x14] untouched
     }

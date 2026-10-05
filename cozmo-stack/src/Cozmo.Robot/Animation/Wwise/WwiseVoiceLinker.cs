@@ -477,6 +477,13 @@ public sealed class WwiseVoiceLinkSeams
     /// </summary>
     public Action<WwiseMixBus, object>? MixObjectRemoveInput { get; set; }
 
+    /// <summary>
+    /// <c>0x9A7EB0([0x108D8E0], id, 1)</c> (<c>0x9D4128..0x9D4138</c>, C40.4 T-A7a): the AddRef'd lookup of a node by id in the node registry, the aux bus of an entry (<c>[entry+0xC]</c>). Null is "not found" (<c>0x9D413C subs r5,r0,#0; beq 0x9D4214</c>: the dispatch does nothing). The registry's contents come from
+    /// the bank loader (HIRC creators unread), so the lookup is a host input; the AddRef the lookup makes and the release <c>bus-&gt;vt+0xC</c> at the end of <c>0x9D4108</c> (<c>0x9D419C..0x9D41A8</c>) are balanced within the call and not modelled. Required.
+    /// </summary>
+    // fidelity: M6-010, M6-025
+    public Func<uint, WwiseRoutingNode?>? BusLookup9A7EB0 { get; set; }
+
     /// <summary>The connection mixer's input/output channel counts (<c>0xA6F90C</c> rows give none).</summary>
     public Func<WwiseLiveVoice, WwiseMixBus, (int Input, int Output)>? ConnectionChannels { get; set; }
 
@@ -487,7 +494,7 @@ public sealed class WwiseVoiceLinkSeams
     /// <c>0xA0428C(mgr, [pbi'+0x134], 0x9BD138(pbi'))</c> (<c>0xA545B0..0xA545CC</c>, C30.1(b)) with <c>pbi' = [voice+8]</c> = the owner
     /// PBI's <c>+0xC</c>: <c>mgr</c> is the global at <c>[GOT+0xFFFFFDD4]</c> (the seam's closure supplies it), the second argument is the
     /// playing id (<c>pbi'+0x134</c> = <c>pbi+0x140</c>) and the third is <c>0x9BD138(pbi')</c> = <c>[[pbi'+0xD4]+8]</c>, the id of the PBI's node
-    /// (<c>pbi+0xE0</c>, <see cref="WwisePlayingInstance.NodeE0"/>). The body is unread.
+    /// (<c>pbi+0xE0</c>, <see cref="WwisePlayingInstance.NodeE0"/>). The body is read (C40.1 T-E4c): <see cref="WwisePlayingIdTable.NodeNotificationA0428C"/> (it reads only the playing id; the node id is not read), so a host wires <c>(id, _) =&gt; table.NodeNotificationA0428C(id)</c>.
     /// </summary>
     public Action<uint, uint>? A0428C { get; set; }
 
@@ -978,6 +985,70 @@ public sealed class WwiseVoiceLinker
                 if (arg5 == 0) voice.DryLineC = null;                      // voice+0xC = 0 if conn+0x68 == 0
             }
         }
+    }
+
+    // ---------------------------------------------------------------- 0x9D4108, 0xA43434 (the aux connections, C40.4)
+
+    /// <summary>
+    /// <c>0x9D4108(voice, entry, mask)</c> (C40.4 T-A7a), the per-entry dispatch of <c>0x9D4228</c>: <c>bus = 0x9A7EB0(registry, [entry+0xC], 1)</c> (<see cref="WwiseVoiceLinkSeams.BusLookup9A7EB0"/>; null does nothing). With bit 6 of <c>[bus+0xCC]</c> clear, for each device of the output-device list (the struct the GOT word <c>0x10400B8</c> points at, <c>0x108DAFC</c>, head <c>[0x108DAFC+8]</c> = <c>0x108DB04</c>: <c>0x9D4118..0x9D4158</c>; the extraction's "<c>[0x108DAE8]+8</c>" is the output-device state that holds it at <c>+0x14</c>) in order whose id is not (2,0) and whose
+    /// listener mask <c>[d+0x18]</c> has a bit of <paramref name="mask"/>, <c>0xA43434(bus, entry, d.lo, d.hi, voice)</c>. With the bit set (a descendant of the master bus: Robot_Bus_N) only the first device with id (2,0): its mask is tested the same way and the call uses (2,0); a list with no such device is the native null
+    /// dereference (<c>0x9D4208..0x9D4210</c>), here an <see cref="InvalidOperationException"/>.
+    /// </summary>
+    // fidelity: M6-010, M6-025
+    public void DispatchAuxEntry9D4108(WwiseLiveVoice voice, WwiseAuxEntry entry, byte mask)
+        => DispatchAuxEntry9D4108(voice, entry, mask, LinkAuxA43434);
+
+    /// <summary>The body of <see cref="DispatchAuxEntry9D4108(WwiseLiveVoice, WwiseAuxEntry, byte)"/> with the <c>0xA43434</c> call replaceable (the test of the device selection observes it).</summary>
+    internal void DispatchAuxEntry9D4108(WwiseLiveVoice voice, WwiseAuxEntry entry, byte mask, Action<WwiseRoutingNode, WwiseAuxEntry, WwiseDeviceId, WwiseLiveVoice> link)
+    {
+        ArgumentNullException.ThrowIfNull(voice);
+        ArgumentNullException.ThrowIfNull(entry);
+        var bus = (Seams.BusLookup9A7EB0 ?? throw Missing("0x9A7EB0 (the node registry [0x108D8E0], 0x9D4128..0x9D4138)"))(entry.Id);
+        if (bus is null) return;                                                   // 0x9D413C subs r5,r0,#0; beq 0x9D4214
+        if (!bus.Bit6)                                                             // 0x9D4144 ldrb r3,[r5,#0xcc]; tst r3,#0x40; bne 0x9D41B4
+        {
+            foreach (var d in Devices.Entries)                                     // 0x9D4158..0x9D4198: head [list+8], next [+4]
+            {
+                if (d.Id.IsMain) continue;                                         // 0x9D4164..0x9D4170 ldrd r2,r3,[r4,#0x10]; cmp r3,#0; cmpeq r2,#2; beq
+                if ((mask & d.ListenerMask) == 0) continue;                        // 0x9D4174..0x9D417C ldr r1,[r4,#0x18]; tst r6,r1; beq
+                link(bus, entry, d.Id, voice);                                     // 0x9D4180..0x9D418C
+            }
+            return;
+        }
+        WwiseOutputDeviceEntry? main = null;                                       // 0x9D41B4..0x9D41C8: the first device with id (2,0)
+        foreach (var d in Devices.Entries)
+            if (d.Id.IsMain) { main = d; break; }
+        if (main is null)
+            throw new InvalidOperationException("M6-010 T-A7a: bit 6 of [bus+0xCC] selects the device (2,0) and the list has none: 0x9D4208..0x9D4210 loads and stores through a null pointer (udf)");
+        if ((mask & main.ListenerMask) == 0) return;                               // 0x9D41E0..0x9D41E8 ldr r3,[r1,#0x18]; tst r6,r3; beq 0x9D419C
+        link(bus, entry, WwiseDeviceId.Main, voice);                               // 0x9D41EC..0x9D4200 (r2 = 2, r3 = 0)
+    }
+
+    /// <summary>
+    /// <c>0xA43434(bus, entry, devLo, devHi, voice)</c> (C40.4 T-A7b): the context <c>{bus, key2 = [entry+8], byte 0}</c> finds the line by the same scan as the dry path (<see cref="FindLine"/>: <c>0xA68A2C</c> key, <c>[line+0x50]</c>, device, state != 2; both bus pointers null skip the key tests) or creates it
+    /// (<c>0xA429F0</c>, <see cref="CreateLine"/>, flag 0; a null result returns), sets <c>[line+0x1CC]</c> bit 0 (the line is touched), returns when the voice already has a connection to the line, else makes the connection with <c>0xA4C280</c> (<see cref="MakeConnection"/>) with
+    /// <c>arg5 = [entry+0x10]</c> (the kind), ORed with 4 when bit 6 of the aux bus differs from bit 6 of the Sound's output bus (<c>[[voice+8]+0xD4]-&gt;vt+0x88()</c>; no bus counts as 1).
+    /// </summary>
+    // fidelity: M6-010, M6-025
+    private void LinkAuxA43434(WwiseRoutingNode bus, WwiseAuxEntry entry, WwiseDeviceId dev, WwiseLiveVoice voice)
+        => LinkAuxA43434(bus, entry, dev, voice, CreateLine, MakeConnection);
+
+    /// <summary>The body of <c>0xA43434</c> with <c>0xA429F0</c> (<paramref name="create"/>) and <c>0xA4C280</c> (<paramref name="connect"/>) replaceable (the test of the line find and the connection arguments observes them).</summary>
+    internal void LinkAuxA43434(WwiseRoutingNode bus, WwiseAuxEntry entry, WwiseDeviceId dev, WwiseLiveVoice voice,
+        Func<WwiseBusContext, WwiseDeviceId, bool, WwiseMixBus?> create, Action<WwisePbiRouting, WwiseLiveVoice, WwiseMixBus, WwiseDeviceId, uint> connect)
+    {
+        var ctx = new WwiseBusContext(bus, entry.Handle, 0);                       // 0xA43448..0xA43470
+        var line = FindLine(ctx, dev);                                             // 0xA43478..0xA434F4
+        line ??= create(ctx, dev, false);                                          // 0xA435C4..0xA435DC bl 0xA429F0(&ctx, .., lo, hi, 0)
+        if (line is null) return;                                                  // 0xA435E0 subs r4,r0,#0; bne 0xA43504 (else return)
+        line.MarkTouched();                                                        // 0xA43504..0xA4350C orr r3,r3,#1; strb r3,[r4,#0x1cc]
+        if (voice.Connections.Any(c => ReferenceEquals(c.Bus, line))) return;      // 0xA43510..0xA43528 [conn+0x30] == line
+        var owner = voice.BusOwner8 as WwisePlayingInstance ?? throw new InvalidOperationException(
+            "M6-010 T-A7b: 0xA43538 loads [voice+8] and 0xA435EC dereferences it when null; the voice has no owner PBI");
+        var routing = _routingFor(owner);
+        var ctxBus = NodeOf(routing).Vt88();                                       // 0xA43548..0xA43554 [[voice+8]+0xD4]->vt+0x88()
+        bool sameSide = bus.Bit6 == (ctxBus is null || ctxBus.Bit6);               // 0xA43560..0xA43580: r3 = bit 6 of [bus+0xCC]; r2 = ctxBus ? bit 6 of [ctxBus+0xCC] : 1
+        connect(routing, voice, line, dev, entry.Kind | (sameSide ? 0u : 4u));    // 0xA43588..0xA43598 bl 0xA4C280(voice, line, lo, hi, [entry+0x10] | 4)
     }
 
     /// <summary>

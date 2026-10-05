@@ -366,72 +366,8 @@ public readonly record struct WwiseGainEffective(
     float VolumeDb, float PitchCents, float LowPass, float HighPass, float MakeUpGain,
     float MuteFade, float VoiceGain);
 
-/// <summary>One game-object aux-send control value from <c>SetGameObjectAuxSendValues</c> (gapC 2.1).</summary>
-/// <param name="BusId">The target bus id; entries with a zero id are not stored (gapC 2.1).</param>
-/// <param name="Value">The game object's send value, regobj+0x24 (gapC 2.1, 2.3).</param>
-public readonly record struct WwiseGameAuxSend(uint BusId, float Value);
-
-/// <summary>One connection the voice builds: a bus, its gain and the send type (gapC 2.3). Type 1 is a game-defined send.</summary>
-public readonly record struct WwiseAuxSend(uint BusId, float Gain, int Type);
-
-/// <summary>One user send the voice builds: a bus id and a linear gain (gapC 1.8, 2.3).</summary>
-public readonly record struct WwiseUserAuxSend(uint Id, float Gain);
-
-/// <summary>
-/// The voice-to-aux send list (gapC 2.3). The game send gain is
-/// <c>dBToLin(GameAuxSendVolume) · game object control value</c> and deliberately excludes Volume,
-/// OutputBusVolume and the game object's OutputBusVolume, which is why robot_volume cannot reach the
-/// Hijack through it. User sends are the same decision shape but with no game-object value.
-/// </summary>
-public static class WwiseAuxSendBuilder
-{
-    /// <summary>C10: [0x1052454], binary32 0x38D1B717 from Init.bnk's -80 dB threshold.</summary>
-    public const float GameSendThreshold = 0.0001f;
-
-    /// <summary>C10: the raw STMG threshold at [0x1052450].</summary>
-    public const float UserSendThresholdDb = -80f;
-
-    /// <summary>
-    /// The game-defined send list (gapC 2.3): built only when the deciding node set use-game-aux and the
-    /// game object has entries. Each entry emits when its gain is above [0x1052454] (C10).
-    /// </summary>
-    public static IReadOnlyList<WwiseAuxSend> BuildGameSends(in WwiseAudioParameters io,
-        IReadOnlyList<WwiseGameAuxSend> gameObjectSends, float emitLinearThreshold = GameSendThreshold)
-    {
-        ArgumentNullException.ThrowIfNull(gameObjectSends);
-        var result = new List<WwiseAuxSend>();
-        if (!io.UseGameAux || gameObjectSends.Count == 0) return result;
-
-        float line = WwiseGain.DbToLinear(io.GameAuxSendVolumeDb);
-        foreach (var send in gameObjectSends)
-        {
-            float gain = line * send.Value;
-            if (gain > emitLinearThreshold) result.Add(new WwiseAuxSend(send.BusId, gain, 1));
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// The user send list (gapC 1.8, 2.3, 2.4): for each of the four slots, a non-zero id and a dB volume
-    /// above the caller's threshold emits {id, dBToLin(volume)} of type 2. gapC 2.4 builds the send list
-    /// only when use-game-aux is set "or any user ID" is present, so a slot whose id is 0 emits nothing.
-    /// No shipped node has aux bit3, so this is empty in the shipped data. C10 settles [0x1052450] as -80 dB.
-    /// </summary>
-    public static IReadOnlyList<WwiseUserAuxSend> BuildUserSends(in WwiseAudioParameters io,
-        float emitDbThreshold = UserSendThresholdDb)
-    {
-        var result = new List<WwiseUserAuxSend>();
-        if (!io.UserAuxDecided) return result;
-
-        for (int i = 0; i < 4; i++)
-        {
-            if (io.UserAuxIds[i] == 0) continue;                       // gapC 2.4: "or any user ID"
-            float db = io.UserAuxVolumesDb[i];
-            if (db > emitDbThreshold) result.Add(new WwiseUserAuxSend(io.UserAuxIds[i], WwiseGain.DbToLinear(db)));
-        }
-        return result;
-    }
-}
+// The game-object aux send values, the send gain builder and the user sends of the voice (C40.4) are WwiseGameObjectRef.SetAuxValuesA0BA3C and WwiseAuxRoute (0x9BD368, 0x9D4228). The earlier test-only model of 0x9BD368 that stood here
+// (WwiseAuxSendBuilder: a threshold of 0.0001f as a decimal, a caller-supplied emit threshold, no stop at a zero id, no terminator, DbToLinear's own polynomial literals) is replaced by that port.
 
 /// <summary>
 /// The M6-010 gain composition: <c>GetAudioParameters</c> over the parent/bus links, the per-voice
@@ -465,7 +401,7 @@ public static class WwiseGain
     public const float BusVolumeInitDb = -96.3f;
 
     /// <summary>
-    /// The game send's emit threshold address, [0x1052454] (C10: binary32 0x38D1B717).
+    /// The game send's emit threshold address, [0x1052454] (WwiseSendGlobals.Shared: 0x38D2306A after the Init.bnk STMG setter 0x9A080C(-80, 2) (0x37800000 only in the pre-load image); the earlier C10 value 0x38D1B717 was contradicted).
     /// </summary>
     public const uint GameSendThresholdAddress = 0x1052454;
 

@@ -76,6 +76,13 @@ public sealed class WwisePlayingInstance
     public uint? GameObject14 { get; set; }
 
     /// <summary>
+    /// <c>[ctx+8]</c> (<c>pbi+0x14</c> as a pointer): the game object <c>0x9BC90C</c> keeps and takes a reference on (C40.3). <see cref="GameObject14"/> is the same word as an identity. The aux sends (<c>0x9BD368</c>), the listener mask (<c>[GO+0x22]</c>, <c>0x9D4228</c>) and the output bus
+    /// volume (<c>[GO+0x60]</c>, <c>0xA4B9F0</c>) of a voice are read through it. Set by <see cref="WwisePlaybackBridge.ContextInit9BC90C"/>.
+    /// </summary>
+    // fidelity: M6-010, M6-025
+    public WwiseGameObjectRef? GameObjectRef14 { get; set; }
+
+    /// <summary>
     /// <c>+0x64</c> (ctx <c>+0x58</c>): the third input of the volume-threshold product in <c>0x9BEB30</c> (C29.4, 3.2). CalcEffectiveParams writes it: <c>0x9FFB64</c> zeroes it only on the reset
     /// path (<c>0x9FFB10</c>; skipped when <c>[r7+0x90] == r6</c>), then <c>0x9FFDF0..0x9FFE04</c> add <c>s16</c>, which is 0.0f only on the <c>0x9FFC1C</c> and <c>0x9FFE88</c> paths and is
     /// <c>0x9C39DC(r6, .., 5)</c> on the <c>0x9FFEB0</c> path (taken when <c>0x9C54E8(r6) == 0</c>, <c>r6</c> = the first output bus <c>0x9F4BB8(node)</c>); <c>0x9C54E8</c> and <c>0x9C39DC</c> are

@@ -528,7 +528,7 @@ internal static class WwiseBridgeTestSeams
         bridge.TailA9E85C8 ??= (_, _, _) => { };
         // The shipped Play path (C32.1) with doubles for the unread callees: every node has an output bus (a non-collapsed one, so the walk adds nothing), node vt+0xAC accumulates nothing,
         // and no node has an RTPC the doubles would have to evaluate. The modulator manager answers 1 for every id (0x9DCE44 is not adopted).
-        bridge.CtxNodeChainFlag9BC90C ??= _ => false;        // test double: the writers of [node+0x40] bits 17..19 are unread
+        // the ctx init's node chain test (0x9BC9FC..0x9BCA1C, C40.3) runs over the runtime graph below: the only writer of [node+0x40] & 0xE0000 is the Bus loader, so the doubles' buses (Word40 = 0) give false
         bridge.PlayPath ??= new WwisePlayPath(n => bridge.Limiter?.ParentNode(n), new WwisePlaySeams
         {
             NodeVtAC = _ => { },

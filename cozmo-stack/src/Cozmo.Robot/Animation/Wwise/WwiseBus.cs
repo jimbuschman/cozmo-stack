@@ -24,6 +24,12 @@ public sealed record WwiseBusNode(uint Id, string Bank, WwiseNodeParams Params,
     /// <summary>The bus's byte B (D6.1: b0 to <c>+0x45</c> bit2, b1 to <c>+0x45</c> bit3, b2 to <c>+0x47</c> bit6).</summary>
     public byte ByteB { get; init; }
 
+    /// <summary>
+    /// The bus's byte C (the byte after the channel config, <c>0x9C6528</c>): bit 0 stores <c>[bus+0x40]</c> <c>0xE0000</c> (<c>0x9C6540/44</c>, the only writer of those bits, C40.3 T-N1), bit 1 stores <c>[bus+0xCC]</c> bit 3 (<c>0x9C654C</c>). All 15 shipped buses have 2. The reader used to discard it.
+    /// </summary>
+    // fidelity: M6-025
+    public byte ByteC { get; init; }
+
     /// <summary>The bank's recovery time in ms (D6.1: converted to samples at <c>bus+0x64</c>); <c>0x9C5240</c> tests <c>[bus+0x64] != 0</c> (M6-026 1.3).</summary>
     public uint RecoveryMs { get; init; }
 }

@@ -48,6 +48,13 @@ public sealed class WwisePlayInitParams
     /// <summary><c>+0x08</c>: the game object (queued action <c>+0x34</c>, <c>0xA62BF0</c>).</summary>
     public uint? GameObjectId { get; set; }
 
+    /// <summary>
+    /// <c>+0x08</c> as the engine holds it: the pointer to the registered game object, which <c>0x9BC90C</c> stores at <c>[ctx+8]</c> and takes a reference on (<c>[GO+0x7C]</c> low 30 bits <c>+= 1</c>, <c>0x9BCA20..0x9BCA2C</c>, C40.3). The event runtime sets it from its registry
+    /// for an object-scope action. A null here with a non-null <see cref="GameObjectId"/> is a host that did not supply the object, and a Play through the bridge then stops (the increment has no object to touch).
+    /// </summary>
+    // fidelity: M6-025
+    public WwiseGameObjectRef? GameObjectRef { get; set; }
+
     /// <summary><c>+0x0C</c>: the fade-in transition pointer (<c>0xA62BFC</c>).</summary>
     public WwiseFadeInTransition? Transition { get; set; }
 

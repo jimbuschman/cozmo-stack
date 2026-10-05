@@ -549,127 +549,10 @@ public class WwiseGainTests
     }
 
     // ------------------------------------------------------------------ aux send
-
-    /// <summary>
-    /// M6-010 / gapC 2.3, 2.6: the game-defined send gain is
-    /// <c>dBToLin(GameAuxSendVolume) · the game object's send value</c>. 0 dB is the fast pow's 0.99903899,
-    /// so a control value of 1.0 gives that and 0.5 gives half of it.
-    /// </summary>
-    [Fact]
-    public void TheGameAuxSendIsTheSendVolumeTimesTheGameObjectValue()
-    {
-        var io = WwiseAudioParameters.Create();
-        io.UseGameAux = true;
-        io.GameAuxDecided = true;
-        io.GameAuxSendVolumeDb = 0f;
-
-        var sends = new[]
-        {
-            new WwiseGameAuxSend(100, 1.0f),
-            new WwiseGameAuxSend(101, 0.5f),
-        };
-        var built = WwiseAuxSendBuilder.BuildGameSends(io, sends, 0f);
-
-        Assert.Equal(2, built.Count);
-        Close(DbToLin0, built[0].Gain);
-        Close(DbToLin0 * 0.5f, built[1].Gain);
-        Assert.Equal(1, built[0].Type);
-        Assert.Equal(100u, built[0].BusId);
-
-        // A −6.0206 dB send volume is its own fast-pow factor.
-        io.GameAuxSendVolumeDb = -6.0206f;
-        var lower = WwiseAuxSendBuilder.BuildGameSends(io, sends, 0f);
-        Close(DbToLinMinus6, lower[0].Gain);
-    }
-
-    /// <summary>
-    /// M6-010 / gapC 2.3 (0x9BD368): the send gain does not include OutputBusVolume or the game object's
-    /// output-bus volume. Changing the output-bus values leaves every send gain identical.
-    /// </summary>
-    [Fact]
-    public void TheGameAuxSendExcludesOutputBusVolume()
-    {
-        var io = WwiseAudioParameters.Create();
-        io.UseGameAux = true;
-        io.GameAuxDecided = true;
-        io.GameAuxSendVolumeDb = 0f;
-        io.OutputBusVolumeDb = -20f;
-        io.OutputBusLowPass = 15f;
-        io.OutputBusHighPass = 80f;
-
-        var sends = new[] { new WwiseGameAuxSend(100, 1.0f) };
-        var built = WwiseAuxSendBuilder.BuildGameSends(io, sends, 0f);
-
-        Close(DbToLin0, built[0].Gain);   // unchanged by the output-bus values
-        Assert.Single(built);
-    }
-
-    /// <summary>M6-010 / gapC 2.3: use-game-aux unset builds no send, and an entry at or below the emit threshold is dropped.</summary>
-    [Fact]
-    public void TheGameSendRespectsUseGameAuxAndTheEmitThreshold()
-    {
-        var sends = new[] { new WwiseGameAuxSend(100, 1.0f) };
-
-        var off = WwiseAudioParameters.Create();
-        off.GameAuxDecided = true;
-        off.GameAuxSendVolumeDb = 0f;
-        Assert.Empty(WwiseAuxSendBuilder.BuildGameSends(off, sends, 0f));
-
-        var on = WwiseAudioParameters.Create();
-        on.UseGameAux = true;
-        on.GameAuxDecided = true;
-        on.GameAuxSendVolumeDb = 0f;
-        // A caller may still supply a stricter diagnostic threshold; C10 settles the production default.
-        Assert.Empty(WwiseAuxSendBuilder.BuildGameSends(on, sends, DbToLin0 + 0.01f));
-    }
-
-    /// <summary>
-    /// M6-010 / C10: Init.bnk's -80 dB is stored raw at 0x1052450 and as binary32 0x38D1B717 at
-    /// 0x1052454. The production overloads use those values without a caller-supplied guess.
-    /// </summary>
-    [Fact]
-    public void TheProductionSendThresholdsComeFromStmg()
-    {
-        Assert.Equal(-80f, WwiseAuxSendBuilder.UserSendThresholdDb);
-        Assert.Equal(0x38D1B717u,
-            BitConverter.ToUInt32(BitConverter.GetBytes(WwiseAuxSendBuilder.GameSendThreshold), 0));
-
-        var game = WwiseAudioParameters.Create();
-        game.UseGameAux = true;
-        game.GameAuxDecided = true;
-        game.GameAuxSendVolumeDb = 0f;
-        Assert.Single(WwiseAuxSendBuilder.BuildGameSends(game,
-            new[] { new WwiseGameAuxSend(100, 1f) }));
-
-        var user = WwiseAudioParameters.Create();
-        user.UserAuxDecided = true;
-        user.UserAuxIds[0] = 77;
-        user.UserAuxVolumesDb[0] = -80f;
-        Assert.Empty(WwiseAuxSendBuilder.BuildUserSends(user));
-        user.UserAuxVolumesDb[0] = -79f;
-        Assert.Single(WwiseAuxSendBuilder.BuildUserSends(user));
-    }
-
-    /// <summary>
-    /// M6-010 / gapC 1.8: user sends use the slot's dB volume directly through dBToLin (no game-object
-    /// value). No shipped node has aux bit3, so this is inert in the shipped data.
-    /// </summary>
-    [Fact]
-    public void TheUserAuxSendIsTheSlotVolumeThroughDbToLin()
-    {
-        var io = WwiseAudioParameters.Create();
-        io.UserAuxDecided = true;
-        io.UserAuxVolumesDb[0] = 0f;
-        io.UserAuxVolumesDb[1] = -20f;
-        io.UserAuxIds[0] = 77;
-        io.UserAuxIds[1] = 78;
-
-        var built = WwiseAuxSendBuilder.BuildUserSends(io, -80f);
-        Assert.Equal(2, built.Count);
-        Close(DbToLin0, built[0].Gain);
-        Close(DbToLinMinus20, built[1].Gain);
-        Assert.Equal(77u, built[0].Id);
-    }
+    //
+    // The earlier tests here asserted a model of 0x9BD368 (WwiseAuxSendBuilder: an emit threshold the caller could override, a decimal threshold, DbToLinear's polynomial, no zero-id stop, no terminator):
+    // TheGameAuxSendIsTheSendVolumeTimesTheGameObjectValue, TheGameAuxSendExcludesOutputBusVolume, TheGameSendRespectsUseGameAuxAndTheEmitThreshold, TheProductionSendThresholdsComeFromStmg and
+    // TheUserAuxSendIsTheSlotVolumeThroughDbToLin. They are replaced by WwiseAuxRouteTests, whose expected values are the engine's own 0x9BD368 output (WwiseAuxOracle, emu_aux.py).
 
     // ------------------------------------------------------------------ dry path and bus placement
 
@@ -698,13 +581,7 @@ public class WwiseGainTests
     {
         Assert.Equal(-8f, WwiseGain.FoldCollapsedBusVolume(-5f, -3f));
 
-        var io = WwiseAudioParameters.Create();
-        io.UseGameAux = true;
-        io.GameAuxDecided = true;
-        io.GameAuxSendVolumeDb = 0f;
-        io.OutputBusVolumeDb = WwiseGain.FoldCollapsedBusVolume(-5f, -3f);   // the fold touched the dry path
-        var sends = new[] { new WwiseGameAuxSend(100, 1.0f) };
-        Close(DbToLin0, WwiseAuxSendBuilder.BuildGameSends(io, sends, 0f)[0].Gain);
+        // the dry path's fold never reaches the aux sends: 0x9BD368 reads only [ctx+0x84] (the GameAuxSendVolume term) and the game object's pairs, never the output bus volume (see WwiseAuxRouteTests).
     }
 
     /// <summary>

@@ -361,6 +361,46 @@ public class WwisePlaybackLimiterTests
         Assert.Null(l.LimiterOf(2)!.SubscriberNode20);
     }
 
+    [Fact]
+    public void C40_2_TheLimiterIsStoredAtTheNodeBeforeItsSubscriptionAndKeepsTheZeroKeyBlock_0x9F2AD0_0x9F2CE8()
+    {
+        // 0x9F2AD0 stores [node+0x30] = the limiter BEFORE 0xA19ECC(limiter+0x10, node, &{0x10000, 0}, 1) at 0x9F2CE8 (C40.2 correction 10); 0xA19CDC copies the key block {0, 0, 0, 0xFF, 0xFF, 0} to the limiter's context (0x9F2A58..0x9F2A70).
+        var g = new Graph(Mix(1, P(adv0: 4, max: 1)));
+        var l = Limiter(g);
+        WwiseNodeLimiter? seen = null;
+        var calls = new List<(string, uint, ulong)>();
+        l.RtpcSubscribeA19ECC = (kind, node, mask) => { seen = l.LimiterOf(node.Id); calls.Add((kind, node.Id, mask)); };
+        l.Count9FAC54(g[1], false);
+        Assert.NotNull(seen);                                                           // visible during the call
+        Assert.Same(l.LimiterOf(1), seen);
+        Assert.Equal(new WwiseListenerKey(0, 0, 0, 0xFF, 0xFF, 0), seen!.Key10);
+        Assert.Equal((ushort)1, seen.List.Max);                                         // [limiter+0x44] is stored before the call too (0x9F2B00)
+        Assert.True(seen.Global68);                                                     // 0x9F2B8C bfi: the node's global bit 6, applied after the call (adv0 bit 2 = 4)
+        Assert.Equal(("limiter", 1u, 0x10000UL), Assert.Single(calls));
+    }
+
+    [Theory]
+    [InlineData(7.5f, 7)]       // vcvt.u32.f32 truncates (0x9F2CB8..0x9F2CC4) and ldrh [sp+4] takes the low half
+    [InlineData(0.4f, 0)]       // a result that truncates to 0 makes the gate cmp r3,#0 (0x9F2AF8) skip the subscription
+    public void C40_2_TheRtpcDrivenMaxReplacesTheBankMaxWhenTheRegistryHoldsParameter0x10_0x9F2C7C(float curveValue, int expectedMax)
+    {
+        // [node+0x14] non-null with bit 16 of mask A and a non-zero static max takes 0x9F2C7C: max = u16(trunc(0xA11590(mgr, node+0x10, 0x10, {0,0,0,FF,FF,0}))). The curve is constant, so the value does not depend on the interpolation shape.
+        var rtpc = new WwiseRtpc(0x55, 0, 0, 0x10, 0, 0, new[] { (0f, curveValue, 4u), (10f, curveValue, 4u) });
+        var g = new Graph(Mix(1, P(adv0: 4, max: 1, rtpcs: new[] { rtpc })));
+        var l = Limiter(g);
+        var routing = new WwiseRoutingNode { Id = 1, SubscriptionKey10 = 0x4000, SubscriptionMask14 = 1UL << 16 };
+        var store = new WwiseRtpcStore();
+        store.SetRtpcs(0x55, 2.0f, 0, 0, 0, 0, false);
+        store.AddSubscription(new WwiseRtpcSubscription { Key1 = 0x4000, Param = 0x10, Type = 1, Accumulate = 0, Curves = new[] { rtpc } });
+        l.RuntimeNodeOf = _ => routing;
+        l.RtpcListeners = store;
+        var calls = new List<string>();
+        l.RtpcSubscribeA19ECC = (kind, node, mask) => calls.Add(kind);
+        l.Count9FAC54(g[1], false);
+        Assert.Equal((ushort)expectedMax, l.LimiterOf(1)!.List.Max);
+        Assert.Equal(expectedMax != 0 ? 1 : 0, calls.Count);
+    }
+
     // ------------------------------------------------------------------ W2..W4: the walk order and the merge
 
     [Theory]
@@ -2023,26 +2063,37 @@ public class WwisePlaybackLimiterTests
     }
 
     [Fact]
+    public void M6_026_3_2_TheShippedThresholdIsTheStateAfterTheInitBnkStmgSetter()
+    {
+        var pbi = Pbi(50f);
+        pbi.Word64 = 0f;
+        pbi.Volume3C = -80f;                                                         // lin 1.0e-4 (0.99903899 * 10^-4 class): above 2^-16, below 0x38D2306A (1.0001e-4)
+        Assert.False(WwisePlaybackLimiter.Below9BEB30(pbi, new WwiseSendGlobals()));
+        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi));                          // the shared default is the post-STMG state
+    }
+
+    [Fact]
     public void M6_026_3_2_TheThresholdIsTwoToTheMinus16AndAnUnorderedProductIsNotBelow()
     {
         Assert.Equal(0x37800000, BitConverter.SingleToInt32Bits(1f / 65536f));
+        var image = new WwiseSendGlobals();                                          // the pre-load state: 2^-16 (the oracle ran the engine with the image's [0x1052454]); the shipped state after the Init.bnk STMG setter is 0x38D2306A
         var pbi = Pbi(50f);
-        Assert.Throws<WwiseMissingBehaviourException>(() => WwisePlaybackLimiter.Below9BEB30(pbi));   // pbi+0x64 has no default (0x9FFDF0..0x9FFEB0)
+        Assert.Throws<WwiseMissingBehaviourException>(() => WwisePlaybackLimiter.Below9BEB30(pbi, image));   // pbi+0x64 has no default (0x9FFDF0..0x9FFEB0)
         pbi.Word64 = 0f;
         pbi.Volume3C = -100f;                                                        // lin ~ 1.0e-5 <= 2^-16 (1.5e-5)
-        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi, image));
         pbi.Volume3C = -80f;                                                         // ~1.0e-4 > 2^-16
-        Assert.False(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.False(WwisePlaybackLimiter.Below9BEB30(pbi, image));
         pbi.Volume3C = -1000f;                                                       // lin 0 -> product 0
-        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi, image));
         pbi.Volume3C = 0f;
         pbi.MuteFade40 = float.NaN;                                                  // vcmpe unordered: movls not taken
-        Assert.False(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.False(WwisePlaybackLimiter.Below9BEB30(pbi, image));
         pbi.MuteFade40 = 0f;
-        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi, image));
         pbi.MuteFade40 = 1f;
         pbi.Word64 = -100f;                                                          // ctx+0x58 is the third factor
-        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi));
+        Assert.True(WwisePlaybackLimiter.Below9BEB30(pbi, image));
     }
 
     // ------------------------------------------------------------------ the live entry: WwiseEventRuntime -> WwisePlaybackBridge.PlaySound
@@ -2167,7 +2218,7 @@ public class WwisePlaybackLimiterTests
         {
             uint id = playingId ?? Runtime.PostEvent(eventId, go);
             var node = Runtime.FindNode(soundId)!;
-            var p = new WwisePlayInitParams { PlayingId = id, TargetNodeId = soundId, GameObjectId = go, ChainId = chain ?? 0 };
+            var p = new WwisePlayInitParams { PlayingId = id, TargetNodeId = soundId, GameObjectId = go, GameObjectRef = Runtime.FindGameObject(go), ChainId = chain ?? 0 };   // [params+8] is the registered object (C40.3: 0x9BC90C takes a reference on it)
             tweak?.Invoke(p);
             Bridge.OnPlay(node, id, go, p);
             return id;
@@ -2175,6 +2226,30 @@ public class WwisePlaybackLimiterTests
     }
 
     private static WwiseBank Synthetic(params (byte Type, byte[] Payload)[] objects) => WwiseBank.Parse(BankFile(objects), "t.bnk");
+
+    [Fact]
+    public void C40_3_ALivePlayTakesAReferenceOnTheGameObjectAndTheNodeAndWalksTheChainWithoutAFlagSeam()
+    {
+        // Through the live entry (PostEvent, the pump, ExecutePlay, OnPlay, PlaySound): 0x9BC90C increments [[ctx+8]+0x7C] low 30 bits (0x9BCA20..0x9BCA2C) and calls the node's vt+8 (0x9F1CBC, 0x9BCA30..0x9BCA38); the chain test
+        // [x+0x40] & 0xE0000 (0x9BC9FC..0x9BCA1C) runs over the runtime graph (no CtxNodeChainFlag9BC90C seam is set: the doubles' buses have no such bit, so bit 3 of [ctx+0xDD] is clear).
+        var bank = Synthetic(MixerObj(200, 0x04, 1), SoundObj(500, 200), PlayAction(100, 500), EventObj(900, 100));
+        var rig = new Rig(new[] { bank });
+        Assert.Null(rig.Bridge.CtxNodeChainFlag9BC90C);
+        var go = rig.Runtime.FindGameObject(7)!;
+        Assert.Equal(0xC0000001u, go.Word7C);                                          // the constructor (0xA0B34C): count 1, top bits 0xC0
+        rig.Play(900);
+        var pbi = rig.Bridge.Instances.Single();
+        Assert.Equal(0xC0000002u, go.Word7C);
+        Assert.Same(go, pbi.GameObjectRef14);
+        Assert.Equal(1, rig.Bridge.NodeRefs.ReferencesOf(500));
+        Assert.Equal(0, pbi.Flags0E9 & 8);                                             // the chain flag: false for a chain with no 0xE0000 bus
+        // a Play with no game object reference is the native null dereference (0x9BCA20): it stops, and takes nothing
+        var node = rig.Runtime.FindNode(500)!;
+        var ex = Assert.Throws<WwiseMissingBehaviourException>(() => rig.Bridge.OnPlay(node, 77, null, new WwisePlayInitParams { PlayingId = 77, TargetNodeId = 500 }));
+        Assert.Contains("0x9BC90C", ex.Message);
+        Assert.Equal(0xC0000002u, go.Word7C);
+        Assert.Equal(1, rig.Bridge.NodeRefs.ReferencesOf(500));
+    }
 
     [Fact]
     public void M6_026_P4_C28_1_ASecondPlayUnderAMaxOneGlobalMixerKillsTheFirstThroughTheLiveEntry()
@@ -2439,11 +2514,10 @@ public class WwisePlaybackLimiterTests
         Assert.Throws<WwiseMissingBehaviourException>(() => runtime.ReleasePbiPlayingIdReference(id));   // both zero: 0xA0C238 is unread
         var zeros = new List<uint>();
         var again = new WwiseEventRuntime(new[] { OneMixerBank(0x04, 3) }, new WwiseRng(1));
-        again.PlayingItemFieldsWriter = (item, ev, go) => { item.EventId20 = ev; item.GameObject24 = go ?? WwiseEndOfEventDoubles.DoubleGameObjectForNull; };   // double: the writer of [item+0x20]/[item+0x24] is unread
         again.PlayingIds.Seams.GameObjectLookupA0C238 = _ => null;
         again.PlayingIds.Seams.A1C660 = item => zeros.Add(item.PlayingId);
         again.PlayingIds.Seams.A1C65C = _ => { };
-        uint id2 = again.PostEvent(900, null);
+        uint id2 = again.PostEvent(900, WwiseEndOfEventDoubles.DoubleGameObjectForNull);        // 0xA03108 writes [item+0x20]/[item+0x24] (C40.1)
         var holder2 = PbiWithId(id2);
         again.RegisterPbiPlayingId(holder2);
         again.PlayingIds.Find(id2)!.Count1C = 0;
@@ -2486,7 +2560,7 @@ public class WwisePlaybackLimiterTests
         table.Seams.A1C65C = _ => log.Add("A1C65C");
         WwiseEndOfEventInfo? info = null;
         var item = table.GetOrCreate(77);
-        item.Flags48 = 1; item.Cookie44 = 0xC0; item.GameObject24 = 7; item.EventId20 = 900; item.Object28 = new object();
+        item.Flags48 = 1; item.Cookie44 = 0xC0u; item.GameObject24 = 7; item.EventId20 = 900; item.Object28 = new object();
         item.Callback40 = (type, i) => { log.Add("callback:" + type + ":idle=" + table.CallbackIdle1C); info = (WwiseEndOfEventInfo)i; };
         item.Count1C = 1;
         table.EndOfEventA03618(item, 77);                                             // [item+0x1C] != 0: nothing
@@ -2495,7 +2569,7 @@ public class WwisePlaybackLimiterTests
         table.EndOfEventA03618(item, 77);
         Assert.Equal(new[] { "A0C238:7", "A0B600", "A1C660", "9A6988", "A1C65C", "callback:1:idle=False" }, log);
         Assert.Equal(0xC0000000u, obj.Word7C);                                        // (x - 1) & 0x3FFFFFFF with the top bits kept: 0xC0000001 -> 0xC0000000
-        Assert.Equal(new WwiseEndOfEventInfo(0xC0, 7, 77, 900, obj, 77), info);
+        Assert.Equal(new WwiseEndOfEventInfo(0xC0u, 7, 77, 900, obj, 77), info);
         Assert.True(table.CallbackIdle1C);
         Assert.Equal(1, table.Broadcasts);
         Assert.Null(table.Find(77));
@@ -2529,14 +2603,14 @@ public class WwisePlaybackLimiterTests
         Assert.Same(unsetEvent, table.Find(6));
         // (2) a teardown that clears the item's fields does not change the callback's info.
         var item = table.GetOrCreate(7);
-        item.EventId20 = 11; item.GameObject24 = 22; item.Cookie44 = 33; item.Flags48 = 1; item.Object28 = new object();
+        item.EventId20 = 11; item.GameObject24 = 22; item.Cookie44 = 33u; item.Flags48 = 1; item.Object28 = new object();
         object? seen = null;
         var original = item.Callback40 = (t, info) => seen = info;
-        table.Seams.A1C660 = i => { i.EventId20 = 99; i.GameObject24 = 98; i.Cookie44 = 97; i.Callback40 = null; };
+        table.Seams.A1C660 = i => { i.EventId20 = 99; i.GameObject24 = 98; i.Cookie44 = 97u; i.Callback40 = null; };
         table.Seams.A9A6988 = _ => { };
         table.EndOfEventA03618(item, 7);
         var got = Assert.IsType<WwiseEndOfEventInfo>(seen);
-        Assert.Equal((33u, 22u, 7u, 11u), (got.Cookie, got.GameObject, got.PlayingId, got.EventId));
+        Assert.Equal(((object)33u, 22u, 7u, 11u), (got.Cookie, got.GameObject, got.PlayingId, got.EventId));
         Assert.Null(table.Find(7));
     }
 
@@ -2599,7 +2673,7 @@ public class WwisePlaybackLimiterTests
     {
         var table = new WwisePlayingIdTable();
         var item = table.GetOrCreate(5);
-        item.Cookie44 = 3; item.GameObject24 = 7; item.EventId20 = 900;
+        item.Cookie44 = 3u; item.GameObject24 = 7; item.EventId20 = 900;
         int calls = 0;
         WwiseDurationInfo? info = null;
         item.Callback40 = (type, i) => { calls++; Assert.Equal(8, type); info = (WwiseDurationInfo)i; };
@@ -2607,7 +2681,7 @@ public class WwisePlaybackLimiterTests
         Assert.Equal(0, calls);                                                       // [item+0x48] bit 3 clear (0xA039B0)
         item.Flags48 = 8;
         table.DurationA0393C(5, 1.5f, 0.75f, 11, 12, true);
-        Assert.Equal(new WwiseDurationInfo(3, 7, 5, 900, 1.5f, 0.75f, 11, 12, true), info);
+        Assert.Equal(new WwiseDurationInfo(3u, 7, 5, 900, 1.5f, 0.75f, 11, 12, true), info);
         table.DurationA0393C(6, 1f, 1f, 1, 1, false);                                 // no entry: nothing
         Assert.Equal(1, calls);
     }
@@ -2821,7 +2895,7 @@ public class WwisePlaybackLimiterTests
             rig.PlayDirect(500, 900);
             var node = rig.Runtime.FindNode(501)!;
             uint id = rig.Runtime.PostEvent(901, 7);
-            rig.Bridge.OnPlay(node, id, 7, new WwisePlayInitParams { PlayingId = id, TargetNodeId = target, GameObjectId = 7 });
+            rig.Bridge.OnPlay(node, id, 7, new WwisePlayInitParams { PlayingId = id, TargetNodeId = target, GameObjectId = 7, GameObjectRef = rig.Runtime.FindGameObject(7) });
             return rig.Bridge.Instances.Count == 2;
         }
         Assert.False(Continues(1));                                                  // code 1

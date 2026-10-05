@@ -241,7 +241,7 @@ public class WwiseAppAudioInputTests
     public void TheDispatchBuildsTheContextOnlyWhenTheCallbackIdIsNotZero()
     {
         var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
-        var dispatch = new WwiseAudioInputDispatch(runtime);
+        var dispatch = new WwiseAudioInputDispatch(runtime) { Callback8D8D41 = (_, _) => { } };   // a context makes the wrapper pass the Anki trampoline (C40.1)
 
         var noContext = dispatch.HandleGameEvents(
             (ushort)WwiseGameToEngineTag.PostAudioEvent,
@@ -268,7 +268,7 @@ public class WwiseAppAudioInputTests
     public void TheAppPathContextIs0xffAt0x008DED46AndGivesFlags13()
     {
         var runtime = WwiseEndOfEventDoubles.Runtime(new[] { RoutingBank() }, new WwiseRng(1));
-        var dispatch = new WwiseAudioInputDispatch(runtime);
+        var dispatch = new WwiseAudioInputDispatch(runtime) { Callback8D8D41 = (_, _) => { } };
 
         var result = dispatch.HandleGameEvents(
             (ushort)WwiseGameToEngineTag.PostAudioEvent,
