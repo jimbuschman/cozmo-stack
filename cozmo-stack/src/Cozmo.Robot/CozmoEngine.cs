@@ -1606,7 +1606,7 @@ internal sealed class RobotManager
 /// MessageHandler, RobotManager and the firmware header load. Game messages are the calls on this class; they are
 /// queued and dispatched synchronously at the start of the next tick (CD7).
 /// </summary>
-public sealed class CozmoEngine : IDisposable
+public sealed partial class CozmoEngine : IDisposable
 {
     /// <summary>The only robot id the engine uses (B2: robot 1).</summary>
     public const uint RobotId = 1;

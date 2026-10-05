@@ -1867,4 +1867,108 @@ public class EngineAppLayerTests
         Assert.Null(robot.Engine.Robot);
         Assert.False(robot.SendMessage(new DriveWheels(1, 1, 0, 0)));
     }
+
+    [Theory]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    public void CheckedSdkExit_IndependentEduAndExternalGates(bool external, bool edu, bool unpause)
+    {
+        using var rig = new Rig();
+        rig.Connect();
+        rig.Port.Calls.Clear();
+        var calls = new List<string>();
+        rig.Engine.NeedsSetPaused = paused => calls.Add($"paused:{paused}");
+        rig.Engine.SdkExitExternalInterface = msg => calls.Add(msg.Name);
+        rig.Engine.SdkTelemetry = calls.Add;
+        rig.Engine.MovementExitSdkMode = () => calls.Add($"movement:{rig.Engine.DisconnectReason}");
+        rig.Engine.ExitSdkMode(external, edu);
+        Assert.Empty(calls); // E1: runs on the game-message drain, not caller thread.
+        rig.Tick();
+        var expected = new List<string>();
+        if (unpause) expected.Add("paused:False");
+        expected.Add("RemoveIdleAnimation");
+        if (external) expected.Add("robot.sdk_mode_off");
+        expected.Add($"movement:{(external ? RobotDisconnectReason.ExitSDKMode : RobotDisconnectReason.Unknown)}");
+        Assert.Equal(expected, calls);
+        Assert.Equal(external, rig.Port.Calls.Any(c => c.StartsWith("disconnect ")));
+    }
+
+    [Fact]
+    public void CheckedSdkExit_RemainingModeStillUpdatesCommunicationWithoutEqualitySuppression()
+    {
+        using var rig = new Rig();
+        rig.Connect();
+        rig.Engine.SdkEduMode = true;
+        rig.Engine.SdkExternalMode = true;
+        rig.Engine.SdkCommunicationEnabled = 2;
+        var calls = new List<string>();
+        rig.Engine.NeedsSetPaused = _ => calls.Add("unpause");
+        rig.Engine.SdkExitExternalInterface = msg => calls.Add(msg.Name);
+        rig.Engine.SdkTelemetry = calls.Add;
+        for (int i = 0; i < 3; i++)
+        {
+            int index = i;
+            rig.Engine.SdkConnections[i] = new() { Enabled = 2, Changed = (old, enabled) => calls.Add($"{index}:{old}:{enabled}") };
+        }
+        rig.Engine.MovementExitSdkMode = () => calls.Add("movement");
+        rig.Engine.ExitSdkMode(true, false);
+        rig.Tick();
+        Assert.False(rig.Engine.SdkExternalMode);
+        Assert.True(rig.Engine.SdkEduMode);
+        Assert.Equal(new[] { "unpause", "1:2:True", "2:2:True", "movement" }, calls);
+    }
+
+    [Fact]
+    public void CheckedSdkExit_ResetHandoffsPrecedeBlockPoolAndConnectedFlagClear()
+    {
+        using var rig = new Rig();
+        rig.Connect();
+        rig.Engine.SdkExternalMode = true;
+        rig.Engine.SdkWasConnected = true;
+        rig.Engine.SdkResetBlockPool = true;
+        rig.Engine.NeedsSetPaused = _ => { };
+        var messages = new List<SdkExitHandoff>();
+        rig.Engine.SdkExitExternalInterface = msg => { Assert.True(rig.Engine.SdkWasConnected); messages.Add(msg); };
+        rig.Engine.SdkTelemetry = _ => { };
+        rig.Engine.ExitSdkMode(true, false);
+        rig.Tick();
+        Assert.Equal(new[] { "RemoveIdleAnimation", "RemoveDisableReactionsLock", "ActivateHighLevelActivity",
+            "SetCameraSettings", "EnableColorImages", "UndefineAllCustomMarkerObjects", "DeleteAllCustomObjects",
+            "StopRobotForSdk", "EnableLiftPower", "BlockPoolResetMessage" }, messages.Select(m => m.Name));
+        Assert.Equal("sdk_mode_obfusc8te", messages[0].Payload);
+        Assert.Equal((true, (ushort)0, 0f), messages[3].Payload);
+        Assert.Equal(new byte[] { 0, 1 }, Assert.IsType<byte[]>(messages[^1].Payload));
+        Assert.False(rig.Engine.SdkWasConnected);
+    }
+
+    [Theory]
+    [InlineData(false, 0, 0)]
+    [InlineData(true, 0, 7)]
+    [InlineData(true, 1, 6)]
+    [InlineData(true, 2, 0)]
+    public void CheckedSdkExit_ChargerGateAndOneEntryErase(bool charger, int locks, byte expectedMask)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1, PoseOriginId = 1, Status = charger ? 0x1000u : 0u });
+        rig.Tick();
+        if (locks == 1) rig.Robot.Motion.LockTracks(1, "other");
+        if (locks == 2)
+        {
+            rig.Robot.Motion.LockTracks(7, "OnChargerInSDK");
+            rig.Robot.Motion.LockTracks(7, "OnChargerInSDK");
+        }
+        rig.Port.Sent.Clear();
+        rig.Engine.NeedsSetPaused = _ => { };
+        rig.Engine.SdkExitExternalInterface = _ => { };
+        rig.Engine.ExitSdkMode(false, true); // E10 skips disconnect; E11 ignores both flags.
+        rig.Tick();
+        var enables = rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<EnableAnimTracks>().ToList();
+        if (expectedMask == 0) Assert.Empty(enables);
+        else Assert.Equal(expectedMask, Assert.Single(enables).Field0);
+        if (locks == 2) Assert.Equal((byte)7, rig.Robot.Motion.LockedTracks);
+    }
 }

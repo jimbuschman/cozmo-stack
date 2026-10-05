@@ -66,7 +66,7 @@ public sealed class CozmoMotion
     public const byte HeadTrack = 1, LiftTrack = 2, BodyTrack = 4;
 
     /// <summary>The lock sets per track bit (MC+0x38.., one per bit); each holds the ids of whoever locked it.</summary>
-    private readonly HashSet<string>[] _trackLocks = { new(), new(), new() };
+    private readonly List<string>[] _trackLocks = { new(), new(), new(), new(), new(), new(), new(), new() };
     /// <summary>The direct drive's lock holder, MC+0xC4.</summary>
     private const string DirectDriveWho = "MovementComponent.DirectDrive";
     /// <summary>MC+0xB8 (body), +0xB9 (head), +0xBA (lift): this direct drive holds the track.</summary>
@@ -189,7 +189,7 @@ public sealed class CozmoMotion
             lock (_gate)
             {
                 byte m = 0;
-                for (int b = 0; b < 3; b++) if (_trackLocks[b].Count > 0) m |= (byte)(1 << b);
+                for (int b = 0; b < _trackLocks.Length; b++) if (_trackLocks[b].Count > 0) m |= (byte)(1 << b);
                 return m;
             }
         }
@@ -215,7 +215,7 @@ public sealed class CozmoMotion
     private void LockTracksLocked(byte mask, string who)
     {
         byte newly = 0;
-        for (int b = 0; b < 3; b++)
+        for (int b = 0; b < _trackLocks.Length; b++)
         {
             if ((mask & (1 << b)) == 0) continue;
             _trackLocks[b].Add(who);
@@ -232,24 +232,39 @@ public sealed class CozmoMotion
     private void UnlockTracksLocked(byte mask, string who)
     {
         byte freed = 0;
-        for (int b = 0; b < 3; b++)
+        for (int b = 0; b < _trackLocks.Length; b++)
         {
             if ((mask & (1 << b)) == 0) continue;
-            if (_trackLocks[b].Remove(who) && _trackLocks[b].Count == 0) freed |= (byte)(1 << b);
+            if (!_trackLocks[b].Remove(who))
+            {
+                Log($"MovementComponent.UnlockTracks: Tracks 0x{mask:x} are not currently locked by {who}");
+                Log("MISSING: MovementComponent.PrintLockState 0x0063FF7A");
+            }
+            if (_trackLocks[b].Count == 0) freed |= (byte)(1 << b);
         }
         if (freed != 0) _robot.SendMessage(new EnableAnimTracks { Field0 = freed });
     }
 
+    // fidelity: M1-025
+    // E11–E14: the message fields do not gate this per-Robot subscriber.
+    private readonly string _sdkChargerOwner = "OnChargerInSDK"; // ctor 0x0063DADC
+    private readonly byte _sdkChargerMask = 0x07; // ctor 0x0063DB10
+    internal void OnExitSdkMode()
+    {
+        if (!_robot.State.OnCharger) return;
+        lock (_gate) UnlockTracksLocked(_sdkChargerMask, _sdkChargerOwner);
+    }
+
     private bool AreAllTracksLockedLocked(byte mask)
     {
-        for (int b = 0; b < 3; b++)
+        for (int b = 0; b < _trackLocks.Length; b++)
             if ((mask & (1 << b)) != 0 && _trackLocks[b].Count == 0) return false;
         return true;
     }
 
     private bool IsTrackLockedLocked(byte mask)
     {
-        for (int b = 0; b < 3; b++)
+        for (int b = 0; b < _trackLocks.Length; b++)
             if ((mask & (1 << b)) != 0 && _trackLocks[b].Count > 0) return true;
         return false;
     }
@@ -273,7 +288,7 @@ public sealed class CozmoMotion
     {
         lock (_gate)
         {
-            for (int b = 0; b < 3; b++)
+            for (int b = 0; b < _trackLocks.Length; b++)
                 if ((mask & (1 << b)) != 0 && !_trackLocks[b].Contains(owner)) return false;
             return true;
         }

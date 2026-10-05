@@ -291,6 +291,7 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
+        Engine.MovementExitSdkMode = Motion.OnExitSdkMode;
         Engine.PublicRoute = m => EventFan.Raise(Message, m, e => Fault(e));
         Engine.Faulted = Fault;
         // fidelity: M1-025, M1-015

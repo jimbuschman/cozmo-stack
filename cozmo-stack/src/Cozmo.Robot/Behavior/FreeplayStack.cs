@@ -168,6 +168,8 @@ public sealed class FreeplayStack : IDisposable
         // NeedsManager, so the manager is handed over through the engine hook; FreeplaySystem.Tick no longer
         // calls it.
         robot.Engine.NeedsUpdate = needs.Update;
+        robot.Engine.NeedsSetPaused = needs.SetPaused;
+        stack._unsubscribe.Add(() => robot.Engine.NeedsSetPaused = null);
         stack._unsubscribe.Add(() => robot.Engine.NeedsUpdate = null);
 
         // fidelity: M15-016

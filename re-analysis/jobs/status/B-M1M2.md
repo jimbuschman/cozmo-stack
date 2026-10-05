@@ -28,3 +28,13 @@ CLAIMED Codex: manager-approved Rows checked at dee950e unblocks decay D1–D18,
 - D17 invokes the explicit repair collaborator after store/dirty; absent collaborator logs MISSING. Repair mutation/RNG, FP environment/NaN payloads and exception catch disposition remain MISSING/UNKNOWN. These were not built.
 - CHECKLIST self-review: existing live entry, tick ordering retained, separate binary32 multiply/subtract, no FMA/double integration, source-derived bit oracles and failure-edge gates; tests include the live engine tick. Required read-only cozmo-verifier: PASS, no circular tests or blocking defects; no settlement.
 - Focused/regression tests: 104 passed. fidelity --check and diff --check pass. Full suite: 3,846 passed, zero failed/skipped (3 m 34 s). M1-024 remains IMPLEMENTATION_GAP with built/awaiting-strong-verification text. Commit follows this entry; its hash will be logged after push.
+
+- Batch 2 commit: 8c266d7 (pushed); independent push gate passed all 3,846 tests (3 m 40 s).
+
+## Batch 3: checked ExitSdkMode (M1-025)
+
+- Built the live game-drain entry and ordered UI, MessageHandler and per-Robot Movement subscribers from manager-adopted E1–E14. Edu gates unpause, external gates disconnect, charger gates unlock; SDK status flags and the communication byte remain distinct. Preserved synchronous reset-message handoffs and unchanged-connection callbacks.
+- Fixed track multiset semantics needed by this entry: retain duplicates, erase one owner, inspect resulting size even when the owner is absent; existing MA3 sends one combined empty-track mask. No recipient or telemetry payload was guessed.
+- MISSING: EnterSdkMode writers, concrete SDK connections, nested SDK recipients/telemetry fields, PrintLockState. Existing removal/teardown correction follows in the next batch. All records stay IMPLEMENTATION_GAP.
+- CHECKLIST self-review and required read-only verifier: PASS after removing an unsupported duration-state mutation and its assertion. Focused regression: 101 passed. fidelity --check and diff --check passed. Full-suite result and commit follow below.
+- Full suite: 3,856 passed, zero failed/skipped (3 m 8 s). Commit follows; hash/push result logged in the next entry.
