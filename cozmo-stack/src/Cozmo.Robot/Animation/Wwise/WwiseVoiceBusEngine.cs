@@ -921,29 +921,6 @@ public sealed class WwiseBusInsertFxSlotState
 }
 
 /// <summary>
-/// V7-m <c>0xA550CC..0xA551F0</c> (C17 V7-m): one 16-byte parameter ramp record
-/// <c>{float current @+0, float target @+4, u16 rate @+8, u8 flag @+0xb}</c>. The four live records sit at
-/// <c>voice+0x340</c>, <c>voice+0x510</c>, <c>voice+0x350</c> and <c>voice+0x520</c>. The field names are
-/// UNKNOWN (C17 residual); the offsets and the ramp arithmetic are the row's.
-/// </summary>
-public sealed class WwiseVoiceRamp
-{
-    // fidelity: M6-022
-
-    /// <summary><c>+0</c>: the ramped/current value.</summary>
-    public float Current { get; set; }
-
-    /// <summary><c>+4</c>: the stored target the gate compares and the body overwrites.</summary>
-    public float Target { get; set; }
-
-    /// <summary><c>+8</c>: the u16 rate.</summary>
-    public ushort Rate { get; set; }
-
-    /// <summary><c>+0xb</c>: set to 1 by the ramp body.</summary>
-    public byte Flag { get; set; }
-}
-
-/// <summary>
 /// The voice node (M6-022 V6/V7/V8). The native container is based at <c>0x108DF50</c>, head
 /// <c>[+0x14]</c>, next <c>+0xD0</c>, state <c>+0xDC</c>, active 1, bus chain <c>+0xD4</c>, pending
 /// <c>+0xD8</c>. This model carries the fields the settled rows read; the per-voice state machine's
@@ -1062,17 +1039,24 @@ public sealed class WwiseLiveVoice
     // fidelity: M6-025
     public uint Word0xF0 { get; set; }
 
-    /// <summary>V7-m ramp 1: the 16-byte record at <c>voice+0x340</c> (current/target/rate/flag).</summary>
-    public WwiseVoiceRamp Ramp340 { get; } = new();
+    /// <summary>
+    /// The four 16-byte parameter-ramp records of V7-m (<c>voice+0x340</c>, <c>0x510</c>, <c>0x350</c>, <c>0x520</c>) are the filter bands themselves (C43.1; <c>0x340 = node(0x1D0) + 0x170</c>): <c>voice+0x340</c> = <c>FilterA.LowPass</c>,
+    /// <c>0x510</c> = <c>FilterB.LowPass</c>, <c>0x350</c> = <c>FilterA.HighPass</c>, <c>0x520</c> = <c>FilterB.HighPass</c> (<see cref="WwiseVoiceFilterBand"/>: <c>+0</c> current, <c>+4</c> target, <c>u16 +8</c> steps, <c>+0xB</c> dirty).
+    /// </summary>
+    // fidelity: M6-011, M6-022
+    public WwiseVoiceFilterBand Ramp340 => FilterA.LowPass;
 
-    /// <summary>V7-m ramp 2: the 16-byte record at <c>voice+0x510</c>.</summary>
-    public WwiseVoiceRamp Ramp510 { get; } = new();
+    /// <summary>See <see cref="Ramp340"/>: <c>voice+0x510</c>.</summary>
+    // fidelity: M6-011, M6-022
+    public WwiseVoiceFilterBand Ramp510 => FilterB.LowPass;
 
-    /// <summary>V7-m ramp 3: the 16-byte record at <c>voice+0x350</c>.</summary>
-    public WwiseVoiceRamp Ramp350 { get; } = new();
+    /// <summary>See <see cref="Ramp340"/>: <c>voice+0x350</c>.</summary>
+    // fidelity: M6-011, M6-022
+    public WwiseVoiceFilterBand Ramp350 => FilterA.HighPass;
 
-    /// <summary>V7-m ramp 4: the 16-byte record at <c>voice+0x520</c>.</summary>
-    public WwiseVoiceRamp Ramp520 { get; } = new();
+    /// <summary>See <see cref="Ramp340"/>: <c>voice+0x520</c>.</summary>
+    // fidelity: M6-011, M6-022
+    public WwiseVoiceFilterBand Ramp520 => FilterB.HighPass;
 
     /// <summary>
     /// V7-p <c>[sp+0x2e]</c> (C18 V7-p, <c>0xA4BCB4..0xA4BCDC</c>, <c>0xA4BD08..0xA4BD20</c>,
@@ -1183,11 +1167,7 @@ public sealed class WwiseLiveVoice
                 }
                 case 2:
                 {
-                    if (Buffer.State.Data is { } filterData)                        // 0xA4C60C: returns when [state] == 0
-                    {
-                        var channel0 = (filterData as float[] ?? throw new InvalidOperationException("filter A reads planar float[] data")).AsSpan(0, Math.Min(Buffer.State.MaxFrames, ((float[])filterData).Length));
-                        FilterA.Process(channel0);                                  // 0xA446E0 0xA4C60C(voice+0x1C0, state) (the frame count of 0xA766B8 is not adopted: the whole channel 0 of u16[state+0xC] frames, as before)
-                    }
+                    FilterA.ProcessA4C60C(Buffer.State);                            // 0xA446E0 0xA4C60C(voice+0x1C0, state): returns when [state] == 0, else 0xA766B8 with byte[S+4] channels, u16[S+0xE] frames, u16[S+0xC] stride (C43.2)
                     GainStageA56E00();                                              // 0xA446EC 0xA56E00(voice+0x380, state)
                     RunA548C0(Source as IWwisePitchNodeSource ?? throw new WwiseMissingBehaviourException("M6-022 R5.3: 0xA548C0 reads [[voice+0xD4]+0xC]; the current source is not a pitch-node source"));   // 0xA44700 bl 0xA548C0(voice, state)
                     int res = Buffer.Result;                                        // 0xA44704
@@ -1354,6 +1334,17 @@ public sealed class WwiseLiveVoice
     /// </summary>
     public bool AllowRenderOrderApproximation { get; set; }
 
+    /// <summary>
+    /// The legacy approximation's filter call: channel 0 of the voice's own planar arrays through the engine's process (one channel, all <c>Length</c> frames, stride <c>Length</c>). It is NOT an engine step: the engine runs filter A / B on the pass
+    /// block <c>S</c> (<see cref="WwiseVoiceFilter.ProcessA4C60C"/>). A filter whose init <c>0xA764D4</c> never ran (the build <c>0xA54A30</c> is not part of this order) is initialised for the voice's channel count first, which the engine would have done.
+    /// </summary>
+    private void LegacyFilter(WwiseVoiceFilter filter)
+    {
+        if (!filter.IsInitialised) filter.InitA764D4((uint)Buffer.ChannelCount, 0, null);
+        var data = Buffer.Channels[0];
+        filter.Process(data, 1, (ushort)data.Length, (ushort)data.Length);
+    }
+
     /// <summary>The earlier approximation for a voice whose source has no pitch node (see <see cref="Render"/>): NOT the engine's order.</summary>
     private void RenderLegacyOrder()
     {
@@ -1364,7 +1355,7 @@ public sealed class WwiseLiveVoice
         for (int i = 3; i >= 0; i--) InsertFxSlots[i]?.Execute38(Buffer);
         for (int i = 0; i < 4; i++) InsertFxSlots[i]?.Execute3C(Buffer);
 
-        FilterA.Process(Buffer.Channels[0]);                     // filter A (M6-011)
+        LegacyFilter(FilterA);                                   // filter A (M6-011)
 
         // gain/ramp 0xA56E00(voice+0x380) refreshes each connection's ramp (M6-012).
         foreach (var connection in Connections)
@@ -1435,9 +1426,8 @@ public sealed class WwiseLiveVoice
             if (firstDry)
             {
                 if (engineOrder) WalkTrace?.Invoke("F");                            // 0xA4492C add r0,r7,#0x390; 0xA44934 bl 0xA4C60C (the trace is called before the filter runs)
-                if (!engineOrder) FilterB.Process(Buffer.Channels[0]);
-                else if (Buffer.State.Data is float[] filterBData)                  // 0xA4C60C returns when [state] == 0
-                    FilterB.Process(filterBData.AsSpan(0, Math.Min(Buffer.State.MaxFrames, filterBData.Length)));
+                if (!engineOrder) LegacyFilter(FilterB);
+                else FilterB.ProcessA4C60C(Buffer.State);                           // 0xA4C60C(voice+0x390, S) returns when [state] == 0, else 0xA766B8 (C43.2)
                 firstDry = false;
             }
             if (!engineOrder) connection.Mix(Buffer);
@@ -1529,7 +1519,7 @@ public sealed class WwiseLiveVoice
     /// <summary>See <see cref="PitchNodeVt10"/>.</summary>
     public Func<int>? PitchNodeVt20 { get; set; }
 
-    /// <summary>The filter A object's <c>0xA7666C(this+0x10, r1)</c> that the holder's <c>vt+0x14</c> (<c>0xA4C5D8</c>) runs before forwarding: unread, a REQUIRED seam.</summary>
+    /// <summary>An optional observer called right after the filter A Reset <c>0xA7666C(this+0x10, r1)</c> that the holder's <c>vt+0x14</c> (<c>0xA4C5D8</c>) runs before forwarding (C43: the Reset itself is <see cref="WwiseVoiceFilter.ResetA7666C"/>; this hook is not an engine step).</summary>
     // fidelity: M6-022
     public Action<int>? FilterAVt14A7666C { get; set; }
 
@@ -1580,11 +1570,12 @@ public sealed class WwiseLiveVoice
     // fidelity: M6-022
     public int HolderVt10(int r1) => HolderUpstream1C4.Vt10(r1);
 
-    /// <summary><c>[voice+0x1C0]-&gt;vt+0x14(r1)</c> (<c>0xA4C5D8</c>, row 2.10): <c>0xA7666C(this+0x10, r1)</c> (filter A, unread: <see cref="FilterAVt14A7666C"/>), then <c>n-&gt;vt+0x14(n, r1)</c>.</summary>
-    // fidelity: M6-022
+    /// <summary><c>[voice+0x1C0]-&gt;vt+0x14(r1)</c> (<c>0xA4C5D8</c>, row 2.10, C43): <c>0xA7666C(this+0x10, r1)</c> (filter A's Reset, <see cref="WwiseVoiceFilter.ResetA7666C"/>; <see cref="FilterAVt14A7666C"/> only observes it), then <c>n-&gt;vt+0x14(n, r1)</c>.</summary>
+    // fidelity: M6-011, M6-022
     public void HolderVt14(int r1)
     {
-        (FilterAVt14A7666C ?? throw new WwiseMissingBehaviourException("M6-022 2.10: the holder's vt+0x14 (0xA4C5D8) runs 0xA7666C on filter A first, which is unread; supply WwiseLiveVoice.FilterAVt14A7666C"))(r1);
+        FilterA.ResetA7666C();                                       // 0xA4C5E0..0xA4C5E8 bl 0xA7666C(voice+0x1C0+0x10)
+        FilterAVt14A7666C?.Invoke(r1);
         HolderUpstream1C4.Vt14(r1);
     }
 
@@ -2365,19 +2356,18 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         RunRamp(voice.Ramp520, t4, hasFloor: true, floor: pbi.Field6C);           // 0xA5517C..0xA551BC
     }
 
-    /// <summary>One ramp record (row 1.9): the floor (<c>vmovle</c>), the clamp to 0 (<c>bmi</c>) and to 100.0f (<c>vmovgt</c>), then a changed target stores the flag, the target and <c>cur + (oldTarget - cur) * 0.125f * float(u16 rate)</c>.</summary>
-    private static void RunRamp(WwiseVoiceRamp ramp, float target, bool hasFloor, float floor)
+    /// <summary>
+    /// One ramp record (row 1.9, C43.1): the floor (<c>vmovle</c>), the clamp to 0 (<c>bmi</c>) and to 100.0f (<c>vmovgt</c>), then a changed target runs the band's setter (<see cref="WwiseVoiceFilterBand.SetTarget"/>: the flag, the target and
+    /// <c>cur + ((oldTarget - cur) * 0.125f) * float(u16 steps)</c>) on the filter band record itself.
+    /// </summary>
+    // fidelity: M6-011, M6-022
+    private static void RunRamp(WwiseVoiceFilterBand ramp, float target, bool hasFloor, float floor)
     {
         float clamped = target;
         if (hasFloor && (clamped <= floor || float.IsNaN(clamped) || float.IsNaN(floor))) clamped = floor;   // 0xA55118/0xA5518C vcmpe; vmovle (LE holds for an unordered compare: N != V)
         if (clamped < 0f) clamped = 0f;                                  // 0xA5511C..0xA55124 bmi -> 0xA554C4 (the literal 0)
         if (clamped > 100f) clamped = 100f;                              // 0xA55128..0xA55134 vmovgt (0x42C80000)
-        if (ramp.Target == clamped) return;                              // vcmp.f32; bne to the body only on a change (a NaN differs)
-        float targetOld = ramp.Target;
-        ramp.Flag = 1;                                                   // 0xA55450/0xA5541C/0xA553E4/0xA551CC
-        ramp.Target = clamped;                                           // 0xA5545C/0xA55428/0xA553F0/0xA551D8
-        float step = (targetOld - ramp.Current) * 0.125f;                // vsub.f32; vmul.f32 (0.125f is exact)
-        ramp.Current = ramp.Current + step * (float)ramp.Rate;           // vcvt.f32.s32 of the u16; vmla.f32 (not fused)
+        ramp.SetTarget(clamped);                                         // vcmp.f32; bne to the setter only on a change (a NaN differs): 0xA55444 / 0xA55410 / 0xA553D8 / 0xA551C0
     }
 
     /// <summary>

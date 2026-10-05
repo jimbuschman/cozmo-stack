@@ -147,6 +147,7 @@ public class WwisePitchNodeTests
             pbi1.Word15C = w15c; pbi1.SourceFormat158 = rate; pbi1.Byte160 = (byte)WwiseResamplerTests.FmtWord(isFloat, ch); pbi1.Byte161 = (byte)(WwiseResamplerTests.FmtWord(isFloat, ch) >> 8);
             var src1 = new ScriptSource(events, "1", ParseBlocks(parts[1]), pbi1, markerPbis, ch, isFloat, rate, w15c);
             var voice = new WwiseLiveVoice(ch, 1024) { Source = src1, Pbi388 = pbi1 };
+            voice.FilterA.InitA764D4((uint)ch, 0, null); voice.FilterB.InitA764D4((uint)ch, 0, null);     // 0xA54B74 / 0xA54D44: the filters' init of the build 0xA54A30 (the E1 call dereferences their history blocks; C43)
             var pbi2 = NewPbi();
             ScriptSource? src2 = null;
             if (pend)
@@ -325,6 +326,7 @@ public class WwisePitchNodeTests
         pbi.Word15C = 0x4101; pbi.SourceFormat158 = 48000; pbi.Byte160 = (byte)WwiseResamplerTests.FmtWord(true, 1); pbi.Byte161 = (byte)(WwiseResamplerTests.FmtWord(true, 1) >> 8);
         var src = new ScriptSource(events, "1", ParseBlocks(blocks), pbi, new[] { NewPbi(), NewPbi(), NewPbi() }, 1, true, 48000, 0x4101);
         var voice = new WwiseLiveVoice(1, 1024) { Source = src, Pbi388 = src.Pbi };
+        voice.FilterA.InitA764D4(1, 0, null); voice.FilterB.InitA764D4(1, 0, null);                  // 0xA54B74 / 0xA54D44: the filters' init of the build 0xA54A30 (C43)
         voice.SourceNotReadyA55C14 = (_, _) => events.Add("handler");
         Assert.True(voice.StartResamplerA5321C());
         voice.Buffer.InitPassBlockA44A00();

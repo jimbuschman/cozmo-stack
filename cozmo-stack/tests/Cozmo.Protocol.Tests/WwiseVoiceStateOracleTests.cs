@@ -102,11 +102,11 @@ public sealed class WwiseVoiceStateOracleTests
         var flags = f["conn"] == "-" ? Array.Empty<string>() : f["conn"].Split('.');
         foreach (var cf in flags) voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = (byte)U(cf) });
         var ramps = f["ramps"].Split('.');
-        WwiseVoiceRamp[] rm = { voice.Ramp340, voice.Ramp510, voice.Ramp350, voice.Ramp520 };
+        WwiseVoiceFilterBand[] rm = { voice.Ramp340, voice.Ramp510, voice.Ramp350, voice.Ramp520 };      // the 16-byte records at voice+0x340 / 0x510 / 0x350 / 0x520 are the filter bands (C43.1)
         for (int i = 0; i < 4; i++)
         {
             var r = ramps[i].Split(':');
-            rm[i].Current = F(r[0]); rm[i].Target = F(r[1]); rm[i].Rate = (ushort)U(r[2]); rm[i].Flag = (byte)U(r[3]);
+            rm[i].Current = F(r[0]); rm[i].Target = F(r[1]); rm[i].Steps = (ushort)U(r[2]); rm[i].Dirty = (byte)U(r[3]);
         }
         var sf = f["S"].Split(':');
         var state = voice.Buffer.State;
@@ -158,7 +158,7 @@ public sealed class WwiseVoiceStateOracleTests
         o.Add($"r={(ret ? 1 : 0)}");
         o.Add($"S={state.ChannelConfig:x}.{(uint)state.Code28:x}.{(voice.Buffer.HasBusParam ? 1 : 0)}");
         o.Add($"V={voice.FlagsCD:x}.{(voice.FlagE8 ? 1 : 0)}.{voice.Word0xF0:x}.{(voice.PitchNode.Pbi is null ? 0 : 1)}");
-        o.Add("Rm=" + string.Join('.', rm.Select(r => $"{H(r.Current)}:{H(r.Target)}:{r.Rate:x}:{r.Flag:x}")));
+        o.Add("Rm=" + string.Join('.', rm.Select(r => $"{H(r.Current)}:{H(r.Target)}:{r.Steps:x}:{r.Dirty:x}")));
         o.Add($"P={pbi.StartOffset:x}.{H(pbi.FieldC4)}.{pbi.Flags1BE:x}.{pbi.Flags0E9:x}.{H(pbi.Volume3C)}.{H(pbi.MuteFade40)}.{pbi.Flags0E8:x}");
         o.Add($"Q={pbi.Word1B4:x}.{pbi.Flags1BD:x}.{(src.StartStreamSucceeded ? 1 : 0)}");
         o.Add("C=" + (voice.Connections.Count == 0 ? "-" : string.Join('.', voice.Connections.Select(c => c.Flags6C.ToString("x")))));

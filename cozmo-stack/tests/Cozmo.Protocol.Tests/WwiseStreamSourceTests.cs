@@ -918,6 +918,7 @@ public class WwiseStreamSourceTests
         var live = new WwiseLiveVoice(1, 1024) { Source = source, Pbi388 = pbi };
         live.SourceNotReadyA55C14 = (_, _) => { };
         Assert.True(live.StartResamplerA5321C());                                                           // 0xA54A30 -> 0xA5321C with the format the StartStream wrote
+        live.FilterA.InitA764D4(1, 0, null); live.FilterB.InitA764D4(1, 0, null);                           // 0xA54B74 / 0xA54D44: the rest of the build 0xA54A30 this rig stands in for (the filters' history blocks the E1 call dereferences; C43)
         live.Buffer.InitPassBlockA44A00();
         live.Render();
         int delivered = live.PitchNode.Out.ValidFrames;
@@ -997,6 +998,7 @@ public class WwiseStreamSourceTests
         voice.SourceNotReadyA55C14 = (_, _) => { };
         voice.StartStreamFormatWriter = (_, _) => { };
         Assert.True(voice.StartResamplerA5321C());
+        voice.FilterA.InitA764D4(1, 0, null); voice.FilterB.InitA764D4(1, 0, null);                         // 0xA54B74 / 0xA54D44: the rest of the build 0xA54A30 (C43)
         var all = new List<float>();
         var perPass = new List<int>();
         int result = 0;
