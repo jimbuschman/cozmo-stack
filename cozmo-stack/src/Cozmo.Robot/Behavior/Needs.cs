@@ -173,15 +173,16 @@ public sealed record DecayConfig(IReadOnlyDictionary<NeedId, IReadOnlyList<(doub
     {
         var result = new Dictionary<NeedId, float> { [NeedId.Repair] = 1f, [NeedId.Energy] = 1f, [NeedId.Play] = 1f };
         if (Modifiers is null) return result;
-        foreach (var (source, entries) in Modifiers)
+        foreach (var source in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
+            if (!Modifiers.TryGetValue(source, out var entries)) continue;
             float l = (float)level(source);
             // 0x00691040 sorts the modifier list descending by threshold (16-byte entries: a float threshold and a vector of affected-need pairs, 0x0069C26C..0x0069C280);
             // 0x0069C270/0x0069C278 stop at the FIRST entry whose threshold is <= the level and only that entry's pairs are applied (0x0069C28A..0x0069C2AE).
             // Two entries that share a threshold are two entries: the second never applies.
             foreach (var entry in entries.OrderByDescending(e => e.Threshold))
             {
-                if (l < (float)entry.Threshold) continue;           // vcmpe s0(level), s2(threshold); bge ends the scan
+                if (!(l >= (float)entry.Threshold)) continue;       // BGE excludes unordered
                 foreach (var (other, multiplier) in entry.Affected)
                     result[other] = (float)multiplier * result[other];
                 break;
@@ -345,15 +346,59 @@ public sealed class NeedsState
 
     public void ApplyDecay(DecayConfig decay, float elapsedSec, bool connected)
     {
-        // GetDecayMultipliers is asked once, from the levels as they stand, and the same three multipliers
-        // are used for the whole pass (ApplyDecayAllNeeds 0x00695CFE). The engine divides the elapsed by
-        // 60.0f and multiplies the rate and multiplier in f32 (NeedsState::ApplyDecay 0x0069C48A,
-        // 0x0069C4A8..0x0069C4B0).
+        UpdateCurNeedsBrackets();
         var multipliers = decay.DecayMultipliers(n => _levels[(int)n]);
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+            ApplyDecay(n, decay, elapsedSec, connected, multipliers[n]);
+    }
+
+    /// <summary>Checked D17 interface to PossiblyDamageParts(Decay), 0x0069C536.
+    /// Its repair mutation/random selection is MISSING; a collaborator must supply that higher-layer body.</summary>
+    public Action<NeedsActionId>? PossiblyDamageParts { get; set; }
+
+    // fidelity: M1-024
+    /// <summary>NeedsState::ApplyDecay 0x0069C3C0, checked D5–D18. All intermediates and the stored level are f32.</summary>
+    public void ApplyDecay(NeedId need, DecayConfig decay, float elapsedSec, bool connected, float multiplier)
+    {
+        Warn?.Invoke(FormattableString.Invariant($"NeedsState.ApplyDecay: Decaying need index {(int)need} with elapsed time of {elapsedSec:F6} seconds"));
+        float level = (float)_levels[(int)need];
+        var rates = (connected ? decay.Connected : decay.Unconnected).GetValueOrDefault(need);
+        if (rates is null) return;
+        int index = 0;
+        while (index < rates.Count && !(level >= (float)rates[index].Threshold)) index++;
+        if (index == rates.Count) return;                  // no clamp/store/dirty/damage
+        float minutes = elapsedSec / BitConverter.Int32BitsToSingle(0x42700000);
+        float output = level;
+        if (minutes > 0f)                                 // BLE: nonpositive/unordered skip
         {
-            float rate = (float)decay.RatePerMinute(n, _levels[(int)n], connected) * multipliers[n];
-            SetNeedLevel(n, _levels[(int)n] - (rate * elapsedSec / 60f));
+            while (index < rates.Count)
+            {
+                float rate = (float)rates[index].PerMinute * multiplier;
+                if (rate <= 0f) { output = level; break; } // BLS: unordered continues
+                float floor = (float)rates[index].Threshold;
+                float gap = level - floor;
+                float crossing = gap / rate;
+                if (!(minutes > crossing))              // BLE includes unordered
+                {
+                    float decrement = minutes * rate;    // VMUL, then VSUB; never FMA
+                    output = level - decrement;
+                    break;
+                }
+                minutes -= crossing;
+                output = floor;
+                if (!(minutes > 0f)) break;
+                level = floor;
+                index++;
+            }
+        }
+        float minimum = (float)_cfg.MinimumNeedLevel;
+        if (output < minimum) output = minimum;           // IT MI: strict ordered min only
+        _levels[(int)need] = output;
+        _bracketsDirty = true;
+        if (need == NeedId.Repair)
+        {
+            if (PossiblyDamageParts is { } damage) damage(NeedsActionId.Decay);
+            else Warn?.Invoke("MISSING: NeedsState.PossiblyDamageParts(Decay) 0x0069C536");
         }
     }
 
@@ -836,13 +881,14 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
+            State.UpdateCurNeedsBrackets();                                      // D1, 0x00695D0E
             var multipliers = Decay.DecayMultipliers(n => State.GetNeedLevel(n));
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
                 if (_needPaused[(int)n]) continue;                                 // 0x00695D36
-                if (_fullnessDeadlineSec.TryGetValue(n, out var deadline))
+                if (_fullnessDeadlineSec.TryGetValue(n, out var deadline) && deadline != 0f)
                 {
-                    if (now <= deadline) continue;                                  // 0x00695D4C..0x00695D58 (f32)
+                    if (!(now > deadline)) continue;                                // BLE includes unordered
                     // 0x00695D5A..0x00695D6A: +0x1E4 += (+0x208 - +0x1FC), so the cooldown window
                     // (the fill time through the deadline) is excluded from the decay; then the passed
                     // deadline and start are cleared (0x00695D84).
@@ -852,13 +898,7 @@ public sealed class NeedsManager
                     _fullnessStartSec.Remove(n);
                 }
                 float elapsed = now - _lastDecaySec.GetValueOrDefault(n, now);      // 0x00695D8A..0x00695D96 (f32)
-                if (elapsed > 0)
-                {
-                    // 0x00695D9C..0x00695DA4: NeedsState::ApplyDecay takes the elapsed as a float and divides
-                    // it by 60.0f (0x0069C48A); the rate and multiplier multiply in f32.
-                    float rate = (float)Decay.RatePerMinute(n, State.GetNeedLevel(n), connected) * multipliers[n];
-                    State.ApplyDelta(n, -(rate * elapsed / 60f));
-                }
+                State.ApplyDecay(n, Decay, elapsed, connected, multipliers[n]);        // no elapsed>0 gate
                 _lastDecaySec[n] = now;                                             // 0x00695DA8
             }
             DetectBracketChanges(nowOverride: now);

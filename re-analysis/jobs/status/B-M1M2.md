@@ -17,3 +17,14 @@ Trial: M1-015, M1-024, M1-025, M1-041, M2-002. M1-029 and M1-031/044/045 deferre
 - M2-002 remaining open scope: Delocalize bit 0x2/GetRobotState callers and the queue-driven lifecycle/clock bridge have no checked correction in this trial. Retained explicitly in unresolved; no new behavior invented.
 
 BLOCKED 2026-10-05: batch 1 is committed and pushed; M1-015, M1-024 and M1-025 cannot be completed within the checked-row trial scope. Required manager action: supply checked decay/ExitSdkMode rows and, for teardown, approve the deferred M1-031/044/045 split. No records were settled. No higher-layer job or hardware run was started.
+
+## Resumed claim 2026-10-05
+
+CLAIMED Codex: manager-approved Rows checked at dee950e unblocks decay D1–D18, ExitSdkMode E1–E14, and the cited M1/higher-layer teardown and sleep split. One batch at a time; M1-029 stays deferred. PARTIAL descendant effects/FP environment/nested SDK handlers stay MISSING. No records settle.
+
+## Batch 2: checked Needs decay (M1-024)
+
+- Built manager-adopted D1–D18 on the live NeedsManager/NeedsState path: f32 current-floor integration, inclusive ordered threshold scan, per-pass multipliers in need order, unordered compare branches, min-only final clamp, no elapsed gate and caller-clock advancement.
+- D17 invokes the explicit repair collaborator after store/dirty; absent collaborator logs MISSING. Repair mutation/RNG, FP environment/NaN payloads and exception catch disposition remain MISSING/UNKNOWN. These were not built.
+- CHECKLIST self-review: existing live entry, tick ordering retained, separate binary32 multiply/subtract, no FMA/double integration, source-derived bit oracles and failure-edge gates; tests include the live engine tick. Required read-only cozmo-verifier: PASS, no circular tests or blocking defects; no settlement.
+- Focused/regression tests: 104 passed. fidelity --check and diff --check pass. Full suite: 3,846 passed, zero failed/skipped (3 m 34 s). M1-024 remains IMPLEMENTATION_GAP with built/awaiting-strong-verification text. Commit follows this entry; its hash will be logged after push.

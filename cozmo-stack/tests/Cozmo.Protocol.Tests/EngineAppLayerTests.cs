@@ -375,6 +375,22 @@ public class EngineAppLayerTests
         Assert.Equal(0.36f, needsNow);
     }
 
+    [Fact]
+    public void M1_024_D1_D18_CheckedDecayRunsThroughTheEngineTick()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var table = new Dictionary<Cozmo.Robot.Behavior.NeedId, IReadOnlyList<(double, double)>>
+        { [Cozmo.Robot.Behavior.NeedId.Play] = new[] { (.75, .25), (.25, .125), (0.0, .0625) } };
+        var manager = new Cozmo.Robot.Behavior.NeedsManager(() => rig.Engine.Timer.SecondsF,
+            Cozmo.Robot.Behavior.NeedsConfig.Default,
+            new Cozmo.Robot.Behavior.DecayConfig(table, table));
+        rig.Engine.NeedsUpdate = manager.Update;
+        // D8–D14: three minutes from level1 cross .75 after one minute, then finish at .5.
+        rig.Tick(180000);
+        Assert.Equal(0.5, manager.State.GetNeedLevel(Cozmo.Robot.Behavior.NeedId.Play));
+    }
+
     // ================================================================== M1-025: connect, response, DisconnectCurrent
 
     /// <summary>
