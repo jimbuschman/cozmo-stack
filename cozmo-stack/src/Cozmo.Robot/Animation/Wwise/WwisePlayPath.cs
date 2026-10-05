@@ -559,17 +559,19 @@ public sealed class WwisePlayPath
     }
 
     /// <summary>
-    /// The voice's <c>vt+0x6C</c> = <c>0xA5335C</c> (R2.12): for slots 0..3 the voice's <c>vt+0x70</c> (<c>0xA5338C</c>) does nothing when <c>[voice+0xD4]</c> is null or the slot is empty; a filled slot needs the node's
-    /// <c>vt+0xE8</c> (<c>0x9EEF2C</c>, R2.6) and its bypass byte store, which this model does not hold, so it throws.
+    /// The voice's <c>vt+0x6C</c> = <c>0xA5335C</c> (R2.12) over <c>vt+0x70 = 0xA5338C</c> for slots 0..3: nothing when <c>[voice+0xD4]</c> is null or the slot is empty (<c>0xA5338C..0xA533B4</c>). Otherwise the node's <c>vt+0xE8</c> = <c>0x9EEF2C</c> is called DIRECTLY (<c>0xA533CC</c>; no
+    /// <c>0xA019B8</c> gate) and <c>[W+0x21] = byte [out+4]</c> is stored unconditionally (<c>0xA533D8..0xA533E0</c>, also when the descriptor is null); a non-null descriptor is released (<c>vt+0xC</c>). The resolver is the required seam <see cref="WwiseLiveVoice.ResolveNodeFx9EEF2C"/>.
     /// </summary>
-    private static void RefreshVoiceVt6C(WwiseLiveVoice voice)
+    internal static void RefreshVoiceVt6C(WwiseLiveVoice voice)
     {
         for (int i = 0; i < 4; i++)                                                     // 0xA5335C: i = 0..3
         {
             if (voice.Source is null) continue;                                          // 0xA5338C: [voice+0xD4] != 0
             if (voice.InsertFxSlots[i] is null) continue;                               //           [voice+0x370+4i] != 0
-            throw new WwiseMissingBehaviourException(
-                "M6-025 R2.12: voice vt+0x70 (0xA5338C) with a filled insert-FX slot calls node vt+0xE8 (0x9EEF2C) and stores the bypass byte; that path is not modelled");
+            var (fx, bypass) = (voice.ResolveNodeFx9EEF2C ?? throw new WwiseMissingBehaviourException(
+                "M6-025 R2.12: voice vt+0x70 (0xA5338C) with a filled insert-FX slot calls node vt+0xE8 (0x9EEF2C), which is not extracted; supply WwiseLiveVoice.ResolveNodeFx9EEF2C"))(i);   // 0xA533CC
+            voice.InsertFxSlots[i].Bypass = bypass;                                     // 0xA533D8..0xA533E0 strb r3,[r4,#0x21] (before the null test)
+            fx?.Release();                                                              // 0xA533E4..0xA533F0
         }
     }
 

@@ -180,6 +180,53 @@ public sealed class WwisePlayingInstance
     public uint Field1F8 { get; set; } = 0xFFFFFFFF;
 
     /// <summary>
+    /// The PBI's vtable class (C41.3, verification A1). The class decides what <c>pbi-&gt;vt+0x3C</c> (the call V7 makes at <c>0xA552D8</c> and <c>0xA553B4</c>) does: the base / Sound PBI (vptr <c>0x103B768</c>) and the <c>0xA6A8A0</c>-class (vptr
+    /// <c>0x103D3B0</c>) return 0 (<c>0x9FF544</c>: <c>mov r0,#0; bx lr</c>); the <c>0x9883AC</c>-class (vptr <c>0x1039D98</c>) runs <c>0x9882E0</c>, which needs <c>0x99CC40</c> (unread). The bridge builds only Sound PBIs; a PBI built with
+    /// <c>continuous: true</c> takes the <c>0x9883AC</c> class (the mapping to the continuous containers is the extractor's inference, C41.3: a visible stop when its <c>vt+0x3C</c> is called, not a silent 0).
+    /// </summary>
+    // fidelity: M6-022
+    public WwisePbiClass PbiClass { get; set; }
+
+    /// <summary><c>[pbi+0x204]</c>, the object the <c>0x9883AC</c> class's <c>0x9882E0</c> hands to <c>0x99CC40</c> (verification A1). Only that class has it.</summary>
+    // fidelity: M6-022
+    public object? Object204 { get; set; }
+
+    /// <summary>
+    /// <c>0x99CC40([pbi+0x204], pbi, &amp;a, &amp;b)</c> (verification A1; body unread, RECOVERABLE_GAP): returns 0 for "none", else the values stored to <c>[pbi+0x1D8]</c> (<c>a</c>) and <c>[pbi+0x1B4]</c> (<c>b</c>). Required by the <c>0x9883AC</c> class's
+    /// <c>vt+0x3C</c>.
+    /// </summary>
+    // fidelity: M6-022
+    public Func<WwisePlayingInstance, (int Result, uint A, uint B)>? Seam99CC40 { get; set; }
+
+    /// <summary>
+    /// <c>pbi-&gt;vt+0x3C(pbi, E0)</c> (C41.3). Base and <c>0xA6A8A0</c> classes: <c>0x9FF544</c>, 0 for every argument. The <c>0x9883AC</c> class: <c>0x9882E0</c> (verification A1): <c>0x99CC40([pbi+0x204], pbi, &amp;a, &amp;b)</c>; 0 returns 2, else
+    /// <c>[pbi+0x1D8] = a</c>, <c>[pbi+0x1B4] = b</c>, <c>[pbi+0x1BE]</c> bits 0 and 1 cleared, <c>[pbi+0x1BD]</c> bit 7 set, and 1 is returned.
+    /// </summary>
+    // fidelity: M6-022
+    public int RequestVt3C(int e0)
+    {
+        switch (PbiClass)
+        {
+            case WwisePbiClass.Base:
+            case WwisePbiClass.Class103D3B0:
+                return 0;                                                          // 0x9FF544 mov r0,#0; bx lr
+            case WwisePbiClass.Container9883AC:
+            {
+                var (result, a, b) = (Seam99CC40 ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 C41.3: the 0x9883AC-class pbi vt+0x3C (0x9882E0) calls 0x99CC40, which is unread; supply WwisePlayingInstance.Seam99CC40"))(this);
+                if (result == 0) return 2;                                         // 0x9882E0: 0 -> returns 2
+                StartOffset = a;                                                   // [pbi+0x1D8] = a
+                Word1B4 = b;                                                       // [pbi+0x1B4] = b
+                Flags1BE = (byte)(Flags1BE & ~3);                                  // [pbi+0x1BE] bits 0 and 1 cleared (the engine's own 0x9882E0 under Unicorn clears both; verification A1 names bit 1 only)
+                Flags1BD = (byte)(Flags1BD | 0x80);                                // [pbi+0x1BD] bit 7 set
+                return 1;
+            }
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    /// <summary>
     /// PBI <c>vt+0x58</c> = <c>0x9CBACC</c> (C31.4 R4.8, <c>0x9CBACC..0x9CBAD8</c>): returns <c>[pbi+0x1F8]</c> and stores <c>-1</c> there (<c>mvn r2,#0</c>; <c>ldr r0,[r0,#0x1f8]</c>; <c>str r2,[r3,#0x1f8]</c>): the stop offset
     /// is read once and consumed. <c>0xA548C0</c> is the caller (<c>0xA54910</c>).
     /// </summary>
@@ -364,6 +411,26 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0xC4</c> (ctx <c>+0xB8</c>): 101.0f from the ctx init <c>0x9BCA48</c> and from CalcEffectiveParams (<c>0x9FFC9C</c>).</summary>
     public float FieldC4 { get; set; }
 
+    /// <summary><c>+0xC8</c>, <c>+0xCC</c>, <c>+0xD0</c> (ctx <c>+0xBC..+0xC4</c>): the destination of the <c>0xA4BFC4</c> copy of <c>[pbi+0xB4..0xC0]</c> (<see cref="PropagateParamsA4BFC4"/>); <c>+0xC4</c> is <see cref="FieldC4"/>.</summary>
+    // fidelity: M6-022
+    public float FieldC8 { get; set; }
+
+    /// <summary>See <see cref="FieldC8"/>.</summary>
+    public float FieldCC { get; set; }
+
+    /// <summary>See <see cref="FieldC8"/>: the byte copy of <see cref="PanC0"/> (the three upper bytes of the engine's word <c>[pbi+0xC0]</c> are uninitialised pool memory and are modelled as 0).</summary>
+    public byte FieldD0 { get; set; }
+
+    /// <summary><c>0xA4BFC4</c> (inside <c>0xA4BC58</c>, C18 X3): copies the four words <c>[pbi+0xB4..0xC0]</c> to <c>[pbi+0xC4..0xD0]</c>.</summary>
+    // fidelity: M6-022
+    public void PropagateParamsA4BFC4()
+    {
+        FieldC4 = PanB4;
+        FieldC8 = PanB8;
+        FieldCC = PanBC;
+        FieldD0 = PanC0;
+    }
+
     /// <summary><c>+0xB4</c>, <c>+0xB8</c>, <c>+0xBC</c> (ctx <c>+0xA8..+0xB0</c>): properties 0xC, 0xD, 0xE of the top node (<c>0x9FAEE8</c>).</summary>
     public float PanB4 { get; set; }
 
@@ -426,6 +493,7 @@ public sealed class WwisePlayingInstance
         // 0xA002A8/0xA002AC: params+0x128 bit4 -> pbi+0x1BE bit6 only. 0xA002D0: params+0x128 bit2 ->
         // pbi+0x1BF bit2. These stores precede the chain-id stores at 0xA00334/0xA00418, so the chain bit3
         // is applied after them.
+        PbiClass = continuous ? WwisePbiClass.Container9883AC : WwisePbiClass.Base;   // C41.3 (the continuous mapping is the extractor's inference; see PbiClass)
         Flags1BD = (byte)((continuous ? 1 << 7 : 0) | 0x44);              // 0xA00288
         Flags1BE = (byte)((Flags1BE & ~0x40) | ((p.Flags128 & 0x10) != 0 ? 0x40 : 0));
         Flags1BF = (byte)((p.Flags128 & 4) != 0 ? 4 : 0);
@@ -452,4 +520,18 @@ public sealed class WwisePlayingInstance
     /// </summary>
     public void MarkChainMatchedA01878()
         => Flags1BA = (byte)((Flags1BA & ~0x78) | (3 << 3));
+}
+
+/// <summary>The three PBI vtable classes the engine builds (C41.3, verification A1); see <see cref="WwisePlayingInstance.PbiClass"/>.</summary>
+// fidelity: M6-022
+public enum WwisePbiClass
+{
+    /// <summary>The base / Sound PBI, vptr <c>0x103B768</c>: <c>vt+0x3C = 0x9FF544</c>.</summary>
+    Base = 0,
+
+    /// <summary>The <c>0x9883AC</c>-class, vptr <c>0x1039D98</c>: <c>vt+0x3C = 0x9882E0</c>.</summary>
+    Container9883AC = 1,
+
+    /// <summary>The <c>0xA6A8A0</c>-class, vptr <c>0x103D3B0</c>: <c>vt+0x3C = 0x9FF544</c>.</summary>
+    Class103D3B0 = 2,
 }

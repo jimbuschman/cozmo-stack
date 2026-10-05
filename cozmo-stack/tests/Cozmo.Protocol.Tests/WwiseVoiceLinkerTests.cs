@@ -912,10 +912,12 @@ public class WwiseVoiceLinkerTests
         // 0xA4BD54 SetBit2 (UpdateConnectionGains, voice->vt+0x3C != 0 and [voice+0xCD] bit3 clear): bit2 = vt3c & 1.
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
         var conn = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 1, TargetGain = 0.25f };
-        var voice = new WwiseLiveVoice(1, 8) { VoiceRequest3C = () => 1 };
+        var voice = new WwiseLiveVoice(1, 8);
         voice.Connections.Add(conn);
+        var owner = Rig.Pbi();
+        owner.Flags1BE = 0x04;                                              // voice->vt+0x3C = 0xA55E90 = ([pbi+0x1BE] & 0x14) != 0 (gapE 3.3): non-zero
 
-        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 1f, 0);
 
         Assert.Equal(4, conn.Flags6C & 4);
         Assert.True(conn.FadeIn);
@@ -964,10 +966,12 @@ public class WwiseVoiceLinkerTests
         // of [[conn+0x30]+0x64].
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Format64 = lineWord };
         var conn = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
-        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = word, FlagsCD = 8, VoiceRequest3C = () => 1 };   // vt3c != 0: main loop
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = word, FlagsCD = 8 };
         voice.Connections.Add(conn);
+        var owner = Rig.Pbi();
+        owner.Flags1BE = 0x04;                                              // vt3c != 0 (0xA55E90, gapE 3.3): main loop
 
-        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 1f, 0);
 
         Assert.Equal(expectedSize, conn.Descriptor.Size);
         Assert.Equal((int)(word & 0xFF), conn.C64);                        // [conn+0x64] = inCh once [conn+0x18] != 0
@@ -979,9 +983,11 @@ public class WwiseVoiceLinkerTests
         // 0xA4BD74 cmp r6,#0; beq 0xA4BFD4: inCh 0 skips the loop, so no descriptor is sized.
         var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Format64 = 0x3102 };
         var conn = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
-        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4100, FlagsCD = 8, VoiceRequest3C = () => 1 };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4100, FlagsCD = 8 };
         voice.Connections.Add(conn);
-        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        var owner = Rig.Pbi();
+        owner.Flags1BE = 0x04;
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 1f, 0);
         Assert.False(conn.HasDry);
     }
 
@@ -1049,11 +1055,13 @@ public class WwiseVoiceLinkerTests
         var failing = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
         failing.Descriptor.AllocationFails = () => true;
         var ok = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };
-        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4101, FlagsCD = 8, VoiceRequest3C = () => 1, OutputGain = 1f };
+        var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 0x4101, FlagsCD = 8, OutputGain = 1f };
         voice.Connections.Add(failing);
         voice.Connections.Add(ok);
+        var owner = Rig.Pbi();
+        owner.Flags1BE = 0x04;
 
-        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 0.5f);
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, owner, 0.5f, 0);
 
         Assert.False(failing.HasDry);
         Assert.Equal(0f, failing.C0C);                                    // the gain store 0xA4BE6C was not reached
@@ -2411,7 +2419,7 @@ public class WwiseVoiceLinkerTests
         pass.AdvanceTickCounters = () => f.Bridge.WalkPendingVoices();
         pass.DuckPrePass = () => f.Calls.Add($"duck@{pbi.StartOffset}");
         pass.NodeCleanup = () => f.Calls.Add("cleanup");
-        pass.VoicePass();
+        pass.VoicePass(1);
         Assert.Equal(new[] { "duck@1976", "cleanup" }, f.Calls);            // the walk ran first (0xA44978), then 0xA43D24, then 0xA39564
     }
 

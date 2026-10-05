@@ -2779,7 +2779,7 @@ public class WwisePlaybackLimiterTests
         pass.SourceOwner = s => ReferenceEquals(s, src) ? marked : null;
         var voice = new WwiseLiveVoice(1, 16) { State = 0, BusOwner8 = other, Source = src };
         pass.Voices.Add(voice);
-        pass.VoicePass();
+        pass.VoicePass(1);
         Assert.Empty(pass.Voices);                                                   // the source's owner is marked, voice+8's is not
         Assert.Equal(2, voice.State);
         Assert.Equal(0x07, marked.Flags1BA);                                         // the source owner's bits 3..6 were cleared
@@ -2791,13 +2791,13 @@ public class WwisePlaybackLimiterTests
     {
         var unset = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { } }.WithPrePassDoubles();
         unset.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0, Source = new Src() });
-        Assert.Throws<WwiseMissingBehaviourException>(() => unset.VoicePass());       // no lookup wired
+        Assert.Throws<WwiseMissingBehaviourException>(() => unset.VoicePass(1));       // no lookup wired
         var noSource = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => Pbi(50f) }.WithPrePassDoubles();
         noSource.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0 });
-        Assert.Throws<WwiseMissingBehaviourException>(() => noSource.VoicePass());    // [voice+0xD4] == 0: the engine dereferences it
+        Assert.Throws<WwiseMissingBehaviourException>(() => noSource.VoicePass(1));    // [voice+0xD4] == 0: the engine dereferences it
         var noOwner = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState()) { DestroyVoiceA9D40C4 = _ => { }, SourceOwner = _ => null }.WithPrePassDoubles();
         noOwner.Voices.Add(new WwiseLiveVoice(1, 16) { State = 0, Source = new Src() });
-        Assert.Throws<WwiseMissingBehaviourException>(() => noOwner.VoicePass());     // [src+0xC] is not a PBI
+        Assert.Throws<WwiseMissingBehaviourException>(() => noOwner.VoicePass(1));     // [src+0xC] is not a PBI
         Assert.Throws<ArgumentNullException>(() => new WwiseLiveVoice(1, 16).StopA533FC(null!));
     }
 
@@ -3150,7 +3150,10 @@ public class WwisePlaybackLimiterTests
         public void Frame()
         {
             Bridge.DrainStartList();
-            Pass.VoicePass();
+            Pass.StartStreamOverrideA54A30 ??= _ => 1;                               // TEST DOUBLES: V7 (0xA54F1C) runs for the state-1 voice; the build 0xA54A30 and the tail's CalcEffectiveParams are not what these tests are about, and the test sources have no pitch node
+            Pass.CalcEffectiveParamsVt24 ??= _ => { };
+            foreach (var v in Bridge.Voices) v.AllowRenderOrderApproximation = true;
+            Pass.VoicePass(1);
             Pass.FlushPbiNotifications();
         }
     }
@@ -3233,7 +3236,7 @@ public class WwisePlaybackLimiterTests
         // 7.3: sl = (1BC & 0x20) ? ([pbi+0x1F8] == -1) : 0; the mix-result byte forces sl = 1. 7.5: result 0x11 stops on sl or with no pending source; any other result stops on 2 or sl.
         WwiseLiveVoice Make(WwiseVoiceBusPass pass, WwisePlayingInstance pbi, int state = 1)
         {
-            var voice = new WwiseLiveVoice(1, 16) { State = state, BusOwner8 = pbi, Source = Owned(pbi) };
+            var voice = new WwiseLiveVoice(1, 16) { State = state, BusOwner8 = pbi, Source = Owned(pbi), AllowRenderOrderApproximation = true };
             pass.Voices.Add(voice);
             return voice;
         }
@@ -3247,18 +3250,18 @@ public class WwisePlaybackLimiterTests
         // state 0 (not started) is not mixed, the result stays 0x2B; a marked PBI still stops it
         var p1 = NewPass(); var marked = Pbi(50f); marked.Flags1BC = 0x20;
         var v1 = Make(p1, marked, state: 0);
-        p1.VoicePass();
+        p1.VoicePass(1);
         Assert.Empty(p1.Voices);
         Assert.Equal(2, v1.State);
         // an unmarked PBI keeps its voice
         var p2 = NewPass(); var alive = Pbi(50f);
         Make(p2, alive, state: 0);
-        p2.VoicePass();
+        p2.VoicePass(1);
         Assert.Single(p2.Voices);
         // the stop clears 1BA bits 3..6 (0xA565D0 -> 0xA01840)
         var p3 = NewPass(); var fading = Pbi(50f); fading.Flags1BA = 0x7F; fading.Flags1BC = 0x20;
         Make(p3, fading, state: 0);
-        p3.VoicePass();
+        p3.VoicePass(1);
         Assert.Equal(0x07, fading.Flags1BA);
         // the decision by result (7.5), with the mix result set as a mix would leave it
         var p4 = NewPass();
@@ -3288,14 +3291,14 @@ public class WwisePlaybackLimiterTests
         // pause of a paused-and-running PBI needs the seam
         var p5 = NewPass(); var paused = Pbi(50f); paused.Flags1BC = 0x80;
         Make(p5, paused, state: 1);
-        Assert.Throws<WwiseMissingBehaviourException>(() => p5.VoicePass());
+        Assert.Throws<WwiseMissingBehaviourException>(() => p5.VoicePass(1));
         var pausedCalls = new List<WwiseLiveVoice>();
         p5.PauseVoice4C = pausedCalls.Add;
-        p5.VoicePass();
+        p5.VoicePass(1);
         Assert.Single(pausedCalls);
         // a stopped voice needs the destroy seam
         var p6 = NewPass(); p6.DestroyVoiceA9D40C4 = null;
         Make(p6, marked, state: 0);
-        Assert.Throws<WwiseMissingBehaviourException>(() => p6.VoicePass());
+        Assert.Throws<WwiseMissingBehaviourException>(() => p6.VoicePass(1));
     }
 }

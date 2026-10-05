@@ -335,8 +335,8 @@ public sealed class WwiseVoiceConnection
     /// <summary>V7/C1 <c>0xA4BEC4</c> <c>0xA5975C</c> per-connection conversion (unread seam).</summary>
     public Action<WwiseVoiceConnection>? Conversion5975C { get; set; }
 
-    /// <summary>V7/C1 <c>0xA4BF4C</c> <c>0xA5D70C</c> per-connection step (unread seam).</summary>
-    public Action<WwiseVoiceConnection>? Conversion5D70C { get; set; }
+    /// <summary>V7/C1 <c>0xA4BF4C</c> <c>0xA5D70C</c> per-connection step (unread seam); it also receives <c>param_12</c> (<c>0xA4BF38</c>, X2).</summary>
+    public Action<WwiseVoiceConnection, WwiseGainArg12?>? Conversion5D70C { get; set; }
 
     /// <summary>The pan matrix the next <see cref="Refresh"/> applies (M6-012 gapE 2.1; caller-supplied).</summary>
     public float[]? TargetMatrix { get; set; }
@@ -493,61 +493,369 @@ public sealed class WwiseVoiceSendTable
 }
 
 /// <summary>
-/// V12 <c>0xA54A30</c> (C15 V12-vt): the 0x9C-byte voice insert-FX slot object. Its vtable is
-/// <c>0x103DC38</c> when a plug-in is present and <c>0x103DB98</c> otherwise, from GOT
-/// <c>0x1040174</c>/<c>0x1040170</c>. Slots: <c>+0x24 = 0xA52678</c>, <c>+0x28 = 0xA79858</c> (init),
-/// <c>+0x2C = 0xA79DAC</c>, <c>+0x38 = 0xA79A2C</c>, <c>+0x3C = 0xA79A78</c>. The class name is UNKNOWN;
-/// the <c>vt+0x38</c>/<c>vt+0x3C</c> bodies are the plug-in's, so they are caller seams.
+/// The FX descriptor <c>fx</c> that <c>0xA019B8(pbi, i, &amp;fx)</c> (= node <c>vt+0xE8</c> = <c>0x9EEF2C</c>) hands to <c>0xA54A30</c> (C41.4, rows 4.1, 4.4, 4.5): <c>[fx+0x10]</c> the plug-in id, <c>[fx+0x14]</c> the parameter object (its <c>vt+0xC</c> clones it with the
+/// plug-in allocator, the clone's <c>vt+0x14</c> destroys it), <c>[fx+0x24]</c> / <c>[fx+0x28]</c> the RTPC records (0x20 bytes each) and <c>vt+8</c> / <c>vt+0xC</c> the reference count (AddRef / Release). The resolver body <c>0x9EEF2C</c> is not extracted, so the descriptor is
+/// supplied by the host (<see cref="WwiseLiveVoice.ResolveNodeFx9EEF2C"/>).
 /// </summary>
-public sealed class WwiseVoiceInsertFxSlot
+// fidelity: M6-022
+public sealed class WwiseVoiceFxDescriptor
 {
-    // fidelity: M6-022
+    /// <summary><c>[fx+0x10]</c>: the plug-in id.</summary>
+    public uint Id { get; set; }
 
-    /// <summary>The plugin-present vtable <c>0x103DC38</c> (C15 V12-vt).</summary>
-    public const uint PluginVtable = 0x103DC38;
+    /// <summary><c>[fx+0x14]-&gt;vt+0xC(clone, allocator)</c>: clones the parameter object; null here is <c>[fx+0x14] == 0</c>.</summary>
+    public Func<IWwisePluginMemAlloc, object?>? CloneParams { get; set; }
 
-    /// <summary>The no-plugin vtable <c>0x103DB98</c> (C15 V12-vt).</summary>
-    public const uint NoPluginVtable = 0x103DB98;
+    /// <summary>The clone's <c>vt+0x14</c> (<c>0x9CF820</c>, the holder teardown): destroys the cloned parameter object.</summary>
+    public Action<object, IWwisePluginMemAlloc>? DestroyParams { get; set; }
 
-    /// <summary>True when the slot holds a plug-in (selects <see cref="PluginVtable"/>).</summary>
-    public bool HasPlugin { get; set; }
+    /// <summary><c>[fx+0x28]</c>: the number of RTPC records at <c>[fx+0x24]</c>; the shipped Compressor ShareSet has none (row 4.5).</summary>
+    public int RtpcRecordCount { get; set; }
 
-    /// <summary>The stored vtable (<c>0x103DC38</c> or <c>0x103DB98</c>).</summary>
-    public uint Vtable => HasPlugin ? PluginVtable : NoPluginVtable;
+    /// <summary>The reference count: 1 from the resolver, <see cref="AddRef"/> by the holder (<c>fx-&gt;vt+8</c>), <see cref="Release"/> by <c>vt+0xC</c>.</summary>
+    public int RefCount { get; private set; } = 1;
 
-    /// <summary>True once <c>vt+0x28 = 0xA79858</c> ran.</summary>
-    public bool Initialised { get; private set; }
+    /// <summary><c>fx-&gt;vt+8</c>.</summary>
+    public void AddRef() => RefCount++;
 
-    /// <summary><c>vt+0x28 = 0xA79858</c>: the slot init.</summary>
-    public void Initialise() => Initialised = true;
+    /// <summary><c>fx-&gt;vt+0xC</c>.</summary>
+    public void Release() => RefCount--;
+}
 
-    /// <summary><c>vt+0x2C = 0xA79DAC</c>: the slot teardown.</summary>
-    public Action? TeardownHook { get; set; }
+/// <summary>
+/// The 0x18-byte context object a wrapper hands the plug-in as Init's <c>ctx</c> (<c>0xA6C22C</c>, vptr <c>0x103D4F0</c>, row 4.2): <c>[+4] = i</c>, <c>[+8..0x10] = 0</c>, <c>[+0x14] = voice</c>.
+/// </summary>
+// fidelity: M6-022
+public sealed class WwiseVoiceFxContext
+{
+    /// <summary><c>[+4]</c>: the slot index.</summary>
+    public int Index { get; }
 
-    /// <summary><c>vt+0x38 = 0xA79A2C</c> (V8 step 1, per-params execute); the body is the plug-in's.</summary>
-    public Action<WwiseVoiceBuffer>? Execute38Hook { get; set; }
+    /// <summary><c>[+0x14]</c>: the voice.</summary>
+    public WwiseLiveVoice Voice { get; }
+
+    internal WwiseVoiceFxContext(WwiseLiveVoice voice, int index) { Voice = voice; Index = index; }
+}
+
+/// <summary>
+/// One node of the voice's chain as its downstream neighbour calls it (C41.6 row 2.10: the chain is <c>src</c>, the pitch node, the FX slots in slot order, the filter holder <c>voice+0x1C0</c>, <c>voice+0x380</c>; each node's <c>vt+0x24</c> stores its upstream neighbour at
+/// <c>[node+4]</c>, <c>0xA54D8C..0xA54DAC</c>). The slots forward <c>vt+0x10/0x14/0x18/0x1C/0x20</c> to their upstream neighbour; the pitch node's bodies of those slots are unread (<see cref="WwiseLiveVoice"/>'s required seams).
+/// </summary>
+// fidelity: M6-022
+public interface IWwiseFxChainNode
+{
+    /// <summary><c>vt+0x10(this, &amp;r1)</c>: the result goes to <c>[S+0x28]</c> in V7's <c>0xA55598</c>.</summary>
+    int Vt10(int r1);
+
+    /// <summary><c>vt+0x14(this, r1)</c>.</summary>
+    void Vt14(int r1);
+
+    /// <summary><c>vt+0x18(this, r1, r2)</c>.</summary>
+    int Vt18(int r1, int r2);
+
+    /// <summary><c>vt+0x1C(this)</c>.</summary>
+    int Vt1C();
+
+    /// <summary><c>vt+0x20(this)</c>.</summary>
+    int Vt20();
+}
+
+/// <summary>
+/// The voice's in-place FX wrapper (C41.4 rows 4.1..4.7): the 0x34-byte object of vptr <c>0x103DB98</c> that <c>0xA54A30</c> builds when <c>byte [info+8] != 0</c> (the plug-in works in place; the shipped Compressor does), <c>vt+0x28 = 0xA792B0</c>. The 0x9C-byte
+/// out-of-place class (<c>0x103DC38</c>, <c>vt+0x28 = 0xA79858</c>) is not extracted: building it is a required stop (<see cref="WwiseMissingBehaviourException"/>). A slot whose creation fails is not made: <c>[voice+0x370+4i]</c> stays null; there is no "no plug-in" form.
+/// Layout (row 4.2): <c>+4</c> the upstream node, <c>+8</c> the voice, <c>+0xC</c> the context, <c>+0x10</c> the holder (<c>+0x14</c> the cloned parameters, <c>+0x18</c> the descriptor), <c>+0x1C</c> the plug-in id, <c>+0x20</c> done, <c>+0x21</c> bypass,
+/// <c>+0x22</c> reset done, <c>+0x24</c> the slot index, <c>+0x28</c> the plug-in, <c>+0x2C</c> the buffer, <c>+0x30</c> the channel word.
+/// <para>The <c>Execute38Hook</c> / <c>Execute3CHook</c> / <c>ReleaseVtCHook</c> / <c>TeardownHook</c> properties are TEST-ONLY overrides (the engine oracles of the render order stand in for the slot bodies); production leaves them null and runs the wrapper's bodies.</para>
+/// </summary>
+// fidelity: M6-022
+public sealed class WwiseVoiceInsertFxSlot : IWwiseFxChainNode
+{
+    /// <summary>The wrapper's vptr (<c>.got 0x1040170 -&gt; 0x103DB90 + 8</c>, row 4.1).</summary>
+    public const uint Vtable = 0x103DB98;
+
+    /// <summary>The out-of-place class's vptr (<c>.got 0x1040174 -&gt; 0x103DC30 + 8</c>; not built).</summary>
+    public const uint OutOfPlaceVtable = 0x103DC38;
+
+    /// <summary>The wrapper's allocation size (<c>ldr r1,#0x34</c>, row 4.1).</summary>
+    public const int Size = 0x34;
+
+    private IWwiseFxChainNode? _upstream;
+    private WwiseLiveVoice? _voice;
+    private IWwiseEffectPlugin? _plugin;
+    private float[]? _buffer;
+    private WwiseVoiceFxDescriptor? _fx;
+    private object? _params;
+    private WwiseVoiceFxContext? _ctx;
+
+    // The hook-only slot (the engine oracles of the render order use it); the engine's slot is made by Create.
+    internal WwiseVoiceInsertFxSlot() { }
+
+    /// <summary><c>[W+4]</c>: the upstream node (<c>vt+0x24 = 0xA52678</c>).</summary>
+    public IWwiseFxChainNode? Upstream => _upstream;
+
+    /// <summary><c>[W+0x1C]</c>: the plug-in id (initial -1).</summary>
+    public uint PluginId { get; private set; } = 0xFFFFFFFF;
+
+    /// <summary><c>byte [W+0x20]</c>: done (set when the result was 0x11).</summary>
+    public byte Done { get; private set; }
+
+    /// <summary><c>byte [W+0x21]</c>: bypass (voice <c>vt+0x68</c> / <c>vt+0x70</c> write it).</summary>
+    public byte Bypass { get; set; }
+
+    /// <summary><c>byte [W+0x22]</c>: reset done.</summary>
+    public byte ResetDone { get; private set; }
+
+    /// <summary><c>[W+0x24]</c>: the slot index.</summary>
+    public int Index { get; private set; }
+
+    /// <summary><c>[W+0x28]</c>: the plug-in instance (<c>vt+0x40 = 0xA79364</c>).</summary>
+    public IWwiseEffectPlugin? Plugin => _plugin;
+
+    /// <summary><c>[W+0x2C]</c>: the buffer the process step allocates when the voice has no data.</summary>
+    public float[]? Buffer => _buffer;
+
+    /// <summary><c>[W+0x30]</c>: the channel word <c>[fmt+4]</c> (<c>vt+0x44 = 0xA7904C</c>).</summary>
+    public uint ChannelWord { get; private set; }
+
+    /// <summary><c>[W+0x14]</c>: the cloned parameter object the holder keeps.</summary>
+    public object? Params => _params;
+
+    /// <summary><c>[W+0x18]</c>: the descriptor the holder keeps.</summary>
+    public WwiseVoiceFxDescriptor? Descriptor => _fx;
+
+    /// <summary><c>[W+0xC]</c>: the context object.</summary>
+    public WwiseVoiceFxContext? Context => _ctx;
+
+    /// <summary>TEST-ONLY: replaces <c>vt+0x38</c> (<c>0xA790E8</c>).</summary>
+    internal Action<WwiseVoiceBuffer>? Execute38Hook { get; set; }
+
+    /// <summary>TEST-ONLY: replaces <c>vt+0x3C</c> (<c>0xA791A8</c>).</summary>
+    internal Action<WwiseVoiceBuffer>? Execute3CHook { get; set; }
+
+    /// <summary>TEST-ONLY: replaces <c>vt+0xC</c> (<c>0xA7915C</c>); true when the chain continues upstream.</summary>
+    internal Func<bool>? ReleaseVtCHook { get; set; }
+
+    /// <summary>TEST-ONLY: replaces <c>vt+0x2C</c> (<c>0xA7933C</c>).</summary>
+    internal Action? TeardownHook { get; set; }
+
+    private WwiseLiveVoice VoiceOrThrow() => _voice ?? throw new WwiseMissingBehaviourException("M6-022 4.6: a hook-only insert-FX slot has no voice");
+
+    private IWwiseEffectPlugin PluginOrThrow(string what) => _plugin ?? throw new WwiseMissingBehaviourException(
+        $"M6-022 4.6: {what} needs the slot's plug-in [W+0x28]; this slot was made without one (hook-only)");
 
     /// <summary>
-    /// <c>vt+0xC</c> (the in-place wrapper's <c>0xA7915C</c>, C38.1 P1-15): the release of the chain after the pull: the wrapper frees its own buffer <c>[W+0x2C]</c> and returns when it has one (false: the chain stops here), else it forwards to its
-    /// upstream (true). The wrapper object is not built (the slot is a hook stand-in), so the hook is required when the release reaches a filled slot.
+    /// <c>vt+0x28 = 0xA792B0(W, plugin, &amp;fx, i, voice, &amp;fmt)</c> (row 4.3): <c>[W+0x28] = plugin</c>, <c>[W+0x30] = [fmt+4]</c>, <c>[W+0x2C] = 0</c>, then <c>0xA793D4</c> (a result other than 1 is returned), then the plug-in's <c>vt+0x1C</c> Init
+    /// (<c>alloc, [W+0xC], [W+0x14], fmt</c>; a result other than 1 is returned) and the tail <c>plugin-&gt;vt+0xC</c> (Reset).
     /// </summary>
-    public Func<bool>? ReleaseVtCHook { get; set; }
+    public int InitA792B0(IWwiseEffectPlugin plugin, WwiseVoiceFxDescriptor fx, int i, WwiseLiveVoice voice, WwiseEffectFormat fmt)
+    {
+        _plugin = plugin;                                                          // 0xA792B0.. [W+0x28] = plugin
+        ChannelWord = fmt.ChannelWord;                                             // [W+0x30] = [fmt+4]
+        _buffer = null;                                                            // [W+0x2C] = 0
+        int r = InitHolderA793D4(fx, i, voice);
+        if (r != 1) return r;
+        r = plugin.Init(voice.PluginAllocator, _ctx, _params, fmt);                // plugin vt+0x1C(alloc, [W+0xC], [W+0x14], fmt)
+        if (r != 1) return r;
+        return plugin.Reset();                                                     // tail plugin vt+0xC
+    }
 
-    /// <summary><c>vt+0xC</c>: see <see cref="ReleaseVtCHook"/>; true when the chain continues upstream.</summary>
-    public bool ReleaseVtC() => (ReleaseVtCHook ?? throw new WwiseMissingBehaviourException(
-        "M6-022 P1-15: the insert-FX wrapper's vt+0xC (0xA7915C) is not built; supply WwiseVoiceInsertFxSlot.ReleaseVtCHook"))();
+    /// <summary>
+    /// <c>0xA793D4(W, plugin, &amp;fx, i, voice)</c> (row 4.4): <c>[W+0xC] = 0</c>, <c>[W+8] = voice</c>, <c>[W+0x20..0x22] = 0</c>, <c>[W+0x24] = i</c>; <c>key = [voice+8]</c> (0 when the voice has no PBI context); <c>0x9CF644(W+0x10, fx, key, 1)</c> (0 returns 2);
+    /// <c>[W+0x1C] = [fx+0x10]</c>; the 0x18-byte context (an allocation failure leaves <c>[W+0xC] = 0</c> and returns 2) <c>0xA6C22C(ctx, voice, i)</c>, <c>[W+0xC] = ctx</c>; 1.
+    /// </summary>
+    private int InitHolderA793D4(WwiseVoiceFxDescriptor fx, int i, WwiseLiveVoice voice)
+    {
+        _ctx = null;                                                               // [W+0xC] = 0
+        _voice = voice;                                                            // [W+8] = voice
+        Done = 0; Bypass = 0; ResetDone = 0;                                       // [W+0x20..0x22] = 0
+        Index = i;                                                                 // [W+0x24] = i
+        object? holderParams = HolderInit9CF644(fx, flag: true);                   // key = [voice+8]: the holder's key loops are required stops (row 4.5)
+        if (holderParams is null) return 2;                                        // 0 -> return 2
+        PluginId = fx.Id;                                                          // [W+0x1C] = [fx+0x10]
+        if (voice.FxAllocationFails?.Invoke() == true) { _ctx = null; return 2; }  // alloc 0x18 -> null: [W+0xC] = 0, return 2
+        _ctx = new WwiseVoiceFxContext(voice, i);                                  // 0xA6C22C: [+4] = i, [+8..0x10] = 0, [+0x14] = voice
+        return 1;
+    }
 
-    /// <summary><c>vt+0x3C = 0xA79A78</c> (V8 step 1, the state 0x2D/0x11 path).</summary>
-    public Action<WwiseVoiceBuffer>? Execute3CHook { get; set; }
+    /// <summary>
+    /// <c>0x9CF644(holder, fx, key, flag)</c> (row 4.5), the shipped ShareSet path: <c>[fx+0x14]</c> clones into <c>[holder+4]</c>, <c>[holder+8] = fx</c>, <c>fx-&gt;vt+8</c> (AddRef); the function returns <c>[holder+4]</c>. A descriptor with no parameter object (<c>[fx+0x14] == 0</c>:
+    /// the engine returns the holder's initial <c>[holder+4]</c>, whose ctor is unread) and one with RTPC records (<c>0xA11F98</c> per record, <c>0x9CF3A4</c>, <c>0x9E61B4</c>: unread) are required stops.
+    /// </summary>
+    private object? HolderInit9CF644(WwiseVoiceFxDescriptor fx, bool flag)
+    {
+        if (fx.CloneParams is null)
+            throw new WwiseMissingBehaviourException("M6-022 4.5: 0x9CF644 with [fx+0x14] == 0 returns the holder's initial [holder+4], whose constructor is unread");
+        _params = fx.CloneParams(VoiceOrThrow().PluginAllocator);                  // [holder+4] = [fx+0x14]->vt+0xC(clone, allocator)
+        _fx = fx;                                                                  // [holder+8] = fx
+        fx.AddRef();                                                               // fx->vt+8
+        if (!flag) return _params;
+        if (fx.RtpcRecordCount != 0)
+            throw new WwiseMissingBehaviourException("M6-022 4.5: 0x9CF644's RTPC record loops (0xA11F98 per record, 0x9CF3A4, 0x9E61B4) are unread; only a ShareSet with no records (the shipped Compressor's) is built");
+        return _params;
+    }
 
-    /// <summary>Runs <c>vt+0x38</c>.</summary>
-    public void Execute38(WwiseVoiceBuffer buffer) => Execute38Hook?.Invoke(buffer);
+    /// <summary><c>vt+0x24 = 0xA52678</c>: stores the upstream neighbour at <c>[W+4]</c> (<c>0xA54D8C..0xA54DAC</c>).</summary>
+    public void SetUpstreamA52678(IWwiseFxChainNode upstream) => _upstream = upstream;
 
-    /// <summary>Runs <c>vt+0x3C</c>.</summary>
-    public void Execute3C(WwiseVoiceBuffer buffer) => Execute3CHook?.Invoke(buffer);
+    /// <summary>
+    /// <c>vt+0xC = 0xA7915C</c> (row 4.6), the local part: a wrapper holding its own buffer frees it and returns (the chain stops: false); otherwise the release goes on to the upstream neighbour (true; the voice walks the chain,
+    /// <see cref="WwiseLiveVoice.ReleaseChainVtC"/>).
+    /// </summary>
+    public bool ReleaseVtC()
+    {
+        if (ReleaseVtCHook is { } hook) return hook();
+        if (_buffer is not null) { _buffer = null; return false; }                 // 0xA7A914(pool, buf); [W+0x2C] = 0
+        return true;                                                               // n = [W+4]; n->vt+0xC(n) if non-null
+    }
 
-    /// <summary>Runs <c>vt+0x2C</c>.</summary>
-    public void Teardown() => TeardownHook?.Invoke();
+    /// <summary><c>vt+0x10 = 0xA79108</c> (row 4.6): done returns 0x11; else the plug-in's <c>vt+0x24</c> (TimeSkip, <c>*r1</c>; the Compressor returns 0x2D, ignored) and then <c>n-&gt;vt+0x10(n, r1)</c>.</summary>
+    public int Vt10(int r1)
+    {
+        if (Done != 0) return 0x11;
+        PluginOrThrow("vt+0x10 (0xA79108)").Slot24();                              // plugin->vt+0x24(plugin, *r1): the result is ignored
+        return (_upstream ?? throw new WwiseMissingBehaviourException("M6-022 4.6: vt+0x10 forwards to [W+4], which is not linked")).Vt10(r1);
+    }
+
+    /// <summary>
+    /// <c>vt+0x14 = 0xA79054</c> (+ <c>0xA79384</c>, row 4.6): <c>r1 != 2</c> resets the plug-in (<c>vt+0xC</c>); then <c>r1 == 0</c> clears done and calls <c>n-&gt;vt+0x14(n, 0)</c>; otherwise, when done, it returns, else <c>n-&gt;vt+0x14(n, r1)</c>.
+    /// </summary>
+    public void Vt14(int r1)
+    {
+        if (r1 != 2) PluginOrThrow("vt+0x14 (0xA79054)").Reset();
+        if (r1 == 0) { Done = 0; }
+        else if (Done != 0) return;
+        (_upstream ?? throw new WwiseMissingBehaviourException("M6-022 4.6: vt+0x14 forwards to [W+4], which is not linked")).Vt14(r1);
+    }
+
+    /// <summary><c>vt+0x18 = 0xA793B0</c> (row 4.6): done returns 1; else <c>n-&gt;vt+0x18(n, r1, r2)</c>.</summary>
+    public int Vt18(int r1, int r2)
+    {
+        if (Done != 0) return 1;
+        return (_upstream ?? throw new WwiseMissingBehaviourException("M6-022 4.6: vt+0x18 forwards to [W+4], which is not linked")).Vt18(r1, r2);
+    }
+
+    /// <summary><c>vt+0x1C = 0xA79018</c> (row 4.6): the plug-in's <c>vt+0xC</c> (Reset), <c>[W+0x20] = 0</c>, then <c>n-&gt;vt+0x1C(n)</c>.</summary>
+    public int Vt1C()
+    {
+        PluginOrThrow("vt+0x1C (0xA79018)").Reset();
+        Done = 0;
+        return (_upstream ?? throw new WwiseMissingBehaviourException("M6-022 4.6: vt+0x1C forwards to [W+4], which is not linked")).Vt1C();
+    }
+
+    /// <summary><c>vt+0x20 = 0xA4C660</c> (rows 2.10, 4.6): <c>[W+4]</c> null returns 0, else <c>n-&gt;vt+0x20(n)</c>.</summary>
+    public int Vt20() => _upstream is null ? 0 : _upstream.Vt20();
+
+    /// <summary><c>vt+0x34 = 0xA7935C</c> (row 4.6): returns 0.</summary>
+    public int Vt34() => 0;
+
+    /// <summary><c>vt+0x40 = 0xA79364</c> (row 4.6): returns the plug-in <c>[W+0x28]</c>.</summary>
+    public IWwiseEffectPlugin? Vt40() => _plugin;
+
+    /// <summary><c>vt+0x44 = 0xA7904C</c> (row 4.6): returns <c>[W+0x30]</c>.</summary>
+    public uint Vt44() => ChannelWord;
+
+    /// <summary>
+    /// <c>vt+0x2C = 0xA7933C</c> (row 4.6): <c>W-&gt;vt+0x30</c> (<see cref="Vt30A79088"/>) then <c>0xA79488(W)</c> (<c>0x9CF820(W+0x10)</c>: the holder's teardown, the parameter clone's <c>vt+0x14</c> and the descriptor's <c>vt+0xC</c>; the context is deleted and
+    /// <c>[W+0xC] = 0</c>). A holder over a descriptor with RTPC records (<c>0xA0EDB0</c> per record) is a required stop.
+    /// </summary>
+    public void Teardown()
+    {
+        if (TeardownHook is { } hook) { hook(); return; }
+        Vt30A79088();
+        if (_fx is { } fx)
+        {
+            if (fx.RtpcRecordCount != 0)
+                throw new WwiseMissingBehaviourException("M6-022 4.5: 0x9CF820's per-record 0xA0EDB0 is unread");
+            if (_params is not null) fx.DestroyParams?.Invoke(_params, VoiceOrThrow().PluginAllocator);   // [holder+4]->vt+0x14
+            _params = null;
+            fx.Release();                                                         // [holder+8]->vt+0xC
+            _fx = null;
+        }
+        _ctx = null;                                                              // 0xA79488: the ctx is deleted, [W+0xC] = 0
+    }
+
+    /// <summary><c>vt+0x30 = 0xA79088</c> (row 4.6): <c>plugin-&gt;vt+8(plugin, allocator)</c> (Term), <c>[W+0x28] = 0</c>, then the buffer <c>[W+0x2C]</c> is freed and zeroed.</summary>
+    public void Vt30A79088()
+    {
+        if (_plugin is { } plugin)                                                 // 0xA79090: a null [W+0x28] is skipped
+        {
+            plugin.Term(VoiceOrThrow().PluginAllocator);
+            _plugin = null;
+        }
+        _buffer = null;
+    }
+
+    /// <summary>Runs <c>vt+0x38</c> (<c>0xA790E8</c>, row 4.6): with <c>[W+0x20] != 0</c> it sets <c>[S+0x28] = 0x11</c> and tail-calls <c>vt+0x3C</c>; otherwise it does nothing.</summary>
+    public void Execute38(WwiseVoiceBuffer buffer)
+    {
+        if (Execute38Hook is { } hook) { hook(buffer); return; }
+        if (Done == 0) return;
+        buffer.State.Code28 = 0x11;
+        Process(buffer.State);
+    }
+
+    /// <summary>Runs <c>vt+0x3C</c> (<c>0xA791A8</c>, row 4.7).</summary>
+    public void Execute3C(WwiseVoiceBuffer buffer)
+    {
+        if (Execute3CHook is { } hook) { hook(buffer); return; }
+        Process(buffer.State);
+    }
+
+    /// <summary>
+    /// <c>vt+0x3C = 0xA791A8(W, S)</c> (row 4.7, the process step). <c>[W+0x21] != 0</c> or <c>byte [[[W+8]+8]+0x8B] != 0</c> (<c>[pbi+0x97]</c>; a voice with no PBI context is an undefined instruction in the engine): with <c>[W+0x22] == 0</c> the plug-in is reset, then
+    /// <c>[W+0x22] = 1</c> and the audio is left alone. Otherwise <c>[W+0x22] = 0</c>; a result of 0x11 sets <c>[W+0x20]</c>; with <c>[S] == 0</c> a buffer of <c>u16[S+0xC] * byte[S+4] * 4</c> bytes is allocated into <c>[W+0x2C]</c> (a failure stores
+    /// <c>[S+0x28] = 2</c> and returns) and stored in <c>[S]</c> with <c>u16[S+0xE] = 0</c>; then <c>[S+8] = [S+0x28]</c>, the plug-in's <c>vt+0x20(S)</c> and <c>[S+0x28] = [S+8]</c>.
+    /// </summary>
+    private void Process(WwiseDecodeState s)
+    {
+        var plugin = PluginOrThrow("vt+0x3C (0xA791A8)");
+        var voice = VoiceOrThrow();
+        if (Bypass != 0 || (voice.BusOwner8 as WwisePlayingInstance ?? throw new WwiseMissingBehaviourException(
+            "M6-022 4.7: 0xA791A8 reads byte [[[W+8]+8]+0x8B] ([pbi+0x97]) when [W+0x21] == 0; the voice has no PBI context in BusOwner8 (the engine's null context is an undefined instruction)")).Byte97 != 0)   // 0xA791A8..
+        {
+            if (ResetDone == 0) plugin.Reset();                                    // plugin->vt+0xC
+            ResetDone = 1;
+            return;
+        }
+        ResetDone = 0;
+        if (s.Code28 == 0x11) Done = 1;                                            // r3 == 0x11 -> [W+0x20] = 1
+        if (s.Data is null)                                                        // [S] == 0
+        {
+            if (voice.FxAllocationFails?.Invoke() == true) { s.Code28 = 2; return; }   // 0xA7A894 -> null: [S+0x28] = 2
+            _buffer = new float[s.MaxFrames * (int)(s.ChannelConfig & 0xFF)];     // u16[S+0xC] * byte[S+4] * 4 bytes
+            s.Data = _buffer;
+            s.ValidFrames = 0;                                                     // u16[S+0xE] = 0
+        }
+        s.Scratch08 = unchecked((uint)s.Code28);                                   // [S+8] = [S+0x28]
+        plugin.Execute(s);                                                         // plugin->vt+0x20(plugin, S)
+        s.Code28 = unchecked((int)s.Scratch08);                                    // [S+0x28] = [S+8]
+    }
+
+    /// <summary>
+    /// The creation of one slot by <c>0xA54A30</c> (rows 4.1, 4.3): the wrapper (<c>byte [info+8] != 0</c>) is allocated (a failure runs <c>plugin-&gt;vt+8(allocator)</c>, releases the descriptor and fails) and initialised through
+    /// <see cref="InitA792B0"/>; the caller stores it, links it into the chain and releases the descriptor on success; on failure it runs <see cref="Teardown"/>, frees the wrapper and releases the descriptor. Returns the slot, or null (the slot stays null; <paramref name="allocationFailed"/> tells the pool failure, which ends the whole build with 2).
+    /// </summary>
+    internal static WwiseVoiceInsertFxSlot? Create(WwiseLiveVoice voice, int i, WwiseVoiceFxDescriptor fx, IWwiseEffectPlugin plugin, WwiseEffectFormat fmt, out bool allocationFailed)
+    {
+        allocationFailed = false;
+        if (voice.FxAllocationFails?.Invoke() == true)                             // the 0x34-byte pool block: null
+        {
+            plugin.Term(voice.PluginAllocator);                                    // plugin->vt+8(0x108DA00)
+            fx.Release();
+            allocationFailed = true;                                               // 0xA54EC8..0xA54EFC, 0xA54A88: 0xA54A30 returns 2
+            return null;
+        }
+        var slot = new WwiseVoiceInsertFxSlot();
+        int r = slot.InitA792B0(plugin, fx, i, voice, fmt);
+        if (r == 1)
+        {
+            fx.Release();                                                          // the caller's own reference (0xA54E88..0xA54EC0)
+            return slot;
+        }
+        slot.Teardown();                                                           // W->vt+0x2C, W->vt+0, pool free
+        fx.Release();
+        return null;
+    }
 }
 
 /// <summary>
@@ -852,8 +1160,7 @@ public sealed class WwiseLiveVoice
                     int r6 = r4 - 1;                                                // 0xA44654
                     var slot = InsertFxSlots[r4 - 1];                               // 0xA44650..0xA44658 [voice + 4 * r4 + 0x36c]
                     if (slot is null) { r4 = r6; break; }                           // 0xA4465C..0xA44660 -> 0xA44724
-                    if (slot.Execute38Hook is null) throw new WwiseMissingBehaviourException("M6-022 V8: the insert-FX slot's vt+0x38 (0xA79A2C / the plug-in's) is not read; supply WwiseVoiceInsertFxSlot.Execute38Hook");
-                    slot.Execute38(Buffer);                                         // 0xA44664..0xA44670 vt+0x38
+                    slot.Execute38(Buffer);                                         // 0xA44664..0xA44670 vt+0x38 (the wrapper's 0xA790E8, C41.4)
                     int res = Buffer.Result;                                        // 0xA44674
                     if (res == 0x2B) { r4 = r6; break; }                            // 0xA44678..0xA4467C -> 0xA44724
                     if (res != 0x2D && res != 0x11) return false;                   // 0xA44680..0xA44688 -> 0xA44714
@@ -865,8 +1172,7 @@ public sealed class WwiseLiveVoice
                     var slot = InsertFxSlots[r4];                                   // 0xA44694..0xA4469C [voice + 4 * r4 + 0x370]
                     if (slot is not null)
                     {
-                        if (slot.Execute3CHook is null) throw new WwiseMissingBehaviourException("M6-022 V8: the insert-FX slot's vt+0x3C (0xA79A78 / the plug-in's) is not read; supply WwiseVoiceInsertFxSlot.Execute3CHook");
-                        slot.Execute3C(Buffer);                                     // 0xA446B0..0xA446B8 vt+0x3C
+                        slot.Execute3C(Buffer);                                     // 0xA446B0..0xA446B8 vt+0x3C (the wrapper's 0xA791A8, C41.4)
                         int res = Buffer.Result;                                    // 0xA446BC
                         if (res == 0x2B) { phase = r4 == 0 ? 3 : 0; break; }        // 0xA446C0..0xA446C4 -> 0xA4471C: r4 == 0 to the pitch pass, else the walk down from r4
                         if (res != 0x11 && res != 0x2D) return false;               // 0xA446C8..0xA446D0 -> 0xA44714
@@ -907,14 +1213,14 @@ public sealed class WwiseLiveVoice
 
     /// <summary>
     /// <c>0xA56E00(voice+0x380, state)</c> (V2-09, C38.3): returns when <c>[state] == 0</c> or <c>[[voice+0x388]+0x34] == 0</c> (<c>pbi+0x34</c> is null for a non-positioned sound: every shipped Sound carries a non-3D positioning byte, C32.1); otherwise it runs the
-    /// per-connection gain / ramp stage <c>0xA56A7C</c>, which is not read (a visible stop). <c>[voice+0x388]</c> is the voice's PBI (<c>0xA549A0</c> stores it): the pitch node's owner PBI <c>[N+0xB4]</c> stands for it. The earlier model refreshed every connection's gain
+    /// per-connection gain / ramp stage <c>0xA56A7C</c>, which is not read (a visible stop). <c>[voice+0x388]</c> is the voice's PBI (<c>0xA54D5C</c> and <c>0xA549A0</c> store it): <see cref="Pbi388"/> (an unset one is a visible stop, the engine reads it raw). The earlier model refreshed every connection's gain
     /// pair and matrices here (<see cref="WwiseVoiceConnection.Refresh"/>); the engine does not: the connections' gains and matrices are the host's inputs to the mix.
     /// </summary>
     // fidelity: M6-022
     private void GainStageA56E00()
     {
         if (Buffer.State.Data is null) return;                                       // 0xA56E00..0xA56E08
-        var pbi = PitchNode.Pbi ?? throw new WwiseMissingBehaviourException("M6-022 V2-09: 0xA56E00 reads [[voice+0x388]+0x34]; the voice's PBI is not set (the pitch node's owner stands for it)");
+        var pbi = Pbi388 ?? throw new WwiseMissingBehaviourException("M6-022 V2-09: 0xA56E00 reads [[voice+0x388]+0x34] raw; [voice+0x388] is not set (0xA54D5C / 0xA549A0 store it)");
         if (pbi.Field34 == 0) return;                                                // 0xA56E10..0xA56E1C
         throw new WwiseMissingBehaviourException("M6-022 V2-09: 0xA56A7C (the per-connection gain / ramp stage of a positioned sound, [pbi+0x34] != 0) is not read");
     }
@@ -1173,19 +1479,14 @@ public sealed class WwiseLiveVoice
     /// </summary>
     public Action<WwiseLiveVoice>? InsertFx { get; set; }
 
-    /// <summary>V7: the first connection's bus (the native <c>[source+0xC]</c> chain); null when unconnected.</summary>
-    public WwiseMixBus? PrimaryBus => Connections.Count > 0 ? Connections[0].Bus : null;
-
     // ---------------------------------------------------------------- V7 vtable seams
     //
-    // 0xA54F1C calls these voice/bus/filter vtable slots. Their bodies are per-class and not read
-    // (RECOVERABLE_GAP / UNKNOWN class identity), so they are caller seams. The defaults keep the ordinary
-    // render path running; they are not recovered values.
+    // 0xA54F1C calls these voice / pitch-node / filter slots. Where C41 gives a body it is built; the rest are REQUIRED seams (a missing one is a visible stop, never a default).
 
-    /// <summary>V7 <c>voice-&gt;vt+0x3C</c>: the per-voice source request; default 1 (live).</summary>
-    public Func<int>? VoiceRequest3C { get; set; }
-
-    /// <summary>V7 <c>voice-&gt;vt+0x48</c>: the stop/fail path.</summary>
+    /// <summary>
+    /// <c>voice-&gt;vt+0x48</c> (<c>0xA533FC</c>, <see cref="StopA533FC"/>): TEST-ONLY override of the stop V7 makes at <c>0xA5530C</c>, <c>0xA55344</c>, <c>0xA55514</c>, <c>0xA555A0</c> and <c>0xA555D0</c>; unset, V7 runs <see cref="StopA533FC"/>.
+    /// The bridge's required <c>0xA54480</c> call reads it too.
+    /// </summary>
     public Action? VoiceStop48 { get; set; }
 
     /// <summary>
@@ -1204,31 +1505,92 @@ public sealed class WwiseLiveVoice
         State = 2;
     }
 
-    /// <summary>V7 <c>voice-&gt;vt+0x58</c>: called at <c>0xA554D8</c> on the E8 return-1 path; its return is
-    /// discarded (the bit2 value is the saved <c>bus-&gt;vt+0x3C</c> return).</summary>
-    public Func<bool>? VoiceBit58 { get; set; }
+    /// <summary>
+    /// <c>voice-&gt;vt+0x58</c> (<c>0xA53698</c>), called at <c>0xA554D8</c> on the E8 return-1 path for its side effect (its return is not used: <c>0xA4C584</c> gets the saved <c>pbi-&gt;vt+0x3C</c> return). Its body is report row 2.11, which C41.6 does not adopt: a REQUIRED seam.
+    /// </summary>
+    // fidelity: M6-022
+    public Action? VoiceVt58A53698 { get; set; }
 
-    /// <summary>V7 <c>[voice+0x1C4]</c>: the downstream node the <c>0xA4C620</c> wrapper forwards to. The wrapper
-    /// vtable is <c>0x103C120</c> (<c>[0x104017C]+8</c>), slot <c>+0x18</c> = <c>0xA4C620</c> (C16 V7-h).</summary>
-    public object? FilterInner1C4 { get; set; }
+    /// <summary>
+    /// The pitch node's <c>vt+0x10</c> / <c>vt+0x14</c> / <c>vt+0x18</c> / <c>vt+0x1C</c> / <c>vt+0x20</c> as the first FX slot (or the filter holder, with no slot) calls them as its upstream neighbour (row 2.10, 4.6): not extracted, so REQUIRED seams.
+    /// </summary>
+    // fidelity: M6-022
+    public Func<int, int>? PitchNodeVt10 { get; set; }
 
-    /// <summary>V7 <c>[[voice+0x1C4]]-&gt;vt+0x18(inner, E0, r2)</c>: the downstream node's slot (C16 V7-h).</summary>
-    public Func<int, int, int>? FilterInner18 { get; set; }
+    /// <summary>See <see cref="PitchNodeVt10"/>.</summary>
+    public Action<int>? PitchNodeVt14 { get; set; }
 
-    /// <summary>V7 <c>voice+0x1C0-&gt;vt+0x14(E0)</c>.</summary>
-    public Func<int, int>? FilterRequest14 { get; set; }
+    /// <summary>See <see cref="PitchNodeVt10"/>.</summary>
+    public Func<int, int, int>? PitchNodeVt18 { get; set; }
 
-    /// <summary>V7 <c>voice+0x1C0-&gt;vt+0x10(&amp;s)</c>; its return is stored in <c>params+0x28</c>.</summary>
-    public Func<int, int>? FilterRequest10 { get; set; }
+    /// <summary>See <see cref="PitchNodeVt10"/>.</summary>
+    public Func<int>? PitchNodeVt1C { get; set; }
 
-    /// <summary>V7 <c>voice+0x1C0-&gt;vt+0xC</c>.</summary>
-    public Action? FilterRequest0C { get; set; }
+    /// <summary>See <see cref="PitchNodeVt10"/>.</summary>
+    public Func<int>? PitchNodeVt20 { get; set; }
 
-    /// <summary>V7 <c>0xA56650(source, [bus+0x1DC], [bus+0x1E0])</c>: 1 already set, else start; default 0.</summary>
-    public Func<int>? StartSource56650 { get; set; }
+    /// <summary>The filter A object's <c>0xA7666C(this+0x10, r1)</c> that the holder's <c>vt+0x14</c> (<c>0xA4C5D8</c>) runs before forwarding: unread, a REQUIRED seam.</summary>
+    // fidelity: M6-022
+    public Action<int>? FilterAVt14A7666C { get; set; }
 
-    /// <summary>V7 <c>[voice+0x1B4]</c>: when non-zero the insert-FX/start build is skipped.</summary>
-    public bool Has1B4 { get; set; }
+    private sealed class PitchNodeChain : IWwiseFxChainNode
+    {
+        private readonly WwiseLiveVoice _voice;
+        public PitchNodeChain(WwiseLiveVoice voice) => _voice = voice;
+        public int Vt10(int r1) => (_voice.PitchNodeVt10 ?? throw Missing("vt+0x10"))(r1);
+        public void Vt14(int r1) => (_voice.PitchNodeVt14 ?? throw Missing("vt+0x14"))(r1);
+        public int Vt18(int r1, int r2) => (_voice.PitchNodeVt18 ?? throw Missing("vt+0x18"))(r1, r2);
+        public int Vt1C() => (_voice.PitchNodeVt1C ?? throw Missing("vt+0x1C"))();
+        public int Vt20() => (_voice.PitchNodeVt20 ?? throw Missing("vt+0x20"))();
+        private static WwiseMissingBehaviourException Missing(string slot)
+            => new($"M6-022 2.10: the pitch node's {slot} (the end of the filter holder's / the first FX slot's chain) is not extracted; supply WwiseLiveVoice.PitchNodeVt{slot[5..]}");
+    }
+
+    private IWwiseFxChainNode? _pitchChain;
+
+    /// <summary>
+    /// <c>[voice+0x1C4]</c>, the filter holder's upstream neighbour (row 2.10, <c>0xA54D8C..0xA54DAC</c>: the chain is src, pitch node, the created slots in slot order, the holder): the highest filled slot, else the pitch node.
+    /// </summary>
+    // fidelity: M6-022
+    public IWwiseFxChainNode HolderUpstream1C4
+    {
+        get
+        {
+            for (int i = InsertFxSlots.Length - 1; i >= 0; i--)
+                if (InsertFxSlots[i] is { } slot) return slot;
+            return _pitchChain ??= new PitchNodeChain(this);
+        }
+    }
+
+    /// <summary>The slot's upstream neighbour (the previous filled slot, else the pitch node): what <c>vt+0x24</c> stores in <c>[W+4]</c> (<c>0xA54D8C..0xA54DAC</c>).</summary>
+    internal IWwiseFxChainNode UpstreamOfSlot(int index)
+    {
+        for (int i = index - 1; i >= 0; i--)
+            if (InsertFxSlots[i] is { } slot) return slot;
+        return _pitchChain ??= new PitchNodeChain(this);
+    }
+
+    /// <summary>
+    /// <c>[voice+0x1C0]-&gt;vt+0xC</c> (<c>0xA4C5B0</c>, row 2.10): <c>n = [this+4]</c> and, when non-null, <c>n-&gt;vt+0xC(n)</c>: the release walk <see cref="ReleaseChainVtC"/> (the slots from the highest, each stopping the walk when it frees a buffer, then the pitch node).
+    /// </summary>
+    // fidelity: M6-022
+    public void HolderVt0C() => ReleaseChainVtC();
+
+    /// <summary><c>[voice+0x1C0]-&gt;vt+0x10(&amp;r1)</c> (<c>0xA4C5C8</c>, row 2.10): <c>n-&gt;vt+0x10(n, r1)</c> with no null check.</summary>
+    // fidelity: M6-022
+    public int HolderVt10(int r1) => HolderUpstream1C4.Vt10(r1);
+
+    /// <summary><c>[voice+0x1C0]-&gt;vt+0x14(r1)</c> (<c>0xA4C5D8</c>, row 2.10): <c>0xA7666C(this+0x10, r1)</c> (filter A, unread: <see cref="FilterAVt14A7666C"/>), then <c>n-&gt;vt+0x14(n, r1)</c>.</summary>
+    // fidelity: M6-022
+    public void HolderVt14(int r1)
+    {
+        (FilterAVt14A7666C ?? throw new WwiseMissingBehaviourException("M6-022 2.10: the holder's vt+0x14 (0xA4C5D8) runs 0xA7666C on filter A first, which is unread; supply WwiseLiveVoice.FilterAVt14A7666C"))(r1);
+        HolderUpstream1C4.Vt14(r1);
+    }
+
+    /// <summary><c>[voice+0x1C0]-&gt;vt+0x18(r1, r2)</c> (<c>0xA4C620</c>, row 2.10): a null <c>[this+4]</c> returns 1, else <c>n-&gt;vt+0x18(n, r1, r2)</c>.</summary>
+    // fidelity: M6-022
+    public int HolderVt18(int r1, int r2) => HolderUpstream1C4.Vt18(r1, r2);
 
     /// <summary>V7-f: the four insert-FX slots <c>voice+0x370..0x37C</c> (V12).</summary>
     public WwiseVoiceInsertFxSlot[] InsertFxSlots { get; } = new WwiseVoiceInsertFxSlot[4];
@@ -1249,34 +1611,79 @@ public sealed class WwiseLiveVoice
         return PitchNode.InitA5321C(f2, pbi, MixRateEC) == 1;                       // 0xA54A54 ldr r3,[r0,#0xec]; 0xA54A78 bl 0xA5321C
     }
 
-    /// <summary>V7-f <c>0xA019B8(bus,i,...)</c>: resolves the bus's insert-FX slot candidate; UNKNOWN registry.</summary>
-    public Func<int, object?>? ResolveBusSlot { get; set; }
+    /// <summary>
+    /// The node's <c>vt+0xE8</c> = <c>0x9EEF2C(node = [pbi+0xE0], i, &amp;out, [pbi+0x14])</c> (rows 4.1, 2.11; <c>0xA533CC</c>, <c>0xA019B8</c>): <c>out = {fx*, byte}</c>: the FX descriptor of slot <c>i</c> (null: none) and the BYPASS BYTE the resolver itself writes at <c>out+4</c>
+    /// (<c>0x9EEFEC</c>; 0 at <c>0x9EF0D4</c>). The build reaches it through <c>0xA019B8</c>, which first tests <c>[pbi+0xE9]</c> bit 2 (set: the descriptor is released, nothing resolved, no descriptor); voice <c>vt+0x70</c> (<c>0xA5338C</c>) calls it directly with no such gate.
+    /// The resolver body is not extracted: a REQUIRED seam. Each call hands out a reference the caller releases.
+    /// </summary>
+    // fidelity: M6-022
+    public Func<int, (WwiseVoiceFxDescriptor? Fx, byte Bypass)>? ResolveNodeFx9EEF2C { get; set; }
 
-    /// <summary>V7-f <c>0x9CC2AC</c>/<c>0x9CC4D8</c>: the plug-in create/validate (registry-assigned, UNKNOWN).</summary>
-    public Func<object, int, bool>? CreatePlugin { get; set; }
+    /// <summary>
+    /// <c>vt+0x24(this = voice+0x380 node, upstream)</c> (<c>0xA54D98..0xA54DAC</c>, the FIRST call of the link loop, with the filter holder <see cref="HolderNode1C0"/> as its upstream): its body is not extracted (the node's vtable was not identified), so it is a
+    /// REQUIRED seam of the build; the argument is the upstream node object.
+    /// </summary>
+    // fidelity: M6-022
+    public Action<object>? GainNode380Vt24 { get; set; }
 
-    /// <summary>V7-f <c>0xA5676C(voice+0x380, bus)</c>: the gain/ramp init; M6-012.</summary>
-    public Action? InitGain { get; set; }
+    /// <summary>The filter holder object at <c>voice+0x1C0</c> as an element of the build's chain array (<c>0xA54D40</c>).</summary>
+    // fidelity: M6-022
+    public object HolderNode1C0 { get; } = new();
+
+    /// <summary>The <c>voice+0x380</c> gain-stage node as the last element of the build's chain array (<c>0xA54D84</c>).</summary>
+    // fidelity: M6-022
+    public object GainNode380 { get; } = new();
+
+    /// <summary>The <c>(node, upstream)</c> pairs of the last build's <c>vt+0x24</c> loop, in call order (<c>0xA54D8C..0xA54DB8</c>).</summary>
+    // fidelity: M6-022
+    public List<(object Node, object Upstream)> ChainLinks { get; } = new();
+
+    internal IWwiseFxChainNode PitchChainNode => _pitchChain ??= new PitchNodeChain(this);
+
+    /// <summary>
+    /// <c>0x9CC2AC(id, &amp;plugin, &amp;info)</c> (row 4.1): the plug-in registry lookup and <c>create(allocator)</c>; null is "not registered" (the slot stays null). The registry body is not extracted: a REQUIRED seam. <c>plugin-&gt;vt+0x10(info)</c> (GetPluginInfo) is the plug-in's.
+    /// </summary>
+    // fidelity: M6-022
+    public Func<uint, IWwisePluginMemAlloc, IWwiseEffectPlugin?>? PluginRegistry9CC2AC { get; set; }
+
+    /// <summary>The plug-in allocator <c>0x108DA00</c> every FX call passes (a managed stand-in: it only answers whether an allocation succeeds and records the frees).</summary>
+    // fidelity: M6-022
+    public IWwisePluginMemAlloc PluginAllocator { get; set; } = new WwisePluginAllocator();
+
+    /// <summary>The engine's pool allocations of the FX path (<c>0xA7A7F4</c>/<c>0xA7A894</c>: the 0x34-byte wrapper, the 0x18-byte context, the process buffer): true makes the call return null. Null never fails.</summary>
+    // fidelity: M6-022
+    public Func<bool>? FxAllocationFails { get; set; }
+
+    /// <summary><c>[voice+0x388]</c> (<c>[[voice+0x380]+8]</c>): the PBI <c>0xA5676C(voice+0x380, pbi)</c> stores (<c>0xA54D5C</c>); <see cref="GainStageA56E00"/> reads it.</summary>
+    // fidelity: M6-022
+    public WwisePlayingInstance? Pbi388 { get; set; }
+
+    /// <summary>The two pool allocations of <c>0xA764D4</c> (the filter's coefficient and history blocks): true makes a call return null (the init returns 2). Null never fails.</summary>
+    // fidelity: M6-022
+    public Func<bool>? FilterAllocationFails { get; set; }
 
     /// <summary>V7-f <c>voice-&gt;vt+0x6C</c>: the voice start hook.</summary>
     public Action? VoiceStart6C { get; set; }
-
-    /// <summary>V7 <c>source-&gt;vt+0x4C</c>: the per-source request; class identity UNKNOWN.</summary>
-    public Action<WwiseVoiceBuffer>? SourceRequest4C { get; set; }
-
-    /// <summary>V7 <c>0xA4B4B0(voice)</c> ducking apply; see <see cref="WwiseVoiceBusPass.ApplyDucking"/>.</summary>
-    public Action? ApplyDuckingHook { get; set; }
 
     /// <summary>The table <c>[voice+0x10]</c> (<see cref="WwiseVoiceSendTable"/>).</summary>
     public WwiseVoiceSendTable? SendTable { get; set; }
 
     /// <summary>V7/C1 <c>0xA4BC58</c> the four output-float minima <c>[sp+0x5c..0x68]</c>.</summary>
     public float[] OutputMin50 { get; } = new float[4];
-
-    /// <summary>V7/C1 <c>0xA4BC58</c> <c>r8</c>: the low byte of the <c>source-&gt;vt+0x4C</c> return. The built
-    /// <see cref="SourceRequest4C"/> seam is void, so this is a caller input.</summary>
-    public int SourceGain8Low { get; set; }
 }
+
+/// <summary>
+/// The <c>param_12</c> of <c>0xA4BC58</c> (verification, rows 1.5 and 1.18, X2): a pointer to <c>{[pbi+0x140], word}</c> when <c>[pbi+4] &amp; 0x10</c> is set, else 0. <paramref name="PlayingId"/> is the playing id (<c>[pbi+0x140]</c>); <paramref name="Word"/> is the
+/// <c>[voice+0xF0]</c> V7 read at <c>0xA54F28</c> (<c>r8</c>): the second call at <c>0xA5572C</c> passes that stale value, not the current word.
+/// </summary>
+// fidelity: M6-022
+public readonly record struct WwiseGainArg12(uint PlayingId, uint Word);
+
+/// <summary>
+/// <c>0xA4BC58</c> as V7 calls it (rows 1.5, 1.18); the return is the byte <c>[sp+0x2F]</c> (S2F). The callee also writes <see cref="WwiseLiveVoice.Run2E"/> (<c>[sp+0x2E]</c>) and the four float outputs <paramref name="floatOutputs"/>.
+/// </summary>
+// fidelity: M6-022
+public delegate bool WwiseConnectionGainsA4BC58(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, byte arg5, WwiseGainArg12? arg12, float[] floatOutputs);
 
 /// <summary>
 /// The per-voice and per-bus pass bodies (M6-022 V5..V20). The engine skeleton's
@@ -1293,11 +1700,9 @@ public sealed class WwiseLiveVoice
 /// <item><b>The bus metering stage <c>0xA50044..0xA50FD0</c> (C12 X1).</b> The bus-output tail is level
 /// analysis, not mixing; its DSP identity is RECOVERABLE_GAP. <see cref="WwiseBusMetering"/> throws rather
 /// than inventing a kernel.</item>
-/// <item><b>The per-voice state machine <c>0xA54F1C</c> (V7).</b> Its branch table is settled but its callees
-/// (<c>0xA4C584</c>, <c>0xA022E8</c>, <c>0xA0228C</c>, <c>0xA01768</c>, <c>0xA4B93C</c>, <c>0x9D4228</c>,
-/// <c>0xA54A30</c>'s insert-FX build) are RECOVERABLE_GAP. <see cref="RunVoiceStateMachine"/> exposes the
-/// settled gates and throws on an unread callee path.</item>
-/// <item><b>The insert-FX slot class identity (V12/V18b)</b> is RECOVERABLE_GAP; slots are caller-supplied.</item>
+/// <item><b>The per-voice state machine <c>0xA54F1C</c> (V7)</b> is built on the owner PBI (C41, <see cref="RunVoiceStateMachine"/>, checked against the engine in <c>WwiseVoiceStateOracleTests</c>); what C41 does not give (<c>0xA370E4</c>, voice <c>vt+0x58</c>, the pitch node's chain slots, <c>0xA7666C</c>, <c>0x99CC40</c>,
+/// the FX resolver, registry and <c>&amp;fmt</c>) is a required seam that throws <see cref="WwiseMissingBehaviourException"/>.</item>
+/// <item><b>The insert-FX slot</b> is the in-place wrapper <see cref="WwiseVoiceInsertFxSlot"/> (C41.4); the out-of-place class <c>0x103DC38</c> is not extracted (a required stop).</item>
 /// <item><b>The bus mix kernel <c>0xA4F9E0</c>/<c>0xA45E9C</c></b> is M6-012's <see cref="WwiseMixerConnection"/>.</item>
 /// </list></para>
 /// </summary>
@@ -1366,9 +1771,10 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     /// node/array objects are a caller seam.</item>
     /// </list>
     /// </summary>
-    public void VoicePass()
+    public void VoicePass(int arg)
     {
         // fidelity: M6-022, M6-025, M6-026
+        // arg = the pass's first argument (0xA44948 r0 -> [sp+4]): 0xA44DE0..0xA44DF4 byte [A] == 0 ? 1 : byte [B] (WwiseOutputDeviceState.BusPassArg), also the argument of 0xA44C18; the engine passes it.
         // 0xA44978 bl 0x9D3CC0, 0xA4497C bl 0xA43D24, 0xA44980 bl 0xA39564, unconditionally and in this order (C24.1, C30). Each is a
         // REQUIRED collaborator: a missing one throws and is never skipped, because the engine runs all three every pass.
         (AdvanceTickCounters ?? throw new WwiseMissingBehaviourException(
@@ -1384,7 +1790,8 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             var voice = Voices[i];
             // fidelity: M6-026 (7.2): per voice the block starts with result 0x2B (AK_DataNeeded) and the mix-result byte 0.
             voice.Buffer.InitPassBlockA44A00();                      // 0xA44A00..0xA44A48 (result 0x2B, the mix-result byte 0, max frames 1024)
-            if (voice.State == 1 && RunVoiceStateMachine(voice))     // V7: returns 1 when the voice has a live source
+            bool v7 = voice.State == 1 && RunVoiceStateMachine(voice);   // V7 (0xA44B50): returns 1 when the voice has a live source
+            if (v7 && (arg & 1) != 0)                                // 0xA44B54..0xA44B5C ldr r3,[sp,#4]; tst r0,r3; beq 0xA44BAC (no render, no 0xA5495C / 0xA55CC4)
             {
                 voice.Render(_notify);                               // V8: 0xA44630
                 VoicesRendered++;
@@ -1564,6 +1971,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     {
         ArgumentNullException.ThrowIfNull(voice);
         var pbi = OwnerOfSource(voice);                              // 0xA55750..0xA5575C ldr r3,[r0,#0xd4]; ldr r5,[r3,#0xc]
+        RequireBaseCtx(pbi);                                         // the ctx vt+0x24 / vt+0x28 of the other PBI classes are not read (C41.3)
         if ((pbi.Flags0E8 & 0x20) == 0)                              // 0xA55768..0xA55774 ands r1,r1,#0xff; beq 0xA55888
             (CalcEffectiveParamsVt24 ?? throw new WwiseMissingBehaviourException(
                 "M6-022 L7-10: 0xA55888..0xA55894 calls the context's vt+0x24 (CalcEffectiveParams, r1 = 0); supply WwiseVoiceBusPass.CalcEffectiveParamsVt24"))(pbi);
@@ -1652,314 +2060,341 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     public Action? AdvanceTickCounters { get; set; }
 
     /// <summary>
-    /// V7 <c>0xA54F1C</c>: the per-voice parameter/state machine, transliterated from C12 voice-callees Q4
-    /// (settled branch table) and C17 V7-j..V7-m. The settled gates are <c>E4=[voice+0xE4]</c>,
-    /// <c>E0=[voice+0xE0]</c>, <c>A=[voice+0xCD]&amp;1</c>, <c>E8=[voice+0xE8]&amp;1</c>,
-    /// <c>SRC10=[source+0x10]&amp;1</c>; the named callees are <see cref="SetConnectionBit2"/> (<c>0xA4C584</c>),
-    /// <see cref="ReleaseBusRef"/> / <see cref="AcquireBusRef"/> (<c>0xA022E8</c>/<c>0xA0228C</c>),
-    /// <see cref="NextSource"/> (<c>0xA01768</c>), <see cref="RefreshTailA4B9BC"/> (<c>0xA4B93C</c>, <c>0x9D4228</c>) and
-    /// <see cref="StartStreamAndBuildInsertFx"/> (<c>0xA54A30</c>).
-    ///
-    /// <para><b>Order.</b> The <c>P2F!=0</c> path runs the four parameter ramps (<see cref="RunParameterRamps"/>,
-    /// <c>0xA550CC..0xA551F0</c>) then the <c>0xA551F0</c> branch table; the <c>P2F==0</c> path enters
-    /// <c>0xA5532C</c>. Every sub-branch of either path joins the common continuation at <c>0xA5521C</c>
-    /// (E8 gate <c>0xA553A4</c> -&gt; budget step <c>0xA55228</c> -&gt; dispatch <c>0xA55248</c> -&gt; bit0
-    /// write and <c>0xA555B8</c> detour <c>0xA5526C</c> -&gt; tail <c>0xA5528C</c>). The <c>0xA5530C</c>
-    /// epilogue (<c>voice-&gt;vt+0x48</c>, return 0, no tail) is the only early exit.</para>
-    ///
-    /// <para><b>Seams.</b> The voice/bus/filter vtable slots (<c>voice-&gt;vt+0x3C/0x48/0x58</c>,
-    /// <c>bus-&gt;vt+0x3C/0x24/0x28</c>, <c>voice+0x1C0-&gt;vt+0x18/0x14/0x10/0xC</c>, <c>0xA56650</c>) are
-    /// per-class and not read (class identity UNKNOWN), so they are caller inputs. The RECOVERABLE_GAP
-    /// sub-callees inside <c>0xA4B93C</c> (<c>0x9BE28C</c>, <c>0x9BDA88</c>, <c>0x9BD368</c>,
-    /// <c>0x9BF8E4</c>, <c>0xA5E694</c>) and <c>0x9EEDA4</c> inside <c>0xA01768</c> are seams and do not
-    /// throw on the ordinary render path.</para>
+    /// <c>0xA4BC58</c> as V7 calls it (C41.1 row 1.5): <c>(voice, ctx = pbi+0xC, id = [voice+0xF0], gain, arg5, &amp;S2E, &amp;S2F, &amp;f30, &amp;f34, &amp;f38, &amp;f3C, arg12)</c>. The returned byte is <c>[sp+0x2F]</c>; the callee also writes <see cref="WwiseLiveVoice.Run2E"/>
+    /// (<c>[sp+0x2E]</c>) and the four float outputs. TEST-ONLY override (the V7 oracle stands in for the callee).
+    /// </summary>
+    internal WwiseConnectionGainsA4BC58? ConnectionGainsOverrideA4BC58 { get; set; }
+
+    /// <summary><c>0xA4B4B0(voice)</c> as V7 calls it (<c>0xA55644</c>): TEST-ONLY override (the V7 oracle stands in for the callee).</summary>
+    internal Action<WwiseLiveVoice>? DuckingOverrideA4B4B0 { get; set; }
+
+    /// <summary><c>0xA54A30(voice)</c> as V7 calls it (<c>0xA555C0</c>): TEST-ONLY override (the V7 oracle stands in for the callee); unset, <see cref="StartStreamAndBuildInsertFx"/>.</summary>
+    internal Func<WwiseLiveVoice, int>? StartStreamOverrideA54A30 { get; set; }
+
+    /// <summary>
+    /// The limiter that owns the global the acquire <c>0xA0228C</c> increments (<c>0x1040144</c>'s target, <see cref="WwisePlaybackLimiter.GlobalVirtualCount"/>); REQUIRED when V7 acquires.
+    /// </summary>
+    // fidelity: M6-022
+    public WwisePlaybackLimiter? Limiter { get; set; }
+
+    /// <summary>
+    /// V7 <c>0xA54F1C(voice, S)</c> on the OWNER PBI <c>[[voice+0xD4]+0xC]</c> (C41.1, rows 1.1..1.19, 1.20; the pre-pass <c>0xA55750</c> runs before it every pass, C41.2, <see cref="PrePassVoiceA55750"/>). Order:
+    /// <list type="number">
+    /// <item>the gate on <c>[pbi+0x1F8]</c> (-1 continues with S untouched; otherwise <c>[S+0x2C] = 1</c> and 0 returns 0, <c>0xA5531C</c>), <c>[S+4] = [voice+0xF0]</c> (the channel-config word, <c>0xA54F64</c>), the gain <c>lin(([pbi+0x54]+[pbi+0x11C])*0.05f)</c> times <c>[[src+8]+4]</c>
+    /// and, with <c>byte [pbi+0x58]</c> bit 0, <c>[[src+8]]</c> (row 1.4);</item>
+    /// <item><c>0xA4BC58</c> with <c>arg5</c> from <c>src-&gt;vt+0x4C</c> (a pure getter: bit 6 of <c>byte [pbi+0x1BE]</c>, verification D1) and <c>arg12 = ([pbi+4]&amp;0x10) ? {[pbi+0x140], [voice+0xF0] as read at entry} : 0</c> (rows 1.5, 1.6);</item>
+    /// <item>the scaled frames <c>s = round-half-away(float(u16 [S+0xC]) * [pbi+0x164])</c> in single precision (row 1.7); with <c>S2F != 0</c> and a connection list the four ramps (row 1.9) and the branch table (rows 1.10, 1.12), with <c>S2F == 0</c> the path <c>0xA5532C</c> (row 1.11);</item>
+    /// <item>the E8 gate <c>0xA5521C</c> (row 1.13), the budget step (row 1.15), the dispatch (row 1.16), <c>[voice+0xCD]</c> bit 0 := S2F, the build <c>0xA54A30</c> when r5 and <c>[voice+0x1B4]</c> is clear (a result other than 1 stops the voice and V7 returns 0, verification D2) and the <c>0xA5561C</c> tail in every case of
+    /// <c>[pbi+0xE8]&amp;0x20</c> / <c>[pbi+0xE9]&amp;1</c> (row 1.18), then <c>[voice+0xCD] |= 8</c> and <c>r5</c> (row 1.19).</item>
+    /// </list>
+    /// <c>pbi-&gt;vt+0x3C</c> is class specific (C41.3, <see cref="WwisePlayingInstance.RequestVt3C"/>); the voice's own vt slots, the filter holder's methods and the pitch node's slots that C41 does not give are required seams.
     /// </summary>
     /// <returns>True when the voice has a live source and the V8 dispatcher should run.</returns>
+    // fidelity: M6-022
     public bool RunVoiceStateMachine(WwiseLiveVoice voice)
     {
         ArgumentNullException.ThrowIfNull(voice);
-        var source = voice.Source;
-        if (source is null) return false;
-        var bus = voice.PrimaryBus;
-        if (bus is null) return false;
+        var source = voice.Source ?? throw new WwiseMissingBehaviourException("M6-022 V7: the voice has no current source ([voice+0xD4] == 0); 0xA54F1C dereferences it (0xA54F20)");
+        var pbi = OwnerOfSource(voice);                              // 0xA54F20, 0xA54F2C r5 = [voice+0xD4], r6 = [r5+0xC]
+        uint r8 = voice.Word0xF0;                                    // 0xA54F28 ldr r8,[r0,#0xf0]: the value both arg12 words use (0xA54F5C, 0xA55658)
+        var state = voice.Buffer.State;
 
-        // Prologue 0xA54F20..0xA54F4C: [bus+0x1F8].
-        if (bus.NextSourceParam != -1)
+        // 0xA54F34..0xA54F4C (row 1.3): the gate on [pbi+0x1F8].
+        uint gate = pbi.Field1F8;
+        if (gate != 0xFFFFFFFFu)
         {
-            voice.Buffer.HasBusParam = true;                         // [params+0x2C] = 1
-            if (bus.NextSourceParam == 0) return false;              // 0xA5531C
+            voice.Buffer.HasBusParam = true;                         // 0xA54F48 strb 1,[S+0x2C]
+            if (gate == 0) return false;                             // 0xA54F4C beq 0xA5531C
         }
 
-        // 0xA54F50..0xA54FD0: the V7 prologue dB gain ([bus+0x54]+[bus+0x11C])*0.05, clamped at -37, then
-        // the [source+8] factors.
-        float gain = VoiceGain(voice, bus, source);
+        // 0xA54F50..0xA54FEC (row 1.4).
+        state.ChannelConfig = r8;                                    // 0xA54F64 str r8,[r1,#4]
+        float gain = SourceGainA54F50(source, pbi);
 
-        voice.SourceRequest4C?.Invoke(voice.Buffer);                 // 0xA55008 source->vt+0x4C
-        bool p2f = UpdateConnectionGains(voice, bus, gain);          // 0xA55058 0xA4BC58 -> [sp+0x2f]
+        // 0xA54FF0..0xA55058 (rows 1.5, 1.6): call 1.
+        byte arg5 = SourceVt4C(pbi);                                 // 0xA55008 src->vt+0x4C
+        var arg12 = Arg12(pbi, r8);                                  // 0xA5501C..0xA55028
+        bool s2f = RunConnectionGains(voice, pbi, gain, arg5, arg12, voice.OutputMin50);
 
-        // 0xA55090..0xA550C4: the sample count s16 = round([params+0xC] * [bus+0x164]). It is read by the
-        // P2F==0 path's 0xA5556C branch and again by the budget step 0xA55228 (C16 V7-i).
-        int s = (int)MathF.Round(voice.Buffer.ValidFrames * bus.SampleScale164);
-
-        // 0xA550CC..0xA551F0: the four parameter ramps run only on the P2F!=0 path and only when the
-        // connection list [voice+0x28] is non-empty (C17 V7-m). They run before the 0xA551F0 branch table.
-        if (p2f && voice.Connections.Count != 0)
-            RunParameterRamps(voice, bus);
+        // 0xA55090..0xA550C4 (row 1.7).
+        int s = ScaledFramesA55090(state.MaxFrames, pbi.Ratio);
 
         bool r5;
-        bool stopped = false;
-        if (!p2f)
+        if (!s2f)
         {
-            // 0xA550C8 -> 0xA5532C: the P2F==0 path (C17 V7-k). Its sub-branches set r5 and join the common
-            // continuation at 0xA5521C; only 0xA5530C is an early return.
-            r5 = Path5532C(voice, bus, s);
+            r5 = Path5532C(voice, pbi, s);                           // 0xA550C8 beq 0xA5532C
         }
         else
         {
-            bool a = (voice.FlagsCD & 1) != 0;
+            if (voice.Connections.Count != 0) RunParameterRamps(voice, pbi);   // 0xA550CC..0xA551EC (row 1.9)
+            bool a = (voice.FlagsCD & 1) != 0;                       // 0xA551F0..0xA551F8
             int e4 = voice.E4;
-            bool src10 = source.StartStreamSucceeded;
+            bool src10 = source.StartStreamSucceeded;                // byte [src+0x10] bit 0
 
-            // 0xA551F0..0xA552EC: the branch table (C12 voice-callees Q4 / C16 V7-g).
             if (a)
             {
-                // 0xA55200
-                if (src10) r5 = true;                                    // -> 0xA55218
-                else if (e4 == 2) r5 = Path554F0(voice, bus, ref p2f);   // -> 0xA554F0
-                else r5 = true;                                          // -> 0xA55218
+                if (src10) r5 = true;                                // 0xA55200..0xA55208 -> 0xA55218
+                else if (e4 == 2) r5 = Path554F0(voice, pbi, source, ref s2f);   // 0xA5520C..0xA55214 -> 0xA554F0
+                else r5 = true;
             }
             else
             {
-                // 0xA552B0
-                if (e4 != 2) r5 = true;                                  // -> 0xA55218
-                else if (!src10) r5 = Path554F0(voice, bus, ref p2f);    // -> 0xA554F0
-                else r5 = Path552C8(voice, bus, ref p2f, out stopped);   // -> 0xA552C8
+                if (e4 != 2) r5 = true;                              // 0xA552B0..0xA552B8 -> 0xA55218
+                else if (!src10) r5 = Path554F0(voice, pbi, source, ref s2f);    // 0xA552BC..0xA552C4 -> 0xA554F0
+                else if (!Path552C8(voice, pbi, out r5)) return false;           // 0xA552C8: the stop 0xA5530C returns 0 with no tail
             }
-
-            if (stopped) return false;                               // 0xA5530C epilogue (no shared tail)
         }
 
-        // 0xA5521C: the E8 gate; the only gate before the budget step 0xA55228.
+        // 0xA5521C (row 1.13): the E8 gate.
         if (voice.FlagE8)
         {
-            int r = bus.SourceRequest3C?.Invoke(voice.E0) ?? 1;      // 0xA553A4/0xA553B4
+            int r = pbi.RequestVt3C(voice.E0);                       // 0xA553A4..0xA553B4 pbi->vt+0x3C(pbi, E0)
             if (r == 1)
             {
-                // 0xA554CC/0xA554D0: the bus->vt+0x3C return is saved to [sp+0x24] before the call.
-                // 0xA554D8 calls voice->vt+0x58 and discards its return; 0xA554E0/0xA554E4 pass the saved
-                // bus return as r1, so bit2 comes from r, not from voice->vt+0x58.
-                voice.VoiceBit58?.Invoke();                          // 0xA554D8, return discarded
-                SetConnectionBit2(voice, (r & 1) != 0);              // 0xA554E8 0xA4C584(voice, r1)
-                voice.FlagE8 = false;                                // 0xA553C8 clear bit0
+                (voice.VoiceVt58A53698 ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 2.11: voice vt+0x58 (0xA53698), called at 0xA554D8 on the E8 return-1 path, is report row 2.11, which C41.6 does not adopt; supply WwiseLiveVoice.VoiceVt58A53698"))();
+                SetConnectionBit2(voice, true);                      // 0xA554E8 0xA4C584(voice, r & 1) with r == 1
             }
             else if (r == 2)
             {
-                voice.VoiceStop48?.Invoke();                         // 0xA555A0
+                Stop48(voice);                                       // 0xA555A0
                 r5 = false;
-                voice.FlagE8 = false;                                // 0xA555B4 -> 0xA553C8 clear bit0
             }
-            else
-            {
-                voice.FlagE8 = false;                                // 0xA553C8
-            }
+            voice.FlagE8 = false;                                    // 0xA553C8 bfc bit 0 (all three cases)
         }
 
-        // 0xA55228: the budget step. There is no gate on [bus+0x164]; s may be 0 and the step still runs
-        // (C16 V7-i).
-        int budget = bus.FrameBudget;
-        if (budget >= s) r5 = false;                                 // 0xA55234 sets r5=0
-        if (budget >= 0) bus.FrameBudget = budget - s;               // 0xA5523C..0xA55244
+        // 0xA55228..0xA55244 (row 1.15): the budget step.
+        int budget = unchecked((int)pbi.StartOffset);                // [pbi+0x1D8], signed
+        if (budget >= s) r5 = false;                                 // 0xA55230..0xA55234 cmp r3,r2; movge r5,#0
+        if (budget >= 0) pbi.StartOffset = unchecked((uint)(budget - s));   // 0xA5523C..0xA55244
 
-        // 0xA55248..0xA55268: the acquire/release pair, gated on E4/A/P2F.
-        if (voice.E4 == 0)
+        // 0xA55248..0xA55268, 0xA55384..0xA55398, 0xA5547C..0xA55488 (row 1.16): the dispatch.
+        if (voice.E4 != 0)
         {
-            // 0xA5526C.
-        }
-        else if ((voice.FlagsCD & 1) == 0)
-        {
-            if (p2f) ReleaseBusRef(bus);                             // 0xA55384 -> 0xA55398 0xA022E8(bus,1)
-        }
-        else if (!p2f)
-        {
-            AcquireBusRef(bus);                                      // 0xA5547C -> 0xA55484 0xA0228C(bus)
+            if ((voice.FlagsCD & 1) == 0) { if (s2f) ReleaseVirtualA022E8(pbi); }   // 0xA55384 -> 0xA022E8(pbi, 1)
+            else if (!s2f) AcquireVirtualA0228C(pbi);                // 0xA5547C -> 0xA0228C(pbi)
         }
 
-        // 0xA5526C: bit0 = P2F; then the insert-FX/start path when r5 and [voice+0x1B4]==0.
-        voice.FlagsCD = (byte)((voice.FlagsCD & ~1) | (p2f ? 1 : 0)); // bfi r3,r2,#0,#1
-        if (r5 && !voice.Has1B4)
+        // 0xA5526C..0xA5528C (row 1.17).
+        voice.FlagsCD = (byte)((voice.FlagsCD & ~1) | (s2f ? 1 : 0));       // 0xA55274 bfi r3,r2,#0,#1
+        if (r5 && voice.PitchNode.Pbi is null)                       // 0xA55280..0xA55288 [voice+0x1B4] == 0
         {
-            int r = StartStreamAndBuildInsertFx(voice);              // 0xA555B8 -> 0xA54A30
+            int r = StartStreamA54A30(voice);                        // 0xA555C0 bl 0xA54A30
             if (r == 1)
-            {
-                // 0xA555F0: the state-0x11 tail.
-                if ((bus.FlagsE8 & 0x20) != 0 && (bus.FlagsE9 & 1) != 0)
-                {
-                    bus.BusStart28?.Invoke();                        // [[bus+0xC]]->vt+0x28 on bus+0xC
-                    bus.C4 = 101f;                                   // 0x42CA0000
-                    voice.Buffer.Result = (int)voice.Word0xF0;             // [params+4] = [voice+0xF0]
-                    voice.FlagsCD = (byte)(voice.FlagsCD & ~8);      // clear bit3
-                    ApplyDucking(voice, bus);                        // 0xA4B4B0
-                    // 0xA5572C (C18 V7-q): the second 0xA4BC58 call passes the same &sp+0x2e/&sp+0x2f but
-                    // its four float outputs are sp+0x40, so they are discarded and only the flags are
-                    // rewritten after the ramps have run.
-                    UpdateConnectionGains(voice, bus, VoiceGain(voice, bus, source), _sp40);  // 0xA5572C 0xA4BC58
-                }
-                else if ((bus.FlagsE8 & 0x20) == 0)
-                {
-                    bus.BusStop24?.Invoke();                         // 0xA5573C [[bus+0xC]]->vt+0x24
-                }
-            }
+                TailA555F0(voice, pbi, r8);                          // 0xA555F0 (row 1.18)
             else
             {
-                voice.VoiceStop48?.Invoke();                         // 0xA5528C? the r!=1 path
+                r5 = false;                                          // 0xA555D4 mov r5,r3 (r3 = [voice+0x1B4] = 0)
+                Stop48(voice);                                       // 0xA555DC..0xA555E0
             }
         }
 
-        voice.FlagsCD = (byte)(voice.FlagsCD | 8);                   // 0xA5528C: [voice+0xCD] |= 8
+        voice.FlagsCD = (byte)(voice.FlagsCD | 8);                   // 0xA5528C..0xA55298 (row 1.19)
         return r5;
     }
 
     /// <summary>
-    /// V7 prologue <c>0xA54F50..0xA54FD0</c> (C12 voice-callees Q4): <c>s=([bus+0x54]+[bus+0x11C])*0.05</c>,
-    /// clamped at -37 with the fast-pow linearisation, then scaled by <c>[[source+8]+4]</c> and, when
-    /// <c>[bus+0x58]</c> bit0 is set, by <c>[source+8]</c>.
+    /// <c>0xA5561C..0xA55734</c> (row 1.18), after a successful <c>0xA54A30</c>: the context call by <c>[pbi+0xE8]&amp;0x20</c> (clear: <c>vt+0x24</c> = CalcEffectiveParams; set with <c>[pbi+0xE9]&amp;1</c>: <c>vt+0x28</c> = <c>0x9FF368</c>; set with the bit clear: nothing), then in every case
+    /// <c>[pbi+0xC4] = 101.0f</c>, <c>[S+4] = [voice+0xF0]</c> (re-read), <c>[voice+0xCD]</c> bit 3 cleared, <c>0xA4B4B0(voice)</c>, the gain recomputed from the fresh <c>[pbi+0x54]+[pbi+0x11C]</c> and <c>src-&gt;vt+0x4C</c> read a second time, and the second <c>0xA4BC58</c> with its
+    /// four float outputs at <c>sp+0x40</c> (discarded; <c>&amp;S2E</c> / <c>&amp;S2F</c> are still passed) and <c>arg12 = {[pbi+0x140], r8}</c> with the STALE <c>r8</c> (<c>0xA54F28</c>).
     /// </summary>
-    private static float VoiceGain(WwiseLiveVoice voice, WwiseMixBus bus, IWwiseVoiceSource source)
+    // fidelity: M6-022
+    private void TailA555F0(WwiseLiveVoice voice, WwisePlayingInstance pbi, uint stale)
     {
-        float lin = WwiseGain.DbToLinear(bus.Gain54 + bus.Gain11C);   // 0x3D4CCCCD / 0xC2140000 / fast pow
-        if (source.Gain8 is { } g)
+        var state = voice.Buffer.State;
+        if ((pbi.Flags0E8 & 0x20) == 0)                              // 0xA555F0..0xA555FC
+            CtxCalcEffectiveParams(pbi);                             // 0xA5573C..0xA55748 ctx->vt+0x24 (0xA000E0 -> 0x9FFAD4), r1 = 0
+        else if ((pbi.Flags0E9 & 1) != 0)                            // 0xA55600..0xA55608
         {
-            lin *= g.At4;                                            // 0xA54FD8/0xA54FE4
-            if ((bus.Gain58 & 1) != 0) lin *= g.At0;                 // 0xA54FE8/0xA54FEC
+            RequireBaseCtx(pbi);
+            WwisePlayPath.Recompute9FF368(pbi);                      // 0xA5560C..0xA55618 ctx->vt+0x28 (0x9FF414 -> 0x9FF368)
+        }
+        pbi.FieldC4 = Float101;                                      // 0xA55620..0xA55628 [pbi+0xC4] = 0x42CA0000
+        state.ChannelConfig = voice.Word0xF0;                        // 0xA5561C ldr r3,[r4,#0xf0]; 0xA55634 str r3,[r7,#4]
+        voice.FlagsCD = (byte)(voice.FlagsCD & ~8);                  // 0xA55638..0xA55640 bfc bit 3
+        DuckA4B4B0(voice);                                           // 0xA55644 bl 0xA4B4B0
+        var source2 = voice.Source ?? throw new WwiseMissingBehaviourException("M6-022 V7: the voice lost its source across 0xA54A30 ([voice+0xD4] re-read at 0xA55648)");
+        var pbi2 = OwnerOfSource(voice);                             // 0xA55648..0xA55654 r2 = [[voice+0xD4]+0xC]
+        float gain2 = SourceGainA54F50(source2, pbi2);               // 0xA55660..0xA556E0: the fresh gain
+        byte arg5 = SourceVt4C(pbi2);                                // 0xA556E4..0xA556EC src->vt+0x4C, a second time
+        var arg12 = Arg12(pbi, stale);                               // 0xA556F0..0xA55704 ([pbi+4]&0x10) ? &{[pbi+0x140], r8}
+        RunConnectionGains(voice, pbi, gain2, arg5, arg12, _sp40);   // 0xA55708..0xA5572C bl 0xA4BC58
+    }
+
+    private static readonly float Float101 = BitConverter.Int32BitsToSingle(0x42CA0000);
+
+    /// <summary><c>0xA54F50..0xA54FEC</c> / <c>0xA55648..0xA556E0</c> (row 1.4): the V7 gain.</summary>
+    private static float SourceGainA54F50(IWwiseVoiceSource source, WwisePlayingInstance pbi)
+    {
+        float lin = WwisePlaybackLimiter.Lin9BEB30(pbi.Field54 + pbi.Ranges118.MakeUpGain);   // 0xA54F74 vadd.f32; the *0.05f, the -37.0f floor and the fast power (the same code, 1.4 note)
+        if (source.Gain8 is { } g)                                   // 0xA54FD0 cmp r2,#0 ([src+8])
+        {
+            lin = WwiseArmFloat.Mul(lin, g.At4);                      // 0xA54FD8, 0xA54FE4 vmul.f32 s16,s16,[r2+4] (the engine's invalid-operation NaN)
+            if ((pbi.Byte58 & 1) != 0) lin = WwiseArmFloat.Mul(lin, g.At0);   // 0xA54FDC..0xA54FEC vmulne.f32 s16,s16,[r2]
         }
         return lin;
     }
 
     /// <summary>
-    /// V7 <c>0xA552C8</c>: <c>E4==2, SRC10 set, A==0</c>. A <c>bus-&gt;vt+0x3C</c> return of 2 short-circuits
-    /// to the stop and never reaches the <c>0xA552F0</c> wrapper; otherwise the wrapper is called with
-    /// <c>r2 = 1</c> (return 1) or <c>0</c> (fall-through), and only a wrapper return of 1 reaches
-    /// <c>0xA55218</c> (C16 V7-g).
+    /// <c>src-&gt;vt+0x4C</c> (verification D1): a pure getter, bit 6 of <c>byte [[src+0xC]+0x1BE]</c> (base source vtable <c>0x103C848</c> slot <c>0xA566C8</c>; derived <c>0x103D6C0</c>, <c>0x103D740</c>, <c>0x103D7C0</c>, <c>0x103D840</c> slot <c>0xA72B14</c>); the argument 5 of <c>0xA4BC58</c>.
     /// </summary>
-    private static bool Path552C8(WwiseLiveVoice voice, WwiseMixBus bus, ref bool p2f, out bool stopped)
+    // fidelity: M6-022
+    public static byte SourceVt4C(WwisePlayingInstance owner) => (byte)((owner.Flags1BE >> 6) & 1);
+
+    private static WwiseGainArg12? Arg12(WwisePlayingInstance pbi, uint word)
+        => (pbi.Flags4 & 0x10) != 0 ? new WwiseGainArg12(pbi.PlayingId, word) : null;      // 0xA5501C..0xA55028: ([pbi+4]&0x10) ? &{[pbi+0x140], r8} : 0
+
+    /// <summary>
+    /// <c>0xA55090..0xA550C4</c> (row 1.7): <c>vcvt.f32.u32(u16)</c> times <c>[pbi+0x164]</c>, then <c>+0.5f</c> when the product is above 0 (else <c>-0.5f</c>: zero, negative and NaN) and <c>vcvt.s32.f32</c> (toward zero, saturating, NaN to 0): round-half-away-from-zero in single precision.
+    /// </summary>
+    // fidelity: M6-022
+    public static int ScaledFramesA55090(ushort maxFrames, float ratio)
     {
-        stopped = false;
-        int r = bus.SourceRequest3C?.Invoke(voice.E0) ?? 1;           // 0xA552D8
-        if (r == 2) { voice.VoiceStop48?.Invoke(); stopped = true; return false; }   // 0xA5530C
-        int r2 = r == 1 ? 1 : 0;                                     // 0xA555E8 mov r2,r0 / 0xA552EC mov r2,r5
-        int f = Wrapper18(voice, voice.E0, r2);                      // 0xA552F0 [voice+0x1C0]->vt+0x18
-        if (f == 1) return true;                                     // 1 -> 0xA55218
-        voice.VoiceStop48?.Invoke();                                 // 0xA5530C
-        stopped = true;
+        float s15 = (float)maxFrames * ratio;                        // 0xA550A4 vcvt.f32.u32; 0xA550A8 vmul.f32 s15,s15,s13
+        float half = s15 > 0f ? 0.5f : -0.5f;                        // 0xA550AC..0xA550B8 vmov.f32 s16,#-0.5; vcmpe s15,#0; vmovgt s16,s14
+        return FloatToS32(s15 + half);                               // 0xA550C0 vadd.f32; 0xA550C4 vcvt.s32.f32
+    }
+
+    /// <summary><c>vcvt.s32.f32</c>: truncation toward zero, saturating, NaN to 0.</summary>
+    public static int FloatToS32(float v)
+    {
+        if (float.IsNaN(v)) return 0;
+        if (v >= 2147483648f) return int.MaxValue;
+        if (v <= -2147483648f) return int.MinValue;
+        return (int)v;
+    }
+
+    /// <summary>The call of <c>0xA4BC58</c> (<see cref="ConnectionGainsOverrideA4BC58"/> or the real one).</summary>
+    private bool RunConnectionGains(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, byte arg5, WwiseGainArg12? arg12, float[] outputs)
+        => ConnectionGainsOverrideA4BC58 is { } over
+            ? over(voice, pbi, gain, arg5, arg12, outputs)
+            : UpdateConnectionGains(voice, pbi, gain, arg5, arg12, outputs);
+
+    /// <summary><c>0xA4B4B0(voice)</c> (row 2.4): <c>line = [voice+0xC]</c>, null returns; <see cref="ApplyDucking"/> otherwise.</summary>
+    private void DuckA4B4B0(WwiseLiveVoice voice)
+    {
+        if (DuckingOverrideA4B4B0 is { } over) { over(voice); return; }
+        if (voice.DryLineC is not { } line) return;
+        ApplyDucking(voice, line);
+    }
+
+    private int StartStreamA54A30(WwiseLiveVoice voice)
+        => StartStreamOverrideA54A30 is { } over ? over(voice) : StartStreamAndBuildInsertFx(voice);
+
+    /// <summary><c>voice-&gt;vt+0x48</c> (<c>0xA533FC</c>): <see cref="WwiseLiveVoice.VoiceStop48"/> when a host or test supplies one, else <see cref="WwiseLiveVoice.StopA533FC"/>.</summary>
+    private void Stop48(WwiseLiveVoice voice)
+    {
+        if (voice.VoiceStop48 is { } stop) stop();
+        else voice.StopA533FC(OwnerOfSourceRaw);
+    }
+
+    private static void RequireBaseCtx(WwisePlayingInstance pbi)
+    {
+        if (pbi.PbiClass != WwisePbiClass.Base)
+            throw new WwiseMissingBehaviourException("M6-022 C41.3: the PBI context's vt+0x24 / vt+0x28 of the 0x9883AC and 0xA6A8A0 classes are not read; only the base / Sound PBI's (ctx vptr 0x103B7DC: 0xA000E0, 0x9FF414) are");
+    }
+
+    /// <summary>The PBI context's <c>vt+0x24</c> (row 1.18; <c>0xA000E0</c> -&gt; PBI <c>vt+0x44</c> = <c>0x9FFAD4</c>, CalcEffectiveParams) with <c>r1 = 0</c>.</summary>
+    private void CtxCalcEffectiveParams(WwisePlayingInstance pbi)
+    {
+        RequireBaseCtx(pbi);
+        (CalcEffectiveParamsVt24 ?? throw new WwiseMissingBehaviourException(
+            "M6-022 1.18: the PBI context's vt+0x24 (CalcEffectiveParams, 0x9FFAD4, r1 = 0) is a required seam; supply WwiseVoiceBusPass.CalcEffectiveParamsVt24"))(pbi);
+    }
+
+    /// <summary>
+    /// V7 <c>0xA552C8</c> (<c>E4 == 2</c>, <c>SRC10</c> set, <c>A == 0</c>, rows 1.10, 1.14): <c>pbi-&gt;vt+0x3C(pbi, E0)</c>; a result of 2 stops (<c>0xA5530C</c>: V7 returns 0 with no tail); 1 gives <c>r2 = 1</c>, any other 0; then <c>[voice+0x1C0]-&gt;vt+0x18(E0, r2)</c>
+    /// (<see cref="WwiseLiveVoice.HolderVt18"/>): 1 continues at <c>0xA55218</c> (<paramref name="r5"/> = 1), anything else stops. Returns false when V7 returns at once.
+    /// </summary>
+    private bool Path552C8(WwiseLiveVoice voice, WwisePlayingInstance pbi, out bool r5)
+    {
+        r5 = false;
+        int r = pbi.RequestVt3C(voice.E0);                           // 0xA552C8..0xA552D8
+        if (r == 2) { Stop48(voice); return false; }                 // 0xA552E8 beq 0xA5530C
+        int r2 = r == 1 ? 1 : 0;                                     // 0xA555E8 mov r2,r0 / 0xA552EC mov r2,r5 (r5 = 0 here)
+        int f = voice.HolderVt18(voice.E0, r2);                      // 0xA552F0..0xA55300 [voice+0x1C0]->vt+0x18
+        if (f == 1) { r5 = true; return true; }                      // 0xA55308 beq 0xA55218
+        Stop48(voice);                                               // 0xA5530C
         return false;
     }
 
     /// <summary>
-    /// V7 <c>0xA5532C</c> (C17 V7-k): the <c>P2F==0</c> branch reached from <c>0xA550C8</c>. The settled
-    /// branches, each ending at the common continuation <c>0xA5521C</c> (never straight at the tail):
-    /// <list type="bullet">
-    /// <item><c>E4==2</c>, <c>A=[voice+0xCD]&amp;1</c> set: call <c>voice+0x1C0-&gt;vt+0x14(E0)</c>; when
-    /// <c>[voice+0xE0]==2</c> -> <c>0xA554A4</c> (<c>r5=0</c>), else call <c>voice+0x1C0-&gt;vt+0xC</c> and
-    /// fall into <c>0xA55498</c>;</item>
-    /// <item><c>0xA55498</c> re-checks <c>[voice+0xE0]==1</c>: when set, if <c>[bus+0x1D8] &lt; s</c> call
-    /// <c>voice+0x1C0-&gt;vt+0x10(&amp;s)</c> and store the return in <c>params+0x28</c>; then <c>r5=0</c>;</item>
-    /// <item><c>E4==1</c>: <c>voice-&gt;vt+0x48</c>; <c>r5=0</c>;</item>
-    /// <item>anything else continues at <c>0xA55218</c> with <c>r5=1</c>.</item>
-    /// </list>
+    /// V7 <c>0xA5532C</c> (<c>S2F == 0</c>, row 1.11), entered with <c>r5 = 0</c>: <c>E4 == 2</c> with <c>A</c> set runs the holder's <c>vt+0x14(E0)</c> (<see cref="WwiseLiveVoice.HolderVt14"/>) and, unless <c>E0 == 2</c> (r5 = 0), its <c>vt+0xC</c>; then (also with
+    /// <c>A</c> clear) <c>E0 == 1</c> with <c>[pbi+0x1D8] &lt; s</c> runs the holder's <c>vt+0x10(&amp;s)</c> and stores its result in <c>[S+0x28]</c> (r5 = 0 whichever); <c>E4 == 1</c> stops the voice (r5 = 0); any other <c>E4</c> continues with r5 = 1.
     /// </summary>
-    /// <param name="voice">The voice.</param>
-    /// <param name="bus">The voice's bus (<c>r6</c> in the native).</param>
-    /// <param name="s">The <c>0xA55090</c> sample count.</param>
-    /// <returns>The <c>r5</c> flag the caller carries into the common continuation (<c>0xA5521C</c>).</returns>
-    private static bool Path5532C(WwiseLiveVoice voice, WwiseMixBus bus, int s)
+    private bool Path5532C(WwiseLiveVoice voice, WwisePlayingInstance pbi, int s)
     {
-        if (voice.E4 == 2)
+        if (voice.E4 == 2)                                           // 0xA55334..0xA55338
         {
-            if ((voice.FlagsCD & 1) != 0)
+            if ((voice.FlagsCD & 1) != 0)                            // 0xA55490 tst r2,#1
             {
-                voice.FilterRequest14?.Invoke(voice.E0);             // 0xA55544/48
-                if (voice.E0 == 2) return false;                     // 0xA55554 -> 0xA554A4 (r5=0)
-                voice.FilterRequest0C?.Invoke();                     // 0xA55560/64 -> 0xA55498
+                voice.HolderVt14(voice.E0);                          // 0xA55534..0xA55548 [voice+0x1C0]->vt+0x14(E0)
+                if (voice.E0 == 2) return false;                     // 0xA5554C..0xA55554 -> 0xA554A4
+                voice.HolderVt0C();                                  // 0xA55558..0xA55564 [voice+0x1C0]->vt+0xC
             }
-            // 0xA55498: re-check E0 == 1 (C17 item 3).
-            if (voice.E0 == 1)
+            if (voice.E0 == 1)                                       // 0xA55498..0xA554A0
             {
-                if (bus.FrameBudget < s)                             // 0xA55574 bge -> 0xA554A4
-                    voice.Buffer.Result = voice.FilterRequest10?.Invoke(s) ?? voice.Buffer.Result;  // 0xA55598
+                int budget = unchecked((int)pbi.StartOffset);        // 0xA5556C..0xA55570
+                if (budget < s)                                      // 0xA55574..0xA55578 cmp r3,r2; bge 0xA554A4
+                    voice.Buffer.State.Code28 = voice.HolderVt10(s); // 0xA5557C..0xA55598 vt+0x10(&s), str r0,[S+0x28]
             }
-            return false;                                            // 0xA554A4/0xA5556C: r5=0 -> 0xA5521C
+            return false;                                            // 0xA554A4 r5 = 0 / 0xA55588
         }
-        if (voice.E4 == 1)
+        if (voice.E4 == 1)                                           // 0xA5533C..0xA55340
         {
-            voice.VoiceStop48?.Invoke();                             // 0xA55344/0xA5534C
-            return false;                                            // r5=0 -> 0xA5521C
+            Stop48(voice);                                           // 0xA55344..0xA55350
+            return false;                                            // 0xA55354 b 0xA5521C with r5 = 0
         }
-        return true;                                                 // else -> 0xA55218 (r5=1)
+        return true;                                                 // 0xA55340 bne 0xA55218
     }
 
     /// <summary>
-    /// V7-m <c>0xA550CC..0xA551F0</c> (C17 V7-m, C18 V7-p): the four parameter ramps, run only when
-    /// <c>P2F!=0</c> and <c>[voice+0x28]!=0</c>. The targets are the <c>sp+0x30/34/38/3C</c> values: when
-    /// <see cref="WwiseLiveVoice.Run2E"/> (<c>[sp+0x2e]</c>) is non-zero the copy at
-    /// <c>0xA55068..0xA5508C</c> puts the voice target fields (<c>[voice+0x344]</c>, <c>[voice+0x514]</c>,
-    /// <c>[voice+0x354]</c>, <c>[voice+0x524]</c>) there; when it is zero the copy is skipped and they hold
-    /// the four <see cref="WwiseLiveVoice.OutputMin50"/> minima (zero when <c>id == 0</c>). Ramps 2 and 4
-    /// apply <c>max(target,[bus+0x68])</c>/<c>max(target,[bus+0x6C])</c> first; all clamp to 100.0 and floor
-    /// at 0. A record whose clamped target differs from its stored target gets flag 1, the new target, and
-    /// <c>cur += (target_old - cur) * 0.125 * rate</c>.
+    /// V7-m <c>0xA550CC..0xA551F0</c> (row 1.9): the four parameter ramps, run only when <c>S2F != 0</c> and <c>[voice+0x28] != 0</c>. The targets are <c>f30/f34/f38/f3C</c>: with <c>S2E != 0</c> the copy at <c>0xA5505C..0xA5508C</c> replaces them by the stored targets
+    /// (<c>[voice+0x344]</c>, <c>[voice+0x514]</c>, <c>[voice+0x354]</c>, <c>[voice+0x524]</c>); otherwise they are the four <see cref="WwiseLiveVoice.OutputMin50"/> minima. Ramps 2 and 4 first take <c>max</c> with <c>[pbi+0x68]</c> / <c>[pbi+0x6C]</c>; all clamp to 0 below and 100.0f above.
     /// </summary>
-    private static void RunParameterRamps(WwiseLiveVoice voice, WwiseMixBus bus)
+    private static void RunParameterRamps(WwiseLiveVoice voice, WwisePlayingInstance pbi)
     {
-        // 0xA5505C..0xA5508C: the copy into sp+0x30/34/38/3C is gated on [sp+0x2e]; when the gate is clear
-        // the four slots hold the 0xA4BC58 minima (0xA55090 is only reached with sp+0x30..3c already set).
-        float t1 = voice.Run2E ? voice.Ramp340.Target : voice.OutputMin50[0];
-        float t2 = voice.Run2E ? voice.Ramp510.Target : voice.OutputMin50[1];
-        float t3 = voice.Run2E ? voice.Ramp350.Target : voice.OutputMin50[2];
-        float t4 = voice.Run2E ? voice.Ramp520.Target : voice.OutputMin50[3];
+        float t1 = voice.Run2E ? voice.Ramp340.Target : voice.OutputMin50[0];     // f30
+        float t2 = voice.Run2E ? voice.Ramp510.Target : voice.OutputMin50[1];     // f34
+        float t3 = voice.Run2E ? voice.Ramp350.Target : voice.OutputMin50[2];     // f38
+        float t4 = voice.Run2E ? voice.Ramp520.Target : voice.OutputMin50[3];     // f3C
 
-        RunRamp(voice.Ramp340, t1, hasFloor: false, floor: 0f);          // 0xA550D8..0xA55104
-        RunRamp(voice.Ramp510, t2, hasFloor: true, floor: bus.RampFloor68);   // 0xA55108..0xA55148
-        RunRamp(voice.Ramp350, t3, hasFloor: false, floor: 0f);          // 0xA5514C..0xA55178
-        RunRamp(voice.Ramp520, t4, hasFloor: true, floor: bus.RampFloor6C);   // 0xA5517C..0xA551BC
+        RunRamp(voice.Ramp340, t1, hasFloor: false, floor: 0f);                   // 0xA550D8..0xA55104
+        RunRamp(voice.Ramp510, t2, hasFloor: true, floor: pbi.Field68);           // 0xA55108..0xA55148
+        RunRamp(voice.Ramp350, t3, hasFloor: false, floor: 0f);                   // 0xA5514C..0xA55178
+        RunRamp(voice.Ramp520, t4, hasFloor: true, floor: pbi.Field6C);           // 0xA5517C..0xA551BC
     }
 
-    /// <summary>One V7-m ramp record: clamp/floor the target, then ramp <c>current</c> toward it.</summary>
+    /// <summary>One ramp record (row 1.9): the floor (<c>vmovle</c>), the clamp to 0 (<c>bmi</c>) and to 100.0f (<c>vmovgt</c>), then a changed target stores the flag, the target and <c>cur + (oldTarget - cur) * 0.125f * float(u16 rate)</c>.</summary>
     private static void RunRamp(WwiseVoiceRamp ramp, float target, bool hasFloor, float floor)
     {
         float clamped = target;
-        if (hasFloor && clamped <= floor) clamped = floor;               // 0xA55118/0xA5518C vmovle
-        if (clamped < 0f) clamped = 0f;                                  // the 0xA554AC/0xA554B4/... stubs
-        if (clamped > 100f) clamped = 100f;                              // 0x42C80000
-        if (ramp.Target == clamped) return;                              // bne to the body only on a change
+        if (hasFloor && (clamped <= floor || float.IsNaN(clamped) || float.IsNaN(floor))) clamped = floor;   // 0xA55118/0xA5518C vcmpe; vmovle (LE holds for an unordered compare: N != V)
+        if (clamped < 0f) clamped = 0f;                                  // 0xA5511C..0xA55124 bmi -> 0xA554C4 (the literal 0)
+        if (clamped > 100f) clamped = 100f;                              // 0xA55128..0xA55134 vmovgt (0x42C80000)
+        if (ramp.Target == clamped) return;                              // vcmp.f32; bne to the body only on a change (a NaN differs)
         float targetOld = ramp.Target;
         ramp.Flag = 1;                                                   // 0xA55450/0xA5541C/0xA553E4/0xA551CC
         ramp.Target = clamped;                                           // 0xA5545C/0xA55428/0xA553F0/0xA551D8
-        ramp.Current += (targetOld - ramp.Current) * 0.125f * ramp.Rate; // 0xA55464..0xA55474
+        float step = (targetOld - ramp.Current) * 0.125f;                // vsub.f32; vmul.f32 (0.125f is exact)
+        ramp.Current = ramp.Current + step * (float)ramp.Rate;           // vcvt.f32.s32 of the u16; vmla.f32 (not fused)
     }
 
     /// <summary>
-    /// V7-h <c>0xA4C620</c>, the <c>0x103C120</c> slot <c>+0x18</c>: if <c>[this+4]</c> (= <c>[voice+0x1C4]</c>)
-    /// is null return 1; else tail-call <c>[[voice+0x1C4]]-&gt;vt+0x18(inner, E0, r2)</c>.
+    /// V7 <c>0xA554F0</c> (<c>E4 == 2</c> with <c>SRC10</c> clear, row 1.12): <c>0xA56650(src, [pbi+0x1DC], [pbi+0x1E0])</c>: 1 continues at <c>0xA55218</c> (r5 = 1); <c>0x3F</c> gives r5 = 0 and S2F = 0 with no stop; anything else stops the voice with r5 = 0 and S2F = 0.
+    /// A source whose <c>vt+0x28</c> ran and does not write the PBI's format bytes needs the host's <see cref="WwiseLiveVoice.StartStreamFormatWriter"/> (as <c>0xA548C0</c>'s start does).
     /// </summary>
-    private static int Wrapper18(WwiseLiveVoice voice, int e0, int r2)
+    private bool Path554F0(WwiseLiveVoice voice, WwisePlayingInstance pbi, IWwiseVoiceSource source, ref bool s2f)
     {
-        if (voice.FilterInner1C4 is null) return 1;                  // 0xA4C624/0xA4C628/0xA4C638
-        return voice.FilterInner18?.Invoke(e0, r2) ?? 1;             // 0xA4C62C..0xA4C634
-    }
-
-    /// <summary>
-    /// V7 <c>0xA554F0</c>: <c>E4==2, SRC10 clear</c>, calls <c>0xA56650</c>. A return of <c>0x3F</c> sets
-    /// <c>r5=0</c> and <c>P2F=0</c> without calling <c>voice-&gt;vt+0x48</c>; return 1 reaches <c>0xA55218</c>;
-    /// anything else calls <c>voice-&gt;vt+0x48</c> and sets <c>r5=0, P2F=0</c> (C12 voice-callees Q4).
-    /// </summary>
-    private static bool Path554F0(WwiseLiveVoice voice, WwiseMixBus bus, ref bool p2f)
-    {
-        int r = (voice.StartSource56650 ?? throw new WwiseMissingBehaviourException(
-            "M6-025 C30: 0xA554F8 calls 0xA56650(source, [bus+0x1DC], [bus+0x1E0]) on the live state machine; supply StartSource56650 rather than defaulting to 0"))();   // 0xA554F8
-        if (r == 1) return true;                                     // 0xA55218
-        if (r != 0x3F) voice.VoiceStop48?.Invoke();                  // the else path only
-        p2f = false;                                                 // [sp+0x2f]=0
-        return false;                                                // -> 0xA5521C with r5=0
+        int r = WwiseVoiceSourceStart.StartA56650(source, pbi.Read1DC(), pbi.Read1E0(), out bool ran);   // 0xA554F0..0xA554F8
+        if (ran && source is not IWwiseStreamingVoiceSource { WritesSourceFormatInStartStream: true })
+            (voice.StartStreamFormatWriter ?? throw new WwiseMissingBehaviourException(
+                "M6-025 C26.5: the StartStream writers of pbi+0x158..0x162 (0xA72760..0xAB138C) are not built for this source's class; supply WwiseLiveVoice.StartStreamFormatWriter")).Invoke(pbi, source);
+        if (r == 0x3F) { s2f = false; return false; }                // 0xA554FC..0xA55508 moveq r5,#0; strbeq r5,[sp,#0x2f]
+        if (r == 1) return true;                                     // 0xA5550C..0xA55510 -> 0xA55218
+        Stop48(voice);                                               // 0xA55514..0xA55520
+        s2f = false;                                                 // 0xA55524..0xA5552C
+        return false;
     }
 
     /// <summary>
@@ -2080,137 +2515,126 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
     }
 
     /// <summary>
-    /// V7-b <c>0xA022E8(bus,unused)</c> (C15 V7-b): if <c>[bus+0x1BE]&amp;0x20</c> is set, clear it, decrement
-    /// the per-target counter at <c>[entry+0x22]</c> for each of <c>[bus+0x1F0]</c> entries in
-    /// <c>[bus+0x1EC]</c>, then decrement the global dword. The array identity is UNKNOWN.
+    /// <c>0xA022E8(pbi, 1)</c> (row 1.16): with <c>[pbi+0x1BE]</c> bit 5 clear it returns; else it clears the bit, decrements <c>u16 [ptr+0x22]</c> for each of the <c>[pbi+0x1F0]</c> pointers of the array <c>[pbi+0x1EC]</c> and tail-calls <c>0xA370E4</c>, which is
+    /// <c>[0x108DE78] -= 1</c> (<c>0xA370E4..0xA370F8</c>): the limiter's <see cref="WwisePlaybackLimiter.ReleaseVirtual0A022E8"/>, which owns that global (the REQUIRED <see cref="Limiter"/>).
     /// </summary>
-    public static void ReleaseBusRef(WwiseMixBus bus)
+    // fidelity: M6-022
+    public void ReleaseVirtualA022E8(WwisePlayingInstance pbi)
     {
-        ArgumentNullException.ThrowIfNull(bus);
-        if ((bus.Flags1BE & 0x20) == 0) return;
-        bus.Flags1BE = (byte)(bus.Flags1BE & ~0x20);
-        var arr = bus.RefCountArray1EC;
-        for (int i = 0; i < bus.RefCount1F0 && arr is not null && i < arr.Length; i++)
-            arr[i] = unchecked(arr[i] - 1);
-        BusRefGlobal--;
-    }
-
-    /// <summary>V7-b <c>0xA0228C(bus)</c> (C15 V7-b): the exact inverse of <see cref="ReleaseBusRef"/>.</summary>
-    public static void AcquireBusRef(WwiseMixBus bus)
-    {
-        ArgumentNullException.ThrowIfNull(bus);
-        if ((bus.Flags1BE & 0x20) != 0) return;
-        bus.Flags1BE = (byte)(bus.Flags1BE | 0x20);
-        var arr = bus.RefCountArray1EC;
-        for (int i = 0; i < bus.RefCount1F0 && arr is not null && i < arr.Length; i++)
-            arr[i] = unchecked(arr[i] + 1);
-        BusRefGlobal++;
-    }
-
-    /// <summary>The global dword the acquire/release pair touches (identity UNKNOWN, C15 V7-b).</summary>
-    public static int BusRefGlobal;
-
-    /// <summary>
-    /// V7-c <c>0xA01768(bus,&amp;out)</c> (C15 V7-c): the cached 4-bit next-source code and 3-bit index in
-    /// <c>[bus+0x1BB]</c> (bit7 valid); calls <c>0x9EEDA4([bus+0xE0])</c> (seam, RECOVERABLE_GAP), then
-    /// <c>[[bus+0xE0]]-&gt;vt+0x120([bus+0x14C])</c> when the result is 3. Called as
-    /// <c>0xA01768(bus,&amp;[voice+0xE0])</c>.
-    /// </summary>
-    public static int NextSource(WwiseMixBus bus, out int index)
-    {
-        ArgumentNullException.ThrowIfNull(bus);
-        byte cached = bus.NextSource1BB;
-        if ((cached & 0x80) != 0)
-        {
-            index = cached & 7;
-            return (cached >> 3) & 0xF;
-        }
-
-        // UNRESOLVED (MISSING for the Extractor): this bus model keeps its own cache field (WwiseMixBus.NextSource1BB),
-        // while the native cache is the single pbi+0x1BB shared by 0xA01768's callers (AddSrc and 0xA37258, 0xA373B4,
-        // 0xA37578, 0xA37650, 0xA37944, 0xA55B54); the bus-to-pbi identity is not settled here, so it is not unified.
-        // fidelity: M6-025
-        var result = (bus.NextSourceEda ?? throw new WwiseMissingBehaviourException(
-            "M6-025 C27: 0x9EEDA4 (inside 0xA01768) is unread; supply WwiseMixBus.NextSourceEda")).Invoke(bus.NextSourceE0);
-        int code;
-        if (result.Code == 3)                                                   // 0xA017A4 cmp r0,#3
-        {
-            int r = (bus.E0Vt120 ?? throw new WwiseMissingBehaviourException(
-                "M6-025 C27: vt+0x120 (0xA017C8..0xA017E4) is unread; supply WwiseMixBus.E0Vt120")).Invoke(bus.E0Arg14C);
-            code = r == 0 ? 1 : 2;                                              // only the mapped value is stored
-        }
-        else
-        {
-            code = result.Code & 0xF;
-        }
-        index = result.Index & 7;
-        bus.NextSource1BB = (byte)(0x80 | (index & 7) | ((code & 0xF) << 3));
-        return code;
+        ArgumentNullException.ThrowIfNull(pbi);
+        if ((pbi.Flags1BE & 0x20) == 0) return;                      // 0xA022E8: bit 5 clear
+        (Limiter ?? throw new WwiseMissingBehaviourException(
+            "M6-022 1.16: 0xA022E8 decrements the global at 0x108DE78 (0xA370E4), which the limiter owns; supply WwiseVoiceBusPass.Limiter")).ReleaseVirtual0A022E8(pbi);
     }
 
     /// <summary>
-    /// V7-f <c>0xA54A30(voice)</c> (C15 V7-f): start the source/resampler, resolve up to four bus insert-FX
-    /// slots via <c>0xA019B8</c>/<c>0x9CC2AC</c>/<c>0x9CC4D8</c>, build the 0x9C-byte voice slot objects
-    /// (<see cref="WwiseVoiceInsertFxSlot"/>, vtables <c>0x103DC38</c>/<c>0x103DB98</c>, init
-    /// <c>vt+0x28</c>), then initialise filter A/B and the gain. The plug-in registry and the effect class
-    /// are UNKNOWN; the create/validate are caller seams. Returns 1 on success, 2 when the resampler start
-    /// fails.
+    /// <c>0xA0228C(pbi)</c> (row 1.16): with <c>[pbi+0x1BE]</c> bit 5 set it returns; else it sets the bit, increments <c>u16 [ptr+0x22]</c> for each pointer of the array <c>[pbi+0x1EC]</c> and the global at <c>0x1040144</c>'s target (the limiter's
+    /// <see cref="WwisePlaybackLimiter.AcquireVirtual0A0228C"/>, which owns that global: the REQUIRED <see cref="Limiter"/>).
     /// </summary>
+    // fidelity: M6-022
+    public void AcquireVirtualA0228C(WwisePlayingInstance pbi)
+    {
+        ArgumentNullException.ThrowIfNull(pbi);
+        if ((pbi.Flags1BE & 0x20) != 0) return;                      // 0xA0228C: bit 5 already set
+        (Limiter ?? throw new WwiseMissingBehaviourException(
+            "M6-022 1.16: 0xA0228C increments the global at 0x1040144's target, which the limiter owns; supply WwiseVoiceBusPass.Limiter")).AcquireVirtual0A0228C(pbi);
+    }
+
+    /// <summary>
+    /// V7-f <c>0xA54A30(voice)</c> (C41.4 rows 4.1..4.6, 2.10; the binary order <c>0xA54A30..0xA54F1C</c>): <c>pbi = [[voice+0xD4]+0xC]</c>; the resampler start (<c>0xA5321C</c>, a result other than 1 returns 2); then for each slot <c>i = 0..3</c> the FX descriptor
+    /// (<c>0xA019B8</c> -> <c>0x9EEF2C</c>; none: next slot), the plug-in (<c>0x9CC2AC</c>; not 1: the descriptor is released, next slot) and its info (<c>0x9CC4D8</c>: <c>[info] == 3</c> and <c>[info+4]</c> 0x7E001 / 0x7E002; <c>byte [info+0xA] != 0</c>; for an in-place plug-in <c>byte [info+9] != 0</c>:
+    /// each rejection runs the plug-in's <c>vt+8</c> (Term) and releases the descriptor, <c>0xA54D08</c>, then the next slot). By <c>byte [info+8]</c>: in place makes the 0x34-byte wrapper (<see cref="WwiseVoiceInsertFxSlot.Create"/>, Init <c>0xA792B0</c> then Reset; an Init failure leaves the
+    /// slot null and goes on to the next slot, <c>0xA54B38</c>); a pool failure of the wrapper returns 2 from the WHOLE function (<c>0xA54BE8</c>/<c>0xA54DFC</c> -> <c>0xA54EC8</c> -> <c>0xA54A88</c>, C24.2); out of place is the <c>0x103DC38</c> class, not extracted (a required stop). The format
+    /// <c>&amp;fmt</c> handed to the wrapper and the plug-in is <c>{[voice+0xEC], [pbi+0x15C], [pbi+0x160]}</c> (<c>0xA54AD0</c> overwrites the first word of the copy of <c>[pbi+0x158..]</c> with the mix rate). Then <c>[voice+0xF0] = [pbi+0x15C]</c> (<c>0xA54B60..0xA54B70</c>), filter A
+    /// <c>0xA764D4(voice+0x1D0, [voice+0xF0], 0)</c> and filter B <c>0xA764D4(voice+0x3A0, [voice+0xF0], 0)</c> (each result other than 1 is returned, <c>0xA54B78..0xA54B80</c>, <c>0xA54D48..0xA54D4C</c>), <c>0xA5676C(voice+0x380, pbi)</c> (<c>[node+8] = pbi</c>, returns 1: the voice's
+    /// <c>+0x388</c>), the chain links (<c>vt+0x24</c> from the voice+0x380 node down to the pitch node, <c>0xA54D3C..0xA54DB8</c>) and the voice's <c>vt+0x6C</c> (<c>0xA5335C</c>, <see cref="WwiseLiveVoice.VoiceStart6C"/> or the built <see cref="WwisePlayPath"/> body). Returns 1, or the first failing result.
+    /// The node resolver <c>0x9EEF2C</c> (behind <c>0xA019B8</c>'s <c>[pbi+0xE9]</c> bit 2 gate), the registry <c>0x9CC2AC</c> and the 0x380 node's <c>vt+0x24</c> are not extracted: required seams.
+    /// </summary>
+    // fidelity: M6-022
     public static int StartStreamAndBuildInsertFx(WwiseLiveVoice voice)
     {
         ArgumentNullException.ThrowIfNull(voice);
-        if (!(voice.StartResampler5321C ?? voice.StartResamplerA5321C)()) return 2;  // 0xA54A78 0xA5321C != 1 -> 2
+        var pbi = (voice.Source as IWwisePitchNodeSource)?.Owner ?? voice.BusOwner8 as WwisePlayingInstance ?? throw new WwiseMissingBehaviourException(
+            "M6-022 V7-f: 0xA54A30 reads pbi = [[voice+0xD4]+0xC]; the current source has no owner PBI (BusOwner8 is the same PBI's context)");
+        if (!(voice.StartResampler5321C ?? voice.StartResamplerA5321C)()) return 2;  // 0xA54A78 0xA5321C != 1 -> 0xA54A88 returns 2
 
-        for (int i = 0; i < voice.InsertFxSlots.Length; i++)
+        for (int i = 0; i < voice.InsertFxSlots.Length; i++)         // 0xA54ADC.. up to four slots
         {
-            var candidate = voice.ResolveBusSlot?.Invoke(i);         // 0xA54AF0 0xA019B8
-            if (candidate is null) continue;
-            if (voice.CreatePlugin?.Invoke(candidate, i) != true) continue;  // 0x9CC2AC/0x9CC4D8
-            var slot = voice.InsertFxSlots[i] ??= new WwiseVoiceInsertFxSlot();
-            slot.HasPlugin = true;
-            slot.Initialise();                                       // vt+0x28 = 0xA79858
+            WwiseVoiceFxDescriptor? fx = null;
+            if ((pbi.Flags0E9 & 4) == 0)                             // 0xA019B8: [pbi+0xE9] bit 2 set -> the out pointer is zeroed, the resolver is not called
+                fx = (voice.ResolveNodeFx9EEF2C ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 4.1: node vt+0xE8 = 0x9EEF2C (reached through 0xA019B8) resolves slot i's FX descriptor and is not extracted; supply WwiseLiveVoice.ResolveNodeFx9EEF2C"))(i).Fx;   // 0xA54AF0 0xA019B8 -> 0x9EEF2C
+            if (fx is null) continue;                                // 0xA54AF8 beq 0xA54B50
+            var plugin = (voice.PluginRegistry9CC2AC ?? throw new WwiseMissingBehaviourException(
+                "M6-022 4.1: 0x9CC2AC (the plug-in registry lookup and create) is not extracted; supply WwiseLiveVoice.PluginRegistry9CC2AC"))(fx.Id, voice.PluginAllocator);
+            if (plugin is null) { fx.Release(); continue; }          // 0xA54B30..0xA54B38: not 1 -> release the descriptor, next slot
+            plugin.GetPluginInfo(out var info);                      // 0x9CC2AC: plugin->vt+0x10(info)
+            // 0x9CC4D8(id, 3, &info) != 0, byte [info+0xA] != 0: 0xA54D08 plug-in vt+8, release, next slot. byte [info+9] (0xA54DD0) cannot be reported through IWwiseEffectPlugin (WwisePluginInfo has no such field): it is the pre-initialised 0.
+            if (info.Word0 != 3 || (info.Word4 != 0x7E001 && info.Word4 != 0x7E002) || info.ByteA != 0)
+            {
+                plugin.Term(voice.PluginAllocator);
+                fx.Release();
+                continue;
+            }
+            if (info.Byte8 == 0)                                     // 0xA54BB8: the 0x9C-byte 0x103DC38 class
+                throw new WwiseMissingBehaviourException("M6-022 4.1: an out-of-place plug-in (byte [info+8] == 0) gets the 0x9C-byte class of vptr 0x103DC38 (vt+0x28 = 0xA79858), which is not extracted");
+            var fmt = new WwiseEffectFormat(voice.MixRateEC, pbi.Word15C);   // 0xA54AD0 str r2,[sp,#0x34] ([voice+0xEC]); [sp+0x38] = [pbi+0x15C]
+            var slot = WwiseVoiceInsertFxSlot.Create(voice, i, fx, plugin, fmt, out bool allocationFailed);
+            if (allocationFailed) return 2;                          // 0xA54EC8..0xA54EFC, 0xA54A88: the whole function returns 2
+            voice.InsertFxSlots[i] = slot!;                          // [voice+0x370+4i] = W; an Init failure leaves the slot null
         }
 
-        // 0xA54B60: [voice+0xF0] = [sp+0x38]; filter A init 0xA764D4(voice+0x1D0,0); if 1 -> filter B.
-        voice.FilterA.Reset();                                       // 0xA764D4 filter A init
-        voice.FilterB.Reset();                                       // 0xA764D4 filter B init
-        voice.InitGain?.Invoke();                                    // 0xA5676C(voice+0x380, bus)
-
-        foreach (var slot in voice.InsertFxSlots)
-            slot?.Initialise();                                      // slot->vt+0x24
-        voice.VoiceStart6C?.Invoke();                                // voice->vt+0x6C
+        voice.Word0xF0 = pbi.Word15C;                                // 0xA54B60 ldr r1,[sp,#0x38]; 0xA54B70 str r1,[r5,#0xf0]
+        int rf = voice.FilterA.InitA764D4(voice.Word0xF0, 0, voice.FilterAllocationFails);   // 0xA54B74 0xA764D4(voice+0x1D0, [voice+0xF0], 0)
+        if (rf != 1) return rf;                                      // 0xA54B78..0xA54B80
+        rf = voice.FilterB.InitA764D4(voice.Word0xF0, 0, voice.FilterAllocationFails);       // 0xA54D44 0xA764D4(voice+0x3A0, [voice+0xF0], 0)
+        if (rf != 1) return rf;                                      // 0xA54D48..0xA54D4C
+        voice.Pbi388 = pbi;                                          // 0xA54D5C 0xA5676C(voice+0x380, pbi): str r1,[r0,#8]; returns 1
+        // 0xA54D3C..0xA54DB8: arr = [src, pitch node, the filled slots compacted in slot order, the holder voice+0x1C0, the voice+0x380 node]; k = n+1 DOWN to 1: arr[k]->vt+0x24(arr[k-1]).
+        var chain = new List<object> { voice.Source!, voice.PitchNode };
+        foreach (var slot in voice.InsertFxSlots) if (slot is not null) chain.Add(slot);
+        chain.Add(voice.HolderNode1C0);
+        chain.Add(voice.GainNode380);
+        voice.ChainLinks.Clear();
+        for (int k = chain.Count - 1; k >= 1; k--)
+        {
+            object node = chain[k], upstream = chain[k - 1];
+            voice.ChainLinks.Add((node, upstream));
+            if (node is WwiseVoiceInsertFxSlot linked)
+                linked.SetUpstreamA52678(upstream as IWwiseFxChainNode ?? voice.PitchChainNode);   // 0xA52678: [W+4] = upstream
+            else if (ReferenceEquals(node, voice.GainNode380))
+                (voice.GainNode380Vt24 ?? throw new WwiseMissingBehaviourException(
+                    "M6-022 2.10: 0xA54D98..0xA54DAC calls vt+0x24 on the voice+0x380 node first, whose body is not extracted; supply WwiseLiveVoice.GainNode380Vt24"))(upstream);
+            // the pitch node's ([node+4] = src, set when the source is assigned) and the holder's (derived: HolderUpstream1C4) vt+0x24 store nothing the model keeps separately
+        }
+        if (voice.VoiceStart6C is { } start) start();                // 0xA54DC4 voice->vt+0x6C
+        else WwisePlayPath.RefreshVoiceVt6C(voice);                  // 0xA5335C (R2.12)
         return 1;
     }
 
     /// <summary>
-    /// V7/C1 <c>0xA4BC58(voice, busChain, id, gain, ...)</c> (C12 voice-callees Q4/F1, C16 V7-g, C18
-    /// V7-n/V7-o/V7-p): the per-connection gain/format update. It computes the aggregate <c>sb</c>/<c>fp</c>
-    /// flags over the connection list, runs the branch structure that produces the <c>[sp+0x2f]</c> byte
-    /// <c>P2F</c> and the <c>[sp+0x2e]</c> byte <see cref="WwiseLiveVoice.Run2E"/>, sets
-    /// <c>[conn+0xC] = [voice+0x1C]*gain</c>, sets bit2 of <c>[conn+0x6C]</c>, copies
-    /// <c>[param_2+0x3C]/[param_2+0x40]</c> (<c>[bus+0x48]/[bus+0x4C]</c>) to the connection, propagates
-    /// <c>+0xA8..0xB4</c> to <c>+0xB8..0xC4</c>, and keeps the four running minima of
-    /// <c>[conn+0x50/+0x54/+0x58/+0x5C]</c> in <paramref name="floatOutputs"/>.
+    /// <c>0xA4BC58</c> (C12 voice-callees Q4/F1, C16 V7-g, C18 V7-n/V7-o/V7-p; C41.1 rows 1.5, 1.18 for the arguments): the per-connection gain/format update on the owner PBI. <c>param_2 = pbi+0xC</c> (so <c>[param_2+0x3C]/[param_2+0x40]</c> are <c>[pbi+0x48]/[pbi+0x4C]</c>, the
+    /// propagated <c>[param_2+0xA8..0xB4]</c> / <c>[param_2+0xB8..0xC4]</c> are <c>[pbi+0xB4..0xC0]</c> / <c>[pbi+0xC4..0xD0]</c> and <c>[param_2+0xDC]</c> is <c>[pbi+0xE8]</c>). It computes the aggregate <c>sb</c>/<c>fp</c> flags over the connection list, runs the branch structure that
+    /// produces the <c>[sp+0x2f]</c> byte (returned, and stored in <see cref="WwiseLiveVoice.P2F"/>) and the <c>[sp+0x2e]</c> byte (<see cref="WwiseLiveVoice.Run2E"/>), sets <c>[conn+0xC] = [voice+0x1C]*gain</c>, bit 2 of <c>[conn+0x6C]</c> (the first branch from <paramref name="arg5"/>,
+    /// <c>src-&gt;vt+0x4C</c>), and keeps the four running minima of <c>[conn+0x50/+0x54/+0x58/+0x5C]</c> in <paramref name="floatOutputs"/>. <c>voice-&gt;vt+0x3C</c> is <c>0xA55E90</c>: <c>([pbi+0x1BE] &amp; 0x14) != 0</c> (gapE 3.3).
     /// </summary>
     /// <param name="voice">The voice (<c>param_1</c>).</param>
-    /// <param name="bus">The bus (<c>[source+0xC]</c>); <c>param_2</c> is <c>bus+0xC</c>.</param>
+    /// <param name="pbi">The owner PBI <c>[source+0xC]</c>; <c>param_2</c> is <c>pbi+0xC</c>.</param>
     /// <param name="gain">The <c>param_4</c> gain.</param>
+    /// <param name="arg5">The <c>param_5</c> byte: <c>src-&gt;vt+0x4C</c> (<see cref="SourceVt4C"/>).</param>
+    /// <param name="arg12">The <c>param_12</c> pointer: <c>{[pbi+0x140], word}</c> or none; the per-connection step <c>0xA5D70C</c> is its reader (<c>0xA4BF38</c>, X2).</param>
     /// <param name="floatOutputs">
-    /// The <c>param_8..11</c> destination, in order. The first call passes
-    /// <see cref="WwiseLiveVoice.OutputMin50"/> (the caller's <c>sp+0x30..0x3c</c>); the second call at
-    /// <c>0xA5572C</c> passes a scratch array because its outputs go to <c>sp+0x40</c> and are never read
-    /// (C18 V7-q). Null means <see cref="WwiseLiveVoice.OutputMin50"/>.
+    /// The <c>param_8..11</c> destination, in order. The first call passes <see cref="WwiseLiveVoice.OutputMin50"/> (the caller's <c>sp+0x30..0x3c</c>); the second call at <c>0xA5572C</c> passes a scratch because its outputs go to <c>sp+0x40</c> and are never read (C18 V7-q).
     /// </param>
     /// <returns>The <c>P2F</c> byte the state machine reads at <c>0xA55248</c>/<c>0xA5526C</c>.</returns>
     /// <remarks>
-    /// The conversion sub-callees <c>0xA5975C</c>, <c>0xA67C58</c>, <c>0xA67B9C</c> and <c>0xA5D70C</c> are
-    /// unread and stay explicit seams (finding 5). The four output floats <c>[sp+0x5c..0x68]</c> carry the
-    /// min of the connection fields <c>+0x50/+0x54/+0x58/+0x5C</c>.
+    /// The conversion sub-callees <c>0xA5975C</c>, <c>0xA67C58</c>, <c>0xA67B9C</c> and <c>0xA5D70C</c> are unread and stay explicit seams (finding 5). The four output floats <c>[sp+0x5c..0x68]</c> carry the min of the connection fields <c>+0x50/+0x54/+0x58/+0x5C</c>.
     /// </remarks>
-    public static bool UpdateConnectionGains(WwiseLiveVoice voice, WwiseMixBus bus, float gain, float[]? floatOutputs = null)
+    // fidelity: M6-022
+    public static bool UpdateConnectionGains(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, byte arg5, WwiseGainArg12? arg12 = null, float[]? floatOutputs = null)
     {
         ArgumentNullException.ThrowIfNull(voice);
-        ArgumentNullException.ThrowIfNull(bus);
+        ArgumentNullException.ThrowIfNull(pbi);
         float[] minima = floatOutputs ?? voice.OutputMin50;
 
         // 0xA4BC90..0xA4BCAC: the four output floats start at 0.
@@ -2236,7 +2660,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             }
         }
 
-        int vt3c = voice.VoiceRequest3C?.Invoke() ?? 1;              // 0xA4BCF4 voice->vt+0x3C
+        int vt3c = (pbi.Flags1BE & 0x14) != 0 ? 1 : 0;               // 0xA4BCF4 voice->vt+0x3C = 0xA55E90 (gapE 3.3)
         bool cd8 = (voice.FlagsCD & 8) != 0;
 
         bool p2f;
@@ -2255,7 +2679,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             else
             {
                 // 0xA4BD1C: sb==0 -> 0xA4C010 -> main loop + tail; else 0xA4C080 end (skip tail).
-                if (!sb) { p2f = true; MainConnectionLoop(voice, bus, gain, minima); runTail = true; }
+                if (!sb) { p2f = true; MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
                 else { p2f = false; runTail = false; }
             }
         }
@@ -2267,32 +2691,32 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
                 // fp!=0 -> 0xA4C024 bit2=r8 + main loop + tail.
                 p2f = fp;
                 if (!fp) { SetBit2(voice, 1); runTail = false; }
-                else { SetBit2(voice, voice.SourceGain8Low); MainConnectionLoop(voice, bus, gain, minima); runTail = true; }
+                else { SetBit2(voice, arg5); MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
             }
             else if (run)
             {
                 // 0xA4BD1C: sb==0 -> 0xA4C010 -> main loop + tail; else 0xA4C080 end (skip tail).
-                if (!sb) { p2f = true; MainConnectionLoop(voice, bus, gain, minima); runTail = true; }
+                if (!sb) { p2f = true; MainConnectionLoop(voice, pbi, gain, minima, arg12); runTail = true; }
                 else { p2f = false; runTail = false; }
             }
             else
             {
                 // 0xA4C010: p2f=1, then the 0xA4BD74 main loop + tail.
                 p2f = true;
-                MainConnectionLoop(voice, bus, gain, minima);
+                MainConnectionLoop(voice, pbi, gain, minima, arg12);
                 runTail = true;
             }
         }
 
         // 0xA4BFC4/0xA4BFD4: the tail runs only on the branches that reach 0xA4BFD4; 0xA4C080
         // (vt3c!=0 && cd8 && sb, and vt3c==0 && cd8 && run && sb) and 0xA4BD6C (the !cd8 paths whose fp
-        // is 0) skip it. Propagate [param_2+0xA8..0xB4] to [param_2+0xB8..0xC4], then clear [voice+0xCD]
-        // bit2 and [param_2+0xDC] bit4 (C18 X3).
+        // is 0) skip it. Propagate [param_2+0xA8..0xB4] to [param_2+0xB8..0xC4] ([pbi+0xB4..0xC0] to [pbi+0xC4..0xD0]), then clear [voice+0xCD]
+        // bit2 and [param_2+0xDC] bit4 ([pbi+0xE8] bit 4) (C18 X3).
         if (runTail)
         {
-            bus.PropagateParams();
+            pbi.PropagateParamsA4BFC4();
             voice.FlagsCD = (byte)(voice.FlagsCD & ~0x04);
-            bus.ClearDcBit4();
+            pbi.Flags0E8 = (byte)(pbi.Flags0E8 & ~0x10);
         }
 
         // 0xA4BFEC/0xA4BFF0: the epilogue writes param_6 = r5. r5 is 0 iff the list is non-empty, some
@@ -2312,11 +2736,11 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
 
     /// <summary>
     /// 0xA4BD74..0xA4BFB8: the per-connection gain/format loop. It sets the four output floats to 100.0,
-    /// then per connection copies <c>[param_2+0x3C]/[param_2+0x40]</c> (<c>[bus+0x48]/[bus+0x4C]</c>, C18
+    /// then per connection copies <c>[param_2+0x3C]/[param_2+0x40]</c> (<c>[pbi+0x48]/[pbi+0x4C]</c>, C18
     /// X3) to <c>+0x50/+0x58</c>, zeros <c>+0x54/+0x5C</c>, runs the <c>0xA5975C</c> conversion (seam) and
     /// keeps the minimum in the four output floats. It runs only when the id low byte is non-zero.
     /// </summary>
-    private static void MainConnectionLoop(WwiseLiveVoice voice, WwiseMixBus bus, float gain, float[] minima)
+    private static void MainConnectionLoop(WwiseLiveVoice voice, WwisePlayingInstance pbi, float gain, float[] minima, WwiseGainArg12? arg12)
     {
         if ((voice.Word0xF0 & 0xFF) == 0) return;                          // 0xA4BD74 cmp r6,#0; beq 0xA4BFD4
         for (int i = 0; i < 4; i++) minima[i] = 100f;                // 0x42CA0000
@@ -2348,8 +2772,8 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
 
             c.C0C = voice.OutputGain * gain;                         // 0xA4BE6C [conn+0xc] = [voice+0x1c]*gain
             c.ConnectionGain = c.C0C;
-            c.C50 = bus.Param2_3C;                                   // 0xA4BE80 [r7+0x3c], r7 = param_2
-            c.C58 = bus.Param2_40;                                   // 0xA4BE88 [r7+0x40]
+            c.C50 = pbi.Lpf48;                                       // 0xA4BE80 [r7+0x3c], r7 = param_2 = pbi+0xC: [pbi+0x48]
+            c.C58 = pbi.Hpf4C;                                       // 0xA4BE88 [r7+0x40]: [pbi+0x4C]
             c.C54 = 0f;
             c.C5C = 0f;
             c.Conversion5975C?.Invoke(c);                            // 0xA4BEC4 (seam)
@@ -2359,7 +2783,7 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
             minima[2] = MathF.Min(minima[2], c.C58);
             minima[3] = MathF.Min(minima[3], c.C5C);
 
-            c.Conversion5D70C?.Invoke(c);                            // 0xA4BF4C (seam)
+            c.Conversion5D70C?.Invoke(c, arg12);                     // 0xA4BF38 (param_12), 0xA4BF4C (seam)
             c.C08 = c.C0C;                                           // 0xA4BFA8 [conn+8]=[conn+0xc]
             c.C10 = c.C14;                                           // 0xA4BFAC [conn+0x10]=[conn+0x14]
         }
@@ -2401,7 +2825,6 @@ public sealed class WwiseVoiceBusPass : IWwiseVoiceBusPass
         }
 
         voice.OutputGain = s12;                                      // 0xA4B5A4 vstr s12,[r0,#0x1c]
-        voice.ApplyDuckingHook?.Invoke();                            // optional extra caller observer
     }
 
     /// <summary>

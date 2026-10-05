@@ -915,7 +915,7 @@ public class WwiseStreamSourceTests
         // 0xA52D4C, C38.1) takes: this medium is 48000 Hz mono float, so the node's resampler is the float bypass 0xA479F4 (a plain copy); [pbi+0x1D8] = -F*P (the voice pass 0xA55228..0xA55244 leaves D in [-F*P, 0)) writes no silent frames.
         // The node releases each source block through vt+0xC (0xAB1100); the voice's loop ends when the stream layer has nothing more (0x2E, the not-ready handler 0xA55C14). Every delivered frame is the existing offline decode, bit for bit.
         pbi.StartOffset = unchecked((uint)-1024);
-        var live = new WwiseLiveVoice(1, 1024) { Source = source };
+        var live = new WwiseLiveVoice(1, 1024) { Source = source, Pbi388 = pbi };
         live.SourceNotReadyA55C14 = (_, _) => { };
         Assert.True(live.StartResamplerA5321C());                                                           // 0xA54A30 -> 0xA5321C with the format the StartStream wrote
         live.Buffer.InitPassBlockA44A00();
@@ -958,7 +958,7 @@ public class WwiseStreamSourceTests
             var linker = new WwiseVoiceLinker(new WwiseMixBusHierarchy(), new WwiseOutputDeviceList(), new List<WwiseLiveVoice>(),
                 _ => new WwisePbiRouting { Node = new WwiseRoutingNode { Id = 1 } },
                 new WwiseVoiceLinkSeams { SourceOwner = _ => pbi, SourceFlag10Bit1 = _ => true });
-            var voice = new WwiseLiveVoice(1, 16) { Source = source };
+            var voice = new WwiseLiveVoice(1, 16) { Source = source, Pbi388 = pbi };
             Assert.Equal(expected, linker.NotReadyCheck(voice, pbi));
             Assert.Equal(expected == 0x3F && prefixLen == 346, !source.StartStreamSucceeded);              // the latch is set only by the raw result 1
         }
@@ -993,7 +993,7 @@ public class WwiseStreamSourceTests
         Assert.True(ran);
         Assert.True(source.StartStreamSucceeded);
         Assert.Equal(32000u, pbi.SourceFormat158);                                                          // written inside StartStream (0xAB0BF0)
-        var voice = new WwiseLiveVoice(1, 1024) { Source = source };
+        var voice = new WwiseLiveVoice(1, 1024) { Source = source, Pbi388 = pbi };
         voice.SourceNotReadyA55C14 = (_, _) => { };
         voice.StartStreamFormatWriter = (_, _) => { };
         Assert.True(voice.StartResamplerA5321C());

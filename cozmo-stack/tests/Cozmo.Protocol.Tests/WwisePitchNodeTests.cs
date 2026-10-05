@@ -146,7 +146,7 @@ public class WwisePitchNodeTests
             pbi1.Pitch44 = cents; pbi1.Flags1BE = (byte)h1be; pbi1.Flags1BF = (byte)(h1be >> 8); pbi1.Flags1BD = (byte)b1bd; pbi1.Word1B4 = s1b4; pbi1.StartOffset = d1d8; pbi1.Ratio = BitConverter.UInt32BitsToSingle(p164);
             pbi1.Word15C = w15c; pbi1.SourceFormat158 = rate; pbi1.Byte160 = (byte)WwiseResamplerTests.FmtWord(isFloat, ch); pbi1.Byte161 = (byte)(WwiseResamplerTests.FmtWord(isFloat, ch) >> 8);
             var src1 = new ScriptSource(events, "1", ParseBlocks(parts[1]), pbi1, markerPbis, ch, isFloat, rate, w15c);
-            var voice = new WwiseLiveVoice(ch, 1024) { Source = src1 };
+            var voice = new WwiseLiveVoice(ch, 1024) { Source = src1, Pbi388 = pbi1 };
             var pbi2 = NewPbi();
             ScriptSource? src2 = null;
             if (pend)
@@ -260,7 +260,7 @@ public class WwisePitchNodeTests
             var events = new List<string>();
             var extra = extraSpec.Length == 0 ? new Dictionary<string, string>() : extraSpec.Split(';').Select(x => x.Split('=', 2)).ToDictionary(x => x[0], x => x[1]);
             var src = new StubSource(events);
-            var voice = new WwiseLiveVoice(1, 64) { Source = src };
+            var voice = new WwiseLiveVoice(1, 64) { Source = src, Pbi388 = src.Pbi };
             voice.Buffer.Result = 0x2B;
             if (slotSpec.Length != 0)
                 foreach (var sl in slotSpec.Split(';'))
@@ -324,7 +324,7 @@ public class WwisePitchNodeTests
         pbi.StartOffset = startOffset; pbi.Word1B4 = word1B4; pbi.Flags1BD = flags1BD; pbi.Ratio = ratio;
         pbi.Word15C = 0x4101; pbi.SourceFormat158 = 48000; pbi.Byte160 = (byte)WwiseResamplerTests.FmtWord(true, 1); pbi.Byte161 = (byte)(WwiseResamplerTests.FmtWord(true, 1) >> 8);
         var src = new ScriptSource(events, "1", ParseBlocks(blocks), pbi, new[] { NewPbi(), NewPbi(), NewPbi() }, 1, true, 48000, 0x4101);
-        var voice = new WwiseLiveVoice(1, 1024) { Source = src };
+        var voice = new WwiseLiveVoice(1, 1024) { Source = src, Pbi388 = src.Pbi };
         voice.SourceNotReadyA55C14 = (_, _) => events.Add("handler");
         Assert.True(voice.StartResamplerA5321C());
         voice.Buffer.InitPassBlockA44A00();
@@ -399,7 +399,7 @@ public class WwisePitchNodeTests
         WwiseLiveVoice Rig(out StubSource src)
         {
             src = new StubSource(new List<string>());
-            var v = new WwiseLiveVoice(1, 64) { Source = src };
+            var v = new WwiseLiveVoice(1, 64) { Source = src, Pbi388 = src.Pbi };
             v.InsertFxSlots[3] = new WwiseVoiceInsertFxSlot { Execute38Hook = b => b.Result = 0x2D };
             v.Buffer.Result = 0x2B;
             return v;

@@ -418,6 +418,29 @@ public sealed class WwiseVoiceFilter
         LowPass.Reset();
         HighPass.Reset();
     }
+
+    /// <summary><c>[F+0x190]</c>: the channel word the init stored (<c>0xA764FC</c>); <c>byte [F+0x194]</c> is <see cref="Byte194"/>.</summary>
+    // fidelity: M6-022
+    public uint Word190 { get; private set; }
+
+    /// <summary><c>byte [F+0x194]</c> (<c>0xA764F0</c>): the init's third argument.</summary>
+    // fidelity: M6-022
+    public byte Byte194 { get; private set; }
+
+    /// <summary>
+    /// <c>0xA764D4(F, word, flag)</c> (<c>0xA54B74</c>, <c>0xA54D44</c>): stores <c>flag</c> and <c>word</c>, resets both bands (the blocks' initial state, <c>0xA76500..0xA7654C</c>) and allocates the two <c>(byte word) &lt;&lt; 4</c>-byte blocks (<c>0xA7655C</c>, <c>0xA7658C</c>):
+    /// an allocation failure (<paramref name="allocationFails"/>, called once per block) frees what was made and returns 2; otherwise 1.
+    /// </summary>
+    // fidelity: M6-022
+    public int InitA764D4(uint word, byte flag, Func<bool>? allocationFails)
+    {
+        Byte194 = flag;
+        Word190 = word;
+        Reset();
+        if (allocationFails?.Invoke() == true) return 2;           // 0xA76564 beq 0xA765D0 -> 0xA765FC mov r0,#2
+        if (allocationFails?.Invoke() == true) return 2;           // 0xA76598 beq 0xA765B0 ... mov r0,#2
+        return 1;
+    }
 }
 
 /// <summary>

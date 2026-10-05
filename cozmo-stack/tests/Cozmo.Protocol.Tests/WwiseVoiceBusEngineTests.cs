@@ -76,7 +76,6 @@ public sealed class WwiseVoiceBusEngineTests
     {
         var buses = new WwiseMixBusHierarchy();
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var deviceState = new WwiseOutputDeviceState();
         var pass = new WwiseVoiceBusPass(buses, deviceState).WithPrePassDoubles();
         pass.PostMixA5495C = _ => { }; pass.PostMixNoDataReadyA55CC4 = (_, _) => { };                  // M6-026 7.2: 0xA55CC4 / 0xA5495C after a mix are unread (test double)
@@ -103,37 +102,11 @@ public sealed class WwiseVoiceBusEngineTests
         voice.Connections.Add(connection);
         pass.Voices.Add(voice);
 
-        pass.VoicePass();
+        pass.VoicePass(1);
 
         Assert.Equal(1, pass.VoicesRendered);
         Assert.Equal(1, bus.State);                                   // MixInput set state 4 -> 1
         for (int i = 0; i < 8; i++) Close(0.5f, bus.Buffer[i]);       // 1.0 mono->mono gain
-    }
-
-    /// <summary>
-    /// M6-022 V7 (0xA54F1C, C15 V7-a/V7-order): the trivial live branch returns true; the E8 branch runs the
-    /// settled <c>0xA553A4</c> path and <c>0xA4C584</c> sets bit2 of every connection's <c>+0x6C</c> from the
-    /// saved <c>bus-&gt;vt+0x3C</c> return (0xA554D0), not from <c>voice-&gt;vt+0x58</c> (0xA554D8, discarded).
-    /// </summary>
-    [Fact]
-    public void TheVoiceStateMachineRunsTheSettledE8Path()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
-        var connection = new WwiseVoiceConnection(bus, 1, 1);
-        voice.Connections.Add(connection);
-        bus.SourceRequest3C = _ => 1;                                // 0xA553A4 accepted
-        voice.VoiceBit58 = () => false;                              // 0xA554D8 return is discarded
-
-        Assert.True(pass.RunVoiceStateMachine(voice));
-
-        voice.FlagE8 = true;                                         // 0xA55218 -> 0xA553A4
-        Assert.True(pass.RunVoiceStateMachine(voice));
-        Assert.True((connection.Flags6C & 0x04) != 0);               // 0xA4C584 bit2 from the bus return, not vt+0x58
-        Assert.False(voice.FlagE8);                                  // 0xA553C8 cleared
     }
 
     // ---------------------------------------------------------------- V18: the metering gap is explicit
@@ -344,7 +317,6 @@ public sealed class WwiseVoiceBusEngineTests
         var buses = new WwiseMixBusHierarchy();
         var key = new WwiseMixBusKey(0, 0, 7, 0);
         var bus = buses.GetOrCreate(key, () => new WwiseMixBus(key, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var deviceState = new WwiseOutputDeviceState();
         var sink = new RecordingSink();
         var device = new SinkDevice { DeviceKey28 = 7, Sink = sink };
@@ -361,7 +333,7 @@ public sealed class WwiseVoiceBusEngineTests
         voice.Connections.Add(dry);
         pass.Voices.Add(voice);
 
-        pass.VoicePass();                                            // V8/V14: source -> bus buffer
+        pass.VoicePass(1);                                            // V8/V14: source -> bus buffer
         pass.BusPass(deviceState.BusPassArg);                        // V17: bus -> 0x9E9E78 -> device sink
 
         Assert.Equal(1, pass.VoicesRendered);
@@ -433,355 +405,33 @@ public sealed class WwiseVoiceBusEngineTests
         Assert.Equal(3, record.State.Status);                        // 0x9E57E8 n == 0
     }
 
-    // ---------------------------------------------------------------- V7 callees
+    // ---------------------------------------------------------------- V7: 0xA4BC58 on the owner PBI (C41.1: param_2 = pbi+0xC; the earlier tests read a mix bus as the owner)
+
+    private static WwisePlayingInstance OwnerPbi()
+        => new(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, continuous: false);
+
+    private static WwiseVoiceConnection LineConnection(byte flags6C)
+        => new(new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8), 1, 1) { Flags6C = flags6C };
 
     /// <summary>
-    /// M6-022 V7-b (C15 V7-b): <c>0xA0228C</c> sets bit5 and increments the counters; <c>0xA022E8</c> is the
-    /// exact inverse and clears bit5.
+    /// M6-022 V7-o (C18 V7-o/X3, <c>0xA4BE80..0xA4BF34</c>; C41.1: <c>param_2 = [source+0xC]+0xC = pbi+0xC</c>): the four float minima are zeroed at entry, set to 100.0 when <c>id != 0</c>, then reduced to the running minima of
+    /// <c>[conn+0x50/+0x54/+0x58/+0x5C]</c>. The per-connection copy reads <c>[param_2+0x3C]/[param_2+0x40]</c> = <c>[pbi+0x48]/[pbi+0x4C]</c>, not the voice: <c>[conn+0x50]=[pbi+0x48]</c>, <c>[conn+0x58]=[pbi+0x4C]</c>, <c>[conn+0x54]=[conn+0x5C]=0</c>.
     /// </summary>
     [Fact]
-    public void TheBusRefAcquireReleasePairInverts()
+    public void TheBc58ConnectionCopyReadsTheOwnerPbiNotTheVoice()
     {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8)
-        {
-            RefCountArray1EC = new[] { 0, 0 },
-            RefCount1F0 = 2,
-        };
-        WwiseVoiceBusPass.BusRefGlobal = 0;                          // process-wide native global; isolate
-
-        WwiseVoiceBusPass.AcquireBusRef(bus);
-        Assert.True((bus.Flags1BE & 0x20) != 0);
-        Assert.Equal(new[] { 1, 1 }, bus.RefCountArray1EC);
-        Assert.Equal(1, WwiseVoiceBusPass.BusRefGlobal);
-
-        WwiseVoiceBusPass.ReleaseBusRef(bus);
-        Assert.False((bus.Flags1BE & 0x20) != 0);
-        Assert.Equal(new[] { 0, 0 }, bus.RefCountArray1EC);
-        Assert.Equal(0, WwiseVoiceBusPass.BusRefGlobal);
-    }
-
-    /// <summary>
-    /// M6-022 V12-vt (C15 V12-vt): the voice insert-FX slot stores vtable <c>0x103DC38</c> when a plug-in is
-    /// present and <c>0x103DB98</c> otherwise.
-    /// </summary>
-    [Fact]
-    public void TheVoiceInsertFxSlotStoresTheC15Vtable()
-    {
-        var slot = new WwiseVoiceInsertFxSlot();
-        Assert.Equal(WwiseVoiceInsertFxSlot.NoPluginVtable, slot.Vtable);
-        slot.HasPlugin = true;
-        Assert.Equal(WwiseVoiceInsertFxSlot.PluginVtable, slot.Vtable);
-        slot.Initialise();
-        Assert.True(slot.Initialised);
-    }
-
-    // ---------------------------------------------------------------- V7: the P2F==0 branch 0xA5532C
-
-    /// <summary>
-    /// M6-022 V7 (0xA5532C, report voice-callees Q4 lines 218-227): the <c>P2F==0</c> path reached from
-    /// <c>0xA550C8</c>. A first-frame voice (cd8 clear, so <c>0xA4BC58</c> returns P2F=0) with <c>E4==1</c>
-    /// runs <c>voice-&gt;vt+0x48</c>, takes the shared tail (<c>[voice+0xCD] |= 8</c>) and returns 0.
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathStopsOnE4One()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1 };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-        bool stopped = false;
-        voice.VoiceStop48 = () => stopped = true;
-
-        Assert.False(pass.RunVoiceStateMachine(voice));              // 0xA55344 -> 0xA5521C tail
-        Assert.True(stopped);
-        Assert.True((voice.FlagsCD & 8) != 0);                       // [voice+0xCD] |= 8
-    }
-
-    /// <summary>
-    /// M6-022 V7 (0xA5532C, report Q4 lines 218-227): <c>E4==2</c>, <c>A==0</c>, <c>[voice+0xE0]==1</c>:
-    /// when <c>[bus+0x1D8] &lt; s</c> the path calls <c>voice+0x1C0-&gt;vt+0x10(&amp;s)</c> with the
-    /// <c>0xA55090</c> sample count; then the shared tail. Here s = round(4 * 1.0) = 4 and the budget is 2.
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathCallsFilterRequest10WithTheSampleCount()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8)
-        {
-            Source = new ConstantSource(0.5f, 8),
-            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
-            E4 = 2,
-            E0 = 1,
-        };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-        voice.Buffer.ValidFrames = 4;                                // params+0xC
-        bus.SampleScale164 = 1f;                                     // bus+0x164
-        bus.FrameBudget = 2;                                         // bus+0x1D8 < s
-        int? got = null;
-        voice.FilterRequest10 = v => { got = v; return v; };          // seam stores params+0x28
-
-        Assert.False(pass.RunVoiceStateMachine(voice));
-        Assert.Equal(4, got);
-        Assert.Equal(4, voice.Buffer.Result);                        // params+0x28 = vt+0x10 return
-        Assert.True((voice.FlagsCD & 8) != 0);
-    }
-
-    /// <summary>
-    /// M6-022 V7 (0xA5532C, report Q4 lines 218-227): <c>E4==2</c>, <c>A=[voice+0xCD]&amp;1</c> set:
-    /// <c>voice+0x1C0-&gt;vt+0x14(E0)</c> runs, and <c>voice+0x1C0-&gt;vt+0xC</c> runs only when
-    /// <c>[voice+0xE0] != 2</c>.
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathRunsTheFilterRequestsInOrder()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8)
-        {
-            Source = new ConstantSource(0.5f, 8),
-            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
-            E4 = 2,
-            E0 = 5,
-            FlagsCD = 1,                                             // A set, cd8 clear
-        };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-        bool req14 = false, req0c = false;
-        voice.FilterRequest14 = _ => { req14 = true; return 0; };
-        voice.FilterRequest0C = () => req0c = true;
-
-        Assert.False(pass.RunVoiceStateMachine(voice));
-        Assert.True(req14);
-        Assert.True(req0c);
-
-        req14 = req0c = false;
-        voice.E0 = 2;                                                // ==2: only vt+0x14
-        voice.FlagsCD = 1;
-        Assert.False(pass.RunVoiceStateMachine(voice));
-        Assert.True(req14);
-        Assert.False(req0c);
-    }
-
-    /// <summary>
-    /// M6-022 V7 (0xA5532C, report Q4 lines 218-227): <c>E4</c> not 1 and not 2 continues at
-    /// <c>0xA55218</c> with <c>r5=1</c>, so the voice is live. The budget is set so the later step does not
-    /// clear r5 (C16 V7-i).
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathContinuesForTheOtherE4Codes()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 0 };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-
-        Assert.True(pass.RunVoiceStateMachine(voice));               // -> 0xA55218
-    }
-
-    /// <summary>
-    /// M6-022 V7-l (C17 V7-l): the <c>P2F==0</c> path joins the common continuation at <c>0xA5521C</c>, so
-    /// the E8 gate <c>0xA553A4</c> runs for it too. A first-frame voice (cd8 clear, connection bit1 set so
-    /// <c>fp=0</c> gives <c>P2F=0</c>) with E8 set calls <c>bus-&gt;vt+0x3C</c> and clears E8 bit0; the
-    /// return-1 path sets connection bit2 from that bus return even though <c>voice-&gt;vt+0x58</c> is false.
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathRunsTheCommonContinuationE8Gate()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1, FlagE8 = true };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // fp = 0 -> P2F = 0
-        voice.VoiceRequest3C = () => 0;
-        bool called = false;
-        bus.SourceRequest3C = _ => { called = true; return 1; };      // 0xA553A4/0xA553B4
-        voice.VoiceBit58 = () => false;
-
-        Assert.False(pass.RunVoiceStateMachine(voice));              // E4==1 -> r5=0
-
-        Assert.True(called);                                         // the E8 gate ran on the P2F==0 path
-        Assert.True((voice.Connections[0].Flags6C & 0x04) != 0);     // 0xA4C584 bit2 from the bus return
-        Assert.False(voice.FlagE8);                                  // 0xA553C8 cleared bit0
-        Assert.True((voice.FlagsCD & 8) != 0);                       // 0xA5528C tail
-    }
-
-    /// <summary>
-    /// M6-022 V7-l (C18, 0xA555A0/0xA555B4/0xA553C8): the E8 gate's <c>bus-&gt;vt+0x3C</c> return-2 path
-    /// calls <c>voice-&gt;vt+0x48</c> and sets <c>r5=0</c>, and it still reaches the <c>0xA553C8</c> clear
-    /// that drops E8 bit0 before the common continuation.
-    /// </summary>
-    [Fact]
-    public void TheE8GateReturnTwoStopsTheVoiceAndClearsE8()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;                                        // the budget step does not clear r5
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), FlagE8 = true };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-        bool stopped = false;
-        voice.VoiceStop48 = () => stopped = true;                    // 0xA555A0 voice->vt+0x48
-        bus.SourceRequest3C = _ => 2;                                // 0xA553B4 return 2
-
-        Assert.False(pass.RunVoiceStateMachine(voice));              // 0xA555A0 r5 = 0
-
-        Assert.True(stopped);                                        // the stop path ran
-        Assert.False(voice.FlagE8);                                  // 0xA555B4 -> 0xA553C8 cleared bit0
-    }
-
-    /// <summary>
-    /// M6-022 V7-k (C17 item 3): after the A-set <c>0xA55534</c> branch calls <c>vt+0xC</c>,
-    /// <c>0xA55498</c> re-checks <c>[voice+0xE0]==1</c> and branches to <c>0xA5556C</c>, so <c>vt+0x10</c>
-    /// runs and its return is stored in <c>params+0x28</c>.
-    /// </summary>
-    [Fact]
-    public void TheP2FZeroPathRechecksE0OneAfterTheASetFilterRequest()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8)
-        {
-            Source = new ConstantSource(0.5f, 8),
-            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
-            E4 = 2,
-            E0 = 1,
-            FlagsCD = 1,                                             // A set
-        };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
-        voice.Buffer.ValidFrames = 4;                                // params+0xC
-        bus.SampleScale164 = 1f;                                     // s = 4
-        bus.FrameBudget = 2;                                         // [bus+0x1D8] < s
-        bool req14 = false, req0c = false;
-        voice.FilterRequest14 = _ => { req14 = true; return 0; };
-        voice.FilterRequest0C = () => req0c = true;
-        voice.FilterRequest10 = v => { Assert.Equal(4, v); return 7; };
-
-        Assert.False(pass.RunVoiceStateMachine(voice));
-
-        Assert.True(req14);                                          // 0xA55544/48
-        Assert.True(req0c);                                          // 0xA55560/64 -> 0xA55498
-        Assert.Equal(7, voice.Buffer.Result);                        // params+0x28 = vt+0x10 return
-    }
-
-    // ---------------------------------------------------------------- V7-m: the four parameter ramps
-
-    /// <summary>
-    /// M6-022 V7-m (C17 V7-m): the four parameter ramps run only when <c>P2F!=0</c> and
-    /// <c>[voice+0x28]!=0</c>. Each record whose clamped target differs from its stored target sets
-    /// <c>flag=1</c>, stores the clamped target and applies <c>cur += (target_old-cur)*0.125*rate</c>.
-    /// Ramps 2/4 first <c>max(target,[bus+0x68]/[bus+0x6C])</c>; all clamp to 100 and floor at 0.
-    /// </summary>
-    [Fact]
-    public void TheFourParameterRampsFollowC17V7m()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8) };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });  // fp = 1 -> P2F = 1
-        voice.VoiceRequest3C = () => 0;                              // vt3c==0
-
-        // [sp+0x2e]==0: the copy is skipped and the targets are the 0xA4BC58 minima. Here id==0, so the
-        // per-connection loop did not run and the minima are the entry zeros. Ramp 1: 0 != 50 ->
-        // cur += (50-10)*0.125*8 = 50.
-        voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
-        // Ramp 2: max(0,[bus+0x68]=200) = 200, clamp to 100 -> cur += (50-10)*0.125*8 = 50.
-        voice.Ramp510.Target = 50f; voice.Ramp510.Current = 10f; voice.Ramp510.Rate = 8;
-        bus.RampFloor68 = 200f;
-
-        Assert.False(pass.RunVoiceStateMachine(voice));              // r5 cleared by the budget step (s=0)
-
-        Assert.Equal(1, voice.Ramp340.Flag);
-        Assert.Equal(0f, voice.Ramp340.Target);
-        Close(50f, voice.Ramp340.Current);
-        Assert.Equal(1, voice.Ramp510.Flag);
-        Assert.Equal(100f, voice.Ramp510.Target);
-        Close(50f, voice.Ramp510.Current);
-        Assert.Equal(0, voice.Ramp350.Flag);                         // target 0 == stored 0: untouched
-        Assert.Equal(0, voice.Ramp520.Flag);
-    }
-
-    /// <summary>
-    /// M6-022 V7-m/V7-p (C17 V7-m, C18 V7-p, <c>0xA5505C..0xA5508C</c>): when
-    /// <see cref="WwiseLiveVoice.Run2E"/> (<c>[sp+0x2e]</c>) is non-zero the ramp target is the voice
-    /// target field itself, so an out-of-range target is clamped in place (150 -&gt; 100) and the ramp uses
-    /// the pre-store target as <c>target_old</c>: <c>10 + (150-10)*0.125*8 = 150</c>. Here the connection's
-    /// bit1 is set and <c>cd8</c> is set, so <c>0xA4BC58</c> leaves the aggregate run flag 1 and returns
-    /// <c>P2F=1</c>.
-    /// </summary>
-    [Fact]
-    public void TheFourParameterRampsCopyTheVoiceTargetsWhen2EIsSet()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8)
-        {
-            Source = new ConstantSource(0.5f, 8),
-            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
-            FlagsCD = 8,                                             // cd8 set
-        };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // bit1 set -> run stays 1
-        voice.VoiceRequest3C = () => 0;                              // vt3c == 0
-        voice.Ramp340.Target = 150f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
-
-        Assert.False(pass.RunVoiceStateMachine(voice));
-
-        Assert.True(voice.Run2E);                                    // [sp+0x2e] != 0
-        Assert.Equal(1, voice.Ramp340.Flag);
-        Assert.Equal(100f, voice.Ramp340.Target);                    // clamped in place
-        Close(150f, voice.Ramp340.Current);                          // 10 + (150-10)*1
-    }
-
-    /// <summary>
-    /// M6-022 V7-m (C17 V7-m): the ramps are gated on <c>P2F!=0</c>. On the P2F==0 path a set target is
-    /// left untouched.
-    /// </summary>
-    [Fact]
-    public void TheFourParameterRampsDoNotRunWhenP2FIsZero()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1 };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // fp = 0 -> P2F = 0
-        voice.VoiceRequest3C = () => 0;
-        voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
-
-        pass.RunVoiceStateMachine(voice);
-
-        Assert.Equal(0, voice.Ramp340.Flag);
-        Assert.Equal(50f, voice.Ramp340.Target);
-        Assert.Equal(10f, voice.Ramp340.Current);
-    }
-
-    /// <summary>
-    /// M6-022 V7-o (C18 V7-o/X3, <c>0xA4BE80..0xA4BF34</c>): the four float minima are zeroed at entry,
-    /// set to 100.0 when <c>id != 0</c>, then reduced to the running minima of
-    /// <c>[conn+0x50/+0x54/+0x58/+0x5C]</c>. The per-connection copy reads <c>param_2 = [source+0xC]+0xC</c>
-    /// (the bus's <c>+0x48/+0x4C</c>), not the voice: <c>[conn+0x50]=[bus+0x48]</c>,
-    /// <c>[conn+0x58]=[bus+0x4C]</c>, <c>[conn+0x54]=[conn+0x5C]=0</c>.
-    /// </summary>
-    [Fact]
-    public void TheBc58ConnectionCopyReadsParam2NotTheVoice()
-    {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f, Param2_40 = 7f };
+        var pbi = OwnerPbi();
+        pbi.Lpf48 = 5f; pbi.Hpf4C = 7f;
+        pbi.Flags1BE = 0x04;                                         // voice->vt+0x3C = 0xA55E90 = ([pbi+0x1BE] & 0x14) != 0 (gapE 3.3): vt3c != 0 -> main loop + tail
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
-        var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };  // sb clear
+        var connection = LineConnection(0);                          // sb clear
         voice.Connections.Add(connection);
-        voice.VoiceRequest3C = () => 1;                              // vt3c != 0 -> main loop + tail
 
-        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, pbi, 1f, 0);
 
         Assert.True(p2f);
-        Assert.Equal(5f, connection.C50);                            // [bus+0x48]
-        Assert.Equal(7f, connection.C58);                            // [bus+0x4C]
+        Assert.Equal(5f, connection.C50);                            // [pbi+0x48]
+        Assert.Equal(7f, connection.C58);                            // [pbi+0x4C]
         Assert.Equal(0f, connection.C54);
         Assert.Equal(0f, connection.C5C);
         Assert.Equal(5f, voice.OutputMin50[0]);                      // min(100, 5)
@@ -791,163 +441,99 @@ public sealed class WwiseVoiceBusEngineTests
     }
 
     /// <summary>
-    /// M6-022 V7-p (C18 V7-p): when <c>[sp+0x2e]==0</c> the copy at <c>0xA55068..0xA5508C</c> is skipped
-    /// and the four ramp targets are the <c>0xA4BC58</c> minima, not zero. Here <c>id=1</c>, the single
-    /// connection's bit1 is clear and <c>vt3c==0</c>, so <c>Run2E=0</c> and the minima are
-    /// <c>[5,0,7,0]</c> from <c>[bus+0x48]/[bus+0x4C]</c>.
-    /// </summary>
-    [Fact]
-    public void TheFourParameterRampsUseTheConnectionMinimaWhen2EIsZero()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.Param2_3C = 5f;
-        bus.Param2_40 = 7f;
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), Word0xF0 = 1 };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });  // bit1 clear
-        voice.VoiceRequest3C = () => 0;                              // vt3c == 0 -> Run2E = run = 0
-        voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
-        voice.Ramp350.Target = 40f; voice.Ramp350.Current = 10f; voice.Ramp350.Rate = 8;
-
-        pass.RunVoiceStateMachine(voice);
-
-        Assert.False(voice.Run2E);
-        Assert.Equal(5f, voice.OutputMin50[0]);
-        Assert.Equal(7f, voice.OutputMin50[2]);
-        Assert.Equal(5f, voice.Ramp340.Target);                      // the minimum, not 0
-        Close(50f, voice.Ramp340.Current);                           // 10 + (50-10)*0.125*8
-        Assert.Equal(7f, voice.Ramp350.Target);
-        Close(40f, voice.Ramp350.Current);                           // 10 + (40-10)*0.125*8
-    }
-
-    /// <summary>
-    /// M6-022 V7-q (C18 V7-q, <c>0xA5572C</c>): the second <c>0xA4BC58</c> call on the <c>0xA555F0</c>
-    /// completion path passes the same <c>&amp;sp+0x2e</c>/<c>&amp;sp+0x2f</c> but its float outputs go to
-    /// <c>sp+0x40</c>, so it rewrites <c>Run2E</c>/<c>P2F</c> after the ramps without touching
-    /// <c>OutputMin50</c>. Here the first call sees <c>vt3c=1</c> (<c>Run2E=1</c>, <c>P2F=0</c>) and the
-    /// second sees <c>vt3c=0</c> with the connection's bit1 clear (<c>Run2E=0</c>, <c>P2F=1</c>).
-    /// </summary>
-    [Fact]
-    public void TheSecondBc58CallRewritesRun2EAndP2FAfterTheRamps()
-    {
-        var buses = new WwiseMixBusHierarchy();
-        var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
-        bus.FrameBudget = -1;                                        // the budget step does not clear r5
-        bus.FlagsE8 = 0x20;                                          // the 0xA555F0 state-0x11 tail runs
-        bus.FlagsE9 = 1;
-        var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 0 };
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0, C60 = 1f });
-        int calls = 0;
-        voice.VoiceRequest3C = () => calls++ == 0 ? 1 : 0;           // first call Run2E=1, second Run2E=0
-
-        Assert.True(pass.RunVoiceStateMachine(voice));
-
-        Assert.Equal(2, calls);                                      // the 0xA5572C call ran
-        Assert.False(voice.Run2E);                                   // rewritten by the second call
-        Assert.True(voice.P2F);                                      // rewritten by the second call
-    }
-
-    // ---------------------------------------------------------------- V7: 0xA4BC58 tail gating
-
-    /// <summary>
-    /// M6-022 V7/C1 (0xA4BC58, C12 voice-callees Q4, finding 3): on the <c>!cd8</c> branch with
-    /// <c>vt3c!=0</c> the native overwrites fp with <c>cd8 &amp; 8</c> (=0) at <c>0xA4C05C</c>, so
-    /// <c>0xA4BD6C</c> skips both the main loop and the tail. Only <c>SetBit2 = vt3c &amp; 1</c> runs.
+    /// M6-022 V7/C1 (0xA4BC58, C12 voice-callees Q4, finding 3): on the <c>!cd8</c> branch with <c>vt3c!=0</c> the native overwrites fp with <c>cd8 &amp; 8</c> (=0) at <c>0xA4C05C</c>, so <c>0xA4BD6C</c> skips both the main loop and the tail. Only <c>SetBit2 = vt3c &amp; 1</c> runs.
+    /// The propagated words are <c>[pbi+0xB4..0xC0]</c> to <c>[pbi+0xC4..0xD0]</c> and the cleared bit is bit 4 of <c>[pbi+0xE8]</c> (<c>[param_2+0xDC]</c>).
     /// </summary>
     [Fact]
     public void TheBc58FirstFrameDefersTheGainsAndSkipsTheTail()
     {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f };
+        var pbi = OwnerPbi();
+        pbi.Lpf48 = 5f; pbi.PanB4 = 7f; pbi.FieldC4 = 0f; pbi.Flags0E8 = 0x10; pbi.Flags1BE = 0x04;
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
-        bus.ParamsA8B4[0] = 7f;
-        bus.Param2_DC = 0x10;                                        // [param_2+0xDC] bit4
-        var connection = new WwiseVoiceConnection(bus, 1, 1);
+        var connection = LineConnection(0);
         voice.Connections.Add(connection);
-        voice.VoiceRequest3C = () => 1;                              // vt3c != 0
 
-        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, pbi, 1f, 0);
 
         Assert.False(p2f);                                           // *param_7 = 0
         Assert.Equal(0x04, connection.Flags6C & 0x04);               // 0xA4BD54 bfi = vt3c & 1
         Assert.Equal(0f, voice.OutputMin50[0]);                      // main loop did not run
-        Assert.Equal(0f, bus.ParamsB8C4[0]);                         // tail did not run
-        Assert.Equal(0x10, bus.Param2_DC);                           // bit4 not cleared
+        Assert.Equal(0f, pbi.FieldC4);                               // tail did not run
+        Assert.Equal(0x10, pbi.Flags0E8);                            // bit4 not cleared
     }
 
     /// <summary>
-    /// M6-022 V7/C1 (0xA4BC58, finding 2): the <c>0xA4C080</c> skip is
-    /// <c>vt3c!=0 &amp;&amp; cd8 &amp;&amp; sb</c>; the other cd8 branches run the tail. With cd8 set and
-    /// sb clear the main loop and the tail run.
+    /// M6-022 V7/C1 (0xA4BC58, finding 2): the <c>0xA4C080</c> skip is <c>vt3c!=0 &amp;&amp; cd8 &amp;&amp; sb</c>; the other cd8 branches run the tail. With cd8 set and sb clear the main loop and the tail run.
     /// </summary>
     [Fact]
     public void TheBc58TailRunsOnTheCd8SbClearBranch()
     {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8) { Param2_3C = 5f };
+        var pbi = OwnerPbi();
+        pbi.Lpf48 = 5f; pbi.PanB4 = 7f; pbi.PanB8 = 8f; pbi.PanBC = 9f; pbi.PanC0 = 3; pbi.Flags0E8 = 0x10; pbi.Flags1BE = 0x04;
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
-        bus.ParamsA8B4[0] = 7f;
-        bus.Param2_DC = 0x10;
-        var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 };  // sb clear
+        var connection = LineConnection(0);                          // sb clear
         voice.Connections.Add(connection);
-        voice.VoiceRequest3C = () => 1;
 
-        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, pbi, 1f, 0);
 
         Assert.True(p2f);                                            // -> 0xA4C010 p2f=1
-        Assert.Equal(5f, voice.OutputMin50[0]);                      // main loop ran: min(100, param_2+0x3C=5)
-        Assert.Equal(7f, bus.ParamsB8C4[0]);                         // 0xA4BFC4 propagated
-        Assert.Equal(0, bus.Param2_DC);                              // 0xA4BFD4 cleared bit4
+        Assert.Equal(5f, voice.OutputMin50[0]);                      // main loop ran: min(100, param_2+0x3C = [pbi+0x48] = 5)
+        Assert.Equal(7f, pbi.FieldC4);                               // 0xA4BFC4 propagated [pbi+0xB4..0xC0] to [pbi+0xC4..0xD0]
+        Assert.Equal(8f, pbi.FieldC8);
+        Assert.Equal(9f, pbi.FieldCC);
+        Assert.Equal(3, pbi.FieldD0);
+        Assert.Equal(0, pbi.Flags0E8);                               // 0xA4BFD4 cleared bit4 of [pbi+0xE8]
     }
 
     /// <summary>
-    /// M6-022 V7/C1 (0xA4BC58, finding 2): the <c>0xA4C080</c> skip
-    /// (<c>vt3c!=0 &amp;&amp; cd8 &amp;&amp; sb</c>) leaves the tail out and the p2f is 0.
+    /// M6-022 V7/C1 (0xA4BC58, finding 2): the <c>0xA4C080</c> skip (<c>vt3c!=0 &amp;&amp; cd8 &amp;&amp; sb</c>) leaves the tail out and the p2f is 0.
     /// </summary>
     [Fact]
     public void TheBc58TailIsSkippedOnTheCd8SbSetBranch()
     {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
+        var pbi = OwnerPbi();
+        pbi.PanB4 = 7f; pbi.FieldC4 = 0f; pbi.Flags0E8 = 0x10; pbi.Flags1BE = 0x04;
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 8 };
-        bus.ParamsA8B4[0] = 7f;
-        bus.Param2_DC = 0x10;
-        var connection = new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x04 };  // sb set
-        voice.Connections.Add(connection);
-        voice.VoiceRequest3C = () => 1;
+        voice.Connections.Add(LineConnection(0x04));                 // sb set
 
-        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
+        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice, pbi, 1f, 0);
 
         Assert.False(p2f);
-        Assert.Equal(0f, bus.ParamsB8C4[0]);
-        Assert.Equal(0x10, bus.Param2_DC);
+        Assert.Equal(0f, pbi.FieldC4);
+        Assert.Equal(0x10, pbi.Flags0E8);
     }
 
     /// <summary>
-    /// M6-022 V7/C1 (0xA4BC58, finding 2): on the <c>vt3c==0, !cd8</c> branch the tail is gated by fp at
-    /// <c>0xA4BD6C</c>: fp==0 skips it, fp!=0 runs the main loop and the tail.
+    /// M6-022 V7/C1 (0xA4BC58, finding 2; verification D1): on the <c>vt3c==0, !cd8</c> branch the tail is gated by fp at <c>0xA4BD6C</c>: fp==0 skips it (bit 2 = 1), fp!=0 sets bit 2 to <c>arg5</c> (<c>src-&gt;vt+0x4C</c>, bit 6 of <c>byte [pbi+0x1BE]</c>), runs the main loop and the tail.
     /// </summary>
     [Fact]
     public void TheBc58TailFollowsFpOnTheVt3cZeroFirstFrame()
     {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
+        var pbi = OwnerPbi();
+        pbi.PanB4 = 7f; pbi.FieldC4 = 0f; pbi.Flags0E8 = 0x10;       // [pbi+0x1BE] & 0x14 == 0: vt3c == 0
         // fp == 0: the only connection has bit1 set.
         var voice = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
-        bus.ParamsA8B4[0] = 7f;
-        bus.Param2_DC = 0x10;
-        voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });
-        voice.VoiceRequest3C = () => 0;
-        WwiseVoiceBusPass.UpdateConnectionGains(voice, bus, 1f);
-        Assert.Equal(0f, bus.ParamsB8C4[0]);                         // fp==0 -> skip
-        Assert.Equal(0x10, bus.Param2_DC);
+        var held = LineConnection(0x02);
+        voice.Connections.Add(held);
+        WwiseVoiceBusPass.UpdateConnectionGains(voice, pbi, 1f, 0);
+        Assert.Equal(0f, pbi.FieldC4);                               // fp==0 -> skip
+        Assert.Equal(0x10, pbi.Flags0E8);
+        Assert.Equal(0x04, held.Flags6C & 0x04);                     // 0xA4BD40: bit 2 = 1
 
-        // fp != 0: bit1 clear.
+        // fp != 0: bit1 clear; bit 2 takes arg5.
         var voice2 = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
-        voice2.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });
-        voice2.VoiceRequest3C = () => 0;
-        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice2, bus, 1f);
+        var open = LineConnection(0);
+        voice2.Connections.Add(open);
+        bool p2f = WwiseVoiceBusPass.UpdateConnectionGains(voice2, pbi, 1f, 0);
         Assert.True(p2f);                                            // p2f = fp
-        Assert.Equal(7f, bus.ParamsB8C4[0]);                         // tail ran
-        Assert.Equal(0, bus.Param2_DC);
+        Assert.Equal(7f, pbi.FieldC4);                               // tail ran
+        Assert.Equal(0, pbi.Flags0E8);
+        Assert.Equal(0, open.Flags6C & 0x04);                        // 0xA4C024: bit 2 = arg5 = 0
+        var voice3 = new WwiseLiveVoice(1, 8) { Word0xF0 = 1, FlagsCD = 0 };
+        var open3 = LineConnection(0);
+        voice3.Connections.Add(open3);
+        WwiseVoiceBusPass.UpdateConnectionGains(voice3, pbi, 1f, 1);
+        Assert.Equal(0x04, open3.Flags6C & 0x04);                    // arg5 = 1
     }
 
     // ---------------------------------------------------------------- V7: the settled ducking threshold
@@ -1172,46 +758,6 @@ public sealed class WwiseVoiceBusEngineTests
 
 public class WwiseVoiceBusPassNextSourceTests
 {
-    [Theory]
-    [InlineData(0, 1)]
-    [InlineData(9, 2)]
-    public void NextSourceCode3IsMappedThroughVt120To1Or2AndTheRawThreeIsNeverStored_C27Step4(int vt120, int stored)
-    {
-        // C27 step 4 further facts (0xA017A4 cmp r0,#3; 0xA017C8..0xA017E4): a 0x9EEDA4 result of 3 is mapped through
-        // vt+0x120: 0 gives 1, otherwise 2; only the mapped value is stored.
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8)
-        {
-            NextSourceEda = _ => (3, 4),
-            E0Arg14C = 0x14C,
-        };
-        int? seen = null;
-        bus.E0Vt120 = a => { seen = a; return vt120; };
-
-        int code = WwiseVoiceBusPass.NextSource(bus, out int index);
-
-        Assert.Equal(stored, code);
-        Assert.Equal(4, index);
-        Assert.Equal(0x14C, seen);
-        Assert.Equal(stored, (bus.NextSource1BB >> 3) & 0xF);
-        Assert.NotEqual(3, (bus.NextSource1BB >> 3) & 0xF);
-    }
-
-    [Fact]
-    public void NextSourceSeamsAreRequiredAndAThrowCachesNothing_C27Step4()
-    {
-        var bus = new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8);
-        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseVoiceBusPass.NextSource(bus, out _));
-        Assert.Equal(0, bus.NextSource1BB);
-
-        bus.NextSourceEda = _ => (3, 0);
-        Assert.Throws<WwiseMissingBehaviourException>(() => WwiseVoiceBusPass.NextSource(bus, out _));
-        Assert.Equal(0, bus.NextSource1BB);
-
-        bus.NextSourceEda = _ => (2, 1);                                     // code 2: vt+0x120 is not reached
-        Assert.Equal(2, WwiseVoiceBusPass.NextSource(bus, out int index));
-        Assert.Equal(1, index);
-    }
-
     // ------------------------------------------------------------------ the voice pass's required collaborators (M6-022 V5, C30)
 
     /// <summary>A source that is never rendered (the voice is in state 0 and is stopped by the pass).</summary>
@@ -1251,7 +797,7 @@ public class WwiseVoiceBusPassNextSourceTests
         pass.DuckPrePass = () => log.Add("A43D24");
         pass.NodeCleanup = () => log.Add("A39564");
 
-        pass.VoicePass();
+        pass.VoicePass(1);
 
         Assert.Equal(new[] { "9D3CC0", "A43D24", "A39564", "destroy" }, log);
         Assert.Equal(2, voice.State);
@@ -1271,7 +817,7 @@ public class WwiseVoiceBusPassNextSourceTests
         if (unset != 1) pass.DuckPrePass = () => log.Add("A43D24");
         if (unset != 2) pass.NodeCleanup = () => log.Add("A39564");
 
-        Assert.Throws<WwiseMissingBehaviourException>(() => pass.VoicePass());
+        Assert.Throws<WwiseMissingBehaviourException>(() => pass.VoicePass(1));
 
         Assert.Equal(new[] { "9D3CC0", "A43D24", "A39564" }.Take(unset).ToArray(), log);   // only the collaborators before the unset one ran
         Assert.Equal(0, voice.State);                                  // the voice walk did not run
@@ -1310,6 +856,9 @@ internal static class WwisePrePassTestDoubles
         pass.AdvanceTickCounters ??= () => { };
         pass.DuckPrePass ??= () => { };
         pass.NodeCleanup ??= () => { };
+        // V7 (0xA54F1C) now runs for every state-1 voice: its build 0xA54A30 and the context call of its tail are test doubles here (the V7 values are WwiseVoiceStateOracleTests').
+        pass.StartStreamOverrideA54A30 ??= _ => 1;
+        pass.CalcEffectiveParamsVt24 ??= _ => { };
         return pass;
     }
 }

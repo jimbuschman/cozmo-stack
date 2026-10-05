@@ -199,101 +199,6 @@ public sealed class WwiseMixBus
     /// </summary>
     public WwiseBusMeter? Meter { get; set; }
 
-    // ---------------------------------------------------------------- V7 state-machine fields
-    //
-    // The V7 per-voice state machine (0xA54F1C, C12 voice-callees Q4) reads these bus fields. The semantics
-    // of most are UNKNOWN (the record names the offsets and the branches only), so they are caller inputs and
-    // default to values that leave the ordinary render path running.
-
-    /// <summary>V7 prologue <c>bus+0x1F8</c>: -1 = absent, 0 = returns 0, else <c>params+0x2C=1</c>.</summary>
-    public int NextSourceParam { get; set; } = -1;
-
-    /// <summary>V7 <c>bus+0x1D8</c>: the frame budget the state machine decrements.</summary>
-    public int FrameBudget { get; set; }
-
-    /// <summary>V7 <c>bus+0x1DC</c>/<c>bus+0x1E0</c>: the two arguments of <c>0xA56650</c>.</summary>
-    public int AuxArg1DC { get; set; }
-    public int AuxArg1E0 { get; set; }
-
-    /// <summary>V7 <c>bus+0xE8</c>/<c>bus+0xE9</c>: the duck/stop flags.</summary>
-    public byte FlagsE8 { get; set; }
-    public byte FlagsE9 { get; set; }
-
-    /// <summary>V7 <c>bus+0x1BE</c>: the bit5 acquire latch, bit3 source attach, bit2 node cleanup.</summary>
-    public byte Flags1BE { get; set; }
-
-    /// <summary>V7 <c>bus+0xC4</c>: set to 101.0 on the state-0x11 tail.</summary>
-    public float C4 { get; set; }
-
-    /// <summary>V7 gain <c>bus+0x54</c>/<c>bus+0x11C</c>.</summary>
-    public float Gain54 { get; set; }
-    public float Gain11C { get; set; }
-
-    /// <summary>V7 <c>bus+0x58</c> bit0: scales the gain by <c>[source+8]</c>.</summary>
-    public byte Gain58 { get; set; }
-
-    /// <summary>
-    /// V7-m <c>bus+0x68</c> (C17 V7-m): the floor ramp 2 applies before the 0..100 clamp
-    /// (<c>0xA5510C/0xA55118</c>). The field's semantic name is UNKNOWN, so it is a caller input.
-    /// </summary>
-    public float RampFloor68 { get; set; }
-
-    /// <summary>
-    /// V7-m <c>bus+0x6C</c> (C17 V7-m): the floor ramp 4 applies before the 0..100 clamp
-    /// (<c>0xA55180/0xA5518C</c>). The field's semantic name is UNKNOWN, so it is a caller input.
-    /// </summary>
-    public float RampFloor6C { get; set; }
-
-    /// <summary>
-    /// V7/C1 <c>0xA4BC58</c> (C18 X3): <c>param_2 = [source+0xC]+0xC</c> and <c>[source+0xC]</c> is the bus,
-    /// so this is <c>[bus+0x48]</c> = <c>[param_2+0x3C]</c>. It is copied to every connection's
-    /// <c>+0x50</c> before the <c>0xA5975C</c> conversion and the minima. The field's semantic name is
-    /// UNKNOWN, so it is a caller input.
-    /// </summary>
-    // fidelity: M6-022
-    public float Param2_3C { get; set; }
-
-    /// <summary>
-    /// V7/C1 <c>0xA4BC58</c> (C18 X3): <c>[bus+0x4C]</c> = <c>[param_2+0x40]</c>, copied to every
-    /// connection's <c>+0x58</c>. The field's semantic name is UNKNOWN, so it is a caller input.
-    /// </summary>
-    public float Param2_40 { get; set; }
-
-    /// <summary>
-    /// V7/C1 <c>0xA4BFC4</c> (C18 X3, Appendix J F1): the four params <c>param_2+0xA8..+0xB4</c>. They are
-    /// copied forward to <see cref="ParamsB8C4"/> by <see cref="PropagateParams"/>. The field's semantic
-    /// name is UNKNOWN, so it is a caller input.
-    /// </summary>
-    // fidelity: M6-022
-    public float[] ParamsA8B4 { get; } = new float[4];
-
-    /// <summary>
-    /// V7/C1 <c>0xA4BFC4</c> (C18 X3, Appendix J F1): the propagated params <c>param_2+0xB8..+0xC4</c>.
-    /// </summary>
-    // fidelity: M6-022
-    public float[] ParamsB8C4 { get; } = new float[4];
-
-    /// <summary>V7/C1 <c>0xA4BFC4</c> (C18 X3): copy the four <c>param_2</c> params forward.</summary>
-    public void PropagateParams()
-    {
-        for (int i = 0; i < ParamsA8B4.Length; i++) ParamsB8C4[i] = ParamsA8B4[i];
-    }
-
-    /// <summary>
-    /// V7/C1 <c>0xA4BFE0/0xA4BFE4</c> (C18 X3): <c>param_2+0xDC</c> bit4, cleared by the <c>0xA4BFD4</c>
-    /// tail. This is the <c>param_2</c> object, not the voice's own <c>+0xDC</c> state byte
-    /// (<see cref="WwiseLiveVoice.State"/>); the immediately preceding bit2 clear is on the voice
-    /// <c>+0xCD</c>.
-    /// </summary>
-    // fidelity: M6-022
-    public byte Param2_DC { get; set; }
-
-    /// <summary>V7/C1 <c>0xA4BFE0/0xA4BFE4</c> (C18 X3): clear bit4 of <c>param_2+0xDC</c>.</summary>
-    public void ClearDcBit4() => Param2_DC = (byte)(Param2_DC & ~0x10);
-
-    /// <summary>V7 sample count <c>bus+0x164</c>.</summary>
-    public float SampleScale164 { get; set; }
-
     /// <summary>V7 <c>bus+0x90</c>: the bus volume in dB (V18c <c>0xA4D994</c>).</summary>
     public float VolumeDb90 { get; set; }
 
@@ -309,39 +214,8 @@ public sealed class WwiseMixBus
     /// <summary>V7 <c>0xA4B4B0</c> ducking: <c>bus+0x1D8</c>.</summary>
     public float Ducking1D8 { get; set; }
 
-    /// <summary>V7 <c>bus+0x1EC</c>/<c>bus+0x1F0</c>: the acquire/release array and count (identity UNKNOWN).</summary>
-    public int[]? RefCountArray1EC { get; set; }
-    public int RefCount1F0 { get; set; }
-
-    /// <summary>V7-c <c>bus+0x1BB</c>: the cached next-source byte (bit7 valid, bits0-2 index, bits3-6 code).</summary>
-    public byte NextSource1BB { get; set; }
-
-    /// <summary>V7 <c>bus+0xE0</c>: the next-source object passed to <c>0xA01768</c>/<c>0x9EEDA4</c>.</summary>
-    public object? NextSourceE0 { get; set; }
-
-    /// <summary>V7 <c>bus+0x14C</c>: the argument of <c>[[bus+0xE0]]-&gt;vt+0x120</c>.</summary>
-    public int E0Arg14C { get; set; }
-
     /// <summary>V7 <c>bus+0x1C0</c>: the connection count (see <see cref="Connections"/>).</summary>
     public int ConnectionCount => _connections;
-
-    /// <summary>V7 <c>bus-&gt;vt+0x3C(E0)</c>: the next-source request; 1 accepted, 2 stop, else fallback. Default 1.</summary>
-    public Func<int, int>? SourceRequest3C { get; set; }
-
-    /// <summary>V7 <c>bus-&gt;vt+0x24</c>: the stop path.</summary>
-    public Action? BusStop24 { get; set; }
-
-    /// <summary>V7 <c>bus-&gt;vt+0x28</c>: the start path.</summary>
-    public Action? BusStart28 { get; set; }
-
-    /// <summary>
-    /// V7-c <c>0x9EEDA4([bus+0xE0])</c> (RECOVERABLE_GAP, C15 residual): returns the next-source code and
-    /// writes the 3-bit index. The callee identity is UNKNOWN, so it is a caller seam.
-    /// </summary>
-    public Func<object?, (int Code, int Index)>? NextSourceEda { get; set; }
-
-    /// <summary>V7-c <c>[[bus+0xE0]]-&gt;vt+0x120([bus+0x14C])</c> when the <c>0x9EEDA4</c> result is 3.</summary>
-    public Func<int, int>? E0Vt120 { get; set; }
 
     /// <summary>The per-frame eState (<c>+0x68</c>): 0x2D after mixing, 0x11 after ReleaseBuffer (D2.5).</summary>
     public int EState => _eState;

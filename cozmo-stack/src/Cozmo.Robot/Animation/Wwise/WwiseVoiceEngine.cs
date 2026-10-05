@@ -423,7 +423,7 @@ public interface IWwiseVoiceBusPass
     /// <summary>
     /// V5 pre-pass (<c>0x9D3CC0</c>, <c>0xA43D24</c>, <c>0xA39564</c>) then the voice list (V6..V16).
     /// </summary>
-    void VoicePass();
+    void VoicePass(int arg);
 
     /// <summary>V17 <c>0xA44C18(arg)</c>: the bus pass, last-to-first, then idle removal <c>0xA43F64</c>.</summary>
     void BusPass(int arg);
@@ -554,7 +554,7 @@ public sealed class WwiseVoiceEngine : IWwiseFrameRender
             _lastThrottleTick = tick;                                   // N3: else store
         }
 
-        _pass.VoicePass();                                              // V4: 0xA44948
+        _pass.VoicePass(_deviceState.BusPassArg);                       // V4: 0xA44948(arg) (0xA44DE0..0xA44DF8: the same argument as the bus pass)
         _pass.BusPass(_deviceState.BusPassArg);                         // V4: 0xA44C18
     }
 

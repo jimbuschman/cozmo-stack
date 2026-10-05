@@ -825,9 +825,7 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     // fidelity: M6-025
     private int NextSourceA01768(WwisePlayingInstance pbi, out int index)
     {
-        // The native callers other than AddSrc (0xA37258, 0xA373B4, 0xA37578, 0xA37650, 0xA37944, 0xA55B54) share this
-        // pbi+0x1BB cache. UNRESOLVED: the bus model WwiseVoiceBusPass.NextSource keeps a separate cache field
-        // (WwiseMixBus.NextSource1BB); the two are not unified here.
+        // The native callers other than AddSrc (0xA37258, 0xA373B4, 0xA37578, 0xA37650, 0xA37944, 0xA55B54) share this pbi+0x1BB cache: this is the one live copy (the earlier bus-model copy was removed in batch 5k).
         if ((pbi.NextSourceCache1BB & 0x80) == 0)
         {
             var node = pbi.NodeE0;                                               // [pbi+0xE0]

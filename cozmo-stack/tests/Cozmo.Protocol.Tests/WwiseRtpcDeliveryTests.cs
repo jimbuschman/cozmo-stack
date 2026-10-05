@@ -249,7 +249,7 @@ public class WwiseRtpcDeliveryTests
             AssertBits(chain.Delivered, ReadFields(pbi), $"{c.Name} after the set");
             Assert.Equal(chain.DeliveredE9, pbi.Flags0E9);
 
-            var voice = new WwiseLiveVoice(1, 8) { State = 1, Source = new StubSource(), BusOwner8 = pbi };
+            var voice = new WwiseLiveVoice(1, 8) { State = 1, Source = new StubSource(), BusOwner8 = pbi, AllowRenderOrderApproximation = true };
             var pass = new WwiseVoiceBusPass(new WwiseMixBusHierarchy(), new WwiseOutputDeviceState())
             {
                 SourceOwner = _ => pbi,
@@ -257,9 +257,11 @@ public class WwiseRtpcDeliveryTests
                 NodeCleanup = () => { },
                 DuckPrePassTailA43D6C = () => { },                                               // TEST DOUBLE: 0xA43D6C..0xA43EFC is not adopted
                 VoiceRefreshTailA4B9BC = _ => { },                                               // TEST DOUBLE: 0xA4B9BC.. is not adopted
+                StartStreamOverrideA54A30 = _ => 1,                                              // TEST DOUBLE: V7 (0xA54F1C) runs; its build 0xA54A30 and the tail's CalcEffectiveParams are not what this test is about
+                CalcEffectiveParamsVt24 = _ => { },
             };
             pass.Voices.Add(voice);
-            pass.VoicePass();                                                                    // 0xA44948: 0x9D3CC0, 0xA43D24 -> 0xA55750, 0xA39564, then the voice walk (no connection: nothing renders)
+            pass.VoicePass(1);                                                                    // 0xA44948: 0x9D3CC0, 0xA43D24 -> 0xA55750, 0xA39564, then the voice walk (no connection: nothing renders)
             Assert.True(chain.F98 == Bits(pbi.Field98), $"{c.Name} +0x98: engine 0x{chain.F98:X8}, C# 0x{Bits(pbi.Field98):X8}");
             Assert.True(chain.Vol == Bits(pbi.Volume3C), $"{c.Name} +0x3C: engine 0x{chain.Vol:X8}, C# 0x{Bits(pbi.Volume3C):X8}");
             Assert.True(chain.Mute == Bits(pbi.MuteFade40), $"{c.Name} +0x40: engine 0x{chain.Mute:X8}, C# 0x{Bits(pbi.MuteFade40):X8}");
@@ -286,7 +288,7 @@ public class WwiseRtpcDeliveryTests
                 CalcEffectiveParamsVt24 = p => { events.Add("calc"); p.Volume3C = F(c.Calc[0]); p.MuteFade40 = F(c.Calc[1]); },     // the oracle's stub of vt+0x24 leaves the same scripted values
                 VoiceRefreshTailA4B9BC = _ => events.Add("9BE28C,9BDA88"),
             };
-            var voice = new WwiseLiveVoice(1, 8) { State = 1, Source = new StubSource(), BusOwner8 = pbi };
+            var voice = new WwiseLiveVoice(1, 8) { State = 1, Source = new StubSource(), BusOwner8 = pbi, AllowRenderOrderApproximation = true };
             pass.Voices.Add(voice);
             pass.PrePassVoicesA43D24();
             Assert.True(c.Gain == Bits(voice.OutputGain), $"{c.Name} voice+0x1C: engine 0x{c.Gain:X8}, C# 0x{Bits(voice.OutputGain):X8}");
@@ -324,6 +326,6 @@ public class WwiseRtpcDeliveryTests
         pass.VoiceRefreshTailA4B9BC = _ => { };
         pass.AdvanceTickCounters = () => { };
         pass.NodeCleanup = () => { };
-        Assert.Throws<WwiseMissingBehaviourException>(() => pass.VoicePass());
+        Assert.Throws<WwiseMissingBehaviourException>(() => pass.VoicePass(1));
     }
 }

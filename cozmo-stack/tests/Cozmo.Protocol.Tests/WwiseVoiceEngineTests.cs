@@ -29,7 +29,8 @@ public sealed class WwiseVoiceEngineTests
         public int BusPasses;
         public int Flushes;
         public int LastBusArg = int.MinValue;
-        public void VoicePass() => VoicePasses++;
+        public int LastVoiceArg = int.MinValue;
+        public void VoicePass(int arg) { VoicePasses++; LastVoiceArg = arg; }
         public void BusPass(int arg) { BusPasses++; LastBusArg = arg; }
         public void FlushPbiNotifications() => Flushes++;
     }
@@ -285,6 +286,7 @@ public sealed class WwiseVoiceEngineTests
         Assert.Equal(1, pass.VoicePasses);
         Assert.Equal(1, pass.BusPasses);
         Assert.Equal(1, pass.LastBusArg);           // V4: gate2 == 0 -> 1
+        Assert.Equal(1, pass.LastVoiceArg);         // 0xA44DE0..0xA44DF8: the same argument goes to 0xA44948
         Assert.Equal(1, pass.Flushes);
         Assert.Equal(1, engine.PerformTick);
     }
