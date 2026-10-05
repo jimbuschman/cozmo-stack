@@ -77,3 +77,4 @@ CLAIMED Codex: pulled; manager-adopted item 6 and Item 6 corrections in the rows
 - Final self-review/verifier follow-up: PASS for the checked subset, no blocking defects or circular tests. fidelity --check and diff --check pass. Full suite: 3,928 passed, zero failed/skipped (2 m 26 s).
 
 BLOCKED 2026-10-05: the checked byte-reader subset is built; M1-029 is not complete. Needed checked rows: shipped real-number num_get/decimal rounding/overflow/current process locale (0x008E22C8/0x008E22F8), plus real asString formatting. Final exception destination stays MISSING as explicitly required. No research or higher-layer build started. Publication hash and gate result follow after push.
+- Batch 5 commit: 2167663 (pushed to main). Independent push gate passed fidelity and all 3,928 tests, zero failed/skipped (2 m 40 s). Checked subset only; BLOCKED/MISSING details above remain authoritative. No settlement or hardware acceptance.
