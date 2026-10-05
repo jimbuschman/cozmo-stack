@@ -3117,3 +3117,36 @@ Hijack 0x112C3 plug-ins ARE registered by `.init_array` constructors, all four i
 - **Records touched (text only, no status):** M6-001, M6-009, M6-010, M6-012, M6-013, M6-014, M6-015, M6-022, M6-025.
   Still open: the music node types, Layer/State/RanSeq/Switch init bodies, `0x9CE3B8` interior, the 3D path, A25FF8 beyond
   the standard arms, `0x9C39DC` for `[bus+0x90]`, the Master line cfg words, the global-list callbacks at load.
+
+## Correction C45 (manager, 2026-10-05): the Robot_Bus FX contents and the EQ, Peak Limiter and Hijack plug-ins, checked
+
+**Sonnet-verified; awaiting Opus check.** C45 adopts the rows that the Verification section of
+`re-analysis/research/20261005-B-M6b-4-bus-fx-17.md` lists as HOLDS, **with that section's corrections applied** (V1..V7) and its
+exact build spec. Where C45 differs from earlier text, C45 wins (inventory rows 4.4, 4.7: the limiter Execute does not return
+0x2D; the output-gain ramp is the NEON-lane form with the restarting scalar tail; the prescan hold is the remaining count; the
+fast-pow `DbToLinear` is not used by the output-gain stage, which is `powf(10.0f, dB*0.05f)`). No status changes.
+
+- **C45.1, the Robot_Bus slots** (Init.bnk): every `Robot_Bus_1..4` carries slot 0 = ShareSet 0x6767FC1F (Parametric EQ 0x690003,
+  MasterCurve), slot 1 = 0x174901C6 (Parametric EQ, HiLowPass), slot 2 = 0xDF2230FF (Peak Limiter 0x6E0003) and slot 3 = a
+  FxCustom Hijack (0x112C3) whose 4-byte param is the bus number 1..4. Bypass and rendered bytes are 0 everywhere, no FX record
+  has RTPC records or properties. The EQ, limiter and Hijack param blocks are decoded in the report (every constant as a bit
+  pattern); the SFX bus carries a linked limiter 0x3ABE7001 and Cozmo_Robot_External the Compressor 0x89DDC03B.
+- **C45.2, the param objects** (EQ 0x101C9F8, Limiter 0x101C9D0, Hijack 0x1038850): SetParamsBlock offset maps, defaults, SetParam
+  id maps, Clone, dirty bytes; the `vt+0x10` wrapper does not check the block length against the size.
+- **C45.3, the EQ plug-in** (0x103DF88): Create/Init/Reset/Term/Info/Execute exactly as the build spec: dirty recompute before the
+  `on` check, the coefficient routine 0xAA25E0 for all seven types with the verified association and literals (cap
+  `(fs*0.5f)*0.9f`; gain scale `0.025f`), the biquad 0xAA2324, the output-gain ramp (NEON lanes, scalar tail restarting at the old
+  gain), `powf` for every dB-to-linear conversion; the libm calls (tanf, sinf, cosf, powf, sqrtf) are the phone's:
+  EQUIVALENT_IMPLEMENTATION with correctly rounded float32 host stand-ins, exactness on a given phone BLOCKED_EXTERNAL, the VFP
+  FPSCR state HARDWARE_ONLY (NEON parts flush to zero by the ISA).
+- **C45.4, the Peak Limiter plug-in** (0x103DF58): Create/Init/Setup 0xAA19CC/Reset/Term/Execute 0xAA1BD8, the process selection,
+  P2 0xAA0EB4 (the Robot_Bus path), the NoMoreData flush path (eState 0x11 -> pad -> 0x2D when the tail remains), the
+  `log10approx` and fast-pow10 literals, the output ramp. P1 0xAA09B8 and P3 0xAA1464 (linked variants, the LFE swap) are read
+  structurally only: RECOVERABLE_GAP unless the SFX bus is brought into scope. Execute's r0 is incidental.
+- **C45.5, the Hijack plug-in** (0x10387F4, Thumb): ctor sets `[core+4] = 0` (no rate argument), Init stores the param object at
+  `[obj+0xA0]`, and all three user callbacks receive `[[obj+0xA0]+4]` (the bus number) as first argument; the process callback
+  also gets (float* data, u32 count). The writers of `[core+4]` and `u16[core+8]` are in the SetupEnginePlugInFx veneer
+  (0xAE3090): unread.
+- **Records touched (text only, no status):** M6-013 (the DSP of the unlinked path is source-complete; slot resolution/holder/ctx
+  steps are pass 14), M6-014, M6-015, M6-022. Still open: P1/P3 limiter variants, EQ type > 6, the callers of bus `vt+0x118`,
+  `0xAE3090`.
