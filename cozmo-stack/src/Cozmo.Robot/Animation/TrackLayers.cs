@@ -605,9 +605,10 @@ internal sealed class TrackLayerComponent
     /// <summary>TLC+0x10: the layer-base face, the last streamed face.</summary>
     public ProceduralFacePose LastFace { get; private set; } = new();
 
+    // fidelity: M5-031, M7-017
     /// <summary>
-    /// The DesiredFaceDistortion degree (G1/G2: DesiredFaceDistortionComponent, an M7 interface). Unset gives 0, so no
-    /// glitch is added.
+    /// The DesiredFaceDistortion degree the glitch reads (G1/G2: DesiredFaceDistortionComponent, an M7 interface).
+    /// Unset gives the engine's -1.0f sentinel (0xBF800000), so no glitch is added.
     /// </summary>
     public Func<float>? DesiredFaceDistortion { get; set; }
 
@@ -645,13 +646,16 @@ internal sealed class TrackLayerComponent
     /// <summary>Q1.1: audio OR backpack OR face, in that order.</summary>
     public bool HaveLayersToSend => AudioLayerCount != 0 || Backpack.HaveLayersToSend || Face.HaveLayersToSend;
 
+    // fidelity: M5-031, M7-017
     /// <summary>
-    /// G1 TrackLayerComponent::Update: a DesiredFaceDistortion above 1e-5 calls AddGlitch(degree).
+    /// G1 TrackLayerComponent::Update (0x0064EDE8): the DesiredFaceDistortion degree is read and, when it is
+    /// above 0x3727C5AC (1e-5f; the engine's vcmpe.f32, return if &lt;=), AddGlitch(degree) is tail-called with the
+    /// sampled degree. The unset seam is the engine's -1.0f sentinel (0xBF800000), not 0.
     /// </summary>
     public void Update()
     {
-        float degree = DesiredFaceDistortion?.Invoke() ?? 0f;
-        if (degree > 1e-5f) AddGlitch(degree);
+        float degree = DesiredFaceDistortion?.Invoke() ?? BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+        if (degree > BitConverter.Int32BitsToSingle(unchecked((int)0x3727C5AC))) AddGlitch(degree);
     }
 
     /// <summary>

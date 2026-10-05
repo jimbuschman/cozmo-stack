@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-03",
+  "approved": "2026-10-04",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "9706d8a11372d482fe35e2315caa10e4f4b093833c5c574d403561ac1a214edc",
+  "inventory_sha256": "2fd2efab8fdaf8eb18a4cd1bbaf36773f17876da25cf1d3c68c963dfca84403c",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -71,7 +71,7 @@
       "hardware_required": false
     },
     "M7-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Eye shift moves the whole face through LookAt with the engine bounds",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -219,7 +219,10 @@
         "InitStream 0x0057b674",
         "UpdateStream 0x0057c84c",
         "SendStartOfAnimation 0x0057c400",
-        "SendBufferedMessages 0x0057bf60"
+        "SendBufferedMessages 0x0057bf60",
+        "DesiredFaceDistortionComponent ctor 0x0063b3be, Init 0x0063b3d4, Params 0x0063b434, GetCurrentDesiredDistortion 0x0063b760 (research/20261004-procedural-live-extraction.md D01-D18)",
+        "NeedsManager owns it at +0x3D4 (0x0069210c, 0x00692212); TrackLayerComponent::Update 0x0064ede8 reads it at 0x0057cf7a and compares with 0x3727c5ac before AddGlitch (0x0064edf8..0x0064ee14)",
+        "LiveUpdateFailed 0x0057d084..0x0057d0e6 (log 0xbef148/0xbef172, _errG 0x0105DD34)"
       ],
       "live_path": true,
       "hardware_required": false

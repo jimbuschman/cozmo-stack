@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cozmo.Robot.Animation;
 
 namespace Cozmo.Robot.Behavior;
 
@@ -696,6 +697,51 @@ public sealed class NeedsManager
     public event Action<NeedId, NeedBracketId, NeedBracketId, double>? BracketChanged;
     public event Action<string>? Log;
 
+    /// <summary>
+    /// <c>NeedsManager</c>+0x3D4: the desired-face-distortion component (D01). Constructed and initialised by
+    /// <see cref="FromObb"/> (the <c>NeedsManager::Init</c> analogue); null for a manager built with the
+    /// constructor, so the getter returns the -1 sentinel (D03's skip).
+    /// </summary>
+    // fidelity: M7-017
+    public DesiredFaceDistortionComponent? DesiredFaceDistortion { get; private set; }
+
+    /// <summary>
+    /// The RNG the distortion component samples on (the engine's context RNG at context+0x14; in this stack
+    /// <c>AnimationScheduler.ContextRandom</c>, set by <c>FreeplayStack.Create</c>). When it is null the manager
+    /// falls back to <c>new EngineRandom(Random)</c>, the established context-RNG stand-in. Setting it after
+    /// <see cref="FromObb"/> has initialised the component updates the component's +0xC.
+    /// </summary>
+    // fidelity: M7-017
+    public EngineRandom? DistortionRng
+    {
+        get => _distortionRng;
+        set
+        {
+            _distortionRng = value;
+            if (DesiredFaceDistortion is { } component) component.Rng = value;
+        }
+    }
+    private EngineRandom? _distortionRng;
+
+    /// <summary>
+    /// The tick-count seam the distortion getter caches on (the engine reads BaseStationTimer::GetTickCount).
+    /// <c>FreeplayStack.Create</c> sets it to <c>robot.Engine.Timer.TickCount</c>; default 0.
+    /// </summary>
+    // fidelity: M7-017
+    public Func<long> TickCount { get; set; } = () => 0;
+
+    /// <summary>
+    /// The needs-driven face distortion the streamer reads every keep-alive tick (D07/D08/D18): delegates to
+    /// <see cref="DesiredFaceDistortion"/>, or returns the -1.0f sentinel when there is no component.
+    /// </summary>
+    // fidelity: M7-017
+    public float GetCurrentDesiredDistortion()
+    {
+        if (DesiredFaceDistortion is not { } component) return -1f;
+        if (component.Rng is null) component.Rng = DistortionRng ?? new EngineRandom(Random);
+        return component.GetCurrentDesiredDistortion();
+    }
+
     // fidelity: M15-014
     public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null)
     {
@@ -710,6 +756,21 @@ public sealed class NeedsManager
         // J7: InitInternal's forced WriteToDevice(true) (0x0069347E) must reach a real file when the host
         // supplied a device directory, so the seam is wired before InitInternal runs.
         if (deviceDirectory is not null) needs.WriteToDevice = needs.WriteDeviceFile;
+        // fidelity: M7-017
+        // D01..D06: NeedsManager::Init 0x00692574 constructs the DesiredFaceDistortionComponent (owned at +0x3D4),
+        // reads the context RNG (+0x14) and initialises the component with the needs-handler config's
+        // needsBasedFaceDistortion block. Init stores the RNG at component +0xC. The component's clock seams read
+        // this manager's tick/seconds; FreeplayStack replaces TickCount with the engine timer's.
+        var distortion = new DesiredFaceDistortionComponent(needs);
+        distortion.TickCount = () => needs.TickCount();
+        distortion.ClockSeconds = () => (float)clockSec();
+        if (Read("needs_handlers_config.json") is { } handlers)
+        {
+            using var doc = JsonDocument.Parse(handlers, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true });
+            if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("needsBasedFaceDistortion", out var block))
+                distortion.Init(block, needs.DistortionRng ?? new EngineRandom(needs.Random));
+        }
+        needs.DesiredFaceDistortion = distortion;
         // NeedsManager::Init 0x00692574 ends by calling InitInternal 0x006926CE (J1/J14): the construction
         // analogue here, so a manager built from the OBB has run the startup device read and its tail.
         needs.InitInternal(clockSec());
