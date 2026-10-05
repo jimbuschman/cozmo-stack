@@ -3084,3 +3084,36 @@ S2E/S2F truth table and the build spec). Where C43 differs from earlier text, C4
 - **C43.5, the ctor `0xA76280`** initial F contents (unity matrix, `-0` lanes) have no output effect (every use follows a design).
 - **Records touched (text only, no status):** M6-011 (the block form, frame count, channels, targets, design association),
   M6-022. Still open: the 3D path `0xA4C138`, NaN cur/target against the real function, pause/stop triggers of `[pbi+0x1BE]`.
+
+## Correction C44 (manager, 2026-10-05): the runtime node graph, the FX resolvers and Robot_Bus chain, the connection matrix chain and the bus gain stage, checked
+
+**Sonnet-verified; awaiting Opus check.** C44 adopts the rows that the Verification sections of
+`re-analysis/research/20261005-B-M6b-4-hirc-graph-15.md`, `...-fx-bus-chain-14.md` and `...-matrix-chain-16.md` list as HOLDS,
+**with those sections' corrections applied** (pass 15 V1..V9, pass 14 V1..V11, pass 16 items 1..10). Where C44 differs from
+earlier text, C44 wins (including inventory row D2.3 lines 576/623: the EQ 0x690003, limiter 0x6E0003, Compressor 0x6C0003 and
+Hijack 0x112C3 plug-ins ARE registered by `.init_array` constructors, all four in place). No status changes.
+
+- **C44.1, the HIRC load** (pass 15): walker 0x9B3260 and the per-type handlers (A1..A12), registration/lookup/refcount
+  (B1..B6; `0x9A7EB0` increments `[obj+0xC]` for both flags), NodeBase order (C1..C12) with the deterministic base bit math
+  (`[+0x44..45] = 0x4000`, `[+0x45] = 0x40`, `[+0x46] = 0x21`; only `[+0x47]` bit 7 and `[+0x58]` bits 6..7 are host), the Sound
+  source struct in both forms (`0xA1EA68` for codec plug-ins, `0xA1EB58` for the 46 source-plugin Sounds), links and
+  refcounts (D3 incl. `0x9C581C` for bus children, D4), bus ctor/init/reader (D6..D10), Event/Action (D12/D13), RTPC
+  subscription at load (E1..E3 incl. the manager-null error 2), load order (F1/F2). The engine does not check that a loader
+  consumed the whole body. The bus maxDuck is the bank value (-96.0), not the ctor value. The construction order is the
+  verifier's list under "What the C# must construct, in order".
+- **C44.2, the FX resolvers and the Robot_Bus chain** (pass 14): buses resolve their FX through `0x9C2C64`, param nodes through
+  `0x9EEF2C`; bypass byte `0x9EEDF8`; descriptor/hash/refcount protocol; registry 0x9CBAE0/0x9CC2AC/0x9CC4D8; plug-in vtables;
+  the `voice+0x380` node (vptr 0x103C8C0, `vt+0x24` = `0xA52678` stores the upstream); the lazy build `0xA4FEF8` -> `0xA4F754`
+  (tail corrected: the `0x80` case is an alternative to the default stores) -> `0xA4E974` per slot (masked format check, pool
+  `*0x1052428`, drop 0xA4E7CC with its full field list), Execute order with the `Execute(in, 0, out)` shape and the
+  `[bus+0x1B8]` bit 1 latch. Unread: `0xA11590`, the `0x9CF3A4` records path, `0xA22304` numerics, EQ/limiter/Hijack Execute bodies;
+  the Init.bnk Robot_Bus FX contents (which plug-in per slot) are the next extraction.
+- **C44.3, the connection state machine and the matrix chain** (pass 16): `0xA4BC58` prelude and per-connection body
+  (the minima start at 100.0f; B1..B15), `0xA5975C`/`0xA25FF8`/`0xA1F79C` (mono to mono [1,0,0,0], mono to stereo
+  [0.70710677, 0.70710677], stereo to mono 0.70710677 twice; the standard arms), the dry-silence path (`[GO+0x60]` -> table
+  entry gain -> `conn+0x60` -> bit 1), the mix gains and `0xA45E9C`/`0xA46668` argument orders (source row r0, destination
+  row r1), `0xA5D70C` unreachable on Cozmo (flags {0,1,5,9,13}; other writers of `[pbi+4]` not enumerated), `0xA4D994`
+  (touches no samples; the Hijack runs before it in the FX loop) and `0xA4F9E0` parent mix.
+- **Records touched (text only, no status):** M6-001, M6-009, M6-010, M6-012, M6-013, M6-014, M6-015, M6-022, M6-025.
+  Still open: the music node types, Layer/State/RanSeq/Switch init bodies, `0x9CE3B8` interior, the 3D path, A25FF8 beyond
+  the standard arms, `0x9C39DC` for `[bus+0x90]`, the Master line cfg words, the global-list callbacks at load.
