@@ -83,3 +83,25 @@ Records whose evidence is too weak: M6-022 evidence line reads as covering 0xA4A
 5. Unread: 0xA55A84, 0xA55D04, 0xA55CC4, 0xA56414, 0xA56478, 0xA47528, 0xA370E4.
 6. Linked-worker numerics (3.5) read but not run under EMU; emu_comp.py needs a linked-worker case before it is called verified.
 7. Names are inference.
+
+## Verification (cozmo-verifier, Opus, 2026-10-04; manager-condensed from its hand-back)
+
+Verdict: Parts 1, 3.1, 3.4, 3.5 and Part 4 (4.1-4.7) HOLD, with the corrections below. Verifier disassembled every address itself and re-derived 1.21 from the six banks (all 2360 Sounds E4=0, E0=1; also all 3490 nodes of types 2,5,6,7,9,10,11,12,13: Advanced byte0 bit4 never set, byte4 = 0, byte1&7 = 1).
+
+WRONG / corrections:
+- A1 (row 1.14): the other two PBI classes are mis-quoted. The 0x9883AC-class (ctor bl 0xA000E8 at 0x9883DC) has vptr 0x1039D98 and **+0x3C = 0x9882E0** (not 0x9FF4D4, which is its +0x34): it calls 0x99CC40([pbi+0x204],pbi,&a,&b); 0 -> returns 2, else [pbi+0x1D8]=a, [pbi+0x1B4]=b, clears [pbi+0x1BE] bit1, sets [pbi+0x1BD] bit7, returns 1; ctor called from 0x97DCA4 (a PBI-creation function; the mapping to the 25 continuous containers is inference, unread). The 0xA6A8A0-class has vptr 0x103D3B0 and **+0x3C = 0x9FF544** (returns 0; 0xA6A008 is its +0x34; the bit-5 side effect is not reached from V7's vt+0x3C call). Base/Sound PBI HOLDS (vptr 0x103B768, +0x3C=0x9FF544; ctx vptr 0x103B7DC, ctx vt+0x24=0xA000E0, vt+0x28=0x9FF414). So the C# default `SourceRequest3C ?? 1` is wrong for a Sound PBI (correct 0) but the seam must be class-specific; the continuous-container class needs 0x9882E0 and 0x99CC40 (unread).
+- A2 (row 2.1): 0xA549A0's first call is 0xA56414(src, **0**) (mov r1,#0 at 0xA549A4; the (src,1) form is at 0xA55968). 0xA52B90's budget uses the PENDING source's PBI r5=[[voice+0xD8]+0xC] (0xA52B9C/A0); new [1D8]=max(0,[1D8]-round(float(u16[n+0x94]-u16[n+0x96])*[pbi+0x164])) with round-half-away (vmovle -0.5 else +0.5), returns 0x11.
+- A3 (row 2.3, omission): 0xA437E0 CLEARS bit5 and bit4 of byte[bus+0xCC] after testing them (bfc 0xA438FC, 0xA439B0); bit3 only read. "new-w >= 0.5 -> [line+0x1CC]|=1" occurs only in the release (cur>w) branch; the attack branch (w>=cur) stores cur=w and skips it (0xA439E0). Linear domain: if cur<=w_lin store w_lin and use dB w; else blend in linear, convert with fast log10 x20 (0xA43BCC..0xA43C68).
+- 1.4 note: `vmov s15,ip`/`vmov s15,r3` are bit reinterpretations (f = bits (u&0x7FFFFF)|0x3F800000; last factor = bits ((u>>23)<<23)), not int-to-float conversions. Same sequence at 0xAA0150..0xAA018C, 0xA4B50C..0xA4B54C, 0xA43B88..0xA43BC8, 0xA556xx.
+- 1.11: E0!=1 -> r5=0 (0xA554A4); [1D8]>=s -> r5=0 without the vt+0x10 call (0xA55574).
+- 1.18: the second 0xA4BC58 call still passes &S2E (sp+0x2E) and &S2F (sp+0x2F) as outputs (not read afterwards); only the four floats go to sp+0x40. 0x9FF368: product over 12-byte entries at [pbi+0x10C] (count [pbi+0x110]) of the float at ENTRY+8, start 1.0f, then *[0x168] then *[0x16C]; clears E9 bit0; [0x3C]=[0x98]+[0x118]; [0x40]=(prod<=0 -> 0, NaN stays) else prod.
+
+NEW facts the report omitted (feed C41):
+- D1: src->vt+0x4C is a PURE GETTER: base source vtable 0x103C848 slot 0xA566C8; derived vtables 0x103D6C0/0x103D740/0x103D7C0/0x103D840 slot 0xA72B14: bit 6 of byte[[src+0xC]+0x1BE]. It is arg5 of 0xA4BC58 (ldrb r8,[sp,#0x50] at 0xA4BC8C), used for SetBit2 (C# SourceGain8Low). The PBI ctor sets that bit: 0xA002A4..B0 bit6 := ([ctx+0x128]>>4)&1. The C# SourceRequest4C seam discards the return and SourceGain8Low is a free input.
+- D2: when 0xA54A30 returns != 1, native sets r5=0 (0xA555D0..E0) so V7 returns 0; C# does not.
+- D3: native tail writes S+4=[voice+0xF0] (str at 0xA55634, channel-config word), and the prologue also stores S+4 at 0xA54F64 on every pass through the gate; C# writes the RESULT code (Buffer.Result = State.Code28) and never sets S+4.
+- D4: E8 bit0 writers: 0xA545A0 (linker), 0xA55C38 sets it; ctor 0xA5471C/0xA54738/0xA5475C and 0xA54260/0xA542B8 clear it. The clear at 0xA553C8 must happen.
+- D5: [pbi+0x1D8] initial = [ctor-arg+0x74] (0xA002D8/0xA002EC, arg r5 of 0xA000E8); [pbi+0x1DC]/[0x1E0] zeroed (0xA002F0/F4); [pbi+0x1F8] = ctor r7 (0xA00318, from 0xA02EC8's r3).
+- D6: the pre-pass 0xA55750 is a per-pass call (caller 0xA4497C via 0xA43D24) running ctx vt+0x24 (CalcEffectiveParams) when [pbi+0xE8]&0x20 is clear, before V7.
+
+Still UNKNOWN / unverified: 0x99CC40 and 0x97DCA4's mapping; 0xA370E4; 0xA55A84, 0xA55D04, 0xA55CC4, 0xA56414, 0xA56478, 0xA47528; 0x9E84C8, 0xA68A2C (read in C40), 0x9C5E08; callers of 0xA0266C (bit4/bit2 of [pbi+0x1BE]); linked-worker numerics (verified by disassembly only, not emulated); rows 2.5, 2.6, 2.9, 4.8, 4.9, 1.22, 1.23 skimmed only.

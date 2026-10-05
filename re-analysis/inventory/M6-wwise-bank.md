@@ -3010,3 +3010,40 @@ section's corrections applied** (1..11). Where C40 differs from earlier text, C4
   sends), M6-013/014/015 (the Hijack parameters). Still open: the bodies `0xA4AF50`, `0xA437E0`, `0xA4B4B0`, `0xA5975C`,
   `0xA25FF8`, `0xA1F79C`, `0xA22304`, `0xA22684`, `0xA6C25C`, `0xA9FEEC`, `0xA56A7C`, the linked Compressor worker, T-V1,
   T-V8, T-E3b, T-E4d, T-F2, T-F3, and Anki's start-time posting of the aux-send and output-bus messages (A11).
+
+## Correction C41 (manager, 2026-10-04): the V7 state machine on the owner PBI, the linked Compressor worker and the in-place FX wrapper, checked
+
+**Sonnet-verified; awaiting Opus check** (the same standing as C31..C40). C41 adopts the rows that
+`re-analysis/research/20261004-B-M6b-4-live-bodies-11.md` lists as HOLDS in its Verification section, **with that
+section's corrections applied** (A1..A3, 1.4 note, 1.11, 1.18, D1..D6). Where C41 differs from earlier text, C41 wins.
+No status changes.
+
+- **C41.1, V7 (`0xA54F1C`) rows 1.1..1.19** hold as the report states them, on the **owner PBI** `[[voice+0xD4]+0xC]`, with
+  the verified additions: the prologue `S+4 = [voice+0xF0]` (`0xA54F64`) and the tail `S+4 = [voice+0xF0]` (`0xA55634`) write
+  the channel-config word and never the result code; `src->vt+0x4C` is the pure getter bit 6 of `byte[[src+0xC]+0x1BE]`
+  (slot `0xA566C8` base, `0xA72B14` derived), the arg5 of `0xA4BC58`; scaled frames round half away from zero in single
+  precision (`0xA55090..0xA550C4`); the `0xA5561C` tail runs in all three E8/E9 cases and its second `0xA4BC58` call still
+  passes `&S2E`/`&S2F`; an `0xA54A30` result other than 1 stops the voice and V7 returns 0; the `[voice+0xE8]` bit 0 clear
+  (`0xA553C8`) must happen.
+- **C41.2, `[pbi+0x1D8]`, `[0x1DC]`, `[0x1E0]`, `[0x1F8]`** originate in the PBI ctor `0xA000E8` (`[0x1D8] = [arg+0x74]`, the
+  others zero or the ctor's r7). The pre-pass `0xA55750` (CalcEffectiveParams `0x9FFAD4` when `[pbi+0xE8]&0x20` is clear)
+  runs every pass before V7.
+- **C41.3, `pbi->vt+0x3C`** is class specific: the base/Sound PBI (vptr `0x103B768`) and the `0xA6A8A0`-class (vptr `0x103D3B0`)
+  return 0 (`0x9FF544`); the `0x9883AC`-class (vptr `0x1039D98`) is `0x9882E0` (calls `0x99CC40`, unread). On every
+  shipped Sound the E0/E4 resolution (`0xA01768` -> `0x9EEDA4`) gives E4 = 0, E0 = 1 (all 2360 Sounds and all 3490 container
+  nodes), so the E4 = 1/2 branches, the `0xA552C8` call and the E8 handling are reachable only through the pre-pass flag path
+  (`[pbi+0x1BE]&0x14`, setters unread for shipped data: UNKNOWN).
+- **C41.4, the FX slot** (`0xA54A30`): class by `byte[info+8]` (in place = 0x34-byte wrapper vptr `0x103DB98`, `vt+0x28 =
+  0xA792B0`, `+0x38 = 0xA790E8`, `+0x3C = 0xA791A8`; else the 0x9C-byte `0x103DC38`, `+0x28 = 0xA79858`); a failed slot is
+  null; **there is no "no plug-in" form**. Rows 4.2..4.7 give the layout, Init, `0xA793D4`, `0x9CF644` and the process step.
+  The existing `WwiseVoiceInsertFxSlot` class mapping is contradicted.
+- **C41.5, the Compressor linked worker `0xA9FEEC`** (row 3.5, literal pool `0xAA0250..0xAA0294`) is read and
+  disassembly-verified (not emulated); `Execute`'s return is the stale channel count and no caller reads it (3.1, 3.2).
+  Init.bnk bus `0x939CA830` also carries the Compressor shareset (bus Execute loop `0xA4FDE0..0xA4FEF8` partly read).
+- **C41.6, callee bodies** rows 2.1 (with A2), 2.2, 2.3 (with A3), 2.4, 2.8, 2.10 and 2.12 hold. Unread: `0xA55A84`,
+  `0xA55D04`, `0xA55CC4`, `0xA56414`, `0xA56478`, `0xA47528`, `0xA370E4`, `0x9E84C8`, `0x9C5E08`, `0xA56778` and the
+  `0x9E8xxx` list bodies (57 modulator Sounds), `0x99CC40`, `0xA53770`.
+- **Records touched (text only, no status):** M6-022 (V7 identity and the E0/E4 answer; the voice FX slot class;
+  `[voice+0x1C4]` is the upstream neighbour of the filter holder), M6-011 (the bypass path is what shipped Sounds execute),
+  M6-013 (the Compressor linked worker, wrapper). Still open: the items under C41.6, the bus-chain Compressor path
+  (Init.bnk bus), and the MISSING items of batch 5i.
