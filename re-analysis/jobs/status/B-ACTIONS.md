@@ -117,10 +117,58 @@ Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
 - `AddAction` with ignoreFailure=false erases a keyed predicate; native leaves the map unchanged.
 - `DeleteActions`/`ClearActions` clear the completion cache; native clears it only in the destruction tail.
 
+## Batch 4 - completion to the game (rows D1-D9, W1-W17)
+
+- **Row verification.** `cozmo-verifier` checked D1-D9 and W1-W17: **26/26 HOLDS**, 0 PARTIAL/FAILS. Four
+  rows have incomplete citation ranges (D5's compound-dtor order, D6's slot load, W8's caller ordering, W10's
+  Interrupt evidence), each independently verified in the binary. The report's M7-020 correction was confirmed:
+  the manifest's `HandleActionEnded 0x0067c770` is wrong; the real entry is `0x0067B318` (reloc 0x0103FA44).
+- **Enum tables (new extraction, addresses cited).** `RobotActionType` 54 entries, table base `0x01032560`
+  (index = value+2, -2 COMPOUND .. 51 WAIT_FOR_LAMBDA); `ActionResultCategory` 5 entries, base `0x01032540`
+  (0 SUCCESS .. 4 RETRY). Forward maps `RobotActionTypeFromString 0x0075A448` (miss -2) and
+  `ActionResultCategoryFromString 0x00757E40` (miss 0); the JSON keys in `MoodManager::LoadActionCompletedEventMap`
+  are mapped string->int at `0x0067B084`/`0x0067B104`, emplace `0x0067B168`.
+- **Built.** `Actions/RobotCompletedAction.cs` (the D8/D9 64-byte record and the CLAD body/union packer),
+  `Actions/RobotActionEnums.cs` (the vendored tables), `Actions/ActionWatcher.cs` rewritten to W1-W12 (node tree,
+  nesting stack, destruction deque, `GetSubActionResults`, callback drain, the D3/D6 game seam), the D1-D7
+  `ActionQueue.DeleteRunner` order, the `ActionRunner.Watcher` hooks, `MoveAction`/`CompoundAction` watcher
+  propagation, `ActionList.RegisterActionEndedCallback`/`UnregisterActionEndedCallback`, and the live
+  `FreeplayStack.Create` Mood registration (W13-W17). Tests: `ActionCompletionTests.cs` (12) and the replaced
+  `M7BatchThreeBTests.TheProductionRegistrationDrivesHandleActionEnded`.
+- **Verified.** `cozmo-verifier` first **FAILed** on three blocking findings: (1) only `MoveAction` reached the
+  watcher, so a compound's own destruction event was dropped (contradicts D5/W10); (2) `ActionEnding` attached a
+  new node to `_currentTag` instead of the root `[this+0xC]` (W4); (3) the stale
+  `TheMissingActionListCallerIsReportedByTheProductionStack` asserted the removed gap report and failed the suite.
+  All three fixed (watcher propagation through `CompoundAction`, attach to `_rootTag`, a live production-entry
+  test) and re-verified **PASS**. The M7-020 manifest was corrected to name the `+0x44` node-`Name` gap.
+- **Gates.** `fidelity.py --check` clean (445 records). Full suite: **3892 passed, 0 failed, 0 skipped**.
+- **Commit.** (this commit)
+
+### Queued (non-blocking, from the batch-4 verifiers; fix in a later batch)
+- The Q2 `Discard` and the `_clearing` branch of `DuplicateOrClearingGuard` call `WatcherEnding()` before the
+  runner's `Watcher` is assigned, so a rejected/discarded runner emits no `ActionEnding` where native reaches the
+  watcher through the robot (`0x54122E`). Off in production (`ExternalActionsDisabled` false); give it a record.
+- The node `Name` (+0x44) has no source on `IActionRunner` and stays null (W6). Named in M7-020's `unresolved`.
+- The concrete `ActionCompletedUnion` variant is UNKNOWN (report U6): `PackBody` writes the 4-byte +0x1C cache
+  only; the union half of the wire body is not settled.
+- `ActionWatcher.cs` has no trailing newline (cosmetic).
+
 ## Remaining batch
-3b (replace the stack's async sequences in FlipBlockAction, ChargerActions and DockActions with compounds) and
-4 (completion to the game: RobotCompletedAction and ActionWatcher). Records stay IMPLEMENTATION_GAP until a
-strong verifier settles them.
+3b (replace the stack's async sequences in FlipBlockAction, ChargerActions and DockActions with compounds).
+Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
+
+### Batch 3b extraction (done, not yet built)
+`cozmo-extractor` recovered the concrete compound constructions (address-cited): FlipBlockAction's embedded
+`CompoundActionSequential` at `this+0x80` with children `[MoveLiftToHeightAction(45.0, tol 5.0, var 0),
+DriveStraightAction(distance = 3-D norm + 20.0, speed 150.0, bool 1)]` in that order, both
+`AddAction(_, false, false)`; the charger align/turn compounds (`MountChargerAction` +0x84/+0x88); the dock
+`SetupTurnAndVerifyAction` compound (`IDockAction+0x98`, `SetDeleteActionOnCompletion(false)`, children
+`[VisuallyVerifyNoObjectAtPoseAction, TurnTowardsObjectAction]`); and `DriveOffChargerContactsAction` (no
+compound). The children include `DriveStraightAction`, which is an `IActionRunner` (type 8, mask 4) and is not
+yet an `ActionRunner` in this stack. The three enclosing actions are members updated directly by
+`IActionRunner::Update`, not queued; the only `ActionList::QueueAction` in the paths is the flip carry lift
+(position 5). Building 3b needs `DriveStraightAction` ported onto the ActionList first. UNKNOWN-1: the caller
+that queues `DriveToAndMountChargerAction` was not located (behaviour layer).
 
 ### Follow-up fix (same batch): global tag-counter race
 
@@ -156,27 +204,26 @@ test/engine pump ticks the list on the main thread).
 ## Resume here (next session)
 
 **Done and pushed:** batch 1 (6539e66), batch 2 (75b623d/bb8c9d5), tag-counter race fix (15b4488), batch 3a
-(d621fe1) and its concurrency/test-harness follow-up (f648f41). Pushed as 298ec71. All verifier-PASS with the full
-suite green (last gate run 3880 passed). The manifest is untouched; every record stays IMPLEMENTATION_GAP.
+(d621fe1) and its concurrency/test-harness follow-up (f648f41), pushed as 298ec71. **Batch 4** (the
+RobotCompletedAction/ActionWatcher/game-send/Mood registration) is committed this session and verified PASS
+(full suite 3892 passed). The manifest is untouched apart from M7-020's `unresolved`; every record stays
+IMPLEMENTATION_GAP.
 
 **Remaining:**
 - **Batch 3b.** Replace the stack's async sequences in `Manipulation/FlipBlockAction.cs`, `ChargerActions.cs` and
-  `DockActions.cs` with the compounds where the engine builds a compound (report H9). The compounds exist
-  (`Actions/CompoundActions.cs`, verifier-PASS). The hard part: the engine's flip embedded compound
-  (0x0055ECE0) has children {`MoveLiftToHeightAction`, `DriveStraightAction`}; the drive is not yet an
-  `ActionRunner`. Decide whether to make it one, or to scope 3b to the cases whose children are already runners,
-  and record the rest as a named gap. Extract the concrete child inputs/order/predicate for each compound before
-  building (they are not in the P/S/R rows).
-- **Batch 4.** `RobotCompletedAction` (rows D1-D9) and `ActionWatcher` (rows W1-W17): verify those rows first,
-  then build the watcher node tree/deque/callback drain, the game send, and wire MoodManager's
-  `HandleActionEnded` (M7-020) and the ended callbacks (M8-008).
-- **Queued from the verifiers:** `WatcherEnding` tag release (L15); the completion-union init by type
-  (0x0053FECA..0x0053FF9C); the terminal/timeout result log; `BehaviorFrameworkTests`' order-dependent tag
-  assertion; `Vision/FaceActions.cs:591` stale text; `CompoundActions.cs`' file-level `// fidelity:` tag placement;
-  `AddAction`'s predicate `Remove`; `DeleteActions`/`ClearActions` clearing the completion cache; the batch-1
-  queued items in the batch-1 section.
+  `DockActions.cs` with the compounds where the engine builds one. The concrete child inputs/order/predicate are
+  now extracted (see the Batch 3b extraction section). The hard part remains: `DriveStraightAction` is an
+  `IActionRunner` (type 8, mask 4) in the engine and is not yet an `ActionRunner` here; port it onto the
+  ActionList first, then build the embedded/member compounds. The three enclosing actions are members updated
+  directly by `IActionRunner::Update`, not queued.
+- **Queued from the verifiers:** the Q2 `Discard`/`_clearing` watcher-before-assignment omission; the node
+  `Name` (+0x44) gap; the concrete `ActionCompletedUnion` variant (U6); `WatcherEnding` tag release (L15); the
+  completion-union init by type (0x0053FECA..0x0053FF9C); the terminal/timeout result log; the batch-1 queued
+  items; `CompoundActions.cs`' file-level `// fidelity:` tag placement; `AddAction`'s predicate `Remove`;
+  `DeleteActions`/`ClearActions` clearing the completion cache.
 - **Rare flake:** about 1 in 4 full-suite runs an unidentified `NavigationTests` `RunToEnd` timeout. Harness
   concurrency/timing, not a production defect; the bounds were raised to 60 s. Capture the test name next time it
   appears.
 - **MISSING (still open):** robot+0x2C7's writer; the sequential +0x9C delay producer; the compound
-  `Init`/`CheckIfDone` bodies; the completion-union proxy caller; the S2 +0x24 hook body.
+  `Init`/`CheckIfDone` bodies; the completion-union proxy caller; the S2 +0x24 hook body; the runner +0x48 name;
+  the concrete completion-union variant; the int-keyed Mood model and the forward-map miss fallback (M7-020).

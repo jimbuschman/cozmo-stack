@@ -71,6 +71,11 @@ public interface IActionRunner
     bool CanInterrupt();
     /// <summary>D2: Prep, run before the game snapshot/destructor. Batch 4 (D/W).</summary>
     void Prep();
+    /// <summary>
+    /// L13/W3/D3: the virtual completion-union getter (the +0x1C cache after Prep). The base implementation in
+    /// <see cref="ActionRunner"/> returns the cache; a runner that is not an <see cref="ActionRunner"/> answers 0.
+    /// </summary>
+    uint GetCompletionUnion() => 0;
     /// <summary>W10/D5: enqueue the destruction event. Batch 4 (D/W).</summary>
     void WatcherEnding();
     /// <summary>L14: release this action's track lock. Batch 2 (L).</summary>
@@ -143,8 +148,8 @@ internal sealed class ActionRunnerTagCounter
 /// and Prep, the end release, the destruction stop-before-unlock, and ForceComplete/RetriesRemain.
 ///
 /// The concrete action supplies Init/CheckIfDone and the track primitives; the queue drives Update. The
-/// ActionWatcher hooks (ActionStartUpdating/ActionEndUpdating/ActionEnding) are batch 4 (W rows) and are
-/// virtual no-ops here so the lifecycle order is exact.
+/// ActionWatcher hooks (ActionStartUpdating/ActionEndUpdating/ActionEnding, W rows) run through the runner's
+/// <see cref="Watcher"/>; a runner without one (the base, and every test fake) is a no-op.
 /// </summary>
 public abstract class ActionRunner : IActionRunner
 {
@@ -190,9 +195,13 @@ public abstract class ActionRunner : IActionRunner
     /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
     protected virtual float EngineClockSeconds => 0f;
 
-    // L3/W8/W9: the watcher hooks; batch 4 (W rows). Virtual no-ops keep the order exact here.
-    protected virtual void ActionStartUpdating() { }
-    protected virtual void ActionEndUpdating() { }
+    // fidelity: M7-020
+    // W7/W8/W9: the watcher this runner reports its nesting and destruction to. The stack's seam for the engine's
+    // robot+0x250+0x10 path: ActionList::QueueAction sets it on the incoming runner (IActionRunner::
+    // GetRobotCompletedActionMessage 0x540AC2 [r0,#4] -> robot+0x250 ActionList -> [r0,#0x10] watcher), and a
+    // compound propagates it to its children (W7). A runner without one (the base, and every test fake) is a no-op.
+    // W13: registration is not gated by the external interface.
+    internal virtual ActionWatcher? Watcher { get; set; }
 
     // L5/L14/L15: the MovementComponent primitives, overridden by a concrete action that owns a robot.
     protected virtual bool AreAnyTracksLocked(uint mask) => false;
@@ -242,7 +251,7 @@ public abstract class ActionRunner : IActionRunner
     /// </summary>
     public virtual uint Update()
     {
-        ActionStartUpdating();
+        Watcher?.ActionStartUpdating(this);
 
         uint result;
         if (State == EngineActionResult.Running)
@@ -264,7 +273,7 @@ public abstract class ActionRunner : IActionRunner
                 {
                     Log?.Invoke("warning: IActionRunner.Update.TracksLocked");
                     State = EngineActionResult.TracksLocked;
-                    ActionEndUpdating();
+                    Watcher?.ActionEndUpdating();
                     return State;
                 }
                 LockTracks(RequiredTrackMask, LockOwner);
@@ -275,7 +284,7 @@ public abstract class ActionRunner : IActionRunner
         {
             // L3: a terminal stored state -> Prep/ActionEndUpdating without CheckIfDone.
             Prep();
-            ActionEndUpdating();
+            Watcher?.ActionEndUpdating();
             return State;
         }
 
@@ -284,7 +293,7 @@ public abstract class ActionRunner : IActionRunner
         // RUNNING.
         State = result;
         if (result != EngineActionResult.Running) Prep();
-        ActionEndUpdating();
+        Watcher?.ActionEndUpdating();
         return result;
     }
 
@@ -417,7 +426,7 @@ public abstract class ActionRunner : IActionRunner
     /// The ~IActionRunner tail 0x00541084..0x0054127A (L15/L16). The queue's DeleteActionAndIter calls this as
     /// the virtual deleting destructor: stop each moving track this action owns (HEAD then LIFT then BODY, using
     /// the unsigned stop-owner), then release the declared mask unless +0x56 or NOT_STARTED, then the watcher's
-    /// ActionEnding. The batch-4 watcher enqueue sits at the end of this method.
+    /// ActionEnding (W10/D5).
     /// </summary>
     public virtual void WatcherEnding()
     {
@@ -428,6 +437,7 @@ public abstract class ActionRunner : IActionRunner
         // L16: the declared-mask release after the stops.
         if (!SuppressTrackLocking && State != EngineActionResult.NotStarted)
             UnlockTracksInternal(RequiredTrackMask, LockOwner);
-        // Batch 4 (W10/D5): ActionWatcher::ActionEnding enqueue.
+        // W10/D5: the watcher's ActionEnding enqueue, after the stop/unlock tail and independent of the game gate.
+        Watcher?.ActionEnding(this);
     }
 }

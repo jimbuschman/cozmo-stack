@@ -49,11 +49,26 @@ public abstract class CompoundAction : ActionRunner
     // L7: the compound's engine clock (BaseStationTimer::GetCurrentTimeInSeconds).
     protected override float EngineClockSeconds => _engineClock?.Invoke() ?? 0f;
 
+    // fidelity: M7-020
+    // W7/W8/W9: a compound reaches the watcher through the robot like every runner (ActionList.QueueAction sets it);
+    // setting it propagates to the children so each child's ActionStartUpdating/ActionEndUpdating/ActionEnding fires
+    // under the compound's root. Children added after the watcher is set get it in AddAction/AppendChild.
+    internal override ActionWatcher? Watcher
+    {
+        get => base.Watcher;
+        set
+        {
+            base.Watcher = value;
+            foreach (var child in _children) child.Watcher = value;
+        }
+    }
+
     /// <summary>P3: append a child, copying the parent logging +0x57; the base body does not use the extra bool.</summary>
     protected virtual void AddAction(ActionRunner child, bool other)
     {
         _ = other;                                        // P3: forwarded, unused by the base body
         child.Log = Log;                                  // +0x57
+        child.Watcher = Watcher;
         _children.Add(child);
     }
 
@@ -83,6 +98,7 @@ public abstract class CompoundAction : ActionRunner
             return;
         }
         child.Log = Log;
+        child.Watcher = Watcher;
         _children.Add(child);
     }
 

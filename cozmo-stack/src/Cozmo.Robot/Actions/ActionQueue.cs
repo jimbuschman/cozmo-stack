@@ -223,17 +223,24 @@ internal sealed class ActionQueue : IDisposable
     /// </summary>
     public bool Delete(IActionRunner runner) => DeleteRunner(runner);
 
+    // fidelity: M7-020
     /// <summary>
-    /// D1/D2/D5: the queue deletion path. D1 inserts tag+60 into the queue deletion set (a duplicate returns
-    /// false); D2 Preps before the snapshot/destructor; D5/W10 queues the watcher destruction event. D6/D7 (the
-    /// game broadcast and the erase-after-broadcast) are batch 4, so the guard is released after the event.
+    /// D1..D7: the queue deletion path. D1 inserts tag+60 into the queue deletion set (a duplicate returns false);
+    /// D2 Preps before the game snapshot/destructor; D3 snapshots the game record before the destructor (the
+    /// watcher's <see cref="ActionWatcher.BuildCompletedAction"/> applies the D2 HasExternalInterface/INTERRUPTED
+    /// gate); D5/W10 the destructor queues the watcher destruction event; D6 sends the game record AFTER the
+    /// destructor; D7 erases the guard tag AFTER the broadcast.
     /// </summary>
     private bool DeleteRunner(IActionRunner runner)
     {
-        if (!_deletionTags.Add(runner.Tag)) return false;
-        runner.Prep();
-        runner.WatcherEnding();
-        _deletionTags.Remove(runner.Tag);
+        if (!_deletionTags.Add(runner.Tag)) return false;             // D1
+        runner.Prep();                                                // D2
+        // The queue's runner surface is IActionRunner; only an ActionRunner carries the watcher (design point 3).
+        var watcher = (runner as ActionRunner)?.Watcher;
+        var record = watcher?.BuildCompletedAction(runner);           // D3 before the destructor
+        runner.WatcherEnding();                                       // D5: destructor -> ActionEnding enqueues
+        if (record is { } r) watcher!.SendGameMessage(r);             // D6 after the destructor
+        _deletionTags.Remove(runner.Tag);                             // D7 after the broadcast
         return true;
     }
 }

@@ -584,11 +584,11 @@ public sealed class TrackFaceAction : IDisposable
     public async Task<bool> RunAsync(TimeSpan duration, CancellationToken cancel)
     {
         // MISSING: the engine runs tracking as ITrackAction::CheckIfDone (0x00564F09..0x0056584B, 2372 bytes) once per ActionList tick (Robot::Update -> ActionList::Update 0x005140BC ->
-        // IAction::UpdateInternal), after ITrackAction::Init (0x00564D35). This stack has no ActionList: CozmoMotion's UpdateActions is the only per-tick action hook (Engine.ActionRunnerUpdate) and
+        // IAction::UpdateInternal), after ITrackAction::Init (0x00564D35). The ActionList and ActionWatcher are built, but TrackFaceAction is not routed through them: CozmoMotion's UpdateActions is the only per-tick action hook (Engine.ActionRunnerUpdate) and
         // runs head/lift moves only. The wall-clock loop below is therefore NOT the engine's mechanism, and CheckIfDone's other branches are unread and unbuilt: the stop criteria
         // (StopCriteriaMetAndTimeToStop 0x0056594D), the small-angle clamping with its random periods (UpdateSmallAngleClamping 0x0056584D), the sound with its spacing, the eye shift
         // (+0xA1, 0x0056529C..0x0056535A), the update timeout, the mode, the driving-animation end and the 0x5654xx result mapping.
-        SteppedBehavior.ReportMissing("TrackFaceAction (M14-003): ITrackAction::CheckIfDone 0x00564F09 on the ActionList tick is not built (no ActionList in this stack); the Task.Delay(60) loop is a stand-in and its stop criteria, small-angle clamping, sound, eye shift and timeout are unread");
+        SteppedBehavior.ReportMissing("TrackFaceAction (M14-003): ITrackAction::CheckIfDone 0x00564F09 on the ActionList tick is not built (TrackFaceAction is not routed through the built ActionList); the Task.Delay(60) loop is a stand-in and its stop criteria, small-angle clamping, sound, eye shift and timeout are unread");
         var end = DateTime.UtcNow + duration;
         while (DateTime.UtcNow < end && !cancel.IsCancellationRequested)
         {

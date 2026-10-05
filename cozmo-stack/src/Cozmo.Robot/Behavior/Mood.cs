@@ -430,16 +430,14 @@ public sealed class MoodState
     /// erased and produces no event (tail call 0x008cd6ac, <c>__tree&lt;unsigned&gt;::erase</c>); otherwise the key is the action type at +4 and the high byte of
     /// the 32-bit result at +8 (the <c>ActionResultCategory</c>, 0x0067b320..0x0067b354), looked up in the map at +0x134, and its event triggered.
     ///
-    /// <b>The live caller is MISSING.</b> The engine's <c>MoodManager::Init</c> registers this member function with the robot's <c>ActionList</c>
-    /// (robot +0x250) whenever the robot pointer is non-null (0x0067aee8..0x0067af38, handle stored at +0x158; the destructor unregisters it,
-    /// 0x0067ae18..0x0067ae30) and <c>ActionWatcher::Update</c> (called from <c>ActionList::Update</c>, 0x0053f5dc..0x0053f5e4) invokes it with the
-    /// whole 0x40-byte <c>RobotCompletedAction</c> for every completed action (0x0054187e..0x005418de). This stack has no <c>ActionList</c> or
-    /// <c>ActionWatcher</c>, and its actions (the behaviours' own, <see cref="CozmoMotion"/>'s, the manipulation and vision actions) do not
-    /// produce a completion record with an action tag, a <c>RobotActionType</c> and a 32-bit result, so nothing calls this method on the live
-    /// path (<see cref="FreeplayStack"/> reports it). What would build it: an ActionList with an ActionWatcher that queues a RobotCompletedAction
-    /// ({tag u32, action type, result u32, ...}) at every action's ending (<c>ActionWatcher::ActionEnding</c> 0x00541bd8..0x00541c00) and drains it
-    /// after the queues in <c>ActionList::Update</c>, plus the <c>RobotActionType</c> and <c>ActionResultCategory</c> enums whose names key
-    /// <c>mood_config.json</c>. The string keys here stand for those two enums.
+    /// <b>Live caller (built).</b> The engine's <c>MoodManager::Init</c> registers this member function with the robot's <c>ActionList</c>
+    /// (robot +0x250) whenever the robot pointer is non-null (0x0067aee8..0067af38, handle stored at +0x158; the destructor unregisters it,
+    /// 0x0067ae18..0x0067ae30); <see cref="FreeplayStack.Create"/> performs that registration, and <c>ActionWatcher::Update</c> (called from
+    /// <c>ActionList::Update</c>, 0x0053f5dc..0x0053f5e4) invokes it with the whole 0x40-byte <see cref="RobotCompletedAction"/> for every
+    /// completed action (0x0054187e..0x005418de). The stack's <c>ActionList</c>/<c>ActionWatcher</c> queue a RobotCompletedAction at every
+    /// action's ending (<c>ActionWatcher::ActionEnding</c> 0x00541bd8..0x00541c00) and drain it after the queues. The string keys here stand
+    /// for the <c>RobotActionType</c> and <c>ActionResultCategory</c> enums whose names key <c>mood_config.json</c>; M7-020 stays open on the
+    /// int-keyed model and the watcher node-name gap (see the record).
     /// </summary>
     // fidelity: M7-020
     public bool HandleActionEnded(string actionType, string resultCategory, string actionId, double nowSec)

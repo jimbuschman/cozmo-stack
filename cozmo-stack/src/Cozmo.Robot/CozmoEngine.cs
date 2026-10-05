@@ -800,6 +800,9 @@ public sealed partial class EngineRobot
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
         _actionList = new ActionList(engine.Log);
+        // D2: the game gate. The stack has no engine-to-game sink, so the ActionWatcher does not raise the D6
+        // RobotCompletedAction broadcast in production; a test may turn it on through ActionList.GameSend.
+        _actionList.Watcher.HasExternalInterface = false;
         InitLifetime();
         ConstructorDelocalize();
         if (queueConnectionReads) QueueConnectionReads();

@@ -126,9 +126,23 @@ public sealed class FreeplayStack : IDisposable
         if (ctx.Mood.Robot is null) ctx.Mood.AttachRobot(robot);
         // fidelity: M7-020
         // MoodManager::Init registers HandleActionEnded with the robot's ActionList whenever the robot is non-null (0x0067aee8..0x0067af38) and
-        // ActionWatcher::Update invokes it for every completed action (0x0054187e..0x005418de). This stack has no ActionList or ActionWatcher, so the
-        // callback cannot be registered and no action completion reaches MoodState.HandleActionEnded.
-        SteppedBehavior.ReportMissing("MoodManager::Init 0x0067aee8..0x0067af38 registers HandleActionEnded with ActionList (robot+0x250) and ActionWatcher::Update 0x0054187e..0x005418de calls it for every completed RobotCompletedAction: this stack has no ActionList/ActionWatcher and its actions produce no completion record (tag, RobotActionType, 32-bit result), so no action completion reaches MoodState.HandleActionEnded");
+        // ActionWatcher::Update invokes it for every completed action (0x0054187e..0x005418de). W13: the separate external-subscription gate
+        // (0x0067aef2..0x0067af0a) does NOT gate watcher registration. W15/W16: the handler keys the full int32 action type (record+4) and the
+        // category byte (record.result >> 24) into the action-event map. This stack's MoodState still keys by the JSON string names (M7-012's
+        // documented stand-in), so the record is mapped through the shipped RobotActionType/ActionResultCategory tables. The int-keyed model and
+        // the forward-map miss fallback are not built; M7-020 is not settled.
+        var actionEndedList = robot.Engine.Robot?.ActionList;
+        int actionEndedHandle = -1;
+        if (actionEndedList is not null)
+        {
+            actionEndedHandle = actionEndedList.RegisterActionEndedCallback(r =>
+            {
+                string? type = RobotActionType.NameOf(r.ActionType);
+                string? category = ActionResultCategory.NameOf((int)(r.Result >> 24));
+                if (type is null || category is null) return;          // W15: an out-of-range name produces no event
+                ctx.Mood.HandleActionEnded(type, category, r.Tag.ToString(), clockSec());
+            });
+        }
         // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
         // (0x005a38f4/0x005a38fe): 0x16 is the ReactionTrigger NoneTrigger, not a behaviour, so nothing is bound here.
         var manager = new BehaviorManager(ctx);
@@ -160,6 +174,9 @@ public sealed class FreeplayStack : IDisposable
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
+        // fidelity: M7-020
+        // W17: the destructor unregisters the action-ended callback when the handle is non-zero and the robot/ActionList are present (0x0067ae18..0x0067ae30).
+        if (actionEndedList is not null) stack._unsubscribe.Add(() => actionEndedList.UnregisterActionEndedCallback(actionEndedHandle));
 
         // fidelity: M1-024
         // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->

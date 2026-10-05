@@ -169,26 +169,36 @@ public class M7BatchThreeBTests
     }
 
     /// <summary>
-    /// M7-020: the live caller is MISSING, and the stack says so. The engine registers HandleActionEnded with the robot's ActionList in MoodManager::Init
-    /// (0x0067AEE8..0x0067AF38) and ActionWatcher::Update calls it for every completed action (0x0054187E..0x005418DE); this stack has no ActionList, so
-    /// creating the production stack reports the gap and nothing reaches the mood.
+    /// M7-020 through the production entry (W13/W14/W15/W16): <c>FreeplayStack.Create</c> registers
+    /// <c>MoodManager::HandleActionEnded</c> with the robot's ActionList (0x0067AEE8..0x0067AF38) and the watcher
+    /// drains it (W11). A completed head action (RobotActionType MOVE_HEAD_TO_ANGLE = 0x12, result SUCCESS) reaches
+    /// <c>MoodState.HandleActionEnded</c> and triggers the mapped event. The expected 0.3 is the affector this test
+    /// put in its own model, not a value the production code returns.
     /// </summary>
     [Fact]
-    public void TheMissingActionListCallerIsReportedByTheProductionStack()
+    public async Task TheProductionRegistrationDrivesHandleActionEnded()
     {
-        var obb = ObbRoot();
-        if (obb is null) return;
+        var obb = ObbRoot()!;
         using var rig = new Rig();
-        var reported = new List<string>();
-        void On(string s) => reported.Add(s);
-        SteppedBehavior.ResetMissingForTests();
-        SteppedBehavior.MissingReported += On;
-        try
-        {
-            using var stack = FreeplayStack.Create(obb, rig.Robot, Ctx(rig), () => 1.0, rig.Vision, rig.M, withReactions: false, random: new Random(1));
-            Assert.Contains(reported, r => r.Contains("MoodManager::Init 0x0067aee8..0x0067af38") && r.Contains("HandleActionEnded") && r.Contains("ActionList"));
-        }
-        finally { SteppedBehavior.MissingReported -= On; }
+        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+        var model = new MoodModel();
+        model.AddDecayGraph(new DecayGraph("Confident", new[] { (0.0, 1.0) }));
+        model.AddEvent(new EmotionEvent("HeadMoveSucceeded", new[] { new EmotionAffector(EmotionType.Confident, 0.3) }));
+        model.AddActionResultEvent("MOVE_HEAD_TO_ANGLE", "SUCCESS", "HeadMoveSucceeded");
+        var mood = new MoodState(model);
+        var ctx = Ctx(rig);
+        ctx.Mood = mood;
+        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => 1.0, rig.Vision, rig.M, withReactions: false, random: new Random(1));
+        Assert.Same(mood, ctx.Mood);                                     // the production Create kept the supplied model
+        Assert.Equal(0.0, mood[EmotionType.Confident]);
+
+        rig.State();                                                     // report the head at rest and in position
+        var pending = rig.Robot.Motion.SetHeadAngleAsync(rig.Head + 0.034f);   // within tolerance + 1e-5: in position
+        rig.Tick();                                                      // Robot::Update's ActionList step
+
+        var outcome = await pending.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.True(outcome.Ok, outcome.Detail);
+        Assert.Equal(0.3f, (float)mood[EmotionType.Confident], 6);       // the production callback fired
     }
 
     // =============================================================== M7-018: BehaviorClassFromString and the factory table

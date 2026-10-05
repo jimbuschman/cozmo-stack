@@ -12,6 +12,7 @@ internal sealed class ActionList : IDisposable
     private readonly SortedDictionary<int, ActionQueue> _queues = new();
     private readonly ActionWatcher _watcher = new();
     private readonly Action<string>? _log;
+    private Action<RobotCompletedAction>? _gameSend;
     private bool _clearing;
     // The engine is single-threaded, so this lock changes no engine behaviour: it only keeps a caller that queues
     // from another thread (the stack's async FlipBlockAction drives SetLiftHeightAsync off the pump thread) from
@@ -19,7 +20,12 @@ internal sealed class ActionList : IDisposable
     // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
     private readonly object _gate = new();
 
-    public ActionList(Action<string>? log = null) => _log = log;
+    public ActionList(Action<string>? log = null)
+    {
+        _log = log;
+        // The watcher's D6 broadcast is the local seam; forward it to the game sink when one is set.
+        _watcher.RobotCompletedActionBroadcast += r => _gameSend?.Invoke(r);
+    }
 
     /// <summary>A7: IsEmpty loads the map count (+8) and returns count == 0; NOT the sum of current/pending.</summary>
     public bool IsEmpty => _queues.Count == 0;
@@ -32,6 +38,30 @@ internal sealed class ActionList : IDisposable
 
     /// <summary>T6/T5: the watcher this list ticks.</summary>
     internal ActionWatcher Watcher => _watcher;
+
+// fidelity: M7-020
+    /// <summary>
+    /// W12: move a callback into the watcher and return its integer handle. W13: registration is not gated by the
+    /// external interface.
+    /// </summary>
+    public int RegisterActionEndedCallback(Action<RobotCompletedAction> callback) => _watcher.RegisterCallback(callback);
+
+    /// <summary>W12: erase the matching callback handle and return whether it was found.</summary>
+    public bool UnregisterActionEndedCallback(int handle) => _watcher.UnregisterCallback(handle);
+
+    /// <summary>
+    /// D6: the engine-to-game sink. Setting it turns the D2 game gate on (<see cref="ActionWatcher.HasExternalInterface"/>)
+    /// and wires the watcher's broadcast seam; clearing it turns the gate off. The stack has no engine-to-game sink, so
+    /// production leaves it unset (the watcher reports the missing sink when the gate is on).
+    /// </summary>
+    internal Action<RobotCompletedAction>? GameSend
+    {
+        set
+        {
+            _gameSend = value;
+            _watcher.HasExternalInterface = value is not null;
+        }
+    }
 
     /// <summary>
     /// Q2: robot+0x2C7. The row settles the gate's ranges and its discard path, not what sets the byte; its only
@@ -126,10 +156,15 @@ internal sealed class ActionList : IDisposable
             if ((ExternalActionsDisabled && IsExternalTag(incoming.Tag)) || incoming.State == EngineActionResult.BadTag)
             {
                 Discard(incoming);
-                return 0;
+return 0;
             }
             if (DuplicateOrClearingGuard(incoming)) return 1;
             incoming.RetriesRemain = retries;
+            // fidelity: M7-020
+            // W7/W8/W9: the engine reaches the watcher for every runner through the robot (IActionRunner::
+            // GetRobotCompletedActionMessage 0x540AC2 [r0,#4] -> robot+0x250 ActionList -> [r0,#0x10] watcher).
+            // QueueAction is the point the runner is accepted; a compound's setter propagates to its children.
+            if (incoming is ActionRunner ar) ar.Watcher = _watcher;
 
             switch (position)
             {
@@ -277,3 +312,4 @@ internal sealed class ActionList : IDisposable
     private static bool IsExternalTag(uint tag) =>
         (tag >= 0x00000001u && tag <= 0x000F4240u) || (tag >= 0x001E8481u && tag <= 0x002DC6C0u);
 }
+
