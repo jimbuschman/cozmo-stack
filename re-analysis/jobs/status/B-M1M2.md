@@ -1,1 +1,19 @@
-CLAIMED Codex 2026-10-05. Trial: M1-015, M1-024, M1-025, M1-041, M2-002. M1-029 and M1-031/044/045 deferred pending checked rows.
+CLAIMED Codex 2026-10-05. Claim commit: 4ab6a2c (pushed).
+
+Trial: M1-015, M1-024, M1-025, M1-041, M2-002. M1-029 and M1-031/044/045 deferred by the operator pending the manager's checked rows. The research row check and instruction companion are saved locally in re-analysis/research/20261005-B-M1M2-rows-check.md and 20261005-B-M1M2-native.txt; they are not build authority and are not staged in this job.
+
+## Batch 1: M1-041 and M2-002
+
+- M1-041: restored the Opus-confirmed missing warning and info events in the existing live handlers; self-review reopened their cited addresses to preserve ordering. SendingSyncTime follows SyncTime; the idle callback stores ready before its info log. Failure warning is limited to SyncTime and InitController, preserving short-circuit sends. No wire or timer changes.
+- M2-002: the Opus-confirmed PlaceObjectOnGround gate, 30-second timeout and verify-result defects were already repaired by cf36fb5. Added regression through RunAsync for an unlatched action after BlockPlaced, the exact binary32 deadline and result 0x03000018; extended the gate test with the moving bit. Corrected stale unresolved text, without claiming the whole lifecycle recovered.
+- CHECKLIST self-review: live mfgId/response, SyncTimeAck and NV-idle entries; success/failure gates; log order; no new parallel component; no float arithmetic changes; timeout expected words from the checked binary; no circular expected constants. Both records remain IMPLEMENTATION_GAP, unresolved begins "built, awaiting strong verification:". The full queue-driven PlaceObject lifecycle remains unverified.
+- Targeted tests: 17 passed. Fidelity check and diff whitespace check: passed. Full suite: 3,832 passed, 0 failed, 0 skipped (2 m 50 s). Commit: this batch, hash to be logged after push.
+
+## MISSING items
+
+- MISSING M1-015: its Opus-noted remaining defect is Robot teardown through M1-044 (0x0052F2F6, 0x005110D4, thread join 0x0065257C). The operator explicitly deferred M1-031/044/045 and the only new detailed rows here are this builder's own unchecked extraction. No teardown changes or settlement.
+- MISSING M1-024: Opus establishes the single-rate/double/clamp/elapsed-gate contradictions, but its unresolved text and verification report do not supply the precise threshold-walk branch conditions, crossing-time calculation and multiplier association for NeedsState::ApplyDecay 0x0069C4AC..0x0069C4EE. Implementing a plausible piecewise integrator from that summary would violate CODEX-BUILDER rule 2. Needs a checked build row for that routine, including edge/failure behavior. Existing contradicted decay remains visible in the unchanged record.
+- MISSING M1-025: E7..E9 establish subscriber ordering and the disconnect/send FIFO effect, but do not establish what UiMessageHandler::OnExitSdkMode does or the predicates and mask by which MovementComponent "may" send EnableAnimTracks. No live ExitSdkMode dispatch exists in this stack. Porting an invented UI callback or unconditional unlock would violate CODEX-BUILDER rule 2. Needs checked bodies for 0x00661538..0x00661566 and 0x0064053A..0x00640570 / 0x0063FE92..0x0063FFB4. Its teardown dependency on M1-044 is also deferred above.
+- M2-002 remaining open scope: Delocalize bit 0x2/GetRobotState callers and the queue-driven lifecycle/clock bridge have no checked correction in this trial. Retained explicitly in unresolved; no new behavior invented.
+
+After batch 1 passes and is pushed, the trial is BLOCKED on the missing checked rows above. No higher-layer job or hardware run is started.

@@ -858,6 +858,53 @@ public class EngineAppLayerTests
         Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);          // the forced failure
         Assert.Contains(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);       // and it still goes out
         Assert.True(rig.Engine.Robot!.SyncTimeSentAt > 0);                             // +0x520 from that send
+        Assert.False(rig.Logged("Robot.SendSyncTime.FailedToSend"));
+    }
+
+    /// <summary>M1-041, Opus checked 0x005152C4: SyncTime and InitController failures share the warning;
+    /// ImageRequest and AbsoluteLocalizationUpdate failures do not take that branch. Drive the mfgId handler.</summary>
+    [Theory]
+    [InlineData(RobotMessageId.SyncTime, true)]
+    [InlineData(RobotMessageId.InitAnimController, true)]
+    [InlineData(RobotMessageId.AbsLocalizationUpdate, false)]
+    public void M1_041_TheSyncSendWarningHasOnlyTheTwoEarlyFailureBranches(RobotMessageId failing, bool warned)
+    {
+        using var rig = new Rig();
+        rig.ToValidated();
+        rig.Engine.Robot!.SendFault = m => m.ToBytes()[0] == (byte)failing ? false : null;
+        rig.Data(new ManufacturingID { SerialNumber = 1, BodyHwVersion = 2, BodyColor = 3 });
+        rig.Tick();
+        Assert.Equal(warned ? 1 : 0, rig.Log.Count(l => l == "warning: Robot.SendSyncTime.FailedToSend"));
+        Assert.DoesNotContain(failing, rig.Port.SentIds);
+        if (warned)
+        {
+            Assert.DoesNotContain(RobotMessageId.ImageRequest, rig.Port.SentIds);
+            Assert.DoesNotContain(RobotMessageId.AbsLocalizationUpdate, rig.Port.SentIds);
+        }
+        Assert.Equal(0f, rig.Engine.Robot.SyncTimeSentAt);
+    }
+
+    /// <summary>M1-041 Opus checked info logs: 0x005289EC after SyncTime (call 0x005289D2), 0x00528A34 before
+    /// registering the idle callback, 0x0052C3B6 inside that callback, and SyncTimeAck at 0x0053667E.</summary>
+    [Fact]
+    public void M1_041_ConnectionLogsFollowTheSyncAndNvIdleEntries()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        const string sending = "info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime";
+        const string queueing = "info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims";
+        const string setting = "info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims";
+        Assert.True(rig.Log.IndexOf(sending) >= 0);
+        Assert.True(rig.Log.IndexOf("info: Setting pose to (0,0,0)") < rig.Log.IndexOf(sending));
+        Assert.True(rig.Log.IndexOf(sending) < rig.Log.IndexOf(queueing));
+        Assert.DoesNotContain(setting, rig.Log);
+        bool? readyAtLog = null;
+        rig.Engine.LogLine += line => { if (line == setting) readyAtLog = rig.Engine.Robot!.ReadyToStream; };
+        rig.DrainConnectionQueue();
+        Assert.Equal(1, rig.Log.Count(l => l == "info: Robot.HandleSyncTimeAck"));
+        Assert.True(rig.Log.IndexOf(queueing) < rig.Log.IndexOf(setting));
+        Assert.Equal(true, readyAtLog); // +0x2A is stored at 0x0052C3A6 before the log call
+        Assert.True(rig.Engine.Robot!.ReadyToStream);
     }
 
     /// <summary>

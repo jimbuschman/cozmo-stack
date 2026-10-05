@@ -511,10 +511,38 @@ public class ManipulationTests
         SpinUntil(() => rig.M.Docking.Carrying.IsCarryingObject == false, () => rig.Pump());
         Thread.Sleep(30);
         Assert.False(t.IsCompleted);                                     // the result is in; the gate is closed
+        // 0x005549E0: clearing bit 0x4 is insufficient while MovementComponent+9 is set.
+        rig.State(flags: (uint)RobotStatusFlag.IsMoving);
+        Thread.Sleep(30);
+        Assert.False(t.IsCompleted);
         // the place is done: bit 0x4 clear and the robot is not moving
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos));
         SpinUntil(() => t.IsCompleted, () => rig.Pump());
         Assert.Equal(ActionResult.Success, t.Result);
+    }
+
+    /// <summary>M2-002, checked by Opus: a clear +0x84 latch stays RUNNING (0x005549D6), even after
+    /// BlockPlaced. The IAction timeout slot returns 30.0f (0x41F00000, 0x0052B0C2), and the inclusive
+    /// deadline fails with 0x03000018 (0x00540DA2..0x00540DAA, 0x00540E80).</summary>
+    [Fact]
+    public void M2_002_AnUnlatchedPlaceTimesOutAt30SecondsWithTheEngineResult()
+    {
+        using var rig = new Rig();
+        int clockBits = 0;
+        rig.M.ClockSec = () => BitConverter.Int32BitsToSingle(Volatile.Read(ref clockBits));
+        rig.M.Docking.Carrying.SetCarrying(7);
+        rig.State(flags: 0);
+        var place = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
+        var task = place.RunAsync(default);
+        SpinUntil(() => !rig.M.Docking.Carrying.IsCarryingObject, () => rig.Pump());
+        Assert.False(place.StatusLatched);
+        Volatile.Write(ref clockBits, unchecked((int)0x41EFFFFF)); // binary32 immediately below 30 seconds
+        Thread.Sleep(30);
+        Assert.False(task.IsCompleted); // neither the old 10-second timeout nor BlockPlaced completes it
+        Volatile.Write(ref clockBits, unchecked((int)0x41F00000));
+        SpinUntil(() => task.IsCompleted);
+        Assert.Equal(0x03000018u, (uint)task.Result);
+        Assert.False(place.StatusLatched);
     }
 
     // ------------------------------------------------------------------ behaviours

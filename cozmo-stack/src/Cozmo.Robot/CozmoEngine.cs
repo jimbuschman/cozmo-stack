@@ -1001,8 +1001,13 @@ public sealed class EngineRobot
         if (Engine.RobotStateHistoryClear is { } clear) Engine.RunIsolated(clear);
         // fidelity: M2-004
         // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
-        if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")) return;
-        if (!Send(new InitController(), "InitController")) return;
+        if (!Send(new Protocol.SyncTime(Engine.Timer.TimeStampMs, Protocol.SyncTime.EngineConstant), "SyncTime")
+            || !Send(new InitController(), "InitController"))
+        {
+            // M1-041: both failures reach the same warning (0x005152C4, name 0x00515458).
+            Engine.Log("warning: Robot.SendSyncTime.FailedToSend");
+            return;
+        }
         // fidelity: M1-041, M4-020
         // CD18: the ImageRequest send result is discarded (0x0051530C) and SendSyncTime goes on to the
         // AbsoluteLocalizationUpdate; SendSyncTime returns that send's result (0x005153AE), so +0x520 is set
@@ -1113,7 +1118,12 @@ public sealed class EngineRobot
 
     // fidelity: M1-041
     /// <summary>HandleSyncTimeAck (CD19): +0x520 = 0 and +0x29 = 1; nothing is sent.</summary>
-    internal void HandleSyncTimeAck() { SyncTimeSentAt = 0; TimeSynced = true; }
+    internal void HandleSyncTimeAck()
+    {
+        Engine.Log("info: Robot.HandleSyncTimeAck");                 // M1-041, 0x0053667E
+        SyncTimeSentAt = 0;
+        TimeSynced = true;
+    }
 
     // fidelity: M1-041, M4-020, M4-022
     /// <summary>
@@ -2031,7 +2041,13 @@ public sealed class CozmoEngine : IDisposable
         Isolated(() =>
         {
             robot.SyncTime();
-            robot.NvOnIdle(() => robot.ReadyToStream = true);
+            Log("info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime"); // 0x005289EC, after SyncTime at 0x005289D2
+            Log("info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims"); // 0x00528A34
+            robot.NvOnIdle(() =>
+            {
+                robot.ReadyToStream = true;
+                Log("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims"); // 0x0052C3B6, after +0x2A store at 0x0052C3A6
+            });
         });
         // fidelity: M3-019, M3-022
         if (VisionConnected is { } vision) Isolated(() => vision(resp.BodyHWVersion));
