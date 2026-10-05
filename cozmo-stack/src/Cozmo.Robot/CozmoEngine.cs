@@ -799,6 +799,7 @@ public sealed class EngineRobot
     {
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
+        ActionList = new ActionList(engine.Log);
         ConstructorDelocalize();
         if (queueConnectionReads) QueueConnectionReads();
     }
@@ -879,6 +880,12 @@ public sealed class EngineRobot
     /// and ready to stream (CD12). The stack's animation loop streams only while this is set.
     /// </summary>
     public bool AnimationStreamingOpen { get => _streamGate; internal set => _streamGate = value; }
+
+    /// <summary>
+    /// Robot+0x250: the ActionList (20261004-actionlist-extraction.md A/T/Q/C, B-ACTIONS batch 1). Robot::Update
+    /// ticks it at 0x005140BC, after the AIComponent step and before the animation streamer.
+    /// </summary>
+    internal ActionList ActionList { get; }
 
     // fidelity: M3-012
     private volatile int _animBytesPlayed, _audioFramesPlayed;
@@ -1232,6 +1239,15 @@ public sealed class EngineRobot
         // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
         // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
         // (IAction::UpdateInternal 0x00540D4A..0x00540E80).
+        // B-ACTIONS batch 1 (T5/T4): Robot::Update calls ActionList::Update at 0x005140BC. A non-zero list result
+        // warns but does not abort the later components.
+        Engine.RunIsolated(() =>
+        {
+            int actionResult = ActionList.Update();
+            if (actionResult != 0) Engine.Log("warning: Robot.Update.ActionList failed");
+        });
+        // The ActionRunnerUpdate hook remains the bridge for the stack's per-tick head/lift pass (M4-016), which
+        // is not yet a queued IActionRunner (B-ACTIONS batch 2 moves Motion onto the ActionList).
         if (Engine.ActionRunnerUpdate is { } actions) Engine.RunIsolated(actions);
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
         // fidelity: M3-013
