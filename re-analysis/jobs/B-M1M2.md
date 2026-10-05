@@ -1,6 +1,6 @@
 # Job B-M1M2: finish M1 and M2
 
-- **Agent:** opencode (DeepSeek) as cozmo-manager.
+- **Agent:** Codex, as builder (trial: `jobs/CODEX-BUILDER.md`). Its rules apply.
 - **Type:** build.
 - **Rules:** `CHECKLIST.md` applies, and **this job never settles a record** (section 6). The first job under the
   one-layer-at-a-time plan (PROJECT_STATE, "The plan").
@@ -31,3 +31,9 @@ Before each commit:
 - the full suite passes.
 
 Push each batch. Log it in `status/B-M1M2.md`. Finish with `DONE` or `BLOCKED <reason>`.
+
+## Trial scope (2026-10-05)
+
+Codex extracted the rows for M1-029 (the jsoncpp reader) and for the M1-031/044/045 split itself, in `research/20260930-bcore-extractions.md`, and they are unchecked. Under CODEX-BUILDER rule 2, those two items wait for the manager's check after the Claude reset.
+
+This trial builds item 1 without M1-029: M1-015, M1-024, M1-025, M1-041 and M2-002, whose rows come from the Opus verifications.

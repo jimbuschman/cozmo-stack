@@ -1,0 +1,31 @@
+# Codex as builder (trial from 2026-10-05)
+
+The operator moved development to Codex for a month. The trial is B-M1M2. These rules replace the research-lane rules
+(`re-analysis/research/README.md`) when Codex is given a **build** job. A research task still follows the research
+rules.
+
+## Setup, once, in the clone
+
+- `git config core.hooksPath scripts/hooks`: the push gate. It runs `fidelity.py --check` and the full suite before a
+  push to main.
+- `dotnet` must build `cozmo-stack/Cozmo.sln` and run its tests.
+
+## Rules
+
+1. **Read first:** `AGENTS.md`, `PROJECT_STATE.md` ("The plan"), `re-analysis/jobs/CHECKLIST.md` and the job file.
+2. **Build only from checked rows.** A checked row is one an Opus verification or the manager confirmed in the binary.
+   This means the `unresolved` text that starts "Opus verification", or a research file the manager adopted.
+   - **Never build from your own unchecked extraction.** One role does not extract and build in the same work. That
+     separation is what keeps guesses out of the code.
+   - **When a needed step has no checked row,** stop it as `MISSING:` in the status file and go on with the rest.
+3. **One batch at a time**, each kept small enough to review.
+4. **Verify each batch before committing it.** Review your own diff against CHECKLIST.md (the live production path,
+   gates, order, failure results, floats as the engine's bits at the engine's width, log texts, tests whose expected
+   values come from the binary), then run `fidelity.py --check` and the full suite.
+5. **You never settle a record.** Records stay IMPLEMENTATION_GAP, with `unresolved` starting "built, awaiting strong
+   verification:". A separate Opus pass settles the layer.
+6. **Commit and push to main yourself.** If the gate refuses because origin moved, `git pull --rebase` and push again.
+   Never force-push. Never skip the hook.
+7. **Log each batch in `status/<job>.md`:** the commit, the records touched, and every MISSING.
+8. **Stop** when the job is DONE, or BLOCKED on a decision the source can't settle. Don't start another job without
+   the operator.
