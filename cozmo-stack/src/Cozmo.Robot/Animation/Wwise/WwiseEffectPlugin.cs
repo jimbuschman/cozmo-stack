@@ -7,7 +7,8 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// </summary>
 /// <param name="SampleRate"><c>u32 [fmt+0]</c>.</param>
 /// <param name="ChannelWord"><c>u32 [fmt+4]</c>; its low byte is the channel count.</param>
-public readonly record struct WwiseEffectFormat(uint SampleRate, uint ChannelWord)
+/// <param name="RawFormat"><c>u16 [fmt+8]</c>, the sample-format word (optional; the Hijack's resampler reads it, the Compressor, EQ and Peak Limiter do not).</param>
+public readonly record struct WwiseEffectFormat(uint SampleRate, uint ChannelWord, int RawFormat = 0)
 {
     /// <summary><c>byte [fmt+4]</c> (<c>0xA9FB48 ldrb r2,[r2,#4]</c>).</summary>
     public byte Channels => (byte)(ChannelWord & 0xFF);

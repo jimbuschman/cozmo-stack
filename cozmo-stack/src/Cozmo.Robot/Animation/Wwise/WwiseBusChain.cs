@@ -42,8 +42,9 @@ public sealed record WwiseBusChainReport(double InputPeak, double OutputPeak, do
 /// <b>What is exact.</b> Every parameter below is read from <c>Init.bnk</c>: three EQ bands with their
 /// type, gain, frequency and Q, and a limiter's threshold, ratio, look-ahead and release. The filters and
 /// the limiter are the recovered Wwise plug-in DSP (M6-013; M9-026): the parametric-EQ coefficient routine
-/// and direct-form-I biquad of <see cref="WwiseEqCoefficients"/> / <see cref="WwiseEqBiquad"/>, and the
-/// peak-hold look-ahead limiter of <see cref="WwisePeakLimiter"/>. The former stand-in biquad and limiter
+/// and direct-form-I biquad of <see cref="WwiseEqPlugin"/> (<see cref="WwiseEqCoefficients"/>), and the
+/// peak-hold look-ahead limiter of <see cref="WwiseLimiterPlugin"/>, driven through the mono adapters
+/// <see cref="WwiseParametricEq"/> and <see cref="WwisePeakLimiter"/>. The former stand-in biquad and limiter
 /// are gone from the live path. The chain runs at the rate its caller passes; the stack currently renders
 /// and runs it at the robot's 22320 Hz (<see cref="CozmoAudio.SampleRate"/>).
 ///
@@ -116,7 +117,8 @@ public sealed class WwiseBusChain
                                "exact EQ coefficient routine (gapC 4.3); the engine runs this chain at the " +
                                "48000 Hz Wwise mix rate (M6-017/M6-018)");
             }
-            var settings = WwiseEqSettings.For(fx.Id, bands, eq.OutputDb);
+            // C45.2: the block's ProcessLFE byte is at 0x37 (0xAA2F2C); the shipped ShareSets carry 0.
+            var settings = WwiseEqSettings.For(fx.Id, bands, eq.OutputDb, fx.Parameters.Span[0x37] != 0);
             var filter = new WwiseParametricEq(settings, _rate);
             _resets.Add(filter.Reset);
             _stages.Add((name, scratch => filter.Process(scratch)));
@@ -125,9 +127,9 @@ public sealed class WwiseBusChain
 
         if (fx.PeakLimiter() is { } limiter && fx.PluginId == WwiseEffectNode.PeakLimiterPlugin)
         {
-            // M9-026: the exact peak-hold look-ahead limiter, including the L-sample delay and tail. The two
-            // flag bytes are the bank's own (gapC 4.5); the shipped ShareSet is unlinked (channelLink 0), and
-            // the unlinked/mono path is the only one with recovered arithmetic.
+            // M9-026: the exact Peak Limiter plug-in (WwiseLimiterPlugin, P2 0xAA0EB4). The two flag bytes are
+            // the bank's own (gapC 4.5); the shipped ShareSet is unlinked (channelLink 0). The linked processes
+            // the inventory reads only structurally throw WwiseMissingBehaviourException when Execute reaches them.
             var (processLfe, channelLink) = fx.LimiterFlags();
             var settings = new WwisePeakLimiterSettings(
                 limiter.ThresholdDb, limiter.Ratio, limiter.LookAheadSeconds, limiter.ReleaseSeconds,
