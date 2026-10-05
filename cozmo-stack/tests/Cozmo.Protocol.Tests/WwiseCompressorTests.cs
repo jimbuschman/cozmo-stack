@@ -8,7 +8,7 @@ namespace Cozmo.Protocol.Tests;
 
 /// <summary>
 /// The Compressor plug-in (<c>0x006C0003</c>, vptr <c>0x103DF28</c>; M6-013 / M6-022, C40.6, research live-bodies-10 T-F1, T-F4..T-F7) against the engine's own code under Unicorn (<c>re-analysis/tools/emu/emu_comp.py</c> -> <see cref="WwiseCompressorOracle"/>): the creators <c>0xAA0538</c> and
-/// <c>0xAA0808</c>, the parameter object's block parse <c>0xAA07A0</c> / <c>0xAA0734</c> and SetParam <c>0xAA0660</c>, Init <c>0xA9FB28</c>, Reset <c>0xA9FA68</c> and the Execute wrapper <c>0xA9FC70</c> with the per-channel worker <c>0xAA0298</c>. The expected values are the engine's, never this
+/// <c>0xAA0808</c>, the parameter object's block parse <c>0xAA07A0</c> / <c>0xAA0734</c> and SetParam <c>0xAA0660</c>, Init <c>0xA9FB28</c>, Reset <c>0xA9FA68</c> and the Execute wrapper <c>0xA9FC70</c> with the per-channel worker <c>0xAA0298</c> and (C41.5, row 3.5) the linked worker <c>0xA9FEEC</c>. The expected values are the engine's, never this
 /// implementation's. A NaN is compared as NaN (its payload is not modelled); the phone's libm is the one host seam (<see cref="WwiseHostMath.Expf"/>, <see cref="WwiseHostMath.Powf"/>) and the proof tables show it equals the correctly rounded float32 for every argument the oracle uses.
 /// </summary>
 public class WwiseCompressorTests
@@ -132,11 +132,11 @@ public class WwiseCompressorTests
     }
 
     [Fact]
-    public void M6_013_T_F5_T_F6_T_F7_Every_oracle_case_matches_the_engine_Init_0xA9FB28_Reset_0xA9FA68_and_Execute_0xA9FC70_with_worker_0xAA0298()
+    public void M6_013_T_F5_T_F6_T_F7_T_F8_Every_oracle_case_matches_the_engine_Init_0xA9FB28_Reset_0xA9FA68_and_Execute_0xA9FC70_with_workers_0xAA0298_and_0xA9FEEC()
     {
-        // 2796 lives: the shipped blocks at every rate, grid blocks, make-up changes (the NEON ramp and the equal multiply), denormal-scale and denormal inputs (NEON flush to zero), NaN / inf / random patterns, stereo and 3 channels with the LFE
+        // 5346 lives (2796 with the per-channel worker; the rest are the linked worker 0xA9FEEC, C41.5: the shipped blocks forced to link byte 1 at every rate on 2, 3 and 6 channels, 2..8 channels with link bytes 1..3, the LFE flag with the LFE byte 0 and 1 including the n == 0 mono case, denormal and NaN inputs, extreme coefficients, coefficient refresh, a channel word that disagrees with the object). The per-channel groups: the shipped blocks at every rate, grid blocks, make-up changes (the NEON ramp and the equal multiply), denormal-scale and denormal inputs (NEON flush to zero), NaN / inf / random patterns, stereo and 3 channels with the LFE
         // flag, coefficient extremes, every Init worker choice and the failing state allocation, and the parameter-object ops. Each row is the engine's output.
-        Assert.True(WwiseCompressorOracle.Cases.Length >= 2400);
+        Assert.True(WwiseCompressorOracle.Cases.Length >= 5000);
         int bad = 0;
         string? first = null;
         foreach (var row in WwiseCompressorOracle.Cases)
@@ -171,7 +171,49 @@ public class WwiseCompressorTests
             if (part[2].Contains("E.") && !part[2].Contains("P.4.") && !part[2].Contains("B.") && !part[2].Contains("D")) equalMultiply++;
         }
         Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6 }, kinds.OrderBy(k => k).ToArray());
-        Assert.True(ramp > 400 && equalMultiply > 1000 && linked >= 12 && perChannel > 2500 && failed >= 24 && stereo > 300, $"{ramp} {equalMultiply} {linked} {perChannel} {failed} {stereo}");
+        Assert.True(ramp > 400 && equalMultiply > 1000 && linked >= 2500 && perChannel > 2500 && failed >= 24 && stereo > 300, $"{ramp} {equalMultiply} {linked} {perChannel} {failed} {stereo}");
+    }
+
+    [Fact]
+    public void M6_013_T_F8_The_oracle_covers_the_linked_worker_0xA9FEEC_on_every_channel_count_link_byte_and_LFE_case()
+    {
+        // C41.5 (row 3.5): the guard of the linked part of the oracle: Executes on the linked worker at 1..8 channels, the three link bytes, the LFE flag of the channel word with the LFE byte 0 and 1, every input kind, and the n == 0 case
+        // (mono, LFE flag, LFE byte 0), where the engine's mean square becomes NaN (0 * inf) and the state word {g, ms} carries it.
+        var channels = new HashSet<int>();
+        var links = new HashSet<int>();
+        var kinds = new HashSet<int>();
+        var lfeCombos = new HashSet<string>();
+        int nZero = 0, nZeroNaN = 0, stereoLinkedExecutes = 0;
+        foreach (var row in WwiseCompressorOracle.Cases)
+        {
+            var part = row.Split(" | ");
+            var init = part[3].Split(' ');
+            if (init[1] != "A9FEEC" || !part[2].Contains("E.")) continue;
+            var head = part[0].Split(' ');
+            int ch = int.Parse(head[1]);
+            uint word = Convert.ToUInt32(head[2], 16);
+            var block = Convert.FromHexString(part[1]);
+            channels.Add(ch);
+            links.Add(block[0x15]);
+            foreach (var op in part[2].Split(' ')) if (op.StartsWith("E.")) kinds.Add(int.Parse(op.Split('.')[3]));
+            bool flag = (word & 0x8000) != 0;
+            lfeCombos.Add($"{(flag ? "flag" : "noflag")}/lfe{block[0x14]}");
+            if (ch == 2) stereoLinkedExecutes++;
+            if (flag && block[0x14] == 0 && ch == 1)
+            {
+                nZero++;
+                // the first E result: the state pair {g, ms}; ms is NaN (canonicalised to 7FC00000 in the comparison)
+                var e = part[4].Split(" ; ").First(r => r.StartsWith("E:")).Split(':');
+                var pair = e[^1].Split(',');
+                if (CanonWords(pair[1]) == "7FC00000") nZeroNaN++;
+            }
+        }
+        Assert.Equal(new[] { 1, 2, 3, 4, 5, 6, 7, 8 }, channels.OrderBy(c => c).ToArray());
+        Assert.Equal(new[] { 1, 2, 3 }, links.OrderBy(c => c).Select(c => (int)c).ToArray());
+        Assert.Equal(new[] { 0, 1, 2, 3, 4, 5, 6 }, kinds.OrderBy(k => k).ToArray());
+        Assert.Equal(new[] { "flag/lfe0", "flag/lfe1", "noflag/lfe0", "noflag/lfe1" }, lfeCombos.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+        Assert.True(nZero >= 5 && nZeroNaN == nZero, $"n == 0 rows {nZero}, with a NaN mean square {nZeroNaN}");
+        Assert.True(stereoLinkedExecutes > 500, stereoLinkedExecutes.ToString());
     }
 
     [Fact]
@@ -341,12 +383,18 @@ public class WwiseCompressorTests
     }
 
     [Theory]
-    [InlineData(2, 1)]
-    [InlineData(3, 1)]
-    [InlineData(1, 2)]
-    public void M6_013_T_F8_The_linked_worker_0xA9FEEC_is_selected_by_Init_and_stops_Execute_visibly(int channels, int link)
+    [InlineData(2, 1, true)]
+    [InlineData(3, 1, true)]
+    [InlineData(2, 2, true)]
+    [InlineData(1, 2, true)]
+    [InlineData(1, 3, true)]
+    [InlineData(1, 1, false)]
+    [InlineData(1, 0, false)]
+    [InlineData(2, 0, false)]
+    [InlineData(3, 0, false)]
+    public void M6_013_T_F8_Init_chooses_the_linked_worker_0xA9FEEC_when_the_channel_count_is_not_1_and_the_link_byte_is_set_or_the_link_byte_is_above_1(int channels, int link, bool linked)
     {
-        // 0xA9FBB8 cmp r2,r6; bhs: m = (channels == 1), m < byte[params+0x19] picks 0xA9FEEC with an 8-byte state and +0x1C = 1. Its per-sample arithmetic is RECOVERABLE_GAP (not read).
+        // 0xA9FBA8..0xA9FBB8: m = (channels == 1), m < byte[params+0x19] (unsigned) picks 0xA9FEEC with an 8-byte state and +0x1C = 1; otherwise 0xAA0298 (the oracle's Init rows, group H, are the engine's own answers for the same table).
         var a = new WwisePluginAllocator();
         var p = WwiseCompressorParams.Create(a)!;
         var blk = (byte[])ShippedBlock.Clone();
@@ -354,14 +402,52 @@ public class WwiseCompressorTests
         p.SetParamsBlock(blk);
         var c = WwiseCompressor.Create(a)!;
         Assert.Equal(1, c.Init(a, null, p, new WwiseEffectFormat(48000, (uint)channels)));
-        Assert.Equal(WwiseCompressor.WorkerKind.Linked, c.Worker);
-        Assert.Equal(1u, c.StateCount);
-        Assert.Equal(8, a.Sizes[^1]);
+        Assert.Equal(linked ? WwiseCompressor.WorkerKind.Linked : WwiseCompressor.WorkerKind.PerChannel, c.Worker);
+        if (linked)
+        {
+            Assert.Equal(1u, c.StateCount);
+            Assert.Equal(8, a.Sizes[^1]);
+        }
         c.Reset();
-        var s = new WwiseDecodeState { Data = new float[2 * 16], ChannelConfig = (uint)channels, MaxFrames = 16, ValidFrames = 16 };
-        Assert.Throws<WwiseMissingBehaviourException>(() => c.Execute(s));
+        var data = new float[3 * 16];
+        for (int i = 0; i < data.Length; i++) data[i] = 0.01f * (i + 1);
+        var s = new WwiseDecodeState { Data = data, ChannelConfig = (uint)channels, MaxFrames = 16, ValidFrames = 16 };
+        c.Execute(s);                                                      // the linked worker no longer stops (its arithmetic is the oracle's, see the equality test)
         s.ValidFrames = 0;
         c.Execute(s);                                                      // 0xA9FC8C returns before the worker is reached
+    }
+
+    [Fact]
+    public void M6_013_T_F8_A_zero_channel_object_with_the_LFE_flag_wraps_in_the_linked_worker_and_is_a_visible_stop()
+    {
+        // 0xA9FF04..0xA9FF18 / 0xAA01E4: [S+4] & 0x8000 with the LFE byte 0 subtracts 1 from [this+0x14]; a zero-channel object wraps to 0xFFFFFFFF (the engine builds a pointer table of 2^32 entries on an 8-byte stack block).
+        var a = new WwisePluginAllocator();
+        var p = WwiseCompressorParams.Create(a)!;
+        var blk = (byte[])ShippedBlock.Clone();
+        blk[0x14] = 0;
+        blk[0x15] = 2;
+        p.SetParamsBlock(blk);
+        var c = WwiseCompressor.Create(a)!;
+        Assert.Equal(1, c.Init(a, null, p, new WwiseEffectFormat(48000, 0)));
+        Assert.Equal(WwiseCompressor.WorkerKind.Linked, c.Worker);
+        c.Reset();
+        var s = new WwiseDecodeState { Data = new float[16], ChannelConfig = 0x8000, MaxFrames = 16, ValidFrames = 16 };
+        Assert.Throws<InvalidOperationException>(() => c.Execute(s));
+    }
+
+    [Fact]
+    public void M6_013_T_F8_The_linked_worker_before_Reset_stops_visibly()
+    {
+        // 0xA9FF90 / 0xA9FF98 read {g, ms} at [this+0x24] (the allocation of 0xA9FBEC is not zeroed).
+        var a = new WwisePluginAllocator();
+        var p = WwiseCompressorParams.Create(a)!;
+        var blk = (byte[])ShippedBlock.Clone();
+        blk[0x15] = 1;
+        p.SetParamsBlock(blk);
+        var c = WwiseCompressor.Create(a)!;
+        c.Init(a, null, p, new WwiseEffectFormat(48000, 2));
+        var s = new WwiseDecodeState { Data = new float[32], ChannelConfig = 2, MaxFrames = 16, ValidFrames = 16 };
+        Assert.Throws<WwiseMissingBehaviourException>(() => c.Execute(s));
     }
 
     [Fact]

@@ -113,3 +113,8 @@ Queued: WwiseVoiceBusPass tail override test-only; NodeNotificationA0428C not ho
 
 ## Pass 11 extraction (V7 on owner PBI, linked compressor worker, in-place FX wrapper)
 Saved as research/20261004-B-M6b-4-live-bodies-11.md, UNVERIFIED. Next: verifier on rows, correction C41, batch 5k (V7 on owner PBI; WwiseVoiceInsertFxSlot 0x103DB98 in-place wrapper vs 0x103DC38; linked worker 0xA9FEEC with emu_comp oracle).
+
+## Batch 5l - Compressor linked worker 0xA9FEEC (Sonnet-built, Opus-verified PASS)
+Built from C41.5 / row 3.5: RunLinkedWorker in WwiseCompressor.cs (n adjust with the 0x8000 flag, k, coefficient refresh incl. NaN time, non-fused sum/ms/log10/pow10, state stores, n==0 NaN). Oracle 5346 lives (first 2796 unchanged; 2550 linked; emitted as u8 data literals to stay inside the CS8103 string-literal budget); emu_comp.py --check 16928 Executes 0 mismatches; 29 mutants (27 killed, 1 equivalent; verifier's own 17: only the fused m=sum*inv+1e-25 survives, no row has sums below ~1e-17). No MISSING in the worker. Visible stops: n wraps to 0xFFFFFFFF, state not ready.
+Tests: WwiseCompressorTests 30/30 in a private copy of HEAD (real tree not building mid-5k). Full suite not run for this commit alone (tree mid-5k); runs with 5k.
+Queued: emu_comp.py docstrings (Model lists 0xA9FEEC; stride<frames claim untested); a row with tiny sums to pin non-fused m. M6-013 `test` text updated (5346 lives, both workers). Still unwired: nothing constructs the Compressor; the wrapper slot is batch 5k.

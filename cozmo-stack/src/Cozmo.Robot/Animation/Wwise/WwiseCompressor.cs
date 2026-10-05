@@ -145,8 +145,8 @@ public sealed class WwiseCompressorParams
 /// <c>operator delete(this)</c>), <c>+8</c> Term <c>0xA9FA14</c>, <c>+0xC</c> Reset <c>0xA9FA68</c>, <c>+0x10</c> GetPluginInfo <c>0xA9FAEC</c>, <c>+0x14</c>/<c>+0x18</c> the stubs returning 0, <c>+0x1C</c> Init <c>0xA9FB28</c>, <c>+0x20</c> Execute <c>0xA9FC70</c>, <c>+0x24</c> <c>0xAA05B0</c>.
 /// <para><b>Fields</b> (the engine's object): <c>+4</c> the parameter object, <c>+8</c>/<c>+0xC</c> the worker member pointer (Init always stores a direct pointer, <c>+0xC = 0</c>), <c>+0x10</c> the previous make-up gain (the ramp start), <c>+0x14</c> the channels, <c>+0x18</c> the rate, <c>+0x1C</c> the number of state pairs,
 /// <c>+0x20</c> the power smoothing coefficient <c>expf(-1.0f / (rate * 0.02322f))</c>, <c>+0x24</c> the state array (pairs <c>{g, p}</c>, 8 bytes each), <c>+0x28</c>/<c>+0x2C</c> the attack time and its coefficient <c>expf(-2.2f / (rate * attack))</c>, <c>+0x30</c>/<c>+0x34</c> the release time and coefficient, byte <c>+0x38</c> the LFE flag.</para>
-/// <para><b>Workers.</b> <c>m = (channels == 1)</c>; <c>m &lt; byte[params+0x19]</c> (unsigned) selects the linked worker <c>0xA9FEEC</c> (state 8 bytes, <c>+0x1C = 1</c>), otherwise the per-channel worker <c>0xAA0298</c> with <c>channels * 8</c> state bytes when that byte is 0, else 8 bytes. The per-channel
-/// worker (mono, and stereo without the link flag) is built; the linked worker's per-sample arithmetic is not read (RECOVERABLE_GAP): its Execute throws <see cref="WwiseMissingBehaviourException"/>.</para>
+/// <para><b>Workers.</b> <c>m = (channels == 1)</c>; <c>m &lt; byte[params+0x19]</c> (unsigned) selects the linked worker <c>0xA9FEEC</c> (state 8 bytes, <c>+0x1C = 1</c>), otherwise the per-channel worker <c>0xAA0298</c> with <c>channels * 8</c> state bytes when that byte is 0, else 8 bytes. Both workers are built: the per-channel one
+/// (mono, and stereo without the link flag) and the linked one <see cref="RunLinkedWorker"/> (C41.5, row 3.5).</para>
 /// <para><b>Numerics.</b> binary32 throughout, non-fused <c>vmla/vmls/vnmls</c> (the product rounded, then the add), scalar VFP operations IEEE; the NEON q-register operations of the make-up stage (<c>vmul.f32</c>, <c>vadd.f32</c>) flush denormal operands and results to zero (a NaN's payload is not modelled: it compares as NaN).
 /// The one host seam is <see cref="WwiseHostMath.Expf"/>. The state memory the engine allocates is not zeroed (<c>0xA9FBEC</c> only allocates); the owner calls <see cref="Reset"/> next (the in-place wrapper's tail call <c>0xA79334</c>), and Execute before that throws.</para>
 /// </summary>
@@ -176,7 +176,7 @@ public sealed class WwiseCompressor : IWwiseEffectPlugin
         /// <summary><c>0xAA0298</c>: one state pair per channel.</summary>
         PerChannel = 1,
 
-        /// <summary><c>0xA9FEEC</c>: one gain from the summed squares of all channels (not read).</summary>
+        /// <summary><c>0xA9FEEC</c>: one gain from the summed squares of all channels (C41.5).</summary>
         Linked = 2,
     }
 
@@ -404,7 +404,8 @@ public sealed class WwiseCompressor : IWwiseEffectPlugin
                 RunPerChannelWorker(s, p0, p1, p2, p3);
                 break;
             case WorkerKind.Linked:
-                throw new WwiseMissingBehaviourException("M6-013 T-F8: the linked worker 0xA9FEEC (channels > 1 with byte [params+0x19] set; also mono with that byte above 1) is read at control-flow level only: its per-sample arithmetic is RECOVERABLE_GAP");
+                RunLinkedWorker(s, p0, p1, p2, p3);                              // 0xA9FEEC (C41.5, row 3.5)
+                break;
             default:
                 throw new WwiseMissingBehaviourException("M6-013 T-F6: Execute before Init (the engine's worker pointer [this+8] is uninitialised)");
         }
@@ -473,6 +474,103 @@ public sealed class WwiseCompressor : IWwiseEffectPlugin
         if (chs != 0 && (long)(chs - 1) * stride + n > data.Length)
             throw new InvalidOperationException("the engine would read past the audio buffer: channels * stride + frames exceed it");
         return data;
+    }
+
+    /// <summary>
+    /// The linked worker <c>0xA9FEEC(this, S, P)</c> (C41.5, row 3.5): one gain for all channels. <c>n = [+0x14]</c>, minus 1 when <c>u32 [S+4] &amp; 0x8000</c> and byte <c>[+0x38] == 0</c> (<c>0xA9FEFC..0xA9FF18</c>, <c>0xAA01E4</c>); <c>inv = 1.0f / float(n)</c> (unsigned convert; <c>n == 0</c> gives +inf),
+    /// <c>k = 1.0f / P[1] - 1.0f</c>. Attack and release refresh the cached coefficients exactly as the per-channel worker does (<c>0xAA0224..0xAA0248</c>, <c>0xAA01F8..0xAA0220</c>; a NaN time differs). The state pair is <c>{g, ms}</c> at <c>[+0x24]</c>. Per frame:
+    /// <c>sum</c> = the non-fused <c>vmla</c> chain of <c>x_c * x_c</c> over the <c>n</c> planes from <c>0.0f</c> (<c>0xAA0088..0xAA00A0</c>; none when <c>n == 0</c>, <c>0xAA01DC</c>); <c>m = 1e-25f + sum * inv</c> (for <c>n == 0</c> that is <c>0 * inf</c> = NaN);
+    /// <c>ms = m + (ms - m) * [+0x20]</c>; the fast log of <c>ms</c> as the per-channel worker; <c>lvl = 10.0f * L - P[0]</c> (<c>vnmls</c>); <c>over = lvl</c> when <c>lvl &gt; 0</c>, else <c>0.0f</c> (a NaN gives 0); the coefficient is the release's when <c>over - g &lt; 0</c> or unordered, else the attack's;
+    /// <c>g = over + c * (g - over)</c>; <c>y = (g * k) * 0.05f</c>; <c>lin = 0</c> when <c>y &lt; -37.0f</c>, else the fast power; every plane <c>c &lt; n</c> frame is multiplied by <c>lin</c> in place, plane by plane. The plane pointer table (<c>0xA9FFC8..0xAA0048</c>, NEON integer <c>vmla.i32</c> blocks of four plus a scalar
+    /// tail) is integer arithmetic only: <c>ptr[c] = pData + 4 * c * u16 [S+0xC]</c>, so there is no flush-to-zero there and the float arithmetic is all scalar VFP (IEEE). After the loop <c>st[1] = ms</c> and <c>st[0] = g</c> (<c>0xAA01C0..0xAA01C4</c>).
+    /// </summary>
+    private void RunLinkedWorker(WwiseDecodeState s, float p0, float p1, float p2, float p3)
+    {
+        uint n = _channels;                                                     // 0xA9FF1C ldr r4,[r5,#0x14]
+        if ((s.ChannelConfig & 0x8000) != 0 && _lfe == 0) n--;                  // 0xA9FF04..0xA9FF18, 0xAA01E4..0xAA01E8
+        float one = 1f;                                                         // 0xA9FF20 vmov.f32 s15,#1.0
+        float k = one / p1;                                                     // 0xA9FF34 vdiv.f32 s17,s15,s17
+        k = k - one;                                                            // 0xA9FF44 vsub.f32 s17,s17,s15
+        float inv = one / (float)n;                                             // 0xA9FF3C vcvt.f32.u32 s16,s12; 0xA9FF4C vdiv.f32 s16,s15,s16
+        if (p2 != _attackSetting)                                               // 0xA9FF40 vcmp.f32 s14,s13; bne 0xAA0224
+        {
+            _attackSetting = p2;                                                // 0xAA0228
+            _attackCoef = WwiseHostMath.Expf(MinusTwoPointTwo / (p2 * (float)_rate));         // 0xAA022C..0xAA0244
+        }
+        if (p3 != _releaseSetting)                                              // 0xA9FF60 vcmp.f32 s15,s14; bne 0xAA01F8
+        {
+            _releaseSetting = p3;                                               // 0xAA01FC
+            _releaseCoef = WwiseHostMath.Expf(MinusTwoPointTwo / (p3 * (float)_rate));        // 0xAA0200..0xAA0218
+        }
+        if (n == uint.MaxValue) throw new InvalidOperationException("the linked worker's channel count wraps to 0xFFFFFFFF (a zero-channel object with the LFE flag): the engine builds a pointer table of 2^32 entries on a stack block of 8 bytes");
+
+        int frames = s.ValidFrames;                                             // 0xAA0054 ldrh r0,[r6,#0xe]
+        int stride = s.MaxFrames;                                               // 0xA9FFB8 ldrh r7,[r6,#0xc] (only read when n != 0)
+        if (_state is null || !_stateReady || _state.Length < 2)
+            throw new WwiseMissingBehaviourException("M6-013 T-F7/C41.5: the linked worker reads {g, ms} at [this+0x24] (0xA9FF90, 0xA9FF98): Init's allocation is not zeroed (Reset must run first) and an allocation-failed Init leaves it null");
+        float[]? data = n == 0 ? null : DataOf(s, n, stride, frames);           // 0xA9FF7C cmp r4,#0; beq 0xAA004C: the table is not built for n == 0
+
+        float g = _state[0];                                                    // 0xA9FF98 vldr s13,[lr]
+        float ms = _state[1];                                                   // 0xA9FF90 vldr s12,[lr,#4]
+        for (int i = 0; i < frames; i++)                                        // 0xAA0078 subs r0,r0,#1; blo 0xAA01C0
+        {
+            float sum = 0f;                                                     // 0xAA0088 / 0xAA01DC (0.0f, literal 0xAA0260)
+            for (uint c = 0; c < n; c++)                                        // 0xAA0090..0xAA00A0
+            {
+                float x = data![(int)c * stride + i];
+                float xx = x * x;
+                sum = sum + xx;                                                 // 0xAA009C vmla.f32 s14,s15,s15
+            }
+            float prodSum = sum * inv;
+            float m = Tiny + prodSum;                                           // 0xAA00A4..0xAA00A8 s15 = 1e-25f; vmla.f32 s15,s14,s16
+            float diff = ms - m;                                                // 0xAA00AC vsub.f32 s12,s12,s15
+            float prodMs = diff * _powerCoef;
+            ms = m + prodMs;                                                    // 0xAA00B0 vmla.f32 s15,s12,s10; 0xAA00BC s12 = s15
+            uint bits = BitConverter.SingleToUInt32Bits(ms);                    // 0xAA00B4
+            uint mant = bits & 0x7FFFFF;                                        // 0xAA00C0 ubfx r2,r3,#0,#0x17
+            int e = (int)((bits >> 23) & 0xFF);                                 // 0xAA00C4 ubfx r3,r3,#0x17,#8
+            float f = BitConverter.UInt32BitsToSingle(mant + 0x3F800000);       // 0xAA00CC, 0xAA00D0
+            float t = (f - 1f) / (f + 1f);                                      // 0xAA00D8, 0xAA00DC, 0xAA00E0
+            float t2 = t * t;                                                   // 0xAA00E4
+            float ef = (float)e - 127f;                                         // 0xAA00D4 vcvt.f32.s32; 0xAA00E8 (127.0f 0xAA026C)
+            float prodPoly = t2 * OneThird;
+            float poly = 1f + prodPoly;                                         // 0xAA00EC vmla.f32 s20,s0,s4
+            float lnE = ef * Ln2;                                               // 0xAA00F0
+            float t2x = t + t;                                                  // 0xAA00F4
+            float prodLn = t2x * poly;
+            float sumLn = lnE + prodLn;                                         // 0xAA00F8 vmla.f32 s15,s14,s20
+            float lg = sumLn * Log10E;                                          // 0xAA00FC
+            float prodL = lg * 10f;                                             // 0xAA0100, 0xAA0108 vnmls.f32 s0,s15,s14 with s0 = threshold
+            float lvl = prodL - p0;
+            float over = lvl > 0f ? lvl : 0f;                                   // 0xAA010C..0xAA0118: vcmpe; vmovle s15,s2 (a NaN is "le")
+            float rise = over - g;                                              // 0xAA011C
+            float fall = g - over;                                              // 0xAA0120
+            float cf = rise >= 0f ? _attackCoef : _releaseCoef;                 // 0xAA0124..0xAA0130: vmovlt (release), vmovge (attack); unordered is lt
+            float prodG = cf * fall;
+            g = over + prodG;                                                   // 0xAA0134 vmla.f32 s15,s14,s13
+            float y = g * k;                                                    // 0xAA0138
+            y = y * Point05;                                                    // 0xAA013C
+            float lin;
+            if (y < MinusThirtySeven) lin = 0f;                                 // 0xAA0140..0xAA014C bmi 0xAA01D4 (s14 = 0.0f)
+            else
+            {
+                float scaled = y * PowScale;                                    // 0xAA0158 vmla.f32 s15,s14,s1
+                float word = PowBase + scaled;
+                uint u = SaturatingU32(word);                                   // 0xAA0164 vcvt.u32.f32
+                float m2 = BitConverter.UInt32BitsToSingle((u & 0x7FFFFF) + 0x3F800000);       // 0xAA016C, 0xAA0174, 0xAA017C
+                float expWord = BitConverter.UInt32BitsToSingle((u >> 23) << 23);              // 0xAA0170, 0xAA0178, 0xAA0188
+                float c7 = PolyC7 + m2 * PolyC6;                                // 0xAA0180 vmla.f32 s0,s15,s20
+                float c8 = PolyC8 + m2 * c7;                                    // 0xAA0184 vmla.f32 s14,s15,s0
+                lin = c8 * expWord;                                             // 0xAA018C
+            }
+            for (uint c = 0; c < n; c++)                                        // 0xAA0198..0xAA01B4
+            {
+                int idx = (int)c * stride + i;
+                data![idx] = data[idx] * lin;                                   // 0xAA01A4 vmul.f32 s15,s15,s14
+            }
+        }
+        _state[1] = ms;                                                         // 0xAA01C0 vstr s12,[lr,#4]
+        _state[0] = g;                                                          // 0xAA01C4 vstr s13,[lr]
     }
 
     /// <summary>

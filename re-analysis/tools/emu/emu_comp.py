@@ -5,7 +5,7 @@
     python re-analysis/tools/emu/emu_comp.py --case N                                                                 (the long form of case N)
 
 The engine code that runs (no stand-in for it): the creators 0xAA0538 (the Compressor, 0x3C bytes) and 0xAA0808 (the parameter object, 0x1C bytes), the parameter object's block parse 0xAA07A0 -> 0xAA0734 (the defaults for size 0) and SetParam 0xAA0660, Init
-0xA9FB28, Reset 0xA9FA68 and the Execute wrapper 0xA9FC70 with its worker 0xAA0298 (the per-channel worker: mono, and unlinked stereo). The stand-ins are the plug-in allocator (vt+8 / vt+0xC of an object in emulated memory: a bump allocator whose
+0xA9FB28, Reset 0xA9FA68 and the Execute wrapper 0xA9FC70 with its workers 0xAA0298 (the per-channel worker: mono, and unlinked stereo) and, since batch 5l (C41.5), 0xA9FEEC (the linked worker: channels > 1 with the link byte set, and mono with the link byte above 1). The stand-ins are the plug-in allocator (vt+8 / vt+0xC of an object in emulated memory: a bump allocator whose
 blocks are poisoned with 0xCD, so a read of uninitialised memory shows) and the phone's libm: expf (PLT 0x4D0058) and powf (PLT 0x4D6778) are not shipped, so both are float32 CORRECTLY ROUNDED here (200-bit mpmath arithmetic, rounded once to 24 bits by
 integer arithmetic: independent of any double precision exp), which is what the C# host seam WwiseHostMath.Expf (double Math.Exp rounded once) is proved equal to for every argument this oracle produces (the ExpfProof / PowfProof tables).
 
@@ -408,7 +408,10 @@ class Model:
             w = P['w']
             thr, ratio, att, rel = F(w[0]), F(w[1]), F(w[2]), F(w[3])
             g1 = F(w[4])
-            self.worker(o, data, c, frames, stride, thr, ratio, att, rel)
+            if o['worker'] == 'L':
+                self.worker_linked(o, data, c, frames, stride, thr, ratio, att, rel)
+            else:
+                self.worker(o, data, c, frames, stride, thr, ratio, att, rel)
             g0 = o['prev']
             cfg = c['cfg']
             chs = cfg & 0xFF
@@ -515,6 +518,68 @@ class Model:
                 data[b + i] = x * lin
             o['state'][2 * ch] = g
             o['state'][2 * ch + 1] = p
+
+    def worker_linked(self, o, data, c, frames, stride, thr, ratio, att, rel):
+        """0xA9FEEC from the disassembly (not from the C#): the plane pointers are pData + 4 * c * stride, i.e. element index c * stride (the same read/modify/write order as the engine, so a stride that makes the planes overlap behaves the same)."""
+        one = np.float32(1.0)
+        n = o['ch']
+        if (c['cfg'] & 0x8000) and o['lfe'] == 0:
+            n -= 1
+        inv = one / np.float32(n)                         # vcvt.f32.u32 then vdiv: n == 0 gives +inf
+        k = np.float32(one / ratio) - one
+        if not (att == o['aset']):
+            o['aset'] = att
+            o['acoef'] = F(expf(fb(F(0xC00CCCCD) / (att * np.float32(o['rate'])))))
+        if not (rel == o['rset']):
+            o['rset'] = rel
+            o['rcoef'] = F(expf(fb(F(0xC00CCCCD) / (rel * np.float32(o['rate'])))))
+        tiny, third, c127, ln2, l10 = F(0x15F79688), F(0x3EAAAAAB), F(0x42FE0000), F(0x3F317218), F(0x3EDE5BD9)
+        p05, m37, sc, base, c6, c7, c8 = F(0x3D4CCCCD), F(0xC2140000), F(0x4BD49A78), F(0x4E7E0000), F(0x3EA67F46), F(0x3CAA70DE), F(0x3F272DDB)
+        g = o['state'][0]
+        ms = o['state'][1]
+        for i in range(frames):
+            s_ = np.float32(0.0)
+            for ch in range(n):
+                x = data[ch * stride + i]
+                s_ = s_ + np.float32(x * x)
+            m = tiny + np.float32(s_ * inv)
+            ms = m + np.float32((ms - m) * o['pcoef'])
+            bb = fb(ms)
+            e = (bb >> 23) & 0xFF
+            f = F((bb & 0x7FFFFF) + 0x3F800000)
+            t = (f - one) / (f + one)
+            t2 = t * t
+            poly = one + np.float32(t2 * third)
+            ln = np.float32(np.float32(e) - c127) * ln2
+            ln = ln + np.float32(np.float32(t + t) * poly)
+            lg = ln * l10
+            over = np.float32(lg * np.float32(10.0)) - thr
+            if not (over > 0):
+                over = np.float32(0.0)
+            rise = over - g
+            fall = g - over
+            a = o['acoef'] if rise >= 0 else o['rcoef']
+            g = over + np.float32(a * fall)
+            y = np.float32(g * k) * p05
+            if y < m37:
+                lin = np.float32(0.0)
+            else:
+                word = base + np.float32(y * sc)
+                if np.isnan(word) or word <= 0:
+                    u = 0
+                elif word >= np.float32(4294967296.0):
+                    u = M32
+                else:
+                    u = int(word)
+                m2 = F((u & 0x7FFFFF) + 0x3F800000)
+                f7 = c7 + np.float32(m2 * c6)
+                f8 = c8 + np.float32(m2 * f7)
+                lin = f8 * F((u >> 23) << 23)
+            for ch in range(n):
+                idx = ch * stride + i
+                data[idx] = data[idx] * lin
+        o['state'][0] = g
+        o['state'][1] = ms
 
 
 def model_row(m, c):
@@ -652,16 +717,114 @@ def make_cases():
     # I. the defaults and the block ops between executes
     for _ in range(60):
         case(rng.choice(RATES), 1, 1, None, [('R',), E(), ('B', rand_block(rng)), E(), ('D',), E()])
+    # ---- batch 5l (C41.5): the linked worker 0xA9FEEC. These groups come after every group above, so the rows above (and the random draws that make them) are unchanged.
+    def lblock(b, link=None, lfe=None):
+        b = bytearray(b)
+        if link is not None:
+            b[0x15] = link
+        if lfe is not None:
+            b[0x14] = lfe
+        return bytes(b)
+
+    # J. the seven shipped blocks (link byte forced to 1 where the bank has 0), every rate, stereo / 3 / 6 channels
+    for blk in SHIPPED_BLOCKS:
+        for rate in RATES:
+            for ch in (2, 3, 6):
+                case(rate, ch, ch, lblock(blk, link=1), [('R',), E(kind=0), E(kind=0), E(kind=1)])
+    # K. grid blocks, link byte 1..3, 2..8 channels, audio / loud, with a make-up change (the NEON ramp) in the middle
+    for _ in range(600):
+        ch = rng.choice([2, 2, 3, 4, 5, 6, 7, 8])
+        blk = lblock(rand_block(rng), link=rng.choice([1, 1, 2, 3]))
+        case(rng.choice(RATES), ch, ch, blk, [('R',), E(kind=rng.choice([0, 0, 1])), P(4, fb(f32(rng.choice([0.0, 3.0, 6.0, -6.0])))), E(kind=0), E(kind=rng.choice([0, 1]))])
+    # L. the LFE flag in the channel word with the LFE byte 0 and 1; mono with link byte 2, 3 (n = 1, and n = 0: 0 * inf = NaN enters the mean square)
+    for _ in range(300):
+        ch = rng.choice([1, 1, 2, 3, 6])
+        blk = lblock(rand_block(rng), link=rng.choice([2, 3]) if ch == 1 else rng.choice([1, 2]), lfe=rng.choice([0, 1]))
+        case(rng.choice(RATES), ch, ch | 0x8000, blk, [('R',), E(kind=rng.choice([0, 0, 1])), E(kind=0), P(4, fb(f32(6.0))), E(kind=rng.choice([0, 1]))])
+    # M. denormal-scale and denormal inputs, zeros
+    for _ in range(400):
+        ch = rng.choice([1, 2, 3, 4, 6])
+        blk = lblock(rand_block(rng), link=rng.choice([1, 2]) if ch > 1 else 2)
+        kind = rng.choice([2, 2, 3, 3, 6])
+        case(rng.choice(RATES), ch, ch | rng.choice([0, 0x8000]), blk, [('R',), E(kind=kind), P(4, fb(f32(rng.choice([3.0, 9.0, -9.0])))), E(kind=kind), E(kind=0), E(kind=kind)])
+    # N. NaN / inf / random bit patterns on 1..6 channels
+    for _ in range(400):
+        ch = rng.choice([1, 2, 2, 3, 4, 6])
+        blk = lblock(rand_block(rng), link=rng.choice([1, 2]) if ch > 1 else 2)
+        kind = rng.choice([4, 5, 5])
+        case(rng.choice(RATES), ch, ch | rng.choice([0, 0, 0x8000]), blk, [('R',), E(kind=kind), E(kind=0), P(4, fb(f32(rng.choice([2.0, 5.0])))), E(kind=kind)])
+    # O. extremes of the coefficients (zero, negative, huge, NaN times; zero and huge rates; ratio 0 / NaN / negative; threshold NaN / huge)
+    for _ in range(150):
+        ch = rng.choice([2, 3, 6])
+        blk = lblock(rand_block(rng, edge=True), link=rng.choice([1, 2]))
+        case(rng.choice(RATES + [0, 1, 1000000]), ch, ch, blk, [('R',), E(kind=rng.choice([0, 1, 5])), E(kind=0)])
+    # P. attack / release / ratio / threshold changes between Executes (the coefficient cache refresh, with and without a change)
+    for _ in range(300):
+        ch = rng.choice([2, 3, 4])
+        blk = lblock(rand_block(rng), link=1)
+        pid = rng.choice([0, 1, 2, 3, 4])
+        if pid <= 3:
+            newv = fb(f32(rng.choice(TIMES + [-30.0, -12.0, 2.0, 8.0]))) if pid != 1 else fb(f32(rng.choice([1.0, 2.0, 4.0, 8.0])))
+        else:
+            newv = fb(f32(rng.choice([0.0, 3.0, 6.0, 12.0, -6.0, 24.0])))
+        case(rng.choice(RATES), ch, ch, blk, [('R',), E(), P(pid, newv), E(), E(), P(pid, newv), E()])
+    # Q. the channel word's count differs from the object's channel count (the data holds the larger count of planes); the object's count, not the word's, sets n in the worker
+    for _ in range(100):
+        ch = rng.choice([2, 3, 4])
+        cw = rng.choice([1, 2, 3, 4, 6])
+        blk = lblock(rand_block(rng), link=rng.choice([1, 2]))
+        case(rng.choice(RATES), ch, cw | rng.choice([0, 0x8000]), blk, [('R',), E(kind=0), E(kind=1)])
+    # R. the boundary of the `y < -37.0f` test of 0xAA0140..0xAA014C (bmi: strictly less): the threshold is searched (with the float32 arithmetic of the linked worker's first frame from a zeroed state, attack = release = 0 so that g = over) such that
+    # over is exactly 1480.0f and, with ratio 2 (k = 1/2 - 1 = -0.5), y = (1480 * -0.5) * 0.05f is exactly -37.0f. The engine then takes the fast-pow path (lin ~ 1e-37), not the zero.
+    def boundary_threshold(rate, ch, seed):
+        one = np.float32(1.0)
+        data = [F(b) for b in gen_input(0, seed, ch)]
+        pcoef = F(expf(fb(np.float32(-1.0) / (np.float32(rate) * F(0x3CBE37DF)))))
+        acc = np.float32(0.0)
+        for x in data:
+            acc = acc + np.float32(x * x)
+        m = F(0x15F79688) + np.float32(acc * (one / np.float32(ch)))
+        ms = m + np.float32((np.float32(0.0) - m) * pcoef)
+        bb = fb(ms)
+        f = F((bb & 0x7FFFFF) + 0x3F800000)
+        t = (f - one) / (f + one)
+        poly = one + np.float32(np.float32(t * t) * F(0x3EAAAAAB))
+        ln = np.float32(np.float32(np.float32((bb >> 23) & 0xFF) - F(0x42FE0000)) * F(0x3F317218)) + np.float32(np.float32(t + t) * poly)
+        prod = np.float32(np.float32(ln * F(0x3EDE5BD9)) * np.float32(10.0))
+        t0 = np.float32(prod - np.float32(1480.0))
+        cand = t0
+        for _ in range(64):
+            if np.float32(prod - cand) == np.float32(1480.0):
+                return cand
+            cand = np.nextafter(cand, np.float32(1e9))
+        cand = t0
+        for _ in range(64):
+            if np.float32(prod - cand) == np.float32(1480.0):
+                return cand
+            cand = np.nextafter(cand, np.float32(-1e9))
+        raise AssertionError('no threshold found')
+
+    for rate in RATES:
+        for ch, seed in ((2, 101), (3, 202), (2, 303), (6, 404)):
+            thr = boundary_threshold(rate, ch, seed + rate)
+            case(rate, ch, ch, block(float(thr), 2.0, 0.0, 0.0, 0.0, 0, 1), [('R',), ('E', 1, 1, 0, seed + rate)])
     return cases
 
 
 # ------------------------------------------------------------------------------------------------ output
 
-def cs_strings(name, doc, rows):
-    lines = ['    /// <summary>%s</summary>' % doc, '    public static readonly string[] %s =' % name, '    {']
-    for r in rows:
-        lines.append('        "%s",' % r)
-    lines.append('    };')
+def cs_strings(name, doc, rows, chunk=100):
+    """The rows as UTF-8 data-section literals ("..."u8, concatenated at compile time), not as string literals: the combined length of the user strings of the test assembly is limited (CS8103) and the Compressor oracle alone is about 3 MB.
+    The rows are the same text; Add splits the decoded chunk at '\n'."""
+    lines = ['    /// <summary>%s</summary>' % doc, '    public static readonly string[] %s = Make%s();' % (name, name), '',
+             '    private static string[] Make%s()' % name, '    {', '        var l = new List<string>();']
+    for i in range(0, len(rows), chunk):
+        part = rows[i:i + chunk]
+        lines.append('        Add(l,')
+        for j, r in enumerate(part):
+            lines.append('            "%s\\n"u8%s' % (r, ' +' if j < len(part) - 1 else ');'))
+    lines.append('        return l.ToArray();')
+    lines.append('    }')
     return '\n'.join(lines)
 
 
@@ -719,13 +882,18 @@ def main():
     worst = min(MARGINS) if MARGINS else None
     sys.stderr.write('cases %d; expf arguments %d; powf arguments %d; the smallest distance of an exact result to a binary32 midpoint: %s (units of 2^-53 * result; the argument bits %s)\n' % (
         len(cases), len(all_exp), len(all_pow), '%.3f' % worst[0] if worst else None, '%08X' % worst[1] if worst else None))
-    print('// <auto-generated> by re-analysis/tools/emu/emu_comp.py from the engine\'s own output (the real Compressor Init 0xA9FB28, Reset 0xA9FA68, Execute wrapper 0xA9FC70, worker 0xAA0298, creators 0xAA0538 / 0xAA0808 and the parameter object 0xAA0660 / 0xAA07A0 / 0xAA0734 under Unicorn): do not edit.')
+    print('// <auto-generated> by re-analysis/tools/emu/emu_comp.py from the engine\'s own output (the real Compressor Init 0xA9FB28, Reset 0xA9FA68, Execute wrapper 0xA9FC70, workers 0xAA0298 and 0xA9FEEC, creators 0xAA0538 / 0xAA0808 and the parameter object 0xAA0660 / 0xAA07A0 / 0xAA0734 under Unicorn): do not edit.')
     print('// The phone\'s expf / powf are float32 CORRECTLY ROUNDED in the emulator run (200-bit mpmath, then integer rounding to 24 bits).')
     print('// Smallest distance of any exact exp / pow result the oracle used to a binary32 rounding midpoint: %s units of 2^-53 * result.' % ('%.3f' % worst[0] if worst else 'n/a'))
     print('namespace Cozmo.Protocol.Tests;')
     print()
     print('internal static class WwiseCompressorOracle')
     print('{')
+    print('    private static void Add(List<string> l, ReadOnlySpan<byte> chunk)')
+    print('    {')
+    print('        foreach (var row in System.Text.Encoding.UTF8.GetString(chunk).Split(\'\\n\', StringSplitOptions.RemoveEmptyEntries)) l.Add(row);')
+    print('    }')
+    print()
     print(cs_strings('Cases', 'One Compressor life per row: "rate ch channelWord failAlloc | block | ops | init | results". ops: R reset, E.frames.stride.kind.seed execute on a generated buffer (kinds 0 audio, 1 loud, 2 quiet (x*x denormal-scale), 3 denormal patterns, 4 random bit patterns, 5 audio with specials, 6 zeros; the generator is the xorshift32 Xs), P.id.valueBits SetParam, B.block a new block, D the defaults. init: "rc worker +C +10 +14 +18 +1C +20 +28 +2C +30 +34 +38 stateAllocated". results per op: E:outputHash:+10:+28:+2C:+30:+34:statePairs, R:rc, P/B/D:rc:parameterWords.', rows))
     print()
     print(cs_strings('ExpfProof', 'expf: "argument bits correctly rounded result bits" for every argument the Compressor forms (the grid of realistic rates and times, the shipped blocks, and every argument the emulator run passed).', exp_rows))
