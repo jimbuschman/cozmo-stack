@@ -152,3 +152,31 @@ test/engine pump ticks the list on the main thread).
 - Full suite after: **3852 passed, 0 failed**. A rare (about 1 in 4 full runs, not reproduced in focused runs)
   unidentified `NavigationTests` `RunToEnd` timeout remains; it is a harness concurrency/timing flake, not a
   production defect, and is recorded here for a later pass.
+
+## Resume here (next session)
+
+**Done and pushed:** batch 1 (6539e66), batch 2 (75b623d/bb8c9d5), tag-counter race fix (15b4488), batch 3a
+(d621fe1) and its concurrency/test-harness follow-up (f648f41). Pushed as 298ec71. All verifier-PASS with the full
+suite green (last gate run 3880 passed). The manifest is untouched; every record stays IMPLEMENTATION_GAP.
+
+**Remaining:**
+- **Batch 3b.** Replace the stack's async sequences in `Manipulation/FlipBlockAction.cs`, `ChargerActions.cs` and
+  `DockActions.cs` with the compounds where the engine builds a compound (report H9). The compounds exist
+  (`Actions/CompoundActions.cs`, verifier-PASS). The hard part: the engine's flip embedded compound
+  (0x0055ECE0) has children {`MoveLiftToHeightAction`, `DriveStraightAction`}; the drive is not yet an
+  `ActionRunner`. Decide whether to make it one, or to scope 3b to the cases whose children are already runners,
+  and record the rest as a named gap. Extract the concrete child inputs/order/predicate for each compound before
+  building (they are not in the P/S/R rows).
+- **Batch 4.** `RobotCompletedAction` (rows D1-D9) and `ActionWatcher` (rows W1-W17): verify those rows first,
+  then build the watcher node tree/deque/callback drain, the game send, and wire MoodManager's
+  `HandleActionEnded` (M7-020) and the ended callbacks (M8-008).
+- **Queued from the verifiers:** `WatcherEnding` tag release (L15); the completion-union init by type
+  (0x0053FECA..0x0053FF9C); the terminal/timeout result log; `BehaviorFrameworkTests`' order-dependent tag
+  assertion; `Vision/FaceActions.cs:591` stale text; `CompoundActions.cs`' file-level `// fidelity:` tag placement;
+  `AddAction`'s predicate `Remove`; `DeleteActions`/`ClearActions` clearing the completion cache; the batch-1
+  queued items in the batch-1 section.
+- **Rare flake:** about 1 in 4 full-suite runs an unidentified `NavigationTests` `RunToEnd` timeout. Harness
+  concurrency/timing, not a production defect; the bounds were raised to 60 s. Capture the test name next time it
+  appears.
+- **MISSING (still open):** robot+0x2C7's writer; the sequential +0x9C delay producer; the compound
+  `Init`/`CheckIfDone` bodies; the completion-union proxy caller; the S2 +0x24 hook body.
