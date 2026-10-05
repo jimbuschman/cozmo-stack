@@ -54,3 +54,9 @@ CLAIMED Codex: manager-approved Rows checked at dee950e unblocks decay D1–D18,
 - First full suite found one obsolete Freeplay test that invoked the late host reset callback. Replaced it with the live DisconnectCurrent entry and checked Needs persistence before the destructor event. Affected-test verifier PASS; five targeted tests passed. Rerunning the full suite after this test correction.
 
 - Corrected full suite: 3,860 passed, zero failed/skipped (2 m 59 s). Commit follows; hash and push gate will be logged after publication.
+
+- Batch 4 commit: f9857c0 (pushed to main). Independent push gate passed fidelity and all 3,860 tests, zero failed/skipped (3 m 25 s).
+
+DONE 2026-10-05: the manager-adopted checked-row builder scope is built, self-reviewed, independently verified, fully tested, committed and pushed in batches 8c266d7 (M1-024), 0ea935d (M1-025), and f9857c0 (M1-015/031/044/045 boundaries and cited ownership correction). Batch 1 remains 327f7fc. No record settled; manager/Opus verification and layer acceptance remain separate. The PARTIAL recipient/FP/recursive items listed above stay MISSING, and M1-029 remains deferred. No further job started.
+
+The separate ADP-1 research task is saved locally at re-analysis/research/20261005-adp1-triage.md, outside these build commits under the research-lane rules. It covers all 48 non-EXACT_SOURCE M6/M9 records plus C30–C35 and the previous check's remaining items; mixed coefficient-design/matrix boundaries are VERIFY, with DROP restricted to named pure PCM arithmetic.
