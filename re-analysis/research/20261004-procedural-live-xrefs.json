@@ -1,0 +1,176 @@
+[
+  {
+    "address": "0x543e26",
+    "target": "0x4aade0",
+    "resolved": "0x4aade0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(Anki::Cozmo::Animation*, unsigned int, bool, bool)"
+  },
+  {
+    "address": "0x543f96",
+    "target": "0x4aade0",
+    "resolved": "0x4aade0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(Anki::Cozmo::Animation*, unsigned int, bool, bool)"
+  },
+  {
+    "address": "0x573152",
+    "target": "0x4ad2f4",
+    "resolved": "0x4ad2f4",
+    "name": "Anki::Cozmo::AnimationStreamer::PushIdleAnimation(Anki::Cozmo::AnimationTrigger, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)"
+  },
+  {
+    "address": "0x57b16c",
+    "target": "0x4aade0",
+    "resolved": "0x4aade0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(Anki::Cozmo::Animation*, unsigned int, bool, bool)"
+  },
+  {
+    "address": "0x57bd60",
+    "target": "0x4aade0",
+    "resolved": "0x4aade0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(Anki::Cozmo::Animation*, unsigned int, bool, bool)"
+  },
+  {
+    "address": "0x57cfd2",
+    "target": "0x4aade0",
+    "resolved": "0x4aade0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(Anki::Cozmo::Animation*, unsigned int, bool, bool)"
+  },
+  {
+    "address": "0x57ec32",
+    "target": "0x8cb8dc",
+    "resolved": "0x4ad2f4",
+    "name": "Anki::Cozmo::AnimationStreamer::PushIdleAnimation(Anki::Cozmo::AnimationTrigger, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)"
+  },
+  {
+    "address": "0x57ed2a",
+    "target": "0x8cb8fc",
+    "resolved": "0x4adff0",
+    "name": "Anki::Cozmo::AnimationStreamer::SetStreamingAnimation(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&, unsigned int, bool)"
+  },
+  {
+    "address": "0x5acc70",
+    "target": "0x4ad2f4",
+    "resolved": "0x4ad2f4",
+    "name": "Anki::Cozmo::AnimationStreamer::PushIdleAnimation(Anki::Cozmo::AnimationTrigger, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)"
+  },
+  {
+    "address": "0x5b1630",
+    "target": "0x4b1c08",
+    "resolved": "0x4b1c08",
+    "name": "Anki::Cozmo::IActivity::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5b2924",
+    "target": "0x4b1d4c",
+    "resolved": "0x4b1d4c",
+    "name": "Anki::Cozmo::IActivity::ReadConfig(Anki::Cozmo::Robot&, Json::Value const&)"
+  },
+  {
+    "address": "0x5b31bc",
+    "target": "0x4b1c08",
+    "resolved": "0x4b1c08",
+    "name": "Anki::Cozmo::IActivity::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5b3304",
+    "target": "0x4ad2f4",
+    "resolved": "0x4ad2f4",
+    "name": "Anki::Cozmo::AnimationStreamer::PushIdleAnimation(Anki::Cozmo::AnimationTrigger, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)"
+  },
+  {
+    "address": "0x5be464",
+    "target": "0x4ad2f4",
+    "resolved": "0x4ad2f4",
+    "name": "Anki::Cozmo::AnimationStreamer::PushIdleAnimation(Anki::Cozmo::AnimationTrigger, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)"
+  },
+  {
+    "address": "0x5d7ed4",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5ec13c",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5f14c4",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5f1ef2",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5f679a",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5f845e",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x5fb442",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x606cca",
+    "target": "0x4b426c",
+    "resolved": "0x4b426c",
+    "name": "Anki::Cozmo::IBehavior::SmartPushIdleAnimation(Anki::Cozmo::Robot&, Anki::Cozmo::AnimationTrigger)"
+  },
+  {
+    "address": "0x63b3f2",
+    "target": "0x4b94a4",
+    "resolved": "0x4b94a4",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::Params::Params(Json::Value const&)"
+  },
+  {
+    "address": "0x63b3fc",
+    "target": "0x4b94b0",
+    "resolved": "0x4b94b0",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::Params::~Params()"
+  },
+  {
+    "address": "0x64edf4",
+    "target": "0x4ba080",
+    "resolved": "0x4ba080",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::GetCurrentDesiredDistortion()"
+  },
+  {
+    "address": "0x692212",
+    "target": "0x4bd920",
+    "resolved": "0x4bd920",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::DesiredFaceDistortionComponent(Anki::Cozmo::NeedsManager&)"
+  },
+  {
+    "address": "0x692304",
+    "target": "0x4bd92c",
+    "resolved": "0x4bd92c",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::Params::~Params()"
+  },
+  {
+    "address": "0x6924b6",
+    "target": "0x4bd92c",
+    "resolved": "0x4bd92c",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::Params::~Params()"
+  },
+  {
+    "address": "0x69262c",
+    "target": "0x4bd998",
+    "resolved": "0x4bd998",
+    "name": "Anki::Cozmo::DesiredFaceDistortionComponent::Init(Json::Value const&, Anki::Util::RandomGenerator*)"
+  }
+]

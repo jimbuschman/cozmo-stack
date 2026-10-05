@@ -1,0 +1,608 @@
+{
+  "M15-freeplay": {
+    "id": "M15-freeplay",
+    "name": "Needs, activities and freeplay",
+    "milestone": "M15",
+    "source_investigation_exhausted": true,
+    "implementation_fidelity_complete": false,
+    "review": {
+      "state": "INVENTORY_APPROVED",
+      "inventory": "re-analysis/inventory/M15-freeplay.md",
+      "approved": "2026-10-04",
+      "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
+    }
+  },
+  "M5-005": {
+    "id": "M5-005",
+    "subsystem": "M5-animation",
+    "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
+    "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+    "evidence": [
+      "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
+      "gap1 RNG semantics 0x0082F9B0..0x0082FAC6"
+    ],
+    "live_path": true,
+    "test": "M5AnimationTests.M5_005_C3_VariabilityIsNotClamped, AnimationGapTests.VariabilityIsAppliedToHeadAndLiftKeyframesAtStreamTime, M5AnimationTests.M5_005_R1_Mt19937AndGetNextDbl",
+    "effect": "keyframe values vary differently",
+    "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): WithVariability draws RandIntInRange(v - var, v + var) (gap1: a + trunc(u\u00b7(b - a + 1)), EngineRandom) on the scheduler's keyframe RNG each time the keyframe's message is built, and the result is cast unchecked (sbyte for the head, byte for the lift): no clamp, so it truncates or wraps (C2, C3). The uniform source behind the draw is System.Random; the engine's mt19937 stream and seed are not in the inventory, so no sequence is claimed. Verify round 1 (2026-09-25, corrections C1..C3, gap4): IKeyFrame::sRNG is a ported std::mt19937 (Mt19937) seeded from OS entropy (RandomNumberGenerator for /dev/urandom, R2, C3); GetNextDbl = (d0 + d1\u00b72^32)\u00b72^-64 (R1). The scheduler's test seam (a given Random) seeds it instead.",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): EngineRandom reads /dev/urandom ONCE for seed 0 and uses the word even if it is zero (0x0082F898..0x0082F8A4); tests through an injectable entropy source with an independent mt19937 (seed 0 gives 2357136044, 2546248239; seed 5489 gives 3499211612, 581869302). Still open: none known.",
+    "hardware_required": false
+  },
+  "M5-017": {
+    "subsystem": "M5-animation",
+    "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
+    "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
+    "evidence": [
+      "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC"
+    ],
+    "live_path": true,
+    "test": "AnimationGapTests.TheAlternativeIsChosenByProbabilityAsTheEngineDoes, AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent, AnimationGapTests.AClipWithProbabilitiesPlaysTheWeightedAlternativeNotTheFirst",
+    "id": "M5-017",
+    "effect": "a different sound plays",
+    "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AudioAnimation.Start draws r = (float)RandDbl(1) on the keyframe RNG and takes ChooseAlternative: the first alternative with lower <= r <= upper over the cumulative probabilities, skipping |p| < 1e-5; none \u2192 nothing plays (C14). Loaded keyframes always carry N probabilities summing to at most 1 (C13); ChooseAlternative's 1/N fallback is only for keyframes built in code with other probabilities. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The alternative draw is on sRNG, the entropy-seeded mt19937 (R2).",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the audio-alternative draw inherits the M5-005 fix (single entropy read, zero word used). Still open: none known.",
+    "hardware_required": false
+  },
+  "M6-003": {
+    "subsystem": "M6-wwise-bank",
+    "title": "IMA ADPCM exactly: header predictor is sample 0, 63 nibbles, diff ((2n+1)*step)>>3, interleaved int16, 64 frames per block",
+    "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseAdpcm.cs",
+    "effect": "ADPCM sounds decode to different samples",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+    "evidence": [
+      "decoder 0x00A7A194..0x00A7A3C4 (step table 0x00FFD650, index 0x00FFD708)",
+      "callers 0x00A725F8..0x00A72624, 0x00A73E88..0x00A73EAC, 0x00A740E0..0x00A7410C",
+      "step table 0x00FFD650 = the standard IMA 89 i16 (7,8,9,...,32767); index table 0x00FFD708 = 16 i16 (-1,-1,-1,-1,2,4,6,8,-1,-1,-1,-1,2,4,6,8), 16-bit entries",
+      "channel mapping half 0 = channel 0, half 1 = channel 1 (callers 0x00A72618, 0x00A73EA0, 0x00A74100; the 5th argument only sets the interleave stride channels*2 at 0x00A7A1C4)",
+      "no source-side channel gate: only wFormatTag == 2 (0x00A72704, 0x00A73B2C); the 7 shipped stereo format-tag-2 media (blockAlign 72, 4 bits) decode and route"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the decoder is generic in the channel count (0x00A72618, 0x00A73EA0, 0x00A74100): channel c's block at c*36 inside each block with the file's blockAlign as the stride, the header step index unclamped with the engine's table window (167 words after the 89-entry step table, rodata 0x00FFD650), updates clamped to 0..88, a negative product shifted as (p+7)>>3 (0x00A7A240..0x00A7A24C); tests are Unicorn emulations of the shipped decoder FUN_00a7a194. Still open: a blockAlign below 36*channels or channels < 1 decodes to nothing where the engine reads out of bounds; channels == 0 (WwiseMedia.Parse accepts it) still divides by zero in WwiseVoiceSources.cs:369; WwiseAudioSource's pcm is now empty, not null, for such files.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "WwiseTests.TheAdpcmHeaderPredictorIsOutputSampleZero, WwiseTests.TheAdpcmDiffIsTheWwiseFormulaNotTheImaShiftSum, WwiseTests.AShippedAdpcmBlockDecodesToTheRowsExactSamples, WwiseTests.AStereoAdpcmBlockInterleavesHalfZeroAsChannelZero, WwiseTests.WhatIsDecodableIsDecidedInExactlyOnePlace",
+    "id": "M6-003"
+  },
+  "M10-002": {
+    "id": "M10-002",
+    "subsystem": "M10-derived",
+    "title": "Unexpected-movement detector: gates, wheel/gyro rules and constants, fire at count > 10",
+    "location": "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "B1 tail call 0x63E392; B2..B5 gates 0x63E3B4..0x63E426",
+      "B6 ctor constants 0x63DAB0..0x63DB00; B7..B11 rules 0x63E428..0x63E5DA",
+      "R-ANIM pre-extraction part 2 item 2 B7..B11-a: 0x63E474, 0x63E49C, 0x63E588, 0x63E51C..0x63E53E, 0x63E674, 0x63E5B2"
+    ],
+    "live_path": true,
+    "test": "DerivedStateTests.TheUnexpectedMovementSumsMatchTheAccumulationRule, DerivedStateTests.TheSameSignDecayCannotMakeTheCountNegative",
+    "effect": "unexpected movement is detected differently",
+    "provenance": "the existing stack code compared against re-analysis/inventory/M10-derived.md and its corrections C4 (R-ANIM part 2 item 2): the +1 paths' sums and the guarded same-sign decrement are reproduced Settled EXACT_SOURCE on 2026-09-29 (R-ANIM, C5/C4): the rows above were checked by @cozmo-verifier against libcozmoEngine.so and the built path was verified.",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the gyro threshold is binary32 0x3E32B8C2 (0x0063DAB0/0x0063DAB6, vcmpe.f32 0x0063E4B6..0x0063E4C2: |gz| >= threshold takes the active path), with ULP-boundary tests through Update. Still open: other 0.174533 sites (DriveActions, BlockWorld, Faces, VisionSystem) are other records'.",
+    "hardware_required": false
+  },
+  "M10-009": {
+    "subsystem": "M10-derived",
+    "title": "Nothing in this build ever raises the obstacle-detected flag",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/IBehavior.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "StrategyObstacleDetected 0x006141F8 is a StrategyGeneric whose predicate is the three-instruction function object at 0x006143CA: return *(bool*)(*(void**)(robot + 0x264) + 4)",
+      "Robot+0x264 is the AIComponent: Robot::Delocalize calls AIComponent::OnRobotDelocalized on it at 0x00510D72",
+      "AIComponent+4 is a plain bool the constructor zeroes at 0x00569A80, and that store is the only byte written at +4 anywhere in AIComponent code",
+      "no wide strb to +4 exists in the binary outside MemoryMapData_ProxObstacle's constructor, and no function that fetches the component from Robot+0x264 writes a byte at its +4 within forty-five instructions of doing so",
+      "so the strategy never becomes true, and ReactToObstacle - listed by hiking, nothingToDo, playAlone and socialize, with reactToObstacle.json giving it this strategy - never runs"
+    ],
+    "prior": "a local hook stood in for the flag, true while an obstacle stop was pending, which made ReactToObstacle run at times the app never would",
+    "live_path": true,
+    "test": "DerivedStateTests.NothingRaisesTheObstacleStrategyByItself",
+    "id": "M10-009",
+    "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): AIComponent+4 is zeroed (0x00569A80) and never written; the writable BehaviorContext.ObstacleDetected seam is removed; the flag is AIComponent.ObstacleDetected with an internal setter (read as context.AI?.ObstacleDetected, 0x006143CA), settable only by the test assembly. Still open: none known (nothing in production raises it, as in the engine).",
+    "effect": "the robot reacts to an obstacle that the original never reports",
+    "hardware_required": false
+  },
+  "M12-001": {
+    "id": "M12-001",
+    "subsystem": "M12-manipulation",
+    "title": "Pre-action pose types, their per-type ctor distances and the distance threshold",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: Block::GeneratePreActionPoses 0x004E5808 (tbh 0x004E595E, table 0x004E5962); PreActionPose ctor 0x0050DCFC stores the 4th arg at +0x18 (0x0050DD46) and SetHeightTolerance 0x0050DAA4 writes +0x14 (0x0050DB06, 0x3F13CD3A at 0x0050DB10); ActionableObject::GetCurrentPreActionPoses 0x004DF850 reads element+0x18 as a value (0x004DF9DE, arithmetic 0x004DFA26/0x004DFA78/0x004DFCD8/0x004DFCDC, stride 0x1C at 0x004DFDC4); ComputePreActionPoseDistThreshold 0x00550098 (3-D norm 0x00550102..0x00550122, sinf 0x00550140, vmul 0x0055014E, out 0x005501A4/0x005501A8, -1.0f sentinels 0x005501AE/0x005501C0); the world pose is composed by PreActionPose(PreActionPose const&, Pose3d const&, float, float) 0x0050DF00 (PLT 0x4A4144): dest.pose = objectPose * Pose3d(src.pose.rotation, unit(src.pose.translation) * (|src.pose.translation| + b)) and dest+0x18 = a; ActionableObject::GetCurrentPreActionPoses 0x004DF850 calls it at 0x004DF99A with a = element+0x18 and b = preDockPoseOffset_mm (param_7, from 0x00550984 vldr s16,[r7,#0x10]); when param_7 == 0 it computes b = min(dist2, element+0x18) at 0x004DF9B8..0x004DFC16 and calls the ctor a second time at 0x004DFBE6; the stores at 0x004DFCFC..0x004DFD00 are the param_8==1 visualization path (0x004DFC5E cmp r0,#1); preDockPoseOffset_mm is PreActionPoseInput+0x10 (r1+0x10 at 0x00550984), filled inline by each caller: IDockAction::Init uses IDockAction+0xBC (0), the DriveToObjectAction paths use DriveToObjectAction+0x88 (the ctor's first float arg, 0 in every direct caller: 0x005585A4; no setter), PlaceRel/DriveAndFlip/FlipBlock/IHelper pass 0, BehaviorDriveInDesperation passes 0x3E860A92; param_2 of GetCurrentPreActionPoses is the robot's world pose (&(Robot+0x298) via FUN_004EA398 0x004EA398, checked against GetWorldOrigin); objectPose is ObservableObject::GetPose &(Object+4) 0x00876840; FUN_004DF628 returns the pose relative to its own root (world), so world = world(objectPose) * Pose3d(element.rotation, unit(element.translation)*(|element.translation|+b)); corrected (C-E7/E9): the four sb rotations are about Y_AXIS_3D (PLT 0x4A47B0) at table 0x010590AC (angles 0/pi/2/pi/-pi/2, built 0x004E5868..0x004E58E4) applied with Transform3d::RotateBy 0x0084BB3A; each branch builds Pose3d(angle, Z_AXIS, translation) with the marker as parent (0x004E59EE): Docking pi/2 {0,-65,-22}, PlaceRelative pi/2 {0,-100,-22}, PlaceOnGround pi/2 {0,-49,-22}, Rolling pi/2 {0,-65,-22}, Flipping 3pi/4 {dimX/2+56.5771,-56.5771,-22}; -22 = -size[8]/2 (0x004E5938 vneg); the PreActionPose ctor 0x0050DCFC re-roots to the marker's parent (0x0050DDB2), so stored = marker.local * builtPose; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): GetCurrentPreActionPoses 0x004DF850: iterates the withAction set in ascending ActionType order (with withAction empty it collects nothing and returns 0); per type a cache vector at this+0x28+12*type, generated by virtual slot 2 (Block::GeneratePreActionPoses) when empty; the withCode filter (marker code in the set, if non-empty) and the withAction filter; the world pose is PreActionPose(elem, objectPose, a = elem+0x18, b = offset); with offset == 0 (every production caller, distanceFromMarker 0.0) b is computed: P0 = the pose composed with b = offset; t = GetAngleAroundZaxis(P0); (dx,dy) = (P0.x + a*cos t - P0w.x, P0.y + a*sin t - P0w.y) (0x004DFA26..0x004DFA2E, 0x004DFA78..0x004DFA80); |dx| < 1e-5 (0x3727C5AC at 0x004DFC4C): dist = |R.y - P0w.y| (0x004DFA52..0x004DFA6E); else |dy| < 1e-5: dist = |R.x - P0w.x| (0x004DFAA4..0x004DFABC); else dist = |foot - P0w| with foot the perpendicular foot of the robot pose R on the line through P0w with slope dy/dx (0x004DFAC2..0x004DFB30); b = dist > 0 ? (dist < a ? dist : a) : 0 (0x004DFB60..0x004DFBD8; NaN gives a); second ctor at 0x004DFBE6 (types 2 and 5 have a = 0 so b = 0). Each composed pose is pushed only if the virtual IsPreActionPoseValid (vtbl+4, M12-036) returns exactly 1; nothing else drops a pose (no bottom-face, upside-down or height-tolerance test; PreActionPose+0x14 has no reader found); output order is (ascending ActionType) x (cache order) x (survivors), no sort; the return byte is sb & 1 = 'a cache vector was regenerated' (0x004DFDD4), not 'a pose survived'; the visualise block (param [sp+0x148]) is not on the production path",
+    "evidence": [
+      "dispatch on actionType 0..5: 0x004E5958 cmp r5,#5 / 0x004E595E tbh / table 0x004E5962",
+      "type 0 Docking 75.0 (0x004E5A36 movt r1,#0x4296); angle pi/2 (0x004E5998 vadd d10=pi/2); translation {0,-65,-22} (0x004E59B4/0x004E59C0/0x004E59D4)",
+      "type 1 PlaceRelative 40.0 (0x004E5ADA movt r1,#0x4220); angle pi/2 (0x004E5A4E); translation {0,-100,-22} (0x004E5A70 movt r0,#0xc2c8 / 0x004E5A7E)",
+      "type 2 PlaceOnGround 4th arg 0 (0x004E5B5A/0x004E5B80); angle pi/2 (0x004E5AF4); translation {0,-49,-22} (0x004E5B0C movt r0,#0xc244 / 0x004E5B16)",
+      "type 3 Entry: 0x004E5DA2 (loop tail), no pose",
+      "type 4 Rolling 75.0 (0x004E5C50 movt r1,#0x4296); angle pi/2 (0x004E5BA6/0x004E5BB4); translation {0,-65,-22} (0x004E5BE2/0x004E5BE8)",
+      "type 5 Flipping 4th arg 0 (0x004E5D04/0x004E5D28); angle 3pi/4 (0x004E5C9C vadd d11); translation {dimX/2+56.5771,-56.5771,-22} (0x004E5CC0 vstr s18 / 0x004E5CB8 movt r0,#0xc262 (0xC2624EEF) / 0x004E5CC6 vstr s16)",
+      "PreActionPose ctor 0x0050DCFC stores +0x18 at 0x0050DD46; second ctor 0x0050DB14",
+      "SetHeightTolerance 0x0050DAA4 writes +0x14 at 0x0050DB06 (0.5773503 at 0x0050DB10)",
+      "the +0x18 value consumer: ActionableObject::GetCurrentPreActionPoses 0x004DF850, 0x004DF9DE vldr s28,[sl,#0x18], stride 0x004DFDC4",
+      "ComputePreActionPoseDistThreshold 0x00550098: 3-D distance (0x00550102 vldr s0,[r0,#0x20]; 0x00550122 vsqrt.f32); out[0]=2*dist*sin at 0x00550164/0x005501A4, out[1]=dist*sin at 0x005501A8",
+      "the only tolerance branch is angleTolerance > Radians(0): 0x005500BC blx 0x4A4528 / 0x005500C0 cmp r0,#0 / 0x005500C2 beq 0x5501AE; operator> 0x0084CC90 with the ~1e-5 epsilon 0x3727C5AC; false writes -1.0f at 0x005501B6; a GetWithRespectTo failure writes -1.0f at 0x005501C0; no floor",
+      "Block::LookupBlockInfo symbol 0x004E4C8C; 0x00503DC8 (75.0) is inside MinimalAnglePlanner::ComputeNewPathIfNeeded 0x00503C18 and unrelated",
+      "the world-pose ctor PreActionPose 0x0050DF00 (PLT 0x4A4144): 0x0050DF54 vstr s16,[sl,#0x18] (a); 0x0050DF6C Point3::MakeUnitLength 0x0050E0C0 returns |t|; 0x0050DF7C vadd (|t|+b); 0x0050DFE4 operator*(Pose3d,Pose3d) 0x0084782C; SetHeightTolerance 0x0050E036",
+      "GetCurrentPreActionPoses 0x004DF850: first ctor call 0x004DF99A; param_7 from 0x00550984 ([robot+0x10], named preDockPoseOffset_mm at 0x0055137A); param_8 = 0 on this path (0x00550A2A); second ctor call 0x004DFBE6 with b = min(dist2, d) (0x004DFB88 vldr s0,[sl,#0x18]; 0x004DFB94 bpl); the 0x004DFCFC..0x004DFD00 store is the param_8==1 viz block (0x004DFC5E)",
+      "all three production threshold callers read both outputs with one ldrd (see M12-020)",
+      "preDockPoseOffset_mm: 0x00550984 vldr s16,[r7,#0x10] (r7=r1=PreActionPoseInput); IDockAction+0x10 left 0 by IActionRunner 0x0053FDD0 strd r6,r6,[r5,#0x10]; input+0x10 from IDockAction+0xBC (0x0055161A, 0 at ctor 0x005503AA) and DriveToObjectAction+0x88 (ctor 0x005585A4; no setter; direct callers pass 0); offset-0 branch b=min(dist2,element+0x18)",
+      "GetCurrentPreActionPoses param_2: 0x00550A00 bl 0x004EA398 -> &(Robot+0x298); FUN_004df628 0x004DF628 = pose.GetWithRespectTo(pose.FindRoot()) (0x004DF674/0x004DF67E); objectPose = ObservableObject::GetPose 0x00876840 = &(ObservableObject+4)",
+      "sb rotation: 0x004E5870/0x004E5890/0x004E58B2/0x004E58D4 blx 0x4A47B0 (Y_AXIS_3D); base 0x010590AC (0x004E5876/0x004E587A); angles 0x3FC90FDB/0x40490FDB/0xBFC90FDB; applied with Transform3d::RotateBy 0x0084BB3A (0x004E5A1C/0x004E5AC0/0x004E5B60/0x004E5C36/0x004E5D0A)",
+      "Pose3d(angle, Z_AXIS, translation) with the marker as 4th ctor arg (parent): 0x004E59EE strd r0,r6,[sp]; precompute 0x004E592C..0x004E5938 s16=-size[8]/2, s18=size[4]/2+56.5771; PreActionPose ctor re-roots 0x0050DDA2..0x0050DDB2 passedPose.GetWithRespectTo(marker.parent)",
+      "0x004DF88A..0x004DF8E8 collection; 0x004DF94A..0x004DF99A filters; 0x004DF9B8..0x004DFBE6 the b computation; 0x004DFC1A..0x004DFC58 the validity push; 0x004DFDD4 the return byte",
+      "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md (2.3 formula, 2.2b)"
+    ],
+    "effect": "a pre-action pose is built at the wrong distance or angle, or the drive threshold accepts a pose the engine would reject",
+    "provenance": "the current code used 49 for PlaceOnGround and 56.5771 for Flipping as the distance, a planar X/Y threshold, and a guessed floor; none of that is the engine's",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the Flipping corner is binary32 0x42624EEF (X = size.y*0.5f + corner, 0x004E583A..0x004E5934; Y = 0xC2624EEF), the close-enough threshold follows the binary32 sequence (0x00550102..0x00550164: vmul/vadd, vsqrt, sinf, vmul, vadd), the tolerance guard is operator> 0x0084CC90 (strict IsNear, so exactly 1e-5f now passes), OffsetEpsilon is 0x3727C5AC. Still open: the preceding validity filter is M12-036's; ComposeWorld's offset geometry (0x004DFA26..0x004DFB46) and IsRestingFlat are double where the engine is float; sinf/sqrt use MathF (libm stand-in); PreActionPose+0x14 has no reader found (M12-038); the per-object cache is never cleared.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "ManipulationTests; M12RVisBuildTests.M12_001_*; M12RVisBuildTests.M12_020_*; M12RVisBuildTests.M12_036_*"
+  },
+  "M12-002": {
+    "id": "M12-002",
+    "subsystem": "M12-manipulation",
+    "title": "Path segment, ExecutePath and ClearPath packings; the path-motion-profile defaults and their wiring",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/RobotPath.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: PathDolerOuter::Dole 0x00507E4C (line send 0x00507FE0, arc 0x00508036, point turn 0x00507F8E); PathComponent::ExecutePath 0x0064A340 (build 0x0064A426/0x0064A42A/0x0064A430, send 0x0064A436/0x0064A442); PathComponent::ClearPath 0x00649220 (0x00649268/0x0064926A) with the id correlation 0x00649234/0x0064923A; SpeedChooser::GetPathMotionProfile 0x0053B798 from the table 0x00C535E0; the consumer path DriveToPoseAction::Init 0x0055A86C -> StartDrivingToPose 0x0055A998 -> 0x0064ADE0 -> [PathComponent+0x4C] -> HandlePlanComplete 0x00649F76/0x00649F82 -> ExecutePath 0x0064A0A4",
+    "evidence": [
+      "PathDolerOuter::Dole 0x00507E4C: 0x00507F40/0x00507F44/0x00507F48 cmp r1,#1/2/3; line 0x00507FE0 blx 0x4A7234; arc 0x00508036 blx 0x4A7240; point turn 0x00507F8E blx 0x4A7228",
+      "PathComponent::ExecutePath 0x0064A340: 0x0064A426 ldrh r0,[r5,#-0x12]; 0x0064A430 strh.w r0,[sp,#8]; 0x0064A42A strb.w r6,[sp,#0xa]; 0x0064A436 blx 0x4B9D8C; 0x0064A442 blx 0x4A5368",
+      "PathComponent::ClearPath 0x00649220: 0x00649268 movs r0,#0; 0x0064926A strh.w r0,[sp]; 0x00649234 ldrh.w r0,[r4,#0x42]; 0x0064923A strh.w r0,[r4,#0x4a]",
+      "SpeedChooser::GetPathMotionProfile 0x0053B798 copies the 11-word table 0x00C535E0 = 100,200,500,2,10,10,60,200,500,80,0",
+      "DriveToPoseAction::Init 0x0055A86C; 0x0055A998 blx 0x4ABEE4 (StartDrivingToPose); 0x0064ADE0 blx 0x4B9DBC (GetPathMotionProfile); 0x0064ADD2/0x0064ADE4 copy into [this+0x4C]",
+      "PathComponent::UpdatePlanning 0x006495E0 tail-calls HandlePlanComplete on status 2: 0x006496DE b.w veneer -> 0x4B9D2C",
+      "HandlePlanComplete reads [this+0x4C] and passes it to IPathPlanner::GetCompletePath: 0x00649F76 ldr r1,[r4,#0x4c]; 0x00649F82 blx 0x4B9D68",
+      "the packing citation 0x00632BAE..0x00632BEE is the PlaceObjectOnGround builder (0x00632B88), not path packing"
+    ],
+    "effect": "the robot receives path segments with the wrong fields, or an execute/clear with the wrong id",
+    "provenance": "the record's packing citation pointed at the PlaceObjectOnGround builder, and the profile's consumer was misidentified as UpdatePlanning",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the u16 path id wraps (ldrh/adds #1/strh 0x0064A3C2..0x0064A3CA: 0xFFFF wraps to 0, tested over 65535 real Execute calls); the Dole segment packing (0x00507F40..0x00508056) and the profile table 0x00C535E0 (ten fields) compared. Still open: PathDolerOuter::Dole is incremental in the engine (Dole(count) from [+0xFC] of [+0xF8], called repeatedly) while the C# sends all segments after ClearPath; the profile table's 11th word (0) is unexplained.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "ManipulationTests"
+  },
+  "M12-007": {
+    "id": "M12-007",
+    "subsystem": "M12-manipulation",
+    "title": "The two timed checks a pick-up is verified against",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: PickupObjectAction::Verify 0x00553BE0 stamps the first call at +0x10C (0x00553BF8), tests IsMoving (virtual, 0x00553C8E) against +0x118 = 500 ms (0x00553C98) and the last-observed time against a dock-action timeout at +0x80 (0x00553D0A/0x00553D0E/0x00553D12/0x00553D18), both ending in SetCarriedObjectAsUnattached(true) (0x00553CAA, 0x00553D2A); the ctor sets the timeouts at 0x005536CC",
+    "evidence": [
+      "0x00553BE0 Verify; 0x00553BF8 str.w r5,[r7,#0x10c]; 0x00553C8E blx r2 (IsMoving); 0x00553C98 ldr.w r0,[r7,#0x118]; 0x00553CAA blx 0x4A7B7C",
+      "0x00553D0A ldrb.w r2,[r7,#0x80]; 0x00553D0E add.w r3,r7,#0x120; 0x00553D12; 0x00553D18 addeq.w r3,r7,#0x11c",
+      "+0x11C = 500 ms low, +0x120 = 2000 ms high, set at the ctor 0x005536CC"
+    ],
+    "effect": "a failed pick-up is not detected, or a good one is discarded",
+    "provenance": "the record had the checks but the dock-action-dependent timeout selection was incomplete",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): PickupObjectAction::Verify is multi-update: stamp at +0x10C on the first call (0x00553BF8), then `[[+0xCC]+5]` didSucceed (0x00553C06), the moving block (0x00553C72..0x00553D70: RUNNING while now <= firstVerify + 500, unsigned and inclusive; 0x03000004 object not located 0x00553CEE; 0x03000014 still moving 0x00553CEA; 0x03000015 not seen recently 0x00553D6E), the carry check ([[+0xD0]+8] == -1: 0x04000005), UnSetCarryingObjects(false) on seeing the object in its original pose (0x005542BC..0x005542C4 via 0x00554116), a 30.0f timeout over the Verify wait. Still open (reported MISSING): the early [+0xC1]/[+0xC2] gate with its [+0x110]/[+0x114] deadline (0x00553C0E..0x00553C2E), the TurnTowardsPoseAction sub-action at [+0x104] (0x00553D80..0x00553DD8), the carried-object located lookup returning null (0x03000004 at 0x00554008) and `[obj+0x40] < 0` (0x00553C82..0x00553C86), the wait for the next RobotState while RUNNING (the engine's own tick is not modelled), the whole-action 30 s slot; the !Succeeded early path still returns Retry through the +0xCC/+0x104 logic that is MISSING.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "PickupVerifyTests.TheVerifyTimeoutsAreTheEngines"
+  },
+  "M12-010": {
+    "id": "M12-010",
+    "subsystem": "M12-manipulation",
+    "title": "The search-for-block pattern, built",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/SearchActions.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: SearchForNearbyObjectAction ctor 0x005469C0 and Init 0x00546C14; SearchForBlockHelper::SearchForBlock 0x005BAF24 (state 0 0x005BAF9A, state 1 0x005BB1AA, state 2 0x005BB066); SearchFinishedWithoutInterruption 0x005BB478 (object+0x24 == 1 at 0x005BB49E/0x005BB4A2); the callers DriveToHelper::RespondToDriveResult (0x005B5D68) and PickupBlockHelper::RespondToPickupResult (0x005B83B6)",
+    "evidence": [
+      "ctor 0x005469C0: 0x00546A38 0x3F4CCCCD (0.8); 0x00546A6C 0x3F99999A (1.2); 0x00546A52 0x3E860A92 (0.261799); 0x00546A56 0x3EB2B8C2 (0.349066); stores +0x14C/+0x150/+0x154 at 0x00546A68/70/74",
+      "Init 0x00546C14: three waits (0x00546C3A/3E, 0x00546C9C/A4, 0x00546D16/2A); two turns (0x00546C76/7A, 0x00546CDA/DE); coin 0x00546CCE",
+      "0x00546DD2..0x00546F4C: Wait; Compound(DriveStraight, MoveHeadToAngle tol 0x3D0EFA35); Wait; TurnInPlace tol 0x3D8EFA35; Wait; TurnInPlace(-sign*(a1+a2)); Wait",
+      "speed 100.0 at 0x00547044 selects the default-speed ctor: 0x00546E1E vs 0x00546E34",
+      "state 0 0x005BAF9A (corrected): TurnTowardsObjectAction(pi) is ADDED first (0x005BB024) and the nearby search second (0x005BB03E); AddAction 0x0054ED90 appends to the list at this+0x70 (emplace_back 0x0054EE28) and CompoundActionSequential::UpdateInternal 0x0054F70C runs front-to-back, so the execution order is turn then search; the turn is added only when the target id is set (0x005BAFDA beq 0x5bb02e), the search unconditionally",
+      "state 1 0x005BB1AA: DriveStraight(-20,20); two TurnInPlace(+0.785398); nearby search; DriveStraight again 0x005BB2DA; TurnInPlace(-3pi/4) 0x005BB312; TurnInPlace(-0.785398) 0x005BB34A; second nearby search 0x005BB39A",
+      "state 2 0x005BB066 (corrected): a two-iteration loop (r8=-1 at 0x005BB078; 0x005BB16E add r8,#1; 0x005BB176 blt 0x5bb084) of DriveStraight(-20,20); TurnInPlace(-0.785398); TurnInPlace(-0.785398); SearchForNearbyObjectAction(-20,100,-0.0872665), i.e. the four actions run twice; state 2 has no state-1 tail and does not update [this+0x10C]",
+      "SearchFinishedWithoutInterruption 0x005BB478: 0x005BB49E ldrb.w r0,[r0,#0x24]; 0x005BB4A2 cmp r0,#1",
+      "callers: 0x005B5D68 blx 0x4B2064 and 0x005B83B6 blx 0x4B2064",
+      "state 1 tail signs: TurnInPlace(-3pi/4) 0x005BB312 (0xC016CBE4) and TurnInPlace(-0.785398) 0x005BB34A (0xBF490FDB), both negative; state 1 sets [this+0x10C]=2 at 0x005BB3C4"
+    ],
+    "effect": "the robot gives up where the app looks around for the cube",
+    "provenance": "the record's state-1 text stopped after the second drive and omitted the last two turns and the second search; the caller site was wrong",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): every constant is a bit pattern (0x3E860A92, 0x3EB2B8C2, 0x3F4CCCCD, 0x3F99999A, 0x3D8EFA35, 0x3D0EFA35, 0xBDB2B8C2, 0x3F490FDB, the tail turn -3pi/4 0xC016CBE4); the RNG is the engine's context RNG (IAction::GetRNG 0x00540D10 -> Robot::GetRNG 0x005126B6 [[robot]+0x14]) with the engine's draw order w1, coin, a1, w2, a2, w3 (0x00546C34..0x00546D42) and RandDblInRange 0x0082FA48; state 0's TurnTowardsObjectAction result is ignored (AddAction ignoreFailure=1, 0x005BB020), state 1's eight children are all ignoreFailure=1 (0x005BB1E6..0x005BB3A8), state 2's four are ignoreFailure=0; the nearby search drives with the 2-argument DriveStraightAction default (-80 mm/s for a negative distance: 0xC2A00000 at 0x00547268). Still open: SearchForNearbyObjectAction::CheckIfDone (0x005470BE) returns 0x0300001D when the compound finishes with an ObjectID set (a flag at +0x12C returns 0; no writer found); Init's prologue (0x00546C1E..0x00546C30) and the DriveStraight default-speed ctor choice are not modelled; the head leg of the parallel compound is not awaited; whether a cancelled sequential child ends state 1 is untested (the engine continues for any ignored child).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "SearchForBlockTests"
+  },
+  "M12-012": {
+    "id": "M12-012",
+    "subsystem": "M12-manipulation",
+    "title": "What makes a cube a valid bottom to stack on: resting flat within ten degrees",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: DockingComponent::CanStackOnTopOfObject 0x0063C5C4 = CanInteractWithObjectHelper 0x0063C654 then !IsPoseTooHigh(pose, 1.0, 15.0, 0.5) (1.0 0x0063C614, 15.0 0x0063C60E, 0.5 0x0063C606, call 0x0063C618); the helper tests IsRestingFlat(Radians(0.174533)) (0x3E32B8C2 at 0x0063C66C/0x0063C670); ObservableObject::IsRestingFlat 0x0087751C; ObservableObject::IsPoseTooHigh 0x00877954 (PLT 0x4ACFF4) returns (D*f1 + f2 + 1e-5 < D*f3 + pose.translation.z), with D = GetDimInParentFrame<'Z'> 0x00557794 (via GetRotatedParentAxis<'Z'> 0x4AB8E4); the caller passes f1=1.0, f2=15.0, f3=0.5, so too-high iff pose.z > 0.5*D + 15.0 + 1e-5; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): CanInteractWithObjectHelper 0x0063C654 tail: it builds the default BlockWorldFilter, calls FindObjectOnTopOrUnderneathHelper(obj, 15.0f, filter, onTop=1) and RETURNS (found == nullptr) (0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792); the earlier checks are family in {1,2}, IsRestingFlat(10 degrees), not currently carried ([[robot+0x284]+8] != the id: 0x0063C686..0x0063C698), GetWithRespectTo(robot pose) success (the whole helper 0x0063C654..0x0063C794 reads NO PoseState; the 'PoseState Known or Dirty' clause the manager added from an earlier verifier's misreading is WRONG and removed); the pose passed to IsPoseTooHigh is the object's pose WITH RESPECT TO THE ROBOT pose (tmpPose), not the world pose; CanStackOnTopOfObject 0x0063C5C4 = helper && !IsPoseTooHigh(pose, 1.0, 15.0, 0.5) and does not reuse the found-object result; siblings CanPickUpObject 0x0063C7F0 = helper && !IsPoseTooHigh(pose, 2.0, 15.0, 0.5) and CanPickUpObjectFromGround 0x0063C880 = helper && !IsPoseTooHigh(pose, 0.5, 10.0, 0.0)",
+    "evidence": [
+      "0x0063C5C4 CanStackOnTopOfObject; 0x0063C654 CanInteractWithObjectHelper",
+      "0x0063C66C movw r1,#0xB8C2 + 0x0063C670 movt r1,#0x3E32 = 0.174533 rad = 10 deg; 0x0087751C IsRestingFlat",
+      "the 15.0 is owned by M13-007",
+      "IsPoseTooHigh 0x00877954: 0x00877978 D=GetDimInParentFrame<'Z'> (0x00557794); 0x00877990 s0=D*f1; 0x00877994 s16=D*f3; 0x00877998 s18=D*f1+f2; 0x008779A0 pose.z ([r0+0x28]); 0x008779AA D*f3+pose.z; 0x008779AE +1e-5 (0x3727C5AC); 0x008779B2 vcmpe; 0x008779BA movmi r0,#1",
+      "0x0063C6C0..0x0063C730, 0x0063C78A..0x0063C792, 0x0063C5FE..0x0063C61C, 0x0063C840, 0x0063C8C2..0x0063C8D2",
+      "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q7"
+    ],
+    "effect": "the stack refuses a cube lying on its side that the engine would stack on, or accepts a tilted one",
+    "provenance": "the current code tested UpAxisFromPose() == ZPositive; the engine tests acos(|dot|) < 10 deg",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the ten-degree tolerance is binary32 0x3E32B8C2 (0x0063C66C..0x0063C670) with bit-boundary tests; the PoseState check removal and the with-respect-to-robot pose from fix round 3 stand. Still open: the on-top search is M13-007/M13-023; IsRestingFlat (BlockWorld, Math.Acos) and Radians::Rescale are double where the engine is float; CanPickUpObject/CanPickUpObjectFromGround have no C# caller.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "RestingFlatTests.ACubeIsFlatWhenItsZLiesNearAParentAxis; M12RVisBuildTests.M12_012_*"
+  },
+  "M12-017": {
+    "id": "M12-017",
+    "subsystem": "M12-manipulation",
+    "title": "IDockAction::Init setup, handler registration and the docking squint",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: IDockAction::Init 0x005514FC looks up the object (0x00551598 blx 0x4A7114), checks the pre-action pose (0x00551640 blx 0x4AB950), registers the completion handlers for tags 0xc5 (0x005516EA) and 0xda (0x00551750), and sets the docking squint (0x00552394 blx 0x4ABA04); the docking squint is set from IDockAction::CheckIfDone 0x005521AC at 0x00552394 (blx 0x4ABA04), not from Init; the call is AddSquint(TrackLayerComponent at robot+0xC0, \"DockSquint\", 1.05, 0.35, -10.0) and its bool is stored at IDockAction+0xF4 (0x00552398); R-VIS (re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q6, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap2.md): IDockAction::Init order: (1) remove the reaction locks (0x00551540, and 0x00551578 if [+0xC4]); (2) object lookup; (3) IsValidLightCube; (4) only if [+0xB9]: GetPreActionPoses (0x00551640); (5) SelectDockAction (vptr+0x38, 0x00551654); (6) subscribe to tags 0xC5 (movingLiftPostDock) and 0xDA (liftLoad) and the external-interface handler; (7) set +0x82/+0x84 to 3; (8) marker choice (branch B rejoins at 0x00551844 and so also runs the NullDockMarker check 0x03000002 and [this+0x82] = *(u16*)marker; the distance is 3-D against Robot::GetPose() with a strict 'smaller wins' from FLT_MAX); (9) SetupTurnAndVerifyAction (0x0055186C); (10) DisableReactionsWithLock; (11) cube-light trigger 0x18; (12) RemoveSquint(robot+0xC0, 250); (13) InitInternal at 0x00551C0C through vtable +0x30 (cbnz r4 returns early on an error); (14) sub-action Update, and only {0, 0x01000000} continue to DisableReactionsWithLock('dockActions'). SelectDockAction 0x00555434 (PlaceRel): not carrying -> 0x03000011; +0xA8 nonzero -> DockAction 3, type 0x18; else if CanStackOnTopOfObject -> DockAction 2, +0xBB = 0, type 0x19; else warn and 0x03000004; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): marker choice when [+0xB9] is 0 (IDockAction::Init 0x005514FC -> 0x00551960): GetObservedMarkers(vec, [obj_vbase+0x1C]) (0x00551976); empty -> error log and 0x0300001D (0x00551A30..0x00551A82); exactly one (size == 4) -> that marker; several (loop 0x00551ACA): each marker+4 GetWithRespectTo(Robot::GetPose), 3-D squared distance with strict < (0x00551B3E..0x00551B4A), best kept in [sp+0x14], a failing GetWithRespectTo logs and skips; all paths join at 0x00551844: [+0x82] = the marker's u16 code, [+0x84] = 3 when vtbl+0x34 returns null, then SetupTurnAndVerifyAction (M12-037). The IActionRunner::Update on the compound is in Init, after the vtbl+0x10 call, [+0xF6]=1, RemoveSquint if [+0xF4] and the vtbl+0x30 (InitInternal) call: 0x00551C16 ldr r0,[r5,#0x98]; 0x00551C1A blx Update; (result | 0x1000000) == 0x1000000 then DisableReactionsWithLock('dockActions') (0x00551C2A..0x00551C4C). Wire-built actions store [+0xF7] = 1 and [+0xB9] = 0 for Align, FacePlant, Pickup, PopAWheelie and RollObject (0x00529CF6..0x0052AAC6) and variable registers for the two PlaceRelObject sites (0x0052A646/0x0052A64A, 0x0052A750/0x0052A754)",
+    "evidence": [
+      "0x005514FC Init; 0x00551598 GetLocatedObjectByIdHelper; 0x00551640 GetPreActionPoses; 0x005516EA movs r3,#0xc5; 0x00551750 movs r3,#0xda",
+      "the handler bodies are the action's own state machine",
+      "the AddSquint call 0x00552394 is inside IDockAction::CheckIfDone 0x005521AC (body 0x005521AC..0x005523F6), not Init 0x005514FC (body 0x005514FC..0x00551C8A, no call to PLT 0x4ABA04)",
+      "AddSquint args: TrackLayerComponent at robot+0xC0 (0x00552362 ldr.w r5,[r0,#0xc0]); name \"DockSquint\" (literal at 0x005524A0, 10 bytes); f1=0x3F866666=1.05 (0x0055237A/0x00552388); f2=0x3EB33333=0.35 (0x0055237E/0x0055238C); f3=0xC1200000=-10.0 (0x00552378/82/86); return at 0x00552398 strb [r4,#0xf4]",
+      "TrackLayerComponent::AddSquint 0x0064F370 -> FaceLayerManager::GenerateSquint 0x0058D738 (PLT 0x4BA164) then AddPersistentLayer 0x4AE9E0; GenerateSquint ignores its float args and clips EyeScaleY=0.35, EyeScaleX=1.05, UpperLidAngle=-10.0 on both eyes",
+      "GenerateSquint track: two ProceduralFaceKeyFrames, the second at 250 ms (0xFA) with Reset (0x0058D820/0x0058D82C)",
+      "0x00551540..0x00551C14 the Init order; 0x00551C0C ldr r1,[r0,#0x30] / 0x00551C10 blx r1 / 0x00551C14 cbnz r4 (InitInternal is the last step; PlaceRelObjectAction vtable 0x010222F0 slot +0x30)",
+      "0x00555435..0x005555B5 SelectDockAction",
+      "re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q6; re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q6",
+      "0x00551960..0x00551B8C marker choice; 0x00551C0C..0x00551C4C the tail; 0x00529CF4..0x0052AAC6 the wire stores",
+      "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q10.1-10.2; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md (10.1, 10.6)"
+    ],
+    "effect": "the dock action never completes or never sets the squint the engine sets",
+    "provenance": "the setup and handler registration had no record",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): DockWithObject is sent first (0x005522AE), the squint is added on the rising edge of IS_PICKING_OR_PLACING after the dock message (0x0055233E..0x00552398: [+0x94] stored only on the prev == 0 path, so at most one add per dock), behind ShouldApplyDockingSquint 0x005524AC ([[[robot+0x264]+0x30]+0x14] != 1, through a seam that returns 3 and reports MISSING); the 0xC5/0xDA handlers are registered at IDockAction::Init (0x005516EA, 0x00551750) for the action's lifetime; DockAsync clears its state in a finally. Still open: the handler bodies (M12-034), the StandIn sub-actions, the first gate [[IDockAction+0xCC]+4] is read only on later RobotState messages (the engine reads it on the dock-start tick), CheckIfDone result 0x03000016, RemoveSquint, the IDockAction constructor default of [+0xF7].",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "M12RVisBuildTests.M12_017_*; M12RVisBuildTests.M12_037_*; M12RVisBuildTests.M12_028_*; ManipulationTests"
+  },
+  "M12-019": {
+    "id": "M12-019",
+    "subsystem": "M12-manipulation",
+    "title": "The docking-error-signal clamp is 40 degrees",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204: UpdateDockingErrorSignal 0x0063BE80 clamps the pose to flat with 0x3F32B8C2 = 0.698132 rad = 40 deg (0x0063C182 movw r1,#0xB8C2 + 0x0063C188 movt r1,#0x3F32) at ObservableObject::ClampPoseToFlat 0x0063C194",
+    "evidence": [
+      "0x0063C182/0x0063C188 form 0x3F32B8C2 (40 deg); 0x0063C194 blx 0x4A6FD0 (ClampPoseToFlat)",
+      "distinct from the 20 degrees M11-006 records for the pose-confirmation path (0x3EB2B8C2)"
+    ],
+    "effect": "the error signal's angle is clamped to the wrong range",
+    "provenance": "the 40-degree clamp had no record; the 20-degree pose-confirm clamp is M11-006",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the docking-error-signal clamp is binary32 0x3F32B8C2 (0x0063C182..0x0063C194) with a one-ulp test on each side through BlockWorld.ClampPoseToFlat. Still open: the clamp's arithmetic inside BlockWorld is double.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "ManipulationTests.DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult"
+  },
+  "M15-004": {
+    "id": "M15-004",
+    "subsystem": "M15-freeplay",
+    "title": "Needs decay modifiers and damaged-part thresholds",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+    "effect": "need decay rates and the reported damaged-part count change",
+    "provenance": "libcozmoEngine.so and shipped needs configuration",
+    "authority": "libcozmoEngine.so and shipped needs configuration",
+    "evidence": [
+      "NeedsState::GetDecayMultipliers 0x0069C214",
+      "decay modifier descending sort 0x00691040",
+      "NeedsState::NumDamagedPartsForRepairLevel 0x0069CCAC",
+      "needs_decay_config.json",
+      "needs_config.json"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): GetDecayMultipliers (0x0069C214: start 1.0f, f32 compare bge 0x0069C278, vmul.f32) and NumDamagedPartsForRepairLevel (0x0069CCAC) in binary32; the model is one entry per JSON entry (threshold + affected pairs; the outer scan stops at the FIRST entry with level >= threshold and applies its whole pair vector once). Still open: NeedsState levels stay double (narrowed to float at the two functions); a NaN level would match in the C# but never in the engine.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig"
+  },
+  "M15-008": {
+    "id": "M15-008",
+    "subsystem": "M15-freeplay",
+    "title": "Desired activity from objects and behavior-owned needs-action reporting",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+    "effect": "the chosen freeplay activity and needs rewards change",
+    "provenance": "libcozmoEngine.so",
+    "authority": "libcozmoEngine.so",
+    "evidence": [
+      "ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C",
+      "IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8",
+      "IBehavior::NeedActionCompleted 0x005BE40C",
+      "ActivityGatherCubes::Update 0x005AF2F0"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): TransitionToObjectPickedUp in the engine's order (carried-object check, lookup, active-beacon check, FindFreeCubeToStackOn 0x005DF46A, TryToStackOn 0x005DF4F2, then NeedActionCompleted PickupCube 0x005DF59C), AIBeacon::IsLocWithinBeacon (0x0059C24C), the stack-callback StackCompleted per lambda 0x005E142C (category 0 StackCube 0x2A then FireEmotionEvents; category 4 retries only while carried == candidate and attempt <= 2; category 3 and a failed retry test log and SetFailedToUse(target, 1); every other category does nothing). Still open: the floor branch is not built (new records M15-019..M15-025 own FindFreePoseInBeacon, TryToPlaceAt, PlaceObjectOnGroundAtPoseAction, the NoFreePoses branch and the failure memory; the stack ends the behaviour with the cube still carried, MISSING); DriveToPlaceOnObjectAction (0x005DFE0E) is unbuilt: the stack branch runs the old PlaceRelObjectHelper as a labelled stand-in; the pose-aware DidFailToUse; ProgressionUnlockComponent::IsUnlocked(StackTwoCubes = 10) has no component (a live-path default: treated as unlocked); ActivityGatherCubes (Update 0x005AF27C, NeedActionCompleted(0x14) at 0x005AF2F0, its gate 0x005AF2A8..0x005AF2AE and the one-shot flag at +0x78) and the PeekABoo/TrackLaser/GuardDog behaviours are not built; the retry-taken branch of StackCompleted has no test.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity"
+  },
+  "M15-009": {
+    "id": "M15-009",
+    "subsystem": "M15-freeplay",
+    "title": "Emotion event names fired when a cube is placed in a beacon",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "the mood events emitted by cube placement change",
+    "provenance": "libcozmoEngine.so",
+    "authority": "libcozmoEngine.so",
+    "evidence": [
+      "BehaviorExploreBringCubeToBeacon::FireEmotionEvents 0x005E002C"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the local free-pose search and the invented stand pose are removed; FireEmotionEvents (0x005E002C..0x005E0096) is kept. Still open: the route to it is the floor-placement path (new records M15-019..M15-025): the floor branch ends the behaviour with the cube still carried (a loss of function, MISSING) until those are built.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
+  },
+  "M15-011": {
+    "id": "M15-011",
+    "subsystem": "M15-freeplay",
+    "title": "Freeplay beacon is centered on the robot pose",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "the location used for subsequent cube gathering changes",
+    "provenance": "libcozmoEngine.so",
+    "authority": "libcozmoEngine.so",
+    "evidence": [
+      "BehaviorThinkAboutBeacons::SelectNewBeacon 0x005E5F0C",
+      "AIWhiteboard::AddBeacon 0x0056C39C"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): SelectNewBeacon passes the full copied robot pose (z and rotation included) to AddBeacon (0x005E5F1A..0x005E5F30). Still open: none known.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside"
+  },
+  "M15-012": {
+    "id": "M15-012",
+    "subsystem": "M15-freeplay",
+    "title": "Put-down image wait and CantHandleTallStack animation trigger",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ManipulationBehaviors.cs",
+    "effect": "the post-put-down action sequence and tall-stack reaction animation change",
+    "provenance": "libcozmoEngine.so",
+    "authority": "libcozmoEngine.so",
+    "evidence": [
+      "BehaviorPutDownBlock::CreateLookAfterPlaceAction 0x005C8174",
+      "BehaviorCantHandleTallStack::TransitionToDisapointment 0x005ED0F0"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the put-down look: head angle 0xBEB2B8C2 (0x005C81A6..0x005C81AC); head and the -30 mm drive are one parallel compound (0x005C8196..0x005C822A; the 2-argument DriveStraightAction default speed -80 mm/s, 0xC2A00000 at 0x00547268; the first failed child ends it and a failed parallel skips the image wait and the keep-alive: ignoreFailure=0 at 0x005C8220/0x005C8258); the gate at 0x005C818C..0x005C8194 ([[robot+0x284]+8] != -1) skips the parallel and the image wait when nothing is carried; the carried object is released AFTER the look action ends, only if still carrying (std::function 0x005C8480, SetCarriedObjectAsUnattached(false) at 0x005C84CE; the early release is removed). Still open: the 0x199 keep-alive in TurnTowardsFaceWrapperAction (0x005C8264..0x005C82CC) is deferred; what the behaviour's completion callback does with a failed look compound is not in the inventory; framesBefore is captured before the compound while the engine's WaitForImages starts after it; the head move cannot be cancelled when the drive fails.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "ManipulationTests.PutDownBlockBacksUpPlaysThePutDownAndLooksDown"
+  },
+  "M15-013": {
+    "id": "M15-013",
+    "subsystem": "M15-freeplay",
+    "title": "Activity tree construction, desired names and discarded activityPriority",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
+    "effect": "activity membership and ordering change",
+    "provenance": "libcozmoEngine.so and shipped activity configuration",
+    "authority": "libcozmoEngine.so and shipped activity configuration",
+    "evidence": [
+      "ActivityFreeplay::CreateFromConfig 0x005AD478",
+      "ActivityStrictPriority constructor 0x005B23DC",
+      "activities_config.json"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): PickNewActivity is the engine's PickNewActivityForSpark (0x005ADC44): activities bucketed by required spark in config order (0x005AD676..0x005AD69E), only the requested spark's bucket is walked, +0x91 (forced) then +0x90 (desired from objects) take only that activity id without asking a strategy (0x005ADC6A..0x005ADC7E), otherwise the first activity whose strategy WantsToStart; ActivityIDFromString returns 0 for an unknown name (0x0076706C..0x007670D4); a missing bucket warns (0x005ADCD8). Still open: the engine's askCurrent argument is not a parameter here; FreeplaySystem.GetDesiredActiveBehavior loops up to SubActivities.Count passes where the engine re-picks at most once per tick (M15-002's).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "FreeplayTests"
+  },
+  "M15-015": {
+    "id": "M15-015",
+    "subsystem": "M15-freeplay",
+    "title": "Freeplay active-time tracker and its four pause sources",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs",
+    "effect": "active freeplay telemetry accumulation and reporting change",
+    "provenance": "libcozmoEngine.so plus Unity HighLevelActivity enum",
+    "authority": "libcozmoEngine.so plus Unity HighLevelActivity enum",
+    "evidence": [
+      "FreeplayDataTracker constructor 0x0056EBD4",
+      "FreeplayDataTracker::SendData 0x0056EC48",
+      "FreeplayDataTracker::SetFreeplayPauseFlag 0x0056EEBC",
+      "BehaviorManager::SetCurrentActivity 0x005A106C",
+      "Robot::CheckAndUpdateTreadsState 0x005121F4",
+      "Robot::SetOnChargerPlatform 0x00511DB0",
+      "unity/scripts/csharp/Anki.Cozmo/HighLevelActivity.cs"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the tracker keeps u64 nanoseconds (0x0056EC50..0x0056EC84, 0x0056EED6..0x0056EF14, 0x0056F082), reports (int)round(acc/1e9) half away from zero with a signed `< 37` compare, the next-send deadline is f32 seconds (float)(ns/1e9)+30.0f re-read each SendData (BaseStationTimer 0x0084BC38), the DataTooHigh log text is the engine's, seeded from InitConfiguration (0x005A0DFC: GameControl paused; the OffTreads and OnCharger flags from the current state, then GameControl cleared). Still open: the seeding is the stack's late-creation substitute (the engine's flags are set on transitions: 0x005121F4, 0x00511DB0); the SendData debug log (0x56ECBE) is omitted.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "FreeplayTests"
+  },
+  "M3-024": {
+    "id": "M3-024",
+    "subsystem": "M3-device",
+    "title": "The audio output source comes from the firmware version JSON: \"sim\" null means physical, play on the robot",
+    "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+    "evidence": [
+      "C1 HandleFirmwareVersion 0x00536934..0x0053698E (\"sim\" at 0x00536A4C)",
+      "C2 CreateAudioAnimation 0x0059A070..0x0059A0B6"
+    ],
+    "effect": "audio is routed to the wrong output",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "status": "IMPLEMENTATION_GAP",
+    "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): EngineRobot.HandleFirmwareVersion runs for every FirmwareVersion in the robot-level broadcast: 'sim' absent or null gives IsPhysicalRobot and PlayOnRobot (2), otherwise PlayOnDevice (1). What the handler does with a JSON that does not parse, or whose root is not an object, is not in the rows: the source is left unset with a MISSING warning. The source's consumer (C2) is M5/M6; this stack streams animation audio to the robot either way.",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): CreateAudioAnimation (0x00599FF0, 0x0059A070..0x0059A0B6) is branched at the call site: source 2 keeps the on-robot streaming stand-in, source 1 streams nothing and reports MISSING, source 0 or null clears the track and creates nothing (0x0059A11C..0x0059A12E; null is the client's initial value, 0x005994E6, so nothing streams until the firmware version arrives, as in the engine); the post-construction check (0x0059A0BA, state 4 or 5) is reported MISSING. Still open: RobotAudioAnimationOnDevice's device playback (Dispatch::After 0x005975A2) and InitAnimation's per-keyframe audio-reference RNG draws (0x00596814) are not built; a scheduler without the OutputSource seam keeps the old on-robot behaviour (only tools build one).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "M3DeviceTests.M3_024_C1_TheAudioOutputSourceComesFromSim"
+  },
+  "M10-010": {
+    "id": "M10-010",
+    "subsystem": "M10-derived",
+    "title": "The physical flag robot+0x14: 0 until FirmwareVersion, then json[\"sim\"].isNull(); its gates",
+    "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+    "evidence": [
+      "A4 ctor 0x50FC36; SetPhysicalRobot 0x51397A from HandleFirmwareVersion 0x536980",
+      "B2 0x63E3B4..0x63E3B8"
+    ],
+    "effect": "physical-only behaviour runs at different times",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "status": "IMPLEMENTATION_GAP",
+    "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the firmware-version handler (0x005368F4): a parse failure does nothing (cbz 0x00536932); a null root is accepted (resolveReference 0x008EACCE) so 'sim' is null: physical, source 2; SetPhysicalRobot 0x00536980 and SetOutputSource 0x0053698E. Still open: array/string/number/bool roots throw Json::throwLogicError (0x008EADC2..0x008EAE64) and where the engine catches it is not established (M1-029 row 11o): the stack reports MISSING once and sets nothing.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "DerivedStateTests.OnBackTakesOneSecondAndUsesThePhysicalCentre"
+  },
+  "M10-011": {
+    "id": "M10-011",
+    "subsystem": "M10-derived",
+    "title": "Falling events: FallingStarted broadcast; FallingStopped NeedsAction 17 above 1000, DAS, broadcast",
+    "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+    "evidence": [
+      "C1 0x534F4C..0x534F9E",
+      "C2 0x5350AA..0x5350C2, 0x535186..0x53519C"
+    ],
+    "effect": "falls are reported differently",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "status": "IMPLEMENTATION_GAP",
+    "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
+    "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): HandleFallingStopped's order (0x005350AA..0x0053519C): Register(17 = 'Fall') then the DAS event then the broadcast, condition > 1000.0f (0x5352A8); FreeplayStack subscribes Sensors.NeedsActionCompleted to NeedsManager.RegisterNeedsActionCompleted(\"Fall\"). Still open: the HandleFallingStopped info log (0x535084) and the DAS int-rounded intensity are not reproduced (log only).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "DerivedStateTests.FallingNeedsTheFlagAndSomethingElse"
+  },
+  "M15-019": {
+    "id": "M15-019",
+    "subsystem": "M15-freeplay",
+    "title": "FindFreePoseInBeacon: the candidate frame, grid, order and the three tests",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon 0x005E0378..0x005E0666 (static: r0 object, r1 beacon, r2 robot, r3 &out, float on the stack; the rest of 0x005E0378..0x005E139F is helpers and lambdas); frame = rotation about Z from the nearest cube in the beacon (CalculateDirectionalityClosest 0x005E07D8), else the robot-to-beacon heading via acosf, else angle 0",
+      "grid S = size.x + 10.0f (0x41200000), N = trunc(radius / S); order i = 0, -1..-N, then 1..N; for each i, j = 0, -1, +1, ..., -N, +N; candidate = beacon translation + R*(S*i, S*j, 0), parent = world origin; *out is written before any test",
+      "tests in order: (1) squared distance of the rotated offset > radius^2 rejects (strict; AIBeacon::IsLocWithinBeacon is not used here); (2) DidFailToUse(-1, PlaceObjectAt = 2, cooldown, pose, 100.0f 0x42C80000, pi 0x40490FDB) (call 0x005E0B78); (3) FindLocatedIntersectingObjects with the carried id ignored, padding 0x41200000, no Z test; returns 1 on the first free candidate",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-020": {
+    "id": "M15-020",
+    "subsystem": "M15-freeplay",
+    "title": "CalculateDirectionalityClosest, the FindCubesInBeacon predicate and AIBeacon::IsLocWithinBeacon's formula",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "CalculateDirectionalityClosest 0x005E07D8: the rotation about Z from the nearest cube in the beacon; AIBeacon::IsLocWithinBeacon 0x0059C24C: x*x + y*y + z*z in f32 against (radius - margin)^2 plus 0x3727C5AC, `ge`; used only by FindCubesInBeacon (with extra 0)",
+      "the function at 0x005E06D8..0x005E07B0 (an averaging function) has no caller found (extraction section 8 item 6)",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-021": {
+    "id": "M15-021",
+    "subsystem": "M15-freeplay",
+    "title": "TryToPlaceAt and its callback: arguments, attempt counter, the same-pose retry and the failure tail",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "TryToPlaceAt builds a CompoundActionSequential of DriveToPlaceCarriedObjectAction(placeOnGround = 1, +0x178 = 0, +0x179 = 1, padding 10.0f) and PlaceObjectOnGroundAction; callback 0x005E188C: success -> FireEmotionEvents (no NeedActionCompleted); a RETRY category retries with the same pose only while still carrying the target and attempt <= 2 (3 attempts); categories 1, 2, 3 or a non-retryable RETRY end in SetFailedToUse(obj, 2, candidate pose) (0x005E1B56)",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-022": {
+    "id": "M15-022",
+    "subsystem": "M15-freeplay",
+    "title": "PlaceObjectOnGroundAtPoseAction composition and PlaceObjectOnGroundAction Init/CheckIfDone",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "PlaceObjectOnGroundAction Init sends message 0x44 (0, 0, 0, 100, 200, 500 as raw bits), builds a TurnTowardsObject verify action and calls StopAllMotors; CheckIfDone never reads DockingComponent+5, its result is the verify action's (extraction sections 2.3..2.8; construction of PlaceObjectOnGroundAtPoseAction at 0x005DFF14)",
+      "M12-015 owns only the wire message of PlaceObjectOnGround (its evidence does not cover the action)",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-023": {
+    "id": "M15-023",
+    "subsystem": "M15-freeplay",
+    "title": "The NoFreePoses branch: FailedToFindLocationInBeacon stamp, the log, the 'HikingNoLocationAtBeacon' event and the IsRunnable cooldown",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "0x005DF69C..0x005DF73A: AIBeacon::FailedToFindLocation (0x0059C314..0x0059C322) stamps [beacon+0x10] (an f32 time) with BaseStationTimer::GetCurrentTimeInSeconds(); then the 'all poses failed' log, then the mood event 'HikingNoLocationAtBeacon' (24 chars), no action started; IsRunnableInternal (vldr s16,[r0,#0x10] 0x005DF148) then blocks for recentFailureCooldown_sec (45.0f hiking, 5.0f sparks)",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-024": {
+    "id": "M15-024",
+    "subsystem": "M15-freeplay",
+    "title": "The whiteboard failure memory: tables, caps, FailureInfo and EntryMatches",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "AIWhiteboard::DidFailToUse / SetFailedToUse with a pose: per-object-id tables with caps {1, 1, 10, 1} (PlaceObjectAt keeps the last 10); EntryMatches expiry is strict with 1e-5f slack; id -1 means any object; the floor path's DidFailToUse is 0x005E0B78 (failure 2, id -1, 100.0f, pi) and the stack-on filter's is 0x005E1D24 (failure 1, 20.0f, pi/8)",
+      "Pose3d::IsSameAs_WithAmbiguity 0x00846F3C (the per-axis and angle test) is unread: RECOVERABLE_GAP",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  },
+  "M15-025": {
+    "id": "M15-025",
+    "subsystem": "M15-freeplay",
+    "title": "NeedActionCompleted(0x1F) before the pose search, and the floor callback's lack of any needs call",
+    "location": "cozmo-stack/src/Cozmo.Robot/Behavior/CubeGameBehaviors.cs",
+    "effect": "where a carried cube is placed on the floor inside a beacon, and what a failed placement remembers",
+    "provenance": "libcozmoEngine.so; re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "BehaviorExploreBringCubeToBeacon floor branch: IBehavior::NeedActionCompleted(NeedsActionId 0x1F) BEFORE the pose search, whatever the search returns (0x005DF59C movs r1,#0x1f, 0x005DF5A0; 0x005DF59C..0x005DF5E0)",
+      "the floor callback's category 0 path: log 'Successfully placed cube', FireEmotionEvents, no NeedActionCompleted, no SetFailedToUse (0x005E18AC..0x005E191A)",
+      "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-03): new record for a path M15-008/M15-009 depended on and no record owned (extraction research/20261003-R-FIX2-M15-gap1-extraction.md, a Claude extractor; every address re-read). Not built yet: the stack ends the behaviour with the cube still carried (MISSING) where the engine places it.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "NavigationTests.M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories (to be extended by the R-FIX2 floor-placement build)"
+  }
+}

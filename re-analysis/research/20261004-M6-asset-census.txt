@@ -1,0 +1,30 @@
+Cozmo.bnk DIDX=2042
+Cozmo zip comparisons {('0xffff', 'proper prefix'): 1742, 'no zip entry': 73, ('0x2', 'proper prefix'): 206, ('0x2', 'equal'): 21}
+non-prefix ids []
+SFX.bnk DIDX=24
+UI.bnk DIDX=4
+Music.bnk DIDX=126
+Cozmo.bnk/SFX.bnk shared=0
+Cozmo.bnk/UI.bnk shared=0
+Cozmo.bnk/Music.bnk shared=0
+SFX.bnk/UI.bnk shared=0
+Music.bnk/SFX.bnk shared=0
+Music.bnk/UI.bnk shared=0
+
+Sound-object census
+('0x40001', 1, 1, True, True): 1812
+('zipcmp', '0x40001', 'proper'): 1826
+('0x40001', 2, 1, False, True): 18
+('0x40001', 0, 1, True, False): 27
+('0x640002', 0, 0, False, False): 1
+('0x40001', 1, 0, True, True): 14
+('0x6412c2', 0, 0, False, False): 15
+('0x650002', 0, 0, False, False): 11
+('0x20001', 1, 0, True, True): 333
+('zipcmp', '0x20001', 'proper'): 305
+('zipcmp', '0x20001', 'equal'): 28
+errors=[]
+
+Actions {1027: 723, 259: 109, 6401: 51, 4612: 7, 8451: 1, 4867: 3, 258: 8, 770: 1, 514: 1, 264: 1, 7683: 1}
+Play prop IDs {15: 11, 16: 11}
+Unexpected prop IDs []

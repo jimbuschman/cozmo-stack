@@ -1,0 +1,4318 @@
+
+===== Anki::Cozmo::CozmoEngine::Update 004ed4d4 =====
+0x004ed4d4 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x004ed4d8 sub       sp, #0x10 ; 
+0x004ed4da mov       r4, r0 ; 
+0x004ed4dc mov       r8, r3 ; 
+0x004ed4de ldrb      r0, [r4, #0x10] ; 
+0x004ed4e0 mov       r7, r2 ; 
+0x004ed4e2 cmp       r0, #0 ; 
+0x004ed4e4 beq       #0x4ed56e ; 
+0x004ed4e6 ldrb.w    r0, [r4, #0x61] ; 
+0x004ed4ea cbnz      r0, #0x4ed4f8 ; 
+0x004ed4ec ldr       r0, [r4, #0x34] ; 
+0x004ed4ee blx       #0x4a4f78 ; Anki::Cozmo::CozmoContext::SetMainThread()
+0x004ed4f2 movs      r0, #1 ; 
+0x004ed4f4 strb.w    r0, [r4, #0x61] ; 
+0x004ed4f8 ldr       r0, [r4, #0x30] ; 
+0x004ed4fa ldr       r1, [r0] ; 
+0x004ed4fc ldr       r1, [r1, #0x44] ; 
+0x004ed4fe blx       r1 ; 
+0x004ed500 ldr       r0, [r4, #0x34] ; 
+0x004ed502 movs      r6, #0 ; 
+0x004ed504 ldr       r0, [r0, #0x20] ; 
+0x004ed506 ldr       r0, [r0, #0x60] ; 
+0x004ed508 strd      r6, r6, [r0, #0x38] ; 
+0x004ed50c ldr       r0, [r4, #0x34] ; 
+0x004ed50e ldr       r0, [r0, #0x24] ; 
+0x004ed510 str       r6, [r0, #0x10] ; 
+0x004ed512 ldr       r0, [r4, #0x30] ; 
+0x004ed514 blx       #0x4a520c ; Anki::Cozmo::UiMessageHandler::Update()
+0x004ed518 mov       r5, r0 ; 
+0x004ed51a cmp       r5, #0 ; 
+0x004ed51c beq       #0x4ed5c4 ; 
+0x004ed51e strd      r6, r6, [sp, #4] ; 
+0x004ed522 str       r6, [sp, #0xc] ; 
+0x004ed524 adr       r0, #0x1d8 ; 
+0x004ed526 add       r1, sp, #4 ; 
+0x004ed528 adr       r2, #0x1e8 ; 
+0x004ed52a blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x004ed52e ldr       r0, [sp, #4] ; 
+0x004ed530 cbz       r0, #0x4ed550 ; 
+0x004ed532 ldr       r1, [sp, #8] ; 
+0x004ed534 cmp       r1, r0 ; 
+0x004ed536 itttt     ne ; 
+0x004ed538 subne.w   r2, r1, #8 ; 
+0x004ed53c subne     r2, r2, r0 ; 
+0x004ed53e mvnne     r3, #7 ; 
+0x004ed542 bicne.w   r2, r3, r2 ; 
+0x004ed546 itt       ne ; 
+0x004ed548 addne     r1, r1, r2 ; 
+0x004ed54a strne     r1, [sp, #8] ; 
+0x004ed54c blx       #0x4a40cc ; operator delete(void*)
+0x004ed550 ldr       r0, [pc, #0x1e0] ; 
+0x004ed552 movs      r2, #1 ; 
+0x004ed554 ldr       r1, [pc, #0x1e0] ; 
+0x004ed556 add       r0, pc ; 
+0x004ed558 add       r1, pc ; 
+0x004ed55a ldr       r0, [r0] ; 
+0x004ed55c ldr       r1, [r1] ; 
+0x004ed55e ldrb      r0, [r0] ; 
+0x004ed560 strb      r2, [r1] ; 
+0x004ed562 cmp       r0, #0 ; 
+0x004ed564 beq.w     #0x4ed6ca ; 
+0x004ed568 blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x004ed56c b         #0x4ed6ca ; 
+0x004ed56e ldr       r2, [pc, #0x220] ; 
+0x004ed570 movs      r0, #0 ; 
+0x004ed572 strd      r0, r0, [sp, #4] ; 
+0x004ed576 add       r2, pc ; 
+0x004ed578 str       r0, [sp, #0xc] ; 
+0x004ed57a adr       r0, #0x184 ; 
+0x004ed57c add       r1, sp, #4 ; 
+0x004ed57e blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x004ed582 ldr       r0, [sp, #4] ; 
+0x004ed584 cbz       r0, #0x4ed5a4 ; 
+0x004ed586 ldr       r1, [sp, #8] ; 
+0x004ed588 cmp       r1, r0 ; 
+0x004ed58a itttt     ne ; 
+0x004ed58c subne.w   r2, r1, #8 ; 
+0x004ed590 subne     r2, r2, r0 ; 
+0x004ed592 mvnne     r3, #7 ; 
+0x004ed596 bicne.w   r2, r3, r2 ; 
+0x004ed59a itt       ne ; 
+0x004ed59c addne     r1, r1, r2 ; 
+0x004ed59e strne     r1, [sp, #8] ; 
+0x004ed5a0 blx       #0x4a40cc ; operator delete(void*)
+0x004ed5a4 ldr       r0, [pc, #0x1ec] ; 
+0x004ed5a6 movs      r5, #1 ; 
+0x004ed5a8 ldr       r1, [pc, #0x1ec] ; 
+0x004ed5aa add       r0, pc ; 
+0x004ed5ac add       r1, pc ; 
+0x004ed5ae ldr       r0, [r0] ; 
+0x004ed5b0 ldr       r1, [r1] ; 
+0x004ed5b2 ldrb      r0, [r0] ; 
+0x004ed5b4 strb      r5, [r1] ; 
+0x004ed5b6 cmp       r0, #0 ; 
+0x004ed5b8 beq.w     #0x4ed6ca ; 
+0x004ed5bc blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x004ed5c0 movs      r5, #1 ; 
+0x004ed5c2 b         #0x4ed6ca ; 
+0x004ed5c4 ldrb.w    r0, [r4, #0x62] ; 
+0x004ed5c8 cmp       r0, #4 ; 
+0x004ed5ca bhi       #0x4ed672 ; 
+0x004ed5cc tbb       [pc, r0] ; 
+0x004ed5d0 lsls      r7, r6, #0xd ; 
+0x004ed5d2 movs      r7, #0x10 ; 
+0x004ed5d4 lsls      r2, r0, #1 ; 
+0x004ed5d6 ldr       r0, [r4, #0x30] ; 
+0x004ed5d8 blx       #0x4a5218 ; Anki::Cozmo::UiMessageHandler::HasDesiredNumUiDevices() const
+0x004ed5dc cmp       r0, #1 ; 
+0x004ed5de bne       #0x4ed6be ; 
+0x004ed5e0 mov       r0, r4 ; 
+0x004ed5e2 blx       #0x4a5224 ; Anki::Cozmo::CozmoEngine::SendSupportInfo() const
+0x004ed5e6 mov       r0, r4 ; 
+0x004ed5e8 movs      r1, #2 ; 
+0x004ed5ea blx       #0x4a5104 ; Anki::Cozmo::CozmoEngine::SetEngineState(Anki::Cozmo::EngineState)
+0x004ed5ee b         #0x4ed6be ; 
+0x004ed5f0 movs      r0, #0 ; 
+0x004ed5f2 add       r1, sp, #4 ; 
+0x004ed5f4 str       r0, [sp, #4] ; 
+0x004ed5f6 ldr       r0, [r4, #0x34] ; 
+0x004ed5f8 ldr       r0, [r0, #0x1c] ; 
+0x004ed5fa blx       #0x4a5230 ; Anki::Cozmo::RobotDataLoader::DoNonConfigDataLoading(float&)
+0x004ed5fe cmp       r0, #1 ; 
+0x004ed600 bne       #0x4ed612 ; 
+0x004ed602 ldr       r0, [r4, #0x34] ; 
+0x004ed604 ldr       r0, [r0, #0x20] ; 
+0x004ed606 blx       #0x4a523c ; Anki::Cozmo::RobotManager::BroadcastAvailableAnimations()
+0x004ed60a mov       r0, r4 ; 
+0x004ed60c movs      r1, #3 ; 
+0x004ed60e blx       #0x4a5104 ; Anki::Cozmo::CozmoEngine::SetEngineState(Anki::Cozmo::EngineState)
+0x004ed612 ldr       r0, [r4, #0x34] ; 
+0x004ed614 add       r1, sp, #4 ; 
+0x004ed616 ldr       r0, [r0, #4] ; 
+0x004ed618 bl        #0x4ed7c0 ; 
+0x004ed61c b         #0x4ed6be ; 
+0x004ed61e blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x004ed622 mov       r2, r7 ; 
+0x004ed624 mov       r3, r8 ; 
+0x004ed626 blx       #0x4a5248 ; Anki::BaseStationTimer::UpdateTime(unsigned long long)
+0x004ed62a ldr       r0, [r4, #0x34] ; 
+0x004ed62c ldr       r0, [r0, #0x20] ; 
+0x004ed62e blx       #0x4a5254 ; Anki::Cozmo::RobotManager::UpdateRobotConnection()
+0x004ed632 blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x004ed636 blx       #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0x004ed63a mov       r1, r0 ; 
+0x004ed63c ldr       r0, [r4, #0x34] ; 
+0x004ed63e ldr       r0, [r0, #0x34] ; 
+0x004ed640 blx       #0x4a5260 ; Anki::Cozmo::NeedsManager::Update(float)
+0x004ed644 ldr       r0, [r4, #0x34] ; 
+0x004ed646 ldr       r0, [r0, #0x20] ; 
+0x004ed648 blx       #0x4a526c ; Anki::Cozmo::RobotManager::UpdateAllRobots()
+0x004ed64c mov       r0, r4 ; 
+0x004ed64e blx       #0x4a5278 ; Anki::Cozmo::CozmoEngine::UpdateLatencyInfo()
+0x004ed652 b         #0x4ed6be ; 
+0x004ed654 ldr       r0, [r4, #0x34] ; 
+0x004ed656 ldr       r0, [r0, #0x20] ; 
+0x004ed658 blx       #0x4a5254 ; Anki::Cozmo::RobotManager::UpdateRobotConnection()
+0x004ed65c ldr       r0, [r4, #0x34] ; 
+0x004ed65e ldr       r0, [r0, #0x20] ; 
+0x004ed660 blx       #0x4a5284 ; Anki::Cozmo::RobotManager::UpdateFirmware()
+0x004ed664 cmp       r0, #1 ; 
+0x004ed666 bne       #0x4ed6be ; 
+0x004ed668 mov       r0, r4 ; 
+0x004ed66a movs      r1, #3 ; 
+0x004ed66c blx       #0x4a5104 ; Anki::Cozmo::CozmoEngine::SetEngineState(Anki::Cozmo::EngineState)
+0x004ed670 b         #0x4ed6be ; 
+0x004ed672 movs      r0, #0 ; 
+0x004ed674 strd      r0, r0, [sp, #4] ; 
+0x004ed678 str       r0, [sp, #0xc] ; 
+0x004ed67a adr       r0, #0xc0 ; 
+0x004ed67c add       r1, sp, #4 ; 
+0x004ed67e adr       r2, #0xe0 ; 
+0x004ed680 blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x004ed684 ldr       r0, [sp, #4] ; 
+0x004ed686 cbz       r0, #0x4ed6a6 ; 
+0x004ed688 ldr       r1, [sp, #8] ; 
+0x004ed68a cmp       r1, r0 ; 
+0x004ed68c itttt     ne ; 
+0x004ed68e subne.w   r2, r1, #8 ; 
+0x004ed692 subne     r2, r2, r0 ; 
+0x004ed694 mvnne     r3, #7 ; 
+0x004ed698 bicne.w   r2, r3, r2 ; 
+0x004ed69c itt       ne ; 
+0x004ed69e addne     r1, r1, r2 ; 
+0x004ed6a0 strne     r1, [sp, #8] ; 
+0x004ed6a2 blx       #0x4a40cc ; operator delete(void*)
+0x004ed6a6 ldr       r0, [pc, #0xe0] ; 
+0x004ed6a8 movs      r2, #1 ; 
+0x004ed6aa ldr       r1, [pc, #0xe0] ; 
+0x004ed6ac add       r0, pc ; 
+0x004ed6ae add       r1, pc ; 
+0x004ed6b0 ldr       r0, [r0] ; 
+0x004ed6b2 ldr       r1, [r1] ; 
+0x004ed6b4 ldrb      r0, [r0] ; 
+0x004ed6b6 strb      r2, [r1] ; 
+0x004ed6b8 cbz       r0, #0x4ed6be ; 
+0x004ed6ba blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x004ed6be ldr       r0, [r4, #0x34] ; 
+0x004ed6c0 ldr       r0, [r0, #0xc] ; 
+0x004ed6c2 cbz       r0, #0x4ed6c8 ; 
+0x004ed6c4 blx       #0x4a5290 ; Anki::AudioEngine::Multiplexer::AudioMultiplexer::UpdateAudioController()
+0x004ed6c8 movs      r5, #0 ; 
+0x004ed6ca mov       r0, r5 ; 
+
+===== Anki::Cozmo::AnimationStreamer::SetupHandlers 0057a5a8 =====
+0x0057a5a8 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x0057a5ac sub       sp, #0x78 ; 
+0x0057a5ae mov       r4, r0 ; 
+0x0057a5b0 ldr       r0, [pc, #0x230] ; 
+0x0057a5b2 mov       r5, r1 ; 
+0x0057a5b4 cmp       r5, #0 ; 
+0x0057a5b6 add       r0, pc ; 
+0x0057a5b8 ldr       r0, [r0] ; 
+0x0057a5ba ldr       r0, [r0] ; 
+0x0057a5bc str       r0, [sp, #0x74] ; 
+0x0057a5be beq.w     #0x57a76e ; 
+0x0057a5c2 ldr       r0, [r5] ; 
+0x0057a5c4 add       r7, sp, #0x58 ; 
+0x0057a5c6 movs      r1, #0xae ; 
+0x0057a5c8 ldr       r6, [r0, #0x2c] ; 
+0x0057a5ca ldr       r0, [pc, #0x21c] ; 
+0x0057a5cc str       r4, [sp, #0x5c] ; 
+0x0057a5ce add       r0, pc ; 
+0x0057a5d0 strh.w    r1, [sp, #6] ; 
+0x0057a5d4 adds      r0, #8 ; 
+0x0057a5d6 str       r7, [sp, #0x68] ; 
+0x0057a5d8 str       r0, [sp, #0x58] ; 
+0x0057a5da add       r0, sp, #8 ; 
+0x0057a5dc add.w     r2, sp, #6 ; 
+0x0057a5e0 mov       r1, r5 ; 
+0x0057a5e2 mov       r3, r7 ; 
+0x0057a5e4 blx       r6 ; 
+0x0057a5e6 ldrd      r0, r1, [r4, #0x1b8] ; 
+0x0057a5ea add.w     r8, r4, #0x1b4 ; 
+0x0057a5ee cmp       r0, r1 ; 
+0x0057a5f0 bhs       #0x57a60c ; 
+0x0057a5f2 ldr       r1, [sp, #8] ; 
+0x0057a5f4 str       r1, [r0] ; 
+0x0057a5f6 ldr       r1, [sp, #0xc] ; 
+0x0057a5f8 str       r1, [r0, #4] ; 
+0x0057a5fa movs      r0, #0 ; 
+0x0057a5fc strd      r0, r0, [sp, #8] ; 
+0x0057a600 ldr.w     r0, [r4, #0x1b8] ; 
+0x0057a604 adds      r0, #8 ; 
+0x0057a606 str.w     r0, [r4, #0x1b8] ; 
+0x0057a60a b         #0x57a61c ; 
+0x0057a60c add       r1, sp, #8 ; 
+0x0057a60e mov       r0, r8 ; 
+0x0057a610 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0057a614 ldr       r0, [sp, #0xc] ; 
+0x0057a616 cbz       r0, #0x57a61c ; 
+0x0057a618 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0057a61c ldr       r0, [sp, #0x68] ; 
+0x0057a61e cmp       r7, r0 ; 
+0x0057a620 beq       #0x57a62a ; 
+0x0057a622 cbz       r0, #0x57a630 ; 
+0x0057a624 ldr       r1, [r0] ; 
+0x0057a626 ldr       r1, [r1, #0x14] ; 
+0x0057a628 b         #0x57a62e ; 
+0x0057a62a ldr       r1, [r0] ; 
+0x0057a62c ldr       r1, [r1, #0x10] ; 
+0x0057a62e blx       r1 ; 
+0x0057a630 ldr       r0, [r5] ; 
+0x0057a632 add       r7, sp, #0x40 ; 
+0x0057a634 movs      r1, #0xaf ; 
+0x0057a636 ldr       r6, [r0, #0x2c] ; 
+0x0057a638 ldr       r0, [pc, #0x1b0] ; 
+0x0057a63a str       r4, [sp, #0x44] ; 
+0x0057a63c add       r0, pc ; 
+0x0057a63e strh.w    r1, [sp, #6] ; 
+0x0057a642 adds      r0, #8 ; 
+0x0057a644 str       r7, [sp, #0x50] ; 
+0x0057a646 str       r0, [sp, #0x40] ; 
+0x0057a648 add       r0, sp, #8 ; 
+0x0057a64a add.w     r2, sp, #6 ; 
+0x0057a64e mov       r1, r5 ; 
+0x0057a650 mov       r3, r7 ; 
+0x0057a652 blx       r6 ; 
+0x0057a654 ldrd      r0, r1, [r4, #0x1b8] ; 
+0x0057a658 cmp       r0, r1 ; 
+0x0057a65a bhs       #0x57a676 ; 
+0x0057a65c ldr       r1, [sp, #8] ; 
+0x0057a65e str       r1, [r0] ; 
+0x0057a660 ldr       r1, [sp, #0xc] ; 
+0x0057a662 str       r1, [r0, #4] ; 
+0x0057a664 movs      r0, #0 ; 
+0x0057a666 strd      r0, r0, [sp, #8] ; 
+0x0057a66a ldr.w     r0, [r4, #0x1b8] ; 
+0x0057a66e adds      r0, #8 ; 
+0x0057a670 str.w     r0, [r4, #0x1b8] ; 
+0x0057a674 b         #0x57a686 ; 
+0x0057a676 add       r1, sp, #8 ; 
+0x0057a678 mov       r0, r8 ; 
+0x0057a67a blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0057a67e ldr       r0, [sp, #0xc] ; 
+0x0057a680 cbz       r0, #0x57a686 ; 
+0x0057a682 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0057a686 ldr       r0, [sp, #0x50] ; 
+0x0057a688 cmp       r7, r0 ; 
+0x0057a68a beq       #0x57a694 ; 
+0x0057a68c cbz       r0, #0x57a69a ; 
+0x0057a68e ldr       r1, [r0] ; 
+0x0057a690 ldr       r1, [r1, #0x14] ; 
+0x0057a692 b         #0x57a698 ; 
+0x0057a694 ldr       r1, [r0] ; 
+0x0057a696 ldr       r1, [r1, #0x10] ; 
+0x0057a698 blx       r1 ; 
+0x0057a69a ldr       r0, [r5] ; 
+0x0057a69c add       r7, sp, #0x28 ; 
+0x0057a69e movs      r1, #0xad ; 
+0x0057a6a0 ldr       r6, [r0, #0x2c] ; 
+0x0057a6a2 ldr       r0, [pc, #0x14c] ; 
+0x0057a6a4 str       r4, [sp, #0x2c] ; 
+0x0057a6a6 add       r0, pc ; 
+0x0057a6a8 strh.w    r1, [sp, #6] ; 
+0x0057a6ac adds      r0, #8 ; 
+0x0057a6ae str       r7, [sp, #0x38] ; 
+0x0057a6b0 str       r0, [sp, #0x28] ; 
+0x0057a6b2 add       r0, sp, #8 ; 
+0x0057a6b4 add.w     r2, sp, #6 ; 
+0x0057a6b8 mov       r1, r5 ; 
+0x0057a6ba mov       r3, r7 ; 
+0x0057a6bc blx       r6 ; 
+0x0057a6be ldrd      r0, r1, [r4, #0x1b8] ; 
+0x0057a6c2 cmp       r0, r1 ; 
+0x0057a6c4 bhs       #0x57a6e0 ; 
+0x0057a6c6 ldr       r1, [sp, #8] ; 
+0x0057a6c8 str       r1, [r0] ; 
+0x0057a6ca ldr       r1, [sp, #0xc] ; 
+0x0057a6cc str       r1, [r0, #4] ; 
+0x0057a6ce movs      r0, #0 ; 
+0x0057a6d0 strd      r0, r0, [sp, #8] ; 
+0x0057a6d4 ldr.w     r0, [r4, #0x1b8] ; 
+0x0057a6d8 adds      r0, #8 ; 
+0x0057a6da str.w     r0, [r4, #0x1b8] ; 
+0x0057a6de b         #0x57a6f0 ; 
+0x0057a6e0 add       r1, sp, #8 ; 
+0x0057a6e2 mov       r0, r8 ; 
+0x0057a6e4 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0057a6e8 ldr       r0, [sp, #0xc] ; 
+0x0057a6ea cbz       r0, #0x57a6f0 ; 
+0x0057a6ec blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0057a6f0 ldr       r0, [sp, #0x38] ; 
+0x0057a6f2 cmp       r7, r0 ; 
+0x0057a6f4 beq       #0x57a6fe ; 
+0x0057a6f6 cbz       r0, #0x57a704 ; 
+0x0057a6f8 ldr       r1, [r0] ; 
+0x0057a6fa ldr       r1, [r1, #0x14] ; 
+0x0057a6fc b         #0x57a702 ; 
+0x0057a6fe ldr       r1, [r0] ; 
+0x0057a700 ldr       r1, [r1, #0x10] ; 
+0x0057a702 blx       r1 ; 
+0x0057a704 ldr       r0, [r5] ; 
+0x0057a706 add       r7, sp, #0x10 ; 
+0x0057a708 movs      r1, #0xc4 ; 
+0x0057a70a ldr       r6, [r0, #0x2c] ; 
+0x0057a70c ldr       r0, [pc, #0xe4] ; 
+0x0057a70e str       r4, [sp, #0x14] ; 
+0x0057a710 add       r0, pc ; 
+0x0057a712 strh.w    r1, [sp, #6] ; 
+0x0057a716 adds      r0, #8 ; 
+0x0057a718 str       r7, [sp, #0x20] ; 
+0x0057a71a str       r0, [sp, #0x10] ; 
+0x0057a71c add       r0, sp, #8 ; 
+0x0057a71e add.w     r2, sp, #6 ; 
+0x0057a722 mov       r1, r5 ; 
+0x0057a724 mov       r3, r7 ; 
+0x0057a726 blx       r6 ; 
+0x0057a728 ldrd      r0, r1, [r4, #0x1b8] ; 
+0x0057a72c cmp       r0, r1 ; 
+0x0057a72e bhs       #0x57a74a ; 
+0x0057a730 ldr       r1, [sp, #8] ; 
+0x0057a732 str       r1, [r0] ; 
+0x0057a734 ldr       r1, [sp, #0xc] ; 
+0x0057a736 str       r1, [r0, #4] ; 
+0x0057a738 movs      r0, #0 ; 
+0x0057a73a strd      r0, r0, [sp, #8] ; 
+0x0057a73e ldr.w     r0, [r4, #0x1b8] ; 
+0x0057a742 adds      r0, #8 ; 
+0x0057a744 str.w     r0, [r4, #0x1b8] ; 
+0x0057a748 b         #0x57a75a ; 
+0x0057a74a add       r1, sp, #8 ; 
+0x0057a74c mov       r0, r8 ; 
+0x0057a74e blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0057a752 ldr       r0, [sp, #0xc] ; 
+0x0057a754 cbz       r0, #0x57a75a ; 
+0x0057a756 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0057a75a ldr       r0, [sp, #0x20] ; 
+0x0057a75c cmp       r7, r0 ; 
+0x0057a75e beq       #0x57a768 ; 
+0x0057a760 cbz       r0, #0x57a76e ; 
+0x0057a762 ldr       r1, [r0] ; 
+0x0057a764 ldr       r1, [r1, #0x14] ; 
+0x0057a766 b         #0x57a76c ; 
+0x0057a768 ldr       r1, [r0] ; 
+0x0057a76a ldr       r1, [r1, #0x10] ; 
+0x0057a76c blx       r1 ; 
+0x0057a76e ldr       r0, [pc, #0x88] ; 
+0x0057a770 ldr       r1, [sp, #0x74] ; 
+0x0057a772 add       r0, pc ; 
+0x0057a774 ldr       r0, [r0] ; 
+0x0057a776 ldr       r0, [r0] ; 
+0x0057a778 subs      r0, r0, r1 ; 
+0x0057a77a itt       eq ; 
+0x0057a77c addeq     sp, #0x78 ; 
+0x0057a77e popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x0057a782 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::BehaviorManager::SwitchToUIGameRequestBehavior 005a2730 =====
+0x005a2730 push      {r4, r5, r7, lr} ; 
+0x005a2732 sub       sp, #0x20 ; 
+0x005a2734 ldr       r1, [pc, #0xa8] ; 
+0x005a2736 add       r5, sp, #8 ; 
+0x005a2738 mov       r4, r0 ; 
+0x005a273a movs      r0, #0 ; 
+0x005a273c add       r1, pc ; 
+0x005a273e str       r0, [sp, #0x10] ; 
+0x005a2740 strd      r0, r0, [sp, #8] ; 
+0x005a2744 mov       r0, r5 ; 
+0x005a2746 movs      r2, #0x17 ; 
+0x005a2748 bl        #0x4e02b2 ; 
+0x005a274c ldr       r2, [pc, #0x94] ; 
+0x005a274e add       r2, pc ; 
+0x005a2750 mov       r0, r4 ; 
+0x005a2752 mov       r1, r5 ; 
+0x005a2754 movs      r3, #1 ; 
+0x005a2756 blx       #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&, Anki::Util::FullEnumToValueArrayChecker::EnumToValueEntry<Anki::Cozmo::ReactionTrigger, bool, (Anki::Cozmo::ReactionTrigger)21> const (&) [21], bool)
+0x005a275a ldrb.w    r0, [sp, #8] ; 
+0x005a275e lsls      r0, r0, #0x1f ; 
+0x005a2760 itt       ne ; 
+0x005a2762 ldrne     r0, [sp, #0x10] ; 
+0x005a2764 blxne     #0x4a40cc ; 
+0x005a2768 movs      r0, #0 ; 
+0x005a276a strd      r0, r0, [sp, #0x10] ; 
+0x005a276e strd      r0, r0, [sp, #8] ; 
+0x005a2772 movs      r0, #0x16 ; 
+0x005a2774 strb.w    r0, [sp, #0x18] ; 
+0x005a2778 ldrd      r1, r0, [r4, #0x30] ; 
+0x005a277c cmp       r0, #0 ; 
+0x005a277e strd      r1, r0, [sp] ; 
+0x005a2782 beq       #0x5a2788 ; 
+0x005a2784 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a2788 add       r0, sp, #8 ; 
+0x005a278a mov       r1, sp ; 
+0x005a278c bl        #0x5a207c ; 
+0x005a2790 ldr       r0, [sp, #4] ; 
+0x005a2792 cbz       r0, #0x5a2798 ; 
+0x005a2794 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a2798 add       r1, sp, #8 ; 
+0x005a279a mov       r0, r4 ; 
+0x005a279c blx       #0x4b0eb8 ; Anki::Cozmo::BehaviorManager::SwitchToBehaviorBase(Anki::Cozmo::BehaviorRunningAndResumeInfo&)
+0x005a27a0 ldr       r0, [sp, #0x14] ; 
+0x005a27a2 cbz       r0, #0x5a27a8 ; 
+0x005a27a4 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a27a8 ldr       r0, [sp, #0xc] ; 
+0x005a27aa cbz       r0, #0x5a27b0 ; 
+0x005a27ac blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a27b0 add       sp, #0x20 ; 
+0x005a27b2 pop       {r4, r5, r7, pc} ; 
+
+===== Anki::Cozmo::BehaviorManager::SelectUIRequestGameBehavior 005a3340 =====
+0x005a3340 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x005a3344 sub       sp, #0x28 ; 
+0x005a3346 mov       r4, r0 ; 
+0x005a3348 ldr       r1, [r4, #4] ; 
+0x005a334a ldr.w     r0, [r1, #0x264] ; 
+0x005a334e ldr       r0, [r0, #0x20] ; 
+0x005a3350 blx       #0x4b1020 ; Anki::Cozmo::RequestGameComponent::IdentifyNextGameTypeToRequest(Anki::Cozmo::Robot const&)
+0x005a3354 cmp       r0, #0x55 ; 
+0x005a3356 bne       #0x5a3370 ; 
+0x005a3358 ldr       r0, [r4, #0x34] ; 
+0x005a335a movs      r1, #0 ; 
+0x005a335c strd      r1, r1, [r4, #0x30] ; 
+0x005a3360 cmp       r0, #0 ; 
+0x005a3362 beq.w     #0x5a3494 ; 
+0x005a3366 add       sp, #0x28 ; 
+0x005a3368 pop.w     {r4, r5, r6, r7, r8, lr} ; 
+0x005a336c b.w       #0x8cb60c ; 
+0x005a3370 mov       r1, r4 ; 
+0x005a3372 ldr       r7, [r1, #0x14]! ; 
+0x005a3376 cmp       r7, #0 ; 
+0x005a3378 beq.w     #0x5a3482 ; 
+0x005a337c mov       r3, r1 ; 
+0x005a337e mov       r2, r7 ; 
+0x005a3380 ldr       r7, [r2, #0x10] ; 
+0x005a3382 cmp       r7, r0 ; 
+0x005a3384 bge       #0x5a338e ; 
+0x005a3386 ldr       r2, [r2, #4] ; 
+0x005a3388 cmp       r2, #0 ; 
+0x005a338a bne       #0x5a3380 ; 
+0x005a338c b         #0x5a3398 ; 
+0x005a338e ldr       r7, [r2] ; 
+0x005a3390 mov       r3, r2 ; 
+0x005a3392 cmp       r7, #0 ; 
+0x005a3394 bne       #0x5a337e ; 
+0x005a3396 b         #0x5a339a ; 
+0x005a3398 mov       r2, r3 ; 
+0x005a339a cmp       r2, r1 ; 
+0x005a339c beq       #0x5a3482 ; 
+0x005a339e ldr       r3, [r2, #0x10] ; 
+0x005a33a0 cmp       r0, r3 ; 
+0x005a33a2 blt       #0x5a3482 ; 
+0x005a33a4 cmp       r2, r1 ; 
+0x005a33a6 beq       #0x5a3482 ; 
+0x005a33a8 ldrd      r6, r5, [r2, #0x14] ; 
+0x005a33ac cbz       r5, #0x5a33b4 ; 
+0x005a33ae mov       r0, r5 ; 
+0x005a33b0 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a33b4 str       r6, [r4, #0x30] ; 
+0x005a33b6 ldr       r0, [r4, #0x34] ; 
+0x005a33b8 str       r5, [r4, #0x34] ; 
+0x005a33ba cbz       r0, #0x5a33c0 ; 
+0x005a33bc blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a33c0 movs      r0, #2 ; 
+0x005a33c2 add       r5, sp, #4 ; 
+0x005a33c4 str       r0, [sp, #0x1c] ; 
+0x005a33c6 add       r0, sp, #0x1c ; 
+0x005a33c8 movs      r7, #0 ; 
+0x005a33ca mov       r1, r5 ; 
+0x005a33cc str       r7, [sp, #4] ; 
+0x005a33ce blx       #0x4b102c ; Anki::Cozmo::GetSparkCosts(Anki::Cozmo::SparkableThings const&, unsigned int const&)
+0x005a33d2 mov       r6, r0 ; 
+0x005a33d4 ldr       r0, [r4, #4] ; 
+0x005a33d6 rsbs      r2, r6, #0 ; 
+0x005a33d8 movs      r1, #1 ; 
+0x005a33da mov.w     r8, #1 ; 
+0x005a33de ldr.w     r0, [r0, #0x444] ; 
+0x005a33e2 blx       #0x4b1038 ; Anki::Cozmo::InventoryComponent::AddInventoryAmount(Anki::Cozmo::InventoryType, int)
+0x005a33e6 ldr       r0, [r4, #4] ; 
+0x005a33e8 mov       r1, r6 ; 
+0x005a33ea ldr.w     r0, [r0, #0x264] ; 
+0x005a33ee ldr       r0, [r0, #0x18] ; 
+0x005a33f0 strb.w    r8, [r0, #0x75] ; 
+0x005a33f4 mov       r0, r5 ; 
+0x005a33f6 blx       #0x4a5c74 ; std::__ndk1::to_string(unsigned int)
+0x005a33fa ldr       r0, [pc, #0xd8] ; 
+0x005a33fc ldrb.w    r2, [sp, #4] ; 
+0x005a3400 ldr       r1, [sp, #0xc] ; 
+0x005a3402 add       r0, pc ; 
+0x005a3404 str       r0, [sp, #0x10] ; 
+0x005a3406 tst.w     r2, #1 ; 
+0x005a340a it        eq ; 
+0x005a340c orreq     r1, r5, #1 ; 
+0x005a3410 str       r7, [sp, #0x24] ; 
+0x005a3412 str       r1, [sp, #0x14] ; 
+0x005a3414 strd      r7, r7, [sp, #0x1c] ; 
+0x005a3418 movs      r0, #8 ; 
+0x005a341a blx       #0x4a42a0 ; operator new(unsigned int)
+0x005a341e ldr       r2, [sp, #0x14] ; 
+0x005a3420 add.w     r3, r0, #8 ; 
+0x005a3424 ldr       r1, [sp, #0x10] ; 
+0x005a3426 str       r0, [sp, #0x1c] ; 
+0x005a3428 str       r0, [sp, #0x20] ; 
+0x005a342a str       r3, [sp, #0x24] ; 
+0x005a342c strd      r1, r2, [r0] ; 
+0x005a3430 ldr       r0, [sp, #0x20] ; 
+0x005a3432 adds      r0, #8 ; 
+0x005a3434 str       r0, [sp, #0x20] ; 
+0x005a3436 ldr       r0, [r4, #0x30] ; 
+0x005a3438 mov       r1, r0 ; 
+0x005a343a ldrb      r2, [r1, #0x40]! ; 
+0x005a343e tst.w     r2, #1 ; 
+0x005a3442 ite       eq ; 
+0x005a3444 addeq     r2, r1, #1 ; 
+0x005a3446 ldrne     r2, [r0, #0x48] ; 
+0x005a3448 adr       r0, #0x8c ; 
+0x005a344a add       r1, sp, #0x1c ; 
+0x005a344c blx       #0x4a50e0 ; Anki::Util::sEvent(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*)
+0x005a3450 ldr       r0, [sp, #0x1c] ; 
+0x005a3452 cbz       r0, #0x5a3472 ; 
+0x005a3454 ldr       r1, [sp, #0x20] ; 
+0x005a3456 cmp       r1, r0 ; 
+0x005a3458 itttt     ne ; 
+0x005a345a subne.w   r2, r1, #8 ; 
+0x005a345e subne     r2, r2, r0 ; 
+0x005a3460 mvnne     r3, #7 ; 
+0x005a3464 bicne.w   r2, r3, r2 ; 
+0x005a3468 itt       ne ; 
+0x005a346a addne     r1, r1, r2 ; 
+0x005a346c strne     r1, [sp, #0x20] ; 
+0x005a346e blx       #0x4a40cc ; operator delete(void*)
+0x005a3472 ldrb.w    r0, [sp, #4] ; 
+0x005a3476 lsls      r0, r0, #0x1f ; 
+0x005a3478 beq       #0x5a3494 ; 
+0x005a347a ldr       r0, [sp, #0xc] ; 
+0x005a347c blx       #0x4a40cc ; operator delete(void*)
+0x005a3480 b         #0x5a3494 ; 
+0x005a3482 blx       #0x4ad258 ; Anki::Cozmo::EnumToString(Anki::Cozmo::UnlockId)
+0x005a3486 mov       r3, r0 ; 
+0x005a3488 ldr       r0, [pc, #0x64] ; 
+0x005a348a adr       r1, #0x68 ; 
+0x005a348c adr       r2, #0xa0 ; 
+0x005a348e add       r0, pc ; 
+0x005a3490 blx       #0x4a4c6c ; Anki::Util::sVerifyFailedReturnFalse(char const*, char const*, ...)
+0x005a3494 add       sp, #0x28 ; 
+0x005a3496 pop.w     {r4, r5, r6, r7, r8, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::SelectionBSRunnableChooser 0060a848 =====
+0x0060a848 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x0060a84c sub       sp, #0x48 ; 
+0x0060a84e mov       r4, r0 ; 
+0x0060a850 ldr       r0, [pc, #0x1e4] ; 
+0x0060a852 mov       r6, r1 ; 
+0x0060a854 add       r0, pc ; 
+0x0060a856 ldr       r0, [r0] ; 
+0x0060a858 ldr       r0, [r0] ; 
+0x0060a85a str       r0, [sp, #0x44] ; 
+0x0060a85c mov       r0, r4 ; 
+0x0060a85e bl        #0x609f28 ; 
+0x0060a862 ldr       r0, [pc, #0x1d8] ; 
+0x0060a864 add.w     r8, r4, #0x20 ; 
+0x0060a868 str       r6, [r4, #0x1c] ; 
+0x0060a86a movs      r1, #0x1c ; 
+0x0060a86c add       r0, pc ; 
+0x0060a86e ldr       r0, [r0] ; 
+0x0060a870 adds      r0, #8 ; 
+0x0060a872 str       r0, [r4] ; 
+0x0060a874 mov       r0, r8 ; 
+0x0060a876 blx       #0x4a403c ; __aeabi_memclr4
+0x0060a87a movs      r0, #0 ; 
+0x0060a87c strb.w    r0, [r4, #0x40] ; 
+0x0060a880 mov.w     r0, #-1 ; 
+0x0060a884 str       r0, [r4, #0x3c] ; 
+0x0060a886 mov       r0, r6 ; 
+0x0060a888 blx       #0x4a56f8 ; Anki::Cozmo::Robot::HasExternalInterface() const
+0x0060a88c cmp       r0, #1 ; 
+0x0060a88e bne       #0x60a984 ; 
+0x0060a890 ldr       r0, [r4, #0x1c] ; 
+0x0060a892 blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x0060a896 mov       r1, r0 ; 
+0x0060a898 ldr       r0, [pc, #0x1a4] ; 
+0x0060a89a add       r7, sp, #0x28 ; 
+0x0060a89c ldr       r3, [pc, #0x1a4] ; 
+0x0060a89e add       r0, pc ; 
+0x0060a8a0 ldr       r2, [r1] ; 
+0x0060a8a2 add       r3, pc ; 
+0x0060a8a4 ldr       r0, [r0] ; 
+0x0060a8a6 ldr       r5, [r2, #0x2c] ; 
+0x0060a8a8 ldr       r2, [r3] ; 
+0x0060a8aa adds      r0, #8 ; 
+0x0060a8ac movs      r3, #0x94 ; 
+0x0060a8ae str       r2, [sp, #0x2c] ; 
+0x0060a8b0 movs      r2, #0 ; 
+0x0060a8b2 strh.w    r3, [sp, #6] ; 
+0x0060a8b6 strd      r2, r4, [sp, #0x30] ; 
+0x0060a8ba str       r7, [sp, #0x38] ; 
+0x0060a8bc str       r0, [sp, #0x28] ; 
+0x0060a8be add       r0, sp, #8 ; 
+0x0060a8c0 add.w     r2, sp, #6 ; 
+0x0060a8c4 mov       r3, r7 ; 
+0x0060a8c6 blx       r5 ; 
+0x0060a8c8 ldrd      r0, r1, [r4, #0x24] ; 
+0x0060a8cc cmp       r0, r1 ; 
+0x0060a8ce bhs       #0x60a8e6 ; 
+0x0060a8d0 ldr       r1, [sp, #8] ; 
+0x0060a8d2 str       r1, [r0] ; 
+0x0060a8d4 ldr       r1, [sp, #0xc] ; 
+0x0060a8d6 str       r1, [r0, #4] ; 
+0x0060a8d8 movs      r0, #0 ; 
+0x0060a8da strd      r0, r0, [sp, #8] ; 
+0x0060a8de ldr       r0, [r4, #0x24] ; 
+0x0060a8e0 adds      r0, #8 ; 
+0x0060a8e2 str       r0, [r4, #0x24] ; 
+0x0060a8e4 b         #0x60a8f6 ; 
+0x0060a8e6 add       r1, sp, #8 ; 
+0x0060a8e8 mov       r0, r8 ; 
+0x0060a8ea blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0060a8ee ldr       r0, [sp, #0xc] ; 
+0x0060a8f0 cbz       r0, #0x60a8f6 ; 
+0x0060a8f2 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a8f6 ldr       r0, [sp, #0x38] ; 
+0x0060a8f8 cmp       r7, r0 ; 
+0x0060a8fa beq       #0x60a904 ; 
+0x0060a8fc cbz       r0, #0x60a90a ; 
+0x0060a8fe ldr       r1, [r0] ; 
+0x0060a900 ldr       r1, [r1, #0x14] ; 
+0x0060a902 b         #0x60a908 ; 
+0x0060a904 ldr       r1, [r0] ; 
+0x0060a906 ldr       r1, [r1, #0x10] ; 
+0x0060a908 blx       r1 ; 
+0x0060a90a ldr       r0, [r4, #0x1c] ; 
+0x0060a90c blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x0060a910 mov       r1, r0 ; 
+0x0060a912 ldr       r0, [pc, #0x134] ; 
+0x0060a914 add       r7, sp, #0x10 ; 
+0x0060a916 ldr       r3, [pc, #0x134] ; 
+0x0060a918 add       r0, pc ; 
+0x0060a91a ldr       r2, [r1] ; 
+0x0060a91c add       r3, pc ; 
+0x0060a91e ldr       r0, [r0] ; 
+0x0060a920 ldr       r5, [r2, #0x2c] ; 
+0x0060a922 ldr       r2, [r3] ; 
+0x0060a924 adds      r0, #8 ; 
+0x0060a926 movs      r3, #0x93 ; 
+0x0060a928 str       r2, [sp, #0x14] ; 
+0x0060a92a movs      r2, #0 ; 
+0x0060a92c strh.w    r3, [sp, #6] ; 
+0x0060a930 strd      r2, r4, [sp, #0x18] ; 
+0x0060a934 str       r7, [sp, #0x20] ; 
+0x0060a936 str       r0, [sp, #0x10] ; 
+0x0060a938 add       r0, sp, #8 ; 
+0x0060a93a add.w     r2, sp, #6 ; 
+0x0060a93e mov       r3, r7 ; 
+0x0060a940 blx       r5 ; 
+0x0060a942 ldrd      r0, r1, [r4, #0x24] ; 
+0x0060a946 cmp       r0, r1 ; 
+0x0060a948 bhs       #0x60a960 ; 
+0x0060a94a ldr       r1, [sp, #8] ; 
+0x0060a94c str       r1, [r0] ; 
+0x0060a94e ldr       r1, [sp, #0xc] ; 
+0x0060a950 str       r1, [r0, #4] ; 
+0x0060a952 movs      r0, #0 ; 
+0x0060a954 strd      r0, r0, [sp, #8] ; 
+0x0060a958 ldr       r0, [r4, #0x24] ; 
+0x0060a95a adds      r0, #8 ; 
+0x0060a95c str       r0, [r4, #0x24] ; 
+0x0060a95e b         #0x60a970 ; 
+0x0060a960 add       r1, sp, #8 ; 
+0x0060a962 mov       r0, r8 ; 
+0x0060a964 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0060a968 ldr       r0, [sp, #0xc] ; 
+0x0060a96a cbz       r0, #0x60a970 ; 
+0x0060a96c blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a970 ldr       r0, [sp, #0x20] ; 
+0x0060a972 cmp       r7, r0 ; 
+0x0060a974 beq       #0x60a97e ; 
+0x0060a976 cbz       r0, #0x60a984 ; 
+0x0060a978 ldr       r1, [r0] ; 
+0x0060a97a ldr       r1, [r1, #0x14] ; 
+0x0060a97c b         #0x60a982 ; 
+0x0060a97e ldr       r1, [r0] ; 
+0x0060a980 ldr       r1, [r1, #0x10] ; 
+0x0060a982 blx       r1 ; 
+0x0060a984 ldr       r1, [r6, #0x44] ; 
+0x0060a986 add       r0, sp, #8 ; 
+0x0060a988 movs      r2, #0xb2 ; 
+0x0060a98a blx       #0x4b1380 ; Anki::Cozmo::BehaviorManager::FindBehaviorByID(Anki::Cozmo::BehaviorID) const
+0x0060a98e movs      r0, #0 ; 
+0x0060a990 ldrd      r1, r2, [sp, #8] ; 
+0x0060a994 strd      r0, r0, [sp, #8] ; 
+0x0060a998 ldr       r0, [r4, #0x38] ; 
+0x0060a99a strd      r1, r2, [r4, #0x34] ; 
+0x0060a99e cbz       r0, #0x60a9ac ; 
+0x0060a9a0 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a9a4 ldr       r0, [sp, #0xc] ; 
+0x0060a9a6 cbz       r0, #0x60a9ac ; 
+0x0060a9a8 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a9ac ldr       r0, [pc, #0xa4] ; 
+0x0060a9ae ldr       r1, [sp, #0x44] ; 
+0x0060a9b0 add       r0, pc ; 
+0x0060a9b2 ldr       r0, [r0] ; 
+0x0060a9b4 ldr       r0, [r0] ; 
+0x0060a9b6 subs      r0, r0, r1 ; 
+0x0060a9b8 ittt      eq ; 
+0x0060a9ba moveq     r0, r4 ; 
+0x0060a9bc addeq     sp, #0x48 ; 
+0x0060a9be popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x0060a9c2 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::HandleExecuteBehavior 0060aa58 =====
+0x0060aa58 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x0060aa5c sub       sp, #0x28 ; 
+0x0060aa5e mov       r2, r1 ; 
+0x0060aa60 mov       r5, r0 ; 
+0x0060aa62 ldrh      r0, [r2, #0x10]! ; 
+0x0060aa66 cmp       r0, #0x93 ; 
+0x0060aa68 beq       #0x60aaae ; 
+0x0060aa6a cmp       r0, #0x94 ; 
+0x0060aa6c bne       #0x60ab28 ; 
+0x0060aa6e mov       r0, r2 ; 
+0x0060aa70 blx       #0x4b6c84 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_ExecuteBehaviorByID() const
+0x0060aa74 mov       r6, r0 ; 
+0x0060aa76 ldr       r0, [r5, #0x1c] ; 
+0x0060aa78 ldrb      r2, [r6] ; 
+0x0060aa7a ldr       r1, [r0, #0x44] ; 
+0x0060aa7c add       r0, sp, #0x1c ; 
+0x0060aa7e blx       #0x4b1380 ; Anki::Cozmo::BehaviorManager::FindBehaviorByID(Anki::Cozmo::BehaviorID) const
+0x0060aa82 ldrd      r7, r4, [sp, #0x1c] ; 
+0x0060aa86 ldr       r0, [r6, #4] ; 
+0x0060aa88 str       r0, [r5, #0x3c] ; 
+0x0060aa8a movs      r0, #0 ; 
+0x0060aa8c cmp       r7, #0 ; 
+0x0060aa8e beq       #0x60ab7c ; 
+0x0060aa90 strd      r0, r0, [sp, #0x1c] ; 
+0x0060aa94 str       r0, [sp, #0x24] ; 
+0x0060aa96 ldrb      r0, [r6] ; 
+0x0060aa98 blx       #0x4a7e58 ; Anki::Cozmo::EnumToString(Anki::Cozmo::BehaviorID)
+0x0060aa9c ldr       r1, [pc, #0x278] ; 
+0x0060aa9e add       r1, pc ; 
+0x0060aaa0 str       r0, [sp] ; 
+0x0060aaa2 adr       r0, #0x220 ; 
+0x0060aaa4 add       r2, sp, #0x1c ; 
+0x0060aaa6 adr       r3, #0x274 ; 
+0x0060aaa8 blx       #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0060aaac b         #0x60ab02 ; 
+0x0060aaae mov       r0, r2 ; 
+0x0060aab0 blx       #0x4b6c90 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_ExecuteBehaviorByExecutableType() const
+0x0060aab4 mov       r6, r0 ; 
+0x0060aab6 ldr       r0, [r5, #0x1c] ; 
+0x0060aab8 ldrb      r2, [r6] ; 
+0x0060aaba ldr       r1, [r0, #0x44] ; 
+0x0060aabc add       r0, sp, #0x1c ; 
+0x0060aabe blx       #0x4b6c9c ; Anki::Cozmo::BehaviorManager::FindBehaviorByExecutableType(Anki::Cozmo::ExecutableBehaviorType) const
+0x0060aac2 ldrd      r7, r4, [sp, #0x1c] ; 
+0x0060aac6 ldr       r0, [r6, #4] ; 
+0x0060aac8 str       r0, [r5, #0x3c] ; 
+0x0060aaca movs      r0, #0 ; 
+0x0060aacc cmp       r7, #0 ; 
+0x0060aace beq       #0x60ab98 ; 
+0x0060aad0 strd      r0, r0, [sp, #0x1c] ; 
+0x0060aad4 str       r0, [sp, #0x24] ; 
+0x0060aad6 mov       r0, r7 ; 
+0x0060aad8 ldrb      r1, [r0, #0x40]! ; 
+0x0060aadc tst.w     r1, #1 ; 
+0x0060aae0 ite       eq ; 
+0x0060aae2 addeq.w   r8, r0, #1 ; 
+0x0060aae6 ldrne.w   r8, [r7, #0x48] ; 
+0x0060aaea ldrb      r0, [r6] ; 
+0x0060aaec blx       #0x4b6ca8 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ExecutableBehaviorType)
+0x0060aaf0 ldr       r1, [pc, #0x1cc] ; 
+0x0060aaf2 add       r1, pc ; 
+0x0060aaf4 strd      r8, r0, [sp] ; 
+0x0060aaf8 adr       r0, #0x1c8 ; 
+0x0060aafa add       r2, sp, #0x1c ; 
+0x0060aafc adr       r3, #0x1cc ; 
+0x0060aafe blx       #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0060ab02 ldr       r0, [sp, #0x1c] ; 
+0x0060ab04 cmp       r0, #0 ; 
+0x0060ab06 beq       #0x60abd6 ; 
+0x0060ab08 ldr       r1, [sp, #0x20] ; 
+0x0060ab0a cmp       r1, r0 ; 
+0x0060ab0c itttt     ne ; 
+0x0060ab0e subne.w   r2, r1, #8 ; 
+0x0060ab12 subne     r2, r2, r0 ; 
+0x0060ab14 mvnne     r3, #7 ; 
+0x0060ab18 bicne.w   r2, r3, r2 ; 
+0x0060ab1c itt       ne ; 
+0x0060ab1e addne     r1, r1, r2 ; 
+0x0060ab20 strne     r1, [sp, #0x20] ; 
+0x0060ab22 blx       #0x4a40cc ; operator delete(void*)
+0x0060ab26 b         #0x60abd6 ; 
+0x0060ab28 ldr       r0, [pc, #0x228] ; 
+0x0060ab2a movs      r1, #0 ; 
+0x0060ab2c ldr       r2, [pc, #0x228] ; 
+0x0060ab2e add       r0, pc ; 
+0x0060ab30 strd      r1, r1, [sp, #0x1c] ; 
+0x0060ab34 add       r2, pc ; 
+0x0060ab36 str       r1, [sp, #0x24] ; 
+0x0060ab38 add       r1, sp, #0x1c ; 
+0x0060ab3a blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0060ab3e ldr       r0, [sp, #0x1c] ; 
+0x0060ab40 cbz       r0, #0x60ab60 ; 
+0x0060ab42 ldr       r1, [sp, #0x20] ; 
+0x0060ab44 cmp       r1, r0 ; 
+0x0060ab46 itttt     ne ; 
+0x0060ab48 subne.w   r2, r1, #8 ; 
+0x0060ab4c subne     r2, r2, r0 ; 
+0x0060ab4e mvnne     r3, #7 ; 
+0x0060ab52 bicne.w   r2, r3, r2 ; 
+0x0060ab56 itt       ne ; 
+0x0060ab58 addne     r1, r1, r2 ; 
+0x0060ab5a strne     r1, [sp, #0x20] ; 
+0x0060ab5c blx       #0x4a40cc ; operator delete(void*)
+0x0060ab60 ldr       r0, [pc, #0x1f8] ; 
+0x0060ab62 movs      r2, #1 ; 
+0x0060ab64 ldr       r1, [pc, #0x1f8] ; 
+0x0060ab66 add       r0, pc ; 
+0x0060ab68 add       r1, pc ; 
+0x0060ab6a ldr       r0, [r0] ; 
+0x0060ab6c ldr       r1, [r1] ; 
+0x0060ab6e strb      r2, [r0] ; 
+0x0060ab70 ldrb      r0, [r1] ; 
+0x0060ab72 cbz       r0, #0x60ab78 ; 
+0x0060ab74 blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x0060ab78 movs      r4, #0 ; 
+0x0060ab7a b         #0x60abd4 ; 
+0x0060ab7c strd      r0, r0, [sp, #0x1c] ; 
+0x0060ab80 str       r0, [sp, #0x24] ; 
+0x0060ab82 ldrb      r0, [r6] ; 
+0x0060ab84 blx       #0x4a7e58 ; Anki::Cozmo::EnumToString(Anki::Cozmo::BehaviorID)
+0x0060ab88 mov       r3, r0 ; 
+0x0060ab8a ldr       r0, [pc, #0x1b0] ; 
+0x0060ab8c add       r0, pc ; 
+0x0060ab8e add       r1, sp, #0x1c ; 
+0x0060ab90 adr       r2, #0x1ac ; 
+0x0060ab92 blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0060ab96 b         #0x60abb2 ; 
+0x0060ab98 strd      r0, r0, [sp, #0x1c] ; 
+0x0060ab9c str       r0, [sp, #0x24] ; 
+0x0060ab9e ldrb      r0, [r6] ; 
+0x0060aba0 blx       #0x4b6ca8 ; Anki::Cozmo::EnumToString(Anki::Cozmo::ExecutableBehaviorType)
+0x0060aba4 mov       r3, r0 ; 
+0x0060aba6 ldr       r0, [pc, #0x14c] ; 
+0x0060aba8 add       r0, pc ; 
+0x0060abaa add       r1, sp, #0x1c ; 
+0x0060abac adr       r2, #0x148 ; 
+0x0060abae blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0060abb2 ldr       r0, [sp, #0x1c] ; 
+0x0060abb4 cbz       r0, #0x60abd4 ; 
+0x0060abb6 ldr       r1, [sp, #0x20] ; 
+0x0060abb8 cmp       r1, r0 ; 
+0x0060abba itttt     ne ; 
+0x0060abbc subne.w   r2, r1, #8 ; 
+0x0060abc0 subne     r2, r2, r0 ; 
+0x0060abc2 mvnne     r3, #7 ; 
+0x0060abc6 bicne.w   r2, r3, r2 ; 
+0x0060abca itt       ne ; 
+0x0060abcc addne     r1, r1, r2 ; 
+0x0060abce strne     r1, [sp, #0x20] ; 
+0x0060abd0 blx       #0x4a40cc ; operator delete(void*)
+0x0060abd4 movs      r7, #0 ; 
+0x0060abd6 ldr       r0, [r5, #0x2c] ; 
+0x0060abd8 cmp       r0, r7 ; 
+0x0060abda beq       #0x60ac1e ; 
+0x0060abdc str       r0, [sp, #0x14] ; 
+0x0060abde ldr       r6, [r5, #0x30] ; 
+0x0060abe0 str       r6, [sp, #0x18] ; 
+0x0060abe2 cbz       r6, #0x60abea ; 
+0x0060abe4 mov       r0, r6 ; 
+0x0060abe6 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060abea add       r1, sp, #0x14 ; 
+0x0060abec mov       r0, r5 ; 
+0x0060abee movs      r2, #0 ; 
+0x0060abf0 blx       #0x4b6cb4 ; Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x0060abf4 cbz       r6, #0x60abfc ; 
+0x0060abf6 mov       r0, r6 ; 
+0x0060abf8 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060abfc cmp       r4, #0 ; 
+0x0060abfe strd      r7, r4, [sp, #0xc] ; 
+0x0060ac02 beq       #0x60ac0a ; 
+0x0060ac04 mov       r0, r4 ; 
+0x0060ac06 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060ac0a add       r1, sp, #0xc ; 
+0x0060ac0c mov       r0, r5 ; 
+0x0060ac0e movs      r2, #1 ; 
+0x0060ac10 blx       #0x4b6cb4 ; Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x0060ac14 cbz       r4, #0x60ac2a ; 
+0x0060ac16 mov       r0, r4 ; 
+0x0060ac18 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060ac1c b         #0x60ac20 ; 
+0x0060ac1e cbz       r4, #0x60ac2a ; 
+0x0060ac20 mov       r0, r4 ; 
+0x0060ac22 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060ac26 movs      r6, #0 ; 
+0x0060ac28 b         #0x60ac2c ; 
+0x0060ac2a movs      r6, #1 ; 
+0x0060ac2c str       r7, [r5, #0x2c] ; 
+0x0060ac2e ldr       r0, [r5, #0x30] ; 
+0x0060ac30 str       r4, [r5, #0x30] ; 
+0x0060ac32 cbz       r0, #0x60ac38 ; 
+0x0060ac34 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060ac38 cbnz      r6, #0x60ac40 ; 
+0x0060ac3a mov       r0, r4 ; 
+0x0060ac3c blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060ac40 add       sp, #0x28 ; 
+0x0060ac42 pop.w     {r4, r5, r6, r7, r8, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::GetDesiredActiveBehavior 0060ad64 =====
+0x0060ad64 push.w    {r4, r5, r6, r7, r8, sb, lr} ; 
+0x0060ad68 sub       sp, #4 ; 
+0x0060ad6a mov       r5, r1 ; 
+0x0060ad6c mov       r8, r2 ; 
+0x0060ad6e ldrd      r4, r7, [r5, #0x2c] ; 
+0x0060ad72 mov       sb, r0 ; 
+0x0060ad74 cbz       r7, #0x60ad7c ; 
+0x0060ad76 mov       r0, r7 ; 
+0x0060ad78 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060ad7c cbz       r4, #0x60ad8a ; 
+0x0060ad7e ldrb.w    r0, [r4, #0xa1] ; 
+0x0060ad82 cbz       r0, #0x60ad92 ; 
+0x0060ad84 movs      r0, #1 ; 
+0x0060ad86 movs      r6, #1 ; 
+0x0060ad88 b         #0x60ad9e ; 
+0x0060ad8a movs      r0, #0 ; 
+0x0060ad8c movs      r4, #0 ; 
+0x0060ad8e movs      r6, #0 ; 
+0x0060ad90 b         #0x60ad9e ; 
+0x0060ad92 mov       r0, r4 ; 
+0x0060ad94 mov       r1, r8 ; 
+0x0060ad96 blx       #0x4b0f54 ; Anki::Cozmo::IBehavior::IsRunnable(Anki::Cozmo::Robot const&) const
+0x0060ad9a mov       r6, r0 ; 
+0x0060ad9c movs      r0, #0 ; 
+0x0060ad9e ldr       r1, [r5, #0x2c] ; 
+0x0060ada0 cmp       r4, r1 ; 
+0x0060ada2 bne       #0x60add0 ; 
+0x0060ada4 ldr       r1, [r5, #0x3c] ; 
+0x0060ada6 cbz       r1, #0x60adce ; 
+0x0060ada8 cmp       r1, #1 ; 
+0x0060adaa blt       #0x60adc8 ; 
+0x0060adac ldrb.w    r2, [r5, #0x40] ; 
+0x0060adb0 movs      r3, #0 ; 
+0x0060adb2 cmp       r2, #0 ; 
+0x0060adb4 it        eq ; 
+0x0060adb6 moveq     r3, #1 ; 
+0x0060adb8 orrs.w    r2, r0, r3 ; 
+0x0060adbc bne       #0x60adc8 ; 
+0x0060adbe subs      r1, #1 ; 
+0x0060adc0 str       r1, [r5, #0x3c] ; 
+0x0060adc2 it        ne ; 
+0x0060adc4 movne     r1, #1 ; 
+0x0060adc6 ands      r6, r1 ; 
+0x0060adc8 strb.w    r0, [r5, #0x40] ; 
+0x0060adcc b         #0x60add0 ; 
+0x0060adce movs      r6, #0 ; 
+0x0060add0 cbz       r7, #0x60add8 ; 
+0x0060add2 mov       r0, r7 ; 
+0x0060add4 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060add8 cmp       r6, #1 ; 
+0x0060adda bne       #0x60ade2 ; 
+0x0060addc ldrd      r1, r0, [r5, #0x2c] ; 
+0x0060ade0 b         #0x60ae52 ; 
+0x0060ade2 ldrd      r4, r7, [r5, #0x34] ; 
+0x0060ade6 cbz       r7, #0x60adee ; 
+0x0060ade8 mov       r0, r7 ; 
+0x0060adea blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060adee cbz       r4, #0x60adfc ; 
+0x0060adf0 ldrb.w    r0, [r4, #0xa1] ; 
+0x0060adf4 cbz       r0, #0x60ae04 ; 
+0x0060adf6 movs      r0, #1 ; 
+0x0060adf8 movs      r6, #1 ; 
+0x0060adfa b         #0x60ae10 ; 
+0x0060adfc movs      r0, #0 ; 
+0x0060adfe movs      r4, #0 ; 
+0x0060ae00 movs      r6, #0 ; 
+0x0060ae02 b         #0x60ae10 ; 
+0x0060ae04 mov       r0, r4 ; 
+0x0060ae06 mov       r1, r8 ; 
+0x0060ae08 blx       #0x4b0f54 ; Anki::Cozmo::IBehavior::IsRunnable(Anki::Cozmo::Robot const&) const
+0x0060ae0c mov       r6, r0 ; 
+0x0060ae0e movs      r0, #0 ; 
+0x0060ae10 ldr       r1, [r5, #0x2c] ; 
+0x0060ae12 cmp       r4, r1 ; 
+0x0060ae14 bne       #0x60ae42 ; 
+0x0060ae16 ldr       r1, [r5, #0x3c] ; 
+0x0060ae18 cbz       r1, #0x60ae40 ; 
+0x0060ae1a cmp       r1, #1 ; 
+0x0060ae1c blt       #0x60ae3a ; 
+0x0060ae1e ldrb.w    r2, [r5, #0x40] ; 
+0x0060ae22 movs      r3, #0 ; 
+0x0060ae24 cmp       r2, #0 ; 
+0x0060ae26 it        eq ; 
+0x0060ae28 moveq     r3, #1 ; 
+0x0060ae2a orrs.w    r2, r0, r3 ; 
+0x0060ae2e bne       #0x60ae3a ; 
+0x0060ae30 subs      r1, #1 ; 
+0x0060ae32 str       r1, [r5, #0x3c] ; 
+0x0060ae34 it        ne ; 
+0x0060ae36 movne     r1, #1 ; 
+0x0060ae38 ands      r6, r1 ; 
+0x0060ae3a strb.w    r0, [r5, #0x40] ; 
+0x0060ae3e b         #0x60ae42 ; 
+0x0060ae40 movs      r6, #0 ; 
+0x0060ae42 cbz       r7, #0x60ae4a ; 
+0x0060ae44 mov       r0, r7 ; 
+0x0060ae46 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060ae4a cmp       r6, #1 ; 
+0x0060ae4c bne       #0x60ae64 ; 
+0x0060ae4e ldrd      r1, r0, [r5, #0x34] ; 
+0x0060ae52 cmp       r0, #0 ; 
+0x0060ae54 str.w     r1, [sb] ; 
+0x0060ae58 str.w     r0, [sb, #4] ; 
+0x0060ae5c beq       #0x60ae6a ; 
+0x0060ae5e blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060ae62 b         #0x60ae6a ; 
+0x0060ae64 movs      r0, #0 ; 
+0x0060ae66 strd      r0, r0, [sb] ; 
+0x0060ae6a add       sp, #4 ; 
+0x0060ae6c pop.w     {r4, r5, r6, r7, r8, sb, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled 0060ae84 =====
+0x0060ae84 push      {r4, r5, r6, lr} ; 
+0x0060ae86 sub       sp, #0x10 ; 
+0x0060ae88 ldr       r1, [r1] ; 
+0x0060ae8a cbz       r1, #0x60aee8 ; 
+0x0060ae8c ldr       r4, [r1, #0x1c] ; 
+0x0060ae8e cbz       r4, #0x60aee8 ; 
+0x0060ae90 ldr       r0, [r0, #0x1c] ; 
+0x0060ae92 cmp       r2, #1 ; 
+0x0060ae94 ldr.w     r0, [r0, #0x264] ; 
+0x0060ae98 ldr       r5, [r0, #8] ; 
+0x0060ae9a mov.w     r0, #0 ; 
+0x0060ae9e bne       #0x60aebe ; 
+0x0060aea0 mov       r6, sp ; 
+0x0060aea2 adr       r1, #0x60 ; 
+0x0060aea4 str       r0, [sp, #8] ; 
+0x0060aea6 movs      r2, #0x1a ; 
+0x0060aea8 strd      r0, r0, [sp] ; 
+0x0060aeac mov       r0, r6 ; 
+0x0060aeae bl        #0x4e02b2 ; 
+0x0060aeb2 mov       r0, r5 ; 
+0x0060aeb4 mov       r1, r4 ; 
+0x0060aeb6 mov       r2, r6 ; 
+0x0060aeb8 blx       #0x4b1da0 ; Anki::Cozmo::AIInformationAnalyzer::AddEnableRequest(Anki::Cozmo::AIInformationAnalysis::EProcess, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)
+0x0060aebc b         #0x60aeda ; 
+0x0060aebe mov       r6, sp ; 
+0x0060aec0 adr       r1, #0x40 ; 
+0x0060aec2 str       r0, [sp, #8] ; 
+0x0060aec4 movs      r2, #0x1a ; 
+0x0060aec6 strd      r0, r0, [sp] ; 
+0x0060aeca mov       r0, r6 ; 
+0x0060aecc bl        #0x4e02b2 ; 
+0x0060aed0 mov       r0, r5 ; 
+0x0060aed2 mov       r1, r4 ; 
+0x0060aed4 mov       r2, r6 ; 
+0x0060aed6 blx       #0x4b1dac ; Anki::Cozmo::AIInformationAnalyzer::RemoveEnableRequest(Anki::Cozmo::AIInformationAnalysis::EProcess, std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> > const&)
+0x0060aeda ldrb.w    r0, [sp] ; 
+0x0060aede lsls      r0, r0, #0x1f ; 
+0x0060aee0 itt       ne ; 
+0x0060aee2 ldrne     r0, [sp, #8] ; 
+0x0060aee4 blxne     #0x4a40cc ; 
+0x0060aee8 add       sp, #0x10 ; 
+0x0060aeea pop       {r4, r5, r6, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::OnSelected 0060af20 =====
+0x0060af20 push      {r4, r5, r7, lr} ; 
+0x0060af22 sub       sp, #8 ; 
+0x0060af24 mov       r5, r0 ; 
+0x0060af26 ldrd      r0, r4, [r5, #0x2c] ; 
+0x0060af2a cmp       r4, #0 ; 
+0x0060af2c strd      r0, r4, [sp] ; 
+0x0060af30 beq       #0x60af38 ; 
+0x0060af32 mov       r0, r4 ; 
+0x0060af34 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060af38 mov       r1, sp ; 
+0x0060af3a mov       r0, r5 ; 
+0x0060af3c movs      r2, #1 ; 
+0x0060af3e blx       #0x4b6cb4 ; Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x0060af42 cbz       r4, #0x60af50 ; 
+0x0060af44 mov       r0, r4 ; 
+0x0060af46 add       sp, #8 ; 
+0x0060af48 pop.w     {r4, r5, r7, lr} ; 
+0x0060af4c b.w       #0x8cb60c ; 
+0x0060af50 add       sp, #8 ; 
+0x0060af52 pop       {r4, r5, r7, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::OnDeselected 0060af64 =====
+0x0060af64 push      {r4, r5, r7, lr} ; 
+0x0060af66 sub       sp, #8 ; 
+0x0060af68 mov       r5, r0 ; 
+0x0060af6a ldrd      r0, r4, [r5, #0x2c] ; 
+0x0060af6e cmp       r4, #0 ; 
+0x0060af70 strd      r0, r4, [sp] ; 
+0x0060af74 beq       #0x60af7c ; 
+0x0060af76 mov       r0, r4 ; 
+0x0060af78 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x0060af7c mov       r1, sp ; 
+0x0060af7e mov       r0, r5 ; 
+0x0060af80 movs      r2, #0 ; 
+0x0060af82 blx       #0x4b6cb4 ; Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x0060af86 cbz       r4, #0x60af94 ; 
+0x0060af88 mov       r0, r4 ; 
+0x0060af8a add       sp, #8 ; 
+0x0060af8c pop.w     {r4, r5, r7, lr} ; 
+0x0060af90 b.w       #0x8cb60c ; 
+0x0060af94 add       sp, #8 ; 
+0x0060af96 pop       {r4, r5, r7, pc} ; 
+
+===== Anki::Cozmo::UiMessageHandler::ProcessMessageBytes 00661720 =====
+0x00661720 push.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0x00661724 sub.w     sp, sp, #0x5d0 ; 
+0x00661728 sub       sp, #4 ; 
+0x0066172a mov       sl, r0 ; 
+0x0066172c ldr.w     r0, [pc, #0x784] ; 
+0x00661730 mov       sb, r3 ; 
+0x00661732 mov       r6, r1 ; 
+0x00661734 add       r0, pc ; 
+0x00661736 movw      fp, #0xffff ; 
+0x0066173a movs      r4, #0 ; 
+0x0066173c ldr       r0, [r0] ; 
+0x0066173e ldr       r0, [r0] ; 
+0x00661740 str.w     r0, [sp, #0x5d0] ; 
+0x00661744 lsls      r0, r2, #0x10 ; 
+0x00661746 strh.w    fp, [sp, #0x1b8] ; 
+0x0066174a beq.w     #0x661c7e ; 
+0x0066174e ldr.w     r0, [sp, #0x5f8] ; 
+0x00661752 add       r4, sp, #0x1b8 ; 
+0x00661754 str       r2, [sp, #4] ; 
+0x00661756 eor       r8, r0, #1 ; 
+0x0066175a mov       r0, r2 ; 
+0x0066175c uxth      r5, r0 ; 
+0x0066175e mov       r0, r4 ; 
+0x00661760 mov       r1, r6 ; 
+0x00661762 mov       r2, r5 ; 
+0x00661764 blx       #0x4bb2f8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Unpack(unsigned char const*, unsigned int)
+0x00661768 mov       r7, r0 ; 
+0x0066176a ldr       r0, [sp, #4] ; 
+0x0066176c cmp       r7, r0 ; 
+0x0066176e mov.w     r0, #0 ; 
+0x00661772 it        eq ; 
+0x00661774 moveq     r0, #1 ; 
+0x00661776 orrs.w    r0, r0, r8 ; 
+0x0066177a beq       #0x6617ac ; 
+0x0066177c subs      r0, r7, #1 ; 
+0x0066177e cmp       r0, r5 ; 
+0x00661780 blo       #0x66178c ; 
+0x00661782 ldr.w     r0, [sp, #0x5f8] ; 
+0x00661786 cmp       r0, #0 ; 
+0x00661788 beq.w     #0x661960 ; 
+0x0066178c ldr.w     r0, [sp, #0x5fc] ; 
+0x00661790 mov       r1, r4 ; 
+0x00661792 str       r0, [sp] ; 
+0x00661794 mov       r0, sl ; 
+0x00661796 mov       r2, sb ; 
+0x00661798 mov       r3, r7 ; 
+0x0066179a blx       #0x4bb304 ; Anki::Cozmo::UiMessageHandler::HandleProcessedMessage(Anki::Cozmo::ExternalInterface::MessageGameToEngine const&, Anki::Cozmo::UiConnectionType, unsigned int, bool)
+0x0066179e subs      r0, r5, r7 ; 
+0x006617a0 add       r6, r7 ; 
+0x006617a2 tst.w     r0, fp ; 
+0x006617a6 bne       #0x66175c ; 
+0x006617a8 movs      r4, #0 ; 
+0x006617aa b         #0x661c7e ; 
+0x006617ac add       r0, sp, #0x1b8 ; 
+0x006617ae blx       #0x4bad4c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Size() const
+0x006617b2 ldr       r1, [sp, #4] ; 
+0x006617b4 cmp       r0, r1 ; 
+0x006617b6 bhs.w     #0x661adc ; 
+0x006617ba ldr.w     r0, [pc, #0x774] ; 
+0x006617be add       r4, sp, #0x128 ; 
+0x006617c0 ldr.w     r1, [pc, #0x770] ; 
+0x006617c4 add.w     sb, r4, #0x40 ; 
+0x006617c8 add       r0, pc ; 
+0x006617ca add.w     r7, r4, #0xc ; 
+0x006617ce add       r1, pc ; 
+0x006617d0 movs      r5, #0 ; 
+0x006617d2 ldr       r0, [r0] ; 
+0x006617d4 ldr       r1, [r1] ; 
+0x006617d6 add.w     r2, r0, #0xc ; 
+0x006617da adds      r0, #0x20 ; 
+0x006617dc adds      r1, #0x20 ; 
+0x006617de str       r5, [sp, #0x12c] ; 
+0x006617e0 str       r2, [sp, #0x128] ; 
+0x006617e2 str       r1, [sp, #0x130] ; 
+0x006617e4 str       r0, [sp, #0x168] ; 
+0x006617e6 mov       r0, sb ; 
+0x006617e8 mov       r1, r7 ; 
+0x006617ea blx       #0x4a445c ; std::__ndk1::ios_base::init(void*)
+0x006617ee ldr.w     r0, [pc, #0x748] ; 
+0x006617f2 mov.w     r2, #-1 ; 
+0x006617f6 ldr.w     r1, [pc, #0x744] ; 
+0x006617fa add.w     r8, r4, #0x10 ; 
+0x006617fe add       r0, pc ; 
+0x00661800 str       r2, [sp, #0x1b4] ; 
+0x00661802 add       r1, pc ; 
+0x00661804 str       r5, [sp, #0x1b0] ; 
+0x00661806 ldr       r0, [r0] ; 
+0x00661808 ldr       r1, [r1] ; 
+0x0066180a add.w     r2, r0, #0x34 ; 
+0x0066180e str       r2, [sp, #0x168] ; 
+0x00661810 add.w     r2, r0, #0xc ; 
+0x00661814 adds      r0, #0x20 ; 
+0x00661816 str       r2, [sp, #0x128] ; 
+0x00661818 str       r0, [sp, #0x130] ; 
+0x0066181a add.w     r0, r1, #8 ; 
+0x0066181e str       r0, [sp, #0x134] ; 
+0x00661820 mov       r0, r8 ; 
+0x00661822 blx       #0x4a4468 ; std::__ndk1::locale::locale()
+0x00661826 add.w     r0, r4, #0x14 ; 
+0x0066182a movs      r1, #0x18 ; 
+0x0066182c movs      r6, #0x18 ; 
+0x0066182e blx       #0x4a403c ; __aeabi_memclr4
+0x00661832 ldr.w     r0, [pc, #0x70c] ; 
+0x00661836 str       r5, [sp, #0x154] ; 
+0x00661838 add       r0, pc ; 
+0x0066183a ldr       r0, [r0] ; 
+0x0066183c adds      r0, #8 ; 
+0x0066183e str       r0, [sp, #0x134] ; 
+0x00661840 strd      r5, r5, [sp, #0x158] ; 
+0x00661844 strd      r5, r6, [sp, #0x160] ; 
+0x00661848 str       r5, [sp, #0xa0] ; 
+0x0066184a strd      r5, r5, [sp, #0x98] ; 
+0x0066184e add       r1, sp, #0x98 ; 
+0x00661850 mov       r0, r7 ; 
+0x00661852 bl        #0x4e4598 ; 
+0x00661856 ldrb.w    r0, [sp, #0x98] ; 
+0x0066185a lsls      r0, r0, #0x1f ; 
+0x0066185c itt       ne ; 
+0x0066185e ldrne     r0, [sp, #0xa0] ; 
+0x00661860 blxne     #0x4a40cc ; 
+0x00661864 add.w     r0, r4, #8 ; 
+0x00661868 addw      r1, pc, #0x6dc ; 
+0x0066186c movs      r2, #0x3e ; 
+0x0066186e blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661872 mov       r4, r0 ; 
+0x00661874 ldrh.w    r0, [sp, #0x1b8] ; 
+0x00661878 blx       #0x4a8cec ; Anki::Cozmo::ExternalInterface::MessageGameToEngineTagToString(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)
+0x0066187c mov       r5, r0 ; 
+0x0066187e mov       r0, r5 ; 
+0x00661880 blx       #0x4a44e0 ; strlen
+0x00661884 mov       r2, r0 ; 
+0x00661886 mov       r0, r4 ; 
+0x00661888 mov       r1, r5 ; 
+0x0066188a blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x0066188e addw      r1, pc, #0x644 ; 
+0x00661892 movs      r2, #0xb ; 
+0x00661894 blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661898 mov       r4, r0 ; 
+0x0066189a add       r0, sp, #0x1b8 ; 
+0x0066189c blx       #0x4bad4c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Size() const
+0x006618a0 mov       r1, r0 ; 
+0x006618a2 mov       r0, r4 ; 
+0x006618a4 blx       #0x4a8134 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >::operator<<(unsigned int)
+0x006618a8 addw      r1, pc, #0x634 ; 
+0x006618ac movs      r2, #8 ; 
+0x006618ae blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x006618b2 ldr       r1, [sp, #4] ; 
+0x006618b4 blx       #0x4a8134 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >::operator<<(unsigned int)
+0x006618b8 addw      r1, pc, #0x630 ; 
+0x006618bc movs      r2, #1 ; 
+0x006618be blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x006618c2 movs      r0, #0 ; 
+0x006618c4 strd      r0, r0, [sp, #0x98] ; 
+0x006618c8 str       r0, [sp, #0xa0] ; 
+0x006618ca add       r4, sp, #8 ; 
+0x006618cc mov       r1, r7 ; 
+0x006618ce mov       r0, r4 ; 
+0x006618d0 blx       #0x4a448c ; std::__ndk1::basic_stringbuf<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> >::str() const
+0x006618d4 ldrb.w    r0, [sp, #8] ; 
+0x006618d8 ldr       r2, [sp, #0x10] ; 
+0x006618da tst.w     r0, #1 ; 
+0x006618de it        eq ; 
+0x006618e0 orreq     r2, r4, #1 ; 
+0x006618e4 addw      r0, pc, #0x608 ; 
+0x006618e8 add       r1, sp, #0x98 ; 
+0x006618ea blx       #0x4a9c10 ; Anki::Util::sWarning(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*)
+0x006618ee ldrb.w    r0, [sp, #8] ; 
+0x006618f2 lsls      r0, r0, #0x1f ; 
+0x006618f4 itt       ne ; 
+0x006618f6 ldrne     r0, [sp, #0x10] ; 
+0x006618f8 blxne     #0x4a40cc ; 
+0x006618fc ldr       r0, [sp, #0x98] ; 
+0x006618fe cbz       r0, #0x66191e ; 
+0x00661900 ldr       r1, [sp, #0x9c] ; 
+0x00661902 cmp       r1, r0 ; 
+0x00661904 itttt     ne ; 
+0x00661906 subne.w   r2, r1, #8 ; 
+0x0066190a subne     r2, r2, r0 ; 
+0x0066190c mvnne     r3, #7 ; 
+0x00661910 bicne.w   r2, r3, r2 ; 
+0x00661914 itt       ne ; 
+0x00661916 addne     r1, r1, r2 ; 
+0x00661918 strne     r1, [sp, #0x9c] ; 
+0x0066191a blx       #0x4a40cc ; operator delete(void*)
+0x0066191e ldr.w     r0, [pc, #0x674] ; 
+0x00661922 ldr.w     r1, [pc, #0x674] ; 
+0x00661926 add       r0, pc ; 
+0x00661928 ldrb.w    r2, [sp, #0x154] ; 
+0x0066192c add       r1, pc ; 
+0x0066192e ldr       r0, [r0] ; 
+0x00661930 ldr       r1, [r1] ; 
+0x00661932 add.w     r3, r0, #0x34 ; 
+0x00661936 str       r3, [sp, #0x168] ; 
+0x00661938 add.w     r3, r0, #0xc ; 
+0x0066193c adds      r0, #0x20 ; 
+0x0066193e str       r3, [sp, #0x128] ; 
+0x00661940 str       r0, [sp, #0x130] ; 
+0x00661942 add.w     r0, r1, #8 ; 
+0x00661946 str       r0, [sp, #0x134] ; 
+0x00661948 lsls      r0, r2, #0x1f ; 
+0x0066194a itt       ne ; 
+0x0066194c ldrne     r0, [sp, #0x15c] ; 
+0x0066194e blxne     #0x4a40cc ; 
+0x00661952 ldr.w     r0, [pc, #0x648] ; 
+0x00661956 add       r0, pc ; 
+0x00661958 ldr       r0, [r0] ; 
+0x0066195a adds      r0, #8 ; 
+0x0066195c str       r0, [sp, #0x134] ; 
+0x0066195e b         #0x661c70 ; 
+0x00661960 ldr.w     r0, [pc, #0x63c] ; 
+0x00661964 add       r5, sp, #8 ; 
+0x00661966 ldr.w     r1, [pc, #0x63c] ; 
+0x0066196a add.w     r8, r5, #0x40 ; 
+0x0066196e add       r0, pc ; 
+0x00661970 add.w     r4, r5, #0xc ; 
+0x00661974 add       r1, pc ; 
+0x00661976 movs      r7, #0 ; 
+0x00661978 ldr       r0, [r0] ; 
+0x0066197a ldr       r1, [r1] ; 
+0x0066197c add.w     r2, r0, #0xc ; 
+0x00661980 adds      r0, #0x20 ; 
+0x00661982 adds      r1, #0x20 ; 
+0x00661984 str       r7, [sp, #0xc] ; 
+0x00661986 str       r2, [sp, #8] ; 
+0x00661988 str       r1, [sp, #0x10] ; 
+0x0066198a str       r0, [sp, #0x48] ; 
+0x0066198c mov       r0, r8 ; 
+0x0066198e mov       r1, r4 ; 
+0x00661990 blx       #0x4a445c ; std::__ndk1::ios_base::init(void*)
+0x00661994 ldr.w     r0, [pc, #0x610] ; 
+0x00661998 mov.w     r2, #-1 ; 
+0x0066199c ldr.w     r1, [pc, #0x60c] ; 
+0x006619a0 add.w     sb, r5, #0x10 ; 
+0x006619a4 add       r0, pc ; 
+0x006619a6 str       r2, [sp, #0x94] ; 
+0x006619a8 add       r1, pc ; 
+0x006619aa str       r7, [sp, #0x90] ; 
+0x006619ac ldr       r0, [r0] ; 
+0x006619ae ldr       r1, [r1] ; 
+0x006619b0 add.w     r2, r0, #0x34 ; 
+0x006619b4 str       r2, [sp, #0x48] ; 
+0x006619b6 add.w     r2, r0, #0xc ; 
+0x006619ba adds      r0, #0x20 ; 
+0x006619bc str       r2, [sp, #8] ; 
+0x006619be str       r0, [sp, #0x10] ; 
+0x006619c0 add.w     r0, r1, #8 ; 
+0x006619c4 str       r0, [sp, #0x14] ; 
+0x006619c6 mov       r0, sb ; 
+0x006619c8 blx       #0x4a4468 ; std::__ndk1::locale::locale()
+0x006619cc add.w     r0, r5, #0x14 ; 
+0x006619d0 movs      r1, #0x18 ; 
+0x006619d2 movs      r6, #0x18 ; 
+0x006619d4 blx       #0x4a403c ; __aeabi_memclr4
+0x006619d8 ldr.w     r0, [pc, #0x5d4] ; 
+0x006619dc str       r7, [sp, #0x34] ; 
+0x006619de add       r0, pc ; 
+0x006619e0 ldr       r0, [r0] ; 
+0x006619e2 adds      r0, #8 ; 
+0x006619e4 str       r0, [sp, #0x14] ; 
+0x006619e6 strd      r7, r7, [sp, #0x38] ; 
+0x006619ea strd      r7, r6, [sp, #0x40] ; 
+0x006619ee str       r7, [sp, #0x130] ; 
+0x006619f0 strd      r7, r7, [sp, #0x128] ; 
+0x006619f4 add       r1, sp, #0x128 ; 
+0x006619f6 mov       r0, r4 ; 
+0x006619f8 bl        #0x4e4598 ; 
+0x006619fc ldrb.w    r0, [sp, #0x128] ; 
+0x00661a00 lsls      r0, r0, #0x1f ; 
+0x00661a02 itt       ne ; 
+0x00661a04 ldrne     r0, [sp, #0x130] ; 
+0x00661a06 blxne     #0x4a40cc ; 
+0x00661a0a ldr.w     r1, [pc, #0x5ac] ; 
+0x00661a0e add       r1, pc ; 
+0x00661a10 add.w     r0, r5, #8 ; 
+0x00661a14 movs      r2, #0x2f ; 
+0x00661a16 blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661a1a mov       r7, r0 ; 
+0x00661a1c ldrh.w    r0, [sp, #0x1b8] ; 
+0x00661a20 blx       #0x4a8cec ; Anki::Cozmo::ExternalInterface::MessageGameToEngineTagToString(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)
+0x00661a24 mov       r5, r0 ; 
+0x00661a26 mov       r0, r5 ; 
+0x00661a28 blx       #0x4a44e0 ; strlen
+0x00661a2c mov       r2, r0 ; 
+0x00661a2e mov       r0, r7 ; 
+0x00661a30 mov       r1, r5 ; 
+0x00661a32 blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661a36 movs      r0, #0 ; 
+0x00661a38 strd      r0, r0, [sp, #0x128] ; 
+0x00661a3c str       r0, [sp, #0x130] ; 
+0x00661a3e add       r5, sp, #0x98 ; 
+0x00661a40 mov       r1, r4 ; 
+0x00661a42 mov       r0, r5 ; 
+0x00661a44 blx       #0x4a448c ; std::__ndk1::basic_stringbuf<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> >::str() const
+0x00661a48 ldrb.w    r0, [sp, #0x98] ; 
+0x00661a4c ldr       r2, [sp, #0xa0] ; 
+0x00661a4e tst.w     r0, #1 ; 
+0x00661a52 it        eq ; 
+0x00661a54 orreq     r2, r5, #1 ; 
+0x00661a58 addw      r0, pc, #0x494 ; 
+0x00661a5c add       r1, sp, #0x128 ; 
+0x00661a5e blx       #0x4a4498 ; Anki::Util::sError(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*)
+0x00661a62 ldrb.w    r0, [sp, #0x98] ; 
+0x00661a66 lsls      r0, r0, #0x1f ; 
+0x00661a68 itt       ne ; 
+0x00661a6a ldrne     r0, [sp, #0xa0] ; 
+0x00661a6c blxne     #0x4a40cc ; 
+0x00661a70 ldr       r0, [sp, #0x128] ; 
+0x00661a72 cbz       r0, #0x661a92 ; 
+0x00661a74 ldr       r1, [sp, #0x12c] ; 
+0x00661a76 cmp       r1, r0 ; 
+0x00661a78 itttt     ne ; 
+0x00661a7a subne.w   r2, r1, #8 ; 
+0x00661a7e subne     r2, r2, r0 ; 
+0x00661a80 mvnne     r3, #7 ; 
+0x00661a84 bicne.w   r2, r3, r2 ; 
+0x00661a88 itt       ne ; 
+0x00661a8a addne     r1, r1, r2 ; 
+0x00661a8c strne     r1, [sp, #0x12c] ; 
+0x00661a8e blx       #0x4a40cc ; operator delete(void*)
+0x00661a92 ldr.w     r0, [pc, #0x534] ; 
+0x00661a96 ldr.w     r1, [pc, #0x534] ; 
+0x00661a9a add       r0, pc ; 
+0x00661a9c ldrb.w    r2, [sp, #0x34] ; 
+0x00661aa0 add       r1, pc ; 
+0x00661aa2 ldr       r0, [r0] ; 
+0x00661aa4 ldr       r1, [r1] ; 
+0x00661aa6 add.w     r3, r0, #0x34 ; 
+0x00661aaa str       r3, [sp, #0x48] ; 
+0x00661aac add.w     r3, r0, #0xc ; 
+0x00661ab0 adds      r0, #0x20 ; 
+0x00661ab2 str       r3, [sp, #8] ; 
+0x00661ab4 str       r0, [sp, #0x10] ; 
+0x00661ab6 add.w     r0, r1, #8 ; 
+0x00661aba str       r0, [sp, #0x14] ; 
+0x00661abc lsls      r0, r2, #0x1f ; 
+0x00661abe itt       ne ; 
+0x00661ac0 ldrne     r0, [sp, #0x3c] ; 
+0x00661ac2 blxne     #0x4a40cc ; 
+0x00661ac6 ldr.w     r0, [pc, #0x508] ; 
+0x00661aca add       r0, pc ; 
+0x00661acc ldr       r0, [r0] ; 
+0x00661ace adds      r0, #8 ; 
+0x00661ad0 str       r0, [sp, #0x14] ; 
+0x00661ad2 mov       r0, sb ; 
+0x00661ad4 blx       #0x4a44a4 ; std::__ndk1::locale::~locale()
+0x00661ad8 mov       r0, r8 ; 
+0x00661ada b         #0x661c78 ; 
+0x00661adc ldr.w     r0, [pc, #0x3d8] ; 
+0x00661ae0 add       r4, sp, #0x98 ; 
+0x00661ae2 ldr.w     r1, [pc, #0x3d8] ; 
+0x00661ae6 add.w     sb, r4, #0x40 ; 
+0x00661aea add       r0, pc ; 
+0x00661aec add.w     r7, r4, #0xc ; 
+0x00661af0 add       r1, pc ; 
+0x00661af2 movs      r5, #0 ; 
+0x00661af4 ldr       r0, [r0] ; 
+0x00661af6 ldr       r1, [r1] ; 
+0x00661af8 add.w     r2, r0, #0xc ; 
+0x00661afc adds      r0, #0x20 ; 
+0x00661afe adds      r1, #0x20 ; 
+0x00661b00 str       r5, [sp, #0x9c] ; 
+0x00661b02 str       r2, [sp, #0x98] ; 
+0x00661b04 str       r1, [sp, #0xa0] ; 
+0x00661b06 str       r0, [sp, #0xd8] ; 
+0x00661b08 mov       r0, sb ; 
+0x00661b0a mov       r1, r7 ; 
+0x00661b0c blx       #0x4a445c ; std::__ndk1::ios_base::init(void*)
+0x00661b10 ldr.w     r0, [pc, #0x3ac] ; 
+0x00661b14 mov.w     r2, #-1 ; 
+0x00661b18 ldr.w     r1, [pc, #0x3a8] ; 
+0x00661b1c add.w     r8, r4, #0x10 ; 
+0x00661b20 add       r0, pc ; 
+0x00661b22 str       r2, [sp, #0x124] ; 
+0x00661b24 add       r1, pc ; 
+0x00661b26 str       r5, [sp, #0x120] ; 
+0x00661b28 ldr       r0, [r0] ; 
+0x00661b2a ldr       r1, [r1] ; 
+0x00661b2c add.w     r2, r0, #0x34 ; 
+0x00661b30 str       r2, [sp, #0xd8] ; 
+0x00661b32 add.w     r2, r0, #0xc ; 
+0x00661b36 adds      r0, #0x20 ; 
+0x00661b38 str       r2, [sp, #0x98] ; 
+0x00661b3a str       r0, [sp, #0xa0] ; 
+0x00661b3c add.w     r0, r1, #8 ; 
+0x00661b40 str       r0, [sp, #0xa4] ; 
+0x00661b42 mov       r0, r8 ; 
+0x00661b44 blx       #0x4a4468 ; std::__ndk1::locale::locale()
+0x00661b48 add.w     r0, r4, #0x14 ; 
+0x00661b4c movs      r1, #0x18 ; 
+0x00661b4e movs      r6, #0x18 ; 
+0x00661b50 blx       #0x4a403c ; __aeabi_memclr4
+0x00661b54 ldr       r0, [pc, #0x370] ; 
+0x00661b56 str       r5, [sp, #0xc4] ; 
+0x00661b58 add       r0, pc ; 
+0x00661b5a ldr       r0, [r0] ; 
+0x00661b5c adds      r0, #8 ; 
+0x00661b5e str       r0, [sp, #0xa4] ; 
+0x00661b60 strd      r5, r5, [sp, #0xc8] ; 
+0x00661b64 strd      r5, r6, [sp, #0xd0] ; 
+0x00661b68 str       r5, [sp, #0x130] ; 
+0x00661b6a strd      r5, r5, [sp, #0x128] ; 
+0x00661b6e add       r1, sp, #0x128 ; 
+0x00661b70 mov       r0, r7 ; 
+0x00661b72 bl        #0x4e4598 ; 
+0x00661b76 ldrb.w    r0, [sp, #0x128] ; 
+0x00661b7a lsls      r0, r0, #0x1f ; 
+0x00661b7c itt       ne ; 
+0x00661b7e ldrne     r0, [sp, #0x130] ; 
+0x00661b80 blxne     #0x4a40cc ; 
+0x00661b84 ldr       r1, [pc, #0x348] ; 
+0x00661b86 add       r1, pc ; 
+0x00661b88 add.w     r0, r4, #8 ; 
+0x00661b8c movs      r2, #0x40 ; 
+0x00661b8e blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661b92 mov       r4, r0 ; 
+0x00661b94 ldrh.w    r0, [sp, #0x1b8] ; 
+0x00661b98 blx       #0x4a8cec ; Anki::Cozmo::ExternalInterface::MessageGameToEngineTagToString(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)
+0x00661b9c mov       r5, r0 ; 
+0x00661b9e mov       r0, r5 ; 
+0x00661ba0 blx       #0x4a44e0 ; strlen
+0x00661ba4 mov       r2, r0 ; 
+0x00661ba6 mov       r0, r4 ; 
+0x00661ba8 mov       r1, r5 ; 
+0x00661baa blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661bae adr       r1, #0x324 ; 
+0x00661bb0 movs      r2, #0xb ; 
+0x00661bb2 blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661bb6 mov       r4, r0 ; 
+0x00661bb8 add       r0, sp, #0x1b8 ; 
+0x00661bba blx       #0x4bad4c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Size() const
+0x00661bbe mov       r1, r0 ; 
+0x00661bc0 mov       r0, r4 ; 
+0x00661bc2 blx       #0x4a8134 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >::operator<<(unsigned int)
+0x00661bc6 adr       r1, #0x318 ; 
+0x00661bc8 movs      r2, #8 ; 
+0x00661bca blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661bce ldr       r1, [sp, #4] ; 
+0x00661bd0 blx       #0x4a8134 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >::operator<<(unsigned int)
+0x00661bd4 adr       r1, #0x314 ; 
+0x00661bd6 movs      r2, #1 ; 
+0x00661bd8 blx       #0x4a4474 ; std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >& std::__ndk1::__put_character_sequence<char, std::__ndk1::char_traits<char> >(std::__ndk1::basic_ostream<char, std::__ndk1::char_traits<char> >&, char const*, unsigned int)
+0x00661bdc movs      r0, #0 ; 
+0x00661bde strd      r0, r0, [sp, #0x128] ; 
+0x00661be2 str       r0, [sp, #0x130] ; 
+0x00661be4 add       r4, sp, #8 ; 
+0x00661be6 mov       r1, r7 ; 
+0x00661be8 mov       r0, r4 ; 
+0x00661bea blx       #0x4a448c ; std::__ndk1::basic_stringbuf<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char> >::str() const
+0x00661bee ldrb.w    r0, [sp, #8] ; 
+0x00661bf2 ldr       r2, [sp, #0x10] ; 
+0x00661bf4 tst.w     r0, #1 ; 
+0x00661bf8 it        eq ; 
+0x00661bfa orreq     r2, r4, #1 ; 
+0x00661bfe adr       r0, #0x2f0 ; 
+0x00661c00 add       r1, sp, #0x128 ; 
+0x00661c02 blx       #0x4a4498 ; Anki::Util::sError(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*)
+0x00661c06 ldrb.w    r0, [sp, #8] ; 
+0x00661c0a lsls      r0, r0, #0x1f ; 
+0x00661c0c itt       ne ; 
+0x00661c0e ldrne     r0, [sp, #0x10] ; 
+0x00661c10 blxne     #0x4a40cc ; 
+0x00661c14 ldr       r0, [sp, #0x128] ; 
+0x00661c16 cbz       r0, #0x661c36 ; 
+0x00661c18 ldr       r1, [sp, #0x12c] ; 
+0x00661c1a cmp       r1, r0 ; 
+0x00661c1c itttt     ne ; 
+0x00661c1e subne.w   r2, r1, #8 ; 
+0x00661c22 subne     r2, r2, r0 ; 
+0x00661c24 mvnne     r3, #7 ; 
+0x00661c28 bicne.w   r2, r3, r2 ; 
+0x00661c2c itt       ne ; 
+0x00661c2e addne     r1, r1, r2 ; 
+0x00661c30 strne     r1, [sp, #0x12c] ; 
+0x00661c32 blx       #0x4a40cc ; operator delete(void*)
+0x00661c36 ldr       r0, [pc, #0x2ec] ; 
+0x00661c38 ldr       r1, [pc, #0x2ec] ; 
+0x00661c3a add       r0, pc ; 
+0x00661c3c ldrb.w    r2, [sp, #0xc4] ; 
+0x00661c40 add       r1, pc ; 
+0x00661c42 ldr       r0, [r0] ; 
+0x00661c44 ldr       r1, [r1] ; 
+0x00661c46 add.w     r3, r0, #0x34 ; 
+0x00661c4a str       r3, [sp, #0xd8] ; 
+0x00661c4c add.w     r3, r0, #0xc ; 
+0x00661c50 adds      r0, #0x20 ; 
+0x00661c52 str       r3, [sp, #0x98] ; 
+0x00661c54 str       r0, [sp, #0xa0] ; 
+0x00661c56 add.w     r0, r1, #8 ; 
+0x00661c5a str       r0, [sp, #0xa4] ; 
+0x00661c5c lsls      r0, r2, #0x1f ; 
+0x00661c5e itt       ne ; 
+0x00661c60 ldrne     r0, [sp, #0xcc] ; 
+0x00661c62 blxne     #0x4a40cc ; 
+0x00661c66 ldr       r0, [pc, #0x2c4] ; 
+0x00661c68 add       r0, pc ; 
+0x00661c6a ldr       r0, [r0] ; 
+0x00661c6c adds      r0, #8 ; 
+0x00661c6e str       r0, [sp, #0xa4] ; 
+0x00661c70 mov       r0, r8 ; 
+0x00661c72 blx       #0x4a44a4 ; std::__ndk1::locale::~locale()
+0x00661c76 mov       r0, sb ; 
+0x00661c78 blx       #0x4a44b0 ; std::__ndk1::ios_base::~ios_base()
+0x00661c7c movs      r4, #1 ; 
+0x00661c7e add       r0, sp, #0x1b8 ; 
+0x00661c80 blx       #0x4ae0b0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::ClearCurrent()
+0x00661c84 ldr       r0, [pc, #0x34c] ; 
+0x00661c86 ldr.w     r1, [sp, #0x5d0] ; 
+0x00661c8a add       r0, pc ; 
+0x00661c8c ldr       r0, [r0] ; 
+0x00661c8e ldr       r0, [r0] ; 
+0x00661c90 subs      r0, r0, r1 ; 
+0x00661c92 itttt     eq ; 
+0x00661c94 moveq     r0, r4 ; 
+0x00661c96 addeq.w   sp, sp, #0x5d0 ; 
+0x00661c9a addeq     sp, #4 ; 
+0x00661c9c popeq.w   {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+0x00661ca0 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::UiMessageHandler::HandleProcessedMessage 00661fd8 =====
+0x00661fd8 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x00661fdc sub       sp, #0x128 ; 
+0x00661fde mov       r4, r0 ; 
+0x00661fe0 ldr       r0, [pc, #0x240] ; 
+0x00661fe2 mov       r6, r1 ; 
+0x00661fe4 mov       r8, r3 ; 
+0x00661fe6 add       r0, pc ; 
+0x00661fe8 mov       r5, r2 ; 
+0x00661fea ldr       r0, [r0] ; 
+0x00661fec ldr       r0, [r0] ; 
+0x00661fee str       r0, [sp, #0x124] ; 
+0x00661ff0 ldr.w     r0, [r4, #0xf8] ; 
+0x00661ff4 ldr       r1, [sp, #0x140] ; 
+0x00661ff6 adds      r0, #1 ; 
+0x00661ff8 str.w     r0, [r4, #0xf8] ; 
+0x00661ffc ldrh      r7, [r6] ; 
+0x00661ffe cbnz      r1, #0x662010 ; 
+0x00662000 sub.w     r0, r7, #0xdc ; 
+0x00662004 cmp       r0, #3 ; 
+0x00662006 bhi.w     #0x662192 ; 
+0x0066200a cmp       r0, #1 ; 
+0x0066200c beq.w     #0x662192 ; 
+0x00662010 mov       r0, r5 ; 
+0x00662012 blx       #0x4bb1b4 ; Anki::Cozmo::IsExternalSdkConnection(Anki::Cozmo::UiConnectionType)
+0x00662016 cmp       r0, #1 ; 
+0x00662018 bne       #0x66204e ; 
+0x0066201a cmp       r7, #0x9a ; 
+0x0066201c bgt       #0x6620cc ; 
+0x0066201e cmp       r7, #0x64 ; 
+0x00662020 bgt.w     #0x66213c ; 
+0x00662024 sub.w     r0, r7, #0x45 ; 
+0x00662028 cmp       r0, #0x15 ; 
+0x0066202a bhi       #0x662040 ; 
+0x0066202c movs      r1, #1 ; 
+0x0066202e lsl.w     r0, r1, r0 ; 
+0x00662032 movw      r1, #0x3831 ; 
+0x00662036 movt      r1, #0x30 ; 
+0x0066203a tst       r0, r1 ; 
+0x0066203c bne.w     #0x662156 ; 
+0x00662040 cmp       r7, #8 ; 
+0x00662042 beq.w     #0x662156 ; 
+0x00662046 cmp       r7, #0x1e ; 
+0x00662048 beq.w     #0x662156 ; 
+0x0066204c b         #0x662110 ; 
+0x0066204e ldrb.w    r0, [r4, #0xe1] ; 
+0x00662052 cbz       r0, #0x66207c ; 
+0x00662054 sub.w     r0, r7, #0xdc ; 
+0x00662058 cmp       r0, #0x16 ; 
+0x0066205a bhi       #0x66206c ; 
+0x0066205c movs      r1, #1 ; 
+0x0066205e lsl.w     r0, r1, r0 ; 
+0x00662062 movs      r1, #0xf ; 
+0x00662064 movt      r1, #0x60 ; 
+0x00662068 tst       r0, r1 ; 
+0x0066206a bne       #0x66207c ; 
+0x0066206c sub.w     r0, r7, #0x3b ; 
+0x00662070 cmp       r0, #4 ; 
+0x00662072 bhi.w     #0x662192 ; 
+0x00662076 cmp       r0, #3 ; 
+0x00662078 beq.w     #0x662192 ; 
+0x0066207c ldrb.w    r0, [r4, #0xe2] ; 
+0x00662080 cmp       r0, #0 ; 
+0x00662082 bne.w     #0x662110 ; 
+0x00662086 cmp       r7, #0x39 ; 
+0x00662088 bne.w     #0x66211e ; 
+0x0066208c cmp       r5, #2 ; 
+0x0066208e bhi.w     #0x662192 ; 
+0x00662092 add.w     r0, r4, r5, lsl #2 ; 
+0x00662096 ldr       r7, [r0, #4] ; 
+0x00662098 cmp       r7, #0 ; 
+0x0066209a beq.w     #0x662192 ; 
+0x0066209e mov       r0, r6 ; 
+0x006620a0 blx       #0x4bb310 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_Ping() const
+0x006620a4 mov       r1, r0 ; 
+0x006620a6 ldrb      r0, [r1, #0x10] ; 
+0x006620a8 cmp       r0, #0 ; 
+0x006620aa beq.w     #0x6621aa ; 
+0x006620ae ldr       r0, [pc, #0x194] ; 
+0x006620b0 ldr       r2, [sp, #0x124] ; 
+0x006620b2 add       r0, pc ; 
+0x006620b4 ldr       r0, [r0] ; 
+0x006620b6 ldr       r0, [r0] ; 
+0x006620b8 subs      r0, r0, r2 ; 
+0x006620ba itttt     eq ; 
+0x006620bc moveq     r0, r7 ; 
+0x006620be addeq     sp, #0x128 ; 
+0x006620c0 popeq.w   {r4, r5, r6, r7, r8, lr} ; 
+0x006620c4 beq.w     #0x8cd3bc ; 
+0x006620c8 blx       #0x4a4fe4 ; __stack_chk_fail
+0x006620cc sub.w     r0, r7, #0xc7 ; 
+0x006620d0 cmp       r0, #0x35 ; 
+0x006620d2 bhi.w     #0x6621e0 ; 
+0x006620d6 tbb       [pc, r0] ; 
+0x006620da subs      r6, #0x3e ; 
+0x006620dc subs      r6, r7, r4 ; 
+0x006620de subs      r6, r7, r4 ; 
+0x006620e0 subs      r6, #0x3e ; 
+0x006620e2 subs      r6, #0x1b ; 
+0x006620e4 subs      r6, r7, r4 ; 
+0x006620e6 subs      r3, r3, r4 ; 
+0x006620e8 subs      r3, r3, r4 ; 
+0x006620ea subs      r6, r7, r4 ; 
+0x006620ec subs      r3, r3, r4 ; 
+0x006620ee subs      r3, r3, r4 ; 
+0x006620f0 subs      r3, r3, r4 ; 
+0x006620f2 subs      r6, #0x1b ; 
+0x006620f4 subs      r3, r3, r4 ; 
+0x006620f6 subs      r6, #0x3e ; 
+0x006620f8 subs      r3, r3, r4 ; 
+0x006620fa subs      r3, r3, r4 ; 
+0x006620fc subs      r3, r3, r4 ; 
+0x006620fe subs      r6, #0x1b ; 
+0x00662100 subs      r6, #0x3e ; 
+0x00662102 subs      r3, r3, r4 ; 
+0x00662104 subs      r6, #0x3e ; 
+0x00662106 subs      r3, r3, r4 ; 
+0x00662108 subs      r3, r3, r4 ; 
+0x0066210a subs      r6, #0x1b ; 
+0x0066210c subs      r6, #0x3e ; 
+0x0066210e subs      r6, #0x3e ; 
+0x00662110 add.w     r0, r4, #0x68 ; 
+0x00662114 mov       r1, r6 ; 
+0x00662116 mov       r2, r8 ; 
+0x00662118 blx       #0x4bb31c ; Anki::Cozmo::SdkStatus::OnRecvMessage(Anki::Cozmo::ExternalInterface::MessageGameToEngine const&, unsigned int)
+0x0066211c b         #0x662086 ; 
+0x0066211e ldr       r0, [r4] ; 
+0x00662120 ldr       r2, [r0, #8] ; 
+0x00662122 ldr       r0, [pc, #0x11c] ; 
+0x00662124 ldr       r1, [sp, #0x124] ; 
+0x00662126 add       r0, pc ; 
+0x00662128 ldr       r0, [r0] ; 
+0x0066212a ldr       r0, [r0] ; 
+0x0066212c subs      r0, r0, r1 ; 
+0x0066212e bne       #0x6621a6 ; 
+0x00662130 mov       r0, r4 ; 
+0x00662132 mov       r1, r6 ; 
+0x00662134 add       sp, #0x128 ; 
+0x00662136 pop.w     {r4, r5, r6, r7, r8, lr} ; 
+0x0066213a bx        r2 ; 
+0x0066213c sub.w     r0, r7, #0x65 ; 
+0x00662140 cmp       r0, #0x16 ; 
+0x00662142 bhi       #0x662110 ; 
+0x00662144 movs      r1, #1 ; 
+0x00662146 lsl.w     r0, r1, r0 ; 
+0x0066214a movw      r1, #0x3c1 ; 
+0x0066214e movt      r1, #0x6b ; 
+0x00662152 tst       r0, r1 ; 
+0x00662154 beq       #0x662110 ; 
+0x00662156 movs      r0, #0 ; 
+0x00662158 strd      r0, r0, [sp, #0x18] ; 
+0x0066215c str       r0, [sp, #0x20] ; 
+0x0066215e mov       r0, r7 ; 
+0x00662160 blx       #0x4a8cec ; Anki::Cozmo::ExternalInterface::MessageGameToEngineTagToString(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)
+0x00662164 mov       r3, r0 ; 
+0x00662166 adr       r0, #0xc0 ; 
+0x00662168 add       r1, sp, #0x18 ; 
+0x0066216a adr       r2, #0xd0 ; 
+0x0066216c blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00662170 ldr       r0, [sp, #0x18] ; 
+0x00662172 cbz       r0, #0x662192 ; 
+0x00662174 ldr       r1, [sp, #0x1c] ; 
+0x00662176 cmp       r1, r0 ; 
+0x00662178 itttt     ne ; 
+0x0066217a subne.w   r2, r1, #8 ; 
+0x0066217e subne     r2, r2, r0 ; 
+0x00662180 mvnne     r3, #7 ; 
+0x00662184 bicne.w   r2, r3, r2 ; 
+0x00662188 itt       ne ; 
+0x0066218a addne     r1, r1, r2 ; 
+0x0066218c strne     r1, [sp, #0x1c] ; 
+0x0066218e blx       #0x4a40cc ; operator delete(void*)
+0x00662192 ldr       r0, [pc, #0xb4] ; 
+0x00662194 ldr       r1, [sp, #0x124] ; 
+0x00662196 add       r0, pc ; 
+0x00662198 ldr       r0, [r0] ; 
+0x0066219a ldr       r0, [r0] ; 
+0x0066219c subs      r0, r0, r1 ; 
+0x0066219e itt       eq ; 
+0x006621a0 addeq     sp, #0x128 ; 
+0x006621a2 popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x006621a6 blx       #0x4a4fe4 ; __stack_chk_fail
+0x006621aa ldr       r0, [r1] ; 
+0x006621ac vldr      d0, [r1, #8] ; 
+0x006621b0 str       r0, [sp] ; 
+0x006621b2 movs      r0, #1 ; 
+0x006621b4 .byte     0x8d, 0xf8 ; 
+
+===== Anki::Cozmo::UiMessageHandler::Broadcast 0066233c =====
+0x0066233c push.w    {r4, r5, r6, r7, r8, sb, lr} ; 
+0x00662340 sub.w     sp, sp, #0x428 ; 
+0x00662344 sub       sp, #4 ; 
+0x00662346 mov       r6, r0 ; 
+0x00662348 ldr       r0, [pc, #0x74] ; 
+0x0066234a mov       r5, r1 ; 
+0x0066234c add       r0, pc ; 
+0x0066234e ldr       r0, [r0] ; 
+0x00662350 ldr       r0, [r0] ; 
+0x00662352 str.w     r0, [sp, #0x428] ; 
+0x00662356 blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x0066235a blx       #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0x0066235e vmov      s0, r0 ; 
+0x00662362 mov       r7, sp ; 
+0x00662364 add.w     r4, r7, #0x10 ; 
+0x00662368 ldrh      r0, [r5] ; 
+0x0066236a vcvt.f64.f32 d0, s0 ; 
+0x0066236e str       r0, [sp, #8] ; 
+0x00662370 mov       r0, r4 ; 
+0x00662372 mov       r1, r5 ; 
+0x00662374 vstr      d0, [sp] ; 
+0x00662378 blx       #0x4bb340 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::MessageGameToEngine(Anki::Cozmo::ExternalInterface::MessageGameToEngine const&)
+0x0066237c add.w     r0, r6, #0x34 ; 
+0x00662380 mov       r1, r7 ; 
+0x00662382 bl        #0x6623c8 ; 
+0x00662386 mov       r0, r4 ; 
+0x00662388 blx       #0x4ae0b0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::ClearCurrent()
+0x0066238c ldr       r0, [pc, #0x34] ; 
+0x0066238e ldr.w     r1, [sp, #0x428] ; 
+0x00662392 add       r0, pc ; 
+0x00662394 ldr       r0, [r0] ; 
+0x00662396 ldr       r0, [r0] ; 
+0x00662398 subs      r0, r0, r1 ; 
+0x0066239a ittt      eq ; 
+0x0066239c addeq.w   sp, sp, #0x428 ; 
+0x006623a0 addeq     sp, #4 ; 
+0x006623a2 popeq.w   {r4, r5, r6, r7, r8, sb, pc} ; 
+0x006623a6 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::UiMessageHandler::Broadcast 006623e8 =====
+0x006623e8 push.w    {r4, r5, r6, r7, r8, sb, lr} ; 
+0x006623ec sub.w     sp, sp, #0x428 ; 
+0x006623f0 sub       sp, #4 ; 
+0x006623f2 mov       r6, r0 ; 
+0x006623f4 ldr       r0, [pc, #0x74] ; 
+0x006623f6 mov       r5, r1 ; 
+0x006623f8 add       r0, pc ; 
+0x006623fa ldr       r0, [r0] ; 
+0x006623fc ldr       r0, [r0] ; 
+0x006623fe str.w     r0, [sp, #0x428] ; 
+0x00662402 ldrh      r4, [r5] ; 
+0x00662404 blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x00662408 blx       #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0x0066240c vmov      s0, r0 ; 
+0x00662410 str       r4, [sp, #8] ; 
+0x00662412 mov       r7, sp ; 
+0x00662414 add.w     r4, r7, #0x10 ; 
+0x00662418 vcvt.f64.f32 d0, s0 ; 
+0x0066241c mov       r1, r5 ; 
+0x0066241e mov       r0, r4 ; 
+0x00662420 vstr      d0, [sp] ; 
+0x00662424 blx       #0x4bb358 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::MessageGameToEngine(Anki::Cozmo::ExternalInterface::MessageGameToEngine&&)
+0x00662428 add.w     r0, r6, #0x34 ; 
+0x0066242c mov       r1, r7 ; 
+0x0066242e bl        #0x6623c8 ; 
+0x00662432 mov       r0, r4 ; 
+0x00662434 blx       #0x4ae0b0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::ClearCurrent()
+0x00662438 ldr       r0, [pc, #0x34] ; 
+0x0066243a ldr.w     r1, [sp, #0x428] ; 
+0x0066243e add       r0, pc ; 
+0x00662440 ldr       r0, [r0] ; 
+0x00662442 ldr       r0, [r0] ; 
+0x00662444 subs      r0, r0, r1 ; 
+0x00662446 ittt      eq ; 
+0x00662448 addeq.w   sp, sp, #0x428 ; 
+0x0066244c addeq     sp, #4 ; 
+0x0066244e popeq.w   {r4, r5, r6, r7, r8, sb, pc} ; 
+0x00662452 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::UiMessageHandler::BroadcastDeferred 00662474 =====
+0x00662474 push      {r4, r5, r6, lr} ; 
+0x00662476 mov       r5, r0 ; 
+0x00662478 add.w     r4, r5, #0x64 ; 
+0x0066247c mov       r6, r1 ; 
+0x0066247e mov       r0, r4 ; 
+0x00662480 blx       #0x4a6784 ; std::__ndk1::mutex::lock()
+0x00662484 ldrd      r0, r1, [r5, #0x50] ; 
+0x00662488 cmp       r0, r1 ; 
+0x0066248a bhs       #0x66249c ; 
+0x0066248c mov       r1, r6 ; 
+0x0066248e blx       #0x4bb340 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::MessageGameToEngine(Anki::Cozmo::ExternalInterface::MessageGameToEngine const&)
+0x00662492 ldr       r0, [r5, #0x50] ; 
+0x00662494 add.w     r0, r0, #0x418 ; 
+0x00662498 str       r0, [r5, #0x50] ; 
+0x0066249a b         #0x6624a6 ; 
+0x0066249c add.w     r0, r5, #0x4c ; 
+0x006624a0 mov       r1, r6 ; 
+0x006624a2 blx       #0x4bb364 ; void std::__ndk1::vector<Anki::Cozmo::ExternalInterface::MessageGameToEngine, std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageGameToEngine> >::__emplace_back_slow_path<Anki::Cozmo::ExternalInterface::MessageGameToEngine const&>(Anki::Cozmo::ExternalInterface::MessageGameToEngine const&)
+0x006624a6 mov       r0, r4 ; 
+0x006624a8 pop.w     {r4, r5, r6, lr} ; 
+0x006624ac b.w       #0x8caf7c ; 
+
+===== Anki::Cozmo::UiMessageHandler::Subscribe 006626cc =====
+0x006626cc push      {r4, r5, r6, r7, lr} ; 
+0x006626ce sub       sp, #0x24 ; 
+0x006626d0 mov       r5, r0 ; 
+0x006626d2 ldr       r0, [pc, #0x74] ; 
+0x006626d4 add       r4, sp, #8 ; 
+0x006626d6 mov       r6, r1 ; 
+0x006626d8 add       r0, pc ; 
+0x006626da mov       r1, r3 ; 
+0x006626dc ldr       r0, [r0] ; 
+0x006626de ldr       r0, [r0] ; 
+0x006626e0 str       r0, [sp, #0x20] ; 
+0x006626e2 mov       r0, r4 ; 
+0x006626e4 ldrh      r7, [r2] ; 
+0x006626e6 blx       #0x4ac838 ; std::__ndk1::function<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&)>::function(std::__ndk1::function<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&)> const&)
+0x006626ea str       r7, [sp, #4] ; 
+0x006626ec add.w     r0, r6, #0x20 ; 
+0x006626f0 add       r1, sp, #4 ; 
+0x006626f2 blx       #0x4bb3b8 ; std::__ndk1::unordered_map<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> >, std::__ndk1::hash<unsigned int>, std::__ndk1::equal_to<unsigned int>, std::__ndk1::allocator<std::__ndk1::pair<unsigned int const, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > > > >::operator[](unsigned int const&)
+0x006626f6 mov       r1, r0 ; 
+0x006626f8 add       r6, sp, #8 ; 
+0x006626fa mov       r0, r5 ; 
+0x006626fc mov       r2, r6 ; 
+0x006626fe bl        #0x66411c ; 
+0x00662702 ldr       r0, [sp, #0x18] ; 
+0x00662704 cmp       r6, r0 ; 
+0x00662706 beq       #0x662710 ; 
+0x00662708 cbz       r0, #0x662716 ; 
+0x0066270a ldr       r1, [r0] ; 
+0x0066270c ldr       r1, [r1, #0x14] ; 
+0x0066270e b         #0x662714 ; 
+0x00662710 ldr       r1, [r0] ; 
+0x00662712 ldr       r1, [r1, #0x10] ; 
+0x00662714 blx       r1 ; 
+0x00662716 ldr       r0, [pc, #0x34] ; 
+0x00662718 ldr       r1, [sp, #0x20] ; 
+0x0066271a add       r0, pc ; 
+0x0066271c ldr       r0, [r0] ; 
+0x0066271e ldr       r0, [r0] ; 
+0x00662720 subs      r0, r0, r1 ; 
+0x00662722 itt       eq ; 
+0x00662724 addeq     sp, #0x24 ; 
+0x00662726 popeq     {r4, r5, r6, r7, pc} ; 
+0x00662728 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::UiMessageHandler::ProcessMessages 00662800 =====
+0x00662800 push.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0x00662804 sub       sp, #0x2c ; 
+0x00662806 mov       r5, r0 ; 
+0x00662808 movs      r7, #1 ; 
+0x0066280a ldrb.w    r0, [r5, #0xf1] ; 
+0x0066280e cmp       r0, #0 ; 
+0x00662810 beq.w     #0x66291c ; 
+0x00662814 ldr       r0, [pc, #0x14c] ; 
+0x00662816 movs      r6, #0 ; 
+0x00662818 ldr       r1, [pc, #0x14c] ; 
+0x0066281a mov.w     r8, #0 ; 
+0x0066281e add       r0, pc ; 
+0x00662820 add       r1, pc ; 
+0x00662822 ldr       r0, [r0] ; 
+0x00662824 str       r0, [sp, #0x10] ; 
+0x00662826 ldr       r0, [r1] ; 
+0x00662828 str       r0, [sp, #0xc] ; 
+0x0066282a movs      r0, #0 ; 
+0x0066282c uxtb.w    sb, r0 ; 
+0x00662830 strb.w    r0, [r5, #0xf0] ; 
+0x00662834 add.w     r0, r5, sb, lsl #2 ; 
+0x00662838 ldr.w     sl, [r0, #4] ; 
+0x0066283c cmp.w     sl, #0 ; 
+0x00662840 beq       #0x662908 ; 
+0x00662842 ldr.w     r0, [sl] ; 
+0x00662846 ldr       r1, [r0, #0x10] ; 
+0x00662848 mov       r0, sl ; 
+0x0066284a blx       r1 ; 
+0x0066284c eor       r4, r0, #1 ; 
+0x00662850 strd      r6, r6, [sp, #0x20] ; 
+0x00662854 str       r6, [sp, #0x28] ; 
+0x00662856 ldr.w     r0, [sl] ; 
+0x0066285a ldr       r2, [r0, #0x2c] ; 
+0x0066285c add       r1, sp, #0x20 ; 
+0x0066285e mov       r0, sl ; 
+0x00662860 blx       r2 ; 
+0x00662862 mov       fp, r0 ; 
+0x00662864 cmp.w     fp, #1 ; 
+0x00662868 bne       #0x6628f2 ; 
+0x0066286a ldrd      r1, r0, [sp, #0x20] ; 
+0x0066286e subs      r2, r0, r1 ; 
+0x00662870 mov       r0, r5 ; 
+0x00662872 mov       r3, sb ; 
+0x00662874 strd      r4, r7, [sp] ; 
+0x00662878 blx       #0x4bb3dc ; Anki::Cozmo::UiMessageHandler::ProcessMessageBytes(unsigned char const*, unsigned int, Anki::Cozmo::UiConnectionType, bool, bool)
+0x0066287c cbz       r0, #0x6628f2 ; 
+0x0066287e mov       r0, sb ; 
+0x00662880 blx       #0x4bb1b4 ; Anki::Cozmo::IsExternalSdkConnection(Anki::Cozmo::UiConnectionType)
+0x00662884 cmp       r0, #1 ; 
+0x00662886 bne       #0x6628e6 ; 
+0x00662888 ldrd      r2, r1, [sp, #0xc] ; 
+0x0066288c mov       r0, sl ; 
+0x0066288e movs      r3, #0 ; 
+0x00662890 blx       #0x4a4ec4 ; __dynamic_cast
+0x00662894 mov       r8, r0 ; 
+0x00662896 cmp.w     r8, #0 ; 
+0x0066289a beq       #0x6628ec ; 
+0x0066289c ldr.w     r7, [r8, #0x9c] ; 
+0x006628a0 strd      r6, r6, [sp, #0x14] ; 
+0x006628a4 str       r6, [sp, #0x1c] ; 
+0x006628a6 adr       r0, #0xc4 ; 
+0x006628a8 add       r1, sp, #0x14 ; 
+0x006628aa adr       r2, #0xfc ; 
+0x006628ac mov       r3, r7 ; 
+0x006628ae blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x006628b2 ldr       r0, [sp, #0x14] ; 
+0x006628b4 cbz       r0, #0x6628d4 ; 
+0x006628b6 ldr       r1, [sp, #0x18] ; 
+0x006628b8 cmp       r1, r0 ; 
+0x006628ba itttt     ne ; 
+0x006628bc subne.w   r2, r1, #8 ; 
+0x006628c0 subne     r2, r2, r0 ; 
+0x006628c2 mvnne     r3, #7 ; 
+0x006628c6 bicne.w   r2, r3, r2 ; 
+0x006628ca itt       ne ; 
+0x006628cc addne     r1, r1, r2 ; 
+0x006628ce strne     r1, [sp, #0x18] ; 
+0x006628d0 blx       #0x4a40cc ; operator delete(void*)
+0x006628d4 ldr.w     r0, [r8] ; 
+0x006628d8 ldr       r2, [r0, #0x18] ; 
+0x006628da mov       r0, r8 ; 
+0x006628dc mov       r1, r7 ; 
+0x006628de blx       r2 ; 
+0x006628e0 mov.w     r8, #0 ; 
+0x006628e4 b         #0x6628f0 ; 
+0x006628e6 mov.w     r8, #1 ; 
+0x006628ea b         #0x6628f2 ; 
+0x006628ec mov.w     r8, #1 ; 
+0x006628f0 movs      r7, #1 ; 
+0x006628f2 ldr       r0, [sp, #0x20] ; 
+0x006628f4 cbz       r0, #0x662902 ; 
+0x006628f6 ldr       r1, [sp, #0x24] ; 
+0x006628f8 cmp       r1, r0 ; 
+0x006628fa it        ne ; 
+0x006628fc strne     r0, [sp, #0x24] ; 
+0x006628fe blx       #0x4a40cc ; operator delete(void*)
+0x00662902 cmp.w     fp, #0 ; 
+0x00662906 bne       #0x662850 ; 
+0x00662908 add.w     r0, sb, #1 ; 
+0x0066290c uxtb      r1, r0 ; 
+0x0066290e cmp       r1, #3 ; 
+0x00662910 blo.w     #0x66282c ; 
+0x00662914 movs      r0, #3 ; 
+0x00662916 mov       r7, r8 ; 
+0x00662918 strb.w    r0, [r5, #0xf0] ; 
+0x0066291c mov       r0, r7 ; 
+0x0066291e add       sp, #0x2c ; 
+0x00662920 pop.w     {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+
+===== Anki::Cozmo::UiMessageHandler::Update 006629e8 =====
+0x006629e8 push.w    {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0x006629ec sub       sp, #0x13c ; 
+0x006629ee mov       sl, r0 ; 
+0x006629f0 ldr       r0, [pc, #0x2ec] ; 
+0x006629f2 movw      r1, #0xcccd ; 
+0x006629f6 add.w     sb, sp, #0x30 ; 
+0x006629fa add       r0, pc ; 
+0x006629fc movt      r1, #0xcccc ; 
+0x00662a00 add.w     r8, sp, #0x18 ; 
+0x00662a04 mov.w     fp, #0 ; 
+0x00662a08 ldr       r0, [r0] ; 
+0x00662a0a ldr       r0, [r0] ; 
+0x00662a0c str       r0, [sp, #0x138] ; 
+0x00662a0e ldr.w     r0, [sl, #0xec] ; 
+0x00662a12 umull     r1, r2, r0, r1 ; 
+0x00662a16 adds      r1, r0, #1 ; 
+0x00662a18 str.w     r1, [sl, #0xec] ; 
+0x00662a1c lsrs      r1, r2, #4 ; 
+0x00662a1e add.w     r1, r1, r1, lsl #2 ; 
+0x00662a22 sub.w     r5, r0, r1, lsl #2 ; 
+0x00662a26 movs      r0, #0 ; 
+0x00662a28 uxtb      r7, r0 ; 
+0x00662a2a add.w     r0, sl, r7, lsl #2 ; 
+0x00662a2e ldr       r6, [r0, #4] ; 
+0x00662a30 cbz       r6, #0x662a7e ; 
+0x00662a32 ldr       r0, [r6] ; 
+0x00662a34 ldr       r1, [r0, #0xc] ; 
+0x00662a36 mov       r0, r6 ; 
+0x00662a38 blx       r1 ; 
+0x00662a3a cbnz      r5, #0x662a7e ; 
+0x00662a3c ldr       r0, [r6] ; 
+0x00662a3e ldr       r1, [r0, #0x20] ; 
+0x00662a40 mov       r0, r6 ; 
+0x00662a42 blx       r1 ; 
+0x00662a44 cbz       r0, #0x662a7e ; 
+0x00662a46 ldr.w     r4, [r6, #0x80] ; 
+0x00662a4a adds      r0, r4, #1 ; 
+0x00662a4c str.w     r0, [r6, #0x80] ; 
+0x00662a50 blx       #0x4a889c ; Anki::Util::Time::UniversalTime::GetCurrentTimeInMilliseconds()
+0x00662a54 vmov      d0, r0, r1 ; 
+0x00662a58 mov       r0, sb ; 
+0x00662a5a mov       r1, r8 ; 
+0x00662a5c str       r4, [sp, #0x18] ; 
+0x00662a5e strb.w    fp, [sp, #0x28] ; 
+0x00662a62 vstr      d0, [sp, #0x20] ; 
+0x00662a66 blx       #0x4bb3e8 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::Ping&&)
+0x00662a6a ldr.w     r0, [sl] ; 
+0x00662a6e ldr       r3, [r0, #0x48] ; 
+0x00662a70 mov       r0, sl ; 
+0x00662a72 mov       r1, sb ; 
+0x00662a74 mov       r2, r7 ; 
+0x00662a76 blx       r3 ; 
+0x00662a78 mov       r0, sb ; 
+0x00662a7a blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x00662a7e adds      r0, r7, #1 ; 
+0x00662a80 uxtb      r1, r0 ; 
+0x00662a82 cmp       r1, #3 ; 
+0x00662a84 blo       #0x662a28 ; 
+0x00662a86 mov       r0, sl ; 
+0x00662a88 blx       #0x4bb3f4 ; Anki::Cozmo::UiMessageHandler::ProcessMessages()
+0x00662a8c mov       r4, r0 ; 
+0x00662a8e cbz       r4, #0x662aaa ; 
+0x00662a90 ldr       r0, [pc, #0x2d4] ; 
+0x00662a92 ldr       r1, [sp, #0x138] ; 
+0x00662a94 add       r0, pc ; 
+0x00662a96 ldr       r0, [r0] ; 
+0x00662a98 ldr       r0, [r0] ; 
+0x00662a9a subs      r0, r0, r1 ; 
+0x00662a9c ittt      eq ; 
+0x00662a9e moveq     r0, r4 ; 
+0x00662aa0 addeq     sp, #0x13c ; 
+0x00662aa2 popeq.w   {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+0x00662aa6 blx       #0x4a4fe4 ; __stack_chk_fail
+0x00662aaa add       r5, sp, #0x18 ; 
+0x00662aac add.w     r8, sp, #0x30 ; 
+0x00662ab0 mov.w     sb, #0 ; 
+0x00662ab4 str       r4, [sp, #0xc] ; 
+0x00662ab6 uxtb.w    r4, sb ; 
+0x00662aba add.w     r0, sl, r4, lsl #2 ; 
+0x00662abe ldr       r0, [r0, #4] ; 
+0x00662ac0 cmp       r0, #0 ; 
+0x00662ac2 beq       #0x662bae ; 
+0x00662ac4 movs      r1, #0 ; 
+0x00662ac6 strd      r1, r1, [sp, #0x18] ; 
+0x00662aca str       r1, [sp, #0x20] ; 
+0x00662acc ldr       r1, [r0] ; 
+0x00662ace ldr       r2, [r1, #0x1c] ; 
+0x00662ad0 mov       r1, r5 ; 
+0x00662ad2 blx       r2 ; 
+0x00662ad4 ldrd      fp, r5, [sp, #0x18] ; 
+0x00662ad8 cmp       fp, r5 ; 
+0x00662ada beq       #0x662b86 ; 
+0x00662adc ldr.w     r6, [fp] ; 
+0x00662ae0 ldr.w     r0, [sl, #0xe8] ; 
+0x00662ae4 cmp       r6, r0 ; 
+0x00662ae6 bne       #0x662b1a ; 
+0x00662ae8 mov       r0, sl ; 
+0x00662aea mov       r1, r6 ; 
+0x00662aec mov       r2, r4 ; 
+0x00662aee blx       #0x4bb190 ; Anki::Cozmo::UiMessageHandler::ConnectToUiDevice(int, Anki::Cozmo::UiConnectionType)
+0x00662af2 cmp       r0, #1 ; 
+0x00662af4 bne       #0x662b3c ; 
+0x00662af6 movs      r0, #0 ; 
+0x00662af8 strd      r0, r0, [sp, #0x30] ; 
+0x00662afc str       r0, [sp, #0x38] ; 
+0x00662afe mov       r0, r4 ; 
+0x00662b00 blx       #0x4bb040 ; Anki::Cozmo::EnumToString(Anki::Cozmo::UiConnectionType)
+0x00662b04 ldr       r1, [pc, #0x268] ; 
+0x00662b06 adr       r3, #0x230 ; 
+0x00662b08 strd      r0, r6, [sp] ; 
+0x00662b0c mov       r2, r8 ; 
+0x00662b0e ldr       r0, [pc, #0x25c] ; 
+0x00662b10 add       r1, pc ; 
+0x00662b12 add       r0, pc ; 
+0x00662b14 blx       #0x4a505c ; Anki::Util::sChanneledInfoF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00662b18 b         #0x662b58 ; 
+0x00662b1a ldr.w     r0, [sl] ; 
+0x00662b1e ldr       r7, [r0, #0x1c] ; 
+0x00662b20 str       r6, [sp, #0x14] ; 
+0x00662b22 strb.w    sb, [sp, #0x10] ; 
+0x00662b26 add       r1, sp, #0x10 ; 
+0x00662b28 mov       r0, r8 ; 
+0x00662b2a blx       #0x4bb400 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::UiDeviceAvailable&&)
+0x00662b2e mov       r0, sl ; 
+0x00662b30 mov       r1, r8 ; 
+0x00662b32 blx       r7 ; 
+0x00662b34 mov       r0, r8 ; 
+0x00662b36 blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x00662b3a b         #0x662b7a ; 
+0x00662b3c movs      r0, #0 ; 
+0x00662b3e strd      r0, r0, [sp, #0x30] ; 
+0x00662b42 str       r0, [sp, #0x38] ; 
+0x00662b44 mov       r0, r4 ; 
+0x00662b46 blx       #0x4bb040 ; Anki::Cozmo::EnumToString(Anki::Cozmo::UiConnectionType)
+0x00662b4a mov       r3, r0 ; 
+0x00662b4c adr       r0, #0x194 ; 
+0x00662b4e adr       r2, #0x1bc ; 
+0x00662b50 mov       r1, r8 ; 
+0x00662b52 str       r6, [sp] ; 
+0x00662b54 blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x00662b58 ldr       r0, [sp, #0x30] ; 
+0x00662b5a cbz       r0, #0x662b7a ; 
+0x00662b5c ldr       r1, [sp, #0x34] ; 
+0x00662b5e cmp       r1, r0 ; 
+0x00662b60 itttt     ne ; 
+0x00662b62 subne.w   r2, r1, #8 ; 
+0x00662b66 subne     r2, r2, r0 ; 
+0x00662b68 mvnne     r3, #7 ; 
+0x00662b6c bicne.w   r2, r3, r2 ; 
+0x00662b70 itt       ne ; 
+0x00662b72 addne     r1, r1, r2 ; 
+0x00662b74 strne     r1, [sp, #0x34] ; 
+0x00662b76 blx       #0x4a40cc ; operator delete(void*)
+0x00662b7a add.w     fp, fp, #4 ; 
+0x00662b7e cmp       r5, fp ; 
+0x00662b80 bne       #0x662adc ; 
+0x00662b82 ldr.w     fp, [sp, #0x18] ; 
+0x00662b86 add       r5, sp, #0x18 ; 
+0x00662b88 cmp.w     fp, #0 ; 
+0x00662b8c beq       #0x662bae ; 
+0x00662b8e ldr       r0, [sp, #0x1c] ; 
+0x00662b90 cmp       r0, fp ; 
+0x00662b92 itttt     ne ; 
+0x00662b94 subne     r1, r0, #4 ; 
+0x00662b96 subne.w   r1, r1, fp ; 
+0x00662b9a mvnne     r2, #3 ; 
+0x00662b9e bicne.w   r1, r2, r1 ; 
+0x00662ba2 itt       ne ; 
+0x00662ba4 addne     r0, r0, r1 ; 
+0x00662ba6 strne     r0, [sp, #0x1c] ; 
+0x00662ba8 mov       r0, fp ; 
+0x00662baa blx       #0x4a40cc ; operator delete(void*)
+0x00662bae add.w     sb, r4, #1 ; 
+0x00662bb2 uxtb.w    r0, sb ; 
+0x00662bb6 cmp       r0, #3 ; 
+0x00662bb8 blo.w     #0x662ab6 ; 
+0x00662bbc add.w     r6, sl, #0x64 ; 
+0x00662bc0 mov       r0, r6 ; 
+0x00662bc2 blx       #0x4a6784 ; std::__ndk1::mutex::lock()
+0x00662bc6 ldrd      r7, r5, [sl, #0x4c] ; 
+0x00662bca cmp       r5, r7 ; 
+0x00662bcc beq       #0x662c00 ; 
+0x00662bce cmp       r7, r5 ; 
+0x00662bd0 beq       #0x662bea ; 
+0x00662bd2 ldr.w     r0, [sl] ; 
+0x00662bd6 ldr       r2, [r0, #0xc] ; 
+0x00662bd8 mov       r0, sl ; 
+0x00662bda mov       r1, r7 ; 
+0x00662bdc blx       r2 ; 
+0x00662bde add.w     r7, r7, #0x418 ; 
+0x00662be2 cmp       r5, r7 ; 
+0x00662be4 bne       #0x662bd2 ; 
+0x00662be6 ldr.w     r7, [sl, #0x4c] ; 
+0x00662bea ldr.w     r0, [sl, #0x50] ; 
+0x00662bee cmp       r0, r7 ; 
+0x00662bf0 beq       #0x662c00 ; 
+0x00662bf2 sub.w     r0, r0, #0x418 ; 
+0x00662bf6 str.w     r0, [sl, #0x50] ; 
+0x00662bfa blx       #0x4ae0b0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::ClearCurrent()
+0x00662bfe b         #0x662bea ; 
+0x00662c00 mov       r0, r6 ; 
+0x00662c02 blx       #0x4a6790 ; std::__ndk1::mutex::unlock()
+0x00662c06 mov       r0, r6 ; 
+0x00662c08 blx       #0x4a6784 ; std::__ndk1::mutex::lock()
+0x00662c0c ldrd      r7, r5, [sl, #0x58] ; 
+0x00662c10 ldr       r4, [sp, #0xc] ; 
+0x00662c12 cmp       r5, r7 ; 
+0x00662c14 beq       #0x662c48 ; 
+0x00662c16 cmp       r7, r5 ; 
+0x00662c18 beq       #0x662c32 ; 
+0x00662c1a ldr.w     r0, [sl] ; 
+0x00662c1e ldr       r2, [r0, #0x1c] ; 
+0x00662c20 mov       r0, sl ; 
+0x00662c22 mov       r1, r7 ; 
+0x00662c24 blx       r2 ; 
+0x00662c26 add.w     r7, r7, #0x108 ; 
+0x00662c2a cmp       r5, r7 ; 
+0x00662c2c bne       #0x662c1a ; 
+0x00662c2e ldr.w     r7, [sl, #0x58] ; 
+0x00662c32 ldr.w     r0, [sl, #0x5c] ; 
+0x00662c36 cmp       r0, r7 ; 
+0x00662c38 beq       #0x662c48 ; 
+0x00662c3a sub.w     r0, r0, #0x108 ; 
+0x00662c3e str.w     r0, [sl, #0x5c] ; 
+0x00662c42 blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x00662c46 b         #0x662c32 ; 
+0x00662c48 mov       r0, r6 ; 
+0x00662c4a blx       #0x4a6790 ; std::__ndk1::mutex::unlock()
+0x00662c4e mov       r0, sl ; 
+0x00662c50 blx       #0x4bb40c ; Anki::Cozmo::UiMessageHandler::UpdateSdk()
+0x00662c54 b         #0x662a90 ; 
+
+===== Anki::Cozmo::Robot::Broadcast 00511de8 =====
+0x00511de8 ldr       r0, [r0] ; 
+0x00511dea ldr       r0, [r0, #4] ; 
+0x00511dec cbz       r0, #0x511dfa ; 
+0x00511dee push      {r7, lr} ; 
+0x00511df0 ldr       r2, [r0] ; 
+0x00511df2 ldr       r2, [r2, #0x18] ; 
+0x00511df4 blx       r2 ; 
+0x00511df6 movs      r0, #1 ; 
+0x00511df8 pop       {r7, pc} ; 
+0x00511dfa movs      r0, #0 ; 
+0x00511dfc bx        lr ; 
+
+===== Anki::Cozmo::BehaviorManager::Update 005a2f68 =====
+0x005a2f68 push      {r4, r5, r6, r7, lr} ; 
+0x005a2f6a sub       sp, #0x2c ; 
+0x005a2f6c mov       r4, r0 ; 
+0x005a2f6e mov       r5, r1 ; 
+0x005a2f70 ldrb      r0, [r4] ; 
+0x005a2f72 cbz       r0, #0x5a2fe4 ; 
+0x005a2f74 add       r0, sp, #0x18 ; 
+0x005a2f76 mov       r1, r4 ; 
+0x005a2f78 blx       #0x4a7e40 ; Anki::Cozmo::BehaviorManager::GetCurrentActivity()
+0x005a2f7c ldr       r0, [sp, #0x18] ; 
+0x005a2f7e ldr       r1, [r0] ; 
+0x005a2f80 ldr       r2, [r1, #0x20] ; 
+0x005a2f82 mov       r1, r5 ; 
+0x005a2f84 blx       r2 ; 
+0x005a2f86 ldr       r0, [sp, #0x1c] ; 
+0x005a2f88 cbz       r0, #0x5a2f8e ; 
+0x005a2f8a blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a2f8e ldrb.w    r0, [r5, #0x355] ; 
+0x005a2f92 cbnz      r0, #0x5a2f9c ; 
+0x005a2f94 ldrb.w    r0, [r4, #0x20] ; 
+0x005a2f98 cmp       r0, #1 ; 
+0x005a2f9a beq       #0x5a2fa2 ; 
+0x005a2f9c mov       r0, r4 ; 
+0x005a2f9e blx       #0x4b0fd8 ; Anki::Cozmo::BehaviorManager::EnsureRequestGameIsClear()
+0x005a2fa2 ldrb.w    r0, [r4, #0x38] ; 
+0x005a2fa6 cmp       r0, #0 ; 
+0x005a2fa8 beq       #0x5a3060 ; 
+0x005a2faa mov       r0, r4 ; 
+0x005a2fac blx       #0x4b0fe4 ; Anki::Cozmo::BehaviorManager::SelectUIRequestGameBehavior()
+0x005a2fb0 ldr       r0, [r4, #0x1c] ; 
+0x005a2fb2 movs      r1, #0 ; 
+0x005a2fb4 strb.w    r1, [r4, #0x38] ; 
+0x005a2fb8 ldrd      r6, r5, [r0] ; 
+0x005a2fbc cbz       r5, #0x5a2fc4 ; 
+0x005a2fbe mov       r0, r5 ; 
+0x005a2fc0 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a2fc4 cbz       r6, #0x5a303c ; 
+0x005a2fc6 ldr       r0, [r4, #0x1c] ; 
+0x005a2fc8 ldrd      r7, r6, [r0] ; 
+0x005a2fcc cbz       r6, #0x5a3040 ; 
+0x005a2fce mov       r0, r6 ; 
+0x005a2fd0 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a2fd4 mov       r0, r6 ; 
+0x005a2fd6 ldrb.w    r7, [r7, #0x64] ; 
+0x005a2fda blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a2fde movs      r6, #0 ; 
+0x005a2fe0 cmp       r7, #0x2e ; 
+0x005a2fe2 b         #0x5a3048 ; 
+0x005a2fe4 ldr       r0, [pc, #0x2d4] ; 
+0x005a2fe6 movs      r1, #0 ; 
+0x005a2fe8 ldr       r2, [pc, #0x2d4] ; 
+0x005a2fea add       r0, pc ; 
+0x005a2fec strd      r1, r1, [sp, #0x20] ; 
+0x005a2ff0 add       r2, pc ; 
+0x005a2ff2 str       r1, [sp, #0x28] ; 
+0x005a2ff4 add       r1, sp, #0x20 ; 
+0x005a2ff6 blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x005a2ffa ldr       r0, [sp, #0x20] ; 
+0x005a2ffc cbz       r0, #0x5a301c ; 
+0x005a2ffe ldr       r1, [sp, #0x24] ; 
+0x005a3000 cmp       r1, r0 ; 
+0x005a3002 itttt     ne ; 
+0x005a3004 subne.w   r2, r1, #8 ; 
+0x005a3008 subne     r2, r2, r0 ; 
+0x005a300a mvnne     r3, #7 ; 
+0x005a300e bicne.w   r2, r3, r2 ; 
+0x005a3012 itt       ne ; 
+0x005a3014 addne     r1, r1, r2 ; 
+0x005a3016 strne     r1, [sp, #0x24] ; 
+0x005a3018 blx       #0x4a40cc ; operator delete(void*)
+0x005a301c ldr       r0, [pc, #0x2a4] ; 
+0x005a301e movs      r2, #1 ; 
+0x005a3020 ldr       r1, [pc, #0x2a4] ; 
+0x005a3022 add       r0, pc ; 
+0x005a3024 add       r1, pc ; 
+0x005a3026 ldr       r0, [r0] ; 
+0x005a3028 ldr       r1, [r1] ; 
+0x005a302a ldrb      r0, [r0] ; 
+0x005a302c strb      r2, [r1] ; 
+0x005a302e cmp       r0, #0 ; 
+0x005a3030 beq.w     #0x5a31ba ; 
+0x005a3034 blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x005a3038 movs      r2, #1 ; 
+0x005a303a b         #0x5a31ba ; 
+0x005a303c movs      r6, #0 ; 
+0x005a303e b         #0x5a304c ; 
+0x005a3040 ldrb.w    r0, [r7, #0x64] ; 
+0x005a3044 movs      r6, #0 ; 
+0x005a3046 cmp       r0, #0x2e ; 
+0x005a3048 it        eq ; 
+0x005a304a moveq     r6, #1 ; 
+0x005a304c cbz       r5, #0x5a3054 ; 
+0x005a304e mov       r0, r5 ; 
+0x005a3050 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a3054 cmp       r6, #1 ; 
+0x005a3056 ittt      eq ; 
+0x005a3058 ldreq     r0, [r4, #0x30] ; 
+0x005a305a moveq     r1, #1 ; 
+0x005a305c strbeq.w  r1, [r0, #0x220] ; 
+0x005a3060 mov       r0, r4 ; 
+0x005a3062 blx       #0x4b0ff0 ; Anki::Cozmo::BehaviorManager::CheckReactionTriggerStrategies()
+0x005a3066 mov       r5, r0 ; 
+0x005a3068 cbnz      r5, #0x5a307c ; 
+0x005a306a ldr       r0, [r4, #0x30] ; 
+0x005a306c cbnz      r0, #0x5a307c ; 
+0x005a306e ldr       r0, [r4, #0x1c] ; 
+0x005a3070 ldrb      r0, [r0, #0x10] ; 
+0x005a3072 cmp       r0, #0x16 ; 
+0x005a3074 itt       eq ; 
+0x005a3076 moveq     r0, r4 ; 
+0x005a3078 blxeq     #0x4b0ed0 ; 
+0x005a307c cbnz      r5, #0x5a30a6 ; 
+0x005a307e ldr       r0, [r4, #0x30] ; 
+0x005a3080 cbz       r0, #0x5a30a6 ; 
+0x005a3082 ldr       r1, [r4, #0x1c] ; 
+0x005a3084 ldrd      r6, r5, [r1] ; 
+0x005a3088 cbz       r5, #0x5a3094 ; 
+0x005a308a mov       r0, r5 ; 
+0x005a308c blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a3090 ldr       r0, [r4, #0x30] ; 
+0x005a3092 cbz       r0, #0x5a30a0 ; 
+0x005a3094 cmp       r6, r0 ; 
+0x005a3096 beq       #0x5a309e ; 
+0x005a3098 mov       r0, r4 ; 
+0x005a309a blx       #0x4b0ffc ; Anki::Cozmo::BehaviorManager::SwitchToUIGameRequestBehavior()
+0x005a309e cbz       r5, #0x5a30a6 ; 
+0x005a30a0 mov       r0, r5 ; 
+0x005a30a2 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a30a6 ldr       r0, [r4, #0x1c] ; 
+0x005a30a8 ldrd      r6, r5, [r0] ; 
+0x005a30ac cbz       r5, #0x5a30b4 ; 
+0x005a30ae mov       r0, r5 ; 
+0x005a30b0 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a30b4 cbz       r6, #0x5a312e ; 
+0x005a30b6 ldr       r0, [r4, #0x1c] ; 
+0x005a30b8 ldrb      r7, [r0, #0x10] ; 
+0x005a30ba mov       r0, r6 ; 
+0x005a30bc blx       #0x4b1008 ; Anki::Cozmo::IBehavior::Update()
+0x005a30c0 cmp       r0, #0 ; 
+0x005a30c2 beq       #0x5a3134 ; 
+0x005a30c4 cmp       r0, #2 ; 
+0x005a30c6 bne       #0x5a312e ; 
+0x005a30c8 movs      r0, #0 ; 
+0x005a30ca strd      r0, r0, [sp, #0x20] ; 
+0x005a30ce str       r0, [sp, #0x28] ; 
+0x005a30d0 ldrb.w    r0, [r6, #0x3c] ; 
+0x005a30d4 blx       #0x4a7e58 ; Anki::Cozmo::EnumToString(Anki::Cozmo::BehaviorID)
+0x005a30d8 ldr.w     ip, [pc, #0x158] ; 
+0x005a30dc add       ip, pc ; 
+0x005a30de adr       r1, #0x158 ; 
+0x005a30e0 add       r2, sp, #0x20 ; 
+0x005a30e2 adr       r3, #0x17c ; 
+0x005a30e4 str       r0, [sp] ; 
+0x005a30e6 mov       r0, ip ; 
+0x005a30e8 blx       #0x4a5b84 ; Anki::Util::sChanneledDebugF(char const*, char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x005a30ec ldr       r0, [sp, #0x20] ; 
+0x005a30ee cbz       r0, #0x5a310e ; 
+0x005a30f0 ldr       r1, [sp, #0x24] ; 
+0x005a30f2 cmp       r1, r0 ; 
+0x005a30f4 itttt     ne ; 
+0x005a30f6 subne.w   r2, r1, #8 ; 
+0x005a30fa subne     r2, r2, r0 ; 
+0x005a30fc mvnne     r3, #7 ; 
+0x005a3100 bicne.w   r2, r3, r2 ; 
+0x005a3104 itt       ne ; 
+0x005a3106 addne     r1, r1, r2 ; 
+0x005a3108 strne     r1, [sp, #0x24] ; 
+0x005a310a blx       #0x4a40cc ; operator delete(void*)
+0x005a310e cmp       r5, #0 ; 
+0x005a3110 strd      r6, r5, [sp, #0x10] ; 
+0x005a3114 beq       #0x5a311c ; 
+0x005a3116 mov       r0, r5 ; 
+0x005a3118 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a311c movs      r2, #0 ; 
+0x005a311e cmp       r7, #0x16 ; 
+0x005a3120 it        ne ; 
+0x005a3122 movne     r2, #1 ; 
+0x005a3124 add       r1, sp, #0x10 ; 
+0x005a3126 mov       r0, r4 ; 
+0x005a3128 blx       #0x4b1014 ; Anki::Cozmo::BehaviorManager::FinishCurrentBehavior(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x005a312c b         #0x5a31aa ; 
+0x005a312e cmp       r5, #0 ; 
+0x005a3130 bne       #0x5a31b2 ; 
+0x005a3132 b         #0x5a31b8 ; 
+0x005a3134 movs      r0, #0 ; 
+0x005a3136 strd      r0, r0, [sp, #0x20] ; 
+0x005a313a str       r0, [sp, #0x28] ; 
+0x005a313c ldrb.w    r0, [r6, #0x3c] ; 
+0x005a3140 blx       #0x4a7e58 ; Anki::Cozmo::EnumToString(Anki::Cozmo::BehaviorID)
+0x005a3144 mov       r3, r0 ; 
+0x005a3146 ldr       r0, [pc, #0x144] ; 
+0x005a3148 add       r0, pc ; 
+0x005a314a add       r1, sp, #0x20 ; 
+0x005a314c adr       r2, #0x140 ; 
+0x005a314e blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x005a3152 ldr       r0, [sp, #0x20] ; 
+0x005a3154 cbz       r0, #0x5a3174 ; 
+0x005a3156 ldr       r1, [sp, #0x24] ; 
+0x005a3158 cmp       r1, r0 ; 
+0x005a315a itttt     ne ; 
+0x005a315c subne.w   r2, r1, #8 ; 
+0x005a3160 subne     r2, r2, r0 ; 
+0x005a3162 mvnne     r3, #7 ; 
+0x005a3166 bicne.w   r2, r3, r2 ; 
+0x005a316a itt       ne ; 
+0x005a316c addne     r1, r1, r2 ; 
+0x005a316e strne     r1, [sp, #0x24] ; 
+0x005a3170 blx       #0x4a40cc ; operator delete(void*)
+0x005a3174 ldr       r0, [pc, #0x13c] ; 
+0x005a3176 movs      r2, #1 ; 
+0x005a3178 ldr       r1, [pc, #0x13c] ; 
+0x005a317a add       r0, pc ; 
+0x005a317c add       r1, pc ; 
+0x005a317e ldr       r0, [r0] ; 
+0x005a3180 ldr       r1, [r1] ; 
+0x005a3182 ldrb      r0, [r0] ; 
+0x005a3184 strb      r2, [r1] ; 
+0x005a3186 cbz       r0, #0x5a318c ; 
+0x005a3188 blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x005a318c cmp       r5, #0 ; 
+0x005a318e strd      r6, r5, [sp, #8] ; 
+0x005a3192 beq       #0x5a319a ; 
+0x005a3194 mov       r0, r5 ; 
+0x005a3196 blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x005a319a movs      r2, #0 ; 
+0x005a319c cmp       r7, #0x16 ; 
+0x005a319e it        ne ; 
+0x005a31a0 movne     r2, #1 ; 
+0x005a31a2 add       r1, sp, #8 ; 
+0x005a31a4 mov       r0, r4 ; 
+0x005a31a6 blx       #0x4b1014 ; Anki::Cozmo::BehaviorManager::FinishCurrentBehavior(std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>, bool)
+0x005a31aa cbz       r5, #0x5a31b8 ; 
+0x005a31ac mov       r0, r5 ; 
+0x005a31ae blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a31b2 mov       r0, r5 ; 
+0x005a31b4 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a31b8 movs      r2, #0 ; 
+0x005a31ba mov       r0, r2 ; 
+0x005a31bc add       sp, #0x2c ; 
+0x005a31be pop       {r4, r5, r6, r7, pc} ; 
+
+===== Anki::Cozmo::SelectionBSRunnableChooser::SelectionBSRunnableChooser 0060a848 =====
+0x0060a848 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x0060a84c sub       sp, #0x48 ; 
+0x0060a84e mov       r4, r0 ; 
+0x0060a850 ldr       r0, [pc, #0x1e4] ; 
+0x0060a852 mov       r6, r1 ; 
+0x0060a854 add       r0, pc ; 
+0x0060a856 ldr       r0, [r0] ; 
+0x0060a858 ldr       r0, [r0] ; 
+0x0060a85a str       r0, [sp, #0x44] ; 
+0x0060a85c mov       r0, r4 ; 
+0x0060a85e bl        #0x609f28 ; 
+0x0060a862 ldr       r0, [pc, #0x1d8] ; 
+0x0060a864 add.w     r8, r4, #0x20 ; 
+0x0060a868 str       r6, [r4, #0x1c] ; 
+0x0060a86a movs      r1, #0x1c ; 
+0x0060a86c add       r0, pc ; 
+0x0060a86e ldr       r0, [r0] ; 
+0x0060a870 adds      r0, #8 ; 
+0x0060a872 str       r0, [r4] ; 
+0x0060a874 mov       r0, r8 ; 
+0x0060a876 blx       #0x4a403c ; __aeabi_memclr4
+0x0060a87a movs      r0, #0 ; 
+0x0060a87c strb.w    r0, [r4, #0x40] ; 
+0x0060a880 mov.w     r0, #-1 ; 
+0x0060a884 str       r0, [r4, #0x3c] ; 
+0x0060a886 mov       r0, r6 ; 
+0x0060a888 blx       #0x4a56f8 ; Anki::Cozmo::Robot::HasExternalInterface() const
+0x0060a88c cmp       r0, #1 ; 
+0x0060a88e bne       #0x60a984 ; 
+0x0060a890 ldr       r0, [r4, #0x1c] ; 
+0x0060a892 blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x0060a896 mov       r1, r0 ; 
+0x0060a898 ldr       r0, [pc, #0x1a4] ; 
+0x0060a89a add       r7, sp, #0x28 ; 
+0x0060a89c ldr       r3, [pc, #0x1a4] ; 
+0x0060a89e add       r0, pc ; 
+0x0060a8a0 ldr       r2, [r1] ; 
+0x0060a8a2 add       r3, pc ; 
+0x0060a8a4 ldr       r0, [r0] ; 
+0x0060a8a6 ldr       r5, [r2, #0x2c] ; 
+0x0060a8a8 ldr       r2, [r3] ; 
+0x0060a8aa adds      r0, #8 ; 
+0x0060a8ac movs      r3, #0x94 ; 
+0x0060a8ae str       r2, [sp, #0x2c] ; 
+0x0060a8b0 movs      r2, #0 ; 
+0x0060a8b2 strh.w    r3, [sp, #6] ; 
+0x0060a8b6 strd      r2, r4, [sp, #0x30] ; 
+0x0060a8ba str       r7, [sp, #0x38] ; 
+0x0060a8bc str       r0, [sp, #0x28] ; 
+0x0060a8be add       r0, sp, #8 ; 
+0x0060a8c0 add.w     r2, sp, #6 ; 
+0x0060a8c4 mov       r3, r7 ; 
+0x0060a8c6 blx       r5 ; 
+0x0060a8c8 ldrd      r0, r1, [r4, #0x24] ; 
+0x0060a8cc cmp       r0, r1 ; 
+0x0060a8ce bhs       #0x60a8e6 ; 
+0x0060a8d0 ldr       r1, [sp, #8] ; 
+0x0060a8d2 str       r1, [r0] ; 
+0x0060a8d4 ldr       r1, [sp, #0xc] ; 
+0x0060a8d6 str       r1, [r0, #4] ; 
+0x0060a8d8 movs      r0, #0 ; 
+0x0060a8da strd      r0, r0, [sp, #8] ; 
+0x0060a8de ldr       r0, [r4, #0x24] ; 
+0x0060a8e0 adds      r0, #8 ; 
+0x0060a8e2 str       r0, [r4, #0x24] ; 
+0x0060a8e4 b         #0x60a8f6 ; 
+0x0060a8e6 add       r1, sp, #8 ; 
+0x0060a8e8 mov       r0, r8 ; 
+0x0060a8ea blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0060a8ee ldr       r0, [sp, #0xc] ; 
+0x0060a8f0 cbz       r0, #0x60a8f6 ; 
+0x0060a8f2 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a8f6 ldr       r0, [sp, #0x38] ; 
+0x0060a8f8 cmp       r7, r0 ; 
+0x0060a8fa beq       #0x60a904 ; 
+0x0060a8fc cbz       r0, #0x60a90a ; 
+0x0060a8fe ldr       r1, [r0] ; 
+0x0060a900 ldr       r1, [r1, #0x14] ; 
+0x0060a902 b         #0x60a908 ; 
+0x0060a904 ldr       r1, [r0] ; 
+0x0060a906 ldr       r1, [r1, #0x10] ; 
+0x0060a908 blx       r1 ; 
+0x0060a90a ldr       r0, [r4, #0x1c] ; 
+0x0060a90c blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x0060a910 mov       r1, r0 ; 
+0x0060a912 ldr       r0, [pc, #0x134] ; 
+0x0060a914 add       r7, sp, #0x10 ; 
+0x0060a916 ldr       r3, [pc, #0x134] ; 
+0x0060a918 add       r0, pc ; 
+0x0060a91a ldr       r2, [r1] ; 
+0x0060a91c add       r3, pc ; 
+0x0060a91e ldr       r0, [r0] ; 
+0x0060a920 ldr       r5, [r2, #0x2c] ; 
+0x0060a922 ldr       r2, [r3] ; 
+0x0060a924 adds      r0, #8 ; 
+0x0060a926 movs      r3, #0x93 ; 
+0x0060a928 str       r2, [sp, #0x14] ; 
+0x0060a92a movs      r2, #0 ; 
+0x0060a92c strh.w    r3, [sp, #6] ; 
+0x0060a930 strd      r2, r4, [sp, #0x18] ; 
+0x0060a934 str       r7, [sp, #0x20] ; 
+0x0060a936 str       r0, [sp, #0x10] ; 
+0x0060a938 add       r0, sp, #8 ; 
+0x0060a93a add.w     r2, sp, #6 ; 
+0x0060a93e mov       r3, r7 ; 
+0x0060a940 blx       r5 ; 
+0x0060a942 ldrd      r0, r1, [r4, #0x24] ; 
+0x0060a946 cmp       r0, r1 ; 
+0x0060a948 bhs       #0x60a960 ; 
+0x0060a94a ldr       r1, [sp, #8] ; 
+0x0060a94c str       r1, [r0] ; 
+0x0060a94e ldr       r1, [sp, #0xc] ; 
+0x0060a950 str       r1, [r0, #4] ; 
+0x0060a952 movs      r0, #0 ; 
+0x0060a954 strd      r0, r0, [sp, #8] ; 
+0x0060a958 ldr       r0, [r4, #0x24] ; 
+0x0060a95a adds      r0, #8 ; 
+0x0060a95c str       r0, [r4, #0x24] ; 
+0x0060a95e b         #0x60a970 ; 
+0x0060a960 add       r1, sp, #8 ; 
+0x0060a962 mov       r0, r8 ; 
+0x0060a964 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x0060a968 ldr       r0, [sp, #0xc] ; 
+0x0060a96a cbz       r0, #0x60a970 ; 
+0x0060a96c blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a970 ldr       r0, [sp, #0x20] ; 
+0x0060a972 cmp       r7, r0 ; 
+0x0060a974 beq       #0x60a97e ; 
+0x0060a976 cbz       r0, #0x60a984 ; 
+0x0060a978 ldr       r1, [r0] ; 
+0x0060a97a ldr       r1, [r1, #0x14] ; 
+0x0060a97c b         #0x60a982 ; 
+0x0060a97e ldr       r1, [r0] ; 
+0x0060a980 ldr       r1, [r1, #0x10] ; 
+0x0060a982 blx       r1 ; 
+0x0060a984 ldr       r1, [r6, #0x44] ; 
+0x0060a986 add       r0, sp, #8 ; 
+0x0060a988 movs      r2, #0xb2 ; 
+0x0060a98a blx       #0x4b1380 ; Anki::Cozmo::BehaviorManager::FindBehaviorByID(Anki::Cozmo::BehaviorID) const
+0x0060a98e movs      r0, #0 ; 
+0x0060a990 ldrd      r1, r2, [sp, #8] ; 
+0x0060a994 strd      r0, r0, [sp, #8] ; 
+0x0060a998 ldr       r0, [r4, #0x38] ; 
+0x0060a99a strd      r1, r2, [r4, #0x34] ; 
+0x0060a99e cbz       r0, #0x60a9ac ; 
+0x0060a9a0 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a9a4 ldr       r0, [sp, #0xc] ; 
+0x0060a9a6 cbz       r0, #0x60a9ac ; 
+0x0060a9a8 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0060a9ac ldr       r0, [pc, #0xa4] ; 
+0x0060a9ae ldr       r1, [sp, #0x44] ; 
+0x0060a9b0 add       r0, pc ; 
+0x0060a9b2 ldr       r0, [r0] ; 
+0x0060a9b4 ldr       r0, [r0] ; 
+0x0060a9b6 subs      r0, r0, r1 ; 
+0x0060a9b8 ittt      eq ; 
+0x0060a9ba moveq     r0, r4 ; 
+0x0060a9bc addeq     sp, #0x48 ; 
+0x0060a9be popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x0060a9c2 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::UiMessageHandler::DeliverToGame 00661594 =====
+0x00661594 push.w    {r4, r5, r6, r7, r8, sb, sl, lr} ; 
+0x00661598 sub.w     sp, sp, #0x1020 ; 
+0x0066159c sub       sp, #0x18 ; 
+0x0066159e mov       r4, r0 ; 
+0x006615a0 ldr       r0, [pc, #0x110] ; 
+0x006615a2 add.w     r8, sp, #8 ; 
+0x006615a6 add       r5, sp, #0x18 ; 
+0x006615a8 add       r0, pc ; 
+0x006615aa movs      r7, #0 ; 
+0x006615ac mov       r6, r1 ; 
+0x006615ae mov.w     r1, #-1 ; 
+0x006615b2 ldr       r0, [r0] ; 
+0x006615b4 movw      sl, #0x1008 ; 
+0x006615b8 mov       sb, r2 ; 
+0x006615ba mov.w     r2, #0x1000 ; 
+0x006615be ldr       r0, [r0] ; 
+0x006615c0 str.w     r0, [r8] ; 
+0x006615c4 ldr.w     r0, [r4, #0xfc] ; 
+0x006615c8 adds      r0, #1 ; 
+0x006615ca str.w     r0, [r4, #0xfc] ; 
+0x006615ce movw      r0, #0x1014 ; 
+0x006615d2 str       r7, [r5, r0] ; 
+0x006615d4 movw      r0, #0x1010 ; 
+0x006615d8 str       r7, [r5, r0] ; 
+0x006615da movw      r0, #0x1004 ; 
+0x006615de str       r1, [r5, r0] ; 
+0x006615e0 mov       r0, r6 ; 
+0x006615e2 str.w     r1, [r5, sl] ; 
+0x006615e6 orr       r1, r5, #2 ; 
+0x006615ea strh.w    r7, [sp, #0x18] ; 
+0x006615ee blx       #0x4bb2ec ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Pack(unsigned char*, unsigned int) const
+0x006615f2 mov       r0, r6 ; 
+0x006615f4 blx       #0x4bad64 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Size() const
+0x006615f8 strh.w    r0, [sp, #0x18] ; 
+0x006615fc mov       r1, sb ; 
+0x006615fe ldr.w     r0, [r4, #0xe8] ; 
+0x00661602 adds.w    r6, sb, #1 ; 
+0x00661606 str.w     r0, [r5, sl] ; 
+0x0066160a it        eq ; 
+0x0066160c moveq     r1, #0 ; 
+0x0066160e uxtb      r0, r1 ; 
+0x00661610 cmp       r0, #2 ; 
+0x00661612 bls       #0x661650 ; 
+0x00661614 strd      r7, r7, [sp, #0xc] ; 
+0x00661618 str       r7, [sp, #0x14] ; 
+0x0066161a blx       #0x4bb040 ; Anki::Cozmo::EnumToString(Anki::Cozmo::UiConnectionType)
+0x0066161e str       r0, [sp] ; 
+0x00661620 adr       r0, #0x94 ; 
+0x00661622 add       r1, sp, #0xc ; 
+0x00661624 adr       r2, #0xc0 ; 
+0x00661626 mov       r3, sb ; 
+0x00661628 blx       #0x4a4540 ; Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x0066162c ldr       r0, [sp, #0xc] ; 
+0x0066162e cbz       r0, #0x66166e ; 
+0x00661630 ldr       r1, [sp, #0x10] ; 
+0x00661632 cmp       r1, r0 ; 
+0x00661634 itttt     ne ; 
+0x00661636 subne.w   r2, r1, #8 ; 
+0x0066163a subne     r2, r2, r0 ; 
+0x0066163c mvnne     r3, #7 ; 
+0x00661640 bicne.w   r2, r3, r2 ; 
+0x00661644 itt       ne ; 
+0x00661646 addne     r1, r1, r2 ; 
+0x00661648 strne     r1, [sp, #0x10] ; 
+0x0066164a blx       #0x4a40cc ; operator delete(void*)
+0x0066164e b         #0x66166e ; 
+0x00661650 add       r5, sp, #0x18 ; 
+0x00661652 uxtb      r7, r1 ; 
+0x00661654 add.w     r0, r4, r7, lsl #2 ; 
+0x00661658 ldr       r0, [r0, #4] ; 
+0x0066165a cbz       r0, #0x661664 ; 
+0x0066165c ldr       r1, [r0] ; 
+0x0066165e ldr       r2, [r1, #0x28] ; 
+0x00661660 mov       r1, r5 ; 
+0x00661662 blx       r2 ; 
+0x00661664 cbnz      r6, #0x66166e ; 
+0x00661666 adds      r1, r7, #1 ; 
+0x00661668 uxtb      r0, r1 ; 
+0x0066166a cmp       r0, #3 ; 
+0x0066166c blo       #0x661652 ; 
+0x0066166e ldr       r0, [pc, #0xac] ; 
+0x00661670 ldr.w     r1, [r8] ; 
+0x00661674 add       r0, pc ; 
+0x00661676 ldr       r0, [r0] ; 
+0x00661678 ldr       r0, [r0] ; 
+0x0066167a subs      r0, r0, r1 ; 
+0x0066167c ittt      eq ; 
+0x0066167e addeq.w   sp, sp, #0x1020 ; 
+0x00661682 addeq     sp, #0x18 ; 
+0x00661684 popeq.w   {r4, r5, r6, r7, r8, sb, sl, pc} ; 
+0x00661688 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== FUN_006623c8 006623c8 =====
+0x006623c8 push      {r4, lr} ; 
+0x006623ca sub       sp, #8 ; 
+0x006623cc mov       r4, r1 ; 
+0x006623ce adds      r0, #4 ; 
+0x006623d0 ldr       r1, [r4, #8] ; 
+0x006623d2 str       r1, [sp, #4] ; 
+0x006623d4 add       r1, sp, #4 ; 
+0x006623d6 blx       #0x4bb34c ; std::__ndk1::__hash_iterator<std::__ndk1::__hash_node<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > >, void*>*> std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::__unordered_map_hasher<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::hash<unsigned int>, true>, std::__ndk1::__unordered_map_equal<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::equal_to<unsigned int>, true>, std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > > > >::find<unsigned int>(unsigned int const&)
+0x006623da cbz       r0, #0x6623e4 ; 
+0x006623dc adds      r0, #0xc ; 
+0x006623de mov       r1, r4 ; 
+0x006623e0 bl        #0x663954 ; 
+0x006623e4 add       sp, #8 ; 
+0x006623e6 pop       {r4, pc} ; 
+
+===== Anki::Cozmo::UiMessageHandler::Broadcast 00662508 =====
+0x00662508 push      {r4, r5, r6, r7, lr} ; 
+0x0066250a sub       sp, #0x11c ; 
+0x0066250c mov       r4, r1 ; 
+0x0066250e ldr       r1, [pc, #0x78] ; 
+0x00662510 mov       r5, r0 ; 
+0x00662512 mov.w     r2, #-1 ; 
+0x00662516 add       r1, pc ; 
+0x00662518 ldr       r1, [r1] ; 
+0x0066251a ldr       r1, [r1] ; 
+0x0066251c str       r1, [sp, #0x118] ; 
+0x0066251e ldr       r1, [r5], #0x1c ; 
+0x00662522 ldr       r3, [r1, #0x48] ; 
+0x00662524 mov       r1, r4 ; 
+0x00662526 blx       r3 ; 
+0x00662528 blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x0066252c blx       #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0x00662530 vmov      s0, r0 ; 
+0x00662534 mov       r7, sp ; 
+0x00662536 add.w     r6, r7, #0x10 ; 
+0x0066253a ldrh      r0, [r4] ; 
+0x0066253c vcvt.f64.f32 d0, s0 ; 
+0x00662540 str       r0, [sp, #8] ; 
+0x00662542 mov       r0, r6 ; 
+0x00662544 mov       r1, r4 ; 
+0x00662546 vstr      d0, [sp] ; 
+0x0066254a blx       #0x4bb37c ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::MessageEngineToGame const&)
+0x0066254e mov       r0, r5 ; 
+0x00662550 mov       r1, r7 ; 
+0x00662552 bl        #0x662590 ; 
+0x00662556 mov       r0, r6 ; 
+0x00662558 blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x0066255c ldr       r0, [pc, #0x2c] ; 
+0x0066255e ldr       r1, [sp, #0x118] ; 
+0x00662560 add       r0, pc ; 
+0x00662562 ldr       r0, [r0] ; 
+0x00662564 ldr       r0, [r0] ; 
+0x00662566 subs      r0, r0, r1 ; 
+0x00662568 itt       eq ; 
+0x0066256a addeq     sp, #0x11c ; 
+0x0066256c popeq     {r4, r5, r6, r7, pc} ; 
+0x0066256e blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== FUN_00662590 00662590 =====
+0x00662590 push      {r4, lr} ; 
+0x00662592 sub       sp, #8 ; 
+0x00662594 mov       r4, r1 ; 
+0x00662596 adds      r0, #4 ; 
+0x00662598 ldr       r1, [r4, #8] ; 
+0x0066259a str       r1, [sp, #4] ; 
+0x0066259c add       r1, sp, #4 ; 
+0x0066259e blx       #0x4bb388 ; std::__ndk1::__hash_iterator<std::__ndk1::__hash_node<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > >, void*>*> std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::__unordered_map_hasher<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::hash<unsigned int>, true>, std::__ndk1::__unordered_map_equal<unsigned int, std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > >, std::__ndk1::equal_to<unsigned int>, true>, std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame> const&), Signal::Lib::CollectorDefault<void> > > > >::find<unsigned int>(unsigned int const&)
+0x006625a2 cbz       r0, #0x6625ac ; 
+0x006625a4 adds      r0, #0xc ; 
+0x006625a6 mov       r1, r4 ; 
+0x006625a8 bl        #0x663c74 ; 
+0x006625ac add       sp, #8 ; 
+0x006625ae pop       {r4, pc} ; 
+
+===== Anki::Cozmo::UiMessageHandler::Broadcast 006625b0 =====
+0x006625b0 push      {r4, r5, r6, r7, lr} ; 
+0x006625b2 sub       sp, #0x11c ; 
+0x006625b4 mov       r4, r1 ; 
+0x006625b6 ldr       r1, [pc, #0x78] ; 
+0x006625b8 mov       r5, r0 ; 
+0x006625ba mov.w     r2, #-1 ; 
+0x006625be add       r1, pc ; 
+0x006625c0 ldr       r1, [r1] ; 
+0x006625c2 ldr       r1, [r1] ; 
+0x006625c4 str       r1, [sp, #0x118] ; 
+0x006625c6 ldr       r1, [r5], #0x1c ; 
+0x006625ca ldr       r3, [r1, #0x48] ; 
+0x006625cc mov       r1, r4 ; 
+0x006625ce blx       r3 ; 
+0x006625d0 ldrh      r6, [r4] ; 
+0x006625d2 blx       #0x4a4f6c ; Anki::BaseStationTimer::getInstance()
+0x006625d6 blx       #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds() const
+0x006625da vmov      s0, r0 ; 
+0x006625de str       r6, [sp, #8] ; 
+0x006625e0 mov       r7, sp ; 
+0x006625e2 add.w     r6, r7, #0x10 ; 
+0x006625e6 vcvt.f64.f32 d0, s0 ; 
+0x006625ea mov       r1, r4 ; 
+0x006625ec mov       r0, r6 ; 
+0x006625ee vstr      d0, [sp] ; 
+0x006625f2 blx       #0x4bb394 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::MessageEngineToGame&&)
+0x006625f6 mov       r0, r5 ; 
+0x006625f8 mov       r1, r7 ; 
+0x006625fa bl        #0x662590 ; 
+0x006625fe mov       r0, r6 ; 
+0x00662600 blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x00662604 ldr       r0, [pc, #0x2c] ; 
+0x00662606 ldr       r1, [sp, #0x118] ; 
+0x00662608 add       r0, pc ; 
+0x0066260a ldr       r0, [r0] ; 
+0x0066260c ldr       r0, [r0] ; 
+0x0066260e subs      r0, r0, r1 ; 
+0x00662610 itt       eq ; 
+0x00662612 addeq     sp, #0x11c ; 
+0x00662614 popeq     {r4, r5, r6, r7, pc} ; 
+0x00662616 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== FUN_00663954 00663954 =====
+0x00663954 push      {r4, r5, r6, r7, lr} ; 
+0x00663956 sub       sp, #4 ; 
+0x00663958 mov       r5, r0 ; 
+0x0066395a mov       r4, r1 ; 
+0x0066395c ldr       r6, [r5] ; 
+0x0066395e cbz       r6, #0x663996 ; 
+0x00663960 ldr       r0, [r6, #0x20] ; 
+0x00663962 adds      r0, #1 ; 
+0x00663964 str       r0, [r6, #0x20] ; 
+0x00663966 ldr       r0, [r6, #0x18] ; 
+0x00663968 cbz       r0, #0x663974 ; 
+0x0066396a add.w     r0, r6, #8 ; 
+0x0066396e mov       r1, r4 ; 
+0x00663970 blx       #0x4bb4b4 ; std::__ndk1::function<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&)>::operator()(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&) const
+0x00663974 ldr       r7, [r6] ; 
+0x00663976 ldr       r0, [r7, #0x20] ; 
+0x00663978 adds      r0, #1 ; 
+0x0066397a str       r0, [r7, #0x20] ; 
+0x0066397c mov       r0, r6 ; 
+0x0066397e bl        #0x663696 ; 
+0x00663982 ldr       r0, [r5] ; 
+0x00663984 mov       r6, r7 ; 
+0x00663986 cmp       r7, r0 ; 
+0x00663988 bne       #0x663966 ; 
+0x0066398a mov       r0, r7 ; 
+0x0066398c add       sp, #4 ; 
+0x0066398e pop.w     {r4, r5, r6, r7, lr} ; 
+0x00663992 b.w       #0x663696 ; 
+0x00663996 add       sp, #4 ; 
+0x00663998 pop       {r4, r5, r6, r7, pc} ; 
+
+===== FUN_006648cc 006648cc =====
+0x006648cc push.w    {r4, r5, r6, r7, r8, sb, sl, lr} ; 
+0x006648d0 mov       r5, r1 ; 
+0x006648d2 mov       r8, r0 ; 
+0x006648d4 mov       r0, r5 ; 
+0x006648d6 mov       r6, r2 ; 
+0x006648d8 bl        #0x664b1c ; 
+0x006648dc movs      r0, #4 ; 
+0x006648de blx       #0x4a42a0 ; operator new(unsigned int)
+0x006648e2 mov       sb, r0 ; 
+0x006648e4 movs      r0, #0x14 ; 
+0x006648e6 blx       #0x4a42a0 ; operator new(unsigned int)
+0x006648ea mov       r7, r0 ; 
+0x006648ec ldr       r0, [r5] ; 
+0x006648ee mov       r1, r6 ; 
+0x006648f0 bl        #0x664e34 ; 
+0x006648f4 mov       sl, r0 ; 
+0x006648f6 ldrd      r4, r6, [r5, #4] ; 
+0x006648fa cbz       r6, #0x664906 ; 
+0x006648fc mov       r0, r6 ; 
+0x006648fe blx       #0x4a5014 ; std::__ndk1::__shared_weak_count::__add_shared()
+0x00664902 movs      r0, #0 ; 
+0x00664904 b         #0x664908 ; 
+0x00664906 movs      r0, #1 ; 
+0x00664908 ldr       r1, [pc, #0x58] ; 
+0x0066490a cmp       r0, #0 ; 
+0x0066490c strd      r5, sl, [r7, #4] ; 
+0x00664910 add       r1, pc ; 
+0x00664912 str       r4, [r7, #0xc] ; 
+0x00664914 str       r6, [r7, #0x10] ; 
+0x00664916 ldr       r1, [r1] ; 
+0x00664918 add.w     r1, r1, #8 ; 
+0x0066491c str       r1, [r7] ; 
+0x0066491e bne       #0x664926 ; 
+0x00664920 mov       r0, r6 ; 
+0x00664922 blx       #0x4a5020 ; std::__ndk1::__shared_weak_count::__add_weak()
+0x00664926 str.w     r7, [sb] ; 
+0x0066492a mov       r0, r8 ; 
+0x0066492c mov       r1, sb ; 
+0x0066492e movs      r2, #0 ; 
+0x00664930 blx       #0x4a502c ; std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>::shared_ptr<Signal::Lib::ScopedHandleContainer>(std::__ndk1::enable_if<is_convertible<Signal::Lib::ScopedHandleContainer*, Signal::Lib::ScopedHandleContainer*>::value, std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>::__nat>::type)
+0x00664934 cbz       r6, #0x66493c ; 
+0x00664936 mov       r0, r6 ; 
+0x00664938 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x0066493c pop.w     {r4, r5, r6, r7, r8, sb, sl, pc} ; 
+
+===== Anki::Cozmo::BehaviorManager::InitializeEventHandlers 005a1314 =====
+0x005a1314 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x005a1318 sub       sp, #0xc0 ; 
+0x005a131a mov       r4, r0 ; 
+0x005a131c ldr.w     r0, [pc, #0x3a0] ; 
+0x005a1320 add       r0, pc ; 
+0x005a1322 ldr       r0, [r0] ; 
+0x005a1324 ldr       r0, [r0] ; 
+0x005a1326 str       r0, [sp, #0xbc] ; 
+0x005a1328 ldr       r0, [r4, #4] ; 
+0x005a132a blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x005a132e mov       r5, r0 ; 
+0x005a1330 ldr       r0, [r4, #4] ; 
+0x005a1332 blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x005a1336 mov       r1, r0 ; 
+0x005a1338 add       r7, sp, #0xa0 ; 
+0x005a133a ldr       r0, [r1] ; 
+0x005a133c movs      r2, #0x9f ; 
+0x005a133e ldr       r6, [r0, #0x2c] ; 
+0x005a1340 ldr.w     r0, [pc, #0x380] ; 
+0x005a1344 str       r4, [sp, #0xa4] ; 
+0x005a1346 add       r0, pc ; 
+0x005a1348 strh.w    r2, [sp, #6] ; 
+0x005a134c adds      r0, #8 ; 
+0x005a134e str       r7, [sp, #0xb0] ; 
+0x005a1350 str       r0, [sp, #0xa0] ; 
+0x005a1352 add       r0, sp, #8 ; 
+0x005a1354 add.w     r2, sp, #6 ; 
+0x005a1358 mov       r3, r7 ; 
+0x005a135a blx       r6 ; 
+0x005a135c ldrd      r0, r1, [r4, #0x70] ; 
+0x005a1360 add.w     r8, r4, #0x6c ; 
+0x005a1364 cmp       r0, r1 ; 
+0x005a1366 bhs       #0x5a137e ; 
+0x005a1368 ldr       r1, [sp, #8] ; 
+0x005a136a str       r1, [r0] ; 
+0x005a136c ldr       r1, [sp, #0xc] ; 
+0x005a136e str       r1, [r0, #4] ; 
+0x005a1370 movs      r0, #0 ; 
+0x005a1372 strd      r0, r0, [sp, #8] ; 
+0x005a1376 ldr       r0, [r4, #0x70] ; 
+0x005a1378 adds      r0, #8 ; 
+0x005a137a str       r0, [r4, #0x70] ; 
+0x005a137c b         #0x5a138e ; 
+0x005a137e add       r1, sp, #8 ; 
+0x005a1380 mov       r0, r8 ; 
+0x005a1382 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a1386 ldr       r0, [sp, #0xc] ; 
+0x005a1388 cbz       r0, #0x5a138e ; 
+0x005a138a blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a138e ldr       r0, [sp, #0xb0] ; 
+0x005a1390 cmp       r7, r0 ; 
+0x005a1392 beq       #0x5a139c ; 
+0x005a1394 cbz       r0, #0x5a13a2 ; 
+0x005a1396 ldr       r1, [r0] ; 
+0x005a1398 ldr       r1, [r1, #0x14] ; 
+0x005a139a b         #0x5a13a0 ; 
+0x005a139c ldr       r1, [r0] ; 
+0x005a139e ldr       r1, [r1, #0x10] ; 
+0x005a13a0 blx       r1 ; 
+0x005a13a2 ldr       r0, [r4, #4] ; 
+0x005a13a4 blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x005a13a8 mov       r1, r0 ; 
+0x005a13aa add       r7, sp, #0x88 ; 
+0x005a13ac ldr       r0, [r1] ; 
+0x005a13ae movs      r2, #0xa0 ; 
+0x005a13b0 ldr       r6, [r0, #0x2c] ; 
+0x005a13b2 ldr       r0, [pc, #0x314] ; 
+0x005a13b4 str       r4, [sp, #0x8c] ; 
+0x005a13b6 add       r0, pc ; 
+0x005a13b8 strh.w    r2, [sp, #6] ; 
+0x005a13bc adds      r0, #8 ; 
+0x005a13be str       r7, [sp, #0x98] ; 
+0x005a13c0 str       r0, [sp, #0x88] ; 
+0x005a13c2 add       r0, sp, #8 ; 
+0x005a13c4 add.w     r2, sp, #6 ; 
+0x005a13c8 mov       r3, r7 ; 
+0x005a13ca blx       r6 ; 
+0x005a13cc ldrd      r0, r1, [r4, #0x70] ; 
+0x005a13d0 cmp       r0, r1 ; 
+0x005a13d2 bhs       #0x5a13ea ; 
+0x005a13d4 ldr       r1, [sp, #8] ; 
+0x005a13d6 str       r1, [r0] ; 
+0x005a13d8 ldr       r1, [sp, #0xc] ; 
+0x005a13da str       r1, [r0, #4] ; 
+0x005a13dc movs      r0, #0 ; 
+0x005a13de strd      r0, r0, [sp, #8] ; 
+0x005a13e2 ldr       r0, [r4, #0x70] ; 
+0x005a13e4 adds      r0, #8 ; 
+0x005a13e6 str       r0, [r4, #0x70] ; 
+0x005a13e8 b         #0x5a13fa ; 
+0x005a13ea add       r1, sp, #8 ; 
+0x005a13ec mov       r0, r8 ; 
+0x005a13ee blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a13f2 ldr       r0, [sp, #0xc] ; 
+0x005a13f4 cbz       r0, #0x5a13fa ; 
+0x005a13f6 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a13fa ldr       r0, [sp, #0x98] ; 
+0x005a13fc cmp       r7, r0 ; 
+0x005a13fe beq       #0x5a1408 ; 
+0x005a1400 cbz       r0, #0x5a140e ; 
+0x005a1402 ldr       r1, [r0] ; 
+0x005a1404 ldr       r1, [r1, #0x14] ; 
+0x005a1406 b         #0x5a140c ; 
+0x005a1408 ldr       r1, [r0] ; 
+0x005a140a ldr       r1, [r1, #0x10] ; 
+0x005a140c blx       r1 ; 
+0x005a140e ldr       r0, [r4, #4] ; 
+0x005a1410 blx       #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface()
+0x005a1414 mov       r1, r0 ; 
+0x005a1416 add       r7, sp, #0x70 ; 
+0x005a1418 ldr       r0, [r1] ; 
+0x005a141a movs      r2, #0xa1 ; 
+0x005a141c ldr       r6, [r0, #0x2c] ; 
+0x005a141e ldr       r0, [pc, #0x2ac] ; 
+0x005a1420 str       r4, [sp, #0x74] ; 
+0x005a1422 add       r0, pc ; 
+0x005a1424 strh.w    r2, [sp, #6] ; 
+0x005a1428 adds      r0, #8 ; 
+0x005a142a str       r7, [sp, #0x80] ; 
+0x005a142c str       r0, [sp, #0x70] ; 
+0x005a142e add       r0, sp, #8 ; 
+0x005a1430 add.w     r2, sp, #6 ; 
+0x005a1434 mov       r3, r7 ; 
+0x005a1436 blx       r6 ; 
+0x005a1438 ldrd      r0, r1, [r4, #0x70] ; 
+0x005a143c cmp       r0, r1 ; 
+0x005a143e bhs       #0x5a1456 ; 
+0x005a1440 ldr       r1, [sp, #8] ; 
+0x005a1442 str       r1, [r0] ; 
+0x005a1444 ldr       r1, [sp, #0xc] ; 
+0x005a1446 str       r1, [r0, #4] ; 
+0x005a1448 movs      r0, #0 ; 
+0x005a144a strd      r0, r0, [sp, #8] ; 
+0x005a144e ldr       r0, [r4, #0x70] ; 
+0x005a1450 adds      r0, #8 ; 
+0x005a1452 str       r0, [r4, #0x70] ; 
+0x005a1454 b         #0x5a1466 ; 
+0x005a1456 add       r1, sp, #8 ; 
+0x005a1458 mov       r0, r8 ; 
+0x005a145a blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a145e ldr       r0, [sp, #0xc] ; 
+0x005a1460 cbz       r0, #0x5a1466 ; 
+0x005a1462 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a1466 ldr       r0, [sp, #0x80] ; 
+0x005a1468 cmp       r7, r0 ; 
+0x005a146a beq       #0x5a1474 ; 
+0x005a146c cbz       r0, #0x5a147a ; 
+0x005a146e ldr       r1, [r0] ; 
+0x005a1470 ldr       r1, [r1, #0x14] ; 
+0x005a1472 b         #0x5a1478 ; 
+0x005a1474 ldr       r1, [r0] ; 
+0x005a1476 ldr       r1, [r1, #0x10] ; 
+0x005a1478 blx       r1 ; 
+0x005a147a ldr       r0, [r5] ; 
+0x005a147c add       r7, sp, #0x58 ; 
+0x005a147e movs      r1, #0x92 ; 
+0x005a1480 ldr       r6, [r0, #0x2c] ; 
+0x005a1482 ldr       r0, [pc, #0x24c] ; 
+0x005a1484 str       r4, [sp, #0x5c] ; 
+0x005a1486 add       r0, pc ; 
+0x005a1488 strh.w    r1, [sp, #6] ; 
+0x005a148c adds      r0, #8 ; 
+0x005a148e str       r7, [sp, #0x68] ; 
+0x005a1490 str       r0, [sp, #0x58] ; 
+0x005a1492 add       r0, sp, #8 ; 
+0x005a1494 add.w     r2, sp, #6 ; 
+0x005a1498 mov       r1, r5 ; 
+0x005a149a mov       r3, r7 ; 
+0x005a149c blx       r6 ; 
+0x005a149e ldrd      r0, r1, [r4, #0x70] ; 
+0x005a14a2 cmp       r0, r1 ; 
+0x005a14a4 bhs       #0x5a14bc ; 
+0x005a14a6 ldr       r1, [sp, #8] ; 
+0x005a14a8 str       r1, [r0] ; 
+0x005a14aa ldr       r1, [sp, #0xc] ; 
+0x005a14ac str       r1, [r0, #4] ; 
+0x005a14ae movs      r0, #0 ; 
+0x005a14b0 strd      r0, r0, [sp, #8] ; 
+0x005a14b4 ldr       r0, [r4, #0x70] ; 
+0x005a14b6 adds      r0, #8 ; 
+0x005a14b8 str       r0, [r4, #0x70] ; 
+0x005a14ba b         #0x5a14cc ; 
+0x005a14bc add       r1, sp, #8 ; 
+0x005a14be mov       r0, r8 ; 
+0x005a14c0 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a14c4 ldr       r0, [sp, #0xc] ; 
+0x005a14c6 cbz       r0, #0x5a14cc ; 
+0x005a14c8 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a14cc ldr       r0, [sp, #0x68] ; 
+0x005a14ce cmp       r7, r0 ; 
+0x005a14d0 beq       #0x5a14da ; 
+0x005a14d2 cbz       r0, #0x5a14e0 ; 
+0x005a14d4 ldr       r1, [r0] ; 
+0x005a14d6 ldr       r1, [r1, #0x14] ; 
+0x005a14d8 b         #0x5a14de ; 
+0x005a14da ldr       r1, [r0] ; 
+0x005a14dc ldr       r1, [r1, #0x10] ; 
+0x005a14de blx       r1 ; 
+0x005a14e0 ldr       r0, [r5] ; 
+0x005a14e2 add       r7, sp, #0x40 ; 
+0x005a14e4 movs      r1, #0xa2 ; 
+0x005a14e6 ldr       r6, [r0, #0x2c] ; 
+0x005a14e8 ldr       r0, [pc, #0x1e8] ; 
+0x005a14ea str       r4, [sp, #0x44] ; 
+0x005a14ec add       r0, pc ; 
+0x005a14ee strh.w    r1, [sp, #6] ; 
+0x005a14f2 adds      r0, #8 ; 
+0x005a14f4 str       r7, [sp, #0x50] ; 
+0x005a14f6 str       r0, [sp, #0x40] ; 
+0x005a14f8 add       r0, sp, #8 ; 
+0x005a14fa add.w     r2, sp, #6 ; 
+0x005a14fe mov       r1, r5 ; 
+0x005a1500 mov       r3, r7 ; 
+0x005a1502 blx       r6 ; 
+0x005a1504 ldrd      r0, r1, [r4, #0x70] ; 
+0x005a1508 cmp       r0, r1 ; 
+0x005a150a bhs       #0x5a1522 ; 
+0x005a150c ldr       r1, [sp, #8] ; 
+0x005a150e str       r1, [r0] ; 
+0x005a1510 ldr       r1, [sp, #0xc] ; 
+0x005a1512 str       r1, [r0, #4] ; 
+0x005a1514 movs      r0, #0 ; 
+0x005a1516 strd      r0, r0, [sp, #8] ; 
+0x005a151a ldr       r0, [r4, #0x70] ; 
+0x005a151c adds      r0, #8 ; 
+0x005a151e str       r0, [r4, #0x70] ; 
+0x005a1520 b         #0x5a1532 ; 
+0x005a1522 add       r1, sp, #8 ; 
+0x005a1524 mov       r0, r8 ; 
+0x005a1526 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a152a ldr       r0, [sp, #0xc] ; 
+0x005a152c cbz       r0, #0x5a1532 ; 
+0x005a152e blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a1532 ldr       r0, [sp, #0x50] ; 
+0x005a1534 cmp       r7, r0 ; 
+0x005a1536 beq       #0x5a1540 ; 
+0x005a1538 cbz       r0, #0x5a1546 ; 
+0x005a153a ldr       r1, [r0] ; 
+0x005a153c ldr       r1, [r1, #0x14] ; 
+0x005a153e b         #0x5a1544 ; 
+0x005a1540 ldr       r1, [r0] ; 
+0x005a1542 ldr       r1, [r1, #0x10] ; 
+0x005a1544 blx       r1 ; 
+0x005a1546 ldr       r0, [r5] ; 
+0x005a1548 add       r7, sp, #0x28 ; 
+0x005a154a movs      r1, #0x9d ; 
+0x005a154c ldr       r6, [r0, #0x2c] ; 
+0x005a154e ldr       r0, [pc, #0x188] ; 
+0x005a1550 str       r4, [sp, #0x2c] ; 
+0x005a1552 add       r0, pc ; 
+0x005a1554 strh.w    r1, [sp, #6] ; 
+0x005a1558 adds      r0, #8 ; 
+0x005a155a str       r7, [sp, #0x38] ; 
+0x005a155c str       r0, [sp, #0x28] ; 
+0x005a155e add       r0, sp, #8 ; 
+0x005a1560 add.w     r2, sp, #6 ; 
+0x005a1564 mov       r1, r5 ; 
+0x005a1566 mov       r3, r7 ; 
+0x005a1568 blx       r6 ; 
+0x005a156a ldrd      r0, r1, [r4, #0x70] ; 
+0x005a156e cmp       r0, r1 ; 
+0x005a1570 bhs       #0x5a1588 ; 
+0x005a1572 ldr       r1, [sp, #8] ; 
+0x005a1574 str       r1, [r0] ; 
+0x005a1576 ldr       r1, [sp, #0xc] ; 
+0x005a1578 str       r1, [r0, #4] ; 
+0x005a157a movs      r0, #0 ; 
+0x005a157c strd      r0, r0, [sp, #8] ; 
+0x005a1580 ldr       r0, [r4, #0x70] ; 
+0x005a1582 adds      r0, #8 ; 
+0x005a1584 str       r0, [r4, #0x70] ; 
+0x005a1586 b         #0x5a1598 ; 
+0x005a1588 add       r1, sp, #8 ; 
+0x005a158a mov       r0, r8 ; 
+0x005a158c blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a1590 ldr       r0, [sp, #0xc] ; 
+0x005a1592 cbz       r0, #0x5a1598 ; 
+0x005a1594 blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a1598 ldr       r0, [sp, #0x38] ; 
+0x005a159a cmp       r7, r0 ; 
+0x005a159c beq       #0x5a15a6 ; 
+0x005a159e cbz       r0, #0x5a15ac ; 
+0x005a15a0 ldr       r1, [r0] ; 
+0x005a15a2 ldr       r1, [r1, #0x14] ; 
+0x005a15a4 b         #0x5a15aa ; 
+0x005a15a6 ldr       r1, [r0] ; 
+0x005a15a8 ldr       r1, [r1, #0x10] ; 
+0x005a15aa blx       r1 ; 
+0x005a15ac ldr       r0, [r5] ; 
+0x005a15ae add       r7, sp, #0x10 ; 
+0x005a15b0 movs      r1, #0x96 ; 
+0x005a15b2 ldr       r6, [r0, #0x2c] ; 
+0x005a15b4 ldr       r0, [pc, #0x124] ; 
+0x005a15b6 str       r4, [sp, #0x14] ; 
+0x005a15b8 add       r0, pc ; 
+0x005a15ba strh.w    r1, [sp, #6] ; 
+0x005a15be adds      r0, #8 ; 
+0x005a15c0 str       r7, [sp, #0x20] ; 
+0x005a15c2 str       r0, [sp, #0x10] ; 
+0x005a15c4 add       r0, sp, #8 ; 
+0x005a15c6 add.w     r2, sp, #6 ; 
+0x005a15ca mov       r1, r5 ; 
+0x005a15cc mov       r3, r7 ; 
+0x005a15ce blx       r6 ; 
+0x005a15d0 ldrd      r0, r1, [r4, #0x70] ; 
+0x005a15d4 cmp       r0, r1 ; 
+0x005a15d6 bhs       #0x5a15ee ; 
+0x005a15d8 ldr       r1, [sp, #8] ; 
+0x005a15da str       r1, [r0] ; 
+0x005a15dc ldr       r1, [sp, #0xc] ; 
+0x005a15de str       r1, [r0, #4] ; 
+0x005a15e0 movs      r0, #0 ; 
+0x005a15e2 strd      r0, r0, [sp, #8] ; 
+0x005a15e6 ldr       r0, [r4, #0x70] ; 
+0x005a15e8 adds      r0, #8 ; 
+0x005a15ea str       r0, [r4, #0x70] ; 
+0x005a15ec b         #0x5a15fe ; 
+0x005a15ee add       r1, sp, #8 ; 
+0x005a15f0 mov       r0, r8 ; 
+0x005a15f2 blx       #0x4a5008 ; void std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>, std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> > >::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer> >(std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>&&)
+0x005a15f6 ldr       r0, [sp, #0xc] ; 
+0x005a15f8 cbz       r0, #0x5a15fe ; 
+0x005a15fa blx       #0x4a4ef4 ; std::__ndk1::__shared_weak_count::__release_shared()
+0x005a15fe ldr       r0, [sp, #0x20] ; 
+0x005a1600 cmp       r7, r0 ; 
+0x005a1602 beq       #0x5a160c ; 
+0x005a1604 cbz       r0, #0x5a1612 ; 
+0x005a1606 ldr       r1, [r0] ; 
+0x005a1608 ldr       r1, [r1, #0x14] ; 
+0x005a160a b         #0x5a1610 ; 
+0x005a160c ldr       r1, [r0] ; 
+0x005a160e ldr       r1, [r1, #0x10] ; 
+0x005a1610 blx       r1 ; 
+0x005a1612 ldr       r0, [pc, #0xcc] ; 
+0x005a1614 ldr       r1, [sp, #0xbc] ; 
+0x005a1616 add       r0, pc ; 
+0x005a1618 ldr       r0, [r0] ; 
+0x005a161a ldr       r0, [r0] ; 
+0x005a161c subs      r0, r0, r1 ; 
+0x005a161e itt       eq ; 
+0x005a1620 addeq     sp, #0xc0 ; 
+0x005a1622 popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x005a1626 blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::BehaviorManager::HandleMessage 005a3c6c =====
+0x005a3c6c push      {r4, r5, r6, r7, lr} ; 
+0x005a3c6e sub       sp, #0x24 ; 
+0x005a3c70 ldrb      r5, [r1] ; 
+0x005a3c72 mov       r4, r0 ; 
+0x005a3c74 cmp       r5, #3 ; 
+0x005a3c76 bhi       #0x5a3d5c ; 
+0x005a3c78 tbb       [pc, r5] ; 
+0x005a3c7c ldr       r4, [sp, #8] ; 
+0x005a3c7e adr       r7, #0x48 ; 
+0x005a3c80 mov       r0, r1 ; 
+0x005a3c82 blx       #0x4b1080 ; Anki::Cozmo::ExternalInterface::BehaviorManagerMessageUnion::Get_ActivateSpark() const
+0x005a3c86 mov       r5, r0 ; 
+0x005a3c88 mov       r0, r4 ; 
+0x005a3c8a ldr       r1, [r5] ; 
+0x005a3c8c movs      r2, #0 ; 
+0x005a3c8e blx       #0x4acee0 ; Anki::Cozmo::BehaviorManager::SetRequestedSpark(Anki::Cozmo::UnlockId, bool)
+0x005a3c92 ldr       r0, [r5] ; 
+0x005a3c94 cmp       r0, #0x55 ; 
+0x005a3c96 itt       eq ; 
+0x005a3c98 moveq     r0, #1 ; 
+0x005a3c9a strbeq.w  r0, [r4, #0x65] ; 
+0x005a3c9e b         #0x5a3dda ; 
+0x005a3ca0 ldr       r1, [r4, #4] ; 
+0x005a3ca2 ldr.w     r0, [r1, #0x264] ; 
+0x005a3ca6 ldr       r0, [r0, #0x24] ; 
+0x005a3ca8 blx       #0x4b108c ; Anki::Cozmo::DoATrickSelector::RequestATrick(Anki::Cozmo::Robot&)
+0x005a3cac movs      r0, #1 ; 
+0x005a3cae add       r5, sp, #4 ; 
+0x005a3cb0 str       r0, [sp, #0x18] ; 
+0x005a3cb2 add       r0, sp, #0x18 ; 
+0x005a3cb4 movs      r7, #0 ; 
+0x005a3cb6 mov       r1, r5 ; 
+0x005a3cb8 str       r7, [sp, #4] ; 
+0x005a3cba blx       #0x4b102c ; Anki::Cozmo::GetSparkCosts(Anki::Cozmo::SparkableThings const&, unsigned int const&)
+0x005a3cbe mov       r6, r0 ; 
+0x005a3cc0 ldr       r0, [r4, #4] ; 
+0x005a3cc2 rsbs      r2, r6, #0 ; 
+0x005a3cc4 movs      r1, #1 ; 
+0x005a3cc6 ldr.w     r0, [r0, #0x444] ; 
+0x005a3cca blx       #0x4b1038 ; Anki::Cozmo::InventoryComponent::AddInventoryAmount(Anki::Cozmo::InventoryType, int)
+0x005a3cce ldr       r0, [r4, #0x60] ; 
+0x005a3cd0 cmp       r0, #0 ; 
+0x005a3cd2 beq.w     #0x5a3dda ; 
+0x005a3cd6 mov       r0, r5 ; 
+0x005a3cd8 mov       r1, r6 ; 
+0x005a3cda blx       #0x4a5c74 ; std::__ndk1::to_string(unsigned int)
+0x005a3cde ldr       r0, [pc, #0x158] ; 
+0x005a3ce0 ldrb.w    r2, [sp, #4] ; 
+0x005a3ce4 ldr       r1, [sp, #0xc] ; 
+0x005a3ce6 add       r0, pc ; 
+0x005a3ce8 str       r0, [sp, #0x10] ; 
+0x005a3cea tst.w     r2, #1 ; 
+0x005a3cee it        eq ; 
+0x005a3cf0 orreq     r1, r5, #1 ; 
+0x005a3cf4 strd      r1, r7, [sp, #0x14] ; 
+0x005a3cf8 strd      r7, r7, [sp, #0x1c] ; 
+0x005a3cfc movs      r0, #8 ; 
+0x005a3cfe blx       #0x4a42a0 ; operator new(unsigned int)
+0x005a3d02 ldr       r2, [sp, #0x14] ; 
+0x005a3d04 add.w     r3, r0, #8 ; 
+0x005a3d08 ldr       r1, [sp, #0x10] ; 
+0x005a3d0a str       r0, [sp, #0x18] ; 
+0x005a3d0c str       r0, [sp, #0x1c] ; 
+0x005a3d0e str       r3, [sp, #0x20] ; 
+0x005a3d10 strd      r1, r2, [r0] ; 
+0x005a3d14 ldr       r0, [sp, #0x1c] ; 
+0x005a3d16 adds      r0, #8 ; 
+0x005a3d18 str       r0, [sp, #0x1c] ; 
+0x005a3d1a ldr       r0, [r4, #0x60] ; 
+0x005a3d1c blx       #0x4ad258 ; Anki::Cozmo::EnumToString(Anki::Cozmo::UnlockId)
+0x005a3d20 mov       r2, r0 ; 
+0x005a3d22 adr       r0, #0x118 ; 
+0x005a3d24 add       r1, sp, #0x18 ; 
+0x005a3d26 blx       #0x4a50e0 ; Anki::Util::sEvent(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*)
+0x005a3d2a ldr       r0, [sp, #0x18] ; 
+0x005a3d2c cbz       r0, #0x5a3d4c ; 
+0x005a3d2e ldr       r1, [sp, #0x1c] ; 
+0x005a3d30 cmp       r1, r0 ; 
+0x005a3d32 itttt     ne ; 
+0x005a3d34 subne.w   r2, r1, #8 ; 
+0x005a3d38 subne     r2, r2, r0 ; 
+0x005a3d3a mvnne     r3, #7 ; 
+0x005a3d3e bicne.w   r2, r3, r2 ; 
+0x005a3d42 itt       ne ; 
+0x005a3d44 addne     r1, r1, r2 ; 
+0x005a3d46 strne     r1, [sp, #0x1c] ; 
+0x005a3d48 blx       #0x4a40cc ; operator delete(void*)
+0x005a3d4c ldrb.w    r0, [sp, #4] ; 
+0x005a3d50 lsls      r0, r0, #0x1f ; 
+0x005a3d52 beq       #0x5a3dda ; 
+0x005a3d54 ldr       r0, [sp, #0xc] ; 
+0x005a3d56 blx       #0x4a40cc ; operator delete(void*)
+0x005a3d5a b         #0x5a3dda ; 
+0x005a3d5c movs      r0, #0 ; 
+0x005a3d5e strd      r0, r0, [sp, #0x18] ; 
+0x005a3d62 str       r0, [sp, #0x20] ; 
+0x005a3d64 mov       r0, r5 ; 
+0x005a3d66 blx       #0x4b1098 ; Anki::Cozmo::ExternalInterface::BehaviorManagerMessageUnionTagToString(Anki::Cozmo::ExternalInterface::BehaviorManagerMessageUnionTag)
+0x005a3d6a str       r0, [sp] ; 
+0x005a3d6c adr       r0, #0xe4 ; 
+0x005a3d6e add       r1, sp, #0x18 ; 
+0x005a3d70 adr       r2, #0x118 ; 
+0x005a3d72 mov       r3, r5 ; 
+0x005a3d74 blx       #0x4a4108 ; Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0x005a3d78 ldr       r0, [sp, #0x18] ; 
+0x005a3d7a cbz       r0, #0x5a3d9a ; 
+0x005a3d7c ldr       r1, [sp, #0x1c] ; 
+0x005a3d7e cmp       r1, r0 ; 
+0x005a3d80 itttt     ne ; 
+0x005a3d82 subne.w   r2, r1, #8 ; 
+0x005a3d86 subne     r2, r2, r0 ; 
+0x005a3d88 mvnne     r3, #7 ; 
+0x005a3d8c bicne.w   r2, r3, r2 ; 
+0x005a3d90 itt       ne ; 
+0x005a3d92 addne     r1, r1, r2 ; 
+0x005a3d94 strne     r1, [sp, #0x1c] ; 
+0x005a3d96 blx       #0x4a40cc ; operator delete(void*)
+0x005a3d9a ldr       r0, [pc, #0x108] ; 
+0x005a3d9c movs      r2, #1 ; 
+0x005a3d9e ldr       r1, [pc, #0x108] ; 
+0x005a3da0 add       r0, pc ; 
+0x005a3da2 add       r1, pc ; 
+0x005a3da4 ldr       r0, [r0] ; 
+0x005a3da6 ldr       r1, [r1] ; 
+0x005a3da8 ldrb      r0, [r0] ; 
+0x005a3daa strb      r2, [r1] ; 
+0x005a3dac cbz       r0, #0x5a3dda ; 
+0x005a3dae blx       #0x4a4114 ; Anki::Util::sDebugBreakOnError()
+0x005a3db2 b         #0x5a3dda ; 
+0x005a3db4 mov       r0, r1 ; 
+0x005a3db6 blx       #0x4b10a4 ; Anki::Cozmo::ExternalInterface::BehaviorManagerMessageUnion::Get_SparkUnlocked() const
+0x005a3dba ldr       r1, [r0] ; 
+0x005a3dbc mov       r0, r4 ; 
+0x005a3dbe movs      r2, #1 ; 
+0x005a3dc0 add       sp, #0x24 ; 
+0x005a3dc2 pop.w     {r4, r5, r6, r7, lr} ; 
+0x005a3dc6 b.w       #0x8cbcac ; 
+0x005a3dca ldr       r0, [r4, #0x30] ; 
+0x005a3dcc cbz       r0, #0x5a3dd4 ; 
+0x005a3dce ldrb.w    r0, [r0, #0xa1] ; 
+0x005a3dd2 cbz       r0, #0x5a3dda ; 
+0x005a3dd4 movs      r0, #1 ; 
+0x005a3dd6 strb.w    r0, [r4, #0x38] ; 
+0x005a3dda add       sp, #0x24 ; 
+
+===== FUN_005a5136 005a5136 =====
+0x005a5136 push      {r4, lr} ; 
+0x005a5138 ldr       r4, [r0, #4] ; 
+0x005a513a add.w     r0, r1, #0x10 ; 
+0x005a513e blx       #0x4b11c4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_BehaviorManagerMessage() const
+0x005a5142 mov       r1, r0 ; 
+0x005a5144 mov       r0, r4 ; 
+0x005a5146 pop.w     {r4, lr} ; 
+0x005a514a b.w       #0x8cbcfc ; 
+0x005a514e movs      r0, r0 ; 
+0x005a5150 ldr       r2, [pc, #0x10] ; 
+0x005a5152 ldr       r3, [r1, #4] ; 
+0x005a5154 movs      r1, #0 ; 
+0x005a5156 add       r2, pc ; 
+0x005a5158 cmp       r3, r2 ; 
+0x005a515a it        eq ; 
+0x005a515c addeq     r1, r0, #4 ; 
+0x005a515e mov       r0, r1 ; 
+0x005a5160 bx        lr ; 
+0x005a5162 nop        ; 
+
+===== Anki::Cozmo::UiMessageHandler::Subscribe 00662750 =====
+0x00662750 push      {r4, r5, r6, r7, lr} ; 
+0x00662752 sub       sp, #0x24 ; 
+0x00662754 mov       r5, r0 ; 
+0x00662756 ldr       r0, [pc, #0x74] ; 
+0x00662758 add       r4, sp, #8 ; 
+0x0066275a mov       r6, r1 ; 
+0x0066275c add       r0, pc ; 
+0x0066275e mov       r1, r3 ; 
+0x00662760 ldr       r0, [r0] ; 
+0x00662762 ldr       r0, [r0] ; 
+0x00662764 str       r0, [sp, #0x20] ; 
+0x00662766 mov       r0, r4 ; 
+0x00662768 ldrh      r7, [r2] ; 
+0x0066276a blx       #0x4bb3c4 ; std::__ndk1::function<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&)>::function(std::__ndk1::function<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&)> const&)
+0x0066276e str       r7, [sp, #4] ; 
+0x00662770 add.w     r0, r6, #0x38 ; 
+0x00662774 add       r1, sp, #4 ; 
+0x00662776 blx       #0x4bb3d0 ; std::__ndk1::unordered_map<unsigned int, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> >, std::__ndk1::hash<unsigned int>, std::__ndk1::equal_to<unsigned int>, std::__ndk1::allocator<std::__ndk1::pair<unsigned int const, Signal::Signal<void (Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine> const&), Signal::Lib::CollectorDefault<void> > > > >::operator[](unsigned int const&)
+0x0066277a mov       r1, r0 ; 
+0x0066277c add       r6, sp, #8 ; 
+0x0066277e mov       r0, r5 ; 
+0x00662780 mov       r2, r6 ; 
+0x00662782 bl        #0x6648cc ; 
+0x00662786 ldr       r0, [sp, #0x18] ; 
+0x00662788 cmp       r6, r0 ; 
+0x0066278a beq       #0x662794 ; 
+0x0066278c cbz       r0, #0x66279a ; 
+0x0066278e ldr       r1, [r0] ; 
+0x00662790 ldr       r1, [r1, #0x14] ; 
+0x00662792 b         #0x662798 ; 
+0x00662794 ldr       r1, [r0] ; 
+0x00662796 ldr       r1, [r1, #0x10] ; 
+0x00662798 blx       r1 ; 
+0x0066279a ldr       r0, [pc, #0x34] ; 
+0x0066279c ldr       r1, [sp, #0x20] ; 
+0x0066279e add       r0, pc ; 
+0x006627a0 ldr       r0, [r0] ; 
+0x006627a2 ldr       r0, [r0] ; 
+0x006627a4 subs      r0, r0, r1 ; 
+0x006627a6 itt       eq ; 
+0x006627a8 addeq     sp, #0x24 ; 
+0x006627aa popeq     {r4, r5, r6, r7, pc} ; 
+0x006627ac blx       #0x4a4fe4 ; __stack_chk_fail
+
+===== Anki::Cozmo::MoodManager::SendEmotionsToGame 0067b724 =====
+0x0067b724 push.w    {r4, r5, r6, r7, r8, lr} ; 
+0x0067b728 sub       sp, #0x128 ; 
+0x0067b72a mov       r8, r0 ; 
+0x0067b72c ldr       r0, [pc, #0x124] ; 
+0x0067b72e add       r0, pc ; 
+0x0067b730 ldr       r0, [r0] ; 
+0x0067b732 ldr       r0, [r0] ; 
+0x0067b734 str       r0, [sp, #0x124] ; 
+0x0067b736 ldr.w     r0, [r8, #0x12c] ; 
+0x0067b73a cmp       r0, #0 ; 
+0x0067b73c beq       #0x67b7e0 ; 
+0x0067b73e movs      r0, #0 ; 
+0x0067b740 strd      r0, r0, [sp, #0xc] ; 
+0x0067b744 str       r0, [sp, #0x14] ; 
+0x0067b746 add       r0, sp, #0xc ; 
+0x0067b748 movs      r1, #9 ; 
+0x0067b74a blx       #0x4a6154 ; std::__ndk1::vector<float, std::__ndk1::allocator<float> >::reserve(unsigned int)
+0x0067b74e add.w     r7, r8, #0x18 ; 
+0x0067b752 add       r5, sp, #0xc ; 
+0x0067b754 add       r6, sp, #0x18 ; 
+0x0067b756 movs      r4, #0 ; 
+0x0067b758 ldrd      r0, r2, [sp, #0x10] ; 
+0x0067b75c ldr       r1, [r7] ; 
+0x0067b75e cmp       r0, r2 ; 
+0x0067b760 str       r1, [sp, #0x18] ; 
+0x0067b762 bhs       #0x67b76e ; 
+0x0067b764 str       r1, [r0] ; 
+0x0067b766 ldr       r0, [sp, #0x10] ; 
+0x0067b768 adds      r0, #4 ; 
+0x0067b76a str       r0, [sp, #0x10] ; 
+0x0067b76c b         #0x67b776 ; 
+0x0067b76e mov       r0, r5 ; 
+0x0067b770 mov       r1, r6 ; 
+0x0067b772 blx       #0x4bc648 ; void std::__ndk1::vector<float, std::__ndk1::allocator<float> >::__push_back_slow_path<float>(float&&)
+0x0067b776 adds      r4, #1 ; 
+0x0067b778 adds      r7, #0x20 ; 
+0x0067b77a cmp       r4, #9 ; 
+0x0067b77c blo       #0x67b758 ; 
+0x0067b77e add       r1, sp, #0xc ; 
+0x0067b780 mov       r0, sp ; 
+0x0067b782 blx       #0x4bc654 ; std::__ndk1::vector<float, std::__ndk1::allocator<float> >::vector(std::__ndk1::vector<float, std::__ndk1::allocator<float> > const&)
+0x0067b786 ldr.w     r4, [r8, #0x12c] ; 
+0x0067b78a add       r0, sp, #0x18 ; 
+0x0067b78c mov       r1, sp ; 
+0x0067b78e blx       #0x4bc660 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame(Anki::Cozmo::ExternalInterface::MoodState&&)
+0x0067b792 add       r1, sp, #0x18 ; 
+0x0067b794 mov       r0, r4 ; 
+0x0067b796 blx       #0x4a5b0c ; Anki::Cozmo::Robot::Broadcast(Anki::Cozmo::ExternalInterface::MessageEngineToGame&&)
+0x0067b79a add       r0, sp, #0x18 ; 
+0x0067b79c blx       #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent()
+0x0067b7a0 ldr       r0, [sp] ; 
+0x0067b7a2 cbz       r0, #0x67b7c0 ; 
+0x0067b7a4 ldr       r1, [sp, #4] ; 
+0x0067b7a6 cmp       r1, r0 ; 
+0x0067b7a8 itttt     ne ; 
+0x0067b7aa subne     r2, r1, #4 ; 
+0x0067b7ac subne     r2, r2, r0 ; 
+0x0067b7ae mvnne     r3, #3 ; 
+0x0067b7b2 bicne.w   r2, r3, r2 ; 
+0x0067b7b6 itt       ne ; 
+0x0067b7b8 addne     r1, r1, r2 ; 
+0x0067b7ba strne     r1, [sp, #4] ; 
+0x0067b7bc blx       #0x4a40cc ; operator delete(void*)
+0x0067b7c0 ldr       r0, [sp, #0xc] ; 
+0x0067b7c2 cbz       r0, #0x67b7e0 ; 
+0x0067b7c4 ldr       r1, [sp, #0x10] ; 
+0x0067b7c6 cmp       r1, r0 ; 
+0x0067b7c8 itttt     ne ; 
+0x0067b7ca subne     r2, r1, #4 ; 
+0x0067b7cc subne     r2, r2, r0 ; 
+0x0067b7ce mvnne     r3, #3 ; 
+0x0067b7d2 bicne.w   r2, r3, r2 ; 
+0x0067b7d6 itt       ne ; 
+0x0067b7d8 addne     r1, r1, r2 ; 
+0x0067b7da strne     r1, [sp, #0x10] ; 
+0x0067b7dc blx       #0x4a40cc ; operator delete(void*)
+0x0067b7e0 ldr       r0, [pc, #0x74] ; 
+0x0067b7e2 ldr       r1, [sp, #0x124] ; 
+0x0067b7e4 add       r0, pc ; 
+0x0067b7e6 ldr       r0, [r0] ; 
+0x0067b7e8 ldr       r0, [r0] ; 
+0x0067b7ea subs      r0, r0, r1 ; 
+0x0067b7ec itt       eq ; 
+0x0067b7ee addeq     sp, #0x128 ; 
+0x0067b7f0 popeq.w   {r4, r5, r6, r7, r8, pc} ; 
+0x0067b7f4 blx       #0x4a4fe4 ; __stack_chk_fail
+
+
+Anki::Cozmo::CozmoAPI::SendMessages 0065BC00
+0065BC00: ldr       r0, [r0] 
+0065BC02: cbz       r0, #0x65bc0c 
+0065BC04: ldr       r0, [r0, #4] 
+0065BC06: cbz       r0, #0x65bc0c 
+0065BC08: b.w       #0x8cd1ec 
+0065BC0C: movs      r0, #0 
+0065BC0E: bx        lr 
+
+Anki::Cozmo::CozmoAPI::ReceiveMessages 0065BC10
+0065BC10: ldr       r0, [r0] 
+0065BC12: cbz       r0, #0x65bc1c 
+0065BC14: ldr       r0, [r0, #4] 
+0065BC16: cbz       r0, #0x65bc1c 
+0065BC18: b.w       #0x8cd1fc 
+0065BC1C: bx        lr 
+0065BC1E: ldr       r0, [r0] 
+
+Anki::Cozmo::GameMessagePort::PushFromGameMessages 0065DB58
+0065DB58: push      {r4, r5, r6, r7, lr} 
+0065DB5A: sub       sp, #0xc 
+0065DB5C: mov       r7, r0 
+0065DB5E: add.w     r4, r7, #0x1c 
+0065DB62: mov       r6, r1 
+0065DB64: mov       r5, r2 
+0065DB66: mov       r0, r4 
+0065DB68: str       r6, [sp, #8] 
+0065DB6A: blx       #0x4a6784 std::__ndk1::mutex::lock()
+0065DB6E: adds      r0, r6, r5 
+0065DB70: str       r0, [sp, #4] 
+0065DB72: add.w     r0, r7, #0x10 
+0065DB76: add       r1, sp, #8 
+0065DB78: add       r2, sp, #4 
+0065DB7A: blx       #0x4badc4 void std::__ndk1::list<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >::emplace_back<unsigned char const*&, unsigned char const*>(unsigned char const*&, unsigned char const*)
+0065DB7E: mov       r0, r4 
+0065DB80: blx       #0x4a6790 std::__ndk1::mutex::unlock()
+0065DB84: add       sp, #0xc 
+0065DB86: pop       {r4, r5, r6, r7, pc} 
+
+Anki::Cozmo::GameMessagePort::PullFromGameMessages 0065DB14
+0065DB14: push      {r4, r5, r6, lr} 
+0065DB16: mov       r4, r0 
+0065DB18: movs      r0, #0 
+0065DB1A: strd      r4, r4, [r4] 
+0065DB1E: mov       r6, r1 
+0065DB20: str       r0, [r4, #8] 
+0065DB22: ldr       r0, [r6, #0x18] 
+0065DB24: cbz       r0, #0x65db48 
+0065DB26: add.w     r5, r6, #0x1c 
+0065DB2A: mov       r0, r5 
+0065DB2C: blx       #0x4a6784 std::__ndk1::mutex::lock()
+0065DB30: adds      r6, #0x10 
+0065DB32: mov       r0, r4 
+0065DB34: mov       r1, r6 
+0065DB36: blx       #0x4badb8 std::__ndk1::list<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >::__move_assign(std::__ndk1::list<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >&, std::__ndk1::integral_constant<bool, true>)
+0065DB3A: mov       r0, r6 
+0065DB3C: blx       #0x4b3cfc std::__ndk1::__list_imp<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >::clear()
+0065DB40: mov       r0, r5 
+0065DB42: blx       #0x4a6790 std::__ndk1::mutex::unlock()
+0065DB46: pop       {r4, r5, r6, pc} 
+0065DB48: pop       {r4, r5, r6, pc} 
+
+Anki::Cozmo::DirectGameComms::Update 0065C3D8
+0065C3D8: push      {r4, lr} 
+0065C3DA: sub       sp, #0x10 
+0065C3DC: mov       r4, r0 
+0065C3DE: add       r0, sp, #4 
+0065C3E0: ldr.w     r1, [r4, #0x9c] 
+0065C3E4: blx       #0x4bab30 Anki::Cozmo::GameMessagePort::PullFromGameMessages()
+0065C3E8: ldr       r0, [sp, #0xc] 
+0065C3EA: cbz       r0, #0x65c416 
+0065C3EC: ldrd      r0, r1, [sp, #4] 
+0065C3F0: ldr       r2, [r1] 
+0065C3F2: ldr       r3, [r0, #4] 
+0065C3F4: str       r3, [r2, #4] 
+0065C3F6: ldr       r2, [r0, #4] 
+0065C3F8: ldr       r3, [r1] 
+0065C3FA: str       r3, [r2] 
+0065C3FC: ldr       r2, [r4, #0x8c]! 
+0065C400: str       r1, [r2, #4] 
+0065C402: ldr       r2, [r4] 
+0065C404: str       r2, [r1] 
+0065C406: str       r0, [r4] 
+0065C408: str       r4, [r0, #4] 
+0065C40A: ldr       r0, [r4, #8] 
+0065C40C: ldr       r1, [sp, #0xc] 
+0065C40E: add       r0, r1 
+0065C410: str       r0, [r4, #8] 
+0065C412: movs      r0, #0 
+0065C414: str       r0, [sp, #0xc] 
+0065C416: add       r0, sp, #4 
+0065C418: blx       #0x4b3cfc std::__ndk1::__list_imp<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >::clear()
+0065C41C: add       sp, #0x10 
+0065C41E: pop       {r4, pc} 
+
+Anki::Cozmo::DirectGameComms::RecvMessageInternal 0065C43E
+0065C43E: push      {r4, r5, r6, lr} 
+0065C440: mov       r4, r0 
+0065C442: mov       r5, r1 
+0065C444: ldr.w     r0, [r4, #0x98] 
+0065C448: cmp       r0, #2 
+0065C44A: beq       #0x65c45e 
+0065C44C: cmp       r0, #1 
+0065C44E: bne       #0x65c48e 
+0065C450: ldr.w     r0, [r4, #0x94] 
+0065C454: cbz       r0, #0x65c48e 
+0065C456: movs      r0, #2 
+0065C458: str.w     r0, [r4, #0x98] 
+0065C45C: b         #0x65c464 
+0065C45E: ldr.w     r0, [r4, #0x94] 
+0065C462: cbz       r0, #0x65c48e 
+0065C464: mov       r0, r5 
+0065C466: ldr.w     r6, [r4, #0x90] 
+0065C46A: blx       #0x4a62d4 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::deallocate()
+0065C46E: ldr       r0, [r6, #8] 
+0065C470: str       r0, [r5] 
+0065C472: ldr       r0, [r6, #0xc] 
+0065C474: str       r0, [r5, #4] 
+0065C476: ldr       r0, [r6, #0x10] 
+0065C478: str       r0, [r5, #8] 
+0065C47A: movs      r0, #0 
+0065C47C: strd      r0, r0, [r6, #8] 
+0065C480: str       r0, [r6, #0x10] 
+0065C482: add.w     r0, r4, #0x8c 
+0065C486: blx       #0x4bab48 std::__ndk1::list<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >, std::__ndk1::allocator<std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> > > >::pop_front()
+0065C48A: movs      r0, #1 
+0065C48C: pop       {r4, r5, r6, pc} 
+0065C48E: movs      r0, #0 
+0065C490: pop       {r4, r5, r6, pc} 
+
+Anki::Cozmo::CreateSocketComms 0065FEDC
+0065FEDC: push      {r4, r5, r6, r7, lr} 
+0065FEDE: sub       sp, #4 
+0065FEE0: mov       r7, r3 
+0065FEE2: mov       r5, r2 
+0065FEE4: mov       r6, r1 
+0065FEE6: cmp       r0, #2 
+0065FEE8: beq       #0x65fefe 
+0065FEEA: cbnz      r0, #0x65ff0e 
+0065FEEC: movs      r0, #0xa8 
+0065FEEE: blx       #0x4a42a0 operator new(unsigned int)
+0065FEF2: mov       r4, r0 
+0065FEF4: mov       r1, r6 
+0065FEF6: mov       r2, r5 
+0065FEF8: blx       #0x4bb118 Anki::Cozmo::DirectGameComms::DirectGameComms(Anki::Cozmo::GameMessagePort*, int)
+0065FEFC: b         #0x65ff10 
+0065FEFE: movs      r0, #0xa8 
+0065FF00: blx       #0x4a42a0 operator new(unsigned int)
+0065FF04: mov       r4, r0 
+0065FF06: mov       r1, r7 
+0065FF08: blx       #0x4bb124 Anki::Cozmo::TcpSocketComms::TcpSocketComms(bool)
+0065FF0C: b         #0x65ff10 
+0065FF0E: movs      r4, #0 
+0065FF10: mov       r0, r4 
+0065FF12: add       sp, #4 
+0065FF14: pop       {r4, r5, r6, r7, pc} 
+
+Anki::Cozmo::TcpSocketComms::ReadFromSocket 0065F48E
+0065F48E: push      {r4, r5, r7, lr} 
+0065F490: mov       r4, r0 
+0065F492: ldr       r0, [r4, #0x90]! 
+0065F496: ldr       r1, [r4, #4] 
+0065F498: subs      r5, r1, r0 
+0065F49A: mov       r0, r4 
+0065F49C: add.w     r1, r5, #0x800 
+0065F4A0: blx       #0x4ae218 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::resize(unsigned int)
+0065F4A4: ldr       r1, [r4] 
+0065F4A6: mov.w     r2, #0x800 
+0065F4AA: ldr       r0, [r4, #-0x4] 
+0065F4AE: add       r1, r5 
+0065F4B0: blx       #0x4baf8c TcpServer::Recv(char*, int)
+0065F4B4: cmp       r0, #1 
+0065F4B6: blt       #0x65f4c4 
+0065F4B8: adds      r1, r0, r5 
+0065F4BA: mov       r0, r4 
+0065F4BC: blx       #0x4ae218 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::resize(unsigned int)
+0065F4C0: movs      r0, #1 
+0065F4C2: pop       {r4, r5, r7, pc} 
+0065F4C4: mov       r0, r4 
+0065F4C6: mov       r1, r5 
+0065F4C8: blx       #0x4ae218 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::resize(unsigned int)
+0065F4CC: movs      r0, #0 
+0065F4CE: pop       {r4, r5, r7, pc} 
+
+Anki::Cozmo::TcpSocketComms::ExtractNextMessage 0065F4D0
+0065F4D0: push      {r4, r5, r6, r7, lr} 
+0065F4D2: sub       sp, #0xc 
+0065F4D4: mov       r4, r0 
+0065F4D6: mov       r5, r1 
+0065F4D8: ldrd      r0, r1, [r4, #0x90] 
+0065F4DC: subs      r1, r1, r0 
+0065F4DE: cmp       r1, #2 
+0065F4E0: blo       #0x65f4ec 
+0065F4E2: ldrh      r2, [r0] 
+0065F4E4: adds      r7, r2, #2 
+0065F4E6: uxth      r6, r7 
+0065F4E8: cmp       r1, r6 
+0065F4EA: bhs       #0x65f4f0 
+0065F4EC: movs      r0, #0 
+0065F4EE: b         #0x65f56e 
+0065F4F0: cbz       r2, #0x65f50a 
+0065F4F2: adds      r1, r0, #2 
+0065F4F4: mov       r0, sp 
+0065F4F6: add       r2, r1 
+0065F4F8: blx       #0x4a6ec8 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::vector<unsigned char const*>(std::__ndk1::enable_if<(__is_forward_iterator<unsigned char const*>::value)&&(is_constructible<unsigned char, std::__ndk1::iterator_traits<unsigned char const*>::reference>::value), unsigned char const*>::type)
+0065F4FC: mov       r0, r5 
+0065F4FE: blx       #0x4a62d4 std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >::deallocate()
+0065F502: ldm.w     sp, {r0, r1, r2} 
+0065F506: stm       r5!, {r0, r1, r2} 
+0065F508: b         #0x65f548 
+0065F50A: movs      r0, #0 
+0065F50C: strd      r0, r0, [sp] 
+0065F510: str       r0, [sp, #8] 
+0065F512: adr       r0, #0x88 
+0065F514: adr       r2, #0xa8 
+0065F516: mov       r1, sp 
+0065F518: blx       #0x4a4540 Anki::Util::sWarningF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065F51C: ldr       r0, [sp] 
+0065F51E: cbz       r0, #0x65f53e 
+0065F520: ldr       r1, [sp, #4] 
+0065F522: cmp       r1, r0 
+0065F524: itttt     ne 
+0065F526: subne.w   r2, r1, #8 
+0065F52A: subne     r2, r2, r0 
+0065F52C: mvnne     r3, #7 
+0065F530: bicne.w   r2, r3, r2 
+0065F534: itt       ne 
+0065F536: addne     r1, r1, r2 
+0065F538: strne     r1, [sp, #4] 
+0065F53A: blx       #0x4a40cc operator delete(void*)
+0065F53E: ldrd      r0, r1, [r5] 
+0065F542: cmp       r1, r0 
+0065F544: it        ne 
+0065F546: strne     r0, [r5, #4] 
+0065F548: lsls      r0, r7, #0x10 
+0065F54A: beq       #0x65f56c 
+0065F54C: ldrd      r5, r0, [r4, #0x90] 
+0065F550: adds      r1, r5, r6 
+0065F552: subs      r6, r0, r1 
+0065F554: beq       #0x65f562 
+0065F556: mov       r0, r5 
+0065F558: mov       r2, r6 
+0065F55A: blx       #0x4a4600 __aeabi_memmove
+0065F55E: ldr.w     r0, [r4, #0x94] 
+0065F562: adds      r1, r5, r6 
+0065F564: cmp       r0, r1 
+0065F566: it        ne 
+0065F568: strne.w   r1, [r4, #0x94] 
+0065F56C: movs      r0, #1 
+0065F56E: add       sp, #0xc 
+0065F570: pop       {r4, r5, r6, r7, pc} 
+
+Anki::Cozmo::TcpSocketComms::RecvMessageInternal 0065F5EC
+0065F5EC: push      {r4, r5, r7, lr} 
+0065F5EE: mov       r5, r0 
+0065F5F0: mov       r4, r1 
+0065F5F2: ldr.w     r0, [r5, #0x9c] 
+0065F5F6: adds      r0, #1 
+0065F5F8: beq       #0x65f62a 
+0065F5FA: ldr.w     r0, [r5, #0x8c] 
+0065F5FE: blx       #0x4baf68 TcpServer::HasClient() const
+0065F602: cmp       r0, #1 
+0065F604: bne       #0x65f62a 
+0065F606: mov       r0, r5 
+0065F608: mov       r1, r4 
+0065F60A: blx       #0x4baf98 Anki::Cozmo::TcpSocketComms::ExtractNextMessage(std::__ndk1::vector<unsigned char, std::__ndk1::allocator<unsigned char> >&)
+0065F60E: cbz       r0, #0x65f614 
+0065F610: movs      r0, #1 
+0065F612: pop       {r4, r5, r7, pc} 
+0065F614: mov       r0, r5 
+0065F616: blx       #0x4bafa4 Anki::Cozmo::TcpSocketComms::ReadFromSocket()
+0065F61A: cmp       r0, #1 
+0065F61C: bne       #0x65f62a 
+0065F61E: mov       r0, r5 
+0065F620: mov       r1, r4 
+0065F622: pop.w     {r4, r5, r7, lr} 
+0065F626: b.w       #0x8cd30c 
+0065F62A: movs      r0, #0 
+0065F62C: pop       {r4, r5, r7, pc} 
+0065F62E: movs      r0, r0 
+
+TcpServer::Recv 0084DD3E
+0084DD3E: push      {r4, r5, r7, lr} 
+0084DD40: mov       r5, r0 
+0084DD42: ldr       r0, [r5, #4] 
+0084DD44: adds      r3, r0, #1 
+0084DD46: beq       #0x84dd62 
+0084DD48: movs      r3, #0 
+0084DD4A: blx       #0x4ce558 recv
+0084DD4E: mov       r4, r0 
+0084DD50: cmp       r4, #0 
+0084DD52: bgt       #0x84dd66 
+0084DD54: blx       #0x4a6e20 __errno
+0084DD58: ldr       r0, [r0] 
+0084DD5A: cmp       r0, #0xb 
+0084DD5C: bne       #0x84dd6a 
+0084DD5E: movs      r4, #0 
+0084DD60: b         #0x84dd66 
+0084DD62: mov.w     r4, #-1 
+0084DD66: mov       r0, r4 
+0084DD68: pop       {r4, r5, r7, pc} 
+0084DD6A: ldr       r0, [r5, #4] 
+0084DD6C: cmp       r0, #0 
+0084DD6E: blt       #0x84dd66 
+0084DD70: blx       #0x4bb9f4 close
+0084DD74: mov.w     r0, #-1 
+0084DD78: str       r0, [r5, #4] 
+0084DD7A: b         #0x84dd66 
+
+Anki::Cozmo::CozmoAPI::StartRun 0065B0F8
+0065B0F8: push      {r4, r5, r6, r7, lr} 
+0065B0FA: sub       sp, #0x1c 
+0065B0FC: mov       r4, r0 
+0065B0FE: mov       r5, r2 
+0065B100: ldr       r0, [r4, #4] 
+0065B102: mov       r6, r1 
+0065B104: cbz       r0, #0x65b166 
+0065B106: mov       r0, r4 
+0065B108: blx       #0x4ba9f8 Anki::Cozmo::CozmoAPI::Clear()
+0065B10C: movs      r0, #0 
+0065B10E: strb.w    r0, [sp, #0xf] 
+0065B112: movs      r0, #0x18 
+0065B114: blx       #0x4a42a0 operator new(unsigned int)
+0065B118: mov       r7, r0 
+0065B11A: add.w     r3, sp, #0xf 
+0065B11E: mov       r1, r6 
+0065B120: mov       r2, r5 
+0065B122: blx       #0x4baa04 Anki::Cozmo::CozmoAPI::CozmoInstanceRunner::CozmoInstanceRunner(Anki::Util::Data::DataPlatform*, Json::Value const&, bool&)
+0065B126: ldr       r0, [r4] 
+0065B128: str       r7, [r4] 
+0065B12A: cbz       r0, #0x65b132 
+0065B12C: ldr       r1, [r0] 
+0065B12E: ldr       r1, [r1, #4] 
+0065B130: blx       r1 
+0065B132: ldrb.w    r0, [sp, #0xf] 
+0065B136: cbz       r0, #0x65b1aa 
+0065B138: ldr       r0, [pc, #0x134] 
+0065B13A: movs      r5, #0 
+0065B13C: add       r1, sp, #0x10 
+0065B13E: add       r2, sp, #4 
+0065B140: add       r0, pc 
+0065B142: ldr       r0, [r0] 
+0065B144: strd      r0, r5, [sp, #0x10] 
+0065B148: ldr       r0, [r4] 
+0065B14A: str       r0, [sp, #4] 
+0065B14C: add       r0, sp, #8 
+0065B14E: blx       #0x4baa10 std::__ndk1::thread::thread<void (Anki::Cozmo::CozmoAPI::CozmoInstanceRunner::*)(), Anki::Cozmo::CozmoAPI::CozmoInstanceRunner*, void>(Anki::Cozmo::CozmoAPI::CozmoInstanceRunner*&&)
+0065B152: ldr       r0, [r4, #4] 
+0065B154: cmp       r0, #0 
+0065B156: bne       #0x65b1fc 
+0065B158: ldr       r0, [sp, #8] 
+0065B15A: str       r0, [r4, #4] 
+0065B15C: add       r0, sp, #8 
+0065B15E: str       r5, [sp, #8] 
+0065B160: blx       #0x4a6a60 std::__ndk1::thread::~thread()
+0065B164: b         #0x65b1f6 
+0065B166: ldr       r0, [r4] 
+0065B168: cmp       r0, #0 
+0065B16A: beq       #0x65b10c 
+0065B16C: movs      r0, #0 
+0065B16E: strd      r0, r0, [sp, #0x10] 
+0065B172: str       r0, [sp, #0x18] 
+0065B174: adr       r0, #0xb8 
+0065B176: add       r1, sp, #0x10 
+0065B178: adr       r2, #0xc8 
+0065B17A: blx       #0x4a4108 Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065B17E: ldr       r0, [sp, #0x10] 
+0065B180: cbz       r0, #0x65b1a0 
+0065B182: ldr       r1, [sp, #0x14] 
+0065B184: cmp       r1, r0 
+0065B186: itttt     ne 
+0065B188: subne.w   r2, r1, #8 
+0065B18C: subne     r2, r2, r0 
+0065B18E: mvnne     r3, #7 
+0065B192: bicne.w   r2, r3, r2 
+0065B196: itt       ne 
+0065B198: addne     r1, r1, r2 
+0065B19A: strne     r1, [sp, #0x14] 
+0065B19C: blx       #0x4a40cc operator delete(void*)
+0065B1A0: ldr       r0, [pc, #0xc4] 
+0065B1A2: ldr       r1, [pc, #0xc8] 
+0065B1A4: add       r0, pc 
+0065B1A6: add       r1, pc 
+0065B1A8: b         #0x65b1e6 
+0065B1AA: movs      r0, #0 
+0065B1AC: strd      r0, r0, [sp, #0x10] 
+0065B1B0: str       r0, [sp, #0x18] 
+0065B1B2: adr       r0, #0x7c 
+0065B1B4: add       r1, sp, #0x10 
+0065B1B6: adr       r2, #0xbc 
+0065B1B8: blx       #0x4a4108 Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065B1BC: ldr       r0, [sp, #0x10] 
+0065B1BE: cbz       r0, #0x65b1de 
+0065B1C0: ldr       r1, [sp, #0x14] 
+0065B1C2: cmp       r1, r0 
+0065B1C4: itttt     ne 
+0065B1C6: subne.w   r2, r1, #8 
+0065B1CA: subne     r2, r2, r0 
+0065B1CC: mvnne     r3, #7 
+0065B1D0: bicne.w   r2, r3, r2 
+0065B1D4: itt       ne 
+0065B1D6: addne     r1, r1, r2 
+0065B1D8: strne     r1, [sp, #0x14] 
+0065B1DA: blx       #0x4a40cc operator delete(void*)
+0065B1DE: ldr       r0, [pc, #0xbc] 
+0065B1E0: ldr       r1, [pc, #0xbc] 
+0065B1E2: add       r0, pc 
+0065B1E4: add       r1, pc 
+0065B1E6: ldr       r0, [r0] 
+0065B1E8: movs      r2, #1 
+0065B1EA: ldr       r1, [r1] 
+0065B1EC: ldrb      r0, [r0] 
+0065B1EE: strb      r2, [r1] 
+0065B1F0: cbz       r0, #0x65b1f6 
+0065B1F2: blx       #0x4a4114 Anki::Util::sDebugBreakOnError()
+0065B1F6: movs      r0, #1 
+0065B1F8: add       sp, #0x1c 
+0065B1FA: pop       {r4, r5, r6, r7, pc} 
+0065B1FC: blx       #0x4a45d0 std::terminate()
+
+Anki::Cozmo::CozmoAPI::Update 0065B9B4
+0065B9B4: push      {r4, lr} 
+0065B9B6: sub       sp, #0x10 
+0065B9B8: ldr       r1, [r0, #4] 
+0065B9BA: cbz       r1, #0x65ba0e 
+0065B9BC: movs      r0, #0 
+0065B9BE: strd      r0, r0, [sp, #4] 
+0065B9C2: str       r0, [sp, #0xc] 
+0065B9C4: adr       r0, #0xbc 
+0065B9C6: add       r1, sp, #4 
+0065B9C8: adr       r2, #0xc8 
+0065B9CA: blx       #0x4a4108 Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065B9CE: ldr       r0, [sp, #4] 
+0065B9D0: cbz       r0, #0x65b9f0 
+0065B9D2: ldr       r1, [sp, #8] 
+0065B9D4: cmp       r1, r0 
+0065B9D6: itttt     ne 
+0065B9D8: subne.w   r2, r1, #8 
+0065B9DC: subne     r2, r2, r0 
+0065B9DE: mvnne     r3, #7 
+0065B9E2: bicne.w   r2, r3, r2 
+0065B9E6: itt       ne 
+0065B9E8: addne     r1, r1, r2 
+0065B9EA: strne     r1, [sp, #8] 
+0065B9EC: blx       #0x4a40cc operator delete(void*)
+0065B9F0: ldr       r0, [pc, #0xdc] 
+0065B9F2: ldr       r1, [pc, #0xe0] 
+0065B9F4: add       r0, pc 
+0065B9F6: add       r1, pc 
+0065B9F8: ldr       r0, [r0] 
+0065B9FA: movs      r2, #1 
+0065B9FC: ldr       r1, [r1] 
+0065B9FE: ldrb      r0, [r0] 
+0065BA00: strb      r2, [r1] 
+0065BA02: cbz       r0, #0x65ba08 
+0065BA04: blx       #0x4a4114 Anki::Util::sDebugBreakOnError()
+0065BA08: movs      r0, #0 
+0065BA0A: add       sp, #0x10 
+0065BA0C: pop       {r4, pc} 
+0065BA0E: ldr       r0, [r0] 
+0065BA10: cbz       r0, #0x65ba1c 
+0065BA12: add       sp, #0x10 
+0065BA14: pop.w     {r4, lr} 
+0065BA18: b.w       #0x8cd1dc 
+0065BA1C: movs      r0, #0 
+0065BA1E: strd      r0, r0, [sp, #4] 
+0065BA22: str       r0, [sp, #0xc] 
+0065BA24: adr       r0, #0x5c 
+0065BA26: add       r1, sp, #4 
+0065BA28: adr       r2, #0xac 
+0065BA2A: blx       #0x4a4108 Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065BA2E: ldr       r0, [sp, #4] 
+0065BA30: cbz       r0, #0x65ba50 
+0065BA32: ldr       r1, [sp, #8] 
+0065BA34: cmp       r1, r0 
+0065BA36: itttt     ne 
+0065BA38: subne.w   r2, r1, #8 
+0065BA3C: subne     r2, r2, r0 
+0065BA3E: mvnne     r3, #7 
+0065BA42: bicne.w   r2, r3, r2 
+0065BA46: itt       ne 
+0065BA48: addne     r1, r1, r2 
+0065BA4A: strne     r1, [sp, #8] 
+0065BA4C: blx       #0x4a40cc operator delete(void*)
+0065BA50: ldr       r0, [pc, #0xa0] 
+0065BA52: ldr       r1, [pc, #0xa4] 
+0065BA54: add       r0, pc 
+0065BA56: add       r1, pc 
+0065BA58: b         #0x65b9f8 
+0065BA5A: b         #0x65ba5c 
+
+Anki::Cozmo::CozmoAPI::CozmoInstanceRunner::Update 0065BAFC
+0065BAFC: push      {r4, r5, r6, r7, lr} 
+0065BAFE: sub       sp, #0xc 
+0065BB00: mov       r7, r0 
+0065BB02: add.w     r5, r7, #0x14 
+0065BB06: mov       r4, r3 
+0065BB08: mov       r6, r2 
+0065BB0A: mov       r0, r5 
+0065BB0C: blx       #0x4a6784 std::__ndk1::mutex::lock()
+0065BB10: ldr       r0, [r7, #0xc] 
+0065BB12: mov       r2, r6 
+0065BB14: mov       r3, r4 
+0065BB16: blx       #0x4baa64 Anki::Cozmo::CozmoEngine::Update(unsigned long long)
+0065BB1A: mov       r4, r0 
+0065BB1C: mov       r0, r5 
+0065BB1E: blx       #0x4a6790 std::__ndk1::mutex::unlock()
+0065BB22: cbz       r4, #0x65bb72 
+0065BB24: movs      r0, #0 
+0065BB26: strd      r0, r0, [sp] 
+0065BB2A: str       r0, [sp, #8] 
+0065BB2C: adr       r0, #0x80 
+0065BB2E: adr       r2, #0xa4 
+0065BB30: mov       r1, sp 
+0065BB32: mov       r3, r4 
+0065BB34: blx       #0x4a4108 Anki::Util::sErrorF(char const*, std::__ndk1::vector<std::__ndk1::pair<char const*, char const*>, std::__ndk1::allocator<std::__ndk1::pair<char const*, char const*> > > const&, char const*, ...)
+0065BB38: ldr       r0, [sp] 
+0065BB3A: cbz       r0, #0x65bb5a 
+0065BB3C: ldr       r1, [sp, #4] 
+0065BB3E: cmp       r1, r0 
+0065BB40: itttt     ne 
+0065BB42: subne.w   r2, r1, #8 
+0065BB46: subne     r2, r2, r0 
+0065BB48: mvnne     r3, #7 
+0065BB4C: bicne.w   r2, r3, r2 
+0065BB50: itt       ne 
+0065BB52: addne     r1, r1, r2 
+0065BB54: strne     r1, [sp, #4] 
+0065BB56: blx       #0x4a40cc operator delete(void*)
+0065BB5A: ldr       r0, [pc, #0x9c] 
+0065BB5C: movs      r2, #1 
+0065BB5E: ldr       r1, [pc, #0x9c] 
+0065BB60: add       r0, pc 
+0065BB62: add       r1, pc 
+0065BB64: ldr       r0, [r0] 
+0065BB66: ldr       r1, [r1] 
+0065BB68: ldrb      r0, [r0] 
+0065BB6A: strb      r2, [r1] 
+0065BB6C: cbz       r0, #0x65bb72 
+0065BB6E: blx       #0x4a4114 Anki::Util::sDebugBreakOnError()
+0065BB72: movs      r0, #0 
+0065BB74: cmp       r4, #0 
+0065BB76: it        eq 
+0065BB78: moveq     r0, #1 
+0065BB7A: add       sp, #0xc 
+0065BB7C: pop       {r4, r5, r6, r7, pc} 
+
+std::__ndk1::__thread_proxy<std::__ndk1::tuple<std::__ndk1::unique_ptr<std::__ndk1::__thread_struct,std::__ndk1::default_delete<std::__ndk1::__thread_struct>>,void(Anki::Cozmo::CozmoAPI::CozmoInstanceRunner::*)(),Anki::Cozmo::CozmoAPI::CozmoInstanceRunner*>> 0065C25A
+0065C25A: push      {r4, r5, r7, lr} 
+0065C25C: mov       r4, r0 
+0065C25E: blx       #0x4a6970 std::__ndk1::__thread_local_data()
+0065C262: ldr       r1, [r4] 
+0065C264: movs      r2, #0 
+0065C266: str       r2, [r4] 
+0065C268: blx       #0x4a697c std::__ndk1::__thread_specific_ptr<std::__ndk1::__thread_struct>::reset(std::__ndk1::__thread_struct*)
+0065C26C: ldrd      r1, r2, [r4, #4] 
+0065C270: tst.w     r2, #1 
+0065C274: ldr       r0, [r4, #0xc] 
+0065C276: add.w     r0, r0, r2, asr #1 
+0065C27A: itt       ne 
+0065C27C: ldrne     r2, [r0] 
+0065C27E: ldrne     r1, [r2, r1] 
+0065C280: blx       r1 
+0065C282: ldr       r0, [r4] 
+0065C284: movs      r1, #0 
+0065C286: str       r1, [r4] 
+0065C288: cbz       r0, #0x65c292 
+0065C28A: blx       #0x4a694c std::__ndk1::__thread_struct::~__thread_struct()
+0065C28E: blx       #0x4a40cc operator delete(void*)
+0065C292: mov       r0, r4 
+0065C294: blx       #0x4a40cc operator delete(void*)
+0065C298: movs      r0, #0 
+0065C29A: pop       {r4, r5, r7, pc} 
+
+std::__ndk1::thread::thread<void(Anki::Cozmo::CozmoAPI::CozmoInstanceRunner::*)(),Anki::Cozmo::CozmoAPI::CozmoInstanceRunner*,void> 0065B7F0
+0065B7F0: push.w    {r4, r5, r6, r7, r8, lr} 
+0065B7F4: mov       r8, r0 
+0065B7F6: movs      r0, #4 
+0065B7F8: mov       r7, r2 
+0065B7FA: mov       r5, r1 
+0065B7FC: blx       #0x4a42a0 operator new(unsigned int)
+0065B800: mov       r6, r0 
+0065B802: blx       #0x4a6928 std::__ndk1::__thread_struct::__thread_struct()
+0065B806: movs      r0, #0x10 
+0065B808: blx       #0x4a42a0 operator new(unsigned int)
+0065B80C: mov       r4, r0 
+0065B80E: ldr       r0, [pc, #0x74] 
+0065B810: ldrd      r1, r2, [r5] 
+0065B814: ldr       r3, [r7] 
+0065B816: add       r0, pc 
+0065B818: strd      r6, r1, [r4] 
+0065B81C: strd      r2, r3, [r4, #8] 
+0065B820: ldr       r2, [r0] 
+0065B822: mov       r0, r8 
+0065B824: movs      r1, #0 
+0065B826: mov       r3, r4 
+0065B828: blx       #0x4a6934 pthread_create
+0065B82C: cbz       r0, #0x65b84a 
+0065B82E: adr       r1, #0x58 
+0065B830: blx       #0x4a6940 std::__ndk1::__throw_system_error(int, char const*)
+0065B834: ldr       r0, [r4] 
+0065B836: movs      r1, #0 
+0065B838: str       r1, [r4] 
+0065B83A: cbz       r0, #0x65b844 
+0065B83C: blx       #0x4a694c std::__ndk1::__thread_struct::~__thread_struct()
+0065B840: blx       #0x4a40cc operator delete(void*)
+0065B844: mov       r0, r4 
+0065B846: blx       #0x4a40cc operator delete(void*)
+0065B84A: mov       r0, r8 
+0065B84C: pop.w     {r4, r5, r6, r7, r8, pc} 
