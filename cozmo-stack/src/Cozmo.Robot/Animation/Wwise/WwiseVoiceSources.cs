@@ -183,11 +183,11 @@ public interface IWwisePitchNodeSource : IWwiseVoiceSource
     /// <summary>True when the source runs in the engine's order (it has a pitch node and <see cref="IWwiseVoiceSource.Render"/> is the decode only). False for the in-memory ADPCM class, whose body is unread.</summary>
     bool HasPitchNode { get; }
 
-    /// <summary>The 0x28-byte io state the source fills (the voice's <c>state</c>, P01).</summary>
-    WwiseDecodeState Io { get; }
+    /// <summary>The 0x28-byte io state the source fills: the voice's pass block <c>state</c> (P01). The voice assigns <see cref="WwiseVoiceBuffer.State"/> before every <c>vt+0x30</c> call: the engine hands the one block to whichever source is current.</summary>
+    WwiseDecodeState Io { get; set; }
 
-    /// <summary>The pitch node <c>voice+0x100</c>'s intake (<c>0xA52D4C</c>).</summary>
-    WwisePitchNodeIntake PitchNode { get; }
+    /// <summary><c>vt+0xC</c> (<c>0xA52F18</c>, <c>0xA52FD0</c>): the delivered block is released (the streamed Vorbis class <c>0xAB1100</c>, the in-memory <c>0xAB032C</c>, the ADPCM stream <c>0xA73A14</c>).</summary>
+    void ReleaseOutput();
 
     /// <summary>The owner PBI <c>[source+0xC]</c>: <c>vt+0x20 = 0xA5668C</c> returns its <c>+0x44</c> (the effective pitch) and the pitch pass reads <c>u16[+0x1BE] &amp; 0x380</c> from it. Null: the pitch pass is a visible stop.</summary>
     WwisePlayingInstance? Owner { get; }
@@ -199,8 +199,7 @@ public interface IWwisePitchNodeSource : IWwiseVoiceSource
 /// hand-off <c>0xA73490</c>); the in-memory kind (mode 3, the 0xD0-byte class of vtable <c>0x103E0B8</c>) runs <c>0xAB0B20</c> (<see cref="WwiseVorbisInMemorySource.StartStreamAB0B20"/>) and <c>0xAB0448</c>. Both return the engine's raw
 /// StartStream result (1, 0x3F, 2, 7, 8, 0x34, ...). There is no fallback to an offline decode: a source without a <see cref="WwiseStreamingContext"/> throws <see cref="WwiseMissingBehaviourException"/> at StartStream.
 /// <see cref="Render"/> is <c>vt+0x30</c> only: the decode fills the io state (<see cref="Io"/>, P01) and returns its result. The voice (<see cref="WwiseLiveVoice.Render"/>) calls it inside the <c>0x2B</c> loop and then,
-/// for a result of 0x11 / 0x2D, the pitch node's intake (<see cref="PitchNode"/>, <c>0xA52D4C</c>: a 0x2D with no valid frames becomes 0x2B, the voice then calls the source again). The pitch node's consumption of the
-/// block is a named seam (<see cref="WwiseStreamSourceSeams.PitchNodeConsumeA52DA8"/>).
+/// for a result of 0x11 / 0x2D, the voice's pitch node's intake (<see cref="WwiseLiveVoice.PitchNode"/>, <c>0xA52D4C</c>: a 0x2D with no valid frames becomes 0x2B, the voice then calls the source again; the node consumes the block).
 /// </summary>
 public sealed class WwiseVorbisVoiceSource : IWwisePitchNodeSource, IWwiseVoiceSourceFormat, IWwiseStreamingVoiceSource
 {
@@ -236,11 +235,6 @@ public sealed class WwiseVorbisVoiceSource : IWwisePitchNodeSource, IWwiseVoiceS
                 _mem = new WwiseVorbisInMemorySource(streaming.Pbi, streaming.Seams.Vorbis, streaming.Manager.TryAlloc, streaming.Seams.PoolFree, streaming.Seams.BaseDestructor);
         }
         Io = new WwiseDecodeState();
-        PitchNode = new WwisePitchNodeIntake(ReleaseOutput)
-        {
-            Consume = streaming?.Seams.PitchNodeConsumeA52DA8,
-            EndOfStream = streaming?.Seams.PitchNodeEndOfStreamA52EBC,
-        };
     }
 
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
@@ -255,11 +249,8 @@ public sealed class WwiseVorbisVoiceSource : IWwisePitchNodeSource, IWwiseVoiceS
     /// <inheritdoc />
     public WwisePlayingInstance? Owner => _ctx?.Pbi;
 
-    /// <summary>The io state the decode fills (the voice's <c>params</c>, P01).</summary>
-    public WwiseDecodeState Io { get; }
-
-    /// <summary>The pitch node's intake (<c>0xA52D4C</c>).</summary>
-    public WwisePitchNodeIntake PitchNode { get; }
+    /// <summary>The io state the decode fills (the voice's pass block, P01).</summary>
+    public WwiseDecodeState Io { get; set; }
 
     /// <summary>
     /// <c>vt+0xC</c>: the streamed class's <c>0xAB1100</c> or the in-memory class's <c>0xAB032C</c> (V08): the delivered block is freed.
@@ -373,11 +364,6 @@ public sealed class WwiseAdpcmVoiceSource : IWwisePitchNodeSource, IWwiseVoiceSo
         if (streamed && streaming is not null)
             _stream = new WwisePcmAdpcmStreamSource(streaming.Manager, streaming.Pbi, streaming.Block, streaming.Seams) { Class = WwisePcmAdpcmClass.AdpcmStream };
         Io = new WwiseDecodeState();
-        PitchNode = new WwisePitchNodeIntake(ReleaseOutput)
-        {
-            Consume = streaming?.Seams.PitchNodeConsumeA52DA8,
-            EndOfStream = streaming?.Seams.PitchNodeEndOfStreamA52EBC,
-        };
     }
 
     /// <summary>The engine's stream functions for this source (the streamed kind with a context), or null.</summary>
@@ -389,11 +375,8 @@ public sealed class WwiseAdpcmVoiceSource : IWwisePitchNodeSource, IWwiseVoiceSo
     /// <inheritdoc />
     public WwisePlayingInstance? Owner => _ctx?.Pbi;
 
-    /// <summary>The io state the decode fills (the voice's <c>params</c>, P01).</summary>
-    public WwiseDecodeState Io { get; }
-
-    /// <summary>The pitch node's intake (<c>0xA52D4C</c>).</summary>
-    public WwisePitchNodeIntake PitchNode { get; }
+    /// <summary>The io state the decode fills (the voice's pass block, P01).</summary>
+    public WwiseDecodeState Io { get; set; }
 
     /// <summary><c>vt+0xC = 0xA73A14</c> (the streamed kind): the delivered block is freed.</summary>
     public void ReleaseOutput() => _stream?.ReleaseOutputA73A14();

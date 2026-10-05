@@ -1009,11 +1009,11 @@ public sealed class WwisePlaybackBridge : IWwisePlaybackBridge
     /// <c>0xA5495C(voice)</c> (C31.4 R4.6): <c>[voice+0x1C0]-&gt;vt+0xC</c> (the filter A body, unread: <paramref name="filterAVtC"/>), then for every connection of the voice <c>[conn+0x6C]</c> bit 2 takes the value of bit 1.
     /// </summary>
     // fidelity: M6-026
-    public static void PostMixA5495C(WwiseLiveVoice voice, Action<WwiseLiveVoice>? filterAVtC)
+    public static void PostMixA5495C(WwiseLiveVoice voice, Action<WwiseLiveVoice>? filterAVtC = null)
     {
         ArgumentNullException.ThrowIfNull(voice);
-        (filterAVtC ?? throw new WwiseMissingBehaviourException(
-            "M6-026 R4.6: [voice+0x1C0]->vt+0xC (0xA54970) is unread; supply the filter A body"))(voice);   // 0xA54964..0xA54970
+        if (filterAVtC is not null) filterAVtC(voice);                           // a host's own body for the whole chain
+        else voice.ReleaseChainVtC();                                            // 0xA54964..0xA54970: filter A vt+0xC (0xA56718) -> the FX wrappers (0xA7915C) -> the pitch node (0xA52800), C38.1 P1-15
         foreach (var conn in voice.Connections)                                  // 0xA54974..0xA54998: the list linked through [conn+0x28]
             conn.Flags6C = (byte)((conn.Flags6C & ~4) | (((conn.Flags6C >> 1) & 1) << 2));   // 0xA54980..0xA5498C ubfx r1,r3,#1,#1; bfi r3,r1,#2,#1
     }

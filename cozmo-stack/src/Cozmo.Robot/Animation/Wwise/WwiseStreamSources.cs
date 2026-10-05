@@ -96,11 +96,6 @@ public sealed class WwiseStreamSourceSeams
     /// </summary>
     public WwisePoolFree? PoolFree { get; init; }
 
-    /// <summary>The pitch node's consumption of the delivered block (<c>0xA52DA8..0xA53050</c>; unread, M6-004): required by <see cref="WwisePitchNodeIntake"/> when a source delivers frames.</summary>
-    public WwisePitchNodeConsume? PitchNodeConsumeA52DA8 { get; init; }
-
-    /// <summary>The pitch node's last-buffer path <c>0xA52EBC</c> (the result 0x11; unread): required by <see cref="WwisePitchNodeIntake"/> when a source returns 0x11.</summary>
-    public WwisePitchNodeConsume? PitchNodeEndOfStreamA52EBC { get; init; }
 
     /// <summary>
     /// The base destructors the source destructors end with (<c>0xA75A0C</c> for the streamed Vorbis, ADPCM and PCM classes, <c>0xA73304</c> for the in-memory classes; V22 names them, no adopted row reads their

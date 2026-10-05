@@ -86,6 +86,7 @@ public sealed class WwiseVoiceBusEngineTests
         var voice = new WwiseLiveVoice(channels: 1, maxFrames: 8)
         {
             Source = new ConstantSource(0.5f, 8),
+            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
             OutputGain = 1f,
             AllowRenderOrderApproximation = true,   // the test source has no pitch node: the earlier render approximation, NOT the engine's order (MISSING)
         };
@@ -121,7 +122,7 @@ public sealed class WwiseVoiceBusEngineTests
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         bus.FrameBudget = -1;                                        // V7 0xA55228: a caller budget that does not clear r5
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
         var connection = new WwiseVoiceConnection(bus, 1, 1);
         voice.Connections.Add(connection);
         bus.SourceRequest3C = _ => 1;                                // 0xA553A4 accepted
@@ -353,7 +354,7 @@ public sealed class WwiseVoiceBusEngineTests
         var owner = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 1, TargetNodeId = 1 }, 1, new object(), new byte[0x44], null, false);
         pass.SourceOwner = _ => owner;                       // M6-026 7.3: [[voice+0xD4]+0xC], an unmarked PBI (test double)
 
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), OutputGain = 1f, AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), OutputGain = 1f, AllowRenderOrderApproximation = true };   // the earlier render approximation (MISSING), not the engine's order
         var dry = new WwiseVoiceConnection(bus, 1, 1) { TargetGain = 1f };
         dry.Descriptor.Reserve(1, 1);                                // [conn+0x18] != 0 (C24.4)
         dry.Refresh();                                               // past the first update: bit2 is the live fade-in bit
@@ -487,7 +488,7 @@ public sealed class WwiseVoiceBusEngineTests
         var buses = new WwiseMixBusHierarchy();
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), E4 = 1 };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
         bool stopped = false;
         voice.VoiceStop48 = () => stopped = true;
@@ -511,6 +512,7 @@ public sealed class WwiseVoiceBusEngineTests
         var voice = new WwiseLiveVoice(1, 8)
         {
             Source = new ConstantSource(0.5f, 8),
+            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
             E4 = 2,
             E0 = 1,
         };
@@ -541,6 +543,7 @@ public sealed class WwiseVoiceBusEngineTests
         var voice = new WwiseLiveVoice(1, 8)
         {
             Source = new ConstantSource(0.5f, 8),
+            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
             E4 = 2,
             E0 = 5,
             FlagsCD = 1,                                             // A set, cd8 clear
@@ -574,7 +577,7 @@ public sealed class WwiseVoiceBusEngineTests
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         bus.FrameBudget = -1;
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), E4 = 0 };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 0 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
 
         Assert.True(pass.RunVoiceStateMachine(voice));               // -> 0xA55218
@@ -592,7 +595,7 @@ public sealed class WwiseVoiceBusEngineTests
         var buses = new WwiseMixBusHierarchy();
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), E4 = 1, FlagE8 = true };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1, FlagE8 = true };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // fp = 0 -> P2F = 0
         voice.VoiceRequest3C = () => 0;
         bool called = false;
@@ -619,7 +622,7 @@ public sealed class WwiseVoiceBusEngineTests
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         bus.FrameBudget = -1;                                        // the budget step does not clear r5
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), FlagE8 = true };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), FlagE8 = true };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1));
         bool stopped = false;
         voice.VoiceStop48 = () => stopped = true;                    // 0xA555A0 voice->vt+0x48
@@ -645,6 +648,7 @@ public sealed class WwiseVoiceBusEngineTests
         var voice = new WwiseLiveVoice(1, 8)
         {
             Source = new ConstantSource(0.5f, 8),
+            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
             E4 = 2,
             E0 = 1,
             FlagsCD = 1,                                             // A set
@@ -679,7 +683,7 @@ public sealed class WwiseVoiceBusEngineTests
         var buses = new WwiseMixBusHierarchy();
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8) };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8) };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });  // fp = 1 -> P2F = 1
         voice.VoiceRequest3C = () => 0;                              // vt3c==0
 
@@ -720,6 +724,7 @@ public sealed class WwiseVoiceBusEngineTests
         var voice = new WwiseLiveVoice(1, 8)
         {
             Source = new ConstantSource(0.5f, 8),
+            StartResampler5321C = () => true,   // the host's own resampler start: this source has no pitch node (0xA5321C is the node's)
             FlagsCD = 8,                                             // cd8 set
         };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // bit1 set -> run stays 1
@@ -744,7 +749,7 @@ public sealed class WwiseVoiceBusEngineTests
         var buses = new WwiseMixBusHierarchy();
         var bus = buses.GetOrCreate(default, () => new WwiseMixBus(default, Array.Empty<WwiseBusFxSlot>(), 8));
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), E4 = 1 };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 1 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0x02 });  // fp = 0 -> P2F = 0
         voice.VoiceRequest3C = () => 0;
         voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
@@ -799,7 +804,7 @@ public sealed class WwiseVoiceBusEngineTests
         bus.Param2_3C = 5f;
         bus.Param2_40 = 7f;
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), Word0xF0 = 1 };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), Word0xF0 = 1 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0 });  // bit1 clear
         voice.VoiceRequest3C = () => 0;                              // vt3c == 0 -> Run2E = run = 0
         voice.Ramp340.Target = 50f; voice.Ramp340.Current = 10f; voice.Ramp340.Rate = 8;
@@ -832,7 +837,7 @@ public sealed class WwiseVoiceBusEngineTests
         bus.FlagsE8 = 0x20;                                          // the 0xA555F0 state-0x11 tail runs
         bus.FlagsE9 = 1;
         var pass = new WwiseVoiceBusPass(buses, new WwiseOutputDeviceState());
-        var voice = new WwiseLiveVoice(1, 8) { Source = new ConstantSource(0.5f, 8), E4 = 0 };
+        var voice = new WwiseLiveVoice(1, 8) { StartResampler5321C = () => true, Source = new ConstantSource(0.5f, 8), E4 = 0 };
         voice.Connections.Add(new WwiseVoiceConnection(bus, 1, 1) { Flags6C = 0, C60 = 1f });
         int calls = 0;
         voice.VoiceRequest3C = () => calls++ == 0 ? 1 : 0;           // first call Run2E=1, second Run2E=0

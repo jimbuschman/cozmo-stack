@@ -883,22 +883,10 @@ public class WwiseStreamSourceTests
         pbi.Word1DC = address; pbi.Word1E0 = 346;
         var setups = new List<string>();
         var vorbisCtx = new WwiseVorbisEngineContext { OnSetupAcquire = (bytes, flag) => setups.Add($"{bytes.Length}/{flag}") };
-        // The pitch node's consumption (0xA52DA8, M6-004) is unread: this TEST DOUBLE copies the delivered block 1:1 into the voice buffer and releases it through the source's vt+0xC (A52F0C..A52F18).
-        WwisePitchNodeConsume oneToOne = (held, buffer, release) =>
-        {
-            int n = held.ValidFrames;
-            var block = (float[])held.Data!;
-            Array.Copy(block, 0, buffer.Channels[0], 0, n);
-            buffer.ValidFrames = n;
-            held.ValidFrames = 0;                                                                           // the whole block is consumed: u16[node+0x6E] = 0
-            release();
-            return 0x2D;
-        };
         var seams = new WwiseStreamSourceSeams
         {
             Memory = memory,
             Vorbis = vorbisCtx,
-            PitchNodeConsumeA52DA8 = oneToOne,
         };
         bridge.MediaFor = id => media;
         bridge.Codebooks = codebooks;
@@ -923,15 +911,22 @@ public class WwiseStreamSourceTests
         Assert.Equal(0x4101u, pbi.Word15C);
         Assert.Equal(new[] { "219/0" }, setups);
         // vt+0x30: the gate of 0xAB1550 passes with 8191 >= 4928 bytes buffered, then the engine's own decode runs (the packet loop 0xAB7E40 and the hand-off 0xA73490): the priming packet gives no frames and the first output
-        // packet 128 (the packet value, not the 1024 the voice asks for; the oracle's first call of this medium: emu_decode_stream.py sv_first_calls, f=128), which the pitch node's intake (0xA52D4C) takes and the test double consumes.
-        // The delivered samples are the first 128 of the existing offline decode (the differential), bit for bit.
-        var buffer = new WwiseVoiceBuffer(1, 1024);
-        Assert.Equal(0x2D, PullThroughTheVoice(source, buffer));
-        Assert.Equal(128, buffer.ValidFrames);
+        // packet 128 (the packet value, not the 1024 the voice asks for; the oracle's first call of this medium: emu_decode_stream.py sv_first_calls, f=128), which the live voice's pitch node (WwiseLiveVoice.Render: 0xA44630, 0xA53134,
+        // 0xA52D4C, C38.1) takes: this medium is 48000 Hz mono float, so the node's resampler is the float bypass 0xA479F4 (a plain copy); [pbi+0x1D8] = -F*P (the voice pass 0xA55228..0xA55244 leaves D in [-F*P, 0)) writes no silent frames.
+        // The node releases each source block through vt+0xC (0xAB1100); the voice's loop ends when the stream layer has nothing more (0x2E, the not-ready handler 0xA55C14). Every delivered frame is the existing offline decode, bit for bit.
+        pbi.StartOffset = unchecked((uint)-1024);
+        var live = new WwiseLiveVoice(1, 1024) { Source = source };
+        live.SourceNotReadyA55C14 = (_, _) => { };
+        Assert.True(live.StartResamplerA5321C());                                                           // 0xA54A30 -> 0xA5321C with the format the StartStream wrote
+        live.Buffer.InitPassBlockA44A00();
+        live.Render();
+        int delivered = live.PitchNode.Out.ValidFrames;
+        Assert.True(delivered >= 128, $"delivered {delivered}");
         var offline = WwiseVorbisNative.Decode(media, codebooks);
-        for (int i = 0; i < 128; i++) Assert.Equal(BitConverter.SingleToUInt32Bits(offline[i]), BitConverter.SingleToUInt32Bits(buffer.Channels[0][i]));
+        var data = (float[])live.PitchNode.Out.Data!;
+        for (int i = 0; i < delivered; i++) Assert.Equal(BitConverter.SingleToUInt32Bits(offline[i]), BitConverter.SingleToUInt32Bits(data[i]));
         Assert.Null(source.StreamSource.OutputA4);                                                         // the pitch node released the block through vt+0xC (0xAB1100)
-        Assert.Equal(0u, source.Io.Position);                                                              // [state+0x18]: the position of the first frame
+        Assert.Equal(0u, live.PitchNode.Out.Position);                                                     // [node+0xA0]: the position of the first frame                                                    // [node+0xA0]: the position of the first frame
     }
 
     [Fact]
@@ -970,11 +965,13 @@ public class WwiseStreamSourceTests
     }
 
     [Fact]
-    public void L5_TheInMemoryAdapterPlaysAWholeMediumThroughTheVoiceEntryToTheLastFramesAndEqualsTheOfflineDecode()
+    public void L5_TheInMemoryAdapterPlaysAWholeMediumThroughTheLiveVoiceToTheLastFramesAndEqualsTheResampledOfflineDecode()
     {
-        // The live voice entry for the in-memory class: WwiseVoiceSourceStart.StartA56650 -> the adapter's vt+0x28 -> 0xAB0B20 (the bank-memory address resolved), then the voice's source calls (vt+0x30 = 0xAB0448 and the
-        // pitch node's intake 0xA52D4C): the frames per call are the engine's (128 / 576 / 1024), the last call carries the last frames with the result 0x11, and all the frames together are the existing offline decode
-        // of M6-002 bit for bit. The pitch node's consumption is a TEST DOUBLE (copy the block into the voice buffer, release it through vt+0xC).
+        // The live voice entry for the in-memory class: WwiseVoiceSourceStart.StartA56650 -> the adapter's vt+0x28 -> 0xAB0B20 (the bank-memory address resolved), then WwiseLiveVoice.Render passes (the engine's order 0xA44630: the source's
+        // vt+0x30 = 0xAB0448 with the frames per call 128 / 576 / 1024, the pitch node's intake 0xA52D4C and consumption 0xA52DA8, the release 0xA52800 after each pass): the last call carries the last frames with the result 0x11.
+        // The medium is 32000 Hz mono float, so the voice's node resamples it to 48000 Hz: SetPitch(0) gives the step 0xAAAB (C38.2 P1-18: 32000 -> 0xAAAB, mode 1) and the float mode-1 kernel 0xA49E40 (C38.2 P1-16c) is
+        // out_k = in[i-1] + (f * 2^-16) * (in[i] - in[i-1]) with phase 0x10000 + k * step, i = phase >> 16, f = phase & 0xFFFF, for the outputs with i <= N-1. The expected values are that formula applied to the existing offline
+        // decode of M6-002 (itself bit-exact against the engine's decode): the chunking of 128 / 576 / 1024 frames into 1024-frame passes must not change a single bit.
         var wem = ReadWem("289339243.wem")!;
         var media = WwiseMedia.Parse(wem);
         var codebooks = WwiseVorbisEngineTests.Codebooks();
@@ -985,17 +982,8 @@ public class WwiseStreamSourceTests
         var pbi = new WwisePlayingInstance(new WwisePlayInitParams { PlayingId = 0x1234, TargetNodeId = 1 }, 1, new WwiseSourceDescriptor(WwiseSourceFactory.VorbisPlugin, 1, 289339243, 0, 0), new byte[0x44], null, false);
         pbi.Word15C = 0;
         pbi.LoopCount1B8 = 1;                                                                               // a single play (the Sound has no loop property: 0xA1E280 gives 1)
-        WwisePitchNodeConsume oneToOne = (held, buffer, release) =>
-        {
-            int n = held.ValidFrames;
-            var block = (float[])held.Data!;
-            for (int c = 0; c < buffer.ChannelCount; c++) Array.Copy(block, c * n, buffer.Channels[c], 0, n);
-            buffer.ValidFrames = n;
-            held.ValidFrames = 0;                                                                           // the whole block is consumed: u16[node+0x6E] = 0
-            release();
-            return buffer.Result;
-        };
-        var seams = new WwiseStreamSourceSeams { Memory = memory, PitchNodeConsumeA52DA8 = oneToOne, PitchNodeEndOfStreamA52EBC = oneToOne };
+        pbi.StartOffset = unchecked((uint)-1024);                                                           // [pbi+0x1D8] = -F*P: the voice pass 0xA55228..0xA55244 leaves D in [-F*P, 0)
+        var seams = new WwiseStreamSourceSeams { Memory = memory };
         var source = new WwiseVorbisVoiceSource(WwiseVorbisSourceKind.InMemory, media, codebooks, streaming: new WwiseStreamingContext
         {
             Manager = rig.Manager, Pbi = pbi, Seams = seams, Block = new WwiseSourceBlock150 { SourceId04 = 289339243, Bits0C = 3, Bits0D = 2, Plugin14 = 0x00040001 },
@@ -1005,38 +993,47 @@ public class WwiseStreamSourceTests
         Assert.True(ran);
         Assert.True(source.StartStreamSucceeded);
         Assert.Equal(32000u, pbi.SourceFormat158);                                                          // written inside StartStream (0xAB0BF0)
+        var voice = new WwiseLiveVoice(1, 1024) { Source = source };
+        voice.SourceNotReadyA55C14 = (_, _) => { };
+        voice.StartStreamFormatWriter = (_, _) => { };
+        Assert.True(voice.StartResamplerA5321C());
         var all = new List<float>();
-        var perCall = new List<int>();
+        var perPass = new List<int>();
         int result = 0;
-        for (int i = 0; i < 100 && result != 0x11; i++)
+        for (int pass = 0; pass < 100 && result != 0x11; pass++)
         {
-            var buffer = new WwiseVoiceBuffer(1, 1024);
-            result = PullThroughTheVoice(source, buffer);
-            Assert.Contains(result, new[] { 0x2B, 0x2D, 0x11 });
-            if (result == 0x2B) continue;                                                                   // the priming packet: the voice would call again (0xA44784)
-            perCall.Add(buffer.ValidFrames);
-            all.AddRange(buffer.Channels[0].Take(buffer.ValidFrames));
+            voice.Buffer.InitPassBlockA44A00();
+            voice.Render();
+            result = voice.Buffer.Result;
+            Assert.Contains(result, new[] { 0x2B, 0x2D, 0x11, 0x2E });
+            var S = voice.Buffer.State;
+            if (result is 0x2D or 0x11 && S.ValidFrames != 0)
+            {
+                perPass.Add(S.ValidFrames);
+                all.AddRange(((float[])S.Data!).Take(S.ValidFrames));
+            }
+            voice.ReleaseChainVtC();                                                                        // 0xA5495C: the chain release ends at the node's 0xA52800
         }
         Assert.Equal(0x11, result);
-        Assert.True(3941 == all.Count, $"frames per call [{string.Join(",", perCall)}]");                              // the header's SampleCount
-        Assert.All(perCall.Take(perCall.Count - 1), n => Assert.Contains(n, new[] { 128, 576, 1024 }));
+        Assert.Equal(0xAAABu, voice.PitchNode.Resampler.Step30);                                           // 32000 -> 48000 at 0 cents (C38.2 P1-18)
+        Assert.All(perPass.Take(perPass.Count - 1), n => Assert.Equal(1024, n));                           // every full pass hands the voice its 1024 asked frames
         var offline = WwiseVorbisNative.Decode(media, codebooks);
-        Assert.Equal(offline.Select(BitConverter.SingleToUInt32Bits), all.Select(BitConverter.SingleToUInt32Bits));
+        Assert.Equal(3941, offline.Length);                                                                 // the header's SampleCount
+        var expected = new List<float>();
+        for (long k = 0; ; k++)
+        {
+            long phase = 0x10000 + k * 0xAAAB;
+            long i = phase >> 16;
+            if (i > offline.Length - 1) break;
+            float l = offline[i - 1], r = offline[i];
+            float w = (float)(phase & 0xFFFF) * (1f / 65536f);
+            float d = r - l;
+            float p = w * d;
+            expected.Add(l + p);
+        }
+        Assert.Equal(expected.Count, all.Count);
+        Assert.Equal(expected.Select(BitConverter.SingleToUInt32Bits), all.Select(BitConverter.SingleToUInt32Bits));
         source.Close2C();
-    }
-
-    /// <summary>
-    /// What the voice's pull loop does around the source's <c>vt+0x30</c> (<c>0xA4478C..0xA4477C</c>; <see cref="WwiseLiveVoice.Render"/> runs the same steps): [state+0xC] := u16[0x1052440], the decode, and for 0x11 / 0x2D the pitch
-    /// node's intake. The adapters' <c>Render</c> is the decode only.
-    /// </summary>
-    private static int PullThroughTheVoice(IWwisePitchNodeSource source, WwiseVoiceBuffer buffer)
-    {
-        buffer.ValidFrames = WwiseLiveVoice.PullFrames1052440;
-        int result = source.Render(buffer);
-        if (result != 0x11 && result != 0x2D) return result;
-        source.Io.Code28 = result;
-        buffer.Result = source.PitchNode.IntakeA52D4C(source.Io, buffer);
-        return buffer.Result;
     }
 
     [Fact]

@@ -70,18 +70,19 @@ public class WwiseMixerTests
         Assert.True(connection.StartGain == 0.5f);
         Assert.True(connection.EndGain == 0.5f);
 
-        var input = new[] { new[] { 1f, 1f, 1f, 1f } };
-        var destination = new[] { new float[4] };
-        connection.ConsumeBuffer(input, destination, validFrames: 4, maxFrames: 4);
+        var input = new[] { new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f } };
+        var destination = new[] { new float[8] };
+        connection.ConsumeBuffer(input, destination, validFrames: 8, maxFrames: 8);
 
-        // g(k) = start + k·delta; delta = 0 because start == end.
-        Assert.Equal(new[] { 0.5f, 0.5f, 0.5f, 0.5f }, destination[0]);
+        // inc == 0 (V2-07, 0xA4669C): the constant-gain path, dst += src * start.
+        Assert.Equal(new[] { 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f }, destination[0]);
     }
 
     /// <summary>
-    /// M6-012 / gapE 2.2, 2.3, 2.4 (mixer 0x00A45E9C, kernel 0x00A46668): <c>delta = (end − start)/frames</c>,
-    /// <c>g(k) = start + k·delta</c>, linear over one bus frame. From 0.5 to 1.0 over 4 frames the gains are
-    /// 0.5, 0.625, 0.75, 0.875, and the next frame starts at the end.
+    /// M6-012 / gapE 2.2, 2.3, 2.4 (mixer 0x00A45E9C, kernel 0x00A46668, V2-07): <c>inc = (1/frames) * ((end * 1) - start)</c> and the lane gains
+    /// <c>{s, s + i, (i + i) + s, s + 3i}</c>, then the second four plus <c>4i</c> (accumulated per block of 8; here every value is an exact binary fraction, so they equal
+    /// <c>start + k * inc</c> by hand). From 0.5 to 1.0 over 8 frames inc = 0.0625 and the gains are 0.5, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375;
+    /// the next frame starts at the end.
     /// </summary>
     [Fact]
     public void TheGainRampsLinearlyOverOneBusFrame()
@@ -93,12 +94,12 @@ public class WwiseMixerTests
         Assert.True(connection.StartGain == 0.5f);
         Assert.True(connection.EndGain == 1.0f);
 
-        var input = new[] { new[] { 1f, 1f, 1f, 1f } };
-        var destination = new[] { new float[4] };
-        connection.ConsumeBuffer(input, destination, validFrames: 4, maxFrames: 4);
+        var input = new[] { new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f } };
+        var destination = new[] { new float[8] };
+        connection.ConsumeBuffer(input, destination, validFrames: 8, maxFrames: 8);
 
-        // delta = (1.0 - 0.5)/4 = 0.125.
-        Assert.Equal(new[] { 0.5f, 0.625f, 0.75f, 0.875f }, destination[0]);
+        // inc = (1.0 - 0.5)/8 = 0.0625.
+        Assert.Equal(new[] { 0.5f, 0.5625f, 0.625f, 0.6875f, 0.75f, 0.8125f, 0.875f, 0.9375f }, destination[0]);
 
         // The end of the frame becomes the next frame's start (gapE 2.5).
         connection.Refresh(new[] { 1.0f }, 1.0f);
@@ -116,23 +117,23 @@ public class WwiseMixerTests
 
         var leftOnly = new WwiseMixerConnection(2, 1);
         leftOnly.Refresh(matrix, 1.0f);
-        var leftInput = new[] { new[] { 1f, 1f, 1f, 1f }, new[] { 0f, 0f, 0f, 0f } };
-        var leftDestination = new[] { new float[4] };
-        leftOnly.ConsumeBuffer(leftInput, leftDestination, 4, 4);
-        Assert.Equal(new[] { 0.70710677f, 0.70710677f, 0.70710677f, 0.70710677f }, leftDestination[0]);
+        var leftInput = new[] { new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f }, new[] { 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f } };
+        var leftDestination = new[] { new float[8] };
+        leftOnly.ConsumeBuffer(leftInput, leftDestination, 8, 8);
+        Assert.Equal(Enumerable.Repeat(0.70710677f, 8), leftDestination[0]);
 
         var rightOnly = new WwiseMixerConnection(2, 1);
         rightOnly.Refresh(matrix, 1.0f);
-        var rightInput = new[] { new[] { 0f, 0f, 0f, 0f }, new[] { 1f, 1f, 1f, 1f } };
-        var rightDestination = new[] { new float[4] };
-        rightOnly.ConsumeBuffer(rightInput, rightDestination, 4, 4);
-        Assert.Equal(new[] { 0.70710677f, 0.70710677f, 0.70710677f, 0.70710677f }, rightDestination[0]);
+        var rightInput = new[] { new[] { 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f }, new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f } };
+        var rightDestination = new[] { new float[8] };
+        rightOnly.ConsumeBuffer(rightInput, rightDestination, 8, 8);
+        Assert.Equal(Enumerable.Repeat(0.70710677f, 8), rightDestination[0]);
     }
 
     /// <summary>
     /// M6-012 / gapE 2.2, 2.3 with gapG 5.3: the ramp and the per-channel matrix combine. Stereo → mono,
-    /// gain 0 → 1 over 4 frames, both inputs 1.0, so <c>out[k] = 2·0.70710677·(k/4)</c>:
-    /// 0, 0.35355338, 0.70710677, 1.06066012.
+    /// gain 0 → 1 over 8 frames, both inputs 1.0, so <c>out[k] = 2 * 0.70710677 * (k/8)</c>:
+    /// 0, 0.17677669, 0.35355338, 0.53033008, 0.70710677, 0.88388348, 1.06066017, 1.23743687.
     /// </summary>
     [Fact]
     public void TheMixedRampUsesThePerChannelMatrixOverTheFrame()
@@ -140,14 +141,14 @@ public class WwiseMixerTests
         var matrix = WwiseMixerPan.MatrixForChannelConfigs(0x3102, 0x4101);
         var connection = new WwiseMixerConnection(2, 1);
         connection.Refresh(matrix, 0.0f);   // first update: start = end = 0
-        connection.Refresh(matrix, 1.0f);   // delta = (0.70710677 - 0)/4
+        connection.Refresh(matrix, 1.0f);   // inc = (0.70710677 - 0)/8
 
-        var input = new[] { new[] { 1f, 1f, 1f, 1f }, new[] { 1f, 1f, 1f, 1f } };
-        var destination = new[] { new float[4] };
-        connection.ConsumeBuffer(input, destination, 4, 4);
+        var input = new[] { new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f }, new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f } };
+        var destination = new[] { new float[8] };
+        connection.ConsumeBuffer(input, destination, 8, 8);
 
-        float[] expected = { 0f, 0.35355338f, 0.70710677f, 1.06066012f };
-        for (int k = 0; k < 4; k++) Close(expected[k], destination[0][k]);
+        float[] expected = { 0f, 0.17677669f, 0.35355338f, 0.53033008f, 0.70710677f, 0.88388348f, 1.06066017f, 1.23743687f };
+        for (int k = 0; k < 8; k++) Close(expected[k], destination[0][k]);
     }
 
     /// <summary>
@@ -161,18 +162,18 @@ public class WwiseMixerTests
         var connection = new WwiseMixerConnection(1, 1);
         connection.Refresh(new[] { 1.0f }, 1.0f);
 
-        var input = new[] { new[] { 1f, 1f, 0f, 0f } };
-        var destination = new[] { new float[4] };
-        connection.ConsumeBuffer(input, destination, validFrames: 2, maxFrames: 4);
+        var input = new[] { new[] { 1f, 1f, 7f, 7f, 7f, 7f, 7f, 7f } };
+        var destination = new[] { new float[8] };
+        connection.ConsumeBuffer(input, destination, validFrames: 2, maxFrames: 8);
 
-        Assert.Equal(new[] { 1f, 1f, 0f, 0f }, destination[0]);
-        Assert.Equal(new[] { 1f, 1f, 0f, 0f }, input[0]);   // the pad is written into the voice buffer
+        Assert.Equal(new[] { 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f }, destination[0]);
+        Assert.Equal(new[] { 1f, 1f, 0f, 0f, 0f, 0f, 0f, 0f }, input[0]);   // the pad is written into the voice buffer
     }
 
     /// <summary>
     /// M6-012 / gapE 2.5 (0x00A4C0D8..0x00A4C104): the <c>conn+0x6C bit2</c> first-update flag makes the
-    /// start gain 0, so the first frame ramps in from zero to the target. From 0 to 0.5 over 4 frames the
-    /// gains are 0, 0.125, 0.25, 0.375.
+    /// start gain 0, so the first frame ramps in from zero to the target. From 0 to 0.5 over 8 frames inc = 0.0625 and the
+    /// gains are 0, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375.
     /// </summary>
     [Fact]
     public void TheFadeInStartsTheFirstFrameAtZero()
@@ -183,11 +184,11 @@ public class WwiseMixerTests
         Assert.True(connection.StartGain == 0f);
         Assert.True(connection.EndGain == 0.5f);
 
-        var input = new[] { new[] { 1f, 1f, 1f, 1f } };
-        var destination = new[] { new float[4] };
-        connection.ConsumeBuffer(input, destination, 4, 4);
+        var input = new[] { new[] { 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f } };
+        var destination = new[] { new float[8] };
+        connection.ConsumeBuffer(input, destination, 8, 8);
 
-        Assert.Equal(new[] { 0f, 0.125f, 0.25f, 0.375f }, destination[0]);
+        Assert.Equal(new[] { 0f, 0.0625f, 0.125f, 0.1875f, 0.25f, 0.3125f, 0.375f, 0.4375f }, destination[0]);
     }
 
     /// <summary>

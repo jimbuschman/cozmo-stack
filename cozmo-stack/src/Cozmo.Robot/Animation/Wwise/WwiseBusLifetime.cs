@@ -486,6 +486,10 @@ public sealed class WwiseMixBus
         Frames = MaxFrames;
     }
 
+    /// <summary><c>u16 [bus+0x6E] = u16 [bus+0x58]</c> (<c>0xA4FD70..0xA4FD74</c>, the end of the voice mix <c>0xA4FBEC</c>): the bus buffer's frame count is the bus frame size.</summary>
+    // fidelity: M6-022
+    public void SetFramesA4FD74() => Frames = MaxFrames;
+
     /// <summary>
     /// GetResultingBuffer <c>0xA4FEF8</c> (D2.2/D2.4): instantiate the FX chain lazily if it has not been
     /// (<c>(+0x1B8 &amp; 0xC) ≠ 4</c> → SetInsertFx <c>0xA4F754</c>), then, while the state is 1, run the

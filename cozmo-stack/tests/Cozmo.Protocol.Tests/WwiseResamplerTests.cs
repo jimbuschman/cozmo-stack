@@ -1,277 +1,289 @@
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using Cozmo.Robot.Animation.Wwise;
 using Xunit;
 
 namespace Cozmo.Protocol.Tests;
 
+/// <summary>The test generator of <c>re-analysis/tools/emu/emu_pitch.py</c> (the class XS there): xorshift32, <c>x ^= x &lt;&lt; 13; x ^= x &gt;&gt; 17; x ^= x &lt;&lt; 5</c>. The oracle stores seeds, parameters and the engine's results.</summary>
+internal sealed class Xs
+{
+    private uint _x;
+
+    public Xs(ulong seed)
+    {
+        _x = unchecked((uint)(seed * 2654435761UL + 12345UL));
+        if (_x == 0) _x = 1;
+    }
+
+    public uint U32()
+    {
+        uint x = _x;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        _x = x;
+        return x;
+    }
+
+    /// <summary><c>int32 / 2^31</c>, exact after the (round-to-nearest) int32 to float32 conversion.</summary>
+    public float F32() => (float)unchecked((int)U32()) / 2147483648f;
+
+    public short S16() => unchecked((short)(U32() >> 16));
+
+    public uint Below(uint n) => U32() % n;
+}
+
 /// <summary>
-/// M6-004 / the rows M6 0.11 and gapB P1, P2, P8 and gapE 3.5, 3.6: Wwise's <c>CAkResampler</c>.
-///
-/// Every expected value below is the row's own arithmetic applied by hand, not a value read back from
-/// <see cref="WwiseResampler"/>. The addresses are the rows' native citations.
+/// M6-004 (C38.2): the resampler's every state and kernel against the engine's own code under Unicorn (<c>emu_pitch.py</c> -> <see cref="WwisePitchOracle"/>): the constructor <c>0xA46D70</c>, <c>Init</c> <c>0xA47038</c>, <c>SetPitch</c> <c>0xA47384</c>
+/// and its sibling <c>0xA4776C</c>, the format change <c>0xA47528</c> and <c>Execute</c> <c>0xA47178</c> with every kernel of the table <c>0x103C0B8</c> (modes 0, 1, 2; int16 mono and stereo, float mono, stereo and 3 channels in mode 0). The expected
+/// values are the engine's, never this implementation's. Floats are compared as bit patterns.
 /// </summary>
 public class WwiseResamplerTests
 {
-    private static WwiseResamplerFormat Int16Mono(int rate) => new(WwiseResampler.FormatInt16, 1, rate);
-    private static WwiseResamplerFormat FloatMono(int rate) => new(WwiseResampler.FormatFloat, 1, rate);
+    internal static int FmtWord(bool isFloat, int ch) => (isFloat ? 0x20 : 0x10) | ((ch * (isFloat ? 4 : 2)) << 6);
 
-    /// <summary>
-    /// M6-004 / gapB P2 (0x00A4913C): the int16 mono interpolating kernel is linear interpolation in Q16,
-    /// <c>out = (float)((x0&lt;&lt;16) + (x1−x0)·frac16)·2^−31</c>. With x0=0, x1=32767 and frac=0x8000 that is
-    /// 32767·32768/2^31 = 32767/65536.
-    /// </summary>
-    [Fact]
-    public void TheInt16KernelInterpolatesInQ16()
+    internal static string Snap(WwiseResampler r) => string.Join(" ", new uint[]
     {
-        float mid = WwiseResampler.InterpolateInt16(0, 32767, 0x8000);
-        Assert.Equal(32767f / 65536f, mid);                 // 32767·2^15 / 2^31, exact in binary
-        Assert.Equal(0f, WwiseResampler.InterpolateInt16(0, 32767, 0));
-        Assert.Equal(32767f / 131072f, WwiseResampler.InterpolateInt16(0, 32767, 0x4000));
+        r.InputOffset24, r.OutputOffset28, r.Phase2C, r.Step30, r.Target34, r.Counter38, r.StepScale3C, r.Limit40, r.Mode48,
+        BitConverter.SingleToUInt32Bits(r.Ratio4C), BitConverter.SingleToUInt32Bits(r.Pitch50), r.PoolHistory44, r.KernelType54, r.Channels55, r.Byte56, r.Flag57,
+    }.Select(v => v.ToString("X8")));
+
+    internal static string Hex(ReadOnlySpan<byte> b) => Convert.ToHexString(b).ToLowerInvariant();
+
+    internal static string Sha(ReadOnlySpan<byte> bytes) => Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()[..16];
+
+    internal static float Bits(string hex) => BitConverter.UInt32BitsToSingle(Convert.ToUInt32(hex, 16));
+
+    [Fact]
+    public void M6_004_Init_0xA47038_matches_the_engine_for_every_channel_count_format_and_pool_failure()
+    {
+        // C38.2 / P1-13 (0xA47038 = R2.3): 300 engine runs: channel counts 0..12 (more than 8 allocate the history, a failure returns 2), the formats 0x10, 0x20 and others, the kernel type tables, 48000 / outRate, rate / outRate as float32.
+        Assert.NotEmpty(WwisePitchOracle.Init);
+        foreach (var row in WwisePitchOracle.Init)
+        {
+            var parts = row.Split(" | ");
+            var h = parts[0].Split(' ');
+            int rate = int.Parse(h[0]), ch = int.Parse(h[1]), outRate = int.Parse(h[3]);
+            uint word = Convert.ToUInt32(h[2], 16);
+            bool fail = h[4] == "1";
+            var r = new WwiseResampler { AllocationFails = fail ? () => true : null };
+            int rc = r.Init(new WwiseResamplerFormat(unchecked((int)word), ch, rate), (uint)outRate);
+            Assert.True($"rc={rc}" == parts[1] && Snap(r) == parts[2], $"{row} | C# rc={rc} {Snap(r)}");
+        }
     }
 
-    /// <summary>
-    /// M6-004 / gapB P2 (0x00A48F5C, constant 0x38000000 = 1/32768): the bypass kernel scales int16 to float.
-    /// </summary>
     [Fact]
-    public void TheBypassKernelScalesByOneOver32768()
+    public void M6_004_SetPitch_0xA47384_and_the_sibling_0xA4776C_match_the_engine_on_3000_random_sequences()
     {
-        Assert.Equal(32767f / 32768f, WwiseResampler.BypassInt16(32767));
-        Assert.Equal(-1f, WwiseResampler.BypassInt16(short.MinValue));
-        Assert.Equal(1f / 32768f, WwiseResampler.BypassInt16(1));
+        // C38.2 / P1-12: 3000 sequences of 4..12 calls (SetPitch with flag 0 / 1 and the sibling), cents drawn from integers, fractions, repeats, +-0, +-inf, huge, tiny and NaN, ratios from 8 input rates over 6 output rates: the current / target step,
+        // the ramp counter, the mode, the last pitch and the flag byte after every call. powf is the float32 correctly rounded function on both sides (the host seam WwiseHostMath.Powf).
+        Assert.True(WwisePitchOracle.SetPitch.Length >= 3000);
+        foreach (var row in WwisePitchOracle.SetPitch)
+        {
+            var parts = row.Split(" | ");
+            var h = parts[0].Split(' ');
+            int rate = int.Parse(h[0]), outRate = int.Parse(h[1]), ch = int.Parse(h[2]);
+            bool isFloat = h[3] == "1";
+            var r = new WwiseResampler();
+            int rc = r.Init(new WwiseResamplerFormat(FmtWord(isFloat, ch), ch, rate), (uint)outRate);
+            Assert.Equal(parts[1], $"rc={rc}");
+            var ops = parts[2].Split(' ');
+            var results = parts[3].Split(' ');
+            Assert.Equal(ops.Length, results.Length);
+            for (int k = 0; k < ops.Length; k++)
+            {
+                float cents = Bits(ops[k].Substring(1, 8));
+                bool flag = ops[k][9] == '1';
+                if (ops[k][0] == 's') r.SetPitch(cents, flag);
+                else r.SetPitchSibling4776C(cents);
+                string got = $"{r.Step30:X8}{r.Target34:X8}{r.Counter38:X3}{r.Mode48:X}{BitConverter.SingleToUInt32Bits(r.Pitch50):X8}{r.Flag57}";
+                Assert.True(results[k] == got, $"{row} | call {k}: engine {results[k]} C# {got}");
+            }
+        }
     }
 
-    /// <summary>
-    /// M6-004 / gapE 3.5 (0x00A473E0..0x00A4741C): <c>step = u32(ratio·2^(cents/1200)·65536 + 0.5)</c>. One
-    /// octave doubles the unity step 0x10000.
-    /// </summary>
     [Fact]
-    public void ThePitchStepDoublesOverAnOctave()
+    public void M6_004_FormatChange_0xA47528_matches_the_engine_including_the_history_conversions()
     {
-        Assert.Equal(0x10000u, WwiseResampler.ComputeStep(1f, 0));
-        Assert.Equal(0x20000u, WwiseResampler.ComputeStep(1f, 1200));
+        // C38.2 / P1-13: 400 runs of the real 0xA47528 on random histories (int16 halfwords or floats), a ratio change or not, the three formats and an unchanged channel count: R's fields and the history after.
+        Assert.NotEmpty(WwisePitchOracle.FormatChange);
+        foreach (var row in WwisePitchOracle.FormatChange)
+        {
+            var parts = row.Split(" | ");
+            var h = parts[0].Split(' ');
+            int rate = int.Parse(h[0]), outRate = int.Parse(h[1]), ch = int.Parse(h[2]);
+            bool isFloat = h[3] == "1";
+            int flag0 = int.Parse(h[5]);
+            var hist = Convert.FromHexString(h[6]);
+            int rate2 = int.Parse(h[7]);
+            uint word2 = Convert.ToUInt32(h[8], 16);
+            int ch2 = int.Parse(h[9]);
+            float c1 = Bits(h[10]);
+            var r = new WwiseResampler();
+            r.Init(new WwiseResamplerFormat(FmtWord(isFloat, ch), ch, rate), (uint)outRate);
+            if (h[4] != "N") r.SetPitch(Bits(h[4]), flag0 == 1);
+            hist.AsSpan(0, r.History.Length).CopyTo(r.History);
+            r.FormatChangeA47528(new WwiseResamplerFormat(unchecked((int)word2), ch2, rate2), c1, (uint)outRate);
+            string got = Snap(r) + " " + Hex(r.History);
+            Assert.True(parts[1] == got, $"{row} | C# {got}");
+        }
     }
 
-    /// <summary>
-    /// M6-004 / gapB P8: the Hijack's 48 kHz to 22,320 Hz step is <c>round(float(mix/22320)·65536)</c>, which
-    /// the row gives as about 140938.
-    /// </summary>
-    [Fact]
-    public void TheHijackStepIsTheMixToRobotRatio()
+    internal static (WwiseDecodeState input, WwiseDecodeState output, float[]? outF) BuildKernelCase(string[] h, WwiseResampler r, int ch, bool isFloat)
     {
-        Assert.Equal(140938u, WwiseResampler.ComputeStep(48000f / 22320f, 0));
+        int V = int.Parse(h[2]), A = int.Parse(h[3]), inMax = int.Parse(h[4]), L = int.Parse(h[5]), B = int.Parse(h[6]), outMax = int.Parse(h[7]), outV = int.Parse(h[8]);
+        uint P = Convert.ToUInt32(h[9], 16), S = Convert.ToUInt32(h[10], 16), T = Convert.ToUInt32(h[11], 16), C = Convert.ToUInt32(h[12], 16), fp = uint.Parse(h[13]), cfg = Convert.ToUInt32(h[14], 16), dseed = Convert.ToUInt32(h[15], 16);
+        int mode = int.Parse(h[0]);
+        var d = new Xs(dseed);
+        var hist = new byte[32];
+        for (int i = 0; i < 8; i++)
+        {
+            var w = isFloat ? BitConverter.GetBytes(d.F32()) : BitConverter.GetBytes(d.U32());
+            w.CopyTo(hist, 4 * i);
+        }
+        hist.AsSpan(0, r.History.Length).CopyTo(r.History);
+        Array data;
+        if (isFloat) { var f = new float[inMax * ch]; for (int i = 0; i < f.Length; i++) f[i] = d.F32(); data = f; }
+        else { var s16 = new short[inMax * ch]; for (int i = 0; i < s16.Length; i++) s16[i] = d.S16(); data = s16; }
+        var outF = new float[outMax * ch];
+        Array.Fill(outF, BitConverter.Int32BitsToSingle(0x7FC01234));
+        var input = new WwiseDecodeState { Data = data, ChannelConfig = cfg, Scratch08 = 0x2D, MaxFrames = (ushort)inMax, ValidFrames = (ushort)V };
+        var output = new WwiseDecodeState { Data = outF, ChannelConfig = (uint)ch, Scratch08 = 0x2D, MaxFrames = (ushort)outMax, ValidFrames = (ushort)outV };
+        r.InputOffset24 = (uint)A; r.OutputOffset28 = (uint)B; r.Phase2C = P; r.Step30 = S; r.Target34 = mode == 2 ? T : S; r.Counter38 = C; r.StepScale3C = fp; r.Limit40 = (uint)L; r.Mode48 = (uint)mode;
+        return (input, output, outF);
+    }
 
+    [Fact]
+    public void M6_004_Execute_0xA47178_with_every_kernel_matches_the_engine_bit_for_bit()
+    {
+        // C38.2 / P1-14, P1-16: 400 + 1600 + 1600 engine runs (modes 0, 1, 2 over the int16 mono and stereo and float mono and stereo kernels; mode 0 also the float 3-channel run of 0xA479F4): the result, the offsets, the phase, the steps and the counter,
+        // the mode after the Execute loop's switch at 0x400, the valid counts, the history words and a hash of the whole output block (the unwritten frames keep their sentinel). Includes the int16-stereo +1 LSB quirk of 0xA48C98 and the
+        // NEON / scalar split 4 * ((n2 - 5) / 4 + 1) of the int16 mode-1 kernels.
+        Assert.True(WwisePitchOracle.Kernels.Length >= 3600);
+        foreach (var row in WwisePitchOracle.Kernels)
+        {
+            var parts = row.Split(" | ");
+            var h = parts[0].Split(' ');
+            string kind = h[1];
+            bool isFloat = kind[0] == 'f';
+            int ch = kind[1] - '0';
+            var r = new WwiseResampler();
+            r.Init(new WwiseResamplerFormat(FmtWord(isFloat, ch), ch, 48000), 48000);
+            var (input, output, outF) = BuildKernelCase(h, r, ch, isFloat);
+            int ret;
+            try { ret = r.Execute(input, output); }
+            catch (Exception e) { throw new Exception($"{parts[0]}: {e.GetType().Name} {e.Message} at {e.StackTrace}", e); }
+            string got = $"{ret:X2} {r.InputOffset24:X8} {r.OutputOffset28:X8} {r.Phase2C:X8} {r.Step30:X8} {r.Target34:X8} {r.Counter38:X8} {r.Mode48:X} {input.ValidFrames:X4} {output.ValidFrames:X4} {Hex(r.History)} {Sha(MemoryMarshal.AsBytes(outF.AsSpan()))}";
+            Assert.True(parts[1] == got, $"{parts[0]}: engine [{parts[1]}] C# [{got}]");
+        }
+    }
+
+    [Fact]
+    public void M6_004_An_Execute_the_engine_never_leaves_is_a_visible_stop_not_a_hang()
+    {
+        // The engine's Execute loop 0xA471D0..0xA471CC repeats while the input holds frames and the output is below the limit; a mode 2 kernel that produces nothing and consumes nothing (the counter step does not divide 0x400 - c) never ends
+        // (the engine run hit its instruction limit). The C# stops with an exception instead of hanging.
+        Assert.NotEmpty(WwisePitchOracle.KernelHangs);
+        foreach (var row in WwisePitchOracle.KernelHangs)
+        {
+            var h = row.Split(' ');
+            string kind = h[1];
+            bool isFloat = kind[0] == 'f';
+            int ch = kind[1] - '0';
+            var r = new WwiseResampler();
+            r.Init(new WwiseResamplerFormat(FmtWord(isFloat, ch), ch, 48000), 48000);
+            var (input, output, _) = BuildKernelCase(h, r, ch, isFloat);
+            Assert.Throws<InvalidOperationException>(() => r.Execute(input, output));
+        }
+    }
+
+    [Fact]
+    public void M6_004_The_host_powf_is_the_float32_correctly_rounded_result_for_every_integer_cents()
+    {
+        // C38.2: the phone's libm is not shipped (EQUIVALENT_IMPLEMENTATION): the host function must equal the float32 power for the 4801 integer cents -2400..2400 (numpy float32, independent of .NET).
+        Assert.Equal(4801, WwisePitchOracle.PowfTable.Length);
+        foreach (var row in WwisePitchOracle.PowfTable)
+        {
+            var p = row.Split(' ');
+            float q = Bits(p[0]);
+            Assert.Equal(Convert.ToUInt32(p[1], 16), BitConverter.SingleToUInt32Bits(WwiseHostMath.Powf(2f, q)));
+        }
+    }
+
+    [Fact]
+    public void M6_004_Only_the_listed_cents_change_the_step_when_powf_is_one_ulp_off()
+    {
+        // C38.2: the sensitive cents inside [-800,-100] U [-250,250] U [100,600] are -795, -759, -149, -94, -80, 16, 20, 172, 218, 316, 411, 455, 486, 507, 525; the shipped values -800, -750, -600, -500, -230 are not sensitive.
+        // The engine's step with the powf result exact / one ulp up / one ulp down (emulator runs), and ours with the host powf equal to the exact one.
+        var sensitive = new HashSet<int> { -795, -759, -149, -94, -80, 16, 20, 172, 218, 316, 411, 455, 486, 507, 525 };
+        Assert.Equal(20, WwisePitchOracle.PowfSensitivity.Length);
+        foreach (var row in WwisePitchOracle.PowfSensitivity)
+        {
+            var p = row.Split(' ');
+            int cents = int.Parse(p[0]);
+            uint exact = Convert.ToUInt32(p[1], 16), up = Convert.ToUInt32(p[2], 16), down = Convert.ToUInt32(p[3], 16);
+            Assert.Equal(sensitive.Contains(cents), up != exact || down != exact);
+            var r = new WwiseResampler();
+            r.Init(new WwiseResamplerFormat(FmtWord(false, 1), 1, 48000), 48000);
+            r.SetPitch(cents, false);
+            Assert.Equal(exact, r.Step30);
+        }
+    }
+
+    [Fact]
+    public void M6_004_The_Hijack_stage_is_step_140938_mode_1_float_mono_with_ratio_bits_0x4009A269()
+    {
+        // C38.2 / P1-18 (the real Thumb Init under Unicorn, section 7 of the verification): 48000 -> 22320: ratio 48000/22320 = 0x4009A269, step 140938 = 0x2268A, mode 1, kernel type 4 (float mono), R+0x3C = 2.
         var r = new WwiseResampler();
-        r.Init(FloatMono(48000), 22320);
-        r.SetPitch(0);
-        Assert.Equal(140938u, r.TargetStep);
-        // +0x3C is __aeabi_uidiv(48000, outRate), an integer division (0xA470B0): 48000/22320 = 2, not 2.15.
-        Assert.Equal(2, r.StepScale);
+        Assert.Equal(1, r.Init(new WwiseResamplerFormat(FmtWord(true, 1), 1, 48000), 22320));
+        r.SetPitch(0f, false);
+        Assert.Equal(0x4009A269u, BitConverter.SingleToUInt32Bits(r.Ratio4C));
+        Assert.Equal(0x2268Au, r.Step30);
+        Assert.Equal(0x2268Au, r.Target34);
+        Assert.Equal(1u, r.Mode48);
+        Assert.Equal((byte)4, r.KernelType54);
+        Assert.Equal(2u, r.StepScale3C);
+        // the other shipped rates at cents 0 (P1-18): 44100 -> 0xEB33, 32000 -> 0xAAAB, 24000 -> 0x8000, 48000 -> 0x10000 (mode 0)
+        foreach (var (rate, step, mode) in new[] { (44100, 0xEB33u, 1u), (32000, 0xAAABu, 1u), (24000, 0x8000u, 1u), (48000, 0x10000u, 0u) })
+        {
+            var q = new WwiseResampler();
+            q.Init(new WwiseResamplerFormat(FmtWord(false, 1), 1, rate), 48000);
+            q.SetPitch(0f, false);
+            Assert.Equal(step, q.Step30);
+            Assert.Equal(mode, q.Mode48);
+        }
     }
 
-    /// <summary>
-    /// M6-004 / gapE 3.5: a step that rounds to zero becomes <c>cents &gt; 0 ? 0xFFFFFFFF : 1</c>.
-    /// </summary>
     [Fact]
-    public void AZeroStepSaturatesBySignOfCents()
+    public void M6_004_A_step_that_rounds_to_zero_becomes_one_or_0xFFFFFFFF_by_the_sign_of_the_cents()
     {
-        // ratio 5e-10: ratio·65536 = 3.3e-5, far below the 0.5 that rounds to 1
+        // 0xA4742C..0xA47438 (the same instructions as 0xA46E18..0xA46E1C): a zero step is cents > 0 ? 0xFFFFFFFF : 1, a NaN gives 1. ratio 1 / 2e9 = 5e-10: ratio * 65536 + 0.5 truncates to 0.
         var down = new WwiseResampler();
-        down.Init(Int16Mono(1), 2_000_000_000);
-        down.SetPitch(0);
-        Assert.Equal(1u, down.TargetStep);
-
+        down.Init(new WwiseResamplerFormat(FmtWord(false, 1), 1, 1), 2_000_000_000);
+        down.SetPitch(0f, false);
+        Assert.Equal(1u, down.Step30);
         var up = new WwiseResampler();
-        up.Init(Int16Mono(1), 2_000_000_000);
-        up.SetPitch(100);
-        Assert.Equal(0xFFFFFFFFu, up.TargetStep);
+        up.Init(new WwiseResamplerFormat(FmtWord(false, 1), 1, 1), 2_000_000_000);
+        up.SetPitch(100f, false);
+        Assert.Equal(0xFFFFFFFFu, up.Step30);
     }
 
-    /// <summary>
-    /// M6-004 / M6 0.11 (0x00A49E40): the mono float kernel is
-    /// <c>out = prev + (phase &amp; 0xFFFF)/65536·(next − prev)</c>.
-    /// </summary>
     [Fact]
-    public void TheMonoFloatKernelInterpolatesAtThePhase()
+    public void M6_004_The_resampler_refuses_what_the_inventory_does_not_settle()
     {
-        Assert.Equal(4f, WwiseResampler.InterpolateFloat(2f, 6f, 0x8000));
-        Assert.Equal(3f, WwiseResampler.InterpolateFloat(2f, 6f, 0x4000));
-        Assert.Equal(2f, WwiseResampler.InterpolateFloat(2f, 6f, 0));
-    }
-
-    /// <summary>
-    /// M6-004 / gapB P1: the row table <c>[0,1,2,2 | 4,5,6,6]</c> indexed by <c>(format, channels−1)</c> plus
-    /// <c>mode·8</c> selects the kernel. Mono int16 bypass is row 0; mono float fixed pitch is row 4+8 = 12;
-    /// mono int16 ramp is row 0+16 = 16 (the row names table 0x0103C0B8[16] = 0xA4A2D8).
-    /// </summary>
-    [Fact]
-    public void TheKernelRowIsTableByFormatAndChannels()
-    {
-        var int16 = new WwiseResampler();
-        int16.Init(Int16Mono(48000), 48000);
-        int16.SetPitch(0);
-        Assert.Equal(0, int16.Mode);            // step == 0x10000 -> bypass
-        Assert.Equal(0, int16.KernelIndex);
-
-        var flt = new WwiseResampler();
-        flt.Init(FloatMono(48000), 22320);
-        flt.SetPitch(0);
-        Assert.Equal(1, flt.Mode);              // fixed pitch
-        Assert.Equal(12, flt.KernelIndex);      // float mono (4) + mode 1 (8)
-
-        var ramp = new WwiseResampler();
-        ramp.Init(Int16Mono(48000), 48000);
-        ramp.SetPitch(0);
-        ramp.SetPitch(1200);
-        Assert.Equal(2, ramp.Mode);
-        Assert.Equal(16, ramp.KernelIndex);     // int16 mono (0) + mode 2 (16)
-    }
-
-    /// <summary>
-    /// M6-004 / gapB P1: the format field is <c>fmt &amp; 0x3F</c>, 16 or 32, and the channel count is 1..4.
-    /// Anything else has no row and is refused rather than defaulted.
-    /// </summary>
-    [Fact]
-    public void AnUnreadKernelOrFormatIsRefusedNotDefaulted()
-    {
-        var bad = new WwiseResampler();
-        Assert.Throws<NotSupportedException>(() => bad.Init(new WwiseResamplerFormat(99, 1, 48000), 48000));
-        Assert.Throws<NotSupportedException>(() => bad.Init(new WwiseResamplerFormat(WwiseResampler.FormatInt16, 5, 48000), 48000));
-
-        // The stereo int16 kernel 0x00A49634 was not read (gapB P2): Init accepts the row, Execute refuses.
-        var stereo = new WwiseResampler();
-        stereo.Init(new WwiseResamplerFormat(WwiseResampler.FormatInt16, 2, 44100), 48000);
-        stereo.SetPitch(0);
-        Assert.Throws<NotSupportedException>(() => stereo.Execute(new short[16], new float[16], 16));
-    }
-
-    /// <summary>
-    /// M6-004 / M6 0.11: <c>Execute</c> returns 45 (DataReady) when it reaches <c>+0x40</c> output frames and
-    /// 43 (DataNeeded) when the input runs out first. With ratio 1 the bypass mode reproduces the input from
-    /// input[0]: N outputs need N input samples, and the interpolating modes need one more for the next sample.
-    /// </summary>
-    [Fact]
-    public void ExecuteReportsDataReadyAtTheTargetAndDataNeededOtherwise()
-    {
-        var r = new WwiseResampler();
-        r.Init(Int16Mono(48000), 48000);
-        r.SetPitch(0);
-
-        short[] input = [1000, 2000, 3000, 4000, 5000, 6000];
-        var output = new float[4];
-        Assert.Equal(WwiseResampler.DataReady, r.Execute(input, output, 4));
-        Assert.Equal(new[] { 1000f, 2000f, 3000f, 4000f }, output.Select(s => s * 32768f).ToArray());
-
-        var short2 = new WwiseResampler();
-        short2.Init(Int16Mono(48000), 48000);
-        short2.SetPitch(0);
-        var small = new float[8];
-        Assert.Equal(WwiseResampler.DataNeeded, short2.Execute([1000, 2000, 3000], small, 8));
-        Assert.Equal(1000f / 32768f, small[0]);      // input[0], and three samples give three outputs
-    }
-
-    /// <summary>
-    /// M6-004 / the ctor 0x00A46D70 stores <c>+0x2C = 0x10000</c> (0x00A46D80..0x00A46D88), but the native
-    /// index is <c>(phase&gt;&gt;16)-1</c> (0x00A49F7C: r7=input-4, r4=phase&gt;&gt;16=1 -> input[0]), so the first
-    /// output is still input[0] and no sample is skipped.
-    /// </summary>
-    [Fact]
-    public void TheInitialPhaseIsOneSampleIn()
-    {
-        Assert.Equal(0x10000, WwiseResampler.InitialPhase);
-
-        var r = new WwiseResampler();
-        r.Init(Int16Mono(48000), 48000);
-        r.SetPitch(0);
-        var output = new float[1];
-        Assert.Equal(WwiseResampler.DataReady, r.Execute([1000, 2000, 3000], output, 1));
-        Assert.Equal(1000f / 32768f, output[0]);     // 0x10000 maps to input[0], not input[1]
-    }
-
-    /// <summary>
-    /// M6-004 / M6 0.11 (0x00A49E40): the float kernel steps by the pitch step and interpolates the fraction.
-    /// At ratio 1.5 the step is 1.5·65536, so from input[0] the outputs walk 0, 1.5, 3.
-    /// </summary>
-    [Fact]
-    public void TheFloatExecuteWalksTheStep()
-    {
-        var r = new WwiseResampler();
-        r.Init(FloatMono(72000), 48000);            // ratio 1.5
-        r.SetPitch(0);
-        Assert.Equal(98304u, r.TargetStep);         // 1.5 * 0x10000
-
-        float[] input = [0f, 1f, 2f, 3f, 4f, 5f, 6f];
-        var output = new float[3];
-        Assert.Equal(WwiseResampler.DataReady, r.Execute(input, output, 3));
-        Assert.Equal(0f, output[0]);
-        Assert.Equal(1.5f, output[1]);              // interp(1, 2, 0x8000)
-        Assert.Equal(3f, output[2]);
-    }
-
-    /// <summary>
-    /// M6-004 / 0x00A4717C..0x00A47188: <c>Execute</c> returns 17 (NoMoreData) when the input has zero frames,
-    /// before the kernel loop. It applies to the int16 path, the float path and the in-place float path.
-    /// </summary>
-    [Fact]
-    public void ExecuteReturnsNoMoreDataOnEmptyInput()
-    {
-        var i16 = new WwiseResampler();
-        i16.Init(Int16Mono(48000), 48000);
-        i16.SetPitch(0);
-        Assert.Equal(WwiseResampler.NoMoreData, i16.Execute(ReadOnlySpan<short>.Empty, new float[4], 4));
-
-        var flt = new WwiseResampler();
-        flt.Init(FloatMono(48000), 22320);
-        flt.SetPitch(0);
-        Assert.Equal(WwiseResampler.NoMoreData, flt.Execute(ReadOnlySpan<float>.Empty, new float[4], 4));
-        Assert.Equal(WwiseResampler.NoMoreData, flt.ExecuteInPlace(Span<float>.Empty, 4));
-    }
-
-    /// <summary>
-    /// M6-004 / gapE 3.6: only the float mono mode-1 interpolating kernel 0x00A49E40 was read. The float mono
-    /// bypass 0x00A479F4 and ramp 0x00A4A958 were not, so a float resampler in mode 0 or 2 refuses to run.
-    /// </summary>
-    [Fact]
-    public void TheFloatPathRefusesUnreadModes()
-    {
-        var bypass = new WwiseResampler();          // ratio 1 -> step 0x10000 -> mode 0
-        bypass.Init(FloatMono(48000), 48000);
-        bypass.SetPitch(0);
-        Assert.Equal(0, bypass.Mode);
-        Assert.Throws<NotSupportedException>(() => bypass.Execute(new float[4], new float[4], 4));
-
-        var ramp = new WwiseResampler();
-        ramp.Init(FloatMono(48000), 48000);
-        ramp.SetPitch(0);
-        ramp.SetPitch(1200);                        // changed cents -> mode 2
-        Assert.Equal(2, ramp.Mode);
-        Assert.Throws<NotSupportedException>(() => ramp.Execute(new float[4], new float[4], 4));
-    }
-
-    /// <summary>
-    /// M6-004 / gapE 3.5, 3.6: a changed pitch ramps over <c>0x400</c> phase units. The first Execute advances
-    /// the progress by its frame count; a second reaches the end, at which point current becomes target. The
-    /// step is the row's <c>(current·1024 + diff·(pos0 + inc·(k+1)))&gt;&gt;10</c>.
-    /// </summary>
-    [Fact]
-    public void ThePitchRampRunsOver400PhaseUnits()
-    {
-        var r = new WwiseResampler();
-        r.Init(Int16Mono(48000), 48000);            // stepScale = 48000/48000 = 1
-        r.SetPitch(0);
-        r.SetPitch(1200);                           // target 0x20000, ramping from 0x10000
-        Assert.Equal(2, r.Mode);
-        Assert.Equal(0x10000u, r.CurrentStep);
-        Assert.Equal(0x20000u, r.TargetStep);
-        Assert.Equal(0, r.RampPosition);
-
-        var input = new short[4096];
-        var output = new float[512];
-        Assert.Equal(WwiseResampler.DataReady, r.Execute(input, output, 512));
-        Assert.Equal(2, r.Mode);                    // half way: still ramping
-        Assert.Equal(WwiseResampler.RampSpan / 2, r.RampPosition);
-
-        Assert.Equal(WwiseResampler.DataReady, r.Execute(input, output, 512));
-        Assert.Equal(1, r.Mode);                    // the ramp reached 0x400
-        Assert.Equal(WwiseResampler.RampSpan, r.RampPosition);
-        Assert.Equal(r.TargetStep, r.CurrentStep);
+        // an Execute before Init (the constructor leaves R+0x54..+0x56 unset) and a 3+ channel kernel (0xA47824 and the others are unread: no shipped medium has more than two channels) are visible stops
+        var fresh = new WwiseResampler();
+        var input = new WwiseDecodeState { Data = new float[8], ChannelConfig = 1, MaxFrames = 8, ValidFrames = 4 };
+        var output = new WwiseDecodeState { Data = new float[8], ChannelConfig = 1, MaxFrames = 8 };
+        Assert.Throws<WwiseMissingBehaviourException>(() => fresh.Execute(input, output));
+        var three = new WwiseResampler();
+        three.Init(new WwiseResamplerFormat(FmtWord(false, 3), 3, 48000), 48000);
+        three.Limit40 = 8;
+        three.Mode48 = 0;
+        var in3 = new WwiseDecodeState { Data = new short[24], ChannelConfig = 3, MaxFrames = 8, ValidFrames = 4 };
+        var out3 = new WwiseDecodeState { Data = new float[24], ChannelConfig = 3, MaxFrames = 8 };
+        Assert.Throws<WwiseMissingBehaviourException>(() => three.Execute(in3, out3));
+        Assert.Equal(WwiseResampler.NoMoreData, three.Execute(new WwiseDecodeState { Data = new short[24], ValidFrames = 0 }, out3));
     }
 }

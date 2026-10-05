@@ -356,6 +356,9 @@ def run_pull_cases():
                     'extra': ';'.join('%s=%s' % (k, ('%d/%d/%d/%d' % tuple(v)) if k == 'pend' else v) for k, v in spec.items() if k in ('valid', 'f1f8', 'flags4', 'pos', 'w1c', 'total', 'rate', 'pend', 'repo'))}
         out[name] = {'spec': spec_out,
                      'steps': ['%s | end=%s res=%x n48=%d b9=%d%s' % (','.join(events), ended[0] if ended else 'ret', e.r32(state + 0x28), e.r32(voice + 0x100 + 0x48), e.uc.mem_read(voice + 0x100 + 0xB9, 1)[0], extra)]}
+        if 'pitch(' in out[name]['steps'][0]:      # the run stopped at the unread consumption 0xA52DA8: stub output, not an engine result (the real node is tested in emu_pitch.py)
+            del out[name]
+            continue
         print('pull', name, out[name]['steps'][0], file=sys.stderr, flush=True)
     return out
 

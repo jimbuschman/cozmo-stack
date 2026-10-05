@@ -161,12 +161,9 @@ public sealed class WwiseMixerConnection
     }
 
     /// <summary>
-    /// ConsumeBuffer (gapE 2.1, 2.2, 2.3). It zero-pads every input channel from
-    /// <paramref name="validFrames"/> to <paramref name="maxFrames"/> and accumulates the ramped mix into the
-    /// destination planar buffer. For each input channel <c>i</c> and output channel <c>j</c>:
-    /// <c>start_ij = prev[i][j]·StartGain</c>, <c>delta_ij = (next[i][j]·EndGain − start_ij)/maxFrames</c>,
-    /// and <c>dest[j][k] += input[i][k]·(start_ij + k·delta_ij)</c>. The ramp is linear over one bus frame
-    /// and reaches the end at <c>k = maxFrames</c> (gapE 2.3, 2.4).
+    /// ConsumeBuffer (gapE 2.1, 2.2, 2.3) for the earlier model (planar per-channel arrays; no engine state): it zero-pads every input channel from <paramref name="validFrames"/> to <paramref name="maxFrames"/> and runs the matrix mixer
+    /// <see cref="MatrixMixA45E9C"/> with this connection's <see cref="StartGain"/> and <see cref="EndGain"/> as the composed gains. The engine's entry is <see cref="WwiseVoiceConnection.MixA4FBEC"/> (<c>0xA4FBEC</c>), which gates and pads on
+    /// <c>u16 [state+0xE]</c> and composes the gains from the connection's own fields.
     /// </summary>
     /// <param name="input">The voice's planar buffer; each channel array must be at least <paramref name="maxFrames"/> long.</param>
     /// <param name="destination">The bus's planar accumulation buffer, one array per output channel.</param>
@@ -187,31 +184,99 @@ public sealed class WwiseMixerConnection
         if (maxFrames <= 0) return;
 
         // gapE 2.1: zero-pad the voice buffer from uValidFrames to uMaxFrames, per channel.
+        var sources = new ReadOnlyMemory<float>[_inputChannels];
         for (int i = 0; i < _inputChannels; i++)
         {
             var source = input[i];
             if (source.Length < maxFrames)
                 throw new ArgumentException($"input channel {i} is shorter than {maxFrames} frames", nameof(input));
             for (int k = validFrames; k < maxFrames; k++) source[k] = 0f;
+            sources[i] = source;
         }
+        MatrixMixA45E9C(sources, destination, StartGain, EndGain, maxFrames);
+    }
 
-        // gapE 2.2: start_ij = prev[i][j]·startGain; delta_ij = (next[i][j]·endGain - start_ij)·s16.
-        // gapE 2.4: s16 = bus+0x5C = 1/frames.
-        float s16 = 1f / maxFrames;
-        for (int i = 0; i < _inputChannels; i++)
+    /// <summary>
+    /// The matrix mixer <c>0xA45E9C(S, D, {g0, g1}, A, B, 1/frames, frames)</c> (V2-06): the OUTER loop is over the source channels <c>s</c>, the inner over the destination channels <c>d</c>; for each pair <c>start = a * g0</c>,
+    /// <c>inc = (1/frames) * ((b * g1) - start)</c> (<c>vmul</c>, <c>vnmls</c>, <c>vmul</c>: float32, not fused, each rounded) and <c>0xA46668(dst[d], src[s], start, inc, frames)</c>. The LFE branch (<c>0xA45FD0..0xA46078</c>) is not adopted: a
+    /// source or destination channel configuration with the LFE bit (15) is refused by the callers (<see cref="WwiseMixerPan.MatrixForChannelConfigs"/>, <see cref="WwiseVoiceConnection.MixA4FBEC"/>). The matrices are <c>a = prev[s][d]</c>, <c>b = next[s][d]</c>
+    /// in this class's row-major layout (the engine's rows are padded to a multiple of 4 floats: a layout difference only).
+    /// </summary>
+    internal void MatrixMixA45E9C(ReadOnlyMemory<float>[] sources, float[][] destination, float g0, float g1, int frames)
+    {
+        float oneOverFrames = 1f / frames;                                           // [bus+0x5C]
+        for (int i = 0; i < _inputChannels; i++)                                     // 0xA45F18..0xA45FC4: the outer loop over the source channels
         {
-            var source = input[i];
-            for (int j = 0; j < _outputChannels; j++)
+            for (int j = 0; j < _outputChannels; j++)                                // 0xA45F44..0xA45F90
             {
                 int m = i * _outputChannels + j;
-                float start = _prevMatrix[m] * StartGain;
-                float delta = (_nextMatrix[m] * EndGain - start) * s16;
-                // gapE 2.3: start = 0 and delta = 0 is skipped by the ramp kernel.
-                if (start == 0f && delta == 0f) continue;
+                float start = _prevMatrix![m] * g0;                                  // 0xA45F6C vmul.f32 s15,s14,s15
+                float product = _nextMatrix![m] * g1;                                // 0xA45F7C vnmls.f32 s12,s13,s14: -start + b * g1
+                float diff = product - start;
+                float inc = oneOverFrames * diff;                                    // 0xA45F80 vmul.f32 s15,s16,s12
+                WwiseMixKernels.RampAccumulateA46668(sources[i].Span, destination[j], start, inc, frames);   // 0xA45F88 bl 0xA46668
+            }
+        }
+    }
+}
 
-                var dst = destination[j];
-                for (int k = 0; k < maxFrames; k++)
-                    dst[k] += source[k] * (start + k * delta);
+/// <summary>The NEON accumulate kernel of the mixer (M6-012, V2-07).</summary>
+public static class WwiseMixKernels
+{
+    /// <summary>Advanced SIMD flush-to-zero: a denormal operand or result of a NEON q-register f32 operation becomes a zero of the same sign (FPSCR.FZ is not consulted; the scalar VFP operations of the kernel are unaffected).</summary>
+    private static float Z(float x) => float.IsSubnormal(x) ? (BitConverter.SingleToUInt32Bits(x) >> 31 != 0 ? -0f : 0f) : x;
+
+    /// <summary>
+    /// <c>0xA46668(src, dst, start, inc, frames)</c> (V2-07, 8 frames per iteration; <c>ceil(frames / 8) * 8</c> frames are processed, so a frame count that is not a multiple of 8 overruns the buffers: refused as a visible stop).
+    /// <c>inc == 0</c> (a float compare with 0.0, -0.0 included; a NaN is not equal): <c>start == 0</c> returns, else <c>dst[i] += src[i] * lane</c> with the lanes <c>{start, start + 0.0, start + 0.0, start + 0.0}</c>. Otherwise the lane gains of
+    /// the first four frames are <c>{start, start + inc, (inc + inc) + start, start + inc * 3.0f}</c> (the fourth by <c>vmla</c>: the product rounded, then added), those of the second four are those plus <c>inc * 4.0f</c>, and after every block of 8
+    /// both lane vectors get <c>(inc * 4.0f) + (inc * 4.0f)</c> added (accumulated, NOT <c>start + k * inc</c>); <c>dst = dst + src * lane</c> per lane (not fused). Every q-register operation flushes denormal operands and results to zero (NEON); the scalar lane set-up (<c>vadd/vmla/vmul</c> on s registers) does not.
+    /// </summary>
+    public static void RampAccumulateA46668(ReadOnlySpan<float> src, Span<float> dst, float start, float inc, int frames)
+    {
+        if (frames % 8 != 0)
+            throw new WwiseMissingBehaviourException("M6-012 V2-07: 0xA46668 processes ceil(frames / 8) * 8 frames; a frame count that is not a multiple of 8 overruns the buffers (not modelled)");
+        float zero = 0f;
+        if (inc == 0f)                                                              // 0xA46674 vcmp.f32 s15,#0; bne 0xA4671C
+        {
+            if (start == zero) return;                                              // 0xA466A0..0xA466AC
+            float lane = start + zero;                                              // 0xA466B8 vadd.f32 s13,s14,s13
+            for (int i = 0; i < frames; i += 8)                                     // 0xA466CC..0xA4670C
+            {
+                for (int k = 0; k < 8; k++)
+                {
+                    float g = k % 4 == 0 ? start : lane;                            // lane 0 is the raw start, lanes 1..3 are start + 0.0f
+                    float p = Z(Z(src[i + k]) * Z(g));                              // vmul.f32 q11,q11,q12 (NEON: operands and result flushed)
+                    dst[i + k] = Z(Z(dst[i + k]) + p);                              // vadd.f32 q9,q9,q11
+                }
+            }
+            return;
+        }
+        float three = 3f, four = 4f;
+        var a = new float[4];                                                       // q12: the lane gains of the first four frames
+        a[0] = start;                                                               // 0xA46720 str r2,[r3]
+        float twice = inc + inc;                                                    // 0xA4672C vadd.f32 s13,s15,s15
+        a[1] = start + inc;                                                         // 0xA4673C vadd.f32 s14,s14,s15
+        a[2] = twice + start;                                                       // 0xA46738 vadd.f32 s13,s13,s14
+        float triple = inc * three;                                                 // 0xA46728 vmla.f32 s12,s15,s13: s12 = start + inc * 3.0f (the product rounded, then added)
+        a[3] = start + triple;
+        float inc4 = inc * four;                                                    // 0xA46744 vmul.f32 s15,s15,s12
+        var b = new float[4];                                                       // q13: a + 4*inc
+        for (int k = 0; k < 4; k++) b[k] = Z(Z(a[k]) + Z(inc4));                    // 0xA46754 vadd.f32 q13,q12,q14 (NEON)
+        float step = Z(Z(inc4) + Z(inc4));                                          // 0xA4675C vadd.f32 q14,q14,q14 (NEON)
+        for (int i = 0; i < frames; i += 8)                                         // 0xA46760..0xA467A4
+        {
+            for (int k = 0; k < 4; k++)
+            {
+                float p0 = Z(Z(src[i + k]) * Z(a[k]));                              // vmul.f32 q11,q11,q12 (NEON)
+                float p1 = Z(Z(src[i + 4 + k]) * Z(b[k]));                          // vmul.f32 q10,q10,q13
+                dst[i + k] = Z(Z(dst[i + k]) + p0);                                 // vadd.f32 q9,q9,q11
+                dst[i + 4 + k] = Z(Z(dst[i + 4 + k]) + p1);                         // vadd.f32 q8,q8,q10
+            }
+            for (int k = 0; k < 4; k++)
+            {
+                b[k] = Z(Z(b[k]) + Z(step));                                        // 0xA46784 vadd.f32 q13,q13,q14
+                a[k] = Z(Z(a[k]) + Z(step));                                        // 0xA46794 vadd.f32 q12,q12,q14
             }
         }
     }

@@ -2051,22 +2051,10 @@ internal static class WwiseVorbisEngineOracle
     /// <summary>The voice render order 0xA44630 on a hand-built voice with the REAL 0xA548C0 (slots: index:vt+0x38 results:vt+0x3C results, results joined by /, slots joined by ;; node frames; source script result:valid joined by ;; the owner PBI pitch +0x44, its u16 +0x1BE, the node byte +0xB8; extra: valid, f1f8, flags4, pos, w1c, total, rate, pend = (vt+0x28 result/latch/+0x1DC/+0x1E0), repo = the stamp of a record already in the repository), steps.</summary>
     public static readonly Dictionary<string, (string Slots, int Node, string Src, double Pitch, int F1be, int B8, string Extra, string Step)> Pull = new()
     {
-        ["p_loop_2d_none_then_frames"] = ("", 0, "45:0;45:0;45:128", 0.0, 0, 0, "", "pitch(0.0,1),src(1024),src(1024),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_loop_2e_calls_the_handler_and_returns"] = ("", 0, "46:0", 0.0, 0, 0, "", "pitch(0.0,1),src(1024),handler | end=ret res=2e n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_loop_other_result_returns"] = ("", 0, "2:0", 0.0, 0, 0, "", "pitch(0.0,1),src(1024) | end=ret res=2 n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_loop_2d_none_then_2e"] = ("", 0, "45:0;46:0", 0.0, 0, 0, "", "pitch(0.0,1),src(1024),src(1024),handler | end=ret res=2e n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_node_holds_frames_the_source_is_not_called"] = ("", 50, "45:128", 0.0, 0, 0, "", "pitch(0.0,1),consume | end=stop res=2b n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_all_slots_2b_down_then_the_loop"] = ("0:43:45;1:43:45;2:43:45;3:43:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s38(1),s38(0),pitch(0.0,1),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_slot3_ok_goes_to_filter_a"] = ("0:45:45;1:45:45;2:45:45;3:45:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),notify | end=ret res=2d n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_slot2_ok_then_the_up_walk"] = ("0:45:45;1:45:45;2:45:45;3:43:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s3C(3),notify | end=ret res=2d n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_slot1_other_result_returns"] = ("0:45:45;1:5:45;2:43:45;3:43:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s38(1) | end=ret res=5 n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_up_walk_2b_goes_back_down"] = ("0:43:45;1:45/43:45;2:43:43/45;3:43:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s38(1),s3C(2),s38(1),s38(0),pitch(0.0,1),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_up_walk_other_result_returns"] = ("0:43:45;1:43:45;2:45:45;3:43:5", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s3C(3) | end=ret res=5 n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_after_the_loop_the_up_walk_runs_from_slot_0"] = ("0:43:45;1:43:45;2:43:45;3:43:45", 0, "45:128", 0.0, 0, 0, "", "s38(3),s38(2),s38(1),s38(0),pitch(0.0,1),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_pitch_args_1200_cents_interp_on"] = ("", 0, "45:128", 1200.0, 0, 0, "", "pitch(1200.0,1),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_pitch_args_bit7_set_interp_off"] = ("", 0, "45:128", -350.5, 128, 0, "", "pitch(-350.5,0),src(1024),consume | end=stop res=2d n48=4660 b9=0 v=128 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_empty_node_last_buffer_byte_gives_0x11"] = ("", 0, "45:128", 0.0, 0, 1, "", "pitch(0.0,1),notify | end=ret res=11 n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
-        ["p_held_frames_with_last_buffer_byte"] = ("", 50, "45:128", 24.0, 0, 1, "", "pitch(24.0,1),consume | end=stop res=2b n48=4660 b9=0 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_548_nothing_to_do_notifies"] = ("3:45:45", 0, "", 0.0, 0, 0, "", "s38(3),notify | end=ret res=2d n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_548_result_0x11_from_the_slot_notifies"] = ("3:17:45", 0, "", 0.0, 0, 0, "", "s38(3),notify | end=ret res=11 n48=30583 b9=238 v=0 b2c=0 s1f8=ffffffff lat=-1 repo=[]"),
         ["p_548_stop_offset_below_valid_clamps"] = ("3:45:45", 0, "", 0.0, 0, 0, "valid=800;f1f8=300", "s38(3),notify | end=ret res=2d n48=30583 b9=238 v=300 b2c=1 s1f8=ffffffff lat=-1 repo=[]"),
