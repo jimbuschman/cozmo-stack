@@ -277,8 +277,11 @@ public abstract class ActionRunner : IActionRunner
     /// delays; the timeout first (at equality), then the pre+post wait; then Init once and CheckIfDone the same
     /// tick; the category-4 retry is transient NOT_STARTED and returns RUNNING; a terminal result runs the
     /// callbacks with the full result.
+    ///
+    /// Virtual: the compounds (20261004-actionlist-extraction.md S3/S4, R1/R2) override it with their own child
+    /// tick instead of the timer/Init/CheckIfDone.
     /// </summary>
-    private uint UpdateInternal()
+    protected virtual uint UpdateInternal()
     {
         float now = EngineClockSeconds;
         if (StartTime < 0f) StartTime = now;                       // L7: stamp BEFORE Init
@@ -384,6 +387,15 @@ public abstract class ActionRunner : IActionRunner
         if (State == EngineActionResult.NotStarted) return;
         UnlockTracksInternal(RequiredTrackMask, LockOwner);
     }
+
+    /// <summary>
+    /// P7: a compound's retained child (DeleteOnCompletion false, non-NOT_STARTED, non-suppressed) tests the
+    /// tracks it holds with the UNSIGNED stop-owner string (the same owner the destructor's stop gate uses,
+    /// L6/L15) and re-takes them if it no longer holds them, so the child's own destructor can stop the moving
+    /// track. The owner for the re-take is the same unsigned string: it is what the stop gate tests.
+    /// </summary>
+    internal bool OwnsTracksByUnsignedOwner() => AreAllTracksLockedBy(RequiredTrackMask, StopOwner);
+    internal void RetakeTracks() => LockTracks(RequiredTrackMask, StopOwner);
 
     /// <summary>
     /// The ~IActionRunner tail 0x00541084..0x0054127A (L15/L16). The queue's DeleteActionAndIter calls this as

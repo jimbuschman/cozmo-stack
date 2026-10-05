@@ -428,12 +428,10 @@ public sealed class BehaviorManager : IDisposable
     /// </summary>
     private void QueueHeadAndLift(float headRad, float liftMm)
     {
-        // B-ACTIONS batch 2 stand-in for the source's CompoundActionParallel queued at position 0 (20260929-R-ANIM-pre-extraction.md
-        // 4.4/4.5, 0x5A1C24..0x5A1C9C, movs r2,#2 at 0x5A1C80; R1 0x0054FA58..0x0054FB16) with children {head, lift}.
-        // Until batch 3 builds the compound, the head is queued NOW (key 0) and the lift InParallel (key 1), so the
-        // ActionList ticks them on the same list tick in ascending key order, {head, lift}.
-        _ = _context.Robot.Motion.SetHeadAngleAsync(new Radians(headRad).Value, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
-        _ = _context.Robot.Motion.SetLiftHeightAsync(liftMm, requireCalibration: false, position: QueueActionPosition.InParallel);
+        // B-ACTIONS batch 3a: one real CompoundActionParallel queued at position 0 (20260929-R-ANIM-pre-extraction.md
+        // 4.4/4.5, 0x5A1C24..0x5A1C9C, movs r2,#2 at 0x5A1C80; R1 0x0054FA58..0x0054FB16) with children {head, lift}
+        // in that order. The list tick now drives the pair on the same tick in list order.
+        _context.Robot.Motion.QueueHeadAndLiftCompound(headRad, liftMm);
     }
 
     /// <summary>Adds a behaviour. Ids are unique; adding the same id twice replaces the first.</summary>

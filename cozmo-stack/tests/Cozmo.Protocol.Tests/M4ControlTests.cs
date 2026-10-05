@@ -784,6 +784,35 @@ public class M4ControlTests
     }
 
     /// <summary>
+    /// IActionRunner::Interrupt 0x00540250 calls virtual +0x14 and acts only on a 1. MoveLiftToHeightAction's
+    /// vtable `_ZTVN4Anki5Cozmo22MoveLiftToHeightActionE` = 0x10219B4 (object vptr 0x10219BC, +0x14 = 0x10219D0)
+    /// resolves to 0x0052B0B2 (Thumb 0x0052B0B3): `movs r0,#0; bx lr`, which returns 0. Q14 NOW_AND_RESUME
+    /// therefore refuses to interrupt a lift move and falls back to QueueNow (Q15): the running move is
+    /// Cancelled and Deleted (0x02000000), not Interrupted (0x03000009), and the incoming move is queued.
+    /// </summary>
+    [Fact]
+    public async Task M4_CanInterrupt_A_LiftMoveRefusesQ14InterruptionAndFallsBackToQueueNow()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.LiftInPos, liftAngle: 0f);
+        int mark = rig.Mark();
+
+        var first = rig.Robot.Motion.SetLiftHeightAsync(60f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();                                            // first is current, RUNNING (nothing acks it)
+
+        var second = rig.Robot.Motion.SetLiftHeightAsync(90f, position: QueueActionPosition.NowAndResume,
+                                                         timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();                                            // Q15: Cancel+Delete first, then promote second
+
+        var firstOutcome = await first.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(MotionResult.Failed, firstOutcome.Result);
+        Assert.Equal(0x02000000u, firstOutcome.EngineResult);   // CANCELLED, not INTERRUPTED 0x03000009
+        Assert.Contains(rig.SentSince(mark).OfType<SetLiftHeight>(), m => m.HeightMm == 90f);
+    }
+
+    /// <summary>
     /// M4-016 MA15: nothing is sent when the head is within tolerance + 1e-5 of the target (the game tolerance
     /// 0.0349066, at least 2°), nor when the lift is within 5 mm and not moving (MC+0xB = !LIFT_IN_POS); the move
     /// then succeeds.

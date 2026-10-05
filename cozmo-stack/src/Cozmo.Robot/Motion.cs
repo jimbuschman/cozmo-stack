@@ -573,6 +573,18 @@ bool requireCalibration = true)
                                                  float durationSec = 0f,
                                                  TimeSpan? timeout = null, bool requireCalibration = true)
     {
+        var a = BuildHeadAction(radians, maxSpeedRadPerSec, accelRadPerSec2, durationSec, timeout);
+        Queue(a);
+        return a.Done.Task;
+    }
+
+    /// <summary>
+    /// Builds the MoveHeadToAngleAction runner without queueing it (M4-001/M4-003/M4-016). The game
+    /// SetHeadAngle (MA10) uses this path; M10-008's compound reuses it as a child.
+    /// </summary>
+    private MoveAction BuildHeadAction(float radians, float maxSpeedRadPerSec, float accelRadPerSec2,
+                                       float durationSec, TimeSpan? timeout)
+    {
         // fidelity: M4-001
         // Radians ctor 0x0084C832 rescales first (0x0084C87C); so 99 rad → 99 − 16·2π = −1.5310 and clips to the
         // min with AngleTooLow, and −99 rad → −99 + 16·2π = +1.5310 and clips to the max with AngleTooHigh.
@@ -597,8 +609,7 @@ bool requireCalibration = true)
         var a = new MoveAction(this, isHead: true, target, tolerance, $"head to {target:F3} rad",
                                id => new SetHeadAngle(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id));
         a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
-        Queue(a);
-        return a.Done.Task;
+        return a;
     }
 
     // fidelity: M4-002, M4-003, M4-016
@@ -628,6 +639,18 @@ bool requireCalibration = true)
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
         if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && PlaceObjectOnGroundAsync is not null)
             return PlaceObjectOnGroundAsync();
+        var a = BuildLiftAction(heightMm, maxSpeedRadPerSec, accelRadPerSec2, durationSec, timeout, suppressTrackLocking);
+        Queue(a, position);
+        return a.Done.Task;
+    }
+
+    /// <summary>
+    /// Builds the MoveLiftToHeightAction runner without queueing it (M4-002/M4-003/M4-016). M10-008's compound
+    /// reuses this path as a child.
+    /// </summary>
+    private MoveAction BuildLiftAction(float heightMm, float maxSpeedRadPerSec, float accelRadPerSec2,
+                                       float durationSec, TimeSpan? timeout, bool suppressTrackLocking)
+    {
         float target = heightMm;
         if (target >= 0f && (target < LowDockHeightMm || target > CarryHeightMm))
         {
@@ -645,8 +668,7 @@ bool requireCalibration = true)
                                id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id))
                 { SuppressTrackLocking = suppressTrackLocking };
         a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
-        Queue(a, position);
-        return a.Done.Task;
+        return a;
     }
 
     /// <summary>
@@ -658,6 +680,30 @@ bool requireCalibration = true)
     {
         lock (_gate) _actions.Add(a);
         _robot.Engine.Robot!.ActionList.QueueAction(position, a, 0);
+    }
+
+    // fidelity: M10-008
+    /// <summary>
+    /// M10-008/C11 (0x5A2BB8..0x5A2C3A): the restore queues ONE <see cref="CompoundActionParallel"/> at position
+    /// NOW whose child list is {MoveHeadToAngleAction, MoveLiftToHeightAction} in that order. The head is
+    /// <c>Radians(head)</c> with the action's constructor defaults 15/20 (MA9); the lift is the height with the
+    /// constructor constants 10/20. The children are queued only through the compound, so the ActionList ticks
+    /// the pair in list order on the same tick.
+    /// </summary>
+    internal void QueueHeadAndLiftCompound(float headRad, float liftMm)
+    {
+        var head = BuildHeadAction(new Radians(headRad).Value, ActionDefaultHeadSpeedRadPerSec,
+                                   ActionDefaultHeadAccelRadPerSec2, 0f, null);
+        var lift = BuildLiftAction(liftMm, DefaultLiftSpeedRadPerSec, DefaultLiftAccelRadPerSec2, 0f, null,
+                                   suppressTrackLocking: false);
+        lock (_gate)
+        {
+            _actions.Add(head);
+            _actions.Add(lift);
+        }
+        var compound = new CompoundActionParallel(() => _robot.Engine.Timer.SecondsF,
+                                                  new ActionRunner?[] { head, lift });
+        _robot.Engine.Robot!.ActionList.QueueAction(QueueActionPosition.Now, compound, 0);
     }
 
     /// <summary>The action's destructor tail completed: drop it from the ack dispatch list and map its stored
@@ -864,7 +910,13 @@ bool requireCalibration = true)
         protected override bool LiftTrackMoving => Owner._liftMoving;
         protected override bool BodyTrackMoving => Owner._bodyMoving;
 
-        public override bool CanInterrupt() => true;
+        // IActionRunner::Interrupt 0x00540250 calls virtual +0x14 and acts only on a 1. MoveHeadToAngleAction's
+        // vtable `_ZTVN4Anki5Cozmo21MoveHeadToAngleActionE` = 0x102197C (object vptr 0x1021984, +0x14 = 0x1021998)
+        // and MoveLiftToHeightAction's `_ZTVN4Anki5Cozmo22MoveLiftToHeightActionE` = 0x10219B4 (object vptr
+        // 0x10219BC, +0x14 = 0x10219D0) both resolve to the same target 0x0052B0B2 (Thumb 0x0052B0B3):
+        // `movs r0,#0; bx lr`, which returns 0. Q14 NOW_AND_RESUME therefore refuses to interrupt a head or lift
+        // move and falls back to QueueNow (Q15).
+        public override bool CanInterrupt() => false;
 
         // fidelity: M4-016
         /// <summary>

@@ -84,3 +84,40 @@ Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
 - `Vision/FaceActions.cs:591` still says the stack has no ActionList.
 - Batch-3 nuance: the compound stops later children on a non-ignored child failure (R3); two separate queues do
   not, until the compound is built.
+
+## Batch 3a - the compounds (rows P, S, R)
+
+- **Row verification.** `cozmo-verifier` checked P1-P8, S1-S9, R1-R6: all HOLDS. Two shared mechanisms are on the
+  paths but in no row; the verifier read them in the binary and they were built from that reading:
+  `ICompoundAction::Reset(bool)` 0x0054EC56 and `ClearActions()` 0x0054EFA4.
+- **Built.** `cozmo-stack/src/Cozmo.Robot/Actions/CompoundActions.cs`: `CompoundAction` (P1-P8),
+  `CompoundActionSequential` (S1-S9), `CompoundActionParallel` (R1-R6). `BehaviorManager.QueueHeadAndLift` now
+  queues one `CompoundActionParallel` at NOW with children {head, lift}, replacing the batch-2 stand-in.
+  Tests: `CompoundActionTests.cs` (19 tests).
+- **Verified.** `cozmo-verifier` PASS after two blocking fixes: (1) the compound parent `Type` (+0x44) was not
+  written (native writes it in `StoreUnionAndDelete` 0x0054F0D8/0x0054F0DA and `SetProxyTag`
+  0x0054F23C/0x0054F23E, 0x0054F262/0x0054F264); (2) `CanInterrupt` returned `true` with no source. The fix
+  resolved the vtable slot `+0x14` for the compounds and for the head/lift actions (all -> 0x0052B0B2
+  `movs r0,#0; bx lr`), so a compound and a head/lift move both refuse Q14 and fall back to QueueNow (Q15).
+  The head/lift `CanInterrupt` was a batch-2 defect found here; a new M4ControlTests test pins the Q15 fallback.
+- **Gates.** `fidelity.py --check` clean (427 records). Full suite: **3827 passed, 0 failed, 0 skipped**.
+- **Commit.** (this commit)
+
+### MISSING (still open)
+- The producer of `CompoundActionSequential`'s +0x9C delay; no row says which live function sets a nonzero delay.
+- `ICompoundAction`'s `Init`/`CheckIfDone` bodies are unreachable (the compound overrides `UpdateInternal`);
+  implemented as `Init()==0` and `CheckIfDone()==State`.
+- The concrete compound that sets the completion-union proxy (+0x94/+0x98) and its child tag; P8 settles the
+  mechanism, not its caller.
+- The S2 derived +0x24 hook's concrete body (S2 itself says UNKNOWN absent subclass).
+
+### Queued (non-blocking, from the batch-3a verifier)
+- `CompoundActions.cs`'s file-level `// fidelity: M10-008, M13-028` tag overclaims ownership of the generic base;
+  move the tags to the concrete classes or add a base record.
+- `AddAction` with ignoreFailure=false erases a keyed predicate; native leaves the map unchanged.
+- `DeleteActions`/`ClearActions` clear the completion cache; native clears it only in the destruction tail.
+
+## Remaining batch
+3b (replace the stack's async sequences in FlipBlockAction, ChargerActions and DockActions with compounds) and
+4 (completion to the game: RobotCompletedAction and ActionWatcher). Records stay IMPLEMENTATION_GAP until a
+strong verifier settles them.
