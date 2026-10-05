@@ -66,6 +66,7 @@ public class ActionListTests
         public ConcreteRunner() : base(type: 7, requiredTrackMask: 0) { }
         public override uint Update() => EngineActionResult.Running;
         public override bool CanInterrupt() => true;
+        public override uint CheckIfDone() => EngineActionResult.Success;
     }
 
     private static ActionList NewList() => new();

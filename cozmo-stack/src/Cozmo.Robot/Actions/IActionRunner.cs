@@ -121,14 +121,23 @@ internal sealed class ActionRunnerTagCounter
 }
 
 /// <summary>
-/// Base for an engine action runner. It implements only the parts the queue and the tag rules need in batch 1:
-/// C1 (the ctor tag), C2 (SetTag) and C3 (Cancel). Init, the timeout, CheckIfDone, the track lock, Reset's body
-/// and the destructor are batch 2 and are left abstract or as marked no-ops; the queue drives the fake in tests.
+/// Base for an engine action runner. Batch 2 builds the full <c>IActionRunner::Update</c> lifecycle
+/// (20261004-actionlist-extraction.md rows L1-L18): ActionStartUpdating, the start branch's custom motion
+/// profile and track lock, the timer, Init/CheckIfDone, the category-4 retry, the terminal completion callbacks
+/// and Prep, the end release, the destruction stop-before-unlock, and ForceComplete/RetriesRemain.
+///
+/// The concrete action supplies Init/CheckIfDone and the track primitives; the queue drives Update. The
+/// ActionWatcher hooks (ActionStartUpdating/ActionEndUpdating/ActionEnding) are batch 4 (W rows) and are
+/// virtual no-ops here so the lifecycle order is exact.
 /// </summary>
 public abstract class ActionRunner : IActionRunner
 {
     /// <summary>An optional log sink, wired by the owner (the engine log).</summary>
     public Action<string>? Log { get; set; }
+
+    private bool _prepped;                       // L13: +0x55 guard
+    private uint _completionUnion;               // L13: +0x1C cache
+    private readonly List<Action<uint>> _completionCallbacks = new();   // L1: callback list +0x64
 
     protected ActionRunner(int type, uint requiredTrackMask)
     {
@@ -151,10 +160,179 @@ public abstract class ActionRunner : IActionRunner
     public uint RequiredTrackMask { get; set; }
     public bool SuppressTrackLocking { get; set; }
 
-    /// <summary>IActionRunner::Update; the concrete action is batch 2.</summary>
-    public abstract uint Update();
+    // L2/L7: IAction +0x74, the start time; negative from the ctor/reset, stamped from the engine clock at the
+    // first UpdateInternal before Init. L7/L9: +0x70 initialized.
+    public float StartTime { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+    public bool Initialized { get; set; }
 
-    /// <summary>The virtual +0x14 interrupt predicate; the concrete override is batch 2.</summary>
+    // L8: virtual pre-delay +0x24, post-delay +0x28 (read only when initialized) and timeout +0x2C. The base
+    // defaults are 0, 0 and 30.0 s (0x41F00000, 0x0052B0BA..0x0052B0C8).
+    protected virtual float PreDelaySeconds => 0f;
+    protected virtual float PostDelaySeconds => 0f;
+    public float TimeoutSeconds { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0x41F00000));
+
+    /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
+    protected virtual float EngineClockSeconds => 0f;
+
+    // L3/W8/W9: the watcher hooks; batch 4 (W rows). Virtual no-ops keep the order exact here.
+    protected virtual void ActionStartUpdating() { }
+    protected virtual void ActionEndUpdating() { }
+
+    // L5/L14/L15: the MovementComponent primitives, overridden by a concrete action that owns a robot.
+    protected virtual bool AreAnyTracksLocked(uint mask) => false;
+    protected virtual void LockTracks(uint mask, string owner) { }
+    protected virtual void UnlockTracksInternal(uint mask, string owner) { }
+    protected virtual bool AreAllTracksLockedBy(uint mask, string owner) => false;
+    protected virtual void StopHeadTrack() { }
+    protected virtual void StopLiftTrack() { }
+    protected virtual void StopBodyTrack() { }
+    protected virtual bool HeadTrackMoving => false;
+    protected virtual bool LiftTrackMoving => false;
+    protected virtual bool BodyTrackMoving => false;
+    protected virtual bool HasCustomMotionProfile => false;
+
+    // L6: the lock/unlock owner is to_string(int) of the signed tag; the destructor stop-owner is to_string(unsigned).
+    private string LockOwner => ((int)Tag).ToString();
+    private string StopOwner => ((uint)Tag).ToString();
+
+    // L9: the concrete Init (base Init at 0x005413CA returns 0) and CheckIfDone (pure virtual). L13: the base
+    // completion-union getter copies +0x1C. L4: SetMotionProfile returns false when there is no custom profile.
+    public virtual int Init() => 0;
+    public abstract uint CheckIfDone();
+    public virtual uint GetCompletionUnion() => _completionUnion;
+    public virtual bool SetMotionProfile() => false;
+
+    /// <summary>L12: AddCompletionCallback appends; RunCallbacks loops the list in order with the full result.</summary>
+    public void AddCompletionCallback(Action<uint> callback) => _completionCallbacks.Add(callback);
+    public virtual void RunCompletionCallbacks(uint result)
+    {
+        foreach (var cb in _completionCallbacks) cb(result);
+    }
+
+    // L18: ForceComplete writes SUCCESS.
+    public void ForceComplete() => State = EngineActionResult.Success;
+    // L18: RetriesRemain decrements a positive byte and returns true, else false.
+    public bool TakeRetry()
+    {
+        if (RetriesRemain == 0) return false;
+        RetriesRemain--;
+        return true;
+    }
+
+    /// <summary>
+    /// IActionRunner::Update 0x00540370..0x0054063A (L3-L13). ActionStartUpdating first; RUNNING goes straight
+    /// to UpdateInternal; only NOT_STARTED, INTERRUPTED 0x03000009 and 0x04000000 enter the start branch; any
+    /// other stored state Preps and ActionEndUpdatings without CheckIfDone.
+    /// </summary>
+    public virtual uint Update()
+    {
+        ActionStartUpdating();
+
+        uint result;
+        if (State == EngineActionResult.Running)
+        {
+            result = UpdateInternal();
+        }
+        else if (State == EngineActionResult.NotStarted || State == EngineActionResult.Interrupted || State == 0x04000000u)
+        {
+            // L4: custom motion profile; a false return logs unused, not failure.
+            if (HasCustomMotionProfile && !SetMotionProfile())
+                Log?.Invoke("info: IActionRunner.Update.MotionProfileUnused");
+            // L4: store RUNNING BEFORE the lock check.
+            State = EngineActionResult.Running;
+            // L5: +0x56 bypasses AreAnyTracksLocked and LockTracks; otherwise a locked required mask fails
+            // 0x03000019 and ends the updating without Init (Delete Preps later).
+            if (!SuppressTrackLocking)
+            {
+                if (AreAnyTracksLocked(RequiredTrackMask))
+                {
+                    Log?.Invoke("warning: IActionRunner.Update.TracksLocked");
+                    State = EngineActionResult.TracksLocked;
+                    ActionEndUpdating();
+                    return State;
+                }
+                LockTracks(RequiredTrackMask, LockOwner);
+            }
+            result = UpdateInternal();
+        }
+        else
+        {
+            // L3: a terminal stored state -> Prep/ActionEndUpdating without CheckIfDone.
+            Prep();
+            ActionEndUpdating();
+            return State;
+        }
+
+        // L13: store the virtual result over +0x18. The native always calls ActionEndUpdating after storing (a
+        // RUNNING result branches at 0x005405A2 to 0x54062C); only PrepForCompletion (0x540626) is skipped for
+        // RUNNING.
+        State = result;
+        if (result != EngineActionResult.Running) Prep();
+        ActionEndUpdating();
+        return result;
+    }
+
+    /// <summary>
+    /// IAction::UpdateInternal 0x00540D1C..0x00540F9E (L7-L13): stamp a negative start before Init; read the
+    /// delays; the timeout first (at equality), then the pre+post wait; then Init once and CheckIfDone the same
+    /// tick; the category-4 retry is transient NOT_STARTED and returns RUNNING; a terminal result runs the
+    /// callbacks with the full result.
+    /// </summary>
+    private uint UpdateInternal()
+    {
+        float now = EngineClockSeconds;
+        if (StartTime < 0f) StartTime = now;                       // L7: stamp BEFORE Init
+        float pre = PreDelaySeconds;                               // L8: +0x24
+        float post = Initialized ? PostDelaySeconds : 0f;          // L8: +0x28 only when initialized
+        float timeout = TimeoutSeconds;                            // L8: +0x2C
+
+        // L8/L10: FIRST now >= f32(start + timeout) -> timeout, including equality.
+        if (now >= StartTime + timeout) return Finish(EngineActionResult.Timeout);
+        // L8: else now < f32(f32(start + pre) + post) -> RUNNING wait.
+        if (now < (StartTime + pre) + post) return EngineActionResult.Running;
+
+        // L9: gates pass.
+        if (!Initialized)
+        {
+            int r = Init();
+            if (r == 0) Initialized = true;
+            if (Initialized) return Finish(CheckIfDone());
+            return Finish(unchecked((uint)r));                     // a nonzero Init with init still false
+        }
+        return Finish(CheckIfDone());                              // already init
+    }
+
+    /// <summary>L11 retry and L12 terminal callbacks; the outer Update stores the returned result over +0x18.</summary>
+    private uint Finish(uint result)
+    {
+        if ((result >> 24) == 4 && RetriesRemain > 0)
+        {
+            RetriesRemain--;
+            StartTime = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+            Initialized = false;
+            State = EngineActionResult.NotStarted;                 // transient; outer stores RUNNING
+            return EngineActionResult.Running;
+        }
+        RunCompletionCallbacks(result);
+        return result;
+    }
+
+    /// <summary>
+    /// L13 PrepForCompletion 0x00540750..0x005407C2: the +0x55 guard; the first call copies the virtual
+    /// GetCompletionUnion into the +0x1C cache, a repeat logs AlreadyPrepped. NO RunCallbacks here.
+    /// </summary>
+    public virtual void Prep()
+    {
+        if (_prepped)
+        {
+            Log?.Invoke("debug: IActionRunner.PrepForCompletion.AlreadyPrepped");
+            return;
+        }
+        _completionUnion = GetCompletionUnion();
+        _prepped = true;
+    }
+
+    /// <summary>The virtual +0x14 interrupt predicate; the concrete override says whether Interrupt may take it.</summary>
     public abstract bool CanInterrupt();
 
     // C3: runner Cancel 0x005409DC..0x00540A46: NOT_STARTED unchanged; otherwise log then state CANCELLED; no
@@ -190,12 +368,38 @@ public abstract class ActionRunner : IActionRunner
         return true;
     }
 
-    // L2: the body is batch 2 (clear Init/start, optional unlock). Marked, not invented.
-    public virtual void Reset(bool unlockTracks) { }
-    // D2: Prep is batch 4.
-    public virtual void Prep() { }
-    // W10/D5: the watcher event is batch 4.
-    public virtual void WatcherEnding() { }
-    // L14: the track-lock release is batch 2.
-    public virtual void UnlockTracks() { }
+    /// <summary>L2 Reset 0x00540CE8: clear Init/start; true unlocks before NOT_STARTED, false skips the unlock.</summary>
+    public virtual void Reset(bool unlockTracks)
+    {
+        StartTime = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
+        Initialized = false;
+        if (unlockTracks) UnlockTracks();
+        State = EngineActionResult.NotStarted;
+    }
+
+    /// <summary>L14 UnlockTracks 0x005408EC: skip when +0x56 or NOT_STARTED, otherwise release mask/tag.</summary>
+    public virtual void UnlockTracks()
+    {
+        if (SuppressTrackLocking) return;
+        if (State == EngineActionResult.NotStarted) return;
+        UnlockTracksInternal(RequiredTrackMask, LockOwner);
+    }
+
+    /// <summary>
+    /// The ~IActionRunner tail 0x00541084..0x0054127A (L15/L16). The queue's DeleteActionAndIter calls this as
+    /// the virtual deleting destructor: stop each moving track this action owns (HEAD then LIFT then BODY, using
+    /// the unsigned stop-owner), then release the declared mask unless +0x56 or NOT_STARTED, then the watcher's
+    /// ActionEnding. The batch-4 watcher enqueue sits at the end of this method.
+    /// </summary>
+    public virtual void WatcherEnding()
+    {
+        // L15: the stop checks are NOT gated by +0x56.
+        if (HeadTrackMoving && AreAllTracksLockedBy(1, StopOwner)) StopHeadTrack();
+        if (LiftTrackMoving && AreAllTracksLockedBy(2, StopOwner)) StopLiftTrack();
+        if (BodyTrackMoving && AreAllTracksLockedBy(4, StopOwner)) StopBodyTrack();
+        // L16: the declared-mask release after the stops.
+        if (!SuppressTrackLocking && State != EngineActionResult.NotStarted)
+            UnlockTracksInternal(RequiredTrackMask, LockOwner);
+        // Batch 4 (W10/D5): ActionWatcher::ActionEnding enqueue.
+    }
 }

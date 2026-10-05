@@ -239,12 +239,26 @@ internal sealed class Rig : IDisposable
                 var ack = Cozmo.Protocol.Frame.Single(new SubMessage(ReliableMessageType.Ping, new PingPayload(0, 1, 0, true).ToBytes()), lastSeq);
                 Robot.Transport.ProcessIncoming(FrameCodec.Encode(ack));
             }
+            // B-ACTIONS batch 2: react to what was decoded this round, so a queued action's completion advances the
+            // list inside the same Pump call (the fake robot answers each tick, as it would live).
+            if (fresh.Count > before) ReactMessages(fresh.GetRange(before, fresh.Count - before));
             // the offline connection sends what is pending from its update tick, paced by its clock
             Clock.Advance(50);
             Robot.Transport.OfflineTick();
-            if (Robot.Transport.OfflineOutbound.Count == _framesSeen && fresh.Count == before && round > 2) break;
+            // B-ACTIONS batch 2: a queued head/lift IActionRunner is Init'd on Robot::Update's ActionList tick. The
+            // engine ticks continuously in production, so keep pumping while the action list has work: a terminal
+            // current is deleted without promoting the next action in the same tick (T8).
+            Robot.Engine.Tick();
+            bool listBusy = Robot.Engine.Robot is { } er && !er.ActionList.IsEmpty;
+            if (Robot.Transport.OfflineOutbound.Count == _framesSeen && fresh.Count == before && round > 2 && !listBusy) break;
         }
-        foreach (var m in fresh)
+        return fresh;
+    }
+
+    /// <summary>The fake robot's answer to each decoded message, in order.</summary>
+    private void ReactMessages(List<RobotMessage> msgs)
+    {
+        foreach (var m in msgs)
         {
             switch (m)
             {
@@ -310,7 +324,6 @@ internal sealed class Rig : IDisposable
                     break;
             }
         }
-        return fresh;
     }
 
     public readonly List<float> LiftHeights = new();

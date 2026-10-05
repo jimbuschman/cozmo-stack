@@ -849,7 +849,8 @@ public class M8BatchThreeDTests
         var order = new List<string>();
         var e = fx.Robot.Engine;
         e.AIComponentUpdate = () => { order.Add("ai"); ai.Update(fx.Robot); };
-        var actions = e.ActionRunnerUpdate; e.ActionRunnerUpdate = () => { order.Add("actions"); actions?.Invoke(); };
+        var actions = e.Robot!.ActionList;
+        actions.QueueAction(QueueActionPosition.Now, new OrderAction(() => order.Add("actions")), 0);
         var streamer = e.AnimationStreamerUpdate; e.AnimationStreamerUpdate = () => { order.Add("streamer"); streamer?.Invoke(); };
         var components = e.RobotComponentsUpdate; e.RobotComponentsUpdate = () => { order.Add("components"); components?.Invoke(); };
         IHelper? raw = h;
@@ -944,5 +945,27 @@ public class M8BatchThreeDTests
             Assert.Equal(2, helper.InternalCalls);
         }
         Assert.Null(rig.Robot.Engine.AIComponentUpdate);
+    }
+
+    /// <summary>A minimal IActionRunner whose Update records the ActionList tick's position in the engine order.</summary>
+    private sealed class OrderAction : IActionRunner
+    {
+        private readonly Action _onUpdate;
+        public OrderAction(Action onUpdate) => _onUpdate = onUpdate;
+        public uint State { get; set; } = EngineActionResult.NotStarted;
+        public byte RetriesRemain { get; set; }
+        public uint OriginalTag { get; set; }
+        public uint Tag { get; set; }
+        public int Type { get; set; }
+        public uint RequiredTrackMask { get; set; }
+        public bool SuppressTrackLocking { get; set; }
+        public uint Update() { _onUpdate(); State = EngineActionResult.Running; return EngineActionResult.Running; }
+        public void Cancel() { }
+        public void Reset(bool unlockTracks) { }
+        public bool CanInterrupt() => true;
+        public void Prep() { }
+        public void WatcherEnding() { }
+        public void UnlockTracks() { }
+        public bool SetTag(uint tag) { Tag = tag; return true; }
     }
 }

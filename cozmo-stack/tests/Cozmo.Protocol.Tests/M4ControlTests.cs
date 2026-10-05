@@ -526,6 +526,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
         int mark = rig.Mark();
         var first = rig.Robot.Motion.SetHeadAngleAsync(99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();                                                    // M4-003/Q4: NOW is Init'd on the ActionList tick
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(0xBEDF66F3u, BitConverter.SingleToUInt32Bits(h.AngleRad));   // 99 rad → −1.5310 → min, 0xBEDF66F3
         Assert.Equal(10f, h.MaxSpeedRadPerSec);
@@ -536,6 +537,7 @@ public class M4ControlTests
         await first;
         mark = rig.Mark();
         var second = rig.Robot.Motion.SetHeadAngleAsync(-99f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(0x3F46D3F2u, BitConverter.SingleToUInt32Bits(h.AngleRad));   // −99 rad → +1.5310 → max, 0x3F46D3F2
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
@@ -558,18 +560,21 @@ public class M4ControlTests
         float min = CozmoMotion.MinHeadAngleRad, max = CozmoMotion.MaxHeadAngleRad;
         int mark = rig.Mark();
         var a = rig.Robot.Motion.SetHeadAngleAsync(min - 1e-6f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min - 1e-6f), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.False(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
         rig.Tick(); await a;
         mark = rig.Mark();
         var b = rig.Robot.Motion.SetHeadAngleAsync(max + 1e-6f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max + 1e-6f), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.False(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
         rig.Tick(); await b;
         mark = rig.Mark();
         var c = rig.Robot.Motion.SetHeadAngleAsync(min - 1e-4f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
@@ -591,18 +596,21 @@ public class M4ControlTests
         float min = CozmoMotion.MinHeadAngleRad, max = CozmoMotion.MaxHeadAngleRad;
         int mark = rig.Mark();
         var a = rig.Robot.Motion.SetHeadAngleAsync(float.PositiveInfinity, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         var h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
         rig.Tick(); await a;
         mark = rig.Mark();
         var b = rig.Robot.Motion.SetHeadAngleAsync(float.NegativeInfinity, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(min), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooLow"));
         rig.Tick(); await b;
         mark = rig.Mark();
         var c = rig.Robot.Motion.SetHeadAngleAsync(1e30f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+        rig.Tick();
         h = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         Assert.Equal(BitConverter.SingleToUInt32Bits(max), BitConverter.SingleToUInt32Bits(h.AngleRad));
         Assert.True(rig.Logged("MoveHeadToAngleAction.Constructor.AngleTooHigh"));
@@ -653,6 +661,7 @@ public class M4ControlTests
             // M4-003: the action holds the LIFT track lock until it ends; M4-016: the 1 ms timeout is on the engine
             // clock, so tick to end it before the next move.
             var pending = rig.Robot.Motion.SetLiftHeightAsync(ask, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+            rig.Tick();
             var l = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
             Assert.Equal((10f, 20f, 0f), (l.MaxSpeedRadPerSec, l.AccelRadPerSec2, l.DurationSec));
             rig.Tick();
@@ -701,7 +710,8 @@ public class M4ControlTests
             Task<MotionOutcome> pending;
             if (i % 2 == 0) pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
             else pending = rig.Robot.Motion.SetLiftHeightAsync(80f, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
-            rig.Tick();
+            rig.Tick();                                     // the ActionList tick sends
+            rig.Tick();                                     // the next tick fires the 1 ms timeout
             await pending;
         }
         var ids = rig.SentSince(mark).Select(m => m switch { SetHeadAngle h => (int?)h.ActionId, SetLiftHeight l => l.ActionId, _ => null })
@@ -723,9 +733,10 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
         rig.Robot.Motion.LockTracks(CozmoMotion.HeadTrack, "someone");   // DisableAnimTracks 0x9D {1}, before the mark
         int mark = rig.Mark();
-        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromMilliseconds(50));
-        Assert.Equal(MotionResult.Failed, r.Result);
-        Assert.Equal(0x03000019u, r.EngineResult);
+        var r = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromMilliseconds(50));
+        rig.Tick();                                       // L5: the locked required track fails 0x03000019
+        Assert.Equal(MotionResult.Failed, (await r).Result);
+        Assert.Equal(0x03000019u, (await r).EngineResult);
         Assert.DoesNotContain(rig.SentSince(mark), m => m is SetHeadAngle);
     }
 
@@ -744,6 +755,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
         int mark = rig.Mark();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();                                       // the ActionList tick takes the lock and sends
         var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         byte setHead = (byte)sent.Id;
         var ids = rig.RawSince(mark).Select(b => b[0]).ToList();
@@ -784,13 +796,18 @@ public class M4ControlTests
         rig.Calibrate();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos, head: 0.3f, liftAngle: 0f);
         int mark = rig.Mark();
-        var r = await rig.Robot.Motion.SetHeadAngleAsync(0.3f + 0.034f);
-        Assert.True(r.Ok, r.Detail);
-        var l = await rig.Robot.Motion.SetLiftHeightAsync(48f);                  // 45 mm now
-        Assert.True(l.Ok, l.Detail);
+        var r = rig.Robot.Motion.SetHeadAngleAsync(0.3f + 0.034f);
+        rig.Tick();                                                              // NOW: Init sees in-position and sends nothing
+        var ro = await r;
+        Assert.True(ro.Ok, ro.Detail);
+        var l = rig.Robot.Motion.SetLiftHeightAsync(48f);                        // 45 mm now
+        rig.Tick();
+        var lo = await l;
+        Assert.True(lo.Ok, lo.Detail);
         Assert.DoesNotContain(rig.SentSince(mark), m => m is SetHeadAngle or SetLiftHeight);
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f, liftAngle: 0f);   // the lift is moving
         _ = rig.Robot.Motion.SetLiftHeightAsync(48f, timeout: TimeSpan.FromMilliseconds(1));
+        rig.Tick();
         Assert.Contains(rig.SentSince(mark), m => m is SetLiftHeight);
     }
 
@@ -807,6 +824,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos);
         int mark = rig.Mark();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.3f);
         Assert.False(pending.IsCompleted);                               // no ack yet
@@ -827,6 +845,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos);
         int mark = rig.Mark();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         rig.Data(new MotorActionAck { ActionId = sent.ActionId }); rig.Tick();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode, head: 0.1f);                              // moving
@@ -851,6 +870,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos);
         int mark = rig.Mark();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         rig.Data(new MotorActionAck { ActionId = sent.ActionId }); rig.Tick();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode, head: 0.5f);                               // at the target, moving
@@ -874,6 +894,7 @@ public class M4ControlTests
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos);
         int mark = rig.Mark();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         var sent = Assert.IsType<SetHeadAngle>(rig.SentSince(mark).Single(m => m is SetHeadAngle));
         rig.State(flags: RobotStatusFlag.IsBodyAccMode, head: 0.5f);                               // at the target, before the ack
         rig.State(flags: RobotStatusFlag.IsBodyAccMode, head: 0.2f);                               // and past it, still before the ack
@@ -900,6 +921,7 @@ public class M4ControlTests
         rig.State(flags: inPos, liftAngle: 0f);                                  // 45 mm
         int mark = rig.Mark();
         var ok = rig.Robot.Motion.SetLiftHeightAsync(80f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         var sent = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
         float at80 = MathF.Asin((80f - 45f) / 66f);
         rig.State(flags: inPos, liftAngle: at80);
@@ -909,6 +931,7 @@ public class M4ControlTests
 
         mark = rig.Mark();
         var fail = rig.Robot.Motion.SetLiftHeightAsync(40f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
         sent = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
         rig.Data(new MotorActionAck { ActionId = sent.ActionId }); rig.Tick();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, liftAngle: 0.3f);   // moving
@@ -1615,6 +1638,7 @@ public class M4ControlTests
         Assert.DoesNotContain(rig.SentSince(0), m => m is SetLiftHeight);
         int mark = rig.Mark();
         _ = rig.Robot.Motion.SetLiftHeightAsync(40f, timeout: TimeSpan.FromMilliseconds(1));
+        rig.Tick();
         Assert.Equal(1, placed);                                           // not 32: the ordinary lift path
         Assert.Contains(rig.SentSince(mark), m => m is SetLiftHeight);
     }

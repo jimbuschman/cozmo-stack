@@ -50,6 +50,9 @@ public class ControlTests
             {
                 _clock.Advance(40);
                 Robot.Transport.OfflineTick();
+                // B-ACTIONS batch 2: a queued head/lift IActionRunner is Init'd on Robot::Update's ActionList tick,
+                // so the pump drives one engine tick as a live 60 ms loop would.
+                Robot.Engine.Tick();
                 Ack();
             }
         }
@@ -187,6 +190,7 @@ public class ControlTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(1));
+        rig.Advance(0);                                    // M4-003/Q4: NOW is Init'd on the ActionList tick
         rig.Advance(50);                                   // M4-016: the 1 ms timeout is on the engine clock
         var r = await pending;
         Assert.NotEqual(MotionResult.Refused, r.Result);
@@ -261,6 +265,7 @@ public class ControlTests
         var rig = new Rig();
         rig.MakeReady();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.2f, timeout: TimeSpan.FromMilliseconds(250));
+        rig.Advance(0);                                    // M4-003/Q4: the first tick sends and stamps the start
         rig.Advance(300);                                  // M4-016: the timeout is on the engine clock
         var r = await pending;
         Assert.Equal(MotionResult.Failed, r.Result);       // M4-016: IAction::UpdateInternal fails 0x03000018

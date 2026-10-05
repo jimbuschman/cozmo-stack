@@ -172,10 +172,15 @@ public class HardeningTests
     /// <summary>Feeds messages to an offline robot the way a real one would, over the framed transport.</summary>
     private sealed class Rig : IDisposable
     {
-        public readonly CozmoRobot Robot = CozmoRobot.CreateOffline();
+        private readonly ManualClock _clock = new() { NowMs = 1000 };
+        public readonly CozmoRobot Robot;
         private ushort _seq = 1;
 
-        public Rig() => Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
+        public Rig()
+        {
+            Robot = CozmoRobot.CreateOffline(clock: _clock);
+            Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
+        }
 
         public void Send(RobotMessage m) =>
             Deliver(new SubMessage(ReliableMessageType.SingleReliableMessage, m.ToBytes(), _seq++));
@@ -194,7 +199,21 @@ public class HardeningTests
         /// <summary>Every CLAD message the robot sent so far, after ticking the offline connection.</summary>
         public List<RobotMessage> Sent()
         {
-            Robot.Transport.OfflineTick();
+            // B-ACTIONS batch 2: a queued head/lift IActionRunner is Init'd on Robot::Update's ActionList tick. The
+            // offline transport paces its reliable frames and holds them until acked, so tick, ack and repeat.
+            for (int i = 0; i < 20; i++)
+            {
+                _clock.Advance(40);
+                Robot.Engine.Tick();
+                Robot.Transport.OfflineTick();
+                ushort highest = 0;
+                foreach (var f in Robot.Transport.OfflineOutbound)
+                    foreach (var m in f.Messages)
+                        if (m.Seq > highest) highest = m.Seq;
+                if (highest != 0)
+                    Robot.Transport.ProcessIncoming(FrameCodec.Encode(
+                        Frame.Single(new SubMessage(ReliableMessageType.Ping, new PingPayload(0, 1, 0, true).ToBytes()), highest)));
+            }
             var seen = new HashSet<ushort>();
             var outp = new List<RobotMessage>();
             foreach (var sm in Robot.Transport.OfflineOutbound.SelectMany(f => f.Messages))

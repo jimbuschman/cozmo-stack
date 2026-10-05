@@ -1240,15 +1240,13 @@ public sealed class EngineRobot
         // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there
         // (IAction::UpdateInternal 0x00540D4A..0x00540E80).
         // B-ACTIONS batch 1 (T5/T4): Robot::Update calls ActionList::Update at 0x005140BC. A non-zero list result
-        // warns but does not abort the later components.
+        // warns but does not abort the later components. Batch 2 moved the head/lift actions onto this list
+        // (IAction::UpdateInternal), so there is no separate ActionRunnerUpdate hook.
         Engine.RunIsolated(() =>
         {
             int actionResult = ActionList.Update();
             if (actionResult != 0) Engine.Log("warning: Robot.Update.ActionList failed");
         });
-        // The ActionRunnerUpdate hook remains the bridge for the stack's per-tick head/lift pass (M4-016), which
-        // is not yet a queued IActionRunner (B-ACTIONS batch 2 moves Motion onto the ActionList).
-        if (Engine.ActionRunnerUpdate is { } actions) Engine.RunIsolated(actions);
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
         // fidelity: M3-013
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
@@ -1754,12 +1752,6 @@ public sealed class CozmoEngine : IDisposable
     /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on.
     /// </summary>
     internal Func<bool>? VisionUpdateAllResultsFailed;
-    /// <summary>
-    /// M4-016: IActionRunner::Update, run by Robot::Update's ActionList step (CD12) after the first full state and
-    /// before the animation streamer. <see cref="EngineRobot.Update"/> invokes it; <see cref="CozmoMotion"/> sets it
-    /// to its per-tick action timeout/CheckIfDone pass.
-    /// </summary>
-    internal Action? ActionRunnerUpdate;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>

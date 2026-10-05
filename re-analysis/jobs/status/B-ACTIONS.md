@@ -41,3 +41,46 @@ this job. Q6/Q7/S5 were checked by the manager earlier. No row failed.
 ## Remaining batches
 2 (IActionRunner/IAction lifecycle, move Motion onto it), 3 (compounds), 4 (completion to the game).
 Records stay IMPLEMENTATION_GAP until a strong verifier settles them.
+
+## Batch 2 - the IActionRunner/IAction lifecycle (rows L1-L18)
+
+- **Built.** `cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs`: the full `ActionRunner` lifecycle -
+  ActionStartUpdating/ActionEndUpdating, the start branch's custom motion profile and track lock (L4/L5), the
+  float timer with the timeout checked first and at equality (L7/L8/L10), Init/CheckIfDone on the same tick (L9),
+  the category-4 retry (L11), the completion callbacks and Prep (L12/L13), Reset (L2), UnlockTracks (L14), the
+  destruction stop-before-unlock with the signed lock owner vs unsigned stop owner (L15/L16), and
+  ForceComplete/TakeRetry (L18). `CozmoMotion.MoveAction` is now an `ActionRunner` subclass with concrete
+  Init/CheckIfDone, the engine clock, and the MovementComponent primitives; `SetHeadAngleAsync`/`SetLiftHeightAsync`
+  build the action and queue it at NOW (or a caller position), returning `Done.Task`, which maps the stored engine
+  result back to `MotionOutcome`. The per-tick `ActionRunnerUpdate` hook and `UpdateActions` are removed; the
+  ActionList tick drives the actions. `NextActionTag` now draws from `ActionRunnerTagCounter.Global` (C1/U5).
+- **Row verification.** `cozmo-verifier` checked L1-L18: all HOLDS; two citation corrections only (L1's
+  type->union cache is 0x0053FECA..0x0053FF9C; L7's +0x70 branch is 0x00540D76..0x00540D8A).
+- **Verified.** `cozmo-verifier` PASS after two blocking fixes: (1) `BehaviorManager.QueueHeadAndLift` queued the
+  lift `AtEnd`, which serialised it; it now queues `InParallel` (key 1) after the head `Now` (key 0), the batch-3
+  `CompoundActionParallel` stand-in (0x5A1C24..0x5A1C9C, `movs r2,#2` 0x5A1C80); (2) `ActionEndUpdating()` was
+  skipped on RUNNING; native calls it on every Update (0x005405A2 `beq #0x54062c` -> 0x54062C), only `Prep` is
+  conditional (0x540626). The verifier found no weakened test assertion.
+- **Choices not settled by the L rows (manager to decide):**
+  - the head/lift `RobotActionType` (head 0x12, lift 0x13) comes from M13-022/R-ANIM, not the L rows;
+  - `GetCompletionUnion()` on the base returns the +0x1C cache (0): the concrete head/lift union is M13-022
+    (RECOVERABLE_GAP) and batch 4's game snapshot;
+  - M13-028's carry lift is queued `InParallel` (position 5) per its record.
+- **Test changes.** The head/lift send now happens on the ActionList tick, so the tests that read the wire
+  immediately after `SetHeadAngleAsync`/`SetLiftHeightAsync` tick first; the timeout tests tick once to send and
+  then advance to time out. `ControlTests`, `HardeningTests` and `ManipRig` pump the engine (and ack reliable
+  frames) as a live 60 ms loop would; `ManipRig` reacts to each decoded frame inside its pump and keeps pumping
+  while the ActionList has work (T8: a terminal current does not promote the next action in the same tick).
+  `M8BatchThreeDTests` observes the ActionList step with a queued `OrderAction` instead of the removed hook.
+- **Gates.** `fidelity.py --check` clean (427 records). Full suite: **3827 passed, 0 failed, 0 skipped**.
+- **Commit.** (this commit)
+
+### Queued (non-blocking, from the batch-2 verifier; fix in a later batch)
+- `WatcherEnding` never releases the runner's tags (`Tag`/`OriginalTag`); native erases both at 0x005410FA/
+  0x00541104. Tags leak and a later `SetTag` to a used id is refused. No live effect in batch 2.
+- The completion union is never initialised by type (L1, 0x0053FECA..0x0053FF9C); `Prep` self-assigns.
+- The terminal/timeout result log is missing (L10/L13).
+- `NextActionTag` on the global counter makes `BehaviorFrameworkTests`' tag assertion order-dependent.
+- `Vision/FaceActions.cs:591` still says the stack has no ActionList.
+- Batch-3 nuance: the compound stops later children on a non-ignored child failure (R3); two separate queues do
+  not, until the compound is built.

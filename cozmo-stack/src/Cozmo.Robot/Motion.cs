@@ -50,11 +50,10 @@ public sealed class CozmoMotion
     internal CozmoMotion(CozmoRobot robot)
     {
         _robot = robot;
-        // fidelity: M4-016
-        // Robot::Update's ActionList step (CD12) runs IActionRunner::Update, where IAction::UpdateInternal tests
-        // the engine-clock timeout and then CheckIfDone (0x00540D4A..0x00540E80); this is the only per-tick entry
-        // to Motion.
-        robot.Engine.ActionRunnerUpdate = UpdateActions;
+        // fidelity: M4-003, M4-016
+        // Batch 2: the head/lift actions are IActionRunner subclasses queued on Robot::Update's ActionList
+        // (0x005140BC), so the list tick drives their IAction::UpdateInternal timeout/CheckIfDone
+        // (0x00540D1A..0x00540E80). The old per-tick ActionRunnerUpdate hook is gone.
     }
 
     // ------------------------------------------------------------ MovementComponent state
@@ -62,15 +61,6 @@ public sealed class CozmoMotion
     // fidelity: M4-005
     /// <summary>MC+8: 0 at construction (0x0063DA7C).</summary>
     private byte _actionIdCounter;
-
-    // fidelity: M4-003
-    /// <summary>
-    /// The IActionRunner tag at +0x60, assigned at construction from the global tag counter
-    /// (counter 0x0053FE54..0x0053FE68, store to +0x60 0x0053FEC6) before Update. It is the track-lock owner key (LockTracks 0x00540584..0x0054058A,
-    /// to_string(+0x60) via 0x004F0F4C) and the ~IActionRunner stop gate key (0x00541138/0x0054115E). It is
-    /// separate from MC+8, the motor action id on the wire.
-    /// </summary>
-    private int _lockOwnerCounter;
 
     /// <summary>Track bits (M4-014): HEAD 1, LIFT 2, BODY 4.</summary>
     public const byte HeadTrack = 1, LiftTrack = 2, BodyTrack = 4;
@@ -109,7 +99,6 @@ public sealed class CozmoMotion
         lock (_gate)
         {
             _actionIdCounter = 0;
-            _lockOwnerCounter = 0;
             foreach (var s in _trackLocks) s.Clear();
             _ddBody = _ddHead = _ddLift = false;
             _directDriveDisabled = false;
@@ -119,19 +108,20 @@ public sealed class CozmoMotion
             ending = _actions.ToArray();
             _actions.Clear();
         }
+        // M1-025: a move in flight ends as timed out without anything sent. The queued runners are cancelled and
+        // deleted (which runs their destructor tail); the Done tasks already cleared above complete here.
+        _robot.Engine.Robot?.ActionList.Cancel(-1);
         foreach (var a in ending) a.Done.TrySetResult(new MotionOutcome(MotionResult.TimedOut, $"{a.What}: the robot was removed"));
     }
 
     // fidelity: M4-003
     /// <summary>
-    /// A new IActionRunner tag (+0x60) from the one counter every action draws from, as text: the lock owner key
-    /// <c>to_string(+0x60)</c> (LockTracks 0x00540584..0x0054058a via 0x004f0f4c). An action that is not a head or lift
-    /// move (an animation action, M8-007) takes its owner key here so no two actions share one.
+    /// A new IActionRunner tag (+0x60) from the one global counter every action draws from, as text: the lock
+    /// owner key <c>to_string(+0x60)</c> (LockTracks 0x00540584..0x0054058a via 0x004f0f4c). C1/U5: the counter
+    /// is <c>IActionRunner::sTagCounter</c>, global, not per robot. An action that is not a head or lift move (an
+    /// animation action, M8-007) takes its owner key here so no two actions share one.
     /// </summary>
-    internal string NextActionTag()
-    {
-        lock (_gate) return (++_lockOwnerCounter).ToString();
-    }
+    internal string NextActionTag() => ActionRunnerTagCounter.Global.NextIdTag().ToString();
 
     // fidelity: M4-005
     /// <summary>
@@ -585,8 +575,15 @@ bool requireCalibration = true)
             target = MaxHeadAngleRad;
         }
         float tolerance = Math.Max(GameHeadToleranceRad, MinHeadToleranceRad);
-        var a = new MoveAction(this, isHead: true, target, tolerance, $"head to {target:F3} rad");
-        return RunAsync(a, id => new SetHeadAngle(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id), timeout);
+        // fidelity: M4-003, M4-016
+        // MA10: the game handler constructs the action and queues it at QueueActionPosition::NOW
+        // (ActionList::QueueActionNow 0x0053DCA0). No synchronous Init/Update (Q4): the first ActionList tick
+        // promotes it and IAction::UpdateInternal stamps the start, sends in Init and checks the engine clock.
+        var a = new MoveAction(this, isHead: true, target, tolerance, $"head to {target:F3} rad",
+                               id => new SetHeadAngle(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id));
+        a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
+        Queue(a);
+        return a.Done.Task;
     }
 
     // fidelity: M4-002, M4-003, M4-016
@@ -609,7 +606,8 @@ bool requireCalibration = true)
                                                   float accelRadPerSec2 = DefaultLiftAccelRadPerSec2,
                                                   float durationSec = 0f,
                                                   TimeSpan? timeout = null, bool requireCalibration = true,
-                                                  bool suppressTrackLocking = false)
+                                                  bool suppressTrackLocking = false,
+                                                  QueueActionPosition position = QueueActionPosition.Now)
     {
         // fidelity: M4-003
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
@@ -626,9 +624,48 @@ bool requireCalibration = true)
         {
             target = NegativeHeightTarget(CurrentLiftHeightMm());
         }
-        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm") { SuppressTrackLocking = suppressTrackLocking };
-        return RunAsync(a, id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id), timeout);
+        // fidelity: M4-003, M4-016
+        // MA12: the game handler queues the action at NOW; the ActionList tick drives its timeout/Init/CheckIfDone.
+        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm",
+                               id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id))
+                { SuppressTrackLocking = suppressTrackLocking };
+        a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
+        Queue(a, position);
+        return a.Done.Task;
     }
+
+    /// <summary>
+    /// Queue a head/lift action on the engine's ActionList (M4-003). The list is the engine's robot+0x250
+    /// (EngineRobot.ActionList); the tick at Robot::Update 0x005140BC runs it. The game handlers use NOW; M13-028's
+    /// carry lift uses IN_PARALLEL (position 5, 0x0055F164).
+    /// </summary>
+    private void Queue(MoveAction a, QueueActionPosition position = QueueActionPosition.Now)
+    {
+        lock (_gate) _actions.Add(a);
+        _robot.Engine.Robot!.ActionList.QueueAction(position, a, 0);
+    }
+
+    /// <summary>The action's destructor tail completed: drop it from the ack dispatch list and map its stored
+    /// engine result to the public <see cref="MotionOutcome"/>.</summary>
+    private void ActionEnded(MoveAction a)
+    {
+        lock (_gate) _actions.Remove(a);
+        a.Done.TrySetResult(OutcomeFor(a));
+    }
+
+    /// <summary>Map the engine's stored +0x18 result to <see cref="MotionOutcome"/> (the public API is unchanged).</summary>
+    private static MotionOutcome OutcomeFor(MoveAction a) => a.State switch
+    {
+        EngineActionResult.Success => new MotionOutcome(MotionResult.Acknowledged,
+            $"{a.What}: robot acknowledged action {a.Id} and reports it in position"),
+        EngineActionResult.Timeout => new MotionOutcome(MotionResult.Failed,
+            a.Acked ? $"{a.What}: action {a.Id} acknowledged but not in position within {a.TimeoutSeconds:F1}s"
+                    : $"{a.What}: no acknowledgement of action {a.Id} within {a.TimeoutSeconds:F1}s")
+            { EngineResult = ResultTimedOut },
+        ResultStoppedMakingProgress => new MotionOutcome(MotionResult.Failed,
+            $"{a.What}: action {a.Id} stopped out of position (StoppedMakingProgress)") { EngineResult = ResultStoppedMakingProgress },
+        _ => new MotionOutcome(MotionResult.Failed, $"{a.What}: engine result 0x{a.State:X8}") { EngineResult = a.State },
+    };
 
     // fidelity: M4-002
     /// <summary>
@@ -766,26 +803,21 @@ bool requireCalibration = true)
 
     // ------------------------------------------------------------------ the actions
 
-    /// <summary>A MoveHeadToAngleAction or MoveLiftToHeightAction in flight.</summary>
-    private sealed class MoveAction
+    /// <summary>
+    /// A MoveHeadToAngleAction or MoveLiftToHeightAction in flight, as the engine's IActionRunner subclass
+    /// (L1..L18). The shared lifecycle is in <see cref="ActionRunner"/>; this class supplies the concrete
+    /// Init/CheckIfDone and the MovementComponent track primitives.
+    /// </summary>
+    private sealed class MoveAction : ActionRunner
     {
         public readonly CozmoMotion Owner;
         public readonly bool IsHead;
         public readonly float Target, Tolerance;
         public readonly string What;
-        /// <summary>M4-003: the action's required track mask (+0x54): head 1 (0x00547EAC), lift 2 (0x005489EE).</summary>
-        public readonly byte Mask;
+        /// <summary>The message builder that carries the action id (MA8): SetHeadAngle / SetLiftHeight.</summary>
+        public readonly Func<byte, RobotMessage> Build;
         /// <summary>MA8: the motor action id on the wire (MC+8), taken in MoveHeadToAngle / MoveLiftToHeight.</summary>
         public byte Id;
-        /// <summary>
-        /// M4-003: the IActionRunner tag (+0x60, store 0x0053FEC6) that owns the track lock and the
-        /// ~IActionRunner stop gate. Assigned in <see cref="RunAsync"/> before the lock.
-        /// </summary>
-        public string LockOwner = "";
-        /// <summary>M4-016: IAction +0x74, the engine-clock start time, set at Init (RunAsync).</summary>
-        public float StartTime;
-        /// <summary>M4-016: the IAction timeout slot's value in seconds (+0x74 test, 0x00540E80).</summary>
-        public float TimeoutSeconds;
         /// <summary>+0xAA / +0x95: the command was sent.</summary>
         public bool Sent;
         /// <summary>+0xAB / +0x96: the matching ack arrived.</summary>
@@ -794,16 +826,80 @@ bool requireCalibration = true)
         public bool HasMoved;
         /// <summary>Head +0xAC / lift +0x97: in position, latched (C1, C6).</summary>
         public bool InPositionLatched;
-        /// <summary>M4-003: this action holds its track lock (taken at 0x0054058E, released inline in ~IActionRunner at 0x0054121E..0x0054122A).</summary>
-        public bool Locked;
-        /// <summary>M13-028: the action's byte +0x56 (non-zero: Update neither tests nor takes the track lock, 0x00540428..0x00540434, and the end does not release it, 0x0054120C..0x0054122A).</summary>
-        public bool SuppressTrackLocking { get; init; }
         public readonly TaskCompletionSource<MotionOutcome> Done = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public MoveAction(CozmoMotion owner, bool isHead, float target, float tolerance, string what)
+        public MoveAction(CozmoMotion owner, bool isHead, float target, float tolerance, string what,
+                          Func<byte, RobotMessage> build)
+            : base(isHead ? 0x12 : 0x13, isHead ? HeadTrack : LiftTrack)   // M13-022: head type 0x12; lift 0x13 (R-ANIM pre-extraction)
         {
-            Owner = owner; IsHead = isHead; Target = target; Tolerance = tolerance; What = what;
-            Mask = isHead ? HeadTrack : LiftTrack;
+            Owner = owner; IsHead = isHead; Target = target; Tolerance = tolerance; What = what; Build = build;
+        }
+
+        // L7: the engine clock (BaseStationTimer::GetCurrentTimeInSeconds).
+        protected override float EngineClockSeconds => Owner._robot.Engine.Timer.SecondsF;
+
+        protected override bool AreAnyTracksLocked(uint mask) => Owner.AreAnyTracksLocked((byte)mask);
+        protected override void LockTracks(uint mask, string owner) => Owner.LockTracks((byte)mask, owner);
+        protected override void UnlockTracksInternal(uint mask, string owner) => Owner.UnlockTracks((byte)mask, owner);
+        protected override bool AreAllTracksLockedBy(uint mask, string owner) => Owner.AreAllTracksLockedBy((byte)mask, owner);
+        protected override void StopHeadTrack() => Owner.StopHead();
+        protected override void StopLiftTrack() => Owner.StopLift();
+        protected override void StopBodyTrack() => Owner.StopBody();
+        protected override bool HeadTrackMoving => Owner._headMoving;
+        protected override bool LiftTrackMoving => Owner._liftMoving;
+        protected override bool BodyTrackMoving => Owner._bodyMoving;
+
+        public override bool CanInterrupt() => true;
+
+        // fidelity: M4-016
+        /// <summary>
+        /// The concrete Init (MA15, C6 L1): in position sends nothing and latches; otherwise the next motor
+        /// action id goes on the wire. A send failure is 0x03000016 (MA17). Init runs on the first gates-passing
+        /// UpdateInternal tick, after the start time is stamped.
+        /// </summary>
+        public override int Init()
+        {
+            lock (Owner._gate)
+            {
+                if (Owner.InPositionLocked(this)) { InPositionLatched = true; return 0; }
+                Id = Owner.NextActionId();                       // MA8: taken in MoveHeadToAngle / MoveLiftToHeight
+                if (!Owner._robot.SendMessage(Build(Id))) return (int)ResultSendFailed;
+                Sent = true;
+                return 0;
+            }
+        }
+
+        // fidelity: M4-016
+        /// <summary>
+        /// The concrete CheckIfDone, the same for the head (C1: MoveHeadToAngleAction 0x005485D8..0x005488B6) and
+        /// the lift (C6 L2..L6: MoveLiftToHeightAction 0x005493F6..0x00549508):
+        /// 1. sent and not acked: Running;
+        /// 2. the in-position latch, which stays set once true;
+        /// 3. has moved while the motor is moving;
+        /// 4. in position: Success if not moving else Running; not in position: moving Running, stopped and has
+        ///    moved 0x04000004 StoppedMakingProgress, otherwise Running.
+        /// The head's eye-shift block (0x005485F8..0x00548728) never runs in this build (+0xA8 is never set), and
+        /// the lift has none (C6), so neither changes the result.
+        /// </summary>
+        public override uint CheckIfDone()
+        {
+            lock (Owner._gate)
+            {
+                if (Sent && !Acked) return EngineActionResult.Running;
+                if (Owner.InPositionLocked(this)) InPositionLatched = true;
+                bool moving = Owner.MovingLocked(this);
+                if (moving) HasMoved = true;
+                if (InPositionLatched) return moving ? EngineActionResult.Running : EngineActionResult.Success;
+                if (!moving && HasMoved) return ResultStoppedMakingProgress;
+                return EngineActionResult.Running;
+            }
+        }
+
+        // L16/D5: the base runs the stop-before-unlock tail; then the Done task maps the stored result.
+        public override void WatcherEnding()
+        {
+            base.WatcherEnding();
+            Owner.ActionEnded(this);
         }
     }
 
@@ -823,160 +919,6 @@ bool requireCalibration = true)
     private bool InPositionLocked(MoveAction a) => a.IsHead ? IsHeadInPositionLocked(a) : IsLiftInPositionLocked(a);
     private bool MovingLocked(MoveAction a) => a.IsHead ? _headMoving : _liftMoving;
 
-    // fidelity: M4-003, M4-005, M4-016
-    private async Task<MotionOutcome> RunAsync(MoveAction a, Func<byte, RobotMessage> build, TimeSpan? timeout)
-    {
-        lock (_gate)
-        {
-            // fidelity: M4-003
-            // IActionRunner::IActionRunner 0x0053FDB0 assigns the +0x60 tag at construction (counter 0x0053FE54..0x0053FE68, store 0x0053FEC6),
-            // before Update; the lock owner is to_string(+0x60) (LockTracks 0x00540584..0x0054058A via 0x004F0F4C).
-            // The stack assigns it here, before the lock.
-            a.LockOwner = (++_lockOwnerCounter).ToString();
-            // fidelity: M4-016
-            // IAction::UpdateInternal 0x00540D4A..0x00540D64: +0x74 is the start time, set to the engine clock at
-            // the first Update (Init here); 0x00540E80 fails when start + timeout <= now.
-            a.StartTime = _robot.Engine.Timer.SecondsF;
-            a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
-
-            // IActionRunner::Update (0x00540370): AreAnyTracksLocked(mask) at 0x00540572..0x0054057C fails the
-            // action with 0x03000019 and sends nothing; otherwise LockTracks(mask, to_string(id)) at 0x0054058E sends
-            // DisableAnimTracks. The action's end releases the lock inline in ~IActionRunner (0x0054120C..0x0054122A),
-            // which sends EnableAnimTracks. The in-position branch still takes and releases the lock (M4-016 unresolved).
-            if (!a.SuppressTrackLocking && IsTrackLockedLocked(a.Mask))
-            {
-                Log($"warning: IActionRunner.Update.TracksLocked: {a.What}: required tracks are locked");
-                return new MotionOutcome(MotionResult.Failed, $"{a.What}: required tracks are locked") { EngineResult = ResultTracksLocked };
-            }
-            if (!a.SuppressTrackLocking)
-            {
-                LockTracksLocked(a.Mask, a.LockOwner);
-                a.Locked = true;
-            }
-
-            // MA15, C6 L1: Init clears has-moved and sent/acked (a fresh action), latches in-position and sends nothing
-            // when the motor is already in position. CheckIfDone then skips the ack wait (nothing was sent) and, the
-            // latch being set, succeeds once the motor is not moving: at once when it is not moving now (always so for
-            // the lift, whose in-position test includes MC+0xB == 0); a head in position but moving waits in the list.
-            if (InPositionLocked(a))
-            {
-                if (!MovingLocked(a))
-                {
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
-                    return new MotionOutcome(MotionResult.Acknowledged, $"{a.What}: already in position, nothing sent");
-                }
-                a.InPositionLatched = true;
-                _actions.Add(a);
-            }
-            else
-            {
-                _actions.Add(a);
-                a.Id = unchecked(++_actionIdCounter);      // MA8: the id is taken in MoveHeadToAngle / MoveLiftToHeight
-                if (!_robot.SendMessage(build(a.Id)))
-                {
-                    _actions.Remove(a);
-                    if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
-                    return new MotionOutcome(MotionResult.Failed, $"{a.What}: the send failed") { EngineResult = ResultSendFailed };
-                }
-                a.Sent = true;
-            }
-        }
-        // M4-016: the timeout is not a host delay; IAction::UpdateInternal tests it on the engine clock from
-        // UpdateActions, run by Robot::Update's ActionList step (CD12), before CheckIfDone.
-        return await a.Done.Task.ConfigureAwait(false);
-    }
-
-    // fidelity: M4-003, M4-016
-    /// <summary>
-    /// The per-tick half of IActionRunner::Update, run from Robot::Update's ActionList step (CD12) once the first
-    /// full state is handled. For each in-flight head/lift action, IAction::UpdateInternal tests the engine-clock
-    /// timeout first (0x00540D4A..0x00540D64; 0x00540E80 fails start + timeout &lt;= now with 0x03000018 and logs
-    /// IAction.Update.TimedOut) and then CheckIfDone. A timed-out action is destroyed: ~IActionRunner stops its
-    /// track only when this action holds it (AreAllTracksLockedBy(mask, to_string(+0x60)) 0x00541138/0x0054115E)
-    /// and before the lock release (0x0054120C..0x0054122A).
-    /// </summary>
-    internal void UpdateActions()
-    {
-        var timedOut = new List<MoveAction>();
-        var finished = new List<(MoveAction, MotionOutcome)>();
-        lock (_gate)
-        {
-            foreach (var a in _actions.ToArray())
-            {
-                // fidelity: M4-016
-                if (a.StartTime + a.TimeoutSeconds <= _robot.Engine.Timer.SecondsF)
-                {
-                    _actions.Remove(a);
-                    timedOut.Add(a);
-                }
-            }
-            CheckIfDoneLocked(finished);
-        }
-        foreach (var a in timedOut)
-        {
-            // fidelity: M4-016
-            Log($"warning: IAction.Update.TimedOut: {a.What} timed out after {a.TimeoutSeconds:F1} seconds.");
-            // fidelity: M4-003
-            // ~IActionRunner 0x0054112E..0x00541192: stop the track only when this action holds its lock, and
-            // before the release at 0x0054120C..0x0054122A.
-            if (MovingLocked(a) && AreAllTracksLockedBy(a.Mask, a.LockOwner))
-            {
-                if (a.IsHead) StopHead(); else StopLift();
-            }
-            if (a.Locked) UnlockTracks(a.Mask, a.LockOwner);
-            a.Done.TrySetResult(new MotionOutcome(MotionResult.Failed,
-                a.Acked ? $"{a.What}: action {a.Id} acknowledged but not in position within {a.TimeoutSeconds:F1}s"
-                        : $"{a.What}: no acknowledgement of action {a.Id} within {a.TimeoutSeconds:F1}s")
-            { EngineResult = ResultTimedOut });
-        }
-        foreach (var (a, o) in finished) a.Done.TrySetResult(o);
-    }
-
-    // fidelity: M4-016
-    /// <summary>
-    /// CheckIfDone, run against the latest handled state, the same for the head (C1: MoveHeadToAngleAction 0x005485D8..
-    /// 0x005488B6) and the lift (C6 rows L2..L6: MoveLiftToHeightAction 0x005493F6..0x00549508):
-    /// 1. sent and not acked: Running (head 0x005485D8..0x005485E2, lift 0x005493F6..0x00549402);
-    /// 2. the in-position latch (+0xAC / +0x97), which stays set once true (head 0x005485E4..0x005485F4, lift
-    ///    0x00549406..0x00549418);
-    /// 3. has moved (+0xAD / +0x98) := 1 while the motor is moving, MC+0xA / MC+0xB (head 0x0054872E..0x00548734, lift
-    ///    0x0054941C..0x00549428);
-    /// 4. in position: Success if not moving, else Running; not in position: moving Running, not moving and has moved
-    ///    0x04000004 StoppedMakingProgress, otherwise Running (head 0x00548738..0x005488AC, lift 0x0054942C..0x00549508).
-    /// The head's further code at 0x005485F8..0x00548728 is the eye-shift removal (H4..H6): it runs only while
-    /// +0x9D == 0 and +0xA8 != 0, and +0xA8 is never set in this build (H7), so it never executes and changes neither
-    /// the wire nor the result. The lift's CheckIfDone (0x005493F6..0x00549508) has no eye-shift block (C6). Neither
-    /// needs anything here.
-    /// </summary>
-    private void CheckIfDoneLocked(List<(MoveAction, MotionOutcome)> finished)
-    {
-        foreach (var a in _actions.ToArray())
-        {
-            if (a.Sent && !a.Acked) continue;
-            if (InPositionLocked(a)) a.InPositionLatched = true;
-            bool moving = MovingLocked(a);
-            if (moving) a.HasMoved = true;
-            if (a.InPositionLatched)
-            {
-                if (!moving)
-                    finished.Add((a, new MotionOutcome(MotionResult.Acknowledged,
-                        $"{a.What}: robot acknowledged action {a.Id} and reports it in position")));
-            }
-            else if (!moving && a.HasMoved)
-                finished.Add((a, new MotionOutcome(MotionResult.Failed,
-                    $"{a.What}: action {a.Id} stopped out of position (StoppedMakingProgress)") { EngineResult = ResultStoppedMakingProgress }));
-        }
-        foreach (var (a, _) in finished)
-        {
-            _actions.Remove(a);
-            // fidelity: M4-003
-            // The action's end releases its track lock inline in ~IActionRunner (0x0054121E..0x0054122A), sending
-            // EnableAnimTracks; 0x005408EC is IActionRunner::UnlockTracks, called only from the IAction constructor
-            // (0x00540CB0) and IAction::Reset (0x00540D02).
-            if (a.Locked) { UnlockTracksLocked(a.Mask, a.LockOwner); a.Locked = false; }
-        }
-    }
-
     // fidelity: M4-001, M4-016, M2-002
     /// <summary>
     /// Fed every robot message by <see cref="CozmoRobot"/> (after the state tracker). A MotorActionAck completes the
@@ -984,10 +926,10 @@ bool requireCalibration = true)
     /// updates what the engine keeps: MC+0xA = !HEAD_IN_POS, MC+0xB = !LIFT_IN_POS, MC+0xC = ARE_WHEELS_MOVING (M2
     /// App. B status bits), Robot+0x300 = liftAngle (RS7), and Robot+0x2FC through RS6: ignored until the head is
     /// calibrated, a report below −28° stored as −25° and above 47.5° as 44.5°, with the HeadAngleOOB warning.
+    /// Batch 2: the state/ack flags are stored here; CheckIfDone runs on the ActionList tick (L9), not in Handle.
     /// </summary>
     internal void Handle(RobotMessage m)
     {
-        var finished = new List<(MoveAction, MotionOutcome)>();
         lock (_gate)
         {
             switch (m)
@@ -995,7 +937,6 @@ bool requireCalibration = true)
                 case MotorActionAck ack:
                     foreach (var a in _actions)
                         if (a.Sent && !a.Acked && a.Id == ack.ActionId) a.Acked = true;
-                    CheckIfDoneLocked(finished);
                     break;
                 case RobotState s:
                     _headMoving = !s.Has(RobotStatusFlag.HeadInPos);
@@ -1009,11 +950,9 @@ bool requireCalibration = true)
                         else if (h > ReportedHeadHighOob) { Log("warning: Robot.GetCameraHeadPose.HeadAngleOOB"); h = MaxHeadAngleRad; }
                         _headAngle = h;
                     }
-                    CheckIfDoneLocked(finished);
                     break;
             }
         }
-        foreach (var (a, o) in finished) a.Done.TrySetResult(o);
     }
 
     /// <summary>Waits until the robot's reported state satisfies a condition.</summary>
