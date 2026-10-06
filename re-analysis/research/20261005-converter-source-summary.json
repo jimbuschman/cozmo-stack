@@ -1,0 +1,18 @@
+{
+  "original_checked": 37802,
+  "original_different": 4640,
+  "patched_checked": 37802,
+  "patched_different": 0,
+  "wrapper_checked": 37802,
+  "wrapper_different": 0,
+  "categories": {
+    "random-decimal": 30000,
+    "halfway": 2000,
+    "halfway-negative": 2000,
+    "boundary": 1750,
+    "long-mantissa": 1000,
+    "leading-zero": 1000,
+    "special": 46,
+    "locale-fr-FR": 6
+  }
+}

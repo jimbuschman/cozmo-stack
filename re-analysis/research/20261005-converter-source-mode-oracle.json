@@ -1,0 +1,4258 @@
+[
+  {
+    "mode": 0,
+    "result": {
+      "input": "0.1",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-0.1",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "131.e-227",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "113F0886B36F1862",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "113F0886B36F1862",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "3e-324",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20000018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20000018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1e-400",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60000018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60000018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1e309",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-1e309",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "2.2250738585072014e-308",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0010000000000000",
+        "errno": 77,
+        "fpscr_out": "60000018",
+        "end_offset": 23
+      },
+      "num_get_normalized": {
+        "bits": "0010000000000000",
+        "errno": 77,
+        "fpscr_out": "60000018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1.7976931348623157e308",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FEFFFFFFFFFFFFD",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 22
+      },
+      "num_get_normalized": {
+        "bits": "7FEFFFFFFFFFFFFD",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1.00000000000000011102230246251565404236316680908203125",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 55
+      },
+      "num_get_normalized": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0x1p2",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0x1.8p+2",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0x1p-1074",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0x1p-1075",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0x1p1024",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "nan",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-nan",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "inf",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1e",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1e+",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "1,5",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 0
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-0",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 2
+      },
+      "num_get_normalized": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "0001.2500",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00000000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-61020.74050389632489889156524629945581027508e-119",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "A8380B1BFF4D0F5A",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 50
+      },
+      "num_get_normalized": {
+        "bits": "A8380B1BFF4D0F5A",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "8579617497887167747306959685981058901171036164353777757.4e300",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "end_offset": 61
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "648562358272322254.6e-261",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 25
+      },
+      "num_get_normalized": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-7.326e301",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "end_offset": 10
+      },
+      "num_get_normalized": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "5973129265406697703213685701162462843206075.05443383e-230",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "1910A221E72A7B64",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 57
+      },
+      "num_get_normalized": {
+        "bits": "1910A221E72A7B64",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "7856.352594691932306971764330987413457751992259002e-40",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3870B567BBD8B1D6",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 54
+      },
+      "num_get_normalized": {
+        "bits": "3870B567BBD8B1D6",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "7330276794386864478.632954093576539524031935180326748004391420e-89",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 66
+      },
+      "num_get_normalized": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "873438387.788596594206043416e212",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-.732600051050e-131",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-696959871858306404803003320179.674386460756866819420496281744432e-149",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 70
+      },
+      "num_get_normalized": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": ".9379521893780089786566174827518e-389",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60000018",
+        "end_offset": 37
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60000018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "03978514586675489852360438314815474928444.4631240742129956062392199993e-348",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80000018",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80000018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "45321.5883456275860549196123179545608155303354783026200e-27",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "3B4B652D155B67C7",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 59
+      },
+      "num_get_normalized": {
+        "bits": "3B4B652D155B67C7",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-6667246913647721.44125615148141994649764066440e-244",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "90902C6898F126AB",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "90902C6898F126AB",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "8563746.47845780895358526e330",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "018476.5436660e249",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "00000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-796355874.4e-234",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 17
+      },
+      "num_get_normalized": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-0969455554911454.280304209133255240e-207",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "9811B13CC6661390",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 41
+      },
+      "num_get_normalized": {
+        "bits": "9811B13CC6661390",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "297764573416675281.46105399931147485641110782932210303e300",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "end_offset": 58
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00000010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "5529.7250157623205453104731543917920272e59",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 42
+      },
+      "num_get_normalized": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-044467279837.1134780474188e-162",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-7966284065364963541299214801208453509316.6981985848079728424534690421e-258",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "92A67F34AB00DBE6",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "92A67F34AB00DBE6",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-74097391496246391092.131633778e-264",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-632566.956893e-137",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "370.357888756e-229",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "36.97959017374474575135483730928e-75",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "30B0B9F1AA55CA48",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "30B0B9F1AA55CA48",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "7399502969502025762654543.55832e159",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "661BDCE238CD6C00",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 35
+      },
+      "num_get_normalized": {
+        "bits": "661BDCE238CD6C00",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "7303687450645.7212587439e-190",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "20000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-4909826599620171940219946.7506298e-329",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "80C13D2E47F99735",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 39
+      },
+      "num_get_normalized": {
+        "bits": "80C13D2E47F99735",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "70775387710.21638219e219",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "6FA7573E00ACB36A",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 24
+      },
+      "num_get_normalized": {
+        "bits": "6FA7573E00ACB36A",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": ".4580548358838090935315132541923299102986333071e-266",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "08A2E7C1DE185C80",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "08A2E7C1DE185C80",
+        "errno": 77,
+        "fpscr_out": "80000010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 0,
+    "result": {
+      "input": "-02952900359487744623.705295246388921378e-340",
+      "fpscr_in": "00000000",
+      "raw": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "20000018",
+        "end_offset": 45
+      },
+      "num_get_normalized": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "20000018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0.1",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00400010",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-0.1",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00400010",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "00400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "131.e-227",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "113F0886B36F1864",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "113F0886B36F1864",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "3e-324",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1e-400",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "80400018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "80400018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1e309",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-1e309",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "2.2250738585072014e-308",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0010000000000000",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 23
+      },
+      "num_get_normalized": {
+        "bits": "0010000000000000",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1.7976931348623157e308",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FEFFFFFFFFFFFFF",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 22
+      },
+      "num_get_normalized": {
+        "bits": "7FEFFFFFFFFFFFFF",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1.00000000000000011102230246251565404236316680908203125",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 55
+      },
+      "num_get_normalized": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0x1p2",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0x1.8p+2",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0x1p-1074",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0x1p-1075",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0x1p1024",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "nan",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-nan",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "inf",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1e",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1e+",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "1,5",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 0
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-0",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 2
+      },
+      "num_get_normalized": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "0001.2500",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00400000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-61020.74050389632489889156524629945581027508e-119",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "A8380B1BFF4D0F5A",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "end_offset": 50
+      },
+      "num_get_normalized": {
+        "bits": "A8380B1BFF4D0F5A",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "8579617497887167747306959685981058901171036164353777757.4e300",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "end_offset": 61
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "648562358272322254.6e-261",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "end_offset": 25
+      },
+      "num_get_normalized": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-7.326e301",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 10
+      },
+      "num_get_normalized": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "5973129265406697703213685701162462843206075.05443383e-230",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "1910A221E72A7B64",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 57
+      },
+      "num_get_normalized": {
+        "bits": "1910A221E72A7B64",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "7856.352594691932306971764330987413457751992259002e-40",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3870B567BBD8B1D6",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 54
+      },
+      "num_get_normalized": {
+        "bits": "3870B567BBD8B1D6",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "7330276794386864478.632954093576539524031935180326748004391420e-89",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 66
+      },
+      "num_get_normalized": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "873438387.788596594206043416e212",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "6DCEEDD0E1384475",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "6DCEEDD0E1384475",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-.732600051050e-131",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "A4B4CCD224397399",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B4CCD224397399",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-696959871858306404803003320179.674386460756866819420496281744432e-149",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 70
+      },
+      "num_get_normalized": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": ".9379521893780089786566174827518e-389",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "80400018",
+        "end_offset": 37
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "80400018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "03978514586675489852360438314815474928444.4631240742129956062392199993e-348",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "45321.5883456275860549196123179545608155303354783026200e-27",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "3B4B652D155B67C7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 59
+      },
+      "num_get_normalized": {
+        "bits": "3B4B652D155B67C7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-6667246913647721.44125615148141994649764066440e-244",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "90902C6898F126AC",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "90902C6898F126AC",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "8563746.47845780895358526e330",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "018476.5436660e249",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7484293E452792F7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "7484293E452792F7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-796355874.4e-234",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "9132DD84E7257FF1",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 17
+      },
+      "num_get_normalized": {
+        "bits": "9132DD84E7257FF1",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-0969455554911454.280304209133255240e-207",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "9811B13CC6661390",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 41
+      },
+      "num_get_normalized": {
+        "bits": "9811B13CC6661390",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "297764573416675281.46105399931147485641110782932210303e300",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "end_offset": 58
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00400010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "5529.7250157623205453104731543917920272e59",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 42
+      },
+      "num_get_normalized": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-044467279837.1134780474188e-162",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-7966284065364963541299214801208453509316.6981985848079728424534690421e-258",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "92A67F34AB00DBE7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "92A67F34AB00DBE7",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-74097391496246391092.131633778e-264",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-632566.956893e-137",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "370.357888756e-229",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "10EC13576EEFA0FF",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "10EC13576EEFA0FF",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "36.97959017374474575135483730928e-75",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "30B0B9F1AA55CA48",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "30B0B9F1AA55CA48",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "7399502969502025762654543.55832e159",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "661BDCE238CD6C00",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 35
+      },
+      "num_get_normalized": {
+        "bits": "661BDCE238CD6C00",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "7303687450645.7212587439e-190",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-4909826599620171940219946.7506298e-329",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "80C13D2E47F99735",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "end_offset": 39
+      },
+      "num_get_normalized": {
+        "bits": "80C13D2E47F99735",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "70775387710.21638219e219",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "6FA7573E00ACB36B",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "end_offset": 24
+      },
+      "num_get_normalized": {
+        "bits": "6FA7573E00ACB36B",
+        "errno": 77,
+        "fpscr_out": "80400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": ".4580548358838090935315132541923299102986333071e-266",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "08A2E7C1DE185C80",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "08A2E7C1DE185C80",
+        "errno": 77,
+        "fpscr_out": "20400010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "result": {
+      "input": "-02952900359487744623.705295246388921378e-340",
+      "fpscr_in": "00400000",
+      "raw": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "end_offset": 45
+      },
+      "num_get_normalized": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "20400018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0.1",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-0.1",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "131.e-227",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "113F0886B36F1860",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "113F0886B36F1860",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "3e-324",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20800018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20800018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1e-400",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60800018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60800018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1e309",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-1e309",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "2.2250738585072014e-308",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "000FFFFFFFFFFFFE",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "end_offset": 23
+      },
+      "num_get_normalized": {
+        "bits": "000FFFFFFFFFFFFE",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1.7976931348623157e308",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FEFFFFFFFFFFFFA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 22
+      },
+      "num_get_normalized": {
+        "bits": "7FEFFFFFFFFFFFFA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1.00000000000000011102230246251565404236316680908203125",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 55
+      },
+      "num_get_normalized": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0x1p2",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0x1.8p+2",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0x1p-1074",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0x1p-1075",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0x1p1024",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "nan",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-nan",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "inf",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1e",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1e+",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "1,5",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 0
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-0",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 2
+      },
+      "num_get_normalized": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "0001.2500",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00800000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-61020.74050389632489889156524629945581027508e-119",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "A8380B1BFF4D0F59",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 50
+      },
+      "num_get_normalized": {
+        "bits": "A8380B1BFF4D0F59",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "8579617497887167747306959685981058901171036164353777757.4e300",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "end_offset": 61
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "648562358272322254.6e-261",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 25
+      },
+      "num_get_normalized": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-7.326e301",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 10
+      },
+      "num_get_normalized": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "5973129265406697703213685701162462843206075.05443383e-230",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "1910A221E72A7B63",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 57
+      },
+      "num_get_normalized": {
+        "bits": "1910A221E72A7B63",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "7856.352594691932306971764330987413457751992259002e-40",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3870B567BBD8B1D5",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 54
+      },
+      "num_get_normalized": {
+        "bits": "3870B567BBD8B1D5",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "7330276794386864478.632954093576539524031935180326748004391420e-89",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 66
+      },
+      "num_get_normalized": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "873438387.788596594206043416e212",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-.732600051050e-131",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20800010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-696959871858306404803003320179.674386460756866819420496281744432e-149",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 70
+      },
+      "num_get_normalized": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": ".9379521893780089786566174827518e-389",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60800018",
+        "end_offset": 37
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60800018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "03978514586675489852360438314815474928444.4631240742129956062392199993e-348",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "45321.5883456275860549196123179545608155303354783026200e-27",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "3B4B652D155B67C6",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 59
+      },
+      "num_get_normalized": {
+        "bits": "3B4B652D155B67C6",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-6667246913647721.44125615148141994649764066440e-244",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "90902C6898F126AA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "90902C6898F126AA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "8563746.47845780895358526e330",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "018476.5436660e249",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-796355874.4e-234",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 17
+      },
+      "num_get_normalized": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-0969455554911454.280304209133255240e-207",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "9811B13CC666138F",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 41
+      },
+      "num_get_normalized": {
+        "bits": "9811B13CC666138F",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "297764573416675281.46105399931147485641110782932210303e300",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "end_offset": 58
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00800010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "5529.7250157623205453104731543917920272e59",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 42
+      },
+      "num_get_normalized": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-044467279837.1134780474188e-162",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-7966284065364963541299214801208453509316.6981985848079728424534690421e-258",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "92A67F34AB00DBE5",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "92A67F34AB00DBE5",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-74097391496246391092.131633778e-264",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-632566.956893e-137",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "370.357888756e-229",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20800010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "36.97959017374474575135483730928e-75",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "30B0B9F1AA55CA47",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "30B0B9F1AA55CA47",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "7399502969502025762654543.55832e159",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "661BDCE238CD6BFF",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 35
+      },
+      "num_get_normalized": {
+        "bits": "661BDCE238CD6BFF",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "7303687450645.7212587439e-190",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-4909826599620171940219946.7506298e-329",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "80C13D2E47F99734",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 39
+      },
+      "num_get_normalized": {
+        "bits": "80C13D2E47F99734",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "70775387710.21638219e219",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "6FA7573E00ACB369",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 24
+      },
+      "num_get_normalized": {
+        "bits": "6FA7573E00ACB369",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": ".4580548358838090935315132541923299102986333071e-266",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "08A2E7C1DE185C7E",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "08A2E7C1DE185C7E",
+        "errno": 77,
+        "fpscr_out": "80800010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 2,
+    "result": {
+      "input": "-02952900359487744623.705295246388921378e-340",
+      "fpscr_in": "00800000",
+      "raw": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "end_offset": 45
+      },
+      "num_get_normalized": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "80800018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0.1",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "3FB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-0.1",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "BFB999999999999A",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "131.e-227",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "113F0886B36F1860",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "113F0886B36F1860",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "3e-324",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20C00018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "20C00018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1e-400",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60C00018",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60C00018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1e309",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-1e309",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "end_offset": 6
+      },
+      "num_get_normalized": {
+        "bits": "FFF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "2.2250738585072014e-308",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "000FFFFFFFFFFFFE",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "end_offset": 23
+      },
+      "num_get_normalized": {
+        "bits": "000FFFFFFFFFFFFE",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1.7976931348623157e308",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FEFFFFFFFFFFFFA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 22
+      },
+      "num_get_normalized": {
+        "bits": "7FEFFFFFFFFFFFFA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1.00000000000000011102230246251565404236316680908203125",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 55
+      },
+      "num_get_normalized": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0x1p2",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 5
+      },
+      "num_get_normalized": {
+        "bits": "4010000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0x1.8p+2",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "4018000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0x1p-1074",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000001",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0x1p-1075",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0x1p1024",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "end_offset": 8
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "nan",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-nan",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 4
+      },
+      "num_get_normalized": {
+        "bits": "FFF8000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "inf",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 3
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1e",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1e+",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "1,5",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FF0000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 1
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 0
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-0",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 2
+      },
+      "num_get_normalized": {
+        "bits": "8000000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "0001.2500",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "end_offset": 9
+      },
+      "num_get_normalized": {
+        "bits": "3FF4000000000000",
+        "errno": 77,
+        "fpscr_out": "00C00000",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-61020.74050389632489889156524629945581027508e-119",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "A8380B1BFF4D0F59",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 50
+      },
+      "num_get_normalized": {
+        "bits": "A8380B1BFF4D0F59",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "8579617497887167747306959685981058901171036164353777757.4e300",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "end_offset": 61
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "648562358272322254.6e-261",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 25
+      },
+      "num_get_normalized": {
+        "bits": "0D71B6B23104EAE4",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-7.326e301",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 10
+      },
+      "num_get_normalized": {
+        "bits": "FE9B592DEDEB67E8",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "5973129265406697703213685701162462843206075.05443383e-230",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "1910A221E72A7B63",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 57
+      },
+      "num_get_normalized": {
+        "bits": "1910A221E72A7B63",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "7856.352594691932306971764330987413457751992259002e-40",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3870B567BBD8B1D5",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 54
+      },
+      "num_get_normalized": {
+        "bits": "3870B567BBD8B1D5",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "7330276794386864478.632954093576539524031935180326748004391420e-89",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 66
+      },
+      "num_get_normalized": {
+        "bits": "3160307914B5085F",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "873438387.788596594206043416e212",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "6DCEEDD0E1384473",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-.732600051050e-131",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20C00010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B4CCD224397398",
+        "errno": 77,
+        "fpscr_out": "20C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-696959871858306404803003320179.674386460756866819420496281744432e-149",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 70
+      },
+      "num_get_normalized": {
+        "bits": "A731FF4B7A2CCB4B",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": ".9379521893780089786566174827518e-389",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60C00018",
+        "end_offset": 37
+      },
+      "num_get_normalized": {
+        "bits": "0000000000000000",
+        "errno": 34,
+        "fpscr_out": "60C00018",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "03978514586675489852360438314815474928444.4631240742129956062392199993e-348",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "0002DC614727EED3",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "45321.5883456275860549196123179545608155303354783026200e-27",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "3B4B652D155B67C6",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 59
+      },
+      "num_get_normalized": {
+        "bits": "3B4B652D155B67C6",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-6667246913647721.44125615148141994649764066440e-244",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "90902C6898F126AA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "90902C6898F126AA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "8563746.47845780895358526e330",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00000",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "018476.5436660e249",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "7484293E452792F6",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-796355874.4e-234",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 17
+      },
+      "num_get_normalized": {
+        "bits": "9132DD84E7257FF0",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-0969455554911454.280304209133255240e-207",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "9811B13CC666138F",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 41
+      },
+      "num_get_normalized": {
+        "bits": "9811B13CC666138F",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "297764573416675281.46105399931147485641110782932210303e300",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "end_offset": 58
+      },
+      "num_get_normalized": {
+        "bits": "7FF0000000000000",
+        "errno": 34,
+        "fpscr_out": "00C00010",
+        "state": 4
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "5529.7250157623205453104731543917920272e59",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 42
+      },
+      "num_get_normalized": {
+        "bits": "4CF581D9A18585AA",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-044467279837.1134780474188e-162",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 32
+      },
+      "num_get_normalized": {
+        "bits": "A082A1AB83AA003E",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-7966284065364963541299214801208453509316.6981985848079728424534690421e-258",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "92A67F34AB00DBE5",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 75
+      },
+      "num_get_normalized": {
+        "bits": "92A67F34AB00DBE5",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-74097391496246391092.131633778e-264",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "8D4030AA09AF9334",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-632566.956893e-137",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 19
+      },
+      "num_get_normalized": {
+        "bits": "A4B1F5BDD97BF937",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "370.357888756e-229",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20C00010",
+        "end_offset": 18
+      },
+      "num_get_normalized": {
+        "bits": "10EC13576EEFA0FE",
+        "errno": 77,
+        "fpscr_out": "20C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "36.97959017374474575135483730928e-75",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "30B0B9F1AA55CA47",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 36
+      },
+      "num_get_normalized": {
+        "bits": "30B0B9F1AA55CA47",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "7399502969502025762654543.55832e159",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "661BDCE238CD6BFF",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 35
+      },
+      "num_get_normalized": {
+        "bits": "661BDCE238CD6BFF",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "7303687450645.7212587439e-190",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 29
+      },
+      "num_get_normalized": {
+        "bits": "1B27AD5A5B698404",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-4909826599620171940219946.7506298e-329",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "80C13D2E47F99734",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 39
+      },
+      "num_get_normalized": {
+        "bits": "80C13D2E47F99734",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "70775387710.21638219e219",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "6FA7573E00ACB369",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 24
+      },
+      "num_get_normalized": {
+        "bits": "6FA7573E00ACB369",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": ".4580548358838090935315132541923299102986333071e-266",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "08A2E7C1DE185C7E",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "end_offset": 52
+      },
+      "num_get_normalized": {
+        "bits": "08A2E7C1DE185C7E",
+        "errno": 77,
+        "fpscr_out": "80C00010",
+        "state": 0
+      }
+    }
+  },
+  {
+    "mode": 3,
+    "result": {
+      "input": "-02952900359487744623.705295246388921378e-340",
+      "fpscr_in": "00C00000",
+      "raw": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "end_offset": 45
+      },
+      "num_get_normalized": {
+        "bits": "800000000000003C",
+        "errno": 77,
+        "fpscr_out": "80C00018",
+        "state": 0
+      }
+    }
+  }
+]

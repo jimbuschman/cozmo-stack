@@ -1,0 +1,102 @@
+[
+  {
+    "file": "20261005-converter-source-build.sh",
+    "sha256": "233529da00892b7badb9808f9fb838928ccec65efeeac4fd83f3748d179c8463",
+    "bytes": 278
+  },
+  {
+    "file": "20261005-converter-source-diff.py",
+    "sha256": "3af297d9bb81a3ad94b6291b6daacd7c67a34c22c9a8ecd336d6ccfd75da49d1",
+    "bytes": 2533
+  },
+  {
+    "file": "20261005-converter-source-differences.json",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "bytes": 2
+  },
+  {
+    "file": "20261005-converter-source-directed.c",
+    "sha256": "3b4609ba649fe7a844a1ae6dbec30aa26c81424edcde4233926d6bc0fd0ab48f",
+    "bytes": 49834
+  },
+  {
+    "file": "20261005-converter-source-directed.so",
+    "sha256": "b66f7bdaa06c1ecadac4782f5ebfc3925685850bf09b89553d9959b8f8262206",
+    "bytes": 29368
+  },
+  {
+    "file": "20261005-converter-source-generate.py",
+    "sha256": "9be7c143860e7e32a343047a09aa4b28da48a214da46940df28fbcf52e8c6c29",
+    "bytes": 1466
+  },
+  {
+    "file": "20261005-converter-source-hex-ulp-native.txt",
+    "sha256": "17a7b10e15757c32c6cf4e2bb2aaf7257cd3e85685fe7aed10b3f9e007647b3f",
+    "bytes": 19908
+  },
+  {
+    "file": "20261005-converter-source-mode-diff.py",
+    "sha256": "119acbb29091e329314700a2716c4e6322d3146e583e8e4717aae9f6a100f8ea",
+    "bytes": 1536
+  },
+  {
+    "file": "20261005-converter-source-mode-differences.json",
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "bytes": 2
+  },
+  {
+    "file": "20261005-converter-source-mode-oracle.json",
+    "sha256": "ccff8610219c144958d14bd9386614d7b391dd0d78feee47d4eb33fdab8bc526",
+    "bytes": 95595
+  },
+  {
+    "file": "20261005-converter-source-mode-oracle.py",
+    "sha256": "6c3fc7113615ff061d61fb9252b27de4b67a4bfaefcf45e9ded3fc95d84c41e7",
+    "bytes": 1238
+  },
+  {
+    "file": "20261005-converter-source-mode-summary.json",
+    "sha256": "31efa9caaf2e5aca6abc8e280ec84011acff68fe20eea8d5ec8e72688bc05b86",
+    "bytes": 158
+  },
+  {
+    "file": "20261005-converter-source-original-differences.jsonl.gz",
+    "sha256": "5b1398ae264926f55b1ca319a15e410ebdd3647d99191589c10f903ef688760d",
+    "bytes": 320362
+  },
+  {
+    "file": "20261005-converter-source-original.c",
+    "sha256": "49cc1c1ae0f47e952ea85520b363a1e1a4d6000b4a0a7fa512aa3ff0e0c8c09a",
+    "bytes": 49347
+  },
+  {
+    "file": "20261005-converter-source-original.so",
+    "sha256": "7d3eb06fef507eac813993a2468ece00bb0173ab5bac9ac5624431004983e8d2",
+    "bytes": 29216
+  },
+  {
+    "file": "20261005-converter-source-patched.c",
+    "sha256": "f89da24cd6d5e8d57a4db65df005cfa2504bfcb54fc8482f76ed466c5988fae0",
+    "bytes": 49462
+  },
+  {
+    "file": "20261005-converter-source-patched.so",
+    "sha256": "6f66ce63e6eb0b0602ec570bbcbbd7a64683347e0e613dee005321b5ba168dbf",
+    "bytes": 29216
+  },
+  {
+    "file": "20261005-converter-source-record.json",
+    "sha256": "8b1b6413c98cc184d1e2c683f935695cf55d2f71b396b62551c607accb7c4b25",
+    "bytes": 5677
+  },
+  {
+    "file": "20261005-converter-source-spec-native.txt",
+    "sha256": "13b4b5b8cea673687cac1db421769b28c30c30deb463cfbc0b3490af4b6c1170",
+    "bytes": 25596
+  },
+  {
+    "file": "20261005-converter-source-summary.json",
+    "sha256": "c6aa1ceb00a46b8341ec6d543acfe1871372db480c54ca1b4b64b71d8ec34355",
+    "bytes": 388
+  }
+]

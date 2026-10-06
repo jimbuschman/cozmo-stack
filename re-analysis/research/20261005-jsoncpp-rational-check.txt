@@ -1,0 +1,3 @@
+Exact rational scaled candidate + ULP: 7C9FFFFFFFFFFFFD
+Restore exponent high-word: 7FEFFFFFFFFFFFFD
+This validates this individual nearest-mode add/restore only; not input approximation, ratio helpers or production FPSCR.

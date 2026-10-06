@@ -1,0 +1,359 @@
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x567b8 0x56868 _ZNSt6__ndk16locale8__globalEv
+000567B8: push       {r4, r6, r7, lr} ; 
+000567BA: add        r7, sp, #8 ; 
+000567BC: ldr        r0, [pc, #0x4c] ; literal[0005680C]=00050746
+000567BE: add        r0, pc ; 
+000567C0: ldrb       r0, [r0] ; 
+000567C2: dmb        ish ; 
+000567C6: tst.w      r0, #1 ; 
+000567CA: bne        #0x567f4 ; 
+000567CC: ldr        r0, [pc, #0x40] ; literal[00056810]=00050736
+000567CE: add        r0, pc ; 
+000567D0: blx        #0x31700 ; GOT 000A5154 __cxa_guard_acquire
+000567D4: cbz        r0, #0x567f4 ; 
+000567D6: blx        #0x3263c ; GOT 000A5668 _ZNSt6__ndk16locale7classicEv
+000567DA: ldr        r4, [pc, #0x3c] ; literal[00056818]=0005071E
+000567DC: ldr        r0, [r0] ; 
+000567DE: add        r4, pc ; 
+000567E0: str        r0, [r4] ; 
+000567E2: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+000567E6: ldr        r1, [pc, #0x34] ; literal[0005681C]=00050716
+000567E8: ldr        r0, [pc, #0x34] ; literal[00056820]=00050718
+000567EA: add        r1, pc ; 
+000567EC: add        r0, pc ; 
+000567EE: str        r4, [r1] ; 
+000567F0: blx        #0x3170c ; GOT 000A5158 __cxa_guard_release
+000567F4: ldr        r0, [pc, #0x2c] ; literal[00056824]=0005070A
+000567F6: add        r0, pc ; 
+000567F8: ldr        r0, [r0] ; 
+000567FA: pop        {r4, r6, r7, pc} ; 
+000567FC: mov        r4, r0 ; 
+000567FE: ldr        r0, [pc, #0x14] ; literal[00056814]=00050704
+00056800: add        r0, pc ; 
+00056802: blx        #0x321bc ; GOT 000A54E8 __cxa_guard_abort
+00056806: mov        r0, r4 ; 
+00056808: bl         #0x85740 ; 
+0005680C: lsls       r6, r0, #0x1d ; 
+0005680E: movs       r5, r0 ; 
+00056810: lsls       r6, r6, #0x1c ; 
+00056812: movs       r5, r0 ; 
+00056814: lsls       r4, r0, #0x1c ; 
+00056816: movs       r5, r0 ; 
+00056818: lsls       r6, r3, #0x1c ; 
+0005681A: movs       r5, r0 ; 
+0005681C: lsls       r6, r2, #0x1c ; 
+0005681E: movs       r5, r0 ; 
+00056820: lsls       r0, r3, #0x1c ; 
+00056822: movs       r5, r0 ; 
+00056824: lsls       r2, r1, #0x1c ; 
+00056826: movs       r5, r0 ; 
+00056828: push       {r4, r6, r7, lr} ; 
+0005682A: add        r7, sp, #8 ; 
+0005682C: mov        r4, r0 ; 
+0005682E: blx        #0x32684 ; GOT 000A5680 _ZNSt6__ndk16locale8__globalEv
+00056832: ldr        r0, [r0] ; 
+00056834: str        r0, [r4] ; 
+00056836: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+0005683A: mov        r0, r4 ; 
+0005683C: pop        {r4, r6, r7, pc} ; 
+0005683E: bl         #0x38d6c ; 
+00056842: push       {r4, r6, r7, lr} ; 
+00056844: add        r7, sp, #8 ; 
+00056846: mov        r4, r0 ; 
+00056848: ldr        r0, [r1] ; 
+0005684A: str        r0, [r4] ; 
+0005684C: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+00056850: mov        r0, r4 ; 
+00056852: pop        {r4, r6, r7, pc} ; 
+00056854: push       {r4, r6, r7, lr} ; 
+00056856: add        r7, sp, #8 ; 
+00056858: mov        r4, r0 ; 
+0005685A: ldr        r0, [r4] ; 
+0005685C: blx        #0x31a0c ; GOT 000A5258 _ZNSt6__ndk114__shared_count16__release_sharedEv
+00056860: mov        r0, r4 ; 
+00056862: pop        {r4, r6, r7, pc} ; 
+00056864: push       {r4, r5, r7, lr} ; 
+00056866: add        r7, sp, #8 ; 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x56828 0x56850 _ZNSt6__ndk16localeC2Ev
+00056828: push       {r4, r6, r7, lr} ; 
+0005682A: add        r7, sp, #8 ; 
+0005682C: mov        r4, r0 ; 
+0005682E: blx        #0x32684 ; GOT 000A5680 _ZNSt6__ndk16locale8__globalEv
+00056832: ldr        r0, [r0] ; 
+00056834: str        r0, [r4] ; 
+00056836: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+0005683A: mov        r0, r4 ; 
+0005683C: pop        {r4, r6, r7, pc} ; 
+0005683E: bl         #0x38d6c ; 
+00056842: push       {r4, r6, r7, lr} ; 
+00056844: add        r7, sp, #8 ; 
+00056846: mov        r4, r0 ; 
+00056848: ldr        r0, [r1] ; 
+0005684A: str        r0, [r4] ; 
+0005684C: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x54a34 0x54acc 
+00054A34: push       {r4, r5, r6, r7, lr} ; 
+00054A36: add        r7, sp, #0xc ; 
+00054A38: push.w     {r8, sb, fp} ; 
+00054A3C: mov        r4, r0 ; 
+00054A3E: ldr.w      r0, [pc, #0x5ec] ; literal[0005502C]=0004E414
+00054A42: subs       r1, #1 ; 
+00054A44: add.w      sb, r4, #8 ; 
+00054A48: add        r0, pc ; 
+00054A4A: adds       r0, #8 ; 
+00054A4C: strd       r0, r1, [r4] ; 
+00054A50: mov        r0, sb ; 
+00054A52: movs       r1, #0x1c ; 
+00054A54: bl         #0x5520c ; 
+00054A58: movs       r0, #0 ; 
+00054A5A: mov        r6, r4 ; 
+00054A5C: str        r0, [r6, #0x90]! ; 
+00054A60: strd       r0, r0, [r6, #4] ; 
+00054A64: addw       r1, pc, #0x5c8 ; 
+00054A68: mov        r0, r6 ; 
+00054A6A: movs       r2, #1 ; 
+00054A6C: blx        #0x3194c ; GOT 000A5218 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEPKcj
+00054A70: ldrd       r1, r0, [r4, #8] ; 
+00054A74: cmp        r0, r1 ; 
+00054A76: itttt      ne ; 
+00054A78: subne      r2, r0, #4 ; 
+00054A7A: subne      r1, r2, r1 ; 
+00054A7C: mvnne      r2, #3 ; 
+00054A80: bicne.w    r1, r2, r1 ; 
+00054A84: ldr.w      r2, [pc, #0x5b4] ; literal[0005503C]=000503EC
+00054A88: add        r2, pc ; 
+00054A8A: itt        ne ; 
+00054A8C: addne      r0, r0, r1 ; 
+00054A8E: strne      r0, [r4, #0xc] ; 
+00054A90: ldr.w      r1, [pc, #0x5a4] ; literal[00055038]=00052B24
+00054A94: ldr.w      r0, [pc, #0x59c] ; literal[00055034]=0005030E
+00054A98: add        r1, pc ; 
+00054A9A: add        r0, pc ; 
+00054A9C: ldr        r3, [r0] ; 
+00054A9E: movs       r0, #0 ; 
+00054AA0: str        r0, [r1, #4] ; 
+00054AA2: ldr        r0, [r2] ; 
+00054AA4: add.w      r2, r3, #8 ; 
+00054AA8: str        r2, [r1] ; 
+00054AAA: blx        #0x32054 ; GOT 000A5470 _ZNSt6__ndk16locale2id5__getEv
+00054AAE: mov        r2, r0 ; 
+00054AB0: ldr.w      r1, [pc, #0x58c] ; literal[00055040]=00052B08
+00054AB4: add        r1, pc ; 
+00054AB6: mov        r0, r4 ; 
+00054AB8: bl         #0x5664c ; 
+00054ABC: ldr.w      r0, [pc, #0x584] ; literal[00055044]=000502E4
+00054AC0: ldr.w      r1, [pc, #0x584] ; literal[00055048]=00052AFA
+00054AC4: ldr.w      r2, [pc, #0x584] ; literal[0005504C]=000503AC
+00054AC8: add        r0, pc ; 
+00054ACA: add        r1, pc ; 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x4930c 0x49364 _ZNSt6__ndk19__num_getIcE19__stage2_float_prepERNS_8ios_baseEPcRcS5_
+0004930C: push       {r4, r5, r6, r7, lr} ; 
+0004930E: add        r7, sp, #0xc ; 
+00049310: str        r8, [sp, #-0x4]! ; 
+00049314: sub        sp, #8 ; 
+00049316: mov        r8, r0 ; 
+00049318: ldr        r0, [pc, #0x9c] ; literal[000493B8]=0005B9BA
+0004931A: mov        r5, r3 ; 
+0004931C: mov        r6, r2 ; 
+0004931E: add        r0, pc ; 
+00049320: ldr        r0, [r0] ; 
+00049322: ldr        r0, [r0] ; 
+00049324: str        r0, [sp, #4] ; 
+00049326: mov        r0, sp ; 
+00049328: blx        #0x32048 ; GOT 000A546C _ZNKSt6__ndk18ios_base6getlocEv
+0004932C: ldr        r0, [pc, #0x8c] ; literal[000493BC]=0005BA08
+0004932E: ldr        r4, [sp] ; 
+00049330: add        r0, pc ; 
+00049332: ldr        r0, [r0] ; 
+00049334: blx        #0x32054 ; GOT 000A5470 _ZNSt6__ndk16locale2id5__getEv
+00049338: mov        r1, r0 ; 
+0004933A: mov        r0, r4 ; 
+0004933C: bl         #0x56740 ; 
+00049340: ldr        r1, [pc, #0x7c] ; literal[000493C0]=0005BA74
+00049342: ldr        r2, [r0] ; 
+00049344: add        r1, pc ; 
+00049346: ldr        r1, [r1] ; 
+00049348: ldr        r4, [r2, #0x20] ; 
+0004934A: add.w      r2, r1, #0x20 ; 
+0004934E: mov        r3, r6 ; 
+00049350: blx        r4 ; 
+00049352: ldr        r0, [pc, #0x70] ; literal[000493C4]=0005BA5E
+00049354: ldr        r4, [sp] ; 
+00049356: add        r0, pc ; 
+00049358: ldr        r0, [r0] ; 
+0004935A: blx        #0x32054 ; GOT 000A5470 _ZNSt6__ndk16locale2id5__getEv
+0004935E: mov        r1, r0 ; 
+00049360: mov        r0, r4 ; 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x7ee82 0x7ef12 
+0007EE82: add        r1, sp, #0x44 ; 
+0007EE84: mov        r0, r6 ; 
+0007EE86: bl         #0x81278 ; 
+0007EE8A: vmov.f64   d8, d0 ; 
+0007EE8E: add        r1, sp, #0x40 ; 
+0007EE90: mov        r0, sb ; 
+0007EE92: vstr       d8, [sp, #0x50] ; 
+0007EE96: bl         #0x81278 ; 
+0007EE9A: vstr       d0, [sp, #0x48] ; 
+0007EE9E: vdiv.f64   d0, d8, d0 ; 
+0007EEA2: ldr.w      r0, [sb, #0x10] ; 
+0007EEA6: ldr        r1, [r6, #0x10] ; 
+0007EEA8: ldrd       r2, r3, [sp, #0x40] ; 
+0007EEAC: subs       r0, r1, r0 ; 
+0007EEAE: subs       r1, r3, r2 ; 
+0007EEB0: add        r2, sp, #0x50 ; 
+0007EEB2: add.w      r0, r1, r0, lsl #5 ; 
+0007EEB6: add        r1, sp, #0x48 ; 
+0007EEB8: cmp        r0, #0 ; 
+0007EEBA: it         gt ; 
+0007EEBC: movgt      r1, r2 ; 
+0007EEBE: ldr        r2, [r1, #4] ; 
+0007EEC0: it         mi ; 
+0007EEC2: rsbmi      r0, r0, #0 ; 
+0007EEC4: add.w      r0, r2, r0, lsl #20 ; 
+0007EEC8: str        r0, [r1, #4] ; 
+0007EECA: vcmpe.f64  d0, d10 ; 
+0007EECE: str.w      sl, [sp, #0x1c] ; 
+0007EED2: vmrs       apsr_nzcv, fpscr ; 
+0007EED6: bls        #0x7ef02 ; 
+0007EED8: vmul.f64   d13, d0, d11 ; 
+0007EEDC: cmp.w      r8, #0 ; 
+0007EEE0: vmrs       r0, fpscr ; 
+0007EEE4: vmul.f64   d15, d0, d12 ; 
+0007EEE8: it         ne ; 
+0007EEEA: vmovne.f64 d15, d13 ; 
+0007EEEE: vadd.f64   d0, d15, d11 ; 
+0007EEF2: add.w      r0, r0, #0x400000 ; 
+0007EEF6: lsrs       r0, r0, #0x16 ; 
+0007EEF8: lsls       r0, r0, #0x1e ; 
+0007EEFA: it         eq ; 
+0007EEFC: vmoveq.f64 d15, d0 ; 
+0007EF00: b          #0x7ef12 ; 
+0007EF02: vmov.f64   d13, d14 ; 
+0007EF06: cmp.w      r8, #0 ; 
+0007EF0A: vmov.f64   d15, d14 ; 
+0007EF0E: beq.w      #0x7f072 ; 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x81278 0x81318 
+00081278: push       {r4, r5, r6, r7, lr} ; 
+0008127A: add        r7, sp, #0xc ; 
+0008127C: push.w     {r8, sb, fp} ; 
+00081280: mov        r5, r1 ; 
+00081282: ldr        r1, [pc, #0xa4] ; literal[00081328]=0001EB08
+00081284: add        r1, pc ; 
+00081286: cmp        r0, r1 ; 
+00081288: beq        #0x812ca ; 
+0008128A: ldr        r1, [r0, #0x10] ; 
+0008128C: add.w      sb, r0, #0x14 ; 
+00081290: add.w      r6, sb, r1, lsl #2 ; 
+00081294: mov        r4, r6 ; 
+00081296: ldr        r8, [r4, #-0x4]! ; 
+0008129A: mov        r0, r8 ; 
+0008129C: bl         #0x80c60 ; 
+000812A0: cmp        r0, #0xa ; 
+000812A2: rsb.w      r1, r0, #0x20 ; 
+000812A6: str        r1, [r5] ; 
+000812A8: bgt        #0x812d0 ; 
+000812AA: rsb.w      r1, r0, #0xb ; 
+000812AE: cmp        r4, sb ; 
+000812B0: ite        hi ; 
+000812B2: ldrhi      r3, [r6, #-0x8] ; 
+000812B6: movls      r3, #0 ; 
+000812B8: adds       r0, #0x15 ; 
+000812BA: lsr.w      r2, r8, r1 ; 
+000812BE: lsr.w      r1, r3, r1 ; 
+000812C2: lsl.w      r0, r8, r0 ; 
+000812C6: orrs       r1, r0 ; 
+000812C8: b          #0x81308 ; 
+000812CA: vldr       d0, [pc, #0x54] ; literal[00081320]=00000000
+000812CE: b          #0x81314 ; 
+000812D0: cmp        r4, sb ; 
+000812D2: itte       hi ; 
+000812D4: ldrhi      r1, [r6, #-0x8]! ; 
+000812D8: movhi      r4, r6 ; 
+000812DA: movls      r1, #0 ; 
+000812DC: subs.w     r3, r0, #0xb ; 
+000812E0: beq        #0x81306 ; 
+000812E2: rsb.w      r0, r0, #0x2b ; 
+000812E6: lsl.w      r2, r8, r3 ; 
+000812EA: cmp        r4, sb ; 
+000812EC: lsr.w      r6, r1, r0 ; 
+000812F0: orr.w      r2, r2, r6 ; 
+000812F4: ite        hi ; 
+000812F6: ldrhi      r6, [r4, #-0x4] ; 
+000812FA: movls      r6, #0 ; 
+000812FC: lsls       r1, r3 ; 
+000812FE: lsr.w      r0, r6, r0 ; 
+00081302: orrs       r1, r0 ; 
+00081304: b          #0x81308 ; 
+00081306: mov        r2, r8 ; 
+00081308: orr        r0, r2, #0x30000000 ; 
+0008130C: orr        r0, r0, #0xff00000 ; 
+00081310: vmov       d0, r1, r0 ; 
+00081314: pop.w      {r8, sb, fp} ; 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x56b38 0x56bdc _ZNSt6__ndk16locale6globalERKS0_
+00056B38: push       {r4, r5, r6, r7, lr} ; 
+00056B3A: add        r7, sp, #0xc ; 
+00056B3C: str        r8, [sp, #-0x4]! ; 
+00056B40: sub        sp, #0x18 ; 
+00056B42: mov        r4, r0 ; 
+00056B44: ldr        r0, [pc, #0xcc] ; literal[00056C14]=0004E190
+00056B46: mov        r6, r1 ; 
+00056B48: add        r0, pc ; 
+00056B4A: ldr        r0, [r0] ; 
+00056B4C: ldr        r0, [r0] ; 
+00056B4E: str        r0, [sp, #0x14] ; 
+00056B50: blx        #0x32684 ; GOT 000A5680 _ZNSt6__ndk16locale8__globalEv
+00056B54: mov        r5, r0 ; 
+00056B56: ldr.w      r8, [r5] ; 
+00056B5A: str.w      r8, [r4] ; 
+00056B5E: mov        r0, r8 ; 
+00056B60: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+00056B64: ldr        r0, [r6] ; 
+00056B66: blx        #0x31a00 ; GOT 000A5254 _ZNSt6__ndk114__shared_count12__add_sharedEv
+00056B6A: ldr        r0, [r5] ; 
+00056B6C: blx        #0x31a0c ; GOT 000A5258 _ZNSt6__ndk114__shared_count16__release_sharedEv
+00056B70: ldr        r0, [r6] ; 
+00056B72: str        r0, [r5] ; 
+00056B74: add.w      r1, r0, #0x90 ; 
+00056B78: add        r0, sp, #8 ; 
+00056B7A: blx        #0x324ec ; GOT 000A55F8 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1ERKS5_
+00056B7E: ldrb.w     r1, [sp, #8] ; 
+00056B82: ldr        r0, [sp, #0xc] ; 
+00056B84: tst.w      r1, #1 ; 
+00056B88: it         eq ; 
+00056B8A: lsreq      r0, r1, #1 ; 
+00056B8C: cmp        r0, #1 ; 
+00056B8E: bne        #0x56bae ; 
+00056B90: movs       r0, #1 ; 
+00056B92: adr        r3, #0x84 ; 
+00056B94: str        r0, [sp] ; 
+00056B96: add        r0, sp, #8 ; 
+00056B98: movs       r1, #0 ; 
+00056B9A: mov.w      r2, #-1 ; 
+00056B9E: blx        #0x32690 ; GOT 000A5684 _ZNKSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE7compareEjjPKcj
+00056BA2: mov        r6, r0 ; 
+00056BA4: add        r0, sp, #8 ; 
+00056BA6: blx        #0x32060 ; GOT 000A5474 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev
+00056BAA: cbnz       r6, #0x56bb4 ; 
+00056BAC: b          #0x56bdc ; 
+00056BAE: add        r0, sp, #8 ; 
+00056BB0: blx        #0x32060 ; GOT 000A5474 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev
+00056BB4: ldr        r0, [r5] ; 
+00056BB6: add.w      r1, r0, #0x90 ; 
+00056BBA: add        r0, sp, #8 ; 
+00056BBC: blx        #0x324ec ; GOT 000A55F8 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC1ERKS5_
+00056BC0: ldrb.w     r2, [sp, #8] ; 
+00056BC4: ldr        r1, [sp, #0x10] ; 
+00056BC6: tst.w      r2, #1 ; 
+00056BCA: it         eq ; 
+00056BCC: orreq      r1, r0, #1 ; 
+00056BD0: movs       r0, #6 ; 
+00056BD2: blx        #0x3269c ; GOT 000A5688 setlocale
+00056BD6: add        r0, sp, #8 ; 
+00056BD8: blx        #0x32060 ; GOT 000A5474 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev

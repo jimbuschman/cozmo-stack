@@ -1,0 +1,9 @@
+Collecting unicorn
+  Downloading unicorn-2.1.4-cp37-abi3-win_amd64.whl.metadata (4.3 kB)
+Downloading unicorn-2.1.4-cp37-abi3-win_amd64.whl (15.9 MB)
+   ---------------------------------------- 15.9/15.9 MB 5.6 MB/s  0:00:03
+WARNING: Ignoring invalid distribution ~ (C:\Users\JimBu\AppData\Local\Programs\Python\Python313\Lib\site-packages)
+WARNING: Ignoring invalid distribution ~lipshell (C:\Users\JimBu\AppData\Local\Programs\Python\Python313\Lib\site-packages)
+WARNING: Ignoring invalid distribution ~~ipshell (C:\Users\JimBu\AppData\Local\Programs\Python\Python313\Lib\site-packages)
+Installing collected packages: unicorn
+Successfully installed unicorn-2.1.4

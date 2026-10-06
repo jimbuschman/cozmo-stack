@@ -1,0 +1,42 @@
+[
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libc++_shared.so",
+    "symbol": "_ZNSt6__ndk16locale6globalERKS0_",
+    "value": "56B39"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libc++_shared.so",
+    "symbol": "setlocale",
+    "value": "0"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libgnustl_shared.so",
+    "symbol": "_ZNSt6locale6globalERKS_",
+    "value": "63319"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libgnustl_shared.so",
+    "symbol": "setlocale",
+    "value": "0"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libmono.so",
+    "symbol": "setlocale",
+    "value": "0"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libstlport_shared.so",
+    "symbol": "setlocale",
+    "value": "0"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libstlport_shared.so",
+    "symbol": "_ZNSt6locale6globalERKS_",
+    "value": "36343"
+  },
+  {
+    "artifact": "resources\\lib\\armeabi-v7a\\libunity.so",
+    "symbol": "setlocale",
+    "value": "0"
+  }
+]

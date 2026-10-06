@@ -1,0 +1,6 @@
+Independent execution: QEMU ARM user 10.2.1 (Ubuntu package 1:10.2.1+ds-1ubuntu3.2), cortex-a9, ELF relocated to0x10000000, FPSCR0. Freestanding ARMv7 softfp executable; no C-library numerical parser, no glibc dynamic loader. Cross compiler gcc12.5.0; own syscall/ELF/import fixtures.
+Dependencies extracted locally, not installed into WSL: qemu-user, gcc-12-arm-linux-gnueabi, cpp-12-arm-linux-gnueabi, binutils-arm-linux-gnueabi, libsframe3. Packages obtained from the configured Ubuntu archive with apt-get download. No shipped assets uploaded.
+Rebuild/run: wsl -d Ubuntu -- sh /mnt/c/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex/re-analysis/research/20261005-jsoncpp-qemu-run.sh
+Compare: wsl -d Ubuntu -- python3 /mnt/c/Users/JimBu/source/repos/jimbuschman/cozmo-stack-codex/re-analysis/research/20261005-jsoncpp-qemu-compare.py
+Arithmetic audit: Python with lief/capstone/unicorn2.1.4; research-local Unicorn on module path; run20261005-jsoncpp-independent-fp.py.
+Both emulator families share historical QEMU ancestry. Exact-rational/bigint checks are a separate numerical reference. Neither is a phone run.

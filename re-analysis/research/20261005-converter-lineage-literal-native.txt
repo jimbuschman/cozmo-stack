@@ -1,0 +1,36 @@
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x80c18 0x80c60 
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x811b4 0x81200 
+000811B4: strb       r3, [r2] ; 
+000811B6: beq        #0x811c0 ; 
+000811B8: ldr        r2, [sp] ; 
+000811BA: ldr        r1, [r2] ; 
+000811BC: adds       r1, #4 ; 
+000811BE: str        r1, [r2] ; 
+000811C0: cmp.w      ip, #0 ; 
+000811C4: it         ne ; 
+000811C6: strne.w    r0, [ip] ; 
+000811CA: movs       r1, #0 ; 
+000811CC: b          #0x811d4 ; 
+000811CE: ldrb       r1, [r0] ; 
+000811D0: ldrb.w     r1, [sl, r1] ; 
+000811D4: strb       r1, [r0], #-1 ; 
+000811D8: cmp        r0, r6 ; 
+000811DA: bhs        #0x811ce ; 
+000811DC: mov        r0, r6 ; 
+000811DE: add        sp, #0xc ; 
+000811E0: pop.w      {r8, sb, sl, fp} ; 
+000811E4: pop        {r4, r5, r6, r7, pc} ; 
+000811E6: nop         ; 
+000811E8: movs       r0, r0 ; 
+000811EA: movs       r0, r0 ; 
+000811EC: movs       r0, r0 ; 
+000811EE: str        r0, [r2] ; 
+000811F0: str        r6, [r1, #0x14] ; 
+000811F2: lsls       r6, r1, #1 ; 
+000811F4: ldr        r6, [sp, #0x1f8] ; 
+000811F6: movs       r1, r0 ; 
+000811F8: movs       r0, r6 ; 
+000811FA: movs       r0, r0 ; 
+000811FC: nop.w       ; 
