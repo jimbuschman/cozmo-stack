@@ -1,0 +1,86 @@
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x2334c 0x23368 
+0002334C: str        r1, [r5, #0x6c] ; 
+0002334E: movs       r1, r0 ; 
+00023350: cmp        r1, #2 ; 
+00023352: push       {r0, r1, r2, r4, r5, lr} ; 
+00023354: ldr.w      r4, [r0, #0x1c8] ; 
+00023358: beq        #0x2339e ; 
+0002335A: cmp        r1, #3 ; 
+0002335C: beq        #0x2338a ; 
+0002335E: cmp        r1, #0 ; 
+00023360: bne        #0x233b2 ; 
+00023362: ldr        r2, [r0, #0x54] ; 
+00023364: cbz        r2, #0x23382 ; 
+00023366: ldr        r2, [pc, #0x60] ; literal[000233C8]=00000069
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x2bf4c 0x2bff2 
+0002BF4C: push.w     {r0, r1, r2, r3, r4, r5, r6, r7, r8, sb, sl, lr} ; 
+0002BF50: mov        r8, r3 ; 
+0002BF52: ldr.w      r4, [r0, #0x1c0] ; 
+0002BF56: mov        r5, r0 ; 
+0002BF58: mov        sl, r1 ; 
+0002BF5A: mov        sb, r2 ; 
+0002BF5C: add.w      r7, r4, #8 ; 
+0002BF60: ldr        r3, [r4, #0x30] ; 
+0002BF62: cbnz       r3, #0x2bf74 ; 
+0002BF64: ldr.w      r3, [r0, #0x1c4] ; 
+0002BF68: mov        r1, r7 ; 
+0002BF6A: ldr        r3, [r3, #0xc] ; 
+0002BF6C: blx        r3 ; 
+0002BF6E: cbz        r0, #0x2bfa4 ; 
+0002BF70: movs       r3, #1 ; 
+0002BF72: str        r3, [r4, #0x30] ; 
+0002BF74: ldr.w      r6, [r5, #0x148] ; 
+0002BF78: mov        r0, r5 ; 
+0002BF7A: ldr.w      r1, [r5, #0x1c8] ; 
+0002BF7E: add.w      r2, r4, #0x34 ; 
+0002BF82: str.w      sl, [sp] ; 
+0002BF86: str.w      sb, [sp, #4] ; 
+0002BF8A: mov        r3, r6 ; 
+0002BF8C: str.w      r8, [sp, #8] ; 
+0002BF90: ldr.w      ip, [r1, #4] ; 
+0002BF94: mov        r1, r7 ; 
+0002BF96: blx        ip ; 
+0002BF98: ldr        r3, [r4, #0x34] ; 
+0002BF9A: cmp        r3, r6 ; 
+0002BF9C: ittt       hs ; 
+0002BF9E: movhs      r3, #0 ; 
+0002BFA0: strhs      r3, [r4, #0x30] ; 
+0002BFA2: strhs      r3, [r4, #0x34] ; 
+0002BFA4: add        sp, #0x10 ; 
+0002BFA6: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc} ; 
+0002BFAA: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+0002BFAE: sub        sp, #0x34 ; 
+0002BFB0: ldr.w      r4, [r0, #0x1c0] ; 
+0002BFB4: mov        r6, r0 ; 
+0002BFB6: str        r3, [sp, #0x14] ; 
+0002BFB8: mov        sb, r2 ; 
+0002BFBA: str        r1, [sp, #0x1c] ; 
+0002BFBC: ldr        r3, [r4, #0x30] ; 
+0002BFBE: cbnz       r3, #0x2bfe0 ; 
+0002BFC0: ldr        r3, [r4, #0x40] ; 
+0002BFC2: ldr.w      r2, [r0, #0x1c4] ; 
+0002BFC6: adds       r3, #0xe ; 
+0002BFC8: ldr        r2, [r2, #0xc] ; 
+0002BFCA: ldr.w      r1, [r4, r3, lsl #2] ; 
+0002BFCE: blx        r2 ; 
+0002BFD0: cmp        r0, #0 ; 
+0002BFD2: beq.w      #0x2c1cc ; 
+0002BFD6: movs       r3, #1 ; 
+0002BFD8: str        r3, [r4, #0x30] ; 
+0002BFDA: ldr        r3, [r4, #0x4c] ; 
+0002BFDC: adds       r3, #1 ; 
+0002BFDE: str        r3, [r4, #0x4c] ; 
+0002BFE0: ldr        r3, [r4, #0x44] ; 
+0002BFE2: cmp        r3, #1 ; 
+0002BFE4: beq        #0x2c0d0 ; 
+0002BFE6: cmp        r3, #2 ; 
+0002BFE8: beq        #0x2bff2 ; 
+0002BFEA: cmp        r3, #0 ; 
+0002BFEC: bne.w      #0x2c1cc ; 
+0002BFF0: b          #0x2c02e ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0xb6f08 0xb6f20 
+000B6F08: bx         pc ; 
+000B6F0A: mov        r8, r8 ; 

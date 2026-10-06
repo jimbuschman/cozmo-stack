@@ -1,0 +1,141 @@
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x237b4 0x239a0 
+000237B4: ldr        r3, [r0, #4] ; 
+000237B6: movs       r1, #1 ; 
+000237B8: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ; 
+000237BC: movs       r2, #0xa0 ; 
+000237BE: ldr        r3, [r3] ; 
+000237C0: sub        sp, #0x24 ; 
+000237C2: mov        r4, r0 ; 
+000237C4: blx        r3 ; 
+000237C6: ldr        r3, [pc, #0x130] ; literal[000238F8]=FFFFFE09
+000237C8: add        r3, pc ; 
+000237CA: str.w      r0, [r4, #0x1dc] ; 
+000237CE: mov        r7, r0 ; 
+000237D0: str        r3, [r0] ; 
+000237D2: ldr        r3, [pc, #0x128] ; literal[000238FC]=FFFFFE0D
+000237D4: add        r3, pc ; 
+000237D6: str        r3, [r0, #4] ; 
+000237D8: movs       r3, #0 ; 
+000237DA: str        r3, [r0, #8] ; 
+000237DC: ldr.w      r3, [r4, #0x134] ; 
+000237E0: cbz        r3, #0x237ee ; 
+000237E2: ldr        r3, [r4] ; 
+000237E4: movs       r2, #0x1a ; 
+000237E6: mov        r0, r4 ; 
+000237E8: str        r2, [r3, #0x14] ; 
+000237EA: ldr        r3, [r3] ; 
+000237EC: blx        r3 ; 
+000237EE: ldr        r3, [pc, #0x110] ; literal[00023900]=FFFFFEF3
+000237F0: add.w      r5, r7, #0xc ; 
+000237F4: ldr.w      r6, [r4, #0xd8] ; 
+000237F8: mov        sb, r7 ; 
+000237FA: add        r3, pc ; 
+000237FC: str        r3, [sp, #4] ; 
+000237FE: ldr        r3, [pc, #0x104] ; literal[00023904]=FFFFFF5F
+00023800: add        r3, pc ; 
+00023802: str        r3, [sp, #8] ; 
+00023804: ldr        r3, [pc, #0x100] ; literal[00023908]=FFFFFEB5
+00023806: add        r3, pc ; 
+00023808: str        r3, [sp, #0xc] ; 
+0002380A: ldr        r3, [pc, #0x100] ; literal[0002390C]=FFFFFEA5
+0002380C: add        r3, pc ; 
+0002380E: str        r3, [sp, #0x10] ; 
+00023810: ldr        r3, [pc, #0xfc] ; literal[00023910]=FFFFFEA3
+00023812: add        r3, pc ; 
+00023814: str        r3, [sp, #0x14] ; 
+00023816: ldr        r2, [r4, #0x24] ; 
+00023818: rsb        r3, r7, sb ; 
+0002381C: cmp        r3, r2 ; 
+0002381E: bge        #0x238f2 ; 
+00023820: ldr        r3, [r6, #8] ; 
+00023822: ldr        r1, [r6, #0xc] ; 
+00023824: ldr        r0, [r6, #0x28] ; 
+00023826: ldr        r2, [r6, #0x24] ; 
+00023828: str        r3, [sp] ; 
+0002382A: ldr.w      r3, [r4, #0x144] ; 
+0002382E: muls       r0, r1, r0 ; 
+00023830: ldr.w      r1, [r4, #0x148] ; 
+00023834: str        r2, [sp, #0x1c] ; 
+00023836: str        r3, [sp, #0x18] ; 
+00023838: blx        #0xdb1c ; GOT 00174DA8 __aeabi_idiv
+0002383C: ldr        r1, [r6, #0x34] ; 
+0002383E: ldr.w      fp, [r4, #0x13c] ; 
+00023842: ldr.w      sl, [r4, #0x140] ; 
+00023846: ldr        r3, [sp, #0x18] ; 
+00023848: ldr        r2, [sp, #0x1c] ; 
+0002384A: mov        r8, r0 ; 
+0002384C: str        r0, [r5, #0x58] ; 
+0002384E: cbnz       r1, #0x23854 ; 
+00023850: ldr        r3, [sp, #0x14] ; 
+00023852: b          #0x2386a ; 
+00023854: ldr        r0, [sp] ; 
+00023856: mov        r1, r3 ; 
+00023858: muls       r0, r2, r0 ; 
+0002385A: blx        #0xdb1c ; GOT 00174DA8 __aeabi_idiv
+0002385E: cmp        r0, fp ; 
+00023860: mov        r3, r0 ; 
+00023862: bne        #0x2386e ; 
+00023864: cmp        r8, sl ; 
+00023866: bne        #0x2386e ; 
+00023868: ldr        r3, [sp, #0x10] ; 
+0002386A: str        r3, [r5, #0x28] ; 
+0002386C: b          #0x238e8 ; 
+0002386E: cmp.w      fp, r3, lsl #1 ; 
+00023872: bne        #0x23888 ; 
+00023874: cmp        r8, sl ; 
+00023876: bne        #0x2387c ; 
+00023878: ldr        r3, [sp, #0xc] ; 
+0002387A: b          #0x23884 ; 
+0002387C: cmp.w      sl, r8, lsl #1 ; 
+00023880: bne        #0x23888 ; 
+00023882: ldr        r3, [sp, #8] ; 
+00023884: str        r3, [r5, #0x28] ; 
+00023886: b          #0x238ca ; 
+00023888: mov        r0, fp ; 
+0002388A: mov        r1, r3 ; 
+0002388C: str        r3, [sp] ; 
+0002388E: blx        #0xdc84 ; GOT 00174E20 __aeabi_idivmod
+00023892: cbnz       r1, #0x238be ; 
+00023894: mov        r0, sl ; 
+00023896: mov        r1, r8 ; 
+00023898: blx        #0xdc84 ; GOT 00174E20 __aeabi_idivmod
+0002389C: ldr        r3, [sp] ; 
+0002389E: cbnz       r1, #0x238be ; 
+000238A0: ldr        r2, [sp, #4] ; 
+000238A2: mov        r1, r3 ; 
+000238A4: mov        r0, fp ; 
+000238A6: str        r2, [r5, #0x28] ; 
+000238A8: blx        #0xdb1c ; GOT 00174DA8 __aeabi_idiv
+000238AC: mov        r1, r8 ; 
+000238AE: strb.w     r0, [sb, #0x8c] ; 
+000238B2: mov        r0, sl ; 
+000238B4: blx        #0xdb1c ; GOT 00174DA8 __aeabi_idiv
+000238B8: strb.w     r0, [sb, #0x96] ; 
+000238BC: b          #0x238ca ; 
+000238BE: ldr        r3, [r4] ; 
+000238C0: movs       r2, #0x27 ; 
+000238C2: mov        r0, r4 ; 
+000238C4: str        r2, [r3, #0x14] ; 
+000238C6: ldr        r3, [r3] ; 
+000238C8: blx        r3 ; 
+000238CA: ldr        r3, [r4, #4] ; 
+000238CC: ldr.w      r1, [r4, #0x13c] ; 
+000238D0: ldr        r0, [r4, #0x70] ; 
+000238D2: ldr.w      r8, [r3, #8] ; 
+000238D6: bl         #0x25958 ; 
+000238DA: movs       r1, #1 ; 
+000238DC: ldr.w      r3, [r4, #0x140] ; 
+000238E0: mov        r2, r0 ; 
+000238E2: mov        r0, r4 ; 
+000238E4: blx        r8 ; 
+000238E6: str        r0, [r5] ; 
+000238E8: adds       r6, #0x58 ; 
+000238EA: adds       r5, #4 ; 
+000238EC: add.w      sb, sb, #1 ; 
+000238F0: b          #0x23816 ; 
+000238F2: add        sp, #0x24 ; 
+000238F4: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+000238F8: mcr2       p15, #0, pc, c9, c15, #7 ; 
+000238FC: mcr2       p15, #0, pc, c13, c15, #7 ; 
+00023900: mrc2       p15, #7, apsr_nzcv, c3, c15, #7 ; 

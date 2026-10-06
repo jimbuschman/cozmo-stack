@@ -1,0 +1,81 @@
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x1299c 0x129f0 
+0001299C: ldr        r1, [pc, #0x48] ; literal[000129E8]=42FF0000
+0001299E: ldr        r2, [pc, #0x4c] ; literal[000129EC]=0015F70C
+000129A0: add        r2, pc ; 
+000129A2: str        r1, [r0, #0x24] ; 
+000129A4: adds       r2, #8 ; 
+000129A6: add.w      r1, r0, #0x2c ; 
+000129AA: str        r2, [r0] ; 
+000129AC: movs       r2, #0 ; 
+000129AE: str        r1, [r0, #0x4c] ; 
+000129B0: add.w      r1, r0, #0x54 ; 
+000129B4: str        r2, [r0, #0x14] ; 
+000129B6: str        r2, [r0, #0x18] ; 
+000129B8: str        r2, [r0, #0x1c] ; 
+000129BA: str        r2, [r0, #0x20] ; 
+000129BC: str        r2, [r0, #0x28] ; 
+000129BE: str        r2, [r0, #0x2c] ; 
+000129C0: str        r2, [r0, #0x30] ; 
+000129C2: str        r2, [r0, #0x34] ; 
+000129C4: str        r2, [r0, #0x38] ; 
+000129C6: str        r2, [r0, #0x3c] ; 
+000129C8: str        r2, [r0, #0x40] ; 
+000129CA: str        r2, [r0, #0x44] ; 
+000129CC: str        r2, [r0, #0x48] ; 
+000129CE: str        r1, [r0, #0x50] ; 
+000129D0: mov.w      r1, #-1 ; 
+000129D4: str        r2, [r0, #0x58] ; 
+000129D6: str        r2, [r0, #0x54] ; 
+000129D8: str        r2, [r0, #8] ; 
+000129DA: str        r2, [r0, #4] ; 
+000129DC: strb.w     r2, [r0, #0x5c] ; 
+000129E0: movs       r2, #1 ; 
+000129E2: str        r1, [r0, #0xc] ; 
+000129E4: str        r2, [r0, #0x10] ; 
+000129E6: bx         lr ; 
+000129E8: movs       r0, r0 ; 
+000129EA: cmn        r7, r7 ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x128d0 0x12938 
+000128D0: push.w     {r0, r1, r2, r3, r4, r5, r6, r7, r8, lr} ; 
+000128D4: mov        r4, r0 ; 
+000128D6: ldr        r2, [pc, #0xc0] ; literal[00012998]=0016204E
+000128D8: mov        r5, r1 ; 
+000128DA: ldrb.w     r8, [r0, #0x5c] ; 
+000128DE: add        r2, pc ; 
+000128E0: ldr        r2, [r2] ; 
+000128E2: ldr        r3, [r2] ; 
+000128E4: mov        r6, r2 ; 
+000128E6: str        r3, [sp, #0xc] ; 
+000128E8: cmp.w      r8, #0 ; 
+000128EC: beq        #0x1297a ; 
+000128EE: add        r7, sp, #4 ; 
+000128F0: adds       r0, #0x14 ; 
+000128F2: movs       r3, #0 ; 
+000128F4: str        r3, [sp, #4] ; 
+000128F6: mov        r1, r7 ; 
+000128F8: str        r3, [sp, #8] ; 
+000128FA: bl         #0x12818 ; _ZN2cv6StringaSERKS0_
+000128FE: mov        r0, r7 ; 
+00012900: add.w      r7, r4, #0x24 ; 
+00012904: blx        #0xd9a8 ; GOT 00174D2C _ZN2cv6String10deallocateEv
+00012908: cmp        r7, r5 ; 
+0001290A: beq        #0x1297a ; 
+0001290C: ldr        r3, [r5, #0x24] ; 
+0001290E: cbz        r3, #0x12928 ; 
+00012910: adds       r3, #0xc ; 
+00012912: dmb        sy ; 
+00012916: ldrex      r2, [r3] ; 
+0001291A: adds       r2, #1 ; 
+0001291C: strex      r1, r2, [r3] ; 
+00012920: cmp        r1, #0 ; 
+00012922: bne        #0x12916 ; 
+00012924: dmb        sy ; 
+00012928: mov        r0, r7 ; 
+0001292A: bl         #0xf458 ; _ZN2cv3Mat7releaseEv
+0001292E: ldr        r3, [r5] ; 
+00012930: str        r3, [r4, #0x24] ; 
+00012932: ldr        r3, [r4, #0x28] ; 
+00012934: cmp        r3, #2 ; 
+00012936: bgt        #0x1295a ; 

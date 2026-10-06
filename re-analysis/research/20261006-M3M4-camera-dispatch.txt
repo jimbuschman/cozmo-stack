@@ -1,0 +1,512 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f31c4 0x4f32d0 _ZN4Anki5Cozmo12EncodedImage16MiniToJpegHelperERKNSt6__ndk16vectorIhNS2_9allocatorIhEEEEttRS6_PKhj
+004F31C4: push.w     {r4, r5, r6, r7, r8, sb, sl, lr} ; 
+004F31C8: sub        sp, #8 ; 
+004F31CA: mov        sl, r0 ; 
+004F31CC: mov        r5, r1 ; 
+004F31CE: ldrd       r0, r1, [sl] ; 
+004F31D2: mov        r4, r3 ; 
+004F31D4: ldr.w      r8, [sp, #0x2c] ; 
+004F31D8: mov        r6, r2 ; 
+004F31DA: subs       r7, r1, r0 ; 
+004F31DC: mov        r0, r4 ; 
+004F31DE: add.w      r1, r8, r7, lsl #1 ; 
+004F31E2: blx        #0x4a5914 ; GOT 01040AE8 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE7reserveEj
+004F31E6: ldr        r2, [sp, #0x28] ; 
+004F31E8: mov        r0, r4 ; 
+004F31EA: ldr        r1, [r4] ; 
+004F31EC: add.w      r3, r2, r8 ; 
+004F31F0: blx        #0x4a5a58 ; GOT 01040B54 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE6insertIPKhEENS_9enable_ifIXaasr21__is_forward_iteratorIT_EE5valuesr16is_constructibleIhNS_15iterator_traitsIS8_E9referenceEEE5valueENS_11__wrap_iterIPhEEE4typeENSC_IS6_EES8_S8_
+004F31F4: ldr        r0, [r4] ; 
+004F31F6: lsrs       r1, r5, #8 ; 
+004F31F8: strb.w     r1, [r0, #0x5e] ; 
+004F31FC: lsrs       r1, r6, #8 ; 
+004F31FE: ldr        r0, [r4] ; 
+004F3200: strb.w     r5, [r0, #0x5f] ; 
+004F3204: ldr        r0, [r4] ; 
+004F3206: strb.w     r1, [r0, #0x60] ; 
+004F320A: ldr        r0, [r4] ; 
+004F320C: strb.w     r6, [r0, #0x61] ; 
+004F3210: ldr.w      r0, [sl] ; 
+004F3214: mov        r5, r7 ; 
+004F3216: subs       r7, r5, #1 ; 
+004F3218: ldrb       r1, [r0, r7] ; 
+004F321A: cmp        r1, #0xff ; 
+004F321C: beq        #0x4f3214 ; 
+004F321E: cmp        r5, #2 ; 
+004F3220: blo        #0x4f3286 ; 
+004F3222: add.w      r8, sp, #7 ; 
+004F3226: movs       r6, #2 ; 
+004F3228: mov.w      sb, #0 ; 
+004F322C: b          #0x4f3234 ; 
+004F322E: ldr.w      r0, [sl] ; 
+004F3232: adds       r6, #1 ; 
+004F3234: ldrd       r1, r2, [r4, #4] ; 
+004F3238: add        r0, r6 ; 
+004F323A: cmp        r1, r2 ; 
+004F323C: beq        #0x4f324c ; 
+004F323E: ldrb       r0, [r0, #-0x1] ; 
+004F3242: strb       r0, [r1] ; 
+004F3244: ldr        r0, [r4, #4] ; 
+004F3246: adds       r0, #1 ; 
+004F3248: str        r0, [r4, #4] ; 
+004F324A: b          #0x4f3254 ; 
+004F324C: subs       r1, r0, #1 ; 
+004F324E: mov        r0, r4 ; 
+004F3250: blx        #0x4a5920 ; GOT 01040AEC _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE21__push_back_slow_pathIRKhEEvOT_
+004F3254: ldr.w      r0, [sl] ; 
+004F3258: add        r0, r6 ; 
+004F325A: ldrb       r0, [r0, #-0x1] ; 
+004F325E: cmp        r0, #0xff ; 
+004F3260: bne        #0x4f3282 ; 
+004F3262: strb.w     sb, [sp, #7] ; 
+004F3266: ldrd       r0, r1, [r4, #4] ; 
+004F326A: cmp        r0, r1 ; 
+004F326C: bhs        #0x4f327a ; 
+004F326E: strb.w     sb, [r0] ; 
+004F3272: ldr        r0, [r4, #4] ; 
+004F3274: adds       r0, #1 ; 
+004F3276: str        r0, [r4, #4] ; 
+004F3278: b          #0x4f3282 ; 
+004F327A: mov        r0, r4 ; 
+004F327C: mov        r1, r8 ; 
+004F327E: blx        #0x4a592c ; GOT 01040AF0 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE21__push_back_slow_pathIhEEvOT_
+004F3282: cmp        r5, r6 ; 
+004F3284: bne        #0x4f322e ; 
+004F3286: movs       r0, #0xff ; 
+004F3288: strb.w     r0, [sp, #6] ; 
+004F328C: ldrd       r1, r2, [r4, #4] ; 
+004F3290: cmp        r1, r2 ; 
+004F3292: bhs        #0x4f329e ; 
+004F3294: strb       r0, [r1] ; 
+004F3296: ldr        r0, [r4, #4] ; 
+004F3298: adds       r0, #1 ; 
+004F329A: str        r0, [r4, #4] ; 
+004F329C: b          #0x4f32aa ; 
+004F329E: add.w      r1, sp, #6 ; 
+004F32A2: mov        r0, r4 ; 
+004F32A4: blx        #0x4a592c ; GOT 01040AF0 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE21__push_back_slow_pathIhEEvOT_
+004F32A8: ldr        r0, [r4, #4] ; 
+004F32AA: movs       r1, #0xd9 ; 
+004F32AC: strb.w     r1, [sp, #5] ; 
+004F32B0: ldr        r2, [r4, #8] ; 
+004F32B2: cmp        r0, r2 ; 
+004F32B4: bhs        #0x4f32c0 ; 
+004F32B6: strb       r1, [r0] ; 
+004F32B8: ldr        r0, [r4, #4] ; 
+004F32BA: adds       r0, #1 ; 
+004F32BC: str        r0, [r4, #4] ; 
+004F32BE: b          #0x4f32ca ; 
+004F32C0: add.w      r1, sp, #5 ; 
+004F32C4: mov        r0, r4 ; 
+004F32C6: blx        #0x4a592c ; GOT 01040AF0 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE21__push_back_slow_pathIhEEvOT_
+004F32CA: add        sp, #8 ; 
+004F32CC: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc} ; 
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f287c 0x4f29d0 _ZNK4Anki5Cozmo12EncodedImage17DecodeImageHelperINS_6Vision5ImageEEENS_6ResultERT_
+004F287C: push.w     {r4, r5, r6, r7, r8, sb, sl, lr} ; 
+004F2880: sub        sp, #0x138 ; 
+004F2882: mov        r5, r0 ; 
+004F2884: mov        r4, r1 ; 
+004F2886: ldrb.w     r0, [r5, #0x20] ; 
+004F288A: subs       r1, r0, #1 ; 
+004F288C: cmp        r1, #8 ; 
+004F288E: bhi        #0x4f2924 ; 
+004F2890: movw       sl, #0 ; 
+004F2894: movt       sl, #0x8101 ; 
+004F2898: tbh        [pc, r1, lsl #1] ; literal[004F289C]=01280192
+004F289C: lsls       r2, r2, #6 ; 
+004F289E: lsls       r0, r5, #4 ; 
+004F28A0: lsls       r4, r0, #1 ; 
+004F28A2: lsls       r4, r0, #1 ; 
+004F28A4: movs       r1, r1 ; 
+004F28A6: movs       r1, r1 ; 
+004F28A8: lsls       r0, r1, #7 ; 
+004F28AA: lsls       r6, r6, #1 ; 
+004F28AC: lsls       r1, r1, #3 ; 
+004F28AE: movs       r0, #0 ; 
+004F28B0: str        r0, [sp, #0xcc] ; 
+004F28B2: strd       r5, r0, [sp, #0xc4] ; 
+004F28B6: add.w      r0, sl, #0x20000 ; 
+004F28BA: str        r0, [sp, #0xc0] ; 
+004F28BC: add        r6, sp, #0x50 ; 
+004F28BE: adds       r3, r4, #4 ; 
+004F28C0: add        r1, sp, #0xc0 ; 
+004F28C2: movs       r2, #0 ; 
+004F28C4: mov        r0, r6 ; 
+004F28C6: blx        #0x4a5968 ; GOT 01040B04 _ZN2cv8imdecodeERKNS_11_InputArrayEiPNS_3MatE
+004F28CA: ldr        r0, [sp, #0x74] ; 
+004F28CC: cbz        r0, #0x4f28f0 ; 
+004F28CE: adds       r0, #0xc ; 
+004F28D0: dmb        ish ; 
+004F28D4: ldrex      r1, [r0] ; 
+004F28D8: subs       r2, r1, #1 ; 
+004F28DA: strex      r3, r2, [r0] ; 
+004F28DE: cmp        r3, #0 ; 
+004F28E0: bne        #0x4f28d4 ; 
+004F28E2: cmp        r1, #1 ; 
+004F28E4: dmb        ish ; 
+004F28E8: bne        #0x4f28f0 ; 
+004F28EA: add        r0, sp, #0x50 ; 
+004F28EC: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F28F0: movs       r0, #0 ; 
+004F28F2: str        r0, [sp, #0x6c] ; 
+004F28F4: strd       r0, r0, [sp, #0x64] ; 
+004F28F8: str        r0, [sp, #0x74] ; 
+004F28FA: ldr        r1, [sp, #0x54] ; 
+004F28FC: str        r0, [sp, #0x60] ; 
+004F28FE: cmp        r1, #1 ; 
+004F2900: blt        #0x4f2912 ; 
+004F2902: movs       r1, #0 ; 
+004F2904: ldr        r2, [sp, #0x78] ; 
+004F2906: str.w      r0, [r2, r1, lsl #2] ; 
+004F290A: adds       r1, #1 ; 
+004F290C: ldr        r2, [sp, #0x54] ; 
+004F290E: cmp        r1, r2 ; 
+004F2910: blt        #0x4f2904 ; 
+004F2912: ldr        r0, [sp, #0x7c] ; 
+004F2914: add.w      r1, r6, #0x30 ; 
+004F2918: cmp        r0, r1 ; 
+004F291A: beq.w      #0x4f2cda ; 
+004F291E: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2922: b          #0x4f2cda ; 
+004F2924: movs       r1, #0 ; 
+004F2926: strd       r1, r1, [sp, #0xc0] ; 
+004F292A: str        r1, [sp, #0xc8] ; 
+004F292C: blx        #0x4a5950 ; GOT 01040AFC _ZN4Anki5Cozmo12EnumToStringENS0_13ImageEncodingE
+004F2930: mov        r3, r0 ; 
+004F2932: ldr.w      r0, [pc, #0x5a8] ; literal[004F2EDC]=006F1FD9
+004F2936: ldr.w      r2, [pc, #0x5a8] ; literal[004F2EE0]=006F2007
+004F293A: add        r0, pc ; 
+004F293C: add        r2, pc ; 
+004F293E: add        r1, sp, #0xc0 ; 
+004F2940: blx        #0x4a4108 ; GOT 00FA4380 
+004F2944: ldr        r0, [sp, #0xc0] ; 
+004F2946: cbz        r0, #0x4f2966 ; 
+004F2948: ldr        r1, [sp, #0xc4] ; 
+004F294A: cmp        r1, r0 ; 
+004F294C: itttt      ne ; 
+004F294E: subne.w    r2, r1, #8 ; 
+004F2952: subne      r2, r2, r0 ; 
+004F2954: mvnne      r3, #7 ; 
+004F2958: bicne.w    r2, r3, r2 ; 
+004F295C: itt        ne ; 
+004F295E: addne      r1, r1, r2 ; 
+004F2960: strne      r1, [sp, #0xc4] ; 
+004F2962: blx        #0x4a40cc ; GOT 00FA436C 
+004F2966: ldr.w      r0, [pc, #0x57c] ; literal[004F2EE4]=00B4BE18
+004F296A: movs       r2, #1 ; 
+004F296C: ldr.w      r1, [pc, #0x578] ; literal[004F2EE8]=00B4BE1A
+004F2970: add        r0, pc ; 
+004F2972: add        r1, pc ; 
+004F2974: ldr        r0, [r0] ; 
+004F2976: ldr        r1, [r1] ; 
+004F2978: ldrb       r0, [r0] ; 
+004F297A: strb       r2, [r1] ; 
+004F297C: cmp        r0, #0 ; 
+004F297E: beq.w      #0x4f2d36 ; 
+004F2982: blx        #0x4a4114 ; GOT 00FA4384 
+004F2986: b          #0x4f2d34 ; 
+004F2988: movs       r7, #0 ; 
+004F298A: ldr.w      r0, [pc, #0x544] ; literal[004F2ED0]=007562A8
+004F298E: strd       r7, r7, [sp, #0x10] ; 
+004F2992: str        r7, [sp, #0x18] ; 
+004F2994: add        r0, pc ; 
+004F2996: ldrh       r1, [r5, #0x18] ; 
+004F2998: ldrh       r2, [r5, #0x14] ; 
+004F299A: add        r6, sp, #0x10 ; 
+004F299C: mov.w      r3, #0x144 ; 
+004F29A0: strd       r0, r3, [sp] ; 
+004F29A4: mov        r0, r5 ; 
+004F29A6: mov        r3, r6 ; 
+004F29A8: blx        #0x4a5998 ; GOT 01040B14 _ZN4Anki5Cozmo12EncodedImage16MiniToJpegHelperERKNSt6__ndk16vectorIhNS2_9allocatorIhEEEEttRS6_PKhj
+004F29AC: add.w      r0, sl, #0x20000 ; 
+004F29B0: str        r7, [sp, #0xcc] ; 
+004F29B2: strd       r6, r7, [sp, #0xc4] ; 
+004F29B6: str        r0, [sp, #0xc0] ; 
+004F29B8: add        r6, sp, #0x88 ; 
+004F29BA: adds       r3, r4, #4 ; 
+004F29BC: add        r1, sp, #0xc0 ; 
+004F29BE: movs       r2, #0 ; 
+004F29C0: mov        r0, r6 ; 
+004F29C2: blx        #0x4a5968 ; GOT 01040B04 _ZN2cv8imdecodeERKNS_11_InputArrayEiPNS_3MatE
+004F29C6: ldr        r0, [sp, #0xac] ; 
+004F29C8: cbz        r0, #0x4f29ec ; 
+004F29CA: adds       r0, #0xc ; 
+004F29CC: dmb        ish ; 
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f2a00 0x4f2cd8 
+004F2A00: ldr        r2, [sp, #0xb0] ; 
+004F2A02: str.w      r0, [r2, r1, lsl #2] ; 
+004F2A06: adds       r1, #1 ; 
+004F2A08: ldr        r2, [sp, #0x8c] ; 
+004F2A0A: cmp        r1, r2 ; 
+004F2A0C: blt        #0x4f2a00 ; 
+004F2A0E: ldr        r0, [sp, #0xb4] ; 
+004F2A10: add.w      r1, r6, #0x30 ; 
+004F2A14: cmp        r0, r1 ; 
+004F2A16: beq        #0x4f2a1c ; 
+004F2A18: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2A1C: ldr        r0, [sp, #0x10] ; 
+004F2A1E: cmp        r0, #0 ; 
+004F2A20: beq.w      #0x4f2cda ; 
+004F2A24: ldr        r1, [sp, #0x14] ; 
+004F2A26: cmp        r1, r0 ; 
+004F2A28: it         ne ; 
+004F2A2A: strne      r0, [sp, #0x14] ; 
+004F2A2C: b          #0x4f2ae6 ; 
+004F2A2E: movs       r7, #0 ; 
+004F2A30: ldr.w      r2, [pc, #0x498] ; literal[004F2ECC]=00756346
+004F2A34: strd       r7, r7, [sp, #0x100] ; 
+004F2A38: str        r7, [sp, #0x108] ; 
+004F2A3A: add        r2, pc ; 
+004F2A3C: ldrh       r1, [r5, #0x18] ; 
+004F2A3E: ldr        r0, [r5, #0x14] ; 
+004F2A40: add.w      r0, r0, r0, lsr #31 ; 
+004F2A44: mov.w      r3, #0x14e ; 
+004F2A48: add        r6, sp, #0x100 ; 
+004F2A4A: strd       r2, r3, [sp] ; 
+004F2A4E: ubfx       r2, r0, #1, #0x10 ; 
+004F2A52: mov        r0, r5 ; 
+004F2A54: mov        r3, r6 ; 
+004F2A56: blx        #0x4a5998 ; GOT 01040B14 _ZN4Anki5Cozmo12EncodedImage16MiniToJpegHelperERKNSt6__ndk16vectorIhNS2_9allocatorIhEEEEttRS6_PKhj
+004F2A5A: add.w      r0, sl, #0x20000 ; 
+004F2A5E: str        r7, [sp, #0xcc] ; 
+004F2A60: strd       r6, r7, [sp, #0xc4] ; 
+004F2A64: str        r0, [sp, #0xc0] ; 
+004F2A66: add        r6, sp, #0x10 ; 
+004F2A68: adds       r3, r4, #4 ; 
+004F2A6A: add        r1, sp, #0xc0 ; 
+004F2A6C: movs       r2, #0 ; 
+004F2A6E: mov        r0, r6 ; 
+004F2A70: blx        #0x4a5968 ; GOT 01040B04 _ZN2cv8imdecodeERKNS_11_InputArrayEiPNS_3MatE
+004F2A74: ldr        r0, [sp, #0x34] ; 
+004F2A76: cbz        r0, #0x4f2a9a ; 
+004F2A78: adds       r0, #0xc ; 
+004F2A7A: dmb        ish ; 
+004F2A7E: ldrex      r1, [r0] ; 
+004F2A82: subs       r2, r1, #1 ; 
+004F2A84: strex      r3, r2, [r0] ; 
+004F2A88: cmp        r3, #0 ; 
+004F2A8A: bne        #0x4f2a7e ; 
+004F2A8C: cmp        r1, #1 ; 
+004F2A8E: dmb        ish ; 
+004F2A92: bne        #0x4f2a9a ; 
+004F2A94: add        r0, sp, #0x10 ; 
+004F2A96: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F2A9A: movs       r0, #0 ; 
+004F2A9C: str        r0, [sp, #0x2c] ; 
+004F2A9E: strd       r0, r0, [sp, #0x24] ; 
+004F2AA2: str        r0, [sp, #0x34] ; 
+004F2AA4: ldr        r1, [sp, #0x14] ; 
+004F2AA6: str        r0, [sp, #0x20] ; 
+004F2AA8: cmp        r1, #1 ; 
+004F2AAA: blt        #0x4f2abc ; 
+004F2AAC: movs       r1, #0 ; 
+004F2AAE: ldr        r2, [sp, #0x38] ; 
+004F2AB0: str.w      r0, [r2, r1, lsl #2] ; 
+004F2AB4: adds       r1, #1 ; 
+004F2AB6: ldr        r2, [sp, #0x14] ; 
+004F2AB8: cmp        r1, r2 ; 
+004F2ABA: blt        #0x4f2aae ; 
+004F2ABC: ldr        r0, [sp, #0x3c] ; 
+004F2ABE: add.w      r1, r6, #0x30 ; 
+004F2AC2: cmp        r0, r1 ; 
+004F2AC4: beq        #0x4f2aca ; 
+004F2AC6: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2ACA: ldrd       r2, r1, [r5, #0x14] ; 
+004F2ACE: mov        r0, r4 ; 
+004F2AD0: movs       r3, #1 ; 
+004F2AD2: blx        #0x4a5a04 ; GOT 01040B38 _ZN4Anki6Vision9ImageBaseIhE6ResizeEiiNS0_12ResizeMethodE
+004F2AD6: ldr        r0, [sp, #0x100] ; 
+004F2AD8: cmp        r0, #0 ; 
+004F2ADA: beq.w      #0x4f2cda ; 
+004F2ADE: ldr        r1, [sp, #0x104] ; 
+004F2AE0: cmp        r1, r0 ; 
+004F2AE2: it         ne ; 
+004F2AE4: strne      r0, [sp, #0x104] ; 
+004F2AE6: blx        #0x4a40cc ; GOT 00FA436C 
+004F2AEA: b          #0x4f2cda ; 
+004F2AEC: ldr        r3, [r5] ; 
+004F2AEE: add.w      r8, sp, #0x10 ; 
+004F2AF2: ldrd       r2, r1, [r5, #0x14] ; 
+004F2AF6: mov        r0, r8 ; 
+004F2AF8: blx        #0x4a59b0 ; GOT 01040B1C _ZN4Anki6Vision8ImageRGBC1EiiPh
+004F2AFC: add        r0, sp, #0xc0 ; 
+004F2AFE: mov        r1, r8 ; 
+004F2B00: blx        #0x4a5a10 ; GOT 01040B3C _ZNK4Anki6Vision8ImageRGB6ToGrayEv
+004F2B04: add        r7, sp, #0xc0 ; 
+004F2B06: mov        r0, r4 ; 
+004F2B08: mov        r1, r7 ; 
+004F2B0A: blx        #0x4a5a1c ; GOT 01040B40 _ZN4Anki6Vision9ImageBaseIhEaSERKS2_
+004F2B0E: ldr        r1, [sp, #0xe8] ; 
+004F2B10: cbz        r1, #0x4f2b34 ; 
+004F2B12: adds       r0, r7, #4 ; 
+004F2B14: adds       r1, #0xc ; 
+004F2B16: dmb        ish ; 
+004F2B1A: ldrex      r2, [r1] ; 
+004F2B1E: subs       r3, r2, #1 ; 
+004F2B20: strex      r6, r3, [r1] ; 
+004F2B24: cmp        r6, #0 ; 
+004F2B26: bne        #0x4f2b1a ; 
+004F2B28: cmp        r2, #1 ; 
+004F2B2A: dmb        ish ; 
+004F2B2E: bne        #0x4f2b34 ; 
+004F2B30: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F2B34: ldr        r1, [sp, #0xc8] ; 
+004F2B36: movs       r0, #0 ; 
+004F2B38: strd       r0, r0, [sp, #0xdc] ; 
+004F2B3C: cmp        r1, #1 ; 
+004F2B3E: strd       r0, r0, [sp, #0xd4] ; 
+004F2B42: str        r0, [sp, #0xe8] ; 
+004F2B44: blt        #0x4f2b56 ; 
+004F2B46: movs       r1, #0 ; 
+004F2B48: ldr        r2, [sp, #0xec] ; 
+004F2B4A: str.w      r0, [r2, r1, lsl #2] ; 
+004F2B4E: adds       r1, #1 ; 
+004F2B50: ldr        r2, [sp, #0xc8] ; 
+004F2B52: cmp        r1, r2 ; 
+004F2B54: blt        #0x4f2b48 ; 
+004F2B56: ldr        r0, [sp, #0xf0] ; 
+004F2B58: add.w      r1, r7, #0x34 ; 
+004F2B5C: cmp        r0, r1 ; 
+004F2B5E: beq        #0x4f2b64 ; 
+004F2B60: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2B64: ldr        r1, [sp, #0x38] ; 
+004F2B66: cbz        r1, #0x4f2b8c ; 
+004F2B68: add.w      r0, r8, #4 ; 
+004F2B6C: adds       r1, #0xc ; 
+004F2B6E: dmb        ish ; 
+004F2B72: ldrex      r2, [r1] ; 
+004F2B76: subs       r3, r2, #1 ; 
+004F2B78: strex      r7, r3, [r1] ; 
+004F2B7C: cmp        r7, #0 ; 
+004F2B7E: bne        #0x4f2b72 ; 
+004F2B80: cmp        r2, #1 ; 
+004F2B82: dmb        ish ; 
+004F2B86: bne        #0x4f2b8c ; 
+004F2B88: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F2B8C: ldr        r1, [sp, #0x18] ; 
+004F2B8E: movs       r0, #0 ; 
+004F2B90: strd       r0, r0, [sp, #0x2c] ; 
+004F2B94: cmp        r1, #1 ; 
+004F2B96: strd       r0, r0, [sp, #0x24] ; 
+004F2B9A: str        r0, [sp, #0x38] ; 
+004F2B9C: blt        #0x4f2bae ; 
+004F2B9E: movs       r1, #0 ; 
+004F2BA0: ldr        r2, [sp, #0x3c] ; 
+004F2BA2: str.w      r0, [r2, r1, lsl #2] ; 
+004F2BA6: adds       r1, #1 ; 
+004F2BA8: ldr        r2, [sp, #0x18] ; 
+004F2BAA: cmp        r1, r2 ; 
+004F2BAC: blt        #0x4f2ba0 ; 
+004F2BAE: ldr        r0, [sp, #0x40] ; 
+004F2BB0: add.w      r1, r8, #0x34 ; 
+004F2BB4: cmp        r0, r1 ; 
+004F2BB6: beq.w      #0x4f2cda ; 
+004F2BBA: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2BBE: b          #0x4f2cda ; 
+004F2BC0: ldr        r3, [r5] ; 
+004F2BC2: add        r6, sp, #0xc0 ; 
+004F2BC4: ldrd       r2, r1, [r5, #0x14] ; 
+004F2BC8: mov        r0, r6 ; 
+004F2BCA: blx        #0x4a59c8 ; GOT 01040B24 _ZN4Anki6Vision5ImageC1EiiPh
+004F2BCE: mov        r1, r4 ; 
+004F2BD0: blx        #0x4a5a28 ; GOT 01040B44 _ZNK4Anki6Vision9ImageBaseIhE6CopyToERS2_
+004F2BD4: ldr        r1, [sp, #0xe8] ; 
+004F2BD6: cbz        r1, #0x4f2bfa ; 
+004F2BD8: adds       r0, r6, #4 ; 
+004F2BDA: adds       r1, #0xc ; 
+004F2BDC: dmb        ish ; 
+004F2BE0: ldrex      r2, [r1] ; 
+004F2BE4: subs       r3, r2, #1 ; 
+004F2BE6: strex      r7, r3, [r1] ; 
+004F2BEA: cmp        r7, #0 ; 
+004F2BEC: bne        #0x4f2be0 ; 
+004F2BEE: cmp        r2, #1 ; 
+004F2BF0: dmb        ish ; 
+004F2BF4: bne        #0x4f2bfa ; 
+004F2BF6: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F2BFA: ldr        r1, [sp, #0xc8] ; 
+004F2BFC: movs       r0, #0 ; 
+004F2BFE: strd       r0, r0, [sp, #0xdc] ; 
+004F2C02: cmp        r1, #1 ; 
+004F2C04: strd       r0, r0, [sp, #0xd4] ; 
+004F2C08: str        r0, [sp, #0xe8] ; 
+004F2C0A: blt        #0x4f2c1c ; 
+004F2C0C: movs       r1, #0 ; 
+004F2C0E: ldr        r2, [sp, #0xec] ; 
+004F2C10: str.w      r0, [r2, r1, lsl #2] ; 
+004F2C14: adds       r1, #1 ; 
+004F2C16: ldr        r2, [sp, #0xc8] ; 
+004F2C18: cmp        r1, r2 ; 
+004F2C1A: blt        #0x4f2c0e ; 
+004F2C1C: ldr        r0, [sp, #0xf0] ; 
+004F2C1E: add.w      r1, r6, #0x34 ; 
+004F2C22: cmp        r0, r1 ; 
+004F2C24: beq        #0x4f2cda ; 
+004F2C26: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2C2A: b          #0x4f2cda ; 
+004F2C2C: movs       r0, #0 ; 
+004F2C2E: str        r0, [sp, #0xcc] ; 
+004F2C30: strd       r5, r0, [sp, #0xc4] ; 
+004F2C34: add.w      r0, sl, #0x20000 ; 
+004F2C38: str        r0, [sp, #0xc0] ; 
+004F2C3A: adds       r6, r4, #4 ; 
+004F2C3C: add.w      sb, sp, #0x100 ; 
+004F2C40: add.w      r8, sp, #0xc0 ; 
+004F2C44: movs       r2, #0 ; 
+004F2C46: mov        r0, sb ; 
+004F2C48: mov        r3, r6 ; 
+004F2C4A: mov        r1, r8 ; 
+004F2C4C: blx        #0x4a5968 ; GOT 01040B04 _ZN2cv8imdecodeERKNS_11_InputArrayEiPNS_3MatE
+004F2C50: ldr        r0, [sp, #0x124] ; 
+004F2C52: cbz        r0, #0x4f2c76 ; 
+004F2C54: adds       r0, #0xc ; 
+004F2C56: dmb        ish ; 
+004F2C5A: ldrex      r1, [r0] ; 
+004F2C5E: subs       r2, r1, #1 ; 
+004F2C60: strex      r3, r2, [r0] ; 
+004F2C64: cmp        r3, #0 ; 
+004F2C66: bne        #0x4f2c5a ; 
+004F2C68: cmp        r1, #1 ; 
+004F2C6A: dmb        ish ; 
+004F2C6E: bne        #0x4f2c76 ; 
+004F2C70: add        r0, sp, #0x100 ; 
+004F2C72: blx        #0x4a5974 ; GOT 01040B08 _ZN2cv3Mat10deallocateEv
+004F2C76: movs       r0, #0 ; 
+004F2C78: str        r0, [sp, #0x11c] ; 
+004F2C7A: strd       r0, r0, [sp, #0x114] ; 
+004F2C7E: str        r0, [sp, #0x124] ; 
+004F2C80: ldr        r1, [sp, #0x104] ; 
+004F2C82: str        r0, [sp, #0x110] ; 
+004F2C84: cmp        r1, #1 ; 
+004F2C86: blt        #0x4f2c98 ; 
+004F2C88: movs       r1, #0 ; 
+004F2C8A: ldr        r2, [sp, #0x128] ; 
+004F2C8C: str.w      r0, [r2, r1, lsl #2] ; 
+004F2C90: adds       r1, #1 ; 
+004F2C92: ldr        r2, [sp, #0x104] ; 
+004F2C94: cmp        r1, r2 ; 
+004F2C96: blt        #0x4f2c8a ; 
+004F2C98: ldr        r0, [sp, #0x12c] ; 
+004F2C9A: add.w      r1, sb, #0x30 ; 
+004F2C9E: cmp        r0, r1 ; 
+004F2CA0: beq        #0x4f2ca6 ; 
+004F2CA2: blx        #0x4a5980 ; GOT 01040B0C _ZN2cv8fastFreeEPv
+004F2CA6: movs       r7, #0 ; 
+004F2CA8: add.w      r0, sl, #0x1000000 ; 
+004F2CAC: strd       r7, r7, [sp, #0x18] ; 
+004F2CB0: movs       r1, #0x20 ; 
+004F2CB2: strd       sl, r6, [sp, #0x10] ; 
+004F2CB6: strd       r7, r7, [sp, #0x108] ; 
+004F2CBA: strd       r0, r6, [sp, #0x100] ; 
+004F2CBE: mov        r0, r8 ; 
+004F2CC0: blx        #0x4a48ac ; GOT 01040570 __aeabi_memclr8
+004F2CC4: movs       r0, #0xa0 ; 
+004F2CC6: add        r1, sp, #0x100 ; 
+004F2CC8: strd       r0, r0, [sp] ; 
+004F2CCC: add        r0, sp, #0x10 ; 
+004F2CCE: movs       r2, #0 ; 
+004F2CD0: movs       r3, #0 ; 
+004F2CD2: strd       r7, r8, [sp, #8] ; 

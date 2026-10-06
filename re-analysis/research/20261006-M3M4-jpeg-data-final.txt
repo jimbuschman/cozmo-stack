@@ -1,0 +1,53 @@
+LIMIT n=2 firstVA=000CEFF0; rows vertical size, columns horizontal size; entries before +1
+0 1
+2 3
+LIMIT n=3 firstVA=000CF000; rows vertical size, columns horizontal size; entries before +1
+0 1 5
+2 4 6
+3 7 8
+LIMIT n=4 firstVA=000CF028; rows vertical size, columns horizontal size; entries before +1
+0 1 5 6
+2 4 7 12
+3 8 11 13
+9 10 14 15
+LIMIT n=5 firstVA=000CF068; rows vertical size, columns horizontal size; entries before +1
+0 1 5 6 14
+2 4 7 13 15
+3 8 12 16 21
+9 11 17 20 22
+10 18 19 23 24
+LIMIT n=6 firstVA=000CF0D0; rows vertical size, columns horizontal size; entries before +1
+0 1 5 6 14 15
+2 4 7 13 16 25
+3 8 12 17 24 26
+9 11 18 23 27 32
+10 19 22 28 31 33
+20 21 29 30 34 35
+LIMIT n=7 firstVA=000CF160; rows vertical size, columns horizontal size; entries before +1
+0 1 5 6 14 15 27
+2 4 7 13 16 26 28
+3 8 12 17 25 29 38
+9 11 18 24 30 37 39
+10 19 23 31 36 40 45
+20 22 32 35 41 44 46
+21 33 34 42 43 47 48
+LIMIT n=8 firstVA=000CF228; rows vertical size, columns horizontal size; entries before +1
+0 1 5 6 14 15 27 28
+2 4 7 13 16 26 29 42
+3 8 12 17 25 30 41 43
+9 11 18 24 31 40 44 53
+10 19 23 32 39 45 52 54
+20 22 33 38 46 51 55 60
+21 34 37 47 50 56 59 61
+35 36 48 49 57 58 62 63
+ARM malloc veneer
+000B6F0C: ldr ip, [pc]
+000B6F10: add pc, ip, pc
+ARM veneer target 0000DCD8
+0000DCD8: add ip, pc, #0x100000
+0000DCDC: add ip, ip, #0x67000
+0000DCE0: ldr pc, [ip, #0x15c]!
+STRING 000C215B b'!buf.empty() && buf.isContinuous()'
+STRING 000C1FA8 b'void* cv::imdecode_(const cv::Mat&, int, int, cv::Mat*)'
+STRING 000C217E b'/Users/build/buildAgent/work/2b4c7202ccc51830/opencv-3.1.0/modules/imgcodecs/src/loadsave.cpp'
+RGB-gray coefficients E2AB0 data: 23130000912500004c070000

@@ -1,0 +1,403 @@
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x1ffd8 0x200c0 
+0001FFD8: cmp        r1, #0x5a ; 
+0001FFDA: mov.w      r3, #0 ; 
+0001FFDE: push       {r4, r5, r6, lr} ; 
+0001FFE0: mov        r4, r0 ; 
+0001FFE2: mov        r5, r2 ; 
+0001FFE4: str        r3, [r0, #4] ; 
+0001FFE6: beq        #0x1fffc ; 
+0001FFE8: ldr        r3, [r0] ; 
+0001FFEA: movs       r2, #0xd ; 
+0001FFEC: str        r2, [r3, #0x14] ; 
+0001FFEE: movs       r2, #0x5a ; 
+0001FFF0: str        r2, [r3, #0x18] ; 
+0001FFF2: ldr        r3, [r0] ; 
+0001FFF4: str        r1, [r3, #0x1c] ; 
+0001FFF6: ldr        r3, [r0] ; 
+0001FFF8: ldr        r3, [r3] ; 
+0001FFFA: blx        r3 ; 
+0001FFFC: cmp.w      r5, #0x1e8 ; 
+00020000: beq        #0x2001a ; 
+00020002: ldr        r3, [r4] ; 
+00020004: movs       r2, #0x16 ; 
+00020006: mov        r0, r4 ; 
+00020008: str        r2, [r3, #0x14] ; 
+0002000A: mov.w      r2, #0x1e8 ; 
+0002000E: str        r2, [r3, #0x18] ; 
+00020010: ldr        r3, [r4] ; 
+00020012: str        r5, [r3, #0x1c] ; 
+00020014: ldr        r3, [r4] ; 
+00020016: ldr        r3, [r3] ; 
+00020018: blx        r3 ; 
+0002001A: ldr        r6, [r4] ; 
+0002001C: movs       r1, #0 ; 
+0002001E: ldr        r5, [r4, #0xc] ; 
+00020020: mov.w      r2, #0x1e8 ; 
+00020024: mov        r0, r4 ; 
+00020026: blx        #0xda20 ; GOT 00174D54 memset
+0002002A: movs       r3, #1 ; 
+0002002C: mov        r0, r4 ; 
+0002002E: str        r3, [r4, #0x10] ; 
+00020030: str        r6, [r4] ; 
+00020032: str        r5, [r4, #0xc] ; 
+00020034: bl         #0x2430c ; 
+00020038: movs       r3, #0 ; 
+0002003A: mov        r0, r4 ; 
+0002003C: str        r3, [r4, #8] ; 
+0002003E: str        r3, [r4, #0x18] ; 
+00020040: str.w      r3, [r4, #0xa4] ; 
+00020044: str.w      r3, [r4, #0xa8] ; 
+00020048: str.w      r3, [r4, #0xac] ; 
+0002004C: str.w      r3, [r4, #0xb0] ; 
+00020050: str.w      r3, [r4, #0xb4] ; 
+00020054: str.w      r3, [r4, #0xc4] ; 
+00020058: str.w      r3, [r4, #0xb8] ; 
+0002005C: str.w      r3, [r4, #0xc8] ; 
+00020060: str.w      r3, [r4, #0xbc] ; 
+00020064: str.w      r3, [r4, #0xcc] ; 
+00020068: str.w      r3, [r4, #0xc0] ; 
+0002006C: str.w      r3, [r4, #0xd0] ; 
+00020070: str.w      r3, [r4, #0x138] ; 
+00020074: bl         #0x22874 ; 
+00020078: mov        r0, r4 ; 
+0002007A: bl         #0x2102c ; 
+0002007E: movs       r3, #0xc8 ; 
+00020080: str        r3, [r4, #0x14] ; 
+00020082: pop        {r4, r5, r6, pc} ; 
+00020084: b.w        #0x1ed60 ; 
+00020088: b.w        #0x1ed3c ; 
+0002008C: ldr        r2, [r0, #0x14] ; 
+0002008E: push       {r4, r5, r6, lr} ; 
+00020090: sub.w      r3, r2, #0xc8 ; 
+00020094: mov        r4, r0 ; 
+00020096: cmp        r3, #0xa ; 
+00020098: bhi.w      #0x201e2 ; 
+0002009C: tbb        [pc, r3] ; literal[000200A0]=9BAA1006
+000200A0: asrs       r6, r0, #0x20 ; 
+000200A2: ldr        r3, [sp, #0x2a8] ; 
+000200A4: ldr        r3, [sp, #0x26c] ; 
+000200A6: ldr        r3, [sp, #0x26c] ; 
+000200A8: adr        r1, #0x26c ; 
+000200AA: lsls       r3, r3, #2 ; 
+000200AC: ldr.w      r3, [r0, #0x1cc] ; 
+000200B0: ldr        r3, [r3, #4] ; 
+000200B2: blx        r3 ; 
+000200B4: ldr        r3, [r4, #0x18] ; 
+000200B6: mov        r0, r4 ; 
+000200B8: ldr        r3, [r3, #8] ; 
+000200BA: blx        r3 ; 
+000200BC: movs       r3, #0xc9 ; 
+000200BE: str        r3, [r4, #0x14] ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x15708 0x15844 
+00015708: push       {r4, r5, r6, r7, lr} ; 
+0001570A: sub        sp, #0x6c ; 
+0001570C: ldr        r5, [pc, #0x120] ; literal[00015830]=0015F21C
+0001570E: ldr        r4, [r0, #0x18] ; 
+00015710: add        r5, pc ; 
+00015712: ldr        r5, [r5] ; 
+00015714: ldr        r7, [r0, #0x14] ; 
+00015716: cmn.w      r4, #0x11 ; 
+0001571A: ldr        r3, [r5] ; 
+0001571C: str        r3, [sp, #0x64] ; 
+0001571E: mov.w      r3, #0 ; 
+00015722: str        r3, [sp, #0x28] ; 
+00015724: str        r3, [sp, #0x2c] ; 
+00015726: str        r3, [sp, #0x30] ; 
+00015728: bls        #0x1575e ; 
+0001572A: movs       r0, #8 ; 
+0001572C: blx        #0xd9d8 ; GOT 00174D3C __cxa_allocate_exception
+00015730: ldr        r1, [pc, #0x100] ; literal[00015834]=000ACF44
+00015732: add        r1, pc ; 
+00015734: mov        r4, r0 ; 
+00015736: blx        #0xd9e4 ; GOT 00174D40 _ZNSt11logic_errorC2EPKc
+0001573A: ldr        r3, [pc, #0xfc] ; literal[00015838]=0015F1F6
+0001573C: mov        r0, r4 ; 
+0001573E: ldr        r1, [pc, #0xfc] ; literal[0001583C]=0015F1F4
+00015740: ldr        r2, [pc, #0xfc] ; literal[00015840]=0015F1F2
+00015742: add        r3, pc ; 
+00015744: ldr        r3, [r3] ; 
+00015746: adds       r3, #8 ; 
+00015748: add        r1, pc ; 
+0001574A: ldr        r1, [r1] ; 
+0001574C: str        r3, [r4] ; 
+0001574E: add        r2, pc ; 
+00015750: ldr        r2, [r2] ; 
+00015752: blx        #0xd9f0 ; GOT 00174D44 __cxa_throw
+00015756: mov        r0, r4 ; 
+00015758: blx        #0xd9fc ; GOT 00174D48 __cxa_free_exception
+0001575C: b          #0x15826 ; 
+0001575E: cmp        r4, #0xa ; 
+00015760: bhi        #0x15770 ; 
+00015762: lsls       r3, r4, #1 ; 
+00015764: strb.w     r3, [sp, #0x28] ; 
+00015768: add.w      r3, sp, #0x29 ; 
+0001576C: cbz        r4, #0x15796 ; 
+0001576E: b          #0x1578a ; 
+00015770: add.w      r6, r4, #0x10 ; 
+00015774: bic        r6, r6, #0xf ; 
+00015778: mov        r0, r6 ; 
+0001577A: orr        r6, r6, #1 ; 
+0001577E: blx        #0xdaa4 ; GOT 00174D80 _Znwj
+00015782: str        r6, [sp, #0x28] ; 
+00015784: str        r4, [sp, #0x2c] ; 
+00015786: mov        r3, r0 ; 
+00015788: str        r0, [sp, #0x30] ; 
+0001578A: mov        r0, r3 ; 
+0001578C: mov        r1, r7 ; 
+0001578E: mov        r2, r4 ; 
+00015790: blx        #0xda44 ; GOT 00174D60 memcpy
+00015794: mov        r3, r0 ; 
+00015796: add        r7, sp, #0x28 ; 
+00015798: movs       r2, #0 ; 
+0001579A: mov        r0, sp ; 
+0001579C: strb       r2, [r3, r4] ; 
+0001579E: mov        r1, r7 ; 
+000157A0: mov        r4, sp ; 
+000157A2: ldrb.w     r6, [sp, #0x28] ; 
+000157A6: bl         #0x1c0f6 ; 
+000157AA: lsls       r1, r6, #0x1f ; 
+000157AC: bpl        #0x157b4 ; 
+000157AE: ldr        r0, [sp, #0x30] ; 
+000157B0: blx        #0xd984 ; GOT 00174D20 _ZdlPv
+000157B4: mov        r0, r4 ; 
+000157B6: bl         #0x1d2e8 ; 
+000157BA: cbz        r0, #0x157fe ; 
+000157BC: mov        r0, r7 ; 
+000157BE: mov        r1, r4 ; 
+000157C0: mov.w      r2, #0x112 ; 
+000157C4: bl         #0x1c680 ; 
+000157C8: ldrh.w     r2, [sp, #0x58] ; 
+000157CC: movw       r3, #0xffff ; 
+000157D0: cmp        r2, r3 ; 
+000157D2: ldrb.w     r3, [sp, #0x34] ; 
+000157D6: ite        ne ; 
+000157D8: ldrhne.w   r6, [sp, #0x5a] ; 
+000157DC: moveq      r6, #1 ; 
+000157DE: lsls       r2, r3, #0x1f ; 
+000157E0: bpl        #0x157e8 ; 
+000157E2: ldr        r0, [sp, #0x3c] ; 
+000157E4: blx        #0xd984 ; GOT 00174D20 _ZdlPv
+000157E8: ldr        r0, [sp, #0x28] ; 
+000157EA: cbz        r0, #0x15800 ; 
+000157EC: ldr        r3, [sp, #0x2c] ; 
+000157EE: subs       r2, r3, r0 ; 
+000157F0: lsrs       r2, r2, #3 ; 
+000157F2: sub.w      r3, r3, r2, lsl #3 ; 
+000157F6: str        r3, [sp, #0x2c] ; 
+000157F8: blx        #0xd984 ; GOT 00174D20 _ZdlPv
+000157FC: b          #0x15800 ; 
+000157FE: movs       r6, #1 ; 
+00015800: mov        r0, r4 ; 
+00015802: bl         #0x1c15a ; 
+00015806: ldr        r2, [sp, #0x64] ; 
+00015808: ldr        r3, [r5] ; 
+0001580A: mov        r0, r6 ; 
+0001580C: cmp        r2, r3 ; 
+0001580E: beq        #0x1582a ; 
+00015810: blx        #0xd9c0 ; GOT 00174D34 __stack_chk_fail
+00015814: lsls       r3, r6, #0x1f ; 
+00015816: bpl        #0x15826 ; 
+00015818: ldr        r0, [sp, #0x30] ; 
+0001581A: blx        #0xd984 ; GOT 00174D20 _ZdlPv
+0001581E: b          #0x15826 ; 
+00015820: mov        r0, r4 ; 
+00015822: bl         #0x1c15a ; 
+00015826: blx        #0xd9b4 ; GOT 00174D30 __cxa_end_cleanup
+0001582A: add        sp, #0x6c ; 
+0001582C: pop        {r4, r5, r6, r7, pc} ; 
+0001582E: nop         ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x159f0 0x15b50 
+000159F0: movs       r3, #0 ; 
+000159F2: ldr        r2, [pc, #0x160] ; literal[00015B54]=01010000
+000159F4: str        r3, [sp, #0xc] ; 
+000159F6: add        r0, sp, #4 ; 
+000159F8: str        r3, [sp, #0x10] ; 
+000159FA: str        r3, [sp, #0x1c] ; 
+000159FC: str        r3, [sp, #0x20] ; 
+000159FE: ldr        r3, [pc, #0x158] ; literal[00015B58]=02010000
+00015A00: str        r1, [sp, #8] ; 
+00015A02: str        r1, [sp, #0x18] ; 
+00015A04: add        r1, sp, #0x14 ; 
+00015A06: str        r2, [sp, #4] ; 
+00015A08: str        r3, [sp, #0x14] ; 
+00015A0A: b          #0x15aaa ; 
+00015A0C: movs       r3, #0 ; 
+00015A0E: ldr        r2, [pc, #0x144] ; literal[00015B54]=01010000
+00015A10: str        r3, [sp, #0xc] ; 
+00015A12: add        r0, sp, #4 ; 
+00015A14: str        r3, [sp, #0x10] ; 
+00015A16: str        r3, [sp, #0x1c] ; 
+00015A18: str        r3, [sp, #0x20] ; 
+00015A1A: ldr        r3, [pc, #0x13c] ; literal[00015B58]=02010000
+00015A1C: str        r1, [sp, #8] ; 
+00015A1E: str        r1, [sp, #0x18] ; 
+00015A20: add        r1, sp, #0x14 ; 
+00015A22: str        r2, [sp, #4] ; 
+00015A24: str        r3, [sp, #0x14] ; 
+00015A26: b          #0x15af2 ; 
+00015A28: ldr        r3, [pc, #0x128] ; literal[00015B54]=01010000
+00015A2A: movs       r2, #0 ; 
+00015A2C: str        r1, [sp, #8] ; 
+00015A2E: add        r0, sp, #4 ; 
+00015A30: str        r1, [sp, #0x18] ; 
+00015A32: add        r1, sp, #0x14 ; 
+00015A34: str        r3, [sp, #4] ; 
+00015A36: add.w      r3, r3, #0x1000000 ; 
+00015A3A: str        r2, [sp, #0xc] ; 
+00015A3C: str        r2, [sp, #0x10] ; 
+00015A3E: str        r2, [sp, #0x1c] ; 
+00015A40: str        r2, [sp, #0x20] ; 
+00015A42: str        r3, [sp, #0x14] ; 
+00015A44: b          #0x15b3e ; 
+00015A46: movs       r3, #0 ; 
+00015A48: ldr        r2, [pc, #0x108] ; literal[00015B54]=01010000
+00015A4A: str        r3, [sp, #0xc] ; 
+00015A4C: add        r0, sp, #4 ; 
+00015A4E: str        r3, [sp, #0x10] ; 
+00015A50: str        r3, [sp, #0x1c] ; 
+00015A52: str        r3, [sp, #0x20] ; 
+00015A54: ldr        r3, [pc, #0x100] ; literal[00015B58]=02010000
+00015A56: str        r1, [sp, #8] ; 
+00015A58: str        r1, [sp, #0x18] ; 
+00015A5A: add        r1, sp, #0x14 ; 
+00015A5C: str        r2, [sp, #4] ; 
+00015A5E: str        r3, [sp, #0x14] ; 
+00015A60: blx        #0xdc30 ; GOT 00174E04 _ZN2cv9transposeERKNS_11_InputArrayERKNS_12_OutputArrayE
+00015A64: b          #0x15b42 ; 
+00015A66: ldr.w      sl, [pc, #0xec] ; literal[00015B54]=01010000
+00015A6A: add.w      r8, sp, #4 ; 
+00015A6E: ldr.w      sb, [pc, #0xe8] ; literal[00015B58]=02010000
+00015A72: add        r7, sp, #0x14 ; 
+00015A74: str        r1, [sp, #8] ; 
+00015A76: mov        r0, r8 ; 
+00015A78: str        r1, [sp, #0x18] ; 
+00015A7A: mov        r1, r7 ; 
+00015A7C: movs       r5, #0 ; 
+00015A7E: str.w      sl, [sp, #4] ; 
+00015A82: str        r5, [sp, #0xc] ; 
+00015A84: str        r5, [sp, #0x10] ; 
+00015A86: str        r5, [sp, #0x1c] ; 
+00015A88: str        r5, [sp, #0x20] ; 
+00015A8A: str.w      sb, [sp, #0x14] ; 
+00015A8E: blx        #0xdc30 ; GOT 00174E04 _ZN2cv9transposeERKNS_11_InputArrayERKNS_12_OutputArrayE
+00015A92: mov        r0, r8 ; 
+00015A94: mov        r1, r7 ; 
+00015A96: str        r5, [sp, #0xc] ; 
+00015A98: str        r5, [sp, #0x10] ; 
+00015A9A: str.w      sl, [sp, #4] ; 
+00015A9E: str        r4, [sp, #8] ; 
+00015AA0: str        r5, [sp, #0x1c] ; 
+00015AA2: str        r5, [sp, #0x20] ; 
+00015AA4: str.w      sb, [sp, #0x14] ; 
+00015AA8: str        r4, [sp, #0x18] ; 
+00015AAA: movs       r2, #1 ; 
+00015AAC: b          #0x15b3e ; 
+00015AAE: ldr.w      sl, [pc, #0xa4] ; literal[00015B54]=01010000
+00015AB2: add.w      r8, sp, #4 ; 
+00015AB6: ldr.w      sb, [pc, #0xa0] ; literal[00015B58]=02010000
+00015ABA: add        r7, sp, #0x14 ; 
+00015ABC: str        r1, [sp, #8] ; 
+00015ABE: mov        r0, r8 ; 
+00015AC0: str        r1, [sp, #0x18] ; 
+00015AC2: mov        r1, r7 ; 
+00015AC4: movs       r5, #0 ; 
+00015AC6: str.w      sl, [sp, #4] ; 
+00015ACA: str        r5, [sp, #0xc] ; 
+00015ACC: str        r5, [sp, #0x10] ; 
+00015ACE: str        r5, [sp, #0x1c] ; 
+00015AD0: str        r5, [sp, #0x20] ; 
+00015AD2: str.w      sb, [sp, #0x14] ; 
+00015AD6: blx        #0xdc30 ; GOT 00174E04 _ZN2cv9transposeERKNS_11_InputArrayERKNS_12_OutputArrayE
+00015ADA: mov        r0, r8 ; 
+00015ADC: mov        r1, r7 ; 
+00015ADE: str        r5, [sp, #0xc] ; 
+00015AE0: str        r5, [sp, #0x10] ; 
+00015AE2: str.w      sl, [sp, #4] ; 
+00015AE6: str        r4, [sp, #8] ; 
+00015AE8: str        r5, [sp, #0x1c] ; 
+00015AEA: str        r5, [sp, #0x20] ; 
+00015AEC: str.w      sb, [sp, #0x14] ; 
+00015AF0: str        r4, [sp, #0x18] ; 
+00015AF2: mov.w      r2, #-1 ; 
+00015AF6: b          #0x15b3e ; 
+00015AF8: ldr.w      sl, [pc, #0x58] ; literal[00015B54]=01010000
+00015AFC: add.w      r8, sp, #4 ; 
+00015B00: ldr.w      sb, [pc, #0x54] ; literal[00015B58]=02010000
+00015B04: add        r7, sp, #0x14 ; 
+00015B06: movs       r5, #0 ; 
+00015B08: str        r1, [sp, #8] ; 
+00015B0A: str        r1, [sp, #0x18] ; 
+00015B0C: mov        r0, r8 ; 
+00015B0E: mov        r1, r7 ; 
+00015B10: str        r5, [sp, #0xc] ; 
+00015B12: str        r5, [sp, #0x10] ; 
+00015B14: str.w      sl, [sp, #4] ; 
+00015B18: str        r5, [sp, #0x1c] ; 
+00015B1A: str        r5, [sp, #0x20] ; 
+00015B1C: str.w      sb, [sp, #0x14] ; 
+00015B20: blx        #0xdc30 ; GOT 00174E04 _ZN2cv9transposeERKNS_11_InputArrayERKNS_12_OutputArrayE
+00015B24: mov        r0, r8 ; 
+00015B26: mov        r1, r7 ; 
+00015B28: mov        r2, r5 ; 
+00015B2A: str        r5, [sp, #0xc] ; 
+00015B2C: str        r5, [sp, #0x10] ; 
+00015B2E: str.w      sl, [sp, #4] ; 
+00015B32: str        r4, [sp, #8] ; 
+00015B34: str        r5, [sp, #0x1c] ; 
+00015B36: str        r5, [sp, #0x20] ; 
+00015B38: str.w      sb, [sp, #0x14] ; 
+00015B3C: str        r4, [sp, #0x18] ; 
+00015B3E: blx        #0xdb40 ; GOT 00174DB4 _ZN2cv4flipERKNS_11_InputArrayERKNS_12_OutputArrayEi
+00015B42: ldr        r2, [sp, #0x24] ; 
+00015B44: ldr        r3, [r6] ; 
+00015B46: cmp        r2, r3 ; 
+00015B48: beq        #0x15b4e ; 
+00015B4A: blx        #0xd9c0 ; GOT 00174D34 __stack_chk_fail
+00015B4E: add        sp, #0x28 ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgcodecs.so RANGE 0x22c96 0x22cf8 
+00022C96: cbz        r0, #0x22c9e ; 
+00022C98: ldr.w      r3, [r4, #0x140] ; 
+00022C9C: b          #0x22ca0 ; 
+00022C9E: movs       r3, #1 ; 
+00022CA0: str.w      r3, [r4, #0x80] ; 
+00022CA4: add        sp, #0xc ; 
+00022CA6: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+00022CAA: ldr        r2, [r0, #0x14] ; 
+00022CAC: push       {r4, r5, r6, lr} ; 
+00022CAE: cmp        r2, #0xcf ; 
+00022CB0: mov        r4, r0 ; 
+00022CB2: ldr.w      r5, [r0, #0x1bc] ; 
+00022CB6: beq        #0x22cc6 ; 
+00022CB8: ldr        r3, [r0] ; 
+00022CBA: movs       r1, #0x15 ; 
+00022CBC: str        r2, [r3, #0x18] ; 
+00022CBE: str        r1, [r3, #0x14] ; 
+00022CC0: ldr        r3, [r0] ; 
+00022CC2: ldr        r3, [r3] ; 
+00022CC4: blx        r3 ; 
+00022CC6: ldr        r3, [r4, #0x54] ; 
+00022CC8: cbz        r3, #0x22ce6 ; 
+00022CCA: ldr        r3, [r4, #0x68] ; 
+00022CCC: cbz        r3, #0x22ce6 ; 
+00022CCE: ldr.w      r3, [r4, #0x88] ; 
+00022CD2: cbz        r3, #0x22ce6 ; 
+00022CD4: ldr        r3, [r5, #0x18] ; 
+00022CD6: mov        r0, r4 ; 
+00022CD8: str.w      r3, [r4, #0x1e4] ; 
+00022CDC: ldr        r3, [r3, #0xc] ; 
+00022CDE: blx        r3 ; 
+00022CE0: movs       r3, #0 ; 
+00022CE2: str        r3, [r5, #8] ; 
+00022CE4: pop        {r4, r5, r6, pc} ; 
+00022CE6: ldr        r3, [r4] ; 
+00022CE8: movs       r2, #0x2f ; 
+00022CEA: mov        r0, r4 ; 
+00022CEC: pop.w      {r4, r5, r6, lr} ; 
+00022CF0: str        r2, [r3, #0x14] ; 
+00022CF2: ldr        r3, [r3] ; 
+00022CF4: bx         r3 ; 
+00022CF6: movs       r0, r0 ; 

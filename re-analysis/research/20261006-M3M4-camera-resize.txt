@@ -1,0 +1,64 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x870486 0x8704e2 _ZN4Anki6Vision9ImageBaseINS0_9PixelRGB_IhEEE6ResizeEiiNS0_12ResizeMethodE
+00870486: push       {r4, lr} ; 
+00870488: sub        sp, #0x40 ; 
+0087048A: ldr.w      ip, [r0, #0xc] ; 
+0087048E: cmp        ip, r1 ; 
+00870490: itt        eq ; 
+00870492: ldreq.w    ip, [r0, #0x10] ; 
+00870496: cmpeq      ip, r2 ; 
+00870498: beq        #0x8704da ; 
+0087049A: movw       lr, #0x10 ; 
+0087049E: mov.w      ip, #0 ; 
+008704A2: adds       r4, r0, #4 ; 
+008704A4: movt       lr, #0x8101 ; 
+008704A8: add.w      r0, lr, #0x1000000 ; 
+008704AC: strd       ip, ip, [sp, #0x38] ; 
+008704B0: str        r4, [sp, #0x34] ; 
+008704B2: str.w      lr, [sp, #0x30] ; 
+008704B6: add.w      lr, sp, #0x20 ; 
+008704BA: str.w      ip, [sp, #0x2c] ; 
+008704BE: stm.w      lr, {r0, r4, ip} ; 
+008704C2: strd       r2, r1, [sp, #0x18] ; 
+008704C6: add        r0, sp, #0x30 ; 
+008704C8: add        r1, sp, #0x20 ; 
+008704CA: add        r2, sp, #0x18 ; 
+008704CC: strd       ip, ip, [sp] ; 
+008704D0: strd       ip, ip, [sp, #8] ; 
+008704D4: str        r3, [sp, #0x10] ; 
+008704D6: blx        #0x4cfa10 ; GOT 0104EB3C _ZN2cv6resizeERKNS_11_InputArrayERKNS_12_OutputArrayENS_5Size_IiEEddi
+008704DA: add        sp, #0x40 ; 
+008704DC: pop        {r4, pc} ; 
+008704DE: blx        #0x4a40a8 ; GOT 00FA4360 
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x86f1d6 0x86f232 _ZN4Anki6Vision9ImageBaseIhE6ResizeEiiNS0_12ResizeMethodE
+0086F1D6: push       {r4, lr} ; 
+0086F1D8: sub        sp, #0x40 ; 
+0086F1DA: ldr.w      ip, [r0, #0xc] ; 
+0086F1DE: cmp        ip, r1 ; 
+0086F1E0: itt        eq ; 
+0086F1E2: ldreq.w    ip, [r0, #0x10] ; 
+0086F1E6: cmpeq      ip, r2 ; 
+0086F1E8: beq        #0x86f22a ; 
+0086F1EA: movw       lr, #0 ; 
+0086F1EE: mov.w      ip, #0 ; 
+0086F1F2: adds       r4, r0, #4 ; 
+0086F1F4: movt       lr, #0x8101 ; 
+0086F1F8: add.w      r0, lr, #0x1000000 ; 
+0086F1FC: strd       ip, ip, [sp, #0x38] ; 
+0086F200: str        r4, [sp, #0x34] ; 
+0086F202: str.w      lr, [sp, #0x30] ; 
+0086F206: add.w      lr, sp, #0x20 ; 
+0086F20A: str.w      ip, [sp, #0x2c] ; 
+0086F20E: stm.w      lr, {r0, r4, ip} ; 
+0086F212: strd       r2, r1, [sp, #0x18] ; 
+0086F216: add        r0, sp, #0x30 ; 
+0086F218: add        r1, sp, #0x20 ; 
+0086F21A: add        r2, sp, #0x18 ; 
+0086F21C: strd       ip, ip, [sp] ; 
+0086F220: strd       ip, ip, [sp, #8] ; 
+0086F224: str        r3, [sp, #0x10] ; 
+0086F226: blx        #0x4cfa10 ; GOT 0104EB3C _ZN2cv6resizeERKNS_11_InputArrayERKNS_12_OutputArrayENS_5Size_IiEEddi
+0086F22A: add        sp, #0x40 ; 
+0086F22C: pop        {r4, pc} ; 
+0086F22E: blx        #0x4a40a8 ; GOT 00FA4360 

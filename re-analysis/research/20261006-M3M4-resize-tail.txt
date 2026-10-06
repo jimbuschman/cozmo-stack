@@ -1,0 +1,481 @@
+
+FILE resources/lib/armeabi-v7a/libopencv_imgproc.so RANGE 0x8287c 0x82c88 
+0008287C: vmul.f64   d16, d16, d11 ; 
+00082880: vcvt.s32.f64 s0, d16 ; 
+00082884: vmov       r2, s0 ; 
+00082888: vcvt.f64.s32 d17, s0 ; 
+0008288C: vcmpe.f64  d17, d16 ; 
+00082890: vmrs       apsr_nzcv, fpscr ; 
+00082894: ite        gt ; 
+00082896: movgt      r3, #1 ; 
+00082898: movle      r3, #0 ; 
+0008289A: subs       r3, r2, r3 ; 
+0008289C: adds       r2, r6, #1 ; 
+0008289E: vmov       s0, r2 ; 
+000828A2: adds       r2, r3, #1 ; 
+000828A4: vmov       s15, r2 ; 
+000828A8: vcvt.f64.s32 d0, s0 ; 
+000828AC: vcvt.f64.s32 d16, s15 ; 
+000828B0: vmls.f64   d0, d16, d9 ; 
+000828B4: vcvt.f32.f64 s15, d0 ; 
+000828B8: vcmpe.f32  s15, #0 ; 
+000828BC: vmrs       apsr_nzcv, fpscr ; 
+000828C0: bls        #0x828ec ; 
+000828C2: vcvt.s32.f32 s0, s15 ; 
+000828C6: vmov       r1, s0 ; 
+000828CA: vcvt.f32.s32 s14, s0 ; 
+000828CE: vcmpe.f32  s14, s15 ; 
+000828D2: vmrs       apsr_nzcv, fpscr ; 
+000828D6: ite        gt ; 
+000828D8: movgt      r2, #1 ; 
+000828DA: movle      r2, #0 ; 
+000828DC: subs       r2, r1, r2 ; 
+000828DE: vmov       s0, r2 ; 
+000828E2: vcvt.f32.s32 s0, s0 ; 
+000828E6: vsub.f32   s0, s15, s0 ; 
+000828EA: b          #0x828f0 ; 
+000828EC: vldr       s0, [pc, #-0x78] ; literal[00082878]=00000000
+000828F0: ldr        r2, [sp, #0x34] ; 
+000828F2: cmp.w      sb, #2 ; 
+000828F6: add        r0, sp, #0x118 ; 
+000828F8: str.w      r3, [r2, r6, lsl #2] ; 
+000828FC: bne        #0x82904 ; 
+000828FE: bl         #0x7237e ; 
+00082902: b          #0x82920 ; 
+00082904: cmp.w      sb, #4 ; 
+00082908: bne        #0x82910 ; 
+0008290A: bl         #0x72a90 ; 
+0008290E: b          #0x82920 ; 
+00082910: vmov.f32   s15, #1.000000e+00 ; 
+00082914: vstr       s0, [r0, #4] ; 
+00082918: vsub.f32   s15, s15, s0 ; 
+0008291C: vstr       s15, [r0] ; 
+00082920: cbnz       r5, #0x8292c ; 
+00082922: ldr        r3, [sp, #0x28] ; 
+00082924: add        r2, sp, #0x118 ; 
+00082926: adds       r1, r7, r3 ; 
+00082928: mov        r3, r7 ; 
+0008292A: b          #0x82954 ; 
+0008292C: add        r3, sp, #0x118 ; 
+0008292E: mov.w      fp, #0 ; 
+00082932: cmp        fp, r4 ; 
+00082934: beq        #0x82962 ; 
+00082936: add.w      r2, r3, fp, lsl #2 ; 
+0008293A: str        r3, [sp, #0x3c] ; 
+0008293C: vldr       s0, [r2] ; 
+00082940: vmul.f32   s0, s0, s16 ; 
+00082944: bl         #0x72372 ; 
+00082948: ldr        r3, [sp, #0x3c] ; 
+0008294A: strh.w     r0, [r8, fp, lsl #1] ; 
+0008294E: add.w      fp, fp, #1 ; 
+00082952: b          #0x82932 ; 
+00082954: cmp        r3, r1 ; 
+00082956: beq        #0x82962 ; 
+00082958: ldr        r0, [r2], #4 ; 
+0008295C: str        r0, [r3], #4 ; 
+00082960: b          #0x82954 ; 
+00082962: ldr        r3, [sp, #0x28] ; 
+00082964: adds       r6, #1 ; 
+00082966: add        r7, r3 ; 
+00082968: ldr        r3, [sp, #0x24] ; 
+0008296A: add        r8, r3 ; 
+0008296C: b          #0x8280a ; 
+0008296E: ldr        r2, [sp, #0x38] ; 
+00082970: add        r6, sp, #0xa8 ; 
+00082972: ldr        r3, [sp, #0x4c] ; 
+00082974: add        r7, sp, #0xe0 ; 
+00082976: str        r4, [sp, #0x10] ; 
+00082978: mov        r0, r6 ; 
+0008297A: cmp        r5, #0 ; 
+0008297C: it         eq ; 
+0008297E: moveq      r3, r2 ; 
+00082980: mov        r1, r7 ; 
+00082982: ldr        r2, [sp, #0x30] ; 
+00082984: add        r4, sp, #0x1e0 ; 
+00082986: mov        r5, r3 ; 
+00082988: ldr        r3, [sp, #0x34] ; 
+0008298A: stm.w      sp, {r3, r5} ; 
+0008298E: ldr        r3, [sp, #0x44] ; 
+00082990: ldr        r5, [sp, #0x1c] ; 
+00082992: str        r3, [sp, #8] ; 
+00082994: ldr        r3, [sp, #0x18] ; 
+00082996: str        r3, [sp, #0xc] ; 
+00082998: ldr        r3, [sp, #0x20] ; 
+0008299A: blx        r5 ; 
+0008299C: mov        r0, r4 ; 
+0008299E: bl         #0x1ea1c ; 
+000829A2: mov        r0, r7 ; 
+000829A4: bl         #0x184cc ; _ZN2cv3MatD1Ev
+000829A8: mov        r0, r6 ; 
+000829AA: b          #0x82a7c ; 
+000829AC: ldr        r3, [sp, #0x20] ; 
+000829AE: add.w      sb, sp, #0x608 ; 
+000829B2: lsls       r6, r6, #2 ; 
+000829B4: cmp        r3, #0 ; 
+000829B6: bne.w      #0x82ad8 ; 
+000829BA: ldr        r3, [pc, #0x2ac] ; literal[00082C68]=00078C58
+000829BC: add        r3, pc ; 
+000829BE: add        r6, r3 ; 
+000829C0: ldr.w      r3, [r6, #0xa0] ; 
+000829C4: str        r3, [sp, #0x18] ; 
+000829C6: cmp        r3, #0 ; 
+000829C8: beq.w      #0x82bbc ; 
+000829CC: cmp.w      fp, #4 ; 
+000829D0: bgt.w      #0x82bbc ; 
+000829D4: ldm.w      r7, {r2, r3} ; 
+000829D8: add        r3, r2 ; 
+000829DA: lsls       r6, r3, #1 ; 
+000829DC: add.w      r3, sp, #0x610 ; 
+000829E0: str.w      r3, [sb] ; 
+000829E4: movs       r3, #0x5d ; 
+000829E6: cmp        r6, r3 ; 
+000829E8: str.w      r3, [sb, #4] ; 
+000829EC: bhi.w      #0x82bec ; 
+000829F0: ldr.w      r8, [sb] ; 
+000829F4: mov        r2, fp ; 
+000829F6: ldr        r0, [r7] ; 
+000829F8: vmov.f64   d0, d10 ; 
+000829FC: str.w      r6, [sb, #4] ; 
+00082A00: movs       r6, #0x18 ; 
+00082A02: ldr.w      r1, [sl] ; 
+00082A06: mov        r3, r8 ; 
+00082A08: mla        r6, r6, r0, r8 ; 
+00082A0C: bl         #0x72610 ; 
+00082A10: ldr.w      r1, [sl, #4] ; 
+00082A14: movs       r2, #1 ; 
+00082A16: vmov.f64   d0, d11 ; 
+00082A1A: mov        r3, r6 ; 
+00082A1C: mov        fp, r0 ; 
+00082A1E: ldr        r0, [r7, #4] ; 
+00082A20: bl         #0x72610 ; 
+00082A24: add        r7, sp, #0x1e0 ; 
+00082A26: ldr.w      r1, [sl, #4] ; 
+00082A2A: add        r3, sp, #0x1e8 ; 
+00082A2C: add.w      sl, sp, #0x608 ; 
+00082A30: str        r3, [r7] ; 
+00082A32: adds       r1, #1 ; 
+00082A34: mov.w      r3, #0x108 ; 
+00082A38: str        r3, [r7, #4] ; 
+00082A3A: mov        sb, r0 ; 
+00082A3C: mov        r0, r7 ; 
+00082A3E: bl         #0x20d32 ; 
+00082A42: movs       r3, #0 ; 
+00082A44: ldr.w      lr, [r7] ; 
+00082A48: mov        r2, r3 ; 
+00082A4A: mov        r7, r6 ; 
+00082A4C: cmp        r2, sb ; 
+00082A4E: blt.w      #0x82c0a ; 
+00082A52: str.w      sb, [lr, r3, lsl #2] ; 
+00082A56: mov        r0, r4 ; 
+00082A58: stm.w      sp, {r6, sb, lr} ; 
+00082A5C: mov        r1, r5 ; 
+00082A5E: mov        r2, r8 ; 
+00082A60: mov        r3, fp ; 
+00082A62: ldr        r4, [sp, #0x18] ; 
+00082A64: add        r6, sp, #0x1e0 ; 
+00082A66: blx        r4 ; 
+00082A68: mov        r0, r6 ; 
+00082A6A: bl         #0x20d14 ; 
+00082A6E: mov        r0, sl ; 
+00082A70: bl         #0x8209c ; 
+00082A74: add        r0, sp, #0xe0 ; 
+00082A76: bl         #0x184cc ; _ZN2cv3MatD1Ev
+00082A7A: add        r0, sp, #0xa8 ; 
+00082A7C: bl         #0x184cc ; _ZN2cv3MatD1Ev
+00082A80: ldr        r3, [sp, #0x64] ; 
+00082A82: ldr.w      r2, [sp, #0xa6c] ; 
+00082A86: ldr        r3, [r3] ; 
+00082A88: cmp        r2, r3 ; 
+00082A8A: beq.w      #0x82c52 ; 
+00082A8E: blx        #0x171b8 ; GOT 000FDC08 __stack_chk_fail
+00082A92: mov        r0, r6 ; 
+00082A94: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082A98: add.w      r0, sp, #0x608 ; 
+00082A9C: bl         #0x20d14 ; 
+00082AA0: b          #0x82aba ; 
+00082AA2: mov        r0, r4 ; 
+00082AA4: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082AA8: b          #0x82aba ; 
+00082AAA: mov        r0, r6 ; 
+00082AAC: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082AB0: b          #0x82aba ; 
+00082AB2: mov        r0, r4 ; 
+00082AB4: bl         #0x1ea1c ; 
+00082AB8: b          #0x82aba ; 
+00082ABA: add        r0, sp, #0xe0 ; 
+00082ABC: bl         #0x184cc ; _ZN2cv3MatD1Ev
+00082AC0: b          #0x822f2 ; 
+00082AC2: movs       r3, #0 ; 
+00082AC4: str        r3, [r6, #8] ; 
+00082AC6: str        r3, [r6, #0xc] ; 
+00082AC8: mov        r0, r4 ; 
+00082ACA: ldr        r3, [pc, #0x194] ; literal[00082C60]=02010000
+00082ACC: mov        r1, r6 ; 
+00082ACE: stm.w      r6, {r3, r5} ; 
+00082AD2: blx        #0x17254 ; GOT 000FDC3C _ZNK2cv3Mat6copyToERKNS_12_OutputArrayE
+00082AD6: b          #0x82a74 ; 
+00082AD8: ldr        r3, [sp, #0x1c] ; 
+00082ADA: ldr        r1, [pc, #0x188] ; literal[00082C64]=48442211
+00082ADC: ldr        r0, [r4, #0x30] ; 
+00082ADE: mul        r5, r3, r8 ; 
+00082AE2: ldr        r3, [r4] ; 
+00082AE4: and        r3, r3, #7 ; 
+00082AE8: lsls       r3, r3, #2 ; 
+00082AEA: lsrs       r1, r3 ; 
+00082AEC: and        r1, r1, #0xf ; 
+00082AF0: blx        #0x1768c ; GOT 000FDDA4 __aeabi_uidiv
+00082AF4: add.w      r3, sp, #0x610 ; 
+00082AF8: str.w      r3, [sb] ; 
+00082AFC: mov.w      r3, #0x108 ; 
+00082B00: str.w      r3, [sb, #4] ; 
+00082B04: ldr        r3, [sp, #0x18] ; 
+00082B06: mla        r1, fp, r3, r5 ; 
+00082B0A: str        r0, [sp, #0x20] ; 
+00082B0C: mov        r0, sb ; 
+00082B0E: bl         #0x20d32 ; 
+00082B12: ldr        r3, [pc, #0x158] ; literal[00082C6C]=00078AFC
+00082B14: ldr.w      r4, [sb] ; 
+00082B18: add        r3, pc ; 
+00082B1A: add        r6, r3 ; 
+00082B1C: add.w      r5, r4, r5, lsl #2 ; 
+00082B20: ldr.w      sb, [r6, #0x80] ; 
+00082B24: cmp.w      sb, #0 ; 
+00082B28: bne        #0x82b5a ; 
+00082B2A: add        r7, sp, #0x78 ; 
+00082B2C: ldr        r1, [pc, #0x140] ; literal[00082C70]=00044CCC
+00082B2E: mov        r0, r7 ; 
+00082B30: add        r1, pc ; 
+00082B32: bl         #0x18384 ; _ZN2cv6StringC1EPKc
+00082B36: ldr        r2, [pc, #0x13c] ; literal[00082C74]=0006EAF8
+00082B38: movw       r3, #0xcf5 ; 
+00082B3C: str        r3, [sp] ; 
+00082B3E: mvn        r0, #0xd6 ; 
+00082B42: ldr        r3, [pc, #0x134] ; literal[00082C78]=0005B511
+00082B44: add        r2, pc ; 
+00082B46: mov        r1, r7 ; 
+00082B48: add.w      r2, r2, #0x210 ; 
+00082B4C: add        r3, pc ; 
+00082B4E: add        r6, sp, #0x78 ; 
+00082B50: blx        #0x17170 ; GOT 000FDBF0 _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+00082B54: mov        r0, r6 ; 
+00082B56: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082B5A: movs       r3, #0 ; 
+00082B5C: bic.w      ip, r8, r8, asr #31 ; 
+00082B60: mov        r6, r3 ; 
+00082B62: mov        r0, r3 ; 
+00082B64: ldr        r2, [sp, #0x1c] ; 
+00082B66: cmp        r6, r2 ; 
+00082B68: blt        #0x82b7a ; 
+00082B6A: movs       r2, #0 ; 
+00082B6C: lsl.w      r7, fp, #2 ; 
+00082B70: mul        r6, r8, fp ; 
+00082B74: mov        r0, r5 ; 
+00082B76: mov        r1, r2 ; 
+00082B78: b          #0x82bae ; 
+00082B7A: add.w      lr, r4, r0, lsl #2 ; 
+00082B7E: mov        r1, r3 ; 
+00082B80: movs       r2, #0 ; 
+00082B82: cmp        r2, r8 ; 
+00082B84: bge        #0x82b90 ; 
+00082B86: str.w      r1, [lr, r2, lsl #2] ; 
+00082B8A: adds       r2, #1 ; 
+00082B8C: add        r1, fp ; 
+00082B8E: b          #0x82b82 ; 
+00082B90: ldr        r2, [sp, #0x20] ; 
+00082B92: add        r0, ip ; 
+00082B94: adds       r6, #1 ; 
+00082B96: add        r3, r2 ; 
+00082B98: b          #0x82b64 ; 
+00082B9A: add.w      lr, r3, r2 ; 
+00082B9E: str.w      lr, [r0, r3, lsl #2] ; 
+00082BA2: adds       r3, #1 ; 
+00082BA4: cmp        r3, fp ; 
+00082BA6: blt        #0x82b9a ; 
+00082BA8: adds       r1, #1 ; 
+00082BAA: add        r2, r6 ; 
+00082BAC: add        r0, r7 ; 
+00082BAE: ldr.w      r3, [sl] ; 
+00082BB2: cmp        r1, r3 ; 
+00082BB4: bge.w      #0x82426 ; 
+00082BB8: movs       r3, #0 ; 
+00082BBA: b          #0x82b9a ; 
+00082BBC: add        r6, sp, #0x80 ; 
+00082BBE: ldr        r1, [pc, #0xbc] ; literal[00082C7C]=0005B99F
+00082BC0: mov        r0, r6 ; 
+00082BC2: add        r1, pc ; 
+00082BC4: bl         #0x18384 ; _ZN2cv6StringC1EPKc
+00082BC8: ldr        r2, [pc, #0xb4] ; literal[00082C80]=0006EA66
+00082BCA: movw       r3, #0xd08 ; 
+00082BCE: str        r3, [sp] ; 
+00082BD0: mvn        r0, #0xd6 ; 
+00082BD4: ldr        r3, [pc, #0xac] ; literal[00082C84]=0005B47F
+00082BD6: add        r2, pc ; 
+00082BD8: mov        r1, r6 ; 
+00082BDA: add.w      r2, r2, #0x210 ; 
+00082BDE: add        r3, pc ; 
+00082BE0: blx        #0x17170 ; GOT 000FDBF0 _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+00082BE4: mov        r0, r6 ; 
+00082BE6: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082BEA: b          #0x829d4 ; 
+00082BEC: mov        r0, sb ; 
+00082BEE: bl         #0x8209c ; 
+00082BF2: cmp.w      r6, #0xaa00000 ; 
+00082BF6: itet       ls ; 
+00082BF8: movls      r0, #0xc ; 
+00082BFA: movhi.w    r0, #-1 ; 
+00082BFE: mulls      r0, r6, r0 ; 
+00082C00: blx        #0x171e8 ; GOT 000FDC18 _Znaj
+00082C04: str.w      r0, [sb] ; 
+00082C08: b          #0x829f0 ; 
+00082C0A: cbz        r2, #0x82c16 ; 
+00082C0C: ldr        r1, [r7, #4] ; 
+00082C0E: ldr        r0, [r7, #-0x8] ; 
+00082C12: cmp        r1, r0 ; 
+00082C14: beq        #0x82c1c ; 
+00082C16: str.w      r2, [lr, r3, lsl #2] ; 
+00082C1A: adds       r3, #1 ; 
+00082C1C: adds       r2, #1 ; 
+00082C1E: adds       r7, #0xc ; 
+00082C20: b          #0x82a4c ; 
+00082C22: b          #0x82a98 ; 
+00082C24: mov        r0, r6 ; 
+00082C26: blx        #0x1717c ; GOT 000FDBF4 _ZN2cv6String10deallocateEv
+00082C2A: b          #0x82aba ; 
+00082C2C: mov        r0, r6 ; 
+00082C2E: bl         #0x20d14 ; 
+00082C32: b          #0x82c34 ; 
+00082C34: mov        r0, sl ; 
+00082C36: bl         #0x8209c ; 
+00082C3A: b          #0x82aba ; 
+00082C3C: ldr        r3, [sp, #0x18] ; 
+00082C3E: clz        r5, r6 ; 
+00082C42: mov.w      sb, #3 ; 
+00082C46: lsrs       r5, r5, #5 ; 
+00082C48: mul        r8, fp, r3 ; 
+00082C4C: movs       r3, #1 ; 
+00082C4E: str        r3, [sp, #0x2c] ; 
+00082C50: b          #0x824b2 ; 
+00082C52: addw       sp, sp, #0xa74 ; 
+00082C56: vpop       {d8, d9, d10, d11, d12} ; 
+00082C5A: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ; 
+00082C5E: nop         ; 
+00082C60: movs       r0, r0 ; 
+00082C62: lsls       r1, r0, #8 ; 
+00082C64: movs       r2, #0x11 ; 
+00082C66: ldr        r0, [pc, #0x110] ; literal[00082D78]=EA00F794
+00082C68: ldrh       r0, [r3, #0x22] ; 
+00082C6A: movs       r7, r0 ; 
+00082C6C: ldrh       r4, [r7, #0x16] ; 
+00082C6E: movs       r7, r0 ; 
+00082C70: ldr        r4, [pc, #0x330] ; literal[00082FA4]=3A90EE07
+00082C72: movs       r4, r0 ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgproc.so RANGE 0x2bf08 0x2c050 
+0002BF08: str        r3, [r5, #4] ; 
+0002BF0A: movs       r3, #0 ; 
+0002BF0C: str        r3, [sp] ; 
+0002BF0E: str        r3, [sp, #4] ; 
+0002BF10: mov.w      r3, #-1 ; 
+0002BF14: blx        #0x172b4 ; GOT 000FDC5C _ZNK2cv12_OutputArray6createENS_5Size_IiEEiibi
+0002BF18: add.w      r3, sp, #0x618 ; 
+0002BF1C: mov        r1, r8 ; 
+0002BF1E: mov.w      r2, #-1 ; 
+0002BF22: str        r3, [sp, #0xc] ; 
+0002BF24: mov        r0, r3 ; 
+0002BF26: bl         #0x183ae ; _ZNK2cv11_InputArray6getMatEi
+0002BF2A: mov        r0, sl ; 
+0002BF2C: ldr        r1, [sp, #0xc] ; 
+0002BF2E: bl         #0x184e8 ; _ZN2cv3MataSEOS0_
+0002BF32: ldr        r0, [sp, #0xc] ; 
+0002BF34: addw       r8, sp, #0x584 ; 
+0002BF38: bl         #0x184cc ; _ZN2cv3MatD1Ev
+0002BF3C: vldr       d8, [pc, #0x320] ; literal[0002C260]=00000000
+0002BF40: add        r3, sp, #0x190 ; 
+0002BF42: add.w      r2, sp, #0x590 ; 
+0002BF46: cbnz       r6, #0x2bfb4 ; 
+0002BF48: vmov.i8    q8, #0xff ; 
+0002BF4C: str        r4, [r5, #8] ; 
+0002BF4E: ldr.w      r1, [fp, #8] ; 
+0002BF52: sub.w      r4, r3, #0x1c ; 
+0002BF56: str        r6, [r3, #-0x1c] ; 
+0002BF5A: mov        r0, fp ; 
+0002BF5C: ldr        r3, [pc, #0x308] ; literal[0002C268]=000CDFFE
+0002BF5E: vstr       d16, [r5, #0x10] ; 
+0002BF62: vstr       d17, [r5, #0x18] ; 
+0002BF66: add        r3, pc ; 
+0002BF68: str        r1, [r4, #4] ; 
+0002BF6A: adds       r3, #8 ; 
+0002BF6C: vstr       d16, [r5, #0x20] ; 
+0002BF70: str        r3, [r2, #-0xc] ; 
+0002BF74: stm.w      r5, {r7, sb} ; 
+0002BF78: str.w      fp, [r8, #4] ; 
+0002BF7C: str.w      sl, [r8, #8] ; 
+0002BF80: str.w      r5, [r8, #0xc] ; 
+0002BF84: bl         #0x2663c ; _ZNK2cv3Mat5totalEv
+0002BF88: mov        r1, r8 ; 
+0002BF8A: vmov       s15, r0 ; 
+0002BF8E: mov        r0, r4 ; 
+0002BF90: vcvt.f64.u32 d16, s15 ; 
+0002BF94: vmul.f64   d16, d16, d8 ; 
+0002BF98: vmov       r2, r3, d16 ; 
+0002BF9C: blx        #0x172c0 ; GOT 000FDC60 _ZN2cv13parallel_for_ERKNS_5RangeERKNS_16ParallelLoopBodyEd
+0002BFA0: mov        r0, r8 ; 
+0002BFA2: bl         #0x24b44 ; 
+0002BFA6: b.w        #0x30156 ; 
+0002BFAA: mov        r0, r8 ; 
+0002BFAC: bl         #0x24b44 ; 
+0002BFB0: b.w        #0x30360 ; 
+0002BFB4: cmp        r6, #2 ; 
+0002BFB6: str        r7, [r2, #-0xc] ; 
+0002BFBA: str.w      sb, [r8, #4] ; 
+0002BFBE: str.w      r4, [r8, #8] ; 
+0002BFC2: ldr.w      r2, [fp, #8] ; 
+0002BFC6: bne        #0x2c018 ; 
+0002BFC8: sub.w      r4, r3, #0x14 ; 
+0002BFCC: movs       r1, #0 ; 
+0002BFCE: str        r1, [r3, #-0x14] ; 
+0002BFD2: mov        r0, fp ; 
+0002BFD4: ldr        r3, [pc, #0x294] ; literal[0002C26C]=000CDFA4
+0002BFD6: str        r2, [r4, #4] ; 
+0002BFD8: add        r3, pc ; 
+0002BFDA: str.w      sl, [r5, #8] ; 
+0002BFDE: adds       r3, #8 ; 
+0002BFE0: str.w      r8, [r5, #0xc] ; 
+0002BFE4: stm.w      r5, {r3, fp} ; 
+0002BFE8: bl         #0x2663c ; _ZNK2cv3Mat5totalEv
+0002BFEC: mov        r1, r5 ; 
+0002BFEE: vmov       s15, r0 ; 
+0002BFF2: mov        r0, r4 ; 
+0002BFF4: vcvt.f64.u32 d16, s15 ; 
+0002BFF8: vmul.f64   d16, d16, d8 ; 
+0002BFFC: vmov       r2, r3, d16 ; 
+0002C000: blx        #0x172c0 ; GOT 000FDC60 _ZN2cv13parallel_for_ERKNS_5RangeERKNS_16ParallelLoopBodyEd
+0002C004: mov        r0, r5 ; 
+0002C006: bl         #0x24b70 ; 
+0002C00A: b.w        #0x30156 ; 
+0002C00E: mov        r0, r5 ; 
+0002C010: bl         #0x24b70 ; 
+0002C014: b.w        #0x30360 ; 
+0002C018: sub.w      r4, r3, #0xc ; 
+0002C01C: movs       r1, #0 ; 
+0002C01E: str        r1, [r3, #-0xc] ; 
+0002C022: mov        r0, fp ; 
+0002C024: ldr        r3, [pc, #0x248] ; literal[0002C270]=000CDF6C
+0002C026: str        r2, [r4, #4] ; 
+0002C028: add        r3, pc ; 
+0002C02A: str.w      sl, [r5, #8] ; 
+0002C02E: adds       r3, #8 ; 
+0002C030: str.w      r8, [r5, #0xc] ; 
+0002C034: stm.w      r5, {r3, fp} ; 
+0002C038: bl         #0x2663c ; _ZNK2cv3Mat5totalEv
+0002C03C: mov        r1, r5 ; 
+0002C03E: vmov       s15, r0 ; 
+0002C042: mov        r0, r4 ; 
+0002C044: vcvt.f64.u32 d16, s15 ; 
+0002C048: vmul.f64   d16, d16, d8 ; 
+0002C04C: vmov       r2, r3, d16 ; 
+
+FILE resources/lib/armeabi-v7a/libopencv_imgproc.so RANGE 0x72372 0x7237e 
+00072372: vcvtr.s32.f32 s0, s0 ; 
+00072376: vmov       r0, s0 ; 
+0007237A: b.w        #0x72354 ; 

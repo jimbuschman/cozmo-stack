@@ -1,0 +1,106 @@
+RANGE 00514A70..00514C8E
+00514AB0 add r4, pc -> 00BE72F0 'BlockPool'
+00514AF8 blx #0x4a7f84
+00514B2C blx #0x4a4720
+00514B36 adr r0, #0x1ac -> 00514CE4 'Robot.ConnectToRequestedObjects.SameTypeAlreadyConnected'
+00514B38 add r2, pc -> 00BE758D 'Object with factory ID 0x%x matches type (%s) of another connected object. Only one of each type may be connected.'
+00514B3C blx #0x4a4540
+00514B60 blx #0x4a40cc
+00514B84 adr r3, #0x198 -> 00514D20 'Sending message for slot %d with factory ID = 0x%x'
+00514B88 add r1, pc -> 00BE7534 'Robot.ConnectToRequestedObjects.Sending'
+00514B8A add r0, pc -> 00BE72F0 'BlockPool'
+00514B8C blx #0x4a505c
+00514BAE blx #0x4a40cc
+00514BC2 blx #0x4a7f90
+00514BCE blx #0x4a5368
+00514BD4 blx #0x4a5200
+00514BEC add r4, pc -> 00BE72F0 'BlockPool'
+00514C04 add r1, pc -> 00BE7534 'Robot.ConnectToRequestedObjects.Sending'
+00514C06 add r3, pc -> 00BE755C 'Sending message for slot %d with factory ID = %d'
+00514C0E blx #0x4a505c
+00514C30 blx #0x4a40cc
+00514C4C blx #0x4a7f90
+00514C58 blx #0x4a5368
+00514C5E blx #0x4a5200
+00514C8A blx #0x4a4fe4
+RANGE 005179C0..00517B0A
+005179F2 add r2, pc -> 00BE7391 'Invalid state %d when connected to object 0x%x with active ID %d'
+005179F6 adr r0, #0x16c -> 00517B64 'Robot.HandleConnectedToObject.InvalidState'
+005179FE blx #0x4a4108
+00517A20 blx #0x4a40cc
+00517A38 blx #0x4a4114
+00517A46 blx #0x4a4720
+00517A56 add ip, pc -> 00BE72F0 'BlockPool'
+00517A58 add r3, pc -> 00BE73D2 'Connected to active Id %d with factory Id 0x%x of type %s. Connection State = %d'
+00517A64 adr r1, #0x138 -> 00517BA0 'Robot.HandleConnectToObject'
+00517A68 blx #0x4a505c
+00517A8A blx #0x4a40cc
+00517A98 blx #0x4a814c
+00517AB2 blx #0x4a4720
+00517AC2 blx #0x4a4720
+00517ACA add r7, pc -> 00BE72F0 'BlockPool'
+00517ACC add r3, pc -> 00BE7321 'Ignoring connection to object 0x%x of type %s with active ID %d because expecting connection to 0x%x of type %s'
+00517ACE adr r1, #0x70 -> 00517B40 'Robot.HandleConnectedToObject'
+00517ADE blx #0x4a505c
+00517B00 blx #0x4a40cc
+RANGE 00517BBC..00517D1E
+00517BF0 add r2, pc -> 00BE7498 'Invalid state %d when disconnected from object 0x%x with active ID %d'
+00517BF4 adr r0, #0x184 -> 00517D7C 'Robot.HandleDisconnectedFromObject.InvalidState'
+00517BFC blx #0x4a4108
+00517C1E blx #0x4a40cc
+00517C36 blx #0x4a4114
+00517C44 blx #0x4a4720
+00517C54 add ip, pc -> 00BE72F0 'BlockPool'
+00517C56 add r3, pc -> 00BE74DE 'Disconnected from active Id %d with factory Id 0x%x of type %s. Connection State = %d'
+00517C62 adr r1, #0xf0 -> 00517D54 'Robot.HandleDisconnectedFromObject'
+00517C66 blx #0x4a505c
+00517C88 blx #0x4a40cc
+00517CB6 blx #0x4a4720
+00517CC4 blx #0x4a4720
+00517CCE add ip, pc -> 00BE72F0 'BlockPool'
+00517CD0 add r3, pc -> 00BE7423 'Ignoring disconnection from object 0x%x of type %s with active ID %d because expecting connection to 0x%x of type %s'
+00517CD2 adr r1, #0x80 -> 00517D54 'Robot.HandleDisconnectedFromObject'
+00517CE0 blx #0x4a505c
+00517D02 blx #0x4a40cc
+00517D0C blx #0x4a4f6c
+00517D10 blx #0x4a50b0
+RANGE 0061A7EC..0061A9D2
+0061A7FC adr r7, #0x204 -> 0061AA04 'BlockFilter.UpdateDiscovering'
+0061A836 blx #0x4a4720
+0061A840 adr r3, #0x1e0 -> 0061AA24 'Looking for objects of type %s with RSSI < %d'
+0061A848 add r0, pc -> 00BE72F0 'BlockPool'
+0061A84A blx #0x4a505c
+0061A86C blx #0x4a40cc
+0061A876 blx #0x4b7b90
+0061A88A adr r3, #0x1c8 -> 0061AA54 'Discovered closer object 0x%x'
+0061A890 add r0, pc -> 00BE72F0 'BlockPool'
+0061A896 blx #0x4a505c
+0061A8B8 blx #0x4a40cc
+0061A8D2 blx #0x4b7b9c
+0061A8E6 blx #0x4a4f6c
+0061A8EA blx #0x4a50b0
+0061A914 add r0, pc -> 00BE72F0 'BlockPool'
+0061A91A add r3, pc -> 00BF818F 'Connecting to discovered objects'
+0061A922 adr r1, #0xe0 -> 0061AA04 'BlockFilter.UpdateDiscovering'
+0061A926 blx #0x4a505c
+0061A948 blx #0x4a40cc
+0061A95E blx #0x4b7ad0
+0061A986 blx #0x4a7ab0
+0061A9BA blx #0x4b7ae8
+0061A9C0 blx #0x4b7af4
+RANGE 0061AA8C..0061AB9A
+0061AA94 blx #0x4a4f6c
+0061AA98 blx #0x4a50b0
+0061AABE adr r6, #0x104 -> 0061ABC4 'BlockFilter.UpdateConnecting'
+0061AAD2 blx #0x4b7ba8
+0061AAE6 blx #0x4a4720
+0061AAEE adr r3, #0xf4 -> 0061ABE4 'Looking for a replacement for object 0x%x of type %s'
+0061AAF6 add r0, pc -> 00BE72F0 'BlockPool'
+0061AAF8 blx #0x4a505c
+0061AB1A blx #0x4a40cc
+0061AB26 blx #0x4b7b90
+0061AB40 adr r3, #0xd8 -> 0061AC1C 'Found replacement object 0x%x'
+0061AB46 add r0, pc -> 00BE72F0 'BlockPool'
+0061AB4A blx #0x4a505c
+0061AB6C blx #0x4a40cc
+0061AB88 blx #0x4b7ae8
