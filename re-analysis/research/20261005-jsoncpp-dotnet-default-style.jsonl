@@ -1,0 +1,14 @@
+{"input":"1,5","culture":"","bits":"402E000000000000"}
+{"input":"1.5","culture":"","bits":"3FF8000000000000"}
+{"input":"1,234","culture":"","bits":"4093480000000000"}
+{"input":"1.234","culture":"","bits":"3FF3BE76C8B43958"}
+{"input":"NaN","culture":"","bits":"FFF8000000000000"}
+{"input":"Infinity","culture":"","bits":"7FF0000000000000"}
+{"input":"0x1p2","culture":"","error":"FormatException"}
+{"input":"1,5","culture":"fr-FR","bits":"3FF8000000000000"}
+{"input":"1.5","culture":"fr-FR","error":"FormatException"}
+{"input":"1,234","culture":"fr-FR","bits":"3FF3BE76C8B43958"}
+{"input":"1.234","culture":"fr-FR","error":"FormatException"}
+{"input":"NaN","culture":"fr-FR","bits":"FFF8000000000000"}
+{"input":"Infinity","culture":"fr-FR","error":"FormatException"}
+{"input":"0x1p2","culture":"fr-FR","error":"FormatException"}

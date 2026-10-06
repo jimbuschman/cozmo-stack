@@ -1,0 +1,59 @@
+{
+  "cases": 37802,
+  "discrepancies": 9404,
+  "categories": {
+    "random-decimal": {
+      "cases": 30000,
+      "differences": 7246,
+      "bit_differences": 3099,
+      "acceptance_differences": 4147
+    },
+    "halfway": {
+      "cases": 2000,
+      "differences": 622,
+      "bit_differences": 622,
+      "acceptance_differences": 0
+    },
+    "halfway-negative": {
+      "cases": 2000,
+      "differences": 622,
+      "bit_differences": 622,
+      "acceptance_differences": 0
+    },
+    "boundary": {
+      "cases": 1750,
+      "differences": 606,
+      "bit_differences": 91,
+      "acceptance_differences": 515
+    },
+    "long-mantissa": {
+      "cases": 1000,
+      "differences": 208,
+      "bit_differences": 171,
+      "acceptance_differences": 37
+    },
+    "leading-zero": {
+      "cases": 1000,
+      "differences": 64,
+      "bit_differences": 33,
+      "acceptance_differences": 31
+    },
+    "special": {
+      "cases": 46,
+      "differences": 30,
+      "bit_differences": 23,
+      "acceptance_differences": 16
+    },
+    "locale-fr-FR": {
+      "cases": 6,
+      "differences": 6,
+      "bit_differences": 5,
+      "acceptance_differences": 6
+    }
+  },
+  "seed": "0x1029",
+  "binary_sha256": "8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a",
+  "dotnet_version": "9.0.201",
+  "fpscr_in": "00000000",
+  "elapsed_seconds": 542.1431641578674
+}

@@ -1,0 +1,91 @@
+{
+  "bit_mismatch_exact_rational_checks": {
+    "dotnet-correct / native-not-nearest": 4638
+  },
+  "examples": [
+    {
+      "input": "131.e-227",
+      "native": "113F0886B36F1862",
+      "dotnet": "113F0886B36F1861",
+      "nearest_even": "113F0886B36F1861",
+      "category": "random-decimal"
+    },
+    {
+      "input": "346670056614373788204865159893.67e-122",
+      "native": "2CBCECD3D4DB9AA3",
+      "dotnet": "2CBCECD3D4DB9AA4",
+      "nearest_even": "2CBCECD3D4DB9AA4",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-421.3149876955542988998163696724389344594925797647711705551e-74",
+      "native": "B11DC6A5B4C258C3",
+      "dotnet": "B11DC6A5B4C258C4",
+      "nearest_even": "B11DC6A5B4C258C4",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-352626364254880279899499413276481866637533301249.3437738279e-190",
+      "native": "A25B85307B8A15D3",
+      "dotnet": "A25B85307B8A15D4",
+      "nearest_even": "A25B85307B8A15D4",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-0081637834097.717596377363568e249",
+      "native": "F5E53D12B0250E88",
+      "dotnet": "F5E53D12B0250E87",
+      "nearest_even": "F5E53D12B0250E87",
+      "category": "random-decimal"
+    },
+    {
+      "input": "32960541987661487960815897238469676.170242415001981499e-260",
+      "native": "111F3B9982BE3C51",
+      "dotnet": "111F3B9982BE3C52",
+      "nearest_even": "111F3B9982BE3C52",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-237.193047149969266172746865603941969356e-280",
+      "native": "864AE8DE5BC1DCE0",
+      "dotnet": "864AE8DE5BC1DCE1",
+      "nearest_even": "864AE8DE5BC1DCE1",
+      "category": "random-decimal"
+    },
+    {
+      "input": "26337035501588.698402281083410955494e-249",
+      "native": "0F056FFDDCDD3E34",
+      "dotnet": "0F056FFDDCDD3E36",
+      "nearest_even": "0F056FFDDCDD3E36",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-147827529866425083.892860e87",
+      "native": "D59080200475934A",
+      "dotnet": "D59080200475934C",
+      "nearest_even": "D59080200475934C",
+      "category": "random-decimal"
+    },
+    {
+      "input": "13258937304589654618800579484542353671.2262399371229561523095153736518e-75",
+      "native": "38120C10BACFB3C7",
+      "dotnet": "38120C10BACFB3C8",
+      "nearest_even": "38120C10BACFB3C8",
+      "category": "random-decimal"
+    },
+    {
+      "input": "135996.84244844178634292092579508e241",
+      "native": "7308E5904024979D",
+      "dotnet": "7308E590402497A0",
+      "nearest_even": "7308E590402497A0",
+      "category": "random-decimal"
+    },
+    {
+      "input": "-1776506534368892691649183114774639144400.937146020128e203",
+      "native": "F23AA467FFAC5088",
+      "dotnet": "F23AA467FFAC508A",
+      "nearest_even": "F23AA467FFAC508A",
+      "category": "random-decimal"
+    }
+  ]
+}
