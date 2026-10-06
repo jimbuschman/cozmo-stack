@@ -1,0 +1,1190 @@
+SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+
+FUNCTION 0x52f1a4 _ZN4Anki5Cozmo12RobotManager11RemoveRobotEjb
+0052f1a4: push.w {r4, r5, r6, r7, r8, sb, sl, lr}
+0052f1a8: sub sp, #0x120
+0052f1aa: mov r4, r0
+0052f1ac: ldr r0, [pc, #0x1f4]
+0052f1ae: mov r3, r1
+0052f1b0: mov r7, r2
+0052f1b2: add r0, pc
+0052f1b4: ldr r0, [r0]
+0052f1b6: ldr r0, [r0]
+0052f1b8: str r0, [sp, #0x11c]
+0052f1ba: mov r0, r4
+0052f1bc: str r3, [sp, #0xc]
+0052f1be: ldr r2, [r0, #4]!
+0052f1c2: cmp r2, #0
+0052f1c4: beq #0x52f252
+0052f1c6: mov r1, r0
+0052f1c8: mov r5, r2
+0052f1ca: ldr r2, [r5, #0x10]
+0052f1cc: cmp r2, r3
+0052f1ce: bhs #0x52f1d8
+0052f1d0: ldr r5, [r5, #4]
+0052f1d2: cmp r5, #0
+0052f1d4: bne #0x52f1ca
+0052f1d6: b #0x52f1e2
+0052f1d8: ldr r2, [r5]
+0052f1da: mov r1, r5
+0052f1dc: cmp r2, #0
+0052f1de: bne #0x52f1c8
+0052f1e0: b #0x52f1e4
+0052f1e2: mov r5, r1
+0052f1e4: cmp r5, r0
+0052f1e6: beq #0x52f252
+0052f1e8: ldr r1, [r5, #0x10]
+0052f1ea: cmp r1, r3
+0052f1ec: bhi #0x52f252
+0052f1ee: cmp r5, r0
+0052f1f0: beq #0x52f252
+0052f1f2: ldr r0, [pc, #0x1b4]
+0052f1f4: movs r1, #0
+0052f1f6: strd r1, r1, [sp, #0x10]
+0052f1fa: add r0, pc
+0052f1fc: str r1, [sp, #0x18]
+0052f1fe: str r3, [sp]
+0052f200: adr r1, #0x1a8
+0052f202: add r2, sp, #0x10
+0052f204: adr r3, #0x1c0
+0052f206: blx #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0052f20a: ldr r0, [sp, #0x10]
+0052f20c: cbz r0, #0x52f22c
+0052f20e: ldr r1, [sp, #0x14]
+0052f210: cmp r1, r0
+0052f212: itttt ne
+0052f214: subne.w r2, r1, #8
+0052f218: subne r2, r2, r0
+0052f21a: mvnne r3, #7
+0052f21e: bicne.w r2, r3, r2
+0052f222: itt ne
+0052f224: addne r1, r1, r2
+0052f226: strne r1, [sp, #0x14]
+0052f228: blx #0x4a40cc ; _ZdlPv
+0052f22c: add.w r8, r4, #0x70
+0052f230: add r1, sp, #0xc
+0052f232: mov r0, r8
+0052f234: blx #0x4a9c58 ; _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeIjN4Anki5Cozmo22RobotInitialConnectionEEENS_22__unordered_map_hasherIjS5_NS_4hashIjEELb1EEENS_21__unordered_map_equalIjS5_NS_8equal_toIjEELb1EEENS_9allocatorIS5_EEE4findIjEENS_15__hash_iteratorIPNS_11__hash_nodeIS5_PvEEEERKT_
+0052f238: cbz r0, #0x52f29e
+0052f23a: movs r1, #1
+0052f23c: adds r0, #0xc
+0052f23e: cmp r7, #0
+0052f240: it ne
+0052f242: movne r1, #2
+0052f244: blx #0x4a9c64 ; _ZN4Anki5Cozmo22RobotInitialConnection16HandleDisconnectENS0_21RobotConnectionResultE
+0052f248: cmp r0, #1
+0052f24a: bne #0x52f29e
+0052f24c: add.w r6, r4, #0x18
+0052f250: b #0x52f2dc
+0052f252: movs r0, #0
+0052f254: strd r0, r0, [sp, #0x10]
+0052f258: str r0, [sp, #0x18]
+0052f25a: adr r0, #0x150
+0052f25c: add r1, sp, #0x10
+0052f25e: adr r2, #0x1a0
+0052f260: blx #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0052f264: ldr r0, [sp, #0x10]
+0052f266: cbz r0, #0x52f286
+0052f268: ldr r1, [sp, #0x14]
+0052f26a: cmp r1, r0
+0052f26c: itttt ne
+0052f26e: subne.w r2, r1, #8
+0052f272: subne r2, r2, r0
+0052f274: mvnne r3, #7
+0052f278: bicne.w r2, r3, r2
+0052f27c: itt ne
+0052f27e: addne r1, r1, r2
+0052f280: strne r1, [sp, #0x14]
+0052f282: blx #0x4a40cc ; _ZdlPv
+0052f286: ldr r0, [pc, #0x19c]
+0052f288: ldr r1, [sp, #0x11c]
+0052f28a: add r0, pc
+0052f28c: ldr r0, [r0]
+0052f28e: ldr r0, [r0]
+0052f290: subs r0, r0, r1
+0052f292: itt eq
+0052f294: addeq sp, #0x120
+0052f296: popeq.w {r4, r5, r6, r7, r8, sb, sl, pc}
+0052f29a: blx #0x4a4fe4 ; __stack_chk_fail
+0052f29e: mov r6, r4
+0052f2a0: ldr r1, [sp, #0xc]
+0052f2a2: ldr r0, [r6, #0x18]!
+0052f2a6: ldr r0, [r0, #4]
+0052f2a8: ldr r2, [r0]
+0052f2aa: ldr r2, [r2, #0x30]
+0052f2ac: blx r2
+0052f2ae: ldr r0, [r6]
+0052f2b0: add.w sb, sp, #0x10
+0052f2b4: add r1, sp, #8
+0052f2b6: ldr r7, [r0, #4]
+0052f2b8: ldr r0, [r7]
+0052f2ba: ldr.w sl, [r0, #0x1c]
+0052f2be: movs r0, #0
+0052f2c0: str r0, [sp, #8]
+0052f2c2: mov r0, sb
+0052f2c4: blx #0x4a9c70 ; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGameC1EONS1_17RobotDisconnectedE
+0052f2c8: mov r0, r7
+0052f2ca: mov r1, sb
+0052f2cc: blx sl
+0052f2ce: add r0, sp, #0x10
+0052f2d0: blx #0x4a5158 ; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGame12ClearCurrentEv
+0052f2d4: adr r0, #0x10c
+0052f2d6: movs r1, #0
+0052f2d8: blx #0x4a9b14 ; _ZN4Anki4Util10sSetGlobalEPKcS2_
+0052f2dc: ldr r0, [r6]
+0052f2de: ldr r0, [r0, #0x34]
+0052f2e0: blx #0x4a9c7c ; _ZN4Anki5Cozmo12NeedsManager19OnRobotDisconnectedEv
+0052f2e4: ldr r0, [r6]
+0052f2e6: ldr r0, [r0, #0x3c]
+0052f2e8: blx #0x4a9c88 ; _ZN4Anki5Cozmo10PerfMetric19OnRobotDisconnectedEv
+0052f2ec: movs r0, #0
+0052f2ee: blx #0x4a51a0 ; DASPauseUploadingToServer
+0052f2f2: ldr r0, [r5, #0x14]
+0052f2f4: cbz r0, #0x52f2fe
+0052f2f6: blx #0x4a9c94 ; _ZN4Anki5Cozmo5RobotD1Ev
+0052f2fa: blx #0x4a40cc ; _ZdlPv
+0052f2fe: mov r0, r4
+0052f300: mov r1, r5
+0052f302: blx #0x4a9ca0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjPN4Anki5Cozmo5RobotEEENS_19__map_value_compareIjS6_NS_4lessIjEELb1EEENS_9allocatorIS6_EEE5eraseENS_21__tree_const_iteratorIS6_PNS_11__tree_nodeIS6_PvEEiEE
+0052f306: ldrd r5, r0, [r4, #0xc]
+0052f30a: cmp r5, r0
+0052f30c: beq #0x52f34c
+0052f30e: ldr r1, [sp, #0xc]
+0052f310: ldr r2, [r5]
+0052f312: cmp r2, r1
+0052f314: beq #0x52f31e
+0052f316: adds r5, #4
+0052f318: cmp r0, r5
+0052f31a: bne #0x52f310
+0052f31c: b #0x52f34c
+0052f31e: adds r1, r5, #4
+0052f320: movs r3, #0
+0052f322: subs r2, r0, r1
+0052f324: asrs r6, r2, #2
+0052f326: cmp.w r3, r2, asr #2
+0052f32a: beq #0x52f334
+0052f32c: mov r0, r5
+0052f32e: blx #0x4a6eec ; __aeabi_memmove4
+0052f332: ldr r0, [r4, #0x10]
+0052f334: add.w r1, r5, r6, lsl #2
+0052f338: cmp r0, r1
+0052f33a: beq #0x52f34c
+0052f33c: subs r2, r0, #4
+0052f33e: subs r1, r2, r1
+0052f340: mvn r2, #3
+0052f344: bic.w r1, r2, r1
+0052f348: add r0, r1
+0052f34a: str r0, [r4, #0x10]
+0052f34c: add r1, sp, #0xc
+0052f34e: mov r0, r8
+0052f350: blx #0x4a9cac ; _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeIjN4Anki5Cozmo22RobotInitialConnectionEEENS_22__unordered_map_hasherIjS5_NS_4hashIjEELb1EEENS_21__unordered_map_equalIjS5_NS_8equal_toIjEELb1EEENS_9allocatorIS5_EEE14__erase_uniqueIjEEjRKT_
+0052f354: adr r0, #0x98
+0052f356: movs r1, #0
+0052f358: blx #0x4a9b14 ; _ZN4Anki4Util10sSetGlobalEPKcS2_
+0052f35c: adr r0, #0x98
+0052f35e: movs r1, #0
+0052f360: blx #0x4a9b14 ; _ZN4Anki4Util10sSetGlobalEPKcS2_
+0052f364: b #0x52f286
+
+FUNCTION 0x5110d4 _ZN4Anki5Cozmo5RobotD1Ev
+005110d4: push {r4, r5, r6, r7, lr}
+005110d6: sub sp, #0xc
+005110d8: mov r4, r0
+005110da: movs r0, #0
+005110dc: strd r0, r0, [sp]
+005110e0: str r0, [sp, #8]
+005110e2: ldr r3, [r4, #0x10]
+005110e4: addw r0, pc, #0x84c
+005110e8: addw r2, pc, #0x85c
+005110ec: mov r1, sp
+005110ee: blx #0x4a4f90 ; _ZN4Anki4Util7sEventFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+005110f2: ldr r0, [sp]
+005110f4: cbz r0, #0x511114
+005110f6: ldr r1, [sp, #4]
+005110f8: cmp r1, r0
+005110fa: itttt ne
+005110fc: subne.w r2, r1, #8
+00511100: subne r2, r2, r0
+00511102: mvnne r3, #7
+00511106: bicne.w r2, r3, r2
+0051110a: itt ne
+0051110c: addne r1, r1, r2
+0051110e: strne r1, [sp, #4]
+00511110: blx #0x4a40cc ; _ZdlPv
+00511114: ldr.w r0, [r4, #0x264]
+00511118: ldr r0, [r0, #0x2c]
+0051111a: blx #0x4a7a5c ; _ZN4Anki5Cozmo19FreeplayDataTracker11ForceUpdateEv
+0051111e: mov r0, r4
+00511120: blx #0x4a7a68 ; _ZN4Anki5Cozmo5Robot8AbortAllEv
+00511124: ldr r0, [r4, #0x44]
+00511126: movs r5, #0
+00511128: str r5, [r4, #0x44]
+0051112a: cbz r0, #0x511134
+0051112c: blx #0x4a7978 ; _ZN4Anki5Cozmo15BehaviorManagerD1Ev
+00511130: blx #0x4a40cc ; _ZdlPv
+00511134: ldr r0, [r4, #0x48]
+00511136: str r5, [r4, #0x48]
+00511138: cbz r0, #0x511142
+0051113a: blx #0x4a796c ; _ZN4Anki5Cozmo21BehaviorSystemManagerD1Ev
+0051113e: blx #0x4a40cc ; _ZdlPv
+00511142: ldr.w r0, [r4, #0x250]
+00511146: blx #0x4a7a74 ; _ZN4Anki5Cozmo10ActionList5ClearEv
+0051114a: ldr.w r0, [r4, #0x250]
+0051114e: movs r5, #0
+00511150: str.w r5, [r4, #0x250]
+00511154: cbz r0, #0x51115e
+00511156: blx #0x4a7948 ; _ZN4Anki5Cozmo10ActionListD1Ev
+0051115a: blx #0x4a40cc ; _ZdlPv
+0051115e: ldr.w r0, [r4, #0x258]
+00511162: str.w r5, [r4, #0x258]
+00511166: cbz r0, #0x51116e
+00511168: ldr r1, [r0]
+0051116a: ldr r1, [r1, #4]
+0051116c: blx r1
+0051116e: ldr.w r5, [r4, #0x390]
+00511172: movs r0, #0
+00511174: str.w r0, [r4, #0x390]
+00511178: cbz r5, #0x5111b0
+0051117a: ldr r1, [r5, #0x34]
+0051117c: add.w r0, r5, #0x30
+00511180: blx #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE
+00511184: ldr r1, [r5, #0x28]
+00511186: add.w r0, r5, #0x24
+0051118a: blx #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE
+0051118e: ldr r1, [r5, #0x1c]
+00511190: add.w r0, r5, #0x18
+00511194: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+00511198: ldr r1, [r5, #0x10]
+0051119a: add.w r0, r5, #0xc
+0051119e: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+005111a2: ldr r1, [r5, #4]
+005111a4: mov r0, r5
+005111a6: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+005111aa: mov r0, r5
+005111ac: blx #0x4a40cc ; _ZdlPv
+005111b0: ldr.w r0, [r4, #0x440]
+005111b4: cbz r0, #0x5111be
+005111b6: blx #0x4a7a80 ; _ZN4Anki5Cozmo11MoodManagerD1Ev
+005111ba: blx #0x4a40cc ; _ZdlPv
+005111be: ldr.w r5, [r4, #0x448]
+005111c2: movs r6, #0
+005111c4: str.w r6, [r4, #0x440]
+005111c8: cbz r5, #0x5111ea
+005111ca: add.w r0, r5, #0x1c
+005111ce: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005111d2: ldr r1, [r5, #0x14]
+005111d4: add.w r0, r5, #0x10
+005111d8: blx #0x4a7a8c ; _ZNSt6__ndk16__treeIN4Anki5Cozmo8UnlockIdENS_4lessIS3_EENS_9allocatorIS3_EEE7destroyEPNS_11__tree_nodeIS3_PvEE
+005111dc: ldr r1, [r5, #8]
+005111de: adds r0, r5, #4
+005111e0: blx #0x4a7a8c ; _ZNSt6__ndk16__treeIN4Anki5Cozmo8UnlockIdENS_4lessIS3_EENS_9allocatorIS3_EEE7destroyEPNS_11__tree_nodeIS3_PvEE
+005111e4: mov r0, r5
+005111e6: blx #0x4a40cc ; _ZdlPv
+005111ea: ldr.w r5, [r4, #0x450]
+005111ee: str.w r6, [r4, #0x448]
+005111f2: cbz r5, #0x51121a
+005111f4: add.w r0, r5, #0x2c
+005111f8: blx #0x4a7a98 ; _ZNSt6__ndk110__list_impIN4Anki5Cozmo12ObjectTappedENS_9allocatorIS3_EEE5clearEv
+005111fc: ldr r1, [r5, #0x24]
+005111fe: add.w r0, r5, #0x20
+00511202: blx #0x4a7aa4 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo23BlockTapFilterComponent13DoubleTapInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+00511206: ldr r0, [r5, #0x14]
+00511208: cbz r0, #0x51120e
+0051120a: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+0051120e: adds r0, r5, #4
+00511210: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+00511214: mov r0, r5
+00511216: blx #0x4a40cc ; _ZdlPv
+0051121a: ldr.w r5, [r4, #0x44c]
+0051121e: movs r6, #0
+00511220: str.w r6, [r4, #0x450]
+00511224: cbz r5, #0x51124c
+00511226: add.w r0, r5, #0x80
+0051122a: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+0051122e: ldrb.w r0, [r5, #0x60]
+00511232: lsls r0, r0, #0x1f
+00511234: itt ne
+00511236: ldrne r0, [r5, #0x68]
+00511238: blxne #0x4a40cc ; _ZdlPv
+0051123c: ldr r1, [r5, #0x58]
+0051123e: add.w r0, r5, #0x54
+00511242: blx #0x4a7ab0 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo10ObjectTypeENS3_11BlockFilter10ObjectInfoEEENS_19__map_value_compareIS4_S7_NS_4lessIS4_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+00511246: mov r0, r5
+00511248: blx #0x4a40cc ; _ZdlPv
+0051124c: ldr.w r5, [r4, #0x26c]
+00511250: str.w r6, [r4, #0x44c]
+00511254: cmp r5, #0
+00511256: str.w r6, [r4, #0x26c]
+0051125a: beq #0x51126a
+0051125c: ldr r1, [r5, #8]
+0051125e: adds r0, r5, #4
+00511260: blx #0x4a7180 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo19ObjectPoseConfirmer16PoseConfirmationEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+00511264: mov r0, r5
+00511266: blx #0x4a40cc ; _ZdlPv
+0051126a: ldr.w r0, [r4, #0x264]
+0051126e: movs r5, #0
+00511270: str.w r5, [r4, #0x264]
+00511274: cbz r0, #0x51127e
+00511276: blx #0x4a7930 ; _ZN4Anki5Cozmo11AIComponentD1Ev
+0051127a: blx #0x4a40cc ; _ZdlPv
+0051127e: ldr r0, [r4, #0x5c]
+00511280: str r5, [r4, #0x5c]
+00511282: cbz r0, #0x51128c
+00511284: blx #0x4a7960 ; _ZN4Anki5Cozmo13PathComponentD1Ev
+00511288: blx #0x4a40cc ; _ZdlPv
+0051128c: ldr r5, [r4, #0x3c]
+0051128e: movs r6, #0
+00511290: str r6, [r4, #0x3c]
+00511292: cbz r5, #0x5112a2
+00511294: ldr r1, [r5, #8]
+00511296: adds r0, r5, #4
+00511298: blx #0x4a73a8 ; _ZNSt6__ndk16__treeINS_12__value_typeIiN4Anki6Vision10TrackedPetEEENS_19__map_value_compareIiS5_NS_4lessIiEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0051129c: mov r0, r5
+0051129e: blx #0x4a40cc ; _ZdlPv
+005112a2: ldr r5, [r4, #0x38]
+005112a4: str r6, [r4, #0x38]
+005112a6: cbz r5, #0x5112c6
+005112a8: add.w r0, r5, #0x28
+005112ac: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005112b0: add.w r0, r5, #0x14
+005112b4: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005112b8: ldr r1, [r5, #8]
+005112ba: adds r0, r5, #4
+005112bc: blx #0x4a5af4 ; _ZNSt6__ndk16__treeINS_12__value_typeIiN4Anki5Cozmo9FaceWorld9FaceEntryEEENS_19__map_value_compareIiS6_NS_4lessIiEELb1EEENS_9allocatorIS6_EEE7destroyEPNS_11__tree_nodeIS6_PvEE
+005112c0: mov r0, r5
+005112c2: blx #0x4a40cc ; _ZdlPv
+005112c6: ldr r0, [r4, #0x34]
+005112c8: movs r5, #0
+005112ca: str r5, [r4, #0x34]
+005112cc: cbz r0, #0x5112d6
+005112ce: blx #0x4a7984 ; _ZN4Anki5Cozmo10BlockWorldD1Ev
+005112d2: blx #0x4a40cc ; _ZdlPv
+005112d6: ldr.w r0, [r4, #0x260]
+005112da: str.w r5, [r4, #0x260]
+005112de: cbz r0, #0x5112e6
+005112e0: ldr r1, [r0]
+005112e2: ldr r1, [r1, #4]
+005112e4: blx r1
+005112e6: ldr.w r0, [r4, #0x51c]
+005112ea: movs r5, #0
+005112ec: str.w r5, [r4, #0x51c]
+005112f0: cbz r0, #0x5112fa
+005112f2: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005112f6: blx #0x4a40cc ; _ZdlPv
+005112fa: ldr.w r0, [r4, #0x518]
+005112fe: str.w r5, [r4, #0x518]
+00511302: cbz r0, #0x51130c
+00511304: blx #0x4a78a0 ; _ZN4Anki5Cozmo26RobotToEngineImplMessagingD1Ev
+00511308: blx #0x4a40cc ; _ZdlPv
+0051130c: addw r0, r4, #0x47c
+00511310: blx #0x4a78ac ; _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeIjN4Anki5Cozmo5Robot16ActiveObjectInfoEEENS_22__unordered_map_hasherIjS6_NS_4hashIjEELb1EEENS_21__unordered_map_equalIjS6_NS_8equal_toIjEELb1EEENS_9allocatorIS6_EEED2Ev
+00511314: ldr.w r5, [r4, #0x444]
+00511318: movs r0, #0
+0051131a: str.w r0, [r4, #0x444]
+0051131e: cbz r5, #0x51133a
+00511320: ldr.w r1, [r5, #0x124]
+00511324: add.w r0, r5, #0x120
+00511328: blx #0x4a78b8 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo13InventoryTypeEiEENS_19__map_value_compareIS4_S5_NS_4lessIS4_EELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0051132c: add.w r0, r5, #0x114
+00511330: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+00511334: mov r0, r5
+00511336: blx #0x4a40cc ; _ZdlPv
+0051133a: ldr.w r0, [r4, #0x394]
+0051133e: cbz r0, #0x511350
+00511340: ldr.w r1, [r4, #0x398]
+00511344: cmp r1, r0
+00511346: it ne
+00511348: strne.w r0, [r4, #0x398]
+0051134c: blx #0x4a40cc ; _ZdlPv
+00511350: ldr.w r5, [r4, #0x390]
+00511354: movs r6, #0
+00511356: str.w r6, [r4, #0x390]
+0051135a: cbz r5, #0x511392
+0051135c: ldr r1, [r5, #0x34]
+0051135e: add.w r0, r5, #0x30
+00511362: blx #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE
+00511366: ldr r1, [r5, #0x28]
+00511368: add.w r0, r5, #0x24
+0051136c: blx #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE
+00511370: ldr r1, [r5, #0x1c]
+00511372: add.w r0, r5, #0x18
+00511376: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0051137a: ldr r1, [r5, #0x10]
+0051137c: add.w r0, r5, #0xc
+00511380: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+00511384: ldr r1, [r5, #4]
+00511386: mov r0, r5
+00511388: blx #0x4a78d0 ; _ZNSt6__ndk16__treeINS_12__value_typeIjN4Anki5Cozmo14HistRobotStateEEENS_19__map_value_compareIjS5_NS_4lessIjEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0051138c: mov r0, r5
+0051138e: blx #0x4a40cc ; _ZdlPv
+00511392: add.w r0, r4, #0x2f0
+00511396: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+0051139a: add.w r0, r4, #0x2e4
+0051139e: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005113a2: add.w r0, r4, #0x2d8
+005113a6: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005113aa: add.w r0, r4, #0x2cc
+005113ae: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005113b2: add.w r0, r4, #0x2a4
+005113b6: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005113ba: add.w r0, r4, #0x298
+005113be: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005113c2: ldr.w r0, [r4, #0x294]
+005113c6: str.w r6, [r4, #0x294]
+005113ca: cbz r0, #0x5113d4
+005113cc: blx #0x4a78dc ; _ZN4Anki14PoseOriginListD1Ev
+005113d0: blx #0x4a40cc ; _ZdlPv
+005113d4: ldr.w r0, [r4, #0x28c]
+005113d8: movs r5, #0
+005113da: str.w r5, [r4, #0x28c]
+005113de: cbz r0, #0x5113e8
+005113e0: blx #0x4a78e8 ; _ZN4Anki5Cozmo20TouchSensorComponentD1Ev
+005113e4: blx #0x4a40cc ; _ZdlPv
+005113e8: ldr.w r0, [r4, #0x288]
+005113ec: str.w r5, [r4, #0x288]
+005113f0: cbz r0, #0x5113fa
+005113f2: blx #0x4a78f4 ; _ZN4Anki5Cozmo20CliffSensorComponentD1Ev
+005113f6: blx #0x4a40cc ; _ZdlPv
+005113fa: ldr.w r0, [r4, #0x284]
+005113fe: movs r5, #0
+00511400: str.w r5, [r4, #0x284]
+00511404: cbz r0, #0x51140a
+00511406: blx #0x4a40cc ; _ZdlPv
+0051140a: ldr.w r0, [r4, #0x280]
+0051140e: str.w r5, [r4, #0x280]
+00511412: cbz r0, #0x511418
+00511414: blx #0x4a40cc ; _ZdlPv
+00511418: ldr.w r0, [r4, #0x27c]
+0051141c: movs r5, #0
+0051141e: str.w r5, [r4, #0x27c]
+00511422: cbz r0, #0x511428
+00511424: blx #0x4a40cc ; _ZdlPv
+00511428: ldr.w r0, [r4, #0x278]
+0051142c: str.w r5, [r4, #0x278]
+00511430: cbz r0, #0x511438
+00511432: ldr r1, [r0]
+00511434: ldr r1, [r1, #4]
+00511436: blx r1
+00511438: ldr.w r5, [r4, #0x274]
+0051143c: movs r6, #0
+0051143e: str.w r6, [r4, #0x274]
+00511442: cbz r5, #0x51146a
+00511444: ldr r0, [r5, #0x30]
+00511446: cbz r0, #0x51144c
+00511448: blx #0x4a5560 ; _ZNSt6__ndk119__shared_weak_count14__release_weakEv
+0051144c: ldr r0, [r5, #0x20]
+0051144e: cbz r0, #0x511454
+00511450: blx #0x4a5560 ; _ZNSt6__ndk119__shared_weak_count14__release_weakEv
+00511454: ldr r1, [r5, #0x14]
+00511456: add.w r0, r5, #0x10
+0051145a: blx #0x4a7900 ; _ZNSt6__ndk16__treeINS_12__value_typeIiNS_4listINS_10shared_ptrIN4Anki5Cozmo17BackpackLightDataEEENS_9allocatorIS7_EEEEEENS_19__map_value_compareIiSB_NS_4lessIiEELb1EEENS8_ISB_EEE7destroyEPNS_11__tree_nodeISB_PvEE
+0051145e: adds r0, r5, #4
+00511460: blx #0x4a790c ; _ZNSt6__ndk110__list_impINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEE5clearEv
+00511464: mov r0, r5
+00511466: blx #0x4a40cc ; _ZdlPv
+0051146a: ldr.w r5, [r4, #0x270]
+0051146e: str.w r6, [r4, #0x270]
+00511472: cbz r5, #0x51148c
+00511474: add.w r0, r5, #0x14
+00511478: blx #0x4a790c ; _ZNSt6__ndk110__list_impINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEE5clearEv
+0051147c: ldr r1, [r5, #0xc]
+0051147e: add.w r0, r5, #8
+00511482: blx #0x4a7918 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+00511486: mov r0, r5
+00511488: blx #0x4a40cc ; _ZdlPv
+0051148c: ldr.w r5, [r4, #0x26c]
+00511490: movs r6, #0
+00511492: str.w r6, [r4, #0x26c]
+00511496: cbz r5, #0x5114a6
+00511498: ldr r1, [r5, #8]
+0051149a: adds r0, r5, #4
+0051149c: blx #0x4a7180 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo19ObjectPoseConfirmer16PoseConfirmationEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+005114a0: mov r0, r5
+005114a2: blx #0x4a40cc ; _ZdlPv
+005114a6: ldr.w r0, [r4, #0x268]
+005114aa: str.w r6, [r4, #0x268]
+005114ae: cbz r0, #0x5114b8
+005114b0: blx #0x4a7924 ; _ZN4Anki5Cozmo21TextToSpeechComponentD1Ev
+005114b4: blx #0x4a40cc ; _ZdlPv
+005114b8: ldr.w r0, [r4, #0x264]
+005114bc: movs r5, #0
+005114be: str.w r5, [r4, #0x264]
+005114c2: cbz r0, #0x5114cc
+005114c4: blx #0x4a7930 ; _ZN4Anki5Cozmo11AIComponentD1Ev
+005114c8: blx #0x4a40cc ; _ZdlPv
+005114cc: ldr.w r0, [r4, #0x260]
+005114d0: str.w r5, [r4, #0x260]
+005114d4: cbz r0, #0x5114dc
+005114d6: ldr r1, [r0]
+005114d8: ldr r1, [r1, #4]
+005114da: blx r1
+005114dc: ldr.w r0, [r4, #0x25c]
+005114e0: movs r5, #0
+005114e2: str.w r5, [r4, #0x25c]
+005114e6: cbz r0, #0x5114f0
+005114e8: blx #0x4a793c ; _ZN4Anki5Cozmo12MapComponentD1Ev
+005114ec: blx #0x4a40cc ; _ZdlPv
+005114f0: ldr.w r0, [r4, #0x258]
+005114f4: str.w r5, [r4, #0x258]
+005114f8: cbz r0, #0x511500
+005114fa: ldr r1, [r0]
+005114fc: ldr r1, [r1, #4]
+005114fe: blx r1
+00511500: ldr.w r0, [r4, #0x254]
+00511504: movs r5, #0
+00511506: str.w r5, [r4, #0x254]
+0051150a: cbz r0, #0x511512
+0051150c: ldr r1, [r0]
+0051150e: ldr r1, [r1, #4]
+00511510: blx r1
+00511512: ldr.w r0, [r4, #0x250]
+00511516: str.w r5, [r4, #0x250]
+0051151a: cbz r0, #0x511524
+0051151c: blx #0x4a7948 ; _ZN4Anki5Cozmo10ActionListD1Ev
+00511520: blx #0x4a40cc ; _ZdlPv
+00511524: ldr.w r5, [r4, #0x24c]
+00511528: movs r6, #0
+0051152a: str.w r6, [r4, #0x24c]
+0051152e: cbz r5, #0x511546
+00511530: add.w r0, r5, #0x4c
+00511534: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+00511538: add.w r0, r5, #8
+0051153c: blx #0x4a5710 ; _ZNSt6__ndk113__vector_baseINS_4pairIN4Anki5Cozmo23DrivingAnimationHandler17DrivingAnimationsENS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEEENS9_ISC_EEED2Ev
+00511540: mov r0, r5
+00511542: blx #0x4a40cc ; _ZdlPv
+00511546: add.w r0, r4, #0x60
+0051154a: blx #0x4a7954 ; _ZN4Anki5Cozmo17AnimationStreamerD1Ev
+0051154e: ldr r0, [r4, #0x5c]
+00511550: str r6, [r4, #0x5c]
+00511552: cbz r0, #0x51155c
+00511554: blx #0x4a7960 ; _ZN4Anki5Cozmo13PathComponentD1Ev
+00511558: blx #0x4a40cc ; _ZdlPv
+0051155c: ldr r0, [r4, #0x58]
+0051155e: movs r1, #0
+00511560: str r1, [r4, #0x58]
+00511562: cbz r0, #0x51156a
+00511564: ldr r1, [r0]
+00511566: ldr r1, [r1, #4]
+00511568: blx r1
+0051156a: ldrb.w r0, [r4, #0x4c]
+0051156e: lsls r0, r0, #0x1f
+00511570: itt ne
+00511572: ldrne r0, [r4, #0x54]
+00511574: blxne #0x4a40cc ; _ZdlPv
+00511578: ldr r0, [r4, #0x48]
+0051157a: movs r5, #0
+0051157c: str r5, [r4, #0x48]
+0051157e: cbz r0, #0x511588
+00511580: blx #0x4a796c ; _ZN4Anki5Cozmo21BehaviorSystemManagerD1Ev
+00511584: blx #0x4a40cc ; _ZdlPv
+00511588: ldr r0, [r4, #0x44]
+0051158a: str r5, [r4, #0x44]
+0051158c: cbz r0, #0x511596
+0051158e: blx #0x4a7978 ; _ZN4Anki5Cozmo15BehaviorManagerD1Ev
+00511592: blx #0x4a40cc ; _ZdlPv
+00511596: ldr r0, [r4, #0x40]
+00511598: movs r6, #0
+0051159a: str r6, [r4, #0x40]
+0051159c: cbz r0, #0x5115a6
+0051159e: bl #0x519320 ; 
+005115a2: blx #0x4a40cc ; _ZdlPv
+005115a6: ldr r5, [r4, #0x3c]
+005115a8: str r6, [r4, #0x3c]
+005115aa: cbz r5, #0x5115ba
+005115ac: ldr r1, [r5, #8]
+005115ae: adds r0, r5, #4
+005115b0: blx #0x4a73a8 ; _ZNSt6__ndk16__treeINS_12__value_typeIiN4Anki6Vision10TrackedPetEEENS_19__map_value_compareIiS5_NS_4lessIiEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+005115b4: mov r0, r5
+005115b6: blx #0x4a40cc ; _ZdlPv
+005115ba: ldr r5, [r4, #0x38]
+005115bc: movs r6, #0
+005115be: str r6, [r4, #0x38]
+005115c0: cbz r5, #0x5115e0
+005115c2: add.w r0, r5, #0x28
+005115c6: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005115ca: add.w r0, r5, #0x14
+005115ce: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005115d2: ldr r1, [r5, #8]
+005115d4: adds r0, r5, #4
+005115d6: blx #0x4a5af4 ; _ZNSt6__ndk16__treeINS_12__value_typeIiN4Anki5Cozmo9FaceWorld9FaceEntryEEENS_19__map_value_compareIiS6_NS_4lessIiEELb1EEENS_9allocatorIS6_EEE7destroyEPNS_11__tree_nodeIS6_PvEE
+005115da: mov r0, r5
+005115dc: blx #0x4a40cc ; _ZdlPv
+005115e0: ldr r0, [r4, #0x34]
+005115e2: str r6, [r4, #0x34]
+005115e4: cbz r0, #0x5115ee
+005115e6: blx #0x4a7984 ; _ZN4Anki5Cozmo10BlockWorldD1Ev
+005115ea: blx #0x4a40cc ; _ZdlPv
+005115ee: adds r0, r4, #4
+005115f0: bl #0x511098 ; 
+005115f4: mov r0, r4
+005115f6: add sp, #0xc
+005115f8: pop {r4, r5, r6, r7, pc}
+
+FUNCTION 0x51194c _ZN4Anki5Cozmo5Robot8AbortAllEv
+0051194c: push {r4, r5, r6, r7, lr}
+0051194e: sub sp, #4
+00511950: mov r4, r0
+00511952: mov.w r1, #-1
+00511956: ldr.w r0, [r4, #0x250]
+0051195a: blx #0x4a7abc ; _ZN4Anki5Cozmo10ActionList6CancelENS0_15RobotActionTypeE
+0051195e: ldr r0, [r4, #0x5c]
+00511960: blx #0x4a7ac8 ; _ZN4Anki5Cozmo13PathComponent5AbortEv
+00511964: mov r5, r0
+00511966: ldr.w r0, [r4, #0x280]
+0051196a: blx #0x4a7ad4 ; _ZNK4Anki5Cozmo16DockingComponent12AbortDockingEv
+0051196e: mov r6, r0
+00511970: mov r0, r4
+00511972: blx #0x4a7ae0 ; _ZN4Anki5Cozmo5Robot18SendAbortAnimationEv
+00511976: mov r7, r0
+00511978: ldr.w r0, [r4, #0x254]
+0051197c: blx #0x4a7aec ; _ZN4Anki5Cozmo17MovementComponent13StopAllMotorsEv
+00511980: orr.w r0, r6, r5
+00511984: orrs r0, r7
+00511986: it ne
+00511988: movne r0, #1
+0051198a: add sp, #4
+0051198c: pop {r4, r5, r6, r7, pc}
+
+FUNCTION 0x53d916 _ZN4Anki5Cozmo10ActionList5ClearEv
+0053d916: push {r4, r5, r7, lr}
+0053d918: mov r4, r0
+0053d91a: ldrb r0, [r4, #0xc]
+0053d91c: cbz r0, #0x53d920
+0053d91e: pop {r4, r5, r7, pc}
+0053d920: mov r5, r4
+0053d922: movs r0, #1
+0053d924: ldr r1, [r5, #4]!
+0053d928: strb r0, [r4, #0xc]
+0053d92a: mov r0, r4
+0053d92c: blx #0x4aa840 ; _ZNSt6__ndk16__treeINS_12__value_typeIiN4Anki5Cozmo11ActionQueueEEENS_19__map_value_compareIiS5_NS_4lessIiEELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0053d930: movs r0, #0
+0053d932: str r5, [r4]
+0053d934: str r0, [r4, #8]
+0053d936: str r0, [r5]
+0053d938: strb r0, [r4, #0xc]
+0053d93a: pop {r4, r5, r7, pc}
+
+FUNCTION 0x5a0d22 _ZN4Anki5Cozmo15BehaviorManagerD2Ev
+005a0d22: push.w {r4, r5, r6, r7, r8, sb, lr}
+005a0d26: sub sp, #4
+005a0d28: mov r4, r0
+005a0d2a: add.w r8, r4, #0x40
+005a0d2e: mov r5, r4
+005a0d30: ldr r1, [r5, #0x44]!
+005a0d34: mov r0, r8
+005a0d36: blx #0x4b0df8 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo15ReactionTriggerENS3_19TriggerBehaviorInfoEEENS_19__map_value_compareIS4_S6_NS_4lessIS4_EELb1EEENS_9allocatorIS6_EEE7destroyEPNS_11__tree_nodeIS6_PvEE
+005a0d3a: str r5, [r4, #0x40]
+005a0d3c: mov sb, r4
+005a0d3e: ldr r1, [sb, #0x24]!
+005a0d42: movs r6, #0
+005a0d44: add.w r7, sb, #4
+005a0d48: str r6, [r5]
+005a0d4a: cmp r1, r7
+005a0d4c: str.w r6, [sb, #0x24]
+005a0d50: beq #0x5a0d7e
+005a0d52: mov r5, r1
+005a0d54: ldr r0, [r1, #0x18]
+005a0d56: strd r6, r6, [r1, #0x14]
+005a0d5a: cbz r0, #0x5a0d60
+005a0d5c: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005a0d60: ldr r0, [r5, #4]
+005a0d62: cbz r0, #0x5a0d6e
+005a0d64: mov r1, r0
+005a0d66: ldr r0, [r1]
+005a0d68: cmp r0, #0
+005a0d6a: bne #0x5a0d64
+005a0d6c: b #0x5a0d78
+005a0d6e: ldr r1, [r5, #8]
+005a0d70: ldr r0, [r1]
+005a0d72: cmp r0, r5
+005a0d74: mov r5, r1
+005a0d76: bne #0x5a0d6e
+005a0d78: cmp r1, r7
+005a0d7a: mov r5, r1
+005a0d7c: bne #0x5a0d54
+005a0d7e: add.w r0, r4, #0x78
+005a0d82: blx #0x4b0dec ; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo22BehaviorStateLightInfoENS_9allocatorIS3_EEED2Ev
+005a0d86: add.w r0, r4, #0x6c
+005a0d8a: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005a0d8e: ldr r7, [r4, #0x68]
+005a0d90: str r6, [r4, #0x68]
+005a0d92: cbz r7, #0x5a0da2
+005a0d94: add.w r0, r7, #0x1c
+005a0d98: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005a0d9c: mov r0, r7
+005a0d9e: blx #0x4a40cc ; _ZdlPv
+005a0da2: ldr r1, [r4, #0x44]
+005a0da4: mov r0, r8
+005a0da6: blx #0x4b0df8 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo15ReactionTriggerENS3_19TriggerBehaviorInfoEEENS_19__map_value_compareIS4_S6_NS_4lessIS4_EELb1EEENS_9allocatorIS6_EEE7destroyEPNS_11__tree_nodeIS6_PvEE
+005a0daa: ldr r0, [r4, #0x3c]
+005a0dac: movs r1, #0
+005a0dae: str r1, [r4, #0x3c]
+005a0db0: cbz r0, #0x5a0dba
+005a0db2: blx #0x4b0e04 ; _ZN4Anki5Cozmo17BehaviorContainerD1Ev
+005a0db6: blx #0x4a40cc ; _ZdlPv
+005a0dba: ldr r0, [r4, #0x34]
+005a0dbc: cbz r0, #0x5a0dc2
+005a0dbe: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005a0dc2: ldr r1, [r4, #0x28]
+005a0dc4: mov r0, sb
+005a0dc6: blx #0x4b0e10 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo17HighLevelActivityENS_10shared_ptrINS3_9IActivityEEEEENS_19__map_value_compareIS4_S8_NS_4lessIS4_EELb1EEENS_9allocatorIS8_EEE7destroyEPNS_11__tree_nodeIS8_PvEE
+005a0dca: ldr r5, [r4, #0x1c]
+005a0dcc: movs r0, #0
+005a0dce: str r0, [r4, #0x1c]
+005a0dd0: cbz r5, #0x5a0de8
+005a0dd2: ldr r0, [r5, #0xc]
+005a0dd4: cbz r0, #0x5a0dda
+005a0dd6: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005a0dda: ldr r0, [r5, #4]
+005a0ddc: cbz r0, #0x5a0de2
+005a0dde: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005a0de2: mov r0, r5
+005a0de4: blx #0x4a40cc ; _ZdlPv
+005a0de8: ldr r1, [r4, #0x14]
+005a0dea: add.w r0, r4, #0x10
+005a0dee: blx #0x4b0e1c ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo8UnlockIdENS_10shared_ptrINS3_25BehaviorRequestGameSimpleEEEEENS_19__map_value_compareIS4_S8_NS_4lessIS4_EELb1EEENS_9allocatorIS8_EEE7destroyEPNS_11__tree_nodeIS8_PvEE
+005a0df2: mov r0, r4
+005a0df4: add sp, #4
+005a0df6: pop.w {r4, r5, r6, r7, r8, sb, pc}
+
+FUNCTION 0x67ae14 _ZN4Anki5Cozmo11MoodManagerD2Ev
+0067ae14: push {r4, r5, r6, lr}
+0067ae16: mov r4, r0
+0067ae18: ldr.w r1, [r4, #0x158]
+0067ae1c: cbz r1, #0x67ae34
+0067ae1e: ldr.w r0, [r4, #0x12c]
+0067ae22: cbz r0, #0x67ae34
+0067ae24: ldr.w r0, [r0, #0x250]
+0067ae28: cbz r0, #0x67ae34
+0067ae2a: blx #0x4bc588 ; _ZN4Anki5Cozmo10ActionList18UnregisterCallbackEi
+0067ae2e: movs r0, #0
+0067ae30: str.w r0, [r4, #0x158]
+0067ae34: add.w r0, r4, #0x14c
+0067ae38: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+0067ae3c: ldr.w r1, [r4, #0x144]
+0067ae40: add.w r0, r4, #0x140
+0067ae44: blx #0x4a4264 ; _ZNSt6__ndk16__treeIjNS_4lessIjEENS_9allocatorIjEEE7destroyEPNS_11__tree_nodeIjPvEE
+0067ae48: ldr.w r1, [r4, #0x138]
+0067ae4c: add.w r0, r4, #0x134
+0067ae50: blx #0x4bc594 ; _ZNSt6__ndk16__treeINS_12__value_typeINS_4pairIN4Anki5Cozmo15RobotActionTypeENS4_20ActionResultCategoryEEENS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEEENS_19__map_value_compareIS7_SE_NS_4lessIS7_EELb1EEENSB_ISE_EEE7destroyEPNS_11__tree_nodeISE_PvEE
+0067ae54: ldr.w r1, [r4, #0x124]
+0067ae58: add.w r0, r4, #0x120
+0067ae5c: blx #0x4bc5a0 ; _ZNSt6__ndk16__treeINS_12__value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEfEENS_19__map_value_compareIS7_S8_NS_4lessIS7_EELb1EEENS5_IS8_EEE7destroyEPNS_11__tree_nodeIS8_PvEE
+0067ae60: mov.w r5, #0x100
+0067ae64: adds r0, r4, r5
+0067ae66: blx #0x4bc3fc ; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo7Emotion13HistorySampleENS_9allocatorIS4_EEED2Ev
+0067ae6a: subs r5, #0x20
+0067ae6c: adds.w r0, r5, #0x20
+0067ae70: bne #0x67ae64
+0067ae72: mov r0, r4
+0067ae74: pop {r4, r5, r6, pc}
+
+FUNCTION 0x57af48 _ZN4Anki5Cozmo17AnimationStreamerD2Ev
+0057af48: push {r4, r5, r7, lr}
+0057af4a: mov r4, r0
+0057af4c: ldr r0, [pc, #0xec]
+0057af4e: add r0, pc
+0057af50: ldr r0, [r0]
+0057af52: adds r0, #8
+0057af54: str r0, [r4]
+0057af56: mov r0, r4
+0057af58: blx #0x4adb58 ; _ZN4Anki5Cozmo17AnimationStreamer15ClearSendBufferEv
+0057af5c: ldrb.w r0, [r4, #0x1c8]
+0057af60: lsls r0, r0, #0x1f
+0057af62: itt ne
+0057af64: ldrne.w r0, [r4, #0x1d0]
+0057af68: blxne #0x4a40cc ; _ZdlPv
+0057af6c: add.w r0, r4, #0x1b4
+0057af70: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+0057af74: add.w r0, r4, #0xa8
+0057af78: bl #0x52380c ; 
+0057af7c: add.w r0, r4, #0x8c
+0057af80: blx #0x4adab0 ; _ZNSt6__ndk110__list_impIPN4Anki5Cozmo14RobotInterface13EngineToRobotENS_9allocatorIS5_EEE5clearEv
+0057af84: add.w r0, r4, #0x74
+0057af88: blx #0x4adabc ; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo17ExternalInterface8SongNoteENS_9allocatorIS4_EEED2Ev
+0057af8c: ldr r0, [r4, #0x60]
+0057af8e: movs r1, #0
+0057af90: str r1, [r4, #0x60]
+0057af92: cbz r0, #0x57af9c
+0057af94: blx #0x4adac8 ; _ZN4Anki5Cozmo19TrackLayerComponentD1Ev
+0057af98: blx #0x4a40cc ; _ZdlPv
+0057af9c: ldrb.w r0, [r4, #0x54]
+0057afa0: lsls r0, r0, #0x1f
+0057afa2: itt ne
+0057afa4: ldrne r0, [r4, #0x5c]
+0057afa6: blxne #0x4a40cc ; _ZdlPv
+0057afaa: add.w r0, r4, #0x48
+0057afae: blx #0x4adad4 ; _ZNSt6__ndk113__vector_baseINS_4pairIN4Anki5Cozmo16AnimationTriggerENS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEEENS8_ISB_EEED2Ev
+0057afb2: ldr r0, [pc, #0x8c]
+0057afb4: ldr r1, [r4, #0x20]
+0057afb6: add r0, pc
+0057afb8: ldr r0, [r0]
+0057afba: adds r0, #8
+0057afbc: str r0, [r4]
+0057afbe: add.w r0, r4, #0x1c
+0057afc2: blx #0x4adae0 ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo26LiveIdleAnimationParameterENS_4pairIffEEEENS_19__map_value_compareIS4_S7_NS_4lessIS4_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+0057afc6: ldr r1, [r4, #0x14]
+0057afc8: add.w r0, r4, #0x10
+0057afcc: blx #0x4adaec ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo26LiveIdleAnimationParameterEfEENS_19__map_value_compareIS4_S5_NS_4lessIS4_EELb1EEENS_9allocatorIS5_EEE7destroyEPNS_11__tree_nodeIS5_PvEE
+0057afd0: ldr r0, [r4, #0xc]
+0057afd2: cbz r0, #0x57afd8
+0057afd4: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+0057afd8: mov r0, r4
+0057afda: pop {r4, r5, r7, pc}
+
+FUNCTION 0x56eeb8 _ZN4Anki5Cozmo19FreeplayDataTracker11ForceUpdateEv
+0056eeb8: b.w #0x8cb76c ; 
+0056eebc: cmp r1, #1
+0056eebe: itt ne
+0056eec0: movne r1, r2
+0056eec2: bne.w #0x8cb77c
+
+FUNCTION 0x517de4
+00517de4: push {r4, r5, r7, lr}
+00517de6: sub.w sp, sp, #0x410
+00517dea: mov r4, r0
+00517dec: ldr r0, [pc, #0x58]
+00517dee: add r5, sp, #4
+00517df0: mov r1, sp
+00517df2: add r0, pc
+00517df4: ldr r0, [r0]
+00517df6: ldr r0, [r0]
+00517df8: str.w r0, [sp, #0x40c]
+00517dfc: mov r0, r5
+00517dfe: blx #0x4a8158 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS1_14AbortAnimationE
+00517e02: mov r0, r4
+00517e04: mov r1, r5
+00517e06: movs r2, #1
+00517e08: movs r3, #0
+00517e0a: blx #0x4a5368 ; _ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb
+00517e0e: mov r4, r0
+00517e10: add r0, sp, #4
+00517e12: blx #0x4a5200 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv
+00517e16: ldr r0, [pc, #0x34]
+00517e18: ldr.w r1, [sp, #0x40c]
+00517e1c: add r0, pc
+00517e1e: ldr r0, [r0]
+00517e20: ldr r0, [r0]
+00517e22: subs r0, r0, r1
+00517e24: ittt eq
+00517e26: moveq r0, r4
+00517e28: addeq.w sp, sp, #0x410
+00517e2c: popeq {r4, r5, r7, pc}
+00517e2e: blx #0x4a4fe4 ; __stack_chk_fail
+
+FUNCTION 0x63be10
+0063be10: push {r4, r5, r7, lr}
+0063be12: sub.w sp, sp, #0x410
+0063be16: ldr r1, [pc, #0x5c]
+0063be18: add r5, sp, #4
+0063be1a: add r1, pc
+0063be1c: ldr r1, [r1]
+0063be1e: ldr r1, [r1]
+0063be20: str.w r1, [sp, #0x40c]
+0063be24: mov r1, sp
+0063be26: ldr r4, [r0]
+0063be28: mov r0, r5
+0063be2a: blx #0x4b94c8 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS0_12AbortDockingE
+0063be2e: mov r0, r4
+0063be30: mov r1, r5
+0063be32: movs r2, #1
+0063be34: movs r3, #0
+0063be36: blx #0x4a5368 ; _ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb
+0063be3a: mov r4, r0
+0063be3c: add r0, sp, #4
+0063be3e: blx #0x4a5200 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv
+0063be42: ldr r0, [pc, #0x34]
+0063be44: ldr.w r1, [sp, #0x40c]
+0063be48: add r0, pc
+0063be4a: ldr r0, [r0]
+0063be4c: ldr r0, [r0]
+0063be4e: subs r0, r0, r1
+0063be50: ittt eq
+0063be52: moveq r0, r4
+0063be54: addeq.w sp, sp, #0x410
+0063be58: popeq {r4, r5, r7, pc}
+0063be5a: blx #0x4a4fe4 ; __stack_chk_fail
+
+FUNCTION 0x649100
+00649100: push {r4, r5, r6, lr}
+00649102: sub sp, #0x10
+00649104: mov r4, r0
+00649106: movs r0, #0
+00649108: ldr r1, [pc, #0xd8]
+0064910a: strd r0, r0, [sp, #4]
+0064910e: str r0, [sp, #0xc]
+00649110: add r1, pc
+00649112: ldr r0, [pc, #0xd4]
+00649114: ldr r2, [r4, #0x38]
+00649116: add r0, pc
+00649118: ldr.w r1, [r1, r2, lsl #2]
+0064911c: add r2, sp, #4
+0064911e: str r1, [sp]
+00649120: adr r1, #0xc8
+00649122: adr r3, #0xdc
+00649124: blx #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00649128: ldr r0, [sp, #4]
+0064912a: cbz r0, #0x64914a
+0064912c: ldr r1, [sp, #8]
+0064912e: cmp r1, r0
+00649130: itttt ne
+00649132: subne.w r2, r1, #8
+00649136: subne r2, r2, r0
+00649138: mvnne r3, #7
+0064913c: bicne.w r2, r3, r2
+00649140: itt ne
+00649142: addne r1, r1, r2
+00649144: strne r1, [sp, #8]
+00649146: blx #0x4a40cc ; _ZdlPv
+0064914a: ldr r0, [r4, #0x20]
+0064914c: cbz r0, #0x64915a
+0064914e: ldr r1, [r0]
+00649150: ldr r1, [r1, #0x10]
+00649152: blx r1
+00649154: movs r0, #0
+00649156: strb.w r0, [r4, #0x47]
+0064915a: ldr r0, [r4, #0x34]
+0064915c: movs r1, #0
+0064915e: strd r1, r1, [r4, #0x30]
+00649162: cbz r0, #0x649168
+00649164: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+00649168: mov r0, r4
+0064916a: blx #0x4b9ccc ; _ZN4Anki5Cozmo13PathComponent9ClearPathEv
+0064916e: mov r5, r0
+00649170: ldr r0, [r4, #0x38]
+00649172: cmp r0, #4
+00649174: bhi #0x64918c
+00649176: movs r1, #1
+00649178: lsl.w r0, r1, r0
+0064917c: tst.w r0, #0x13
+00649180: ite eq
+00649182: moveq r1, #5
+00649184: movne r1, #4
+00649186: mov r0, r4
+00649188: blx #0x4b9cd8 ; _ZN4Anki5Cozmo13PathComponent20SetDriveToPoseStatusENS0_23ERobotDriveToPoseStatusE
+0064918c: ldr r6, [r4, #0x50]
+0064918e: movs r0, #0
+00649190: strb.w r0, [r4, #0x46]
+00649194: ldr r4, [r6]
+00649196: b #0x6491a6
+00649198: sub.w r0, r1, #0xc
+0064919c: str r0, [r6, #4]
+0064919e: ldr r1, [r1, #-0xc]
+006491a2: ldr r1, [r1]
+006491a4: blx r1
+006491a6: ldr r1, [r6, #4]
+006491a8: cmp r1, r4
+006491aa: bne #0x649198
+006491ac: ldr r0, [pc, #0x6c]
+006491ae: add r0, pc
+006491b0: ldr r0, [r0]
+006491b2: ldr r0, [r0]
+006491b4: str r0, [r6, #0xc]
+006491b6: mov r0, r5
+006491b8: add sp, #0x10
+006491ba: pop {r4, r5, r6, pc}
+
+FUNCTION 0x63fbd8
+0063fbd8: push.w {r4, r5, r6, r7, r8, sb, lr}
+0063fbdc: sub sp, #0x24
+0063fbde: mov r4, r0
+0063fbe0: mov sb, r4
+0063fbe2: ldrb r0, [sb, #0xb8]!
+0063fbe6: cbnz r0, #0x63fbf8
+0063fbe8: ldrb.w r0, [r4, #0xb9]
+0063fbec: cbnz r0, #0x63fbf8
+0063fbee: ldrb.w r0, [r4, #0xba]
+0063fbf2: cmp r0, #0
+0063fbf4: beq.w #0x63fe0e
+0063fbf8: ldrb.w r0, [r4, #0xd4]
+0063fbfc: cmp r0, #0
+0063fbfe: bne.w #0x63fe0e
+0063fc02: ldr.w r7, [r4, #0xc0]
+0063fc06: movs r5, #0
+0063fc08: str r5, [sp, #0x20]
+0063fc0a: strd r5, r5, [sp, #0x18]
+0063fc0e: mov r0, r7
+0063fc10: blx #0x4a44e0 ; strlen
+0063fc14: add.w r8, sp, #0x18
+0063fc18: mov r2, r0
+0063fc1a: mov r1, r7
+0063fc1c: mov r0, r8
+0063fc1e: bl #0x4e02b2 ; 
+0063fc22: ldr.w r6, [r4, #0xc0]
+0063fc26: str r5, [sp, #0x10]
+0063fc28: strd r5, r5, [sp, #8]
+0063fc2c: mov r0, r6
+0063fc2e: blx #0x4a44e0 ; strlen
+0063fc32: mov r2, r0
+0063fc34: add r7, sp, #8
+0063fc36: mov r1, r6
+0063fc38: mov r0, r7
+0063fc3a: bl #0x4e02b2 ; 
+0063fc3e: add.w r2, r4, #0xb9
+0063fc42: mov r0, r4
+0063fc44: movs r1, #0
+0063fc46: movs r3, #1
+0063fc48: strd r8, r7, [sp]
+0063fc4c: blx #0x4b9654 ; _ZN4Anki5Cozmo17MovementComponent34DirectDriveCheckSpeedAndLockTracksEfRbhRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEESB_
+0063fc50: ldrb.w r0, [sp, #8]
+0063fc54: lsls r0, r0, #0x1f
+0063fc56: itt ne
+0063fc58: ldrne r0, [sp, #0x10]
+0063fc5a: blxne #0x4a40cc ; _ZdlPv
+0063fc5e: ldrb.w r0, [sp, #0x18]
+0063fc62: lsls r0, r0, #0x1f
+0063fc64: itt ne
+0063fc66: ldrne r0, [sp, #0x20]
+0063fc68: blxne #0x4a40cc ; _ZdlPv
+0063fc6c: ldr.w r7, [r4, #0xc4]
+0063fc70: movs r5, #0
+0063fc72: str r5, [sp, #0x20]
+0063fc74: strd r5, r5, [sp, #0x18]
+0063fc78: mov r0, r7
+0063fc7a: blx #0x4a44e0 ; strlen
+0063fc7e: add.w r8, sp, #0x18
+0063fc82: mov r2, r0
+0063fc84: mov r1, r7
+0063fc86: mov r0, r8
+0063fc88: bl #0x4e02b2 ; 
+0063fc8c: ldr.w r6, [r4, #0xc4]
+0063fc90: str r5, [sp, #0x10]
+0063fc92: strd r5, r5, [sp, #8]
+0063fc96: mov r0, r6
+0063fc98: blx #0x4a44e0 ; strlen
+0063fc9c: mov r2, r0
+0063fc9e: add r7, sp, #8
+0063fca0: mov r1, r6
+0063fca2: mov r0, r7
+0063fca4: bl #0x4e02b2 ; 
+0063fca8: add.w r2, r4, #0xba
+0063fcac: mov r0, r4
+0063fcae: movs r1, #0
+0063fcb0: movs r3, #2
+0063fcb2: strd r8, r7, [sp]
+0063fcb6: blx #0x4b9654 ; _ZN4Anki5Cozmo17MovementComponent34DirectDriveCheckSpeedAndLockTracksEfRbhRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEESB_
+0063fcba: ldrb.w r0, [sp, #8]
+0063fcbe: lsls r0, r0, #0x1f
+0063fcc0: itt ne
+0063fcc2: ldrne r0, [sp, #0x10]
+0063fcc4: blxne #0x4a40cc ; _ZdlPv
+0063fcc8: ldrb.w r0, [sp, #0x18]
+0063fccc: lsls r0, r0, #0x1f
+0063fcce: itt ne
+0063fcd0: ldrne r0, [sp, #0x20]
+0063fcd2: blxne #0x4a40cc ; _ZdlPv
+0063fcd6: ldr.w r7, [r4, #0xbc]
+0063fcda: movs r5, #0
+0063fcdc: str r5, [sp, #0x20]
+0063fcde: strd r5, r5, [sp, #0x18]
+0063fce2: mov r0, r7
+0063fce4: blx #0x4a44e0 ; strlen
+0063fce8: add.w r8, sp, #0x18
+0063fcec: mov r2, r0
+0063fcee: mov r1, r7
+0063fcf0: mov r0, r8
+0063fcf2: bl #0x4e02b2 ; 
+0063fcf6: ldr.w r6, [r4, #0xbc]
+0063fcfa: str r5, [sp, #0x10]
+0063fcfc: strd r5, r5, [sp, #8]
+0063fd00: mov r0, r6
+0063fd02: blx #0x4a44e0 ; strlen
+0063fd06: mov r2, r0
+0063fd08: add r7, sp, #8
+0063fd0a: mov r1, r6
+0063fd0c: mov r0, r7
+0063fd0e: bl #0x4e02b2 ; 
+0063fd12: mov r0, r4
+0063fd14: movs r1, #0
+0063fd16: mov r2, sb
+0063fd18: movs r3, #4
+0063fd1a: strd r8, r7, [sp]
+0063fd1e: blx #0x4b9654 ; _ZN4Anki5Cozmo17MovementComponent34DirectDriveCheckSpeedAndLockTracksEfRbhRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEESB_
+0063fd22: ldrb.w r0, [sp, #8]
+0063fd26: lsls r0, r0, #0x1f
+0063fd28: itt ne
+0063fd2a: ldrne r0, [sp, #0x10]
+0063fd2c: blxne #0x4a40cc ; _ZdlPv
+0063fd30: ldrb.w r0, [sp, #0x18]
+0063fd34: lsls r0, r0, #0x1f
+0063fd36: itt ne
+0063fd38: ldrne r0, [sp, #0x20]
+0063fd3a: blxne #0x4a40cc ; _ZdlPv
+0063fd3e: ldr.w r7, [r4, #0xbc]
+0063fd42: movs r5, #0
+0063fd44: str r5, [sp, #0x20]
+0063fd46: strd r5, r5, [sp, #0x18]
+0063fd4a: mov r0, r7
+0063fd4c: blx #0x4a44e0 ; strlen
+0063fd50: add.w r8, sp, #0x18
+0063fd54: mov r2, r0
+0063fd56: mov r1, r7
+0063fd58: mov r0, r8
+0063fd5a: bl #0x4e02b2 ; 
+0063fd5e: ldr.w r6, [r4, #0xc8]
+0063fd62: str r5, [sp, #0x10]
+0063fd64: strd r5, r5, [sp, #8]
+0063fd68: mov r0, r6
+0063fd6a: blx #0x4a44e0 ; strlen
+0063fd6e: mov r2, r0
+0063fd70: add r7, sp, #8
+0063fd72: mov r1, r6
+0063fd74: mov r0, r7
+0063fd76: bl #0x4e02b2 ; 
+0063fd7a: mov r0, r4
+0063fd7c: movs r1, #0
+0063fd7e: mov r2, sb
+0063fd80: movs r3, #4
+0063fd82: strd r8, r7, [sp]
+0063fd86: blx #0x4b9654 ; _ZN4Anki5Cozmo17MovementComponent34DirectDriveCheckSpeedAndLockTracksEfRbhRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEESB_
+0063fd8a: ldrb.w r0, [sp, #8]
+0063fd8e: lsls r0, r0, #0x1f
+0063fd90: itt ne
+0063fd92: ldrne r0, [sp, #0x10]
+0063fd94: blxne #0x4a40cc ; _ZdlPv
+0063fd98: ldrb.w r0, [sp, #0x18]
+0063fd9c: lsls r0, r0, #0x1f
+0063fd9e: itt ne
+0063fda0: ldrne r0, [sp, #0x20]
+0063fda2: blxne #0x4a40cc ; _ZdlPv
+0063fda6: ldr.w r7, [r4, #0xbc]
+0063fdaa: movs r5, #0
+0063fdac: str r5, [sp, #0x20]
+0063fdae: strd r5, r5, [sp, #0x18]
+0063fdb2: mov r0, r7
+0063fdb4: blx #0x4a44e0 ; strlen
+0063fdb8: add.w r8, sp, #0x18
+0063fdbc: mov r2, r0
+0063fdbe: mov r1, r7
+0063fdc0: mov r0, r8
+0063fdc2: bl #0x4e02b2 ; 
+0063fdc6: ldr.w r6, [r4, #0xcc]
+0063fdca: str r5, [sp, #0x10]
+0063fdcc: strd r5, r5, [sp, #8]
+0063fdd0: mov r0, r6
+0063fdd2: blx #0x4a44e0 ; strlen
+0063fdd6: mov r2, r0
+0063fdd8: add r7, sp, #8
+0063fdda: mov r1, r6
+0063fddc: mov r0, r7
+0063fdde: bl #0x4e02b2 ; 
+0063fde2: mov r0, r4
+0063fde4: movs r1, #0
+0063fde6: mov r2, sb
+0063fde8: movs r3, #4
+0063fdea: strd r8, r7, [sp]
+0063fdee: blx #0x4b9654 ; _ZN4Anki5Cozmo17MovementComponent34DirectDriveCheckSpeedAndLockTracksEfRbhRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEESB_
+0063fdf2: ldrb.w r0, [sp, #8]
+0063fdf6: lsls r0, r0, #0x1f
+0063fdf8: itt ne
+0063fdfa: ldrne r0, [sp, #0x10]
+0063fdfc: blxne #0x4a40cc ; _ZdlPv
+0063fe00: ldrb.w r0, [sp, #0x18]
+0063fe04: lsls r0, r0, #0x1f
+0063fe06: itt ne
+0063fe08: ldrne r0, [sp, #0x20]
+0063fe0a: blxne #0x4a40cc ; _ZdlPv
+0063fe0e: ldr r0, [r4, #4]
+0063fe10: bl #0x64099c ; 
+0063fe14: add sp, #0x24
+0063fe16: pop.w {r4, r5, r6, r7, r8, sb, pc}

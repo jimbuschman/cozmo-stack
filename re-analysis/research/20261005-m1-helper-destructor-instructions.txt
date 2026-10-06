@@ -1,0 +1,215 @@
+SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+
+FUNCTION 0x5b5f20 
+005b5f20: push {r4, lr}
+005b5f22: mov r4, r0
+005b5f24: ldr r0, [pc, #0xe8]
+005b5f26: add r0, pc
+005b5f28: ldr r1, [r0]
+005b5f2a: ldr.w r0, [r4, #0xe8]
+005b5f2e: adds r1, #8
+005b5f30: str r1, [r4]
+005b5f32: add.w r1, r4, #0xd8
+005b5f36: cmp r1, r0
+005b5f38: beq #0x5b5f42
+005b5f3a: cbz r0, #0x5b5f48
+005b5f3c: ldr r1, [r0]
+005b5f3e: ldr r1, [r1, #0x14]
+005b5f40: b #0x5b5f46
+005b5f42: ldr r1, [r0]
+005b5f44: ldr r1, [r1, #0x10]
+005b5f46: blx r1
+005b5f48: ldr.w r0, [r4, #0xd0]
+005b5f4c: add.w r1, r4, #0xc0
+005b5f50: cmp r1, r0
+005b5f52: beq #0x5b5f5c
+005b5f54: cbz r0, #0x5b5f62
+005b5f56: ldr r1, [r0]
+005b5f58: ldr r1, [r1, #0x14]
+005b5f5a: b #0x5b5f60
+005b5f5c: ldr r1, [r0]
+005b5f5e: ldr r1, [r1, #0x10]
+005b5f60: blx r1
+005b5f62: ldr.w r0, [r4, #0xb8]
+005b5f66: add.w r1, r4, #0xa8
+005b5f6a: cmp r1, r0
+005b5f6c: beq #0x5b5f76
+005b5f6e: cbz r0, #0x5b5f7c
+005b5f70: ldr r1, [r0]
+005b5f72: ldr r1, [r1, #0x14]
+005b5f74: b #0x5b5f7a
+005b5f76: ldr r1, [r0]
+005b5f78: ldr r1, [r1, #0x10]
+005b5f7a: blx r1
+005b5f7c: ldr.w r0, [r4, #0x90]
+005b5f80: add.w r1, r4, #0x80
+005b5f84: cmp r1, r0
+005b5f86: beq #0x5b5f90
+005b5f88: cbz r0, #0x5b5f96
+005b5f8a: ldr r1, [r0]
+005b5f8c: ldr r1, [r1, #0x14]
+005b5f8e: b #0x5b5f94
+005b5f90: ldr r1, [r0]
+005b5f92: ldr r1, [r1, #0x10]
+005b5f94: blx r1
+005b5f96: ldr r0, [r4, #0x78]
+005b5f98: add.w r1, r4, #0x68
+005b5f9c: cmp r1, r0
+005b5f9e: beq #0x5b5fa8
+005b5fa0: cbz r0, #0x5b5fae
+005b5fa2: ldr r1, [r0]
+005b5fa4: ldr r1, [r1, #0x14]
+005b5fa6: b #0x5b5fac
+005b5fa8: ldr r1, [r0]
+005b5faa: ldr r1, [r1, #0x10]
+005b5fac: blx r1
+005b5fae: ldr r0, [r4, #0x64]
+005b5fb0: cbz r0, #0x5b5fb6
+005b5fb2: blx #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005b5fb6: ldr r0, [r4, #0x58]
+005b5fb8: add.w r1, r4, #0x48
+005b5fbc: cmp r1, r0
+005b5fbe: beq #0x5b5fc8
+005b5fc0: cbz r0, #0x5b5fce
+005b5fc2: ldr r1, [r0]
+005b5fc4: ldr r1, [r1, #0x14]
+005b5fc6: b #0x5b5fcc
+005b5fc8: ldr r1, [r0]
+005b5fca: ldr r1, [r1, #0x10]
+005b5fcc: blx r1
+005b5fce: ldr r0, [r4, #0x40]
+005b5fd0: add.w r1, r4, #0x30
+005b5fd4: cmp r1, r0
+005b5fd6: beq #0x5b5fe0
+005b5fd8: cbz r0, #0x5b5fe6
+005b5fda: ldr r1, [r0]
+005b5fdc: ldr r1, [r1, #0x14]
+005b5fde: b #0x5b5fe4
+005b5fe0: ldr r1, [r0]
+005b5fe2: ldr r1, [r1, #0x10]
+005b5fe4: blx r1
+005b5fe6: ldrb.w r0, [r4, #0x20]
+005b5fea: lsls r0, r0, #0x1f
+005b5fec: itt ne
+005b5fee: ldrne r0, [r4, #0x28]
+005b5ff0: blxne #0x4a40cc ; _ZdlPv
+005b5ff4: ldr r0, [pc, #0x1c]
+005b5ff6: ldrb r1, [r4, #4]
+005b5ff8: add r0, pc
+005b5ffa: ldr r0, [r0]
+005b5ffc: adds r0, #8
+005b5ffe: str r0, [r4]
+005b6000: lsls r0, r1, #0x1f
+005b6002: itt ne
+005b6004: ldrne r0, [r4, #0xc]
+005b6006: blxne #0x4a40cc ; _ZdlPv
+005b600a: mov r0, r4
+005b600c: pop {r4, pc}
+
+FUNCTION 0x5b6018 
+005b6018: trap 
+005b601a: movs r0, r0
+
+FUNCTION 0x5b57b0 _ZN4Anki5Cozmo13DriveToHelperD1Ev
+005b57b0: push {r4, lr}
+005b57b2: mov r4, r0
+005b57b4: ldr r0, [pc, #0x18]
+005b57b6: add r0, pc
+005b57b8: ldr r0, [r0]
+005b57ba: adds r0, #8
+005b57bc: str r0, [r4]
+005b57be: add.w r0, r4, #0x114
+005b57c2: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005b57c6: mov r0, r4
+005b57c8: pop.w {r4, lr}
+005b57cc: b.w #0x5b5f20 ; 
+
+FUNCTION 0x5b57d4 _ZN4Anki5Cozmo13DriveToHelperD0Ev
+005b57d4: push {r4, lr}
+005b57d6: mov r4, r0
+005b57d8: ldr r0, [pc, #0x1c]
+005b57da: add r0, pc
+005b57dc: ldr r0, [r0]
+005b57de: adds r0, #8
+005b57e0: str r0, [r4]
+005b57e2: add.w r0, r4, #0x114
+005b57e6: blx #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+005b57ea: mov r0, r4
+005b57ec: bl #0x5b5f20 ; 
+005b57f0: pop.w {r4, lr}
+005b57f4: b.w #0x8ca88c ; 
+
+FUNCTION 0x5b7b18 _ZN4Anki5Cozmo17PickupBlockHelperD1Ev
+005b7b18: b.w #0x5b5f20 ; 
+005b7b1c: push {r7, lr}
+005b7b1e: bl #0x5b5f20 ; 
+005b7b22: pop.w {r7, lr}
+005b7b26: b.w #0x8ca88c ; 
+
+FUNCTION 0x5b8c94 _ZN4Anki5Cozmo16PlaceBlockHelperD1Ev
+005b8c94: b.w #0x5b5f20 ; 
+005b8c98: push {r7, lr}
+005b8c9a: bl #0x5b5f20 ; 
+005b8c9e: pop.w {r7, lr}
+005b8ca2: b.w #0x8ca88c ; 
+
+FUNCTION 0x5b8fb8 _ZN4Anki5Cozmo20PlaceRelObjectHelperD1Ev
+005b8fb8: b.w #0x5b5f20 ; 
+005b8fbc: push {r7, lr}
+005b8fbe: bl #0x5b5f20 ; 
+005b8fc2: pop.w {r7, lr}
+005b8fc6: b.w #0x8ca88c ; 
+
+FUNCTION 0x5b99cc _ZN4Anki5Cozmo15RollBlockHelperD1Ev
+005b99cc: push {r4, lr}
+005b99ce: mov r4, r0
+005b99d0: ldr r0, [pc, #0x2c]
+005b99d2: add r0, pc
+005b99d4: ldr r1, [r0]
+005b99d6: ldr.w r0, [r4, #0x108]
+005b99da: adds r1, #8
+005b99dc: str r1, [r4]
+005b99de: add.w r1, r4, #0xf8
+005b99e2: cmp r1, r0
+005b99e4: beq #0x5b99ee
+005b99e6: cbz r0, #0x5b99f4
+005b99e8: ldr r1, [r0]
+005b99ea: ldr r1, [r1, #0x14]
+005b99ec: b #0x5b99f2
+005b99ee: ldr r1, [r0]
+005b99f0: ldr r1, [r1, #0x10]
+005b99f2: blx r1
+005b99f4: mov r0, r4
+005b99f6: pop.w {r4, lr}
+005b99fa: b.w #0x5b5f20 ; 
+
+FUNCTION 0x5b9a04 _ZN4Anki5Cozmo15RollBlockHelperD0Ev
+005b9a04: push {r7, lr}
+005b9a06: blx #0x4b2658 ; _ZN4Anki5Cozmo15RollBlockHelperD2Ev
+005b9a0a: pop.w {r7, lr}
+005b9a0e: b.w #0x8ca88c ; 
+
+FUNCTION 0x5bae54 _ZN4Anki5Cozmo20SearchForBlockHelperD1Ev
+005bae54: push {r4, lr}
+005bae56: mov r4, r0
+005bae58: ldr r0, [pc, #0x2c]
+005bae5a: ldr.w r1, [r4, #0x138]
+005bae5e: add r0, pc
+005bae60: ldr r0, [r0]
+005bae62: adds r0, #8
+005bae64: str r0, [r4]
+005bae66: add.w r0, r4, #0x134
+005bae6a: blx #0x4a5890 ; _ZNSt6__ndk16__treeIN4Anki8ObjectIDENS_4lessIS2_EENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE
+005bae6e: add.w r0, r4, #0x110
+005bae72: blx #0x4a7d68 ; _ZN4Anki6Vision6CameraD1Ev
+005bae76: add.w r0, r4, #0x100
+005bae7a: blx #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+005bae7e: mov r0, r4
+005bae80: pop.w {r4, lr}
+005bae84: b.w #0x5b5f20 ; 
+
+FUNCTION 0x5bae8c _ZN4Anki5Cozmo20SearchForBlockHelperD0Ev
+005bae8c: push {r7, lr}
+005bae8e: blx #0x4b27a8 ; _ZN4Anki5Cozmo20SearchForBlockHelperD2Ev
+005bae92: pop.w {r7, lr}
+005bae96: b.w #0x8ca88c ; 
