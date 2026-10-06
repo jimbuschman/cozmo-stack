@@ -66,3 +66,11 @@ Eligibility is captured at claim time; the built records' leading unresolved tex
 
 - Final focused checks: 320 passed, zero failed/skipped. Full suite: 3,946 passed, zero failed/skipped (4m20s); fidelity --check and staged diff --check pass. CHECKLIST self-review PASS for the built subset only.
 - Batch commit and push-hook result follow in a publication entry. Remaining items above require checked extraction/other-layer integration or manager disposition; no additional build from unchecked rows is authorized in this job.
+
+## Publication
+
+- Claim: 5552aa0, pushed to main.
+- Batch 1: 16a9210, pushed to main on 2026-10-06. Push gate independently passed fidelity and all 3,946 tests, zero failed/skipped (4m29s). No hook bypass or force push.
+- Built/annotated records: M3-026/030/031/032, M4-001/010/020. Added live M4-011 coverage without changing its settled record. No record settled and no hardware run.
+
+BLOCKED 2026-10-06: all independent checked corrections in this batch are published. Remaining MISSINGs are enumerated above: NEEDS EXTRACTION records, absent complete checked codec/format/unit/connection rows, and other-layer production dependencies. The layer is not complete or accepted. Requires manager-checked rows/integration or disposition before further building; stop here under the operator's scope.
