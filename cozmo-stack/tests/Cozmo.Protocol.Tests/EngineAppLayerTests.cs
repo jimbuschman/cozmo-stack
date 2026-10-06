@@ -1274,12 +1274,20 @@ public class EngineAppLayerTests
     }
 
     [Theory]
-    [InlineData("1.5")]
-    [InlineData("1e3")]
-    [InlineData("18446744073709551616")]
-    [InlineData("-9223372036854775809")]
-    public void M1_029_RealConversionStaysMissing(string input) =>
-        Assert.Throws<JsonMissingSource>(() => Parses(input, out _));
+    // Expected bits: shipped converter emulator at 0x7E570, FPSCR=0; fixture below.
+    [InlineData("1.5", 0x3FF8000000000000UL)]
+    [InlineData("1e3", 0x408F400000000000UL)]
+    [InlineData("18446744073709551616", 0x43F0000000000000UL)]
+    [InlineData("-9223372036854775809", 0xC3E0000000000000UL)]
+    public void M1_029_RealConversionUsesShippedBits(string input, ulong expected)
+    {
+        Assert.True(Parses(input, out var document));
+        using (document)
+        {
+            Assert.Equal(FirmwareJsonKind.Real, document.RootElement.Kind);
+            Assert.Equal(expected, unchecked((ulong)BitConverter.DoubleToInt64Bits(document.RootElement.Real)));
+        }
+    }
 
     [Theory]
     [InlineData("\"\\uDC00\"", "EDB080")]

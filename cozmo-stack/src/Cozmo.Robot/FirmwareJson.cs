@@ -5,7 +5,7 @@ namespace Cozmo.Robot;
 
 // fidelity: M1-029
 // Manager-adopted item 6, with 20261005-B-M1M2-rows-check.md Item 6 corrections.
-// The real-conversion boundary is explicitly unrecovered, not a .NET substitute.
+// Real conversion follows the adopted shipped-converter rows; formatting stays MISSING.
 internal enum FirmwareJsonKind : byte { Null, Int, UInt, Real, String, Boolean, Array, Object }
 
 internal sealed class FirmwareJsonValue
@@ -261,7 +261,10 @@ internal static class Json
             {
                 byte c = _bytes[p++];
                 if (!Digit(c) || magnitude > limit / 10 || (magnitude == limit / 10 && (ulong)(c - '0') > limit % 10))
-                    throw new JsonMissingSource("MISSING: Json::Reader::decodeDouble -> shipped libc++ num_get/locale/rounding 0x008E22C8..0x008E23B2");
+                {
+                    if (!FirmwareJsonDouble.TryConvert(_bytes.AsSpan(token.Start, token.End - token.Start), out double real)) return false;
+                    value.Assign(FirmwareJsonKind.Real); value.Real = real; return true;
+                }
                 magnitude = magnitude * 10 + (ulong)(c - '0');
             }
             if (negative || magnitude <= 0x7FFFFFFF)

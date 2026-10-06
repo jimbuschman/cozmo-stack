@@ -78,3 +78,16 @@ CLAIMED Codex: pulled; manager-adopted item 6 and Item 6 corrections in the rows
 
 BLOCKED 2026-10-05: the checked byte-reader subset is built; M1-029 is not complete. Needed checked rows: shipped real-number num_get/decimal rounding/overflow/current process locale (0x008E22C8/0x008E22F8), plus real asString formatting. Final exception destination stays MISSING as explicitly required. No research or higher-layer build started. Publication hash and gate result follow after push.
 - Batch 5 commit: 2167663 (pushed to main). Independent push gate passed fidelity and all 3,928 tests, zero failed/skipped (2 m 40 s). Checked subset only; BLOCKED/MISSING details above remain authoritative. No settlement or hardware acceptance.
+
+
+## Batch 6 claim: M1-029 real conversion (2026-10-05)
+
+CLAIMED Codex: pulled/rebased. Operator adopts converter build rows and fixes nearest rounding / C decimal point as EQUIVALENT_IMPLEMENTATION runtime assumptions. Build the row-faithful converter; shipped-emulator fixtures provide expected bits. Formatting and exception destination stay MISSING. No record settles.
+
+- Built FirmwareJsonDouble S1-S21/W1 and wired Reader.DecodeNumber. Preserved binary unadjusted normalized ratio (0x7EE9E), ordered binary64 arithmetic and source failure gates. Runtime nearest/C-locale assumptions recorded as EQUIVALENT_IMPLEMENTATION in M1-029 unresolved; shipped conversion remains source-faithful and record stays IMPLEMENTATION_GAP.
+- Checked-in expected bits/success are copied from the shipped-converter emulator corpus, with hashes and fixture provenance. All 37,771 decimal fixtures across eight categories pass, plus firmware Reader and Header.Parse production-entry tests and numeric overflow fallback fixtures. Expected values never come from C#.
+- .gitignore excludes research .so builds, qemu executable, local dependency folders and downloaded lineage inputs. No unrelated research files staged.
+- CHECKLIST self-review: production entry, integer-to-real fallback, errno/end gates, underflow/overflow, sign-zero, exact tables/width/order checked. Required read-only verifier PASS: native correction gates/order checked; independently compared every fixture to committed emulator output, no defects or circular tests. Manifest test names updated.
+- MISSING retained: real asString formatting, final escaping exception destination, allocation-failure/extreme-length effects. No settlement, no hardware. Full-suite/publication results follow.
+
+- Full suite: 3,938 passed, zero failed/skipped (3 m 32 s). Fidelity and staged diff checks pass. Required verifier PASS. Publication on 2026-10-06 follows; requested real-conversion scope DONE, whole M1-029 remains incomplete due to the documented MISSINGs.

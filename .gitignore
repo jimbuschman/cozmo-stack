@@ -47,3 +47,9 @@ df.txt
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Local research executables, downloaded support and lineage inputs
+/re-analysis/research/*.so
+/re-analysis/research/20261005-jsoncpp-qemu-arm
+/re-analysis/research/_*_dependencies/
+/re-analysis/research/20261005-converter-lineage-source/
