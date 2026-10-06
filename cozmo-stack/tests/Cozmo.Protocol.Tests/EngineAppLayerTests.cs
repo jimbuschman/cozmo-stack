@@ -13,6 +13,80 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class EngineAppLayerTests
 {
+    // Checked M4-011 Load 0061A2DC..0061A58E; Init through SetPhysicalRobot 00513954.
+    [Fact]
+    public void M4_011_CheckedPoolGrammarAndFiveEntryBoundThroughFirmwareEntry()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-m3m4-" + Guid.NewGuid().ToString("N") + ".txt");
+        try
+        {
+            File.WriteAllText(path, "\nignored,1\n0x10\n0x20,3\n0x30,bad\n0x30,2\n0x40,1\n0x50,13\n0x60,2\n0x70,1\n");
+            using (var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path }))
+            {
+                rig.ToValidated(); // physical firmware handler invokes the live BlockFilter.Init
+                Assert.Equal(new uint[] { 0x20, 0x30, 0x40, 0x50, 0x60 }, rig.Robot.Cubes.Connections.PersistentPool.Select(p => p.FactoryId));
+                Assert.Equal(new int[] { 3, 2, 1, 13, 2 }, rig.Robot.Cubes.Connections.PersistentPool.Select(p => (int)p.Type));
+            }
+            File.WriteAllText(path, "0x2a,bad\n");
+            using var partial = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            partial.ToValidated();
+            Assert.Equal(0x2Au, partial.Robot.Cubes.Connections.PersistentPool[0].FactoryId); // stored before throwing type conversion
+        }
+        finally { File.Delete(path); }
+    }
+
+    // M4-011: order 00537ABC/00537C80; last-at-equal RSSI 00518314; save 0061B014.
+    [Fact]
+    public void M4_011_CheckedRssiTieAndSaveThroughAdvertisementAndRobotTick()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-m3m4-" + Guid.NewGuid().ToString("N") + ".txt");
+        try
+        {
+            using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            rig.ToSuccess();
+            rig.SendFirstFullState(1000);
+            foreach (uint id in new uint[] { 10, 7, 4, 9 })
+                rig.Data(new ObjectAvailable { FactoryId = id, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick();
+            rig.Robot.Cubes.EnableAutoBlockPool(true);
+            rig.Tick(3000); // checked pool 2s throttle, then live cube update after Gate A
+            Assert.Equal(10u, rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId); // visits 9,4,7,10
+            Assert.Equal("0xa,1\n", File.ReadAllText(path)); // source lower-case hex, comma, decimal, LF
+            Assert.Contains(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 10 && m.Slot == 0);
+        }
+        finally { File.Delete(path); }
+    }
+
+    // M4-010 ConnectToRequestedObjects 00514A70..00514C46 and matching connect/disconnect receivers.
+    [Fact]
+    public void M4_010_CheckedPendingRequestWaitsForAdvertisementThenSendsSlot()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        var connections = rig.Robot.Cubes.Connections;
+        connections.ConnectToObjects(new uint[] { 0xAB, 0, 0, 0, 0 });
+        rig.Tick();
+        Assert.DoesNotContain(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 0xAB);
+        rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick();
+        Assert.Contains(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 0xAB && m.Slot == 0);
+        Assert.Equal(5, connections.Slots.Count);
+        Assert.Equal(ActiveObjectSlotState.PendingConnection, connections.Slots[0].State);
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAC, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
+        Assert.Equal(ActiveObjectSlotState.PendingConnection, connections.Slots[0].State); // mismatched factory id ignored
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
+        Assert.Equal(ActiveObjectSlotState.Connected, connections.Slots[0].State);
+        connections.ConnectToObjects(new uint[] { 0, 0, 0, 0, 0 });
+        rig.Tick();
+        Assert.Equal(ActiveObjectSlotState.PendingDisconnection, connections.Slots[0].State);
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+        rig.Tick();
+        Assert.Equal(0u, connections.Slots[0].FactoryId);
+    }
+
     // ------------------------------------------------------------------ rig
 
     private sealed class FakePort : IEngineTransport
@@ -911,7 +985,7 @@ public class EngineAppLayerTests
         const string queueing = "info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims";
         const string setting = "info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims";
         Assert.True(rig.Log.IndexOf(sending) >= 0);
-        Assert.True(rig.Log.IndexOf("info: Setting pose to (0,0,0)") < rig.Log.IndexOf(sending));
+        Assert.True(rig.Log.IndexOf("info: Robot.SendSyncTime: Setting pose to (0,0,0)") < rig.Log.IndexOf(sending));
         Assert.True(rig.Log.IndexOf(sending) < rig.Log.IndexOf(queueing));
         Assert.DoesNotContain(setting, rig.Log);
         bool? readyAtLog = null;

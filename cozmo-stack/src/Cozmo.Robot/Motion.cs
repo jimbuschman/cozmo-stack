@@ -593,12 +593,15 @@ bool requireCalibration = true)
         float target = RescaleRadians(radians);
         if (RadiansLessThan(target, MinHeadAngleRad))
         {
-            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: {radians:F4} rad, clipped to {MinHeadAngleRad}");
+            // getDegrees 0x0084CD40: one f32 multiply, then promoted for %.1f.
+            float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+            Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle ({degrees:F1}deg) less than min head angle (-25.0deg). Clipping."));
             target = MinHeadAngleRad;
         }
         else if (RadiansGreaterThan(target, MaxHeadAngleRad))
         {
-            Log($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: {radians:F4} rad, clipped to {MaxHeadAngleRad}");
+            float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+            Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle ({degrees:F1}deg) more than max head angle (44.5deg). Clipping."));
             target = MaxHeadAngleRad;
         }
         float tolerance = Math.Max(GameHeadToleranceRad, MinHeadToleranceRad);

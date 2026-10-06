@@ -17,6 +17,81 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class M3DeviceTests
 {
+    // Checked Opus M3-026/M3-030 rows: 00644E3A..00644E4C and 006436DA.
+    [Fact]
+    public void M3_026_M3_030_CheckedReadLogsRunThroughTheLiveReplyEntry()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int before = NvCommands(rig).Count;
+        bool callbackSawDebug = false;
+        nv.Read(0x80000001, _ => callbackSawDebug = nv.Log.Last() ==
+            "debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: NVEntry_CameraCalib");
+        Assert.Equal(before, NvCommands(rig).Count); // log on enqueue; send still belongs to Update
+        Assert.Equal("info: NVStorageComponent.Read.QueueingReadRequest: NVEntry_CameraCalib", nv.Log.Last());
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1 });
+        rig.Tick();
+        Assert.True(callbackSawDebug);
+        Assert.Contains("info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: NVEntry_CameraCalib, Tag: 0x80000001, result: NV_NOT_FOUND", nv.Log);
+
+        nv.Read(1, _ => { });
+        Assert.Contains("warning: NVStorageComponent.Read.InvalidTag: Tag: 0x1", nv.Log);
+        int callbacks = nv.Log.Count(l => l.Contains("ExecutingReadCallback"));
+        nv.Read(0x80000001, null);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 3, Data = new byte[] { 1 } });
+        rig.Tick();
+        Assert.Equal(callbacks, nv.Log.Count(l => l.Contains("ExecutingReadCallback")));
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0 });
+        rig.Tick();
+        Assert.Equal(callbacks, nv.Log.Count(l => l.Contains("ExecutingReadCallback")));
+        nv.Read(0xC0000001, null);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0xC0000001, Op = 0, Result = -8 });
+        rig.Tick();
+        Assert.Contains("info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0xc0000001, Op: NVOP_READ, Attempt: 1", nv.Log);
+        Assert.Contains("info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0xc0000001 resent due to NV_LOOP", nv.Log);
+    }
+
+    // Opus M3-031: shared resend helper 00645C6A; write caller 006431A2.
+    [Theory]
+    [InlineData((byte)1, "NVOP_WRITE")]
+    [InlineData((byte)2, "NVOP_ERASE")]
+    [InlineData((byte)3, "NVOP_WIPEALL")]
+    public void M3_031_CheckedWriteFamilyRetryLogsAndExhaustion(byte op, string opName)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? completion = null;
+        nv.Request(0x182000, 1, op, new byte[] { 0x12 }, r => completion = r);
+        rig.Tick();
+        int initial = NvCommands(rig).Count;
+        int logStart = nv.Log.Count;
+        for (int attempt = 1; attempt <= 7; attempt++) // native ctor limit8; eight total transmissions
+        {
+            rig.Data(new NVOpResult { Tag = 0x182000, Op = op, Result = -8 });
+            rig.Tick();
+            Assert.Null(completion);
+            Assert.Equal(initial + attempt, NvCommands(rig).Count);
+            Assert.Contains($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x182000, Op: {opName}, Attempt: {attempt}", nv.Log);
+            Assert.Contains($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x182000 resent due to NV_LOOP, op: {opName}", nv.Log);
+        }
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = op, Result = -8 });
+        rig.Tick();
+        Assert.Equal(-8, completion!.Value.Result);
+        Assert.Equal(initial + 7, NvCommands(rig).Count);
+        Assert.Contains($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x182000, Op: {opName}, Attempts: 8", nv.Log);
+        var retryLogs = nv.Log.Skip(logStart).Where(l => l.Contains("ResendLastCommand") || l.Contains("ResentFailedWrite")).ToArray();
+        Assert.Equal(15, retryLogs.Length); // Retry then ResentFailedWrite, seven pairs; final exceeded
+        Assert.Contains(".Retry:", retryLogs[0]);
+        Assert.Contains(".ResentFailedWrite:", retryLogs[1]);
+    }
+
     // ================================================================== display: M3-006, M3-007, M3-009
 
     private const int Rows = 64, Cols = 128;
@@ -2002,6 +2077,7 @@ public class M3DeviceTests
         Assert.NotNull(got);
         Assert.Equal(-4, got!.Value.Result);
         Assert.Empty(got.Value.Data);
+        Assert.Contains("warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x182000", nv.Log);
     }
 
     /// <summary>

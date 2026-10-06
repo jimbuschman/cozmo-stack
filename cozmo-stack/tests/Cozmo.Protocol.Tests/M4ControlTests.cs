@@ -16,6 +16,29 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class M4ControlTests
 {
+    // Opus M4-001: literal strings BEA11C/BEA169; getDegrees f32 0084CD40.
+    [Fact]
+    public void M4_001_CheckedClipWarningsUseRescaledDegreesAndInvariantOneDecimal()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        var saved = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            var commaCulture = (System.Globalization.CultureInfo)System.Globalization.CultureInfo.InvariantCulture.Clone();
+            commaCulture.NumberFormat.NumberDecimalSeparator = ",";
+            System.Globalization.CultureInfo.CurrentCulture = commaCulture;
+            _ = rig.Robot.Motion.SetHeadAngleAsync(-1f);
+            Assert.True(rig.Logged("warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle (-57.3deg) less than min head angle (-25.0deg). Clipping."));
+            _ = rig.Robot.Motion.SetHeadAngleAsync(1f);
+            Assert.True(rig.Logged("warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle (57.3deg) more than max head angle (44.5deg). Clipping."));
+            _ = rig.Robot.Motion.SetHeadAngleAsync(4f); // rescaled into (-pi,pi]: -2.28318548 => -130.8deg
+            Assert.True(rig.Logged("Requested head angle (-130.8deg) less than min head angle (-25.0deg). Clipping."), string.Join("\n", rig.Log));
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = saved; }
+    }
+
     // ------------------------------------------------------------------ rig
 
     private sealed class FakePort : IEngineTransport

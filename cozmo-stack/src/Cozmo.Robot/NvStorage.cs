@@ -340,13 +340,21 @@ public sealed class NvStorageComponent : IDisposable
     {
         if (!IsValidEntryTag(tag))
         {
-            lock (_gate) _log.Add($"warning: NVStorageComponent.Read.InvalidTag: Tag: 0x{tag:X8}");
+            lock (_gate) _log.Add($"warning: NVStorageComponent.Read.InvalidTag: Tag: 0x{tag:x}");
             if (broadcast)
                 NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
             callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
             return 0;
         }
-        Enqueue(new PendingRequest { Tag = tag, Op = OpRead, Callback = callback, Sink = sink, Broadcast = broadcast });
+        // M3-026 / 0x00644E3A..0x00644E4C: name and log before emplace_back.
+        lock (_gate)
+        {
+            if (NvEntryTagName(tag) is { } name)
+                _log.Add($"info: NVStorageComponent.Read.QueueingReadRequest: {name}");
+            else
+                _log.Add("MISSING: NVStorageComponent.Read.QueueingReadRequest NULL-%s rendering");
+            _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpRead, Callback = callback, Sink = sink, Broadcast = broadcast });
+        }
         return 1;
     }
 
@@ -491,7 +499,7 @@ public sealed class NvStorageComponent : IDisposable
                 {
                     if (SyncedClock > deadline)
                     {
-                        _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:X8}");
+                        _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:x}");
                         req.Deadline = null;
                         _inFlight = null;
                         timeoutCallback = req.Callback;
@@ -523,7 +531,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
 
-    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts);
+    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag);
 
     private void OnResult(NVOpResult r)
     {
@@ -550,7 +558,7 @@ public sealed class NvStorageComponent : IDisposable
             // the result byte, delivering 0 for a successful write.
             if (req.Op != OpRead)
             {
-                completion = WriteTerminalLocked(req, result);
+                completion = WriteTerminalLocked(req, r);
                 if (completion is null) return;               // a retry was sent; keep waiting
             }
             else if (result <= -1)
@@ -565,14 +573,14 @@ public sealed class NvStorageComponent : IDisposable
                     if (req.Retries < MaxReadResends)
                     {
                         req.Retries++;
-                        _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:X8}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
-                        _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:X8} resent due to {NvResultName(result)}");
+                        _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
                         if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
+                        _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:x} resent due to {NvResultName(result)}");
                         return;
                     }
-                    _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:X8}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
+                    _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
                 }
-                _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:X8}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
+                _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:x}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
                 completion = CompleteLocked(req, result, req.Buffer);
             }
             else
@@ -649,7 +657,7 @@ public sealed class NvStorageComponent : IDisposable
         if (result == 0)
             _log.Add($"info: NVStorageComponent.HandleNVOpResult.ReadSuccess: BaseTag: {baseName}, result: {NvResultName(0)}");
         else if (result == -1)
-            _log.Add($"info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: {baseName}, Tag: 0x{r.Tag:X8}, result: {NvResultName(-1)}");
+            _log.Add($"info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: {baseName}, Tag: 0x{r.Tag:x}, result: {NvResultName(-1)}");
         else
             _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadFailed: BaseTag: {baseName}, result: {NvResultName(result)}");
     }
@@ -657,7 +665,7 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-031
     private static bool IsRetryableResult(sbyte result) => result is -8 or -7 or -5 or -4;
 
-    // fidelity: M15-014
+    // fidelity: M15-014, M3-031
     /// <summary>
     /// The WRITE/ERASE/WIPEALL terminal (Appendix I3; 0x00643054..0x00643424). A negative result resends for
     /// {-8,-7,-5,-4} (i.e. -8..-4 except -6) while retries remain; otherwise it logs <c>WriteOpFailed</c> for
@@ -667,16 +675,24 @@ public sealed class NvStorageComponent : IDisposable
     /// <see cref="CompleteLocked"/> performs; the engine's <c>WriteDataForTag</c> backup side effect has no
     /// counterpart here.
     /// </summary>
-    private Completion? WriteTerminalLocked(PendingRequest req, sbyte result)
+    private Completion? WriteTerminalLocked(PendingRequest req, NVOpResult response)
     {
+        sbyte result = response.Result;
         if (result <= -1)
         {
-            if (IsRetryableResult(result) && req.Retries < MaxReadResends)
+            if (IsRetryableResult(result))
             {
-                req.Retries++;
-                _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{req.Tag:X8} resent due to {result}");
-                if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
-                return null;
+                if (req.Retries < MaxReadResends)
+                {
+                    req.Retries++;
+                    _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
+                    if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
+                    // 0x006431AA..0x006431E0 formats the received result/tag/op;
+                    // ResendLastCommand's own Retry above uses the saved command's tag/op.
+                    _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{response.Tag:x} resent due to {NvResultName(result)}, op: {NvOpName(response.Op)}");
+                    return null;
+                }
+                _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
             }
             _log.Add($"warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x{req.Tag:X8}, result: {result}");
             return CompleteLocked(req, result, req.Buffer);
@@ -727,11 +743,20 @@ public sealed class NvStorageComponent : IDisposable
         if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
         req.Deadline = null;
         _inFlight = null;
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts);
+        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag);
     }
 
     private void Deliver(Completion c)
     {
+        // M3-030 / 0x006436B6..0x00643714: only a present read callback logs this,
+        // after the outcome log and immediately before invoking the callback.
+        if (c.ReadCallback && c.Callback is not null)
+        {
+            lock (_gate)
+                _log.Add(NvEntryTagName(c.Tag) is { } name
+                    ? $"debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: {name}"
+                    : "MISSING: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback NULL-%s rendering");
+        }
         c.Callback?.Invoke(c.Result);
         if (c.Broadcasts is not null)
             foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);

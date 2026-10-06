@@ -912,7 +912,7 @@ public sealed partial class EngineRobot
         // AbsoluteLocalizationUpdate; SendSyncTime returns that send's result (0x005153AE), so +0x520 is set
         // only when the AbsoluteLocalizationUpdate send succeeds.
         Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
-        Engine.Log("info: Setting pose to (0,0,0)");
+        Engine.Log("info: Robot.SendSyncTime: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
         SyncTimeSentAt = Engine.Timer.SecondsF;
     }
@@ -1004,7 +1004,7 @@ public sealed partial class EngineRobot
         bool sent = SendFault?.Invoke(m) ?? Engine.Handler.SendMessage(m);
         if (sent) return true;
         // fidelity: M4-020
-        // Robot::SendMessage 0x005134F4 is the only warning a failed send makes: channel "Robot.SendMessage"
+        // Robot::SendMessage 0x005134F4 makes this warning for every failed send: channel "Robot.SendMessage"
         // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356C), with Robot+0x10 (the
         // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
         string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
@@ -1119,6 +1119,8 @@ public sealed partial class EngineRobot
             Engine.Log("warning: Robot.Update.SyncTimeAckNotReceived");
             SyncTimeSentAt = 0;
         }
+        // fidelity: M3-032
+        // Gate A 0x00513C5C..0x00513C62. Gate B below remains dependent on M11's missing result/calibration state.
         if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
         // fidelity: M8-011
         // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
