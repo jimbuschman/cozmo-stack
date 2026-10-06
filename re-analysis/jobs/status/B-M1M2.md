@@ -91,3 +91,7 @@ CLAIMED Codex: pulled/rebased. Operator adopts converter build rows and fixes ne
 - MISSING retained: real asString formatting, final escaping exception destination, allocation-failure/extreme-length effects. No settlement, no hardware. Full-suite/publication results follow.
 
 - Full suite: 3,938 passed, zero failed/skipped (3 m 32 s). Fidelity and staged diff checks pass. Required verifier PASS. Publication on 2026-10-06 follows; requested real-conversion scope DONE, whole M1-029 remains incomplete due to the documented MISSINGs.
+
+- Batch 6 commit: d90e4c0 (pushed to main on 2026-10-06). Independent push gate passed fidelity and all 3,938 tests, zero failed/skipped (3 m 37 s).
+
+DONE 2026-10-06 for the requested real-conversion batch. The row-faithful port and shipped-emulator regression fixtures are published; round-to-nearest and C decimal point are explicitly EQUIVALENT_IMPLEMENTATION runtime assumptions in M1-029 unresolved. Research binaries/dependencies/lineage inputs are ignored. M1-029 remains IMPLEMENTATION_GAP, built awaiting strong verification; formatting, escaping exception destination, allocation-failure and extreme-length effects stay MISSING. No settlement or hardware acceptance. Stop here as directed.
