@@ -1,0 +1,63 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A0B068..0x00A0B134 exclusive; ARM;
+00A0B068: bl           #0x9e765c ; FUN_009e765c
+00A0B06C: ldr          r0, [sp, #0xc]
+00A0B070: cmp          r0, #0
+00A0B074: beq          #0xa0b07c
+00A0B078: bl           #0xa69fc8 ; FUN_00a69fc8
+00A0B07C: mov          r0, r4
+00A0B080: add          sp, sp, #0x20
+00A0B084: pop          {r4, r5, r6, pc}
+00A0B088: mov          r3, #1
+00A0B08C: str          r0, [r5, #4]
+00A0B090: str          r3, [r1]
+00A0B094: bl           #0xa69f78 ; FUN_00a69f78
+00A0B098: ldr          r3, [sp, #0xc]
+00A0B09C: cmp          r3, #0
+00A0B0A0: str          r0, [sp, #0xc]
+00A0B0A4: beq          #0xa0b0b4
+00A0B0A8: mov          r0, r3
+00A0B0AC: bl           #0xa69fc8 ; FUN_00a69fc8
+00A0B0B0: ldr          r0, [sp, #0xc]
+00A0B0B4: cmp          r0, #0
+00A0B0B8: movne        r3, sp
+00A0B0BC: strne        r3, [r5, #0x78]
+00A0B0C0: bne          #0xa0b044
+00A0B0C4: mov          r4, #2
+00A0B0C8: b            #0xa0b064
+00A0B0CC: bl           #0xa0a6fc ; FUN_00a0a6fc
+00A0B0D0: mov          r4, r0
+00A0B0D4: mov          r0, r4
+00A0B0D8: add          sp, sp, #0x20
+00A0B0DC: pop          {r4, r5, r6, pc}
+00A0B0E0: bl           #0xa09f04 ; FUN_00a09f04
+00A0B0E4: mov          r4, r0
+00A0B0E8: b            #0xa0b064
+00A0B0EC: bl           #0xa69f78 ; FUN_00a69f78
+00A0B0F0: ldr          r3, [r6, #0xc]
+00A0B0F4: cmp          r3, #0
+00A0B0F8: str          r0, [r6, #0xc]
+00A0B0FC: beq          #0xa0b108
+00A0B100: mov          r0, r3
+00A0B104: bl           #0xa69fc8 ; FUN_00a69fc8
+00A0B108: ldr          r3, [r5, #0x78]
+00A0B10C: ldr          r3, [r3, #0xc]
+00A0B110: cmp          r3, #0
+00A0B114: bne          #0xa0b044
+00A0B118: b            #0xa0b0c4
+00A0B11C: push         {r3, r4, r5, r6, r7, lr}
+00A0B120: mov          r4, r0
+00A0B124: mov          r5, r1
+00A0B128: bl           #0x9ec758 ; FUN_009ec758
+00A0B12C: ldr          r1, [r4, #0x70]
+00A0B130: subs         r1, r1, #1
+0103CBA8: raw=00A63350 relocated=00A63350
+0103CBAC: raw=00A63534 relocated=00A63534
+0103CBB0: raw=00A6028C relocated=00A6028C
+0103CBB4: raw=00A60650 relocated=00A60650
+0103CBB8: raw=009D0410 relocated=009D0410
+0103CBBC: raw=00A60248 relocated=00A60248
+0103CBC0: raw=00A60250 relocated=00A60250
+0103CBC4: raw=00A6076C relocated=00A6076C
+0103CBC8: raw=00A602CC relocated=00A602CC
+0103CBCC: raw=00A62ED4 relocated=00A62ED4

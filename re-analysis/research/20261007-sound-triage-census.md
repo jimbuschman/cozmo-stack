@@ -15,7 +15,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-005 | 36 | PARTIAL |
 | Q14-006 | 39 | CHECKED |
 | Q14-007 | 40 | NOT DONE |
-| Q14-008 | 41 | NOT DONE |
+| Q14-008 | 41 | PARTIAL |
 | Q14-009 | 42 | PARTIAL |
 | Q14-010 | 43 | PARTIAL |
 | Q14-011 | 44 | PARTIAL |
@@ -190,13 +190,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-007 | **KEEP** | 0x00A08A7C..0x00A08AC0;0x0099DB58;0x00A09698;0x00A099BC;0x00A0A3B4;0x00A08A44;0x00A08694;0x00A0A524..0x00A0A6E8 | RNG state/seed, draw cadence, eligibility, shuffle/avoid-repeat, weights and sequence behavior stay exact even where they use floating arithmetic. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. Playlist vtable data writers and complete constructor/lifetime consumer closure remain open; no completed M6-007 claim.
 
 ## Q14-009 — triage line 42
 
 > | M6-008 | **KEEP** | 0x00A0AFDC;0x00A091CC;0x00A09C40;0x00A6A07C;0x00A6A580;0x00A62ED4;0x00A35998;0x00A6A2DC;0x00A4304C;0x00A52B90;0x00A549A0;0x00A09F04;0x00A6ACC0;0x00A03618 | Shared/per-object state, mode-4 chaining, lookahead/delay split, zero-frame fade handling, next-choice/start notification and Term/EndOfEvent latency remain exact scheduling/state work. |
 
-PARTIAL; TT1–TT22 close transition construction/evaluation controls; S/C rows cover choice portions. Continuous chaining, source lifecycle and completion-recipient closure remain pending.
+PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. Base-end/completion recipients, source lifecycle, alternate updates and writer closure remain pending.
 
 ## Q14-010 — triage line 43
 

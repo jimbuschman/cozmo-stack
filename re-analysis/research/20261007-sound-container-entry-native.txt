@@ -1,0 +1,108 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A0AD94..0x00A0ADA8 exclusive; ARM;
+00A0AD94: mov          r0, r5
+00A0AD98: add          sp, sp, #0x14
+00A0AD9C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A0ADA0: cmp          sl, #0
+00A0ADA4: beq          #0xa0af5c
+RANGE 0x00A0AFDC..0x00A0B068 exclusive; ARM;
+00A0AFDC: ldrb         r2, [r0, #0x91]
+00A0AFE0: push         {r4, r5, r6, lr}
+00A0AFE4: tst          r2, #0x40
+00A0AFE8: ldrb         r3, [r0, #0x92]
+00A0AFEC: sub          sp, sp, #0x20
+00A0AFF0: mov          r4, r0
+00A0AFF4: orr          r3, r3, #1
+00A0AFF8: strb         r3, [r0, #0x92]
+00A0AFFC: beq          #0xa0b0cc
+00A0B000: ldr          r2, [r1]
+00A0B004: vmov.i32     q8, #0
+00A0B008: mov          r3, #0
+00A0B00C: mov          r5, r1
+00A0B010: cmp          r2, r3
+00A0B014: str          r3, [sp, #0x10]
+00A0B018: str          r3, [sp, #0x14]
+00A0B01C: vst1.64      {d16, d17}, [sp:0x40]
+00A0B020: str          r3, [sp, #0x18]
+00A0B024: str          r3, [sp, #0x1c]
+00A0B028: beq          #0xa0b088
+00A0B02C: ldr          r6, [r1, #0x78]
+00A0B030: cmp          r6, #0
+00A0B034: beq          #0xa0b044
+00A0B038: ldr          r3, [r6, #0xc]
+00A0B03C: cmp          r3, #0
+00A0B040: beq          #0xa0b0ec
+00A0B044: ldrb         r3, [r4, #0x90]
+00A0B048: mov          r0, r4
+00A0B04C: mov          r1, r5
+00A0B050: and          r3, r3, #0xf
+00A0B054: cmp          r3, #5
+00A0B058: beq          #0xa0b0e0
+00A0B05C: bl           #0xa0abc4 ; FUN_00a0abc4
+00A0B060: mov          r4, r0
+00A0B064: add          r0, sp, #0x14
+RANGE 0x00A6361C..0x00A6371C exclusive; ARM;
+00A6361C: push         {r3, r4, r5, r6, r7, lr}
+00A63620: mov          r7, r0
+00A63624: ldr          r3, [pc, #0xe8] ; word[00A63714]=005DCA0C
+00A63628: mov          r6, r1
+00A6362C: mov          r1, #0xd4
+00A63630: mov          r5, r2
+00A63634: ldr          r3, [pc, r3]
+00A63638: ldr          r0, [r3]
+00A6363C: bl           #0xa7a7f4 ; FUN_00a7a7f4
+00A63640: subs         r4, r0, #0
+00A63644: beq          #0xa6370c
+00A63648: mov          r2, r6
+00A6364C: mov          r1, r7
+00A63650: bl           #0xa62e24 ; FUN_00a62e24
+00A63654: ldr          r0, [r5]
+00A63658: ldr          r3, [pc, #0xb8] ; word[00A63718]=005D9530
+00A6365C: mov          r2, #0
+00A63660: cmp          r0, r2
+00A63664: str          r2, [r4, #0x28]
+00A63668: add          r3, pc, r3
+00A6366C: str          r0, [r4, #0x38]
+00A63670: add          r3, r3, #8
+00A63674: str          r2, [r4, #0x2c]
+00A63678: str          r3, [r4]
+00A6367C: beq          #0xa63684
+00A63680: bl           #0xa69fb8 ; FUN_00a69fb8
+00A63684: ldrb         r1, [r4, #0x9c]
+00A63688: mov          r3, #0
+00A6368C: mov          r2, #1
+00A63690: mov          ip, #4
+00A63694: bfi          r1, r3, #0, #1
+00A63698: str          r3, [r4, #0x80]
+00A6369C: strb         r1, [r4, #0x9c]
+00A636A0: mov          r0, r4
+00A636A4: mvn          r1, #0
+00A636A8: str          r3, [r4, #0x84]
+00A636AC: str          r3, [r4, #0x88]
+00A636B0: str          r3, [r4, #0x8c]
+00A636B4: str          r3, [r4, #0x90]
+00A636B8: strb         r3, [r4, #0x95]
+00A636BC: str          r3, [r4, #0x98]
+00A636C0: str          r3, [r4, #0xa4]
+00A636C4: str          r3, [r4, #0xa8]
+00A636C8: str          r3, [r4, #0xac]
+00A636CC: str          r3, [r4, #0xb0]
+00A636D0: str          r3, [r4, #0xb4]
+00A636D4: strb         r3, [r4, #0xbc]
+00A636D8: strb         r3, [r4, #0xc0]
+00A636DC: str          r3, [r4, #0xc4]
+00A636E0: str          r3, [r4, #0xc8]
+00A636E4: str          r3, [r4, #0xcc]
+00A636E8: str          r3, [r4, #0xd0]
+00A636EC: str          r3, [r4, #0x3c]
+00A636F0: str          r3, [r4, #0x30]
+00A636F4: str          r3, [r4, #0x34]
+00A636F8: strb         r2, [r4, #0x94]
+00A636FC: str          r2, [r4, #0xa0]
+00A63700: str          ip, [r4, #0xb8]
+00A63704: strb         r1, [r4, #0xc1]
+00A63708: bl           #0xa60dec ; FUN_00a60dec
+00A6370C: mov          r0, r4
+00A63710: pop          {r3, r4, r5, r6, r7, pc}
+00A63714: subseq       ip, sp, ip, lsl #20
+00A63718: subseq       sb, sp, r0, lsr r5
