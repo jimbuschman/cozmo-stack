@@ -1,0 +1,194 @@
+
+FILE resources/lib/armeabi-v7a/libc++_shared.so RANGE 0x5f5cc 0x5f790 _ZNSt6__ndk113random_deviceC1ERKNS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEE
+0005F5CC: push       {r4, r5, r6, r7, lr} ;
+0005F5CE: add        r7, sp, #0xc ;
+0005F5D0: str        r8, [sp, #-0x4]! ;
+0005F5D4: sub        sp, #0x10 ;
+0005F5D6: mov        r4, r0 ;
+0005F5D8: ldr        r0, [pc, #0x8c] ; literal[0005F668]=000456FC
+0005F5DA: mov        r5, r1 ;
+0005F5DC: add        r0, pc ;
+0005F5DE: ldr        r0, [r0] ;
+0005F5E0: ldr        r0, [r0] ;
+0005F5E2: str        r0, [sp, #0xc] ;
+0005F5E4: ldrb       r1, [r5] ;
+0005F5E6: ldr        r0, [r5, #8] ;
+0005F5E8: tst.w      r1, #1 ;
+0005F5EC: mov.w      r1, #0 ;
+0005F5F0: it         eq ;
+0005F5F2: addeq      r0, r5, #1 ;
+0005F5F4: blx        #0x33a58 ; GOT 000A5D1C open
+0005F5F8: cmp.w      r0, #-1 ;
+0005F5FC: str        r0, [r4] ;
+0005F5FE: bgt        #0x5f636 ;
+0005F600: blx        #0x31760 ; GOT 000A5174 __errno
+0005F604: mov        r8, sp ;
+0005F606: adr        r1, #0x64 ;
+0005F608: ldr        r6, [r0] ;
+0005F60A: mov        r0, r8 ;
+0005F60C: mov        r2, r5 ;
+0005F60E: blx        #0x324bc ; GOT 000A55E8 _ZNSt6__ndk1plIcNS_11char_traitsIcEENS_9allocatorIcEEEENS_12basic_stringIT_T0_T1_EEPKS6_RKS9_
+0005F612: ldrb.w     r0, [sp] ;
+0005F616: ldr        r1, [sp, #8] ;
+0005F618: tst.w      r0, #1 ;
+0005F61C: it         eq ;
+0005F61E: orreq      r1, r8, #1 ;
+0005F622: mov        r0, r6 ;
+0005F624: blx        #0x3176c ; GOT 000A5178 _ZNSt6__ndk120__throw_system_errorEiPKc
+0005F628: ldrb.w     r0, [sp] ;
+0005F62C: lsls       r0, r0, #0x1f ;
+0005F62E: itt        ne ;
+0005F630: ldrne      r0, [sp, #8] ;
+0005F632: blxne      #0x31730 ;
+0005F636: ldr        r0, [pc, #0x54] ; literal[0005F68C]=0004569E
+0005F638: ldr        r1, [sp, #0xc] ;
+0005F63A: add        r0, pc ;
+0005F63C: ldr        r0, [r0] ;
+0005F63E: ldr        r0, [r0] ;
+0005F640: subs       r0, r0, r1 ;
+0005F642: itttt      eq ;
+0005F644: moveq      r0, r4 ;
+0005F646: addeq      sp, #0x10 ;
+0005F648: ldreq      r8, [sp], #4 ;
+0005F64C: popeq      {r4, r5, r6, r7, pc} ;
+0005F64E: blx        #0x31778 ; GOT 000A517C __stack_chk_fail
+0005F652: mov        r4, r0 ;
+0005F654: ldrb.w     r0, [sp] ;
+0005F658: lsls       r0, r0, #0x1f ;
+0005F65A: itt        ne ;
+0005F65C: ldrne      r0, [sp, #8] ;
+0005F65E: blxne      #0x31730 ;
+0005F662: mov        r0, r4 ;
+0005F664: bl         #0x85740 ;
+0005F668: ldrsb      r4, [r7, r3] ;
+0005F66A: movs       r4, r0 ;
+0005F66C: str        r2, [r6, #0x14] ;
+0005F66E: str        r6, [r5, #0x44] ;
+0005F670: ldr        r7, [r5, #0x54] ;
+0005F672: str        r7, [r3, #0x44] ;
+0005F674: strb       r5, [r4, #0x19] ;
+0005F676: str        r1, [r5, #0x34] ;
+0005F678: movs       r0, #0x65 ;
+0005F67A: str        r6, [r4, #0x14] ;
+0005F67C: ldr        r1, [r5, #0x44] ;
+0005F67E: str        r5, [r4, #0x44] ;
+0005F680: strb       r0, [r4, #0x10] ;
+0005F682: movs       r0, #0x6f ;
+0005F684: strb       r7, [r5, #1] ;
+0005F686: ldr        r5, [r4, #0x64] ;
+0005F688: movs       r0, r4 ;
+0005F68A: movs       r0, r0 ;
+0005F68C: ldrsb      r6, [r3, r2] ;
+0005F68E: movs       r4, r0 ;
+0005F690: push       {r4, r6, r7, lr} ;
+0005F692: add        r7, sp, #8 ;
+0005F694: mov        r4, r0 ;
+0005F696: ldr        r0, [r4] ;
+0005F698: blx        #0x33a64 ; GOT 000A5D20 close
+0005F69C: mov        r0, r4 ;
+0005F69E: pop        {r4, r6, r7, pc} ;
+0005F6A0: bl         #0x38d6c ;
+0005F6A4: push       {r4, r5, r6, r7, lr} ;
+0005F6A6: add        r7, sp, #0xc ;
+0005F6A8: push.w     {r8, sb, fp} ;
+0005F6AC: sub        sp, #8 ;
+0005F6AE: mov        r4, r0 ;
+0005F6B0: ldr        r0, [pc, #0x68] ; literal[0005F71C]=0004561E
+0005F6B2: addw       r8, pc, #0x6c ;
+0005F6B6: addw       sb, pc, #0x90 ;
+0005F6BA: add        r0, pc ;
+0005F6BC: movs       r5, #4 ;
+0005F6BE: mov        r6, sp ;
+0005F6C0: ldr        r0, [r0] ;
+0005F6C2: ldr        r0, [r0] ;
+0005F6C4: str        r0, [sp, #4] ;
+0005F6C6: ldr        r0, [r4] ;
+0005F6C8: mov        r1, r6 ;
+0005F6CA: mov        r2, r5 ;
+0005F6CC: blx        #0x33a70 ; GOT 000A5D24 read
+0005F6D0: adds       r1, r0, #1 ;
+0005F6D2: bne        #0x5f6ec ;
+0005F6D4: blx        #0x31760 ; GOT 000A5174 __errno
+0005F6D8: ldr        r0, [r0] ;
+0005F6DA: cmp        r0, #4 ;
+0005F6DC: beq        #0x5f6c6 ;
+0005F6DE: blx        #0x31760 ; GOT 000A5174 __errno
+0005F6E2: ldr        r0, [r0] ;
+0005F6E4: mov        r1, r8 ;
+0005F6E6: blx        #0x3176c ; GOT 000A5178 _ZNSt6__ndk120__throw_system_errorEiPKc
+0005F6EA: b          #0x5f6c6 ;
+0005F6EC: cbnz       r0, #0x5f6f8 ;
+0005F6EE: movs       r0, #0x3d ;
+0005F6F0: mov        r1, sb ;
+0005F6F2: blx        #0x3176c ; GOT 000A5178 _ZNSt6__ndk120__throw_system_errorEiPKc
+0005F6F6: movs       r0, #0 ;
+0005F6F8: add        r6, r0 ;
+0005F6FA: subs       r5, r5, r0 ;
+0005F6FC: bne        #0x5f6c6 ;
+0005F6FE: ldr        r1, [pc, #0x60] ; literal[0005F760]=000455D6
+0005F700: ldr        r0, [sp] ;
+0005F702: add        r1, pc ;
+0005F704: ldr        r2, [sp, #4] ;
+0005F706: ldr        r1, [r1] ;
+0005F708: ldr        r1, [r1] ;
+0005F70A: subs       r1, r1, r2 ;
+0005F70C: ittt       eq ;
+0005F70E: addeq      sp, #8 ;
+0005F710: popeq.w    {r8, sb, fp} ;
+0005F714: popeq      {r4, r5, r6, r7, pc} ;
+0005F716: blx        #0x31778 ; GOT 000A517C __stack_chk_fail
+0005F71A: nop         ;
+0005F71C: ldrsb      r6, [r3, r0] ;
+0005F71E: movs       r4, r0 ;
+0005F720: str        r2, [r6, #0x14] ;
+0005F722: str        r6, [r5, #0x44] ;
+0005F724: ldr        r7, [r5, #0x54] ;
+0005F726: str        r7, [r3, #0x44] ;
+0005F728: strb       r5, [r4, #0x19] ;
+0005F72A: str        r1, [r5, #0x34] ;
+0005F72C: movs       r0, #0x65 ;
+0005F72E: ldr        r7, [r4, #0x74] ;
+0005F730: movs       r0, #0x74 ;
+0005F732: ldr        r1, [r4, #0x64] ;
+0005F734: strb       r0, [r4, #0x14] ;
+0005F736: str        r6, [r5, #0x54] ;
+0005F738: strb       r0, [r7, #1] ;
+0005F73A: str        r5, [r4, #0x34] ;
+0005F73C: str        r4, [r6, #0x54] ;
+0005F73E: movs       r0, #0x64 ;
+0005F740: strb       r5, [r4, #9] ;
+0005F742: ldr        r2, [r6, #0x74] ;
+0005F744: lsls       r2, r6, #1 ;
+0005F746: movs       r0, r0 ;
+0005F748: str        r2, [r6, #0x14] ;
+0005F74A: str        r6, [r5, #0x44] ;
+0005F74C: ldr        r7, [r5, #0x54] ;
+0005F74E: str        r7, [r3, #0x44] ;
+0005F750: strb       r5, [r4, #0x19] ;
+0005F752: str        r1, [r5, #0x34] ;
+0005F754: movs       r0, #0x65 ;
+0005F756: ldr        r7, [r4, #0x74] ;
+0005F758: movs       r0, #0x74 ;
+0005F75A: ldr        r7, [pc, #0x114] ; literal[0005F870]=F06F4604
+0005F75C: lsls       r6, r0, #1 ;
+0005F75E: movs       r0, r0 ;
+0005F760: strb       r6, [r2, r7] ;
+0005F762: movs       r4, r0 ;
+0005F764: movs       r0, r0 ;
+0005F766: movs       r0, r0 ;
+0005F768: vldr       d0, [pc, #0xc] ; literal[0005F778]=00000000
+0005F76C: vmov       r0, r1, d0 ;
+0005F770: bx         lr ;
+0005F772: nop         ;
+0005F774: nop.w       ;
+0005F778: movs       r0, r0 ;
+0005F77A: movs       r0, r0 ;
+0005F77C: movs       r0, r0 ;
+0005F77E: movs       r0, r0 ;
+0005F780: push       {r4, r5, r6, r7, lr} ;
+0005F782: add        r7, sp, #0xc ;
+0005F784: push.w     {r8, sb, fp} ;
+0005F788: mov        r5, r3 ;
+0005F78A: mov        sb, r2 ;
+0005F78C: mov        r8, r1 ;
+0005F78E: mov        r6, r0 ;

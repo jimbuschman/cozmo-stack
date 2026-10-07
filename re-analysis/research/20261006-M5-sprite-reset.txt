@@ -1,0 +1,64 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4fc520 0x4fc560
+004FC520: bx         lr ;
+004FC522: movs       r0, #0 ;
+004FC524: bx         lr ;
+004FC526: ldr        r0, [r0, #4] ;
+004FC528: bx         lr ;
+004FC52A: ldr        r0, [r0, #4] ;
+004FC52C: bx         lr ;
+004FC52E: ldr        r0, [r0, #4] ;
+004FC530: bx         lr ;
+004FC532: movs       r0, #0 ;
+004FC534: bx         lr ;
+004FC536: ldr        r0, [r0, #4] ;
+004FC538: bx         lr ;
+004FC53A: ldr        r1, [r0, #4] ;
+004FC53C: ldr        r0, [r0, #0xc] ;
+004FC53E: add        r0, r1 ;
+004FC540: bx         lr ;
+004FC542: ldr        r1, [r0, #4] ;
+004FC544: ldr        r0, [r0, #0xc] ;
+004FC546: add        r0, r1 ;
+004FC548: bx         lr ;
+004FC54A: ldr        r0, [r0, #4] ;
+004FC54C: bx         lr ;
+004FC54E: ldr        r1, [r0, #4] ;
+004FC550: ldr        r0, [r0, #0xc] ;
+004FC552: add        r0, r1 ;
+004FC554: bx         lr ;
+004FC556: push       {r4, r5, r7, lr} ;
+004FC558: mov        r4, r0 ;
+004FC55A: movs       r0, #0 ;
+004FC55C: strd       r0, r0, [r4] ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57cd64 0x57cda4 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj
+0057CD64: push       {r4, r5, r6, lr} ;
+0057CD66: mov        r4, r0 ;
+0057CD68: ldr        r0, [r4, #0xc] ;
+0057CD6A: cmp        r0, r4 ;
+0057CD6C: beq        #0x57cd9c ;
+0057CD6E: add.w      r6, r0, #8 ;
+0057CD72: subs       r1, r2, r1 ;
+0057CD74: mov        r0, r6 ;
+0057CD76: blx        #0x4addd4 ; GOT 01043728 _ZNK4Anki5Cozmo9IKeyFrame12IsTimeToPlayEj
+0057CD7A: cmp        r0, #1 ;
+0057CD7C: bne        #0x57cd9c ;
+0057CD7E: ldr        r0, [r6] ;
+0057CD80: ldr        r1, [r0, #4] ;
+0057CD82: mov        r0, r6 ;
+0057CD84: blx        r1 ;
+0057CD86: mov        r5, r0 ;
+0057CD88: ldr        r0, [r6] ;
+0057CD8A: ldr        r1, [r0, #8] ;
+0057CD8C: mov        r0, r6 ;
+0057CD8E: blx        r1 ;
+0057CD90: cmp        r0, #1 ;
+0057CD92: itt        eq ;
+0057CD94: moveq      r0, r4 ;
+0057CD96: blxeq      #0x4ade04 ;
+0057CD9A: b          #0x57cd9e ;
+0057CD9C: movs       r5, #0 ;
+0057CD9E: mov        r0, r5 ;
+0057CDA0: pop        {r4, r5, r6, pc} ;
+0057CDA2: push       {r4, r5, r6, lr} ;

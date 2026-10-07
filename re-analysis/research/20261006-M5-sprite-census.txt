@@ -1,0 +1,23 @@
+Thumb navigation census across .text; literal-pool/ARM false positives possible. No absence proof without construction-path review.
+004F35BC: strb.w r0, [r4, #0x28] ; Anki::Cozmo::FaceAndApproachPlanner::ComputeNewPathIfNeeded
+004F3808: strb.w r0, [r4, #0x28] ; Anki::Cozmo::FaceAndApproachPlanner::ComputeNewPathIfNeeded
+004F38EA: strb.w r0, [r4, #0x28] ; Anki::Cozmo::FaceAndApproachPlanner::ComputeNewPathIfNeeded
+00563E48: bl #0x564290 ; Anki::Cozmo::SetFaceAction::Init
+00564616: strb.w r1, [r4, #0x30] ; std::__ndk1::list<Anki::Cozmo::FaceAnimationKeyFrame,std::__ndk1::allocator<Anki::Cozmo::FaceAnimationKeyFrame>>::emplace_back<Anki::Cozmo::FaceAnimationKeyFrame_const&>
+0057669C: bl #0x564290 ; Anki::Cozmo::Animations::Track<Anki::Cozmo::FaceAnimationKeyFrame>::AddKeyFrameToBack
+0057734C: bl #0x564290 ; Anki::Cozmo::Animations::Track<Anki::Cozmo::FaceAnimationKeyFrame>::AddKeyFrameToBack
+0057AAF4: strb.w sl, [sp, #0x28] ; Anki::Cozmo::AnimationStreamer::CreateCustomSongAnimation
+0057CE74: strb.w r2, [sp, #0x28] ; Anki::Cozmo::AnimationStreamer::Update
+0057CEBC: strb.w r2, [sp, #0x28] ; Anki::Cozmo::AnimationStreamer::Update
+0057D0EE: strb.w r1, [sp, #0x28] ; Anki::Cozmo::AnimationStreamer::Update
+0057E392: strb.w r1, [r4, #0x30] ; std::__ndk1::list<Anki::Cozmo::FaceAnimationKeyFrame,std::__ndk1::allocator<Anki::Cozmo::FaceAnimationKeyFrame>>::push_back
+00587CCC: bl #0x564290 ; Anki::Cozmo::CannedAnimationContainer::CannedAnimationContainer
+0058D3F4: strb.w r6, [sp, #0x28] ; Anki::Cozmo::FaceLayerManager::KeepFaceAlive
+0058DA06: strb.w r4, [r8, #0x30] ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::ApplyLayersToFrame
+0058DF90: strb.w r5, [r8, #0x30] ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::BackpackLightsKeyFrame>::ApplyLayersToFrame
+0058E6FC: strb.w r5, [r8, #0x30] ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::ProceduralFaceKeyFrame>::ApplyLayersToFrame
+0058EF0A: strb.w r0, [sp, #0x28] ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::RemovePersistentLayer
+00599BB4: strb.w r7, [sp, #0x28] ; Anki::Cozmo::Audio::RobotAudioClient::ClearCurrentAnimation
+0064EEB8: strb.w r6, [sp, #0x28] ; Anki::Cozmo::TrackLayerComponent::AddGlitch
+0086CDC8: strb.w r0, [sb, #0x30] ; Anki::Vision::FaceTracker::Impl::DetectFaceParts
+0087CAF0: strb.w r0, [sp, #0x30] ; Anki::Vision::PetTracker::Update

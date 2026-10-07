@@ -1,0 +1,80 @@
+FILE resources/lib/armeabi-v7a/libunity.so 0xf6dca0 0xf6dd30
+00F6DCA0: cmp          r1, #0
+00F6DCA4: beq          #0xf6dc94
+00F6DCA8: push         {r0, r1, lr}
+00F6DCAC: bl           #0xf6dbf8
+00F6DCB0: pop          {r1, r2, lr}
+00F6DCB4: mul          r3, r2, r0
+00F6DCB8: sub          r1, r1, r3
+00F6DCBC: bx           lr
+00F6DCC0: cmp          r1, #0
+00F6DCC4: beq          #0xf6dd8c
+00F6DCC8: eor          ip, r0, r1
+00F6DCCC: rsbmi        r1, r1, #0
+00F6DCD0: subs         r2, r1, #1
+00F6DCD4: beq          #0xf6dd58
+00F6DCD8: movs         r3, r0
+00F6DCDC: rsbmi        r3, r0, #0
+00F6DCE0: cmp          r3, r1
+00F6DCE4: bls          #0xf6dd64
+00F6DCE8: tst          r1, r2
+00F6DCEC: beq          #0xf6dd74
+00F6DCF0: clz          r2, r1
+00F6DCF4: clz          r0, r3
+00F6DCF8: sub          r0, r2, r0
+00F6DCFC: mov          r2, #1
+00F6DD00: lsl          r1, r1, r0
+00F6DD04: lsl          r2, r2, r0
+00F6DD08: mov          r0, #0
+00F6DD0C: cmp          r3, r1
+00F6DD10: subhs        r3, r3, r1
+00F6DD14: orrhs        r0, r0, r2
+00F6DD18: cmp          r3, r1, lsr #1
+00F6DD1C: subhs        r3, r3, r1, lsr #1
+00F6DD20: orrhs        r0, r0, r2, lsr #1
+00F6DD24: cmp          r3, r1, lsr #2
+00F6DD28: subhs        r3, r3, r1, lsr #2
+00F6DD2C: orrhs        r0, r0, r2, lsr #2
+FILE resources/lib/armeabi-v7a/libunity.so 0xf6dbf8 0xf6dca0
+00F6DBF8: subs         r2, r1, #1
+00F6DBFC: bxeq         lr
+00F6DC00: blo          #0xf6dc94
+00F6DC04: cmp          r0, r1
+00F6DC08: bls          #0xf6dc78
+00F6DC0C: tst          r1, r2
+00F6DC10: beq          #0xf6dc84
+00F6DC14: clz          r3, r1
+00F6DC18: clz          r2, r0
+00F6DC1C: sub          r2, r3, r2
+00F6DC20: mov          r3, #1
+00F6DC24: lsl          r1, r1, r2
+00F6DC28: lsl          r3, r3, r2
+00F6DC2C: mov          r2, #0
+00F6DC30: cmp          r0, r1
+00F6DC34: subhs        r0, r0, r1
+00F6DC38: orrhs        r2, r2, r3
+00F6DC3C: cmp          r0, r1, lsr #1
+00F6DC40: subhs        r0, r0, r1, lsr #1
+00F6DC44: orrhs        r2, r2, r3, lsr #1
+00F6DC48: cmp          r0, r1, lsr #2
+00F6DC4C: subhs        r0, r0, r1, lsr #2
+00F6DC50: orrhs        r2, r2, r3, lsr #2
+00F6DC54: cmp          r0, r1, lsr #3
+00F6DC58: subhs        r0, r0, r1, lsr #3
+00F6DC5C: orrhs        r2, r2, r3, lsr #3
+00F6DC60: cmp          r0, #0
+00F6DC64: lsrsne       r3, r3, #4
+00F6DC68: lsrne        r1, r1, #4
+00F6DC6C: bne          #0xf6dc30
+00F6DC70: mov          r0, r2
+00F6DC74: bx           lr
+00F6DC78: moveq        r0, #1
+00F6DC7C: movne        r0, #0
+00F6DC80: bx           lr
+00F6DC84: clz          r2, r1
+00F6DC88: rsb          r2, r2, #0x1f
+00F6DC8C: lsr          r0, r0, r2
+00F6DC90: bx           lr
+00F6DC94: cmp          r0, #0
+00F6DC98: mvnne        r0, #0
+00F6DC9C: b            #0xf6e5b8

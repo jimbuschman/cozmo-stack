@@ -1,0 +1,6 @@
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so 0x8cb8b0 0x8cb8bc
+008CB8B0: ldr          ip, [pc]
+008CB8B4: add          pc, ip, pc
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so 0x8cb8c0 0x8cb8cc
+008CB8C0: ldr          ip, [pc]
+008CB8C4: add          pc, ip, pc

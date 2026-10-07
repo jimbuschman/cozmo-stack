@@ -1,0 +1,223 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x53a660 0x53a6ae _ZN4Anki5Cozmo17ScanlineDistorter6UpdateEi
+0053A660: push.w     {r4, r5, r6, r7, r8, sb, lr} ;
+0053A664: sub        sp, #4 ;
+0053A666: ldrd       r7, r6, [r0] ;
+0053A66A: mov        sb, r1 ;
+0053A66C: cmp        r7, r6 ;
+0053A66E: beq        #0x53a6a8 ;
+0053A670: ldr.w      r8, [pc, #0x3c] ; literal[0053A6B0]=00B1F854
+0053A674: mov        r5, sb ;
+0053A676: cmp.w      sb, #0 ;
+0053A67A: it         mi ;
+0053A67C: rsbmi.w    r5, sb, #0 ;
+0053A680: add        r8, pc ;
+0053A682: ldr        r4, [r7, #4] ;
+0053A684: cmp.w      sb, #0 ;
+0053A688: it         lt ;
+0053A68A: rsblt      r4, r4, #0 ;
+0053A68C: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A690: mov        r0, r8 ;
+0053A692: movs       r1, #1 ;
+0053A694: mov        r2, r5 ;
+0053A696: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A69A: ldr        r1, [r7, #8] ;
+0053A69C: mla        r0, r0, r4, r1 ;
+0053A6A0: str        r0, [r7, #8] ;
+0053A6A2: adds       r7, #0xc ;
+0053A6A4: cmp        r6, r7 ;
+0053A6A6: bne        #0x53a682 ;
+0053A6A8: add        sp, #4 ;
+0053A6AA: pop.w      {r4, r5, r6, r7, r8, sb, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x53a6b4 0x53a78c _ZNK4Anki5Cozmo17ScanlineDistorter22GetEyeDistortionAmountEf
+0053A6B4: push.w     {r4, r5, r6, r7, r8, lr} ;
+0053A6B8: vpush      {d8, d9} ;
+0053A6BC: mov        r4, r0 ;
+0053A6BE: ldrd       r2, r3, [r4] ;
+0053A6C2: subs       r0, r3, r2 ;
+0053A6C4: cmp        r0, #0xc ;
+0053A6C6: bne        #0x53a6cc ;
+0053A6C8: movs       r0, #0 ;
+0053A6CA: b          #0x53a784 ;
+0053A6CC: vmov.f32   s18, #1.000000e+00 ;
+0053A6D0: ldr.w      r8, [pc, #0xb8] ; literal[0053A78C]=00B1F7F8
+0053A6D4: movw       r7, #0xaaab ;
+0053A6D8: vmov       s16, r1 ;
+0053A6DC: add        r8, pc ;
+0053A6DE: movs       r0, #0 ;
+0053A6E0: movt       r7, #0xaaaa ;
+0053A6E4: movs       r5, #0 ;
+0053A6E6: subs       r1, r3, r2 ;
+0053A6E8: asrs       r1, r1, #2 ;
+0053A6EA: mul        r3, r1, r7 ;
+0053A6EE: add.w      r1, r5, r5, lsl #1 ;
+0053A6F2: add.w      r1, r2, r1, lsl #2 ;
+0053A6F6: adds       r1, #0xc ;
+0053A6F8: subs       r2, r3, #1 ;
+0053A6FA: vldr       s0, [r1, #-0xc] ;
+0053A6FE: adds       r5, #1 ;
+0053A700: vcmpe.f32  s0, s16 ;
+0053A704: vmrs       apsr_nzcv, fpscr ;
+0053A708: bhi        #0x53a718 ;
+0053A70A: vldr       s2, [r1] ;
+0053A70E: vcmpe.f32  s2, s16 ;
+0053A712: vmrs       apsr_nzcv, fpscr ;
+0053A716: bgt        #0x53a720 ;
+0053A718: adds       r1, #0xc ;
+0053A71A: cmp        r5, r2 ;
+0053A71C: blo        #0x53a6fa ;
+0053A71E: b          #0x53a784 ;
+0053A720: vsub.f32   s2, s2, s0 ;
+0053A724: vldr       s4, [r1, #-4] ;
+0053A728: vsub.f32   s0, s16, s0 ;
+0053A72C: vdiv.f32   s0, s0, s2 ;
+0053A730: vldr       s2, [r1, #8] ;
+0053A734: vsub.f32   s6, s18, s0 ;
+0053A738: vcvt.f32.s32 s2, s2 ;
+0053A73C: vcvt.f32.s32 s4, s4 ;
+0053A740: vmul.f32   s0, s0, s2 ;
+0053A744: vmul.f32   s2, s6, s4 ;
+0053A748: vadd.f32   s0, s2, s0 ;
+0053A74C: vmov       r0, s0 ;
+0053A750: blx        #0x4a6688 ; GOT 01040F64 roundf
+0053A754: mov        r6, r0 ;
+0053A756: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A75A: mov        r0, r8 ;
+0053A75C: mvn        r1, #2 ;
+0053A760: movs       r2, #3 ;
+0053A762: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A766: vmov       s0, r6 ;
+0053A76A: ldrd       r2, r3, [r4] ;
+0053A76E: vcvt.s32.f32 s0, s0 ;
+0053A772: subs       r1, r3, r2 ;
+0053A774: asrs       r1, r1, #2 ;
+0053A776: muls       r1, r7, r1 ;
+0053A778: vmov       r6, s0 ;
+0053A77C: subs       r1, #1 ;
+0053A77E: cmp        r5, r1 ;
+0053A780: add        r0, r6 ;
+0053A782: blo        #0x53a6e6 ;
+0053A784: vpop       {d8, d9} ;
+0053A788: pop.w      {r4, r5, r6, r7, r8, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x53a790 0x53a8a6 _ZNK4Anki5Cozmo17ScanlineDistorter11AddOffNoiseERKNS_11SmallMatrixILj2ELj3EfEEiiRNS_6Vision5ImageE
+0053A790: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+0053A794: sub        sp, #4 ;
+0053A796: vpush      {d8, d9, d10} ;
+0053A79A: sub        sp, #0x20 ;
+0053A79C: str        r1, [sp, #4] ;
+0053A79E: ldrd       r8, r0, [r0, #0xc] ;
+0053A7A2: cmp        r8, r0 ;
+0053A7A4: str        r0, [sp] ;
+0053A7A6: beq        #0x53a89a ;
+0053A7A8: vmov       s0, r2 ;
+0053A7AC: ldr.w      sl, [sp, #0x60] ;
+0053A7B0: mov.w      fp, #0 ;
+0053A7B4: vcvt.f32.s32 s16, s0 ;
+0053A7B8: add.w      r5, sl, #4 ;
+0053A7BC: vmov       s0, r3 ;
+0053A7C0: vcvt.f32.s32 s18, s0 ;
+0053A7C4: vldr       s0, [r8] ;
+0053A7C8: mov.w      r0, #0x3f800000 ;
+0053A7CC: vldr       s2, [r8, #4] ;
+0053A7D0: add        r2, sp, #0x14 ;
+0053A7D2: vmul.f32   s0, s0, s18 ;
+0053A7D6: ldr        r1, [sp, #4] ;
+0053A7D8: vmul.f32   s2, s2, s16 ;
+0053A7DC: str        r0, [sp, #0x1c] ;
+0053A7DE: add        r0, sp, #0xc ;
+0053A7E0: vstr       s2, [sp, #0x18] ;
+0053A7E4: vstr       s0, [sp, #0x14] ;
+0053A7E8: blx        #0x4aa63c ; GOT 010424A0 _ZN4AnkimlILj2ELj3EfffEENS_5PointIXT_ET3_EERKNS_11SmallMatrixIXT_EXT0_ET1_EERKNS1_IXT0_ET2_EE
+0053A7EC: ldr.w      r0, [sl, #0xc] ;
+0053A7F0: str        r0, [sp, #8] ;
+0053A7F2: ldr.w      sb, [sl, #0x10] ;
+0053A7F6: ldrd       r6, r7, [sp, #0xc] ;
+0053A7FA: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A7FE: ldr        r0, [pc, #0xa8] ; literal[0053A8A8]=00B1F6D0
+0053A800: movs       r1, #1 ;
+0053A802: movs       r2, #3 ;
+0053A804: add        r0, pc ;
+0053A806: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A80A: mov        r4, r0 ;
+0053A80C: mov        r0, r7 ;
+0053A80E: blx        #0x4a6688 ; GOT 01040F64 roundf
+0053A812: vmov       s20, r0 ;
+0053A816: mov        r0, r6 ;
+0053A818: blx        #0x4a6688 ; GOT 01040F64 roundf
+0053A81C: vmov       s0, r0 ;
+0053A820: and        r0, r4, #1 ;
+0053A824: vcvt.s32.f32 s2, s20 ;
+0053A828: subs       r0, r4, r0 ;
+0053A82A: vcvt.s32.f32 s0, s0 ;
+0053A82E: add.w      r3, r4, r4, lsr #31 ;
+0053A832: add.w      r1, r0, r0, lsr #31 ;
+0053A836: sub.w      r0, sb, #1 ;
+0053A83A: vmov       r2, s0 ;
+0053A83E: cmp        r0, r2 ;
+0053A840: it         gt ;
+0053A842: movgt      r0, r2 ;
+0053A844: cmp        r2, #0 ;
+0053A846: it         le ;
+0053A848: movle      r0, fp ;
+0053A84A: add.w      r4, r0, r3, asr #1 ;
+0053A84E: ldr        r3, [sp, #8] ;
+0053A850: sub.w      r2, r0, r1, asr #1 ;
+0053A854: subs       r7, r3, #1 ;
+0053A856: vmov       r3, s2 ;
+0053A85A: cmp        r7, r3 ;
+0053A85C: it         gt ;
+0053A85E: movgt      r7, r3 ;
+0053A860: cmp        r3, #0 ;
+0053A862: it         le ;
+0053A864: movle      r7, fp ;
+0053A866: cmp        r2, r4 ;
+0053A868: bgt        #0x53a890 ;
+0053A86A: subs       r0, #1 ;
+0053A86C: asrs       r1, r1, #1 ;
+0053A86E: subs       r6, r0, r1 ;
+0053A870: adds       r6, #1 ;
+0053A872: cmp        r6, #0 ;
+0053A874: blt        #0x53a88c ;
+0053A876: ldr.w      r0, [sl, #0x10] ;
+0053A87A: cmp        r6, r0 ;
+0053A87C: bge        #0x53a88c ;
+0053A87E: mov        r0, r5 ;
+0053A880: mov        r1, r7 ;
+0053A882: mov        r2, r6 ;
+0053A884: blx        #0x4aa648 ; GOT 010424A4 _ZN4Anki7Array2dIhEclEii
+0053A888: strb.w     fp, [r0] ;
+0053A88C: cmp        r6, r4 ;
+0053A88E: blt        #0x53a870 ;
+0053A890: ldr        r0, [sp] ;
+0053A892: add.w      r8, r8, #8 ;
+0053A896: cmp        r8, r0 ;
+0053A898: bne        #0x53a7c4 ;
+0053A89A: add        sp, #0x20 ;
+0053A89C: vpop       {d8, d9, d10} ;
+0053A8A0: add        sp, #4 ;
+0053A8A2: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x53a050 0x53a084 _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A050: push       {r4, lr} ;
+0053A052: ldr        r0, [pc, #0x40] ; literal[0053A094]=00B20858
+0053A054: add        r0, pc ;
+0053A056: ldrb       r0, [r0] ;
+0053A058: dmb        ish ;
+0053A05C: tst.w      r0, #1 ;
+0053A060: bne        #0x53a07e ;
+0053A062: ldr        r0, [pc, #0x34] ; literal[0053A098]=00B20848
+0053A064: add        r0, pc ;
+0053A066: blx        #0x4a472c ; GOT 010404F0 __cxa_guard_acquire
+0053A06A: cbz        r0, #0x53a07e ;
+0053A06C: ldr        r0, [pc, #0x2c] ; literal[0053A09C]=00B1FE66
+0053A06E: add        r0, pc ;
+0053A070: movs       r1, #1 ;
+0053A072: blx        #0x4a4d5c ; GOT 01040700 _ZN4Anki4Util15RandomGeneratorC1Ej
+0053A076: ldr        r0, [pc, #0x2c] ; literal[0053A0A4]=00B20834
+0053A078: add        r0, pc ;
+0053A07A: blx        #0x4a475c ; GOT 01040500 __cxa_guard_release
+0053A07E: ldr        r0, [pc, #0x28] ; literal[0053A0A8]=00B1FE54
+0053A080: add        r0, pc ;
+0053A082: pop        {r4, pc} ;

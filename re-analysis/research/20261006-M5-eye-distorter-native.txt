@@ -1,0 +1,750 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5850e0 0x58591c _ZN4Anki5Cozmo20ProceduralFaceDrawer7DrawEyeERKNS0_14ProceduralFaceENS2_8WhichEyeERNS_6Vision5ImageERNS_9RectangleIfEE
+005850E0: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+005850E4: sub        sp, #4 ;
+005850E6: vpush      {d8, d9, d10, d11, d12, d13, d14, d15} ;
+005850EA: sub        sp, #0x120 ;
+005850EC: mov        fp, r0 ;
+005850EE: movs       r0, #0x4c ;
+005850F0: mla        r4, r1, r0, fp ;
+005850F4: vmov.f32   s18, #5.000000e-01 ;
+005850F8: str        r3, [sp, #0x1c] ;
+005850FA: str        r1, [sp, #0x30] ;
+005850FC: vmov.f32   s20, #3.000000e+01 ;
+00585100: vldr       s16, [pc, #0x2a4] ; literal[005853A8]=42200000
+00585104: mov        sl, r2 ;
+00585106: vldr       s2, [r4, #0x28] ;
+0058510A: vldr       s0, [r4, #0x24] ;
+0058510E: vmul.f32   s2, s2, s18 ;
+00585112: vmul.f32   s0, s0, s18 ;
+00585116: vmul.f32   s2, s2, s16 ;
+0058511A: vmul.f32   s22, s0, s20 ;
+0058511E: vmov       r0, s2 ;
+00585122: blx        #0x4a6688 ; GOT 01040F64 roundf
+00585126: mov        sb, r0 ;
+00585128: vmov       r0, s22 ;
+0058512C: vldr       s0, [r4, #0x2c] ;
+00585130: movs       r7, #0 ;
+00585132: vldr       s22, [r4, #0x30] ;
+00585136: vmul.f32   s0, s0, s18 ;
+0058513A: vldr       s24, [r4, #0x14] ;
+0058513E: vldr       s26, [r4, #0x18] ;
+00585142: vldr       s28, [r4, #0x1c] ;
+00585146: vldr       s30, [r4, #0x20] ;
+0058514A: strd       r7, r7, [sp, #0x114] ;
+0058514E: str        r7, [sp, #0x11c] ;
+00585150: str        r7, [sp, #0x108] ;
+00585152: vmul.f32   s0, s0, s20 ;
+00585156: vmov       r6, s0 ;
+0058515A: blx        #0x4a6688 ; GOT 01040F64 roundf
+0058515E: vmul.f32   s0, s22, s18 ;
+00585162: vmul.f32   s2, s28, s18 ;
+00585166: vmov       s17, sb ;
+0058516A: vmul.f32   s0, s0, s16 ;
+0058516E: vmul.f32   s2, s2, s20 ;
+00585172: vmov       r4, s0 ;
+00585176: vmul.f32   s0, s24, s18 ;
+0058517A: vmov       r5, s2 ;
+0058517E: vmul.f32   s0, s0, s20 ;
+00585182: vmov       s20, r0 ;
+00585186: mov        r0, r6 ;
+00585188: vmov       r8, s0 ;
+0058518C: blx        #0x4a6688 ; GOT 01040F64 roundf
+00585190: vmov       s24, r0 ;
+00585194: mov        r0, r4 ;
+00585196: blx        #0x4a6688 ; GOT 01040F64 roundf
+0058519A: vmov       s22, r0 ;
+0058519E: mov        r0, r5 ;
+005851A0: blx        #0x4a6688 ; GOT 01040F64 roundf
+005851A4: vmul.f32   s0, s30, s18 ;
+005851A8: mov        r4, r0 ;
+005851AA: vmul.f32   s2, s26, s18 ;
+005851AE: str        r7, [sp, #0x10c] ;
+005851B0: vmul.f32   s0, s0, s16 ;
+005851B4: vmul.f32   s2, s2, s16 ;
+005851B8: vmov       r0, s0 ;
+005851BC: vmov       r5, s2 ;
+005851C0: blx        #0x4a6688 ; GOT 01040F64 roundf
+005851C4: vmov       s30, r0 ;
+005851C8: mov        r0, r5 ;
+005851CA: vmov       s18, r4 ;
+005851CE: blx        #0x4a6688 ; GOT 01040F64 roundf
+005851D2: vmov       s26, r0 ;
+005851D6: mov        r0, r8 ;
+005851D8: blx        #0x4a6688 ; GOT 01040F64 roundf
+005851DC: vmov       s0, r0 ;
+005851E0: vcvt.s32.f32 s26, s26 ;
+005851E4: str        r7, [sp, #0x110] ;
+005851E6: vcvt.s32.f32 s28, s0 ;
+005851EA: str        r7, [sp, #0x100] ;
+005851EC: vcvt.s32.f32 s0, s30 ;
+005851F0: str        r7, [sp, #0xfc] ;
+005851F2: vcvt.s32.f32 s2, s18 ;
+005851F6: vcvt.s32.f32 s22, s22 ;
+005851FA: str        r7, [sp, #0x104] ;
+005851FC: vcvt.s32.f32 s24, s24 ;
+00585200: str        r7, [sp, #0xf4] ;
+00585202: vcvt.s32.f32 s18, s17 ;
+00585206: vcvt.s32.f32 s20, s20 ;
+0058520A: str        r7, [sp, #0xf0] ;
+0058520C: str        r7, [sp, #0xf8] ;
+0058520E: vmov       r0, s2 ;
+00585212: cmp        r0, #1 ;
+00585214: itt        ge ;
+00585216: vmovge     r1, s0 ;
+0058521A: cmpge      r1, #1 ;
+0058521C: blt        #0x585256 ;
+0058521E: sub.w      r2, r1, #0x14 ;
+00585222: str        r2, [sp, #0xec] ;
+00585224: rsb.w      r2, r0, #0xf ;
+00585228: add        r3, sp, #0xe0 ;
+0058522A: stm        r3!, {r0, r1, r2} ;
+0058522C: add        r0, sp, #0x108 ;
+0058522E: movs       r1, #0xa ;
+00585230: mov.w      r2, #0x168 ;
+00585234: mov.w      r3, #0x10e ;
+00585238: strd       r2, r1, [sp] ;
+0058523C: add        r1, sp, #0xe0 ;
+0058523E: str        r0, [sp, #8] ;
+00585240: add        r0, sp, #0xe8 ;
+00585242: movs       r2, #0 ;
+00585244: blx        #0x4ae464 ; GOT 01043958 _ZN2cv12ellipse2PolyENS_6Point_IiEENS_5Size_IiEEiiiiRNSt6__ndk16vectorIS1_NS4_9allocatorIS1_EEEE
+00585248: ldrd       r2, r3, [sp, #0x108] ;
+0058524C: ldr        r1, [sp, #0x118] ;
+0058524E: add        r0, sp, #0x114 ;
+00585250: blx        #0x4ae470 ; GOT 0104395C _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE6insertINS_11__wrap_iterIPS3_EEEENS_9enable_ifIXaasr21__is_forward_iteratorIT_EE5valuesr16is_constructibleIS3_NS_15iterator_traitsISC_E9referenceEEE5valueESA_E4typeENS8_IPKS3_EESC_SC_
+00585254: b          #0x585268 ;
+00585256: mvn        r0, #0x13 ;
+0058525A: str        r0, [sp, #0x94] ;
+0058525C: movs       r0, #0xf ;
+0058525E: str        r0, [sp, #0x90] ;
+00585260: add        r0, sp, #0x114 ;
+00585262: add        r1, sp, #0x90 ;
+00585264: blx        #0x4ae47c ; GOT 01043960 _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE21__push_back_slow_pathIS3_EEvOT_
+00585268: vmov       r0, s28 ;
+0058526C: cmp        r0, #1 ;
+0058526E: itt        ge ;
+00585270: vmovge     r1, s26 ;
+00585274: cmpge      r1, #1 ;
+00585276: blt        #0x5852ac ;
+00585278: rsb.w      r2, r1, #0x14 ;
+0058527C: str        r2, [sp, #0xdc] ;
+0058527E: rsb.w      r2, r0, #0xf ;
+00585282: add        r3, sp, #0xd0 ;
+00585284: stm        r3!, {r0, r1, r2} ;
+00585286: add        r0, sp, #0x108 ;
+00585288: movs       r1, #0xa ;
+0058528A: movs       r2, #0x5a ;
+0058528C: movs       r3, #0 ;
+0058528E: strd       r2, r1, [sp] ;
+00585292: add        r1, sp, #0xd0 ;
+00585294: str        r0, [sp, #8] ;
+00585296: add        r0, sp, #0xd8 ;
+00585298: movs       r2, #0 ;
+0058529A: blx        #0x4ae464 ; GOT 01043958 _ZN2cv12ellipse2PolyENS_6Point_IiEENS_5Size_IiEEiiiiRNSt6__ndk16vectorIS1_NS4_9allocatorIS1_EEEE
+0058529E: ldrd       r2, r3, [sp, #0x108] ;
+005852A2: ldr        r1, [sp, #0x118] ;
+005852A4: add        r0, sp, #0x114 ;
+005852A6: blx        #0x4ae470 ; GOT 0104395C _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE6insertINS_11__wrap_iterIPS3_EEEENS_9enable_ifIXaasr21__is_forward_iteratorIT_EE5valuesr16is_constructibleIS3_NS_15iterator_traitsISC_E9referenceEEE5valueESA_E4typeENS8_IPKS3_EESC_SC_
+005852AA: b          #0x5852d2 ;
+005852AC: movs       r0, #0x14 ;
+005852AE: movs       r1, #0xf ;
+005852B0: str        r0, [sp, #0x94] ;
+005852B2: ldrd       r0, r2, [sp, #0x118] ;
+005852B6: str        r1, [sp, #0x90] ;
+005852B8: cmp        r0, r2 ;
+005852BA: bhs        #0x5852ca ;
+005852BC: str        r1, [r0] ;
+005852BE: ldr        r1, [sp, #0x94] ;
+005852C0: str        r1, [r0, #4] ;
+005852C2: ldr        r0, [sp, #0x118] ;
+005852C4: adds       r0, #8 ;
+005852C6: str        r0, [sp, #0x118] ;
+005852C8: b          #0x5852d2 ;
+005852CA: add        r0, sp, #0x114 ;
+005852CC: add        r1, sp, #0x90 ;
+005852CE: blx        #0x4ae47c ; GOT 01043960 _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE21__push_back_slow_pathIS3_EEvOT_
+005852D2: vmov       r0, s24 ;
+005852D6: cmp        r0, #1 ;
+005852D8: itt        ge ;
+005852DA: vmovge     r1, s22 ;
+005852DE: cmpge      r1, #1 ;
+005852E0: blt        #0x585316 ;
+005852E2: rsb.w      r2, r1, #0x14 ;
+005852E6: str        r2, [sp, #0xcc] ;
+005852E8: sub.w      r2, r0, #0xf ;
+005852EC: add        r3, sp, #0xc0 ;
+005852EE: stm        r3!, {r0, r1, r2} ;
+005852F0: add        r0, sp, #0x108 ;
+005852F2: movs       r1, #0xa ;
+005852F4: movs       r2, #0xb4 ;
+005852F6: movs       r3, #0x5a ;
+005852F8: strd       r2, r1, [sp] ;
+005852FC: add        r1, sp, #0xc0 ;
+005852FE: str        r0, [sp, #8] ;
+00585300: add        r0, sp, #0xc8 ;
+00585302: movs       r2, #0 ;
+00585304: blx        #0x4ae464 ; GOT 01043958 _ZN2cv12ellipse2PolyENS_6Point_IiEENS_5Size_IiEEiiiiRNSt6__ndk16vectorIS1_NS4_9allocatorIS1_EEEE
+00585308: ldrd       r2, r3, [sp, #0x108] ;
+0058530C: ldr        r1, [sp, #0x118] ;
+0058530E: add        r0, sp, #0x114 ;
+00585310: blx        #0x4ae470 ; GOT 0104395C _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE6insertINS_11__wrap_iterIPS3_EEEENS_9enable_ifIXaasr21__is_forward_iteratorIT_EE5valuesr16is_constructibleIS3_NS_15iterator_traitsISC_E9referenceEEE5valueESA_E4typeENS8_IPKS3_EESC_SC_
+00585314: b          #0x58533e ;
+00585316: movs       r0, #0x14 ;
+00585318: mvn        r1, #0xe ;
+0058531C: str        r0, [sp, #0x94] ;
+0058531E: ldrd       r0, r2, [sp, #0x118] ;
+00585322: str        r1, [sp, #0x90] ;
+00585324: cmp        r0, r2 ;
+00585326: bhs        #0x585336 ;
+00585328: str        r1, [r0] ;
+0058532A: ldr        r1, [sp, #0x94] ;
+0058532C: str        r1, [r0, #4] ;
+0058532E: ldr        r0, [sp, #0x118] ;
+00585330: adds       r0, #8 ;
+00585332: str        r0, [sp, #0x118] ;
+00585334: b          #0x58533e ;
+00585336: add        r0, sp, #0x114 ;
+00585338: add        r1, sp, #0x90 ;
+0058533A: blx        #0x4ae47c ; GOT 01043960 _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE21__push_back_slow_pathIS3_EEvOT_
+0058533E: vmov       r0, s20 ;
+00585342: cmp        r0, #1 ;
+00585344: itt        ge ;
+00585346: vmovge     r1, s18 ;
+0058534A: cmpge      r1, #1 ;
+0058534C: blt        #0x585384 ;
+0058534E: sub.w      r2, r1, #0x14 ;
+00585352: str        r2, [sp, #0xbc] ;
+00585354: sub.w      r2, r0, #0xf ;
+00585358: add        r3, sp, #0xb0 ;
+0058535A: stm        r3!, {r0, r1, r2} ;
+0058535C: add        r0, sp, #0x108 ;
+0058535E: movs       r1, #0xa ;
+00585360: mov.w      r2, #0x10e ;
+00585364: movs       r3, #0xb4 ;
+00585366: strd       r2, r1, [sp] ;
+0058536A: add        r1, sp, #0xb0 ;
+0058536C: str        r0, [sp, #8] ;
+0058536E: add        r0, sp, #0xb8 ;
+00585370: movs       r2, #0 ;
+00585372: blx        #0x4ae464 ; GOT 01043958 _ZN2cv12ellipse2PolyENS_6Point_IiEENS_5Size_IiEEiiiiRNSt6__ndk16vectorIS1_NS4_9allocatorIS1_EEEE
+00585376: ldrd       r2, r3, [sp, #0x108] ;
+0058537A: ldr        r1, [sp, #0x118] ;
+0058537C: add        r0, sp, #0x114 ;
+0058537E: blx        #0x4ae470 ; GOT 0104395C _ZNSt6__ndk16vectorIN2cv6Point_IiEENS_9allocatorIS3_EEE6insertINS_11__wrap_iterIPS3_EEEENS_9enable_ifIXaasr21__is_forward_iteratorIT_EE5valuesr16is_constructibleIS3_NS_15iterator_traitsISC_E9referenceEEE5valueESA_E4typeENS8_IPKS3_EESC_SC_
+00585382: b          #0x5853c8 ;
+00585384: mvn        r0, #0x13 ;
+00585388: mvn        r1, #0xe ;
+0058538C: str        r0, [sp, #0x94] ;
+0058538E: ldrd       r0, r2, [sp, #0x118] ;
+00585392: str        r1, [sp, #0x90] ;
+00585394: cmp        r0, r2 ;
+00585396: bhs        #0x5853c0 ;
+00585398: str        r1, [r0] ;
+0058539A: ldr        r1, [sp, #0x94] ;
+0058539C: str        r1, [r0, #4] ;
+0058539E: ldr        r0, [sp, #0x118] ;
+005853A0: adds       r0, #8 ;
+005853A2: str        r0, [sp, #0x118] ;
+005853A4: b          #0x5853c8 ;
+005853A6: nop         ;
+005853A8: movs       r0, r0 ;
+005853AA: tst        r0, r4 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x53a0b0 0x53a898 _ZN4Anki5Cozmo17ScanlineDistorterC1Eif
+0053A0B0: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+0053A0B4: sub        sp, #4 ;
+0053A0B6: vpush      {d8} ;
+0053A0BA: sub        sp, #0x28 ;
+0053A0BC: mov        r7, r1 ;
+0053A0BE: movs       r1, #0x18 ;
+0053A0C0: mov        r6, r2 ;
+0053A0C2: mov        r4, r0 ;
+0053A0C4: blx        #0x4a403c ; GOT 010402A0 __aeabi_memclr4
+0053A0C8: add.w      r0, r4, #0xc ;
+0053A0CC: str        r0, [sp, #8] ;
+0053A0CE: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A0D2: ldr.w      r0, [pc, #0x4b4] ; literal[0053A588]=00B1FDFE
+0053A0D6: add        r0, pc ;
+0053A0D8: movs       r1, #3 ;
+0053A0DA: blx        #0x4aa5dc ; GOT 01042480 _ZNK4Anki4Util15RandomGenerator7RandIntEi
+0053A0DE: strb       r0, [r4, #0x18] ;
+0053A0E0: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A0E4: ldr.w      r0, [pc, #0x4a4] ; literal[0053A58C]=00B1FDE8
+0053A0E8: vmov.f64   d0, #1.000000e+00 ;
+0053A0EC: add        r0, pc ;
+0053A0EE: vmov       r2, r3, d0 ;
+0053A0F2: blx        #0x4a60ac ; GOT 01040D70 _ZNK4Anki4Util15RandomGenerator7RandDblEd
+0053A0F6: vmov.f64   d1, #5.000000e-01 ;
+0053A0FA: movs       r2, #1 ;
+0053A0FC: vmov       d0, r0, r1 ;
+0053A100: vcmpe.f64  d0, d1 ;
+0053A104: vmrs       apsr_nzcv, fpscr ;
+0053A108: it         mi ;
+0053A10A: movmi.w    r2, #-1 ;
+0053A10E: str        r2, [sp, #0x24] ;
+0053A110: ldrd       r1, r0, [r4] ;
+0053A114: cmp        r0, r1 ;
+0053A116: beq        #0x53a138 ;
+0053A118: sub.w      r3, r0, #0xc ;
+0053A11C: subs       r1, r3, r1 ;
+0053A11E: movw       r3, #0xaaab ;
+0053A122: movt       r3, #0xaaaa ;
+0053A126: umull      r1, r3, r1, r3 ;
+0053A12A: mvn.w      r1, r3, lsr #3 ;
+0053A12E: add.w      r1, r1, r1, lsl #1 ;
+0053A132: add.w      r0, r0, r1, lsl #2 ;
+0053A136: str        r0, [r4, #4] ;
+0053A138: ldrb       r0, [r4, #0x18] ;
+0053A13A: cmp        r0, #3 ;
+0053A13C: bhi.w      #0x53a458 ;
+0053A140: tbb        [pc, r0] ; literal[0053A144]=541D3802
+0053A144: subs       r0, #2 ;
+0053A146: strb       r5, [r3, r0] ;
+0053A148: rsbs       r5, r2, #0 ;
+0053A14A: movs       r0, #0 ;
+0053A14C: str        r0, [sp, #0xc] ;
+0053A14E: str        r5, [sp, #0x20] ;
+0053A150: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A154: ldr.w      r0, [pc, #0x4b4] ; literal[0053A60C]=00B1FD7C
+0053A158: add        r0, pc ;
+0053A15A: movs       r1, #1 ;
+0053A15C: mov        r2, r7 ;
+0053A15E: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A162: str        r0, [sp, #0x1c] ;
+0053A164: ldrd       r1, r2, [r4, #4] ;
+0053A168: cmp        r1, r2 ;
+0053A16A: bhs.w      #0x53a2ae ;
+0053A16E: movs       r2, #0 ;
+0053A170: strd       r2, r5, [r1] ;
+0053A174: str        r0, [r1, #8] ;
+0053A176: ldr        r0, [r4, #4] ;
+0053A178: adds       r0, #0xc ;
+0053A17A: str        r0, [r4, #4] ;
+0053A17C: b          #0x53a2ba ;
+0053A17E: movs       r0, #0 ;
+0053A180: str        r0, [sp, #0xc] ;
+0053A182: rsbs       r0, r2, #0 ;
+0053A184: str        r0, [sp, #0x20] ;
+0053A186: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A18A: ldr.w      r0, [pc, #0x458] ; literal[0053A5E4]=00B1FD46
+0053A18E: add        r0, pc ;
+0053A190: movs       r1, #1 ;
+0053A192: mov        r2, r7 ;
+0053A194: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A198: str        r0, [sp, #0x1c] ;
+0053A19A: ldrd       r1, r2, [r4, #4] ;
+0053A19E: cmp        r1, r2 ;
+0053A1A0: bhs        #0x53a246 ;
+0053A1A2: ldr        r3, [sp, #0x20] ;
+0053A1A4: ldr        r2, [sp, #0xc] ;
+0053A1A6: strd       r2, r3, [r1] ;
+0053A1AA: str        r0, [r1, #8] ;
+0053A1AC: ldr        r0, [r4, #4] ;
+0053A1AE: adds       r0, #0xc ;
+0053A1B0: str        r0, [r4, #4] ;
+0053A1B2: b          #0x53a252 ;
+0053A1B4: movs       r0, #0 ;
+0053A1B6: str        r0, [sp, #0xc] ;
+0053A1B8: rsbs       r0, r2, #0 ;
+0053A1BA: str        r0, [sp, #0x20] ;
+0053A1BC: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A1C0: ldr.w      r0, [pc, #0x438] ; literal[0053A5FC]=00B1FD10
+0053A1C4: add        r0, pc ;
+0053A1C6: movs       r1, #1 ;
+0053A1C8: mov        r2, r7 ;
+0053A1CA: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A1CE: str        r0, [sp, #0x1c] ;
+0053A1D0: ldrd       r1, r2, [r4, #4] ;
+0053A1D4: cmp        r1, r2 ;
+0053A1D6: bhs.w      #0x53a2ea ;
+0053A1DA: ldr        r3, [sp, #0x20] ;
+0053A1DC: ldr        r2, [sp, #0xc] ;
+0053A1DE: strd       r2, r3, [r1] ;
+0053A1E2: str        r0, [r1, #8] ;
+0053A1E4: ldr        r0, [r4, #4] ;
+0053A1E6: adds       r0, #0xc ;
+0053A1E8: str        r0, [r4, #4] ;
+0053A1EA: b          #0x53a2f6 ;
+0053A1EC: movs       r0, #0 ;
+0053A1EE: strd       r0, r0, [sp, #0xc] ;
+0053A1F2: str        r0, [sp, #0x14] ;
+0053A1F4: addw       r0, pc, #0x398 ;
+0053A1F8: add        r1, sp, #0xc ;
+0053A1FA: addw       r2, pc, #0x3c4 ;
+0053A1FE: blx        #0x4a4108 ; GOT 010402E4 _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0053A202: ldr        r0, [sp, #0xc] ;
+0053A204: cbz        r0, #0x53a224 ;
+0053A206: ldr        r1, [sp, #0x10] ;
+0053A208: cmp        r1, r0 ;
+0053A20A: itttt      ne ;
+0053A20C: subne.w    r2, r1, #8 ;
+0053A210: subne      r2, r2, r0 ;
+0053A212: mvnne      r3, #7 ;
+0053A216: bicne.w    r2, r3, r2 ;
+0053A21A: itt        ne ;
+0053A21C: addne      r1, r1, r2 ;
+0053A21E: strne      r1, [sp, #0x10] ;
+0053A220: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0053A224: ldr.w      r0, [pc, #0x3b4] ; literal[0053A5DC]=00B0455A
+0053A228: movs       r2, #1 ;
+0053A22A: ldr.w      r1, [pc, #0x3b4] ; literal[0053A5E0]=00B0455C
+0053A22E: add        r0, pc ;
+0053A230: add        r1, pc ;
+0053A232: ldr        r0, [r0] ;
+0053A234: ldr        r1, [r1] ;
+0053A236: ldrb       r0, [r0] ;
+0053A238: strb       r2, [r1] ;
+0053A23A: cmp        r0, #0 ;
+0053A23C: beq.w      #0x53a50c ;
+0053A240: blx        #0x4a4114 ; GOT 010402E8 _ZN4Anki4Util18sDebugBreakOnErrorEv
+0053A244: b          #0x53a50c ;
+0053A246: add        r1, sp, #0xc ;
+0053A248: add        r2, sp, #0x20 ;
+0053A24A: add        r3, sp, #0x1c ;
+0053A24C: mov        r0, r4 ;
+0053A24E: blx        #0x4aa5e8 ; GOT 01042484 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfiiEEEvDpOT_
+0053A252: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A256: ldr        r0, [pc, #0x390] ; literal[0053A5E8]=00B1FC78
+0053A258: vldr       d0, [pc, #0x314] ; literal[0053A570]=33333333
+0053A25C: add        r0, pc ;
+0053A25E: vmov       r2, r3, d0 ;
+0053A262: movw       r1, #0x6666 ;
+0053A266: mov.w      r5, #0x66666666 ;
+0053A26A: movt       r1, #0x3fd6 ;
+0053A26E: strd       r5, r1, [sp] ;
+0053A272: blx        #0x4aa5f4 ; GOT 01042488 _ZNK4Anki4Util15RandomGenerator14RandDblInRangeEdd
+0053A276: vmov       d0, r0, r1 ;
+0053A27A: vcvt.f32.f64 s0, d0 ;
+0053A27E: vstr       s0, [sp, #0x20] ;
+0053A282: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A286: ldr        r0, [pc, #0x364] ; literal[0053A5EC]=00B1FC4C
+0053A288: add        r0, pc ;
+0053A28A: movs       r1, #1 ;
+0053A28C: mov        r2, r7 ;
+0053A28E: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A292: str        r0, [sp, #0xc] ;
+0053A294: ldrd       r1, r2, [r4, #4] ;
+0053A298: cmp        r1, r2 ;
+0053A29A: bhs        #0x53a356 ;
+0053A29C: ldrd       r2, r3, [sp, #0x20] ;
+0053A2A0: strd       r2, r3, [r1] ;
+0053A2A4: str        r0, [r1, #8] ;
+0053A2A6: ldr        r0, [r4, #4] ;
+0053A2A8: adds       r0, #0xc ;
+0053A2AA: str        r0, [r4, #4] ;
+0053A2AC: b          #0x53a362 ;
+0053A2AE: add        r1, sp, #0xc ;
+0053A2B0: add        r2, sp, #0x20 ;
+0053A2B2: add        r3, sp, #0x1c ;
+0053A2B4: mov        r0, r4 ;
+0053A2B6: blx        #0x4aa5e8 ; GOT 01042484 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfiiEEEvDpOT_
+0053A2BA: mov.w      r0, #0x3f800000 ;
+0053A2BE: str        r0, [sp, #0xc] ;
+0053A2C0: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A2C4: ldr        r0, [pc, #0x348] ; literal[0053A610]=00B1FC0E
+0053A2C6: add        r0, pc ;
+0053A2C8: movs       r1, #1 ;
+0053A2CA: mov        r2, r7 ;
+0053A2CC: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A2D0: str        r0, [sp, #0x20] ;
+0053A2D2: ldrd       r1, r2, [r4, #4] ;
+0053A2D6: cmp        r1, r2 ;
+0053A2D8: blo.w      #0x53a438 ;
+0053A2DC: add        r1, sp, #0xc ;
+0053A2DE: add        r2, sp, #0x24 ;
+0053A2E0: add        r3, sp, #0x20 ;
+0053A2E2: mov        r0, r4 ;
+0053A2E4: blx        #0x4aa600 ; GOT 0104248C _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfRKiiEEEvDpOT_
+0053A2E8: b          #0x53a458 ;
+0053A2EA: add        r1, sp, #0xc ;
+0053A2EC: add        r2, sp, #0x20 ;
+0053A2EE: add        r3, sp, #0x1c ;
+0053A2F0: mov        r0, r4 ;
+0053A2F2: blx        #0x4aa5e8 ; GOT 01042484 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfiiEEEvDpOT_
+0053A2F6: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A2FA: ldr        r0, [pc, #0x304] ; literal[0053A600]=00B1FBD4
+0053A2FC: vldr       d0, [pc, #0x280] ; literal[0053A580]=66666666
+0053A300: add        r0, pc ;
+0053A302: vmov       r2, r3, d0 ;
+0053A306: movw       r1, #0xcccc ;
+0053A30A: movw       r5, #0xcccd ;
+0053A30E: movt       r1, #0x3fe4 ;
+0053A312: movt       r5, #0xcccc ;
+0053A316: strd       r5, r1, [sp] ;
+0053A31A: blx        #0x4aa5f4 ; GOT 01042488 _ZNK4Anki4Util15RandomGenerator14RandDblInRangeEdd
+0053A31E: vmov       d0, r0, r1 ;
+0053A322: vcvt.f32.f64 s16, d0 ;
+0053A326: vstr       s16, [sp, #0xc] ;
+0053A32A: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A32E: ldr        r0, [pc, #0x2d4] ; literal[0053A604]=00B1FBA4
+0053A330: add        r0, pc ;
+0053A332: movs       r1, #1 ;
+0053A334: mov        r2, r7 ;
+0053A336: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A33A: str        r0, [sp, #0x20] ;
+0053A33C: ldrd       r1, r2, [r4, #4] ;
+0053A340: cmp        r1, r2 ;
+0053A342: bhs        #0x53a3c2 ;
+0053A344: ldr        r2, [sp, #0x24] ;
+0053A346: strd       r2, r0, [r1, #4] ;
+0053A34A: vstr       s16, [r1] ;
+0053A34E: ldr        r0, [r4, #4] ;
+0053A350: adds       r0, #0xc ;
+0053A352: str        r0, [r4, #4] ;
+0053A354: b          #0x53a3ce ;
+0053A356: add        r1, sp, #0x20 ;
+0053A358: add        r2, sp, #0x24 ;
+0053A35A: add        r3, sp, #0xc ;
+0053A35C: mov        r0, r4 ;
+0053A35E: blx        #0x4aa60c ; GOT 01042490 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJRKfRKiiEEEvDpOT_
+0053A362: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A366: ldr        r0, [pc, #0x288] ; literal[0053A5F0]=00B1FB68
+0053A368: vldr       d0, [pc, #0x20c] ; literal[0053A578]=CCCCCCCD
+0053A36C: add        r0, pc ;
+0053A36E: vmov       r2, r3, d0 ;
+0053A372: movw       r1, #0x3333 ;
+0053A376: mov.w      r5, #0x33333333 ;
+0053A37A: movt       r1, #0x3feb ;
+0053A37E: strd       r5, r1, [sp] ;
+0053A382: blx        #0x4aa5f4 ; GOT 01042488 _ZNK4Anki4Util15RandomGenerator14RandDblInRangeEdd
+0053A386: vmov       d0, r0, r1 ;
+0053A38A: ldr        r0, [sp, #0x24] ;
+0053A38C: vcvt.f32.f64 s16, d0 ;
+0053A390: rsbs       r5, r0, #0 ;
+0053A392: str        r5, [sp, #0xc] ;
+0053A394: vstr       s16, [sp, #0x1c] ;
+0053A398: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A39C: ldr        r0, [pc, #0x254] ; literal[0053A5F4]=00B1FB36
+0053A39E: add        r0, pc ;
+0053A3A0: movs       r1, #1 ;
+0053A3A2: mov        r2, r7 ;
+0053A3A4: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A3A8: str        r0, [sp, #0x18] ;
+0053A3AA: ldrd       r1, r2, [r4, #4] ;
+0053A3AE: cmp        r1, r2 ;
+0053A3B0: bhs        #0x53a40c ;
+0053A3B2: strd       r5, r0, [r1, #4] ;
+0053A3B6: vstr       s16, [r1] ;
+0053A3BA: ldr        r0, [r4, #4] ;
+0053A3BC: adds       r0, #0xc ;
+0053A3BE: str        r0, [r4, #4] ;
+0053A3C0: b          #0x53a418 ;
+0053A3C2: add        r1, sp, #0xc ;
+0053A3C4: add        r2, sp, #0x24 ;
+0053A3C6: add        r3, sp, #0x20 ;
+0053A3C8: mov        r0, r4 ;
+0053A3CA: blx        #0x4aa60c ; GOT 01042490 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJRKfRKiiEEEvDpOT_
+0053A3CE: mov.w      r0, #0x3f800000 ;
+0053A3D2: str        r0, [sp, #0x20] ;
+0053A3D4: ldr        r0, [sp, #0x24] ;
+0053A3D6: rsbs       r5, r0, #0 ;
+0053A3D8: str        r5, [sp, #0x1c] ;
+0053A3DA: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A3DE: ldr        r0, [pc, #0x228] ; literal[0053A608]=00B1FAF4
+0053A3E0: add        r0, pc ;
+0053A3E2: movs       r1, #1 ;
+0053A3E4: mov        r2, r7 ;
+0053A3E6: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A3EA: str        r0, [sp, #0x18] ;
+0053A3EC: ldrd       r1, r2, [r4, #4] ;
+0053A3F0: cmp        r1, r2 ;
+0053A3F2: bhs        #0x53a3fe ;
+0053A3F4: mov.w      r2, #0x3f800000 ;
+0053A3F8: strd       r2, r5, [r1] ;
+0053A3FC: b          #0x53a442 ;
+0053A3FE: add        r1, sp, #0x20 ;
+0053A400: add        r2, sp, #0x1c ;
+0053A402: add        r3, sp, #0x18 ;
+0053A404: mov        r0, r4 ;
+0053A406: blx        #0x4aa5e8 ; GOT 01042484 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfiiEEEvDpOT_
+0053A40A: b          #0x53a458 ;
+0053A40C: add        r1, sp, #0x1c ;
+0053A40E: add        r2, sp, #0xc ;
+0053A410: add        r3, sp, #0x18 ;
+0053A412: mov        r0, r4 ;
+0053A414: blx        #0x4aa618 ; GOT 01042494 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJRKfiiEEEvDpOT_
+0053A418: mov.w      r0, #0x3f800000 ;
+0053A41C: str        r0, [sp, #0xc] ;
+0053A41E: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A422: ldr        r0, [pc, #0x1d4] ; literal[0053A5F8]=00B1FAB0
+0053A424: add        r0, pc ;
+0053A426: movs       r1, #1 ;
+0053A428: mov        r2, r7 ;
+0053A42A: blx        #0x4a5f44 ; GOT 01040CF8 _ZNK4Anki4Util15RandomGenerator14RandIntInRangeEii
+0053A42E: str        r0, [sp, #0x18] ;
+0053A430: ldrd       r1, r2, [r4, #4] ;
+0053A434: cmp        r1, r2 ;
+0053A436: bhs        #0x53a44c ;
+0053A438: ldr        r2, [sp, #0x24] ;
+0053A43A: mov.w      r3, #0x3f800000 ;
+0053A43E: str        r3, [r1] ;
+0053A440: str        r2, [r1, #4] ;
+0053A442: str        r0, [r1, #8] ;
+0053A444: ldr        r0, [r4, #4] ;
+0053A446: adds       r0, #0xc ;
+0053A448: str        r0, [r4, #4] ;
+0053A44A: b          #0x53a458 ;
+0053A44C: add        r1, sp, #0xc ;
+0053A44E: add        r2, sp, #0x24 ;
+0053A450: add        r3, sp, #0x18 ;
+0053A452: mov        r0, r4 ;
+0053A454: blx        #0x4aa600 ; GOT 0104248C _ZNSt6__ndk16vectorIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEE24__emplace_back_slow_pathIJfRKiiEEEvDpOT_
+0053A458: vmov       s0, r6 ;
+0053A45C: vldr       s2, [pc, #0x1b4] ; literal[0053A614]=3727C5AC
+0053A460: vcmpe.f32  s0, s2 ;
+0053A464: vmrs       apsr_nzcv, fpscr ;
+0053A468: ble        #0x53a50c ;
+0053A46A: vldr       s2, [pc, #0x1ac] ; literal[0053A618]=44960000
+0053A46E: vmul.f32   s0, s0, s2 ;
+0053A472: vcvt.u32.f32 s0, s0 ;
+0053A476: vmov       r6, s0 ;
+0053A47A: ldr        r0, [sp, #8] ;
+0053A47C: mov        r1, r6 ;
+0053A47E: blx        #0x4a4870 ; GOT 0104055C _ZNSt6__ndk16vectorIN4Anki5PointILj2EfEENS_9allocatorIS3_EEE7reserveEj
+0053A482: cmp        r6, #0 ;
+0053A484: beq        #0x53a50c ;
+0053A486: vmov.f64   d0, #-5.000000e-01 ;
+0053A48A: ldr.w      sb, [pc, #0x190] ; literal[0053A61C]=00B1FA3E
+0053A48E: movw       r8, #0 ;
+0053A492: mov.w      fp, #0 ;
+0053A496: add        sb, pc ;
+0053A498: movt       r8, #0x3fe0 ;
+0053A49C: mov.w      sl, #0 ;
+0053A4A0: vmov       r7, r5, d0 ;
+0053A4A4: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A4A8: mov        r0, sb ;
+0053A4AA: mov        r2, r7 ;
+0053A4AC: mov        r3, r5 ;
+0053A4AE: strd       fp, r8, [sp] ;
+0053A4B2: blx        #0x4aa5f4 ; GOT 01042488 _ZNK4Anki4Util15RandomGenerator14RandDblInRangeEdd
+0053A4B6: vmov       d0, r0, r1 ;
+0053A4BA: vcvt.f32.f64 s0, d0 ;
+0053A4BE: vstr       s0, [sp, #0xc] ;
+0053A4C2: blx        #0x4aa5d0 ; GOT 0104247C _ZN4Anki5Cozmo17ScanlineDistorter6GetRNGEv
+0053A4C6: ldr        r0, [pc, #0x158] ; literal[0053A620]=00B1FA04
+0053A4C8: mov        r2, r7 ;
+0053A4CA: mov        r3, r5 ;
+0053A4CC: strd       fp, r8, [sp] ;
+0053A4D0: add        r0, pc ;
+0053A4D2: blx        #0x4aa5f4 ; GOT 01042488 _ZNK4Anki4Util15RandomGenerator14RandDblInRangeEdd
+0053A4D6: vmov       d0, r0, r1 ;
+0053A4DA: vcvt.f32.f64 s0, d0 ;
+0053A4DE: vstr       s0, [sp, #0x20] ;
+0053A4E2: ldrd       r0, r1, [r4, #0x10] ;
+0053A4E6: cmp        r0, r1 ;
+0053A4E8: bhs        #0x53a4fa ;
+0053A4EA: ldr        r1, [sp, #0xc] ;
+0053A4EC: vstr       s0, [r0, #4] ;
+0053A4F0: str        r1, [r0] ;
+0053A4F2: ldr        r0, [r4, #0x10] ;
+0053A4F4: adds       r0, #8 ;
+0053A4F6: str        r0, [r4, #0x10] ;
+0053A4F8: b          #0x53a504 ;
+0053A4FA: ldr        r0, [sp, #8] ;
+0053A4FC: add        r1, sp, #0xc ;
+0053A4FE: add        r2, sp, #0x20 ;
+0053A500: blx        #0x4aa624 ; GOT 01042498 _ZNSt6__ndk16vectorIN4Anki5PointILj2EfEENS_9allocatorIS3_EEE24__emplace_back_slow_pathIJffEEEvDpOT_
+0053A504: add.w      sl, sl, #1 ;
+0053A508: cmp        sl, r6 ;
+0053A50A: blo        #0x53a4a4 ;
+0053A50C: mov        r0, r4 ;
+0053A50E: add        sp, #0x28 ;
+0053A510: vpop       {d8} ;
+0053A514: add        sp, #4 ;
+0053A516: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ;
+0053A51A: mov        r6, r0 ;
+0053A51C: ldr        r0, [sp, #0xc] ;
+0053A51E: cbz        r0, #0x53a55c ;
+0053A520: ldr        r1, [sp, #0x10] ;
+0053A522: cmp        r1, r0 ;
+0053A524: beq        #0x53a538 ;
+0053A526: sub.w      r2, r1, #8 ;
+0053A52A: mvn        r3, #7 ;
+0053A52E: subs       r2, r2, r0 ;
+0053A530: bic.w      r2, r3, r2 ;
+0053A534: add        r1, r2 ;
+0053A536: str        r1, [sp, #0x10] ;
+0053A538: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0053A53C: b          #0x53a55c ;
+0053A53E: b          #0x53a55a ;
+0053A540: b          #0x53a55a ;
+0053A542: b          #0x53a55a ;
+0053A544: b          #0x53a55a ;
+0053A546: b          #0x53a55a ;
+0053A548: b          #0x53a55a ;
+0053A54A: b          #0x53a55a ;
+0053A54C: b          #0x53a55a ;
+0053A54E: b          #0x53a55a ;
+0053A550: b          #0x53a55a ;
+0053A552: b          #0x53a55a ;
+0053A554: b          #0x53a55a ;
+0053A556: b          #0x53a55a ;
+0053A558: b          #0x53a55a ;
+0053A55A: mov        r6, r0 ;
+0053A55C: ldr        r0, [sp, #8] ;
+0053A55E: blx        #0x4a5ae8 ; GOT 01040B84 _ZNSt6__ndk113__vector_baseIN4Anki5PointILj2EfEENS_9allocatorIS3_EEED2Ev
+0053A562: mov        r0, r4 ;
+0053A564: blx        #0x4aa630 ; GOT 0104249C _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo17ScanlineDistorter12ControlPointENS_9allocatorIS4_EEED2Ev
+0053A568: mov        r0, r6 ;
+0053A56A: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+0053A56E: nop         ;
+0053A570: adds       r3, #0x33 ;
+0053A572: adds       r3, #0x33 ;
+0053A574: adds       r3, #0x33 ;
+0053A576: subs       r7, #0xc3 ;
+0053A578: ldm        r4!, {r0, r2, r3, r6, r7} ;
+0053A57A: ldm        r4!, {r2, r3, r6, r7} ;
+0053A57C: ldm        r4!, {r2, r3, r6, r7} ;
+0053A57E: subs       r7, #0xe4 ;
+0053A580: str        r6, [r4, #0x64] ;
+0053A582: str        r6, [r4, #0x64] ;
+0053A584: str        r6, [r4, #0x64] ;
+0053A586: subs       r7, #0xd6 ;
+0053A588: ldc2l      p0, c0, [lr, #0x2c4]! ;
+0053A58C: stc2l      p0, c0, [r8, #0x2c4]! ;
+0053A590: strb       r0, [r2, #9] ;
+0053A592: str        r7, [r5, #0x34] ;
+0053A594: str        r5, [r4, #0x44] ;
+0053A596: strb       r5, [r6, #9] ;
+0053A598: ldr        r1, [r4, #0x44] ;
+0053A59A: str        r6, [r0, #0x14] ;
+0053A59C: str        r3, [r4, #0x54] ;
+0053A59E: ldr        r1, [pc, #0xb8] ; literal[0053A658]=4620ED3A
+0053A5A0: ldr        r6, [r5, #0x14] ;
+0053A5A2: strh       r4, [r6, r5] ;
+0053A5A4: str        r3, [r4, #0x14] ;
+0053A5A6: ldr        r6, [r5, #0x44] ;
+0053A5A8: ldr        r1, [r5, #0x64] ;
+0053A5AA: add        r5, ip ;
+0053A5AC: strb       r1, [r5, #0xd] ;
+0053A5AE: ldr        r4, [r6, #0x74] ;
+0053A5B0: strb       r2, [r6, #0x11] ;
+0053A5B2: ldr        r1, [r5, #0x74] ;
+0053A5B4: cmp        r6, #0x6e ;
+0053A5B6: str        r2, [r0, #0x14] ;
+0053A5B8: strh       r4, [r4, r5] ;
+0053A5BA: str        r0, [r5, #0x14] ;
+0053A5BC: str        r0, [r6, #0x54] ;
+0053A5BE: movs       r0, r0 ;
+0053A5C0: ldr        r3, [r0, #0x74] ;
+0053A5C2: ldr        r5, [r6, #0x64] ;
+0053A5C4: movs       r0, #0x74 ;
+0053A5C6: strb       r1, [r5, #0xd] ;
+0053A5C8: ldr        r0, [r4, #0x60] ;
+0053A5CA: strb       r7, [r5, #0x11] ;
+0053A5CC: strb       r0, [r4, #0x18] ;
+0053A5CE: ldr        r1, [r4, #0x44] ;
+0053A5D0: str        r1, [r5, #0x44] ;
+0053A5D2: strb       r0, [r4, #0xc] ;
+0053A5D4: str        r0, [r5, #0x14] ;
+0053A5D6: str        r0, [r6, #0x54] ;
+0053A5D8: movs       r0, r0 ;
+0053A5DA: movs       r0, r0 ;
+0053A5DC: cmp        r2, fp ;
+0053A5DE: lsls       r0, r6, #2 ;
+0053A5E0: cmp        r4, fp ;
+0053A5E2: lsls       r0, r6, #2 ;
+0053A5E4: stc2l      p0, c0, [r6, #-0x2c4] ;
+0053A5E8: ldc2l      p0, c0, [r8], #-0x2c4 ;
+0053A5EC: mcrr2      p0, #0xb, r0, ip, c1 ;

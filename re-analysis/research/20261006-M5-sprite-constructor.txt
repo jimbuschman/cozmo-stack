@@ -1,0 +1,49 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x564290 0x56430a
+00564290: push       {r4, r5, r7, lr} ;
+00564292: mov        r5, r1 ;
+00564294: mov        r4, r0 ;
+00564296: blx        #0x4ac4b4 ; GOT 01042EC8 _ZN4Anki5Cozmo9IKeyFrameC2Ev
+0056429A: ldr        r0, [pc, #0x48] ; literal[005642E4]=00ADA732
+0056429C: movs       r1, #0 ;
+0056429E: strd       r1, r1, [r4, #0x10] ;
+005642A2: add        r0, pc ;
+005642A4: ldr        r0, [r0] ;
+005642A6: adds       r0, #8 ;
+005642A8: str        r0, [r4] ;
+005642AA: mov        r0, r4 ;
+005642AC: str        r1, [r0, #0xc]! ;
+005642B0: ldrb       r1, [r5] ;
+005642B2: lsls       r1, r1, #0x1f ;
+005642B4: bne        #0x5642be ;
+005642B6: ldm.w      r5, {r1, r2, r3} ;
+005642BA: stm        r0!, {r1, r2, r3} ;
+005642BC: b          #0x5642c6 ;
+005642BE: ldrd       r2, r1, [r5, #4] ;
+005642C2: bl         #0x4e02b2 ;
+005642C6: add.w      r0, r4, #0x18 ;
+005642CA: movs       r1, #0x11 ;
+005642CC: blx        #0x4a403c ; GOT 010402A0 __aeabi_memclr4
+005642D0: mov        r0, r4 ;
+005642D2: pop        {r4, r5, r7, pc} ;
+005642D4: mov        r5, r0 ;
+005642D6: mov        r0, r4 ;
+005642D8: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+005642DC: mov        r0, r5 ;
+005642DE: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005642E2: nop         ;
+005642E4: adr        r7, #0xc8 ;
+005642E6: lsls       r5, r5, #2 ;
+005642E8: push       {r4, r5, r7, lr} ;
+005642EA: mov        r4, r0 ;
+005642EC: ldr        r0, [pc, #0xe8] ; literal[005643D8]=00ADA946
+005642EE: add        r0, pc ;
+005642F0: ldr        r1, [r0] ;
+005642F2: ldr.w      r0, [r4, #0x254] ;
+005642F6: adds       r1, #8 ;
+005642F8: str        r1, [r4] ;
+005642FA: cbz        r0, #0x564314 ;
+005642FC: blx        #0x4aa8d0 ; GOT 0104257C _ZN4Anki5Cozmo13IActionRunner17PrepForCompletionEv
+00564300: ldr.w      r0, [r4, #0x254] ;
+00564304: movs       r1, #0 ;
+00564306: str.w      r1, [r4, #0x254] ;

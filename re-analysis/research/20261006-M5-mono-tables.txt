@@ -1,0 +1,78 @@
+FILE resources/lib/armeabi-v7a/libmono.so 0x191d20 0x191d84
+00191D20: bl           #0x2a36f0
+00191D24: bl           #0x19d3c0
+00191D28: sub          sp, fp, #8
+00191D2C: pop          {r4, fp, pc}
+FILE resources/lib/armeabi-v7a/libmono.so 0x191e44 0x191f24
+00191E44: push         {fp, lr}
+00191E48: add          fp, sp, #4
+00191E4C: sub          sp, sp, #0x10
+00191E50: str          r0, [fp, #-0x10]
+00191E54: str          r1, [fp, #-0x14]
+00191E58: ldr          r3, [fp, #-0x14]
+00191E5C: ldrh         r3, [r3]
+00191E60: mov          r2, r3
+00191E64: ldr          r3, [pc, #0x24] ; literal[00191E90]=0017AE48
+00191E68: add          r3, pc, r3
+00191E6C: add          r3, r2, r3
+00191E70: str          r3, [fp, #-8]
+00191E74: ldr          r0, [fp, #-0x10]
+00191E78: ldr          r1, [fp, #-8]
+00191E7C: bl           #0x15c28
+00191E80: mov          r3, r0
+00191E84: mov          r0, r3
+00191E88: sub          sp, fp, #4
+00191E8C: pop          {fp, pc}
+00191E90: andseq       sl, r7, r8, asr #28
+00191E94: push         {fp, lr}
+00191E98: add          fp, sp, #4
+00191E9C: sub          sp, sp, #0x18
+00191EA0: str          r0, [fp, #-0x10]
+00191EA4: ldr          r3, [pc, #0x68] ; literal[00191F14]=FFFFFF94
+00191EA8: add          r3, pc, r3
+00191EAC: str          r3, [sp]
+00191EB0: ldr          r0, [fp, #-0x10]
+00191EB4: ldr          r3, [pc, #0x5c] ; literal[00191F18]=0017BA40
+00191EB8: add          r3, pc, r3
+00191EBC: mov          r1, r3
+00191EC0: mov          r2, #0x6b
+00191EC4: mov          r3, #2
+00191EC8: bl           #0x1606c
+00191ECC: str          r0, [fp, #-8]
+00191ED0: ldr          r3, [fp, #-8]
+00191ED4: cmp          r3, #0
+00191ED8: bne          #0x191ee4
+00191EDC: mov          r3, #0
+00191EE0: b            #0x191f08
+00191EE4: ldr          r2, [fp, #-8]
+00191EE8: ldr          r3, [pc, #0x2c] ; literal[00191F1C]=0017BA0C
+00191EEC: add          r3, pc, r3
+00191EF0: rsb          r3, r3, r2
+00191EF4: asr          r3, r3, #1
+00191EF8: lsl          r2, r3, #1
+00191EFC: ldr          r3, [pc, #0x1c] ; literal[00191F20]=0017ACD8
+00191F00: add          r3, pc, r3
+00191F04: add          r3, r2, r3
+00191F08: mov          r0, r3
+00191F0C: sub          sp, fp, #4
+00191F10: pop          {fp, pc}
+FILE resources/lib/armeabi-v7a/libmono.so 0x191d38 0x191d84
+00191D38: add          fp, sp, #4
+00191D3C: sub          sp, sp, #0x10
+00191D40: str          r0, [fp, #-0x10]
+00191D44: str          r1, [fp, #-0x14]
+00191D48: ldr          r3, [fp, #-0x14]
+00191D4C: ldrh         r3, [r3]
+00191D50: mov          r2, r3
+00191D54: ldr          r3, [pc, #0x24] ; literal[00191D80]=0017BC78
+00191D58: add          r3, pc, r3
+00191D5C: add          r3, r2, r3
+00191D60: str          r3, [fp, #-8]
+00191D64: ldr          r0, [fp, #-0x10]
+00191D68: ldr          r1, [fp, #-8]
+00191D6C: bl           #0x15c28
+00191D70: mov          r3, r0
+00191D74: mov          r0, r3
+00191D78: sub          sp, fp, #4
+00191D7C: pop          {fp, pc}
+00191D80: andseq       fp, r7, r8, ror ip

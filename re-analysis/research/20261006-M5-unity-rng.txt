@@ -1,0 +1,134 @@
+FILE resources/lib/armeabi-v7a/libunity.so 0x10bc00 0x10bd30
+0010BC00: push         {r4, r5, r6, r7, fp, lr}
+0010BC04: mov          r4, r0
+0010BC08: movw         r0, #0x8965
+0010BC0C: movt         r0, #0x6c07
+0010BC10: mul          r1, r4, r0
+0010BC14: add          r5, r1, #1
+0010BC18: mul          r1, r5, r0
+0010BC1C: add          r6, r1, #1
+0010BC20: mul          r7, r6, r0
+0010BC24: bl           #0x766fc0
+0010BC28: add          r1, r7, #1
+0010BC2C: stm          r0, {r4, r5, r6}
+0010BC30: str          r1, [r0, #0xc]
+0010BC34: pop          {r4, r5, r6, r7, fp, pc}
+0010BC38: push         {r4, lr}
+0010BC3C: mov          r4, r0
+0010BC40: bl           #0x766fc0
+0010BC44: vld1.32      {d16, d17}, [r0]
+0010BC48: vst1.32      {d16, d17}, [r4]
+0010BC4C: pop          {r4, pc}
+0010BC50: push         {r4, lr}
+0010BC54: mov          r4, r0
+0010BC58: bl           #0x766fc0
+0010BC5C: vld1.32      {d16, d17}, [r4]
+0010BC60: vst1.32      {d16, d17}, [r0]
+0010BC64: pop          {r4, pc}
+0010BC68: push         {r4, r5, fp, lr}
+0010BC6C: mov          r4, r1
+0010BC70: mov          r5, r0
+0010BC74: bl           #0x766fc0
+0010BC78: ldm          r0, {r1, r2}
+0010BC7C: vmov.f32     s4, #1.000000e+00
+0010BC80: vmov         s6, r4
+0010BC84: str          r2, [r0]
+0010BC88: ldr          r2, [r0, #8]
+0010BC8C: eor          r1, r1, r1, lsl #11
+0010BC90: str          r2, [r0, #4]
+0010BC94: ldr          r2, [r0, #0xc]
+0010BC98: eor          r1, r1, r1, lsr #8
+0010BC9C: vldr         s2, [pc, #0x40] ; literal[0010BCE4]=34000001
+0010BCA0: eor          r1, r1, r2
+0010BCA4: eor          r3, r1, r2, lsr #19
+0010BCA8: mov          r1, r3
+0010BCAC: bfc          r1, #0x17, #9
+0010BCB0: vmov         s0, r1
+0010BCB4: vcvt.f32.u32 s0, s0
+0010BCB8: str          r2, [r0, #8]
+0010BCBC: str          r3, [r0, #0xc]
+0010BCC0: vmul.f32     s0, s0, s2
+0010BCC4: vsub.f32     s2, s4, s0
+0010BCC8: vmov         s4, r5
+0010BCCC: vmul.f32     s0, s0, s4
+0010BCD0: vmul.f32     s2, s2, s6
+0010BCD4: vadd.f32     s0, s0, s2
+0010BCD8: vmov         r1, s0
+0010BCDC: mov          r0, r1
+0010BCE0: pop          {r4, r5, fp, pc}
+0010BCE4: strlo        r0, [r0], #-1
+0010BCE8: push         {r4, r5, fp, lr}
+0010BCEC: mov          r5, r1
+0010BCF0: mov          r4, r0
+0010BCF4: bl           #0x766fc0
+0010BCF8: cmp          r4, r5
+0010BCFC: bge          #0x10bd40
+0010BD00: ldm          r0, {r1, r2}
+0010BD04: str          r2, [r0]
+0010BD08: ldr          r2, [r0, #8]
+0010BD0C: eor          r1, r1, r1, lsl #11
+0010BD10: str          r2, [r0, #4]
+0010BD14: ldr          r2, [r0, #0xc]
+0010BD18: eor          r1, r1, r1, lsr #8
+0010BD1C: str          r2, [r0, #8]
+0010BD20: eor          r1, r1, r2
+0010BD24: eor          r2, r1, r2, lsr #19
+0010BD28: sub          r1, r5, r4
+0010BD2C: str          r2, [r0, #0xc]
+FILE resources/lib/armeabi-v7a/libunity.so 0x71ed4 0x71f08
+00071ED4: mov          r0, #0
+00071ED8: bl           #0x531f4
+00071EDC: movw         r1, #0x8965
+00071EE0: ldr          ip, [pc, #0x9c] ; literal[00071F84]=011764DC
+00071EE4: movt         r1, #0x6c07
+00071EE8: mul          r2, r0, r1
+00071EEC: add          r2, r2, #1
+00071EF0: mul          r3, r2, r1
+00071EF4: add          r3, r3, #1
+00071EF8: mul          lr, r3, r1
+00071EFC: add          r1, pc, ip
+00071F00: add          ip, lr, #1
+00071F04: stm          r1, {r0, r2, r3, ip}
+FILE resources/lib/armeabi-v7a/libunity.so 0x10bd30 0x10bdd8
+0010BD30: mov          r0, r2
+0010BD34: bl           #0xf6dca0
+0010BD38: add          r4, r1, r4
+0010BD3C: b            #0x10bd84
+0010BD40: cmp          r5, r4
+0010BD44: bge          #0x10bd84
+0010BD48: ldm          r0, {r1, r2}
+0010BD4C: str          r2, [r0]
+0010BD50: ldr          r2, [r0, #8]
+0010BD54: eor          r1, r1, r1, lsl #11
+0010BD58: str          r2, [r0, #4]
+0010BD5C: ldr          r2, [r0, #0xc]
+0010BD60: eor          r1, r1, r1, lsr #8
+0010BD64: str          r2, [r0, #8]
+0010BD68: eor          r1, r1, r2
+0010BD6C: eor          r2, r1, r2, lsr #19
+0010BD70: sub          r1, r4, r5
+0010BD74: str          r2, [r0, #0xc]
+0010BD78: mov          r0, r2
+0010BD7C: bl           #0xf6dca0
+0010BD80: sub          r4, r4, r1
+0010BD84: mov          r0, r4
+0010BD88: pop          {r4, r5, fp, pc}
+0010BD8C: push         {fp, lr}
+0010BD90: bl           #0x766fc0
+0010BD94: ldm          r0, {r1, r2}
+0010BD98: str          r2, [r0]
+0010BD9C: ldr          r2, [r0, #8]
+0010BDA0: eor          r1, r1, r1, lsl #11
+0010BDA4: str          r2, [r0, #4]
+0010BDA8: ldr          r2, [r0, #0xc]
+0010BDAC: eor          r1, r1, r1, lsr #8
+0010BDB0: vldr         s2, [pc, #0x2c] ; literal[0010BDE4]=34000001
+0010BDB4: eor          r1, r1, r2
+0010BDB8: eor          r3, r1, r2, lsr #19
+0010BDBC: mov          r1, r3
+0010BDC0: bfc          r1, #0x17, #9
+0010BDC4: vmov         s0, r1
+0010BDC8: vcvt.f32.u32 s0, s0
+0010BDCC: str          r2, [r0, #8]
+0010BDD0: str          r3, [r0, #0xc]
+0010BDD4: vmul.f32     s0, s0, s2

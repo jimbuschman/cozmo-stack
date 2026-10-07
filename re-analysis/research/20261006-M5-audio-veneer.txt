@@ -1,0 +1,4 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x8cb8ac 0x8cb8bc
+008CB8AC: bx         pc ;
+008CB8AE: mov        r8, r8 ;

@@ -1,0 +1,221 @@
+FILE resources/lib/armeabi-v7a/libmono.so 0x29fa38 0x29fa70
+0029FA38: push         {fp, lr}
+0029FA3C: add          fp, sp, #4
+0029FA40: sub          sp, sp, #8
+0029FA44: ldr          r3, [pc, #0x70] ; literal[0029FABC]=000FFDB0
+0029FA48: add          r3, pc, r3
+0029FA4C: ldrd         r2, r3, [r3]
+0029FA50: orrs         r1, r2, r3
+0029FA54: bne          #0x29fa70
+0029FA58: bl           #0x29f960
+0029FA5C: mov          r2, r0
+0029FA60: mov          r3, r1
+0029FA64: ldr          r1, [pc, #0x54] ; literal[0029FAC0]=000FFD90
+0029FA68: add          r1, pc, r1
+0029FA6C: strd         r2, r3, [r1]
+FILE resources/lib/armeabi-v7a/libmono.so 0x29f960 0x29fabc
+0029F960: push         {fp, lr}
+0029F964: add          fp, sp, #4
+0029F968: sub          sp, sp, #0x18
+0029F96C: ldr          r3, [pc, #0xb4] ; literal[0029FA28]=000CB414
+0029F970: add          r3, pc, r3
+0029F974: mov          r0, r3
+0029F978: ldr          r3, [pc, #0xac] ; literal[0029FA2C]=000CB418
+0029F97C: add          r3, pc, r3
+0029F980: mov          r1, r3
+0029F984: bl           #0x15d3c
+0029F988: str          r0, [fp, #-8]
+0029F98C: ldr          r3, [fp, #-8]
+0029F990: cmp          r3, #0
+0029F994: beq          #0x29fa04
+0029F998: sub          r3, fp, #0x1c
+0029F99C: ldr          r0, [fp, #-8]
+0029F9A0: ldr          r2, [pc, #0x88] ; literal[0029FA30]=000CB3F4
+0029F9A4: add          r2, pc, r2
+0029F9A8: mov          r1, r2
+0029F9AC: mov          r2, r3
+0029F9B0: bl           #0x15d60
+0029F9B4: mov          r3, r0
+0029F9B8: cmp          r3, #1
+0029F9BC: bne          #0x29f9fc
+0029F9C0: bl           #0x29fac8
+0029F9C4: strd         r0, r1, [fp, #-0x14]
+0029F9C8: ldr          r0, [fp, #-8]
+0029F9CC: bl           #0x15ce8
+0029F9D0: vldr         d6, [fp, #-0x1c]
+0029F9D4: vldr         d7, [pc, #0x44] ; literal[0029FA20]=00000000
+0029F9D8: vmul.f64     d7, d6, d7
+0029F9DC: vmov         r0, r1, d7
+0029F9E0: bl           #0x2c4870
+0029F9E4: mov          r2, r0
+0029F9E8: mov          r3, r1
+0029F9EC: ldrd         r0, r1, [fp, #-0x14]
+0029F9F0: subs         r2, r0, r2
+0029F9F4: sbc          r3, r1, r3
+0029F9F8: b            #0x29fa10
+0029F9FC: ldr          r0, [fp, #-8]
+0029FA00: bl           #0x15ce8
+0029FA04: mov          r2, #0x5e00
+0029FA08: movt         r2, #0xb2d0
+0029FA0C: mov          r3, #0
+0029FA10: mov          r0, r2
+0029FA14: mov          r1, r3
+0029FA18: sub          sp, fp, #4
+0029FA1C: pop          {fp, pc}
+0029FA20: andeq        r0, r0, r0
+0029FA24: ldrdmi       r1, r2, [r3, #-0x20]!
+0029FA28: andeq        fp, ip, r4, lsl r4
+0029FA2C: andeq        fp, ip, r8, lsl r4
+0029FA30: strdeq       fp, ip, [ip], -r4
+0029FA34: nop
+0029FA38: push         {fp, lr}
+0029FA3C: add          fp, sp, #4
+0029FA40: sub          sp, sp, #8
+0029FA44: ldr          r3, [pc, #0x70] ; literal[0029FABC]=000FFDB0
+0029FA48: add          r3, pc, r3
+0029FA4C: ldrd         r2, r3, [r3]
+0029FA50: orrs         r1, r2, r3
+0029FA54: bne          #0x29fa70
+0029FA58: bl           #0x29f960
+0029FA5C: mov          r2, r0
+0029FA60: mov          r3, r1
+0029FA64: ldr          r1, [pc, #0x54] ; literal[0029FAC0]=000FFD90
+0029FA68: add          r1, pc, r1
+0029FA6C: strd         r2, r3, [r1]
+0029FA70: bl           #0x29fac8
+0029FA74: strd         r0, r1, [fp, #-0xc]
+0029FA78: ldr          r3, [pc, #0x44] ; literal[0029FAC4]=000FFD7C
+0029FA7C: add          r3, pc, r3
+0029FA80: ldrd         r2, r3, [r3]
+0029FA84: ldrd         r0, r1, [fp, #-0xc]
+0029FA88: subs         r2, r0, r2
+0029FA8C: sbc          r3, r1, r3
+0029FA90: mov          r0, r2
+0029FA94: mov          r1, r3
+0029FA98: movw         r2, #0x2710
+0029FA9C: mov          r3, #0
+0029FAA0: bl           #0x2c47e0
+0029FAA4: mov          r2, r0
+0029FAA8: mov          r3, r1
+0029FAAC: mov          r3, r2
+0029FAB0: mov          r0, r3
+0029FAB4: sub          sp, fp, #4
+0029FAB8: pop          {fp, pc}
+FILE resources/lib/armeabi-v7a/libmono.so 0x29fac8 0x29fbe0
+0029FAC8: push         {fp, lr}
+0029FACC: add          fp, sp, #4
+0029FAD0: sub          sp, sp, #0x10
+0029FAD4: ldr          r3, [pc, #0x184] ; literal[0029FC60]=000FFD28
+0029FAD8: add          r3, pc, r3
+0029FADC: ldr          r3, [r3, #4]
+0029FAE0: cmp          r3, #0
+0029FAE4: bne          #0x29fb20
+0029FAE8: mov          r0, #1
+0029FAEC: ldr          r3, [pc, #0x170] ; literal[0029FC64]=000FFD10
+0029FAF0: add          r3, pc, r3
+0029FAF4: mov          r1, r3
+0029FAF8: bl           #0x165d0
+0029FAFC: mov          r3, r0
+0029FB00: cmp          r3, #0
+0029FB04: movne        r3, #0
+0029FB08: moveq        r3, #1
+0029FB0C: uxtb         r3, r3
+0029FB10: mov          r2, r3
+0029FB14: ldr          r3, [pc, #0x14c] ; literal[0029FC68]=000FFCF0
+0029FB18: add          r3, pc, r3
+0029FB1C: str          r2, [r3]
+0029FB20: ldr          r3, [pc, #0x144] ; literal[0029FC6C]=000FFCE4
+0029FB24: add          r3, pc, r3
+0029FB28: ldr          r3, [r3]
+0029FB2C: cmp          r3, #0
+0029FB30: beq          #0x29fbb8
+0029FB34: sub          r3, fp, #0x14
+0029FB38: mov          r0, #1
+0029FB3C: mov          r1, r3
+0029FB40: bl           #0x165dc
+0029FB44: mov          r3, r0
+0029FB48: cmp          r3, #0
+0029FB4C: bne          #0x29fbb8
+0029FB50: ldr          r3, [fp, #-0x14]
+0029FB54: mov          r2, r3
+0029FB58: asr          r3, r2, #0x1f
+0029FB5C: movw         r1, #0x9680
+0029FB60: movt         r1, #0x98
+0029FB64: mul          r0, r1, r3
+0029FB68: mov          r1, #0
+0029FB6C: mul          r1, r1, r2
+0029FB70: add          r0, r0, r1
+0029FB74: movw         r1, #0x9680
+0029FB78: movt         r1, #0x98
+0029FB7C: umull        r2, r3, r2, r1
+0029FB80: add          r1, r0, r3
+0029FB84: mov          r3, r1
+0029FB88: ldr          r0, [fp, #-0x10]
+0029FB8C: movw         r1, #0x851f
+0029FB90: movt         r1, #0x51eb
+0029FB94: smull        ip, r1, r1, r0
+0029FB98: asr          ip, r1, #5
+0029FB9C: asr          r1, r0, #0x1f
+0029FBA0: rsb          r1, r1, ip
+0029FBA4: mov          r0, r1
+0029FBA8: asr          r1, r0, #0x1f
+0029FBAC: adds         r2, r2, r0
+0029FBB0: adc          r3, r3, r1
+0029FBB4: b            #0x29fc50
+0029FBB8: sub          r3, fp, #0xc
+0029FBBC: mov          r0, r3
+0029FBC0: mov          r1, #0
+0029FBC4: bl           #0x163f0
+0029FBC8: mov          r3, r0
+0029FBCC: cmp          r3, #0
+0029FBD0: bne          #0x29fc48
+0029FBD4: ldr          r3, [fp, #-0xc]
+0029FBD8: mov          r2, r3
+0029FBDC: asr          r3, r2, #0x1f
+FILE resources/lib/armeabi-v7a/libmono.so 0x29fbe0 0x29fc50
+0029FBE0: movw         r1, #0x4240
+0029FBE4: movt         r1, #0xf
+0029FBE8: mul          r0, r1, r3
+0029FBEC: mov          r1, #0
+0029FBF0: mul          r1, r1, r2
+0029FBF4: add          r0, r0, r1
+0029FBF8: movw         r1, #0x4240
+0029FBFC: movt         r1, #0xf
+0029FC00: umull        r2, r3, r2, r1
+0029FC04: add          r1, r0, r3
+0029FC08: mov          r3, r1
+0029FC0C: ldr          r1, [fp, #-8]
+0029FC10: mov          r0, r1
+0029FC14: asr          r1, r0, #0x1f
+0029FC18: adds         r2, r2, r0
+0029FC1C: adc          r3, r3, r1
+0029FC20: mov          r1, #0xa
+0029FC24: mul          r0, r1, r3
+0029FC28: mov          r1, #0
+0029FC2C: mul          r1, r1, r2
+0029FC30: add          r1, r0, r1
+0029FC34: mov          r0, #0xa
+0029FC38: umull        r2, r3, r2, r0
+0029FC3C: add          r1, r1, r3
+0029FC40: mov          r3, r1
+0029FC44: b            #0x29fc50
+0029FC48: mov          r2, #0
+0029FC4C: mov          r3, #0
+FILE resources/lib/armeabi-v7a/libmono.so 0x29fc50 0x29fc70
+0029FC50: mov          r0, r2
+0029FC54: mov          r1, r3
+0029FC58: sub          sp, fp, #4
+0029FC5C: pop          {fp, pc}
+0029FC60: andeq        pc, pc, r8, lsr #26
+0029FC64: andeq        pc, pc, r0, lsl sp
+FILE resources/lib/armeabi-v7a/libmono.so 0x165d0 0x165e8
+000165D0: add          ip, pc, #0x300000
+000165D4: add          ip, ip, #0x83000
+000165D8: ldr          pc, [ip, #0x9ac]!
+000165DC: add          ip, pc, #0x300000
+000165E0: add          ip, ip, #0x83000
+000165E4: ldr          pc, [ip, #0x9a4]!
+FILE resources/lib/armeabi-v7a/libmono.so 0x163f0 0x163fc
+000163F0: add          ip, pc, #0x300000
+000163F4: add          ip, ip, #0x83000
+000163F8: ldr          pc, [ip, #0xaec]!

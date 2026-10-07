@@ -1,0 +1,31 @@
+Primary data words; not decimal approximations.
+engine 0082FA18: f64 41F0000000000000
+engine 0082FA20: f64 3BF0000000000000
+distorter 0053A570: f64 3FC3333333333333
+distorter 0053A578: f64 3FE4CCCCCCCCCCCD
+distorter 0053A580: f64 3FD6666666666666
+CombineEyeParams add indices: 00 01 04 0e 11
+CombineEyeParams multiply indices: 02 03
+Clip table 00C5A97C: key=17 min=C2340000 max=42340000
+Clip table 00C5A988: key=14 min=C2340000 max=42340000
+Clip table 00C5A994: key=2 min=00000000 max=7F7FFFFF
+Clip table 00C5A9A0: key=3 min=00000000 max=7F7FFFFF
+Clip table 00C5A9AC: key=5 min=00000000 max=3F800000
+Clip table 00C5A9B8: key=6 min=00000000 max=3F800000
+Clip table 00C5A9C4: key=7 min=00000000 max=3F800000
+Clip table 00C5A9D0: key=8 min=00000000 max=3F800000
+Clip table 00C5A9DC: key=11 min=00000000 max=3F800000
+Clip table 00C5A9E8: key=12 min=00000000 max=3F800000
+Clip table 00C5A9F4: key=9 min=00000000 max=3F800000
+Clip table 00C5AA00: key=10 min=00000000 max=3F800000
+Clip table 00C5AA0C: key=16 min=00000000 max=3F800000
+Clip table 00C5AA18: key=13 min=00000000 max=3F800000
+Clip table 00C5AA24: key=18 min=00000000 max=3F800000
+Clip table 00C5AA30: key=15 min=00000000 max=3F800000
+Mono uptime multiplier 0029FA20: f64 416312D000000000
+Mono 0036AD8C: b'/proc/uptime'
+Mono 0036AD9C: b'r'
+Mono 0036ADA0: b'%lf'
+Veneer literal 008CB8B8=FFBE250C; target=004ADDC8
+Veneer literal 008CB8C8=FFBE234C; target=004ADC18
+Mono method table index=146, name offset=0AF6, pointer[00398E94]=0029FA38

@@ -1,0 +1,151 @@
+FILE resources/lib/armeabi-v7a/libmono.so 0x2c47e0 0x2c48d0
+002C47E0: cmp          r3, #0
+002C47E4: cmpeq        r2, #0
+002C47E8: bne          #0x2c4808
+002C47EC: cmp          r1, #0
+002C47F0: cmpeq        r0, #0
+002C47F4: movlt        r1, #0x80000000
+002C47F8: movlt        r0, #0
+002C47FC: mvngt        r1, #0x80000000
+002C4800: mvngt        r0, #0
+002C4804: b            #0x2c4860
+002C4808: sub          sp, sp, #8
+002C480C: push         {sp, lr}
+002C4810: bl           #0x2c491c
+002C4814: ldr          lr, [sp, #4]
+002C4818: add          sp, sp, #8
+002C481C: pop          {r2, r3}
+002C4820: bx           lr
+002C4824: cmp          r3, #0
+002C4828: cmpeq        r2, #0
+002C482C: bne          #0x2c4844
+002C4830: cmp          r1, #0
+002C4834: cmpeq        r0, #0
+002C4838: mvnne        r1, #0
+002C483C: mvnne        r0, #0
+002C4840: b            #0x2c4860
+002C4844: sub          sp, sp, #8
+002C4848: push         {sp, lr}
+002C484C: bl           #0x2c4958
+002C4850: ldr          lr, [sp, #4]
+002C4854: add          sp, sp, #8
+002C4858: pop          {r2, r3}
+002C485C: bx           lr
+002C4860: push         {r1, lr}
+002C4864: mov          r0, #8
+002C4868: bl           #0x15c7c
+002C486C: pop          {r1, pc}
+002C4870: push         {r3, r4, r5, lr}
+002C4874: mov          r2, #0
+002C4878: mov          r3, #0
+002C487C: mov          r5, r0
+002C4880: mov          r4, r1
+002C4884: bl           #0x2c63e4
+002C4888: cmp          r0, #0
+002C488C: mov          r0, r5
+002C4890: beq          #0x2c48a8
+002C4894: add          r1, r4, #0x80000000
+002C4898: bl           #0x2c48b4
+002C489C: rsbs         r0, r0, #0
+002C48A0: rsc          r1, r1, #0
+002C48A4: pop          {r3, r4, r5, pc}
+002C48A8: mov          r1, r4
+002C48AC: pop          {r3, r4, r5, lr}
+002C48B0: b            #0x2c48b4
+002C48B4: push         {r4, r5, r6, lr}
+002C48B8: mov          r2, #0
+002C48BC: ldr          r3, [pc, #0x50] ; literal[002C4914]=3DF00000
+002C48C0: mov          r4, r0
+002C48C4: mov          r5, r1
+002C48C8: bl           #0x2c5e98
+002C48CC: bl           #0x2c6434
+FILE resources/lib/armeabi-v7a/libmono.so 0x2c4870 0x2c49d4
+002C4870: push         {r3, r4, r5, lr}
+002C4874: mov          r2, #0
+002C4878: mov          r3, #0
+002C487C: mov          r5, r0
+002C4880: mov          r4, r1
+002C4884: bl           #0x2c63e4
+002C4888: cmp          r0, #0
+002C488C: mov          r0, r5
+002C4890: beq          #0x2c48a8
+002C4894: add          r1, r4, #0x80000000
+002C4898: bl           #0x2c48b4
+002C489C: rsbs         r0, r0, #0
+002C48A0: rsc          r1, r1, #0
+002C48A4: pop          {r3, r4, r5, pc}
+002C48A8: mov          r1, r4
+002C48AC: pop          {r3, r4, r5, lr}
+002C48B0: b            #0x2c48b4
+002C48B4: push         {r4, r5, r6, lr}
+002C48B8: mov          r2, #0
+002C48BC: ldr          r3, [pc, #0x50] ; literal[002C4914]=3DF00000
+002C48C0: mov          r4, r0
+002C48C4: mov          r5, r1
+002C48C8: bl           #0x2c5e98
+002C48CC: bl           #0x2c6434
+002C48D0: mov          r6, r0
+002C48D4: bl           #0x2c4490
+002C48D8: mov          r2, #0
+002C48DC: ldr          r3, [pc, #0x34] ; literal[002C4918]=41F00000
+002C48E0: bl           #0x2c5e98
+002C48E4: mov          r2, r0
+002C48E8: mov          r3, r1
+002C48EC: mov          r0, r4
+002C48F0: mov          r1, r5
+002C48F4: bl           #0x2c41e0
+002C48F8: mov          r5, r6
+002C48FC: bl           #0x2c6434
+002C4900: mov          r2, #0
+002C4904: mov          r1, r6
+002C4908: orr          r4, r2, r0
+002C490C: mov          r0, r4
+002C4910: pop          {r4, r5, r6, pc}
+002C4914: ldcllo       p0, c0, [r0, #0]!
+002C4918: mvnsmi       r0, r0
+002C491C: push         {r3, r4, r5, r6, r7, lr}
+002C4920: mov          r6, r2
+002C4924: mov          r4, r0
+002C4928: mov          r5, r1
+002C492C: mov          r7, r3
+002C4930: bl           #0x2c6488
+002C4934: ldr          ip, [sp, #0x18]
+002C4938: mul          r3, r6, r1
+002C493C: mla          r7, r0, r7, r3
+002C4940: umull        r2, r3, r6, r0
+002C4944: add          r3, r7, r3
+002C4948: subs         r2, r4, r2
+002C494C: sbc          r3, r5, r3
+002C4950: strd         r2, r3, [ip]
+002C4954: pop          {r3, r4, r5, r6, r7, pc}
+002C4958: push         {r3, r4, r5, r6, r7, lr}
+002C495C: mov          r6, r2
+002C4960: mov          r4, r0
+002C4964: mov          r5, r1
+002C4968: mov          r7, r3
+002C496C: bl           #0x2c6900
+002C4970: ldr          ip, [sp, #0x18]
+002C4974: mul          r7, r0, r7
+002C4978: umull        r2, r3, r0, r6
+002C497C: mla          r7, r6, r1, r7
+002C4980: add          r3, r7, r3
+002C4984: subs         r2, r4, r2
+002C4988: sbc          r3, r5, r3
+002C498C: strd         r2, r3, [ip]
+002C4990: pop          {r3, r4, r5, r6, r7, pc}
+002C4994: ldr          r3, [r0]
+002C4998: tst          r3, #0x40000000
+002C499C: orrne        r3, r3, #0x80000000
+002C49A0: biceq        r3, r3, #0x80000000
+002C49A4: add          r0, r0, r3
+002C49A8: bx           lr
+002C49AC: push         {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+002C49B0: cmp          r1, #0
+002C49B4: mov          sb, r0
+002C49B8: mov          r6, r2
+002C49BC: beq          #0x2c4a34
+002C49C0: sub          r8, r1, #1
+002C49C4: mov          r7, #0
+002C49C8: mov          sl, r8
+002C49CC: add          r4, r7, sl
+002C49D0: add          r4, r4, r4, lsr #31

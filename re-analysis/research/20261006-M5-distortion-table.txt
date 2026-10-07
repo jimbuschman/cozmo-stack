@@ -1,0 +1,12 @@
+GetNextDistortionFrame table, engine VA 0x00C530C0, eleven (binary32 hold probability, signed integer degree multiplier) pairs:
+00C530C0: probability=00000000 multiplier=1
+00C530C8: probability=00000000 multiplier=1
+00C530D0: probability=3F400000 multiplier=2
+00C530D8: probability=00000000 multiplier=1
+00C530E0: probability=00000000 multiplier=4
+00C530E8: probability=00000000 multiplier=10
+00C530F0: probability=00000000 multiplier=-1
+00C530F8: probability=00000000 multiplier=-9
+00C53100: probability=3F400000 multiplier=-5
+00C53108: probability=00000000 multiplier=2
+00C53110: probability=00000000 multiplier=-2
