@@ -44,6 +44,10 @@ in the Wwise runtime inside `libcozmoEngine.so`. Nothing else may.
 3. **External tools** (wwiser, vgmstream, PyCozmo) are authority 6: cross-checks only. They run locally; the shipped
    banks are not uploaded anywhere.
 
+### Other approved departures
+
+- **M1-034, handler isolation** (operator, 2026-10-07): a handler exception is caught, logged and survived; the original aborts. Apply no other departure without the operator.
+
 ## Primary rule
 
 NEVER fill an unknown behavior with a plausible implementation and then treat it as recovered.

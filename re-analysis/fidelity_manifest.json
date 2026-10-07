@@ -979,7 +979,7 @@
       ],
       "effect": "a handler exception is survived here where the app would abort",
       "provenance": "operator decision D6 (2026-09-24): this stack isolates message handlers",
-      "unresolved": "",
+      "unresolved": "Operator decision (2026-10-07): keep. The original aborts on a handler exception; this stack catches, logs and continues, and that departure is approved as a deliberate exception to \"Exact, always\". It also covers the M1-029 firmware-JSON handlers' catch: the engine's exception destination is unknown, and this policy is what the stack does instead.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_034_RobotLinkIsolatesEachStateAndMessageSubscriber, TransportHardeningTests.AHandlerThatThrowsIsCountedAndTheOthersStillRun, TransportHardeningTests.AThrowingHandlerDoesNotStopLaterMessagesBeingDelivered"
