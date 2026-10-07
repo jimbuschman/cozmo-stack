@@ -1,0 +1,3953 @@
+[
+  {
+    "key": "0.0174524",
+    "token": "0.0174524f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 375,
+    "address": "libopencv_imgproc.so VA 0x000E7914 (table[1])",
+    "bits": 1016002646,
+    "csharp_bits": 1016002646
+  },
+  {
+    "key": "0.0348995",
+    "token": "0.0348995f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 375,
+    "address": "libopencv_imgproc.so VA 0x000E7918 (table[2])",
+    "bits": 1024389831,
+    "csharp_bits": 1024389831
+  },
+  {
+    "key": "0.0697565",
+    "token": "0.0697565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 375,
+    "address": "libopencv_imgproc.so VA 0x000E7920 (table[4])",
+    "bits": 1032772735,
+    "csharp_bits": 1032772735
+  },
+  {
+    "key": "0.0871557",
+    "token": "0.0871557f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 375,
+    "address": "libopencv_imgproc.so VA 0x000E7924 (table[5])",
+    "bits": 1035108016,
+    "csharp_bits": 1035108016
+  },
+  {
+    "key": "0.1045285",
+    "token": "0.1045285f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E7928 (table[6])",
+    "bits": 1037439754,
+    "csharp_bits": 1037439754
+  },
+  {
+    "key": "0.1218693",
+    "token": "0.1218693f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E792C (table[7])",
+    "bits": 1039767197,
+    "csharp_bits": 1039767197
+  },
+  {
+    "key": "0.1391731",
+    "token": "0.1391731f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E7930 (table[8])",
+    "bits": 1041138533,
+    "csharp_bits": 1041138533
+  },
+  {
+    "key": "0.1564345",
+    "token": "0.1564345f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E7934 (table[9])",
+    "bits": 1042296926,
+    "csharp_bits": 1042296926
+  },
+  {
+    "key": "0.1736482",
+    "token": "0.1736482f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E7938 (table[10])",
+    "bits": 1043452117,
+    "csharp_bits": 1043452117
+  },
+  {
+    "key": "0.1908090",
+    "token": "0.1908090f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 376,
+    "address": "libopencv_imgproc.so VA 0x000E793C (table[11])",
+    "bits": 1044603759,
+    "csharp_bits": 1044603759
+  },
+  {
+    "key": "0.2079117",
+    "token": "0.2079117f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E7940 (table[12])",
+    "bits": 1045751502,
+    "csharp_bits": 1045751502
+  },
+  {
+    "key": "0.2249511",
+    "token": "0.2249511f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E7944 (table[13])",
+    "bits": 1046894997,
+    "csharp_bits": 1046894997
+  },
+  {
+    "key": "0.2419219",
+    "token": "0.2419219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E7948 (table[14])",
+    "bits": 1048033888,
+    "csharp_bits": 1048033888
+  },
+  {
+    "key": "0.2588190",
+    "token": "0.2588190f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E794C (table[15])",
+    "bits": 1048871917,
+    "csharp_bits": 1048871917
+  },
+  {
+    "key": "0.2756374",
+    "token": "0.2756374f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E7950 (table[16])",
+    "bits": 1049436248,
+    "csharp_bits": 1049436248
+  },
+  {
+    "key": "0.2923717",
+    "token": "0.2923717f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 377,
+    "address": "libopencv_imgproc.so VA 0x000E7954 (table[17])",
+    "bits": 1049997758,
+    "csharp_bits": 1049997758
+  },
+  {
+    "key": "0.3090170",
+    "token": "0.3090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E7958 (table[18])",
+    "bits": 1050556282,
+    "csharp_bits": 1050556282
+  },
+  {
+    "key": "0.3255682",
+    "token": "0.3255682f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E795C (table[19])",
+    "bits": 1051111648,
+    "csharp_bits": 1051111648
+  },
+  {
+    "key": "0.3420201",
+    "token": "0.3420201f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E7960 (table[20])",
+    "bits": 1051663682,
+    "csharp_bits": 1051663682
+  },
+  {
+    "key": "0.3583679",
+    "token": "0.3583679f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E7964 (table[21])",
+    "bits": 1052212223,
+    "csharp_bits": 1052212223
+  },
+  {
+    "key": "0.3746066",
+    "token": "0.3746066f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E7968 (table[22])",
+    "bits": 1052757104,
+    "csharp_bits": 1052757104
+  },
+  {
+    "key": "0.3907311",
+    "token": "0.3907311f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 378,
+    "address": "libopencv_imgproc.so VA 0x000E796C (table[23])",
+    "bits": 1053298152,
+    "csharp_bits": 1053298152
+  },
+  {
+    "key": "0.4067366",
+    "token": "0.4067366f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E7970 (table[24])",
+    "bits": 1053835208,
+    "csharp_bits": 1053835208
+  },
+  {
+    "key": "0.4226183",
+    "token": "0.4226183f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E7974 (table[25])",
+    "bits": 1054368109,
+    "csharp_bits": 1054368109
+  },
+  {
+    "key": "0.4383711",
+    "token": "0.4383711f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E7978 (table[26])",
+    "bits": 1054896685,
+    "csharp_bits": 1054896685
+  },
+  {
+    "key": "0.4539905",
+    "token": "0.4539905f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E797C (table[27])",
+    "bits": 1055420785,
+    "csharp_bits": 1055420785
+  },
+  {
+    "key": "0.4694716",
+    "token": "0.4694716f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E7980 (table[28])",
+    "bits": 1055940245,
+    "csharp_bits": 1055940245
+  },
+  {
+    "key": "0.4848096",
+    "token": "0.4848096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 379,
+    "address": "libopencv_imgproc.so VA 0x000E7984 (table[29])",
+    "bits": 1056454903,
+    "csharp_bits": 1056454903
+  },
+  {
+    "key": "0.5150381",
+    "token": "0.5150381f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 380,
+    "address": "libopencv_imgproc.so VA 0x000E798C (table[31])",
+    "bits": 1057216905,
+    "csharp_bits": 1057216905
+  },
+  {
+    "key": "0.5299193",
+    "token": "0.5299193f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 380,
+    "address": "libopencv_imgproc.so VA 0x000E7990 (table[32])",
+    "bits": 1057466571,
+    "csharp_bits": 1057466571
+  },
+  {
+    "key": "0.5446390",
+    "token": "0.5446390f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 380,
+    "address": "libopencv_imgproc.so VA 0x000E7994 (table[33])",
+    "bits": 1057713526,
+    "csharp_bits": 1057713526
+  },
+  {
+    "key": "0.5591929",
+    "token": "0.5591929f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 380,
+    "address": "libopencv_imgproc.so VA 0x000E7998 (table[34])",
+    "bits": 1057957700,
+    "csharp_bits": 1057957700
+  },
+  {
+    "key": "0.5735764",
+    "token": "0.5735764f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 380,
+    "address": "libopencv_imgproc.so VA 0x000E799C (table[35])",
+    "bits": 1058199015,
+    "csharp_bits": 1058199015
+  },
+  {
+    "key": "0.5877853",
+    "token": "0.5877853f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79A0 (table[36])",
+    "bits": 1058437401,
+    "csharp_bits": 1058437401
+  },
+  {
+    "key": "0.6018150",
+    "token": "0.6018150f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79A4 (table[37])",
+    "bits": 1058672780,
+    "csharp_bits": 1058672780
+  },
+  {
+    "key": "0.6156615",
+    "token": "0.6156615f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79A8 (table[38])",
+    "bits": 1058905086,
+    "csharp_bits": 1058905086
+  },
+  {
+    "key": "0.6293204",
+    "token": "0.6293204f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79AC (table[39])",
+    "bits": 1059134244,
+    "csharp_bits": 1059134244
+  },
+  {
+    "key": "0.6427876",
+    "token": "0.6427876f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79B0 (table[40])",
+    "bits": 1059360186,
+    "csharp_bits": 1059360186
+  },
+  {
+    "key": "0.6560590",
+    "token": "0.6560590f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 381,
+    "address": "libopencv_imgproc.so VA 0x000E79B4 (table[41])",
+    "bits": 1059582844,
+    "csharp_bits": 1059582844
+  },
+  {
+    "key": "0.6691306",
+    "token": "0.6691306f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79B8 (table[42])",
+    "bits": 1059802149,
+    "csharp_bits": 1059802149
+  },
+  {
+    "key": "0.6819984",
+    "token": "0.6819984f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79BC (table[43])",
+    "bits": 1060018034,
+    "csharp_bits": 1060018034
+  },
+  {
+    "key": "0.6946584",
+    "token": "0.6946584f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79C0 (table[44])",
+    "bits": 1060230434,
+    "csharp_bits": 1060230434
+  },
+  {
+    "key": "0.7071068",
+    "token": "0.7071068f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79C4 (table[45])",
+    "bits": 1060439284,
+    "csharp_bits": 1060439284
+  },
+  {
+    "key": "0.7193398",
+    "token": "0.7193398f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79C8 (table[46])",
+    "bits": 1060644519,
+    "csharp_bits": 1060644519
+  },
+  {
+    "key": "0.7313537",
+    "token": "0.7313537f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 382,
+    "address": "libopencv_imgproc.so VA 0x000E79CC (table[47])",
+    "bits": 1060846079,
+    "csharp_bits": 1060846079
+  },
+  {
+    "key": "0.7431448",
+    "token": "0.7431448f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79D0 (table[48])",
+    "bits": 1061043901,
+    "csharp_bits": 1061043901
+  },
+  {
+    "key": "0.7547096",
+    "token": "0.7547096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79D4 (table[49])",
+    "bits": 1061237926,
+    "csharp_bits": 1061237926
+  },
+  {
+    "key": "0.7660444",
+    "token": "0.7660444f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79D8 (table[50])",
+    "bits": 1061428092,
+    "csharp_bits": 1061428092
+  },
+  {
+    "key": "0.7771460",
+    "token": "0.7771460f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79DC (table[51])",
+    "bits": 1061614346,
+    "csharp_bits": 1061614346
+  },
+  {
+    "key": "0.7880108",
+    "token": "0.7880108f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79E0 (table[52])",
+    "bits": 1061796627,
+    "csharp_bits": 1061796627
+  },
+  {
+    "key": "0.7986355",
+    "token": "0.7986355f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 383,
+    "address": "libopencv_imgproc.so VA 0x000E79E4 (table[53])",
+    "bits": 1061974880,
+    "csharp_bits": 1061974880
+  },
+  {
+    "key": "0.8090170",
+    "token": "0.8090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79E8 (table[54])",
+    "bits": 1062149053,
+    "csharp_bits": 1062149053
+  },
+  {
+    "key": "0.8191520",
+    "token": "0.8191520f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79EC (table[55])",
+    "bits": 1062319090,
+    "csharp_bits": 1062319090
+  },
+  {
+    "key": "0.8290376",
+    "token": "0.8290376f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79F0 (table[56])",
+    "bits": 1062484943,
+    "csharp_bits": 1062484943
+  },
+  {
+    "key": "0.8386706",
+    "token": "0.8386706f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79F4 (table[57])",
+    "bits": 1062646558,
+    "csharp_bits": 1062646558
+  },
+  {
+    "key": "0.8480481",
+    "token": "0.8480481f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79F8 (table[58])",
+    "bits": 1062803886,
+    "csharp_bits": 1062803886
+  },
+  {
+    "key": "0.8571673",
+    "token": "0.8571673f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 384,
+    "address": "libopencv_imgproc.so VA 0x000E79FC (table[59])",
+    "bits": 1062956881,
+    "csharp_bits": 1062956881
+  },
+  {
+    "key": "0.8660254",
+    "token": "0.8660254f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A00 (table[60])",
+    "bits": 1063105495,
+    "csharp_bits": 1063105495
+  },
+  {
+    "key": "0.8746197",
+    "token": "0.8746197f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A04 (table[61])",
+    "bits": 1063249684,
+    "csharp_bits": 1063249684
+  },
+  {
+    "key": "0.8829476",
+    "token": "0.8829476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A08 (table[62])",
+    "bits": 1063389403,
+    "csharp_bits": 1063389403
+  },
+  {
+    "key": "0.8910065",
+    "token": "0.8910065f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A0C (table[63])",
+    "bits": 1063524609,
+    "csharp_bits": 1063524609
+  },
+  {
+    "key": "0.8987940",
+    "token": "0.8987940f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A10 (table[64])",
+    "bits": 1063655261,
+    "csharp_bits": 1063655261
+  },
+  {
+    "key": "0.9063078",
+    "token": "0.9063078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 385,
+    "address": "libopencv_imgproc.so VA 0x000E7A14 (table[65])",
+    "bits": 1063781322,
+    "csharp_bits": 1063781322
+  },
+  {
+    "key": "0.9135455",
+    "token": "0.9135455f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A18 (table[66])",
+    "bits": 1063902750,
+    "csharp_bits": 1063902750
+  },
+  {
+    "key": "0.9205049",
+    "token": "0.9205049f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A1C (table[67])",
+    "bits": 1064019510,
+    "csharp_bits": 1064019510
+  },
+  {
+    "key": "0.9271839",
+    "token": "0.9271839f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A20 (table[68])",
+    "bits": 1064131565,
+    "csharp_bits": 1064131565
+  },
+  {
+    "key": "0.9335804",
+    "token": "0.9335804f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A24 (table[69])",
+    "bits": 1064238880,
+    "csharp_bits": 1064238880
+  },
+  {
+    "key": "0.9396926",
+    "token": "0.9396926f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A28 (table[70])",
+    "bits": 1064341426,
+    "csharp_bits": 1064341426
+  },
+  {
+    "key": "0.9455186",
+    "token": "0.9455186f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 386,
+    "address": "libopencv_imgproc.so VA 0x000E7A2C (table[71])",
+    "bits": 1064439170,
+    "csharp_bits": 1064439170
+  },
+  {
+    "key": "0.9510565",
+    "token": "0.9510565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A30 (table[72])",
+    "bits": 1064532080,
+    "csharp_bits": 1064532080
+  },
+  {
+    "key": "0.9563048",
+    "token": "0.9563048f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A34 (table[73])",
+    "bits": 1064620132,
+    "csharp_bits": 1064620132
+  },
+  {
+    "key": "0.9612617",
+    "token": "0.9612617f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A38 (table[74])",
+    "bits": 1064703295,
+    "csharp_bits": 1064703295
+  },
+  {
+    "key": "0.9659258",
+    "token": "0.9659258f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A3C (table[75])",
+    "bits": 1064781546,
+    "csharp_bits": 1064781546
+  },
+  {
+    "key": "0.9702957",
+    "token": "0.9702957f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A40 (table[76])",
+    "bits": 1064854861,
+    "csharp_bits": 1064854861
+  },
+  {
+    "key": "0.9743701",
+    "token": "0.9743701f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 387,
+    "address": "libopencv_imgproc.so VA 0x000E7A44 (table[77])",
+    "bits": 1064923218,
+    "csharp_bits": 1064923218
+  },
+  {
+    "key": "0.9781476",
+    "token": "0.9781476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A48 (table[78])",
+    "bits": 1064986594,
+    "csharp_bits": 1064986594
+  },
+  {
+    "key": "0.9816272",
+    "token": "0.9816272f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A4C (table[79])",
+    "bits": 1065044972,
+    "csharp_bits": 1065044972
+  },
+  {
+    "key": "0.9848078",
+    "token": "0.9848078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A50 (table[80])",
+    "bits": 1065098333,
+    "csharp_bits": 1065098333
+  },
+  {
+    "key": "0.9876883",
+    "token": "0.9876883f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A54 (table[81])",
+    "bits": 1065146660,
+    "csharp_bits": 1065146660
+  },
+  {
+    "key": "0.9902681",
+    "token": "0.9902681f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A58 (table[82])",
+    "bits": 1065189942,
+    "csharp_bits": 1065189942
+  },
+  {
+    "key": "0.9925462",
+    "token": "0.9925462f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 388,
+    "address": "libopencv_imgproc.so VA 0x000E7A5C (table[83])",
+    "bits": 1065228162,
+    "csharp_bits": 1065228162
+  },
+  {
+    "key": "0.9945219",
+    "token": "0.9945219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A60 (table[84])",
+    "bits": 1065261309,
+    "csharp_bits": 1065261309
+  },
+  {
+    "key": "0.9961947",
+    "token": "0.9961947f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A64 (table[85])",
+    "bits": 1065289374,
+    "csharp_bits": 1065289374
+  },
+  {
+    "key": "0.9975641",
+    "token": "0.9975641f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A68 (table[86])",
+    "bits": 1065312348,
+    "csharp_bits": 1065312348
+  },
+  {
+    "key": "0.9986295",
+    "token": "0.9986295f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A6C (table[87])",
+    "bits": 1065330223,
+    "csharp_bits": 1065330223
+  },
+  {
+    "key": "0.9993908",
+    "token": "0.9993908f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A70 (table[88])",
+    "bits": 1065342995,
+    "csharp_bits": 1065342995
+  },
+  {
+    "key": "0.9998477",
+    "token": "0.9998477f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 389,
+    "address": "libopencv_imgproc.so VA 0x000E7A74 (table[89])",
+    "bits": 1065350661,
+    "csharp_bits": 1065350661
+  },
+  {
+    "key": "0.9998477",
+    "token": "0.9998477f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 390,
+    "address": "libopencv_imgproc.so VA 0x000E7A7C (table[91])",
+    "bits": 1065350661,
+    "csharp_bits": 1065350661
+  },
+  {
+    "key": "0.9993908",
+    "token": "0.9993908f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 390,
+    "address": "libopencv_imgproc.so VA 0x000E7A80 (table[92])",
+    "bits": 1065342995,
+    "csharp_bits": 1065342995
+  },
+  {
+    "key": "0.9986295",
+    "token": "0.9986295f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 390,
+    "address": "libopencv_imgproc.so VA 0x000E7A84 (table[93])",
+    "bits": 1065330223,
+    "csharp_bits": 1065330223
+  },
+  {
+    "key": "0.9975641",
+    "token": "0.9975641f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 390,
+    "address": "libopencv_imgproc.so VA 0x000E7A88 (table[94])",
+    "bits": 1065312348,
+    "csharp_bits": 1065312348
+  },
+  {
+    "key": "0.9961947",
+    "token": "0.9961947f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 390,
+    "address": "libopencv_imgproc.so VA 0x000E7A8C (table[95])",
+    "bits": 1065289374,
+    "csharp_bits": 1065289374
+  },
+  {
+    "key": "0.9945219",
+    "token": "0.9945219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7A90 (table[96])",
+    "bits": 1065261309,
+    "csharp_bits": 1065261309
+  },
+  {
+    "key": "0.9925462",
+    "token": "0.9925462f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7A94 (table[97])",
+    "bits": 1065228162,
+    "csharp_bits": 1065228162
+  },
+  {
+    "key": "0.9902681",
+    "token": "0.9902681f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7A98 (table[98])",
+    "bits": 1065189942,
+    "csharp_bits": 1065189942
+  },
+  {
+    "key": "0.9876883",
+    "token": "0.9876883f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7A9C (table[99])",
+    "bits": 1065146660,
+    "csharp_bits": 1065146660
+  },
+  {
+    "key": "0.9848078",
+    "token": "0.9848078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7AA0 (table[100])",
+    "bits": 1065098333,
+    "csharp_bits": 1065098333
+  },
+  {
+    "key": "0.9816272",
+    "token": "0.9816272f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 391,
+    "address": "libopencv_imgproc.so VA 0x000E7AA4 (table[101])",
+    "bits": 1065044972,
+    "csharp_bits": 1065044972
+  },
+  {
+    "key": "0.9781476",
+    "token": "0.9781476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7AA8 (table[102])",
+    "bits": 1064986594,
+    "csharp_bits": 1064986594
+  },
+  {
+    "key": "0.9743701",
+    "token": "0.9743701f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7AAC (table[103])",
+    "bits": 1064923218,
+    "csharp_bits": 1064923218
+  },
+  {
+    "key": "0.9702957",
+    "token": "0.9702957f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7AB0 (table[104])",
+    "bits": 1064854861,
+    "csharp_bits": 1064854861
+  },
+  {
+    "key": "0.9659258",
+    "token": "0.9659258f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7AB4 (table[105])",
+    "bits": 1064781546,
+    "csharp_bits": 1064781546
+  },
+  {
+    "key": "0.9612617",
+    "token": "0.9612617f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7AB8 (table[106])",
+    "bits": 1064703295,
+    "csharp_bits": 1064703295
+  },
+  {
+    "key": "0.9563048",
+    "token": "0.9563048f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 392,
+    "address": "libopencv_imgproc.so VA 0x000E7ABC (table[107])",
+    "bits": 1064620132,
+    "csharp_bits": 1064620132
+  },
+  {
+    "key": "0.9510565",
+    "token": "0.9510565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7AC0 (table[108])",
+    "bits": 1064532080,
+    "csharp_bits": 1064532080
+  },
+  {
+    "key": "0.9455186",
+    "token": "0.9455186f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7AC4 (table[109])",
+    "bits": 1064439170,
+    "csharp_bits": 1064439170
+  },
+  {
+    "key": "0.9396926",
+    "token": "0.9396926f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7AC8 (table[110])",
+    "bits": 1064341426,
+    "csharp_bits": 1064341426
+  },
+  {
+    "key": "0.9335804",
+    "token": "0.9335804f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7ACC (table[111])",
+    "bits": 1064238880,
+    "csharp_bits": 1064238880
+  },
+  {
+    "key": "0.9271839",
+    "token": "0.9271839f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7AD0 (table[112])",
+    "bits": 1064131565,
+    "csharp_bits": 1064131565
+  },
+  {
+    "key": "0.9205049",
+    "token": "0.9205049f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 393,
+    "address": "libopencv_imgproc.so VA 0x000E7AD4 (table[113])",
+    "bits": 1064019510,
+    "csharp_bits": 1064019510
+  },
+  {
+    "key": "0.9135455",
+    "token": "0.9135455f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7AD8 (table[114])",
+    "bits": 1063902750,
+    "csharp_bits": 1063902750
+  },
+  {
+    "key": "0.9063078",
+    "token": "0.9063078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7ADC (table[115])",
+    "bits": 1063781322,
+    "csharp_bits": 1063781322
+  },
+  {
+    "key": "0.8987940",
+    "token": "0.8987940f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7AE0 (table[116])",
+    "bits": 1063655261,
+    "csharp_bits": 1063655261
+  },
+  {
+    "key": "0.8910065",
+    "token": "0.8910065f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7AE4 (table[117])",
+    "bits": 1063524609,
+    "csharp_bits": 1063524609
+  },
+  {
+    "key": "0.8829476",
+    "token": "0.8829476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7AE8 (table[118])",
+    "bits": 1063389403,
+    "csharp_bits": 1063389403
+  },
+  {
+    "key": "0.8746197",
+    "token": "0.8746197f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 394,
+    "address": "libopencv_imgproc.so VA 0x000E7AEC (table[119])",
+    "bits": 1063249684,
+    "csharp_bits": 1063249684
+  },
+  {
+    "key": "0.8660254",
+    "token": "0.8660254f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7AF0 (table[120])",
+    "bits": 1063105495,
+    "csharp_bits": 1063105495
+  },
+  {
+    "key": "0.8571673",
+    "token": "0.8571673f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7AF4 (table[121])",
+    "bits": 1062956881,
+    "csharp_bits": 1062956881
+  },
+  {
+    "key": "0.8480481",
+    "token": "0.8480481f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7AF8 (table[122])",
+    "bits": 1062803886,
+    "csharp_bits": 1062803886
+  },
+  {
+    "key": "0.8386706",
+    "token": "0.8386706f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7AFC (table[123])",
+    "bits": 1062646558,
+    "csharp_bits": 1062646558
+  },
+  {
+    "key": "0.8290376",
+    "token": "0.8290376f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7B00 (table[124])",
+    "bits": 1062484943,
+    "csharp_bits": 1062484943
+  },
+  {
+    "key": "0.8191520",
+    "token": "0.8191520f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 395,
+    "address": "libopencv_imgproc.so VA 0x000E7B04 (table[125])",
+    "bits": 1062319090,
+    "csharp_bits": 1062319090
+  },
+  {
+    "key": "0.8090170",
+    "token": "0.8090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B08 (table[126])",
+    "bits": 1062149053,
+    "csharp_bits": 1062149053
+  },
+  {
+    "key": "0.7986355",
+    "token": "0.7986355f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B0C (table[127])",
+    "bits": 1061974880,
+    "csharp_bits": 1061974880
+  },
+  {
+    "key": "0.7880108",
+    "token": "0.7880108f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B10 (table[128])",
+    "bits": 1061796627,
+    "csharp_bits": 1061796627
+  },
+  {
+    "key": "0.7771460",
+    "token": "0.7771460f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B14 (table[129])",
+    "bits": 1061614346,
+    "csharp_bits": 1061614346
+  },
+  {
+    "key": "0.7660444",
+    "token": "0.7660444f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B18 (table[130])",
+    "bits": 1061428092,
+    "csharp_bits": 1061428092
+  },
+  {
+    "key": "0.7547096",
+    "token": "0.7547096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 396,
+    "address": "libopencv_imgproc.so VA 0x000E7B1C (table[131])",
+    "bits": 1061237926,
+    "csharp_bits": 1061237926
+  },
+  {
+    "key": "0.7431448",
+    "token": "0.7431448f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B20 (table[132])",
+    "bits": 1061043901,
+    "csharp_bits": 1061043901
+  },
+  {
+    "key": "0.7313537",
+    "token": "0.7313537f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B24 (table[133])",
+    "bits": 1060846079,
+    "csharp_bits": 1060846079
+  },
+  {
+    "key": "0.7193398",
+    "token": "0.7193398f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B28 (table[134])",
+    "bits": 1060644519,
+    "csharp_bits": 1060644519
+  },
+  {
+    "key": "0.7071068",
+    "token": "0.7071068f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B2C (table[135])",
+    "bits": 1060439284,
+    "csharp_bits": 1060439284
+  },
+  {
+    "key": "0.6946584",
+    "token": "0.6946584f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B30 (table[136])",
+    "bits": 1060230434,
+    "csharp_bits": 1060230434
+  },
+  {
+    "key": "0.6819984",
+    "token": "0.6819984f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 397,
+    "address": "libopencv_imgproc.so VA 0x000E7B34 (table[137])",
+    "bits": 1060018034,
+    "csharp_bits": 1060018034
+  },
+  {
+    "key": "0.6691306",
+    "token": "0.6691306f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B38 (table[138])",
+    "bits": 1059802149,
+    "csharp_bits": 1059802149
+  },
+  {
+    "key": "0.6560590",
+    "token": "0.6560590f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B3C (table[139])",
+    "bits": 1059582844,
+    "csharp_bits": 1059582844
+  },
+  {
+    "key": "0.6427876",
+    "token": "0.6427876f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B40 (table[140])",
+    "bits": 1059360186,
+    "csharp_bits": 1059360186
+  },
+  {
+    "key": "0.6293204",
+    "token": "0.6293204f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B44 (table[141])",
+    "bits": 1059134244,
+    "csharp_bits": 1059134244
+  },
+  {
+    "key": "0.6156615",
+    "token": "0.6156615f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B48 (table[142])",
+    "bits": 1058905086,
+    "csharp_bits": 1058905086
+  },
+  {
+    "key": "0.6018150",
+    "token": "0.6018150f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 398,
+    "address": "libopencv_imgproc.so VA 0x000E7B4C (table[143])",
+    "bits": 1058672780,
+    "csharp_bits": 1058672780
+  },
+  {
+    "key": "0.5877853",
+    "token": "0.5877853f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B50 (table[144])",
+    "bits": 1058437401,
+    "csharp_bits": 1058437401
+  },
+  {
+    "key": "0.5735764",
+    "token": "0.5735764f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B54 (table[145])",
+    "bits": 1058199015,
+    "csharp_bits": 1058199015
+  },
+  {
+    "key": "0.5591929",
+    "token": "0.5591929f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B58 (table[146])",
+    "bits": 1057957700,
+    "csharp_bits": 1057957700
+  },
+  {
+    "key": "0.5446390",
+    "token": "0.5446390f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B5C (table[147])",
+    "bits": 1057713526,
+    "csharp_bits": 1057713526
+  },
+  {
+    "key": "0.5299193",
+    "token": "0.5299193f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B60 (table[148])",
+    "bits": 1057466571,
+    "csharp_bits": 1057466571
+  },
+  {
+    "key": "0.5150381",
+    "token": "0.5150381f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 399,
+    "address": "libopencv_imgproc.so VA 0x000E7B64 (table[149])",
+    "bits": 1057216905,
+    "csharp_bits": 1057216905
+  },
+  {
+    "key": "0.4848096",
+    "token": "0.4848096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 400,
+    "address": "libopencv_imgproc.so VA 0x000E7B6C (table[151])",
+    "bits": 1056454903,
+    "csharp_bits": 1056454903
+  },
+  {
+    "key": "0.4694716",
+    "token": "0.4694716f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 400,
+    "address": "libopencv_imgproc.so VA 0x000E7B70 (table[152])",
+    "bits": 1055940245,
+    "csharp_bits": 1055940245
+  },
+  {
+    "key": "0.4539905",
+    "token": "0.4539905f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 400,
+    "address": "libopencv_imgproc.so VA 0x000E7B74 (table[153])",
+    "bits": 1055420785,
+    "csharp_bits": 1055420785
+  },
+  {
+    "key": "0.4383711",
+    "token": "0.4383711f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 400,
+    "address": "libopencv_imgproc.so VA 0x000E7B78 (table[154])",
+    "bits": 1054896685,
+    "csharp_bits": 1054896685
+  },
+  {
+    "key": "0.4226183",
+    "token": "0.4226183f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 400,
+    "address": "libopencv_imgproc.so VA 0x000E7B7C (table[155])",
+    "bits": 1054368109,
+    "csharp_bits": 1054368109
+  },
+  {
+    "key": "0.4067366",
+    "token": "0.4067366f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B80 (table[156])",
+    "bits": 1053835208,
+    "csharp_bits": 1053835208
+  },
+  {
+    "key": "0.3907311",
+    "token": "0.3907311f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B84 (table[157])",
+    "bits": 1053298152,
+    "csharp_bits": 1053298152
+  },
+  {
+    "key": "0.3746066",
+    "token": "0.3746066f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B88 (table[158])",
+    "bits": 1052757104,
+    "csharp_bits": 1052757104
+  },
+  {
+    "key": "0.3583679",
+    "token": "0.3583679f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B8C (table[159])",
+    "bits": 1052212223,
+    "csharp_bits": 1052212223
+  },
+  {
+    "key": "0.3420201",
+    "token": "0.3420201f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B90 (table[160])",
+    "bits": 1051663682,
+    "csharp_bits": 1051663682
+  },
+  {
+    "key": "0.3255682",
+    "token": "0.3255682f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 401,
+    "address": "libopencv_imgproc.so VA 0x000E7B94 (table[161])",
+    "bits": 1051111648,
+    "csharp_bits": 1051111648
+  },
+  {
+    "key": "0.3090170",
+    "token": "0.3090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7B98 (table[162])",
+    "bits": 1050556282,
+    "csharp_bits": 1050556282
+  },
+  {
+    "key": "0.2923717",
+    "token": "0.2923717f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7B9C (table[163])",
+    "bits": 1049997758,
+    "csharp_bits": 1049997758
+  },
+  {
+    "key": "0.2756374",
+    "token": "0.2756374f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7BA0 (table[164])",
+    "bits": 1049436248,
+    "csharp_bits": 1049436248
+  },
+  {
+    "key": "0.2588190",
+    "token": "0.2588190f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7BA4 (table[165])",
+    "bits": 1048871917,
+    "csharp_bits": 1048871917
+  },
+  {
+    "key": "0.2419219",
+    "token": "0.2419219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7BA8 (table[166])",
+    "bits": 1048033888,
+    "csharp_bits": 1048033888
+  },
+  {
+    "key": "0.2249511",
+    "token": "0.2249511f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 402,
+    "address": "libopencv_imgproc.so VA 0x000E7BAC (table[167])",
+    "bits": 1046894997,
+    "csharp_bits": 1046894997
+  },
+  {
+    "key": "0.2079117",
+    "token": "0.2079117f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BB0 (table[168])",
+    "bits": 1045751502,
+    "csharp_bits": 1045751502
+  },
+  {
+    "key": "0.1908090",
+    "token": "0.1908090f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BB4 (table[169])",
+    "bits": 1044603759,
+    "csharp_bits": 1044603759
+  },
+  {
+    "key": "0.1736482",
+    "token": "0.1736482f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BB8 (table[170])",
+    "bits": 1043452117,
+    "csharp_bits": 1043452117
+  },
+  {
+    "key": "0.1564345",
+    "token": "0.1564345f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BBC (table[171])",
+    "bits": 1042296926,
+    "csharp_bits": 1042296926
+  },
+  {
+    "key": "0.1391731",
+    "token": "0.1391731f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BC0 (table[172])",
+    "bits": 1041138533,
+    "csharp_bits": 1041138533
+  },
+  {
+    "key": "0.1218693",
+    "token": "0.1218693f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 403,
+    "address": "libopencv_imgproc.so VA 0x000E7BC4 (table[173])",
+    "bits": 1039767197,
+    "csharp_bits": 1039767197
+  },
+  {
+    "key": "0.1045285",
+    "token": "0.1045285f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 404,
+    "address": "libopencv_imgproc.so VA 0x000E7BC8 (table[174])",
+    "bits": 1037439754,
+    "csharp_bits": 1037439754
+  },
+  {
+    "key": "0.0871557",
+    "token": "0.0871557f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 404,
+    "address": "libopencv_imgproc.so VA 0x000E7BCC (table[175])",
+    "bits": 1035108016,
+    "csharp_bits": 1035108016
+  },
+  {
+    "key": "0.0697565",
+    "token": "0.0697565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 404,
+    "address": "libopencv_imgproc.so VA 0x000E7BD0 (table[176])",
+    "bits": 1032772735,
+    "csharp_bits": 1032772735
+  },
+  {
+    "key": "0.0348995",
+    "token": "0.0348995f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 404,
+    "address": "libopencv_imgproc.so VA 0x000E7BD8 (table[178])",
+    "bits": 1024389831,
+    "csharp_bits": 1024389831
+  },
+  {
+    "key": "0.0174524",
+    "token": "0.0174524f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 404,
+    "address": "libopencv_imgproc.so VA 0x000E7BDC (table[179])",
+    "bits": 1016002646,
+    "csharp_bits": 1016002646
+  },
+  {
+    "key": "0.0174524",
+    "token": "-0.0174524f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 405,
+    "address": "libopencv_imgproc.so VA 0x000E7BE4 (table[181])",
+    "bits": 3163486294,
+    "csharp_bits": 3163486294
+  },
+  {
+    "key": "0.0348995",
+    "token": "-0.0348995f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 405,
+    "address": "libopencv_imgproc.so VA 0x000E7BE8 (table[182])",
+    "bits": 3171873479,
+    "csharp_bits": 3171873479
+  },
+  {
+    "key": "0.0697565",
+    "token": "-0.0697565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 405,
+    "address": "libopencv_imgproc.so VA 0x000E7BF0 (table[184])",
+    "bits": 3180256383,
+    "csharp_bits": 3180256383
+  },
+  {
+    "key": "0.0871557",
+    "token": "-0.0871557f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 405,
+    "address": "libopencv_imgproc.so VA 0x000E7BF4 (table[185])",
+    "bits": 3182591664,
+    "csharp_bits": 3182591664
+  },
+  {
+    "key": "0.1045285",
+    "token": "-0.1045285f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7BF8 (table[186])",
+    "bits": 3184923402,
+    "csharp_bits": 3184923402
+  },
+  {
+    "key": "0.1218693",
+    "token": "-0.1218693f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7BFC (table[187])",
+    "bits": 3187250845,
+    "csharp_bits": 3187250845
+  },
+  {
+    "key": "0.1391731",
+    "token": "-0.1391731f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7C00 (table[188])",
+    "bits": 3188622181,
+    "csharp_bits": 3188622181
+  },
+  {
+    "key": "0.1564345",
+    "token": "-0.1564345f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7C04 (table[189])",
+    "bits": 3189780574,
+    "csharp_bits": 3189780574
+  },
+  {
+    "key": "0.1736482",
+    "token": "-0.1736482f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7C08 (table[190])",
+    "bits": 3190935765,
+    "csharp_bits": 3190935765
+  },
+  {
+    "key": "0.1908090",
+    "token": "-0.1908090f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 406,
+    "address": "libopencv_imgproc.so VA 0x000E7C0C (table[191])",
+    "bits": 3192087407,
+    "csharp_bits": 3192087407
+  },
+  {
+    "key": "0.2079117",
+    "token": "-0.2079117f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C10 (table[192])",
+    "bits": 3193235150,
+    "csharp_bits": 3193235150
+  },
+  {
+    "key": "0.2249511",
+    "token": "-0.2249511f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C14 (table[193])",
+    "bits": 3194378645,
+    "csharp_bits": 3194378645
+  },
+  {
+    "key": "0.2419219",
+    "token": "-0.2419219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C18 (table[194])",
+    "bits": 3195517536,
+    "csharp_bits": 3195517536
+  },
+  {
+    "key": "0.2588190",
+    "token": "-0.2588190f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C1C (table[195])",
+    "bits": 3196355565,
+    "csharp_bits": 3196355565
+  },
+  {
+    "key": "0.2756374",
+    "token": "-0.2756374f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C20 (table[196])",
+    "bits": 3196919896,
+    "csharp_bits": 3196919896
+  },
+  {
+    "key": "0.2923717",
+    "token": "-0.2923717f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 407,
+    "address": "libopencv_imgproc.so VA 0x000E7C24 (table[197])",
+    "bits": 3197481406,
+    "csharp_bits": 3197481406
+  },
+  {
+    "key": "0.3090170",
+    "token": "-0.3090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C28 (table[198])",
+    "bits": 3198039930,
+    "csharp_bits": 3198039930
+  },
+  {
+    "key": "0.3255682",
+    "token": "-0.3255682f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C2C (table[199])",
+    "bits": 3198595296,
+    "csharp_bits": 3198595296
+  },
+  {
+    "key": "0.3420201",
+    "token": "-0.3420201f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C30 (table[200])",
+    "bits": 3199147330,
+    "csharp_bits": 3199147330
+  },
+  {
+    "key": "0.3583679",
+    "token": "-0.3583679f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C34 (table[201])",
+    "bits": 3199695871,
+    "csharp_bits": 3199695871
+  },
+  {
+    "key": "0.3746066",
+    "token": "-0.3746066f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C38 (table[202])",
+    "bits": 3200240752,
+    "csharp_bits": 3200240752
+  },
+  {
+    "key": "0.3907311",
+    "token": "-0.3907311f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 408,
+    "address": "libopencv_imgproc.so VA 0x000E7C3C (table[203])",
+    "bits": 3200781800,
+    "csharp_bits": 3200781800
+  },
+  {
+    "key": "0.4067366",
+    "token": "-0.4067366f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C40 (table[204])",
+    "bits": 3201318856,
+    "csharp_bits": 3201318856
+  },
+  {
+    "key": "0.4226183",
+    "token": "-0.4226183f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C44 (table[205])",
+    "bits": 3201851757,
+    "csharp_bits": 3201851757
+  },
+  {
+    "key": "0.4383711",
+    "token": "-0.4383711f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C48 (table[206])",
+    "bits": 3202380333,
+    "csharp_bits": 3202380333
+  },
+  {
+    "key": "0.4539905",
+    "token": "-0.4539905f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C4C (table[207])",
+    "bits": 3202904433,
+    "csharp_bits": 3202904433
+  },
+  {
+    "key": "0.4694716",
+    "token": "-0.4694716f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C50 (table[208])",
+    "bits": 3203423893,
+    "csharp_bits": 3203423893
+  },
+  {
+    "key": "0.4848096",
+    "token": "-0.4848096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 409,
+    "address": "libopencv_imgproc.so VA 0x000E7C54 (table[209])",
+    "bits": 3203938551,
+    "csharp_bits": 3203938551
+  },
+  {
+    "key": "0.5150381",
+    "token": "-0.5150381f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 410,
+    "address": "libopencv_imgproc.so VA 0x000E7C5C (table[211])",
+    "bits": 3204700553,
+    "csharp_bits": 3204700553
+  },
+  {
+    "key": "0.5299193",
+    "token": "-0.5299193f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 410,
+    "address": "libopencv_imgproc.so VA 0x000E7C60 (table[212])",
+    "bits": 3204950219,
+    "csharp_bits": 3204950219
+  },
+  {
+    "key": "0.5446390",
+    "token": "-0.5446390f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 410,
+    "address": "libopencv_imgproc.so VA 0x000E7C64 (table[213])",
+    "bits": 3205197174,
+    "csharp_bits": 3205197174
+  },
+  {
+    "key": "0.5591929",
+    "token": "-0.5591929f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 410,
+    "address": "libopencv_imgproc.so VA 0x000E7C68 (table[214])",
+    "bits": 3205441348,
+    "csharp_bits": 3205441348
+  },
+  {
+    "key": "0.5735764",
+    "token": "-0.5735764f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 410,
+    "address": "libopencv_imgproc.so VA 0x000E7C6C (table[215])",
+    "bits": 3205682663,
+    "csharp_bits": 3205682663
+  },
+  {
+    "key": "0.5877853",
+    "token": "-0.5877853f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C70 (table[216])",
+    "bits": 3205921049,
+    "csharp_bits": 3205921049
+  },
+  {
+    "key": "0.6018150",
+    "token": "-0.6018150f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C74 (table[217])",
+    "bits": 3206156428,
+    "csharp_bits": 3206156428
+  },
+  {
+    "key": "0.6156615",
+    "token": "-0.6156615f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C78 (table[218])",
+    "bits": 3206388734,
+    "csharp_bits": 3206388734
+  },
+  {
+    "key": "0.6293204",
+    "token": "-0.6293204f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C7C (table[219])",
+    "bits": 3206617892,
+    "csharp_bits": 3206617892
+  },
+  {
+    "key": "0.6427876",
+    "token": "-0.6427876f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C80 (table[220])",
+    "bits": 3206843834,
+    "csharp_bits": 3206843834
+  },
+  {
+    "key": "0.6560590",
+    "token": "-0.6560590f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 411,
+    "address": "libopencv_imgproc.so VA 0x000E7C84 (table[221])",
+    "bits": 3207066492,
+    "csharp_bits": 3207066492
+  },
+  {
+    "key": "0.6691306",
+    "token": "-0.6691306f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C88 (table[222])",
+    "bits": 3207285797,
+    "csharp_bits": 3207285797
+  },
+  {
+    "key": "0.6819984",
+    "token": "-0.6819984f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C8C (table[223])",
+    "bits": 3207501682,
+    "csharp_bits": 3207501682
+  },
+  {
+    "key": "0.6946584",
+    "token": "-0.6946584f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C90 (table[224])",
+    "bits": 3207714082,
+    "csharp_bits": 3207714082
+  },
+  {
+    "key": "0.7071068",
+    "token": "-0.7071068f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C94 (table[225])",
+    "bits": 3207922932,
+    "csharp_bits": 3207922932
+  },
+  {
+    "key": "0.7193398",
+    "token": "-0.7193398f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C98 (table[226])",
+    "bits": 3208128167,
+    "csharp_bits": 3208128167
+  },
+  {
+    "key": "0.7313537",
+    "token": "-0.7313537f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 412,
+    "address": "libopencv_imgproc.so VA 0x000E7C9C (table[227])",
+    "bits": 3208329727,
+    "csharp_bits": 3208329727
+  },
+  {
+    "key": "0.7431448",
+    "token": "-0.7431448f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CA0 (table[228])",
+    "bits": 3208527549,
+    "csharp_bits": 3208527549
+  },
+  {
+    "key": "0.7547096",
+    "token": "-0.7547096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CA4 (table[229])",
+    "bits": 3208721574,
+    "csharp_bits": 3208721574
+  },
+  {
+    "key": "0.7660444",
+    "token": "-0.7660444f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CA8 (table[230])",
+    "bits": 3208911740,
+    "csharp_bits": 3208911740
+  },
+  {
+    "key": "0.7771460",
+    "token": "-0.7771460f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CAC (table[231])",
+    "bits": 3209097994,
+    "csharp_bits": 3209097994
+  },
+  {
+    "key": "0.7880108",
+    "token": "-0.7880108f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CB0 (table[232])",
+    "bits": 3209280275,
+    "csharp_bits": 3209280275
+  },
+  {
+    "key": "0.7986355",
+    "token": "-0.7986355f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 413,
+    "address": "libopencv_imgproc.so VA 0x000E7CB4 (table[233])",
+    "bits": 3209458528,
+    "csharp_bits": 3209458528
+  },
+  {
+    "key": "0.8090170",
+    "token": "-0.8090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CB8 (table[234])",
+    "bits": 3209632701,
+    "csharp_bits": 3209632701
+  },
+  {
+    "key": "0.8191520",
+    "token": "-0.8191520f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CBC (table[235])",
+    "bits": 3209802738,
+    "csharp_bits": 3209802738
+  },
+  {
+    "key": "0.8290376",
+    "token": "-0.8290376f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CC0 (table[236])",
+    "bits": 3209968591,
+    "csharp_bits": 3209968591
+  },
+  {
+    "key": "0.8386706",
+    "token": "-0.8386706f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CC4 (table[237])",
+    "bits": 3210130206,
+    "csharp_bits": 3210130206
+  },
+  {
+    "key": "0.8480481",
+    "token": "-0.8480481f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CC8 (table[238])",
+    "bits": 3210287534,
+    "csharp_bits": 3210287534
+  },
+  {
+    "key": "0.8571673",
+    "token": "-0.8571673f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 414,
+    "address": "libopencv_imgproc.so VA 0x000E7CCC (table[239])",
+    "bits": 3210440529,
+    "csharp_bits": 3210440529
+  },
+  {
+    "key": "0.8660254",
+    "token": "-0.8660254f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CD0 (table[240])",
+    "bits": 3210589143,
+    "csharp_bits": 3210589143
+  },
+  {
+    "key": "0.8746197",
+    "token": "-0.8746197f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CD4 (table[241])",
+    "bits": 3210733332,
+    "csharp_bits": 3210733332
+  },
+  {
+    "key": "0.8829476",
+    "token": "-0.8829476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CD8 (table[242])",
+    "bits": 3210873051,
+    "csharp_bits": 3210873051
+  },
+  {
+    "key": "0.8910065",
+    "token": "-0.8910065f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CDC (table[243])",
+    "bits": 3211008257,
+    "csharp_bits": 3211008257
+  },
+  {
+    "key": "0.8987940",
+    "token": "-0.8987940f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CE0 (table[244])",
+    "bits": 3211138909,
+    "csharp_bits": 3211138909
+  },
+  {
+    "key": "0.9063078",
+    "token": "-0.9063078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 415,
+    "address": "libopencv_imgproc.so VA 0x000E7CE4 (table[245])",
+    "bits": 3211264970,
+    "csharp_bits": 3211264970
+  },
+  {
+    "key": "0.9135455",
+    "token": "-0.9135455f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CE8 (table[246])",
+    "bits": 3211386398,
+    "csharp_bits": 3211386398
+  },
+  {
+    "key": "0.9205049",
+    "token": "-0.9205049f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CEC (table[247])",
+    "bits": 3211503158,
+    "csharp_bits": 3211503158
+  },
+  {
+    "key": "0.9271839",
+    "token": "-0.9271839f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CF0 (table[248])",
+    "bits": 3211615213,
+    "csharp_bits": 3211615213
+  },
+  {
+    "key": "0.9335804",
+    "token": "-0.9335804f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CF4 (table[249])",
+    "bits": 3211722528,
+    "csharp_bits": 3211722528
+  },
+  {
+    "key": "0.9396926",
+    "token": "-0.9396926f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CF8 (table[250])",
+    "bits": 3211825074,
+    "csharp_bits": 3211825074
+  },
+  {
+    "key": "0.9455186",
+    "token": "-0.9455186f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 416,
+    "address": "libopencv_imgproc.so VA 0x000E7CFC (table[251])",
+    "bits": 3211922818,
+    "csharp_bits": 3211922818
+  },
+  {
+    "key": "0.9510565",
+    "token": "-0.9510565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D00 (table[252])",
+    "bits": 3212015728,
+    "csharp_bits": 3212015728
+  },
+  {
+    "key": "0.9563048",
+    "token": "-0.9563048f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D04 (table[253])",
+    "bits": 3212103780,
+    "csharp_bits": 3212103780
+  },
+  {
+    "key": "0.9612617",
+    "token": "-0.9612617f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D08 (table[254])",
+    "bits": 3212186943,
+    "csharp_bits": 3212186943
+  },
+  {
+    "key": "0.9659258",
+    "token": "-0.9659258f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D0C (table[255])",
+    "bits": 3212265194,
+    "csharp_bits": 3212265194
+  },
+  {
+    "key": "0.9702957",
+    "token": "-0.9702957f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D10 (table[256])",
+    "bits": 3212338509,
+    "csharp_bits": 3212338509
+  },
+  {
+    "key": "0.9743701",
+    "token": "-0.9743701f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 417,
+    "address": "libopencv_imgproc.so VA 0x000E7D14 (table[257])",
+    "bits": 3212406866,
+    "csharp_bits": 3212406866
+  },
+  {
+    "key": "0.9781476",
+    "token": "-0.9781476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D18 (table[258])",
+    "bits": 3212470242,
+    "csharp_bits": 3212470242
+  },
+  {
+    "key": "0.9816272",
+    "token": "-0.9816272f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D1C (table[259])",
+    "bits": 3212528620,
+    "csharp_bits": 3212528620
+  },
+  {
+    "key": "0.9848078",
+    "token": "-0.9848078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D20 (table[260])",
+    "bits": 3212581981,
+    "csharp_bits": 3212581981
+  },
+  {
+    "key": "0.9876883",
+    "token": "-0.9876883f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D24 (table[261])",
+    "bits": 3212630308,
+    "csharp_bits": 3212630308
+  },
+  {
+    "key": "0.9902681",
+    "token": "-0.9902681f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D28 (table[262])",
+    "bits": 3212673590,
+    "csharp_bits": 3212673590
+  },
+  {
+    "key": "0.9925462",
+    "token": "-0.9925462f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 418,
+    "address": "libopencv_imgproc.so VA 0x000E7D2C (table[263])",
+    "bits": 3212711810,
+    "csharp_bits": 3212711810
+  },
+  {
+    "key": "0.9945219",
+    "token": "-0.9945219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D30 (table[264])",
+    "bits": 3212744957,
+    "csharp_bits": 3212744957
+  },
+  {
+    "key": "0.9961947",
+    "token": "-0.9961947f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D34 (table[265])",
+    "bits": 3212773022,
+    "csharp_bits": 3212773022
+  },
+  {
+    "key": "0.9975641",
+    "token": "-0.9975641f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D38 (table[266])",
+    "bits": 3212795996,
+    "csharp_bits": 3212795996
+  },
+  {
+    "key": "0.9986295",
+    "token": "-0.9986295f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D3C (table[267])",
+    "bits": 3212813871,
+    "csharp_bits": 3212813871
+  },
+  {
+    "key": "0.9993908",
+    "token": "-0.9993908f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D40 (table[268])",
+    "bits": 3212826643,
+    "csharp_bits": 3212826643
+  },
+  {
+    "key": "0.9998477",
+    "token": "-0.9998477f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 419,
+    "address": "libopencv_imgproc.so VA 0x000E7D44 (table[269])",
+    "bits": 3212834309,
+    "csharp_bits": 3212834309
+  },
+  {
+    "key": "0.9998477",
+    "token": "-0.9998477f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 420,
+    "address": "libopencv_imgproc.so VA 0x000E7D4C (table[271])",
+    "bits": 3212834309,
+    "csharp_bits": 3212834309
+  },
+  {
+    "key": "0.9993908",
+    "token": "-0.9993908f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 420,
+    "address": "libopencv_imgproc.so VA 0x000E7D50 (table[272])",
+    "bits": 3212826643,
+    "csharp_bits": 3212826643
+  },
+  {
+    "key": "0.9986295",
+    "token": "-0.9986295f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 420,
+    "address": "libopencv_imgproc.so VA 0x000E7D54 (table[273])",
+    "bits": 3212813871,
+    "csharp_bits": 3212813871
+  },
+  {
+    "key": "0.9975641",
+    "token": "-0.9975641f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 420,
+    "address": "libopencv_imgproc.so VA 0x000E7D58 (table[274])",
+    "bits": 3212795996,
+    "csharp_bits": 3212795996
+  },
+  {
+    "key": "0.9961947",
+    "token": "-0.9961947f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 420,
+    "address": "libopencv_imgproc.so VA 0x000E7D5C (table[275])",
+    "bits": 3212773022,
+    "csharp_bits": 3212773022
+  },
+  {
+    "key": "0.9945219",
+    "token": "-0.9945219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D60 (table[276])",
+    "bits": 3212744957,
+    "csharp_bits": 3212744957
+  },
+  {
+    "key": "0.9925462",
+    "token": "-0.9925462f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D64 (table[277])",
+    "bits": 3212711810,
+    "csharp_bits": 3212711810
+  },
+  {
+    "key": "0.9902681",
+    "token": "-0.9902681f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D68 (table[278])",
+    "bits": 3212673590,
+    "csharp_bits": 3212673590
+  },
+  {
+    "key": "0.9876883",
+    "token": "-0.9876883f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D6C (table[279])",
+    "bits": 3212630308,
+    "csharp_bits": 3212630308
+  },
+  {
+    "key": "0.9848078",
+    "token": "-0.9848078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D70 (table[280])",
+    "bits": 3212581981,
+    "csharp_bits": 3212581981
+  },
+  {
+    "key": "0.9816272",
+    "token": "-0.9816272f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 421,
+    "address": "libopencv_imgproc.so VA 0x000E7D74 (table[281])",
+    "bits": 3212528620,
+    "csharp_bits": 3212528620
+  },
+  {
+    "key": "0.9781476",
+    "token": "-0.9781476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D78 (table[282])",
+    "bits": 3212470242,
+    "csharp_bits": 3212470242
+  },
+  {
+    "key": "0.9743701",
+    "token": "-0.9743701f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D7C (table[283])",
+    "bits": 3212406866,
+    "csharp_bits": 3212406866
+  },
+  {
+    "key": "0.9702957",
+    "token": "-0.9702957f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D80 (table[284])",
+    "bits": 3212338509,
+    "csharp_bits": 3212338509
+  },
+  {
+    "key": "0.9659258",
+    "token": "-0.9659258f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D84 (table[285])",
+    "bits": 3212265194,
+    "csharp_bits": 3212265194
+  },
+  {
+    "key": "0.9612617",
+    "token": "-0.9612617f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D88 (table[286])",
+    "bits": 3212186943,
+    "csharp_bits": 3212186943
+  },
+  {
+    "key": "0.9563048",
+    "token": "-0.9563048f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 422,
+    "address": "libopencv_imgproc.so VA 0x000E7D8C (table[287])",
+    "bits": 3212103780,
+    "csharp_bits": 3212103780
+  },
+  {
+    "key": "0.9510565",
+    "token": "-0.9510565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7D90 (table[288])",
+    "bits": 3212015728,
+    "csharp_bits": 3212015728
+  },
+  {
+    "key": "0.9455186",
+    "token": "-0.9455186f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7D94 (table[289])",
+    "bits": 3211922818,
+    "csharp_bits": 3211922818
+  },
+  {
+    "key": "0.9396926",
+    "token": "-0.9396926f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7D98 (table[290])",
+    "bits": 3211825074,
+    "csharp_bits": 3211825074
+  },
+  {
+    "key": "0.9335804",
+    "token": "-0.9335804f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7D9C (table[291])",
+    "bits": 3211722528,
+    "csharp_bits": 3211722528
+  },
+  {
+    "key": "0.9271839",
+    "token": "-0.9271839f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7DA0 (table[292])",
+    "bits": 3211615213,
+    "csharp_bits": 3211615213
+  },
+  {
+    "key": "0.9205049",
+    "token": "-0.9205049f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 423,
+    "address": "libopencv_imgproc.so VA 0x000E7DA4 (table[293])",
+    "bits": 3211503158,
+    "csharp_bits": 3211503158
+  },
+  {
+    "key": "0.9135455",
+    "token": "-0.9135455f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DA8 (table[294])",
+    "bits": 3211386398,
+    "csharp_bits": 3211386398
+  },
+  {
+    "key": "0.9063078",
+    "token": "-0.9063078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DAC (table[295])",
+    "bits": 3211264970,
+    "csharp_bits": 3211264970
+  },
+  {
+    "key": "0.8987940",
+    "token": "-0.8987940f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DB0 (table[296])",
+    "bits": 3211138909,
+    "csharp_bits": 3211138909
+  },
+  {
+    "key": "0.8910065",
+    "token": "-0.8910065f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DB4 (table[297])",
+    "bits": 3211008257,
+    "csharp_bits": 3211008257
+  },
+  {
+    "key": "0.8829476",
+    "token": "-0.8829476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DB8 (table[298])",
+    "bits": 3210873051,
+    "csharp_bits": 3210873051
+  },
+  {
+    "key": "0.8746197",
+    "token": "-0.8746197f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 424,
+    "address": "libopencv_imgproc.so VA 0x000E7DBC (table[299])",
+    "bits": 3210733332,
+    "csharp_bits": 3210733332
+  },
+  {
+    "key": "0.8660254",
+    "token": "-0.8660254f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DC0 (table[300])",
+    "bits": 3210589143,
+    "csharp_bits": 3210589143
+  },
+  {
+    "key": "0.8571673",
+    "token": "-0.8571673f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DC4 (table[301])",
+    "bits": 3210440529,
+    "csharp_bits": 3210440529
+  },
+  {
+    "key": "0.8480481",
+    "token": "-0.8480481f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DC8 (table[302])",
+    "bits": 3210287534,
+    "csharp_bits": 3210287534
+  },
+  {
+    "key": "0.8386706",
+    "token": "-0.8386706f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DCC (table[303])",
+    "bits": 3210130206,
+    "csharp_bits": 3210130206
+  },
+  {
+    "key": "0.8290376",
+    "token": "-0.8290376f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DD0 (table[304])",
+    "bits": 3209968591,
+    "csharp_bits": 3209968591
+  },
+  {
+    "key": "0.8191520",
+    "token": "-0.8191520f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 425,
+    "address": "libopencv_imgproc.so VA 0x000E7DD4 (table[305])",
+    "bits": 3209802738,
+    "csharp_bits": 3209802738
+  },
+  {
+    "key": "0.8090170",
+    "token": "-0.8090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DD8 (table[306])",
+    "bits": 3209632701,
+    "csharp_bits": 3209632701
+  },
+  {
+    "key": "0.7986355",
+    "token": "-0.7986355f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DDC (table[307])",
+    "bits": 3209458528,
+    "csharp_bits": 3209458528
+  },
+  {
+    "key": "0.7880108",
+    "token": "-0.7880108f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DE0 (table[308])",
+    "bits": 3209280275,
+    "csharp_bits": 3209280275
+  },
+  {
+    "key": "0.7771460",
+    "token": "-0.7771460f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DE4 (table[309])",
+    "bits": 3209097994,
+    "csharp_bits": 3209097994
+  },
+  {
+    "key": "0.7660444",
+    "token": "-0.7660444f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DE8 (table[310])",
+    "bits": 3208911740,
+    "csharp_bits": 3208911740
+  },
+  {
+    "key": "0.7547096",
+    "token": "-0.7547096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 426,
+    "address": "libopencv_imgproc.so VA 0x000E7DEC (table[311])",
+    "bits": 3208721574,
+    "csharp_bits": 3208721574
+  },
+  {
+    "key": "0.7431448",
+    "token": "-0.7431448f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7DF0 (table[312])",
+    "bits": 3208527549,
+    "csharp_bits": 3208527549
+  },
+  {
+    "key": "0.7313537",
+    "token": "-0.7313537f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7DF4 (table[313])",
+    "bits": 3208329727,
+    "csharp_bits": 3208329727
+  },
+  {
+    "key": "0.7193398",
+    "token": "-0.7193398f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7DF8 (table[314])",
+    "bits": 3208128167,
+    "csharp_bits": 3208128167
+  },
+  {
+    "key": "0.7071068",
+    "token": "-0.7071068f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7DFC (table[315])",
+    "bits": 3207922932,
+    "csharp_bits": 3207922932
+  },
+  {
+    "key": "0.6946584",
+    "token": "-0.6946584f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7E00 (table[316])",
+    "bits": 3207714082,
+    "csharp_bits": 3207714082
+  },
+  {
+    "key": "0.6819984",
+    "token": "-0.6819984f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 427,
+    "address": "libopencv_imgproc.so VA 0x000E7E04 (table[317])",
+    "bits": 3207501682,
+    "csharp_bits": 3207501682
+  },
+  {
+    "key": "0.6691306",
+    "token": "-0.6691306f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E08 (table[318])",
+    "bits": 3207285797,
+    "csharp_bits": 3207285797
+  },
+  {
+    "key": "0.6560590",
+    "token": "-0.6560590f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E0C (table[319])",
+    "bits": 3207066492,
+    "csharp_bits": 3207066492
+  },
+  {
+    "key": "0.6427876",
+    "token": "-0.6427876f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E10 (table[320])",
+    "bits": 3206843834,
+    "csharp_bits": 3206843834
+  },
+  {
+    "key": "0.6293204",
+    "token": "-0.6293204f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E14 (table[321])",
+    "bits": 3206617892,
+    "csharp_bits": 3206617892
+  },
+  {
+    "key": "0.6156615",
+    "token": "-0.6156615f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E18 (table[322])",
+    "bits": 3206388734,
+    "csharp_bits": 3206388734
+  },
+  {
+    "key": "0.6018150",
+    "token": "-0.6018150f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 428,
+    "address": "libopencv_imgproc.so VA 0x000E7E1C (table[323])",
+    "bits": 3206156428,
+    "csharp_bits": 3206156428
+  },
+  {
+    "key": "0.5877853",
+    "token": "-0.5877853f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E20 (table[324])",
+    "bits": 3205921049,
+    "csharp_bits": 3205921049
+  },
+  {
+    "key": "0.5735764",
+    "token": "-0.5735764f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E24 (table[325])",
+    "bits": 3205682663,
+    "csharp_bits": 3205682663
+  },
+  {
+    "key": "0.5591929",
+    "token": "-0.5591929f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E28 (table[326])",
+    "bits": 3205441348,
+    "csharp_bits": 3205441348
+  },
+  {
+    "key": "0.5446390",
+    "token": "-0.5446390f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E2C (table[327])",
+    "bits": 3205197174,
+    "csharp_bits": 3205197174
+  },
+  {
+    "key": "0.5299193",
+    "token": "-0.5299193f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E30 (table[328])",
+    "bits": 3204950219,
+    "csharp_bits": 3204950219
+  },
+  {
+    "key": "0.5150381",
+    "token": "-0.5150381f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 429,
+    "address": "libopencv_imgproc.so VA 0x000E7E34 (table[329])",
+    "bits": 3204700553,
+    "csharp_bits": 3204700553
+  },
+  {
+    "key": "0.4848096",
+    "token": "-0.4848096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 430,
+    "address": "libopencv_imgproc.so VA 0x000E7E3C (table[331])",
+    "bits": 3203938551,
+    "csharp_bits": 3203938551
+  },
+  {
+    "key": "0.4694716",
+    "token": "-0.4694716f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 430,
+    "address": "libopencv_imgproc.so VA 0x000E7E40 (table[332])",
+    "bits": 3203423893,
+    "csharp_bits": 3203423893
+  },
+  {
+    "key": "0.4539905",
+    "token": "-0.4539905f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 430,
+    "address": "libopencv_imgproc.so VA 0x000E7E44 (table[333])",
+    "bits": 3202904433,
+    "csharp_bits": 3202904433
+  },
+  {
+    "key": "0.4383711",
+    "token": "-0.4383711f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 430,
+    "address": "libopencv_imgproc.so VA 0x000E7E48 (table[334])",
+    "bits": 3202380333,
+    "csharp_bits": 3202380333
+  },
+  {
+    "key": "0.4226183",
+    "token": "-0.4226183f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 430,
+    "address": "libopencv_imgproc.so VA 0x000E7E4C (table[335])",
+    "bits": 3201851757,
+    "csharp_bits": 3201851757
+  },
+  {
+    "key": "0.4067366",
+    "token": "-0.4067366f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E50 (table[336])",
+    "bits": 3201318856,
+    "csharp_bits": 3201318856
+  },
+  {
+    "key": "0.3907311",
+    "token": "-0.3907311f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E54 (table[337])",
+    "bits": 3200781800,
+    "csharp_bits": 3200781800
+  },
+  {
+    "key": "0.3746066",
+    "token": "-0.3746066f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E58 (table[338])",
+    "bits": 3200240752,
+    "csharp_bits": 3200240752
+  },
+  {
+    "key": "0.3583679",
+    "token": "-0.3583679f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E5C (table[339])",
+    "bits": 3199695871,
+    "csharp_bits": 3199695871
+  },
+  {
+    "key": "0.3420201",
+    "token": "-0.3420201f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E60 (table[340])",
+    "bits": 3199147330,
+    "csharp_bits": 3199147330
+  },
+  {
+    "key": "0.3255682",
+    "token": "-0.3255682f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 431,
+    "address": "libopencv_imgproc.so VA 0x000E7E64 (table[341])",
+    "bits": 3198595296,
+    "csharp_bits": 3198595296
+  },
+  {
+    "key": "0.3090170",
+    "token": "-0.3090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E68 (table[342])",
+    "bits": 3198039930,
+    "csharp_bits": 3198039930
+  },
+  {
+    "key": "0.2923717",
+    "token": "-0.2923717f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E6C (table[343])",
+    "bits": 3197481406,
+    "csharp_bits": 3197481406
+  },
+  {
+    "key": "0.2756374",
+    "token": "-0.2756374f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E70 (table[344])",
+    "bits": 3196919896,
+    "csharp_bits": 3196919896
+  },
+  {
+    "key": "0.2588190",
+    "token": "-0.2588190f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E74 (table[345])",
+    "bits": 3196355565,
+    "csharp_bits": 3196355565
+  },
+  {
+    "key": "0.2419219",
+    "token": "-0.2419219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E78 (table[346])",
+    "bits": 3195517536,
+    "csharp_bits": 3195517536
+  },
+  {
+    "key": "0.2249511",
+    "token": "-0.2249511f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 432,
+    "address": "libopencv_imgproc.so VA 0x000E7E7C (table[347])",
+    "bits": 3194378645,
+    "csharp_bits": 3194378645
+  },
+  {
+    "key": "0.2079117",
+    "token": "-0.2079117f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E80 (table[348])",
+    "bits": 3193235150,
+    "csharp_bits": 3193235150
+  },
+  {
+    "key": "0.1908090",
+    "token": "-0.1908090f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E84 (table[349])",
+    "bits": 3192087407,
+    "csharp_bits": 3192087407
+  },
+  {
+    "key": "0.1736482",
+    "token": "-0.1736482f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E88 (table[350])",
+    "bits": 3190935765,
+    "csharp_bits": 3190935765
+  },
+  {
+    "key": "0.1564345",
+    "token": "-0.1564345f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E8C (table[351])",
+    "bits": 3189780574,
+    "csharp_bits": 3189780574
+  },
+  {
+    "key": "0.1391731",
+    "token": "-0.1391731f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E90 (table[352])",
+    "bits": 3188622181,
+    "csharp_bits": 3188622181
+  },
+  {
+    "key": "0.1218693",
+    "token": "-0.1218693f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 433,
+    "address": "libopencv_imgproc.so VA 0x000E7E94 (table[353])",
+    "bits": 3187250845,
+    "csharp_bits": 3187250845
+  },
+  {
+    "key": "0.1045285",
+    "token": "-0.1045285f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 434,
+    "address": "libopencv_imgproc.so VA 0x000E7E98 (table[354])",
+    "bits": 3184923402,
+    "csharp_bits": 3184923402
+  },
+  {
+    "key": "0.0871557",
+    "token": "-0.0871557f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 434,
+    "address": "libopencv_imgproc.so VA 0x000E7E9C (table[355])",
+    "bits": 3182591664,
+    "csharp_bits": 3182591664
+  },
+  {
+    "key": "0.0697565",
+    "token": "-0.0697565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 434,
+    "address": "libopencv_imgproc.so VA 0x000E7EA0 (table[356])",
+    "bits": 3180256383,
+    "csharp_bits": 3180256383
+  },
+  {
+    "key": "0.0348995",
+    "token": "-0.0348995f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 434,
+    "address": "libopencv_imgproc.so VA 0x000E7EA8 (table[358])",
+    "bits": 3171873479,
+    "csharp_bits": 3171873479
+  },
+  {
+    "key": "0.0174524",
+    "token": "-0.0174524f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 434,
+    "address": "libopencv_imgproc.so VA 0x000E7EAC (table[359])",
+    "bits": 3163486294,
+    "csharp_bits": 3163486294
+  },
+  {
+    "key": "0.0174524",
+    "token": "0.0174524f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 435,
+    "address": "libopencv_imgproc.so VA 0x000E7EB4 (table[361])",
+    "bits": 1016002646,
+    "csharp_bits": 1016002646
+  },
+  {
+    "key": "0.0348995",
+    "token": "0.0348995f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 435,
+    "address": "libopencv_imgproc.so VA 0x000E7EB8 (table[362])",
+    "bits": 1024389831,
+    "csharp_bits": 1024389831
+  },
+  {
+    "key": "0.0697565",
+    "token": "0.0697565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 435,
+    "address": "libopencv_imgproc.so VA 0x000E7EC0 (table[364])",
+    "bits": 1032772735,
+    "csharp_bits": 1032772735
+  },
+  {
+    "key": "0.0871557",
+    "token": "0.0871557f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 435,
+    "address": "libopencv_imgproc.so VA 0x000E7EC4 (table[365])",
+    "bits": 1035108016,
+    "csharp_bits": 1035108016
+  },
+  {
+    "key": "0.1045285",
+    "token": "0.1045285f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7EC8 (table[366])",
+    "bits": 1037439754,
+    "csharp_bits": 1037439754
+  },
+  {
+    "key": "0.1218693",
+    "token": "0.1218693f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7ECC (table[367])",
+    "bits": 1039767197,
+    "csharp_bits": 1039767197
+  },
+  {
+    "key": "0.1391731",
+    "token": "0.1391731f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7ED0 (table[368])",
+    "bits": 1041138533,
+    "csharp_bits": 1041138533
+  },
+  {
+    "key": "0.1564345",
+    "token": "0.1564345f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7ED4 (table[369])",
+    "bits": 1042296926,
+    "csharp_bits": 1042296926
+  },
+  {
+    "key": "0.1736482",
+    "token": "0.1736482f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7ED8 (table[370])",
+    "bits": 1043452117,
+    "csharp_bits": 1043452117
+  },
+  {
+    "key": "0.1908090",
+    "token": "0.1908090f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 436,
+    "address": "libopencv_imgproc.so VA 0x000E7EDC (table[371])",
+    "bits": 1044603759,
+    "csharp_bits": 1044603759
+  },
+  {
+    "key": "0.2079117",
+    "token": "0.2079117f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EE0 (table[372])",
+    "bits": 1045751502,
+    "csharp_bits": 1045751502
+  },
+  {
+    "key": "0.2249511",
+    "token": "0.2249511f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EE4 (table[373])",
+    "bits": 1046894997,
+    "csharp_bits": 1046894997
+  },
+  {
+    "key": "0.2419219",
+    "token": "0.2419219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EE8 (table[374])",
+    "bits": 1048033888,
+    "csharp_bits": 1048033888
+  },
+  {
+    "key": "0.2588190",
+    "token": "0.2588190f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EEC (table[375])",
+    "bits": 1048871917,
+    "csharp_bits": 1048871917
+  },
+  {
+    "key": "0.2756374",
+    "token": "0.2756374f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EF0 (table[376])",
+    "bits": 1049436248,
+    "csharp_bits": 1049436248
+  },
+  {
+    "key": "0.2923717",
+    "token": "0.2923717f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 437,
+    "address": "libopencv_imgproc.so VA 0x000E7EF4 (table[377])",
+    "bits": 1049997758,
+    "csharp_bits": 1049997758
+  },
+  {
+    "key": "0.3090170",
+    "token": "0.3090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7EF8 (table[378])",
+    "bits": 1050556282,
+    "csharp_bits": 1050556282
+  },
+  {
+    "key": "0.3255682",
+    "token": "0.3255682f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7EFC (table[379])",
+    "bits": 1051111648,
+    "csharp_bits": 1051111648
+  },
+  {
+    "key": "0.3420201",
+    "token": "0.3420201f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7F00 (table[380])",
+    "bits": 1051663682,
+    "csharp_bits": 1051663682
+  },
+  {
+    "key": "0.3583679",
+    "token": "0.3583679f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7F04 (table[381])",
+    "bits": 1052212223,
+    "csharp_bits": 1052212223
+  },
+  {
+    "key": "0.3746066",
+    "token": "0.3746066f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7F08 (table[382])",
+    "bits": 1052757104,
+    "csharp_bits": 1052757104
+  },
+  {
+    "key": "0.3907311",
+    "token": "0.3907311f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 438,
+    "address": "libopencv_imgproc.so VA 0x000E7F0C (table[383])",
+    "bits": 1053298152,
+    "csharp_bits": 1053298152
+  },
+  {
+    "key": "0.4067366",
+    "token": "0.4067366f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F10 (table[384])",
+    "bits": 1053835208,
+    "csharp_bits": 1053835208
+  },
+  {
+    "key": "0.4226183",
+    "token": "0.4226183f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F14 (table[385])",
+    "bits": 1054368109,
+    "csharp_bits": 1054368109
+  },
+  {
+    "key": "0.4383711",
+    "token": "0.4383711f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F18 (table[386])",
+    "bits": 1054896685,
+    "csharp_bits": 1054896685
+  },
+  {
+    "key": "0.4539905",
+    "token": "0.4539905f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F1C (table[387])",
+    "bits": 1055420785,
+    "csharp_bits": 1055420785
+  },
+  {
+    "key": "0.4694716",
+    "token": "0.4694716f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F20 (table[388])",
+    "bits": 1055940245,
+    "csharp_bits": 1055940245
+  },
+  {
+    "key": "0.4848096",
+    "token": "0.4848096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 439,
+    "address": "libopencv_imgproc.so VA 0x000E7F24 (table[389])",
+    "bits": 1056454903,
+    "csharp_bits": 1056454903
+  },
+  {
+    "key": "0.5150381",
+    "token": "0.5150381f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 440,
+    "address": "libopencv_imgproc.so VA 0x000E7F2C (table[391])",
+    "bits": 1057216905,
+    "csharp_bits": 1057216905
+  },
+  {
+    "key": "0.5299193",
+    "token": "0.5299193f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 440,
+    "address": "libopencv_imgproc.so VA 0x000E7F30 (table[392])",
+    "bits": 1057466571,
+    "csharp_bits": 1057466571
+  },
+  {
+    "key": "0.5446390",
+    "token": "0.5446390f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 440,
+    "address": "libopencv_imgproc.so VA 0x000E7F34 (table[393])",
+    "bits": 1057713526,
+    "csharp_bits": 1057713526
+  },
+  {
+    "key": "0.5591929",
+    "token": "0.5591929f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 440,
+    "address": "libopencv_imgproc.so VA 0x000E7F38 (table[394])",
+    "bits": 1057957700,
+    "csharp_bits": 1057957700
+  },
+  {
+    "key": "0.5735764",
+    "token": "0.5735764f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 440,
+    "address": "libopencv_imgproc.so VA 0x000E7F3C (table[395])",
+    "bits": 1058199015,
+    "csharp_bits": 1058199015
+  },
+  {
+    "key": "0.5877853",
+    "token": "0.5877853f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F40 (table[396])",
+    "bits": 1058437401,
+    "csharp_bits": 1058437401
+  },
+  {
+    "key": "0.6018150",
+    "token": "0.6018150f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F44 (table[397])",
+    "bits": 1058672780,
+    "csharp_bits": 1058672780
+  },
+  {
+    "key": "0.6156615",
+    "token": "0.6156615f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F48 (table[398])",
+    "bits": 1058905086,
+    "csharp_bits": 1058905086
+  },
+  {
+    "key": "0.6293204",
+    "token": "0.6293204f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F4C (table[399])",
+    "bits": 1059134244,
+    "csharp_bits": 1059134244
+  },
+  {
+    "key": "0.6427876",
+    "token": "0.6427876f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F50 (table[400])",
+    "bits": 1059360186,
+    "csharp_bits": 1059360186
+  },
+  {
+    "key": "0.6560590",
+    "token": "0.6560590f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 441,
+    "address": "libopencv_imgproc.so VA 0x000E7F54 (table[401])",
+    "bits": 1059582844,
+    "csharp_bits": 1059582844
+  },
+  {
+    "key": "0.6691306",
+    "token": "0.6691306f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F58 (table[402])",
+    "bits": 1059802149,
+    "csharp_bits": 1059802149
+  },
+  {
+    "key": "0.6819984",
+    "token": "0.6819984f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F5C (table[403])",
+    "bits": 1060018034,
+    "csharp_bits": 1060018034
+  },
+  {
+    "key": "0.6946584",
+    "token": "0.6946584f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F60 (table[404])",
+    "bits": 1060230434,
+    "csharp_bits": 1060230434
+  },
+  {
+    "key": "0.7071068",
+    "token": "0.7071068f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F64 (table[405])",
+    "bits": 1060439284,
+    "csharp_bits": 1060439284
+  },
+  {
+    "key": "0.7193398",
+    "token": "0.7193398f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F68 (table[406])",
+    "bits": 1060644519,
+    "csharp_bits": 1060644519
+  },
+  {
+    "key": "0.7313537",
+    "token": "0.7313537f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 442,
+    "address": "libopencv_imgproc.so VA 0x000E7F6C (table[407])",
+    "bits": 1060846079,
+    "csharp_bits": 1060846079
+  },
+  {
+    "key": "0.7431448",
+    "token": "0.7431448f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F70 (table[408])",
+    "bits": 1061043901,
+    "csharp_bits": 1061043901
+  },
+  {
+    "key": "0.7547096",
+    "token": "0.7547096f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F74 (table[409])",
+    "bits": 1061237926,
+    "csharp_bits": 1061237926
+  },
+  {
+    "key": "0.7660444",
+    "token": "0.7660444f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F78 (table[410])",
+    "bits": 1061428092,
+    "csharp_bits": 1061428092
+  },
+  {
+    "key": "0.7771460",
+    "token": "0.7771460f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F7C (table[411])",
+    "bits": 1061614346,
+    "csharp_bits": 1061614346
+  },
+  {
+    "key": "0.7880108",
+    "token": "0.7880108f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F80 (table[412])",
+    "bits": 1061796627,
+    "csharp_bits": 1061796627
+  },
+  {
+    "key": "0.7986355",
+    "token": "0.7986355f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 443,
+    "address": "libopencv_imgproc.so VA 0x000E7F84 (table[413])",
+    "bits": 1061974880,
+    "csharp_bits": 1061974880
+  },
+  {
+    "key": "0.8090170",
+    "token": "0.8090170f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F88 (table[414])",
+    "bits": 1062149053,
+    "csharp_bits": 1062149053
+  },
+  {
+    "key": "0.8191520",
+    "token": "0.8191520f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F8C (table[415])",
+    "bits": 1062319090,
+    "csharp_bits": 1062319090
+  },
+  {
+    "key": "0.8290376",
+    "token": "0.8290376f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F90 (table[416])",
+    "bits": 1062484943,
+    "csharp_bits": 1062484943
+  },
+  {
+    "key": "0.8386706",
+    "token": "0.8386706f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F94 (table[417])",
+    "bits": 1062646558,
+    "csharp_bits": 1062646558
+  },
+  {
+    "key": "0.8480481",
+    "token": "0.8480481f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F98 (table[418])",
+    "bits": 1062803886,
+    "csharp_bits": 1062803886
+  },
+  {
+    "key": "0.8571673",
+    "token": "0.8571673f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 444,
+    "address": "libopencv_imgproc.so VA 0x000E7F9C (table[419])",
+    "bits": 1062956881,
+    "csharp_bits": 1062956881
+  },
+  {
+    "key": "0.8660254",
+    "token": "0.8660254f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FA0 (table[420])",
+    "bits": 1063105495,
+    "csharp_bits": 1063105495
+  },
+  {
+    "key": "0.8746197",
+    "token": "0.8746197f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FA4 (table[421])",
+    "bits": 1063249684,
+    "csharp_bits": 1063249684
+  },
+  {
+    "key": "0.8829476",
+    "token": "0.8829476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FA8 (table[422])",
+    "bits": 1063389403,
+    "csharp_bits": 1063389403
+  },
+  {
+    "key": "0.8910065",
+    "token": "0.8910065f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FAC (table[423])",
+    "bits": 1063524609,
+    "csharp_bits": 1063524609
+  },
+  {
+    "key": "0.8987940",
+    "token": "0.8987940f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FB0 (table[424])",
+    "bits": 1063655261,
+    "csharp_bits": 1063655261
+  },
+  {
+    "key": "0.9063078",
+    "token": "0.9063078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 445,
+    "address": "libopencv_imgproc.so VA 0x000E7FB4 (table[425])",
+    "bits": 1063781322,
+    "csharp_bits": 1063781322
+  },
+  {
+    "key": "0.9135455",
+    "token": "0.9135455f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FB8 (table[426])",
+    "bits": 1063902750,
+    "csharp_bits": 1063902750
+  },
+  {
+    "key": "0.9205049",
+    "token": "0.9205049f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FBC (table[427])",
+    "bits": 1064019510,
+    "csharp_bits": 1064019510
+  },
+  {
+    "key": "0.9271839",
+    "token": "0.9271839f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FC0 (table[428])",
+    "bits": 1064131565,
+    "csharp_bits": 1064131565
+  },
+  {
+    "key": "0.9335804",
+    "token": "0.9335804f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FC4 (table[429])",
+    "bits": 1064238880,
+    "csharp_bits": 1064238880
+  },
+  {
+    "key": "0.9396926",
+    "token": "0.9396926f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FC8 (table[430])",
+    "bits": 1064341426,
+    "csharp_bits": 1064341426
+  },
+  {
+    "key": "0.9455186",
+    "token": "0.9455186f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 446,
+    "address": "libopencv_imgproc.so VA 0x000E7FCC (table[431])",
+    "bits": 1064439170,
+    "csharp_bits": 1064439170
+  },
+  {
+    "key": "0.9510565",
+    "token": "0.9510565f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FD0 (table[432])",
+    "bits": 1064532080,
+    "csharp_bits": 1064532080
+  },
+  {
+    "key": "0.9563048",
+    "token": "0.9563048f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FD4 (table[433])",
+    "bits": 1064620132,
+    "csharp_bits": 1064620132
+  },
+  {
+    "key": "0.9612617",
+    "token": "0.9612617f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FD8 (table[434])",
+    "bits": 1064703295,
+    "csharp_bits": 1064703295
+  },
+  {
+    "key": "0.9659258",
+    "token": "0.9659258f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FDC (table[435])",
+    "bits": 1064781546,
+    "csharp_bits": 1064781546
+  },
+  {
+    "key": "0.9702957",
+    "token": "0.9702957f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FE0 (table[436])",
+    "bits": 1064854861,
+    "csharp_bits": 1064854861
+  },
+  {
+    "key": "0.9743701",
+    "token": "0.9743701f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 447,
+    "address": "libopencv_imgproc.so VA 0x000E7FE4 (table[437])",
+    "bits": 1064923218,
+    "csharp_bits": 1064923218
+  },
+  {
+    "key": "0.9781476",
+    "token": "0.9781476f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FE8 (table[438])",
+    "bits": 1064986594,
+    "csharp_bits": 1064986594
+  },
+  {
+    "key": "0.9816272",
+    "token": "0.9816272f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FEC (table[439])",
+    "bits": 1065044972,
+    "csharp_bits": 1065044972
+  },
+  {
+    "key": "0.9848078",
+    "token": "0.9848078f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FF0 (table[440])",
+    "bits": 1065098333,
+    "csharp_bits": 1065098333
+  },
+  {
+    "key": "0.9876883",
+    "token": "0.9876883f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FF4 (table[441])",
+    "bits": 1065146660,
+    "csharp_bits": 1065146660
+  },
+  {
+    "key": "0.9902681",
+    "token": "0.9902681f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FF8 (table[442])",
+    "bits": 1065189942,
+    "csharp_bits": 1065189942
+  },
+  {
+    "key": "0.9925462",
+    "token": "0.9925462f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 448,
+    "address": "libopencv_imgproc.so VA 0x000E7FFC (table[443])",
+    "bits": 1065228162,
+    "csharp_bits": 1065228162
+  },
+  {
+    "key": "0.9945219",
+    "token": "0.9945219f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E8000 (table[444])",
+    "bits": 1065261309,
+    "csharp_bits": 1065261309
+  },
+  {
+    "key": "0.9961947",
+    "token": "0.9961947f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E8004 (table[445])",
+    "bits": 1065289374,
+    "csharp_bits": 1065289374
+  },
+  {
+    "key": "0.9975641",
+    "token": "0.9975641f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E8008 (table[446])",
+    "bits": 1065312348,
+    "csharp_bits": 1065312348
+  },
+  {
+    "key": "0.9986295",
+    "token": "0.9986295f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E800C (table[447])",
+    "bits": 1065330223,
+    "csharp_bits": 1065330223
+  },
+  {
+    "key": "0.9993908",
+    "token": "0.9993908f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E8010 (table[448])",
+    "bits": 1065342995,
+    "csharp_bits": 1065342995
+  },
+  {
+    "key": "0.9998477",
+    "token": "0.9998477f",
+    "path": "Cozmo.Robot/Animation/OpenCv310.cs",
+    "line": 449,
+    "address": "libopencv_imgproc.so VA 0x000E8014 (table[449])",
+    "bits": 1065350661,
+    "csharp_bits": 1065350661
+  },
+  {
+    "key": "9.169666",
+    "token": "9.169666f",
+    "path": "Cozmo.Robot/Animation/ProceduralFace.cs",
+    "line": 354,
+    "address": "anim_singlepose_01.bin offset 0xF0",
+    "bits": 1091745524,
+    "csharp_bits": 1091745524
+  },
+  {
+    "key": "1.214333",
+    "token": "1.214333f",
+    "path": "Cozmo.Robot/Animation/ProceduralFace.cs",
+    "line": 354,
+    "address": "anim_singlepose_01.bin offset 0xF8",
+    "bits": 1067151171,
+    "csharp_bits": 1067151172
+  },
+  {
+    "key": "10.206374",
+    "token": "-10.206374f",
+    "path": "Cozmo.Robot/Animation/ProceduralFace.cs",
+    "line": 360,
+    "address": "anim_singlepose_01.bin offset 0xA0",
+    "bits": 3240316239,
+    "csharp_bits": 3240316239
+  },
+  {
+    "key": "1.222037",
+    "token": "1.222037f",
+    "path": "Cozmo.Robot/Animation/ProceduralFace.cs",
+    "line": 360,
+    "address": "anim_singlepose_01.bin offset 0xA8",
+    "bits": 1067215797,
+    "csharp_bits": 1067215797
+  }
+]

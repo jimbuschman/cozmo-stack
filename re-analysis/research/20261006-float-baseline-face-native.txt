@@ -1,0 +1,52 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x583790 0x583808 _ZN4Anki5Cozmo14ProceduralFace17SetEyeArrayHelperENS1_8WhichEyeERKNSt6__ndk16vectorIfNS3_9allocatorIfEEEE
+00583790: push.w     {r4, r5, r6, r7, r8, sb, sl, lr} ;
+00583794: sub        sp, #0x18 ;
+00583796: mov        r5, r2 ;
+00583798: mov        sb, r0 ;
+0058379A: ldrd       r0, r2, [r5] ;
+0058379E: mov        r8, r1 ;
+005837A0: subs       r1, r2, r0 ;
+005837A2: cmp        r1, #0x4c ;
+005837A4: bne        #0x5837e2 ;
+005837A6: cmp        r2, r0 ;
+005837A8: beq        #0x58382e ;
+005837AA: movs       r1, #0x4c ;
+005837AC: movs       r4, #0 ;
+005837AE: mla        sl, r8, r1, sb ;
+005837B2: movs       r6, #0 ;
+005837B4: ldr        r3, [r0, r4] ;
+005837B6: uxtb       r7, r6 ;
+005837B8: mov        r0, sb ;
+005837BA: mov        r1, r8 ;
+005837BC: mov        r2, r7 ;
+005837BE: blx        #0x4ae338 ; GOT 010438F4 _ZNK4Anki5Cozmo14ProceduralFace4ClipENS1_8WhichEyeENS0_22ProceduralEyeParameterEf
+005837C2: str.w      r0, [sl, r7, lsl #2] ;
+005837C6: adds       r4, #4 ;
+005837C8: adds       r6, #1 ;
+005837CA: ldrd       r0, r1, [r5] ;
+005837CE: subs       r1, r1, r0 ;
+005837D0: asrs       r2, r1, #2 ;
+005837D2: cmp        r2, #0x13 ;
+005837D4: mov.w      r2, #0x13 ;
+005837D8: it         lo ;
+005837DA: asrlo      r2, r1, #2 ;
+005837DC: cmp        r6, r2 ;
+005837DE: blo        #0x5837b4 ;
+005837E0: b          #0x58382e ;
+005837E2: ldr        r0, [pc, #0x78] ; literal[0058385C]=0066BF2E
+005837E4: movs       r2, #0 ;
+005837E6: ldr        r3, [pc, #0x78] ; literal[00583860]=0066BF30
+005837E8: add        r0, pc ;
+005837EA: strd       r2, r2, [sp, #0xc] ;
+005837EE: add        r3, pc ;
+005837F0: str        r2, [sp, #0x14] ;
+005837F2: movs       r2, #0x13 ;
+005837F4: asrs       r1, r1, #2 ;
+005837F6: strd       r1, r2, [sp] ;
+005837FA: cmp.w      r8, #0 ;
+005837FE: it         eq ;
+00583800: moveq      r3, r0 ;
+00583802: adr        r0, #0x60 ;
+00583804: add        r1, sp, #0xc ;
+00583806: adr        r2, #0x8c ;
