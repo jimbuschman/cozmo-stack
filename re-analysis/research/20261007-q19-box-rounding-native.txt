@@ -1,0 +1,73 @@
+libopencv_imgproc.so SHA256 3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830
+RANGE 0x7a284 0x7a320 exclusive Thumb
+0007A284: push         {r4, lr}
+0007A286: ldr          r4, [pc, #0x88] ; word[0007A310]=0011C2CC
+0007A288: vpush        {d8, d9}
+0007A28C: add          r4, pc
+0007A28E: vmov         d8, r0, r1
+0007A292: vmov         d9, r2, r3
+0007A296: ldrb         r3, [r4]
+0007A298: dmb          sy
+0007A29C: lsls         r2, r3, #0x1f
+0007A29E: bmi          #0x7a2ba
+0007A2A0: mov          r0, r4
+0007A2A2: blx          #0x17470
+0007A2A6: cbz          r0, #0x7a2ba
+0007A2A8: ldr          r3, [pc, #0x68] ; word[0007A314]=0011C294
+0007A2AA: vmov.i32     q8, #0x80000000
+0007A2AE: mov          r0, r4
+0007A2B0: add          r3, pc
+0007A2B2: vst1.64      {d16, d17}, [r3:0x40]
+0007A2B6: blx          #0x1747c
+0007A2BA: ldr          r4, [pc, #0x5c] ; word[0007A318]=0011C298
+0007A2BC: add          r4, pc
+0007A2BE: ldrb         r3, [r4]
+0007A2C0: dmb          sy
+0007A2C4: lsls         r3, r3, #0x1f
+0007A2C6: bmi          #0x7a2e2
+0007A2C8: mov          r0, r4
+0007A2CA: blx          #0x17470
+0007A2CE: cbz          r0, #0x7a2e2
+0007A2D0: ldr          r3, [pc, #0x48] ; word[0007A31C]=0011C25C
+0007A2D2: vmov.f32     q8, #5.000000e-01
+0007A2D6: mov          r0, r4
+0007A2D8: add          r3, pc
+0007A2DA: vst1.64      {d16, d17}, [r3:0x40]
+0007A2DE: blx          #0x1747c
+0007A2E2: ldr          r3, [pc, #0x3c] ; word[0007A320]=0011C250
+0007A2E4: add          r3, pc
+0007A2E6: vld1.64      {d18, d19}, [r3:0x40]
+0007A2EA: ldr          r3, [pc, #0x38] ; word[0007A324]=0011C258
+0007A2EC: add          r3, pc
+0007A2EE: vld1.64      {d16, d17}, [r3:0x40]
+0007A2F2: vand         q8, q8, q4
+0007A2F6: vorr         q8, q9, q8
+0007A2FA: vadd.f32     q4, q4, q8
+0007A2FE: vcvt.s32.f32 q8, q4
+0007A302: vpop         {d8, d9}
+0007A306: vmov         r0, r1, d16
+0007A30A: vmov         r2, r3, d17
+0007A30E: pop          {r4, pc}
+0007A310: stm          r2!, {r2, r3, r6, r7}
+0007A312: movs         r1, r2
+0007A314: stm          r2!, {r2, r4, r7}
+0007A316: movs         r1, r2
+0007A318: stm          r2!, {r3, r4, r7}
+0007A31A: movs         r1, r2
+0007A31C: stm          r2!, {r2, r3, r4, r6}
+0007A31E: movs         r1, r2
+RANGE 0xa2580 0xa25a4 exclusive Thumb
+000A2580: add.w        r3, r0, #0x8000
+000A2584: cmp.w        r3, #0x10000
+000A2588: bhs          #0xa258e
+000A258A: uxth         r0, r0
+000A258C: b            #0xa259a
+000A258E: cmp          r0, #0
+000A2590: movw         r0, #0x7fff
+000A2594: it           le
+000A2596: movle.w      r0, #0x8000
+000A259A: sxth         r0, r0
+000A259C: bx           lr
+000A259E: movs         r3, #0
+000A25A0: str          r3, [r0, #0x18]
+000A25A2: bx           lr

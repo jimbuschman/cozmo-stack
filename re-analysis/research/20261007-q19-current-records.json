@@ -1,0 +1,158 @@
+[
+  {
+    "id": "M11-003",
+    "subsystem": "M11-vision",
+    "title": "Camera pose on the robot, cube size, marker size, face poses and codes",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/CubeGeometry.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "_kDefaultHeadCamRotation is a RotationMatrix3d in .bss at 0x01059CF8, initialised by the static ctor 0x004D6DA4..0x004D6DB6 from the 9 floats at 0x00C4A854 = [0,-0.0698,0.9976,-1,0,0,0,-0.9976,-0.0698]; read in Robot::Robot at 0x0050FFAE/0x0050FFB0",
+      "GetCameraPose 0x00510FFC: copy [this+0x2d8], negate the angle 0x00511016, RotationVector3d(Radians, Y_AXIS_3D()) 0x00511020..0x0051102A, RotateBy 0x00511036",
+      "Block::LookupBlockInfo 0x004E4C8C: four entries, keys 1..4 LIGHTCUBE1/2/3/GHOST, ORANGE/YELLOW/RED/WHITE, each (44,44,44) (0x004E4CD6/0x004E4D8E/0x004E4E46/0x004E4EFA movt #0x4230)",
+      "marker size 25.0 in every BlockFaceDef_t at +8 (tables 0xC45C40/0xC45CA0/0xC45D00/0xC45D60); KnownMarker stores it at +0x10 and Get3dCorners scales by it (0x0087E26E..0x0087E332)",
+      "KnownMarker::_canonicalCorners3d is a Quadrilateral<3,float> in .bss at 0x0105E0F0, initialised by the static ctor 0x004DD7D8..0x004DD81A with the ctor arguments in the order (-0.5,0,+0.5),(-0.5,0,-0.5),(+0.5,0,+0.5),(+0.5,0,-0.5) (0x4DD7F4/0x4DD7EC/0x4DD7FC/0x4DD810, point addrs 0x4DD802/0x4DD7F0/0x4DD80E/0x4DD80C); the Quadrilateral<3,float> ctor 0x4E9636 stores argument i at corner i (0x4E964C..0x4E968E), so memory corner 0 is (-0.5,0,+0.5) and corner 1 is (-0.5,0,-0.5); Get3dCorners 0x87E2E8 copies them in memory order and scales x by size.x and z by size.y (0x87E312/0x87E326); Extract 0x8A0130..0x8A018A pairs canonical corner i with detected corner cornerReorder[label][i] (table 0xDC73AC, 16 bytes/label; orientationDeg 0xDC7D0C)",
+      "Block::AddFace 0x004E53BC: tbb 0x004E5438, six cases (0x004E5442 face0 -pi/2, 0x004E557C face1 +pi, 0x004E54EA face2 +pi/2, 0x004E5534 face3 0, 0x004E5490 face4 2pi/3, 0x004E55D6 face5 2pi/3); translations +-22; the size getter is Block+0x88 (vtable +0x18 = 0x004E382C)",
+      "face-to-code map: LIGHTCUBE1 6,7,4,8,9,5; LIGHTCUBE2 12,13,10,14,15,11; LIGHTCUBE3 18,19,16,20,21,17; GHOST all 39"
+    ],
+    "live_path": true,
+    "test": "VisionTests",
+    "hardware_required": false,
+    "effect": "cube and marker geometry is wrong, so every marker pose is wrong",
+    "provenance": "the stack's CubeGeometry.cs is to be compared against the values above",
+    "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): Block::AddFace's constants are binary32 bit patterns (0xBFC90FDB, 0x3FC90FDB, 0x40490FDB, 0x40060A92, axis 0x3F13CD3A; 0x004E5442..0x004E55DC). Still open: Pose3d, CameraModel and OccluderList are double stack-wide; the face poses are built in double from binary32 values, so the engine's float rotations are not bit-reproduced."
+  },
+  {
+    "subsystem": "M11-vision",
+    "title": "The sub-pixel corner refinement",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/CornerRefinement.cs",
+    "effect": "a refined corner lands in a different place than the engine would put it, so the marker pose does too",
+    "provenance": "the stack's CornerRefinement uses a different solver (EQUIVALENT); SD1 requires the engine's exactly",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "RefineCorners 0x0089FD98: ComputeBrightDarkValues 0x0089FE00 (validity 2 on failure), threshold (u8)((Bright+Dark)*0.5) 0x0089FE56..0x0089FE66, RefineQuadrilateral 0x0089FEA6 (blx 0x4D169C, body 0x008C55E0), re-check 0x0089FFCA, restore 0x0089FFD0..0x0089FFEA",
+      "sample generation 0x008C5E80..0x008C61E0: ceil(n*0.125) per block x 8, projection through the homography, the bilinear read at (floor,ceil) with weights (1-fracY)*[(1-fracX)*p00+fracX*p01] + fracY*[(1-fracX)*p10+fracX*p11] (0x008C6062..0x008C610A), residual (value-(bright+dark)/2)/255 (0x008C6112/0x008C6116)",
+      "the 8-vector 0x008C5CE6..0x008C5D86: Tx*x, Tx*y, Tx, Ty*x, Ty*y, Ty, -(Tx*x*x+Ty*x*y), -(Tx*x*y+Ty*y*y)",
+      "A = J'J upper triangle 0x008C611E..0x008C6188; MakeSymmetric(A,false) 0x008C61E0 (body 0x0088DDC0); SolveLeastSquaresWithCholesky 0x008C61F4 (body 0x0088DE68): natural pivot order, pivot < FLT_EPSILON (1.1920929e-07 at 0x88E1B0) sets the bool& out-flag true and returns 0 (0x0088DF50..0x0088E138), otherwise 1/sqrt(pivot)",
+      "update U = [[s0+1,s1,s2],[s3,s4+1,s5],[s6,s7,1]] 0x008C620A..0x008C6268, Invert3x3 0x008C6290, H = H*inv(U) 0x008C629A; H22 renormalisation when |H22-1| >= 1e-5 (0x008C62AA..0x008C634A)",
+      "stopping test 0x008C636C..0x008C6388 and helper 0x008C66C4; contrast gate 0x0089F8E8 and 0x0089FD10..0x0089FD30 (ratio 1.01 at 0x0087538E)",
+      "the caller treats the Cholesky out-flag != 0 as the accept path: 0x008C6418 cmp r0,#1"
+    ],
+    "status": "EXACT_SOURCE",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "VisionTests",
+    "id": "M11-005"
+  },
+  {
+    "subsystem": "M11-vision",
+    "title": "The clustering tolerances and the flat-snap angle",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+    "status": "IMPLEMENTATION_GAP",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "ObservableObjectLibrary::CreateObjectsFromMarkers 0x0062539C calls ClusterObjectPoses(poses, object, distThreshold, angleThreshold, clusters) with 5.0 mm (0x40A00000 built at 0x006254F4) and 0.0872665 rad, 5 degrees (0x3DB2B8C3 at 0x00625498, through the Radians constructor at 0x006254E0)",
+      "ObjectPoseConfirmer::UpdatePoseInInstance calls ObservableObject::ClampPoseToFlat(pose, Radians(0.349066)) - 20 degrees, 0x3EB2B8C2 at 0x00505F16 - which is the path every observation of an object already in the world takes",
+      "on the creation path CreateObjectsFromMarkers asks the object itself for the angle in degrees and multiplies by 0.0174533 (0x00625566) before the same call",
+      "ClampPoseToFlat 0x00877330 itself is the shape this stack already had: the rotated parent Z axis, acos of the magnitude of its largest component, compared with the angle",
+      "CreateObjectsFromMarkers also passes 0.1 to ObservableObject::SetMarkerAsObserved (0x0062559C)"
+    ],
+    "prior": "20 mm and 10 degrees for the clustering and 8 degrees for the flat snap, all chosen here",
+    "live_path": true,
+    "test": "VisionTests.TheClusteringAndFlatSnapTolerancesAreTheEngines",
+    "id": "M11-006",
+    "hardware_required": false,
+    "effect": "objects are clustered or snapped at the wrong tolerance",
+    "provenance": "the stack BlockWorld.cs tolerances are to be compared against the instructions above",
+    "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): cluster angle 0x3DB2B8C3 and flat clamp 0x3EB2B8C2 (0x00625498..0x006254E0, 0x00505F10..0x00505F22). Still open: the shared double Pose3d width."
+  },
+  {
+    "id": "M13-023",
+    "subsystem": "M13-navigation",
+    "title": "The remaining unread pieces of the footprint path (corner-list writers, cv::Rodrigues, SortCornersClockwise ties, the bionic libm)",
+    "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs",
+    "effect": "a non-cube candidate is misjudged as on top of or under another object",
+    "provenance": "not read",
+    "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md): cv::minAreaRect is now read (M13-024) and the bounding-quad overrides for every class are resolved (M13-025). Still unread: (a) the writers of the MatPiece/FlatMat corner vector at sub-object +0x7C (getter 0x00502DD8) and of the CustomObject corner vector at +0x64 (getter 0x004EF78A); (b) cv::Rodrigues in libopencv_calib3d.so, used through RotationMatrixBase<3>::RenormalizeHelper 0x008499B0 by Rotation3d::GetRotationMatrix 0x0084AAE0, on which the numeric result of the BASE Vision::ObservableObject::GetBoundingQuadXY (0x0087713A) depends; (c) the tie behaviour of Quadrilateral::SortCornersClockwise 0x004E7EFC for equal atan2 angles (a degenerate footprint) and the body of Rectangle<float>::InitFromPointContainer (the minAreaRect failure fallback); (d) Robot::GetCameraPose(float) and the Robot members at +0x2CC and +0x258; (e) equivalence of the Android bionic libm sin, cos, atan2 and atan2f (system library that does not ship in the APK) with the host's: a policy question, not source-recoverable",
+    "evidence": [
+      "0x00502DD8, 0x004EF78A the corner getters; 0x0084AAE0, 0x008494E0, 0x008499B0 the rotation-matrix path; 0x004E7EFC SortCornersClockwise; 0x004E6778 InitFromPointContainer",
+      "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'"
+    ],
+    "status": "RECOVERABLE_GAP",
+    "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "M13RVisBuildTests.M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses; M13RVisBuildTests.M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow; M13RVisBuildTests.M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck"
+  },
+  {
+    "id": "M11-032",
+    "subsystem": "M11-vision",
+    "title": "The live component extractor is the ecvcs integral-image variant",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/QuadDetector.cs",
+    "effect": "the connected components (and hence the quads) are found by the wrong algorithm",
+    "provenance": "the stack's QuadDetector implements the binomial path; the shipped selector byte is 1, so the live extractor is ExtractComponentsViaCharacteristicScale 0x0088F8BC (ecvcs_computeBinaryImage_numFilters3/_5, ScrollingIntegralImage_u8_s32::FilterRow)",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "selector byte 1 (0x008752FC/0x00875304) -> ExtractComponentsViaCharacteristicScale 0x0088F8BC; window bank {4,8,16} 0x00898B5A..0x00898B9E",
+      "ScrollingIntegralImage_u8_s32 ctor 0x008A4D34; FilterRow 0x0088F538; ecvcs_filterRows 0x0088F4D0; ScrollDown 0x008A4DB0; get_maxRow 0x008A51E0",
+      "numFilters3 0x0088F61A: a = |f1-f0| > |f2-f1| ? f1 : f2; mask = ((a * params+0x0c) >> 16) > pixel; the multiplier 0xCCCC is live at 0x00898BAA -> 0x0088F662 mul / 0x0088F66A asrs #0x10",
+      "the per-row DP Extract2dComponents_PerRow_* 0x00893BAA thunk; Extract1dComponents 0x00896FDC; NextRow 0x00893F96"
+    ],
+    "status": "EXACT_SOURCE",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "VisionTests"
+  },
+  {
+    "id": "M11-047",
+    "subsystem": "M11-vision",
+    "title": "The quad tree's border walk (FindBorders, AddBorderWaypoint, FillBorder)",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
+    "effect": "type-10 edge cells are placed in a different order or at different nodes",
+    "provenance": "the walk order depends on heap addresses; the border definition (neighbour and direction) and AddBorderWaypoint 0x0068ADAA are not fully read",
+    "authority": "libcozmoEngine.so 3.4.0-1204: the border cache key is type<<32|flags, a new entry is dirty (flag byte 1); any node type change or destruction marks every entry dirty; the waypoint is {from, to, dir}, from a type-9 node with a flagged neighbour, walked by a wall-follower; FillBorder inserts a one-point polygon at each de-duplicated from-node centre straight into QuadTreeNode::Insert (0x0068A206; no NaN gate, no Expand), so a level-0 seed becomes one type-10 cell and a merged block four type-10 cells around its centre. FindBorders iterates an unordered_set of node pointers, so the exact waypoint order depends on heap addresses and is not read; kDebugFindBorders (0x00C88160) is unreferenced (the pc-relative pairs at 0x00689AB8, 0x0068ABAC, 0x0068B1EE resolve to 0x00C88161, the empty piecewise_construct_t)",
+    "evidence": [
+      "0x00689AB8, 0x0068ABAC, 0x0068B1EE, 0x0068A206, 0x00689ACC, 0x0068B1F4",
+      "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md rows 4.x; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (4.1, 4.2, 4.5 PASS; 4.7 corrected)"
+    ],
+    "status": "RECOVERABLE_GAP",
+    "unresolved": "read the border-walk order (4.3, 4.4), the neighbour definition and AddBorderWaypoint 0x0068ADAA; decide with the operator whether an address-dependent order must be reproduced or only the resulting border set.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "VisionTests"
+  },
+  {
+    "id": "M11-048",
+    "subsystem": "M11-vision",
+    "title": "Unread quad-tree, OpenCV-numeric and vision-handler bodies",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs",
+    "effect": "the map, the edge detector or the result handlers differ from the engine in cases the read rows do not cover",
+    "provenance": "not read",
+    "authority": "libcozmoEngine.so 3.4.0-1204 and the shipped OpenCV 3.1.0: QuadTree::ShiftRoot branch table, SwapChildrenAndContent 0x00687601, DestroyNodes; LineSegment::IntersectsWith (PLT 0x004BD080); AddSmallestDescendants 0x00688105 and ...DepthFirst 0x00688251 and the CheckedInfo bit indexing; the 3-vector behind AIWhiteboard +0x50's running maximum (0x0067FDE8..0x0067FE38); the uses of the constants 3.0 and 6.0 next to the 6.00001 literal; callers of MemoryMap::TransformContent(fn); OpenCV 3.1.0 filter2D 8U->16S (libopencv_imgproc.so 0x0005705D) and fillConvexPoly (0x00042F59, 0x00042C99), Mat::convertTo 0x000407E9, Mat::setTo 0x0004486D, transpose 0x0008ED6D (libopencv_core.so); kmLine2WithLineIntersection (PLT 0x004D3220); the UpdateAllResults loop head 0x006542EC..0x00654486 and the handler bodies UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795, UpdateOverheadMap 0x00655909; the shipped PerformanceLogging.DropStatsWindowLength_sec value",
+    "evidence": [
+      "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'"
+    ],
+    "status": "RECOVERABLE_GAP",
+    "unresolved": "read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu).",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "VisionTests"
+  },
+  {
+    "id": "M11-054",
+    "subsystem": "M11-vision",
+    "title": "The head camera's translation on the robot: RobotHeadCam at (17.52, 0, -8.0) under the neck (-13, 0, 49)",
+    "location": "cozmo-stack/src/Cozmo.Robot/Vision/CameraModel.cs",
+    "effect": "camera geometry for marker pose estimation and head-angle computation",
+    "provenance": "libcozmoEngine.so",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "Robot::Robot 0x0050FF7C..0x0050FFBA builds RobotHeadCam: x = movw/movt 0x418C28F6 (17.52) at 0x0050FF7C, z = `mov.w r1,#0xC1000000` (-8.0) at 0x0050FF8A stored at 0x0050FF8E, passed as r2 = sp+0x48 at 0x0050FFB2 to the Pose3d constructor (PLT 0x4A6C40) with the neck pose at robot+0x2CC as parent; the neck is x = 0xC1500000 (-13.0), z = 0x42440000 (49.0) at 0x0050FF36 and 0x0050FF40 (a Unicorn run of 0x0050FF7C..0x0050FFBA confirmed (17.52, 0, -8.0))"
+    ],
+    "status": "IMPLEMENTATION_GAP",
+    "unresolved": "R-FIX2 (2026-10-04): found by the verifier of the floor-placement batch: HeadGeometry.HeadCamPositionMm in CameraModel.cs is (17.52, 0, 17.52), the engine's z is -8.0. The engine's value is used only inside TurnTowardsPose.ComputeHeadAngleToSeePose (HeadGeometry.EngineHeadCamPositionMm). Applying it to the vision model moves the camera 25.52 mm lower and three tests that estimate marker poses (CORE005_TheChargerDockingSignalUsesTheMarkersRealShape, NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected, DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget) then miss by 10-19 mm, because PoseEstimation.cs is a local stand-in for cv::solvePnP (homography init plus Levenberg-Marquardt) that is ill-conditioned for a small near-frontal planar marker. Needs the exact solvePnP and corner pipeline (M11 extraction) before the constant can change; no capture or acceptance bundle contains marker or cube poses, so hardware cannot discriminate 17.52 from -8.0 (the engine binary wins). Not built.",
+    "hardware_required": false,
+    "live_path": true,
+    "test": "R2FloorPlacementTests.M13_021_ComputeHeadAngleToSeePoseHasTheEnginesResults"
+  }
+]

@@ -1,0 +1,86 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+RANGE 0x23b68 0x23c10 exclusive Thumb
+00023B68: push         {r4, lr}
+00023B6A: ldr          r4, [pc, #0x50] ; word[00023BBC]=000D1764
+00023B6C: vpush        {d8, d9}
+00023B70: add          r4, pc
+00023B72: vmov         d8, r0, r1
+00023B76: vmov         d9, r2, r3
+00023B7A: ldrb         r3, [r4]
+00023B7C: dmb          sy
+00023B80: lsls         r3, r3, #0x1f
+00023B82: bmi          #0x23b9e
+00023B84: mov          r0, r4
+00023B86: blx          #0x1f9c0
+00023B8A: cbz          r0, #0x23b9e
+00023B8C: ldr          r3, [pc, #0x30] ; word[00023BC0]=000D1728
+00023B8E: vmov.f32     q8, #5.000000e-01
+00023B92: mov          r0, r4
+00023B94: add          r3, pc
+00023B96: vst1.64      {d16, d17}, [r3:0x40]
+00023B9A: blx          #0x1f9cc
+00023B9E: ldr          r3, [pc, #0x24] ; word[00023BC4]=000D171C
+00023BA0: add          r3, pc
+00023BA2: vld1.64      {d16, d17}, [r3:0x40]
+00023BA6: vadd.f32     q4, q4, q8
+00023BAA: vcvt.u32.f32 q8, q4
+00023BAE: vpop         {d8, d9}
+00023BB2: vmov         r0, r1, d16
+00023BB6: vmov         r2, r3, d17
+00023BBA: pop          {r4, pc}
+00023BBC: asrs         r4, r4, #0x1d
+00023BBE: movs         r5, r1
+00023BC0: asrs         r0, r5, #0x1c
+00023BC2: movs         r5, r1
+00023BC4: asrs         r4, r3, #0x1c
+00023BC6: movs         r5, r1
+00023BC8: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00023BCC: mov          fp, r2
+00023BCE: vpush        {d8, d9, d10, d11, d12, d13, d14, d15}
+00023BD2: bic          r3, r3, #1
+00023BD6: mov          r8, r0
+00023BD8: sub          sp, #0x44
+00023BDA: ldr          r2, [sp, #0xb8]
+00023BDC: ldr.w        sl, [sp, #0xb0]
+00023BE0: str          r3, [sp, #0x28]
+00023BE2: vldr         d9, [r2, #0x10]
+00023BE6: cmp.w        sl, #0
+00023BEA: ldr          r3, [sp, #0xac]
+00023BEC: lsr.w        r5, sl, #3
+00023BF0: vldr         d8, [r2]
+00023BF4: bic          r3, r3, #1
+00023BF8: str          r3, [sp, #0x2c]
+00023BFA: lsl.w        r5, r5, #4
+00023BFE: ldr          r3, [sp, #0xb4]
+00023C00: it           lt
+00023C02: movlt        r5, #0
+00023C04: vldr         d16, [r2, #8]
+00023C08: bic          r2, r1, #1
+00023C0C: str          r2, [sp, #0x24]
+00023C0E: str          r3, [sp, #0x20]
+RANGE 0x38c60 0x38ca0 exclusive Thumb
+00038C60: vcvtr.s32.f32 s0, s0
+00038C64: vmov         r0, s0
+00038C68: cmp          r0, #0xff
+00038C6A: bhi          #0x38c70
+00038C6C: uxtb         r0, r0
+00038C6E: bx           lr
+00038C70: cmp          r0, #0
+00038C72: ite          gt
+00038C74: movgt        r0, #0xff
+00038C76: movle        r0, #0
+00038C78: bx           lr
+00038C7A: add.w        r3, r0, #0x80
+00038C7E: cmp          r3, #0xff
+00038C80: bhi          #0x38c86
+00038C82: uxtb         r0, r0
+00038C84: b            #0x38c8e
+00038C86: cmp          r0, #0
+00038C88: ite          gt
+00038C8A: movgt        r0, #0x7f
+00038C8C: movle        r0, #0x80
+00038C8E: sxtb         r0, r0
+00038C90: bx           lr
+00038C92: vcvtr.s32.f32 s0, s0
+00038C96: vmov         r0, s0
+00038C9A: b.w          #0x38c7a

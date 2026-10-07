@@ -1,0 +1,721 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+RANGE 0x4486c 0x44c00 exclusive Thumb _ZN2cv3Mat5setToERKNS_11_InputArrayES3_
+0004486C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00044870: subw         sp, sp, #0x50c
+00044874: ldr          r4, [pc, #0x2b0] ; word[00044B28]=000B042C
+00044876: mov          r5, r0
+00044878: mov          r8, r1
+0004487A: mov          r7, r2
+0004487C: add          r4, pc
+0004487E: ldr          r4, [r4]
+00044880: ldr          r3, [r4]
+00044882: str.w        r3, [sp, #0x504]
+00044886: bl           #0x438da ; _ZNK2cv3Mat5emptyEv
+0004488A: str          r4, [sp, #0x34]
+0004488C: cmp          r0, #0
+0004488E: bne.w        #0x44a92
+00044892: add          r6, sp, #0x84
+00044894: add          r4, sp, #0xbc
+00044896: mov          r1, r8
+00044898: mov.w        r2, #-1
+0004489C: mov          r0, r6
+0004489E: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+000448A2: mov          r0, r4
+000448A4: mov          r1, r7
+000448A6: mov.w        r2, #-1
+000448AA: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+000448AE: mov          r0, r8
+000448B0: ldr          r7, [r5]
+000448B2: bl           #0x825b0 ; _ZNK2cv11_InputArray4kindEv
+000448B6: ldr          r3, [r6, #4]
+000448B8: cmp          r3, #2
+000448BA: ble          #0x448ca
+000448BC: add          r7, sp, #0x40
+000448BE: ldr          r1, [pc, #0x26c] ; word[00044B2C]=00093D84
+000448C0: mov          r0, r7
+000448C2: add          r1, pc
+000448C4: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+000448C8: b            #0x448d2
+000448CA: ldr          r1, [r6]
+000448CC: lsls         r3, r1, #0x11
+000448CE: bpl          #0x448bc
+000448D0: b            #0x44ac6
+000448D2: ldr          r2, [pc, #0x25c] ; word[00044B30]=000A0B04
+000448D4: movw         r3, #0x211
+000448D8: str          r3, [sp]
+000448DA: mvn          r0, #0xd6
+000448DE: ldr          r3, [pc, #0x254] ; word[00044B34]=00093B7D
+000448E0: add          r2, pc
+000448E2: mov          r1, r7
+000448E4: add.w        r2, r2, #0x138
+000448E8: add          r3, pc
+000448EA: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+000448EE: mov          r0, r7
+000448F0: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+000448F4: mov          r0, r4
+000448F6: bl           #0x438da ; _ZNK2cv3Mat5emptyEv
+000448FA: cbnz         r0, #0x4493e
+000448FC: ldr          r3, [r4]
+000448FE: ubfx         r3, r3, #0, #0xc
+00044902: cbnz         r3, #0x44910
+00044904: add.w        r0, r5, #0x28
+00044908: add          r1, sp, #0xe4
+0004490A: bl           #0x2418c ; _ZNK2cv7MatSizeeqERKS0_
+0004490E: cbnz         r0, #0x4493e
+00044910: add          r7, sp, #0x50
+00044912: ldr          r1, [pc, #0x224] ; word[00044B38]=00093D6D
+00044914: mov          r0, r7
+00044916: add          r1, pc
+00044918: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0004491C: ldr          r2, [pc, #0x21c] ; word[00044B3C]=000A0ABA
+0004491E: movw         r3, #0x212
+00044922: str          r3, [sp]
+00044924: mvn          r0, #0xd6
+00044928: ldr          r3, [pc, #0x214] ; word[00044B40]=00093B33
+0004492A: add          r2, pc
+0004492C: mov          r1, r7
+0004492E: add.w        r2, r2, #0x138
+00044932: add          r3, pc
+00044934: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+00044938: mov          r0, r7
+0004493A: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0004493E: mov          r0, r5
+00044940: add          r7, sp, #0x3c
+00044942: bl           #0x438c0 ; _ZNK2cv3Mat8elemSizeEv
+00044946: add.w        r8, sp, #0x58
+0004494A: str          r0, [r7]
+0004494C: bl           #0x438f0
+00044950: movs         r2, #0xc
+00044952: movs         r1, #0
+00044954: str          r0, [sp, #0x2c]
+00044956: mov          r0, r8
+00044958: blx          #0x1fa08
+0004495C: mov          r0, r4
+0004495E: str.w        r5, [r8]
+00044962: bl           #0x438da ; _ZNK2cv3Mat5emptyEv
+00044966: add          r2, sp, #0x48
+00044968: movs         r3, #0
+0004496A: mov          r1, r8
+0004496C: str          r3, [r2]
+0004496E: cmp          r0, #0
+00044970: str          r3, [r2, #4]
+00044972: mov.w        r3, #-1
+00044976: it           ne
+00044978: movne        r4, #0
+0004497A: str.w        r4, [r8, #4]
+0004497E: add          r4, sp, #0x64
+00044980: mov          r0, r4
+00044982: bl           #0x84d70 ; _ZN2cv15NAryMatIteratorC2EPPKNS_3MatEPPhi
+00044986: ldr          r3, [r4, #0x14]
+00044988: add.w        r8, sp, #0xf4
+0004498C: ldr          r4, [r7]
+0004498E: addw         r0, r4, #0x3ff
+00044992: str          r3, [sp, #0x14]
+00044994: mov          r1, r4
+00044996: blx          #0x1f9fc
+0004499A: ldr          r3, [sp, #0x14]
+0004499C: cmp          r3, r0
+0004499E: it           ge
+000449A0: movge        r3, r0
+000449A2: muls         r4, r3, r4
+000449A4: mov          r7, r3
+000449A6: add          r3, sp, #0xfc
+000449A8: str.w        r3, [r8]
+000449AC: mov.w        r3, #0x408
+000449B0: str.w        r3, [r8, #4]
+000449B4: adds         r4, #0x20
+000449B6: cmp          r4, r3
+000449B8: bls          #0x449ca
+000449BA: mov          r0, r8
+000449BC: bl           #0x29686
+000449C0: mov          r0, r4
+000449C2: blx          #0x1f9f0
+000449C6: str.w        r0, [r8]
+000449CA: str.w        r4, [r8, #4]
+000449CE: mov          r0, r6
+000449D0: ldr.w        r4, [r8]
+000449D4: ldr          r1, [r5]
+000449D6: adds         r4, #7
+000449D8: bic          r3, r4, #7
+000449DC: ubfx         r1, r1, #0, #0xc
+000449E0: str          r3, [sp, #0x18]
+000449E2: mov          r2, r3
+000449E4: mov          r3, r7
+000449E6: bl           #0x27220
+000449EA: add.w        sl, sp, #0x64
+000449EE: mov.w        sb, #0
+000449F2: add          r3, sp, #0x3c
+000449F4: str          r3, [sp, #0x28]
+000449F6: ldr.w        r3, [sl, #0x10]
+000449FA: cmp          sb, r3
+000449FC: bhs          #0x44a80
+000449FE: ldr.w        fp, [sp, #0x14]
+00044A02: add          r6, sp, #0x48
+00044A04: mov.w        r8, #0
+00044A08: rsbs         r3, r7, #0
+00044A0A: str          r3, [sp, #0x30]
+00044A0C: add          r3, sp, #0x50
+00044A0E: str          r3, [sp, #0x20]
+00044A10: ldr          r3, [sp, #0x14]
+00044A12: cmp          r8, r3
+00044A14: bge          #0x44a74
+00044A16: cmp          fp, r7
+00044A18: mov          r3, fp
+00044A1A: it           ge
+00044A1C: movge        r3, r7
+00044A1E: str          r3, [sp, #0x1c]
+00044A20: ldr          r3, [sp, #0x28]
+00044A22: ldr          r2, [sp, #0x1c]
+00044A24: ldr          r3, [r3]
+00044A26: muls         r3, r2, r3
+00044A28: ldm.w        r6, {r0, r2}
+00044A2C: str          r3, [sp, #0x24]
+00044A2E: cbz          r2, #0x44a5c
+00044A30: ldr          r3, [sp, #0x20]
+00044A32: ldr          r4, [sp, #0x2c]
+00044A34: mov          r1, r3
+00044A36: ldr          r3, [sp, #0x1c]
+00044A38: str          r3, [r1]
+00044A3A: movs         r3, #1
+00044A3C: str          r3, [r1, #4]
+00044A3E: movs         r1, #0
+00044A40: ldr          r3, [sp, #0x20]
+00044A42: str          r0, [sp]
+00044A44: str          r1, [sp, #4]
+00044A46: str          r3, [sp, #8]
+00044A48: ldr          r3, [sp, #0x28]
+00044A4A: ldr          r0, [sp, #0x18]
+00044A4C: str          r3, [sp, #0xc]
+00044A4E: mov          r3, r1
+00044A50: blx          r4
+00044A52: ldr          r3, [r6, #4]
+00044A54: ldr          r2, [sp, #0x1c]
+00044A56: add          r3, r2
+00044A58: str          r3, [r6, #4]
+00044A5A: b            #0x44a64
+00044A5C: ldr          r1, [sp, #0x18]
+00044A5E: ldr          r2, [sp, #0x24]
+00044A60: blx          #0x1f978
+00044A64: ldr          r3, [r6]
+00044A66: add          r8, r7
+00044A68: ldr          r2, [sp, #0x24]
+00044A6A: add          r3, r2
+00044A6C: str          r3, [r6]
+00044A6E: ldr          r3, [sp, #0x30]
+00044A70: add          fp, r3
+00044A72: b            #0x44a10
+00044A74: mov          r0, sl
+00044A76: add.w        sb, sb, #1
+00044A7A: bl           #0x84d96 ; _ZN2cv15NAryMatIteratorppEv
+00044A7E: b            #0x449f6
+00044A80: add          r0, sp, #0xf4
+00044A82: bl           #0x29686
+00044A86: add          r0, sp, #0xbc
+00044A88: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044A8C: add          r0, sp, #0x84
+00044A8E: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044A92: ldr          r3, [sp, #0x34]
+00044A94: mov          r0, r5
+00044A96: ldr.w        r2, [sp, #0x504]
+00044A9A: ldr          r3, [r3]
+00044A9C: cmp          r2, r3
+00044A9E: beq          #0x44b1e
+00044AA0: blx          #0x1f984
+00044AA4: mov          r0, r7
+00044AA6: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+00044AAA: b            #0x44ab4
+00044AAC: add          r0, sp, #0xf4
+00044AAE: bl           #0x29686
+00044AB2: b            #0x44ab4
+00044AB4: add          r0, sp, #0xbc
+00044AB6: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044ABA: b            #0x44abc
+00044ABC: add          r0, sp, #0x84
+00044ABE: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044AC2: blx          #0x1f990
+00044AC6: ldr          r3, [r6, #0x28]
+00044AC8: ldr          r0, [r3, #4]
+00044ACA: ldr          r2, [r3]
+00044ACC: cmp          r0, #1
+00044ACE: beq          #0x44ad6
+00044AD0: cmp          r2, #1
+00044AD2: bne.w        #0x448bc
+00044AD6: cmp          r0, #1
+00044AD8: ubfx         r3, r7, #3, #9
+00044ADC: add.w        r3, r3, #1
+00044AE0: bne          #0x44af6
+00044AE2: cmp          r2, #1
+00044AE4: beq.w        #0x448f4
+00044AE8: cmp          r2, r3
+00044AEA: beq.w        #0x448f4
+00044AEE: cmp          r2, #4
+00044AF0: bne.w        #0x448bc
+00044AF4: b            #0x44b04
+00044AF6: cmp          r0, r3
+00044AF8: bne.w        #0x448bc
+00044AFC: cmp          r2, #1
+00044AFE: bne.w        #0x448bc
+00044B02: b            #0x448f4
+00044B04: ubfx         r1, r1, #0, #0xc
+00044B08: cmp          r1, #6
+00044B0A: bne.w        #0x448bc
+00044B0E: cmp          r3, #4
+00044B10: ble.w        #0x448f4
+00044B14: b            #0x448bc
+00044B16: mov          r0, r7
+00044B18: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+00044B1C: b            #0x44ab4
+00044B1E: addw         sp, sp, #0x50c
+00044B22: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00044B26: nop
+00044B28: lsls         r4, r5, #0x10
+00044B2A: movs         r3, r1
+00044B2C: subs         r5, #0x84
+00044B2E: movs         r1, r1
+00044B30: lsrs         r4, r0, #0xc
+00044B32: movs         r2, r1
+00044B34: subs         r3, #0x7d
+00044B36: movs         r1, r1
+00044B38: subs         r5, #0x6d
+00044B3A: movs         r1, r1
+00044B3C: lsrs         r2, r7, #0xa
+00044B3E: movs         r2, r1
+00044B40: subs         r3, #0x33
+00044B42: movs         r1, r1
+00044B44: sub          sp, #8
+00044B46: mov          r1, r0
+00044B48: push.w       {r4, r5, r6, r7, r8, sl, fp, lr}
+00044B4C: movs         r4, #0
+00044B4E: vpush        {d8, d9, d10}
+00044B52: ldr          r6, [pc, #0xdc] ; word[00044C30]=000B0154
+00044B54: add          r6, pc
+00044B56: ldr          r6, [r6]
+00044B58: sub          sp, #0xc0
+00044B5A: add          r0, sp, #0xf8
+00044B5C: add          r7, sp, #0x48
+00044B5E: ldr.w        r8, [sp, #0x118]
+00044B62: add          r5, sp, #0x80
+00044B64: stm.w        r0, {r2, r3}
+00044B68: mov          r0, r7
+00044B6A: ldr          r3, [r6]
+00044B6C: mov          r2, r4
+00044B6E: str          r4, [sp]
+00044B70: str          r4, [sp, #4]
+00044B72: str          r3, [sp, #0xbc]
+00044B74: movs         r3, #1
+00044B76: vldr         d10, [sp, #0xf8]
+00044B7A: ldrd         sl, fp, [sp, #0x110]
+00044B7E: vldr         d9, [sp, #0x100]
+00044B82: vldr         d8, [sp, #0x108]
+00044B86: bl           #0x88080 ; _ZN2cv10cvarrToMatEPKvbbiPNS_10AutoBufferIdLj136EEE
+00044B8A: cmp.w        r8, #0
+00044B8E: bne          #0x44baa
+00044B90: mov          r0, r7
+00044B92: mov          r1, r5
+00044B94: vstr         d10, [sp, #0x80]
+00044B98: strd         sl, fp, [sp, #0x98]
+00044B9C: vstr         d9, [sp, #0x88]
+00044BA0: vstr         d8, [sp, #0x90]
+00044BA4: bl           #0x43bd8 ; _ZN2cv3MataSERKNS_7Scalar_IdEE
+00044BA8: b            #0x44bf4
+00044BAA: ldr          r3, [pc, #0x7c] ; word[00044C28]=C1020006
+00044BAC: movs         r2, #4
+00044BAE: str          r4, [sp]
+00044BB0: mov          r0, r5
+00044BB2: str          r2, [sp, #0x14]
+00044BB4: mov          r1, r8
+00044BB6: str          r3, [sp, #8]
+00044BB8: mov          r2, r4
+00044BBA: add          r3, sp, #0x28
+00044BBC: str          r4, [sp, #4]
+00044BBE: str          r3, [sp, #0xc]
+00044BC0: movs         r3, #1
+00044BC2: vstr         d10, [sp, #0x28]
+00044BC6: strd         sl, fp, [sp, #0x40]
+00044BCA: str          r3, [sp, #0x10]
+00044BCC: vstr         d9, [sp, #0x30]
+00044BD0: vstr         d8, [sp, #0x38]
+00044BD4: bl           #0x88080 ; _ZN2cv10cvarrToMatEPKvbbiPNS_10AutoBufferIdLj136EEE
+00044BD8: movs         r3, #0
+00044BDA: str          r3, [sp, #0x20]
+00044BDC: str          r3, [sp, #0x24]
+00044BDE: mov          r0, r7
+00044BE0: ldr          r3, [pc, #0x48] ; word[00044C2C]=01010000
+00044BE2: add          r1, sp, #8
+00044BE4: add          r2, sp, #0x18
+00044BE6: str          r5, [sp, #0x1c]
+00044BE8: str          r3, [sp, #0x18]
+00044BEA: bl           #0x4486c ; _ZN2cv3Mat5setToERKNS_11_InputArrayES3_
+00044BEE: mov          r0, r5
+00044BF0: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044BF4: mov          r0, r7
+00044BF6: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00044BFA: ldr          r2, [sp, #0xbc]
+00044BFC: ldr          r3, [r6]
+00044BFE: cmp          r2, r3
+RANGE 0x8ed6c 0x8f100 exclusive Thumb _ZN2cv9transposeERKNS_11_InputArrayERKNS_12_OutputArrayE
+0008ED6C: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0008ED70: sub          sp, #0xb4
+0008ED72: ldr          r5, [pc, #0x26c] ; word[0008EFE0]=00065F2C
+0008ED74: mov          r8, r1
+0008ED76: mov.w        r1, #-1
+0008ED7A: mov          r7, r0
+0008ED7C: add          r5, pc
+0008ED7E: ldr          r5, [r5]
+0008ED80: ldr          r3, [r5]
+0008ED82: str          r3, [sp, #0xac]
+0008ED84: bl           #0x836b8 ; _ZNK2cv11_InputArray4typeEi
+0008ED88: movw         r3, #0xba50
+0008ED8C: mov.w        r1, #-1
+0008ED90: ubfx         r4, r0, #3, #9
+0008ED94: and          r0, r0, #7
+0008ED98: adds         r4, #1
+0008ED9A: lsls         r0, r0, #1
+0008ED9C: lsrs         r3, r0
+0008ED9E: mov          r0, r7
+0008EDA0: and          r3, r3, #3
+0008EDA4: lsls         r4, r3
+0008EDA6: bl           #0x82fd4 ; _ZNK2cv11_InputArray4dimsEi
+0008EDAA: cmp          r0, #2
+0008EDAC: bgt          #0x8edb2
+0008EDAE: cmp          r4, #0x20
+0008EDB0: ble          #0x8ede0
+0008EDB2: add          r6, sp, #0x2c
+0008EDB4: ldr          r1, [pc, #0x22c] ; word[0008EFE4]=0004D13A
+0008EDB6: mov          r0, r6
+0008EDB8: add          r1, pc
+0008EDBA: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008EDBE: ldr          r2, [pc, #0x228] ; word[0008EFE8]=0005D76C
+0008EDC0: movw         r3, #0xca1
+0008EDC4: str          r3, [sp]
+0008EDC6: ldr          r3, [pc, #0x224] ; word[0008EFEC]=0004BD42
+0008EDC8: add          r2, pc
+0008EDCA: mvn          r0, #0xd6
+0008EDCE: mov          r1, r6
+0008EDD0: add.w        r2, r2, #0x460
+0008EDD4: add          r3, pc
+0008EDD6: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008EDDA: mov          r0, r6
+0008EDDC: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EDE0: add          r6, sp, #0x3c
+0008EDE2: mov          r1, r7
+0008EDE4: mov.w        r2, #-1
+0008EDE8: mov          r0, r6
+0008EDEA: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+0008EDEE: mov          r0, r6
+0008EDF0: bl           #0x438da ; _ZNK2cv3Mat5emptyEv
+0008EDF4: cbz          r0, #0x8edfe
+0008EDF6: mov          r0, r8
+0008EDF8: bl           #0x8db38 ; _ZNK2cv12_OutputArray7releaseEv
+0008EDFC: b            #0x8ef8a
+0008EDFE: mov.w        r3, #-1
+0008EE02: str          r3, [sp]
+0008EE04: ldr          r3, [sp, #0x3c]
+0008EE06: str          r0, [sp, #4]
+0008EE08: str          r0, [sp, #8]
+0008EE0A: ubfx         r3, r3, #0, #0xc
+0008EE0E: mov          r0, r8
+0008EE10: ldr          r1, [sp, #0x48]
+0008EE12: ldr          r2, [sp, #0x44]
+0008EE14: bl           #0x8e3e4 ; _ZNK2cv12_OutputArray6createEiiiibi
+0008EE18: add          r7, sp, #0x74
+0008EE1A: mov          r1, r8
+0008EE1C: mov.w        r2, #-1
+0008EE20: mov          r0, r7
+0008EE22: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+0008EE26: ldr.w        sb, [sp, #0x44]
+0008EE2A: ldr          r3, [sp, #0x80]
+0008EE2C: cmp          sb, r3
+0008EE2E: bne          #0x8ee38
+0008EE30: ldr          r3, [sp, #0x7c]
+0008EE32: ldr          r2, [sp, #0x48]
+0008EE34: cmp          r2, r3
+0008EE36: beq          #0x8eeaa
+0008EE38: ldr          r3, [sp, #0x64]
+0008EE3A: add.w        r8, sp, #0x2c
+0008EE3E: add          r0, sp, #0x24
+0008EE40: mov          r1, r8
+0008EE42: ldm          r3, {r2, r3}
+0008EE44: str          r3, [sp, #0x24]
+0008EE46: ldr          r3, [sp, #0x9c]
+0008EE48: str          r2, [sp, #0x28]
+0008EE4A: ldm          r3, {r2, r3}
+0008EE4C: str          r3, [sp, #0x2c]
+0008EE4E: str          r2, [sp, #0x30]
+0008EE50: bl           #0x7bb88
+0008EE54: cbz          r0, #0x8ee66
+0008EE56: ldr          r3, [sp, #0x48]
+0008EE58: cmp          r3, #1
+0008EE5A: beq          #0x8ee64
+0008EE5C: add.w        r3, sb, #-1
+0008EE60: rsbs         r0, r3, #0
+0008EE62: adcs         r0, r3
+0008EE64: cbnz         r0, #0x8ee94
+0008EE66: add          r4, sp, #0x14
+0008EE68: ldr          r1, [pc, #0x184] ; word[0008EFF0]=0004D034
+0008EE6A: mov          r0, r4
+0008EE6C: add          r1, pc
+0008EE6E: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008EE72: ldr          r2, [pc, #0x180] ; word[0008EFF4]=0005D6B4
+0008EE74: movw         r3, #0xcb3
+0008EE78: str          r3, [sp]
+0008EE7A: mvn          r0, #0xd6
+0008EE7E: ldr          r3, [pc, #0x178] ; word[0008EFF8]=0004BC8E
+0008EE80: add          r2, pc
+0008EE82: mov          r1, r4
+0008EE84: add.w        r2, r2, #0x460
+0008EE88: add          r3, pc
+0008EE8A: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008EE8E: mov          r0, r4
+0008EE90: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EE94: movs         r3, #0
+0008EE96: str          r3, [sp, #0x34]
+0008EE98: str          r3, [sp, #0x38]
+0008EE9A: mov          r0, r6
+0008EE9C: ldr          r3, [pc, #0x13c] ; word[0008EFDC]=02010000
+0008EE9E: mov          r1, r8
+0008EEA0: str          r7, [sp, #0x30]
+0008EEA2: str          r3, [sp, #0x2c]
+0008EEA4: bl           #0x43918 ; _ZNK2cv3Mat6copyToERKNS_12_OutputArrayE
+0008EEA8: b            #0x8ef84
+0008EEAA: ldr          r3, [sp, #0x4c]
+0008EEAC: lsls         r4, r4, #2
+0008EEAE: ldr          r2, [sp, #0x84]
+0008EEB0: cmp          r2, r3
+0008EEB2: bne          #0x8ef32
+0008EEB4: ldr          r3, [pc, #0x144] ; word[0008EFFC]=00063F76
+0008EEB6: add          r3, pc
+0008EEB8: add          r4, r3
+0008EEBA: ldr.w        r8, [r4, #0x240]
+0008EEBE: cmp.w        r8, #0
+0008EEC2: bne          #0x8eef2
+0008EEC4: add          r4, sp, #0x1c
+0008EEC6: ldr          r1, [pc, #0x138] ; word[0008F000]=000490E5
+0008EEC8: mov          r0, r4
+0008EECA: add          r1, pc
+0008EECC: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008EED0: ldr          r2, [pc, #0x130] ; word[0008F004]=0005D656
+0008EED2: movw         r3, #0xcbd
+0008EED6: str          r3, [sp]
+0008EED8: mvn          r0, #0xd6
+0008EEDC: ldr          r3, [pc, #0x128] ; word[0008F008]=0004BC30
+0008EEDE: add          r2, pc
+0008EEE0: mov          r1, r4
+0008EEE2: add.w        r2, r2, #0x460
+0008EEE6: add          r3, pc
+0008EEE8: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008EEEC: mov          r0, r4
+0008EEEE: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EEF2: ldr          r3, [sp, #0x7c]
+0008EEF4: ldr          r2, [sp, #0x80]
+0008EEF6: cmp          r2, r3
+0008EEF8: beq          #0x8ef28
+0008EEFA: add          r4, sp, #0x24
+0008EEFC: ldr          r1, [pc, #0x10c] ; word[0008F00C]=0004CFDD
+0008EEFE: mov          r0, r4
+0008EF00: add          r1, pc
+0008EF02: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008EF06: ldr          r2, [pc, #0x108] ; word[0008F010]=0005D620
+0008EF08: movw         r3, #0xcbe
+0008EF0C: str          r3, [sp]
+0008EF0E: mvn          r0, #0xd6
+0008EF12: ldr          r3, [pc, #0x100] ; word[0008F014]=0004BBFA
+0008EF14: add          r2, pc
+0008EF16: mov          r1, r4
+0008EF18: add.w        r2, r2, #0x460
+0008EF1C: add          r3, pc
+0008EF1E: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008EF22: mov          r0, r4
+0008EF24: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EF28: ldr          r0, [sp, #0x84]
+0008EF2A: ldr          r1, [sp, #0xa4]
+0008EF2C: ldr          r2, [sp, #0x7c]
+0008EF2E: blx          r8
+0008EF30: b            #0x8ef84
+0008EF32: ldr          r3, [pc, #0xe4] ; word[0008F018]=00063EF8
+0008EF34: add          r3, pc
+0008EF36: add          r4, r3
+0008EF38: ldr.w        r8, [r4, #0x2c8]
+0008EF3C: add          r4, sp, #0x2c
+0008EF3E: cmp.w        r8, #0
+0008EF42: bne          #0x8ef70
+0008EF44: ldr          r1, [pc, #0xd4] ; word[0008F01C]=00049067
+0008EF46: mov          r0, r4
+0008EF48: add          r1, pc
+0008EF4A: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008EF4E: ldr          r2, [pc, #0xd0] ; word[0008F020]=0005D5D8
+0008EF50: movw         r3, #0xcc4
+0008EF54: str          r3, [sp]
+0008EF56: mvn          r0, #0xd6
+0008EF5A: ldr          r3, [pc, #0xc8] ; word[0008F024]=0004BBB2
+0008EF5C: add          r2, pc
+0008EF5E: mov          r1, r4
+0008EF60: add.w        r2, r2, #0x460
+0008EF64: add          r3, pc
+0008EF66: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008EF6A: mov          r0, r4
+0008EF6C: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EF70: ldr          r3, [sp, #0x64]
+0008EF72: ldr          r0, [sp, #0x4c]
+0008EF74: ldr          r1, [sp, #0x6c]
+0008EF76: ldm          r3, {r2, r3}
+0008EF78: str          r4, [sp]
+0008EF7A: str          r3, [sp, #0x2c]
+0008EF7C: str          r2, [sp, #0x30]
+0008EF7E: ldr          r3, [sp, #0xa4]
+0008EF80: ldr          r2, [sp, #0x84]
+0008EF82: blx          r8
+0008EF84: mov          r0, r7
+0008EF86: bl           #0x240dc ; _ZN2cv3MatD1Ev
+0008EF8A: mov          r0, r6
+0008EF8C: bl           #0x240dc ; _ZN2cv3MatD1Ev
+0008EF90: ldr          r2, [sp, #0xac]
+0008EF92: ldr          r3, [r5]
+0008EF94: cmp          r2, r3
+0008EF96: beq          #0x8efd6
+0008EF98: blx          #0x1f984
+0008EF9C: mov          r0, r4
+0008EF9E: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EFA2: b            #0x8efbc
+0008EFA4: mov          r0, r4
+0008EFA6: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EFAA: b            #0x8efbc
+0008EFAC: mov          r0, r4
+0008EFAE: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EFB2: b            #0x8efbc
+0008EFB4: mov          r0, r4
+0008EFB6: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EFBA: b            #0x8efbc
+0008EFBC: mov          r0, r7
+0008EFBE: bl           #0x240dc ; _ZN2cv3MatD1Ev
+0008EFC2: b            #0x8efc4
+0008EFC4: mov          r0, r6
+0008EFC6: bl           #0x240dc ; _ZN2cv3MatD1Ev
+0008EFCA: blx          #0x1f990
+0008EFCE: mov          r0, r6
+0008EFD0: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008EFD4: b            #0x8efca
+0008EFD6: add          sp, #0xb4
+0008EFD8: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+0008EFDC: movs         r0, r0
+0008EFDE: lsls         r1, r0, #8
+0008EFE0: ldrsh        r4, [r5, r4]
+0008EFE2: movs         r6, r0
+0008EFE4: bne          #0x8f05c
+0008EFE6: movs         r4, r0
+0008EFE8: bvc          #0x8f0c4
+0008EFEA: movs         r5, r0
+0008EFEC: pop          {r1, r6, pc}
+0008EFEE: movs         r4, r0
+0008EFF0: beq          #0x8f05c
+0008EFF2: movs         r4, r0
+0008EFF4: bvs          #0x8ef60
+0008EFF6: movs         r5, r0
+0008EFF8: pop          {r1, r2, r3, r7}
+0008EFFA: movs         r4, r0
+0008EFFC: subs         r7, #0x76
+0008EFFE: movs         r6, r0
+0008F000: str          r0, [sp, #0x394]
+0008F002: movs         r4, r0
+0008F004: bvs          #0x8f0b4
+0008F006: movs         r5, r0
+0008F008: pop          {r4, r5}
+0008F00A: movs         r4, r0
+0008F00C: ldm          r7, {r0, r2, r3, r4, r6, r7}
+0008F00E: movs         r4, r0
+0008F010: bvs          #0x8f054
+0008F012: movs         r5, r0
+0008F014: cbnz         r2, #0x8f096
+0008F016: movs         r4, r0
+0008F018: subs         r6, #0xf8
+0008F01A: movs         r6, r0
+0008F01C: str          r0, [sp, #0x19c]
+0008F01E: movs         r4, r0
+0008F020: bpl          #0x8efd4
+0008F022: movs         r5, r0
+0008F024: cbnz         r2, #0x8f094
+0008F026: movs         r4, r0
+0008F028: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0008F02C: sub          sp, #0x68
+0008F02E: ldr.w        sb, [pc, #0x12c] ; word[0008F15C]=00065C6E
+0008F032: mov          r4, r0
+0008F034: mov          r6, r1
+0008F036: add.w        r8, sp, #0x18
+0008F03A: add          sb, pc
+0008F03C: ldr.w        sb, [sb]
+0008F040: ldr.w        r3, [sb]
+0008F044: str          r3, [sp, #0x64]
+0008F046: ldr          r3, [r1, #0xc]
+0008F048: cmp          r3, #1
+0008F04A: beq          #0x8f07e
+0008F04C: ldr          r3, [r1, #8]
+0008F04E: cmp          r3, #1
+0008F050: beq          #0x8f07e
+0008F052: ldr          r1, [pc, #0x10c] ; word[0008F160]=0004CEBA
+0008F054: mov          r0, r8
+0008F056: add          r1, pc
+0008F058: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+0008F05C: ldr          r2, [pc, #0x104] ; word[0008F164]=0005D4CE
+0008F05E: movw         r3, #0x402
+0008F062: str          r3, [sp]
+0008F064: ldr          r3, [pc, #0x100] ; word[0008F168]=0004BAA4
+0008F066: add          r2, pc
+0008F068: mvn          r0, #0xd6
+0008F06C: mov          r1, r8
+0008F06E: add.w        r2, r2, #0x498
+0008F072: add          r3, pc
+0008F074: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+0008F078: mov          r0, r8
+0008F07A: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+0008F07E: ldr          r3, [r6, #0xc]
+0008F080: movs         r2, #0
+0008F082: ldr          r7, [r6, #8]
+0008F084: movs         r5, #0
+0008F086: add.w        r0, r4, #0x2c
+0008F08A: add          r7, r3
+0008F08C: ldr          r3, [r6]
+0008F08E: subs         r7, #1
+0008F090: str          r5, [r4, #8]
+0008F092: ubfx         sl, r3, #0, #0xc
+0008F096: movs         r3, #0
+0008F098: strd         r2, r3, [sp, #0x28]
+0008F09C: strd         r2, r3, [sp, #0x40]
+0008F0A0: strd         r2, r3, [sp, #0x38]
+0008F0A4: strd         r2, r3, [sp, #0x30]
+0008F0A8: ldr          r3, [pc, #0xa4] ; word[0008F150]=42FF0000
+0008F0AA: str          r5, [r4, #0xc]
+0008F0AC: str          r5, [r4, #0x10]
+0008F0AE: stm.w        r4, {r3, r5}
+0008F0B2: add.w        r3, r4, #8
+0008F0B6: str          r5, [r4, #0x14]
+0008F0B8: str          r3, [r4, #0x28]
+0008F0BA: str          r5, [r4, #0x18]
+0008F0BC: str          r5, [r4, #0x1c]
+0008F0BE: str          r5, [r4, #0x20]
+0008F0C0: str          r5, [r4, #0x24]
+0008F0C2: bl           #0x81216 ; _ZN2cv7MatStepC1Ev
+0008F0C6: mov          r2, r7
+0008F0C8: mov          r1, r7
+0008F0CA: add          r7, sp, #0x28
+0008F0CC: mov          r0, r4
+0008F0CE: mov          r3, sl
+0008F0D0: bl           #0x45804 ; _ZN2cv3Mat6createEiii
+0008F0D4: mov          r1, r7
+0008F0D6: mov          r0, r4
+0008F0D8: bl           #0x43bd8 ; _ZN2cv3MataSERKNS_7Scalar_IdEE
+0008F0DC: mov          r0, r7
+0008F0DE: mov          r1, r4
+0008F0E0: mov          r2, r5
+0008F0E2: bl           #0x81d24 ; _ZNK2cv3Mat4diagEi
+0008F0E6: ldr          r3, [r6, #0xc]
+0008F0E8: cmp          r3, #1
+0008F0EA: ldr          r3, [pc, #0x68] ; word[0008F154]=02010000
+0008F0EC: bne          #0x8f100
+0008F0EE: mov          r0, r6
+0008F0F0: mov          r1, r8
+0008F0F2: str          r5, [sp, #0x20]
+0008F0F4: str          r5, [sp, #0x24]
+0008F0F6: str          r3, [sp, #0x18]
+0008F0F8: str          r7, [sp, #0x1c]
+0008F0FA: bl           #0x43918 ; _ZNK2cv3Mat6copyToERKNS_12_OutputArrayE
+0008F0FE: b            #0x8f11a

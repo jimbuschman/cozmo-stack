@@ -1,0 +1,85 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00513358..0x00513412 exclusive; Thumb; _ZN4Anki5Cozmo5Robot12SetHeadAngleERKf
+00513358: push         {r4, r5, r6, lr}
+0051335A: sub          sp, #0x20
+0051335C: mov          r4, r0
+0051335E: ldrb.w       r0, [r4, #0x314]
+00513362: cmp          r0, #0
+00513364: beq          #0x51340e
+00513366: vldr         s2, [pc, #0xe0] ; word[00513448]=BEFA35DD
+0051336A: vldr         s0, [r1]
+0051336E: vcmpe.f32    s0, s2
+00513372: vmrs         apsr_nzcv, fpscr
+00513376: bpl          #0x51337e
+00513378: vldr         s0, [pc, #0xc8] ; word[00513444]=BEDF66F3
+0051337C: b            #0x513390
+0051337E: vldr         s2, [pc, #0xd0] ; word[00513450]=3F543B67
+00513382: vcmpe.f32    s0, s2
+00513386: vmrs         apsr_nzcv, fpscr
+0051338A: ble          #0x5133e8
+0051338C: vldr         s0, [pc, #0xbc] ; word[0051344C]=3F46D3F2
+00513390: movs         r0, #0
+00513392: vstr         s0, [r4, #0x2fc]
+00513396: strd         r0, r0, [sp, #0x14]
+0051339A: str          r0, [sp, #0x1c]
+0051339C: vldr         s2, [pc, #0xb4] ; word[00513454]=42652EE1
+005133A0: vldr         s0, [r1]
+005133A4: ldr          r2, [pc, #0xb0] ; word[00513458]=006D372F
+005133A6: vmul.f32     s2, s0, s2
+005133AA: vcvt.f64.f32 d0, s0
+005133AE: add          r2, pc
+005133B0: vcvt.f64.f32 d1, s2
+005133B4: adr          r0, #0xa4
+005133B6: add          r1, sp, #0x14
+005133B8: vstmia       sp, {d0, d1}
+005133BC: blx          #0x4a4540 ; Anki::Util::sWarningF
+005133C0: ldr          r0, [sp, #0x14]
+005133C2: cbz          r0, #0x5133e2
+005133C4: ldr          r1, [sp, #0x18]
+005133C6: cmp          r1, r0
+005133C8: itttt        ne
+005133CA: subne.w      r2, r1, #8
+005133CE: subne        r2, r2, r0
+005133D0: mvnne        r3, #7
+005133D4: bicne.w      r2, r3, r2
+005133D8: itt          ne
+005133DA: addne        r1, r1, r2
+005133DC: strne        r1, [sp, #0x18]
+005133DE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005133E2: vldr         s0, [r4, #0x2fc]
+005133E6: b            #0x5133ec
+005133E8: vstr         s0, [r4, #0x2fc]
+005133EC: vmov         r2, s0
+005133F0: add          r5, sp, #0x14
+005133F2: mov          r1, r4
+005133F4: ldr.w        r6, [r4, #0x258]
+005133F8: mov          r0, r5
+005133FA: blx          #0x4a7870 ; Anki::Cozmo::Robot::GetCameraPose
+005133FE: add.w        r0, r6, #0x30
+00513402: mov          r1, r5
+00513404: blx          #0x4a40e4 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::operator=
+00513408: add          r0, sp, #0x14
+0051340A: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0051340E: add          sp, #0x20
+00513410: pop          {r4, r5, r6, pc}
+RANGE 0x005126EC..0x00512724 exclusive; Thumb; _ZN4Anki5Cozmo5Robot10SetNewPoseERKNS_6Pose3dE
+005126EC: push         {r4, r5, r7, lr}
+005126EE: sub          sp, #0x10
+005126F0: add          r5, sp, #4
+005126F2: mov          r4, r0
+005126F4: mov          r0, r5
+005126F6: bl           #0x4df628 ; FUN_004df628
+005126FA: mov          r0, r4
+005126FC: mov          r1, r5
+005126FE: blx          #0x4a7bac ; Anki::Cozmo::Robot::SetPose
+00512702: add          r0, sp, #4
+00512704: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+00512708: ldr.w        r3, [r4, #0x2fc]
+0051270C: add.w        r2, r4, #0x298
+00512710: ldr          r1, [r4, #0x2c]
+00512712: mov          r0, r4
+00512714: vldr         s0, [r4, #0x300]
+00512718: vstr         s0, [sp]
+0051271C: blx          #0x4a7bb8 ; Anki::Cozmo::Robot::AddVisionOnlyStateToHistory
+00512720: add          sp, #0x10
+00512722: pop          {r4, r5, r7, pc}

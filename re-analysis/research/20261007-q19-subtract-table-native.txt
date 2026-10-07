@@ -1,0 +1,82 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+000F5068: 00027991 _ZN2cv3hal5sub8uEPKhjS2_jPhjiiPv
+000F506C: 00027AD9 _ZN2cv3hal5sub8sEPKajS2_jPajiiPv
+000F5070: 00027C11 _ZN2cv3hal6sub16uEPKtjS2_jPtjiiPv
+000F5074: 00027D49 _ZN2cv3hal6sub16sEPKsjS2_jPsjiiPv
+000F5078: 0002228F _ZN2cv3hal6sub32sEPKijS2_jPijiiPv
+000F507C: 00022395 _ZN2cv3hal6sub32fEPKfjS2_jPfjiiPv
+000F5080: 00020DA7 _ZN2cv3hal6sub64fEPKdjS2_jPdjiiPv
+000F5084: 00000000
+RANGE 0x40610 0x4063c exclusive Thumb
+00040610: and          r1, r1, #7
+00040614: ldr          r3, [pc, #0x10] ; word[00040628]=000B249E
+00040616: and          r0, r0, #7
+0004061A: add.w        r0, r0, r1, lsl #3
+0004061E: add          r3, pc
+00040620: ldr.w        r0, [r3, r0, lsl #2]
+00040624: bx           lr
+00040626: nop
+00040628: movs         r4, #0x9e
+0004062A: movs         r3, r1
+0004062C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00040630: sub          sp, #0xe4
+00040632: ldr          r7, [pc, #0x19c] ; word[000407D0]=000B466E
+00040634: mov          sb, r3
+00040636: add          r6, sp, #0x6c
+00040638: mov          r4, r0
+0004063A: add          r7, pc
+RANGE 0x2bdc2 0x2be54 exclusive Thumb
+0002BDC2: movs         r3, #0
+0002BDC4: str          r3, [sp, #0x20]
+0002BDC6: ldr          r3, [sp, #0x18]
+0002BDC8: cmp          r3, fp
+0002BDCA: beq          #0x2bddc
+0002BDCC: cmp          r3, r8
+0002BDCE: beq          #0x2bde0
+0002BDD0: mov          r0, r3
+0002BDD2: mov          r1, r8
+0002BDD4: bl           #0x40610
+0002BDD8: str          r0, [sp, #0x30]
+0002BDDA: b            #0x2bde4
+0002BDDC: ldr          r3, [sp, #0x20]
+0002BDDE: b            #0x2bde2
+0002BDE0: movs         r3, #0
+0002BDE2: str          r3, [sp, #0x30]
+0002BDE4: cmp          sb, r8
+0002BDE6: beq          #0x2bdf4
+0002BDE8: mov          r0, r8
+0002BDEA: mov          r1, sb
+0002BDEC: bl           #0x40610
+0002BDF0: str          r0, [sp, #0x1c]
+0002BDF2: b            #0x2bdf8
+0002BDF4: movs         r3, #0
+0002BDF6: str          r3, [sp, #0x1c]
+0002BDF8: and          r2, fp, #7
+0002BDFC: movw         r4, #0xba50
+0002BE00: ubfx         r3, fp, #3, #9
+0002BE04: lsls         r2, r2, #1
+0002BE06: adds         r3, #1
+0002BE08: lsr.w        r5, r4, r2
+0002BE0C: and          r2, r8, #7
+0002BE10: and          r5, r5, #3
+0002BE14: lsls         r3, r5
+0002BE16: ubfx         r5, sb, #3, #9
+0002BE1A: and          sb, sb, #7
+0002BE1E: str          r3, [sp, #0x5c]
+0002BE20: adds         r5, #1
+0002BE22: lsls         r2, r2, #1
+0002BE24: lsl.w        sb, sb, #1
+0002BE28: lsr.w        r3, r4, sb
+0002BE2C: lsrs         r4, r2
+0002BE2E: and          r3, r3, #3
+0002BE32: and          sb, r4, #3
+0002BE36: lsls         r5, r3
+0002BE38: ubfx         r3, r8, #3, #9
+0002BE3C: adds         r3, #1
+0002BE3E: str          r5, [sp, #0x68]
+0002BE40: lsl.w        r4, r3, sb
+0002BE44: addw         r0, r4, #0x3ff
+0002BE48: mov          r1, r4
+0002BE4A: blx          #0x1f9fc
+0002BE4E: mov          sb, r0
+0002BE50: mov          r0, r5

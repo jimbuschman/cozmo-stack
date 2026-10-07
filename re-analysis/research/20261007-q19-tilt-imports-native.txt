@@ -1,0 +1,10 @@
+libopencv_imgproc.so SHA256 3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830
+RANGE 0x17710 0x17728 exclusive ARM
+00017710: add          ip, pc, #0, #12
+00017714: add          ip, ip, #0xe6000
+00017718: ldr          pc, [ip, #0x6b8]!
+0001771C: add          ip, pc, #0, #12
+00017720: add          ip, ip, #0xe6000
+00017724: ldr          pc, [ip, #0x6b0]!
+000FDDD0: 000170C0 cos
+000FDDD4: 000170C0 sin

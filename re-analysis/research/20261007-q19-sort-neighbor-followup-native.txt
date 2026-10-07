@@ -1,0 +1,92 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004E833A..0x004E8384 exclusive; Thumb;
+004E833A: sub.w        r1, sl, r6
+004E833E: asrs         r0, r1, #3
+004E8340: cmp          r0, #5
+004E8342: bls.w        #0x4e847e
+004E8346: cmp          r1, #0x37
+004E8348: ble.w        #0x4e84b0
+004E834C: add.w        r2, r0, r0, lsr #31
+004E8350: and.w        r2, r5, r2, lsl #2
+004E8354: adds         r4, r6, r2
+004E8356: movw         r2, #0x1f39
+004E835A: cmp          r1, r2
+004E835C: blt          #0x4e837a
+004E835E: asrs         r1, r0, #0x1f
+004E8360: mov          r2, r4
+004E8362: add.w        r0, r0, r1, lsr #30
+004E8366: strd         sb, r8, [sp]
+004E836A: and.w        r0, r5, r0, lsl #1
+004E836E: adds         r1, r6, r0
+004E8370: adds         r3, r4, r0
+004E8372: mov          r0, r6
+004E8374: blx          #0x4a49f0 ; std::__ndk1::__sort5<Anki::CompareFirst<float,Anki::Quad::CornerName>&,std::__ndk1::pair<float,Anki::Quad::CornerName>*>
+004E8378: b            #0x4e8386
+004E837A: mov          r0, r6
+004E837C: mov          r1, r4
+004E837E: mov          r2, sb
+004E8380: mov          r3, r8
+RANGE 0x006881B4..0x00688252 exclusive; Thumb; _ZNK4Anki5Cozmo12QuadTreeNode18FindSingleNeighborENS0_13QuadTreeTypes10EDirectionE
+006881B4: push         {r4, lr}
+006881B6: mov          r2, r0
+006881B8: movs         r0, #0
+006881BA: ldrb.w       r3, [r2, #0x81]
+006881BE: cmp          r3, #4
+006881C0: beq          #0x688214
+006881C2: ldr          r4, [pc, #0x54] ; word[00688218]=009C8E9C
+006881C4: add          r4, pc
+006881C6: add.w        r4, r4, r3, lsl #3
+006881CA: add.w        r4, r4, r1, lsl #1
+006881CE: cbz          r4, #0x688214
+006881D0: ldr.w        ip, [pc, #0x48] ; word[0068821C]=009C8E8A
+006881D4: ldr          r0, [r2, #0x7c]
+006881D6: add          ip, pc
+006881D8: add.w        r2, ip, r3, lsl #3
+006881DC: add.w        r2, r2, r1, lsl #1
+006881E0: ldrb         r2, [r2, #1]
+006881E2: cbz          r2, #0x6881f6
+006881E4: ldrd         r1, r0, [r0]
+006881E8: cmp          r1, r0
+006881EA: itee         eq
+006881EC: moveq        r0, #0
+006881EE: ldrbne       r0, [r4]
+006881F0: ldrne.w      r0, [r1, r0, lsl #2]
+006881F4: pop          {r4, pc}
+006881F6: blx          #0x4bd068 ; Anki::Cozmo::QuadTreeNode::FindSingleNeighbor
+006881FA: cbz          r0, #0x68820c
+006881FC: ldrd         r1, r2, [r0]
+00688200: cmp          r1, r2
+00688202: beq          #0x68820c
+00688204: ldrb         r2, [r4]
+00688206: ldr.w        r1, [r1, r2, lsl #2]
+0068820A: b            #0x68820e
+0068820C: movs         r1, #0
+0068820E: cmp          r1, #0
+00688210: it           ne
+00688212: movne        r0, r1
+00688214: pop          {r4, pc}
+00688216: nop
+00688218: ldrh         r4, [r3, #0x34]
+0068821A: lsls         r4, r3, #2
+0068821C: ldrh         r2, [r1, #0x34]
+0068821E: lsls         r4, r3, #2
+00688220: push         {r4, r5, r6, lr}
+00688222: mov          r4, r3
+00688224: mov          r6, r2
+00688226: mov          r5, r1
+00688228: blx          #0x4bd068 ; Anki::Cozmo::QuadTreeNode::FindSingleNeighbor
+0068822C: cbz          r0, #0x68824e
+0068822E: adds         r1, r5, #2
+00688230: movs         r2, #0
+00688232: cmp          r6, #0
+00688234: it           eq
+00688236: moveq        r2, #1
+00688238: asrs         r3, r1, #0x1f
+0068823A: add.w        r3, r1, r3, lsr #30
+0068823E: bic          r3, r3, #3
+00688242: subs         r1, r1, r3
+00688244: mov          r3, r4
+00688246: pop.w        {r4, r5, r6, lr}
+0068824A: b.w          #0x8cd83c
+0068824E: pop          {r4, r5, r6, pc}
+00688250: push         {r4, r5, r6, lr}

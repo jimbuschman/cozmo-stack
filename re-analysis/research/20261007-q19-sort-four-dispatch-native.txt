@@ -1,0 +1,18 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004E847E..0x004E84B0 exclusive; Thumb;
+004E847E: tbb          [pc, r0]
+004E8482: subs         r7, #0x3f
+004E8484: subs         r3, r0, #4
+004E8486: adds         r4, #0x29
+004E8488: vldr         s0, [r6]
+004E848C: vldr         s2, [sb]
+004E8490: vcmpe.f32    s2, s0
+004E8494: vmrs         apsr_nzcv, fpscr
+004E8498: bpl          #0x4e8500
+004E849A: vstr         s2, [r6]
+004E849E: ldr          r0, [sl, #-0x4]
+004E84A2: vstr         s0, [sl, #-8]
+004E84A6: ldr          r1, [r6, #4]
+004E84A8: str          r0, [r6, #4]
+004E84AA: str          r1, [sl, #-0x4]
+004E84AE: b            #0x4e8500

@@ -1,0 +1,363 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0068768A..0x006876D6 exclusive; Thumb; _ZN4Anki5Cozmo12QuadTreeNode12DestroyNodesERNSt6__ndk16vectorINS2_10unique_ptrIS1_NS2_14default_deleteIS1_EEEENS2_9allocatorIS7_EEEERNS0_17QuadTreeProcessorE
+0068768A: push.w       {r4, r5, r6, r7, r8, lr}
+0068768E: ldrd         r6, r7, [r0]
+00687692: mov          r4, r1
+00687694: cmp          r6, r7
+00687696: it           eq
+00687698: popeq.w      {r4, r5, r6, r7, r8, pc}
+0068769C: mov.w        r8, #0
+006876A0: ldr          r0, [r6]
+006876A2: mov          r1, r4
+006876A4: blx          #0x4bcff0 ; Anki::Cozmo::QuadTreeNode::DestroyNodes
+006876A8: ldr          r1, [r6]
+006876AA: mov          r0, r4
+006876AC: blx          #0x4bd008 ; Anki::Cozmo::QuadTreeProcessor::OnNodeDestroyed
+006876B0: ldr          r5, [r6]
+006876B2: str.w        r8, [r6]
+006876B6: cbz          r5, #0x6876cc
+006876B8: ldr.w        r0, [r5, #0x88]
+006876BC: cbz          r0, #0x6876c2
+006876BE: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006876C2: mov          r0, r5
+006876C4: blx          #0x4bcd44 ; std::__ndk1::__vector_base<std::__ndk1::unique_ptr<Anki::Cozmo::QuadTreeNode,std::__ndk1::default_delete<Anki::Cozmo::QuadTreeNode>>,std::__ndk1::allocator<std::__ndk1::unique_ptr<Anki::Cozmo::QuadTreeNode,std::__ndk1::default_delete<Anki::Cozmo::QuadTreeNode>>>>::~__vector_base
+006876C8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+006876CC: adds         r6, #4
+006876CE: cmp          r7, r6
+006876D0: bne          #0x6876a0
+006876D2: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x0067FDC0..0x0067FE58 exclusive; Thumb;
+0067FDC0: add          r1, sp, #0x148
+0067FDC2: ldm.w        r0, {r2, r3, r6}
+0067FDC6: stm          r1!, {r2, r3, r6}
+0067FDC8: movs         r0, #1
+0067FDCA: str          r0, [sp, #0x28]
+0067FDCC: cmp.w        ip, #0
+0067FDD0: it           ne
+0067FDD2: movne.w      ip, #1
+0067FDD6: ldr          r0, [sp, #0x34]
+0067FDD8: eor          fp, fp, #1
+0067FDDC: ldrb         r0, [r0, #0xc]
+0067FDDE: cmp          r0, #0
+0067FDE0: beq          #0x67fe66
+0067FDE2: ldr.w        r0, [sl]
+0067FDE6: mov          r5, ip
+0067FDE8: bl           #0x4ea398 ; FUN_004ea398
+0067FDEC: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0067FDF0: adds         r0, #0x20
+0067FDF2: mov          r1, r4
+0067FDF4: ldm.w        r0, {r2, r3, r6}
+0067FDF8: movs         r0, #0
+0067FDFA: stm          r1!, {r2, r3, r6}
+0067FDFC: add          r2, sp, #0xb0
+0067FDFE: adds         r1, r2, r0
+0067FE00: vldr         s0, [r1]
+0067FE04: adds         r1, r4, r0
+0067FE06: adds         r0, #4
+0067FE08: vldr         s2, [r1]
+0067FE0C: cmp          r0, #0xc
+0067FE0E: vsub.f32     s0, s2, s0
+0067FE12: vstr         s0, [r1]
+0067FE16: bne          #0x67fdfe
+0067FE18: vldr         s0, [sp, #0x70]
+0067FE1C: add          r6, sp, #0x100
+0067FE1E: movs         r0, #0
+0067FE20: vmul.f32     s24, s0, s0
+0067FE24: add.w        r1, sb, r0
+0067FE28: adds         r0, #4
+0067FE2A: cmp          r0, #8
+0067FE2C: vldr         s0, [r1]
+0067FE30: vmul.f32     s0, s0, s0
+0067FE34: vadd.f32     s24, s24, s0
+0067FE38: bne          #0x67fe24
+0067FE3A: vmov         r0, s16
+0067FE3E: vadd.f32     s26, s16, s20
+0067FE42: blx          #0x4ae3a4 ; <EXTERNAL>::isnanf
+0067FE46: cmp          r0, #0
+0067FE48: vcmpe.f32    s26, s24
+0067FE4C: it           ne
+0067FE4E: vmovne.f32   s16, s24
+0067FE52: vmrs         apsr_nzcv, fpscr
+0067FE56: add          r7, sp, #0x120
+RANGE 0x008F6220..0x008F630C exclusive; Thumb; kmLine2WithLineIntersection
+008F6220: push         {r4, r5, r7, lr}
+008F6222: vpush        {d8, d9}
+008F6226: ldr.w        ip, [r3]
+008F622A: ldr.w        lr, [r3, #4]
+008F622E: ldr          r3, [r2]
+008F6230: ldr          r4, [r1]
+008F6232: vmov         s2, ip
+008F6236: ldr          r2, [r2, #4]
+008F6238: vmov         s6, lr
+008F623C: ldr          r1, [r1, #4]
+008F623E: vmov         s10, r3
+008F6242: ldr          r5, [r0]
+008F6244: vmov         s14, r4
+008F6248: ldr          r0, [r0, #4]
+008F624A: vmov         s12, r2
+008F624E: vadd.f32     s8, s10, s2
+008F6252: vldr         d9, [pc, #0xbc] ; word[008F6310]=EB1C432D
+008F6256: vmov         s2, r5
+008F625A: vmov         s4, r1
+008F625E: vmov         s0, r0
+008F6262: vadd.f32     s6, s12, s6
+008F6266: vadd.f32     s4, s0, s4
+008F626A: vadd.f32     s3, s2, s14
+008F626E: vsub.f32     s14, s8, s10
+008F6272: vsub.f32     s1, s6, s12
+008F6276: vsub.f32     s4, s4, s0
+008F627A: vsub.f32     s6, s3, s2
+008F627E: vmul.f32     s8, s4, s14
+008F6282: vmul.f32     s3, s6, s1
+008F6286: vsub.f32     s8, s3, s8
+008F628A: vcvt.f64.f32 d8, s8
+008F628E: vcmpe.f64    d8, d9
+008F6292: vmrs         apsr_nzcv, fpscr
+008F6296: ble          #0x8f62aa
+008F6298: vldr         d9, [pc, #0x7c] ; word[008F6318]=EB1C432D
+008F629C: vcmpe.f64    d8, d9
+008F62A0: vmrs         apsr_nzcv, fpscr
+008F62A4: bpl          #0x8f62aa
+008F62A6: movs         r0, #0
+008F62A8: b            #0x8f6306
+008F62AA: vsub.f32     s3, s2, s10
+008F62AE: ldrd         r1, r0, [sp, #0x20]
+008F62B2: vsub.f32     s12, s0, s12
+008F62B6: cmp          r1, #0
+008F62B8: vmul.f32     s10, s3, s1
+008F62BC: vmul.f32     s14, s12, s14
+008F62C0: vsub.f32     s10, s14, s10
+008F62C4: vdiv.f32     s10, s10, s8
+008F62C8: beq          #0x8f62ce
+008F62CA: vstr         s10, [r1]
+008F62CE: ldr          r1, [sp, #0x28]
+008F62D0: cbz          r0, #0x8f62e6
+008F62D2: vmul.f32     s14, s4, s3
+008F62D6: vmul.f32     s12, s6, s12
+008F62DA: vsub.f32     s12, s12, s14
+008F62DE: vdiv.f32     s8, s12, s8
+008F62E2: vstr         s8, [r0]
+008F62E6: cbz          r1, #0x8f6304
+008F62E8: vmul.f32     s4, s4, s10
+008F62EC: vmul.f32     s6, s6, s10
+008F62F0: vadd.f32     s0, s0, s4
+008F62F4: vadd.f32     s2, s2, s6
+008F62F8: vmov         r0, s0
+008F62FC: vmov         r2, s2
+008F6300: str          r0, [r1, #4]
+008F6302: str          r2, [r1]
+008F6304: movs         r0, #1
+008F6306: vpop         {d8, d9}
+008F630A: pop          {r4, r5, r7, pc}
+RANGE 0x006542EC..0x00654486 exclusive; Thumb; _ZN4Anki5Cozmo15VisionComponent16UpdateAllResultsEv
+006542EC: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+006542F0: sub.w        sp, sp, #0x25c
+006542F4: mov          sb, r0
+006542F6: ldr.w        r0, [pc, #0x980] ; word[00654C78]=009EA54A
+006542FA: mov.w        sl, #0
+006542FE: add          r0, pc
+00654300: ldr          r0, [r0]
+00654302: ldr          r0, [r0]
+00654304: str          r0, [sp, #0x258]
+00654306: ldr.w        r0, [sb, #0x1c]
+0065430A: cmp          r0, #0
+0065430C: beq.w        #0x654ac4
+00654310: add          r7, sp, #0xb4
+00654312: str.w        sl, [sp, #0xb8]
+00654316: add.w        r0, r7, #0x18
+0065431A: str.w        sl, [sp, #0xd4]
+0065431E: str          r0, [sp, #0x74]
+00654320: add.w        r8, r7, #0x48
+00654324: strd         r0, r0, [sp, #0xcc]
+00654328: add.w        r0, r7, #0x24
+0065432C: str.w        sl, [sp, #0xe0]
+00654330: add.w        r4, r7, #0x6c
+00654334: str          r0, [sp, #0x70]
+00654336: add          r6, sp, #0x150
+00654338: strd         r0, r0, [sp, #0xd8]
+0065433C: add.w        r0, r7, #0x30
+00654340: str.w        sl, [sp, #0xec]
+00654344: str          r0, [sp, #0x78]
+00654346: strd         r0, r0, [sp, #0xe4]
+0065434A: add.w        r0, r7, #0x3c
+0065434E: str.w        sl, [sp, #0xf8]
+00654352: str          r0, [sp, #0x84]
+00654354: strd         r0, r0, [sp, #0xf0]
+00654358: add.w        r0, r7, #0x54
+0065435C: str.w        sl, [sp, #0x104]
+00654360: strd         r8, r8, [sp, #0xfc]
+00654364: str.w        sl, [sp, #0x110]
+00654368: str          r0, [sp, #0x6c]
+0065436A: strd         r0, r0, [sp, #0x108]
+0065436E: add.w        r0, r7, #0x60
+00654372: str.w        sl, [sp, #0x11c]
+00654376: str          r0, [sp, #0x68]
+00654378: strd         r0, r0, [sp, #0x114]
+0065437C: add.w        r0, r7, #0x78
+00654380: str.w        sl, [sp, #0x128]
+00654384: strd         r4, r4, [sp, #0x120]
+00654388: str.w        sl, [sp, #0x134]
+0065438C: str          r0, [sp, #0x64]
+0065438E: strd         r0, r0, [sp, #0x12c]
+00654392: add.w        r0, r7, #0x84
+00654396: str.w        sl, [sp, #0x140]
+0065439A: str          r0, [sp, #0x7c]
+0065439C: strd         r0, r0, [sp, #0x138]
+006543A0: add.w        r0, r7, #0x90
+006543A4: str.w        sl, [sp, #0x14c]
+006543A8: str          r0, [sp, #0x8c]
+006543AA: strd         r0, r0, [sp, #0x144]
+006543AE: add          r0, sp, #0x90
+006543B0: adds         r0, #4
+006543B2: str          r0, [sp, #0x18]
+006543B4: ldr.w        r0, [pc, #0x99c] ; word[00654D54]=009EA3CC
+006543B8: ldr.w        r1, [pc, #0x99c] ; word[00654D58]=009EA3CA
+006543BC: add          r0, pc
+006543BE: str.w        r8, [sp, #0x80]
+006543C2: add          r1, pc
+006543C4: ldr          r0, [r0]
+006543C6: str          r0, [sp, #0x14]
+006543C8: ldr          r0, [r1]
+006543CA: str          r0, [sp, #0x10]
+006543CC: ldr.w        r0, [pc, #0x92c] ; word[00654CFC]=009EA3B4
+006543D0: ldr.w        r1, [pc, #0x92c] ; word[00654D00]=009EA3B6
+006543D4: add          r0, pc
+006543D6: add          r1, pc
+006543D8: ldr          r0, [r0]
+006543DA: str          r0, [sp, #0x20]
+006543DC: ldr          r0, [r1]
+006543DE: str          r0, [sp, #0x1c]
+006543E0: ldr.w        r0, [pc, #0x910] ; word[00654CF4]=009EA3A0
+006543E4: ldr.w        r1, [pc, #0x910] ; word[00654CF8]=009EA3A2
+006543E8: add          r0, pc
+006543EA: add          r1, pc
+006543EC: ldr          r0, [r0]
+006543EE: str          r0, [sp, #0x28]
+006543F0: ldr          r0, [r1]
+006543F2: str          r0, [sp, #0x24]
+006543F4: ldr.w        r0, [pc, #0x8f4] ; word[00654CEC]=009EA38C
+006543F8: ldr.w        r1, [pc, #0x8f4] ; word[00654CF0]=009EA38E
+006543FC: add          r0, pc
+006543FE: add          r1, pc
+00654400: ldr          r0, [r0]
+00654402: str          r0, [sp, #0x30]
+00654404: ldr          r0, [r1]
+00654406: str          r0, [sp, #0x2c]
+00654408: ldr.w        r0, [pc, #0x8d8] ; word[00654CE4]=009EA378
+0065440C: ldr.w        r1, [pc, #0x8d8] ; word[00654CE8]=009EA37A
+00654410: add          r0, pc
+00654412: add          r1, pc
+00654414: ldr          r0, [r0]
+00654416: str          r0, [sp, #0x38]
+00654418: ldr          r0, [r1]
+0065441A: str          r0, [sp, #0x34]
+0065441C: ldr.w        r0, [pc, #0x8bc] ; word[00654CDC]=009EA364
+00654420: ldr.w        r1, [pc, #0x8bc] ; word[00654CE0]=009EA366
+00654424: add          r0, pc
+00654426: add          r1, pc
+00654428: ldr          r0, [r0]
+0065442A: str          r0, [sp, #0x40]
+0065442C: ldr          r0, [r1]
+0065442E: str          r0, [sp, #0x3c]
+00654430: ldr.w        r0, [pc, #0x8a0] ; word[00654CD4]=009EA350
+00654434: ldr.w        r1, [pc, #0x8a0] ; word[00654CD8]=009EA352
+00654438: add          r0, pc
+0065443A: add          r1, pc
+0065443C: ldr          r0, [r0]
+0065443E: str          r0, [sp, #0x48]
+00654440: ldr          r0, [r1]
+00654442: str          r0, [sp, #0x44]
+00654444: ldr.w        r0, [pc, #0x884] ; word[00654CCC]=009EA33C
+00654448: ldr.w        r1, [pc, #0x884] ; word[00654CD0]=009EA33E
+0065444C: add          r0, pc
+0065444E: add          r1, pc
+00654450: ldr          r0, [r0]
+00654452: str          r0, [sp, #0x50]
+00654454: ldr          r0, [r1]
+00654456: str          r0, [sp, #0x4c]
+00654458: ldr.w        r0, [pc, #0x868] ; word[00654CC4]=009EA328
+0065445C: ldr.w        r1, [pc, #0x868] ; word[00654CC8]=009EA32A
+00654460: add          r0, pc
+00654462: add          r1, pc
+00654464: ldr          r0, [r0]
+00654466: str          r0, [sp, #0x58]
+00654468: ldr          r0, [r1]
+0065446A: str          r0, [sp, #0x54]
+0065446C: ldr.w        r0, [pc, #0x84c] ; word[00654CBC]=009EA314
+00654470: ldr.w        r1, [pc, #0x84c] ; word[00654CC0]=009EA316
+00654474: add          r0, pc
+00654476: add          r1, pc
+00654478: ldr          r0, [r0]
+0065447A: str          r0, [sp, #0x60]
+0065447C: ldr          r0, [r1]
+0065447E: str          r0, [sp, #0x5c]
+00654480: movs         r0, #0
+00654482: str          r0, [sp, #0x88]
+00654484: b            #0x654a6e
+RANGE 0x0050FF00..0x0050FFC0 exclusive; Thumb;
+0050FF00: ldr          r0, [r0]
+0050FF02: str.w        r1, [r5, #0x2b0]
+0050FF06: adds         r0, #8
+0050FF08: str.w        r1, [r5, #0x2c0]
+0050FF0C: strb.w       r1, [r5, #0x2bc]
+0050FF10: strb.w       r2, [r5, #0x2c4]
+0050FF14: strb.w       r1, [r5, #0x2c6]
+0050FF18: strb.w       r1, [r5, #0x2c7]
+0050FF1C: str.w        sb, [r5, #0x2c8]
+0050FF20: str.w        r0, [r5, #0x2b4]
+0050FF24: add          r0, sp, #0x40
+0050FF26: movs         r1, #0
+0050FF28: blx          #0x4a4294 ; Anki::Radians::Radians
+0050FF2C: blx          #0x4a47b0 ; Anki::Y_AXIS_3D
+0050FF30: mov          r4, r0
+0050FF32: movs         r1, #0
+0050FF34: movs         r0, #0
+0050FF36: movt         r1, #0xc150
+0050FF3A: str          r0, [sp, #0x4c]
+0050FF3C: str          r1, [sp, #0x48]
+0050FF3E: movs         r1, #0
+0050FF40: movt         r1, #0x4244
+0050FF44: str          r0, [sp, #0x38]
+0050FF46: str          r1, [sp, #0x50]
+0050FF48: strd         r0, r0, [sp, #0x30]
+0050FF4C: add          r6, sp, #0x30
+0050FF4E: addw         r1, pc, #0xa5c
+0050FF52: movs         r2, #9
+0050FF54: mov          r0, r6
+0050FF56: bl           #0x4e02b2 ; FUN_004e02b2
+0050FF5A: add.w        r7, r5, #0x2cc
+0050FF5E: add          r1, sp, #0x40
+0050FF60: add          r3, sp, #0x48
+0050FF62: mov          r0, r7
+0050FF64: mov          r2, r4
+0050FF66: strd         r8, r6, [sp]
+0050FF6A: blx          #0x4a47e0 ; Anki::Pose3d::Pose3d
+0050FF6E: ldrb.w       r0, [sp, #0x30]
+0050FF72: lsls         r0, r0, #0x1f
+0050FF74: itt          ne
+0050FF76: ldrne        r0, [sp, #0x38]
+0050FF78: blxne        #0x4a40cc
+0050FF7C: movw         r1, #0x28f6
+0050FF80: movs         r0, #0
+0050FF82: movt         r1, #0x418c
+0050FF86: str          r0, [sp, #0x4c]
+0050FF88: str          r1, [sp, #0x48]
+0050FF8A: mov.w        r1, #-0x3f000000
+0050FF8E: str          r1, [sp, #0x50]
+0050FF90: str          r0, [sp, #0x38]
+0050FF92: strd         r0, r0, [sp, #0x30]
+0050FF96: add          r4, sp, #0x30
+0050FF98: addw         r1, pc, #0xa1c
+0050FF9C: movs         r2, #0xc
+0050FF9E: str          r7, [sp, #0x18]
+0050FFA0: mov          r0, r4
+0050FFA2: bl           #0x4e02b2 ; FUN_004e02b2
+0050FFA6: ldr.w        r0, [pc, #0xa20] ; word[005109C8]=00B2E9A6
+0050FFAA: add.w        r6, r5, #0x2d8
+0050FFAE: add          r0, pc
+0050FFB0: ldr          r1, [r0]
+0050FFB2: add          r2, sp, #0x48
+0050FFB4: mov          r0, r6
+0050FFB6: mov          r3, r7
+0050FFB8: str          r4, [sp]
+0050FFBA: blx          #0x4a6c40 ; Anki::Pose3d::Pose3d

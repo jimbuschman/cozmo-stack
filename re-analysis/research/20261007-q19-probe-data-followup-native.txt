@@ -1,0 +1,136 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103FF2C: raw=00000000 relocated=00DC7F70 _ZN4Anki8Embedded12VisionMarker16NUM_PROBE_POINTSE
+0103FF30: raw=00000000 relocated=00DC7F6C _ZN4Anki8Embedded12VisionMarker19NUM_FRACTIONAL_BITSE
+0103FF34: raw=00000000 relocated=00DC7F7E _ZN4Anki8Embedded12VisionMarker13ProbePoints_YE
+0103FF38: raw=00000000 relocated=00DC7F74 _ZN4Anki8Embedded12VisionMarker13ProbePoints_XE
+0103FF3C: raw=00000000 relocated=00DC87EC _ZN4Anki8Embedded12VisionMarker14ProbeCenters_YE
+0103FF40: raw=00000000 relocated=00DC7FEC _ZN4Anki8Embedded12VisionMarker14ProbeCenters_XE
+0103FF44: raw=00000000 relocated=00DC7F64 _ZN4Anki8Embedded12VisionMarker8GRIDSIZEE
+0103FF48: raw=00000000 relocated=00DC7F88 _ZN4Anki8Embedded12VisionMarker20NUM_THRESHOLD_PROBESE
+0103FF4C: raw=00000000 relocated=00DC7FD4 _ZN4Anki8Embedded12VisionMarker22ThresholdBrightProbe_YE
+0103FF50: raw=00000000 relocated=00DC7FBC _ZN4Anki8Embedded12VisionMarker22ThresholdBrightProbe_XE
+0103FF54: raw=00000000 relocated=00DC7F8C _ZN4Anki8Embedded12VisionMarker20ThresholdDarkProbe_XE
+0103FFB0: raw=00000000 relocated=01038CA8 _ZTVN4Json10LogicErrorE
+0103FFB4: raw=00000000 relocated=01038CC8 _ZTIN4Json10LogicErrorE
+0103FFB8: raw=00000000 relocated=01038BDC _ZTVN4Json23BuiltStyledStreamWriterE
+0103FFBC: raw=00000000 relocated=01038BF0 _ZTVN4Json12StreamWriterE
+0103FFC0: raw=00000000 relocated=01038C04 _ZTVN4Json19StreamWriterBuilderE
+0103FFC4: raw=00000000 relocated=0108D1B4 _ZN4Json5Value7nullRefE
+0103FFC8: raw=00000000 relocated=00DCA5C0 KM_VEC3_POS_Y
+0103FFCC: raw=00000000 relocated=00DCA5E4 KM_VEC3_POS_X
+0103FFD0: raw=00000000 relocated=00DCA5B4 KM_VEC3_NEG_Z
+0103FFD4: raw=00000000 relocated=00DCA5A8 KM_VEC3_POS_Z
+0103FFD8: raw=00000000 relocated=00DCA5F0 KM_VEC3_ZERO
+0103FFDC: raw=00000000 relocated=008FC244 OkaoExtraMalloc2
+0103FF38: raw=00000000 relocated=00DC7F74 _ZN4Anki8Embedded12VisionMarker13ProbePoints_XE
+0103FF3C: raw=00000000 relocated=00DC87EC _ZN4Anki8Embedded12VisionMarker14ProbeCenters_YE
+RANGE 0x00688252..0x00688690 exclusive; Thumb;
+00688252: sub          sp, #8
+00688254: ldrd         r5, r6, [r0]
+00688258: mov          r4, r1
+0068825A: cmp          r5, r6
+0068825C: beq          #0x68826e
+0068825E: ldr          r0, [r5], #4
+00688262: mov          r1, r4
+00688264: blx          #0x4bcdc8 ; Anki::Cozmo::QuadTreeNode::AddSmallestDescendantsDepthFirst
+00688268: cmp          r6, r5
+0068826A: bne          #0x68825e
+0068826C: b            #0x68828a
+0068826E: str          r0, [sp, #4]
+00688270: ldrd         r1, r2, [r4, #4]
+00688274: cmp          r1, r2
+00688276: bhs          #0x688282
+00688278: str          r0, [r1]
+0068827A: ldr          r0, [r4, #4]
+0068827C: adds         r0, #4
+0068827E: str          r0, [r4, #4]
+00688280: b            #0x68828a
+00688282: add          r1, sp, #4
+00688284: mov          r0, r4
+00688286: blx          #0x4bd074 ; std::__ndk1::vector<Anki::Cozmo::QuadTreeNode_const*,std::__ndk1::allocator<Anki::Cozmo::QuadTreeNode_const*>>::__emplace_back_slow_path<Anki::Cozmo::QuadTreeNode_const*>
+0068828A: add          sp, #8
+0068828C: pop          {r4, r5, r6, pc}
+0068828E: movs         r0, r0
+00688290: push.w       {r4, r5, r6, r7, r8, sb, lr}
+00688294: sub          sp, #4
+00688296: mov          sb, r1
+00688298: mov          r5, r0
+0068829A: ldrd         r7, r1, [sb]
+0068829E: cmp          r7, r1
+006882A0: beq          #0x688324
+006882A2: vldr         s0, [pc, #0xcc] ; word[00688370]=B727C5AC
+006882A6: movs         r2, #1
+006882A8: vldr         s2, [r5, #0x1c]
+006882AC: movs         r3, #0
+006882AE: vldr         s4, [pc, #0xc4] ; word[00688374]=3727C5AC
+006882B2: mov          r0, r7
+006882B4: vadd.f32     s2, s2, s0
+006882B8: b            #0x6882da
+006882BA: adds         r0, #8
+006882BC: cmp          r1, r0
+006882BE: bne          #0x6882da
+006882C0: b            #0x688322
+006882C2: vldr         s8, [r5, #0x28]
+006882C6: movs         r6, #0
+006882C8: vadd.f32     s8, s8, s4
+006882CC: vcmpe.f32    s8, s6
+006882D0: vmrs         apsr_nzcv, fpscr
+006882D4: it           ge
+006882D6: movge        r6, #1
+006882D8: b            #0x688312
+006882DA: vldr         s6, [r0]
+006882DE: vcmpe.f32    s2, s6
+006882E2: vmrs         apsr_nzcv, fpscr
+006882E6: bhi          #0x688310
+006882E8: vldr         s8, [r5, #0x24]
+006882EC: vadd.f32     s8, s8, s4
+006882F0: vcmpe.f32    s8, s6
+006882F4: vmrs         apsr_nzcv, fpscr
+006882F8: blt          #0x688310
+006882FA: vldr         s6, [r5, #0x20]
+006882FE: vadd.f32     s8, s6, s0
+00688302: vldr         s6, [r0, #4]
+00688306: vcmpe.f32    s8, s6
+0068830A: vmrs         apsr_nzcv, fpscr
+0068830E: bls          #0x6882c2
+00688310: movs         r6, #0
+00688312: ands         r2, r6
+00688314: orr.w        r3, r3, r6
+00688318: bne          #0x6882ba
+0068831A: lsls         r6, r3, #0x1f
+0068831C: beq          #0x6882ba
+0068831E: movs         r0, #1
+00688320: b            #0x688326
+00688322: cbz          r2, #0x68832c
+00688324: movs         r0, #3
+00688326: add          sp, #4
+00688328: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+0068832C: subs         r0, r1, r7
+0068832E: asrs         r0, r0, #3
+00688330: cmp          r0, #2
+00688332: blo          #0x68836c
+00688334: add.w        r8, r5, #0x7c
+00688338: add.w        r6, r5, #0x2c
+0068833C: ldrd         r7, r4, [sb, #0x38]
+00688340: cmp          r7, r4
+00688342: beq          #0x688356
+00688344: mov          r0, r7
+00688346: mov          r1, r6
+00688348: blx          #0x4bd080 ; Anki::LineSegment::IntersectsWith
+0068834C: cmp          r0, #0
+0068834E: bne          #0x68831e
+00688350: adds         r7, #0x28
+00688352: cmp          r4, r7
+00688354: bne          #0x688344
+00688356: adds         r6, #0x28
+00688358: cmp          r6, r8
+0068835A: bne          #0x68833c
+0068835C: add.w        r1, r5, #0x1c
+00688360: mov          r0, sb
+00688362: blx          #0x4bd08c ; Anki::FastPolygon::Contains
+00688366: cbz          r0, #0x68836c
+00688368: movs         r0, #2
+0068836A: b            #0x688326
+0068836C: movs         r0, #0
+0068836E: b            #0x688326
+00688370: stm          r5!, {r2, r3, r5, r7}

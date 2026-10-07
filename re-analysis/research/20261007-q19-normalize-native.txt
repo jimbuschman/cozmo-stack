@@ -1,0 +1,215 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+RANGE 0x40a68 0x40c9c exclusive Thumb _ZN2cv9normalizeERKNS_11_InputArrayERKNS_17_InputOutputArrayEddiiS2_
+00040A68: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00040A6C: mov          sb, r1
+00040A6E: vpush        {d8, d9, d10, d11}
+00040A72: mov          r8, r0
+00040A74: ldr          r5, [pc, #0x210] ; word[00040C88]=000B4232
+00040A76: add          r5, pc
+00040A78: ldr          r5, [r5]
+00040A7A: vmov         d9, r2, r3
+00040A7E: sub          sp, #0xe4
+00040A80: add          r1, sp, #0x130
+00040A82: ldr          r3, [r5]
+00040A84: vldr         d11, [sp, #0x128]
+00040A88: add          r4, sp, #0x20
+00040A8A: ldm.w        r1, {r1, r6, sl}
+00040A8E: str          r3, [sp, #0xdc]
+00040A90: vldr         d8, [pc, #0x1e4] ; word[00040C78]=00000000
+00040A94: cmp          r1, #0x20
+00040A96: bne          #0x40af6
+00040A98: vcmpe.f64    d9, d11
+00040A9C: movs         r3, #0
+00040A9E: add          r1, sp, #0x18
+00040AA0: stm.w        sp, {r3, sl}
+00040AA4: mov          r2, r4
+00040AA6: vstr         d8, [sp, #0x18]
+00040AAA: vmrs         apsr_nzcv, fpscr
+00040AAE: vstr         d8, [sp, #0x20]
+00040AB2: ite          le
+00040AB4: vmovle.f64   d10, d9
+00040AB8: vmovgt.f64   d10, d11
+00040ABC: it           pl
+00040ABE: vmovpl.f64   d11, d9
+00040AC2: bl           #0xbd258 ; _ZN2cv9minMaxLocERKNS_11_InputArrayEPdS3_PNS_6Point_IiEES6_S2_
+00040AC6: vldr         d17, [sp, #0x18]
+00040ACA: vldr         d16, [sp, #0x20]
+00040ACE: vldr         d18, [pc, #0x1b0] ; word[00040C80]=00000000
+00040AD2: vsub.f64     d16, d16, d17
+00040AD6: vcmpe.f64    d16, d18
+00040ADA: vsub.f64     d9, d11, d10
+00040ADE: vmrs         apsr_nzcv, fpscr
+00040AE2: ble          #0x40aec
+00040AE4: vmov.f64     d8, #1.000000e+00
+00040AE8: vdiv.f64     d8, d8, d16
+00040AEC: vmul.f64     d8, d9, d8
+00040AF0: vmls.f64     d10, d17, d8
+00040AF4: b            #0x40b60
+00040AF6: cmp          r1, #4
+00040AF8: beq          #0x40b00
+00040AFA: subs         r3, r1, #1
+00040AFC: cmp          r3, #1
+00040AFE: bhi          #0x40b24
+00040B00: mov          r0, r8
+00040B02: mov          r2, sl
+00040B04: bl           #0xbd884 ; _ZN2cv4normERKNS_11_InputArrayEiS2_
+00040B08: vldr         d16, [pc, #0x174] ; word[00040C80]=00000000
+00040B0C: vmov         d8, r0, r1
+00040B10: vcmpe.f64    d8, d16
+00040B14: vmrs         apsr_nzcv, fpscr
+00040B18: ble          #0x40b58
+00040B1A: vdiv.f64     d8, d9, d8
+00040B1E: vldr         d10, [pc, #0x158] ; word[00040C78]=00000000
+00040B22: b            #0x40b60
+00040B24: ldr          r1, [pc, #0x164] ; word[00040C8C]=000974E9
+00040B26: mov          r0, r4
+00040B28: add          r1, pc
+00040B2A: bl           #0x2087e ; _ZN2cv6StringC1EPKc
+00040B2E: ldr          r2, [pc, #0x160] ; word[00040C90]=000A43A4
+00040B30: movw         r3, #0x14e9
+00040B34: str          r3, [sp]
+00040B36: ldr          r3, [pc, #0x15c] ; word[00040C94]=00097477
+00040B38: add          r2, pc
+00040B3A: mvn          r0, #4
+00040B3E: mov          r1, r4
+00040B40: adds         r2, #0x98
+00040B42: add          r3, pc
+00040B44: bl           #0xc0970 ; _ZN2cv5errorEiRKNS_6StringEPKcS4_i
+00040B48: mov          r0, r4
+00040B4A: vldr         d10, [pc, #0x12c] ; word[00040C78]=00000000
+00040B4E: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+00040B52: vmov.f64     d8, #1.000000e+00
+00040B56: b            #0x40b60
+00040B58: vldr         d10, [pc, #0x11c] ; word[00040C78]=00000000
+00040B5C: vmov.f64     d8, d10
+00040B60: mov          r0, r8
+00040B62: mov.w        r1, #-1
+00040B66: bl           #0x836b8 ; _ZNK2cv11_InputArray4typeEi
+00040B6A: cmp          r6, #0
+00040B6C: mov          fp, r0
+00040B6E: ubfx         r7, r0, #3, #9
+00040B72: bge          #0x40b8e
+00040B74: mov          r0, sb
+00040B76: bl           #0x84360 ; _ZNK2cv12_OutputArray9fixedTypeEv
+00040B7A: cbnz         r0, #0x40b82
+00040B7C: and          r6, fp, #7
+00040B80: b            #0x40b8e
+00040B82: mov          r0, sb
+00040B84: mov.w        r1, #-1
+00040B88: bl           #0x839bc ; _ZNK2cv11_InputArray5depthEi
+00040B8C: mov          r6, r0
+00040B8E: and          r2, r6, #7
+00040B92: mov          r1, r8
+00040B94: add.w        r2, r2, r7, lsl #3
+00040B98: mov          r0, sb
+00040B9A: add          r7, sp, #0x34
+00040B9C: bl           #0x8f9f4 ; _ZNK2cv12_OutputArray14createSameSizeERKNS_11_InputArrayEi
+00040BA0: mov          r1, r8
+00040BA2: add.w        r8, sp, #0x6c
+00040BA6: mov          r0, r7
+00040BA8: mov.w        r2, #-1
+00040BAC: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+00040BB0: mov          r0, r8
+00040BB2: mov          r1, sb
+00040BB4: mov.w        r2, #-1
+00040BB8: bl           #0x23e5a ; _ZNK2cv11_InputArray6getMatEi
+00040BBC: mov          r0, sl
+00040BBE: bl           #0x839d8 ; _ZNK2cv11_InputArray5emptyEv
+00040BC2: ldr.w        fp, [pc, #0xd4] ; word[00040C98]=02010000
+00040BC6: cbz          r0, #0x40bea
+00040BC8: vstr         d8, [sp]
+00040BCC: mov          r0, r7
+00040BCE: mov          r1, r4
+00040BD0: mov          r2, r6
+00040BD2: movs         r3, #0
+00040BD4: str.w        fp, [sp, #0x20]
+00040BD8: vstr         d10, [sp, #8]
+00040BDC: str          r3, [sp, #0x28]
+00040BDE: str          r3, [sp, #0x2c]
+00040BE0: str.w        r8, [sp, #0x24]
+00040BE4: bl           #0x407e8 ; _ZNK2cv3Mat9convertToERKNS_12_OutputArrayEidd
+00040BE8: b            #0x40c34
+00040BEA: add.w        sb, sp, #0xa4
+00040BEE: str          r0, [sp, #0x14]
+00040BF0: mov          r0, sb
+00040BF2: bl           #0x23efc ; _ZN2cv3MatC1Ev
+00040BF6: ldr          r3, [sp, #0x14]
+00040BF8: vstr         d8, [sp]
+00040BFC: mov          r0, r7
+00040BFE: mov          r1, r4
+00040C00: mov          r2, r6
+00040C02: str          r3, [sp, #0x28]
+00040C04: vstr         d10, [sp, #8]
+00040C08: str          r3, [sp, #0x2c]
+00040C0A: str.w        fp, [sp, #0x20]
+00040C0E: str.w        sb, [sp, #0x24]
+00040C12: bl           #0x407e8 ; _ZNK2cv3Mat9convertToERKNS_12_OutputArrayEidd
+00040C16: mov          r0, sb
+00040C18: mov          r1, r4
+00040C1A: mov          r2, sl
+00040C1C: movs         r3, #0
+00040C1E: str.w        fp, [sp, #0x20]
+00040C22: str          r3, [sp, #0x28]
+00040C24: str          r3, [sp, #0x2c]
+00040C26: str.w        r8, [sp, #0x24]
+00040C2A: bl           #0x43cd0 ; _ZNK2cv3Mat6copyToERKNS_12_OutputArrayERKNS_11_InputArrayE
+00040C2E: mov          r0, sb
+00040C30: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C34: mov          r0, r8
+00040C36: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C3A: mov          r0, r7
+00040C3C: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C40: ldr          r2, [sp, #0xdc]
+00040C42: ldr          r3, [r5]
+00040C44: cmp          r2, r3
+00040C46: beq          #0x40c6e
+00040C48: blx          #0x1f984
+00040C4C: mov          r0, r4
+00040C4E: bl           #0xbffc8 ; _ZN2cv6String10deallocateEv
+00040C52: b            #0x40c6a
+00040C54: mov          r0, sb
+00040C56: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C5A: b            #0x40c5c
+00040C5C: mov          r0, r8
+00040C5E: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C62: b            #0x40c64
+00040C64: mov          r0, r7
+00040C66: bl           #0x240dc ; _ZN2cv3MatD1Ev
+00040C6A: blx          #0x1f990
+00040C6E: add          sp, #0xe4
+00040C70: vpop         {d8, d9, d10, d11}
+00040C74: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00040C78: movs         r0, r0
+00040C7A: movs         r0, r0
+00040C7C: movs         r0, r0
+00040C7E: movs         r0, r0
+00040C80: movs         r0, r0
+00040C82: movs         r0, r0
+00040C84: movs         r0, r0
+00040C86: subs         r4, #0xb0
+00040C88: tst          r2, r6
+00040C8A: movs         r3, r1
+00040C8C: strb         r1, [r5, #0x13]
+00040C8E: movs         r1, r1
+00040C90: bics         r4, r4
+00040C92: movs         r2, r1
+00040C94: strb         r7, [r6, #0x11]
+00040C96: movs         r1, r1
+00040C98: movs         r0, r0
+00040C9A: lsls         r1, r0, #8
+RANGE 0x2c744 0x2c764 exclusive Thumb _ZN2cv8subtractERKNS_11_InputArrayES2_RKNS_12_OutputArrayES2_i
+0002C744: push         {r0, r1, r2, r3, r4, lr}
+0002C746: ldr          r4, [sp, #0x18]
+0002C748: str          r4, [sp]
+0002C74A: ldr          r4, [pc, #0x14] ; word[0002C760]=000C88B8
+0002C74C: add          r4, pc
+0002C74E: adds         r4, #0x60
+0002C750: str          r4, [sp, #4]
+0002C752: movs         r4, #0
+0002C754: str          r4, [sp, #8]
+0002C756: str          r4, [sp, #0xc]
+0002C758: bl           #0x2b7dc
+0002C75C: add          sp, #0x10
+0002C75E: pop          {r4, pc}
+0002C760: ldrh         r0, [r7, #4]
+0002C762: movs         r4, r1

@@ -1,0 +1,240 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x006871BC..0x00687402 exclusive; Thumb;
+006871BC: ldr          r0, [pc, #0x334] ; word[006874F4]=009B88A4
+006871BE: movs         r1, #0
+006871C0: strb.w       r1, [sp, #0x28]
+006871C4: add          r0, pc
+006871C6: strd         r8, r8, [sp, #0x2c]
+006871CA: ldr          r0, [r0]
+006871CC: adds         r0, #8
+006871CE: str          r0, [sp, #0x24]
+006871D0: add          r0, sp, #0x1c
+006871D2: add          r1, sp, #0x24
+006871D4: blx          #0x4bcf3c ; Anki::Cozmo::QuadTreeTypes::NodeContent::NodeContent
+006871D8: ldr          r7, [sp, #0x14]
+006871DA: and.w        r0, sb, fp
+006871DE: cmp          r0, #1
+006871E0: bne          #0x68721e
+006871E2: ldr          r0, [r4]
+006871E4: cmp          r6, #1
+006871E6: ldr          r0, [r0]
+006871E8: bne          #0x68725e
+006871EA: cmp          r5, #1
+006871EC: bne          #0x6872d2
+006871EE: add          r1, sp, #0x1c
+006871F0: mov          r2, r7
+006871F2: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+006871F6: ldr          r0, [r4]
+006871F8: ldr          r0, [r0, #4]
+006871FA: add          r1, sp, #0x1c
+006871FC: mov          r2, r7
+006871FE: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687202: ldr          r0, [r4]
+00687204: ldr          r0, [r0, #8]
+00687206: add          r1, sp, #0x1c
+00687208: mov          r2, r7
+0068720A: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+0068720E: ldr          r0, [sp, #0x44]
+00687210: ldr          r2, [r4]
+00687212: ldr          r1, [r0]
+00687214: ldr          r0, [r2, #0xc]
+00687216: mov          r2, r7
+00687218: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068721C: b            #0x687394
+0068721E: cmp.w        fp, #1
+00687222: bne          #0x687292
+00687224: ldr          r0, [r4]
+00687226: cmp          r6, #1
+00687228: ldr          r0, [r0]
+0068722A: bne          #0x687302
+0068722C: add          r1, sp, #0x1c
+0068722E: mov          r2, r7
+00687230: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687234: ldr          r0, [r4]
+00687236: ldr          r0, [r0, #4]
+00687238: add          r1, sp, #0x1c
+0068723A: mov          r2, r7
+0068723C: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687240: ldr          r0, [sp, #0x44]
+00687242: ldr          r2, [r4]
+00687244: ldr          r1, [r0]
+00687246: ldr          r0, [r2, #8]
+00687248: mov          r2, r7
+0068724A: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068724E: ldr          r0, [sp, #0x44]
+00687250: ldr          r2, [r4]
+00687252: ldr          r1, [r0, #4]
+00687254: ldr          r0, [r2, #0xc]
+00687256: mov          r2, r7
+00687258: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068725C: b            #0x687394
+0068725E: cmp          r5, #1
+00687260: bne          #0x687334
+00687262: add          r1, sp, #0x1c
+00687264: mov          r2, r7
+00687266: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+0068726A: ldr          r0, [sp, #0x44]
+0068726C: ldr          r2, [r4]
+0068726E: ldr          r1, [r0, #8]
+00687270: ldr          r0, [r2, #4]
+00687272: mov          r2, r7
+00687274: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+00687278: ldr          r0, [r4]
+0068727A: ldr          r0, [r0, #8]
+0068727C: add          r1, sp, #0x1c
+0068727E: mov          r2, r7
+00687280: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687284: ldr          r0, [r4]
+00687286: ldr          r0, [r0, #0xc]
+00687288: add          r1, sp, #0x1c
+0068728A: mov          r2, r7
+0068728C: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687290: b            #0x687394
+00687292: cmp.w        sb, #1
+00687296: bne          #0x687394
+00687298: ldr          r0, [r4]
+0068729A: cmp          r5, #1
+0068729C: ldr          r0, [r0]
+0068729E: bne          #0x687364
+006872A0: add          r1, sp, #0x1c
+006872A2: mov          r2, r7
+006872A4: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+006872A8: ldr          r0, [sp, #0x44]
+006872AA: ldr          r2, [r4]
+006872AC: ldr          r1, [r0]
+006872AE: ldr          r0, [r2, #4]
+006872B0: mov          r2, r7
+006872B2: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+006872B6: ldr          r0, [r4]
+006872B8: ldr          r0, [r0, #8]
+006872BA: add          r1, sp, #0x1c
+006872BC: mov          r2, r7
+006872BE: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+006872C2: ldr          r0, [sp, #0x44]
+006872C4: ldr          r2, [r4]
+006872C6: ldr          r1, [r0, #8]
+006872C8: ldr          r0, [r2, #0xc]
+006872CA: mov          r2, r7
+006872CC: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+006872D0: b            #0x687394
+006872D2: add          r1, sp, #0x1c
+006872D4: mov          r2, r7
+006872D6: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+006872DA: ldr          r0, [r4]
+006872DC: ldr          r0, [r0, #4]
+006872DE: add          r1, sp, #0x1c
+006872E0: mov          r2, r7
+006872E2: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+006872E6: ldr          r0, [sp, #0x44]
+006872E8: ldr          r2, [r4]
+006872EA: ldr          r1, [r0, #4]
+006872EC: ldr          r0, [r2, #8]
+006872EE: mov          r2, r7
+006872F0: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+006872F4: ldr          r0, [r4]
+006872F6: ldr          r0, [r0, #0xc]
+006872F8: add          r1, sp, #0x1c
+006872FA: mov          r2, r7
+006872FC: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687300: b            #0x687394
+00687302: ldr          r1, [sp, #0x44]
+00687304: ldr          r1, [r1, #8]
+00687306: mov          r2, r7
+00687308: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068730C: ldr          r0, [sp, #0x44]
+0068730E: ldr          r2, [r4]
+00687310: ldr          r1, [r0, #0xc]
+00687312: ldr          r0, [r2, #4]
+00687314: mov          r2, r7
+00687316: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068731A: ldr          r0, [r4]
+0068731C: ldr          r0, [r0, #8]
+0068731E: add          r1, sp, #0x1c
+00687320: mov          r2, r7
+00687322: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687326: ldr          r0, [r4]
+00687328: ldr          r0, [r0, #0xc]
+0068732A: add          r1, sp, #0x1c
+0068732C: mov          r2, r7
+0068732E: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687332: b            #0x687394
+00687334: ldr          r1, [sp, #0x44]
+00687336: ldr          r1, [r1, #0xc]
+00687338: mov          r2, r7
+0068733A: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068733E: ldr          r0, [r4]
+00687340: ldr          r0, [r0, #4]
+00687342: add          r1, sp, #0x1c
+00687344: mov          r2, r7
+00687346: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+0068734A: ldr          r0, [r4]
+0068734C: ldr          r0, [r0, #8]
+0068734E: add          r1, sp, #0x1c
+00687350: mov          r2, r7
+00687352: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687356: ldr          r0, [r4]
+00687358: ldr          r0, [r0, #0xc]
+0068735A: add          r1, sp, #0x1c
+0068735C: mov          r2, r7
+0068735E: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687362: b            #0x687394
+00687364: ldr          r1, [sp, #0x44]
+00687366: ldr          r1, [r1, #4]
+00687368: mov          r2, r7
+0068736A: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+0068736E: ldr          r0, [r4]
+00687370: ldr          r0, [r0, #4]
+00687372: add          r1, sp, #0x1c
+00687374: mov          r2, r7
+00687376: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+0068737A: ldr          r0, [sp, #0x44]
+0068737C: ldr          r2, [r4]
+0068737E: ldr          r1, [r0, #0xc]
+00687380: ldr          r0, [r2, #8]
+00687382: mov          r2, r7
+00687384: blx          #0x4bcfe4 ; Anki::Cozmo::QuadTreeNode::SwapChildrenAndContent
+00687388: ldr          r0, [r4]
+0068738A: ldr          r0, [r0, #0xc]
+0068738C: add          r1, sp, #0x1c
+0068738E: mov          r2, r7
+00687390: blx          #0x4bcf84 ; Anki::Cozmo::QuadTreeNode::ForceSetDetectedContentType
+00687394: add          r0, sp, #0x44
+00687396: mov          r1, r7
+00687398: blx          #0x4bcff0 ; Anki::Cozmo::QuadTreeNode::DestroyNodes
+0068739C: ldr          r0, [sp, #0x20]
+0068739E: cbz          r0, #0x6873a4
+006873A0: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006873A4: add          r0, sp, #0x44
+006873A6: blx          #0x4bcd44 ; std::__ndk1::__vector_base<std::__ndk1::unique_ptr<Anki::Cozmo::QuadTreeNode,std::__ndk1::default_delete<Anki::Cozmo::QuadTreeNode>>,std::__ndk1::allocator<std::__ndk1::unique_ptr<Anki::Cozmo::QuadTreeNode,std::__ndk1::default_delete<Anki::Cozmo::QuadTreeNode>>>>::~__vector_base
+006873AA: movs         r0, #0
+006873AC: vldr         s0, [pc, #0x148] ; word[006874F8]=3A83126F
+006873B0: strd         r0, r0, [sp, #0x34]
+006873B4: str          r0, [sp, #0x3c]
+006873B6: vldr         s2, [r4, #0x18]
+006873BA: ldr          r0, [pc, #0x140] ; word[006874FC]=00578907
+006873BC: vmul.f32     s0, s2, s0
+006873C0: ldrb.w       r1, [r4, #0x80]
+006873C4: ldr          r3, [pc, #0x138] ; word[00687500]=0057890E
+006873C6: add          r0, pc
+006873C8: add          r3, pc
+006873CA: vcvt.f64.f32 d0, s0
+006873CE: str          r1, [sp]
+006873D0: adr          r1, #0x130
+006873D2: add          r2, sp, #0x34
+006873D4: vstr         d0, [sp, #8]
+006873D8: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+006873DC: ldr          r0, [sp, #0x34]
+006873DE: cbz          r0, #0x6873fe
+006873E0: ldr          r1, [sp, #0x38]
+006873E2: cmp          r1, r0
+006873E4: itttt        ne
+006873E6: subne.w      r2, r1, #8
+006873EA: subne        r2, r2, r0
+006873EC: mvnne        r3, #7
+006873F0: bicne.w      r2, r3, r2
+006873F4: itt          ne
+006873F6: addne        r1, r1, r2
+006873F8: strne        r1, [sp, #0x38]
+006873FA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+006873FE: movs         r2, #1
+00687400: b            #0x686f9c

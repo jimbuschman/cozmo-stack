@@ -1,0 +1,651 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+RANGE 0x3a7ac 0x3aa0e exclusive Thumb
+0003A7AC: push.w       {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003A7B0: ldr          r3, [sp, #0x38]
+0003A7B2: ldr          r2, [sp, #0x34]
+0003A7B4: ldr          r6, [sp, #0x30]
+0003A7B6: ldr          r7, [r3]
+0003A7B8: bic          ip, r2, #3
+0003A7BC: ldr          r3, [r3, #4]
+0003A7BE: cmp          r7, #0
+0003A7C0: sub.w        r8, r7, #7
+0003A7C4: lsr.w        sl, r7, #3
+0003A7C8: add.w        lr, r3, #-1
+0003A7CC: sub.w        sb, r7, #3
+0003A7D0: it           lt
+0003A7D2: movlt        r2, #0
+0003A7D4: lsl.w        r3, sl, #5
+0003A7D8: lsl.w        sl, sl, #3
+0003A7DC: it           lt
+0003A7DE: movlt        r3, #0
+0003A7E0: str          r3, [sp, #4]
+0003A7E2: it           ge
+0003A7E4: movge        r2, sl
+0003A7E6: cmp.w        lr, #-1
+0003A7EA: beq          #0x3a86a
+0003A7EC: mov          r4, r6
+0003A7EE: movs         r3, #0
+0003A7F0: cmp          r8, r3
+0003A7F2: ble          #0x3a818
+0003A7F4: adds         r5, r0, r3
+0003A7F6: adds         r3, #8
+0003A7F8: vld1.8       {d16}, [r5]
+0003A7FC: add.w        r5, r4, #0x10
+0003A800: vmovl.u8     q8, d16
+0003A804: vmovl.u16    q9, d16
+0003A808: vmovl.u16    q8, d17
+0003A80C: vst1.32      {d18, d19}, [r4]
+0003A810: adds         r4, #0x20
+0003A812: vst1.32      {d16, d17}, [r5]
+0003A816: b            #0x3a7f0
+0003A818: ldr          r4, [sp, #4]
+0003A81A: adds         r5, r0, r2
+0003A81C: adds         r4, r6, r4
+0003A81E: cmp          sb, r3
+0003A820: ble          #0x3a84a
+0003A822: ldrb.w       sl, [r5, #1]
+0003A826: adds         r3, #4
+0003A828: ldrb.w       fp, [r5]
+0003A82C: adds         r4, #0x10
+0003A82E: adds         r5, #4
+0003A830: str          sl, [r4, #-0xc]
+0003A834: str          fp, [r4, #-0x10]
+0003A838: ldrb         fp, [r5, #-0x2]
+0003A83C: ldrb         sl, [r5, #-0x1]
+0003A840: str          fp, [r4, #-0x8]
+0003A844: str          sl, [r4, #-0x4]
+0003A848: b            #0x3a81e
+0003A84A: add.w        r4, r6, r3, lsl #2
+0003A84E: add          r3, r0
+0003A850: subs         r5, r3, r0
+0003A852: cmp          r5, r7
+0003A854: bge          #0x3a860
+0003A856: ldrb         r5, [r3], #1
+0003A85A: str          r5, [r4], #4
+0003A85E: b            #0x3a850
+0003A860: add          r0, r1
+0003A862: add          r6, ip
+0003A864: add.w        lr, lr, #-1
+0003A868: b            #0x3a7e6
+0003A86A: add          sp, #0xc
+0003A86C: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0003A870: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003A874: ldr          r2, [sp, #0x2c]
+0003A876: ldr          r3, [sp, #0x28]
+0003A878: ldr          r6, [sp, #0x24]
+0003A87A: ldr          r7, [r2]
+0003A87C: bic          r8, r3, #3
+0003A880: ldr          r3, [r2, #4]
+0003A882: cmp          r7, #0
+0003A884: sub.w        sb, r7, #7
+0003A888: lsr.w        r2, r7, #3
+0003A88C: add.w        lr, r3, #-1
+0003A890: sub.w        sl, r7, #3
+0003A894: lsl.w        ip, r2, #5
+0003A898: lsl.w        r5, r2, #3
+0003A89C: itt          lt
+0003A89E: movlt.w      ip, #0
+0003A8A2: movlt        r5, #0
+0003A8A4: cmp.w        lr, #-1
+0003A8A8: beq          #0x3a958
+0003A8AA: mov          r2, r6
+0003A8AC: movs         r3, #0
+0003A8AE: cmp          sb, r3
+0003A8B0: ble          #0x3a8de
+0003A8B2: adds         r4, r0, r3
+0003A8B4: adds         r3, #8
+0003A8B6: vld1.8       {d16}, [r4]
+0003A8BA: add.w        r4, r2, #0x10
+0003A8BE: vmovl.u8     q8, d16
+0003A8C2: vmovl.u16    q9, d16
+0003A8C6: vmovl.u16    q8, d17
+0003A8CA: vcvt.f32.u32 q9, q9
+0003A8CE: vcvt.f32.u32 q8, q8
+0003A8D2: vst1.32      {d18, d19}, [r2]
+0003A8D6: adds         r2, #0x20
+0003A8D8: vst1.32      {d16, d17}, [r4]
+0003A8DC: b            #0x3a8ae
+0003A8DE: add.w        r2, r6, ip
+0003A8E2: adds         r4, r0, r5
+0003A8E4: cmp          sl, r3
+0003A8E6: ble          #0x3a930
+0003A8E8: ldrb.w       fp, [r4, #1]
+0003A8EC: adds         r3, #4
+0003A8EE: adds         r2, #0x10
+0003A8F0: adds         r4, #4
+0003A8F2: vmov         s15, fp
+0003A8F6: ldrb         fp, [r4, #-0x4]
+0003A8FA: vcvt.f32.u32 s15, s15
+0003A8FE: vmov         s14, fp
+0003A902: vcvt.f32.u32 s14, s14
+0003A906: vstr         s15, [r2, #-0xc]
+0003A90A: vstr         s14, [r2, #-0x10]
+0003A90E: ldrb         fp, [r4, #-0x2]
+0003A912: vmov         s14, fp
+0003A916: ldrb         fp, [r4, #-0x1]
+0003A91A: vcvt.f32.u32 s14, s14
+0003A91E: vmov         s15, fp
+0003A922: vcvt.f32.u32 s15, s15
+0003A926: vstr         s14, [r2, #-8]
+0003A92A: vstr         s15, [r2, #-4]
+0003A92E: b            #0x3a8e4
+0003A930: add.w        r2, r6, r3, lsl #2
+0003A934: add          r3, r0
+0003A936: subs         r4, r3, r0
+0003A938: cmp          r4, r7
+0003A93A: bge          #0x3a94e
+0003A93C: ldrb         r4, [r3], #1
+0003A940: vmov         s15, r4
+0003A944: vcvt.f32.u32 s15, s15
+0003A948: vstmia       r2!, {s15}
+0003A94C: b            #0x3a936
+0003A94E: add          r0, r1
+0003A950: add          r6, r8
+0003A952: add.w        lr, lr, #-1
+0003A956: b            #0x3a8a4
+0003A958: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0003A95C: push.w       {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003A960: ldr          r3, [sp, #0x38]
+0003A962: ldr          r2, [sp, #0x34]
+0003A964: ldr.w        lr, [sp, #0x30]
+0003A968: ldr          r7, [r3]
+0003A96A: bic          ip, r2, #1
+0003A96E: ldr          r6, [r3, #4]
+0003A970: cmp          r7, #0
+0003A972: sub.w        r8, r7, #7
+0003A976: lsr.w        sl, r7, #3
+0003A97A: add.w        r6, r6, #-1
+0003A97E: sub.w        sb, r7, #3
+0003A982: it           lt
+0003A984: movlt        r2, #0
+0003A986: lsl.w        r3, sl, #4
+0003A98A: lsl.w        sl, sl, #3
+0003A98E: it           lt
+0003A990: movlt        r3, #0
+0003A992: str          r3, [sp, #4]
+0003A994: it           ge
+0003A996: movge        r2, sl
+0003A998: adds         r3, r6, #1
+0003A99A: beq          #0x3aa08
+0003A99C: movs         r3, #0
+0003A99E: cmp          r8, r3
+0003A9A0: ble          #0x3a9b8
+0003A9A2: adds         r4, r0, r3
+0003A9A4: vld1.8       {d16}, [r4]
+0003A9A8: add.w        r4, lr, r3, lsl #1
+0003A9AC: adds         r3, #8
+0003A9AE: vmovl.s8     q8, d16
+0003A9B2: vst1.16      {d16, d17}, [r4]
+0003A9B6: b            #0x3a99e
+0003A9B8: ldr          r4, [sp, #4]
+0003A9BA: adds         r5, r0, r2
+0003A9BC: add          r4, lr
+0003A9BE: cmp          sb, r3
+0003A9C0: ble          #0x3a9ea
+0003A9C2: ldrsb.w      sl, [r5, #1]
+0003A9C6: adds         r3, #4
+0003A9C8: ldrsb.w      fp, [r5]
+0003A9CC: adds         r4, #8
+0003A9CE: adds         r5, #4
+0003A9D0: strh         sl, [r4, #-0x6]
+0003A9D4: strh         fp, [r4, #-0x8]
+0003A9D8: ldrsb        fp, [r5, #-0x2]
+0003A9DC: ldrsb        sl, [r5, #-0x1]
+0003A9E0: strh         fp, [r4, #-0x4]
+0003A9E4: strh         sl, [r4, #-0x2]
+0003A9E8: b            #0x3a9be
+0003A9EA: add.w        r4, lr, r3, lsl #1
+0003A9EE: add          r3, r0
+0003A9F0: subs         r5, r3, r0
+0003A9F2: cmp          r5, r7
+0003A9F4: bge          #0x3aa00
+0003A9F6: ldrsb        r5, [r3], #1
+0003A9FA: strh         r5, [r4], #2
+0003A9FE: b            #0x3a9f0
+0003AA00: add          r0, r1
+0003AA02: add          lr, ip
+0003AA04: subs         r6, #1
+0003AA06: b            #0x3a998
+0003AA08: add          sp, #0xc
+0003AA0A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x3ae6e 0x3b142 exclusive Thumb
+0003AE6E: push.w       {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003AE72: bic          r1, r1, #1
+0003AE76: ldr          r3, [sp, #0x38]
+0003AE78: ldr          r2, [sp, #0x34]
+0003AE7A: ldr          r6, [sp, #0x30]
+0003AE7C: ldr          r7, [r3]
+0003AE7E: bic          ip, r2, #3
+0003AE82: ldr          r3, [r3, #4]
+0003AE84: cmp          r7, #0
+0003AE86: sub.w        r8, r7, #7
+0003AE8A: lsr.w        sl, r7, #3
+0003AE8E: add.w        lr, r3, #-1
+0003AE92: sub.w        sb, r7, #3
+0003AE96: it           lt
+0003AE98: movlt        r2, #0
+0003AE9A: lsl.w        r3, sl, #5
+0003AE9E: lsl.w        sl, sl, #4
+0003AEA2: it           lt
+0003AEA4: movlt        r3, #0
+0003AEA6: str          r3, [sp, #4]
+0003AEA8: it           ge
+0003AEAA: movge        r2, sl
+0003AEAC: cmp.w        lr, #-1
+0003AEB0: beq          #0x3af28
+0003AEB2: mov          r4, r6
+0003AEB4: movs         r3, #0
+0003AEB6: cmp          r8, r3
+0003AEB8: ble          #0x3aedc
+0003AEBA: add.w        r5, r0, r3, lsl #1
+0003AEBE: adds         r3, #8
+0003AEC0: vld1.16      {d16, d17}, [r5]
+0003AEC4: add.w        r5, r4, #0x10
+0003AEC8: vmovl.s16    q9, d16
+0003AECC: vmovl.s16    q8, d17
+0003AED0: vst1.32      {d18, d19}, [r4]
+0003AED4: adds         r4, #0x20
+0003AED6: vst1.32      {d16, d17}, [r5]
+0003AEDA: b            #0x3aeb6
+0003AEDC: ldr          r4, [sp, #4]
+0003AEDE: adds         r5, r0, r2
+0003AEE0: adds         r4, r6, r4
+0003AEE2: cmp          sb, r3
+0003AEE4: ble          #0x3af0e
+0003AEE6: ldrsh.w      sl, [r5, #2]
+0003AEEA: adds         r3, #4
+0003AEEC: ldrsh.w      fp, [r5]
+0003AEF0: adds         r4, #0x10
+0003AEF2: adds         r5, #8
+0003AEF4: str          sl, [r4, #-0xc]
+0003AEF8: str          fp, [r4, #-0x10]
+0003AEFC: ldrsh        fp, [r5, #-0x4]
+0003AF00: ldrsh        sl, [r5, #-0x2]
+0003AF04: str          fp, [r4, #-0x8]
+0003AF08: str          sl, [r4, #-0x4]
+0003AF0C: b            #0x3aee2
+0003AF0E: cmp          r3, r7
+0003AF10: bge          #0x3af1e
+0003AF12: ldrsh.w      r4, [r0, r3, lsl #1]
+0003AF16: str.w        r4, [r6, r3, lsl #2]
+0003AF1A: adds         r3, #1
+0003AF1C: b            #0x3af0e
+0003AF1E: add          r0, r1
+0003AF20: add          r6, ip
+0003AF22: add.w        lr, lr, #-1
+0003AF26: b            #0x3aeac
+0003AF28: add          sp, #0xc
+0003AF2A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0003AF2E: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003AF32: bic          r1, r1, #1
+0003AF36: ldr          r3, [sp, #0x2c]
+0003AF38: ldr          r2, [sp, #0x28]
+0003AF3A: ldr          r6, [sp, #0x24]
+0003AF3C: ldr          r7, [r3]
+0003AF3E: bic          r8, r2, #3
+0003AF42: ldr          r2, [r3, #4]
+0003AF44: cmp          r7, #0
+0003AF46: sub.w        sb, r7, #7
+0003AF4A: lsr.w        r3, r7, #3
+0003AF4E: add.w        lr, r2, #-1
+0003AF52: sub.w        sl, r7, #3
+0003AF56: lsl.w        ip, r3, #5
+0003AF5A: lsl.w        r5, r3, #4
+0003AF5E: itt          lt
+0003AF60: movlt.w      ip, #0
+0003AF64: movlt        r5, #0
+0003AF66: cmp.w        lr, #-1
+0003AF6A: beq          #0x3b016
+0003AF6C: mov          r2, r6
+0003AF6E: movs         r3, #0
+0003AF70: cmp          sb, r3
+0003AF72: ble          #0x3af9e
+0003AF74: add.w        r4, r0, r3, lsl #1
+0003AF78: adds         r3, #8
+0003AF7A: vld1.16      {d18, d19}, [r4]
+0003AF7E: add.w        r4, r2, #0x10
+0003AF82: vmovl.s16    q8, d18
+0003AF86: vcvt.f32.s32 q8, q8
+0003AF8A: vst1.32      {d16, d17}, [r2]
+0003AF8E: vmovl.s16    q8, d19
+0003AF92: adds         r2, #0x20
+0003AF94: vcvt.f32.s32 q8, q8
+0003AF98: vst1.32      {d16, d17}, [r4]
+0003AF9C: b            #0x3af70
+0003AF9E: add.w        r2, r6, ip
+0003AFA2: adds         r4, r0, r5
+0003AFA4: cmp          sl, r3
+0003AFA6: ble          #0x3aff0
+0003AFA8: ldrsh.w      fp, [r4, #2]
+0003AFAC: adds         r3, #4
+0003AFAE: adds         r2, #0x10
+0003AFB0: adds         r4, #8
+0003AFB2: vmov         s15, fp
+0003AFB6: ldrsh        fp, [r4, #-0x8]
+0003AFBA: vcvt.f32.s32 s15, s15
+0003AFBE: vmov         s14, fp
+0003AFC2: vcvt.f32.s32 s14, s14
+0003AFC6: vstr         s15, [r2, #-0xc]
+0003AFCA: vstr         s14, [r2, #-0x10]
+0003AFCE: ldrsh        fp, [r4, #-0x4]
+0003AFD2: vmov         s14, fp
+0003AFD6: ldrsh        fp, [r4, #-0x2]
+0003AFDA: vcvt.f32.s32 s14, s14
+0003AFDE: vmov         s15, fp
+0003AFE2: vcvt.f32.s32 s15, s15
+0003AFE6: vstr         s14, [r2, #-8]
+0003AFEA: vstr         s15, [r2, #-4]
+0003AFEE: b            #0x3afa4
+0003AFF0: add.w        r2, r6, r3, lsl #2
+0003AFF4: cmp          r3, r7
+0003AFF6: bge          #0x3b00c
+0003AFF8: ldrsh.w      r4, [r0, r3, lsl #1]
+0003AFFC: adds         r3, #1
+0003AFFE: vmov         s15, r4
+0003B002: vcvt.f32.s32 s15, s15
+0003B006: vstmia       r2!, {s15}
+0003B00A: b            #0x3aff4
+0003B00C: add          r0, r1
+0003B00E: add          r6, r8
+0003B010: add.w        lr, lr, #-1
+0003B014: b            #0x3af66
+0003B016: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0003B01A: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003B01E: sub          sp, #0x1c
+0003B020: mov          r7, r0
+0003B022: bic          r3, r1, #3
+0003B026: ldr          r0, [sp, #0x48]
+0003B028: ldr          r6, [sp, #0x40]
+0003B02A: str          r3, [sp, #4]
+0003B02C: ldr          r5, [r0]
+0003B02E: ldr          r1, [r0, #4]
+0003B030: cmp          r5, #0
+0003B032: sub.w        fp, r5, #3
+0003B036: lsr.w        ip, r5, #4
+0003B03A: add.w        sl, r1, #-1
+0003B03E: it           lt
+0003B040: movlt        r3, #0
+0003B042: lsl.w        r0, ip, #6
+0003B046: lsl.w        ip, ip, #4
+0003B04A: it           ge
+0003B04C: movge        r3, r0
+0003B04E: str          r3, [sp, #8]
+0003B050: ite          ge
+0003B052: movge        r3, ip
+0003B054: movlt        r3, #0
+0003B056: str          r3, [sp, #0xc]
+0003B058: sub.w        r3, r5, #0xf
+0003B05C: str          r3, [sp, #0x10]
+0003B05E: cmp.w        sl, #-1
+0003B062: beq          #0x3b13c
+0003B064: mov          r0, r7
+0003B066: movs         r4, #0
+0003B068: ldr          r3, [sp, #0x10]
+0003B06A: cmp          r3, r4
+0003B06C: ble          #0x3b0bc
+0003B06E: add.w        lr, r0, #0x10
+0003B072: vld1.32      {d16, d17}, [r0]
+0003B076: vld1.32      {d22, d23}, [lr]
+0003B07A: add.w        lr, r0, #0x20
+0003B07E: vqmovn.s32   d16, q8
+0003B082: vld1.32      {d18, d19}, [lr]
+0003B086: add.w        lr, r0, #0x30
+0003B08A: vqmovn.s32   d22, q11
+0003B08E: adds         r0, #0x40
+0003B090: vld1.32      {d20, d21}, [lr]
+0003B094: vqmovn.s32   d18, q9
+0003B098: add.w        lr, r6, r4
+0003B09C: adds         r4, #0x10
+0003B09E: vqmovn.s32   d20, q10
+0003B0A2: vorr         d17, d22, d22
+0003B0A6: vorr         d19, d20, d20
+0003B0AA: vqmovn.s16   d16, q8
+0003B0AE: vqmovn.s16   d18, q9
+0003B0B2: vorr         d17, d18, d18
+0003B0B6: vst1.8       {d16, d17}, [lr]
+0003B0BA: b            #0x3b068
+0003B0BC: ldr          r3, [sp, #8]
+0003B0BE: add.w        sb, r7, r3
+0003B0C2: ldr          r3, [sp, #0xc]
+0003B0C4: add.w        r8, r6, r3
+0003B0C8: cmp          fp, r4
+0003B0CA: add.w        sb, sb, #0x10
+0003B0CE: add.w        r8, r8, #4
+0003B0D2: ble          #0x3b114
+0003B0D4: ldr          r0, [sb, #-0x10]
+0003B0D8: adds         r4, #4
+0003B0DA: bl           #0x38c7a
+0003B0DE: str          r0, [sp, #0x14]
+0003B0E0: ldr          r0, [sb, #-0xc]
+0003B0E4: bl           #0x38c7a
+0003B0E8: ldr.w        ip, [sp, #0x14]
+0003B0EC: strb         ip, [r8, #-0x4]
+0003B0F0: strb         r0, [r8, #-0x3]
+0003B0F4: ldr          r0, [sb, #-0x8]
+0003B0F8: bl           #0x38c7a
+0003B0FC: str          r0, [sp, #0x14]
+0003B0FE: ldr          r0, [sb, #-0x4]
+0003B102: bl           #0x38c7a
+0003B106: ldr.w        ip, [sp, #0x14]
+0003B10A: strb         ip, [r8, #-0x2]
+0003B10E: strb         r0, [r8, #-0x1]
+0003B112: b            #0x3b0c8
+0003B114: add.w        r8, r7, r4, lsl #2
+0003B118: add          r4, r6
+0003B11A: subs         r0, r4, r6
+0003B11C: cmp          r0, r5
+0003B11E: bge          #0x3b12e
+0003B120: ldr          r0, [r8], #4
+0003B124: bl           #0x38c7a
+0003B128: strb         r0, [r4], #1
+0003B12C: b            #0x3b11a
+0003B12E: ldr          r3, [sp, #4]
+0003B130: add.w        sl, sl, #-1
+0003B134: add          r7, r3
+0003B136: ldr          r3, [sp, #0x44]
+0003B138: add          r6, r3
+0003B13A: b            #0x3b05e
+0003B13C: add          sp, #0x1c
+0003B13E: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x3b142 0x3b37c exclusive Thumb
+0003B142: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003B146: sub          sp, #0x1c
+0003B148: bic          r3, r1, #3
+0003B14C: mov          r7, r0
+0003B14E: ldr          r4, [sp, #0x48]
+0003B150: ldr          r1, [sp, #0x44]
+0003B152: str          r3, [sp, #8]
+0003B154: ldr.w        r8, [r4]
+0003B158: bic          r3, r1, #1
+0003B15C: ldr          r1, [r4, #4]
+0003B15E: cmp.w        r8, #0
+0003B162: ldr.w        sl, [sp, #0x40]
+0003B166: lsr.w        ip, r8, #3
+0003B16A: str          r3, [sp, #0xc]
+0003B16C: add.w        sb, r1, #-1
+0003B170: sub.w        fp, r8, #3
+0003B174: lsl.w        r0, ip, #5
+0003B178: ite          lt
+0003B17A: movlt        r3, #0
+0003B17C: movge        r3, r0
+0003B17E: lsl.w        r0, ip, #4
+0003B182: str          r3, [sp]
+0003B184: ite          lt
+0003B186: movlt        r3, #0
+0003B188: movge        r3, r0
+0003B18A: str          r3, [sp, #4]
+0003B18C: sub.w        r3, r8, #7
+0003B190: str          r3, [sp, #0x10]
+0003B192: cmp.w        sb, #-1
+0003B196: beq          #0x3b240
+0003B198: mov          r0, r7
+0003B19A: movs         r4, #0
+0003B19C: ldr          r3, [sp, #0x10]
+0003B19E: cmp          r3, r4
+0003B1A0: ble          #0x3b1c8
+0003B1A2: add.w        r5, r0, #0x10
+0003B1A6: vld1.32      {d16, d17}, [r0]
+0003B1AA: adds         r0, #0x20
+0003B1AC: vld1.32      {d18, d19}, [r5]
+0003B1B0: vqmovn.s32   d16, q8
+0003B1B4: add.w        r5, sl, r4, lsl #1
+0003B1B8: adds         r4, #8
+0003B1BA: vqmovn.s32   d18, q9
+0003B1BE: vorr         d17, d18, d18
+0003B1C2: vst1.16      {d16, d17}, [r5]
+0003B1C6: b            #0x3b19c
+0003B1C8: ldr          r3, [sp]
+0003B1CA: adds         r6, r7, r3
+0003B1CC: ldr          r3, [sp, #4]
+0003B1CE: add.w        r5, sl, r3
+0003B1D2: cmp          fp, r4
+0003B1D4: add.w        r6, r6, #0x10
+0003B1D8: add.w        r5, r5, #8
+0003B1DC: ble          #0x3b21e
+0003B1DE: ldr          r0, [r6, #-0x10]
+0003B1E2: adds         r4, #4
+0003B1E4: bl           #0x38c9e
+0003B1E8: str          r0, [sp, #0x14]
+0003B1EA: ldr          r0, [r6, #-0xc]
+0003B1EE: bl           #0x38c9e
+0003B1F2: ldr.w        ip, [sp, #0x14]
+0003B1F6: strh         ip, [r5, #-0x8]
+0003B1FA: strh         r0, [r5, #-0x6]
+0003B1FE: ldr          r0, [r6, #-0x8]
+0003B202: bl           #0x38c9e
+0003B206: str          r0, [sp, #0x14]
+0003B208: ldr          r0, [r6, #-0x4]
+0003B20C: bl           #0x38c9e
+0003B210: ldr.w        ip, [sp, #0x14]
+0003B214: strh         ip, [r5, #-0x4]
+0003B218: strh         r0, [r5, #-0x2]
+0003B21C: b            #0x3b1d2
+0003B21E: cmp          r4, r8
+0003B220: bge          #0x3b232
+0003B222: ldr.w        r0, [r7, r4, lsl #2]
+0003B226: bl           #0x38c9e
+0003B22A: strh.w       r0, [sl, r4, lsl #1]
+0003B22E: adds         r4, #1
+0003B230: b            #0x3b21e
+0003B232: ldr          r3, [sp, #8]
+0003B234: add.w        sb, sb, #-1
+0003B238: add          r7, r3
+0003B23A: ldr          r3, [sp, #0xc]
+0003B23C: add          sl, r3
+0003B23E: b            #0x3b192
+0003B240: add          sp, #0x1c
+0003B242: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0003B246: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0003B24A: bic          sb, r1, #3
+0003B24E: ldr          r4, [sp, #0x24]
+0003B250: ldr          r3, [sp, #0x20]
+0003B252: ldr          r6, [sp, #0x1c]
+0003B254: ldr          r5, [r4]
+0003B256: bic          lr, r3, #3
+0003B25A: ldr          r2, [r4, #4]
+0003B25C: cmp          r5, #0
+0003B25E: sub.w        ip, r5, #3
+0003B262: lsr.w        r4, r5, #2
+0003B266: add.w        r2, r2, #-1
+0003B26A: lsl.w        r4, r4, #4
+0003B26E: it           lt
+0003B270: movlt        r4, #0
+0003B272: adds         r3, r2, #1
+0003B274: beq          #0x3b2b6
+0003B276: movs         r3, #0
+0003B278: cmp          ip, r3
+0003B27A: ble          #0x3b294
+0003B27C: lsls         r7, r3, #2
+0003B27E: adds         r3, #4
+0003B280: add.w        r8, r0, r7
+0003B284: add          r7, r6
+0003B286: vld1.32      {d16, d17}, [r8]
+0003B28A: vcvt.f32.s32 q8, q8
+0003B28E: vst1.32      {d16, d17}, [r7]
+0003B292: b            #0x3b278
+0003B294: adds         r7, r6, r4
+0003B296: cmp          r3, r5
+0003B298: bge          #0x3b2ae
+0003B29A: ldr.w        r1, [r0, r3, lsl #2]
+0003B29E: adds         r3, #1
+0003B2A0: vmov         s15, r1
+0003B2A4: vcvt.f32.s32 s15, s15
+0003B2A8: vstmia       r7!, {s15}
+0003B2AC: b            #0x3b296
+0003B2AE: add          r0, sb
+0003B2B0: add          r6, lr
+0003B2B2: subs         r2, #1
+0003B2B4: b            #0x3b272
+0003B2B6: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+0003B2BA: push         {r4, lr}
+0003B2BC: mov          r4, r0
+0003B2BE: ldr          r0, [r0, #8]
+0003B2C0: cbz          r0, #0x3b2c8
+0003B2C2: ldr          r3, [r0]
+0003B2C4: ldr          r3, [r3, #4]
+0003B2C6: blx          r3
+0003B2C8: ldr          r3, [r4]
+0003B2CA: mov          r0, r4
+0003B2CC: pop.w        {r4, lr}
+0003B2D0: ldr          r3, [r3, #4]
+0003B2D2: bx           r3
+0003B2D4: vcvtr.s32.f32 s0, s0
+0003B2D8: vmov         r0, s0
+0003B2DC: cmp.w        r0, #0x10000
+0003B2E0: blo          #0x3b2ec
+0003B2E2: cmp          r0, #0
+0003B2E4: ite          le
+0003B2E6: movle        r0, #0
+0003B2E8: movgt        r0, #1
+0003B2EA: rsbs         r0, r0, #0
+0003B2EC: uxth         r0, r0
+0003B2EE: bx           lr
+0003B2F0: vcvtr.s32.f64 s0, d0
+0003B2F4: vmov         r0, s0
+0003B2F8: cmp.w        r0, #0x10000
+0003B2FC: blo          #0x3b308
+0003B2FE: cmp          r0, #0
+0003B300: ite          le
+0003B302: movle        r0, #0
+0003B304: movgt        r0, #1
+0003B306: rsbs         r0, r0, #0
+0003B308: uxth         r0, r0
+0003B30A: bx           lr
+0003B30C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003B310: mov          sb, r0
+0003B312: vpush        {d8, d9, d10}
+0003B316: bic          r3, r1, #7
+0003B31A: sub          sp, #0x14
+0003B31C: ldr          r0, [sp, #0x5c]
+0003B31E: ldr          r2, [sp, #0x58]
+0003B320: ldr.w        r8, [sp, #0x50]
+0003B324: vldr         d10, [r0]
+0003B328: ldr.w        fp, [r2]
+0003B32C: ldr.w        sl, [r2, #4]
+0003B330: vldr         d16, [r0, #8]
+0003B334: cmp.w        fp, #0
+0003B338: lsr.w        r7, fp, #2
+0003B33C: ldr          r1, [sp, #0x54]
+0003B33E: str          r3, [sp]
+0003B340: vcvt.f32.f64 s20, d10
+0003B344: lsl.w        r7, r7, #5
+0003B348: it           lt
+0003B34A: movlt        r7, #0
+0003B34C: bic          r3, r1, #1
+0003B350: str          r3, [sp, #4]
+0003B352: sub.w        r3, fp, #3
+0003B356: str          r3, [sp, #8]
+0003B358: vcvt.f32.f64 s21, d16
+0003B35C: adds.w       sl, sl, #-1
+0003B360: blo          #0x3b404
+0003B362: mov          r6, sb
+0003B364: mov          r5, r8
+0003B366: movs         r4, #0
+0003B368: ldr          r3, [sp, #8]
+0003B36A: adds         r6, #0x20
+0003B36C: adds         r5, #8
+0003B36E: cmp          r3, r4
+0003B370: ble          #0x3b3d6
+0003B372: vcvt.f64.f32 d8, s21
+0003B376: adds         r4, #4
+0003B378: vldr         d16, [r6, #-0x20]

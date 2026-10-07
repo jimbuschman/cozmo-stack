@@ -1,0 +1,98 @@
+libopencv_core.so SHA256 8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d
+000F2B30: 0003B143
+000F2B34: 0003C5AF
+000F2B38: 0003B7FD
+000F2B3C: 00000000
+000F2B40: 0003A7AD
+000F2B44: 0003AA0F
+000F2B48: 0003ABBF
+000F2B4C: 0003AE6F
+RANGE 0x2228e 0x22394 exclusive Thumb _ZN2cv3hal6sub32sEPKijS2_jPijiiPv
+0002228E: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00022292: sub          sp, #0x14
+00022294: mov          fp, r1
+00022296: mov          sl, r3
+00022298: ldr.w        lr, [sp, #0x40]
+0002229C: ldr.w        sb, [sp, #0x38]
+000222A0: cmp.w        lr, #0
+000222A4: ldr.w        r8, [sp, #0x44]
+000222A8: lsr.w        ip, lr, #3
+000222AC: sub.w        r3, lr, #7
+000222B0: str          r3, [sp, #8]
+000222B2: sub.w        r3, lr, #3
+000222B6: lsl.w        ip, ip, #5
+000222BA: it           lt
+000222BC: movlt.w      ip, #0
+000222C0: str          r3, [sp, #0xc]
+000222C2: cmp.w        r8, #0
+000222C6: beq          #0x2238e
+000222C8: add.w        r5, r0, #0x10
+000222CC: add.w        r4, r2, #0x10
+000222D0: add.w        r1, sb, #0x10
+000222D4: movs         r3, #0
+000222D6: ldr          r6, [sp, #8]
+000222D8: cmp          r6, r3
+000222DA: ble          #0x22312
+000222DC: sub.w        r6, r5, #0x10
+000222E0: vld1.32      {d16, d17}, [r5]
+000222E4: adds         r3, #8
+000222E6: adds         r5, #0x20
+000222E8: vld1.32      {d18, d19}, [r6]
+000222EC: sub.w        r6, r4, #0x10
+000222F0: vld1.32      {d20, d21}, [r6]
+000222F4: sub.w        r6, r1, #0x10
+000222F8: vsub.i32     q9, q9, q10
+000222FC: vld1.32      {d20, d21}, [r4]
+00022300: adds         r4, #0x20
+00022302: vsub.i32     q8, q8, q10
+00022306: vst1.32      {d18, d19}, [r6]
+0002230A: vst1.32      {d16, d17}, [r1]
+0002230E: adds         r1, #0x20
+00022310: b            #0x222d6
+00022312: add.w        r1, sb, ip
+00022316: add.w        r4, r0, ip
+0002231A: add.w        r5, r2, ip
+0002231E: ldr          r6, [sp, #0xc]
+00022320: cmp          r6, r3
+00022322: ble          #0x2236a
+00022324: ldr          r7, [r5, #4]
+00022326: adds         r3, #4
+00022328: ldr          r6, [r4, #4]
+0002232A: adds         r1, #0x10
+0002232C: adds         r4, #0x10
+0002232E: adds         r5, #0x10
+00022330: subs         r6, r6, r7
+00022332: ldr          r7, [r4, #-0x10]
+00022336: str          r6, [sp, #4]
+00022338: ldr          r6, [r5, #-0x10]
+0002233C: subs         r7, r7, r6
+0002233E: ldr          r6, [sp, #4]
+00022340: str          r7, [r1, #-0x10]
+00022344: str          r6, [r1, #-0xc]
+00022348: ldr          r7, [r5, #-0x8]
+0002234C: ldr          r6, [r4, #-0x8]
+00022350: subs         r6, r6, r7
+00022352: ldr          r7, [r5, #-0x4]
+00022356: str          r6, [sp, #4]
+00022358: ldr          r6, [r4, #-0x4]
+0002235C: subs         r6, r6, r7
+0002235E: ldr          r7, [sp, #4]
+00022360: str          r6, [r1, #-0x4]
+00022364: str          r7, [r1, #-0x8]
+00022368: b            #0x2231e
+0002236A: cmp          r3, lr
+0002236C: bge          #0x22380
+0002236E: ldr.w        r1, [r0, r3, lsl #2]
+00022372: ldr.w        r4, [r2, r3, lsl #2]
+00022376: subs         r1, r1, r4
+00022378: str.w        r1, [sb, r3, lsl #2]
+0002237C: adds         r3, #1
+0002237E: b            #0x2236a
+00022380: ldr          r3, [sp, #0x3c]
+00022382: add          r0, fp
+00022384: add          r2, sl
+00022386: add.w        r8, r8, #-1
+0002238A: add          sb, r3
+0002238C: b            #0x222c2
+0002238E: add          sp, #0x14
+00022390: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
