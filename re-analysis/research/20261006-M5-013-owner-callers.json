@@ -1,0 +1,93 @@
+{
+  "scope": "Direct calls from symbol-bounded native functions only; navigation requires receiver checking.",
+  "calls": [
+    {
+      "caller": "_ZN4Anki5Cozmo9FaceWorld15AddOrUpdateFaceERKNS_6Vision11TrackedFaceE",
+      "caller_va": "0x4f4278",
+      "address": "0x4f4542",
+      "target": "#0x4f50f8",
+      "preceding": [
+        "004F451C: cmp r0, r5",
+        "004F451E: mov r5, fp",
+        "004F4520: bne #0x4f4514",
+        "004F4522: cmp fp, r7",
+        "004F4524: mov r5, fp",
+        "004F4526: bne.w #0x4f4440",
+        "004F452A: lsls.w r0, r8, #0x1f",
+        "004F452E: ldr.w r8, [sp, #0x38]",
+        "004F4532: ldrd r5, sb, [sp, #0x30]",
+        "004F4536: beq #0x4f4608",
+        "004F4538: mov fp, r4",
+        "004F453A: ldr.w r4, [fp]",
+        "004F453E: mov r0, fp",
+        "004F4540: mov r1, sb"
+      ]
+    },
+    {
+      "caller": "_ZN4Anki5Cozmo9FaceWorld15AddOrUpdateFaceERKNS_6Vision11TrackedFaceE",
+      "caller_va": "0x4f4278",
+      "address": "0x4f47b2",
+      "target": "#0x4f50f8",
+      "preceding": [
+        "004F478C: mov r6, r0",
+        "004F478E: add r0, sp, #0x148",
+        "004F4790: blx #0x4a4060",
+        "004F4794: adds r0, #0x20",
+        "004F4796: add.w r1, r6, #0x20",
+        "004F479A: movs r2, #0",
+        "004F479C: ldr.w r3, [r1, r2, lsl #2]",
+        "004F47A0: str.w r3, [r0, r2, lsl #2]",
+        "004F47A4: adds r2, #1",
+        "004F47A6: cmp r2, #3",
+        "004F47A8: bne #0x4f479c",
+        "004F47AA: add.w fp, r7, #0x14",
+        "004F47AE: mov r0, fp",
+        "004F47B0: mov r1, sb"
+      ]
+    },
+    {
+      "caller": "_ZN4Anki5Cozmo10VizManager11DrawSegmentIfEEvRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEERKNS_5PointILj3ET_EESG_RKNS_9ColorRGBAEbf",
+      "caller_va": "0x56c90c",
+      "address": "0x56c97e",
+      "target": "#0x56d816",
+      "preceding": [
+        "0056C94E: vldr s6, [r3, #4]",
+        "0056C952: vmul.f32 s2, s2, s0",
+        "0056C956: vldr s8, [r3, #8]",
+        "0056C95A: add r3, sp, #0xc",
+        "0056C95C: vstr s2, [sp, #0xc]",
+        "0056C960: vmul.f32 s2, s6, s0",
+        "0056C964: vstr s2, [sp, #0x10]",
+        "0056C968: vadd.f32 s2, s8, s4",
+        "0056C96C: vmul.f32 s0, s2, s0",
+        "0056C970: vstr s0, [sp, #0x14]",
+        "0056C974: strd r3, r2, [sp]",
+        "0056C978: rev r2, r0",
+        "0056C97A: add r3, sp, #0x18",
+        "0056C97C: mov r0, r5"
+      ]
+    },
+    {
+      "caller": "_ZN4Anki5Cozmo26BehaviorDriveInDesperationC1ERNS0_5RobotERKN4Json5ValueE",
+      "caller_va": "0x5d8ae0",
+      "address": "0x5d8b36",
+      "target": "#0x5d9f50",
+      "preceding": [
+        "005D8B0C: str r1, [r4]",
+        "005D8B0E: movs r1, #0",
+        "005D8B10: adds r0, #8",
+        "005D8B12: movt r1, #0xbf80",
+        "005D8B16: strb.w r2, [r4, #0x138]",
+        "005D8B1A: strd r2, r2, [r4, #0x11c]",
+        "005D8B1E: strd r2, r1, [r4, #0x124]",
+        "005D8B22: strd r2, r0, [r4, #0x12c]",
+        "005D8B26: str.w r3, [r4, #0x134]",
+        "005D8B2A: movs r0, #0x3c",
+        "005D8B2C: blx #0x4a42a0",
+        "005D8B30: mov r6, r0",
+        "005D8B32: mov r0, r6",
+        "005D8B34: mov r1, r5"
+      ]
+    }
+  ]
+}

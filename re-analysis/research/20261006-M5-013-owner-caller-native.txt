@@ -1,0 +1,120 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f4278 0x4f42b8 _ZN4Anki5Cozmo9FaceWorld15AddOrUpdateFaceERKNS_6Vision11TrackedFaceE
+004F4278: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+004F427C: sub        sp, #4 ;
+004F427E: vpush      {d8, d9, d10} ;
+004F4282: sub.w      sp, sp, #0x288 ;
+004F4286: mov        r8, r0 ;
+004F4288: ldr.w      r0, [pc, #0xc10] ; literal[004F4E9C]=00B4A5B8
+004F428C: movs       r4, #0 ;
+004F428E: mov        sb, r1 ;
+004F4290: add        r0, pc ;
+004F4292: movs       r2, #1 ;
+004F4294: add        r3, sp, #0x154 ;
+004F4296: ldr        r0, [r0] ;
+004F4298: ldr        r0, [r0] ;
+004F429A: str        r0, [sp, #0x284] ;
+004F429C: strd       r4, r4, [sp, #0x158] ;
+004F42A0: ldr.w      r0, [r8] ;
+004F42A4: ldr.w      r1, [sb, #8] ;
+004F42A8: ldr.w      r0, [r0, #0x390] ;
+004F42AC: strd       r3, r2, [sp] ;
+004F42B0: add        r2, sp, #0x15c ;
+004F42B2: add        r3, sp, #0x158 ;
+004F42B4: blx        #0x4a5b60 ; GOT 01040BAC _ZN4Anki5Cozmo17RobotStateHistory23ComputeAndInsertStateAtEjRjPPNS0_14HistRobotStateEPjb
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f4532 0x4f4552
+004F4532: ldrd       r5, sb, [sp, #0x30] ;
+004F4536: beq        #0x4f4608 ;
+004F4538: mov        fp, r4 ;
+004F453A: ldr.w      r4, [fp] ;
+004F453E: mov        r0, fp ;
+004F4540: mov        r1, sb ;
+004F4542: bl         #0x4f50f8 ;
+004F4546: str.w      r4, [fp] ;
+004F454A: b          #0x4f46ce ;
+004F454C: mov        r7, r2 ;
+004F454E: cmp        r7, r0 ;
+004F4550: beq        #0x4f456e ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f4774 0x4f47ba
+004F4774: str        r1, [sp, #0x164] ;
+004F4776: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F477A: mov.w      sl, #0 ;
+004F477E: ldrb.w     r0, [sb, #0x30] ;
+004F4782: cbnz       r0, #0x4f47aa ;
+004F4784: add.w      r0, r7, #0x108 ;
+004F4788: blx        #0x4a4048 ; GOT 010402A4 _ZNKR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv
+004F478C: mov        r6, r0 ;
+004F478E: add        r0, sp, #0x148 ;
+004F4790: blx        #0x4a4060 ; GOT 010402AC _ZNR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv
+004F4794: adds       r0, #0x20 ;
+004F4796: add.w      r1, r6, #0x20 ;
+004F479A: movs       r2, #0 ;
+004F479C: ldr.w      r3, [r1, r2, lsl #2] ;
+004F47A0: str.w      r3, [r0, r2, lsl #2] ;
+004F47A4: adds       r2, #1 ;
+004F47A6: cmp        r2, #3 ;
+004F47A8: bne        #0x4f479c ;
+004F47AA: add.w      fp, r7, #0x14 ;
+004F47AE: mov        r0, fp ;
+004F47B0: mov        r1, sb ;
+004F47B2: bl         #0x4f50f8 ;
+004F47B6: add.w      r5, fp, #0xf4 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x56c90c 0x56c98a _ZN4Anki5Cozmo10VizManager11DrawSegmentIfEEvRKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEERKNS_5PointILj3ET_EESG_RKNS_9ColorRGBAEbf
+0056C90C: push       {r4, r5, r7, lr} ;
+0056C90E: sub        sp, #0xc0 ;
+0056C910: vldr       s0, [pc, #0xc0] ; literal[0056C9D4]=3A83126F
+0056C914: mov        r4, r0 ;
+0056C916: vldr       s2, [r2] ;
+0056C91A: add        r5, sp, #0x24 ;
+0056C91C: ldr        r0, [sp, #0xd0] ;
+0056C91E: vmul.f32   s2, s2, s0 ;
+0056C922: vldr       s4, [r2, #4] ;
+0056C926: vldr       s6, [r2, #8] ;
+0056C92A: ldr        r0, [r0] ;
+0056C92C: ldr        r2, [sp, #0xd4] ;
+0056C92E: vstr       s2, [sp, #0x18] ;
+0056C932: vmul.f32   s2, s4, s0 ;
+0056C936: vldr       s4, [sp, #0xd8] ;
+0056C93A: vstr       s2, [sp, #0x1c] ;
+0056C93E: vadd.f32   s2, s6, s4 ;
+0056C942: vmul.f32   s2, s2, s0 ;
+0056C946: vstr       s2, [sp, #0x20] ;
+0056C94A: vldr       s2, [r3] ;
+0056C94E: vldr       s6, [r3, #4] ;
+0056C952: vmul.f32   s2, s2, s0 ;
+0056C956: vldr       s8, [r3, #8] ;
+0056C95A: add        r3, sp, #0xc ;
+0056C95C: vstr       s2, [sp, #0xc] ;
+0056C960: vmul.f32   s2, s6, s0 ;
+0056C964: vstr       s2, [sp, #0x10] ;
+0056C968: vadd.f32   s2, s8, s4 ;
+0056C96C: vmul.f32   s0, s2, s0 ;
+0056C970: vstr       s0, [sp, #0x14] ;
+0056C974: strd       r3, r2, [sp] ;
+0056C978: rev        r2, r0 ;
+0056C97A: add        r3, sp, #0x18 ;
+0056C97C: mov        r0, r5 ;
+0056C97E: bl         #0x56d816 ;
+0056C982: add        r0, sp, #0x50 ;
+0056C984: mov        r1, r5 ;
+0056C986: blx        #0x4acc70 ; GOT 0104315C _ZN4Anki5Cozmo12VizInterface10MessageVizC1EONS1_16SegmentPrimitiveE
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5d8b2a 0x5d8b56
+005D8B2A: movs       r0, #0x3c ;
+005D8B2C: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+005D8B30: mov        r6, r0 ;
+005D8B32: mov        r0, r6 ;
+005D8B34: mov        r1, r5 ;
+005D8B36: bl         #0x5d9f50 ;
+005D8B3A: ldr.w      r0, [r4, #0x11c] ;
+005D8B3E: str.w      r6, [r4, #0x11c] ;
+005D8B42: cbz        r0, #0x5d8b4c ;
+005D8B44: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005D8B48: ldr.w      r6, [r4, #0x11c] ;
+005D8B4C: ldrb.w     r0, [r6, #0x30] ;
+005D8B50: cmp        r0, #0 ;
+005D8B52: beq        #0x5d8c34 ;
+005D8B54: movs       r0, #0x70 ;
