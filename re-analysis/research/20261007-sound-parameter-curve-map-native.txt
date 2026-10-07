@@ -1,0 +1,348 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DF220..0x008DF3B0 exclusive; Thumb;
+008DF220: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008DF224: sub          sp, #0xc
+008DF226: mov          sb, r1
+008DF228: mov          sl, r0
+008DF22A: movs         r1, #0
+008DF22C: cmp          r2, #0
+008DF22E: mov.w        r0, #0x3f800000
+008DF232: strd         r1, r1, [sl]
+008DF236: strd         r1, r1, [sl, #8]
+008DF23A: str.w        r0, [sl, #0x10]
+008DF23E: beq.w        #0x8df3a8
+008DF242: add.w        r0, sb, r2, lsl #1
+008DF246: movs         r7, #0
+008DF248: movs         r6, #0
+008DF24A: str          r0, [sp, #8]
+008DF24C: add.w        r0, sl, #8
+008DF250: str          r0, [sp]
+008DF252: str.w        sl, [sp, #4]
+008DF256: b            #0x8df25c
+008DF258: ldr.w        r6, [sl, #4]
+008DF25C: ldrb.w       r8, [sb]
+008DF260: cmp          r6, #0
+008DF262: beq          #0x8df2c0
+008DF264: subs         r4, r6, #1
+008DF266: ands.w       fp, r4, r6
+008DF26A: beq          #0x8df278
+008DF26C: mov          r0, r8
+008DF26E: mov          r1, r6
+008DF270: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF274: mov          r5, r1
+008DF276: b            #0x8df27c
+008DF278: and.w        r5, r4, r8
+008DF27C: ldr.w        r0, [sl]
+008DF280: ldr.w        sl, [r0, r5, lsl #2]
+008DF284: cmp.w        sl, #0
+008DF288: beq          #0x8df2bc
+008DF28A: ldr.w        sl, [sl]
+008DF28E: cmp.w        sl, #0
+008DF292: beq          #0x8df2bc
+008DF294: ldr.w        r0, [sl, #4]
+008DF298: cmp.w        fp, #0
+008DF29C: beq          #0x8df2a6
+008DF29E: mov          r1, r6
+008DF2A0: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF2A4: b            #0x8df2aa
+008DF2A6: and.w        r1, r0, r4
+008DF2AA: cmp          r1, r5
+008DF2AC: bne          #0x8df2bc
+008DF2AE: ldrb.w       r0, [sl, #8]
+008DF2B2: cmp          r0, r8
+008DF2B4: bne          #0x8df28a
+008DF2B6: ldr.w        sl, [sp, #4]
+008DF2BA: b            #0x8df39c
+008DF2BC: ldr.w        sl, [sp, #4]
+008DF2C0: movs         r0, #0xc
+008DF2C2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DF2C6: mov          r4, r0
+008DF2C8: vmov         s0, r6
+008DF2CC: cmp          r6, #0
+008DF2CE: vcvt.f32.u32 s4, s0
+008DF2D2: ldrh.w       r0, [sb]
+008DF2D6: strh         r0, [r4, #8]
+008DF2D8: mov.w        r0, #0
+008DF2DC: strd         r0, r8, [r4]
+008DF2E0: add.w        r0, r7, #1
+008DF2E4: vldr         s0, [sl, #0x10]
+008DF2E8: vmov         s2, r0
+008DF2EC: vcvt.f32.u32 s2, s2
+008DF2F0: beq          #0x8df300
+008DF2F2: vmul.f32     s4, s0, s4
+008DF2F6: vcmpe.f32    s4, s2
+008DF2FA: vmrs         apsr_nzcv, fpscr
+008DF2FE: bpl          #0x8df354
+008DF300: lsls         r5, r6, #1
+008DF302: cmp          r6, #3
+008DF304: blo          #0x8df310
+008DF306: subs         r0, r6, #1
+008DF308: ands         r6, r0
+008DF30A: it           ne
+008DF30C: movne        r6, #1
+008DF30E: b            #0x8df312
+008DF310: movs         r6, #1
+008DF312: vdiv.f32     s0, s2, s0
+008DF316: vmov         r0, s0
+008DF31A: blx          #0x4a83f8 ; <EXTERNAL>::ceilf
+008DF31E: vmov         s0, r0
+008DF322: orr.w        r1, r6, r5
+008DF326: vcvt.u32.f32 s0, s0
+008DF32A: vmov         r0, s0
+008DF32E: cmp          r1, r0
+008DF330: it           lo
+008DF332: movlo        r1, r0
+008DF334: mov          r0, sl
+008DF336: bl           #0x8df9f6 ; FUN_008df9f6
+008DF33A: ldr.w        r6, [sl, #4]
+008DF33E: subs         r0, r6, #1
+008DF340: tst          r0, r6
+008DF342: beq          #0x8df350
+008DF344: mov          r0, r8
+008DF346: mov          r1, r6
+008DF348: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF34C: mov          r5, r1
+008DF34E: b            #0x8df354
+008DF350: and.w        r5, r0, r8
+008DF354: ldr.w        r1, [sl]
+008DF358: ldr.w        r0, [r1, r5, lsl #2]
+008DF35C: cbz          r0, #0x8df364
+008DF35E: ldr          r1, [r0]
+008DF360: str          r1, [r4]
+008DF362: b            #0x8df390
+008DF364: ldr          r0, [sp]
+008DF366: mov          r2, r0
+008DF368: ldr          r0, [r2]
+008DF36A: str          r0, [r4]
+008DF36C: str          r4, [r2]
+008DF36E: str.w        r2, [r1, r5, lsl #2]
+008DF372: ldr          r0, [r4]
+008DF374: cbz          r0, #0x8df392
+008DF376: ldr          r0, [r0, #4]
+008DF378: subs         r1, r6, #1
+008DF37A: tst          r1, r6
+008DF37C: beq          #0x8df386
+008DF37E: mov          r1, r6
+008DF380: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF384: b            #0x8df388
+008DF386: ands         r1, r0
+008DF388: ldr.w        r0, [sl]
+008DF38C: add.w        r0, r0, r1, lsl #2
+008DF390: str          r4, [r0]
+008DF392: ldr.w        r0, [sl, #0xc]
+008DF396: adds         r7, r0, #1
+008DF398: str.w        r7, [sl, #0xc]
+008DF39C: ldr          r0, [sp, #8]
+008DF39E: add.w        sb, sb, #2
+008DF3A2: cmp          sb, r0
+008DF3A4: bne.w        #0x8df258
+008DF3A8: mov          r0, sl
+008DF3AA: add          sp, #0xc
+008DF3AC: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DF9F6..0x008DFB9C exclusive; Thumb;
+008DF9F6: push         {r4, r5, r6, r7, lr}
+008DF9F8: sub          sp, #4
+008DF9FA: mov          r5, r1
+008DF9FC: mov          r4, r0
+008DF9FE: cmp          r5, #1
+008DFA00: bne          #0x8dfa06
+008DFA02: movs         r5, #2
+008DFA04: b            #0x8dfa14
+008DFA06: subs         r0, r5, #1
+008DFA08: tst          r0, r5
+008DFA0A: beq          #0x8dfa14
+008DFA0C: mov          r0, r5
+008DFA0E: blx          #0x4a85d8 ; <EXTERNAL>::std::__ndk1::__next_prime
+008DFA12: mov          r5, r0
+008DFA14: ldr          r6, [r4, #4]
+008DFA16: cmp          r5, r6
+008DFA18: bhi          #0x8dfa72
+008DFA1A: bhs          #0x8dfa80
+008DFA1C: movs         r7, #0
+008DFA1E: cmp          r6, #3
+008DFA20: blo          #0x8dfa2a
+008DFA22: subs         r0, r6, #1
+008DFA24: tst          r0, r6
+008DFA26: it           eq
+008DFA28: moveq        r7, #1
+008DFA2A: vldr         s0, [r4, #0xc]
+008DFA2E: vldr         s2, [r4, #0x10]
+008DFA32: vcvt.f32.u32 s0, s0
+008DFA36: vdiv.f32     s0, s0, s2
+008DFA3A: vmov         r0, s0
+008DFA3E: blx          #0x4a83f8 ; <EXTERNAL>::ceilf
+008DFA42: vmov         s0, r0
+008DFA46: cmp          r7, #1
+008DFA48: vcvt.u32.f32 s0, s0
+008DFA4C: vmov         r0, s0
+008DFA50: bne          #0x8dfa64
+008DFA52: subs         r0, #1
+008DFA54: movs         r1, #1
+008DFA56: clz          r0, r0
+008DFA5A: rsb.w        r0, r0, #0x20
+008DFA5E: lsl.w        r0, r1, r0
+008DFA62: b            #0x8dfa68
+008DFA64: blx          #0x4a85d8 ; <EXTERNAL>::std::__ndk1::__next_prime
+008DFA68: cmp          r5, r0
+008DFA6A: it           lo
+008DFA6C: movlo        r5, r0
+008DFA6E: cmp          r5, r6
+008DFA70: bhs          #0x8dfa80
+008DFA72: mov          r0, r4
+008DFA74: mov          r1, r5
+008DFA76: add          sp, #4
+008DFA78: pop.w        {r4, r5, r6, r7, lr}
+008DFA7C: b.w          #0x8dfa84
+008DFA80: add          sp, #4
+008DFA82: pop          {r4, r5, r6, r7, pc}
+008DFA84: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008DFA88: sub          sp, #0xc
+008DFA8A: mov          r5, r1
+008DFA8C: mov          r4, r0
+008DFA8E: cbz          r5, #0x8dfad8
+008DFA90: cmp.w        r5, #0x40000000
+008DFA94: bhs          #0x8dfb66
+008DFA96: lsls         r0, r5, #2
+008DFA98: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DFA9C: mov          r1, r0
+008DFA9E: ldr          r0, [r4]
+008DFAA0: str          r1, [r4]
+008DFAA2: cbz          r0, #0x8dfaa8
+008DFAA4: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFAA8: movs         r0, #0
+008DFAAA: movs         r1, #0
+008DFAAC: str          r5, [r4, #4]
+008DFAAE: ldr          r2, [r4]
+008DFAB0: str.w        r0, [r2, r1, lsl #2]
+008DFAB4: adds         r1, #1
+008DFAB6: cmp          r5, r1
+008DFAB8: bne          #0x8dfaae
+008DFABA: mov          r7, r4
+008DFABC: ldr          r6, [r7, #8]!
+008DFAC0: cmp          r6, #0
+008DFAC2: beq          #0x8dfb60
+008DFAC4: subs         r1, r5, #1
+008DFAC6: ldr          r0, [r6, #4]
+008DFAC8: ands.w       sb, r1, r5
+008DFACC: str          r1, [sp]
+008DFACE: beq          #0x8dfae8
+008DFAD0: mov          r1, r5
+008DFAD2: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DFAD6: b            #0x8dfaea
+008DFAD8: ldr          r0, [r4]
+008DFADA: movs         r5, #0
+008DFADC: str          r5, [r4]
+008DFADE: cbz          r0, #0x8dfae4
+008DFAE0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFAE4: str          r5, [r4, #4]
+008DFAE6: b            #0x8dfb60
+008DFAE8: ands         r1, r0
+008DFAEA: ldr          r0, [r4]
+008DFAEC: str.w        r7, [r0, r1, lsl #2]
+008DFAF0: b            #0x8dfb5a
+008DFAF2: mov          sl, r1
+008DFAF4: mov          fp, r6
+008DFAF6: mov          r8, r6
+008DFAF8: mov          r6, r0
+008DFAFA: ldr          r0, [r6, #4]
+008DFAFC: cmp.w        sb, #0
+008DFB00: beq          #0x8dfb0a
+008DFB02: mov          r1, r5
+008DFB04: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DFB08: b            #0x8dfb0e
+008DFB0A: ldr          r1, [sp]
+008DFB0C: ands         r1, r0
+008DFB0E: cmp          r1, sl
+008DFB10: beq          #0x8dfb4c
+008DFB12: ldr          r0, [r4]
+008DFB14: ldr.w        r2, [r0, r1, lsl #2]
+008DFB18: cmp          r2, #0
+008DFB1A: mov          r2, r6
+008DFB1C: beq          #0x8dfb56
+008DFB1E: mov          r0, r2
+008DFB20: ldr          r2, [r0]
+008DFB22: cbz          r2, #0x8dfb2c
+008DFB24: ldrb         r3, [r2, #8]
+008DFB26: ldrb         r7, [r6, #8]
+008DFB28: cmp          r7, r3
+008DFB2A: beq          #0x8dfb1e
+008DFB2C: str.w        r2, [fp]
+008DFB30: ldr          r2, [r4]
+008DFB32: ldr.w        r2, [r2, r1, lsl #2]
+008DFB36: ldr          r2, [r2]
+008DFB38: str          r2, [r0]
+008DFB3A: ldr          r0, [r4]
+008DFB3C: ldr.w        r0, [r0, r1, lsl #2]
+008DFB40: str          r6, [r0]
+008DFB42: ldr.w        r6, [r8]
+008DFB46: cmp          r6, #0
+008DFB48: bne          #0x8dfafa
+008DFB4A: b            #0x8dfb60
+008DFB4C: ldr          r0, [r6]
+008DFB4E: mov          fp, r6
+008DFB50: cmp          r0, #0
+008DFB52: bne          #0x8dfaf6
+008DFB54: b            #0x8dfb60
+008DFB56: str.w        fp, [r0, r1, lsl #2]
+008DFB5A: ldr          r0, [r6]
+008DFB5C: cmp          r0, #0
+008DFB5E: bne          #0x8dfaf2
+008DFB60: add          sp, #0xc
+008DFB62: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+008DFB66: ldr          r1, [pc, #0x44] ; word[008DFBAC]=003043D5
+008DFB68: add          r4, sp, #4
+008DFB6A: add          r1, pc
+008DFB6C: mov          r0, r4
+008DFB6E: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+008DFB72: ldr          r0, [pc, #0x3c] ; word[008DFBB0]=0075EC28
+008DFB74: add          r0, pc
+008DFB76: ldr          r0, [r0]
+008DFB78: add.w        r5, r0, #8
+008DFB7C: movs         r0, #8
+008DFB7E: str          r5, [sp, #4]
+008DFB80: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008DFB84: mov          r1, r4
+008DFB86: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+008DFB8A: ldr          r1, [pc, #0x28] ; word[008DFBB4]=0075EC12
+008DFB8C: ldr          r2, [pc, #0x28] ; word[008DFBB8]=0075EC12
+008DFB8E: add          r1, pc
+008DFB90: str          r5, [r0]
+008DFB92: add          r2, pc
+008DFB94: ldr          r1, [r1]
+008DFB96: ldr          r2, [r2]
+008DFB98: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x008DF186..0x008DF1BC exclusive; Thumb;
+008DF186: mov          r4, r0
+008DF188: ldr          r0, [pc, #0x3c] ; word[008DF1C8]=007AE01A
+008DF18A: add          r0, pc
+008DF18C: blx          #0x4a4774 ; <EXTERNAL>::__cxa_guard_abort
+008DF190: b            #0x8df1b6
+008DF192: b            #0x8df194
+008DF194: mov          r4, r0
+008DF196: ldr          r0, [sp, #0x1c]
+008DF198: cbz          r0, #0x8df1b6
+008DF19A: ldr          r1, [sp, #0x20]
+008DF19C: cmp          r1, r0
+008DF19E: beq          #0x8df1b2
+008DF1A0: sub.w        r2, r1, #8
+008DF1A4: mvn          r3, #7
+008DF1A8: subs         r2, r2, r0
+008DF1AA: bic.w        r2, r3, r2
+008DF1AE: add          r1, r2
+008DF1B0: str          r1, [sp, #0x20]
+008DF1B2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF1B6: mov          r0, r4
+008DF1B8: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DF3B0..0x008DF3CC exclusive; Thumb;
+008DF3B0: mov          r5, r0
+008DF3B2: mov          r0, r4
+008DF3B4: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF3B8: b            #0x8df3bc
+008DF3BA: mov          r5, r0
+008DF3BC: mov          r0, sl
+008DF3BE: bl           #0x8df704 ; FUN_008df704
+008DF3C2: mov          r0, r5
+008DF3C4: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+008DF3C8: b.w          #0x8df704 ; FUN_008df704

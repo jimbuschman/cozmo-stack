@@ -1,0 +1,465 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DEAE0..0x008DEB02 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexerC2EPNS0_21AudioEngineControllerE
+008DEAE0: ldr          r2, [pc, #0x20] ; word[008DEB04]=0076149A
+008DEAE2: mov.w        r3, #0x3f800000
+008DEAE6: str          r1, [r0, #4]
+008DEAE8: movs         r1, #0
+008DEAEA: add          r2, pc
+008DEAEC: strd         r1, r1, [r0, #0x10]
+008DEAF0: strd         r1, r1, [r0, #8]
+008DEAF4: ldr          r2, [r2]
+008DEAF6: str          r3, [r0, #0x18]
+008DEAF8: strb         r1, [r0, #0x1c]
+008DEAFA: add.w        r1, r2, #8
+008DEAFE: str          r1, [r0]
+008DEB00: bx           lr
+RANGE 0x008DEB08..0x008DEB50 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexerD1Ev
+008DEB08: push         {r4, r5, r6, lr}
+008DEB0A: mov          r4, r0
+008DEB0C: ldr          r0, [pc, #0x40] ; word[008DEB50]=00761476
+008DEB0E: add          r0, pc
+008DEB10: ldr          r1, [r0]
+008DEB12: ldr          r0, [r4, #4]
+008DEB14: adds         r1, #8
+008DEB16: str          r1, [r4]
+008DEB18: cbz          r0, #0x8deb20
+008DEB1A: ldr          r1, [r0]
+008DEB1C: ldr          r1, [r1, #4]
+008DEB1E: blx          r1
+008DEB20: ldr          r6, [r4, #0x10]
+008DEB22: movs         r5, #0
+008DEB24: str          r5, [r4, #4]
+008DEB26: cbz          r6, #0x8deb3c
+008DEB28: ldr          r0, [r6, #0xc]
+008DEB2A: cbz          r0, #0x8deb32
+008DEB2C: ldr          r1, [r0]
+008DEB2E: ldr          r1, [r1, #4]
+008DEB30: blx          r1
+008DEB32: ldr          r0, [r6]
+008DEB34: str          r5, [r6, #0xc]
+008DEB36: cmp          r0, #0
+008DEB38: mov          r6, r0
+008DEB3A: bne          #0x8deb28
+008DEB3C: add.w        r5, r4, #8
+008DEB40: mov          r0, r5
+008DEB42: bl           #0x8df728 ; FUN_008df728
+008DEB46: mov          r0, r5
+008DEB48: bl           #0x8df6e0 ; FUN_008df6e0
+008DEB4C: mov          r0, r4
+008DEB4E: pop          {r4, r5, r6, pc}
+RANGE 0x008DEB54..0x008DEB62 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexerD0Ev
+008DEB54: push         {r7, lr}
+008DEB56: blx          #0x4d259c ; Anki::AudioEngine::Multiplexer::AudioMultiplexer::~AudioMultiplexer
+008DEB5A: pop.w        {r7, lr}
+008DEB5E: b.w          #0xae2fa0
+RANGE 0x008CA734..0x008CA7B4 exclusive; Thumb; _ZN4Anki11AudioEngine21AudioEngineControllerC1Ev
+008CA734: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008CA738: sub          sp, #4
+008CA73A: mov          r4, r0
+008CA73C: ldr          r0, [pc, #0xf0] ; word[008CA830]=00775814
+008CA73E: add.w        sl, r4, #8
+008CA742: movs         r5, #0
+008CA744: add          r0, pc
+008CA746: strb         r5, [r4, #4]
+008CA748: movs         r1, #0x1c
+008CA74A: ldr          r0, [r0]
+008CA74C: adds         r0, #8
+008CA74E: str          r0, [r4]
+008CA750: mov          r0, sl
+008CA752: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+008CA756: mov          r7, r4
+008CA758: mov.w        r6, #0x3f800000
+008CA75C: str          r5, [r7, #0x3c]!
+008CA760: movs         r1, #0x1c
+008CA762: add.w        sb, r7, #4
+008CA766: mov          r8, r7
+008CA768: str          r6, [r7, #-0x18]
+008CA76C: mov          r0, sb
+008CA76E: strd         r5, r5, [r7, #-0x10]
+008CA772: strd         r5, r6, [r7, #-0x8]
+008CA776: str          r5, [r8, #-0x14]!
+008CA77A: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+008CA77E: add.w        fp, r7, #0x24
+008CA782: movs         r1, #0x18
+008CA784: str          r6, [r7, #0x20]
+008CA786: mov          r0, fp
+008CA788: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+008CA78C: movs         r0, #8
+008CA78E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008CA792: mov          r5, r0
+008CA794: mov          r0, r5
+008CA796: bl           #0x8d8004 ; FUN_008d8004
+008CA79A: ldr.w        r0, [sl]
+008CA79E: str.w        r5, [sl]
+008CA7A2: cbz          r0, #0x8ca7ac
+008CA7A4: bl           #0x8d8048 ; FUN_008d8048
+008CA7A8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008CA7AC: mov          r0, r4
+008CA7AE: add          sp, #4
+008CA7B0: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x008D8004..0x008D8044 exclusive; Thumb;
+008D8004: push         {r4, r5, r6, lr}
+008D8006: mov          r4, r0
+008D8008: movs         r6, #0
+008D800A: movs         r0, #0x60
+008D800C: strb         r6, [r4]
+008D800E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008D8012: mov          r5, r0
+008D8014: bl           #0x8d6b6c ; FUN_008d6b6c
+008D8018: ldr          r0, [pc, #0x28] ; word[008D8044]=007605B4
+008D801A: str          r6, [r5, #0x50]
+008D801C: add          r0, pc
+008D801E: strb.w       r6, [r5, #0x5c]
+008D8022: add.w        r1, r0, #8
+008D8026: adds         r0, #0x48
+008D8028: strd         r6, r6, [r5, #0x54]
+008D802C: strd         r1, r0, [r5]
+008D8030: mov          r0, r4
+008D8032: str          r5, [r4, #4]
+008D8034: pop          {r4, r5, r6, pc}
+008D8036: mov          r4, r0
+008D8038: mov          r0, r5
+008D803A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D803E: mov          r0, r4
+008D8040: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+RANGE 0x008D8048..0x008D8062 exclusive; Thumb;
+008D8048: push         {r4, lr}
+008D804A: mov          r4, r0
+008D804C: bl           #0x8d8068 ; FUN_008d8068
+008D8050: ldr          r0, [r4, #4]
+008D8052: cbz          r0, #0x8d805a
+008D8054: ldr          r1, [r0]
+008D8056: ldr          r1, [r1, #4]
+008D8058: blx          r1
+008D805A: movs         r0, #0
+008D805C: str          r0, [r4, #4]
+008D805E: mov          r0, r4
+008D8060: pop          {r4, pc}
+RANGE 0x008DF6E0..0x008DF704 exclusive; Thumb;
+008DF6E0: push         {r4, r5, r7, lr}
+008DF6E2: mov          r4, r0
+008DF6E4: ldr          r0, [r4, #8]
+008DF6E6: cbz          r0, #0x8df6f4
+008DF6E8: ldr          r5, [r0]
+008DF6EA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF6EE: cmp          r5, #0
+008DF6F0: mov          r0, r5
+008DF6F2: bne          #0x8df6e8
+008DF6F4: ldr          r0, [r4]
+008DF6F6: movs         r1, #0
+008DF6F8: str          r1, [r4]
+008DF6FA: cbz          r0, #0x8df700
+008DF6FC: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF700: mov          r0, r4
+008DF702: pop          {r4, r5, r7, pc}
+RANGE 0x008DF728..0x008DF75A exclusive; Thumb;
+008DF728: push         {r4, r5, r7, lr}
+008DF72A: mov          r4, r0
+008DF72C: ldr          r0, [r4, #0xc]
+008DF72E: cbz          r0, #0x8df758
+008DF730: ldr          r0, [r4, #8]
+008DF732: cbz          r0, #0x8df740
+008DF734: ldr          r5, [r0]
+008DF736: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF73A: cmp          r5, #0
+008DF73C: mov          r0, r5
+008DF73E: bne          #0x8df734
+008DF740: ldr          r1, [r4, #4]
+008DF742: movs         r0, #0
+008DF744: str          r0, [r4, #8]
+008DF746: cbz          r1, #0x8df756
+008DF748: movs         r2, #0
+008DF74A: ldr          r3, [r4]
+008DF74C: str.w        r0, [r3, r2, lsl #2]
+008DF750: adds         r2, #1
+008DF752: cmp          r1, r2
+008DF754: bne          #0x8df74a
+008DF756: str          r0, [r4, #0xc]
+008DF758: pop          {r4, r5, r7, pc}
+RANGE 0x008D1C1C..0x008D1CA0 exclusive; Thumb; _ZN4Anki11AudioEngine21AudioEngineControllerD1Ev
+008D1C1C: push         {r4, r5, r6, lr}
+008D1C1E: mov          r4, r0
+008D1C20: ldr          r0, [pc, #0x7c] ; word[008D1CA0]=0076E336
+008D1C22: add          r0, pc
+008D1C24: ldr          r0, [r0]
+008D1C26: adds         r0, #8
+008D1C28: str          r0, [r4]
+008D1C2A: mov          r0, r4
+008D1C2C: blx          #0x4d2404 ; Anki::AudioEngine::AudioEngineController::ClearGarbageCollector
+008D1C30: add.w        r0, r4, #0x6c
+008D1C34: bl           #0x4eaf98 ; FUN_004eaf98
+008D1C38: add.w        r0, r4, #0x60
+008D1C3C: bl           #0x4eaf98 ; FUN_004eaf98
+008D1C40: add.w        r0, r4, #0x4c
+008D1C44: bl           #0x8d3774 ; FUN_008d3774
+008D1C48: add.w        r0, r4, #0x40
+008D1C4C: bl           #0x8ca834 ; FUN_008ca834
+008D1C50: add.w        r0, r4, #0x3c
+008D1C54: blx          #0x4a6958 ; <EXTERNAL>::std::__ndk1::mutex::~mutex
+008D1C58: add.w        r0, r4, #0x28
+008D1C5C: bl           #0x8d37cc ; FUN_008d37cc
+008D1C60: add.w        r0, r4, #0x14
+008D1C64: bl           #0x8d37f0 ; FUN_008d37f0
+008D1C68: ldr          r0, [r4, #0x10]
+008D1C6A: movs         r6, #0
+008D1C6C: str          r6, [r4, #0x10]
+008D1C6E: cbz          r0, #0x8d1c78
+008D1C70: blx          #0x4d23f8 ; Anki::AudioEngine::PlugIns::AnkiPluginInterface::~AnkiPluginInterface
+008D1C74: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D1C78: ldr          r5, [r4, #0xc]
+008D1C7A: str          r6, [r4, #0xc]
+008D1C7C: cbz          r5, #0x8d1c8c
+008D1C7E: add.w        r0, r5, #0x20
+008D1C82: blx          #0x4a6958 ; <EXTERNAL>::std::__ndk1::mutex::~mutex
+008D1C86: mov          r0, r5
+008D1C88: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D1C8C: ldr          r0, [r4, #8]
+008D1C8E: movs         r1, #0
+008D1C90: str          r1, [r4, #8]
+008D1C92: cbz          r0, #0x8d1c9c
+008D1C94: bl           #0x8d8048 ; FUN_008d8048
+008D1C98: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D1C9C: mov          r0, r4
+008D1C9E: pop          {r4, r5, r6, pc}
+RANGE 0x008D1D10..0x008D1D1E exclusive; Thumb; _ZN4Anki11AudioEngine21AudioEngineControllerD0Ev
+008D1D10: push         {r7, lr}
+008D1D12: blx          #0x4af160 ; Anki::AudioEngine::AudioEngineController::~AudioEngineController
+008D1D16: pop.w        {r7, lr}
+008D1D1A: b.w          #0xae2fa0
+RANGE 0x008D8068..0x008D80A6 exclusive; Thumb;
+008D8068: push         {r4, r5, r7, lr}
+008D806A: mov          r4, r0
+008D806C: blx          #0x97d4f8 ; FUN_0097d4f8
+008D8070: blx          #0x99dc54 ; FUN_0099dc54
+008D8074: cmp          r0, #1
+008D8076: it           eq
+008D8078: blxeq        #0x99dcec
+008D807C: ldr          r0, [pc, #0x28] ; word[008D80A8]=00767EE2
+008D807E: add          r0, pc
+008D8080: ldr          r0, [r0]
+008D8082: ldr          r5, [r0]
+008D8084: cbz          r5, #0x8d8094
+008D8086: ldr          r0, [r4, #4]
+008D8088: bl           #0x8d80ac ; FUN_008d80ac
+008D808C: ldr          r0, [r5]
+008D808E: ldr          r1, [r0, #8]
+008D8090: mov          r0, r5
+008D8092: blx          r1
+008D8094: blx          #0xa7a6dc ; FUN_00a7a6dc
+008D8098: cmp          r0, #1
+008D809A: it           ne
+008D809C: popne        {r4, r5, r7, pc}
+008D809E: pop.w        {r4, r5, r7, lr}
+008D80A2: b.w          #0xae3030
+RANGE 0x008DF704..0x008DF728 exclusive; Thumb;
+008DF704: push         {r4, r5, r7, lr}
+008DF706: mov          r4, r0
+008DF708: ldr          r0, [r4, #8]
+008DF70A: cbz          r0, #0x8df718
+008DF70C: ldr          r5, [r0]
+008DF70E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF712: cmp          r5, #0
+008DF714: mov          r0, r5
+008DF716: bne          #0x8df70c
+008DF718: ldr          r0, [r4]
+008DF71A: movs         r1, #0
+008DF71C: str          r1, [r4]
+008DF71E: cbz          r0, #0x8df724
+008DF720: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF724: mov          r0, r4
+008DF726: pop          {r4, r5, r7, pc}
+0103FF5C: raw=00000000 relocated=010383F0 _ZTVN4Anki11AudioEngine21AudioEngineControllerE
+0103FF88: raw=00000000 relocated=01038A70 _ZTVN4Anki11AudioEngine11Multiplexer16AudioMultiplexerE
+010383F0: raw=00000000 relocated=00000000
+010383F4: raw=00000000 relocated=01038400 _ZTIN4Anki11AudioEngine21AudioEngineControllerE
+010383F8: raw=00000000 relocated=008D1C1D _ZN4Anki11AudioEngine21AudioEngineControllerD1Ev
+010383FC: raw=00000000 relocated=008D1D11 _ZN4Anki11AudioEngine21AudioEngineControllerD0Ev
+01038400: raw=00000008 relocated=00000008 _ZTVN10__cxxabiv121__vmi_class_type_infoE
+01038404: raw=00000000 relocated=00DC8FF0 _ZTSN4Anki11AudioEngine21AudioEngineControllerE
+01038408: raw=00000000 relocated=00000000
+0103840C: raw=00000001 relocated=00000001
+01038A70: raw=00000000 relocated=00000000
+01038A74: raw=00000000 relocated=01038A80 _ZTIN4Anki11AudioEngine11Multiplexer16AudioMultiplexerE
+01038A78: raw=00000000 relocated=008DEB09 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexerD1Ev
+01038A7C: raw=00000000 relocated=008DEB55 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexerD0Ev
+01038A80: raw=00000008 relocated=00000008 _ZTVN10__cxxabiv121__vmi_class_type_infoE
+01038A84: raw=00000000 relocated=00DCA170 _ZTSN4Anki11AudioEngine11Multiplexer16AudioMultiplexerE
+01038A88: raw=00000000 relocated=00000000
+01038A8C: raw=00000001 relocated=00000001
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EAF98..0x004EAFD0 exclusive; Thumb;
+004EAF98: push         {r4, r5, r7, lr}
+004EAF9A: mov          r4, r0
+004EAF9C: ldr          r5, [r4]
+004EAF9E: cbz          r5, #0x4eafcc
+004EAFA0: ldr          r0, [r4, #4]
+004EAFA2: cmp          r0, r5
+004EAFA4: beq          #0x4eafc6
+004EAFA6: sub.w        r1, r0, #0xc
+004EAFAA: str          r1, [r4, #4]
+004EAFAC: ldrb         r2, [r0, #-0xc]
+004EAFB0: lsls         r2, r2, #0x1f
+004EAFB2: beq          #0x4eafbe
+004EAFB4: ldr          r0, [r0, #-0x4]
+004EAFB8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+004EAFBC: ldr          r1, [r4, #4]
+004EAFBE: cmp          r1, r5
+004EAFC0: mov          r0, r1
+004EAFC2: bne          #0x4eafa6
+004EAFC4: ldr          r5, [r4]
+004EAFC6: mov          r0, r5
+004EAFC8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+004EAFCC: mov          r0, r4
+004EAFCE: pop          {r4, r5, r7, pc}
+RANGE 0x008CA834..0x008CA85C exclusive; Thumb;
+008CA834: push         {r4, lr}
+008CA836: mov          r4, r0
+008CA838: ldr          r0, [r4]
+008CA83A: cbz          r0, #0x8ca858
+008CA83C: ldr          r1, [r4, #4]
+008CA83E: cmp          r1, r0
+008CA840: itttt        ne
+008CA842: subne        r2, r1, #4
+008CA844: subne        r2, r2, r0
+008CA846: mvnne        r3, #3
+008CA84A: bicne.w      r2, r3, r2
+008CA84E: itt          ne
+008CA850: addne        r1, r1, r2
+008CA852: strne        r1, [r4, #4]
+008CA854: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008CA858: mov          r0, r4
+008CA85A: pop          {r4, pc}
+RANGE 0x008D3774..0x008D380A exclusive; Thumb;
+008D3774: push         {r4, lr}
+008D3776: mov          r4, r0
+008D3778: ldr          r1, [r4, #8]
+008D377A: bl           #0x8d378e ; FUN_008d378e
+008D377E: ldr          r0, [r4]
+008D3780: movs         r1, #0
+008D3782: str          r1, [r4]
+008D3784: cbz          r0, #0x8d378a
+008D3786: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D378A: mov          r0, r4
+008D378C: pop          {r4, pc}
+008D378E: push         {r4, r5, r7, lr}
+008D3790: mov          r4, r1
+008D3792: cbz          r4, #0x8d37ca
+008D3794: add.w        r0, r4, #0x2c
+008D3798: ldr          r5, [r4]
+008D379A: bl           #0x4eaf98 ; FUN_004eaf98
+008D379E: add.w        r0, r4, #0x20
+008D37A2: bl           #0x5943c8 ; FUN_005943c8
+008D37A6: ldrb         r0, [r4, #0x14]
+008D37A8: lsls         r0, r0, #0x1f
+008D37AA: itt          ne
+008D37AC: ldrne        r0, [r4, #0x1c]
+008D37AE: blxne        #0x4a40cc
+008D37B2: ldrb         r0, [r4, #8]
+008D37B4: lsls         r0, r0, #0x1f
+008D37B6: itt          ne
+008D37B8: ldrne        r0, [r4, #0x10]
+008D37BA: blxne        #0x4a40cc
+008D37BE: mov          r0, r4
+008D37C0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D37C4: cmp          r5, #0
+008D37C6: mov          r4, r5
+008D37C8: bne          #0x8d3794
+008D37CA: pop          {r4, r5, r7, pc}
+008D37CC: push         {r4, r5, r7, lr}
+008D37CE: mov          r4, r0
+008D37D0: ldr          r0, [r4, #8]
+008D37D2: cbz          r0, #0x8d37e0
+008D37D4: ldr          r5, [r0]
+008D37D6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D37DA: cmp          r5, #0
+008D37DC: mov          r0, r5
+008D37DE: bne          #0x8d37d4
+008D37E0: ldr          r0, [r4]
+008D37E2: movs         r1, #0
+008D37E4: str          r1, [r4]
+008D37E6: cbz          r0, #0x8d37ec
+008D37E8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D37EC: mov          r0, r4
+008D37EE: pop          {r4, r5, r7, pc}
+008D37F0: push         {r4, lr}
+008D37F2: mov          r4, r0
+008D37F4: ldr          r1, [r4, #8]
+008D37F6: bl           #0x8d380a ; FUN_008d380a
+008D37FA: ldr          r0, [r4]
+008D37FC: movs         r1, #0
+008D37FE: str          r1, [r4]
+008D3800: cbz          r0, #0x8d3806
+008D3802: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D3806: mov          r0, r4
+008D3808: pop          {r4, pc}
+RANGE 0x008D380A..0x008D382C exclusive; Thumb;
+008D380A: push         {r4, r5, r7, lr}
+008D380C: mov          r4, r1
+008D380E: cbz          r4, #0x8d382a
+008D3810: ldrb         r0, [r4, #0xc]
+008D3812: ldr          r5, [r4]
+008D3814: lsls         r0, r0, #0x1f
+008D3816: itt          ne
+008D3818: ldrne        r0, [r4, #0x14]
+008D381A: blxne        #0x4a40cc
+008D381E: mov          r0, r4
+008D3820: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D3824: cmp          r5, #0
+008D3826: mov          r4, r5
+008D3828: bne          #0x8d3810
+008D382A: pop          {r4, r5, r7, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005943C8..0x0059440E exclusive; Thumb;
+005943C8: push         {r4, r5, r6, lr}
+005943CA: mov          r4, r0
+005943CC: ldr          r5, [r4]
+005943CE: cbz          r5, #0x59440a
+005943D0: ldr          r6, [r4, #4]
+005943D2: cmp          r6, r5
+005943D4: beq          #0x594404
+005943D6: sub.w        r0, r6, #0x24
+005943DA: str          r0, [r4, #4]
+005943DC: sub.w        r0, r6, #0xc
+005943E0: bl           #0x594dfc ; FUN_00594dfc
+005943E4: sub.w        r0, r6, #0x18
+005943E8: bl           #0x594dfc ; FUN_00594dfc
+005943EC: ldrb         r0, [r6, #-0x24]
+005943F0: lsls         r0, r0, #0x1f
+005943F2: beq          #0x5943fc
+005943F4: ldr          r0, [r6, #-0x1c]
+005943F8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005943FC: ldr          r6, [r4, #4]
+005943FE: cmp          r6, r5
+00594400: bne          #0x5943d6
+00594402: ldr          r5, [r4]
+00594404: mov          r0, r5
+00594406: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059440A: mov          r0, r4
+0059440C: pop          {r4, r5, r6, pc}
+RANGE 0x00594DFC..0x00594E38 exclusive; Thumb;
+00594DFC: push         {r4, r5, r6, lr}
+00594DFE: mov          r4, r0
+00594E00: ldr          r5, [r4]
+00594E02: cbz          r5, #0x594e36
+00594E04: ldr          r6, [r4, #4]
+00594E06: cmp          r6, r5
+00594E08: beq          #0x594e30
+00594E0A: sub.w        r0, r6, #0x18
+00594E0E: str          r0, [r4, #4]
+00594E10: sub.w        r0, r6, #0xc
+00594E14: bl           #0x4eaf98 ; FUN_004eaf98
+00594E18: ldrb         r0, [r6, #-0x18]
+00594E1C: lsls         r0, r0, #0x1f
+00594E1E: beq          #0x594e28
+00594E20: ldr          r0, [r6, #-0x10]
+00594E24: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00594E28: ldr          r6, [r4, #4]
+00594E2A: cmp          r6, r5
+00594E2C: bne          #0x594e0a
+00594E2E: ldr          r5, [r4]
+00594E30: mov          r0, r5
+00594E32: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00594E36: mov          r0, r4
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00594E38..0x00594E3A exclusive; Thumb;
+00594E38: pop          {r4, r5, r6, pc}
