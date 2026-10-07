@@ -1,0 +1,16 @@
+1941aec|B-M6b-4 batch 6d: EQ, Peak Limiter and Hijack plug-ins exact (param objects, coefficient routine, NEON ramp, P2 path, host libm seams); emulator oracles (Opus-verified)
+7d763b2|B-M6b-4 batch 6c: runtime node/bus graph from the HIRC loaders (registry, NodeBase, links, bus init, shared refcount); real-walker emulator oracle (Opus-verified)
+5fc1aa5|B-M6b-4 batch 6a: voice filter A/B exact (band records, A1-A9, NEON block kernel, design, Init/Reset/ctor, host tanf); emulator oracle (Opus-verified)
+0703b40|B-M6b-4 batch 5k: V7 on the owner PBI, in-place FX wrapper, FX-slot build, VoicePass arg; emulator oracle; correction C42 (Opus-verified over 4 rounds)
+d16aa89|B-M6b-4 batch 5l: Compressor linked worker 0xA9FEEC; oracle 5346 lives (u8 literals); emulator + numpy check (Opus-verified)
+85b6a48|B-M6b-4 batch 5i: PostEvent entry writer, ctx init, limiter order, aux-send route, STMG send globals, context cookie; emulator oracle (Opus-verified)
+335ac74|B-M6b-4 batch 5j: Compressor plug-in (0x103DF28, Init, Execute, mono worker), host expf; emulator oracle (Opus-verified)
+ca5421c|B-M6b-4 batch 5g: pitch node, resampler (SetPitch, 11 kernels), mix kernels, the engine-order voice mix and the Hijack stage (C38); emulator oracles
+70098aa|B-M6b-4 batch 5h: complete listener registration (0x9F7390 non-bus and bus branches), removal (0x9F9064, 0xA19F60, 0xA19D44, 0xA1A0B4) and the PBI listener key as the engine's constructor leaves it (C39); emulator oracles
+4b975f8|B-M6b-4 batch 5f: 0xA548C0 and the RTPC value-change delivery (listener registration, delivery chain, pre-pass gain) (C31 R5.3, C37.1); emulator oracles
+1d569ce|B-M6b-4 batch 5e: Vorbis/ADPCM/PCM decode integration (frame loop, shared work block, hand-off, setup cache, DSP, walker, in-memory and streamed sources), pitch-node intake and the engine-order voice pull loop (C36); emulator oracles
+ffd1b94|B-M6b-4 batch 5d: exact binary32 port of the RTPC curve evaluation 0xA14E28 (C35); emulator oracle
+ab54401|B-M6b-4 batch 5c: bus walk, RTPC subscription/accumulators and modulators, source close paths, notification queue, bank loader and reader (C34); emulator oracles
+ca6c9e4|B-M6b-4 batch 5b: Anki resolver and zip index, stream manager/device/auto stream, source-class stream bodies (C33); the single I/O-thread seam; emulator oracles
+0633600|B-M6b-4 batch 5a: media table, shipped Play path, AddSrc/teardown/play-position seams, EndOfEvent body (C31-C33); emulator oracles
+87899c1|B-M6b-4 C30 step 1: StartStream raw int and latch, NotReadyCheck truncation, linker-owned Init and device table, Reserve result 2, VoicePass required collaborators; emulator oracles
