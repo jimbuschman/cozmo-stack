@@ -1296,7 +1296,7 @@ public class M5AnimationTests
         Assert.Contains("RemoveKeepAliveEyeDart", s.FaceLayerNames);
         var remove = s.Layers.Face.AllLayers.Single(l => l.Name == "RemoveKeepAliveEyeDart");
         Assert.Equal(new uint[] { 0, 99 }, remove.Track.Frames.Select(f => f.Trigger));
-        Assert.Equal(new ProceduralFacePose().Left.ToArray(), remove.Track.Frames[1].Face.Left.ToArray());
+        Assert.Equal(NativeOracleFixtures.DefaultEye, remove.Track.Frames[1].Face.Left.ToArray());
     }
 
     /// <summary>
@@ -2070,7 +2070,7 @@ public class M5AnimationTests
         Assert.Equal(0x4C4C4CFFu, NamedColors.GetByString("DARKGRAY"));
         Assert.Equal(0x007F00FFu, NamedColors.GetByString("DARKGREEN"));
         Assert.Equal(0xCCCCCCCCu, NamedColors.GetByString("OFFWHITE"));
-        Assert.Equal(NamedColors.Default, NamedColors.GetByString("red"));   // case-sensitive miss
+        Assert.Equal(NativeOracleFixtures.NamedColor("red"), NamedColors.GetByString("red"));   // native case-sensitive miss
     }
 
     /// <summary>
@@ -2086,11 +2086,11 @@ public class M5AnimationTests
         """);
         Assert.False(clip.LoadTruncated);
         var leds = Assert.Single(clip.Keyframes.OfType<LightsKeyframe>()).EncodedLeds!;
-        Assert.Equal(BackpackColor.Encode(0x0000FFFFu), leds[0]);   // Left  BLUE
-        Assert.Equal(BackpackColor.Encode(0x00FF00FFu), leds[1]);   // Front GREEN
-        Assert.Equal(BackpackColor.Encode(0xFFCC00FFu), leds[2]);   // Middle the DEFAULT for the unknown name
-        Assert.Equal(BackpackColor.Encode(0xFF0000FFu), leds[3]);   // Back  RED
-        Assert.Equal(BackpackColor.Encode(0xFFFFFFFFu), leds[4]);   // Right WHITE
+        Assert.Equal(NativeOracleFixtures.Packed(0x0000FFFFu), leds[0]);   // Left  BLUE
+        Assert.Equal(NativeOracleFixtures.Packed(0x00FF00FFu), leds[1]);   // Front GREEN
+        Assert.Equal(NativeOracleFixtures.Packed(0xFFCC00FFu), leds[2]);   // Middle the DEFAULT for the unknown name
+        Assert.Equal(NativeOracleFixtures.Packed(0xFF0000FFu), leds[3]);   // Back  RED
+        Assert.Equal(NativeOracleFixtures.Packed(0xFFFFFFFFu), leds[4]);   // Right WHITE
     }
 
     // ================================================================== M5-011/M5-014: the group loader (C5 item 4)

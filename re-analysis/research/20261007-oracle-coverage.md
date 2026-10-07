@@ -19,7 +19,7 @@
 | M3 image RGB→gray, 0x008728D8 | PARTIAL | Replay stops at shipped OpenCV `cv::Mat::create`; cross-library linking/initialized image bridge is MISSING. No Python grayscale model used. |
 | Remaining M1–M5 numeric/transform census, renderer/image kernels, head clips, keyframe transforms and RNG range wrappers | PARTIAL | Not exhaustively enumerated or oracle-tested in this batch. Their fixtures/production-entry adapters are MISSING; this report must not be read as coverage of every engine transform. |
 
-Queue 4 Q10, after the required pull at 75625ad. **Partial oracle batch, not complete numeric coverage.**
+Queue 4 Q10, after the required pull at 336aadc. **Partial oracle batch, not complete numeric coverage.**
 The queue authorizes emulator-backed production/test/tool changes and own commits, overriding the ordinary research write restrictions. No record is settled and no hardware is run.
 
 ## Reproduction and limits
@@ -28,7 +28,7 @@ Generator: `tools/emu/emu_m1_m5_numeric.py`; fixture:
 `cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/m1_m5_numeric_oracle.json`.
 Inputs, unsupported calls, generator seed and both artifact hashes are in the fixture.
 Engine SHA256: `02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1`.
-The complete native rows total 4,148, including 6,500 mt19937 words and 3,250 double words within their sequence rows.
+The initial Q10 commit's complete native rows total 4,148, including 6,500 mt19937 words and 3,250 double words within their sequence rows. Q11 later adds two explicit color rows, taking this fixture to 4,150.
 The blocked-input list contains 2,541 actual failed calls. These are not comparison passes.
 
 Unicorn executes the mapped ELF instructions and resolved engine symbols. The actual shipped `libstlport_shared.so` is additionally mapped/relocated for its `__aeabi_ldivmod` compiler helper; its hash is recorded. Supported external services are memory copying/clearing, successful allocation/deletion, serial C++ guards and exit-callback registration. There is no engine-method substitution and no phone math/division substitution. FPU is enabled, FPSCR starts at zero for each call. Phone entropy is outside this batch: seeds are explicitly nonzero (1, 2, 5489, FFFFFFFF, 80000000). Seed-zero behavior is not claimed tested.

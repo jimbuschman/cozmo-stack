@@ -75,8 +75,8 @@ class Native:
         if a in self.imports:
             name=self.imports[a]
             args=[uc.reg_read(r) for r in [UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2]]
-            if name in ['__aeabi_memclr4','__aeabi_memclr']: uc.mem_write(args[0],bytes(args[1]))
-            elif name in ['__aeabi_memcpy4','__aeabi_memcpy','__aeabi_memmove']:
+            if name in ['__aeabi_memclr8','__aeabi_memclr4','__aeabi_memclr']: uc.mem_write(args[0],bytes(args[1]))
+            elif name in ['__aeabi_memcpy8','__aeabi_memcpy4','__aeabi_memcpy','__aeabi_memmove']:
                 uc.mem_write(args[0],bytes(uc.mem_read(args[1],args[2])))
             elif name == '__cxa_guard_acquire': uc.reg_write(UC_ARM_REG_R0,0 if self.word(args[0]) & 1 else 1)
             elif name == '__cxa_guard_release': self.put(args[0],1)
@@ -86,6 +86,10 @@ class Native:
                 if self.heap >= 0x20100000: raise RuntimeError('phone allocation arena exhausted')
                 uc.mem_write(p,bytes(args[0])); uc.reg_write(UC_ARM_REG_R0,p)
             elif name in ['_ZdlPv','_ZdaPv']: pass
+            elif name == 'memcmp':
+                left=bytes(uc.mem_read(args[0],args[2]));right=bytes(uc.mem_read(args[1],args[2]))
+                value=next((a-b for a,b in zip(left,right) if a!=b),0)
+                uc.reg_write(UC_ARM_REG_R0,value & 0xffffffff)
             else: raise RuntimeError('unsupported import: '+name)
     def run(self,a,*args):
         self.uc.reg_write(UC_ARM_REG_SP,0x210f0000)
@@ -93,7 +97,7 @@ class Native:
         self.uc.reg_write(UC_ARM_REG_FPSCR,0)
         for r,v in zip([UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3],args): self.uc.reg_write(r,v)
         for i,v in enumerate(args[4:]): self.put(0x210f0000+4*i,v)
-        self.uc.emu_start(a|1,0x22000000,count=200000)
+        self.uc.emu_start(a|1,0x22000000,count=1000000)
         if self.uc.reg_read(UC_ARM_REG_PC)&~1 != 0x22000000: raise RuntimeError('instruction limit')
         return self.uc.reg_read(UC_ARM_REG_R0),self.uc.reg_read(UC_ARM_REG_R1)
 
@@ -106,7 +110,8 @@ def generate():
     rows=[]; blocked=[]
     # Install the shipped no-warning callback, rather than invoking an uninitialized logger.
     n.run(0x584b48,0)
-    colors=[[0,0,0,0],[255,0,0,255],[0,255,0,255],[0,0,255,255],[255,255,255,255]]
+    colors=[[0,0,0,0],[255,0,0,255],[0,255,0,255],[0,0,255,255],[255,255,255,255],
+            [0,0,0,255],[255,204,0,255]]
     for channel in range(4):
         for value in range(256):
             c=[0,0,0,0];c[channel]=value;colors.append(c)

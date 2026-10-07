@@ -341,7 +341,7 @@ public class DeviceTests
     {
         var noise = (FaceBitmap)FaceBitmaps().First(r => (string)r[0] == "noise")[1];
         var payload = FaceBitmapCodec.Encode(noise);
-        Assert.Equal(FaceBitmapCodec.RawFrameSize, payload.Length);
+        Assert.Equal(NativeOracleFixtures.Rle("noise").Length, payload.Length);
         Assert.True(payload.Length <= CozmoDisplay.DefaultMaxPayload);
         Assert.Equal(noise.ToText(), FaceBitmapCodec.Decode(payload).ToText());
 
@@ -422,7 +422,7 @@ public class DeviceTests
     {
         var sent = new List<RobotMessage>();
         var display = new CozmoDisplay(sent.Add);
-        var image = FaceBitmap.TestPattern();
+        var image = NativeOracleFixtures.Bitmap("test-pattern");
 
         var start = DateTime.UtcNow;
         display.Show(image);
@@ -433,7 +433,7 @@ public class DeviceTests
         Assert.Equal(2, display.FramesSent);
         Assert.All(sent, m => Assert.Equal(RobotMessageId.AnimFaceImage, m.Id));
         var msg = Assert.IsType<FaceMsg>(sent[0]);
-        Assert.Equal(FaceBitmapCodec.Encode(image), msg.Image);
+        Assert.Equal(NativeOracleFixtures.Rle("test-pattern"), msg.Image);
         Assert.Equal(msg.ToBytes(), RobotMessage.Parse(msg.ToBytes()).ToBytes());
         Assert.True(elapsed >= CozmoDisplay.MinInterval, $"two frames went out in {elapsed.TotalMilliseconds:F1} ms");
     }

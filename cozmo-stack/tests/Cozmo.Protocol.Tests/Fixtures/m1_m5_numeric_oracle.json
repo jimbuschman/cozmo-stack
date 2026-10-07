@@ -62,6 +62,26 @@
         0,
         0,
         0,
+        255
+      ],
+      "expected": 32768
+    },
+    {
+      "function": "rgb555_fragment",
+      "inputs": [
+        255,
+        204,
+        0,
+        255
+      ],
+      "expected": 65312
+    },
+    {
+      "function": "rgb555_fragment",
+      "inputs": [
+        0,
+        0,
+        0,
         0
       ],
       "expected": 0

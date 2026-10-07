@@ -1125,7 +1125,7 @@ public class M4ControlTests
         int mark = rig.Mark();
         rig.Tick();
         var red = Assert.Single(rig.RawSince(mark), b => b[0] == 0x03);
-        Assert.Equal(new[] { LedColor.Red.Packed, LedColor.Red.Packed, LedColor.Red.Packed },
+        Assert.Equal(new[] { NativeOracleFixtures.Packed(0xFF0000FF), NativeOracleFixtures.Packed(0xFF0000FF), NativeOracleFixtures.Packed(0xFF0000FF) },
                      ((BackpackLightsMiddle)RobotMessage.Parse(red)).Field0.Select(l => l.OnColor));
         rig.Tick();
         Assert.Single(rig.RawSince(mark), b => b[0] == 0x03);            // unchanged: not resent

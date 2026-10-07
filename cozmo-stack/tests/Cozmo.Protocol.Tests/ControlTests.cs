@@ -371,9 +371,9 @@ public class ControlTests
         rig.Send(Rig.StateWith());                // the next Robot::Update
 
         var msg = rig.Sent.OfType<BackpackLightsMiddle>().Last();
-        Assert.Equal(LedColor.Red.Packed, msg.Field0[0].OnColor);
-        Assert.Equal(LedColor.Green.Packed, msg.Field0[1].OnColor);
-        Assert.Equal(LedColor.Blue.Packed, msg.Field0[2].OnColor);
+        Assert.Equal(NativeOracleFixtures.Packed(0xFF0000FF), msg.Field0[0].OnColor);
+        Assert.Equal(NativeOracleFixtures.Packed(0x00FF00FF), msg.Field0[1].OnColor);
+        Assert.Equal(NativeOracleFixtures.Packed(0x0000FFFF), msg.Field0[2].OnColor);
         Assert.Equal((LedColor.Red, LedColor.Green, LedColor.Blue), rig.Robot.Lights.Backpack);
     }
 
@@ -387,8 +387,8 @@ public class ControlTests
         var msg = rig.Sent.OfType<BackpackLightsMiddle>().Last();
         Assert.Equal((byte)10, msg.Field0[0].OnFrames);
         Assert.Equal((byte)20, msg.Field0[0].OffFrames);
-        Assert.Equal(LedColor.Red.Packed, msg.Field0[0].OnColor);
-        Assert.Equal(LedColor.Off.Packed, msg.Field0[0].OffColor);
+        Assert.Equal(NativeOracleFixtures.Packed(0xFF0000FF), msg.Field0[0].OnColor);
+        Assert.Equal(NativeOracleFixtures.Packed(0x000000FF), msg.Field0[0].OffColor);
     }
 
     [Fact]

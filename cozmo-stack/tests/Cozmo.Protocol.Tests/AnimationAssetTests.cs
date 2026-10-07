@@ -179,8 +179,8 @@ public class AnimationAssetTests
             foreach (var k in lib.GetClip(name).Keyframes.OfType<FaceKeyframe>())
             {
                 faces++;
-                Assert.Equal(Eye.ParamCount, k.Pose.Left.ToArray().Length);
-                Assert.Equal(Eye.ParamCount, k.Pose.Right.ToArray().Length);
+                Assert.Equal(NativeOracleFixtures.DefaultEye.Length, k.Pose.Left.ToArray().Length);
+                Assert.Equal(NativeOracleFixtures.DefaultEye.Length, k.Pose.Right.ToArray().Length);
             }
         Assert.True(faces > 1000, $"only {faces} face keyframes found across the whole asset set");
     }

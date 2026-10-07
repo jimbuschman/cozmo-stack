@@ -182,11 +182,11 @@ public class AnimationGapTests
         s.Play(Clip("t", new EventKeyframe(10_000, "late")), 0);
 
         for (int i = 0; i < 100; i++) s.Advance(i * 33.0);
-        Assert.Equal(CozmoAudio.RobotBufferFrames, r.AudioFrames);   // filled the buffer and stopped
+        Assert.Equal(NativeOracleFixtures.FrameBudget(0), r.AudioFrames);   // native budget with no played frames
 
         r.Played = 5;                                                // the robot drains five
         for (int i = 0; i < 100; i++) s.Advance(3300 + i * 33.0);
-        Assert.Equal(CozmoAudio.RobotBufferFrames + 5, r.AudioFrames);
+        Assert.Equal(NativeOracleFixtures.FrameBudget(5), r.AudioFrames);
     }
 
     /// <summary>
@@ -209,7 +209,7 @@ public class AnimationGapTests
         s.Play(Clip("t", frames.ToArray()), 0);
 
         for (int i = 0; i < 14; i++) s.Advance(i * 33.0);                // fills the robot's 14-frame budget
-        Assert.Equal(CozmoAudio.RobotBufferFrames, r.AudioFrames);
+        Assert.Equal(NativeOracleFixtures.FrameBudget(0), r.AudioFrames);
         Assert.Empty(r.Events);
         // M3 A18: the 15th frame (t = 462) is built and its audio stops the drain; its stream-time step is taken anyway
         Assert.Equal(14 * 33, s.PositionMs);
@@ -221,7 +221,7 @@ public class AnimationGapTests
         r.Played = 3;                                                    // the robot has played three frames
         s.Advance(41 * 33.0);
         Assert.Equal(new[] { "462", "495", "528" }, r.Events);           // three frames, three steps of 33
-        Assert.Equal(CozmoAudio.RobotBufferFrames + 3, r.AudioFrames);
+        Assert.Equal(NativeOracleFixtures.FrameBudget(3), r.AudioFrames);
         Assert.Equal(17 * 33, s.PositionMs);                             // frame 561 built, waiting on the budget (A18)
     }
 
