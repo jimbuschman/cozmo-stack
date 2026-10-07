@@ -1,0 +1,179 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009A206C..0x009A2088 exclusive; ARM;
+009A206C: ldr          r3, [pc, #0x14] ; word[009A2088]=006EB7EC
+009A2070: mov          r1, r0
+009A2074: add          r3, pc, r3
+009A2078: ldr          r0, [r3, #0x8c]
+009A207C: cmp          r0, #0
+009A2080: bxeq         lr
+009A2084: b            #0xa03540
+RANGE 0x00A03540..0x00A03614 exclusive; ARM;
+00A03540: push         {r4, r5, r6, lr}
+00A03544: add          r6, r0, #0x10
+00A03548: mov          r5, r0
+00A0354C: mov          r4, r1
+00A03550: mov          r0, r6
+00A03554: bl           #0x4d3064 ; <EXTERNAL>::pthread_mutex_lock
+00A03558: ldr          r1, [r5, #4]
+00A0355C: cmp          r1, #0
+00A03560: beq          #0xa035b8
+00A03564: mov          r0, r4
+00A03568: bl           #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+00A0356C: ldr          r3, [r5]
+00A03570: ldr          r3, [r3, r1, lsl #2]
+00A03574: cmp          r3, #0
+00A03578: beq          #0xa035b8
+00A0357C: ldr          r2, [r3, #0x3c]
+00A03580: cmp          r4, r2
+00A03584: beq          #0xa035a0
+00A03588: ldr          r3, [r3, #0x4c]
+00A0358C: cmp          r3, #0
+00A03590: beq          #0xa035b8
+00A03594: ldr          r2, [r3, #0x3c]
+00A03598: cmp          r4, r2
+00A0359C: bne          #0xa03588
+00A035A0: ldr          r2, [r3, #0x48]
+00A035A4: mov          r1, #0
+00A035A8: str          r1, [r3, #0x40]
+00A035AC: lsr          r2, r2, #0x14
+00A035B0: lsl          r2, r2, #0x14
+00A035B4: str          r2, [r3, #0x48]
+00A035B8: mov          r0, r6
+00A035BC: bl           #0x4d3070 ; <EXTERNAL>::pthread_mutex_unlock
+00A035C0: ldr          r3, [pc, #0x4c] ; word[00A03614]=0063CB80
+00A035C4: ldr          r3, [pc, r3]
+00A035C8: ldr          r4, [r3]
+00A035CC: bl           #0x4a4edc ; <EXTERNAL>::pthread_self
+00A035D0: cmp          r4, r0
+00A035D4: popeq        {r4, r5, r6, pc}
+00A035D8: add          r4, r5, #0x14
+00A035DC: mov          r0, r4
+00A035E0: bl           #0x4d3064 ; <EXTERNAL>::pthread_mutex_lock
+00A035E4: ldrb         r3, [r5, #0x1c]
+00A035E8: cmp          r3, #0
+00A035EC: beq          #0xa035fc
+00A035F0: mov          r0, r4
+00A035F4: pop          {r4, r5, r6, lr}
+00A035F8: b            #0x4d3070 ; <EXTERNAL>::pthread_mutex_unlock
+00A035FC: add          r0, r5, #0x18
+00A03600: mov          r1, r4
+00A03604: bl           #0x4d66d0 ; <EXTERNAL>::pthread_cond_wait
+00A03608: mov          r0, r4
+00A0360C: pop          {r4, r5, r6, lr}
+00A03610: b            #0x4d3070 ; <EXTERNAL>::pthread_mutex_unlock
+RANGE 0x0059A4C2..0x0059A504 exclusive; Thumb;
+0059A4C2: push         {r4, r5, r7, lr}
+0059A4C4: mov          r4, r0
+0059A4C6: mov          r5, r1
+0059A4C8: ldr          r0, [r4, #0x10]
+0059A4CA: cmp          r4, r0
+0059A4CC: beq          #0x59a4d6
+0059A4CE: cbz          r0, #0x59a4dc
+0059A4D0: ldr          r1, [r0]
+0059A4D2: ldr          r1, [r1, #0x14]
+0059A4D4: b            #0x59a4da
+0059A4D6: ldr          r1, [r0]
+0059A4D8: ldr          r1, [r1, #0x10]
+0059A4DA: blx          r1
+0059A4DC: movs         r1, #0
+0059A4DE: str          r1, [r4, #0x10]
+0059A4E0: ldr          r0, [r5, #0x10]
+0059A4E2: cbz          r0, #0x59a4f0
+0059A4E4: cmp          r5, r0
+0059A4E6: beq          #0x59a4f4
+0059A4E8: str          r0, [r4, #0x10]
+0059A4EA: movs         r0, #0
+0059A4EC: str          r0, [r5, #0x10]
+0059A4EE: b            #0x59a500
+0059A4F0: str          r1, [r4, #0x10]
+0059A4F2: b            #0x59a500
+0059A4F4: str          r4, [r4, #0x10]
+0059A4F6: ldr          r0, [r5, #0x10]
+0059A4F8: ldr          r1, [r0]
+0059A4FA: ldr          r2, [r1, #0xc]
+0059A4FC: mov          r1, r4
+0059A4FE: blx          r2
+0059A500: mov          r0, r4
+0059A502: pop          {r4, r5, r7, pc}
+RANGE 0x008D382C..0x008D386E exclusive; Thumb;
+008D382C: push         {r4, r5, r7, lr}
+008D382E: mov          r4, r0
+008D3830: mov          r5, r1
+008D3832: ldr          r0, [r4, #0x10]
+008D3834: cmp          r4, r0
+008D3836: beq          #0x8d3840
+008D3838: cbz          r0, #0x8d3846
+008D383A: ldr          r1, [r0]
+008D383C: ldr          r1, [r1, #0x14]
+008D383E: b            #0x8d3844
+008D3840: ldr          r1, [r0]
+008D3842: ldr          r1, [r1, #0x10]
+008D3844: blx          r1
+008D3846: movs         r1, #0
+008D3848: str          r1, [r4, #0x10]
+008D384A: ldr          r0, [r5, #0x10]
+008D384C: cbz          r0, #0x8d385a
+008D384E: cmp          r5, r0
+008D3850: beq          #0x8d385e
+008D3852: str          r0, [r4, #0x10]
+008D3854: movs         r0, #0
+008D3856: str          r0, [r5, #0x10]
+008D3858: b            #0x8d386a
+008D385A: str          r1, [r4, #0x10]
+008D385C: b            #0x8d386a
+008D385E: str          r4, [r4, #0x10]
+008D3860: ldr          r0, [r5, #0x10]
+008D3862: ldr          r1, [r0]
+008D3864: ldr          r2, [r1, #0xc]
+008D3866: mov          r1, r4
+008D3868: blx          r2
+008D386A: mov          r0, r4
+008D386C: pop          {r4, r5, r7, pc}
+01038AA0: raw=008DF9F5 relocated=008DF9F5
+01038AA4: raw=008DF981 relocated=008DF981
+01038AA8: raw=008DF985 relocated=008DF985
+01038AAC: raw=008DF9A5 relocated=008DF9A5
+01038AB0: raw=008DF9BD relocated=008DF9BD
+01038AB4: raw=008DF9BF relocated=008DF9BF
+01038AB8: raw=008DF9C3 relocated=008DF9C3
+01038ABC: raw=008DF9D1 relocated=008DF9D1
+01038AC0: raw=008DF9E9 relocated=008DF9E9
+01038420: raw=008D4005 relocated=008D4005
+01038424: raw=008D3F9B relocated=008D3F9B
+01038428: raw=008D3FA1 relocated=008D3FA1
+0103842C: raw=008D3FBD relocated=008D3FBD
+01038430: raw=008D3FD1 relocated=008D3FD1
+01038434: raw=008D3FD3 relocated=008D3FD3
+01038438: raw=008D3FD7 relocated=008D3FD7
+RANGE 0x008DF9C2..0x008DF9CE exclusive; Thumb;
+008DF9C2: mov          r3, r2
+008DF9C4: ldrh         r2, [r0, #0xa]
+008DF9C6: ldrb         r1, [r0, #8]
+008DF9C8: ldr          r0, [r0, #4]
+008DF9CA: b.w          #0xae3120
+RANGE 0x008D3FD6..0x008D3FDE exclusive; Thumb;
+008D3FD6: ldr          r0, [r0, #4]
+008D3FD8: ldr          r1, [r1]
+008D3FDA: b.w          #0xae2fb0
+RANGE 0x00AE3120..0x00AE3124 exclusive; Thumb;
+00AE3120: bx           pc
+00AE3122: mov          r8, r8
+RANGE 0x00AE3124..0x00AE312C exclusive; ARM;
+00AE3124: ldr          ip, [pc] ; word[00AE312C]=FF9EF520
+00AE3128: add          pc, ip, pc
+RANGE 0x00AE2FB0..0x00AE2FB4 exclusive; Thumb;
+00AE2FB0: bx           pc
+00AE2FB2: mov          r8, r8
+RANGE 0x00AE2FB4..0x00AE2FBC exclusive; ARM;
+00AE2FB4: ldr          ip, [pc] ; word[00AE2FBC]=FF9EF4B0
+00AE2FB8: add          pc, ip, pc
+RANGE 0x004D2650..0x004D265C exclusive; ARM;
+004D2650: add          ip, pc, #0xb00000
+004D2654: add          ip, ip, #0x7d000
+004D2658: ldr          pc, [ip, #0x3a4]!
+RANGE 0x004D2470..0x004D247C exclusive; ARM;
+004D2470: add          ip, pc, #0xb00000
+004D2474: add          ip, ip, #0x7d000
+004D2478: ldr          pc, [ip, #0x4e4]!
+0104F9FC: raw=004A4010 relocated=008DF3E1 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer15PerformCallbackEhtRKNS0_17AudioCallbackInfoE
+0104F95C: raw=004A4010 relocated=008D36FD _ZN4Anki11AudioEngine21AudioEngineController37MoveCallbackContextToGarbageCollectorEPKNS0_20AudioCallbackContextE
