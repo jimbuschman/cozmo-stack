@@ -1,0 +1,175 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5763c4 0x57645e _ZN4Anki5Cozmo9Animation5ClearEv
+005763C4: push       {r4, r5, r7, lr} ;
+005763C6: mov        r4, r0 ;
+005763C8: add.w      r5, r4, #0x10 ;
+005763CC: mov        r0, r5 ;
+005763CE: blx        #0x4a8b60 ; GOT 01041BAC _ZNSt6__ndk110__list_impIN4Anki5Cozmo17HeadAngleKeyFrameENS_9allocatorIS3_EEE5clearEv
+005763D2: str        r5, [r4, #0x1c] ;
+005763D4: add.w      r5, r4, #0x24 ;
+005763D8: mov        r0, r5 ;
+005763DA: blx        #0x4a8b54 ; GOT 01041BA8 _ZNSt6__ndk110__list_impIN4Anki5Cozmo18LiftHeightKeyFrameENS_9allocatorIS3_EEE5clearEv
+005763DE: str        r5, [r4, #0x30] ;
+005763E0: add.w      r5, r4, #0x38 ;
+005763E4: mov        r0, r5 ;
+005763E6: blx        #0x4a8b48 ; GOT 01041BA4 _ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv
+005763EA: str        r5, [r4, #0x44] ;
+005763EC: add.w      r5, r4, #0x4c ;
+005763F0: mov        r0, r5 ;
+005763F2: blx        #0x4a8b3c ; GOT 01041BA0 _ZNSt6__ndk110__list_impIN4Anki5Cozmo22ProceduralFaceKeyFrameENS_9allocatorIS3_EEE5clearEv
+005763F6: str        r5, [r4, #0x58] ;
+005763F8: add.w      r5, r4, #0x60 ;
+005763FC: mov        r0, r5 ;
+005763FE: blx        #0x4a8b30 ; GOT 01041B9C _ZNSt6__ndk110__list_impIN4Anki5Cozmo13EventKeyFrameENS_9allocatorIS3_EEE5clearEv
+00576402: str        r5, [r4, #0x6c] ;
+00576404: add.w      r5, r4, #0xc4 ;
+00576408: mov        r0, r5 ;
+0057640A: blx        #0x4a8af4 ; GOT 01041B88 _ZNSt6__ndk110__list_impIN4Anki5Cozmo19DeviceAudioKeyFrameENS_9allocatorIS3_EEE5clearEv
+0057640E: str.w      r5, [r4, #0xd0] ;
+00576412: add.w      r5, r4, #0xd8 ;
+00576416: mov        r0, r5 ;
+00576418: blx        #0x4a8ae8 ; GOT 01041B84 _ZNSt6__ndk110__list_impIN4Anki5Cozmo18RobotAudioKeyFrameENS_9allocatorIS3_EEE5clearEv
+0057641C: str.w      r5, [r4, #0xe4] ;
+00576420: add.w      r5, r4, #0x74 ;
+00576424: mov        r0, r5 ;
+00576426: blx        #0x4a8b24 ; GOT 01041B98 _ZNSt6__ndk110__list_impIN4Anki5Cozmo22BackpackLightsKeyFrameENS_9allocatorIS3_EEE5clearEv
+0057642A: str.w      r5, [r4, #0x80] ;
+0057642E: add.w      r5, r4, #0x88 ;
+00576432: mov        r0, r5 ;
+00576434: blx        #0x4a8b18 ; GOT 01041B94 _ZNSt6__ndk110__list_impIN4Anki5Cozmo18BodyMotionKeyFrameENS_9allocatorIS3_EEE5clearEv
+00576438: str.w      r5, [r4, #0x94] ;
+0057643C: add.w      r5, r4, #0x9c ;
+00576440: mov        r0, r5 ;
+00576442: blx        #0x4a8b0c ; GOT 01041B90 _ZNSt6__ndk110__list_impIN4Anki5Cozmo21RecordHeadingKeyFrameENS_9allocatorIS3_EEE5clearEv
+00576446: str.w      r5, [r4, #0xa8] ;
+0057644A: add.w      r5, r4, #0xb0 ;
+0057644E: mov        r0, r5 ;
+00576450: blx        #0x4a8b00 ; GOT 01041B8C _ZNSt6__ndk110__list_impIN4Anki5Cozmo29TurnToRecordedHeadingKeyFrameENS_9allocatorIS3_EEE5clearEv
+00576454: movs       r0, #0 ;
+00576456: strb       r0, [r4, #0xc] ;
+00576458: str.w      r5, [r4, #0xbc] ;
+0057645C: pop        {r4, r5, r7, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x577efc 0x577fa6 _ZN4Anki5Cozmo9Animation15AppendAnimationERKS1_
+00577EFC: push       {r4, r5, r6, lr} ;
+00577EFE: mov        r4, r1 ;
+00577F00: mov        r5, r0 ;
+00577F02: blx        #0x4ac328 ; GOT 01042E44 _ZN4Anki5Cozmo9Animation22GetLastKeyFrameTime_msEv
+00577F06: add.w      r2, r5, #0x10 ;
+00577F0A: add.w      r6, r0, #0x21 ;
+00577F0E: add.w      r1, r4, #0x10 ;
+00577F12: mov        r0, r2 ;
+00577F14: mov        r2, r6 ;
+00577F16: blx        #0x4ad8d0 ; GOT 0104357C _ZN4Anki5Cozmo10Animations5TrackINS0_17HeadAngleKeyFrameEE11AppendTrackERKS4_j
+00577F1A: add.w      r0, r5, #0x24 ;
+00577F1E: add.w      r1, r4, #0x24 ;
+00577F22: mov        r2, r6 ;
+00577F24: blx        #0x4ad8dc ; GOT 01043580 _ZN4Anki5Cozmo10Animations5TrackINS0_18LiftHeightKeyFrameEE11AppendTrackERKS4_j
+00577F28: add.w      r0, r5, #0x38 ;
+00577F2C: add.w      r1, r4, #0x38 ;
+00577F30: mov        r2, r6 ;
+00577F32: blx        #0x4ad8e8 ; GOT 01043584 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j
+00577F36: add.w      r0, r5, #0x4c ;
+00577F3A: add.w      r1, r4, #0x4c ;
+00577F3E: mov        r2, r6 ;
+00577F40: blx        #0x4ad8f4 ; GOT 01043588 _ZN4Anki5Cozmo10Animations5TrackINS0_22ProceduralFaceKeyFrameEE11AppendTrackERKS4_j
+00577F44: add.w      r0, r5, #0x60 ;
+00577F48: add.w      r1, r4, #0x60 ;
+00577F4C: mov        r2, r6 ;
+00577F4E: blx        #0x4ad900 ; GOT 0104358C _ZN4Anki5Cozmo10Animations5TrackINS0_13EventKeyFrameEE11AppendTrackERKS4_j
+00577F52: add.w      r0, r5, #0x74 ;
+00577F56: add.w      r1, r4, #0x74 ;
+00577F5A: mov        r2, r6 ;
+00577F5C: blx        #0x4ad90c ; GOT 01043590 _ZN4Anki5Cozmo10Animations5TrackINS0_22BackpackLightsKeyFrameEE11AppendTrackERKS4_j
+00577F60: add.w      r0, r5, #0x88 ;
+00577F64: add.w      r1, r4, #0x88 ;
+00577F68: mov        r2, r6 ;
+00577F6A: blx        #0x4ad918 ; GOT 01043594 _ZN4Anki5Cozmo10Animations5TrackINS0_18BodyMotionKeyFrameEE11AppendTrackERKS4_j
+00577F6E: add.w      r0, r5, #0x9c ;
+00577F72: add.w      r1, r4, #0x9c ;
+00577F76: mov        r2, r6 ;
+00577F78: blx        #0x4ad924 ; GOT 01043598 _ZN4Anki5Cozmo10Animations5TrackINS0_21RecordHeadingKeyFrameEE11AppendTrackERKS4_j
+00577F7C: add.w      r0, r5, #0xb0 ;
+00577F80: add.w      r1, r4, #0xb0 ;
+00577F84: mov        r2, r6 ;
+00577F86: blx        #0x4ad930 ; GOT 0104359C _ZN4Anki5Cozmo10Animations5TrackINS0_29TurnToRecordedHeadingKeyFrameEE11AppendTrackERKS4_j
+00577F8A: add.w      r0, r5, #0xc4 ;
+00577F8E: add.w      r1, r4, #0xc4 ;
+00577F92: mov        r2, r6 ;
+00577F94: blx        #0x4ad93c ; GOT 010435A0 _ZN4Anki5Cozmo10Animations5TrackINS0_19DeviceAudioKeyFrameEE11AppendTrackERKS4_j
+00577F98: add.w      r0, r5, #0xd8 ;
+00577F9C: add.w      r1, r4, #0xd8 ;
+00577FA0: mov        r2, r6 ;
+00577FA2: pop.w      {r4, r5, r6, lr} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57ac50 0x57ad2c
+0057AC50: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+0057AC54: sub        sp, #0x14 ;
+0057AC56: mov        r4, r0 ;
+0057AC58: movs       r0, #0 ;
+0057AC5A: strd       r0, r0, [r4] ;
+0057AC5E: mov        r7, r1 ;
+0057AC60: str        r0, [r4, #8] ;
+0057AC62: ldrb       r0, [r7] ;
+0057AC64: lsls       r0, r0, #0x1f ;
+0057AC66: bne        #0x57ac74 ;
+0057AC68: mov        r0, r7 ;
+0057AC6A: mov        r1, r4 ;
+0057AC6C: ldm.w      r0, {r2, r3, r6} ;
+0057AC70: stm        r1!, {r2, r3, r6} ;
+0057AC72: b          #0x57ac7e ;
+0057AC74: ldrd       r2, r1, [r7, #4] ;
+0057AC78: mov        r0, r4 ;
+0057AC7A: bl         #0x4e02b2 ;
+0057AC7E: ldrh       r0, [r7, #0xc] ;
+0057AC80: add.w      r8, r4, #0x10 ;
+0057AC84: strh       r0, [r4, #0xc] ;
+0057AC86: add.w      r1, r7, #0x10 ;
+0057AC8A: mov        r0, r8 ;
+0057AC8C: bl         #0x57e092 ;
+0057AC90: add.w      r6, r4, #0x24 ;
+0057AC94: add.w      r1, r7, #0x24 ;
+0057AC98: mov        r0, r6 ;
+0057AC9A: str.w      r8, [sp, #0x10] ;
+0057AC9E: bl         #0x57e0b4 ;
+0057ACA2: add.w      r5, r4, #0x38 ;
+0057ACA6: add.w      r1, r7, #0x38 ;
+0057ACAA: mov        r0, r5 ;
+0057ACAC: str        r6, [sp, #0xc] ;
+0057ACAE: bl         #0x57e0d6 ;
+0057ACB2: add.w      r6, r4, #0x4c ;
+0057ACB6: add.w      r1, r7, #0x4c ;
+0057ACBA: mov        r0, r6 ;
+0057ACBC: str        r5, [sp, #8] ;
+0057ACBE: bl         #0x57e0f8 ;
+0057ACC2: add.w      r0, r4, #0x60 ;
+0057ACC6: add.w      r1, r7, #0x60 ;
+0057ACCA: str        r6, [sp, #4] ;
+0057ACCC: bl         #0x57e11a ;
+0057ACD0: add.w      r5, r4, #0x74 ;
+0057ACD4: str        r0, [sp] ;
+0057ACD6: add.w      r1, r7, #0x74 ;
+0057ACDA: mov        r0, r5 ;
+0057ACDC: bl         #0x57e13c ;
+0057ACE0: add.w      r8, r4, #0x88 ;
+0057ACE4: add.w      r1, r7, #0x88 ;
+0057ACE8: mov        r0, r8 ;
+0057ACEA: bl         #0x57e15e ;
+0057ACEE: add.w      sb, r4, #0x9c ;
+0057ACF2: add.w      r1, r7, #0x9c ;
+0057ACF6: mov        r0, sb ;
+0057ACF8: bl         #0x57e180 ;
+0057ACFC: add.w      sl, r4, #0xb0 ;
+0057AD00: add.w      r1, r7, #0xb0 ;
+0057AD04: mov        r0, sl ;
+0057AD06: bl         #0x57e1a2 ;
+0057AD0A: add.w      fp, r4, #0xc4 ;
+0057AD0E: add.w      r1, r7, #0xc4 ;
+0057AD12: mov        r0, fp ;
+0057AD14: bl         #0x57e1c4 ;
+0057AD18: add.w      r0, r4, #0xd8 ;
+0057AD1C: add.w      r1, r7, #0xd8 ;
+0057AD20: bl         #0x57e1e6 ;
+0057AD24: mov        r0, r4 ;
+0057AD26: add        sp, #0x14 ;
+0057AD28: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ;
