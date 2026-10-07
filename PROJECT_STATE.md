@@ -11,8 +11,10 @@ ACCEPTED yet.
 1. M1 + M2: connecting and protocol.
 2. M3 + M4: devices and motor control.
 3. M5: animation and the face.
-4. The sound layers, M6 + M9, here by default. The operator may move them last.
-5. M10–M15 and M7/M8: vision, cubes, navigation, behaviours.
+4. M10–M15 and M7/M8: vision, cubes, navigation, behaviours.
+5. The sound layers, M6 + M9, **last** (operator, 2026-10-07). Sound already plays, approximately, through the direct
+   decoder. Even under ADP-1 its decision rows run to about 140 obligations (queue 5, Q14), so the robot's behaviour
+   layers are finished first.
 
 **Done for a layer means:**
 - every record is EXACT_SOURCE, or a policy record that the manager has confirmed legitimate (COMPATIBILITY_POLICY,
