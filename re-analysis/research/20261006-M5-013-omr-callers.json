@@ -1,0 +1,4 @@
+{
+  "scope": "Direct calls from symbol-bounded native functions only; navigation requires receiver checking.",
+  "calls": []
+}

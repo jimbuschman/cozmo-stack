@@ -1,0 +1,49 @@
+0x00926B9C: push     {r4, r5, r6, r7, r8, sb, sl, fp}
+0x00926BA0: add      r4, r2, #4
+0x00926BA4: sub      sp, sp, #0x10
+0x00926BA8: add      r6, r2, #0x2bc
+0x00926BAC: mov      ip, r4
+0x00926BB0: mov      r7, #0
+0x00926BB4: str      r1, [sp, #0xc]
+0x00926BB8: b        #0x926bc0   ; ->0x00926BC0
+0x00926BBC: add      r4, r4, #4
+0x00926BC0: ldrsb    r5, [ip, #-4]
+0x00926BC4: lsl      r5, r5, #7
+0x00926BC8: str      r5, [r1]
+0x00926BCC: ldrsb    r5, [r2, #1]
+0x00926BD0: lsl      r5, r5, #7
+0x00926BD4: str      r5, [r1, #4]
+0x00926BD8: ldrb     r5, [r2, #2]
+0x00926BDC: cmp      r5, #0
+0x00926BE0: streq    r5, [r1, #8]
+0x00926BE4: streq    r5, [r1, #0xc]
+0x00926BE8: beq      #0x926c14
+0x00926BEC: sxtb     r5, r5
+0x00926BF0: cmp      r5, #0
+0x00926BF4: strle    r7, [r1, #8]
+0x00926BF8: lslgt    r5, r5, #7
+0x00926BFC: strgt    r7, [r1, #0xc]
+0x00926C00: ldrsble  r5, [r2, #2]
+0x00926C04: strgt    r5, [r1, #8]
+0x00926C08: rsble    r5, r5, #0
+0x00926C0C: lslle    r5, r5, #7
+0x00926C10: strle    r5, [r1, #0xc]
+0x00926C14: ldrb     r5, [r2, #3]
+0x00926C18: cmp      r5, #0
+0x00926C1C: streq    r5, [r1, #0x10]
+0x00926C20: streq    r5, [r1, #0x14]
+0x00926C24: beq      #0x926c50
+0x00926C28: sxtb     r5, r5
+0x00926C2C: cmp      r5, #0
+0x00926C30: strle    r7, [r1, #0x10]
+0x00926C34: lslgt    r5, r5, #7
+0x00926C38: strgt    r7, [r1, #0x14]
+0x00926C3C: ldrsble  r5, [r2, #3]
+0x00926C40: strgt    r5, [r1, #0x10]
+0x00926C44: rsble    r5, r5, #0
+0x00926C48: lslle    r5, r5, #7
+0x00926C4C: strle    r5, [r1, #0x14]
+0x00926C50: ldrsb    r5, [ip, #-4]
+0x00926C54: cmp      r4, r6
+0x00926C58: add      ip, ip, #4
+0x00926C5C: add      r1, r1, #0x40
