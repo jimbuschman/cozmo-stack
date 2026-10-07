@@ -1,0 +1,64 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005C80E0..0x005C814A exclusive; Thumb; _ZN4Anki5Cozmo20BehaviorPutDownBlock15LookDownAtBlockERNS0_5RobotE
+005C80E0: push         {r4, r5, r6, r7, lr}
+005C80E2: sub          sp, #0x1c
+005C80E4: mov          r6, r0
+005C80E6: ldr          r0, [pc, #0x80] ; word[005C8168]=00A7675C
+005C80E8: mov          r4, r1
+005C80EA: movs         r1, #1
+005C80EC: add          r0, pc
+005C80EE: ldr          r0, [r0]
+005C80F0: ldr          r0, [r0]
+005C80F2: str          r0, [sp, #0x18]
+005C80F4: mov          r0, r4
+005C80F6: blx          #0x4b3504 ; Anki::Cozmo::BehaviorPutDownBlock::CreateLookAfterPlaceAction
+005C80FA: movs         r1, #0
+005C80FC: mov          r7, r0
+005C80FE: movt         r1, #0x40a0
+005C8102: mov          r0, r6
+005C8104: blx          #0x4b01bc ; Anki::Cozmo::IBehavior::IncreaseScoreWhileActing
+005C8108: ldr          r0, [pc, #0x60] ; word[005C816C]=00A5F606
+005C810A: mov          r5, sp
+005C810C: str          r4, [sp, #4]
+005C810E: add          r0, pc
+005C8110: adds         r0, #8
+005C8112: str          r0, [sp]
+005C8114: str          r5, [sp, #0x10]
+005C8116: mov          r0, r6
+005C8118: mov          r1, r7
+005C811A: mov          r2, r5
+005C811C: blx          #0x4b34b0 ; Anki::Cozmo::IBehavior::StartActing
+005C8120: ldr          r0, [sp, #0x10]
+005C8122: cmp          r5, r0
+005C8124: beq          #0x5c812e
+005C8126: cbz          r0, #0x5c8134
+005C8128: ldr          r1, [r0]
+005C812A: ldr          r1, [r1, #0x14]
+005C812C: b            #0x5c8132
+005C812E: ldr          r1, [r0]
+005C8130: ldr          r1, [r1, #0x10]
+005C8132: blx          r1
+005C8134: ldr          r0, [pc, #0x38] ; word[005C8170]=00A76710
+005C8136: ldr          r1, [sp, #0x18]
+005C8138: add          r0, pc
+005C813A: ldr          r0, [r0]
+005C813C: ldr          r0, [r0]
+005C813E: subs         r0, r0, r1
+005C8140: itt          eq
+005C8142: addeq        sp, #0x1c
+005C8144: popeq        {r4, r5, r6, r7, pc}
+005C8146: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+01027720: raw=0052C355 relocated=0052C355
+01027724: raw=005C8445 relocated=005C8445
+01027728: raw=005C8449 relocated=005C8449
+0102772C: raw=005C8465 relocated=005C8465
+01027730: raw=005C8479 relocated=005C8479
+01027734: raw=005C847B relocated=005C847B
+01027738: raw=005C8481 relocated=005C8481
+0102773C: raw=005C8575 relocated=005C8575
+01027740: raw=005C858D relocated=005C858D
+RANGE 0x005ED182..0x005ED18A exclusive; Thumb;
+005ED182: add          sp, #0x3c
+005ED184: pop          {r4, r5, r6, r7, pc}
+005ED186: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+005ED1C4: bytes=b'DebugState::Disapiontment'

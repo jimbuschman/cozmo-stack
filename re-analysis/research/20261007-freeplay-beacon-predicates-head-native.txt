@@ -1,0 +1,88 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0056D026..0x0056D06E exclusive; Thumb;
+0056D026: movs         r0, r0
+0056D028: push         {r4, r5, r6, r7, lr}
+0056D02A: sub          sp, #4
+0056D02C: mov          r5, r0
+0056D02E: ldr          r4, [r1]
+0056D030: ldr          r7, [r5, #4]
+0056D032: mov          r1, r4
+0056D034: ldr          r0, [r7, #4]
+0056D036: ldr.w        r0, [r0, #0x280]
+0056D03A: blx          #0x4accdc ; Anki::Cozmo::DockingComponent::CanPickUpObject
+0056D03E: cmp          r0, #1
+0056D040: bne          #0x56d0a8
+0056D042: ldrd         r6, r0, [r7, #0x60]
+0056D046: cmp          r6, r0
+0056D048: beq          #0x56d06c
+0056D04A: sub.w        r7, r0, #0x14
+0056D04E: mov          r0, r4
+0056D050: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+0056D054: mov          r1, r0
+0056D056: mov          r0, r6
+0056D058: movs         r2, #0
+0056D05A: blx          #0x4acce8 ; Anki::Cozmo::AIBeacon::IsLocWithinBeacon
+0056D05E: cbnz         r0, #0x56d06a
+0056D060: add.w        r1, r6, #0x14
+0056D064: cmp          r7, r6
+0056D066: mov          r6, r1
+0056D068: bne          #0x56d04e
+0056D06A: cbnz         r0, #0x56d0a8
+0056D06C: ldr          r0, [r5, #8]
+RANGE 0x0056D20E..0x0056D258 exclusive; Thumb;
+0056D20E: push         {r4, r5, r6, r7, lr}
+0056D210: sub          sp, #4
+0056D212: ldr          r5, [r1]
+0056D214: mov          r4, r0
+0056D216: ldrb.w       r0, [r5, #0x24]
+0056D21A: cmp          r0, #1
+0056D21C: bne          #0x56d254
+0056D21E: ldr          r0, [r4, #4]
+0056D220: ldrd         r6, r0, [r0, #0x60]
+0056D224: cmp          r6, r0
+0056D226: beq          #0x56d254
+0056D228: sub.w        r7, r0, #0x14
+0056D22C: mov          r0, r5
+0056D22E: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+0056D232: mov          r1, r0
+0056D234: mov          r0, r6
+0056D236: movs         r2, #0
+0056D238: blx          #0x4acce8 ; Anki::Cozmo::AIBeacon::IsLocWithinBeacon
+0056D23C: cbnz         r0, #0x56d248
+0056D23E: add.w        r1, r6, #0x14
+0056D242: cmp          r7, r6
+0056D244: mov          r6, r1
+0056D246: bne          #0x56d22c
+0056D248: cmp          r0, #1
+0056D24A: itttt        eq
+0056D24C: ldreq        r0, [r4, #8]
+0056D24E: ldreq        r1, [r0]
+0056D250: addeq        r1, #1
+0056D252: streq        r1, [r0]
+0056D254: movs         r0, #0
+0056D256: add          sp, #4
+00C57E0C: raw=00000000 relocated=00000000
+00C57E10: raw=00000002 relocated=00000002
+00C57E14: raw=00000001 relocated=00000001
+00C57E18: raw=00000002 relocated=00000002
+00C57E1C: raw=00000001 relocated=00000001
+RANGE 0x005E5F0C..0x005E5F3E exclusive; Thumb; _ZN4Anki5Cozmo25BehaviorThinkAboutBeacons15SelectNewBeaconERNS0_5RobotE
+005E5F0C: push         {r4, r5, r6, lr}
+005E5F0E: sub          sp, #0x10
+005E5F10: mov          r4, r0
+005E5F12: ldr.w        r0, [r1, #0x264]
+005E5F16: ldr          r5, [r0, #0x18]
+005E5F18: mov          r0, r1
+005E5F1A: bl           #0x4ea398 ; FUN_004ea398
+005E5F1E: add          r6, sp, #4
+005E5F20: mov          r1, r0
+005E5F22: mov          r0, r6
+005E5F24: bl           #0x4df628 ; FUN_004df628
+005E5F28: ldr.w        r2, [r4, #0x128]
+005E5F2C: mov          r0, r5
+005E5F2E: mov          r1, r6
+005E5F30: blx          #0x4b4da0 ; Anki::Cozmo::AIWhiteboard::AddBeacon
+005E5F34: add          r0, sp, #4
+005E5F36: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E5F3A: add          sp, #0x10
+005E5F3C: pop          {r4, r5, r6, pc}

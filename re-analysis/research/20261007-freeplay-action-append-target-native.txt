@@ -1,0 +1,19 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0050A518..0x0050A530 exclusive; Thumb;
+0050A518: ldr.w        r0, [pc, #0xa90] ; word[0050AFAC]=00B34414
+0050A51C: ldr.w        r2, [pc, #0xa90] ; word[0050AFB0]=00B4F76A
+0050A520: add          r0, pc
+0050A522: add          r2, pc
+0050A524: ldr          r0, [r0]
+0050A526: ldr          r4, [r0]
+0050A528: movs         r0, #0
+0050A52A: strd         r0, r0, [sp, #0x2ec]
+0050A52E: str          r0, [sp, #0x2f4]
+RANGE 0x008CD93C..0x008CD940 exclusive; Thumb;
+008CD93C: bx           pc
+008CD93E: mov          r8, r8
+RANGE 0x004BD794..0x004BD7A0 exclusive; ARM;
+004BD794: add          ip, pc, #0xb00000
+004BD798: add          ip, ip, #0x8b000
+004BD79C: ldr          pc, [ip, #0x2cc]!
+01048A68: raw=004A4010 relocated=00691F6D _ZNSt6__ndk16vectorIN4Anki5Cozmo11ActionDeltaENS_9allocatorIS3_EEE8__appendEj

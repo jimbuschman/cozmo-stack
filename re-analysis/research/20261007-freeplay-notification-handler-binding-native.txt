@@ -1,0 +1,27 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0068E4DA..0x0068E4F0 exclusive; Thumb;
+0068E4DA: push         {r4, lr}
+0068E4DC: ldr          r4, [r0, #4]
+0068E4DE: add.w        r0, r1, #0x10
+0068E4E2: blx          #0x4bd5c0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)212>
+0068E4E6: mov          r0, r4
+0068E4E8: pop.w        {r4, lr}
+0068E4EC: b.w          #0x8cd8ac ; Anki::Cozmo::LocalNotifications::Generate
+RANGE 0x0068E54E..0x0068E564 exclusive; Thumb;
+0068E54E: push         {r4, lr}
+0068E550: ldr          r4, [r0, #4]
+0068E552: add.w        r0, r1, #0x10
+0068E556: blx          #0x4bd5cc ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)213>
+0068E55A: mov          r0, r4
+0068E55C: pop.w        {r4, lr}
+0068E560: b.w          #0x8cd8fc
+RANGE 0x0068E5C2..0x0068E5DC exclusive; Thumb;
+0068E5C2: push         {r4, lr}
+0068E5C4: ldr          r4, [r0, #4]
+0068E5C6: add.w        r0, r1, #0x10
+0068E5CA: blx          #0x4bd5e4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)214>
+0068E5CE: mov          r1, r0
+0068E5D0: mov          r0, r4
+0068E5D2: pop.w        {r4, lr}
+0068E5D6: b.w          #0x8cd90c
+0068E5DA: movs         r0, r0

@@ -1,0 +1,198 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00691F6C..0x0069218C exclusive; Thumb; _ZNSt6__ndk16vectorIN4Anki5Cozmo11ActionDeltaENS_9allocatorIS3_EEE8__appendEj
+00691F6C: push.w       {r4, r5, r6, r7, r8, sb, lr}
+00691F70: sub          sp, #0x14
+00691F72: mov          r4, r0
+00691F74: mov          r5, r1
+00691F76: ldrd         r0, r2, [r4, #4]
+00691F7A: movw         r8, #0x8ba3
+00691F7E: movt         r8, #0xba2e
+00691F82: subs         r1, r2, r0
+00691F84: asrs         r1, r1, #2
+00691F86: mul          r1, r1, r8
+00691F8A: cmp          r1, r5
+00691F8C: bhs          #0x692060
+00691F8E: mov          r6, r4
+00691F90: movw         r7, #0x745d
+00691F94: ldr          r1, [r6], #8
+00691F98: movt         r7, #0x5d1
+00691F9C: subs         r0, r0, r1
+00691F9E: asrs         r0, r0, #2
+00691FA0: mla          sb, r0, r8, r5
+00691FA4: cmp          sb, r7
+00691FA6: bls          #0x691fb2
+00691FA8: mov          r0, r4
+00691FAA: bl           #0x4e0668 ; FUN_004e0668
+00691FAE: ldr          r1, [r4]
+00691FB0: ldr          r2, [r4, #8]
+00691FB2: subs         r0, r2, r1
+00691FB4: movw         r2, #0xba2d
+00691FB8: movt         r2, #0x2e8
+00691FBC: asrs         r0, r0, #2
+00691FBE: mul          r0, r0, r8
+00691FC2: cmp          r0, r2
+00691FC4: bhi          #0x691fce
+00691FC6: lsls         r7, r0, #1
+00691FC8: cmp          r7, sb
+00691FCA: it           lo
+00691FCC: movlo        r7, sb
+00691FCE: ldr          r0, [r4, #4]
+00691FD0: mov          r3, r6
+00691FD2: subs         r0, r0, r1
+00691FD4: mov          r1, r7
+00691FD6: asrs         r0, r0, #2
+00691FD8: mul          r2, r0, r8
+00691FDC: mov          r0, sp
+00691FDE: blx          #0x4bd8e4 ; std::__ndk1::__split_buffer<Anki::Cozmo::ActionDelta,std::__ndk1::allocator<Anki::Cozmo::ActionDelta>&>::__split_buffer
+00691FE2: mov.w        sb, #0x2c
+00691FE6: ldr          r6, [sp, #8]
+00691FE8: mul          r1, r5, sb
+00691FEC: mov          r0, r6
+00691FEE: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+00691FF2: mla          r7, r5, sb, r6
+00691FF6: movw         r0, #0x5d17
+00691FFA: movt         r0, #0xd174
+00691FFE: str          r7, [sp, #8]
+00692000: ldrd         r1, r3, [r4]
+00692004: ldr          r6, [sp, #4]
+00692006: subs         r2, r3, r1
+00692008: cmp          r2, #0
+0069200A: smmul        r0, r2, r0
+0069200E: asr.w        r5, r0, #3
+00692012: add.w        r0, r5, r0, lsr #31
+00692016: mla          r0, r0, sb, r6
+0069201A: str          r0, [sp, #4]
+0069201C: ble          #0x69202a
+0069201E: blx          #0x4a4354 ; <EXTERNAL>::__aeabi_memcpy4
+00692022: ldrd         r1, r3, [r4]
+00692026: ldrd         r0, r7, [sp, #4]
+0069202A: str          r0, [r4]
+0069202C: cmp          r3, r1
+0069202E: str          r1, [sp, #4]
+00692030: str          r7, [r4, #4]
+00692032: ldr          r0, [sp, #0xc]
+00692034: str          r3, [sp, #8]
+00692036: ldr          r2, [r4, #8]
+00692038: str          r0, [r4, #8]
+0069203A: str          r1, [sp]
+0069203C: str          r2, [sp, #0xc]
+0069203E: beq          #0x692056
+00692040: sub.w        r0, r3, #0x2c
+00692044: subs         r0, r0, r1
+00692046: umull        r0, r2, r0, r8
+0069204A: mvn.w        r0, r2, lsr #5
+0069204E: movs         r2, #0x2c
+00692050: mla          r0, r0, r2, r3
+00692054: str          r0, [sp, #8]
+00692056: cbz          r1, #0x692072
+00692058: mov          r0, r1
+0069205A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0069205E: b            #0x692072
+00692060: movs         r1, #0x2c
+00692062: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+00692066: ldr          r0, [r4, #4]
+00692068: subs         r5, #1
+0069206A: add.w        r0, r0, #0x2c
+0069206E: str          r0, [r4, #4]
+00692070: bne          #0x692060
+00692072: add          sp, #0x14
+00692074: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+00692078: push         {r4, r5, r6, lr}
+0069207A: sub          sp, #8
+0069207C: mov          r5, r1
+0069207E: mov          r4, r0
+00692080: movs         r0, #0
+00692082: mov          r6, r2
+00692084: cmp          r5, #0
+00692086: strd         r0, r3, [r4, #0xc]
+0069208A: beq          #0x6920a0
+0069208C: movw         r0, #0x745e
+00692090: movt         r0, #0x5d1
+00692094: cmp          r5, r0
+00692096: bhs          #0x6920b8
+00692098: movs         r0, #0x2c
+0069209A: muls         r0, r5, r0
+0069209C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+006920A0: movs         r1, #0x2c
+006920A2: mla          r2, r6, r1, r0
+006920A6: mla          r1, r5, r1, r0
+006920AA: strd         r0, r2, [r4]
+006920AE: mov          r0, r4
+006920B0: strd         r2, r1, [r4, #8]
+006920B4: add          sp, #8
+006920B6: pop          {r4, r5, r6, pc}
+006920B8: ldr          r1, [pc, #0x40] ; word[006920FC]=00551E81
+006920BA: mov          r4, sp
+006920BC: mov          r0, r4
+006920BE: add          r1, pc
+006920C0: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+006920C4: ldr          r0, [pc, #0x38] ; word[00692100]=009AC6D6
+006920C6: add          r0, pc
+006920C8: ldr          r0, [r0]
+006920CA: add.w        r5, r0, #8
+006920CE: movs         r0, #8
+006920D0: str          r5, [sp]
+006920D2: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+006920D6: mov          r1, r4
+006920D8: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+006920DC: ldr          r1, [pc, #0x24] ; word[00692104]=009AC6C0
+006920DE: ldr          r2, [pc, #0x28] ; word[00692108]=009AC6C0
+006920E0: add          r1, pc
+006920E2: str          r5, [r0]
+006920E4: add          r2, pc
+006920E6: ldr          r1, [r1]
+006920E8: ldr          r2, [r2]
+006920EA: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+006920EE: mov          r4, r0
+006920F0: mov          r0, sp
+006920F2: blx          #0x4a42f4 ; <EXTERNAL>::std::length_error::~length_error
+006920F6: mov          r0, r4
+006920F8: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+006920FC: subs         r1, r0, #2
+006920FE: lsls         r5, r2, #1
+00692100: stm          r6!, {r1, r2, r4, r6, r7}
+00692102: lsls         r2, r3, #2
+00692104: stm          r6!, {r6, r7}
+00692106: lsls         r2, r3, #2
+00692108: stm          r6!, {r6, r7}
+0069210A: lsls         r2, r3, #2
+0069210C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00692110: sub          sp, #0x14
+00692112: mov          r4, r0
+00692114: add.w        sb, r4, #8
+00692118: mov          r6, r1
+0069211A: movs         r0, #0
+0069211C: strd         r6, r0, [r4]
+00692120: mov          r0, sb
+00692122: blx          #0x4b3fa8 ; Anki::Cozmo::NeedsState::NeedsState
+00692126: add.w        sl, r4, #0x98
+0069212A: mov          r0, sl
+0069212C: blx          #0x4b3fa8 ; Anki::Cozmo::NeedsState::NeedsState
+00692130: add.w        r0, r4, #0x128
+00692134: blx          #0x4bd8f0 ; Anki::Cozmo::NeedsConfig::NeedsConfig
+00692138: add.w        fp, r4, #0x19c
+0069213C: mov          r0, fp
+0069213E: blx          #0x4bd8fc ; Anki::Cozmo::ActionsConfig::ActionsConfig
+00692142: movs         r0, #0
+00692144: strd         r0, r0, [r4, #0x1a8]
+00692148: mov.w        r0, #0x1e0
+0069214C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00692150: mov          r5, r0
+00692152: mov          r0, r5
+00692154: mov          r1, r6
+00692156: mov          r2, r4
+00692158: blx          #0x4bd908 ; Anki::Cozmo::LocalNotifications::LocalNotifications
+0069215C: add.w        r0, r4, #0x1b0
+00692160: mov          r1, r5
+00692162: movs         r2, #0
+00692164: movs         r7, #0
+00692166: blx          #0x4bd914 ; std::__ndk1::shared_ptr<Anki::Cozmo::LocalNotifications>::shared_ptr<Anki::Cozmo::LocalNotifications>
+0069216A: add.w        r0, r4, #0x1b8
+0069216E: movs         r1, #0x1e
+00692170: strd         r7, r7, [r4, #0x3a4]
+00692174: blx          #0x4a48ac ; <EXTERNAL>::__aeabi_memclr8
+00692178: add.w        r0, r4, #0x1e4
+0069217C: movw         r1, #0x1b9
+00692180: strh.w       r7, [r4, #0x1e0]
+00692184: strd         r7, r7, [r4, #0x1d8]
+00692188: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4

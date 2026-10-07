@@ -1,0 +1,6 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004B7404..0x004B7410 exclusive; ARM;
+004B7404: add          ip, pc, #0xb00000
+004B7408: add          ip, ip, #0x8f000
+004B740C: ldr          pc, [ip, #0x52c]!
+010450DC: raw=004A4010 relocated=005C013B _ZNK4Anki5Cozmo24BehaviorPlayAnimSequence18IsRunnableInternalERKNS0_5RobotE

@@ -1,0 +1,42 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0068DC34..0x0068DCA6 exclusive; Thumb; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo21LocalNotificationItemENS_9allocatorIS3_EEED2Ev
+0068DC34: push         {r4, r5, r6, r7, lr}
+0068DC36: sub          sp, #4
+0068DC38: mov          r4, r0
+0068DC3A: ldr          r6, [r4]
+0068DC3C: cbz          r6, #0x68dca0
+0068DC3E: ldr          r7, [r4, #4]
+0068DC40: cmp          r7, r6
+0068DC42: beq          #0x68dc9a
+0068DC44: sub.w        r5, r7, #0x64
+0068DC48: str          r5, [r4, #4]
+0068DC4A: ldrb         r0, [r7, #-0xc]
+0068DC4E: lsls         r0, r0, #0x1f
+0068DC50: itt          ne
+0068DC52: ldrne        r0, [r7, #-0x4]
+0068DC56: blxne        #0x4a40cc
+0068DC5A: ldrb         r0, [r7, #-0x18]
+0068DC5E: lsls         r0, r0, #0x1f
+0068DC60: itt          ne
+0068DC62: ldrne        r0, [r7, #-0x10]
+0068DC66: blxne        #0x4a40cc
+0068DC6A: ldrb         r0, [r7, #-0x38]
+0068DC6E: lsls         r0, r0, #0x1f
+0068DC70: itt          ne
+0068DC72: ldrne        r0, [r7, #-0x30]
+0068DC76: blxne        #0x4a40cc
+0068DC7A: sub.w        r0, r7, #0x48
+0068DC7E: bl           #0x4eaf98 ; FUN_004eaf98
+0068DC82: ldrb         r0, [r7, #-0x54]
+0068DC86: lsls         r0, r0, #0x1f
+0068DC88: itt          ne
+0068DC8A: ldrne        r0, [r7, #-0x4c]
+0068DC8E: blxne        #0x4a40cc
+0068DC92: mov          r0, r5
+0068DC94: blx          #0x4bd380 ; Anki::Cozmo::NotificationUnion::ClearCurrent
+0068DC98: b            #0x68dc3e
+0068DC9A: ldr          r0, [r4]
+0068DC9C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068DCA0: mov          r0, r4
+0068DCA2: add          sp, #4
+0068DCA4: pop          {r4, r5, r6, r7, pc}

@@ -1,0 +1,387 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005B38CC..0x005B3928 exclusive; Thumb;
+005B38CC: ldr          r4, [r5, #0x28]
+005B38CE: ldr          r1, [sp, #0x30]
+005B38D0: cmp          r4, #0
+005B38D2: beq          #0x5b396e
+005B38D4: ldr          r0, [r6]
+005B38D6: cmp          r1, r0
+005B38D8: beq          #0x5b396e
+005B38DA: ldr          r2, [r4]
+005B38DC: ldr          r0, [sp, #0x34]
+005B38DE: ldr.w        sl, [r2, #0x28]
+005B38E2: cmp          r0, #0
+005B38E4: strd         r1, r0, [sp, #0x20]
+005B38E8: beq          #0x5b38ee
+005B38EA: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+005B38EE: add          r0, sp, #0x14
+005B38F0: add          r3, sp, #0x20
+005B38F2: mov          r1, r4
+005B38F4: mov          r2, r7
+005B38F6: blx          sl
+005B38F8: movs         r0, #0
+005B38FA: ldrd         r1, r2, [sp, #0x14]
+005B38FE: strd         r0, r0, [sp, #0x14]
+005B3902: ldr          r0, [r5, #0x30]
+005B3904: strd         r1, r2, [r5, #0x2c]
+005B3908: cmp          r0, #0
+005B390A: beq          #0x5b3918
+005B390C: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005B3910: ldr          r0, [sp, #0x18]
+005B3912: cbz          r0, #0x5b3918
+005B3914: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005B3918: ldr          r0, [sp, #0x24]
+005B391A: cbz          r0, #0x5b3920
+005B391C: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005B3920: ldr          r0, [r5, #0x2c]
+005B3922: cbz          r0, #0x5b396c
+005B3924: movs         r0, #0
+RANGE 0x005B35DC..0x005B3664 exclusive; Thumb;
+005B35DC: tst.w        r2, #1
+005B35E0: it           eq
+005B35E2: orreq        r0, r6, #1
+005B35E6: str          r0, [sp, #0x24]
+005B35E8: movs         r0, #0
+005B35EA: str          r0, [sp, #0x30]
+005B35EC: strd         r0, r0, [sp, #0x28]
+005B35F0: movs         r0, #8
+005B35F2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005B35F6: ldr          r2, [sp, #0x24]
+005B35F8: add.w        r3, r0, #8
+005B35FC: ldr          r1, [sp, #0x20]
+005B35FE: str          r0, [sp, #0x28]
+005B3600: str          r0, [sp, #0x2c]
+005B3602: str          r3, [sp, #0x30]
+005B3604: strd         r1, r2, [r0]
+005B3608: ldr          r0, [sp, #0x2c]
+005B360A: adds         r0, #8
+005B360C: str          r0, [sp, #0x2c]
+005B360E: ldrb.w       r0, [r5, #0x34]
+005B3612: blx          #0x4aefa4 ; Anki::Cozmo::EnumToString
+005B3616: mov          r3, r0
+005B3618: ldr          r0, [pc, #0x144] ; word[005B3760]=0063EA9F
+005B361A: add          r0, pc
+005B361C: add          r1, sp, #0x28
+005B361E: adr          r2, #0x144
+005B3620: blx          #0x4a4f90 ; Anki::Util::sEventF
+005B3624: ldr          r0, [sp, #0x28]
+005B3626: cbz          r0, #0x5b3646
+005B3628: ldr          r1, [sp, #0x2c]
+005B362A: cmp          r1, r0
+005B362C: itttt        ne
+005B362E: subne.w      r2, r1, #8
+005B3632: subne        r2, r2, r0
+005B3634: mvnne        r3, #7
+005B3638: bicne.w      r2, r3, r2
+005B363C: itt          ne
+005B363E: addne        r1, r1, r2
+005B3640: strne        r1, [sp, #0x2c]
+005B3642: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005B3646: ldrb.w       r0, [sp, #0x14]
+005B364A: lsls         r0, r0, #0x1f
+005B364C: itt          ne
+005B364E: ldrne        r0, [sp, #0x1c]
+005B3650: blxne        #0x4a40cc
+005B3654: ldr          r0, [r5]
+005B3656: mov          r1, r4
+005B3658: ldr          r2, [r0, #0x2c]
+005B365A: mov          r0, r5
+005B365C: blx          r2
+005B365E: add          sp, #0x34
+005B3660: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x005B3768..0x005B37A4 exclusive; Thumb; _ZN4Anki5Cozmo9IActivity31SmartRemoveDisableReactionsLockERNS0_5RobotERKNSt6__ndk112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEE
+005B3768: push         {r4, r5, r6, r7, lr}
+005B376A: sub          sp, #0xc
+005B376C: mov          r4, r2
+005B376E: ldr          r2, [pc, #0x4c] ; word[005B37BC]=0063EA5C
+005B3770: mov          r7, sp
+005B3772: mov          r5, r0
+005B3774: add          r2, pc
+005B3776: ldr          r6, [r1, #0x44]
+005B3778: mov          r0, r7
+005B377A: mov          r1, r4
+005B377C: blx          #0x4a7318 ; std::__ndk1::operator+
+005B3780: mov          r0, r6
+005B3782: mov          r1, r7
+005B3784: blx          #0x4ab944 ; Anki::Cozmo::BehaviorManager::RemoveDisableReactionsLock
+005B3788: ldrb.w       r0, [sp]
+005B378C: lsls         r0, r0, #0x1f
+005B378E: itt          ne
+005B3790: ldrne        r0, [sp, #8]
+005B3792: blxne        #0x4a40cc
+005B3796: add.w        r0, r5, #0x5c
+005B379A: mov          r1, r4
+005B379C: blx          #0x4ad468 ; std::__ndk1::__tree<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::less<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::allocator<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>>::__erase_unique<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>
+005B37A0: add          sp, #0xc
+005B37A2: pop          {r4, r5, r6, r7, pc}
+RANGE 0x005B37C0..0x005B3822 exclusive; Thumb; _ZN4Anki5Cozmo9IActivity24SmartRemoveIdleAnimationERNS0_5RobotE
+005B37C0: push         {r4, r5, r6, lr}
+005B37C2: sub          sp, #0x10
+005B37C4: mov          r4, r0
+005B37C6: mov          r5, r1
+005B37C8: ldrb.w       r0, [r4, #0x50]
+005B37CC: cbz          r0, #0x5b3806
+005B37CE: ldr          r0, [r4]
+005B37D0: ldr          r1, [r0, #0x24]
+005B37D2: mov          r0, r4
+005B37D4: blx          r1
+005B37D6: ldr          r1, [pc, #0x60] ; word[005B3838]=00AA7680
+005B37D8: add          r6, sp, #4
+005B37DA: mov          r2, r0
+005B37DC: add          r1, pc
+005B37DE: mov          r0, r6
+005B37E0: blx          #0x4a7318 ; std::__ndk1::operator+
+005B37E4: add.w        r0, r5, #0x60
+005B37E8: mov          r1, r6
+005B37EA: blx          #0x4a92a4 ; Anki::Cozmo::AnimationStreamer::RemoveIdleAnimation
+005B37EE: ldrb.w       r0, [sp, #4]
+005B37F2: lsls         r0, r0, #0x1f
+005B37F4: itt          ne
+005B37F6: ldrne        r0, [sp, #0xc]
+005B37F8: blxne        #0x4a40cc
+005B37FC: movs         r0, #0
+005B37FE: strb.w       r0, [r4, #0x50]
+005B3802: add          sp, #0x10
+005B3804: pop          {r4, r5, r6, pc}
+005B3806: ldr          r0, [r4]
+005B3808: ldr          r1, [r0, #0x24]
+005B380A: mov          r0, r4
+005B380C: blx          r1
+005B380E: ldr          r1, [pc, #0x2c] ; word[005B383C]=0063E952
+005B3810: mov          r3, r0
+005B3812: adr          r0, #0x2c
+005B3814: adr          r2, #0x58
+005B3816: add          r1, pc
+005B3818: add          sp, #0x10
+005B381A: pop.w        {r4, r5, r6, lr}
+005B381E: b.w          #0x8cbe5c
+RANGE 0x005AD8C8..0x005AD9A0 exclusive; Thumb; _ZN4Anki5Cozmo16ActivityFreeplay28SetActivityIDFromSubActivityENS0_10ActivityIDE
+005AD8C8: push         {r4, r5, r6, r7, lr}
+005AD8CA: sub          sp, #0x24
+005AD8CC: mov          r4, r0
+005AD8CE: strb.w       r1, [r4, #0x92]
+005AD8D2: ldrb.w       r0, [r4, #0x34]
+005AD8D6: blx          #0x4aefa4 ; Anki::Cozmo::EnumToString
+005AD8DA: movs         r7, #0
+005AD8DC: mov          r5, r0
+005AD8DE: str          r7, [sp, #8]
+005AD8E0: strd         r7, r7, [sp]
+005AD8E4: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005AD8E8: mov          r6, sp
+005AD8EA: mov          r2, r0
+005AD8EC: mov          r0, r6
+005AD8EE: mov          r1, r5
+005AD8F0: bl           #0x4e02b2 ; FUN_004e02b2
+005AD8F4: adr          r1, #0xd4
+005AD8F6: mov          r0, r6
+005AD8F8: movs         r2, #1
+005AD8FA: bl           #0x4e8048 ; FUN_004e8048
+005AD8FE: mov          r2, r0
+005AD900: add          r1, sp, #0x10
+005AD902: ldm.w        r2, {r3, r5, r6}
+005AD906: stm          r1!, {r3, r5, r6}
+005AD908: strd         r7, r7, [r0]
+005AD90C: str          r7, [r0, #8]
+005AD90E: ldrb.w       r0, [r4, #0x92]
+005AD912: blx          #0x4aefa4 ; Anki::Cozmo::EnumToString
+005AD916: mov          r5, r0
+005AD918: mov          r0, r5
+005AD91A: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005AD91E: mov          r2, r0
+005AD920: add          r0, sp, #0x10
+005AD922: mov          r1, r5
+005AD924: bl           #0x4e8048 ; FUN_004e8048
+005AD928: mov          r5, r0
+005AD92A: adds         r1, r5, #1
+005AD92C: add          r0, sp, #0x1c
+005AD92E: movs         r2, #7
+005AD930: ldrb         r7, [r5]
+005AD932: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+005AD936: movs         r1, #0
+005AD938: ldr          r6, [r5, #8]
+005AD93A: strd         r1, r1, [r5]
+005AD93E: mov          r0, r4
+005AD940: str          r1, [r5, #8]
+005AD942: ldrb         r2, [r0, #0x94]!
+005AD946: tst.w        r2, #1
+005AD94A: bne          #0x5ad950
+005AD94C: strh         r1, [r0]
+005AD94E: b            #0x5ad95a
+005AD950: ldr.w        r2, [r4, #0x9c]
+005AD954: strb         r1, [r2]
+005AD956: str.w        r1, [r4, #0x98]
+005AD95A: movs         r1, #0
+005AD95C: movs         r5, #0
+005AD95E: bl           #0x4e75ec ; FUN_004e75ec
+005AD962: add.w        r0, r4, #0x95
+005AD966: add          r1, sp, #0x1c
+005AD968: movs         r2, #7
+005AD96A: strb.w       r7, [r4, #0x94]
+005AD96E: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+005AD972: str.w        r6, [r4, #0x9c]
+005AD976: ldrb.w       r0, [sp, #0x10]
+005AD97A: str          r5, [sp, #0x1c]
+005AD97C: strb.w       r5, [sp, #0x22]
+005AD980: lsls         r0, r0, #0x1f
+005AD982: strh.w       r5, [sp, #0x20]
+005AD986: itt          ne
+005AD988: ldrne        r0, [sp, #0x18]
+005AD98A: blxne        #0x4a40cc
+005AD98E: ldrb.w       r0, [sp]
+005AD992: lsls         r0, r0, #0x1f
+005AD994: itt          ne
+005AD996: ldrne        r0, [sp, #8]
+005AD998: blxne        #0x4a40cc
+005AD99C: add          sp, #0x24
+005AD99E: pop          {r4, r5, r6, r7, pc}
+RANGE 0x005AD9D0..0x005AD9E0 exclusive; Thumb; _ZN4Anki5Cozmo16ActivityFreeplay6UpdateERNS0_5RobotE
+005AD9D0: ldr.w        r0, [r0, #0x80]
+005AD9D4: cbz          r0, #0x5ad9dc
+005AD9D6: ldr          r2, [r0]
+005AD9D8: ldr          r2, [r2, #0x20]
+005AD9DA: bx           r2
+005AD9DC: movs         r0, #0
+005AD9DE: bx           lr
+RANGE 0x005AD9E0..0x005AD9F6 exclusive; Thumb; _ZN4Anki5Cozmo16ActivityFreeplay20OnDeselectedInternalERNS0_5RobotE
+005AD9E0: push         {r4, lr}
+005AD9E2: mov          r4, r0
+005AD9E4: ldr.w        r0, [r4, #0x80]
+005AD9E8: cbz          r0, #0x5ad9f4
+005AD9EA: blx          #0x4b0eac ; Anki::Cozmo::IActivity::OnDeselected
+005AD9EE: movs         r0, #0
+005AD9F0: str.w        r0, [r4, #0x80]
+005AD9F4: pop          {r4, pc}
+RANGE 0x005AD9F8..0x005ADA80 exclusive; Thumb; _ZN4Anki5Cozmo16ActivityFreeplay13HandleMessageINS0_17ExternalInterface26RobotOffTreadsStateChangedEEEvRKT_
+005AD9F8: push         {r4, lr}
+005AD9FA: sub          sp, #0x10
+005AD9FC: mov          r4, r0
+005AD9FE: ldrb         r0, [r1]
+005ADA00: cbz          r0, #0x5ada06
+005ADA02: add          sp, #0x10
+005ADA04: pop          {r4, pc}
+005ADA06: ldr.w        r1, [r4, #0x80]
+005ADA0A: cmp          r1, #0
+005ADA0C: beq          #0x5ada02
+005ADA0E: ldrb.w       r0, [r1, #0x34]
+005ADA12: cmp          r0, #7
+005ADA14: beq          #0x5ada02
+005ADA16: cmp          r0, #8
+005ADA18: itt          ne
+005ADA1A: ldrbne.w     r2, [r4, #0x91]
+005ADA1E: cmpne        r0, r2
+005ADA20: beq          #0x5ada02
+005ADA22: ldr          r1, [r1, #0x4c]
+005ADA24: cmp          r1, #0x55
+005ADA26: bne          #0x5ada02
+005ADA28: movs         r1, #0
+005ADA2A: strd         r1, r1, [sp, #4]
+005ADA2E: str          r1, [sp, #0xc]
+005ADA30: blx          #0x4aefa4 ; Anki::Cozmo::EnumToString
+005ADA34: ldr          r1, [pc, #0x74] ; word[005ADAAC]=00643C53
+005ADA36: ldr.w        ip, [pc, #0x70] ; word[005ADAA8]=00640881
+005ADA3A: add          r1, pc
+005ADA3C: add          ip, pc
+005ADA3E: add          r2, sp, #4
+005ADA40: adr          r3, #0x6c
+005ADA42: str          r0, [sp]
+005ADA44: mov          r0, ip
+005ADA46: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005ADA4A: ldr          r0, [sp, #4]
+005ADA4C: cbz          r0, #0x5ada6c
+005ADA4E: ldr          r1, [sp, #8]
+005ADA50: cmp          r1, r0
+005ADA52: itttt        ne
+005ADA54: subne.w      r2, r1, #8
+005ADA58: subne        r2, r2, r0
+005ADA5A: mvnne        r3, #7
+005ADA5E: bicne.w      r2, r3, r2
+005ADA62: itt          ne
+005ADA64: addne        r1, r1, r2
+005ADA66: strne        r1, [sp, #8]
+005ADA68: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005ADA6C: ldr.w        r0, [r4, #0x80]
+005ADA70: ldr.w        r1, [r4, #0xa0]
+005ADA74: blx          #0x4b0eac ; Anki::Cozmo::IActivity::OnDeselected
+005ADA78: movs         r0, #0
+005ADA7A: str.w        r0, [r4, #0x80]
+005ADA7E: b            #0x5ada02
+RANGE 0x005AA43C..0x005AA4FE exclusive; Thumb; _ZN4Anki5Cozmo15ActivityFactory14CreateActivityERNS0_5RobotENS0_12ActivityTypeERKN4Json5ValueE
+005AA43C: push         {r4, r5, r6, lr}
+005AA43E: mov          r5, r2
+005AA440: mov          r6, r0
+005AA442: cmp          r1, #8
+005AA444: bhi          #0x5aa4e6
+005AA446: tbb          [pc, r1]
+005AA44A: lsrs         r5, r0, #0x18
+005AA44C: movs         r1, #0x17
+005AA44E: adds         r3, #0x2a
+005AA450: cmp          r4, r7
+005AA452: lsls         r0, r2, #1
+005AA454: movs         r0, #0x68
+005AA456: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA45A: mov          r4, r0
+005AA45C: mov          r1, r6
+005AA45E: mov          r2, r5
+005AA460: blx          #0x4b1638 ; Anki::Cozmo::ActivityBehaviorsOnly::ActivityBehaviorsOnly
+005AA464: b            #0x5aa4fa
+005AA466: movs         r0, #0xec
+005AA468: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA46C: mov          r4, r0
+005AA46E: mov          r1, r6
+005AA470: mov          r2, r5
+005AA472: blx          #0x4b1644 ; Anki::Cozmo::ActivityBuildPyramid::ActivityBuildPyramid
+005AA476: b            #0x5aa4fa
+005AA478: mov.w        r0, #0x13c
+005AA47C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA480: mov          r4, r0
+005AA482: mov          r1, r6
+005AA484: mov          r2, r5
+005AA486: blx          #0x4b1650 ; Anki::Cozmo::ActivityFeeding::ActivityFeeding
+005AA48A: b            #0x5aa4fa
+005AA48C: movs         r0, #0xa4
+005AA48E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA492: mov          r4, r0
+005AA494: mov          r1, r6
+005AA496: mov          r2, r5
+005AA498: blx          #0x4b165c ; Anki::Cozmo::ActivityFreeplay::ActivityFreeplay
+005AA49C: b            #0x5aa4fa
+005AA49E: movs         r0, #0x7c
+005AA4A0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA4A4: mov          r4, r0
+005AA4A6: mov          r1, r6
+005AA4A8: mov          r2, r5
+005AA4AA: blx          #0x4b1668 ; Anki::Cozmo::ActivityGatherCubes::ActivityGatherCubes
+005AA4AE: b            #0x5aa4fa
+005AA4B0: movs         r0, #0xb8
+005AA4B2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA4B6: mov          r4, r0
+005AA4B8: mov          r1, r6
+005AA4BA: mov          r2, r5
+005AA4BC: blx          #0x4b1674 ; Anki::Cozmo::ActivitySocialize::ActivitySocialize
+005AA4C0: b            #0x5aa4fa
+005AA4C2: movs         r0, #0xe8
+005AA4C4: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA4C8: mov          r4, r0
+005AA4CA: mov          r1, r6
+005AA4CC: mov          r2, r5
+005AA4CE: blx          #0x4b1680 ; Anki::Cozmo::ActivitySparked::ActivitySparked
+005AA4D2: b            #0x5aa4fa
+005AA4D4: movs         r0, #0x78
+005AA4D6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA4DA: mov          r4, r0
+005AA4DC: mov          r1, r6
+005AA4DE: mov          r2, r5
+005AA4E0: blx          #0x4b168c ; Anki::Cozmo::ActivityStrictPriority::ActivityStrictPriority
+005AA4E4: b            #0x5aa4fa
+005AA4E6: movs         r4, #0
+005AA4E8: b            #0x5aa4fa
+005AA4EA: movs         r0, #0x68
+005AA4EC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005AA4F0: mov          r4, r0
+005AA4F2: mov          r1, r6
+005AA4F4: mov          r2, r5
+005AA4F6: blx          #0x4b1698 ; Anki::Cozmo::ActivityExpressNeeds::ActivityExpressNeeds
+005AA4FA: mov          r0, r4
+005AA4FC: pop          {r4, r5, r6, pc}
+00BF1D0A: bytes=b'ctivityNames'
+00BF1CF0: bytes=b''

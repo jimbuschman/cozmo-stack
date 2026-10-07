@@ -1,0 +1,400 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0060DA0C..0x0060DA64 exclusive; Thumb;
+0060DA0C: mov.w        sb, #0
+0060DA10: ldrb.w       r0, [sp, #0x40]
+0060DA14: lsls         r0, r0, #0x1f
+0060DA16: itt          ne
+0060DA18: ldrne        r0, [sp, #0x48]
+0060DA1A: blxne        #0x4a40cc
+0060DA1E: ldr          r0, [pc, #0x218] ; word[0060DC38]=00A30E26
+0060DA20: ldr          r1, [sp, #0x128]
+0060DA22: add          r0, pc
+0060DA24: ldr          r0, [r0]
+0060DA26: ldr          r0, [r0]
+0060DA28: subs         r0, r0, r1
+0060DA2A: ittt         eq
+0060DA2C: moveq        r0, sb
+0060DA2E: addeq        sp, #0x12c
+0060DA30: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+0060DA34: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+0060DA38: mov          r4, r0
+0060DA3A: ldr          r0, [sp, #0x120]
+0060DA3C: cmp          r6, r0
+0060DA3E: bne          #0x60da46
+0060DA40: ldr          r1, [r0]
+0060DA42: ldr          r1, [r1, #0x10]
+0060DA44: b            #0x60da50
+0060DA46: cmp          r0, #0
+0060DA48: beq.w        #0x60db5c
+0060DA4C: ldr          r1, [r0]
+0060DA4E: ldr          r1, [r1, #0x14]
+0060DA50: blx          r1
+0060DA52: b            #0x60db5c
+0060DA54: b            #0x60db1a
+0060DA56: mov          r4, r0
+0060DA58: ldr          r0, [sp, #0x60]
+0060DA5A: cmp          r6, r0
+0060DA5C: bne          #0x60da64
+0060DA5E: ldr          r1, [r0]
+0060DA60: ldr          r1, [r1, #0x10]
+0060DA62: b            #0x60da6a
+RANGE 0x0060EF2C..0x0060F084 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric36CreateReactionTriggerStrategyGenericERNS0_5RobotERKN4Json5ValueE
+0060EF2C: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0060EF30: sub          sp, #0xd0
+0060EF32: mov          sl, r0
+0060EF34: movs         r0, #0
+0060EF36: mov          r6, r1
+0060EF38: str          r0, [sp, #0xc8]
+0060EF3A: strd         r0, r0, [sp, #0xc0]
+0060EF3E: add          r0, sp, #0xc0
+0060EF40: adr          r1, #0x1ec
+0060EF42: movs         r2, #0x18
+0060EF44: bl           #0x4e02b2 ; FUN_004e02b2
+0060EF48: ldr          r1, [pc, #0x200] ; word[0060F14C]=005E8D97
+0060EF4A: add          r1, pc
+0060EF4C: mov          r0, r6
+0060EF4E: blx          #0x4a5f2c ; Json::Value::operator[]
+0060EF52: mov          r5, r0
+0060EF54: mov          r0, r5
+0060EF56: blx          #0x4a5f8c ; Json::Value::isNull
+0060EF5A: movs         r4, #0
+0060EF5C: cmp          r0, #0
+0060EF5E: bne.w        #0x60f06e
+0060EF62: str          r4, [sp, #0x60]
+0060EF64: strd         r4, r4, [sp, #0x58]
+0060EF68: add          r0, sp, #0x58
+0060EF6A: adr          r1, #0x1e4
+0060EF6C: movs         r2, #0x11
+0060EF6E: bl           #0x4e02b2 ; FUN_004e02b2
+0060EF72: add          r7, sp, #0xc0
+0060EF74: add          r1, sp, #0x58
+0060EF76: mov          r0, r5
+0060EF78: mov          r2, r7
+0060EF7A: blx          #0x4a5fec ; Anki::JsonTools::GetValueOptional<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>
+0060EF7E: ldrb.w       r0, [sp, #0x58]
+0060EF82: lsls         r0, r0, #0x1f
+0060EF84: itt          ne
+0060EF86: ldrne        r0, [sp, #0x60]
+0060EF88: blxne        #0x4a40cc
+0060EF8C: add.w        r8, sp, #0x58
+0060EF90: mov          r0, r8
+0060EF92: blx          #0x4a9a9c ; Json::Reader::Reader
+0060EF96: add          r0, sp, #0x40
+0060EF98: movs         r1, #0
+0060EF9A: movs         r4, #0
+0060EF9C: blx          #0x4a4f30 ; Json::Value::Value
+0060EFA0: str          r4, [sp, #0x30]
+0060EFA2: strd         r4, r4, [sp, #0x28]
+0060EFA6: add          r0, sp, #0x28
+0060EFA8: adr          r1, #0x1b8
+0060EFAA: movs         r2, #0x1f
+0060EFAC: bl           #0x4e02b2 ; FUN_004e02b2
+0060EFB0: add.w        sb, sp, #0x58
+0060EFB4: add          r1, sp, #0x28
+0060EFB6: add          r2, sp, #0x40
+0060EFB8: movs         r3, #0
+0060EFBA: mov          r0, sb
+0060EFBC: blx          #0x4a9aa8 ; Json::Reader::parse
+0060EFC0: ldrb.w       r0, [sp, #0x28]
+0060EFC4: lsls         r0, r0, #0x1f
+0060EFC6: itt          ne
+0060EFC8: ldrne        r0, [sp, #0x30]
+0060EFCA: blxne        #0x4a40cc
+0060EFCE: add          r0, sp, #0x28
+0060EFD0: mov          r1, r6
+0060EFD2: blx          #0x4a5068 ; Json::Value::Value
+0060EFD6: add          r0, sp, #0x10
+0060EFD8: add          r1, sp, #0x40
+0060EFDA: blx          #0x4a5068 ; Json::Value::Value
+0060EFDE: add          r0, sp, #0x28
+0060EFE0: adr          r1, #0x1a0
+0060EFE2: blx          #0x4a82fc ; Json::Value::operator[]
+0060EFE6: add          r1, sp, #0x10
+0060EFE8: blx          #0x4a5074 ; Json::Value::operator=
+0060EFEC: add          r0, sp, #0x10
+0060EFEE: blx          #0x4a4ff0 ; Json::Value::~Value
+0060EFF2: movs         r0, #0x58
+0060EFF4: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0060EFF8: mov          r4, r0
+0060EFFA: ldrb.w       r1, [sp, #0xc0]
+0060EFFE: movs         r0, #0
+0060F000: str          r0, [sp]
+0060F002: strd         r0, r0, [sp, #4]
+0060F006: lsls         r0, r1, #0x1f
+0060F008: bne          #0x60f014
+0060F00A: mov          r0, sp
+0060F00C: ldm.w        r7, {r1, r2, r3}
+0060F010: stm          r0!, {r1, r2, r3}
+0060F012: b            #0x60f01e
+0060F014: ldrd         r2, r1, [sp, #0xc4]
+0060F018: mov          r0, sp
+0060F01A: bl           #0x4e02b2 ; FUN_004e02b2
+0060F01E: add          r2, sp, #0x28
+0060F020: mov          r3, sp
+0060F022: mov          r0, r4
+0060F024: mov          r1, sl
+0060F026: blx          #0x4b7158 ; Anki::Cozmo::ReactionTriggerStrategyGeneric::ReactionTriggerStrategyGeneric
+0060F02A: ldrb.w       r0, [sp]
+0060F02E: lsls         r0, r0, #0x1f
+0060F030: itt          ne
+0060F032: ldrne        r0, [sp, #8]
+0060F034: blxne        #0x4a40cc
+0060F038: add          r0, sp, #0x28
+0060F03A: blx          #0x4a4ff0 ; Json::Value::~Value
+0060F03E: add          r0, sp, #0x40
+0060F040: blx          #0x4a4ff0 ; Json::Value::~Value
+0060F044: ldrb.w       r0, [sp, #0xa8]
+0060F048: lsls         r0, r0, #0x1f
+0060F04A: itt          ne
+0060F04C: ldrne        r0, [sp, #0xb0]
+0060F04E: blxne        #0x4a40cc
+0060F052: ldrb.w       r0, [sp, #0x88]
+0060F056: lsls         r0, r0, #0x1f
+0060F058: itt          ne
+0060F05A: ldrne        r0, [sp, #0x90]
+0060F05C: blxne        #0x4a40cc
+0060F060: add.w        r0, sb, #0x18
+0060F064: bl           #0x52dfca ; FUN_0052dfca
+0060F068: mov          r0, sb
+0060F06A: bl           #0x52e0d6 ; FUN_0052e0d6
+0060F06E: ldrb.w       r0, [sp, #0xc0]
+0060F072: lsls         r0, r0, #0x1f
+0060F074: itt          ne
+0060F076: ldrne        r0, [sp, #0xc8]
+0060F078: blxne        #0x4a40cc
+0060F07C: mov          r0, r4
+0060F07E: add          sp, #0xd0
+0060F080: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+RANGE 0x0060F1A0..0x0060F346 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGenericC1ERNS0_5RobotERKN4Json5ValueENSt6__ndk112basic_stringIcNS8_11char_traitsIcEENS8_9allocatorIcEEEE
+0060F1A0: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0060F1A4: sub          sp, #0xc
+0060F1A6: mov          r5, r3
+0060F1A8: mov          fp, r2
+0060F1AA: mov          sb, r0
+0060F1AC: blx          #0x4b6d80 ; Anki::Cozmo::IReactionTriggerStrategy::IReactionTriggerStrategy
+0060F1B0: ldr          r0, [pc, #0x13c] ; word[0060F2F0]=00A30524
+0060F1B2: movs         r2, #0
+0060F1B4: add.w        r8, sb, #0x2c
+0060F1B8: strb.w       r2, [sb, #0x2a]
+0060F1BC: add          r0, pc
+0060F1BE: ldr          r1, [pc, #0x134] ; word[0060F2F4]=005E8B1D
+0060F1C0: mov          r3, r8
+0060F1C2: ldr          r0, [r0]
+0060F1C4: add          r1, pc
+0060F1C6: adds         r0, #8
+0060F1C8: str.w        r0, [sb]
+0060F1CC: mov          r0, r5
+0060F1CE: ldm.w        r0, {r4, r6, r7}
+0060F1D2: mov.w        r0, #-1
+0060F1D6: stm          r3!, {r4, r6, r7}
+0060F1D8: mov          r4, sb
+0060F1DA: strd         r2, r2, [r5]
+0060F1DE: str          r2, [r5, #8]
+0060F1E0: str          r2, [r4, #0x44]!
+0060F1E4: mov          sl, r4
+0060F1E6: str          r2, [r4, #0x10]
+0060F1E8: str          r2, [sl, #0xc]!
+0060F1EC: mov          r5, r4
+0060F1EE: mov          r7, r4
+0060F1F0: strd         r2, sl, [r4, #4]
+0060F1F4: strd         r0, r4, [r4, #-0x8]
+0060F1F8: movw         r0, #0x101
+0060F1FC: strb         r2, [r5, #-0xa]!
+0060F200: strh         r0, [r7, #-0xc]!
+0060F204: mov          r0, fp
+0060F206: blx          #0x4a5f2c ; Json::Value::operator[]
+0060F20A: mov          r6, r0
+0060F20C: mov          r0, r6
+0060F20E: blx          #0x4a5f8c ; Json::Value::isNull
+0060F212: cmp          r0, #0
+0060F214: bne          #0x60f296
+0060F216: movs         r0, #0
+0060F218: str          r0, [sp, #8]
+0060F21A: strd         r0, r0, [sp]
+0060F21E: adr          r1, #0xd8
+0060F220: mov          r0, sp
+0060F222: movs         r2, #0x10
+0060F224: bl           #0x4e02b2 ; FUN_004e02b2
+0060F228: mov          r1, sp
+0060F22A: mov          r0, r6
+0060F22C: mov          r2, r7
+0060F22E: blx          #0x4a60dc ; Anki::JsonTools::GetValueOptional<bool>
+0060F232: ldrb.w       r0, [sp]
+0060F236: lsls         r0, r0, #0x1f
+0060F238: itt          ne
+0060F23A: ldrne        r0, [sp, #8]
+0060F23C: blxne        #0x4a40cc
+0060F240: movs         r0, #0
+0060F242: str          r0, [sp, #8]
+0060F244: strd         r0, r0, [sp]
+0060F248: adr          r1, #0xc0
+0060F24A: mov          r0, sp
+0060F24C: movs         r2, #0x22
+0060F24E: bl           #0x4e02b2 ; FUN_004e02b2
+0060F252: sub.w        r2, r4, #0xb
+0060F256: mov          r1, sp
+0060F258: mov          r0, r6
+0060F25A: blx          #0x4a60dc ; Anki::JsonTools::GetValueOptional<bool>
+0060F25E: ldrb.w       r0, [sp]
+0060F262: lsls         r0, r0, #0x1f
+0060F264: itt          ne
+0060F266: ldrne        r0, [sp, #8]
+0060F268: blxne        #0x4a40cc
+0060F26C: movs         r0, #0
+0060F26E: str          r0, [sp, #8]
+0060F270: strd         r0, r0, [sp]
+0060F274: adr          r1, #0xb8
+0060F276: mov          r0, sp
+0060F278: movs         r2, #0x10
+0060F27A: bl           #0x4e02b2 ; FUN_004e02b2
+0060F27E: mov          r1, sp
+0060F280: mov          r0, r6
+0060F282: mov          r2, r5
+0060F284: blx          #0x4a60dc ; Anki::JsonTools::GetValueOptional<bool>
+0060F288: ldrb.w       r0, [sp]
+0060F28C: lsls         r0, r0, #0x1f
+0060F28E: itt          ne
+0060F290: ldrne        r0, [sp, #8]
+0060F292: blxne        #0x4a40cc
+0060F296: mov          r0, sb
+0060F298: add          sp, #0xc
+0060F29A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0060F29E: b            #0x60f2a6
+0060F2A0: b            #0x60f2bc
+0060F2A2: b            #0x60f2a6
+0060F2A4: b            #0x60f2bc
+0060F2A6: mov          r5, r0
+0060F2A8: ldrb.w       r0, [sp]
+0060F2AC: lsls         r0, r0, #0x1f
+0060F2AE: beq          #0x60f2be
+0060F2B0: ldr          r0, [sp, #8]
+0060F2B2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0060F2B6: b            #0x60f2be
+0060F2B8: b            #0x60f2bc
+0060F2BA: b            #0x60f2bc
+0060F2BC: mov          r5, r0
+0060F2BE: ldr.w        r1, [sl]
+0060F2C2: add.w        r0, r4, #8
+0060F2C6: subs         r6, r4, #4
+0060F2C8: blx          #0x4b7164 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>,std::__ndk1::__map_value_compare<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>>>::destroy
+0060F2CC: ldr          r1, [r4]
+0060F2CE: mov          r0, r6
+0060F2D0: blx          #0x4b2ed4 ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::destroy
+0060F2D4: ldrb.w       r0, [r8]
+0060F2D8: lsls         r0, r0, #0x1f
+0060F2DA: itt          ne
+0060F2DC: ldrne.w      r0, [sb, #0x34]
+0060F2E0: blxne        #0x4a40cc
+0060F2E4: mov          r0, sb
+0060F2E6: bl           #0x60b6f4 ; FUN_0060b6f4
+0060F2EA: mov          r0, r5
+0060F2EC: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0060F2F0: lsls         r4, r4, #0x14
+0060F2F2: lsls         r3, r4, #2
+0060F2F4: ldrh         r5, [r3, #0x18]
+0060F2F6: lsls         r6, r3, #1
+0060F2F8: ldr          r3, [r6, #4]
+0060F2FA: strb         r7, [r5, #0x15]
+0060F2FC: str          r4, [r5, #0x44]
+0060F2FE: str          r2, [r2, #0x54]
+0060F300: strb         r3, [r6, #0x15]
+0060F302: str          r5, [r5, #0x54]
+0060F304: str          r4, [r1, #0x14]
+0060F306: strb         r3, [r6, #0x11]
+0060F308: movs         r0, r0
+0060F30A: movs         r0, r0
+0060F30C: str          r3, [r4, #0x14]
+0060F30E: ldr          r1, [pc, #0x1b8] ; word[0060F4C8]=9804EE60
+0060F310: strb         r6, [r5, #0x11]
+0060F312: strb         r5, [r4, #9]
+0060F314: strb         r2, [r6, #0x15]
+0060F316: strb         r0, [r6, #0x11]
+0060F318: strb         r7, [r1, #0x11]
+0060F31A: str          r0, [r5, #0x54]
+0060F31C: strb         r2, [r6, r1]
+0060F31E: ldr          r2, [r6, #0x14]
+0060F320: str          r7, [r4, #0x74]
+0060F322: strb         r5, [r4, #9]
+0060F324: str          r5, [r4, #0x44]
+0060F326: str          r2, [r0, #0x54]
+0060F328: str          r0, [r5, #0x14]
+0060F32A: ldr          r6, [r6, #0x14]
+0060F32C: strb         r7, [r5, #9]
+0060F32E: movs         r0, r0
+0060F330: str          r6, [r5, #0x54]
+0060F332: str          r5, [r4, #0x44]
+0060F334: strh         r3, [r6, r1]
+0060F336: str          r7, [r5, #0x24]
+0060F338: strb         r7, [r5, #0x11]
+0060F33A: strb         r0, [r2, #9]
+0060F33C: strh         r5, [r4, r1]
+0060F33E: strb         r5, [r4, #5]
+0060F340: movs         r0, r0
+0060F342: movs         r0, r0
+0060F344: ldr          r0, [r2]
+RANGE 0x0060F3BC..0x0060F458 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric29ShouldTriggerBehaviorInternalERKNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+0060F3BC: push.w       {r4, r5, r6, r7, r8, lr}
+0060F3C0: mov          r5, r0
+0060F3C2: mov          r4, r1
+0060F3C4: ldr          r0, [r5, #4]
+0060F3C6: cbz          r0, #0x60f3d6
+0060F3C8: ldr          r0, [r2]
+0060F3CA: ldrb.w       r1, [r0, #0xa1]
+0060F3CE: cbz          r1, #0x60f3e4
+0060F3D0: mov.w        r8, #1
+0060F3D4: b            #0x60f3ec
+0060F3D6: ldr          r0, [pc, #0x80] ; word[0060F458]=005E8867
+0060F3D8: adr          r1, #0x80
+0060F3DA: adr          r2, #0xac
+0060F3DC: add          r0, pc
+0060F3DE: blx          #0x4a4c6c ; Anki::Util::sVerifyFailedReturnFalse
+0060F3E2: b            #0x60f452
+0060F3E4: mov          r1, r4
+0060F3E6: blx          #0x4b0f54 ; Anki::Cozmo::IBehavior::IsRunnable
+0060F3EA: mov          r8, r0
+0060F3EC: ldr          r0, [r5, #0x3c]
+0060F3EE: cmp          r0, #1
+0060F3F0: blt          #0x60f438
+0060F3F2: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0060F3F6: blx          #0x4a7b58 ; Anki::BaseStationTimer::GetCurrentTimeStamp
+0060F3FA: ldr          r7, [r5, #0x4c]
+0060F3FC: add.w        r1, r5, #0x50
+0060F400: cmp          r7, r1
+0060F402: beq          #0x60f43c
+0060F404: ldr          r2, [r5, #0x3c]
+0060F406: subs         r2, r0, r2
+0060F408: movs         r0, #0
+0060F40A: ldr          r3, [r7, #0x14]
+0060F40C: cmp          r3, r2
+0060F40E: it           hi
+0060F410: movhi        r0, #1
+0060F412: bhi          #0x60f432
+0060F414: ldr          r3, [r7, #4]
+0060F416: mov          r6, r7
+0060F418: cbz          r3, #0x60f424
+0060F41A: mov          r7, r3
+0060F41C: ldr          r3, [r7]
+0060F41E: cmp          r3, #0
+0060F420: bne          #0x60f41a
+0060F422: b            #0x60f42e
+0060F424: ldr          r7, [r6, #8]
+0060F426: ldr          r3, [r7]
+0060F428: cmp          r3, r6
+0060F42A: mov          r6, r7
+0060F42C: bne          #0x60f424
+0060F42E: cmp          r7, r1
+0060F430: bne          #0x60f40a
+0060F432: and          r7, r0, #1
+0060F436: b            #0x60f43e
+0060F438: movs         r7, #1
+0060F43A: b            #0x60f43e
+0060F43C: movs         r7, #0
+0060F43E: cmp.w        r8, #1
+0060F442: bne          #0x60f452
+0060F444: ldr          r0, [r5, #4]
+0060F446: mov          r1, r4
+0060F448: blx          #0x4b1f20 ; Anki::Cozmo::IWantsToRunStrategy::WantsToRun
+0060F44C: ands         r0, r7
+0060F44E: pop.w        {r4, r5, r6, r7, r8, pc}
+0060F452: movs         r0, #0
+0060F454: pop.w        {r4, r5, r6, r7, r8, pc}

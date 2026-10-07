@@ -1,0 +1,15 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A0E46..0x005A0E66 exclusive; Thumb;
+005A0E46: mov          r5, r4
+005A0E48: movs         r1, #1
+005A0E4A: ldr          r0, [r5, #4]!
+005A0E4E: movs         r2, #0
+005A0E50: ldr.w        r0, [r0, #0x264]
+005A0E54: ldr          r0, [r0, #0x2c]
+005A0E56: blx          #0x4a7b4c ; Anki::Cozmo::FreeplayDataTracker::SetFreeplayPauseFlag
+005A0E5A: b            #0x5a0f58
+005A0E5C: mov          r0, r6
+005A0E5E: str          r4, [sp, #0xc]
+005A0E60: blx          #0x4a6124 ; Json::Value::size
+005A0E64: mov          r5, r0
+0056EE60: bytes=b'robot.active_freeplay_time'

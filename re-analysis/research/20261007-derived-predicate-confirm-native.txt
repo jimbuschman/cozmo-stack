@@ -1,0 +1,76 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00614474..0x006144D0 exclusive; Thumb; _ZNK4Anki5Cozmo23StrategyPlacedOnCharger18WantsToRunInternalERKNS0_5RobotE
+00614474: push         {r4, lr}
+00614476: mov          r4, r0
+00614478: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0061447C: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+00614480: vldr         s2, [r4, #0x18]
+00614484: vmov         s0, r0
+00614488: vcmpe.f32    s2, #0
+0061448C: vmrs         apsr_nzcv, fpscr
+00614490: ittt         mi
+00614492: vmovmi.f32   s2, #2.000000e+01
+00614496: vaddmi.f32   s2, s0, s2
+0061449A: vstrmi       s2, [r4, #0x18]
+0061449E: vcmpe.f32    s2, s0
+006144A2: vmrs         apsr_nzcv, fpscr
+006144A6: bhi          #0x6144b0
+006144A8: ldrb         r0, [r4, #0x15]
+006144AA: cbz          r0, #0x6144b0
+006144AC: movs         r0, #1
+006144AE: b            #0x6144b2
+006144B0: movs         r0, #0
+006144B2: movs         r1, #0
+006144B4: strb         r1, [r4, #0x15]
+006144B6: pop          {r4, pc}
+006144B8: push         {r4, lr}
+006144BA: mov          r4, r0
+006144BC: ldrh         r0, [r1, #0x10]!
+006144C0: cmp          r0, #0x39
+006144C2: it           ne
+006144C4: popne        {r4, pc}
+006144C6: mov          r0, r1
+006144C8: blx          #0x4b6498 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Get_ChargerEvent
+006144CC: ldrb         r0, [r0]
+006144CE: strb         r0, [r4, #0x15]
+RANGE 0x00569A74..0x00569AB8 exclusive; Thumb;
+00569A74: ldr          r0, [sp, #0x3c8]
+00569A76: lsls         r3, r5, #2
+00569A78: push         {r4, r5, r6, r7, lr}
+00569A7A: sub          sp, #4
+00569A7C: mov          r4, r0
+00569A7E: movs         r0, #0
+00569A80: strb         r0, [r4, #4]
+00569A82: mov          r5, r1
+00569A84: movs         r0, #0x18
+00569A86: str          r5, [r4]
+00569A88: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00569A8C: mov          r6, r0
+00569A8E: blx          #0x4ac91c ; Anki::Cozmo::AIInformationAnalyzer::AIInformationAnalyzer
+00569A92: str          r6, [r4, #8]
+00569A94: movs         r0, #0x10
+00569A96: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00569A9A: mov          r6, r0
+00569A9C: mov          r0, r6
+00569A9E: blx          #0x4ac928 ; Anki::Cozmo::BehaviorEventAnimResponseDirector::BehaviorEventAnimResponseDirector
+00569AA2: str          r6, [r4, #0xc]
+00569AA4: movs         r0, #0x48
+00569AA6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00569AAA: mov          r6, r0
+00569AAC: mov          r0, r6
+00569AAE: blx          #0x4ac934 ; Anki::Cozmo::BehaviorHelperComponent::BehaviorHelperComponent
+00569AB2: str          r6, [r4, #0x10]
+00569AB4: movs         r0, #0x18
+RANGE 0x006143CA..0x006143D6 exclusive; Thumb;
+006143CA: ldr.w        r0, [r1, #0x264]
+006143CE: ldrb         r0, [r0, #4]
+006143D0: bx           lr
+006143D2: movs         r0, r0
+006143D4: ldr          r2, [pc, #0x10] ; word[006143E8]=00662BA2
+RANGE 0x0060DF7A..0x0060DF86 exclusive; Thumb;
+0060DF7A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060DF7E: ldrb.w       r0, [r1, #0x355]
+0060DF82: subs         r0, #3
+0060DF84: uxtb         r1, r0
+00C75500: raw=3674534E relocated=3674534E
+00C75504: raw=646E5F5F relocated=646E5F5F

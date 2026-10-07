@@ -1,0 +1,189 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00804BD0..0x00804C46 exclusive; Thumb; _ZNK4Anki4Util16GraphEvaluator2d9EvaluateYEf
+00804BD0: ldr          r2, [r0]
+00804BD2: vmov         s0, r1
+00804BD6: vldr         s2, [r2]
+00804BDA: vcmpe.f32    s2, s0
+00804BDE: vmrs         apsr_nzcv, fpscr
+00804BE2: bgt          #0x804c3c
+00804BE4: ldr          r0, [r0, #4]
+00804BE6: subs         r0, r0, r2
+00804BE8: asrs         r0, r0, #3
+00804BEA: cmp          r0, #2
+00804BEC: blo          #0x804c3c
+00804BEE: movs         r1, #1
+00804BF0: vldr         s4, [r2, #8]
+00804BF4: vcmpe.f32    s4, s0
+00804BF8: vmrs         apsr_nzcv, fpscr
+00804BFC: bge          #0x804c08
+00804BFE: adds         r1, #1
+00804C00: adds         r2, #8
+00804C02: cmp          r1, r0
+00804C04: blo          #0x804bf0
+00804C06: b            #0x804c3c
+00804C08: vldr         s2, [r2]
+00804C0C: vldr         s6, [pc, #0x38] ; word[00804C48]=3727C5AC
+00804C10: vsub.f32     s4, s4, s2
+00804C14: vcmpe.f32    s4, s6
+00804C18: vmrs         apsr_nzcv, fpscr
+00804C1C: ble          #0x804c3c
+00804C1E: vsub.f32     s0, s0, s2
+00804C22: vldr         s2, [r2, #4]
+00804C26: vdiv.f32     s0, s0, s4
+00804C2A: vldr         s4, [r2, #0xc]
+00804C2E: vsub.f32     s4, s4, s2
+00804C32: vmul.f32     s0, s0, s4
+00804C36: vadd.f32     s0, s2, s0
+00804C3A: b            #0x804c40
+00804C3C: vldr         s0, [r2, #4]
+00804C40: vmov         r0, s0
+00804C44: bx           lr
+RANGE 0x0060AE84..0x0060AEBE exclusive; Thumb; _ZN4Anki5Cozmo26SelectionBSRunnableChooser17SetProcessEnabledENSt6__ndk110shared_ptrINS0_9IBehaviorEEEb
+0060AE84: push         {r4, r5, r6, lr}
+0060AE86: sub          sp, #0x10
+0060AE88: ldr          r1, [r1]
+0060AE8A: cbz          r1, #0x60aee8
+0060AE8C: ldr          r4, [r1, #0x1c]
+0060AE8E: cbz          r4, #0x60aee8
+0060AE90: ldr          r0, [r0, #0x1c]
+0060AE92: cmp          r2, #1
+0060AE94: ldr.w        r0, [r0, #0x264]
+0060AE98: ldr          r5, [r0, #8]
+0060AE9A: mov.w        r0, #0
+0060AE9E: bne          #0x60aebe
+0060AEA0: mov          r6, sp
+0060AEA2: adr          r1, #0x60
+0060AEA4: str          r0, [sp, #8]
+0060AEA6: movs         r2, #0x1a
+0060AEA8: strd         r0, r0, [sp]
+0060AEAC: mov          r0, r6
+0060AEAE: bl           #0x4e02b2 ; FUN_004e02b2
+0060AEB2: mov          r0, r5
+0060AEB4: mov          r1, r4
+0060AEB6: mov          r2, r6
+0060AEB8: blx          #0x4b1da0 ; Anki::Cozmo::AIInformationAnalyzer::AddEnableRequest
+0060AEBC: b            #0x60aeda
+00609FA8: bytes=b'D\xf8\x04L\xc4\xe9'
+0060B1E8: bytes=b'behaviors'
+0060AF04: bytes=b'SelectionBSRunnableChooser'
+RANGE 0x00768D5C..0x00768E8C exclusive; Thumb; _ZN4Anki5Cozmo29BehaviorChooserTypeFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE
+00768D5C: push         {r4, r5, r6, lr}
+00768D5E: sub          sp, #0x30
+00768D60: mov          r4, r0
+00768D62: ldr          r0, [pc, #0x184] ; word[00768EE8]=008F4034
+00768D64: add          r0, pc
+00768D66: ldrb         r0, [r0]
+00768D68: dmb          ish
+00768D6C: tst.w        r0, #1
+00768D70: bne          #0x768e0e
+00768D72: ldr          r0, [pc, #0x178] ; word[00768EEC]=008F4024
+00768D74: add          r0, pc
+00768D76: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+00768D7A: cmp          r0, #0
+00768D7C: beq          #0x768e0e
+00768D7E: ldr          r1, [pc, #0x170] ; word[00768EF0]=004B0DD2
+00768D80: movs         r6, #0
+00768D82: str          r6, [sp, #8]
+00768D84: add          r1, pc
+00768D86: strd         r6, r6, [sp]
+00768D8A: mov          r5, sp
+00768D8C: movs         r2, #7
+00768D8E: mov          r0, r5
+00768D90: bl           #0x4e02b2 ; FUN_004e02b2
+00768D94: ldr          r1, [pc, #0x15c] ; word[00768EF4]=004B0BF5
+00768D96: str          r6, [sp, #0x18]
+00768D98: add          r1, pc
+00768D9A: strd         r6, r6, [sp, #0x10]
+00768D9E: strb.w       r6, [sp, #0xc]
+00768DA2: add.w        r0, r5, #0x10
+00768DA6: movs         r2, #9
+00768DA8: bl           #0x4e02b2 ; FUN_004e02b2
+00768DAC: ldr          r1, [pc, #0x148] ; word[00768EF8]=004B0B32
+00768DAE: movs         r0, #0
+00768DB0: str          r0, [sp, #0x28]
+00768DB2: add          r1, pc
+00768DB4: strd         r0, r0, [sp, #0x20]
+00768DB8: movs         r0, #1
+00768DBA: strb.w       r0, [sp, #0x1c]
+00768DBE: add.w        r0, r5, #0x20
+00768DC2: movs         r2, #0xe
+00768DC4: bl           #0x4e02b2 ; FUN_004e02b2
+00768DC8: ldr          r0, [pc, #0x130] ; word[00768EFC]=008F3FB4
+00768DCA: movs         r1, #2
+00768DCC: strb.w       r1, [sp, #0x2c]
+00768DD0: add          r0, pc
+00768DD2: mov          r5, sp
+00768DD4: movs         r2, #3
+00768DD6: mov          r1, r5
+00768DD8: blx          #0x4c584c ; std::__ndk1::unordered_map<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,Anki::Cozmo::BehaviorChooserType,std::__ndk1::hash<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::equal_to<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::allocator<std::__ndk1::pair<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>const,Anki::Cozmo::BehaviorChooserType>>>::unordered_map
+00768DDC: movs         r6, #0
+00768DDE: adds         r0, r5, r6
+00768DE0: ldrb.w       r1, [r0, #0x20]
+00768DE4: lsls         r1, r1, #0x1f
+00768DE6: itt          ne
+00768DE8: ldrne        r0, [r0, #0x28]
+00768DEA: blxne        #0x4a40cc
+00768DEE: subs         r6, #0x10
+00768DF0: adds.w       r0, r6, #0x30
+00768DF4: bne          #0x768dde
+00768DF6: ldr          r0, [pc, #0x10c] ; word[00768F04]=0000037F
+00768DF8: ldr          r1, [pc, #0x10c] ; word[00768F08]=008F3F86
+00768DFA: ldr          r2, [pc, #0x110] ; word[00768F0C]=008E81FC
+00768DFC: add          r0, pc
+00768DFE: add          r1, pc
+00768E00: add          r2, pc
+00768E02: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+00768E06: ldr          r0, [pc, #0x108] ; word[00768F10]=008F3F90
+00768E08: add          r0, pc
+00768E0A: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+00768E0E: ldr          r0, [pc, #0x104] ; word[00768F14]=008F3F72
+00768E10: mov          r1, r4
+00768E12: add          r0, pc
+00768E14: blx          #0x4c5858 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,Anki::Cozmo::BehaviorChooserType>,std::__ndk1::__unordered_map_hasher<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::__hash_value_type<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,Anki::Cozmo::BehaviorChooserType>,std::__ndk1::hash<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,true>,std::__ndk1::__unordered_map_equal<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::__hash_value_type<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,Anki::Cozmo::BehaviorChooserType>,std::__ndk1::equal_to<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,Anki::Cozmo::BehaviorChooserType>>>::find<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>
+00768E18: cmp          r0, #0
+00768E1A: beq          #0x768e20
+00768E1C: ldrb         r0, [r0, #0x14]
+00768E1E: b            #0x768e88
+00768E20: ldr          r0, [pc, #0xf4] ; word[00768F18]=008D6CAE
+00768E22: adr          r1, #0xf8
+00768E24: movs         r2, #0xf
+00768E26: add          r0, pc
+00768E28: ldr          r0, [r0]
+00768E2A: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+00768E2E: ldrd         r2, r1, [r4, #4]
+00768E32: ldrb         r3, [r4]
+00768E34: ands         r6, r3, #1
+00768E38: itt          eq
+00768E3A: addeq        r1, r4, #1
+00768E3C: lsreq        r2, r3, #1
+00768E3E: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+00768E42: adr          r1, #0xe8
+00768E44: movs         r2, #0x2a
+00768E46: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+00768E4A: mov          r4, r0
+00768E4C: mov          r5, sp
+00768E4E: ldr          r0, [r4]
+00768E50: ldr          r0, [r0, #-0xc]
+00768E54: adds         r1, r4, r0
+00768E56: mov          r0, r5
+00768E58: blx          #0x4a457c ; <EXTERNAL>::std::__ndk1::ios_base::getloc
+00768E5C: ldr          r0, [pc, #0xf8] ; word[00768F58]=008D596E
+00768E5E: add          r0, pc
+00768E60: ldr          r1, [r0]
+00768E62: mov          r0, r5
+00768E64: blx          #0x4a4588 ; <EXTERNAL>::std::__ndk1::locale::use_facet
+00768E68: ldr          r1, [r0]
+00768E6A: ldr          r2, [r1, #0x1c]
+00768E6C: movs         r1, #0xa
+00768E6E: blx          r2
+00768E70: mov          r5, r0
+00768E72: mov          r0, sp
+00768E74: blx          #0x4a44a4 ; <EXTERNAL>::std::__ndk1::locale::~locale
+00768E78: mov          r0, r4
+00768E7A: mov          r1, r5
+00768E7C: blx          #0x4a68bc ; std::__ndk1::basic_ostream<char,std::__ndk1::char_traits<char>>::put
+00768E80: mov          r0, r4
+00768E82: bl           #0x4e44be ; FUN_004e44be
+00768E86: movs         r0, #0
+00768E88: add          sp, #0x30
+00768E8A: pop          {r4, r5, r6, pc}

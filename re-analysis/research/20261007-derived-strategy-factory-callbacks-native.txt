@@ -1,0 +1,171 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+VT 0x102cf48 callback 0x60dd6e
+RANGE 0x0060DD6E..0x0060DDCE exclusive; Thumb;
+0060DD6E: ldr          r0, [r2, #0x44]
+0060DD70: movs         r1, #0xb
+0060DD72: b.w          #0x8cc95c
+0060DD76: movs         r0, r0
+0060DD78: ldr          r2, [pc, #0x10] ; word[0060DD8C]=0066816E
+0060DD7A: ldr          r3, [r1, #4]
+0060DD7C: movs         r1, #0
+0060DD7E: add          r2, pc
+0060DD80: cmp          r3, r2
+0060DD82: it           eq
+0060DD84: addeq        r1, r0, #4
+0060DD86: mov          r0, r1
+0060DD88: bx           lr
+0060DD8A: nop
+0060DD8C: strh         r6, [r5, #0xa]
+0060DD8E: lsls         r6, r4, #1
+0060DD90: ldr          r0, [pc, #4] ; word[0060DD98]=00A1F1EA
+0060DD92: add          r0, pc
+0060DD94: bx           lr
+0060DD96: nop
+VT 0x102cf88 callback 0x60ddce
+RANGE 0x0060DDCE..0x0060DE2E exclusive; Thumb;
+0060DDCE: ldrb.w       r0, [r1, #0x355]
+0060DDD2: cmp          r0, #1
+0060DDD4: it           ne
+0060DDD6: movne        r0, #0
+0060DDD8: bx           lr
+0060DDDA: movs         r0, r0
+0060DDDC: ldr          r2, [pc, #0x10] ; word[0060DDF0]=0066825A
+0060DDDE: ldr          r3, [r1, #4]
+0060DDE0: movs         r1, #0
+0060DDE2: add          r2, pc
+0060DDE4: cmp          r3, r2
+0060DDE6: it           eq
+0060DDE8: addeq        r1, r0, #4
+0060DDEA: mov          r0, r1
+0060DDEC: bx           lr
+0060DDEE: nop
+0060DDF0: strh         r2, [r3, #0x12]
+0060DDF2: lsls         r6, r4, #1
+0060DDF4: ldr          r0, [pc, #4] ; word[0060DDFC]=00A1F1C6
+0060DDF6: add          r0, pc
+0060DDF8: bx           lr
+0060DDFA: nop
+0060DDFC: rsb.w        r0, r6, #0xa1
+0060DE00: bx           lr
+0060DE02: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060DE06: movs         r0, r0
+0060DE08: push         {r7, lr}
+0060DE0A: movs         r0, #8
+0060DE0C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0060DE10: ldr          r1, [pc, #8] ; word[0060DE1C]=00A1F1B2
+0060DE12: add          r1, pc
+0060DE14: adds         r1, #8
+0060DE16: str          r1, [r0]
+0060DE18: pop          {r7, pc}
+0060DE1A: nop
+0060DE1C: subs.w       r0, r2, #0xa1
+0060DE20: ldr          r0, [pc, #8] ; word[0060DE2C]=00A1F1A2
+0060DE22: add          r0, pc
+0060DE24: adds         r0, #8
+0060DE26: str          r0, [r1]
+0060DE28: bx           lr
+0060DE2A: nop
+VT 0x102cfc8 callback 0x60de36
+RANGE 0x0060DE36..0x0060DE96 exclusive; Thumb;
+0060DE36: push         {r4, r5, r7, lr}
+0060DE38: ldr          r0, [r2, #0x44]
+0060DE3A: mov          r5, r1
+0060DE3C: movs         r1, #0xe
+0060DE3E: blx          #0x4b6dd4 ; Anki::Cozmo::BehaviorManager::IsReactionTriggerEnabled
+0060DE42: movs         r4, #0
+0060DE44: cmp          r0, #1
+0060DE46: bne          #0x60de58
+0060DE48: add.w        r0, r5, #0x10
+0060DE4C: blx          #0x4b3924 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Get_RobotOffTreadsStateChanged
+0060DE50: ldrb         r0, [r0]
+0060DE52: cmp          r0, #0
+0060DE54: it           eq
+0060DE56: moveq        r4, #1
+0060DE58: mov          r0, r4
+0060DE5A: pop          {r4, r5, r7, pc}
+0060DE5C: ldr          r2, [pc, #0x10] ; word[0060DE70]=0066836A
+0060DE5E: ldr          r3, [r1, #4]
+0060DE60: movs         r1, #0
+0060DE62: add          r2, pc
+0060DE64: cmp          r3, r2
+0060DE66: it           eq
+0060DE68: addeq        r1, r0, #4
+0060DE6A: mov          r0, r1
+0060DE6C: bx           lr
+0060DE6E: nop
+0060DE70: strh         r2, [r5, #0x1a]
+0060DE72: lsls         r6, r4, #1
+0060DE74: ldr          r0, [pc, #4] ; word[0060DE7C]=00A1F186
+0060DE76: add          r0, pc
+0060DE78: bx           lr
+0060DE7A: nop
+VT 0x102d008 callback 0x60deb2
+RANGE 0x0060DEB2..0x0060DF12 exclusive; Thumb;
+0060DEB2: ldrb.w       r1, [r1, #0x355]
+0060DEB6: movs         r0, #0
+0060DEB8: cmp          r1, #2
+0060DEBA: it           eq
+0060DEBC: moveq        r0, #1
+0060DEBE: bx           lr
+0060DEC0: ldr          r2, [pc, #0x10] ; word[0060DED4]=00668456
+0060DEC2: ldr          r3, [r1, #4]
+0060DEC4: movs         r1, #0
+0060DEC6: add          r2, pc
+0060DEC8: cmp          r3, r2
+0060DECA: it           eq
+0060DECC: addeq        r1, r0, #4
+0060DECE: mov          r0, r1
+0060DED0: bx           lr
+0060DED2: nop
+0060DED4: strh         r6, [r2, #0x22]
+0060DED6: lsls         r6, r4, #1
+0060DED8: ldr          r0, [pc, #4] ; word[0060DEE0]=00A1F162
+0060DEDA: add          r0, pc
+0060DEDC: bx           lr
+0060DEDE: nop
+0060DEE0: sbc          r0, r2, #0xa1
+0060DEE4: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060DEE8: push         {r7, lr}
+0060DEEA: movs         r0, #8
+0060DEEC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0060DEF0: ldr          r1, [pc, #8] ; word[0060DEFC]=00A1F152
+0060DEF2: add          r1, pc
+0060DEF4: adds         r1, #8
+0060DEF6: str          r1, [r0]
+0060DEF8: pop          {r7, pc}
+0060DEFA: nop
+0060DEFC: adcs         r0, r2, #0xa1
+0060DF00: ldr          r0, [pc, #8] ; word[0060DF0C]=00A1F142
+0060DF02: add          r0, pc
+0060DF04: adds         r0, #8
+0060DF06: str          r0, [r1]
+0060DF08: bx           lr
+0060DF0A: nop
+0060DF0C: adc          r0, r2, #0xa1
+0060DF10: bx           lr
+VT 0x102d048 callback 0x60df16
+RANGE 0x0060DF16..0x0060DF76 exclusive; Thumb;
+0060DF16: ldrb.w       r1, [r1, #0x355]
+0060DF1A: movs         r0, #0
+0060DF1C: cmp          r1, #5
+0060DF1E: it           eq
+0060DF20: moveq        r0, #1
+0060DF22: bx           lr
+0060DF24: ldr          r2, [pc, #0x10] ; word[0060DF38]=00668542
+0060DF26: ldr          r3, [r1, #4]
+0060DF28: movs         r1, #0
+0060DF2A: add          r2, pc
+0060DF2C: cmp          r3, r2
+0060DF2E: it           eq
+0060DF30: addeq        r1, r0, #4
+0060DF32: mov          r0, r1
+0060DF34: bx           lr
+0060DF36: nop
+0060DF38: strh         r2, [r0, #0x2a]
+0060DF3A: lsls         r6, r4, #1
+0060DF3C: ldr          r0, [pc, #4] ; word[0060DF44]=00A1F13E
+0060DF3E: add          r0, pc
+0060DF40: bx           lr
+0060DF42: nop
+VT 0x102d08a callback 0xdf910060
+RANGE 0xDF910060..0xDF9100C0 exclusive; Thumb;

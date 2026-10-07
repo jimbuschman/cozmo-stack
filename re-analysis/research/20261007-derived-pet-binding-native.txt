@@ -1,0 +1,8 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103F6F8: raw=00000000 relocated=0102D320 _ZTVN4Anki5Cozmo42ReactionTriggerStrategyPetInitialDetectionE
+RANGE 0x008CC9CC..0x008CC9D0 exclusive; Thumb;
+008CC9CC: bx           pc
+008CC9CE: mov          r8, r8
+RANGE 0x008CC9D0..0x008CC9D8 exclusive; ARM;
+008CC9D0: ldr          ip, [pc] ; word[008CC9D8]=FFBEAA28
+008CC9D4: add          pc, ip, pc

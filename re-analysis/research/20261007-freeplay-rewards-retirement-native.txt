@@ -1,0 +1,20 @@
+0x1048cac 0x69ab66 _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo11UnlockLevelENS_9allocatorIS3_EEED2Ev
+RANGE 0x0069AB66..0x0069AB8E exclusive; Thumb; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo11UnlockLevelENS_9allocatorIS3_EEED2Ev
+0069AB66: push         {r4, r5, r7, lr}
+0069AB68: mov          r4, r0
+0069AB6A: ldr          r5, [r4]
+0069AB6C: cbz          r5, #0x69ab8a
+0069AB6E: ldr          r0, [r4, #4]
+0069AB70: cmp          r0, r5
+0069AB72: beq          #0x69ab84
+0069AB74: subs         r0, #0x40
+0069AB76: str          r0, [r4, #4]
+0069AB78: blx          #0x4bd5fc ; std::__ndk1::__vector_base<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::~__vector_base
+0069AB7C: ldr          r0, [r4, #4]
+0069AB7E: cmp          r0, r5
+0069AB80: bne          #0x69ab74
+0069AB82: ldr          r5, [r4]
+0069AB84: mov          r0, r5
+0069AB86: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0069AB8A: mov          r0, r4
+0069AB8C: pop          {r4, r5, r7, pc}

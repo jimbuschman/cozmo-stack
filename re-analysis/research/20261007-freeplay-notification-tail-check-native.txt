@@ -1,0 +1,82 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0069BF9C..0x0069BFFE exclusive; Thumb; _ZN4Anki5Cozmo10NeedsState5ResetEv
+0069BF9C: push         {r4, r5, r6, r7, lr}
+0069BF9E: sub          sp, #4
+0069BFA0: mov          r4, r0
+0069BFA2: add.w        r0, r4, #0x34
+0069BFA6: mov          r6, r4
+0069BFA8: ldr          r1, [r6, #0x38]!
+0069BFAC: blx          #0x4bd518 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::NeedId,float>,std::__ndk1::__map_value_compare<Anki::Cozmo::NeedId,std::__ndk1::__value_type<Anki::Cozmo::NeedId,float>,std::__ndk1::less<Anki::Cozmo::NeedId>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::NeedId,float>>>::destroy
+0069BFB0: str          r6, [r4, #0x34]
+0069BFB2: mov          r7, r4
+0069BFB4: ldr          r1, [r7, #0x74]!
+0069BFB8: add.w        r0, r4, #0x70
+0069BFBC: movs         r5, #0
+0069BFBE: str          r5, [r4, #0x3c]
+0069BFC0: str          r5, [r6]
+0069BFC2: blx          #0x4bd500 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>,std::__ndk1::__map_value_compare<Anki::Cozmo::NeedId,std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>,std::__ndk1::less<Anki::Cozmo::NeedId>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>>>::destroy
+0069BFC6: mov          r6, r4
+0069BFC8: add.w        r0, r4, #0x7c
+0069BFCC: ldr          r1, [r6, #0x80]!
+0069BFD0: str          r7, [r4, #0x70]
+0069BFD2: str          r5, [r4, #0x78]
+0069BFD4: str          r5, [r7]
+0069BFD6: blx          #0x4bd500 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>,std::__ndk1::__map_value_compare<Anki::Cozmo::NeedId,std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>,std::__ndk1::less<Anki::Cozmo::NeedId>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::NeedId,Anki::Cozmo::NeedBracketId>>>::destroy
+0069BFDA: mov          r7, r4
+0069BFDC: ldr          r1, [r7, #0x44]!
+0069BFE0: subs         r0, r7, #4
+0069BFE2: str          r6, [r4, #0x7c]
+0069BFE4: str          r5, [r6]
+0069BFE6: str          r5, [r7, #0x40]
+0069BFE8: blx          #0x4bd50c ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::RepairablePartId,bool>,std::__ndk1::__map_value_compare<Anki::Cozmo::RepairablePartId,std::__ndk1::__value_type<Anki::Cozmo::RepairablePartId,bool>,std::__ndk1::less<Anki::Cozmo::RepairablePartId>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::RepairablePartId,bool>>>::destroy
+0069BFEC: movs         r0, #1
+0069BFEE: strb.w       r0, [r7, #0x44]
+0069BFF2: str          r7, [r7, #-0x4]
+0069BFF6: strd         r5, r5, [r7]
+0069BFFA: add          sp, #4
+0069BFFC: pop          {r4, r5, r6, r7, pc}
+RANGE 0x0068D26C..0x0068D284 exclusive; Thumb;
+0068D26C: beq.w        #0x68d030
+0068D270: ldr          r0, [sp, #0x18]
+0068D272: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068D276: b            #0x68d030
+0068D278: mov          r4, r0
+0068D27A: ldrb.w       r0, [sp, #0x10]
+0068D27E: lsls         r0, r0, #0x1f
+0068D280: beq          #0x68d2ae
+0068D282: ldr          r0, [sp, #0x18]
+RANGE 0x0068D4BE..0x0068D4D0 exclusive; Thumb;
+0068D4BE: adds         r1, r1, r2
+0068D4C0: str          r1, [sp, #0xc]
+0068D4C2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068D4C6: b            #0x68d32e
+0068D4C8: b            #0x68d4ca
+0068D4CA: mov          r4, r0
+0068D4CC: ldr          r0, [sp, #8]
+0068D4CE: cbz          r0, #0x68d4ec
+RANGE 0x0068DBE4..0x0068DC2E exclusive; Thumb; _ZNK4Anki5Cozmo18LocalNotifications24GetMinutesAfterTimestampEili
+0068DBE4: push         {r4, r5, r6, r7, lr}
+0068DBE6: sub          sp, #0xc
+0068DBE8: mov          r7, sp
+0068DBEA: mov          r4, r3
+0068DBEC: mov          r0, r7
+0068DBEE: mov          r5, r2
+0068DBF0: mov          r6, r1
+0068DBF2: blx          #0x4a7348 ; <EXTERNAL>::std::__ndk1::chrono::system_clock::now
+0068DBF6: mov          r0, r7
+0068DBF8: add          r5, r6
+0068DBFA: blx          #0x4a7354 ; <EXTERNAL>::std::__ndk1::chrono::system_clock::to_time_t
+0068DBFE: subs         r0, r5, r0
+0068DC00: vldr         s2, [pc, #0x2c] ; word[0068DC30]=42700000
+0068DC04: vmov         s0, r0
+0068DC08: vcvt.f32.s32 s0, s0
+0068DC0C: vdiv.f32     s0, s0, s2
+0068DC10: vmov         s2, r4
+0068DC14: vcvt.f32.s32 s2, s2
+0068DC18: vcmpe.f32    s0, s2
+0068DC1C: vmrs         apsr_nzcv, fpscr
+0068DC20: it           mi
+0068DC22: vmovmi.f32   s0, s2
+0068DC26: vmov         r0, s0
+0068DC2A: add          sp, #0xc
+0068DC2C: pop          {r4, r5, r6, r7, pc}

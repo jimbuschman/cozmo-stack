@@ -1,0 +1,125 @@
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+00036CCC: raw=00037010 relocated=00037010
+00036EB4: raw=00005770 relocated=00005770 unlink
+00036EB8: raw=00005770 relocated=00008009 _DAS_SetGlobal
+00036EC4: raw=00005770 relocated=00005770 sscanf
+RANGE 0x00027C3C..0x00027D88 exclusive; Thumb;
+00027C3C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00027C40: sub.w        sp, sp, #0x1420
+00027C44: sub          sp, #4
+00027C46: mov          r7, r0
+00027C48: ldr          r0, [pc, #0x11c] ; word[00027D68]=0000F042
+00027C4A: add          r5, sp, #0xc
+00027C4C: mov          sl, r2
+00027C4E: add          r0, pc
+00027C50: mov          r6, r1
+00027C52: ldr          r0, [r0]
+00027C54: ldr          r0, [r0]
+00027C56: str          r0, [r5]
+00027C58: bl           #0x27b10
+00027C5C: mov          r4, r0
+00027C5E: mov.w        fp, #0
+00027C62: cmp          r4, #0
+00027C64: beq          #0x27d0c
+00027C66: ldr          r0, [r4]
+00027C68: ldrb         r2, [r7]
+00027C6A: ldr          r1, [r7, #8]
+00027C6C: ldr.w        r3, [r0, #0x29c]
+00027C70: tst.w        r2, #1
+00027C74: it           eq
+00027C76: addeq        r1, r7, #1
+00027C78: mov          r0, r4
+00027C7A: blx          r3
+00027C7C: mov          r8, r0
+00027C7E: ldr          r0, [r4]
+00027C80: ldrb         r2, [r6]
+00027C82: ldr          r1, [r6, #8]
+00027C84: ldr.w        r3, [r0, #0x29c]
+00027C88: tst.w        r2, #1
+00027C8C: it           eq
+00027C8E: addeq        r1, r6, #1
+00027C90: mov          r0, r4
+00027C92: blx          r3
+00027C94: strb.w       fp, [sp, #0x1c]
+00027C98: mov          sb, r0
+00027C9A: ldr          r2, [r4]
+00027C9C: add.w        fp, sp, #0x1c
+00027CA0: ldr          r0, [pc, #0xc8] ; word[00027D6C]=0000F4A2
+00027CA2: movs         r3, #0
+00027CA4: ldr          r1, [pc, #0xc8] ; word[00027D70]=0000F498
+00027CA6: add          r0, pc
+00027CA8: ldr.w        r5, [r2, #0x394]
+00027CAC: add          r1, pc
+00027CAE: mov.w        r2, #0x1400
+00027CB2: ldr          r6, [r0]
+00027CB4: mov          r0, r4
+00027CB6: ldr          r7, [r1]
+00027CB8: mov          r1, fp
+00027CBA: blx          r5
+00027CBC: strd         sb, r0, [sp]
+00027CC0: mov          r0, r4
+00027CC2: mov          r1, r7
+00027CC4: mov          r2, r6
+00027CC6: mov          r3, r8
+00027CC8: bl           #0x27d78
+00027CCC: mov          r6, r0
+00027CCE: movw         r0, #0x13ff
+00027CD2: movs         r1, #0
+00027CD4: strb.w       r1, [fp, r0]
+00027CD8: mov          r0, fp
+00027CDA: blx          #0x585c
+00027CDE: cbz          r0, #0x27d2a
+00027CE0: add.w        fp, sp, #0x1c
+00027CE4: movs         r5, #0
+00027CE6: str          r5, [sp, #0x18]
+00027CE8: mov          r0, fp
+00027CEA: strd         r5, r5, [sp, #0x10]
+00027CEE: blx          #0x585c
+00027CF2: add          r7, sp, #0x10
+00027CF4: mov          r2, r0
+00027CF6: mov          r1, fp
+00027CF8: mov          r0, r7
+00027CFA: bl           #0x9594
+00027CFE: ldrb.w       r0, [sl]
+00027D02: lsls         r0, r0, #0x1f
+00027D04: bne          #0x27d10
+00027D06: strh.w       r5, [sl]
+00027D0A: b            #0x27d1a
+00027D0C: movs         r6, #0
+00027D0E: b            #0x27d46
+00027D10: ldr.w        r0, [sl, #8]
+00027D14: strb         r5, [r0]
+00027D16: str.w        r5, [sl, #4]
+00027D1A: mov          r0, sl
+00027D1C: movs         r1, #0
+00027D1E: bl           #0x9ac6
+00027D22: ldm.w        r7, {r0, r1, r2}
+00027D26: stm.w        sl, {r0, r1, r2}
+00027D2A: ldr          r0, [r4]
+00027D2C: mov          r1, r8
+00027D2E: ldr          r2, [r0, #0x5c]
+00027D30: mov          r0, r4
+00027D32: blx          r2
+00027D34: ldr          r0, [r4]
+00027D36: mov          r1, sb
+00027D38: ldr          r2, [r0, #0x5c]
+00027D3A: mov          r0, r4
+00027D3C: blx          r2
+00027D3E: add          r5, sp, #0xc
+00027D40: cmp          r6, #0
+00027D42: it           ne
+00027D44: movne        r6, #1
+00027D46: ldr          r0, [pc, #0x2c] ; word[00027D74]=0000EF46
+00027D48: ldr          r1, [r5]
+00027D4A: add          r0, pc
+00027D4C: ldr          r0, [r0]
+00027D4E: ldr          r0, [r0]
+00027D50: subs         r0, r0, r1
+00027D52: itttt        eq
+00027D54: moveq        r0, r6
+00027D56: addeq.w      sp, sp, #0x1420
+00027D5A: addeq        sp, #4
+00027D5C: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00027D60: blx          #0x5868
+00027D64: bl           #0x8b80
+00027D68: orr          r0, r2, #0

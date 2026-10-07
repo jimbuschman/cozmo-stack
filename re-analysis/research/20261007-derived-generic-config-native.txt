@@ -1,0 +1,314 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0060DB80: bytes=b'strategyToCreate'
+0060F130: bytes=b'Trigger Strategy Generic'
+0060F150: bytes=b'debugStrategyName'
+0060F164: bytes=b'{   "strategyType" : "Generic"}'
+0060F180: bytes=b'c"}'
+0060F2F8: bytes=b'shouldResumeLast'
+0060F30C: bytes=b'canInterruptOtherTriggeredBehavior'
+0060F330: bytes=b'needsRobotPreReq'
+RANGE 0x0060F344..0x0060F3BC exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric25SetupForceTriggerBehaviorERKNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+0060F344: ldr          r0, [r2]
+0060F346: b.w          #0x8cc96c
+0060F34A: movs         r0, r0
+0060F34C: push         {r4, r5, r7, lr}
+0060F34E: sub          sp, #0x20
+0060F350: ldrh         r1, [r1, #0x10]
+0060F352: mov          r4, r0
+0060F354: strh.w       r1, [sp, #0xe]
+0060F358: ldr          r5, [r0, #0x44]!
+0060F35C: cbz          r5, #0x60f3b4
+0060F35E: mov          r3, r0
+0060F360: mov          r2, r5
+0060F362: ldrh         r5, [r2, #0xe]
+0060F364: cmp          r5, r1
+0060F366: bhs          #0x60f370
+0060F368: ldr          r2, [r2, #4]
+0060F36A: cmp          r2, #0
+0060F36C: bne          #0x60f362
+0060F36E: b            #0x60f37a
+0060F370: ldr          r5, [r2]
+0060F372: mov          r3, r2
+0060F374: cmp          r5, #0
+0060F376: bne          #0x60f360
+0060F378: b            #0x60f37c
+0060F37A: mov          r2, r3
+0060F37C: cmp          r2, r0
+0060F37E: beq          #0x60f3b4
+0060F380: ldrh         r3, [r2, #0xe]
+0060F382: cmp          r1, r3
+0060F384: blo          #0x60f3b4
+0060F386: cmp          r2, r0
+0060F388: beq          #0x60f3b4
+0060F38A: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0060F38E: blx          #0x4a7b58 ; Anki::BaseStationTimer::GetCurrentTimeStamp
+0060F392: ldr          r3, [pc, #0x24] ; word[0060F3B8]=00667466
+0060F394: mov          r5, r0
+0060F396: add          r0, sp, #0x10
+0060F398: add          r1, sp, #0x14
+0060F39A: add.w        r2, sp, #0xe
+0060F39E: str          r2, [sp, #0x14]
+0060F3A0: strd         r1, r0, [sp]
+0060F3A4: add          r3, pc
+0060F3A6: add.w        r1, r4, #0x4c
+0060F3AA: add          r0, sp, #0x18
+0060F3AC: blx          #0x4b7170 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>,std::__ndk1::__map_value_compare<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,unsigned_int>>>::__emplace_unique_key_args<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::piecewise_construct_t_const&,std::__ndk1::tuple<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag_const&>,std::__ndk1::tuple<>>
+0060F3B0: ldr          r0, [sp, #0x18]
+0060F3B2: str          r5, [r0, #0x14]
+0060F3B4: add          sp, #0x20
+0060F3B6: pop          {r4, r5, r7, pc}
+0060F3B8: strb         r6, [r4, #0x11]
+0060F3BA: lsls         r6, r4, #1
+RANGE 0x0060F438..0x0060F458 exclusive; Thumb;
+0060F438: movs         r7, #1
+0060F43A: b            #0x60f43e
+0060F43C: movs         r7, #0
+0060F43E: cmp.w        r8, #1
+0060F442: bne          #0x60f452
+0060F444: ldr          r0, [r5, #4]
+0060F446: mov          r1, r4
+0060F448: blx          #0x4b1f20 ; Anki::Cozmo::IWantsToRunStrategy::WantsToRun
+0060F44C: ands         r0, r7
+0060F44E: pop.w        {r4, r5, r6, r7, r8, pc}
+0060F452: movs         r0, #0
+0060F454: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x0060F548..0x0060F624 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric34ConfigureRelevantEventsWithTimeoutERKNSt6__ndk13setINS0_17ExternalInterface22MessageEngineToGameTagENS2_4lessIS5_EENS2_9allocatorIS5_EEEENS2_8functionIFbRKNS0_9AnkiEventINS4_19MessageEngineToGameEEERKNS0_5RobotEEEEi
+0060F548: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0060F54C: sub          sp, #0x30
+0060F54E: mov          sl, r0
+0060F550: ldr          r0, [pc, #0xfc] ; word[0060F650]=00A2F2F2
+0060F552: mov          r4, r3
+0060F554: mov          r8, r2
+0060F556: add          r0, pc
+0060F558: mov          sb, r1
+0060F55A: ldr          r0, [r0]
+0060F55C: ldr          r0, [r0]
+0060F55E: str          r0, [sp, #0x2c]
+0060F560: ldr.w        r0, [sl, #0x3c]
+0060F564: adds         r0, #1
+0060F566: beq          #0x60f574
+0060F568: ldr          r0, [pc, #0xe8] ; word[0060F654]=005E8719
+0060F56A: adr          r1, #0xec
+0060F56C: adr          r2, #0xf8
+0060F56E: add          r0, pc
+0060F570: blx          #0x4a4c6c ; Anki::Util::sVerifyFailedReturnFalse
+0060F574: add.w        r0, sl, #0x40
+0060F578: str.w        r4, [sl, #0x3c]
+0060F57C: cmp          r0, sb
+0060F57E: beq          #0x60f58e
+0060F580: mov          r7, sb
+0060F582: ldr          r1, [r7], #4
+0060F586: mov          r2, r7
+0060F588: blx          #0x4b7194 ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::__assign_multi<std::__ndk1::__tree_const_iterator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::__tree_node<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,void*>*,int>>
+0060F58C: b            #0x60f592
+0060F58E: add.w        r7, sb, #4
+0060F592: movs         r0, #0
+0060F594: strd         r0, r0, [sp, #8]
+0060F598: add          r0, sp, #4
+0060F59A: adds         r6, r0, #4
+0060F59C: str          r6, [sp, #4]
+0060F59E: ldr.w        r5, [sb]
+0060F5A2: cmp          r5, r7
+0060F5A4: beq          #0x60f5d4
+0060F5A6: add          r4, sp, #4
+0060F5A8: add.w        r2, r5, #0xe
+0060F5AC: mov          r0, r4
+0060F5AE: mov          r1, r6
+0060F5B0: mov          r3, r2
+0060F5B2: blx          #0x4b2ebc ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::__emplace_hint_unique_key_args<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,Anki::Cozmo::ExternalInterface::MessageEngineToGameTag_const&>
+0060F5B6: ldr          r0, [r5, #4]
+0060F5B8: cbz          r0, #0x60f5c4
+0060F5BA: mov          r5, r0
+0060F5BC: ldr          r0, [r5]
+0060F5BE: cmp          r0, #0
+0060F5C0: bne          #0x60f5ba
+0060F5C2: b            #0x60f5d0
+0060F5C4: mov          r0, r5
+0060F5C6: ldr          r5, [r0, #8]
+0060F5C8: ldr          r1, [r5]
+0060F5CA: cmp          r1, r0
+0060F5CC: mov          r0, r5
+0060F5CE: bne          #0x60f5c6
+0060F5D0: cmp          r5, r7
+0060F5D2: bne          #0x60f5a8
+0060F5D4: add          r1, sp, #4
+0060F5D6: mov          r0, sl
+0060F5D8: blx          #0x4b6d8c ; Anki::Cozmo::IReactionTriggerStrategy::SubscribeToTags
+0060F5DC: ldr          r1, [sp, #8]
+0060F5DE: add          r0, sp, #4
+0060F5E0: blx          #0x4b2ed4 ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::destroy
+0060F5E4: add          r6, sp, #0x10
+0060F5E6: mov          r1, r8
+0060F5E8: mov          r0, r6
+0060F5EA: blx          #0x4b71a0 ; std::__ndk1::function<bool(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame>const&,Anki::Cozmo::Robot_const&)>::function
+0060F5EE: mov          r0, sl
+0060F5F0: mov          r1, sb
+0060F5F2: mov          r2, r6
+0060F5F4: blx          #0x4b6fb4 ; Anki::Cozmo::ReactionTriggerStrategyGeneric::ConfigureRelevantEvents
+0060F5F8: ldr          r0, [sp, #0x20]
+0060F5FA: cmp          r6, r0
+0060F5FC: beq          #0x60f606
+0060F5FE: cbz          r0, #0x60f60c
+0060F600: ldr          r1, [r0]
+0060F602: ldr          r1, [r1, #0x14]
+0060F604: b            #0x60f60a
+0060F606: ldr          r1, [r0]
+0060F608: ldr          r1, [r1, #0x10]
+0060F60A: blx          r1
+0060F60C: ldr          r0, [pc, #0x6c] ; word[0060F67C]=00A2F238
+0060F60E: ldr          r1, [sp, #0x2c]
+0060F610: add          r0, pc
+0060F612: ldr          r0, [r0]
+0060F614: ldr          r0, [r0]
+0060F616: subs         r0, r0, r1
+0060F618: itt          eq
+0060F61A: addeq        sp, #0x30
+0060F61C: popeq.w      {r4, r5, r6, r7, r8, sb, sl, pc}
+0060F620: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x0060F680..0x0060F722 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric23ConfigureRelevantEventsERKNSt6__ndk13setINS0_17ExternalInterface22MessageEngineToGameTagENS2_4lessIS5_EENS2_9allocatorIS5_EEEENS2_8functionIFbRKNS0_9AnkiEventINS4_19MessageEngineToGameEEERKNS0_5RobotEEEE
+0060F680: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0060F684: sub          sp, #0x2c
+0060F686: mov          r6, r1
+0060F688: ldr          r1, [pc, #0xc0] ; word[0060F74C]=00A2F1BC
+0060F68A: mov          sb, r2
+0060F68C: add          r1, pc
+0060F68E: ldr          r1, [r1]
+0060F690: ldr          r1, [r1]
+0060F692: str          r1, [sp, #0x28]
+0060F694: ldr.w        r8, [r0, #4]
+0060F698: movs         r0, #0
+0060F69A: strd         r0, r0, [sp, #8]
+0060F69E: add          r0, sp, #4
+0060F6A0: adds         r7, r0, #4
+0060F6A2: str          r7, [sp, #4]
+0060F6A4: ldr          r5, [r6], #4
+0060F6A8: cmp          r5, r6
+0060F6AA: beq          #0x60f6da
+0060F6AC: add          r4, sp, #4
+0060F6AE: add.w        r2, r5, #0xe
+0060F6B2: mov          r0, r4
+0060F6B4: mov          r1, r7
+0060F6B6: mov          r3, r2
+0060F6B8: blx          #0x4b2ebc ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::__emplace_hint_unique_key_args<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,Anki::Cozmo::ExternalInterface::MessageEngineToGameTag_const&>
+0060F6BC: ldr          r0, [r5, #4]
+0060F6BE: cbz          r0, #0x60f6ca
+0060F6C0: mov          r5, r0
+0060F6C2: ldr          r0, [r5]
+0060F6C4: cmp          r0, #0
+0060F6C6: bne          #0x60f6c0
+0060F6C8: b            #0x60f6d6
+0060F6CA: mov          r0, r5
+0060F6CC: ldr          r5, [r0, #8]
+0060F6CE: ldr          r1, [r5]
+0060F6D0: cmp          r1, r0
+0060F6D2: mov          r0, r5
+0060F6D4: bne          #0x60f6cc
+0060F6D6: cmp          r5, r6
+0060F6D8: bne          #0x60f6ae
+0060F6DA: add          r0, sp, #0x10
+0060F6DC: mov          r1, sb
+0060F6DE: blx          #0x4b71a0 ; std::__ndk1::function<bool(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageEngineToGame>const&,Anki::Cozmo::Robot_const&)>::function
+0060F6E2: add          r5, sp, #0x10
+0060F6E4: add          r1, sp, #4
+0060F6E6: mov          r0, r8
+0060F6E8: mov          r2, r5
+0060F6EA: blx          #0x4b71ac ; Anki::Cozmo::StrategyGeneric::ConfigureRelevantEvents
+0060F6EE: ldr          r0, [sp, #0x20]
+0060F6F0: cmp          r5, r0
+0060F6F2: beq          #0x60f6fc
+0060F6F4: cbz          r0, #0x60f702
+0060F6F6: ldr          r1, [r0]
+0060F6F8: ldr          r1, [r1, #0x14]
+0060F6FA: b            #0x60f700
+0060F6FC: ldr          r1, [r0]
+0060F6FE: ldr          r1, [r1, #0x10]
+0060F700: blx          r1
+0060F702: ldr          r1, [sp, #8]
+0060F704: add          r0, sp, #4
+0060F706: blx          #0x4b2ed4 ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageEngineToGameTag>>::destroy
+0060F70A: ldr          r0, [pc, #0x44] ; word[0060F750]=00A2F13A
+0060F70C: ldr          r1, [sp, #0x28]
+0060F70E: add          r0, pc
+0060F710: ldr          r0, [r0]
+0060F712: ldr          r0, [r0]
+0060F714: subs         r0, r0, r1
+0060F716: itt          eq
+0060F718: addeq        sp, #0x2c
+0060F71A: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+0060F71E: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x0060F780..0x0060F822 exclusive; Thumb; _ZN4Anki5Cozmo30ReactionTriggerStrategyGeneric23ConfigureRelevantEventsERKNSt6__ndk13setINS0_17ExternalInterface22MessageGameToEngineTagENS2_4lessIS5_EENS2_9allocatorIS5_EEEENS2_8functionIFbRKNS0_9AnkiEventINS4_19MessageGameToEngineEEERKNS0_5RobotEEEE
+0060F780: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0060F784: sub          sp, #0x2c
+0060F786: mov          r6, r1
+0060F788: ldr          r1, [pc, #0xc0] ; word[0060F84C]=00A2F0BC
+0060F78A: mov          sb, r2
+0060F78C: add          r1, pc
+0060F78E: ldr          r1, [r1]
+0060F790: ldr          r1, [r1]
+0060F792: str          r1, [sp, #0x28]
+0060F794: ldr.w        r8, [r0, #4]
+0060F798: movs         r0, #0
+0060F79A: strd         r0, r0, [sp, #8]
+0060F79E: add          r0, sp, #4
+0060F7A0: adds         r7, r0, #4
+0060F7A2: str          r7, [sp, #4]
+0060F7A4: ldr          r5, [r6], #4
+0060F7A8: cmp          r5, r6
+0060F7AA: beq          #0x60f7da
+0060F7AC: add          r4, sp, #4
+0060F7AE: add.w        r2, r5, #0xe
+0060F7B2: mov          r0, r4
+0060F7B4: mov          r1, r7
+0060F7B6: mov          r3, r2
+0060F7B8: blx          #0x4b3e04 ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag>>::__emplace_hint_unique_key_args<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag,Anki::Cozmo::ExternalInterface::MessageGameToEngineTag_const&>
+0060F7BC: ldr          r0, [r5, #4]
+0060F7BE: cbz          r0, #0x60f7ca
+0060F7C0: mov          r5, r0
+0060F7C2: ldr          r0, [r5]
+0060F7C4: cmp          r0, #0
+0060F7C6: bne          #0x60f7c0
+0060F7C8: b            #0x60f7d6
+0060F7CA: mov          r0, r5
+0060F7CC: ldr          r5, [r0, #8]
+0060F7CE: ldr          r1, [r5]
+0060F7D0: cmp          r1, r0
+0060F7D2: mov          r0, r5
+0060F7D4: bne          #0x60f7cc
+0060F7D6: cmp          r5, r6
+0060F7D8: bne          #0x60f7ae
+0060F7DA: add          r0, sp, #0x10
+0060F7DC: mov          r1, sb
+0060F7DE: blx          #0x4b71b8 ; std::__ndk1::function<bool(Anki::Cozmo::AnkiEvent<Anki::Cozmo::ExternalInterface::MessageGameToEngine>const&,Anki::Cozmo::Robot_const&)>::function
+0060F7E2: add          r5, sp, #0x10
+0060F7E4: add          r1, sp, #4
+0060F7E6: mov          r0, r8
+0060F7E8: mov          r2, r5
+0060F7EA: blx          #0x4b71c4 ; Anki::Cozmo::StrategyGeneric::ConfigureRelevantEvents
+0060F7EE: ldr          r0, [sp, #0x20]
+0060F7F0: cmp          r5, r0
+0060F7F2: beq          #0x60f7fc
+0060F7F4: cbz          r0, #0x60f802
+0060F7F6: ldr          r1, [r0]
+0060F7F8: ldr          r1, [r1, #0x14]
+0060F7FA: b            #0x60f800
+0060F7FC: ldr          r1, [r0]
+0060F7FE: ldr          r1, [r1, #0x10]
+0060F800: blx          r1
+0060F802: ldr          r1, [sp, #8]
+0060F804: add          r0, sp, #4
+0060F806: blx          #0x4b3e1c ; std::__ndk1::__tree<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag,std::__ndk1::less<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag>,std::__ndk1::allocator<Anki::Cozmo::ExternalInterface::MessageGameToEngineTag>>::destroy
+0060F80A: ldr          r0, [pc, #0x44] ; word[0060F850]=00A2F03A
+0060F80C: ldr          r1, [sp, #0x28]
+0060F80E: add          r0, pc
+0060F810: ldr          r0, [r0]
+0060F812: ldr          r0, [r0]
+0060F814: subs         r0, r0, r1
+0060F816: itt          eq
+0060F818: addeq        sp, #0x2c
+0060F81A: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+0060F81E: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x0060DF7A..0x0060DF86 exclusive; Thumb;
+0060DF7A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060DF7E: ldrb.w       r0, [r1, #0x355]
+0060DF82: subs         r0, #3
+0060DF84: uxtb         r1, r0

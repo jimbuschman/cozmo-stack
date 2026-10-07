@@ -1,0 +1,111 @@
+0x1048bfc 0x698740 _ZN4Anki5Cozmo12NeedsManager28SendStarLevelCompletedToGameEv
+RANGE 0x00698740..0x00698848 exclusive; Thumb; _ZN4Anki5Cozmo12NeedsManager28SendStarLevelCompletedToGameEv
+00698740: push         {r4, r5, r6, r7, lr}
+00698742: sub          sp, #0x13c
+00698744: mov          r4, r0
+00698746: ldr          r0, [pc, #0x154] ; word[0069889C]=009A6100
+00698748: add          r0, pc
+0069874A: ldr          r0, [r0]
+0069874C: ldr          r0, [r0]
+0069874E: str          r0, [sp, #0x138]
+00698750: movs         r0, #0
+00698752: strd         r0, r0, [sp, #0x24]
+00698756: str          r0, [sp, #0x2c]
+00698758: ldr          r1, [r4, #0x54]
+0069875A: ldr.w        r0, [r4, #0x1a8]
+0069875E: blx          #0x4bdc68 ; Anki::Cozmo::StarRewardsConfig::GetLevelOrLastLevel
+00698762: ldr          r0, [r0, #0x14]
+00698764: str          r0, [sp, #0x20]
+00698766: ldr          r1, [r4, #0x54]
+00698768: cmp          r1, #1
+0069876A: it           ge
+0069876C: cmpge        r0, #1
+0069876E: blt          #0x698792
+00698770: add          r7, sp, #0x20
+00698772: add          r6, sp, #0x24
+00698774: movs         r5, #0
+00698776: mov          r0, r4
+00698778: mov          r1, r5
+0069877A: mov          r2, r6
+0069877C: movs         r3, #1
+0069877E: str          r7, [sp]
+00698780: blx          #0x4bdd10 ; Anki::Cozmo::NeedsManager::ProcessLevelRewards
+00698784: ldr          r1, [r4, #0x54]
+00698786: adds         r5, #1
+00698788: cmp          r5, r1
+0069878A: bge          #0x698792
+0069878C: ldr          r0, [sp, #0x20]
+0069878E: cmp          r0, #1
+00698790: bge          #0x698776
+00698792: movs         r0, #0
+00698794: add          r2, sp, #0x24
+00698796: str          r0, [sp]
+00698798: mov          r0, r4
+0069879A: movs         r3, #0
+0069879C: blx          #0x4bdd10 ; Anki::Cozmo::NeedsManager::ProcessLevelRewards
+006987A0: ldr          r1, [r4, #0x54]
+006987A2: add.w        r0, r4, #8
+006987A6: adds         r1, #1
+006987A8: blx          #0x4bdd1c ; Anki::Cozmo::NeedsState::SetStarLevel
+006987AC: ldr          r0, [r4, #0x54]
+006987AE: ldr          r1, [r4, #0x5c]
+006987B0: strd         r0, r1, [sp, #0xc]
+006987B4: add          r0, sp, #0xc
+006987B6: add          r1, sp, #0x24
+006987B8: adds         r0, #8
+006987BA: blx          #0x4bd620 ; std::__ndk1::vector<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::vector
+006987BE: ldr          r0, [r4]
+006987C0: ldr          r6, [r0, #4]
+006987C2: ldr          r0, [r6]
+006987C4: ldr          r7, [r0, #0x1c]
+006987C6: add          r5, sp, #0xc
+006987C8: add          r0, sp, #0x30
+006987CA: mov          r1, r5
+006987CC: blx          #0x4bdd28 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame
+006987D0: add          r1, sp, #0x30
+006987D2: mov          r0, r6
+006987D4: blx          r7
+006987D6: add          r0, sp, #0x30
+006987D8: blx          #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent
+006987DC: ldr          r0, [pc, #0xc0] ; word[006988A0]=009A72A8
+006987DE: movs         r1, #0
+006987E0: add.w        r3, r4, #0x54
+006987E4: add          r0, pc
+006987E6: ldr          r0, [r0]
+006987E8: ldr          r0, [r0]
+006987EA: strd         r1, r1, [sp, #0x30]
+006987EE: str          r1, [sp, #0x38]
+006987F0: ldm          r3, {r1, r2, r3}
+006987F2: strd         r1, r3, [sp]
+006987F6: adr          r1, #0xac
+006987F8: str          r2, [sp, #8]
+006987FA: add          r2, sp, #0x30
+006987FC: adr          r3, #0xd0
+006987FE: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00698802: ldr          r0, [sp, #0x30]
+00698804: cbz          r0, #0x698824
+00698806: ldr          r1, [sp, #0x34]
+00698808: cmp          r1, r0
+0069880A: itttt        ne
+0069880C: subne.w      r2, r1, #8
+00698810: subne        r2, r2, r0
+00698812: mvnne        r3, #7
+00698816: bicne.w      r2, r3, r2
+0069881A: itt          ne
+0069881C: addne        r1, r1, r2
+0069881E: strne        r1, [sp, #0x34]
+00698820: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00698824: add.w        r0, r5, #8
+00698828: blx          #0x4bd5fc ; std::__ndk1::__vector_base<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::~__vector_base
+0069882C: add          r0, sp, #0x24
+0069882E: blx          #0x4bd5fc ; std::__ndk1::__vector_base<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::~__vector_base
+00698832: ldr          r0, [pc, #0xd4] ; word[00698908]=009A6012
+00698834: ldr          r1, [sp, #0x138]
+00698836: add          r0, pc
+00698838: ldr          r0, [r0]
+0069883A: ldr          r0, [r0]
+0069883C: subs         r0, r0, r1
+0069883E: itt          eq
+00698840: addeq        sp, #0x13c
+00698842: popeq        {r4, r5, r6, r7, pc}
+00698844: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

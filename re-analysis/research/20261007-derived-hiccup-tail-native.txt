@@ -1,0 +1,189 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x006102B8..0x0061035E exclusive; Thumb; _ZN4Anki5Cozmo29ReactionTriggerStrategyHiccup12SendDasEventEb
+006102B8: push         {r4, r5, r7, lr}
+006102BA: sub          sp, #0x28
+006102BC: mov          r4, r1
+006102BE: mov          r5, r0
+006102C0: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+006102C4: blx          #0x4a7b58 ; Anki::BaseStationTimer::GetCurrentTimeStamp
+006102C8: ldr          r1, [r5, #0x54]
+006102CA: add          r5, sp, #4
+006102CC: cmp          r1, #0
+006102CE: it           ne
+006102D0: subne        r1, r0, r1
+006102D2: mov          r0, r5
+006102D4: blx          #0x4a5c74 ; <EXTERNAL>::std::__ndk1::to_string
+006102D8: ldrb.w       r2, [sp, #4]
+006102DC: adr          r1, #0xb8
+006102DE: ldr          r0, [sp, #0xc]
+006102E0: str          r1, [sp, #0x10]
+006102E2: tst.w        r2, #1
+006102E6: it           eq
+006102E8: orreq        r0, r5, #1
+006102EC: str          r0, [sp, #0x14]
+006102EE: movs         r0, #0
+006102F0: str          r0, [sp, #0x24]
+006102F2: strd         r0, r0, [sp, #0x1c]
+006102F6: movs         r0, #8
+006102F8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+006102FC: ldr          r2, [sp, #0x14]
+006102FE: add.w        r3, r0, #8
+00610302: ldr          r1, [sp, #0x10]
+00610304: cmp          r4, #0
+00610306: str          r0, [sp, #0x1c]
+00610308: str          r0, [sp, #0x20]
+0061030A: str          r3, [sp, #0x24]
+0061030C: adr          r3, #0x9c
+0061030E: strd         r1, r2, [r0]
+00610312: ldr          r0, [sp, #0x20]
+00610314: add.w        r0, r0, #8
+00610318: str          r0, [sp, #0x20]
+0061031A: adr          r0, #0x84
+0061031C: it           eq
+0061031E: moveq        r3, r0
+00610320: adr          r0, #0x98
+00610322: add          r1, sp, #0x1c
+00610324: adr          r2, #0xa8
+00610326: blx          #0x4a4f90 ; Anki::Util::sEventF
+0061032A: ldr          r0, [sp, #0x1c]
+0061032C: cbz          r0, #0x61034c
+0061032E: ldr          r1, [sp, #0x20]
+00610330: cmp          r1, r0
+00610332: itttt        ne
+00610334: subne.w      r2, r1, #8
+00610338: subne        r2, r2, r0
+0061033A: mvnne        r3, #7
+0061033E: bicne.w      r2, r3, r2
+00610342: itt          ne
+00610344: addne        r1, r1, r2
+00610346: strne        r1, [sp, #0x20]
+00610348: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061034C: ldrb.w       r0, [sp, #4]
+00610350: lsls         r0, r0, #0x1f
+00610352: itt          ne
+00610354: ldrne        r0, [sp, #0xc]
+00610356: blxne        #0x4a40cc
+0061035A: add          sp, #0x28
+0061035C: pop          {r4, r5, r7, pc}
+RANGE 0x006103E2..0x00610458 exclusive; Thumb; _ZN4Anki5Cozmo29ReactionTriggerStrategyHiccup25SetupForceTriggerBehaviorERKNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+006103E2: push.w       {r4, r5, r6, r7, r8, lr}
+006103E6: sub          sp, #0x18
+006103E8: mov          r6, r0
+006103EA: movs         r0, #0
+006103EC: mov          r5, r2
+006103EE: strd         r0, r0, [sp, #0x10]
+006103F2: mov          r8, r1
+006103F4: ldr          r1, [r5]
+006103F6: ldr.w        r0, [r8, #0x44]
+006103FA: ldrb.w       r1, [r1, #0x3c]
+006103FE: add          r3, sp, #0x10
+00610400: movs         r2, #0x29
+00610402: blx          #0x4b726c ; Anki::Cozmo::BehaviorManager::FindBehaviorByIDAndDowncast<Anki::Cozmo::BehaviorPlayAnimSequence>
+00610406: ldr          r4, [sp, #0x10]
+00610408: add          r7, sp, #4
+0061040A: mov          r1, r6
+0061040C: mov          r0, r7
+0061040E: blx          #0x4b7278 ; Anki::Cozmo::ReactionTriggerStrategyHiccup::GetHiccupAnim
+00610412: add.w        r0, r4, #0x11c
+00610416: cmp          r0, r7
+00610418: beq          #0x610422
+0061041A: ldrd         r1, r2, [sp, #4]
+0061041E: blx          #0x4b7284 ; std::__ndk1::vector<Anki::Cozmo::AnimationTrigger,std::__ndk1::allocator<Anki::Cozmo::AnimationTrigger>>::assign<Anki::Cozmo::AnimationTrigger*>
+00610422: ldr          r0, [sp, #4]
+00610424: cbz          r0, #0x610442
+00610426: ldr          r1, [sp, #8]
+00610428: cmp          r1, r0
+0061042A: itttt        ne
+0061042C: subne        r2, r1, #4
+0061042E: subne        r2, r2, r0
+00610430: mvnne        r3, #3
+00610434: bicne.w      r2, r3, r2
+00610438: itt          ne
+0061043A: addne        r1, r1, r2
+0061043C: strne        r1, [sp, #8]
+0061043E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00610442: ldr          r0, [r5]
+00610444: mov          r1, r8
+00610446: blx          #0x4b0f54 ; Anki::Cozmo::IBehavior::IsRunnable
+0061044A: ldr          r0, [sp, #0x14]
+0061044C: cbz          r0, #0x610452
+0061044E: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00610452: add          sp, #0x18
+00610454: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x0061062C..0x00610668 exclusive; Thumb; _ZNK4Anki5Cozmo29ReactionTriggerStrategyHiccup13GetHiccupAnimEv
+0061062C: push         {r4, r5, r7, lr}
+0061062E: mov          r4, r0
+00610630: movs         r0, #0
+00610632: ldrd         r2, r1, [r1, #0x30]
+00610636: strd         r0, r0, [r4]
+0061063A: str          r0, [r4, #8]
+0061063C: subs         r0, r1, #1
+0061063E: cmp          r2, r0
+00610640: bne          #0x61064c
+00610642: movs         r0, #4
+00610644: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00610648: movs         r1, #0xe2
+0061064A: b            #0x610654
+0061064C: movs         r0, #4
+0061064E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00610652: movs         r1, #0xe1
+00610654: strd         r0, r0, [r4]
+00610658: adds         r2, r0, #4
+0061065A: str          r2, [r4, #8]
+0061065C: str          r1, [r0]
+0061065E: ldr          r0, [r4, #4]
+00610660: adds         r0, #4
+00610662: str          r0, [r4, #4]
+00610664: pop          {r4, r5, r7, pc}
+00610666: b            #0x610668
+RANGE 0x00610882..0x006108A8 exclusive; Thumb;
+00610882: beq.w        #0x610704
+00610886: ldr          r1, [sp, #0x14]
+00610888: cmp          r1, r0
+0061088A: itttt        ne
+0061088C: subne.w      r2, r1, #8
+00610890: subne        r2, r2, r0
+00610892: mvnne        r3, #7
+00610896: bicne.w      r2, r3, r2
+0061089A: itt          ne
+0061089C: addne        r1, r1, r2
+0061089E: strne        r1, [sp, #0x14]
+006108A0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+006108A4: b            #0x610704
+RANGE 0x0061098C..0x006109C8 exclusive; Thumb; _ZN4Anki5Cozmo29ReactionTriggerStrategyHiccup11CureHiccupsEb
+0061098C: push         {r4, r5, r7, lr}
+0061098E: mov          r5, r1
+00610990: mov          r4, r0
+00610992: blx          #0x4b7254 ; Anki::Cozmo::ReactionTriggerStrategyHiccup::SendDasEvent
+00610996: mov          r0, r4
+00610998: blx          #0x4b723c ; Anki::Cozmo::ReactionTriggerStrategyHiccup::ResetHiccups
+0061099C: movs         r0, #3
+0061099E: cmp          r5, #1
+006109A0: str          r0, [r4, #0x40]
+006109A2: bne          #0x6109bc
+006109A4: ldr          r0, [r4, #0x2c]
+006109A6: movs         r2, #2
+006109A8: ldr          r1, [r4, #0x70]
+006109AA: str          r2, [r4, #0x40]
+006109AC: add          r0, r1
+006109AE: str          r0, [r4, #0x2c]
+006109B0: mov          r0, r4
+006109B2: movs         r1, #0x19
+006109B4: pop.w        {r4, r5, r7, lr}
+006109B8: b.w          #0x8cc98c
+006109BC: mov          r0, r4
+006109BE: movs         r1, #0x18
+006109C0: pop.w        {r4, r5, r7, lr}
+006109C4: b.w          #0x8cc98c
+0060EE48: bytes=b'maxConfidence'
+006100FC: bytes=b'\xd6\xef'
+00610120: bytes=b'maxHiccupOccurrenceFrequency_s'
+00610140: bytes=b'minNumberOfHiccupsToDo'
+00610158: bytes=b'maxNumberOfHiccupsToDo'
+00610170: bytes=b'minHiccupSpacing_ms'
+00BF7D8C: bytes=b'xHiccupSpacing_ms'
+00BF7D9C: bytes=b's'
+00C76810: raw=00350001 relocated=00350001
+00C76814: raw=000000A4 relocated=000000A4
+00C76818: raw=000000E3 relocated=000000E3
+00C7681C: raw=000000E7 relocated=000000E7

@@ -1,0 +1,100 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005DFEDC..0x005DFFC4 exclusive; Thumb; _ZN4Anki5Cozmo32BehaviorExploreBringCubeToBeacon12TryToPlaceAtERNS0_5RobotERKNS_6Pose3dEi
+005DFEDC: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005DFEE0: sub          sp, #0x5c
+005DFEE2: mov          r8, r0
+005DFEE4: ldr          r0, [pc, #0x130] ; word[005E0018]=00A5E95E
+005DFEE6: mov          r7, r3
+005DFEE8: mov          r4, r2
+005DFEEA: add          r0, pc
+005DFEEC: mov          r6, r1
+005DFEEE: ldr          r0, [r0]
+005DFEF0: ldr          r0, [r0]
+005DFEF2: str          r0, [sp, #0x58]
+005DFEF4: movs         r0, #0xb4
+005DFEF6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005DFEFA: mov          sb, r0
+005DFEFC: movs         r0, #0
+005DFEFE: movs         r1, #1
+005DFF00: movs         r5, #0
+005DFF02: movt         r0, #0x4120
+005DFF06: strd         r5, r1, [sp]
+005DFF0A: mov          r1, r6
+005DFF0C: str          r0, [sp, #8]
+005DFF0E: mov          r0, sb
+005DFF10: mov          r2, r4
+005DFF12: movs         r3, #0
+005DFF14: blx          #0x4a9400 ; Anki::Cozmo::PlaceObjectOnGroundAtPoseAction::PlaceObjectOnGroundAtPoseAction
+005DFF18: add          r0, sp, #0x10
+005DFF1A: strd         r8, r6, [sp, #0x10]
+005DFF1E: add.w        r6, r0, #8
+005DFF22: mov          r1, r4
+005DFF24: mov          r0, r6
+005DFF26: blx          #0x4a418c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::PoseBase
+005DFF2A: ldr          r0, [pc, #0xf0] ; word[005E001C]=00A5E862
+005DFF2C: str          r7, [sp, #0x24]
+005DFF2E: add          r0, pc
+005DFF30: str          r5, [sp, #0x50]
+005DFF32: ldr          r0, [r0]
+005DFF34: adds         r0, #8
+005DFF36: str          r0, [sp, #0x18]
+005DFF38: movs         r0, #0x1c
+005DFF3A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005DFF3E: mov          r7, r0
+005DFF40: ldr          r0, [pc, #0xdc] ; word[005E0020]=00A49756
+005DFF42: ldrd         r1, r2, [sp, #0x10]
+005DFF46: add          r0, pc
+005DFF48: adds         r0, #8
+005DFF4A: stm.w        r7, {r0, r1, r2}
+005DFF4E: add.w        r0, r7, #0xc
+005DFF52: mov          r1, r6
+005DFF54: blx          #0x4a418c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::PoseBase
+005DFF58: ldr          r0, [pc, #0xc8] ; word[005E0024]=00A5E834
+005DFF5A: str          r7, [sp, #0x50]
+005DFF5C: add          r0, pc
+005DFF5E: ldr          r0, [r0]
+005DFF60: adds         r0, #8
+005DFF62: str          r0, [r7, #0xc]
+005DFF64: ldr          r0, [sp, #0x24]
+005DFF66: str          r0, [r7, #0x18]
+005DFF68: mov          r0, r6
+005DFF6A: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005DFF6E: add          r6, sp, #0x40
+005DFF70: add          r0, sp, #0x28
+005DFF72: mov          r1, r6
+005DFF74: blx          #0x4aa990 ; std::__ndk1::function<void(Anki::Cozmo::ExternalInterface::RobotCompletedAction_const&)>::function
+005DFF78: add          r7, sp, #0x28
+005DFF7A: mov          r0, r8
+005DFF7C: mov          r1, sb
+005DFF7E: mov          r2, r7
+005DFF80: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+005DFF84: ldr          r0, [sp, #0x38]
+005DFF86: cmp          r7, r0
+005DFF88: beq          #0x5dff92
+005DFF8A: cbz          r0, #0x5dff98
+005DFF8C: ldr          r1, [r0]
+005DFF8E: ldr          r1, [r1, #0x14]
+005DFF90: b            #0x5dff96
+005DFF92: ldr          r1, [r0]
+005DFF94: ldr          r1, [r1, #0x10]
+005DFF96: blx          r1
+005DFF98: ldr          r0, [sp, #0x50]
+005DFF9A: cmp          r6, r0
+005DFF9C: beq          #0x5dffa6
+005DFF9E: cbz          r0, #0x5dffac
+005DFFA0: ldr          r1, [r0]
+005DFFA2: ldr          r1, [r1, #0x14]
+005DFFA4: b            #0x5dffaa
+005DFFA6: ldr          r1, [r0]
+005DFFA8: ldr          r1, [r1, #0x10]
+005DFFAA: blx          r1
+005DFFAC: ldr          r0, [pc, #0x78] ; word[005E0028]=00A5E898
+005DFFAE: ldr          r1, [sp, #0x58]
+005DFFB0: add          r0, pc
+005DFFB2: ldr          r0, [r0]
+005DFFB4: ldr          r0, [r0]
+005DFFB6: subs         r0, r0, r1
+005DFFB8: itt          eq
+005DFFBA: addeq        sp, #0x5c
+005DFFBC: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+005DFFC0: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

@@ -1,0 +1,949 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0056B6B0..0x0056B8F4 exclusive; Thumb; _ZN4Anki5Cozmo12AIWhiteboard14SetFailedToUseERKNS0_16ObservableObjectENS1_19ObjectActionFailureE
+0056B6B0: push         {r4, r5, r6, lr}
+0056B6B2: mov          r5, r1
+0056B6B4: mov          r6, r0
+0056B6B6: mov          r0, r5
+0056B6B8: mov          r4, r2
+0056B6BA: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+0056B6BE: mov          r3, r0
+0056B6C0: mov          r0, r6
+0056B6C2: mov          r1, r5
+0056B6C4: mov          r2, r4
+0056B6C6: pop.w        {r4, r5, r6, lr}
+0056B6CA: b.w          #0x8cb71c
+0056B6CE: movs         r0, r0
+0056B6D0: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0056B6D4: sub          sp, #4
+0056B6D6: vpush        {d8, d9}
+0056B6DA: sub          sp, #0x48
+0056B6DC: mov          r6, r2
+0056B6DE: mov          sb, r1
+0056B6E0: mov          r1, r6
+0056B6E2: mov          r4, r3
+0056B6E4: blx          #0x4acb8c ; Anki::Cozmo::AIWhiteboard::GetObjectFailureTable
+0056B6E8: mov          r1, r0
+0056B6EA: ldr.w        r0, [sb, #0x18]
+0056B6EE: ldr          r3, [pc, #0x1b0] ; word[0056B8A0]=006EC752
+0056B6F0: add          r2, sp, #0x3c
+0056B6F2: str          r0, [sp, #0x3c]
+0056B6F4: add          r0, sp, #0x40
+0056B6F6: add          r3, pc
+0056B6F8: str          r2, [sp, #0x44]
+0056B6FA: add          r7, sp, #0x44
+0056B6FC: strd         r7, r0, [sp]
+0056B700: add          r0, sp, #0x30
+0056B702: blx          #0x4acb98 ; std::__ndk1::__tree<std::__ndk1::__value_type<int,std::__ndk1::list<Anki::Cozmo::AIWhiteboard::FailureInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::FailureInfo>>>,std::__ndk1::__map_value_compare<int,std::__ndk1::__value_type<int,std::__ndk1::list<Anki::Cozmo::AIWhiteboard::FailureInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::FailureInfo>>>,std::__ndk1::less<int>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<int,std::__ndk1::list<Anki::Cozmo::AIWhiteboard::FailureInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::FailureInfo>>>>>::__emplace_unique_key_args<int,std::__ndk1::piecewise_construct_t_const&,std::__ndk1::tuple<int&&>,std::__ndk1::tuple<>>
+0056B706: ldr          r5, [sp, #0x30]
+0056B708: cmp          r6, #3
+0056B70A: itte         ls
+0056B70C: adrls        r0, #0x194
+0056B70E: ldrls.w      r7, [r0, r6, lsl #2]
+0056B712: movhi        r7, #0
+0056B714: add.w        r8, r5, #0x14
+0056B718: ldr          r0, [r5, #0x1c]
+0056B71A: cmp          r0, r7
+0056B71C: blo          #0x56b7c2
+0056B71E: movs         r0, #0
+0056B720: cmp          r6, #3
+0056B722: strd         r0, r0, [sp, #0x30]
+0056B726: str          r0, [sp, #0x38]
+0056B728: bhi          #0x56b734
+0056B72A: ldr          r0, [pc, #0x198] ; word[0056B8C4]=00AB7D14
+0056B72C: add          r0, pc
+0056B72E: ldr.w        sl, [r0, r6, lsl #2]
+0056B732: b            #0x56b738
+0056B734: addw         sl, pc, #0x17c
+0056B738: ldr.w        fp, [sb, #0x18]
+0056B73C: ldr          r0, [r5, #0x18]
+0056B73E: adds         r0, #8
+0056B740: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B744: vldr         s16, [r0, #0x20]
+0056B748: ldr          r0, [r5, #0x18]
+0056B74A: adds         r0, #8
+0056B74C: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B750: vldr         s18, [r0, #0x24]
+0056B754: ldr          r0, [r5, #0x18]
+0056B756: adds         r0, #8
+0056B758: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B75C: ldr          r1, [r5, #0x18]
+0056B75E: vcvt.f64.f32 d0, s16
+0056B762: ldr          r3, [pc, #0x164] ; word[0056B8C8]=00682A78
+0056B764: add          r3, pc
+0056B766: vldr         s2, [r0, #0x28]
+0056B76A: vldr         s4, [r1, #0x14]
+0056B76E: vcvt.f64.f32 d1, s2
+0056B772: vcvt.f64.f32 d3, s18
+0056B776: vcvt.f64.f32 d2, s4
+0056B77A: adr          r0, #0x150
+0056B77C: adr          r1, #0x15c
+0056B77E: add          r2, sp, #0x30
+0056B780: str          r7, [sp, #0x28]
+0056B782: vstr         d1, [sp, #0x18]
+0056B786: vstr         d3, [sp, #0x10]
+0056B78A: vstr         d0, [sp, #8]
+0056B78E: strd         sl, fp, [sp]
+0056B792: vstr         d2, [sp, #0x20]
+0056B796: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0056B79A: ldr          r0, [sp, #0x30]
+0056B79C: cbz          r0, #0x56b7bc
+0056B79E: ldr          r1, [sp, #0x34]
+0056B7A0: cmp          r1, r0
+0056B7A2: itttt        ne
+0056B7A4: subne.w      r2, r1, #8
+0056B7A8: subne        r2, r2, r0
+0056B7AA: mvnne        r3, #7
+0056B7AE: bicne.w      r2, r3, r2
+0056B7B2: itt          ne
+0056B7B4: addne        r1, r1, r2
+0056B7B6: strne        r1, [sp, #0x34]
+0056B7B8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0056B7BC: mov          r0, r8
+0056B7BE: blx          #0x4acba4 ; std::__ndk1::list<Anki::Cozmo::AIWhiteboard::FailureInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::FailureInfo>>::pop_front
+0056B7C2: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0056B7C6: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+0056B7CA: add          r2, sp, #0x44
+0056B7CC: str          r0, [sp, #0x44]
+0056B7CE: mov          r0, r8
+0056B7D0: mov          r1, r4
+0056B7D2: blx          #0x4acbb0 ; std::__ndk1::list<Anki::Cozmo::AIWhiteboard::FailureInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::FailureInfo>>::emplace_back<Anki::Pose3d_const&,float_const&>
+0056B7D6: movs         r0, #0
+0056B7D8: cmp          r6, #3
+0056B7DA: strd         r0, r0, [sp, #0x30]
+0056B7DE: str          r0, [sp, #0x38]
+0056B7E0: bhi          #0x56b7ec
+0056B7E2: ldr          r0, [pc, #0x108] ; word[0056B8EC]=00AB7C5C
+0056B7E4: add          r0, pc
+0056B7E6: ldr.w        r5, [r0, r6, lsl #2]
+0056B7EA: b            #0x56b7ee
+0056B7EC: adr          r5, #0xc4
+0056B7EE: ldr.w        r6, [sb, #0x18]
+0056B7F2: mov          r0, r4
+0056B7F4: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B7F8: vldr         s16, [r0, #0x20]
+0056B7FC: mov          r0, r4
+0056B7FE: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B802: vldr         s18, [r0, #0x24]
+0056B806: mov          r0, r4
+0056B808: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056B80C: vldr         s2, [sp, #0x44]
+0056B810: vldr         s4, [r0, #0x28]
+0056B814: ldr          r3, [pc, #0xd8] ; word[0056B8F0]=00682A34
+0056B816: vcvt.f64.f32 d0, s16
+0056B81A: add          r3, pc
+0056B81C: vcvt.f64.f32 d3, s18
+0056B820: vcvt.f64.f32 d1, s2
+0056B824: vcvt.f64.f32 d2, s4
+0056B828: adr          r0, #0xa0
+0056B82A: adr          r1, #0xb0
+0056B82C: add          r2, sp, #0x30
+0056B82E: vstr         d0, [sp, #8]
+0056B832: strd         r5, r6, [sp]
+0056B836: vstr         d3, [sp, #0x10]
+0056B83A: vstr         d1, [sp, #0x20]
+0056B83E: vstr         d2, [sp, #0x18]
+0056B842: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0056B846: ldr          r0, [sp, #0x30]
+0056B848: cbz          r0, #0x56b868
+0056B84A: ldr          r1, [sp, #0x34]
+0056B84C: cmp          r1, r0
+0056B84E: itttt        ne
+0056B850: subne.w      r2, r1, #8
+0056B854: subne        r2, r2, r0
+0056B856: mvnne        r3, #7
+0056B85A: bicne.w      r2, r3, r2
+0056B85E: itt          ne
+0056B860: addne        r1, r1, r2
+0056B862: strne        r1, [sp, #0x34]
+0056B864: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0056B868: add          sp, #0x48
+0056B86A: vpop         {d8, d9}
+0056B86E: add          sp, #4
+0056B870: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0056B874: b            #0x56b876
+0056B876: mov          r4, r0
+0056B878: ldr          r0, [sp, #0x30]
+0056B87A: cbz          r0, #0x56b898
+0056B87C: ldr          r1, [sp, #0x34]
+0056B87E: cmp          r1, r0
+0056B880: beq          #0x56b894
+0056B882: sub.w        r2, r1, #8
+0056B886: mvn          r3, #7
+0056B88A: subs         r2, r2, r0
+0056B88C: bic.w        r2, r3, r2
+0056B890: add          r1, r2
+0056B892: str          r1, [sp, #0x34]
+0056B894: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0056B898: mov          r0, r4
+0056B89A: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056B89E: nop
+0056B8A0: stm          r7!, {r1, r4, r6}
+0056B8A2: lsls         r6, r5, #1
+0056B8A4: movs         r1, r0
+0056B8A6: movs         r0, r0
+0056B8A8: movs         r1, r0
+0056B8AA: movs         r0, r0
+0056B8AC: movs         r2, r1
+0056B8AE: movs         r0, r0
+0056B8B0: movs         r1, r0
+0056B8B2: movs         r0, r0
+0056B8B4: ldr          r6, [pc, #0x154] ; word[0056BA0C]=1D01460C
+0056B8B6: cmp          r4, r8
+0056B8B8: ldr          r1, [pc, #0x118] ; word[0056B9D4]=4478616E
+0056B8BA: cmp          r6, sb
+0056B8BC: ldrsh        r4, [r0, r5]
+0056B8BE: strh         r5, [r0, r1]
+0056B8C0: ldr          r7, [pc, #0x148] ; word[0056BA0C]=1D01460C
+0056B8C2: lsls         r2, r2, #1
+0056B8C4: ldrb         r4, [r2, #0x14]
+0056B8C6: lsls         r3, r5, #2
+0056B8C8: cmp          r2, #0x78
+0056B8CA: lsls         r0, r5, #1
+0056B8CC: ldr          r1, [pc, #0x104] ; word[0056B9D4]=4478616E
+0056B8CE: ldr          r7, [r2, #4]
+0056B8D0: strb         r1, [r5, #0x11]
+0056B8D2: str          r5, [r4, #0x24]
+0056B8D4: str          r7, [r5, #0x14]
+0056B8D6: str          r2, [r6, #0x44]
+0056B8D8: movs         r0, r0
+0056B8DA: movs         r0, r0
+0056B8DC: str          r3, [r2, #0x54]
+0056B8DE: mov          r4, lr
+0056B8E0: ldr          r1, [r4, #0x14]
+0056B8E2: str          r4, [r5, #0x54]
+0056B8E4: strb         r4, [r4, r1]
+0056B8E6: strb         r7, [r5, r5]
+0056B8E8: str          r3, [r6, #0x54]
+0056B8EA: movs         r0, r0
+0056B8EC: ldrb         r4, [r3, #0x11]
+0056B8EE: lsls         r3, r5, #2
+0056B8F0: cmp          r2, #0x34
+0056B8F2: lsls         r0, r5, #1
+RANGE 0x0056B8F4..0x0056C11C exclusive; Thumb; _ZN4Anki5Cozmo12AIWhiteboard21GetObjectFailureTableENS1_19ObjectActionFailureE
+0056B8F4: push         {r4, lr}
+0056B8F6: cmp          r1, #3
+0056B8F8: bhi          #0x56b908
+0056B8FA: tbb          [pc, r1]
+0056B8FE: movs         r6, #2
+0056B900: cmp          r4, #0x29
+0056B902: add.w        r4, r0, #0x14
+0056B906: b            #0x56b966
+0056B908: ldr          r0, [pc, #0x60] ; word[0056B96C]=00AEF06E
+0056B90A: add          r0, pc
+0056B90C: ldrb         r0, [r0]
+0056B90E: dmb          ish
+0056B912: tst.w        r0, #1
+0056B916: bne          #0x56b95c
+0056B918: ldr          r0, [pc, #0x58] ; word[0056B974]=00AEF05E
+0056B91A: add          r0, pc
+0056B91C: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+0056B920: cbz          r0, #0x56b962
+0056B922: ldr          r4, [pc, #0x58] ; word[0056B97C]=00AEF044
+0056B924: movs         r1, #0
+0056B926: ldr          r0, [pc, #0x58] ; word[0056B980]=FFFFE9ED
+0056B928: add          r4, pc
+0056B92A: ldr          r2, [pc, #0x58] ; word[0056B984]=00AE56CE
+0056B92C: add          r0, pc
+0056B92E: add          r2, pc
+0056B930: mov          r3, r4
+0056B932: str          r1, [r4, #8]
+0056B934: str          r1, [r3, #4]!
+0056B938: mov          r1, r4
+0056B93A: str          r3, [r4]
+0056B93C: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+0056B940: ldr          r0, [pc, #0x44] ; word[0056B988]=00AEF036
+0056B942: add          r0, pc
+0056B944: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+0056B948: b            #0x56b966
+0056B94A: add.w        r4, r0, #0x20
+0056B94E: b            #0x56b966
+0056B950: add.w        r4, r0, #0x2c
+0056B954: b            #0x56b966
+0056B956: add.w        r4, r0, #0x38
+0056B95A: b            #0x56b966
+0056B95C: ldr          r4, [pc, #0x10] ; word[0056B970]=00AEF00E
+0056B95E: add          r4, pc
+0056B960: b            #0x56b966
+0056B962: ldr          r4, [pc, #0x14] ; word[0056B978]=00AEF008
+0056B964: add          r4, pc
+0056B966: mov          r0, r4
+0056B968: pop          {r4, pc}
+0056B96A: nop
+0056B96C: orn          r0, lr, #0xae
+0056B970: and          r0, lr, #0xae
+0056B974: orrs         r0, lr, #0xae
+0056B978: and          r0, r8, #0xae
+0056B97C: orr          r0, r4, #0xae
+0056B980: strd         pc, pc, [sp, #0x3fc]!
+0056B984: ldrsb        r6, [r1, r3]
+0056B986: lsls         r6, r5, #2
+0056B988: bics         r0, r6, #0xae
+0056B98C: push         {r4, lr}
+0056B98E: ldr          r4, [r0, #4]
+0056B990: ldrd         r1, r2, [r4]
+0056B994: str          r2, [r1, #4]
+0056B996: ldrd         r1, r2, [r4]
+0056B99A: str          r1, [r2]
+0056B99C: ldr          r1, [r0, #8]
+0056B99E: subs         r1, #1
+0056B9A0: str          r1, [r0, #8]
+0056B9A2: add.w        r0, r4, #8
+0056B9A6: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056B9AA: mov          r0, r4
+0056B9AC: pop.w        {r4, lr}
+0056B9B0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0056B9B4: push         {r4, r5, r6, r7, lr}
+0056B9B6: sub          sp, #4
+0056B9B8: mov          r4, r0
+0056B9BA: movs         r0, #0x18
+0056B9BC: mov          r6, r2
+0056B9BE: mov          r7, r1
+0056B9C0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0056B9C4: ldr          r6, [r6]
+0056B9C6: mov          r5, r0
+0056B9C8: add.w        r0, r5, #8
+0056B9CC: mov          r1, r7
+0056B9CE: blx          #0x4a418c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::PoseBase
+0056B9D2: ldr          r0, [pc, #0x2c] ; word[0056BA00]=00AD2DBA
+0056B9D4: str          r6, [r5, #0x14]
+0056B9D6: add          r0, pc
+0056B9D8: ldr          r1, [r4]
+0056B9DA: strd         r1, r4, [r5]
+0056B9DE: ldr          r0, [r0]
+0056B9E0: adds         r0, #8
+0056B9E2: str          r0, [r5, #8]
+0056B9E4: str          r5, [r1, #4]
+0056B9E6: ldr          r0, [r4, #8]
+0056B9E8: str          r5, [r4]
+0056B9EA: adds         r0, #1
+0056B9EC: str          r0, [r4, #8]
+0056B9EE: add          sp, #4
+0056B9F0: pop          {r4, r5, r6, r7, pc}
+0056B9F2: mov          r4, r0
+0056B9F4: mov          r0, r5
+0056B9F6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0056B9FA: mov          r0, r4
+0056B9FC: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BA00: cmp          r5, #0xba
+0056BA02: lsls         r5, r5, #2
+0056BA04: push         {r4, r5, r6, lr}
+0056BA06: sub          sp, #0x40
+0056BA08: mov          r5, r0
+0056BA0A: add          r0, sp, #0x34
+0056BA0C: mov          r4, r1
+0056BA0E: adds         r1, r0, #4
+0056BA10: movs         r6, #0
+0056BA12: str          r2, [sp, #0x30]
+0056BA14: strd         r6, r6, [sp, #0x38]
+0056BA18: str          r1, [sp, #0x34]
+0056BA1A: add          r2, sp, #0x30
+0056BA1C: mov          r3, r2
+0056BA1E: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BA22: ldr          r1, [pc, #0x8c] ; word[0056BAB0]=006784D6
+0056BA24: str          r6, [sp, #0x20]
+0056BA26: add          r1, pc
+0056BA28: strd         r6, r6, [sp, #0x18]
+0056BA2C: add          r0, sp, #0x18
+0056BA2E: movs         r2, #0
+0056BA30: bl           #0x4e02b2 ; FUN_004e02b2
+0056BA34: add          r6, sp, #0x24
+0056BA36: add          r1, sp, #0x18
+0056BA38: mov          r0, r6
+0056BA3A: blx          #0x4a40c0 ; Anki::Pose3d::Pose3d
+0056BA3E: add          r0, sp, #0x10
+0056BA40: blx          #0x4a5854 ; Anki::Radians::Radians
+0056BA44: movs         r3, #0
+0056BA46: add          r2, sp, #0x34
+0056BA48: movt         r3, #0xbf80
+0056BA4C: mov          r1, r4
+0056BA4E: strd         r6, r3, [sp]
+0056BA52: str          r0, [sp, #8]
+0056BA54: mov          r0, r5
+0056BA56: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BA5A: mov          r4, r0
+0056BA5C: add          r0, sp, #0x24
+0056BA5E: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BA62: ldrb.w       r0, [sp, #0x18]
+0056BA66: lsls         r0, r0, #0x1f
+0056BA68: itt          ne
+0056BA6A: ldrne        r0, [sp, #0x20]
+0056BA6C: blxne        #0x4a40cc
+0056BA70: ldr          r1, [sp, #0x38]
+0056BA72: add          r0, sp, #0x34
+0056BA74: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BA78: mov          r0, r4
+0056BA7A: add          sp, #0x40
+0056BA7C: pop          {r4, r5, r6, pc}
+0056BA7E: mov          r4, r0
+0056BA80: b            #0x56ba92
+0056BA82: mov          r4, r0
+0056BA84: b            #0x56baa0
+0056BA86: mov          r4, r0
+0056BA88: b            #0x56baa0
+0056BA8A: mov          r4, r0
+0056BA8C: add          r0, sp, #0x24
+0056BA8E: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BA92: ldrb.w       r0, [sp, #0x18]
+0056BA96: lsls         r0, r0, #0x1f
+0056BA98: itt          ne
+0056BA9A: ldrne        r0, [sp, #0x20]
+0056BA9C: blxne        #0x4a40cc
+0056BAA0: ldr          r1, [sp, #0x38]
+0056BAA2: add          r0, sp, #0x34
+0056BAA4: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BAA8: mov          r0, r4
+0056BAAA: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BAAE: nop
+0056BAB0: strh         r6, [r2, #0x26]
+0056BAB2: lsls         r7, r4, #1
+0056BAB4: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0056BAB8: vpush        {d8}
+0056BABC: sub          sp, #0x10
+0056BABE: mov          r5, r2
+0056BAC0: mov          sl, r3
+0056BAC2: ldr          r4, [r5], #4
+0056BAC6: mov          r6, r1
+0056BAC8: mov          r7, r0
+0056BACA: cmp          r4, r5
+0056BACC: beq          #0x56bb1a
+0056BACE: ldr.w        r8, [sp, #0x40]
+0056BAD2: ldr.w        sb, [sp, #0x38]
+0056BAD6: vldr         s16, [sp, #0x3c]
+0056BADA: ldr          r1, [r4, #0x10]
+0056BADC: mov          r0, r7
+0056BADE: blx          #0x4acbe0 ; Anki::Cozmo::AIWhiteboard::GetObjectFailureTable
+0056BAE2: mov          r1, r0
+0056BAE4: mov          r0, r7
+0056BAE6: mov          r2, r6
+0056BAE8: mov          r3, sl
+0056BAEA: str.w        r8, [sp, #8]
+0056BAEE: vstr         s16, [sp, #4]
+0056BAF2: str.w        sb, [sp]
+0056BAF6: blx          #0x4acbec ; Anki::Cozmo::AIWhiteboard::FindMatchingEntry
+0056BAFA: cbnz         r0, #0x56bb1e
+0056BAFC: ldr          r0, [r4, #4]
+0056BAFE: mov          r1, r4
+0056BB00: cbz          r0, #0x56bb0c
+0056BB02: mov          r4, r0
+0056BB04: ldr          r0, [r4]
+0056BB06: cmp          r0, #0
+0056BB08: bne          #0x56bb02
+0056BB0A: b            #0x56bb16
+0056BB0C: ldr          r4, [r1, #8]
+0056BB0E: ldr          r0, [r4]
+0056BB10: cmp          r0, r1
+0056BB12: mov          r1, r4
+0056BB14: bne          #0x56bb0c
+0056BB16: cmp          r4, r5
+0056BB18: bne          #0x56bada
+0056BB1A: movs         r0, #0
+0056BB1C: b            #0x56bb20
+0056BB1E: movs         r0, #1
+0056BB20: add          sp, #0x10
+0056BB22: vpop         {d8}
+0056BB26: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+0056BB2A: movs         r0, r0
+0056BB2C: push         {r4, r5, r6, r7, lr}
+0056BB2E: sub          sp, #0x44
+0056BB30: mov          r6, r0
+0056BB32: add          r0, sp, #0x38
+0056BB34: mov          r5, r1
+0056BB36: adds         r1, r0, #4
+0056BB38: mov          r4, r3
+0056BB3A: movs         r7, #0
+0056BB3C: str          r2, [sp, #0x34]
+0056BB3E: strd         r7, r7, [sp, #0x3c]
+0056BB42: str          r1, [sp, #0x38]
+0056BB44: add          r2, sp, #0x34
+0056BB46: mov          r3, r2
+0056BB48: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BB4C: ldr          r1, [pc, #0x8c] ; word[0056BBDC]=006783AC
+0056BB4E: str          r7, [sp, #0x20]
+0056BB50: add          r1, pc
+0056BB52: strd         r7, r7, [sp, #0x18]
+0056BB56: add          r0, sp, #0x18
+0056BB58: movs         r2, #0
+0056BB5A: bl           #0x4e02b2 ; FUN_004e02b2
+0056BB5E: add          r7, sp, #0x28
+0056BB60: add          r1, sp, #0x18
+0056BB62: mov          r0, r7
+0056BB64: blx          #0x4a40c0 ; Anki::Pose3d::Pose3d
+0056BB68: add          r0, sp, #0x10
+0056BB6A: blx          #0x4a5854 ; Anki::Radians::Radians
+0056BB6E: movs         r1, #0
+0056BB70: add          r2, sp, #0x38
+0056BB72: movt         r1, #0xbf80
+0056BB76: mov          r3, r4
+0056BB78: strd         r7, r1, [sp]
+0056BB7C: mov          r1, r5
+0056BB7E: str          r0, [sp, #8]
+0056BB80: mov          r0, r6
+0056BB82: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BB86: mov          r4, r0
+0056BB88: add          r0, sp, #0x28
+0056BB8A: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BB8E: ldrb.w       r0, [sp, #0x18]
+0056BB92: lsls         r0, r0, #0x1f
+0056BB94: itt          ne
+0056BB96: ldrne        r0, [sp, #0x20]
+0056BB98: blxne        #0x4a40cc
+0056BB9C: ldr          r1, [sp, #0x3c]
+0056BB9E: add          r0, sp, #0x38
+0056BBA0: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BBA4: mov          r0, r4
+0056BBA6: add          sp, #0x44
+0056BBA8: pop          {r4, r5, r6, r7, pc}
+0056BBAA: mov          r4, r0
+0056BBAC: b            #0x56bbbe
+0056BBAE: mov          r4, r0
+0056BBB0: b            #0x56bbcc
+0056BBB2: mov          r4, r0
+0056BBB4: b            #0x56bbcc
+0056BBB6: mov          r4, r0
+0056BBB8: add          r0, sp, #0x28
+0056BBBA: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BBBE: ldrb.w       r0, [sp, #0x18]
+0056BBC2: lsls         r0, r0, #0x1f
+0056BBC4: itt          ne
+0056BBC6: ldrne        r0, [sp, #0x20]
+0056BBC8: blxne        #0x4a40cc
+0056BBCC: ldr          r1, [sp, #0x3c]
+0056BBCE: add          r0, sp, #0x38
+0056BBD0: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BBD4: mov          r0, r4
+0056BBD6: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BBDA: nop
+0056BBDC: strh         r4, [r5, #0x1c]
+0056BBDE: lsls         r7, r4, #1
+0056BBE0: push         {r4, r5, r6, lr}
+0056BBE2: sub          sp, #0x20
+0056BBE4: mov          r5, r0
+0056BBE6: movs         r0, #0
+0056BBE8: str          r2, [sp, #0x10]
+0056BBEA: mov          r4, r1
+0056BBEC: strd         r0, r0, [sp, #0x18]
+0056BBF0: add          r0, sp, #0x14
+0056BBF2: adds         r1, r0, #4
+0056BBF4: mov          r6, r3
+0056BBF6: str          r1, [sp, #0x14]
+0056BBF8: add          r2, sp, #0x10
+0056BBFA: mov          r3, r2
+0056BBFC: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BC00: ldr          r0, [sp, #0x34]
+0056BC02: vldr         s0, [sp, #0x30]
+0056BC06: movs         r3, #0
+0056BC08: add          r2, sp, #0x14
+0056BC0A: str          r0, [sp, #8]
+0056BC0C: movt         r3, #0xbf80
+0056BC10: mov          r0, r5
+0056BC12: mov          r1, r4
+0056BC14: vstr         s0, [sp, #4]
+0056BC18: str          r6, [sp]
+0056BC1A: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BC1E: mov          r4, r0
+0056BC20: ldr          r1, [sp, #0x18]
+0056BC22: add          r0, sp, #0x14
+0056BC24: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BC28: mov          r0, r4
+0056BC2A: add          sp, #0x20
+0056BC2C: pop          {r4, r5, r6, pc}
+0056BC2E: b            #0x56bc30
+0056BC30: ldr          r1, [sp, #0x18]
+0056BC32: mov          r4, r0
+0056BC34: add          r0, sp, #0x14
+0056BC36: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BC3A: mov          r0, r4
+0056BC3C: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BC40: push         {r4, r5, r6, lr}
+0056BC42: sub          sp, #0x20
+0056BC44: mov          r6, r0
+0056BC46: movs         r0, #0
+0056BC48: str          r2, [sp, #0x10]
+0056BC4A: mov          r5, r1
+0056BC4C: strd         r0, r0, [sp, #0x18]
+0056BC50: add          r0, sp, #0x14
+0056BC52: adds         r1, r0, #4
+0056BC54: mov          r4, r3
+0056BC56: str          r1, [sp, #0x14]
+0056BC58: add          r2, sp, #0x10
+0056BC5A: mov          r3, r2
+0056BC5C: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BC60: ldr          r0, [sp, #0x38]
+0056BC62: ldr          r1, [sp, #0x30]
+0056BC64: vldr         s0, [sp, #0x34]
+0056BC68: add          r2, sp, #0x14
+0056BC6A: str          r0, [sp, #8]
+0056BC6C: vstr         s0, [sp, #4]
+0056BC70: mov          r0, r6
+0056BC72: str          r1, [sp]
+0056BC74: mov          r1, r5
+0056BC76: mov          r3, r4
+0056BC78: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BC7C: mov          r4, r0
+0056BC7E: ldr          r1, [sp, #0x18]
+0056BC80: add          r0, sp, #0x14
+0056BC82: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BC86: mov          r0, r4
+0056BC88: add          sp, #0x20
+0056BC8A: pop          {r4, r5, r6, pc}
+0056BC8C: b            #0x56bc8e
+0056BC8E: ldr          r1, [sp, #0x18]
+0056BC90: mov          r4, r0
+0056BC92: add          r0, sp, #0x14
+0056BC94: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BC98: mov          r0, r4
+0056BC9A: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BC9E: movs         r0, r0
+0056BCA0: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0056BCA4: sub          sp, #0x40
+0056BCA6: mov          sb, r0
+0056BCA8: mov.w        sl, #0
+0056BCAC: add          r0, sp, #0x34
+0056BCAE: mov          r6, r2
+0056BCB0: strd         sl, sl, [sp, #0x38]
+0056BCB4: adds         r7, r0, #4
+0056BCB6: str          r7, [sp, #0x34]
+0056BCB8: mov          r8, r1
+0056BCBA: ldr          r5, [r6], #4
+0056BCBE: cmp          r5, r6
+0056BCC0: beq          #0x56bcf0
+0056BCC2: add          r4, sp, #0x34
+0056BCC4: add.w        r2, r5, #0x10
+0056BCC8: mov          r0, r4
+0056BCCA: mov          r1, r7
+0056BCCC: mov          r3, r2
+0056BCCE: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BCD2: ldr          r0, [r5, #4]
+0056BCD4: cbz          r0, #0x56bce0
+0056BCD6: mov          r5, r0
+0056BCD8: ldr          r0, [r5]
+0056BCDA: cmp          r0, #0
+0056BCDC: bne          #0x56bcd6
+0056BCDE: b            #0x56bcec
+0056BCE0: mov          r0, r5
+0056BCE2: ldr          r5, [r0, #8]
+0056BCE4: ldr          r1, [r5]
+0056BCE6: cmp          r1, r0
+0056BCE8: mov          r0, r5
+0056BCEA: bne          #0x56bce2
+0056BCEC: cmp          r5, r6
+0056BCEE: bne          #0x56bcc4
+0056BCF0: ldr          r1, [pc, #0x8c] ; word[0056BD80]=00678206
+0056BCF2: str.w        sl, [sp, #0x20]
+0056BCF6: add          r1, pc
+0056BCF8: strd         sl, sl, [sp, #0x18]
+0056BCFC: add          r0, sp, #0x18
+0056BCFE: movs         r2, #0
+0056BD00: bl           #0x4e02b2 ; FUN_004e02b2
+0056BD04: add          r4, sp, #0x28
+0056BD06: add          r1, sp, #0x18
+0056BD08: mov          r0, r4
+0056BD0A: blx          #0x4a40c0 ; Anki::Pose3d::Pose3d
+0056BD0E: add          r0, sp, #0x10
+0056BD10: blx          #0x4a5854 ; Anki::Radians::Radians
+0056BD14: movs         r3, #0
+0056BD16: add          r2, sp, #0x34
+0056BD18: movt         r3, #0xbf80
+0056BD1C: mov          r1, r8
+0056BD1E: strd         r4, r3, [sp]
+0056BD22: str          r0, [sp, #8]
+0056BD24: mov          r0, sb
+0056BD26: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BD2A: mov          r4, r0
+0056BD2C: add          r0, sp, #0x28
+0056BD2E: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BD32: ldrb.w       r0, [sp, #0x18]
+0056BD36: lsls         r0, r0, #0x1f
+0056BD38: itt          ne
+0056BD3A: ldrne        r0, [sp, #0x20]
+0056BD3C: blxne        #0x4a40cc
+0056BD40: ldr          r1, [sp, #0x38]
+0056BD42: add          r0, sp, #0x34
+0056BD44: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BD48: mov          r0, r4
+0056BD4A: add          sp, #0x40
+0056BD4C: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+0056BD50: mov          r4, r0
+0056BD52: b            #0x56bd5e
+0056BD54: b            #0x56bd6e
+0056BD56: mov          r4, r0
+0056BD58: add          r0, sp, #0x28
+0056BD5A: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BD5E: ldrb.w       r0, [sp, #0x18]
+0056BD62: lsls         r0, r0, #0x1f
+0056BD64: itt          ne
+0056BD66: ldrne        r0, [sp, #0x20]
+0056BD68: blxne        #0x4a40cc
+0056BD6C: b            #0x56bd70
+0056BD6E: mov          r4, r0
+0056BD70: ldr          r1, [sp, #0x38]
+0056BD72: add          r0, sp, #0x34
+0056BD74: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BD78: mov          r0, r4
+0056BD7A: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BD7E: nop
+0056BD80: strh         r6, [r0, #0x10]
+0056BD82: lsls         r7, r4, #1
+0056BD84: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0056BD88: sub          sp, #0x3c
+0056BD8A: mov          sl, r0
+0056BD8C: mov.w        fp, #0
+0056BD90: add          r0, sp, #0x30
+0056BD92: mov          r7, r2
+0056BD94: strd         fp, fp, [sp, #0x34]
+0056BD98: adds         r4, r0, #4
+0056BD9A: str          r4, [sp, #0x30]
+0056BD9C: mov          r8, r3
+0056BD9E: ldr          r6, [r7], #4
+0056BDA2: mov          sb, r1
+0056BDA4: cmp          r6, r7
+0056BDA6: beq          #0x56bdd6
+0056BDA8: add          r5, sp, #0x30
+0056BDAA: add.w        r2, r6, #0x10
+0056BDAE: mov          r0, r5
+0056BDB0: mov          r1, r4
+0056BDB2: mov          r3, r2
+0056BDB4: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BDB8: ldr          r0, [r6, #4]
+0056BDBA: cbz          r0, #0x56bdc6
+0056BDBC: mov          r6, r0
+0056BDBE: ldr          r0, [r6]
+0056BDC0: cmp          r0, #0
+0056BDC2: bne          #0x56bdbc
+0056BDC4: b            #0x56bdd2
+0056BDC6: mov          r0, r6
+0056BDC8: ldr          r6, [r0, #8]
+0056BDCA: ldr          r1, [r6]
+0056BDCC: cmp          r1, r0
+0056BDCE: mov          r0, r6
+0056BDD0: bne          #0x56bdc8
+0056BDD2: cmp          r6, r7
+0056BDD4: bne          #0x56bdaa
+0056BDD6: ldr          r1, [pc, #0x90] ; word[0056BE68]=00678120
+0056BDD8: str.w        fp, [sp, #0x20]
+0056BDDC: add          r1, pc
+0056BDDE: strd         fp, fp, [sp, #0x18]
+0056BDE2: add          r0, sp, #0x18
+0056BDE4: movs         r2, #0
+0056BDE6: bl           #0x4e02b2 ; FUN_004e02b2
+0056BDEA: add          r4, sp, #0x24
+0056BDEC: add          r1, sp, #0x18
+0056BDEE: mov          r0, r4
+0056BDF0: blx          #0x4a40c0 ; Anki::Pose3d::Pose3d
+0056BDF4: add          r0, sp, #0x10
+0056BDF6: blx          #0x4a5854 ; Anki::Radians::Radians
+0056BDFA: movs         r1, #0
+0056BDFC: add          r2, sp, #0x30
+0056BDFE: movt         r1, #0xbf80
+0056BE02: mov          r3, r8
+0056BE04: strd         r4, r1, [sp]
+0056BE08: mov          r1, sb
+0056BE0A: str          r0, [sp, #8]
+0056BE0C: mov          r0, sl
+0056BE0E: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BE12: mov          r4, r0
+0056BE14: add          r0, sp, #0x24
+0056BE16: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BE1A: ldrb.w       r0, [sp, #0x18]
+0056BE1E: lsls         r0, r0, #0x1f
+0056BE20: itt          ne
+0056BE22: ldrne        r0, [sp, #0x20]
+0056BE24: blxne        #0x4a40cc
+0056BE28: ldr          r1, [sp, #0x34]
+0056BE2A: add          r0, sp, #0x30
+0056BE2C: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BE30: mov          r0, r4
+0056BE32: add          sp, #0x3c
+0056BE34: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0056BE38: mov          r4, r0
+0056BE3A: b            #0x56be46
+0056BE3C: b            #0x56be56
+0056BE3E: mov          r4, r0
+0056BE40: add          r0, sp, #0x24
+0056BE42: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056BE46: ldrb.w       r0, [sp, #0x18]
+0056BE4A: lsls         r0, r0, #0x1f
+0056BE4C: itt          ne
+0056BE4E: ldrne        r0, [sp, #0x20]
+0056BE50: blxne        #0x4a40cc
+0056BE54: b            #0x56be58
+0056BE56: mov          r4, r0
+0056BE58: ldr          r1, [sp, #0x34]
+0056BE5A: add          r0, sp, #0x30
+0056BE5C: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BE60: mov          r0, r4
+0056BE62: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BE66: nop
+0056BE68: strh         r0, [r4, #8]
+0056BE6A: lsls         r7, r4, #1
+0056BE6C: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0056BE70: sub          sp, #0x18
+0056BE72: mov          sb, r0
+0056BE74: movs         r0, #0
+0056BE76: strd         r0, r0, [sp, #0x10]
+0056BE7A: add          r0, sp, #0xc
+0056BE7C: adds         r4, r0, #4
+0056BE7E: mov          r7, r2
+0056BE80: str          r4, [sp, #0xc]
+0056BE82: mov          sl, r3
+0056BE84: ldr          r6, [r7], #4
+0056BE88: mov          r8, r1
+0056BE8A: cmp          r6, r7
+0056BE8C: beq          #0x56bebc
+0056BE8E: add          r5, sp, #0xc
+0056BE90: add.w        r2, r6, #0x10
+0056BE94: mov          r0, r5
+0056BE96: mov          r1, r4
+0056BE98: mov          r3, r2
+0056BE9A: blx          #0x4acbbc ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::__emplace_hint_unique_key_args<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,Anki::Cozmo::AIWhiteboard::ObjectActionFailure_const&>
+0056BE9E: ldr          r0, [r6, #4]
+0056BEA0: cbz          r0, #0x56beac
+0056BEA2: mov          r6, r0
+0056BEA4: ldr          r0, [r6]
+0056BEA6: cmp          r0, #0
+0056BEA8: bne          #0x56bea2
+0056BEAA: b            #0x56beb8
+0056BEAC: mov          r0, r6
+0056BEAE: ldr          r6, [r0, #8]
+0056BEB0: ldr          r1, [r6]
+0056BEB2: cmp          r1, r0
+0056BEB4: mov          r0, r6
+0056BEB6: bne          #0x56beae
+0056BEB8: cmp          r6, r7
+0056BEBA: bne          #0x56be90
+0056BEBC: ldr          r0, [sp, #0x3c]
+0056BEBE: vldr         s0, [sp, #0x38]
+0056BEC2: movs         r3, #0
+0056BEC4: add          r2, sp, #0xc
+0056BEC6: str          r0, [sp, #8]
+0056BEC8: movt         r3, #0xbf80
+0056BECC: mov          r0, sb
+0056BECE: mov          r1, r8
+0056BED0: vstr         s0, [sp, #4]
+0056BED4: str.w        sl, [sp]
+0056BED8: blx          #0x4acbc8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+0056BEDC: mov          r4, r0
+0056BEDE: ldr          r1, [sp, #0x10]
+0056BEE0: add          r0, sp, #0xc
+0056BEE2: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BEE6: mov          r0, r4
+0056BEE8: add          sp, #0x18
+0056BEEA: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+0056BEEE: b            #0x56bef0
+0056BEF0: ldr          r1, [sp, #0x10]
+0056BEF2: mov          r4, r0
+0056BEF4: add          r0, sp, #0xc
+0056BEF6: blx          #0x4acbd4 ; std::__ndk1::__tree<Anki::Cozmo::AIWhiteboard::ObjectActionFailure,std::__ndk1::less<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectActionFailure>>::destroy
+0056BEFA: mov          r0, r4
+0056BEFC: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0056BF00: push         {r4, lr}
+0056BF02: cmp          r1, #3
+0056BF04: bhi          #0x56bf14
+0056BF06: tbb          [pc, r1]
+0056BF0A: movs         r6, #2
+0056BF0C: cmp          r4, #0x29
+0056BF0E: add.w        r4, r0, #0x14
+0056BF12: b            #0x56bf72
+0056BF14: ldr          r0, [pc, #0x60] ; word[0056BF78]=00AEEA52
+0056BF16: add          r0, pc
+0056BF18: ldrb         r0, [r0]
+0056BF1A: dmb          ish
+0056BF1E: tst.w        r0, #1
+0056BF22: bne          #0x56bf68
+0056BF24: ldr          r0, [pc, #0x58] ; word[0056BF80]=00AEEA42
+0056BF26: add          r0, pc
+0056BF28: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+0056BF2C: cbz          r0, #0x56bf6e
+0056BF2E: ldr          r4, [pc, #0x58] ; word[0056BF88]=00AEEA28
+0056BF30: movs         r1, #0
+0056BF32: ldr          r0, [pc, #0x58] ; word[0056BF8C]=FFFFE3E1
+0056BF34: add          r4, pc
+0056BF36: ldr          r2, [pc, #0x58] ; word[0056BF90]=00AE50C2
+0056BF38: add          r0, pc
+0056BF3A: add          r2, pc
+0056BF3C: mov          r3, r4
+0056BF3E: str          r1, [r4, #8]
+0056BF40: str          r1, [r3, #4]!
+0056BF44: mov          r1, r4
+0056BF46: str          r3, [r4]
+0056BF48: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+0056BF4C: ldr          r0, [pc, #0x44] ; word[0056BF94]=00AEEA1A
+0056BF4E: add          r0, pc
+0056BF50: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+0056BF54: b            #0x56bf72
+0056BF56: add.w        r4, r0, #0x20
+0056BF5A: b            #0x56bf72
+0056BF5C: add.w        r4, r0, #0x2c
+0056BF60: b            #0x56bf72
+0056BF62: add.w        r4, r0, #0x38
+0056BF66: b            #0x56bf72
+0056BF68: ldr          r4, [pc, #0x10] ; word[0056BF7C]=00AEE9F2
+0056BF6A: add          r4, pc
+0056BF6C: b            #0x56bf72
+0056BF6E: ldr          r4, [pc, #0x14] ; word[0056BF84]=00AEE9EC
+0056BF70: add          r4, pc
+0056BF72: mov          r0, r4
+0056BF74: pop          {r4, pc}
+0056BF76: nop
+0056BF78: orrs.w       r0, r2, lr, asr #2
+0056BF7C: ldrd         r0, r0, [r2, #0x2b8]!
+0056BF80: orr.w        r0, r2, lr, asr #2
+0056BF84: strd         r0, r0, [ip, #0x2b8]!
+0056BF88: bic.w        r0, r8, lr, asr #2
+0056BF8C: b            #0x56c752
+RANGE 0x0056BF00..0x0056BF98 exclusive; Thumb; _ZNK4Anki5Cozmo12AIWhiteboard21GetObjectFailureTableENS1_19ObjectActionFailureE
+0056BF00: push         {r4, lr}
+0056BF02: cmp          r1, #3
+0056BF04: bhi          #0x56bf14
+0056BF06: tbb          [pc, r1]
+0056BF0A: movs         r6, #2
+0056BF0C: cmp          r4, #0x29
+0056BF0E: add.w        r4, r0, #0x14
+0056BF12: b            #0x56bf72
+0056BF14: ldr          r0, [pc, #0x60] ; word[0056BF78]=00AEEA52
+0056BF16: add          r0, pc
+0056BF18: ldrb         r0, [r0]
+0056BF1A: dmb          ish
+0056BF1E: tst.w        r0, #1
+0056BF22: bne          #0x56bf68
+0056BF24: ldr          r0, [pc, #0x58] ; word[0056BF80]=00AEEA42
+0056BF26: add          r0, pc
+0056BF28: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+0056BF2C: cbz          r0, #0x56bf6e
+0056BF2E: ldr          r4, [pc, #0x58] ; word[0056BF88]=00AEEA28
+0056BF30: movs         r1, #0
+0056BF32: ldr          r0, [pc, #0x58] ; word[0056BF8C]=FFFFE3E1
+0056BF34: add          r4, pc
+0056BF36: ldr          r2, [pc, #0x58] ; word[0056BF90]=00AE50C2
+0056BF38: add          r0, pc
+0056BF3A: add          r2, pc
+0056BF3C: mov          r3, r4
+0056BF3E: str          r1, [r4, #8]
+0056BF40: str          r1, [r3, #4]!
+0056BF44: mov          r1, r4
+0056BF46: str          r3, [r4]
+0056BF48: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+0056BF4C: ldr          r0, [pc, #0x44] ; word[0056BF94]=00AEEA1A
+0056BF4E: add          r0, pc
+0056BF50: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+0056BF54: b            #0x56bf72
+0056BF56: add.w        r4, r0, #0x20
+0056BF5A: b            #0x56bf72
+0056BF5C: add.w        r4, r0, #0x2c
+0056BF60: b            #0x56bf72
+0056BF62: add.w        r4, r0, #0x38
+0056BF66: b            #0x56bf72
+0056BF68: ldr          r4, [pc, #0x10] ; word[0056BF7C]=00AEE9F2
+0056BF6A: add          r4, pc
+0056BF6C: b            #0x56bf72
+0056BF6E: ldr          r4, [pc, #0x14] ; word[0056BF84]=00AEE9EC
+0056BF70: add          r4, pc
+0056BF72: mov          r0, r4
+0056BF74: pop          {r4, pc}
+0056BF76: nop
+0056BF78: orrs.w       r0, r2, lr, asr #2
+0056BF7C: ldrd         r0, r0, [r2, #0x2b8]!
+0056BF80: orr.w        r0, r2, lr, asr #2
+0056BF84: strd         r0, r0, [ip, #0x2b8]!
+0056BF88: bic.w        r0, r8, lr, asr #2
+0056BF8C: b            #0x56c752

@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EF1B8..0x004EF226 exclusive; Thumb;
+004EF1B8: push         {r4, lr}
+004EF1BA: mov          r4, r0
+004EF1BC: ldr          r0, [r4]
+004EF1BE: ldr          r1, [r0]
+004EF1C0: ldr          r1, [r1, #8]
+004EF1C2: blx          r1
+004EF1C4: ldr          r0, [r4]
+004EF1C6: cbz          r0, #0x4ef1ce
+004EF1C8: ldr          r1, [r0]
+004EF1CA: ldr          r1, [r1, #4]
+004EF1CC: blx          r1
+004EF1CE: mov          r0, r4
+004EF1D0: pop          {r4, pc}
+004EF1D2: bl           #0x4e39f8
+004EF1D6: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+004EF1DA: movs         r0, r0
+004EF1DC: push         {r4, lr}
+004EF1DE: mov          r4, r0
+004EF1E0: movs         r0, #8
+004EF1E2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+004EF1E6: ldr          r1, [pc, #0xc] ; word[004EF1F4]=00B2F2B6
+004EF1E8: ldr          r2, [r4, #4]
+004EF1EA: add          r1, pc
+004EF1EC: adds         r1, #8
+004EF1EE: strd         r1, r2, [r0]
+004EF1F2: pop          {r4, pc}

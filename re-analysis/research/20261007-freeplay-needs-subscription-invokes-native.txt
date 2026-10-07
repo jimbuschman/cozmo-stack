@@ -1,0 +1,366 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+REGISTRATION 0x692784 TAG 0xc7 INVOKE 0x69abca
+RANGE 0x0069ABCA..0x0069ABF8 exclusive; Thumb;
+0069ABCA: push         {r4, lr}
+0069ABCC: ldr          r4, [r0, #4]
+0069ABCE: add.w        r0, r1, #0x10
+0069ABD2: blx          #0x4bde6c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)199>
+0069ABD6: mov          r1, r0
+0069ABD8: mov          r0, r4
+0069ABDA: pop.w        {r4, lr}
+0069ABDE: b.w          #0x8cd9fc
+0069ABE2: movs         r0, r0
+0069ABE4: ldr          r2, [pc, #0x10] ; word[0069ABF8]=005EE392
+0069ABE6: ldr          r3, [r1, #4]
+0069ABE8: movs         r1, #0
+0069ABEA: add          r2, pc
+0069ABEC: cmp          r3, r2
+0069ABEE: it           eq
+0069ABF0: addeq        r1, r0, #4
+0069ABF2: mov          r0, r1
+0069ABF4: bx           lr
+0069ABF6: nop
+RANGE 0x008CDA00..0x008CDA08 exclusive; ARM;
+008CDA00: ldr          ip, [pc] ; word[008CDA08]=FFBF046C
+008CDA04: add          pc, ip, pc
+VENEER DEST 0x4bde78
+REGISTRATION 0x692844 TAG 0xc6 INVOKE 0x69ac42
+RANGE 0x0069AC42..0x0069AC70 exclusive; Thumb;
+0069AC42: push         {r4, lr}
+0069AC44: ldr          r4, [r0, #4]
+0069AC46: add.w        r0, r1, #0x10
+0069AC4A: blx          #0x4bde84 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)198>
+0069AC4E: mov          r1, r0
+0069AC50: mov          r0, r4
+0069AC52: pop.w        {r4, lr}
+0069AC56: b.w          #0x8cda0c
+0069AC5A: movs         r0, r0
+0069AC5C: ldr          r2, [pc, #0x10] ; word[0069AC70]=005EE57A
+0069AC5E: ldr          r3, [r1, #4]
+0069AC60: movs         r1, #0
+0069AC62: add          r2, pc
+0069AC64: cmp          r3, r2
+0069AC66: it           eq
+0069AC68: addeq        r1, r0, #4
+0069AC6A: mov          r0, r1
+0069AC6C: bx           lr
+0069AC6E: nop
+RANGE 0x008CDA10..0x008CDA18 exclusive; ARM;
+008CDA10: ldr          ip, [pc] ; word[008CDA18]=FFBF0474
+008CDA14: add          pc, ip, pc
+VENEER DEST 0x4bde90
+REGISTRATION 0x692904 TAG 0xca INVOKE 0x69acba
+RANGE 0x0069ACBA..0x0069ACD0 exclusive; Thumb;
+0069ACBA: push         {r4, lr}
+0069ACBC: ldr          r4, [r0, #4]
+0069ACBE: add.w        r0, r1, #0x10
+0069ACC2: blx          #0x4bde9c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)202>
+0069ACC6: mov          r0, r4
+0069ACC8: pop.w        {r4, lr}
+0069ACCC: b.w          #0x8cd9bc ; Anki::Cozmo::NeedsManager::SendNeedsPauseStateToGame
+RANGE 0x008CD9C0..0x008CD9C8 exclusive; ARM;
+008CD9C0: ldr          ip, [pc] ; word[008CD9C8]=FFBF01C4
+008CD9C4: add          pc, ip, pc
+VENEER DEST 0x4bdb90 Anki::Cozmo::NeedsManager::SendNeedsPauseStateToGame
+REGISTRATION 0x6929c4 TAG 0xcc INVOKE 0x69ad2e
+RANGE 0x0069AD2E..0x0069AD44 exclusive; Thumb;
+0069AD2E: push         {r4, lr}
+0069AD30: ldr          r4, [r0, #4]
+0069AD32: add.w        r0, r1, #0x10
+0069AD36: blx          #0x4bdea8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)204>
+0069AD3A: mov          r0, r4
+0069AD3C: pop.w        {r4, lr}
+0069AD40: b.w          #0x8cd9cc ; Anki::Cozmo::NeedsManager::SendNeedsPauseStatesToGame
+RANGE 0x008CD9D0..0x008CD9D8 exclusive; ARM;
+008CD9D0: ldr          ip, [pc] ; word[008CD9D8]=FFBF0358
+008CD9D4: add          pc, ip, pc
+VENEER DEST 0x4bdd34 Anki::Cozmo::NeedsManager::SendNeedsPauseStatesToGame
+REGISTRATION 0x692a84 TAG 0xc5 INVOKE 0x69ada2
+RANGE 0x0069ADA2..0x0069ADC4 exclusive; Thumb;
+0069ADA2: push         {r4, lr}
+0069ADA4: ldr          r4, [r0, #4]
+0069ADA6: add.w        r0, r1, #0x10
+0069ADAA: blx          #0x4bdeb4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)197>
+0069ADAE: mov          r0, r4
+0069ADB0: movs         r1, #0
+0069ADB2: pop.w        {r4, lr}
+0069ADB6: b.w          #0x8cd9ac
+0069ADBA: movs         r0, r0
+0069ADBC: ldr          r2, [pc, #0x10] ; word[0069ADD0]=005EEB3A
+0069ADBE: ldr          r3, [r1, #4]
+0069ADC0: movs         r1, #0
+0069ADC2: add          r2, pc
+RANGE 0x008CD9B0..0x008CD9B8 exclusive; ARM;
+008CD9B0: ldr          ip, [pc] ; word[008CD9B8]=FFBF0018
+008CD9B4: add          pc, ip, pc
+VENEER DEST 0x4bd9d4 Anki::Cozmo::NeedsManager::SendNeedsStateToGame
+REGISTRATION 0x692b44 TAG 0xd3 INVOKE 0x69ae1a
+RANGE 0x0069AE1A..0x0069AE46 exclusive; Thumb;
+0069AE1A: push         {r4, lr}
+0069AE1C: ldr          r4, [r0, #4]
+0069AE1E: add.w        r0, r1, #0x10
+0069AE22: blx          #0x4bdec0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)211>
+0069AE26: mov          r0, r4
+0069AE28: pop.w        {r4, lr}
+0069AE2C: b.w          #0x8cda1c
+0069AE30: ldr          r2, [pc, #0x10] ; word[0069AE44]=005EED26
+0069AE32: ldr          r3, [r1, #4]
+0069AE34: movs         r1, #0
+0069AE36: add          r2, pc
+0069AE38: cmp          r3, r2
+0069AE3A: it           eq
+0069AE3C: addeq        r1, r0, #4
+0069AE3E: mov          r0, r1
+0069AE40: bx           lr
+0069AE42: nop
+RANGE 0x008CDA20..0x008CDA28 exclusive; ARM;
+008CDA20: ldr          ip, [pc] ; word[008CDA28]=FFBF04A0
+008CDA24: add          pc, ip, pc
+VENEER DEST 0x4bdecc
+REGISTRATION 0x692c04 TAG 0xcf INVOKE 0x69ae8e
+RANGE 0x0069AE8E..0x0069AEA4 exclusive; Thumb;
+0069AE8E: push         {r4, lr}
+0069AE90: ldr          r4, [r0, #4]
+0069AE92: add.w        r0, r1, #0x10
+0069AE96: blx          #0x4bded8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)207>
+0069AE9A: mov          r0, r4
+0069AE9C: pop.w        {r4, lr}
+0069AEA0: b.w          #0x8cd9dc ; Anki::Cozmo::NeedsManager::SendNeedsOnboardingToGame
+RANGE 0x008CD9E0..0x008CD9E8 exclusive; ARM;
+008CD9E0: ldr          ip, [pc] ; word[008CD9E8]=FFBF00E4
+008CD9E4: add          pc, ip, pc
+VENEER DEST 0x4bdad0 Anki::Cozmo::NeedsManager::SendNeedsOnboardingToGame
+REGISTRATION 0x692cc4 TAG 0xce INVOKE 0x69af02
+RANGE 0x0069AF02..0x0069AF24 exclusive; Thumb;
+0069AF02: push         {r4, lr}
+0069AF04: ldr          r4, [r0, #4]
+0069AF06: add.w        r0, r1, #0x10
+0069AF0A: blx          #0x4bdee4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)206>
+0069AF0E: ldr          r1, [r0]
+0069AF10: mov          r0, r4
+0069AF12: pop.w        {r4, lr}
+0069AF16: b.w          #0x8cbf6c
+0069AF1A: movs         r0, r0
+0069AF1C: ldr          r2, [pc, #0x10] ; word[0069AF30]=005EF0FA
+0069AF1E: ldr          r3, [r1, #4]
+0069AF20: movs         r1, #0
+0069AF22: add          r2, pc
+RANGE 0x008CBF70..0x008CBF78 exclusive; ARM;
+008CBF70: ldr          ip, [pc] ; word[008CBF78]=FFBDE210
+008CBF74: add          pc, ip, pc
+VENEER DEST 0x4aa18c Anki::Cozmo::NeedsManager::RegisterNeedsActionCompleted
+REGISTRATION 0x692d84 TAG 0xc8 INVOKE 0x69af7a
+RANGE 0x0069AF7A..0x0069AFA8 exclusive; Thumb;
+0069AF7A: push         {r4, lr}
+0069AF7C: ldr          r4, [r0, #4]
+0069AF7E: add.w        r0, r1, #0x10
+0069AF82: blx          #0x4bdef0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)200>
+0069AF86: mov          r1, r0
+0069AF88: mov          r0, r4
+0069AF8A: pop.w        {r4, lr}
+0069AF8E: b.w          #0x8cda2c
+0069AF92: movs         r0, r0
+0069AF94: ldr          r2, [pc, #0x10] ; word[0069AFA8]=005EF2E2
+0069AF96: ldr          r3, [r1, #4]
+0069AF98: movs         r1, #0
+0069AF9A: add          r2, pc
+0069AF9C: cmp          r3, r2
+0069AF9E: it           eq
+0069AFA0: addeq        r1, r0, #4
+0069AFA2: mov          r0, r1
+0069AFA4: bx           lr
+0069AFA6: nop
+RANGE 0x008CDA30..0x008CDA38 exclusive; ARM;
+008CDA30: ldr          ip, [pc] ; word[008CDA38]=FFBF04C0
+008CDA34: add          pc, ip, pc
+VENEER DEST 0x4bdefc
+REGISTRATION 0x692e44 TAG 0x55 INVOKE 0x69aff2
+RANGE 0x0069AFF2..0x0069B020 exclusive; Thumb;
+0069AFF2: push         {r4, lr}
+0069AFF4: ldr          r4, [r0, #4]
+0069AFF6: add.w        r0, r1, #0x10
+0069AFFA: blx          #0x4a54d0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)85>
+0069AFFE: mov          r1, r0
+0069B000: mov          r0, r4
+0069B002: pop.w        {r4, lr}
+0069B006: b.w          #0x8cda3c
+0069B00A: movs         r0, r0
+0069B00C: ldr          r2, [pc, #0x10] ; word[0069B020]=005EF4CA
+0069B00E: ldr          r3, [r1, #4]
+0069B010: movs         r1, #0
+0069B012: add          r2, pc
+0069B014: cmp          r3, r2
+0069B016: it           eq
+0069B018: addeq        r1, r0, #4
+0069B01A: mov          r0, r1
+0069B01C: bx           lr
+0069B01E: nop
+RANGE 0x008CDA40..0x008CDA48 exclusive; ARM;
+008CDA40: ldr          ip, [pc] ; word[008CDA48]=FFBF04BC
+008CDA44: add          pc, ip, pc
+VENEER DEST 0x4bdf08
+REGISTRATION 0x692f04 TAG 0xcd INVOKE 0x69b06a
+RANGE 0x0069B06A..0x0069B098 exclusive; Thumb;
+0069B06A: push         {r4, lr}
+0069B06C: ldr          r4, [r0, #4]
+0069B06E: add.w        r0, r1, #0x10
+0069B072: blx          #0x4bdf14 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)205>
+0069B076: mov          r1, r0
+0069B078: mov          r0, r4
+0069B07A: pop.w        {r4, lr}
+0069B07E: b.w          #0x8cda4c
+0069B082: movs         r0, r0
+0069B084: ldr          r2, [pc, #0x10] ; word[0069B098]=005EF6B2
+0069B086: ldr          r3, [r1, #4]
+0069B088: movs         r1, #0
+0069B08A: add          r2, pc
+0069B08C: cmp          r3, r2
+0069B08E: it           eq
+0069B090: addeq        r1, r0, #4
+0069B092: mov          r0, r1
+0069B094: bx           lr
+0069B096: nop
+RANGE 0x008CDA50..0x008CDA58 exclusive; ARM;
+008CDA50: ldr          ip, [pc] ; word[008CDA58]=FFBF04C4
+008CDA54: add          pc, ip, pc
+VENEER DEST 0x4bdf20
+REGISTRATION 0x692fc4 TAG 0xc9 INVOKE 0x69b0e2
+RANGE 0x0069B0E2..0x0069B104 exclusive; Thumb;
+0069B0E2: push         {r4, lr}
+0069B0E4: ldr          r4, [r0, #4]
+0069B0E6: add.w        r0, r1, #0x10
+0069B0EA: blx          #0x4bdf2c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)201>
+0069B0EE: ldrb         r1, [r0]
+0069B0F0: mov          r0, r4
+0069B0F2: pop.w        {r4, lr}
+0069B0F6: b.w          #0x8cd39c
+0069B0FA: movs         r0, r0
+0069B0FC: ldr          r2, [pc, #0x10] ; word[0069B110]=005EF89A
+0069B0FE: ldr          r3, [r1, #4]
+0069B100: movs         r1, #0
+0069B102: add          r2, pc
+RANGE 0x008CD3A0..0x008CD3A8 exclusive; ARM;
+008CD3A0: ldr          ip, [pc] ; word[008CD3A8]=FFBEDF1C
+008CD3A4: add          pc, ip, pc
+VENEER DEST 0x4bb2c8 Anki::Cozmo::NeedsManager::SetPaused
+REGISTRATION 0x693084 TAG 0xcb INVOKE 0x69b15a
+RANGE 0x0069B15A..0x0069B188 exclusive; Thumb;
+0069B15A: push         {r4, lr}
+0069B15C: ldr          r4, [r0, #4]
+0069B15E: add.w        r0, r1, #0x10
+0069B162: blx          #0x4bdf38 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)203>
+0069B166: mov          r1, r0
+0069B168: mov          r0, r4
+0069B16A: pop.w        {r4, lr}
+0069B16E: b.w          #0x8cda5c
+0069B172: movs         r0, r0
+0069B174: ldr          r2, [pc, #0x10] ; word[0069B188]=005EFA82
+0069B176: ldr          r3, [r1, #4]
+0069B178: movs         r1, #0
+0069B17A: add          r2, pc
+0069B17C: cmp          r3, r2
+0069B17E: it           eq
+0069B180: addeq        r1, r0, #4
+0069B182: mov          r0, r1
+0069B184: bx           lr
+0069B186: nop
+RANGE 0x008CDA60..0x008CDA68 exclusive; ARM;
+008CDA60: ldr          ip, [pc] ; word[008CDA68]=FFBF04D8
+008CDA64: add          pc, ip, pc
+VENEER DEST 0x4bdf44
+REGISTRATION 0x693144 TAG 0xd1 INVOKE 0x69b1d2
+RANGE 0x0069B1D2..0x0069B200 exclusive; Thumb;
+0069B1D2: push         {r4, lr}
+0069B1D4: ldr          r4, [r0, #4]
+0069B1D6: add.w        r0, r1, #0x10
+0069B1DA: blx          #0x4bdf50 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)209>
+0069B1DE: mov          r1, r0
+0069B1E0: mov          r0, r4
+0069B1E2: pop.w        {r4, lr}
+0069B1E6: b.w          #0x8cda6c
+0069B1EA: movs         r0, r0
+0069B1EC: ldr          r2, [pc, #0x10] ; word[0069B200]=005EFC6A
+0069B1EE: ldr          r3, [r1, #4]
+0069B1F0: movs         r1, #0
+0069B1F2: add          r2, pc
+0069B1F4: cmp          r3, r2
+0069B1F6: it           eq
+0069B1F8: addeq        r1, r0, #4
+0069B1FA: mov          r0, r1
+0069B1FC: bx           lr
+0069B1FE: nop
+RANGE 0x008CDA70..0x008CDA78 exclusive; ARM;
+008CDA70: ldr          ip, [pc] ; word[008CDA78]=FFBF04E0
+008CDA74: add          pc, ip, pc
+VENEER DEST 0x4bdf5c
+REGISTRATION 0x693204 TAG 0x6d INVOKE 0x69b24a
+RANGE 0x0069B24A..0x0069B276 exclusive; Thumb;
+0069B24A: push         {r4, lr}
+0069B24C: ldr          r4, [r0, #4]
+0069B24E: add.w        r0, r1, #0x10
+0069B252: blx          #0x4a8650 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)109>
+0069B256: mov          r0, r4
+0069B258: pop.w        {r4, lr}
+0069B25C: b.w          #0x8cda7c
+0069B260: ldr          r2, [pc, #0x10] ; word[0069B274]=005EFE56
+0069B262: ldr          r3, [r1, #4]
+0069B264: movs         r1, #0
+0069B266: add          r2, pc
+0069B268: cmp          r3, r2
+0069B26A: it           eq
+0069B26C: addeq        r1, r0, #4
+0069B26E: mov          r0, r1
+0069B270: bx           lr
+0069B272: nop
+RANGE 0x008CDA80..0x008CDA88 exclusive; ARM;
+008CDA80: ldr          ip, [pc] ; word[008CDA88]=FFBF04DC
+008CDA84: add          pc, ip, pc
+VENEER DEST 0x4bdf68
+REGISTRATION 0x6932c4 TAG 0xd0 INVOKE 0x69b2be
+RANGE 0x0069B2BE..0x0069B2EA exclusive; Thumb;
+0069B2BE: push         {r4, lr}
+0069B2C0: ldr          r4, [r0, #4]
+0069B2C2: add.w        r0, r1, #0x10
+0069B2C6: blx          #0x4bdf74 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)208>
+0069B2CA: mov          r0, r4
+0069B2CC: pop.w        {r4, lr}
+0069B2D0: b.w          #0x8cda8c
+0069B2D4: ldr          r2, [pc, #0x10] ; word[0069B2E8]=005F0042
+0069B2D6: ldr          r3, [r1, #4]
+0069B2D8: movs         r1, #0
+0069B2DA: add          r2, pc
+0069B2DC: cmp          r3, r2
+0069B2DE: it           eq
+0069B2E0: addeq        r1, r0, #4
+0069B2E2: mov          r0, r1
+0069B2E4: bx           lr
+0069B2E6: nop
+0069B2E8: lsls         r2, r0, #1
+RANGE 0x008CDA90..0x008CDA98 exclusive; ARM;
+008CDA90: ldr          ip, [pc] ; word[008CDA98]=FFBF04E4
+008CDA94: add          pc, ip, pc
+VENEER DEST 0x4bdf80
+REGISTRATION 0x693384 TAG 0xd2 INVOKE 0x69b332
+RANGE 0x0069B332..0x0069B35E exclusive; Thumb;
+0069B332: push         {r4, lr}
+0069B334: ldr          r4, [r0, #4]
+0069B336: add.w        r0, r1, #0x10
+0069B33A: blx          #0x4bdf8c ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_<(Anki::Cozmo::ExternalInterface::MessageGameToEngineTag)210>
+0069B33E: mov          r0, r4
+0069B340: pop.w        {r4, lr}
+0069B344: b.w          #0x8cda9c
+0069B348: ldr          r2, [pc, #0x10] ; word[0069B35C]=005F022E
+0069B34A: ldr          r3, [r1, #4]
+0069B34C: movs         r1, #0
+0069B34E: add          r2, pc
+0069B350: cmp          r3, r2
+0069B352: it           eq
+0069B354: addeq        r1, r0, #4
+0069B356: mov          r0, r1
+0069B358: bx           lr
+0069B35A: nop
+0069B35C: lsls         r6, r5, #8
+RANGE 0x008CDAA0..0x008CDAA8 exclusive; ARM;
+008CDAA0: ldr          ip, [pc] ; word[008CDAA8]=FFBF04EC
+008CDAA4: add          pc, ip, pc
+VENEER DEST 0x4bdf98

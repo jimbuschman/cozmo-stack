@@ -1,0 +1,51 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00511246..0x00511258 exclusive; Thumb;
+00511246: mov          r0, r5
+00511248: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0051124C: ldr.w        r5, [r4, #0x26c]
+00511250: str.w        r6, [r4, #0x44c]
+00511254: cmp          r5, #0
+RANGE 0x00511418..0x0051142C exclusive; Thumb;
+00511418: ldr.w        r0, [r4, #0x27c]
+0051141C: movs         r5, #0
+0051141E: str.w        r5, [r4, #0x27c]
+00511422: cbz          r0, #0x511428
+00511424: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00511428: ldr.w        r0, [r4, #0x278]
+RANGE 0x00519708..0x0051972C exclusive; Thumb; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo10ObjectTypeENS3_11BlockFilter10ObjectInfoEEENS_19__map_value_compareIS4_S7_NS_4lessIS4_EELb1EEENS_9allocatorIS7_EEE7destroyEPNS_11__tree_nodeIS7_PvEE
+00519708: push         {r4, r5, r7, lr}
+0051970A: mov          r4, r1
+0051970C: mov          r5, r0
+0051970E: cbz          r4, #0x51972a
+00519710: ldr          r1, [r4]
+00519712: mov          r0, r5
+00519714: blx          #0x4a7ab0 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>,std::__ndk1::__map_value_compare<Anki::Cozmo::ObjectType,std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>,std::__ndk1::less<Anki::Cozmo::ObjectType>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>>>::destroy
+00519718: ldr          r1, [r4, #4]
+0051971A: mov          r0, r5
+0051971C: blx          #0x4a7ab0 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>,std::__ndk1::__map_value_compare<Anki::Cozmo::ObjectType,std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>,std::__ndk1::less<Anki::Cozmo::ObjectType>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::ObjectType,Anki::Cozmo::BlockFilter::ObjectInfo>>>::destroy
+00519720: mov          r0, r4
+00519722: pop.w        {r4, r5, r7, lr}
+00519726: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0051972A: pop          {r4, r5, r7, pc}
+RANGE 0x00619D70..0x00619D9E exclusive; Thumb;
+00619D70: ldr          r0, [sp, #0x20]
+00619D72: cmp          r6, r0
+00619D74: beq          #0x619d7e
+00619D76: cbz          r0, #0x619d84
+00619D78: ldr          r1, [r0]
+00619D7A: ldr          r1, [r1, #0x14]
+00619D7C: b            #0x619d82
+00619D7E: ldr          r1, [r0]
+00619D80: ldr          r1, [r1, #0x10]
+00619D82: blx          r1
+00619D84: ldr          r0, [pc, #0xf0] ; word[00619E78]=00A24AC0
+00619D86: ldr          r1, [sp, #0xa4]
+00619D88: add          r0, pc
+00619D8A: ldr          r0, [r0]
+00619D8C: ldr          r0, [r0]
+00619D8E: subs         r0, r0, r1
+00619D90: ittt         eq
+00619D92: moveq        r0, r4
+00619D94: addeq        sp, #0xa8
+00619D96: popeq.w      {r4, r5, r6, r7, r8, sb, sl, pc}
+00619D9A: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

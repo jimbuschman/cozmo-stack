@@ -1,0 +1,44 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A4DB6..0x005A4E30 exclusive; Thumb;
+005A4DB6: movs         r2, #0xb
+005A4DB8: strb.w       r0, [sp, #0x17]
+005A4DBC: ldrb         r0, [r1, #0x16]
+005A4DBE: strb.w       r2, [sp, #0x1a]
+005A4DC2: movs         r2, #0xc
+005A4DC4: strb.w       r0, [sp, #0x19]
+005A4DC8: ldrb         r0, [r1, #0x17]
+005A4DCA: strb.w       r2, [sp, #0x1c]
+005A4DCE: movs         r2, #0xd
+005A4DD0: strb.w       r0, [sp, #0x1b]
+005A4DD4: ldrb         r0, [r1, #0x18]
+005A4DD6: strb.w       r2, [sp, #0x1e]
+005A4DDA: movs         r2, #0xe
+005A4DDC: strb.w       r0, [sp, #0x1d]
+005A4DE0: ldrb         r0, [r1, #0x19]
+005A4DE2: strb.w       r2, [sp, #0x20]
+005A4DE6: movs         r2, #0xf
+005A4DE8: strb.w       r0, [sp, #0x1f]
+005A4DEC: ldrb         r0, [r1, #0x1a]
+005A4DEE: strb.w       r2, [sp, #0x22]
+005A4DF2: movs         r2, #0x10
+005A4DF4: strb.w       r0, [sp, #0x21]
+005A4DF8: ldrb         r0, [r1, #0x1b]
+005A4DFA: strb.w       r2, [sp, #0x24]
+005A4DFE: movs         r2, #0x11
+005A4E00: strb.w       r0, [sp, #0x23]
+005A4E04: ldrb         r0, [r1, #0x1c]
+005A4E06: strb.w       r2, [sp, #0x26]
+005A4E0A: movs         r2, #0x12
+005A4E0C: strb.w       r0, [sp, #0x25]
+005A4E10: ldrb         r0, [r1, #0x1d]
+005A4E12: strb.w       r2, [sp, #0x28]
+005A4E16: movs         r2, #0x13
+005A4E18: strb.w       r0, [sp, #0x27]
+005A4E1C: ldrb         r0, [r1, #0x1e]
+005A4E1E: strb.w       r2, [sp, #0x2a]
+005A4E22: movs         r2, #0x14
+005A4E24: strb.w       r0, [sp, #0x29]
+005A4E28: ldrb         r0, [r1, #0x1f]
+005A4E2A: strb.w       r2, [sp, #0x2c]
+005A4E2E: add          r2, sp, #4
+005A3BC8: bytes=b''

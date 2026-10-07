@@ -1,0 +1,241 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004D7DC8..0x004D7E38 exclusive; Thumb;
+004D7DC8: push         {r4, r5, r6, lr}
+004D7DCA: ldr          r0, [pc, #0x50] ; word[004D7E1C]=00B8359A
+004D7DCC: movs         r5, #0
+004D7DCE: ldr          r6, [pc, #0x50] ; word[004D7E20]=0079EAB8
+004D7DD0: ldr          r4, [pc, #0x50] ; word[004D7E24]=00B83596
+004D7DD2: add          r0, pc
+004D7DD4: add          r6, pc
+004D7DD6: add          r4, pc
+004D7DD8: mov          r1, r0
+004D7DDA: str          r5, [r0, #8]
+004D7DDC: str          r5, [r1, #4]!
+004D7DE0: str          r1, [r0]
+004D7DE2: adds         r2, r6, r5
+004D7DE4: adds         r1, r4, #4
+004D7DE6: mov          r0, r4
+004D7DE8: mov          r3, r2
+004D7DEA: blx          #0x4a7dd4 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::__emplace_hint_unique_key_args<Anki::Cozmo::ObjectFamily,Anki::Cozmo::ObjectFamily_const&>
+004D7DEE: adds         r5, #4
+004D7DF0: cmp          r5, #8
+004D7DF2: bne          #0x4d7de2
+004D7DF4: ldr          r0, [pc, #0x34] ; word[004D7E2C]=000EDB8B
+004D7DF6: ldr          r1, [pc, #0x38] ; word[004D7E30]=00B83570
+004D7DF8: ldr          r2, [pc, #0x38] ; word[004D7E34]=00B791FE
+004D7DFA: add          r0, pc
+004D7DFC: add          r1, pc
+004D7DFE: add          r2, pc
+004D7E00: pop.w        {r4, r5, r6, lr}
+004D7E04: b.w          #0x8caddc
+004D7E08: mov          r4, r0
+004D7E0A: ldr          r0, [pc, #0x1c] ; word[004D7E28]=00B83560
+004D7E0C: add          r0, pc
+004D7E0E: ldr          r1, [r0, #4]
+004D7E10: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+004D7E14: mov          r0, r4
+004D7E16: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+004D7E1A: nop
+004D7E1C: adds         r5, #0x9a
+004D7E1E: lsls         r0, r7, #2
+004D7E2C: raw=000EDB8B relocated=000EDB8B
+004D7E30: raw=00B83570 relocated=00B83570
+004D7E34: raw=00B791FE relocated=00B791FE
+RANGE 0x0068C858..0x0068C8E0 exclusive; Thumb;
+0068C858: push         {r4, r5, r6, lr}
+0068C85A: sub          sp, #0x30
+0068C85C: ldr          r1, [pc, #0xac] ; word[0068C90C]=009B1FE6
+0068C85E: add          r6, sp, #0x10
+0068C860: movs         r3, #0xd4
+0068C862: add          r1, pc
+0068C864: ldr          r1, [r1]
+0068C866: ldr          r1, [r1]
+0068C868: str          r1, [sp, #0x2c]
+0068C86A: ldm.w        r0, {r1, r2, r5}
+0068C86E: ldr          r0, [r1]
+0068C870: ldr          r4, [r0, #0x2c]
+0068C872: ldr          r0, [pc, #0x9c] ; word[0068C910]=009A4246
+0068C874: str          r2, [sp, #0x14]
+0068C876: add          r0, pc
+0068C878: strh.w       r3, [sp, #6]
+0068C87C: adds         r0, #8
+0068C87E: str          r6, [sp, #0x20]
+0068C880: str          r0, [sp, #0x10]
+0068C882: add          r0, sp, #8
+0068C884: add.w        r2, sp, #6
+0068C888: mov          r3, r6
+0068C88A: blx          r4
+0068C88C: ldrd         r0, r1, [r5, #4]
+0068C890: cmp          r0, r1
+0068C892: bhs          #0x68c8aa
+0068C894: ldr          r1, [sp, #8]
+0068C896: str          r1, [r0]
+0068C898: ldr          r1, [sp, #0xc]
+0068C89A: str          r1, [r0, #4]
+0068C89C: movs         r0, #0
+0068C89E: strd         r0, r0, [sp, #8]
+0068C8A2: ldr          r0, [r5, #4]
+0068C8A4: adds         r0, #8
+0068C8A6: str          r0, [r5, #4]
+0068C8A8: b            #0x68c8b2
+0068C8AA: add          r1, sp, #8
+0068C8AC: mov          r0, r5
+0068C8AE: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068C8B2: ldr          r0, [sp, #0xc]
+0068C8B4: cbz          r0, #0x68c8ba
+0068C8B6: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068C8BA: ldr          r0, [sp, #0x20]
+0068C8BC: cmp          r6, r0
+0068C8BE: beq          #0x68c8c8
+0068C8C0: cbz          r0, #0x68c8ce
+0068C8C2: ldr          r1, [r0]
+0068C8C4: ldr          r1, [r1, #0x14]
+0068C8C6: b            #0x68c8cc
+0068C8C8: ldr          r1, [r0]
+0068C8CA: ldr          r1, [r1, #0x10]
+0068C8CC: blx          r1
+0068C8CE: ldr          r0, [pc, #0x44] ; word[0068C914]=009B1F76
+0068C8D0: ldr          r1, [sp, #0x2c]
+0068C8D2: add          r0, pc
+0068C8D4: ldr          r0, [r0]
+0068C8D6: ldr          r0, [r0]
+0068C8D8: subs         r0, r0, r1
+0068C8DA: itt          eq
+0068C8DC: addeq        sp, #0x30
+0068C8DE: popeq        {r4, r5, r6, pc}
+RANGE 0x0068C918..0x0068C9A0 exclusive; Thumb;
+0068C918: push         {r4, r5, r6, lr}
+0068C91A: sub          sp, #0x30
+0068C91C: ldr          r1, [pc, #0xac] ; word[0068C9CC]=009B1F26
+0068C91E: add          r6, sp, #0x10
+0068C920: movs         r3, #0xd5
+0068C922: add          r1, pc
+0068C924: ldr          r1, [r1]
+0068C926: ldr          r1, [r1]
+0068C928: str          r1, [sp, #0x2c]
+0068C92A: ldm.w        r0, {r1, r2, r5}
+0068C92E: ldr          r0, [r1]
+0068C930: ldr          r4, [r0, #0x2c]
+0068C932: ldr          r0, [pc, #0x9c] ; word[0068C9D0]=009A41C6
+0068C934: str          r2, [sp, #0x14]
+0068C936: add          r0, pc
+0068C938: strh.w       r3, [sp, #6]
+0068C93C: adds         r0, #8
+0068C93E: str          r6, [sp, #0x20]
+0068C940: str          r0, [sp, #0x10]
+0068C942: add          r0, sp, #8
+0068C944: add.w        r2, sp, #6
+0068C948: mov          r3, r6
+0068C94A: blx          r4
+0068C94C: ldrd         r0, r1, [r5, #4]
+0068C950: cmp          r0, r1
+0068C952: bhs          #0x68c96a
+0068C954: ldr          r1, [sp, #8]
+0068C956: str          r1, [r0]
+0068C958: ldr          r1, [sp, #0xc]
+0068C95A: str          r1, [r0, #4]
+0068C95C: movs         r0, #0
+0068C95E: strd         r0, r0, [sp, #8]
+0068C962: ldr          r0, [r5, #4]
+0068C964: adds         r0, #8
+0068C966: str          r0, [r5, #4]
+0068C968: b            #0x68c972
+0068C96A: add          r1, sp, #8
+0068C96C: mov          r0, r5
+0068C96E: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068C972: ldr          r0, [sp, #0xc]
+0068C974: cbz          r0, #0x68c97a
+0068C976: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068C97A: ldr          r0, [sp, #0x20]
+0068C97C: cmp          r6, r0
+0068C97E: beq          #0x68c988
+0068C980: cbz          r0, #0x68c98e
+0068C982: ldr          r1, [r0]
+0068C984: ldr          r1, [r1, #0x14]
+0068C986: b            #0x68c98c
+0068C988: ldr          r1, [r0]
+0068C98A: ldr          r1, [r1, #0x10]
+0068C98C: blx          r1
+0068C98E: ldr          r0, [pc, #0x44] ; word[0068C9D4]=009B1EB6
+0068C990: ldr          r1, [sp, #0x2c]
+0068C992: add          r0, pc
+0068C994: ldr          r0, [r0]
+0068C996: ldr          r0, [r0]
+0068C998: subs         r0, r0, r1
+0068C99A: itt          eq
+0068C99C: addeq        sp, #0x30
+0068C99E: popeq        {r4, r5, r6, pc}
+RANGE 0x0068C9D8..0x0068CA60 exclusive; Thumb;
+0068C9D8: push         {r4, r5, r6, lr}
+0068C9DA: sub          sp, #0x30
+0068C9DC: ldr          r1, [pc, #0xac] ; word[0068CA8C]=009B1E66
+0068C9DE: add          r6, sp, #0x10
+0068C9E0: movs         r3, #0xd6
+0068C9E2: add          r1, pc
+0068C9E4: ldr          r1, [r1]
+0068C9E6: ldr          r1, [r1]
+0068C9E8: str          r1, [sp, #0x2c]
+0068C9EA: ldm.w        r0, {r1, r2, r5}
+0068C9EE: ldr          r0, [r1]
+0068C9F0: ldr          r4, [r0, #0x2c]
+0068C9F2: ldr          r0, [pc, #0x9c] ; word[0068CA90]=009A4146
+0068C9F4: str          r2, [sp, #0x14]
+0068C9F6: add          r0, pc
+0068C9F8: strh.w       r3, [sp, #6]
+0068C9FC: adds         r0, #8
+0068C9FE: str          r6, [sp, #0x20]
+0068CA00: str          r0, [sp, #0x10]
+0068CA02: add          r0, sp, #8
+0068CA04: add.w        r2, sp, #6
+0068CA08: mov          r3, r6
+0068CA0A: blx          r4
+0068CA0C: ldrd         r0, r1, [r5, #4]
+0068CA10: cmp          r0, r1
+0068CA12: bhs          #0x68ca2a
+0068CA14: ldr          r1, [sp, #8]
+0068CA16: str          r1, [r0]
+0068CA18: ldr          r1, [sp, #0xc]
+0068CA1A: str          r1, [r0, #4]
+0068CA1C: movs         r0, #0
+0068CA1E: strd         r0, r0, [sp, #8]
+0068CA22: ldr          r0, [r5, #4]
+0068CA24: adds         r0, #8
+0068CA26: str          r0, [r5, #4]
+0068CA28: b            #0x68ca32
+0068CA2A: add          r1, sp, #8
+0068CA2C: mov          r0, r5
+0068CA2E: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068CA32: ldr          r0, [sp, #0xc]
+0068CA34: cbz          r0, #0x68ca3a
+0068CA36: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068CA3A: ldr          r0, [sp, #0x20]
+0068CA3C: cmp          r6, r0
+0068CA3E: beq          #0x68ca48
+0068CA40: cbz          r0, #0x68ca4e
+0068CA42: ldr          r1, [r0]
+0068CA44: ldr          r1, [r1, #0x14]
+0068CA46: b            #0x68ca4c
+0068CA48: ldr          r1, [r0]
+0068CA4A: ldr          r1, [r1, #0x10]
+0068CA4C: blx          r1
+0068CA4E: ldr          r0, [pc, #0x44] ; word[0068CA94]=009B1DF6
+0068CA50: ldr          r1, [sp, #0x2c]
+0068CA52: add          r0, pc
+0068CA54: ldr          r0, [r0]
+0068CA56: ldr          r0, [r0]
+0068CA58: subs         r0, r0, r1
+0068CA5A: itt          eq
+0068CA5C: addeq        sp, #0x30
+0068CA5E: popeq        {r4, r5, r6, pc}
+RANGE 0x004BD3E0..0x004BD3EC exclusive; ARM;
+004BD3E0: add          ip, pc, #0xb00000
+004BD3E4: add          ip, ip, #0x8b000
+004BD3E8: ldr          pc, [ip, #0x544]!
+RANGE 0x004BD410..0x004BD428 exclusive; ARM;
+004BD410: add          ip, pc, #0xb00000
+004BD414: add          ip, ip, #0x8b000
+004BD418: ldr          pc, [ip, #0x524]!
+004BD41C: add          ip, pc, #0xb00000
+004BD420: add          ip, ip, #0x8b000
+004BD424: ldr          pc, [ip, #0x51c]!
+0068D6F0: bytes=b'%Y-%m-%d %H:%M'

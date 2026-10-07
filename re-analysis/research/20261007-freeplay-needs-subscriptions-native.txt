@@ -1,0 +1,1293 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00692784..0x00692810 exclusive; Thumb;
+00692784: push         {r4, r5, r6, lr}
+00692786: sub          sp, #0x30
+00692788: ldr          r1, [pc, #0xac] ; word[00692838]=009AC0BA
+0069278A: add          r6, sp, #0x10
+0069278C: movs         r3, #0xc7
+0069278E: add          r1, pc
+00692790: ldr          r1, [r1]
+00692792: ldr          r1, [r1]
+00692794: str          r1, [sp, #0x2c]
+00692796: ldm.w        r0, {r1, r2, r5}
+0069279A: ldr          r0, [r1]
+0069279C: ldr          r4, [r0, #0x2c]
+0069279E: ldr          r0, [pc, #0x9c] ; word[0069283C]=0099E42A
+006927A0: str          r2, [sp, #0x14]
+006927A2: add          r0, pc
+006927A4: strh.w       r3, [sp, #6]
+006927A8: adds         r0, #8
+006927AA: str          r6, [sp, #0x20]
+006927AC: str          r0, [sp, #0x10]
+006927AE: add          r0, sp, #8
+006927B0: add.w        r2, sp, #6
+006927B4: mov          r3, r6
+006927B6: blx          r4
+006927B8: ldrd         r0, r1, [r5, #4]
+006927BC: cmp          r0, r1
+006927BE: bhs          #0x6927d6
+006927C0: ldr          r1, [sp, #8]
+006927C2: str          r1, [r0]
+006927C4: ldr          r1, [sp, #0xc]
+006927C6: str          r1, [r0, #4]
+006927C8: movs         r0, #0
+006927CA: strd         r0, r0, [sp, #8]
+006927CE: ldr          r0, [r5, #4]
+006927D0: adds         r0, #8
+006927D2: str          r0, [r5, #4]
+006927D4: b            #0x6927de
+006927D6: add          r1, sp, #8
+006927D8: mov          r0, r5
+006927DA: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+006927DE: ldr          r0, [sp, #0xc]
+006927E0: cbz          r0, #0x6927e6
+006927E2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006927E6: ldr          r0, [sp, #0x20]
+006927E8: cmp          r6, r0
+006927EA: beq          #0x6927f4
+006927EC: cbz          r0, #0x6927fa
+006927EE: ldr          r1, [r0]
+006927F0: ldr          r1, [r1, #0x14]
+006927F2: b            #0x6927f8
+006927F4: ldr          r1, [r0]
+006927F6: ldr          r1, [r1, #0x10]
+006927F8: blx          r1
+006927FA: ldr          r0, [pc, #0x44] ; word[00692840]=009AC04A
+006927FC: ldr          r1, [sp, #0x2c]
+006927FE: add          r0, pc
+00692800: ldr          r0, [r0]
+00692802: ldr          r0, [r0]
+00692804: subs         r0, r0, r1
+00692806: itt          eq
+00692808: addeq        sp, #0x30
+0069280A: popeq        {r4, r5, r6, pc}
+0069280C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030bd0
+0x1030bd0 0x0
+0x1030bd4 0x1030bfc
+0x1030bd8 0x4eeb61
+0x1030bdc 0x69ab8f
+0x1030be0 0x69ab95
+0x1030be4 0x69abb1
+0x1030be8 0x69abc5 FUN_0069abc4
+0x1030bec 0x69abc7 <EXTERNAL>::operator.delete
+0x1030bf0 0x69abcb FUN_0069abca
+0x1030bf4 0x69abe5
+0x1030bf8 0x69abfd
+0x1030bfc 0x8
+RANGE 0x00692844..0x006928D0 exclusive; Thumb;
+00692844: push         {r4, r5, r6, lr}
+00692846: sub          sp, #0x30
+00692848: ldr          r1, [pc, #0xac] ; word[006928F8]=009ABFFA
+0069284A: add          r6, sp, #0x10
+0069284C: movs         r3, #0xc6
+0069284E: add          r1, pc
+00692850: ldr          r1, [r1]
+00692852: ldr          r1, [r1]
+00692854: str          r1, [sp, #0x2c]
+00692856: ldm.w        r0, {r1, r2, r5}
+0069285A: ldr          r0, [r1]
+0069285C: ldr          r4, [r0, #0x2c]
+0069285E: ldr          r0, [pc, #0x9c] ; word[006928FC]=0099E3AA
+00692860: str          r2, [sp, #0x14]
+00692862: add          r0, pc
+00692864: strh.w       r3, [sp, #6]
+00692868: adds         r0, #8
+0069286A: str          r6, [sp, #0x20]
+0069286C: str          r0, [sp, #0x10]
+0069286E: add          r0, sp, #8
+00692870: add.w        r2, sp, #6
+00692874: mov          r3, r6
+00692876: blx          r4
+00692878: ldrd         r0, r1, [r5, #4]
+0069287C: cmp          r0, r1
+0069287E: bhs          #0x692896
+00692880: ldr          r1, [sp, #8]
+00692882: str          r1, [r0]
+00692884: ldr          r1, [sp, #0xc]
+00692886: str          r1, [r0, #4]
+00692888: movs         r0, #0
+0069288A: strd         r0, r0, [sp, #8]
+0069288E: ldr          r0, [r5, #4]
+00692890: adds         r0, #8
+00692892: str          r0, [r5, #4]
+00692894: b            #0x69289e
+00692896: add          r1, sp, #8
+00692898: mov          r0, r5
+0069289A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069289E: ldr          r0, [sp, #0xc]
+006928A0: cbz          r0, #0x6928a6
+006928A2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006928A6: ldr          r0, [sp, #0x20]
+006928A8: cmp          r6, r0
+006928AA: beq          #0x6928b4
+006928AC: cbz          r0, #0x6928ba
+006928AE: ldr          r1, [r0]
+006928B0: ldr          r1, [r1, #0x14]
+006928B2: b            #0x6928b8
+006928B4: ldr          r1, [r0]
+006928B6: ldr          r1, [r1, #0x10]
+006928B8: blx          r1
+006928BA: ldr          r0, [pc, #0x44] ; word[00692900]=009ABF8A
+006928BC: ldr          r1, [sp, #0x2c]
+006928BE: add          r0, pc
+006928C0: ldr          r0, [r0]
+006928C2: ldr          r0, [r0]
+006928C4: subs         r0, r0, r1
+006928C6: itt          eq
+006928C8: addeq        sp, #0x30
+006928CA: popeq        {r4, r5, r6, pc}
+006928CC: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030c10
+0x1030c10 0x0
+0x1030c14 0x1030c3c
+0x1030c18 0x4eeb61
+0x1030c1c 0x69ac09
+0x1030c20 0x69ac0d FUN_0069ac0c
+0x1030c24 0x69ac29
+0x1030c28 0x69ac3d FUN_0069ac3c
+0x1030c2c 0x69ac3f <EXTERNAL>::operator.delete
+0x1030c30 0x69ac43 FUN_0069ac42
+0x1030c34 0x69ac5d
+0x1030c38 0x69ac75
+0x1030c3c 0x8
+RANGE 0x00692904..0x00692990 exclusive; Thumb;
+00692904: push         {r4, r5, r6, lr}
+00692906: sub          sp, #0x30
+00692908: ldr          r1, [pc, #0xac] ; word[006929B8]=009ABF3A
+0069290A: add          r6, sp, #0x10
+0069290C: movs         r3, #0xca
+0069290E: add          r1, pc
+00692910: ldr          r1, [r1]
+00692912: ldr          r1, [r1]
+00692914: str          r1, [sp, #0x2c]
+00692916: ldm.w        r0, {r1, r2, r5}
+0069291A: ldr          r0, [r1]
+0069291C: ldr          r4, [r0, #0x2c]
+0069291E: ldr          r0, [pc, #0x9c] ; word[006929BC]=0099E32A
+00692920: str          r2, [sp, #0x14]
+00692922: add          r0, pc
+00692924: strh.w       r3, [sp, #6]
+00692928: adds         r0, #8
+0069292A: str          r6, [sp, #0x20]
+0069292C: str          r0, [sp, #0x10]
+0069292E: add          r0, sp, #8
+00692930: add.w        r2, sp, #6
+00692934: mov          r3, r6
+00692936: blx          r4
+00692938: ldrd         r0, r1, [r5, #4]
+0069293C: cmp          r0, r1
+0069293E: bhs          #0x692956
+00692940: ldr          r1, [sp, #8]
+00692942: str          r1, [r0]
+00692944: ldr          r1, [sp, #0xc]
+00692946: str          r1, [r0, #4]
+00692948: movs         r0, #0
+0069294A: strd         r0, r0, [sp, #8]
+0069294E: ldr          r0, [r5, #4]
+00692950: adds         r0, #8
+00692952: str          r0, [r5, #4]
+00692954: b            #0x69295e
+00692956: add          r1, sp, #8
+00692958: mov          r0, r5
+0069295A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069295E: ldr          r0, [sp, #0xc]
+00692960: cbz          r0, #0x692966
+00692962: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692966: ldr          r0, [sp, #0x20]
+00692968: cmp          r6, r0
+0069296A: beq          #0x692974
+0069296C: cbz          r0, #0x69297a
+0069296E: ldr          r1, [r0]
+00692970: ldr          r1, [r1, #0x14]
+00692972: b            #0x692978
+00692974: ldr          r1, [r0]
+00692976: ldr          r1, [r1, #0x10]
+00692978: blx          r1
+0069297A: ldr          r0, [pc, #0x44] ; word[006929C0]=009ABECA
+0069297C: ldr          r1, [sp, #0x2c]
+0069297E: add          r0, pc
+00692980: ldr          r0, [r0]
+00692982: ldr          r0, [r0]
+00692984: subs         r0, r0, r1
+00692986: itt          eq
+00692988: addeq        sp, #0x30
+0069298A: popeq        {r4, r5, r6, pc}
+0069298C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030c50
+0x1030c50 0x0
+0x1030c54 0x1030c7c
+0x1030c58 0x4eeb61
+0x1030c5c 0x69ac81
+0x1030c60 0x69ac85 FUN_0069ac84
+0x1030c64 0x69aca1
+0x1030c68 0x69acb5 FUN_0069acb4
+0x1030c6c 0x69acb7 <EXTERNAL>::operator.delete
+0x1030c70 0x69acbb FUN_0069acba
+0x1030c74 0x69acd1
+0x1030c78 0x69ace9
+0x1030c7c 0x8
+RANGE 0x006929C4..0x00692A50 exclusive; Thumb;
+006929C4: push         {r4, r5, r6, lr}
+006929C6: sub          sp, #0x30
+006929C8: ldr          r1, [pc, #0xac] ; word[00692A78]=009ABE7A
+006929CA: add          r6, sp, #0x10
+006929CC: movs         r3, #0xcc
+006929CE: add          r1, pc
+006929D0: ldr          r1, [r1]
+006929D2: ldr          r1, [r1]
+006929D4: str          r1, [sp, #0x2c]
+006929D6: ldm.w        r0, {r1, r2, r5}
+006929DA: ldr          r0, [r1]
+006929DC: ldr          r4, [r0, #0x2c]
+006929DE: ldr          r0, [pc, #0x9c] ; word[00692A7C]=0099E2AA
+006929E0: str          r2, [sp, #0x14]
+006929E2: add          r0, pc
+006929E4: strh.w       r3, [sp, #6]
+006929E8: adds         r0, #8
+006929EA: str          r6, [sp, #0x20]
+006929EC: str          r0, [sp, #0x10]
+006929EE: add          r0, sp, #8
+006929F0: add.w        r2, sp, #6
+006929F4: mov          r3, r6
+006929F6: blx          r4
+006929F8: ldrd         r0, r1, [r5, #4]
+006929FC: cmp          r0, r1
+006929FE: bhs          #0x692a16
+00692A00: ldr          r1, [sp, #8]
+00692A02: str          r1, [r0]
+00692A04: ldr          r1, [sp, #0xc]
+00692A06: str          r1, [r0, #4]
+00692A08: movs         r0, #0
+00692A0A: strd         r0, r0, [sp, #8]
+00692A0E: ldr          r0, [r5, #4]
+00692A10: adds         r0, #8
+00692A12: str          r0, [r5, #4]
+00692A14: b            #0x692a1e
+00692A16: add          r1, sp, #8
+00692A18: mov          r0, r5
+00692A1A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692A1E: ldr          r0, [sp, #0xc]
+00692A20: cbz          r0, #0x692a26
+00692A22: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692A26: ldr          r0, [sp, #0x20]
+00692A28: cmp          r6, r0
+00692A2A: beq          #0x692a34
+00692A2C: cbz          r0, #0x692a3a
+00692A2E: ldr          r1, [r0]
+00692A30: ldr          r1, [r1, #0x14]
+00692A32: b            #0x692a38
+00692A34: ldr          r1, [r0]
+00692A36: ldr          r1, [r1, #0x10]
+00692A38: blx          r1
+00692A3A: ldr          r0, [pc, #0x44] ; word[00692A80]=009ABE0A
+00692A3C: ldr          r1, [sp, #0x2c]
+00692A3E: add          r0, pc
+00692A40: ldr          r0, [r0]
+00692A42: ldr          r0, [r0]
+00692A44: subs         r0, r0, r1
+00692A46: itt          eq
+00692A48: addeq        sp, #0x30
+00692A4A: popeq        {r4, r5, r6, pc}
+00692A4C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030c90
+0x1030c90 0x0
+0x1030c94 0x1030cbc
+0x1030c98 0x4eeb61
+0x1030c9c 0x69acf5
+0x1030ca0 0x69acf9 FUN_0069acf8
+0x1030ca4 0x69ad15
+0x1030ca8 0x69ad29 FUN_0069ad28
+0x1030cac 0x69ad2b <EXTERNAL>::operator.delete
+0x1030cb0 0x69ad2f FUN_0069ad2e
+0x1030cb4 0x69ad45
+0x1030cb8 0x69ad5d
+0x1030cbc 0x8
+RANGE 0x00692A84..0x00692B10 exclusive; Thumb;
+00692A84: push         {r4, r5, r6, lr}
+00692A86: sub          sp, #0x30
+00692A88: ldr          r1, [pc, #0xac] ; word[00692B38]=009ABDBA
+00692A8A: add          r6, sp, #0x10
+00692A8C: movs         r3, #0xc5
+00692A8E: add          r1, pc
+00692A90: ldr          r1, [r1]
+00692A92: ldr          r1, [r1]
+00692A94: str          r1, [sp, #0x2c]
+00692A96: ldm.w        r0, {r1, r2, r5}
+00692A9A: ldr          r0, [r1]
+00692A9C: ldr          r4, [r0, #0x2c]
+00692A9E: ldr          r0, [pc, #0x9c] ; word[00692B3C]=0099E22A
+00692AA0: str          r2, [sp, #0x14]
+00692AA2: add          r0, pc
+00692AA4: strh.w       r3, [sp, #6]
+00692AA8: adds         r0, #8
+00692AAA: str          r6, [sp, #0x20]
+00692AAC: str          r0, [sp, #0x10]
+00692AAE: add          r0, sp, #8
+00692AB0: add.w        r2, sp, #6
+00692AB4: mov          r3, r6
+00692AB6: blx          r4
+00692AB8: ldrd         r0, r1, [r5, #4]
+00692ABC: cmp          r0, r1
+00692ABE: bhs          #0x692ad6
+00692AC0: ldr          r1, [sp, #8]
+00692AC2: str          r1, [r0]
+00692AC4: ldr          r1, [sp, #0xc]
+00692AC6: str          r1, [r0, #4]
+00692AC8: movs         r0, #0
+00692ACA: strd         r0, r0, [sp, #8]
+00692ACE: ldr          r0, [r5, #4]
+00692AD0: adds         r0, #8
+00692AD2: str          r0, [r5, #4]
+00692AD4: b            #0x692ade
+00692AD6: add          r1, sp, #8
+00692AD8: mov          r0, r5
+00692ADA: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692ADE: ldr          r0, [sp, #0xc]
+00692AE0: cbz          r0, #0x692ae6
+00692AE2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692AE6: ldr          r0, [sp, #0x20]
+00692AE8: cmp          r6, r0
+00692AEA: beq          #0x692af4
+00692AEC: cbz          r0, #0x692afa
+00692AEE: ldr          r1, [r0]
+00692AF0: ldr          r1, [r1, #0x14]
+00692AF2: b            #0x692af8
+00692AF4: ldr          r1, [r0]
+00692AF6: ldr          r1, [r1, #0x10]
+00692AF8: blx          r1
+00692AFA: ldr          r0, [pc, #0x44] ; word[00692B40]=009ABD4A
+00692AFC: ldr          r1, [sp, #0x2c]
+00692AFE: add          r0, pc
+00692B00: ldr          r0, [r0]
+00692B02: ldr          r0, [r0]
+00692B04: subs         r0, r0, r1
+00692B06: itt          eq
+00692B08: addeq        sp, #0x30
+00692B0A: popeq        {r4, r5, r6, pc}
+00692B0C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030cd0
+0x1030cd0 0x0
+0x1030cd4 0x1030cfc
+0x1030cd8 0x4eeb61
+0x1030cdc 0x69ad69
+0x1030ce0 0x69ad6d FUN_0069ad6c
+0x1030ce4 0x69ad89
+0x1030ce8 0x69ad9d FUN_0069ad9c
+0x1030cec 0x69ad9f <EXTERNAL>::operator.delete
+0x1030cf0 0x69ada3 FUN_0069ada2
+0x1030cf4 0x69adbd
+0x1030cf8 0x69add5
+0x1030cfc 0x8
+RANGE 0x00692B44..0x00692BD0 exclusive; Thumb;
+00692B44: push         {r4, r5, r6, lr}
+00692B46: sub          sp, #0x30
+00692B48: ldr          r1, [pc, #0xac] ; word[00692BF8]=009ABCFA
+00692B4A: add          r6, sp, #0x10
+00692B4C: movs         r3, #0xd3
+00692B4E: add          r1, pc
+00692B50: ldr          r1, [r1]
+00692B52: ldr          r1, [r1]
+00692B54: str          r1, [sp, #0x2c]
+00692B56: ldm.w        r0, {r1, r2, r5}
+00692B5A: ldr          r0, [r1]
+00692B5C: ldr          r4, [r0, #0x2c]
+00692B5E: ldr          r0, [pc, #0x9c] ; word[00692BFC]=0099E1AA
+00692B60: str          r2, [sp, #0x14]
+00692B62: add          r0, pc
+00692B64: strh.w       r3, [sp, #6]
+00692B68: adds         r0, #8
+00692B6A: str          r6, [sp, #0x20]
+00692B6C: str          r0, [sp, #0x10]
+00692B6E: add          r0, sp, #8
+00692B70: add.w        r2, sp, #6
+00692B74: mov          r3, r6
+00692B76: blx          r4
+00692B78: ldrd         r0, r1, [r5, #4]
+00692B7C: cmp          r0, r1
+00692B7E: bhs          #0x692b96
+00692B80: ldr          r1, [sp, #8]
+00692B82: str          r1, [r0]
+00692B84: ldr          r1, [sp, #0xc]
+00692B86: str          r1, [r0, #4]
+00692B88: movs         r0, #0
+00692B8A: strd         r0, r0, [sp, #8]
+00692B8E: ldr          r0, [r5, #4]
+00692B90: adds         r0, #8
+00692B92: str          r0, [r5, #4]
+00692B94: b            #0x692b9e
+00692B96: add          r1, sp, #8
+00692B98: mov          r0, r5
+00692B9A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692B9E: ldr          r0, [sp, #0xc]
+00692BA0: cbz          r0, #0x692ba6
+00692BA2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692BA6: ldr          r0, [sp, #0x20]
+00692BA8: cmp          r6, r0
+00692BAA: beq          #0x692bb4
+00692BAC: cbz          r0, #0x692bba
+00692BAE: ldr          r1, [r0]
+00692BB0: ldr          r1, [r1, #0x14]
+00692BB2: b            #0x692bb8
+00692BB4: ldr          r1, [r0]
+00692BB6: ldr          r1, [r1, #0x10]
+00692BB8: blx          r1
+00692BBA: ldr          r0, [pc, #0x44] ; word[00692C00]=009ABC8A
+00692BBC: ldr          r1, [sp, #0x2c]
+00692BBE: add          r0, pc
+00692BC0: ldr          r0, [r0]
+00692BC2: ldr          r0, [r0]
+00692BC4: subs         r0, r0, r1
+00692BC6: itt          eq
+00692BC8: addeq        sp, #0x30
+00692BCA: popeq        {r4, r5, r6, pc}
+00692BCC: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030d10
+0x1030d10 0x0
+0x1030d14 0x1030d3c
+0x1030d18 0x4eeb61
+0x1030d1c 0x69ade1
+0x1030d20 0x69ade5 FUN_0069ade4
+0x1030d24 0x69ae01
+0x1030d28 0x69ae15 FUN_0069ae14
+0x1030d2c 0x69ae17 <EXTERNAL>::operator.delete
+0x1030d30 0x69ae1b FUN_0069ae1a
+0x1030d34 0x69ae31
+0x1030d38 0x69ae49
+0x1030d3c 0x8
+RANGE 0x00692C04..0x00692C90 exclusive; Thumb;
+00692C04: push         {r4, r5, r6, lr}
+00692C06: sub          sp, #0x30
+00692C08: ldr          r1, [pc, #0xac] ; word[00692CB8]=009ABC3A
+00692C0A: add          r6, sp, #0x10
+00692C0C: movs         r3, #0xcf
+00692C0E: add          r1, pc
+00692C10: ldr          r1, [r1]
+00692C12: ldr          r1, [r1]
+00692C14: str          r1, [sp, #0x2c]
+00692C16: ldm.w        r0, {r1, r2, r5}
+00692C1A: ldr          r0, [r1]
+00692C1C: ldr          r4, [r0, #0x2c]
+00692C1E: ldr          r0, [pc, #0x9c] ; word[00692CBC]=0099E12A
+00692C20: str          r2, [sp, #0x14]
+00692C22: add          r0, pc
+00692C24: strh.w       r3, [sp, #6]
+00692C28: adds         r0, #8
+00692C2A: str          r6, [sp, #0x20]
+00692C2C: str          r0, [sp, #0x10]
+00692C2E: add          r0, sp, #8
+00692C30: add.w        r2, sp, #6
+00692C34: mov          r3, r6
+00692C36: blx          r4
+00692C38: ldrd         r0, r1, [r5, #4]
+00692C3C: cmp          r0, r1
+00692C3E: bhs          #0x692c56
+00692C40: ldr          r1, [sp, #8]
+00692C42: str          r1, [r0]
+00692C44: ldr          r1, [sp, #0xc]
+00692C46: str          r1, [r0, #4]
+00692C48: movs         r0, #0
+00692C4A: strd         r0, r0, [sp, #8]
+00692C4E: ldr          r0, [r5, #4]
+00692C50: adds         r0, #8
+00692C52: str          r0, [r5, #4]
+00692C54: b            #0x692c5e
+00692C56: add          r1, sp, #8
+00692C58: mov          r0, r5
+00692C5A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692C5E: ldr          r0, [sp, #0xc]
+00692C60: cbz          r0, #0x692c66
+00692C62: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692C66: ldr          r0, [sp, #0x20]
+00692C68: cmp          r6, r0
+00692C6A: beq          #0x692c74
+00692C6C: cbz          r0, #0x692c7a
+00692C6E: ldr          r1, [r0]
+00692C70: ldr          r1, [r1, #0x14]
+00692C72: b            #0x692c78
+00692C74: ldr          r1, [r0]
+00692C76: ldr          r1, [r1, #0x10]
+00692C78: blx          r1
+00692C7A: ldr          r0, [pc, #0x44] ; word[00692CC0]=009ABBCA
+00692C7C: ldr          r1, [sp, #0x2c]
+00692C7E: add          r0, pc
+00692C80: ldr          r0, [r0]
+00692C82: ldr          r0, [r0]
+00692C84: subs         r0, r0, r1
+00692C86: itt          eq
+00692C88: addeq        sp, #0x30
+00692C8A: popeq        {r4, r5, r6, pc}
+00692C8C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030d50
+0x1030d50 0x0
+0x1030d54 0x1030d7c
+0x1030d58 0x4eeb61
+0x1030d5c 0x69ae55
+0x1030d60 0x69ae59 FUN_0069ae58
+0x1030d64 0x69ae75
+0x1030d68 0x69ae89 FUN_0069ae88
+0x1030d6c 0x69ae8b <EXTERNAL>::operator.delete
+0x1030d70 0x69ae8f FUN_0069ae8e
+0x1030d74 0x69aea5
+0x1030d78 0x69aebd
+0x1030d7c 0x8
+RANGE 0x00692CC4..0x00692D50 exclusive; Thumb;
+00692CC4: push         {r4, r5, r6, lr}
+00692CC6: sub          sp, #0x30
+00692CC8: ldr          r1, [pc, #0xac] ; word[00692D78]=009ABB7A
+00692CCA: add          r6, sp, #0x10
+00692CCC: movs         r3, #0xce
+00692CCE: add          r1, pc
+00692CD0: ldr          r1, [r1]
+00692CD2: ldr          r1, [r1]
+00692CD4: str          r1, [sp, #0x2c]
+00692CD6: ldm.w        r0, {r1, r2, r5}
+00692CDA: ldr          r0, [r1]
+00692CDC: ldr          r4, [r0, #0x2c]
+00692CDE: ldr          r0, [pc, #0x9c] ; word[00692D7C]=0099E0AA
+00692CE0: str          r2, [sp, #0x14]
+00692CE2: add          r0, pc
+00692CE4: strh.w       r3, [sp, #6]
+00692CE8: adds         r0, #8
+00692CEA: str          r6, [sp, #0x20]
+00692CEC: str          r0, [sp, #0x10]
+00692CEE: add          r0, sp, #8
+00692CF0: add.w        r2, sp, #6
+00692CF4: mov          r3, r6
+00692CF6: blx          r4
+00692CF8: ldrd         r0, r1, [r5, #4]
+00692CFC: cmp          r0, r1
+00692CFE: bhs          #0x692d16
+00692D00: ldr          r1, [sp, #8]
+00692D02: str          r1, [r0]
+00692D04: ldr          r1, [sp, #0xc]
+00692D06: str          r1, [r0, #4]
+00692D08: movs         r0, #0
+00692D0A: strd         r0, r0, [sp, #8]
+00692D0E: ldr          r0, [r5, #4]
+00692D10: adds         r0, #8
+00692D12: str          r0, [r5, #4]
+00692D14: b            #0x692d1e
+00692D16: add          r1, sp, #8
+00692D18: mov          r0, r5
+00692D1A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692D1E: ldr          r0, [sp, #0xc]
+00692D20: cbz          r0, #0x692d26
+00692D22: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692D26: ldr          r0, [sp, #0x20]
+00692D28: cmp          r6, r0
+00692D2A: beq          #0x692d34
+00692D2C: cbz          r0, #0x692d3a
+00692D2E: ldr          r1, [r0]
+00692D30: ldr          r1, [r1, #0x14]
+00692D32: b            #0x692d38
+00692D34: ldr          r1, [r0]
+00692D36: ldr          r1, [r1, #0x10]
+00692D38: blx          r1
+00692D3A: ldr          r0, [pc, #0x44] ; word[00692D80]=009ABB0A
+00692D3C: ldr          r1, [sp, #0x2c]
+00692D3E: add          r0, pc
+00692D40: ldr          r0, [r0]
+00692D42: ldr          r0, [r0]
+00692D44: subs         r0, r0, r1
+00692D46: itt          eq
+00692D48: addeq        sp, #0x30
+00692D4A: popeq        {r4, r5, r6, pc}
+00692D4C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030d90
+0x1030d90 0x0
+0x1030d94 0x1030dbc
+0x1030d98 0x4eeb61
+0x1030d9c 0x69aec9
+0x1030da0 0x69aecd FUN_0069aecc
+0x1030da4 0x69aee9
+0x1030da8 0x69aefd FUN_0069aefc
+0x1030dac 0x69aeff <EXTERNAL>::operator.delete
+0x1030db0 0x69af03 FUN_0069af02
+0x1030db4 0x69af1d
+0x1030db8 0x69af35
+0x1030dbc 0x8
+RANGE 0x00692D84..0x00692E10 exclusive; Thumb;
+00692D84: push         {r4, r5, r6, lr}
+00692D86: sub          sp, #0x30
+00692D88: ldr          r1, [pc, #0xac] ; word[00692E38]=009ABABA
+00692D8A: add          r6, sp, #0x10
+00692D8C: movs         r3, #0xc8
+00692D8E: add          r1, pc
+00692D90: ldr          r1, [r1]
+00692D92: ldr          r1, [r1]
+00692D94: str          r1, [sp, #0x2c]
+00692D96: ldm.w        r0, {r1, r2, r5}
+00692D9A: ldr          r0, [r1]
+00692D9C: ldr          r4, [r0, #0x2c]
+00692D9E: ldr          r0, [pc, #0x9c] ; word[00692E3C]=0099E02A
+00692DA0: str          r2, [sp, #0x14]
+00692DA2: add          r0, pc
+00692DA4: strh.w       r3, [sp, #6]
+00692DA8: adds         r0, #8
+00692DAA: str          r6, [sp, #0x20]
+00692DAC: str          r0, [sp, #0x10]
+00692DAE: add          r0, sp, #8
+00692DB0: add.w        r2, sp, #6
+00692DB4: mov          r3, r6
+00692DB6: blx          r4
+00692DB8: ldrd         r0, r1, [r5, #4]
+00692DBC: cmp          r0, r1
+00692DBE: bhs          #0x692dd6
+00692DC0: ldr          r1, [sp, #8]
+00692DC2: str          r1, [r0]
+00692DC4: ldr          r1, [sp, #0xc]
+00692DC6: str          r1, [r0, #4]
+00692DC8: movs         r0, #0
+00692DCA: strd         r0, r0, [sp, #8]
+00692DCE: ldr          r0, [r5, #4]
+00692DD0: adds         r0, #8
+00692DD2: str          r0, [r5, #4]
+00692DD4: b            #0x692dde
+00692DD6: add          r1, sp, #8
+00692DD8: mov          r0, r5
+00692DDA: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692DDE: ldr          r0, [sp, #0xc]
+00692DE0: cbz          r0, #0x692de6
+00692DE2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692DE6: ldr          r0, [sp, #0x20]
+00692DE8: cmp          r6, r0
+00692DEA: beq          #0x692df4
+00692DEC: cbz          r0, #0x692dfa
+00692DEE: ldr          r1, [r0]
+00692DF0: ldr          r1, [r1, #0x14]
+00692DF2: b            #0x692df8
+00692DF4: ldr          r1, [r0]
+00692DF6: ldr          r1, [r1, #0x10]
+00692DF8: blx          r1
+00692DFA: ldr          r0, [pc, #0x44] ; word[00692E40]=009ABA4A
+00692DFC: ldr          r1, [sp, #0x2c]
+00692DFE: add          r0, pc
+00692E00: ldr          r0, [r0]
+00692E02: ldr          r0, [r0]
+00692E04: subs         r0, r0, r1
+00692E06: itt          eq
+00692E08: addeq        sp, #0x30
+00692E0A: popeq        {r4, r5, r6, pc}
+00692E0C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030dd0
+0x1030dd0 0x0
+0x1030dd4 0x1030dfc
+0x1030dd8 0x4eeb61
+0x1030ddc 0x69af41
+0x1030de0 0x69af45 FUN_0069af44
+0x1030de4 0x69af61
+0x1030de8 0x69af75 FUN_0069af74
+0x1030dec 0x69af77 <EXTERNAL>::operator.delete
+0x1030df0 0x69af7b FUN_0069af7a
+0x1030df4 0x69af95
+0x1030df8 0x69afad
+0x1030dfc 0x8
+RANGE 0x00692E44..0x00692ED0 exclusive; Thumb;
+00692E44: push         {r4, r5, r6, lr}
+00692E46: sub          sp, #0x30
+00692E48: ldr          r1, [pc, #0xac] ; word[00692EF8]=009AB9FA
+00692E4A: add          r6, sp, #0x10
+00692E4C: movs         r3, #0x55
+00692E4E: add          r1, pc
+00692E50: ldr          r1, [r1]
+00692E52: ldr          r1, [r1]
+00692E54: str          r1, [sp, #0x2c]
+00692E56: ldm.w        r0, {r1, r2, r5}
+00692E5A: ldr          r0, [r1]
+00692E5C: ldr          r4, [r0, #0x2c]
+00692E5E: ldr          r0, [pc, #0x9c] ; word[00692EFC]=0099DFAA
+00692E60: str          r2, [sp, #0x14]
+00692E62: add          r0, pc
+00692E64: strh.w       r3, [sp, #6]
+00692E68: adds         r0, #8
+00692E6A: str          r6, [sp, #0x20]
+00692E6C: str          r0, [sp, #0x10]
+00692E6E: add          r0, sp, #8
+00692E70: add.w        r2, sp, #6
+00692E74: mov          r3, r6
+00692E76: blx          r4
+00692E78: ldrd         r0, r1, [r5, #4]
+00692E7C: cmp          r0, r1
+00692E7E: bhs          #0x692e96
+00692E80: ldr          r1, [sp, #8]
+00692E82: str          r1, [r0]
+00692E84: ldr          r1, [sp, #0xc]
+00692E86: str          r1, [r0, #4]
+00692E88: movs         r0, #0
+00692E8A: strd         r0, r0, [sp, #8]
+00692E8E: ldr          r0, [r5, #4]
+00692E90: adds         r0, #8
+00692E92: str          r0, [r5, #4]
+00692E94: b            #0x692e9e
+00692E96: add          r1, sp, #8
+00692E98: mov          r0, r5
+00692E9A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692E9E: ldr          r0, [sp, #0xc]
+00692EA0: cbz          r0, #0x692ea6
+00692EA2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692EA6: ldr          r0, [sp, #0x20]
+00692EA8: cmp          r6, r0
+00692EAA: beq          #0x692eb4
+00692EAC: cbz          r0, #0x692eba
+00692EAE: ldr          r1, [r0]
+00692EB0: ldr          r1, [r1, #0x14]
+00692EB2: b            #0x692eb8
+00692EB4: ldr          r1, [r0]
+00692EB6: ldr          r1, [r1, #0x10]
+00692EB8: blx          r1
+00692EBA: ldr          r0, [pc, #0x44] ; word[00692F00]=009AB98A
+00692EBC: ldr          r1, [sp, #0x2c]
+00692EBE: add          r0, pc
+00692EC0: ldr          r0, [r0]
+00692EC2: ldr          r0, [r0]
+00692EC4: subs         r0, r0, r1
+00692EC6: itt          eq
+00692EC8: addeq        sp, #0x30
+00692ECA: popeq        {r4, r5, r6, pc}
+00692ECC: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030e10
+0x1030e10 0x0
+0x1030e14 0x1030e3c
+0x1030e18 0x4eeb61
+0x1030e1c 0x69afb9
+0x1030e20 0x69afbd FUN_0069afbc
+0x1030e24 0x69afd9
+0x1030e28 0x69afed FUN_0069afec
+0x1030e2c 0x69afef <EXTERNAL>::operator.delete
+0x1030e30 0x69aff3 FUN_0069aff2
+0x1030e34 0x69b00d
+0x1030e38 0x69b025
+0x1030e3c 0x8
+RANGE 0x00692F04..0x00692F90 exclusive; Thumb;
+00692F04: push         {r4, r5, r6, lr}
+00692F06: sub          sp, #0x30
+00692F08: ldr          r1, [pc, #0xac] ; word[00692FB8]=009AB93A
+00692F0A: add          r6, sp, #0x10
+00692F0C: movs         r3, #0xcd
+00692F0E: add          r1, pc
+00692F10: ldr          r1, [r1]
+00692F12: ldr          r1, [r1]
+00692F14: str          r1, [sp, #0x2c]
+00692F16: ldm.w        r0, {r1, r2, r5}
+00692F1A: ldr          r0, [r1]
+00692F1C: ldr          r4, [r0, #0x2c]
+00692F1E: ldr          r0, [pc, #0x9c] ; word[00692FBC]=0099DF2A
+00692F20: str          r2, [sp, #0x14]
+00692F22: add          r0, pc
+00692F24: strh.w       r3, [sp, #6]
+00692F28: adds         r0, #8
+00692F2A: str          r6, [sp, #0x20]
+00692F2C: str          r0, [sp, #0x10]
+00692F2E: add          r0, sp, #8
+00692F30: add.w        r2, sp, #6
+00692F34: mov          r3, r6
+00692F36: blx          r4
+00692F38: ldrd         r0, r1, [r5, #4]
+00692F3C: cmp          r0, r1
+00692F3E: bhs          #0x692f56
+00692F40: ldr          r1, [sp, #8]
+00692F42: str          r1, [r0]
+00692F44: ldr          r1, [sp, #0xc]
+00692F46: str          r1, [r0, #4]
+00692F48: movs         r0, #0
+00692F4A: strd         r0, r0, [sp, #8]
+00692F4E: ldr          r0, [r5, #4]
+00692F50: adds         r0, #8
+00692F52: str          r0, [r5, #4]
+00692F54: b            #0x692f5e
+00692F56: add          r1, sp, #8
+00692F58: mov          r0, r5
+00692F5A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00692F5E: ldr          r0, [sp, #0xc]
+00692F60: cbz          r0, #0x692f66
+00692F62: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00692F66: ldr          r0, [sp, #0x20]
+00692F68: cmp          r6, r0
+00692F6A: beq          #0x692f74
+00692F6C: cbz          r0, #0x692f7a
+00692F6E: ldr          r1, [r0]
+00692F70: ldr          r1, [r1, #0x14]
+00692F72: b            #0x692f78
+00692F74: ldr          r1, [r0]
+00692F76: ldr          r1, [r1, #0x10]
+00692F78: blx          r1
+00692F7A: ldr          r0, [pc, #0x44] ; word[00692FC0]=009AB8CA
+00692F7C: ldr          r1, [sp, #0x2c]
+00692F7E: add          r0, pc
+00692F80: ldr          r0, [r0]
+00692F82: ldr          r0, [r0]
+00692F84: subs         r0, r0, r1
+00692F86: itt          eq
+00692F88: addeq        sp, #0x30
+00692F8A: popeq        {r4, r5, r6, pc}
+00692F8C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030e50
+0x1030e50 0x0
+0x1030e54 0x1030e7c
+0x1030e58 0x4eeb61
+0x1030e5c 0x69b031
+0x1030e60 0x69b035 FUN_0069b034
+0x1030e64 0x69b051
+0x1030e68 0x69b065 FUN_0069b064
+0x1030e6c 0x69b067 <EXTERNAL>::operator.delete
+0x1030e70 0x69b06b FUN_0069b06a
+0x1030e74 0x69b085
+0x1030e78 0x69b09d
+0x1030e7c 0x8
+RANGE 0x00692FC4..0x00693050 exclusive; Thumb;
+00692FC4: push         {r4, r5, r6, lr}
+00692FC6: sub          sp, #0x30
+00692FC8: ldr          r1, [pc, #0xac] ; word[00693078]=009AB87A
+00692FCA: add          r6, sp, #0x10
+00692FCC: movs         r3, #0xc9
+00692FCE: add          r1, pc
+00692FD0: ldr          r1, [r1]
+00692FD2: ldr          r1, [r1]
+00692FD4: str          r1, [sp, #0x2c]
+00692FD6: ldm.w        r0, {r1, r2, r5}
+00692FDA: ldr          r0, [r1]
+00692FDC: ldr          r4, [r0, #0x2c]
+00692FDE: ldr          r0, [pc, #0x9c] ; word[0069307C]=0099DEAA
+00692FE0: str          r2, [sp, #0x14]
+00692FE2: add          r0, pc
+00692FE4: strh.w       r3, [sp, #6]
+00692FE8: adds         r0, #8
+00692FEA: str          r6, [sp, #0x20]
+00692FEC: str          r0, [sp, #0x10]
+00692FEE: add          r0, sp, #8
+00692FF0: add.w        r2, sp, #6
+00692FF4: mov          r3, r6
+00692FF6: blx          r4
+00692FF8: ldrd         r0, r1, [r5, #4]
+00692FFC: cmp          r0, r1
+00692FFE: bhs          #0x693016
+00693000: ldr          r1, [sp, #8]
+00693002: str          r1, [r0]
+00693004: ldr          r1, [sp, #0xc]
+00693006: str          r1, [r0, #4]
+00693008: movs         r0, #0
+0069300A: strd         r0, r0, [sp, #8]
+0069300E: ldr          r0, [r5, #4]
+00693010: adds         r0, #8
+00693012: str          r0, [r5, #4]
+00693014: b            #0x69301e
+00693016: add          r1, sp, #8
+00693018: mov          r0, r5
+0069301A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069301E: ldr          r0, [sp, #0xc]
+00693020: cbz          r0, #0x693026
+00693022: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00693026: ldr          r0, [sp, #0x20]
+00693028: cmp          r6, r0
+0069302A: beq          #0x693034
+0069302C: cbz          r0, #0x69303a
+0069302E: ldr          r1, [r0]
+00693030: ldr          r1, [r1, #0x14]
+00693032: b            #0x693038
+00693034: ldr          r1, [r0]
+00693036: ldr          r1, [r1, #0x10]
+00693038: blx          r1
+0069303A: ldr          r0, [pc, #0x44] ; word[00693080]=009AB80A
+0069303C: ldr          r1, [sp, #0x2c]
+0069303E: add          r0, pc
+00693040: ldr          r0, [r0]
+00693042: ldr          r0, [r0]
+00693044: subs         r0, r0, r1
+00693046: itt          eq
+00693048: addeq        sp, #0x30
+0069304A: popeq        {r4, r5, r6, pc}
+0069304C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030e90
+0x1030e90 0x0
+0x1030e94 0x1030ebc
+0x1030e98 0x4eeb61
+0x1030e9c 0x69b0a9
+0x1030ea0 0x69b0ad FUN_0069b0ac
+0x1030ea4 0x69b0c9
+0x1030ea8 0x69b0dd FUN_0069b0dc
+0x1030eac 0x69b0df <EXTERNAL>::operator.delete
+0x1030eb0 0x69b0e3 FUN_0069b0e2
+0x1030eb4 0x69b0fd
+0x1030eb8 0x69b115
+0x1030ebc 0x8
+RANGE 0x00693084..0x00693110 exclusive; Thumb;
+00693084: push         {r4, r5, r6, lr}
+00693086: sub          sp, #0x30
+00693088: ldr          r1, [pc, #0xac] ; word[00693138]=009AB7BA
+0069308A: add          r6, sp, #0x10
+0069308C: movs         r3, #0xcb
+0069308E: add          r1, pc
+00693090: ldr          r1, [r1]
+00693092: ldr          r1, [r1]
+00693094: str          r1, [sp, #0x2c]
+00693096: ldm.w        r0, {r1, r2, r5}
+0069309A: ldr          r0, [r1]
+0069309C: ldr          r4, [r0, #0x2c]
+0069309E: ldr          r0, [pc, #0x9c] ; word[0069313C]=0099DE2A
+006930A0: str          r2, [sp, #0x14]
+006930A2: add          r0, pc
+006930A4: strh.w       r3, [sp, #6]
+006930A8: adds         r0, #8
+006930AA: str          r6, [sp, #0x20]
+006930AC: str          r0, [sp, #0x10]
+006930AE: add          r0, sp, #8
+006930B0: add.w        r2, sp, #6
+006930B4: mov          r3, r6
+006930B6: blx          r4
+006930B8: ldrd         r0, r1, [r5, #4]
+006930BC: cmp          r0, r1
+006930BE: bhs          #0x6930d6
+006930C0: ldr          r1, [sp, #8]
+006930C2: str          r1, [r0]
+006930C4: ldr          r1, [sp, #0xc]
+006930C6: str          r1, [r0, #4]
+006930C8: movs         r0, #0
+006930CA: strd         r0, r0, [sp, #8]
+006930CE: ldr          r0, [r5, #4]
+006930D0: adds         r0, #8
+006930D2: str          r0, [r5, #4]
+006930D4: b            #0x6930de
+006930D6: add          r1, sp, #8
+006930D8: mov          r0, r5
+006930DA: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+006930DE: ldr          r0, [sp, #0xc]
+006930E0: cbz          r0, #0x6930e6
+006930E2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006930E6: ldr          r0, [sp, #0x20]
+006930E8: cmp          r6, r0
+006930EA: beq          #0x6930f4
+006930EC: cbz          r0, #0x6930fa
+006930EE: ldr          r1, [r0]
+006930F0: ldr          r1, [r1, #0x14]
+006930F2: b            #0x6930f8
+006930F4: ldr          r1, [r0]
+006930F6: ldr          r1, [r1, #0x10]
+006930F8: blx          r1
+006930FA: ldr          r0, [pc, #0x44] ; word[00693140]=009AB74A
+006930FC: ldr          r1, [sp, #0x2c]
+006930FE: add          r0, pc
+00693100: ldr          r0, [r0]
+00693102: ldr          r0, [r0]
+00693104: subs         r0, r0, r1
+00693106: itt          eq
+00693108: addeq        sp, #0x30
+0069310A: popeq        {r4, r5, r6, pc}
+0069310C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030ed0
+0x1030ed0 0x0
+0x1030ed4 0x1030efc
+0x1030ed8 0x4eeb61
+0x1030edc 0x69b121
+0x1030ee0 0x69b125 FUN_0069b124
+0x1030ee4 0x69b141
+0x1030ee8 0x69b155 FUN_0069b154
+0x1030eec 0x69b157 <EXTERNAL>::operator.delete
+0x1030ef0 0x69b15b FUN_0069b15a
+0x1030ef4 0x69b175
+0x1030ef8 0x69b18d
+0x1030efc 0x8
+RANGE 0x00693144..0x006931D0 exclusive; Thumb;
+00693144: push         {r4, r5, r6, lr}
+00693146: sub          sp, #0x30
+00693148: ldr          r1, [pc, #0xac] ; word[006931F8]=009AB6FA
+0069314A: add          r6, sp, #0x10
+0069314C: movs         r3, #0xd1
+0069314E: add          r1, pc
+00693150: ldr          r1, [r1]
+00693152: ldr          r1, [r1]
+00693154: str          r1, [sp, #0x2c]
+00693156: ldm.w        r0, {r1, r2, r5}
+0069315A: ldr          r0, [r1]
+0069315C: ldr          r4, [r0, #0x2c]
+0069315E: ldr          r0, [pc, #0x9c] ; word[006931FC]=0099DDAA
+00693160: str          r2, [sp, #0x14]
+00693162: add          r0, pc
+00693164: strh.w       r3, [sp, #6]
+00693168: adds         r0, #8
+0069316A: str          r6, [sp, #0x20]
+0069316C: str          r0, [sp, #0x10]
+0069316E: add          r0, sp, #8
+00693170: add.w        r2, sp, #6
+00693174: mov          r3, r6
+00693176: blx          r4
+00693178: ldrd         r0, r1, [r5, #4]
+0069317C: cmp          r0, r1
+0069317E: bhs          #0x693196
+00693180: ldr          r1, [sp, #8]
+00693182: str          r1, [r0]
+00693184: ldr          r1, [sp, #0xc]
+00693186: str          r1, [r0, #4]
+00693188: movs         r0, #0
+0069318A: strd         r0, r0, [sp, #8]
+0069318E: ldr          r0, [r5, #4]
+00693190: adds         r0, #8
+00693192: str          r0, [r5, #4]
+00693194: b            #0x69319e
+00693196: add          r1, sp, #8
+00693198: mov          r0, r5
+0069319A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069319E: ldr          r0, [sp, #0xc]
+006931A0: cbz          r0, #0x6931a6
+006931A2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006931A6: ldr          r0, [sp, #0x20]
+006931A8: cmp          r6, r0
+006931AA: beq          #0x6931b4
+006931AC: cbz          r0, #0x6931ba
+006931AE: ldr          r1, [r0]
+006931B0: ldr          r1, [r1, #0x14]
+006931B2: b            #0x6931b8
+006931B4: ldr          r1, [r0]
+006931B6: ldr          r1, [r1, #0x10]
+006931B8: blx          r1
+006931BA: ldr          r0, [pc, #0x44] ; word[00693200]=009AB68A
+006931BC: ldr          r1, [sp, #0x2c]
+006931BE: add          r0, pc
+006931C0: ldr          r0, [r0]
+006931C2: ldr          r0, [r0]
+006931C4: subs         r0, r0, r1
+006931C6: itt          eq
+006931C8: addeq        sp, #0x30
+006931CA: popeq        {r4, r5, r6, pc}
+006931CC: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030f10
+0x1030f10 0x0
+0x1030f14 0x1030f3c
+0x1030f18 0x4eeb61
+0x1030f1c 0x69b199
+0x1030f20 0x69b19d FUN_0069b19c
+0x1030f24 0x69b1b9
+0x1030f28 0x69b1cd FUN_0069b1cc
+0x1030f2c 0x69b1cf <EXTERNAL>::operator.delete
+0x1030f30 0x69b1d3 FUN_0069b1d2
+0x1030f34 0x69b1ed
+0x1030f38 0x69b205
+0x1030f3c 0x8
+RANGE 0x00693204..0x00693290 exclusive; Thumb;
+00693204: push         {r4, r5, r6, lr}
+00693206: sub          sp, #0x30
+00693208: ldr          r1, [pc, #0xac] ; word[006932B8]=009AB63A
+0069320A: add          r6, sp, #0x10
+0069320C: movs         r3, #0x6d
+0069320E: add          r1, pc
+00693210: ldr          r1, [r1]
+00693212: ldr          r1, [r1]
+00693214: str          r1, [sp, #0x2c]
+00693216: ldm.w        r0, {r1, r2, r5}
+0069321A: ldr          r0, [r1]
+0069321C: ldr          r4, [r0, #0x2c]
+0069321E: ldr          r0, [pc, #0x9c] ; word[006932BC]=0099DD2A
+00693220: str          r2, [sp, #0x14]
+00693222: add          r0, pc
+00693224: strh.w       r3, [sp, #6]
+00693228: adds         r0, #8
+0069322A: str          r6, [sp, #0x20]
+0069322C: str          r0, [sp, #0x10]
+0069322E: add          r0, sp, #8
+00693230: add.w        r2, sp, #6
+00693234: mov          r3, r6
+00693236: blx          r4
+00693238: ldrd         r0, r1, [r5, #4]
+0069323C: cmp          r0, r1
+0069323E: bhs          #0x693256
+00693240: ldr          r1, [sp, #8]
+00693242: str          r1, [r0]
+00693244: ldr          r1, [sp, #0xc]
+00693246: str          r1, [r0, #4]
+00693248: movs         r0, #0
+0069324A: strd         r0, r0, [sp, #8]
+0069324E: ldr          r0, [r5, #4]
+00693250: adds         r0, #8
+00693252: str          r0, [r5, #4]
+00693254: b            #0x69325e
+00693256: add          r1, sp, #8
+00693258: mov          r0, r5
+0069325A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069325E: ldr          r0, [sp, #0xc]
+00693260: cbz          r0, #0x693266
+00693262: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00693266: ldr          r0, [sp, #0x20]
+00693268: cmp          r6, r0
+0069326A: beq          #0x693274
+0069326C: cbz          r0, #0x69327a
+0069326E: ldr          r1, [r0]
+00693270: ldr          r1, [r1, #0x14]
+00693272: b            #0x693278
+00693274: ldr          r1, [r0]
+00693276: ldr          r1, [r1, #0x10]
+00693278: blx          r1
+0069327A: ldr          r0, [pc, #0x44] ; word[006932C0]=009AB5CA
+0069327C: ldr          r1, [sp, #0x2c]
+0069327E: add          r0, pc
+00693280: ldr          r0, [r0]
+00693282: ldr          r0, [r0]
+00693284: subs         r0, r0, r1
+00693286: itt          eq
+00693288: addeq        sp, #0x30
+0069328A: popeq        {r4, r5, r6, pc}
+0069328C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030f50
+0x1030f50 0x0
+0x1030f54 0x1030f7c
+0x1030f58 0x4eeb61
+0x1030f5c 0x69b211
+0x1030f60 0x69b215 FUN_0069b214
+0x1030f64 0x69b231
+0x1030f68 0x69b245 FUN_0069b244
+0x1030f6c 0x69b247 <EXTERNAL>::operator.delete
+0x1030f70 0x69b24b FUN_0069b24a
+0x1030f74 0x69b261
+0x1030f78 0x69b279
+0x1030f7c 0x8
+RANGE 0x006932C4..0x00693350 exclusive; Thumb;
+006932C4: push         {r4, r5, r6, lr}
+006932C6: sub          sp, #0x30
+006932C8: ldr          r1, [pc, #0xac] ; word[00693378]=009AB57A
+006932CA: add          r6, sp, #0x10
+006932CC: movs         r3, #0xd0
+006932CE: add          r1, pc
+006932D0: ldr          r1, [r1]
+006932D2: ldr          r1, [r1]
+006932D4: str          r1, [sp, #0x2c]
+006932D6: ldm.w        r0, {r1, r2, r5}
+006932DA: ldr          r0, [r1]
+006932DC: ldr          r4, [r0, #0x2c]
+006932DE: ldr          r0, [pc, #0x9c] ; word[0069337C]=0099DCAA
+006932E0: str          r2, [sp, #0x14]
+006932E2: add          r0, pc
+006932E4: strh.w       r3, [sp, #6]
+006932E8: adds         r0, #8
+006932EA: str          r6, [sp, #0x20]
+006932EC: str          r0, [sp, #0x10]
+006932EE: add          r0, sp, #8
+006932F0: add.w        r2, sp, #6
+006932F4: mov          r3, r6
+006932F6: blx          r4
+006932F8: ldrd         r0, r1, [r5, #4]
+006932FC: cmp          r0, r1
+006932FE: bhs          #0x693316
+00693300: ldr          r1, [sp, #8]
+00693302: str          r1, [r0]
+00693304: ldr          r1, [sp, #0xc]
+00693306: str          r1, [r0, #4]
+00693308: movs         r0, #0
+0069330A: strd         r0, r0, [sp, #8]
+0069330E: ldr          r0, [r5, #4]
+00693310: adds         r0, #8
+00693312: str          r0, [r5, #4]
+00693314: b            #0x69331e
+00693316: add          r1, sp, #8
+00693318: mov          r0, r5
+0069331A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0069331E: ldr          r0, [sp, #0xc]
+00693320: cbz          r0, #0x693326
+00693322: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00693326: ldr          r0, [sp, #0x20]
+00693328: cmp          r6, r0
+0069332A: beq          #0x693334
+0069332C: cbz          r0, #0x69333a
+0069332E: ldr          r1, [r0]
+00693330: ldr          r1, [r1, #0x14]
+00693332: b            #0x693338
+00693334: ldr          r1, [r0]
+00693336: ldr          r1, [r1, #0x10]
+00693338: blx          r1
+0069333A: ldr          r0, [pc, #0x44] ; word[00693380]=009AB50A
+0069333C: ldr          r1, [sp, #0x2c]
+0069333E: add          r0, pc
+00693340: ldr          r0, [r0]
+00693342: ldr          r0, [r0]
+00693344: subs         r0, r0, r1
+00693346: itt          eq
+00693348: addeq        sp, #0x30
+0069334A: popeq        {r4, r5, r6, pc}
+0069334C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030f90
+0x1030f90 0x0
+0x1030f94 0x1030fbc
+0x1030f98 0x4eeb61
+0x1030f9c 0x69b285
+0x1030fa0 0x69b289 FUN_0069b288
+0x1030fa4 0x69b2a5
+0x1030fa8 0x69b2b9 FUN_0069b2b8
+0x1030fac 0x69b2bb <EXTERNAL>::operator.delete
+0x1030fb0 0x69b2bf FUN_0069b2be
+0x1030fb4 0x69b2d5
+0x1030fb8 0x69b2ed
+0x1030fbc 0x8
+RANGE 0x00693384..0x00693410 exclusive; Thumb;
+00693384: push         {r4, r5, r6, lr}
+00693386: sub          sp, #0x30
+00693388: ldr          r1, [pc, #0xac] ; word[00693438]=009AB4BA
+0069338A: add          r6, sp, #0x10
+0069338C: movs         r3, #0xd2
+0069338E: add          r1, pc
+00693390: ldr          r1, [r1]
+00693392: ldr          r1, [r1]
+00693394: str          r1, [sp, #0x2c]
+00693396: ldm.w        r0, {r1, r2, r5}
+0069339A: ldr          r0, [r1]
+0069339C: ldr          r4, [r0, #0x2c]
+0069339E: ldr          r0, [pc, #0x9c] ; word[0069343C]=0099DC2A
+006933A0: str          r2, [sp, #0x14]
+006933A2: add          r0, pc
+006933A4: strh.w       r3, [sp, #6]
+006933A8: adds         r0, #8
+006933AA: str          r6, [sp, #0x20]
+006933AC: str          r0, [sp, #0x10]
+006933AE: add          r0, sp, #8
+006933B0: add.w        r2, sp, #6
+006933B4: mov          r3, r6
+006933B6: blx          r4
+006933B8: ldrd         r0, r1, [r5, #4]
+006933BC: cmp          r0, r1
+006933BE: bhs          #0x6933d6
+006933C0: ldr          r1, [sp, #8]
+006933C2: str          r1, [r0]
+006933C4: ldr          r1, [sp, #0xc]
+006933C6: str          r1, [r0, #4]
+006933C8: movs         r0, #0
+006933CA: strd         r0, r0, [sp, #8]
+006933CE: ldr          r0, [r5, #4]
+006933D0: adds         r0, #8
+006933D2: str          r0, [r5, #4]
+006933D4: b            #0x6933de
+006933D6: add          r1, sp, #8
+006933D8: mov          r0, r5
+006933DA: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+006933DE: ldr          r0, [sp, #0xc]
+006933E0: cbz          r0, #0x6933e6
+006933E2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+006933E6: ldr          r0, [sp, #0x20]
+006933E8: cmp          r6, r0
+006933EA: beq          #0x6933f4
+006933EC: cbz          r0, #0x6933fa
+006933EE: ldr          r1, [r0]
+006933F0: ldr          r1, [r1, #0x14]
+006933F2: b            #0x6933f8
+006933F4: ldr          r1, [r0]
+006933F6: ldr          r1, [r1, #0x10]
+006933F8: blx          r1
+006933FA: ldr          r0, [pc, #0x44] ; word[00693440]=009AB44A
+006933FC: ldr          r1, [sp, #0x2c]
+006933FE: add          r0, pc
+00693400: ldr          r0, [r0]
+00693402: ldr          r0, [r0]
+00693404: subs         r0, r0, r1
+00693406: itt          eq
+00693408: addeq        sp, #0x30
+0069340A: popeq        {r4, r5, r6, pc}
+0069340C: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+FUNCTION OBJECT VTABLE 0x1030fd0
+0x1030fd0 0x0
+0x1030fd4 0x1030ffc
+0x1030fd8 0x4eeb61
+0x1030fdc 0x69b2f9
+0x1030fe0 0x69b2fd FUN_0069b2fc
+0x1030fe4 0x69b319
+0x1030fe8 0x69b32d FUN_0069b32c
+0x1030fec 0x69b32f <EXTERNAL>::operator.delete
+0x1030ff0 0x69b333 FUN_0069b332
+0x1030ff4 0x69b349
+0x1030ff8 0x69b361
+0x1030ffc 0x8

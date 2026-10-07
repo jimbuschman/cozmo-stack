@@ -1,0 +1,279 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00690458..0x00690704 exclusive; Thumb; _ZNSt6__ndk16__sortIRN4Anki5Cozmo35SortDecayRatesByThresholdDescendingEPNS2_9DecayRateEEEvT0_S7_T_
+00690458: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0069045C: sub          sp, #0xc
+0069045E: mov          sl, r1
+00690460: mov          r4, r0
+00690462: str          r2, [sp, #8]
+00690464: sub.w        sb, sl, #8
+00690468: b            #0x690478
+0069046A: ldr          r2, [sp, #8]
+0069046C: mov          r0, fp
+0069046E: mov          r1, r8
+00690470: blx          #0x4bd6bc ; std::__ndk1::__sort<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+00690474: add.w        r4, r8, #8
+00690478: mov          fp, r4
+0069047A: mvn          r6, #7
+0069047E: b            #0x690530
+00690480: rsb.w        r2, fp, #0
+00690484: mov          r3, sb
+00690486: adds         r1, r3, r2
+00690488: cmp          r1, #8
+0069048A: beq          #0x6904a2
+0069048C: vldr         s4, [r3, #-8]
+00690490: sub.w        r1, r3, #8
+00690494: vcmpe.f32    s4, s2
+00690498: mov          r3, r1
+0069049A: vmrs         apsr_nzcv, fpscr
+0069049E: ble          #0x690486
+006904A0: b            #0x69059c
+006904A2: vldr         s2, [sb]
+006904A6: add.w        r0, fp, #8
+006904AA: vcmpe.f32    s0, s2
+006904AE: vmrs         apsr_nzcv, fpscr
+006904B2: bgt          #0x6904e4
+006904B4: cmp          r0, sb
+006904B6: beq.w        #0x690700
+006904BA: add.w        r0, fp, #0x10
+006904BE: vldr         s2, [r0, #-8]
+006904C2: vcmpe.f32    s0, s2
+006904C6: vmrs         apsr_nzcv, fpscr
+006904CA: bgt          #0x6904d4
+006904CC: adds         r0, #8
+006904CE: cmp          sl, r0
+006904D0: bne          #0x6904be
+006904D2: b            #0x690700
+006904D4: ldrd         r1, r2, [r0, #-0x8]
+006904D8: ldrd         r3, r7, [sb]
+006904DC: strd         r3, r7, [r0, #-0x8]
+006904E0: strd         r1, r2, [sb]
+006904E4: cmp          r0, sb
+006904E6: beq.w        #0x690700
+006904EA: mov          r1, sb
+006904EC: b            #0x6904fe
+006904EE: ldrd         r3, r7, [r2]
+006904F2: ldrd         r5, r4, [r1]
+006904F6: strd         r5, r4, [r2]
+006904FA: strd         r3, r7, [r1]
+006904FE: vldr         s0, [fp]
+00690502: sub.w        r2, r0, #8
+00690506: vldr         s2, [r2, #8]
+0069050A: adds         r2, #8
+0069050C: vcmpe.f32    s0, s2
+00690510: vmrs         apsr_nzcv, fpscr
+00690514: ble          #0x690506
+00690516: add.w        r0, r2, #8
+0069051A: vldr         s2, [r1, #-8]
+0069051E: subs         r1, #8
+00690520: vcmpe.f32    s0, s2
+00690524: vmrs         apsr_nzcv, fpscr
+00690528: bgt          #0x69051a
+0069052A: cmp          r2, r1
+0069052C: blo          #0x6904ee
+0069052E: mov          fp, r2
+00690530: sub.w        r1, sl, fp
+00690534: asrs         r0, r1, #3
+00690536: cmp          r0, #5
+00690538: bls.w        #0x69067e
+0069053C: cmp          r1, #0xf7
+0069053E: ble.w        #0x6906ac
+00690542: add.w        r2, r0, r0, lsr #31
+00690546: and.w        r2, r6, r2, lsl #2
+0069054A: add.w        r4, fp, r2
+0069054E: movw         r2, #0x1f39
+00690552: cmp          r1, r2
+00690554: blt          #0x690578
+00690556: str.w        sb, [sp]
+0069055A: mov          r2, r4
+0069055C: ldr          r1, [sp, #8]
+0069055E: str          r1, [sp, #4]
+00690560: asrs         r1, r0, #0x1f
+00690562: add.w        r0, r0, r1, lsr #30
+00690566: and.w        r0, r6, r0, lsl #1
+0069056A: add.w        r1, fp, r0
+0069056E: adds         r3, r4, r0
+00690570: mov          r0, fp
+00690572: blx          #0x4bd7d0 ; std::__ndk1::__sort5<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+00690576: b            #0x690584
+00690578: ldr          r3, [sp, #8]
+0069057A: mov          r0, fp
+0069057C: mov          r1, r4
+0069057E: mov          r2, sb
+00690580: blx          #0x4bd7dc ; std::__ndk1::__sort3<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+00690584: vldr         s2, [r4]
+00690588: vldr         s0, [fp]
+0069058C: vcmpe.f32    s0, s2
+00690590: vmrs         apsr_nzcv, fpscr
+00690594: ble.w        #0x690480
+00690598: mov          r1, sb
+0069059A: b            #0x6905ae
+0069059C: adds         r0, #1
+0069059E: ldrd         r2, r3, [fp]
+006905A2: ldrd         r7, r5, [r1]
+006905A6: strd         r7, r5, [fp]
+006905AA: strd         r2, r3, [r1]
+006905AE: add.w        r8, fp, #8
+006905B2: cmp          r8, r1
+006905B4: blo          #0x6905d2
+006905B6: b            #0x690604
+006905B8: ldrd         r3, r7, [r2]
+006905BC: cmp          r4, r2
+006905BE: ldrd         r6, r5, [r1]
+006905C2: add.w        r0, r0, #1
+006905C6: strd         r6, r5, [r2]
+006905CA: strd         r3, r7, [r1]
+006905CE: it           eq
+006905D0: moveq        r4, r1
+006905D2: vldr         s0, [r4]
+006905D6: sub.w        r2, r8, #8
+006905DA: vldr         s2, [r2, #8]
+006905DE: adds         r2, #8
+006905E0: vcmpe.f32    s2, s0
+006905E4: vmrs         apsr_nzcv, fpscr
+006905E8: bgt          #0x6905da
+006905EA: add.w        r8, r2, #8
+006905EE: vldr         s2, [r1, #-8]
+006905F2: subs         r1, #8
+006905F4: vcmpe.f32    s2, s0
+006905F8: vmrs         apsr_nzcv, fpscr
+006905FC: ble          #0x6905ee
+006905FE: cmp          r2, r1
+00690600: bls          #0x6905b8
+00690602: mov          r8, r2
+00690604: cmp          r8, r4
+00690606: beq          #0x69062c
+00690608: vldr         s0, [r8]
+0069060C: vldr         s2, [r4]
+00690610: vcmpe.f32    s2, s0
+00690614: vmrs         apsr_nzcv, fpscr
+00690618: ble          #0x69062c
+0069061A: adds         r0, #1
+0069061C: ldrd         r1, r2, [r8]
+00690620: ldrd         r3, r7, [r4]
+00690624: strd         r3, r7, [r8]
+00690628: strd         r1, r2, [r4]
+0069062C: cbnz         r0, #0x690652
+0069062E: ldr          r5, [sp, #8]
+00690630: mov          r0, fp
+00690632: mov          r1, r8
+00690634: mov          r2, r5
+00690636: blx          #0x4bd7e8 ; std::__ndk1::__insertion_sort_incomplete<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+0069063A: add.w        r4, r8, #8
+0069063E: mov          r7, r0
+00690640: mov          r1, sl
+00690642: mov          r2, r5
+00690644: mov          r0, r4
+00690646: blx          #0x4bd7e8 ; std::__ndk1::__insertion_sort_incomplete<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+0069064A: cbnz         r0, #0x690672
+0069064C: cmp          r7, #0
+0069064E: bne.w        #0x690478
+00690652: sub.w        r0, sl, r8
+00690656: sub.w        r1, r8, fp
+0069065A: cmp          r1, r0
+0069065C: blt.w        #0x69046a
+00690660: ldr          r2, [sp, #8]
+00690662: add.w        r0, r8, #8
+00690666: mov          r1, sl
+00690668: blx          #0x4bd6bc ; std::__ndk1::__sort<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+0069066C: mov          sl, r8
+0069066E: mov          r4, fp
+00690670: b            #0x690464
+00690672: cmp          r7, #1
+00690674: mov          sl, r8
+00690676: mov          r4, fp
+00690678: bne.w        #0x690464
+0069067C: b            #0x690700
+0069067E: tbb          [pc, r0]
+00690682: subs         r7, #0x3f
+00690684: adds         r3, r0, #4
+00690686: adds         r2, #0x27
+00690688: vldr         s0, [fp]
+0069068C: vldr         s2, [sb]
+00690690: vcmpe.f32    s2, s0
+00690694: vmrs         apsr_nzcv, fpscr
+00690698: ble          #0x690700
+0069069A: ldrd         r0, r1, [fp]
+0069069E: ldrd         r2, r3, [sb]
+006906A2: strd         r2, r3, [fp]
+006906A6: strd         r0, r1, [sb]
+006906AA: b            #0x690700
+006906AC: mov          r0, fp
+006906AE: mov          r1, sl
+006906B0: ldr          r2, [sp, #8]
+006906B2: add          sp, #0xc
+006906B4: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+006906B8: b.w          #0x8cd94c
+006906BC: add.w        r1, fp, #8
+006906C0: mov          r0, fp
+006906C2: mov          r2, sb
+006906C4: ldr          r3, [sp, #8]
+006906C6: add          sp, #0xc
+006906C8: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+006906CC: b.w          #0x8cd95c
+006906D0: ldr          r0, [sp, #8]
+006906D2: add.w        r1, fp, #8
+006906D6: add.w        r2, fp, #0x10
+006906DA: str          r0, [sp]
+006906DC: mov          r0, fp
+006906DE: mov          r3, sb
+006906E0: blx          #0x4bd7f4 ; std::__ndk1::__sort4<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+006906E4: b            #0x690700
+006906E6: str.w        sb, [sp]
+006906EA: add.w        r1, fp, #8
+006906EE: ldr          r0, [sp, #8]
+006906F0: add.w        r2, fp, #0x10
+006906F4: add.w        r3, fp, #0x18
+006906F8: str          r0, [sp, #4]
+006906FA: mov          r0, fp
+006906FC: blx          #0x4bd7d0 ; std::__ndk1::__sort5<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+00690700: add          sp, #0xc
+RANGE 0x00690708..0x006907B0 exclusive; Thumb; _ZNSt6__ndk17__sort3IRN4Anki5Cozmo35SortDecayRatesByThresholdDescendingEPNS2_9DecayRateEEEjT0_S7_S7_T_
+00690708: push         {r4, lr}
+0069070A: vldr         s2, [r1]
+0069070E: vldr         s4, [r0]
+00690712: vldr         s0, [r2]
+00690716: vcmpe.f32    s2, s4
+0069071A: vmrs         apsr_nzcv, fpscr
+0069071E: ble          #0x69073c
+00690720: ldrd         r3, ip, [r0]
+00690724: vcmpe.f32    s0, s2
+00690728: vmrs         apsr_nzcv, fpscr
+0069072C: ble          #0x69077e
+0069072E: ldrd         r1, r4, [r2]
+00690732: strd         r1, r4, [r0]
+00690736: strd         r3, ip, [r2]
+0069073A: b            #0x6907ac
+0069073C: vcmpe.f32    s0, s2
+00690740: vmrs         apsr_nzcv, fpscr
+00690744: itt          le
+00690746: movle        r0, #0
+00690748: pople        {r4, pc}
+0069074A: ldrd         lr, ip, [r1]
+0069074E: ldrd         r3, r4, [r2]
+00690752: strd         r3, r4, [r1]
+00690756: strd         lr, ip, [r2]
+0069075A: vldr         s0, [r0]
+0069075E: vldr         s2, [r1]
+00690762: vcmpe.f32    s2, s0
+00690766: vmrs         apsr_nzcv, fpscr
+0069076A: ble          #0x6907ac
+0069076C: ldrd         ip, r3, [r0]
+00690770: ldrd         r4, r2, [r1]
+00690774: strd         r4, r2, [r0]
+00690778: strd         ip, r3, [r1]
+0069077C: b            #0x6907a8
+0069077E: ldrd         r4, lr, [r1]
+00690782: vmov         s0, r3
+00690786: strd         r4, lr, [r0]
+0069078A: strd         r3, ip, [r1]
+0069078E: vldr         s2, [r2]
+00690792: vcmpe.f32    s2, s0
+00690796: vmrs         apsr_nzcv, fpscr
+0069079A: ble          #0x6907ac
+0069079C: ldrd         r0, r4, [r2]
+006907A0: strd         r0, r4, [r1]
+006907A4: strd         r3, ip, [r2]
+006907A8: movs         r0, #2
+006907AA: pop          {r4, pc}
+006907AC: movs         r0, #1
+006907AE: pop          {r4, pc}

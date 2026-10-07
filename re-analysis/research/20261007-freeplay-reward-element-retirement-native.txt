@@ -1,0 +1,25 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0068FCB6..0x0068FCEE exclusive; Thumb; _ZNSt6__ndk113__vector_baseIN4Anki5Cozmo11NeedsRewardENS_9allocatorIS3_EEED2Ev
+0068FCB6: push         {r4, r5, r7, lr}
+0068FCB8: mov          r4, r0
+0068FCBA: ldr          r5, [r4]
+0068FCBC: cbz          r5, #0x68fcea
+0068FCBE: ldr          r0, [r4, #4]
+0068FCC0: cmp          r0, r5
+0068FCC2: beq          #0x68fce4
+0068FCC4: sub.w        r1, r0, #0x14
+0068FCC8: str          r1, [r4, #4]
+0068FCCA: ldrb         r2, [r0, #-0x10]
+0068FCCE: lsls         r2, r2, #0x1f
+0068FCD0: beq          #0x68fcdc
+0068FCD2: ldr          r0, [r0, #-0x8]
+0068FCD6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068FCDA: ldr          r1, [r4, #4]
+0068FCDC: cmp          r1, r5
+0068FCDE: mov          r0, r1
+0068FCE0: bne          #0x68fcc4
+0068FCE2: ldr          r5, [r4]
+0068FCE4: mov          r0, r5
+0068FCE6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068FCEA: mov          r0, r4
+0068FCEC: pop          {r4, r5, r7, pc}

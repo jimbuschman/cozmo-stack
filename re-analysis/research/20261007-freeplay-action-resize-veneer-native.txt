@@ -1,0 +1,5 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008CD93C..0x008CD94C exclusive; ARM;
+008CD93C: uxtab16mi    r4, r0, r8, ror #8
+008CD940: ldr          ip, [pc] ; word[008CD948]=FFBEFE48
+008CD944: add          pc, ip, pc

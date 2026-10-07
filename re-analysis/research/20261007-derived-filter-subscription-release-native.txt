@@ -1,0 +1,24 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EAE94..0x004EAEC8 exclusive; Thumb; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+004EAE94: push         {r4, r5, r7, lr}
+004EAE96: mov          r4, r0
+004EAE98: ldr          r5, [r4]
+004EAE9A: cbz          r5, #0x4eaec4
+004EAE9C: ldr          r0, [r4, #4]
+004EAE9E: cmp          r0, r5
+004EAEA0: beq          #0x4eaebe
+004EAEA2: sub.w        r1, r0, #8
+004EAEA6: str          r1, [r4, #4]
+004EAEA8: ldr          r0, [r0, #-0x4]
+004EAEAC: cbz          r0, #0x4eaeb6
+004EAEAE: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+004EAEB2: ldr          r0, [r4, #4]
+004EAEB4: b            #0x4eaeb8
+004EAEB6: mov          r0, r1
+004EAEB8: cmp          r0, r5
+004EAEBA: bne          #0x4eaea2
+004EAEBC: ldr          r5, [r4]
+004EAEBE: mov          r0, r5
+004EAEC0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+004EAEC4: mov          r0, r4
+004EAEC6: pop          {r4, r5, r7, pc}

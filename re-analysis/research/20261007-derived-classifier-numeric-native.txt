@@ -1,0 +1,171 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+005122A0: raw=60000000 relocated=60000000
+005122A4: raw=3FFAEB82 relocated=3FFAEB82
+005122A8: raw=40000000 relocated=40000000
+005122AC: raw=3FF4CDE8 relocated=3FF4CDE8
+005122B0: raw=40000000 relocated=40000000
+005122B4: raw=3FD0C152 relocated=3FD0C152
+005122B8: raw=00B2CA34 relocated=00B2CA34
+005122BC: raw=3F490FDB relocated=3F490FDB
+RANGE 0x00512A40..0x00512A80 exclusive; Thumb;
+00512A40: lsrs         r0, r0, #8
+00512A42: vmul.f32     s2, s10, s4
+00512A46: vstr         s0, [r4, #0x380]
+00512A4A: vldr         s0, [r5, #0x34]
+00512A4E: vmul.f32     s0, s0, s6
+00512A52: vadd.f32     s0, s2, s0
+00512A56: vmul.f32     s2, s12, s4
+00512A5A: vstr         s0, [r4, #0x384]
+00512A5E: vldr         s0, [r5, #0x38]
+00512A62: ldrb.w       r6, [r4, #0x355]
+00512A66: vmul.f32     s0, s0, s6
+00512A6A: vadd.f32     s0, s2, s0
+00512A6E: vstr         s0, [r4, #0x388]
+00512A72: blx          #0x4a7c18 ; Anki::Cozmo::Robot::CheckAndUpdateTreadsState
+00512A76: cmp          r0, #1
+00512A78: bne          #0x512a90
+00512A7A: cbz          r6, #0x512a94
+00512A7C: ldrb.w       r0, [r4, #0x355]
+RANGE 0x0084CC90..0x0084CD32 exclusive; Thumb; _ZN4AnkigtERKNS_7RadiansES2_
+0084CC90: push         {r4, r5, r6, lr}
+0084CC92: sub          sp, #8
+0084CC94: mov          r4, r1
+0084CC96: mov          r5, r0
+0084CC98: vldr         s0, [r4]
+0084CC9C: vldr         s2, [r5]
+0084CCA0: vsub.f32     s0, s2, s0
+0084CCA4: vcmpe.f32    s0, #0
+0084CCA8: vmrs         apsr_nzcv, fpscr
+0084CCAC: ble          #0x84ccd6
+0084CCAE: movw         r0, #0xc5ac
+0084CCB2: mov          r6, sp
+0084CCB4: movt         r0, #0x3727
+0084CCB8: str          r0, [sp]
+0084CCBA: movs         r0, #1
+0084CCBC: strb.w       r0, [sp, #4]
+0084CCC0: mov          r0, r6
+0084CCC2: blx          #0x4ce528 ; Anki::Radians::rescale
+0084CCC6: mov          r0, r5
+0084CCC8: mov          r1, r4
+0084CCCA: mov          r2, r6
+0084CCCC: blx          #0x4a586c ; Anki::Radians::IsNear
+0084CCD0: eor          r0, r0, #1
+0084CCD4: b            #0x84ccd8
+0084CCD6: movs         r0, #0
+0084CCD8: add          sp, #8
+0084CCDA: pop          {r4, r5, r6, pc}
+0084CCDC: push         {r4, r5, r6, lr}
+0084CCDE: sub          sp, #8
+0084CCE0: mov          r4, r1
+0084CCE2: mov          r5, r0
+0084CCE4: blx          #0x4a4528 ; Anki::operator>
+0084CCE8: mov          r1, r0
+0084CCEA: movs         r0, #1
+0084CCEC: cbnz         r1, #0x84cd0e
+0084CCEE: movw         r1, #0xc5ac
+0084CCF2: mov          r6, sp
+0084CCF4: movt         r1, #0x3727
+0084CCF8: str          r1, [sp]
+0084CCFA: strb.w       r0, [sp, #4]
+0084CCFE: mov          r0, r6
+0084CD00: blx          #0x4ce528 ; Anki::Radians::rescale
+0084CD04: mov          r0, r5
+0084CD06: mov          r1, r4
+0084CD08: mov          r2, r6
+0084CD0A: blx          #0x4a586c ; Anki::Radians::IsNear
+0084CD0E: add          sp, #8
+0084CD10: pop          {r4, r5, r6, pc}
+0084CD12: mov          r2, r0
+0084CD14: mov          r0, r1
+0084CD16: mov          r1, r2
+0084CD18: b.w          #0x8d152c
+0084CD1C: mov          r2, r0
+0084CD1E: mov          r0, r1
+0084CD20: mov          r1, r2
+0084CD22: b.w          #0x8d153c
+0084CD26: push         {r7, lr}
+0084CD28: vldr         s0, [r1]
+0084CD2C: movs         r1, #1
+0084CD2E: strb         r1, [r0, #4]
+RANGE 0x0084CC0A..0x0084CC90 exclusive; Thumb; _ZNK4Anki7Radians6IsNearERKS0_S2_
+0084CC0A: push         {r4, r5, r6, lr}
+0084CC0C: sub          sp, #0x10
+0084CC0E: ldr          r0, [r0]
+0084CC10: movs         r6, #1
+0084CC12: str          r0, [sp, #8]
+0084CC14: add          r0, sp, #8
+0084CC16: mov          r4, r2
+0084CC18: mov          r5, r1
+0084CC1A: strb.w       r6, [sp, #0xc]
+0084CC1E: blx          #0x4ce528 ; Anki::Radians::rescale
+0084CC22: strb.w       r6, [sp, #4]
+0084CC26: mov          r0, sp
+0084CC28: vldr         s0, [sp, #8]
+0084CC2C: vldr         s2, [r5]
+0084CC30: vsub.f32     s0, s0, s2
+0084CC34: vstr         s0, [sp]
+0084CC38: blx          #0x4ce528 ; Anki::Radians::rescale
+0084CC3C: vldr         s0, [r4]
+0084CC40: movs         r0, #0
+0084CC42: vldr         s2, [sp]
+0084CC46: vabs.f32     s0, s0
+0084CC4A: vabs.f32     s2, s2
+0084CC4E: vcmpe.f32    s2, s0
+0084CC52: vmrs         apsr_nzcv, fpscr
+0084CC56: it           mi
+0084CC58: movmi        r0, #1
+0084CC5A: add          sp, #0x10
+0084CC5C: pop          {r4, r5, r6, pc}
+0084CC5E: push         {r4, r5, r6, lr}
+0084CC60: sub          sp, #8
+0084CC62: mov          r5, r0
+0084CC64: movw         r0, #0xc5ac
+0084CC68: movt         r0, #0x3727
+0084CC6C: mov          r6, sp
+0084CC6E: str          r0, [sp]
+0084CC70: movs         r0, #1
+0084CC72: strb.w       r0, [sp, #4]
+0084CC76: mov          r0, r6
+0084CC78: mov          r4, r1
+0084CC7A: blx          #0x4ce528 ; Anki::Radians::rescale
+0084CC7E: mov          r0, r5
+0084CC80: mov          r1, r4
+0084CC82: mov          r2, r6
+0084CC84: blx          #0x4a586c ; Anki::Radians::IsNear
+0084CC88: eor          r0, r0, #1
+0084CC8C: add          sp, #8
+0084CC8E: pop          {r4, r5, r6, pc}
+RANGE 0x0084C87C..0x0084C8EC exclusive; Thumb; _ZN4Anki7Radians7rescaleEv
+0084C87C: push         {r4, lr}
+0084C87E: vpush        {d8, d9}
+0084C882: mov          r4, r0
+0084C884: ldrb         r0, [r4, #4]
+0084C886: cmp          r0, #0
+0084C888: beq          #0x84c932
+0084C88A: vldr         s0, [pc, #0xac] ; word[0084C938]=C0490FDB
+0084C88E: vldr         s16, [r4]
+0084C892: vcmpe.f32    s16, s0
+0084C896: vmrs         apsr_nzcv, fpscr
+0084C89A: ble          #0x84c8aa
+0084C89C: vldr         s2, [pc, #0x9c] ; word[0084C93C]=40490FDB
+0084C8A0: vcmpe.f32    s16, s2
+0084C8A4: vmrs         apsr_nzcv, fpscr
+0084C8A8: bls          #0x84c932
+0084C8AA: vmov.f32     s2, #1.000000e+01
+0084C8AE: vabs.f32     s4, s16
+0084C8B2: vcmpe.f32    s4, s2
+0084C8B6: vmrs         apsr_nzcv, fpscr
+0084C8BA: bpl          #0x84c902
+0084C8BC: vcmpe.f32    s16, s0
+0084C8C0: vmrs         apsr_nzcv, fpscr
+0084C8C4: bhi          #0x84c8dc
+0084C8C6: vldr         s2, [pc, #0x78] ; word[0084C940]=40C90FDB
+0084C8CA: vadd.f32     s16, s16, s2
+0084C8CE: vcmpe.f32    s16, s0
+0084C8D2: vmrs         apsr_nzcv, fpscr
+0084C8D6: bls          #0x84c8ca
+0084C8D8: vstr         s16, [r4]
+0084C8DC: vldr         s0, [pc, #0x5c] ; word[0084C93C]=40490FDB
+0084C8E0: vcmpe.f32    s16, s0
+0084C8E4: vmrs         apsr_nzcv, fpscr
+0084C8E8: ble          #0x84c932

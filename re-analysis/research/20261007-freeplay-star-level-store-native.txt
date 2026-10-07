@@ -1,0 +1,10 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0069CBB8..0x0069CBCC exclusive; Thumb; _ZN4Anki5Cozmo10NeedsState12SetStarLevelEi
+0069CBB8: push         {r4, lr}
+0069CBBA: mov          r4, r0
+0069CBBC: movs         r2, #0
+0069CBBE: ldr          r0, [r4, #0x68]
+0069CBC0: strd         r1, r2, [r4, #0x4c]
+0069CBC4: blx          #0x4bddd0 ; Anki::Cozmo::StarRewardsConfig::GetMaxStarsForLevel
+0069CBC8: str          r0, [r4, #0x54]
+0069CBCA: pop          {r4, pc}

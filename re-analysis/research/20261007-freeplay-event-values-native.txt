@@ -1,0 +1,18 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005DF190..0x005DF1B8 exclusive; Thumb;
+005DF190: vmrs         apsr_nzcv, fpscr
+005DF194: bgt.w        #0x5df2d8
+005DF198: movs         r0, #0
+005DF19A: strd         r0, r0, [sp, #0x3c]
+005DF19E: str          r0, [sp, #0x44]
+005DF1A0: add          r1, sp, #0x3c
+005DF1A2: mov          r0, r5
+005DF1A4: blx          #0x4b4aa0 ; Anki::Cozmo::AIWhiteboard::FindUsableCubesOutOfBeacons
+005DF1A8: cmp          r0, #1
+005DF1AA: bne          #0x5df29a
+005DF1AC: ldrd         r7, r8, [sp, #0x3c]
+005DF1B0: cmp          r7, r8
+005DF1B2: beq          #0x5df29c
+005DF1B4: add.w        r0, r4, #0x11c
+005E00CC: bytes=b'HikingBroughtLastCubeToBeacon'
+005E00B0: bytes=b'HikingBroughtCubeToBeacon'

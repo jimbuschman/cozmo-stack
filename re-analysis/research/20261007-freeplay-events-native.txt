@@ -1,0 +1,245 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E002C..0x005E0098 exclusive; Thumb; _ZN4Anki5Cozmo32BehaviorExploreBringCubeToBeacon17FireEmotionEventsERNS0_5RobotE
+005E002C: push         {r4, lr}
+005E002E: sub          sp, #0x10
+005E0030: mov          r4, r1
+005E0032: ldr.w        r0, [r4, #0x264]
+005E0036: ldr          r0, [r0, #0x18]
+005E0038: blx          #0x4b1a88 ; Anki::Cozmo::AIWhiteboard::AreAllCubesInBeacons
+005E003C: ldr.w        r4, [r4, #0x440]
+005E0040: cmp          r0, #1
+005E0042: bne          #0x5e0066
+005E0044: movs         r0, #0
+005E0046: adr          r1, #0x84
+005E0048: str          r0, [sp, #8]
+005E004A: movs         r2, #0x1d
+005E004C: strd         r0, r0, [sp]
+005E0050: mov          r0, sp
+005E0052: bl           #0x4e02b2 ; FUN_004e02b2
+005E0056: blx          #0x4ab3bc ; Anki::Cozmo::MoodManager::GetCurrentTimeInSeconds
+005E005A: mov          r2, r0
+005E005C: mov          r1, sp
+005E005E: mov          r0, r4
+005E0060: blx          #0x4ab3c8 ; Anki::Cozmo::MoodManager::TriggerEmotionEvent
+005E0064: b            #0x5e0086
+005E0066: movs         r0, #0
+005E0068: adr          r1, #0x44
+005E006A: str          r0, [sp, #8]
+005E006C: movs         r2, #0x19
+005E006E: strd         r0, r0, [sp]
+005E0072: mov          r0, sp
+005E0074: bl           #0x4e02b2 ; FUN_004e02b2
+005E0078: blx          #0x4ab3bc ; Anki::Cozmo::MoodManager::GetCurrentTimeInSeconds
+005E007C: mov          r2, r0
+005E007E: mov          r1, sp
+005E0080: mov          r0, r4
+005E0082: blx          #0x4ab3c8 ; Anki::Cozmo::MoodManager::TriggerEmotionEvent
+005E0086: ldrb.w       r0, [sp]
+005E008A: lsls         r0, r0, #0x1f
+005E008C: itt          ne
+005E008E: ldrne        r0, [sp, #8]
+005E0090: blxne        #0x4a40cc
+005E0094: add          sp, #0x10
+005E0096: pop          {r4, pc}
+RANGE 0x005E5F0C..0x005E5F80 exclusive; Thumb; _ZN4Anki5Cozmo25BehaviorThinkAboutBeacons15SelectNewBeaconERNS0_5RobotE
+005E5F0C: push         {r4, r5, r6, lr}
+005E5F0E: sub          sp, #0x10
+005E5F10: mov          r4, r0
+005E5F12: ldr.w        r0, [r1, #0x264]
+005E5F16: ldr          r5, [r0, #0x18]
+005E5F18: mov          r0, r1
+005E5F1A: bl           #0x4ea398 ; FUN_004ea398
+005E5F1E: add          r6, sp, #4
+005E5F20: mov          r1, r0
+005E5F22: mov          r0, r6
+005E5F24: bl           #0x4df628 ; FUN_004df628
+005E5F28: ldr.w        r2, [r4, #0x128]
+005E5F2C: mov          r0, r5
+005E5F2E: mov          r1, r6
+005E5F30: blx          #0x4b4da0 ; Anki::Cozmo::AIWhiteboard::AddBeacon
+005E5F34: add          r0, sp, #4
+005E5F36: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E5F3A: add          sp, #0x10
+005E5F3C: pop          {r4, r5, r6, pc}
+005E5F3E: mov          r4, r0
+005E5F40: add          r0, sp, #4
+005E5F42: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E5F46: mov          r0, r4
+005E5F48: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005E5F4C: movs         r0, #0
+005E5F4E: bx           lr
+005E5F50: stm.w        r0, {r1, r2, r3}
+005E5F54: bx           lr
+005E5F56: ldrd         r1, r0, [r0]
+005E5F5A: movs         r2, #0x2c
+005E5F5C: ldr          r1, [r1, #4]
+005E5F5E: mla          r0, r0, r2, r1
+005E5F62: bx           lr
+005E5F64: push         {r4, r5, r7, lr}
+005E5F66: mov          r5, r2
+005E5F68: mov          r4, r0
+005E5F6A: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+005E5F6E: ldr          r0, [pc, #0x6c] ; word[005E5FDC]=00A5949E
+005E5F70: movs         r1, #0x14
+005E5F72: add          r0, pc
+005E5F74: ldr          r0, [r0]
+005E5F76: adds         r0, #8
+005E5F78: str          r0, [r4]
+005E5F7A: add.w        r0, r4, #0x11c
+RANGE 0x0059C314..0x0059C324 exclusive; Thumb; _ZN4Anki5Cozmo8AIBeacon20FailedToFindLocationEv
+0059C314: push         {r4, lr}
+0059C316: mov          r4, r0
+0059C318: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0059C31C: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+0059C320: str          r0, [r4, #0x10]
+0059C322: pop          {r4, pc}
+RANGE 0x005DF148..0x005DF196 exclusive; Thumb;
+005DF148: vldr         s16, [r0, #0x10]
+005DF14C: vcmpe.f32    s16, #0
+005DF150: vmrs         apsr_nzcv, fpscr
+005DF154: vneg.f32     s0, s16
+005DF158: vmov.f32     s2, s16
+005DF15C: it           mi
+005DF15E: vmovmi.f32   s2, s0
+005DF162: vldr         s0, [pc, #0x1d0] ; word[005DF334]=3727C5AC
+005DF166: vcmpe.f32    s2, s0
+005DF16A: vmrs         apsr_nzcv, fpscr
+005DF16E: bmi          #0x5df198
+005DF170: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+005DF174: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+005DF178: vldr         s0, [r4, #0x130]
+005DF17C: vldr         s2, [pc, #0x1b8] ; word[005DF338]=B727C5AC
+005DF180: vadd.f32     s0, s16, s0
+005DF184: vadd.f32     s0, s0, s2
+005DF188: vmov         s2, r0
+005DF18C: vcmpe.f32    s0, s2
+005DF190: vmrs         apsr_nzcv, fpscr
+RANGE 0x005DF69C..0x005DF73C exclusive; Thumb;
+005DF69C: mov          r0, r8
+005DF69E: mov          r1, sb
+005DF6A0: blx          #0x4b4b00 ; Anki::Cozmo::AIWhiteboard::FailedToFindLocationInBeacon
+005DF6A4: add.w        r1, r5, #0x40
+005DF6A8: add          r5, sp, #0x30
+005DF6AA: adr          r2, #0x1a0
+005DF6AC: mov          r0, r5
+005DF6AE: blx          #0x4a7318 ; std::__ndk1::operator+
+005DF6B2: ldr          r0, [pc, #0x1c0] ; word[005DF874]=0060EC01
+005DF6B4: movs         r7, #0
+005DF6B6: ldrb.w       r2, [sp, #0x30]
+005DF6BA: ldr          r1, [sp, #0x38]
+005DF6BC: add          r0, pc
+005DF6BE: ldr          r3, [pc, #0x1b8] ; word[005DF878]=00614ABA
+005DF6C0: tst.w        r2, #1
+005DF6C4: strd         r7, r7, [sp, #0x24]
+005DF6C8: str          r7, [sp, #0x2c]
+005DF6CA: it           eq
+005DF6CC: orreq        r1, r5, #1
+005DF6D0: add          r3, pc
+005DF6D2: add          r2, sp, #0x24
+005DF6D4: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005DF6D8: ldr          r0, [sp, #0x24]
+005DF6DA: cbz          r0, #0x5df6fa
+005DF6DC: ldr          r1, [sp, #0x28]
+005DF6DE: cmp          r1, r0
+005DF6E0: itttt        ne
+005DF6E2: subne.w      r2, r1, #8
+005DF6E6: subne        r2, r2, r0
+005DF6E8: mvnne        r3, #7
+005DF6EC: bicne.w      r2, r3, r2
+005DF6F0: itt          ne
+005DF6F2: addne        r1, r1, r2
+005DF6F4: strne        r1, [sp, #0x28]
+005DF6F6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005DF6FA: ldrb.w       r0, [sp, #0x30]
+005DF6FE: lsls         r0, r0, #0x1f
+005DF700: itt          ne
+005DF702: ldrne        r0, [sp, #0x38]
+005DF704: blxne        #0x4a40cc
+005DF708: ldr.w        r4, [r4, #0x440]
+005DF70C: movs         r0, #0
+005DF70E: str          r0, [sp, #0x38]
+005DF710: strd         r0, r0, [sp, #0x30]
+005DF714: add          r0, sp, #0x30
+005DF716: adr          r1, #0x164
+005DF718: movs         r2, #0x18
+005DF71A: bl           #0x4e02b2 ; FUN_004e02b2
+005DF71E: blx          #0x4ab3bc ; Anki::Cozmo::MoodManager::GetCurrentTimeInSeconds
+005DF722: mov          r2, r0
+005DF724: add          r1, sp, #0x30
+005DF726: mov          r0, r4
+005DF728: blx          #0x4ab3c8 ; Anki::Cozmo::MoodManager::TriggerEmotionEvent
+005DF72C: ldrb.w       r0, [sp, #0x30]
+005DF730: lsls         r0, r0, #0x1f
+005DF732: itt          ne
+005DF734: ldrne        r0, [sp, #0x38]
+005DF736: blxne        #0x4a40cc
+005DF73A: add          r6, sp, #0x40
+RANGE 0x005DF59C..0x005DF5E2 exclusive; Thumb;
+005DF59C: mov          r0, r5
+005DF59E: movs         r1, #0x1f
+005DF5A0: blx          #0x4b3090 ; Anki::Cozmo::IBehavior::NeedActionCompleted
+005DF5A4: ldr          r1, [pc, #0x2a0] ; word[005DF848]=00604950
+005DF5A6: add          r6, sp, #0x30
+005DF5A8: movs         r0, #0
+005DF5AA: movs         r2, #0
+005DF5AC: add          r1, pc
+005DF5AE: str          r0, [sp, #0x38]
+005DF5B0: strd         r0, r0, [sp, #0x30]
+005DF5B4: mov          r0, r6
+005DF5B6: bl           #0x4e02b2 ; FUN_004e02b2
+005DF5BA: add          r0, sp, #0x40
+005DF5BC: mov          r1, r6
+005DF5BE: blx          #0x4a40c0 ; Anki::Pose3d::Pose3d
+005DF5C2: ldrb.w       r0, [sp, #0x30]
+005DF5C6: lsls         r0, r0, #0x1f
+005DF5C8: itt          ne
+005DF5CA: ldrne        r0, [sp, #0x38]
+005DF5CC: blxne        #0x4a40cc
+005DF5D0: vldr         s0, [r5, #0x130]
+005DF5D4: add          r3, sp, #0x40
+005DF5D6: mov          r0, r7
+005DF5D8: mov          r1, sb
+005DF5DA: mov          r2, r4
+005DF5DC: vstr         s0, [sp]
+RANGE 0x005E18AC..0x005E191C exclusive; Thumb;
+005E18AC: ldr          r2, [pc, #0x38c] ; word[005E1C3C]=00612B94
+005E18AE: add          r5, sp, #0x3c
+005E18B0: add.w        r1, sb, #0x40
+005E18B4: add          r2, pc
+005E18B6: mov          r0, r5
+005E18B8: blx          #0x4a7318 ; std::__ndk1::operator+
+005E18BC: ldr          r0, [pc, #0x380] ; word[005E1C40]=0060C9F7
+005E18BE: movs         r7, #0
+005E18C0: ldrb.w       r2, [sp, #0x3c]
+005E18C4: ldr          r1, [sp, #0x44]
+005E18C6: add          r0, pc
+005E18C8: ldr          r3, [pc, #0x378] ; word[005E1C44]=00612B88
+005E18CA: tst.w        r2, #1
+005E18CE: strd         r7, r7, [sp, #0x30]
+005E18D2: str          r7, [sp, #0x38]
+005E18D4: it           eq
+005E18D6: orreq        r1, r5, #1
+005E18DA: add          r3, pc
+005E18DC: add          r2, sp, #0x30
+005E18DE: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005E18E2: ldr          r0, [sp, #0x30]
+005E18E4: cbz          r0, #0x5e1904
+005E18E6: ldr          r1, [sp, #0x34]
+005E18E8: cmp          r1, r0
+005E18EA: itttt        ne
+005E18EC: subne.w      r2, r1, #8
+005E18F0: subne        r2, r2, r0
+005E18F2: mvnne        r3, #7
+005E18F6: bicne.w      r2, r3, r2
+005E18FA: itt          ne
+005E18FC: addne        r1, r1, r2
+005E18FE: strne        r1, [sp, #0x34]
+005E1900: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1904: ldrb.w       r0, [sp, #0x3c]
+005E1908: lsls         r0, r0, #0x1f
+005E190A: itt          ne
+005E190C: ldrne        r0, [sp, #0x44]
+005E190E: blxne        #0x4a40cc
+005E1912: ldr.w        r1, [r8, #8]
+005E1916: blx          #0x4b4b30 ; Anki::Cozmo::BehaviorExploreBringCubeToBeacon::FireEmotionEvents
+005E191A: b            #0x5e1b5a

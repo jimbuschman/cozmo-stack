@@ -1,0 +1,217 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004BDE78..0x004BDE9C exclusive; ARM;
+004BDE78: add          ip, pc, #0xb00000
+004BDE7C: add          ip, ip, #0x8a000
+004BDE80: ldr          pc, [ip, #0xe34]!
+004BDE84: add          ip, pc, #0xb00000
+004BDE88: add          ip, ip, #0x8a000
+004BDE8C: ldr          pc, [ip, #0xe2c]!
+004BDE90: add          ip, pc, #0xb00000
+004BDE94: add          ip, ip, #0x8a000
+004BDE98: ldr          pc, [ip, #0xe24]!
+RANGE 0x004BDECC..0x004BDED8 exclusive; ARM;
+004BDECC: add          ip, pc, #0xb00000
+004BDED0: add          ip, ip, #0x8a000
+004BDED4: ldr          pc, [ip, #0xdfc]!
+RANGE 0x004BDEFC..0x004BDF2C exclusive; ARM;
+004BDEFC: add          ip, pc, #0xb00000
+004BDF00: add          ip, ip, #0x8a000
+004BDF04: ldr          pc, [ip, #0xddc]!
+004BDF08: add          ip, pc, #0xb00000
+004BDF0C: add          ip, ip, #0x8a000
+004BDF10: ldr          pc, [ip, #0xdd4]!
+004BDF14: add          ip, pc, #0xb00000
+004BDF18: add          ip, ip, #0x8a000
+004BDF1C: ldr          pc, [ip, #0xdcc]!
+004BDF20: add          ip, pc, #0xb00000
+004BDF24: add          ip, ip, #0x8a000
+004BDF28: ldr          pc, [ip, #0xdc4]!
+RANGE 0x004BDF44..0x004BDFA4 exclusive; ARM;
+004BDF44: add          ip, pc, #0xb00000
+004BDF48: add          ip, ip, #0x8a000
+004BDF4C: ldr          pc, [ip, #0xdac]!
+004BDF50: add          ip, pc, #0xb00000
+004BDF54: add          ip, ip, #0x8a000
+004BDF58: ldr          pc, [ip, #0xda4]!
+004BDF5C: add          ip, pc, #0xb00000
+004BDF60: add          ip, ip, #0x8a000
+004BDF64: ldr          pc, [ip, #0xd9c]!
+004BDF68: add          ip, pc, #0xb00000
+004BDF6C: add          ip, ip, #0x8a000
+004BDF70: ldr          pc, [ip, #0xd94]!
+004BDF74: add          ip, pc, #0xb00000
+004BDF78: add          ip, ip, #0x8a000
+004BDF7C: ldr          pc, [ip, #0xd8c]!
+004BDF80: add          ip, pc, #0xb00000
+004BDF84: add          ip, ip, #0x8a000
+004BDF88: ldr          pc, [ip, #0xd84]!
+004BDF8C: add          ip, pc, #0xb00000
+004BDF90: add          ip, ip, #0x8a000
+004BDF94: ldr          pc, [ip, #0xd7c]!
+004BDF98: add          ip, pc, #0xb00000
+004BDF9C: add          ip, ip, #0x8a000
+004BDFA0: ldr          pc, [ip, #0xd74]!
+RANGE 0x0068C618..0x0068C7A6 exclusive; Thumb; _ZN4Anki5Cozmo18LocalNotifications4InitERKN4Json5ValueEPNS_4Util15RandomGeneratorEf
+0068C618: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0068C61C: sub          sp, #0x74
+0068C61E: vldr         s0, [pc, #0x1e0] ; word[0068C800]=42700000
+0068C622: vmov         s2, r3
+0068C626: mov          r4, r0
+0068C628: mov          r8, r1
+0068C62A: vadd.f32     s0, s2, s0
+0068C62E: mov          sb, r4
+0068C630: ldr          r6, [sb, #0x1c]!
+0068C634: str          r2, [sb, #-0x14]
+0068C638: vstr         s0, [sb, #-4]
+0068C63C: ldr          r5, [r4, #0x20]
+0068C63E: cmp          r5, r6
+0068C640: beq          #0x68c698
+0068C642: sub.w        r7, r5, #0x64
+0068C646: str          r7, [r4, #0x20]
+0068C648: ldrb         r0, [r5, #-0xc]
+0068C64C: lsls         r0, r0, #0x1f
+0068C64E: itt          ne
+0068C650: ldrne        r0, [r5, #-0x4]
+0068C654: blxne        #0x4a40cc
+0068C658: ldrb         r0, [r5, #-0x18]
+0068C65C: lsls         r0, r0, #0x1f
+0068C65E: itt          ne
+0068C660: ldrne        r0, [r5, #-0x10]
+0068C664: blxne        #0x4a40cc
+0068C668: ldrb         r0, [r5, #-0x38]
+0068C66C: lsls         r0, r0, #0x1f
+0068C66E: itt          ne
+0068C670: ldrne        r0, [r5, #-0x30]
+0068C674: blxne        #0x4a40cc
+0068C678: sub.w        r0, r5, #0x48
+0068C67C: bl           #0x4eaf98 ; FUN_004eaf98
+0068C680: ldrb         r0, [r5, #-0x54]
+0068C684: lsls         r0, r0, #0x1f
+0068C686: itt          ne
+0068C688: ldrne        r0, [r5, #-0x4c]
+0068C68C: blxne        #0x4a40cc
+0068C690: mov          r0, r7
+0068C692: blx          #0x4bd380 ; Anki::Cozmo::NotificationUnion::ClearCurrent
+0068C696: b            #0x68c63c
+0068C698: ldr          r1, [pc, #0x168] ; word[0068C804]=009CFA10
+0068C69A: mov          r0, r8
+0068C69C: add          r1, pc
+0068C69E: blx          #0x4a5f80 ; Json::Value::operator[]
+0068C6A2: mov          r7, r0
+0068C6A4: blx          #0x4a60e8 ; Json::Value::isArray
+0068C6A8: cmp          r0, #1
+0068C6AA: bne          #0x68c77e
+0068C6AC: mov          r0, r7
+0068C6AE: blx          #0x4a6124 ; Json::Value::size
+0068C6B2: mov          r5, r0
+0068C6B4: mov          r0, sb
+0068C6B6: mov          r1, r5
+0068C6B8: blx          #0x4bd38c ; std::__ndk1::vector<Anki::Cozmo::LocalNotificationItem,std::__ndk1::allocator<Anki::Cozmo::LocalNotificationItem>>::reserve
+0068C6BC: mov          r0, r5
+0068C6BE: cmp          r5, #1
+0068C6C0: str          r0, [sp]
+0068C6C2: blt          #0x68c77e
+0068C6C4: add          r6, sp, #0x10
+0068C6C6: movs         r5, #0
+0068C6C8: add.w        r0, r6, #0x1c
+0068C6CC: add.w        fp, r6, #0x2c
+0068C6D0: str          r0, [sp, #0xc]
+0068C6D2: add.w        r0, r6, #0x4c
+0068C6D6: mov.w        r8, #0
+0068C6DA: str          r0, [sp, #8]
+0068C6DC: add.w        r0, r6, #0x10
+0068C6E0: str          r0, [sp, #4]
+0068C6E2: mov          r0, r7
+0068C6E4: mov          r1, r8
+0068C6E6: blx          #0x4a6130 ; Json::Value::operator[]
+0068C6EA: mov          sl, r0
+0068C6EC: movs         r0, #0xff
+0068C6EE: strb.w       r0, [sp, #0x10]
+0068C6F2: movs         r1, #0x18
+0068C6F4: strd         r5, r5, [fp]
+0068C6F8: ldr          r0, [sp, #4]
+0068C6FA: str.w        r5, [fp, #8]
+0068C6FE: blx          #0x4a48ac ; <EXTERNAL>::__aeabi_memclr8
+0068C702: ldr          r0, [sp, #8]
+0068C704: movs         r1, #0x18
+0068C706: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+0068C70A: mov          r0, r6
+0068C70C: mov          r1, sl
+0068C70E: blx          #0x4bd398 ; Anki::Cozmo::LocalNotificationItem::SetFromJSON
+0068C712: ldrd         r0, r1, [r4, #0x20]
+0068C716: cmp          r0, r1
+0068C718: bhs          #0x68c728
+0068C71A: mov          r1, r6
+0068C71C: bl           #0x68e35e ; FUN_0068e35e
+0068C720: ldr          r0, [r4, #0x20]
+0068C722: adds         r0, #0x64
+0068C724: str          r0, [r4, #0x20]
+0068C726: b            #0x68c730
+0068C728: mov          r0, sb
+0068C72A: mov          r1, r6
+0068C72C: blx          #0x4bd3a4 ; std::__ndk1::vector<Anki::Cozmo::LocalNotificationItem,std::__ndk1::allocator<Anki::Cozmo::LocalNotificationItem>>::__emplace_back_slow_path<Anki::Cozmo::LocalNotificationItem&>
+0068C730: ldrb.w       r0, [sp, #0x68]
+0068C734: lsls         r0, r0, #0x1f
+0068C736: itt          ne
+0068C738: ldrne        r0, [sp, #0x70]
+0068C73A: blxne        #0x4a40cc
+0068C73E: ldrb.w       r0, [sp, #0x5c]
+0068C742: lsls         r0, r0, #0x1f
+0068C744: itt          ne
+0068C746: ldrne        r0, [sp, #0x64]
+0068C748: blxne        #0x4a40cc
+0068C74C: ldrb.w       r0, [sp, #0x3c]
+0068C750: lsls         r0, r0, #0x1f
+0068C752: itt          ne
+0068C754: ldrne        r0, [sp, #0x44]
+0068C756: blxne        #0x4a40cc
+0068C75A: ldr          r0, [sp, #0xc]
+0068C75C: bl           #0x4eaf98 ; FUN_004eaf98
+0068C760: ldrb.w       r0, [sp, #0x20]
+0068C764: lsls         r0, r0, #0x1f
+0068C766: itt          ne
+0068C768: ldrne        r0, [sp, #0x28]
+0068C76A: blxne        #0x4a40cc
+0068C76E: mov          r0, r6
+0068C770: blx          #0x4bd380 ; Anki::Cozmo::NotificationUnion::ClearCurrent
+0068C774: ldr          r0, [sp]
+0068C776: add.w        r8, r8, #1
+0068C77A: cmp          r8, r0
+0068C77C: blt          #0x68c6e2
+0068C77E: mov          r0, r4
+0068C780: ldr          r1, [r0], #0xc
+0068C784: ldr          r1, [r1, #4]
+0068C786: strd         r1, r4, [sp, #0x10]
+0068C78A: add          r4, sp, #0x10
+0068C78C: str          r0, [sp, #0x18]
+0068C78E: mov          r0, r4
+0068C790: bl           #0x68c858 ; FUN_0068c858
+0068C794: mov          r0, r4
+0068C796: bl           #0x68c918 ; FUN_0068c918
+0068C79A: mov          r0, r4
+0068C79C: bl           #0x68c9d8 ; FUN_0068c9d8
+0068C7A0: add          sp, #0x74
+0068C7A2: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x0063B3D4..0x0063B40A exclusive; Thumb; _ZN4Anki5Cozmo30DesiredFaceDistortionComponent4InitERKN4Json5ValueEPNS_4Util15RandomGeneratorE
+0063B3D4: push         {r4, r5, r6, r7, lr}
+0063B3D6: sub          sp, #4
+0063B3D8: mov          r4, r2
+0063B3DA: adr          r2, #0x3c
+0063B3DC: mov          r5, r0
+0063B3DE: mov          r0, r1
+0063B3E0: mov          r1, r2
+0063B3E2: blx          #0x4a5f2c ; Json::Value::operator[]
+0063B3E6: mov          r7, r0
+0063B3E8: movs         r0, #0x10
+0063B3EA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0063B3EE: mov          r6, r0
+0063B3F0: mov          r1, r7
+0063B3F2: blx          #0x4b94a4 ; Anki::Cozmo::DesiredFaceDistortionComponent::Params::Params
+0063B3F6: ldr          r0, [r5]
+0063B3F8: str          r6, [r5]
+0063B3FA: cbz          r0, #0x63b404
+0063B3FC: blx          #0x4b94b0 ; Anki::Cozmo::DesiredFaceDistortionComponent::Params::~Params
+0063B400: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0063B404: str          r4, [r5, #0xc]
+0063B406: add          sp, #4
+0063B408: pop          {r4, r5, r6, r7, pc}

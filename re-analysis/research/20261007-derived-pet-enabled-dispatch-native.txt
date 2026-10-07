@@ -1,0 +1,19 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00612030..0x00612054 exclusive; Thumb;
+00612030: movs         r0, #1
+00612032: bx           lr
+00612034: movs         r0, #1
+00612036: bx           lr
+00612038: ldr          r1, [r0, #0x30]
+0061203A: b.w          #0x8cc9cc
+0061203E: movs         r0, r0
+00612040: push         {r4, r5, r6, r7, lr}
+00612042: sub          sp, #0xc
+00612044: mov          r6, r1
+00612046: mov          r4, r0
+00612048: movs         r0, #0
+0061204A: mov          r7, sp
+0061204C: adr          r1, #0x50
+0061204E: mov          r5, r2
+00612050: str          r0, [sp, #8]
+00612052: movs         r2, #0x22

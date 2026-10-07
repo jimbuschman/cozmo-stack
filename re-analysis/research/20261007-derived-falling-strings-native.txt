@@ -1,0 +1,5 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00535248: bytes=b'Robot.HandleFallingStopped.FallingStopped'
+00535270: bytes=b'd'
+005352B0: bytes=b'robot.falling_event'
+00BE44C1: bytes=b'$data'

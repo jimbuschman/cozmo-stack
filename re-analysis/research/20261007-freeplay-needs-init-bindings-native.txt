@@ -1,0 +1,290 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0104CCB4: raw=004A4010 relocated=007DEB75 _ZNSt6__ndk113unordered_mapINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeENS_4hashIS6_EENS_8equal_toIS6_EENS4_INS_4pairIKS6_S9_EEEEEC2ESt16initializer_listISG_E
+0104CCB8: raw=004A4010 relocated=007DFC55 _ZNKSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE4findIS7_EENS_21__hash_const_iteratorIPNS_11__hash_nodeISB_PvEEEERKT_
+0104CCBC: raw=004A4010 relocated=007DF995 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE21__construct_node_hashIRKNS_4pairIKS7_SA_EEJEEENS_10unique_ptrINS_11__hash_nodeISB_PvEENS_22__hash_node_destructorINS5_ISV_EEEEEEjOT_DpOT0_
+0104CCC0: raw=004A4010 relocated=007DF9FB _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE6rehashEj
+0104CCC4: raw=004A4010 relocated=007DF21B _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEED2Ev
+0104CCC8: raw=004A4010 relocated=007DEF7D _ZNSt6__ndk113unordered_mapINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeENS_4hashIS6_EENS_8equal_toIS6_EENS4_INS_4pairIKS6_S9_EEEEEC2ESt16initializer_listISG_E
+0104CCCC: raw=004A4010 relocated=007DFFD5 _ZNKSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE4findIS7_EENS_21__hash_const_iteratorIPNS_11__hash_nodeISB_PvEEEERKT_
+0104CCD0: raw=004A4010 relocated=007DFD15 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE21__construct_node_hashIRKNS_4pairIKS7_SA_EEJEEENS_10unique_ptrINS_11__hash_nodeISB_PvEENS_22__hash_node_destructorINS5_ISV_EEEEEEjOT_DpOT0_
+0104CCD4: raw=004A4010 relocated=007DFD7B _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE6rehashEj
+0104CCD8: raw=004A4010 relocated=007DF257 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEED2Ev
+0104CCDC: raw=004A4010 relocated=007DF1BD _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo12VizConstantsEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE12__deallocateEPNS_11__hash_nodeISB_PvEE
+0104CCE0: raw=004A4010 relocated=007DF1F9 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo13VizObjectTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE12__deallocateEPNS_11__hash_nodeISB_PvEE
+0104CCE4: raw=004A4010 relocated=007DF235 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE12__deallocateEPNS_11__hash_nodeISB_PvEE
+0104CCE8: raw=004A4010 relocated=007DF271 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE12__deallocateEPNS_11__hash_nodeISB_PvEE
+0104CCEC: raw=004A4010 relocated=007DF389 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo12VizConstantsEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE8__rehashEj
+0104CCF0: raw=004A4010 relocated=007DF709 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo13VizObjectTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE8__rehashEj
+0104CCF4: raw=004A4010 relocated=007DFA89 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo11VizQuadTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE8__rehashEj
+0104CCF8: raw=004A4010 relocated=007DFE09 _ZNSt6__ndk112__hash_tableINS_17__hash_value_typeINS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEN4Anki5Cozmo18VizRobotMarkerTypeEEENS_22__unordered_map_hasherIS7_SB_NS_4hashIS7_EELb1EEENS_21__unordered_map_equalIS7_SB_NS_8equal_toIS7_EELb1EEENS5_ISB_EEE8__rehashEj
+0104CCFC: raw=004A4010 relocated=007E00A1 _ZN4Anki5Cozmo12VizInterface17RobotStateMessage6UnpackERKN4CLAD17SafeMessageBufferE
+0104CD00: raw=004A4010 relocated=007E016F _ZNK4Anki5Cozmo12VizInterface17RobotStateMessage4PackERN4CLAD17SafeMessageBufferE
+0104CD04: raw=004A4010 relocated=007E0235 _ZNK4Anki5Cozmo12VizInterface17RobotStateMessageeqERKS2_
+0104CD08: raw=004A4010 relocated=007E02B9 _ZN4Anki5Cozmo12VizInterface6Object6UnpackERKN4CLAD17SafeMessageBufferE
+0104CD0C: raw=004A4010 relocated=007E03EB _ZNK4Anki5Cozmo12VizInterface6Object4PackERN4CLAD17SafeMessageBufferE
+0104CD10: raw=004A4010 relocated=007E0509 _ZNK4Anki5Cozmo12VizInterface6ObjecteqERKS2_
+0104CD14: raw=004A4010 relocated=007E063B _ZN4Anki5Cozmo12VizInterface16SegmentPrimitive6UnpackERKN4CLAD17SafeMessageBufferE
+0104CD18: raw=004A4010 relocated=007E0611 _ZN4Anki5Cozmo12VizInterface16SegmentPrimitiveC1ERKN4CLAD17SafeMessageBufferE
+0104CD1C: raw=004A4010 relocated=007E0719 _ZNK4Anki5Cozmo12VizInterface16SegmentPrimitive4PackERN4CLAD17SafeMessageBufferE
+0104CD20: raw=004A4010 relocated=007E07D5 _ZNK4Anki5Cozmo12VizInterface16SegmentPrimitiveeqERKS2_
+0104CD24: raw=004A4010 relocated=007E08B7 _ZN4Anki5Cozmo12VizInterface4Quad6UnpackERKN4CLAD17SafeMessageBufferE
+RANGE 0x0068E650..0x0068E706 exclusive; Thumb; _ZN4Anki5Cozmo17StarRewardsConfig4InitERKN4Json5ValueE
+0068E650: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0068E654: sub          sp, #0x44
+0068E656: mov          r4, r0
+0068E658: mov          r5, r1
+0068E65A: ldr          r6, [r4]
+0068E65C: b            #0x68e666
+0068E65E: subs         r0, #0x40
+0068E660: str          r0, [r4, #4]
+0068E662: blx          #0x4bd5fc ; std::__ndk1::__vector_base<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::~__vector_base
+0068E666: ldr          r0, [r4, #4]
+0068E668: cmp          r0, r6
+0068E66A: bne          #0x68e65e
+0068E66C: ldr          r1, [pc, #0xa4] ; word[0068E714]=009CDB7C
+0068E66E: mov          r0, r5
+0068E670: add          r1, pc
+0068E672: blx          #0x4a5f80 ; Json::Value::operator[]
+0068E676: mov          sl, r0
+0068E678: blx          #0x4a60e8 ; Json::Value::isArray
+0068E67C: cmp          r0, #1
+0068E67E: bne          #0x68e700
+0068E680: mov          r0, sl
+0068E682: blx          #0x4a6124 ; Json::Value::size
+0068E686: mov          r5, r0
+0068E688: mov          r0, r4
+0068E68A: mov          r1, r5
+0068E68C: blx          #0x4bd608 ; std::__ndk1::vector<Anki::Cozmo::UnlockLevel,std::__ndk1::allocator<Anki::Cozmo::UnlockLevel>>::reserve
+0068E690: cmp          r5, #1
+0068E692: blt          #0x68e700
+0068E694: add.w        fp, sp, #4
+0068E698: mov.w        sb, #0
+0068E69C: mov.w        r8, #0
+0068E6A0: add.w        r0, fp, #0xc
+0068E6A4: str          r0, [sp]
+0068E6A6: mov          r0, sl
+0068E6A8: mov          r1, r8
+0068E6AA: blx          #0x4a6130 ; Json::Value::operator[]
+0068E6AE: mov          r1, r0
+0068E6B0: strd         sb, sb, [sp, #4]
+0068E6B4: str.w        sb, [sp, #0xc]
+0068E6B8: mov          r0, fp
+0068E6BA: blx          #0x4bd614 ; Anki::Cozmo::UnlockLevel::SetFromJSON
+0068E6BE: ldrd         r0, r1, [r4, #4]
+0068E6C2: cmp          r0, r1
+0068E6C4: bhs          #0x68e6ea
+0068E6C6: mov          r1, fp
+0068E6C8: blx          #0x4bd620 ; std::__ndk1::vector<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::vector
+0068E6CC: ldr          r1, [sp]
+0068E6CE: mov          ip, r5
+0068E6D0: adds         r0, #0xc
+0068E6D2: ldm          r1!, {r2, r3, r5, r7}
+0068E6D4: stm          r0!, {r2, r3, r5, r7}
+0068E6D6: ldm          r1!, {r2, r3, r5, r7}
+0068E6D8: stm          r0!, {r2, r3, r5, r7}
+0068E6DA: ldm.w        r1, {r2, r3, r5, r6, r7}
+0068E6DE: stm          r0!, {r2, r3, r5, r6, r7}
+0068E6E0: mov          r5, ip
+0068E6E2: ldr          r0, [r4, #4]
+0068E6E4: adds         r0, #0x40
+0068E6E6: str          r0, [r4, #4]
+0068E6E8: b            #0x68e6f2
+0068E6EA: mov          r0, r4
+0068E6EC: mov          r1, fp
+0068E6EE: blx          #0x4bd62c ; std::__ndk1::vector<Anki::Cozmo::UnlockLevel,std::__ndk1::allocator<Anki::Cozmo::UnlockLevel>>::__emplace_back_slow_path<Anki::Cozmo::UnlockLevel&>
+0068E6F2: mov          r0, fp
+0068E6F4: blx          #0x4bd5fc ; std::__ndk1::__vector_base<Anki::Cozmo::NeedsReward,std::__ndk1::allocator<Anki::Cozmo::NeedsReward>>::~__vector_base
+0068E6F8: add.w        r8, r8, #1
+0068E6FC: cmp          r8, r5
+0068E6FE: blt          #0x68e6a6
+0068E700: add          sp, #0x44
+0068E702: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x0068C858..0x0068C8E4 exclusive; Thumb;
+0068C858: push         {r4, r5, r6, lr}
+0068C85A: sub          sp, #0x30
+0068C85C: ldr          r1, [pc, #0xac] ; word[0068C90C]=009B1FE6
+0068C85E: add          r6, sp, #0x10
+0068C860: movs         r3, #0xd4
+0068C862: add          r1, pc
+0068C864: ldr          r1, [r1]
+0068C866: ldr          r1, [r1]
+0068C868: str          r1, [sp, #0x2c]
+0068C86A: ldm.w        r0, {r1, r2, r5}
+0068C86E: ldr          r0, [r1]
+0068C870: ldr          r4, [r0, #0x2c]
+0068C872: ldr          r0, [pc, #0x9c] ; word[0068C910]=009A4246
+0068C874: str          r2, [sp, #0x14]
+0068C876: add          r0, pc
+0068C878: strh.w       r3, [sp, #6]
+0068C87C: adds         r0, #8
+0068C87E: str          r6, [sp, #0x20]
+0068C880: str          r0, [sp, #0x10]
+0068C882: add          r0, sp, #8
+0068C884: add.w        r2, sp, #6
+0068C888: mov          r3, r6
+0068C88A: blx          r4
+0068C88C: ldrd         r0, r1, [r5, #4]
+0068C890: cmp          r0, r1
+0068C892: bhs          #0x68c8aa
+0068C894: ldr          r1, [sp, #8]
+0068C896: str          r1, [r0]
+0068C898: ldr          r1, [sp, #0xc]
+0068C89A: str          r1, [r0, #4]
+0068C89C: movs         r0, #0
+0068C89E: strd         r0, r0, [sp, #8]
+0068C8A2: ldr          r0, [r5, #4]
+0068C8A4: adds         r0, #8
+0068C8A6: str          r0, [r5, #4]
+0068C8A8: b            #0x68c8b2
+0068C8AA: add          r1, sp, #8
+0068C8AC: mov          r0, r5
+0068C8AE: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068C8B2: ldr          r0, [sp, #0xc]
+0068C8B4: cbz          r0, #0x68c8ba
+0068C8B6: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068C8BA: ldr          r0, [sp, #0x20]
+0068C8BC: cmp          r6, r0
+0068C8BE: beq          #0x68c8c8
+0068C8C0: cbz          r0, #0x68c8ce
+0068C8C2: ldr          r1, [r0]
+0068C8C4: ldr          r1, [r1, #0x14]
+0068C8C6: b            #0x68c8cc
+0068C8C8: ldr          r1, [r0]
+0068C8CA: ldr          r1, [r1, #0x10]
+0068C8CC: blx          r1
+0068C8CE: ldr          r0, [pc, #0x44] ; word[0068C914]=009B1F76
+0068C8D0: ldr          r1, [sp, #0x2c]
+0068C8D2: add          r0, pc
+0068C8D4: ldr          r0, [r0]
+0068C8D6: ldr          r0, [r0]
+0068C8D8: subs         r0, r0, r1
+0068C8DA: itt          eq
+0068C8DC: addeq        sp, #0x30
+0068C8DE: popeq        {r4, r5, r6, pc}
+0068C8E0: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x0068C918..0x0068C9A4 exclusive; Thumb;
+0068C918: push         {r4, r5, r6, lr}
+0068C91A: sub          sp, #0x30
+0068C91C: ldr          r1, [pc, #0xac] ; word[0068C9CC]=009B1F26
+0068C91E: add          r6, sp, #0x10
+0068C920: movs         r3, #0xd5
+0068C922: add          r1, pc
+0068C924: ldr          r1, [r1]
+0068C926: ldr          r1, [r1]
+0068C928: str          r1, [sp, #0x2c]
+0068C92A: ldm.w        r0, {r1, r2, r5}
+0068C92E: ldr          r0, [r1]
+0068C930: ldr          r4, [r0, #0x2c]
+0068C932: ldr          r0, [pc, #0x9c] ; word[0068C9D0]=009A41C6
+0068C934: str          r2, [sp, #0x14]
+0068C936: add          r0, pc
+0068C938: strh.w       r3, [sp, #6]
+0068C93C: adds         r0, #8
+0068C93E: str          r6, [sp, #0x20]
+0068C940: str          r0, [sp, #0x10]
+0068C942: add          r0, sp, #8
+0068C944: add.w        r2, sp, #6
+0068C948: mov          r3, r6
+0068C94A: blx          r4
+0068C94C: ldrd         r0, r1, [r5, #4]
+0068C950: cmp          r0, r1
+0068C952: bhs          #0x68c96a
+0068C954: ldr          r1, [sp, #8]
+0068C956: str          r1, [r0]
+0068C958: ldr          r1, [sp, #0xc]
+0068C95A: str          r1, [r0, #4]
+0068C95C: movs         r0, #0
+0068C95E: strd         r0, r0, [sp, #8]
+0068C962: ldr          r0, [r5, #4]
+0068C964: adds         r0, #8
+0068C966: str          r0, [r5, #4]
+0068C968: b            #0x68c972
+0068C96A: add          r1, sp, #8
+0068C96C: mov          r0, r5
+0068C96E: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068C972: ldr          r0, [sp, #0xc]
+0068C974: cbz          r0, #0x68c97a
+0068C976: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068C97A: ldr          r0, [sp, #0x20]
+0068C97C: cmp          r6, r0
+0068C97E: beq          #0x68c988
+0068C980: cbz          r0, #0x68c98e
+0068C982: ldr          r1, [r0]
+0068C984: ldr          r1, [r1, #0x14]
+0068C986: b            #0x68c98c
+0068C988: ldr          r1, [r0]
+0068C98A: ldr          r1, [r1, #0x10]
+0068C98C: blx          r1
+0068C98E: ldr          r0, [pc, #0x44] ; word[0068C9D4]=009B1EB6
+0068C990: ldr          r1, [sp, #0x2c]
+0068C992: add          r0, pc
+0068C994: ldr          r0, [r0]
+0068C996: ldr          r0, [r0]
+0068C998: subs         r0, r0, r1
+0068C99A: itt          eq
+0068C99C: addeq        sp, #0x30
+0068C99E: popeq        {r4, r5, r6, pc}
+0068C9A0: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x0068C9D8..0x0068CA64 exclusive; Thumb;
+0068C9D8: push         {r4, r5, r6, lr}
+0068C9DA: sub          sp, #0x30
+0068C9DC: ldr          r1, [pc, #0xac] ; word[0068CA8C]=009B1E66
+0068C9DE: add          r6, sp, #0x10
+0068C9E0: movs         r3, #0xd6
+0068C9E2: add          r1, pc
+0068C9E4: ldr          r1, [r1]
+0068C9E6: ldr          r1, [r1]
+0068C9E8: str          r1, [sp, #0x2c]
+0068C9EA: ldm.w        r0, {r1, r2, r5}
+0068C9EE: ldr          r0, [r1]
+0068C9F0: ldr          r4, [r0, #0x2c]
+0068C9F2: ldr          r0, [pc, #0x9c] ; word[0068CA90]=009A4146
+0068C9F4: str          r2, [sp, #0x14]
+0068C9F6: add          r0, pc
+0068C9F8: strh.w       r3, [sp, #6]
+0068C9FC: adds         r0, #8
+0068C9FE: str          r6, [sp, #0x20]
+0068CA00: str          r0, [sp, #0x10]
+0068CA02: add          r0, sp, #8
+0068CA04: add.w        r2, sp, #6
+0068CA08: mov          r3, r6
+0068CA0A: blx          r4
+0068CA0C: ldrd         r0, r1, [r5, #4]
+0068CA10: cmp          r0, r1
+0068CA12: bhs          #0x68ca2a
+0068CA14: ldr          r1, [sp, #8]
+0068CA16: str          r1, [r0]
+0068CA18: ldr          r1, [sp, #0xc]
+0068CA1A: str          r1, [r0, #4]
+0068CA1C: movs         r0, #0
+0068CA1E: strd         r0, r0, [sp, #8]
+0068CA22: ldr          r0, [r5, #4]
+0068CA24: adds         r0, #8
+0068CA26: str          r0, [r5, #4]
+0068CA28: b            #0x68ca32
+0068CA2A: add          r1, sp, #8
+0068CA2C: mov          r0, r5
+0068CA2E: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0068CA32: ldr          r0, [sp, #0xc]
+0068CA34: cbz          r0, #0x68ca3a
+0068CA36: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0068CA3A: ldr          r0, [sp, #0x20]
+0068CA3C: cmp          r6, r0
+0068CA3E: beq          #0x68ca48
+0068CA40: cbz          r0, #0x68ca4e
+0068CA42: ldr          r1, [r0]
+0068CA44: ldr          r1, [r1, #0x14]
+0068CA46: b            #0x68ca4c
+0068CA48: ldr          r1, [r0]
+0068CA4A: ldr          r1, [r1, #0x10]
+0068CA4C: blx          r1
+0068CA4E: ldr          r0, [pc, #0x44] ; word[0068CA94]=009B1DF6
+0068CA50: ldr          r1, [sp, #0x2c]
+0068CA52: add          r0, pc
+0068CA54: ldr          r0, [r0]
+0068CA56: ldr          r0, [r0]
+0068CA58: subs         r0, r0, r1
+0068CA5A: itt          eq
+0068CA5C: addeq        sp, #0x30
+0068CA5E: popeq        {r4, r5, r6, pc}
+0068CA60: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

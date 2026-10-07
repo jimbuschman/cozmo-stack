@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0056D12C..0x0056D1A8 exclusive; Thumb;
+0056D12C: push         {r4, r5, r6, r7, lr}
+0056D12E: sub          sp, #4
+0056D130: mov          r6, r0
+0056D132: ldr          r4, [r1]
+0056D134: ldr          r0, [r6, #4]
+0056D136: add.w        r5, r4, #0x14
+0056D13A: ldr          r0, [r0, #4]
+0056D13C: mov          r1, r5
+0056D13E: ldr.w        r0, [r0, #0x284]
+0056D142: blx          #0x4a6fac ; Anki::Cozmo::CarryingComponent::IsCarryingObject
+0056D146: cbnz         r0, #0x56d198
+0056D148: mov          r0, r4
+0056D14A: ldr          r7, [r6, #0xc]
+0056D14C: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+0056D150: mov          r1, r0
+0056D152: mov          r0, r7
+0056D154: movs         r2, #0
+0056D156: blx          #0x4acce8 ; Anki::Cozmo::AIBeacon::IsLocWithinBeacon
+0056D15A: cmp          r0, #1
+0056D15C: bne          #0x56d198
+0056D15E: ldr          r0, [r6, #8]
+0056D160: ldr          r2, [r4, #0x48]
+0056D162: str          r2, [sp]
+0056D164: ldrd         r1, r3, [r0, #4]
+0056D168: cmp          r1, r3
+0056D16A: bhs          #0x56d190
+0056D16C: ldr          r3, [pc, #0x30] ; word[0056D1A0]=00AD17AC
+0056D16E: ldr          r7, [pc, #0x34] ; word[0056D1A4]=00AD172E
+0056D170: add          r3, pc
+0056D172: add          r7, pc
+0056D174: ldr          r3, [r3]
+0056D176: ldr          r7, [r7]
+0056D178: adds         r3, #8
+0056D17A: str          r3, [r1]
+0056D17C: ldr          r3, [r4, #0x18]
+0056D17E: str          r2, [r1, #8]
+0056D180: add.w        r2, r7, #8
+0056D184: strd         r2, r3, [r1]
+0056D188: ldr          r1, [r0, #4]
+0056D18A: adds         r1, #0xc
+0056D18C: str          r1, [r0, #4]
+0056D18E: b            #0x56d198
+0056D190: mov          r2, sp
+0056D192: mov          r1, r5
+0056D194: blx          #0x4acb74 ; std::__ndk1::vector<Anki::Cozmo::AIWhiteboard::ObjectInfo,std::__ndk1::allocator<Anki::Cozmo::AIWhiteboard::ObjectInfo>>::__emplace_back_slow_path<Anki::ObjectID_const&,Anki::Cozmo::ObjectFamily>
+0056D198: movs         r0, #0
+0056D19A: add          sp, #4
+0056D19C: pop          {r4, r5, r6, r7, pc}
+0056D19E: nop
+0056D1A0: asrs         r4, r5, #0x1e
+0056D1A2: lsls         r5, r5, #2
+0056D1A4: asrs         r6, r5, #0x1c
+0056D1A6: lsls         r5, r5, #2
+RANGE 0x005E0D18..0x005E0D36 exclusive; Thumb;
+005E0D18: ldrd         pc, r8, [sl, #0x268]
+005E0D1C: movs         r4, r2
+005E0D1E: orn          r1, r7, r4
+005E0D22: cmp          r0, #0
+005E0D24: it           ne
+005E0D26: movne        r0, #1
+005E0D28: ands         r0, r1
+005E0D2A: strb.w       r0, [sl, #0x14]
+005E0D2E: mov          r0, r5
+005E0D30: add          sp, #0xc8
+005E0D32: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}

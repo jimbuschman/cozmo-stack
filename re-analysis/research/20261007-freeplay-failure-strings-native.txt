@@ -1,0 +1,63 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00BEE1E0: bytes=b"Removed failure on ['%s'] for object '%d' atPose (%.2f,%.2f,%.2f) atTime (%fs) to add one (we are at the max=%zu)"
+00BEE252: bytes=b"Added failure on ['%s'] for object '%d' atPose (%.2f,%.2f,%.2f) atTime (%fs) "
+01023444: raw=00BEE2A0 relocated=00BEE2A0
+01023448: raw=00BEE2A7 relocated=00BEE2A7
+0102344C: raw=00BEE2AF relocated=00BEE2AF
+01023450: raw=00BEE2B7 relocated=00BEE2B7
+RANGE 0x005E1CC6..0x005E1D56 exclusive; Thumb;
+005E1CC6: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005E1CCA: sub          sp, #0x14
+005E1CCC: mov          r5, r0
+005E1CCE: ldr          r4, [r1]
+005E1CD0: ldr          r0, [r5, #4]
+005E1CD2: cmp          r0, r4
+005E1CD4: beq          #0x5e1d52
+005E1CD6: ldrb.w       r0, [r4, #0x24]
+005E1CDA: cmp          r0, #1
+005E1CDC: bne          #0x5e1d52
+005E1CDE: ldr          r0, [r5, #0xc]
+005E1CE0: ldr          r7, [r5, #0x14]
+005E1CE2: ldr.w        r0, [r0, #0x264]
+005E1CE6: ldr.w        r8, [r0, #0x18]
+005E1CEA: mov          r0, r4
+005E1CEC: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+005E1CF0: mov          sb, r0
+005E1CF2: mov          r0, r4
+005E1CF4: ldr          r1, [r0, #0x14]!
+005E1CF8: ldr          r1, [r1]
+005E1CFA: blx          r1
+005E1CFC: movw         r1, #0xfdb
+005E1D00: mov          r6, r0
+005E1D02: add          r0, sp, #0xc
+005E1D04: movt         r1, #0x3ec9
+005E1D08: ldr.w        r7, [r7, #0x130]
+005E1D0C: blx          #0x4a4294 ; Anki::Radians::Radians
+005E1D10: movs         r1, #0
+005E1D12: movs         r2, #1
+005E1D14: movt         r1, #0x41a0
+005E1D18: mov          r3, r7
+005E1D1A: strd         sb, r1, [sp]
+005E1D1E: mov          r1, r6
+005E1D20: str          r0, [sp, #8]
+005E1D22: mov          r0, r8
+005E1D24: blx          #0x4acfe8 ; Anki::Cozmo::AIWhiteboard::DidFailToUse
+005E1D28: cbnz         r0, #0x5e1d52
+005E1D2A: mov          r0, r4
+005E1D2C: ldr          r6, [r5, #8]
+005E1D2E: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+005E1D32: ldr          r2, [r5, #0x10]
+005E1D34: mov          r1, r0
+005E1D36: mov          r0, r6
+005E1D38: blx          #0x4acce8 ; Anki::Cozmo::AIBeacon::IsLocWithinBeacon
+005E1D3C: cmp          r0, #1
+005E1D3E: bne          #0x5e1d52
+005E1D40: ldr          r0, [r5, #0xc]
+005E1D42: mov          r1, r4
+005E1D44: ldr.w        r0, [r0, #0x280]
+005E1D48: blx          #0x4abb0c ; Anki::Cozmo::DockingComponent::CanStackOnTopOfObject
+005E1D4C: cbz          r0, #0x5e1d52
+005E1D4E: movs         r0, #1
+005E1D50: b            #0x5e1d54
+005E1D52: movs         r0, #0
+005E1D54: add          sp, #0x14

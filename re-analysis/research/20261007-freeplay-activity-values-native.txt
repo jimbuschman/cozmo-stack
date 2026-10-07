@@ -1,0 +1,41 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005B33B8..0x005B3406 exclusive; Thumb; _ZN4Anki5Cozmo9IActivity12OnDeselectedERNS0_5RobotE
+005B33B8: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005B33BC: sub          sp, #0x34
+005B33BE: mov          r4, r1
+005B33C0: mov          r5, r0
+005B33C2: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+005B33C6: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+005B33CA: mov          r1, r0
+005B33CC: ldr          r0, [r5, #0x24]
+005B33CE: str          r1, [r5, #0x58]
+005B33D0: cbz          r0, #0x5b33d8
+005B33D2: ldr          r1, [r0]
+005B33D4: ldr          r1, [r1, #0x24]
+005B33D6: blx          r1
+005B33D8: ldr          r0, [r5, #0x44]
+005B33DA: movw         r8, #0x23f
+005B33DE: cmp          r0, r8
+005B33E0: beq          #0x5b341e
+005B33E2: ldr          r0, [r5]
+005B33E4: ldr          r1, [r0, #0x24]
+005B33E6: mov          r0, r5
+005B33E8: blx          r1
+005B33EA: mov          r6, r0
+005B33EC: movs         r0, #0
+005B33EE: str          r0, [sp, #0x30]
+005B33F0: strd         r0, r0, [sp, #0x28]
+005B33F4: mov          r0, r6
+005B33F6: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005B33FA: add          r7, sp, #0x28
+005B33FC: mov          r2, r0
+005B33FE: mov          r1, r6
+005B3400: mov          r0, r7
+005B3402: bl           #0x4e02b2 ; FUN_004e02b2
+00BF1C08: bytes=b"e new activity '%s' picked no behavior. It proba"
+00BF1D18: bytes=b'aceAndCubeActivityName'
+00BF1D36: bytes=b'yActivityName'
+00BF1D44: bytes=b'cubeOnlyActivityName'
+00BF1D50: bytes=b'vityName'
+005AD760: bytes=b'activityID'
+005AD778: bytes=b'play.CreateFromC'

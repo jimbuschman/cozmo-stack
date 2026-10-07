@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00513914..0x00513986 exclusive; Thumb; _ZN4Anki5Cozmo5Robot16SetPhysicalRobotEb
+00513914: push.w       {r4, r5, r6, r7, r8, lr}
+00513918: sub          sp, #0x20
+0051391A: mov          r4, r1
+0051391C: mov          r5, r0
+0051391E: cmp          r4, #1
+00513920: bne          #0x513974
+00513922: ldr          r0, [r5]
+00513924: ldr          r7, [r0, #8]
+00513926: cbz          r7, #0x513974
+00513928: movs         r0, #4
+0051392A: ldr.w        r8, [r5, #0x44c]
+0051392E: str          r0, [sp, #0x10]
+00513930: movs         r0, #0
+00513932: mov          r6, sp
+00513934: adr          r1, #0x78
+00513936: str          r0, [sp, #8]
+00513938: movs         r2, #0xd
+0051393A: strd         r0, r0, [sp]
+0051393E: mov          r0, r6
+00513940: bl           #0x4e02b2 ; FUN_004e02b2
+00513944: add          r0, sp, #0x14
+00513946: add          r2, sp, #0x10
+00513948: mov          r1, r7
+0051394A: mov          r3, r6
+0051394C: blx          #0x4a64fc ; Anki::Util::Data::DataPlatform::pathToResource
+00513950: add          r1, sp, #0x14
+00513952: mov          r0, r8
+00513954: blx          #0x4a7d2c ; Anki::Cozmo::BlockFilter::Init
+00513958: ldrb.w       r0, [sp, #0x14]
+0051395C: lsls         r0, r0, #0x1f
+0051395E: itt          ne
+00513960: ldrne        r0, [sp, #0x1c]
+00513962: blxne        #0x4a40cc
+00513966: ldrb.w       r0, [sp]
+0051396A: lsls         r0, r0, #0x1f
+0051396C: itt          ne
+0051396E: ldrne        r0, [sp, #8]
+00513970: blxne        #0x4a40cc
+00513974: ldr.w        r0, [r5, #0x258]
+00513978: mov          r1, r4
+0051397A: strb         r4, [r5, #0x14]
+0051397C: blx          #0x4a7d38 ; Anki::Cozmo::VisionComponent::SetPhysicalRobot
+00513980: add          sp, #0x20
+00513982: pop.w        {r4, r5, r6, r7, r8, pc}
+0053524C: bytes=b't.HandleFallingStopped.FallingStopped'
+00535278: bytes=b'stamp: %u, duration (ms): %u, intensity '
+005352B1: bytes=b'obot.falling_event'
+005352B0: bytes=b'robot.falling_event'

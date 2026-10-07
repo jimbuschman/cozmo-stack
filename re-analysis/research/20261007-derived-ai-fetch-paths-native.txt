@@ -1,0 +1,1258 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+FETCH 0x5103d8 Anki::Cozmo::Robot::Robot
+0x5103d8 ldr.w r0, [r5, #0x264]
+0x5103dc blx #0x4a7894
+0x5103e0 ldr.w r0, [pc, #0x63c]
+0x5103e4 ldr r1, [sp, #0x60]
+0x5103e6 add r0, pc
+0x5103e8 ldr r0, [r0]
+0x5103ea ldr r0, [r0]
+0x5103ec subs r0, r0, r1
+FETCH 0x510d6e Anki::Cozmo::Robot::Delocalize
+0x510d6e ldr.w r0, [r4, #0x264]
+0x510d72 blx #0x4a7a20
+0x510d76 ldr r0, [r4, #0x44]
+0x510d78 blx #0x4a7a2c
+0x510d7c ldr.w r0, [r4, #0x254]
+0x510d80 blx #0x4a7a38
+0x510d84 add r0, sp, #0x30
+0x510d86 add r1, sp, #0x14
+FETCH 0x511114 Anki::Cozmo::Robot::~Robot
+0x511114 ldr.w r0, [r4, #0x264]
+0x511118 ldr r0, [r0, #0x2c]
+0x51111a blx #0x4a7a5c
+0x51111e mov r0, r4
+0x511120 blx #0x4a7a68
+0x511124 ldr r0, [r4, #0x44]
+0x511126 movs r5, #0
+0x511128 str r5, [r4, #0x44]
+FETCH 0x51126a Anki::Cozmo::Robot::~Robot
+0x51126a ldr.w r0, [r4, #0x264]
+0x51126e movs r5, #0
+0x511270 str.w r5, [r4, #0x264]
+0x511274 cbz r0, #0x51127e
+0x511276 blx #0x4a7930
+0x51127a blx #0x4a40cc
+0x51127e ldr r0, [r4, #0x5c]
+0x511280 str r5, [r4, #0x5c]
+FETCH 0x5114b8 Anki::Cozmo::Robot::~Robot
+0x5114b8 ldr.w r0, [r4, #0x264]
+0x5114bc movs r5, #0
+0x5114be str.w r5, [r4, #0x264]
+0x5114c2 cbz r0, #0x5114cc
+0x5114c4 blx #0x4a7930
+0x5114c8 blx #0x4a40cc
+0x5114cc ldr.w r0, [r4, #0x260]
+0x5114d0 str.w r5, [r4, #0x260]
+FETCH 0x511da4 Anki::Cozmo::Robot::SetOnChargerPlatform
+0x511da4 ldr.w r0, [r4, #0x264]
+0x511da8 movs r2, #3
+0x511daa ldrb.w r1, [r4, #0x34a]
+0x511dae ldr r0, [r0, #0x2c]
+0x511db0 blx #0x4a7b4c
+0x511db4 ldr r0, [pc, #0x2c]
+0x511db6 ldr r1, [sp, #0x114]
+0x511db8 add r0, pc
+FETCH 0x5121e2 Anki::Cozmo::Robot::CheckAndUpdateTreadsState
+0x5121e2 ldr.w r0, [sb, #0x264]
+0x5121e6 movs r2, #2
+0x5121e8 ldrb.w r1, [sb, #0x355]
+0x5121ec ldr r0, [r0, #0x2c]
+0x5121ee cmp r1, #0
+0x5121f0 it ne
+0x5121f2 movne r1, #1
+0x5121f4 blx #0x4a7b4c
+FETCH 0x512464 Anki::Cozmo::Robot::SetLocalizedTo
+0x512464 ldr.w r0, [r4, #0x264]
+0x512468 strb.w r6, [r4, #0x2bc]
+0x51246c blx #0x4a7b94
+0x512470 ldr r0, [r4]
+0x512472 ldr r7, [r0, #0x24]
+0x512474 movs r0, #2
+0x512476 strb.w r0, [sp, #0x18]
+0x51247a ldr r0, [r5, #0x4c]
+FETCH 0x513ea8 Anki::Cozmo::Robot::Update
+0x513ea8 ldr.w r0, [r4, #0x264]
+0x513eac blx #0x4a7e28
+0x513eb0 ldr.w r0, [pc, #0x7b8]
+0x513eb4 add r0, pc
+0x513eb6 ldr r0, [r0]
+0x513eb8 cmp r0, #0
+0x513eba ble #0x513ede
+0x513ebc ldr.w r1, [pc, #0x7b0]
+FETCH 0x54504c Anki::Cozmo::PlayNeedsGetOutAnimIfNeeded::~PlayNeedsGetOutAnimIfNeeded
+0x54504c ldr.w r0, [r1, #0x264]
+0x545050 ldr r0, [r0, #0x30]
+0x545052 ldr r1, [r0, #0x14]
+0x545054 cmp r1, #3
+0x545056 beq #0x545062
+0x545058 ldrb.w r1, [r4, #0xc9]
+0x54505c cbnz r1, #0x545062
+0x54505e blx #0x4aaedc
+FETCH 0x5450b4 Anki::Cozmo::PlayNeedsGetOutAnimIfNeeded::Init
+0x5450b4 ldr.w r0, [r0, #0x264]
+0x5450b8 ldr r0, [r0, #0x30]
+0x5450ba ldr r0, [r0, #0x14]
+0x5450bc cmp r0, #3
+0x5450be bhi #0x545134
+0x5450c0 movw r1, #0x141
+0x5450c4 tbb [pc, r0]
+0x5450c8 lsls r7, r0, #8
+FETCH 0x5451e2 Anki::Cozmo::PlayNeedsGetOutAnimIfNeeded::CheckIfDone
+0x5451e2 ldr.w r0, [r0, #0x264]
+0x5451e6 ldr r0, [r0, #0x30]
+0x5451e8 blx #0x4aaedc
+0x5451ec movs r0, #1
+0x5451ee strb.w r0, [r4, #0xc9]
+0x5451f2 ldrb.w r0, [r4, #0x89]
+0x5451f6 cbz r0, #0x5451fc
+0x5451f8 movs r0, #0
+FETCH 0x552354 Anki::Cozmo::IDockAction::CheckIfDone
+0x552354 ldr.w r1, [r0, #0x264]
+0x552358 ldr r1, [r1, #0x30]
+0x55235a ldr r1, [r1, #0x14]
+0x55235c cmp r1, #1
+0x55235e beq #0x5523d8
+0x552360 add r6, sp, #0x38
+0x552362 ldr.w r5, [r0, #0xc0]
+0x552366 movs r0, #0
+FETCH 0x5524ae Anki::Cozmo::IDockAction::ShouldApplyDockingSquint
+0x5524ae ldr.w r0, [r0, #0x264]
+0x5524b2 ldr r0, [r0, #0x30]
+0x5524b4 ldr r1, [r0, #0x14]
+0x5524b6 movs r0, #0
+0x5524b8 cmp r1, #1
+0x5524ba it ne
+0x5524bc movne r0, #1
+0x5524be bx lr
+FETCH 0x5703b2 Anki::Cozmo::ObjectInteractionInfoCache::CanPickupNoAxisCheck
+0x5703b2 ldr.w r1, [r1, #0x264]
+0x5703b6 ldr r2, [r2]
+0x5703b8 ldr.w r8, [r1, #0x18]
+0x5703bc blx r2
+0x5703be ldr r4, [pc, #0x110]
+0x5703c0 add r6, sp, #0xc
+0x5703c2 adds r7, r6, #4
+0x5703c4 movs r5, #0
+FETCH 0x57067e Anki::Cozmo::ObjectInteractionInfoCache::CanRollObjectDelegateNoAxisCheck
+0x57067e ldr.w r1, [r1, #0x264]
+0x570682 ldr r2, [r2]
+0x570684 ldr r6, [r1, #0x18]
+0x570686 blx r2
+0x570688 mov r7, r0
+0x57068a mov r0, r4
+0x57068c blx #0x4a412c
+0x570690 ldr r1, [pc, #0x154]
+FETCH 0x570938 Anki::Cozmo::ObjectInteractionInfoCache::CanUseForPopAWheelie
+0x570938 ldr.w r1, [r1, #0x264]
+0x57093c ldr r2, [r2]
+0x57093e ldr r6, [r1, #0x18]
+0x570940 blx r2
+0x570942 mov r7, r0
+0x570944 mov r0, r4
+0x570946 blx #0x4a412c
+0x57094a ldr r1, [pc, #0x38]
+FETCH 0x571574 Anki::Cozmo::ObjectInteractionInfoCache::CanUseAsStackBottomHelper
+0x571574 ldr.w r1, [r1, #0x264]
+0x571578 ldr r2, [r2]
+0x57157a ldr r6, [r1, #0x18]
+0x57157c blx r2
+0x57157e mov r7, r0
+0x571580 mov r0, r4
+0x571582 blx #0x4a412c
+0x571586 ldr r1, [pc, #0x3c]
+FETCH 0x592410 Anki::Cozmo::Audio::BehaviorAudioClient::HandleSparkUpdates
+0x592410 ldr.w r0, [r0, #0x264]
+0x592414 ldr r0, [r0, #0x1c]
+0x592416 blx #0x4af028
+0x59241a mov r6, r0
+0x59241c ldr r0, [r4]
+0x59241e movs r1, #3
+0x592420 mov r2, r6
+0x592422 ldr r0, [r0, #0x40]
+FETCH 0x5a0e50 Anki::Cozmo::BehaviorManager::InitConfiguration
+0x5a0e50 ldr.w r0, [r0, #0x264]
+0x5a0e54 ldr r0, [r0, #0x2c]
+0x5a0e56 blx #0x4a7b4c
+0x5a0e5a b #0x5a0f58
+0x5a0e5c mov r0, r6
+0x5a0e5e str r4, [sp, #0xc]
+0x5a0e60 blx #0x4a6124
+0x5a0e64 mov r5, r0
+FETCH 0x5a1212 Anki::Cozmo::BehaviorManager::SetCurrentActivity
+0x5a1212 ldr.w r0, [r1, #0x264]
+0x5a1216 mov.w r1, #0
+0x5a121a ldr r0, [r0, #0x2c]
+0x5a121c it ne
+0x5a121e movne r1, #1
+0x5a1220 blx #0x4a7b4c
+0x5a1224 cmp r6, #0x16
+0x5a1226 itt eq
+FETCH 0x5a3306 Anki::Cozmo::BehaviorManager::EnsureRequestGameIsClear
+0x5a3306 ldr.w r0, [r0, #0x264]
+0x5a330a ldr r0, [r0, #0x18]
+0x5a330c strb.w r5, [r0, #0x75]
+0x5a3310 ldr r0, [r4, #0x34]
+0x5a3312 strd r5, r5, [r4, #0x30]
+0x5a3316 cbz r0, #0x5a331c
+0x5a3318 blx #0x4a4ef4
+0x5a331c strb.w r5, [r4, #0x38]
+FETCH 0x5a334a Anki::Cozmo::BehaviorManager::SelectUIRequestGameBehavior
+0x5a334a ldr.w r0, [r1, #0x264]
+0x5a334e ldr r0, [r0, #0x20]
+0x5a3350 blx #0x4b1020
+0x5a3354 cmp r0, #0x55
+0x5a3356 bne #0x5a3370
+0x5a3358 ldr r0, [r4, #0x34]
+0x5a335a movs r1, #0
+0x5a335c strd r1, r1, [r4, #0x30]
+FETCH 0x5a33ea Anki::Cozmo::BehaviorManager::SelectUIRequestGameBehavior
+0x5a33ea ldr.w r0, [r0, #0x264]
+0x5a33ee ldr r0, [r0, #0x18]
+0x5a33f0 strb.w r8, [r0, #0x75]
+0x5a33f4 mov r0, r5
+0x5a33f6 blx #0x4a5c74
+0x5a33fa ldr r0, [pc, #0xd8]
+0x5a33fc ldrb.w r2, [sp, #4]
+0x5a3400 ldr r1, [sp, #0xc]
+FETCH 0x5a3ca2 Anki::Cozmo::BehaviorManager::HandleMessage
+0x5a3ca2 ldr.w r0, [r1, #0x264]
+0x5a3ca6 ldr r0, [r0, #0x24]
+0x5a3ca8 blx #0x4b108c
+0x5a3cac movs r0, #1
+0x5a3cae add r5, sp, #4
+0x5a3cb0 str r0, [sp, #0x18]
+0x5a3cb2 add r0, sp, #0x18
+0x5a3cb4 movs r7, #0
+FETCH 0x5a69ea Anki::Cozmo::FeedingCubeController::UpdateChargeAudioRound
+0x5a69ea ldr.w r0, [r4, #0x264]
+0x5a69ee mov r1, r4
+0x5a69f0 ldr r2, [r6, #8]
+0x5a69f2 ldr r0, [r0, #0x28]
+0x5a69f4 ldr r3, [r2, #0x18]
+0x5a69f6 str r5, [sp]
+0x5a69f8 blx #0x4b1308
+0x5a69fc add sp, #0x18
+FETCH 0x5aae30 Anki::Cozmo::ActivityFeeding::OnSelectedInternal
+0x5aae30 ldr.w r0, [r8, #0x264]
+0x5aae34 ldr r0, [r0, #0x30]
+0x5aae36 ldr r0, [r0, #0x14]
+0x5aae38 cmp r0, #1
+0x5aae3a bne #0x5aae46
+0x5aae3c mov r0, sb
+0x5aae3e mov r1, r8
+0x5aae40 blx #0x4b1704
+FETCH 0x5abfe6 Anki::Cozmo::ActivityFeeding::Update
+0x5abfe6 ldr.w r0, [r4, #0x264]
+0x5abfea ldr r1, [r0, #0x30]
+0x5abfec ldrb.w r0, [r5, #0xa1]
+0x5abff0 ldr r1, [r1, #0x14]
+0x5abff2 cmp r1, #1
+0x5abff4 it eq
+0x5abff6 cmpeq r0, #0
+0x5abff8 bne #0x5ac004
+FETCH 0x5acb82 Anki::Cozmo::ActivityFeeding::SetIdleForCurrentStage
+0x5acb82 ldr.w r0, [r8, #0x264]
+0x5acb86 ldr r0, [r0, #0x30]
+0x5acb88 ldr r0, [r0, #0x14]
+0x5acb8a tbb [pc, r1]
+0x5acb8e strh r5, [r0, #0x3c]
+0x5acb90 lsls r7, r0, #0x1c
+0x5acb92 lsls r1, r1, #0x1e
+0x5acb94 ldrh r7, [r0, #0x30]
+FETCH 0x5ae4e2 Anki::Cozmo::ActivityFreeplay::GetDesiredActiveBehaviorInternal
+0x5ae4e2 ldr.w r0, [r7, #0x264]
+0x5ae4e6 movs r1, #0
+0x5ae4e8 cmp r6, #0x55
+0x5ae4ea ldr r0, [r0, #0x2c]
+0x5ae4ec it ne
+0x5ae4ee movne r1, #1
+0x5ae4f0 movs r2, #1
+0x5ae4f2 blx #0x4a7b4c
+FETCH 0x5af2a0 Anki::Cozmo::ActivityGatherCubes::Update
+0x5af2a0 ldr.w r0, [r5, #0x264]
+0x5af2a4 ldr r6, [r0, #0x18]
+0x5af2a6 mov r0, r6
+0x5af2a8 blx #0x4b1a88
+0x5af2ac cmp r0, #1
+0x5af2ae bne #0x5af2fe
+0x5af2b0 ldrd r6, r7, [sp, #4]
+0x5af2b4 cmp r6, r7
+FETCH 0x5af81a Anki::Cozmo::ActivityGatherCubes::OnSelectedInternal
+0x5af81a ldr.w r0, [r0, #0x264]
+0x5af81e ldr r0, [r0, #0x18]
+0x5af820 b.w #0x8cb6ec
+FETCH 0x5af826 Anki::Cozmo::ActivityGatherCubes::ClearBeacons
+0x5af826 ldr.w r0, [r0, #0x264]
+0x5af82a ldr r0, [r0, #0x18]
+0x5af82c b.w #0x8cb6ec
+0x5af830 push {r4, lr}
+FETCH 0x5af836 Anki::Cozmo::ActivityGatherCubes::OnDeselectedInternal
+0x5af836 ldr.w r0, [r0, #0x264]
+0x5af83a ldr r0, [r0, #0x18]
+0x5af83c blx #0x4acafc
+0x5af840 movs r0, #0
+0x5af842 strb.w r0, [r4, #0x78]
+0x5af846 pop {r4, pc}
+FETCH 0x5b31c4 Anki::Cozmo::IActivity::OnSelected
+0x5b31c4 ldr.w r0, [sb, #0x264]
+0x5b31c8 ldr.w r8, [r0, #8]
+0x5b31cc ldr r0, [r5]
+0x5b31ce ldr r1, [r0, #0x24]
+0x5b31d0 mov r0, r5
+0x5b31d2 blx r1
+0x5b31d4 mov r4, r0
+0x5b31d6 movs r0, #0
+FETCH 0x5b3466 Anki::Cozmo::IActivity::OnDeselected
+0x5b3466 ldr.w r0, [r4, #0x264]
+0x5b346a ldr.w r8, [r0, #8]
+0x5b346e ldr r0, [r5]
+0x5b3470 ldr r1, [r0, #0x24]
+0x5b3472 mov r0, r5
+0x5b3474 blx r1
+0x5b3476 mov r7, r0
+0x5b3478 movs r0, #0
+FETCH 0x5b3e32 Anki::Cozmo::ActivityStrategyFPPlayWithHumans::ActivityStrategyFPPlayWithHumans
+0x5b3e32 ldr.w r0, [r6, #0x264]
+0x5b3e36 ldr r0, [r0, #0x18]
+0x5b3e38 str r0, [r4, #0x4c]
+0x5b3e3a mov r0, r6
+0x5b3e3c blx #0x4a56f8
+0x5b3e40 cmp r0, #1
+0x5b3e42 bne #0x5b3e60
+0x5b3e44 mov r0, r6
+FETCH 0x5b40d6 Anki::Cozmo::ActivityStrategyFPPlayWithHumans::WantsToStartInternal
+0x5b40d6 ldr.w r0, [r1, #0x264]
+0x5b40da ldr r0, [r0, #0x20]
+0x5b40dc blx #0x4b1020
+0x5b40e0 movs r1, #0
+0x5b40e2 cmp r0, #0x55
+0x5b40e4 it ne
+0x5b40e6 movne r1, #1
+0x5b40e8 mov r0, r1
+FETCH 0x5b410c Anki::Cozmo::ActivityStrategyFPPlayWithHumans::WantsToEndInternal
+0x5b410c ldr.w r0, [r1, #0x264]
+0x5b4110 ldr r0, [r0, #0x20]
+0x5b4112 blx #0x4b1020
+0x5b4116 mov r1, r0
+0x5b4118 movs r0, #0
+0x5b411a cmp r1, #0x55
+0x5b411c it eq
+0x5b411e moveq r0, #1
+FETCH 0x5b4780 Anki::Cozmo::ActivityStrategyNeeds::WantsToEndInternal
+0x5b4780 ldr.w r0, [r4, #0x264]
+0x5b4784 ldr r0, [r0, #0x30]
+0x5b4786 ldr r1, [r0, #0x14]
+0x5b4788 cmp r1, #3
+0x5b478a it ne
+0x5b478c blxne #0x4aaedc
+0x5b4790 b #0x5b47a0
+0x5b4792 ldr r1, [pc, #0x20]
+FETCH 0x5b5398 Anki::Cozmo::IActivityStrategy::WantsToStart
+0x5b5398 ldr.w r0, [r5, #0x264]
+0x5b539c ldr r0, [r0, #0x18]
+0x5b539e vldr s20, [r0, #0x48]
+0x5b53a2 vcmpe.f32 s20, s18
+0x5b53a6 vmrs apsr_nzcv, fpscr
+0x5b53aa ble #0x5b53f6
+0x5b53ac vldr s18, [pc, #0x54]
+0x5b53b0 vadd.f32 s0, s20, s18
+FETCH 0x5b5978 Anki::Cozmo::DriveToHelper::DriveToPreActionPose
+0x5b5978 ldr.w r0, [r5, #0x264]
+0x5b597c ldr.w r1, [r4, #0xf4]
+0x5b5980 ldr r0, [r0, #0x18]
+0x5b5982 str r1, [r0, #0x70]
+0x5b5984 movs r0, #0
+0x5b5986 b #0x5b5a00
+0x5b5988 ldr r1, [r0]
+0x5b598a ldr r1, [r1, #0x10]
+FETCH 0x5b5cde Anki::Cozmo::DriveToHelper::RespondToDriveResult
+0x5b5cde ldr.w r0, [r5, #0x264]
+0x5b5ce2 ldr.w r1, [r4, #0xf4]
+0x5b5ce6 ldr r0, [r0, #0x18]
+0x5b5ce8 str r1, [r0, #0x70]
+0x5b5cea b #0x5b5dbe
+0x5b5cec mvn r0, #0x4000000
+0x5b5cf0 add r0, r1
+0x5b5cf2 cmp r0, #3
+FETCH 0x5b71f4 Anki::Cozmo::IHelper::RespondToActionWithAnim<Anki::Cozmo::ActionResult>
+0x5b71f4 ldr.w r0, [sb, #0x264]
+0x5b71f8 ldr r0, [r0, #0xc]
+0x5b71fa blx #0x4b2208
+0x5b71fe mov r6, r0
+0x5b7200 movw r0, #0x23f
+0x5b7204 cmp r6, r0
+0x5b7206 bne #0x5b7282
+0x5b7208 add r6, sp, #0x10
+FETCH 0x5b73f4 Anki::Cozmo::IHelper::RespondToActionWithAnim<Anki::Cozmo::ExternalInterface::RobotCompletedAction>
+0x5b73f4 ldr.w r0, [sb, #0x264]
+0x5b73f8 ldr r0, [r0, #0xc]
+0x5b73fa blx #0x4b2208
+0x5b73fe mov r6, r0
+0x5b7400 movw r0, #0x23f
+0x5b7404 cmp r6, r0
+0x5b7406 bne #0x5b7482
+0x5b7408 add r6, sp, #0x10
+FETCH 0x5b75c8 Anki::Cozmo::IHelper::AnimationResponseToActionResult
+0x5b75c8 ldr.w r0, [r1, #0x264]
+0x5b75cc mov r1, r2
+0x5b75ce ldr r0, [r0, #0xc]
+0x5b75d0 b.w #0x8cbedc
+FETCH 0x5b8278 Anki::Cozmo::PickupBlockHelper::RespondToPickupResult
+0x5b8278 ldr.w r0, [r8, #0x264]
+0x5b827c ldr.w r1, [sl, #0xf4]
+0x5b8280 ldr r0, [r0, #0x18]
+0x5b8282 str r1, [r0, #0x70]
+0x5b8284 b #0x5b8302
+0x5b8286 add.w r0, r6, #0x18
+0x5b828a blx #0x4b2340
+0x5b828e ldrb r0, [r0, #0x15]
+FETCH 0x5b8628 Anki::Cozmo::PickupBlockHelper::MarkTargetAsFailedToPickup
+0x5b8628 ldr.w r0, [r4, #0x264]
+0x5b862c movs r2, #0
+0x5b862e ldr r0, [r0, #0x18]
+0x5b8630 pop.w {r4, lr}
+0x5b8634 b.w #0x8cbefc
+0x5b8638 pop {r4, pc}
+FETCH 0x5b93d8 Anki::Cozmo::PlaceRelObjectHelper::MarkFailedToStackOrPlace
+0x5b93d8 ldr.w r0, [r5, #0x264]
+0x5b93dc ldrb.w r1, [r7, #0xf8]
+0x5b93e0 ldr.w sb, [r0, #0x18]
+0x5b93e4 cbz r1, #0x5b9452
+0x5b93e6 ldrd r5, r7, [r7, #0xfc]
+0x5b93ea blx #0x4a4780
+0x5b93ee add.w r8, sp, #0x24
+0x5b93f2 mov r1, r0
+FETCH 0x5b9522 Anki::Cozmo::PlaceRelObjectHelper::RespondToPlaceRelResult
+0x5b9522 ldr.w r1, [r2, #0x264]
+0x5b9526 ldr.w r0, [r0, #0xf4]
+0x5b952a ldr r1, [r1, #0x18]
+0x5b952c str r0, [r1, #0x70]
+0x5b952e bx lr
+FETCH 0x5ba078 Anki::Cozmo::RollBlockHelper::UnableToRollDelegate
+0x5ba078 ldr.w r0, [sl, #0x264]
+0x5ba07c movs r1, #0
+0x5ba07e movs r6, #0
+0x5ba080 ldr r0, [r0, #0x14]
+0x5ba082 blx #0x4b26f4
+0x5ba086 add r1, sp, #0x30
+0x5ba088 mov fp, r0
+0x5ba08a adds r0, r1, #4
+FETCH 0x5ba77c Anki::Cozmo::RollBlockHelper::MarkTargetAsFailedToRoll
+0x5ba77c ldr.w r0, [r4, #0x264]
+0x5ba780 movs r2, #3
+0x5ba782 ldr r0, [r0, #0x18]
+0x5ba784 pop.w {r4, lr}
+0x5ba788 b.w #0x8cbefc
+0x5ba78c pop {r4, pc}
+0x5ba78e movs r0, r0
+FETCH 0x5bd2a8 Anki::Cozmo::IBehavior::StopHelperWithoutCallback
+0x5bd2a8 ldr.w r0, [r0, #0x264]
+0x5bd2ac ldr r0, [r0, #0x10]
+0x5bd2ae add r1, sp, #0x18
+0x5bd2b0 blx #0x4b2928
+0x5bd2b4 mov r5, r0
+0x5bd2b6 ldr r0, [sp, #0x1c]
+0x5bd2b8 cbnz r0, #0x5bd2c6
+0x5bd2ba b #0x5bd2ca
+FETCH 0x5bd7d8 Anki::Cozmo::IBehavior::IsRunnableBase
+0x5bd7d8 ldr.w r0, [r5, #0x264]
+0x5bd7dc ldr r0, [r0, #8]
+0x5bd7de blx #0x4b2940
+0x5bd7e2 cmp r0, #0
+0x5bd7e4 beq #0x5bd8cc
+0x5bd7e6 ldr r0, [r4, #0x74]
+0x5bd7e8 cmp r0, #3
+0x5bd7ea beq #0x5bd7fa
+FETCH 0x5bd7ec Anki::Cozmo::IBehavior::IsRunnableBase
+0x5bd7ec ldr.w r1, [r5, #0x264]
+0x5bd7f0 ldr r1, [r1, #0x30]
+0x5bd7f2 ldr r1, [r1, #0x14]
+0x5bd7f4 cmp r0, r1
+0x5bd7f6 bne.w #0x5bd962
+0x5bd7fa blx #0x4a4f6c
+0x5bd7fe blx #0x4a50b0
+0x5bd802 ldr r1, [r4, #0x70]
+FETCH 0x5bd936 Anki::Cozmo::IBehavior::IsRunnableBase
+0x5bd936 ldr.w r0, [r5, #0x264]
+0x5bd93a ldr r0, [r0, #0x18]
+0x5bd93c vldr s6, [r0, #0x44]
+0x5bd940 vcmpe.f32 s6, s4
+0x5bd944 vmrs apsr_nzcv, fpscr
+0x5bd948 blt #0x5bd962
+0x5bd94a vadd.f32 s2, s2, s6
+0x5bd94e vldr s4, [pc, #0xd0]
+FETCH 0x5bebee Anki::Cozmo::IBehavior::SmartDelegateToHelper
+0x5bebee ldr.w r1, [r0, #0x264]
+0x5bebf2 ldrd r2, r0, [r5]
+0x5bebf6 cmp r0, #0
+0x5bebf8 ldr r7, [r1, #0x10]
+0x5bebfa strd r2, r0, [sp, #0x10]
+0x5bebfe beq #0x5bec04
+0x5bec00 blx #0x4a5014
+0x5bec04 add.w fp, sp, #0x48
+FETCH 0x5bee4c Anki::Cozmo::IBehavior::GetBehaviorHelperFactory
+0x5bee4c ldr.w r0, [r0, #0x264]
+0x5bee50 ldr r0, [r0, #0x10]
+0x5bee52 ldr r0, [r0]
+0x5bee54 bx lr
+FETCH 0x5bfece Anki::Cozmo::BehaviorPlayAnimOnNeedsChange::ShouldGetInBePlayed
+0x5bfece ldr.w r0, [r1, #0x264]
+0x5bfed2 ldr r1, [r1]
+0x5bfed4 ldr.w r5, [r4, #0x13c]
+0x5bfed8 ldr r2, [r0, #0x30]
+0x5bfeda ldr r0, [r1, #0x34]
+0x5bfedc ldr r6, [r2, #0x14]
+0x5bfede blx #0x4a5740
+0x5bfee2 ldr.w r1, [r4, #0x13c]
+FETCH 0x5bff08 Anki::Cozmo::BehaviorPlayAnimOnNeedsChange::StopInternal
+0x5bff08 ldr.w r0, [r5, #0x264]
+0x5bff0c ldr.w r1, [r4, #0x13c]
+0x5bff10 ldr r0, [r0, #0x30]
+0x5bff12 pop.w {r4, r5, r7, lr}
+0x5bff16 b.w #0x8cb81c
+0x5bff1a movs r0, #1
+FETCH 0x5c0b34 Anki::Cozmo::BehaviorDriveOffCharger::InitInternal
+0x5c0b34 ldr.w r0, [r5, #0x264]
+0x5c0b38 ldr r0, [r0, #0x30]
+0x5c0b3a ldr r0, [r0, #0x14]
+0x5c0b3c cmp r0, #3
+0x5c0b3e bne #0x5c0b54
+0x5c0b40 ldr r1, [pc, #0x6c]
+0x5c0b42 mov r2, r6
+0x5c0b44 ldr.w r0, [r5, #0x24c]
+FETCH 0x5c0e02 Anki::Cozmo::BehaviorDriveOffCharger::UpdateInternal
+0x5c0e02 ldr.w r1, [r5, #0x264]
+0x5c0e06 ldr r1, [r1, #0x18]
+0x5c0e08 str r0, [r1, #0x44]
+0x5c0e0a movs r0, #2
+0x5c0e0c b #0x5c0e1e
+0x5c0e0e ldr.w r0, [r4, #0x84]
+0x5c0e12 cbnz r0, #0x5c0e1c
+0x5c0e14 mov r0, r4
+FETCH 0x5c23e0 Anki::Cozmo::BehaviorInteractWithFaces::SelectFaceToTrack
+0x5c23e0 ldr.w r0, [r5, #0x264]
+0x5c23e4 ldr r0, [r0, #0x18]
+0x5c23e6 mov r1, r6
+0x5c23e8 movs r2, #1
+0x5c23ea blx #0x4b2f04
+0x5c23ee str.w r0, [r4, #0x11c]
+0x5c23f2 add r0, sp, #4
+0x5c23f4 ldr r1, [sp, #8]
+FETCH 0x5c3de4 FUN_005c3dce
+0x5c3de4 ldr.w r0, [r0, #0x264]
+0x5c3de8 ldr r0, [r0, #0x18]
+0x5c3dea str r1, [r0, #0x70]
+0x5c3dec pop {r4, pc}
+0x5c3dee movs r2, #4
+0x5c3df0 cmp.w r2, r1, lsr #24
+0x5c3df4 beq #0x5c3e08
+0x5c3df6 lsrs r1, r1, #0x18
+FETCH 0x5c673e Anki::Cozmo::BehaviorPickUpCube::TransitionToPickingUpCube
+0x5c673e ldr.w r0, [r4, #0x264]
+0x5c6742 movs r1, #0
+0x5c6744 movs r6, #0
+0x5c6746 ldr r0, [r0, #0x10]
+0x5c6748 ldr r7, [r0]
+0x5c674a movw r0, #0x23f
+0x5c674e str r0, [sp, #0x18]
+0x5c6750 add.w r0, r8, #4
+FETCH 0x5c6886 Anki::Cozmo::BehaviorPickUpCube::UpdateTargetBlocksInternal
+0x5c6886 ldr.w r0, [r4, #0x264]
+0x5c688a ldr r5, [r0, #0x14]
+0x5c688c add r0, sp, #0x80
+0x5c688e mov r1, r5
+0x5c6890 blx #0x4b3390
+0x5c6894 ldrd r0, r1, [r6, #0x124]
+0x5c6898 cmp r0, r1
+0x5c689a beq #0x5c68de
+FETCH 0x5c7740 Anki::Cozmo::BehaviorPopAWheelie::UpdateTargetBlock
+0x5c7740 ldr.w r0, [r0, #0x264]
+0x5c7744 ldr r1, [r0, #0x14]
+0x5c7746 mov r0, sp
+0x5c7748 blx #0x4b3390
+0x5c774c ldr r0, [sp, #4]
+0x5c774e str.w r0, [r4, #0x120]
+0x5c7752 add sp, #8
+0x5c7754 pop {r4, pc}
+FETCH 0x5c87fc Anki::Cozmo::BehaviorRollBlock::TransitionToPerformingAction
+0x5c87fc ldr.w r0, [r7, #0x264]
+0x5c8800 ldr r0, [r0, #0x10]
+0x5c8802 ldr r1, [r0]
+0x5c8804 movs r0, #1
+0x5c8806 mov r2, r7
+0x5c8808 strd r6, r0, [sp]
+0x5c880c add r0, sp, #0x20
+0x5c880e mov r3, r4
+FETCH 0x5c8cae Anki::Cozmo::BehaviorRollBlock::UpdateTargetBlock
+0x5c8cae ldr.w r0, [r1, #0x264]
+0x5c8cb2 ldrb.w r3, [r4, #0x128]
+0x5c8cb6 movs r2, #6
+0x5c8cb8 ldr r1, [r0, #0x14]
+0x5c8cba cmp r3, #0
+0x5c8cbc it ne
+0x5c8cbe movne r2, #7
+0x5c8cc0 mov r0, sp
+FETCH 0x5c94aa Anki::Cozmo::BehaviorStackBlocks::UpdateTargetBlocks
+0x5c94aa ldr.w r2, [r1, #0x264]
+0x5c94ae mov r4, r0
+0x5c94b0 ldr.w r0, [r1, #0x448]
+0x5c94b4 movs r1, #9
+0x5c94b6 ldr r5, [r2, #0x14]
+0x5c94b8 movs r2, #1
+0x5c94ba blx #0x4aced4
+0x5c94be cbnz r0, #0x5c94c6
+FETCH 0x5c9868 Anki::Cozmo::BehaviorStackBlocks::UpdateInternal
+0x5c9868 ldr.w r0, [sl, #0x264]
+0x5c986c add r4, sp, #0x90
+0x5c986e movs r2, #4
+0x5c9870 cmp r5, #0
+0x5c9872 ldr r7, [r0, #0x14]
+0x5c9874 it ne
+0x5c9876 movne r2, #5
+0x5c9878 mov r0, r4
+FETCH 0x5c9b90 Anki::Cozmo::BehaviorStackBlocks::GetClosestValidBottom
+0x5c9b90 ldr.w r2, [fp, #0x264]
+0x5c9b94 ldr.w r3, [r1, #0x130]
+0x5c9b98 add.w r1, r1, #0x12c
+0x5c9b9c ldr r0, [r0]
+0x5c9b9e ldr r7, [r2, #0x14]
+0x5c9ba0 mov.w r2, #-1
+0x5c9ba4 adds r0, #8
+0x5c9ba6 strd r0, r3, [sb]
+FETCH 0x5d5cba Anki::Cozmo::BehaviorFeedingEat::TransitionToReactingToInterruption
+0x5d5cba ldr.w r0, [r5, #0x264]
+0x5d5cbe ldr r0, [r0, #0x30]
+0x5d5cc0 ldr r7, [r0, #0x14]
+0x5d5cc2 movs r0, #0xcc
+0x5d5cc4 blx #0x4a42a0
+0x5d5cc8 mov r6, r0
+0x5d5cca movs r0, #0
+0x5d5ccc movs r1, #1
+FETCH 0x5d6da8 Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToMakeFoodRequest
+0x5d6da8 ldr.w r0, [r5, #0x264]
+0x5d6dac ldr r0, [r0, #0x30]
+0x5d6dae ldr r7, [r0, #0x14]
+0x5d6db0 movs r0, #0xcc
+0x5d6db2 blx #0x4a42a0
+0x5d6db6 mov r6, r0
+0x5d6db8 movs r1, #0
+0x5d6dba movs r0, #0
+FETCH 0x5d6e94 Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToFailedToFindCubeReaction
+0x5d6e94 ldr.w r0, [r8, #0x264]
+0x5d6e98 ldr r0, [r0, #0x30]
+0x5d6e9a ldr r5, [r0, #0x14]
+0x5d6e9c movs r0, #0xcc
+0x5d6e9e blx #0x4a42a0
+0x5d6ea2 mov r6, r0
+0x5d6ea4 movs r0, #0
+0x5d6ea6 movs r7, #0
+FETCH 0x5d6f72 Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToSearchForFoodBase
+0x5d6f72 ldr.w r0, [r6, #0x264]
+0x5d6f76 movs r7, #0xb1
+0x5d6f78 ldr r0, [r0, #0x30]
+0x5d6f7a ldr r0, [r0, #0x14]
+0x5d6f7c cmp r0, #1
+0x5d6f7e mov.w r0, #0x9c
+0x5d6f82 it eq
+0x5d6f84 moveq r7, #0xb2
+FETCH 0x5d7e9a Anki::Cozmo::BehaviorCubeLiftWorkout::IsRunnableInternal
+0x5d7e9a ldr.w r0, [r1, #0x264]
+0x5d7e9e movs r2, #0
+0x5d7ea0 movs r4, #0
+0x5d7ea2 ldr r1, [r0, #0x14]
+0x5d7ea4 mov r0, sp
+0x5d7ea6 blx #0x4b3390
+0x5d7eaa ldr r0, [sp, #4]
+0x5d7eac adds r0, #1
+FETCH 0x5d7ed8 Anki::Cozmo::BehaviorCubeLiftWorkout::InitInternal
+0x5d7ed8 ldr.w r0, [r4, #0x264]
+0x5d7edc ldr r0, [r0, #0x1c]
+0x5d7ede blx #0x4b4278
+0x5d7ee2 mov r1, r4
+0x5d7ee4 mov r6, r0
+0x5d7ee6 blx #0x4b4284
+0x5d7eea str.w r0, [r5, #0x11c]
+0x5d7eee mov r0, r6
+FETCH 0x5d7f26 Anki::Cozmo::BehaviorCubeLiftWorkout::InitInternal
+0x5d7f26 ldr.w r0, [r4, #0x264]
+0x5d7f2a ldr r1, [r0, #0x14]
+0x5d7f2c mov r0, sp
+0x5d7f2e blx #0x4b3390
+0x5d7f32 ldr r0, [sp, #4]
+0x5d7f34 mov r1, r4
+0x5d7f36 str.w r0, [r5, #0x12c]
+0x5d7f3a mov r0, r5
+FETCH 0x5d7f5e Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPostLiftAnim
+0x5d7f5e ldr.w r0, [r4, #0x264]
+0x5d7f62 ldr r0, [r0, #0x1c]
+0x5d7f64 blx #0x4b4278
+0x5d7f68 mov sl, r0
+0x5d7f6a movs r0, #0xac
+0x5d7f6c blx #0x4a42a0
+0x5d7f70 mov r6, r0
+0x5d7f72 mov r1, r4
+FETCH 0x5d800e Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPostLiftAnim
+0x5d800e ldr.w r0, [r4, #0x264]
+0x5d8012 ldr r0, [r0, #0x1c]
+0x5d8014 blx #0x4af028
+0x5d8018 cmp r0, #1
+0x5d801a bne #0x5d8026
+0x5d801c ldr r0, [r4, #0x40]
+0x5d801e movs r1, #3
+0x5d8020 movs r2, #2
+FETCH 0x5d80a4 Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPickingUpCube
+0x5d80a4 ldr.w r0, [r4, #0x264]
+0x5d80a8 ldr r0, [r0, #0x1c]
+0x5d80aa blx #0x4b4278
+0x5d80ae mov r5, r0
+0x5d80b0 movw r0, #0x23f
+0x5d80b4 str r0, [sp, #0x20]
+0x5d80b6 add.w r0, r8, #4
+0x5d80ba movs r1, #0
+FETCH 0x5d80d4 Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPickingUpCube
+0x5d80d4 ldr.w r0, [r4, #0x264]
+0x5d80d8 ldr r0, [r0, #0x10]
+0x5d80da ldr r1, [r0]
+0x5d80dc add r0, sp, #0x18
+0x5d80de strd r7, r8, [sp]
+0x5d80e2 blx #0x4b21a8
+0x5d80e6 ldrd r1, r0, [sp, #0x18]
+0x5d80ea cmp r0, #0
+FETCH 0x5d8192 Anki::Cozmo::BehaviorCubeLiftWorkout::StopInternal
+0x5d8192 ldr.w r0, [r4, #0x264]
+0x5d8196 ldr r0, [r0, #0x1c]
+0x5d8198 strb r6, [r0, #0x11]
+0x5d819a add sp, #8
+0x5d819c pop {r4, r5, r6, pc}
+FETCH 0x5d8452 Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToStrongLifts
+0x5d8452 ldr.w r0, [r5, #0x264]
+0x5d8456 ldr r0, [r0, #0x1c]
+0x5d8458 blx #0x4b4278
+0x5d845c mov r7, r0
+0x5d845e movs r0, #0xcc
+0x5d8460 blx #0x4a42a0
+0x5d8464 mov r6, r0
+0x5d8466 ldr.w r3, [r4, #0x11c]
+FETCH 0x5d8530 Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToWeakPose
+0x5d8530 ldr.w r0, [r5, #0x264]
+0x5d8534 ldr r0, [r0, #0x1c]
+0x5d8536 blx #0x4b4278
+0x5d853a mov r7, r0
+0x5d853c movw r1, #0x23f
+0x5d8540 ldr r0, [r7, #0xc]
+0x5d8542 cmp r0, r1
+0x5d8544 bne #0x5d8554
+FETCH 0x5d8602 Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToWeakLifts
+0x5d8602 ldr.w r0, [r5, #0x264]
+0x5d8606 ldr r0, [r0, #0x1c]
+0x5d8608 blx #0x4b4278
+0x5d860c mov r7, r0
+0x5d860e movs r0, #0xcc
+0x5d8610 blx #0x4a42a0
+0x5d8614 mov r6, r0
+0x5d8616 ldr.w r3, [r4, #0x120]
+FETCH 0x5d86ea Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPuttingDown
+0x5d86ea ldr.w r0, [r5, #0x264]
+0x5d86ee ldr r0, [r0, #0x1c]
+0x5d86f0 blx #0x4b4278
+0x5d86f4 mov r7, r0
+0x5d86f6 movw r1, #0x23f
+0x5d86fa ldr r0, [r7, #0x14]
+0x5d86fc cmp r0, r1
+0x5d86fe bne #0x5d870e
+FETCH 0x5d8a1c Anki::Cozmo::BehaviorCubeLiftWorkout::EndIteration
+0x5d8a1c ldr.w r0, [r4, #0x264]
+0x5d8a20 ldr r0, [r0, #0x1c]
+0x5d8a22 blx #0x4b4278
+0x5d8a26 ldr r1, [r0, #0x3c]
+0x5d8a28 cmp r1, #0x29
+0x5d8a2a beq #0x5d8a34
+0x5d8a2c mov r0, r5
+0x5d8a2e movs r2, #1
+FETCH 0x5d8a34 Anki::Cozmo::BehaviorCubeLiftWorkout::EndIteration
+0x5d8a34 ldr.w r0, [r4, #0x264]
+0x5d8a38 ldr r0, [r0, #0x1c]
+0x5d8a3a pop.w {r4, r5, r7, lr}
+0x5d8a3e b.w #0x8cc42c
+0x5d8a42 push {r7, lr}
+FETCH 0x5d96f8 Anki::Cozmo::BehaviorDriveInDesperation::TransitionToSearchForCube
+0x5d96f8 ldr.w r0, [r4, #0x264]
+0x5d96fc mov r3, r5
+0x5d96fe ldr r1, [pc, #0x98]
+0x5d9700 add r1, pc
+0x5d9702 ldr r0, [r0, #0x10]
+0x5d9704 ldr r2, [r1]
+0x5d9706 ldr r1, [r0]
+0x5d9708 add.w r0, r2, #8
+FETCH 0x5db692 Anki::Cozmo::BehaviorPickUpAndPutDownCube::IsRunnableInternal
+0x5db692 ldr.w r0, [r1, #0x264]
+0x5db696 movs r2, #0
+0x5db698 movs r5, #0
+0x5db69a ldr r1, [r0, #0x14]
+0x5db69c mov r0, sp
+0x5db69e blx #0x4b3390
+0x5db6a2 ldr r0, [sp, #4]
+0x5db6a4 str.w r0, [r4, #0x120]
+FETCH 0x5db6d6 Anki::Cozmo::BehaviorPickUpAndPutDownCube::InitInternal
+0x5db6d6 ldr.w r0, [r4, #0x264]
+0x5db6da add r7, sp, #0x18
+0x5db6dc movs r1, #0
+0x5db6de mov.w r8, #0
+0x5db6e2 ldr r0, [r0, #0x10]
+0x5db6e4 ldr r6, [r0]
+0x5db6e6 movw r0, #0x23f
+0x5db6ea str r0, [sp, #0x18]
+FETCH 0x5dbd38 Anki::Cozmo::BehaviorBuildPyramid::TransitionToDrivingToTopBlock
+0x5dbd38 ldr.w r0, [r4, #0x264]
+0x5dbd3c movs r1, #0
+0x5dbd3e mov.w r8, #0
+0x5dbd42 ldr r0, [r0, #0x10]
+0x5dbd44 ldr r7, [r0]
+0x5dbd46 movw r0, #0x23f
+0x5dbd4a str r0, [sp, #0x18]
+0x5dbd4c adds r0, r6, #4
+FETCH 0x5dc228 Anki::Cozmo::BehaviorBuildPyramid::TransitionToPlacingTopBlock
+0x5dc228 ldr.w r0, [r8, #0x264]
+0x5dc22c ldr r0, [r0, #0x10]
+0x5dc22e ldr r6, [r0]
+0x5dc230 movs r0, #0
+0x5dc232 strd r0, r0, [sp, #0x30]
+0x5dc236 movs r0, #1
+0x5dc238 strb.w r0, [sp, #0x38]
+0x5dc23c add r0, sp, #0x3c
+FETCH 0x5dcafa Anki::Cozmo::BehaviorBuildPyramidBase::UpdatePyramidTargets
+0x5dcafa ldr.w r0, [r1, #0x264]
+0x5dcafe movs r2, #9
+0x5dcb00 ldr r5, [r0, #0x14]
+0x5dcb02 add r0, sp, #0x10
+0x5dcb04 mov r1, r5
+0x5dcb06 blx #0x4b3390
+0x5dcb0a add r0, sp, #8
+0x5dcb0c mov r1, r5
+FETCH 0x5dcc16 Anki::Cozmo::BehaviorBuildPyramidBase::TransitionToDrivingToBaseBlock
+0x5dcc16 ldr.w r0, [r8, #0x264]
+0x5dcc1a ldr r0, [r0, #0x10]
+0x5dcc1c ldr r7, [r0]
+0x5dcc1e movw r0, #0x23f
+0x5dcc22 str r0, [sp, #0x18]
+0x5dcc24 adds r0, r6, #4
+0x5dcc26 movs r1, #0
+0x5dcc28 movs r4, #0
+FETCH 0x5dce0e Anki::Cozmo::BehaviorBuildPyramidBase::TransitionToPlacingBaseBlock
+0x5dce0e ldr.w r0, [r8, #0x264]
+0x5dce12 movs r7, #0
+0x5dce14 mov.w sb, #1
+0x5dce18 ldr r0, [r0, #0x10]
+0x5dce1a ldr.w sl, [r0]
+0x5dce1e strd r7, r7, [sp, #0x1c]
+0x5dce22 strb.w sb, [sp, #0x24]
+0x5dce26 add r5, sp, #0x1c
+FETCH 0x5de9f8 Anki::Cozmo::BehaviorRespondPossiblyRoll::DelegateToRollHelper
+0x5de9f8 ldr.w r0, [r7, #0x264]
+0x5de9fc movs r1, #0
+0x5de9fe ldr r0, [r0, #0x10]
+0x5dea00 ldr r4, [r0]
+0x5dea02 movw r0, #0x23f
+0x5dea06 str r0, [sp, #0x100]
+0x5dea08 str r1, [sp, #0xf8]
+0x5dea0a str r0, [sp, #0x104]
+FETCH 0x5df136 Anki::Cozmo::BehaviorExploreBringCubeToBeacon::IsRunnableInternal
+0x5df136 ldr.w r0, [sb, #0x264]
+0x5df13a ldr r5, [r0, #0x18]
+0x5df13c mov r0, r5
+0x5df13e blx #0x4b4a94
+0x5df142 cmp r0, #0
+0x5df144 beq.w #0x5df2d8
+0x5df148 vldr s16, [r0, #0x10]
+0x5df14c vcmpe.f32 s16, #0
+FETCH 0x5df38c Anki::Cozmo::BehaviorExploreBringCubeToBeacon::InitInternal
+0x5df38c ldr.w r0, [r5, #0x264]
+0x5df390 ldr r0, [r0, #0x18]
+0x5df392 blx #0x4b1aa0
+0x5df396 vldr s16, [r0, #0x10]
+0x5df39a blx #0x4a4f6c
+0x5df39e blx #0x4a50b0
+0x5df3a2 vmov s0, r0
+0x5df3a6 movs r0, #0
+FETCH 0x5df44c Anki::Cozmo::BehaviorExploreBringCubeToBeacon::TransitionToObjectPickedUp
+0x5df44c ldr.w r0, [r4, #0x264]
+0x5df450 ldr.w r8, [r0, #0x18]
+0x5df454 mov r0, r8
+0x5df456 blx #0x4b1aa0
+0x5df45a mov sb, r0
+0x5df45c cmp.w sb, #0
+0x5df460 beq #0x5df54c
+0x5df462 mov r0, r5
+FETCH 0x5e0032 Anki::Cozmo::BehaviorExploreBringCubeToBeacon::FireEmotionEvents
+0x5e0032 ldr.w r0, [r4, #0x264]
+0x5e0036 ldr r0, [r0, #0x18]
+0x5e0038 blx #0x4b1a88
+0x5e003c ldr.w r4, [r4, #0x440]
+0x5e0040 cmp r0, #1
+0x5e0042 bne #0x5e0066
+0x5e0044 movs r0, #0
+0x5e0046 adr r1, #0x84
+FETCH 0x5e03ac Anki::Cozmo::BehaviorExploreBringCubeToBeacon::FindFreePoseInBeacon
+0x5e03ac ldr.w r0, [r8, #0x264]
+0x5e03b0 ldr r0, [r0, #0x18]
+0x5e03b2 add r2, sp, #0x4c
+0x5e03b4 mov r1, r7
+0x5e03b6 blx #0x4b4b0c
+0x5e03ba cbz r0, #0x5e03d0
+0x5e03bc ldr.w r1, [r8, #0x34]
+0x5e03c0 add r0, sp, #0x4c
+FETCH 0x5e0b56 FUN_005e09e0
+0x5e0b56 ldr.w r0, [r0, #0x264]
+0x5e0b5a ldr r5, [r0, #0x18]
+0x5e0b5c mov r0, r6
+0x5e0b5e blx #0x4a4294
+0x5e0b62 movs r0, #0
+0x5e0b64 mov.w r1, #-1
+0x5e0b68 movt r0, #0x42c8
+0x5e0b6c movs r2, #2
+FETCH 0x5e1b50 FUN_005e188c
+0x5e1b50 ldr.w r0, [r0, #0x264]
+0x5e1b54 ldr r0, [r0, #0x18]
+0x5e1b56 blx #0x4acb80
+0x5e1b5a add sp, #0x48
+0x5e1b5c vpop {d8, d9}
+0x5e1b60 pop.w {r4, r5, r6, r7, r8, sb, sl, pc}
+FETCH 0x5e1ce2 FUN_005e1cc6
+0x5e1ce2 ldr.w r0, [r0, #0x264]
+0x5e1ce6 ldr.w r8, [r0, #0x18]
+0x5e1cea mov r0, r4
+0x5e1cec blx #0x4a412c
+0x5e1cf0 mov sb, r0
+0x5e1cf2 mov r0, r4
+0x5e1cf4 ldr r1, [r0, #0x14]!
+0x5e1cf8 ldr r1, [r1]
+FETCH 0x5e3d70 Anki::Cozmo::BehaviorExploreVisitPossibleMarker::IsRunnableInternal
+0x5e3d70 ldr.w r0, [r1, #0x264]
+0x5e3d74 add.w r1, r4, #0x11c
+0x5e3d78 ldr r0, [r0, #0x18]
+0x5e3d7a blx #0x4b4c38
+0x5e3d7e ldrd r1, r2, [r4, #0x11c]
+0x5e3d82 movs r0, #0
+0x5e3d84 cmp r1, r2
+0x5e3d86 it ne
+FETCH 0x5e466a Anki::Cozmo::BehaviorExploreVisitPossibleMarker::MarkPossiblePoseAsEmpty
+0x5e466a ldr.w r0, [r6, #0x264]
+0x5e466e mov r1, r5
+0x5e4670 mov r2, r4
+0x5e4672 ldr r0, [r0, #0x18]
+0x5e4674 blx #0x4b4c50
+0x5e4678 add sp, #0x10
+0x5e467a pop {r4, r5, r6, pc}
+FETCH 0x5e5cc4 Anki::Cozmo::BehaviorThinkAboutBeacons::IsRunnableInternal
+0x5e5cc4 ldr.w r0, [r1, #0x264]
+0x5e5cc8 ldr r0, [r0, #0x18]
+0x5e5cca blx #0x4b4a94
+0x5e5cce movs r1, #0
+0x5e5cd0 cmp r0, #0
+0x5e5cd2 it eq
+0x5e5cd4 moveq r1, #1
+0x5e5cd6 mov r0, r1
+FETCH 0x5e5f12 Anki::Cozmo::BehaviorThinkAboutBeacons::SelectNewBeacon
+0x5e5f12 ldr.w r0, [r1, #0x264]
+0x5e5f16 ldr r5, [r0, #0x18]
+0x5e5f18 mov r0, r1
+0x5e5f1a bl #0x4ea398
+0x5e5f1e add r6, sp, #4
+0x5e5f20 mov r1, r0
+0x5e5f22 mov r0, r6
+0x5e5f24 bl #0x4df628
+FETCH 0x5e6864 Anki::Cozmo::BehaviorVisitInterestingEdge::PickGoals
+0x5e6864 ldr.w r0, [r6, #0x264]
+0x5e6868 ldr r4, [r0, #8]
+0x5e686a ldrd r0, r1, [r4, #0xc]
+0x5e686e cmp r0, r1
+0x5e6870 beq.w #0x5e6bf0
+0x5e6874 mov r0, r6
+0x5e6876 bl #0x4ea398
+0x5e687a add r7, sp, #0x68
+FETCH 0x5e701e Anki::Cozmo::BehaviorVisitInterestingEdge::InitInternal
+0x5e701e ldr.w r0, [r4, #0x264]
+0x5e7022 add.w r2, r5, #0x40
+0x5e7026 movs r1, #1
+0x5e7028 ldr r0, [r0, #8]
+0x5e702a blx #0x4b4e24
+0x5e702e movs r0, #0
+0x5e7030 mov r1, r4
+0x5e7032 str.w r0, [r5, #0x190]
+FETCH 0x5e72a4 Anki::Cozmo::BehaviorVisitInterestingEdge::StopInternal
+0x5e72a4 ldr.w r0, [r5, #0x264]
+0x5e72a8 add.w r2, r4, #0x40
+0x5e72ac movs r1, #1
+0x5e72ae ldr r0, [r0, #8]
+0x5e72b0 blx #0x4b4e48
+0x5e72b4 ldr r0, [r5]
+0x5e72b6 mov r7, sp
+0x5e72b8 ldr r1, [pc, #0x60]
+FETCH 0x5e754c Anki::Cozmo::BehaviorVisitInterestingEdge::StateUpdate_GatheringAccurateEdge
+0x5e754c ldr.w r0, [r8, #0x264]
+0x5e7550 ldr r0, [r0, #0x18]
+0x5e7552 vldr s16, [r0, #0x50]
+0x5e7556 vmov r0, s16
+0x5e755a blx #0x4ae3a4
+0x5e755e cmp r0, #0
+0x5e7560 beq.w #0x5e7696
+0x5e7564 add r5, sp, #0x3c
+FETCH 0x5e7dc0 Anki::Cozmo::BehaviorVisitInterestingEdge::TransitionToS3_ObserveFromClose
+0x5e7dc0 ldr.w r0, [r8, #0x264]
+0x5e7dc4 add.w r1, r4, #0x40
+0x5e7dc8 adr r2, #0x220
+0x5e7dca vldr s16, [r4, #0x154]
+0x5e7dce ldr r0, [r0, #0x18]
+0x5e7dd0 vldr s18, [r0, #0x50]
+0x5e7dd4 mov r0, r6
+0x5e7dd6 blx #0x4a7318
+FETCH 0x5e9424 Anki::Cozmo::IBehaviorRequestGame::FilterBlocks
+0x5e9424 ldr.w r1, [sb, #0x264]
+0x5e9428 str r5, [sp]
+0x5e942a ldr r2, [r5, #0x14]!
+0x5e942e ldr.w sl, [r1, #0x18]
+0x5e9432 mov r0, r5
+0x5e9434 ldr r1, [r2]
+0x5e9436 blx r1
+0x5e9438 ldr.w r8, [pc, #0x84]
+FETCH 0x5e94ca Anki::Cozmo::IBehaviorRequestGame::IsRunnableInternal
+0x5e94ca ldr.w r0, [r4, #0x264]
+0x5e94ce ldr r0, [r0, #0x20]
+0x5e94d0 blx #0x4b1020
+0x5e94d4 ldr r1, [r5, #0x70]
+0x5e94d6 cmp r0, r1
+0x5e94d8 itt ne
+0x5e94da movne r0, #0
+0x5e94dc popne {r4, r5, r7, pc}
+FETCH 0x5e95da Anki::Cozmo::IBehaviorRequestGame::SendRequest
+0x5e95da ldr.w r0, [r4, #0x264]
+0x5e95de ldr r1, [r5, #0x70]
+0x5e95e0 ldr r0, [r0, #0x20]
+0x5e95e2 blx #0x4b4f44
+0x5e95e6 ldr r0, [r4, #0x40]
+0x5e95e8 movs r1, #1
+0x5e95ea blx #0x4b4f50
+0x5e95ee ldr r0, [pc, #0x30]
+FETCH 0x5eaf68 Anki::Cozmo::BehaviorRequestGameSimple::TransitionToFacingBlock
+0x5eaf68 ldr.w r0, [r5, #0x264]
+0x5eaf6c mov r3, r4
+0x5eaf6e ldr r1, [pc, #0x144]
+0x5eaf70 add r1, pc
+0x5eaf72 ldr r0, [r0, #0x10]
+0x5eaf74 ldr r2, [r1]
+0x5eaf76 ldr r1, [r0]
+0x5eaf78 add.w r0, r2, #8
+FETCH 0x5eb57a Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPickingUpBlock
+0x5eb57a ldr.w r0, [r5, #0x264]
+0x5eb57e add r6, sp, #0x28
+0x5eb580 movs r1, #0
+0x5eb582 ldr r0, [r0, #0x10]
+0x5eb584 ldr r7, [r0]
+0x5eb586 movw r0, #0x23f
+0x5eb58a str r0, [sp, #0x28]
+0x5eb58c adds r0, r6, #4
+FETCH 0x5ee588 Anki::Cozmo::BehaviorExpressNeeds::IsRunnableInternal
+0x5ee588 ldr.w r0, [r5, #0x264]
+0x5ee58c ldr.w r1, [r4, #0x11c]
+0x5ee590 ldr r0, [r0, #0x30]
+0x5ee592 ldr r0, [r0, #0x14]
+0x5ee594 cmp r1, r0
+0x5ee596 beq #0x5ee5b0
+0x5ee598 movs r0, #0
+0x5ee59a b #0x5ee5de
+FETCH 0x5ee7de Anki::Cozmo::BehaviorExpressNeeds::StopInternal
+0x5ee7de ldr.w r0, [r1, #0x264]
+0x5ee7e2 ldr r0, [r0, #0x30]
+0x5ee7e4 b.w #0x8cc62c
+0x5ee7e8 bx lr
+0x5ee7ea movs r0, r0
+FETCH 0x5f1366 Anki::Cozmo::BehaviorBouncer::IsRunnableInternal
+0x5f1366 ldr.w r0, [r7, #0x264]
+0x5f136a ldr r0, [r0, #0x18]
+0x5f136c add r1, sp, #0x18
+0x5f136e movs r2, #1
+0x5f1370 blx #0x4b2f04
+0x5f1374 mov r2, r0
+0x5f1376 add r0, sp, #0xc
+0x5f1378 mov r1, r6
+FETCH 0x5f2ab8 Anki::Cozmo::BehaviorGuardDog::IsRunnableInternal
+0x5f2ab8 ldr.w r0, [r4, #0x264]
+0x5f2abc movs r5, #0
+0x5f2abe ldr r0, [r0, #0x18]
+0x5f2ac0 ldrb.w r0, [r0, #0x74]
+0x5f2ac4 cbnz r0, #0x5f2b16
+0x5f2ac6 strd r5, r5, [sp, #0x2c]
+0x5f2aca str r5, [sp, #0x34]
+0x5f2acc ldr.w r1, [r6, #0x12c]
+FETCH 0x5f66b0 Anki::Cozmo::BehaviorPeekABoo::GetInteractionFace
+0x5f66b0 ldr.w r0, [r4, #0x264]
+0x5f66b4 ldr r0, [r0, #0x18]
+0x5f66b6 mov r1, sp
+0x5f66b8 movs r2, #0
+0x5f66ba blx #0x4b2f04
+0x5f66be mov r4, r0
+0x5f66c0 str r4, [r5]
+0x5f66c2 ldr r1, [sp, #4]
+FETCH 0x601754 Anki::Cozmo::BehaviorOnboardingShowCube::StartSubStatePickUpBlock
+0x601754 ldr.w r0, [sb, #0x264]
+0x601758 movs r1, #0
+0x60175a ldr r0, [r0, #0x10]
+0x60175c ldr r4, [r0]
+0x60175e movw r0, #0x23f
+0x601762 str r0, [sp, #0x20]
+0x601764 add.w r0, r8, #4
+0x601768 blx #0x4a4294
+FETCH 0x602974 Anki::Cozmo::BehaviorAcknowledgeFace::BeginIteration
+0x602974 ldr.w r0, [r6, #0x264]
+0x602978 ldr r0, [r0, #0x18]
+0x60297a blx #0x4b2f04
+0x60297e mov r7, r0
+0x602980 cmp r7, #0
+0x602982 beq.w #0x602aaa
+0x602986 mov.w r0, #0x1d8
+0x60298a str.w r7, [r4, #0x11c]
+FETCH 0x602b90 Anki::Cozmo::BehaviorAcknowledgeFace::UpdateBestTarget
+0x602b90 ldr.w r0, [r1, #0x264]
+0x602b94 add.w r1, r5, #0x120
+0x602b98 movs r2, #0
+0x602b9a movs r4, #0
+0x602b9c ldr r0, [r0, #0x18]
+0x602b9e blx #0x4b2f04
+0x602ba2 cbz r0, #0x602baa
+0x602ba4 movs r4, #1
+FETCH 0x604dd4 Anki::Cozmo::BehaviorReactToCliff::InitInternal
+0x604dd4 ldr.w r0, [r5, #0x264]
+0x604dd8 ldr r7, [r1]
+0x604dda ldr r0, [r0, #0x30]
+0x604ddc ldr r6, [r0, #0x14]
+0x604dde movs r0, #0x98
+0x604de0 blx #0x4a42a0
+0x604de4 mov r8, r0
+0x604de6 ldr r0, [pc, #0x124]
+FETCH 0x605170 Anki::Cozmo::BehaviorReactToCliff::TransitionToPlayingCliffReaction
+0x605170 ldr.w r0, [r5, #0x264]
+0x605174 ldr r0, [r0, #0x30]
+0x605176 ldr r7, [r0, #0x14]
+0x605178 movs r0, #0xcc
+0x60517a blx #0x4a42a0
+0x60517e mov r6, r0
+0x605180 movs r1, #0
+0x605182 movs r0, #0
+FETCH 0x60793c Anki::Cozmo::BehaviorReactToPickup::StartAnim
+0x60793c ldr.w r0, [sl, #0x264]
+0x607940 ldr r0, [r0, #0x18]
+0x607942 ldrb.w r4, [r0, #0x74]
+0x607946 movs r0, #0xcc
+0x607948 blx #0x4a42a0
+0x60794c mov r6, r0
+0x60794e movs r0, #0
+0x607950 movs r5, #0
+FETCH 0x6080ac Anki::Cozmo::BehaviorReactToPlacedOnSlope::InitInternal
+0x6080ac ldr.w r0, [r5, #0x264]
+0x6080b0 ldr r0, [r0, #0x30]
+0x6080b2 ldr r7, [r0, #0x14]
+0x6080b4 movs r0, #0xcc
+0x6080b6 blx #0x4a42a0
+0x6080ba mov r6, r0
+0x6080bc movs r1, #0
+0x6080be movs r0, #0
+FETCH 0x608806 Anki::Cozmo::BehaviorReactToRobotOnBack::FlipDownIfNeeded
+0x608806 ldr.w r0, [r5, #0x264]
+0x60880a ldr r0, [r0, #0x18]
+0x60880c ldrb.w r8, [r0, #0x74]
+0x608810 movs r0, #0xcc
+0x608812 blx #0x4a42a0
+0x608816 mov r6, r0
+0x608818 movs r0, #0
+0x60881a movs r1, #1
+FETCH 0x608ada Anki::Cozmo::BehaviorReactToRobotOnFace::FlipOverIfNeeded
+0x608ada ldr.w r0, [r6, #0x264]
+0x608ade vldr s16, [r6, #0x300]
+0x608ae2 ldr r0, [r0, #0x18]
+0x608ae4 ldrb.w r7, [r0, #0x74]
+0x608ae8 movs r0, #0xcc
+0x608aea blx #0x4a42a0
+0x608aee mov r5, r0
+0x608af0 vldr s0, [pc, #0x60]
+FETCH 0x609148 Anki::Cozmo::BehaviorReactToRobotShaken::InitInternal
+0x609148 ldr.w r0, [r5, #0x264]
+0x60914c ldr r0, [r0, #0x30]
+0x60914e ldr r1, [r0, #0x14]
+0x609150 cmp r1, #3
+0x609152 it ne
+0x609154 blxne #0x4aaedc
+0x609158 movs r7, #0
+0x60915a str.w r7, [r4, #0x120]
+FETCH 0x609b06 Anki::Cozmo::BehaviorReactToUnexpectedMovement::InitInternal
+0x609b06 ldr.w r0, [r5, #0x264]
+0x609b0a ldrb.w r7, [r8, #0x11c]
+0x609b0e ldr r0, [r0, #0x30]
+0x609b10 ldr r4, [r0, #0x14]
+0x609b12 movs r0, #0xcc
+0x609b14 blx #0x4a42a0
+0x609b18 mov r6, r0
+0x609b1a movs r2, #0
+FETCH 0x60ae94 Anki::Cozmo::SelectionBSRunnableChooser::SetProcessEnabled
+0x60ae94 ldr.w r0, [r0, #0x264]
+0x60ae98 ldr r5, [r0, #8]
+0x60ae9a mov.w r0, #0
+0x60ae9e bne #0x60aebe
+0x60aea0 mov r6, sp
+0x60aea2 adr r1, #0x60
+0x60aea4 str r0, [sp, #8]
+0x60aea6 movs r2, #0x1a
+FETCH 0x60fdca Anki::Cozmo::ReactionTriggerStrategyHiccup::ReactionTriggerStrategyHiccup
+0x60fdca ldr.w r0, [r7, #0x264]
+0x60fdce ldr r0, [r0, #0x18]
+0x60fdd0 str r0, [r4, #0x50]
+0x60fdd2 add.w r0, r4, #0x54
+0x60fdd6 blx #0x4a403c
+0x60fdda movs r0, #0x55
+0x60fddc str r0, [r4, #0x74]
+0x60fdde adr r1, #0xd0
+FETCH 0x6106e6 Anki::Cozmo::ReactionTriggerStrategyHiccup::ShouldTriggerBehaviorInternal
+0x6106e6 ldr.w r0, [r5, #0x264]
+0x6106ea ldr r0, [r0, #0x30]
+0x6106ec ldr r0, [r0, #0x14]
+0x6106ee cmp r0, #1
+0x6106f0 bhi #0x6107a2
+0x6106f2 movs r6, #0
+0x6106f4 mov r0, r4
+0x6106f6 movs r1, #0
+FETCH 0x610e50 Anki::Cozmo::ReactionTriggerStrategyNoPreDockPoses::ShouldTriggerBehaviorInternal
+0x610e50 ldr.w r0, [r4, #0x264]
+0x610e54 ldr r1, [r0, #0x18]
+0x610e56 ldr r0, [r1, #0x70]
+0x610e58 adds r2, r0, #1
+0x610e5a beq #0x610e74
+0x610e5c mov.w r2, #-1
+0x610e60 str r2, [r1, #0x70]
+0x610e62 ldr r1, [sp]
+FETCH 0x6136dc Anki::Cozmo::StrategyExpressNeedsTransition::WantsToRunInternal
+0x6136dc ldr.w r0, [r1, #0x264]
+0x6136e0 ldr r1, [r1]
+0x6136e2 ldr r5, [r0, #0x30]
+0x6136e4 ldr r0, [r1, #0x34]
+0x6136e6 blx #0x4a5740
+0x6136ea ldr r1, [r4, #0x18]
+0x6136ec movs r2, #3
+0x6136ee blx #0x4ad2c4
+FETCH 0x67e476 Anki::Cozmo::MapComponent::UpdateRobotPose
+0x67e476 ldr.w r0, [r0, #0x264]
+0x67e47a ldr r0, [r0, #0x18]
+0x67e47c add r1, sp, #8
+0x67e47e blx #0x4bc93c
+0x67e482 add r1, sp, #0xec
+0x67e484 mov r0, r8
+0x67e486 blx #0x4a40e4
+0x67e48a add r0, sp, #0xec
+FETCH 0x67f700 Anki::Cozmo::MapComponent::ClearRobotToMarkers
+0x67f700 ldr.w r0, [r0, #0x264]
+0x67f704 ldr r0, [r0, #0x18]
+0x67f706 mov r1, r6
+0x67f708 blx #0x4bc93c
+0x67f70c ldr r0, [sp, #8]
+0x67f70e adds r7, #4
+0x67f710 cmp r0, r7
+0x67f712 bne #0x67f65a

@@ -1,0 +1,126 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0051016A..0x0051018C exclusive; Thumb;
+0051016A: mov          r1, r5
+0051016C: blx          #0x4a77c8 ; Anki::Cozmo::ProgressionUnlockComponent::ProgressionUnlockComponent
+00510170: str.w        r4, [r5, #0x448]
+00510174: movs         r0, #0x90
+00510176: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0051017A: mov          r6, r0
+0051017C: ldr.w        r2, [sl, #4]
+00510180: mov          r0, r6
+00510182: mov          r1, r5
+00510184: blx          #0x4a77d4 ; Anki::Cozmo::BlockFilter::BlockFilter
+00510188: str.w        r6, [r5, #0x44c]
+RANGE 0x0061A590..0x0061A620 exclusive; Thumb;
+0061A590: movs         r0, #0
+0061A592: strd         r0, r0, [sp, #0x1c]
+0061A596: str          r0, [sp, #0x24]
+0061A598: adr          r0, #0x120
+0061A59A: add          r1, sp, #0x1c
+0061A59C: adr          r2, #0x130
+0061A59E: movs         r3, #5
+0061A5A0: blx          #0x4a4108 ; Anki::Util::sErrorF
+0061A5A4: ldr          r0, [sp, #0x1c]
+0061A5A6: cbz          r0, #0x61a5c6
+0061A5A8: ldr          r1, [sp, #0x20]
+0061A5AA: cmp          r1, r0
+0061A5AC: itttt        ne
+0061A5AE: subne.w      r2, r1, #8
+0061A5B2: subne        r2, r2, r0
+0061A5B4: mvnne        r3, #7
+0061A5B8: bicne.w      r2, r3, r2
+0061A5BC: itt          ne
+0061A5BE: addne        r1, r1, r2
+0061A5C0: strne        r1, [sp, #0x20]
+0061A5C2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A5C6: ldr          r0, [pc, #0x144] ; word[0061A70C]=00A241BC
+0061A5C8: movs         r2, #1
+0061A5CA: ldr          r1, [pc, #0x144] ; word[0061A710]=00A241BE
+0061A5CC: add          r0, pc
+0061A5CE: add          r1, pc
+0061A5D0: ldr          r0, [r0]
+0061A5D2: ldr          r1, [r1]
+0061A5D4: ldrb         r0, [r0]
+0061A5D6: strb         r2, [r1]
+0061A5D8: cbz          r0, #0x61a5de
+0061A5DA: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+0061A5DE: mov          r0, r5
+0061A5E0: blx          #0x4a69c4 ; std::__ndk1::basic_filebuf<char,std::__ndk1::char_traits<char>>::close
+0061A5E4: cbnz         r0, #0x61a5f8
+0061A5E6: ldr          r0, [sp, #0x34]
+0061A5E8: ldr          r0, [r0, #-0xc]
+0061A5EC: add          r0, r6
+0061A5EE: ldr          r1, [r0, #0x10]
+0061A5F0: orr          r1, r1, #4
+0061A5F4: blx          #0x4a4594 ; <EXTERNAL>::std::__ndk1::ios_base::clear
+0061A5F8: ldrb.w       r0, [sp, #0x28]
+0061A5FC: lsls         r0, r0, #0x1f
+0061A5FE: beq.w        #0x61a36e
+0061A602: ldr          r0, [sp, #0x30]
+0061A604: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A608: b            #0x61a36e
+0061A60A: b            #0x61a678
+0061A60C: mov          r7, r0
+0061A60E: ldr          r0, [sp, #0x1c]
+0061A610: cbz          r0, #0x61a62e
+0061A612: ldr          r1, [sp, #0x20]
+0061A614: cmp          r1, r0
+0061A616: beq          #0x61a62a
+0061A618: sub.w        r2, r1, #8
+0061A61C: mvn          r3, #7
+RANGE 0x0061A620..0x0061A6AC exclusive; Thumb;
+0061A620: subs         r2, r2, r0
+0061A622: bic.w        r2, r3, r2
+0061A626: add          r1, r2
+0061A628: str          r1, [sp, #0x20]
+0061A62A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A62E: add          r0, sp, #0x18
+0061A630: blx          #0x4b7b6c ; <EXTERNAL>::std::exception::~exception
+0061A634: blx          #0x4a45b8 ; <EXTERNAL>::__cxa_end_catch
+0061A638: b            #0x61a67a
+0061A63A: bl           #0x4e39f8
+0061A63E: mov          r7, r0
+0061A640: ldr          r0, [sp, #0x1c]
+0061A642: cbz          r0, #0x61a67a
+0061A644: ldr          r1, [sp, #0x20]
+0061A646: cmp          r1, r0
+0061A648: beq          #0x61a65c
+0061A64A: sub.w        r2, r1, #8
+0061A64E: mvn          r3, #7
+0061A652: subs         r2, r2, r0
+0061A654: bic.w        r2, r3, r2
+0061A658: add          r1, r2
+0061A65A: str          r1, [sp, #0x20]
+0061A65C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A660: b            #0x61a67a
+0061A662: b            #0x61a678
+0061A664: b            #0x61a666
+0061A666: mov          r7, r0
+0061A668: b            #0x61a69e
+0061A66A: mov          r7, r0
+0061A66C: b            #0x61a688
+0061A66E: mov          r7, r0
+0061A670: add          r0, sp, #0x1c
+0061A672: blx          #0x4a44a4 ; <EXTERNAL>::std::__ndk1::locale::~locale
+0061A676: b            #0x61a67a
+0061A678: mov          r7, r0
+0061A67A: ldrb.w       r0, [sp, #0x28]
+0061A67E: lsls         r0, r0, #0x1f
+0061A680: beq          #0x61a688
+0061A682: ldr          r0, [sp, #0x30]
+0061A684: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A688: ldr          r0, [pc, #0xc0] ; word[0061A74C]=00A250D6
+0061A68A: add          r0, pc
+0061A68C: ldr          r0, [r0]
+0061A68E: add.w        r1, r0, #0x20
+0061A692: adds         r0, #0xc
+0061A694: str          r1, [sp, #0xa0]
+0061A696: str          r0, [sp, #0x34]
+0061A698: mov          r0, r5
+0061A69A: blx          #0x4a6760 ; std::__ndk1::basic_filebuf<char,std::__ndk1::char_traits<char>>::~basic_filebuf
+0061A69E: mov          r0, r8
+0061A6A0: blx          #0x4a44b0 ; <EXTERNAL>::std::__ndk1::ios_base::~ios_base
+0061A6A4: mov          r0, r7
+0061A6A6: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0061A6AA: nop
+0061A724: bytes=b'Unnamed'

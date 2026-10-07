@@ -1,0 +1,262 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E00EC..0x005E02D0 exclusive; Thumb; _ZNK4Anki5Cozmo32BehaviorExploreBringCubeToBeacon21FindFreeCubeToStackOnEPKNS0_16ObservableObjectEPKNS0_8AIBeaconERKNS0_5RobotE
+005E00EC: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005E00F0: sub          sp, #0xb4
+005E00F2: mov          fp, r0
+005E00F4: ldr          r0, [pc, #0x270] ; word[005E0368]=00A5E74E
+005E00F6: mov          r7, r3
+005E00F8: mov          r4, r2
+005E00FA: add          r0, pc
+005E00FC: mov          r5, r1
+005E00FE: movs         r1, #0xa
+005E0100: movs         r2, #1
+005E0102: ldr          r0, [r0]
+005E0104: ldr          r0, [r0]
+005E0106: str          r0, [sp, #0xb0]
+005E0108: ldr.w        r0, [r7, #0x448]
+005E010C: blx          #0x4aced4 ; Anki::Cozmo::ProgressionUnlockComponent::IsUnlocked
+005E0110: movs         r6, #0
+005E0112: cmp          r0, #1
+005E0114: bne.w        #0x5e02b6
+005E0118: str          r4, [sp]
+005E011A: add          r4, sp, #0xc
+005E011C: adds         r0, r4, #4
+005E011E: strd         r6, r6, [sp, #0x10]
+005E0122: str          r0, [sp, #0xc]
+005E0124: add.w        r0, r4, #0x10
+005E0128: strd         r6, r6, [sp, #0x1c]
+005E012C: add.w        sb, sp, #0x88
+005E0130: str          r0, [sp, #0x18]
+005E0132: add.w        r0, r4, #0x1c
+005E0136: strd         r6, r6, [sp, #0x28]
+005E013A: add.w        r8, sb, #4
+005E013E: str          r0, [sp, #0x24]
+005E0140: add.w        r0, r4, #0x28
+005E0144: ldr.w        sl, [pc, #0x224] ; word[005E036C]=0068D54A
+005E0148: add.w        r1, r4, #0x60
+005E014C: strd         r6, r6, [sp, #0x34]
+005E0150: str          r0, [sp, #0x30]
+005E0152: add.w        r0, r4, #0x34
+005E0156: strd         r6, r6, [sp, #0x40]
+005E015A: add          sl, pc
+005E015C: str          r0, [sp, #0x3c]
+005E015E: add.w        r0, r4, #0x40
+005E0162: strd         r6, r6, [sp, #0x4c]
+005E0166: str          r0, [sp, #0x48]
+005E0168: add.w        r0, r4, #0x4c
+005E016C: strd         r6, r6, [sp, #0x58]
+005E0170: str          r0, [sp, #0x54]
+005E0172: add.w        r0, r4, #0x58
+005E0176: strd         r6, r6, [sp, #0x64]
+005E017A: str          r1, [sp, #0x6c]
+005E017C: str          r0, [sp, #0x60]
+005E017E: add.w        r0, r4, #0x3c
+005E0182: str          r1, [sp, #4]
+005E0184: strd         r1, r6, [sp, #0x70]
+005E0188: strh.w       r6, [sp, #0x78]
+005E018C: strd         r6, r6, [sp, #0x8c]
+005E0190: str.w        r8, [sp, #0x88]
+005E0194: str          r0, [sp, #8]
+005E0196: add.w        r2, sl, r6
+005E019A: mov          r0, sb
+005E019C: mov          r1, r8
+005E019E: mov          r3, r2
+005E01A0: blx          #0x4a7dd4 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::__emplace_hint_unique_key_args<Anki::Cozmo::ObjectFamily,Anki::Cozmo::ObjectFamily_const&>
+005E01A4: adds         r6, #4
+005E01A6: cmp          r6, #8
+005E01A8: bne          #0x5e0196
+005E01AA: ldr          r1, [sp, #0x88]
+005E01AC: ldr          r0, [sp, #8]
+005E01AE: mov          r2, r8
+005E01B0: blx          #0x4a7de0 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::__assign_multi<std::__ndk1::__tree_const_iterator<Anki::Cozmo::ObjectFamily,std::__ndk1::__tree_node<Anki::Cozmo::ObjectFamily,void*>*,int>>
+005E01B4: ldr          r1, [sp, #0x8c]
+005E01B6: add          r0, sp, #0x88
+005E01B8: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+005E01BC: mov          r0, r5
+005E01BE: blx          #0x4a412c ; Anki::Vision::ObservableObject::GetPose
+005E01C2: mov          r1, r0
+005E01C4: add          r0, sp, #0x7c
+005E01C6: bl           #0x4df628 ; FUN_004df628
+005E01CA: add          r0, sp, #0x7c
+005E01CC: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E01D0: mov          r1, r0
+005E01D2: add          r0, sp, #0x88
+005E01D4: blx          #0x4a4054 ; Anki::Rotation3d::GetRotationMatrix
+005E01D8: add          r1, sp, #0x88
+005E01DA: mov          r0, r5
+005E01DC: blx          #0x4ab9a4 ; Anki::Vision::ObservableObject::GetDimInParentFrame<(char)88>
+005E01E0: mov          r6, r0
+005E01E2: add          r0, sp, #0x7c
+005E01E4: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E01E8: movs         r0, #0
+005E01EA: str          r0, [sp, #0x98]
+005E01EC: movs         r0, #0x18
+005E01EE: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005E01F2: vmov.f32     s2, #1.000000e+01
+005E01F6: ldr          r1, [pc, #0x178] ; word[005E0370]=00A494DC
+005E01F8: vmov         s0, r6
+005E01FC: str.w        fp, [r0, #0x14]
+005E0200: add          r1, pc
+005E0202: adds         r1, #8
+005E0204: strd         r1, r5, [r0]
+005E0208: ldr          r1, [sp]
+005E020A: strd         r1, r7, [r0, #8]
+005E020E: str          r0, [sp, #0x98]
+005E0210: vadd.f32     s0, s0, s2
+005E0214: vstr         s0, [r0, #0x10]
+005E0218: add          r6, sp, #0x88
+005E021A: ldr          r0, [sp, #4]
+005E021C: mov          r1, r6
+005E021E: blx          #0x4a7090 ; std::__ndk1::list<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>,std::__ndk1::allocator<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>>>::push_back
+005E0222: ldr          r0, [sp, #0x98]
+005E0224: cmp          r6, r0
+005E0226: beq          #0x5e0230
+005E0228: cbz          r0, #0x5e0236
+005E022A: ldr          r1, [r0]
+005E022C: ldr          r1, [r1, #0x14]
+005E022E: b            #0x5e0234
+005E0230: ldr          r1, [r0]
+005E0232: ldr          r1, [r1, #0x10]
+005E0234: blx          r1
+005E0236: ldr          r0, [r7, #0x34]
+005E0238: movs         r1, #0
+005E023A: str          r1, [sp, #0x98]
+005E023C: add          r5, sp, #0xc
+005E023E: add          r7, sp, #0x88
+005E0240: movs         r3, #1
+005E0242: mov          r1, r5
+005E0244: mov          r2, r7
+005E0246: blx          #0x4a709c ; Anki::Cozmo::BlockWorld::FindLocatedObjectHelper
+005E024A: mov          r6, r0
+005E024C: ldr          r0, [sp, #0x98]
+005E024E: cmp          r7, r0
+005E0250: beq          #0x5e025a
+005E0252: cbz          r0, #0x5e0260
+005E0254: ldr          r1, [r0]
+005E0256: ldr          r1, [r1, #0x14]
+005E0258: b            #0x5e025e
+005E025A: ldr          r1, [r0]
+005E025C: ldr          r1, [r1, #0x10]
+005E025E: blx          r1
+005E0260: add.w        r0, r5, #0x60
+005E0264: blx          #0x4a70cc ; std::__ndk1::__list_imp<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>,std::__ndk1::allocator<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>>>::clear
+005E0268: ldr          r1, [sp, #0x64]
+005E026A: add.w        r0, r5, #0x54
+005E026E: blx          #0x4a4264 ; std::__ndk1::__tree<unsigned_int,std::__ndk1::less<unsigned_int>,std::__ndk1::allocator<unsigned_int>>::destroy
+005E0272: ldr          r1, [sp, #0x58]
+005E0274: add.w        r0, r5, #0x48
+005E0278: blx          #0x4a4264 ; std::__ndk1::__tree<unsigned_int,std::__ndk1::less<unsigned_int>,std::__ndk1::allocator<unsigned_int>>::destroy
+005E027C: ldr          r1, [sp, #0x4c]
+005E027E: add.w        r0, r5, #0x3c
+005E0282: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+005E0286: ldr          r1, [sp, #0x40]
+005E0288: add.w        r0, r5, #0x30
+005E028C: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+005E0290: ldr          r1, [sp, #0x34]
+005E0292: add.w        r0, r5, #0x24
+005E0296: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+005E029A: ldr          r1, [sp, #0x28]
+005E029C: add.w        r0, r5, #0x18
+005E02A0: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+005E02A4: ldr          r1, [sp, #0x1c]
+005E02A6: add.w        r0, r5, #0xc
+005E02AA: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+005E02AE: ldr          r1, [sp, #0x10]
+005E02B0: mov          r0, r5
+005E02B2: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+005E02B6: ldr          r0, [pc, #0xbc] ; word[005E0374]=00A5E58E
+005E02B8: ldr          r1, [sp, #0xb0]
+005E02BA: add          r0, pc
+005E02BC: ldr          r0, [r0]
+005E02BE: ldr          r0, [r0]
+005E02C0: subs         r0, r0, r1
+005E02C2: ittt         eq
+005E02C4: moveq        r0, r6
+005E02C6: addeq        sp, #0xb4
+005E02C8: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+005E02CC: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+RANGE 0x005F75DC..0x005F76AE exclusive; Thumb; _ZN4Anki5Cozmo16BehaviorPeekABoo14TransitionExitERNS0_5RobotE
+005F75DC: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005F75E0: sub          sp, #0x3c
+005F75E2: mov          r4, r0
+005F75E4: ldr          r0, [pc, #0xfc] ; word[005F76E4]=00A4725E
+005F75E6: add          r6, sp, #0x10
+005F75E8: mov          sb, r1
+005F75EA: add          r0, pc
+005F75EC: adr          r1, #0xf8
+005F75EE: movs         r2, #0x12
+005F75F0: ldr          r0, [r0]
+005F75F2: ldr          r0, [r0]
+005F75F4: str          r0, [sp, #0x38]
+005F75F6: movs         r0, #0
+005F75F8: str          r0, [sp, #0x18]
+005F75FA: strd         r0, r0, [sp, #0x10]
+005F75FE: mov          r0, r6
+005F7600: bl           #0x4e02b2 ; FUN_004e02b2
+005F7604: movs         r0, #7
+005F7606: str.w        r0, [r4, #0x13c]
+005F760A: mov          r0, r4
+005F760C: mov          r1, r6
+005F760E: bl           #0x5c0ca8 ; FUN_005c0ca8
+005F7612: ldrb.w       r0, [sp, #0x10]
+005F7616: lsls         r0, r0, #0x1f
+005F7618: itt          ne
+005F761A: ldrne        r0, [sp, #0x18]
+005F761C: blxne        #0x4a40cc
+005F7620: movs         r0, #0xcc
+005F7622: ldrd         r7, r8, [r4, #0x120]
+005F7626: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005F762A: mov          r6, r0
+005F762C: movs         r0, #0
+005F762E: movs         r5, #0
+005F7630: movs         r1, #1
+005F7632: movt         r0, #0x4270
+005F7636: movw         r2, #0x179
+005F763A: strd         r1, r5, [sp]
+005F763E: strd         r0, r5, [sp, #8]
+005F7642: cmp          r7, r8
+005F7644: it           ne
+005F7646: movne.w      r2, #0x178
+005F764A: mov          r0, r6
+005F764C: mov          r1, sb
+005F764E: movs         r3, #1
+005F7650: blx          #0x4a577c ; Anki::Cozmo::TriggerLiftSafeAnimationAction::TriggerLiftSafeAnimationAction
+005F7654: str          r5, [sp, #0x30]
+005F7656: add          r5, sp, #0x20
+005F7658: mov          r0, r4
+005F765A: mov          r1, r6
+005F765C: mov          r2, r5
+005F765E: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+005F7662: ldr          r0, [sp, #0x30]
+005F7664: cmp          r5, r0
+005F7666: beq          #0x5f7670
+005F7668: cbz          r0, #0x5f7676
+005F766A: ldr          r1, [r0]
+005F766C: ldr          r1, [r1, #0x14]
+005F766E: b            #0x5f7674
+005F7670: ldr          r1, [r0]
+005F7672: ldr          r1, [r1, #0x10]
+005F7674: blx          r1
+005F7676: mov          r0, r4
+005F7678: movs         r1, #0x10
+005F767A: movs         r2, #1
+005F767C: blx          #0x4b2c64 ; Anki::Cozmo::IBehavior::BehaviorObjectiveAchieved
+005F7680: cmp          r7, r8
+005F7682: beq          #0x5f7696
+005F7684: mov          r0, r4
+005F7686: movs         r1, #0x11
+005F7688: movs         r2, #1
+005F768A: blx          #0x4b2c64 ; Anki::Cozmo::IBehavior::BehaviorObjectiveAchieved
+005F768E: mov          r0, r4
+005F7690: movs         r1, #0
+005F7692: blx          #0x4b3090 ; Anki::Cozmo::IBehavior::NeedActionCompleted
+005F7696: ldr          r0, [pc, #0x64] ; word[005F76FC]=00A471AE
+005F7698: ldr          r1, [sp, #0x38]
+005F769A: add          r0, pc
+005F769C: ldr          r0, [r0]
+005F769E: ldr          r0, [r0]
+005F76A0: subs         r0, r0, r1
+005F76A2: itt          eq
+005F76A4: addeq        sp, #0x3c
+005F76A6: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+005F76AA: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

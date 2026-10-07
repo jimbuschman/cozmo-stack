@@ -1,0 +1,12 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0x4d7dc8 _INIT_33 0x4d7dd2 0x105b370
+0x4d7dc8 _INIT_33 0x4d7dd6 0x105b370
+0x4d7dc8 _INIT_33 0x4d7dfc 0x105b370
+0x4d7e38 _INIT_34 0x4d7e3c 0x105b37c
+0x603da8 Anki::Cozmo::BehaviorAcknowledgeObject::CheckIfGhostBlockVisible 0x603dde 0x105b368
+0x603da8 Anki::Cozmo::BehaviorAcknowledgeObject::CheckIfGhostBlockVisible 0x603dee 0x105b368
+0x603da8 Anki::Cozmo::BehaviorAcknowledgeObject::CheckIfGhostBlockVisible 0x603e32 0x105b368
+0x6114a0 Anki::Cozmo::ReactionTriggerStrategyObjectPositionUpdated::HandleObjectObserved 0x6114ac 0x105b370
+0x61625c Anki::Cozmo::BlockConfigurations::BlockConfigurationFromString 0x616262 0x105b37c
+0x61636c Anki::Cozmo::BlockConfigurations::IsBlockConfiguration 0x616370 0x105b37c
+0x6163ec Anki::JsonTools::GetValueOptional 0x61643c 0x105b37c

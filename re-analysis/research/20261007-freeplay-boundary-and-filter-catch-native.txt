@@ -1,0 +1,48 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004A9400..0x004A940C exclusive; Thumb;
+004A9400: stm          r6!, {r0, r1, r3}
+004A9402: b            #0x4a9924
+004A9404: ldm          r2!, {r3, r4, r7}
+004A9406: b            #0x4a9922
+RANGE 0x004A7060..0x004A706C exclusive; Thumb;
+004A7060: stm          r6!, {r0, r1, r3}
+004A7062: b            #0x4a7584
+004A7064: ldm          r2!, {r1, r3, r4, r7}
+004A7066: b            #0x4a7582
+004A7068: blx          #0xaebbe4
+RANGE 0x0061A534..0x0061A590 exclusive; Thumb;
+0061A534: str          r0, [sp, #0x18]
+0061A536: mov          r0, r7
+0061A538: blx          #0x4a45a0 ; <EXTERNAL>::__cxa_begin_catch
+0061A53C: ldrb.w       r1, [sp, #0x28]
+0061A540: movs         r2, #0
+0061A542: ldr          r0, [sp, #0x30]
+0061A544: str          r2, [sp, #0x24]
+0061A546: tst.w        r1, #1
+0061A54A: str          r2, [sp, #0x1c]
+0061A54C: str          r2, [sp, #0x20]
+0061A54E: it           eq
+0061A550: orreq        r0, sb, #1
+0061A554: str          r0, [sp]
+0061A556: adr          r0, #0x1cc
+0061A558: adr          r1, #0x1d0
+0061A55A: adr          r3, #0x1ec
+0061A55C: mov          r2, r4
+0061A55E: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+0061A562: ldr          r0, [sp, #0x1c]
+0061A564: cbz          r0, #0x61a584
+0061A566: ldr          r1, [sp, #0x20]
+0061A568: cmp          r1, r0
+0061A56A: itttt        ne
+0061A56C: subne.w      r2, r1, #8
+0061A570: subne        r2, r2, r0
+0061A572: mvnne        r3, #7
+0061A576: bicne.w      r2, r3, r2
+0061A57A: itt          ne
+0061A57C: addne        r1, r1, r2
+0061A57E: strne        r1, [sp, #0x20]
+0061A580: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0061A584: add          r0, sp, #0x18
+0061A586: blx          #0x4b7b6c ; <EXTERNAL>::std::exception::~exception
+0061A58A: blx          #0x4a45b8 ; <EXTERNAL>::__cxa_end_catch
+0061A58E: b            #0x61a3c8

@@ -1,0 +1,1897 @@
+ASSET re-analysis/obb/assets/cozmo_resources/config/engine/needs_config.json SHA256 37c9f13406e6f3d96a4adea31024ade507a5aa2d56a87bf1aae8483e11d16dee
+.MaximumNeedLevel number 1 f32-if-consumer-asFloat 0x3F800000
+.MinimumNeedLevel number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.DecayPeriodSeconds number 60 f32-if-consumer-asFloat 0x42700000
+.InitialNeedLevelRepair number 1 f32-if-consumer-asFloat 0x3F800000
+.InitialNeedLevelEnergy number 1 f32-if-consumer-asFloat 0x3F800000
+.InitialNeedLevelPlay number 1 f32-if-consumer-asFloat 0x3F800000
+.BracketLevelRepairFull number 0.99 f32-if-consumer-asFloat 0x3F7D70A4
+.BracketLevelRepairNormal number 0.6 f32-if-consumer-asFloat 0x3F19999A
+.BracketLevelRepairWarning number 0.27 f32-if-consumer-asFloat 0x3E8A3D71
+.BracketLevelRepairCritical number 0 f32-if-consumer-asFloat 0x00000000
+.BracketLevelEnergyFull number 0.99 f32-if-consumer-asFloat 0x3F7D70A4
+.BracketLevelEnergyNormal number 0.6 f32-if-consumer-asFloat 0x3F19999A
+.BracketLevelEnergyWarning number 0.21 f32-if-consumer-asFloat 0x3E570A3D
+.BracketLevelEnergyCritical number 0 f32-if-consumer-asFloat 0x00000000
+.BracketLevelPlayFull number 0.99 f32-if-consumer-asFloat 0x3F7D70A4
+.BracketLevelPlayNormal number 0.5 f32-if-consumer-asFloat 0x3F000000
+.BracketLevelPlayWarning number 0.14 f32-if-consumer-asFloat 0x3E0F5C29
+.BracketLevelPlayCritical number 0 f32-if-consumer-asFloat 0x00000000
+.FullnessDecayCooldownRepair number 1200 f32-if-consumer-asFloat 0x44960000
+.FullnessDecayCooldownEnergy number 1200 f32-if-consumer-asFloat 0x44960000
+.FullnessDecayCooldownPlay number 1200 f32-if-consumer-asFloat 0x44960000
+.BrokenPartThreshold0 number 0.98 f32-if-consumer-asFloat 0x3F7AE148
+.BrokenPartThreshold1 number 0.6 f32-if-consumer-asFloat 0x3F19999A
+.BrokenPartThreshold2 number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.LocalNotificationMaxFutureMinutes number 5256000 f32-if-consumer-asFloat 0x4AA06680
+.RepairRounds number 1 f32-if-consumer-asFloat 0x3F800000
+ASSET re-analysis/obb/assets/cozmo_resources/config/engine/needs_action_config.json SHA256 15b1731ad3ab87db67010f27b87268c551abb2084842890f0e831ae5be77922e
+.actionDeltas[0].actionId "RepairHead"
+.actionDeltas[0].repairDelta number 0.33 f32-if-consumer-asFloat 0x3EA8F5C3
+.actionDeltas[0].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].energyDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[0].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].actionId "RepairLift"
+.actionDeltas[1].repairDelta number 0.33 f32-if-consumer-asFloat 0x3EA8F5C3
+.actionDeltas[1].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].energyDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[1].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].actionId "RepairTreads"
+.actionDeltas[2].repairDelta number 0.33 f32-if-consumer-asFloat 0x3EA8F5C3
+.actionDeltas[2].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].energyDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[2].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[3].actionId "Feed"
+.actionDeltas[3].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[3].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[3].energyDelta number 0.33 f32-if-consumer-asFloat 0x3EA8F5C3
+.actionDeltas[3].energyRange number 0.005 f32-if-consumer-asFloat 0x3BA3D70A
+.actionDeltas[3].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[3].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[3].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[3].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[4].actionId "KeepAwayWin"
+.actionDeltas[4].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[4].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[4].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[4].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[4].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[4].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[4].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[4].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[5].actionId "KeepAwayLose"
+.actionDeltas[5].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[5].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[5].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[5].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[5].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[5].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[5].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[5].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[6].actionId "MemoryMatchWin"
+.actionDeltas[6].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[6].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[6].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[6].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[6].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[6].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[6].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[6].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[7].actionId "MemoryMatchLose"
+.actionDeltas[7].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[7].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[7].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[7].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[7].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[7].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[7].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[7].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[8].actionId "QuickTapWin"
+.actionDeltas[8].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[8].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[8].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[8].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[8].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[8].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[8].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[8].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[9].actionId "QuickTapLose"
+.actionDeltas[9].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[9].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[9].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[9].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[9].playDelta number 0.75 f32-if-consumer-asFloat 0x3F400000
+.actionDeltas[9].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[9].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[9].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[10].actionId "CozmoSings"
+.actionDeltas[10].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[10].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[10].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[10].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[10].playDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[10].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[10].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[10].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[11].actionId "DizzyHard"
+.actionDeltas[11].repairDelta number -0.1 f32-if-consumer-asFloat 0xBDCCCCCD
+.actionDeltas[11].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[11].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[11].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[11].playDelta number -0.1 f32-if-consumer-asFloat 0xBDCCCCCD
+.actionDeltas[11].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[11].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[11].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[12].actionId "DizzyMedium"
+.actionDeltas[12].repairDelta number -0.05 f32-if-consumer-asFloat 0xBD4CCCCD
+.actionDeltas[12].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[12].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[12].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[12].playDelta number -0.05 f32-if-consumer-asFloat 0xBD4CCCCD
+.actionDeltas[12].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[12].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[12].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].actionId "DizzySoft"
+.actionDeltas[13].repairDelta number -0.025 f32-if-consumer-asFloat 0xBCCCCCCD
+.actionDeltas[13].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[13].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[13].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[14].actionId "Fall"
+.actionDeltas[14].repairDelta number -0.15 f32-if-consumer-asFloat 0xBE19999A
+.actionDeltas[14].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[14].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[14].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[14].playDelta number -0.1 f32-if-consumer-asFloat 0xBDCCCCCD
+.actionDeltas[14].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[14].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[14].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[15].actionId "FistBump"
+.actionDeltas[15].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[15].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[15].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[15].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[15].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[15].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[15].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[15].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[16].actionId "FistBump_Sparked"
+.actionDeltas[16].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[16].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[16].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[16].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[16].playDelta number 0.35 f32-if-consumer-asFloat 0x3EB33333
+.actionDeltas[16].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[16].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[16].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[17].actionId "GatherCubes"
+.actionDeltas[17].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[17].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[17].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[17].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[17].playDelta number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.actionDeltas[17].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[17].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[17].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[18].actionId "GuardDogLose"
+.actionDeltas[18].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[18].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[18].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[18].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[18].playDelta number 0.5 f32-if-consumer-asFloat 0x3F000000
+.actionDeltas[18].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[18].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[18].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[19].actionId "GuardDogWin"
+.actionDeltas[19].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[19].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[19].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[19].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[19].playDelta number 0.5 f32-if-consumer-asFloat 0x3F000000
+.actionDeltas[19].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[19].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[19].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[20].actionId "GuardDogNoInteraction"
+.actionDeltas[20].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[20].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[20].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].actionId "HiccupsEndBad"
+.actionDeltas[21].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[21].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[21].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[22].actionId "HiccupsEndGood"
+.actionDeltas[22].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[22].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[22].energyDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[22].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[22].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[22].playRange number 0.03 f32-if-consumer-asFloat 0x3CF5C28F
+.actionDeltas[22].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[22].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[23].actionId "IndividualHiccup"
+.actionDeltas[23].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].energyDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].playDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[23].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[24].actionId "KnockDownCubes"
+.actionDeltas[24].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[24].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[24].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[24].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[24].playDelta number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.actionDeltas[24].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[24].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[24].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[25].actionId "KnockDownCubes_Sparked"
+.actionDeltas[25].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[25].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[25].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[25].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[25].playDelta number 0.35 f32-if-consumer-asFloat 0x3EB33333
+.actionDeltas[25].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[25].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[25].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[26].actionId "PeekAboo"
+.actionDeltas[26].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[26].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[26].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[26].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[26].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[26].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[26].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[26].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[27].actionId "PeekAboo_Sparked"
+.actionDeltas[27].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[27].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[27].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[27].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[27].playDelta number 0.5 f32-if-consumer-asFloat 0x3F000000
+.actionDeltas[27].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[27].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[27].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[28].actionId "PickupCube"
+.actionDeltas[28].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[28].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[28].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[28].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[28].playDelta number 0.15 f32-if-consumer-asFloat 0x3E19999A
+.actionDeltas[28].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[28].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[28].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[29].actionId "PickupCube_Sparked"
+.actionDeltas[29].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[29].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[29].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[29].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[29].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[29].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[29].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[29].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[30].actionId "PopAWheelie"
+.actionDeltas[30].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[30].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[30].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[30].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[30].playDelta number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.actionDeltas[30].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[30].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[30].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[31].actionId "PopAWheelie_Sparked"
+.actionDeltas[31].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[31].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[31].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[31].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[31].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[31].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[31].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[31].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[32].actionId "Pounce"
+.actionDeltas[32].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[32].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[32].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[32].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[32].playDelta number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.actionDeltas[32].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[32].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[32].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[33].actionId "Pounce_Sparked"
+.actionDeltas[33].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[33].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[33].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[33].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[33].playDelta number 0.35 f32-if-consumer-asFloat 0x3EB33333
+.actionDeltas[33].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[33].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[33].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[34].actionId "PyramidCompleted"
+.actionDeltas[34].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[34].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[34].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[34].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[34].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[34].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[34].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[34].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[35].actionId "PyramidCompleted_Sparked"
+.actionDeltas[35].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[35].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[35].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[35].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[35].playDelta number 0.5 f32-if-consumer-asFloat 0x3F000000
+.actionDeltas[35].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[35].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[35].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[36].actionId "RollACube"
+.actionDeltas[36].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[36].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[36].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[36].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[36].playDelta number 0.15 f32-if-consumer-asFloat 0x3E19999A
+.actionDeltas[36].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[36].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[36].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[37].actionId "RollACube_Sparked"
+.actionDeltas[37].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[37].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[37].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[37].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[37].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[37].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[37].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[37].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[38].actionId "SayName"
+.actionDeltas[38].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[38].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[38].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[38].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[38].playDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[38].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[38].cooldownSecs number 60 f32-if-consumer-asFloat 0x42700000
+.actionDeltas[38].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[39].actionId "StackCube"
+.actionDeltas[39].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[39].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[39].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[39].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[39].playDelta number 0.15 f32-if-consumer-asFloat 0x3E19999A
+.actionDeltas[39].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[39].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[39].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[40].actionId "StackCube_Sparked"
+.actionDeltas[40].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[40].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[40].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[40].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[40].playDelta number 0.25 f32-if-consumer-asFloat 0x3E800000
+.actionDeltas[40].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[40].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[40].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[41].actionId "Workout"
+.actionDeltas[41].repairDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[41].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[41].energyDelta number -0.01 f32-if-consumer-asFloat 0xBC23D70A
+.actionDeltas[41].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[41].playDelta number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.actionDeltas[41].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[41].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[41].freeplaySparksRewardWeight number 1 f32-if-consumer-asFloat 0x3F800000
+.actionDeltas[42].actionId "Workout_Sparked"
+.actionDeltas[42].repairDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[42].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[42].energyDelta number -0.01 f32-if-consumer-asFloat 0xBC23D70A
+.actionDeltas[42].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[42].playDelta number 0.35 f32-if-consumer-asFloat 0x3EB33333
+.actionDeltas[42].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[42].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[42].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[43].actionId "SeeFace"
+.actionDeltas[43].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[43].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[43].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[43].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[43].playDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[43].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[43].cooldownSecs number 60 f32-if-consumer-asFloat 0x42700000
+.actionDeltas[43].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[44].actionId "PlacedOnSide"
+.actionDeltas[44].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[44].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[44].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[44].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[44].playDelta number -0.03 f32-if-consumer-asFloat 0xBCF5C28F
+.actionDeltas[44].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[44].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[44].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[45].actionId "BoredOnSide"
+.actionDeltas[45].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[45].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[45].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[45].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[45].playDelta number -0.05 f32-if-consumer-asFloat 0xBD4CCCCD
+.actionDeltas[45].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[45].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[45].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[46].actionId "Laser_Sparked"
+.actionDeltas[46].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[46].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[46].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[46].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[46].playDelta number 0.5 f32-if-consumer-asFloat 0x3F000000
+.actionDeltas[46].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[46].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[46].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[47].actionId "CubeMixup"
+.actionDeltas[47].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[47].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[47].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[47].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[47].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[47].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[47].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[47].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[48].actionId "TreasureTrail"
+.actionDeltas[48].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[48].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[48].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[48].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[48].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[48].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[48].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[48].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[49].actionId "Roboshambo"
+.actionDeltas[49].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[49].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[49].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[49].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[49].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[49].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[49].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[49].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[50].actionId "TwistTapRoll"
+.actionDeltas[50].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[50].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[50].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[50].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[50].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[50].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[50].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[50].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[51].actionId "CubeTennis"
+.actionDeltas[51].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[51].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[51].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[51].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[51].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[51].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[51].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[51].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[52].actionId "TidalTap"
+.actionDeltas[52].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[52].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[52].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[52].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[52].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[52].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[52].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[52].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[53].actionId "StareOff"
+.actionDeltas[53].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[53].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[53].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[53].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[53].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[53].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[53].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[53].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[54].actionId "DadJokesBadJokes"
+.actionDeltas[54].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[54].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[54].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[54].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[54].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[54].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[54].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[54].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[55].actionId "CubeBlaster"
+.actionDeltas[55].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[55].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[55].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[55].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[55].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[55].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[55].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[55].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[56].actionId "NumberTap"
+.actionDeltas[56].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[56].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[56].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[56].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[56].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[56].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[56].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[56].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[57].actionId "JackpotBot"
+.actionDeltas[57].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[57].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[57].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[57].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[57].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[57].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[57].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[57].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[58].actionId "ColorShuffle"
+.actionDeltas[58].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[58].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[58].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[58].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[58].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[58].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[58].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[58].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[59].actionId "ForYouMom"
+.actionDeltas[59].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[59].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[59].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[59].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[59].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[59].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[59].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[59].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[60].actionId "ComposeWithCozmo"
+.actionDeltas[60].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[60].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[60].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[60].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[60].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[60].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[60].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[60].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[61].actionId "PoetryJam"
+.actionDeltas[61].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[61].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[61].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[61].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[61].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[61].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[61].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[61].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[62].actionId "CozmosGarden"
+.actionDeltas[62].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[62].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[62].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[62].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[62].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[62].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[62].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[62].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[63].actionId "Constellations"
+.actionDeltas[63].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[63].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[63].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[63].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[63].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[63].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[63].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[63].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[64].actionId "GuessTheNumber"
+.actionDeltas[64].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[64].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[64].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[64].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[64].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[64].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[64].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[64].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[65].actionId "WakeUpCozmo"
+.actionDeltas[65].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[65].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[65].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[65].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[65].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[65].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[65].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[65].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[66].actionId "PaddleBall"
+.actionDeltas[66].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[66].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[66].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[66].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[66].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[66].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[66].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[66].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[67].actionId "DrivingInCircles"
+.actionDeltas[67].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[67].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[67].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[67].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[67].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[67].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[67].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[67].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[68].actionId "PotOGoldDetector"
+.actionDeltas[68].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[68].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[68].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[68].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[68].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[68].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[68].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[68].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[69].actionId "ComplimentGenerator"
+.actionDeltas[69].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[69].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[69].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[69].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[69].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[69].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[69].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[69].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[70].actionId "RemoteControlRacer"
+.actionDeltas[70].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[70].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[70].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[70].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[70].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[70].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[70].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[70].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[71].actionId "ShakeIt"
+.actionDeltas[71].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[71].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[71].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[71].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[71].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[71].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[71].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[71].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[72].actionId "PuttPutt"
+.actionDeltas[72].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[72].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[72].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[72].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[72].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[72].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[72].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[72].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[73].actionId "ValentinesCozmogram"
+.actionDeltas[73].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[73].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[73].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[73].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[73].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[73].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[73].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[73].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[74].actionId "LaserSmile"
+.actionDeltas[74].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[74].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[74].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[74].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[74].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[74].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[74].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[74].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[75].actionId "FireTruckAlarm"
+.actionDeltas[75].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[75].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[75].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[75].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[75].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[75].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[75].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[75].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[76].actionId "MagicFortuneTeller"
+.actionDeltas[76].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[76].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[76].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[76].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[76].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[76].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[76].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[76].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[77].actionId "LightShow"
+.actionDeltas[77].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[77].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[77].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[77].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[77].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[77].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[77].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[77].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[78].actionId "CubeWhack"
+.actionDeltas[78].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[78].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[78].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[78].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[78].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[78].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[78].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[78].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[79].actionId "TinyOrchestra"
+.actionDeltas[79].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[79].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[79].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[79].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[79].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[79].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[79].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[79].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[80].actionId "HotPotato"
+.actionDeltas[80].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[80].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[80].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[80].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[80].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[80].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[80].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[80].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[81].actionId "BlasterTag"
+.actionDeltas[81].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[81].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[81].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[81].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[81].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[81].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[81].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[81].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[82].actionId "FireTruckAlarm"
+.actionDeltas[82].repairDelta number 0.001 f32-if-consumer-asFloat 0x3A83126F
+.actionDeltas[82].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[82].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[82].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[82].playDelta number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.actionDeltas[82].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[82].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[82].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[83].actionId "CozmoSingsCompleted_Sparked"
+.actionDeltas[83].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[83].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[83].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[83].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[83].playDelta number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.actionDeltas[83].playRange number 0.01 f32-if-consumer-asFloat 0x3C23D70A
+.actionDeltas[83].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[83].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].actionId "CozmoPerformsComplete"
+.actionDeltas[84].repairDelta number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].repairRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].energyDelta number -0.001 f32-if-consumer-asFloat 0xBA83126F
+.actionDeltas[84].energyRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].playDelta number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.actionDeltas[84].playRange number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].cooldownSecs number 0 f32-if-consumer-asFloat 0x00000000
+.actionDeltas[84].freeplaySparksRewardWeight number 0 f32-if-consumer-asFloat 0x00000000
+ASSET re-analysis/obb/assets/cozmo_resources/config/engine/needs_level_config.json SHA256 2a864a427509ee5c0093c5fa2f9a4080ca853d11320244b36cfededc9d8414a2
+.unlockLevels[0].freeplayTargetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[0].freeplayMinSparksRewardPct number 0.3 f32-if-consumer-asFloat 0x3E99999A
+.unlockLevels[0].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[0].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[0].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[0].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[0].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[0].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[0].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[0].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[0].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[0].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[0].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[0].rewards[0].rewardType "Sparks"
+.unlockLevels[0].rewards[0].data ""
+.unlockLevels[0].rewards[1].rewardType "Unlock"
+.unlockLevels[0].rewards[1].data "FistBump"
+.unlockLevels[0].rewards[2].rewardType "Song"
+.unlockLevels[0].rewards[2].data "Singing_PopGoesTheWeasel"
+.unlockLevels[1].freeplayTargetSparksTotal number 50 f32-if-consumer-asFloat 0x42480000
+.unlockLevels[1].freeplayMinSparksRewardPct number 0.2 f32-if-consumer-asFloat 0x3E4CCCCD
+.unlockLevels[1].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[1].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[1].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[1].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[1].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[1].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[1].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[1].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[1].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[1].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[1].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[1].rewards[0].rewardType "Sparks"
+.unlockLevels[1].rewards[0].data ""
+.unlockLevels[1].rewards[1].rewardType "Unlock"
+.unlockLevels[1].rewards[1].data "FireTruckAlarm"
+.unlockLevels[1].rewards[2].rewardType "Song"
+.unlockLevels[1].rewards[2].data "Singing_ItsyBitsySpider"
+.unlockLevels[2].freeplayTargetSparksTotal number 25 f32-if-consumer-asFloat 0x41C80000
+.unlockLevels[2].freeplayMinSparksRewardPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[2].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[2].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[2].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[2].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[2].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[2].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[2].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[2].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[2].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[2].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[2].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[2].rewards[0].rewardType "Sparks"
+.unlockLevels[2].rewards[0].data ""
+.unlockLevels[2].rewards[1].rewardType "Unlock"
+.unlockLevels[2].rewards[1].data "PopAWheelieAction"
+.unlockLevels[2].rewards[2].rewardType "Song"
+.unlockLevels[2].rewards[2].data "Singing_TakeMeOutToTheBallgame"
+.unlockLevels[3].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[3].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[3].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[3].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[3].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[3].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[3].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[3].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[3].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[3].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[3].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[3].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[3].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[3].rewards[0].rewardType "Sparks"
+.unlockLevels[3].rewards[0].data ""
+.unlockLevels[3].rewards[1].rewardType "Unlock"
+.unlockLevels[3].rewards[1].data "BuildPyramid"
+.unlockLevels[3].rewards[2].rewardType "Song"
+.unlockLevels[3].rewards[2].data "Singing_WilliamTell"
+.unlockLevels[4].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[4].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[4].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[4].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[4].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[4].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[4].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[4].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[4].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[4].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[4].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[4].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[4].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[4].rewards[0].rewardType "Sparks"
+.unlockLevels[4].rewards[0].data ""
+.unlockLevels[4].rewards[1].rewardType "Unlock"
+.unlockLevels[4].rewards[1].data "TrackLaser"
+.unlockLevels[4].rewards[2].rewardType "Song"
+.unlockLevels[4].rewards[2].data "Singing_BeautifulDreamer"
+.unlockLevels[5].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[5].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[5].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[5].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[5].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[5].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[5].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[5].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[5].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[5].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[5].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[5].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[5].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[5].rewards[0].rewardType "Sparks"
+.unlockLevels[5].rewards[0].data ""
+.unlockLevels[5].rewards[1].rewardType "Unlock"
+.unlockLevels[5].rewards[1].data "Workout"
+.unlockLevels[5].rewards[2].rewardType "Song"
+.unlockLevels[5].rewards[2].data "Singing_EntryOfTheGladiators"
+.unlockLevels[6].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[6].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[6].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[6].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[6].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[6].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[6].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[6].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[6].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[6].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[6].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[6].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[6].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[6].rewards[0].rewardType "Sparks"
+.unlockLevels[6].rewards[0].data ""
+.unlockLevels[6].rewards[1].rewardType "Unlock"
+.unlockLevels[6].rewards[1].data "PeekABoo"
+.unlockLevels[6].rewards[2].rewardType "Song"
+.unlockLevels[6].rewards[2].data "Singing_Beethovens5th"
+.unlockLevels[7].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[7].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[7].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[7].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[7].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[7].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[7].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[7].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[7].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[7].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[7].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[7].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[7].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[7].rewards[0].rewardType "Sparks"
+.unlockLevels[7].rewards[0].data ""
+.unlockLevels[7].rewards[1].rewardType "Unlock"
+.unlockLevels[7].rewards[1].data "GuardDog"
+.unlockLevels[8].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[8].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[8].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[8].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[8].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[8].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[8].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[8].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[8].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[8].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[8].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[8].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[8].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[8].rewards[0].rewardType "Sparks"
+.unlockLevels[8].rewards[0].data ""
+.unlockLevels[8].rewards[1].rewardType "Song"
+.unlockLevels[8].rewards[1].data "Singing_TaRaRaBoom"
+.unlockLevels[9].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[9].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[9].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[9].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[9].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[9].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[9].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[9].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[9].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[9].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[9].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[9].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[9].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[9].rewards[0].rewardType "Sparks"
+.unlockLevels[9].rewards[0].data ""
+.unlockLevels[9].rewards[1].rewardType "Song"
+.unlockLevels[9].rewards[1].data "Singing_MountainKing"
+.unlockLevels[10].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[10].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[10].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[10].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[10].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[10].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[10].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[10].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[10].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[10].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[10].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[10].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[10].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[10].rewards[0].rewardType "Sparks"
+.unlockLevels[10].rewards[0].data ""
+.unlockLevels[10].rewards[1].rewardType "Song"
+.unlockLevels[10].rewards[1].data "Singing_PachebelCanon"
+.unlockLevels[11].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[11].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[11].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[11].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[11].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[11].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[11].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[11].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[11].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[11].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[11].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[11].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[11].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[11].rewards[0].rewardType "Sparks"
+.unlockLevels[11].rewards[0].data ""
+.unlockLevels[11].rewards[1].rewardType "Song"
+.unlockLevels[11].rewards[1].data "Singing_OdeToJoy"
+.unlockLevels[12].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[12].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[12].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[12].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[12].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[12].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[12].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[12].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[12].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[12].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[12].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[12].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[12].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[12].rewards[0].rewardType "Sparks"
+.unlockLevels[12].rewards[0].data ""
+.unlockLevels[12].rewards[1].rewardType "Song"
+.unlockLevels[12].rewards[1].data "Singing_SilveryMoon"
+.unlockLevels[13].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[13].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[13].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[13].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[13].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[13].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[13].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[13].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[13].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[13].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[13].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[13].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[13].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[13].rewards[0].rewardType "Sparks"
+.unlockLevels[13].rewards[0].data ""
+.unlockLevels[13].rewards[1].rewardType "Song"
+.unlockLevels[13].rewards[1].data "Singing_TisketTasket"
+.unlockLevels[14].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[14].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[14].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[14].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[14].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[14].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[14].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[14].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[14].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[14].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[14].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[14].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[14].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[14].rewards[0].rewardType "Sparks"
+.unlockLevels[14].rewards[0].data ""
+.unlockLevels[14].rewards[1].rewardType "Song"
+.unlockLevels[14].rewards[1].data "Singing_FarmerInTheDell"
+.unlockLevels[15].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[15].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[15].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[15].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[15].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[15].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[15].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[15].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[15].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[15].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[15].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[15].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[15].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[15].rewards[0].rewardType "Sparks"
+.unlockLevels[15].rewards[0].data ""
+.unlockLevels[15].rewards[1].rewardType "Song"
+.unlockLevels[15].rewards[1].data "Singing_DannyBoy"
+.unlockLevels[16].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[16].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[16].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[16].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[16].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[16].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[16].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[16].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[16].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[16].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[16].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[16].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[16].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[16].rewards[0].rewardType "Sparks"
+.unlockLevels[16].rewards[0].data ""
+.unlockLevels[16].rewards[1].rewardType "Song"
+.unlockLevels[16].rewards[1].data "Singing_AbaDaba"
+.unlockLevels[17].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[17].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[17].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[17].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[17].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[17].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[17].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[17].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[17].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[17].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[17].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[17].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[17].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[17].rewards[0].rewardType "Sparks"
+.unlockLevels[17].rewards[0].data ""
+.unlockLevels[17].rewards[1].rewardType "Song"
+.unlockLevels[17].rewards[1].data "Singing_VivaldiSpring"
+.unlockLevels[18].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[18].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[18].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[18].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[18].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[18].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[18].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[18].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[18].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[18].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[18].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[18].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[18].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[18].rewards[0].rewardType "Sparks"
+.unlockLevels[18].rewards[0].data ""
+.unlockLevels[18].rewards[1].rewardType "Song"
+.unlockLevels[18].rewards[1].data "Singing_Bingo"
+.unlockLevels[19].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[19].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[19].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[19].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[19].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[19].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[19].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[19].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[19].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[19].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[19].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[19].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[19].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[19].rewards[0].rewardType "Sparks"
+.unlockLevels[19].rewards[0].data ""
+.unlockLevels[19].rewards[1].rewardType "Song"
+.unlockLevels[19].rewards[1].data "Singing_WaterMusic"
+.unlockLevels[20].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[20].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[20].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[20].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[20].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[20].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[20].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[20].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[20].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[20].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[20].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[20].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[20].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[20].rewards[0].rewardType "Sparks"
+.unlockLevels[20].rewards[0].data ""
+.unlockLevels[20].rewards[1].rewardType "Song"
+.unlockLevels[20].rewards[1].data "Singing_BuffaloGals"
+.unlockLevels[21].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[21].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[21].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[21].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[21].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[21].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[21].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[21].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[21].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[21].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[21].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[21].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[21].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[21].rewards[0].rewardType "Sparks"
+.unlockLevels[21].rewards[0].data ""
+.unlockLevels[21].rewards[1].rewardType "Song"
+.unlockLevels[21].rewards[1].data "Singing_Toccata"
+.unlockLevels[22].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[22].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[22].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[22].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[22].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[22].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[22].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[22].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[22].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[22].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[22].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[22].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[22].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[22].rewards[0].rewardType "Sparks"
+.unlockLevels[22].rewards[0].data ""
+.unlockLevels[23].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[23].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[23].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[23].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[23].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[23].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[23].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[23].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[23].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[23].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[23].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[23].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[23].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[23].rewards[0].rewardType "Sparks"
+.unlockLevels[23].rewards[0].data ""
+.unlockLevels[24].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[24].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[24].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[24].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[24].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[24].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[24].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[24].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[24].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[24].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[24].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[24].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[24].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[24].rewards[0].rewardType "Sparks"
+.unlockLevels[24].rewards[0].data ""
+.unlockLevels[25].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[25].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[25].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[25].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[25].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[25].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[25].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[25].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[25].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[25].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[25].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[25].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[25].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[25].rewards[0].rewardType "Sparks"
+.unlockLevels[25].rewards[0].data ""
+.unlockLevels[26].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[26].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[26].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[26].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[26].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[26].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[26].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[26].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[26].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[26].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[26].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[26].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[26].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[26].rewards[0].rewardType "Sparks"
+.unlockLevels[26].rewards[0].data ""
+.unlockLevels[27].freeplayTargetSparksTotal number 15 f32-if-consumer-asFloat 0x41700000
+.unlockLevels[27].freeplayMinSparksRewardPct number 0.05 f32-if-consumer-asFloat 0x3D4CCCCD
+.unlockLevels[27].freeplayMinSparksPct number 0.02 f32-if-consumer-asFloat 0x3CA3D70A
+.unlockLevels[27].freeplayMaxSparksPct number 0.1 f32-if-consumer-asFloat 0x3DCCCCCD
+.unlockLevels[27].freeplayMinSparks number 2 f32-if-consumer-asFloat 0x40000000
+.unlockLevels[27].freeplayMinMaxSparks number 3 f32-if-consumer-asFloat 0x40400000
+.unlockLevels[27].numStarsToUnlock number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[27].targetSparksTotal number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[27].minSparksPct number 0.9 f32-if-consumer-asFloat 0x3F666666
+.unlockLevels[27].maxSparksPct number 1.1 f32-if-consumer-asFloat 0x3F8CCCCD
+.unlockLevels[27].minSparks number 100 f32-if-consumer-asFloat 0x42C80000
+.unlockLevels[27].minMaxSparks number 120 f32-if-consumer-asFloat 0x42F00000
+.unlockLevels[27].maxPriorLevelUnlocks number 1 f32-if-consumer-asFloat 0x3F800000
+.unlockLevels[27].rewards[0].rewardType "Sparks"
+.unlockLevels[27].rewards[0].data ""
+ASSET re-analysis/obb/assets/cozmo_resources/config/engine/local_notification_config.json SHA256 adbaedb01a5f86f14bae755140970bfff40bf5abb1d4eb996d03ba3043b1879a
+.localNotificationConfigs[0].connection "Either"
+.localNotificationConfigs[0].titleKey ""
+.localNotificationConfigs[0].webpageURL ""
+.localNotificationConfigs[0].DeeplinkCodeLab ""
+.localNotificationConfigs[0].textKeys[0] "LocalNotif.CodeLabContent.ColorShuffle.01"
+.localNotificationConfigs[0].whenType "LocalDateTime"
+.localNotificationConfigs[0].whenParam "2018-05-19 12:00"
+.localNotificationConfigs[0].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[0].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[0].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[0].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[0].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[0].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[1].connection "Either"
+.localNotificationConfigs[1].titleKey ""
+.localNotificationConfigs[1].webpageURL ""
+.localNotificationConfigs[1].DeeplinkCodeLab ""
+.localNotificationConfigs[1].textKeys[0] "LocalNotif.CodeLabContent.ForYouMom.01"
+.localNotificationConfigs[1].whenType "LocalDateTime"
+.localNotificationConfigs[1].whenParam "2018-05-13 12:00"
+.localNotificationConfigs[1].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[1].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[1].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[1].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[1].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[1].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[2].connection "Either"
+.localNotificationConfigs[2].titleKey ""
+.localNotificationConfigs[2].webpageURL ""
+.localNotificationConfigs[2].DeeplinkCodeLab ""
+.localNotificationConfigs[2].textKeys[0] "LocalNotif.CodeLabContent.ComposeWithCozmo.01"
+.localNotificationConfigs[2].whenType "LocalDateTime"
+.localNotificationConfigs[2].whenParam "2018-05-19 12:00"
+.localNotificationConfigs[2].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[2].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[2].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[2].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[2].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[2].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[3].connection "Either"
+.localNotificationConfigs[3].titleKey ""
+.localNotificationConfigs[3].webpageURL ""
+.localNotificationConfigs[3].DeeplinkCodeLab ""
+.localNotificationConfigs[3].textKeys[0] "LocalNotif.CodeLabContent.PoetryJam.01"
+.localNotificationConfigs[3].whenType "LocalDateTime"
+.localNotificationConfigs[3].whenParam "2018-05-05 12:00"
+.localNotificationConfigs[3].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[3].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[3].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[3].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[3].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[3].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[4].connection "Either"
+.localNotificationConfigs[4].titleKey ""
+.localNotificationConfigs[4].webpageURL ""
+.localNotificationConfigs[4].DeeplinkCodeLab ""
+.localNotificationConfigs[4].textKeys[0] "LocalNotif.CodeLabContent.StareOff.01"
+.localNotificationConfigs[4].whenType "LocalDateTime"
+.localNotificationConfigs[4].whenParam "2018-06-23 10:00"
+.localNotificationConfigs[4].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[4].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[4].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[4].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[4].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[4].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[5].connection "Either"
+.localNotificationConfigs[5].titleKey ""
+.localNotificationConfigs[5].webpageURL ""
+.localNotificationConfigs[5].DeeplinkCodeLab ""
+.localNotificationConfigs[5].textKeys[0] "LocalNotif.CodeLabContent.TidalTap.01"
+.localNotificationConfigs[5].whenType "LocalDateTime"
+.localNotificationConfigs[5].whenParam "2018-06-30 10:00"
+.localNotificationConfigs[5].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[5].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[5].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[5].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[5].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[5].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[6].connection "Either"
+.localNotificationConfigs[6].titleKey ""
+.localNotificationConfigs[6].webpageURL ""
+.localNotificationConfigs[6].DeeplinkCodeLab ""
+.localNotificationConfigs[6].textKeys[0] "LocalNotif.CodeLabContent.LaserSmile.01"
+.localNotificationConfigs[6].whenType "LocalDateTime"
+.localNotificationConfigs[6].whenParam "2018-07-07 10:00"
+.localNotificationConfigs[6].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[6].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[6].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[6].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[6].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[6].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[7].connection "Either"
+.localNotificationConfigs[7].titleKey ""
+.localNotificationConfigs[7].webpageURL ""
+.localNotificationConfigs[7].DeeplinkCodeLab ""
+.localNotificationConfigs[7].textKeys[0] "LocalNotif.CodeLabContent.RemoteControlRacer.01"
+.localNotificationConfigs[7].whenType "LocalDateTime"
+.localNotificationConfigs[7].whenParam "2018-07-14 10:00"
+.localNotificationConfigs[7].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[7].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[7].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[7].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[7].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[7].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[8].connection "Either"
+.localNotificationConfigs[8].titleKey ""
+.localNotificationConfigs[8].webpageURL ""
+.localNotificationConfigs[8].DeeplinkCodeLab ""
+.localNotificationConfigs[8].textKeys[0] "LocalNotif.CodeLabContent.TwistTapRoll.01"
+.localNotificationConfigs[8].whenType "LocalDateTime"
+.localNotificationConfigs[8].whenParam "2018-07-21 10:00"
+.localNotificationConfigs[8].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[8].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[8].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[8].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[8].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[8].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[9].connection "Either"
+.localNotificationConfigs[9].titleKey ""
+.localNotificationConfigs[9].webpageURL ""
+.localNotificationConfigs[9].DeeplinkCodeLab ""
+.localNotificationConfigs[9].textKeys[0] "LocalNotif.CodeLabContent.GuessTheNumber.01"
+.localNotificationConfigs[9].whenType "LocalDateTime"
+.localNotificationConfigs[9].whenParam "2018-07-28 10:00"
+.localNotificationConfigs[9].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[9].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[9].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[9].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[9].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[9].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[10].connection "Either"
+.localNotificationConfigs[10].titleKey ""
+.localNotificationConfigs[10].webpageURL ""
+.localNotificationConfigs[10].DeeplinkCodeLab ""
+.localNotificationConfigs[10].textKeys[0] "LocalNotif.CodeLabContent.TreasureTrail.01"
+.localNotificationConfigs[10].whenType "LocalDateTime"
+.localNotificationConfigs[10].whenParam "2018-08-04 10:00"
+.localNotificationConfigs[10].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[10].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[10].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[10].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[10].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[10].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[11].connection "Either"
+.localNotificationConfigs[11].titleKey ""
+.localNotificationConfigs[11].webpageURL ""
+.localNotificationConfigs[11].DeeplinkCodeLab ""
+.localNotificationConfigs[11].textKeys[0] "LocalNotif.CodeLabContent.CubeMixup.01"
+.localNotificationConfigs[11].whenType "LocalDateTime"
+.localNotificationConfigs[11].whenParam "2018-08-11 10:00"
+.localNotificationConfigs[11].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[11].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[11].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[11].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[11].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[11].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[12].connection "Either"
+.localNotificationConfigs[12].titleKey "LocalNotif.CRMOnboarding.Unlocks.Title.01"
+.localNotificationConfigs[12].webpageURL ""
+.localNotificationConfigs[12].DeeplinkCodeLab ""
+.localNotificationConfigs[12].textKeys[0] "LocalNotif.CRMOnboarding.Unlocks.Body.01"
+.localNotificationConfigs[12].whenType "InstallDate"
+.localNotificationConfigs[12].whenParam number 1440 f32-if-consumer-asFloat 0x44B40000
+.localNotificationConfigs[12].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[12].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[12].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[12].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[12].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[12].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[13].connection "Either"
+.localNotificationConfigs[13].titleKey "LocalNotif.CRMOnboarding.PlayGame.Title.01"
+.localNotificationConfigs[13].webpageURL ""
+.localNotificationConfigs[13].DeeplinkCodeLab ""
+.localNotificationConfigs[13].textKeys[0] "LocalNotif.CRMOnboarding.PlayGame.Body.01"
+.localNotificationConfigs[13].whenType "InstallDate"
+.localNotificationConfigs[13].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[13].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[13].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[13].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[13].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[13].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[13].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[14].connection "Either"
+.localNotificationConfigs[14].titleKey "LocalNotif.CRMOnboarding.Sparks.Title.01"
+.localNotificationConfigs[14].webpageURL ""
+.localNotificationConfigs[14].DeeplinkCodeLab ""
+.localNotificationConfigs[14].textKeys[0] "LocalNotif.CRMOnboarding.Sparks.Body.01"
+.localNotificationConfigs[14].whenType "InstallDate"
+.localNotificationConfigs[14].whenParam number 7200 f32-if-consumer-asFloat 0x45E10000
+.localNotificationConfigs[14].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[14].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[14].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[14].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[14].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[14].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[15].connection "Either"
+.localNotificationConfigs[15].titleKey "LocalNotif.CRMOnboarding.Explorer.Title.01"
+.localNotificationConfigs[15].webpageURL ""
+.localNotificationConfigs[15].DeeplinkCodeLab ""
+.localNotificationConfigs[15].textKeys[0] "LocalNotif.CRMOnboarding.Explorer.Body.01"
+.localNotificationConfigs[15].whenType "InstallDate"
+.localNotificationConfigs[15].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[15].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[15].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[15].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[15].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[15].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[15].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[16].connection "Either"
+.localNotificationConfigs[16].titleKey "LocalNotif.CRMOnboarding.CozmoPerforms.Title.01"
+.localNotificationConfigs[16].webpageURL ""
+.localNotificationConfigs[16].DeeplinkCodeLab ""
+.localNotificationConfigs[16].textKeys[0] "LocalNotif.CRMOnboarding.CozmoPerforms.Body.01"
+.localNotificationConfigs[16].whenType "InstallDate"
+.localNotificationConfigs[16].whenParam number 14400 f32-if-consumer-asFloat 0x46610000
+.localNotificationConfigs[16].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[16].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[16].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[16].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[16].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[16].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[17].connection "Either"
+.localNotificationConfigs[17].titleKey "LocalNotif.CRMOnboarding.Freetime.Title.01"
+.localNotificationConfigs[17].webpageURL ""
+.localNotificationConfigs[17].DeeplinkCodeLab ""
+.localNotificationConfigs[17].textKeys[0] "LocalNotif.CRMOnboarding.Freetime.Body.01"
+.localNotificationConfigs[17].whenType "InstallDate"
+.localNotificationConfigs[17].whenParam number 20160 f32-if-consumer-asFloat 0x469D8000
+.localNotificationConfigs[17].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[17].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[17].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[17].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[17].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[17].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[18].connection "Either"
+.localNotificationConfigs[18].titleKey "LocalNotif.CRMOnboarding.FistBump.Title.01"
+.localNotificationConfigs[18].webpageURL ""
+.localNotificationConfigs[18].DeeplinkCodeLab ""
+.localNotificationConfigs[18].textKeys[0] "LocalNotif.CRMOnboarding.FistBump.Body.01"
+.localNotificationConfigs[18].whenType "InstallDate"
+.localNotificationConfigs[18].whenParam number 25920 f32-if-consumer-asFloat 0x46CA8000
+.localNotificationConfigs[18].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[18].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[18].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[18].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[18].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[18].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[19].connection "Either"
+.localNotificationConfigs[19].titleKey "LocalNotif.CRMOnboarding.MeetCozmo.Title.01"
+.localNotificationConfigs[19].webpageURL ""
+.localNotificationConfigs[19].DeeplinkCodeLab ""
+.localNotificationConfigs[19].textKeys[0] "LocalNotif.CRMOnboarding.MeetCozmo.Body.01"
+.localNotificationConfigs[19].whenType "InstallDate"
+.localNotificationConfigs[19].whenParam number 30240 f32-if-consumer-asFloat 0x46EC4000
+.localNotificationConfigs[19].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[19].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[19].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[19].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[19].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[19].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[20].connection "Either"
+.localNotificationConfigs[20].titleKey "LocalNotif.CRMOnboarding.CodeLab.Title.01"
+.localNotificationConfigs[20].webpageURL ""
+.localNotificationConfigs[20].DeeplinkCodeLab ""
+.localNotificationConfigs[20].textKeys[0] "LocalNotif.CRMOnboarding.CodeLab.Body.01"
+.localNotificationConfigs[20].whenType "InstallDate"
+.localNotificationConfigs[20].whenParam number 40320 f32-if-consumer-asFloat 0x471D8000
+.localNotificationConfigs[20].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[20].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[20].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[20].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[20].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[20].notificationMainUnion.type "notificationGeneral"
+.localNotificationConfigs[21].connection "Either"
+.localNotificationConfigs[21].titleKey ""
+.localNotificationConfigs[21].webpageURL ""
+.localNotificationConfigs[21].DeeplinkCodeLab ""
+.localNotificationConfigs[21].textKeys[0] "LocalNotif.CRMRetention.8d.01"
+.localNotificationConfigs[21].textKeys[1] "LocalNotif.CRMRetention.8d.02"
+.localNotificationConfigs[21].textKeys[2] "LocalNotif.CRMRetention.8d.03"
+.localNotificationConfigs[21].textKeys[3] "LocalNotif.CRMRetention.8d.04"
+.localNotificationConfigs[21].textKeys[4] "LocalNotif.CRMRetention.8d.05"
+.localNotificationConfigs[21].whenType "AfterAppClose"
+.localNotificationConfigs[21].whenParam number 11520 f32-if-consumer-asFloat 0x46340000
+.localNotificationConfigs[21].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[21].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[21].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[21].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[21].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[21].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[21].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[22].connection "Either"
+.localNotificationConfigs[22].titleKey ""
+.localNotificationConfigs[22].webpageURL ""
+.localNotificationConfigs[22].DeeplinkCodeLab ""
+.localNotificationConfigs[22].textKeys[0] "LocalNotif.CRMRetention.15d.01"
+.localNotificationConfigs[22].textKeys[1] "LocalNotif.CRMRetention.15d.02"
+.localNotificationConfigs[22].textKeys[2] "LocalNotif.CRMRetention.15d.03"
+.localNotificationConfigs[22].textKeys[3] "LocalNotif.CRMRetention.15d.04"
+.localNotificationConfigs[22].textKeys[4] "LocalNotif.CRMRetention.15d.05"
+.localNotificationConfigs[22].whenType "AfterAppClose"
+.localNotificationConfigs[22].whenParam number 21600 f32-if-consumer-asFloat 0x46A8C000
+.localNotificationConfigs[22].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[22].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[22].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[22].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[22].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[22].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[22].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[23].connection "Either"
+.localNotificationConfigs[23].titleKey ""
+.localNotificationConfigs[23].webpageURL ""
+.localNotificationConfigs[23].DeeplinkCodeLab ""
+.localNotificationConfigs[23].textKeys[0] "LocalNotif.CRMRetention.22d.01"
+.localNotificationConfigs[23].textKeys[1] "LocalNotif.CRMRetention.22d.02"
+.localNotificationConfigs[23].textKeys[2] "LocalNotif.CRMRetention.22d.03"
+.localNotificationConfigs[23].textKeys[3] "LocalNotif.CRMRetention.22d.04"
+.localNotificationConfigs[23].whenType "AfterAppClose"
+.localNotificationConfigs[23].whenParam number 31680 f32-if-consumer-asFloat 0x46F78000
+.localNotificationConfigs[23].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[23].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[23].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[23].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[23].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[23].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[23].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[24].connection "Either"
+.localNotificationConfigs[24].titleKey ""
+.localNotificationConfigs[24].webpageURL ""
+.localNotificationConfigs[24].DeeplinkCodeLab ""
+.localNotificationConfigs[24].textKeys[0] "LocalNotif.CRMRetention.29d.01"
+.localNotificationConfigs[24].textKeys[1] "LocalNotif.CRMRetention.29d.02"
+.localNotificationConfigs[24].textKeys[2] "LocalNotif.CRMRetention.29d.03"
+.localNotificationConfigs[24].whenType "AfterAppClose"
+.localNotificationConfigs[24].whenParam number 41760 f32-if-consumer-asFloat 0x47232000
+.localNotificationConfigs[24].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[24].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[24].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[24].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[24].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[24].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[24].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[25].connection "Either"
+.localNotificationConfigs[25].titleKey ""
+.localNotificationConfigs[25].webpageURL ""
+.localNotificationConfigs[25].DeeplinkCodeLab ""
+.localNotificationConfigs[25].textKeys[0] "LocalNotif.CRMRetention.60d.01"
+.localNotificationConfigs[25].whenType "AfterAppClose"
+.localNotificationConfigs[25].whenParam number 86400 f32-if-consumer-asFloat 0x47A8C000
+.localNotificationConfigs[25].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[25].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[25].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[25].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[25].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[25].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[25].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[26].connection "Either"
+.localNotificationConfigs[26].titleKey ""
+.localNotificationConfigs[26].webpageURL ""
+.localNotificationConfigs[26].DeeplinkCodeLab ""
+.localNotificationConfigs[26].textKeys[0] "LocalNotif.CRMRetention.90d.01"
+.localNotificationConfigs[26].whenType "AfterAppClose"
+.localNotificationConfigs[26].whenParam number 129600 f32-if-consumer-asFloat 0x47FD2000
+.localNotificationConfigs[26].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[26].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[26].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[26].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[26].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[26].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[26].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[27].connection "Either"
+.localNotificationConfigs[27].titleKey ""
+.localNotificationConfigs[27].webpageURL ""
+.localNotificationConfigs[27].DeeplinkCodeLab ""
+.localNotificationConfigs[27].textKeys[0] "LocalNotif.CRMRetention.180d.01"
+.localNotificationConfigs[27].whenType "AfterAppClose"
+.localNotificationConfigs[27].whenParam number 259200 f32-if-consumer-asFloat 0x487D2000
+.localNotificationConfigs[27].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[27].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[27].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[27].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[27].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[27].notificationMainUnion.type "notificationPostOnboarding"
+.localNotificationConfigs[27].notificationMainUnion.numDaysStartAfter number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[28].connection "Either"
+.localNotificationConfigs[28].titleKey "LocalNotif.LastUnlock.FistBump.Title.01"
+.localNotificationConfigs[28].webpageURL ""
+.localNotificationConfigs[28].DeeplinkCodeLab ""
+.localNotificationConfigs[28].textKeys[0] "LocalNotif.LastUnlock.FistBump.Body.01"
+.localNotificationConfigs[28].whenType "AfterUnlock"
+.localNotificationConfigs[28].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[28].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[28].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[28].minimumDuration number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[28].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[28].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[28].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[28].notificationMainUnion.trickUnlockId "FistBump"
+.localNotificationConfigs[28].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[29].connection "Either"
+.localNotificationConfigs[29].titleKey "LocalNotif.LastUnlock.FireTruckAlarm.Title.01"
+.localNotificationConfigs[29].webpageURL ""
+.localNotificationConfigs[29].DeeplinkCodeLab ""
+.localNotificationConfigs[29].textKeys[0] "LocalNotif.LastUnlock.FireTruckAlarm.Body.01"
+.localNotificationConfigs[29].whenType "AfterUnlock"
+.localNotificationConfigs[29].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[29].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[29].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[29].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[29].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[29].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[29].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[29].notificationMainUnion.trickUnlockId "FireTruckAlarm"
+.localNotificationConfigs[29].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[30].connection "Either"
+.localNotificationConfigs[30].titleKey "LocalNotif.LastUnlock.PopAWheelie.Title.01"
+.localNotificationConfigs[30].webpageURL ""
+.localNotificationConfigs[30].DeeplinkCodeLab ""
+.localNotificationConfigs[30].textKeys[0] "LocalNotif.LastUnlock.PopAWheelie.Body.01"
+.localNotificationConfigs[30].whenType "AfterUnlock"
+.localNotificationConfigs[30].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[30].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[30].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[30].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[30].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[30].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[30].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[30].notificationMainUnion.trickUnlockId "PopAWheelieAction"
+.localNotificationConfigs[30].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[31].connection "Either"
+.localNotificationConfigs[31].titleKey "LocalNotif.LastUnlock.Workout.Title.01"
+.localNotificationConfigs[31].webpageURL ""
+.localNotificationConfigs[31].DeeplinkCodeLab ""
+.localNotificationConfigs[31].textKeys[0] "LocalNotif.LastUnlock.Workout.Body.01"
+.localNotificationConfigs[31].whenType "AfterUnlock"
+.localNotificationConfigs[31].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[31].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[31].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[31].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[31].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[31].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[31].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[31].notificationMainUnion.trickUnlockId "Workout"
+.localNotificationConfigs[31].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[32].connection "Either"
+.localNotificationConfigs[32].titleKey "LocalNotif.LastUnlock.PeekABoo.Title.01"
+.localNotificationConfigs[32].webpageURL ""
+.localNotificationConfigs[32].DeeplinkCodeLab ""
+.localNotificationConfigs[32].textKeys[0] "LocalNotif.LastUnlock.PeekABoo.Body.01"
+.localNotificationConfigs[32].whenType "AfterUnlock"
+.localNotificationConfigs[32].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[32].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[32].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[32].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[32].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[32].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[32].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[32].notificationMainUnion.trickUnlockId "PeekABoo"
+.localNotificationConfigs[32].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[33].connection "Either"
+.localNotificationConfigs[33].titleKey "LocalNotif.LastUnlock.BuildPyramid.Title.01"
+.localNotificationConfigs[33].webpageURL ""
+.localNotificationConfigs[33].DeeplinkCodeLab ""
+.localNotificationConfigs[33].textKeys[0] "LocalNotif.LastUnlock.BuildPyramid.Body.01"
+.localNotificationConfigs[33].whenType "AfterUnlock"
+.localNotificationConfigs[33].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[33].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[33].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[33].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[33].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[33].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[33].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[33].notificationMainUnion.trickUnlockId "BuildPyramid"
+.localNotificationConfigs[33].notificationMainUnion.comparisonType "LastUnlock"
+.localNotificationConfigs[34].connection "Either"
+.localNotificationConfigs[34].titleKey "LocalNotif.TrickPlay.FistBump.Title.01"
+.localNotificationConfigs[34].webpageURL ""
+.localNotificationConfigs[34].DeeplinkCodeLab ""
+.localNotificationConfigs[34].textKeys[0] "LocalNotif.TrickPlay.FistBump.Body.01"
+.localNotificationConfigs[34].whenType "AfterUnlock"
+.localNotificationConfigs[34].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[34].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[34].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[34].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[34].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[34].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[34].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[34].notificationMainUnion.trickUnlockId "FistBump"
+.localNotificationConfigs[34].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[35].connection "Either"
+.localNotificationConfigs[35].titleKey "LocalNotif.TrickPlay.FireTruckAlarm.Title.01"
+.localNotificationConfigs[35].webpageURL ""
+.localNotificationConfigs[35].DeeplinkCodeLab ""
+.localNotificationConfigs[35].textKeys[0] "LocalNotif.TrickPlay.FireTruckAlarm.Body.01"
+.localNotificationConfigs[35].whenType "AfterUnlock"
+.localNotificationConfigs[35].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[35].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[35].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[35].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[35].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[35].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[35].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[35].notificationMainUnion.trickUnlockId "FireTruckAlarm"
+.localNotificationConfigs[35].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[36].connection "Either"
+.localNotificationConfigs[36].titleKey "LocalNotif.TrickPlay.PopAWheelie.Title.01"
+.localNotificationConfigs[36].webpageURL ""
+.localNotificationConfigs[36].DeeplinkCodeLab ""
+.localNotificationConfigs[36].textKeys[0] "LocalNotif.TrickPlay.PopAWheelie.Body.01"
+.localNotificationConfigs[36].whenType "AfterUnlock"
+.localNotificationConfigs[36].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[36].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[36].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[36].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[36].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[36].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[36].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[36].notificationMainUnion.trickUnlockId "PopAWheelieAction"
+.localNotificationConfigs[36].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[37].connection "Either"
+.localNotificationConfigs[37].titleKey "LocalNotif.TrickPlay.Workout.Title.01"
+.localNotificationConfigs[37].webpageURL ""
+.localNotificationConfigs[37].DeeplinkCodeLab ""
+.localNotificationConfigs[37].textKeys[0] "LocalNotif.TrickPlay.Workout.Body.01"
+.localNotificationConfigs[37].whenType "AfterUnlock"
+.localNotificationConfigs[37].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[37].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[37].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[37].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[37].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[37].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[37].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[37].notificationMainUnion.trickUnlockId "Workout"
+.localNotificationConfigs[37].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[38].connection "Either"
+.localNotificationConfigs[38].titleKey "LocalNotif.TrickPlay.PeekABoo.Title.01"
+.localNotificationConfigs[38].webpageURL ""
+.localNotificationConfigs[38].DeeplinkCodeLab ""
+.localNotificationConfigs[38].textKeys[0] "LocalNotif.TrickPlay.PeekABoo.Body.01"
+.localNotificationConfigs[38].whenType "AfterUnlock"
+.localNotificationConfigs[38].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[38].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[38].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[38].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[38].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[38].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[38].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[38].notificationMainUnion.trickUnlockId "PeekABoo"
+.localNotificationConfigs[38].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[39].connection "Either"
+.localNotificationConfigs[39].titleKey "LocalNotif.TrickPlay.BuildPyramid.Title.01"
+.localNotificationConfigs[39].webpageURL ""
+.localNotificationConfigs[39].DeeplinkCodeLab ""
+.localNotificationConfigs[39].textKeys[0] "LocalNotif.TrickPlay.BuildPyramid.Body.01"
+.localNotificationConfigs[39].whenType "AfterUnlock"
+.localNotificationConfigs[39].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[39].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[39].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[39].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[39].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[39].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[39].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[39].notificationMainUnion.trickUnlockId "BuildPyramid"
+.localNotificationConfigs[39].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[40].connection "Either"
+.localNotificationConfigs[40].titleKey "LocalNotif.TrickPlay.GuardDog.Title.01"
+.localNotificationConfigs[40].webpageURL ""
+.localNotificationConfigs[40].DeeplinkCodeLab ""
+.localNotificationConfigs[40].textKeys[0] "LocalNotif.TrickPlay.GuardDog.Body.01"
+.localNotificationConfigs[40].whenType "AfterUnlock"
+.localNotificationConfigs[40].whenParam number 4320 f32-if-consumer-asFloat 0x45870000
+.localNotificationConfigs[40].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[40].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[40].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[40].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[40].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[40].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[40].notificationMainUnion.trickUnlockId "GuardDog"
+.localNotificationConfigs[40].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[41].connection "Either"
+.localNotificationConfigs[41].titleKey "LocalNotif.FeaturePlays.Explorer.Title.01"
+.localNotificationConfigs[41].webpageURL ""
+.localNotificationConfigs[41].DeeplinkCodeLab ""
+.localNotificationConfigs[41].textKeys[0] "LocalNotif.FeaturePlays.Explorer.Body.01"
+.localNotificationConfigs[41].whenType "InstallDate"
+.localNotificationConfigs[41].whenParam number 10080 f32-if-consumer-asFloat 0x461D8000
+.localNotificationConfigs[41].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[41].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[41].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[41].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[41].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[41].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[41].notificationMainUnion.trickUnlockId "DroneModeGame"
+.localNotificationConfigs[41].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[42].connection "Either"
+.localNotificationConfigs[42].titleKey "LocalNotif.FeaturePlays.CozmoPerforms.Title.01"
+.localNotificationConfigs[42].webpageURL ""
+.localNotificationConfigs[42].DeeplinkCodeLab ""
+.localNotificationConfigs[42].textKeys[0] "LocalNotif.FeaturePlays.CozmoPerforms.Body.01"
+.localNotificationConfigs[42].whenType "InstallDate"
+.localNotificationConfigs[42].whenParam number 20160 f32-if-consumer-asFloat 0x469D8000
+.localNotificationConfigs[42].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[42].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[42].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[42].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[42].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[42].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[42].notificationMainUnion.trickUnlockId "CozmoPerforms"
+.localNotificationConfigs[42].notificationMainUnion.comparisonType "NotPlayed"
+.localNotificationConfigs[43].connection "Either"
+.localNotificationConfigs[43].titleKey "LocalNotif.FeaturePlays.CodeLabGame.Title.01"
+.localNotificationConfigs[43].webpageURL ""
+.localNotificationConfigs[43].DeeplinkCodeLab ""
+.localNotificationConfigs[43].textKeys[0] "LocalNotif.FeaturePlays.CodeLabGame.Body.01"
+.localNotificationConfigs[43].whenType "InstallDate"
+.localNotificationConfigs[43].whenParam number 30240 f32-if-consumer-asFloat 0x46EC4000
+.localNotificationConfigs[43].rangeEarly number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[43].rangeLate number 0 f32-if-consumer-asFloat 0x00000000
+.localNotificationConfigs[43].minimumDuration number 30 f32-if-consumer-asFloat 0x41F00000
+.localNotificationConfigs[43].noEarlierThan number 480 f32-if-consumer-asFloat 0x43F00000
+.localNotificationConfigs[43].noLaterThan number 1320 f32-if-consumer-asFloat 0x44A50000
+.localNotificationConfigs[43].notificationMainUnion.type "notificationTrickBased"
+.localNotificationConfigs[43].notificationMainUnion.trickUnlockId "CodeLabGame"
+.localNotificationConfigs[43].notificationMainUnion.comparisonType "NotPlayed"

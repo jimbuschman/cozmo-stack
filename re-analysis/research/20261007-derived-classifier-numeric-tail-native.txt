@@ -1,0 +1,69 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0084C8E8..0x0084C938 exclusive; Thumb;
+0084C8E8: ble          #0x84c932
+0084C8EA: vldr         s2, [pc, #0x58] ; word[0084C944]=C0C90FDB
+0084C8EE: vadd.f32     s16, s16, s2
+0084C8F2: vcmpe.f32    s16, s0
+0084C8F6: vmrs         apsr_nzcv, fpscr
+0084C8FA: bgt          #0x84c8ee
+0084C8FC: vstr         s16, [r4]
+0084C900: b            #0x84c932
+0084C902: vldr         s18, [pc, #0x3c] ; word[0084C940]=40C90FDB
+0084C906: vmov.f32     s2, #-5.000000e-01
+0084C90A: vdiv.f32     s0, s16, s18
+0084C90E: vadd.f32     s0, s0, s2
+0084C912: vmov         r0, s0
+0084C916: blx          #0x4a83f8 ; <EXTERNAL>::ceilf
+0084C91A: vmov         s0, r0
+0084C91E: vcvt.s32.f32 s0, s0
+0084C922: vcvt.f32.s32 s0, s0
+0084C926: vmul.f32     s0, s0, s18
+0084C92A: vsub.f32     s0, s16, s0
+0084C92E: vstr         s0, [r4]
+0084C932: vpop         {d8, d9}
+0084C936: pop          {r4, pc}
+RANGE 0x005129E0..0x00512A40 exclusive; Thumb;
+005129E0: vsqrt.f32    s0, s2
+005129E4: vcmpe.f32    s0, s0
+005129E8: vmrs         apsr_nzcv, fpscr
+005129EC: bvc          #0x5129fa
+005129EE: vmov         r0, s2
+005129F2: blx          #0x4a4078 ; <EXTERNAL>::sqrtf
+005129F6: vmov         s0, r0
+005129FA: vldr         s4, [pc, #0x308] ; word[00512D04]=3D4CCCD0
+005129FE: mov          r0, r4
+00512A00: vldr         s2, [pc, #0x304] ; word[00512D08]=3F733333
+00512A04: mov          r1, r5
+00512A06: vldr         s6, [r4, #0x37c]
+00512A0A: vmul.f32     s4, s0, s4
+00512A0E: vldr         s8, [r4, #0x380]
+00512A12: vmul.f32     s2, s6, s2
+00512A16: vldr         s10, [r4, #0x384]
+00512A1A: vldr         s12, [r4, #0x388]
+00512A1E: vstr         s0, [r4, #0x378]
+00512A22: vldr         s6, [pc, #0x2e8] ; word[00512D0C]=3DCCCCD0
+00512A26: vadd.f32     s2, s4, s2
+00512A2A: vldr         s4, [pc, #0x2e4] ; word[00512D10]=3F666666
+00512A2E: vstr         s2, [r4, #0x37c]
+00512A32: vmul.f32     s2, s8, s4
+00512A36: vldr         s0, [r5, #0x30]
+00512A3A: vmul.f32     s0, s0, s6
+RANGE 0x0084C966..0x0084C984 exclusive; Thumb;
+0084C966: vldr         s2, [sp]
+0084C96A: vadd.f32     s0, s0, s2
+0084C96E: vstr         s0, [r5]
+0084C972: blx          #0x4ce528 ; Anki::Radians::rescale
+0084C976: add          sp, #8
+0084C978: pop          {r4, r5, r6, pc}
+0084C97A: push         {r4, r5, r6, lr}
+0084C97C: sub          sp, #8
+0084C97E: mov          r5, r0
+0084C980: mov          r0, sp
+0084C982: movs         r6, #1
+RANGE 0x008D152C..0x008D153C exclusive; ARM;
+008D152C: uxtab16mi    r4, r0, r8, ror #8
+008D1530: ldr          ip, [pc] ; word[008D1538]=FFBD2FEC
+008D1534: add          pc, ip, pc
+RANGE 0x008CB700..0x008CB70C exclusive; ARM;
+008CB700: ldr          ip, [pc] ; word[008CB708]=FFBE1438
+008CB704: add          pc, ip, pc

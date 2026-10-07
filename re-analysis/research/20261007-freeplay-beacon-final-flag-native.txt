@@ -1,0 +1,12 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E0D1A..0x005E0D36 exclusive; Thumb;
+005E0D1A: ldrb.w       r0, [sl, #0x14]
+005E0D1E: orn          r1, r7, r4
+005E0D22: cmp          r0, #0
+005E0D24: it           ne
+005E0D26: movne        r0, #1
+005E0D28: ands         r0, r1
+005E0D2A: strb.w       r0, [sl, #0x14]
+005E0D2E: mov          r0, r5
+005E0D30: add          sp, #0xc8
+005E0D32: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}

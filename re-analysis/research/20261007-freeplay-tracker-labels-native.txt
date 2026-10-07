@@ -1,0 +1,10 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01023554: raw=00BEE313 relocated=00BEE313
+01023558: raw=00BEE31F relocated=00BEE31F
+0102355C: raw=00BEE325 relocated=00BEE325
+01023560: raw=00BEE32F relocated=00BEE32F
+RANGE 0x0056EBC4..0x0056EBCE exclusive; Thumb; _ZN4Anki5Cozmo19FreeplayDataTracker25FreeplayPauseFlagToStringENS0_17FreeplayPauseFlagE
+0056EBC4: ldr          r1, [pc, #8] ; word[0056EBD0]=00AB498A
+0056EBC6: add          r1, pc
+0056EBC8: ldr.w        r0, [r1, r0, lsl #2]
+0056EBCC: bx           lr

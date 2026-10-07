@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+005B51AC: bytes=b'activityCanEndDurationSecs'
+005B51C8: bytes=b'activityShouldEndDurationSecs'
+005B51E8: bytes=b'cooldownBaseSecs'
+005B51FC: bytes=b'cooldownRandomnessSecs'
+005B5214: bytes=b'startInCooldown'
+00BE22F7: bytes=b'\x7f\xb0\xb0\xac\x80\x8c\t\xd4\x7f\xa9\x08\xb1\x80\x84\n\xd4\x7f\xab\x08\xb1\x80'
+005B5228: bytes=b'requiredMinStartMoodScore'
+00BE2317: bytes=b'\x7f\xaa?\x01\x80@\r\xd4\x7f\x01'
+RANGE 0x005B26E8..0x005B2714 exclusive; Thumb;
+005B26E8: bne          #0x5b279e
+005B26EA: mov          r4, r7
+005B26EC: ldrd         r7, r0, [r6, #0x68]
+005B26F0: b            #0x5b26f6
+005B26F2: ldr          r0, [r6, #0x6c]
+005B26F4: adds         r7, #4
+005B26F6: cmp          r7, r0
+005B26F8: beq          #0x5b2710
+005B26FA: ldr          r1, [r7]
+005B26FC: ldr          r0, [r1, #0x20]
+005B26FE: ldrd         r3, r2, [r1, #0x54]
+005B2702: mov          r1, r5
+005B2704: blx          #0x4b19bc ; Anki::Cozmo::IActivityStrategy::WantsToStart
+005B2708: cmp          r0, #1
+005B270A: bne          #0x5b26f2
+005B270C: ldr          r0, [r7]
+005B270E: str          r0, [r6, #0x74]
+005B2710: add.w        r0, sb, #1

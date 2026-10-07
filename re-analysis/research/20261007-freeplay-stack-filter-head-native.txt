@@ -1,0 +1,145 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E1BC4..0x005E1CBC exclusive; Thumb;
+005E1BC4: ldm          r1!, {r0, r5}
+005E1BC6: lsls         r0, r4, #1
+005E1BC8: str          r6, [r0, #0x14]
+005E1BCA: ldr          r1, [r5, #0x44]
+005E1BCC: str          r5, [r4, #0x44]
+005E1BCE: strb         r0, [r4, #0x10]
+005E1BD0: movs         r0, #0x6f
+005E1BD2: ldr          r0, [r6, #0x44]
+005E1BD4: str          r1, [r4, #0x34]
+005E1BD6: movs         r0, #0x65
+005E1BD8: movs         r5, #0x27
+005E1BDA: movs         r7, #0x64
+005E1BDC: str          r0, [r4, #0x10]
+005E1BDE: movs         r0, #0x74
+005E1BE0: ldr          r0, [r6, #0x74]
+005E1BE2: str          r3, [r6, #0x54]
+005E1BE4: ldrh         r0, [r4, r4]
+005E1BE6: cmp          r6, #0x25
+005E1BE8: str          r2, [r6, #0x60]
+005E1BEA: movs         r5, #0x2c
+005E1BEC: adds         r2, #0x2e
+005E1BEE: cmp          r4, #0x66
+005E1BF0: cmp          r6, #0x25
+005E1BF2: str          r2, [r6, #0x60]
+005E1BF4: cmp          r4, #0x5d
+005E1BF6: str          r0, [r4, #0x20]
+005E1BF8: strb         r5, [r6, #0x11]
+005E1BFA: str          r0, [r4, #0x30]
+005E1BFC: ldr          r1, [r4, #0x64]
+005E1BFE: strb         r0, [r4, #8]
+005E1C00: strb         r5, [r4, #0x11]
+005E1C02: ldrb         r2, [r6, #5]
+005E1C04: movs         r0, r0
+005E1C06: movs         r0, r0
+005E1C08: ldr          r6, [r5, #0x70]
+005E1C0A: str          r6, [r5, r1]
+005E1C0C: str          r4, [r5, #0x14]
+005E1C0E: str          r3, [r4, #0x54]
+005E1C10: str          r1, [r0, #0x34]
+005E1C12: ldr          r4, [r6, #0x14]
+005E1C14: ldr          r7, [r5, #0x64]
+005E1C16: str          r2, [r2, #0x54]
+005E1C18: strb         r3, [r6, #0x15]
+005E1C1A: strb         r4, [r5, #0x11]
+005E1C1C: orrs         r6, r5
+005E1C1E: ldr          r1, [r4, #0x64]
+005E1C20: ldr          r6, [r5, #0x74]
+005E1C22: strh         r4, [r6, r1]
+005E1C24: strb         r5, [r4, #0x11]
+005E1C26: ldrb         r2, [r6, #5]
+005E1C28: movs         r0, r0
+005E1C2A: movs         r0, r0
+005E1C2C: stm          r7!, {r0, r1, r4, r5, r6, r7}
+005E1C2E: lsls         r0, r4, #1
+005E1C30: cmp          r1, #0xad
+005E1C32: lsls         r1, r4, #1
+005E1C34: str          r1, [r7, #0x54]
+005E1C36: lsls         r3, r6, #1
+005E1C38: ldr          r6, [r5, #0x74]
+005E1C3A: movs         r0, r0
+005E1C3C: cmp          r3, #0x94
+005E1C3E: lsls         r1, r4, #1
+005E1C40: ldm          r1, {r0, r1, r2, r4, r5, r6, r7}
+005E1C42: lsls         r0, r4, #1
+005E1C44: cmp          r3, #0x88
+005E1C46: lsls         r1, r4, #1
+005E1C48: cmp          r2, #0xbd
+005E1C4A: lsls         r1, r4, #1
+005E1C4C: ldm          r0, {r0, r5, r7}
+005E1C4E: lsls         r0, r4, #1
+005E1C50: cmp          r2, #0xbb
+005E1C52: lsls         r1, r4, #1
+005E1C54: ldr          r2, [pc, #0x10] ; word[005E1C68]=0068BDB2
+005E1C56: ldr          r3, [r1, #4]
+005E1C58: movs         r1, #0
+005E1C5A: add          r2, pc
+005E1C5C: cmp          r3, r2
+005E1C5E: it           eq
+005E1C60: addeq        r1, r0, #4
+005E1C62: mov          r0, r1
+005E1C64: bx           lr
+005E1C66: nop
+005E1C68: pop          {r1, r4, r5, r7, pc}
+005E1C6A: lsls         r0, r5, #1
+005E1C6C: ldr          r0, [pc, #4] ; word[005E1C74]=00A47A66
+005E1C6E: add          r0, pc
+005E1C70: bx           lr
+005E1C72: nop
+005E1C74: ldrb         r6, [r4, #9]
+005E1C76: lsls         r4, r4, #2
+005E1C78: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005E1C7C: push         {r4, r5, r7, lr}
+005E1C7E: mov          r4, r0
+005E1C80: movs         r0, #0x18
+005E1C82: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005E1C86: ldr          r1, [pc, #0x18] ; word[005E1CA0]=00A47A52
+005E1C88: mov          ip, r0
+005E1C8A: add          r1, pc
+005E1C8C: adds         r1, #8
+005E1C8E: str          r1, [ip], #4
+005E1C92: adds         r1, r4, #4
+005E1C94: ldm.w        r1, {r2, r3, r4, r5, lr}
+005E1C98: stm.w        ip, {r2, r3, r4, r5, lr}
+005E1C9C: pop          {r4, r5, r7, pc}
+005E1C9E: nop
+005E1CA0: ldrb         r2, [r2, #9]
+005E1CA2: lsls         r4, r4, #2
+005E1CA4: push         {r4, lr}
+005E1CA6: ldr          r2, [pc, #0x14] ; word[005E1CBC]=00A47A32
+005E1CA8: adds         r0, #4
+005E1CAA: add          r2, pc
+005E1CAC: adds         r2, #8
+005E1CAE: str          r2, [r1], #4
+005E1CB2: ldm.w        r0, {r2, r3, r4, ip, lr}
+005E1CB6: stm.w        r1, {r2, r3, r4, ip, lr}
+005E1CBA: pop          {r4, pc}
+RANGE 0x005AE114..0x005AE16A exclusive; Thumb;
+005AE114: add.w        r0, fp, #0x60
+005AE118: blx          #0x4a70cc ; std::__ndk1::__list_imp<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>,std::__ndk1::allocator<std::__ndk1::function<bool(Anki::Cozmo::ObservableObject_const*)>>>::clear
+005AE11C: ldr          r1, [sp, #0x68]
+005AE11E: add.w        r0, fp, #0x54
+005AE122: blx          #0x4a4264 ; std::__ndk1::__tree<unsigned_int,std::__ndk1::less<unsigned_int>,std::__ndk1::allocator<unsigned_int>>::destroy
+005AE126: ldr          r1, [sp, #0x5c]
+005AE128: add.w        r0, fp, #0x48
+005AE12C: blx          #0x4a4264 ; std::__ndk1::__tree<unsigned_int,std::__ndk1::less<unsigned_int>,std::__ndk1::allocator<unsigned_int>>::destroy
+005AE130: ldr          r1, [sp, #0x50]
+005AE132: add.w        r0, fp, #0x3c
+005AE136: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+005AE13A: ldr          r1, [sp, #0x44]
+005AE13C: add.w        r0, fp, #0x30
+005AE140: blx          #0x4a58a8 ; std::__ndk1::__tree<Anki::Cozmo::ObjectFamily,std::__ndk1::less<Anki::Cozmo::ObjectFamily>,std::__ndk1::allocator<Anki::Cozmo::ObjectFamily>>::destroy
+005AE144: ldr          r1, [sp, #0x38]
+005AE146: add.w        r0, fp, #0x24
+005AE14A: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+005AE14E: ldr          r1, [sp, #0x2c]
+005AE150: add.w        r0, fp, #0x18
+005AE154: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+005AE158: ldr          r1, [sp, #0x20]
+005AE15A: add.w        r0, fp, #0xc
+005AE15E: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+005AE162: ldr          r1, [sp, #0x14]
+005AE164: mov          r0, fp
+005AE166: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy

@@ -1,0 +1,23 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+010413B4: raw=004A4010 relocated=0050B1ED _ZNK4Anki5Cozmo10PerfMetric9DumpFilesEv
+005096F0: bytes=b'RECORDING'
+005096FC: bytes=b'Number of ticks in buffer: '
+00511930: bytes=b'\xd2\xf7b\xf8robot.destructor'
+00511948: bytes=b'%d'
+RANGE 0x005B5940..0x005B596C exclusive; Thumb;
+005B5940: str          r0, [sp]
+005B5942: adr          r0, #0x238
+005B5944: adr          r1, #0x23c
+005B5946: add          r2, sp, #0x3c
+005B5948: adr          r3, #0x26c
+005B594A: vstr         d0, [sp, #8]
+005B594E: vstr         d1, [sp, #0x10]
+005B5952: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005B5956: ldr          r0, [sp, #0x3c]
+005B5958: cbz          r0, #0x5b5978
+005B595A: ldr          r1, [sp, #0x40]
+005B595C: cmp          r1, r0
+005B595E: itttt        ne
+005B5960: subne.w      r2, r1, #8
+005B5964: subne        r2, r2, r0
+005B5966: mvnne        r3, #7

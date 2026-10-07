@@ -1,0 +1,31 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004D7590..0x004D75C4 exclusive; Thumb;
+004D7590: push         {r4, r5, r7, lr}
+004D7592: ldr          r4, [pc, #0x30] ; word[004D75C4]=00B838C2
+004D7594: movs         r5, #0
+004D7596: ldr          r1, [pc, #0x30] ; word[004D75C8]=0077272E
+004D7598: movs         r0, #0x12
+004D759A: add          r4, pc
+004D759C: movs         r2, #9
+004D759E: add          r1, pc
+004D75A0: strd         r5, r5, [r4]
+004D75A4: str          r5, [r4, #8]
+004D75A6: strb         r0, [r4]
+004D75A8: adds         r0, r4, #1
+004D75AA: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+004D75AE: ldr          r0, [pc, #0x1c] ; word[004D75CC]=00B67384
+004D75B0: mov          r1, r4
+004D75B2: ldr          r2, [pc, #0x1c] ; word[004D75D0]=00B79A44
+004D75B4: add          r0, pc
+004D75B6: strb         r5, [r4, #0xa]
+004D75B8: add          r2, pc
+004D75BA: ldr          r0, [r0]
+004D75BC: pop.w        {r4, r5, r7, lr}
+004D75C0: b.w          #0x8caddc
+00BF1CFE: bytes=b'ity'
+00BF1CFC: bytes=b'ority'
+005B2EF0: bytes=b'ireSpark'
+00BF21BB: bytes=b'interludeBehaviorChooser'
+005AD718: bytes=b'subActivities'
+00BF1CFE: bytes=b'ity'
+00BF1CFE: bytes=b'ity'

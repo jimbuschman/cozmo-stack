@@ -1,0 +1,19 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008CD9F0..0x008CD9FC exclusive; ARM;
+008CD9F0: ldr          ip, [pc] ; word[008CD9F8]=FFBF0464
+008CD9F4: add          pc, ip, pc
+008CD9F8: raw=FFBF0464 relocated=FFBF0464
+RANGE 0x008CDAD0..0x008CDADC exclusive; ARM;
+008CDAD0: ldr          ip, [pc] ; word[008CDAD8]=FFBEFFC4
+008CDAD4: add          pc, ip, pc
+008CDAD8: raw=FFBEFFC4 relocated=FFBEFFC4
+RANGE 0x0068E7A4..0x0068E7BE exclusive; Thumb; _ZNK4Anki5Cozmo17StarRewardsConfig19GetLevelOrLastLevelEi
+0068E7A4: ldrd         r2, r0, [r0]
+0068E7A8: mov.w        ip, #-1
+0068E7AC: subs         r0, r0, r2
+0068E7AE: asrs         r3, r0, #6
+0068E7B0: cmp          r3, r1
+0068E7B2: it           ls
+0068E7B4: addls.w      r1, ip, r0, asr #6
+0068E7B8: add.w        r0, r2, r1, lsl #6
+0068E7BC: bx           lr

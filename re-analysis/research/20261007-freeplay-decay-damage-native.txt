@@ -1,0 +1,372 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0069CAD8..0x0069CB0E exclusive; Thumb; _ZNK4Anki5Cozmo10NeedsState15NumDamagedPartsEv
+0069CAD8: ldr          r1, [r0, #0x40]
+0069CADA: add.w        ip, r0, #0x44
+0069CADE: movs         r0, #0
+0069CAE0: cmp          r1, ip
+0069CAE2: it           eq
+0069CAE4: bxeq         lr
+0069CAE6: mov          r3, r1
+0069CAE8: ldrb         r1, [r1, #0x14]
+0069CAEA: ldr          r2, [r3, #4]
+0069CAEC: add          r0, r1
+0069CAEE: cmp          r2, #0
+0069CAF0: beq          #0x69cafc
+0069CAF2: mov          r1, r2
+0069CAF4: ldr          r2, [r1]
+0069CAF6: cmp          r2, #0
+0069CAF8: bne          #0x69caf2
+0069CAFA: b            #0x69cb06
+0069CAFC: ldr          r1, [r3, #8]
+0069CAFE: ldr          r2, [r1]
+0069CB00: cmp          r2, r3
+0069CB02: mov          r3, r1
+0069CB04: bne          #0x69cafc
+0069CB06: cmp          r1, ip
+0069CB08: mov          r3, r1
+0069CB0A: bne          #0x69cae8
+0069CB0C: bx           lr
+RANGE 0x0069CCDE..0x0069CD30 exclusive; Thumb; _ZNK4Anki5Cozmo10NeedsState16PickPartToDamageEv
+0069CCDE: push         {r4, r5, r7, lr}
+0069CCE0: mov          r4, r0
+0069CCE2: ldr          r5, [r4, #0x48]
+0069CCE4: blx          #0x4bdc38 ; Anki::Cozmo::NeedsState::NumDamagedParts
+0069CCE8: ldr          r2, [r4, #0x30]
+0069CCEA: subs         r1, r5, r0
+0069CCEC: mov          r0, r2
+0069CCEE: blx          #0x4aa5dc ; Anki::Util::RandomGenerator::RandInt
+0069CCF2: ldr          r2, [r4, #0x40]
+0069CCF4: add.w        ip, r4, #0x44
+0069CCF8: mov          r1, r0
+0069CCFA: movs         r0, #0
+0069CCFC: cmp          r2, ip
+0069CCFE: it           eq
+0069CD00: popeq        {r4, r5, r7, pc}
+0069CD02: mov          r4, r2
+0069CD04: ldrb         r2, [r2, #0x14]
+0069CD06: cbnz         r2, #0x69cd0c
+0069CD08: cbz          r1, #0x69cd2e
+0069CD0A: subs         r1, #1
+0069CD0C: ldr          r3, [r4, #4]
+0069CD0E: adds         r0, #1
+0069CD10: cmp          r3, #0
+0069CD12: beq          #0x69cd1e
+0069CD14: mov          r2, r3
+0069CD16: ldr          r3, [r2]
+0069CD18: cmp          r3, #0
+0069CD1A: bne          #0x69cd14
+0069CD1C: b            #0x69cd28
+0069CD1E: ldr          r2, [r4, #8]
+0069CD20: ldr          r3, [r2]
+0069CD22: cmp          r3, r4
+0069CD24: mov          r4, r2
+0069CD26: bne          #0x69cd1e
+0069CD28: cmp          r2, ip
+0069CD2A: mov          r4, r2
+0069CD2C: bne          #0x69cd04
+0069CD2E: pop          {r4, r5, r7, pc}
+RANGE 0x0069C2BC..0x0069C35A exclusive; Thumb; _ZNK4Anki5Cozmo10NeedsState12GetNeedLevelENS0_6NeedIdE
+0069C2BC: push         {r4, lr}
+0069C2BE: vpush        {d8}
+0069C2C2: sub          sp, #0x10
+0069C2C4: ldr          r4, [r0, #0x38]!
+0069C2C8: cbz          r4, #0x69c2fc
+0069C2CA: mov          r3, r0
+0069C2CC: mov          r2, r4
+0069C2CE: ldr          r4, [r2, #0x10]
+0069C2D0: cmp          r4, r1
+0069C2D2: bge          #0x69c2dc
+0069C2D4: ldr          r2, [r2, #4]
+0069C2D6: cmp          r2, #0
+0069C2D8: bne          #0x69c2ce
+0069C2DA: b            #0x69c2e6
+0069C2DC: ldr          r4, [r2]
+0069C2DE: mov          r3, r2
+0069C2E0: cmp          r4, #0
+0069C2E2: bne          #0x69c2cc
+0069C2E4: b            #0x69c2e8
+0069C2E6: mov          r2, r3
+0069C2E8: cmp          r2, r0
+0069C2EA: beq          #0x69c2fc
+0069C2EC: ldr          r3, [r2, #0x10]
+0069C2EE: cmp          r3, r1
+0069C2F0: bgt          #0x69c2fc
+0069C2F2: cmp          r2, r0
+0069C2F4: beq          #0x69c2fc
+0069C2F6: vldr         s16, [r2, #0x14]
+0069C2FA: b            #0x69c34e
+0069C2FC: ldr          r0, [pc, #0x84] ; word[0069C384]=00564341
+0069C2FE: movs         r1, #0
+0069C300: strd         r1, r1, [sp, #4]
+0069C304: add          r0, pc
+0069C306: str          r1, [sp, #0xc]
+0069C308: add          r1, sp, #4
+0069C30A: adr          r2, #0x7c
+0069C30C: blx          #0x4a4108 ; Anki::Util::sErrorF
+0069C310: ldr          r0, [sp, #4]
+0069C312: cbz          r0, #0x69c332
+0069C314: ldr          r1, [sp, #8]
+0069C316: cmp          r1, r0
+0069C318: itttt        ne
+0069C31A: subne.w      r2, r1, #8
+0069C31E: subne        r2, r2, r0
+0069C320: mvnne        r3, #7
+0069C324: bicne.w      r2, r3, r2
+0069C328: itt          ne
+0069C32A: addne        r1, r1, r2
+0069C32C: strne        r1, [sp, #8]
+0069C32E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0069C332: ldr          r0, [pc, #0x80] ; word[0069C3B4]=009A2450
+0069C334: movs         r2, #1
+0069C336: ldr          r1, [pc, #0x80] ; word[0069C3B8]=009A244E
+0069C338: add          r0, pc
+0069C33A: vldr         s16, [pc, #0x80] ; word[0069C3BC]=00000000
+0069C33E: add          r1, pc
+0069C340: ldr          r0, [r0]
+0069C342: ldr          r1, [r1]
+0069C344: ldrb         r0, [r0]
+0069C346: strb         r2, [r1]
+0069C348: cbz          r0, #0x69c34e
+0069C34A: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+0069C34E: vmov         r0, s16
+0069C352: add          sp, #0x10
+0069C354: vpop         {d8}
+0069C358: pop          {r4, pc}
+RANGE 0x0068EE88..0x0068F04E exclusive; Thumb; _ZN4Anki5Cozmo11NeedsConfig14InitDecayRatesERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEERNS0_11DecayConfigE
+0068EE88: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0068EE8C: sub          sp, #4
+0068EE8E: vpush        {d8, d9}
+0068EE92: sub          sp, #0x50
+0068EE94: add          r4, sp, #0x38
+0068EE96: add.w        sb, sp, #0x24
+0068EE9A: add          r6, sp, #0x10
+0068EE9C: mov          r7, r2
+0068EE9E: mov          sl, r1
+0068EEA0: mov.w        r8, #0
+0068EEA4: movs         r2, #0
+0068EEA6: str          r3, [sp]
+0068EEA8: strd         r8, r8, [sp, #0x44]
+0068EEAC: str.w        r8, [sp, #0x4c]
+0068EEB0: mov          r0, r2
+0068EEB2: str          r2, [sp, #0xc]
+0068EEB4: blx          #0x4ad2d0 ; Anki::Cozmo::EnumToString
+0068EEB8: mov          r2, r0
+0068EEBA: mov          r0, r4
+0068EEBC: mov          r1, r7
+0068EEBE: blx          #0x4a7318 ; std::__ndk1::operator+
+0068EEC2: ldrb.w       r0, [sp, #0x38]
+0068EEC6: ldr          r1, [sp, #0x40]
+0068EEC8: tst.w        r0, #1
+0068EECC: it           eq
+0068EECE: orreq        r1, r4, #1
+0068EED2: mov          r0, sl
+0068EED4: blx          #0x4a5f2c ; Json::Value::operator[]
+0068EED8: mov          r5, r0
+0068EEDA: strd         r8, r8, [sp, #0x2c]
+0068EEDE: str.w        r8, [sp, #0x34]
+0068EEE2: mov          r0, sb
+0068EEE4: mov          r1, r5
+0068EEE6: blx          #0x4a6160 ; Json::Value::begin
+0068EEEA: add          r0, sp, #0x1c
+0068EEEC: mov          r1, r5
+0068EEEE: blx          #0x4a616c ; Json::Value::end
+0068EEF2: strd         sl, r7, [sp, #4]
+0068EEF6: add          r1, sp, #0x1c
+0068EEF8: mov          r0, sb
+0068EEFA: blx          #0x4a6178 ; Json::ValueIteratorBase::isEqual
+0068EEFE: cmp          r0, #1
+0068EF00: beq          #0x68efc0
+0068EF02: mov          r0, sb
+0068EF04: blx          #0x4a6184 ; Json::ValueIteratorBase::deref
+0068EF08: mov          sl, r0
+0068EF0A: ldr          r0, [pc, #0x1f0] ; word[0068F0FC]=009CD264
+0068EF0C: str.w        r8, [sp, #0x18]
+0068EF10: add          r0, pc
+0068EF12: ldr          r5, [r0, #8]
+0068EF14: ldrb         r7, [r0]
+0068EF16: strd         r8, r8, [sp, #0x10]
+0068EF1A: adr          r1, #0x198
+0068EF1C: mov          r0, r6
+0068EF1E: movs         r2, #0x26
+0068EF20: bl           #0x4e02b2 ; FUN_004e02b2
+0068EF24: lsls         r0, r7, #0x1f
+0068EF26: ldr          r0, [pc, #0x1d8] ; word[0068F100]=009CD24C
+0068EF28: add          r0, pc
+0068EF2A: it           eq
+0068EF2C: addeq        r5, r0, #1
+0068EF2E: mov          r0, sl
+0068EF30: mov          r1, r5
+0068EF32: mov          r2, r6
+0068EF34: blx          #0x4b1bf0 ; Anki::JsonTools::ParseFloat
+0068EF38: mov          r5, r0
+0068EF3A: ldrb.w       r0, [sp, #0x10]
+0068EF3E: lsls         r0, r0, #0x1f
+0068EF40: itt          ne
+0068EF42: ldrne        r0, [sp, #0x18]
+0068EF44: blxne        #0x4a40cc
+0068EF48: ldr          r0, [pc, #0x1b8] ; word[0068F104]=009CD236
+0068EF4A: str.w        r8, [sp, #0x18]
+0068EF4E: add          r0, pc
+0068EF50: ldr.w        fp, [r0, #8]
+0068EF54: ldrb         r7, [r0]
+0068EF56: strd         r8, r8, [sp, #0x10]
+0068EF5A: adr          r1, #0x180
+0068EF5C: mov          r0, r6
+0068EF5E: movs         r2, #0x1c
+0068EF60: bl           #0x4e02b2 ; FUN_004e02b2
+0068EF64: lsls         r0, r7, #0x1f
+0068EF66: ldr          r0, [pc, #0x1a0] ; word[0068F108]=009CD21C
+0068EF68: add          r0, pc
+0068EF6A: it           eq
+0068EF6C: addeq.w      fp, r0, #1
+0068EF70: mov          r0, sl
+0068EF72: mov          r1, fp
+0068EF74: mov          r2, r6
+0068EF76: blx          #0x4b1bf0 ; Anki::JsonTools::ParseFloat
+0068EF7A: vmov         s18, r0
+0068EF7E: ldrb.w       r0, [sp, #0x10]
+0068EF82: vmov         s16, r5
+0068EF86: lsls         r0, r0, #0x1f
+0068EF88: itt          ne
+0068EF8A: ldrne        r0, [sp, #0x18]
+0068EF8C: blxne        #0x4a40cc
+0068EF90: ldr          r1, [sp, #0x34]
+0068EF92: ldr          r0, [sp, #0x30]
+0068EF94: vstr         s18, [sp, #0x14]
+0068EF98: cmp          r0, r1
+0068EF9A: vstr         s16, [sp, #0x10]
+0068EF9E: bhs          #0x68efb0
+0068EFA0: ldrd         r1, r2, [sp, #0x10]
+0068EFA4: strd         r1, r2, [r0]
+0068EFA8: ldr          r0, [sp, #0x30]
+0068EFAA: adds         r0, #8
+0068EFAC: str          r0, [sp, #0x30]
+0068EFAE: b            #0x68efb8
+0068EFB0: add          r0, sp, #0x2c
+0068EFB2: mov          r1, r6
+0068EFB4: blx          #0x4bd6b0 ; std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>::__push_back_slow_path<Anki::Cozmo::DecayRate>
+0068EFB8: mov          r0, sb
+0068EFBA: blx          #0x4a619c ; Json::ValueIteratorBase::increment
+0068EFBE: b            #0x68eef6
+0068EFC0: ldrd         r0, r1, [sp, #0x2c]
+0068EFC4: mov          r2, r6
+0068EFC6: blx          #0x4bd6bc ; std::__ndk1::__sort<Anki::Cozmo::SortDecayRatesByThresholdDescending&,Anki::Cozmo::DecayRate*>
+0068EFCA: ldrd         sl, r7, [sp, #4]
+0068EFCE: ldrd         r0, r1, [sp, #0x48]
+0068EFD2: cmp          r0, r1
+0068EFD4: beq          #0x68efe4
+0068EFD6: add          r1, sp, #0x2c
+0068EFD8: blx          #0x4bd6c8 ; std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>::vector
+0068EFDC: ldr          r0, [sp, #0x48]
+0068EFDE: adds         r0, #0xc
+0068EFE0: str          r0, [sp, #0x48]
+0068EFE2: b            #0x68efec
+0068EFE4: add          r0, sp, #0x44
+0068EFE6: add          r1, sp, #0x2c
+0068EFE8: blx          #0x4bd6d4 ; std::__ndk1::vector<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>,std::__ndk1::allocator<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>>>::__push_back_slow_path<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>const&>
+0068EFEC: ldr          r0, [sp, #0x2c]
+0068EFEE: cbz          r0, #0x68f00e
+0068EFF0: ldr          r1, [sp, #0x30]
+0068EFF2: cmp          r1, r0
+0068EFF4: itttt        ne
+0068EFF6: subne.w      r2, r1, #8
+0068EFFA: subne        r2, r2, r0
+0068EFFC: mvnne        r3, #7
+0068F000: bicne.w      r2, r3, r2
+0068F004: itt          ne
+0068F006: addne        r1, r1, r2
+0068F008: strne        r1, [sp, #0x30]
+0068F00A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0068F00E: ldrb.w       r0, [sp, #0x38]
+0068F012: lsls         r0, r0, #0x1f
+0068F014: itt          ne
+0068F016: ldrne        r0, [sp, #0x40]
+0068F018: blxne        #0x4a40cc
+0068F01C: ldr          r2, [sp, #0xc]
+0068F01E: adds         r2, #1
+0068F020: cmp          r2, #3
+0068F022: blo.w        #0x68eeb0
+0068F026: ldr          r4, [sp]
+0068F028: mov          r0, r4
+0068F02A: blx          #0x4bd6e0 ; std::__ndk1::vector<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>,std::__ndk1::allocator<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>>>::deallocate
+0068F02E: add          r2, sp, #0x44
+0068F030: ldm          r2, {r0, r1, r2}
+0068F032: stm          r4!, {r0, r1, r2}
+0068F034: movs         r0, #0
+0068F036: str          r0, [sp, #0x4c]
+0068F038: strd         r0, r0, [sp, #0x44]
+0068F03C: add          r0, sp, #0x44
+0068F03E: blx          #0x4bd6ec ; std::__ndk1::__vector_base<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>,std::__ndk1::allocator<std::__ndk1::vector<Anki::Cozmo::DecayRate,std::__ndk1::allocator<Anki::Cozmo::DecayRate>>>>::~__vector_base
+0068F042: add          sp, #0x50
+0068F044: vpop         {d8, d9}
+0068F048: add          sp, #4
+0068F04A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x00691A0C..0x00691AD8 exclusive; Thumb; _ZNSt6__ndk118__insertion_sort_3IRN4Anki5Cozmo39SortDecayModifiersByThresholdDescendingEPNS2_13DecayModifierEEEvT0_S7_T_
+00691A0C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00691A10: sub          sp, #4
+00691A12: vpush        {d8}
+00691A16: sub          sp, #8
+00691A18: mov          r5, r0
+00691A1A: add.w        r6, r5, #0x20
+00691A1E: mov          r8, r1
+00691A20: add.w        r1, r5, #0x10
+00691A24: mov          r3, r2
+00691A26: mov          r2, r6
+00691A28: blx          #0x4bd884 ; std::__ndk1::__sort3<Anki::Cozmo::SortDecayModifiersByThresholdDescending&,Anki::Cozmo::DecayModifier*>
+00691A2C: add.w        r0, r5, #0x30
+00691A30: cmp          r0, r8
+00691A32: beq          #0x691acc
+00691A34: movs         r7, #0
+00691A36: mov.w        sl, #0
+00691A3A: str.w        r8, [sp]
+00691A3E: mov          r4, r0
+00691A40: vldr         s0, [r6]
+00691A44: vldr         s16, [r4]
+00691A48: vcmpe.f32    s16, s0
+00691A4C: vmrs         apsr_nzcv, fpscr
+00691A50: ble          #0x691abe
+00691A52: ldrd         r6, r0, [r4, #4]
+00691A56: mov          sb, sl
+00691A58: str          r0, [sp, #4]
+00691A5A: ldr.w        fp, [r4, #0xc]
+00691A5E: strd         r7, r7, [r4, #4]
+00691A62: str          r7, [r4, #0xc]
+00691A64: add.w        r8, r5, sb
+00691A68: ldr.w        r0, [r8, #0x20]
+00691A6C: str.w        r0, [r8, #0x30]
+00691A70: add.w        r0, r8, #0x34
+00691A74: blx          #0x4bd86c ; std::__ndk1::vector<Anki::Cozmo::OtherNeedModifier,std::__ndk1::allocator<Anki::Cozmo::OtherNeedModifier>>::deallocate
+00691A78: add.w        r2, r8, #0x24
+00691A7C: add.w        r3, r8, #0x34
+00691A80: ldm          r2, {r0, r1, r2}
+00691A82: stm          r3!, {r0, r1, r2}
+00691A84: adds.w       r0, sb, #0x20
+00691A88: strd         r7, r7, [r8, #0x24]
+00691A8C: str.w        r7, [r8, #0x2c]
+00691A90: beq          #0x691aa4
+00691A92: vldr         s0, [r8, #0x10]
+00691A96: sub.w        sb, sb, #0x10
+00691A9A: vcmpe.f32    s0, s16
+00691A9E: vmrs         apsr_nzcv, fpscr
+00691AA2: bmi          #0x691a64
+00691AA4: add.w        r0, r8, #0x24
+00691AA8: vstr         s16, [r8, #0x20]
+00691AAC: blx          #0x4bd86c ; std::__ndk1::vector<Anki::Cozmo::OtherNeedModifier,std::__ndk1::allocator<Anki::Cozmo::OtherNeedModifier>>::deallocate
+00691AB0: str.w        r6, [r8, #0x24]
+00691AB4: ldr          r0, [sp, #4]
+00691AB6: strd         r0, fp, [r8, #0x28]
+00691ABA: ldr.w        r8, [sp]
+00691ABE: add.w        r0, r4, #0x10
+00691AC2: add.w        sl, sl, #0x10
+00691AC6: cmp          r0, r8
+00691AC8: mov          r6, r4
+00691ACA: bne          #0x691a3e
+00691ACC: add          sp, #8
+00691ACE: vpop         {d8}
+00691AD2: add          sp, #4
+00691AD4: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0069143A: raw=40036565 relocated=40036565
+0069143E: raw=ED96584D relocated=ED96584D
+0069C7D8: bytes=b':'
+0069C7E0: bytes=b'a'
+0069C7E8: bytes=b's.part_damaged'

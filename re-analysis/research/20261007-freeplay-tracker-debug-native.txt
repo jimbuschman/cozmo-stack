@@ -1,0 +1,165 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00BEE313: bytes=b'GameControl'
+00BEE31F: bytes=b'Spark'
+00BEE325: bytes=b'OffTreads'
+00BEE32F: bytes=b'OnCharger'
+RANGE 0x0056F218..0x0056F3C6 exclusive; Thumb; _ZNK4Anki5Cozmo19FreeplayDataTracker16GetDebugStateStrEv
+0056F218: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0056F21C: sub          sp, #0xb4
+0056F21E: mov          r7, r1
+0056F220: mov          fp, r0
+0056F222: ldr          r0, [r7, #8]
+0056F224: cmp          r0, #0
+0056F226: beq.w        #0x56f3ac
+0056F22A: ldr          r0, [pc, #0x228] ; word[0056F454]=00ACF582
+0056F22C: add.w        sb, sp, #0x10
+0056F230: ldr          r1, [pc, #0x224] ; word[0056F458]=00ACF580
+0056F232: add.w        sl, sb, #0x40
+0056F236: add          r0, pc
+0056F238: add.w        r6, sb, #0xc
+0056F23C: add          r1, pc
+0056F23E: movs         r5, #0
+0056F240: ldr          r0, [r0]
+0056F242: ldr          r1, [r1]
+0056F244: add.w        r2, r0, #0xc
+0056F248: adds         r0, #0x20
+0056F24A: adds         r1, #0x20
+0056F24C: str          r5, [sp, #0x14]
+0056F24E: str          r2, [sp, #0x10]
+0056F250: str          r1, [sp, #0x18]
+0056F252: str          r0, [sp, #0x50]
+0056F254: mov          r0, sl
+0056F256: mov          r1, r6
+0056F258: blx          #0x4a445c ; <EXTERNAL>::std::__ndk1::ios_base::init
+0056F25C: ldr          r0, [pc, #0x1fc] ; word[0056F45C]=00ACF554
+0056F25E: mov.w        r2, #-1
+0056F262: ldr          r1, [pc, #0x1fc] ; word[0056F460]=00ACF554
+0056F264: add.w        r4, sb, #0x10
+0056F268: add          r0, pc
+0056F26A: str          r2, [sp, #0x9c]
+0056F26C: add          r1, pc
+0056F26E: str          r5, [sp, #0x98]
+0056F270: ldr          r0, [r0]
+0056F272: ldr          r1, [r1]
+0056F274: add.w        r2, r0, #0x34
+0056F278: str          r2, [sp, #0x50]
+0056F27A: add.w        r2, r0, #0xc
+0056F27E: adds         r0, #0x20
+0056F280: str          r2, [sp, #0x10]
+0056F282: str          r0, [sp, #0x18]
+0056F284: add.w        r0, r1, #8
+0056F288: str          r0, [sp, #0x1c]
+0056F28A: mov          r0, r4
+0056F28C: blx          #0x4a4468 ; <EXTERNAL>::std::__ndk1::locale::locale
+0056F290: add.w        r0, sb, #0x14
+0056F294: movs         r1, #0x18
+0056F296: mov.w        r8, #0x18
+0056F29A: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+0056F29E: ldr          r0, [pc, #0x1c4] ; word[0056F464]=00ACF522
+0056F2A0: str          r5, [sp, #0x3c]
+0056F2A2: add          r0, pc
+0056F2A4: ldr          r0, [r0]
+0056F2A6: adds         r0, #8
+0056F2A8: str          r0, [sp, #0x1c]
+0056F2AA: strd         r5, r5, [sp, #0x40]
+0056F2AE: strd         r5, r8, [sp, #0x48]
+0056F2B2: str          r5, [sp, #0xa8]
+0056F2B4: strd         r5, r5, [sp, #0xa0]
+0056F2B8: add          r1, sp, #0xa0
+0056F2BA: mov          r0, r6
+0056F2BC: bl           #0x4e4598 ; FUN_004e4598
+0056F2C0: ldrb.w       r0, [sp, #0xa0]
+0056F2C4: lsls         r0, r0, #0x1f
+0056F2C6: itt          ne
+0056F2C8: ldrne        r0, [sp, #0xa8]
+0056F2CA: blxne        #0x4a40cc
+0056F2CE: add.w        r5, sb, #8
+0056F2D2: strd         r6, r4, [sp, #4]
+0056F2D6: str.w        sl, [sp, #0xc]
+0056F2DA: adr          r1, #0x190
+0056F2DC: mov          r0, r5
+0056F2DE: movs         r2, #8
+0056F2E0: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+0056F2E4: ldr          sb, [r7], #4
+0056F2E8: cmp          sb, r7
+0056F2EA: beq          #0x56f342
+0056F2EC: ldr.w        r8, [pc, #0x188] ; word[0056F478]=00AB425A
+0056F2F0: add          r4, sp, #0xa0
+0056F2F2: mov.w        sl, #0x20
+0056F2F6: add          r8, pc
+0056F2F8: ldr.w        r0, [sb, #0x10]
+0056F2FC: ldr.w        r6, [r8, r0, lsl #2]
+0056F300: mov          r0, r6
+0056F302: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+0056F306: mov          r2, r0
+0056F308: mov          r0, r5
+0056F30A: mov          r1, r6
+0056F30C: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+0056F310: strb.w       sl, [sp, #0xa0]
+0056F314: mov          r1, r4
+0056F316: movs         r2, #1
+0056F318: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+0056F31C: ldr.w        r0, [sb, #4]
+0056F320: mov          r1, sb
+0056F322: cbz          r0, #0x56f330
+0056F324: mov          sb, r0
+0056F326: ldr.w        r0, [sb]
+0056F32A: cmp          r0, #0
+0056F32C: bne          #0x56f324
+0056F32E: b            #0x56f33e
+0056F330: ldr.w        sb, [r1, #8]
+0056F334: ldr.w        r0, [sb]
+0056F338: cmp          r0, r1
+0056F33A: mov          r1, sb
+0056F33C: bne          #0x56f330
+0056F33E: cmp          sb, r7
+0056F340: bne          #0x56f2f8
+0056F342: movs         r0, #0x29
+0056F344: strb.w       r0, [sp, #0xb3]
+0056F348: add.w        r1, sp, #0xb3
+0056F34C: mov          r0, r5
+0056F34E: movs         r2, #1
+0056F350: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+0056F354: ldr          r1, [sp, #4]
+0056F356: mov          r0, fp
+0056F358: blx          #0x4a448c ; std::__ndk1::basic_stringbuf<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>::str
+0056F35C: ldr          r0, [pc, #0x128] ; word[0056F488]=00ACF45C
+0056F35E: ldr          r1, [pc, #0x12c] ; word[0056F48C]=00ACF45E
+0056F360: add          r0, pc
+0056F362: ldrb.w       r2, [sp, #0x3c]
+0056F366: add          r1, pc
+0056F368: ldr          r0, [r0]
+0056F36A: ldr          r1, [r1]
+0056F36C: add.w        r3, r0, #0x34
+0056F370: str          r3, [sp, #0x50]
+0056F372: add.w        r3, r0, #0xc
+0056F376: adds         r0, #0x20
+0056F378: str          r3, [sp, #0x10]
+0056F37A: str          r0, [sp, #0x18]
+0056F37C: add.w        r0, r1, #8
+0056F380: str          r0, [sp, #0x1c]
+0056F382: lsls         r0, r2, #0x1f
+0056F384: ldrd         r5, r4, [sp, #8]
+0056F388: itt          ne
+0056F38A: ldrne        r0, [sp, #0x44]
+0056F38C: blxne        #0x4a40cc
+0056F390: ldr          r0, [pc, #0xfc] ; word[0056F490]=00ACF42E
+0056F392: add          r0, pc
+0056F394: ldr          r0, [r0]
+0056F396: adds         r0, #8
+0056F398: str          r0, [sp, #0x1c]
+0056F39A: mov          r0, r5
+0056F39C: blx          #0x4a44a4 ; <EXTERNAL>::std::__ndk1::locale::~locale
+0056F3A0: mov          r0, r4
+0056F3A2: blx          #0x4a44b0 ; <EXTERNAL>::std::__ndk1::ios_base::~ios_base
+0056F3A6: add          sp, #0xb4
+0056F3A8: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0056F3AC: movs         r0, #0
+0056F3AE: adr          r1, #0xe4
+0056F3B0: strd         r0, r0, [fp]
+0056F3B4: movs         r2, #6
+0056F3B6: str.w        r0, [fp, #8]
+0056F3BA: mov          r0, fp
+0056F3BC: bl           #0x4e02b2 ; FUN_004e02b2
+0056F3C0: add          sp, #0xb4
+0056F3C2: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}

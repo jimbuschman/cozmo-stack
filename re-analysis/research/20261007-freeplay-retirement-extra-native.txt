@@ -1,0 +1,13 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0069BED0..0x0069BEDA exclusive; Thumb;
+0069BED0: pop.w        {r4, lr}
+0069BED4: b.w          #0x8cdacc
+0069BED8: ldr          r2, [pc, #0x10] ; word[0069BEEC]=005ECDFE
+RANGE 0x008CD9EC..0x008CD9FC exclusive; Thumb;
+008CD9EC: bx           pc
+008CD9EE: mov          r8, r8
+RANGE 0x004BD980..0x004BD98C exclusive; ARM;
+004BD980: add          ip, pc, #0xb00000
+004BD984: add          ip, ip, #0x8b000
+004BD988: ldr          pc, [ip, #0x184]!
+0104AA00: raw=004A4010 relocated=0072F859 _ZNSt6__ndk16vectorIN4Anki5Cozmo17ExternalInterface15DebugConsoleVarENS_9allocatorIS4_EEE8allocateEj

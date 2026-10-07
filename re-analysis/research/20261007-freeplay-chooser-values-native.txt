@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0060A6E0: raw=A0000000 relocated=A0000000
+0060A6E4: raw=3FB99999 relocated=3FB99999
+0060A6E8: raw=00000000 relocated=00000000
+0060A6EC: raw=3DCCCCCD relocated=3DCCCCCD
+0060A6F0: raw=3C23D70A relocated=3C23D70A
+00609E54: bytes=b'type'
+00609FAC: bytes=b'\xc4\xe9'
+0060A1A8: bytes=b'scoring'
+0060A1B0: bytes=b'scoreBonusForCurrentBehavior'
+0060B1EC: bytes=b'viors'
+RANGE 0x00609F28..0x00609F72 exclusive; Thumb;
+00609F28: push         {r4, r5, r7, lr}
+00609F2A: sub          sp, #0x10
+00609F2C: mov          r4, r0
+00609F2E: movs         r0, #0
+00609F30: mov          r5, sp
+00609F32: adr          r1, #0x4c
+00609F34: str          r0, [sp, #8]
+00609F36: movs         r2, #7
+00609F38: strd         r0, r0, [sp]
+00609F3C: mov          r0, r5
+00609F3E: bl           #0x4e02b2 ; FUN_004e02b2
+00609F42: mov          r0, r4
+00609F44: mov          r1, r5
+00609F46: blx          #0x4b1d40 ; Anki::Cozmo::IBSRunnable::IBSRunnable
+00609F4A: ldrb.w       r0, [sp]
+00609F4E: lsls         r0, r0, #0x1f
+00609F50: itt          ne
+00609F52: ldrne        r0, [sp, #8]
+00609F54: blxne        #0x4a40cc
+00609F58: ldr          r0, [pc, #0x2c] ; word[00609F88]=00A35752
+00609F5A: add          r0, pc
+00609F5C: ldr          r0, [r0]
+00609F5E: adds         r0, #8
+00609F60: str          r0, [r4]
+00609F62: mov          r0, r4
+00609F64: add          sp, #0x10
+00609F66: pop          {r4, r5, r7, pc}
+00609F68: mov          r4, r0
+00609F6A: ldrb.w       r0, [sp]
+00609F6E: lsls         r0, r0, #0x1f
+00609F70: itt          ne

@@ -1,0 +1,15 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A4E2E..0x005A4E4E exclusive; Thumb;
+005A4E2E: add          r2, sp, #4
+005A4E30: strb.w       r0, [sp, #0x2b]
+005A4E34: ldrb.w       r0, [r1, #0x20]
+005A4E38: strb.w       r0, [sp, #0x2d]
+005A4E3C: mov          r0, r4
+005A4E3E: blx          #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock
+005A4E42: add          sp, #0x30
+005A4E44: pop          {r4, pc}
+005A4E46: movs         r0, r0
+005A4E48: ldr          r2, [pc, #0x10] ; word[005A4E5C]=006BC00E
+005A4E4A: ldr          r3, [r1, #4]
+005A4E4C: movs         r1, #0
+005A3BCC: bytes=b'sdk'

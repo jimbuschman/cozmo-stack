@@ -1,0 +1,126 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E188C..0x005E1920 exclusive; Thumb;
+005E188C: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+005E1890: vpush        {d8, d9}
+005E1894: sub          sp, #0x48
+005E1896: mov          r8, r0
+005E1898: ldr          r0, [r1, #8]
+005E189A: ldr.w        sb, [r8, #4]
+005E189E: movs         r1, #4
+005E18A0: cmp.w        r1, r0, lsr #24
+005E18A4: beq          #0x5e191c
+005E18A6: lsrs         r0, r0, #0x18
+005E18A8: bne.w        #0x5e1a02
+005E18AC: ldr          r2, [pc, #0x38c] ; word[005E1C3C]=00612B94
+005E18AE: add          r5, sp, #0x3c
+005E18B0: add.w        r1, sb, #0x40
+005E18B4: add          r2, pc
+005E18B6: mov          r0, r5
+005E18B8: blx          #0x4a7318 ; std::__ndk1::operator+
+005E18BC: ldr          r0, [pc, #0x380] ; word[005E1C40]=0060C9F7
+005E18BE: movs         r7, #0
+005E18C0: ldrb.w       r2, [sp, #0x3c]
+005E18C4: ldr          r1, [sp, #0x44]
+005E18C6: add          r0, pc
+005E18C8: ldr          r3, [pc, #0x378] ; word[005E1C44]=00612B88
+005E18CA: tst.w        r2, #1
+005E18CE: strd         r7, r7, [sp, #0x30]
+005E18D2: str          r7, [sp, #0x38]
+005E18D4: it           eq
+005E18D6: orreq        r1, r5, #1
+005E18DA: add          r3, pc
+005E18DC: add          r2, sp, #0x30
+005E18DE: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005E18E2: ldr          r0, [sp, #0x30]
+005E18E4: cbz          r0, #0x5e1904
+005E18E6: ldr          r1, [sp, #0x34]
+005E18E8: cmp          r1, r0
+005E18EA: itttt        ne
+005E18EC: subne.w      r2, r1, #8
+005E18F0: subne        r2, r2, r0
+005E18F2: mvnne        r3, #7
+005E18F6: bicne.w      r2, r3, r2
+005E18FA: itt          ne
+005E18FC: addne        r1, r1, r2
+005E18FE: strne        r1, [sp, #0x34]
+005E1900: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1904: ldrb.w       r0, [sp, #0x3c]
+005E1908: lsls         r0, r0, #0x1f
+005E190A: itt          ne
+005E190C: ldrne        r0, [sp, #0x44]
+005E190E: blxne        #0x4a40cc
+005E1912: ldr.w        r1, [r8, #8]
+005E1916: blx          #0x4b4b30 ; Anki::Cozmo::BehaviorExploreBringCubeToBeacon::FireEmotionEvents
+005E191A: b            #0x5e1b5a
+005E191C: mov          r4, r8
+RANGE 0x005E1B5A..0x005E1BC0 exclusive; Thumb;
+005E1B5A: add          sp, #0x48
+005E1B5C: vpop         {d8, d9}
+005E1B60: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+005E1B64: b            #0x5e1b6a
+005E1B66: b            #0x5e1b6a
+005E1B68: b            #0x5e1b6a
+005E1B6A: mov          r4, r0
+005E1B6C: ldr          r0, [sp, #0x30]
+005E1B6E: cbz          r0, #0x5e1b8c
+005E1B70: ldr          r1, [sp, #0x34]
+005E1B72: cmp          r1, r0
+005E1B74: beq          #0x5e1b88
+005E1B76: sub.w        r2, r1, #8
+005E1B7A: mvn          r3, #7
+005E1B7E: subs         r2, r2, r0
+005E1B80: bic.w        r2, r3, r2
+005E1B84: add          r1, r2
+005E1B86: str          r1, [sp, #0x34]
+005E1B88: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1B8C: ldrb.w       r0, [sp, #0x3c]
+005E1B90: lsls         r0, r0, #0x1f
+005E1B92: itt          ne
+005E1B94: ldrne        r0, [sp, #0x44]
+005E1B96: blxne        #0x4a40cc
+005E1B9A: mov          r0, r4
+005E1B9C: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005E1BA0: ldr          r6, [r5, #0x70]
+005E1BA2: str          r6, [r5, r1]
+005E1BA4: str          r4, [r5, #0x14]
+005E1BA6: str          r3, [r4, #0x54]
+005E1BA8: str          r1, [r0, #0x34]
+005E1BAA: ldr          r4, [r6, #0x14]
+005E1BAC: ldr          r7, [r5, #0x64]
+005E1BAE: str          r2, [r2, #0x54]
+005E1BB0: strb         r3, [r6, #0x15]
+005E1BB2: strb         r4, [r5, #0x11]
+005E1BB4: add          r6, r5
+005E1BB6: ldr          r7, [r5, #0x64]
+005E1BB8: cmp          r6, #0x65
+005E1BBA: str          r3, [r0, #0x14]
+005E1BBC: strh         r6, [r5, r1]
+005E1BBE: strb         r5, [r4, #0x11]
+RANGE 0x008CB6FC..0x008CB708 exclusive; Thumb;
+008CB6FC: bx           pc
+008CB6FE: mov          r8, r8
+RANGE 0x005E5F0C..0x005E5F48 exclusive; Thumb; _ZN4Anki5Cozmo25BehaviorThinkAboutBeacons15SelectNewBeaconERNS0_5RobotE
+005E5F0C: push         {r4, r5, r6, lr}
+005E5F0E: sub          sp, #0x10
+005E5F10: mov          r4, r0
+005E5F12: ldr.w        r0, [r1, #0x264]
+005E5F16: ldr          r5, [r0, #0x18]
+005E5F18: mov          r0, r1
+005E5F1A: bl           #0x4ea398 ; FUN_004ea398
+005E5F1E: add          r6, sp, #4
+005E5F20: mov          r1, r0
+005E5F22: mov          r0, r6
+005E5F24: bl           #0x4df628 ; FUN_004df628
+005E5F28: ldr.w        r2, [r4, #0x128]
+005E5F2C: mov          r0, r5
+005E5F2E: mov          r1, r6
+005E5F30: blx          #0x4b4da0 ; Anki::Cozmo::AIWhiteboard::AddBeacon
+005E5F34: add          r0, sp, #4
+005E5F36: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E5F3A: add          sp, #0x10
+005E5F3C: pop          {r4, r5, r6, pc}
+005E5F3E: mov          r4, r0
+005E5F40: add          r0, sp, #4
+005E5F42: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+005E5F46: mov          r0, r4
+005DF87C: bytes=b'HikingNoLocationAtBeacon'

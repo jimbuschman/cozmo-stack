@@ -1,0 +1,118 @@
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+RANGE 0x0000C374..0x0000C3EC exclusive; Thumb;
+0000C374: push         {r4, r5, r6, lr}
+0000C376: sub          sp, #0x10
+0000C378: mov          r4, r0
+0000C37A: ldr          r5, [r4, #8]
+0000C37C: mov          r0, r5
+0000C37E: bl           #0xb8c0
+0000C382: ldr          r0, [r4, #0x20]
+0000C384: cbz          r0, #0xc3d0
+0000C386: movs         r0, #0
+0000C388: ldrb         r6, [r5, #0x15]
+0000C38A: str          r0, [sp, #8]
+0000C38C: adds         r4, #0x10
+0000C38E: strd         r0, r0, [sp]
+0000C392: mov          r0, r5
+0000C394: ldrb         r1, [r0, #0x18]!
+0000C398: tst.w        r1, #1
+0000C39C: bne          #0xc3a8
+0000C39E: mov          r1, sp
+0000C3A0: ldm.w        r0, {r2, r3, r5}
+0000C3A4: stm          r1!, {r2, r3, r5}
+0000C3A6: b            #0xc3b2
+0000C3A8: ldrd         r2, r1, [r5, #0x1c]
+0000C3AC: mov          r0, sp
+0000C3AE: bl           #0x9594
+0000C3B2: movs         r1, #0
+0000C3B4: cmp          r6, #0
+0000C3B6: it           eq
+0000C3B8: moveq        r1, #1
+0000C3BA: mov          r2, sp
+0000C3BC: mov          r0, r4
+0000C3BE: bl           #0x71ec
+0000C3C2: ldrb.w       r0, [sp]
+0000C3C6: lsls         r0, r0, #0x1f
+0000C3C8: itt          ne
+0000C3CA: ldrne        r0, [sp, #8]
+0000C3CC: blxne        #0x579c
+0000C3D0: add          sp, #0x10
+0000C3D2: pop          {r4, r5, r6, pc}
+0000C3D4: mov          r4, r0
+0000C3D6: ldrb.w       r0, [sp]
+0000C3DA: lsls         r0, r0, #0x1f
+0000C3DC: itt          ne
+0000C3DE: ldrne        r0, [sp, #8]
+0000C3E0: blxne        #0x579c
+0000C3E4: mov          r0, r4
+0000C3E6: blx          #0x57fc
+0000C3EA: movs         r0, r0
+RANGE 0x0002618C..0x00026228 exclusive; Thumb;
+0002618C: add          r7, sp, #0x30
+0002618E: ldrb.w       r0, [sp, #0x58]
+00026192: add.w        r6, r7, #8
+00026196: strb.w       r0, [sp, #0x30]
+0002619A: mov          r1, r8
+0002619C: mov          r0, r6
+0002619E: bl           #0x26230
+000261A2: ldrd         r0, r1, [r4]
+000261A6: strd         r0, r1, [sp, #0x50]
+000261AA: mov          r0, r5
+000261AC: mov          r1, r7
+000261AE: bl           #0x26456
+000261B2: ldr          r0, [sp, #0x48]
+000261B4: cmp          r6, r0
+000261B6: beq          #0x261c0
+000261B8: cbz          r0, #0x261c6
+000261BA: ldr          r1, [r0]
+000261BC: ldr          r1, [r1, #0x14]
+000261BE: b            #0x261c4
+000261C0: ldr          r1, [r0]
+000261C2: ldr          r1, [r1, #0x10]
+000261C4: blx          r1
+000261C6: ldr          r0, [sp, #0x70]
+000261C8: cmp          r8, r0
+000261CA: beq          #0x261d4
+000261CC: cbz          r0, #0x261da
+000261CE: ldr          r1, [r0]
+000261D0: ldr          r1, [r1, #0x14]
+000261D2: b            #0x261d8
+000261D4: ldr          r1, [r0]
+000261D6: ldr          r1, [r1, #0x10]
+000261D8: blx          r1
+000261DA: ldr          r0, [pc, #0x50] ; word[0002622C]=00010AB2
+000261DC: ldr          r1, [sp, #0x84]
+000261DE: add          r0, pc
+000261E0: ldr          r0, [r0]
+000261E2: ldr          r0, [r0]
+000261E4: subs         r0, r0, r1
+000261E6: itt          eq
+000261E8: addeq        sp, #0x88
+000261EA: popeq.w      {r4, r5, r6, r7, r8, pc}
+000261EE: blx          #0x5868
+000261F2: mov          r5, r0
+000261F4: ldr          r0, [sp, #0x48]
+000261F6: b            #0x261fc
+000261F8: mov          r5, r0
+000261FA: ldr          r0, [sp, #0x20]
+000261FC: cmp          r6, r0
+000261FE: bne          #0x26206
+00026200: ldr          r1, [r0]
+00026202: ldr          r1, [r1, #0x10]
+00026204: b            #0x2620c
+00026206: cbz          r0, #0x2620e
+00026208: ldr          r1, [r0]
+0002620A: ldr          r1, [r1, #0x14]
+0002620C: blx          r1
+0002620E: ldr          r0, [sp, #0x70]
+00026210: cmp          r8, r0
+00026212: bne          #0x2621a
+00026214: ldr          r1, [r0]
+00026216: ldr          r1, [r1, #0x10]
+00026218: b            #0x26220
+0002621A: cbz          r0, #0x26222
+0002621C: ldr          r1, [r0]
+0002621E: ldr          r1, [r1, #0x14]
+00026220: blx          r1
+00026222: mov          r0, r5
+00026224: blx          #0x57fc

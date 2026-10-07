@@ -1,0 +1,22 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+006100FC: bytes=b'\xd6\xef'
+00610100: bytes=b'minHiccupOccurrenceFrequency_s'
+00BF7D88: bytes=b'd'
+00BF7D9E: bytes=b'hiccupsWontOccurAfterBeingCuredTime_s'
+00610390: bytes=b'\x9e\xee F\x93\xf6\x88\xee$data'
+006103AC: bytes=b'PLAYER_CURED'
+006103A0: bytes=b'SELF_CURED'
+006103BC: bytes=b'robot.hiccups.ended'
+006103D0: bytes=b'%s'
+RANGE 0x0061029C..0x006102B6 exclusive; Thumb; _ZNK4Anki5Cozmo29ReactionTriggerStrategyHiccup10HasHiccupsEv
+0061029C: push         {r4, lr}
+0061029E: mov          r4, r0
+006102A0: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+006102A4: blx          #0x4a7b58 ; Anki::BaseStationTimer::GetCurrentTimeStamp
+006102A8: ldr          r2, [r4, #0x2c]
+006102AA: movs         r1, #0
+006102AC: cmp          r0, r2
+006102AE: it           hi
+006102B0: movhi        r1, #1
+006102B2: mov          r0, r1
+006102B4: pop          {r4, pc}

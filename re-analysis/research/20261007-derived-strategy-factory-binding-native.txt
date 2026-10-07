@@ -1,0 +1,110 @@
+0 0x60d6a4
+1 0x60d700
+2 0x60d714
+3 0x60d728
+4 0x60d73c
+5 0x60d750
+6 0x60d764
+7 0x60d7b2
+8 0x60d7c6
+9 0x60d7da
+10 0x60d7ee
+11 0x60d802
+12 0x60d854
+13 0x60d878
+14 0x60d88c
+15 0x60d8da
+16 0x60d8fc
+17 0x60d91e
+18 0x60d956
+19 0x60d9a6
+20 0x60d96a
+21 0x60d64a
+22 0x60d64a
+tag 0xc75ac0 22003400
+tag 0xc75ac4 1e003a00
+tag 0xc75ac6 3a003500
+tag 0xc75ac8 35003c00
+tag 0xc75aca 3c000000
+vt 0x102cec8
+RANGE 0x0060DC76..0x0060DCD6 exclusive; Thumb;
+0060DC76: push         {r4, r5, r6, lr}
+0060DC78: mov          r6, r2
+0060DC7A: mov          r4, r0
+0060DC7C: ldr          r0, [r6, #0x44]
+0060DC7E: movs         r1, #0
+0060DC80: movs         r5, #0
+0060DC82: blx          #0x4b6dd4 ; Anki::Cozmo::BehaviorManager::IsReactionTriggerEnabled
+0060DC86: cmp          r0, #1
+0060DC88: bne          #0x60dc94
+0060DC8A: ldr          r0, [r6, #0x44]
+0060DC8C: blx          #0x4b7068 ; Anki::Cozmo::BehaviorManager::GetCurrentReactionTrigger
+0060DC90: cbz          r0, #0x60dc98
+0060DC92: movs         r5, #1
+0060DC94: mov          r0, r5
+0060DC96: pop          {r4, r5, r6, pc}
+0060DC98: ldr          r0, [r4, #4]
+0060DC9A: ldr          r1, [r0]
+0060DC9C: ldr          r1, [r1, #0x10]
+0060DC9E: pop.w        {r4, r5, r6, lr}
+0060DCA2: bx           r1
+0060DCA4: ldr          r2, [pc, #0x10] ; word[0060DCB8]=00667F22
+0060DCA6: ldr          r3, [r1, #4]
+0060DCA8: movs         r1, #0
+0060DCAA: add          r2, pc
+0060DCAC: cmp          r3, r2
+0060DCAE: it           eq
+0060DCB0: addeq        r1, r0, #4
+0060DCB2: mov          r0, r1
+0060DCB4: bx           lr
+0060DCB6: nop
+0060DCB8: ldrb         r2, [r4, #0x1c]
+0060DCBA: lsls         r6, r4, #1
+0060DCBC: ldr          r0, [pc, #4] ; word[0060DCC4]=00A1F23E
+0060DCBE: add          r0, pc
+0060DCC0: bx           lr
+0060DCC2: nop
+vt 0x102cf08
+RANGE 0x0060DCFA..0x0060DD5A exclusive; Thumb;
+0060DCFA: push         {r7, lr}
+0060DCFC: add.w        r0, r1, #0x10
+0060DD00: blx          #0x4b3a8c ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Get_MotorCalibration
+0060DD04: ldrb         r1, [r0, #1]
+0060DD06: ldrb         r0, [r0, #2]
+0060DD08: cmp          r1, #0
+0060DD0A: it           ne
+0060DD0C: movne        r1, #1
+0060DD0E: cmp          r0, #0
+0060DD10: it           ne
+0060DD12: movne        r0, #1
+0060DD14: ands         r0, r1
+0060DD16: pop          {r7, pc}
+0060DD18: ldr          r2, [pc, #0x10] ; word[0060DD2C]=0066803E
+0060DD1A: ldr          r3, [r1, #4]
+0060DD1C: movs         r1, #0
+0060DD1E: add          r2, pc
+0060DD20: cmp          r3, r2
+0060DD22: it           eq
+0060DD24: addeq        r1, r0, #4
+0060DD26: mov          r0, r1
+0060DD28: bx           lr
+0060DD2A: nop
+0060DD2C: strh         r6, [r7]
+0060DD2E: lsls         r6, r4, #1
+0060DD30: ldr          r0, [pc, #4] ; word[0060DD38]=00A1F20A
+0060DD32: add          r0, pc
+0060DD34: bx           lr
+0060DD36: nop
+0060DD38: addw         r0, sl, #0xa1
+0060DD3C: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060DD40: push         {r7, lr}
+0060DD42: movs         r0, #8
+0060DD44: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0060DD48: ldr          r1, [pc, #8] ; word[0060DD54]=00A1F1FA
+0060DD4A: add          r1, pc
+0060DD4C: adds         r1, #8
+0060DD4E: str          r1, [r0]
+0060DD50: pop          {r7, pc}
+0060DD52: nop
+vt 0x102cf4a
+RANGE 0xDD790060..0xDD7900C0 exclusive; Thumb;

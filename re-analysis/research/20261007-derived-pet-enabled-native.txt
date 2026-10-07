@@ -1,0 +1,20 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00611FA4..0x00611FCE exclusive; Thumb; _ZN4Anki5Cozmo42ReactionTriggerStrategyPetInitialDetection13InitReactedToERKNS0_5RobotE
+00611FA4: push         {r4, r5, r6, lr}
+00611FA6: mov          r5, r0
+00611FA8: mov          r4, r1
+00611FAA: mov          r6, r5
+00611FAC: add.w        r0, r5, #0x34
+00611FB0: ldr          r1, [r6, #0x38]!
+00611FB4: blx          #0x4a5ce0 ; std::__ndk1::__tree<int,std::__ndk1::less<int>,std::__ndk1::allocator<int>>::destroy
+00611FB8: movs         r0, #0
+00611FBA: str          r6, [r5, #0x34]
+00611FBC: str          r0, [r5, #0x3c]
+00611FBE: mov          r1, r4
+00611FC0: str          r0, [r6]
+00611FC2: mov          r0, r5
+00611FC4: pop.w        {r4, r5, r6, lr}
+00611FC8: b.w          #0x8cc9cc
+00611FCC: subs         r0, #0x2c
+RANGE 0x008CC9C4..0x008CC9D0 exclusive; ARM;
+008CC9C4: add          pc, ip, pc

@@ -1,0 +1,40 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0071232C..0x00712374 exclusive; Thumb; _ZNK4Anki5Cozmo17ExternalInterface14FallingStarted4SizeEv
+0071232C: movs         r0, #0
+0071232E: bx           lr
+00712330: movs         r0, #1
+00712332: bx           lr
+00712334: movs         r0, #0
+00712336: bx           lr
+00712338: push         {r4, lr}
+0071233A: mov          r4, r0
+0071233C: blx          #0x4c1964 ; Anki::Cozmo::ExternalInterface::FallingStopped::Unpack
+00712340: mov          r0, r4
+00712342: pop          {r4, pc}
+00712344: push         {r4, r5, r7, lr}
+00712346: mov          r4, r1
+00712348: mov          r5, r0
+0071234A: mov          r0, r4
+0071234C: mov          r1, r5
+0071234E: movs         r2, #4
+00712350: blx          #0x4bfbc4 ; CLAD::SafeMessageBuffer::ReadBytes
+00712354: adds         r1, r5, #4
+00712356: mov          r0, r4
+00712358: movs         r2, #4
+0071235A: blx          #0x4bfbc4 ; CLAD::SafeMessageBuffer::ReadBytes
+0071235E: mov          r0, r4
+00712360: pop.w        {r4, r5, r7, lr}
+00712364: b.w          #0x8cde1c
+00712368: push         {r4, r5, r7, lr}
+0071236A: sub          sp, #0x18
+0071236C: add          r5, sp, #4
+0071236E: mov          r4, r0
+00712370: movs         r3, #0
+00712372: mov          r0, r5
+RANGE 0x0071228E..0x0071229C exclusive; Thumb; _ZN4Anki5Cozmo17ExternalInterface14FallingStartedC1ERKN4CLAD17SafeMessageBufferE
+0071228E: push         {r4, lr}
+00712290: mov          r4, r0
+00712292: mov          r0, r1
+00712294: blx          #0x4bfbdc ; CLAD::SafeMessageBuffer::GetBytesRead
+00712298: mov          r0, r4
+0071229A: pop          {r4, pc}

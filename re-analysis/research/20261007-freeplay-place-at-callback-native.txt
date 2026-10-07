@@ -1,0 +1,203 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005E191C..0x005E1B64 exclusive; Thumb;
+005E191C: mov          r4, r8
+005E191E: ldr          r0, [r4, #8]!
+005E1922: ldr.w        r0, [r0, #0x284]
+005E1926: ldr          r0, [r0, #8]
+005E1928: adds         r1, r0, #1
+005E192A: beq.w        #0x5e1a6e
+005E192E: ldr.w        r1, [sb, #0x12c]
+005E1932: movs         r5, #0
+005E1934: ldr.w        r2, [r8, #0x18]
+005E1938: cmp          r0, r1
+005E193A: it           eq
+005E193C: moveq        r5, #1
+005E193E: cmp          r2, #2
+005E1940: bgt.w        #0x5e1a70
+005E1944: cmp          r0, r1
+005E1946: bne.w        #0x5e1a70
+005E194A: add          r6, sp, #0x3c
+005E194C: add.w        r1, sb, #0x40
+005E1950: adr          r2, #0x24c
+005E1952: mov          r0, r6
+005E1954: blx          #0x4a7318 ; std::__ndk1::operator+
+005E1958: ldrb.w       r0, [sp, #0x3c]
+005E195C: movs         r1, #0
+005E195E: ldr          r7, [sp, #0x44]
+005E1960: strd         r1, r1, [sp, #0x30]
+005E1964: tst.w        r0, #1
+005E1968: str          r1, [sp, #0x38]
+005E196A: it           eq
+005E196C: orreq        r7, r6, #1
+005E1970: ldr.w        r4, [sb, #0x12c]
+005E1974: add.w        r6, r8, #0xc
+005E1978: mov          r0, r6
+005E197A: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E197E: vldr         s16, [r0, #0x20]
+005E1982: mov          r0, r6
+005E1984: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E1988: vldr         s18, [r0, #0x24]
+005E198C: mov          r0, r6
+005E198E: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E1992: vldr         s2, [r0, #0x28]
+005E1996: ldr          r0, [pc, #0x22c] ; word[005E1BC4]=0060C921
+005E1998: vcvt.f64.f32 d0, s16
+005E199C: add          r0, pc
+005E199E: vcvt.f64.f32 d2, s18
+005E19A2: vcvt.f64.f32 d1, s2
+005E19A6: add          r2, sp, #0x30
+005E19A8: adr          r3, #0x21c
+005E19AA: mov          r1, r7
+005E19AC: vstr         d0, [sp, #8]
+005E19B0: str          r4, [sp]
+005E19B2: vstr         d2, [sp, #0x10]
+005E19B6: vstr         d1, [sp, #0x18]
+005E19BA: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005E19BE: ldr          r0, [sp, #0x30]
+005E19C0: cbz          r0, #0x5e19e0
+005E19C2: ldr          r1, [sp, #0x34]
+005E19C4: cmp          r1, r0
+005E19C6: itttt        ne
+005E19C8: subne.w      r2, r1, #8
+005E19CC: subne        r2, r2, r0
+005E19CE: mvnne        r3, #7
+005E19D2: bicne.w      r2, r3, r2
+005E19D6: itt          ne
+005E19D8: addne        r1, r1, r2
+005E19DA: strne        r1, [sp, #0x34]
+005E19DC: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E19E0: ldrb.w       r0, [sp, #0x3c]
+005E19E4: lsls         r0, r0, #0x1f
+005E19E6: itt          ne
+005E19E8: ldrne        r0, [sp, #0x44]
+005E19EA: blxne        #0x4a40cc
+005E19EE: ldr.w        r0, [r8, #0x18]
+005E19F2: mov          r2, r6
+005E19F4: ldr.w        r1, [r8, #8]
+005E19F8: adds         r3, r0, #1
+005E19FA: mov          r0, sb
+005E19FC: blx          #0x4b4af4 ; Anki::Cozmo::BehaviorExploreBringCubeToBeacon::TryToPlaceAt
+005E1A00: b            #0x5e1b5a
+005E1A02: ldr          r2, [pc, #0x244] ; word[005E1C48]=00612ABD
+005E1A04: add          r6, sp, #0x3c
+005E1A06: add.w        r1, sb, #0x40
+005E1A0A: add          r2, pc
+005E1A0C: mov          r0, r6
+005E1A0E: blx          #0x4a7318 ; std::__ndk1::operator+
+005E1A12: ldr          r0, [pc, #0x238] ; word[005E1C4C]=0060C8A1
+005E1A14: movs         r7, #0
+005E1A16: ldrb.w       r2, [sp, #0x3c]
+005E1A1A: ldr          r1, [sp, #0x44]
+005E1A1C: add          r0, pc
+005E1A1E: ldr          r3, [pc, #0x230] ; word[005E1C50]=00612ABB
+005E1A20: tst.w        r2, #1
+005E1A24: strd         r7, r7, [sp, #0x30]
+005E1A28: str          r7, [sp, #0x38]
+005E1A2A: it           eq
+005E1A2C: orreq        r1, r6, #1
+005E1A30: add          r3, pc
+005E1A32: add          r2, sp, #0x30
+005E1A34: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005E1A38: ldr          r0, [sp, #0x30]
+005E1A3A: cbz          r0, #0x5e1a5a
+005E1A3C: ldr          r1, [sp, #0x34]
+005E1A3E: cmp          r1, r0
+005E1A40: itttt        ne
+005E1A42: subne.w      r2, r1, #8
+005E1A46: subne        r2, r2, r0
+005E1A48: mvnne        r3, #7
+005E1A4C: bicne.w      r2, r3, r2
+005E1A50: itt          ne
+005E1A52: addne        r1, r1, r2
+005E1A54: strne        r1, [sp, #0x34]
+005E1A56: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1A5A: ldrb.w       r0, [sp, #0x3c]
+005E1A5E: lsls         r0, r0, #0x1f
+005E1A60: itt          ne
+005E1A62: ldrne        r0, [sp, #0x44]
+005E1A64: blxne        #0x4a40cc
+005E1A68: add.w        r4, r8, #8
+005E1A6C: b            #0x5e1b32
+005E1A6E: movs         r5, #0
+005E1A70: add          r7, sp, #0x3c
+005E1A72: add.w        r1, sb, #0x40
+005E1A76: adr          r2, #0x190
+005E1A78: mov          r0, r7
+005E1A7A: blx          #0x4a7318 ; std::__ndk1::operator+
+005E1A7E: ldrb.w       r0, [sp, #0x3c]
+005E1A82: movs         r1, #0
+005E1A84: ldr          r6, [sp, #0x44]
+005E1A86: strd         r1, r1, [sp, #0x30]
+005E1A8A: tst.w        r0, #1
+005E1A8E: str          r1, [sp, #0x38]
+005E1A90: it           eq
+005E1A92: orreq        r6, r7, #1
+005E1A96: ldr.w        sl, [sb, #0x12c]
+005E1A9A: add.w        r7, r8, #0xc
+005E1A9E: mov          r0, r7
+005E1AA0: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E1AA4: vldr         s16, [r0, #0x20]
+005E1AA8: mov          r0, r7
+005E1AAA: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E1AAE: vldr         s18, [r0, #0x24]
+005E1AB2: mov          r0, r7
+005E1AB4: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+005E1AB8: ldr.w        r1, [r8, #0x18]
+005E1ABC: adr          r2, #0x174
+005E1ABE: ldr.w        ip, [pc, #0x16c] ; word[005E1C2C]=0060C7F3
+005E1AC2: adr          r7, #0x174
+005E1AC4: ldr          r3, [pc, #0x168] ; word[005E1C30]=006129AD
+005E1AC6: vcvt.f64.f32 d0, s16
+005E1ACA: add          ip, pc
+005E1ACC: cmp          r5, #0
+005E1ACE: add          r3, pc
+005E1AD0: vldr         s4, [r0, #0x28]
+005E1AD4: it           ne
+005E1AD6: movne        r7, r2
+005E1AD8: vcvt.f64.f32 d1, s18
+005E1ADC: vcvt.f64.f32 d2, s4
+005E1AE0: movs         r0, #3
+005E1AE2: add          r2, sp, #0x30
+005E1AE4: strd         r1, r0, [sp, #0x20]
+005E1AE8: mov          r0, ip
+005E1AEA: mov          r1, r6
+005E1AEC: str          r7, [sp, #0x28]
+005E1AEE: vstr         d0, [sp, #8]
+005E1AF2: str.w        sl, [sp]
+005E1AF6: vstr         d1, [sp, #0x10]
+005E1AFA: vstr         d2, [sp, #0x18]
+005E1AFE: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005E1B02: ldr          r0, [sp, #0x30]
+005E1B04: cbz          r0, #0x5e1b24
+005E1B06: ldr          r1, [sp, #0x34]
+005E1B08: cmp          r1, r0
+005E1B0A: itttt        ne
+005E1B0C: subne.w      r2, r1, #8
+005E1B10: subne        r2, r2, r0
+005E1B12: mvnne        r3, #7
+005E1B16: bicne.w      r2, r3, r2
+005E1B1A: itt          ne
+005E1B1C: addne        r1, r1, r2
+005E1B1E: strne        r1, [sp, #0x34]
+005E1B20: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1B24: ldrb.w       r0, [sp, #0x3c]
+005E1B28: lsls         r0, r0, #0x1f
+005E1B2A: beq          #0x5e1b32
+005E1B2C: ldr          r0, [sp, #0x44]
+005E1B2E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005E1B32: ldr          r0, [r4]
+005E1B34: add.w        r1, sb, #0x128
+005E1B38: mov.w        r2, #-1
+005E1B3C: ldr          r0, [r0, #0x34]
+005E1B3E: blx          #0x4a7114 ; Anki::Cozmo::BlockWorld::GetLocatedObjectByIdHelper
+005E1B42: mov          r1, r0
+005E1B44: cbz          r1, #0x5e1b5a
+005E1B46: ldr.w        r0, [r8, #8]
+005E1B4A: add.w        r3, r8, #0xc
+005E1B4E: movs         r2, #2
+005E1B50: ldr.w        r0, [r0, #0x264]
+005E1B54: ldr          r0, [r0, #0x18]
+005E1B56: blx          #0x4acb80 ; Anki::Cozmo::AIWhiteboard::SetFailedToUse
+005E1B5A: add          sp, #0x48
+005E1B5C: vpop         {d8, d9}
+005E1B60: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}

@@ -1,0 +1,45 @@
+ASSET re-analysis\obb\assets\cozmo_resources\config\engine\behaviorSystem\reactionTrigger_behavior_map.json
+SHA256 5ba31f971a4a30cb14d17736f63cc62864b8fb67999881d7ee7f53dde2d8d78e
+{"reactionTrigger":"FacePositionUpdated","behaviorID":"AcknowledgeFace"}
+{"reactionTrigger":"FistBump","behaviorID":"FistBump","behaviorObjectiveTriggerParams":[{"behaviorObjective":"StackedBlock","triggerCooldownTime_s":180.0,"triggerProbability":0.2,"triggerExpiration_s":3.0},{"behaviorObjective":"BuiltPyramid","triggerCooldownTime_s":180.0,"triggerProbability":0.5,"triggerExpiration_s":3.0},{"behaviorObjective":"InteractedWithFace","triggerCooldownTime_s":300.0,"triggerProbability":0.75,"triggerExpiration_s":3.0},{"behaviorObjective":"PeekABooSuccess","triggerCooldownTime_s":300.0,"triggerProbability":0.2,"triggerExpiration_s":3.0},{"behaviorObjective":"PerformedStrongWorkout","triggerCooldownTime_s":180.0,"triggerProbability":0.5,"triggerExpiration_s":3.0},{"behaviorObjective":"PoppedWheelie","triggerCooldownTime_s":180.0,"triggerProbability":0.2,"triggerExpiration_s":6.0}]}
+FistBump/FistBump.behaviorObjectiveTriggerParams[0].triggerCooldownTime_s decimal=180.0 binary32=00003443 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[0].triggerProbability decimal=0.2 binary32=cdcc4c3e (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[0].triggerExpiration_s decimal=3.0 binary32=00004040 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[1].triggerCooldownTime_s decimal=180.0 binary32=00003443 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[1].triggerProbability decimal=0.5 binary32=0000003f (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[1].triggerExpiration_s decimal=3.0 binary32=00004040 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[2].triggerCooldownTime_s decimal=300.0 binary32=00009643 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[2].triggerProbability decimal=0.75 binary32=0000403f (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[2].triggerExpiration_s decimal=3.0 binary32=00004040 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[3].triggerCooldownTime_s decimal=300.0 binary32=00009643 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[3].triggerProbability decimal=0.2 binary32=cdcc4c3e (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[3].triggerExpiration_s decimal=3.0 binary32=00004040 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[4].triggerCooldownTime_s decimal=180.0 binary32=00003443 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[4].triggerProbability decimal=0.5 binary32=0000003f (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[4].triggerExpiration_s decimal=3.0 binary32=00004040 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[5].triggerCooldownTime_s decimal=180.0 binary32=00003443 (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[5].triggerProbability decimal=0.2 binary32=cdcc4c3e (little-endian bytes)
+FistBump/FistBump.behaviorObjectiveTriggerParams[5].triggerExpiration_s decimal=6.0 binary32=0000c040 (little-endian bytes)
+{"reactionTrigger":"Hiccup","behaviorID":"Hiccup","hiccupParams":{"minHiccupOccurrenceFrequency_s":300,"maxHiccupOccurrenceFrequency_s":3300,"minNumberOfHiccupsToDo":5,"maxNumberOfHiccupsToDo":10,"minHiccupSpacing_ms":4500,"maxHiccupSpacing_ms":8000,"hiccupsWontOccurAfterBeingCuredTime_s":600,"hiccupsUnlockId":"DroneModeGame"}}
+{"reactionTrigger":"ObjectPositionUpdated","behaviorID":"AcknowledgeObject"}
+{"reactionTrigger":"CliffDetected","behaviorID":"ReactToCliff","genericStrategyParams":{"shouldResumeLast":true,"debugStrategyName":"Trigger Strategy React To Cliff"}}
+{"reactionTrigger":"CubeMoved","behaviorID":"ReactToCubeMoved"}
+{"reactionTrigger":"Frustration","behaviorID":"ReactToFrustrationMinor","frustrationParams":{"maxConfidence":-0.6,"cooldownTime_s":60.0}}
+Frustration/ReactToFrustrationMinor.frustrationParams.maxConfidence decimal=-0.6 binary32=9a9919bf (little-endian bytes)
+Frustration/ReactToFrustrationMinor.frustrationParams.cooldownTime_s decimal=60.0 binary32=00007042 (little-endian bytes)
+{"reactionTrigger":"Frustration","behaviorID":"ReactToFrustrationMajor","frustrationParams":{"maxConfidence":-0.9}}
+Frustration/ReactToFrustrationMajor.frustrationParams.maxConfidence decimal=-0.9 binary32=666666bf (little-endian bytes)
+{"reactionTrigger":"MotorCalibration","behaviorID":"ReactToMotorCalibration","genericStrategyParams":{"shouldResumeLast":true,"debugStrategyName":"Trigger Strategy Motor Calibration"}}
+{"reactionTrigger":"NoPreDockPoses","behaviorID":"RamIntoBlock"}
+{"reactionTrigger":"PlacedOnCharger","behaviorID":"ReactToOnCharger","wantsToRunStrategyConfig":{"strategyType":"PlacedOnCharger"}}
+{"reactionTrigger":"PetInitialDetection","behaviorID":"ReactToPet"}
+{"reactionTrigger":"RobotFalling","behaviorID":"ReactToImpact","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Falling"}}
+{"reactionTrigger":"RobotPickedUp","behaviorID":"ReactToPickup","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Pickup"}}
+{"reactionTrigger":"RobotPlacedOnSlope","behaviorID":"ReactToPlacedOnSlope","wantsToRunStrategyConfig":{"strategyType":"RobotPlacedOnSlope"}}
+{"reactionTrigger":"ReturnedToTreads","behaviorID":"ReactToReturnedToTreads","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Returned to Treads"}}
+{"reactionTrigger":"RobotOnBack","behaviorID":"ReactToRobotOnBack","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Robot On Back"}}
+{"reactionTrigger":"RobotOnFace","behaviorID":"ReactToRobotOnFace","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Robot On Face"}}
+{"reactionTrigger":"RobotOnSide","behaviorID":"ReactToRobotOnSide","genericStrategyParams":{"shouldResumeLast":false,"debugStrategyName":"Trigger Strategy Robot On Side"}}
+{"reactionTrigger":"RobotShaken","behaviorID":"ReactToRobotShaken","wantsToRunStrategyConfig":{"strategyType":"RobotShaken"}}
+{"reactionTrigger":"Sparked","behaviorID":"ReactToSparked"}
+{"reactionTrigger":"UnexpectedMovement","behaviorID":"ReactToUnexpectedMovement","genericStrategyParams":{"shouldResumeLast":true,"debugStrategyName":"Trigger Strategy Unexpected Movement"}}
