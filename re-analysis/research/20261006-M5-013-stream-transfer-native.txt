@@ -1,0 +1,126 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57bf2c 0x57bf60 _ZN4Anki5Cozmo17AnimationStreamer19BufferMessageToSendEPNS0_14RobotInterface13EngineToRobotE
+0057BF2C: push       {r4, r5, r7, lr} ;
+0057BF2E: mov        r5, r1 ;
+0057BF30: mov        r4, r0 ;
+0057BF32: cbz        r5, #0x57bf5c ;
+0057BF34: movs       r0, #0xc ;
+0057BF36: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+0057BF3A: ldr.w      r2, [r4, #0x8c] ;
+0057BF3E: add.w      r1, r4, #0x8c ;
+0057BF42: strd       r2, r1, [r0] ;
+0057BF46: str        r5, [r0, #8] ;
+0057BF48: str        r0, [r2, #4] ;
+0057BF4A: ldr.w      r1, [r4, #0x94] ;
+0057BF4E: str.w      r0, [r4, #0x8c] ;
+0057BF52: adds       r0, r1, #1 ;
+0057BF54: str.w      r0, [r4, #0x94] ;
+0057BF58: movs       r0, #1 ;
+0057BF5A: pop        {r4, r5, r7, pc} ;
+0057BF5C: movs       r0, #0 ;
+0057BF5E: pop        {r4, r5, r7, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57c8aa 0x57c8d0
+0057C8AA: blx        #0x4add20 ; GOT 010436EC _ZN4Anki5Cozmo9Animation8GetTrackINS0_29TurnToRecordedHeadingKeyFrameEEERNS0_10Animations5TrackIT_EEv
+0057C8AE: str        r0, [sp, #0x28] ;
+0057C8B0: mov        r0, sl ;
+0057C8B2: blx        #0x4add2c ; GOT 010436F0 _ZN4Anki5Cozmo9Animation8GetTrackINS0_13EventKeyFrameEEERNS0_10Animations5TrackIT_EEv
+0057C8B6: str        r0, [sp, #0x34] ;
+0057C8B8: mov        r0, sl ;
+0057C8BA: blx        #0x4ac514 ; GOT 01042EE8 _ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv
+0057C8BE: str        r0, [sp, #0x40] ;
+0057C8C0: ldr        r0, [r7, #0xc] ;
+0057C8C2: cmp        r0, r7 ;
+0057C8C4: beq        #0x57c8e4 ;
+0057C8C6: ldr.w      r1, [r5, #0x80] ;
+0057C8CA: adds       r0, #8 ;
+0057C8CC: mov        r2, r8 ;
+0057C8CE: .byte      0x31, 0xf7 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57c9f6 0x57ca26
+0057C9F6: .byte      0x2e, 0xe9 ;
+0057C9F8: ldrd       r1, r2, [r5, #0x80] ;
+0057C9FC: ldr        r0, [sp, #0x34] ;
+0057C9FE: blx        #0x4add8c ; GOT 01043710 _ZN4Anki5Cozmo10Animations5TrackINS0_13EventKeyFrameEE26GetCurrentStreamingMessageEjj
+0057CA02: mov        r1, r0 ;
+0057CA04: mov        r0, r5 ;
+0057CA06: blx        #0x4adc54 ; GOT 010436A8 _ZN4Anki5Cozmo17AnimationStreamer19BufferMessageToSendEPNS0_14RobotInterface13EngineToRobotE
+0057CA0A: ldrd       r1, r2, [r5, #0x80] ;
+0057CA0E: ldr        r0, [sp, #0x40] ;
+0057CA10: blx        #0x4add98 ; GOT 01043714 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj
+0057CA14: mov        r1, r0 ;
+0057CA16: mov        r0, r5 ;
+0057CA18: blx        #0x4adc54 ; GOT 010436A8 _ZN4Anki5Cozmo17AnimationStreamer19BufferMessageToSendEPNS0_14RobotInterface13EngineToRobotE
+0057CA1C: cbnz       r0, #0x57ca34 ;
+0057CA1E: ldr        r1, [sp, #0x40] ;
+0057CA20: ldr        r0, [r1, #0xc] ;
+0057CA22: cmp        r0, r1 ;
+0057CA24: bne        #0x57ca34 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f97c8 0x4f9868 _ZN4Anki5Cozmo21FaceAnimationKeyFrame16GetStreamMessageEv
+004F97C8: push       {r4, r5, r6, lr} ;
+004F97CA: sub        sp, #0x10 ;
+004F97CC: mov        r4, r0 ;
+004F97CE: ldr        r0, [r4] ;
+004F97D0: ldr        r1, [r0, #8] ;
+004F97D2: mov        r0, r4 ;
+004F97D4: blx        r1 ;
+004F97D6: cbz        r0, #0x4f97de ;
+004F97D8: movs       r5, #0 ;
+004F97DA: str        r5, [r4, #0x24] ;
+004F97DC: b          #0x4f98c4 ;
+004F97DE: ldrb.w     r0, [r4, #0x28] ;
+004F97E2: cbz        r0, #0x4f97ea ;
+004F97E4: add.w      r0, r4, #0x18 ;
+004F97E8: b          #0x4f9818 ;
+004F97EA: ldr        r0, [pc, #0x124] ; literal[004F9910]=00B450E8
+004F97EC: add        r0, pc ;
+004F97EE: ldr        r0, [r0] ;
+004F97F0: ldr        r5, [r0] ;
+004F97F2: cbnz       r5, #0x4f9808 ;
+004F97F4: movs       r0, #0x14 ;
+004F97F6: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+004F97FA: mov        r5, r0 ;
+004F97FC: blx        #0x4a6028 ; GOT 01040D44 _ZN4Anki5Cozmo20FaceAnimationManagerC1Ev
+004F9800: ldr        r0, [pc, #0x110] ; literal[004F9914]=00B450D2
+004F9802: add        r0, pc ;
+004F9804: ldr        r0, [r0] ;
+004F9806: str        r5, [r0] ;
+004F9808: add.w      r6, r4, #0xc ;
+004F980C: ldr        r2, [r4, #0x24] ;
+004F980E: mov        r0, r5 ;
+004F9810: mov        r1, r6 ;
+004F9812: blx        #0x4a6040 ; GOT 01040D4C _ZNK4Anki5Cozmo20FaceAnimationManager8GetFrameERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEj
+004F9816: cbz        r0, #0x4f9868 ;
+004F9818: ldrd       r1, r2, [r0] ;
+004F981C: cmp        r1, r2 ;
+004F981E: beq        #0x4f9860 ;
+004F9820: add.w      r6, r4, #0x18 ;
+004F9824: cmp        r6, r0 ;
+004F9826: itt        ne ;
+004F9828: movne      r0, r6 ;
+004F982A: blxne      #0x4a604c ;
+004F982E: ldr        r0, [r4, #0x24] ;
+004F9830: adds       r0, #1 ;
+004F9832: str        r0, [r4, #0x24] ;
+004F9834: mov.w      r0, #0x408 ;
+004F9838: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+004F983C: mov        r5, r0 ;
+004F983E: add        r0, sp, #4 ;
+004F9840: mov        r1, r6 ;
+004F9842: blx        #0x4a5fd4 ; GOT 01040D28 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEEC2ERKS3_
+004F9846: add        r1, sp, #4 ;
+004F9848: mov        r0, r5 ;
+004F984A: blx        #0x4a5fe0 ; GOT 01040D2C _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS0_12AnimKeyFrame9FaceImageE
+004F984E: ldr        r0, [sp, #4] ;
+004F9850: cbz        r0, #0x4f98c4 ;
+004F9852: ldr        r1, [sp, #8] ;
+004F9854: cmp        r1, r0 ;
+004F9856: it         ne ;
+004F9858: strne      r0, [sp, #8] ;
+004F985A: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F985E: b          #0x4f98c4 ;
+004F9860: ldr        r0, [r4, #0x24] ;
+004F9862: adds       r0, #1 ;
+004F9864: str        r0, [r4, #0x24] ;
+004F9866: b          #0x4f98c2 ;

@@ -1,0 +1,139 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x548f90 0x548fc0
+00548F90: add        r2, pc ;
+00548F92: ldr        r0, [r0] ;
+00548F94: ldr        r1, [r1] ;
+00548F96: ldr        r2, [r2] ;
+00548F98: adds       r0, #8 ;
+00548F9A: str        r0, [r4] ;
+00548F9C: mov        r0, r4 ;
+00548F9E: blx        #0x4a42d0 ; GOT 0104037C __cxa_throw
+00548FA2: cmp        r0, #0 ;
+00548FA4: beq        #0x548f78 ;
+00548FA6: adds       r0, #0x14 ;
+00548FA8: pop        {r4, r5, r7, pc} ;
+00548FAA: mov        r5, r0 ;
+00548FAC: mov        r0, r4 ;
+00548FAE: blx        #0x4a42dc ; GOT 01040380 __cxa_free_exception
+00548FB2: mov        r0, r5 ;
+00548FB4: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+00548FB8: str        r5, [r5, #0x14] ;
+00548FBA: subs       r2, #0x70 ;
+00548FBC: str        r2, [r7, #0x10] ;
+00548FBE: subs       r2, #0x74 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x58d8f8 0x58d928
+0058D8F8: add        r2, pc ;
+0058D8FA: ldr        r0, [r0] ;
+0058D8FC: ldr        r1, [r1] ;
+0058D8FE: ldr        r2, [r2] ;
+0058D900: adds       r0, #8 ;
+0058D902: str        r0, [r4] ;
+0058D904: mov        r0, r4 ;
+0058D906: blx        #0x4a42d0 ; GOT 0104037C __cxa_throw
+0058D90A: cmp        r0, #0 ;
+0058D90C: beq        #0x58d8e0 ;
+0058D90E: adds       r0, #0x14 ;
+0058D910: pop        {r4, r5, r7, pc} ;
+0058D912: mov        r5, r0 ;
+0058D914: mov        r0, r4 ;
+0058D916: blx        #0x4a42dc ; GOT 01040380 __cxa_free_exception
+0058D91A: mov        r0, r5 ;
+0058D91C: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+0058D920: str        r5, [r5, #0x14] ;
+0058D922: subs       r2, #0x70 ;
+0058D924: str        r2, [r7, #0x10] ;
+0058D926: subs       r2, #0x74 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5d1a6c 0x5d1a9c
+005D1A6C: add        r2, pc ;
+005D1A6E: ldr        r0, [r0] ;
+005D1A70: ldr        r1, [r1] ;
+005D1A72: ldr        r2, [r2] ;
+005D1A74: adds       r0, #8 ;
+005D1A76: str        r0, [r4] ;
+005D1A78: mov        r0, r4 ;
+005D1A7A: blx        #0x4a42d0 ; GOT 0104037C __cxa_throw
+005D1A7E: cmp        r0, #0 ;
+005D1A80: beq        #0x5d1a54 ;
+005D1A82: adds       r0, #0x14 ;
+005D1A84: pop        {r4, r5, r7, pc} ;
+005D1A86: mov        r5, r0 ;
+005D1A88: mov        r0, r4 ;
+005D1A8A: blx        #0x4a42dc ; GOT 01040380 __cxa_free_exception
+005D1A8E: mov        r0, r5 ;
+005D1A90: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005D1A94: str        r5, [r5, #0x14] ;
+005D1A96: subs       r2, #0x70 ;
+005D1A98: str        r2, [r7, #0x10] ;
+005D1A9A: subs       r2, #0x74 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x612a48 0x612a78
+00612A48: add        r2, pc ;
+00612A4A: ldr        r0, [r0] ;
+00612A4C: ldr        r1, [r1] ;
+00612A4E: ldr        r2, [r2] ;
+00612A50: adds       r0, #8 ;
+00612A52: str        r0, [r4] ;
+00612A54: mov        r0, r4 ;
+00612A56: blx        #0x4a42d0 ; GOT 0104037C __cxa_throw
+00612A5A: cmp        r0, #0 ;
+00612A5C: beq        #0x612a30 ;
+00612A5E: adds       r0, #0x14 ;
+00612A60: pop        {r4, r5, r7, pc} ;
+00612A62: mov        r5, r0 ;
+00612A64: mov        r0, r4 ;
+00612A66: blx        #0x4a42dc ; GOT 01040380 __cxa_free_exception
+00612A6A: mov        r0, r5 ;
+00612A6C: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+00612A70: str        r5, [r5, #0x14] ;
+00612A72: subs       r2, #0x70 ;
+00612A74: str        r2, [r7, #0x10] ;
+00612A76: subs       r2, #0x74 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x63d29c 0x63d2cc
+0063D29C: add        r2, pc ;
+0063D29E: ldr        r0, [r0] ;
+0063D2A0: ldr        r1, [r1] ;
+0063D2A2: ldr        r2, [r2] ;
+0063D2A4: adds       r0, #8 ;
+0063D2A6: str        r0, [r4] ;
+0063D2A8: mov        r0, r4 ;
+0063D2AA: blx        #0x4a42d0 ; GOT 0104037C __cxa_throw
+0063D2AE: cmp        r0, #0 ;
+0063D2B0: beq        #0x63d284 ;
+0063D2B2: adds       r0, #0x14 ;
+0063D2B4: pop        {r4, r5, r7, pc} ;
+0063D2B6: mov        r5, r0 ;
+0063D2B8: mov        r0, r4 ;
+0063D2BA: blx        #0x4a42dc ; GOT 01040380 __cxa_free_exception
+0063D2BE: mov        r0, r5 ;
+0063D2C0: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+0063D2C4: str        r5, [r5, #0x14] ;
+0063D2C6: subs       r2, #0x70 ;
+0063D2C8: str        r2, [r7, #0x10] ;
+0063D2CA: subs       r2, #0x74 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x63ab1c 0x63ab58
+0063AB1C: strd       r0, r1, [r5, #0x10] ;
+0063AB20: add.w      r0, r5, #0x18 ;
+0063AB24: movs       r1, #0x50 ;
+0063AB26: blx        #0x4a403c ; GOT 010402A0 __aeabi_memclr4
+0063AB2A: movs       r0, #2 ;
+0063AB2C: strb       r6, [r5, #0x1c] ;
+0063AB2E: str        r0, [r5, #0x18] ;
+0063AB30: add.w      r0, r5, #0x44 ;
+0063AB34: add.w      r1, r5, #0x20 ;
+0063AB38: strd       r1, r1, [r1] ;
+0063AB3C: str        r6, [r1, #8] ;
+0063AB3E: adds       r1, #0xc ;
+0063AB40: cmp        r1, r0 ;
+0063AB42: bne        #0x63ab38 ;
+0063AB44: add.w      r1, r5, #0x68 ;
+0063AB48: movs       r2, #0 ;
+0063AB4A: strd       r0, r0, [r0] ;
+0063AB4E: str        r2, [r0, #8] ;
+0063AB50: adds       r0, #0xc ;
+0063AB52: cmp        r0, r1 ;
+0063AB54: bne        #0x63ab4a ;
+0063AB56: movs       r0, #1 ;

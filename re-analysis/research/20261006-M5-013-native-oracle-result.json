@@ -130,6 +130,36 @@
       }
     }
   ],
+  "insertion_and_init_cases": [
+    {
+      "input_flag": 0,
+      "empty_old_tail_output": 0,
+      "nonempty_old_tail_output": 536872424,
+      "expected_old_tail_payload": 536872424,
+      "init_return": 0,
+      "init_current_iterator": 536872416,
+      "expected_begin_node": 536872416,
+      "flags_after_init": [
+        0,
+        0
+      ],
+      "is_empty": 0
+    },
+    {
+      "input_flag": 1,
+      "empty_old_tail_output": 0,
+      "nonempty_old_tail_output": 536872552,
+      "expected_old_tail_payload": 536872552,
+      "init_return": 0,
+      "init_current_iterator": 536872544,
+      "expected_begin_node": 536872544,
+      "flags_after_init": [
+        1,
+        1
+      ],
+      "is_empty": 0
+    }
+  ],
   "cpu_flag_writes": [
     {
       "phase": "list-copy flag=0 length=0",
@@ -164,9 +194,41 @@
       "field": "copied node flag"
     },
     {
+      "phase": "insertion helper flag=0 empty",
+      "pc": "0x564616",
+      "address": "0x20000610",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "insertion helper flag=0 nonempty",
+      "pc": "0x564616",
+      "address": "0x20000650",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "insertion helper flag=1 empty",
+      "pc": "0x564616",
+      "address": "0x20000690",
+      "size": 1,
+      "value": 1,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "insertion helper flag=1 nonempty",
+      "pc": "0x564616",
+      "address": "0x200006d0",
+      "size": 1,
+      "value": 1,
+      "field": "copied node flag"
+    },
+    {
       "phase": "shipped asset FlatBuffer track factory",
       "pc": "0x564616",
-      "address": "0x20000210",
+      "address": "0x20000730",
       "size": 1,
       "value": 0,
       "field": "copied node flag"
@@ -174,7 +236,7 @@
     {
       "phase": "shipped asset FlatBuffer track factory",
       "pc": "0x564616",
-      "address": "0x20000290",
+      "address": "0x200007b0",
       "size": 1,
       "value": 0,
       "field": "copied node flag"
@@ -435,6 +497,94 @@
       ]
     },
     {
+      "import": "_Znwj",
+      "args": [
+        1032,
+        570445824,
+        570445828
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        570445828
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536872400,
+        570445824,
+        4
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        570441728
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        570441728
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536872416,
+        570437688,
+        570437688
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536872480,
+        570437688,
+        570437688
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        570441728
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        570441728
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536872544,
+        570437688,
+        570437688
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536872608,
+        570437688,
+        570437688
+      ]
+    },
+    {
       "import": "__aeabi_memclr4",
       "args": [
         554631128,
@@ -453,7 +603,7 @@
     {
       "import": "__aeabi_memcpy",
       "args": [
-        536871360,
+        536872672,
         570491028,
         19
       ]
@@ -622,22 +772,22 @@
       "import": "_Znwj",
       "args": [
         32,
-        536871360,
+        536872672,
         19
       ]
     },
     {
       "import": "__aeabi_memcpy",
       "args": [
-        536871456,
-        536871360,
+        536872768,
+        536872672,
         19
       ]
     },
     {
       "import": "_ZdlPv",
       "args": [
-        536871360,
+        536872672,
         16904376,
         19
       ]
@@ -645,7 +795,7 @@
     {
       "import": "_ZdlPv",
       "args": [
-        536871456,
+        536872768,
         570429440,
         570429440
       ]
@@ -653,7 +803,7 @@
     {
       "import": "_ZdlPv",
       "args": [
-        536871392,
+        536872704,
         570429440,
         570429440
       ]
@@ -677,7 +827,7 @@
     {
       "import": "__aeabi_memcpy",
       "args": [
-        536871488,
+        536872800,
         570491032,
         19
       ]
@@ -846,22 +996,22 @@
       "import": "_Znwj",
       "args": [
         32,
-        536871488,
+        536872800,
         19
       ]
     },
     {
       "import": "__aeabi_memcpy",
       "args": [
-        536871584,
-        536871488,
+        536872896,
+        536872800,
         19
       ]
     },
     {
       "import": "_ZdlPv",
       "args": [
-        536871488,
+        536872800,
         16904376,
         19
       ]
@@ -869,7 +1019,7 @@
     {
       "import": "_ZdlPv",
       "args": [
-        536871584,
+        536872896,
         570429440,
         570429440
       ]
@@ -877,10 +1027,31 @@
     {
       "import": "_ZdlPv",
       "args": [
-        536871520,
+        536872832,
         570429440,
         570429440
       ]
+    }
+  ],
+  "cached_message_cases": [
+    {
+      "synthetic_flag": 1,
+      "input_payload": "",
+      "message_pointer": 0,
+      "message_aliases_keyframe": false,
+      "index_after": 1,
+      "flag_after": 1
+    },
+    {
+      "synthetic_flag": 1,
+      "input_payload": "0081ff7f",
+      "message_pointer": 536871360,
+      "message_aliases_keyframe": false,
+      "index_after": 1,
+      "flag_after": 1,
+      "message_tag": 151,
+      "native_message_payload": "0081ff7f",
+      "payload_aliases_input": false
     }
   ]
 }

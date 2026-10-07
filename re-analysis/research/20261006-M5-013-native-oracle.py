@@ -1,5 +1,6 @@
-"""Execute shipped keyframe constructor/list-copy/IsDone primitive in Unicorn.
-Only phone allocation/memclr imports are serviced. Not an end-to-end producer trace.
+"""Execute shipped keyframe/container primitives and asset factory in Unicorn.
+Phone allocator/delete, memclr, memcpy/memmove and memchr imports are serviced.
+No engine method is substituted. Not a package-wide producer/alias proof.
 Local dependency: python -m pip install --target re-analysis/research/_m5013_dependencies unicorn==2.1.4
 """
 from pathlib import Path
@@ -108,6 +109,47 @@ for flag in [0,1]:
 uc.mem_write(obj+0x28,b'\x01')
 phase='IsDone synthetic true';done=run(0x4F976C,obj)
 assert done==0
+cached_message_cases=[]
+for payload in [b'',b'\x00\x81\xff\x7f']:
+    p=0x22005000;uc.mem_write(p,payload or b'\x00')
+    for offset,value in zip([0x18,0x1C,0x20],[p,p+len(payload),p+len(payload)]):put(obj+offset,value)
+    put(obj+0x24,0);uc.mem_write(obj+0x28,b'\x01')
+    phase=f'cached-message synthetic flag1 length={len(payload)}'
+    message=run(0x4F97C8,obj)
+    assert bool(message)==bool(payload) and word(obj+0x24)==1 and uc.mem_read(obj+0x28,1)[0]==1
+    cached_message_cases.append({'synthetic_flag':1,'input_payload':payload.hex(),'message_pointer':message,'message_aliases_keyframe':obj<=message<obj+0x2C,'index_after':word(obj+0x24),'flag_after':uc.mem_read(obj+0x28,1)[0]})
+    assert not obj<=message<obj+0x2C
+    if message:
+        begin,end=word(message+4),word(message+8)
+        emitted=bytes(uc.mem_read(begin,end-begin))
+        assert emitted==payload and begin!=p and uc.mem_read(message,1)[0]==0x97
+        cached_message_cases[-1].update({'message_tag':0x97,'native_message_payload':emitted.hex(),'payload_aliases_input':begin==p})
+insertion_cases=[]
+for flag in [0,1]:
+    # Synthetic primitive input; this is not a shipped true-flag producer.
+    uc.mem_write(obj+0x28,bytes([flag]));put(obj+0x24,7)
+    for off in [0x18,0x1C,0x20]:put(obj+off,0)
+    animation=0x22003000;uc.mem_write(animation,bytes(0xF0))
+    for offset in [0x10,0x24,0x38,0x4C,0x60,0x74,0x88,0x9C,0xB0,0xC4,0xD8]:
+        h=animation+offset;put(h,h);put(h+4,h);put(h+8,0);put(h+12,h)
+    head=animation+0x38;output=0x22004000
+    phase=f'insertion helper flag={flag} empty'
+    assert run(0x564508,head,obj,output)==0
+    empty_output=word(output);first=word(head)
+    assert empty_output==0 and word(head+8)==1
+    phase=f'insertion helper flag={flag} nonempty'
+    assert run(0x564508,head,obj,output)==0
+    nonempty_output=word(output);last=word(head)
+    assert nonempty_output==first+8 and word(head+8)==2
+    # Deliberately move current iterator away; Init must reset it to list begin.
+    put(head+12,head);phase=f'Animation Init flag={flag}'
+    init_result=run(0x577BC4,animation)
+    init_flags=[uc.mem_read(node+0x30,1)[0] for node in [first,last]]
+    assert init_result==0 and word(head+12)==first and init_flags==[flag,flag]
+    assert uc.mem_read(animation+12,1)[0]==1
+    phase=f'Animation IsEmpty flag={flag}';assert run(0x577E04,animation)==0
+    insertion_cases.append({'input_flag':flag,'empty_old_tail_output':empty_output,'nonempty_old_tail_output':nonempty_output,'expected_old_tail_payload':first+8,'init_return':init_result,'init_current_iterator':word(head+12),'expected_begin_node':first,'flags_after_init':init_flags,'is_empty':0})
+    phase='insertion native cleanup';run(0x523AB8,head)
 asset_case=None;asset_cases=[];parse_failures=[];files_examined=0
 def asset_field(data,t,n):
     v=t-struct.unpack_from('<i',data,t)[0];size=struct.unpack_from('<H',data,v)[0]
@@ -158,7 +200,8 @@ for asset_case in selected_cases:
     # End this independent list's node lifetimes using the native clear routine.
     phase='factory case native cleanup';run(0x523AB8,head)
 factory=factory_cases[0]
-assert all((w['phase'].startswith('list-copy') or w['phase']=='shipped asset FlatBuffer track factory') and w['pc']=='0x564616' for w in writes)
-result={'engine_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'scope':'Native primitives and shipped-asset FlatBuffer track-factory paths; synthetic true flag tests copy preservation and branch consumption, never an enabling producer. Phone import shims are recorded below. CPU write hook excludes Python fixture setup and shim memset; those operations are explicit in the script/import log.','constructor':constructor,'copy_cases':cases,'vector_assign_cases':assign_cases,'cpu_flag_writes':writes,'is_done_when_flag_true':done,'shipped_asset_factory':factory,'asset_files_examined':files_examined,'asset_parse_failures':parse_failures,'asset_corpus_available_cases':len(asset_cases),'asset_corpus_executed_cases':len(factory_cases),'shipped_asset_factory_cases':factory_cases,'imports_serviced':calls}
+assert all((w['phase'].startswith(('list-copy','insertion helper')) or w['phase']=='shipped asset FlatBuffer track factory') and w['pc']=='0x564616' for w in writes)
+result={'engine_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'scope':'Native primitives and shipped-asset FlatBuffer track-factory paths; synthetic true flag tests copy preservation and branch consumption, never an enabling producer. Phone import shims are recorded below. CPU write hook excludes Python fixture setup and shim memset; those operations are explicit in the script/import log.','constructor':constructor,'copy_cases':cases,'vector_assign_cases':assign_cases,'insertion_and_init_cases':insertion_cases,'cpu_flag_writes':writes,'is_done_when_flag_true':done,'shipped_asset_factory':factory,'asset_files_examined':files_examined,'asset_parse_failures':parse_failures,'asset_corpus_available_cases':len(asset_cases),'asset_corpus_executed_cases':len(factory_cases),'shipped_asset_factory_cases':factory_cases,'imports_serviced':calls}
+result['cached_message_cases']=cached_message_cases
 (out/'20261006-M5-013-native-oracle-result.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
 print(f'Native checks passed, including {len(factory_cases)}/{len(asset_cases)} shipped sprite keyframe factory cases; no global producer-absence claim.')

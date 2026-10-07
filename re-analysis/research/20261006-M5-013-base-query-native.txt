@@ -1,0 +1,27 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f8a70 0x4f8aa4 _ZN4Anki5Cozmo9IKeyFrameC2Ev
+004F8A70: ldr        r1, [pc, #0x10] ; literal[004F8A84]=00B45E50
+004F8A72: movs       r2, #0 ;
+004F8A74: add        r1, pc ;
+004F8A76: ldr        r1, [r1] ;
+004F8A78: adds       r1, #8 ;
+004F8A7A: strd       r1, r2, [r0] ;
+004F8A7E: str        r2, [r0, #8] ;
+004F8A80: bx         lr ;
+004F8A82: nop         ;
+004F8A84: ldrsh      r0, [r2, r1] ;
+004F8A86: lsls       r4, r6, #2 ;
+004F8A88: bx         lr ;
+004F8A8A: ldr        r2, [r0, #4] ;
+004F8A8C: movs       r0, #0 ;
+004F8A8E: cmp        r2, r1 ;
+004F8A90: it         ls ;
+004F8A92: movls      r0, #1 ;
+004F8A94: bx         lr ;
+004F8A96: ldr        r0, [r0, #4] ;
+004F8A98: add        r1, r0 ;
+004F8A9A: movs       r0, #0 ;
+004F8A9C: cmp        r1, r2 ;
+004F8A9E: it         ls ;
+004F8AA0: movls      r0, #1 ;
+004F8AA2: bx         lr ;

@@ -1,0 +1,80 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x548f78 0x548f98
+00548F78: movs       r0, #8 ;
+00548F7A: blx        #0x4a42b8 ; GOT 01040374 __cxa_allocate_exception
+00548F7E: mov        r4, r0 ;
+00548F80: adr        r1, #0x34 ;
+00548F82: blx        #0x4a42c4 ; GOT 01040378 _ZNSt11logic_errorC2EPKc
+00548F86: ldr        r0, [pc, #0x48] ; literal[00548FD0]=00AF587C
+00548F88: ldr        r1, [pc, #0x48] ; literal[00548FD4]=00AF587E
+00548F8A: ldr        r2, [pc, #0x4c] ; literal[00548FD8]=00AF5880
+00548F8C: add        r0, pc ;
+00548F8E: add        r1, pc ;
+00548F90: add        r2, pc ;
+00548F92: ldr        r0, [r0] ;
+00548F94: ldr        r1, [r1] ;
+00548F96: ldr        r2, [r2] ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x58d8e0 0x58d900
+0058D8E0: movs       r0, #8 ;
+0058D8E2: blx        #0x4a42b8 ; GOT 01040374 __cxa_allocate_exception
+0058D8E6: mov        r4, r0 ;
+0058D8E8: adr        r1, #0x34 ;
+0058D8EA: blx        #0x4a42c4 ; GOT 01040378 _ZNSt11logic_errorC2EPKc
+0058D8EE: ldr        r0, [pc, #0x48] ; literal[0058D938]=00AB0F14
+0058D8F0: ldr        r1, [pc, #0x48] ; literal[0058D93C]=00AB0F16
+0058D8F2: ldr        r2, [pc, #0x4c] ; literal[0058D940]=00AB0F18
+0058D8F4: add        r0, pc ;
+0058D8F6: add        r1, pc ;
+0058D8F8: add        r2, pc ;
+0058D8FA: ldr        r0, [r0] ;
+0058D8FC: ldr        r1, [r1] ;
+0058D8FE: ldr        r2, [r2] ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5d1a54 0x5d1a74
+005D1A54: movs       r0, #8 ;
+005D1A56: blx        #0x4a42b8 ; GOT 01040374 __cxa_allocate_exception
+005D1A5A: mov        r4, r0 ;
+005D1A5C: adr        r1, #0x34 ;
+005D1A5E: blx        #0x4a42c4 ; GOT 01040378 _ZNSt11logic_errorC2EPKc
+005D1A62: ldr        r0, [pc, #0x48] ; literal[005D1AAC]=00A6CDA0
+005D1A64: ldr        r1, [pc, #0x48] ; literal[005D1AB0]=00A6CDA2
+005D1A66: ldr        r2, [pc, #0x4c] ; literal[005D1AB4]=00A6CDA4
+005D1A68: add        r0, pc ;
+005D1A6A: add        r1, pc ;
+005D1A6C: add        r2, pc ;
+005D1A6E: ldr        r0, [r0] ;
+005D1A70: ldr        r1, [r1] ;
+005D1A72: ldr        r2, [r2] ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x612a30 0x612a50
+00612A30: movs       r0, #8 ;
+00612A32: blx        #0x4a42b8 ; GOT 01040374 __cxa_allocate_exception
+00612A36: mov        r4, r0 ;
+00612A38: adr        r1, #0x34 ;
+00612A3A: blx        #0x4a42c4 ; GOT 01040378 _ZNSt11logic_errorC2EPKc
+00612A3E: ldr        r0, [pc, #0x48] ; literal[00612A88]=00A2BDC4
+00612A40: ldr        r1, [pc, #0x48] ; literal[00612A8C]=00A2BDC6
+00612A42: ldr        r2, [pc, #0x4c] ; literal[00612A90]=00A2BDC8
+00612A44: add        r0, pc ;
+00612A46: add        r1, pc ;
+00612A48: add        r2, pc ;
+00612A4A: ldr        r0, [r0] ;
+00612A4C: ldr        r1, [r1] ;
+00612A4E: ldr        r2, [r2] ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x63d284 0x63d2a4
+0063D284: movs       r0, #8 ;
+0063D286: blx        #0x4a42b8 ; GOT 01040374 __cxa_allocate_exception
+0063D28A: mov        r4, r0 ;
+0063D28C: adr        r1, #0x34 ;
+0063D28E: blx        #0x4a42c4 ; GOT 01040378 _ZNSt11logic_errorC2EPKc
+0063D292: ldr        r0, [pc, #0x48] ; literal[0063D2DC]=00A01570
+0063D294: ldr        r1, [pc, #0x48] ; literal[0063D2E0]=00A01572
+0063D296: ldr        r2, [pc, #0x4c] ; literal[0063D2E4]=00A01574
+0063D298: add        r0, pc ;
+0063D29A: add        r1, pc ;
+0063D29C: add        r2, pc ;
+0063D29E: ldr        r0, [r0] ;
+0063D2A0: ldr        r1, [r1] ;
+0063D2A2: ldr        r2, [r2] ;

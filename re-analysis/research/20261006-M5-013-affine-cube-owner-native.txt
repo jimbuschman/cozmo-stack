@@ -1,0 +1,32 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x63aad8 0x63ab1e
+0063AAD8: blx        #0x4b93a8 ; GOT 010473C4 _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE16__insert_node_atEPNS_16__tree_node_baseIPvEERSI_SI_
+0063AADC: ldr        r0, [sp, #4] ;
+0063AADE: movs       r1, #1 ;
+0063AAE0: strb       r1, [r4, #4] ;
+0063AAE2: str        r0, [r4] ;
+0063AAE4: add        sp, #0x14 ;
+0063AAE6: pop        {r4, r5, r6, r7, pc} ;
+0063AAE8: push.w     {r4, r5, r6, r7, r8, lr} ;
+0063AAEC: mov        r4, r0 ;
+0063AAEE: movs       r0, #0x68 ;
+0063AAF0: mov        r8, r3 ;
+0063AAF2: mov        r7, r1 ;
+0063AAF4: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+0063AAF8: ldr        r1, [pc, #0x68] ; literal[0063AB64]=00A03E1C
+0063AAFA: adds       r2, r7, #4 ;
+0063AAFC: mov        r5, r0 ;
+0063AAFE: movs       r6, #0 ;
+0063AB00: add        r1, pc ;
+0063AB02: ldr        r0, [pc, #0x5c] ; literal[0063AB60]=00A03D96
+0063AB04: strd       r5, r2, [r4] ;
+0063AB08: str        r6, [r4, #8] ;
+0063AB0A: add        r0, pc ;
+0063AB0C: ldr        r1, [r1] ;
+0063AB0E: ldr.w      r2, [r8] ;
+0063AB12: adds       r1, #8 ;
+0063AB14: str        r1, [r5, #0x10] ;
+0063AB16: ldr        r0, [r0] ;
+0063AB18: ldr        r1, [r2, #4] ;
+0063AB1A: adds       r0, #8 ;
+0063AB1C: .byte      0xc5, 0xe9 ;

@@ -1,0 +1,247 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x564508 0x5645b0 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_
+00564508: push       {r4, lr} ;
+0056450A: sub        sp, #0x10 ;
+0056450C: mov        r4, r0 ;
+0056450E: movs       r0, #0 ;
+00564510: str        r0, [r2] ;
+00564512: ldr        r3, [r4, #8] ;
+00564514: cmp.w      r3, #0x3e8 ;
+00564518: bls        #0x56455e ;
+0056451A: strd       r0, r0, [sp, #4] ;
+0056451E: str        r0, [sp, #0xc] ;
+00564520: ldr        r0, [r1] ;
+00564522: ldr        r2, [pc, #0x88] ; literal[005645AC]=00689347
+00564524: ldr        r0, [r0, #-0x4] ;
+00564528: add        r2, pc ;
+0056452A: ldr        r1, [r0, #4] ;
+0056452C: ldr        r0, [pc, #0x78] ; literal[005645A8]=0068945F
+0056452E: add        r0, pc ;
+00564530: str        r1, [sp] ;
+00564532: add        r1, sp, #4 ;
+00564534: blx        #0x4a4540 ; GOT 0104044C _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00564538: ldr        r0, [sp, #4] ;
+0056453A: cbz        r0, #0x56455a ;
+0056453C: ldr        r1, [sp, #8] ;
+0056453E: cmp        r1, r0 ;
+00564540: itttt      ne ;
+00564542: subne.w    r2, r1, #8 ;
+00564546: subne      r2, r2, r0 ;
+00564548: mvnne      r3, #7 ;
+0056454C: bicne.w    r2, r3, r2 ;
+00564550: itt        ne ;
+00564552: addne      r1, r1, r2 ;
+00564554: strne      r1, [sp, #8] ;
+00564556: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0056455A: movs       r0, #1 ;
+0056455C: b          #0x56457c ;
+0056455E: cmp        r3, #0 ;
+00564560: itte       ne ;
+00564562: ldrne      r0, [r4] ;
+00564564: addne      r0, #8 ;
+00564566: moveq      r0, #0 ;
+00564568: str        r0, [r2] ;
+0056456A: mov        r0, r4 ;
+0056456C: blx        #0x4ac544 ; GOT 01042EF8 _ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE12emplace_backIJRKS3_EEEvDpOT_
+00564570: ldr        r0, [r4, #8] ;
+00564572: cmp        r0, #1 ;
+00564574: itt        eq ;
+00564576: ldreq      r0, [r4, #4] ;
+00564578: streq      r0, [r4, #0xc] ;
+0056457A: movs       r0, #0 ;
+0056457C: add        sp, #0x10 ;
+0056457E: pop        {r4, pc} ;
+00564580: mov        r4, r0 ;
+00564582: ldr        r0, [sp, #4] ;
+00564584: cbz        r0, #0x5645a2 ;
+00564586: ldr        r1, [sp, #8] ;
+00564588: cmp        r1, r0 ;
+0056458A: beq        #0x56459e ;
+0056458C: sub.w      r2, r1, #8 ;
+00564590: mvn        r3, #7 ;
+00564594: subs       r2, r2, r0 ;
+00564596: bic.w      r2, r3, r2 ;
+0056459A: add        r1, r2 ;
+0056459C: str        r1, [sp, #8] ;
+0056459E: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005645A2: mov        r0, r4 ;
+005645A4: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005645A8: str        r4, [sp, #0x17c] ;
+005645AA: lsls       r0, r5, #1 ;
+005645AC: str        r3, [sp, #0x11c] ;
+005645AE: lsls       r0, r5, #1 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x5641e0 0x564290 _ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_
+005641E0: push       {r4, r5, r7, lr} ;
+005641E2: sub        sp, #0x10 ;
+005641E4: mov        r4, r1 ;
+005641E6: mov        r5, r0 ;
+005641E8: blx        #0x4ac514 ; GOT 01042EE8 _ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv
+005641EC: add        r2, sp, #4 ;
+005641EE: mov        r1, r4 ;
+005641F0: blx        #0x4ac520 ; GOT 01042EEC _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_
+005641F4: mov        r4, r0 ;
+005641F6: cbz        r4, #0x564252 ;
+005641F8: movs       r0, #0 ;
+005641FA: ldr        r2, [pc, #0x88] ; literal[00564284]=0068977A
+005641FC: strd       r0, r0, [sp, #4] ;
+00564200: str        r0, [sp, #0xc] ;
+00564202: add        r2, pc ;
+00564204: ldrb       r0, [r5] ;
+00564206: lsls       r0, r0, #0x1f ;
+00564208: ite        eq ;
+0056420A: addeq      r3, r5, #1 ;
+0056420C: ldrne      r3, [r5, #8] ;
+0056420E: ldr        r0, [pc, #0x70] ; literal[00564280]=00689749
+00564210: add        r0, pc ;
+00564212: add        r1, sp, #4 ;
+00564214: blx        #0x4a4108 ; GOT 010402E4 _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00564218: ldr        r0, [sp, #4] ;
+0056421A: cbz        r0, #0x56423a ;
+0056421C: ldr        r1, [sp, #8] ;
+0056421E: cmp        r1, r0 ;
+00564220: itttt      ne ;
+00564222: subne.w    r2, r1, #8 ;
+00564226: subne      r2, r2, r0 ;
+00564228: mvnne      r3, #7 ;
+0056422C: bicne.w    r2, r3, r2 ;
+00564230: itt        ne ;
+00564232: addne      r1, r1, r2 ;
+00564234: strne      r1, [sp, #8] ;
+00564236: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0056423A: ldr        r0, [pc, #0x4c] ; literal[00564288]=00ADA548
+0056423C: movs       r2, #1 ;
+0056423E: ldr        r1, [pc, #0x4c] ; literal[0056428C]=00ADA54A
+00564240: add        r0, pc ;
+00564242: add        r1, pc ;
+00564244: ldr        r0, [r0] ;
+00564246: ldr        r1, [r1] ;
+00564248: ldrb       r0, [r0] ;
+0056424A: strb       r2, [r1] ;
+0056424C: cbz        r0, #0x564252 ;
+0056424E: blx        #0x4a4114 ; GOT 010402E8 _ZN4Anki4Util18sDebugBreakOnErrorEv
+00564252: mov        r0, r4 ;
+00564254: add        sp, #0x10 ;
+00564256: pop        {r4, r5, r7, pc} ;
+00564258: mov        r4, r0 ;
+0056425A: ldr        r0, [sp, #4] ;
+0056425C: cbz        r0, #0x56427a ;
+0056425E: ldr        r1, [sp, #8] ;
+00564260: cmp        r1, r0 ;
+00564262: beq        #0x564276 ;
+00564264: sub.w      r2, r1, #8 ;
+00564268: mvn        r3, #7 ;
+0056426C: subs       r2, r2, r0 ;
+0056426E: bic.w      r2, r3, r2 ;
+00564272: add        r1, r2 ;
+00564274: str        r1, [sp, #8] ;
+00564276: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0056427A: mov        r0, r4 ;
+0056427C: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+00564280: str        r7, [sp, #0x124] ;
+00564282: lsls       r0, r5, #1 ;
+00564284: str        r7, [sp, #0x1e8] ;
+00564286: lsls       r0, r5, #1 ;
+00564288: adr        r5, #0x120 ;
+0056428A: lsls       r5, r5, #2 ;
+0056428C: adr        r5, #0x128 ;
+0056428E: lsls       r5, r5, #2 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x579454 0x5794f4 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_
+00579454: push       {r4, lr} ;
+00579456: sub        sp, #0x10 ;
+00579458: add        r2, sp, #4 ;
+0057945A: mov        r4, r0 ;
+0057945C: blx        #0x4ac520 ; GOT 01042EEC _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_
+00579460: cbnz       r0, #0x5794c0 ;
+00579462: ldr        r0, [r4, #8] ;
+00579464: cmp        r0, #2 ;
+00579466: blo        #0x5794be ;
+00579468: ldr        r1, [r4] ;
+0057946A: ldr        r0, [r1] ;
+0057946C: ldr        r2, [r1, #0xc] ;
+0057946E: ldr        r3, [r0, #0xc] ;
+00579470: movs       r0, #0 ;
+00579472: cmp        r2, r3 ;
+00579474: bhi        #0x5794c0 ;
+00579476: strd       r0, r0, [sp, #4] ;
+0057947A: str        r0, [sp, #0xc] ;
+0057947C: ldr        r0, [r1] ;
+0057947E: ldr        r3, [r1, #0xc] ;
+00579480: ldr        r2, [pc, #0x6c] ; literal[005794F0]=006757A4
+00579482: ldr        r1, [r0, #0xc] ;
+00579484: ldr        r0, [pc, #0x64] ; literal[005794EC]=00675771
+00579486: add        r2, pc ;
+00579488: add        r0, pc ;
+0057948A: str        r1, [sp] ;
+0057948C: add        r1, sp, #4 ;
+0057948E: blx        #0x4a4540 ; GOT 0104044C _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00579492: ldr        r0, [sp, #4] ;
+00579494: cbz        r0, #0x5794b4 ;
+00579496: ldr        r1, [sp, #8] ;
+00579498: cmp        r1, r0 ;
+0057949A: itttt      ne ;
+0057949C: subne.w    r2, r1, #8 ;
+005794A0: subne      r2, r2, r0 ;
+005794A2: mvnne      r3, #7 ;
+005794A6: bicne.w    r2, r3, r2 ;
+005794AA: itt        ne ;
+005794AC: addne      r1, r1, r2 ;
+005794AE: strne      r1, [sp, #8] ;
+005794B0: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005794B4: mov        r0, r4 ;
+005794B6: blx        #0x4ad9f0 ; GOT 010435DC _ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv
+005794BA: movs       r0, #1 ;
+005794BC: b          #0x5794c0 ;
+005794BE: movs       r0, #0 ;
+005794C0: add        sp, #0x10 ;
+005794C2: pop        {r4, pc} ;
+005794C4: mov        r4, r0 ;
+005794C6: ldr        r0, [sp, #4] ;
+005794C8: cbz        r0, #0x5794e6 ;
+005794CA: ldr        r1, [sp, #8] ;
+005794CC: cmp        r1, r0 ;
+005794CE: beq        #0x5794e2 ;
+005794D0: sub.w      r2, r1, #8 ;
+005794D4: mvn        r3, #7 ;
+005794D8: subs       r2, r2, r0 ;
+005794DA: bic.w      r2, r3, r2 ;
+005794DE: add        r1, r2 ;
+005794E0: str        r1, [sp, #8] ;
+005794E2: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005794E6: mov        r0, r4 ;
+005794E8: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005794EC: ldrsb      r1, [r6, r5] ;
+005794EE: lsls       r7, r4, #1 ;
+005794F0: ldrsb      r4, [r4, r6] ;
+005794F2: lsls       r7, r4, #1 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57cd64 0x57cda2 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj
+0057CD64: push       {r4, r5, r6, lr} ;
+0057CD66: mov        r4, r0 ;
+0057CD68: ldr        r0, [r4, #0xc] ;
+0057CD6A: cmp        r0, r4 ;
+0057CD6C: beq        #0x57cd9c ;
+0057CD6E: add.w      r6, r0, #8 ;
+0057CD72: subs       r1, r2, r1 ;
+0057CD74: mov        r0, r6 ;
+0057CD76: blx        #0x4addd4 ; GOT 01043728 _ZNK4Anki5Cozmo9IKeyFrame12IsTimeToPlayEj
+0057CD7A: cmp        r0, #1 ;
+0057CD7C: bne        #0x57cd9c ;
+0057CD7E: ldr        r0, [r6] ;
+0057CD80: ldr        r1, [r0, #4] ;
+0057CD82: mov        r0, r6 ;
+0057CD84: blx        r1 ;
+0057CD86: mov        r5, r0 ;
+0057CD88: ldr        r0, [r6] ;
+0057CD8A: ldr        r1, [r0, #8] ;
+0057CD8C: mov        r0, r6 ;
+0057CD8E: blx        r1 ;
+0057CD90: cmp        r0, #1 ;
+0057CD92: itt        eq ;
+0057CD94: moveq      r0, r4 ;
+0057CD96: blxeq      #0x4ade04 ;
+0057CD9A: b          #0x57cd9e ;
+0057CD9C: movs       r5, #0 ;
+0057CD9E: mov        r0, r5 ;
+0057CDA0: pop        {r4, r5, r6, pc} ;

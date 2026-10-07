@@ -1,0 +1,16 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x7aa8b0 0x7aa8d0 _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC2EONS0_12AnimKeyFrame9FaceImageE
+007AA8B0: movs       r2, #0 ;
+007AA8B2: strd       r2, r2, [r0, #4] ;
+007AA8B6: str        r2, [r0, #0xc] ;
+007AA8B8: ldr        r3, [r1] ;
+007AA8BA: str        r3, [r0, #4] ;
+007AA8BC: ldr        r3, [r1, #4] ;
+007AA8BE: str        r3, [r0, #8] ;
+007AA8C0: ldr        r3, [r1, #8] ;
+007AA8C2: str        r3, [r0, #0xc] ;
+007AA8C4: strd       r2, r2, [r1] ;
+007AA8C8: str        r2, [r1, #8] ;
+007AA8CA: movs       r1, #0x97 ;
+007AA8CC: strb       r1, [r0] ;
+007AA8CE: bx         lr ;
