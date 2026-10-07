@@ -1,0 +1,235 @@
+{
+  "asset": "re-analysis/obb/assets/cozmo_resources/assets/animations/anim_singlepose_01.bin",
+  "clip": "anim_neutral_eyes_01",
+  "first_face": "0x90",
+  "words": [
+    {
+      "eye": "left",
+      "parameter": 0,
+      "offset": "0xf0",
+      "bits": "4112B6F4"
+    },
+    {
+      "eye": "left",
+      "parameter": 1,
+      "offset": "0xf4",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 2,
+      "offset": "0xf8",
+      "bits": "3F9B6F43"
+    },
+    {
+      "eye": "left",
+      "parameter": 3,
+      "offset": "0xfc",
+      "bits": "3F67C075"
+    },
+    {
+      "eye": "left",
+      "parameter": 4,
+      "offset": "0x100",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 5,
+      "offset": "0x104",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 6,
+      "offset": "0x108",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 7,
+      "offset": "0x10c",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 8,
+      "offset": "0x110",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 9,
+      "offset": "0x114",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 10,
+      "offset": "0x118",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 11,
+      "offset": "0x11c",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 12,
+      "offset": "0x120",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 13,
+      "offset": "0x124",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 14,
+      "offset": "0x128",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 15,
+      "offset": "0x12c",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 16,
+      "offset": "0x130",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 17,
+      "offset": "0x134",
+      "bits": "00000000"
+    },
+    {
+      "eye": "left",
+      "parameter": 18,
+      "offset": "0x138",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 0,
+      "offset": "0xa0",
+      "bits": "C1234D4F"
+    },
+    {
+      "eye": "right",
+      "parameter": 1,
+      "offset": "0xa4",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 2,
+      "offset": "0xa8",
+      "bits": "3F9C6BB5"
+    },
+    {
+      "eye": "right",
+      "parameter": 3,
+      "offset": "0xac",
+      "bits": "3F67C075"
+    },
+    {
+      "eye": "right",
+      "parameter": 4,
+      "offset": "0xb0",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 5,
+      "offset": "0xb4",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 6,
+      "offset": "0xb8",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 7,
+      "offset": "0xbc",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 8,
+      "offset": "0xc0",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 9,
+      "offset": "0xc4",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 10,
+      "offset": "0xc8",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 11,
+      "offset": "0xcc",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 12,
+      "offset": "0xd0",
+      "bits": "3F000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 13,
+      "offset": "0xd4",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 14,
+      "offset": "0xd8",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 15,
+      "offset": "0xdc",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 16,
+      "offset": "0xe0",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 17,
+      "offset": "0xe4",
+      "bits": "00000000"
+    },
+    {
+      "eye": "right",
+      "parameter": 18,
+      "offset": "0xe8",
+      "bits": "00000000"
+    }
+  ]
+}
