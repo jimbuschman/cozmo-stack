@@ -680,7 +680,7 @@ public class FreeplayTests
         needs.Log += logs.Add;
 
         // the first decay is due at 60; pausing at 10 leaves 50 owed
-        clock = 10;
+        clock = 10; needs.Update();
         needs.SetPaused(true);
         Assert.True(needs.IsPaused);
         Assert.Equal(new[] { NeedsActionId.NoAction }, actions);
@@ -694,7 +694,7 @@ public class FreeplayTests
         Assert.Contains(logs, l => l.Contains("NeedsManager.SetPaused.Redundant"));
 
         // unpausing at 40 moves the next decay to 40 + 50 = 90 and sends/writes nothing
-        clock = 40;
+        clock = 40; needs.Update();
         needs.SetPaused(false);
         Assert.False(needs.IsPaused);
         Assert.Single(actions);
@@ -733,8 +733,8 @@ public class FreeplayTests
         needs.SetLevel(NeedId.Play, 0.9);
         Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full; the fill time is 0
 
-        clock = 10; needs.SetPaused(true);
-        clock = 30; needs.SetPaused(false);                        // a 20 s pause; fill 0 -> 20, deadline 100 -> 120
+        clock = 10; needs.Update(); needs.SetPaused(true);
+        clock = 30; needs.Update(); needs.SetPaused(false);                        // a 20 s pause; fill 0 -> 20, deadline 100 -> 120
         needs.SetLevel(NeedId.Play, 1.0);
 
         clock = 119; needs.ApplyDecayAllNeeds(true, (float)clock);
@@ -762,8 +762,8 @@ public class FreeplayTests
             Assert.Equal(0.0, needs.BracketChangedSec(n), 6);      // the ctor seeds +0x214 = now
         }
 
-        clock = 10; needs.SetPaused(true);
-        clock = 30; needs.SetPaused(false);                        // a 20 s pause
+        clock = 10; needs.Update(); needs.SetPaused(true);
+        clock = 30; needs.Update(); needs.SetPaused(false);                        // a 20 s pause
 
         foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
         {
@@ -818,9 +818,10 @@ public class FreeplayTests
         double clock = 0;
         var needs = new NeedsManager(() => clock);
         var writes = new List<bool>();
+        var connectedAtWrite = new List<bool>();
         var actions = new List<NeedsActionId>();
         var das = new List<string>();
-        needs.WriteToDevice = forced => writes.Add(forced);
+        needs.WriteToDevice = forced => { writes.Add(forced); connectedAtWrite.Add(needs.Connected); };
         needs.NeedsStateSent += actions.Add;
         needs.SendNeedsLevelsDasEvent += das.Add;
         needs.Connected = true;
@@ -833,12 +834,13 @@ public class FreeplayTests
         Assert.False(needs.Connected);                       // the robot pointer is cleared
         Assert.Equal(5, needs.LastDisconnectSec, 6);
         Assert.Equal(new[] { true }, writes);                // forced write when not paused
+        Assert.Equal(new[] { true }, connectedAtWrite);      // 0x0069592A write precedes pointer clear at 0x00695932
         Assert.Equal(1234, needs.DeviceTimestampSnapshotSec, 6);   // +0x1B8/+0x1BC = +8/+0xC (0x00695934)
         Assert.Equal(new[] { "disconnect" }, das);
         Assert.Empty(actions);                               // no SendNeedsStateToGame here
 
         // while paused the disconnect does not write
-        clock = 10; needs.SetPaused(true);
+        clock = 10; needs.Update(); needs.SetPaused(true);
         writes.Clear();
         needs.OnRobotDisconnected();
         Assert.Empty(writes);

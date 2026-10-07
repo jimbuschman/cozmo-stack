@@ -610,7 +610,7 @@ public sealed class NeedsManager
     /// <summary><c>+0x4</c>: whether a robot is connected (the flag <c>Update</c> passes as <c>robot != 0</c>; J12). <c>+0x1d4</c> is a separate field (the notification gate <c>LocalNotifications::ShouldBeRegistered</c> reads, J12) and is not modelled here.</summary>
     private bool _robotConnected = true;
     /// <summary>The clock time the current pause began (<c>+0x1d8</c>, 0x00695EB6).</summary>
-    private double _pausedAtSec;
+    private float _pausedAtSec;
     /// <summary><c>+0x18/+0x1c</c>: the clock time of the last disconnect (0x00695908).</summary>
     private double _lastDisconnectSec;
     /// <summary>
@@ -1086,7 +1086,7 @@ public sealed class NeedsManager
         lock (_gate)
         {
             if (paused == _paused) { Log?.Invoke("NeedsManager.SetPaused.Redundant"); return; }
-            double now = _clockSec();
+            float now = _nowSec; // 0x00695EAA / 0x00695F08: stored +0x3AC tick, not a fresh clock
             if (paused)
             {
                 _paused = true;
@@ -1098,7 +1098,7 @@ public sealed class NeedsManager
             else
             {
                 _paused = false;
-                double pauseDuration = now - _pausedAtSec;
+                float pauseDuration = now - _pausedAtSec; // 0x00695F10 vsub.f32
                 _nextDecaySec = (float)(now + _pausedRemainingSec);   // +0x3b0 = now + +0x3b4
                 // J11 (0x00695F02..0x00695F6A): the engine adds pauseDuration to each need's +0x1e4 (last
                 // decay) and +0x1f0 (the per-need pause start) always, and to +0x208 (the fullness deadline)
@@ -1107,11 +1107,14 @@ public sealed class NeedsManager
                 // fill + cooldown.
                 foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
                 {
-                    _needPauseStartSec[(int)n] += pauseDuration;  // +0x1f0 always (0x00695F40)
-                    _bracketChangedSec[(int)n] += pauseDuration;  // +0x214 always (0x00695F66)
-                    if (_lastDecaySec.TryGetValue(n, out var last)) _lastDecaySec[n] = (float)(last + pauseDuration);
-                    if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = (float)(start + pauseDuration);
-                    if (_fullnessDeadlineSec.TryGetValue(n, out var deadline)) _fullnessDeadlineSec[n] = (float)(deadline + pauseDuration);
+                    if (_lastDecaySec.TryGetValue(n, out var last)) _lastDecaySec[n] = pauseDuration + last;
+                    _needPauseStartSec[(int)n] = pauseDuration + (float)_needPauseStartSec[(int)n]; // 0x00695F38..40 f32
+                    if (_fullnessDeadlineSec.TryGetValue(n, out var deadline) && deadline != 0f) // 0x00695F28..44 NE
+                    {
+                        _fullnessDeadlineSec[n] = pauseDuration + deadline; // +0x208 before +0x1FC
+                        if (_fullnessStartSec.TryGetValue(n, out var start)) _fullnessStartSec[n] = pauseDuration + start;
+                    }
+                    _bracketChangedSec[(int)n] = pauseDuration + (float)_bracketChangedSec[(int)n]; // 0x00695F62..66 f32
                 }
             }
             LocalNotificationsSetPaused?.Invoke(paused);

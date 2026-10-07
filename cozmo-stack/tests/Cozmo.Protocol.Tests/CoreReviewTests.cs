@@ -212,7 +212,7 @@ public class CoreReviewTests
             if (what == BlockOn)
             {
                 Entered.Set();
-                Release.Wait(5_000);
+                Release.Wait(); // controller releases explicitly, including its failure path
             }
             lock (Log) Log.Add(what);
         }
@@ -260,15 +260,24 @@ public class CoreReviewTests
         scheduler.Play(clip, 0);
 
         // one frame, on another thread, which will block inside the head keyframe's emission
-        var streaming = Task.Run(() => scheduler.Advance(0));
-        Assert.True(sink.Entered.Wait(2_000), "the sink was never reached");
-
-        // cancel while that emission is in flight
-        var stopping = Task.Run(() => scheduler.Stop());
-        Thread.Sleep(50);                       // give the cancel every chance to get in front
-        sink.Release.Set();
-        Assert.True(streaming.Wait(2_000));
-        Assert.True(stopping.Wait(2_000));
+        var streaming = Task.Factory.StartNew(() => scheduler.Advance(0), CancellationToken.None,
+            TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        using var stoppingStarted = new ManualResetEventSlim(false);
+        Task? stopping = null;
+        try
+        {
+            Assert.True(sink.Entered.Wait(30_000), "the sink was never reached");
+            // A dedicated worker avoids thread-pool starvation under full-suite load.
+            stopping = Task.Factory.StartNew(() =>
+            {
+                stoppingStarted.Set();
+                scheduler.Stop();
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            Assert.True(stoppingStarted.Wait(30_000), "the cancellation worker never started");
+        }
+        finally { sink.Release.Set(); }
+        Assert.True(streaming.Wait(30_000));
+        Assert.True(stopping!.Wait(30_000));
 
         var log = sink.Snapshot();
         Assert.Contains("head", log);            // the keyframe that was legitimately in flight went out

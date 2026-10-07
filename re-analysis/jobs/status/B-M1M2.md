@@ -95,3 +95,14 @@ CLAIMED Codex: pulled/rebased. Operator adopts converter build rows and fixes ne
 - Batch 6 commit: d90e4c0 (pushed to main on 2026-10-06). Independent push gate passed fidelity and all 3,938 tests, zero failed/skipped (3 m 37 s).
 
 DONE 2026-10-06 for the requested real-conversion batch. The row-faithful port and shipped-emulator regression fixtures are published; round-to-nearest and C decimal point are explicitly EQUIVALENT_IMPLEMENTATION runtime assumptions in M1-029 unresolved. Research binaries/dependencies/lineage inputs are ignored. M1-029 remains IMPLEMENTATION_GAP, built awaiting strong verification; formatting, escaping exception destination, allocation-failure and extreme-length effects stay MISSING. No settlement or hardware acceptance. Stop here as directed.
+
+## Manager follow-up claim (2026-10-07)
+
+CLAIMED Codex after Q13: confirm E3 stored f32 time and nonzero deadline gate, check T4 reorder against primary instructions, document external snprintf and retained M1-034 catches, make CORE003 signal-driven. Leave higher-layer recipients untouched. No records settle.
+
+- Confirmed E3 recipient instructions at 0x00695EAA..0x00695F6A: stored binary32 tick, f32 pause duration/stores, NE-gated deadline/start update. Corrected the existing NeedsManager.SetPaused; six shipped-emulator fragment fixtures pass through ExitSdkMode. No new production binding.
+- T4 review reorder rejected by primary code: WriteToDevice at 0x0069592A before robot-pointer clear at 0x00695932; retained production order and added an observation assertion. Higher-layer recipients unchanged.
+- Real formatter core is undefined snprintf from phone libc; all 28 shipped libraries checked. Wrapper remains shipped and formatting build remains MISSING. No formatter port started.
+- M1-029 unresolved now explicitly cites the M1-034 operator-approved catch/log departure. Catches unchanged; statuses/evidence/inventories unchanged; derived FIDELITY_GAPS regenerated.
+- CORE003 now uses dedicated workers and explicit cancellation-start signal with finally-release, preserving its assertions. Targeted tests 94 passed; final full suite 3,952 passed, zero failed/skipped (DOTNET_PROCESSOR_COUNT=4). Fidelity and diff checks pass. CHECKLIST self-review completed; report/native evidence under research/20261007-M1-manager-decisions.md and -native.txt.
+- Requested scope DONE pending publication. Existing missing higher-layer recipients, formatting wrapper/runtime policy, allocation/extreme-input and original exception-disposition uncertainty remain; no settlement or hardware run.

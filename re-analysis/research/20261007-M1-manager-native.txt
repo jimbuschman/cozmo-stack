@@ -1,0 +1,293 @@
+00695E04 b0b5 push {r4, r5, r7, lr}
+00695E06 84b0 sub sp, #0x10
+00695E08 0546 mov r5, r0
+00695E0A 0c46 mov r4, r1
+00695E0C 95f8d501 ldrb.w r0, [r5, #0x1d5]
+00695E10 8442 cmp r4, r0
+00695E12 28d1 bne #0x695e66
+00695E14 8348 ldr r0, [pc, #0x20c]
+00695E16 0022 movs r2, #0
+00695E18 8349 ldr r1, [pc, #0x20c]
+00695E1A 87a5 adr r5, #0x21c
+00695E1C 7844 add r0, pc
+00695E1E 834b ldr r3, [pc, #0x20c]
+00695E20 7944 add r1, pc
+00695E22 002c cmp r4, #0
+00695E24 0068 ldr r0, [r0]
+00695E26 7b44 add r3, pc
+00695E28 0068 ldr r0, [r0]
+00695E2A cde90122 strd r2, r2, [sp, #4]
+00695E2E 0392 str r2, [sp, #0xc]
+00695E30 7fa2 adr r2, #0x1fc
+00695E32 08bf it eq
+00695E34 1546 moveq r5, r2
+00695E36 01aa add r2, sp, #4
+00695E38 0095 str r5, [sp]
+00695E3A 0ff6a4ee blx #0x4a5b84
+00695E3E 0198 ldr r0, [sp, #4]
+00695E40 0028 cmp r0, #0
+00695E42 00f09b80 beq.w #0x695f7c
+00695E46 0299 ldr r1, [sp, #8]
+00695E48 8142 cmp r1, r0
+00695E4A 1fbf itttt ne
+00695E4C a1f10802 subne.w r2, r1, #8
+00695E50 121a subne r2, r2, r0
+00695E52 6ff00703 mvnne r3, #7
+00695E56 23ea0202 bicne.w r2, r3, r2
+00695E5A 1cbf itt ne
+00695E5C 8918 addne r1, r1, r2
+00695E5E 0291 strne r1, [sp, #8]
+00695E60 0ef634e9 blx #0x4a40cc
+00695E64 8ae0 b #0x695f7c
+00695E66 5148 ldr r0, [pc, #0x144]
+00695E68 0021 movs r1, #0
+00695E6A 85f8d541 strb.w r4, [r5, #0x1d5]
+00695E6E 012c cmp r4, #1
+00695E70 7844 add r0, pc
+00695E72 0068 ldr r0, [r0]
+00695E74 0068 ldr r0, [r0]
+00695E76 2bd1 bne #0x695ed0
+00695E78 cde90111 strd r1, r1, [sp, #4]
+00695E7C 0391 str r1, [sp, #0xc]
+00695E7E 5ba1 adr r1, #0x16c
+00695E80 01aa add r2, sp, #4
+00695E82 62a3 adr r3, #0x188
+00695E84 0ff6eae8 blx #0x4a505c
+00695E88 0198 ldr r0, [sp, #4]
+00695E8A 70b1 cbz r0, #0x695eaa
+00695E8C 0299 ldr r1, [sp, #8]
+00695E8E 8142 cmp r1, r0
+00695E90 1fbf itttt ne
+00695E92 a1f10802 subne.w r2, r1, #8
+00695E96 121a subne r2, r2, r0
+00695E98 6ff00703 mvnne r3, #7
+00695E9C 23ea0202 bicne.w r2, r3, r2
+00695EA0 1cbf itt ne
+00695EA2 8918 addne r1, r1, r2
+00695EA4 0291 strne r1, [sp, #8]
+00695EA6 0ef612e9 blx #0x4a40cc
+00695EAA 95edeb0a vldr s0, [r5, #0x3ac]
+00695EAE 2846 mov r0, r5
+00695EB0 95edec1a vldr s2, [r5, #0x3b0]
+00695EB4 0021 movs r1, #0
+00695EB6 85ed760a vstr s0, [r5, #0x1d8]
+00695EBA 31ee401a vsub.f32 s2, s2, s0
+00695EBE 85eded1a vstr s2, [r5, #0x3b4]
+00695EC2 27f688ed blx #0x4bd9d4
+00695EC6 2846 mov r0, r5
+00695EC8 0121 movs r1, #1
+00695ECA 27f68aed blx #0x4bd9e0
+00695ECE 4de0 b #0x695f6c
+00695ED0 cde90111 strd r1, r1, [sp, #4]
+00695ED4 0391 str r1, [sp, #0xc]
+00695ED6 36a1 adr r1, #0xd8
+00695ED8 01aa add r2, sp, #4
+00695EDA 3ea3 adr r3, #0xf8
+00695EDC 0ff6bee8 blx #0x4a505c
+00695EE0 0198 ldr r0, [sp, #4]
+00695EE2 70b1 cbz r0, #0x695f02
+00695EE4 0299 ldr r1, [sp, #8]
+00695EE6 8142 cmp r1, r0
+00695EE8 1fbf itttt ne
+00695EEA a1f10802 subne.w r2, r1, #8
+00695EEE 121a subne r2, r2, r0
+00695EF0 6ff00703 mvnne r3, #7
+00695EF4 23ea0202 bicne.w r2, r3, r2
+00695EF8 1cbf itt ne
+00695EFA 8918 addne r1, r1, r2
+00695EFC 0291 strne r1, [sp, #8]
+00695EFE 0ef6e6e8 blx #0x4a40cc
+00695F02 95ed760a vldr s0, [r5, #0x1d8]
+00695F06 0020 movs r0, #0
+00695F08 95edeb1a vldr s2, [r5, #0x3ac]
+00695F0C 95eded2a vldr s4, [r5, #0x3b4]
+00695F10 31ee400a vsub.f32 s0, s2, s0
+00695F14 31ee022a vadd.f32 s4, s2, s4
+00695F18 85edec2a vstr s4, [r5, #0x3b0]
+00695F1C 2918 adds r1, r5, r0
+00695F1E 0430 adds r0, #4
+00695F20 91ed821a vldr s2, [r1, #0x208]
+00695F24 91ed792a vldr s4, [r1, #0x1e4]
+00695F28 b5ee401a vcmp.f32 s2, #0
+00695F2C 91ed7c3a vldr s6, [r1, #0x1f0]
+00695F30 f1ee10fa vmrs apsr_nzcv, fpscr
+00695F34 30ee022a vadd.f32 s4, s0, s4
+00695F38 30ee033a vadd.f32 s6, s0, s6
+00695F3C 81ed792a vstr s4, [r1, #0x1e4]
+00695F40 81ed7c3a vstr s6, [r1, #0x1f0]
+00695F44 1fbf itttt ne
+00695F46 30ee011a vaddne.f32 s2, s0, s2
+00695F4A 81ed821a vstrne s2, [r1, #0x208]
+00695F4E 91ed7f1a vldrne s2, [r1, #0x1fc]
+00695F52 30ee011a vaddne.f32 s2, s0, s2
+00695F56 18bf it ne
+00695F58 81ed7f1a vstrne s2, [r1, #0x1fc]
+00695F5C 0c28 cmp r0, #0xc
+00695F5E 91ed851a vldr s2, [r1, #0x214]
+00695F62 30ee011a vadd.f32 s2, s0, s2
+00695F66 81ed851a vstr s2, [r1, #0x214]
+00695F6A d7d1 bne #0x695f1c
+00695F6C d5f8b001 ldr.w r0, [r5, #0x1b0]
+00695F70 2146 mov r1, r4
+00695F72 27f608ee blx #0x4bdb84
+00695F76 2846 mov r0, r5
+00695F78 27f60aee blx #0x4bdb90
+00695908 b0b5 push {r4, r5, r7, lr}
+0069590A 82b0 sub sp, #8
+0069590C 0446 mov r4, r0
+0069590E 6846 mov r0, sp
+00695910 11f61aed blx #0x4a7348
+00695914 dde90001 ldrd r0, r1, [sp]
+00695918 0025 movs r5, #0
+0069591A c4e90601 strd r0, r1, [r4, #0x18]
+0069591E 94f8d501 ldrb.w r0, [r4, #0x1d5]
+00695922 2563 str r5, [r4, #0x30]
+00695924 18b9 cbnz r0, #0x69592e
+00695926 2046 mov r0, r4
+00695928 0121 movs r1, #1
+0069592A 28f65ae8 blx #0x4bd9e0
+0069592E d4e90201 ldrd r0, r1, [r4, #8]
+00695932 6560 str r5, [r4, #4]
+00695934 c4e96e01 strd r0, r1, [r4, #0x1b8]
+00695938 2046 mov r0, r4
+0069593A 0121 movs r1, #1
+0069593C 28f6fee8 blx #0x4bdb3c
+00695940 02a1 adr r1, #8
+00695942 2046 mov r0, r4
+00695944 28f652e8 blx #0x4bd9ec
+00695948 02b0 add sp, #8
+0069594A b0bd pop {r4, r5, r7, pc}
+0069594C 6469 ldr r4, [r4, #0x14]
+0069594E 7363 str r3, [r6, #0x34]
+00695950 6f6e ldr r7, [r5, #0x64]
+00695952 6e65 str r6, [r5, #0x54]
+00695954 6374 strb r3, [r4, #0x11]
+00695956 0000 movs r0, r0
+0052F2DC 3068 ldr r0, [r6]
+0052F2DE 406b ldr r0, [r0, #0x34]
+0052F2E0 7af7ccec blx #0x4a9c7c
+0052F2E4 3068 ldr r0, [r6]
+0052F2E6 c06b ldr r0, [r0, #0x3c]
+0052F2E8 7af7ceec blx #0x4a9c88
+0052F2EC 0020 movs r0, #0
+0052F2EE 75f758ef blx #0x4a51a0
+008EBF7C 70b5 push {r4, r5, r6, lr}
+008EBF7E 2ded028b vpush {d8}
+008EBF82 8eb0 sub sp, #0x38
+008EBF84 0446 mov r4, r0
+008EBF86 3948 ldr r0, [pc, #0xe4]
+008EBF88 0d46 mov r5, r1
+008EBF8A 39a1 adr r1, #0xe4
+008EBF8C 7844 add r0, pc
+008EBF8E b0ee408b vmov.f64 d8, d0
+008EBF92 0068 ldr r0, [r0]
+008EBF94 0068 ldr r0, [r0]
+008EBF96 0d90 str r0, [sp, #0x34]
+008EBF98 0df10a00 add.w r0, sp, #0xa
+008EBF9C bbf7c2e1 blx #0x4a7324
+008EBFA0 51ec180b vmov r0, r1, d8
+008EBFA4 e4f710e0 blx #0x4cffc8
+008EBFA8 f0b1 cbz r0, #0x8ebfe8
+008EBFAA 04ae add r6, sp, #0x10
+008EBFAC 0df10a02 add.w r2, sp, #0xa
+008EBFB0 2421 movs r1, #0x24
+008EBFB2 8ded008b vstr d8, [sp]
+008EBFB6 3046 mov r0, r6
+008EBFB8 bbf7c0e7 blx #0x4a7f3c
+008EBFBC 0546 mov r5, r0
+008EBFBE 3046 mov r0, r6
+008EBFC0 2e21 movs r1, #0x2e
+008EBFC2 def73ae7 blx #0x4cae38
+008EBFC6 50bb cbnz r0, #0x8ec01e
+008EBFC8 04ae add r6, sp, #0x10
+008EBFCA 6521 movs r1, #0x65
+008EBFCC 3046 mov r0, r6
+008EBFCE def734e7 blx #0x4cae38
+008EBFD2 20bb cbnz r0, #0x8ec01e
+008EBFD4 3046 mov r0, r6
+008EBFD6 b8f784e2 blx #0x4a44e0
+008EBFDA 43f22e01 movw r1, #0x302e
+008EBFDE 3152 strh r1, [r6, r0]
+008EBFE0 3044 add r0, r6
+008EBFE2 0021 movs r1, #0
+008EBFE4 8170 strb r1, [r0, #2]
+008EBFE6 1ae0 b #0x8ec01e
+008EBFE8 b4eec88b vcmpe.f64 d8, d8
+008EBFEC f1ee10fa vmrs apsr_nzcv, fpscr
+008EBFF0 07d6 bvs #0x8ec002
+008EBFF2 b5eec08b vcmpe.f64 d8, #0
+008EBFF6 f1ee10fa vmrs apsr_nzcv, fpscr
+008EBFFA 06d5 bpl #0x8ec00a
+008EBFFC 23a0 adr r0, #0x8c
+008EBFFE 26a2 adr r2, #0x98
+008EC000 05e0 b #0x8ec00e
+008EC002 2848 ldr r0, [pc, #0xa0]
+008EC004 28a2 adr r2, #0xa0
+008EC006 7844 add r0, pc
+008EC008 01e0 b #0x8ec00e
+008EC00A 1ba0 adr r0, #0x6c
+008EC00C 1ca2 adr r2, #0x70
+008EC00E 002d cmp r5, #0
+008EC010 08bf it eq
+008EC012 0246 moveq r2, r0
+008EC014 04a8 add r0, sp, #0x10
+008EC016 2421 movs r1, #0x24
+008EC018 bbf790e7 blx #0x4a7f3c
+008EC01C 0546 mov r5, r0
+008EC01E 012d cmp r5, #1
+008EC020 09db blt #0x8ec036
+008EC022 04a8 add r0, sp, #0x10
+008EC024 2e21 movs r1, #0x2e
+008EC026 0278 ldrb r2, [r0]
+008EC028 2c2a cmp r2, #0x2c
+008EC02A 08bf it eq
+008EC02C 0170 strbeq r1, [r0]
+008EC02E 013d subs r5, #1
+008EC030 00f10100 add.w r0, r0, #1
+008EC034 f7d1 bne #0x8ec026
+008EC036 04ad add r5, sp, #0x10
+
+Dynamic-symbol scan of all 28 packaged armeabi-v7a libraries:
+
+libacattsandroid.so sprintf 0x0 UNDEFINED
+libacattsandroid.so snprintf 0x0 UNDEFINED
+libc++_shared.so __isfinite 0x0 UNDEFINED
+libcozmoEngine.so snprintf 0x0 UNDEFINED
+libcozmoEngine.so __isfinite 0x0 UNDEFINED
+libcozmoEngine.so sprintf 0x0 UNDEFINED
+relocation 0x1041398 sprintf
+relocation 0x10417a0 snprintf
+relocation 0x104ed24 __isfinite
+libDAS.so snprintf 0x0 UNDEFINED
+libDAS.so __isfinite 0x0 UNDEFINED
+libDAS.so sprintf 0x0 UNDEFINED
+libgnustl_shared.so sprintf 0x0 UNDEFINED
+libmain.so snprintf 0x0 UNDEFINED
+libmono.so sprintf 0x0 UNDEFINED
+libmono.so snprintf 0x0 UNDEFINED
+libopencv_calib3d.so snprintf 0x0 UNDEFINED
+libopencv_core.so snprintf 0x0 UNDEFINED
+libopencv_core.so sprintf 0x0 UNDEFINED
+libopencv_features2d.so snprintf 0x0 UNDEFINED
+libopencv_flann.so snprintf 0x0 UNDEFINED
+libopencv_highgui.so snprintf 0x0 UNDEFINED
+libopencv_imgcodecs.so sprintf 0x0 UNDEFINED
+libopencv_imgcodecs.so snprintf 0x0 UNDEFINED
+libopencv_imgproc.so snprintf 0x0 UNDEFINED
+libopencv_java3.so snprintf 0x0 UNDEFINED
+libopencv_ml.so snprintf 0x0 UNDEFINED
+libopencv_objdetect.so sprintf 0x0 UNDEFINED
+libopencv_objdetect.so snprintf 0x0 UNDEFINED
+libopencv_photo.so snprintf 0x0 UNDEFINED
+libopencv_shape.so snprintf 0x0 UNDEFINED
+libopencv_stitching.so snprintf 0x0 UNDEFINED
+libopencv_superres.so snprintf 0x0 UNDEFINED
+libopencv_video.so snprintf 0x0 UNDEFINED
+libopencv_videoio.so sprintf 0x0 UNDEFINED
+libopencv_videoio.so snprintf 0x0 UNDEFINED
+libopencv_videostab.so snprintf 0x0 UNDEFINED
+libstlport_shared.so sprintf 0x0 UNDEFINED
+libstlport_shared.so snprintf 0x0 UNDEFINED
+libtbb.so snprintf 0x0 UNDEFINED
+libunity.so snprintf 0x0 UNDEFINED
+libunity.so sprintf 0x0 UNDEFINED

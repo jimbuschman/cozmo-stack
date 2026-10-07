@@ -1,0 +1,222 @@
+{
+  "generator": "emu_needs_unpause.py",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "rows": [
+    {
+      "pause_tick": 1092616192,
+      "unpause_tick": 1109393408,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 0,
+      "deadline_present": true,
+      "pause_at": 1092616192,
+      "remaining": 1112014848,
+      "expected_next": 1119092736,
+      "expected_last_decay": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_pause_start": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_start": [
+        1088421888,
+        1088421888,
+        1088421888
+      ],
+      "expected_deadline": [
+        0,
+        0,
+        0
+      ],
+      "expected_bracket": [
+        1106247680,
+        1106247680,
+        1106247680
+      ]
+    },
+    {
+      "pause_tick": 1092616192,
+      "unpause_tick": 1109393408,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 2147483648,
+      "deadline_present": true,
+      "pause_at": 1092616192,
+      "remaining": 1112014848,
+      "expected_next": 1119092736,
+      "expected_last_decay": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_pause_start": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_start": [
+        1088421888,
+        1088421888,
+        1088421888
+      ],
+      "expected_deadline": [
+        2147483648,
+        2147483648,
+        2147483648
+      ],
+      "expected_bracket": [
+        1106247680,
+        1106247680,
+        1106247680
+      ]
+    },
+    {
+      "pause_tick": 1092616192,
+      "unpause_tick": 1109393408,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 1120403456,
+      "deadline_present": true,
+      "pause_at": 1092616192,
+      "remaining": 1112014848,
+      "expected_next": 1119092736,
+      "expected_last_decay": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_pause_start": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_start": [
+        1108606976,
+        1108606976,
+        1108606976
+      ],
+      "expected_deadline": [
+        1124204544,
+        1124204544,
+        1124204544
+      ],
+      "expected_bracket": [
+        1106247680,
+        1106247680,
+        1106247680
+      ]
+    },
+    {
+      "pause_tick": 1092616192,
+      "unpause_tick": 1109393408,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 2143289344,
+      "deadline_present": true,
+      "pause_at": 1092616192,
+      "remaining": 1112014848,
+      "expected_next": 1119092736,
+      "expected_last_decay": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_pause_start": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_start": [
+        1108606976,
+        1108606976,
+        1108606976
+      ],
+      "expected_deadline": [
+        2143289344,
+        2143289344,
+        2143289344
+      ],
+      "expected_bracket": [
+        1106247680,
+        1106247680,
+        1106247680
+      ]
+    },
+    {
+      "pause_tick": 1065353217,
+      "unpause_tick": 1109393409,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 1120403456,
+      "deadline_present": true,
+      "pause_at": 1065353217,
+      "remaining": 1114374144,
+      "expected_next": 1120272384,
+      "expected_last_decay": [
+        1109131265,
+        1109131265,
+        1109131265
+      ],
+      "expected_pause_start": [
+        1109131265,
+        1109131265,
+        1109131265
+      ],
+      "expected_start": [
+        1110966273,
+        1110966273,
+        1110966273
+      ],
+      "expected_deadline": [
+        1124794368,
+        1124794368,
+        1124794368
+      ],
+      "expected_bracket": [
+        1109131265,
+        1109131265,
+        1109131265
+      ]
+    },
+    {
+      "pause_tick": 1092616192,
+      "unpause_tick": 1109393408,
+      "next_before": 1114636288,
+      "start_before": 1088421888,
+      "deadline_before": 0,
+      "deadline_present": false,
+      "pause_at": 1092616192,
+      "remaining": 1112014848,
+      "expected_next": 1119092736,
+      "expected_last_decay": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_pause_start": [
+        1106247680,
+        1106247680,
+        1106247680
+      ],
+      "expected_start": [
+        1088421888,
+        1088421888,
+        1088421888
+      ],
+      "expected_deadline": [
+        0,
+        0,
+        0
+      ],
+      "expected_bracket": [
+        1106247680,
+        1106247680,
+        1106247680
+      ]
+    }
+  ]
+}
