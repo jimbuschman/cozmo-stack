@@ -1,0 +1,898 @@
+[
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 32,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1024,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 8,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 16,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "snrDb": "infinity"
+  }
+]

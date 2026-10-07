@@ -12,5 +12,10 @@ Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Comm
 
 ## Q12 literal representation
 
-Replaced 451 native sine-table words with explicit binary32 bit constructors and per-word addresses; removed 87 lint baseline keys. No value or width change. Four asset literals excluded by the requested source-kind gate. Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Commit is the Q12 literal batch introducing this section; push gate runs before publication.
+Replaced 451 native sine-table words with explicit binary32 bit constructors and per-word addresses; removed 87 lint baseline keys. No value or width change. Four asset literals excluded by the requested source-kind gate. Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Commit b4353ac, pushed; gate passed all 3,948 tests. First gate run hit an unrelated NavigationTests timeout; isolated retry passed, then the unchanged full gate passed.
 
+
+
+## Q13 ADP component extension
+
+Strict native component corpus: mixer128 and biquad64 have zero sample/history error; ready LPF/HPF32 have measured differences with arbitrary coefficient-block reachability VERIFY. All length/zero-region gates pass. Twelve native cutoff observations and the strict EQ/tanf stop recorded. Full rendered streams remain zero; all complete-path categories remain PARTIAL. No production audio edit, no thresholds, no statuses settled. Validation: fidelity --check and diff --check pass; all 3,951 tests passed, zero skipped, with DOTNET_PROCESSOR_COUNT=4. Prior full-load retry hit a NavigationTests timeout; isolated test passed. Commit is the Q13 component corpus batch introducing this section.

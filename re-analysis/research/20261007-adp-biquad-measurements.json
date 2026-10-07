@@ -1,0 +1,642 @@
+[
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 64,
+    "channels": 1,
+    "stride": 67,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 128,
+    "channels": 2,
+    "stride": 131,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 0,
+    "channels": 1,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 1,
+    "channels": 2,
+    "stride": 4,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 2,
+    "channels": 1,
+    "stride": 5,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  },
+  {
+    "frames": 15,
+    "channels": 2,
+    "stride": 18,
+    "silentMismatch": 0,
+    "rms": 0,
+    "maximumAbsoluteError": 0,
+    "historyMaximum": 0,
+    "snrDb": "infinity"
+  }
+]

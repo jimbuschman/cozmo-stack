@@ -4,6 +4,9 @@
 | C# production output capture for the same input | PARTIAL | Existing render entry inspected; comparable chunk/timeline adapter MISSING. |
 | Structure-first comparator | CHECKED | Built; 6 hand-stream tests pass. |
 | Per-case and overall RMS/SNR/max error | CHECKED | Implemented after structure gate; no engine baseline pairs available. |
+| Q13 strict ARM mixer component corpus | CHECKED | 128 actual calls; 26,736 float samples; component structure agrees; RMS/max error 0, SNR infinity. Not a full-stream pair. |
+| Q13 strict ARM EQ biquad component corpus | CHECKED | 64 actual calls; 3,873 buffer words, 3,574 active samples; sample/history error 0. Not a full-stream pair. |
+| Q13 strict ARM LPF/HPF component corpus | CHECKED | 32 actual calls with synthetic stored coefficient blocks; error measured below. Production reachability of those blocks requires VERIFY. |
 | Mono Vorbis / stereo Vorbis to mono corpus | PARTIAL | Native decode fixtures identify media; event and complete stream capture MISSING. |
 | ADPCM corpus | PARTIAL | Shipped media covered by existing decoder tests; complete engine event capture MISSING. |
 | Volume/RTPC / pitch-resampling | PARTIAL | Component oracles exist; complete scheduled render MISSING. |
@@ -40,7 +43,7 @@ Those are corpus leads, not selected event sessions or an ADP stream baseline. E
 corpus category still needs a shipped event/graph whose actual path exercises it, then
 both captured renders; choosing a synthetic signal is insufficient for the requested corpus.
 
-Unicorn is absent from this Python environment. Installing it alone would not establish
+Unicorn 2.1.4 is now available through the local research dependencies. That does not establish
 the missing downstream code or approved harness rows. No external banks were uploaded,
 no robot was used, and no output from a Python model was labelled engine output.
 
@@ -56,3 +59,32 @@ no runtime branch guessed; structural gates precede metrics; no float constant w
 ported from a rounded engine value; expected unit-test energies derive independently
 from integer streams; no fidelity record is settled. Fidelity check passes (445 records).
 Full-suite result and batch commit are recorded in `jobs/status/B-ADP-HARNESS.md`.
+
+## Q13 extension, 2026-10-07
+
+The new strict generator is `tools/emu/emu_adp_strict.py`, using `emu_m1_m5_numeric.Native` to map the shipped ELF and execute ARM. Its mixer entry is `0x00A46668`; no callee, math import or pool allocator is substituted on these calls. Engine SHA256 `02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1`. FPSCR is reset to zero. Expected words in `cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/adp_strict_mixer.json` are copied from emulated output memory. Inputs are fixed seed `0x20261007`, explicit binary32 source/destination words, gains and increments: ±zero, negative/positive gains, normal and subnormal increments; lengths 8, 16, 32, 64, 128, 1024. These are synthetic component inputs, not shipped event sessions.
+
+`AdpStrictMeasurementsTests` calls the existing WwiseMixKernels.RampAccumulateA46668. It checks component frame length and exact zero/nonzero regions before measuring error. All 128 cases / 26,736 samples pass those component gates. Every measured RMS and maximum absolute error is 0; every SNR is infinity. Per-case measurements are in `20261007-adp-mixer-measurements.json`. No PCM threshold is selected or asserted. This does not verify a routing/voice-limit decision, start time, end time or robot chunk boundary.
+
+Two further pure bodies run without substituted callees: EQ biquad `0x00AA2324` (64 calls) and ready LPF/HPF `0x00A766F0` / `0x00A77480` (32 calls). Fixtures `adp_strict_biquad.json` / `adp_strict_filters.json` contain all input/output words and history. Mono/stereo, zero/one/two/three-frame and block/tail lengths, padding, scalar alignment and bypass are exercised. The C# adapters call the existing private EQ body via reflection or the existing public filter-band Process; they supply the same stored coefficient/history inputs. They do not reconstruct parameter selection, Design, Init or the production graph. No parallel DSP implementation is added.
+
+| Component | Cases | Measured buffer words (active samples) | Overall RMS | Maximum absolute error | Overall SNR dB | Maximum history error |
+|---|---:|---:|---:|---:|---|---:|
+| Mixer | 128 | 26,736 (26,736) | 0 | 0 | infinity | n/a |
+| EQ biquad | 64 | 3,873 (3,574) | 0 | 0 | infinity | 0 |
+| LPF/HPF synthetic stored blocks | 32 | 1,212 (1,064) | 0.5078717734546343 | 1.2194648385047913 | 0.762855520887886 | 1.3704183399677277 |
+
+Per-case results are `20261007-adp-biquad-measurements.json` and `20261007-adp-filter-measurements.json`. All component buffer-length and zero/nonzero gates pass. RMS/SNR weight each measured buffer by its word count, including unchanged padding; active counts are listed separately. Filter F blocks are arbitrary finite caller input words, not demonstrated outputs of native Design; **VERIFY their production-reachable coefficient invariants before using these differences to assess equivalence**. These large differences are synthetic component observations, not established audible errors on shipped sounds. No filter code is changed and no threshold is derived from them. All native expected words still come directly from shipped execution.
+
+| Missing baseline path | Coverage | Strict extension / reason it remains missing |
+|---|---|---|
+| Mixing/gain inner loop | CHECKED | 128 complete shipped kernel calls and C# measurements above. Production mix routing and matrix selection remain outside this component. |
+| LPF/HPF | PARTIAL | 32 strict ready-body cases added; stored-block reachability requires VERIFY. Twelve shipped cutoff-map calls at `0x00A7A3D8` / `0x00A7A4AC`, including NaN/infinity, are retained as boundary observations in `20261007-adp-boundary-probes.json`. Full Design/ramp path still imports phone tanf; no strict full-path PCM pair. Cutoff values/choices remain exact, not ADP arithmetic. |
+| EQ | PARTIAL | 64 pure biquad cases added. Actual `0x00AA25E0` coefficient call with explicit rate22320 and input record stops at unsupported phone `tanf`. Failed call is retained, without fabricated coefficient output. Existing `emu_eq.py` supplies a libm model; it is not adopted as an execution-only reference. |
+| Compressor/limiter | PARTIAL | Existing `emu_comp.py` / `emu_limiter.py` use pool/FX libm adapters. Linked limiter P1/P3 and full bus/ducking selection lack a strict initialized graph. No new complete reference session. |
+| Pitch/resampler | PARTIAL | `emu_pitch.py` replaces powf and source/context/filter/notification callees. Complete source-to-output timing remains missing; existing component fixtures do not become production sessions. |
+| Mono/stereo Vorbis; ADPCM | PARTIAL | Existing decode evidence retained. No event/source/filter/mix/output capture with native chunk and absolute positions. Decoder output is not relabelled as a rendered event. |
+| Simultaneous voices, limits/ducking, crossfade | PARTIAL | Exact decision/control context missing; synthetic mixer buffers cannot settle it. |
+| Singing | PARTIAL | No M9 initialized decision/scheduling session; no upper-layer implementation attempted. |
+
+Full engine/C# paired streams remain **0**, with structure/RMS/SNR/max error **NOT MEASURED** for those streams. In particular, the comparator's canonical s16le 744-byte / 372-sample representation has no native robot-framing bridge yet; do not treat that harness schema as verified native wire framing. No existing category is dropped and no record is settled. Q13 advances the component corpus and remains PARTIAL for the complete audio path. Self-review: expected samples only from actual shipped ARM; no audio production edit, no invented timing/routing, no PCM threshold, no equivalent status claim. Validation/publication are logged in `jobs/status/CODEX-Q4.md`.

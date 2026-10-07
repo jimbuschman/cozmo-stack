@@ -1,0 +1,86 @@
+[
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 0,
+    "expected": 1176301568
+  },
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 1106247680,
+    "expected": 1171996585
+  },
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 1112014848,
+    "expected": 1151062159
+  },
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 1120403456,
+    "expected": 1099317275
+  },
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 2143289344,
+    "expected": 0
+  },
+  {
+    "address": "0xa7a3d8",
+    "rate": 22320,
+    "input": 2139095040,
+    "expected": 0
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 0,
+    "expected": 1099317275
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 1106247680,
+    "expected": 1130322637
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 1112014848,
+    "expected": 1151062159
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 1120403456,
+    "expected": 1176301568
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 2143289344,
+    "expected": 0
+  },
+  {
+    "address": "0xa7a4ac",
+    "rate": 22320,
+    "input": 2139095040,
+    "expected": 1176301568
+  },
+  {
+    "address": "0xaa25e0",
+    "object_rate": 22320,
+    "band": 0,
+    "record": [
+      0,
+      1065353216,
+      1148846080,
+      1060439283
+    ],
+    "blocked": "unsupported import: tanf"
+  }
+]
