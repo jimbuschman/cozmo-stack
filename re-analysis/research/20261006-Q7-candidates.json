@@ -1,0 +1,1163 @@
+[
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationAssetTests.cs",
+    "line": 76,
+    "expected": "FaceBitmap.Width * FaceBitmap.Height",
+    "types": [
+      "FaceBitmap"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationAssetTests.cs",
+    "line": 182,
+    "expected": "Eye.ParamCount",
+    "types": [
+      "Eye"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationAssetTests.cs",
+    "line": 183,
+    "expected": "Eye.ParamCount",
+    "types": [
+      "Eye"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationAssetTests.cs",
+    "line": 319,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationGapTests.cs",
+    "line": 185,
+    "expected": "CozmoAudio.RobotBufferFrames",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationGapTests.cs",
+    "line": 189,
+    "expected": "CozmoAudio.RobotBufferFrames + 5",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationGapTests.cs",
+    "line": 212,
+    "expected": "CozmoAudio.RobotBufferFrames",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationGapTests.cs",
+    "line": 224,
+    "expected": "CozmoAudio.RobotBufferFrames + 3",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationGapTests.cs",
+    "line": 331,
+    "expected": "AnimationTrack.Body",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 114,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 257,
+    "expected": "AnimationEndReason.Cancelled",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 311,
+    "expected": "AnimationEndReason.Replaced",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 322,
+    "expected": "AnimationEndReason.Replaced",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 331,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 333,
+    "expected": "AnimationTrack.Head | AnimationTrack.Face",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/AnimationTests.cs",
+    "line": 335,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 41,
+    "expected": "AnimationTrack.Head | AnimationTrack.Lift",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 45,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 59,
+    "expected": "AnimationTrack.Head | AnimationTrack.Lift",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 62,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 111,
+    "expected": "AnimationTrack.Head",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 112,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 435,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 608,
+    "expected": "CozmoMotion.LiftTrack",
+    "types": [
+      "CozmoMotion"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 2293,
+    "expected": "AnimationTrack.Head",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 2295,
+    "expected": "AnimationTrack.Head",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/BehaviorFrameworkTests.cs",
+    "line": 2319,
+    "expected": "AnimationTrack.None",
+    "types": [
+      "AnimationTrack"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 271,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 305,
+    "expected": "CozmoMotion.MinHeadAngleRad",
+    "types": [
+      "CozmoMotion"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 310,
+    "expected": "CozmoMotion.MinLiftHeightMm",
+    "types": [
+      "CozmoMotion"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 374,
+    "expected": "LedColor.Red.Packed",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 375,
+    "expected": "LedColor.Green.Packed",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 376,
+    "expected": "LedColor.Blue.Packed",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 377,
+    "expected": "(LedColor.Red, LedColor.Green, LedColor.Blue)",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 390,
+    "expected": "LedColor.Red.Packed",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 391,
+    "expected": "LedColor.Off.Packed",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ControlTests.cs",
+    "line": 444,
+    "expected": "CliffSensors.FrontLeft | CliffSensors.BackLeft",
+    "types": [
+      "CliffSensors"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 72,
+    "expected": "AnkiMuLaw.Encode((short)-32767)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 73,
+    "expected": "AnkiMuLaw.Encode((short)-32767)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 74,
+    "expected": "AnkiMuLaw.Encode((short)32767)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 75,
+    "expected": "AnkiMuLaw.Encode((short)32767)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 77,
+    "expected": "AnkiMuLaw.Encode((short)(int)(f * 32767f))",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 94,
+    "expected": "AudioCodec.AnkiMuLaw",
+    "types": [
+      "AudioCodec"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 144,
+    "expected": "CozmoAudio.SamplesPerFrame",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 146,
+    "expected": "AnkiMuLaw.Encode(1000)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 147,
+    "expected": "AnkiMuLaw.Encode(0)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 148,
+    "expected": "AnkiMuLaw.Encode(0)",
+    "types": [
+      "AnkiMuLaw"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 162,
+    "expected": "CozmoAudio.SamplesPerFrame",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 163,
+    "expected": "CozmoAudio.FrameInterval.TotalMilliseconds",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 171,
+    "expected": "CozmoAudio.SampleRate / 2",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 205,
+    "expected": "1 + CozmoAudio.SamplesPerFrame",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 237,
+    "expected": "CozmoAudio.SampleRate",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 321,
+    "expected": "TransportOptions.EngineDefaults.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead",
+    "types": [
+      "CozmoDisplay"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 323,
+    "expected": "CozmoDisplay.DefaultMaxPayload",
+    "types": [
+      "CozmoDisplay"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 344,
+    "expected": "FaceBitmapCodec.RawFrameSize",
+    "types": [
+      "FaceBitmapCodec"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 436,
+    "expected": "FaceBitmapCodec.Encode(image)",
+    "types": [
+      "FaceBitmapCodec"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 643,
+    "expected": "MiniJpeg.EncodingJpegMinimizedColor",
+    "types": [
+      "MiniJpeg"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 648,
+    "expected": "MiniJpeg.EncodingJpegMinimizedGray",
+    "types": [
+      "MiniJpeg"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/DeviceTests.cs",
+    "line": 774,
+    "expected": "MiniJpeg.EncodingJpegMinimizedGray",
+    "types": [
+      "MiniJpeg"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 75,
+    "expected": "ActiveObjectSlotState.PendingConnection",
+    "types": [
+      "ActiveObjectSlotState"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 78,
+    "expected": "ActiveObjectSlotState.PendingConnection",
+    "types": [
+      "ActiveObjectSlotState"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 81,
+    "expected": "ActiveObjectSlotState.Connected",
+    "types": [
+      "ActiveObjectSlotState"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 84,
+    "expected": "ActiveObjectSlotState.PendingDisconnection",
+    "types": [
+      "ActiveObjectSlotState"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 527,
+    "expected": "RobotDisconnectReason.SleepPlacedOnCharger",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 531,
+    "expected": "RobotDisconnectReason.Unknown",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 581,
+    "expected": "RobotDisconnectReason.SleepBackground",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 623,
+    "expected": "new RobotConnectionResponse(RobotConnectionResult.ConnectionRejected, 0, 0, -1, -1)",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 641,
+    "expected": "new RobotConnectionResponse(RobotConnectionResult.ConnectionFailure, 0, 0, -1, -1)",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 643,
+    "expected": "RobotDisconnectReason.Unknown",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 847,
+    "expected": "new RobotConnectionResponse(RobotConnectionResult.Success, 2381, 0xABCD, 7, 2)",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1039,
+    "expected": "new RobotConnectionResponse(RobotConnectionResult.ConnectionFailure, 0, 0, -1, -1)",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1081,
+    "expected": "RobotDisconnectReason.Unknown",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1085,
+    "expected": "new RobotConnectionResponse(RobotConnectionResult.Success, v, 5, 1, 0)",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1499,
+    "expected": "Cozmo.Robot.CameraSettings.CalibrationBytes",
+    "types": [
+      "CameraSettings"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1638,
+    "expected": "RobotDisconnectReason.Unknown",
+    "types": [
+      "RobotDisconnectReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1901,
+    "expected": "RobotConnectionResult.Success",
+    "types": [
+      "RobotConnectionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/EngineAppLayerTests.cs",
+    "line": 1928,
+    "expected": "Cozmo.Robot.Animation.AnimationScheduler.LiveAnimationTag",
+    "types": [
+      "AnimationScheduler"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 707,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 708,
+    "expected": "NvStorageComponent.NonFactoryReadLength",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 713,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 736,
+    "expected": "NvStorageComponent.OpWrite",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 743,
+    "expected": "NvStorageComponent.OpWrite",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FaceTests.cs",
+    "line": 755,
+    "expected": "NvStorageComponent.OpErase",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FreeplayTests.cs",
+    "line": 1714,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FreeplayTests.cs",
+    "line": 1770,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FreeplayTests.cs",
+    "line": 1961,
+    "expected": "NvStorageComponent.OpWrite",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/FreeplayTests.cs",
+    "line": 2240,
+    "expected": "NvStorageComponent.OpWrite",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/HardeningTests.cs",
+    "line": 315,
+    "expected": "MotionResult.TimedOut",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/HardwareRunnerTests.cs",
+    "line": 574,
+    "expected": "check.Phase",
+    "types": [
+      "check"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/HardwareRunnerTests.cs",
+    "line": 575,
+    "expected": "check.Why",
+    "types": [
+      "check"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/HardwareRunnerTests.cs",
+    "line": 576,
+    "expected": "check.Success",
+    "types": [
+      "check"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/KeepAliveTests.cs",
+    "line": 89,
+    "expected": "new[] { (AnimationScheduler.IdleCount, AnimationScheduler.DefaultAnimLock) }",
+    "types": [
+      "AnimationScheduler"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M11RVisBuildTests.cs",
+    "line": 897,
+    "expected": "RobotAudioOutputSource.PlayOnRobot",
+    "types": [
+      "RobotAudioOutputSource"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 766,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 779,
+    "expected": "StreamSendBuffer.DrainResult.SendError",
+    "types": [
+      "StreamSendBuffer",
+      "DrainResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 828,
+    "expected": "CozmoAudio.ToFrames(pcm).Count",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 1428,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 1699,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 1760,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 1883,
+    "expected": "NvStorageComponent.ResultScheduled",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 2039,
+    "expected": "NvStorageComponent.MaxReadResends",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 2044,
+    "expected": "afterRead + NvStorageComponent.MaxReadResends",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 2048,
+    "expected": "NvStorageComponent.MaxReadResends",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 2527,
+    "expected": "rig.Robot.CameraSettings.Calibration",
+    "types": [
+      "CameraSettings"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs",
+    "line": 2784,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 761,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 833,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 907,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 957,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 993,
+    "expected": "MotionResult.Failed",
+    "types": [
+      "MotionResult"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M4ControlTests.cs",
+    "line": 1128,
+    "expected": "new[] { LedColor.Red.Packed, LedColor.Red.Packed, LedColor.Red.Packed }",
+    "types": [
+      "LedColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 589,
+    "expected": "AnimationEndReason.Replaced",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 611,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 879,
+    "expected": "new ProceduralFaceRenderer.EyeBox(16, 1, 32, 42)",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 880,
+    "expected": "new ProceduralFaceRenderer.EyeBox(80, 11, 32, 42)",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1164,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1179,
+    "expected": "new[] { (AnimationScheduler.IdleCount, \"default_anim_lock\") }",
+    "types": [
+      "AnimationScheduler"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1201,
+    "expected": "AnimationScheduler.IdleCount",
+    "types": [
+      "AnimationScheduler"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1472,
+    "expected": "Cozmo.Robot.Animation.AnimEvent.TAPPED_BLOCK",
+    "types": [
+      "AnimEvent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1907,
+    "expected": "AnimationEndReason.Completed",
+    "types": [
+      "AnimationEndReason"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 1948,
+    "expected": "Cozmo.Robot.Animation.AnimEvent.TAPPED_BLOCK",
+    "types": [
+      "AnimEvent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2073,
+    "expected": "NamedColors.Default",
+    "types": [
+      "NamedColors"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2089,
+    "expected": "BackpackColor.Encode(0x0000FFFFu)",
+    "types": [
+      "BackpackColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2090,
+    "expected": "BackpackColor.Encode(0x00FF00FFu)",
+    "types": [
+      "BackpackColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2091,
+    "expected": "BackpackColor.Encode(0xFFCC00FFu)",
+    "types": [
+      "BackpackColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2092,
+    "expected": "BackpackColor.Encode(0xFF0000FFu)",
+    "types": [
+      "BackpackColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/M5AnimationTests.cs",
+    "line": 2093,
+    "expected": "BackpackColor.Encode(0xFFFFFFFFu)",
+    "types": [
+      "BackpackColor"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 56,
+    "expected": "FaceBitmap.Width",
+    "types": [
+      "FaceBitmap"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 57,
+    "expected": "FaceBitmap.Height * 2",
+    "types": [
+      "FaceBitmap"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 58,
+    "expected": "ProceduralFaceRenderer.CanvasWidth / 2f",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 59,
+    "expected": "ProceduralFaceRenderer.CanvasHeight / 2f",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 110,
+    "expected": "ProceduralFaceRenderer.LeftEyeCenterX",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 111,
+    "expected": "ProceduralFaceRenderer.RightEyeCenterX",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 125,
+    "expected": "ProceduralFaceRenderer.EyeCenterY / 2f",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/ProceduralFaceRendererTests.cs",
+    "line": 199,
+    "expected": "ProceduralFaceRenderer.LeftEyeCenterX",
+    "types": [
+      "ProceduralFaceRenderer"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/RFix2BTests.cs",
+    "line": 395,
+    "expected": "RobotAudioOutputSource.PlayOnRobot",
+    "types": [
+      "RobotAudioOutputSource"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/RFix2BTests.cs",
+    "line": 399,
+    "expected": "RobotAudioOutputSource.PlayOnDevice",
+    "types": [
+      "RobotAudioOutputSource"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/RFix2BTests.cs",
+    "line": 403,
+    "expected": "RobotAudioOutputSource.PlayOnRobot",
+    "types": [
+      "RobotAudioOutputSource"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/VisionTests.cs",
+    "line": 767,
+    "expected": "NvStorageComponent.OpRead",
+    "types": [
+      "NvStorageComponent"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseClipWindowTests.cs",
+    "line": 63,
+    "expected": "CozmoAudio.SampleRate * 12",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwisePlaybackLimiterTests.cs",
+    "line": 1072,
+    "expected": "slot.Entry.List",
+    "types": [
+      "Entry"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseSongTests.cs",
+    "line": 201,
+    "expected": "12000 * CozmoAudio.SampleRate / 1000",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseSongTests.cs",
+    "line": 249,
+    "expected": "(int)Math.Round(r.DurationMs * CozmoAudio.SampleRate / 1000)",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseSongTests.cs",
+    "line": 285,
+    "expected": "12000 * CozmoAudio.SampleRate / 1000",
+    "types": [
+      "CozmoAudio"
+    ]
+  },
+  {
+    "file": "cozmo-stack/tests/Cozmo.Protocol.Tests/WwiseSongTests.cs",
+    "line": 383,
+    "expected": "(int)(462000L * CozmoAudio.SampleRate / 1000)",
+    "types": [
+      "CozmoAudio"
+    ]
+  }
+]

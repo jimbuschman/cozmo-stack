@@ -1,0 +1,731 @@
+{
+  "types": {
+    "Control": "cozmo-stack\\src\\Cozmo.Conformance\\Control.cs",
+    "RobotAnimationSink": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\CozmoAnimations.cs",
+    "CozmoAnimations": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\CozmoAnimations.cs",
+    "CozmoFace": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\CozmoAnimations.cs",
+    "ActiveObjectSlotState": "cozmo-stack\\src\\Cozmo.Robot\\CubeConnections.cs",
+    "ActiveObjectSlot": "cozmo-stack\\src\\Cozmo.Robot\\CubeConnections.cs",
+    "CubeConnections": "cozmo-stack\\src\\Cozmo.Robot\\CubeConnections.cs",
+    "Info": "cozmo-stack\\src\\Cozmo.Robot\\CubeConnections.cs",
+    "but": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotConnectionResult": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotDisconnectReason": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotConnectionException": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "CozmoEngineOptions": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "ReliableTransportPort": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "BaseStationTimer": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "EngineTickRunner": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotConnectionData": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "ArrivedKind": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "Arrived": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotConnectionManager": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "MessageHandler": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "FirmwareHeader": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "JsonLogicError": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "IdleTimeoutComponent": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "EngineRobot": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotAudioOutputSource": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotInitialConnection": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "Subscription": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "RobotManager": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "CozmoEngine": "cozmo-stack\\src\\Cozmo.Robot\\CozmoEngine.cs",
+    "MiniJpeg": "cozmo-stack\\src\\Cozmo.Robot\\MiniJpeg.cs",
+    "MotionResult": "cozmo-stack\\src\\Cozmo.Robot\\Motion.cs",
+    "CozmoMotion": "cozmo-stack\\src\\Cozmo.Robot\\Motion.cs",
+    "supplies": "cozmo-stack\\src\\Cozmo.Robot\\Motion.cs",
+    "MoveAction": "cozmo-stack\\src\\Cozmo.Robot\\Motion.cs",
+    "Vector3": "cozmo-stack\\src\\Cozmo.Robot\\Sensors.cs",
+    "CliffSensors": "cozmo-stack\\src\\Cozmo.Robot\\Sensors.cs",
+    "CozmoSensors": "cozmo-stack\\src\\Cozmo.Robot\\Sensors.cs",
+    "Expression": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\Expressions.cs",
+    "Expressions": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\Expressions.cs",
+    "CubeHighPassFilter": "cozmo-stack\\src\\Cozmo.Robot\\CubeAccel.cs",
+    "CubeShakeListener": "cozmo-stack\\src\\Cozmo.Robot\\CubeAccel.cs",
+    "CubeAccelStreams": "cozmo-stack\\src\\Cozmo.Robot\\CubeAccel.cs",
+    "name": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\JsonClipLoader.cs",
+    "JsonClipLoader": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\JsonClipLoader.cs",
+    "JsonCppException": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\JsonClipLoader.cs",
+    "MuLaw": "cozmo-stack\\src\\Cozmo.Robot\\Audio.cs",
+    "AudioCodec": "cozmo-stack\\src\\Cozmo.Robot\\Audio.cs",
+    "AnkiMuLaw": "cozmo-stack\\src\\Cozmo.Robot\\Audio.cs",
+    "CozmoAudio": "cozmo-stack\\src\\Cozmo.Robot\\Audio.cs",
+    "ProceduralFaceRenderer": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\ProceduralFaceRenderer.cs",
+    "EyeBox": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\ProceduralFaceRenderer.cs",
+    "StreamSendBuffer": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "Entry": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "DrainResult": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "AnimationEndReason": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "AnimationScheduler": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "StreamOwner": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "summary": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "AudioAnimation": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "LiveIdleRobotInputs": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "StreamSizes": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationScheduler.cs",
+    "RobotStateTracker": "cozmo-stack\\src\\Cozmo.Robot\\CozmoRobot.cs",
+    "EventFan": "cozmo-stack\\src\\Cozmo.Robot\\CozmoRobot.cs",
+    "CozmoRobot": "cozmo-stack\\src\\Cozmo.Robot\\CozmoRobot.cs",
+    "FaceBitmap": "cozmo-stack\\src\\Cozmo.Robot\\Display.cs",
+    "FaceBitmapCodec": "cozmo-stack\\src\\Cozmo.Robot\\Display.cs",
+    "will": "cozmo-stack\\src\\Cozmo.Robot\\Display.cs",
+    "CozmoDisplay": "cozmo-stack\\src\\Cozmo.Robot\\Display.cs",
+    "NvStorageComponent": "cozmo-stack\\src\\Cozmo.Robot\\NvStorage.cs",
+    "PendingRequest": "cozmo-stack\\src\\Cozmo.Robot\\NvStorage.cs",
+    "Completion": "cozmo-stack\\src\\Cozmo.Robot\\NvStorage.cs",
+    "NvResult": "cozmo-stack\\src\\Cozmo.Robot\\NvStorage.cs",
+    "NVStorageOpResult": "cozmo-stack\\src\\Cozmo.Robot\\NvStorage.cs",
+    "TrackLayer": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "TrackLayerManager": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "FaceLayerManager": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "BackpackLayerManager": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "ScanLineState": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "LiveIdleParam": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "LiveIdleParams": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "LayeredFrame": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "TrackLayerComponent": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\TrackLayers.cs",
+    "Cube": "cozmo-stack\\src\\Cozmo.Robot\\Cubes.cs",
+    "CozmoCubes": "cozmo-stack\\src\\Cozmo.Robot\\Cubes.cs",
+    "DoubleTapInfo": "cozmo-stack\\src\\Cozmo.Robot\\Cubes.cs",
+    "AnimationTrack": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationClip.cs",
+    "NamedColors": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationClip.cs",
+    "BackpackColor": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationClip.cs",
+    "AnimEvent": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationClip.cs",
+    "AnimationClip": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationClip.cs",
+    "CameraResolutions": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "CameraFrame": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "EncodedImageDecoder": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "CozmoCamera": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "CurrentCameraParams": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "CameraSettings": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "before": "cozmo-stack\\src\\Cozmo.Robot\\Camera.cs",
+    "FaceAnimationLibrary": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\FaceAnimationLibrary.cs",
+    "MiniPng": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\FaceAnimationLibrary.cs",
+    "Gray8": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\FaceAnimationLibrary.cs",
+    "LedColor": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "LedPattern": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "LightWire": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "BackpackLightAnimations": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "BodyLightComponent": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "CozmoLights": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "CubeLightAnimations": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "CubeLightComponent": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "Playing": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "ObjectInfo": "cozmo-stack\\src\\Cozmo.Robot\\Lights.cs",
+    "SimpleMood": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "GroupContainer": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "AnimationGroup": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "check": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "AnimationTriggerResponses": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "AnimationLibrary": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\AnimationLibrary.cs",
+    "EyeParam": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\ProceduralFace.cs",
+    "Eye": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\ProceduralFace.cs",
+    "ProceduralFacePose": "cozmo-stack\\src\\Cozmo.Robot\\Animation\\ProceduralFace.cs"
+  },
+  "files": [
+    [
+      "ActionCompletionTests.cs",
+      35
+    ],
+    [
+      "ActionListTests.cs",
+      72
+    ],
+    [
+      "AnimationAssetTests.cs",
+      26
+    ],
+    [
+      "AnimationGapTests.cs",
+      76
+    ],
+    [
+      "AnimationGroupGateTests.cs",
+      4
+    ],
+    [
+      "AnimationStreamLifecycleTests.cs",
+      5
+    ],
+    [
+      "AnimationTests.cs",
+      37
+    ],
+    [
+      "AssetPresenceTests.cs",
+      0
+    ],
+    [
+      "BehaviorFrameworkTests.cs",
+      218
+    ],
+    [
+      "BehaviorHardeningTests.cs",
+      8
+    ],
+    [
+      "BehaviorTests.cs",
+      16
+    ],
+    [
+      "BodyAngleTests.cs",
+      21
+    ],
+    [
+      "ClaheTests.cs",
+      20
+    ],
+    [
+      "CompoundActionTests.cs",
+      52
+    ],
+    [
+      "ConnectionTests.cs",
+      54
+    ],
+    [
+      "ControlCheckFidelityTests.cs",
+      13
+    ],
+    [
+      "ControlTests.cs",
+      60
+    ],
+    [
+      "CoreReviewTests.cs",
+      50
+    ],
+    [
+      "CorrectionsTests.cs",
+      25
+    ],
+    [
+      "CorrectionTests.cs",
+      40
+    ],
+    [
+      "CubeShakeTests.cs",
+      19
+    ],
+    [
+      "DerivedStateTests.cs",
+      122
+    ],
+    [
+      "DesiredFaceDistortionTests.cs",
+      16
+    ],
+    [
+      "DeviceTests.cs",
+      125
+    ],
+    [
+      "EcvcsExtractorTests.cs",
+      61
+    ],
+    [
+      "EngineAppLayerTests.cs",
+      184
+    ],
+    [
+      "FaceRecognizerTests.cs",
+      153
+    ],
+    [
+      "FaceTests.cs",
+      125
+    ],
+    [
+      "FidelityLiteralLintTests.cs",
+      0
+    ],
+    [
+      "FidelityManifestTests.cs",
+      0
+    ],
+    [
+      "FirmwareJsonDoubleTests.cs",
+      5
+    ],
+    [
+      "FrameTests.cs",
+      51
+    ],
+    [
+      "FreeplayTests.cs",
+      316
+    ],
+    [
+      "HardeningTests.cs",
+      3
+    ],
+    [
+      "HardwareCaptureTests.cs",
+      10
+    ],
+    [
+      "HardwareCatalogFidelityTests.cs",
+      5
+    ],
+    [
+      "HardwareRunnerTests.cs",
+      154
+    ],
+    [
+      "IdleFaceTests.cs",
+      43
+    ],
+    [
+      "ImageCacheTests.cs",
+      10
+    ],
+    [
+      "JpegCheck.cs",
+      0
+    ],
+    [
+      "KeepAliveTests.cs",
+      47
+    ],
+    [
+      "LiftGeometryTests.cs",
+      13
+    ],
+    [
+      "LightPackingTests.cs",
+      6
+    ],
+    [
+      "LinkCheckFidelityTests.cs",
+      2
+    ],
+    [
+      "LiveIdleSeam.cs",
+      0
+    ],
+    [
+      "M10TestSupport.cs",
+      0
+    ],
+    [
+      "M11RVisBuildTests.cs",
+      309
+    ],
+    [
+      "M12RFix2StreamATests.cs",
+      39
+    ],
+    [
+      "M12RVisBuildTests.cs",
+      367
+    ],
+    [
+      "M13RVisBuildTests.cs",
+      188
+    ],
+    [
+      "M2ProtocolTests.cs",
+      77
+    ],
+    [
+      "M3DeviceTests.cs",
+      276
+    ],
+    [
+      "M4ControlTests.cs",
+      191
+    ],
+    [
+      "M5AnimationTests.cs",
+      278
+    ],
+    [
+      "M7BatchThreeATests.cs",
+      86
+    ],
+    [
+      "M7BatchThreeBTests.cs",
+      116
+    ],
+    [
+      "M7BehaviorTests.cs",
+      28
+    ],
+    [
+      "M8BatchThreeCTests.cs",
+      83
+    ],
+    [
+      "M8BatchThreeDTests.cs",
+      83
+    ],
+    [
+      "ManipRig.cs",
+      0
+    ],
+    [
+      "ManipulationTests.cs",
+      129
+    ],
+    [
+      "MessageTests.cs",
+      37
+    ],
+    [
+      "MoodTests.cs",
+      41
+    ],
+    [
+      "MotionPrimitiveTests.cs",
+      31
+    ],
+    [
+      "NavigationTests.cs",
+      192
+    ],
+    [
+      "NeedsDecayCheckedRowsTests.cs",
+      9
+    ],
+    [
+      "OpenCv310M11Tests.cs",
+      27
+    ],
+    [
+      "OverheadEdgeTests.cs",
+      48
+    ],
+    [
+      "PickupVerifyTests.cs",
+      11
+    ],
+    [
+      "ProceduralFaceRendererTests.cs",
+      44
+    ],
+    [
+      "R2FloorPlacementTests.cs",
+      111
+    ],
+    [
+      "RemainingGapTests.cs",
+      13
+    ],
+    [
+      "RestingFlatTests.cs",
+      6
+    ],
+    [
+      "RFix2BTests.cs",
+      45
+    ],
+    [
+      "RFixBatch1Tests.cs",
+      76
+    ],
+    [
+      "RFixBatch2Tests.cs",
+      176
+    ],
+    [
+      "RFixBatch3Tests.cs",
+      22
+    ],
+    [
+      "SearchForBlockTests.cs",
+      35
+    ],
+    [
+      "SimulatedFacePacing.cs",
+      0
+    ],
+    [
+      "SourceFidelityTests.cs",
+      37
+    ],
+    [
+      "TransportHardeningTests.cs",
+      17
+    ],
+    [
+      "TransportRepairTests.cs",
+      289
+    ],
+    [
+      "TransportSourceTests.cs",
+      30
+    ],
+    [
+      "TriggerTests.cs",
+      15
+    ],
+    [
+      "VisionModeScheduleTests.cs",
+      31
+    ],
+    [
+      "VisionTests.cs",
+      190
+    ],
+    [
+      "WwiseAnkiResolverTests.cs",
+      122
+    ],
+    [
+      "WwiseAppAudioInputTests.cs",
+      47
+    ],
+    [
+      "WwiseAssets.cs",
+      0
+    ],
+    [
+      "WwiseAudioSceneTests.cs",
+      7
+    ],
+    [
+      "WwiseAuxRouteTests.cs",
+      146
+    ],
+    [
+      "WwiseBankLoaderTests.cs",
+      20
+    ],
+    [
+      "WwiseBankReaderTests.cs",
+      1
+    ],
+    [
+      "WwiseBusFxTests.cs",
+      69
+    ],
+    [
+      "WwiseBusLifetimeTests.cs",
+      34
+    ],
+    [
+      "WwiseBusTests.cs",
+      25
+    ],
+    [
+      "WwiseBusWalkTests.cs",
+      14
+    ],
+    [
+      "WwiseClipWindowTests.cs",
+      15
+    ],
+    [
+      "WwiseCompressorTests.cs",
+      70
+    ],
+    [
+      "WwiseContinuousTests.cs",
+      59
+    ],
+    [
+      "WwiseEndOfEventDoubles.cs",
+      0
+    ],
+    [
+      "WwiseEqPluginTests.cs",
+      95
+    ],
+    [
+      "WwiseEventRuntimeTests.cs",
+      44
+    ],
+    [
+      "WwiseFrameDriverTests.cs",
+      13
+    ],
+    [
+      "WwiseGainTests.cs",
+      18
+    ],
+    [
+      "WwiseHashTests.cs",
+      7
+    ],
+    [
+      "WwiseHijackPluginTests.cs",
+      84
+    ],
+    [
+      "WwiseLimiterPluginTests.cs",
+      129
+    ],
+    [
+      "WwiseListenerTests.cs",
+      61
+    ],
+    [
+      "WwiseLiveVibratoTests.cs",
+      8
+    ],
+    [
+      "WwiseMediaTableTests.cs",
+      82
+    ],
+    [
+      "WwiseMixerTests.cs",
+      16
+    ],
+    [
+      "WwiseMixKernelTests.cs",
+      0
+    ],
+    [
+      "WwiseModulatorListTests.cs",
+      0
+    ],
+    [
+      "WwiseModulatorTests.cs",
+      38
+    ],
+    [
+      "WwiseMusicTests.cs",
+      51
+    ],
+    [
+      "WwiseNotificationQueueTests.cs",
+      3
+    ],
+    [
+      "WwisePitchNodeTests.cs",
+      14
+    ],
+    [
+      "WwisePlaybackBridgeTests.cs",
+      57
+    ],
+    [
+      "WwisePlaybackLimiterTests.cs",
+      481
+    ],
+    [
+      "WwisePlaybackTests.cs",
+      12
+    ],
+    [
+      "WwisePlayPathTests.cs",
+      126
+    ],
+    [
+      "WwiseResamplerTests.cs",
+      19
+    ],
+    [
+      "WwiseRobotAudioPathTests.cs",
+      83
+    ],
+    [
+      "WwiseRtpcCurveTests.cs",
+      30
+    ],
+    [
+      "WwiseRtpcDeliveryTests.cs",
+      12
+    ],
+    [
+      "WwiseRtpcListenerWalkTests.cs",
+      22
+    ],
+    [
+      "WwiseRtpcStoreTests.cs",
+      57
+    ],
+    [
+      "WwiseRtpcTests.cs",
+      15
+    ],
+    [
+      "WwiseRuntimeGraphChainTests.cs",
+      153
+    ],
+    [
+      "WwiseRuntimeGraphTests.cs",
+      3
+    ],
+    [
+      "WwiseRuntimeTests.cs",
+      36
+    ],
+    [
+      "WwiseSelectionTests.cs",
+      25
+    ],
+    [
+      "WwiseSongTests.cs",
+      68
+    ],
+    [
+      "WwiseSourceCloseTests.cs",
+      1
+    ],
+    [
+      "WwiseStreamManagerTests.cs",
+      141
+    ],
+    [
+      "WwiseStreamSourceTests.cs",
+      97
+    ],
+    [
+      "WwiseStreamTestRig.cs",
+      0
+    ],
+    [
+      "WwiseTests.cs",
+      82
+    ],
+    [
+      "WwiseVoiceBusEngineTests.cs",
+      59
+    ],
+    [
+      "WwiseVoiceEngineTests.cs",
+      70
+    ],
+    [
+      "WwiseVoiceFilterOracleTests.cs",
+      14
+    ],
+    [
+      "WwiseVoiceFilterTests.cs",
+      99
+    ],
+    [
+      "WwiseVoiceLinkerTests.cs",
+      287
+    ],
+    [
+      "WwiseVoiceStateOracleTests.cs",
+      0
+    ],
+    [
+      "WwiseVoiceStateTests.cs",
+      92
+    ],
+    [
+      "WwiseVorbisCombineNativeTests.cs",
+      2
+    ],
+    [
+      "WwiseVorbisEngineTests.cs",
+      26
+    ],
+    [
+      "WwiseVorbisImdctNativeTests.cs",
+      1
+    ],
+    [
+      "WwiseVorbisNativeTests.cs",
+      194
+    ],
+    [
+      "WwiseVorbisWholeDecodeNativeTests.cs",
+      2
+    ]
+  ],
+  "assertions": 9743
+}
