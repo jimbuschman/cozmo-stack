@@ -21,11 +21,11 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-011 | 44 | PARTIAL |
 | Q14-012 | 46 | PARTIAL |
 | Q14-013 | 48 | CHECKED |
-| Q14-014 | 49 | NOT DONE |
+| Q14-014 | 49 | PARTIAL |
 | Q14-015 | 50 | NOT DONE |
-| Q14-016 | 53 | NOT DONE |
+| Q14-016 | 53 | PARTIAL |
 | Q14-017 | 55 | PARTIAL |
-| Q14-019 | 57 | NOT DONE |
+| Q14-019 | 57 | PARTIAL |
 | Q14-020 | 58 | PARTIAL |
 | Q14-021 | 59 | NOT DONE |
 | Q14-022 | 60 | NOT DONE |
@@ -34,7 +34,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-025 | 63 | PARTIAL |
 | Q14-026 | 64 | NOT DONE |
 | Q14-027 | 65 | NOT DONE |
-| Q14-028 | 66 | NOT DONE |
+| Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | NOT DONE |
 | Q14-030 | 68 | NOT DONE |
 | Q14-031 | 69 | NOT DONE |
@@ -226,7 +226,7 @@ CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficie
 
 > | M6-012 | **KEEP** | 0x00A4FBEC;0x00A45E9C;0x00A25FF8;0x00A1F79C;0x00A209BC | Channel mapping/LFE route, matrix inputs and updates, first-update rule and conn+6C fade arming remain exact; panner decisions cannot be replaced by an arbitrary stereo average. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: CR1–CR6 and MR1–MR5 establish connection dispatch, supplied gain pairs, ordinary/LFE channel selection, padded matrix layout, frame publication and mixer control/PCM boundary. Panner/matrix producers, first-update and connection6C arming remain open; no completed M6-012 claim.
 
 ## Q14-015 — triage line 50
 
@@ -238,7 +238,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-013 | **KEEP** | 0x00A4FD84..0x00A4FEF4;0x004DEB18;0x004DEB8C;0x00AA19CC;0x00AA25E0 | Registry, ShareSet parameters, slot order, bypass/LFE/channelLink settings, live insert-FX wiring, detector choice and reset timing remain exact; do not default missing bank fields. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: FX1–FX6, B1–B12/B19–B26 and F1–F21 establish slot execution/return order, bypass reset/update gates, registry factories, parameter setup and kernel/control boundaries. ShareSet reader/writer and live factory/initialization closure remain open; no whole M6-013 completion claim.
 
 ## Q14-017 — triage line 55
 
@@ -250,7 +250,7 @@ PARTIAL; F1–F21 separate externally authored settings, coefficient stores, ker
 
 > | M6-014 | **KEEP** | 0x00A42210;0x00A4FEF8;0x00A4F754;0x00A4F36C;0x00A43F64;0x00A4ECE4;0x005985FC;0x009CC2AC;0x009CC4D8 | Reuse keys/eState, aux-connect policy, device gates, FX factory/bypass, idle-frame lifetime, tail and zero-length chunks are routing/state/timing, not DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: FX1–FX6, BO1–BO6, BW1–BW4 and HG1–HG8 establish render ordering, bypass/format propagation, callback visibility and Hijack producer/consumer state. Bus creation/reuse, per-slot factory and idle-release/destruction remain open; no whole M6-014 completion claim.
 
 ## Q14-020 — triage line 58
 
@@ -304,7 +304,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-022 | **VERIFY** | 0x00A50044..0x00A50FD0;0x00A52164..0x00A5266B;0x009C806C..0x009C8104 | Meter filter identity, lane mapping and metric consumers must be bounded: prove whether a result drives decisions or is callback-visible before simplifying it. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: BO4–BO6 and B13 prove metric pointer/results are passed to an observer and optional external completion callback; empty-frame values/order are exact. Full metric/filter identity, lane mapping, concrete live registrations and downstream consumers remain open. No whole metering-stage arithmetic exemption established.
 
 ## Q14-029 — triage line 67
 

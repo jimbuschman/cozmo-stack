@@ -1,0 +1,42 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A46668..0x00A46708 exclusive; ARM;
+00A46668: vmov         s15, r3
+00A4666C: str          fp, [sp, #-4]!
+00A46670: add          fp, sp, #0
+00A46674: vcmp.f32     s15, #0
+00A46678: sub          sp, sp, #0xc
+00A4667C: sub          sp, sp, #0x20
+00A46680: ldr          ip, [fp, #4]
+00A46684: add          r3, sp, #0xf
+00A46688: bic          r3, r3, #0xf
+00A4668C: vmov         s14, r2
+00A46690: vldr         s13, [pc, #0x11c] ; word[00A467B4]=00000000
+00A46694: vmrs         apsr_nzcv, fpscr
+00A46698: add          ip, r0, ip, lsl #2
+00A4669C: bne          #0xa4671c
+00A466A0: vcmp.f32     s14, s13
+00A466A4: vmrs         apsr_nzcv, fpscr
+00A466A8: bne          #0xa466b8
+00A466AC: sub          sp, fp, #0
+00A466B0: pop          {fp}
+00A466B4: bx           lr
+00A466B8: vadd.f32     s13, s14, s13
+00A466BC: str          r2, [r3]
+00A466C0: vstr         s13, [r3, #4]
+00A466C4: vstr         s13, [r3, #8]
+00A466C8: vstr         s13, [r3, #0xc]
+00A466CC: vld1.32      {d24, d25}, [r3:0x40]
+00A466D0: add          r2, r0, #0x10
+00A466D4: add          r3, r1, #0x10
+00A466D8: vld1.32      {d22, d23}, [r0]
+00A466DC: add          r0, r0, #0x20
+00A466E0: vmul.f32     q11, q11, q12
+00A466E4: cmp          ip, r0
+00A466E8: vld1.32      {d20, d21}, [r2]
+00A466EC: vmul.f32     q10, q10, q12
+00A466F0: vld1.32      {d18, d19}, [r1]
+00A466F4: vld1.32      {d16, d17}, [r3]
+00A466F8: vadd.f32     q9, q9, q11
+00A466FC: vadd.f32     q8, q8, q10
+00A46700: vst1.32      {d18, d19}, [r1]
+00A46704: add          r1, r1, #0x20

@@ -1,0 +1,46 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A46708..0x00A467B4 exclusive; ARM;
+00A46708: vst1.32      {d16, d17}, [r3]
+00A4670C: bhi          #0xa466d0
+00A46710: sub          sp, fp, #0
+00A46714: pop          {fp}
+00A46718: bx           lr
+00A4671C: vmov.f32     s13, #3.000000e+00
+00A46720: str          r2, [r3]
+00A46724: vmov         s12, r2
+00A46728: vmla.f32     s12, s15, s13
+00A4672C: vadd.f32     s13, s15, s15
+00A46730: vstr         s12, [r3, #0xc]
+00A46734: vmov.f32     s12, #4.000000e+00
+00A46738: vadd.f32     s13, s13, s14
+00A4673C: vadd.f32     s14, s14, s15
+00A46740: vstr         s13, [r3, #8]
+00A46744: vmul.f32     s15, s15, s12
+00A46748: vstr         s14, [r3, #4]
+00A4674C: vld1.32      {d24, d25}, [r3:0x40]
+00A46750: vdup.32      q14, d7[1]
+00A46754: vadd.f32     q13, q12, q14
+00A46758: vstr         s15, [fp, #-8]
+00A4675C: vadd.f32     q14, q14, q14
+00A46760: add          r2, r0, #0x10
+00A46764: vld1.32      {d22, d23}, [r0]
+00A46768: vmul.f32     q11, q11, q12
+00A4676C: add          r3, r1, #0x10
+00A46770: vld1.32      {d20, d21}, [r2]
+00A46774: add          r0, r0, #0x20
+00A46778: vmul.f32     q10, q10, q13
+00A4677C: cmp          ip, r0
+00A46780: vld1.32      {d18, d19}, [r1]
+00A46784: vadd.f32     q13, q13, q14
+00A46788: vld1.32      {d16, d17}, [r3]
+00A4678C: vadd.f32     q9, q9, q11
+00A46790: vadd.f32     q8, q8, q10
+00A46794: vadd.f32     q12, q12, q14
+00A46798: vst1.32      {d18, d19}, [r1]
+00A4679C: add          r1, r1, #0x20
+00A467A0: vst1.32      {d16, d17}, [r3]
+00A467A4: bhi          #0xa46760
+00A467A8: sub          sp, fp, #0
+00A467AC: pop          {fp}
+00A467B0: bx           lr
+00A467B4: raw=00000000 relocated=00000000

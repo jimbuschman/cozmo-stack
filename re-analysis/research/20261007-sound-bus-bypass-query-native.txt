@@ -1,0 +1,73 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A68B28..0x00A68B84 exclusive; ARM;
+00A68B28: ldr          r0, [r0]
+00A68B2C: cmp          r0, #0
+00A68B30: bxeq         lr
+00A68B34: b            #0x9c5974
+00A68B38: ldr          r0, [r0]
+00A68B3C: cmp          r0, #0
+00A68B40: bxeq         lr
+00A68B44: ldr          r0, [r0, #0x54]
+00A68B48: cmp          r0, #0
+00A68B4C: bxeq         lr
+00A68B50: ldr          r0, [r0, #4]
+00A68B54: adds         r0, r0, #0
+00A68B58: movne        r0, #1
+00A68B5C: bx           lr
+00A68B60: ldr          r0, [r0]
+00A68B64: cmp          r0, #0
+00A68B68: beq          #0xa68b70
+00A68B6C: b            #0x9c5a24
+00A68B70: ldr          r3, [r1]
+00A68B74: push         {r4, lr}
+00A68B78: cmp          r3, #0
+00A68B7C: mov          r4, r1
+00A68B80: str          r0, [r1]
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009C5974..0x009C59D4 exclusive; ARM;
+009C5974: ldr          r3, [r0, #0x28]
+009C5978: push         {r4, r5, r6, r7, lr}
+009C597C: cmp          r3, #0
+009C5980: ldr          r2, [r0, #0x14]
+009C5984: sub          sp, sp, #0x1c
+009C5988: ldrbne       r3, [r3, #0x24]
+009C598C: ubfxne       r3, r3, #4, #1
+009C5990: cmp          r2, #0
+009C5994: beq          #0x9c5a0c
+009C5998: ldr          r2, [r2, #4]
+009C599C: mov          r7, #0
+009C59A0: mov          r5, #0
+009C59A4: lsr          r4, r2, #1
+009C59A8: and          r6, r4, #1
+009C59AC: orrs         r2, r6, r7
+009C59B0: beq          #0x9c5a0c
+009C59B4: ldr          ip, [pc, #0x64] ; word[009C5A20]=0067A6B4
+009C59B8: mov          r3, sp
+009C59BC: add          r1, r0, #0x10
+009C59C0: mov          r2, #0x21
+009C59C4: mvn          lr, #0
+009C59C8: str          r5, [sp]
+009C59CC: ldr          ip, [pc, ip]
+009C59D0: str          r5, [sp, #4]
+00A50FD8: raw=00000000 relocated=00000000
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009C59D4..0x009C5A20 exclusive; ARM;
+009C59D4: str          r5, [sp, #8]
+009C59D8: ldr          r0, [ip]
+009C59DC: str          r5, [sp, #0x14]
+009C59E0: strb         lr, [sp, #0xc]
+009C59E4: strb         lr, [sp, #0x10]
+009C59E8: bl           #0xa11590 ; FUN_00a11590
+009C59EC: vmov         s15, r0
+009C59F0: vcmp.f32     s15, #0
+009C59F4: vmrs         apsr_nzcv, fpscr
+009C59F8: movne        r3, #1
+009C59FC: moveq        r3, #0
+009C5A00: mov          r0, r3
+009C5A04: add          sp, sp, #0x1c
+009C5A08: pop          {r4, r5, r6, r7, pc}
+009C5A0C: ldr          r2, [r0, #0x24]
+009C5A10: cmp          r2, #0
+009C5A14: ldrbne       r3, [r2, #0x10]
+009C5A18: ubfxne       r3, r3, #4, #1
+009C5A1C: b            #0x9c5a00

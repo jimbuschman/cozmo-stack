@@ -1,0 +1,70 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004DEB18..0x004DEB8C exclusive; ARM;
+004DEB18: ldr          r1, [pc, #0x5c] ; word[004DEB7C]=00B6144C
+004DEB1C: mov          r2, #0
+004DEB20: ldr          ip, [pc, #0x58] ; word[004DEB80]=00B61694
+004DEB24: ldr          r0, [pc, #0x58] ; word[004DEB84]=00B61690
+004DEB28: ldr          r1, [pc, r1]
+004DEB2C: ldr          r3, [pc, #0x54] ; word[004DEB88]=00BAF990
+004DEB30: push         {r4, r5, lr}
+004DEB34: add          r3, pc, r3
+004DEB38: ldr          r5, [r1]
+004DEB3C: mov          r4, #3
+004DEB40: ldr          ip, [pc, ip]
+004DEB44: mov          lr, #0x6e
+004DEB48: ldr          r0, [pc, r0]
+004DEB4C: str          r3, [r1]
+004DEB50: str          r5, [r3]
+004DEB54: str          r4, [r3, #4]
+004DEB58: str          lr, [r3, #0xc]
+004DEB5C: str          ip, [r3, #0x10]
+004DEB60: str          r0, [r3, #0x14]
+004DEB64: str          r2, [r3, #8]
+004DEB68: str          r2, [r3, #0x18]
+004DEB6C: str          r2, [r3, #0x1c]
+004DEB70: str          r2, [r3, #0x20]
+004DEB74: str          r2, [r3, #0x24]
+004DEB78: pop          {r4, r5, pc}
+004DEB7C: adcseq       r1, r6, ip, asr #8
+004DEB80: umlalseq     r1, r6, r4, r6
+004DEB84: umlalseq     r1, r6, r0, r6
+004DEB88: umlalseq     pc, sl, r0, sb
+RANGE 0x004DEB8C..0x004DEC00 exclusive; ARM;
+004DEB8C: ldr          r1, [pc, #0x5c] ; word[004DEBF0]=00B613D8
+004DEB90: mov          r2, #0
+004DEB94: ldr          ip, [pc, #0x58] ; word[004DEBF4]=00B61628
+004DEB98: ldr          r0, [pc, #0x58] ; word[004DEBF8]=00B61624
+004DEB9C: ldr          r1, [pc, r1]
+004DEBA0: ldr          r3, [pc, #0x54] ; word[004DEBFC]=00BAF944
+004DEBA4: push         {r4, r5, lr}
+004DEBA8: add          r3, pc, r3
+004DEBAC: ldr          r5, [r1]
+004DEBB0: mov          r4, #3
+004DEBB4: ldr          ip, [pc, ip]
+004DEBB8: mov          lr, #0x69
+004DEBBC: ldr          r0, [pc, r0]
+004DEBC0: str          r3, [r1]
+004DEBC4: str          r5, [r3]
+004DEBC8: str          r4, [r3, #4]
+004DEBCC: str          lr, [r3, #0xc]
+004DEBD0: str          ip, [r3, #0x10]
+004DEBD4: str          r0, [r3, #0x14]
+004DEBD8: str          r2, [r3, #8]
+004DEBDC: str          r2, [r3, #0x18]
+004DEBE0: str          r2, [r3, #0x1c]
+004DEBE4: str          r2, [r3, #0x20]
+004DEBE8: str          r2, [r3, #0x24]
+004DEBEC: pop          {r4, r5, pc}
+004DEBF0: ldrsbteq     r1, [r6], r8
+004DEBF4: adcseq       r1, r6, r8, lsr #12
+004DEBF8: adcseq       r1, r6, r4, lsr #12
+004DEBFC: adcseq       pc, sl, r4, asr #18
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103FF7C: raw=00000000 relocated=0108D9F4 g_pAKPluginList
+010401DC: raw=00AA18F4 relocated=00AA18F4
+010401E0: raw=00AA2280 relocated=00AA2280
+010401E4: raw=00AA257C relocated=00AA257C
+010401E8: raw=00AA3178 relocated=00AA3178
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103E560: raw=004DEB18 relocated=004DEB18
+0103E564: raw=004DEB8C relocated=004DEB8C

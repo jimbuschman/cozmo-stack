@@ -1,0 +1,123 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A45E9C..0x00A46080 exclusive; ARM;
+00A45E9C: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A45EA0: mov          r7, r1
+00A45EA4: vpush        {d8}
+00A45EA8: mov          r1, r3
+00A45EAC: ldr          r4, [r0, #4]
+00A45EB0: mov          fp, r2
+00A45EB4: ldr          r5, [r7, #4]
+00A45EB8: ldrb         r2, [r7, #4]
+00A45EBC: sub          sp, sp, #0x2c
+00A45EC0: ubfx         sb, r5, #0xf, #1
+00A45EC4: rsb          sb, sb, r5
+00A45EC8: str          r3, [sp, #0x24]
+00A45ECC: ubfx         r3, r4, #0xf, #1
+00A45ED0: rsb          r3, r3, r4
+00A45ED4: str          r0, [sp, #0x14]
+00A45ED8: ands         r3, r3, #0xff
+00A45EDC: str          r2, [sp, #0x20]
+00A45EE0: str          r3, [sp, #0x18]
+00A45EE4: uxtb         sb, sb
+00A45EE8: vldr         s16, [sp, #0x5c]
+00A45EEC: ldrh         sl, [sp, #0x60]
+00A45EF0: beq          #0xa45fd0
+00A45EF4: add          r3, r2, #3
+00A45EF8: ldr          r2, [sp, #0x58]
+00A45EFC: str          r1, [sp, #0xc]
+00A45F00: lsr          r3, r3, #2
+00A45F04: str          r2, [sp, #0x10]
+00A45F08: mov          r2, #0
+00A45F0C: lsl          r3, r3, #4
+00A45F10: str          r2, [sp, #8]
+00A45F14: str          r3, [sp, #0x1c]
+00A45F18: ldr          r2, [sp, #0x14]
+00A45F1C: cmp          sb, #0
+00A45F20: ldrh         r3, [r2, #0xc]
+00A45F24: ldr          r8, [r2]
+00A45F28: ldr          r2, [sp, #8]
+00A45F2C: lsl          r3, r3, #2
+00A45F30: mla          r8, r2, r3, r8
+00A45F34: beq          #0xa45f94
+00A45F38: ldr          r6, [sp, #0x10]
+00A45F3C: mov          r4, #0
+00A45F40: ldr          r5, [sp, #0xc]
+00A45F44: vldmia       r5!, {s14}
+00A45F48: mov          r0, r8
+00A45F4C: ldrh         r3, [r7, #0xc]
+00A45F50: ldr          r1, [r7]
+00A45F54: vldr         s15, [fp]
+00A45F58: str          sl, [sp]
+00A45F5C: lsl          r3, r3, #2
+00A45F60: vldmia       r6!, {s13}
+00A45F64: mla          r1, r4, r3, r1
+00A45F68: add          r4, r4, #1
+00A45F6C: vmul.f32     s15, s14, s15
+00A45F70: vldr         s14, [fp, #4]
+00A45F74: vmov.f32     s12, s15
+00A45F78: vmov         r2, s15
+00A45F7C: vnmls.f32    s12, s13, s14
+00A45F80: vmul.f32     s15, s16, s12
+00A45F84: vmov         r3, s15
+00A45F88: bl           #0xa46668 ; FUN_00a46668
+00A45F8C: cmp          sb, r4
+00A45F90: bne          #0xa45f44
+00A45F94: ldr          r1, [sp, #0xc]
+00A45F98: ldr          r2, [sp, #0x1c]
+00A45F9C: ldr          r3, [sp, #8]
+00A45FA0: add          r1, r1, r2
+00A45FA4: str          r1, [sp, #0xc]
+00A45FA8: ldr          r1, [sp, #0x18]
+00A45FAC: add          r3, r3, #1
+00A45FB0: str          r3, [sp, #8]
+00A45FB4: cmp          r1, r3
+00A45FB8: ldr          r3, [sp, #0x10]
+00A45FBC: add          r3, r3, r2
+00A45FC0: str          r3, [sp, #0x10]
+00A45FC4: bne          #0xa45f18
+00A45FC8: ldr          r3, [sp, #0x14]
+00A45FCC: ldr          r4, [r3, #4]
+00A45FD0: tst          r4, #0x8000
+00A45FD4: beq          #0xa46070
+00A45FD8: ldr          r2, [r7, #4]
+00A45FDC: tst          r2, #0x8000
+00A45FE0: beq          #0xa46070
+00A45FE4: ldr          r3, [sp, #0x20]
+00A45FE8: uxtb         r2, r2
+00A45FEC: ldr          r1, [sp, #0x18]
+00A45FF0: sub          r2, r2, #1
+00A45FF4: add          r3, r3, #3
+00A45FF8: ldr          r5, [sp, #0x14]
+00A45FFC: bic          r3, r3, #3
+00A46000: vldr         s12, [fp]
+00A46004: ldrh         r4, [r7, #0xc]
+00A46008: mla          r3, r1, r3, r2
+00A4600C: ldrb         lr, [r5, #4]
+00A46010: ldrh         r0, [r5, #0xc]
+00A46014: lsl          r2, r2, #2
+00A46018: vldr         s14, [fp, #4]
+00A4601C: sub          lr, lr, #1
+00A46020: ldr          r1, [r7]
+00A46024: ldr          r5, [r5]
+00A46028: lsl          lr, lr, #2
+00A4602C: lsl          ip, r3, #2
+00A46030: ldr          r3, [sp, #0x24]
+00A46034: str          sl, [sp]
+00A46038: add          r3, r3, ip
+00A4603C: ldr          r6, [sp, #0x58]
+00A46040: mla          r1, r4, r2, r1
+00A46044: vldr         s15, [r3]
+00A46048: add          ip, r6, ip
+00A4604C: mla          r0, r0, lr, r5
+00A46050: vldr         s13, [ip]
+00A46054: vmul.f32     s15, s15, s12
+00A46058: vmov.f32     s12, s15
+00A4605C: vmov         r2, s15
+00A46060: vnmls.f32    s12, s13, s14
+00A46064: vmul.f32     s15, s16, s12
+00A46068: vmov         r3, s15
+00A4606C: bl           #0xa46668 ; FUN_00a46668
+00A46070: strh         sl, [r7, #0xe]
+00A46074: add          sp, sp, #0x2c
+00A46078: vpop         {d8}
+00A4607C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
