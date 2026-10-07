@@ -1,0 +1,1072 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00592BB0..0x00593440 exclusive; Thumb; _ZN4Anki5Cozmo5Audio20CozmoAudioControllerC2EPKNS0_12CozmoContextE
+00592BB0: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00592BB4: sub.w        sp, sp, #0x214
+00592BB8: mov          sb, r0
+00592BBA: ldr.w        r0, [pc, #0xe6c] ; word[00593A28]=00AABC88
+00592BBE: mov          fp, r1
+00592BC0: add          r0, pc
+00592BC2: ldr          r0, [r0]
+00592BC4: ldr          r0, [r0]
+00592BC6: str          r0, [sp, #0x210]
+00592BC8: mov          r0, sb
+00592BCA: blx          #0x4af0a0 ; Anki::AudioEngine::AudioEngineController::AudioEngineController
+00592BCE: ldr.w        r0, [pc, #0xe5c] ; word[00593A2C]=00AAC1CE
+00592BD2: movs         r4, #0
+00592BD4: movs         r5, #1
+00592BD6: add          r0, pc
+00592BD8: ldr          r0, [r0]
+00592BDA: adds         r0, #8
+00592BDC: str.w        r0, [sb]
+00592BE0: mov.w        r0, #0x3f800000
+00592BE4: strd         r4, r4, [sb, #0x7c]
+00592BE8: strd         r4, r0, [sb, #0x84]
+00592BEC: strd         r4, r4, [sb, #0x90]
+00592BF0: strd         r4, r0, [sb, #0x98]
+00592BF4: mov          r0, sb
+00592BF6: str          r4, [r0, #0x78]!
+00592BFA: str          r0, [sp, #0x14]
+00592BFC: mov          r0, sb
+00592BFE: str          r4, [r0, #0x8c]!
+00592C02: str          r0, [sp, #0x10]
+00592C04: movw         r0, #0x36d6
+00592C08: movt         r0, #0xedf0
+00592C0C: str          r0, [sp, #0xb4]
+00592C0E: movw         r0, #0x2782
+00592C12: movt         r0, #0xa3d3
+00592C16: str          r5, [sp, #0xb0]
+00592C18: str          r0, [sp, #0xb8]
+00592C1A: movw         r0, #0xb0f6
+00592C1E: movt         r0, #0x8dd
+00592C22: str          r0, [sp, #0xbc]
+00592C24: add          r1, sp, #0xb0
+00592C26: mov          r0, sb
+00592C28: blx          #0x4af0ac ; Anki::AudioEngine::AudioEngineController::InitializeMusicConductor
+00592C2C: ldr.w        r6, [fp, #8]
+00592C30: str          r5, [sp, #0x178]
+00592C32: str          r4, [sp, #0x1a0]
+00592C34: strd         r4, r4, [sp, #0x198]
+00592C38: add          r0, sp, #0x198
+00592C3A: addw         r1, pc, #0xe6c
+00592C3E: movs         r2, #6
+00592C40: bl           #0x4e02b2 ; FUN_004e02b2
+00592C44: add          r5, sp, #0x178
+00592C46: add.w        r8, sp, #0x198
+00592C4A: add          r0, sp, #0xa0
+00592C4C: mov          r1, r6
+00592C4E: mov          r2, r5
+00592C50: mov          r3, r8
+00592C52: blx          #0x4a64fc ; Anki::Util::Data::DataPlatform::pathToResource
+00592C56: ldrb.w       r0, [sp, #0x198]
+00592C5A: lsls         r0, r0, #0x1f
+00592C5C: itt          ne
+00592C5E: ldrne        r0, [sp, #0x1a0]
+00592C60: blxne        #0x4a40cc
+00592C64: add          r0, sp, #0x9c
+00592C66: blx          #0x4af0b8 ; Anki::Util::JNIUtils::getJNIEnvWrapper
+00592C6A: ldr          r0, [sp, #0x9c]
+00592C6C: ldr          r1, [r0]
+00592C6E: ldr          r1, [r1]
+00592C70: blx          r1
+00592C72: mov          sl, r0
+00592C74: add          r0, sp, #0xa0
+00592C76: blx          #0x4ae0d4 ; Anki::Util::FileUtils::DirectoryExists
+00592C7A: mov          r1, sl
+00592C7C: cmp.w        sl, #0
+00592C80: it           ne
+00592C82: movne        r1, #1
+00592C84: orrs         r0, r1
+00592C86: beq          #0x592cf6
+00592C88: add.w        r0, r8, #0x28
+00592C8C: movs         r4, #0
+00592C8E: movs         r1, #0x30
+00592C90: str          r4, [sp, #0x1a0]
+00592C92: str          r4, [sp, #0x1b8]
+00592C94: strd         r4, r4, [sp, #0x198]
+00592C98: str          r0, [sp, #0xc]
+00592C9A: blx          #0x4a48ac ; <EXTERNAL>::__aeabi_memclr8
+00592C9E: mov.w        r0, #0x1000000
+00592CA2: add.w        r7, r8, #0x10
+00592CA6: strd         r0, r0, [sp, #0x1f0]
+00592CAA: mov.w        r0, #0x10000
+00592CAE: str          r0, [sp, #0x1f8]
+00592CB0: mov.w        r0, #0x200000
+00592CB4: str          r0, [sp, #0x1fc]
+00592CB6: mov.w        r0, #0x400
+00592CBA: str          r0, [sp, #0x200]
+00592CBC: movs         r0, #0xf
+00592CBE: str          r0, [sp, #0x204]
+00592CC0: strh.w       r4, [sp, #0x208]
+00592CC4: strb.w       r4, [sp, #0x20a]
+00592CC8: strh.w       r4, [sp, #0x20c]
+00592CCC: add          r6, sp, #0xa0
+00592CCE: mov          r0, r8
+00592CD0: mov          r1, r6
+00592CD2: bl           #0x4e462a ; FUN_004e462a
+00592CD6: ldr.w        r0, [pc, #0xe3c] ; word[00593B14]=00000EFB
+00592CDA: add          r0, pc
+00592CDC: str          r0, [sp, #0x178]
+00592CDE: strd         r4, r4, [sp, #0x180]
+00592CE2: adds         r0, r5, #4
+00592CE4: ldrb.w       r1, [sp, #0xa0]
+00592CE8: str          r4, [sp, #0x17c]
+00592CEA: lsls         r1, r1, #0x1f
+00592CEC: bne          #0x592d6c
+00592CEE: ldm.w        r6, {r1, r2, r3}
+00592CF2: stm          r0!, {r1, r2, r3}
+00592CF4: b            #0x592d74
+00592CF6: movs         r0, #0
+00592CF8: strd         r0, r0, [sp, #0x198]
+00592CFC: str          r0, [sp, #0x1a0]
+00592CFE: addw         r0, pc, #0xdb0
+00592D02: add          r1, sp, #0x198
+00592D04: addw         r2, pc, #0xdd4
+00592D08: blx          #0x4a4108 ; Anki::Util::sErrorF
+00592D0C: ldr          r0, [sp, #0x198]
+00592D0E: cbz          r0, #0x592d2e
+00592D10: ldr          r1, [sp, #0x19c]
+00592D12: cmp          r1, r0
+00592D14: itttt        ne
+00592D16: subne.w      r2, r1, #8
+00592D1A: subne        r2, r2, r0
+00592D1C: mvnne        r3, #7
+00592D20: bicne.w      r2, r3, r2
+00592D24: itt          ne
+00592D26: addne        r1, r1, r2
+00592D28: strne        r1, [sp, #0x19c]
+00592D2A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00592D2E: ldr.w        r0, [pc, #0xddc] ; word[00593B0C]=00AABA50
+00592D32: movs         r2, #1
+00592D34: ldr.w        r1, [pc, #0xdd8] ; word[00593B10]=00AABA52
+00592D38: add          r0, pc
+00592D3A: add          r1, pc
+00592D3C: ldr          r0, [r0]
+00592D3E: ldr          r1, [r1]
+00592D40: ldrb         r0, [r0]
+00592D42: strb         r2, [r1]
+00592D44: cbz          r0, #0x592d4a
+00592D46: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+00592D4A: ldr          r0, [sp, #0x9c]
+00592D4C: movs         r1, #0
+00592D4E: str          r1, [sp, #0x9c]
+00592D50: cbz          r0, #0x592d58
+00592D52: ldr          r1, [r0]
+00592D54: ldr          r1, [r1, #8]
+00592D56: blx          r1
+00592D58: ldrb.w       r0, [sp, #0xa0]
+00592D5C: lsls         r0, r0, #0x1f
+00592D5E: beq.w        #0x593632
+00592D62: ldr          r0, [sp, #0xa8]
+00592D64: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00592D68: b.w          #0x593632
+00592D6C: ldrd         r2, r1, [sp, #0xa4]
+00592D70: bl           #0x4e02b2 ; FUN_004e02b2
+00592D74: add          r1, sp, #0x178
+00592D76: mov          r0, r7
+00592D78: blx          #0x4af0c4 ; std::__ndk1::function<bool(std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>const&,std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>&)>::operator=
+00592D7C: ldrb.w       r0, [sp, #0x17c]
+00592D80: lsls         r0, r0, #0x1f
+00592D82: itt          ne
+00592D84: ldrne        r0, [sp, #0x184]
+00592D86: blxne        #0x4a40cc
+00592D8A: cmp.w        sl, #0
+00592D8E: beq.w        #0x592ffe
+00592D92: ldr.w        r1, [pc, #0xda0] ; word[00593B34]=0065D329
+00592D96: ldr.w        r0, [sl]
+00592D9A: add          r1, pc
+00592D9C: ldr          r2, [r0, #0x18]
+00592D9E: mov          r0, sl
+00592DA0: blx          r2
+00592DA2: mov          r1, r0
+00592DA4: add.w        r8, sp, #0x178
+00592DA8: mov          r2, sl
+00592DAA: mov          r0, r8
+00592DAC: bl           #0x593d08 ; FUN_00593d08
+00592DB0: mov          r0, sl
+00592DB2: str          r7, [sp, #8]
+00592DB4: blx          #0x4af0d0 ; Anki::Util::JNIUtils::getCurrentActivity
+00592DB8: mov          r1, r0
+00592DBA: add          r0, sp, #0x158
+00592DBC: mov          r2, sl
+00592DBE: bl           #0x593db0 ; FUN_00593db0
+00592DC2: ldr.w        r0, [pc, #0xd74] ; word[00593B38]=00AABFE0
+00592DC6: ldr          r1, [sp, #0x158]
+00592DC8: add          r0, pc
+00592DCA: ldr          r0, [r0]
+00592DCC: ldr          r0, [r0]
+00592DCE: str          r0, [sp, #0x1e8]
+00592DD0: ldr.w        r0, [sl]
+00592DD4: ldr          r2, [r0, #0x64]
+00592DD6: mov          r0, sl
+00592DD8: blx          r2
+00592DDA: str          r0, [sp, #0x1ec]
+00592DDC: ldr.w        r0, [sl]
+00592DE0: ldr          r1, [sp, #0x178]
+00592DE2: ldr.w        r7, [r0, #0x84]
+00592DE6: addw         r2, pc, #0xd54
+00592DEA: addw         r3, pc, #0xd5c
+00592DEE: mov          r0, sl
+00592DF0: blx          r7
+00592DF2: mov          r2, r0
+00592DF4: ldr          r1, [sp, #0x158]
+00592DF6: mov          r0, sl
+00592DF8: bl           #0x593e58 ; FUN_00593e58
+00592DFC: mov          r1, r0
+00592DFE: add          r0, sp, #0x138
+00592E00: mov          r2, sl
+00592E02: bl           #0x593db0 ; FUN_00593db0
+00592E06: ldr.w        r1, [pc, #0xd54] ; word[00593B5C]=0065D2D4
+00592E0A: ldr.w        r0, [sl]
+00592E0E: add          r1, pc
+00592E10: ldr          r2, [r0, #0x18]
+00592E12: mov          r0, sl
+00592E14: blx          r2
+00592E16: mov          r1, r0
+00592E18: add          r0, sp, #0x118
+00592E1A: mov          r2, sl
+00592E1C: bl           #0x593d08 ; FUN_00593d08
+00592E20: ldr.w        r0, [pc, #0xd3c] ; word[00593B60]=0065D2C7
+00592E24: ldr.w        r1, [pc, #0xd3c] ; word[00593B64]=0065D2D3
+00592E28: add          r0, pc
+00592E2A: ldr          r3, [sp, #0x138]
+00592E2C: add          r1, pc
+00592E2E: ldr          r2, [sp, #0x118]
+00592E30: add          r5, sp, #0x90
+00592E32: strd         r0, r1, [sp]
+00592E36: mov          r1, sl
+00592E38: mov          r0, r5
+00592E3A: blx          #0x4af0dc ; Anki::Util::JNIUtils::getStringFromObjectMethod
+00592E3E: ldrb.w       r2, [sp, #0x90]
+00592E42: ldr          r0, [sp, #0x94]
+00592E44: ands         r1, r2, #1
+00592E48: it           eq
+00592E4A: lsreq        r0, r2, #1
+00592E4C: cmp          r0, #0
+00592E4E: beq.w        #0x5931f8
+00592E52: ldr.w        r0, [pc, #0xd14] ; word[00593B68]=00AABF4E
+00592E56: movs         r2, #0
+00592E58: ldr.w        r3, [pc, #0xd10] ; word[00593B6C]=0065D2B4
+00592E5C: cmp          r1, #0
+00592E5E: add          r0, pc
+00592E60: add          r3, pc
+00592E62: ldr          r0, [r0]
+00592E64: ldr          r0, [r0]
+00592E66: strd         r2, r2, [sp, #0xfc]
+00592E6A: ldr          r7, [sp, #0x98]
+00592E6C: str          r2, [sp, #0xf8]
+00592E6E: it           eq
+00592E70: orreq        r7, r5, #1
+00592E74: addw         r1, pc, #0xc38
+00592E78: add          r2, sp, #0xf8
+00592E7A: str          r7, [sp]
+00592E7C: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00592E80: ldr          r0, [sp, #0xf8]
+00592E82: cbz          r0, #0x592ea2
+00592E84: ldr          r1, [sp, #0xfc]
+00592E86: cmp          r1, r0
+00592E88: itttt        ne
+00592E8A: subne.w      r2, r1, #8
+00592E8E: subne        r2, r2, r0
+00592E90: mvnne        r3, #7
+00592E94: bicne.w      r2, r3, r2
+00592E98: itt          ne
+00592E9A: addne        r1, r1, r2
+00592E9C: strne        r1, [sp, #0xfc]
+00592E9E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00592EA2: ldr.w        r2, [pc, #0xccc] ; word[00593B70]=0065D279
+00592EA6: ldr.w        r0, [sl]
+00592EAA: ldr          r1, [sp, #0x118]
+00592EAC: add          r2, pc
+00592EAE: ldr.w        r3, [pc, #0xcc4] ; word[00593B74]=0065D274
+00592EB2: ldr.w        r7, [r0, #0x84]
+00592EB6: add          r3, pc
+00592EB8: mov          r0, sl
+00592EBA: blx          r7
+00592EBC: mov          r2, r0
+00592EBE: ldr          r1, [sp, #0x138]
+00592EC0: mov          r0, sl
+00592EC2: bl           #0x593e58 ; FUN_00593e58
+00592EC6: mov          r1, r0
+00592EC8: add.w        r8, sp, #0xf8
+00592ECC: mov          r2, sl
+00592ECE: mov          r0, r8
+00592ED0: bl           #0x593e78 ; FUN_00593e78
+00592ED4: ldr          r1, [sp, #0xf8]
+00592ED6: cmp          r1, #0
+00592ED8: beq.w        #0x59309c
+00592EDC: ldr.w        r0, [sl]
+00592EE0: ldr.w        r2, [r0, #0x2ac]
+00592EE4: mov          r0, sl
+00592EE6: blx          r2
+00592EE8: cmp          r0, #1
+00592EEA: blt.w        #0x5930da
+00592EEE: ldr.w        r0, [sl]
+00592EF2: ldr          r1, [sp, #0xf8]
+00592EF4: ldr.w        r3, [r0, #0x2b4]
+00592EF8: mov          r0, sl
+00592EFA: movs         r2, #0
+00592EFC: blx          r3
+00592EFE: mov          r1, r0
+00592F00: add          r0, sp, #0xd8
+00592F02: mov          r2, sl
+00592F04: bl           #0x593db0 ; FUN_00593db0
+00592F08: ldr.w        r0, [sl]
+00592F0C: ldr          r1, [sp, #0xd8]
+00592F0E: ldr.w        r3, [r0, #0x2a4]
+00592F12: mov          r0, sl
+00592F14: movs         r2, #0
+00592F16: movs         r4, #0
+00592F18: blx          r3
+00592F1A: mov          r6, r0
+00592F1C: mov          r0, r6
+00592F1E: str          r4, [sp, #0x88]
+00592F20: strd         r4, r4, [sp, #0x80]
+00592F24: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+00592F28: mov          r2, r0
+00592F2A: add          r5, sp, #0x80
+00592F2C: mov          r1, r6
+00592F2E: mov          r0, r5
+00592F30: bl           #0x4e02b2 ; FUN_004e02b2
+00592F34: add          r0, sp, #0x40
+00592F36: add          r1, sp, #0x90
+00592F38: addw         r2, pc, #0xc44
+00592F3C: blx          #0x4a7318 ; std::__ndk1::operator+
+00592F40: ldrd         r2, r1, [sp, #0x84]
+00592F44: ldrb.w       r0, [sp, #0x80]
+00592F48: ands         r3, r0, #1
+00592F4C: itt          eq
+00592F4E: orreq        r1, r5, #1
+00592F52: lsreq        r2, r0, #1
+00592F54: add          r0, sp, #0x40
+00592F56: bl           #0x4e8048 ; FUN_004e8048
+00592F5A: add          r2, sp, #0x50
+00592F5C: mov          r1, r0
+00592F5E: movs         r4, #0
+00592F60: ldm.w        r1, {r5, r6, r7}
+00592F64: mov          r3, r2
+00592F66: stm          r3!, {r5, r6, r7}
+00592F68: strd         r4, r4, [r0]
+00592F6C: str          r4, [r0, #8]
+00592F6E: addw         r1, pc, #0xc14
+00592F72: mov          r0, r2
+00592F74: movs         r2, #1
+00592F76: bl           #0x4e8048 ; FUN_004e8048
+00592F7A: ldr.w        r1, [pc, #0xc0c] ; word[00593B88]=0065D1BC
+00592F7E: add.w        ip, sp, #0x60
+00592F82: mov          r3, r0
+00592F84: add          r1, pc
+00592F86: mov          r2, ip
+00592F88: ldm.w        r3, {r5, r6, r7}
+00592F8C: stm          r2!, {r5, r6, r7}
+00592F8E: strd         r4, r4, [r0]
+00592F92: str          r4, [r0, #8]
+00592F94: mov          r0, ip
+00592F96: movs         r2, #0x2c
+00592F98: bl           #0x4e8048 ; FUN_004e8048
+00592F9C: add          r5, sp, #0x70
+00592F9E: mov          r1, r0
+00592FA0: ldm.w        r1, {r3, r6, r7}
+00592FA4: movs         r1, #0
+00592FA6: mov          r2, r5
+00592FA8: stm          r2!, {r3, r6, r7}
+00592FAA: strd         r1, r1, [r0]
+00592FAE: str          r1, [r0, #8]
+00592FB0: ldrb.w       r0, [sp, #0x60]
+00592FB4: lsls         r0, r0, #0x1f
+00592FB6: itt          ne
+00592FB8: ldrne        r0, [sp, #0x68]
+00592FBA: blxne        #0x4a40cc
+00592FBE: ldrb.w       r0, [sp, #0x50]
+00592FC2: lsls         r0, r0, #0x1f
+00592FC4: itt          ne
+00592FC6: ldrne        r0, [sp, #0x58]
+00592FC8: blxne        #0x4a40cc
+00592FCC: ldrb.w       r0, [sp, #0x40]
+00592FD0: lsls         r0, r0, #0x1f
+00592FD2: itt          ne
+00592FD4: ldrne        r0, [sp, #0x48]
+00592FD6: blxne        #0x4a40cc
+00592FDA: ldrd         r0, r1, [sp, #0x1c4]
+00592FDE: cmp          r0, r1
+00592FE0: bhs.w        #0x593122
+00592FE4: mov          r1, r5
+00592FE6: ldm.w        r1, {r2, r3, r7}
+00592FEA: movs         r1, #0
+00592FEC: stm          r0!, {r2, r3, r7}
+00592FEE: movs         r2, #0
+00592FF0: ldr          r0, [sp, #0x1c4]
+00592FF2: str          r1, [sp, #0x78]
+00592FF4: strd         r1, r1, [sp, #0x70]
+00592FF8: adds         r0, #0xc
+00592FFA: str          r0, [sp, #0x1c4]
+00592FFC: b            #0x593130
+00592FFE: add          r0, sp, #0x40
+00593000: add          r1, sp, #0xa0
+00593002: addw         r2, pc, #0xb14
+00593006: blx          #0x4a7318 ; std::__ndk1::operator+
+0059300A: add          r5, sp, #0x40
+0059300C: mov          r0, r5
+0059300E: blx          #0x4a82e4 ; Anki::Util::FileUtils::FileExists
+00593012: cmp          r0, #1
+00593014: bne          #0x593034
+00593016: ldrd         r0, r1, [sp, #0x1c4]
+0059301A: cmp          r0, r1
+0059301C: bhs          #0x5930c0
+0059301E: ldm.w        r5, {r1, r2, r3}
+00593022: stm          r0!, {r1, r2, r3}
+00593024: movs         r1, #0
+00593026: ldr          r0, [sp, #0x1c4]
+00593028: str          r1, [sp, #0x48]
+0059302A: strd         r1, r1, [sp, #0x40]
+0059302E: adds         r0, #0xc
+00593030: str          r0, [sp, #0x1c4]
+00593032: b            #0x5930c8
+00593034: movs         r0, #0
+00593036: ldr.w        r2, [pc, #0xaf0] ; word[00593B28]=0065D186
+0059303A: str          r0, [sp, #0x180]
+0059303C: strd         r0, r0, [sp, #0x178]
+00593040: add          r2, pc
+00593042: ldrb.w       r0, [sp, #0x40]
+00593046: ldr          r3, [sp, #0x48]
+00593048: tst.w        r0, #1
+0059304C: it           eq
+0059304E: orreq        r3, r5, #1
+00593052: addw         r0, pc, #0xa5c
+00593056: add          r1, sp, #0x178
+00593058: blx          #0x4a4108 ; Anki::Util::sErrorF
+0059305C: ldr          r0, [sp, #0x178]
+0059305E: cbz          r0, #0x59307e
+00593060: ldr          r1, [sp, #0x17c]
+00593062: cmp          r1, r0
+00593064: itttt        ne
+00593066: subne.w      r2, r1, #8
+0059306A: subne        r2, r2, r0
+0059306C: mvnne        r3, #7
+00593070: bicne.w      r2, r3, r2
+00593074: itt          ne
+00593076: addne        r1, r1, r2
+00593078: strne        r1, [sp, #0x17c]
+0059307A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059307E: ldr.w        r0, [pc, #0xaac] ; word[00593B2C]=00AAB700
+00593082: movs         r2, #1
+00593084: ldr.w        r1, [pc, #0xaa8] ; word[00593B30]=00AAB702
+00593088: add          r0, pc
+0059308A: add          r1, pc
+0059308C: ldr          r0, [r0]
+0059308E: ldr          r1, [r1]
+00593090: ldrb         r0, [r0]
+00593092: strb         r2, [r1]
+00593094: cbz          r0, #0x5930c8
+00593096: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+0059309A: b            #0x5930c8
+0059309C: ldr.w        r0, [pc, #0xaf4] ; word[00593B94]=00AABD06
+005930A0: movs         r1, #0
+005930A2: ldr.w        r3, [pc, #0xaf4] ; word[00593B98]=0065D0F0
+005930A6: add          r0, pc
+005930A8: add          r3, pc
+005930AA: ldr          r0, [r0]
+005930AC: ldr          r0, [r0]
+005930AE: strd         r1, r1, [sp, #0xd8]
+005930B2: str          r1, [sp, #0xe0]
+005930B4: addw         r1, pc, #0x9f8
+005930B8: add          r2, sp, #0xd8
+005930BA: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005930BE: b            #0x5930fc
+005930C0: ldr          r0, [sp, #0xc]
+005930C2: add          r1, sp, #0x40
+005930C4: bl           #0x59560e ; FUN_0059560e
+005930C8: ldrb.w       r0, [sp, #0x40]
+005930CC: lsls         r0, r0, #0x1f
+005930CE: beq.w        #0x5933a2
+005930D2: ldr          r0, [sp, #0x48]
+005930D4: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005930D8: b            #0x5933a2
+005930DA: ldr.w        r0, [pc, #0xa9c] ; word[00593B78]=00AABCC8
+005930DE: movs         r1, #0
+005930E0: ldr.w        r3, [pc, #0xa98] ; word[00593B7C]=0065D094
+005930E4: add          r0, pc
+005930E6: add          r3, pc
+005930E8: ldr          r0, [r0]
+005930EA: ldr          r0, [r0]
+005930EC: strd         r1, r1, [sp, #0xd8]
+005930F0: str          r1, [sp, #0xe0]
+005930F2: addw         r1, pc, #0x9bc
+005930F6: add          r2, sp, #0xd8
+005930F8: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005930FC: ldr          r0, [sp, #0xd8]
+005930FE: cmp          r0, #0
+00593100: beq          #0x5931c4
+00593102: ldr          r1, [sp, #0xdc]
+00593104: cmp          r1, r0
+00593106: itttt        ne
+00593108: subne.w      r2, r1, #8
+0059310C: subne        r2, r2, r0
+0059310E: mvnne        r3, #7
+00593112: bicne.w      r2, r3, r2
+00593116: itt          ne
+00593118: addne        r1, r1, r2
+0059311A: strne        r1, [sp, #0xdc]
+0059311C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00593120: b            #0x5931c4
+00593122: ldr          r0, [sp, #0xc]
+00593124: add          r1, sp, #0x70
+00593126: bl           #0x59560e ; FUN_0059560e
+0059312A: ldr          r1, [sp, #0x78]
+0059312C: ldrb.w       r2, [sp, #0x70]
+00593130: ldr.w        r0, [pc, #0xa58] ; word[00593B8C]=00AABC70
+00593134: movs         r7, #0
+00593136: ldr.w        r3, [pc, #0xa58] ; word[00593B90]=0065D02F
+0059313A: lsls         r2, r2, #0x1f
+0059313C: add          r0, pc
+0059313E: add          r3, pc
+00593140: ldr          r0, [r0]
+00593142: ldr          r0, [r0]
+00593144: strd         r7, r7, [sp, #0x60]
+00593148: str          r7, [sp, #0x68]
+0059314A: it           eq
+0059314C: orreq        r1, r5, #1
+00593150: str          r1, [sp]
+00593152: addw         r1, pc, #0x95c
+00593156: add          r2, sp, #0x60
+00593158: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0059315C: ldr          r0, [sp, #0x60]
+0059315E: add          r4, sp, #0xd8
+00593160: cbz          r0, #0x593180
+00593162: ldr          r1, [sp, #0x64]
+00593164: cmp          r1, r0
+00593166: itttt        ne
+00593168: subne.w      r2, r1, #8
+0059316C: subne        r2, r2, r0
+0059316E: mvnne        r3, #7
+00593172: bicne.w      r2, r3, r2
+00593176: itt          ne
+00593178: addne        r1, r1, r2
+0059317A: strne        r1, [sp, #0x64]
+0059317C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00593180: ldrb.w       r0, [sp, #0x70]
+00593184: lsls         r0, r0, #0x1f
+00593186: itt          ne
+00593188: ldrne        r0, [sp, #0x78]
+0059318A: blxne        #0x4a40cc
+0059318E: ldrb.w       r0, [sp, #0x80]
+00593192: lsls         r0, r0, #0x1f
+00593194: itt          ne
+00593196: ldrne        r0, [sp, #0x88]
+00593198: blxne        #0x4a40cc
+0059319C: ldr          r1, [sp, #0xd8]
+0059319E: movs         r0, #0
+005931A0: str          r0, [sp, #0xd8]
+005931A2: cbz          r1, #0x5931ac
+005931A4: add.w        r0, r4, #8
+005931A8: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+005931AC: ldr          r0, [sp, #0xf0]
+005931AE: add.w        r1, r4, #8
+005931B2: cmp          r1, r0
+005931B4: beq          #0x5931be
+005931B6: cbz          r0, #0x5931c4
+005931B8: ldr          r1, [r0]
+005931BA: ldr          r1, [r1, #0x14]
+005931BC: b            #0x5931c2
+005931BE: ldr          r1, [r0]
+005931C0: ldr          r1, [r1, #0x10]
+005931C2: blx          r1
+005931C4: ldr          r1, [sp, #0xf8]
+005931C6: movs         r0, #0
+005931C8: str          r0, [sp, #0xf8]
+005931CA: cbz          r1, #0x5931d4
+005931CC: add.w        r0, r8, #8
+005931D0: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+005931D4: ldr          r0, [sp, #0x110]
+005931D6: add.w        r1, r8, #8
+005931DA: cmp          r1, r0
+005931DC: beq          #0x5931ee
+005931DE: cmp          r0, #0
+005931E0: add.w        r8, sp, #0x178
+005931E4: ittt         ne
+005931E6: ldrne        r1, [r0]
+005931E8: ldrne        r1, [r1, #0x14]
+005931EA: blxne        r1
+005931EC: b            #0x5931f8
+005931EE: ldr          r1, [r0]
+005931F0: ldr          r1, [r1, #0x10]
+005931F2: blx          r1
+005931F4: add.w        r8, sp, #0x178
+005931F8: ldr.w        r0, [pc, #0x9a0] ; word[00593B9C]=0065CFA6
+005931FC: ldr.w        r1, [pc, #0x9a0] ; word[00593BA0]=0065CEFB
+00593200: add          r0, pc
+00593202: ldr          r3, [sp, #0x158]
+00593204: add          r1, pc
+00593206: ldr          r2, [sp, #0x178]
+00593208: strd         r0, r1, [sp]
+0059320C: add          r0, sp, #0x60
+0059320E: mov          r1, sl
+00593210: blx          #0x4af0dc ; Anki::Util::JNIUtils::getStringFromObjectMethod
+00593214: add          r0, sp, #0xf8
+00593216: add          r1, sp, #0x60
+00593218: addw         r2, pc, #0x968
+0059321C: blx          #0x4a7318 ; std::__ndk1::operator+
+00593220: ldr.w        r1, [pc, #0x980] ; word[00593BA4]=0065CF1C
+00593224: add          r1, pc
+00593226: add          r0, sp, #0xf8
+00593228: movs         r2, #0x2c
+0059322A: add.w        sl, sp, #0x118
+0059322E: bl           #0x4e8048 ; FUN_004e8048
+00593232: add          r5, sp, #0x50
+00593234: mov          r2, r0
+00593236: movs         r4, #0
+00593238: ldm.w        r2, {r3, r6, r7}
+0059323C: mov          r1, r5
+0059323E: stm          r1!, {r3, r6, r7}
+00593240: strd         r4, r4, [r0]
+00593244: str          r4, [r0, #8]
+00593246: ldrb.w       r0, [sp, #0xf8]
+0059324A: lsls         r0, r0, #0x1f
+0059324C: itt          ne
+0059324E: ldrne        r0, [sp, #0x100]
+00593250: blxne        #0x4a40cc
+00593254: ldr.w        r0, [pc, #0x950] ; word[00593BA8]=00AABB52
+00593258: str          r4, [sp, #0x100]
+0059325A: add          r0, pc
+0059325C: ldr.w        r3, [pc, #0x94c] ; word[00593BAC]=0065CF57
+00593260: ldr          r0, [r0]
+00593262: add          r3, pc
+00593264: ldr          r0, [r0]
+00593266: strd         r4, r4, [sp, #0xf8]
+0059326A: ldrb.w       r2, [sp, #0x50]
+0059326E: ldr          r1, [sp, #0x58]
+00593270: tst.w        r2, #1
+00593274: it           eq
+00593276: orreq        r1, r5, #1
+0059327A: str          r1, [sp]
+0059327C: addw         r1, pc, #0x830
+00593280: add          r2, sp, #0xf8
+00593282: ldr          r7, [sp, #8]
+00593284: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00593288: ldr          r0, [sp, #0xf8]
+0059328A: cbz          r0, #0x5932aa
+0059328C: ldr          r1, [sp, #0xfc]
+0059328E: cmp          r1, r0
+00593290: itttt        ne
+00593292: subne.w      r2, r1, #8
+00593296: subne        r2, r2, r0
+00593298: mvnne        r3, #7
+0059329C: bicne.w      r2, r3, r2
+005932A0: itt          ne
+005932A2: addne        r1, r1, r2
+005932A4: strne        r1, [sp, #0xfc]
+005932A6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005932AA: ldrd         r0, r1, [sp, #0x1c4]
+005932AE: cmp          r0, r1
+005932B0: bhs          #0x5932cc
+005932B2: ldm.w        r5, {r1, r2, r3}
+005932B6: add          r4, sp, #0x158
+005932B8: add          r5, sp, #0x138
+005932BA: stm          r0!, {r1, r2, r3}
+005932BC: movs         r1, #0
+005932BE: ldr          r0, [sp, #0x1c4]
+005932C0: str          r1, [sp, #0x58]
+005932C2: strd         r1, r1, [sp, #0x50]
+005932C6: adds         r0, #0xc
+005932C8: str          r0, [sp, #0x1c4]
+005932CA: b            #0x5932e6
+005932CC: ldr          r0, [sp, #0xc]
+005932CE: add          r1, sp, #0x50
+005932D0: bl           #0x59560e ; FUN_0059560e
+005932D4: ldrb.w       r0, [sp, #0x50]
+005932D8: add          r4, sp, #0x158
+005932DA: add          r5, sp, #0x138
+005932DC: lsls         r0, r0, #0x1f
+005932DE: itt          ne
+005932E0: ldrne        r0, [sp, #0x58]
+005932E2: blxne        #0x4a40cc
+005932E6: ldrb.w       r0, [sp, #0x60]
+005932EA: lsls         r0, r0, #0x1f
+005932EC: itt          ne
+005932EE: ldrne        r0, [sp, #0x68]
+005932F0: blxne        #0x4a40cc
+005932F4: ldrb.w       r0, [sp, #0x90]
+005932F8: lsls         r0, r0, #0x1f
+005932FA: itt          ne
+005932FC: ldrne        r0, [sp, #0x98]
+005932FE: blxne        #0x4a40cc
+00593302: ldr          r1, [sp, #0x118]
+00593304: movs         r0, #0
+00593306: str          r0, [sp, #0x118]
+00593308: cbz          r1, #0x593312
+0059330A: add.w        r0, sl, #8
+0059330E: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+00593312: ldr          r0, [sp, #0x130]
+00593314: add.w        r1, sl, #8
+00593318: cmp          r1, r0
+0059331A: beq          #0x593324
+0059331C: cbz          r0, #0x59332a
+0059331E: ldr          r1, [r0]
+00593320: ldr          r1, [r1, #0x14]
+00593322: b            #0x593328
+00593324: ldr          r1, [r0]
+00593326: ldr          r1, [r1, #0x10]
+00593328: blx          r1
+0059332A: ldr          r1, [sp, #0x138]
+0059332C: movs         r0, #0
+0059332E: str          r0, [sp, #0x138]
+00593330: cbz          r1, #0x59333a
+00593332: add.w        r0, r5, #8
+00593336: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+0059333A: ldr          r0, [sp, #0x150]
+0059333C: add.w        r1, r5, #8
+00593340: cmp          r1, r0
+00593342: beq          #0x59334c
+00593344: cbz          r0, #0x593352
+00593346: ldr          r1, [r0]
+00593348: ldr          r1, [r1, #0x14]
+0059334A: b            #0x593350
+0059334C: ldr          r1, [r0]
+0059334E: ldr          r1, [r1, #0x10]
+00593350: blx          r1
+00593352: ldr          r1, [sp, #0x158]
+00593354: movs         r0, #0
+00593356: str          r0, [sp, #0x158]
+00593358: cbz          r1, #0x593362
+0059335A: add.w        r0, r4, #8
+0059335E: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+00593362: ldr          r0, [sp, #0x170]
+00593364: add.w        r1, r4, #8
+00593368: cmp          r1, r0
+0059336A: beq          #0x593374
+0059336C: cbz          r0, #0x59337a
+0059336E: ldr          r1, [r0]
+00593370: ldr          r1, [r1, #0x14]
+00593372: b            #0x593378
+00593374: ldr          r1, [r0]
+00593376: ldr          r1, [r1, #0x10]
+00593378: blx          r1
+0059337A: ldr          r1, [sp, #0x178]
+0059337C: movs         r0, #0
+0059337E: str          r0, [sp, #0x178]
+00593380: cbz          r1, #0x59338a
+00593382: add.w        r0, r8, #8
+00593386: blx          #0x4af0e8 ; std::__ndk1::function<void(_jobject*)>::operator()
+0059338A: ldr          r0, [sp, #0x190]
+0059338C: add.w        r1, r8, #8
+00593390: cmp          r1, r0
+00593392: beq          #0x59339c
+00593394: cbz          r0, #0x5933a2
+00593396: ldr          r1, [r0]
+00593398: ldr          r1, [r1, #0x14]
+0059339A: b            #0x5933a0
+0059339C: ldr          r1, [r0]
+0059339E: ldr          r1, [r1, #0x10]
+005933A0: blx          r1
+005933A2: mov.w        r0, #0x200000
+005933A6: str          r0, [sp, #0x1f0]
+005933A8: movs         r0, #0
+005933AA: strb.w       r0, [sp, #0x20a]
+005933AE: mov.w        r0, #0x100000
+005933B2: str          r0, [sp, #0x1f4]
+005933B4: mov.w        r0, #0x180000
+005933B8: str          r0, [sp, #0x1fc]
+005933BA: movs         r0, #0x1e
+005933BC: str          r0, [sp, #0x204]
+005933BE: movw         r0, #0x101
+005933C2: strh.w       r0, [sp, #0x208]
+005933C6: add          r5, sp, #0x198
+005933C8: mov          r0, sb
+005933CA: mov          r1, r5
+005933CC: blx          #0x4af0f4 ; Anki::AudioEngine::AudioEngineController::InitializeAudioEngine
+005933D0: ldr.w        r0, [pc, #0x7dc] ; word[00593BB0]=00AAB9D6
+005933D4: add          r6, sp, #0xc0
+005933D6: ldr.w        r1, [pc, #0x7dc] ; word[00593BB4]=00000B3F
+005933DA: add          r0, pc
+005933DC: str          r6, [sp, #0xd0]
+005933DE: add          r1, pc
+005933E0: str          r1, [sp, #0xc4]
+005933E2: ldr          r0, [r0]
+005933E4: adds         r0, #8
+005933E6: str          r0, [sp, #0xc0]
+005933E8: mov          r0, sb
+005933EA: movs         r1, #3
+005933EC: mov          r2, r6
+005933EE: blx          #0x4af100 ; Anki::AudioEngine::AudioEngineController::SetLogOutput
+005933F2: ldr          r0, [sp, #0xd0]
+005933F4: cmp          r6, r0
+005933F6: beq          #0x593400
+005933F8: cbz          r0, #0x593406
+005933FA: ldr          r1, [r0]
+005933FC: ldr          r1, [r1, #0x14]
+005933FE: b            #0x593404
+00593400: ldr          r1, [r0]
+00593402: ldr          r1, [r1, #0x10]
+00593404: blx          r1
+00593406: ldrb.w       r0, [sp, #0x1dc]
+0059340A: lsls         r0, r0, #0x1f
+0059340C: itt          ne
+0059340E: ldrne        r0, [sp, #0x1e4]
+00593410: blxne        #0x4a40cc
+00593414: ldrb.w       r0, [sp, #0x1cc]
+00593418: lsls         r0, r0, #0x1f
+0059341A: itt          ne
+0059341C: ldrne        r0, [sp, #0x1d4]
+0059341E: blxne        #0x4a40cc
+00593422: add.w        r0, r5, #0x28
+00593426: bl           #0x4eaf98 ; FUN_004eaf98
+0059342A: ldr          r0, [sp, #0x1b8]
+0059342C: add.w        r1, r5, #0x10
+00593430: cmp          r1, r0
+00593432: beq          #0x59343c
+00593434: cbz          r0, #0x593442
+00593436: ldr          r1, [r0]
+00593438: ldr          r1, [r1, #0x14]
+0059343A: b            #0x593440
+0059343C: ldr          r1, [r0]
+0059343E: ldr          r1, [r1, #0x10]
+RANGE 0x009A33D8..0x009A34F8 exclusive; ARM;
+009A33D8: push         {r4, r5, r6, r7, r8, sb, lr}
+009A33DC: sub          sp, sp, #0x7c
+009A33E0: add          r6, sp, #0x34
+009A33E4: mov          r7, r2
+009A33E8: ldr          r2, [pc, #0x108] ; word[009A34F8]=00604594
+009A33EC: mov          r5, r0
+009A33F0: mov          r8, r1
+009A33F4: mov          r1, r0
+009A33F8: add          r2, pc, r2
+009A33FC: mov          r0, r6
+009A3400: mov          r4, #0
+009A3404: str          r4, [sp, #0x34]
+009A3408: strb         r4, [sp, #0x38]
+009A340C: bl           #0x9b1730 ; FUN_009b1730
+009A3410: cmp          r0, #1
+009A3414: movne        r0, #0x34
+009A3418: beq          #0x9a3424
+009A341C: add          sp, sp, #0x7c
+009A3420: pop          {r4, r5, r6, r7, r8, sb, pc}
+009A3424: mov          r0, r5
+009A3428: ldr          r5, [pc, #0xcc] ; word[009A34FC]=006EA42C
+009A342C: bl           #0x99d8fc ; FUN_0099d8fc
+009A3430: add          sb, sp, #0x3c
+009A3434: add          r5, pc, r5
+009A3438: mov          r1, sb
+009A343C: ldr          r3, [r5, #0x70]
+009A3440: ldr          r2, [r3]
+009A3444: ldr          r2, [r2, #0x14]
+009A3448: str          r0, [r7]
+009A344C: mov          r0, r3
+009A3450: blx          r2
+009A3454: cmp          r0, #1
+009A3458: bne          #0x9a341c
+009A345C: ldm          r6, {r0, r1}
+009A3460: add          r3, sp, #0x2c
+009A3464: ldr          r2, [r5, #0xf0]
+009A3468: add          lr, sp, #0x54
+009A346C: str          sb, [sp, #0x5c]
+009A3470: mov          ip, sp
+009A3474: str          r0, [sp, #0x2c]
+009A3478: strb         r1, [sp, #0x30]
+009A347C: ldm          r3, {r0, r1}
+009A3480: str          r4, [sp, #0x60]
+009A3484: str          r2, [sp, #0x58]
+009A3488: str          r0, [sp, #0x50]
+009A348C: strb         r1, [sp, #0x54]
+009A3490: ldm          lr!, {r0, r1, r2, r3}
+009A3494: ldr          r6, [r5, #0x70]
+009A3498: str          r8, [sp, #0x64]
+009A349C: str          r4, [sp, #0x68]
+009A34A0: str          r4, [sp, #0x6c]
+009A34A4: ldr          r8, [r6]
+009A34A8: stm          ip!, {r0, r1, r2, r3}
+009A34AC: ldm          lr!, {r0, r1, r2, r3}
+009A34B0: ldr          r7, [r7]
+009A34B4: str          r4, [sp, #0x48]
+009A34B8: str          r7, [sp, #0x4c]
+009A34BC: stm          ip!, {r0, r1, r2, r3}
+009A34C0: add          r3, sp, #0x48
+009A34C4: ldr          lr, [lr]
+009A34C8: mov          r0, r6
+009A34CC: ldm          r3, {r1, r2, r3}
+009A34D0: str          lr, [ip]
+009A34D4: ldr          ip, [r8, #0x10]
+009A34D8: blx          ip
+009A34DC: mov          r1, sb
+009A34E0: mov          r2, r0
+009A34E4: ldr          r0, [r5, #0x70]
+009A34E8: ldr          ip, [r0]
+009A34EC: ldr          r3, [ip, #0x18]
+009A34F0: blx          r3
+009A34F4: b            #0x9a341c
+RANGE 0x009A48D0..0x009A4B94 exclusive; ARM;
+009A48D0: cmp          r2, #0
+009A48D4: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+009A48D8: moveq        r6, #0x1f
+009A48DC: sub          sp, sp, #0x68
+009A48E0: beq          #0x9a4970
+009A48E4: cmp          r2, #1
+009A48E8: mov          r4, r1
+009A48EC: mov          r8, r0
+009A48F0: mov          r6, r2
+009A48F4: beq          #0x9a497c
+009A48F8: ldr          r3, [pc, #0x294] ; word[009A4B94]=006ADB10
+009A48FC: lsl          r1, r2, #2
+009A4900: add          r3, pc, r3
+009A4904: ldr          r0, [r3]
+009A4908: bl           #0xa7a7f4 ; FUN_00a7a7f4
+009A490C: subs         sb, r0, #0
+009A4910: moveq        r6, #0x34
+009A4914: beq          #0x9a4970
+009A4918: cmp          r6, #0
+009A491C: beq          #0x9a4b14
+009A4920: sub          r4, r4, #4
+009A4924: sub          r7, sb, #4
+009A4928: mov          r5, #0
+009A492C: ldr          r0, [r4, #4]!
+009A4930: add          r5, r5, #1
+009A4934: bl           #0x99db84 ; FUN_0099db84
+009A4938: cmp          r5, r6
+009A493C: str          r0, [r7, #4]!
+009A4940: bne          #0x9a492c
+009A4944: ldr          r4, [pc, #0x24c] ; word[009A4B98]=006E8F14
+009A4948: add          r7, sp, #0x2c
+009A494C: add          r4, pc, r4
+009A4950: mov          r1, r7
+009A4954: ldr          r0, [r4, #0x70]
+009A4958: ldr          r3, [r0]
+009A495C: ldr          r3, [r3, #0x14]
+009A4960: blx          r3
+009A4964: cmp          r0, #1
+009A4968: mov          r6, r0
+009A496C: beq          #0x9a4a50
+009A4970: mov          r0, r6
+009A4974: add          sp, sp, #0x68
+009A4978: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+009A497C: ldr          r0, [r1]
+009A4980: add          r7, sp, #0x2c
+009A4984: bl           #0x99db84 ; FUN_0099db84
+009A4988: ldr          r5, [pc, #0x20c] ; word[009A4B9C]=006E8ED0
+009A498C: mov          r1, r7
+009A4990: add          r5, pc, r5
+009A4994: mov          r4, r0
+009A4998: ldr          r0, [r5, #0x70]
+009A499C: ldr          r3, [r0]
+009A49A0: ldr          r3, [r3, #0x14]
+009A49A4: blx          r3
+009A49A8: cmp          r0, #1
+009A49AC: mov          r6, r0
+009A49B0: bne          #0x9a4970
+009A49B4: ldr          r3, [r5, #0xf0]
+009A49B8: add          lr, sp, #0x44
+009A49BC: ldr          sl, [r5, #0x70]
+009A49C0: mov          sb, #0
+009A49C4: str          r4, [sp, #0x58]
+009A49C8: mov          ip, sp
+009A49CC: str          sb, [sp, #0x40]
+009A49D0: cmp          r8, sb
+009A49D4: strb         sb, [sp, #0x44]
+009A49D8: str          r7, [sp, #0x4c]
+009A49DC: moveq        r8, #2
+009A49E0: str          r3, [sp, #0x48]
+009A49E4: movne        r8, #3
+009A49E8: str          sb, [sp, #0x50]
+009A49EC: ldm          lr!, {r0, r1, r2, r3}
+009A49F0: ldr          r4, [sl]
+009A49F4: str          r6, [sp, #0x54]
+009A49F8: str          sb, [sp, #0x3c]
+009A49FC: ldr          r4, [r4, #0x10]
+009A4A00: stm          ip!, {r0, r1, r2, r3}
+009A4A04: ldm          lr!, {r0, r1, r2, r3}
+009A4A08: str          r8, [sp, #0x38]
+009A4A0C: ldr          lr, [lr]
+009A4A10: stm          ip!, {r0, r1, r2, r3}
+009A4A14: add          r3, sp, #0x38
+009A4A18: str          lr, [ip]
+009A4A1C: mov          r0, sl
+009A4A20: ldm          r3, {r1, r2, r3}
+009A4A24: blx          r4
+009A4A28: mov          r1, r7
+009A4A2C: mov          r2, r0
+009A4A30: ldr          r0, [r5, #0x70]
+009A4A34: ldr          ip, [r0]
+009A4A38: ldr          r3, [ip, #0x18]
+009A4A3C: blx          r3
+009A4A40: mov          r6, r0
+009A4A44: mov          r0, r6
+009A4A48: add          sp, sp, #0x68
+009A4A4C: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+009A4A50: cmp          r8, #0
+009A4A54: ldr          r2, [r4, #0xf0]
+009A4A58: mov          r3, #0
+009A4A5C: str          r7, [sp, #0x4c]
+009A4A60: moveq        r1, #2
+009A4A64: movne        r1, #3
+009A4A68: cmp          r5, #1
+009A4A6C: str          r5, [sp, #0x54]
+009A4A70: str          r1, [sp, #0x38]
+009A4A74: str          r2, [sp, #0x48]
+009A4A78: str          r3, [sp, #0x3c]
+009A4A7C: str          r3, [sp, #0x40]
+009A4A80: strb         r3, [sp, #0x44]
+009A4A84: str          r3, [sp, #0x50]
+009A4A88: beq          #0x9a4b48
+009A4A8C: add          lr, sp, #0x44
+009A4A90: ldr          r4, [r4, #0x70]
+009A4A94: str          sb, [sp, #0x58]
+009A4A98: mov          ip, sp
+009A4A9C: ldm          lr!, {r0, r1, r2, r3}
+009A4AA0: ldr          r5, [r4]
+009A4AA4: ldr          r5, [r5, #0x10]
+009A4AA8: stm          ip!, {r0, r1, r2, r3}
+009A4AAC: ldm          lr!, {r0, r1, r2, r3}
+009A4AB0: ldr          lr, [lr]
+009A4AB4: stm          ip!, {r0, r1, r2, r3}
+009A4AB8: add          r3, sp, #0x38
+009A4ABC: mov          r0, r4
+009A4AC0: str          lr, [ip]
+009A4AC4: ldm          r3, {r1, r2, r3}
+009A4AC8: blx          r5
+009A4ACC: cmp          r0, #1
+009A4AD0: mov          r4, r0
+009A4AD4: beq          #0x9a4aec
+009A4AD8: ldr          r3, [pc, #0xc0] ; word[009A4BA0]=006AD930
+009A4ADC: mov          r1, sb
+009A4AE0: add          r3, pc, r3
+009A4AE4: ldr          r0, [r3]
+009A4AE8: bl           #0xa7a988 ; FUN_00a7a988
+009A4AEC: mov          r2, r4
+009A4AF0: ldr          r3, [pc, #0xac] ; word[009A4BA4]=006E8D68
+009A4AF4: mov          r1, r7
+009A4AF8: add          r3, pc, r3
+009A4AFC: ldr          r0, [r3, #0x70]
+009A4B00: ldr          r3, [r0]
+009A4B04: ldr          r3, [r3, #0x18]
+009A4B08: blx          r3
+009A4B0C: mov          r6, r0
+009A4B10: b            #0x9a4970
+009A4B14: ldr          r3, [pc, #0x8c] ; word[009A4BA8]=006E8D44
+009A4B18: add          r7, sp, #0x2c
+009A4B1C: add          r3, pc, r3
+009A4B20: mov          r1, r7
+009A4B24: ldr          r0, [r3, #0x70]
+009A4B28: ldr          r3, [r0]
+009A4B2C: ldr          r3, [r3, #0x14]
+009A4B30: blx          r3
+009A4B34: cmp          r0, #1
+009A4B38: mov          r6, r0
+009A4B3C: bne          #0x9a4970
+009A4B40: mov          r2, #0x1f
+009A4B44: b            #0x9a4af0
+009A4B48: ldr          r3, [sb]
+009A4B4C: add          lr, sp, #0x44
+009A4B50: ldr          r4, [r4, #0x70]
+009A4B54: mov          ip, sp
+009A4B58: str          r3, [sp, #0x58]
+009A4B5C: ldm          lr!, {r0, r1, r2, r3}
+009A4B60: ldr          r5, [r4]
+009A4B64: ldr          r5, [r5, #0x10]
+009A4B68: stm          ip!, {r0, r1, r2, r3}
+009A4B6C: ldm          lr!, {r0, r1, r2, r3}
+009A4B70: ldr          lr, [lr]
+009A4B74: stm          ip!, {r0, r1, r2, r3}
+009A4B78: add          r3, sp, #0x38
+009A4B7C: mov          r0, r4
+009A4B80: str          lr, [ip]
+009A4B84: ldm          r3, {r1, r2, r3}
+009A4B88: blx          r5
+009A4B8C: mov          r4, r0
+009A4B90: b            #0x9a4aec
