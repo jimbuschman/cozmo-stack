@@ -1,0 +1,437 @@
+{
+  "warning": "Navigation only; indirect calls, PIC idioms outside recognized patterns and arbitrary aliases are not proven absent. Added unnamed bodies are decoded in both modes; neither interpretation is automatically evidence. Inspect every candidate in native instructions.",
+  "functions_decoded": 13808,
+  "scan_mode": "unnamed-both-modes",
+  "typed_targets": {
+    "0x4f9434": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame18SetMembersFromJsonERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4f9574": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+    "0x4f96c4": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame17DefineFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4f9708": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame21SetMembersFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4f976c": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame6IsDoneEv",
+    "0x4f97c8": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame16GetStreamMessageEv",
+    "0x523ab8": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+    "0x5641e0": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+    "0x577ba0": "_ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv",
+    "0x564508": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+    "0x5645b0": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE12emplace_backIJRKS3_EEEvDpOT_",
+    "0x576678": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+    "0x579454": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+    "0x577328": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+    "0x577cd2": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE14ClearAfterTimeEj",
+    "0x579d54": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5eraseENS_21__list_const_iteratorIS3_PvEE",
+    "0x578268": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+    "0x5794f4": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv",
+    "0x57cd64": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj",
+    "0x57f260": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE18MoveToNextKeyFrameEv",
+    "0x57e2f8": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEEC2ERKS6_",
+    "0x57e32c": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE9push_backERKS3_",
+    "0x588dfe": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE6spliceENS_21__list_const_iteratorIS3_PvEERS6_",
+    "0x564290": "unnamed FaceAnimationKeyFrame name constructor",
+    "0x4a5ff8": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+    "0x4a6418": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame16GetStreamMessageEv",
+    "0x4a6424": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame6IsDoneEv",
+    "0x4a6430": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame18SetMembersFromJsonERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4a643c": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame21SetMembersFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4a8b48": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+    "0x4ac4f0": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+    "0x4ac514": "_ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv",
+    "0x4ac520": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+    "0x4ac544": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE12emplace_backIJRKS3_EEEvDpOT_",
+    "0x4ad5f4": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+    "0x4ad6a8": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame17DefineFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+    "0x4ad6b4": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+    "0x4ad75c": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+    "0x4ad7e0": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE14ClearAfterTimeEj",
+    "0x4ad864": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5eraseENS_21__list_const_iteratorIS3_PvEE",
+    "0x4ad8e8": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+    "0x4ad9f0": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv",
+    "0x4add98": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj",
+    "0x4ade04": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE18MoveToNextKeyFrameEv",
+    "0x4adee8": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEEC2ERKS6_",
+    "0x4adf54": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE9push_backERKS3_",
+    "0x4ae6a4": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE6spliceENS_21__list_const_iteratorIS3_PvEERS6_"
+  },
+  "calls": [
+    {
+      "address": "0x4f9474",
+      "owner": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame18SetMembersFromJsonERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+      "owner_va": "0x4f9434",
+      "target": "0x4a5ff8",
+      "name": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x4f975a",
+      "owner": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame21SetMembersFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+      "owner_va": "0x4f9708",
+      "target": "0x4a5ff8",
+      "name": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x563e48",
+      "owner": "_ZN4Anki5Cozmo13SetFaceAction4InitEv",
+      "owner_va": "0x563cb0",
+      "target": "0x564290",
+      "name": "unnamed FaceAnimationKeyFrame name constructor",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x563e52",
+      "owner": "_ZN4Anki5Cozmo13SetFaceAction4InitEv",
+      "owner_va": "0x563cb0",
+      "target": "0x4ac4f0",
+      "name": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5641e8",
+      "owner": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+      "owner_va": "0x5641e0",
+      "target": "0x4ac514",
+      "name": "_ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5641f0",
+      "owner": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+      "owner_va": "0x5641e0",
+      "target": "0x4ac520",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x56456c",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+      "owner_va": "0x564508",
+      "target": "0x4ac544",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE12emplace_backIJRKS3_EEEvDpOT_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x575d8e",
+      "owner": "_ZN4Anki5Cozmo9Animation17DefineFromFlatBufERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEPKN9CozmoAnim8AnimClipE",
+      "owner_va": "0x57571c",
+      "target": "0x4ad5f4",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5763e6",
+      "owner": "_ZN4Anki5Cozmo9Animation5ClearEv",
+      "owner_va": "0x5763c4",
+      "target": "0x4a8b48",
+      "name": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57669c",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x576678",
+      "target": "0x564290",
+      "name": "unnamed FaceAnimationKeyFrame name constructor",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5766b4",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x576678",
+      "target": "0x4ad6a8",
+      "name": "_ZN4Anki5Cozmo21FaceAnimationKeyFrame17DefineFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5766c0",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x576678",
+      "target": "0x4ad6b4",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x576ad0",
+      "owner": "_ZN4Anki5Cozmo9Animation14DefineFromJsonERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEERKN4Json5ValueE",
+      "owner_va": "0x576868",
+      "target": "0x4ad75c",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57734c",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x577328",
+      "target": "0x564290",
+      "name": "unnamed FaceAnimationKeyFrame name constructor",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x577370",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x577328",
+      "target": "0x4ad6b4",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x577c36",
+      "owner": "_ZN4Anki5Cozmo9Animation14ClearAfterTimeEj",
+      "owner_va": "0x577c18",
+      "target": "0x4ad7e0",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE14ClearAfterTimeEj",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x577cec",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE14ClearAfterTimeEj",
+      "owner_va": "0x577cd2",
+      "target": "0x4ad864",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5eraseENS_21__list_const_iteratorIS3_PvEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x577f32",
+      "owner": "_ZN4Anki5Cozmo9Animation15AppendAnimationERKS1_",
+      "owner_va": "0x577efc",
+      "target": "0x4ad8e8",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x578324",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+      "owner_va": "0x578268",
+      "target": "0x4ac520",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57945c",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+      "owner_va": "0x579454",
+      "target": "0x4ac520",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x5794b6",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_",
+      "owner_va": "0x579454",
+      "target": "0x4ad9f0",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57b564",
+      "owner": "_ZN4Anki5Cozmo17AnimationStreamer5AbortEv",
+      "owner_va": "0x57b3e0",
+      "target": "0x4ac514",
+      "name": "_ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57c8ba",
+      "owner": "_ZN4Anki5Cozmo17AnimationStreamer12UpdateStreamERNS0_5RobotEPNS0_9AnimationEb",
+      "owner_va": "0x57c84c",
+      "target": "0x4ac514",
+      "name": "_ZN4Anki5Cozmo9Animation8GetTrackINS0_21FaceAnimationKeyFrameEEERNS0_10Animations5TrackIT_EEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57ca10",
+      "owner": "_ZN4Anki5Cozmo17AnimationStreamer12UpdateStreamERNS0_5RobotEPNS0_9AnimationEb",
+      "owner_va": "0x57c84c",
+      "target": "0x4add98",
+      "name": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE26GetCurrentStreamingMessageEjj",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57e310",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEEC2ERKS6_",
+      "owner_va": "0x57e2f8",
+      "target": "0x4adf54",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE9push_backERKS3_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57e322",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEEC2ERKS6_",
+      "owner_va": "0x57e2f8",
+      "target": "0x4a8b48",
+      "name": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x57f26c",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE18MoveToNextKeyFrameEv",
+      "owner_va": "0x57f260",
+      "target": "0x4ad864",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5eraseENS_21__list_const_iteratorIS3_PvEE",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x587ccc",
+      "owner": "_ZN4Anki5Cozmo24CannedAnimationContainerC1Ev",
+      "owner_va": "0x587c94",
+      "target": "0x564290",
+      "name": "unnamed FaceAnimationKeyFrame name constructor",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x587cd4",
+      "owner": "_ZN4Anki5Cozmo24CannedAnimationContainerC1Ev",
+      "owner_va": "0x587c94",
+      "target": "0x4ac4f0",
+      "name": "_ZN4Anki5Cozmo9Animation17AddKeyFrameToBackINS0_21FaceAnimationKeyFrameEEENS_6ResultERKT_",
+      "mode": "Thumb"
+    },
+    {
+      "address": "0x523854",
+      "owner": "FUN_0052380c",
+      "owner_va": "0x52380c",
+      "target": "0x4a8b48",
+      "name": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+      "mode": "Thumb",
+      "mode_status": "candidate-only, validate native state"
+    },
+    {
+      "address": "0x57e0da",
+      "owner": "FUN_0057e0d6",
+      "owner_va": "0x57e0d6",
+      "target": "0x4adee8",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEEC2ERKS6_",
+      "mode": "Thumb",
+      "mode_status": "candidate-only, validate native state"
+    },
+    {
+      "address": "0x588bcc",
+      "owner": "FUN_00588bb8",
+      "owner_va": "0x588bb8",
+      "target": "0x4ae6a4",
+      "name": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE6spliceENS_21__list_const_iteratorIS3_PvEERS6_",
+      "mode": "Thumb",
+      "mode_status": "candidate-only, validate native state"
+    }
+  ],
+  "vtable_got_references": [
+    {
+      "address": "0x523ade",
+      "owner": "_ZNSt6__ndk110__list_impIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5clearEv",
+      "owner_va": "0x523ab8",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x563e5a",
+      "owner": "_ZN4Anki5Cozmo13SetFaceAction4InitEv",
+      "owner_va": "0x563cb0",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x563fd4",
+      "owner": "_ZN4Anki5Cozmo13SetFaceAction4InitEv",
+      "owner_va": "0x563cb0",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5645ca",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE12emplace_backIJRKS3_EEEvDpOT_",
+      "owner_va": "0x5645b0",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5766c8",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x576678",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x576700",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x576678",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x577378",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x577328",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5773b0",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE",
+      "owner_va": "0x577328",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x57829a",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+      "owner_va": "0x578268",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5782a8",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+      "owner_va": "0x578268",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5783da",
+      "owner": "_ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j",
+      "owner_va": "0x578268",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5794fe",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv",
+      "owner_va": "0x5794f4",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x579d60",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE5eraseENS_21__list_const_iteratorIS3_PvEE",
+      "owner_va": "0x579d54",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x57e346",
+      "owner": "_ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE9push_backERKS3_",
+      "owner_va": "0x57e32c",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x587d28",
+      "owner": "_ZN4Anki5Cozmo24CannedAnimationContainerC1Ev",
+      "owner_va": "0x587c94",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x587d84",
+      "owner": "_ZN4Anki5Cozmo24CannedAnimationContainerC1Ev",
+      "owner_va": "0x587c94",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE"
+    },
+    {
+      "address": "0x5642a2",
+      "owner": "FUN_00564290",
+      "owner_va": "0x564290",
+      "got": "0x103e9d8",
+      "symbol": "_ZTVN4Anki5Cozmo21FaceAnimationKeyFrameE",
+      "mode_status": "candidate-only, validate native state"
+    }
+  ]
+}

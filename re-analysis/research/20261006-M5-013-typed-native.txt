@@ -1,0 +1,677 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x578268 0x578428 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE11AppendTrackERKS4_j
+00578268: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+0057826C: sub        sp, #0x54 ;
+0057826E: mov        r6, r1 ;
+00578270: mov        r7, r2 ;
+00578272: ldr.w      fp, [r6, #4] ;
+00578276: mov        r5, r0 ;
+00578278: cmp        r6, fp ;
+0057827A: beq.w      #0x5783a4 ;
+0057827E: add        r4, sp, #0x28 ;
+00578280: ldr        r1, [pc, #0x190] ; literal[00578414]=00AC64FC
+00578282: add.w      r0, r4, #0x24 ;
+00578286: str        r0, [sp, #0x10] ;
+00578288: add.w      r0, r4, #0x18 ;
+0057828C: str        r0, [sp, #0x14] ;
+0057828E: ldr        r0, [pc, #0x17c] ; literal[0057840C]=00AC673A
+00578290: add        r1, pc ;
+00578292: add.w      sl, r4, #0xc ;
+00578296: add.w      r8, r4, #4 ;
+0057829A: add        r0, pc ;
+0057829C: mov.w      sb, #0 ;
+005782A0: ldr        r0, [r0] ;
+005782A2: adds       r0, #8 ;
+005782A4: str        r0, [sp, #0x18] ;
+005782A6: ldr        r0, [pc, #0x174] ; literal[0057841C]=00AC672C
+005782A8: add        r0, pc ;
+005782AA: ldr        r0, [r0] ;
+005782AC: adds       r0, #8 ;
+005782AE: str        r0, [sp, #0xc] ;
+005782B0: ldr        r0, [pc, #0x15c] ; literal[00578410]=00AC64D6
+005782B2: add        r0, pc ;
+005782B4: ldr        r0, [r0] ;
+005782B6: str        r0, [sp, #8] ;
+005782B8: ldr        r0, [r1] ;
+005782BA: str        r0, [sp, #4] ;
+005782BC: ldrd       r0, r1, [fp, #0xc] ;
+005782C0: strd       r0, r1, [r8] ;
+005782C4: ldr        r0, [sp, #0x18] ;
+005782C6: str        r0, [sp, #0x28] ;
+005782C8: mov        r0, fp ;
+005782CA: strd       sb, sb, [sl] ;
+005782CE: str.w      sb, [sl, #8] ;
+005782D2: ldrb       r1, [r0, #0x14]! ;
+005782D6: tst.w      r1, #1 ;
+005782DA: bne        #0x5782f6 ;
+005782DC: mov        ip, r4 ;
+005782DE: mov        r4, r6 ;
+005782E0: mov        r6, r5 ;
+005782E2: mov        r5, r7 ;
+005782E4: mov        r1, sl ;
+005782E6: ldm.w      r0, {r2, r3, r7} ;
+005782EA: stm        r1!, {r2, r3, r7} ;
+005782EC: mov        r7, r5 ;
+005782EE: mov        r5, r6 ;
+005782F0: mov        r6, r4 ;
+005782F2: mov        r4, ip ;
+005782F4: b          #0x578300 ;
+005782F6: ldrd       r2, r1, [fp, #0x18] ;
+005782FA: mov        r0, sl ;
+005782FC: bl         #0x4e02b2 ;
+00578300: ldr        r0, [sp, #0x14] ;
+00578302: add.w      r1, fp, #0x20 ;
+00578306: blx        #0x4a5fd4 ; GOT 01040D28 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEEC2ERKS3_
+0057830A: ldr        r2, [sp, #0x10] ;
+0057830C: ldr.w      r0, [fp, #0x2c] ;
+00578310: ldrb.w     r1, [fp, #0x30] ;
+00578314: strb       r1, [r2, #4] ;
+00578316: str        r0, [r2] ;
+00578318: ldr        r0, [sp, #0x2c] ;
+0057831A: add        r0, r7 ;
+0057831C: str        r0, [sp, #0x2c] ;
+0057831E: add        r2, sp, #0x1c ;
+00578320: mov        r0, r5 ;
+00578322: mov        r1, r4 ;
+00578324: blx        #0x4ac520 ; GOT 01042EEC _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_
+00578328: cbz        r0, #0x578372 ;
+0057832A: strd       sb, sb, [sp, #0x1c] ;
+0057832E: str.w      sb, [sp, #0x24] ;
+00578332: ldr        r0, [pc, #0xec] ; literal[00578420]=0067692D
+00578334: add        r1, sp, #0x1c ;
+00578336: ldr        r2, [pc, #0xec] ; literal[00578424]=0066BBC2
+00578338: add        r0, pc ;
+0057833A: add        r2, pc ;
+0057833C: blx        #0x4a4108 ; GOT 010402E4 _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00578340: ldr        r0, [sp, #0x1c] ;
+00578342: cbz        r0, #0x578362 ;
+00578344: ldr        r1, [sp, #0x20] ;
+00578346: cmp        r1, r0 ;
+00578348: itttt      ne ;
+0057834A: subne.w    r2, r1, #8 ;
+0057834E: subne      r2, r2, r0 ;
+00578350: mvnne      r3, #7 ;
+00578354: bicne.w    r2, r3, r2 ;
+00578358: itt        ne ;
+0057835A: addne      r1, r1, r2 ;
+0057835C: strne      r1, [sp, #0x20] ;
+0057835E: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+00578362: ldr        r0, [sp, #8] ;
+00578364: movs       r2, #1 ;
+00578366: ldr        r1, [sp, #4] ;
+00578368: ldrb       r0, [r0] ;
+0057836A: strb       r2, [r1] ;
+0057836C: cbz        r0, #0x578372 ;
+0057836E: blx        #0x4a4114 ; GOT 010402E8 _ZN4Anki4Util18sDebugBreakOnErrorEv
+00578372: ldr        r0, [sp, #0x40] ;
+00578374: ldr        r1, [sp, #0xc] ;
+00578376: cmp        r0, #0 ;
+00578378: str        r1, [sp, #0x28] ;
+0057837A: beq        #0x578388 ;
+0057837C: ldr        r1, [sp, #0x44] ;
+0057837E: cmp        r1, r0 ;
+00578380: it         ne ;
+00578382: strne      r0, [sp, #0x44] ;
+00578384: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+00578388: ldrb.w     r0, [sp, #0x34] ;
+0057838C: lsls       r0, r0, #0x1f ;
+0057838E: itt        ne ;
+00578390: ldrne      r0, [sp, #0x3c] ;
+00578392: blxne      #0x4a40cc ;
+00578396: mov        r0, r4 ;
+00578398: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+0057839C: ldr.w      fp, [fp, #4] ;
+005783A0: cmp        r6, fp ;
+005783A2: bne        #0x5782bc ;
+005783A4: add        sp, #0x54 ;
+005783A6: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ;
+005783AA: mov        r4, r0 ;
+005783AC: b          #0x578400 ;
+005783AE: mov        r4, r0 ;
+005783B0: ldr        r0, [sp, #0x1c] ;
+005783B2: cbz        r0, #0x5783d8 ;
+005783B4: ldr        r1, [sp, #0x20] ;
+005783B6: cmp        r1, r0 ;
+005783B8: beq        #0x5783cc ;
+005783BA: sub.w      r2, r1, #8 ;
+005783BE: mvn        r3, #7 ;
+005783C2: subs       r2, r2, r0 ;
+005783C4: bic.w      r2, r3, r2 ;
+005783C8: add        r1, r2 ;
+005783CA: str        r1, [sp, #0x20] ;
+005783CC: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005783D0: b          #0x5783d8 ;
+005783D2: mov        r4, r0 ;
+005783D4: b          #0x5783f2 ;
+005783D6: mov        r4, r0 ;
+005783D8: ldr        r0, [pc, #0x3c] ; literal[00578418]=00AC65FA
+005783DA: add        r0, pc ;
+005783DC: ldr        r1, [r0] ;
+005783DE: ldr        r0, [sp, #0x40] ;
+005783E0: adds       r1, #8 ;
+005783E2: str        r1, [sp, #0x28] ;
+005783E4: cbz        r0, #0x5783f2 ;
+005783E6: ldr        r1, [sp, #0x44] ;
+005783E8: cmp        r1, r0 ;
+005783EA: it         ne ;
+005783EC: strne      r0, [sp, #0x44] ;
+005783EE: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005783F2: ldrb.w     r0, [sp, #0x34] ;
+005783F6: lsls       r0, r0, #0x1f ;
+005783F8: itt        ne ;
+005783FA: ldrne      r0, [sp, #0x3c] ;
+005783FC: blxne      #0x4a40cc ;
+00578400: add        r0, sp, #0x28 ;
+00578402: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+00578406: mov        r0, r4 ;
+00578408: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+0057840C: str        r2, [r7, #0x70] ;
+0057840E: lsls       r4, r5, #2 ;
+00578410: str        r6, [r2, #0x4c] ;
+00578412: lsls       r4, r5, #2 ;
+00578414: str        r4, [r7, #0x4c] ;
+00578416: lsls       r4, r5, #2 ;
+00578418: str        r2, [r7, #0x5c] ;
+0057841A: lsls       r4, r5, #2 ;
+0057841C: str        r4, [r5, #0x70] ;
+0057841E: lsls       r4, r5, #2 ;
+00578420: ldr        r5, [r5, #0x10] ;
+00578422: lsls       r7, r4, #1 ;
+00578424: cbnz       r2, #0x578498 ;
+00578426: lsls       r6, r4, #1 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x576678 0x576750 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE
+00576678: push       {r4, r5, r6, r7, lr} ;
+0057667A: sub        sp, #0x3c ;
+0057667C: mov        r6, r1 ;
+0057667E: ldr        r1, [pc, #0xc4] ; literal[00576744]=0066D878
+00576680: mov        r4, r0 ;
+00576682: movs       r0, #0 ;
+00576684: add        r1, pc ;
+00576686: mov        r7, sp ;
+00576688: mov        r5, r2 ;
+0057668A: str        r0, [sp, #8] ;
+0057668C: strd       r0, r0, [sp] ;
+00576690: mov        r0, r7 ;
+00576692: movs       r2, #0 ;
+00576694: bl         #0x4e02b2 ;
+00576698: add        r0, sp, #0x10 ;
+0057669A: mov        r1, r7 ;
+0057669C: bl         #0x564290 ;
+005766A0: ldrb.w     r0, [sp] ;
+005766A4: lsls       r0, r0, #0x1f ;
+005766A6: itt        ne ;
+005766A8: ldrne      r0, [sp, #8] ;
+005766AA: blxne      #0x4a40cc ;
+005766AE: add        r0, sp, #0x10 ;
+005766B0: mov        r1, r6 ;
+005766B2: mov        r2, r5 ;
+005766B4: blx        #0x4ad6a8 ; GOT 010434C4 _ZN4Anki5Cozmo21FaceAnimationKeyFrame17DefineFromFlatBufEPKN9CozmoAnim13FaceAnimationERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE
+005766B8: mov        r5, r0 ;
+005766BA: cbnz       r5, #0x5766c6 ;
+005766BC: add        r1, sp, #0x10 ;
+005766BE: mov        r0, r4 ;
+005766C0: blx        #0x4ad6b4 ; GOT 010434C8 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_
+005766C4: mov        r5, r0 ;
+005766C6: ldr        r0, [pc, #0x84] ; literal[0057674C]=00AC830C
+005766C8: add        r0, pc ;
+005766CA: ldr        r1, [r0] ;
+005766CC: ldr        r0, [sp, #0x28] ;
+005766CE: adds       r1, #8 ;
+005766D0: str        r1, [sp, #0x10] ;
+005766D2: cbz        r0, #0x5766e0 ;
+005766D4: ldr        r1, [sp, #0x2c] ;
+005766D6: cmp        r1, r0 ;
+005766D8: it         ne ;
+005766DA: strne      r0, [sp, #0x2c] ;
+005766DC: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005766E0: ldrb.w     r0, [sp, #0x1c] ;
+005766E4: lsls       r0, r0, #0x1f ;
+005766E6: itt        ne ;
+005766E8: ldrne      r0, [sp, #0x24] ;
+005766EA: blxne      #0x4a40cc ;
+005766EE: add        r0, sp, #0x10 ;
+005766F0: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+005766F4: mov        r0, r5 ;
+005766F6: add        sp, #0x3c ;
+005766F8: pop        {r4, r5, r6, r7, pc} ;
+005766FA: b          #0x5766fc ;
+005766FC: mov        r4, r0 ;
+005766FE: ldr        r0, [pc, #0x48] ; literal[00576748]=00AC82D4
+00576700: add        r0, pc ;
+00576702: ldr        r1, [r0] ;
+00576704: ldr        r0, [sp, #0x28] ;
+00576706: adds       r1, #8 ;
+00576708: str        r1, [sp, #0x10] ;
+0057670A: cbz        r0, #0x576718 ;
+0057670C: ldr        r1, [sp, #0x2c] ;
+0057670E: cmp        r1, r0 ;
+00576710: it         ne ;
+00576712: strne      r0, [sp, #0x2c] ;
+00576714: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+00576718: ldrb.w     r0, [sp, #0x1c] ;
+0057671C: lsls       r0, r0, #0x1f ;
+0057671E: itt        ne ;
+00576720: ldrne      r0, [sp, #0x24] ;
+00576722: blxne      #0x4a40cc ;
+00576726: add        r0, sp, #0x10 ;
+00576728: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+0057672C: b          #0x57673e ;
+0057672E: mov        r4, r0 ;
+00576730: ldrb.w     r0, [sp] ;
+00576734: lsls       r0, r0, #0x1f ;
+00576736: beq        #0x57673e ;
+00576738: ldr        r0, [sp, #8] ;
+0057673A: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+0057673E: mov        r0, r4 ;
+00576740: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+00576744: bhi        #0x576838 ;
+00576746: lsls       r6, r4, #1 ;
+00576748: strh       r4, [r2, #0x16] ;
+0057674A: lsls       r4, r5, #2 ;
+0057674C: strh       r4, [r1, #0x18] ;
+0057674E: lsls       r4, r5, #2 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x577328 0x577400 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE17AddKeyFrameToBackERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS9_11char_traitsIcEENS9_9allocatorIcEEEE
+00577328: push       {r4, r5, r6, r7, lr} ;
+0057732A: sub        sp, #0x3c ;
+0057732C: mov        r6, r1 ;
+0057732E: ldr        r1, [pc, #0xc4] ; literal[005773F4]=0066CBC8
+00577330: mov        r4, r0 ;
+00577332: movs       r0, #0 ;
+00577334: add        r1, pc ;
+00577336: mov        r7, sp ;
+00577338: mov        r5, r2 ;
+0057733A: str        r0, [sp, #8] ;
+0057733C: strd       r0, r0, [sp] ;
+00577340: mov        r0, r7 ;
+00577342: movs       r2, #0 ;
+00577344: bl         #0x4e02b2 ;
+00577348: add        r0, sp, #0x10 ;
+0057734A: mov        r1, r7 ;
+0057734C: bl         #0x564290 ;
+00577350: ldrb.w     r0, [sp] ;
+00577354: lsls       r0, r0, #0x1f ;
+00577356: itt        ne ;
+00577358: ldrne      r0, [sp, #8] ;
+0057735A: blxne      #0x4a40cc ;
+0057735E: add        r0, sp, #0x10 ;
+00577360: mov        r1, r6 ;
+00577362: mov        r2, r5 ;
+00577364: blx        #0x4ad690 ; GOT 010434BC _ZN4Anki5Cozmo9IKeyFrame14DefineFromJsonERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE
+00577368: mov        r5, r0 ;
+0057736A: cbnz       r5, #0x577376 ;
+0057736C: add        r1, sp, #0x10 ;
+0057736E: mov        r0, r4 ;
+00577370: blx        #0x4ad6b4 ; GOT 010434C8 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_
+00577374: mov        r5, r0 ;
+00577376: ldr        r0, [pc, #0x84] ; literal[005773FC]=00AC765C
+00577378: add        r0, pc ;
+0057737A: ldr        r1, [r0] ;
+0057737C: ldr        r0, [sp, #0x28] ;
+0057737E: adds       r1, #8 ;
+00577380: str        r1, [sp, #0x10] ;
+00577382: cbz        r0, #0x577390 ;
+00577384: ldr        r1, [sp, #0x2c] ;
+00577386: cmp        r1, r0 ;
+00577388: it         ne ;
+0057738A: strne      r0, [sp, #0x2c] ;
+0057738C: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+00577390: ldrb.w     r0, [sp, #0x1c] ;
+00577394: lsls       r0, r0, #0x1f ;
+00577396: itt        ne ;
+00577398: ldrne      r0, [sp, #0x24] ;
+0057739A: blxne      #0x4a40cc ;
+0057739E: add        r0, sp, #0x10 ;
+005773A0: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+005773A4: mov        r0, r5 ;
+005773A6: add        sp, #0x3c ;
+005773A8: pop        {r4, r5, r6, r7, pc} ;
+005773AA: b          #0x5773ac ;
+005773AC: mov        r4, r0 ;
+005773AE: ldr        r0, [pc, #0x48] ; literal[005773F8]=00AC7624
+005773B0: add        r0, pc ;
+005773B2: ldr        r1, [r0] ;
+005773B4: ldr        r0, [sp, #0x28] ;
+005773B6: adds       r1, #8 ;
+005773B8: str        r1, [sp, #0x10] ;
+005773BA: cbz        r0, #0x5773c8 ;
+005773BC: ldr        r1, [sp, #0x2c] ;
+005773BE: cmp        r1, r0 ;
+005773C0: it         ne ;
+005773C2: strne      r0, [sp, #0x2c] ;
+005773C4: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005773C8: ldrb.w     r0, [sp, #0x1c] ;
+005773CC: lsls       r0, r0, #0x1f ;
+005773CE: itt        ne ;
+005773D0: ldrne      r0, [sp, #0x24] ;
+005773D2: blxne      #0x4a40cc ;
+005773D6: add        r0, sp, #0x10 ;
+005773D8: blx        #0x4a8b6c ; GOT 01041BB0 _ZN4Anki5Cozmo9IKeyFrameD2Ev
+005773DC: b          #0x5773ee ;
+005773DE: mov        r4, r0 ;
+005773E0: ldrb.w     r0, [sp] ;
+005773E4: lsls       r0, r0, #0x1f ;
+005773E6: beq        #0x5773ee ;
+005773E8: ldr        r0, [sp, #8] ;
+005773EA: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005773EE: mov        r0, r4 ;
+005773F0: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005773F4: ldm        r3, {r3, r6, r7} ;
+005773F6: lsls       r6, r4, #1 ;
+005773F8: strb       r4, [r4, #0x18] ;
+005773FA: lsls       r4, r5, #2 ;
+005773FC: strb       r4, [r3, #0x19] ;
+005773FE: lsls       r4, r5, #2 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x579454 0x5794f4 _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE20AddNewKeyFrameToBackERKS3_
+00579454: push       {r4, lr} ;
+00579456: sub        sp, #0x10 ;
+00579458: add        r2, sp, #4 ;
+0057945A: mov        r4, r0 ;
+0057945C: blx        #0x4ac520 ; GOT 01042EEC _ZN4Anki5Cozmo10Animations5TrackINS0_21FaceAnimationKeyFrameEE23AddKeyFrameToBackHelperERKS3_RPS3_
+00579460: cbnz       r0, #0x5794c0 ;
+00579462: ldr        r0, [r4, #8] ;
+00579464: cmp        r0, #2 ;
+00579466: blo        #0x5794be ;
+00579468: ldr        r1, [r4] ;
+0057946A: ldr        r0, [r1] ;
+0057946C: ldr        r2, [r1, #0xc] ;
+0057946E: ldr        r3, [r0, #0xc] ;
+00579470: movs       r0, #0 ;
+00579472: cmp        r2, r3 ;
+00579474: bhi        #0x5794c0 ;
+00579476: strd       r0, r0, [sp, #4] ;
+0057947A: str        r0, [sp, #0xc] ;
+0057947C: ldr        r0, [r1] ;
+0057947E: ldr        r3, [r1, #0xc] ;
+00579480: ldr        r2, [pc, #0x6c] ; literal[005794F0]=006757A4
+00579482: ldr        r1, [r0, #0xc] ;
+00579484: ldr        r0, [pc, #0x64] ; literal[005794EC]=00675771
+00579486: add        r2, pc ;
+00579488: add        r0, pc ;
+0057948A: str        r1, [sp] ;
+0057948C: add        r1, sp, #4 ;
+0057948E: blx        #0x4a4540 ; GOT 0104044C _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+00579492: ldr        r0, [sp, #4] ;
+00579494: cbz        r0, #0x5794b4 ;
+00579496: ldr        r1, [sp, #8] ;
+00579498: cmp        r1, r0 ;
+0057949A: itttt      ne ;
+0057949C: subne.w    r2, r1, #8 ;
+005794A0: subne      r2, r2, r0 ;
+005794A2: mvnne      r3, #7 ;
+005794A6: bicne.w    r2, r3, r2 ;
+005794AA: itt        ne ;
+005794AC: addne      r1, r1, r2 ;
+005794AE: strne      r1, [sp, #8] ;
+005794B0: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005794B4: mov        r0, r4 ;
+005794B6: blx        #0x4ad9f0 ; GOT 010435DC _ZNSt6__ndk14listIN4Anki5Cozmo21FaceAnimationKeyFrameENS_9allocatorIS3_EEE8pop_backEv
+005794BA: movs       r0, #1 ;
+005794BC: b          #0x5794c0 ;
+005794BE: movs       r0, #0 ;
+005794C0: add        sp, #0x10 ;
+005794C2: pop        {r4, pc} ;
+005794C4: mov        r4, r0 ;
+005794C6: ldr        r0, [sp, #4] ;
+005794C8: cbz        r0, #0x5794e6 ;
+005794CA: ldr        r1, [sp, #8] ;
+005794CC: cmp        r1, r0 ;
+005794CE: beq        #0x5794e2 ;
+005794D0: sub.w      r2, r1, #8 ;
+005794D4: mvn        r3, #7 ;
+005794D8: subs       r2, r2, r0 ;
+005794DA: bic.w      r2, r3, r2 ;
+005794DE: add        r1, r2 ;
+005794E0: str        r1, [sp, #8] ;
+005794E2: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005794E6: mov        r0, r4 ;
+005794E8: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+005794EC: ldrsb      r1, [r6, r5] ;
+005794EE: lsls       r7, r4, #1 ;
+005794F0: ldrsb      r4, [r4, r6] ;
+005794F2: lsls       r7, r4, #1 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f9434 0x4f9528 _ZN4Anki5Cozmo21FaceAnimationKeyFrame18SetMembersFromJsonERKN4Json5ValueERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE
+004F9434: push       {r4, r5, r6, r7, lr} ;
+004F9436: sub        sp, #0xc ;
+004F9438: mov        r6, r1 ;
+004F943A: mov        r5, r0 ;
+004F943C: movs       r0, #0 ;
+004F943E: mov        r7, sp ;
+004F9440: adr        r1, #0xc8 ;
+004F9442: mov        r4, r2 ;
+004F9444: str        r0, [sp, #8] ;
+004F9446: movs       r2, #8 ;
+004F9448: strd       r0, r0, [sp] ;
+004F944C: mov        r0, r7 ;
+004F944E: bl         #0x4e02b2 ;
+004F9452: add.w      r2, r5, #0xc ;
+004F9456: mov        r0, r6 ;
+004F9458: mov        r1, r7 ;
+004F945A: blx        #0x4a5fec ; GOT 01040D30 _ZN4Anki9JsonTools16GetValueOptionalINSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEEEbRKN4Json5ValueERKS8_RT_
+004F945E: mov        r6, r0 ;
+004F9460: ldrb.w     r0, [sp] ;
+004F9464: lsls       r0, r0, #0x1f ;
+004F9466: itt        ne ;
+004F9468: ldrne      r0, [sp, #8] ;
+004F946A: blxne      #0x4a40cc ;
+004F946E: cbz        r6, #0x4f947c ;
+004F9470: mov        r0, r5 ;
+004F9472: mov        r1, r4 ;
+004F9474: blx        #0x4a5ff8 ; GOT 01040D34 _ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+004F9478: movs       r2, #0 ;
+004F947A: b          #0x4f94d0 ;
+004F947C: ldr        r0, [pc, #0x98] ; literal[004F9518]=006EBA76
+004F947E: movs       r1, #0 ;
+004F9480: ldr        r2, [pc, #0x98] ; literal[004F951C]=006EBA91
+004F9482: add        r0, pc ;
+004F9484: strd       r1, r1, [sp] ;
+004F9488: add        r2, pc ;
+004F948A: str        r1, [sp, #8] ;
+004F948C: adr        r3, #0x7c ;
+004F948E: mov        r1, sp ;
+004F9490: blx        #0x4a4108 ; GOT 010402E4 _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+004F9494: ldr        r0, [sp] ;
+004F9496: cbz        r0, #0x4f94b6 ;
+004F9498: ldr        r1, [sp, #4] ;
+004F949A: cmp        r1, r0 ;
+004F949C: itttt      ne ;
+004F949E: subne.w    r2, r1, #8 ;
+004F94A2: subne      r2, r2, r0 ;
+004F94A4: mvnne      r3, #7 ;
+004F94A8: bicne.w    r2, r3, r2 ;
+004F94AC: itt        ne ;
+004F94AE: addne      r1, r1, r2 ;
+004F94B0: strne      r1, [sp, #4] ;
+004F94B2: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F94B6: ldr        r0, [pc, #0x68] ; literal[004F9520]=00B452CC
+004F94B8: movs       r2, #1 ;
+004F94BA: ldr        r1, [pc, #0x68] ; literal[004F9524]=00B452CE
+004F94BC: add        r0, pc ;
+004F94BE: add        r1, pc ;
+004F94C0: ldr        r0, [r0] ;
+004F94C2: ldr        r1, [r1] ;
+004F94C4: ldrb       r0, [r0] ;
+004F94C6: strb       r2, [r1] ;
+004F94C8: cbz        r0, #0x4f94d0 ;
+004F94CA: blx        #0x4a4114 ; GOT 010402E8 _ZN4Anki4Util18sDebugBreakOnErrorEv
+004F94CE: movs       r2, #1 ;
+004F94D0: mov        r0, r2 ;
+004F94D2: add        sp, #0xc ;
+004F94D4: pop        {r4, r5, r6, r7, pc} ;
+004F94D6: mov        r4, r0 ;
+004F94D8: ldr        r0, [sp] ;
+004F94DA: cbz        r0, #0x4f9506 ;
+004F94DC: ldr        r1, [sp, #4] ;
+004F94DE: cmp        r1, r0 ;
+004F94E0: beq        #0x4f9502 ;
+004F94E2: sub.w      r2, r1, #8 ;
+004F94E6: mvn        r3, #7 ;
+004F94EA: subs       r2, r2, r0 ;
+004F94EC: bic.w      r2, r3, r2 ;
+004F94F0: add        r1, r2 ;
+004F94F2: str        r1, [sp, #4] ;
+004F94F4: b          #0x4f9502 ;
+004F94F6: mov        r4, r0 ;
+004F94F8: ldrb.w     r0, [sp] ;
+004F94FC: lsls       r0, r0, #0x1f ;
+004F94FE: beq        #0x4f9506 ;
+004F9500: ldr        r0, [sp, #8] ;
+004F9502: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F9506: mov        r0, r4 ;
+004F9508: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+004F950C: ldr        r1, [r4, #0x64] ;
+004F950E: ldr        r1, [r5, #0x54] ;
+004F9510: str        r6, [r1, #0x14] ;
+004F9512: str        r5, [r5, #0x54] ;
+004F9514: movs       r0, r0 ;
+004F9516: movs       r0, r0 ;
+004F9518: rev16      r6, r6 ;
+004F951A: lsls       r6, r5, #1 ;
+004F951C: .byte      0x91, 0xba ;
+004F951E: lsls       r6, r5, #1 ;
+004F9520: strh       r4, [r1, r3] ;
+004F9522: lsls       r4, r6, #2 ;
+004F9524: strh       r6, [r1, r3] ;
+004F9526: lsls       r4, r6, #2 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4f9574 0x4f96c4 _ZN4Anki5Cozmo21FaceAnimationKeyFrame7ProcessERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+004F9574: push.w     {r4, r5, r6, r7, r8, sb, sl, lr} ;
+004F9578: sub        sp, #0x18 ;
+004F957A: mov        sl, r0 ;
+004F957C: adr        r7, #0xf4 ;
+004F957E: mov        r5, sl ;
+004F9580: mov        r8, r1 ;
+004F9582: ldrb       r0, [r5, #0xc]! ;
+004F9586: ands       sb, r0, #1 ;
+004F958A: itte       eq ;
+004F958C: lsreq      r6, r0, #1 ;
+004F958E: addeq      r4, r5, #1 ;
+004F9590: ldrdne     r6, r4, [sl, #0x10] ;
+004F9594: cmp        r6, #0 ;
+004F9596: beq        #0x4f963a ;
+004F9598: adds       r0, r4, r6 ;
+004F959A: movs       r2, #1 ;
+004F959C: ldrb       r1, [r0, #-0x1] ;
+004F95A0: mov        r0, r7 ;
+004F95A2: blx        #0x4a6010 ; GOT 01040D3C memchr
+004F95A6: subs       r6, #1 ;
+004F95A8: cmp        r0, #0 ;
+004F95AA: beq        #0x4f9594 ;
+004F95AC: adds       r0, r6, #1 ;
+004F95AE: beq        #0x4f963a ;
+004F95B0: movs       r0, #0 ;
+004F95B2: strd       r0, r0, [sp, #8] ;
+004F95B6: str        r0, [sp, #0x10] ;
+004F95B8: ldrb.w     r0, [r8] ;
+004F95BC: ldr.w      r3, [r8, #8] ;
+004F95C0: lsls       r0, r0, #0x1f ;
+004F95C2: it         eq ;
+004F95C4: addeq.w    r3, r8, #1 ;
+004F95C8: cmp.w      sb, #0 ;
+004F95CC: ite        eq ;
+004F95CE: addeq      r0, r5, #1 ;
+004F95D0: ldrne.w    r0, [sl, #0x14] ;
+004F95D4: str        r0, [sp] ;
+004F95D6: adr        r0, #0xa0 ;
+004F95D8: add        r1, sp, #8 ;
+004F95DA: adr        r2, #0xbc ;
+004F95DC: blx        #0x4a4540 ; GOT 0104044C _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+004F95E0: ldr        r0, [sp, #8] ;
+004F95E2: cbz        r0, #0x4f9602 ;
+004F95E4: ldr        r1, [sp, #0xc] ;
+004F95E6: cmp        r1, r0 ;
+004F95E8: itttt      ne ;
+004F95EA: subne.w    r2, r1, #8 ;
+004F95EE: subne      r2, r2, r0 ;
+004F95F0: mvnne      r3, #7 ;
+004F95F4: bicne.w    r2, r3, r2 ;
+004F95F8: itt        ne ;
+004F95FA: addne      r1, r1, r2 ;
+004F95FC: strne      r1, [sp, #0xc] ;
+004F95FE: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F9602: adds       r2, r6, #1 ;
+004F9604: add        r6, sp, #8 ;
+004F9606: mov        r1, r5 ;
+004F9608: mov.w      r3, #-1 ;
+004F960C: mov        r0, r6 ;
+004F960E: str        r5, [sp] ;
+004F9610: blx        #0x4a601c ; GOT 01040D40 _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC2ERKS5_jjRKS4_
+004F9614: ldrb       r0, [r5] ;
+004F9616: lsls       r0, r0, #0x1f ;
+004F9618: bne        #0x4f9620 ;
+004F961A: movs       r0, #0 ;
+004F961C: strh       r0, [r5] ;
+004F961E: b          #0x4f962c ;
+004F9620: ldr.w      r0, [sl, #0x14] ;
+004F9624: movs       r1, #0 ;
+004F9626: strb       r1, [r0] ;
+004F9628: str.w      r1, [sl, #0x10] ;
+004F962C: mov        r0, r5 ;
+004F962E: movs       r1, #0 ;
+004F9630: bl         #0x4e75ec ;
+004F9634: ldm.w      r6, {r0, r1, r2} ;
+004F9638: stm        r5!, {r0, r1, r2} ;
+004F963A: movs       r0, #0 ;
+004F963C: str.w      r0, [sl, #0x24] ;
+004F9640: movs       r0, #0 ;
+004F9642: add        sp, #0x18 ;
+004F9644: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc} ;
+004F9648: bl         #0x4e39f8 ;
+004F964C: mov        r4, r0 ;
+004F964E: ldr        r0, [sp, #8] ;
+004F9650: cbz        r0, #0x4f966e ;
+004F9652: ldr        r1, [sp, #0xc] ;
+004F9654: cmp        r1, r0 ;
+004F9656: beq        #0x4f966a ;
+004F9658: sub.w      r2, r1, #8 ;
+004F965C: mvn        r3, #7 ;
+004F9660: subs       r2, r2, r0 ;
+004F9662: bic.w      r2, r3, r2 ;
+004F9666: add        r1, r2 ;
+004F9668: str        r1, [sp, #0xc] ;
+004F966A: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004F966E: mov        r0, r4 ;
+004F9670: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+004F9674: movs       r7, r5 ;
+004F9676: movs       r0, r0 ;
+004F9678: str        r6, [r0, #0x14] ;
+004F967A: str        r3, [r4, #0x54] ;
+004F967C: ldr        r1, [r0, #0x64] ;
+004F967E: ldr        r1, [r5, #0x54] ;
+004F9680: strb       r1, [r4, #0x11] ;
+004F9682: ldr        r1, [r5, #0x74] ;
+004F9684: ldr        r3, [pc, #0x1b8] ; literal[004F9840]=F7AC4631
+004F9686: ldrb       r5, [r4, #5] ;
+004F9688: strb       r6, [r0, #9] ;
+004F968A: ldr        r1, [r4, #0x54] ;
+004F968C: cmp        r6, #0x65 ;
+004F968E: strb       r0, [r2, #9] ;
+004F9690: str        r7, [r5, #0x34] ;
+004F9692: strb       r5, [r4, #0xd] ;
+004F9694: lsls       r3, r6, #1 ;
+004F9696: movs       r0, r0 ;
+004F9698: strb       r5, [r4, #0xc] ;
+004F969A: movs       r0, #0x3a ;
+004F969C: str        r2, [r2, #0x54] ;
+004F969E: ldr        r5, [r5, #0x74] ;
+004F96A0: ldr        r6, [r6, #0x14] ;
+004F96A2: str        r6, [r5, #0x74] ;
+004F96A4: strb       r0, [r4] ;
+004F96A6: strb       r1, [r4, #0x11] ;
+004F96A8: movs       r0, #0x68 ;
+004F96AA: strb       r6, [r4, #9] ;
+004F96AC: ldr        r7, [r5, #0x54] ;
+004F96AE: str        r0, [r4, #0x10] ;
+004F96B0: ldr        r6, [r5, #0x14] ;
+004F96B2: str        r5, [r5, #0x14] ;
+004F96B4: ldr        r4, [r6, #0x14] ;
+004F96B6: ldr        r7, [r5, #0x64] ;
+004F96B8: ldr        r0, [r4, #0x60] ;
+004F96BA: ldr        r1, [r4, #0x54] ;
+004F96BC: subs       r2, #0x65 ;
+004F96BE: movs       r5, #0x20 ;
+004F96C0: lsls       r3, r6, #1 ;
+004F96C2: movs       r0, r0 ;
