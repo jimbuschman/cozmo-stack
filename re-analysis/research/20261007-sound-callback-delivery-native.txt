@@ -1,0 +1,230 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008D88CC..0x008D8944 exclusive; Thumb;
+008D88CC: push         {r4, r5, r7, lr}
+008D88CE: sub          sp, #0x18
+008D88D0: ldrb         r0, [r0]
+008D88D2: cbz          r0, #0x8d8924
+008D88D4: ldr          r0, [pc, #0x6c] ; word[008D8944]=007B47F0
+008D88D6: movs         r1, #1
+008D88D8: strb.w       r1, [sp, #0x14]
+008D88DC: add          r0, pc
+008D88DE: str          r0, [sp, #0x10]
+008D88E0: blx          #0x4a6784 ; <EXTERNAL>::std::__ndk1::mutex::lock
+008D88E4: ldr          r0, [pc, #0x60] ; word[008D8948]=007B47E8
+008D88E6: movs         r5, #0
+008D88E8: add          r0, pc
+008D88EA: ldm.w        r0, {r1, r2, r3}
+008D88EE: strd         r5, r5, [r0]
+008D88F2: str          r5, [r0, #8]
+008D88F4: add          r0, sp, #4
+008D88F6: stm          r0!, {r1, r2, r3}
+008D88F8: add          r0, sp, #0x10
+008D88FA: bl           #0x501f90 ; FUN_00501f90
+008D88FE: ldrd         r4, r5, [sp, #4]
+008D8902: b            #0x8d890e
+008D8904: ldrd         r0, r1, [r4]
+008D8908: blx          #0x4d2428 ; Anki::AudioEngine::AudioCallbackContext::HandleCallback
+008D890C: adds         r4, #8
+008D890E: cmp          r4, r5
+008D8910: bne          #0x8d8904
+008D8912: add          r0, sp, #4
+008D8914: bl           #0x8ca6fc ; FUN_008ca6fc
+008D8918: ldrb.w       r0, [sp, #0x14]
+008D891C: cbz          r0, #0x8d8924
+008D891E: ldr          r0, [sp, #0x10]
+008D8920: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+008D8924: add          sp, #0x18
+008D8926: pop          {r4, r5, r7, pc}
+008D8928: b            #0x8d892a
+008D892A: mov          r4, r0
+008D892C: add          r0, sp, #4
+008D892E: bl           #0x8ca6fc ; FUN_008ca6fc
+008D8932: ldrb.w       r0, [sp, #0x14]
+008D8936: cbz          r0, #0x8d893e
+008D8938: ldr          r0, [sp, #0x10]
+008D893A: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+008D893E: mov          r0, r4
+008D8940: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+RANGE 0x008D4A3C..0x008D4A54 exclusive; Thumb; _ZN4Anki11AudioEngine20AudioCallbackContext14HandleCallbackERKNS0_17AudioCallbackInfoE
+008D4A3C: push         {r4, r5, r7, lr}
+008D4A3E: mov          r4, r0
+008D4A40: mov          r5, r1
+008D4A42: ldr          r0, [r4, #0x18]
+008D4A44: cbz          r0, #0x8d4a70
+008D4A46: ldrb         r0, [r5, #8]
+008D4A48: subs         r1, r0, #1
+008D4A4A: cmp          r1, #3
+008D4A4C: bhi          #0x8d4a70
+008D4A4E: movs         r0, #2
+008D4A50: tbb          [pc, r1]
+008D4A54: raw=08040502 relocated=08040502
+RANGE 0x008D4A58..0x008D4ACC exclusive; Thumb;
+008D4A58: movs         r0, #1
+008D4A5A: b            #0x8d4a5e
+008D4A5C: movs         r0, #4
+008D4A5E: ldr          r1, [r4]
+008D4A60: tst          r1, r0
+008D4A62: beq          #0x8d4a70
+008D4A64: add.w        r0, r4, #8
+008D4A68: mov          r1, r4
+008D4A6A: mov          r2, r5
+008D4A6C: bl           #0x8d4a90 ; FUN_008d4a90
+008D4A70: ldrb         r0, [r5, #8]
+008D4A72: subs         r0, #3
+008D4A74: uxtb         r0, r0
+008D4A76: cmp          r0, #1
+008D4A78: it           hi
+008D4A7A: pophi        {r4, r5, r7, pc}
+008D4A7C: ldr          r0, [r4, #0x30]
+008D4A7E: cbz          r0, #0x8d4a8e
+008D4A80: add.w        r0, r4, #0x20
+008D4A84: mov          r1, r4
+008D4A86: pop.w        {r4, r5, r7, lr}
+008D4A8A: b.w          #0x8d4ad8
+008D4A8E: pop          {r4, r5, r7, pc}
+008D4A90: push         {r7, lr}
+008D4A92: sub          sp, #8
+008D4A94: str          r1, [sp, #4]
+008D4A96: ldr          r0, [r0, #0x10]
+008D4A98: cbz          r0, #0x8d4aa6
+008D4A9A: ldr          r1, [r0]
+008D4A9C: ldr          r3, [r1, #0x18]
+008D4A9E: add          r1, sp, #4
+008D4AA0: blx          r3
+008D4AA2: add          sp, #8
+008D4AA4: pop          {r7, pc}
+008D4AA6: movs         r0, #4
+008D4AA8: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008D4AAC: ldr          r1, [pc, #0x1c] ; word[008D4ACC]=00769F04
+008D4AAE: ldr          r2, [pc, #0x20] ; word[008D4AD0]=00769F06
+008D4AB0: ldr.w        ip, [pc, #0x20] ; word[008D4AD4]=00769F08
+008D4AB4: add          r1, pc
+008D4AB6: add          r2, pc
+008D4AB8: add          ip, pc
+008D4ABA: ldr          r3, [r1]
+008D4ABC: ldr          r1, [r2]
+008D4ABE: ldr.w        r2, [ip]
+008D4AC2: adds         r3, #8
+008D4AC4: str          r3, [r0]
+008D4AC6: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+008D4ACA: nop
+RANGE 0x008D4AD8..0x008D4B14 exclusive; Thumb;
+008D4AD8: push         {r7, lr}
+008D4ADA: sub          sp, #8
+008D4ADC: str          r1, [sp, #4]
+008D4ADE: ldr          r0, [r0, #0x10]
+008D4AE0: cbz          r0, #0x8d4aee
+008D4AE2: ldr          r1, [r0]
+008D4AE4: ldr          r2, [r1, #0x18]
+008D4AE6: add          r1, sp, #4
+008D4AE8: blx          r2
+008D4AEA: add          sp, #8
+008D4AEC: pop          {r7, pc}
+008D4AEE: movs         r0, #4
+008D4AF0: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008D4AF4: ldr          r1, [pc, #0x1c] ; word[008D4B14]=00769EBC
+008D4AF6: ldr          r2, [pc, #0x20] ; word[008D4B18]=00769EBE
+008D4AF8: ldr.w        ip, [pc, #0x20] ; word[008D4B1C]=00769EC0
+008D4AFC: add          r1, pc
+008D4AFE: add          r2, pc
+008D4B00: add          ip, pc
+008D4B02: ldr          r3, [r1]
+008D4B04: ldr          r1, [r2]
+008D4B06: ldr.w        r2, [ip]
+008D4B0A: adds         r3, #8
+008D4B0C: str          r3, [r0]
+008D4B0E: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+008D4B12: nop
+0104F944: raw=004A4010 relocated=008D4A3D _ZN4Anki11AudioEngine20AudioCallbackContext14HandleCallbackERKNS0_17AudioCallbackInfoE
+RANGE 0x00501F90..0x00501FAE exclusive; Thumb;
+00501F90: push         {r4, lr}
+00501F92: mov          r4, r0
+00501F94: ldrb         r0, [r4, #4]
+00501F96: cbnz         r0, #0x501fa2
+00501F98: ldr          r1, [pc, #0x14] ; word[00501FB0]=006E3B32
+00501F9A: movs         r0, #1
+00501F9C: add          r1, pc
+00501F9E: blx          #0x4a6940 ; <EXTERNAL>::std::__ndk1::__throw_system_error
+00501FA2: ldr          r0, [r4]
+00501FA4: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+00501FA8: movs         r0, #0
+00501FAA: strb         r0, [r4, #4]
+00501FAC: pop          {r4, pc}
+RANGE 0x008CA6FC..0x008CA734 exclusive; Thumb;
+008CA6FC: push         {r4, r5, r6, lr}
+008CA6FE: mov          r4, r0
+008CA700: ldr          r5, [r4]
+008CA702: cbz          r5, #0x8ca730
+008CA704: ldr          r1, [r4, #4]
+008CA706: cmp          r1, r5
+008CA708: beq          #0x8ca72a
+008CA70A: movs         r6, #0
+008CA70C: sub.w        r0, r1, #8
+008CA710: str          r0, [r4, #4]
+008CA712: ldr          r0, [r1, #-0x4]
+008CA716: str          r6, [r1, #-0x4]
+008CA71A: cbz          r0, #0x8ca722
+008CA71C: ldr          r1, [r0]
+008CA71E: ldr          r1, [r1, #4]
+008CA720: blx          r1
+008CA722: ldr          r1, [r4, #4]
+008CA724: cmp          r1, r5
+008CA726: bne          #0x8ca70c
+008CA728: ldr          r5, [r4]
+008CA72A: mov          r0, r5
+008CA72C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008CA730: mov          r0, r4
+008CA732: pop          {r4, r5, r6, pc}
+RANGE 0x008DA25C..0x008DA2E0 exclusive; Thumb;
+008DA25C: push.w       {r4, r5, r6, r7, r8, lr}
+008DA260: sub          sp, #0x18
+008DA262: mov          r4, r0
+008DA264: mov          r8, r1
+008DA266: ldrd         r0, r1, [r4]
+008DA26A: mov          r5, r2
+008DA26C: movs         r2, #1
+008DA26E: add.w        r7, r4, #8
+008DA272: subs         r1, r1, r0
+008DA274: add.w        r6, r2, r1, asr #3
+008DA278: cmp.w        r6, #0x20000000
+008DA27C: blo          #0x8da286
+008DA27E: mov          r0, r4
+008DA280: bl           #0x4e0668 ; FUN_004e0668
+008DA284: ldr          r0, [r4]
+008DA286: ldr          r1, [r4, #8]
+008DA288: movw         r3, #0xfffe
+008DA28C: movt         r3, #0xfff
+008DA290: subs         r1, r1, r0
+008DA292: asrs         r2, r1, #3
+008DA294: cmp          r2, r3
+008DA296: bhi          #0x8da2a2
+008DA298: asrs         r1, r1, #2
+008DA29A: cmp          r1, r6
+008DA29C: it           lo
+008DA29E: movlo        r1, r6
+008DA2A0: b            #0x8da2a6
+008DA2A2: mvn          r1, #0xe0000000
+008DA2A6: ldr          r2, [r4, #4]
+008DA2A8: add          r6, sp, #4
+008DA2AA: mov          r3, r7
+008DA2AC: subs         r0, r2, r0
+008DA2AE: asrs         r2, r0, #3
+008DA2B0: mov          r0, r6
+008DA2B2: bl           #0x8da2f0 ; FUN_008da2f0
+008DA2B6: ldr          r0, [sp, #0xc]
+008DA2B8: movs         r2, #0
+008DA2BA: ldr.w        r1, [r8]
+008DA2BE: str          r1, [r0]
+008DA2C0: ldr          r1, [r5]
+008DA2C2: str          r2, [r5]
+008DA2C4: str          r1, [r0, #4]
+008DA2C6: ldr          r0, [sp, #0xc]
+008DA2C8: adds         r0, #8
+008DA2CA: str          r0, [sp, #0xc]
+008DA2CC: mov          r0, r4
+008DA2CE: mov          r1, r6
+008DA2D0: bl           #0x8da37c ; FUN_008da37c
+008DA2D4: add          r0, sp, #4
+008DA2D6: bl           #0x8da3d2 ; FUN_008da3d2
+008DA2DA: add          sp, #0x18
+008DA2DC: pop.w        {r4, r5, r6, r7, r8, pc}

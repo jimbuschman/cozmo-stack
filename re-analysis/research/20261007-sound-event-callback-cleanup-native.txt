@@ -1,0 +1,56 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004D2428..0x004D2434 exclusive; ARM;
+004D2428: add          ip, pc, #0xb00000
+004D242C: add          ip, ip, #0x7d000
+004D2430: ldr          pc, [ip, #0x514]!
+RANGE 0x008D8F7C..0x008D8FE8 exclusive; Thumb;
+008D8F7C: mov          r4, r0
+008D8F7E: ldr          r0, [sp, #0x24]
+008D8F80: movs         r1, #0
+008D8F82: cmp          r0, #0
+008D8F84: str          r1, [sp, #0x24]
+008D8F86: beq          #0x8d8fba
+008D8F88: ldr          r1, [r0]
+008D8F8A: ldr          r1, [r1, #4]
+008D8F8C: blx          r1
+008D8F8E: b            #0x8d8fba
+008D8F90: mov          r4, r0
+008D8F92: ldr          r0, [sp, #0x20]
+008D8F94: movs         r1, #0
+008D8F96: cmp          r0, #0
+008D8F98: str          r1, [sp, #0x20]
+008D8F9A: beq          #0x8d8fc6
+008D8F9C: ldr          r1, [r0]
+008D8F9E: ldr          r1, [r1, #4]
+008D8FA0: blx          r1
+008D8FA2: b            #0x8d8fc6
+008D8FA4: mov          r4, r0
+008D8FA6: ldr          r0, [sp, #0x24]
+008D8FA8: movs         r1, #0
+008D8FAA: cmp          r0, #0
+008D8FAC: str          r1, [sp, #0x24]
+008D8FAE: beq          #0x8d8fd2
+008D8FB0: ldr          r1, [r0]
+008D8FB2: ldr          r1, [r1, #4]
+008D8FB4: blx          r1
+008D8FB6: b            #0x8d8fd2
+008D8FB8: mov          r4, r0
+008D8FBA: ldr          r0, [pc, #0x80] ; word[008D903C]=007B4110
+008D8FBC: add          r0, pc
+008D8FBE: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+008D8FC2: b            #0x8d8fe2
+008D8FC4: mov          r4, r0
+008D8FC6: ldr          r0, [pc, #0x54] ; word[008D901C]=007B4104
+008D8FC8: add          r0, pc
+008D8FCA: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+008D8FCE: b            #0x8d8fe2
+008D8FD0: mov          r4, r0
+008D8FD2: ldr          r0, [pc, #0x28] ; word[008D8FFC]=007B40F8
+008D8FD4: add          r0, pc
+008D8FD6: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+008D8FDA: b            #0x8d8fe2
+008D8FDC: b            #0x8d8fe0
+008D8FDE: b            #0x8d8fe0
+008D8FE0: mov          r4, r0
+008D8FE2: mov          r0, r4
+008D8FE4: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume

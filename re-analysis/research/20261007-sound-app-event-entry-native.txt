@@ -1,0 +1,79 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005919B8..0x00591A70 exclusive; Thumb;
+005919B8: ldrh         r0, [r5]
+005919BA: subs         r1, r0, #1
+005919BC: cmp          r1, #5
+005919BE: bhi          #0x591a1a
+005919C0: tbb          [pc, r1]
+005919C4: lsrs         r3, r0, #4
+005919C6: asrs         r7, r1, #0x14
+005919C8: movs         r1, #0x1b
+005919CA: ldr          r0, [r4]
+005919CC: ldr          r6, [r0, #0xc]
+005919CE: mov          r0, r5
+005919D0: blx          #0x4aeec0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PostAudioEvent
+005919D4: b            #0x591a10
+005919D6: ldr          r0, [r4]
+005919D8: ldr          r6, [r0, #0x10]
+005919DA: mov          r0, r5
+005919DC: blx          #0x4aeecc ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_StopAllAudioEvents
+005919E0: b            #0x591a10
+005919E2: ldr          r0, [r4]
+005919E4: ldr          r6, [r0, #0x14]
+005919E6: mov          r0, r5
+005919E8: blx          #0x4aeed8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PostAudioGameState
+005919EC: b            #0x591a10
+005919EE: ldr          r0, [r4]
+005919F0: ldr          r6, [r0, #0x18]
+005919F2: mov          r0, r5
+005919F4: blx          #0x4aeee4 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PostAudioSwitchState
+005919F8: b            #0x591a10
+005919FA: ldr          r0, [r4]
+005919FC: ldr          r6, [r0, #0x1c]
+005919FE: mov          r0, r5
+00591A00: blx          #0x4aeef0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PostAudioParameter
+00591A04: b            #0x591a10
+00591A06: ldr          r0, [r4]
+00591A08: ldr          r6, [r0, #0x20]
+00591A0A: mov          r0, r5
+00591A0C: blx          #0x4aeefc ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PostAudioMusicState
+00591A10: mov          r1, r0
+00591A12: mov          r0, r4
+00591A14: blx          r6
+00591A16: add          sp, #0x10
+00591A18: pop          {r4, r5, r6, pc}
+00591A1A: movs         r1, #0
+00591A1C: strd         r1, r1, [sp, #4]
+00591A20: str          r1, [sp, #0xc]
+00591A22: blx          #0x4a8cec ; Anki::Cozmo::ExternalInterface::MessageGameToEngineTagToString
+00591A26: mov          r3, r0
+00591A28: adr          r0, #0x74
+00591A2A: add          r1, sp, #4
+00591A2C: adr          r2, #0xb4
+00591A2E: blx          #0x4a4108 ; Anki::Util::sErrorF
+00591A32: ldr          r0, [sp, #4]
+00591A34: cbz          r0, #0x591a54
+00591A36: ldr          r1, [sp, #8]
+00591A38: cmp          r1, r0
+00591A3A: itttt        ne
+00591A3C: subne.w      r2, r1, #8
+00591A40: subne        r2, r2, r0
+00591A42: mvnne        r3, #7
+00591A46: bicne.w      r2, r3, r2
+00591A4A: itt          ne
+00591A4C: addne        r1, r1, r2
+00591A4E: strne        r1, [sp, #8]
+00591A50: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00591A54: ldr          r0, [pc, #0xb8] ; word[00591B10]=00AACD2E
+00591A56: movs         r2, #1
+00591A58: ldr          r1, [pc, #0xb8] ; word[00591B14]=00AACD30
+00591A5A: add          r0, pc
+00591A5C: add          r1, pc
+00591A5E: ldr          r0, [r0]
+00591A60: ldr          r1, [r1]
+00591A62: ldrb         r0, [r0]
+00591A64: strb         r2, [r1]
+00591A66: cmp          r0, #0
+00591A68: beq          #0x591a16
+00591A6A: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+00591A6E: b            #0x591a16

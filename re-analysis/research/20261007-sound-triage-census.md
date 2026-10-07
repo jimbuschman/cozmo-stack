@@ -36,7 +36,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-027 | 65 | NOT DONE |
 | Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | NOT DONE |
-| Q14-030 | 68 | NOT DONE |
+| Q14-030 | 68 | PARTIAL |
 | Q14-031 | 69 | NOT DONE |
 | Q14-032 | 70 | NOT DONE |
 | Q14-033 | 71 | NOT DONE |
@@ -316,7 +316,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-023 | **KEEP** | 0x005919B8;0x008DFC4C;0x008DED14;0x008D1F20;0x008D8CE4;0x009A6704 | Unity/app dispatch, flags/cookie/callback propagation and live registration remain exact event behavior. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: UE1–UE7 and UC1–UC5 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates and flush ordering. Remaining: mux callback recipient, controller removal, complete queue-growth helpers and the audio tick caller; those shipped bodies are readable dependencies, not UNKNOWN.
 
 ## Q14-031 — triage line 69
 
