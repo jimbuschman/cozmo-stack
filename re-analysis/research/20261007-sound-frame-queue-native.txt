@@ -1,0 +1,122 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0059B146..0x0059B258 exclusive; Thumb; _ZN4Anki5Cozmo5Audio21RobotAudioFrameStreamC2Ed
+0059B146: push         {r4, r5, r7, lr}
+0059B148: mov          r4, r0
+0059B14A: vmov         d0, r2, r3
+0059B14E: add.w        r0, r4, #0xc
+0059B152: movs         r5, #0
+0059B154: movs         r1, #0x18
+0059B156: strb         r5, [r4, #8]
+0059B158: vstr         d0, [r4]
+0059B15C: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+0059B160: mov          r0, r4
+0059B162: str          r5, [r4, #0x24]
+0059B164: pop          {r4, r5, r7, pc}
+0059B166: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0059B16A: sub          sp, #4
+0059B16C: mov          r4, r0
+0059B16E: add.w        r8, r4, #0x24
+0059B172: mov          r0, r8
+0059B174: blx          #0x4a6784 ; <EXTERNAL>::std::__ndk1::mutex::lock
+0059B178: add.w        r6, r4, #0xc
+0059B17C: mov.w        sb, #0
+0059B180: ldr          r0, [r4, #0x20]
+0059B182: cbz          r0, #0x59b1ac
+0059B184: ldr          r5, [r4, #0x1c]
+0059B186: ldr          r0, [r4, #0x10]
+0059B188: lsrs         r1, r5, #0xa
+0059B18A: bfc          r5, #0xa, #0x16
+0059B18E: ldr.w        r7, [r0, r1, lsl #2]
+0059B192: ldr.w        r0, [r7, r5, lsl #2]
+0059B196: cbz          r0, #0x59b1a0
+0059B198: blx          #0x4a82a8 ; std::__ndk1::__vector_base<float,std::__ndk1::allocator<float>>::~__vector_base
+0059B19C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059B1A0: str.w        sb, [r7, r5, lsl #2]
+0059B1A4: mov          r0, r6
+0059B1A6: blx          #0x4af88c ; std::__ndk1::deque<Anki::AudioEngine::AudioFrameData*,std::__ndk1::allocator<Anki::AudioEngine::AudioFrameData*>>::pop_front
+0059B1AA: b            #0x59b180
+0059B1AC: mov          r0, r8
+0059B1AE: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+0059B1B2: mov          r0, r8
+0059B1B4: blx          #0x4a6958 ; <EXTERNAL>::std::__ndk1::mutex::~mutex
+0059B1B8: mov          r0, r6
+0059B1BA: blx          #0x4af898 ; std::__ndk1::__deque_base<Anki::AudioEngine::AudioFrameData*,std::__ndk1::allocator<Anki::AudioEngine::AudioFrameData*>>::~__deque_base
+0059B1BE: mov          r0, r4
+0059B1C0: add          sp, #4
+0059B1C2: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+0059B1C6: mov          r6, r0
+0059B1C8: b            #0x59b1d2
+0059B1CA: mov          r6, r0
+0059B1CC: mov          r0, r8
+0059B1CE: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+0059B1D2: mov          r0, r8
+0059B1D4: blx          #0x4a6958 ; <EXTERNAL>::std::__ndk1::mutex::~mutex
+0059B1D8: add.w        r0, r4, #0xc
+0059B1DC: blx          #0x4af898 ; std::__ndk1::__deque_base<Anki::AudioEngine::AudioFrameData*,std::__ndk1::allocator<Anki::AudioEngine::AudioFrameData*>>::~__deque_base
+0059B1E0: mov          r0, r6
+0059B1E2: bl           #0x4e39f8
+0059B1E6: push         {r4, r5, r7, lr}
+0059B1E8: sub          sp, #8
+0059B1EA: mov          r5, r0
+0059B1EC: add.w        r4, r5, #0x24
+0059B1F0: str          r1, [sp, #4]
+0059B1F2: mov          r0, r4
+0059B1F4: blx          #0x4a6784 ; <EXTERNAL>::std::__ndk1::mutex::lock
+0059B1F8: add.w        r0, r5, #0xc
+0059B1FC: add          r1, sp, #4
+0059B1FE: blx          #0x4af8a4 ; std::__ndk1::deque<Anki::AudioEngine::AudioFrameData*,std::__ndk1::allocator<Anki::AudioEngine::AudioFrameData*>>::push_back
+0059B202: mov          r0, r4
+0059B204: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+0059B208: add          sp, #8
+0059B20A: pop          {r4, r5, r7, pc}
+0059B20C: mov          r5, r0
+0059B20E: mov          r0, r4
+0059B210: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+0059B214: mov          r0, r5
+0059B216: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+0059B21A: push         {r4, r5, r6, lr}
+0059B21C: mov          r5, r0
+0059B21E: add.w        r4, r5, #0x24
+0059B222: mov          r0, r4
+0059B224: blx          #0x4a6784 ; <EXTERNAL>::std::__ndk1::mutex::lock
+0059B228: ldr          r0, [r5, #0x20]
+0059B22A: cbz          r0, #0x59b248
+0059B22C: ldr          r1, [r5, #0x1c]
+0059B22E: ldr          r0, [r5, #0x10]
+0059B230: lsrs         r2, r1, #0xa
+0059B232: bfc          r1, #0xa, #0x16
+0059B236: ldr.w        r0, [r0, r2, lsl #2]
+0059B23A: ldr.w        r6, [r0, r1, lsl #2]
+0059B23E: add.w        r0, r5, #0xc
+0059B242: blx          #0x4af88c ; std::__ndk1::deque<Anki::AudioEngine::AudioFrameData*,std::__ndk1::allocator<Anki::AudioEngine::AudioFrameData*>>::pop_front
+0059B246: b            #0x59b24a
+0059B248: movs         r6, #0
+0059B24A: mov          r0, r4
+0059B24C: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+0059B250: mov          r0, r6
+0059B252: pop          {r4, r5, r6, pc}
+0059B254: mov          r5, r0
+0059B256: mov          r0, r4
+RANGE 0x005989C4..0x00598A06 exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioBuffer21PopNextAudioFrameDataEv
+005989C4: push         {r4, r5, r7, lr}
+005989C6: mov          r5, r0
+005989C8: add.w        r4, r5, #0x18
+005989CC: mov          r0, r4
+005989CE: blx          #0x4a65e0 ; <EXTERNAL>::std::__ndk1::recursive_mutex::lock
+005989D2: ldr          r1, [r5, #0x10]
+005989D4: movw         r2, #0xa0a1
+005989D8: movt         r2, #0xa0a0
+005989DC: ldr          r0, [r5, #4]
+005989DE: umull        r2, r3, r1, r2
+005989E2: lsrs         r2, r3, #6
+005989E4: movs         r3, #0x66
+005989E6: mls          r1, r2, r3, r1
+005989EA: ldr.w        r0, [r0, r2, lsl #2]
+005989EE: add.w        r1, r1, r1, lsl #2
+005989F2: add.w        r0, r0, r1, lsl #3
+005989F6: blx          #0x4af628 ; Anki::Cozmo::Audio::RobotAudioFrameStream::PopRobotAudioFrame
+005989FA: mov          r5, r0
+005989FC: mov          r0, r4
+005989FE: blx          #0x4a6598 ; <EXTERNAL>::std::__ndk1::recursive_mutex::unlock
+00598A02: mov          r0, r5
+00598A04: pop          {r4, r5, r7, pc}

@@ -12,7 +12,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-002 | 33 | PARTIAL |
 | Q14-003 | 34 | PARTIAL |
 | Q14-004 | 35 | PARTIAL |
-| Q14-005 | 36 | NOT DONE |
+| Q14-005 | 36 | PARTIAL |
 | Q14-006 | 39 | CHECKED |
 | Q14-007 | 40 | NOT DONE |
 | Q14-008 | 41 | NOT DONE |
@@ -20,13 +20,13 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-010 | 43 | PARTIAL |
 | Q14-011 | 44 | PARTIAL |
 | Q14-012 | 46 | NOT DONE |
-| Q14-013 | 48 | NOT DONE |
+| Q14-013 | 48 | CHECKED |
 | Q14-014 | 49 | NOT DONE |
 | Q14-015 | 50 | NOT DONE |
 | Q14-016 | 53 | NOT DONE |
 | Q14-017 | 55 | PARTIAL |
 | Q14-019 | 57 | NOT DONE |
-| Q14-020 | 58 | NOT DONE |
+| Q14-020 | 58 | PARTIAL |
 | Q14-021 | 59 | NOT DONE |
 | Q14-022 | 60 | NOT DONE |
 | Q14-023 | 61 | NOT DONE |
@@ -145,7 +145,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-136 | 192 | NOT DONE |
 | Q14-137 | 200 | CHECKED |
 | Q14-138 | 201 | CHECKED |
-| Q14-139 | 204 | NOT DONE |
+| Q14-139 | 204 | CHECKED |
 | Q14-140 | 205 | NOT DONE |
 | Q14-141 | 206 | CHECKED |
 | Q14-142 | 207 | CHECKED |
@@ -166,13 +166,13 @@ PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and varia
 
 > | M6-003 | **KEEP** | 0x00A7A194..0x00A7A3C4;0x00A72618;0x00A73EA0;0x00A74100 | ADPCM channels/blockAlign, out-of-bounds/error behavior and zero-channel source handling remain decoding decisions; integer decoder arithmetic is not exempt DSP. |
 
-PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. Earlier source header acceptance, constructor/format writers and stream virtual bodies remain open.
+PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. AH1–AH10 and SK1–SK7 add header rejection, format/endpoint writers, pending seek/cue choice and ownership teardown. The RIFF optional-chunk helpers, factory/constructor closure and stream virtual bodies remain open.
 
 ## Q14-005 — triage line 36
 
 > | M6-004 | **KEEP** | 0x00A46D80..0x00A46D88;0x00A47038;0x00A47384;0x00A47178;0x00A52D4C | Format/rate/channel writers, initial phase, pitch/ramp scheduling, input consumed/output produced, zero-input results and live wiring stay exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. Integer/multi-channel ramp bodies, complete format writers and next-source wiring remain open; not a completed M6-004 port.
 
 ## Q14-006 — triage line 39
 
@@ -220,7 +220,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-011 | **VERIFY** | 0x00A767BC..0x00A769C4 | Establish the pure PCM matrix/association subset before dropping its reconstruction: the reopened prefix contains persistent coefficient stores, so parameter/update work remains KEEP and this mixed span is not certified per-sample-only. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficient/matrix output with no PCM access. KEEP, not a pure per-sample DROP. Scalar values and publication order are rows; remaining matrix expression/consumer port belongs to broad M6-011, not claimed closed by this boundary check.
 
 ## Q14-014 — triage line 49
 
@@ -256,7 +256,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-015 | **KEEP** | 0x008DBD74;0x008DBFE8..0x008DC034;0x008DBF76..0x008DBFB6;0x005942C6..0x00594354 | Hijack registration, persistent validFrames, DataReady/NoMoreData callbacks, reset/flush and exact 22320-Hz/744-byte output framing remain exact; only its delegated resampler math is SIMPLIFY under M6-004. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity writers, global callback replacement, per-instance relays and app buffer recipients. Frame-stream consumers and complete source/resampler geometry remain exact obligations; no completed whole-stream claim.
 
 ## Q14-021 — triage line 59
 
@@ -970,7 +970,7 @@ CHECKED: RK1–RK6 separate the entire A49E40 kernel geometry, count/phase progr
 
 > | 0x00A767BC..0x00A76820 (ARM) | Scratch initialization and coefficient/matrix arithmetic are mixed with persistent coefficient stores. | VERIFY: this range is not a certified pure PCM loop, so no arithmetic obligation here is dropped yet. Exact target/update/bypass and parameter semantics survive; establish the coefficient/matrix boundary first. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: FB1–FB3 establish the same persistent coefficient/matrix boundary for the narrowed prefix. No pure-PCM exemption applies to the shown coefficient stores; broad M6-011 control/consumer closure remains separate.
 
 ## Q14-140 — triage line 205
 

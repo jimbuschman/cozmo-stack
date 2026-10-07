@@ -1,0 +1,138 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A767BC..0x00A769EC exclusive; ARM;
+00A767BC: add          ip, sp, #0x60
+00A767C0: mov          r3, #0
+00A767C4: str          r3, [sp, #0x68]
+00A767C8: str          r3, [sp, #0x64]
+00A767CC: mov          r7, ip
+00A767D0: str          r3, [sp, #0x60]
+00A767D4: mov          r6, ip
+00A767D8: mov          r5, ip
+00A767DC: mov          lr, ip
+00A767E0: mov          r8, ip
+00A767E4: mov          sb, ip
+00A767E8: vmov.f32     s14, #3.000000e+00
+00A767EC: vmov         s15, r0
+00A767F0: vdiv.f32     s13, s12, s15
+00A767F4: vmul.f32     s11, s13, s11
+00A767F8: vmul.f32     s13, s13, s13
+00A767FC: vadd.f32     s4, s11, s12
+00A76800: vadd.f32     s4, s13, s4
+00A76804: vdiv.f32     s4, s12, s4
+00A76808: vsub.f32     s15, s12, s13
+00A7680C: vdup.32      q8, d2[0]
+00A76810: vstr         s4, [r4, #0x80]
+00A76814: vstr         s4, [r4, #0x88]
+00A76818: vst1.64      {d16, d17}, [r4:0x40]
+00A7681C: vadd.f32     s15, s15, s15
+00A76820: vnmul.f32    s15, s15, s4
+00A76824: vsub.f32     s12, s12, s11
+00A76828: vstr         s15, [r4, #0x8c]
+00A7682C: vmul.f32     s2, s4, s15
+00A76830: vadd.f32     s13, s13, s12
+00A76834: vadd.f32     s9, s4, s4
+00A76838: vmul.f32     s13, s4, s13
+00A7683C: vstr         s9, [r4, #0x84]
+00A76840: vadd.f32     s7, s9, s2
+00A76844: vmov.f32     s21, s4
+00A76848: vstr         s7, [sp, #0x6c]
+00A7684C: vmov.f32     s11, s4
+00A76850: ldm          ip!, {r0, r1, r2, r3}
+00A76854: vstr         s7, [sp, #0x68]
+00A76858: vmla.f32     s21, s9, s15
+00A7685C: str          r0, [r4, #0x10]
+00A76860: str          r1, [r4, #0x14]
+00A76864: str          r2, [r4, #0x18]
+00A76868: str          r3, [r4, #0x1c]
+00A7686C: vneg.f32     s12, s13
+00A76870: vmla.f32     s11, s15, s7
+00A76874: vstr         s12, [r4, #0x90]
+00A76878: vmul.f32     s0, s9, s12
+00A7687C: vmul.f32     s3, s15, s12
+00A76880: vmul.f32     s10, s4, s12
+00A76884: vmov.f32     s20, s0
+00A76888: vmul.f32     s14, s12, s14
+00A7688C: vmul.f32     s8, s4, s3
+00A76890: vmla.f32     s20, s15, s21
+00A76894: vadd.f32     s11, s11, s10
+00A76898: vmul.f32     s5, s15, s15
+00A7689C: vstr         s11, [sp, #0x6c]
+00A768A0: ldm          r7!, {r0, r1, r2, r3}
+00A768A4: vstr         s11, [sp, #0x68]
+00A768A8: vstr         s7, [sp, #0x64]
+00A768AC: str          r0, [r4, #0x20]
+00A768B0: str          r1, [r4, #0x24]
+00A768B4: vmla.f32     s8, s15, s11
+00A768B8: str          r2, [r4, #0x28]
+00A768BC: str          r3, [r4, #0x2c]
+00A768C0: vmul.f32     s14, s15, s14
+00A768C4: vadd.f32     s19, s12, s12
+00A768C8: vmov.f32     s1, s10
+00A768CC: vmul.f32     s18, s15, s0
+00A768D0: vmla.f32     s1, s15, s20
+00A768D4: vmul.f32     s6, s15, s5
+00A768D8: vmul.f32     s14, s15, s14
+00A768DC: vmul.f32     s17, s15, s2
+00A768E0: vmul.f32     s11, s12, s19
+00A768E4: vmov.f32     s22, s18
+00A768E8: vadd.f32     s8, s8, s0
+00A768EC: vmla.f32     s14, s15, s6
+00A768F0: vstr         s8, [sp, #0x6c]
+00A768F4: ldm          r6!, {r0, r1, r2, r3}
+00A768F8: vstr         s9, [sp, #0x60]
+00A768FC: vstr         s21, [sp, #0x64]
+00A76900: str          r0, [r4, #0x30]
+00A76904: str          r1, [r4, #0x34]
+00A76908: vstr         s20, [sp, #0x68]
+00A7690C: str          r2, [r4, #0x38]
+00A76910: str          r3, [r4, #0x3c]
+00A76914: vmla.f32     s22, s15, s17
+00A76918: vmul.f32     s16, s15, s3
+00A7691C: vmul.f32     s11, s15, s11
+00A76920: vadd.f32     s9, s1, s18
+00A76924: vmul.f32     s7, s12, s12
+00A76928: vstr         s9, [sp, #0x6c]
+00A7692C: ldm          r5!, {r0, r1, r2, r3}
+00A76930: vstr         s4, [sp, #0x60]
+00A76934: vstr         s2, [sp, #0x64]
+00A76938: str          r0, [r4, #0x40]
+00A7693C: str          r1, [r4, #0x44]
+00A76940: vmla.f32     s6, s15, s19
+00A76944: str          r2, [r4, #0x48]
+00A76948: vstr         s22, [sp, #0x6c]
+00A7694C: str          r3, [r4, #0x4c]
+00A76950: vadd.f32     s10, s10, s17
+00A76954: vmla.f32     s11, s15, s16
+00A76958: vstr         s10, [sp, #0x68]
+00A7695C: ldm          lr!, {r0, r1, r2, r3}
+00A76960: vstr         s15, [sp, #0x60]
+00A76964: str          r0, [r4, #0x50]
+00A76968: str          r1, [r4, #0x54]
+00A7696C: str          r2, [r4, #0x58]
+00A76970: str          r3, [r4, #0x5c]
+00A76974: vadd.f32     s14, s14, s7
+00A76978: vsub.f32     s13, s5, s13
+00A7697C: vadd.f32     s7, s7, s16
+00A76980: vstr         s13, [sp, #0x64]
+00A76984: vstr         s6, [sp, #0x68]
+00A76988: vstr         s14, [sp, #0x6c]
+00A7698C: ldm          r8!, {r0, r1, r2, r3}
+00A76990: vstr         s3, [sp, #0x64]
+00A76994: vstr         s11, [sp, #0x6c]
+00A76998: str          r0, [r4, #0x60]
+00A7699C: str          r1, [r4, #0x64]
+00A769A0: vstr         s12, [sp, #0x60]
+00A769A4: str          r2, [r4, #0x68]
+00A769A8: str          r3, [r4, #0x6c]
+00A769AC: vstr         s7, [sp, #0x68]
+00A769B0: ldm          sb!, {r0, r1, r2, r3}
+00A769B4: str          r0, [r4, #0x70]
+00A769B8: ldr          r0, [sp, #0xc]
+00A769BC: str          r1, [r4, #0x74]
+00A769C0: str          r2, [r4, #0x78]
+00A769C4: str          r3, [r4, #0x7c]
+00A769C8: ldrb         r5, [r0, #0xd]
+00A769CC: b            #0xa76a18
+00A769D0: ldrdmi       r0, r1, [sb], #-0xfb
+00A769D4: svclo        #0xb504f3
+00A769D8: subseq       sb, ip, ip, ror #22

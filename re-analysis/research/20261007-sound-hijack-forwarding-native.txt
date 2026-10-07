@@ -1,0 +1,291 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DBB58..0x008DBCFC exclusive; Thumb;
+008DBB58: bx           lr
+008DBB5A: b.w          #0xae2fa0
+008DBB5E: ldr.w        ip, [r0, #4]
+008DBB62: ldr.w        r0, [ip, #0x40]
+008DBB66: cbz          r0, #0x8dbb7c
+008DBB68: ldr          r0, [r1]
+008DBB6A: ldr          r2, [r2]
+008DBB6C: ldr          r3, [r3]
+008DBB6E: ldr.w        r0, [r0, #0xa0]
+008DBB72: ldr          r1, [r0, #4]
+008DBB74: add.w        r0, ip, #0x30
+008DBB78: b.w          #0x8dbba8 ; FUN_008dbba8
+008DBB7C: bx           lr
+008DBB7E: movs         r0, r0
+008DBB80: ldr          r2, [pc, #0x10] ; word[008DBB94]=004EDB96
+008DBB82: ldr          r3, [r1, #4]
+008DBB84: movs         r1, #0
+008DBB86: add          r2, pc
+008DBB88: cmp          r3, r2
+008DBB8A: it           eq
+008DBB8C: addeq        r1, r0, #4
+008DBB8E: mov          r0, r1
+008DBB90: bx           lr
+008DBB92: nop
+008DBB94: blt          #0x8dbac4
+008DBB96: lsls         r6, r1, #1
+008DBB98: ldr          r0, [pc, #4] ; word[008DBBA0]=0075CBEE
+008DBB9A: add          r0, pc
+008DBB9C: bx           lr
+008DBB9E: nop
+008DBBA0: ldm          r3, {r1, r2, r3, r5, r6, r7}
+008DBBA2: lsls         r5, r6, #1
+008DBBA4: bx           lr
+008DBBA6: movs         r0, r0
+008DBBA8: push         {r7, lr}
+008DBBAA: sub          sp, #0x10
+008DBBAC: str          r1, [sp, #0xc]
+008DBBAE: strd         r3, r2, [sp, #4]
+008DBBB2: ldr          r0, [r0, #0x10]
+008DBBB4: cbz          r0, #0x8dbbc8
+008DBBB6: ldr          r1, [r0]
+008DBBB8: add          r2, sp, #8
+008DBBBA: add          r3, sp, #4
+008DBBBC: ldr.w        ip, [r1, #0x18]
+008DBBC0: add          r1, sp, #0xc
+008DBBC2: blx          ip
+008DBBC4: add          sp, #0x10
+008DBBC6: pop          {r7, pc}
+008DBBC8: movs         r0, #4
+008DBBCA: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008DBBCE: ldr          r1, [pc, #0x1c] ; word[008DBBEC]=00762DE2
+008DBBD0: ldr          r2, [pc, #0x1c] ; word[008DBBF0]=00762DE4
+008DBBD2: ldr.w        ip, [pc, #0x20] ; word[008DBBF4]=00762DE6
+008DBBD6: add          r1, pc
+008DBBD8: add          r2, pc
+008DBBDA: add          ip, pc
+008DBBDC: ldr          r3, [r1]
+008DBBDE: ldr          r1, [r2]
+008DBBE0: ldr.w        r2, [ip]
+008DBBE4: adds         r3, #8
+008DBBE6: str          r3, [r0]
+008DBBE8: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+008DBBEC: cmp          r5, #0xe2
+008DBBEE: lsls         r6, r6, #1
+008DBBF0: cmp          r5, #0xe4
+008DBBF2: lsls         r6, r6, #1
+008DBBF4: cmp          r5, #0xe6
+008DBBF6: lsls         r6, r6, #1
+008DBBF8: bx           lr
+008DBBFA: b.w          #0xae2fa0
+008DBBFE: movs         r0, r0
+008DBC00: push         {r4, lr}
+008DBC02: mov          r4, r0
+008DBC04: movs         r0, #8
+008DBC06: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DBC0A: ldr          r1, [pc, #0xc] ; word[008DBC18]=0075CB82
+008DBC0C: ldr          r2, [r4, #4]
+008DBC0E: add          r1, pc
+008DBC10: adds         r1, #8
+008DBC12: strd         r1, r2, [r0]
+008DBC16: pop          {r4, pc}
+008DBC18: ldm          r3!, {r1, r7}
+008DBC1A: lsls         r5, r6, #1
+008DBC1C: ldr          r2, [pc, #0xc] ; word[008DBC2C]=0075CB72
+008DBC1E: add          r2, pc
+008DBC20: adds         r2, #8
+008DBC22: str          r2, [r1]
+008DBC24: ldr          r0, [r0, #4]
+008DBC26: str          r0, [r1, #4]
+008DBC28: bx           lr
+008DBC2A: nop
+008DBC2C: ldm          r3!, {r1, r4, r5, r6}
+008DBC2E: lsls         r5, r6, #1
+008DBC30: bx           lr
+008DBC32: b.w          #0xae2fa0
+008DBC36: ldr          r0, [r0, #4]
+008DBC38: ldr          r2, [r0, #0x28]
+008DBC3A: cbz          r2, #0x8dbc4a
+008DBC3C: ldr          r1, [r1]
+008DBC3E: adds         r0, #0x18
+008DBC40: ldr.w        r1, [r1, #0xa0]
+008DBC44: ldr          r1, [r1, #4]
+008DBC46: b.w          #0x8dbadc
+008DBC4A: bx           lr
+008DBC4C: ldr          r2, [pc, #0x10] ; word[008DBC60]=004EDBCA
+008DBC4E: ldr          r3, [r1, #4]
+008DBC50: movs         r1, #0
+008DBC52: add          r2, pc
+008DBC54: cmp          r3, r2
+008DBC56: it           eq
+008DBC58: addeq        r1, r0, #4
+008DBC5A: mov          r0, r1
+008DBC5C: bx           lr
+008DBC5E: nop
+008DBC60: blt          #0x8dbbf8
+008DBC62: lsls         r6, r1, #1
+008DBC64: ldr          r0, [pc, #4] ; word[008DBC6C]=0075CB62
+008DBC66: add          r0, pc
+008DBC68: bx           lr
+008DBC6A: nop
+008DBC6C: ldm          r3!, {r1, r5, r6}
+008DBC6E: lsls         r5, r6, #1
+008DBC70: push         {r4, r5, r7, lr}
+008DBC72: ldr          r1, [r0]
+008DBC74: ldr          r2, [r1, #8]
+008DBC76: movs         r1, #0xd8
+008DBC78: blx          r2
+008DBC7A: mov          r5, r0
+008DBC7C: movs         r4, #0
+008DBC7E: cbz          r5, #0x8dbca0
+008DBC80: ldr          r0, [pc, #0x38] ; word[008DBCBC]=0075CB64
+008DBC82: mov          r1, r5
+008DBC84: add          r0, pc
+008DBC86: adds         r0, #8
+008DBC88: str          r0, [r5]
+008DBC8A: add.w        r0, r5, #8
+008DBC8E: bl           #0x8dbf44 ; FUN_008dbf44
+008DBC92: str.w        r4, [r5, #0xb8]
+008DBC96: str.w        r4, [r5, #0xa0]
+008DBC9A: str.w        r4, [r5, #0xd0]
+008DBC9E: mov          r4, r5
+008DBCA0: ldr          r0, [pc, #0x1c] ; word[008DBCC0]=007B146A
+008DBCA2: add          r0, pc
+008DBCA4: ldr          r0, [r0, #0x10]
+008DBCA6: cbz          r0, #0x8dbcb2
+008DBCA8: ldr          r0, [pc, #0x18] ; word[008DBCC4]=007B1460
+008DBCAA: mov          r1, r4
+008DBCAC: add          r0, pc
+008DBCAE: bl           #0x8dbcc8 ; FUN_008dbcc8
+008DBCB2: mov          r0, r4
+008DBCB4: pop          {r4, r5, r7, pc}
+008DBCB6: blx          #0x4d2524 ; <EXTERNAL>::__cxa_call_unexpected
+008DBCBA: nop
+008DBCBC: ldm          r3!, {r2, r5, r6}
+008DBCBE: lsls         r5, r6, #1
+008DBCC0: asrs         r2, r5, #0x11
+008DBCC2: lsls         r3, r7, #1
+008DBCC4: asrs         r0, r4, #0x11
+008DBCC6: lsls         r3, r7, #1
+008DBCC8: push         {r7, lr}
+008DBCCA: sub          sp, #8
+008DBCCC: str          r1, [sp, #4]
+008DBCCE: ldr          r0, [r0, #0x10]
+008DBCD0: cbz          r0, #0x8dbcde
+008DBCD2: ldr          r1, [r0]
+008DBCD4: ldr          r2, [r1, #0x18]
+008DBCD6: add          r1, sp, #4
+008DBCD8: blx          r2
+008DBCDA: add          sp, #8
+008DBCDC: pop          {r7, pc}
+008DBCDE: movs         r0, #4
+008DBCE0: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008DBCE4: ldr          r1, [pc, #0x1c] ; word[008DBD04]=00762CCC
+008DBCE6: ldr          r2, [pc, #0x20] ; word[008DBD08]=00762CCE
+008DBCE8: ldr.w        ip, [pc, #0x20] ; word[008DBD0C]=00762CD0
+008DBCEC: add          r1, pc
+008DBCEE: add          r2, pc
+008DBCF0: add          ip, pc
+008DBCF2: ldr          r3, [r1]
+008DBCF4: ldr          r1, [r2]
+008DBCF6: ldr.w        r2, [ip]
+008DBCFA: adds         r3, #8
+RANGE 0x008DC3EC..0x008DC424 exclusive; Thumb; _ZN4Anki11AudioEngine7PlugIns19AnkiPluginInterface42SetupHijackAudioPlugInAndRobotAudioBuffersEjt
+008DC3EC: push         {r4, r5, r6, r7, lr}
+008DC3EE: sub          sp, #4
+008DC3F0: mov          r4, r0
+008DC3F2: movs         r0, #0x58
+008DC3F4: mov          r6, r2
+008DC3F6: mov          r7, r1
+008DC3F8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DC3FC: mov          r5, r0
+008DC3FE: mov          r1, r7
+008DC400: mov          r2, r6
+008DC402: blx          #0x4af19c ; Anki::AudioEngine::PlugIns::HijackAudioPlugIn::HijackAudioPlugIn
+008DC406: ldr          r0, [r4]
+008DC408: str          r5, [r4]
+008DC40A: cbz          r0, #0x8dc416
+008DC40C: blx          #0x4d253c ; Anki::AudioEngine::PlugIns::HijackAudioPlugIn::~HijackAudioPlugIn
+008DC410: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DC414: ldr          r5, [r4]
+008DC416: mov          r0, r5
+008DC418: add          sp, #4
+008DC41A: pop.w        {r4, r5, r6, r7, lr}
+008DC41E: b.w          #0xae30d0
+008DC422: mov          r4, r0
+RANGE 0x00594354..0x0059438C exclusive; Thumb;
+00594354: blx          #0x4af1c0 ; Anki::AudioEngine::PlugIns::HijackAudioPlugIn::SetProcessCallback
+00594358: ldr          r0, [sp, #0x10]
+0059435A: cmp          r6, r0
+0059435C: beq          #0x594366
+0059435E: cbz          r0, #0x59436c
+00594360: ldr          r1, [r0]
+00594362: ldr          r1, [r1, #0x14]
+00594364: b            #0x59436a
+00594366: ldr          r1, [r0]
+00594368: ldr          r1, [r1, #0x10]
+0059436A: blx          r1
+0059436C: ldr          r0, [pc, #0x54] ; word[005943C4]=00AAA4D8
+0059436E: ldr          r1, [sp, #0x4c]
+00594370: add          r0, pc
+00594372: ldr          r0, [r0]
+00594374: ldr          r0, [r0]
+00594376: subs         r0, r0, r1
+00594378: itt          eq
+0059437A: addeq        sp, #0x50
+0059437C: popeq        {r4, r5, r6, pc}
+0059437E: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+00594382: mov          r4, r0
+00594384: ldr          r0, [sp, #0x10]
+00594386: b            #0x594392
+00594388: mov          r4, r0
+0059438A: ldr          r0, [sp, #0x28]
+010386DC: raw=008DB979 relocated=008DB979
+010386E0: raw=008DB911 relocated=008DB911
+010386E4: raw=008DB915 relocated=008DB915
+010386E8: raw=008DB931 relocated=008DB931
+010386EC: raw=008DB945 relocated=008DB945
+010386F0: raw=008DB947 relocated=008DB947
+010386F4: raw=008DB94B relocated=008DB94B
+010386F8: raw=008DB955 relocated=008DB955
+010386FC: raw=008DB96D relocated=008DB96D
+01038700: raw=00000008 relocated=00000008
+01038704: raw=00DC94A0 relocated=00DC94A0
+01038708: raw=010387D4 relocated=010387D4
+0103870C: raw=00000008 relocated=00000008
+01038710: raw=00DC9530 relocated=00DC9530
+01038714: raw=00000000 relocated=00000000
+01038718: raw=01038740 relocated=01038740
+0103871C: raw=008DBBF9 relocated=008DBBF9
+01038720: raw=008DBA69 relocated=008DBA69
+01038724: raw=008DBA6D relocated=008DBA6D
+01038728: raw=008DBA89 relocated=008DBA89
+0103872C: raw=008DBA9D relocated=008DBA9D
+01038730: raw=008DBA9F relocated=008DBA9F
+01038734: raw=008DBAA3 relocated=008DBAA3
+01038738: raw=008DBAB9 relocated=008DBAB9
+0103873C: raw=008DBAD1 relocated=008DBAD1
+01038740: raw=00000008 relocated=00000008
+01038744: raw=00DC9580 relocated=00DC9580
+01038748: raw=010387DC relocated=010387DC
+0103874C: raw=00000008 relocated=00000008
+01038750: raw=00DC9620 relocated=00DC9620
+01038754: raw=00000000 relocated=00000000
+01038758: raw=01038780 relocated=01038780
+0103875C: raw=008DBBA5 relocated=008DBBA5
+01038760: raw=008DBB25 relocated=008DBB25
+01038764: raw=008DBB29 relocated=008DBB29
+01038768: raw=008DBB45 relocated=008DBB45
+0103876C: raw=008DBB59 relocated=008DBB59
+01038770: raw=008DBB5B relocated=008DBB5B
+01038774: raw=008DBB5F relocated=008DBB5F
+01038778: raw=008DBB81 relocated=008DBB81
+0103877C: raw=008DBB99 relocated=008DBB99
+01038780: raw=00000008 relocated=00000008
+01038784: raw=00DC9680 relocated=00DC9680
+01038788: raw=010387E4 relocated=010387E4
+0103878C: raw=00000008 relocated=00000008
+01038790: raw=00DC9720 relocated=00DC9720
+01038794: raw=00000000 relocated=00000000
+01038798: raw=010387C0 relocated=010387C0
+0103879C: raw=008DBBF9 relocated=008DBBF9
+010387A0: raw=008DBBFB relocated=008DBBFB
+010387A4: raw=008DBC01 relocated=008DBC01
+010387A8: raw=008DBC1D relocated=008DBC1D
+010387AC: raw=008DBC31 relocated=008DBC31
+010387B0: raw=008DBC33 relocated=008DBC33
+010387B4: raw=008DBC37 relocated=008DBC37
+010387B8: raw=008DBC4D relocated=008DBC4D
+010387BC: raw=008DBC65 relocated=008DBC65

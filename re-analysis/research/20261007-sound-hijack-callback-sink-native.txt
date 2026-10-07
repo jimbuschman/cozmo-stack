@@ -1,0 +1,180 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00595FE4..0x00596140 exclusive; Thumb;
+00595FE4: ldr          r2, [pc, #0xc8] ; word[005960B0]=00AA8DC4
+00595FE6: ldr          r4, [r1]
+00595FE8: add          r2, pc
+00595FEA: ldr          r1, [pc, #0xc8] ; word[005960B4]=0065A237
+00595FEC: ldr          r5, [r0, #4]
+00595FEE: ldr          r2, [r2]
+00595FF0: add          r1, pc
+00595FF2: ldr          r0, [r2]
+00595FF4: movs         r2, #0
+00595FF6: strd         r2, r2, [sp, #4]
+00595FFA: str          r2, [sp, #0xc]
+00595FFC: add          r2, sp, #4
+00595FFE: adr          r3, #0xb8
+00596000: str          r4, [sp]
+00596002: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00596006: ldr          r0, [sp, #4]
+00596008: cbz          r0, #0x596028
+0059600A: ldr          r1, [sp, #8]
+0059600C: cmp          r1, r0
+0059600E: itttt        ne
+00596010: subne.w      r2, r1, #8
+00596014: subne        r2, r2, r0
+00596016: mvnne        r3, #7
+0059601A: bicne.w      r2, r3, r2
+0059601E: itt          ne
+00596020: addne        r1, r1, r2
+00596022: strne        r1, [sp, #8]
+00596024: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00596028: add.w        r0, r5, #0x78
+0059602C: add          r1, sp, #4
+0059602E: str          r4, [sp, #4]
+00596030: blx          #0x4af268 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::__unordered_map_hasher<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::hash<unsigned_int>,true>,std::__ndk1::__unordered_map_equal<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::equal_to<unsigned_int>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>>>::find<unsigned_int>
+00596034: cbz          r0, #0x596040
+00596036: ldr          r0, [r0, #0xc]
+00596038: cbz          r0, #0x596040
+0059603A: blx          #0x4af304 ; Anki::Cozmo::Audio::RobotAudioBuffer::CloseAudioBuffer
+0059603E: b            #0x596082
+00596040: ldr          r0, [pc, #0x94] ; word[005960D8]=00AA8D66
+00596042: movs         r2, #0
+00596044: ldr          r1, [pc, #0x94] ; word[005960DC]=0065A26F
+00596046: add          r0, pc
+00596048: ldr          r3, [pc, #0x94] ; word[005960E0]=0065A255
+0059604A: add          r1, pc
+0059604C: ldr          r0, [r0]
+0059604E: add          r3, pc
+00596050: ldr          r0, [r0]
+00596052: strd         r2, r2, [sp, #4]
+00596056: str          r2, [sp, #0xc]
+00596058: add          r2, sp, #4
+0059605A: str          r4, [sp]
+0059605C: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00596060: ldr          r0, [sp, #4]
+00596062: cbz          r0, #0x596082
+00596064: ldr          r1, [sp, #8]
+00596066: cmp          r1, r0
+00596068: itttt        ne
+0059606A: subne.w      r2, r1, #8
+0059606E: subne        r2, r2, r0
+00596070: mvnne        r3, #7
+00596074: bicne.w      r2, r3, r2
+00596078: itt          ne
+0059607A: addne        r1, r1, r2
+0059607C: strne        r1, [sp, #8]
+0059607E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00596082: add          sp, #0x10
+00596084: pop          {r4, r5, r7, pc}
+00596086: b            #0x596088
+00596088: mov          r4, r0
+0059608A: ldr          r0, [sp, #4]
+0059608C: cbz          r0, #0x5960aa
+0059608E: ldr          r1, [sp, #8]
+00596090: cmp          r1, r0
+00596092: beq          #0x5960a6
+00596094: sub.w        r2, r1, #8
+00596098: mvn          r3, #7
+0059609C: subs         r2, r2, r0
+0059609E: bic.w        r2, r3, r2
+005960A2: add          r1, r2
+005960A4: str          r1, [sp, #8]
+005960A6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005960AA: mov          r0, r4
+005960AC: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005960B0: ldrh         r4, [r0, #0x2e]
+005960B2: lsls         r2, r5, #2
+005960B4: adr          r2, #0xdc
+005960B6: lsls         r5, r4, #1
+005960B8: str          r4, [r0, #0x54]
+005960BA: strb         r3, [r6, #0x11]
+005960BC: ldr          r2, [r6, #0x74]
+005960BE: movs         r0, #0x79
+005960C0: ldr          r0, [r2, #0x44]
+005960C2: str          r5, [r6, #0x74]
+005960C4: ldr          r1, [r5, #0x64]
+005960C6: ldr          r0, [r4, #0x10]
+005960C8: subs         r2, #0x64
+005960CA: movs         r5, #0x20
+005960CC: movs         r0, #0x64
+005960CE: str          r3, [r4, #0x14]
+005960D0: ldr          r4, [r5, #0x44]
+005960D2: str          r2, [r4, #0x14]
+005960D4: ldr          r3, [r4, #0x34]
+005960D6: movs         r0, r0
+005960D8: ldrh         r6, [r4, #0x2a]
+005960DA: lsls         r2, r5, #2
+005960DC: adr          r2, #0x1bc
+005960DE: lsls         r5, r4, #1
+005960E0: adr          r2, #0x154
+005960E2: lsls         r5, r4, #1
+005960E4: ldr          r2, [pc, #0x10] ; word[005960F8]=006C5972
+005960E6: ldr          r3, [r1, #4]
+005960E8: movs         r1, #0
+005960EA: add          r2, pc
+005960EC: cmp          r3, r2
+005960EE: it           eq
+005960F0: addeq        r1, r0, #4
+005960F2: mov          r0, r1
+005960F4: bx           lr
+005960F6: nop
+005960F8: ldr          r2, [r6, r5]
+005960FA: lsls         r4, r5, #1
+005960FC: ldr          r0, [pc, #4] ; word[00596104]=00A8DD52
+005960FE: add          r0, pc
+00596100: bx           lr
+00596102: nop
+00596104: ble          #0x5961ac
+00596106: lsls         r0, r5, #2
+00596108: bx           lr
+0059610A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0059610E: movs         r0, r0
+00596110: push         {r4, lr}
+00596112: mov          r4, r0
+00596114: movs         r0, #8
+00596116: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059611A: ldr          r1, [pc, #0xc] ; word[00596128]=00A8DD3A
+0059611C: ldr          r2, [r4, #4]
+0059611E: add          r1, pc
+00596120: adds         r1, #8
+00596122: strd         r1, r2, [r0]
+00596126: pop          {r4, pc}
+00596128: ble          #0x5961a0
+0059612A: lsls         r0, r5, #2
+0059612C: ldr          r2, [pc, #0xc] ; word[0059613C]=00A8DD2A
+0059612E: add          r2, pc
+00596130: adds         r2, #8
+00596132: str          r2, [r1]
+00596134: ldr          r0, [r0, #4]
+00596136: str          r0, [r1, #4]
+00596138: bx           lr
+0059613A: nop
+0059613C: ble          #0x596194
+0059613E: lsls         r0, r5, #2
+RANGE 0x008DBADC..0x008DBB18 exclusive; Thumb;
+008DBADC: push         {r7, lr}
+008DBADE: sub          sp, #8
+008DBAE0: str          r1, [sp, #4]
+008DBAE2: ldr          r0, [r0, #0x10]
+008DBAE4: cbz          r0, #0x8dbaf2
+008DBAE6: ldr          r1, [r0]
+008DBAE8: ldr          r2, [r1, #0x18]
+008DBAEA: add          r1, sp, #4
+008DBAEC: blx          r2
+008DBAEE: add          sp, #8
+008DBAF0: pop          {r7, pc}
+008DBAF2: movs         r0, #4
+008DBAF4: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008DBAF8: ldr          r1, [pc, #0x1c] ; word[008DBB18]=00762EB8
+008DBAFA: ldr          r2, [pc, #0x20] ; word[008DBB1C]=00762EBA
+008DBAFC: ldr.w        ip, [pc, #0x20] ; word[008DBB20]=00762EBC
+008DBB00: add          r1, pc
+008DBB02: add          r2, pc
+008DBB04: add          ip, pc
+008DBB06: ldr          r3, [r1]
+008DBB08: ldr          r1, [r2]
+008DBB0A: ldr.w        r2, [ip]
+008DBB0E: adds         r3, #8
+008DBB10: str          r3, [r0]
+008DBB12: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+008DBB16: nop
