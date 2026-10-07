@@ -1,0 +1,529 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DFCF0..0x008DFD5C exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18StopAllAudioEventsE
+008DFCF0: push         {r4, lr}
+008DFCF2: sub          sp, #0x10
+008DFCF4: mov          r2, r0
+008DFCF6: ldr          r0, [r2, #4]
+008DFCF8: cbz          r0, #0x8dfd06
+008DFCFA: ldrb         r2, [r2, #8]
+008DFCFC: add          sp, #0x10
+008DFCFE: pop.w        {r4, lr}
+008DFD02: b.w          #0xae3140
+008DFD06: ldr          r0, [pc, #0x7c] ; word[008DFD84]=003632FE
+008DFD08: movs         r1, #0
+008DFD0A: ldr          r2, [pc, #0x7c] ; word[008DFD88]=00363314
+008DFD0C: add          r0, pc
+008DFD0E: strd         r1, r1, [sp, #4]
+008DFD12: add          r2, pc
+008DFD14: str          r1, [sp, #0xc]
+008DFD16: add          r1, sp, #4
+008DFD18: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DFD1C: ldr          r0, [sp, #4]
+008DFD1E: cbz          r0, #0x8dfd3e
+008DFD20: ldr          r1, [sp, #8]
+008DFD22: cmp          r1, r0
+008DFD24: itttt        ne
+008DFD26: subne.w      r2, r1, #8
+008DFD2A: subne        r2, r2, r0
+008DFD2C: mvnne        r3, #7
+008DFD30: bicne.w      r2, r3, r2
+008DFD34: itt          ne
+008DFD36: addne        r1, r1, r2
+008DFD38: strne        r1, [sp, #8]
+008DFD3A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFD3E: ldr          r0, [pc, #0x4c] ; word[008DFD8C]=0075EA44
+008DFD40: movs         r2, #1
+008DFD42: ldr          r1, [pc, #0x4c] ; word[008DFD90]=0075EA46
+008DFD44: add          r0, pc
+008DFD46: add          r1, pc
+008DFD48: ldr          r0, [r0]
+008DFD4A: ldr          r1, [r1]
+008DFD4C: ldrb         r0, [r0]
+008DFD4E: strb         r2, [r1]
+008DFD50: cbz          r0, #0x8dfd56
+008DFD52: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DFD56: add          sp, #0x10
+008DFD58: pop          {r4, pc}
+008DFD5A: mov          r4, r0
+RANGE 0x008DFD94..0x008DFE00 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18PostAudioGameStateE
+008DFD94: push         {r4, lr}
+008DFD96: sub          sp, #0x10
+008DFD98: mov          r2, r0
+008DFD9A: ldr          r0, [r2, #4]
+008DFD9C: cbz          r0, #0x8dfdaa
+008DFD9E: ldrb         r2, [r2, #8]
+008DFDA0: add          sp, #0x10
+008DFDA2: pop.w        {r4, lr}
+008DFDA6: b.w          #0xae3150
+008DFDAA: ldr          r0, [pc, #0x7c] ; word[008DFE28]=0036325A
+008DFDAC: movs         r1, #0
+008DFDAE: ldr          r2, [pc, #0x7c] ; word[008DFE2C]=00363270
+008DFDB0: add          r0, pc
+008DFDB2: strd         r1, r1, [sp, #4]
+008DFDB6: add          r2, pc
+008DFDB8: str          r1, [sp, #0xc]
+008DFDBA: add          r1, sp, #4
+008DFDBC: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DFDC0: ldr          r0, [sp, #4]
+008DFDC2: cbz          r0, #0x8dfde2
+008DFDC4: ldr          r1, [sp, #8]
+008DFDC6: cmp          r1, r0
+008DFDC8: itttt        ne
+008DFDCA: subne.w      r2, r1, #8
+008DFDCE: subne        r2, r2, r0
+008DFDD0: mvnne        r3, #7
+008DFDD4: bicne.w      r2, r3, r2
+008DFDD8: itt          ne
+008DFDDA: addne        r1, r1, r2
+008DFDDC: strne        r1, [sp, #8]
+008DFDDE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFDE2: ldr          r0, [pc, #0x4c] ; word[008DFE30]=0075E9A0
+008DFDE4: movs         r2, #1
+008DFDE6: ldr          r1, [pc, #0x4c] ; word[008DFE34]=0075E9A2
+008DFDE8: add          r0, pc
+008DFDEA: add          r1, pc
+008DFDEC: ldr          r0, [r0]
+008DFDEE: ldr          r1, [r1]
+008DFDF0: ldrb         r0, [r0]
+008DFDF2: strb         r2, [r1]
+008DFDF4: cbz          r0, #0x8dfdfa
+008DFDF6: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DFDFA: add          sp, #0x10
+008DFDFC: pop          {r4, pc}
+008DFDFE: mov          r4, r0
+RANGE 0x008DFE38..0x008DFEA4 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_20PostAudioSwitchStateE
+008DFE38: push         {r4, lr}
+008DFE3A: sub          sp, #0x10
+008DFE3C: mov          r2, r0
+008DFE3E: ldr          r0, [r2, #4]
+008DFE40: cbz          r0, #0x8dfe4e
+008DFE42: ldrb         r2, [r2, #8]
+008DFE44: add          sp, #0x10
+008DFE46: pop.w        {r4, lr}
+008DFE4A: b.w          #0xae3160
+008DFE4E: ldr          r0, [pc, #0x7c] ; word[008DFECC]=003631B6
+008DFE50: movs         r1, #0
+008DFE52: ldr          r2, [pc, #0x7c] ; word[008DFED0]=003631CC
+008DFE54: add          r0, pc
+008DFE56: strd         r1, r1, [sp, #4]
+008DFE5A: add          r2, pc
+008DFE5C: str          r1, [sp, #0xc]
+008DFE5E: add          r1, sp, #4
+008DFE60: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DFE64: ldr          r0, [sp, #4]
+008DFE66: cbz          r0, #0x8dfe86
+008DFE68: ldr          r1, [sp, #8]
+008DFE6A: cmp          r1, r0
+008DFE6C: itttt        ne
+008DFE6E: subne.w      r2, r1, #8
+008DFE72: subne        r2, r2, r0
+008DFE74: mvnne        r3, #7
+008DFE78: bicne.w      r2, r3, r2
+008DFE7C: itt          ne
+008DFE7E: addne        r1, r1, r2
+008DFE80: strne        r1, [sp, #8]
+008DFE82: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFE86: ldr          r0, [pc, #0x4c] ; word[008DFED4]=0075E8FC
+008DFE88: movs         r2, #1
+008DFE8A: ldr          r1, [pc, #0x4c] ; word[008DFED8]=0075E8FE
+008DFE8C: add          r0, pc
+008DFE8E: add          r1, pc
+008DFE90: ldr          r0, [r0]
+008DFE92: ldr          r1, [r1]
+008DFE94: ldrb         r0, [r0]
+008DFE96: strb         r2, [r1]
+008DFE98: cbz          r0, #0x8dfe9e
+008DFE9A: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DFE9E: add          sp, #0x10
+008DFEA0: pop          {r4, pc}
+008DFEA2: mov          r4, r0
+RANGE 0x008DFEDC..0x008DFF48 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18PostAudioParameterE
+008DFEDC: push         {r4, lr}
+008DFEDE: sub          sp, #0x10
+008DFEE0: mov          r2, r0
+008DFEE2: ldr          r0, [r2, #4]
+008DFEE4: cbz          r0, #0x8dfef2
+008DFEE6: ldrb         r2, [r2, #8]
+008DFEE8: add          sp, #0x10
+008DFEEA: pop.w        {r4, lr}
+008DFEEE: b.w          #0xae3170
+008DFEF2: ldr          r0, [pc, #0x7c] ; word[008DFF70]=00363112
+008DFEF4: movs         r1, #0
+008DFEF6: ldr          r2, [pc, #0x7c] ; word[008DFF74]=00363128
+008DFEF8: add          r0, pc
+008DFEFA: strd         r1, r1, [sp, #4]
+008DFEFE: add          r2, pc
+008DFF00: str          r1, [sp, #0xc]
+008DFF02: add          r1, sp, #4
+008DFF04: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DFF08: ldr          r0, [sp, #4]
+008DFF0A: cbz          r0, #0x8dff2a
+008DFF0C: ldr          r1, [sp, #8]
+008DFF0E: cmp          r1, r0
+008DFF10: itttt        ne
+008DFF12: subne.w      r2, r1, #8
+008DFF16: subne        r2, r2, r0
+008DFF18: mvnne        r3, #7
+008DFF1C: bicne.w      r2, r3, r2
+008DFF20: itt          ne
+008DFF22: addne        r1, r1, r2
+008DFF24: strne        r1, [sp, #8]
+008DFF26: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFF2A: ldr          r0, [pc, #0x4c] ; word[008DFF78]=0075E858
+008DFF2C: movs         r2, #1
+008DFF2E: ldr          r1, [pc, #0x4c] ; word[008DFF7C]=0075E85A
+008DFF30: add          r0, pc
+008DFF32: add          r1, pc
+008DFF34: ldr          r0, [r0]
+008DFF36: ldr          r1, [r1]
+008DFF38: ldrb         r0, [r0]
+008DFF3A: strb         r2, [r1]
+008DFF3C: cbz          r0, #0x8dff42
+008DFF3E: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DFF42: add          sp, #0x10
+008DFF44: pop          {r4, pc}
+008DFF46: mov          r4, r0
+RANGE 0x008DFF80..0x008DFFEC exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_19PostAudioMusicStateE
+008DFF80: push         {r4, lr}
+008DFF82: sub          sp, #0x10
+008DFF84: mov          r2, r0
+008DFF86: ldr          r0, [r2, #4]
+008DFF88: cbz          r0, #0x8dff96
+008DFF8A: ldrb         r2, [r2, #8]
+008DFF8C: add          sp, #0x10
+008DFF8E: pop.w        {r4, lr}
+008DFF92: b.w          #0xae3180
+008DFF96: ldr          r0, [pc, #0x7c] ; word[008E0014]=0036306E
+008DFF98: movs         r1, #0
+008DFF9A: ldr          r2, [pc, #0x7c] ; word[008E0018]=00363084
+008DFF9C: add          r0, pc
+008DFF9E: strd         r1, r1, [sp, #4]
+008DFFA2: add          r2, pc
+008DFFA4: str          r1, [sp, #0xc]
+008DFFA6: add          r1, sp, #4
+008DFFA8: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DFFAC: ldr          r0, [sp, #4]
+008DFFAE: cbz          r0, #0x8dffce
+008DFFB0: ldr          r1, [sp, #8]
+008DFFB2: cmp          r1, r0
+008DFFB4: itttt        ne
+008DFFB6: subne.w      r2, r1, #8
+008DFFBA: subne        r2, r2, r0
+008DFFBC: mvnne        r3, #7
+008DFFC0: bicne.w      r2, r3, r2
+008DFFC4: itt          ne
+008DFFC6: addne        r1, r1, r2
+008DFFC8: strne        r1, [sp, #8]
+008DFFCA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DFFCE: ldr          r0, [pc, #0x4c] ; word[008E001C]=0075E7B4
+008DFFD0: movs         r2, #1
+008DFFD2: ldr          r1, [pc, #0x4c] ; word[008E0020]=0075E7B6
+008DFFD4: add          r0, pc
+008DFFD6: add          r1, pc
+008DFFD8: ldr          r0, [r0]
+008DFFDA: ldr          r1, [r1]
+008DFFDC: ldrb         r0, [r0]
+008DFFDE: strb         r2, [r1]
+008DFFE0: cbz          r0, #0x8dffe6
+008DFFE2: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DFFE6: add          sp, #0x10
+008DFFE8: pop          {r4, pc}
+008DFFEA: mov          r4, r0
+RANGE 0x008DEE64..0x008DEE6C exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18StopAllAudioEventsEh
+008DEE64: ldr          r0, [r0, #4]
+008DEE66: ldr          r1, [r1]
+008DEE68: b.w          #0xae30f0
+RANGE 0x008DEE6C..0x008DEED2 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18PostAudioGameStateEh
+008DEE6C: push         {r4, r5, r6, lr}
+008DEE6E: sub          sp, #0x18
+008DEE70: mov          r5, r1
+008DEE72: ldrd         r1, r2, [r5]
+008DEE76: ldr          r0, [r0, #4]
+008DEE78: blx          #0x4af1f0 ; Anki::AudioEngine::AudioEngineController::SetState
+008DEE7C: cbnz         r0, #0x8deece
+008DEE7E: ldr          r0, [pc, #0x7c] ; word[008DEEFC]=007AE30C
+008DEE80: add          r0, pc
+008DEE82: ldr          r4, [r0]
+008DEE84: movs         r0, #0
+008DEE86: strd         r0, r0, [sp, #0xc]
+008DEE8A: str          r0, [sp, #0x14]
+008DEE8C: ldr          r0, [r5]
+008DEE8E: blx          #0x4d25a8 ; Anki::AudioMetaData::GameState::EnumToString
+008DEE92: mov          r6, r0
+008DEE94: ldr          r0, [r5, #4]
+008DEE96: blx          #0x4d25b4 ; Anki::AudioMetaData::GameState::EnumToString
+008DEE9A: ldr          r1, [pc, #0x64] ; word[008DEF00]=003640D2
+008DEE9C: add          r1, pc
+008DEE9E: add          r2, sp, #0xc
+008DEEA0: adr          r3, #0x60
+008DEEA2: strd         r6, r0, [sp]
+008DEEA6: mov          r0, r4
+008DEEA8: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+008DEEAC: ldr          r0, [sp, #0xc]
+008DEEAE: cbz          r0, #0x8deece
+008DEEB0: ldr          r1, [sp, #0x10]
+008DEEB2: cmp          r1, r0
+008DEEB4: itttt        ne
+008DEEB6: subne.w      r2, r1, #8
+008DEEBA: subne        r2, r2, r0
+008DEEBC: mvnne        r3, #7
+008DEEC0: bicne.w      r2, r3, r2
+008DEEC4: itt          ne
+008DEEC6: addne        r1, r1, r2
+008DEEC8: strne        r1, [sp, #0x10]
+008DEECA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DEECE: add          sp, #0x18
+008DEED0: pop          {r4, r5, r6, pc}
+RANGE 0x008DEF20..0x008DEF90 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_20PostAudioSwitchStateEh
+008DEF20: push         {r4, r5, r6, r7, lr}
+008DEF22: sub          sp, #0x1c
+008DEF24: mov          r5, r1
+008DEF26: ldm.w        r5, {r1, r2, r3}
+008DEF2A: ldr          r0, [r0, #4]
+008DEF2C: blx          #0x4d25c0 ; Anki::AudioEngine::AudioEngineController::SetSwitchState
+008DEF30: cbnz         r0, #0x8def8c
+008DEF32: ldr          r0, [pc, #0x84] ; word[008DEFB8]=007AE258
+008DEF34: add          r0, pc
+008DEF36: ldr          r4, [r0]
+008DEF38: movs         r0, #0
+008DEF3A: strd         r0, r0, [sp, #0x10]
+008DEF3E: str          r0, [sp, #0x18]
+008DEF40: ldr          r0, [r5]
+008DEF42: blx          #0x4d25cc ; Anki::AudioMetaData::SwitchState::EnumToString
+008DEF46: mov          r6, r0
+008DEF48: ldr          r0, [r5, #4]
+008DEF4A: blx          #0x4d25d8 ; Anki::AudioMetaData::SwitchState::EnumToString
+008DEF4E: mov          r7, r0
+008DEF50: ldr          r0, [r5, #8]
+008DEF52: blx          #0x4aae88 ; Anki::AudioMetaData::EnumToString
+008DEF56: ldr          r1, [pc, #0x64] ; word[008DEFBC]=00364016
+008DEF58: add          r1, pc
+008DEF5A: add          r2, sp, #0x10
+008DEF5C: adr          r3, #0x60
+008DEF5E: strd         r6, r7, [sp]
+008DEF62: str          r0, [sp, #8]
+008DEF64: mov          r0, r4
+008DEF66: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+008DEF6A: ldr          r0, [sp, #0x10]
+008DEF6C: cbz          r0, #0x8def8c
+008DEF6E: ldr          r1, [sp, #0x14]
+008DEF70: cmp          r1, r0
+008DEF72: itttt        ne
+008DEF74: subne.w      r2, r1, #8
+008DEF78: subne        r2, r2, r0
+008DEF7A: mvnne        r3, #7
+008DEF7E: bicne.w      r2, r3, r2
+008DEF82: itt          ne
+008DEF84: addne        r1, r1, r2
+008DEF86: strne        r1, [sp, #0x14]
+008DEF88: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DEF8C: add          sp, #0x1c
+008DEF8E: pop          {r4, r5, r6, r7, pc}
+RANGE 0x008DEFF4..0x008DF186 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18PostAudioParameterEh
+008DEFF4: push.w       {r4, r5, r6, r7, r8, sb, lr}
+008DEFF8: sub          sp, #4
+008DEFFA: vpush        {d8}
+008DEFFE: sub          sp, #0x30
+008DF000: mov          r7, r0
+008DF002: ldr          r0, [pc, #0x1b8] ; word[008DF1BC]=007AE19E
+008DF004: mov          r4, r1
+008DF006: add          r0, pc
+008DF008: ldrd         r5, sb, [r4, #8]
+008DF00C: vldr         s16, [r4, #4]
+008DF010: ldr.w        r8, [r4]
+008DF014: cmp          r5, #0
+008DF016: ldrb         r0, [r0]
+008DF018: dmb          ish
+008DF01C: it           eq
+008DF01E: moveq.w      r5, #-1
+008DF022: tst.w        r0, #1
+008DF026: bne          #0x8df08a
+008DF028: ldr          r0, [pc, #0x194] ; word[008DF1C0]=007AE17A
+008DF02A: add          r0, pc
+008DF02C: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+008DF030: cbz          r0, #0x8df08a
+008DF032: movw         r1, #0x202
+008DF036: ldr          r0, [pc, #0x18c] ; word[008DF1C4]=007AE14E
+008DF038: strh.w       r1, [sp, #0x20]
+008DF03C: movs         r1, #0
+008DF03E: movt         r1, #0x101
+008DF042: add          r0, pc
+008DF044: str          r1, [sp, #0x1c]
+008DF046: movw         r1, #0x303
+008DF04A: movt         r1, #0x404
+008DF04E: str.w        r1, [sp, #0x22]
+008DF052: movw         r1, #0x707
+008DF056: movt         r1, #0x808
+008DF05A: str.w        r1, [sp, #0x2a]
+008DF05E: movw         r1, #0x505
+008DF062: movt         r1, #0x606
+008DF066: str.w        r1, [sp, #0x26]
+008DF06A: add          r1, sp, #0x1c
+008DF06C: movs         r2, #9
+008DF06E: bl           #0x8df220 ; FUN_008df220
+008DF072: ldr          r0, [pc, #0x158] ; word[008DF1CC]=0000034D
+008DF074: ldr          r1, [pc, #0x158] ; word[008DF1D0]=007AE116
+008DF076: ldr          r2, [pc, #0x15c] ; word[008DF1D4]=00771F80
+008DF078: add          r0, pc
+008DF07A: add          r1, pc
+008DF07C: add          r2, pc
+008DF07E: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+008DF082: ldr          r0, [pc, #0x154] ; word[008DF1D8]=007AE120
+008DF084: add          r0, pc
+008DF086: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+008DF08A: ldr          r0, [pc, #0x150] ; word[008DF1DC]=007AE100
+008DF08C: add.w        r6, r4, #0x10
+008DF090: add          r0, pc
+008DF092: mov          r1, r6
+008DF094: bl           #0x8dfbbc ; FUN_008dfbbc
+008DF098: cmp          r0, #0
+008DF09A: beq          #0x8df0a0
+008DF09C: ldrb         r3, [r0, #9]
+008DF09E: b            #0x8df0f8
+008DF0A0: movs         r0, #0
+008DF0A2: strd         r0, r0, [sp, #0x1c]
+008DF0A6: str          r0, [sp, #0x24]
+008DF0A8: ldrb         r0, [r6]
+008DF0AA: blx          #0x4d25e4 ; Anki::AudioEngine::Multiplexer::EnumToString
+008DF0AE: mov          r3, r0
+008DF0B0: ldr          r0, [pc, #0x12c] ; word[008DF1E0]=00363EBC
+008DF0B2: add          r0, pc
+008DF0B4: add          r1, sp, #0x1c
+008DF0B6: adr          r2, #0x12c
+008DF0B8: blx          #0x4a4108 ; Anki::Util::sErrorF
+008DF0BC: ldr          r0, [sp, #0x1c]
+008DF0BE: cbz          r0, #0x8df0de
+008DF0C0: ldr          r1, [sp, #0x20]
+008DF0C2: cmp          r1, r0
+008DF0C4: itttt        ne
+008DF0C6: subne.w      r2, r1, #8
+008DF0CA: subne        r2, r2, r0
+008DF0CC: mvnne        r3, #7
+008DF0D0: bicne.w      r2, r3, r2
+008DF0D4: itt          ne
+008DF0D6: addne        r1, r1, r2
+008DF0D8: strne        r1, [sp, #0x20]
+008DF0DA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF0DE: ldr          r0, [pc, #0x12c] ; word[008DF20C]=0075F6A8
+008DF0E0: movs         r2, #1
+008DF0E2: ldr          r1, [pc, #0x12c] ; word[008DF210]=0075F6A2
+008DF0E4: add          r0, pc
+008DF0E6: add          r1, pc
+008DF0E8: ldr          r0, [r0]
+008DF0EA: ldr          r1, [r1]
+008DF0EC: strb         r2, [r0]
+008DF0EE: ldrb         r0, [r1]
+008DF0F0: cbz          r0, #0x8df0f6
+008DF0F2: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+008DF0F6: movs         r3, #0
+008DF0F8: vmov         r2, s16
+008DF0FC: ldr          r0, [r7, #4]
+008DF0FE: strd         sb, r3, [sp]
+008DF102: mov          r1, r8
+008DF104: mov          r3, r5
+008DF106: blx          #0x4d25f0 ; Anki::AudioEngine::AudioEngineController::SetParameter
+008DF10A: cbnz         r0, #0x8df17a
+008DF10C: ldr          r0, [pc, #0x104] ; word[008DF214]=007AE07E
+008DF10E: add          r0, pc
+008DF110: ldr.w        r8, [r0]
+008DF114: movs         r0, #0
+008DF116: strd         r0, r0, [sp, #0x1c]
+008DF11A: str          r0, [sp, #0x24]
+008DF11C: ldr          r0, [r4]
+008DF11E: blx          #0x4d25fc ; Anki::AudioMetaData::GameParameter::EnumToString
+008DF122: mov          r6, r0
+008DF124: ldr          r0, [r4, #8]
+008DF126: vldr         s16, [r4, #4]
+008DF12A: blx          #0x4aae88 ; Anki::AudioMetaData::EnumToString
+008DF12E: mov          r7, r0
+008DF130: ldr          r5, [r4, #0xc]
+008DF132: ldrb         r0, [r4, #0x10]
+008DF134: blx          #0x4d25e4 ; Anki::AudioEngine::Multiplexer::EnumToString
+008DF138: ldr          r1, [pc, #0xdc] ; word[008DF218]=00363E2E
+008DF13A: vcvt.f64.f32 d0, s16
+008DF13E: ldr          r3, [pc, #0xdc] ; word[008DF21C]=00363E4C
+008DF140: add          r1, pc
+008DF142: add          r3, pc
+008DF144: add          r2, sp, #0x1c
+008DF146: strd         r7, r5, [sp, #0x10]
+008DF14A: str          r0, [sp, #0x18]
+008DF14C: mov          r0, r8
+008DF14E: vstr         d0, [sp, #8]
+008DF152: str          r6, [sp]
+008DF154: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+008DF158: ldr          r0, [sp, #0x1c]
+008DF15A: cbz          r0, #0x8df17a
+008DF15C: ldr          r1, [sp, #0x20]
+008DF15E: cmp          r1, r0
+008DF160: itttt        ne
+008DF162: subne.w      r2, r1, #8
+008DF166: subne        r2, r2, r0
+008DF168: mvnne        r3, #7
+008DF16C: bicne.w      r2, r3, r2
+008DF170: itt          ne
+008DF172: addne        r1, r1, r2
+008DF174: strne        r1, [sp, #0x20]
+008DF176: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DF17A: add          sp, #0x30
+008DF17C: vpop         {d8}
+008DF180: add          sp, #4
+008DF182: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x008DF3CC..0x008DF3DA exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_19PostAudioMusicStateEh
+008DF3CC: ldr          r0, [r0, #4]
+008DF3CE: ldr          r3, [r1, #8]
+008DF3D0: ldrb         r2, [r1, #4]
+008DF3D2: ldr          r1, [r1]
+008DF3D4: ldr          r0, [r0, #0xc]
+008DF3D6: b.w          #0xae3100
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00AE3140..0x00AE3144 exclusive; Thumb;
+00AE3140: bx           pc
+00AE3142: mov          r8, r8
+RANGE 0x00AE3144..0x00AE314C exclusive; ARM;
+00AE3144: ldr          ip, [pc] ; word[00AE314C]=FF9EF524
+00AE3148: add          pc, ip, pc
+RANGE 0x00AE3150..0x00AE3154 exclusive; Thumb;
+00AE3150: bx           pc
+00AE3152: mov          r8, r8
+RANGE 0x00AE3154..0x00AE315C exclusive; ARM;
+00AE3154: ldr          ip, [pc] ; word[00AE315C]=FF9EF520
+00AE3158: add          pc, ip, pc
+RANGE 0x00AE3160..0x00AE3164 exclusive; Thumb;
+00AE3160: bx           pc
+00AE3162: mov          r8, r8
+RANGE 0x00AE3164..0x00AE316C exclusive; ARM;
+00AE3164: ldr          ip, [pc] ; word[00AE316C]=FF9EF51C
+00AE3168: add          pc, ip, pc
+RANGE 0x00AE3170..0x00AE3174 exclusive; Thumb;
+00AE3170: bx           pc
+00AE3172: mov          r8, r8
+RANGE 0x00AE3174..0x00AE317C exclusive; ARM;
+00AE3174: ldr          ip, [pc] ; word[00AE317C]=FF9EF518
+00AE3178: add          pc, ip, pc
+RANGE 0x00AE3180..0x00AE3184 exclusive; Thumb;
+00AE3180: bx           pc
+00AE3182: mov          r8, r8
+RANGE 0x00AE3184..0x00AE318C exclusive; ARM;
+00AE3184: ldr          ip, [pc] ; word[00AE318C]=FF9EF514
+00AE3188: add          pc, ip, pc
+RANGE 0x004D2674..0x004D26B0 exclusive; ARM;
+004D2674: add          ip, pc, #0xb00000
+004D2678: add          ip, ip, #0x7d000
+004D267C: ldr          pc, [ip, #0x38c]!
+004D2680: add          ip, pc, #0xb00000
+004D2684: add          ip, ip, #0x7d000
+004D2688: ldr          pc, [ip, #0x384]!
+004D268C: add          ip, pc, #0xb00000
+004D2690: add          ip, ip, #0x7d000
+004D2694: ldr          pc, [ip, #0x37c]!
+004D2698: add          ip, pc, #0xb00000
+004D269C: add          ip, ip, #0x7d000
+004D26A0: ldr          pc, [ip, #0x374]!
+004D26A4: add          ip, pc, #0xb00000
+004D26A8: add          ip, ip, #0x7d000
+004D26AC: ldr          pc, [ip, #0x36c]!
+0104FA08: raw=004A4010 relocated=008DEE65 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18StopAllAudioEventsEh
+0104FA0C: raw=004A4010 relocated=008DEE6D _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18PostAudioGameStateEh
+0104FA10: raw=004A4010 relocated=008DEF21 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_20PostAudioSwitchStateEh
+0104FA14: raw=004A4010 relocated=008DEFF5 _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_18PostAudioParameterEh
+0104FA18: raw=004A4010 relocated=008DF3CD _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer14ProcessMessageERKNS1_19PostAudioMusicStateEh
