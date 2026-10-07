@@ -1,0 +1,54 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004ED6BE..0x004ED6D2 exclusive; Thumb;
+004ED6BE: ldr          r0, [r4, #0x34]
+004ED6C0: ldr          r0, [r0, #0xc]
+004ED6C2: cbz          r0, #0x4ed6c8
+004ED6C4: blx          #0x4a5290 ; Anki::AudioEngine::Multiplexer::AudioMultiplexer::UpdateAudioController
+004ED6C8: movs         r5, #0
+004ED6CA: mov          r0, r5
+004ED6CC: add          sp, #0x10
+004ED6CE: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x008DF3DA..0x008DF3E0 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer21UpdateAudioControllerEv
+008DF3DA: ldr          r0, [r0, #4]
+008DF3DC: b.w          #0xae3110
+RANGE 0x00AE3110..0x00AE3114 exclusive; Thumb;
+00AE3110: bx           pc
+00AE3112: mov          r8, r8
+RANGE 0x00AE3114..0x00AE311C exclusive; ARM;
+00AE3114: ldr          ip, [pc] ; word[00AE311C]=FF9EF4F4
+00AE3118: add          pc, ip, pc
+RANGE 0x004D2614..0x004D2620 exclusive; ARM;
+004D2614: add          ip, pc, #0xb00000
+004D2618: add          ip, ip, #0x7d000
+004D261C: ldr          pc, [ip, #0x3cc]!
+0104F9E8: raw=004A4010 relocated=008D2929 _ZN4Anki11AudioEngine21AudioEngineController6UpdateEv
+RANGE 0x008D2928..0x008D2946 exclusive; Thumb; _ZN4Anki11AudioEngine21AudioEngineController6UpdateEv
+008D2928: push         {r4, lr}
+008D292A: mov          r4, r0
+008D292C: ldr          r0, [r4, #0xc]
+008D292E: cbz          r0, #0x8d2934
+008D2930: blx          #0x4d2434 ; Anki::AudioEngine::MusicConductor::UpdateTick
+008D2934: ldr          r0, [r4, #8]
+008D2936: movs         r1, #0
+008D2938: bl           #0x8d88c0 ; FUN_008d88c0
+008D293C: ldr          r0, [r4, #8]
+008D293E: pop.w        {r4, lr}
+008D2942: b.w          #0x8d88cc
+RANGE 0x008D88C0..0x008D88CC exclusive; Thumb;
+008D88C0: ldrb         r0, [r0]
+008D88C2: cbz          r0, #0x8d88ca
+008D88C4: movs         r0, #1
+008D88C6: b.w          #0xae3060
+008D88CA: bx           lr
+RANGE 0x00AE3060..0x00AE3064 exclusive; Thumb;
+00AE3060: bx           pc
+00AE3062: mov          r8, r8
+RANGE 0x00AE3064..0x00AE306C exclusive; ARM;
+00AE3064: ldr          ip, [pc] ; word[00AE306C]=FFEBC0C0
+00AE3068: add          pc, ip, pc
+RANGE 0x0099F130..0x0099F144 exclusive; ARM;
+0099F130: ldr          r3, [pc, #0xc] ; word[0099F144]=006EE728
+0099F134: mov          r1, r0
+0099F138: add          r3, pc, r3
+0099F13C: ldr          r0, [r3, #8]
+0099F140: b            #0x9afd10 ; FUN_009afd10

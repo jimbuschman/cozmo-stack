@@ -1,0 +1,154 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DA25C..0x008DA2E0 exclusive; Thumb;
+008DA25C: push.w       {r4, r5, r6, r7, r8, lr}
+008DA260: sub          sp, #0x18
+008DA262: mov          r4, r0
+008DA264: mov          r8, r1
+008DA266: ldrd         r0, r1, [r4]
+008DA26A: mov          r5, r2
+008DA26C: movs         r2, #1
+008DA26E: add.w        r7, r4, #8
+008DA272: subs         r1, r1, r0
+008DA274: add.w        r6, r2, r1, asr #3
+008DA278: cmp.w        r6, #0x20000000
+008DA27C: blo          #0x8da286
+008DA27E: mov          r0, r4
+008DA280: bl           #0x4e0668 ; FUN_004e0668
+008DA284: ldr          r0, [r4]
+008DA286: ldr          r1, [r4, #8]
+008DA288: movw         r3, #0xfffe
+008DA28C: movt         r3, #0xfff
+008DA290: subs         r1, r1, r0
+008DA292: asrs         r2, r1, #3
+008DA294: cmp          r2, r3
+008DA296: bhi          #0x8da2a2
+008DA298: asrs         r1, r1, #2
+008DA29A: cmp          r1, r6
+008DA29C: it           lo
+008DA29E: movlo        r1, r6
+008DA2A0: b            #0x8da2a6
+008DA2A2: mvn          r1, #0xe0000000
+008DA2A6: ldr          r2, [r4, #4]
+008DA2A8: add          r6, sp, #4
+008DA2AA: mov          r3, r7
+008DA2AC: subs         r0, r2, r0
+008DA2AE: asrs         r2, r0, #3
+008DA2B0: mov          r0, r6
+008DA2B2: bl           #0x8da2f0 ; FUN_008da2f0
+008DA2B6: ldr          r0, [sp, #0xc]
+008DA2B8: movs         r2, #0
+008DA2BA: ldr.w        r1, [r8]
+008DA2BE: str          r1, [r0]
+008DA2C0: ldr          r1, [r5]
+008DA2C2: str          r2, [r5]
+008DA2C4: str          r1, [r0, #4]
+008DA2C6: ldr          r0, [sp, #0xc]
+008DA2C8: adds         r0, #8
+008DA2CA: str          r0, [sp, #0xc]
+008DA2CC: mov          r0, r4
+008DA2CE: mov          r1, r6
+008DA2D0: bl           #0x8da37c ; FUN_008da37c
+008DA2D4: add          r0, sp, #4
+008DA2D6: bl           #0x8da3d2 ; FUN_008da3d2
+008DA2DA: add          sp, #0x18
+008DA2DC: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x008DA2F0..0x008DA35C exclusive; Thumb;
+008DA2F0: push         {r4, r5, r6, lr}
+008DA2F2: sub          sp, #8
+008DA2F4: mov          r5, r1
+008DA2F6: mov          r4, r0
+008DA2F8: movs         r0, #0
+008DA2FA: mov          r6, r2
+008DA2FC: cmp          r5, #0
+008DA2FE: strd         r0, r3, [r4, #0xc]
+008DA302: beq          #0x8da310
+008DA304: cmp.w        r5, #0x20000000
+008DA308: bhs          #0x8da326
+008DA30A: lsls         r0, r5, #3
+008DA30C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DA310: add.w        r1, r0, r6, lsl #3
+008DA314: add.w        r2, r0, r5, lsl #3
+008DA318: strd         r0, r1, [r4]
+008DA31C: mov          r0, r4
+008DA31E: strd         r1, r2, [r4, #8]
+008DA322: add          sp, #8
+008DA324: pop          {r4, r5, r6, pc}
+008DA326: ldr          r1, [pc, #0x44] ; word[008DA36C]=00309C13
+008DA328: mov          r4, sp
+008DA32A: mov          r0, r4
+008DA32C: add          r1, pc
+008DA32E: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+008DA332: ldr          r0, [pc, #0x3c] ; word[008DA370]=00764468
+008DA334: add          r0, pc
+008DA336: ldr          r0, [r0]
+008DA338: add.w        r5, r0, #8
+008DA33C: movs         r0, #8
+008DA33E: str          r5, [sp]
+008DA340: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008DA344: mov          r1, r4
+008DA346: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+008DA34A: ldr          r1, [pc, #0x28] ; word[008DA374]=00764452
+008DA34C: ldr          r2, [pc, #0x28] ; word[008DA378]=00764452
+008DA34E: add          r1, pc
+008DA350: str          r5, [r0]
+008DA352: add          r2, pc
+008DA354: ldr          r1, [r1]
+008DA356: ldr          r2, [r2]
+008DA358: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x008DA37C..0x008DA3D2 exclusive; Thumb;
+008DA37C: ldrd         ip, r2, [r0]
+008DA380: cmp          r2, ip
+008DA382: beq          #0x8da3b4
+008DA384: push         {r4, lr}
+008DA386: ldr          r3, [r1, #4]
+008DA388: mov.w        lr, #0
+008DA38C: ldr          r4, [r2, #-0x8]!
+008DA390: str          r4, [r3, #-0x8]
+008DA394: cmp          ip, r2
+008DA396: ldr          r4, [r2, #4]
+008DA398: str.w        lr, [r2, #4]
+008DA39C: str          r4, [r3, #-0x4]
+008DA3A0: ldr          r3, [r1, #4]
+008DA3A2: sub.w        r3, r3, #8
+008DA3A6: str          r3, [r1, #4]
+008DA3A8: bne          #0x8da38c
+008DA3AA: ldr.w        ip, [r0]
+008DA3AE: pop.w        {r4, lr}
+008DA3B2: b            #0x8da3b6
+008DA3B4: ldr          r3, [r1, #4]
+008DA3B6: str          r3, [r0]
+008DA3B8: ldr          r2, [r1, #8]
+008DA3BA: str.w        ip, [r1, #4]
+008DA3BE: ldr          r3, [r0, #4]
+008DA3C0: str          r2, [r0, #4]
+008DA3C2: ldr          r2, [r1, #0xc]
+008DA3C4: str          r3, [r1, #8]
+008DA3C6: ldr          r3, [r0, #8]
+008DA3C8: str          r2, [r0, #8]
+008DA3CA: ldr          r0, [r1, #4]
+008DA3CC: str          r3, [r1, #0xc]
+008DA3CE: str          r0, [r1]
+008DA3D0: bx           lr
+RANGE 0x008DA3D2..0x008DA408 exclusive; Thumb;
+008DA3D2: push         {r4, r5, r6, lr}
+008DA3D4: mov          r4, r0
+008DA3D6: ldrd         r5, r1, [r4, #4]
+008DA3DA: cmp          r1, r5
+008DA3DC: beq          #0x8da3fc
+008DA3DE: movs         r6, #0
+008DA3E0: sub.w        r0, r1, #8
+008DA3E4: str          r0, [r4, #8]
+008DA3E6: ldr          r0, [r1, #-0x4]
+008DA3EA: str          r6, [r1, #-0x4]
+008DA3EE: cbz          r0, #0x8da3f6
+008DA3F0: ldr          r1, [r0]
+008DA3F2: ldr          r1, [r1, #4]
+008DA3F4: blx          r1
+008DA3F6: ldr          r1, [r4, #8]
+008DA3F8: cmp          r1, r5
+008DA3FA: bne          #0x8da3e0
+008DA3FC: ldr          r0, [r4]
+008DA3FE: cbz          r0, #0x8da404
+008DA400: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008DA404: mov          r0, r4
+008DA406: pop          {r4, r5, r6, pc}
