@@ -51,7 +51,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-042 | 80 | NOT DONE |
 | Q14-043 | 81 | NOT DONE |
 | Q14-044 | 82 | PARTIAL |
-| Q14-045 | 83 | NOT DONE |
+| Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | NOT DONE |
 | Q14-047 | 85 | NOT DONE |
 | Q14-048 | 86 | NOT DONE |
@@ -406,7 +406,7 @@ PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope 
 
 > | M9-007 | **KEEP** | 0x00A14F88..0x00A15038;0x009D552C | Note-on/off gate, curve scaling2 fast-log and envelope trigger timing determine RTPC/control values; ADP-1 does not exempt them or the circular test. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve companions establish scalar curve/scaling2 values, strict saturation gates and exact float association; MT7 establishes property15 event gates. Class-specific envelope trigger/timing and complete parameter recipient wiring remain open. No change to the production path or the cited circular test in this research task.
 
 ## Q14-046 — triage line 84
 
