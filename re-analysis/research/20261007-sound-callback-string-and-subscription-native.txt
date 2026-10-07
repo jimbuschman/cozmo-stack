@@ -1,0 +1,275 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004E02B2..0x004E0306 exclusive; Thumb;
+004E02B2: push         {r4, r5, r6, r7, lr}
+004E02B4: sub          sp, #4
+004E02B6: mov          r4, r2
+004E02B8: mov          r6, r1
+004E02BA: mov          r5, r0
+004E02BC: cmn.w        r4, #0x10
+004E02C0: blo          #0x4e02ca
+004E02C2: mov          r0, r5
+004E02C4: bl           #0x4e0308 ; FUN_004e0308
+004E02C8: b            #0x4e02dc
+004E02CA: cmp          r4, #0xb
+004E02CC: bhs          #0x4e02dc
+004E02CE: lsls         r0, r4, #1
+004E02D0: cmp          r4, #0
+004E02D2: strb         r0, [r5], #1
+004E02D6: mov          r0, r5
+004E02D8: bne          #0x4e02f6
+004E02DA: b            #0x4e02fe
+004E02DC: add.w        r0, r4, #0x10
+004E02E0: bic          r7, r0, #0xf
+004E02E4: mov          r0, r7
+004E02E6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+004E02EA: orr          r1, r7, #1
+004E02EE: strd         r1, r4, [r5]
+004E02F2: str          r0, [r5, #8]
+004E02F4: mov          r5, r0
+004E02F6: mov          r1, r6
+004E02F8: mov          r2, r4
+004E02FA: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+004E02FE: movs         r0, #0
+004E0300: strb         r0, [r5, r4]
+004E0302: add          sp, #4
+004E0304: pop          {r4, r5, r6, r7, pc}
+RANGE 0x004E0308..0x004E0334 exclusive; Thumb;
+004E0308: push         {r4, r5, r7, lr}
+004E030A: movs         r0, #8
+004E030C: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+004E0310: mov          r4, r0
+004E0312: adr          r1, #0x30
+004E0314: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+004E0318: ldr          r0, [pc, #0x38] ; word[004E0354]=00B5E47E
+004E031A: ldr          r1, [pc, #0x3c] ; word[004E0358]=00B5E480
+004E031C: ldr          r2, [pc, #0x3c] ; word[004E035C]=00B5E482
+004E031E: add          r0, pc
+004E0320: add          r1, pc
+004E0322: add          r2, pc
+004E0324: ldr          r0, [r0]
+004E0326: ldr          r1, [r1]
+004E0328: ldr          r2, [r2]
+004E032A: adds         r0, #8
+004E032C: str          r0, [r4]
+004E032E: mov          r0, r4
+004E0330: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x00591BA0..0x00591BC4 exclusive; Thumb;
+00591BA0: push         {r4, lr}
+00591BA2: mov          r4, r0
+00591BA4: ldr          r0, [pc, #0x1c] ; word[00591BC4]=00AAD1E6
+00591BA6: add          r0, pc
+00591BA8: ldr          r0, [r0]
+00591BAA: add.w        r1, r0, #8
+00591BAE: mov          r0, r4
+00591BB0: str          r1, [r0], #0x10
+00591BB4: blx          #0x4a4e4c ; std::__ndk1::__vector_base<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::~__vector_base
+00591BB8: mov          r0, r4
+00591BBA: pop.w        {r4, lr}
+00591BBE: b.w          #0x8cbadc
+00591BC2: nop
+RANGE 0x00591BC8..0x00591BEE exclusive; Thumb;
+00591BC8: push         {r4, lr}
+00591BCA: mov          r4, r0
+00591BCC: ldr          r0, [pc, #0x20] ; word[00591BF0]=00AAD1BE
+00591BCE: add          r0, pc
+00591BD0: ldr          r0, [r0]
+00591BD2: add.w        r1, r0, #8
+00591BD6: mov          r0, r4
+00591BD8: str          r1, [r0], #0x10
+00591BDC: blx          #0x4a4e4c ; std::__ndk1::__vector_base<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::~__vector_base
+00591BE0: mov          r0, r4
+00591BE2: blx          #0x4aed04 ; Anki::AudioEngine::Multiplexer::AudioMuxInput::~AudioMuxInput
+00591BE6: pop.w        {r4, lr}
+00591BEA: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+RANGE 0x008DFC34..0x008DFC44 exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInputD1Ev
+008DFC34: ldr          r1, [pc, #0xc] ; word[008DFC44]=00760350
+008DFC36: movs         r2, #0
+008DFC38: add          r1, pc
+008DFC3A: ldr          r1, [r1]
+008DFC3C: adds         r1, #8
+008DFC3E: strd         r1, r2, [r0]
+008DFC42: bx           lr
+004E0344: bytes=b'basic_string'
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EAE94..0x004EAEC8 exclusive; Thumb; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev
+004EAE94: push         {r4, r5, r7, lr}
+004EAE96: mov          r4, r0
+004EAE98: ldr          r5, [r4]
+004EAE9A: cbz          r5, #0x4eaec4
+004EAE9C: ldr          r0, [r4, #4]
+004EAE9E: cmp          r0, r5
+004EAEA0: beq          #0x4eaebe
+004EAEA2: sub.w        r1, r0, #8
+004EAEA6: str          r1, [r4, #4]
+004EAEA8: ldr          r0, [r0, #-0x4]
+004EAEAC: cbz          r0, #0x4eaeb6
+004EAEAE: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+004EAEB2: ldr          r0, [r4, #4]
+004EAEB4: b            #0x4eaeb8
+004EAEB6: mov          r0, r1
+004EAEB8: cmp          r0, r5
+004EAEBA: bne          #0x4eaea2
+004EAEBC: ldr          r5, [r4]
+004EAEBE: mov          r0, r5
+004EAEC0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+004EAEC4: mov          r0, r4
+004EAEC6: pop          {r4, r5, r7, pc}
+RANGE 0x004EE6CE..0x004EE74C exclusive; Thumb; _ZNSt6__ndk16vectorINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEE24__emplace_back_slow_pathIJS5_EEEvDpOT_
+004EE6CE: push         {r4, r5, r6, r7, lr}
+004EE6D0: sub          sp, #0x14
+004EE6D2: mov          r4, r0
+004EE6D4: mov          r5, r1
+004EE6D6: ldrd         r0, r1, [r4]
+004EE6DA: movs         r2, #1
+004EE6DC: add.w        r6, r4, #8
+004EE6E0: subs         r1, r1, r0
+004EE6E2: add.w        r7, r2, r1, asr #3
+004EE6E6: cmp.w        r7, #0x20000000
+004EE6EA: blo          #0x4ee6f4
+004EE6EC: mov          r0, r4
+004EE6EE: bl           #0x4e0668 ; FUN_004e0668
+004EE6F2: ldr          r0, [r4]
+004EE6F4: ldr          r1, [r4, #8]
+004EE6F6: movw         r3, #0xfffe
+004EE6FA: movt         r3, #0xfff
+004EE6FE: subs         r1, r1, r0
+004EE700: asrs         r2, r1, #3
+004EE702: cmp          r2, r3
+004EE704: bhi          #0x4ee710
+004EE706: asrs         r1, r1, #2
+004EE708: cmp          r1, r7
+004EE70A: it           lo
+004EE70C: movlo        r1, r7
+004EE70E: b            #0x4ee714
+004EE710: mvn          r1, #0xe0000000
+004EE714: ldr          r2, [r4, #4]
+004EE716: mov          r7, sp
+004EE718: mov          r3, r6
+004EE71A: subs         r0, r2, r0
+004EE71C: asrs         r2, r0, #3
+004EE71E: mov          r0, r7
+004EE720: blx          #0x4a541c ; std::__ndk1::__split_buffer<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>&>::__split_buffer
+004EE724: ldr          r0, [sp, #8]
+004EE726: ldr          r1, [r5]
+004EE728: str          r1, [r0]
+004EE72A: ldr          r1, [r5, #4]
+004EE72C: str          r1, [r0, #4]
+004EE72E: movs         r0, #0
+004EE730: strd         r0, r0, [r5]
+004EE734: ldr          r0, [sp, #8]
+004EE736: adds         r0, #8
+004EE738: str          r0, [sp, #8]
+004EE73A: mov          r0, r4
+004EE73C: mov          r1, r7
+004EE73E: blx          #0x4a5428 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__swap_out_circular_buffer
+004EE742: mov          r0, sp
+004EE744: blx          #0x4a5434 ; std::__ndk1::__split_buffer<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>&>::~__split_buffer
+004EE748: add          sp, #0x14
+004EE74A: pop          {r4, r5, r6, r7, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EE75C..0x004EE7C8 exclusive; Thumb; _ZNSt6__ndk114__split_bufferINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEERNS_9allocatorIS5_EEEC2EjjS8_
+004EE75C: push         {r4, r5, r6, lr}
+004EE75E: sub          sp, #8
+004EE760: mov          r5, r1
+004EE762: mov          r4, r0
+004EE764: movs         r0, #0
+004EE766: mov          r6, r2
+004EE768: cmp          r5, #0
+004EE76A: strd         r0, r3, [r4, #0xc]
+004EE76E: beq          #0x4ee77c
+004EE770: cmp.w        r5, #0x20000000
+004EE774: bhs          #0x4ee792
+004EE776: lsls         r0, r5, #3
+004EE778: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+004EE77C: add.w        r1, r0, r6, lsl #3
+004EE780: add.w        r2, r0, r5, lsl #3
+004EE784: strd         r0, r1, [r4]
+004EE788: mov          r0, r4
+004EE78A: strd         r1, r2, [r4, #8]
+004EE78E: add          sp, #8
+004EE790: pop          {r4, r5, r6, pc}
+004EE792: ldr          r1, [pc, #0x44] ; word[004EE7D8]=006F57A7
+004EE794: mov          r4, sp
+004EE796: mov          r0, r4
+004EE798: add          r1, pc
+004EE79A: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+004EE79E: ldr          r0, [pc, #0x3c] ; word[004EE7DC]=00B4FFFC
+004EE7A0: add          r0, pc
+004EE7A2: ldr          r0, [r0]
+004EE7A4: add.w        r5, r0, #8
+004EE7A8: movs         r0, #8
+004EE7AA: str          r5, [sp]
+004EE7AC: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+004EE7B0: mov          r1, r4
+004EE7B2: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+004EE7B6: ldr          r1, [pc, #0x28] ; word[004EE7E0]=00B4FFE6
+004EE7B8: ldr          r2, [pc, #0x28] ; word[004EE7E4]=00B4FFE6
+004EE7BA: add          r1, pc
+004EE7BC: str          r5, [r0]
+004EE7BE: add          r2, pc
+004EE7C0: ldr          r1, [r1]
+004EE7C2: ldr          r2, [r2]
+004EE7C4: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x004EE7E8..0x004EE83E exclusive; Thumb; _ZNSt6__ndk16vectorINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEE26__swap_out_circular_bufferERNS_14__split_bufferIS5_RS7_EE
+004EE7E8: ldrd         ip, r2, [r0]
+004EE7EC: cmp          r2, ip
+004EE7EE: beq          #0x4ee820
+004EE7F0: push         {r4, lr}
+004EE7F2: ldr          r3, [r1, #4]
+004EE7F4: mov.w        lr, #0
+004EE7F8: ldr          r4, [r2, #-0x8]!
+004EE7FC: str          r4, [r3, #-0x8]
+004EE800: cmp          ip, r2
+004EE802: ldr          r4, [r2, #4]
+004EE804: str          r4, [r3, #-0x4]
+004EE808: strd         lr, lr, [r2]
+004EE80C: ldr          r3, [r1, #4]
+004EE80E: sub.w        r3, r3, #8
+004EE812: str          r3, [r1, #4]
+004EE814: bne          #0x4ee7f8
+004EE816: ldr.w        ip, [r0]
+004EE81A: pop.w        {r4, lr}
+004EE81E: b            #0x4ee822
+004EE820: ldr          r3, [r1, #4]
+004EE822: str          r3, [r0]
+004EE824: ldr          r2, [r1, #8]
+004EE826: str.w        ip, [r1, #4]
+004EE82A: ldr          r3, [r0, #4]
+004EE82C: str          r2, [r0, #4]
+004EE82E: ldr          r2, [r1, #0xc]
+004EE830: str          r3, [r1, #8]
+004EE832: ldr          r3, [r0, #8]
+004EE834: str          r2, [r0, #8]
+004EE836: ldr          r0, [r1, #4]
+004EE838: str          r3, [r1, #0xc]
+004EE83A: str          r0, [r1]
+004EE83C: bx           lr
+RANGE 0x004EE83E..0x004EE86E exclusive; Thumb; _ZNSt6__ndk114__split_bufferINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEERNS_9allocatorIS5_EEED2Ev
+004EE83E: push         {r4, r5, r7, lr}
+004EE840: mov          r4, r0
+004EE842: ldr          r5, [r4, #4]
+004EE844: ldr          r0, [r4, #8]
+004EE846: b            #0x4ee84a
+004EE848: mov          r0, r1
+004EE84A: cmp          r0, r5
+004EE84C: beq          #0x4ee862
+004EE84E: sub.w        r1, r0, #8
+004EE852: str          r1, [r4, #8]
+004EE854: ldr          r0, [r0, #-0x4]
+004EE858: cmp          r0, #0
+004EE85A: beq          #0x4ee848
+004EE85C: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+004EE860: b            #0x4ee844
+004EE862: ldr          r0, [r4]
+004EE864: cbz          r0, #0x4ee86a
+004EE866: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+004EE86A: mov          r0, r4
+004EE86C: pop          {r4, r5, r7, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103E7A0: raw=00000000 relocated=00000000
+0103E7A4: raw=00000000 relocated=00000000
+0103E7A8: raw=00000000 relocated=00000000
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103E7A0: raw=00000000 relocated=00000000 _ZTVSt12length_error
+0103E7A4: raw=00000000 relocated=00000000 _ZTISt12length_error
+0103E7A8: raw=00000000 relocated=00000000 _ZNSt12length_errorD1Ev

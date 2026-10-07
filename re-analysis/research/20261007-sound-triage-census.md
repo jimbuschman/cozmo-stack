@@ -316,7 +316,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-023 | **KEEP** | 0x005919B8;0x008DFC4C;0x008DED14;0x008D1F20;0x008D8CE4;0x009A6704 | Unity/app dispatch, flags/cookie/callback propagation and live registration remain exact event behavior. |
 
-PARTIAL: UE1–UE7 and UC1–UC26 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates, flush ordering, lambda recipients, garbage sweep and playing-manager callback suppression. Remaining: marker-string ownership and subscription handle lifetime; map rehash/prime-size helper are now UC21–UC26. Generated callback unions/message constructors are outside audio scope in M2; those shipped bodies are readable dependencies, not UNKNOWN.
+PARTIAL: UE1–UE7 and UC1–UC29 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates, flush ordering, lambda recipients, garbage sweep and playing-manager callback suppression. Marker string and subscription move/release lifetime are UC27–UC29; callback/core map helpers are instruction-closed. Remaining before this entire item is CHECKED: reconcile all six union recipient bodies and constructor/teardown parent wiring against the quoted production claim, and keep external interface/CLAD boundaries explicit. Generated callback unions/message constructors are outside audio scope in M2; those shipped bodies are readable dependencies, not UNKNOWN.
 
 ## Q14-031 — triage line 69
 

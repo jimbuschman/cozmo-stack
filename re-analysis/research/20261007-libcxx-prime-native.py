@@ -46,3 +46,8 @@ for instruction in division.disasm(read(0x8675C, 0xA8), 0x8675C):
 for relocation in elf.relocations:
     if 0xA4D1C <= relocation.address <= 0xA4D24 and relocation.has_symbol:
         print('EXCEPTION RELOCATION', f'{relocation.address:08X}', relocation.symbol.name, f'{relocation.symbol.value:08X}')
+for name in ['_ZNSt6__ndk114__shared_count16__release_sharedEv', '_ZNSt6__ndk119__shared_weak_count16__release_sharedEv']:
+    dependency = next(s for s in elf.symbols if s.name == name and s.value)
+    print('SHARED RELEASE SYMBOL', name, f'{dependency.value:08X}', dependency.size)
+    for instruction in decoder.disasm(read(dependency.value & ~1, dependency.size), dependency.value & ~1):
+        print(f'{instruction.address:08X}: {instruction.mnemonic:12} {instruction.op_str}')

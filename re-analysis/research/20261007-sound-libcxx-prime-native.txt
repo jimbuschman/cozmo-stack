@@ -624,3 +624,57 @@ ARM DIVISION RANGE 0008675C..00086804 exclusive
 EXCEPTION RELOCATION 000A4D1C _ZTVSt14overflow_error 000A4AE0
 EXCEPTION RELOCATION 000A4D20 _ZTISt14overflow_error 000A4AF4
 EXCEPTION RELOCATION 000A4D24 _ZNSt14overflow_errorD1Ev 0007D589
+SHARED RELEASE SYMBOL _ZNSt6__ndk114__shared_count16__release_sharedEv 0005ED17 48
+0005ED16: add.w        ip, r0, #4
+0005ED1A: dmb          ish
+0005ED1E: ldrex        r2, [ip]
+0005ED22: subs         r3, r2, #1
+0005ED24: strex        r1, r3, [ip]
+0005ED28: cmp          r1, #0
+0005ED2A: bne          #0x5ed1e
+0005ED2C: cmp          r2, #0
+0005ED2E: dmb          ish
+0005ED32: beq          #0x5ed38
+0005ED34: movs         r0, #0
+0005ED36: bx           lr
+0005ED38: push         {r7, lr}
+0005ED3A: mov          r7, sp
+0005ED3C: ldr          r1, [r0]
+0005ED3E: ldr          r1, [r1, #8]
+0005ED40: blx          r1
+0005ED42: movs         r0, #1
+0005ED44: pop          {r7, pc}
+SHARED RELEASE SYMBOL _ZNSt6__ndk119__shared_weak_count16__release_sharedEv 0005ED6D 86
+0005ED6C: push         {r4, r5, r7, lr}
+0005ED6E: add          r7, sp, #8
+0005ED70: mov          r4, r0
+0005ED72: adds         r0, r4, #4
+0005ED74: dmb          ish
+0005ED78: ldrex        r1, [r0]
+0005ED7C: subs         r2, r1, #1
+0005ED7E: strex        r3, r2, [r0]
+0005ED82: cmp          r3, #0
+0005ED84: bne          #0x5ed78
+0005ED86: cmp          r1, #0
+0005ED88: dmb          ish
+0005ED8C: bne          #0x5edb4
+0005ED8E: mov          r5, r4
+0005ED90: ldr          r0, [r5], #8
+0005ED94: ldr          r1, [r0, #8]
+0005ED96: mov          r0, r4
+0005ED98: blx          r1
+0005ED9A: dmb          ish
+0005ED9E: ldrex        r0, [r5]
+0005EDA2: subs         r1, r0, #1
+0005EDA4: strex        r2, r1, [r5]
+0005EDA8: cmp          r2, #0
+0005EDAA: bne          #0x5ed9e
+0005EDAC: cmp          r0, #0
+0005EDAE: dmb          ish
+0005EDB2: beq          #0x5edb6
+0005EDB4: pop          {r4, r5, r7, pc}
+0005EDB6: ldr          r0, [r4]
+0005EDB8: ldr          r1, [r0, #0x10]
+0005EDBA: mov          r0, r4
+0005EDBC: pop.w        {r4, r5, r7, lr}
+0005EDC0: bx           r1

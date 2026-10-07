@@ -67,7 +67,8 @@ if __name__=='__main__':
                 v=word(loc);r=rel.get(loc)
                 if r and r.has_symbol and r.type.name=='ARM_ABS32':v=(v+r.symbol.value)&0xffffffff
                 elif r and r.has_symbol and r.type.name in ('ARM_GLOB_DAT','ARM_JUMP_SLOT'):v=r.symbol.value
-                print(f'{loc:08X}: raw={word(loc):08X} relocated={v:08X} {symbols.get(v&~1,"")}')
+                name = symbols.get(v&~1,'') or (r.symbol.name if r and r.has_symbol else '')
+                print(f'{loc:08X}: raw={word(loc):08X} relocated={v:08X} {name}')
         else:
             thumb=arg.startswith('thumb:');arg=arg[6:] if thumb else arg
             p=arg.split(':');a=int(p[0],16)
