@@ -268,7 +268,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-017 | **KEEP** | 0x009AF9F4..0x009AFAB8;0x00A4087C;0x00A40940;0x009AFD10;0x00A38420;0x00A03618;0x009EC418;0x009EBE6C | Thread lifecycle, group/voice/bus order, gate writers, pending-action drain, EndOfEvent and post-Term latency remain exact; external pacing uncertainty is not an ADP-1 arithmetic exemption. |
 
-PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit group and callback order, clock/fraction/groupcount and idle gates; E30–32 cover drain/synchronous Perform and NF1–5 notification flush. Remaining: gate writers/device init/term, pending action/queue bodies, group consumers and complete EndOfEvent/post-Term recipients. All readable, not UNKNOWN.
+PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit group and callback order, clock/fraction/groupcount and idle gates; E30–32 cover drain/synchronous Perform and NF1–5 notification flush. DF1–DF14 add device initialization/termination, pacing worker, mode/gate publications, rebuild/query/format notification order and concrete default sink. Remaining: complete writer census, device build/reset/notification recipients, pending action/queue bodies, group consumers and complete EndOfEvent/post-Term recipients. All readable, not UNKNOWN.
 
 ## Q14-023 — triage line 61
 
