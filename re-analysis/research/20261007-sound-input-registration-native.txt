@@ -1,0 +1,392 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DF920..0x008DF980 exclusive; Thumb;
+008DF920: push.w       {r4, r5, r6, r7, r8, sb, lr}
+008DF924: sub          sp, #4
+008DF926: mov          r6, r0
+008DF928: ldr          r4, [r6, #4]
+008DF92A: cmp          r4, #0
+008DF92C: beq          #0x8df976
+008DF92E: sub.w        r8, r4, #1
+008DF932: ldrb         r5, [r1]
+008DF934: ands.w       sb, r8, r4
+008DF938: beq          #0x8df946
+008DF93A: mov          r0, r5
+008DF93C: mov          r1, r4
+008DF93E: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF942: mov          r7, r1
+008DF944: b            #0x8df94a
+008DF946: and.w        r7, r8, r5
+008DF94A: ldr          r0, [r6]
+008DF94C: ldr.w        r6, [r0, r7, lsl #2]
+008DF950: cbz          r6, #0x8df976
+008DF952: ldr          r6, [r6]
+008DF954: cbz          r6, #0x8df976
+008DF956: ldr          r0, [r6, #4]
+008DF958: cmp.w        sb, #0
+008DF95C: beq          #0x8df966
+008DF95E: mov          r1, r4
+008DF960: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DF964: b            #0x8df96a
+008DF966: and.w        r1, r0, r8
+008DF96A: cmp          r1, r7
+008DF96C: bne          #0x8df976
+008DF96E: ldrb         r0, [r6, #8]
+008DF970: cmp          r0, r5
+008DF972: bne          #0x8df952
+008DF974: b            #0x8df978
+008DF976: movs         r6, #0
+008DF978: mov          r0, r6
+008DF97A: add          sp, #4
+008DF97C: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x00591590..0x0059189C exclusive; Thumb; _ZN4Anki5Cozmo5Audio15AudioUnityInputC2ERNS0_18IExternalInterfaceE
+00591590: push.w       {r4, r5, r6, r7, r8, lr}
+00591594: sub          sp, #0xa8
+00591596: mov          r4, r0
+00591598: ldr.w        r0, [pc, #0x390] ; word[0059192C]=00AAD2AA
+0059159C: mov          r6, r1
+0059159E: add          r0, pc
+005915A0: ldr          r0, [r0]
+005915A2: ldr          r0, [r0]
+005915A4: str          r0, [sp, #0xa4]
+005915A6: mov          r0, r4
+005915A8: blx          #0x4aecf8 ; Anki::AudioEngine::Multiplexer::AudioMuxInput::AudioMuxInput
+005915AC: ldr.w        r0, [pc, #0x380] ; word[00591930]=00AAD7D4
+005915B0: mov          r8, r4
+005915B2: ldr.w        r1, [pc, #0x380] ; word[00591934]=00AAD7D0
+005915B6: add          r7, sp, #0x88
+005915B8: add          r0, pc
+005915BA: str          r6, [r4, #0xc]
+005915BC: ldr.w        r2, [pc, #0x378] ; word[00591938]=00AAD7D0
+005915C0: add          r1, pc
+005915C2: ldr          r0, [r0]
+005915C4: add          r2, pc
+005915C6: ldr          r1, [r1]
+005915C8: adds         r0, #8
+005915CA: str          r0, [r4]
+005915CC: movs         r0, #0
+005915CE: ldr          r2, [r2]
+005915D0: strd         r0, r0, [r4, #0x14]
+005915D4: str          r0, [r8, #0x10]!
+005915D8: ldr          r3, [r6]
+005915DA: ldr          r5, [r3, #0x2c]
+005915DC: movs         r3, #1
+005915DE: strh.w       r3, [sp, #6]
+005915E2: strd         r2, r0, [sp, #0x8c]
+005915E6: add.w        r0, r1, #8
+005915EA: str          r4, [sp, #0x94]
+005915EC: str          r7, [sp, #0x98]
+005915EE: str          r0, [sp, #0x88]
+005915F0: add          r0, sp, #8
+005915F2: add.w        r2, sp, #6
+005915F6: mov          r1, r6
+005915F8: mov          r3, r7
+005915FA: blx          r5
+005915FC: ldrd         r0, r1, [r4, #0x14]
+00591600: cmp          r0, r1
+00591602: bhs          #0x59161a
+00591604: ldr          r1, [sp, #8]
+00591606: str          r1, [r0]
+00591608: ldr          r1, [sp, #0xc]
+0059160A: str          r1, [r0, #4]
+0059160C: movs         r0, #0
+0059160E: strd         r0, r0, [sp, #8]
+00591612: ldr          r0, [r4, #0x14]
+00591614: adds         r0, #8
+00591616: str          r0, [r4, #0x14]
+00591618: b            #0x59162a
+0059161A: add          r1, sp, #8
+0059161C: mov          r0, r8
+0059161E: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00591622: ldr          r0, [sp, #0xc]
+00591624: cbz          r0, #0x59162a
+00591626: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059162A: ldr          r0, [sp, #0x98]
+0059162C: cmp          r7, r0
+0059162E: beq          #0x591638
+00591630: cbz          r0, #0x59163e
+00591632: ldr          r1, [r0]
+00591634: ldr          r1, [r1, #0x14]
+00591636: b            #0x59163c
+00591638: ldr          r1, [r0]
+0059163A: ldr          r1, [r1, #0x10]
+0059163C: blx          r1
+0059163E: ldr          r0, [pc, #0x2fc] ; word[0059193C]=00AAD74C
+00591640: add          r7, sp, #0x70
+00591642: ldr          r1, [r4, #0xc]
+00591644: add          r0, pc
+00591646: ldr          r2, [pc, #0x2f8] ; word[00591940]=00AAD74C
+00591648: add          r2, pc
+0059164A: ldr          r0, [r0]
+0059164C: ldr          r3, [r1]
+0059164E: adds         r0, #8
+00591650: ldr          r2, [r2]
+00591652: ldr          r6, [r3, #0x2c]
+00591654: movs         r3, #2
+00591656: str          r2, [sp, #0x74]
+00591658: movs         r2, #0
+0059165A: strh.w       r3, [sp, #6]
+0059165E: strd         r2, r4, [sp, #0x78]
+00591662: str          r7, [sp, #0x80]
+00591664: str          r0, [sp, #0x70]
+00591666: add          r0, sp, #8
+00591668: add.w        r2, sp, #6
+0059166C: mov          r3, r7
+0059166E: blx          r6
+00591670: ldrd         r0, r1, [r4, #0x14]
+00591674: cmp          r0, r1
+00591676: bhs          #0x59168e
+00591678: ldr          r1, [sp, #8]
+0059167A: str          r1, [r0]
+0059167C: ldr          r1, [sp, #0xc]
+0059167E: str          r1, [r0, #4]
+00591680: movs         r0, #0
+00591682: strd         r0, r0, [sp, #8]
+00591686: ldr          r0, [r4, #0x14]
+00591688: adds         r0, #8
+0059168A: str          r0, [r4, #0x14]
+0059168C: b            #0x59169e
+0059168E: add          r1, sp, #8
+00591690: mov          r0, r8
+00591692: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00591696: ldr          r0, [sp, #0xc]
+00591698: cbz          r0, #0x59169e
+0059169A: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059169E: ldr          r0, [sp, #0x80]
+005916A0: cmp          r7, r0
+005916A2: beq          #0x5916ac
+005916A4: cbz          r0, #0x5916b2
+005916A6: ldr          r1, [r0]
+005916A8: ldr          r1, [r1, #0x14]
+005916AA: b            #0x5916b0
+005916AC: ldr          r1, [r0]
+005916AE: ldr          r1, [r1, #0x10]
+005916B0: blx          r1
+005916B2: ldr          r0, [pc, #0x290] ; word[00591944]=00AAD6D8
+005916B4: add          r7, sp, #0x58
+005916B6: ldr          r1, [r4, #0xc]
+005916B8: add          r0, pc
+005916BA: ldr          r2, [pc, #0x28c] ; word[00591948]=00AAD6D8
+005916BC: add          r2, pc
+005916BE: ldr          r0, [r0]
+005916C0: ldr          r3, [r1]
+005916C2: adds         r0, #8
+005916C4: ldr          r2, [r2]
+005916C6: ldr          r6, [r3, #0x2c]
+005916C8: movs         r3, #3
+005916CA: str          r2, [sp, #0x5c]
+005916CC: movs         r2, #0
+005916CE: strh.w       r3, [sp, #6]
+005916D2: strd         r2, r4, [sp, #0x60]
+005916D6: str          r7, [sp, #0x68]
+005916D8: str          r0, [sp, #0x58]
+005916DA: add          r0, sp, #8
+005916DC: add.w        r2, sp, #6
+005916E0: mov          r3, r7
+005916E2: blx          r6
+005916E4: ldrd         r0, r1, [r4, #0x14]
+005916E8: cmp          r0, r1
+005916EA: bhs          #0x591702
+005916EC: ldr          r1, [sp, #8]
+005916EE: str          r1, [r0]
+005916F0: ldr          r1, [sp, #0xc]
+005916F2: str          r1, [r0, #4]
+005916F4: movs         r0, #0
+005916F6: strd         r0, r0, [sp, #8]
+005916FA: ldr          r0, [r4, #0x14]
+005916FC: adds         r0, #8
+005916FE: str          r0, [r4, #0x14]
+00591700: b            #0x591712
+00591702: add          r1, sp, #8
+00591704: mov          r0, r8
+00591706: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0059170A: ldr          r0, [sp, #0xc]
+0059170C: cbz          r0, #0x591712
+0059170E: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00591712: ldr          r0, [sp, #0x68]
+00591714: cmp          r7, r0
+00591716: beq          #0x591720
+00591718: cbz          r0, #0x591726
+0059171A: ldr          r1, [r0]
+0059171C: ldr          r1, [r1, #0x14]
+0059171E: b            #0x591724
+00591720: ldr          r1, [r0]
+00591722: ldr          r1, [r1, #0x10]
+00591724: blx          r1
+00591726: ldr          r0, [pc, #0x224] ; word[0059194C]=00AAD664
+00591728: add          r7, sp, #0x40
+0059172A: ldr          r1, [r4, #0xc]
+0059172C: add          r0, pc
+0059172E: ldr          r2, [pc, #0x220] ; word[00591950]=00AAD664
+00591730: add          r2, pc
+00591732: ldr          r0, [r0]
+00591734: ldr          r3, [r1]
+00591736: adds         r0, #8
+00591738: ldr          r2, [r2]
+0059173A: ldr          r6, [r3, #0x2c]
+0059173C: movs         r3, #4
+0059173E: str          r2, [sp, #0x44]
+00591740: movs         r2, #0
+00591742: strh.w       r3, [sp, #6]
+00591746: strd         r2, r4, [sp, #0x48]
+0059174A: str          r7, [sp, #0x50]
+0059174C: str          r0, [sp, #0x40]
+0059174E: add          r0, sp, #8
+00591750: add.w        r2, sp, #6
+00591754: mov          r3, r7
+00591756: blx          r6
+00591758: ldrd         r0, r1, [r4, #0x14]
+0059175C: cmp          r0, r1
+0059175E: bhs          #0x591776
+00591760: ldr          r1, [sp, #8]
+00591762: str          r1, [r0]
+00591764: ldr          r1, [sp, #0xc]
+00591766: str          r1, [r0, #4]
+00591768: movs         r0, #0
+0059176A: strd         r0, r0, [sp, #8]
+0059176E: ldr          r0, [r4, #0x14]
+00591770: adds         r0, #8
+00591772: str          r0, [r4, #0x14]
+00591774: b            #0x591786
+00591776: add          r1, sp, #8
+00591778: mov          r0, r8
+0059177A: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0059177E: ldr          r0, [sp, #0xc]
+00591780: cbz          r0, #0x591786
+00591782: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00591786: ldr          r0, [sp, #0x50]
+00591788: cmp          r7, r0
+0059178A: beq          #0x591794
+0059178C: cbz          r0, #0x59179a
+0059178E: ldr          r1, [r0]
+00591790: ldr          r1, [r1, #0x14]
+00591792: b            #0x591798
+00591794: ldr          r1, [r0]
+00591796: ldr          r1, [r1, #0x10]
+00591798: blx          r1
+0059179A: ldr          r0, [pc, #0x1b8] ; word[00591954]=00AAD5F0
+0059179C: add          r7, sp, #0x28
+0059179E: ldr          r1, [r4, #0xc]
+005917A0: add          r0, pc
+005917A2: ldr          r2, [pc, #0x1b4] ; word[00591958]=00AAD5F0
+005917A4: add          r2, pc
+005917A6: ldr          r0, [r0]
+005917A8: ldr          r3, [r1]
+005917AA: adds         r0, #8
+005917AC: ldr          r2, [r2]
+005917AE: ldr          r6, [r3, #0x2c]
+005917B0: movs         r3, #5
+005917B2: str          r2, [sp, #0x2c]
+005917B4: movs         r2, #0
+005917B6: strh.w       r3, [sp, #6]
+005917BA: strd         r2, r4, [sp, #0x30]
+005917BE: str          r7, [sp, #0x38]
+005917C0: str          r0, [sp, #0x28]
+005917C2: add          r0, sp, #8
+005917C4: add.w        r2, sp, #6
+005917C8: mov          r3, r7
+005917CA: blx          r6
+005917CC: ldrd         r0, r1, [r4, #0x14]
+005917D0: cmp          r0, r1
+005917D2: bhs          #0x5917ea
+005917D4: ldr          r1, [sp, #8]
+005917D6: str          r1, [r0]
+005917D8: ldr          r1, [sp, #0xc]
+005917DA: str          r1, [r0, #4]
+005917DC: movs         r0, #0
+005917DE: strd         r0, r0, [sp, #8]
+005917E2: ldr          r0, [r4, #0x14]
+005917E4: adds         r0, #8
+005917E6: str          r0, [r4, #0x14]
+005917E8: b            #0x5917fa
+005917EA: add          r1, sp, #8
+005917EC: mov          r0, r8
+005917EE: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+005917F2: ldr          r0, [sp, #0xc]
+005917F4: cbz          r0, #0x5917fa
+005917F6: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005917FA: ldr          r0, [sp, #0x38]
+005917FC: cmp          r7, r0
+005917FE: beq          #0x591808
+00591800: cbz          r0, #0x59180e
+00591802: ldr          r1, [r0]
+00591804: ldr          r1, [r1, #0x14]
+00591806: b            #0x59180c
+00591808: ldr          r1, [r0]
+0059180A: ldr          r1, [r1, #0x10]
+0059180C: blx          r1
+0059180E: ldr          r0, [pc, #0x14c] ; word[0059195C]=00AAD57C
+00591810: add          r7, sp, #0x10
+00591812: ldr          r1, [r4, #0xc]
+00591814: add          r0, pc
+00591816: ldr          r2, [pc, #0x148] ; word[00591960]=00AAD57C
+00591818: add          r2, pc
+0059181A: ldr          r0, [r0]
+0059181C: ldr          r3, [r1]
+0059181E: adds         r0, #8
+00591820: ldr          r2, [r2]
+00591822: ldr          r6, [r3, #0x2c]
+00591824: movs         r3, #6
+00591826: str          r2, [sp, #0x14]
+00591828: movs         r2, #0
+0059182A: strh.w       r3, [sp, #6]
+0059182E: strd         r2, r4, [sp, #0x18]
+00591832: str          r7, [sp, #0x20]
+00591834: str          r0, [sp, #0x10]
+00591836: add          r0, sp, #8
+00591838: add.w        r2, sp, #6
+0059183C: mov          r3, r7
+0059183E: blx          r6
+00591840: ldrd         r0, r1, [r4, #0x14]
+00591844: cmp          r0, r1
+00591846: bhs          #0x59185e
+00591848: ldr          r1, [sp, #8]
+0059184A: str          r1, [r0]
+0059184C: ldr          r1, [sp, #0xc]
+0059184E: str          r1, [r0, #4]
+00591850: movs         r0, #0
+00591852: strd         r0, r0, [sp, #8]
+00591856: ldr          r0, [r4, #0x14]
+00591858: adds         r0, #8
+0059185A: str          r0, [r4, #0x14]
+0059185C: b            #0x59186e
+0059185E: add          r1, sp, #8
+00591860: mov          r0, r8
+00591862: blx          #0x4a4fc0 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__emplace_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00591866: ldr          r0, [sp, #0xc]
+00591868: cbz          r0, #0x59186e
+0059186A: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059186E: ldr          r0, [sp, #0x20]
+00591870: cmp          r7, r0
+00591872: beq          #0x59187c
+00591874: cbz          r0, #0x591882
+00591876: ldr          r1, [r0]
+00591878: ldr          r1, [r1, #0x14]
+0059187A: b            #0x591880
+0059187C: ldr          r1, [r0]
+0059187E: ldr          r1, [r1, #0x10]
+00591880: blx          r1
+00591882: ldr          r0, [pc, #0xe0] ; word[00591964]=00AACFC2
+00591884: ldr          r1, [sp, #0xa4]
+00591886: add          r0, pc
+00591888: ldr          r0, [r0]
+0059188A: ldr          r0, [r0]
+0059188C: subs         r0, r0, r1
+0059188E: ittt         eq
+00591890: moveq        r0, r4
+00591892: addeq        sp, #0xa8
+00591894: popeq.w      {r4, r5, r6, r7, r8, pc}
+00591898: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00591C42..0x00591C58 exclusive; Thumb; _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo5Audio15AudioUnityInputEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS6_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISK_EEFvSC_EEclESC_
+00591C42: ldrd         r2, r3, [r0, #4]
+00591C46: tst.w        r3, #1
+00591C4A: ldr          r0, [r0, #0xc]
+00591C4C: add.w        r0, r0, r3, asr #1
+00591C50: itt          ne
+00591C52: ldrne        r3, [r0]
+00591C54: ldrne        r2, [r3, r2]
+00591C56: bx           r2
+0103ED90: raw=00000000 relocated=01023CA8 _ZTVN4Anki5Cozmo5Audio15AudioUnityInputE
+0103ED94: raw=00000000 relocated=01023CE0 _ZTVNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo5Audio15AudioUnityInputEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS6_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISK_EEFvSC_EEE
+0103ED98: raw=00000000 relocated=00591969 _ZN4Anki5Cozmo5Audio15AudioUnityInput16HandleGameEventsERKNS0_9AnkiEventINS0_17ExternalInterface19MessageGameToEngineEEE
+0103ED9C: raw=00000000 relocated=00C5B420 _ZTSNSt6__ndk16__bindIMN4Anki5Cozmo5Audio15AudioUnityInputEFvRKNS2_9AnkiEventINS2_17ExternalInterface19MessageGameToEngineEEEEJPS4_RNS_12placeholders4__phILi1EEEEEE

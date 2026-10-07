@@ -1,0 +1,231 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00591B18..0x00591B70 exclusive; Thumb; _ZNK4Anki5Cozmo5Audio15AudioUnityInput12PostCallbackERKNS_11AudioEngine11Multiplexer13AudioCallbackE
+00591B18: push         {r4, r5, r6, lr}
+00591B1A: sub          sp, #0x130
+00591B1C: mov          r4, r0
+00591B1E: ldr          r0, [pc, #0x78] ; word[00591B98]=00AACD26
+00591B20: add          r6, sp, #4
+00591B22: add          r0, pc
+00591B24: adds         r5, r6, #4
+00591B26: ldr          r0, [r0]
+00591B28: ldr          r0, [r0]
+00591B2A: str          r0, [sp, #0x12c]
+00591B2C: ldrh         r0, [r1], #4
+00591B30: strh.w       r0, [sp, #4]
+00591B34: mov          r0, r5
+00591B36: blx          #0x4aed70 ; Anki::AudioEngine::Multiplexer::AudioCallbackInfo::AudioCallbackInfo
+00591B3A: add          r0, sp, #0x20
+00591B3C: mov          r1, r6
+00591B3E: blx          #0x4aef08 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame
+00591B42: mov          r0, r5
+00591B44: blx          #0x4aed88 ; Anki::AudioEngine::Multiplexer::AudioCallbackInfo::ClearCurrent
+00591B48: ldr          r0, [r4, #0xc]
+00591B4A: ldr          r1, [r0]
+00591B4C: ldr          r2, [r1, #0x18]
+00591B4E: add          r1, sp, #0x20
+00591B50: blx          r2
+00591B52: add          r0, sp, #0x20
+00591B54: blx          #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent
+00591B58: ldr          r0, [pc, #0x40] ; word[00591B9C]=00AACCEC
+00591B5A: ldr          r1, [sp, #0x12c]
+00591B5C: add          r0, pc
+00591B5E: ldr          r0, [r0]
+00591B60: ldr          r0, [r0]
+00591B62: subs         r0, r0, r1
+00591B64: itt          eq
+00591B66: addeq        sp, #0x130
+00591B68: popeq        {r4, r5, r6, pc}
+00591B6A: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+01023CA8: raw=00000000 relocated=00000000
+01023CAC: raw=00000000 relocated=01023CD4 _ZTIN4Anki5Cozmo5Audio15AudioUnityInputE
+01023CB0: raw=00591BA1 relocated=00591BA1
+01023CB4: raw=00591BC9 relocated=00591BC9
+01023CB8: raw=00000000 relocated=00591B19 _ZNK4Anki5Cozmo5Audio15AudioUnityInput12PostCallbackERKNS_11AudioEngine11Multiplexer13AudioCallbackE
+01023CBC: raw=00000000 relocated=008DFC4D _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_14PostAudioEventE
+01023CC0: raw=00000000 relocated=008DFCF1 _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18StopAllAudioEventsE
+01023CC4: raw=00000000 relocated=008DFD95 _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18PostAudioGameStateE
+01023CC8: raw=00000000 relocated=008DFE39 _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_20PostAudioSwitchStateE
+01023CCC: raw=00000000 relocated=008DFEDD _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_18PostAudioParameterE
+01023CD0: raw=00000000 relocated=008DFF81 _ZN4Anki11AudioEngine11Multiplexer13AudioMuxInput13HandleMessageERKNS1_19PostAudioMusicStateE
+01023CD4: raw=00000008 relocated=00000008
+RANGE 0x008DEB62..0x008DECDC exclusive; Thumb; _ZN4Anki11AudioEngine11Multiplexer16AudioMultiplexer13RegisterInputEPNS1_13AudioMuxInputE
+008DEB62: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008DEB66: sub          sp, #0xc
+008DEB68: mov          fp, r0
+008DEB6A: mov          sl, r1
+008DEB6C: ldrb.w       r0, [fp, #0x1c]
+008DEB70: add.w        sb, fp, #8
+008DEB74: adds         r4, r0, #1
+008DEB76: strb.w       r4, [fp, #0x1c]
+008DEB7A: str.w        fp, [sl, #4]
+008DEB7E: strb.w       r4, [sl, #8]
+008DEB82: uxtb         r0, r4
+008DEB84: ldr.w        r7, [fp, #0xc]
+008DEB88: str          r0, [sp, #8]
+008DEB8A: cbz          r7, #0x8deba0
+008DEB8C: subs         r6, r7, #1
+008DEB8E: ands.w       r8, r6, r7
+008DEB92: beq          #0x8deba2
+008DEB94: ldr          r0, [sp, #8]
+008DEB96: mov          r1, r7
+008DEB98: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DEB9C: mov          r5, r1
+008DEB9E: b            #0x8deba8
+008DEBA0: b            #0x8debee
+008DEBA2: ldr          r0, [sp, #8]
+008DEBA4: and.w        r5, r6, r0
+008DEBA8: str.w        sb, [sp, #4]
+008DEBAC: ldr.w        r0, [sb]
+008DEBB0: ldr.w        sb, [r0, r5, lsl #2]
+008DEBB4: cmp.w        sb, #0
+008DEBB8: beq          #0x8debea
+008DEBBA: ldr.w        sb, [sb]
+008DEBBE: cmp.w        sb, #0
+008DEBC2: beq          #0x8debea
+008DEBC4: ldr.w        r0, [sb, #4]
+008DEBC8: cmp.w        r8, #0
+008DEBCC: beq          #0x8debd6
+008DEBCE: mov          r1, r7
+008DEBD0: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DEBD4: b            #0x8debda
+008DEBD6: and.w        r1, r0, r6
+008DEBDA: cmp          r1, r5
+008DEBDC: bne          #0x8debea
+008DEBDE: ldrb.w       r0, [sb, #8]
+008DEBE2: ldr          r1, [sp, #8]
+008DEBE4: cmp          r0, r1
+008DEBE6: bne          #0x8debba
+008DEBE8: b            #0x8decd4
+008DEBEA: ldr.w        sb, [sp, #4]
+008DEBEE: movs         r0, #0x10
+008DEBF0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008DEBF4: vmov         s0, r7
+008DEBF8: mov          r6, r0
+008DEBFA: movs         r0, #0
+008DEBFC: cmp          r7, #0
+008DEBFE: vcvt.f32.u32 s4, s0
+008DEC02: strb         r4, [r6, #8]
+008DEC04: str.w        sl, [r6, #0xc]
+008DEC08: str          r0, [r6]
+008DEC0A: ldr          r0, [sp, #8]
+008DEC0C: str          r0, [r6, #4]
+008DEC0E: ldr.w        r0, [fp, #0x14]
+008DEC12: vldr         s0, [fp, #0x18]
+008DEC16: add.w        r0, r0, #1
+008DEC1A: vmov         s2, r0
+008DEC1E: vcvt.f32.u32 s2, s2
+008DEC22: beq          #0x8dec32
+008DEC24: vmul.f32     s4, s0, s4
+008DEC28: vcmpe.f32    s4, s2
+008DEC2C: vmrs         apsr_nzcv, fpscr
+008DEC30: bpl          #0x8dec8a
+008DEC32: lsls         r4, r7, #1
+008DEC34: cmp          r7, #3
+008DEC36: blo          #0x8dec44
+008DEC38: subs         r0, r7, #1
+008DEC3A: ands.w       r5, r0, r7
+008DEC3E: it           ne
+008DEC40: movne        r5, #1
+008DEC42: b            #0x8dec46
+008DEC44: movs         r5, #1
+008DEC46: vdiv.f32     s0, s2, s0
+008DEC4A: vmov         r0, s0
+008DEC4E: blx          #0x4a83f8 ; <EXTERNAL>::ceilf
+008DEC52: vmov         s0, r0
+008DEC56: orr.w        r1, r5, r4
+008DEC5A: vcvt.u32.f32 s0, s0
+008DEC5E: vmov         r0, s0
+008DEC62: cmp          r1, r0
+008DEC64: it           lo
+008DEC66: movlo        r1, r0
+008DEC68: mov          r0, sb
+008DEC6A: bl           #0x8df75a ; FUN_008df75a
+008DEC6E: ldr.w        r7, [fp, #0xc]
+008DEC72: subs         r0, r7, #1
+008DEC74: tst          r0, r7
+008DEC76: beq          #0x8dec84
+008DEC78: ldr          r0, [sp, #8]
+008DEC7A: mov          r1, r7
+008DEC7C: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DEC80: mov          r5, r1
+008DEC82: b            #0x8dec8a
+008DEC84: ldr          r1, [sp, #8]
+008DEC86: and.w        r5, r0, r1
+008DEC8A: ldr.w        r1, [sb]
+008DEC8E: ldr.w        r0, [r1, r5, lsl #2]
+008DEC92: cbz          r0, #0x8dec9a
+008DEC94: ldr          r1, [r0]
+008DEC96: str          r1, [r6]
+008DEC98: b            #0x8decc8
+008DEC9A: mov          r0, fp
+008DEC9C: ldr          r2, [r0, #0x10]!
+008DECA0: str          r2, [r6]
+008DECA2: str          r6, [r0]
+008DECA4: str.w        r0, [r1, r5, lsl #2]
+008DECA8: ldr          r0, [r6]
+008DECAA: cmp          r0, #0
+008DECAC: beq          #0x8decca
+008DECAE: ldr          r0, [r0, #4]
+008DECB0: subs         r1, r7, #1
+008DECB2: tst          r1, r7
+008DECB4: beq          #0x8decbe
+008DECB6: mov          r1, r7
+008DECB8: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008DECBC: b            #0x8decc0
+008DECBE: ands         r1, r0
+008DECC0: ldr.w        r0, [sb]
+008DECC4: add.w        r0, r0, r1, lsl #2
+008DECC8: str          r6, [r0]
+008DECCA: ldr.w        r0, [fp, #0x14]
+008DECCE: adds         r0, #1
+008DECD0: str.w        r0, [fp, #0x14]
+008DECD4: ldr          r0, [sp, #8]
+008DECD6: add          sp, #0xc
+008DECD8: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103ED90: raw=00000000 relocated=01023CA8 _ZTVN4Anki5Cozmo5Audio15AudioUnityInputE
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004EDC6C..0x004EDCD0 exclusive; Thumb; _ZN4Anki5Cozmo11CozmoEngine12InitInternalEv
+004EDC6C: push         {r4, r5, r7, lr}
+004EDC6E: sub          sp, #0x108
+004EDC70: mov          r4, r0
+004EDC72: ldr          r0, [pc, #0x100] ; word[004EDD74]=00B50BD4
+004EDC74: add          r0, pc
+004EDC76: ldr          r0, [r0]
+004EDC78: ldr          r0, [r0]
+004EDC7A: str          r0, [sp, #0x104]
+004EDC7C: movs         r0, #0x1c
+004EDC7E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+004EDC82: mov          r5, r0
+004EDC84: ldr          r0, [r4, #0x34]
+004EDC86: ldr          r1, [r0, #4]
+004EDC88: mov          r0, r5
+004EDC8A: blx          #0x4a52fc ; Anki::Cozmo::Audio::AudioUnityInput::AudioUnityInput
+004EDC8E: ldr          r0, [r4, #0x34]
+004EDC90: ldr          r0, [r0, #0xc]
+004EDC92: cbz          r0, #0x4edc9a
+004EDC94: mov          r1, r5
+004EDC96: blx          #0x4a51d0 ; Anki::AudioEngine::Multiplexer::AudioMultiplexer::RegisterInput
+004EDC9A: add          r0, sp, #0x10
+004EDC9C: movs         r1, #1
+004EDC9E: blx          #0x4a5308 ; Anki::Cozmo::FactoryTestLogger::FactoryTestLogger
+004EDCA2: ldr          r1, [r4, #0x34]
+004EDCA4: ldr          r1, [r1, #8]
+004EDCA6: blx          #0x4a5314 ; Anki::Cozmo::FactoryTestLogger::GetNumLogs
+004EDCAA: mov          r5, r0
+004EDCAC: cmp          r5, #0x64
+004EDCAE: blo          #0x4edd0e
+004EDCB0: ldr          r0, [r4, #0x34]
+004EDCB2: ldr          r1, [r0, #8]
+004EDCB4: add          r0, sp, #0x10
+004EDCB6: blx          #0x4a5320 ; Anki::Cozmo::FactoryTestLogger::ArchiveLogs
+004EDCBA: cmp          r0, #1
+004EDCBC: bne          #0x4edcd8
+004EDCBE: ldr          r0, [pc, #0xf0] ; word[004EDDB0]=006F6322
+004EDCC0: movs         r1, #0
+004EDCC2: strd         r1, r1, [sp, #4]
+004EDCC6: add          r0, pc
+004EDCC8: str          r1, [sp, #0xc]
+004EDCCA: adr          r1, #0xe8
+004EDCCC: add          r2, sp, #4
+004EDCCE: adr          r3, #0x114
