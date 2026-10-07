@@ -322,7 +322,7 @@ PARTIAL: UE1–UE7 and UC1–UC50 establish union dispatch, post flags/context, 
 
 > | M6-024 | **KEEP** | 0x00592BB0;0x005935E2;0x005935EA;0x008D2EE8;0x008D2FE4;0x008D8280;0x008D8320 | Six-bank order, scene construction, unconditional load path, zip registration and live wiring are exact graph/loading work; the stale AddZipFiles claim must be checked against C33, not waived. |
 
-PARTIAL: SL1–SL6 establish six-bank order, unconditional register/load tail, duplicate-bank false result, scene early-abort and preparation-result handling, and archive replacement/configuration parent wiring. Remaining: earlier app construction/JNI asset path, AudioScene construction/map insertion and lookup, runtime bank/preparation recipients and zip reader descendants. Those shipped bodies are readable, not UNKNOWN.
+PARTIAL: SL1–SL11 establish six-bank order, unconditional register/load tail, duplicate-bank false result, scene early-abort and preparation-result handling, and archive validation/prepend/removal and configuration parent wiring. Remaining: earlier app construction/JNI asset path, scene-map insertion and hash/vector-copy descendants, runtime bank/preparation recipients and zip reader descendants. Those shipped bodies are readable, not UNKNOWN.
 
 ## Q14-032 — triage line 70
 
