@@ -274,7 +274,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-018 | **KEEP** | 0x00A57724..0x00A5792C;0x00A1C75C;0x00A1C7D4;0x00A56E20..0x00A5705C | No-JNI 48000/1024 branch, rate-to-bus/voice link, frame rounding and exact robot-rate handoff are timing/geometry; Android system query is an existing separate external boundary, not new DSP permission. |
 
-PARTIAL: Z1–Z15 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. Remaining: final A40BC0 rate-to-bus/voice link and device writer census; robot-rate handoff is separately scoped in H/G rows.
+PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. Remaining: active bus/voice rate consumers and device writer census; A40BC0 is now traced as setup/pool/listener/registration/table initialization rather than assumed a rate setter; robot-rate handoff is separately scoped in H/G rows.
 
 ## Q14-024 — triage line 62
 
