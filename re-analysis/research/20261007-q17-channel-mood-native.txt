@@ -1,0 +1,140 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0066365C..0x00663696 exclusive; Thumb;
+0066365C: push         {r4, lr}
+0066365E: mov          r4, r0
+00663660: add.w        r1, r4, #8
+00663664: ldr          r0, [r4, #0x18]
+00663666: cmp          r1, r0
+00663668: beq          #0x663672
+0066366A: cbz          r0, #0x663678
+0066366C: ldr          r1, [r0]
+0066366E: ldr          r1, [r1, #0x14]
+00663670: b            #0x663676
+00663672: ldr          r1, [r0]
+00663674: ldr          r1, [r1, #0x10]
+00663676: blx          r1
+00663678: ldr          r0, [r4]
+0066367A: movs         r1, #0
+0066367C: str          r1, [r4, #0x18]
+0066367E: cbz          r0, #0x663684
+00663680: ldr          r1, [r4, #4]
+00663682: str          r1, [r0, #4]
+00663684: ldr          r0, [r4, #4]
+00663686: cbz          r0, #0x66368c
+00663688: ldr          r1, [r4]
+0066368A: str          r1, [r0]
+0066368C: mov          r0, r4
+0066368E: pop.w        {r4, lr}
+00663692: b.w          #0x663696 ; FUN_00663696
+0103F17C: raw=00000000 relocated=005BAF25 _ZN4Anki5Cozmo20SearchForBlockHelper14SearchForBlockENS0_12ActionResultERNS0_5RobotE
+0103F180: raw=00000000 relocated=01026488 _ZTVNSt6__ndk110__function6__funcINS_6__bindIRMN4Anki5Cozmo20SearchForBlockHelperEFvNS4_12ActionResultERNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEERNSE_ILi2EEEEEENS_9allocatorISJ_EEFvRKS6_S8_EEE
+0103F17C: raw=00000000 relocated=005BAF25 _ZN4Anki5Cozmo20SearchForBlockHelper14SearchForBlockENS0_12ActionResultERNS0_5RobotE
+RANGE 0x0057EC1A..0x0057EC34 exclusive; Thumb;
+0057EC1A: push         {r4, lr}
+0057EC1C: ldr          r4, [r0, #4]
+0057EC1E: add.w        r0, r1, #0x10
+0057EC22: blx          #0x4adfcc ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_PushIdleAnimation
+0057EC26: mov          r2, r0
+0057EC28: mov          r0, r4
+0057EC2A: ldr          r1, [r2], #4
+0057EC2E: pop.w        {r4, lr}
+RANGE 0x00511DE8..0x00511E00 exclusive; Thumb; _ZN4Anki5Cozmo5Robot9BroadcastEONS0_17ExternalInterface19MessageEngineToGameE
+00511DE8: ldr          r0, [r0]
+00511DEA: ldr          r0, [r0, #4]
+00511DEC: cbz          r0, #0x511dfa
+00511DEE: push         {r7, lr}
+00511DF0: ldr          r2, [r0]
+00511DF2: ldr          r2, [r2, #0x18]
+00511DF4: blx          r2
+00511DF6: movs         r0, #1
+00511DF8: pop          {r7, pc}
+00511DFA: movs         r0, #0
+00511DFC: bx           lr
+00511DFE: movs         r0, r0
+RANGE 0x0067B724..0x0067B7FA exclusive; Thumb; _ZN4Anki5Cozmo11MoodManager18SendEmotionsToGameEv
+0067B724: push.w       {r4, r5, r6, r7, r8, lr}
+0067B728: sub          sp, #0x128
+0067B72A: mov          r8, r0
+0067B72C: ldr          r0, [pc, #0x124] ; word[0067B854]=009C311A
+0067B72E: add          r0, pc
+0067B730: ldr          r0, [r0]
+0067B732: ldr          r0, [r0]
+0067B734: str          r0, [sp, #0x124]
+0067B736: ldr.w        r0, [r8, #0x12c]
+0067B73A: cmp          r0, #0
+0067B73C: beq          #0x67b7e0
+0067B73E: movs         r0, #0
+0067B740: strd         r0, r0, [sp, #0xc]
+0067B744: str          r0, [sp, #0x14]
+0067B746: add          r0, sp, #0xc
+0067B748: movs         r1, #9
+0067B74A: blx          #0x4a6154 ; std::__ndk1::vector<float,std::__ndk1::allocator<float>>::reserve
+0067B74E: add.w        r7, r8, #0x18
+0067B752: add          r5, sp, #0xc
+0067B754: add          r6, sp, #0x18
+0067B756: movs         r4, #0
+0067B758: ldrd         r0, r2, [sp, #0x10]
+0067B75C: ldr          r1, [r7]
+0067B75E: cmp          r0, r2
+0067B760: str          r1, [sp, #0x18]
+0067B762: bhs          #0x67b76e
+0067B764: str          r1, [r0]
+0067B766: ldr          r0, [sp, #0x10]
+0067B768: adds         r0, #4
+0067B76A: str          r0, [sp, #0x10]
+0067B76C: b            #0x67b776
+0067B76E: mov          r0, r5
+0067B770: mov          r1, r6
+0067B772: blx          #0x4bc648 ; std::__ndk1::vector<float,std::__ndk1::allocator<float>>::__push_back_slow_path<float>
+0067B776: adds         r4, #1
+0067B778: adds         r7, #0x20
+0067B77A: cmp          r4, #9
+0067B77C: blo          #0x67b758
+0067B77E: add          r1, sp, #0xc
+0067B780: mov          r0, sp
+0067B782: blx          #0x4bc654 ; std::__ndk1::vector<float,std::__ndk1::allocator<float>>::vector
+0067B786: ldr.w        r4, [r8, #0x12c]
+0067B78A: add          r0, sp, #0x18
+0067B78C: mov          r1, sp
+0067B78E: blx          #0x4bc660 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame
+0067B792: add          r1, sp, #0x18
+0067B794: mov          r0, r4
+0067B796: blx          #0x4a5b0c ; Anki::Cozmo::Robot::Broadcast
+0067B79A: add          r0, sp, #0x18
+0067B79C: blx          #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent
+0067B7A0: ldr          r0, [sp]
+0067B7A2: cbz          r0, #0x67b7c0
+0067B7A4: ldr          r1, [sp, #4]
+0067B7A6: cmp          r1, r0
+0067B7A8: itttt        ne
+0067B7AA: subne        r2, r1, #4
+0067B7AC: subne        r2, r2, r0
+0067B7AE: mvnne        r3, #3
+0067B7B2: bicne.w      r2, r3, r2
+0067B7B6: itt          ne
+0067B7B8: addne        r1, r1, r2
+0067B7BA: strne        r1, [sp, #4]
+0067B7BC: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0067B7C0: ldr          r0, [sp, #0xc]
+0067B7C2: cbz          r0, #0x67b7e0
+0067B7C4: ldr          r1, [sp, #0x10]
+0067B7C6: cmp          r1, r0
+0067B7C8: itttt        ne
+0067B7CA: subne        r2, r1, #4
+0067B7CC: subne        r2, r2, r0
+0067B7CE: mvnne        r3, #3
+0067B7D2: bicne.w      r2, r3, r2
+0067B7D6: itt          ne
+0067B7D8: addne        r1, r1, r2
+0067B7DA: strne        r1, [sp, #0x10]
+0067B7DC: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0067B7E0: ldr          r0, [pc, #0x74] ; word[0067B858]=009C3064
+0067B7E2: ldr          r1, [sp, #0x124]
+0067B7E4: add          r0, pc
+0067B7E6: ldr          r0, [r0]
+0067B7E8: ldr          r0, [r0]
+0067B7EA: subs         r0, r0, r1
+0067B7EC: itt          eq
+0067B7EE: addeq        sp, #0x128
+0067B7F0: popeq.w      {r4, r5, r6, r7, r8, pc}
+0067B7F4: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail

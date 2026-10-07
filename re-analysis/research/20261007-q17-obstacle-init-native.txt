@@ -1,0 +1,20 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004D7618..0x004D7642 exclusive; Thumb;
+004D7618: push         {r4, lr}
+004D761A: ldr          r1, [pc, #0xc0] ; word[004D76DC]=00B67334
+004D761C: movs         r4, #0
+004D761E: ldr          r3, [pc, #0xc4] ; word[004D76E4]=00B671A8
+004D7620: movt         r4, #0x4120
+004D7624: add          r1, pc
+004D7626: ldr          r2, [pc, #0xb8] ; word[004D76E0]=00B83860
+004D7628: add          r3, pc
+004D762A: ldr          r0, [pc, #0xbc] ; word[004D76E8]=00B8386A
+004D762C: add          r2, pc
+004D762E: ldr          r1, [r1]
+004D7630: ldr          r3, [r3]
+004D7632: add          r0, pc
+004D7634: strd         r4, r4, [r2]
+004D7638: movs         r4, #0
+004D763A: ldr          r1, [r1]
+004D763C: movt         r4, #0x4248
+004D7640: str          r4, [r2, #8]

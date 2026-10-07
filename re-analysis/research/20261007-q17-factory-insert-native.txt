@@ -1,0 +1,56 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0059E90C..0x0059E99C exclusive; Thumb; _ZN4Anki5Cozmo17BehaviorContainer12AddToFactoryENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+0059E90C: push         {r4, r5, r6, r7, lr}
+0059E90E: sub          sp, #0x1c
+0059E910: mov          r4, r2
+0059E912: mov          r7, r1
+0059E914: mov          r5, r0
+0059E916: ldrd         r1, r0, [r4]
+0059E91A: cmp          r0, #0
+0059E91C: ldrb.w       r6, [r1, #0x3c]
+0059E920: str          r1, [sp, #0xc]
+0059E922: strb.w       r6, [sp, #8]
+0059E926: str          r0, [sp, #0x10]
+0059E928: beq          #0x59e92e
+0059E92A: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+0059E92E: add          r2, sp, #8
+0059E930: adds         r1, r7, #4
+0059E932: add          r0, sp, #0x14
+0059E934: mov          r3, r2
+0059E936: blx          #0x4b0174 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::BehaviorID,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>,std::__ndk1::__map_value_compare<Anki::Cozmo::BehaviorID,std::__ndk1::__value_type<Anki::Cozmo::BehaviorID,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>,std::__ndk1::less<Anki::Cozmo::BehaviorID>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::BehaviorID,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>>>::__emplace_unique_key_args<Anki::Cozmo::BehaviorID,std::__ndk1::pair<Anki::Cozmo::BehaviorID_const,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>>
+0059E93A: ldr          r0, [sp, #0x10]
+0059E93C: ldrb.w       r7, [sp, #0x18]
+0059E940: cbz          r0, #0x59e946
+0059E942: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059E946: cbz          r7, #0x59e98a
+0059E948: movs         r0, #0
+0059E94A: strd         r0, r0, [sp, #8]
+0059E94E: str          r0, [sp, #0x10]
+0059E950: mov          r0, r6
+0059E952: blx          #0x4a7e58 ; Anki::Cozmo::EnumToString
+0059E956: ldr          r1, [r4]
+0059E958: strd         r0, r1, [sp]
+0059E95C: adr          r0, #0x70
+0059E95E: adr          r1, #0x78
+0059E960: add          r2, sp, #8
+0059E962: adr          r3, #0x94
+0059E964: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0059E968: ldr          r0, [sp, #8]
+0059E96A: cbz          r0, #0x59e98a
+0059E96C: ldr          r1, [sp, #0xc]
+0059E96E: cmp          r1, r0
+0059E970: itttt        ne
+0059E972: subne.w      r2, r1, #8
+0059E976: subne        r2, r2, r0
+0059E978: mvnne        r3, #7
+0059E97C: bicne.w      r2, r3, r2
+0059E980: itt          ne
+0059E982: addne        r1, r1, r2
+0059E984: strne        r1, [sp, #0xc]
+0059E986: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059E98A: ldrd         r0, r1, [r4]
+0059E98E: strd         r0, r1, [r5]
+0059E992: movs         r0, #0
+0059E994: strd         r0, r0, [r4]
+0059E998: add          sp, #0x1c
+0059E99A: pop          {r4, r5, r6, r7, pc}

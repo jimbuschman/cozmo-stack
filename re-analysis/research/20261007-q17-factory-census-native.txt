@@ -1,0 +1,1182 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+CLASS 0 TBH 0x59c8a8 TARGET 0x59c946
+RANGE 0x0059C946..0x0059C968 exclusive; Thumb;
+0059C946: mov.w        r0, #0x158
+0059C94A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C94E: mov          r7, r0
+0059C950: mov          r0, r7
+0059C952: mov          r1, r6
+0059C954: mov          r2, sb
+0059C956: blx          #0x4af9f4 ; Anki::Cozmo::BehaviorBouncer::BehaviorBouncer
+0059C95A: mov          r0, sp
+0059C95C: mov          r1, r7
+0059C95E: movs         r2, #0
+0059C960: blx          #0x4afa00 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorBouncer>
+0059C964: b.w          #0x59d350
+CLASS 1 TBH 0x59c8aa TARGET 0x59c968
+RANGE 0x0059C968..0x0059C98A exclusive; Thumb;
+0059C968: mov.w        r0, #0x138
+0059C96C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C970: mov          r7, r0
+0059C972: mov          r0, r7
+0059C974: mov          r1, r6
+0059C976: mov          r2, sb
+0059C978: blx          #0x4afa0c ; Anki::Cozmo::BehaviorExploreBringCubeToBeacon::BehaviorExploreBringCubeToBeacon
+0059C97C: mov          r0, sp
+0059C97E: mov          r1, r7
+0059C980: movs         r2, #0
+0059C982: blx          #0x4afa18 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorExploreBringCubeToBeacon>
+0059C986: b.w          #0x59d350
+CLASS 2 TBH 0x59c8ac TARGET 0x59c98a
+RANGE 0x0059C98A..0x0059C9AC exclusive; Thumb;
+0059C98A: mov.w        r0, #0x168
+0059C98E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C992: mov          r7, r0
+0059C994: mov          r0, r7
+0059C996: mov          r1, r6
+0059C998: mov          r2, sb
+0059C99A: blx          #0x4afa24 ; Anki::Cozmo::BehaviorBuildPyramid::BehaviorBuildPyramid
+0059C99E: mov          r0, sp
+0059C9A0: mov          r1, r7
+0059C9A2: movs         r2, #0
+0059C9A4: blx          #0x4afa30 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorBuildPyramid>
+0059C9A8: b.w          #0x59d350
+CLASS 3 TBH 0x59c8ae TARGET 0x59c9ac
+RANGE 0x0059C9AC..0x0059C9CE exclusive; Thumb;
+0059C9AC: mov.w        r0, #0x168
+0059C9B0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C9B4: mov          r7, r0
+0059C9B6: mov          r0, r7
+0059C9B8: mov          r1, r6
+0059C9BA: mov          r2, sb
+0059C9BC: blx          #0x4afa3c ; Anki::Cozmo::BehaviorBuildPyramidBase::BehaviorBuildPyramidBase
+0059C9C0: mov          r0, sp
+0059C9C2: mov          r1, r7
+0059C9C4: movs         r2, #0
+0059C9C6: blx          #0x4afa48 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorBuildPyramidBase>
+0059C9CA: b.w          #0x59d350
+CLASS 4 TBH 0x59c8b0 TARGET 0x59c9ce
+RANGE 0x0059C9CE..0x0059C9F0 exclusive; Thumb;
+0059C9CE: mov.w        r0, #0x148
+0059C9D2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C9D6: mov          r7, r0
+0059C9D8: mov          r0, r7
+0059C9DA: mov          r1, r6
+0059C9DC: mov          r2, sb
+0059C9DE: blx          #0x4afa54 ; Anki::Cozmo::BehaviorCantHandleTallStack::BehaviorCantHandleTallStack
+0059C9E2: mov          r0, sp
+0059C9E4: mov          r1, r7
+0059C9E6: movs         r2, #0
+0059C9E8: blx          #0x4afa60 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorCantHandleTallStack>
+0059C9EC: b.w          #0x59d350
+CLASS 5 TBH 0x59c8b2 TARGET 0x59c9f0
+RANGE 0x0059C9F0..0x0059CA12 exclusive; Thumb;
+0059C9F0: mov.w        r0, #0x148
+0059C9F4: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059C9F8: mov          r7, r0
+0059C9FA: mov          r0, r7
+0059C9FC: mov          r1, r6
+0059C9FE: mov          r2, sb
+0059CA00: blx          #0x4afa6c ; Anki::Cozmo::BehaviorCheckForStackAtInterval::BehaviorCheckForStackAtInterval
+0059CA04: mov          r0, sp
+0059CA06: mov          r1, r7
+0059CA08: movs         r2, #0
+0059CA0A: blx          #0x4afa78 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorCheckForStackAtInterval>
+0059CA0E: b.w          #0x59d350
+CLASS 6 TBH 0x59c8b4 TARGET 0x59ca12
+RANGE 0x0059CA12..0x0059CA34 exclusive; Thumb;
+0059CA12: mov.w        r0, #0x130
+0059CA16: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CA1A: mov          r7, r0
+0059CA1C: mov          r0, r7
+0059CA1E: mov          r1, r6
+0059CA20: mov          r2, sb
+0059CA22: blx          #0x4afa84 ; Anki::Cozmo::BehaviorCubeLiftWorkout::BehaviorCubeLiftWorkout
+0059CA26: mov          r0, sp
+0059CA28: mov          r1, r7
+0059CA2A: movs         r2, #0
+0059CA2C: blx          #0x4afa90 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorCubeLiftWorkout>
+0059CA30: b.w          #0x59d350
+CLASS 7 TBH 0x59c8b6 TARGET 0x59ca34
+RANGE 0x0059CA34..0x0059CA56 exclusive; Thumb;
+0059CA34: mov.w        r0, #0x148
+0059CA38: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CA3C: mov          r7, r0
+0059CA3E: mov          r0, r7
+0059CA40: mov          r1, r6
+0059CA42: mov          r2, sb
+0059CA44: blx          #0x4afa9c ; Anki::Cozmo::BehaviorDance::BehaviorDance
+0059CA48: mov          r0, sp
+0059CA4A: mov          r1, r7
+0059CA4C: movs         r2, #0
+0059CA4E: blx          #0x4afaa8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDance>
+0059CA52: b.w          #0x59d350
+CLASS 8 TBH 0x59c8b8 TARGET 0x59ca56
+RANGE 0x0059CA56..0x0059CA78 exclusive; Thumb;
+0059CA56: mov.w        r0, #0x138
+0059CA5A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CA5E: mov          r7, r0
+0059CA60: mov          r0, r7
+0059CA62: mov          r1, r6
+0059CA64: mov          r2, sb
+0059CA66: blx          #0x4afab4 ; Anki::Cozmo::BehaviorDevTurnInPlaceTest::BehaviorDevTurnInPlaceTest
+0059CA6A: mov          r0, sp
+0059CA6C: mov          r1, r7
+0059CA6E: movs         r2, #0
+0059CA70: blx          #0x4afac0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDevTurnInPlaceTest>
+0059CA74: b.w          #0x59d350
+CLASS 9 TBH 0x59c8ba TARGET 0x59ca78
+RANGE 0x0059CA78..0x0059CA9A exclusive; Thumb;
+0059CA78: mov.w        r0, #0x290
+0059CA7C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CA80: mov          r7, r0
+0059CA82: mov          r0, r7
+0059CA84: mov          r1, r6
+0059CA86: mov          r2, sb
+0059CA88: blx          #0x4afacc ; Anki::Cozmo::BehaviorDockingTestSimple::BehaviorDockingTestSimple
+0059CA8C: mov          r0, sp
+0059CA8E: mov          r1, r7
+0059CA90: movs         r2, #0
+0059CA92: blx          #0x4afad8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDockingTestSimple>
+0059CA96: b.w          #0x59d350
+CLASS 10 TBH 0x59c8bc TARGET 0x59ca9a
+RANGE 0x0059CA9A..0x0059CABC exclusive; Thumb;
+0059CA9A: mov.w        r0, #0x140
+0059CA9E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CAA2: mov          r7, r0
+0059CAA4: mov          r0, r7
+0059CAA6: mov          r1, r6
+0059CAA8: mov          r2, sb
+0059CAAA: blx          #0x4afae4 ; Anki::Cozmo::BehaviorDriveInDesperation::BehaviorDriveInDesperation
+0059CAAE: mov          r0, sp
+0059CAB0: mov          r1, r7
+0059CAB2: movs         r2, #0
+0059CAB4: blx          #0x4afaf0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDriveInDesperation>
+0059CAB8: b.w          #0x59d350
+CLASS 11 TBH 0x59c8be TARGET 0x59cabc
+RANGE 0x0059CABC..0x0059CADE exclusive; Thumb;
+0059CABC: mov.w        r0, #0x128
+0059CAC0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CAC4: mov          r7, r0
+0059CAC6: mov          r0, r7
+0059CAC8: mov          r1, r6
+0059CACA: mov          r2, sb
+0059CACC: blx          #0x4afafc ; Anki::Cozmo::BehaviorDriveOffCharger::BehaviorDriveOffCharger
+0059CAD0: mov          r0, sp
+0059CAD2: mov          r1, r7
+0059CAD4: movs         r2, #0
+0059CAD6: blx          #0x4afb08 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDriveOffCharger>
+0059CADA: b.w          #0x59d350
+CLASS 12 TBH 0x59c8c0 TARGET 0x59cade
+RANGE 0x0059CADE..0x0059CB00 exclusive; Thumb;
+0059CADE: mov.w        r0, #0x218
+0059CAE2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CAE6: mov          r7, r0
+0059CAE8: mov          r0, r7
+0059CAEA: mov          r1, r6
+0059CAEC: mov          r2, sb
+0059CAEE: blx          #0x4afb14 ; Anki::Cozmo::BehaviorDrivePath::BehaviorDrivePath
+0059CAF2: mov          r0, sp
+0059CAF4: mov          r1, r7
+0059CAF6: movs         r2, #0
+0059CAF8: blx          #0x4afb20 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDrivePath>
+0059CAFC: b.w          #0x59d350
+CLASS 13 TBH 0x59c8c2 TARGET 0x59cb00
+RANGE 0x0059CB00..0x0059CB22 exclusive; Thumb;
+0059CB00: mov.w        r0, #0x128
+0059CB04: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CB08: mov          r7, r0
+0059CB0A: mov          r0, r7
+0059CB0C: mov          r1, r6
+0059CB0E: mov          r2, sb
+0059CB10: blx          #0x4afb2c ; Anki::Cozmo::BehaviorDriveToFace::BehaviorDriveToFace
+0059CB14: mov          r0, sp
+0059CB16: mov          r1, r7
+0059CB18: movs         r2, #0
+0059CB1A: blx          #0x4afb38 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorDriveToFace>
+0059CB1E: b.w          #0x59d350
+CLASS 14 TBH 0x59c8c4 TARGET 0x59cb22
+RANGE 0x0059CB22..0x0059CB44 exclusive; Thumb;
+0059CB22: mov.w        r0, #0x120
+0059CB26: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CB2A: mov          r7, r0
+0059CB2C: mov          r0, r7
+0059CB2E: mov          r1, r6
+0059CB30: mov          r2, sb
+0059CB32: blx          #0x4afb44 ; Anki::Cozmo::BehaviorEarnedSparks::BehaviorEarnedSparks
+0059CB36: mov          r0, sp
+0059CB38: mov          r1, r7
+0059CB3A: movs         r2, #0
+0059CB3C: blx          #0x4afb50 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorEarnedSparks>
+0059CB40: b.w          #0x59d350
+CLASS 15 TBH 0x59c8c6 TARGET 0x59cb44
+RANGE 0x0059CB44..0x0059CB64 exclusive; Thumb;
+0059CB44: mov.w        r0, #0x180
+0059CB48: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CB4C: mov          r7, r0
+0059CB4E: mov          r0, r7
+0059CB50: mov          r1, r6
+0059CB52: mov          r2, sb
+0059CB54: blx          #0x4afb5c ; Anki::Cozmo::BehaviorEnrollFace::BehaviorEnrollFace
+0059CB58: mov          r0, sp
+0059CB5A: mov          r1, r7
+0059CB5C: movs         r2, #0
+0059CB5E: blx          #0x4afb68 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorEnrollFace>
+0059CB62: b            #0x59d350
+CLASS 16 TBH 0x59c8c8 TARGET 0x59cb64
+RANGE 0x0059CB64..0x0059CB84 exclusive; Thumb;
+0059CB64: mov.w        r0, #0x1f8
+0059CB68: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CB6C: mov          r7, r0
+0059CB6E: mov          r0, r7
+0059CB70: mov          r1, r6
+0059CB72: mov          r2, sb
+0059CB74: blx          #0x4afb74 ; Anki::Cozmo::BehaviorExploreLookAroundInPlace::BehaviorExploreLookAroundInPlace
+0059CB78: mov          r0, sp
+0059CB7A: mov          r1, r7
+0059CB7C: movs         r2, #0
+0059CB7E: blx          #0x4afb80 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorExploreLookAroundInPlace>
+0059CB82: b            #0x59d350
+CLASS 17 TBH 0x59c8ca TARGET 0x59cb84
+RANGE 0x0059CB84..0x0059CBA4 exclusive; Thumb;
+0059CB84: mov.w        r0, #0x128
+0059CB88: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CB8C: mov          r7, r0
+0059CB8E: mov          r0, r7
+0059CB90: mov          r1, r6
+0059CB92: mov          r2, sb
+0059CB94: blx          #0x4afb8c ; Anki::Cozmo::BehaviorExploreVisitPossibleMarker::BehaviorExploreVisitPossibleMarker
+0059CB98: mov          r0, sp
+0059CB9A: mov          r1, r7
+0059CB9C: movs         r2, #0
+0059CB9E: blx          #0x4afb98 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorExploreVisitPossibleMarker>
+0059CBA2: b            #0x59d350
+CLASS 18 TBH 0x59c8cc TARGET 0x59cba4
+RANGE 0x0059CBA4..0x0059CBC4 exclusive; Thumb;
+0059CBA4: mov.w        r0, #0x140
+0059CBA8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CBAC: mov          r7, r0
+0059CBAE: mov          r0, r7
+0059CBB0: mov          r1, r6
+0059CBB2: mov          r2, sb
+0059CBB4: blx          #0x4afba4 ; Anki::Cozmo::BehaviorExpressNeeds::BehaviorExpressNeeds
+0059CBB8: mov          r0, sp
+0059CBBA: mov          r1, r7
+0059CBBC: movs         r2, #0
+0059CBBE: blx          #0x4afbb0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorExpressNeeds>
+0059CBC2: b            #0x59d350
+CLASS 19 TBH 0x59c8ce TARGET 0x59cbc4
+RANGE 0x0059CBC4..0x0059CBE4 exclusive; Thumb;
+0059CBC4: mov.w        r0, #0x210
+0059CBC8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CBCC: mov          r7, r0
+0059CBCE: mov          r0, r7
+0059CBD0: mov          r1, r6
+0059CBD2: mov          r2, sb
+0059CBD4: blx          #0x4afbbc ; Anki::Cozmo::BehaviorFactoryCentroidExtractor::BehaviorFactoryCentroidExtractor
+0059CBD8: mov          r0, sp
+0059CBDA: mov          r1, r7
+0059CBDC: movs         r2, #0
+0059CBDE: blx          #0x4afbc8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFactoryCentroidExtractor>
+0059CBE2: b            #0x59d350
+CLASS 20 TBH 0x59c8d0 TARGET 0x59cbe4
+RANGE 0x0059CBE4..0x0059CC04 exclusive; Thumb;
+0059CBE4: mov.w        r0, #0x370
+0059CBE8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CBEC: mov          r7, r0
+0059CBEE: mov          r0, r7
+0059CBF0: mov          r1, r6
+0059CBF2: mov          r2, sb
+0059CBF4: blx          #0x4afbd4 ; Anki::Cozmo::BehaviorFactoryTest::BehaviorFactoryTest
+0059CBF8: mov          r0, sp
+0059CBFA: mov          r1, r7
+0059CBFC: movs         r2, #0
+0059CBFE: blx          #0x4afbe0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFactoryTest>
+0059CC02: b            #0x59d350
+CLASS 21 TBH 0x59c8d2 TARGET 0x59cc04
+RANGE 0x0059CC04..0x0059CC24 exclusive; Thumb;
+0059CC04: mov.w        r0, #0x150
+0059CC08: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CC0C: mov          r7, r0
+0059CC0E: mov          r0, r7
+0059CC10: mov          r1, r6
+0059CC12: mov          r2, sb
+0059CC14: blx          #0x4afbec ; Anki::Cozmo::BehaviorFeedingEat::BehaviorFeedingEat
+0059CC18: mov          r0, sp
+0059CC1A: mov          r1, r7
+0059CC1C: movs         r2, #0
+0059CC1E: blx          #0x4afbf8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFeedingEat>
+0059CC22: b            #0x59d350
+CLASS 22 TBH 0x59c8d4 TARGET 0x59cc24
+RANGE 0x0059CC24..0x0059CC44 exclusive; Thumb;
+0059CC24: mov.w        r0, #0x128
+0059CC28: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CC2C: mov          r7, r0
+0059CC2E: mov          r0, r7
+0059CC30: mov          r1, r6
+0059CC32: mov          r2, sb
+0059CC34: blx          #0x4afc04 ; Anki::Cozmo::BehaviorFeedingSearchForCube::BehaviorFeedingSearchForCube
+0059CC38: mov          r0, sp
+0059CC3A: mov          r1, r7
+0059CC3C: movs         r2, #0
+0059CC3E: blx          #0x4afc10 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFeedingSearchForCube>
+0059CC42: b            #0x59d350
+CLASS 23 TBH 0x59c8d6 TARGET 0x59cc44
+RANGE 0x0059CC44..0x0059CC64 exclusive; Thumb;
+0059CC44: mov.w        r0, #0x200
+0059CC48: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CC4C: mov          r7, r0
+0059CC4E: mov          r0, r7
+0059CC50: mov          r1, r6
+0059CC52: mov          r2, sb
+0059CC54: blx          #0x4afc1c ; Anki::Cozmo::BehaviorFindFaces::BehaviorFindFaces
+0059CC58: mov          r0, sp
+0059CC5A: mov          r1, r7
+0059CC5C: movs         r2, #0
+0059CC5E: blx          #0x4afc28 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFindFaces>
+0059CC62: b            #0x59d350
+CLASS 24 TBH 0x59c8d8 TARGET 0x59cc64
+RANGE 0x0059CC64..0x0059CC84 exclusive; Thumb;
+0059CC64: mov.w        r0, #0x120
+0059CC68: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CC6C: mov          r7, r0
+0059CC6E: mov          r0, r7
+0059CC70: mov          r1, r6
+0059CC72: mov          r2, sb
+0059CC74: blx          #0x4afc34 ; Anki::Cozmo::BehaviorFireTruckAlarm::BehaviorFireTruckAlarm
+0059CC78: mov          r0, sp
+0059CC7A: mov          r1, r7
+0059CC7C: movs         r2, #0
+0059CC7E: blx          #0x4afc40 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFireTruckAlarm>
+0059CC82: b            #0x59d350
+CLASS 25 TBH 0x59c8da TARGET 0x59cc84
+RANGE 0x0059CC84..0x0059CCA4 exclusive; Thumb;
+0059CC84: mov.w        r0, #0x158
+0059CC88: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CC8C: mov          r7, r0
+0059CC8E: mov          r0, r7
+0059CC90: mov          r1, r6
+0059CC92: mov          r2, sb
+0059CC94: blx          #0x4afc4c ; Anki::Cozmo::BehaviorFistBump::BehaviorFistBump
+0059CC98: mov          r0, sp
+0059CC9A: mov          r1, r7
+0059CC9C: movs         r2, #0
+0059CC9E: blx          #0x4afc58 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorFistBump>
+0059CCA2: b            #0x59d350
+CLASS 26 TBH 0x59c8dc TARGET 0x59cca4
+RANGE 0x0059CCA4..0x0059CCC4 exclusive; Thumb;
+0059CCA4: mov.w        r0, #0x158
+0059CCA8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CCAC: mov          r7, r0
+0059CCAE: mov          r0, r7
+0059CCB0: mov          r1, r6
+0059CCB2: mov          r2, sb
+0059CCB4: blx          #0x4afc64 ; Anki::Cozmo::BehaviorGuardDog::BehaviorGuardDog
+0059CCB8: mov          r0, sp
+0059CCBA: mov          r1, r7
+0059CCBC: movs         r2, #0
+0059CCBE: blx          #0x4afc70 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorGuardDog>
+0059CCC2: b            #0x59d350
+CLASS 27 TBH 0x59c8de TARGET 0x59ccc4
+RANGE 0x0059CCC4..0x0059CCE4 exclusive; Thumb;
+0059CCC4: mov.w        r0, #0x140
+0059CCC8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CCCC: mov          r7, r0
+0059CCCE: mov          r0, r7
+0059CCD0: mov          r1, r6
+0059CCD2: mov          r2, sb
+0059CCD4: blx          #0x4afc7c ; Anki::Cozmo::BehaviorInteractWithFaces::BehaviorInteractWithFaces
+0059CCD8: mov          r0, sp
+0059CCDA: mov          r1, r7
+0059CCDC: movs         r2, #0
+0059CCDE: blx          #0x4afc88 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorInteractWithFaces>
+0059CCE2: b            #0x59d350
+CLASS 28 TBH 0x59c8e0 TARGET 0x59cce4
+RANGE 0x0059CCE4..0x0059CD04 exclusive; Thumb;
+0059CCE4: mov.w        r0, #0x168
+0059CCE8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CCEC: mov          r7, r0
+0059CCEE: mov          r0, r7
+0059CCF0: mov          r1, r6
+0059CCF2: mov          r2, sb
+0059CCF4: blx          #0x4afc94 ; Anki::Cozmo::BehaviorKnockOverCubes::BehaviorKnockOverCubes
+0059CCF8: mov          r0, sp
+0059CCFA: mov          r1, r7
+0059CCFC: movs         r2, #0
+0059CCFE: blx          #0x4afca0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorKnockOverCubes>
+0059CD02: b            #0x59d350
+CLASS 29 TBH 0x59c8e2 TARGET 0x59cd04
+RANGE 0x0059CD04..0x0059CD24 exclusive; Thumb;
+0059CD04: mov.w        r0, #0x228
+0059CD08: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CD0C: mov          r7, r0
+0059CD0E: mov          r0, r7
+0059CD10: mov          r1, r6
+0059CD12: mov          r2, sb
+0059CD14: blx          #0x4afcac ; Anki::Cozmo::BehaviorLiftLoadTest::BehaviorLiftLoadTest
+0059CD18: mov          r0, sp
+0059CD1A: mov          r1, r7
+0059CD1C: movs         r2, #0
+0059CD1E: blx          #0x4afcb8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorLiftLoadTest>
+0059CD22: b            #0x59d350
+CLASS 30 TBH 0x59c8e4 TARGET 0x59cd24
+RANGE 0x0059CD24..0x0059CD44 exclusive; Thumb;
+0059CD24: mov.w        r0, #0x168
+0059CD28: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CD2C: mov          r7, r0
+0059CD2E: mov          r0, r7
+0059CD30: mov          r1, r6
+0059CD32: mov          r2, sb
+0059CD34: blx          #0x4afcc4 ; Anki::Cozmo::BehaviorLookAround::BehaviorLookAround
+0059CD38: mov          r0, sp
+0059CD3A: mov          r1, r7
+0059CD3C: movs         r2, #0
+0059CD3E: blx          #0x4afcd0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorLookAround>
+0059CD42: b            #0x59d350
+CLASS 31 TBH 0x59c8e6 TARGET 0x59cd44
+RANGE 0x0059CD44..0x0059CD64 exclusive; Thumb;
+0059CD44: mov.w        r0, #0x1a0
+0059CD48: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CD4C: mov          r7, r0
+0059CD4E: mov          r0, r7
+0059CD50: mov          r1, r6
+0059CD52: mov          r2, sb
+0059CD54: blx          #0x4afcdc ; Anki::Cozmo::BehaviorLookForFaceAndCube::BehaviorLookForFaceAndCube
+0059CD58: mov          r0, sp
+0059CD5A: mov          r1, r7
+0059CD5C: movs         r2, #0
+0059CD5E: blx          #0x4afce8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorLookForFaceAndCube>
+0059CD62: b            #0x59d350
+CLASS 32 TBH 0x59c8e8 TARGET 0x59cd64
+RANGE 0x0059CD64..0x0059CD84 exclusive; Thumb;
+0059CD64: mov.w        r0, #0x178
+0059CD68: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CD6C: mov          r7, r0
+0059CD6E: mov          r0, r7
+0059CD70: mov          r1, r6
+0059CD72: mov          r2, sb
+0059CD74: blx          #0x4afcf4 ; Anki::Cozmo::BehaviorLookInPlaceMemoryMap::BehaviorLookInPlaceMemoryMap
+0059CD78: mov          r0, sp
+0059CD7A: mov          r1, r7
+0059CD7C: movs         r2, #0
+0059CD7E: blx          #0x4afd00 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorLookInPlaceMemoryMap>
+0059CD82: b            #0x59d350
+CLASS 33 TBH 0x59c8ea TARGET 0x59cd84
+RANGE 0x0059CD84..0x0059CDA4 exclusive; Thumb;
+0059CD84: mov.w        r0, #0x140
+0059CD88: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CD8C: mov          r7, r0
+0059CD8E: mov          r0, r7
+0059CD90: mov          r1, r6
+0059CD92: mov          r2, sb
+0059CD94: blx          #0x4afd0c ; Anki::Cozmo::BehaviorOnConfigSeen::BehaviorOnConfigSeen
+0059CD98: mov          r0, sp
+0059CD9A: mov          r1, r7
+0059CD9C: movs         r2, #0
+0059CD9E: blx          #0x4afd18 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorOnConfigSeen>
+0059CDA2: b            #0x59d350
+CLASS 34 TBH 0x59c8ec TARGET 0x59cda4
+RANGE 0x0059CDA4..0x0059CDC4 exclusive; Thumb;
+0059CDA4: mov.w        r0, #0x130
+0059CDA8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CDAC: mov          r7, r0
+0059CDAE: mov          r0, r7
+0059CDB0: mov          r1, r6
+0059CDB2: mov          r2, sb
+0059CDB4: blx          #0x4afd24 ; Anki::Cozmo::BehaviorOnboardingShowCube::BehaviorOnboardingShowCube
+0059CDB8: mov          r0, sp
+0059CDBA: mov          r1, r7
+0059CDBC: movs         r2, #0
+0059CDBE: blx          #0x4afd30 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorOnboardingShowCube>
+0059CDC2: b            #0x59d350
+CLASS 35 TBH 0x59c8ee TARGET 0x59cdc4
+RANGE 0x0059CDC4..0x0059CDE4 exclusive; Thumb;
+0059CDC4: mov.w        r0, #0x170
+0059CDC8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CDCC: mov          r7, r0
+0059CDCE: mov          r0, r7
+0059CDD0: mov          r1, r6
+0059CDD2: mov          r2, sb
+0059CDD4: blx          #0x4afd3c ; Anki::Cozmo::BehaviorPeekABoo::BehaviorPeekABoo
+0059CDD8: mov          r0, sp
+0059CDDA: mov          r1, r7
+0059CDDC: movs         r2, #0
+0059CDDE: blx          #0x4afd48 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPeekABoo>
+0059CDE2: b            #0x59d350
+CLASS 36 TBH 0x59c8f0 TARGET 0x59cde4
+RANGE 0x0059CDE4..0x0059CE04 exclusive; Thumb;
+0059CDE4: mov.w        r0, #0x128
+0059CDE8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CDEC: mov          r7, r0
+0059CDEE: mov          r0, r7
+0059CDF0: mov          r1, r6
+0059CDF2: mov          r2, sb
+0059CDF4: blx          #0x4afd54 ; Anki::Cozmo::BehaviorPickUpAndPutDownCube::BehaviorPickUpAndPutDownCube
+0059CDF8: mov          r0, sp
+0059CDFA: mov          r1, r7
+0059CDFC: movs         r2, #0
+0059CDFE: blx          #0x4afd60 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPickUpAndPutDownCube>
+0059CE02: b            #0x59d350
+CLASS 37 TBH 0x59c8f2 TARGET 0x59ce04
+RANGE 0x0059CE04..0x0059CE24 exclusive; Thumb;
+0059CE04: mov.w        r0, #0x130
+0059CE08: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CE0C: mov          r7, r0
+0059CE0E: mov          r0, r7
+0059CE10: mov          r1, r6
+0059CE12: mov          r2, sb
+0059CE14: blx          #0x4afd6c ; Anki::Cozmo::BehaviorPickUpCube::BehaviorPickUpCube
+0059CE18: mov          r0, sp
+0059CE1A: mov          r1, r7
+0059CE1C: movs         r2, #0
+0059CE1E: blx          #0x4afd78 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPickUpCube>
+0059CE22: b            #0x59d350
+CLASS 38 TBH 0x59c8f4 TARGET 0x59ce24
+RANGE 0x0059CE24..0x0059CE46 exclusive; Thumb;
+0059CE24: mov.w        r0, #0x140
+0059CE28: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CE2C: mov          r7, r0
+0059CE2E: mov          r0, r7
+0059CE30: mov          r1, r6
+0059CE32: mov          r2, sb
+0059CE34: movs         r3, #1
+0059CE36: blx          #0x4afd84 ; Anki::Cozmo::BehaviorPlayAnimSequence::BehaviorPlayAnimSequence
+0059CE3A: mov          r0, sp
+0059CE3C: mov          r1, r7
+0059CE3E: movs         r2, #0
+0059CE40: blx          #0x4afd90 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPlayAnimSequence>
+0059CE44: b            #0x59d350
+CLASS 39 TBH 0x59c8f6 TARGET 0x59ce46
+RANGE 0x0059CE46..0x0059CE66 exclusive; Thumb;
+0059CE46: mov.w        r0, #0x140
+0059CE4A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CE4E: mov          r7, r0
+0059CE50: mov          r0, r7
+0059CE52: mov          r1, r6
+0059CE54: mov          r2, sb
+0059CE56: blx          #0x4afd9c ; Anki::Cozmo::BehaviorPlayAnimOnNeedsChange::BehaviorPlayAnimOnNeedsChange
+0059CE5A: mov          r0, sp
+0059CE5C: mov          r1, r7
+0059CE5E: movs         r2, #0
+0059CE60: blx          #0x4afda8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPlayAnimOnNeedsChange>
+0059CE64: b            #0x59d350
+CLASS 40 TBH 0x59c8f8 TARGET 0x59ce66
+RANGE 0x0059CE66..0x0059CE86 exclusive; Thumb;
+0059CE66: mov.w        r0, #0x140
+0059CE6A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CE6E: mov          r7, r0
+0059CE70: mov          r0, r7
+0059CE72: mov          r1, r6
+0059CE74: mov          r2, sb
+0059CE76: blx          #0x4afdb4 ; Anki::Cozmo::BehaviorPlayAnimSequenceWithFace::BehaviorPlayAnimSequenceWithFace
+0059CE7A: mov          r0, sp
+0059CE7C: mov          r1, r7
+0059CE7E: movs         r2, #0
+0059CE80: blx          #0x4afdc0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPlayAnimSequenceWithFace>
+0059CE84: b            #0x59d350
+CLASS 41 TBH 0x59c8fa TARGET 0x59ce86
+RANGE 0x0059CE86..0x0059CEA6 exclusive; Thumb;
+0059CE86: mov.w        r0, #0x140
+0059CE8A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CE8E: mov          r7, r0
+0059CE90: mov          r0, r7
+0059CE92: mov          r1, r6
+0059CE94: mov          r2, sb
+0059CE96: blx          #0x4afdcc ; Anki::Cozmo::BehaviorPlayArbitraryAnim::BehaviorPlayArbitraryAnim
+0059CE9A: mov          r0, sp
+0059CE9C: mov          r1, r7
+0059CE9E: movs         r2, #0
+0059CEA0: blx          #0x4afdd8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPlayArbitraryAnim>
+0059CEA4: b            #0x59d350
+CLASS 42 TBH 0x59c8fc TARGET 0x59cea6
+RANGE 0x0059CEA6..0x0059CEC6 exclusive; Thumb;
+0059CEA6: mov.w        r0, #0x138
+0059CEAA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CEAE: mov          r7, r0
+0059CEB0: mov          r0, r7
+0059CEB2: mov          r1, r6
+0059CEB4: mov          r2, sb
+0059CEB6: blx          #0x4afde4 ; Anki::Cozmo::BehaviorPopAWheelie::BehaviorPopAWheelie
+0059CEBA: mov          r0, sp
+0059CEBC: mov          r1, r7
+0059CEBE: movs         r2, #0
+0059CEC0: blx          #0x4afdf0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPopAWheelie>
+0059CEC4: b            #0x59d350
+CLASS 43 TBH 0x59c8fe TARGET 0x59cec6
+RANGE 0x0059CEC6..0x0059CEE6 exclusive; Thumb;
+0059CEC6: mov.w        r0, #0x190
+0059CECA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CECE: mov          r7, r0
+0059CED0: mov          r0, r7
+0059CED2: mov          r1, r6
+0059CED4: mov          r2, sb
+0059CED6: blx          #0x4afdfc ; Anki::Cozmo::BehaviorPounceOnMotion::BehaviorPounceOnMotion
+0059CEDA: mov          r0, sp
+0059CEDC: mov          r1, r7
+0059CEDE: movs         r2, #0
+0059CEE0: blx          #0x4afe08 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPounceOnMotion>
+0059CEE4: b            #0x59d350
+CLASS 44 TBH 0x59c900 TARGET 0x59cee6
+RANGE 0x0059CEE6..0x0059CF06 exclusive; Thumb;
+0059CEE6: mov.w        r0, #0x120
+0059CEEA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CEEE: mov          r7, r0
+0059CEF0: mov          r0, r7
+0059CEF2: mov          r1, r6
+0059CEF4: mov          r2, sb
+0059CEF6: blx          #0x4afe14 ; Anki::Cozmo::BehaviorPutDownBlock::BehaviorPutDownBlock
+0059CEFA: mov          r0, sp
+0059CEFC: mov          r1, r7
+0059CEFE: movs         r2, #0
+0059CF00: blx          #0x4afe20 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPutDownBlock>
+0059CF04: b            #0x59d350
+CLASS 45 TBH 0x59c902 TARGET 0x59cf06
+RANGE 0x0059CF06..0x0059CF26 exclusive; Thumb;
+0059CF06: mov.w        r0, #0x128
+0059CF0A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CF0E: mov          r7, r0
+0059CF10: mov          r0, r7
+0059CF12: mov          r1, r6
+0059CF14: mov          r2, sb
+0059CF16: blx          #0x4afe2c ; Anki::Cozmo::BehaviorPyramidThankYou::BehaviorPyramidThankYou
+0059CF1A: mov          r0, sp
+0059CF1C: mov          r1, r7
+0059CF1E: movs         r2, #0
+0059CF20: blx          #0x4afe38 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorPyramidThankYou>
+0059CF24: b            #0x59d350
+CLASS 46 TBH 0x59c904 TARGET 0x59cf26
+RANGE 0x0059CF26..0x0059CF46 exclusive; Thumb;
+0059CF26: mov.w        r0, #0x228
+0059CF2A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CF2E: mov          r7, r0
+0059CF30: mov          r0, r7
+0059CF32: mov          r1, r6
+0059CF34: mov          r2, sb
+0059CF36: blx          #0x4afe44 ; Anki::Cozmo::BehaviorRequestGameSimple::BehaviorRequestGameSimple
+0059CF3A: mov          r0, sp
+0059CF3C: mov          r1, r7
+0059CF3E: movs         r2, #0
+0059CF40: blx          #0x4afe50 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorRequestGameSimple>
+0059CF44: b            #0x59d350
+CLASS 47 TBH 0x59c906 TARGET 0x59cf46
+RANGE 0x0059CF46..0x0059CF66 exclusive; Thumb;
+0059CF46: mov.w        r0, #0x150
+0059CF4A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CF4E: mov          r7, r0
+0059CF50: mov          r0, r7
+0059CF52: mov          r1, r6
+0059CF54: mov          r2, sb
+0059CF56: blx          #0x4afe5c ; Anki::Cozmo::BehaviorRespondPossiblyRoll::BehaviorRespondPossiblyRoll
+0059CF5A: mov          r0, sp
+0059CF5C: mov          r1, r7
+0059CF5E: movs         r2, #0
+0059CF60: blx          #0x4afe68 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorRespondPossiblyRoll>
+0059CF64: b            #0x59d350
+CLASS 48 TBH 0x59c908 TARGET 0x59cf66
+RANGE 0x0059CF66..0x0059CF86 exclusive; Thumb;
+0059CF66: mov.w        r0, #0x130
+0059CF6A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CF6E: mov          r7, r0
+0059CF70: mov          r0, r7
+0059CF72: mov          r1, r6
+0059CF74: mov          r2, sb
+0059CF76: blx          #0x4afe74 ; Anki::Cozmo::BehaviorRespondToRenameFace::BehaviorRespondToRenameFace
+0059CF7A: mov          r0, sp
+0059CF7C: mov          r1, r7
+0059CF7E: movs         r2, #0
+0059CF80: blx          #0x4afe80 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorRespondToRenameFace>
+0059CF84: b            #0x59d350
+CLASS 49 TBH 0x59c90a TARGET 0x59cf86
+RANGE 0x0059CF86..0x0059CFA6 exclusive; Thumb;
+0059CF86: mov.w        r0, #0x138
+0059CF8A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CF8E: mov          r7, r0
+0059CF90: mov          r0, r7
+0059CF92: mov          r1, r6
+0059CF94: mov          r2, sb
+0059CF96: blx          #0x4afe8c ; Anki::Cozmo::BehaviorRollBlock::BehaviorRollBlock
+0059CF9A: mov          r0, sp
+0059CF9C: mov          r1, r7
+0059CF9E: movs         r2, #0
+0059CFA0: blx          #0x4afe98 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorRollBlock>
+0059CFA4: b            #0x59d350
+CLASS 50 TBH 0x59c90c TARGET 0x59cfa6
+RANGE 0x0059CFA6..0x0059CFC6 exclusive; Thumb;
+0059CFA6: mov.w        r0, #0x120
+0059CFAA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CFAE: mov          r7, r0
+0059CFB0: mov          r0, r7
+0059CFB2: mov          r1, r6
+0059CFB4: mov          r2, sb
+0059CFB6: blx          #0x4afea4 ; Anki::Cozmo::BehaviorSearchForFace::BehaviorSearchForFace
+0059CFBA: mov          r0, sp
+0059CFBC: mov          r1, r7
+0059CFBE: movs         r2, #0
+0059CFC0: blx          #0x4afeb0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorSearchForFace>
+0059CFC4: b            #0x59d350
+CLASS 51 TBH 0x59c90e TARGET 0x59cfc6
+RANGE 0x0059CFC6..0x0059CFE6 exclusive; Thumb;
+0059CFC6: mov.w        r0, #0x148
+0059CFCA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CFCE: mov          r7, r0
+0059CFD0: mov          r0, r7
+0059CFD2: mov          r1, r6
+0059CFD4: mov          r2, sb
+0059CFD6: blx          #0x4afebc ; Anki::Cozmo::BehaviorSinging::BehaviorSinging
+0059CFDA: mov          r0, sp
+0059CFDC: mov          r1, r7
+0059CFDE: movs         r2, #0
+0059CFE0: blx          #0x4afec8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorSinging>
+0059CFE4: b            #0x59d350
+CLASS 52 TBH 0x59c910 TARGET 0x59cfe6
+RANGE 0x0059CFE6..0x0059D006 exclusive; Thumb;
+0059CFE6: mov.w        r0, #0x138
+0059CFEA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059CFEE: mov          r7, r0
+0059CFF0: mov          r0, r7
+0059CFF2: mov          r1, r6
+0059CFF4: mov          r2, sb
+0059CFF6: blx          #0x4afed4 ; Anki::Cozmo::BehaviorStackBlocks::BehaviorStackBlocks
+0059CFFA: mov          r0, sp
+0059CFFC: mov          r1, r7
+0059CFFE: movs         r2, #0
+0059D000: blx          #0x4afee0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorStackBlocks>
+0059D004: b            #0x59d350
+CLASS 53 TBH 0x59c912 TARGET 0x59d006
+RANGE 0x0059D006..0x0059D026 exclusive; Thumb;
+0059D006: mov.w        r0, #0x130
+0059D00A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D00E: mov          r7, r0
+0059D010: mov          r0, r7
+0059D012: mov          r1, r6
+0059D014: mov          r2, sb
+0059D016: blx          #0x4afeec ; Anki::Cozmo::BehaviorThinkAboutBeacons::BehaviorThinkAboutBeacons
+0059D01A: mov          r0, sp
+0059D01C: mov          r1, r7
+0059D01E: movs         r2, #0
+0059D020: blx          #0x4afef8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorThinkAboutBeacons>
+0059D024: b            #0x59d350
+CLASS 54 TBH 0x59c914 TARGET 0x59d026
+RANGE 0x0059D026..0x0059D046 exclusive; Thumb;
+0059D026: mov.w        r0, #0x1d8
+0059D02A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D02E: mov          r7, r0
+0059D030: mov          r0, r7
+0059D032: mov          r1, r6
+0059D034: mov          r2, sb
+0059D036: blx          #0x4aff04 ; Anki::Cozmo::BehaviorTrackLaser::BehaviorTrackLaser
+0059D03A: mov          r0, sp
+0059D03C: mov          r1, r7
+0059D03E: movs         r2, #0
+0059D040: blx          #0x4aff10 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorTrackLaser>
+0059D044: b            #0x59d350
+CLASS 55 TBH 0x59c916 TARGET 0x59d046
+RANGE 0x0059D046..0x0059D066 exclusive; Thumb;
+0059D046: mov.w        r0, #0x120
+0059D04A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D04E: mov          r7, r0
+0059D050: mov          r0, r7
+0059D052: mov          r1, r6
+0059D054: mov          r2, sb
+0059D056: blx          #0x4aff1c ; Anki::Cozmo::BehaviorTurnToFace::BehaviorTurnToFace
+0059D05A: mov          r0, sp
+0059D05C: mov          r1, r7
+0059D05E: movs         r2, #0
+0059D060: blx          #0x4aff28 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorTurnToFace>
+0059D064: b            #0x59d350
+CLASS 56 TBH 0x59c918 TARGET 0x59d066
+RANGE 0x0059D066..0x0059D086 exclusive; Thumb;
+0059D066: mov.w        r0, #0x198
+0059D06A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D06E: mov          r7, r0
+0059D070: mov          r0, r7
+0059D072: mov          r1, r6
+0059D074: mov          r2, sb
+0059D076: blx          #0x4aff34 ; Anki::Cozmo::BehaviorVisitInterestingEdge::BehaviorVisitInterestingEdge
+0059D07A: mov          r0, sp
+0059D07C: mov          r1, r7
+0059D07E: movs         r2, #0
+0059D080: blx          #0x4aff40 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorVisitInterestingEdge>
+0059D084: b            #0x59d350
+CLASS 57 TBH 0x59c91a TARGET 0x59d086
+RANGE 0x0059D086..0x0059D0B2 exclusive; Thumb;
+0059D086: mov.w        r0, #0x120
+0059D08A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D08E: mov          r7, r0
+0059D090: mov          r0, r7
+0059D092: mov          r1, r6
+0059D094: mov          r2, sb
+0059D096: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+0059D09A: ldr.w        r0, [pc, #0x590] ; word[0059D62C]=00AA1D4E
+0059D09E: add          r0, pc
+0059D0A0: ldr          r0, [r0]
+0059D0A2: adds         r0, #8
+0059D0A4: str          r0, [r7]
+0059D0A6: mov          r0, sp
+0059D0A8: mov          r1, r7
+0059D0AA: movs         r2, #0
+0059D0AC: blx          #0x4aff58 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorWait>
+0059D0B0: b            #0x59d350
+CLASS 58 TBH 0x59c91c TARGET 0x59d0b2
+RANGE 0x0059D0B2..0x0059D0D2 exclusive; Thumb;
+0059D0B2: mov.w        r0, #0x140
+0059D0B6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D0BA: mov          r7, r0
+0059D0BC: mov          r0, r7
+0059D0BE: mov          r1, r6
+0059D0C0: mov          r2, sb
+0059D0C2: blx          #0x4aff64 ; Anki::Cozmo::BehaviorAcknowledgeFace::BehaviorAcknowledgeFace
+0059D0C6: mov          r0, sp
+0059D0C8: mov          r1, r7
+0059D0CA: movs         r2, #0
+0059D0CC: blx          #0x4aff70 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorAcknowledgeFace>
+0059D0D0: b            #0x59d350
+CLASS 59 TBH 0x59c91e TARGET 0x59d0d2
+RANGE 0x0059D0D2..0x0059D0F2 exclusive; Thumb;
+0059D0D2: mov.w        r0, #0x168
+0059D0D6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D0DA: mov          r7, r0
+0059D0DC: mov          r0, r7
+0059D0DE: mov          r1, r6
+0059D0E0: mov          r2, sb
+0059D0E2: blx          #0x4aff7c ; Anki::Cozmo::BehaviorAcknowledgeObject::BehaviorAcknowledgeObject
+0059D0E6: mov          r0, sp
+0059D0E8: mov          r1, r7
+0059D0EA: movs         r2, #0
+0059D0EC: blx          #0x4aff88 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorAcknowledgeObject>
+0059D0F0: b            #0x59d350
+CLASS 60 TBH 0x59c920 TARGET 0x59d0f2
+RANGE 0x0059D0F2..0x0059D112 exclusive; Thumb;
+0059D0F2: mov.w        r0, #0x120
+0059D0F6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D0FA: mov          r7, r0
+0059D0FC: mov          r0, r7
+0059D0FE: mov          r1, r6
+0059D100: mov          r2, sb
+0059D102: blx          #0x4aff94 ; Anki::Cozmo::BehaviorRamIntoBlock::BehaviorRamIntoBlock
+0059D106: mov          r0, sp
+0059D108: mov          r1, r7
+0059D10A: movs         r2, #0
+0059D10C: blx          #0x4affa0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorRamIntoBlock>
+0059D110: b            #0x59d350
+CLASS 61 TBH 0x59c922 TARGET 0x59d112
+RANGE 0x0059D112..0x0059D132 exclusive; Thumb;
+0059D112: mov.w        r0, #0x128
+0059D116: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D11A: mov          r7, r0
+0059D11C: mov          r0, r7
+0059D11E: mov          r1, r6
+0059D120: mov          r2, sb
+0059D122: blx          #0x4affac ; Anki::Cozmo::BehaviorReactToCliff::BehaviorReactToCliff
+0059D126: mov          r0, sp
+0059D128: mov          r1, r7
+0059D12A: movs         r2, #0
+0059D12C: blx          #0x4affb8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToCliff>
+0059D130: b            #0x59d350
+CLASS 62 TBH 0x59c924 TARGET 0x59d132
+RANGE 0x0059D132..0x0059D152 exclusive; Thumb;
+0059D132: mov.w        r0, #0x130
+0059D136: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D13A: mov          r7, r0
+0059D13C: mov          r0, r7
+0059D13E: mov          r1, r6
+0059D140: mov          r2, sb
+0059D142: blx          #0x4affc4 ; Anki::Cozmo::BehaviorAcknowledgeCubeMoved::BehaviorAcknowledgeCubeMoved
+0059D146: mov          r0, sp
+0059D148: mov          r1, r7
+0059D14A: movs         r2, #0
+0059D14C: blx          #0x4affd0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorAcknowledgeCubeMoved>
+0059D150: b            #0x59d350
+CLASS 63 TBH 0x59c926 TARGET 0x59d152
+RANGE 0x0059D152..0x0059D172 exclusive; Thumb;
+0059D152: mov.w        r0, #0x148
+0059D156: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D15A: mov          r7, r0
+0059D15C: mov          r0, r7
+0059D15E: mov          r1, r6
+0059D160: mov          r2, sb
+0059D162: blx          #0x4affdc ; Anki::Cozmo::BehaviorReactToFrustration::BehaviorReactToFrustration
+0059D166: mov          r0, sp
+0059D168: mov          r1, r7
+0059D16A: movs         r2, #0
+0059D16C: blx          #0x4affe8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToFrustration>
+0059D170: b            #0x59d350
+CLASS 64 TBH 0x59c928 TARGET 0x59d172
+RANGE 0x0059D172..0x0059D192 exclusive; Thumb;
+0059D172: mov.w        r0, #0x120
+0059D176: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D17A: mov          r7, r0
+0059D17C: mov          r0, r7
+0059D17E: mov          r1, r6
+0059D180: mov          r2, sb
+0059D182: blx          #0x4afff4 ; Anki::Cozmo::BehaviorReactToImpact::BehaviorReactToImpact
+0059D186: mov          r0, sp
+0059D188: mov          r1, r7
+0059D18A: movs         r2, #0
+0059D18C: blx          #0x4b0000 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToImpact>
+0059D190: b            #0x59d350
+CLASS 65 TBH 0x59c92a TARGET 0x59d192
+RANGE 0x0059D192..0x0059D1B2 exclusive; Thumb;
+0059D192: mov.w        r0, #0x120
+0059D196: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D19A: mov          r7, r0
+0059D19C: mov          r0, r7
+0059D19E: mov          r1, r6
+0059D1A0: mov          r2, sb
+0059D1A2: blx          #0x4b000c ; Anki::Cozmo::BehaviorReactToMotorCalibration::BehaviorReactToMotorCalibration
+0059D1A6: mov          r0, sp
+0059D1A8: mov          r1, r7
+0059D1AA: movs         r2, #0
+0059D1AC: blx          #0x4b0018 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToMotorCalibration>
+0059D1B0: b            #0x59d350
+CLASS 66 TBH 0x59c92c TARGET 0x59d1b2
+RANGE 0x0059D1B2..0x0059D1D2 exclusive; Thumb;
+0059D1B2: mov.w        r0, #0x130
+0059D1B6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D1BA: mov          r7, r0
+0059D1BC: mov          r0, r7
+0059D1BE: mov          r1, r6
+0059D1C0: mov          r2, sb
+0059D1C2: blx          #0x4b0024 ; Anki::Cozmo::BehaviorReactToOnCharger::BehaviorReactToOnCharger
+0059D1C6: mov          r0, sp
+0059D1C8: mov          r1, r7
+0059D1CA: movs         r2, #0
+0059D1CC: blx          #0x4b0030 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToOnCharger>
+0059D1D0: b            #0x59d350
+CLASS 67 TBH 0x59c92e TARGET 0x59d1d2
+RANGE 0x0059D1D2..0x0059D1F2 exclusive; Thumb;
+0059D1D2: mov.w        r0, #0x140
+0059D1D6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D1DA: mov          r7, r0
+0059D1DC: mov          r0, r7
+0059D1DE: mov          r1, r6
+0059D1E0: mov          r2, sb
+0059D1E2: blx          #0x4b003c ; Anki::Cozmo::BehaviorReactToPet::BehaviorReactToPet
+0059D1E6: mov          r0, sp
+0059D1E8: mov          r1, r7
+0059D1EA: movs         r2, #0
+0059D1EC: blx          #0x4b0048 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToPet>
+0059D1F0: b            #0x59d350
+CLASS 68 TBH 0x59c930 TARGET 0x59d1f2
+RANGE 0x0059D1F2..0x0059D212 exclusive; Thumb;
+0059D1F2: mov.w        r0, #0x128
+0059D1F6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D1FA: mov          r7, r0
+0059D1FC: mov          r0, r7
+0059D1FE: mov          r1, r6
+0059D200: mov          r2, sb
+0059D202: blx          #0x4b0054 ; Anki::Cozmo::BehaviorReactToPickup::BehaviorReactToPickup
+0059D206: mov          r0, sp
+0059D208: mov          r1, r7
+0059D20A: movs         r2, #0
+0059D20C: blx          #0x4b0060 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToPickup>
+0059D210: b            #0x59d350
+CLASS 69 TBH 0x59c932 TARGET 0x59d212
+RANGE 0x0059D212..0x0059D232 exclusive; Thumb;
+0059D212: mov.w        r0, #0x128
+0059D216: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D21A: mov          r7, r0
+0059D21C: mov          r0, r7
+0059D21E: mov          r1, r6
+0059D220: mov          r2, sb
+0059D222: blx          #0x4b006c ; Anki::Cozmo::BehaviorReactToPlacedOnSlope::BehaviorReactToPlacedOnSlope
+0059D226: mov          r0, sp
+0059D228: mov          r1, r7
+0059D22A: movs         r2, #0
+0059D22C: blx          #0x4b0078 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToPlacedOnSlope>
+0059D230: b            #0x59d350
+CLASS 70 TBH 0x59c934 TARGET 0x59d232
+RANGE 0x0059D232..0x0059D252 exclusive; Thumb;
+0059D232: mov.w        r0, #0x120
+0059D236: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D23A: mov          r7, r0
+0059D23C: mov          r0, r7
+0059D23E: mov          r1, r6
+0059D240: mov          r2, sb
+0059D242: blx          #0x4b0084 ; Anki::Cozmo::BehaviorReactToPyramid::BehaviorReactToPyramid
+0059D246: mov          r0, sp
+0059D248: mov          r1, r7
+0059D24A: movs         r2, #0
+0059D24C: blx          #0x4b0090 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToPyramid>
+0059D250: b            #0x59d350
+CLASS 71 TBH 0x59c936 TARGET 0x59d252
+RANGE 0x0059D252..0x0059D272 exclusive; Thumb;
+0059D252: mov.w        r0, #0x120
+0059D256: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D25A: mov          r7, r0
+0059D25C: mov          r0, r7
+0059D25E: mov          r1, r6
+0059D260: mov          r2, sb
+0059D262: blx          #0x4b009c ; Anki::Cozmo::BehaviorReactToReturnedToTreads::BehaviorReactToReturnedToTreads
+0059D266: mov          r0, sp
+0059D268: mov          r1, r7
+0059D26A: movs         r2, #0
+0059D26C: blx          #0x4b00a8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToReturnedToTreads>
+0059D270: b            #0x59d350
+CLASS 72 TBH 0x59c938 TARGET 0x59d272
+RANGE 0x0059D272..0x0059D292 exclusive; Thumb;
+0059D272: mov.w        r0, #0x120
+0059D276: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D27A: mov          r7, r0
+0059D27C: mov          r0, r7
+0059D27E: mov          r1, r6
+0059D280: mov          r2, sb
+0059D282: blx          #0x4b00b4 ; Anki::Cozmo::BehaviorReactToRobotOnBack::BehaviorReactToRobotOnBack
+0059D286: mov          r0, sp
+0059D288: mov          r1, r7
+0059D28A: movs         r2, #0
+0059D28C: blx          #0x4b00c0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToRobotOnBack>
+0059D290: b            #0x59d350
+CLASS 73 TBH 0x59c93a TARGET 0x59d292
+RANGE 0x0059D292..0x0059D2B2 exclusive; Thumb;
+0059D292: mov.w        r0, #0x120
+0059D296: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D29A: mov          r7, r0
+0059D29C: mov          r0, r7
+0059D29E: mov          r1, r6
+0059D2A0: mov          r2, sb
+0059D2A2: blx          #0x4b00cc ; Anki::Cozmo::BehaviorReactToRobotOnFace::BehaviorReactToRobotOnFace
+0059D2A6: mov          r0, sp
+0059D2A8: mov          r1, r7
+0059D2AA: movs         r2, #0
+0059D2AC: blx          #0x4b00d8 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToRobotOnFace>
+0059D2B0: b            #0x59d350
+CLASS 74 TBH 0x59c93c TARGET 0x59d2b2
+RANGE 0x0059D2B2..0x0059D2D2 exclusive; Thumb;
+0059D2B2: mov.w        r0, #0x120
+0059D2B6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D2BA: mov          r7, r0
+0059D2BC: mov          r0, r7
+0059D2BE: mov          r1, r6
+0059D2C0: mov          r2, sb
+0059D2C2: blx          #0x4b00e4 ; Anki::Cozmo::BehaviorReactToRobotOnSide::BehaviorReactToRobotOnSide
+0059D2C6: mov          r0, sp
+0059D2C8: mov          r1, r7
+0059D2CA: movs         r2, #0
+0059D2CC: blx          #0x4b00f0 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToRobotOnSide>
+0059D2D0: b            #0x59d350
+CLASS 75 TBH 0x59c93e TARGET 0x59d2d2
+RANGE 0x0059D2D2..0x0059D2F2 exclusive; Thumb;
+0059D2D2: mov.w        r0, #0x130
+0059D2D6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D2DA: mov          r7, r0
+0059D2DC: mov          r0, r7
+0059D2DE: mov          r1, r6
+0059D2E0: mov          r2, sb
+0059D2E2: blx          #0x4b00fc ; Anki::Cozmo::BehaviorReactToRobotShaken::BehaviorReactToRobotShaken
+0059D2E6: mov          r0, sp
+0059D2E8: mov          r1, r7
+0059D2EA: movs         r2, #0
+0059D2EC: blx          #0x4b0108 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToRobotShaken>
+0059D2F0: b            #0x59d350
+CLASS 76 TBH 0x59c940 TARGET 0x59d2f2
+RANGE 0x0059D2F2..0x0059D312 exclusive; Thumb;
+0059D2F2: mov.w        r0, #0x120
+0059D2F6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D2FA: mov          r7, r0
+0059D2FC: mov          r0, r7
+0059D2FE: mov          r1, r6
+0059D300: mov          r2, sb
+0059D302: blx          #0x4b0114 ; Anki::Cozmo::BehaviorReactToSparked::BehaviorReactToSparked
+0059D306: mov          r0, sp
+0059D308: mov          r1, r7
+0059D30A: movs         r2, #0
+0059D30C: blx          #0x4b0120 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToSparked>
+0059D310: b            #0x59d350
+CLASS 77 TBH 0x59c942 TARGET 0x59d312
+RANGE 0x0059D312..0x0059D332 exclusive; Thumb;
+0059D312: mov.w        r0, #0x120
+0059D316: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D31A: mov          r7, r0
+0059D31C: mov          r0, r7
+0059D31E: mov          r1, r6
+0059D320: mov          r2, sb
+0059D322: blx          #0x4b012c ; Anki::Cozmo::BehaviorReactToStackOfCubes::BehaviorReactToStackOfCubes
+0059D326: mov          r0, sp
+0059D328: mov          r1, r7
+0059D32A: movs         r2, #0
+0059D32C: blx          #0x4b0138 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToStackOfCubes>
+0059D330: b            #0x59d350
+CLASS 78 TBH 0x59c944 TARGET 0x59d332
+RANGE 0x0059D332..0x0059D404 exclusive; Thumb;
+0059D332: mov.w        r0, #0x120
+0059D336: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0059D33A: mov          r7, r0
+0059D33C: mov          r0, r7
+0059D33E: mov          r1, r6
+0059D340: mov          r2, sb
+0059D342: blx          #0x4b0144 ; Anki::Cozmo::BehaviorReactToUnexpectedMovement::BehaviorReactToUnexpectedMovement
+0059D346: mov          r0, sp
+0059D348: mov          r1, r7
+0059D34A: movs         r2, #0
+0059D34C: blx          #0x4b0150 ; std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>::shared_ptr<Anki::Cozmo::BehaviorReactToUnexpectedMovement>
+0059D350: ldr          r0, [sp]
+0059D352: ldr          r6, [sp, #4]
+0059D354: cbz          r0, #0x59d394
+0059D356: cmp          r6, #0
+0059D358: strd         r0, r6, [sp, #0xc]
+0059D35C: beq          #0x59d364
+0059D35E: mov          r0, r6
+0059D360: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+0059D364: add          r2, sp, #0xc
+0059D366: mov          r0, sp
+0059D368: mov          r1, r8
+0059D36A: blx          #0x4b015c ; Anki::Cozmo::BehaviorContainer::AddToFactory
+0059D36E: ldrd         r4, r7, [sp]
+0059D372: movs         r0, #0
+0059D374: cmp          r6, #0
+0059D376: strd         r0, r0, [sp]
+0059D37A: beq          #0x59d382
+0059D37C: mov          r0, r6
+0059D37E: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059D382: ldr          r0, [sp, #0x10]
+0059D384: cbz          r0, #0x59d38a
+0059D386: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059D38A: cbz          r4, #0x59d392
+0059D38C: strd         r4, r7, [fp]
+0059D390: b            #0x59d3fe
+0059D392: mov          r6, r7
+0059D394: strd         sl, sl, [sp]
+0059D398: str.w        sl, [sp, #8]
+0059D39C: mov          r0, r5
+0059D39E: blx          #0x4b0168 ; Anki::Cozmo::EnumToString
+0059D3A2: mov          r3, r0
+0059D3A4: adr          r0, #0x288
+0059D3A6: addw         r2, pc, #0x2b0
+0059D3AA: mov          r1, sp
+0059D3AC: blx          #0x4a4108 ; Anki::Util::sErrorF
+0059D3B0: ldr          r0, [sp]
+0059D3B2: cbz          r0, #0x59d3d2
+0059D3B4: ldr          r1, [sp, #4]
+0059D3B6: cmp          r1, r0
+0059D3B8: itttt        ne
+0059D3BA: subne.w      r2, r1, #8
+0059D3BE: subne        r2, r2, r0
+0059D3C0: mvnne        r3, #7
+0059D3C4: bicne.w      r2, r3, r2
+0059D3C8: itt          ne
+0059D3CA: addne        r1, r1, r2
+0059D3CC: strne        r1, [sp, #4]
+0059D3CE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059D3D2: ldr.w        r0, [pc, #0x2ac] ; word[0059D680]=00AA13AC
+0059D3D6: movs         r2, #1
+0059D3D8: ldr.w        r1, [pc, #0x2a8] ; word[0059D684]=00AA13AE
+0059D3DC: add          r0, pc
+0059D3DE: add          r1, pc
+0059D3E0: ldr          r0, [r0]
+0059D3E2: ldr          r1, [r1]
+0059D3E4: ldrb         r0, [r0]
+0059D3E6: strb         r2, [r1]
+0059D3E8: cbz          r0, #0x59d3ee
+0059D3EA: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+0059D3EE: movs         r0, #0
+0059D3F0: cmp          r6, #0
+0059D3F2: strd         r0, r0, [fp]
+0059D3F6: beq          #0x59d3fe
+0059D3F8: mov          r0, r6
+0059D3FA: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0059D3FE: add          sp, #0x14
+0059D400: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x0059D404..0x0059D408 exclusive; Thumb;
+0059D404: movs         r6, #0
+0059D406: b            #0x59d394

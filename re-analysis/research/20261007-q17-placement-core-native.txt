@@ -1,0 +1,123 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008CBF10..0x008CBF18 exclusive; ARM;
+008CBF10: ldr          ip, [pc] ; word[008CBF18]=FFBE65F8
+008CBF14: add          pc, ip, pc
+RANGE 0x008CBF40..0x008CBF48 exclusive; ARM;
+008CBF40: ldr          ip, [pc] ; word[008CBF48]=FFBE6730
+008CBF44: add          pc, ip, pc
+RANGE 0x005B9168..0x005B9290 exclusive; Thumb; _ZN4Anki5Cozmo20PlaceRelObjectHelper19StartPlaceRelObjectERNS0_5RobotE
+005B9168: push.w       {r4, r5, r6, r7, r8, lr}
+005B916C: sub          sp, #0xa8
+005B916E: mov          r4, r0
+005B9170: ldr          r0, [pc, #0x21c] ; word[005B9390]=00A856D4
+005B9172: mov          r5, r1
+005B9174: add          r0, pc
+005B9176: ldr          r0, [r0]
+005B9178: ldr          r0, [r0]
+005B917A: str          r0, [sp, #0xa4]
+005B917C: ldr.w        r0, [r4, #0x108]
+005B9180: cmp          r0, #3
+005B9182: blo          #0x5b9192
+005B9184: mov          r0, r4
+005B9186: mov          r1, r5
+005B9188: blx          #0x4b2520 ; Anki::Cozmo::PlaceRelObjectHelper::MarkFailedToStackOrPlace
+005B918C: movs         r0, #0
+005B918E: str          r0, [r4, #0x1c]
+005B9190: b            #0x5b92fa
+005B9192: add.w        r6, r4, #0xf0
+005B9196: vldr         s0, [r4, #0xfc]
+005B919A: vldr         s2, [r4, #0x100]
+005B919E: adds         r0, #1
+005B91A0: str.w        r0, [r4, #0x108]
+005B91A4: mov          r0, r4
+005B91A6: mov          r1, r5
+005B91A8: mov          r2, r6
+005B91AA: movs         r3, #1
+005B91AC: vstr         s0, [sp]
+005B91B0: vstr         s2, [sp, #4]
+005B91B4: movs         r7, #1
+005B91B6: blx          #0x4b22f8 ; Anki::Cozmo::IHelper::IsAtPreActionPoseWithVisualVerification
+005B91BA: cbz          r0, #0x5b9226
+005B91BC: movs         r0, #0
+005B91BE: str          r0, [sp, #0x28]
+005B91C0: strb.w       r0, [sp, #0x24]
+005B91C4: strb.w       r0, [sp, #0x2c]
+005B91C8: str          r7, [sp, #0x20]
+005B91CA: ldrd         r1, r2, [r4, #0xfc]
+005B91CE: strd         r1, r2, [sp, #0x30]
+005B91D2: strd         r0, r0, [sp, #0x68]
+005B91D6: str          r0, [sp, #0x80]
+005B91D8: str          r0, [sp, #0x98]
+005B91DA: add          r0, sp, #0x20
+005B91DC: str          r0, [sp]
+005B91DE: add          r0, sp, #0x18
+005B91E0: mov          r1, r4
+005B91E2: mov          r2, r5
+005B91E4: mov          r3, r6
+005B91E6: blx          #0x4b2304 ; Anki::Cozmo::IHelper::CreateDriveToHelper
+005B91EA: add.w        r8, sp, #0x68
+005B91EE: add          r1, sp, #0x18
+005B91F0: mov          r0, r8
+005B91F2: bl           #0x5b5ee8 ; FUN_005b5ee8
+005B91F6: ldr          r0, [sp, #0x1c]
+005B91F8: cbz          r0, #0x5b91fe
+005B91FA: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005B91FE: ldr          r0, [pc, #0x194] ; word[005B9394]=00A6CE08
+005B9200: add          r7, sp, #0x50
+005B9202: add.w        r5, r8, #8
+005B9206: str          r7, [sp, #0x60]
+005B9208: add          r0, pc
+005B920A: str          r4, [sp, #0x54]
+005B920C: adds         r0, #8
+005B920E: str          r0, [sp, #0x50]
+005B9210: mov          r0, r5
+005B9212: mov          r1, r7
+005B9214: blx          #0x4b2070 ; std::__ndk1::function<Anki::Cozmo::BehaviorStatus(Anki::Cozmo::Robot&)>::operator=
+005B9218: ldr          r0, [sp, #0x60]
+005B921A: cmp          r7, r0
+005B921C: beq          #0x5b928c
+005B921E: cbz          r0, #0x5b9292
+005B9220: ldr          r1, [r0]
+005B9222: ldr          r1, [r1, #0x14]
+005B9224: b            #0x5b9290
+005B9226: mov.w        r0, #0x114
+005B922A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005B922E: mov          r6, r0
+005B9230: ldr          r0, [pc, #0x164] ; word[005B9398]=00A8566A
+005B9232: ldr.w        r1, [r4, #0xf4]
+005B9236: add          r0, pc
+005B9238: str          r1, [sp, #0x14]
+005B923A: ldr          r0, [r0]
+005B923C: adds         r0, #8
+005B923E: str          r0, [sp, #0x10]
+005B9240: ldrb.w       r0, [r4, #0x104]
+005B9244: vldr         s0, [r4, #0xfc]
+005B9248: vldr         s2, [r4, #0x100]
+005B924C: ldrb.w       r3, [r4, #0xf8]
+005B9250: movs         r7, #0
+005B9252: add          r2, sp, #0x10
+005B9254: strd         r7, r0, [sp, #8]
+005B9258: mov          r0, r6
+005B925A: mov          r1, r5
+005B925C: vstr         s0, [sp]
+005B9260: vstr         s2, [sp, #4]
+005B9264: blx          #0x4a9424 ; Anki::Cozmo::PlaceRelObjectAction::PlaceRelObjectAction
+005B9268: ldr          r0, [pc, #0x130] ; word[005B939C]=00A85ED4
+005B926A: str          r7, [sp, #0x48]
+005B926C: add          r0, pc
+005B926E: ldr          r2, [r0]
+005B9270: mov          r0, r4
+005B9272: mov          r1, r6
+005B9274: movs         r3, #0
+005B9276: add          r5, sp, #0x38
+005B9278: str          r5, [sp]
+005B927A: blx          #0x4b252c ; Anki::Cozmo::IHelper::StartActingWithResponseAnim<Anki::Cozmo::PlaceRelObjectHelper>
+005B927E: ldr          r0, [sp, #0x48]
+005B9280: cmp          r5, r0
+005B9282: beq          #0x5b92f4
+005B9284: cbz          r0, #0x5b92fa
+005B9286: ldr          r1, [r0]
+005B9288: ldr          r1, [r1, #0x14]
+005B928A: b            #0x5b92f8
+005B928C: ldr          r1, [r0]
+005B928E: ldr          r1, [r1, #0x10]

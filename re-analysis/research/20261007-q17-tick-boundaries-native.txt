@@ -1,0 +1,134 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00513C60..0x00513CA0 exclusive; Thumb;
+00513C60: cmp          r0, #0
+00513C62: beq.w        #0x513da6
+00513C66: ldr          r0, [r4]
+00513C68: ldr          r0, [r0, #0x24]
+00513C6A: blx          #0x4a7da4 ; Anki::Cozmo::VizManager::SendStartRobotUpdate
+00513C6E: ldr.w        r0, [r4, #0x258]
+00513C72: ldr          r1, [r0, #0x28]
+00513C74: cbz          r1, #0x513cbe
+00513C76: blx          #0x4a7db0 ; Anki::Cozmo::VisionComponent::UpdateAllResults
+00513C7A: mov          r6, r0
+00513C7C: cbz          r6, #0x513cbe
+00513C7E: ldr.w        r2, [pc, #0x9bc] ; word[0051463C]=006D0274
+00513C82: movs         r0, #0
+00513C84: strd         r0, r0, [sp, #0xb8]
+00513C88: add          r2, pc
+00513C8A: str          r0, [sp, #0xc0]
+00513C8C: addw         r0, pc, #0x9b0
+00513C90: add          r1, sp, #0xb8
+00513C92: blx          #0x4a4540 ; Anki::Util::sWarningF
+00513C96: ldr          r0, [sp, #0xb8]
+00513C98: cmp          r0, #0
+00513C9A: beq.w        #0x514484
+00513C9E: ldr          r1, [sp, #0xbc]
+RANGE 0x00513E60..0x00513F10 exclusive; Thumb;
+00513E60: add.w        r0, fp, #0x24
+00513E64: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+00513E68: ldr          r1, [sp, #0xd4]
+00513E6A: add.w        r0, fp, #0x18
+00513E6E: blx          #0x4a589c ; std::__ndk1::__tree<Anki::Cozmo::ObjectType,std::__ndk1::less<Anki::Cozmo::ObjectType>,std::__ndk1::allocator<Anki::Cozmo::ObjectType>>::destroy
+00513E72: ldr          r1, [sp, #0xc8]
+00513E74: add.w        r0, fp, #0xc
+00513E78: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+00513E7C: ldr          r1, [sp, #0xbc]
+00513E7E: mov          r0, fp
+00513E80: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+00513E84: ldr.w        r0, [r4, #0x440]
+00513E88: mov          r1, r5
+00513E8A: blx          #0x4a7df8 ; Anki::Cozmo::MoodManager::Update
+00513E8E: ldr.w        r0, [r4, #0x444]
+00513E92: mov          r1, r5
+00513E94: blx          #0x4a7e04 ; Anki::Cozmo::InventoryComponent::Update
+00513E98: ldr.w        r0, [r4, #0x448]
+00513E9C: blx          #0x4a7e10 ; Anki::Cozmo::ProgressionUnlockComponent::Update
+00513EA0: ldr.w        r0, [r4, #0x450]
+00513EA4: blx          #0x4a7e1c ; Anki::Cozmo::BlockTapFilterComponent::Update
+00513EA8: ldr.w        r0, [r4, #0x264]
+00513EAC: blx          #0x4a7e28 ; Anki::Cozmo::AIComponent::Update
+00513EB0: ldr.w        r0, [pc, #0x7b8] ; word[0051466C]=00B3D158
+00513EB4: add          r0, pc
+00513EB6: ldr          r0, [r0]
+00513EB8: cmp          r0, #0
+00513EBA: ble          #0x513ede
+00513EBC: ldr.w        r1, [pc, #0x7b0] ; word[00514670]=00B3D144
+00513EC0: add.w        fp, r4, #0x4c
+00513EC4: subs         r0, #1
+00513EC6: movs         r2, #0xa
+00513EC8: add          r1, pc
+00513ECA: str          r0, [r1]
+00513ECC: addw         r1, pc, #0x7a4
+00513ED0: mov          r0, fp
+00513ED2: bl           #0x4e4652 ; FUN_004e4652
+00513ED6: ldr.w        sb, [pc, #0x7a8] ; word[00514680]=006D0022
+00513EDA: add          sb, pc
+00513EDC: b            #0x513fba
+00513EDE: ldr          r0, [r4, #0x44]
+00513EE0: mov.w        r8, #0
+00513EE4: mov          r1, r4
+00513EE6: blx          #0x4a7e34 ; Anki::Cozmo::BehaviorManager::Update
+00513EEA: ldr          r1, [r4, #0x44]
+00513EEC: mov.w        r8, #0
+00513EF0: add          r0, sp, #0x60
+00513EF2: blx          #0x4a7e40 ; Anki::Cozmo::BehaviorManager::GetCurrentActivity
+00513EF6: ldr          r0, [sp, #0x60]
+00513EF8: ldr          r1, [r0]
+00513EFA: ldr          r1, [r1, #0x24]
+00513EFC: blx          r1
+00513EFE: mov          sb, r0
+00513F00: ldr          r0, [sp, #0x64]
+00513F02: cbz          r0, #0x513f08
+00513F04: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00513F08: mov          r0, sb
+00513F0A: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+RANGE 0x00569EEC..0x00569F5C exclusive; Thumb;
+00569EEC: ldr          r5, [r4, #0x64]
+00569EEE: cmp          r4, #0x74
+00569EF0: str          r0, [r4, #0x40]
+00569EF2: ldr          r5, [r4, #0x44]
+00569EF4: strb         r5, [r4, #0x11]
+00569EF6: ldr          r1, [r5, #0x64]
+00569EF8: lsls         r7, r4, #1
+00569EFA: movs         r0, r0
+00569EFC: ldr          r1, [pc, #0x1d0] ; word[0056A0D0]=6DA9EFFE
+00569EFE: lsls         r5, r5, #2
+00569F00: ldr          r1, [pc, #0x1d8] ; word[0056A0DC]=F1056CE9
+00569F02: lsls         r5, r5, #2
+00569F04: orrs         r6, r4
+00569F06: lsls         r0, r5, #1
+00569F08: ldr          r1, [pc, #0x104] ; word[0056A010]=6821B194
+00569F0A: ldr          r3, [r0, #0x74]
+00569F0C: strb         r5, [r5, #1]
+00569F0E: ldr          r7, [r5, #0x64]
+00569F10: ldr          r5, [r4, #0x64]
+00569F12: cmp          r6, #0x74
+00569F14: ldr          r1, [r1, #0x64]
+00569F16: strb         r1, [r5, #0x11]
+00569F18: ldr          r6, [pc, #0xb8] ; word[00569FD4]=0130F104
+00569F1A: muls         r7, r5, r7
+00569F1C: ldr          r7, [r5, #0x64]
+00569F1E: str          r4, [r6, #0x54]
+00569F20: strb         r0, [r7, #0x11]
+00569F22: movs         r0, r0
+00569F24: push         {r4, lr}
+00569F26: mov          r4, r0
+00569F28: ldr          r1, [r4]
+00569F2A: ldr          r0, [r4, #8]
+00569F2C: blx          #0x4aca18 ; Anki::Cozmo::AIInformationAnalyzer::Update
+00569F30: ldr          r0, [r4, #0x18]
+00569F32: blx          #0x4aca24 ; Anki::Cozmo::AIWhiteboard::Update
+00569F36: ldr          r0, [r4, #0x30]
+00569F38: blx          #0x4aca30 ; Anki::Cozmo::SevereNeedsComponent::Update
+00569F3C: ldr          r1, [r4]
+00569F3E: ldr          r0, [r4, #0x10]
+00569F40: blx          #0x4aca3c ; Anki::Cozmo::BehaviorHelperComponent::Update
+00569F44: ldr          r0, [r4, #0x2c]
+00569F46: blx          #0x4aca48 ; Anki::Cozmo::FreeplayDataTracker::Update
+00569F4A: movs         r0, #0
+00569F4C: pop          {r4, pc}
+00569F4E: ldr          r0, [r0, #0x18]
+00569F50: b.w          #0x8cb6cc
+00569F54: ldr          r0, [r0, #0x18]
+00569F56: b.w          #0x8cb6dc
+00569F5A: push         {r4, r5, r7, lr}

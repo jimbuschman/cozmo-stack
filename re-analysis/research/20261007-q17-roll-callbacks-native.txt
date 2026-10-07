@@ -1,0 +1,80 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BA81A..0x005BA82E exclusive; Thumb;
+005BA81A: push         {r4, lr}
+005BA81C: ldr          r4, [r0, #4]
+005BA81E: mov          r0, r4
+005BA820: blx          #0x4b267c ; Anki::Cozmo::RollBlockHelper::StartRollingAction
+005BA824: ldr          r0, [r4, #0x1c]
+005BA826: pop          {r4, pc}
+005BA828: ldr          r2, [pc, #0x10] ; word[005BA83C]=006AA93E
+005BA82A: ldr          r3, [r1, #4]
+005BA82C: movs         r1, #0
+RANGE 0x005BA886..0x005BA898 exclusive; Thumb;
+005BA886: push         {r4, lr}
+005BA888: ldr          r4, [r0, #4]
+005BA88A: mov          r0, r4
+005BA88C: blx          #0x4b2664 ; Anki::Cozmo::RollBlockHelper::DetermineAppropriateAction
+005BA890: ldr          r0, [r4, #0x1c]
+005BA892: pop          {r4, pc}
+005BA894: ldr          r2, [pc, #0x10] ; word[005BA8A8]=006AA9C2
+005BA896: ldr          r3, [r1, #4]
+RANGE 0x005BAA82..0x005BAA94 exclusive; Thumb;
+005BAA82: push         {r7, lr}
+005BAA84: ldr          r0, [r0, #4]
+005BAA86: movs         r2, #1
+005BAA88: strb.w       r2, [r0, #0x120]
+005BAA8C: blx          #0x4b2664 ; Anki::Cozmo::RollBlockHelper::DetermineAppropriateAction
+005BAA90: movs         r0, #1
+005BAA92: pop          {r7, pc}
+RANGE 0x005BAAEA..0x005BAAEE exclusive; Thumb;
+005BAAEA: movs         r0, #0
+005BAAEC: bx           lr
+RANGE 0x005BA8F2..0x005BA910 exclusive; Thumb;
+005BA8F2: push         {r4, lr}
+005BA8F4: ldr          r4, [r0, #4]
+005BA8F6: mov          r0, r4
+005BA8F8: blx          #0x4b2688 ; Anki::Cozmo::RollBlockHelper::DelegateToPutDown
+005BA8FC: ldr          r0, [r4, #0x1c]
+005BA8FE: pop          {r4, pc}
+005BA900: ldr          r2, [pc, #0x10] ; word[005BA914]=006AAA46
+005BA902: ldr          r3, [r1, #4]
+005BA904: movs         r1, #0
+005BA906: add          r2, pc
+005BA908: cmp          r3, r2
+005BA90A: it           eq
+005BA90C: addeq        r1, r0, #4
+005BA90E: mov          r0, r1
+RANGE 0x005BA964..0x005BA968 exclusive; Thumb;
+005BA964: cmp          r3, r2
+005BA966: it           eq
+RANGE 0x005BA9CA..0x005BA9E2 exclusive; Thumb;
+005BA9CA: ldr          r3, [r1, #4]
+005BA9CC: movs         r1, #0
+005BA9CE: add          r2, pc
+005BA9D0: cmp          r3, r2
+005BA9D2: it           eq
+005BA9D4: addeq        r1, r0, #4
+005BA9D6: mov          r0, r1
+005BA9D8: bx           lr
+005BA9DA: nop
+005BA9DC: add          r3, sp, #0x178
+005BA9DE: lsls         r2, r5, #1
+005BA9E0: ldr          r0, [pc, #4] ; word[005BA9E8]=00A6B886
+RANGE 0x005BAA36..0x005BAA3A exclusive; Thumb;
+005BAA36: nop
+005BAA38: add          r3, sp, #0x3c8
+RANGE 0x005BAC3E..0x005BAC56 exclusive; Thumb;
+005BAC3E: ldr          r1, [r1]
+005BAC40: movs         r2, #3
+005BAC42: movs         r0, #0
+005BAC44: movt         r2, #0x400
+005BAC48: cmp          r1, r2
+005BAC4A: it           eq
+005BAC4C: moveq        r0, #1
+005BAC4E: cmp          r1, #0
+005BAC50: it           eq
+005BAC52: moveq        r0, #2
+005BAC54: bx           lr
+RANGE 0x008CBF40..0x008CBF4C exclusive; ARM;
+008CBF40: ldr          ip, [pc] ; word[008CBF48]=FFBE6730
+008CBF44: add          pc, ip, pc

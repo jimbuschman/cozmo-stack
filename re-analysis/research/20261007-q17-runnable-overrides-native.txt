@@ -1,0 +1,835 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+ELIGIBILITY 00000000 _ZTVN4Anki5Cozmo9IBehaviorE+28 _ZTVN4Anki5Cozmo20IBehaviorRequestGameE+28
+EXTERNAL __cxa_pure_virtual binding, not null function
+ELIGIBILITY 0059EC0E _ZTVN4Anki5Cozmo12BehaviorWaitE+20
+RANGE 0x0059EC0E..0x0059EC1E exclusive; Thumb;
+0059EC0E: movs         r0, #1
+0059EC10: bx           lr
+0059EC12: movs         r0, #0
+0059EC14: bx           lr
+0059EC16: movs         r0, #1
+0059EC18: bx           lr
+0059EC1A: movs         r1, #0
+0059EC1C: mov          r2, r0
+ELIGIBILITY 0059EC12 _ZTVN4Anki5Cozmo12BehaviorWaitE+24 _ZTVN4Anki5Cozmo9IBehaviorE+24 _ZTVN4Anki5Cozmo29BehaviorPlayAnimOnNeedsChangeE+24 _ZTVN4Anki5Cozmo24BehaviorPlayAnimSequenceE+24 _ZTVN4Anki5Cozmo32BehaviorPlayAnimSequenceWithFaceE+24 _ZTVN4Anki5Cozmo25BehaviorPlayArbitraryAnimE+24 _ZTVN4Anki5Cozmo17BehaviorDrivePathE+24 _ZTVN4Anki5Cozmo17BehaviorFindFacesE+24 _ZTVN4Anki5Cozmo25BehaviorInteractWithFacesE+24 _ZTVN4Anki5Cozmo22BehaviorKnockOverCubesE+24 _ZTVN4Anki5Cozmo18BehaviorLookAroundE+24 _ZTVN4Anki5Cozmo18BehaviorPickUpCubeE+24 _ZTVN4Anki5Cozmo19BehaviorPopAWheelieE+24 _ZTVN4Anki5Cozmo20BehaviorPutDownBlockE+24 _ZTVN4Anki5Cozmo17BehaviorRollBlockE+24 _ZTVN4Anki5Cozmo21BehaviorSearchForFaceE+24 _ZTVN4Anki5Cozmo19BehaviorStackBlocksE+24 _ZTVN4Anki5Cozmo18BehaviorTurnToFaceE+24 _ZTVN4Anki5Cozmo26BehaviorDevTurnInPlaceTestE+24 _ZTVN4Anki5Cozmo25BehaviorDockingTestSimpleE+24 _ZTVN4Anki5Cozmo32BehaviorFactoryCentroidExtractorE+24 _ZTVN4Anki5Cozmo19BehaviorFactoryTestE+24 _ZTVN4Anki5Cozmo20BehaviorLiftLoadTestE+24 _ZTVN4Anki5Cozmo18BehaviorFeedingEatE+24 _ZTVN4Anki5Cozmo28BehaviorFeedingSearchForCubeE+24 _ZTVN4Anki5Cozmo31BehaviorCheckForStackAtIntervalE+24 _ZTVN4Anki5Cozmo23BehaviorCubeLiftWorkoutE+24 _ZTVN4Anki5Cozmo26BehaviorDriveInDesperationE+24 _ZTVN4Anki5Cozmo19BehaviorDriveToFaceE+24 _ZTVN4Anki5Cozmo20BehaviorEarnedSparksE+24 _ZTVN4Anki5Cozmo22BehaviorFireTruckAlarmE+24 _ZTVN4Anki5Cozmo20BehaviorOnConfigSeenE+24 _ZTVN4Anki5Cozmo28BehaviorPickUpAndPutDownCubeE+24 _ZTVN4Anki5Cozmo20BehaviorBuildPyramidE+24 _ZTVN4Anki5Cozmo24BehaviorBuildPyramidBaseE+24 _ZTVN4Anki5Cozmo23BehaviorPyramidThankYouE+24 _ZTVN4Anki5Cozmo27BehaviorRespondPossiblyRollE+24 _ZTVN4Anki5Cozmo32BehaviorExploreBringCubeToBeaconE+24 _ZTVN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceE+24 _ZTVN4Anki5Cozmo34BehaviorExploreVisitPossibleMarkerE+24 _ZTVN4Anki5Cozmo28BehaviorLookInPlaceMemoryMapE+24 _ZTVN4Anki5Cozmo25BehaviorThinkAboutBeaconsE+24 _ZTVN4Anki5Cozmo28BehaviorVisitInterestingEdgeE+24 _ZTVN4Anki5Cozmo20IBehaviorRequestGameE+24 _ZTVN4Anki5Cozmo25BehaviorRequestGameSimpleE+24 _ZTVN4Anki5Cozmo27BehaviorCantHandleTallStackE+24 _ZTVN4Anki5Cozmo13BehaviorDanceE+24 _ZTVN4Anki5Cozmo20BehaviorExpressNeedsE+24 _ZTVN4Anki5Cozmo15BehaviorSingingE+24 _ZTVN4Anki5Cozmo26BehaviorLookForFaceAndCubeE+24 _ZTVN4Anki5Cozmo15BehaviorBouncerE+24 _ZTVN4Anki5Cozmo16BehaviorFistBumpE+24 _ZTVN4Anki5Cozmo16BehaviorGuardDogE+24 _ZTVN4Anki5Cozmo16BehaviorPeekABooE+24 _ZTVN4Anki5Cozmo22BehaviorPounceOnMotionE+24 _ZTVN4Anki5Cozmo18BehaviorTrackLaserE+24 _ZTVN4Anki5Cozmo18BehaviorEnrollFaceE+24 _ZTVN4Anki5Cozmo27BehaviorRespondToRenameFaceE+24 _ZTVN4Anki5Cozmo28BehaviorAcknowledgeCubeMovedE+24 _ZTVN4Anki5Cozmo23BehaviorAcknowledgeFaceE+24 _ZTVN4Anki5Cozmo25BehaviorAcknowledgeObjectE+24 _ZTVN4Anki5Cozmo20BehaviorRamIntoBlockE+24 _ZTVN4Anki5Cozmo20BehaviorReactToCliffE+24 _ZTVN4Anki5Cozmo26BehaviorReactToFrustrationE+24 _ZTVN4Anki5Cozmo21BehaviorReactToImpactE+24 _ZTVN4Anki5Cozmo31BehaviorReactToMotorCalibrationE+24 _ZTVN4Anki5Cozmo18BehaviorReactToPetE+24 _ZTVN4Anki5Cozmo21BehaviorReactToPickupE+24 _ZTVN4Anki5Cozmo28BehaviorReactToPlacedOnSlopeE+24 _ZTVN4Anki5Cozmo22BehaviorReactToPyramidE+24 _ZTVN4Anki5Cozmo31BehaviorReactToReturnedToTreadsE+24 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnBackE+24 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnFaceE+24 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnSideE+24 _ZTVN4Anki5Cozmo26BehaviorReactToRobotShakenE+24 _ZTVN4Anki5Cozmo22BehaviorReactToSparkedE+24 _ZTVN4Anki5Cozmo27BehaviorReactToStackOfCubesE+24 _ZTVN4Anki5Cozmo33BehaviorReactToUnexpectedMovementE+24
+RANGE 0x0059EC12..0x0059EC22 exclusive; Thumb;
+0059EC12: movs         r0, #0
+0059EC14: bx           lr
+0059EC16: movs         r0, #1
+0059EC18: bx           lr
+0059EC1A: movs         r1, #0
+0059EC1C: mov          r2, r0
+0059EC1E: str          r1, [r0, #8]
+ELIGIBILITY 0059EC16 _ZTVN4Anki5Cozmo12BehaviorWaitE+28
+RANGE 0x0059EC16..0x0059EC26 exclusive; Thumb;
+0059EC16: movs         r0, #1
+0059EC18: bx           lr
+0059EC1A: movs         r1, #0
+0059EC1C: mov          r2, r0
+0059EC1E: str          r1, [r0, #8]
+0059EC20: str          r1, [r2, #4]!
+0059EC24: str          r2, [r0]
+ELIGIBILITY 005BF04C _ZTVN4Anki5Cozmo9IBehaviorE+20 _ZTVN4Anki5Cozmo29BehaviorPlayAnimOnNeedsChangeE+20 _ZTVN4Anki5Cozmo24BehaviorPlayAnimSequenceE+20 _ZTVN4Anki5Cozmo32BehaviorPlayAnimSequenceWithFaceE+20 _ZTVN4Anki5Cozmo25BehaviorPlayArbitraryAnimE+20 _ZTVN4Anki5Cozmo17BehaviorDrivePathE+20 _ZTVN4Anki5Cozmo17BehaviorFindFacesE+20 _ZTVN4Anki5Cozmo25BehaviorInteractWithFacesE+20 _ZTVN4Anki5Cozmo22BehaviorKnockOverCubesE+20 _ZTVN4Anki5Cozmo18BehaviorLookAroundE+20 _ZTVN4Anki5Cozmo18BehaviorPickUpCubeE+20 _ZTVN4Anki5Cozmo19BehaviorPopAWheelieE+20 _ZTVN4Anki5Cozmo20BehaviorPutDownBlockE+20 _ZTVN4Anki5Cozmo17BehaviorRollBlockE+20 _ZTVN4Anki5Cozmo21BehaviorSearchForFaceE+20 _ZTVN4Anki5Cozmo19BehaviorStackBlocksE+20 _ZTVN4Anki5Cozmo18BehaviorTurnToFaceE+20 _ZTVN4Anki5Cozmo26BehaviorDevTurnInPlaceTestE+20 _ZTVN4Anki5Cozmo25BehaviorDockingTestSimpleE+20 _ZTVN4Anki5Cozmo32BehaviorFactoryCentroidExtractorE+20 _ZTVN4Anki5Cozmo19BehaviorFactoryTestE+20 _ZTVN4Anki5Cozmo20BehaviorLiftLoadTestE+20 _ZTVN4Anki5Cozmo18BehaviorFeedingEatE+20 _ZTVN4Anki5Cozmo28BehaviorFeedingSearchForCubeE+20 _ZTVN4Anki5Cozmo31BehaviorCheckForStackAtIntervalE+20 _ZTVN4Anki5Cozmo23BehaviorCubeLiftWorkoutE+20 _ZTVN4Anki5Cozmo19BehaviorDriveToFaceE+20 _ZTVN4Anki5Cozmo20BehaviorEarnedSparksE+20 _ZTVN4Anki5Cozmo22BehaviorFireTruckAlarmE+20 _ZTVN4Anki5Cozmo20BehaviorOnConfigSeenE+20 _ZTVN4Anki5Cozmo28BehaviorPickUpAndPutDownCubeE+20 _ZTVN4Anki5Cozmo20BehaviorBuildPyramidE+20 _ZTVN4Anki5Cozmo24BehaviorBuildPyramidBaseE+20 _ZTVN4Anki5Cozmo23BehaviorPyramidThankYouE+20 _ZTVN4Anki5Cozmo27BehaviorRespondPossiblyRollE+20 _ZTVN4Anki5Cozmo32BehaviorExploreBringCubeToBeaconE+20 _ZTVN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceE+20 _ZTVN4Anki5Cozmo34BehaviorExploreVisitPossibleMarkerE+20 _ZTVN4Anki5Cozmo28BehaviorLookInPlaceMemoryMapE+20 _ZTVN4Anki5Cozmo25BehaviorThinkAboutBeaconsE+20 _ZTVN4Anki5Cozmo28BehaviorVisitInterestingEdgeE+20 _ZTVN4Anki5Cozmo20IBehaviorRequestGameE+20 _ZTVN4Anki5Cozmo25BehaviorRequestGameSimpleE+20 _ZTVN4Anki5Cozmo27BehaviorCantHandleTallStackE+20 _ZTVN4Anki5Cozmo13BehaviorDanceE+20 _ZTVN4Anki5Cozmo20BehaviorExpressNeedsE+20 _ZTVN4Anki5Cozmo15BehaviorSingingE+20 _ZTVN4Anki5Cozmo26BehaviorLookForFaceAndCubeE+20 _ZTVN4Anki5Cozmo15BehaviorBouncerE+20 _ZTVN4Anki5Cozmo16BehaviorFistBumpE+20 _ZTVN4Anki5Cozmo16BehaviorGuardDogE+20 _ZTVN4Anki5Cozmo16BehaviorPeekABooE+20 _ZTVN4Anki5Cozmo22BehaviorPounceOnMotionE+20 _ZTVN4Anki5Cozmo18BehaviorTrackLaserE+20 _ZTVN4Anki5Cozmo18BehaviorEnrollFaceE+20 _ZTVN4Anki5Cozmo27BehaviorRespondToRenameFaceE+20 _ZTVN4Anki5Cozmo26BehaviorOnboardingShowCubeE+20 _ZTVN4Anki5Cozmo28BehaviorAcknowledgeCubeMovedE+20 _ZTVN4Anki5Cozmo23BehaviorAcknowledgeFaceE+20 _ZTVN4Anki5Cozmo25BehaviorAcknowledgeObjectE+20 _ZTVN4Anki5Cozmo20BehaviorRamIntoBlockE+20 _ZTVN4Anki5Cozmo20BehaviorReactToCliffE+20 _ZTVN4Anki5Cozmo26BehaviorReactToFrustrationE+20 _ZTVN4Anki5Cozmo21BehaviorReactToImpactE+20 _ZTVN4Anki5Cozmo31BehaviorReactToMotorCalibrationE+20 _ZTVN4Anki5Cozmo18BehaviorReactToPetE+20 _ZTVN4Anki5Cozmo33BehaviorReactToUnexpectedMovementE+20
+RANGE 0x005BF04C..0x005BF05C exclusive; Thumb;
+005BF04C: movs         r0, #0
+005BF04E: bx           lr
+005BF050: bx           lr
+005BF052: push         {r4, r5, r7, lr}
+005BF054: mov          r4, r1
+005BF056: mov          r5, r0
+005BF058: cbz          r4, #0x5bf080
+005BF05A: ldr          r1, [r4]
+ELIGIBILITY 005BFF1A _ZTVN4Anki5Cozmo29BehaviorPlayAnimOnNeedsChangeE+28 _ZTVN4Anki5Cozmo24BehaviorPlayAnimSequenceE+28 _ZTVN4Anki5Cozmo32BehaviorPlayAnimSequenceWithFaceE+28 _ZTVN4Anki5Cozmo25BehaviorPlayArbitraryAnimE+28 _ZTVN4Anki5Cozmo13BehaviorDanceE+28
+RANGE 0x005BFF1A..0x005BFF2A exclusive; Thumb;
+005BFF1A: movs         r0, #1
+005BFF1C: bx           lr
+005BFF1E: movs         r0, #1
+005BFF20: bx           lr
+005BFF22: movs         r0, r0
+005BFF24: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005BFF28: sub          sp, #0x4c
+ELIGIBILITY 005C0E4A _ZTVN4Anki5Cozmo23BehaviorDriveOffChargerE+20
+RANGE 0x005C0E4A..0x005C0E5A exclusive; Thumb;
+005C0E4A: movs         r0, #1
+005C0E4C: bx           lr
+005C0E4E: movs         r0, #1
+005C0E50: bx           lr
+005C0E52: movs         r0, #0
+005C0E54: bx           lr
+005C0E56: bx           lr
+ELIGIBILITY 005C0E4E _ZTVN4Anki5Cozmo23BehaviorDriveOffChargerE+24
+RANGE 0x005C0E4E..0x005C0E5E exclusive; Thumb;
+005C0E4E: movs         r0, #1
+005C0E50: bx           lr
+005C0E52: movs         r0, #0
+005C0E54: bx           lr
+005C0E56: bx           lr
+005C0E58: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005C0E5C: push         {r4, lr}
+ELIGIBILITY 005C0E52 _ZTVN4Anki5Cozmo23BehaviorDriveOffChargerE+28
+RANGE 0x005C0E52..0x005C0E62 exclusive; Thumb;
+005C0E52: movs         r0, #0
+005C0E54: bx           lr
+005C0E56: bx           lr
+005C0E58: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005C0E5C: push         {r4, lr}
+005C0E5E: mov          r4, r0
+005C0E60: movs         r0, #0xc
+ELIGIBILITY 005C1578 _ZTVN4Anki5Cozmo17BehaviorDrivePathE+28
+RANGE 0x005C1578..0x005C1588 exclusive; Thumb;
+005C1578: movs         r0, #0
+005C157A: bx           lr
+005C157C: push         {r4, r5, r7, lr}
+005C157E: mov          r4, r0
+005C1580: ldr          r5, [r4]
+005C1582: cbz          r5, #0x5c15ac
+005C1584: ldr          r0, [r4, #4]
+005C1586: cmp          r0, r5
+ELIGIBILITY 005C1D76 _ZTVN4Anki5Cozmo17BehaviorFindFacesE+28 _ZTVN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceE+28
+RANGE 0x005C1D76..0x005C1D86 exclusive; Thumb;
+005C1D76: ldrb.w       r0, [r0, #0x120]
+005C1D7A: bx           lr
+005C1D7C: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005C1D80: push         {r4, lr}
+005C1D82: mov          r4, r0
+005C1D84: movs         r0, #8
+ELIGIBILITY 005C2A6C _ZTVN4Anki5Cozmo25BehaviorInteractWithFacesE+28
+RANGE 0x005C2A6C..0x005C2A7C exclusive; Thumb;
+005C2A6C: movs         r0, #0
+005C2A6E: bx           lr
+005C2A70: push         {r4, r5, r7, lr}
+005C2A72: mov          r4, r1
+005C2A74: mov          r5, r0
+005C2A76: cbz          r4, #0x5c2a92
+005C2A78: ldr          r1, [r4]
+005C2A7A: mov          r0, r5
+ELIGIBILITY 005C3D00 _ZTVN4Anki5Cozmo22BehaviorKnockOverCubesE+28
+RANGE 0x005C3D00..0x005C3D10 exclusive; Thumb;
+005C3D00: movs         r0, #0
+005C3D02: bx           lr
+005C3D04: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005C3D08: push         {r4, lr}
+005C3D0A: mov          r4, r0
+005C3D0C: movs         r0, #0x10
+ELIGIBILITY 005C6010 _ZTVN4Anki5Cozmo18BehaviorLookAroundE+28
+RANGE 0x005C6010..0x005C6020 exclusive; Thumb;
+005C6010: movs         r0, #0
+005C6012: bx           lr
+005C6014: push         {r4, r5, r7, lr}
+005C6016: mov          r4, r1
+005C6018: mov          r5, r0
+005C601A: cbz          r4, #0x5c6036
+005C601C: ldr          r1, [r4]
+005C601E: mov          r0, r5
+ELIGIBILITY 005C702C _ZTVN4Anki5Cozmo18BehaviorPickUpCubeE+28
+RANGE 0x005C702C..0x005C703C exclusive; Thumb;
+005C702C: movs         r0, #0
+005C702E: bx           lr
+005C7030: push         {r4, r5, r7, lr}
+005C7032: mov          r4, r0
+005C7034: movs         r0, #0
+005C7036: mov          r1, r4
+005C7038: ldr          r2, [pc, #0x24] ; word[005C7060]=006A1360
+005C703A: str          r0, [r4, #8]
+ELIGIBILITY 005C7ACE _ZTVN4Anki5Cozmo19BehaviorPopAWheelieE+28
+RANGE 0x005C7ACE..0x005C7ADE exclusive; Thumb;
+005C7ACE: movs         r0, #0
+005C7AD0: bx           lr
+005C7AD2: movs         r0, r0
+005C7AD4: push         {r4, r5, r7, lr}
+005C7AD6: mov          r4, r0
+005C7AD8: movs         r0, #0
+005C7ADA: mov          r1, r4
+005C7ADC: ldr          r2, [pc, #0x24] ; word[005C7B04]=006A0BBC
+ELIGIBILITY 005C8332 _ZTVN4Anki5Cozmo20BehaviorPutDownBlockE+28
+RANGE 0x005C8332..0x005C8342 exclusive; Thumb;
+005C8332: movs         r0, #1
+005C8334: bx           lr
+005C8336: movs         r0, r0
+005C8338: push         {r4, r5, r7, lr}
+005C833A: sub          sp, #0x20
+005C833C: ldr          r4, [pc, #0x70] ; word[005C83B0]=00A76504
+005C833E: mov          r5, sp
+ELIGIBILITY 005C8CE8 _ZTVN4Anki5Cozmo17BehaviorRollBlockE+28
+RANGE 0x005C8CE8..0x005C8CF8 exclusive; Thumb;
+005C8CE8: movs         r0, #1
+005C8CEA: bx           lr
+005C8CEC: push         {r4, r5, r7, lr}
+005C8CEE: sub          sp, #8
+005C8CF0: mov          r4, r0
+005C8CF2: ldrb.w       r0, [r1, #0x128]
+005C8CF6: movs         r1, #6
+ELIGIBILITY 005C93CC _ZTVN4Anki5Cozmo21BehaviorSearchForFaceE+28
+RANGE 0x005C93CC..0x005C93DC exclusive; Thumb;
+005C93CC: movs         r0, #0
+005C93CE: bx           lr
+005C93D0: push         {r4, r5, r6, lr}
+005C93D2: sub          sp, #0x30
+005C93D4: mov          r5, r2
+005C93D6: mov          r6, r1
+005C93D8: mov          r4, r0
+ELIGIBILITY 005CA1E6 _ZTVN4Anki5Cozmo19BehaviorStackBlocksE+28
+RANGE 0x005CA1E6..0x005CA1F6 exclusive; Thumb;
+005CA1E6: movs         r0, #1
+005CA1E8: bx           lr
+005CA1EA: push         {r4, r5, r7, lr}
+005CA1EC: sub          sp, #8
+005CA1EE: mov          r4, r0
+005CA1F0: ldrb.w       r0, [r1, #0x134]
+005CA1F4: mov          r1, r4
+ELIGIBILITY 005CA54C _ZTVN4Anki5Cozmo18BehaviorTurnToFaceE+28
+RANGE 0x005CA54C..0x005CA55C exclusive; Thumb;
+005CA54C: movs         r0, #0
+005CA54E: bx           lr
+005CA550: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005CA554: sub          sp, #4
+005CA556: vpush        {d8}
+005CA55A: sub          sp, #0x38
+ELIGIBILITY 005CAD80 _ZTVN4Anki5Cozmo26BehaviorDevTurnInPlaceTestE+28
+RANGE 0x005CAD80..0x005CAD90 exclusive; Thumb;
+005CAD80: movs         r0, #0
+005CAD82: bx           lr
+005CAD84: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005CAD88: sub          sp, #0x14
+005CAD8A: mov          r4, r0
+005CAD8C: mov          sb, r1
+ELIGIBILITY 005CEC8A _ZTVN4Anki5Cozmo25BehaviorDockingTestSimpleE+28
+RANGE 0x005CEC8A..0x005CEC9A exclusive; Thumb;
+005CEC8A: movs         r0, #0
+005CEC8C: bx           lr
+005CEC8E: push         {r4, r5, r7, lr}
+005CEC90: mov          r4, r1
+005CEC92: mov          r5, r0
+005CEC94: cbz          r4, #0x5cecb8
+005CEC96: ldr          r1, [r4]
+005CEC98: mov          r0, r5
+ELIGIBILITY 005D02A8 _ZTVN4Anki5Cozmo32BehaviorFactoryCentroidExtractorE+28
+RANGE 0x005D02A8..0x005D02B8 exclusive; Thumb;
+005D02A8: movs         r0, #1
+005D02AA: bx           lr
+005D02AC: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005D02B0: push         {r4, lr}
+005D02B2: mov          r4, r0
+005D02B4: movs         r0, #0xc
+ELIGIBILITY 005D36EA _ZTVN4Anki5Cozmo19BehaviorFactoryTestE+28
+RANGE 0x005D36EA..0x005D36FA exclusive; Thumb;
+005D36EA: movs         r0, #1
+005D36EC: bx           lr
+005D36EE: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005D36F2: movs         r0, r0
+005D36F4: push         {r4, lr}
+005D36F6: mov          r4, r0
+005D36F8: movs         r0, #0x10
+ELIGIBILITY 005D515E _ZTVN4Anki5Cozmo20BehaviorLiftLoadTestE+28
+RANGE 0x005D515E..0x005D516E exclusive; Thumb;
+005D515E: movs         r0, #0
+005D5160: bx           lr
+005D5162: push         {r4, r5, r7, lr}
+005D5164: mov          r4, r1
+005D5166: mov          r5, r0
+005D5168: cbz          r4, #0x5d5184
+005D516A: ldr          r1, [r4]
+005D516C: mov          r0, r5
+ELIGIBILITY 005D6750 _ZTVN4Anki5Cozmo18BehaviorFeedingEatE+28
+RANGE 0x005D6750..0x005D6760 exclusive; Thumb;
+005D6750: movs         r0, #0
+005D6752: bx           lr
+005D6754: push         {r7, lr}
+005D6756: sub          sp, #8
+005D6758: str          r1, [sp, #4]
+005D675A: ldrd         r2, r3, [r0, #0x134]
+005D675E: cmp          r2, r3
+ELIGIBILITY 005D716A _ZTVN4Anki5Cozmo28BehaviorFeedingSearchForCubeE+28
+RANGE 0x005D716A..0x005D717A exclusive; Thumb;
+005D716A: movs         r0, #0
+005D716C: bx           lr
+005D716E: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005D7172: movs         r0, r0
+005D7174: push         {r4, lr}
+005D7176: mov          r4, r0
+005D7178: movs         r0, #0x10
+ELIGIBILITY 005D7BE4 _ZTVN4Anki5Cozmo31BehaviorCheckForStackAtIntervalE+28
+RANGE 0x005D7BE4..0x005D7BF4 exclusive; Thumb;
+005D7BE4: movs         r0, #0
+005D7BE6: bx           lr
+005D7BE8: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005D7BEC: push         {r4, lr}
+005D7BEE: mov          r4, r0
+005D7BF0: movs         r0, #0x10
+ELIGIBILITY 005D8A50 _ZTVN4Anki5Cozmo23BehaviorCubeLiftWorkoutE+28
+RANGE 0x005D8A50..0x005D8A60 exclusive; Thumb;
+005D8A50: movs         r0, #1
+005D8A52: bx           lr
+005D8A54: movs         r0, #1
+005D8A56: bx           lr
+005D8A58: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005D8A5C: push         {r4, lr}
+005D8A5E: mov          r4, r0
+ELIGIBILITY 005D9F46 _ZTVN4Anki5Cozmo26BehaviorDriveInDesperationE+20
+RANGE 0x005D9F46..0x005D9F56 exclusive; Thumb;
+005D9F46: movs         r0, #1
+005D9F48: bx           lr
+005D9F4A: movs         r0, #0
+005D9F4C: bx           lr
+005D9F4E: movs         r0, r0
+005D9F50: push         {r4, r5, r6, r7, lr}
+005D9F52: sub          sp, #0x1c
+005D9F54: mov          r4, r0
+ELIGIBILITY 005D9F4A _ZTVN4Anki5Cozmo26BehaviorDriveInDesperationE+28
+RANGE 0x005D9F4A..0x005D9F5A exclusive; Thumb;
+005D9F4A: movs         r0, #0
+005D9F4C: bx           lr
+005D9F4E: movs         r0, r0
+005D9F50: push         {r4, r5, r6, r7, lr}
+005D9F52: sub          sp, #0x1c
+005D9F54: mov          r4, r0
+005D9F56: movs         r0, #0
+ELIGIBILITY 005DAD54 _ZTVN4Anki5Cozmo19BehaviorDriveToFaceE+28
+RANGE 0x005DAD54..0x005DAD64 exclusive; Thumb;
+005DAD54: movs         r0, #0
+005DAD56: bx           lr
+005DAD58: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005DAD5C: push         {r4, lr}
+005DAD5E: mov          r4, r0
+005DAD60: movs         r0, #0x10
+ELIGIBILITY 005DAF82 _ZTVN4Anki5Cozmo20BehaviorEarnedSparksE+28
+RANGE 0x005DAF82..0x005DAF92 exclusive; Thumb;
+005DAF82: movs         r0, #1
+005DAF84: bx           lr
+005DAF86: movs         r0, r0
+005DAF88: push         {r4, lr}
+005DAF8A: mov          r4, r1
+005DAF8C: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+005DAF90: ldr          r1, [pc, #0xc] ; word[005DAFA0]=00A643E2
+ELIGIBILITY 005DB0E2 _ZTVN4Anki5Cozmo22BehaviorFireTruckAlarmE+28
+RANGE 0x005DB0E2..0x005DB0F2 exclusive; Thumb;
+005DB0E2: movs         r0, #0
+005DB0E4: bx           lr
+005DB0E6: movs         r0, r0
+005DB0E8: push         {r4, r5, r6, r7, lr}
+005DB0EA: sub          sp, #4
+005DB0EC: mov          r7, r2
+005DB0EE: mov          r4, r0
+ELIGIBILITY 005DB4D8 _ZTVN4Anki5Cozmo20BehaviorOnConfigSeenE+28
+RANGE 0x005DB4D8..0x005DB4E8 exclusive; Thumb;
+005DB4D8: movs         r0, #0
+005DB4DA: bx           lr
+005DB4DC: movs         r0, #0
+005DB4DE: bx           lr
+005DB4E0: push         {r4, r5, r7, lr}
+005DB4E2: mov          r4, r1
+005DB4E4: mov          r5, r0
+005DB4E6: cbz          r4, #0x5db502
+ELIGIBILITY 005DBB66 _ZTVN4Anki5Cozmo28BehaviorPickUpAndPutDownCubeE+28
+RANGE 0x005DBB66..0x005DBB76 exclusive; Thumb;
+005DBB66: movs         r0, #0
+005DBB68: bx           lr
+005DBB6A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005DBB6E: movs         r0, r0
+005DBB70: push         {r4, lr}
+005DBB72: mov          r4, r0
+005DBB74: movs         r0, #0x10
+ELIGIBILITY 005DC554 _ZTVN4Anki5Cozmo20BehaviorBuildPyramidE+28
+RANGE 0x005DC554..0x005DC564 exclusive; Thumb;
+005DC554: movs         r0, #1
+005DC556: bx           lr
+005DC558: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005DC55C: push         {r7, lr}
+005DC55E: movs         r0, #8
+005DC560: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+ELIGIBILITY 005DDAF4 _ZTVN4Anki5Cozmo24BehaviorBuildPyramidBaseE+28
+RANGE 0x005DDAF4..0x005DDB04 exclusive; Thumb;
+005DDAF4: movs         r0, #1
+005DDAF6: bx           lr
+005DDAF8: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005DDAFC: push         {r7, lr}
+005DDAFE: movs         r0, #8
+005DDB00: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+ELIGIBILITY 005DE31E _ZTVN4Anki5Cozmo23BehaviorPyramidThankYouE+28
+RANGE 0x005DE31E..0x005DE32E exclusive; Thumb;
+005DE31E: movs         r0, #0
+005DE320: bx           lr
+005DE322: movs         r0, r0
+005DE324: push         {r4, r5, r6, r7, lr}
+005DE326: sub          sp, #0x2c
+005DE328: mov          r4, r0
+005DE32A: ldr          r0, [pc, #0x138] ; word[005DE464]=00A6051A
+005DE32C: mov          r6, r1
+ELIGIBILITY 005DEC30 _ZTVN4Anki5Cozmo27BehaviorRespondPossiblyRollE+28
+RANGE 0x005DEC30..0x005DEC40 exclusive; Thumb;
+005DEC30: movs         r0, #0
+005DEC32: bx           lr
+005DEC34: push         {r4, r5, r7, lr}
+005DEC36: mov          r4, r1
+005DEC38: mov          r5, r0
+005DEC3A: cbz          r4, #0x5dec56
+005DEC3C: ldr          r1, [r4]
+005DEC3E: mov          r0, r5
+ELIGIBILITY 005E0DF0 _ZTVN4Anki5Cozmo32BehaviorExploreBringCubeToBeaconE+28
+RANGE 0x005E0DF0..0x005E0E00 exclusive; Thumb;
+005E0DF0: movs         r0, #1
+005E0DF2: bx           lr
+005E0DF4: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005E0DF8: sub          sp, #0x3c
+005E0DFA: mov          fp, r1
+005E0DFC: mov          r5, r0
+ELIGIBILITY 005E46FC _ZTVN4Anki5Cozmo34BehaviorExploreVisitPossibleMarkerE+28
+RANGE 0x005E46FC..0x005E470C exclusive; Thumb;
+005E46FC: movs         r0, #0
+005E46FE: bx           lr
+005E4700: bx           lr
+005E4702: movs         r0, r0
+005E4704: push         {r4, lr}
+005E4706: mov          r4, r0
+005E4708: ldr          r0, [pc, #0x14] ; word[005E4720]=00A451F6
+005E470A: add          r0, pc
+ELIGIBILITY 005E5760 _ZTVN4Anki5Cozmo28BehaviorLookInPlaceMemoryMapE+28
+RANGE 0x005E5760..0x005E5770 exclusive; Thumb;
+005E5760: movs         r0, #0
+005E5762: bx           lr
+005E5764: push.w       {r4, r5, r6, r7, r8, lr}
+005E5768: sub          sp, #0x18
+005E576A: mov          r4, r0
+005E576C: mov          r5, r2
+005E576E: mov          r6, r1
+ELIGIBILITY 005E5F4C _ZTVN4Anki5Cozmo25BehaviorThinkAboutBeaconsE+28
+RANGE 0x005E5F4C..0x005E5F5C exclusive; Thumb;
+005E5F4C: movs         r0, #0
+005E5F4E: bx           lr
+005E5F50: stm.w        r0, {r1, r2, r3}
+005E5F54: bx           lr
+005E5F56: ldrd         r1, r0, [r0]
+005E5F5A: movs         r2, #0x2c
+ELIGIBILITY 005E834A _ZTVN4Anki5Cozmo28BehaviorVisitInterestingEdgeE+28
+RANGE 0x005E834A..0x005E835A exclusive; Thumb;
+005E834A: movs         r0, #0
+005E834C: bx           lr
+005E834E: movs         r0, r0
+005E8350: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005E8354: sub          sp, #4
+005E8356: vpush        {d8}
+ELIGIBILITY 005EC304 _ZTVN4Anki5Cozmo25BehaviorRequestGameSimpleE+28
+RANGE 0x005EC304..0x005EC314 exclusive; Thumb;
+005EC304: movs         r0, #1
+005EC306: bx           lr
+005EC308: push         {r7, lr}
+005EC30A: blx          #0x4aab4c ; Anki::Cozmo::IActionRunner::~IActionRunner
+005EC30E: pop.w        {r7, lr}
+ELIGIBILITY 005ED384 _ZTVN4Anki5Cozmo27BehaviorCantHandleTallStackE+28
+RANGE 0x005ED384..0x005ED394 exclusive; Thumb;
+005ED384: movs         r0, #0
+005ED386: bx           lr
+005ED388: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005ED38C: push         {r4, lr}
+005ED38E: mov          r4, r0
+005ED390: movs         r0, #0x10
+ELIGIBILITY 005EE860 _ZTVN4Anki5Cozmo20BehaviorExpressNeedsE+28
+RANGE 0x005EE860..0x005EE870 exclusive; Thumb;
+005EE860: movs         r0, #0
+005EE862: bx           lr
+005EE864: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005EE868: push         {r4, lr}
+005EE86A: mov          r4, r0
+005EE86C: movs         r0, #8
+ELIGIBILITY 005EF344 _ZTVN4Anki5Cozmo15BehaviorSingingE+28
+RANGE 0x005EF344..0x005EF354 exclusive; Thumb;
+005EF344: movs         r0, #0
+005EF346: bx           lr
+005EF348: movs         r0, #1
+005EF34A: bx           lr
+005EF34C: push         {r4, r5, r7, lr}
+005EF34E: mov          r4, r1
+005EF350: mov          r5, r0
+005EF352: cbz          r4, #0x5ef36e
+ELIGIBILITY 005F0DC0 _ZTVN4Anki5Cozmo26BehaviorLookForFaceAndCubeE+28
+RANGE 0x005F0DC0..0x005F0DD0 exclusive; Thumb;
+005F0DC0: movs         r0, #0
+005F0DC2: bx           lr
+005F0DC4: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005F0DC8: push         {r4, lr}
+005F0DCA: mov          r4, r0
+005F0DCC: movs         r0, #0x10
+ELIGIBILITY 005F1CBC _ZTVN4Anki5Cozmo15BehaviorBouncerE+28
+RANGE 0x005F1CBC..0x005F1CCC exclusive; Thumb;
+005F1CBC: movs         r0, #0
+005F1CBE: bx           lr
+005F1CC0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005F1CC4: push         {r4, lr}
+005F1CC6: mov          r4, r0
+005F1CC8: movs         r0, #0xc
+ELIGIBILITY 005F278C _ZTVN4Anki5Cozmo16BehaviorFistBumpE+28
+RANGE 0x005F278C..0x005F279C exclusive; Thumb;
+005F278C: movs         r0, #1
+005F278E: bx           lr
+005F2790: push         {r4, r5, r7, lr}
+005F2792: mov          r4, r1
+005F2794: mov          r5, r0
+005F2796: cbz          r4, #0x5f27b2
+005F2798: ldr          r1, [r4]
+005F279A: mov          r0, r5
+ELIGIBILITY 005F575A _ZTVN4Anki5Cozmo16BehaviorGuardDogE+28
+RANGE 0x005F575A..0x005F576A exclusive; Thumb;
+005F575A: movs         r0, #0
+005F575C: bx           lr
+005F575E: movs         r0, #1
+005F5760: bx           lr
+005F5762: push         {r4, r5, r7, lr}
+005F5764: mov          r4, r1
+005F5766: mov          r5, r0
+005F5768: cbz          r4, #0x5f578c
+ELIGIBILITY 005F7858 _ZTVN4Anki5Cozmo16BehaviorPeekABooE+28
+RANGE 0x005F7858..0x005F7868 exclusive; Thumb;
+005F7858: movs         r0, #0
+005F785A: bx           lr
+005F785C: push         {r4, r5, r7, lr}
+005F785E: mov          r4, r1
+005F7860: mov          r5, r0
+005F7862: cbz          r4, #0x5f787e
+005F7864: ldr          r1, [r4]
+005F7866: mov          r0, r5
+ELIGIBILITY 005F9F96 _ZTVN4Anki5Cozmo22BehaviorPounceOnMotionE+28
+RANGE 0x005F9F96..0x005F9FA6 exclusive; Thumb;
+005F9F96: movs         r0, #0
+005F9F98: bx           lr
+005F9F9A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005F9F9E: movs         r0, r0
+005F9FA0: push         {r4, lr}
+005F9FA2: mov          r4, r0
+005F9FA4: movs         r0, #0x10
+ELIGIBILITY 005FC5C4 _ZTVN4Anki5Cozmo18BehaviorTrackLaserE+28
+RANGE 0x005FC5C4..0x005FC5D4 exclusive; Thumb;
+005FC5C4: movs         r0, #0
+005FC5C6: bx           lr
+005FC5C8: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005FC5CC: push         {r4, lr}
+005FC5CE: mov          r4, r0
+005FC5D0: movs         r0, #0x10
+ELIGIBILITY 005FFC24 _ZTVN4Anki5Cozmo18BehaviorEnrollFaceE+28
+RANGE 0x005FFC24..0x005FFC34 exclusive; Thumb;
+005FFC24: movs         r0, #0
+005FFC26: bx           lr
+005FFC28: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005FFC2C: push         {r4, lr}
+005FFC2E: mov          r4, r0
+005FFC30: movs         r0, #8
+ELIGIBILITY 00600ABC _ZTVN4Anki5Cozmo27BehaviorRespondToRenameFaceE+28
+RANGE 0x00600ABC..0x00600ACC exclusive; Thumb;
+00600ABC: movs         r0, #0
+00600ABE: bx           lr
+00600AC0: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00600AC4: sub          sp, #0x14
+00600AC6: mov          fp, r2
+00600AC8: mov          r4, r0
+ELIGIBILITY 00601A98 _ZTVN4Anki5Cozmo26BehaviorOnboardingShowCubeE+24
+RANGE 0x00601A98..0x00601AA8 exclusive; Thumb;
+00601A98: movs         r0, #1
+00601A9A: bx           lr
+00601A9C: movs         r0, #1
+00601A9E: bx           lr
+00601AA0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00601AA4: push         {r4, lr}
+00601AA6: mov          r4, r0
+ELIGIBILITY 00601A9C _ZTVN4Anki5Cozmo26BehaviorOnboardingShowCubeE+28
+RANGE 0x00601A9C..0x00601AAC exclusive; Thumb;
+00601A9C: movs         r0, #1
+00601A9E: bx           lr
+00601AA0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00601AA4: push         {r4, lr}
+00601AA6: mov          r4, r0
+00601AA8: movs         r0, #0x10
+ELIGIBILITY 006027F8 _ZTVN4Anki5Cozmo28BehaviorAcknowledgeCubeMovedE+28
+RANGE 0x006027F8..0x00602808 exclusive; Thumb;
+006027F8: movs         r0, #1
+006027FA: bx           lr
+006027FC: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00602800: push         {r4, lr}
+00602802: mov          r4, r0
+00602804: movs         r0, #0x10
+ELIGIBILITY 00602D20 _ZTVN4Anki5Cozmo23BehaviorAcknowledgeFaceE+28
+RANGE 0x00602D20..0x00602D30 exclusive; Thumb;
+00602D20: movs         r0, #0
+00602D22: bx           lr
+00602D24: push         {r4, r5, r7, lr}
+00602D26: mov          r4, r1
+00602D28: mov          r5, r0
+00602D2A: cbz          r4, #0x602d46
+00602D2C: ldr          r1, [r4]
+00602D2E: mov          r0, r5
+ELIGIBILITY 00604380 _ZTVN4Anki5Cozmo25BehaviorAcknowledgeObjectE+28
+RANGE 0x00604380..0x00604390 exclusive; Thumb;
+00604380: movs         r0, #1
+00604382: bx           lr
+00604384: push         {r4, r5, r7, lr}
+00604386: mov          r4, r1
+00604388: mov          r5, r0
+0060438A: cbz          r4, #0x6043a6
+0060438C: ldr          r1, [r4]
+0060438E: mov          r0, r5
+ELIGIBILITY 00604C42 _ZTVN4Anki5Cozmo20BehaviorRamIntoBlockE+28
+RANGE 0x00604C42..0x00604C52 exclusive; Thumb;
+00604C42: movs         r0, #1
+00604C44: bx           lr
+00604C46: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00604C4A: movs         r0, r0
+00604C4C: push         {r4, lr}
+00604C4E: mov          r4, r0
+00604C50: movs         r0, #0x10
+ELIGIBILITY 00605676 _ZTVN4Anki5Cozmo20BehaviorReactToCliffE+28
+RANGE 0x00605676..0x00605686 exclusive; Thumb;
+00605676: movs         r0, #1
+00605678: bx           lr
+0060567A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060567E: movs         r0, r0
+00605680: push         {r4, lr}
+00605682: mov          r4, r0
+00605684: movs         r0, #8
+ELIGIBILITY 00606110 _ZTVN4Anki5Cozmo26BehaviorReactToFrustrationE+28
+RANGE 0x00606110..0x00606120 exclusive; Thumb;
+00606110: movs         r0, #1
+00606112: bx           lr
+00606114: movs         r0, #1
+00606116: bx           lr
+00606118: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060611C: push         {r4, lr}
+0060611E: mov          r4, r0
+ELIGIBILITY 00606482 _ZTVN4Anki5Cozmo21BehaviorReactToImpactE+28
+RANGE 0x00606482..0x00606492 exclusive; Thumb;
+00606482: movs         r0, #0
+00606484: bx           lr
+00606486: movs         r0, #1
+00606488: bx           lr
+0060648A: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060648E: movs         r0, r0
+00606490: push         {r4, lr}
+ELIGIBILITY 006068BE _ZTVN4Anki5Cozmo31BehaviorReactToMotorCalibrationE+28
+RANGE 0x006068BE..0x006068CE exclusive; Thumb;
+006068BE: movs         r0, #1
+006068C0: bx           lr
+006068C2: bx           lr
+006068C4: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+006068C8: push         {r4, lr}
+006068CA: mov          r4, r0
+006068CC: movs         r0, #8
+ELIGIBILITY 00606E8C _ZTVN4Anki5Cozmo24BehaviorReactToOnChargerE+20
+RANGE 0x00606E8C..0x00606E9C exclusive; Thumb;
+00606E8C: movs         r0, #1
+00606E8E: bx           lr
+00606E90: movs         r0, #1
+00606E92: bx           lr
+00606E94: movs         r0, #1
+00606E96: bx           lr
+00606E98: push         {r7, lr}
+ELIGIBILITY 00606E90 _ZTVN4Anki5Cozmo24BehaviorReactToOnChargerE+24
+RANGE 0x00606E90..0x00606EA0 exclusive; Thumb;
+00606E90: movs         r0, #1
+00606E92: bx           lr
+00606E94: movs         r0, #1
+00606E96: bx           lr
+00606E98: push         {r7, lr}
+00606E9A: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+00606E9E: ldr          r1, [pc, #0x34] ; word[00606ED4]=00A38750
+ELIGIBILITY 00606E94 _ZTVN4Anki5Cozmo24BehaviorReactToOnChargerE+28
+RANGE 0x00606E94..0x00606EA4 exclusive; Thumb;
+00606E94: movs         r0, #1
+00606E96: bx           lr
+00606E98: push         {r7, lr}
+00606E9A: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+00606E9E: ldr          r1, [pc, #0x34] ; word[00606ED4]=00A38750
+00606EA0: movs         r3, #0
+00606EA2: movs         r2, #0
+ELIGIBILITY 006075D4 _ZTVN4Anki5Cozmo18BehaviorReactToPetE+28
+RANGE 0x006075D4..0x006075E4 exclusive; Thumb;
+006075D4: movs         r0, #0
+006075D6: bx           lr
+006075D8: push         {r4, r5, r7, lr}
+006075DA: mov          r4, r1
+006075DC: mov          r5, r0
+006075DE: cbz          r4, #0x6075fa
+006075E0: ldr          r1, [r4]
+006075E2: mov          r0, r5
+ELIGIBILITY 00607DAC _ZTVN4Anki5Cozmo21BehaviorReactToPickupE+20
+RANGE 0x00607DAC..0x00607DBC exclusive; Thumb;
+00607DAC: movs         r0, #1
+00607DAE: bx           lr
+00607DB0: movs         r0, #1
+00607DB2: bx           lr
+00607DB4: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00607DB8: push         {r4, lr}
+00607DBA: mov          r4, r0
+ELIGIBILITY 00607DB0 _ZTVN4Anki5Cozmo21BehaviorReactToPickupE+28
+RANGE 0x00607DB0..0x00607DC0 exclusive; Thumb;
+00607DB0: movs         r0, #1
+00607DB2: bx           lr
+00607DB4: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00607DB8: push         {r4, lr}
+00607DBA: mov          r4, r0
+00607DBC: movs         r0, #0x10
+ELIGIBILITY 00608280 _ZTVN4Anki5Cozmo28BehaviorReactToPlacedOnSlopeE+20
+RANGE 0x00608280..0x00608290 exclusive; Thumb;
+00608280: movs         r0, #1
+00608282: bx           lr
+00608284: movs         r0, #1
+00608286: bx           lr
+00608288: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060828C: push         {r4, lr}
+0060828E: mov          r4, r0
+ELIGIBILITY 00608284 _ZTVN4Anki5Cozmo28BehaviorReactToPlacedOnSlopeE+28
+RANGE 0x00608284..0x00608294 exclusive; Thumb;
+00608284: movs         r0, #1
+00608286: bx           lr
+00608288: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0060828C: push         {r4, lr}
+0060828E: mov          r4, r0
+00608290: movs         r0, #0x10
+ELIGIBILITY 0060842E _ZTVN4Anki5Cozmo22BehaviorReactToPyramidE+20
+RANGE 0x0060842E..0x0060843E exclusive; Thumb;
+0060842E: movs         r0, #0
+00608430: bx           lr
+00608432: movs         r0, #0
+00608434: bx           lr
+00608436: movs         r0, r0
+00608438: push         {r4, r5, r7, lr}
+0060843A: sub          sp, #8
+0060843C: mov          r5, r1
+ELIGIBILITY 00608432 _ZTVN4Anki5Cozmo22BehaviorReactToPyramidE+28
+RANGE 0x00608432..0x00608442 exclusive; Thumb;
+00608432: movs         r0, #0
+00608434: bx           lr
+00608436: movs         r0, r0
+00608438: push         {r4, r5, r7, lr}
+0060843A: sub          sp, #8
+0060843C: mov          r5, r1
+0060843E: mov          r4, r0
+ELIGIBILITY 00608728 _ZTVN4Anki5Cozmo31BehaviorReactToReturnedToTreadsE+20
+RANGE 0x00608728..0x00608738 exclusive; Thumb;
+00608728: movs         r0, #1
+0060872A: bx           lr
+0060872C: movs         r0, #1
+0060872E: bx           lr
+00608730: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608734: push         {r4, lr}
+00608736: mov          r4, r0
+ELIGIBILITY 0060872C _ZTVN4Anki5Cozmo31BehaviorReactToReturnedToTreadsE+28
+RANGE 0x0060872C..0x0060873C exclusive; Thumb;
+0060872C: movs         r0, #1
+0060872E: bx           lr
+00608730: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608734: push         {r4, lr}
+00608736: mov          r4, r0
+00608738: movs         r0, #0x10
+ELIGIBILITY 00608A0C _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnBackE+20
+RANGE 0x00608A0C..0x00608A1C exclusive; Thumb;
+00608A0C: movs         r0, #1
+00608A0E: bx           lr
+00608A10: movs         r0, #1
+00608A12: bx           lr
+00608A14: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608A18: push         {r4, lr}
+00608A1A: mov          r4, r0
+ELIGIBILITY 00608A10 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnBackE+28
+RANGE 0x00608A10..0x00608A20 exclusive; Thumb;
+00608A10: movs         r0, #1
+00608A12: bx           lr
+00608A14: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608A18: push         {r4, lr}
+00608A1A: mov          r4, r0
+00608A1C: movs         r0, #0x10
+ELIGIBILITY 00608CA8 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnFaceE+20
+RANGE 0x00608CA8..0x00608CB8 exclusive; Thumb;
+00608CA8: movs         r0, #1
+00608CAA: bx           lr
+00608CAC: movs         r0, #1
+00608CAE: bx           lr
+00608CB0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608CB4: push         {r4, lr}
+00608CB6: mov          r4, r0
+ELIGIBILITY 00608CAC _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnFaceE+28
+RANGE 0x00608CAC..0x00608CBC exclusive; Thumb;
+00608CAC: movs         r0, #1
+00608CAE: bx           lr
+00608CB0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608CB4: push         {r4, lr}
+00608CB6: mov          r4, r0
+00608CB8: movs         r0, #0x10
+ELIGIBILITY 00609074 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnSideE+20
+RANGE 0x00609074..0x00609084 exclusive; Thumb;
+00609074: movs         r0, #1
+00609076: bx           lr
+00609078: movs         r0, #1
+0060907A: bx           lr
+0060907C: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00609080: push         {r4, lr}
+00609082: mov          r4, r0
+ELIGIBILITY 00609078 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnSideE+28
+RANGE 0x00609078..0x00609088 exclusive; Thumb;
+00609078: movs         r0, #1
+0060907A: bx           lr
+0060907C: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00609080: push         {r4, lr}
+00609082: mov          r4, r0
+00609084: movs         r0, #0x10
+ELIGIBILITY 006097D2 _ZTVN4Anki5Cozmo26BehaviorReactToRobotShakenE+20
+RANGE 0x006097D2..0x006097E2 exclusive; Thumb;
+006097D2: movs         r0, #1
+006097D4: bx           lr
+006097D6: movs         r0, #1
+006097D8: bx           lr
+006097DA: movs         r0, #1
+006097DC: bx           lr
+006097DE: movs         r0, r0
+006097E0: push         {r7, lr}
+ELIGIBILITY 006097D6 _ZTVN4Anki5Cozmo26BehaviorReactToRobotShakenE+28
+RANGE 0x006097D6..0x006097E6 exclusive; Thumb;
+006097D6: movs         r0, #1
+006097D8: bx           lr
+006097DA: movs         r0, #1
+006097DC: bx           lr
+006097DE: movs         r0, r0
+006097E0: push         {r7, lr}
+006097E2: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+ELIGIBILITY 00609876 _ZTVN4Anki5Cozmo22BehaviorReactToSparkedE+20
+RANGE 0x00609876..0x00609886 exclusive; Thumb;
+00609876: movs         r0, #1
+00609878: bx           lr
+0060987A: movs         r0, #0
+0060987C: bx           lr
+0060987E: movs         r0, r0
+00609880: push         {r7, lr}
+00609882: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+ELIGIBILITY 0060987A _ZTVN4Anki5Cozmo22BehaviorReactToSparkedE+28
+RANGE 0x0060987A..0x0060988A exclusive; Thumb;
+0060987A: movs         r0, #0
+0060987C: bx           lr
+0060987E: movs         r0, r0
+00609880: push         {r7, lr}
+00609882: blx          #0x4aff4c ; Anki::Cozmo::IBehavior::IBehavior
+00609886: ldr          r1, [pc, #0xc] ; word[00609894]=00A35E18
+00609888: add          r1, pc
+ELIGIBILITY 006099A2 _ZTVN4Anki5Cozmo27BehaviorReactToStackOfCubesE+20
+RANGE 0x006099A2..0x006099B2 exclusive; Thumb;
+006099A2: movs         r0, #0
+006099A4: bx           lr
+006099A6: movs         r0, #0
+006099A8: bx           lr
+006099AA: movs         r0, r0
+006099AC: push         {r4, r5, r7, lr}
+006099AE: sub          sp, #8
+006099B0: mov          r5, r1
+ELIGIBILITY 006099A6 _ZTVN4Anki5Cozmo27BehaviorReactToStackOfCubesE+28
+RANGE 0x006099A6..0x006099B6 exclusive; Thumb;
+006099A6: movs         r0, #0
+006099A8: bx           lr
+006099AA: movs         r0, r0
+006099AC: push         {r4, r5, r7, lr}
+006099AE: sub          sp, #8
+006099B0: mov          r5, r1
+006099B2: mov          r4, r0
+ELIGIBILITY 00609C1A _ZTVN4Anki5Cozmo33BehaviorReactToUnexpectedMovementE+28
+RANGE 0x00609C1A..0x00609C2A exclusive; Thumb;
+00609C1A: movs         r0, #1
+00609C1C: bx           lr
+00609C1E: bx           lr
+00609C20: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00609C24: push         {r4, lr}
+00609C26: mov          r4, r0
+00609C28: movs         r0, #8

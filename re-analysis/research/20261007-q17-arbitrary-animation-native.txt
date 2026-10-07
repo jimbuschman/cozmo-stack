@@ -1,0 +1,91 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005C07BE..0x005C0896 exclusive; Thumb; _ZNK4Anki5Cozmo25BehaviorPlayArbitraryAnim18IsRunnableInternalERKNS0_5RobotE
+005C07BE: ldr.w        r2, [r0, #0x128]
+005C07C2: cmp          r2, #0
+005C07C4: blt          #0x5c07ca
+005C07C6: b.w          #0x8cc0fc
+005C07CA: movs         r0, #0
+005C07CC: bx           lr
+005C07CE: push         {r4, r5, r7, lr}
+005C07D0: sub          sp, #8
+005C07D2: mov          r5, r0
+005C07D4: str          r1, [sp, #4]
+005C07D6: mov          r4, r2
+005C07D8: ldrd         r0, r2, [r5, #0x11c]
+005C07DC: cmp          r2, r0
+005C07DE: itttt        ne
+005C07E0: subne        r3, r2, #4
+005C07E2: subne        r0, r3, r0
+005C07E4: mvnne        r3, #3
+005C07E8: bicne.w      r0, r3, r0
+005C07EC: itt          ne
+005C07EE: addne        r0, r0, r2
+005C07F0: strne.w      r0, [r5, #0x120]
+005C07F4: ldr.w        r2, [r5, #0x124]
+005C07F8: cmp          r0, r2
+005C07FA: bhs          #0x5c080a
+005C07FC: str          r1, [r0]
+005C07FE: ldr.w        r0, [r5, #0x120]
+005C0802: adds         r0, #4
+005C0804: str.w        r0, [r5, #0x120]
+005C0808: b            #0x5c0814
+005C080A: add.w        r0, r5, #0x11c
+005C080E: add          r1, sp, #4
+005C0810: blx          #0x4b2c04 ; std::__ndk1::vector<Anki::Cozmo::AnimationTrigger,std::__ndk1::allocator<Anki::Cozmo::AnimationTrigger>>::__emplace_back_slow_path<Anki::Cozmo::AnimationTrigger&>
+005C0814: movs         r0, #1
+005C0816: strb.w       r0, [r5, #0x13c]
+005C081A: str.w        r4, [r5, #0x128]
+005C081E: add          sp, #8
+005C0820: pop          {r4, r5, r7, pc}
+005C0822: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005C0826: sub          sp, #4
+005C0828: mov          r5, r0
+005C082A: mov          r8, r2
+005C082C: ldrd         r0, r2, [r5, #0x11c]
+005C0830: cmp          r2, r0
+005C0832: itttt        ne
+005C0834: subne        r3, r2, #4
+005C0836: subne        r0, r3, r0
+005C0838: mvnne        r3, #3
+005C083C: bicne.w      r0, r3, r0
+005C0840: itt          ne
+005C0842: addne        r0, r0, r2
+005C0844: strne.w      r0, [r5, #0x120]
+005C0848: ldrd         r4, r1, [r1]
+005C084C: cmp          r4, r1
+005C084E: beq          #0x5c0886
+005C0850: add.w        r6, r5, #0x11c
+005C0854: subs         r7, r1, #4
+005C0856: mov          sb, sp
+005C0858: b            #0x5c0860
+005C085A: adds         r4, #4
+005C085C: ldr.w        r0, [r5, #0x120]
+005C0860: ldr          r1, [r4]
+005C0862: str          r1, [sp]
+005C0864: ldr.w        r2, [r5, #0x124]
+005C0868: cmp          r0, r2
+005C086A: bhs          #0x5c087a
+005C086C: str          r1, [r0]
+005C086E: ldr.w        r0, [r5, #0x120]
+005C0872: adds         r0, #4
+005C0874: str.w        r0, [r5, #0x120]
+005C0878: b            #0x5c0882
+005C087A: mov          r0, r6
+005C087C: mov          r1, sb
+005C087E: blx          #0x4b2c04 ; std::__ndk1::vector<Anki::Cozmo::AnimationTrigger,std::__ndk1::allocator<Anki::Cozmo::AnimationTrigger>>::__emplace_back_slow_path<Anki::Cozmo::AnimationTrigger&>
+005C0882: cmp          r7, r4
+005C0884: bne          #0x5c085a
+005C0886: movs         r0, #1
+005C0888: strb.w       r0, [r5, #0x13c]
+005C088C: str.w        r8, [r5, #0x128]
+005C0890: add          sp, #4
+005C0892: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x005C0896..0x005C08AA exclusive; Thumb; _ZN4Anki5Cozmo25BehaviorPlayArbitraryAnim12InitInternalERNS0_5RobotE
+005C0896: push         {r7, lr}
+005C0898: movs         r2, #0
+005C089A: strb.w       r2, [r0, #0x13c]
+005C089E: blx          #0x4b2b38 ; Anki::Cozmo::BehaviorPlayAnimSequence::StartPlayingAnimations
+005C08A2: movs         r0, #0
+005C08A4: pop          {r7, pc}
+005C08A6: movs         r0, #0
+005C08A8: bx           lr

@@ -1,0 +1,526 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+CALLER Anki::Cozmo::BehaviorDriveOffCharger::InitInternal
+RANGE 0x005C0B74..0x005C0B78 exclusive; Thumb;
+005C0B74: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveOffCharger::TransitionToDrivingForward
+RANGE 0x005C0BE2..0x005C0BE6 exclusive; Thumb;
+005C0BE2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveOffCharger::UpdateInternal
+RANGE 0x005C0DE0..0x005C0DE4 exclusive; Thumb;
+005C0DE0: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDrivePath::TransitionToFollowingPath
+RANGE 0x005C0FAA..0x005C0FAE exclusive; Thumb;
+005C0FAA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFindFaces::TransitionToLookUp
+RANGE 0x005C1A66..0x005C1A6A exclusive; Thumb;
+005C1A66: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFindFaces::TransitionToLookAtLastFace
+RANGE 0x005C1B74..0x005C1B78 exclusive; Thumb;
+005C1B74: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorInteractWithFaces::TransitionToInitialReaction
+RANGE 0x005C2238..0x005C223C exclusive; Thumb;
+005C2238: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorInteractWithFaces::TransitionToGlancingDown
+RANGE 0x005C24D4..0x005C24D8 exclusive; Thumb;
+005C24D4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorInteractWithFaces::TransitionToDrivingForward
+RANGE 0x005C253A..0x005C253E exclusive; Thumb;
+005C253A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorInteractWithFaces::TransitionToTrackingFace
+RANGE 0x005C272C..0x005C2730 exclusive; Thumb;
+005C272C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorInteractWithFaces::TransitionToTriggerEmotionEvent
+RANGE 0x005C2950..0x005C2954 exclusive; Thumb;
+005C2950: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorKnockOverCubes::TransitionToReachingForBlock
+RANGE 0x005C327A..0x005C327E exclusive; Thumb;
+005C327A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorKnockOverCubes::TransitionToKnockingOverStack
+RANGE 0x005C34D8..0x005C34DC exclusive; Thumb;
+005C34D8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorKnockOverCubes::TransitionToPlayingReaction
+RANGE 0x005C3934..0x005C3938 exclusive; Thumb;
+005C3934: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::TransitionToWaitForOtherActions
+RANGE 0x005C4612..0x005C4616 exclusive; Thumb;
+005C4612: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::SetState_internal
+RANGE 0x005C472E..0x005C4732 exclusive; Thumb;
+005C472E: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::TransitionToInactive
+RANGE 0x005C475A..0x005C475E exclusive; Thumb;
+005C475A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::TransitionToRoaming
+RANGE 0x005C49FC..0x005C4A00 exclusive; Thumb;
+005C49FC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::TransitionToLookingAtPossibleObject
+RANGE 0x005C517E..0x005C5182 exclusive; Thumb;
+005C517E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::TransitionToExaminingFoundObject
+RANGE 0x005C564A..0x005C564E exclusive; Thumb;
+005C564A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLookAround::ResetBehavior
+RANGE 0x005C5924..0x005C5928 exclusive; Thumb;
+005C5924: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPickUpCube::TransitionToDoingInitialReaction
+RANGE 0x005C6680..0x005C6684 exclusive; Thumb;
+005C6680: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPickUpCube::TransitionToPickingUpCube
+RANGE 0x005C672C..0x005C6730 exclusive; Thumb;
+005C672C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPickUpCube::TransitionToSuccessReaction
+RANGE 0x005C6F1A..0x005C6F1E exclusive; Thumb;
+005C6F1A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPopAWheelie::TransitionToReactingToBlock
+RANGE 0x005C74EA..0x005C74EE exclusive; Thumb;
+005C74EA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPopAWheelie::TransitionToPerformingAction
+RANGE 0x005C7660..0x005C7664 exclusive; Thumb;
+005C7660: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRollBlock::TransitionToPerformingAction
+RANGE 0x005C871A..0x005C871E exclusive; Thumb;
+005C871A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRollBlock::TransitionToRollSuccess
+RANGE 0x005C8B5C..0x005C8B60 exclusive; Thumb;
+005C8B5C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRollBlock::SetState_internal
+RANGE 0x005C8CD6..0x005C8CDA exclusive; Thumb;
+005C8CD6: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorSearchForFace::TransitionToSearchingAnimation
+RANGE 0x005C91D2..0x005C91D6 exclusive; Thumb;
+005C91D2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorSearchForFace::TransitionToFoundFace
+RANGE 0x005C92FC..0x005C9300 exclusive; Thumb;
+005C92FC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorSearchForFace::SetState_internal
+RANGE 0x005C93BA..0x005C93BE exclusive; Thumb;
+005C93BA: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorStackBlocks::TransitionToStackingBlock
+RANGE 0x005C9546..0x005C954A exclusive; Thumb;
+005C9546: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorStackBlocks::TransitionToPickingUpBlock
+RANGE 0x005C9708..0x005C970C exclusive; Thumb;
+005C9708: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorStackBlocks::SetState_internal
+RANGE 0x005C9C86..0x005C9C8A exclusive; Thumb;
+005C9C86: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorStackBlocks::TransitionToPlayingFinalAnim
+RANGE 0x005C9E90..0x005C9E94 exclusive; Thumb;
+005C9E90: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDockingTestSimple::UpdateStateName
+RANGE 0x005CDBC6..0x005CDBCA exclusive; Thumb;
+005CDBC6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorLiftLoadTest::UpdateStateName
+RANGE 0x005D4E08..0x005D4E0C exclusive; Thumb;
+005D4E08: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingEat::TransitionToDrivingToFood
+RANGE 0x005D5A8A..0x005D5A8E exclusive; Thumb;
+005D5A8A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingEat::TransitionToReactingToInterruption
+RANGE 0x005D5C8E..0x005D5C92 exclusive; Thumb;
+005D5C8E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingEat::SetState_internal
+RANGE 0x005D5F9E..0x005D5FA2 exclusive; Thumb;
+005D5F9E: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingEat::TransitionToPlacingLiftOnCube
+RANGE 0x005D5FCC..0x005D5FD0 exclusive; Thumb;
+005D5FCC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingEat::TransitionToEating
+RANGE 0x005D6128..0x005D612C exclusive; Thumb;
+005D6128: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToFirstSearchForFood
+RANGE 0x005D6CB4..0x005D6CB8 exclusive; Thumb;
+005D6CB4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToMakeFoodRequest
+RANGE 0x005D6D96..0x005D6D9A exclusive; Thumb;
+005D6D96: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToFailedToFindCubeReaction
+RANGE 0x005D6E82..0x005D6E86 exclusive; Thumb;
+005D6E82: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingSearchForCube::SetState_internal
+RANGE 0x005D6F62..0x005D6F66 exclusive; Thumb;
+005D6F62: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorFeedingSearchForCube::TransitionToSecondSearchForFood
+RANGE 0x005D7076..0x005D707A exclusive; Thumb;
+005D7076: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToIdle
+RANGE 0x005D8F1A..0x005D8F1E exclusive; Thumb;
+005D8F1A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::SetState_internal
+RANGE 0x005D90B6..0x005D90BA exclusive; Thumb;
+005D90B6: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToDriveRandom
+RANGE 0x005D9184..0x005D9188 exclusive; Thumb;
+005D9184: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToRequest
+RANGE 0x005D95C8..0x005D95CC exclusive; Thumb;
+005D95C8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToSearchForCube
+RANGE 0x005D96E6..0x005D96EA exclusive; Thumb;
+005D96E6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToDriveToCube
+RANGE 0x005D98AC..0x005D98B0 exclusive; Thumb;
+005D98AC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveInDesperation::TransitionToLookAtCube
+RANGE 0x005D9BDC..0x005D9BE0 exclusive; Thumb;
+005D9BDC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveToFace::TransitionToTurningTowardsFace
+RANGE 0x005DA788..0x005DA78C exclusive; Thumb;
+005DA788: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveToFace::SetState_internal
+RANGE 0x005DA94C..0x005DA950 exclusive; Thumb;
+005DA94C: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveToFace::TransitionToDrivingToFace
+RANGE 0x005DA976..0x005DA97A exclusive; Thumb;
+005DA976: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveToFace::TransitionToTrackingFace
+RANGE 0x005DAB64..0x005DAB68 exclusive; Thumb;
+005DAB64: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorDriveToFace::TransitionToAlreadyCloseEnough
+RANGE 0x005DAC5A..0x005DAC5E exclusive; Thumb;
+005DAC5A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPickUpAndPutDownCube::TransitionToDriveWithCube
+RANGE 0x005DB78E..0x005DB792 exclusive; Thumb;
+005DB78E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPickUpAndPutDownCube::TransitionToPutDownCube
+RANGE 0x005DBA04..0x005DBA08 exclusive; Thumb;
+005DBA04: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorBuildPyramidBase::TransitionToDrivingToBaseBlock
+RANGE 0x005DCBC4..0x005DCBC8 exclusive; Thumb;
+005DCBC4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorBuildPyramidBase::TransitionToPlacingBaseBlock
+RANGE 0x005DCDD6..0x005DCDDA exclusive; Thumb;
+005DCDD6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorBuildPyramidBase::SetState_internal
+RANGE 0x005DD13A..0x005DD13E exclusive; Thumb;
+005DD13A: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorBuildPyramidBase::TransitionToObservingBase
+RANGE 0x005DD4B6..0x005DD4BA exclusive; Thumb;
+005DD4B6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRespondPossiblyRoll::TurnAndRespondNegatively
+RANGE 0x005DE642..0x005DE646 exclusive; Thumb;
+005DE642: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRespondPossiblyRoll::TurnAndRespondPositively
+RANGE 0x005DE7B4..0x005DE7B8 exclusive; Thumb;
+005DE7B4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRespondPossiblyRoll::DelegateToRollHelper
+RANGE 0x005DE9E6..0x005DE9EA exclusive; Thumb;
+005DE9E6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS1_OppositeTurn
+RANGE 0x005E28C0..0x005E28C4 exclusive; Thumb;
+005E28C0: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS2_Pause
+RANGE 0x005E2B0E..0x005E2B12 exclusive; Thumb;
+005E2B0E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS3_MainTurn
+RANGE 0x005E2C54..0x005E2C58 exclusive; Thumb;
+005E2C54: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS4_HeadOnlyUp
+RANGE 0x005E2E16..0x005E2E1A exclusive; Thumb;
+005E2E16: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS6_MainTurnFinal
+RANGE 0x005E3148..0x005E314C exclusive; Thumb;
+005E3148: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS5_HeadOnlyDown
+RANGE 0x005E3200..0x005E3204 exclusive; Thumb;
+005E3200: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorExploreLookAroundInPlace::TransitionToS7_IterationEnd
+RANGE 0x005E3590..0x005E3594 exclusive; Thumb;
+005E3590: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorVisitInterestingEdge::TransitionToS1_MoveToVantagePoint
+RANGE 0x005E7078..0x005E707C exclusive; Thumb;
+005E7078: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorVisitInterestingEdge::TransitionToS2_GatherAccurateEdge
+RANGE 0x005E7C22..0x005E7C26 exclusive; Thumb;
+005E7C22: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorVisitInterestingEdge::TransitionToS3_ObserveFromClose
+RANGE 0x005E7DAE..0x005E7DB2 exclusive; Thumb;
+005E7DAE: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToLookingAtFace
+RANGE 0x005EA96C..0x005EA970 exclusive; Thumb;
+005EA96C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToDrivingToFace
+RANGE 0x005EAAE8..0x005EAAEC exclusive; Thumb;
+005EAAE8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlayingInitialAnimation
+RANGE 0x005EAC80..0x005EAC84 exclusive; Thumb;
+005EAC80: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToFacingBlock
+RANGE 0x005EAEEA..0x005EAEEE exclusive; Thumb;
+005EAEEA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToFacingBlock
+RANGE 0x005EAF56..0x005EAF5A exclusive; Thumb;
+005EAF56: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlayingDenyAnim
+RANGE 0x005EB18C..0x005EB190 exclusive; Thumb;
+005EB18C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::SetState_internal
+RANGE 0x005EB3B0..0x005EB3B4 exclusive; Thumb;
+005EB3B0: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlayingPreDriveAnimation
+RANGE 0x005EB412..0x005EB416 exclusive; Thumb;
+005EB412: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPickingUpBlock
+RANGE 0x005EB632..0x005EB636 exclusive; Thumb;
+005EB632: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlacingBlock
+RANGE 0x005EBE7E..0x005EBE82 exclusive; Thumb;
+005EBE7E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlayingRequstAnim
+RANGE 0x005EBFC6..0x005EBFCA exclusive; Thumb;
+005EBFC6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorRequestGameSimple::TransitionToIdle
+RANGE 0x005EC0CE..0x005EC0D2 exclusive; Thumb;
+005EC0CE: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorCantHandleTallStack::TransitionToLookingUpAndDown
+RANGE 0x005ECEC6..0x005ECECA exclusive; Thumb;
+005ECEC6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorCantHandleTallStack::TransitionToDisapointment
+RANGE 0x005ED11A..0x005ED11E exclusive; Thumb;
+005ED11A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorBouncer::TransitionToState
+RANGE 0x005F11FA..0x005F11FE exclusive; Thumb;
+005F11FA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::InitInternal
+RANGE 0x005F2DD2..0x005F2DD6 exclusive; Thumb;
+005F2DD2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::UpdateInternal
+RANGE 0x005F2EBC..0x005F2EC0 exclusive; Thumb;
+005F2EBC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::UpdateInternal
+RANGE 0x005F2EF6..0x005F2EFA exclusive; Thumb;
+005F2EF6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::UpdateInternal
+RANGE 0x005F2F82..0x005F2F86 exclusive; Thumb;
+005F2F82: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::UpdateInternal
+RANGE 0x005F35F6..0x005F35FA exclusive; Thumb;
+005F35F6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::HandleObjectConnectionState
+RANGE 0x005F4EA4..0x005F4EA8 exclusive; Thumb;
+005F4EA4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::HandleObjectMoved
+RANGE 0x005F4FD8..0x005F4FDC exclusive; Thumb;
+005F4FD8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::HandleObjectUpAxisChanged
+RANGE 0x005F5196..0x005F519A exclusive; Thumb;
+005F5196: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::CubeMovementHandler
+RANGE 0x005F5598..0x005F559C exclusive; Thumb;
+005F5598: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorGuardDog::CubeMovementHandler
+RANGE 0x005F55FC..0x005F5600 exclusive; Thumb;
+005F55FC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005F5A0A..0x005F5A0E exclusive; Thumb;
+005F5A0A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005F5B16..0x005F5B1A exclusive; Thumb;
+005F5B16: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005F5C88..0x005F5C8C exclusive; Thumb;
+005F5C88: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005F5D76..0x005F5D7A exclusive; Thumb;
+005F5D76: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER FUN_005f5e06
+RANGE 0x005F5E3E..0x005F5E42 exclusive; Thumb;
+005F5E3E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER FUN_005f5eca
+RANGE 0x005F5F02..0x005F5F06 exclusive; Thumb;
+005F5F02: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER FUN_005f6006
+RANGE 0x005F603E..0x005F6042 exclusive; Thumb;
+005F603E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER FUN_005f6142
+RANGE 0x005F617A..0x005F617E exclusive; Thumb;
+005F617A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionToIntroAnim
+RANGE 0x005F683C..0x005F6840 exclusive; Thumb;
+005F683C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionTurnToFace
+RANGE 0x005F68F4..0x005F68F8 exclusive; Thumb;
+005F68F4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionWaitToSeeFace
+RANGE 0x005F6C84..0x005F6C88 exclusive; Thumb;
+005F6C84: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionSeeFaceAfterHiding
+RANGE 0x005F6D86..0x005F6D8A exclusive; Thumb;
+005F6D86: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::SetState_internal
+RANGE 0x005F6F44..0x005F6F48 exclusive; Thumb;
+005F6F44: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionPlayPeekABooAnim
+RANGE 0x005F6FFE..0x005F7002 exclusive; Thumb;
+005F6FFE: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionWaitToHideFace
+RANGE 0x005F724C..0x005F7250 exclusive; Thumb;
+005F724C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionExit
+RANGE 0x005F760E..0x005F7612 exclusive; Thumb;
+005F760E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPeekABoo::TransitionToNoUserInteraction
+RANGE 0x005F7726..0x005F772A exclusive; Thumb;
+005F7726: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::BehaviorPounceOnMotion
+RANGE 0x005F823E..0x005F8242 exclusive; Thumb;
+005F823E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::SetState_internal
+RANGE 0x005F83B6..0x005F83BA exclusive; Thumb;
+005F83B6: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToInitialPounce
+RANGE 0x005F84A2..0x005F84A6 exclusive; Thumb;
+005F84A2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToBringingHeadDown
+RANGE 0x005F8626..0x005F862A exclusive; Thumb;
+005F8626: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::Cleanup
+RANGE 0x005F8772..0x005F8776 exclusive; Thumb;
+005F8772: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToInitialSearch
+RANGE 0x005F8856..0x005F885A exclusive; Thumb;
+005F8856: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToInitialReaction
+RANGE 0x005F8BB2..0x005F8BB6 exclusive; Thumb;
+005F8BB2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToWaitForMotion
+RANGE 0x005F8EFA..0x005F8EFE exclusive; Thumb;
+005F8EFA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToRotateToWatchingNewArea
+RANGE 0x005F9004..0x005F9008 exclusive; Thumb;
+005F9004: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToTurnToMotion
+RANGE 0x005F9340..0x005F9344 exclusive; Thumb;
+005F9340: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToGetOutBored
+RANGE 0x005F94F8..0x005F94FC exclusive; Thumb;
+005F94F8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToCreepForward
+RANGE 0x005F95E8..0x005F95EC exclusive; Thumb;
+005F95E8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToPounce
+RANGE 0x005F9726..0x005F972A exclusive; Thumb;
+005F9726: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToResultAnim
+RANGE 0x005F97D0..0x005F97D4 exclusive; Thumb;
+005F97D0: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorPounceOnMotion::TransitionToBackUp
+RANGE 0x005F9A02..0x005F9A06 exclusive; Thumb;
+005F9A02: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005FA050..0x005FA054 exclusive; Thumb;
+005FA050: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::BehaviorTrackLaser
+RANGE 0x005FA2FE..0x005FA302 exclusive; Thumb;
+005FA2FE: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::SetState_internal
+RANGE 0x005FAAAC..0x005FAAB0 exclusive; Thumb;
+005FAAAC: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToWaitForExposureChange
+RANGE 0x005FAE06..0x005FAE0A exclusive; Thumb;
+005FAE06: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToInitialSearch
+RANGE 0x005FAFDA..0x005FAFDE exclusive; Thumb;
+005FAFDA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToWaitForLaser
+RANGE 0x005FB3AA..0x005FB3AE exclusive; Thumb;
+005FB3AA: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToRespondToLaser
+RANGE 0x005FB416..0x005FB41A exclusive; Thumb;
+005FB416: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToRotateToWatchingNewArea
+RANGE 0x005FB902..0x005FB906 exclusive; Thumb;
+005FB902: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToGetOutBored
+RANGE 0x005FBA86..0x005FBA8A exclusive; Thumb;
+005FBA86: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToGetOutBored
+RANGE 0x005FBADC..0x005FBAE0 exclusive; Thumb;
+005FBADC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToBringingHeadDown
+RANGE 0x005FBC00..0x005FBC04 exclusive; Thumb;
+005FBC00: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::Cleanup
+RANGE 0x005FBD6C..0x005FBD70 exclusive; Thumb;
+005FBD6C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToTrackLaser
+RANGE 0x005FBEC2..0x005FBEC6 exclusive; Thumb;
+005FBEC2: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorTrackLaser::TransitionToPounce
+RANGE 0x005FC10A..0x005FC10E exclusive; Thumb;
+005FC10A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005FCA7E..0x005FCA82 exclusive; Thumb;
+005FCA7E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::InitInternal
+RANGE 0x005FCFCC..0x005FCFD0 exclusive; Thumb;
+005FCFCC: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::TransitionToSayingName
+RANGE 0x005FD242..0x005FD246 exclusive; Thumb;
+005FD242: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::TransitionToSavingToRobot
+RANGE 0x005FD4C6..0x005FD4CA exclusive; Thumb;
+005FD4C6: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::TransitionToScanningInterrupted
+RANGE 0x005FD728..0x005FD72C exclusive; Thumb;
+005FD728: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::TransitionToLookingForFace
+RANGE 0x005FD85C..0x005FD860 exclusive; Thumb;
+005FD85C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::StopInternal
+RANGE 0x005FE37E..0x005FE382 exclusive; Thumb;
+005FE37E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::StopInternal
+RANGE 0x005FE550..0x005FE554 exclusive; Thumb;
+005FE550: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::TransitionToEnrolling
+RANGE 0x005FEC58..0x005FEC5C exclusive; Thumb;
+005FEC58: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::AlwaysHandle
+RANGE 0x005FF334..0x005FF338 exclusive; Thumb;
+005FF334: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::AlwaysHandle
+RANGE 0x005FF47C..0x005FF480 exclusive; Thumb;
+005FF47C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorEnrollFace::HandleWhileRunning
+RANGE 0x005FFA20..0x005FFA24 exclusive; Thumb;
+005FFA20: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x005FFDA4..0x005FFDA8 exclusive; Thumb;
+005FFDA4: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER FUN_00600132
+RANGE 0x0060016A..0x0060016E exclusive; Thumb;
+0060016A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x00600282..0x00600286 exclusive; Thumb;
+00600282: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x00600608..0x0060060C exclusive; Thumb;
+00600608: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER UNKNOWN navigation owner
+RANGE 0x00600638..0x0060063C exclusive; Thumb;
+00600638: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorOnboardingShowCube::SetState_internal
+RANGE 0x00600E3E..0x00600E42 exclusive; Thumb;
+00600E3E: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorAcknowledgeCubeMoved::TransitionToTurningToLastLocationOfBlock
+RANGE 0x00602298..0x0060229C exclusive; Thumb;
+00602298: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorAcknowledgeCubeMoved::TransitionToPlayingSenseReaction
+RANGE 0x0060241C..0x00602420 exclusive; Thumb;
+0060241C: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorAcknowledgeCubeMoved::UpdateInternal
+RANGE 0x0060258A..0x0060258E exclusive; Thumb;
+0060258A: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorAcknowledgeCubeMoved::SetState_internal
+RANGE 0x00602616..0x0060261A exclusive; Thumb;
+00602616: b.w          #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorAcknowledgeCubeMoved::TransitionToReactingToBlockAbsence
+RANGE 0x006026D8..0x006026DC exclusive; Thumb;
+006026D8: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorReactToCliff::TransitionToPlayingStopReaction
+RANGE 0x00604F90..0x00604F94 exclusive; Thumb;
+00604F90: bl           #0x5c0ca8 ; FUN_005c0ca8
+CALLER Anki::Cozmo::BehaviorReactToCliff::TransitionToPlayingCliffReaction
+RANGE 0x00605110..0x00605114 exclusive; Thumb;
+00605110: bl           #0x5c0ca8 ; FUN_005c0ca8

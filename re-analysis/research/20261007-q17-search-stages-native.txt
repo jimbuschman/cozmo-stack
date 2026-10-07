@@ -1,0 +1,299 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BB0B8..0x005BB3E0 exclusive; Thumb;
+005BB0B8: ldr          r0, [r7]
+005BB0BA: ldr          r5, [r0, #0x20]
+005BB0BC: movs         r0, #0xe8
+005BB0BE: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB0C2: mov          r6, r0
+005BB0C4: movw         r2, #0xfdb
+005BB0C8: mov          r1, sb
+005BB0CA: movt         r2, #0xbf49
+005BB0CE: movs         r3, #0
+005BB0D0: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB0D4: add          r0, sp, #0x20
+005BB0D6: mov          r1, r7
+005BB0D8: mov          r2, r6
+005BB0DA: movs         r3, #0
+005BB0DC: str.w        sl, [sp]
+005BB0E0: blx          r5
+005BB0E2: ldr          r0, [sp, #0x24]
+005BB0E4: cbz          r0, #0x5bb0ea
+005BB0E6: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB0EA: ldr          r0, [r7]
+005BB0EC: ldr          r5, [r0, #0x20]
+005BB0EE: movs         r0, #0xe8
+005BB0F0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB0F4: mov          r6, r0
+005BB0F6: movw         r2, #0xfdb
+005BB0FA: mov          r1, sb
+005BB0FC: movt         r2, #0xbf49
+005BB100: movs         r3, #0
+005BB102: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB106: add          r0, sp, #0x18
+005BB108: mov          r1, r7
+005BB10A: mov          r2, r6
+005BB10C: movs         r3, #0
+005BB10E: str.w        sl, [sp]
+005BB112: blx          r5
+005BB114: ldr          r0, [sp, #0x1c]
+005BB116: cbz          r0, #0x5bb11c
+005BB118: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB11C: ldr.w        r0, [fp, #0xf4]
+005BB120: adds         r0, #1
+005BB122: beq          #0x5bb16e
+005BB124: ldr          r0, [r7]
+005BB126: ldr          r6, [r0, #0x20]
+005BB128: mov.w        r0, #0x158
+005BB12C: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB130: mov          sl, r0
+005BB132: movs         r0, #0
+005BB134: movs         r3, #0
+005BB136: movt         r0, #0x42c8
+005BB13A: mov          r1, sb
+005BB13C: str          r0, [sp]
+005BB13E: movw         r0, #0xb8c2
+005BB142: movt         r0, #0xbdb2
+005BB146: movt         r3, #0xc1a0
+005BB14A: str          r0, [sp, #4]
+005BB14C: mov          r0, sl
+005BB14E: ldr          r2, [sp, #0xc]
+005BB150: blx          #0x4a94f0 ; Anki::Cozmo::SearchForNearbyObjectAction::SearchForNearbyObjectAction
+005BB154: movs         r0, #0
+005BB156: mov          r2, sl
+005BB158: str          r0, [sp]
+005BB15A: add          r0, sp, #0x10
+005BB15C: mov          r1, r7
+005BB15E: movs         r3, #0
+005BB160: mov.w        sl, #0
+005BB164: blx          r6
+005BB166: ldr          r0, [sp, #0x14]
+005BB168: cbz          r0, #0x5bb16e
+005BB16A: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB16E: add.w        r8, r8, #1
+005BB172: cmp.w        r8, #1
+005BB176: blt.w        #0x5bb084
+005BB17A: ldr          r0, [pc, #0x2c8] ; word[005BB444]=00A6B2C4
+005BB17C: add          r5, sp, #0x90
+005BB17E: str          r5, [sp, #0xa0]
+005BB180: add          r0, pc
+005BB182: str.w        fp, [sp, #0x94]
+005BB186: adds         r0, #8
+005BB188: str          r0, [sp, #0x90]
+005BB18A: mov          r0, fp
+005BB18C: mov          r1, r7
+005BB18E: mov          r2, r5
+005BB190: blx          #0x4b2058 ; Anki::Cozmo::IHelper::StartActing
+005BB194: ldr          r0, [sp, #0xa0]
+005BB196: cmp          r5, r0
+005BB198: beq.w        #0x5bb3e2
+005BB19C: cmp          r0, #0
+005BB19E: beq.w        #0x5bb3ca
+005BB1A2: ldr          r1, [r0]
+005BB1A4: ldr          r1, [r1, #0x14]
+005BB1A6: blx          r1
+005BB1A8: b            #0x5bb3ca
+005BB1AA: movs         r0, #0xac
+005BB1AC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB1B0: mov          r7, r0
+005BB1B2: mov          r1, sb
+005BB1B4: blx          #0x4a9184 ; Anki::Cozmo::CompoundActionSequential::CompoundActionSequential
+005BB1B8: ldr          r0, [r7]
+005BB1BA: ldr.w        r8, [r0, #0x20]
+005BB1BE: movs         r0, #0x8c
+005BB1C0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB1C4: mov          r6, r0
+005BB1C6: movs         r2, #0
+005BB1C8: movs         r3, #0
+005BB1CA: mov.w        sl, #0
+005BB1CE: movt         r2, #0xc1a0
+005BB1D2: movt         r3, #0x41a0
+005BB1D6: mov          r1, sb
+005BB1D8: str.w        sl, [sp]
+005BB1DC: blx          #0x4a9340 ; Anki::Cozmo::DriveStraightAction::DriveStraightAction
+005BB1E0: add          r0, sp, #0x68
+005BB1E2: mov          r1, r7
+005BB1E4: mov          r2, r6
+005BB1E6: movs         r3, #1
+005BB1E8: str.w        sl, [sp]
+005BB1EC: blx          r8
+005BB1EE: ldr          r0, [sp, #0x6c]
+005BB1F0: cbz          r0, #0x5bb1f6
+005BB1F2: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB1F6: ldr          r0, [r7]
+005BB1F8: ldr.w        r8, [r0, #0x20]
+005BB1FC: movs         r0, #0xe8
+005BB1FE: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB202: mov          r6, r0
+005BB204: movw         r2, #0xfdb
+005BB208: mov          r1, sb
+005BB20A: movt         r2, #0x3f49
+005BB20E: movs         r3, #0
+005BB210: mov.w        sl, #0
+005BB214: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB218: add          r0, sp, #0x60
+005BB21A: mov          r1, r7
+005BB21C: mov          r2, r6
+005BB21E: movs         r3, #1
+005BB220: str.w        sl, [sp]
+005BB224: blx          r8
+005BB226: ldr          r0, [sp, #0x64]
+005BB228: cbz          r0, #0x5bb22e
+005BB22A: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB22E: ldr          r0, [r7]
+005BB230: ldr.w        r8, [r0, #0x20]
+005BB234: movs         r0, #0xe8
+005BB236: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB23A: mov          r6, r0
+005BB23C: movw         r2, #0xfdb
+005BB240: mov          r1, sb
+005BB242: movt         r2, #0x3f49
+005BB246: movs         r3, #0
+005BB248: mov.w        sl, #0
+005BB24C: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB250: add          r0, sp, #0x58
+005BB252: mov          r1, r7
+005BB254: mov          r2, r6
+005BB256: movs         r3, #1
+005BB258: str.w        sl, [sp]
+005BB25C: blx          r8
+005BB25E: ldr          r0, [sp, #0x5c]
+005BB260: cbz          r0, #0x5bb266
+005BB262: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB266: ldr.w        r0, [fp, #0xf4]
+005BB26A: adds         r0, #1
+005BB26C: beq          #0x5bb2b6
+005BB26E: ldr          r0, [r7]
+005BB270: ldr.w        r8, [r0, #0x20]
+005BB274: mov.w        r0, #0x158
+005BB278: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB27C: mov          r6, r0
+005BB27E: movw         r0, #0xb8c2
+005BB282: movs         r1, #0
+005BB284: movs         r3, #0
+005BB286: movt         r0, #0xbdb2
+005BB28A: movt         r1, #0x42c8
+005BB28E: movt         r3, #0xc1a0
+005BB292: strd         r1, r0, [sp]
+005BB296: mov          r0, r6
+005BB298: mov          r1, sb
+005BB29A: mov          r2, r5
+005BB29C: blx          #0x4a94f0 ; Anki::Cozmo::SearchForNearbyObjectAction::SearchForNearbyObjectAction
+005BB2A0: movs         r0, #0
+005BB2A2: mov          r1, r7
+005BB2A4: str          r0, [sp]
+005BB2A6: add          r0, sp, #0x50
+005BB2A8: mov          r2, r6
+005BB2AA: movs         r3, #1
+005BB2AC: blx          r8
+005BB2AE: ldr          r0, [sp, #0x54]
+005BB2B0: cbz          r0, #0x5bb2b6
+005BB2B2: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB2B6: ldr          r0, [r7]
+005BB2B8: ldr.w        r8, [r0, #0x20]
+005BB2BC: movs         r0, #0x8c
+005BB2BE: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB2C2: mov          r6, r0
+005BB2C4: movs         r2, #0
+005BB2C6: movs         r3, #0
+005BB2C8: mov.w        sl, #0
+005BB2CC: movt         r2, #0xc1a0
+005BB2D0: movt         r3, #0x41a0
+005BB2D4: mov          r1, sb
+005BB2D6: str.w        sl, [sp]
+005BB2DA: blx          #0x4a9340 ; Anki::Cozmo::DriveStraightAction::DriveStraightAction
+005BB2DE: add          r0, sp, #0x48
+005BB2E0: mov          r1, r7
+005BB2E2: mov          r2, r6
+005BB2E4: movs         r3, #1
+005BB2E6: str.w        sl, [sp]
+005BB2EA: blx          r8
+005BB2EC: ldr          r0, [sp, #0x4c]
+005BB2EE: cbz          r0, #0x5bb2f4
+005BB2F0: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB2F4: ldr          r0, [r7]
+005BB2F6: ldr.w        r8, [r0, #0x20]
+005BB2FA: movs         r0, #0xe8
+005BB2FC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB300: mov          r6, r0
+005BB302: movw         r2, #0xcbe4
+005BB306: mov          r1, sb
+005BB308: movt         r2, #0xc016
+005BB30C: movs         r3, #0
+005BB30E: mov.w        sl, #0
+005BB312: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB316: add          r0, sp, #0x40
+005BB318: mov          r1, r7
+005BB31A: mov          r2, r6
+005BB31C: movs         r3, #1
+005BB31E: str.w        sl, [sp]
+005BB322: blx          r8
+005BB324: ldr          r0, [sp, #0x44]
+005BB326: cbz          r0, #0x5bb32c
+005BB328: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB32C: ldr          r0, [r7]
+005BB32E: ldr.w        r8, [r0, #0x20]
+005BB332: movs         r0, #0xe8
+005BB334: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB338: mov          r6, r0
+005BB33A: movw         r2, #0xfdb
+005BB33E: mov          r1, sb
+005BB340: movt         r2, #0xbf49
+005BB344: movs         r3, #0
+005BB346: mov.w        sl, #0
+005BB34A: blx          #0x4a958c ; Anki::Cozmo::TurnInPlaceAction::TurnInPlaceAction
+005BB34E: add          r0, sp, #0x38
+005BB350: mov          r1, r7
+005BB352: mov          r2, r6
+005BB354: movs         r3, #1
+005BB356: str.w        sl, [sp]
+005BB35A: blx          r8
+005BB35C: ldr          r0, [sp, #0x3c]
+005BB35E: cbz          r0, #0x5bb364
+005BB360: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB364: ldr.w        r0, [fp, #0xf4]
+005BB368: adds         r0, #1
+005BB36A: beq          #0x5bb3b4
+005BB36C: ldr          r0, [r7]
+005BB36E: ldr.w        r8, [r0, #0x20]
+005BB372: mov.w        r0, #0x158
+005BB376: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB37A: mov          r6, r0
+005BB37C: movw         r0, #0xb8c2
+005BB380: movs         r1, #0
+005BB382: movs         r3, #0
+005BB384: movt         r0, #0xbdb2
+005BB388: movt         r1, #0x42c8
+005BB38C: movt         r3, #0xc1a0
+005BB390: strd         r1, r0, [sp]
+005BB394: mov          r0, r6
+005BB396: mov          r1, sb
+005BB398: mov          r2, r5
+005BB39A: blx          #0x4a94f0 ; Anki::Cozmo::SearchForNearbyObjectAction::SearchForNearbyObjectAction
+005BB39E: movs         r0, #0
+005BB3A0: mov          r1, r7
+005BB3A2: str          r0, [sp]
+005BB3A4: add          r0, sp, #0x30
+005BB3A6: mov          r2, r6
+005BB3A8: movs         r3, #1
+005BB3AA: blx          r8
+005BB3AC: ldr          r0, [sp, #0x34]
+005BB3AE: cbz          r0, #0x5bb3b4
+005BB3B0: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB3B4: ldr          r0, [pc, #0x90] ; word[005BB448]=00A83DBE
+005BB3B6: mov          r1, r7
+005BB3B8: movs         r3, #0
+005BB3BA: add          r0, pc
+005BB3BC: ldr          r2, [r0]
+005BB3BE: mov          r0, fp
+005BB3C0: blx          #0x4b27c0 ; Anki::Cozmo::IHelper::StartActing<Anki::Cozmo::SearchForBlockHelper>
+005BB3C4: movs         r0, #2
+005BB3C6: str.w        r0, [fp, #0x10c]
+005BB3CA: ldr          r0, [pc, #0x88] ; word[005BB454]=00A8347A
+005BB3CC: ldr          r1, [sp, #0xa8]
+005BB3CE: add          r0, pc
+005BB3D0: ldr          r0, [r0]
+005BB3D2: ldr          r0, [r0]
+005BB3D4: subs         r0, r0, r1
+005BB3D6: itt          eq
+005BB3D8: addeq        sp, #0xac
+005BB3DA: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}

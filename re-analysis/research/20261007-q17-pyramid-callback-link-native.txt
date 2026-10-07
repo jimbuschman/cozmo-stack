@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01029060: raw=00000000 relocated=00000000
+01029064: raw=0102908C relocated=0102908C
+01029068: raw=005C0515 relocated=005C0515
+0102906C: raw=005DC74F relocated=005DC74F
+01029070: raw=005DC755 relocated=005DC755
+01029074: raw=005DC771 relocated=005DC771
+01029078: raw=005DC785 relocated=005DC785
+0102907C: raw=005DC787 relocated=005DC787
+01029080: raw=005DC78B relocated=005DC78B
+01029084: raw=005DC791 relocated=005DC791
+01029088: raw=005DC7A9 relocated=005DC7A9
+0102908C: raw=00000008 relocated=00000008
+01029090: raw=00C6C8A0 relocated=00C6C8A0
+01029094: raw=00000000 relocated=01026A2C _ZTINSt6__ndk110__function6__baseIFvRN4Anki5Cozmo5RobotEEEE
+01029098: raw=00000008 relocated=00000008
+0102909C: raw=00C6C930 relocated=00C6C930
+010290A0: raw=00000000 relocated=00000000
+010290A4: raw=010290CC relocated=010290CC
+010290A8: raw=005C0515 relocated=005C0515
+010290AC: raw=005DC7B5 relocated=005DC7B5
+010290B0: raw=005DC7B9 relocated=005DC7B9
+010290B4: raw=005DC7D5 relocated=005DC7D5
+010290B8: raw=005DC7E9 relocated=005DC7E9
+010290BC: raw=005DC7EB relocated=005DC7EB
+010290C0: raw=005DC7F1 relocated=005DC7F1
+010290C4: raw=005DCA1D relocated=005DCA1D
+010290C8: raw=005DCA35 relocated=005DCA35
+0103F448: raw=00000000 relocated=005EC0A9 _ZN4Anki5Cozmo25BehaviorRequestGameSimple16TransitionToIdleERNS0_5RobotE
+RANGE 0x005A207C..0x005A209E exclusive; Thumb;
+005A207C: push         {r4, r5, r6, lr}
+005A207E: ldrd         r6, r5, [r1]
+005A2082: mov          r4, r0
+005A2084: cbz          r5, #0x5a208c
+005A2086: mov          r0, r5
+005A2088: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+005A208C: str          r6, [r4]
+005A208E: ldr          r0, [r4, #4]
+005A2090: str          r5, [r4, #4]
+005A2092: cbz          r0, #0x5a209c
+005A2094: pop.w        {r4, r5, r6, lr}
+005A2098: b.w          #0x8cb60c
+005A209C: pop          {r4, r5, r6, pc}

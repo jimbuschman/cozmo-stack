@@ -1,0 +1,463 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00804DAC..0x00804F3E exclusive; Thumb; _ZN4Anki4Util16GraphEvaluator2d12ReadFromJsonERKN4Json5ValueE
+00804DAC: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00804DB0: sub          sp, #0x44
+00804DB2: ldr          r2, [pc, #0x1f8] ; word[00804FAC]=0041F0CE
+00804DB4: mov          r4, r0
+00804DB6: mov          r0, r1
+00804DB8: add          r2, pc
+00804DBA: mov          r1, r2
+00804DBC: blx          #0x4a5f2c ; Json::Value::operator[]
+00804DC0: mov          r6, r0
+00804DC2: blx          #0x4a5f8c ; Json::Value::isNull
+00804DC6: cmp          r0, #1
+00804DC8: bne          #0x804e0a
+00804DCA: ldr          r0, [pc, #0x26c] ; word[00805038]=0041F04D
+00804DCC: movs         r1, #0
+00804DCE: ldr          r2, [pc, #0x26c] ; word[0080503C]=0041F06D
+00804DD0: ldr          r3, [pc, #0x26c] ; word[00805040]=0041F0AC
+00804DD2: add          r0, pc
+00804DD4: strd         r1, r1, [sp, #0x28]
+00804DD8: add          r2, pc
+00804DDA: add          r3, pc
+00804DDC: str          r1, [sp, #0x30]
+00804DDE: add          r1, sp, #0x28
+00804DE0: blx          #0x4a4540 ; Anki::Util::sWarningF
+00804DE4: ldr          r0, [sp, #0x28]
+00804DE6: cbz          r0, #0x804e06
+00804DE8: ldr          r1, [sp, #0x2c]
+00804DEA: cmp          r1, r0
+00804DEC: itttt        ne
+00804DEE: subne.w      r2, r1, #8
+00804DF2: subne        r2, r2, r0
+00804DF4: mvnne        r3, #7
+00804DF8: bicne.w      r2, r3, r2
+00804DFC: itt          ne
+00804DFE: addne        r1, r1, r2
+00804E00: strne        r1, [sp, #0x2c]
+00804E02: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00804E06: movs         r4, #0
+00804E08: b            #0x804f36
+00804E0A: mov          r0, r6
+00804E0C: blx          #0x4a6124 ; Json::Value::size
+00804E10: mov          fp, r0
+00804E12: ldrd         r1, r0, [r4]
+00804E16: cmp          r0, r1
+00804E18: itttt        ne
+00804E1A: subne.w      r2, r0, #8
+00804E1E: subne        r1, r2, r1
+00804E20: mvnne        r2, #7
+00804E24: bicne.w      r1, r2, r1
+00804E28: itt          ne
+00804E2A: addne        r0, r0, r1
+00804E2C: strne        r0, [r4, #4]
+00804E2E: cmp.w        fp, #0
+00804E32: beq          #0x804eb0
+00804E34: mov          r0, r4
+00804E36: mov          r1, fp
+00804E38: blx          #0x4cb42c ; std::__ndk1::vector<Anki::Util::GraphEvaluator2d::Node,std::__ndk1::allocator<Anki::Util::GraphEvaluator2d::Node>>::reserve
+00804E3C: add          r0, sp, #0x28
+00804E3E: movs         r1, #0
+00804E40: movs         r5, #0
+00804E42: blx          #0x4a4f30 ; Json::Value::Value
+00804E46: add.w        sb, sp, #0x10
+00804E4A: add          r3, sp, #0x28
+00804E4C: mov          r0, sb
+00804E4E: mov          r1, r6
+00804E50: mov          r2, r5
+00804E52: blx          #0x4b0e34 ; Json::Value::get
+00804E56: mov          r0, sb
+00804E58: blx          #0x4a5f8c ; Json::Value::isNull
+00804E5C: cmp          r0, #1
+00804E5E: beq          #0x804ebc
+00804E60: adr          r1, #0x14c
+00804E62: mov          r0, sb
+00804E64: blx          #0x4a5f2c ; Json::Value::operator[]
+00804E68: mov          sl, r0
+00804E6A: adr          r1, #0x148
+00804E6C: mov          r0, sb
+00804E6E: blx          #0x4a5f2c ; Json::Value::operator[]
+00804E72: mov          r8, r0
+00804E74: mov          r0, sl
+00804E76: blx          #0x4a5f8c ; Json::Value::isNull
+00804E7A: cmp          r0, #1
+00804E7C: beq          #0x804ed4
+00804E7E: mov          r0, r8
+00804E80: blx          #0x4a5f8c ; Json::Value::isNull
+00804E84: cmp          r0, #1
+00804E86: beq          #0x804eee
+00804E88: mov          r0, sl
+00804E8A: blx          #0x4a7264 ; Json::Value::asFloat
+00804E8E: mov          r7, r0
+00804E90: mov          r0, r8
+00804E92: blx          #0x4a7264 ; Json::Value::asFloat
+00804E96: mov          r2, r0
+00804E98: mov          r0, r4
+00804E9A: mov          r1, r7
+00804E9C: movs         r3, #1
+00804E9E: blx          #0x4b1ecc ; Anki::Util::GraphEvaluator2d::AddNode
+00804EA2: mov          r0, sb
+00804EA4: blx          #0x4a4ff0 ; Json::Value::~Value
+00804EA8: adds         r5, #1
+00804EAA: cmp          r5, fp
+00804EAC: blo          #0x804e4a
+00804EAE: b            #0x804eb8
+00804EB0: add          r0, sp, #0x28
+00804EB2: movs         r1, #0
+00804EB4: blx          #0x4a4f30 ; Json::Value::Value
+00804EB8: movs         r4, #1
+00804EBA: b            #0x804f30
+00804EBC: ldr          r0, [pc, #0x15c] ; word[0080501C]=0041EF9C
+00804EBE: movs         r1, #0
+00804EC0: strd         r1, r1, [sp, #4]
+00804EC4: add          r0, pc
+00804EC6: str          r1, [sp, #0xc]
+00804EC8: add          r1, sp, #4
+00804ECA: adr          r2, #0x154
+00804ECC: mov          r3, r5
+00804ECE: blx          #0x4a4540 ; Anki::Util::sWarningF
+00804ED2: b            #0x804f06
+00804ED4: movs         r0, #0
+00804ED6: strd         r0, r0, [sp, #4]
+00804EDA: str          r0, [sp, #0xc]
+00804EDC: adr          r0, #0xd0
+00804EDE: str          r0, [sp]
+00804EE0: adr          r0, #0x114
+00804EE2: add          r1, sp, #4
+00804EE4: adr          r2, #0xf4
+00804EE6: mov          r3, r5
+00804EE8: blx          #0x4a4540 ; Anki::Util::sWarningF
+00804EEC: b            #0x804f06
+00804EEE: movs         r0, #0
+00804EF0: strd         r0, r0, [sp, #4]
+00804EF4: str          r0, [sp, #0xc]
+00804EF6: adr          r0, #0xbc
+00804EF8: str          r0, [sp]
+00804EFA: adr          r0, #0xbc
+00804EFC: add          r1, sp, #4
+00804EFE: adr          r2, #0xdc
+00804F00: mov          r3, r5
+00804F02: blx          #0x4a4540 ; Anki::Util::sWarningF
+00804F06: ldr          r0, [sp, #4]
+00804F08: cbz          r0, #0x804f28
+00804F0A: ldr          r1, [sp, #8]
+00804F0C: cmp          r1, r0
+00804F0E: itttt        ne
+00804F10: subne.w      r2, r1, #8
+00804F14: subne        r2, r2, r0
+00804F16: mvnne        r3, #7
+00804F1A: bicne.w      r2, r3, r2
+00804F1E: itt          ne
+00804F20: addne        r1, r1, r2
+00804F22: strne        r1, [sp, #8]
+00804F24: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00804F28: add          r0, sp, #0x10
+00804F2A: blx          #0x4a4ff0 ; Json::Value::~Value
+00804F2E: movs         r4, #0
+00804F30: add          r0, sp, #0x28
+00804F32: blx          #0x4a4ff0 ; Json::Value::~Value
+00804F36: mov          r0, r4
+00804F38: add          sp, #0x44
+00804F3A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x0067AABC..0x0067ABCE exclusive; Thumb; _ZN4Anki5Cozmo13EmotionScorer12ReadFromJsonERKN4Json5ValueE
+0067AABC: push.w       {r4, r5, r6, r7, r8, lr}
+0067AAC0: sub          sp, #0x18
+0067AAC2: mov          r5, r1
+0067AAC4: ldr          r1, [pc, #0x140] ; word[0067AC08]=00584712
+0067AAC6: mov          r4, r0
+0067AAC8: mov          r0, r5
+0067AACA: add          r1, pc
+0067AACC: blx          #0x4a5f2c ; Json::Value::operator[]
+0067AAD0: ldr          r1, [pc, #0x138] ; word[0067AC0C]=005848A0
+0067AAD2: mov          r7, r0
+0067AAD4: mov          r0, r5
+0067AAD6: add          r1, pc
+0067AAD8: blx          #0x4a5f2c ; Json::Value::operator[]
+0067AADC: ldr          r1, [pc, #0x130] ; word[0067AC10]=0058489F
+0067AADE: mov          r6, r0
+0067AAE0: mov          r0, r5
+0067AAE2: add          r1, pc
+0067AAE4: blx          #0x4a5f2c ; Json::Value::operator[]
+0067AAE8: mov          r8, r0
+0067AAEA: mov          r0, r7
+0067AAEC: blx          #0x4a61c0 ; Json::Value::isString
+0067AAF0: cmp          r0, #1
+0067AAF2: bne          #0x67aafe
+0067AAF4: mov          r0, r7
+0067AAF6: blx          #0x4ae914 ; Json::Value::asCString
+0067AAFA: mov          r7, r0
+0067AAFC: b            #0x67ab02
+0067AAFE: ldr          r7, [pc, #0x114] ; word[0067AC14]=005693FC
+0067AB00: add          r7, pc
+0067AB02: movs         r0, #0
+0067AB04: str          r0, [sp, #0x10]
+0067AB06: strd         r0, r0, [sp, #8]
+0067AB0A: mov          r0, r7
+0067AB0C: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+0067AB10: add          r5, sp, #8
+0067AB12: mov          r2, r0
+0067AB14: mov          r1, r7
+0067AB16: mov          r0, r5
+0067AB18: bl           #0x4e02b2 ; FUN_004e02b2
+0067AB1C: mov          r0, r5
+0067AB1E: blx          #0x4bc438 ; Anki::Cozmo::EmotionTypeFromString
+0067AB22: strb         r0, [r4]
+0067AB24: ldrb.w       r1, [sp, #8]
+0067AB28: lsls         r1, r1, #0x1f
+0067AB2A: beq          #0x67ab34
+0067AB2C: ldr          r0, [sp, #0x10]
+0067AB2E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0067AB32: ldrb         r0, [r4]
+0067AB34: cmp          r0, #9
+0067AB36: bne          #0x67ab56
+0067AB38: ldr          r0, [pc, #0x170] ; word[0067ACAC]=00584813
+0067AB3A: movs         r1, #0
+0067AB3C: ldr          r2, [pc, #0x170] ; word[0067ACB0]=005752E9
+0067AB3E: ldr          r3, [pc, #0x174] ; word[0067ACB4]=00584694
+0067AB40: add          r0, pc
+0067AB42: strd         r1, r1, [sp, #8]
+0067AB46: add          r2, pc
+0067AB48: add          r3, pc
+0067AB4A: str          r1, [sp, #0x10]
+0067AB4C: add          r1, sp, #8
+0067AB4E: str          r7, [sp]
+0067AB50: blx          #0x4a4540 ; Anki::Util::sWarningF
+0067AB54: b            #0x67ab98
+0067AB56: adds         r0, r4, #4
+0067AB58: mov          r1, r6
+0067AB5A: blx          #0x4b1ed8 ; Anki::Util::GraphEvaluator2d::ReadFromJson
+0067AB5E: cbz          r0, #0x67ab82
+0067AB60: mov          r0, r8
+0067AB62: blx          #0x4a5f8c ; Json::Value::isNull
+0067AB66: cmp          r0, #1
+0067AB68: bne          #0x67abc2
+0067AB6A: ldr          r3, [pc, #0xf8] ; word[0067AC64]=0058480F
+0067AB6C: movs         r0, #0
+0067AB6E: strd         r0, r0, [sp, #8]
+0067AB72: add          r3, pc
+0067AB74: str          r0, [sp, #0x10]
+0067AB76: adr          r0, #0xf0
+0067AB78: add          r1, sp, #8
+0067AB7A: adr          r2, #0x11c
+0067AB7C: blx          #0x4a4540 ; Anki::Util::sWarningF
+0067AB80: b            #0x67ab98
+0067AB82: ldr          r3, [pc, #0x94] ; word[0067AC18]=005847EC
+0067AB84: movs         r0, #0
+0067AB86: strd         r0, r0, [sp, #8]
+0067AB8A: add          r3, pc
+0067AB8C: str          r0, [sp, #0x10]
+0067AB8E: adr          r0, #0x8c
+0067AB90: add          r1, sp, #8
+0067AB92: adr          r2, #0xb4
+0067AB94: blx          #0x4a4540 ; Anki::Util::sWarningF
+0067AB98: ldr          r0, [sp, #8]
+0067AB9A: cbz          r0, #0x67abba
+0067AB9C: ldr          r1, [sp, #0xc]
+0067AB9E: cmp          r1, r0
+0067ABA0: itttt        ne
+0067ABA2: subne.w      r2, r1, #8
+0067ABA6: subne        r2, r2, r0
+0067ABA8: mvnne        r3, #7
+0067ABAC: bicne.w      r2, r3, r2
+0067ABB0: itt          ne
+0067ABB2: addne        r1, r1, r2
+0067ABB4: strne        r1, [sp, #0xc]
+0067ABB6: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0067ABBA: movs         r0, #0
+0067ABBC: add          sp, #0x18
+0067ABBE: pop.w        {r4, r5, r6, r7, r8, pc}
+0067ABC2: mov          r0, r8
+0067ABC4: blx          #0x4ae758 ; Json::Value::asBool
+0067ABC8: strb         r0, [r4, #0x10]
+0067ABCA: movs         r0, #1
+0067ABCC: b            #0x67abbc
+RANGE 0x005BC488..0x005BC684 exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior18ReadFromScoredJsonERKN4Json5ValueEb
+005BC488: push.w       {r4, r5, r6, r7, r8, lr}
+005BC48C: sub          sp, #0x18
+005BC48E: mov          r4, r0
+005BC490: mov          r5, r1
+005BC492: mov          r6, r4
+005BC494: ldr          r7, [r6, #0xdc]!
+005BC498: ldr          r0, [r6, #4]
+005BC49A: b            #0x5bc4ae
+005BC49C: sub.w        r1, r0, #0x14
+005BC4A0: subs         r0, #0x10
+005BC4A2: str.w        r1, [r4, #0xe0]
+005BC4A6: blx          #0x4aca9c ; std::__ndk1::__vector_base<Anki::Util::GraphEvaluator2d::Node,std::__ndk1::allocator<Anki::Util::GraphEvaluator2d::Node>>::~__vector_base
+005BC4AA: ldr.w        r0, [r4, #0xe0]
+005BC4AE: cmp          r0, r7
+005BC4B0: bne          #0x5bc49c
+005BC4B2: adr          r1, #0x20c
+005BC4B4: mov          r0, r5
+005BC4B6: blx          #0x4a5f2c ; Json::Value::operator[]
+005BC4BA: mov          r7, r0
+005BC4BC: blx          #0x4a5f8c ; Json::Value::isNull
+005BC4C0: cbnz         r0, #0x5bc4ca
+005BC4C2: mov          r0, r6
+005BC4C4: mov          r1, r7
+005BC4C6: blx          #0x4ad3a8 ; Anki::Cozmo::MoodScorer::ReadFromJson
+005BC4CA: adr          r1, #0x204
+005BC4CC: mov          r0, r5
+005BC4CE: blx          #0x4a5f2c ; Json::Value::operator[]
+005BC4D2: mov          r6, r0
+005BC4D4: blx          #0x4a5f8c ; Json::Value::isNull
+005BC4D8: cbnz         r0, #0x5bc4e4
+005BC4DA: mov          r0, r6
+005BC4DC: blx          #0x4a7264 ; Json::Value::asFloat
+005BC4E0: str.w        r0, [r4, #0x100]
+005BC4E4: add.w        r6, r4, #0xe8
+005BC4E8: mov          r0, r6
+005BC4EA: blx          #0x4b1ec0 ; Anki::Util::GraphEvaluator2d::Clear
+005BC4EE: addw         r8, pc, #0x1ec
+005BC4F2: mov          r0, r5
+005BC4F4: mov          r1, r8
+005BC4F6: blx          #0x4a5f2c ; Json::Value::operator[]
+005BC4FA: mov          r7, r0
+005BC4FC: blx          #0x4a5f8c ; Json::Value::isNull
+005BC500: cbnz         r0, #0x5bc554
+005BC502: mov          r0, r6
+005BC504: mov          r1, r7
+005BC506: blx          #0x4b1ed8 ; Anki::Util::GraphEvaluator2d::ReadFromJson
+005BC50A: cbnz         r0, #0x5bc554
+005BC50C: movs         r0, #0
+005BC50E: strd         r0, r0, [sp, #8]
+005BC512: str          r0, [sp, #0x10]
+005BC514: mov          r0, r4
+005BC516: ldrb         r1, [r0, #0x40]!
+005BC51A: tst.w        r1, #1
+005BC51E: ite          eq
+005BC520: addeq        r3, r0, #1
+005BC522: ldrne        r3, [r4, #0x48]
+005BC524: adr          r0, #0x1c8
+005BC526: add          r1, sp, #8
+005BC528: adr          r2, #0x1ec
+005BC52A: str.w        r8, [sp]
+005BC52E: blx          #0x4a4540 ; Anki::Util::sWarningF
+005BC532: ldr          r0, [sp, #8]
+005BC534: cbz          r0, #0x5bc554
+005BC536: ldr          r1, [sp, #0xc]
+005BC538: cmp          r1, r0
+005BC53A: itttt        ne
+005BC53C: subne.w      r2, r1, #8
+005BC540: subne        r2, r2, r0
+005BC542: mvnne        r3, #7
+005BC546: bicne.w      r2, r3, r2
+005BC54A: itt          ne
+005BC54C: addne        r1, r1, r2
+005BC54E: strne        r1, [sp, #0xc]
+005BC550: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005BC554: ldrd         r0, r1, [r4, #0xe8]
+005BC558: cmp          r1, r0
+005BC55A: bne          #0x5bc56a
+005BC55C: mov          r0, r6
+005BC55E: movs         r1, #0
+005BC560: mov.w        r2, #0x3f800000
+005BC564: movs         r3, #1
+005BC566: blx          #0x4b1ecc ; Anki::Util::GraphEvaluator2d::AddNode
+005BC56A: ldr          r1, [pc, #0x1d0] ; word[005BC73C]=006365BC
+005BC56C: mov          r0, r5
+005BC56E: add          r1, pc
+005BC570: blx          #0x4a5f2c ; Json::Value::operator[]
+005BC574: mov          r6, r0
+005BC576: blx          #0x4a5f8c ; Json::Value::isNull
+005BC57A: cbnz         r0, #0x5bc5f8
+005BC57C: mov          r0, r6
+005BC57E: blx          #0x4ae914 ; Json::Value::asCString
+005BC582: mov          r6, r0
+005BC584: movs         r0, #0
+005BC586: str          r0, [sp, #0x10]
+005BC588: strd         r0, r0, [sp, #8]
+005BC58C: mov          r0, r6
+005BC58E: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005BC592: add          r7, sp, #8
+005BC594: mov          r2, r0
+005BC596: mov          r1, r6
+005BC598: mov          r0, r7
+005BC59A: bl           #0x4e02b2 ; FUN_004e02b2
+005BC59E: mov          r0, r7
+005BC5A0: blx          #0x4ad3b4 ; Anki::Cozmo::BehaviorObjectiveFromString
+005BC5A4: str.w        r0, [r4, #0x10c]
+005BC5A8: ldrb.w       r1, [sp, #8]
+005BC5AC: lsls         r1, r1, #0x1f
+005BC5AE: beq          #0x5bc5ba
+005BC5B0: ldr          r0, [sp, #0x10]
+005BC5B2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005BC5B6: ldr.w        r0, [r4, #0x10c]
+005BC5BA: cmp          r0, #0x29
+005BC5BC: bne          #0x5bc5f8
+005BC5BE: ldr          r0, [pc, #0x180] ; word[005BC740]=0063644A
+005BC5C0: movs         r1, #0
+005BC5C2: ldr          r2, [pc, #0x180] ; word[005BC744]=00636469
+005BC5C4: add          r0, pc
+005BC5C6: strd         r1, r1, [sp, #8]
+005BC5CA: add          r2, pc
+005BC5CC: str          r1, [sp, #0x10]
+005BC5CE: add          r1, sp, #8
+005BC5D0: mov          r3, r6
+005BC5D2: blx          #0x4a4540 ; Anki::Util::sWarningF
+005BC5D6: ldr          r0, [sp, #8]
+005BC5D8: cbz          r0, #0x5bc5f8
+005BC5DA: ldr          r1, [sp, #0xc]
+005BC5DC: cmp          r1, r0
+005BC5DE: itttt        ne
+005BC5E0: subne.w      r2, r1, #8
+005BC5E4: subne        r2, r2, r0
+005BC5E6: mvnne        r3, #7
+005BC5EA: bicne.w      r2, r3, r2
+005BC5EE: itt          ne
+005BC5F0: addne        r1, r1, r2
+005BC5F2: strne        r1, [sp, #0xc]
+005BC5F4: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005BC5F8: add.w        r6, r4, #0xf4
+005BC5FC: mov          r0, r6
+005BC5FE: blx          #0x4b1ec0 ; Anki::Util::GraphEvaluator2d::Clear
+005BC602: adr          r7, #0x144
+005BC604: mov          r0, r5
+005BC606: mov          r1, r7
+005BC608: blx          #0x4a5f2c ; Json::Value::operator[]
+005BC60C: mov          r5, r0
+005BC60E: blx          #0x4a5f8c ; Json::Value::isNull
+005BC612: cbnz         r0, #0x5bc666
+005BC614: mov          r0, r6
+005BC616: mov          r1, r5
+005BC618: blx          #0x4b1ed8 ; Anki::Util::GraphEvaluator2d::ReadFromJson
+005BC61C: cbnz         r0, #0x5bc666
+005BC61E: movs         r0, #0
+005BC620: strd         r0, r0, [sp, #8]
+005BC624: str          r0, [sp, #0x10]
+005BC626: mov          r0, r4
+005BC628: ldrb         r1, [r0, #0x40]!
+005BC62C: tst.w        r1, #1
+005BC630: ite          eq
+005BC632: addeq        r3, r0, #1
+005BC634: ldrne        r3, [r4, #0x48]
+005BC636: ldr          r0, [pc, #0x120] ; word[005BC758]=0063642E
+005BC638: add          r0, pc
+005BC63A: add          r1, sp, #8
+005BC63C: adr          r2, #0xd8
+005BC63E: str          r7, [sp]
+005BC640: blx          #0x4a4540 ; Anki::Util::sWarningF
+005BC644: ldr          r0, [sp, #8]
+005BC646: cbz          r0, #0x5bc666
+005BC648: ldr          r1, [sp, #0xc]
+005BC64A: cmp          r1, r0
+005BC64C: itttt        ne
+005BC64E: subne.w      r2, r1, #8
+005BC652: subne        r2, r2, r0
+005BC654: mvnne        r3, #7
+005BC658: bicne.w      r2, r3, r2
+005BC65C: itt          ne
+005BC65E: addne        r1, r1, r2
+005BC660: strne        r1, [sp, #0xc]
+005BC662: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005BC666: ldrd         r0, r1, [r4, #0xf4]
+005BC66A: cmp          r1, r0
+005BC66C: bne          #0x5bc67c
+005BC66E: mov          r0, r6
+005BC670: movs         r1, #0
+005BC672: mov.w        r2, #0x3f800000
+005BC676: movs         r3, #1
+005BC678: blx          #0x4b1ecc ; Anki::Util::GraphEvaluator2d::AddNode
+005BC67C: movs         r0, #1
+005BC67E: add          sp, #0x18
+005BC680: pop.w        {r4, r5, r6, r7, r8, pc}

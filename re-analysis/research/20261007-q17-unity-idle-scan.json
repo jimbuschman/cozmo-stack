@@ -1,0 +1,1589 @@
+{
+  "tool": "UnityPy 1.25.4",
+  "inputs": [
+    {
+      "path": "resources/assets/bin/Data/globalgamemanagers",
+      "sha256": "e801a12093c7ef9d2fe1348618ad8c9d937028db7cec539c57445ec79a8d0981",
+      "objects": 20
+    },
+    {
+      "path": "resources/assets/bin/Data/globalgamemanagers.assets",
+      "sha256": "61c471df92f3de4bad7485b78cdf8dc7d2c928f9fb67364ed53cb1726fe5f4f8",
+      "objects": 963
+    },
+    {
+      "path": "resources/assets/bin/Data/level0",
+      "sha256": "d6a4ce43af260993850b488dd8ac15e024d57e4213ccad31becf88a04e62c392",
+      "objects": 1120
+    },
+    {
+      "path": "resources/assets/bin/Data/sharedassets0.assets.split0",
+      "sha256": "25eadda7f295ef037e165a4d1ce29321c67c55a492d62a6cf050e6a59fe17d06",
+      "objects": 89
+    },
+    {
+      "path": "resources/assets/bin/Data/unity default resources",
+      "sha256": "0a2828b52206aa2f473a06e0c66c63bd3c9efe6d5c26ced1051763d1440ebf18",
+      "objects": 84
+    },
+    {
+      "path": "resources/assets/bin/Data/Resources/unity_builtin_extra",
+      "sha256": "5d467f082ebf2d759397ea9cc9f91599ad19b0436df3e7e465f45441fe7ff0c0",
+      "objects": 34
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/0113f5f9b3c8840f9bb03fe7d35bcbfc",
+      "sha256": "2e60dcf3647a7fa9f1c671102dcd1f70c75c9d04ca99e1f0eae49df51cb0a1af",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/090a4b69bf1f248a3b81618a51bddabb",
+      "sha256": "231606d668e391a0520d8cfbe13b81be524ef62495576e84da6303f97e8ae607",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/128e987d567d4e2c824d754223b3f3b0",
+      "sha256": "eec2dbe4e6d84846b13b1c3243adaed39a76c477f1a49796e71c2948bfe3122f",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/16ec152d801664006888d5142a299cd5",
+      "sha256": "e6aec8ba29afb47bdd34f5dc19c25e8c37740ad9bcffc3062486f87222fae340",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/17d3b771eb9c049ef9f855631ee3aa6c",
+      "sha256": "228bc6f8b41e8149bef78b249b5a82242dc5f171da0d0717d270643c3e289f0c",
+      "objects": 2
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/1e3b057af24249748ff873be7fafee47",
+      "sha256": "c95cdeefca2f68742f3737cbbe11bb7ceed2cad1de4566a010d22b812ab70864",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/231aff45c76e14098976dbe5288e95a1",
+      "sha256": "bbd4f5aa45afbac2ad1781088c701ca27e90a706ca93bf7e45a646823aadc5e0",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/2c646a8e0215641fb973ab5bd932ef30",
+      "sha256": "89cfcdb7b4ceff1f4714bc145a8d91cfbd4ba637456cbb7472ef1dc27681cb70",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/32404f15258314779b656225f5b1667d",
+      "sha256": "9a06b367167614178411d35128a45664e657b49dc290004bbe5644670232dbdc",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/380dfcd606b664fa6a4c86a9f8b364e5",
+      "sha256": "f69b48ca29af6c53741716ee0be8ff9b056a077433648c58243d04ef4c371119",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/3997e2241185407d80309a82f9148466",
+      "sha256": "1dd4897aae22e27b5bb2cb31a0bb4a4d3813d4f6079fb0883d900dfe0c507b92",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/3d49ee19a617c45c1963e50d2a9e4ae9",
+      "sha256": "0dc3efa4ff538039765bebb531a016c78cbd41cebb40e8ed756532df3a59421d",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/407bc68d299748449bbf7f48ee690f8d",
+      "sha256": "9775ee83d9a20464bd024b822332206b07a55089594d464e20dde8284690915b",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/461446f211e07433b942e7bfcb3e1610",
+      "sha256": "20fcc56856d58e1d728ca941a34c1229150b8357f4e6d241d13d2b5224ab1cb1",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/48bb5f55d8670e349b6e614913f9d910",
+      "sha256": "d02fca6e36190429e11d50049139478f2e5c01ae4cd3a713ce89b71d792efc7f",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/55d8cf59040b940c0b59b55e861e874f",
+      "sha256": "2b71f0870fffb36b73b3ce91ab1bcccd331363ce08e01fbd87b0b167ae935949",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/56aedeba945ea460697bed8e6bc69a54",
+      "sha256": "6d7b02a3f4bb4cf524e6309563a6f4ccb772fa76089f304365f509a6dbbac263",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/597f93baa47c24a22acf2d014a1a8000",
+      "sha256": "2ee76e0c5c33bc8fc8fa145a5dde3876c07be08f5c31b4102655ddfac773ee89",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/59993db1ff02746ed8983fb1332c722d",
+      "sha256": "f7070a9df6fbd905521bef3499524a5996dd1d3443486c2a1d2ef111e6dc9a4d",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/59decb11305804791abf7f46bbb25412",
+      "sha256": "8ee8af7b7875d86f556dbd9b72ce3cc604248c0b1f3df6aa7db5dbe0c2ae9901",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/5bca1da29979448fbb27efeda82449cc",
+      "sha256": "051f01c1083d72bff41d123106cbdff10668bda77d4922a3325be6339db3bccd",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/662c343564f4e4e92bb049c7b0d7c7c0",
+      "sha256": "8bf42fad6d3b0cf84c4da732fd3706a120aec482d27a087daeae45229f36664b",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/68e6db2ebdc24f95958faec2be5558d6",
+      "sha256": "613d2043ddc36d0bb0ec522fcf5cb343689feae177ef92fc85d9d6b92e3d794e",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/6ae544021500e4368b15cda0f9265512",
+      "sha256": "3223a03263b7626a058ecc09ead417ec1122cec866db4cfc58d11375be63fdd1",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/6f483e03f26e244a6bacc6e9d045c707",
+      "sha256": "3dd7421301b7f0c28a27fb0fda8a3ee518265009e37578caf844344fdc1ce0fe",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/708821eed7ab54ecf82c2a7cb2ad88f3",
+      "sha256": "1a6818eb5e4c46f903d564f09f3728a095624ca68ae070e9940391ea5c49e277",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/753d7dafb1e0a4b1c9def5df70cbd0ff",
+      "sha256": "59acdb5ecb55a141a506996f58cf3396d5ba8587e4cfcc8e9c7fd34bf760b60d",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/7925b4e20a3174520af619e0d9b1aa6f",
+      "sha256": "f23307e498abbed745de2413e68afab3d67bd5a0f029397ace76707c2df8c725",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/79459efec17a4d00a321bdcc27bbc385",
+      "sha256": "0679c4d272be1a12a9c289fe8cf486bcbfeabd06ea22ef19e8600457d9036aa3",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/85187c2149c549c5b33f0cdb02836b17",
+      "sha256": "85284e4ea529758de065c89a9afe81a50952adfb146566a92de3f7e00cf19d9c",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/8795b863414ea4c5f94ec05ded21a5e5",
+      "sha256": "1aecf17759470a52d78d51bcc1a999f21f8d08d56a7aa61da1a6a854f5cdf71b",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/95d58c374d1fe40e5bd4968670621214",
+      "sha256": "971410076872724a04bbc5ae27b382f0058ded31c3e84c3af49d6676fcf34b14",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/9b6761045fb0142939d4393399780bb1",
+      "sha256": "335527fe437708c69a02e33df6438aa19668a464753347053cf0c51133172107",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/a02a7d8c237544f1962732b55a9aebf1",
+      "sha256": "ca99aa0cad6d0956ad7748f648ed8a670925c83cd733def66926a979b7f7983f",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/a231085fbe5014f918ffc9300f737aa3",
+      "sha256": "1f566fcdc1dc3cffd866f62b1eeccd6fca62b702f163f1fc91c9f6671538eb98",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/aa45c197e007347b58459cd2ff9eff0b",
+      "sha256": "b484e07e9f9277507ab8c38739ff948b8bb2ecfdf93bd13c542e97c0b683863f",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/ac67391e338034fe1b99bf90aeab3198",
+      "sha256": "9bd23bbf74608d08878c9238c624fd73970af0f1639b04f1ab05258b135c6d1c",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/afbcac57e48104e7f9e0a34552be6448",
+      "sha256": "b30328c669b357252d1539de93b4d27726db12a13ea63c707601034e8e7e6fa0",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/b94ffef6912db4681ae2d46acc6041ec",
+      "sha256": "981073410b8e13fb5229ccf35744cc64bcffcb60d638baa0bbfe9c248b94fa96",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/bc1ede39bf3643ee8e493720e4259791",
+      "sha256": "239afb357ff8cbc7dcdb4cfe9fb047a6f33f980e28796106e31eb96a94dfa376",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/c41005c129ba4d66911b75229fd70b45",
+      "sha256": "09da75ad278a295542a03004e245d44176066e766c6a0ccb42bca6c450223cb5",
+      "objects": 2
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/c8faa6b7ffa7840899f632a484a5696c",
+      "sha256": "d0ab080e28a2a82cba737c152a8c5f212a25bf227c71e43867d9fa0c18a6ddd7",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/ca0f6704b198b43a289dec78a62c6f6c",
+      "sha256": "ccddbdd85040f419648cc14d6ff0587c68cb9bb6bed384e7d34241000cfef403",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/d003ddda430114476aa48701058c1a56",
+      "sha256": "73c36dc99044bcb2e18e60d19393e233e390da14a2c82a1709685fbf5df9dc03",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/d21127b8522694ddebe5c2e2f6da37b7",
+      "sha256": "d7f4ce2e6f3b28dfecd5dab7ab3a593a077dc7e8f6cfd6682941c6141e4dffc4",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/d57fefd8bdd284c9b8dbe6cf62790b14",
+      "sha256": "5a6a83be2f1042180eb8b52b41671653d1ef064b1592fe641b08f39e203c6abf",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/d930090c0cd643c7b55f19a38538c162",
+      "sha256": "07ce7ef7e2a3566c71c59ac630a359c68d4382142f57336365dfaa7062c0f6bc",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/da94d10f54e7e4d328a336467cc2a24b",
+      "sha256": "0c530170c9d737fc61dc68bbd4fcc1779c9bdb062676c65e34ba2dd163295d5a",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/dd89cf5b9246416f84610a006f916af7",
+      "sha256": "e0931ffffad814af6ce610d9cbb801085ec8726bab74b01e71c01a9f5a33dae2",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/de8ce11e608ff48afb8c25ff910a0512",
+      "sha256": "96885727af3fa0f896db6bc126b8bff7008a371ace24f3eee45d32ca598d6d99",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/dffef66376be4fa480fb02b19edbe903",
+      "sha256": "e8fdd78001cc7d6b1a74f66c1649f137f21e7950940630a54dc661d59dd0ba9d",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/e2708e1c21f624068a0250400df77370",
+      "sha256": "a0a64706318be704dbdcb9241d2672be13a77f7cd60c61b37713a1e6dc340c6a",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/e57cc77ffe61e4b6090ede26d8ee2ef2",
+      "sha256": "5546c5150aa0345812499cfdd96b2f1fb714e47dabde2a416adaa6fb0f8005f3",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/e73a58f6e2794ae7b1b7e50b7fb811b0",
+      "sha256": "99824a8f0f57c3fc3b56252d53f103663e142ff65d17311cb0b64ff336b18e08",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/f0722e9830e5a4da993f62b903397050",
+      "sha256": "3a4598265cd0e67e9e8ea4d7c57c9dd7d9ba74f48203b0f84077568da5f1cf2b",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/f28043241b4c44a7887f854511efa65b",
+      "sha256": "be22c670f4c65101da7c06ce6a0404b5538b673a89f1f3bf2bacb929782969b7",
+      "objects": 2
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/f41d7aecebb624b91a26379c9d9cf91c",
+      "sha256": "3752b9e79f2912ab8c7bba9f387ce868c7b19c0c8602a00f6129e344355afb3e",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/f4979517b0ebf4bb298c60142e7c2716",
+      "sha256": "e369b1286fb6885f670ab4a88b971e29d6611d89e61d2d3642afa83c87cfcb95",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/bin/Data/f7ada0af4f174f0694ca6a487b8f543d",
+      "sha256": "aea78ac919b1862e4e4fb31bc8da418b4f4906e0062e48ee82d48179927ea673",
+      "objects": 1
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/activities_view",
+      "sha256": "353f49a2038c258e1f87bcf28c79ee6317e8994197dd7978f936e6b5d67ea0f8",
+      "objects": 106
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/activity_icon_sprites.hd",
+      "sha256": "6c9946a651a960ab958114a4868250db177dbd392bed1bae5b109864cabe54c9",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/activity_icon_sprites.sd",
+      "sha256": "42d68760458ccb5f615b4b3e9917cbe368f121d17b9ebcf1fd6699ea624c0eb8",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/activity_icon_sprites.uhd",
+      "sha256": "d0a41ffc7203485ff1b18b83298c2145d8f6304b956715da90ed59b37c8f50aa",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/android",
+      "sha256": "ea25e22dd822cb62a3329de3c43c315753a638eca099766aeee99094115a6ef9",
+      "objects": 2
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/basic_ui_prefabs",
+      "sha256": "2854afd9fe4697854e4039f9ad85233f8b79988f62efb3232b24b2d52689967c",
+      "objects": 1263
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/basic_ui_sprites.hd",
+      "sha256": "b7ea9766cf1466efcf20801c56bb2cc4f347dab3ed7aa4af23f49f82562c3dea",
+      "objects": 173
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/basic_ui_sprites.sd",
+      "sha256": "0e2566c0ea300c08628dc446b2f148970e3c61db072438171ae1bd565fe76b13",
+      "objects": 173
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/basic_ui_sprites.uhd",
+      "sha256": "f5eb65febc2750f2e91741fc7096526e8d540d59fd94d89a96093eec8b8ef21a",
+      "objects": 171
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_button_sprites.hd",
+      "sha256": "b1b7cea15f4b4d4697bd3f4a22efad4fa01b5f6d6aa68f143907650b520364d5",
+      "objects": 49
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_button_sprites.sd",
+      "sha256": "79333f0aed0c25e241bc33c28f19b660ea8dad0cb0376300df481ef955321a0b",
+      "objects": 49
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_button_sprites.uhd",
+      "sha256": "50bb12dd5fd9bca06a3771b7553a4319e5b827b72123abd4f7e2b67be749f7b6",
+      "objects": 49
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_frame_sprites.hd",
+      "sha256": "5991fca2e1d8999067182ed46aa700bcbfc4ac50fa1c06043efb440fa94e0fb9",
+      "objects": 99
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_frame_sprites.sd",
+      "sha256": "34ef311f521c489e69aeecb225d999aaf3f2b7fc6603126c93dcabccb0094400",
+      "objects": 99
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_frame_sprites.uhd",
+      "sha256": "eb675250f6fffd7f657aaa0a84a2f5a83c0b8bb9aece8128bc6591a09744dc42",
+      "objects": 99
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_icon_sprites.hd",
+      "sha256": "51742103566d3bc32c3ce108f6d60f857965d559fbcccecce2a149b902172798",
+      "objects": 97
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_icon_sprites.sd",
+      "sha256": "57f745da04de683ad909684eeb5172843822e67488913437d7ade955250c1d2b",
+      "objects": 97
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/common_icon_sprites.uhd",
+      "sha256": "8636f1a252a4f424ef37ad66365d6539ae7f9cfea83a50455dfe45b9290cbb7a",
+      "objects": 97
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/cozmo_performs_sprites.hd",
+      "sha256": "ad0da28aa393f052a2aaf0ff741acb23679ff1f119e8cdb440c93ce1a902b19f",
+      "objects": 143
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/cozmo_performs_sprites.sd",
+      "sha256": "44cb0c0a27a973f39b435457cf1fac96a5e21dc757b4c90b1b814faa945c4738",
+      "objects": 143
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/cozmo_performs_sprites.uhd",
+      "sha256": "044ea4acba4d37f1611a9c0ddaa746d26450375c1c1ce46b64c579516ba875d1",
+      "objects": 141
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/debug_assets",
+      "sha256": "9e5814818ecfd639477a47f9fb1a8d0ebb71963928f478f576ff7aabd340c43b",
+      "objects": 12
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/debug_prefabs",
+      "sha256": "b3f6f7dc7ecc3c29128f53a4e89d16a93505d81bda9377bc28ec66addc2b28d2",
+      "objects": 3985
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/fonts.ja-jp",
+      "sha256": "c42401245f5cd24500c1034f9a563ef8b76bd04448063cdb57d06f6f5c9a08d1",
+      "objects": 39
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/fonts.latin",
+      "sha256": "0df80dedaefb97acf2579fe4e530298510eac92a02f81a8b6e1179d40987758f",
+      "objects": 21
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/free_play_view",
+      "sha256": "dfb93f57fe8aa56943303fe904809a29cca806bb34e23c933121ccb5a142a846",
+      "objects": 213
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/free_play_view_sprites.hd",
+      "sha256": "81e1ca5629f171387def255c700a6d4ecc33f37e8bdedfedc3bad5aa8cfd8b91",
+      "objects": 35
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/free_play_view_sprites.sd",
+      "sha256": "da8b628207cd81c08189a7f79fdba159d742c2bfa32369317622956c4f4f4573",
+      "objects": 35
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/free_play_view_sprites.uhd",
+      "sha256": "f26f9111545d018b4b92299ec503fc084fd8bf30e2ab82a007637649d8e00d10",
+      "objects": 35
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/game_icon_sprites.hd",
+      "sha256": "ec5b968b2694d164b5d49069bf4fc6db8ccaaf25d6740a8b05ccb1af777f5904",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/game_icon_sprites.sd",
+      "sha256": "78998e06a5cc345af4af7f325af6f41b7a5a5bfbfd3727f1495e1a65940c6ab0",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/game_icon_sprites.uhd",
+      "sha256": "058e5c60ad416ec3ed594151bb23de95b57e7de93394c9ad40cf222c8d706581",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/home_view_prefabs",
+      "sha256": "7cd012c1420c1eb7c12cea9235c91014b2024f8de9ea399165f810bd4cd1cbe4",
+      "objects": 210
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/home_view_ui_sprites.hd",
+      "sha256": "2e5f18d7221a5cb9752dd8532fc29061ddf6666b4fdc96a91c0fd902c736f4af",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/home_view_ui_sprites.sd",
+      "sha256": "e02508397f6f5223965b8bff1ba26170c69db69885706122b63f8b0b7bac1185",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/home_view_ui_sprites.uhd",
+      "sha256": "aab3205bfd7d3cd3d3d4f2d61c1903b41729e2b38f1e1d507bf79b9ec223107b",
+      "objects": 25
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.de-de-hd",
+      "sha256": "8a3507883f0c99468da8c59ace162f73996a845bffcbfff03a94003603efdfa5",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.de-de-sd",
+      "sha256": "7331137d2b3be2ac95c71b023438e4b850fcaf0471aceacfeb73cb78794e7185",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.de-de-uhd",
+      "sha256": "5f151e09dabc658d7b5ff2e26de62cb049b1208913af75fa63719c12f9139d3b",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.en-us-hd",
+      "sha256": "9368f11a2e7a4dcb74ee0b77480ff3fa8ff8227402454a4a43da047878e4c5b6",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.en-us-sd",
+      "sha256": "e239e5208c42c212dcb0905bca83a2a6ba095716fd357b93f93a8b8ecbad1c59",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.en-us-uhd",
+      "sha256": "302e7bbb1ccb6e579555f8964dc8d426e05bb4670231aaecbb7e265d29d5b759",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.fr-fr-hd",
+      "sha256": "3f9fc1bfaab236734279bc8d5a15c31469ad80dd6f35340f6c445b41911913ca",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.fr-fr-sd",
+      "sha256": "f4313030955b2e9d1a43d5cd7063faf2bdb73fad7ce4366a992aa6ab75a392cc",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.fr-fr-uhd",
+      "sha256": "66b76db655f9d5406d78c278dca982c3e1530ea9322d68d00be40af41915dfe3",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.ja-jp-hd",
+      "sha256": "b60a8eb2c054a8b4fc150daff6490901f124fe3f773e59d7c05855267dc3dd81",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.ja-jp-sd",
+      "sha256": "d78b546c4af5a1002f40b8ca73ee0e03fa1c92c20300b49a055eb09362db22f3",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/language_specific_start_view_sprites.ja-jp-uhd",
+      "sha256": "0b7c5e8c94bc6593ad745024c5b9a3046b73414cc7f11aa776f94021b4a016a7",
+      "objects": 3
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/managers",
+      "sha256": "06e3811c2a89d8c8ea2f1f1d1b07120c521fc635b20984a679c25fb0c5389bfe",
+      "objects": 162
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_data_prefabs",
+      "sha256": "e9744d9cd05d31acdf1c9c3fce51cd52d6489d4575ba52c06603418f038d866d",
+      "objects": 2856
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "sha256": "6fca28870e8633c9d2a49578facacfed49ac04ddbc5d2cec4aac82cfb1fd3937",
+      "objects": 77
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_ui_prefabs",
+      "sha256": "b92f406296b97dd825338565368ca886c1e2d527d98db3e3c315470b9a2911da",
+      "objects": 1030
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_ui_sprites.hd",
+      "sha256": "b561611569d3551096bcc1cb692a7bdb714946e4b723cc66fc92cbd8c936344e",
+      "objects": 138
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_ui_sprites.sd",
+      "sha256": "bb5b1a29c9c2350f2598a9483f2c5803efaed69a7146004ebe87b48f88aea241",
+      "objects": 138
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_ui_sprites.uhd",
+      "sha256": "52f55512ec992f28b2c4cf993252428d25cb063d6ecc2a8c90407262da6af09e",
+      "objects": 138
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_view_sprites.hd",
+      "sha256": "1e9484d5498668b661d5faf045ac28abae78fc0d2462053eb428327a44ecda40",
+      "objects": 23
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_view_sprites.sd",
+      "sha256": "7f1ef6313b06e0eaaf1f53a6028c048e429260336e4fb710356a5d979e5481bf",
+      "objects": 23
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/minigame_view_sprites.uhd",
+      "sha256": "b30057322f3f28e601fbd9d3d566ff6cc4dca4f473dddf2a5075fd5fe81d6028",
+      "objects": 23
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_energy_sprites.hd",
+      "sha256": "c48502c7244ed0c3031e118cb2813823d974f7bd630dfcc5b96993792bd065c9",
+      "objects": 5
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_energy_sprites.sd",
+      "sha256": "61b094e24a2fec1465c32a0ee283fa518b55d900d3e790b5d019b677dfa247a0",
+      "objects": 5
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_energy_sprites.uhd",
+      "sha256": "ed5d3fb73ada5e6cb71053f5420926fa359f757ca708c8be5220ca352d8a9b89",
+      "objects": 5
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_hub_connection",
+      "sha256": "e23712efb46d875e84420555eabf86a632aaa9ebd3ce0d5337eea1a26998a607",
+      "objects": 617
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_hub_main_assets",
+      "sha256": "a7767f2f72924ab893c2b741fb9a9e6106835b682b4278346999c09c1cd0c1ae",
+      "objects": 17
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_hub_scene",
+      "sha256": "74a77027013067fb424d2dbbdb2984177a353f2ae7cabd4b7f052d4ee630093c",
+      "objects": 327
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_hub_view",
+      "sha256": "65767bbf058e74ceafc3b3f2307e687dd07178c558a703f3b84e591a1144854e",
+      "objects": 4849
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_meter_sprites.hd",
+      "sha256": "dc0ee12646f70cd0af31a97e5a5b12a745d3d7d33cab3cc2a1a445b6fac32b9c",
+      "objects": 89
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_meter_sprites.sd",
+      "sha256": "0beeafd6f4044a75e4e699784f800b6af0d710c820f17bd58485849004b280bd",
+      "objects": 65
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_meter_sprites.uhd",
+      "sha256": "82ee65b179b8504167c75a566099f36dfbda9cd4fa5b0f5a2a3e78a535576503",
+      "objects": 65
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_view_button_sprites.hd",
+      "sha256": "01ccd2d12fab2e24c68ea8b3f0793f954fd981a0b9b107f11d6253baef9b34e2",
+      "objects": 29
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_view_button_sprites.sd",
+      "sha256": "902d10bf79e356e83f628cbcd964b2d6eb5a905dfa9df67dfce7ca8002b13a3f",
+      "objects": 29
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/needs_view_button_sprites.uhd",
+      "sha256": "4fa228da36d7a44f56a5d5f4a2ce97067fd2bf88776e85216844fd74df7059a2",
+      "objects": 29
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/nurture_ui_sprites.hd",
+      "sha256": "0dfcaf85ce705c5b2fa319eb6a63fa5dd8c533eed2e18a5412ac96fcf4a95204",
+      "objects": 19
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/nurture_ui_sprites.sd",
+      "sha256": "96aa7f61d53fe7adcfd1dc15e1035be0a1412072e78c8d0da6bd527464d3f087",
+      "objects": 19
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/nurture_ui_sprites.uhd",
+      "sha256": "4fba6765474e6041cefb6592ef77bda6fae2a3f2140e719dc873f8820b02b00f",
+      "objects": 19
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "sha256": "de07b92f9160d98a8b5938834a4ac3ec6ef379f9e75ae530b825c0a75cdd6379",
+      "objects": 768
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/onboarding_ui_sprites.hd",
+      "sha256": "7e26e23fc516beac731a6931b2835d3a8711831d62480a2e55e510e894d98e1e",
+      "objects": 21
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/onboarding_ui_sprites.sd",
+      "sha256": "2b97911e0c9a3434d437f950772162003ec56fe168880750dd7e2d497891ea30",
+      "objects": 21
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/onboarding_ui_sprites.uhd",
+      "sha256": "acad00e214f020ac7e094e929eff77cc6f8c88eec05ef322d7463c6e2c2b742f",
+      "objects": 21
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-de-de-hd",
+      "sha256": "6d4c03f175075a2d51ba2d6dccba77b0f48f9afb227a0f7d1b663d7b10445cac",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-de-de-sd",
+      "sha256": "345ee9b5e80d4038bd5e250d3a9f72be03b9d10d879c63d820dbe53c48238031",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-de-de-uhd",
+      "sha256": "175bbe82f1f0f05e1844ddeab8e2a2f38012bb2c4a797121f317d9aa91ddf7e1",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-en-us-hd",
+      "sha256": "4480524087ebc7e82d38e10c3268dfc9066491ed5df9d7cab14b4e9aa397b7c2",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-en-us-sd",
+      "sha256": "16935751f16ae053d9fd8aea54feba7e45bf41f59edcd081ab7d528136f85f2b",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-en-us-uhd",
+      "sha256": "17888a185bd34a669224eb99365d2a067e2a55ce6c1e787b37220b17894aba9b",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-fr-fr-hd",
+      "sha256": "4051a0c202d6d6fbaf9a20c86abce0809326aa436a8d8b6420274917239b15a0",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-fr-fr-sd",
+      "sha256": "1a1d25d7b5519161e6f1b90d8ce0cd244f2effc08296c319557b867f338fbf4c",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-fr-fr-uhd",
+      "sha256": "1dd7ca7dda29c84c68615fed5813c6667c78a3395633d1c8bd7518f4d731a21b",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-ja-jp-hd",
+      "sha256": "a94d0d8059b06fdb50266b7924d6a9ed791e5cbac60563fa4f1ba6ddd6621c1d",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-ja-jp-sd",
+      "sha256": "5cb7931b41618fb41c51bdd9cde6b73e25fac93d8e3697e5105651ec6e8aa29d",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.android-ja-jp-uhd",
+      "sha256": "2b5fa3d9b4fcb3bff048b33ca1437c5f221d2547f352f073dbcb76ae2aac8089",
+      "objects": 13
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-de-de-hd",
+      "sha256": "b83af02b08e844854be8e1f7991f6bfafeb970a7ab5e346fc2d74e1f1bc188d7",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-de-de-sd",
+      "sha256": "e572cf6a9123aaa3f43ec99c1e33c58715db74648616232c6a0ea457b433260c",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-de-de-uhd",
+      "sha256": "018cc52dd5a6c9ecfe0141a2d865befc67a6115ebb75cfeeff9f88caaf0ac0c3",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-en-us-hd",
+      "sha256": "ada339c336f192174d7963276239edff48d925a3eda883ad4ef86e2b1df7b1f5",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-en-us-sd",
+      "sha256": "92116b238bde1a2b592244d4b2f63697d91b46514cb94f99ace4c335cf214862",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-en-us-uhd",
+      "sha256": "84cc78710af1d986d48f5a521d68ceeaf3318afcb9db1caa676945bb09c185ad",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-fr-fr-hd",
+      "sha256": "31c30554f579bd2a477cf848d8ccd20d1b388962c78de4acd09c3674a26e77f3",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-fr-fr-sd",
+      "sha256": "43823df8b66fb0900b7f9ee96ebb08ff61b24c280bc1318f9d40bade4c1b69ba",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-fr-fr-uhd",
+      "sha256": "1bb0017bc171b3922c8e28615a7a1c34dd257db9cd81a7ceec334ec3bd5d88d9",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-ja-jp-hd",
+      "sha256": "852002aabcc78d91a0d01e1de140bb6529a51bc52964f7badaf0433c40fba8ae",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-ja-jp-sd",
+      "sha256": "d371d81a1efdbc8a60566f4ddc0f433ab5d65f9b03e0aaed8ba43e703261f6eb",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_language_specific_start_view_sprites.ios-ja-jp-uhd",
+      "sha256": "4bf1f03e2d3df7e7f4a0951729ffa177b97ff88c3f39cfb5b63fb3d75309754d",
+      "objects": 9
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.android-hd",
+      "sha256": "4c2bbaf75e038efe27be1877f2be0aa79e36540aadf2a13f385faa3563dcf7b8",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.android-sd",
+      "sha256": "91d232e06125207a450833a05713c4eb4281a4c2ad5d3b6f03f6be2e1a7166d2",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.android-uhd",
+      "sha256": "cf892048a46637363454fe3b6cac300635ea275145777a8fab1a82ab7571153e",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.ios-hd",
+      "sha256": "20471aa799297010faa12337c77b6c2a47b9873852975fd68354845985513e32",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.ios-sd",
+      "sha256": "38398b67d107f32171ab5085bed8ef3b666fb77c3642b7d8de117e3669e90988",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/platform_specific_start_view_sprites.ios-uhd",
+      "sha256": "6fe2069c609af02028867dcdbe4b5d3d8bdd24cdc93f7a1fc9bedab3d30c150c",
+      "objects": 11
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/promotion_icon_sprites.hd",
+      "sha256": "f5847447cb414964d8022aac36081edd6caa10f0e26056d6a7cbb98d82285d41",
+      "objects": 37
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/promotion_icon_sprites.sd",
+      "sha256": "f550285dc20861f9ce864606fefcc46192c32cd22bbbbea3ee9d53836bb2442b",
+      "objects": 37
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/promotion_icon_sprites.uhd",
+      "sha256": "ef15ad0f4d3e073566956444c65e3b0df78d29b96e54370e2720805a8b7c8b1f",
+      "objects": 37
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_needs_sprites.hd",
+      "sha256": "4a607fae587f2751be9ac39e245f38ff1022fcfa1658ef4dcff64e28cc898ef9",
+      "objects": 37
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_needs_sprites.sd",
+      "sha256": "57b26dba42899bd0db1db0cb31677d8cb7ea6f40e452c09d83c838a21f3abc8a",
+      "objects": 38
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_needs_sprites.uhd",
+      "sha256": "c53be7d248b326c9af6effec90d03e16f80a2f615b4cbf2bc9a99ca3bb208fc1",
+      "objects": 34
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_view_button_sprites.hd",
+      "sha256": "57ebc63006483829df74f9785840d1ba973c1db2bf3fb2c6e6ac477e2218c981",
+      "objects": 17
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_view_button_sprites.sd",
+      "sha256": "e511f70e4a62e0230a1ac8b8fc97a9ea5446e2a85423f7d41e4bcb7e653661d6",
+      "objects": 17
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/repair_view_button_sprites.uhd",
+      "sha256": "085795ec1635c4a3977c9c4f321f783257a5b78409712ab39bb35f36906588a0",
+      "objects": 17
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/sparks_view",
+      "sha256": "2618323caf538942f77d9b4030ff5a0461a05f968e347d9ec9158d72809e050d",
+      "objects": 1218
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/start_view_prefabs",
+      "sha256": "d522c887abbd3cc38065c26e8452d04a2c2708f61036d728d58bd8306ef0e1e6",
+      "objects": 1326
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/start_view_ui_sprites.hd",
+      "sha256": "8b04a9deaeb3706320e563add61dccc83304b0c7e4d097a4580dd07b20a009f5",
+      "objects": 173
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/start_view_ui_sprites.sd",
+      "sha256": "88565f864516694ee4f2f83a320af62a70308b5de530a7f6c043fc34d8e2c002",
+      "objects": 173
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/start_view_ui_sprites.uhd",
+      "sha256": "101c3f6bf13547ae3c3227f4cd28d1d19cec8dc85936f039068b50cad7a0e95b",
+      "objects": 173
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/trick_icon_sprites.hd",
+      "sha256": "9e28c91d07614f9cfafb5fed172562d82be5f8b9778db8ed84455047cb50c8d6",
+      "objects": 33
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/trick_icon_sprites.sd",
+      "sha256": "4a1d4d35615b95d794f51baa4f7cb5f825ac40fa9409a4bde23add12110de017",
+      "objects": 33
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/trick_icon_sprites.uhd",
+      "sha256": "73928515b78ff58e45ef3efe72cbc1d7896c6927b39ef5fdd0b30746b57b6b99",
+      "objects": 33
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/whats_new_icon_sprites.hd",
+      "sha256": "4568e19c3f30c10538933e965ff60639fd17b95d0ff741c291a010bd85672d2c",
+      "objects": 101
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/whats_new_icon_sprites.sd",
+      "sha256": "ef4b9d5ce46820a514a27994391777b60e637decfdf41a37cf3e0bc614993239",
+      "objects": 101
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/whats_new_icon_sprites.uhd",
+      "sha256": "94cd99a9a7a2efa056a4102bc9295bbe5f9090acd1978569272ebde7bae08d5a",
+      "objects": 101
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/wifi_instructions_prefabs.android",
+      "sha256": "1af6ee5ac0cd49538a04b51ce5cd335a5123a14cffcaf40920380dfe3bc0fecf",
+      "objects": 331
+    },
+    {
+      "path": "re-analysis/obb/assets/AssetBundles/wifi_instructions_prefabs.ios",
+      "sha256": "f0661b42d45f205c0867b6f1166cf397e03d69d8d199c2efccd004f8c451d1b2",
+      "objects": 313
+    }
+  ],
+  "matches": [
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -9166641696111359077,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 488
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -9166641696111359077,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 488
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -6489267584725713738,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CozmoSaysGetIn",
+        "_EnumValue": 103
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -6489267584725713738,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CozmoSaysGetOut",
+        "_EnumValue": 104
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -5983937836791549644,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 566
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -5983937836791549644,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "OnSpeedtapGetOut",
+        "_EnumValue": 333
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -4856068133214563010,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 566
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -4856068133214563010,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 566
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -4767815538053018308,
+      "field": "/IdleTimeoutSec",
+      "value": 60.0,
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 4676852815671719711
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -4445161519094680481,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 566
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -4445161519094680481,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "MemoryMatchCozmoGetOut",
+        "_EnumValue": 290
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -2607906646805776398,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CozmoSaysGetIn",
+        "_EnumValue": 103
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": -2607906646805776398,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CozmoSaysGetOut",
+        "_EnumValue": 104
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 6558253871041720496,
+      "field": "/MinIdleInterval_percent",
+      "value": 0.0,
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -5778932324872475850
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 6558253871041720496,
+      "field": "/MaxIdleInterval_percent",
+      "value": 0.30000001192092896,
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -5778932324872475850
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 7078763070008099591,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CozmoSaysGetIn",
+        "_EnumValue": 103
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 7078763070008099591,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "DroneModeGetOut",
+        "_EnumValue": 160
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 8280510475698268252,
+      "field": "/GetInAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/minigame_metadata",
+      "serialized_file": "CAB-321d16b11e02d53070c4ec876d615180",
+      "path_id": 8280510475698268252,
+      "field": "/GetOutAnimTrigger",
+      "value": {
+        "_EnumValueAsString": "CodeLabExit",
+        "_EnumValue": 51
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4488609256822859317
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -8691911438980715488,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -4852992956874012462
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -8468619138002718150,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingIdleEnergy",
+        "_EnumValue": 363
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -5624354701817638414
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -7524372670704333747,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingPreBirth",
+        "_EnumValue": 353
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -589259548996048452
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -6735065427340453153,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -237733564065264158
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -6651962894638009573,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 1843719783497432314
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -5171420710301899954,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 561
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 1115098796023583386
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -3444783837560885067,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 519
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -1177827301516279549
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": -233887559431156516,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingPreBirth",
+        "_EnumValue": 353
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 4367137287550826645
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 331480305435766895,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -3812943937927321142
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 1450394558566527473,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -7607592368583475489
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 1707433773681132916,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingIdleRepair",
+        "_EnumValue": 311
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -5624354701817638414
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 2325559293237395910,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingPreBirth",
+        "_EnumValue": 367
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -2347010459422037881
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 3423935711831522178,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -6582209953105915473
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 3469749110252611292,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 515
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -8254428522820121891
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 3849058563311809509,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingIdlePlay",
+        "_EnumValue": 364
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -5624354701817638414
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 3980832728625721474,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -7607592368583475489
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 4139398162490332922,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "OnboardingIdlePlay",
+        "_EnumValue": 364
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 9113417720017876264
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 4995909757075809608,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 8459362622463838086
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 5539553290662182153,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 515
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -8254428522820121891
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 6083966671639531830,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 9113417720017876264
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 6404264284083807629,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 515
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 7413640246113332813
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 7924387588174607578,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 575
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 1535524739919645968
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 8231804722625713607,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 515
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": -7607592368583475489
+      }
+    },
+    {
+      "input": "re-analysis/obb/assets/AssetBundles/onboarding_ui_prefabs",
+      "serialized_file": "CAB-5caaa14bc454cff033b3120519324f94",
+      "path_id": 8240572798507294932,
+      "field": "/_CustomIdle",
+      "value": {
+        "_EnumValueAsString": "Count",
+        "_EnumValue": 518
+      },
+      "script": {
+        "m_FileID": 0,
+        "m_PathID": 370603377244295408
+      }
+    }
+  ],
+  "unreadable": [
+    {
+      "input": "resources/assets/bin/Data/level0",
+      "serialized_file": "level0",
+      "path_id": 113,
+      "error": "read_str out of bounds",
+      "script": {
+        "namespace": "",
+        "class": "StartupManager",
+        "assembly": "Assembly-CSharp.dll"
+      }
+    }
+  ],
+  "monobehaviors": 5493
+}

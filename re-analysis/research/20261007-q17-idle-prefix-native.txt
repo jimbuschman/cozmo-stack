@@ -1,0 +1,44 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004D75D4..0x004D7630 exclusive; Thumb;
+004D75D4: push         {r4, r5, r7, lr}
+004D75D6: ldr          r4, [pc, #0x30] ; word[004D7608]=00B8388E
+004D75D8: movs         r5, #0
+004D75DA: ldr          r1, [pc, #0x30] ; word[004D760C]=007726FA
+004D75DC: movs         r0, #0x12
+004D75DE: add          r4, pc
+004D75E0: movs         r2, #9
+004D75E2: add          r1, pc
+004D75E4: strd         r5, r5, [r4]
+004D75E8: str          r5, [r4, #8]
+004D75EA: strb         r0, [r4]
+004D75EC: adds         r0, r4, #1
+004D75EE: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+004D75F2: ldr          r0, [pc, #0x1c] ; word[004D7610]=00B67340
+004D75F4: mov          r1, r4
+004D75F6: ldr          r2, [pc, #0x1c] ; word[004D7614]=00B79A00
+004D75F8: add          r0, pc
+004D75FA: strb         r5, [r4, #0xa]
+004D75FC: add          r2, pc
+004D75FE: ldr          r0, [r0]
+004D7600: pop.w        {r4, r5, r7, lr}
+004D7604: b.w          #0x8caddc
+004D7608: subs         r0, #0x8e
+004D760A: lsls         r0, r7, #2
+004D760C: movs         r6, #0xfa
+004D760E: lsls         r7, r6, #1
+004D7610: strb         r0, [r0, #0xd]
+004D7612: lsls         r6, r6, #2
+004D7614: ldr          r2, [sp]
+004D7616: lsls         r7, r6, #2
+004D7618: push         {r4, lr}
+004D761A: ldr          r1, [pc, #0xc0] ; word[004D76DC]=00B67334
+004D761C: movs         r4, #0
+004D761E: ldr          r3, [pc, #0xc4] ; word[004D76E4]=00B671A8
+004D7620: movt         r4, #0x4120
+004D7624: add          r1, pc
+004D7626: ldr          r2, [pc, #0xb8] ; word[004D76E0]=00B83860
+004D7628: add          r3, pc
+004D762A: ldr          r0, [pc, #0xbc] ; word[004D76E8]=00B8386A
+004D762C: add          r2, pc
+004D762E: ldr          r1, [r1]
+00BF2B20: bytes=b'_behaviorLock'

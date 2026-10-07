@@ -1,0 +1,36 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01025B14: raw=005B627F relocated=005B627F
+01025B18: raw=005B6281 relocated=005B6281
+01025B1C: raw=005B6285 relocated=005B6285
+01025B20: raw=005B62A1 relocated=005B62A1
+01025B24: raw=005B62B5 relocated=005B62B5
+01025B28: raw=005B62B7 relocated=005B62B7
+01025B2C: raw=005B62BB relocated=005B62BB
+01025B30: raw=005B62C9 relocated=005B62C9
+01025B34: raw=005B62E1 relocated=005B62E1
+01025B38: raw=00000008 relocated=00000008
+01025B3C: raw=00C63720 relocated=00C63720
+005C40D0: raw=00000000 relocated=00000000
+005C40D4: raw=3F4CCCCD relocated=3F4CCCCD
+0103E90C: raw=00000000 relocated=00000000
+00C9852C: raw=7FFF0000 relocated=7FFF0000
+RANGE 0x005B626C..0x005B627E exclusive; Thumb;
+005B626C: ldrh         r2, [r0, #0x34]
+005B626E: lsls         r0, r5, #2
+005B6270: ldr          r0, [pc, #4] ; word[005B6278]=00A88E72
+005B6272: add          r0, pc
+005B6274: ldr          r0, [r0]
+005B6276: bx           lr
+005B6278: ldrh         r2, [r6, #0x32]
+005B627A: lsls         r0, r5, #2
+005B627C: bx           lr
+RANGE 0x0060A49E..0x0060A4C0 exclusive; Thumb;
+0060A49E: mov          r0, r6
+0060A4A0: blx          #0x4aa6a8 ; Anki::Cozmo::Robot::GetRNG
+0060A4A4: vmov         r2, r3, d9
+0060A4A8: blx          #0x4a60ac ; Anki::Util::RandomGenerator::RandDbl
+0060A4AC: vldr         s2, [sp, #0x58]
+0060A4B0: vmov         d0, r0, r1
+0060A4B4: vcvt.f64.f32 d1, s2
+0060A4B8: vadd.f64     d0, d0, d1
+0060A4BC: vcvt.f32.f64 s0, d0

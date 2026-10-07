@@ -1,0 +1,7 @@
+0056A394 0056A404 Anki::Cozmo::AIWhiteboard::Init
+0056A684 0056A686 Anki::Cozmo::AIWhiteboard::Update
+0056A6D4 0056A980 Anki::Cozmo::AIWhiteboard::UpdatePossibleObjectRender
+0056AA3C 0056AC00 Anki::Cozmo::AIWhiteboard::UpdateBeaconRender
+0056AD68 0056AE2A Anki::Cozmo::AIWhiteboard::RemovePossibleObjectsMatching
+0056C39C 0056C3EA Anki::Cozmo::AIWhiteboard::AddBeacon
+0056C4C8 0056C6D8 Anki::Cozmo::AIWhiteboard::ConsiderNewPossibleObject

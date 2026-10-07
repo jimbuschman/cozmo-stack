@@ -1,0 +1,63 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00BF3418: bytes=b'Init'
+00BF341D: bytes=b'Inactive'
+00BF3426: bytes=b'Roll'
+00BF342B: bytes=b'PickupLow'
+00BF3435: bytes=b'PlaceLow'
+00BF343E: bytes=b'Reset'
+00BF3444: bytes=b'ManualReset'
+RANGE 0x006089A8..0x00608A36 exclusive; Thumb; _ZN4Anki5Cozmo26BehaviorReactToRobotOnBack17DelayThenFlipDownERNS0_5RobotE
+006089A8: push         {r4, r5, r6, lr}
+006089AA: mov          r6, r1
+006089AC: mov          r4, r0
+006089AE: ldrb.w       r0, [r6, #0x355]
+006089B2: cmp          r0, #2
+006089B4: bne          #0x6089dc
+006089B6: movs         r0, #0x80
+006089B8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+006089BC: mov          r5, r0
+006089BE: mov          r1, r6
+006089C0: mov.w        r2, #0x3f000000
+006089C4: blx          #0x4a9694 ; Anki::Cozmo::WaitAction::WaitAction
+006089C8: ldr          r0, [pc, #0x2c] ; word[006089F8]=00A36C8A
+006089CA: mov          r1, r5
+006089CC: movs         r3, #0
+006089CE: add          r0, pc
+006089D0: ldr          r2, [r0]
+006089D2: mov          r0, r4
+006089D4: pop.w        {r4, r5, r6, lr}
+006089D8: b.w          #0x8cc8dc
+006089DC: mov          r0, r4
+006089DE: movs         r1, #0x21
+006089E0: movs         r2, #1
+006089E2: pop.w        {r4, r5, r6, lr}
+006089E6: b.w          #0x8cc10c
+006089EA: mov          r4, r0
+006089EC: mov          r0, r5
+006089EE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+006089F2: mov          r0, r4
+006089F4: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+006089F8: ldr          r2, [r1, #0x48]
+006089FA: lsls         r3, r4, #2
+006089FC: bx           lr
+006089FE: push         {r7, lr}
+00608A00: blx          #0x4b01b0 ; Anki::Cozmo::IBehavior::~IBehavior
+00608A04: pop.w        {r7, lr}
+00608A08: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608A0C: movs         r0, #1
+00608A0E: bx           lr
+00608A10: movs         r0, #1
+00608A12: bx           lr
+00608A14: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+00608A18: push         {r4, lr}
+00608A1A: mov          r4, r0
+00608A1C: movs         r0, #0x10
+00608A1E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+00608A22: ldr          r1, [pc, #0x18] ; word[00608A3C]=00A36C2E
+00608A24: mov          ip, r0
+00608A26: add          r1, pc
+00608A28: ldr          r1, [r1]
+00608A2A: adds         r1, #8
+00608A2C: str          r1, [ip], #4
+00608A30: adds         r1, r4, #4
+00608A32: ldm.w        r1, {r2, r3, r4}

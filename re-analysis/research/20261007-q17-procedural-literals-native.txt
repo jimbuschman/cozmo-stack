@@ -1,0 +1,52 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+008E9C1C: raw=1912031D relocated=1912031D
+008E9C20: raw=E9D00822 relocated=E9D00822
+0084BCA0: raw=00000000 relocated=00000000
+0084BCA4: raw=41CDCD65 relocated=41CDCD65
+RANGE 0x0057EC32..0x0057EC38 exclusive; Thumb;
+0057EC32: b.w          #0x8cb8dc
+0057EC36: movs         r0, r0
+RANGE 0x0057D03A..0x0057D084 exclusive; Thumb;
+0057D03A: ldrd         r1, r0, [r4, #0x48]
+0057D03E: cmp          r1, r0
+0057D040: ittt         ne
+0057D042: ldrne        r7, [r0, #-0x10]
+0057D046: movwne       r0, #0x23f
+0057D04A: cmpne        r7, r0
+0057D04C: bne          #0x57d064
+0057D04E: ldr          r0, [r4, #0x60]
+0057D050: blx          #0x4adc90 ; Anki::Cozmo::TrackLayerComponent::HaveLayersToSend
+0057D054: cmp          r0, #1
+0057D056: bne          #0x57d122
+0057D058: mov          r0, r4
+0057D05A: mov          r1, sl
+0057D05C: blx          #0x4ade58 ; Anki::Cozmo::AnimationStreamer::StreamLayers
+0057D060: mov          r7, r0
+0057D062: b            #0x57d032
+0057D064: ldr.w        sb, [r4, #0x34]
+0057D068: cmp.w        r7, #0x198
+0057D06C: bne.w        #0x57d1e4
+0057D070: movs         r0, #1
+0057D072: mov          r1, sl
+0057D074: strb.w       r0, [r4, #0x194]
+0057D078: add.w        r0, r4, #0xa8
+0057D07C: str          r0, [r4, #0x34]
+0057D07E: mov          r0, r4
+0057D080: blx          #0x4ade64 ; Anki::Cozmo::AnimationStreamer::UpdateLiveAnimation
+RANGE 0x0064EDE8..0x0064EE18 exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponent6UpdateEv
+0064EDE8: push         {r4, lr}
+0064EDEA: mov          r4, r0
+0064EDEC: ldr          r0, [r4]
+0064EDEE: ldr          r0, [r0, #0x34]
+0064EDF0: ldr.w        r0, [r0, #0x3d4]
+0064EDF4: blx          #0x4ba080 ; Anki::Cozmo::DesiredFaceDistortionComponent::GetCurrentDesiredDistortion
+0064EDF8: mov          r1, r0
+0064EDFA: vldr         s0, [pc, #0x1c] ; word[0064EE18]=3727C5AC
+0064EDFE: vmov         s2, r1
+0064EE02: vcmpe.f32    s2, s0
+0064EE06: vmrs         apsr_nzcv, fpscr
+0064EE0A: it           le
+0064EE0C: pople        {r4, pc}
+0064EE0E: mov          r0, r4
+0064EE10: pop.w        {r4, lr}
+0064EE14: b.w          #0x8ccfec

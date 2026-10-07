@@ -1,0 +1,206 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+VTABLE 010242A8 _ZTVN4Anki5Cozmo12BehaviorWaitE +20=0059EC0F [] +24=0059EC13 [] +28=0059EC17 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010264E0 _ZTVN4Anki5Cozmo9IBehaviorE +20=005BF04D [] +24=0059EC13 [] +28=00000000 [__cxa_pure_virtual] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026870 _ZTVN4Anki5Cozmo29BehaviorPlayAnimOnNeedsChangeE +20=005BF04D [] +24=0059EC13 [] +28=005BFF1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026918 _ZTVN4Anki5Cozmo24BehaviorPlayAnimSequenceE +20=005BF04D [] +24=0059EC13 [] +28=005BFF1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026A60 _ZTVN4Anki5Cozmo32BehaviorPlayAnimSequenceWithFaceE +20=005BF04D [] +24=0059EC13 [] +28=005BFF1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026B48 _ZTVN4Anki5Cozmo25BehaviorPlayArbitraryAnimE +20=005BF04D [] +24=0059EC13 [] +28=005BFF1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026BF0 _ZTVN4Anki5Cozmo23BehaviorDriveOffChargerE +20=005C0E4B [] +24=005C0E4F [] +28=005C0E53 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026CD4 _ZTVN4Anki5Cozmo17BehaviorDrivePathE +20=005BF04D [] +24=0059EC13 [] +28=005C1579 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005C0F73 [_ZNK4Anki5Cozmo17BehaviorDrivePath21EvaluateScoreInternalERKNS0_5RobotE]
+OVERRIDE Anki::Cozmo::BehaviorDrivePath::EvaluateScoreInternal
+RANGE 0x005C0F72..0x005C0F76 exclusive; Thumb; _ZNK4Anki5Cozmo17BehaviorDrivePath21EvaluateScoreInternalERKNS0_5RobotE
+005C0F72: movs         r0, #0
+005C0F74: bx           lr
+VTABLE 01026E40 _ZTVN4Anki5Cozmo17BehaviorFindFacesE +20=005BF04D [] +24=0059EC13 [] +28=005C1D77 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01026F80 _ZTVN4Anki5Cozmo25BehaviorInteractWithFacesE +20=005BF04D [] +24=0059EC13 [] +28=005C2A6D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010270BC _ZTVN4Anki5Cozmo22BehaviorKnockOverCubesE +20=005BF04D [] +24=0059EC13 [] +28=005C3D01 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027200 _ZTVN4Anki5Cozmo18BehaviorLookAroundE +20=005BF04D [] +24=0059EC13 [] +28=005C6011 [] +84=005C40A1 [_ZNK4Anki5Cozmo18BehaviorLookAround28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+OVERRIDE Anki::Cozmo::BehaviorLookAround::EvaluateRunningScoreInternal
+RANGE 0x005C40A0..0x005C40D0 exclusive; Thumb; _ZNK4Anki5Cozmo18BehaviorLookAround28EvaluateRunningScoreInternalERKNS0_5RobotE
+005C40A0: push         {r4, lr}
+005C40A2: ldr.w        r2, [r0, #0x11c]
+005C40A6: adr          r4, #0x28
+005C40A8: subs         r2, #3
+005C40AA: cmp          r2, #2
+005C40AC: it           lo
+005C40AE: addlo        r4, #4
+005C40B0: blx          #0x4b024c ; Anki::Cozmo::IBehavior::EvaluateRunningScoreInternal
+005C40B4: vmov         s0, r0
+005C40B8: vldr         s2, [r4]
+005C40BC: vcmpe.f32    s2, s0
+005C40C0: vmrs         apsr_nzcv, fpscr
+005C40C4: it           mi
+005C40C6: vmovmi.f32   s2, s0
+005C40CA: vmov         r0, s2
+005C40CE: pop          {r4, pc}
+VTABLE 01027390 _ZTVN4Anki5Cozmo18BehaviorPickUpCubeE +20=005BF04D [] +24=0059EC13 [] +28=005C702D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010274CC _ZTVN4Anki5Cozmo19BehaviorPopAWheelieE +20=005BF04D [] +24=0059EC13 [] +28=005C7ACF [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027674 _ZTVN4Anki5Cozmo20BehaviorPutDownBlockE +20=005BF04D [] +24=0059EC13 [] +28=005C8333 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010277B0 _ZTVN4Anki5Cozmo17BehaviorRollBlockE +20=005BF04D [] +24=0059EC13 [] +28=005C8CE9 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027918 _ZTVN4Anki5Cozmo21BehaviorSearchForFaceE +20=005BF04D [] +24=0059EC13 [] +28=005C93CD [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010279BC _ZTVN4Anki5Cozmo19BehaviorStackBlocksE +20=005BF04D [] +24=0059EC13 [] +28=005CA1E7 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027B04 _ZTVN4Anki5Cozmo18BehaviorTurnToFaceE +20=005BF04D [] +24=0059EC13 [] +28=005CA54D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027BA8 _ZTVN4Anki5Cozmo26BehaviorDevTurnInPlaceTestE +20=005BF04D [] +24=0059EC13 [] +28=005CAD81 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027CB0 _ZTVN4Anki5Cozmo25BehaviorDockingTestSimpleE +20=005BF04D [] +24=0059EC13 [] +28=005CEC8B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01027FE0 _ZTVN4Anki5Cozmo32BehaviorFactoryCentroidExtractorE +20=005BF04D [] +24=0059EC13 [] +28=005D02A9 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010280C4 _ZTVN4Anki5Cozmo19BehaviorFactoryTestE +20=005BF04D [] +24=0059EC13 [] +28=005D36EB [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028280 _ZTVN4Anki5Cozmo20BehaviorLiftLoadTestE +20=005BF04D [] +24=0059EC13 [] +28=005D515F [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010283B0 _ZTVN4Anki5Cozmo18BehaviorFeedingEatE +20=005BF04D [] +24=0059EC13 [] +28=005D6751 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028554 _ZTVN4Anki5Cozmo28BehaviorFeedingSearchForCubeE +20=005BF04D [] +24=0059EC13 [] +28=005D716B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028650 _ZTVN4Anki5Cozmo31BehaviorCheckForStackAtIntervalE +20=005BF04D [] +24=0059EC13 [] +28=005D7BE5 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010287D0 _ZTVN4Anki5Cozmo23BehaviorCubeLiftWorkoutE +20=005BF04D [] +24=0059EC13 [] +28=005D8A51 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010288CC _ZTVN4Anki5Cozmo26BehaviorDriveInDesperationE +20=005D9F47 [] +24=0059EC13 [] +28=005D9F4B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028AD8 _ZTVN4Anki5Cozmo19BehaviorDriveToFaceE +20=005BF04D [] +24=0059EC13 [] +28=005DAD55 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028C14 _ZTVN4Anki5Cozmo20BehaviorEarnedSparksE +20=005BF04D [] +24=0059EC13 [] +28=005DAF83 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028CB8 _ZTVN4Anki5Cozmo22BehaviorFireTruckAlarmE +20=005BF04D [] +24=0059EC13 [] +28=005DB0E3 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028D5C _ZTVN4Anki5Cozmo20BehaviorOnConfigSeenE +20=005BF04D [] +24=0059EC13 [] +28=005DB4D9 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028E00 _ZTVN4Anki5Cozmo28BehaviorPickUpAndPutDownCubeE +20=005BF04D [] +24=0059EC13 [] +28=005DBB67 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01028F3C _ZTVN4Anki5Cozmo20BehaviorBuildPyramidE +20=005BF04D [] +24=0059EC13 [] +28=005DC555 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029138 _ZTVN4Anki5Cozmo24BehaviorBuildPyramidBaseE +20=005BF04D [] +24=0059EC13 [] +28=005DDAF5 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 010292DC _ZTVN4Anki5Cozmo23BehaviorPyramidThankYouE +20=005BF04D [] +24=0059EC13 [] +28=005DE31F [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029380 _ZTVN4Anki5Cozmo27BehaviorRespondPossiblyRollE +20=005BF04D [] +24=0059EC13 [] +28=005DEC31 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102957C _ZTVN4Anki5Cozmo32BehaviorExploreBringCubeToBeaconE +20=005BF04D [] +24=0059EC13 [] +28=005E0DF1 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029720 _ZTVN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceE +20=005BF04D [] +24=0059EC13 [] +28=005C1D77 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029860 _ZTVN4Anki5Cozmo34BehaviorExploreVisitPossibleMarkerE +20=005BF04D [] +24=0059EC13 [] +28=005E46FD [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029944 _ZTVN4Anki5Cozmo28BehaviorLookInPlaceMemoryMapE +20=005BF04D [] +24=0059EC13 [] +28=005E5761 [] +84=005E4F2D [_ZNK4Anki5Cozmo28BehaviorLookInPlaceMemoryMap28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+OVERRIDE Anki::Cozmo::BehaviorLookInPlaceMemoryMap::EvaluateRunningScoreInternal
+RANGE 0x005E4F2C..0x005E4F52 exclusive; Thumb; _ZNK4Anki5Cozmo28BehaviorLookInPlaceMemoryMap28EvaluateRunningScoreInternalERKNS0_5RobotE
+005E4F2C: push         {r4, lr}
+005E4F2E: mov          r4, r0
+005E4F30: blx          #0x4b024c ; Anki::Cozmo::IBehavior::EvaluateRunningScoreInternal
+005E4F34: vmov         s0, r0
+005E4F38: ldrb.w       r1, [r4, #0x13c]
+005E4F3C: ldrb.w       r2, [r4, #0x164]
+005E4F40: cmp          r2, r1
+005E4F42: itt          hs
+005E4F44: vldrhs       s2, [r4, #0x140]
+005E4F48: vsubhs.f32   s0, s0, s2
+005E4F4C: vmov         r0, s0
+005E4F50: pop          {r4, pc}
+VTABLE 01029A28 _ZTVN4Anki5Cozmo25BehaviorThinkAboutBeaconsE +20=005BF04D [] +24=0059EC13 [] +28=005E5F4D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029ACC _ZTVN4Anki5Cozmo28BehaviorVisitInterestingEdgeE +20=005BF04D [] +24=0059EC13 [] +28=005E834B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029BF0 _ZTVN4Anki5Cozmo20IBehaviorRequestGameE +20=005BF04D [] +24=0059EC13 [] +28=00000000 [__cxa_pure_virtual] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 01029D3C _ZTVN4Anki5Cozmo25BehaviorRequestGameSimpleE +20=005BF04D [] +24=0059EC13 [] +28=005EC305 [] +84=005EB397 [_ZNK4Anki5Cozmo25BehaviorRequestGameSimple28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005EB361 [_ZNK4Anki5Cozmo25BehaviorRequestGameSimple21EvaluateScoreInternalERKNS0_5RobotE]
+OVERRIDE Anki::Cozmo::BehaviorRequestGameSimple::EvaluateRunningScoreInternal
+RANGE 0x005EB396..0x005EB3AA exclusive; Thumb; _ZNK4Anki5Cozmo25BehaviorRequestGameSimple28EvaluateRunningScoreInternalERKNS0_5RobotE
+005EB396: ldr.w        r2, [r0, #0x84]
+005EB39A: cbz          r2, #0x5eb3a2
+005EB39C: mov.w        r0, #0x3fc00000
+005EB3A0: bx           lr
+005EB3A2: ldr          r2, [r0]
+005EB3A4: ldr.w        r2, [r2, #0x88]
+005EB3A8: bx           r2
+OVERRIDE Anki::Cozmo::BehaviorRequestGameSimple::EvaluateScoreInternal
+RANGE 0x005EB360..0x005EB396 exclusive; Thumb; _ZNK4Anki5Cozmo25BehaviorRequestGameSimple21EvaluateScoreInternalERKNS0_5RobotE
+005EB360: push         {r4, r5, r6, lr}
+005EB362: mov          r4, r1
+005EB364: mov          r5, r0
+005EB366: blx          #0x4b0258 ; Anki::Cozmo::IBehavior::EvaluateScoreInternal
+005EB36A: mov          r6, r0
+005EB36C: ldr          r0, [r5]
+005EB36E: mov          r1, r4
+005EB370: ldr.w        r2, [r0, #0xa4]
+005EB374: mov          r0, r5
+005EB376: blx          r2
+005EB378: add.w        r1, r5, #0x190
+005EB37C: cmp          r0, #0
+005EB37E: it           eq
+005EB380: addeq.w      r1, r5, #0x174
+005EB384: vmov         s0, r6
+005EB388: vldr         s2, [r1]
+005EB38C: vmul.f32     s0, s0, s2
+005EB390: vmov         r0, s0
+005EB394: pop          {r4, r5, r6, pc}
+VTABLE 01029FD8 _ZTVN4Anki5Cozmo27BehaviorCantHandleTallStackE +20=005BF04D [] +24=0059EC13 [] +28=005ED385 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A0DC _ZTVN4Anki5Cozmo13BehaviorDanceE +20=005BF04D [] +24=0059EC13 [] +28=005BFF1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A244 _ZTVN4Anki5Cozmo20BehaviorExpressNeedsE +20=005BF04D [] +24=0059EC13 [] +28=005EE861 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A328 _ZTVN4Anki5Cozmo15BehaviorSingingE +20=005BF04D [] +24=0059EC13 [] +28=005EF345 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A474 _ZTVN4Anki5Cozmo26BehaviorLookForFaceAndCubeE +20=005BF04D [] +24=0059EC13 [] +28=005F0DC1 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A5B0 _ZTVN4Anki5Cozmo15BehaviorBouncerE +20=005BF04D [] +24=0059EC13 [] +28=005F1CBD [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A710 _ZTVN4Anki5Cozmo16BehaviorFistBumpE +20=005BF04D [] +24=0059EC13 [] +28=005F278D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102A7F8 _ZTVN4Anki5Cozmo16BehaviorGuardDogE +20=005BF04D [] +24=0059EC13 [] +28=005F575B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102ABA8 _ZTVN4Anki5Cozmo16BehaviorPeekABooE +20=005BF04D [] +24=0059EC13 [] +28=005F7859 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102AE24 _ZTVN4Anki5Cozmo22BehaviorPounceOnMotionE +20=005BF04D [] +24=0059EC13 [] +28=005F9F97 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005F83BF [_ZNK4Anki5Cozmo22BehaviorPounceOnMotion21EvaluateScoreInternalERKNS0_5RobotE]
+OVERRIDE Anki::Cozmo::BehaviorPounceOnMotion::EvaluateScoreInternal
+RANGE 0x005F83BE..0x005F8412 exclusive; Thumb; _ZNK4Anki5Cozmo22BehaviorPounceOnMotion21EvaluateScoreInternalERKNS0_5RobotE
+005F83BE: push         {r4, r5, r7, lr}
+005F83C0: vpush        {d8}
+005F83C4: vmov.f32     s16, #1.000000e+00
+005F83C8: mov          r5, r0
+005F83CA: ldrb.w       r0, [r5, #0xa1]
+005F83CE: mov          r4, r1
+005F83D0: cbnz         r0, #0x5f83f8
+005F83D2: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+005F83D6: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+005F83DA: vldr         s0, [r5, #0x14c]
+005F83DE: vldr         s2, [r5, #0x16c]
+005F83E2: vadd.f32     s0, s2, s0
+005F83E6: vmov         s2, r0
+005F83EA: vcmpe.f32    s0, s2
+005F83EE: vmrs         apsr_nzcv, fpscr
+005F83F2: it           mi
+005F83F4: vldrmi       s16, [r5, #0x154]
+005F83F8: mov          r0, r5
+005F83FA: mov          r1, r4
+005F83FC: blx          #0x4b0258 ; Anki::Cozmo::IBehavior::EvaluateScoreInternal
+005F8400: vmov         s0, r0
+005F8404: vmul.f32     s0, s16, s0
+005F8408: vmov         r0, s0
+005F840C: vpop         {d8}
+005F8410: pop          {r4, r5, r7, pc}
+VTABLE 0102AFA0 _ZTVN4Anki5Cozmo18BehaviorTrackLaserE +20=005BF04D [] +24=0059EC13 [] +28=005FC5C5 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B19C _ZTVN4Anki5Cozmo18BehaviorEnrollFaceE +20=005BF04D [] +24=0059EC13 [] +28=005FFC25 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B458 _ZTVN4Anki5Cozmo27BehaviorRespondToRenameFaceE +20=005BF04D [] +24=0059EC13 [] +28=00600ABD [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B4FC _ZTVN4Anki5Cozmo26BehaviorOnboardingShowCubeE +20=005BF04D [] +24=00601A99 [] +28=00601A9D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B738 _ZTVN4Anki5Cozmo28BehaviorAcknowledgeCubeMovedE +20=005BF04D [] +24=0059EC13 [] +28=006027F9 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B834 _ZTVN4Anki5Cozmo23BehaviorAcknowledgeFaceE +20=005BF04D [] +24=0059EC13 [] +28=00602D21 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102B970 _ZTVN4Anki5Cozmo25BehaviorAcknowledgeObjectE +20=005BF04D [] +24=0059EC13 [] +28=00604381 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102BAEC _ZTVN4Anki5Cozmo20BehaviorRamIntoBlockE +20=005BF04D [] +24=0059EC13 [] +28=00604C43 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102BBE8 _ZTVN4Anki5Cozmo20BehaviorReactToCliffE +20=005BF04D [] +24=0059EC13 [] +28=00605677 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102BDA4 _ZTVN4Anki5Cozmo26BehaviorReactToFrustrationE +20=005BF04D [] +24=0059EC13 [] +28=00606111 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102BE88 _ZTVN4Anki5Cozmo21BehaviorReactToImpactE +20=005BF04D [] +24=0059EC13 [] +28=00606483 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102BFC4 _ZTVN4Anki5Cozmo31BehaviorReactToMotorCalibrationE +20=005BF04D [] +24=0059EC13 [] +28=006068BF [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C0A8 _ZTVN4Anki5Cozmo24BehaviorReactToOnChargerE +20=00606E8D [] +24=00606E91 [] +28=00606E95 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C14C _ZTVN4Anki5Cozmo18BehaviorReactToPetE +20=005BF04D [] +24=0059EC13 [] +28=006075D5 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C248 _ZTVN4Anki5Cozmo21BehaviorReactToPickupE +20=00607DAD [] +24=0059EC13 [] +28=00607DB1 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C344 _ZTVN4Anki5Cozmo28BehaviorReactToPlacedOnSlopeE +20=00608281 [] +24=0059EC13 [] +28=00608285 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C440 _ZTVN4Anki5Cozmo22BehaviorReactToPyramidE +20=0060842F [] +24=0059EC13 [] +28=00608433 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C4E4 _ZTVN4Anki5Cozmo31BehaviorReactToReturnedToTreadsE +20=00608729 [] +24=0059EC13 [] +28=0060872D [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C5E0 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnBackE +20=00608A0D [] +24=0059EC13 [] +28=00608A11 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C6DC _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnFaceE +20=00608CA9 [] +24=0059EC13 [] +28=00608CAD [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C7D8 _ZTVN4Anki5Cozmo26BehaviorReactToRobotOnSideE +20=00609075 [] +24=0059EC13 [] +28=00609079 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C8E0 _ZTVN4Anki5Cozmo26BehaviorReactToRobotShakenE +20=006097D3 [] +24=0059EC13 [] +28=006097D7 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102C9B0 _ZTVN4Anki5Cozmo22BehaviorReactToSparkedE +20=00609877 [] +24=0059EC13 [] +28=0060987B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102CA54 _ZTVN4Anki5Cozmo27BehaviorReactToStackOfCubesE +20=006099A3 [] +24=0059EC13 [] +28=006099A7 [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+VTABLE 0102CAF8 _ZTVN4Anki5Cozmo33BehaviorReactToUnexpectedMovementE +20=005BF04D [] +24=0059EC13 [] +28=00609C1B [] +84=005BEEDF [_ZNK4Anki5Cozmo9IBehavior28EvaluateRunningScoreInternalERKNS0_5RobotE] +88=005BEEC3 [_ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE]
+SIX HELPER TABLES
+01025A84+vptr20: 005B5F1B
+01025A84+vptr24: 005B5F1D
+01025A84+vptr28: 005B57FD
+01025A84+vptr2C: 005B5801
+01025A84+vptr30: 005B5C0D
+01025D08+vptr20: 005B5F1B
+01025D08+vptr24: 005B5F1D
+01025D08+vptr28: 005B7B2B
+01025D08+vptr2C: 005B7B2F
+01025D08+vptr30: 005B8015
+01025EF8+vptr20: 005B5F1B
+01025EF8+vptr24: 005B5F1D
+01025EF8+vptr28: 005B8CA7
+01025EF8+vptr2C: 005B8CB1
+01025EF8+vptr30: 005B8E61
+01025F8C+vptr20: 005B5F1B
+01025F8C+vptr24: 005B5F1D
+01025F8C+vptr28: 005B8FCB
+01025F8C+vptr2C: 005B8FD1
+01025F8C+vptr30: 005B93A5
+010260EC+vptr20: 005B5F1B
+010260EC+vptr24: 005B5F1D
+010260EC+vptr28: 005B9A13
+010260EC+vptr2C: 005B9A17
+010260EC+vptr30: 005B9D81
+010263C0+vptr20: 005B5F1B
+010263C0+vptr24: 005B5F1D
+010263C0+vptr28: 005BAE9B
+010263C0+vptr2C: 005BAE9F
+010263C0+vptr30: 005BB45D

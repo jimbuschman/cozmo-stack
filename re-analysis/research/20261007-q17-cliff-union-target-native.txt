@@ -1,0 +1,2 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01046410: raw=004A4010 relocated=00723EE5 _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGameC2EONS1_23RobotCliffEventFinishedE

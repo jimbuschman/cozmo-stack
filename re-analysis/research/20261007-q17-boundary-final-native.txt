@@ -1,0 +1,80 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x007283C4..0x007283CE exclusive; Thumb; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGameC2EONS1_25ReactionTriggerTransitionE
+007283C4: movs         r2, #0x88
+007283C6: ldrh         r1, [r1]
+007283C8: strh         r2, [r0]
+007283CA: strh         r1, [r0, #8]
+007283CC: bx           lr
+RANGE 0x005DC192..0x005DC1A2 exclusive; Thumb;
+005DC192: ldr.w        r0, [sl]
+005DC196: mov          r1, sb
+005DC198: blx          #0x4b4824 ; Anki::Cozmo::BlockConfigurations::BlockConfiguration::ContainsBlock
+005DC19C: cmp          r0, #1
+005DC19E: bne.w        #0x5dc2fe
+RANGE 0x005C0254..0x005C0294 exclusive; Thumb; _ZN4Anki5Cozmo24BehaviorPlayAnimSequence15CallToListenersERNS0_5RobotE
+005C0254: push         {r4, r5, r6, lr}
+005C0256: mov          r4, r1
+005C0258: ldr.w        r1, [r0, #0x130]
+005C025C: add.w        r5, r0, #0x134
+005C0260: cmp          r1, r5
+005C0262: it           eq
+005C0264: popeq        {r4, r5, r6, pc}
+005C0266: mov          r6, r1
+005C0268: ldr          r0, [r1, #0x10]
+005C026A: ldr          r1, [r0]
+005C026C: ldr          r2, [r1]
+005C026E: mov          r1, r4
+005C0270: blx          r2
+005C0272: ldr          r0, [r6, #4]
+005C0274: cmp          r0, #0
+005C0276: beq          #0x5c0282
+005C0278: mov          r1, r0
+005C027A: ldr          r0, [r1]
+005C027C: cmp          r0, #0
+005C027E: bne          #0x5c0278
+005C0280: b            #0x5c028c
+005C0282: ldr          r1, [r6, #8]
+005C0284: ldr          r0, [r1]
+005C0286: cmp          r0, r6
+005C0288: mov          r6, r1
+005C028A: bne          #0x5c0282
+005C028C: cmp          r1, r5
+005C028E: mov          r6, r1
+005C0290: bne          #0x5c0268
+005C0292: pop          {r4, r5, r6, pc}
+RANGE 0x005BD3E8..0x005BD40A exclusive; Thumb;
+005BD3E8: ldr          r0, [r4, #0x2c]
+005BD3EA: mov          r1, r6
+005BD3EC: ldr.w        r0, [r0, #0x250]
+005BD3F0: blx          #0x4a57a0 ; Anki::Cozmo::ActionList::Cancel
+005BD3F4: ldr.w        r1, [r4, #0x84]
+005BD3F8: cmp          r1, r6
+005BD3FA: itt          eq
+005BD3FC: moveq        r1, #0
+005BD3FE: streq.w      r1, [r4, #0x84]
+005BD402: b            #0x5bd406
+005BD404: movs         r0, #0
+005BD406: add          sp, #0x1c
+005BD408: pop          {r4, r5, r6, r7, pc}
+010290C0: raw=005DC7F1 relocated=005DC7F1
+010290C4: raw=005DCA1D relocated=005DCA1D
+010290C8: raw=005DCA35 relocated=005DCA35
+010290CC: raw=00000008 relocated=00000008
+010290D0: raw=00C6C990 relocated=00C6C990
+010290D4: raw=00000000 relocated=01026A2C _ZTINSt6__ndk110__function6__baseIFvRN4Anki5Cozmo5RobotEEEE
+010290D8: raw=00000008 relocated=00000008
+010290DC: raw=00C6CA20 relocated=00C6CA20
+010290E0: raw=00000000 relocated=00000000
+010290E4: raw=00000000 relocated=0102910C _ZTINSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EEE
+010290E8: raw=005C0515 relocated=005C0515
+010290EC: raw=005DC5B9 relocated=005DC5B9
+010290F0: raw=00000000 relocated=005DC5BD _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EE7__cloneEv
+010290F4: raw=00000000 relocated=005DC5E5 _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EE7__cloneEPNS0_6__baseISI_EE
+010290F8: raw=00000000 relocated=005DC601 _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EE7destroyEv
+010290FC: raw=00000000 relocated=005DC603 _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EE18destroy_deallocateEv
+01029100: raw=00000000 relocated=005DC607 _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EEclES7_
+01029104: raw=00000000 relocated=005DC61D _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo20BehaviorBuildPyramidEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISF_EEFvS7_EE6targetERKSt9type_info
+0103F4A0: raw=00000000 relocated=005F0DB5 _ZN4Anki5Cozmo26BehaviorLookForFaceAndCube19TransitionToS6_DoneERNS0_5RobotE
+0103F4A4: raw=00000000 relocated=00C6FA50 _ZTSNSt6__ndk16__bindIRMN4Anki5Cozmo26BehaviorLookForFaceAndCubeEFvRNS2_5RobotEEJPS3_RNS_12placeholders4__phILi1EEEEEE
+0103F4A8: raw=00000000 relocated=0102A5A4 _ZTINSt6__ndk16__bindIRMN4Anki5Cozmo26BehaviorLookForFaceAndCubeEFvRNS2_5RobotEEJPS3_RNS_12placeholders4__phILi1EEEEEE
+0103F4AC: raw=00000000 relocated=0102A5B0 _ZTVN4Anki5Cozmo15BehaviorBouncerE

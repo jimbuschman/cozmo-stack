@@ -1,0 +1,27 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01026274: raw=00000000 relocated=00000000
+01026278: raw=010262A0 relocated=010262A0
+0102627C: raw=005B627F relocated=005B627F
+01026280: raw=005BA9ED relocated=005BA9ED
+01026284: raw=005BA9F1 relocated=005BA9F1
+01026288: raw=005BAA09 relocated=005BAA09
+0102628C: raw=005BAA19 relocated=005BAA19
+01026290: raw=005BAA1B relocated=005BAA1B
+01026294: raw=005BAA1F relocated=005BAA1F
+01026298: raw=005BAA25 relocated=005BAA25
+0102629C: raw=005BAA3D relocated=005BAA3D
+RANGE 0x005BA956..0x005BA95C exclusive; Thumb;
+005BA956: movs         r0, #0
+005BA958: bx           lr
+005BA95A: movs         r0, r0
+RANGE 0x005BA9BA..0x005BA9C8 exclusive; Thumb;
+005BA9BA: push         {r4, lr}
+005BA9BC: ldr          r4, [r0, #4]
+005BA9BE: mov          r0, r4
+005BA9C0: blx          #0x4b2688 ; Anki::Cozmo::RollBlockHelper::DelegateToPutDown
+005BA9C4: ldr          r0, [r4, #0x1c]
+005BA9C6: pop          {r4, pc}
+RANGE 0x005BAA1E..0x005BAA24 exclusive; Thumb;
+005BAA1E: movs         r0, #0
+005BAA20: bx           lr
+005BAA22: movs         r0, r0

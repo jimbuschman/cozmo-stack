@@ -1,0 +1,51 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0051208E..0x005120A0 exclusive; Thumb;
+0051208E: strb.w       r0, [sb, #0x355]
+00512092: strb.w       r0, [sp, #0x18]
+00512096: add          r0, sp, #0x20
+00512098: blx          #0x4a7b64 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame
+0051209C: ldr.w        r0, [sb]
+RANGE 0x00511C14..0x00511C24 exclusive; Thumb;
+00511C14: strb.w       fp, [r4]
+00511C18: add          r0, pc
+00511C1A: ldr          r1, [sp, #0x148]
+00511C1C: ldr          r0, [r0]
+00511C1E: ldr          r0, [r0]
+00511C20: subs         r0, r0, r1
+00511C22: itt          eq
+RANGE 0x005BE3C6..0x005BE3D6 exclusive; Thumb;
+005BE3C6: blx          #0x4b1ad0 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::MessageEngineToGame
+005BE3CA: mov          r0, r4
+005BE3CC: mov          r1, r5
+005BE3CE: blx          r6
+005BE3D0: add          r0, sp, #8
+005BE3D2: blx          #0x4a5158 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::ClearCurrent
+RANGE 0x008CC08C..0x008CC0A0 exclusive; Thumb;
+008CC08C: bx           pc
+008CC08E: mov          r8, r8
+0103F654: raw=00000000 relocated=006089A9 _ZN4Anki5Cozmo26BehaviorReactToRobotOnBack17DelayThenFlipDownERNS0_5RobotE
+RANGE 0x00608088..0x006080A0 exclusive; Thumb;
+00608088: movs         r3, #0
+0060808A: movs         r7, #0
+0060808C: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+00608090: str          r7, [sp, #0x38]
+00608092: add          r5, sp, #0x28
+00608094: mov          r0, r4
+00608096: mov          r1, r6
+00608098: mov          r2, r5
+0060809A: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+0060809E: ldr          r0, [sp, #0x38]
+RANGE 0x00608650..0x0060866E exclusive; Thumb;
+00608650: mov          r1, r5
+00608652: movs         r2, #1
+00608654: movs         r3, #0
+00608656: movs         r7, #0
+00608658: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+0060865C: str          r7, [sp, #0x30]
+0060865E: add          r5, sp, #0x20
+00608660: mov          r0, r4
+00608662: mov          r1, r6
+00608664: mov          r2, r5
+00608666: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+0060866A: ldr          r0, [sp, #0x30]
+0060866C: cmp          r5, r0

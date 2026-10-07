@@ -1,0 +1,30 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+CANDIDATE PC-relative references; reopen enclosing bodies before accepting stores
+REFERENCE 0x513eb0 0x513eb4 0x51466c Anki::Cozmo::Robot::Update
+RANGE 0x00513EB0..0x00513ECC exclusive; Thumb;
+00513EB0: ldr.w        r0, [pc, #0x7b8] ; word[0051466C]=00B3D158
+00513EB4: add          r0, pc
+00513EB6: ldr          r0, [r0]
+00513EB8: cmp          r0, #0
+00513EBA: ble          #0x513ede
+00513EBC: ldr.w        r1, [pc, #0x7b0] ; word[00514670]=00B3D144
+00513EC0: add.w        fp, r4, #0x4c
+00513EC4: subs         r0, #1
+00513EC6: movs         r2, #0xa
+00513EC8: add          r1, pc
+00513ECA: str          r0, [r1]
+REFERENCE 0x513ebc 0x513ec8 0x514670 Anki::Cozmo::Robot::Update
+RANGE 0x00513EBC..0x00513EE0 exclusive; Thumb;
+00513EBC: ldr.w        r1, [pc, #0x7b0] ; word[00514670]=00B3D144
+00513EC0: add.w        fp, r4, #0x4c
+00513EC4: subs         r0, #1
+00513EC6: movs         r2, #0xa
+00513EC8: add          r1, pc
+00513ECA: str          r0, [r1]
+00513ECC: addw         r1, pc, #0x7a4
+00513ED0: mov          r0, fp
+00513ED2: bl           #0x4e4652 ; FUN_004e4652
+00513ED6: ldr.w        sb, [pc, #0x7a8] ; word[00514680]=006D0022
+00513EDA: add          sb, pc
+00513EDC: b            #0x513fba
+00513EDE: ldr          r0, [r4, #0x44]

@@ -1,0 +1,77 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00C49DB0: bytes=b'PlaceOnGround'
+00C49D50: bytes=b'DriveToObject'
+RANGE 0x005CD920..0x005CD9E0 exclusive; Thumb; _ZN4Anki5Cozmo25BehaviorDockingTestSimple10EndAttemptERNS0_5RobotENS0_12ActionResultENSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEb
+005CD920: push         {r4, r5, r6, r7, lr}
+005CD922: sub          sp, #0x1c
+005CD924: mov          r5, r0
+005CD926: ldr          r0, [sp, #0x30]
+005CD928: strb.w       r0, [r5, #0x253]
+005CD92C: movs         r0, #0
+005CD92E: str          r0, [sp, #0x18]
+005CD930: mov          r6, r2
+005CD932: strd         r0, r0, [sp, #0x10]
+005CD936: mov          r7, r1
+005CD938: ldrb         r0, [r3]
+005CD93A: lsls         r0, r0, #0x1f
+005CD93C: bne          #0x5cd948
+005CD93E: add          r0, sp, #0x10
+005CD940: ldm.w        r3, {r1, r2, r4}
+005CD944: stm          r0!, {r1, r2, r4}
+005CD946: b            #0x5cd952
+005CD948: ldrd         r2, r1, [r3, #4]
+005CD94C: add          r0, sp, #0x10
+005CD94E: bl           #0x4e02b2 ; FUN_004e02b2
+005CD952: add          r2, sp, #0x10
+005CD954: mov          r0, r5
+005CD956: mov          r1, r6
+005CD958: blx          #0x4b3918 ; Anki::Cozmo::BehaviorDockingTestSimple::RecordAttempt
+005CD95C: ldrb.w       r0, [sp, #0x10]
+005CD960: lsls         r0, r0, #0x1f
+005CD962: itt          ne
+005CD964: ldrne        r0, [sp, #0x18]
+005CD966: blxne        #0x4a40cc
+005CD96A: mov          r0, r5
+005CD96C: movs         r1, #5
+005CD96E: blx          #0x4b38c4 ; Anki::Cozmo::BehaviorDockingTestSimple::SetCurrState
+005CD972: cbz          r6, #0x5cd9d4
+005CD974: ldrb.w       r0, [r5, #0x26d]
+005CD978: cbnz         r0, #0x5cd984
+005CD97A: ldr.w        r0, [r5, #0x258]
+005CD97E: adds         r0, #1
+005CD980: str.w        r0, [r5, #0x258]
+005CD984: ldr.w        r0, [r5, #0x268]
+005CD988: movs         r1, #1
+005CD98A: strb.w       r1, [r5, #0x26d]
+005CD98E: adds         r0, #1
+005CD990: str.w        r0, [r5, #0x268]
+005CD994: cmp          r0, #3
+005CD996: blo          #0x5cd9da
+005CD998: movs         r0, #0
+005CD99A: mov          r6, sp
+005CD99C: adr          r1, #0x64
+005CD99E: str          r0, [sp, #8]
+005CD9A0: strd         r0, r0, [sp]
+005CD9A4: mov          r0, r6
+005CD9A6: movs         r2, #0x32
+005CD9A8: bl           #0x4e02b2 ; FUN_004e02b2
+005CD9AC: mov          r0, r5
+005CD9AE: mov          r1, r6
+005CD9B0: blx          #0x4b3858 ; Anki::Cozmo::BehaviorDockingTestSimple::Write
+005CD9B4: ldrb.w       r0, [sp]
+005CD9B8: lsls         r0, r0, #0x1f
+005CD9BA: itt          ne
+005CD9BC: ldrne        r0, [sp, #8]
+005CD9BE: blxne        #0x4a40cc
+005CD9C2: movs         r0, #1
+005CD9C4: movs         r1, #6
+005CD9C6: strb.w       r0, [r5, #0x251]
+005CD9CA: mov          r0, r5
+005CD9CC: mov          r2, r7
+005CD9CE: blx          #0x4b3888 ; Anki::Cozmo::BehaviorDockingTestSimple::SetCurrStateAndFlashLights
+005CD9D2: b            #0x5cd9da
+005CD9D4: movs         r0, #0
+005CD9D6: str.w        r0, [r5, #0x268]
+005CD9DA: add          sp, #0x1c
+005CD9DC: pop          {r4, r5, r6, r7, pc}
+005CD9DE: mov          r4, r0

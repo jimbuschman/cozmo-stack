@@ -1,0 +1,102 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00607C90..0x00607CCA exclusive; Thumb;
+00607C90: mov          r6, r0
+00607C92: mov          r1, r5
+00607C94: movs         r2, #1
+00607C96: movs         r3, #0
+00607C98: movs         r7, #0
+00607C9A: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+00607C9E: str          r7, [sp, #0x20]
+00607CA0: add          r5, sp, #0x10
+00607CA2: mov          r0, r4
+00607CA4: mov          r1, r6
+00607CA6: mov          r2, r5
+00607CA8: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+00607CAC: ldr          r0, [sp, #0x20]
+00607CAE: cmp          r5, r0
+00607CB0: beq          #0x607cbe
+00607CB2: cmp          r0, #0
+00607CB4: beq.w        #0x607bc0
+00607CB8: ldr          r1, [r0]
+00607CBA: ldr          r1, [r1, #0x14]
+00607CBC: b            #0x607cc2
+00607CBE: ldr          r1, [r0]
+00607CC0: ldr          r1, [r1, #0x10]
+00607CC2: blx          r1
+00607CC4: b            #0x607bc0
+00607CC6: mov          r4, r0
+00607CC8: ldr          r0, [sp, #0x20]
+RANGE 0x00608080..0x006080A0 exclusive; Thumb;
+00608080: ldmdb        r0, {r1, r2, sb, sl, lr}
+00608084: mov          r1, r5
+00608086: movs         r2, #1
+00608088: movs         r3, #0
+0060808A: movs         r7, #0
+0060808C: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+00608090: str          r7, [sp, #0x38]
+00608092: add          r5, sp, #0x28
+00608094: mov          r0, r4
+00608096: mov          r1, r6
+00608098: mov          r2, r5
+0060809A: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+0060809E: ldr          r0, [sp, #0x38]
+RANGE 0x00608650..0x0060866E exclusive; Thumb;
+00608650: mov          r1, r5
+00608652: movs         r2, #1
+00608654: movs         r3, #0
+00608656: movs         r7, #0
+00608658: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+0060865C: str          r7, [sp, #0x30]
+0060865E: add          r5, sp, #0x20
+00608660: mov          r0, r4
+00608662: mov          r1, r6
+00608664: mov          r2, r5
+00608666: blx          #0x4b01c8 ; Anki::Cozmo::IBehavior::StartActing
+0060866A: ldr          r0, [sp, #0x30]
+0060866C: cmp          r5, r0
+RANGE 0x00608886..0x006088A8 exclusive; Thumb;
+00608886: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+0060888A: mov          r6, r0
+0060888C: mov          r1, r5
+0060888E: movs         r2, #1
+00608890: movs         r3, #0
+00608892: blx          #0x4a9304 ; Anki::Cozmo::CalibrateMotorAction::CalibrateMotorAction
+00608896: ldr          r0, [pc, #0x84] ; word[0060891C]=00A36DB8
+00608898: add          r0, pc
+0060889A: ldr          r2, [r0]
+0060889C: mov          r0, r4
+0060889E: mov          r1, r6
+006088A0: movs         r3, #0
+006088A2: blx          #0x4b699c ; Anki::Cozmo::IBehavior::StartActing<Anki::Cozmo::BehaviorReactToRobotOnBack>
+006088A6: add          sp, #0x20
+RANGE 0x005BF8F4..0x005BF8FE exclusive; Thumb;
+005BF8F4: ldr          r1, [r0, #8]
+005BF8F6: adds         r0, #0x10
+005BF8F8: ldr          r1, [r1, #0x2c]
+005BF8FA: b.w          #0x8cc08c
+RANGE 0x005BE1E6..0x005BE228 exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior20HandleActionCompleteERKNS0_17ExternalInterface20RobotCompletedActionE
+005BE1E6: push         {r4, r5, r7, lr}
+005BE1E8: mov          r5, r0
+005BE1EA: mov          r4, r1
+005BE1EC: ldr.w        r0, [r5, #0x84]
+005BE1F0: cbz          r0, #0x5be224
+005BE1F2: ldr          r1, [r4]
+005BE1F4: cmp          r1, r0
+005BE1F6: bne          #0x5be224
+005BE1F8: ldr          r0, [r5]
+005BE1FA: movs         r1, #0
+005BE1FC: str.w        r1, [r5, #0x84]
+005BE200: movs         r1, #0
+005BE202: ldr.w        r2, [r0, #0x80]
+005BE206: mov          r0, r5
+005BE208: blx          r2
+005BE20A: ldrb.w       r0, [r5, #0xa1]
+005BE20E: cbz          r0, #0x5be224
+005BE210: ldr.w        r0, [r5, #0x98]
+005BE214: cbz          r0, #0x5be224
+005BE216: add.w        r0, r5, #0x88
+005BE21A: mov          r1, r4
+005BE21C: pop.w        {r4, r5, r7, lr}
+005BE220: b.w          #0x8cbf5c
+005BE224: pop          {r4, r5, r7, pc}
+005BE226: movs         r0, r0

@@ -1,0 +1,150 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103F17C: raw=00000000 relocated=005BAF25 _ZN4Anki5Cozmo20SearchForBlockHelper14SearchForBlockENS0_12ActionResultERNS0_5RobotE
+RANGE 0x005BB8D0..0x005BB950 exclusive; Thumb;
+005BB8D0: it           eq
+005BB8D2: addeq        r1, r0, #4
+005BB8D4: mov          r0, r1
+005BB8D6: bx           lr
+005BB8D8: subs         r0, #0xb6
+005BB8DA: lsls         r0, r5, #2
+005BB8DC: ldr          r0, [pc, #4] ; word[005BB8E4]=00A838A6
+005BB8DE: add          r0, pc
+005BB8E0: ldr          r0, [r0]
+005BB8E2: bx           lr
+005BB8E4: subs         r0, #0xa6
+005BB8E6: lsls         r0, r5, #2
+005BB8E8: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005BB8EC: push         {r4, lr}
+005BB8EE: mov          r4, r0
+005BB8F0: movs         r0, #8
+005BB8F2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BB8F6: ldr          r1, [pc, #0xc] ; word[005BB904]=00A6AB4A
+005BB8F8: ldr          r2, [r4, #4]
+005BB8FA: add          r1, pc
+005BB8FC: adds         r1, #8
+005BB8FE: strd         r1, r2, [r0]
+005BB902: pop          {r4, pc}
+005BB904: add          r3, sp, #0x128
+005BB906: lsls         r6, r4, #2
+005BB908: ldr          r2, [pc, #0xc] ; word[005BB918]=00A6AB3A
+005BB90A: add          r2, pc
+005BB90C: adds         r2, #8
+005BB90E: str          r2, [r1]
+005BB910: ldr          r0, [r0, #4]
+005BB912: str          r0, [r1, #4]
+005BB914: bx           lr
+005BB916: nop
+005BB918: add          r3, sp, #0xe8
+005BB91A: lsls         r6, r4, #2
+005BB91C: bx           lr
+005BB91E: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005BB922: ldr          r0, [r0, #4]
+005BB924: mov          r1, r2
+005BB926: b.w          #0x8cbf4c
+005BB92A: movs         r0, r0
+005BB92C: ldr          r2, [pc, #0x10] ; word[005BB940]=006AA42A
+005BB92E: ldr          r3, [r1, #4]
+005BB930: movs         r1, #0
+005BB932: add          r2, pc
+005BB934: cmp          r3, r2
+005BB936: it           eq
+005BB938: addeq        r1, r0, #4
+005BB93A: mov          r0, r1
+005BB93C: bx           lr
+005BB93E: nop
+005BB940: adr          r4, #0xa8
+005BB942: lsls         r2, r5, #1
+005BB944: ldr          r0, [pc, #4] ; word[005BB94C]=00A6AB36
+005BB946: add          r0, pc
+005BB948: bx           lr
+005BB94A: nop
+005BB94C: add          r3, sp, #0xd8
+005BB94E: lsls         r6, r4, #2
+RANGE 0x005BAF24..0x005BAFCE exclusive; Thumb; _ZN4Anki5Cozmo20SearchForBlockHelper14SearchForBlockENS0_12ActionResultERNS0_5RobotE
+005BAF24: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005BAF28: sub          sp, #0xac
+005BAF2A: mov          fp, r0
+005BAF2C: ldr.w        r0, [pc, #0x510] ; word[005BB440]=00A83912
+005BAF30: add.w        r5, fp, #0xf0
+005BAF34: mov          sb, r2
+005BAF36: add          r0, pc
+005BAF38: ldr          r0, [r0]
+005BAF3A: ldr          r0, [r0]
+005BAF3C: str          r0, [sp, #0xa8]
+005BAF3E: ldr.w        r0, [fp, #0xf4]
+005BAF42: adds         r0, #1
+005BAF44: beq          #0x5baf5a
+005BAF46: ldr.w        r0, [sb, #0x34]
+005BAF4A: mov          r1, r5
+005BAF4C: mov.w        r2, #-1
+005BAF50: blx          #0x4a7114 ; Anki::Cozmo::BlockWorld::GetLocatedObjectByIdHelper
+005BAF54: cmp          r0, #0
+005BAF56: beq.w        #0x5bb05e
+005BAF5A: ldr.w        r1, [fp, #0xfc]
+005BAF5E: ldr.w        r0, [fp, #0x10c]
+005BAF62: cmp          r0, r1
+005BAF64: ble          #0x5baf8a
+005BAF66: ldr.w        r0, [pc, #0x4f0] ; word[005BB458]=00A838DC
+005BAF6A: ldr          r1, [sp, #0xa8]
+005BAF6C: add          r0, pc
+005BAF6E: ldr          r0, [r0]
+005BAF70: ldr          r0, [r0]
+005BAF72: subs         r0, r0, r1
+005BAF74: itttt        eq
+005BAF76: moveq        r0, fp
+005BAF78: moveq        r1, sb
+005BAF7A: addeq        sp, #0xac
+005BAF7C: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005BAF80: it           eq
+005BAF82: beq.w        #0x8cbf4c
+005BAF86: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+005BAF8A: cmp          r0, #2
+005BAF8C: beq          #0x5bb066
+005BAF8E: cmp          r0, #1
+005BAF90: beq.w        #0x5bb1aa
+005BAF94: cmp          r0, #0
+005BAF96: bne.w        #0x5bb3ca
+005BAF9A: mov.w        r0, #0x158
+005BAF9E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BAFA2: mov          r8, r0
+005BAFA4: movw         r0, #0xb8c2
+005BAFA8: movs         r1, #0
+005BAFAA: movs         r3, #0
+005BAFAC: movt         r0, #0xbdb2
+005BAFB0: movt         r1, #0x42c8
+005BAFB4: movt         r3, #0xc1a0
+005BAFB8: strd         r1, r0, [sp]
+005BAFBC: mov          r0, r8
+005BAFBE: mov          r1, sb
+005BAFC0: mov          r2, r5
+005BAFC2: blx          #0x4a94f0 ; Anki::Cozmo::SearchForNearbyObjectAction::SearchForNearbyObjectAction
+005BAFC6: movs         r0, #0xac
+005BAFC8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BAFCC: mov          r7, r0
+RANGE 0x0056DE36..0x0056DE72 exclusive; Thumb; _ZN4Anki5Cozmo23BehaviorHelperComponent25CheckInactiveStackHelpersERKNS0_5RobotE
+0056DE36: push         {r4, r5, r6, r7, lr}
+0056DE38: sub          sp, #4
+0056DE3A: mov          r4, r0
+0056DE3C: mov          r5, r1
+0056DE3E: ldrd         r6, r0, [r4, #4]
+0056DE42: cmp          r6, r0
+0056DE44: beq          #0x56de6e
+0056DE46: sub.w        r7, r0, #8
+0056DE4A: str          r6, [sp]
+0056DE4C: cmp          r7, r6
+0056DE4E: beq          #0x56de6c
+0056DE50: ldr          r0, [r6], #8
+0056DE54: ldr          r1, [r0]
+0056DE56: ldr          r2, [r1, #0x28]
+0056DE58: mov          r1, r5
+0056DE5A: blx          r2
+0056DE5C: cmp          r0, #1
+0056DE5E: bne          #0x56de4c
+0056DE60: mov          r1, sp
+0056DE62: mov          r0, r4
+0056DE64: str          r6, [sp]
+0056DE66: blx          #0x4ace14 ; Anki::Cozmo::BehaviorHelperComponent::ClearStackFromTopToIter
+0056DE6A: b            #0x56de6e
+0056DE6C: str          r7, [sp]
+0056DE6E: add          sp, #4
+0056DE70: pop          {r4, r5, r6, r7, pc}

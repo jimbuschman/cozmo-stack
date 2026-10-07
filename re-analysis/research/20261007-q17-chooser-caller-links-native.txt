@@ -1,0 +1,116 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+CHOOSER TABLE 0102CBDC _ZTVN4Anki5Cozmo24ScoringBSRunnableChooserE
+ +00 cell0102CBE4=0060A239 _ZN4Anki5Cozmo24ScoringBSRunnableChooserD2Ev
+ +04 cell0102CBE8=0060A2AB _ZN4Anki5Cozmo24ScoringBSRunnableChooserD0Ev
+ +08 cell0102CBEC=0060A7A7
+ +0C cell0102CBF0=0060A7A9
+ +10 cell0102CBF4=0060A7AD
+ +14 cell0102CBF8=0060A7B1
+ +18 cell0102CBFC=0060A7B7
+ +1C cell0102CC00=0060A7BD
+ +20 cell0102CC04=0060A7BF
+ +24 cell0102CC08=0060A7C1
+ +28 cell0102CC0C=0060A3D9 _ZN4Anki5Cozmo24ScoringBSRunnableChooser24GetDesiredActiveBehaviorERNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+ +2C cell0102CC10=0060A7C3
+RANGE 0x0060A7C2..0x0060A7E2 exclusive; Thumb;
+0060A7C2: bx           lr
+0060A7C4: trap
+0060A7C6: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+0060A7CA: sub          sp, #8
+0060A7CC: mov          r8, r1
+0060A7CE: mov          sl, r3
+0060A7D0: mov          r5, r8
+0060A7D2: mov          sb, r0
+0060A7D4: ldr          r7, [r5, #4]!
+0060A7D8: cbz          r7, #0x60a7fe
+0060A7DA: ldrb         r0, [r2]
+0060A7DC: b            #0x60a7ec
+0060A7DE: cmp          r1, r0
+0060A7E0: bhs          #0x60a804
+CHOOSER TABLE 0102CC40 _ZTVN4Anki5Cozmo18IBSRunnableChooserE
+ +00 cell0102CC48=005A7159
+ +04 cell0102CC4C=0060A7C5
+ +08 cell0102CC50=0060A7A7
+ +0C cell0102CC54=0060A7A9
+ +10 cell0102CC58=0060A7AD
+ +14 cell0102CC5C=0060A7B1
+ +18 cell0102CC60=0060A7B7
+ +1C cell0102CC64=0060A7BD
+ +20 cell0102CC68=0060A7BF
+ +24 cell0102CC6C=0060A7C1
+ +28 cell0102CC70=00000000 __cxa_pure_virtual
+CHOOSER TABLE 0102CC74 _ZTVN4Anki5Cozmo26SelectionBSRunnableChooserE
+ +00 cell0102CC7C=0060AFA9
+ +04 cell0102CC80=0060AFF1
+ +08 cell0102CC84=0060A7A7
+ +0C cell0102CC88=0060A7A9
+ +10 cell0102CC8C=0060A7AD
+ +14 cell0102CC90=0060A7B1
+ +18 cell0102CC94=0060A7B7
+ +1C cell0102CC98=0060A7BD
+ +20 cell0102CC9C=0060AF21 _ZN4Anki5Cozmo26SelectionBSRunnableChooser10OnSelectedEv
+ +24 cell0102CCA0=0060AF65 _ZN4Anki5Cozmo26SelectionBSRunnableChooser12OnDeselectedEv
+ +28 cell0102CCA4=0060AD65 _ZN4Anki5Cozmo26SelectionBSRunnableChooser24GetDesiredActiveBehaviorERNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+CHOOSER TABLE 0102CCB4 _ZTVNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EEE
+ +00 cell0102CCBC=004EEB61
+ +04 cell0102CCC0=0060B041
+ +08 cell0102CCC4=0060B045 _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE7__cloneEv
+ +0C cell0102CCC8=0060B06D _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE7__cloneEPNS0_6__baseISM_EE
+ +10 cell0102CCCC=0060B089 _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE7destroyEv
+ +14 cell0102CCD0=0060B08B _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE18destroy_deallocateEv
+ +18 cell0102CCD4=0060B08F _ZNSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EEclESB_
+ +1C cell0102CCD8=0060B0A5 _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE6targetERKSt9type_info
+ +20 cell0102CCDC=0060B0BD _ZNKSt6__ndk110__function6__funcINS_6__bindIMN4Anki5Cozmo26SelectionBSRunnableChooserEFvRKNS4_9AnkiEventINS4_17ExternalInterface19MessageGameToEngineEEEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISJ_EEFvSB_EE11target_typeEv
+CHOOSER TABLE 0102CD0C _ZTVN4Anki5Cozmo31StrictPriorityBSRunnableChooserE
+ +00 cell0102CD14=0060B1F9 _ZN4Anki5Cozmo31StrictPriorityBSRunnableChooserD2Ev
+ +04 cell0102CD18=0060B231 _ZN4Anki5Cozmo31StrictPriorityBSRunnableChooserD0Ev
+ +08 cell0102CD1C=0060A7A7
+ +0C cell0102CD20=0060A7A9
+ +10 cell0102CD24=0060A7AD
+ +14 cell0102CD28=0060A7B1
+ +18 cell0102CD2C=0060A7B7
+ +1C cell0102CD30=0060A7BD
+ +20 cell0102CD34=0060A7BF
+ +24 cell0102CD38=0060A7C1
+ +28 cell0102CD3C=0060B23F _ZN4Anki5Cozmo31StrictPriorityBSRunnableChooser24GetDesiredActiveBehaviorERNS0_5RobotENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+CALLER LITERAL 005B6434 -> cell0103F0E0=01025B70 _ZTVN4Anki5Cozmo7IHelperE
+CALLER LITERAL 005BAE58 -> cell0103F178=010263C0 _ZTVN4Anki5Cozmo20SearchForBlockHelperE
+CALLER LITERAL 005C67AE -> cell0103F214=005C6EE5 _ZN4Anki5Cozmo18BehaviorPickUpCube27TransitionToSuccessReactionERNS0_5RobotE Anki::Cozmo::BehaviorPickUpCube::TransitionToSuccessReaction
+CALLER LITERAL 005C8828 -> cell01027898=00000000
+ INLINE FUNCTION TABLE 01027898 invoke+18=005C8DD7
+CALLER LITERAL 005C882C -> cell010278D8=00000000
+ INLINE FUNCTION TABLE 010278D8 invoke+18=005C8E3D
+CALLER LITERAL 005C8892 -> cell0103E8A4=0101E9B0 _ZTVN4Anki8ObjectIDE
+CALLER LITERAL 005C9572 -> cell00C69140=00000000
+CALLER LITERAL 005C959C -> cell0103F248=005C9E61 _ZN4Anki5Cozmo19BehaviorStackBlocks28TransitionToPlayingFinalAnimERNS0_5RobotE Anki::Cozmo::BehaviorStackBlocks::TransitionToPlayingFinalAnim
+CALLER LITERAL 005C959E -> cell0103F24C=005C9F81 _ZN4Anki5Cozmo19BehaviorStackBlocks25TransitionToFailedToStackERNS0_5RobotE Anki::Cozmo::BehaviorStackBlocks::TransitionToFailedToStack
+CALLER LITERAL 005C95D8 -> cell00BE3FEC=616E6E55
+CALLER LITERAL 005C9770 -> cell0103F250=005C9521 _ZN4Anki5Cozmo19BehaviorStackBlocks25TransitionToStackingBlockERNS0_5RobotE Anki::Cozmo::BehaviorStackBlocks::TransitionToStackingBlock
+CALLER LITERAL 005D80F6 -> cell0103F318=005D7F4D _ZN4Anki5Cozmo23BehaviorCubeLiftWorkout24TransitionToPostLiftAnimERNS0_5RobotE Anki::Cozmo::BehaviorCubeLiftWorkout::TransitionToPostLiftAnim
+CALLER LITERAL 005D8118 -> cell0103E84C=00000000 __stack_chk_guard
+CALLER LITERAL 005D96FE -> cell0103E8A4=0101E9B0 _ZTVN4Anki8ObjectIDE
+CALLER LITERAL 005D9734 -> cell0103F34C=005D9885 _ZN4Anki5Cozmo26BehaviorDriveInDesperation23TransitionToDriveToCubeERNS0_5RobotE Anki::Cozmo::BehaviorDriveInDesperation::TransitionToDriveToCube
+CALLER LITERAL 005DB71E -> cell0103F388=005DB769 _ZN4Anki5Cozmo28BehaviorPickUpAndPutDownCube25TransitionToDriveWithCubeERNS0_5RobotE Anki::Cozmo::BehaviorPickUpAndPutDownCube::TransitionToDriveWithCube
+CALLER LITERAL 005DBD7E -> cell01029020=00000000
+ INLINE FUNCTION TABLE 01029020 invoke+18=005DC67B
+CALLER LITERAL 005DBDD8 -> cell0103E84C=00000000 __stack_chk_guard
+CALLER LITERAL 005DCC5A -> cell0102921C=00000000
+ INLINE FUNCTION TABLE 0102921C invoke+18=005DDB93
+CALLER LITERAL 005DCE58 -> cell0102925C=00000000
+ INLINE FUNCTION TABLE 0102925C invoke+18=005DDBF7
+CALLER LITERAL 005DCE90 -> cell00BF3FB1=61686542
+CALLER LITERAL 005DEA70 -> cell010294E4=00000000
+ INLINE FUNCTION TABLE 010294E4 invoke+18=005DEF87
+CALLER LITERAL 005DEAC2 -> cell0103E8A4=0101E9B0 _ZTVN4Anki8ObjectIDE
+CALLER LITERAL 005EAF6E -> cell0103E8A4=0101E9B0 _ZTVN4Anki8ObjectIDE
+CALLER LITERAL 005EAFA4 -> cell0103F43C=005EAE71 _ZN4Anki5Cozmo25BehaviorRequestGameSimple23TransitionToFacingBlockERNS0_5RobotE Anki::Cozmo::BehaviorRequestGameSimple::TransitionToFacingBlock
+CALLER LITERAL 005EB5BA -> cell01029DFC=00000000
+ INLINE FUNCTION TABLE 01029DFC invoke+18=005EC3EF
+FRAGMENTED; reopen explicit branch ranges
+CALLER LITERAL 005EB5BE -> cell01029E3C=00000000
+ INLINE FUNCTION TABLE 01029E3C invoke+18=005EC471
+CALLER LITERAL 00601794 -> cell0102B620=00000000
+ INLINE FUNCTION TABLE 0102B620 invoke+18=00601C8B
+CALLER LITERAL 00601798 -> cell0102B660=00000000
+ INLINE FUNCTION TABLE 0102B660 invoke+18=00601CF1
+CALLER LITERAL 006017F8 -> cell0103E84C=00000000 __stack_chk_guard

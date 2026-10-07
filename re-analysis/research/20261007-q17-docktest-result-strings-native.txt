@@ -1,0 +1,6 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00C49D60: bytes=b'RollNotSeeingObject'
+00C49D50: bytes=b'DriveToObject'
+00C49D78: bytes=b'DriveToAndPickupNotSeeingObject'
+00C49D90: bytes=b'gObject'
+005CD090: bytes=b'Test Complete'

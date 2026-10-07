@@ -1,0 +1,81 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00804A60..0x00804B3E exclusive; Thumb; _ZN4Anki4Util16GraphEvaluator2d7AddNodeEffb
+00804A60: push         {r4, lr}
+00804A62: sub          sp, #0x40
+00804A64: strd         r2, r1, [sp, #0x38]
+00804A68: vmov         s2, r1
+00804A6C: ldrd         r4, lr, [r0]
+00804A70: vmov         s0, r2
+00804A74: movs         r2, #0
+00804A76: sub.w        r1, lr, r4
+00804A7A: cmp.w        r2, r1, asr #3
+00804A7E: beq          #0x804b18
+00804A80: asrs         r1, r1, #3
+00804A82: sub.w        ip, r1, #1
+00804A86: add.w        r1, r4, ip, lsl #3
+00804A8A: vldr         s4, [r1]
+00804A8E: vcmpe.f32    s4, s2
+00804A92: vmrs         apsr_nzcv, fpscr
+00804A96: ble          #0x804b18
+00804A98: movs         r2, #0
+00804A9A: cmp          r3, #1
+00804A9C: bne          #0x804b38
+00804A9E: strd         r2, r2, [sp, #0x2c]
+00804AA2: vcvt.f64.f32 d0, s0
+00804AA6: str          r2, [sp, #0x34]
+00804AA8: vldr         s4, [r1]
+00804AAC: vldr         s6, [r1, #4]
+00804AB0: vcvt.f64.f32 d1, s2
+00804AB4: vcvt.f64.f32 d2, s4
+00804AB8: vcvt.f64.f32 d3, s6
+00804ABC: adr          r0, #0xa8
+00804ABE: add          r1, sp, #0x2c
+00804AC0: adr          r2, #0xc8
+00804AC2: str.w        ip, [sp, #0x10]
+00804AC6: vstr         d1, [sp]
+00804ACA: vstr         d0, [sp, #8]
+00804ACE: vstr         d2, [sp, #0x18]
+00804AD2: vstr         d3, [sp, #0x20]
+00804AD6: blx          #0x4a4108 ; Anki::Util::sErrorF
+00804ADA: ldr          r0, [sp, #0x2c]
+00804ADC: cbz          r0, #0x804afc
+00804ADE: ldr          r1, [sp, #0x30]
+00804AE0: cmp          r1, r0
+00804AE2: itttt        ne
+00804AE4: subne.w      r2, r1, #8
+00804AE8: subne        r2, r2, r0
+00804AEA: mvnne        r3, #7
+00804AEE: bicne.w      r2, r3, r2
+00804AF2: itt          ne
+00804AF4: addne        r1, r1, r2
+00804AF6: strne        r1, [sp, #0x30]
+00804AF8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00804AFC: ldr          r0, [pc, #0xc8] ; word[00804BC8]=00839C8A
+00804AFE: movs         r2, #1
+00804B00: ldr          r1, [pc, #0xc8] ; word[00804BCC]=00839C84
+00804B02: add          r0, pc
+00804B04: add          r1, pc
+00804B06: ldr          r0, [r0]
+00804B08: ldr          r1, [r1]
+00804B0A: strb         r2, [r0]
+00804B0C: ldrb         r0, [r1]
+00804B0E: cbz          r0, #0x804b14
+00804B10: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+00804B14: movs         r2, #0
+00804B16: b            #0x804b38
+00804B18: ldr          r1, [r0, #8]
+00804B1A: cmp          r1, lr
+00804B1C: bls          #0x804b2e
+00804B1E: vstr         s2, [lr]
+00804B22: vstr         s0, [lr, #4]
+00804B26: ldr          r1, [r0, #4]
+00804B28: adds         r1, #8
+00804B2A: str          r1, [r0, #4]
+00804B2C: b            #0x804b36
+00804B2E: add          r1, sp, #0x3c
+00804B30: add          r2, sp, #0x38
+00804B32: blx          #0x4cb450 ; std::__ndk1::vector<Anki::Util::GraphEvaluator2d::Node,std::__ndk1::allocator<Anki::Util::GraphEvaluator2d::Node>>::__emplace_back_slow_path<float&,float&>
+00804B36: movs         r2, #1
+00804B38: mov          r0, r2
+00804B3A: add          sp, #0x40
+00804B3C: pop          {r4, pc}

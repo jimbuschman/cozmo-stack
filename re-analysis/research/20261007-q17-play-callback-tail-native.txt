@@ -1,0 +1,20 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005C0552..0x005C056C exclusive; Thumb;
+005C0552: push         {r4, r5, r7, lr}
+005C0554: ldr          r5, [r0, #4]
+005C0556: mov          r4, r1
+005C0558: mov          r0, r5
+005C055A: blx          #0x4b2b74 ; Anki::Cozmo::BehaviorPlayAnimSequence::CallToListeners
+005C055E: mov          r0, r5
+005C0560: mov          r1, r4
+005C0562: pop.w        {r4, r5, r7, lr}
+005C0566: b.w          #0x8cc0dc
+005C056A: movs         r0, r0
+0103F198: raw=00000000 relocated=005C0255 _ZN4Anki5Cozmo24BehaviorPlayAnimSequence15CallToListenersERNS0_5RobotE
+0103F19C: raw=00000000 relocated=01026A00 _ZTVNSt6__ndk110__function6__funcINS_6__bindIRMN4Anki5Cozmo24BehaviorPlayAnimSequenceEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISG_EEFvS7_EEE
+RANGE 0x008CC0DC..0x008CC0E0 exclusive; Thumb;
+008CC0DC: bx           pc
+008CC0DE: mov          r8, r8
+RANGE 0x008CC0E0..0x008CC0EC exclusive; ARM;
+008CC0E0: ldr          ip, [pc] ; word[008CC0E8]=FFBE6A64
+008CC0E4: add          pc, ip, pc

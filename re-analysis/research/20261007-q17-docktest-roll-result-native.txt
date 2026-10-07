@@ -1,0 +1,76 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005CEFEC..0x005CF094 exclusive; Thumb;
+005CEFEC: push         {r4, r5, r6, r7, lr}
+005CEFEE: sub          sp, #0x24
+005CEFF0: ldr          r4, [r1]
+005CEFF2: ldr          r5, [r0, #4]
+005CEFF4: cbz          r4, #0x5cf03c
+005CEFF6: ldr          r6, [r0, #8]
+005CEFF8: ldr.w        r0, [r5, #0x254]
+005CEFFC: cmp          r0, #4
+005CEFFE: bgt          #0x5cf048
+005CF000: movs         r0, #0x20
+005CF002: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005CF006: ldr          r1, [pc, #0x88] ; word[005CF090]=0067AD4A
+005CF008: mov          r7, r0
+005CF00A: movs         r0, #0x21
+005CF00C: str          r7, [sp, #0x20]
+005CF00E: str          r0, [sp, #0x18]
+005CF010: movs         r0, #0x13
+005CF012: add          r1, pc
+005CF014: str          r0, [sp, #0x1c]
+005CF016: mov          r0, r7
+005CF018: movs         r2, #0x13
+005CF01A: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+005CF01E: movs         r0, #0
+005CF020: strb         r0, [r7, #0x13]
+005CF022: movs         r0, #1
+005CF024: add          r3, sp, #0x18
+005CF026: str          r0, [sp]
+005CF028: mov          r0, r5
+005CF02A: mov          r1, r6
+005CF02C: mov          r2, r4
+005CF02E: blx          #0x4b38dc ; Anki::Cozmo::BehaviorDockingTestSimple::EndAttempt
+005CF032: mov          r0, r7
+005CF034: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005CF038: movs         r7, #0
+005CF03A: b            #0x5cf076
+005CF03C: mov          r0, r5
+005CF03E: movs         r1, #5
+005CF040: blx          #0x4b38c4 ; Anki::Cozmo::BehaviorDockingTestSimple::SetCurrState
+005CF044: movs         r7, #1
+005CF046: b            #0x5cf076
+005CF048: movs         r7, #0
+005CF04A: movs         r0, #8
+005CF04C: strd         r7, r7, [sp, #8]
+005CF050: str          r7, [sp, #0x10]
+005CF052: strb.w       r0, [sp, #8]
+005CF056: movw         r0, #0x6f52
+005CF05A: movt         r0, #0x6c6c
+005CF05E: str.w        r0, [sp, #9]
+005CF062: strb.w       r7, [sp, #0xd]
+005CF066: movs         r0, #1
+005CF068: add          r3, sp, #8
+005CF06A: str          r0, [sp]
+005CF06C: mov          r0, r5
+005CF06E: mov          r1, r6
+005CF070: mov          r2, r4
+005CF072: blx          #0x4b38dc ; Anki::Cozmo::BehaviorDockingTestSimple::EndAttempt
+005CF076: mov          r0, r7
+005CF078: add          sp, #0x24
+005CF07A: pop          {r4, r5, r6, r7, pc}
+005CF07C: mov          r4, r0
+005CF07E: b            #0x5cf088
+005CF080: mov          r4, r0
+005CF082: mov          r0, r7
+005CF084: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005CF088: mov          r0, r4
+005CF08A: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005CF08E: nop
+005CF090: add          r5, sp, #0x128
+005CF092: lsls         r7, r4, #1
+00C49DC4: bytes=b'eToPose'
+00C49DA8: bytes=b''
+00C49E00: bytes=b'StartSleeping'
+005CD098: bytes=b'plete'
+005CD0AC: bytes=b''

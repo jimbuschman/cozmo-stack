@@ -1,0 +1,94 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BAFE0..0x005BB060 exclusive; Thumb;
+005BAFE0: adr          r0, #0x80
+005BAFE2: mov.w        r0, #0x198
+005BAFE6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BAFEA: mov          r6, r0
+005BAFEC: ldr.w        r0, [pc, #0x45c] ; word[005BB44C]=00A838AE
+005BAFF0: str          r5, [sp, #0x84]
+005BAFF2: add          r0, pc
+005BAFF4: ldr          r0, [r0]
+005BAFF6: adds         r0, #8
+005BAFF8: str          r0, [sp, #0x80]
+005BAFFA: movw         r1, #0xfdb
+005BAFFE: add          r0, sp, #0x78
+005BB000: movt         r1, #0x4049
+005BB004: blx          #0x4a4294 ; Anki::Radians::Radians
+005BB008: add          r2, sp, #0x80
+005BB00A: add          r3, sp, #0x78
+005BB00C: movs         r5, #0
+005BB00E: mov          r0, r6
+005BB010: mov          r1, sb
+005BB012: strd         r5, r5, [sp]
+005BB016: blx          #0x4a9658 ; Anki::Cozmo::TurnTowardsObjectAction::TurnTowardsObjectAction
+005BB01A: add          r0, sp, #0x88
+005BB01C: mov          r1, r7
+005BB01E: mov          r2, r6
+005BB020: movs         r3, #1
+005BB022: str          r5, [sp]
+005BB024: blx          sl
+005BB026: ldr          r0, [sp, #0x8c]
+005BB028: cbz          r0, #0x5bb02e
+005BB02A: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB02E: ldr          r0, [r7]
+005BB030: mov          r1, r7
+005BB032: mov          r2, r8
+005BB034: movs         r3, #0
+005BB036: ldr          r6, [r0, #0x20]
+005BB038: movs         r0, #0
+005BB03A: str          r0, [sp]
+005BB03C: add          r0, sp, #0x70
+005BB03E: blx          r6
+005BB040: ldr          r0, [sp, #0x74]
+005BB042: cbz          r0, #0x5bb048
+005BB044: blx          #0x4a5560 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_weak
+005BB048: ldr.w        r0, [pc, #0x404] ; word[005BB450]=00A84128
+005BB04C: mov          r1, r7
+005BB04E: movs         r3, #0
+005BB050: add          r0, pc
+005BB052: ldr          r2, [r0]
+005BB054: mov          r0, fp
+005BB056: blx          #0x4b27c0 ; Anki::Cozmo::IHelper::StartActing<Anki::Cozmo::SearchForBlockHelper>
+005BB05A: movs         r0, #1
+005BB05C: b            #0x5bb3c6
+005BB05E: movs         r0, #0
+RANGE 0x005A38C4..0x005A3916 exclusive; Thumb; _ZN4Anki5Cozmo15BehaviorManager21FinishCurrentBehaviorENSt6__ndk110shared_ptrINS0_9IBehaviorEEEb
+005A38C4: push         {r4, lr}
+005A38C6: sub          sp, #0x18
+005A38C8: mov          r4, r0
+005A38CA: cmp          r2, #1
+005A38CC: bne          #0x5a38da
+005A38CE: mov          r0, r4
+005A38D0: add          sp, #0x18
+005A38D2: pop.w        {r4, lr}
+005A38D6: b.w          #0x8cbc9c
+005A38DA: ldr          r0, [r4, #0x30]
+005A38DC: cbz          r0, #0x5a38ea
+005A38DE: ldr          r1, [r1]
+005A38E0: cmp          r1, r0
+005A38E2: itt          eq
+005A38E4: moveq        r0, r4
+005A38E6: blxeq        #0x4b0fd8
+005A38EA: movs         r0, #0
+005A38EC: strd         r0, r0, [sp, #8]
+005A38F0: strd         r0, r0, [sp]
+005A38F4: movs         r0, #0x16
+005A38F6: strb.w       r0, [sp, #0x10]
+005A38FA: mov          r1, sp
+005A38FC: mov          r0, r4
+005A38FE: blx          #0x4b0eb8 ; Anki::Cozmo::BehaviorManager::SwitchToBehaviorBase
+005A3902: ldr          r0, [sp, #0xc]
+005A3904: cbz          r0, #0x5a390a
+005A3906: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005A390A: ldr          r0, [sp, #4]
+005A390C: cbz          r0, #0x5a3912
+005A390E: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005A3912: add          sp, #0x18
+005A3914: pop          {r4, pc}
+RANGE 0x008CBC9C..0x008CBCA8 exclusive; ARM;
+008CBC9C: uxtab16mi    r4, r0, r8, ror #8
+008CBCA0: ldr          ip, [pc] ; word[008CBCA8]=FFBE53BC
+008CBCA4: add          pc, ip, pc
+0103F174: raw=00000000 relocated=010263B4 _ZTINSt6__ndk16__bindIRMN4Anki5Cozmo15RollBlockHelperEFvNS2_12ActionResultERNS2_5RobotEEJPS3_RNS_12placeholders4__phILi1EEERNSC_ILi2EEEEEE
+0103F178: raw=00000000 relocated=010263C0 _ZTVN4Anki5Cozmo20SearchForBlockHelperE
+0103F17C: raw=00000000 relocated=005BAF25 _ZN4Anki5Cozmo20SearchForBlockHelper14SearchForBlockENS0_12ActionResultERNS0_5RobotE

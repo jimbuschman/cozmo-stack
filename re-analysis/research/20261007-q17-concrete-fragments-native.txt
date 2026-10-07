@@ -1,0 +1,132 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005B94C0..0x005B956A exclusive; Thumb; _ZN4Anki5Cozmo20PlaceRelObjectHelper23RespondToPlaceRelResultENS0_12ActionResultERNS0_5RobotE
+005B94C0: movs         r3, #0xf
+005B94C2: movt         r3, #0x300
+005B94C6: cmp          r1, r3
+005B94C8: bgt          #0x5b94dc
+005B94CA: cmp.w        r1, #0x3000000
+005B94CE: bge          #0x5b94f4
+005B94D0: cbz          r1, #0x5b951c
+005B94D2: cmp.w        r1, #0x2000000
+005B94D6: it           eq
+005B94D8: bxeq         lr
+005B94DA: b            #0x5b9516
+005B94DC: cmp.w        r1, #0x4000000
+005B94E0: bgt          #0x5b9504
+005B94E2: movs         r3, #0x10
+005B94E4: movt         r3, #0x300
+005B94E8: cmp          r1, r3
+005B94EA: beq          #0x5b9522
+005B94EC: movs         r3, #0x1d
+005B94EE: movt         r3, #0x300
+005B94F2: b            #0x5b9514
+005B94F4: beq          #0x5b9500
+005B94F6: movs         r3, #4
+005B94F8: movt         r3, #0x300
+005B94FC: cmp          r1, r3
+005B94FE: bne          #0x5b9516
+005B9500: movs         r1, #0
+005B9502: b            #0x5b951e
+005B9504: movs         r3, #1
+005B9506: movt         r3, #0x400
+005B950A: cmp          r1, r3
+005B950C: beq          #0x5b9516
+005B950E: movs         r3, #3
+005B9510: movt         r3, #0x400
+005B9514: cmp          r1, r3
+005B9516: mov          r1, r2
+005B9518: b.w          #0x8cbf0c
+005B951C: movs         r1, #2
+005B951E: str          r1, [r0, #0x1c]
+005B9520: bx           lr
+005B9522: ldr.w        r1, [r2, #0x264]
+005B9526: ldr.w        r0, [r0, #0xf4]
+005B952A: ldr          r1, [r1, #0x18]
+005B952C: str          r0, [r1, #0x70]
+005B952E: bx           lr
+005B9530: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005B9534: push         {r4, lr}
+005B9536: mov          r4, r0
+005B9538: movs         r0, #8
+005B953A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005B953E: ldr          r1, [pc, #0xc] ; word[005B954C]=00A6CA8E
+005B9540: ldr          r2, [r4, #4]
+005B9542: add          r1, pc
+005B9544: adds         r1, #8
+005B9546: strd         r1, r2, [r0]
+005B954A: pop          {r4, pc}
+005B954C: ldm          r2, {r1, r2, r3, r7}
+005B954E: lsls         r6, r4, #2
+005B9550: ldr          r2, [pc, #0xc] ; word[005B9560]=00A6CA7E
+005B9552: add          r2, pc
+005B9554: adds         r2, #8
+005B9556: str          r2, [r1]
+005B9558: ldr          r0, [r0, #4]
+005B955A: str          r0, [r1, #4]
+005B955C: bx           lr
+005B955E: nop
+005B9560: ldm          r2, {r1, r2, r3, r4, r5, r6}
+005B9562: lsls         r6, r4, #2
+005B9564: bx           lr
+005B9566: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+RANGE 0x005B956A..0x005B9580 exclusive; Thumb;
+005B956A: push         {r4, lr}
+005B956C: ldr          r4, [r0, #4]
+005B956E: mov          r0, r4
+005B9570: blx          #0x4b2514 ; Anki::Cozmo::PlaceRelObjectHelper::StartPlaceRelObject
+005B9574: ldr          r0, [r4, #0x1c]
+005B9576: pop          {r4, pc}
+005B9578: ldr          r2, [pc, #0x10] ; word[005B958C]=006AB67E
+005B957A: ldr          r3, [r1, #4]
+005B957C: movs         r1, #0
+005B957E: add          r2, pc
+RANGE 0x005B95D6..0x005B95E8 exclusive; Thumb;
+005B95D6: push         {r4, lr}
+005B95D8: ldr          r4, [r0, #4]
+005B95DA: mov          r0, r4
+005B95DC: blx          #0x4b2514 ; Anki::Cozmo::PlaceRelObjectHelper::StartPlaceRelObject
+005B95E0: ldr          r0, [r4, #0x1c]
+005B95E2: pop          {r4, pc}
+005B95E4: ldr          r2, [pc, #0x10] ; word[005B95F8]=006AB6F2
+005B95E6: ldr          r3, [r1, #4]
+RANGE 0x005C0F72..0x005C0F7A exclusive; Thumb; _ZNK4Anki5Cozmo17BehaviorDrivePath21EvaluateScoreInternalERKNS0_5RobotE
+005C0F72: movs         r0, #0
+005C0F74: bx           lr
+005C0F76: push         {r7, lr}
+005B8D60: raw=54442D18 relocated=54442D18
+005B8D64: raw=3FE921FB relocated=3FE921FB
+RANGE 0x005BA7C8..0x005BA818 exclusive; Thumb; _ZN4Anki5Cozmo15RollBlockHelper22RespondToRollingResultENS0_12ActionResultERNS0_5RobotE
+005BA7C8: cmp.w        r1, #0x2000000
+005BA7CC: it           eq
+005BA7CE: bxeq         lr
+005BA7D0: cbnz         r1, #0x5ba7d8
+005BA7D2: movs         r1, #2
+005BA7D4: str          r1, [r0, #0x1c]
+005BA7D6: bx           lr
+005BA7D8: mov          r1, r2
+005BA7DA: b.w          #0x8cbf3c
+005BA7DE: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005BA7E2: movs         r0, r0
+005BA7E4: push         {r4, lr}
+005BA7E6: mov          r4, r0
+005BA7E8: movs         r0, #8
+005BA7EA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005BA7EE: ldr          r1, [pc, #0xc] ; word[005BA7FC]=00A6B93E
+005BA7F0: ldr          r2, [r4, #4]
+005BA7F2: add          r1, pc
+005BA7F4: adds         r1, #8
+005BA7F6: strd         r1, r2, [r0]
+005BA7FA: pop          {r4, pc}
+005BA7FC: cbnz         r6, #0x5ba80e
+005BA7FE: lsls         r6, r4, #2
+005BA800: ldr          r2, [pc, #0xc] ; word[005BA810]=00A6B92E
+005BA802: add          r2, pc
+005BA804: adds         r2, #8
+005BA806: str          r2, [r1]
+005BA808: ldr          r0, [r0, #4]
+005BA80A: str          r0, [r1, #4]
+005BA80C: bx           lr
+005BA80E: nop
+005BA810: cbnz         r6, #0x5ba81e
+005BA812: lsls         r6, r4, #2
+005BA814: bx           lr

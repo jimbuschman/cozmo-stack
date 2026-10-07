@@ -1,0 +1,514 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00804BD0..0x00804C46 exclusive; Thumb; _ZNK4Anki4Util16GraphEvaluator2d9EvaluateYEf
+00804BD0: ldr          r2, [r0]
+00804BD2: vmov         s0, r1
+00804BD6: vldr         s2, [r2]
+00804BDA: vcmpe.f32    s2, s0
+00804BDE: vmrs         apsr_nzcv, fpscr
+00804BE2: bgt          #0x804c3c
+00804BE4: ldr          r0, [r0, #4]
+00804BE6: subs         r0, r0, r2
+00804BE8: asrs         r0, r0, #3
+00804BEA: cmp          r0, #2
+00804BEC: blo          #0x804c3c
+00804BEE: movs         r1, #1
+00804BF0: vldr         s4, [r2, #8]
+00804BF4: vcmpe.f32    s4, s0
+00804BF8: vmrs         apsr_nzcv, fpscr
+00804BFC: bge          #0x804c08
+00804BFE: adds         r1, #1
+00804C00: adds         r2, #8
+00804C02: cmp          r1, r0
+00804C04: blo          #0x804bf0
+00804C06: b            #0x804c3c
+00804C08: vldr         s2, [r2]
+00804C0C: vldr         s6, [pc, #0x38] ; word[00804C48]=3727C5AC
+00804C10: vsub.f32     s4, s4, s2
+00804C14: vcmpe.f32    s4, s6
+00804C18: vmrs         apsr_nzcv, fpscr
+00804C1C: ble          #0x804c3c
+00804C1E: vsub.f32     s0, s0, s2
+00804C22: vldr         s2, [r2, #4]
+00804C26: vdiv.f32     s0, s0, s4
+00804C2A: vldr         s4, [r2, #0xc]
+00804C2E: vsub.f32     s4, s4, s2
+00804C32: vmul.f32     s0, s0, s4
+00804C36: vadd.f32     s0, s2, s0
+00804C3A: b            #0x804c40
+00804C3C: vldr         s0, [r2, #4]
+00804C40: vmov         r0, s0
+00804C44: bx           lr
+RANGE 0x008E9C08..0x008E9D5A exclusive; Thumb; _ZNK4Json5Value7asFloatEv
+008E9C08: push.w       {r4, r5, r6, r7, r8, lr}
+008E9C0C: sub          sp, #0x98
+008E9C0E: ldrb         r1, [r0, #8]
+008E9C10: cmp          r1, #5
+008E9C12: bhi          #0x8e9c60
+008E9C14: vldr         s0, [pc, #0x170] ; word[008E9D88]=00000000
+008E9C18: tbb          [pc, r1]
+008E9C1C: lsls         r5, r3, #0xc
+008E9C1E: adds         r2, r2, r4
+008E9C20: lsrs         r2, r4, #0x20
+008E9C22: ldrd         r0, r1, [r0]
+008E9C26: blx          #0x4baa40 ; <EXTERNAL>::__aeabi_l2f
+008E9C2A: b            #0x8e9c48
+008E9C2C: vmov.f32     s2, #1.000000e+00
+008E9C30: ldrb         r0, [r0]
+008E9C32: vldr         s0, [pc, #0x154] ; word[008E9D88]=00000000
+008E9C36: cmp          r0, #0
+008E9C38: it           ne
+008E9C3A: vmovne.f32   s0, s2
+008E9C3E: b            #0x8e9c56
+008E9C40: ldrd         r0, r1, [r0]
+008E9C44: blx          #0x4caf64 ; <EXTERNAL>::__aeabi_ul2f
+008E9C48: vmov         s0, r0
+008E9C4C: b            #0x8e9c56
+008E9C4E: vldr         d0, [r0]
+008E9C52: vcvt.f32.f64 s0, d0
+008E9C56: vmov         r0, s0
+008E9C5A: add          sp, #0x98
+008E9C5C: pop.w        {r4, r5, r6, r7, r8, pc}
+008E9C60: ldr          r0, [pc, #0x128] ; word[008E9D8C]=00754B8E
+008E9C62: mov          r7, sp
+008E9C64: add.w        r8, r7, #0x38
+008E9C68: adds         r6, r7, #4
+008E9C6A: add          r0, pc
+008E9C6C: ldr          r0, [r0]
+008E9C6E: add.w        r1, r0, #0x20
+008E9C72: adds         r0, #0xc
+008E9C74: str          r1, [sp, #0x38]
+008E9C76: str          r0, [sp]
+008E9C78: mov          r0, r8
+008E9C7A: mov          r1, r6
+008E9C7C: blx          #0x4a445c ; <EXTERNAL>::std::__ndk1::ios_base::init
+008E9C80: ldr          r0, [pc, #0x10c] ; word[008E9D90]=00754B72
+008E9C82: mov.w        r2, #-1
+008E9C86: ldr          r1, [pc, #0x10c] ; word[008E9D94]=00754B32
+008E9C88: movs         r4, #0
+008E9C8A: add          r0, pc
+008E9C8C: str          r2, [sp, #0x84]
+008E9C8E: add          r1, pc
+008E9C90: add.w        r5, r7, #8
+008E9C94: ldr          r0, [r0]
+008E9C96: ldr          r1, [r1]
+008E9C98: add.w        r2, r0, #0x20
+008E9C9C: adds         r0, #0xc
+008E9C9E: str          r4, [sp, #0x80]
+008E9CA0: str          r2, [sp, #0x38]
+008E9CA2: str          r0, [sp]
+008E9CA4: add.w        r0, r1, #8
+008E9CA8: str          r0, [sp, #4]
+008E9CAA: mov          r0, r5
+008E9CAC: blx          #0x4a4468 ; <EXTERNAL>::std::__ndk1::locale::locale
+008E9CB0: add.w        r0, r7, #0xc
+008E9CB4: movs         r1, #0x18
+008E9CB6: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+008E9CBA: ldr          r0, [pc, #0xdc] ; word[008E9D98]=00754B06
+008E9CBC: str          r4, [sp, #0x24]
+008E9CBE: add          r0, pc
+008E9CC0: ldr          r0, [r0]
+008E9CC2: adds         r0, #8
+008E9CC4: str          r0, [sp, #4]
+008E9CC6: movs         r0, #0x10
+008E9CC8: str          r4, [sp, #0x30]
+008E9CCA: strd         r4, r4, [sp, #0x28]
+008E9CCE: str          r0, [sp, #0x34]
+008E9CD0: str          r4, [sp, #0x90]
+008E9CD2: strd         r4, r4, [sp, #0x88]
+008E9CD6: add          r1, sp, #0x88
+008E9CD8: mov          r0, r6
+008E9CDA: bl           #0x4e4598 ; FUN_004e4598
+008E9CDE: ldrb.w       r0, [sp, #0x88]
+008E9CE2: lsls         r0, r0, #0x1f
+008E9CE4: itt          ne
+008E9CE6: ldrne        r0, [sp, #0x90]
+008E9CE8: blxne        #0x4a40cc
+008E9CEC: adr          r1, #0xb0
+008E9CEE: mov          r0, sp
+008E9CF0: movs         r2, #0x22
+008E9CF2: blx          #0x4a4474 ; std::__ndk1::__put_character_sequence<char,std::__ndk1::char_traits<char>>
+008E9CF6: add          r0, sp, #0x88
+008E9CF8: mov          r1, r6
+008E9CFA: blx          #0x4a448c ; std::__ndk1::basic_stringbuf<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>::str
+008E9CFE: add          r0, sp, #0x88
+008E9D00: blx          #0x4d2848 ; Json::throwLogicError
+008E9D04: mov          r6, r0
+008E9D06: ldrb.w       r0, [sp, #0x88]
+008E9D0A: lsls         r0, r0, #0x1f
+008E9D0C: itt          ne
+008E9D0E: ldrne        r0, [sp, #0x90]
+008E9D10: blxne        #0x4a40cc
+008E9D14: b            #0x8e9d1a
+008E9D16: b            #0x8e9d18
+008E9D18: mov          r6, r0
+008E9D1A: ldr          r0, [pc, #0xa8] ; word[008E9DC4]=00754ADE
+008E9D1C: ldr          r1, [pc, #0xa8] ; word[008E9DC8]=00754AA0
+008E9D1E: add          r0, pc
+008E9D20: ldrb.w       r2, [sp, #0x24]
+008E9D24: add          r1, pc
+008E9D26: ldr          r0, [r0]
+008E9D28: ldr          r1, [r1]
+008E9D2A: add.w        r3, r0, #0x20
+008E9D2E: adds         r0, #0xc
+008E9D30: str          r3, [sp, #0x38]
+008E9D32: str          r0, [sp]
+008E9D34: add.w        r0, r1, #8
+008E9D38: str          r0, [sp, #4]
+008E9D3A: lsls         r0, r2, #0x1f
+008E9D3C: itt          ne
+008E9D3E: ldrne        r0, [sp, #0x2c]
+008E9D40: blxne        #0x4a40cc
+008E9D44: ldr          r0, [pc, #0x84] ; word[008E9DCC]=00754A7A
+008E9D46: add          r0, pc
+008E9D48: b            #0x8e9d6c
+008E9D4A: mov          r6, r0
+008E9D4C: ldrb.w       r0, [sp, #0x88]
+008E9D50: lsls         r0, r0, #0x1f
+008E9D52: itt          ne
+008E9D54: ldrne        r0, [sp, #0x90]
+008E9D56: blxne        #0x4a40cc
+RANGE 0x0084BC38..0x0084BCC0 exclusive; Thumb; _ZN4Anki16BaseStationTimer10UpdateTimeEy
+0084BC38: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0084BC3C: sub          sp, #4
+0084BC3E: mov          r6, r0
+0084BC40: mov          r4, r3
+0084BC42: ldrd         r0, r1, [r6, #0x18]
+0084BC46: mov          r5, r2
+0084BC48: ldr.w        sb, [r6, #0x24]
+0084BC4C: subs         r0, r5, r0
+0084BC4E: sbc.w        r1, r4, r1
+0084BC52: blx          #0x4acf34 ; <EXTERNAL>::__aeabi_ul2d
+0084BC56: mov          r8, r0
+0084BC58: mov          r7, r1
+0084BC5A: mov          r0, r5
+0084BC5C: mov          r1, r4
+0084BC5E: blx          #0x4acf34 ; <EXTERNAL>::__aeabi_ul2d
+0084BC62: vmov         d1, r0, r1
+0084BC66: vldr         d0, [pc, #0x38] ; word[0084BCA0]=00000000
+0084BC6A: vmov         d2, r8, r7
+0084BC6E: strd         r5, r4, [r6, #0x18]
+0084BC72: vdiv.f64     d1, d1, d0
+0084BC76: add.w        r0, sb, #1
+0084BC7A: str          r0, [r6, #0x24]
+0084BC7C: vdiv.f64     d0, d2, d0
+0084BC80: vcvt.f32.f64 s4, d1
+0084BC84: vcvt.f32.f64 s0, d0
+0084BC88: vstr         d1, [r6, #8]
+0084BC8C: vstr         s4, [r6, #0x10]
+0084BC90: vstr         s0, [r6, #0x20]
+0084BC94: add          sp, #4
+0084BC96: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+0084BC9A: nop
+0084BC9C: nop.w
+0084BCA0: movs         r0, r0
+0084BCA2: movs         r0, r0
+0084BCA4: ldm          r5, {r0, r2, r5, r6}
+0084BCA6: rors         r5, r1
+0084BCA8: ldr          r0, [r0, #0x10]
+0084BCAA: bx           lr
+0084BCAC: vldr         d0, [r0, #8]
+0084BCB0: vmov         r0, r1, d0
+0084BCB4: bx           lr
+0084BCB6: ldrd         r0, r1, [r0, #0x18]
+0084BCBA: bx           lr
+0084BCBC: ldr          r0, [r0, #0x20]
+0084BCBE: bx           lr
+RANGE 0x0063B760..0x0063B960 exclusive; Thumb; _ZN4Anki5Cozmo30DesiredFaceDistortionComponent27GetCurrentDesiredDistortionEv
+0063B760: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0063B764: sub          sp, #4
+0063B766: vpush        {d8, d9, d10, d11, d12, d13, d14, d15}
+0063B76A: sub          sp, #0x40
+0063B76C: mov          r4, r0
+0063B76E: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0063B772: ldr          r1, [r0]
+0063B774: ldr          r1, [r1, #8]
+0063B776: blx          r1
+0063B778: ldr          r1, [r4, #0x14]
+0063B77A: cmp          r0, r1
+0063B77C: bne          #0x63b784
+0063B77E: vldr         s18, [r4, #0x10]
+0063B782: b            #0x63b958
+0063B784: vmov.f32     s18, #-1.000000e+00
+0063B788: ldr          r1, [r4]
+0063B78A: movs         r2, #0
+0063B78C: movt         r2, #0xbf80
+0063B790: cmp          r1, #0
+0063B792: strd         r2, r0, [r4, #0x10]
+0063B796: beq.w        #0x63b958
+0063B79A: ldr          r0, [r4, #0xc]
+0063B79C: cmp          r0, #0
+0063B79E: beq.w        #0x63b958
+0063B7A2: ldr          r0, [r4, #8]
+0063B7A4: ldrb.w       r0, [r0, #0x1d5]
+0063B7A8: cmp          r0, #0
+0063B7AA: bne.w        #0x63b958
+0063B7AE: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0063B7B2: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+0063B7B6: vldr         s0, [r4, #4]
+0063B7BA: vmov         s16, r0
+0063B7BE: vcmpe.f32    s0, #0
+0063B7C2: vmrs         apsr_nzcv, fpscr
+0063B7C6: bmi          #0x63b7d4
+0063B7C8: vcmpe.f32    s0, s16
+0063B7CC: vmrs         apsr_nzcv, fpscr
+0063B7D0: bhi.w        #0x63b958
+0063B7D4: ldr          r0, [r4, #8]
+0063B7D6: blx          #0x4b5340 ; Anki::Cozmo::NeedsManager::GetCurNeedsState
+0063B7DA: movs         r1, #0
+0063B7DC: mov.w        sb, #0
+0063B7E0: blx          #0x4b174c ; Anki::Cozmo::NeedsState::GetNeedLevel
+0063B7E4: mov          r5, r0
+0063B7E6: ldr          r0, [r4]
+0063B7E8: mov          r1, r5
+0063B7EA: ldr          r0, [r0, #8]
+0063B7EC: blx          #0x4b1ee4 ; Anki::Util::GraphEvaluator2d::EvaluateY
+0063B7F0: vldr         s0, [pc, #0x1a0] ; word[0063B994]=3DCCCCCD
+0063B7F4: vmov         s26, r0
+0063B7F8: vcmpe.f32    s26, s0
+0063B7FC: vmrs         apsr_nzcv, fpscr
+0063B800: blt.w        #0x63b958
+0063B804: vmov.f32     s18, #5.000000e-01
+0063B808: ldr          r1, [r4]
+0063B80A: vmov.f32     s22, #1.000000e+00
+0063B80E: ldr          r0, [r4, #0xc]
+0063B810: vmov         s28, r5
+0063B814: vldr         s0, [r1, #0xc]
+0063B818: vmul.f32     s0, s0, s18
+0063B81C: vsub.f32     s2, s22, s0
+0063B820: vadd.f32     s0, s0, s22
+0063B824: vmul.f32     s2, s26, s2
+0063B828: vmul.f32     s0, s26, s0
+0063B82C: vcvt.f64.f32 d15, s2
+0063B830: vmov         r2, r3, d15
+0063B834: vcvt.f64.f32 d10, s0
+0063B838: vstr         d10, [sp]
+0063B83C: blx          #0x4aa5f4 ; Anki::Util::RandomGenerator::RandDblInRange
+0063B840: mov          r8, r0
+0063B842: ldr          r0, [r4]
+0063B844: mov          r6, r1
+0063B846: mov          r1, r5
+0063B848: ldr          r0, [r0]
+0063B84A: blx          #0x4b1ee4 ; Anki::Util::GraphEvaluator2d::EvaluateY
+0063B84E: ldr          r2, [r4]
+0063B850: vmov         s24, r0
+0063B854: ldr          r1, [r4, #0xc]
+0063B856: vldr         s0, [r2, #4]
+0063B85A: mov          r0, r1
+0063B85C: vmul.f32     s0, s0, s18
+0063B860: vsub.f32     s2, s22, s0
+0063B864: vadd.f32     s0, s0, s22
+0063B868: vmul.f32     s2, s24, s2
+0063B86C: vmul.f32     s0, s24, s0
+0063B870: vcvt.f64.f32 d1, s2
+0063B874: vmov         r2, r3, d1
+0063B878: vstr         d1, [sp, #0x28]
+0063B87C: vcvt.f64.f32 d11, s0
+0063B880: vstr         d11, [sp]
+0063B884: blx          #0x4aa5f4 ; Anki::Util::RandomGenerator::RandDblInRange
+0063B888: vmov         d0, r8, r6
+0063B88C: mov          r5, r0
+0063B88E: vcvt.f64.f32 d14, s28
+0063B892: mov          r7, r1
+0063B894: strd         sb, sb, [sp, #0x34]
+0063B898: str.w        sb, [sp, #0x3c]
+0063B89C: vcvt.f32.f64 s18, d0
+0063B8A0: vcvt.f64.f32 d0, s26
+0063B8A4: vcvt.f64.f32 d1, s18
+0063B8A8: adr          r0, #0xec
+0063B8AA: adr          r1, #0xf8
+0063B8AC: add          r2, sp, #0x34
+0063B8AE: adr          r3, #0x12c
+0063B8B0: vstr         d14, [sp]
+0063B8B4: vstr         d1, [sp, #8]
+0063B8B8: vstr         d0, [sp, #0x10]
+0063B8BC: vstr         d15, [sp, #0x18]
+0063B8C0: vstr         d10, [sp, #0x20]
+0063B8C4: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+0063B8C8: vmov         d0, r5, r7
+0063B8CC: ldr          r0, [sp, #0x34]
+0063B8CE: vcvt.f32.f64 s26, d0
+0063B8D2: cbz          r0, #0x63b8f2
+0063B8D4: ldr          r1, [sp, #0x38]
+0063B8D6: cmp          r1, r0
+0063B8D8: itttt        ne
+0063B8DA: subne.w      r2, r1, #8
+0063B8DE: subne        r2, r2, r0
+0063B8E0: mvnne        r3, #7
+0063B8E4: bicne.w      r2, r3, r2
+0063B8E8: itt          ne
+0063B8EA: addne        r1, r1, r2
+0063B8EC: strne        r1, [sp, #0x38]
+0063B8EE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0063B8F2: ldr          r1, [pc, #0x120] ; word[0063BA14]=005BF3FB
+0063B8F4: movs         r0, #0
+0063B8F6: ldr          r3, [pc, #0x120] ; word[0063BA18]=005BF42C
+0063B8F8: vcvt.f64.f32 d0, s26
+0063B8FC: add          r1, pc
+0063B8FE: strd         r0, r0, [sp, #0x34]
+0063B902: add          r3, pc
+0063B904: str          r0, [sp, #0x3c]
+0063B906: vcvt.f64.f32 d1, s24
+0063B90A: vstr         d14, [sp]
+0063B90E: adr          r0, #0x88
+0063B910: vstr         d0, [sp, #8]
+0063B914: add          r2, sp, #0x34
+0063B916: vldr         d0, [sp, #0x28]
+0063B91A: vstr         d1, [sp, #0x10]
+0063B91E: vstr         d0, [sp, #0x18]
+0063B922: vstr         d11, [sp, #0x20]
+0063B926: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+0063B92A: ldr          r0, [sp, #0x34]
+0063B92C: cbz          r0, #0x63b94c
+0063B92E: ldr          r1, [sp, #0x38]
+0063B930: cmp          r1, r0
+0063B932: itttt        ne
+0063B934: subne.w      r2, r1, #8
+0063B938: subne        r2, r2, r0
+0063B93A: mvnne        r3, #7
+0063B93E: bicne.w      r2, r3, r2
+0063B942: itt          ne
+0063B944: addne        r1, r1, r2
+0063B946: strne        r1, [sp, #0x38]
+0063B948: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0063B94C: vadd.f32     s0, s16, s26
+0063B950: vstr         s18, [r4, #0x10]
+0063B954: vstr         s0, [r4, #4]
+0063B958: vmov         r0, s18
+0063B95C: add          sp, #0x40
+RANGE 0x0064EDE8..0x0064EE1C exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponent6UpdateEv
+0064EDE8: push         {r4, lr}
+0064EDEA: mov          r4, r0
+0064EDEC: ldr          r0, [r4]
+0064EDEE: ldr          r0, [r0, #0x34]
+0064EDF0: ldr.w        r0, [r0, #0x3d4]
+0064EDF4: blx          #0x4ba080 ; Anki::Cozmo::DesiredFaceDistortionComponent::GetCurrentDesiredDistortion
+0064EDF8: mov          r1, r0
+0064EDFA: vldr         s0, [pc, #0x1c] ; word[0064EE18]=3727C5AC
+0064EDFE: vmov         s2, r1
+0064EE02: vcmpe.f32    s2, s0
+0064EE06: vmrs         apsr_nzcv, fpscr
+0064EE0A: it           le
+0064EE0C: pople        {r4, pc}
+0064EE0E: mov          r0, r4
+0064EE10: pop.w        {r4, lr}
+0064EE14: b.w          #0x8ccfec
+0064EE18: stm          r5!, {r2, r3, r5, r7}
+0064EE1A: adds         r7, #0x27
+RANGE 0x0057CF6A..0x0057CFFA exclusive; Thumb;
+0057CF6A: vldr         s0, [r4, #0x88]
+0057CF6E: vcmpe.f32    s0, #0
+0057CF72: vmrs         apsr_nzcv, fpscr
+0057CF76: ble          #0x57cff6
+0057CF78: ldr          r0, [r4, #0x60]
+0057CF7A: blx          #0x4ade34 ; Anki::Cozmo::TrackLayerComponent::Update
+0057CF7E: ldrd         r5, r6, [r4, #0x34]
+0057CF82: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0057CF86: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+0057CF8A: cbnz         r6, #0x57cff6
+0057CF8C: vmov         s0, r0
+0057CF90: vldr         s2, [r4, #0x88]
+0057CF94: vldr         s4, [r4, #0x1c0]
+0057CF98: movs         r0, #0
+0057CF9A: vsub.f32     s0, s0, s2
+0057CF9E: mov          r1, r5
+0057CFA0: add.w        r2, r4, #0xa8
+0057CFA4: vcmpe.f32    s0, s4
+0057CFA8: vmrs         apsr_nzcv, fpscr
+0057CFAC: it           le
+0057CFAE: movle        r0, #1
+0057CFB0: cmp          r5, #0
+0057CFB2: it           ne
+0057CFB4: movne        r1, #1
+0057CFB6: cmp          r5, r2
+0057CFB8: it           ne
+0057CFBA: orrsne.w     r0, r0, r1
+0057CFBE: bne          #0x57cff6
+0057CFC0: ldrb.w       r0, [r4, #0x73]
+0057CFC4: cbz          r0, #0x57cfda
+0057CFC6: ldr          r1, [r4, #0x40]
+0057CFC8: movs         r5, #0
+0057CFCA: mov          r0, r4
+0057CFCC: movs         r2, #1
+0057CFCE: movs         r3, #1
+0057CFD0: str          r5, [sp]
+0057CFD2: blx          #0x4aade0 ; Anki::Cozmo::AnimationStreamer::SetStreamingAnimation
+0057CFD6: strb.w       r5, [r4, #0x73]
+0057CFDA: ldrb         r0, [r4, #4]
+0057CFDC: ldr          r6, [r4, #0x60]
+0057CFDE: cbnz         r0, #0x57cfec
+0057CFE0: ldr          r0, [r4]
+0057CFE2: movs         r1, #1
+0057CFE4: strb         r1, [r4, #4]
+0057CFE6: ldr          r1, [r0]
+0057CFE8: mov          r0, r4
+0057CFEA: blx          r1
+0057CFEC: add.w        r1, r4, #0x10
+0057CFF0: mov          r0, r6
+0057CFF2: blx          #0x4ade40 ; Anki::Cozmo::TrackLayerComponent::KeepFaceAlive
+0057CFF6: ldr          r0, [r4, #0x38]
+0057CFF8: cbz          r0, #0x57d03a
+RANGE 0x0057D03A..0x0057D0E8 exclusive; Thumb;
+0057D03A: ldrd         r1, r0, [r4, #0x48]
+0057D03E: cmp          r1, r0
+0057D040: ittt         ne
+0057D042: ldrne        r7, [r0, #-0x10]
+0057D046: movwne       r0, #0x23f
+0057D04A: cmpne        r7, r0
+0057D04C: bne          #0x57d064
+0057D04E: ldr          r0, [r4, #0x60]
+0057D050: blx          #0x4adc90 ; Anki::Cozmo::TrackLayerComponent::HaveLayersToSend
+0057D054: cmp          r0, #1
+0057D056: bne          #0x57d122
+0057D058: mov          r0, r4
+0057D05A: mov          r1, sl
+0057D05C: blx          #0x4ade58 ; Anki::Cozmo::AnimationStreamer::StreamLayers
+0057D060: mov          r7, r0
+0057D062: b            #0x57d032
+0057D064: ldr.w        sb, [r4, #0x34]
+0057D068: cmp.w        r7, #0x198
+0057D06C: bne.w        #0x57d1e4
+0057D070: movs         r0, #1
+0057D072: mov          r1, sl
+0057D074: strb.w       r0, [r4, #0x194]
+0057D078: add.w        r0, r4, #0xa8
+0057D07C: str          r0, [r4, #0x34]
+0057D07E: mov          r0, r4
+0057D080: blx          #0x4ade64 ; Anki::Cozmo::AnimationStreamer::UpdateLiveAnimation
+0057D084: mov          r7, r0
+0057D086: cmp          r7, #0
+0057D088: beq.w        #0x57d3ee
+0057D08C: ldr.w        r0, [pc, #0x520] ; word[0057D5B0]=006720AE
+0057D090: movs         r1, #0
+0057D092: ldr.w        r2, [pc, #0x520] ; word[0057D5B4]=006720D2
+0057D096: add          r0, pc
+0057D098: strd         r1, r1, [sp, #0x28]
+0057D09C: add          r2, pc
+0057D09E: str          r1, [sp, #0x30]
+0057D0A0: add          r1, sp, #0x28
+0057D0A2: blx          #0x4a4108 ; Anki::Util::sErrorF
+0057D0A6: ldr          r0, [sp, #0x28]
+0057D0A8: cbz          r0, #0x57d0c8
+0057D0AA: ldr          r1, [sp, #0x2c]
+0057D0AC: cmp          r1, r0
+0057D0AE: itttt        ne
+0057D0B0: subne.w      r2, r1, #8
+0057D0B4: subne        r2, r2, r0
+0057D0B6: mvnne        r3, #7
+0057D0BA: bicne.w      r2, r3, r2
+0057D0BE: itt          ne
+0057D0C0: addne        r1, r1, r2
+0057D0C2: strne        r1, [sp, #0x2c]
+0057D0C4: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0057D0C8: ldr.w        r0, [pc, #0x4ec] ; word[0057D5B8]=00AC16B6
+0057D0CC: movs         r2, #1
+0057D0CE: ldr.w        r1, [pc, #0x4ec] ; word[0057D5BC]=00AC16B8
+0057D0D2: add          r0, pc
+0057D0D4: add          r1, pc
+0057D0D6: ldr          r0, [r0]
+0057D0D8: ldr          r1, [r1]
+0057D0DA: ldrb         r0, [r0]
+0057D0DC: strb         r2, [r1]
+0057D0DE: cmp          r0, #0
+0057D0E0: beq          #0x57d032
+0057D0E2: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+0057D0E6: b            #0x57d032

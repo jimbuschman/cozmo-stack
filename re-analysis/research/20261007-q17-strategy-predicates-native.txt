@@ -1,0 +1,221 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+00614724: raw=0D04F000 relocated=0D04F000
+00614728: raw=31281F16 relocated=31281F16
+0103F710: raw=00000000 relocated=0102D580 _ZTVN4Anki5Cozmo17StrategyAlwaysRunE
+0103F714: raw=00000000 relocated=0102D5A8 _ZTVN4Anki5Cozmo30StrategyExpressNeedsTransitionE
+0103F718: raw=00000000 relocated=0102D5D0 _ZTVN4Anki5Cozmo15StrategyGenericE
+0103F71C: raw=00000000 relocated=0102D5F8 _ZTVN4Anki5Cozmo22StrategyInNeedsBracketE
+RANGE 0x00614398..0x006143F8 exclusive; Thumb;
+00614398: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0061439C: push         {r7, lr}
+0061439E: movs         r0, #8
+006143A0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+006143A4: ldr          r1, [pc, #8] ; word[006143B0]=00A1929E
+006143A6: add          r1, pc
+006143A8: adds         r1, #8
+006143AA: str          r1, [r0]
+006143AC: pop          {r7, pc}
+006143AE: nop
+006143B0: str          r2, [sp, #0x278]
+006143B2: lsls         r1, r4, #2
+006143B4: ldr          r0, [pc, #8] ; word[006143C0]=00A1928E
+006143B6: add          r0, pc
+006143B8: adds         r0, #8
+006143BA: str          r0, [r1]
+006143BC: bx           lr
+006143BE: nop
+006143C0: str          r2, [sp, #0x238]
+006143C2: lsls         r1, r4, #2
+006143C4: bx           lr
+006143C6: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+006143CA: ldr.w        r0, [r1, #0x264]
+006143CE: ldrb         r0, [r0, #4]
+006143D0: bx           lr
+006143D2: movs         r0, r0
+006143D4: ldr          r2, [pc, #0x10] ; word[006143E8]=00662BA2
+006143D6: ldr          r3, [r1, #4]
+006143D8: movs         r1, #0
+006143DA: add          r2, pc
+006143DC: cmp          r3, r2
+006143DE: it           eq
+006143E0: addeq        r1, r0, #4
+006143E2: mov          r0, r1
+006143E4: bx           lr
+006143E6: nop
+006143E8: cmp          r3, #0xa2
+006143EA: lsls         r6, r4, #1
+006143EC: ldr          r0, [pc, #4] ; word[006143F4]=00A1928E
+006143EE: add          r0, pc
+006143F0: bx           lr
+006143F2: nop
+006143F4: str          r2, [sp, #0x238]
+006143F6: lsls         r1, r4, #2
+RANGE 0x0061455C..0x0061468C exclusive; Thumb; _ZNK4Anki5Cozmo26StrategyRobotPlacedOnSlope18WantsToRunInternalERKNS0_5RobotE
+0061455C: push         {r4, r5, r6, lr}
+0061455E: vpush        {d8, d9, d10}
+00614562: sub          sp, #0x10
+00614564: mov          r4, r1
+00614566: mov          r5, r0
+00614568: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0061456C: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+00614570: vldr         s2, [r4, #0x370]
+00614574: movs         r2, #0
+00614576: vldr         s0, [r4, #0x36c]
+0061457A: vabs.f32     s2, s2
+0061457E: vldr         s4, [r4, #0x374]
+00614582: vabs.f32     s6, s0
+00614586: vabs.f32     s4, s4
+0061458A: vmov         s0, r0
+0061458E: add          r0, sp, #4
+00614590: add.w        r1, r0, #8
+00614594: vcmpe.f32    s6, s2
+00614598: vstr         s6, [sp, #4]
+0061459C: vmrs         apsr_nzcv, fpscr
+006145A0: vstr         s2, [sp, #8]
+006145A4: vstr         s4, [sp, #0xc]
+006145A8: it           mi
+006145AA: addmi        r0, #4
+006145AC: adds         r3, r1, r2
+006145AE: vldr         s2, [r0]
+006145B2: adds         r2, #4
+006145B4: vldr         s4, [r3]
+006145B8: vcmpe.f32    s2, s4
+006145BC: vmrs         apsr_nzcv, fpscr
+006145C0: it           mi
+006145C2: movmi        r0, r3
+006145C4: cmp          r2, #4
+006145C6: bne          #0x6145ac
+006145C8: vcvt.f64.f32 d8, s0
+006145CC: vldr         s0, [r5, #0x30]
+006145D0: vldr         s2, [r0]
+006145D4: vcmpe.f32    s2, s0
+006145D8: vmrs         apsr_nzcv, fpscr
+006145DC: ble          #0x6145e8
+006145DE: vmov.f64     d10, d8
+006145E2: vstr         d8, [r5, #0x18]
+006145E6: b            #0x6145ec
+006145E8: vldr         d10, [r5, #0x18]
+006145EC: add          r6, sp, #4
+006145EE: mov          r1, r4
+006145F0: vldr         d9, [r5, #0x38]
+006145F4: mov          r0, r6
+006145F6: blx          #0x4ab734 ; Anki::Cozmo::Robot::GetPitchAngle
+006145FA: mov          r0, r6
+006145FC: blx          #0x4a44ec ; Anki::Radians::getDegrees
+00614600: vmov         s0, r0
+00614604: vldr         s2, [r5, #0x28]
+00614608: vcmpe.f32    s0, s2
+0061460C: vmrs         apsr_nzcv, fpscr
+00614610: ble          #0x614626
+00614612: vldr         s2, [r5, #0x2c]
+00614616: movs         r0, #0
+00614618: vcmpe.f32    s0, s2
+0061461C: vmrs         apsr_nzcv, fpscr
+00614620: it           pl
+00614622: movpl        r0, #1
+00614624: b            #0x614628
+00614626: movs         r0, #1
+00614628: vsub.f64     d0, d8, d10
+0061462C: ldrb.w       r1, [r4, #0x349]
+00614630: cbz          r1, #0x61463a
+00614632: vstr         d8, [r5, #0x20]
+00614636: movs         r2, #0
+00614638: b            #0x614654
+0061463A: vldr         d1, [r5, #0x20]
+0061463E: movs         r2, #0
+00614640: vldr         d2, [r5, #0x40]
+00614644: vsub.f64     d1, d8, d1
+00614648: vcmpe.f64    d1, d2
+0061464C: vmrs         apsr_nzcv, fpscr
+00614650: it           mi
+00614652: movmi        r2, #1
+00614654: vcmpe.f64    d0, d9
+00614658: movs         r6, #0
+0061465A: movs         r3, #0
+0061465C: vmrs         apsr_nzcv, fpscr
+00614660: it           le
+00614662: movle        r6, #1
+00614664: orrs         r0, r6
+00614666: mov.w        r0, #0
+0061466A: bne          #0x614676
+0061466C: cmp          r1, #0
+0061466E: it           ne
+00614670: movne        r1, #1
+00614672: orr.w        r0, r1, r2
+00614676: ldrb.w       r1, [r4, #0x355]
+0061467A: cmp          r1, #2
+0061467C: it           lo
+0061467E: movlo        r3, #1
+00614680: ands         r0, r3
+00614682: add          sp, #0x10
+00614684: vpop         {d8, d9, d10}
+00614688: pop          {r4, r5, r6, pc}
+0061468A: movs         r0, r0
+RANGE 0x00614474..0x006144D4 exclusive; Thumb; _ZNK4Anki5Cozmo23StrategyPlacedOnCharger18WantsToRunInternalERKNS0_5RobotE
+00614474: push         {r4, lr}
+00614476: mov          r4, r0
+00614478: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+0061447C: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+00614480: vldr         s2, [r4, #0x18]
+00614484: vmov         s0, r0
+00614488: vcmpe.f32    s2, #0
+0061448C: vmrs         apsr_nzcv, fpscr
+00614490: ittt         mi
+00614492: vmovmi.f32   s2, #2.000000e+01
+00614496: vaddmi.f32   s2, s0, s2
+0061449A: vstrmi       s2, [r4, #0x18]
+0061449E: vcmpe.f32    s2, s0
+006144A2: vmrs         apsr_nzcv, fpscr
+006144A6: bhi          #0x6144b0
+006144A8: ldrb         r0, [r4, #0x15]
+006144AA: cbz          r0, #0x6144b0
+006144AC: movs         r0, #1
+006144AE: b            #0x6144b2
+006144B0: movs         r0, #0
+006144B2: movs         r1, #0
+006144B4: strb         r1, [r4, #0x15]
+006144B6: pop          {r4, pc}
+006144B8: push         {r4, lr}
+006144BA: mov          r4, r0
+006144BC: ldrh         r0, [r1, #0x10]!
+006144C0: cmp          r0, #0x39
+006144C2: it           ne
+006144C4: popne        {r4, pc}
+006144C6: mov          r0, r1
+006144C8: blx          #0x4b6498 ; Anki::Cozmo::ExternalInterface::MessageEngineToGame::Get_ChargerEvent
+006144CC: ldrb         r0, [r0]
+006144CE: strb         r0, [r4, #0x15]
+006144D0: pop          {r4, pc}
+006144D2: movs         r0, r0
+RANGE 0x006136D8..0x00613722 exclusive; Thumb; _ZNK4Anki5Cozmo30StrategyExpressNeedsTransition18WantsToRunInternalERKNS0_5RobotE
+006136D8: push         {r4, r5, r7, lr}
+006136DA: mov          r4, r0
+006136DC: ldr.w        r0, [r1, #0x264]
+006136E0: ldr          r1, [r1]
+006136E2: ldr          r5, [r0, #0x30]
+006136E4: ldr          r0, [r1, #0x34]
+006136E6: blx          #0x4a5740 ; Anki::Cozmo::NeedsManager::GetCurNeedsStateMutable
+006136EA: ldr          r1, [r4, #0x18]
+006136EC: movs         r2, #3
+006136EE: blx          #0x4ad2c4 ; Anki::Cozmo::NeedsState::IsNeedAtBracket
+006136F2: mov          r1, r0
+006136F4: movs         r0, #0
+006136F6: cmp          r1, #1
+006136F8: it           ne
+006136FA: popne        {r4, r5, r7, pc}
+006136FC: ldr          r1, [r4, #0x18]
+006136FE: ldr          r2, [r5, #0x14]
+00613700: cmp          r2, r1
+00613702: it           ne
+00613704: movne        r0, #1
+00613706: pop          {r4, r5, r7, pc}
+00613708: push         {r4, lr}
+0061370A: mov          r4, r0
+0061370C: ldr          r0, [r1]
+0061370E: ldr          r0, [r0, #0x34]
+00613710: blx          #0x4a5740 ; Anki::Cozmo::NeedsManager::GetCurNeedsStateMutable
+00613714: ldr          r1, [r4, #0x18]
+00613716: movs         r2, #3
+00613718: pop.w        {r4, lr}
+0061371C: b.w          #0x8cc9ec
+00613720: push         {r4, lr}

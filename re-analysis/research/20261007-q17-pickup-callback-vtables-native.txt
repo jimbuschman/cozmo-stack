@@ -1,0 +1,65 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01025D50: raw=00000000 relocated=00000000
+01025D54: raw=01025D7C relocated=01025D7C
+01025D58: raw=005B627F relocated=005B627F
+01025D5C: raw=005B863B relocated=005B863B
+01025D60: raw=005B8641 relocated=005B8641
+01025D64: raw=005B865D relocated=005B865D
+01025D68: raw=005B8671 relocated=005B8671
+01025D6C: raw=005B8673 relocated=005B8673
+01025D70: raw=005B8677 relocated=005B8677
+01025D74: raw=005B8689 relocated=005B8689
+01025DD0: raw=00000000 relocated=00000000
+01025DD4: raw=01025DFC relocated=01025DFC
+01025DD8: raw=005B627F relocated=005B627F
+01025DDC: raw=005B8B41 relocated=005B8B41
+01025DE0: raw=005B8B45 relocated=005B8B45
+01025DE4: raw=005B8B61 relocated=005B8B61
+01025DE8: raw=005B8B75 relocated=005B8B75
+01025DEC: raw=005B8B77 relocated=005B8B77
+01025DF0: raw=005B8B7B relocated=005B8B7B
+01025DF4: raw=005B8B8D relocated=005B8B8D
+01025E10: raw=00000000 relocated=00000000
+01025E14: raw=01025E3C relocated=01025E3C
+01025E18: raw=005B627F relocated=005B627F
+01025E1C: raw=005B8BB1 relocated=005B8BB1
+01025E20: raw=005B8BB5 relocated=005B8BB5
+01025E24: raw=005B8BD1 relocated=005B8BD1
+01025E28: raw=005B8BE5 relocated=005B8BE5
+01025E2C: raw=005B8BE7 relocated=005B8BE7
+01025E30: raw=005B8BEB relocated=005B8BEB
+01025E34: raw=005B8BF9 relocated=005B8BF9
+RANGE 0x005B8AF6..0x005B8B1C exclusive; Thumb;
+005B8AF6: ldr          r0, [r1]
+005B8AF8: sub.w        r1, r0, #0x4000000
+005B8AFC: subs         r1, #3
+005B8AFE: cmp          r1, #3
+005B8B00: blo          #0x5b8b0e
+005B8B02: cbz          r0, #0x5b8b12
+005B8B04: movs         r1, #0x15
+005B8B06: movt         r1, #0x300
+005B8B0A: cmp          r0, r1
+005B8B0C: bne          #0x5b8b16
+005B8B0E: movs         r0, #1
+005B8B10: b            #0x5b8b18
+005B8B12: movs         r0, #3
+005B8B14: b            #0x5b8b18
+005B8B16: movs         r0, #0
+005B8B18: uxtb         r0, r0
+005B8B1A: bx           lr
+RANGE 0x005B8610..0x005B863A exclusive; Thumb; _ZN4Anki5Cozmo17PickupBlockHelper26MarkTargetAsFailedToPickupERNS0_5RobotE
+005B8610: push         {r4, lr}
+005B8612: mov          r4, r1
+005B8614: add.w        r1, r0, #0xf0
+005B8618: ldr          r2, [r4, #0x34]
+005B861A: mov          r0, r2
+005B861C: mov.w        r2, #-1
+005B8620: blx          #0x4a7114 ; Anki::Cozmo::BlockWorld::GetLocatedObjectByIdHelper
+005B8624: mov          r1, r0
+005B8626: cbz          r1, #0x5b8638
+005B8628: ldr.w        r0, [r4, #0x264]
+005B862C: movs         r2, #0
+005B862E: ldr          r0, [r0, #0x18]
+005B8630: pop.w        {r4, lr}
+005B8634: b.w          #0x8cbefc
+005B8638: pop          {r4, pc}

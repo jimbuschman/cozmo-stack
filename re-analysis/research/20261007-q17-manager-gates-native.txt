@@ -1,0 +1,114 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A3530..0x005A358C exclusive; Thumb;
+005A3530: strb         r1, [r5, #0x11]
+005A3532: strb         r5, [r4, #9]
+005A3534: movs         r1, #0x20
+005A3536: movs         r0, #0x3d
+005A3538: strb         r7, [r3, #0x15]
+005A353A: bx           sp
+005A353C: ldr          r1, [r4, #0x54]
+005A353E: strh         r5, [r4, r1]
+005A3540: strb         r5, [r4, #5]
+005A3542: str          r5, [r6, #0x54]
+005A3544: strb         r3, [r6, #0x11]
+005A3546: str          r5, [r1, #0x14]
+005A3548: cmp          r6, #0x70
+005A354A: ldr          r5, [r4, #0x64]
+005A354C: cmp          r0, #0x64
+005A354E: movs         r1, r5
+005A3550: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005A3554: sub          sp, #0x34
+005A3556: mov          r5, r0
+005A3558: ldr          r0, [r5, #4]
+005A355A: ldr.w        r0, [r0, #0x250]
+005A355E: blx          #0x4b0f3c ; Anki::Cozmo::ActionList::IsEmpty
+005A3562: ldrb.w       r1, [r5, #0x4c]
+005A3566: eor          r0, r0, #1
+005A356A: orrs         r0, r1
+005A356C: strb.w       r0, [r5, #0x4c]
+005A3570: ittt         ne
+005A3572: addne.w      r8, r5, #0x44
+005A3576: ldrne        r0, [r5, #0x40]
+005A3578: cmpne        r0, r8
+005A357A: bne          #0x5a358c
+005A357C: movs         r0, #0
+005A357E: str          r0, [sp, #0x10]
+005A3580: ldr          r0, [sp, #0x10]
+005A3582: and          r0, r0, #1
+005A3586: add          sp, #0x34
+005A3588: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x005A34C8..0x005A3530 exclusive; Thumb;
+005A34C8: ldr          r0, [sp, #0xc]
+005A34CA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005A34CE: mov          r0, r4
+005A34D0: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005A34D4: asrs         r3, r7, #2
+005A34D6: lsls         r4, r4, #1
+005A34D8: str          r5, [r5, #0x54]
+005A34DA: str          r4, [r6, #0x14]
+005A34DC: strb         r6, [r5, #0xc]
+005A34DE: str          r0, [r6, #0x14]
+005A34E0: ldr          r2, [r6, #0x34]
+005A34E2: strb         r7, [r3, #9]
+005A34E4: ldr          r1, [r4, #0x64]
+005A34E6: ldr          r4, [r4, #0x74]
+005A34E8: ldrsh        r5, [r5, r5]
+005A34EA: str          r7, [r4, #0x14]
+005A34EC: str          r5, [r5, #0x54]
+005A34EE: movs         r0, r0
+005A34F0: bpl          #0x5a355c
+005A34F2: lsls         r4, r4, #1
+005A34F4: cmp          r6, sl
+005A34F6: ldr          r1, [pc, #0x148] ; word[005A3640]=F890B111
+005A34F8: ldr          r6, [r0, r5]
+005A34FA: movs         r5, #0x28
+005A34FC: cmp          r1, #0x73
+005A34FE: movs         r0, #0x3a
+005A3500: ldr          r5, [r2, #0x64]
+005A3502: ldr          r4, [r5, #0x74]
+005A3504: ldr          r3, [r4, #0x34]
+005A3506: ldr          r1, [pc, #0x80] ; word[005A3588]=8FF0E8BD
+005A3508: movs         r0, #0x44
+005A350A: strb         r5, [r4, #0xc]
+005A350C: ldr          r0, [r4, #0x60]
+005A350E: strb         r7, [r5, #0x11]
+005A3510: str          r0, [r4, #0x60]
+005A3512: strb         r7, [r5, #0x15]
+005A3514: str          r6, [r5, #0x44]
+005A3516: ldr          r0, [r4, #0x10]
+005A3518: movs         r0, #0x6e
+005A351A: ldr          r5, [r6, #0x14]
+005A351C: str          r0, [r4, #0x70]
+005A351E: ldr          r1, [r4, #0x54]
+005A3520: movs         r0, #0x65
+005A3522: str          r2, [r6, #0x54]
+005A3524: strb         r1, [r6, #0x15]
+005A3526: strb         r5, [r4, #0xd]
+005A3528: movs         r0, #0x74
+005A352A: str          r5, [r5, #0x14]
+005A352C: lsls         r0, r6, #1
+005A352E: movs         r0, r0
+RANGE 0x005A2730..0x005A2768 exclusive; Thumb; _ZN4Anki5Cozmo15BehaviorManager29SwitchToUIGameRequestBehaviorEv
+005A2730: push         {r4, r5, r7, lr}
+005A2732: sub          sp, #0x20
+005A2734: ldr          r1, [pc, #0xa8] ; word[005A27E0]=0064E56C
+005A2736: add          r5, sp, #8
+005A2738: mov          r4, r0
+005A273A: movs         r0, #0
+005A273C: add          r1, pc
+005A273E: str          r0, [sp, #0x10]
+005A2740: strd         r0, r0, [sp, #8]
+005A2744: mov          r0, r5
+005A2746: movs         r2, #0x17
+005A2748: bl           #0x4e02b2 ; FUN_004e02b2
+005A274C: ldr          r2, [pc, #0x94] ; word[005A27E4]=006BE618
+005A274E: add          r2, pc
+005A2750: mov          r0, r4
+005A2752: mov          r1, r5
+005A2754: movs         r3, #1
+005A2756: blx          #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock
+005A275A: ldrb.w       r0, [sp, #8]
+005A275E: lsls         r0, r0, #0x1f
+005A2760: itt          ne
+005A2762: ldrne        r0, [sp, #0x10]
+005A2764: blxne        #0x4a40cc

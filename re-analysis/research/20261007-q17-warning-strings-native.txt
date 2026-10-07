@@ -1,0 +1,76 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+005BC6F0: bytes=b'IScoredBehavior.BadRepetitionPenalty'
+005BC718: bytes=b"Behavior '%s': %s failed to read"
+00BF2A6A: bytes=b'IBehavior.BadRunningPenalty'
+RANGE 0x006136C0..0x00613708 exclusive; Thumb;
+006136C0: cmp          r7, ip
+006136C2: strb         r2, [r6, #9]
+006136C4: strb         r7, [r5, #9]
+006136C6: ldr          r6, [pc, #0xb8] ; word[00613780]=4605B570
+006136C8: str          r5, [r4, #0x54]
+006136CA: lsls         r4, r4, #1
+006136CC: str          r6, [r5, #0x54]
+006136CE: str          r5, [r4, #0x44]
+006136D0: movs         r0, r0
+006136D2: movs         r0, r0
+006136D4: stm          r0!, {r1, r2, r7}
+006136D6: lsls         r2, r4, #2
+006136D8: push         {r4, r5, r7, lr}
+006136DA: mov          r4, r0
+006136DC: ldr.w        r0, [r1, #0x264]
+006136E0: ldr          r1, [r1]
+006136E2: ldr          r5, [r0, #0x30]
+006136E4: ldr          r0, [r1, #0x34]
+006136E6: blx          #0x4a5740 ; Anki::Cozmo::NeedsManager::GetCurNeedsStateMutable
+006136EA: ldr          r1, [r4, #0x18]
+006136EC: movs         r2, #3
+006136EE: blx          #0x4ad2c4 ; Anki::Cozmo::NeedsState::IsNeedAtBracket
+006136F2: mov          r1, r0
+006136F4: movs         r0, #0
+006136F6: cmp          r1, #1
+006136F8: it           ne
+006136FA: popne        {r4, r5, r7, pc}
+006136FC: ldr          r1, [r4, #0x18]
+006136FE: ldr          r2, [r5, #0x14]
+00613700: cmp          r2, r1
+00613702: it           ne
+00613704: movne        r0, #1
+00613706: pop          {r4, r5, r7, pc}
+RANGE 0x00572A64..0x00572A92 exclusive; Thumb; _ZN4Anki5Cozmo20SevereNeedsComponent4InitEv
+00572A64: push         {r4, lr}
+00572A66: sub          sp, #0x10
+00572A68: mov          r4, r0
+00572A6A: ldr          r0, [r4, #4]
+00572A6C: blx          #0x4a56f8 ; Anki::Cozmo::Robot::HasExternalInterface
+00572A70: cmp          r0, #1
+00572A72: bne          #0x572a8c
+00572A74: ldr          r0, [r4, #4]
+00572A76: blx          #0x4a5704 ; Anki::Cozmo::Robot::GetExternalInterface
+00572A7A: strd         r0, r4, [sp, #4]
+00572A7E: add.w        r0, r4, #8
+00572A82: str          r0, [sp, #0xc]
+00572A84: add          r0, sp, #4
+00572A86: bl           #0x572b10 ; FUN_00572b10
+00572A8A: b            #0x572ac2
+00572A8C: ldr          r2, [pc, #0x60] ; word[00572AF0]=0067B703
+00572A8E: movs         r0, #0
+01034050: raw=00C1D6B1 relocated=00C1D6B1
+01034054: raw=00C1D6BA relocated=00C1D6BA
+01034058: raw=00C1D6C1 relocated=00C1D6C1
+0103405C: raw=00C0EE4C relocated=00C0EE4C
+01034060: raw=00C1D6E7 relocated=00C1D6E7
+01034064: raw=00C0E90C relocated=00C0E90C
+01034068: raw=00C1966A relocated=00C1966A
+0103406C: raw=00C1D70C relocated=00C1D70C
+01034070: raw=00C1D718 relocated=00C1D718
+01034074: raw=00C1D728 relocated=00C1D728
+01034078: raw=00C0E914 relocated=00C0E914
+0103407C: raw=00C1D834 relocated=00C1D834
+01034080: raw=00C1D83F relocated=00C1D83F
+01034084: raw=00C1966A relocated=00C1966A
+01034088: raw=00000000 relocated=00000000
+0103408C: raw=00000000 relocated=00000000
+01034090: raw=00C1D86B relocated=00C1D86B
+01034094: raw=00C1D87E relocated=00C1D87E
+01034098: raw=00C1D897 relocated=00C1D897
+0103409C: raw=00000000 relocated=00000000

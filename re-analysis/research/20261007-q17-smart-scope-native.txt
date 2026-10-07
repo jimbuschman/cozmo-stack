@@ -1,0 +1,146 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BD4C8..0x005BD530 exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior24SmartRemoveIdleAnimationERNS0_5RobotE
+005BD4C8: push         {r4, r5, r6, lr}
+005BD4CA: sub          sp, #0x10
+005BD4CC: mov          r4, r0
+005BD4CE: mov          r5, r1
+005BD4D0: ldrb.w       r0, [r4, #0xb0]
+005BD4D4: cbz          r0, #0x5bd508
+005BD4D6: ldr          r1, [pc, #0x68] ; word[005BD540]=00A9D98E
+005BD4D8: add          r6, sp, #4
+005BD4DA: add.w        r2, r4, #0x40
+005BD4DE: add          r1, pc
+005BD4E0: mov          r0, r6
+005BD4E2: blx          #0x4a835c ; std::__ndk1::operator+
+005BD4E6: add.w        r0, r5, #0x60
+005BD4EA: mov          r1, r6
+005BD4EC: blx          #0x4a92a4 ; Anki::Cozmo::AnimationStreamer::RemoveIdleAnimation
+005BD4F0: ldrb.w       r0, [sp, #4]
+005BD4F4: lsls         r0, r0, #0x1f
+005BD4F6: itt          ne
+005BD4F8: ldrne        r0, [sp, #0xc]
+005BD4FA: blxne        #0x4a40cc
+005BD4FE: movs         r0, #0
+005BD500: strb.w       r0, [r4, #0xb0]
+005BD504: add          sp, #0x10
+005BD506: pop          {r4, r5, r6, pc}
+005BD508: mov          r0, r4
+005BD50A: adr          r2, #0x6c
+005BD50C: ldrb         r1, [r0, #0x40]!
+005BD510: tst.w        r1, #1
+005BD514: ldr          r1, [pc, #0x2c] ; word[005BD544]=006353EF
+005BD516: ite          eq
+005BD518: addeq        r3, r0, #1
+005BD51A: ldrne        r3, [r4, #0x48]
+005BD51C: adr          r0, #0x28
+005BD51E: add          r1, pc
+005BD520: add          sp, #0x10
+005BD522: pop.w        {r4, r5, r6, lr}
+005BD526: b.w          #0x8cbe5c
+005BD52A: mov          r4, r0
+005BD52C: ldrb.w       r0, [sp, #4]
+RANGE 0x005BD584..0x005BD5BC exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior23SmartClearMotionProfileEv
+005BD584: push         {r4, lr}
+005BD586: mov          r4, r0
+005BD588: ldrb.w       r0, [r4, #0xc0]
+005BD58C: cbnz         r0, #0x5bd598
+005BD58E: adr          r0, #0x18
+005BD590: adr          r1, #0x40
+005BD592: adr          r2, #0x78
+005BD594: blx          #0x4a4c6c ; Anki::Util::sVerifyFailedReturnFalse
+005BD598: ldr          r0, [r4, #0x2c]
+005BD59A: ldr          r0, [r0, #0x5c]
+005BD59C: blx          #0x4aab58 ; Anki::Cozmo::PathComponent::ClearCustomMotionProfile
+005BD5A0: movs         r0, #0
+005BD5A2: strb.w       r0, [r4, #0xc0]
+005BD5A6: pop          {r4, pc}
+005BD5A8: rsbs         r1, r1, #0
+005BD5AA: ldr          r5, [r4, #4]
+005BD5AC: strb         r1, [r4, #0x19]
+005BD5AE: ldr          r1, [r5, #0x74]
+005BD5B0: cmp          r6, #0x72
+005BD5B2: ldr          r3, [r2, #0x54]
+005BD5B4: strb         r1, [r4, #9]
+005BD5B6: muls         r4, r6, r4
+005BD5B8: str          r4, [r5, #0x54]
+005BD5BA: strb         r1, [r4, #9]
+RANGE 0x005BCE3C..0x005BCEAC exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior29SmartDisableReactionsWithLockERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEERA21_KNS_4Util27FullEnumToValueArrayChecker16EnumToValueEntryINS0_15ReactionTriggerEbLSE_21EEE
+005BCE3C: push.w       {r4, r5, r6, r7, r8, lr}
+005BCE40: sub          sp, #0x10
+005BCE42: mov          r5, r0
+005BCE44: mov          r6, r2
+005BCE46: ldr          r2, [pc, #0x58] ; word[005BCEA0]=00635CCC
+005BCE48: add.w        r8, sp, #4
+005BCE4C: ldr          r0, [r5, #0x2c]
+005BCE4E: mov          r4, r1
+005BCE50: add          r2, pc
+005BCE52: ldr          r7, [r0, #0x44]
+005BCE54: mov          r0, r8
+005BCE56: blx          #0x4a7318 ; std::__ndk1::operator+
+005BCE5A: mov          r0, r7
+005BCE5C: mov          r1, r8
+005BCE5E: mov          r2, r6
+005BCE60: movs         r3, #1
+005BCE62: blx          #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock
+005BCE66: ldrb.w       r0, [sp, #4]
+005BCE6A: lsls         r0, r0, #0x1f
+005BCE6C: itt          ne
+005BCE6E: ldrne        r0, [sp, #0xc]
+005BCE70: blxne        #0x4a40cc
+005BCE74: add.w        r1, r5, #0xa4
+005BCE78: add          r0, sp, #4
+005BCE7A: mov          r2, r4
+005BCE7C: mov          r3, r4
+005BCE7E: blx          #0x4ad450 ; std::__ndk1::__tree<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::less<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::allocator<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>>::__emplace_unique_key_args<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>const&>
+005BCE82: add          sp, #0x10
+005BCE84: pop.w        {r4, r5, r6, r7, r8, pc}
+005BCE88: mov          r4, r0
+005BCE8A: ldrb.w       r0, [sp, #4]
+005BCE8E: lsls         r0, r0, #0x1f
+005BCE90: itt          ne
+005BCE92: ldrne        r0, [sp, #0xc]
+005BCE94: blxne        #0x4a40cc
+005BCE98: mov          r0, r4
+005BCE9A: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005BCE9E: nop
+005BCEA0: ldrb         r4, [r1, r3]
+005BCEA2: lsls         r3, r4, #1
+005BCEA4: movs         r1, #0
+005BCEA6: str.w        r1, [r0, #0x114]
+005BCEAA: bx           lr
+RANGE 0x005BD470..0x005BD4C8 exclusive; Thumb; _ZN4Anki5Cozmo9IBehavior31SmartRemoveDisableReactionsLockERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+005BD470: push         {r4, r5, r6, r7, lr}
+005BD472: sub          sp, #0xc
+005BD474: mov          r5, r0
+005BD476: ldr          r2, [pc, #0x4c] ; word[005BD4C4]=006356A0
+005BD478: ldr          r0, [r5, #0x2c]
+005BD47A: mov          r7, sp
+005BD47C: add          r2, pc
+005BD47E: mov          r4, r1
+005BD480: ldr          r6, [r0, #0x44]
+005BD482: mov          r0, r7
+005BD484: blx          #0x4a7318 ; std::__ndk1::operator+
+005BD488: mov          r0, r6
+005BD48A: mov          r1, r7
+005BD48C: blx          #0x4ab944 ; Anki::Cozmo::BehaviorManager::RemoveDisableReactionsLock
+005BD490: ldrb.w       r0, [sp]
+005BD494: lsls         r0, r0, #0x1f
+005BD496: itt          ne
+005BD498: ldrne        r0, [sp, #8]
+005BD49A: blxne        #0x4a40cc
+005BD49E: add.w        r0, r5, #0xa4
+005BD4A2: mov          r1, r4
+005BD4A4: blx          #0x4ad468 ; std::__ndk1::__tree<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::less<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::allocator<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>>::__erase_unique<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>
+005BD4A8: add          sp, #0xc
+005BD4AA: pop          {r4, r5, r6, r7, pc}
+005BD4AC: mov          r4, r0
+005BD4AE: ldrb.w       r0, [sp]
+005BD4B2: lsls         r0, r0, #0x1f
+005BD4B4: itt          ne
+005BD4B6: ldrne        r0, [sp, #8]
+005BD4B8: blxne        #0x4a40cc
+005BD4BC: mov          r0, r4
+005BD4BE: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005BD4C2: nop
+005BD4C4: ldrsb        r0, [r4, r2]
+005BD4C6: lsls         r3, r4, #1

@@ -1,0 +1,49 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005140A0..0x00514128 exclusive; Thumb;
+005140A0: itt          ne
+005140A2: ldrne        r0, [sp, #0x58]
+005140A4: blxne        #0x4a40cc
+005140A8: ldrb.w       r0, [sp, #0x68]
+005140AC: lsls         r0, r0, #0x1f
+005140AE: itt          ne
+005140B0: ldrne        r0, [sp, #0x70]
+005140B2: blxne        #0x4a40cc
+005140B6: ldr.w        r0, [r4, #0x250]
+005140BA: ldr          r5, [r4, #0x10]
+005140BC: blx          #0x4a7e70 ; Anki::Cozmo::ActionList::Update
+005140C0: cbz          r0, #0x514108
+005140C2: ldr.w        r1, [pc, #0x5d8] ; word[0051469C]=006D292B
+005140C6: movs         r2, #0
+005140C8: ldr.w        r7, [pc, #0x5cc] ; word[00514698]=006CFF16
+005140CC: add          r1, pc
+005140CE: strd         r2, r2, [sp, #0xb8]
+005140D2: add          r7, pc
+005140D4: str          r2, [sp, #0xc0]
+005140D6: add          r2, sp, #0xb8
+005140D8: addw         r3, pc, #0x5c4
+005140DC: strd         r5, r0, [sp]
+005140E0: mov          r0, r7
+005140E2: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005140E6: ldr          r0, [sp, #0xb8]
+005140E8: cbz          r0, #0x514108
+005140EA: ldr          r1, [sp, #0xbc]
+005140EC: cmp          r1, r0
+005140EE: itttt        ne
+005140F0: subne.w      r2, r1, #8
+005140F4: subne        r2, r2, r0
+005140F6: mvnne        r3, #7
+005140FA: bicne.w      r2, r3, r2
+005140FE: itt          ne
+00514100: addne        r1, r1, r2
+00514102: strne        r1, [sp, #0xbc]
+00514104: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00514108: str.w        fp, [sp, #0x24]
+0051410C: ldrb.w       r0, [r4, #0x29]
+00514110: cbz          r0, #0x514166
+00514112: ldrb.w       r0, [r4, #0x2a]
+00514116: cbz          r0, #0x514166
+00514118: add.w        r0, r4, #0x60
+0051411C: mov          r1, r4
+0051411E: blx          #0x4a7e7c ; Anki::Cozmo::AnimationStreamer::Update
+00514122: cbz          r0, #0x514166
+00514124: ldr.w        r3, [pc, #0x5a4] ; word[005146CC]=006D28DD

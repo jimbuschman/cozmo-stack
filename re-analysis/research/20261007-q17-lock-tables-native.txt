@@ -1,0 +1,742 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+SITE IBehavior::Init
+RANGE 0x005BCD24..0x005BCD48 exclusive; Thumb;
+005BCD24: bne          #0x5bcd56
+005BCD26: ldr          r1, [pc, #0x10c] ; word[005BCE34]=00635DD8
+005BCD28: add          r6, sp, #0x10
+005BCD2A: movs         r0, #0
+005BCD2C: movs         r2, #0x15
+005BCD2E: add          r1, pc
+005BCD30: str          r0, [sp, #0x18]
+005BCD32: strd         r0, r0, [sp, #0x10]
+005BCD36: mov          r0, r6
+005BCD38: bl           #0x4e02b2 ; FUN_004e02b2
+005BCD3C: ldr          r2, [pc, #0xf8] ; word[005BCE38]=006A924E
+005BCD3E: add          r2, pc
+005BCD40: mov          r0, r4
+005BCD42: mov          r1, r6
+005BCD44: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C65F90 00000100020003000400050006000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE IBehavior::Resume
+RANGE 0x005BCFBE..0x005BCFE2 exclusive; Thumb;
+005BCFBE: cmp          r1, r2
+005BCFC0: bne          #0x5bcff2
+005BCFC2: ldr          r1, [pc, #0xa8] ; word[005BD06C]=00635B3C
+005BCFC4: add          r5, sp, #0x10
+005BCFC6: str          r0, [sp, #0x18]
+005BCFC8: movs         r2, #0x15
+005BCFCA: add          r1, pc
+005BCFCC: strd         r0, r0, [sp, #0x10]
+005BCFD0: mov          r0, r5
+005BCFD2: bl           #0x4e02b2 ; FUN_004e02b2
+005BCFD6: ldr          r2, [pc, #0x98] ; word[005BD070]=006A8FB4
+005BCFD8: add          r2, pc
+005BCFDA: mov          r0, r4
+005BCFDC: mov          r1, r5
+005BCFDE: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C65F90 00000100020003000400050006000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorDriveOffCharger::InitInternal
+RANGE 0x005C0B0A..0x005C0B2E exclusive; Thumb;
+005C0B0A: movs         r1, r5
+005C0B0C: nop.w
+005C0B10: ldrb.w       r0, [r1, #0x34a]
+005C0B14: bx           lr
+005C0B16: movs         r0, r0
+005C0B18: push         {r4, r5, r6, lr}
+005C0B1A: sub          sp, #0x10
+005C0B1C: ldr          r2, [pc, #0x8c] ; word[005C0BAC]=006A67C6
+005C0B1E: mov          r4, r0
+005C0B20: add.w        r6, r4, #0x40
+005C0B24: mov          r5, r1
+005C0B26: add          r2, pc
+005C0B28: mov          r1, r6
+005C0B2A: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C672F0 00010101020103000400050106000700080109010a000b000c000d000e000f0010001100120013001401 [(0, 1), (1, 1), (2, 1), (3, 0), (4, 0), (5, 1), (6, 0), (7, 0), (8, 1), (9, 1), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorKnockOverCubes::InitializeMemberVars
+RANGE 0x005C31DA..0x005C31FE exclusive; Thumb;
+005C31DA: mov          r5, r0
+005C31DC: ldr.w        r0, [r5, #0x120]
+005C31E0: cbz          r0, #0x5c3232
+005C31E2: blx          #0x4a556c ; <EXTERNAL>::std::__ndk1::__shared_weak_count::lock
+005C31E6: mov          r4, r0
+005C31E8: cbz          r4, #0x5c3232
+005C31EA: ldr.w        r6, [r5, #0x11c]
+005C31EE: cbz          r6, #0x5c3236
+005C31F0: ldr          r2, [pc, #0x5c] ; word[005C3250]=006A4ABC
+005C31F2: add          r2, pc
+005C31F4: add.w        r1, r5, #0x40
+005C31F8: mov          r0, r5
+005C31FA: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C67CB2 00000101020003000400050106000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 0), (3, 0), (4, 0), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorKnockOverCubes::PrepareForKnockOverAttempt
+RANGE 0x005C37D0..0x005C37F4 exclusive; Thumb;
+005C37D0: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005C37D4: movs         r0, #0
+005C37D6: mov          r5, sp
+005C37D8: adr          r1, #0x44
+005C37DA: str          r0, [sp, #8]
+005C37DC: strd         r0, r0, [sp]
+005C37E0: mov          r0, r5
+005C37E2: movs         r2, #0x1b
+005C37E4: bl           #0x4e02b2 ; FUN_004e02b2
+005C37E8: ldr          r2, [pc, #0x50] ; word[005C383C]=006A44EE
+005C37EA: add          r2, pc
+005C37EC: mov          r0, r4
+005C37EE: mov          r1, r5
+005C37F0: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C67CDC 00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorPopAWheelie::SetupRetryAction
+RANGE 0x005C7BC8..0x005C7BEC exclusive; Thumb;
+005C7BC8: push         {r4, r5, r7, lr}
+005C7BCA: sub.w        sp, sp, #0x410
+005C7BCE: mov          r4, r1
+005C7BD0: ldr          r1, [pc, #0x70] ; word[005C7C44]=00A76C74
+005C7BD2: ldr          r2, [pc, #0x74] ; word[005C7C48]=006A0C63
+005C7BD4: add          r1, pc
+005C7BD6: add          r2, pc
+005C7BD8: ldr          r1, [r1]
+005C7BDA: ldr          r1, [r1]
+005C7BDC: str.w        r1, [sp, #0x40c]
+005C7BE0: ldr          r5, [r0, #4]
+005C7BE2: add.w        r1, r5, #0x40
+005C7BE6: mov          r0, r5
+005C7BE8: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6883D 00010101020003010400050006000700080009000a000b010c010d000e010f0110001100120013001401 [(0, 1), (1, 1), (2, 0), (3, 1), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 1), (12, 1), (13, 0), (14, 1), (15, 1), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorPutDownBlock::InitInternal
+RANGE 0x005C7FC2..0x005C7FE6 exclusive; Thumb;
+005C7FC2: cmp          r0, #0
+005C7FC4: it           ne
+005C7FC6: movne        r0, #1
+005C7FC8: bx           lr
+005C7FCA: movs         r0, r0
+005C7FCC: movs         r0, r0
+005C7FCE: movs         r0, r0
+005C7FD0: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005C7FD4: sub          sp, #0x24
+005C7FD6: ldr          r2, [pc, #0x100] ; word[005C80D8]=006A0B3C
+005C7FD8: mov          sb, r1
+005C7FDA: mov          r5, r0
+005C7FDC: add.w        r1, r5, #0x40
+005C7FE0: add          r2, pc
+005C7FE2: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C68B20 00000100020003000400050006000700080009000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorDevTurnInPlaceTest::InitInternal
+RANGE 0x005CA904..0x005CA928 exclusive; Thumb;
+005CA904: lsls         r7, r0, #5
+005CA906: movs         r2, #0
+005CA908: str.w        r2, [r4, #0x128]
+005CA90C: cmp          r0, r1
+005CA90E: beq          #0x5ca918
+005CA910: strb         r2, [r0, #0x10]
+005CA912: adds         r0, #0x14
+005CA914: cmp          r1, r0
+005CA916: bne          #0x5ca910
+005CA918: blx          #0x4b3780 ; Anki::Cozmo::ReactionTriggerHelpers::GetAffectAllArray
+005CA91C: add.w        r1, r4, #0x40
+005CA920: mov          r2, r0
+005CA922: mov          r0, r4
+005CA924: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+SITE BehaviorFeedingEat::TransitionToEating
+RANGE 0x005D6124..0x005D6148 exclusive; Thumb;
+005D6124: mov          r0, sl
+005D6126: mov          r1, r4
+005D6128: bl           #0x5c0ca8 ; FUN_005c0ca8
+005D612C: ldrb.w       r0, [sp, #0x40]
+005D6130: lsls         r0, r0, #0x1f
+005D6132: itt          ne
+005D6134: ldrne        r0, [sp, #0x48]
+005D6136: blxne        #0x4a40cc
+005D613A: ldr          r2, [pc, #0x2e0] ; word[005D641C]=00694BD2
+005D613C: add.w        r1, sl, #0x40
+005D6140: mov          r0, sl
+005D6142: add          r2, pc
+005D6144: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6AD18 00010100020003000400050006000700080009000a000b010c010d010e010f0010001100120013001400 [(0, 1), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 1), (12, 1), (13, 1), (14, 1), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorCubeLiftWorkout::InitInternal
+RANGE 0x005D7EA8..0x005D7ECC exclusive; Thumb;
+005D7EA8: orns         r8, r4, r1, lsl #4
+005D7EAC: adds         r0, #1
+005D7EAE: it           ne
+005D7EB0: movne        r4, #1
+005D7EB2: mov          r0, r4
+005D7EB4: add          sp, #8
+005D7EB6: pop          {r4, pc}
+005D7EB8: push         {r4, r5, r6, lr}
+005D7EBA: sub          sp, #8
+005D7EBC: ldr          r2, [pc, #0x88] ; word[005D7F48]=00693916
+005D7EBE: mov          r4, r1
+005D7EC0: mov          r5, r0
+005D7EC2: add.w        r1, r5, #0x40
+005D7EC6: add          r2, pc
+005D7EC8: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6B7E0 00000101020103000400050006000700080109000a010b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorBuildPyramid::TransitionToPlacingTopBlock
+RANGE 0x005DC0B6..0x005DC0DA exclusive; Thumb;
+005DC0B6: movs         r1, #5
+005DC0B8: mov          r2, r6
+005DC0BA: blx          #0x4b47b8 ; Anki::Cozmo::BehaviorBuildPyramidBase::SetState_internal
+005DC0BE: ldrb.w       r0, [sp, #0x60]
+005DC0C2: lsls         r0, r0, #0x1f
+005DC0C4: itt          ne
+005DC0C6: ldrne        r0, [sp, #0x68]
+005DC0C8: blxne        #0x4a40cc
+005DC0CC: ldr          r2, [pc, #0x330] ; word[005DC400]=006905B9
+005DC0CE: add.w        r1, r7, #0x40
+005DC0D2: mov          r0, r7
+005DC0D4: add          r2, pc
+005DC0D6: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6C691 00000100020003000400050006000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorRequestGameSimple::RequestGame_InitInternal
+RANGE 0x005EA6C2..0x005EA6E6 exclusive; Thumb;
+005EA6C2: lsls         r0, r4, #1
+005EA6C4: nop.w
+005EA6C8: push         {r4, r5, r6, lr}
+005EA6CA: sub          sp, #0x20
+005EA6CC: mov          r4, r0
+005EA6CE: mov          r5, r1
+005EA6D0: ldrb.w       r0, [r4, #0x194]
+005EA6D4: cbz          r0, #0x5ea72c
+005EA6D6: ldr          r2, [pc, #0x140] ; word[005EA818]=0068413E
+005EA6D8: add.w        r6, r4, #0x40
+005EA6DC: mov          r0, r4
+005EA6DE: add          r2, pc
+005EA6E0: mov          r1, r6
+005EA6E2: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6E820 00000101020103010400050006000700080109000a010b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorRequestGameSimple::TransitionToPlayingRequstAnim
+RANGE 0x005EBF06..0x005EBF2A exclusive; Thumb;
+005EBF06: lsls         r5, r4, #2
+005EBF08: b.w          #0x8cc5dc ; Anki::Cozmo::BehaviorRequestGameSimple::TransitionToPlayingRequstAnim
+005EBF0C: push         {r4, r5, r6, r7, lr}
+005EBF0E: sub          sp, #0x1c
+005EBF10: mov          r4, r0
+005EBF12: mov          r5, r1
+005EBF14: ldrb.w       r0, [r4, #0x194]
+005EBF18: cbnz         r0, #0x5ebf70
+005EBF1A: ldr          r2, [pc, #0xfc] ; word[005EC018]=006828FA
+005EBF1C: add.w        r6, r4, #0x40
+005EBF20: mov          r0, r4
+005EBF22: add          r2, pc
+005EBF24: mov          r1, r6
+005EBF26: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6E820 00000101020103010400050006000700080109000a010b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorDance::InitInternal
+RANGE 0x005ED45C..0x005ED480 exclusive; Thumb;
+005ED45C: movs         r0, #0x1c
+005ED45E: lsls         r5, r4, #2
+005ED460: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005ED464: sub          sp, #0x184
+005ED466: mov          r8, r1
+005ED468: ldr          r1, [pc, #0x390] ; word[005ED7FC]=00A513DC
+005ED46A: ldr          r2, [pc, #0x394] ; word[005ED800]=00681D56
+005ED46C: add          r1, pc
+005ED46E: add          r2, pc
+005ED470: ldr          r1, [r1]
+005ED472: ldr          r1, [r1]
+005ED474: str          r1, [sp, #0x180]
+005ED476: add.w        r1, r0, #0x40
+005ED47A: str          r0, [sp, #0x28]
+005ED47C: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6F1C8 00000101020103010400050006000700080109000a010b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorSinging::InitInternal
+RANGE 0x005EEB3E..0x005EEB62 exclusive; Thumb;
+005EEB3E: add          r0, pc
+005EEB40: ldr          r0, [r0]
+005EEB42: ldr          r0, [r0]
+005EEB44: str          r0, [sp, #0x120]
+005EEB46: ldrd         r1, r2, [r7, #0x11c]
+005EEB4A: str          r3, [sp, #0x30]
+005EEB4C: ldr          r0, [r3, #0x58]
+005EEB4E: blx          #0x4ac2ec ; Anki::Cozmo::Audio::RobotAudioClient::PostRobotSwitchState
+005EEB52: ldr.w        r2, [pc, #0x4fc] ; word[005EF050]=00680A30
+005EEB56: add.w        r1, r7, #0x40
+005EEB5A: mov          r0, r7
+005EEB5C: add          r2, pc
+005EEB5E: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6F590 00000101020103000400050006000700080109000a010b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorBouncer::InitInternal
+RANGE 0x005F1498..0x005F14BC exclusive; Thumb;
+005F1498: movs         r0, #0x74
+005F149A: str          r6, [r6, #0x14]
+005F149C: ldr          r4, [r5, #0x14]
+005F149E: lsls         r4, r4, #1
+005F14A0: push.w       {r4, r5, r6, r7, r8, sb, lr}
+005F14A4: sub          sp, #4
+005F14A6: vpush        {d8, d9, d10, d11}
+005F14AA: sub          sp, #0x10
+005F14AC: ldr          r2, [pc, #0x110] ; word[005F15C0]=0067E6D6
+005F14AE: mov          r5, r1
+005F14B0: mov          r4, r0
+005F14B2: add.w        r1, r4, #0x40
+005F14B6: add          r2, pc
+005F14B8: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6FB90 00000101020103010401050106000700080109000a010b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorFistBump::InitInternal
+RANGE 0x005F1EC6..0x005F1EEA exclusive; Thumb;
+005F1EC6: str          r4, [r5, #0x54]
+005F1EC8: ldr          r4, [r6, #0x14]
+005F1ECA: ldr          r7, [r5, #0x64]
+005F1ECC: ldr          r4, [r2, #0x14]
+005F1ECE: str          r5, [r5, #0x54]
+005F1ED0: movs         r0, r0
+005F1ED2: movs         r0, r0
+005F1ED4: movs         r0, #1
+005F1ED6: bx           lr
+005F1ED8: push         {r4, r5, r7, lr}
+005F1EDA: ldr          r2, [pc, #0x44] ; word[005F1F20]=0067DEE0
+005F1EDC: mov          r4, r1
+005F1EDE: mov          r5, r0
+005F1EE0: add.w        r1, r5, #0x40
+005F1EE4: add          r2, pc
+005F1EE6: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C6FDC8 00000101020103000400050006000700080109000a010b010c010d000e010f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 1), (12, 1), (13, 0), (14, 1), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorGuardDog::InitInternal
+RANGE 0x005F2CEE..0x005F2D12 exclusive; Thumb;
+005F2CEE: nop
+TABLE 00C6FF06 00000101020103010401050106000700080109000a010b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorPeekABoo::InitInternal
+RANGE 0x005F6788..0x005F67AC exclusive; Thumb;
+005F6788: asrs         r0, r2, #9
+005F678A: blx          #0x4a5f44 ; Anki::Util::RandomGenerator::RandIntInRange
+005F678E: strd         r0, r0, [r4, #0x120]
+005F6792: mov          r0, r4
+005F6794: mov          r1, r5
+005F6796: movw         r2, #0x23f
+005F679A: blx          #0x4b426c ; Anki::Cozmo::IBehavior::SmartPushIdleAnimation
+005F679E: ldr          r2, [pc, #0x70] ; word[005F6810]=0067A1B6
+005F67A0: add.w        r1, r4, #0x40
+005F67A4: mov          r0, r4
+005F67A6: add          r2, pc
+005F67A8: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C70960 00000101020103010400050006000700080109000a010b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorEnrollFace::InitInternal
+RANGE 0x005FD0EA..0x005FD10E exclusive; Thumb;
+005FD0EA: lsls         r0, r1, #8
+005FD0EC: subs         r2, r2, r0
+005FD0EE: mvn          r3, #7
+005FD0F2: bic.w        r2, r3, r2
+005FD0F6: itt          ne
+005FD0F8: addne        r1, r1, r2
+005FD0FA: strne        r1, [sp, #0x14]
+005FD0FC: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005FD100: ldr          r2, [pc, #0x108] ; word[005FD20C]=00674A60
+005FD102: add.w        r1, r5, #0x40
+005FD106: mov          r0, r5
+005FD108: add          r2, pc
+005FD10A: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C71B6C 00010101020103010401050106000700080109000a000b010c010d000e010f0110011101120013001401 [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 1), (12, 1), (13, 0), (14, 1), (15, 1), (16, 1), (17, 1), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorOnboardingShowCube::InitInternal
+RANGE 0x00600C88..0x00600CAC exclusive; Thumb;
+00600C88: add          r0, pc
+00600C8A: add.w        r6, r4, #0x40
+00600C8E: add          r1, pc
+00600C90: ldr          r0, [r0]
+00600C92: mov          r2, r6
+00600C94: ldr          r0, [r0]
+00600C96: str          r0, [sp, #0x34]
+00600C98: ldr.w        r0, [r5, #0x24c]
+00600C9C: blx          #0x4a5800 ; Anki::Cozmo::DrivingAnimationHandler::PushDrivingAnimations
+00600CA0: ldr          r2, [pc, #0x140] ; word[00600DE4]=006717AA
+00600CA2: mov          r0, r4
+00600CA4: mov          r1, r6
+00600CA6: add          r2, pc
+00600CA8: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C72454 00000101020103000401050106000700080109000a010b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorAcknowledgeCubeMoved::InitInternal
+RANGE 0x00602222..0x00602246 exclusive; Thumb;
+00602222: lsls         r7, r4, #1
+00602224: ldr.w        r0, [r0, #0x124]
+00602228: adds         r0, #1
+0060222A: mov.w        r0, #0
+0060222E: it           ne
+00602230: movne        r0, #1
+00602232: bx           lr
+00602234: push         {r4, r5, r7, lr}
+00602236: ldr          r2, [pc, #0x34] ; word[0060226C]=0067096E
+00602238: mov          r4, r1
+0060223A: mov          r5, r0
+0060223C: add.w        r1, r5, #0x40
+00602240: add          r2, pc
+00602242: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C72BB2 00000100020003000400050006000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorRamIntoBlock::TransitionToRammingIntoBlock
+RANGE 0x00604A24..0x00604A48 exclusive; Thumb;
+00604A24: sub          sp, #4
+00604A26: vpush        {d8}
+00604A2A: sub          sp, #0x58
+00604A2C: mov          sb, r0
+00604A2E: ldr          r0, [pc, #0x1f0] ; word[00604C20]=00A39E14
+00604A30: ldr          r2, [pc, #0x1f0] ; word[00604C24]=0066EAE2
+00604A32: mov          r5, r1
+00604A34: add          r0, pc
+00604A36: add.w        r1, sb, #0x40
+00604A3A: add          r2, pc
+00604A3C: ldr          r0, [r0]
+00604A3E: ldr          r0, [r0]
+00604A40: str          r0, [sp, #0x54]
+00604A42: mov          r0, sb
+00604A44: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C73520 00010100020103000400050006000700080109000a000b000c000d000e000f0010001100120013001401 [(0, 1), (1, 0), (2, 1), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorReactToCliff::InitInternal
+RANGE 0x00604D80..0x00604DA4 exclusive; Thumb;
+00604D80: mov          r1, sp
+00604D82: mov          r0, r6
+00604D84: blx          #0x4ab3c8 ; Anki::Cozmo::MoodManager::TriggerEmotionEvent
+00604D88: ldrb.w       r0, [sp]
+00604D8C: lsls         r0, r0, #0x1f
+00604D8E: itt          ne
+00604D90: ldrne        r0, [sp, #8]
+00604D92: blxne        #0x4a40cc
+00604D96: ldr          r2, [pc, #0x168] ; word[00604F00]=0066E9A4
+00604D98: add.w        r1, r4, #0x40
+00604D9C: mov          r0, r4
+00604D9E: add          r2, pc
+00604DA0: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C73746 00000101020103000400050006000700080109000a000b000c000d000e000f0010001100120013001401 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 1)]
+SITE BehaviorReactToImpact::InitInternal
+RANGE 0x006061F6..0x0060621A exclusive; Thumb;
+006061F6: lsls         r6, r4, #1
+006061F8: push.w       {r4, r5, r6, r7, r8, lr}
+006061FC: sub          sp, #0x20
+006061FE: mov          r5, r0
+00606200: ldr          r0, [pc, #0xac] ; word[006062B0]=00A38642
+00606202: ldr          r2, [pc, #0xb0] ; word[006062B4]=0066DB26
+00606204: mov          r7, r1
+00606206: add          r0, pc
+00606208: add.w        r1, r5, #0x40
+0060620C: add          r2, pc
+0060620E: ldr          r0, [r0]
+00606210: ldr          r0, [r0]
+00606212: str          r0, [sp, #0x1c]
+00606214: mov          r0, r5
+00606216: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C73D36 00010101020103010401050106010701080109000a010b010c010d010e010f0110011101120013011401 [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1), (9, 0), (10, 1), (11, 1), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1), (17, 1), (18, 0), (19, 1), (20, 1)]
+SITE BehaviorReactToMotorCalibration::InitInternal
+RANGE 0x00606622..0x00606646 exclusive; Thumb;
+00606622: lsls         r0, r1, #8
+00606624: subs         r2, r2, r0
+00606626: mvn          r3, #7
+0060662A: bic.w        r2, r3, r2
+0060662E: itt          ne
+00606630: addne        r1, r1, r2
+00606632: strne        r1, [sp, #8]
+00606634: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00606638: ldr          r2, [pc, #0xf0] ; word[0060672C]=0066D9EE
+0060663A: add.w        r1, r4, #0x40
+0060663E: mov          r0, r4
+00606640: add          r2, pc
+00606642: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C74032 00010100020003000400050106000700080009000a000b000c010d000e010f0110011101120013001400 [(0, 1), (1, 0), (2, 0), (3, 0), (4, 0), (5, 1), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 1), (13, 0), (14, 1), (15, 1), (16, 1), (17, 1), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorReactToOnCharger::InitInternal
+RANGE 0x00606C90..0x00606CB4 exclusive; Thumb; _ZNK4Anki5Cozmo24BehaviorReactToOnCharger18IsRunnableInternalERKNS0_5RobotE
+00606C90: movs         r0, #1
+00606C92: bx           lr
+00606C94: push         {r4, r5, r6, r7, lr}
+00606C96: sub          sp, #0x2c
+00606C98: mov          r4, r0
+00606C9A: ldr          r0, [pc, #0xd8] ; word[00606D74]=00A37BA8
+00606C9C: ldr          r2, [pc, #0xd8] ; word[00606D78]=0066D4D8
+00606C9E: mov          r5, r1
+00606CA0: add          r0, pc
+00606CA2: add.w        r1, r4, #0x40
+00606CA6: add          r2, pc
+00606CA8: ldr          r0, [r0]
+00606CAA: ldr          r0, [r0]
+00606CAC: str          r0, [sp, #0x28]
+00606CAE: mov          r0, r4
+00606CB0: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C74182 00000101020103010401050106000701080109000a010b000c000d000e000f0010001100120013011401 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 1), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 1), (20, 1)]
+SITE BehaviorReactToPlacedOnSlope::InitInternal
+RANGE 0x00607FDE..0x00608002 exclusive; Thumb;
+00607FDE: sub          sp, #4
+00607FE0: vpush        {d8}
+00607FE4: sub          sp, #0x48
+00607FE6: mov          r4, r0
+00607FE8: ldr          r0, [pc, #0x18c] ; word[00608178]=00A3685A
+00607FEA: ldr          r2, [pc, #0x190] ; word[0060817C]=0066C5E8
+00607FEC: mov          r5, r1
+00607FEE: add          r0, pc
+00607FF0: add.w        r1, r4, #0x40
+00607FF4: add          r2, pc
+00607FF6: ldr          r0, [r0]
+00607FF8: ldr          r0, [r0]
+00607FFA: str          r0, [sp, #0x44]
+00607FFC: mov          r0, r4
+00607FFE: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C745E0 00010100020003000400050006000700080009000a000b000c010d000e010f0010001100120013001400 [(0, 1), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (9, 0), (10, 0), (11, 0), (12, 1), (13, 0), (14, 1), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE BehaviorReactToRobotShaken::InitInternal
+RANGE 0x00609124..0x00609148 exclusive; Thumb;
+00609124: str          r0, [r1, #0x58]
+00609126: lsls         r3, r4, #2
+00609128: push         {r4, r5, r6, r7, lr}
+0060912A: sub          sp, #0x2c
+0060912C: mov          r4, r0
+0060912E: ldr          r0, [pc, #0xc8] ; word[006091F8]=00A35714
+00609130: ldr          r2, [pc, #0xc8] ; word[006091FC]=0066BFA2
+00609132: mov          r5, r1
+00609134: add          r0, pc
+00609136: add.w        r1, r4, #0x40
+0060913A: add          r2, pc
+0060913C: ldr          r0, [r0]
+0060913E: ldr          r0, [r0]
+00609140: str          r0, [sp, #0x28]
+00609142: mov          r0, r4
+00609144: blx          #0x4b28ec ; Anki::Cozmo::IBehavior::SmartDisableReactionsWithLock
+TABLE 00C750E0 00010101020103010401050106000700080109000a010b010c010d010e010f0110011101120013001401 [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 1), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1), (17, 1), (18, 0), (19, 0), (20, 1)]
+SITE ActivityFeeding::OnSelectedInternal
+RANGE 0x005AADFE..0x005AAE22 exclusive; Thumb;
+005AADFE: add          r0, r1
+005AAE00: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005AAE04: add.w        sl, sp, #0x20
+005AAE08: mov          r2, r0
+005AAE0A: mov          r1, r5
+005AAE0C: mov          r0, sl
+005AAE0E: bl           #0x4e02b2 ; FUN_004e02b2
+005AAE12: ldr.w        r3, [pc, #0x5fc] ; word[005AB410]=006B6F86
+005AAE16: add          r3, pc
+005AAE18: mov          r0, sb
+005AAE1A: mov          r1, r8
+005AAE1C: mov          r2, sl
+005AAE1E: blx          #0x4b16f8 ; Anki::Cozmo::IActivity::SmartDisableReactionsWithLock
+TABLE 00C61DA0 00000101020103010401050106000700080109000a010b000c000d000e000f0010001100120013011400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 1), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 1), (20, 0)]
+SITE ActivityFeeding::SetupSevereAnims
+RANGE 0x005AB462..0x005AB486 exclusive; Thumb;
+005AB462: stcl         p9, c4, [r8, #0x54]!
+005AB466: movs         r2, #0x17
+005AB468: str          r6, [sp, #8]
+005AB46A: strd         r6, r6, [sp]
+005AB46E: mov          r6, sp
+005AB470: add          r1, pc
+005AB472: mov          r0, r6
+005AB474: bl           #0x4e02b2 ; FUN_004e02b2
+005AB478: ldr          r3, [pc, #0x44] ; word[005AB4C0]=006B6956
+005AB47A: add          r3, pc
+005AB47C: mov          r0, r5
+005AB47E: mov          r1, r4
+005AB480: mov          r2, r6
+005AB482: blx          #0x4b16f8 ; Anki::Cozmo::IActivity::SmartDisableReactionsWithLock
+TABLE 00C61DD4 00000101020103010401050106000701080109000a010b010c010d000e010f0110011101120013011400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 1), (8, 1), (9, 0), (10, 1), (11, 1), (12, 1), (13, 0), (14, 1), (15, 1), (16, 1), (17, 1), (18, 0), (19, 1), (20, 0)]
+SITE ActivitySparked::OnSelectedInternal
+RANGE 0x005B1688..0x005B16AC exclusive; Thumb;
+005B1688: strd         r0, r0, [sp, #0x88]
+005B168C: mov          r0, r5
+005B168E: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+005B1692: add          r6, sp, #0x88
+005B1694: mov          r2, r0
+005B1696: mov          r1, r5
+005B1698: mov          r0, r6
+005B169A: bl           #0x4e02b2 ; FUN_004e02b2
+005B169E: ldr          r3, [pc, #0x78] ; word[005B1718]=006B0E18
+005B16A0: add          r3, pc
+005B16A2: mov          r0, sl
+005B16A4: mov          r1, r8
+005B16A6: mov          r2, r6
+005B16A8: blx          #0x4b16f8 ; Anki::Cozmo::IActivity::SmartDisableReactionsWithLock
+TABLE 00C624BC 00000101020103010401050106000700080009000a010b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 0), (7, 0), (8, 0), (9, 0), (10, 1), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+SITE ActivitySparked::CheckIfSparkShouldEnd
+RANGE 0x005B197C..0x005B19A0 exclusive; Thumb;
+005B197C: movs         r0, #3
+005B197E: str          r0, [r4, #0x68]
+005B1980: movs         r0, #0
+005B1982: str          r0, [sp, #8]
+005B1984: strd         r0, r0, [sp]
+005B1988: adr          r1, #0xe8
+005B198A: mov          r0, sp
+005B198C: movs         r2, #0x16
+005B198E: bl           #0x4e02b2 ; FUN_004e02b2
+005B1992: ldr          r3, [pc, #0xf8] ; word[005B1A8C]=006B0B4E
+005B1994: add          r3, pc
+005B1996: mov          r2, sp
+005B1998: mov          r0, r4
+005B199A: mov          r1, r6
+005B199C: blx          #0x4b16f8 ; Anki::Cozmo::IActivity::SmartDisableReactionsWithLock
+TABLE 00C624E6 00000101020103000401050006000700080109000a000b000c000d000e000f0010001100120013001400 [(0, 0), (1, 1), (2, 1), (3, 0), (4, 1), (5, 0), (6, 0), (7, 0), (8, 1), (9, 0), (10, 0), (11, 0), (12, 0), (13, 0), (14, 0), (15, 0), (16, 0), (17, 0), (18, 0), (19, 0), (20, 0)]
+RANGE 0x005A3A48..0x005A3B9E exclusive; Thumb; _ZN4Anki5Cozmo15BehaviorManager26RemoveDisableReactionsLockERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+005A3A48: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005A3A4C: sub          sp, #0x1c
+005A3A4E: mov          r8, r1
+005A3A50: mov          sb, r0
+005A3A52: ldrb.w       r1, [r8]
+005A3A56: ldr.w        r0, [r8, #4]
+005A3A5A: tst.w        r1, #1
+005A3A5E: it           eq
+005A3A60: lsreq        r0, r1, #1
+005A3A62: cmp          r0, #3
+005A3A64: bne          #0x5a3a82
+005A3A66: movs         r0, #3
+005A3A68: adr          r3, #0x160
+005A3A6A: str          r0, [sp]
+005A3A6C: mov          r0, r8
+005A3A6E: movs         r1, #0
+005A3A70: mov.w        r2, #-1
+005A3A74: movs         r6, #0
+005A3A76: blx          #0x4a6244 ; std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>::compare
+005A3A7A: cmp          r0, #0
+005A3A7C: it           eq
+005A3A7E: moveq        r6, #1
+005A3A80: b            #0x5a3a84
+005A3A82: movs         r6, #0
+005A3A84: ldrb.w       r0, [sb, #0x4c]
+005A3A88: ldr.w        r7, [sb, #0x40]
+005A3A8C: orrs         r0, r6
+005A3A8E: strb.w       r0, [sb, #0x4c]
+005A3A92: add.w        r0, sb, #0x44
+005A3A96: str          r0, [sp, #0xc]
+005A3A98: cmp          r7, r0
+005A3A9A: beq          #0x5a3b98
+005A3A9C: mov          r6, r7
+005A3A9E: add.w        r0, r7, #0x20
+005A3AA2: mov          r1, r8
+005A3AA4: ldrb.w       fp, [r7, #0x10]
+005A3AA8: blx          #0x4b0da4 ; std::__ndk1::__tree<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>,std::__ndk1::less<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>,std::__ndk1::allocator<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>>::find<std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>>
+005A3AAC: add.w        r1, r7, #0x24
+005A3AB0: cmp          r0, r1
+005A3AB2: beq          #0x5a3b76
+005A3AB4: movs         r0, #0
+005A3AB6: strd         r0, r0, [sp, #0x10]
+005A3ABA: str          r0, [sp, #0x18]
+005A3ABC: ldr.w        r4, [r8, #8]
+005A3AC0: ldrb.w       r5, [r8]
+005A3AC4: mov          r0, fp
+005A3AC6: blx          #0x4b0db0 ; Anki::Cozmo::EnumToString
+005A3ACA: lsls         r1, r5, #0x1f
+005A3ACC: it           eq
+005A3ACE: addeq.w      r4, r8, #1
+005A3AD2: strd         r4, r0, [sp]
+005A3AD6: adr          r1, #0xf8
+005A3AD8: ldr          r0, [pc, #0x17c] ; word[005A3C58]=0064CC31
+005A3ADA: add          r2, sp, #0x10
+005A3ADC: adr          r3, #0x128
+005A3ADE: add          r0, pc
+005A3AE0: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005A3AE4: ldr          r0, [sp, #0x10]
+005A3AE6: add.w        sl, r7, #0x14
+005A3AEA: cbz          r0, #0x5a3b0a
+005A3AEC: ldr          r1, [sp, #0x14]
+005A3AEE: cmp          r1, r0
+005A3AF0: itttt        ne
+005A3AF2: subne.w      r2, r1, #8
+005A3AF6: subne        r2, r2, r0
+005A3AF8: mvnne        r3, #7
+005A3AFC: bicne.w      r2, r3, r2
+005A3B00: itt          ne
+005A3B02: addne        r1, r1, r2
+005A3B04: strne        r1, [sp, #0x14]
+005A3B06: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005A3B0A: mov          r0, sl
+005A3B0C: mov          r1, r8
+005A3B0E: mov          r2, fp
+005A3B10: blx          #0x4b1074 ; Anki::Cozmo::TriggerBehaviorInfo::RemoveDisableLockFromTrigger
+005A3B14: ldr          r0, [r7, #0x28]
+005A3B16: cbnz         r0, #0x5a3b76
+005A3B18: movs         r0, #0
+005A3B1A: strd         r0, r0, [sp, #0x10]
+005A3B1E: str          r0, [sp, #0x18]
+005A3B20: mov          r0, fp
+005A3B22: blx          #0x4b0db0 ; Anki::Cozmo::EnumToString
+005A3B26: ldr          r1, [pc, #0x138] ; word[005A3C60]=0064D0FD
+005A3B28: add          r2, sp, #0x10
+005A3B2A: str          r0, [sp]
+005A3B2C: adr          r3, #0x104
+005A3B2E: ldr          r0, [pc, #0x12c] ; word[005A3C5C]=0064CBDD
+005A3B30: add          r1, pc
+005A3B32: add          r0, pc
+005A3B34: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+005A3B38: ldr          r0, [sp, #0x10]
+005A3B3A: cbz          r0, #0x5a3b5a
+005A3B3C: ldr          r1, [sp, #0x14]
+005A3B3E: cmp          r1, r0
+005A3B40: itttt        ne
+005A3B42: subne.w      r2, r1, #8
+005A3B46: subne        r2, r2, r0
+005A3B48: mvnne        r3, #7
+005A3B4C: bicne.w      r2, r3, r2
+005A3B50: itt          ne
+005A3B52: addne        r1, r1, r2
+005A3B54: strne        r1, [sp, #0x14]
+005A3B56: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005A3B5A: ldrd         r4, r7, [r7, #0x14]
+005A3B5E: cmp          r4, r7
+005A3B60: beq          #0x5a3b76
+005A3B62: ldr          r0, [r4], #0xc
+005A3B66: ldr.w        r1, [sb, #4]
+005A3B6A: ldr          r2, [r0]
+005A3B6C: ldr          r3, [r2, #0x1c]
+005A3B6E: movs         r2, #1
+005A3B70: blx          r3
+005A3B72: cmp          r7, r4
+005A3B74: bne          #0x5a3b62
+005A3B76: ldr          r0, [r6, #4]
+005A3B78: cbz          r0, #0x5a3b84
+005A3B7A: mov          r7, r0
+005A3B7C: ldr          r0, [r7]
+005A3B7E: cmp          r0, #0
+005A3B80: bne          #0x5a3b7a
+005A3B82: b            #0x5a3b8e
+005A3B84: ldr          r7, [r6, #8]
+005A3B86: ldr          r0, [r7]
+005A3B88: cmp          r0, r6
+005A3B8A: mov          r6, r7
+005A3B8C: bne          #0x5a3b84
+005A3B8E: ldr          r0, [sp, #0xc]
+005A3B90: mov          r6, r7
+005A3B92: cmp          r7, r0
+005A3B94: bne.w        #0x5a3a9e
+005A3B98: add          sp, #0x1c
+005A3B9A: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x005A4DE0..0x005A4E60 exclusive; Thumb;
+005A4DE0: ldrb         r0, [r1, #0x19]
+005A4DE2: strb.w       r2, [sp, #0x20]
+005A4DE6: movs         r2, #0xf
+005A4DE8: strb.w       r0, [sp, #0x1f]
+005A4DEC: ldrb         r0, [r1, #0x1a]
+005A4DEE: strb.w       r2, [sp, #0x22]
+005A4DF2: movs         r2, #0x10
+005A4DF4: strb.w       r0, [sp, #0x21]
+005A4DF8: ldrb         r0, [r1, #0x1b]
+005A4DFA: strb.w       r2, [sp, #0x24]
+005A4DFE: movs         r2, #0x11
+005A4E00: strb.w       r0, [sp, #0x23]
+005A4E04: ldrb         r0, [r1, #0x1c]
+005A4E06: strb.w       r2, [sp, #0x26]
+005A4E0A: movs         r2, #0x12
+005A4E0C: strb.w       r0, [sp, #0x25]
+005A4E10: ldrb         r0, [r1, #0x1d]
+005A4E12: strb.w       r2, [sp, #0x28]
+005A4E16: movs         r2, #0x13
+005A4E18: strb.w       r0, [sp, #0x27]
+005A4E1C: ldrb         r0, [r1, #0x1e]
+005A4E1E: strb.w       r2, [sp, #0x2a]
+005A4E22: movs         r2, #0x14
+005A4E24: strb.w       r0, [sp, #0x29]
+005A4E28: ldrb         r0, [r1, #0x1f]
+005A4E2A: strb.w       r2, [sp, #0x2c]
+005A4E2E: add          r2, sp, #4
+005A4E30: strb.w       r0, [sp, #0x2b]
+005A4E34: ldrb.w       r0, [r1, #0x20]
+005A4E38: strb.w       r0, [sp, #0x2d]
+005A4E3C: mov          r0, r4
+005A4E3E: blx          #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock
+005A4E42: add          sp, #0x30
+005A4E44: pop          {r4, pc}
+005A4E46: movs         r0, r0
+005A4E48: ldr          r2, [pc, #0x10] ; word[005A4E5C]=006BC00E
+005A4E4A: ldr          r3, [r1, #4]
+005A4E4C: movs         r1, #0
+005A4E4E: add          r2, pc
+005A4E50: cmp          r3, r2
+005A4E52: it           eq
+005A4E54: addeq        r1, r0, #4
+005A4E56: mov          r0, r1
+005A4E58: bx           lr
+005A4E5A: nop
+005A4E5C: stm          r0!, {r1, r2, r3}
+005A4E5E: lsls         r3, r5, #1
+RANGE 0x005A0404..0x005A0414 exclusive; Thumb; _ZN4Anki5Cozmo22ReactionTriggerHelpers17GetAffectAllArrayEv
+005A0404: ldr          r0, [pc, #4] ; word[005A040C]=006C0936
+005A0406: add          r0, pc
+005A0408: bx           lr
+005A040A: nop
+005A040C: lsrs         r6, r6, #4
+005A040E: lsls         r4, r5, #1
+005A0410: bx           lr

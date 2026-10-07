@@ -1,0 +1,7 @@
+006794F8 00679526 Anki::Cozmo::Emotion::GetHistoryValueTicksAgo
+006795A4 00679614 Anki::Cozmo::Emotion::Update
+00679618 006796C2 Anki::Cozmo::Emotion::Add
+0067AEBC 0067AF66 Anki::Cozmo::MoodManager::Init
+0067B318 008CD6AE Anki::Cozmo::MoodManager::HandleActionEnded
+0067B5D4 0067B6B4 Anki::Cozmo::MoodManager::Update
+0067B724 0067B7F8 Anki::Cozmo::MoodManager::SendEmotionsToGame

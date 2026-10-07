@@ -1,0 +1,45 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005C8DD6..0x005C8DDE exclusive; Thumb;
+005C8DD6: ldr          r0, [r0, #4]
+005C8DD8: b.w          #0x8cc23c
+005C8DDC: ldr          r2, [pc, #0x10] ; word[005C8DF0]=006A01DA
+RANGE 0x005C8E3C..0x005C8E44 exclusive; Thumb;
+005C8E3C: push         {r4, r5, r7, lr}
+005C8E3E: sub          sp, #0x10
+005C8E40: ldr          r5, [r0, #4]
+005C8E42: movs         r0, #0
+RANGE 0x005DC67A..0x005DC680 exclusive; Thumb;
+005DC67A: ldr          r0, [r0, #4]
+005DC67C: b.w          #0x8cc4bc
+RANGE 0x005DDB92..0x005DDB98 exclusive; Thumb;
+005DDB92: ldr          r0, [r0, #4]
+005DDB94: b.w          #0x8cc4dc
+RANGE 0x005DDBF6..0x005DDBFC exclusive; Thumb;
+005DDBF6: ldr          r0, [r0, #4]
+005DDBF8: b.w          #0x8cc4ec
+RANGE 0x005DEF86..0x005DEF8C exclusive; Thumb;
+005DEF86: ldr          r0, [r0, #4]
+005DEF88: b.w          #0x8cc4fc
+RANGE 0x008CCB44..0x008CCB58 exclusive; ARM;
+008CCB44: add          pc, ip, pc
+RANGE 0x008CC4B8..0x008CC510 exclusive; ARM;
+RANGE 0x008CC608..0x008CC618 exclusive; ARM;
+RANGE 0x008CC848..0x008CC858 exclusive; ARM;
+RANGE 0x005BAE54..0x005BAE88 exclusive; Thumb; _ZN4Anki5Cozmo20SearchForBlockHelperD1Ev
+005BAE54: push         {r4, lr}
+005BAE56: mov          r4, r0
+005BAE58: ldr          r0, [pc, #0x2c] ; word[005BAE88]=00A84316
+005BAE5A: ldr.w        r1, [r4, #0x138]
+005BAE5E: add          r0, pc
+005BAE60: ldr          r0, [r0]
+005BAE62: adds         r0, #8
+005BAE64: str          r0, [r4]
+005BAE66: add.w        r0, r4, #0x134
+005BAE6A: blx          #0x4a5890 ; std::__ndk1::__tree<Anki::ObjectID,std::__ndk1::less<Anki::ObjectID>,std::__ndk1::allocator<Anki::ObjectID>>::destroy
+005BAE6E: add.w        r0, r4, #0x110
+005BAE72: blx          #0x4a7d68 ; Anki::Vision::Camera::~Camera
+005BAE76: add.w        r0, r4, #0x100
+005BAE7A: blx          #0x4a4e4c ; std::__ndk1::__vector_base<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::~__vector_base
+005BAE7E: mov          r0, r4
+005BAE80: pop.w        {r4, lr}
+005BAE84: b.w          #0x5b5f20 ; FUN_005b5f20

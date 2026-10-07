@@ -1,0 +1,150 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BCEAC..0x005BCFF6 exclusive; ARM; _ZN4Anki5Cozmo9IBehavior6ResumeENS0_15ReactionTriggerE
+005BCEAC: addlt        fp, r8, r0, ror r5
+005BCEB0: strmi        sl, [r4], -r4, lsl #28
+RANGE 0x0060A524..0x0060A650 exclusive; Thumb;
+0060A524: ldrb.w       r0, [sb, #0xa1]
+0060A528: cbz          r0, #0x60a596
+0060A52A: ldr          r0, [sp, #0x38]
+0060A52C: cbz          r0, #0x60a576
+0060A52E: movs         r0, #0
+0060A530: strd         r0, r0, [sp, #0x40]
+0060A534: str          r0, [sp, #0x48]
+0060A536: mov          r0, sb
+0060A538: ldrb         r1, [r0, #0x40]!
+0060A53C: tst.w        r1, #1
+0060A540: ite          eq
+0060A542: addeq        r3, r0, #1
+0060A544: ldrne.w      r3, [sb, #0x48]
+0060A548: ldr          r2, [pc, #0x204] ; word[0060A750]=005ED1D7
+0060A54A: adr          r0, #0x1a8
+0060A54C: add          r1, sp, #0x40
+0060A54E: add          r2, pc
+0060A550: blx          #0x4a4540 ; Anki::Util::sWarningF
+0060A554: ldr          r0, [sp, #0x40]
+0060A556: cbz          r0, #0x60a576
+0060A558: ldr          r1, [sp, #0x44]
+0060A55A: cmp          r1, r0
+0060A55C: itttt        ne
+0060A55E: subne.w      r2, r1, #8
+0060A562: subne        r2, r2, r0
+0060A564: mvnne        r3, #7
+0060A568: bicne.w      r2, r3, r2
+0060A56C: itt          ne
+0060A56E: addne        r1, r1, r2
+0060A570: strne        r1, [sp, #0x44]
+0060A572: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0060A576: cmp.w        fp, #0
+0060A57A: itt          ne
+0060A57C: movne        r0, fp
+0060A57E: blxne        #0x4a5014
+0060A582: ldr          r0, [sp, #0x3c]
+0060A584: cbz          r0, #0x60a58a
+0060A586: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0060A58A: vldr         s24, [sp, #0x58]
+0060A58E: mov          r0, fp
+0060A590: str.w        sb, [sp, #0x38]
+0060A594: str          r0, [sp, #0x3c]
+0060A596: cmp.w        fp, #0
+0060A59A: itt          ne
+0060A59C: movne        r0, fp
+0060A59E: blxne        #0x4a4ef4
+0060A5A2: ldr          r1, [r4, #4]
+0060A5A4: cbz          r1, #0x60a5b0
+0060A5A6: mov          r0, r1
+0060A5A8: ldr          r1, [r0]
+0060A5AA: cmp          r1, #0
+0060A5AC: bne          #0x60a5a6
+0060A5AE: b            #0x60a5ba
+0060A5B0: ldr          r0, [r4, #8]
+0060A5B2: ldr          r1, [r0]
+0060A5B4: cmp          r1, r4
+0060A5B6: mov          r4, r0
+0060A5B8: bne          #0x60a5b0
+0060A5BA: cmp          r0, sl
+0060A5BC: mov          r4, r0
+0060A5BE: bne.w        #0x60a436
+0060A5C2: ldr          r3, [sp, #0x38]
+0060A5C4: cbz          r3, #0x60a642
+0060A5C6: ldr          r0, [sp, #0x24]
+0060A5C8: cmp          r0, r3
+0060A5CA: beq          #0x60a642
+0060A5CC: movs         r0, #0
+0060A5CE: strd         r0, r0, [sp, #0x54]
+0060A5D2: ldr          r2, [sp, #0x20]
+0060A5D4: str          r0, [sp, #0x5c]
+0060A5D6: cbz          r2, #0x60a5ea
+0060A5D8: mov          r0, r2
+0060A5DA: ldrb         r1, [r0, #0x40]!
+0060A5DE: tst.w        r1, #1
+0060A5E2: ite          eq
+0060A5E4: addeq        r1, r0, #1
+0060A5E6: ldrne        r1, [r2, #0x48]
+0060A5E8: b            #0x60a5ec
+0060A5EA: adr          r1, #0x134
+0060A5EC: mov          r0, r3
+0060A5EE: vcvt.f64.f32 d0, s16
+0060A5F2: ldrb         r2, [r0, #0x40]!
+0060A5F6: tst.w        r2, #1
+0060A5FA: ite          eq
+0060A5FC: addeq        r2, r0, #1
+0060A5FE: ldrne        r2, [r3, #0x48]
+0060A600: ldr          r0, [pc, #0x124] ; word[0060A728]=005D99E0
+0060A602: ldr          r3, [pc, #0x128] ; word[0060A72C]=005ED167
+0060A604: vcvt.f64.f32 d1, s24
+0060A608: add          r0, pc
+0060A60A: add          r3, pc
+0060A60C: str          r2, [sp, #0x10]
+0060A60E: add          r2, sp, #0x54
+0060A610: vstr         d0, [sp, #8]
+0060A614: str          r1, [sp]
+0060A616: adr          r1, #0x118
+0060A618: vstr         d1, [sp, #0x18]
+0060A61C: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0060A620: ldr          r0, [sp, #0x54]
+0060A622: cbz          r0, #0x60a642
+0060A624: ldr          r1, [sp, #0x58]
+0060A626: cmp          r1, r0
+0060A628: itttt        ne
+0060A62A: subne.w      r2, r1, #8
+0060A62E: subne        r2, r2, r0
+0060A630: mvnne        r3, #7
+0060A634: bicne.w      r2, r3, r2
+0060A638: itt          ne
+0060A63A: addne        r1, r1, r2
+0060A63C: strne        r1, [sp, #0x58]
+0060A63E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0060A642: ldr          r0, [sp, #0x3c]
+0060A644: cbz          r0, #0x60a64a
+0060A646: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0060A64A: add          sp, #0x60
+0060A64C: vpop         {d8, d9, d10, d11, d12}
+RANGE 0x0060AFA8..0x0060AFE8 exclusive; Thumb;
+0060AFA8: push         {r4, lr}
+0060AFAA: mov          r4, r0
+0060AFAC: ldr          r0, [pc, #0x38] ; word[0060AFE8]=00A34702
+0060AFAE: add          r0, pc
+0060AFB0: ldr          r1, [r0]
+0060AFB2: ldr          r0, [r4, #0x38]
+0060AFB4: adds         r1, #8
+0060AFB6: str          r1, [r4]
+0060AFB8: cbz          r0, #0x60afbe
+0060AFBA: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0060AFBE: ldr          r0, [r4, #0x30]
+0060AFC0: cbz          r0, #0x60afc6
+0060AFC2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0060AFC6: add.w        r0, r4, #0x20
+0060AFCA: blx          #0x4a4e4c ; std::__ndk1::__vector_base<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::~__vector_base
+0060AFCE: ldr          r0, [pc, #0x1c] ; word[0060AFEC]=00A340B2
+0060AFD0: ldrb         r1, [r4, #4]
+0060AFD2: add          r0, pc
+0060AFD4: ldr          r0, [r0]
+0060AFD6: adds         r0, #8
+0060AFD8: str          r0, [r4]
+0060AFDA: lsls         r0, r1, #0x1f
+0060AFDC: itt          ne
+0060AFDE: ldrne        r0, [r4, #0xc]
+0060AFE0: blxne        #0x4a40cc
+0060AFE4: mov          r0, r4
+0060AFE6: pop          {r4, pc}
+0060AF04: bytes=b'SelectionBSRunnableChooser'

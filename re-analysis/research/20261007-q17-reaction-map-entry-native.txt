@@ -1,0 +1,72 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A0504..0x005A05A4 exclusive; Thumb; _ZN4Anki5Cozmo19TriggerBehaviorInfo18AddStrategyMappingERPNS0_24IReactionTriggerStrategyENSt6__ndk110shared_ptrINS0_9IBehaviorEEE
+005A0504: push         {r4, r5, r6, r7, lr}
+005A0506: sub          sp, #0x14
+005A0508: mov          r4, r1
+005A050A: mov          r6, r2
+005A050C: mov          r5, r0
+005A050E: ldr          r0, [r6]
+005A0510: ldr          r7, [r4]
+005A0512: cbz          r0, #0x5a056c
+005A0514: cbz          r7, #0x5a0576
+005A0516: str          r0, [sp, #0xc]
+005A0518: ldr          r0, [r6, #4]
+005A051A: str          r0, [sp, #0x10]
+005A051C: cbz          r0, #0x5a0522
+005A051E: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+005A0522: add          r1, sp, #0xc
+005A0524: mov          r0, r7
+005A0526: blx          #0x4b0d8c ; Anki::Cozmo::IReactionTriggerStrategy::BehaviorThatStrategyWillTrigger
+005A052A: ldr          r0, [sp, #0x10]
+005A052C: cbz          r0, #0x5a0532
+005A052E: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005A0532: ldr          r0, [r4]
+005A0534: str          r0, [sp]
+005A0536: ldrd         r1, r0, [r6]
+005A053A: cmp          r0, #0
+005A053C: strd         r1, r0, [sp, #4]
+005A0540: beq          #0x5a0546
+005A0542: blx          #0x4a5014 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__add_shared
+005A0546: ldrd         r0, r1, [r5, #4]
+005A054A: cmp          r0, r1
+005A054C: bhs          #0x5a057c
+005A054E: ldr          r1, [sp]
+005A0550: movs         r2, #0
+005A0552: str          r2, [sp]
+005A0554: str          r1, [r0]
+005A0556: ldr          r1, [sp, #4]
+005A0558: str          r1, [r0, #4]
+005A055A: ldr          r1, [sp, #8]
+005A055C: str          r1, [r0, #8]
+005A055E: strd         r2, r2, [sp, #4]
+005A0562: ldr          r0, [r5, #4]
+005A0564: adds         r0, #0xc
+005A0566: str          r0, [r5, #4]
+005A0568: str          r2, [r4]
+005A056A: b            #0x5a0590
+005A056C: cbz          r7, #0x5a0576
+005A056E: ldr          r0, [r7]
+005A0570: ldr          r1, [r0, #4]
+005A0572: mov          r0, r7
+005A0574: blx          r1
+005A0576: movs         r0, #0
+005A0578: str          r0, [r4]
+005A057A: b            #0x5a05a0
+005A057C: mov          r1, sp
+005A057E: mov          r0, r5
+005A0580: blx          #0x4b0d98 ; std::__ndk1::vector<std::__ndk1::pair<std::__ndk1::unique_ptr<Anki::Cozmo::IReactionTriggerStrategy,std::__ndk1::default_delete<Anki::Cozmo::IReactionTriggerStrategy>>,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>,std::__ndk1::allocator<std::__ndk1::pair<std::__ndk1::unique_ptr<Anki::Cozmo::IReactionTriggerStrategy,std::__ndk1::default_delete<Anki::Cozmo::IReactionTriggerStrategy>>,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>>>::__emplace_back_slow_path<std::__ndk1::pair<std::__ndk1::unique_ptr<Anki::Cozmo::IReactionTriggerStrategy,std::__ndk1::default_delete<Anki::Cozmo::IReactionTriggerStrategy>>,std::__ndk1::shared_ptr<Anki::Cozmo::IBehavior>>>
+005A0584: ldr          r0, [sp, #8]
+005A0586: movs         r1, #0
+005A0588: str          r1, [r4]
+005A058A: cbz          r0, #0x5a0590
+005A058C: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+005A0590: ldr          r0, [sp]
+005A0592: movs         r1, #0
+005A0594: str          r1, [sp]
+005A0596: cbz          r0, #0x5a059e
+005A0598: ldr          r1, [r0]
+005A059A: ldr          r1, [r1, #4]
+005A059C: blx          r1
+005A059E: movs         r0, #1
+005A05A0: add          sp, #0x14
+005A05A2: pop          {r4, r5, r6, r7, pc}

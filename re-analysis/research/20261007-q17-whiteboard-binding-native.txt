@@ -1,0 +1,304 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0056A444..0x0056A4B0 exclusive; Thumb;
+0056A444: push         {r4, r5, r6, lr}
+0056A446: sub          sp, #0x30
+0056A448: ldr          r1, [pc, #0xac] ; word[0056A4F8]=00AD43FA
+0056A44A: add          r6, sp, #0x10
+0056A44C: movs         r3, #0x44
+0056A44E: add          r1, pc
+0056A450: ldr          r1, [r1]
+0056A452: ldr          r1, [r1]
+0056A454: str          r1, [sp, #0x2c]
+0056A456: ldm.w        r0, {r1, r2, r5}
+0056A45A: ldr          r0, [r1]
+0056A45C: ldr          r4, [r0, #0x28]
+0056A45E: ldr          r0, [pc, #0x9c] ; word[0056A4FC]=00AB8FEE
+0056A460: str          r2, [sp, #0x14]
+0056A462: add          r0, pc
+0056A464: strh.w       r3, [sp, #6]
+0056A468: adds         r0, #8
+0056A46A: str          r6, [sp, #0x20]
+0056A46C: str          r0, [sp, #0x10]
+0056A46E: add          r0, sp, #8
+0056A470: add.w        r2, sp, #6
+0056A474: mov          r3, r6
+0056A476: blx          r4
+0056A478: ldrd         r0, r1, [r5, #4]
+0056A47C: cmp          r0, r1
+0056A47E: bhs          #0x56a496
+0056A480: ldr          r1, [sp, #8]
+0056A482: str          r1, [r0]
+0056A484: ldr          r1, [sp, #0xc]
+0056A486: str          r1, [r0, #4]
+0056A488: movs         r0, #0
+0056A48A: strd         r0, r0, [sp, #8]
+0056A48E: ldr          r0, [r5, #4]
+0056A490: adds         r0, #8
+0056A492: str          r0, [r5, #4]
+0056A494: b            #0x56a49e
+0056A496: add          r1, sp, #8
+0056A498: mov          r0, r5
+0056A49A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0056A49E: ldr          r0, [sp, #0xc]
+0056A4A0: cbz          r0, #0x56a4a6
+0056A4A2: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0056A4A6: ldr          r0, [sp, #0x20]
+0056A4A8: cmp          r6, r0
+0056A4AA: beq          #0x56a4b4
+0056A4AC: cbz          r0, #0x56a4ba
+0056A4AE: ldr          r1, [r0]
+RANGE 0x0056A504..0x0056A570 exclusive; Thumb;
+0056A504: push         {r4, r5, r6, lr}
+0056A506: sub          sp, #0x30
+0056A508: ldr          r1, [pc, #0xac] ; word[0056A5B8]=00AD433A
+0056A50A: add          r6, sp, #0x10
+0056A50C: movs         r3, #0x45
+0056A50E: add          r1, pc
+0056A510: ldr          r1, [r1]
+0056A512: ldr          r1, [r1]
+0056A514: str          r1, [sp, #0x2c]
+0056A516: ldm.w        r0, {r1, r2, r5}
+0056A51A: ldr          r0, [r1]
+0056A51C: ldr          r4, [r0, #0x28]
+0056A51E: ldr          r0, [pc, #0x9c] ; word[0056A5BC]=00AB8F6E
+0056A520: str          r2, [sp, #0x14]
+0056A522: add          r0, pc
+0056A524: strh.w       r3, [sp, #6]
+0056A528: adds         r0, #8
+0056A52A: str          r6, [sp, #0x20]
+0056A52C: str          r0, [sp, #0x10]
+0056A52E: add          r0, sp, #8
+0056A530: add.w        r2, sp, #6
+0056A534: mov          r3, r6
+0056A536: blx          r4
+0056A538: ldrd         r0, r1, [r5, #4]
+0056A53C: cmp          r0, r1
+0056A53E: bhs          #0x56a556
+0056A540: ldr          r1, [sp, #8]
+0056A542: str          r1, [r0]
+0056A544: ldr          r1, [sp, #0xc]
+0056A546: str          r1, [r0, #4]
+0056A548: movs         r0, #0
+0056A54A: strd         r0, r0, [sp, #8]
+0056A54E: ldr          r0, [r5, #4]
+0056A550: adds         r0, #8
+0056A552: str          r0, [r5, #4]
+0056A554: b            #0x56a55e
+0056A556: add          r1, sp, #8
+0056A558: mov          r0, r5
+0056A55A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0056A55E: ldr          r0, [sp, #0xc]
+0056A560: cbz          r0, #0x56a566
+0056A562: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0056A566: ldr          r0, [sp, #0x20]
+0056A568: cmp          r6, r0
+0056A56A: beq          #0x56a574
+0056A56C: cbz          r0, #0x56a57a
+0056A56E: ldr          r1, [r0]
+RANGE 0x0056A5C4..0x0056A630 exclusive; Thumb;
+0056A5C4: push         {r4, r5, r6, lr}
+0056A5C6: sub          sp, #0x30
+0056A5C8: ldr          r1, [pc, #0xac] ; word[0056A678]=00AD427A
+0056A5CA: add          r6, sp, #0x10
+0056A5CC: movs         r3, #0x35
+0056A5CE: add          r1, pc
+0056A5D0: ldr          r1, [r1]
+0056A5D2: ldr          r1, [r1]
+0056A5D4: str          r1, [sp, #0x2c]
+0056A5D6: ldm.w        r0, {r1, r2, r5}
+0056A5DA: ldr          r0, [r1]
+0056A5DC: ldr          r4, [r0, #0x28]
+0056A5DE: ldr          r0, [pc, #0x9c] ; word[0056A67C]=00AB8EEE
+0056A5E0: str          r2, [sp, #0x14]
+0056A5E2: add          r0, pc
+0056A5E4: strh.w       r3, [sp, #6]
+0056A5E8: adds         r0, #8
+0056A5EA: str          r6, [sp, #0x20]
+0056A5EC: str          r0, [sp, #0x10]
+0056A5EE: add          r0, sp, #8
+0056A5F0: add.w        r2, sp, #6
+0056A5F4: mov          r3, r6
+0056A5F6: blx          r4
+0056A5F8: ldrd         r0, r1, [r5, #4]
+0056A5FC: cmp          r0, r1
+0056A5FE: bhs          #0x56a616
+0056A600: ldr          r1, [sp, #8]
+0056A602: str          r1, [r0]
+0056A604: ldr          r1, [sp, #0xc]
+0056A606: str          r1, [r0, #4]
+0056A608: movs         r0, #0
+0056A60A: strd         r0, r0, [sp, #8]
+0056A60E: ldr          r0, [r5, #4]
+0056A610: adds         r0, #8
+0056A612: str          r0, [r5, #4]
+0056A614: b            #0x56a61e
+0056A616: add          r1, sp, #8
+0056A618: mov          r0, r5
+0056A61A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+0056A61E: ldr          r0, [sp, #0xc]
+0056A620: cbz          r0, #0x56a626
+0056A622: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0056A626: ldr          r0, [sp, #0x20]
+0056A628: cmp          r6, r0
+0056A62A: beq          #0x56a634
+0056A62C: cbz          r0, #0x56a63a
+0056A62E: ldr          r1, [r0]
+RANGE 0x0056AA3C..0x0056AC00 exclusive; Thumb; _ZN4Anki5Cozmo12AIWhiteboard18UpdateBeaconRenderEv
+0056AA3C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0056AA40: sub          sp, #4
+0056AA42: vpush        {d8, d9, d10, d11, d12}
+0056AA46: sub          sp, #0x38
+0056AA48: mov          r4, r0
+0056AA4A: ldr          r0, [pc, #0x1e4] ; word[0056AC30]=00AEFF3C
+0056AA4C: add          r0, pc
+0056AA4E: ldrb         r0, [r0]
+0056AA50: dmb          ish
+0056AA54: tst.w        r0, #1
+0056AA58: bne          #0x56aa92
+0056AA5A: ldr          r0, [pc, #0x1d8] ; word[0056AC34]=00AEFF2C
+0056AA5C: add          r0, pc
+0056AA5E: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+0056AA62: cbz          r0, #0x56aa92
+0056AA64: ldr          r0, [pc, #0x1d0] ; word[0056AC38]=00AEFF14
+0056AA66: movs         r1, #0
+0056AA68: add          r0, pc
+0056AA6A: strd         r1, r1, [r0]
+0056AA6E: str          r1, [r0, #8]
+0056AA70: adr          r1, #0x1c8
+0056AA72: movs         r2, #0x1f
+0056AA74: bl           #0x4e02b2 ; FUN_004e02b2
+0056AA78: ldr          r0, [pc, #0x1e4] ; word[0056AC60]=00AD3EBC
+0056AA7A: ldr          r1, [pc, #0x1e8] ; word[0056AC64]=00AEFEFC
+0056AA7C: add          r0, pc
+0056AA7E: ldr          r2, [pc, #0x1e8] ; word[0056AC68]=00AE6578
+0056AA80: add          r1, pc
+0056AA82: ldr          r0, [r0]
+0056AA84: add          r2, pc
+0056AA86: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+0056AA8A: ldr          r0, [pc, #0x1e0] ; word[0056AC6C]=00AEFEFC
+0056AA8C: add          r0, pc
+0056AA8E: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+0056AA92: ldr          r0, [r4, #4]
+0056AA94: ldr          r1, [pc, #0x1d8] ; word[0056AC70]=00AEFEE4
+0056AA96: ldr          r0, [r0]
+0056AA98: add          r1, pc
+0056AA9A: ldr          r0, [r0, #0x24]
+0056AA9C: blx          #0x4acb20 ; Anki::Cozmo::VizManager::EraseSegments
+0056AAA0: ldrd         r5, r0, [r4, #0x60]
+0056AAA4: cmp          r5, r0
+0056AAA6: str          r0, [sp, #0x10]
+0056AAA8: beq.w        #0x56abf4
+0056AAAC: vmov.f32     s20, #-5.000000e-01
+0056AAB0: ldr          r0, [pc, #0x1c0] ; word[0056AC74]=00AD3D1C
+0056AAB2: vmov.f32     s22, #-1.000000e+00
+0056AAB6: add          r6, sp, #0x18
+0056AAB8: add          r0, pc
+0056AABA: vldr         s16, [pc, #0x1bc] ; word[0056AC78]=3727C5AC
+0056AABE: add.w        sb, sp, #0x28
+0056AAC2: vldr         s18, [pc, #0x1b8] ; word[0056AC7C]=420C0000
+0056AAC6: ldr          r0, [r0]
+0056AAC8: mov.w        fp, #0
+0056AACC: mov.w        sl, #8
+0056AAD0: str          r0, [sp, #0x14]
+0056AAD2: mov          r0, r6
+0056AAD4: mov          r1, r5
+0056AAD6: vldr         s24, [r5, #0x10]
+0056AADA: bl           #0x4df628 ; FUN_004df628
+0056AADE: vcmpe.f32    s24, #0
+0056AAE2: ldr          r0, [pc, #0x19c] ; word[0056AC80]=00AD4184
+0056AAE4: vmrs         apsr_nzcv, fpscr
+0056AAE8: vneg.f32     s0, s24
+0056AAEC: add          r0, pc
+0056AAEE: it           mi
+0056AAF0: vmovmi.f32   s24, s0
+0056AAF4: ldr.w        r8, [sp, #0x14]
+0056AAF8: vcmpe.f32    s24, s16
+0056AAFC: vmrs         apsr_nzcv, fpscr
+0056AB00: it           mi
+0056AB02: ldrmi.w      r8, [r0]
+0056AB06: mov          r0, r6
+0056AB08: blx          #0x4a4060 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0056AB0C: adds         r0, #0x20
+0056AB0E: mov          r1, sb
+0056AB10: ldm.w        r0, {r2, r3, r7}
+0056AB14: mov          r0, r6
+0056AB16: stm          r1!, {r2, r3, r7}
+0056AB18: blx          #0x4a406c ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::~PoseBase
+0056AB1C: vldr         s0, [sp, #0x30]
+0056AB20: adr          r1, #0x118
+0056AB22: movs         r2, #0x1f
+0056AB24: vadd.f32     s0, s0, s18
+0056AB28: vstr         s0, [sp, #0x30]
+0056AB2C: ldr          r0, [r4, #4]
+0056AB2E: ldr          r0, [r0]
+0056AB30: ldr          r7, [r0, #0x24]
+0056AB32: mov          r0, r6
+0056AB34: str.w        fp, [sp, #0x20]
+0056AB38: strd         fp, fp, [sp, #0x18]
+0056AB3C: bl           #0x4e02b2 ; FUN_004e02b2
+0056AB40: ldr          r3, [r5, #0xc]
+0056AB42: mov          r0, r7
+0056AB44: mov          r1, r6
+0056AB46: mov          r2, sb
+0056AB48: strd         r8, fp, [sp]
+0056AB4C: strd         sl, fp, [sp, #8]
+0056AB50: blx          #0x4acb50 ; Anki::Cozmo::VizManager::DrawXYCircleAsSegments<float>
+0056AB54: ldrb.w       r0, [sp, #0x18]
+0056AB58: lsls         r0, r0, #0x1f
+0056AB5A: itt          ne
+0056AB5C: ldrne        r0, [sp, #0x20]
+0056AB5E: blxne        #0x4a40cc
+0056AB62: ldr          r0, [r4, #4]
+0056AB64: adr          r1, #0xd4
+0056AB66: movs         r2, #0x1f
+0056AB68: ldr          r0, [r0]
+0056AB6A: ldr          r7, [r0, #0x24]
+0056AB6C: mov          r0, r6
+0056AB6E: str.w        fp, [sp, #0x20]
+0056AB72: strd         fp, fp, [sp, #0x18]
+0056AB76: bl           #0x4e02b2 ; FUN_004e02b2
+0056AB7A: vldr         s0, [r5, #0xc]
+0056AB7E: vadd.f32     s0, s0, s20
+0056AB82: vmov         r3, s0
+0056AB86: mov          r0, r7
+0056AB88: mov          r1, r6
+0056AB8A: mov          r2, sb
+0056AB8C: strd         r8, fp, [sp]
+0056AB90: strd         sl, fp, [sp, #8]
+0056AB94: blx          #0x4acb50 ; Anki::Cozmo::VizManager::DrawXYCircleAsSegments<float>
+0056AB98: ldrb.w       r0, [sp, #0x18]
+0056AB9C: lsls         r0, r0, #0x1f
+0056AB9E: itt          ne
+0056ABA0: ldrne        r0, [sp, #0x20]
+0056ABA2: blxne        #0x4a40cc
+0056ABA6: ldr          r0, [r4, #4]
+0056ABA8: adr          r1, #0x90
+0056ABAA: movs         r2, #0x1f
+0056ABAC: ldr          r0, [r0]
+0056ABAE: ldr          r7, [r0, #0x24]
+0056ABB0: mov          r0, r6
+0056ABB2: str.w        fp, [sp, #0x20]
+0056ABB6: strd         fp, fp, [sp, #0x18]
+0056ABBA: bl           #0x4e02b2 ; FUN_004e02b2
+0056ABBE: vldr         s0, [r5, #0xc]
+0056ABC2: vadd.f32     s0, s0, s22
+0056ABC6: vmov         r3, s0
+0056ABCA: mov          r0, r7
+0056ABCC: mov          r1, r6
+0056ABCE: mov          r2, sb
+0056ABD0: strd         r8, fp, [sp]
+0056ABD4: strd         sl, fp, [sp, #8]
+0056ABD8: blx          #0x4acb50 ; Anki::Cozmo::VizManager::DrawXYCircleAsSegments<float>
+0056ABDC: ldrb.w       r0, [sp, #0x18]
+0056ABE0: lsls         r0, r0, #0x1f
+0056ABE2: itt          ne
+0056ABE4: ldrne        r0, [sp, #0x20]
+0056ABE6: blxne        #0x4a40cc
+0056ABEA: ldr          r0, [sp, #0x10]
+0056ABEC: adds         r5, #0x14
+0056ABEE: cmp          r0, r5
+0056ABF0: bne.w        #0x56aad2
+0056ABF4: add          sp, #0x38
+0056ABF6: vpop         {d8, d9, d10, d11, d12}
+0056ABFA: add          sp, #4
+0056ABFC: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}

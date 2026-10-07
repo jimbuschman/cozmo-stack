@@ -1,0 +1,64 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005BF04C..0x005BF050 exclusive; Thumb;
+005BF04C: movs         r0, #0
+005BF04E: bx           lr
+RANGE 0x0059EC0E..0x0059EC1A exclusive; Thumb;
+0059EC0E: movs         r0, #1
+0059EC10: bx           lr
+0059EC12: movs         r0, #0
+0059EC14: bx           lr
+0059EC16: movs         r0, #1
+0059EC18: bx           lr
+005C40D4: raw=3F4CCCCD relocated=3F4CCCCD
+005C40D8: raw=B084B5B0 relocated=B084B5B0
+0060A6E0: raw=A0000000 relocated=A0000000
+0060A6E4: raw=3FB99999 relocated=3FB99999
+0060A6E8: raw=00000000 relocated=00000000
+0060A6EC: raw=3DCCCCCD relocated=3DCCCCCD
+0060A6F0: raw=3C23D70A relocated=3C23D70A
+RANGE 0x005BEEC2..0x005BEEE6 exclusive; Thumb; _ZNK4Anki5Cozmo9IBehavior21EvaluateScoreInternalERKNS0_5RobotE
+005BEEC2: ldr          r2, [r0, #0xdc]!
+005BEEC6: ldr          r3, [r0, #4]
+005BEEC8: cmp          r2, r3
+005BEECA: itt          ne
+005BEECC: ldrne.w      r1, [r1, #0x440]
+005BEED0: bne.w        #0x8cbf8c
+005BEED4: vldr         s0, [r0, #0x24]
+005BEED8: vmov         r0, s0
+005BEEDC: bx           lr
+005BEEDE: ldr          r2, [r0]
+005BEEE0: ldr.w        r2, [r2, #0x88]
+005BEEE4: bx           r2
+RANGE 0x005B5F1A..0x005B5F20 exclusive; Thumb;
+005B5F1A: bx           lr
+005B5F1C: bx           lr
+005B5F1E: movs         r0, r0
+RANGE 0x005B627E..0x005B6294 exclusive; Thumb;
+005B627E: bx           lr
+005B6280: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005B6284: push         {r4, lr}
+005B6286: mov          r4, r0
+005B6288: movs         r0, #8
+005B628A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005B628E: ldr          r1, [pc, #0xc] ; word[005B629C]=00A6F876
+005B6290: ldr          r2, [r4, #4]
+005B6292: add          r1, pc
+RANGE 0x005B61A2..0x005B61CC exclusive; Thumb;
+005B61A2: push         {r4, r5, r6, lr}
+005B61A4: ldrd         r6, r0, [r0, #4]
+005B61A8: mov          r4, r3
+005B61AA: ldr          r1, [r1]
+005B61AC: mov          r5, r2
+005B61AE: blx          #0x4abfbc ; Anki::Cozmo::DriveToObjectAction::GetPossiblePoses
+005B61B2: cbz          r0, #0x5b61b6
+005B61B4: pop          {r4, r5, r6, pc}
+005B61B6: add.w        r0, r6, #0x114
+005B61BA: mov          r1, r5
+005B61BC: blx          #0x4b20a0 ; Anki::Cozmo::IDockAction::RemoveMatchingPredockPose
+005B61C0: mov          r1, r0
+005B61C2: movs         r0, #0
+005B61C4: cmp          r1, #1
+005B61C6: it           eq
+005B61C8: strbeq       r0, [r4]
+005B61CA: pop          {r4, r5, r6, pc}
+0103E8A8: raw=00000000 relocated=0101E9D0 _ZTVN4Anki5Cozmo12CustomObjectE

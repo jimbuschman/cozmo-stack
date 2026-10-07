@@ -1,0 +1,225 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005B62BA..0x005B6320 exclusive; Thumb;
+005B62BA: push         {r4, lr}
+005B62BC: ldr          r4, [r0, #4]
+005B62BE: mov          r0, r4
+005B62C0: blx          #0x4b2034 ; Anki::Cozmo::DriveToHelper::DriveToPreActionPose
+005B62C4: ldr          r0, [r4, #0x1c]
+005B62C6: pop          {r4, pc}
+005B62C8: ldr          r2, [pc, #0x10] ; word[005B62DC]=006AD4FE
+005B62CA: ldr          r3, [r1, #4]
+005B62CC: movs         r1, #0
+005B62CE: add          r2, pc
+005B62D0: cmp          r3, r2
+005B62D2: it           eq
+005B62D4: addeq        r1, r0, #4
+005B62D6: mov          r0, r1
+005B62D8: bx           lr
+005B62DA: nop
+005B62DC: bmi          #0x5b62dc
+005B62DE: lsls         r2, r5, #1
+005B62E0: ldr          r0, [pc, #4] ; word[005B62E8]=00A6F85E
+005B62E2: add          r0, pc
+005B62E4: bx           lr
+005B62E6: nop
+RANGE 0x005BEF60..0x005BEFFA exclusive; Thumb; _ZNK4Anki5Cozmo9IBehavior13EvaluateScoreERKNS0_5RobotE
+005BEF60: push         {r4, r5, r7, lr}
+005BEF62: vpush        {d8}
+005BEF66: mov          r4, r0
+005BEF68: mov          r5, r1
+005BEF6A: ldrb.w       r0, [r4, #0xa1]
+005BEF6E: cbz          r0, #0x5bef9e
+005BEF70: ldr          r0, [r4]
+005BEF72: ldr.w        r2, [r0, #0x84]
+005BEF76: mov          r0, r4
+005BEF78: mov          r1, r5
+005BEF7A: blx          r2
+005BEF7C: vmov         s0, r0
+005BEF80: vldr         s2, [r4, #0x104]
+005BEF84: ldrb.w       r0, [r4, #0x111]
+005BEF88: vadd.f32     s16, s0, s2
+005BEF8C: cbz          r0, #0x5beff4
+005BEF8E: mov          r0, r4
+005BEF90: blx          #0x4b29e8 ; Anki::Cozmo::IBehavior::EvaluateRunningPenalty
+005BEF94: vmov         s0, r0
+005BEF98: vmul.f32     s16, s16, s0
+005BEF9C: b            #0x5beff4
+005BEF9E: ldr          r1, [r4, #0x2c]
+005BEFA0: mov          r0, r4
+005BEFA2: blx          #0x4b2934 ; Anki::Cozmo::IBehavior::IsRunnableBase
+005BEFA6: vldr         s16, [pc, #0x60] ; word[005BF008]=00000000
+005BEFAA: cmp          r0, #1
+005BEFAC: bne          #0x5beff4
+005BEFAE: ldr          r0, [r4]
+005BEFB0: mov          r1, r5
+005BEFB2: ldr          r2, [r0, #0x50]
+005BEFB4: mov          r0, r4
+005BEFB6: blx          r2
+005BEFB8: cmp          r0, #1
+005BEFBA: bne          #0x5beff4
+005BEFBC: ldrb.w       r1, [r4, #0xa1]
+005BEFC0: ldr          r0, [r4]
+005BEFC2: cmp          r1, #0
+005BEFC4: bne          #0x5bef72
+005BEFC6: ldr.w        r2, [r0, #0x88]
+005BEFCA: mov          r0, r4
+005BEFCC: mov          r1, r5
+005BEFCE: blx          r2
+005BEFD0: vmov         s16, r0
+005BEFD4: ldrb.w       r0, [r4, #0x110]
+005BEFD8: cbz          r0, #0x5beff4
+005BEFDA: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+005BEFDE: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+005BEFE2: vldr         s0, [r4, #0x108]
+005BEFE6: vmov         s2, r0
+005BEFEA: vcmpe.f32    s2, s0
+005BEFEE: vmrs         apsr_nzcv, fpscr
+005BEFF2: bpl          #0x5beffe
+005BEFF4: vmov         r0, s16
+RANGE 0x0060A470..0x0060A51C exclusive; Thumb;
+0060A470: ldrd         r4, r6, [sl], #4
+0060A474: ldr          r0, [sp, #0x28]
+0060A476: blx          #0x4b1ee4 ; Anki::Util::GraphEvaluator2d::EvaluateY
+0060A47A: vmov         s0, r0
+0060A47E: vldr         s2, [sp, #0x58]
+0060A482: vadd.f32     s0, s0, s2
+0060A486: vadd.f32     s2, s0, s20
+0060A48A: vmov.f32     s0, s22
+0060A48E: vcmpe.f32    s2, s22
+0060A492: vmrs         apsr_nzcv, fpscr
+0060A496: it           gt
+0060A498: vmovgt.f32   s0, s2
+0060A49C: b            #0x60a4c0
+0060A49E: mov          r0, r6
+0060A4A0: blx          #0x4aa6a8 ; Anki::Cozmo::Robot::GetRNG
+0060A4A4: vmov         r2, r3, d9
+0060A4A8: blx          #0x4a60ac ; Anki::Util::RandomGenerator::RandDbl
+0060A4AC: vldr         s2, [sp, #0x58]
+0060A4B0: vmov         d0, r0, r1
+0060A4B4: vcvt.f64.f32 d1, s2
+0060A4B8: vadd.f64     d0, d0, d1
+0060A4BC: vcvt.f32.f64 s0, d0
+0060A4C0: vstr         s0, [sp, #0x58]
+0060A4C4: cmp.w        fp, #0
+0060A4C8: ldr          r0, [r7]
+0060A4CA: ldr.w        r8, [r0, #0x2c]
+0060A4CE: strd         sb, fp, [sp, #0x4c]
+0060A4D2: itt          ne
+0060A4D4: movne        r0, fp
+0060A4D6: blxne        #0x4a5014
+0060A4DA: ldr          r2, [sp, #0x34]
+0060A4DC: add          r1, sp, #0x4c
+0060A4DE: mov          r0, r7
+0060A4E0: blx          r8
+0060A4E2: ldr          r0, [sp, #0x50]
+0060A4E4: cbz          r0, #0x60a4ea
+0060A4E6: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+0060A4EA: vldr         s0, [sp, #0x58]
+0060A4EE: vcmpe.f32    s0, s16
+0060A4F2: vmrs         apsr_nzcv, fpscr
+0060A4F6: ble          #0x60a524
+0060A4F8: cmp.w        fp, #0
+0060A4FC: itt          ne
+0060A4FE: movne        r0, fp
+0060A500: blxne        #0x4a5014
+0060A504: strd         sb, fp, [r5]
+0060A508: ldr          r0, [sp, #0x30]
+0060A50A: cmp          r0, #0
+0060A50C: it           ne
+0060A50E: blxne        #0x4a4ef4
+0060A512: mov          r0, fp
+0060A514: vldr         s16, [sp, #0x58]
+0060A518: str          r0, [sp, #0x2c]
+0060A51A: mov          r0, sb
+RANGE 0x005C40A0..0x005C40D8 exclusive; Thumb; _ZNK4Anki5Cozmo18BehaviorLookAround28EvaluateRunningScoreInternalERKNS0_5RobotE
+005C40A0: push         {r4, lr}
+005C40A2: ldr.w        r2, [r0, #0x11c]
+005C40A6: adr          r4, #0x28
+005C40A8: subs         r2, #3
+005C40AA: cmp          r2, #2
+005C40AC: it           lo
+005C40AE: addlo        r4, #4
+005C40B0: blx          #0x4b024c ; Anki::Cozmo::IBehavior::EvaluateRunningScoreInternal
+005C40B4: vmov         s0, r0
+005C40B8: vldr         s2, [r4]
+005C40BC: vcmpe.f32    s2, s0
+005C40C0: vmrs         apsr_nzcv, fpscr
+005C40C4: it           mi
+005C40C6: vmovmi.f32   s2, s0
+005C40CA: vmov         r0, s2
+005C40CE: pop          {r4, pc}
+005C40D0: movs         r0, r0
+005C40D2: movs         r0, r0
+005C40D4: ldm          r4!, {r0, r2, r3, r6, r7}
+005C40D6: subs         r7, #0x4c
+RANGE 0x005E4F2C..0x005E4F58 exclusive; Thumb; _ZNK4Anki5Cozmo28BehaviorLookInPlaceMemoryMap28EvaluateRunningScoreInternalERKNS0_5RobotE
+005E4F2C: push         {r4, lr}
+005E4F2E: mov          r4, r0
+005E4F30: blx          #0x4b024c ; Anki::Cozmo::IBehavior::EvaluateRunningScoreInternal
+005E4F34: vmov         s0, r0
+005E4F38: ldrb.w       r1, [r4, #0x13c]
+005E4F3C: ldrb.w       r2, [r4, #0x164]
+005E4F40: cmp          r2, r1
+005E4F42: itt          hs
+005E4F44: vldrhs       s2, [r4, #0x140]
+005E4F48: vsubhs.f32   s0, s0, s2
+005E4F4C: vmov         r0, s0
+005E4F50: pop          {r4, pc}
+005E4F52: movs         r0, r0
+005E4F54: ldr          r0, [pc, #8] ; word[005E4F60]=00A5A4AE
+005E4F56: add          r0, pc
+RANGE 0x005EB360..0x005EB3AC exclusive; Thumb; _ZNK4Anki5Cozmo25BehaviorRequestGameSimple21EvaluateScoreInternalERKNS0_5RobotE
+005EB360: push         {r4, r5, r6, lr}
+005EB362: mov          r4, r1
+005EB364: mov          r5, r0
+005EB366: blx          #0x4b0258 ; Anki::Cozmo::IBehavior::EvaluateScoreInternal
+005EB36A: mov          r6, r0
+005EB36C: ldr          r0, [r5]
+005EB36E: mov          r1, r4
+005EB370: ldr.w        r2, [r0, #0xa4]
+005EB374: mov          r0, r5
+005EB376: blx          r2
+005EB378: add.w        r1, r5, #0x190
+005EB37C: cmp          r0, #0
+005EB37E: it           eq
+005EB380: addeq.w      r1, r5, #0x174
+005EB384: vmov         s0, r6
+005EB388: vldr         s2, [r1]
+005EB38C: vmul.f32     s0, s0, s2
+005EB390: vmov         r0, s0
+005EB394: pop          {r4, r5, r6, pc}
+005EB396: ldr.w        r2, [r0, #0x84]
+005EB39A: cbz          r2, #0x5eb3a2
+005EB39C: mov.w        r0, #0x3fc00000
+005EB3A0: bx           lr
+005EB3A2: ldr          r2, [r0]
+005EB3A4: ldr.w        r2, [r2, #0x88]
+005EB3A8: bx           r2
+RANGE 0x005F83BE..0x005F8416 exclusive; Thumb; _ZNK4Anki5Cozmo22BehaviorPounceOnMotion21EvaluateScoreInternalERKNS0_5RobotE
+005F83BE: push         {r4, r5, r7, lr}
+005F83C0: vpush        {d8}
+005F83C4: vmov.f32     s16, #1.000000e+00
+005F83C8: mov          r5, r0
+005F83CA: ldrb.w       r0, [r5, #0xa1]
+005F83CE: mov          r4, r1
+005F83D0: cbnz         r0, #0x5f83f8
+005F83D2: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+005F83D6: blx          #0x4a50b0 ; Anki::BaseStationTimer::GetCurrentTimeInSeconds
+005F83DA: vldr         s0, [r5, #0x14c]
+005F83DE: vldr         s2, [r5, #0x16c]
+005F83E2: vadd.f32     s0, s2, s0
+005F83E6: vmov         s2, r0
+005F83EA: vcmpe.f32    s0, s2
+005F83EE: vmrs         apsr_nzcv, fpscr
+005F83F2: it           mi
+005F83F4: vldrmi       s16, [r5, #0x154]
+005F83F8: mov          r0, r5
+005F83FA: mov          r1, r4
+005F83FC: blx          #0x4b0258 ; Anki::Cozmo::IBehavior::EvaluateScoreInternal
+005F8400: vmov         s0, r0
+005F8404: vmul.f32     s0, s16, s0
+005F8408: vmov         r0, s0
+005F840C: vpop         {d8}
+005F8410: pop          {r4, r5, r7, pc}
+005F8412: push         {r4, r5, r7, lr}
+005F8414: mov          r5, r0

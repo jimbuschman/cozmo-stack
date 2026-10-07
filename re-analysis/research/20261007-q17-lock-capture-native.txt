@@ -1,0 +1,174 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x005A4D2A..0x005A4E46 exclusive; Thumb;
+005A4D2A: push         {r4, lr}
+005A4D2C: sub          sp, #0x30
+005A4D2E: ldr          r4, [r0, #4]
+005A4D30: add.w        r0, r1, #0x10
+005A4D34: blx          #0x4b1170 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_DisableReactionsWithLock
+005A4D38: mov          r1, r0
+005A4D3A: movs         r0, #0
+005A4D3C: strb.w       r0, [sp, #4]
+005A4D40: movs         r2, #1
+005A4D42: ldrb         r0, [r1, #0xc]
+005A4D44: movs         r3, #1
+005A4D46: strb.w       r2, [sp, #6]
+005A4D4A: movs         r2, #3
+005A4D4C: strb.w       r0, [sp, #5]
+005A4D50: ldrb         r0, [r1, #0xd]
+005A4D52: strb.w       r0, [sp, #7]
+005A4D56: movs         r0, #2
+005A4D58: strb.w       r0, [sp, #8]
+005A4D5C: ldrb         r0, [r1, #0xe]
+005A4D5E: strb.w       r2, [sp, #0xa]
+005A4D62: movs         r2, #4
+005A4D64: strb.w       r0, [sp, #9]
+005A4D68: ldrb         r0, [r1, #0xf]
+005A4D6A: strb.w       r2, [sp, #0xc]
+005A4D6E: movs         r2, #5
+005A4D70: strb.w       r0, [sp, #0xb]
+005A4D74: ldrb         r0, [r1, #0x10]
+005A4D76: strb.w       r2, [sp, #0xe]
+005A4D7A: movs         r2, #6
+005A4D7C: strb.w       r0, [sp, #0xd]
+005A4D80: ldrb         r0, [r1, #0x11]
+005A4D82: strb.w       r2, [sp, #0x10]
+005A4D86: movs         r2, #7
+005A4D88: strb.w       r0, [sp, #0xf]
+005A4D8C: ldrb         r0, [r1, #0x12]
+005A4D8E: strb.w       r2, [sp, #0x12]
+005A4D92: movs         r2, #8
+005A4D94: strb.w       r0, [sp, #0x11]
+005A4D98: ldrb         r0, [r1, #0x13]
+005A4D9A: strb.w       r2, [sp, #0x14]
+005A4D9E: movs         r2, #9
+005A4DA0: strb.w       r0, [sp, #0x13]
+005A4DA4: ldrb         r0, [r1, #0x14]
+005A4DA6: strb.w       r2, [sp, #0x16]
+005A4DAA: movs         r2, #0xa
+005A4DAC: strb.w       r0, [sp, #0x15]
+005A4DB0: ldrb         r0, [r1, #0x15]
+005A4DB2: strb.w       r2, [sp, #0x18]
+005A4DB6: movs         r2, #0xb
+005A4DB8: strb.w       r0, [sp, #0x17]
+005A4DBC: ldrb         r0, [r1, #0x16]
+005A4DBE: strb.w       r2, [sp, #0x1a]
+005A4DC2: movs         r2, #0xc
+005A4DC4: strb.w       r0, [sp, #0x19]
+005A4DC8: ldrb         r0, [r1, #0x17]
+005A4DCA: strb.w       r2, [sp, #0x1c]
+005A4DCE: movs         r2, #0xd
+005A4DD0: strb.w       r0, [sp, #0x1b]
+005A4DD4: ldrb         r0, [r1, #0x18]
+005A4DD6: strb.w       r2, [sp, #0x1e]
+005A4DDA: movs         r2, #0xe
+005A4DDC: strb.w       r0, [sp, #0x1d]
+005A4DE0: ldrb         r0, [r1, #0x19]
+005A4DE2: strb.w       r2, [sp, #0x20]
+005A4DE6: movs         r2, #0xf
+005A4DE8: strb.w       r0, [sp, #0x1f]
+005A4DEC: ldrb         r0, [r1, #0x1a]
+005A4DEE: strb.w       r2, [sp, #0x22]
+005A4DF2: movs         r2, #0x10
+005A4DF4: strb.w       r0, [sp, #0x21]
+005A4DF8: ldrb         r0, [r1, #0x1b]
+005A4DFA: strb.w       r2, [sp, #0x24]
+005A4DFE: movs         r2, #0x11
+005A4E00: strb.w       r0, [sp, #0x23]
+005A4E04: ldrb         r0, [r1, #0x1c]
+005A4E06: strb.w       r2, [sp, #0x26]
+005A4E0A: movs         r2, #0x12
+005A4E0C: strb.w       r0, [sp, #0x25]
+005A4E10: ldrb         r0, [r1, #0x1d]
+005A4E12: strb.w       r2, [sp, #0x28]
+005A4E16: movs         r2, #0x13
+005A4E18: strb.w       r0, [sp, #0x27]
+005A4E1C: ldrb         r0, [r1, #0x1e]
+005A4E1E: strb.w       r2, [sp, #0x2a]
+005A4E22: movs         r2, #0x14
+005A4E24: strb.w       r0, [sp, #0x29]
+005A4E28: ldrb         r0, [r1, #0x1f]
+005A4E2A: strb.w       r2, [sp, #0x2c]
+005A4E2E: add          r2, sp, #4
+005A4E30: strb.w       r0, [sp, #0x2b]
+005A4E34: ldrb.w       r0, [r1, #0x20]
+005A4E38: strb.w       r0, [sp, #0x2d]
+005A4E3C: mov          r0, r4
+005A4E3E: blx          #0x4ab968 ; Anki::Cozmo::BehaviorManager::DisableReactionsWithLock
+005A4E42: add          sp, #0x30
+005A4E44: pop          {r4, pc}
+RANGE 0x005A4CAC..0x005A4D24 exclusive; Thumb;
+005A4CAC: mov          r1, r7
+005A4CAE: strd         r6, r6, [sl, #4]
+005A4CB2: blx          #0x4b1164 ; std::__ndk1::__tree<std::__ndk1::__value_type<Anki::Cozmo::HighLevelActivity,std::__ndk1::shared_ptr<Anki::Cozmo::IActivity>>,std::__ndk1::__map_value_compare<Anki::Cozmo::HighLevelActivity,std::__ndk1::__value_type<Anki::Cozmo::HighLevelActivity,std::__ndk1::shared_ptr<Anki::Cozmo::IActivity>>,std::__ndk1::less<Anki::Cozmo::HighLevelActivity>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<Anki::Cozmo::HighLevelActivity,std::__ndk1::shared_ptr<Anki::Cozmo::IActivity>>>>::__insert_node_at
+005A4CB6: movs         r6, #1
+005A4CB8: strb.w       r6, [sb, #4]
+005A4CBC: str.w        r4, [sb]
+005A4CC0: add          sp, #8
+005A4CC2: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+005A4CC6: push         {r4, lr}
+005A4CC8: mov          r4, r0
+005A4CCA: movs         r0, #0
+005A4CCC: strd         r0, r0, [r3]
+005A4CD0: str          r1, [r3, #8]
+005A4CD2: str          r3, [r2]
+005A4CD4: ldr          r0, [r4]
+005A4CD6: ldr          r1, [r0]
+005A4CD8: cbz          r1, #0x5a4ce0
+005A4CDA: ldr          r0, [r0]
+005A4CDC: str          r0, [r4]
+005A4CDE: ldr          r3, [r2]
+005A4CE0: ldr          r0, [r4, #4]
+005A4CE2: mov          r1, r3
+005A4CE4: blx          #0x4a4318 ; std::__ndk1::__tree_balance_after_insert<std::__ndk1::__tree_node_base<void*>*>
+005A4CE8: ldr          r0, [r4, #8]
+005A4CEA: adds         r0, #1
+005A4CEC: str          r0, [r4, #8]
+005A4CEE: pop          {r4, pc}
+005A4CF0: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+005A4CF4: push         {r4, lr}
+005A4CF6: mov          r4, r0
+005A4CF8: movs         r0, #8
+005A4CFA: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+005A4CFE: ldr          r1, [pc, #0xc] ; word[005A4D0C]=00A80306
+005A4D00: ldr          r2, [r4, #4]
+005A4D02: add          r1, pc
+005A4D04: adds         r1, #8
+005A4D06: strd         r1, r2, [r0]
+005A4D0A: pop          {r4, pc}
+005A4D0C: lsls         r6, r0, #0xc
+005A4D0E: lsls         r0, r5, #2
+005A4D10: ldr          r2, [pc, #0xc] ; word[005A4D20]=00A802F6
+005A4D12: add          r2, pc
+005A4D14: adds         r2, #8
+005A4D16: str          r2, [r1]
+005A4D18: ldr          r0, [r0, #4]
+005A4D1A: str          r0, [r1, #4]
+005A4D1C: bx           lr
+005A4D1E: nop
+005A4D20: lsls         r6, r6, #0xb
+005A4D22: lsls         r0, r5, #2
+RANGE 0x005A0430..0x005A0470 exclusive; Thumb;
+005A0430: ldrb.w       r2, [r1, #0x21]
+005A0434: str          r2, [sp, #0xc]
+005A0436: ldrb         r2, [r1, #0x1f]
+005A0438: str          r2, [sp, #8]
+005A043A: ldrb         r2, [r1, #0x1d]
+005A043C: str          r2, [sp, #4]
+005A043E: ldrb         r2, [r1, #0x1b]
+005A0440: str          r2, [sp]
+005A0442: ldrb.w       fp, [r1, #0x19]
+005A0446: ldrb.w       sl, [r1, #0x17]
+005A044A: ldrb.w       sb, [r1, #0x15]
+005A044E: ldrb.w       r8, [r1, #0x13]
+005A0452: ldrb         r7, [r1, #0x11]
+005A0454: ldrb         r6, [r1, #0xf]
+005A0456: ldrb         r5, [r1, #0xd]
+005A0458: ldrb         r4, [r1, #0xb]
+005A045A: ldrb.w       lr, [r1, #9]
+005A045E: ldrb.w       ip, [r1, #1]
+005A0462: ldrb         r2, [r1, #3]
+005A0464: ldrb         r3, [r1, #5]
+005A0466: ldrb         r1, [r1, #7]
+005A0468: strb         r2, [r0, #1]
+005A046A: strb.w       ip, [r0]
+005A046E: strb         r3, [r0, #2]

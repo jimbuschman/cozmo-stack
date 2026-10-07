@@ -1,0 +1,1 @@
+No file-backed words at0105AE90: BSS. Reopened initialization is in20261007-q17-obstacle-init-native.txt; actual dimensions are41200000,41200000,42480000.
