@@ -1,0 +1,36 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009E75D0..0x009E7658 exclusive; ARM;
+009E75D0: push         {r4, r5, r6, r7, r8, lr}
+009E75D4: mov          r5, r0
+009E75D8: ldr          r8, [pc, #0x78] ; word[009E7658]=00658A60
+009E75DC: ldr          r6, [r0, #8]
+009E75E0: ldr          r8, [pc, r8]
+009E75E4: add          r6, r1, r6
+009E75E8: lsl          r1, r6, #2
+009E75EC: ldr          r0, [r8]
+009E75F0: bl           #0xa7a7f4 ; FUN_00a7a7f4
+009E75F4: subs         r7, r0, #0
+009E75F8: beq          #0x9e7650
+009E75FC: ldm          r5, {r1, lr}
+009E7600: cmp          r1, #0
+009E7604: beq          #0x9e7640
+009E7608: cmp          lr, #0
+009E760C: addne        lr, r7, lr, lsl #2
+009E7610: subne        r2, r1, #4
+009E7614: movne        r3, r7
+009E7618: movne        r4, #0
+009E761C: beq          #0x9e7638
+009E7620: cmp          r3, #0
+009E7624: strne        r4, [r3]
+009E7628: ldr          ip, [r2, #4]!
+009E762C: str          ip, [r3], #4
+009E7630: cmp          r3, lr
+009E7634: bne          #0x9e7620
+009E7638: ldr          r0, [r8]
+009E763C: bl           #0xa7a988 ; FUN_00a7a988
+009E7640: str          r7, [r5]
+009E7644: mov          r0, #1
+009E7648: str          r6, [r5, #8]
+009E764C: pop          {r4, r5, r6, r7, r8, pc}
+009E7650: mov          r0, r7
+009E7654: pop          {r4, r5, r6, r7, r8, pc}

@@ -1,0 +1,88 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00599F50..0x00599F94 exclusive; Thumb;
+00599F50: ldr          r0, [r1, #0x10]
+00599F52: ldr          r1, [r0]
+00599F54: ldr          r2, [r1, #0xc]
+00599F56: mov          r1, r4
+00599F58: blx          r2
+00599F5A: mov          r0, r4
+00599F5C: pop          {r4, pc}
+00599F5E: bl           #0x4e39f8
+00599F62: push         {r7, lr}
+00599F64: sub          sp, #8
+00599F66: ldr          r3, [r0]
+00599F68: ldrb.w       ip, [r0, #0x3c]
+00599F6C: ldr.w        lr, [r3, #0x18]
+00599F70: movs         r3, #0
+00599F72: strd         r3, r3, [sp]
+00599F76: movs         r3, #6
+00599F78: cmp.w        ip, #2
+00599F7C: it           eq
+00599F7E: moveq        r3, #7
+00599F80: blx          lr
+00599F82: add          sp, #8
+00599F84: pop          {r7, pc}
+00599F86: ldrb.w       r1, [r0, #0x3c]
+00599F8A: movs         r0, #6
+00599F8C: cmp          r1, #2
+00599F8E: it           eq
+00599F90: moveq        r0, #7
+00599F92: bx           lr
+RANGE 0x00501F90..0x00501FB0 exclusive; Thumb;
+00501F90: push         {r4, lr}
+00501F92: mov          r4, r0
+00501F94: ldrb         r0, [r4, #4]
+00501F96: cbnz         r0, #0x501fa2
+00501F98: ldr          r1, [pc, #0x14] ; word[00501FB0]=006E3B32
+00501F9A: movs         r0, #1
+00501F9C: add          r1, pc
+00501F9E: blx          #0x4a6940 ; <EXTERNAL>::std::__ndk1::__throw_system_error
+00501FA2: ldr          r0, [r4]
+00501FA4: blx          #0x4a6790 ; <EXTERNAL>::std::__ndk1::mutex::unlock
+00501FA8: movs         r0, #0
+00501FAA: strb         r0, [r4, #4]
+00501FAC: pop          {r4, pc}
+00501FAE: nop
+RANGE 0x00596854..0x0059687E exclusive; Thumb;
+00596854: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+00596858: ldr          r0, [sp, #0x10]
+0059685A: str          r4, [sp, #4]
+0059685C: cbz          r0, #0x59687c
+0059685E: ldr          r1, [sp, #0x14]
+00596860: cmp          r1, r0
+00596862: itttt        ne
+00596864: subne.w      r2, r1, #8
+00596868: subne        r2, r2, r0
+0059686A: mvnne        r3, #7
+0059686E: bicne.w      r2, r3, r2
+00596872: itt          ne
+00596874: addne        r1, r1, r2
+00596876: strne        r1, [sp, #0x14]
+00596878: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0059687C: mov          r0, r5
+RANGE 0x00599970..0x005999B0 exclusive; Thumb;
+00599970: lsls         r0, r1, #0xc
+00599972: ldr          r1, [sp, #8]
+00599974: str          r0, [sp, #0x14]
+00599976: str          r0, [sp, #0x18]
+00599978: str          r3, [sp, #0x1c]
+0059997A: strd         r1, r2, [r0]
+0059997E: ldr          r0, [sp, #0x18]
+00599980: adds         r0, #8
+00599982: str          r0, [sp, #0x18]
+00599984: ldr.w        r0, [fp, #0x30]
+00599988: add          r2, sp, #0x14
+0059998A: mov          r1, r4
+0059998C: blx          #0x4af6f4 ; Anki::AudioEngine::AudioEngineController::SetGameObjectAuxSendValues
+00599990: ldr.w        r0, [fp, #0x30]
+00599994: mov          r1, r4
+00599996: movs         r2, #0
+00599998: blx          #0x4af700 ; Anki::AudioEngine::AudioEngineController::SetGameObjectOutputBusVolume
+0059999C: ldr.w        r0, [fp, #0x30]
+005999A0: mov          r1, r4
+005999A2: mov          r2, sb
+005999A4: blx          #0x4af70c ; Anki::Cozmo::Audio::CozmoAudioController::RegisterRobotAudioBuffer
+005999A8: mov          r4, r0
+005999AA: ldr          r0, [sp, #0x14]
+005999AC: cbz          r0, #0x5999cc
+005999AE: ldr          r1, [sp, #0x18]

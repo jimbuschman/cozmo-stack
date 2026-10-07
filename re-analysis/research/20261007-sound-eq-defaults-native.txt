@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0101C9F8: raw=00AA2DF0 relocated=00AA2DF0
+0101C9FC: raw=00AA30B8 relocated=00AA30B8
+0101CA00: raw=00AA2F44 relocated=00AA2F44
+0101CA04: raw=00AA2DF4 relocated=00AA2DF4
+0101CA08: raw=00AA30CC relocated=00AA30CC
+0101CA0C: raw=00AA2E54 relocated=00AA2E54
+0101CA10: raw=00AA2E8C relocated=00AA2E8C
+0101CA14: raw=00000000 relocated=00000000
+0101CA18: raw=00000000 relocated=00000000
+0101CA1C: raw=00000000 relocated=00000000
+RANGE 0x00AA30B8..0x00AA3178 exclusive; ARM;
+00AA30B8: push         {r4, lr}
+00AA30BC: mov          r4, r0
+00AA30C0: bl           #0x4a40cc ; <EXTERNAL>::operator.delete
+00AA30C4: mov          r0, r4
+00AA30C8: pop          {r4, pc}
+00AA30CC: cmp          r3, #0
+00AA30D0: mov          ip, r0
+00AA30D4: bne          #0xaa3164
+00AA30D8: push         {r4, r5, r6, lr}
+00AA30DC: mov          r1, #4
+00AA30E0: mov          r2, #0
+00AA30E4: str          r1, [ip, #4]
+00AA30E8: mov          r4, #0
+00AA30EC: mov          lr, #0
+00AA30F0: mov          r1, #0x4000
+00AA30F4: mov          r0, #1
+00AA30F8: mov          r3, #0
+00AA30FC: movt         r2, #0x40a0
+00AA3100: mov          r6, #6
+00AA3104: mov          r5, #5
+00AA3108: movt         r4, #0x42f0
+00AA310C: movt         lr, #0x44fa
+00AA3110: movt         r1, #0x459c
+00AA3114: strb         r0, [ip, #0x14]
+00AA3118: strb         r0, [ip, #0x28]
+00AA311C: strb         r0, [ip, #0x3c]
+00AA3120: strb         r0, [ip, #0x44]
+00AA3124: strb         r0, [ip, #0x48]
+00AA3128: strb         r0, [ip, #0x49]
+00AA312C: strb         r0, [ip, #0x4a]
+00AA3130: str          r2, [ip, #0x10]
+00AA3134: str          r6, [ip, #0x18]
+00AA3138: str          r5, [ip, #0x2c]
+00AA313C: str          r2, [ip, #0x24]
+00AA3140: str          r2, [ip, #0x38]
+00AA3144: str          r3, [ip, #8]
+00AA3148: str          r3, [ip, #0x1c]
+00AA314C: str          r3, [ip, #0x30]
+00AA3150: str          r3, [ip, #0x40]
+00AA3154: str          r4, [ip, #0xc]
+00AA3158: str          lr, [ip, #0x20]
+00AA315C: str          r1, [ip, #0x34]
+00AA3160: pop          {r4, r5, r6, pc}
+00AA3164: ldr          ip, [r0]
+00AA3168: mov          r1, r2
+00AA316C: mov          r2, r3
+00AA3170: ldr          r3, [ip, #0x18]
+00AA3174: bx           r3

@@ -1,0 +1,104 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A58008..0x00A58040 exclusive; ARM;
+00A58008: push         {r2, r3}
+00A5800C: str          lr, [sp, #-4]!
+00A58010: sub          sp, sp, #0xc
+00A58014: ldr          lr, [r0]
+00A58018: add          ip, sp, #0x14
+00A5801C: ldr          r2, [sp, #0x10]
+00A58020: mov          r3, ip
+00A58024: str          ip, [sp, #4]
+00A58028: ldr          ip, [lr, #0x98]
+00A5802C: blx          ip
+00A58030: add          sp, sp, #0xc
+00A58034: pop          {lr}
+00A58038: add          sp, sp, #8
+00A5803C: bx           lr
+RANGE 0x00A35938..0x00A35968 exclusive; ARM;
+00A35938: ldrh         r3, [r3]
+00A3593C: rsb          r3, r3, #0
+00A35940: vmul.f32     s15, s15, s14
+00A35944: vldr         s14, [pc, #0x2c] ; word[00A35978]=473B8000
+00A35948: vdiv.f32     s15, s15, s13
+00A3594C: vmul.f32     s15, s15, s14
+00A35950: vmov         s14, r3
+00A35954: vcvt.f32.s32 s14, s14
+00A35958: vdiv.f32     s15, s14, s15
+00A3595C: vmov         r0, s15
+00A35960: bl           #0x4d0058 ; <EXTERNAL>::expf
+00A35964: str          r0, [r4, #0x38]
+RANGE 0x00A570A4..0x00A571CC exclusive; ARM;
+00A570A4: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00A570A8: mov          r1, #0
+00A570AC: mov          r4, r0
+00A570B0: mov          r5, #1
+00A570B4: mov          r2, #0x54
+00A570B8: mov          r8, #0x10000
+00A570BC: bl           #0x4d36dc ; <EXTERNAL>::memset
+00A570C0: str          r8, [r4, #0x14]
+00A570C4: str          r5, [r4, #0x18]
+00A570C8: mov          r0, r5
+00A570CC: bl           #0x4cd124 ; <EXTERNAL>::sched_get_priority_max
+00A570D0: movw         r7, #0xffff
+00A570D4: mov          r6, r0
+00A570D8: mov          r0, r5
+00A570DC: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A570E0: mov          sb, r0
+00A570E4: mov          r0, r5
+00A570E8: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A570EC: rsb          r3, sb, r6
+00A570F0: str          r8, [r4, #4]
+00A570F4: add          r3, r3, r3, lsr #31
+00A570F8: str          r5, [r4, #8]
+00A570FC: str          r7, [r4, #0x1c]
+00A57100: add          r3, r0, r3, asr r5
+00A57104: mov          r0, r5
+00A57108: str          r3, [r4, #0x10]
+00A5710C: bl           #0x4cd124 ; <EXTERNAL>::sched_get_priority_max
+00A57110: mov          r6, r0
+00A57114: mov          r0, r5
+00A57118: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A5711C: mov          sb, r0
+00A57120: mov          r0, r5
+00A57124: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A57128: rsb          r3, sb, r6
+00A5712C: str          r8, [r4, #0x24]
+00A57130: add          r3, r3, r3, lsr #31
+00A57134: str          r7, [r4, #0xc]
+00A57138: str          r5, [r4, #0x28]
+00A5713C: add          r3, r0, r3, asr r5
+00A57140: mov          r0, r5
+00A57144: str          r3, [r4]
+00A57148: bl           #0x4cd124 ; <EXTERNAL>::sched_get_priority_max
+00A5714C: mov          r6, r0
+00A57150: mov          r0, r5
+00A57154: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A57158: mov          r8, r0
+00A5715C: mov          r0, r5
+00A57160: bl           #0x4cd118 ; <EXTERNAL>::sched_get_priority_min
+00A57164: rsb          r3, r8, r6
+00A57168: str          r7, [r4, #0x2c]
+00A5716C: add          r3, r3, r3, lsr #31
+00A57170: add          r3, r0, r3, asr r5
+00A57174: mov          r0, r5
+00A57178: str          r3, [r4, #0x20]
+00A5717C: bl           #0x4cd124 ; <EXTERNAL>::sched_get_priority_max
+00A57180: str          r0, [r4]
+00A57184: mov          r0, r5
+00A57188: bl           #0x4cd124 ; <EXTERNAL>::sched_get_priority_max
+00A5718C: mov          r1, #0x1000000
+00A57190: mov          r3, #4
+00A57194: mov          r2, #0x3f800000
+00A57198: str          r1, [r4, #0x34]
+00A5719C: mov          r1, #3
+00A571A0: strh         r3, [r4, #0x3c]
+00A571A4: mov          r3, #0
+00A571A8: strb         r5, [r4, #0x44]
+00A571AC: str          r1, [r4, #0x40]
+00A571B0: str          r3, [r4, #0x38]
+00A571B4: str          r3, [r4, #0x48]
+00A571B8: str          r3, [r4, #0x4c]
+00A571BC: str          r3, [r4, #0x50]
+00A571C0: str          r2, [r4, #0x30]
+00A571C4: str          r0, [r4, #0x20]
+00A571C8: pop          {r3, r4, r5, r6, r7, r8, sb, pc}

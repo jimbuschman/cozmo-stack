@@ -1,0 +1,129 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009CFD80..0x009CFDF0 exclusive; ARM;
+009CFD80: ldrb         ip, [r0, #0x3c]
+009CFD84: mov          r2, #0
+009CFD88: str          lr, [sp, #-4]!
+009CFD8C: and          ip, ip, #0xc2
+009CFD90: ldr          lr, [pc, #0x58] ; word[009CFDF0]=0064C2F8
+009CFD94: orr          ip, ip, #0x18
+009CFD98: mov          r1, #0
+009CFD9C: bfi          ip, r2, #1, #1
+009CFDA0: add          lr, pc, lr
+009CFDA4: str          r2, [r0, #0x40]
+009CFDA8: add          lr, lr, #8
+009CFDAC: strb         ip, [r0, #0x3c]
+009CFDB0: str          lr, [r0]
+009CFDB4: str          r2, [r0, #4]
+009CFDB8: str          r2, [r0, #8]
+009CFDBC: str          r2, [r0, #0x24]
+009CFDC0: str          r2, [r0, #0x28]
+009CFDC4: str          r2, [r0, #0x2c]
+009CFDC8: str          r2, [r0, #0x30]
+009CFDCC: str          r2, [r0, #0x34]
+009CFDD0: str          r2, [r0, #0x38]
+009CFDD4: str          r1, [r0, #0x18]
+009CFDD8: str          r1, [r0, #0x1c]
+009CFDDC: str          r1, [r0, #0x20]
+009CFDE0: str          r1, [r0, #0xc]
+009CFDE4: str          r1, [r0, #0x10]
+009CFDE8: str          r1, [r0, #0x14]
+009CFDEC: pop          {pc}
+RANGE 0x009D00FC..0x009D0284 exclusive; ARM;
+009D00FC: push         {r4, r5, r6, r7, lr}
+009D0100: ldr          r4, [r0, #0x30]
+009D0104: cmp          r4, r2
+009D0108: beq          #0x9d0114
+009D010C: mov          r0, #1
+009D0110: pop          {r4, r5, r6, r7, pc}
+009D0114: ldr          ip, [r0, #0x38]
+009D0118: ldr          r2, [sp, #0x14]
+009D011C: cmp          ip, r2
+009D0120: bne          #0x9d010c
+009D0124: cmp          ip, #0
+009D0128: ldr          r2, [r0, #0x2c]
+009D012C: beq          #0x9d027c
+009D0130: ldr          r6, [r0, #0x34]
+009D0134: ldr          r0, [r3, #4]
+009D0138: ldr          lr, [r6, #4]
+009D013C: cmp          lr, r0
+009D0140: bne          #0x9d010c
+009D0144: mov          r7, #0
+009D0148: cmp          lr, #0
+009D014C: beq          #0x9d0254
+009D0150: cmp          lr, #1
+009D0154: ble          #0x9d0210
+009D0158: vldr         s14, [r1]
+009D015C: vldr         s15, [r2]
+009D0160: vcmp.f32     s14, s15
+009D0164: vmrs         apsr_nzcv, fpscr
+009D0168: bne          #0x9d010c
+009D016C: vldr         s14, [r1, #4]
+009D0170: vldr         s15, [r2, #4]
+009D0174: vcmp.f32     s14, s15
+009D0178: vmrs         apsr_nzcv, fpscr
+009D017C: bne          #0x9d010c
+009D0180: vldr         s14, [r1, #8]
+009D0184: vldr         s15, [r2, #8]
+009D0188: vcmp.f32     s14, s15
+009D018C: vmrs         apsr_nzcv, fpscr
+009D0190: bne          #0x9d010c
+009D0194: ldr          r4, [r1, #0xc]
+009D0198: ldr          r0, [r2, #0xc]
+009D019C: cmp          r4, r0
+009D01A0: bne          #0x9d010c
+009D01A4: sub          lr, lr, #1
+009D01A8: mov          r0, #0
+009D01AC: b            #0x9d01fc
+009D01B0: vldr         s14, [r1]
+009D01B4: vldr         s15, [r2]
+009D01B8: vcmp.f32     s14, s15
+009D01BC: vmrs         apsr_nzcv, fpscr
+009D01C0: bne          #0x9d010c
+009D01C4: vldr         s14, [r1, #4]
+009D01C8: vldr         s15, [r2, #4]
+009D01CC: vcmp.f32     s14, s15
+009D01D0: vmrs         apsr_nzcv, fpscr
+009D01D4: bne          #0x9d010c
+009D01D8: vldr         s14, [r1, #8]
+009D01DC: vldr         s15, [r2, #8]
+009D01E0: vcmp.f32     s14, s15
+009D01E4: vmrs         apsr_nzcv, fpscr
+009D01E8: bne          #0x9d010c
+009D01EC: ldr          r5, [r1, #0xc]
+009D01F0: ldr          r4, [r2, #0xc]
+009D01F4: cmp          r5, r4
+009D01F8: bne          #0x9d010c
+009D01FC: add          r0, r0, #1
+009D0200: add          r1, r1, #0x10
+009D0204: cmp          r0, lr
+009D0208: add          r2, r2, #0x10
+009D020C: bne          #0x9d01b0
+009D0210: vldr         s14, [r1]
+009D0214: vldr         s15, [r2]
+009D0218: vcmp.f32     s14, s15
+009D021C: vmrs         apsr_nzcv, fpscr
+009D0220: bne          #0x9d010c
+009D0224: vldr         s14, [r1, #4]
+009D0228: vldr         s15, [r2, #4]
+009D022C: vcmp.f32     s14, s15
+009D0230: vmrs         apsr_nzcv, fpscr
+009D0234: bne          #0x9d010c
+009D0238: vldr         s14, [r1, #8]
+009D023C: vldr         s15, [r2, #8]
+009D0240: vcmp.f32     s14, s15
+009D0244: vmrs         apsr_nzcv, fpscr
+009D0248: bne          #0x9d010c
+009D024C: add          r1, r1, #0x10
+009D0250: add          r2, r2, #0x10
+009D0254: add          r7, r7, #1
+009D0258: cmp          r7, ip
+009D025C: beq          #0x9d027c
+009D0260: ldr          lr, [r6, #0x18]
+009D0264: add          r3, r3, #8
+009D0268: ldr          r0, [r3, #4]
+009D026C: add          r6, r6, #0x14
+009D0270: cmp          lr, r0
+009D0274: beq          #0x9d0148
+009D0278: b            #0x9d010c
+009D027C: mov          r0, #0
+009D0280: pop          {r4, r5, r6, r7, pc}
