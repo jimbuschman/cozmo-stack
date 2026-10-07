@@ -22,14 +22,14 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-012 | 46 | PARTIAL |
 | Q14-013 | 48 | CHECKED |
 | Q14-014 | 49 | PARTIAL |
-| Q14-015 | 50 | NOT DONE |
+| Q14-015 | 50 | PARTIAL |
 | Q14-016 | 53 | PARTIAL |
 | Q14-017 | 55 | PARTIAL |
 | Q14-019 | 57 | PARTIAL |
 | Q14-020 | 58 | PARTIAL |
 | Q14-021 | 59 | NOT DONE |
 | Q14-022 | 60 | NOT DONE |
-| Q14-023 | 61 | NOT DONE |
+| Q14-023 | 61 | PARTIAL |
 | Q14-024 | 62 | PARTIAL |
 | Q14-025 | 63 | PARTIAL |
 | Q14-026 | 64 | NOT DONE |
@@ -232,7 +232,7 @@ PARTIAL: CR1–CR6 and MR1–MR5 establish connection dispatch, supplied gain pa
 
 > | M6-012 | **VERIFY** | 0x00A25FF8;0x00A1F79C;0x00A209BC | Separate pure matrix-weight calculation from channel selection, speaker-mask routing and parameter/state writes before permitting any equivalent arithmetic. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MX1–MX5 establish format/count/mode gates, exact matrix geometry, table-selected routing and primary evidence that A209BC is an interior branch of A1F79C. Remaining: later standard-format routing/mask cases, A234FC and coefficient-to-consumer boundary. No bulk DSP exemption.
 
 ## Q14-016 — triage line 53
 
@@ -274,7 +274,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-018 | **KEEP** | 0x00A57724..0x00A5792C;0x00A1C75C;0x00A1C7D4;0x00A56E20..0x00A5705C | No-JNI 48000/1024 branch, rate-to-bus/voice link, frame rounding and exact robot-rate handoff are timing/geometry; Android system query is an existing separate external boundary, not new DSP permission. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Z1–Z15 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. Remaining: final A40BC0 rate-to-bus/voice link and device writer census; robot-rate handoff is separately scoped in H/G rows.
 
 ## Q14-024 — triage line 62
 
