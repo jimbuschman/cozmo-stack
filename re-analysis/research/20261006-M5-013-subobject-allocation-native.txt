@@ -1,0 +1,39 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4fc5a6 0x4fc5c8 _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE8allocateEj
+004FC5A6: push       {r4, r5, r7, lr} ;
+004FC5A8: mov        r5, r1 ;
+004FC5AA: mov        r4, r0 ;
+004FC5AC: cmp.w      r5, #-1 ;
+004FC5B0: itt        le ;
+004FC5B2: movle      r0, r4 ;
+004FC5B4: blle       #0x4e0668 ;
+004FC5B8: mov        r0, r5 ;
+004FC5BA: blx        #0x4a42a0 ; GOT 0104036C _Znwj
+004FC5BE: adds       r1, r0, r5 ;
+004FC5C0: strd       r0, r0, [r4] ;
+004FC5C4: str        r1, [r4, #8] ;
+004FC5C6: pop        {r4, r5, r7, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4fc68c 0x4fc6aa _ZNSt6__ndk16vectorIhNS_9allocatorIhEEE10deallocateEv
+004FC68C: push       {r4, lr} ;
+004FC68E: mov        r4, r0 ;
+004FC690: ldr        r0, [r4] ;
+004FC692: cbz        r0, #0x4fc6a8 ;
+004FC694: ldr        r1, [r4, #4] ;
+004FC696: cmp        r1, r0 ;
+004FC698: it         ne ;
+004FC69A: strne      r0, [r4, #4] ;
+004FC69C: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+004FC6A0: movs       r0, #0 ;
+004FC6A2: strd       r0, r0, [r4] ;
+004FC6A6: str        r0, [r4, #8] ;
+004FC6A8: pop        {r4, pc} ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4eeb60 0x4eeb72
+004EEB60: bx         lr ;
+004EEB62: b.w        #0x8ca88c ;
+004EEB66: movs       r0, r0 ;
+004EEB68: push       {r4, lr} ;
+004EEB6A: mov        r4, r0 ;
+004EEB6C: movs       r0, #8 ;
+004EEB6E: blx        #0x4a42a0 ; GOT 0104036C _Znwj

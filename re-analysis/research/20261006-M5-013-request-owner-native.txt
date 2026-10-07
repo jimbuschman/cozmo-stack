@@ -1,0 +1,148 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x571f80 0x572108 _ZN4Anki5Cozmo20RequestGameComponentC2ERNS0_5RobotE
+00571F80: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr} ;
+00571F84: sub        sp, #0x44 ;
+00571F86: mov        fp, r0 ;
+00571F88: movs       r0, #0 ;
+00571F8A: mov        r4, fp ;
+00571F8C: mov        r7, r1 ;
+00571F8E: str        r0, [r4, #0x10]! ;
+00571F92: movs       r1, #0x55 ;
+00571F94: strd       r0, r0, [fp] ;
+00571F98: add.w      r6, fp, #0x18 ;
+00571F9C: strd       r0, r4, [fp, #8] ;
+00571FA0: strd       r0, r1, [fp, #0x20] ;
+00571FA4: mov        r1, fp ;
+00571FA6: str        r0, [r1, #0x1c]! ;
+00571FAA: strd       r0, r1, [fp, #0x14] ;
+00571FAE: add.w      r1, fp, #0xc ;
+00571FB2: strh.w     r0, [fp, #0x28] ;
+00571FB6: strd       r0, r0, [fp, #0x38] ;
+00571FBA: ldr        r0, [r7] ;
+00571FBC: ldr        r0, [r0, #0x1c] ;
+00571FBE: str        r1, [sp, #0x14] ;
+00571FC0: add.w      r5, r0, #0x238 ;
+00571FC4: add        r0, sp, #0x3c ;
+00571FC6: mov        r1, r5 ;
+00571FC8: blx        #0x4a6160 ; GOT 01040DAC _ZNK4Json5Value5beginEv
+00571FCC: add        r0, sp, #0x34 ;
+00571FCE: mov        r1, r5 ;
+00571FD0: strd       r4, r6, [sp, #8] ;
+00571FD4: blx        #0x4a616c ; GOT 01040DB0 _ZNK4Json5Value3endEv
+00571FD8: str        r7, [sp, #4] ;
+00571FDA: add        r7, sp, #0x28 ;
+00571FDC: add        r4, sp, #0x3c ;
+00571FDE: add        r6, sp, #0x18 ;
+00571FE0: mov.w      r8, #0 ;
+00571FE4: adds       r0, r7, #4 ;
+00571FE6: str        r0, [sp, #0x10] ;
+00571FE8: add        r1, sp, #0x34 ;
+00571FEA: mov        r0, r4 ;
+00571FEC: blx        #0x4a6178 ; GOT 01040DB4 _ZNK4Json17ValueIteratorBase7isEqualERKS0_
+00571FF0: cmp        r0, #1 ;
+00571FF2: beq        #0x57208c ;
+00571FF4: mov        r0, r4 ;
+00571FF6: blx        #0x4a6184 ; GOT 01040DB8 _ZNK4Json17ValueIteratorBase5derefEv
+00571FFA: mov        sl, r0 ;
+00571FFC: str.w      r8, [sp, #0x20] ;
+00572000: strd       r8, r8, [sp, #0x18] ;
+00572004: adr        r1, #0x130 ;
+00572006: mov        r0, r6 ;
+00572008: movs       r2, #0x1d ;
+0057200A: bl         #0x4e02b2 ;
+0057200E: adr        r2, #0x148 ;
+00572010: mov        r0, r7 ;
+00572012: mov        r1, sl ;
+00572014: mov        r3, r6 ;
+00572016: blx        #0x4acea4 ; GOT 01043218 _ZN4Anki9JsonTools11ParseStringERKN4Json5ValueEPKcRKNSt6__ndk112basic_stringIcNS7_11char_traitsIcEENS7_9allocatorIcEEEE
+0057201A: mov        r0, r7 ;
+0057201C: blx        #0x4aceb0 ; GOT 0104321C _ZN4Anki5Cozmo18UnlockIdFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE
+00572020: mov        sb, r0 ;
+00572022: ldrb.w     r0, [sp, #0x28] ;
+00572026: lsls       r0, r0, #0x1f ;
+00572028: itt        ne ;
+0057202A: ldrne      r0, [sp, #0x30] ;
+0057202C: blxne      #0x4a40cc ;
+00572030: ldrb.w     r0, [sp, #0x18] ;
+00572034: lsls       r0, r0, #0x1f ;
+00572036: itt        ne ;
+00572038: ldrne      r0, [sp, #0x20] ;
+0057203A: blxne      #0x4a40cc ;
+0057203E: str.w      r8, [sp, #0x30] ;
+00572042: strd       r8, r8, [sp, #0x28] ;
+00572046: adr        r1, #0x11c ;
+00572048: mov        r0, r7 ;
+0057204A: movs       r2, #0x1b ;
+0057204C: bl         #0x4e02b2 ;
+00572050: adr        r1, #0x12c ;
+00572052: mov        r0, sl ;
+00572054: mov        r2, r7 ;
+00572056: mov        r5, r6 ;
+00572058: blx        #0x4acebc ; GOT 01043220 _ZN4Anki9JsonTools10ParseUint8ERKN4Json5ValueEPKcRKNSt6__ndk112basic_stringIcNS7_11char_traitsIcEENS7_9allocatorIcEEEE
+0057205C: mov        r6, r0 ;
+0057205E: ldrb.w     r0, [sp, #0x28] ;
+00572062: lsls       r0, r0, #0x1f ;
+00572064: itt        ne ;
+00572066: ldrne      r0, [sp, #0x30] ;
+00572068: blxne      #0x4a40cc ;
+0057206C: ldr        r0, [sp, #0x10] ;
+0057206E: str.w      sb, [sp, #0x28] ;
+00572072: strd       sb, r6, [r0] ;
+00572076: ldr        r1, [sp, #0x14] ;
+00572078: mov        r6, r5 ;
+0057207A: mov        r0, r6 ;
+0057207C: mov        r2, r7 ;
+0057207E: mov        r3, r7 ;
+00572080: blx        #0x4ad234 ; GOT 01043348 _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo8UnlockIdENS3_15GameRequestDataEEENS_19__map_value_compareIS4_S6_NS_4lessIS4_EELb1EEENS_9allocatorIS6_EEE25__emplace_unique_key_argsIS4_JNS_4pairIS4_S5_EEEEENSF_INS_15__tree_iteratorIS6_PNS_11__tree_nodeIS6_PvEEiEEbEERKT_DpOT0_
+00572084: mov        r0, r4 ;
+00572086: blx        #0x4a619c ; GOT 01040DC0 _ZN4Json17ValueIteratorBase9incrementEv
+0057208A: b          #0x571fe8 ;
+0057208C: ldr        r0, [sp, #0x14] ;
+0057208E: ldr        r1, [r0] ;
+00572090: ldr        r6, [sp, #0xc] ;
+00572092: ldr        r2, [sp, #8] ;
+00572094: mov        r0, r6 ;
+00572096: blx        #0x4ad240 ; GOT 0104334C _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki5Cozmo8UnlockIdENS3_15GameRequestDataEEENS_19__map_value_compareIS4_S6_NS_4lessIS4_EELb1EEENS_9allocatorIS6_EEE14__assign_multiINS_21__tree_const_iteratorIS6_PNS_11__tree_nodeIS6_PvEEiEEEEvT_SL_
+0057209A: ldr        r5, [sp, #4] ;
+0057209C: mov        r0, r5 ;
+0057209E: blx        #0x4a56f8 ; GOT 01040A34 _ZNK4Anki5Cozmo5Robot20HasExternalInterfaceEv
+005720A2: cmp        r0, #1 ;
+005720A4: bne        #0x5720c0 ;
+005720A6: mov        r0, r5 ;
+005720A8: blx        #0x4a5704 ; GOT 01040A38 _ZN4Anki5Cozmo5Robot20GetExternalInterfaceEv
+005720AC: strd       r0, fp, [sp, #0x28] ;
+005720B0: str.w      fp, [sp, #0x30] ;
+005720B4: add        r0, sp, #0x28 ;
+005720B6: bl         #0x572188 ;
+005720BA: add        r0, sp, #0x28 ;
+005720BC: bl         #0x572248 ;
+005720C0: mov        r0, fp ;
+005720C2: add        sp, #0x44 ;
+005720C4: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc} ;
+005720C8: b          #0x5720ce ;
+005720CA: b          #0x5720ce ;
+005720CC: b          #0x572112 ;
+005720CE: mov        r5, r0 ;
+005720D0: b          #0x572116 ;
+005720D2: b          #0x572112 ;
+005720D4: mov        r5, r0 ;
+005720D6: ldrb.w     r0, [sp, #0x28] ;
+005720DA: ldr        r6, [sp, #0xc] ;
+005720DC: lsls       r0, r0, #0x1f ;
+005720DE: beq        #0x572116 ;
+005720E0: ldr        r0, [sp, #0x30] ;
+005720E2: blx        #0x4a40cc ; GOT 010402D0 _ZdlPv
+005720E6: b          #0x572116 ;
+005720E8: b          #0x572112 ;
+005720EA: mov        r5, r0 ;
+005720EC: ldrb.w     r0, [sp, #0x28] ;
+005720F0: lsls       r0, r0, #0x1f ;
+005720F2: itt        ne ;
+005720F4: ldrne      r0, [sp, #0x30] ;
+005720F6: blxne      #0x4a40cc ;
+005720FA: b          #0x5720fe ;
+005720FC: mov        r5, r0 ;
+005720FE: ldrb.w     r0, [sp, #0x18] ;
+00572102: ldr        r6, [sp, #0xc] ;
+00572104: lsls       r0, r0, #0x1f ;
+00572106: beq        #0x572116 ;

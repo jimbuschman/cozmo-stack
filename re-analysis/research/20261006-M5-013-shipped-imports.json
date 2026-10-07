@@ -1,0 +1,170 @@
+[
+  {
+    "file": "resources/lib/armeabi-v7a/libacattsandroid.so",
+    "imports": [],
+    "sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libBlueDoveMediaRender.so",
+    "imports": [],
+    "sha256": "2524d61faec2013daab4036db590bdb3c3af18aacd9c82def0cb434520a99a07",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libc++_shared.so",
+    "imports": [],
+    "sha256": "8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libcozmoEngine.so",
+    "imports": [],
+    "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+    "contains_family_name_bytes": true
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libDAS.so",
+    "imports": [],
+    "sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libgnustl_shared.so",
+    "imports": [],
+    "sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libmain.so",
+    "imports": [],
+    "sha256": "ec8a9d9e4117a793a8ec7d6789f5d7e29083cc3d07086f838ebd3b790b027684",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libmono.so",
+    "imports": [],
+    "sha256": "522f18fd3ab84d56033ac12414c633c882b75eafd0f97b6a87bce6523988646f",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_calib3d.so",
+    "imports": [],
+    "sha256": "96d2cbd5e7d19a7345222ffbe9216032e7bcdec1da061a92f5d2158893cd0db3",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_core.so",
+    "imports": [],
+    "sha256": "8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_features2d.so",
+    "imports": [],
+    "sha256": "b3ae2945927a869de90ce83a3bf3a7e671f92126963141edd0b83e2f2ac51b3f",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_flann.so",
+    "imports": [],
+    "sha256": "a795e8fdc4e592eed7da59c20a8f322595d27bb1bdd6e97bedee93b96cc382b1",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_highgui.so",
+    "imports": [],
+    "sha256": "5b3b4fd5f55a0d480e7210602a44fab34a5ec9b6a6f13420b850fd033426a5f5",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_imgcodecs.so",
+    "imports": [],
+    "sha256": "4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_imgproc.so",
+    "imports": [],
+    "sha256": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_java3.so",
+    "imports": [],
+    "sha256": "21b56b4bb20563637f0441a229c131af57b7900a246261508bf12670cccb4334",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_ml.so",
+    "imports": [],
+    "sha256": "45d7b357c7adae1ca9a53d8d1090fa09c882dcf359c7da83f451031d9fbaffd1",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_objdetect.so",
+    "imports": [],
+    "sha256": "dbad91f2d0567d8d428074d096373e37ba6b210cfce122e392451e515da6eb6f",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_photo.so",
+    "imports": [],
+    "sha256": "8d735ae1736ce8ef820cd7ee3f43da7a5146d26f54e30b63d87051a29fb0a7b8",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_shape.so",
+    "imports": [],
+    "sha256": "65b78f001e41c42dffb448231d773a1261704e812239e9c44865565218987e60",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_stitching.so",
+    "imports": [],
+    "sha256": "9eabb213c56c15dfe08b5147b7f78fadda44c61c88893932289588f7e09ea6bc",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_superres.so",
+    "imports": [],
+    "sha256": "f1e1b96e743813b14533494c30ea115cb438f39d70648ac0658262bc4168241f",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_video.so",
+    "imports": [],
+    "sha256": "ae80bb8d9c48d80fa6bf0375bd2dcb9bc53439d8d675f4fe3d826a9fcd9cfc30",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_videoio.so",
+    "imports": [],
+    "sha256": "e3d56573bdb374b9333842c35589b7e3a86368c80adc729381ccb82e873c5bd7",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libopencv_videostab.so",
+    "imports": [],
+    "sha256": "43cfa952690eb51d531d44cd60bdbd2e5cae4f237c0ebcd5e704a635f5522a49",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libstlport_shared.so",
+    "imports": [],
+    "sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libtbb.so",
+    "imports": [],
+    "sha256": "2d2864ac824ac089568d8032c4f21b8f8d3ffbc8f9b83332d95f460133c8c960",
+    "contains_family_name_bytes": false
+  },
+  {
+    "file": "resources/lib/armeabi-v7a/libunity.so",
+    "imports": [],
+    "sha256": "09b007798eead839421762ffc8351060f2fa50a7fbffdc06bce39abcef21d1b5",
+    "contains_family_name_bytes": false
+  }
+]

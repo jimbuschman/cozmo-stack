@@ -1,0 +1,14 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4fc52a 0x4fc542
+004FC52A: ldr        r0, [r0, #4] ;
+004FC52C: bx         lr ;
+004FC52E: ldr        r0, [r0, #4] ;
+004FC530: bx         lr ;
+004FC532: movs       r0, #0 ;
+004FC534: bx         lr ;
+004FC536: ldr        r0, [r0, #4] ;
+004FC538: bx         lr ;
+004FC53A: ldr        r1, [r0, #4] ;
+004FC53C: ldr        r0, [r0, #0xc] ;
+004FC53E: add        r0, r1 ;
+004FC540: bx         lr ;

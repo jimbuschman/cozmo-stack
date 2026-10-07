@@ -1,0 +1,50 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x4de50c 0x4de558
+004DE50C: asrs       r0, r5, #2 ;
+004DE50E: b          #0x4de038 ;
+004DE510: stm        r1!, {r3, r4} ;
+004DE512: b          #0x4de09c ;
+004DE514: strb       r4, [r3, #0x18] ;
+004DE516: b          #0x4de4d8 ;
+004DE518: movs       r1, #0x19 ;
+004DE51A: b          #0x4de0a4 ;
+004DE51C: asrs       r4, r3, #0x18 ;
+004DE51E: b          #0x4de4e0 ;
+004DE520: movs       r1, #0x18 ;
+004DE522: b          #0x4de04c ;
+004DE524: strb       r0, [r7] ;
+004DE526: b          #0x4de030 ;
+004DE528: movs       r6, #0x1c ;
+004DE52A: b          #0x4de4ec ;
+004DE52C: asrs       r0, r5, #2 ;
+004DE52E: b          #0x4de038 ;
+004DE530: str        r4, [r4] ;
+004DE532: b          #0x4de03c ;
+004DE534: b          #0x4de588 ;
+004DE536: b          #0x4de0c0 ;
+004DE538: b          #0x4de60c ;
+004DE53A: b          #0x4de0c4 ;
+004DE53C: str        r4, [r2, #8] ;
+004DE53E: b          #0x4de048 ;
+004DE540: b          #0x4de674 ;
+004DE542: b          #0x4de0cc ;
+004DE544: b          #0x4de6f8 ;
+004DE546: b          #0x4de0d0 ;
+004DE548: str        r4, [r0, #0x10] ;
+004DE54A: b          #0x4de054 ;
+004DE54C: b          #0x4de760 ;
+004DE54E: b          #0x4de0d8 ;
+004DE550: mov        r8, lr ;
+004DE552: b          #0x4de8dc ;
+004DE554: stm        r0!, {r2, r3, r5} ;
+004DE556: b          #0x4de060 ;
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x57293a 0x572950
+0057293A: push       {r4, lr} ;
+0057293C: ldr        r4, [r0, #4] ;
+0057293E: add.w      r0, r1, #0x10 ;
+00572942: blx        #0x4ad294 ; GOT 01043368 _ZNK4Anki5Cozmo17ExternalInterface19MessageGameToEngine4Get_ILNS1_22MessageGameToEngineTagE151EEERKNS1_29MessageGameToEngine_TagToTypeIXT_EE4typeEv
+00572946: ldrb       r0, [r0] ;
+00572948: strb.w     r0, [r4, #0x28] ;
+0057294C: pop        {r4, pc} ;
+0057294E: movs       r0, r0 ;

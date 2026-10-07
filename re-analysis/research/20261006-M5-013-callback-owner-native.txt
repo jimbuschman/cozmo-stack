@@ -1,0 +1,87 @@
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0x572188 0x572246
+00572188: push       {r4, r5, r6, lr} ;
+0057218A: sub        sp, #0x30 ;
+0057218C: ldr        r1, [pc, #0xac] ; literal[0057223C]=00ACC6B6
+0057218E: add        r6, sp, #0x10 ;
+00572190: movs       r3, #0x97 ;
+00572192: add        r1, pc ;
+00572194: ldr        r1, [r1] ;
+00572196: ldr        r1, [r1] ;
+00572198: str        r1, [sp, #0x2c] ;
+0057219A: ldm.w      r0, {r1, r2, r5} ;
+0057219E: ldr        r0, [r1] ;
+005721A0: ldr        r4, [r0, #0x2c] ;
+005721A2: ldr        r0, [pc, #0x9c] ; literal[00572240]=00AB1576
+005721A4: str        r2, [sp, #0x14] ;
+005721A6: add        r0, pc ;
+005721A8: strh.w     r3, [sp, #6] ;
+005721AC: adds       r0, #8 ;
+005721AE: str        r6, [sp, #0x20] ;
+005721B0: str        r0, [sp, #0x10] ;
+005721B2: add        r0, sp, #8 ;
+005721B4: add.w      r2, sp, #6 ;
+005721B8: mov        r3, r6 ;
+005721BA: blx        r4 ;
+005721BC: ldrd       r0, r1, [r5, #4] ;
+005721C0: cmp        r0, r1 ;
+005721C2: bhs        #0x5721da ;
+005721C4: ldr        r1, [sp, #8] ;
+005721C6: str        r1, [r0] ;
+005721C8: ldr        r1, [sp, #0xc] ;
+005721CA: str        r1, [r0, #4] ;
+005721CC: movs       r0, #0 ;
+005721CE: strd       r0, r0, [sp, #8] ;
+005721D2: ldr        r0, [r5, #4] ;
+005721D4: adds       r0, #8 ;
+005721D6: str        r0, [r5, #4] ;
+005721D8: b          #0x5721e2 ;
+005721DA: add        r1, sp, #8 ;
+005721DC: mov        r0, r5 ;
+005721DE: blx        #0x4a5008 ; GOT 010407E4 _ZNSt6__ndk16vectorINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEE21__push_back_slow_pathIS5_EEvOT_
+005721E2: ldr        r0, [sp, #0xc] ;
+005721E4: cbz        r0, #0x5721ea ;
+005721E6: blx        #0x4a4ef4 ; GOT 01040788 _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+005721EA: ldr        r0, [sp, #0x20] ;
+005721EC: cmp        r6, r0 ;
+005721EE: beq        #0x5721f8 ;
+005721F0: cbz        r0, #0x5721fe ;
+005721F2: ldr        r1, [r0] ;
+005721F4: ldr        r1, [r1, #0x14] ;
+005721F6: b          #0x5721fc ;
+005721F8: ldr        r1, [r0] ;
+005721FA: ldr        r1, [r1, #0x10] ;
+005721FC: blx        r1 ;
+005721FE: ldr        r0, [pc, #0x44] ; literal[00572244]=00ACC646
+00572200: ldr        r1, [sp, #0x2c] ;
+00572202: add        r0, pc ;
+00572204: ldr        r0, [r0] ;
+00572206: ldr        r0, [r0] ;
+00572208: subs       r0, r0, r1 ;
+0057220A: itt        eq ;
+0057220C: addeq      sp, #0x30 ;
+0057220E: popeq      {r4, r5, r6, pc} ;
+00572210: blx        #0x4a4fe4 ; GOT 010407D8 __stack_chk_fail
+00572214: mov        r5, r0 ;
+00572216: ldr        r0, [sp, #0xc] ;
+00572218: cbz        r0, #0x572222 ;
+0057221A: blx        #0x4a4ef4 ; GOT 01040788 _ZNSt6__ndk119__shared_weak_count16__release_sharedEv
+0057221E: b          #0x572222 ;
+00572220: mov        r5, r0 ;
+00572222: ldr        r0, [sp, #0x20] ;
+00572224: cmp        r6, r0 ;
+00572226: bne        #0x57222e ;
+00572228: ldr        r1, [r0] ;
+0057222A: ldr        r1, [r1, #0x10] ;
+0057222C: b          #0x572234 ;
+0057222E: cbz        r0, #0x572236 ;
+00572230: ldr        r1, [r0] ;
+00572232: ldr        r1, [r1, #0x14] ;
+00572234: blx        r1 ;
+00572236: mov        r0, r5 ;
+00572238: blx        #0x4a40a8 ; GOT 010402C4 _Unwind_Resume
+0057223C: stm        r6!, {r1, r2, r4, r5, r7} ;
+0057223E: lsls       r4, r5, #2 ;
+00572240: asrs       r6, r6, #0x15 ;
+00572242: lsls       r3, r5, #2 ;
+00572244: stm        r6!, {r1, r2, r6} ;

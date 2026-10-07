@@ -1,0 +1,886 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "scope": "Native primitives and shipped-asset FlatBuffer track-factory paths; synthetic true flag tests copy preservation and branch consumption, never an enabling producer. Phone import shims are recorded below. CPU write hook excludes Python fixture setup and shim memset; those operations are explicit in the script/import log.",
+  "constructor": {
+    "flag": 0,
+    "index": 0,
+    "vector_header": [
+      0,
+      0,
+      0
+    ]
+  },
+  "copy_cases": [
+    {
+      "input_flag": 0,
+      "input_payload": "",
+      "native_copy": {
+        "flag": 0,
+        "index": 7,
+        "payload": ""
+      }
+    },
+    {
+      "input_flag": 0,
+      "input_payload": "0081ff7f",
+      "native_copy": {
+        "flag": 0,
+        "index": 7,
+        "payload": "0081ff7f"
+      }
+    },
+    {
+      "input_flag": 1,
+      "input_payload": "",
+      "native_copy": {
+        "flag": 1,
+        "index": 7,
+        "payload": ""
+      }
+    },
+    {
+      "input_flag": 1,
+      "input_payload": "0081ff7f",
+      "native_copy": {
+        "flag": 1,
+        "index": 7,
+        "payload": "0081ff7f"
+      }
+    }
+  ],
+  "vector_assign_cases": [
+    {
+      "initial_capacity": 0,
+      "input_flag": 0,
+      "input_payload": "616263",
+      "native_result": {
+        "flag": 0,
+        "index": 7,
+        "payload": "616263"
+      }
+    },
+    {
+      "initial_capacity": 8,
+      "input_flag": 0,
+      "input_payload": "7879",
+      "native_result": {
+        "flag": 0,
+        "index": 7,
+        "payload": "7879"
+      }
+    },
+    {
+      "initial_capacity": 4,
+      "input_flag": 0,
+      "input_payload": "6c6f6e676572207061796c6f6164",
+      "native_result": {
+        "flag": 0,
+        "index": 7,
+        "payload": "6c6f6e676572207061796c6f6164"
+      }
+    },
+    {
+      "initial_capacity": 4,
+      "input_flag": 0,
+      "input_payload": "",
+      "native_result": {
+        "flag": 0,
+        "index": 7,
+        "payload": ""
+      }
+    },
+    {
+      "initial_capacity": 0,
+      "input_flag": 1,
+      "input_payload": "616263",
+      "native_result": {
+        "flag": 1,
+        "index": 7,
+        "payload": "616263"
+      }
+    },
+    {
+      "initial_capacity": 8,
+      "input_flag": 1,
+      "input_payload": "7879",
+      "native_result": {
+        "flag": 1,
+        "index": 7,
+        "payload": "7879"
+      }
+    },
+    {
+      "initial_capacity": 4,
+      "input_flag": 1,
+      "input_payload": "6c6f6e676572207061796c6f6164",
+      "native_result": {
+        "flag": 1,
+        "index": 7,
+        "payload": "6c6f6e676572207061796c6f6164"
+      }
+    },
+    {
+      "initial_capacity": 4,
+      "input_flag": 1,
+      "input_payload": "",
+      "native_result": {
+        "flag": 1,
+        "index": 7,
+        "payload": ""
+      }
+    }
+  ],
+  "cpu_flag_writes": [
+    {
+      "phase": "list-copy flag=0 length=0",
+      "pc": "0x564616",
+      "address": "0x20000030",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "list-copy flag=0 length=4",
+      "pc": "0x564616",
+      "address": "0x20000070",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "list-copy flag=1 length=0",
+      "pc": "0x564616",
+      "address": "0x200000c0",
+      "size": 1,
+      "value": 1,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "list-copy flag=1 length=4",
+      "pc": "0x564616",
+      "address": "0x20000100",
+      "size": 1,
+      "value": 1,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "shipped asset FlatBuffer track factory",
+      "pc": "0x564616",
+      "address": "0x20000210",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    },
+    {
+      "phase": "shipped asset FlatBuffer track factory",
+      "pc": "0x564616",
+      "address": "0x20000290",
+      "size": 1,
+      "value": 0,
+      "field": "copied node flag"
+    }
+  ],
+  "is_done_when_flag_true": 0,
+  "shipped_asset_factory": {
+    "asset": "re-analysis/obb/assets/cozmo_resources/assets/animations/anim_bored_event_02.bin",
+    "asset_sha256": "7ed5f6efe11af3a6f8ffd33950c8dd9b919fb401b7ecf07f94a18e668559611b",
+    "clip": "anim_bored_event_02",
+    "flatbuffer_table_offset": "0x88",
+    "return": 0,
+    "node_flag": 0,
+    "node_index": 0,
+    "native_normalized_name": "face_bored_event_02"
+  },
+  "asset_files_examined": 289,
+  "asset_parse_failures": [],
+  "asset_corpus_available_cases": 2,
+  "asset_corpus_executed_cases": 2,
+  "shipped_asset_factory_cases": [
+    {
+      "asset": "re-analysis/obb/assets/cozmo_resources/assets/animations/anim_bored_event_02.bin",
+      "asset_sha256": "7ed5f6efe11af3a6f8ffd33950c8dd9b919fb401b7ecf07f94a18e668559611b",
+      "clip": "anim_bored_event_02",
+      "flatbuffer_table_offset": "0x88",
+      "return": 0,
+      "node_flag": 0,
+      "node_index": 0,
+      "native_normalized_name": "face_bored_event_02"
+    },
+    {
+      "asset": "re-analysis/obb/assets/cozmo_resources/assets/animations/anim_bored_event_04.bin",
+      "asset_sha256": "e82328eda75b0d8d2d54e9f7eab134880d3e070e6b085295876effb88ce733a7",
+      "clip": "anim_bored_event_04",
+      "flatbuffer_table_offset": "0x8c",
+      "return": 0,
+      "node_flag": 0,
+      "node_index": 0,
+      "native_normalized_name": "face_bored_event_04"
+    }
+  ],
+  "imports_serviced": [
+    {
+      "import": "__aeabi_memclr4",
+      "args": [
+        570425368,
+        17,
+        116
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        1936028680
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871040,
+        570426368,
+        4
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        570425344,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        1936028680
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871184,
+        570426368,
+        4
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        3,
+        3,
+        570426627
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871200,
+        570426624,
+        3
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        8,
+        8,
+        0
+      ]
+    },
+    {
+      "import": "__aeabi_memmove",
+      "args": [
+        536871216,
+        570426624,
+        2
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        0
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871232,
+        536871236,
+        570426638
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        14,
+        14,
+        570426638
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871248,
+        570426624,
+        14
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        3,
+        3,
+        570426627
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871280,
+        570426624,
+        3
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        8,
+        8,
+        0
+      ]
+    },
+    {
+      "import": "__aeabi_memmove",
+      "args": [
+        536871296,
+        570426624,
+        2
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        0
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871312,
+        536871316,
+        570426638
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        14,
+        14,
+        570426638
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871328,
+        570426624,
+        14
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        4,
+        4,
+        0
+      ]
+    },
+    {
+      "import": "__aeabi_memclr4",
+      "args": [
+        554631128,
+        17,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        32,
+        570491028,
+        19
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871360,
+        570491028,
+        19
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        50,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        48,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        116,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        110,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        118,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        100,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        114,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        111,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        98,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        99,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        97,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        102,
+        1
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        554631104,
+        554631068
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        32,
+        536871360,
+        19
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871456,
+        536871360,
+        19
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871360,
+        16904376,
+        19
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871456,
+        570429440,
+        570429440
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871392,
+        570429440,
+        570429440
+      ]
+    },
+    {
+      "import": "__aeabi_memclr4",
+      "args": [
+        554631128,
+        17,
+        0
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        32,
+        570491032,
+        19
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871488,
+        570491032,
+        19
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        52,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        48,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        116,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        110,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        118,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        100,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        114,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        111,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        98,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        95,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        101,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        99,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        97,
+        1
+      ]
+    },
+    {
+      "import": "memchr",
+      "args": [
+        5215860,
+        102,
+        1
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        52,
+        554631104,
+        554631068
+      ]
+    },
+    {
+      "import": "_Znwj",
+      "args": [
+        32,
+        536871488,
+        19
+      ]
+    },
+    {
+      "import": "__aeabi_memcpy",
+      "args": [
+        536871584,
+        536871488,
+        19
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871488,
+        16904376,
+        19
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871584,
+        570429440,
+        570429440
+      ]
+    },
+    {
+      "import": "_ZdlPv",
+      "args": [
+        536871520,
+        570429440,
+        570429440
+      ]
+    }
+  ]
+}
