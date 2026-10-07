@@ -200,10 +200,13 @@ public sealed class ProceduralFacePose
         float sx = FaceScaleX, sy = FaceScaleY;
         float xmin = 32f + sx * (Left[EyeParam.EyeCenterX] - 15f * Left[EyeParam.EyeScaleX]);
         float xmax = 96f + sx * (Right[EyeParam.EyeCenterX] + 15f * Right[EyeParam.EyeScaleX]);
-        float ymin = 32f + sy * MathF.Min(Left[EyeParam.EyeCenterY] - 20f * Left[EyeParam.EyeScaleY],
-                                          Right[EyeParam.EyeCenterY] - 20f * Right[EyeParam.EyeScaleY]);
-        float ymax = 32f + sy * MathF.Max(Left[EyeParam.EyeCenterY] + 20f * Left[EyeParam.EyeScaleY],
-                                          Right[EyeParam.EyeCenterY] + 20f * Right[EyeParam.EyeScaleY]);
+        float leftMin = Left[EyeParam.EyeCenterY] - 20f * Left[EyeParam.EyeScaleY];
+        float rightMin = Right[EyeParam.EyeCenterY] - 20f * Right[EyeParam.EyeScaleY];
+        float leftMax = Left[EyeParam.EyeCenterY] + 20f * Left[EyeParam.EyeScaleY];
+        float rightMax = Right[EyeParam.EyeCenterY] + 20f * Right[EyeParam.EyeScaleY];
+        // Shipped ARM oracle 0x00584568: unordered operands retain the left term.
+        float ymin = 32f + sy * (rightMin < leftMin ? rightMin : leftMin);
+        float ymax = 32f + sy * (rightMax > leftMax ? rightMax : leftMax);
         return (xmin, xmax, ymin, ymax);
     }
 
