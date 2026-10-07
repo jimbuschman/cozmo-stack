@@ -19,7 +19,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-009 | 42 | PARTIAL |
 | Q14-010 | 43 | PARTIAL |
 | Q14-011 | 44 | PARTIAL |
-| Q14-012 | 46 | NOT DONE |
+| Q14-012 | 46 | PARTIAL |
 | Q14-013 | 48 | CHECKED |
 | Q14-014 | 49 | NOT DONE |
 | Q14-015 | 50 | NOT DONE |
@@ -60,11 +60,11 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-051 | 90 | NOT DONE |
 | Q14-052 | 91 | NOT DONE |
 | Q14-053 | 92 | NOT DONE |
-| Q14-054 | 93 | NOT DONE |
+| Q14-054 | 93 | CHECKED |
 | Q14-055 | 94 | NOT DONE |
 | Q14-056 | 95 | NOT DONE |
 | Q14-057 | 96 | NOT DONE |
-| Q14-058 | 97 | NOT DONE |
+| Q14-058 | 97 | CHECKED |
 | Q14-059 | 98 | NOT DONE |
 | Q14-060 | 99 | NOT DONE |
 | Q14-061 | 100 | NOT DONE |
@@ -214,7 +214,7 @@ PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positi
 
 > | M6-011 | **KEEP** | 0x009FFD14..0x009FFD74;0x00A550D8..0x00A551EC;0x00A44630;0x00A766F0;0x00A77480;0x00A769EC..0x00A76A2C | Target writers/attenuation, cutoff map parameters, eight-step ramp cadence, finish countdown and immediate bypass predicates remain exact; do not invent default-zero inputs. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: FB1–FB3 and FC1–FC9 establish named target stores, clamp/opcode gates, cutoff maps, coefficient update cadence, stable/bypass history and dispatch order. Persistent matrix values, connection/filter recipients, and complete input writer closure remain open; no whole M6-011 completion claim.
 
 ## Q14-013 — triage line 48
 
@@ -460,7 +460,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-016 | **KEEP** | 0x0057C780..0x0057C7BF | 66-ms stack lead versus native 30000-byte/14-frame budget is timing policy; ADP-1 supplies no permission to retain it without a separate ruling. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: RB1–RB2 reopen the bounded budget consumer, signed gates, modular arithmetic and publication order. Telemetry writers are HIGHER-LAYER M5/device dependencies; this does not approve the independent 66-ms policy.
 
 ## Q14-055 — triage line 94
 
@@ -484,7 +484,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-023 | **KEEP** | UNKNOWN — stock-app/robot capture, no engine range supplied | Hardware audible-result uncertainty remains a separate acceptance item; neither PCM equivalence nor ADP-1 invents the stock recording or settles provenance. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED research boundary: RB3 preserves UNKNOWN final audible output and the absent stock recording. The record remains HARDWARE_ONLY; no hardware verification or provenance upgrade is claimed.
 
 ## Q14-059 — triage line 98
 
