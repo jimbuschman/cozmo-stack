@@ -8,4 +8,9 @@ Validation: fidelity --check passes; full suite and push gate 3,947 passed, zero
 
 ## Q11 circular expectations
 
-Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Commit is the one introducing this Q11 section (`Q11: replace circular expectations with shipped-code fixtures`). Native budget, CompressRLE and NamedColors GetByString fixtures replace supported circular expectations; color/default-eye expectations read Q10 fixtures. MISSING and higher-layer exclusions are itemized for every original Q7 group in `research/20261007-circular-fixes.md`. No production change in this batch, no statuses settled. Corrected the earlier research report's erroneous compression addresses. Selected entry regressions and all 41 new native rows pass.
+Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Commit f32dafd, pushed. Native budget, CompressRLE and NamedColors GetByString fixtures replace supported circular expectations; color/default-eye expectations read Q10 fixtures. MISSING and higher-layer exclusions are itemized for every original Q7 group in `research/20261007-circular-fixes.md`. No production change in this batch, no statuses settled. Corrected the earlier research report's erroneous compression addresses. Selected entry regressions and all 41 new native rows pass.
+
+## Q12 literal representation
+
+Replaced 451 native sine-table words with explicit binary32 bit constructors and per-word addresses; removed 87 lint baseline keys. No value or width change. Four asset literals excluded by the requested source-kind gate. Validation: fidelity --check passes; full suite 3,948 passed, zero skipped. Commit is the Q12 literal batch introducing this section; push gate runs before publication.
+

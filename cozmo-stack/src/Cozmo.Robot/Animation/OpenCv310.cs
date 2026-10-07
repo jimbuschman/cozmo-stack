@@ -372,82 +372,457 @@ public static class OpenCv310
     /// <summary>The stock 451-entry sine table (drawing.cpp), byte-identical in the shipped build (gap3 B2, 0x000E7910).</summary>
     internal static readonly float[] SinTable =
     {
-        0.0000000f, 0.0174524f, 0.0348995f, 0.0523360f, 0.0697565f, 0.0871557f,
-        0.1045285f, 0.1218693f, 0.1391731f, 0.1564345f, 0.1736482f, 0.1908090f,
-        0.2079117f, 0.2249511f, 0.2419219f, 0.2588190f, 0.2756374f, 0.2923717f,
-        0.3090170f, 0.3255682f, 0.3420201f, 0.3583679f, 0.3746066f, 0.3907311f,
-        0.4067366f, 0.4226183f, 0.4383711f, 0.4539905f, 0.4694716f, 0.4848096f,
-        0.5000000f, 0.5150381f, 0.5299193f, 0.5446390f, 0.5591929f, 0.5735764f,
-        0.5877853f, 0.6018150f, 0.6156615f, 0.6293204f, 0.6427876f, 0.6560590f,
-        0.6691306f, 0.6819984f, 0.6946584f, 0.7071068f, 0.7193398f, 0.7313537f,
-        0.7431448f, 0.7547096f, 0.7660444f, 0.7771460f, 0.7880108f, 0.7986355f,
-        0.8090170f, 0.8191520f, 0.8290376f, 0.8386706f, 0.8480481f, 0.8571673f,
-        0.8660254f, 0.8746197f, 0.8829476f, 0.8910065f, 0.8987940f, 0.9063078f,
-        0.9135455f, 0.9205049f, 0.9271839f, 0.9335804f, 0.9396926f, 0.9455186f,
-        0.9510565f, 0.9563048f, 0.9612617f, 0.9659258f, 0.9702957f, 0.9743701f,
-        0.9781476f, 0.9816272f, 0.9848078f, 0.9876883f, 0.9902681f, 0.9925462f,
-        0.9945219f, 0.9961947f, 0.9975641f, 0.9986295f, 0.9993908f, 0.9998477f,
-        1.0000000f, 0.9998477f, 0.9993908f, 0.9986295f, 0.9975641f, 0.9961947f,
-        0.9945219f, 0.9925462f, 0.9902681f, 0.9876883f, 0.9848078f, 0.9816272f,
-        0.9781476f, 0.9743701f, 0.9702957f, 0.9659258f, 0.9612617f, 0.9563048f,
-        0.9510565f, 0.9455186f, 0.9396926f, 0.9335804f, 0.9271839f, 0.9205049f,
-        0.9135455f, 0.9063078f, 0.8987940f, 0.8910065f, 0.8829476f, 0.8746197f,
-        0.8660254f, 0.8571673f, 0.8480481f, 0.8386706f, 0.8290376f, 0.8191520f,
-        0.8090170f, 0.7986355f, 0.7880108f, 0.7771460f, 0.7660444f, 0.7547096f,
-        0.7431448f, 0.7313537f, 0.7193398f, 0.7071068f, 0.6946584f, 0.6819984f,
-        0.6691306f, 0.6560590f, 0.6427876f, 0.6293204f, 0.6156615f, 0.6018150f,
-        0.5877853f, 0.5735764f, 0.5591929f, 0.5446390f, 0.5299193f, 0.5150381f,
-        0.5000000f, 0.4848096f, 0.4694716f, 0.4539905f, 0.4383711f, 0.4226183f,
-        0.4067366f, 0.3907311f, 0.3746066f, 0.3583679f, 0.3420201f, 0.3255682f,
-        0.3090170f, 0.2923717f, 0.2756374f, 0.2588190f, 0.2419219f, 0.2249511f,
-        0.2079117f, 0.1908090f, 0.1736482f, 0.1564345f, 0.1391731f, 0.1218693f,
-        0.1045285f, 0.0871557f, 0.0697565f, 0.0523360f, 0.0348995f, 0.0174524f,
-        0.0000000f, -0.0174524f, -0.0348995f, -0.0523360f, -0.0697565f, -0.0871557f,
-        -0.1045285f, -0.1218693f, -0.1391731f, -0.1564345f, -0.1736482f, -0.1908090f,
-        -0.2079117f, -0.2249511f, -0.2419219f, -0.2588190f, -0.2756374f, -0.2923717f,
-        -0.3090170f, -0.3255682f, -0.3420201f, -0.3583679f, -0.3746066f, -0.3907311f,
-        -0.4067366f, -0.4226183f, -0.4383711f, -0.4539905f, -0.4694716f, -0.4848096f,
-        -0.5000000f, -0.5150381f, -0.5299193f, -0.5446390f, -0.5591929f, -0.5735764f,
-        -0.5877853f, -0.6018150f, -0.6156615f, -0.6293204f, -0.6427876f, -0.6560590f,
-        -0.6691306f, -0.6819984f, -0.6946584f, -0.7071068f, -0.7193398f, -0.7313537f,
-        -0.7431448f, -0.7547096f, -0.7660444f, -0.7771460f, -0.7880108f, -0.7986355f,
-        -0.8090170f, -0.8191520f, -0.8290376f, -0.8386706f, -0.8480481f, -0.8571673f,
-        -0.8660254f, -0.8746197f, -0.8829476f, -0.8910065f, -0.8987940f, -0.9063078f,
-        -0.9135455f, -0.9205049f, -0.9271839f, -0.9335804f, -0.9396926f, -0.9455186f,
-        -0.9510565f, -0.9563048f, -0.9612617f, -0.9659258f, -0.9702957f, -0.9743701f,
-        -0.9781476f, -0.9816272f, -0.9848078f, -0.9876883f, -0.9902681f, -0.9925462f,
-        -0.9945219f, -0.9961947f, -0.9975641f, -0.9986295f, -0.9993908f, -0.9998477f,
-        -1.0000000f, -0.9998477f, -0.9993908f, -0.9986295f, -0.9975641f, -0.9961947f,
-        -0.9945219f, -0.9925462f, -0.9902681f, -0.9876883f, -0.9848078f, -0.9816272f,
-        -0.9781476f, -0.9743701f, -0.9702957f, -0.9659258f, -0.9612617f, -0.9563048f,
-        -0.9510565f, -0.9455186f, -0.9396926f, -0.9335804f, -0.9271839f, -0.9205049f,
-        -0.9135455f, -0.9063078f, -0.8987940f, -0.8910065f, -0.8829476f, -0.8746197f,
-        -0.8660254f, -0.8571673f, -0.8480481f, -0.8386706f, -0.8290376f, -0.8191520f,
-        -0.8090170f, -0.7986355f, -0.7880108f, -0.7771460f, -0.7660444f, -0.7547096f,
-        -0.7431448f, -0.7313537f, -0.7193398f, -0.7071068f, -0.6946584f, -0.6819984f,
-        -0.6691306f, -0.6560590f, -0.6427876f, -0.6293204f, -0.6156615f, -0.6018150f,
-        -0.5877853f, -0.5735764f, -0.5591929f, -0.5446390f, -0.5299193f, -0.5150381f,
-        -0.5000000f, -0.4848096f, -0.4694716f, -0.4539905f, -0.4383711f, -0.4226183f,
-        -0.4067366f, -0.3907311f, -0.3746066f, -0.3583679f, -0.3420201f, -0.3255682f,
-        -0.3090170f, -0.2923717f, -0.2756374f, -0.2588190f, -0.2419219f, -0.2249511f,
-        -0.2079117f, -0.1908090f, -0.1736482f, -0.1564345f, -0.1391731f, -0.1218693f,
-        -0.1045285f, -0.0871557f, -0.0697565f, -0.0523360f, -0.0348995f, -0.0174524f,
-        -0.0000000f, 0.0174524f, 0.0348995f, 0.0523360f, 0.0697565f, 0.0871557f,
-        0.1045285f, 0.1218693f, 0.1391731f, 0.1564345f, 0.1736482f, 0.1908090f,
-        0.2079117f, 0.2249511f, 0.2419219f, 0.2588190f, 0.2756374f, 0.2923717f,
-        0.3090170f, 0.3255682f, 0.3420201f, 0.3583679f, 0.3746066f, 0.3907311f,
-        0.4067366f, 0.4226183f, 0.4383711f, 0.4539905f, 0.4694716f, 0.4848096f,
-        0.5000000f, 0.5150381f, 0.5299193f, 0.5446390f, 0.5591929f, 0.5735764f,
-        0.5877853f, 0.6018150f, 0.6156615f, 0.6293204f, 0.6427876f, 0.6560590f,
-        0.6691306f, 0.6819984f, 0.6946584f, 0.7071068f, 0.7193398f, 0.7313537f,
-        0.7431448f, 0.7547096f, 0.7660444f, 0.7771460f, 0.7880108f, 0.7986355f,
-        0.8090170f, 0.8191520f, 0.8290376f, 0.8386706f, 0.8480481f, 0.8571673f,
-        0.8660254f, 0.8746197f, 0.8829476f, 0.8910065f, 0.8987940f, 0.9063078f,
-        0.9135455f, 0.9205049f, 0.9271839f, 0.9335804f, 0.9396926f, 0.9455186f,
-        0.9510565f, 0.9563048f, 0.9612617f, 0.9659258f, 0.9702957f, 0.9743701f,
-        0.9781476f, 0.9816272f, 0.9848078f, 0.9876883f, 0.9902681f, 0.9925462f,
-        0.9945219f, 0.9961947f, 0.9975641f, 0.9986295f, 0.9993908f, 0.9998477f,
-        1.0000000f,
+        BitConverter.Int32BitsToSingle(unchecked((int)0x00000000)), // libopencv_imgproc.so 0x000E7910
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3C8EF856)), // libopencv_imgproc.so 0x000E7914
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D0EF2C7)), // libopencv_imgproc.so 0x000E7918
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D565E46)), // libopencv_imgproc.so 0x000E791C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D8EDC7F)), // libopencv_imgproc.so 0x000E7920
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DB27EB0)), // libopencv_imgproc.so 0x000E7924
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DD6130A)), // libopencv_imgproc.so 0x000E7928
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DF9969D)), // libopencv_imgproc.so 0x000E792C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E0E8365)), // libopencv_imgproc.so 0x000E7930
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E20305E)), // libopencv_imgproc.so 0x000E7934
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E31D0D5)), // libopencv_imgproc.so 0x000E7938
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E43636F)), // libopencv_imgproc.so 0x000E793C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E54E6CE)), // libopencv_imgproc.so 0x000E7940
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E665995)), // libopencv_imgproc.so 0x000E7944
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E77BA60)), // libopencv_imgproc.so 0x000E7948
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8483ED)), // libopencv_imgproc.so 0x000E794C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8D2058)), // libopencv_imgproc.so 0x000E7950
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E95B1BE)), // libopencv_imgproc.so 0x000E7954
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E9E377A)), // libopencv_imgproc.so 0x000E7958
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EA6B0E0)), // libopencv_imgproc.so 0x000E795C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EAF1D42)), // libopencv_imgproc.so 0x000E7960
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EB77BFF)), // libopencv_imgproc.so 0x000E7964
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EBFCC70)), // libopencv_imgproc.so 0x000E7968
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EC80DE8)), // libopencv_imgproc.so 0x000E796C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED03FC8)), // libopencv_imgproc.so 0x000E7970
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED8616D)), // libopencv_imgproc.so 0x000E7974
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE0722D)), // libopencv_imgproc.so 0x000E7978
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE87171)), // libopencv_imgproc.so 0x000E797C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF05E95)), // libopencv_imgproc.so 0x000E7980
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF838F7)), // libopencv_imgproc.so 0x000E7984
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F000000)), // libopencv_imgproc.so 0x000E7988
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F03D989)), // libopencv_imgproc.so 0x000E798C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F07A8CB)), // libopencv_imgproc.so 0x000E7990
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0B6D76)), // libopencv_imgproc.so 0x000E7994
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0F2744)), // libopencv_imgproc.so 0x000E7998
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F12D5E7)), // libopencv_imgproc.so 0x000E799C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F167919)), // libopencv_imgproc.so 0x000E79A0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1A108C)), // libopencv_imgproc.so 0x000E79A4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1D9BFE)), // libopencv_imgproc.so 0x000E79A8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F211B24)), // libopencv_imgproc.so 0x000E79AC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F248DBA)), // libopencv_imgproc.so 0x000E79B0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F27F37C)), // libopencv_imgproc.so 0x000E79B4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2B4C25)), // libopencv_imgproc.so 0x000E79B8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2E9772)), // libopencv_imgproc.so 0x000E79BC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F31D522)), // libopencv_imgproc.so 0x000E79C0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3504F4)), // libopencv_imgproc.so 0x000E79C4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3826A7)), // libopencv_imgproc.so 0x000E79C8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3B39FF)), // libopencv_imgproc.so 0x000E79CC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3E3EBD)), // libopencv_imgproc.so 0x000E79D0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4134A6)), // libopencv_imgproc.so 0x000E79D4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F441B7C)), // libopencv_imgproc.so 0x000E79D8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F46F30A)), // libopencv_imgproc.so 0x000E79DC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F49BB13)), // libopencv_imgproc.so 0x000E79E0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4C7360)), // libopencv_imgproc.so 0x000E79E4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4F1BBD)), // libopencv_imgproc.so 0x000E79E8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F51B3F2)), // libopencv_imgproc.so 0x000E79EC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F543BCF)), // libopencv_imgproc.so 0x000E79F0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F56B31E)), // libopencv_imgproc.so 0x000E79F4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5919AE)), // libopencv_imgproc.so 0x000E79F8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5B6F51)), // libopencv_imgproc.so 0x000E79FC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5DB3D7)), // libopencv_imgproc.so 0x000E7A00
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5FE714)), // libopencv_imgproc.so 0x000E7A04
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6208DB)), // libopencv_imgproc.so 0x000E7A08
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F641901)), // libopencv_imgproc.so 0x000E7A0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F66175D)), // libopencv_imgproc.so 0x000E7A10
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6803CA)), // libopencv_imgproc.so 0x000E7A14
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F69DE1E)), // libopencv_imgproc.so 0x000E7A18
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6BA636)), // libopencv_imgproc.so 0x000E7A1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6D5BED)), // libopencv_imgproc.so 0x000E7A20
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6EFF20)), // libopencv_imgproc.so 0x000E7A24
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F708FB2)), // libopencv_imgproc.so 0x000E7A28
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F720D82)), // libopencv_imgproc.so 0x000E7A2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F737870)), // libopencv_imgproc.so 0x000E7A30
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F74D064)), // libopencv_imgproc.so 0x000E7A34
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F76153F)), // libopencv_imgproc.so 0x000E7A38
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7746EA)), // libopencv_imgproc.so 0x000E7A3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F78654D)), // libopencv_imgproc.so 0x000E7A40
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F797052)), // libopencv_imgproc.so 0x000E7A44
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7A67E2)), // libopencv_imgproc.so 0x000E7A48
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7B4BEC)), // libopencv_imgproc.so 0x000E7A4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7C1C5D)), // libopencv_imgproc.so 0x000E7A50
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7CD924)), // libopencv_imgproc.so 0x000E7A54
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7D8236)), // libopencv_imgproc.so 0x000E7A58
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E1782)), // libopencv_imgproc.so 0x000E7A5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E98FD)), // libopencv_imgproc.so 0x000E7A60
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F069E)), // libopencv_imgproc.so 0x000E7A64
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F605C)), // libopencv_imgproc.so 0x000E7A68
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FA62F)), // libopencv_imgproc.so 0x000E7A6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FD813)), // libopencv_imgproc.so 0x000E7A70
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FF605)), // libopencv_imgproc.so 0x000E7A74
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F800000)), // libopencv_imgproc.so 0x000E7A78
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FF605)), // libopencv_imgproc.so 0x000E7A7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FD813)), // libopencv_imgproc.so 0x000E7A80
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FA62F)), // libopencv_imgproc.so 0x000E7A84
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F605C)), // libopencv_imgproc.so 0x000E7A88
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F069E)), // libopencv_imgproc.so 0x000E7A8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E98FD)), // libopencv_imgproc.so 0x000E7A90
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E1782)), // libopencv_imgproc.so 0x000E7A94
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7D8236)), // libopencv_imgproc.so 0x000E7A98
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7CD924)), // libopencv_imgproc.so 0x000E7A9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7C1C5D)), // libopencv_imgproc.so 0x000E7AA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7B4BEC)), // libopencv_imgproc.so 0x000E7AA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7A67E2)), // libopencv_imgproc.so 0x000E7AA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F797052)), // libopencv_imgproc.so 0x000E7AAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F78654D)), // libopencv_imgproc.so 0x000E7AB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7746EA)), // libopencv_imgproc.so 0x000E7AB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F76153F)), // libopencv_imgproc.so 0x000E7AB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F74D064)), // libopencv_imgproc.so 0x000E7ABC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F737870)), // libopencv_imgproc.so 0x000E7AC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F720D82)), // libopencv_imgproc.so 0x000E7AC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F708FB2)), // libopencv_imgproc.so 0x000E7AC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6EFF20)), // libopencv_imgproc.so 0x000E7ACC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6D5BED)), // libopencv_imgproc.so 0x000E7AD0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6BA636)), // libopencv_imgproc.so 0x000E7AD4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F69DE1E)), // libopencv_imgproc.so 0x000E7AD8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6803CA)), // libopencv_imgproc.so 0x000E7ADC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F66175D)), // libopencv_imgproc.so 0x000E7AE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F641901)), // libopencv_imgproc.so 0x000E7AE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6208DB)), // libopencv_imgproc.so 0x000E7AE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5FE714)), // libopencv_imgproc.so 0x000E7AEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5DB3D7)), // libopencv_imgproc.so 0x000E7AF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5B6F51)), // libopencv_imgproc.so 0x000E7AF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5919AE)), // libopencv_imgproc.so 0x000E7AF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F56B31E)), // libopencv_imgproc.so 0x000E7AFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F543BCF)), // libopencv_imgproc.so 0x000E7B00
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F51B3F2)), // libopencv_imgproc.so 0x000E7B04
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4F1BBD)), // libopencv_imgproc.so 0x000E7B08
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4C7360)), // libopencv_imgproc.so 0x000E7B0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F49BB13)), // libopencv_imgproc.so 0x000E7B10
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F46F30A)), // libopencv_imgproc.so 0x000E7B14
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F441B7C)), // libopencv_imgproc.so 0x000E7B18
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4134A6)), // libopencv_imgproc.so 0x000E7B1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3E3EBD)), // libopencv_imgproc.so 0x000E7B20
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3B39FF)), // libopencv_imgproc.so 0x000E7B24
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3826A7)), // libopencv_imgproc.so 0x000E7B28
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3504F4)), // libopencv_imgproc.so 0x000E7B2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F31D522)), // libopencv_imgproc.so 0x000E7B30
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2E9772)), // libopencv_imgproc.so 0x000E7B34
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2B4C25)), // libopencv_imgproc.so 0x000E7B38
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F27F37C)), // libopencv_imgproc.so 0x000E7B3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F248DBA)), // libopencv_imgproc.so 0x000E7B40
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F211B24)), // libopencv_imgproc.so 0x000E7B44
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1D9BFE)), // libopencv_imgproc.so 0x000E7B48
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1A108C)), // libopencv_imgproc.so 0x000E7B4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F167919)), // libopencv_imgproc.so 0x000E7B50
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F12D5E7)), // libopencv_imgproc.so 0x000E7B54
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0F2744)), // libopencv_imgproc.so 0x000E7B58
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0B6D76)), // libopencv_imgproc.so 0x000E7B5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F07A8CB)), // libopencv_imgproc.so 0x000E7B60
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F03D989)), // libopencv_imgproc.so 0x000E7B64
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F000000)), // libopencv_imgproc.so 0x000E7B68
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF838F7)), // libopencv_imgproc.so 0x000E7B6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF05E95)), // libopencv_imgproc.so 0x000E7B70
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE87171)), // libopencv_imgproc.so 0x000E7B74
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE0722D)), // libopencv_imgproc.so 0x000E7B78
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED8616D)), // libopencv_imgproc.so 0x000E7B7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED03FC8)), // libopencv_imgproc.so 0x000E7B80
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EC80DE8)), // libopencv_imgproc.so 0x000E7B84
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EBFCC70)), // libopencv_imgproc.so 0x000E7B88
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EB77BFF)), // libopencv_imgproc.so 0x000E7B8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EAF1D42)), // libopencv_imgproc.so 0x000E7B90
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EA6B0E0)), // libopencv_imgproc.so 0x000E7B94
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E9E377A)), // libopencv_imgproc.so 0x000E7B98
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E95B1BE)), // libopencv_imgproc.so 0x000E7B9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8D2058)), // libopencv_imgproc.so 0x000E7BA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8483ED)), // libopencv_imgproc.so 0x000E7BA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E77BA60)), // libopencv_imgproc.so 0x000E7BA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E665995)), // libopencv_imgproc.so 0x000E7BAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E54E6CE)), // libopencv_imgproc.so 0x000E7BB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E43636F)), // libopencv_imgproc.so 0x000E7BB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E31D0D5)), // libopencv_imgproc.so 0x000E7BB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E20305E)), // libopencv_imgproc.so 0x000E7BBC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E0E8365)), // libopencv_imgproc.so 0x000E7BC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DF9969D)), // libopencv_imgproc.so 0x000E7BC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DD6130A)), // libopencv_imgproc.so 0x000E7BC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DB27EB0)), // libopencv_imgproc.so 0x000E7BCC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D8EDC7F)), // libopencv_imgproc.so 0x000E7BD0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D565E46)), // libopencv_imgproc.so 0x000E7BD4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D0EF2C7)), // libopencv_imgproc.so 0x000E7BD8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3C8EF856)), // libopencv_imgproc.so 0x000E7BDC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x00000000)), // libopencv_imgproc.so 0x000E7BE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBC8EF856)), // libopencv_imgproc.so 0x000E7BE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD0EF2C7)), // libopencv_imgproc.so 0x000E7BE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD565E46)), // libopencv_imgproc.so 0x000E7BEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD8EDC7F)), // libopencv_imgproc.so 0x000E7BF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDB27EB0)), // libopencv_imgproc.so 0x000E7BF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDD6130A)), // libopencv_imgproc.so 0x000E7BF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDF9969D)), // libopencv_imgproc.so 0x000E7BFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE0E8365)), // libopencv_imgproc.so 0x000E7C00
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE20305E)), // libopencv_imgproc.so 0x000E7C04
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE31D0D5)), // libopencv_imgproc.so 0x000E7C08
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE43636F)), // libopencv_imgproc.so 0x000E7C0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE54E6CE)), // libopencv_imgproc.so 0x000E7C10
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE665995)), // libopencv_imgproc.so 0x000E7C14
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE77BA60)), // libopencv_imgproc.so 0x000E7C18
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE8483ED)), // libopencv_imgproc.so 0x000E7C1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE8D2058)), // libopencv_imgproc.so 0x000E7C20
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE95B1BE)), // libopencv_imgproc.so 0x000E7C24
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE9E377A)), // libopencv_imgproc.so 0x000E7C28
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEA6B0E0)), // libopencv_imgproc.so 0x000E7C2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEAF1D42)), // libopencv_imgproc.so 0x000E7C30
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEB77BFF)), // libopencv_imgproc.so 0x000E7C34
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEBFCC70)), // libopencv_imgproc.so 0x000E7C38
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEC80DE8)), // libopencv_imgproc.so 0x000E7C3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBED03FC8)), // libopencv_imgproc.so 0x000E7C40
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBED8616D)), // libopencv_imgproc.so 0x000E7C44
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEE0722D)), // libopencv_imgproc.so 0x000E7C48
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEE87171)), // libopencv_imgproc.so 0x000E7C4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEF05E95)), // libopencv_imgproc.so 0x000E7C50
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEF838F7)), // libopencv_imgproc.so 0x000E7C54
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF000000)), // libopencv_imgproc.so 0x000E7C58
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF03D989)), // libopencv_imgproc.so 0x000E7C5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF07A8CB)), // libopencv_imgproc.so 0x000E7C60
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF0B6D76)), // libopencv_imgproc.so 0x000E7C64
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF0F2744)), // libopencv_imgproc.so 0x000E7C68
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF12D5E7)), // libopencv_imgproc.so 0x000E7C6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF167919)), // libopencv_imgproc.so 0x000E7C70
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF1A108C)), // libopencv_imgproc.so 0x000E7C74
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF1D9BFE)), // libopencv_imgproc.so 0x000E7C78
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF211B24)), // libopencv_imgproc.so 0x000E7C7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF248DBA)), // libopencv_imgproc.so 0x000E7C80
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF27F37C)), // libopencv_imgproc.so 0x000E7C84
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF2B4C25)), // libopencv_imgproc.so 0x000E7C88
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF2E9772)), // libopencv_imgproc.so 0x000E7C8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF31D522)), // libopencv_imgproc.so 0x000E7C90
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3504F4)), // libopencv_imgproc.so 0x000E7C94
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3826A7)), // libopencv_imgproc.so 0x000E7C98
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3B39FF)), // libopencv_imgproc.so 0x000E7C9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3E3EBD)), // libopencv_imgproc.so 0x000E7CA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4134A6)), // libopencv_imgproc.so 0x000E7CA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF441B7C)), // libopencv_imgproc.so 0x000E7CA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF46F30A)), // libopencv_imgproc.so 0x000E7CAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF49BB13)), // libopencv_imgproc.so 0x000E7CB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4C7360)), // libopencv_imgproc.so 0x000E7CB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4F1BBD)), // libopencv_imgproc.so 0x000E7CB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF51B3F2)), // libopencv_imgproc.so 0x000E7CBC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF543BCF)), // libopencv_imgproc.so 0x000E7CC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF56B31E)), // libopencv_imgproc.so 0x000E7CC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5919AE)), // libopencv_imgproc.so 0x000E7CC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5B6F51)), // libopencv_imgproc.so 0x000E7CCC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5DB3D7)), // libopencv_imgproc.so 0x000E7CD0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5FE714)), // libopencv_imgproc.so 0x000E7CD4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6208DB)), // libopencv_imgproc.so 0x000E7CD8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF641901)), // libopencv_imgproc.so 0x000E7CDC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF66175D)), // libopencv_imgproc.so 0x000E7CE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6803CA)), // libopencv_imgproc.so 0x000E7CE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF69DE1E)), // libopencv_imgproc.so 0x000E7CE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6BA636)), // libopencv_imgproc.so 0x000E7CEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6D5BED)), // libopencv_imgproc.so 0x000E7CF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6EFF20)), // libopencv_imgproc.so 0x000E7CF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF708FB2)), // libopencv_imgproc.so 0x000E7CF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF720D82)), // libopencv_imgproc.so 0x000E7CFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF737870)), // libopencv_imgproc.so 0x000E7D00
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF74D064)), // libopencv_imgproc.so 0x000E7D04
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF76153F)), // libopencv_imgproc.so 0x000E7D08
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7746EA)), // libopencv_imgproc.so 0x000E7D0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF78654D)), // libopencv_imgproc.so 0x000E7D10
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF797052)), // libopencv_imgproc.so 0x000E7D14
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7A67E2)), // libopencv_imgproc.so 0x000E7D18
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7B4BEC)), // libopencv_imgproc.so 0x000E7D1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7C1C5D)), // libopencv_imgproc.so 0x000E7D20
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7CD924)), // libopencv_imgproc.so 0x000E7D24
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7D8236)), // libopencv_imgproc.so 0x000E7D28
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7E1782)), // libopencv_imgproc.so 0x000E7D2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7E98FD)), // libopencv_imgproc.so 0x000E7D30
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7F069E)), // libopencv_imgproc.so 0x000E7D34
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7F605C)), // libopencv_imgproc.so 0x000E7D38
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FA62F)), // libopencv_imgproc.so 0x000E7D3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FD813)), // libopencv_imgproc.so 0x000E7D40
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FF605)), // libopencv_imgproc.so 0x000E7D44
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000)), // libopencv_imgproc.so 0x000E7D48
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FF605)), // libopencv_imgproc.so 0x000E7D4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FD813)), // libopencv_imgproc.so 0x000E7D50
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7FA62F)), // libopencv_imgproc.so 0x000E7D54
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7F605C)), // libopencv_imgproc.so 0x000E7D58
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7F069E)), // libopencv_imgproc.so 0x000E7D5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7E98FD)), // libopencv_imgproc.so 0x000E7D60
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7E1782)), // libopencv_imgproc.so 0x000E7D64
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7D8236)), // libopencv_imgproc.so 0x000E7D68
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7CD924)), // libopencv_imgproc.so 0x000E7D6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7C1C5D)), // libopencv_imgproc.so 0x000E7D70
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7B4BEC)), // libopencv_imgproc.so 0x000E7D74
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7A67E2)), // libopencv_imgproc.so 0x000E7D78
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF797052)), // libopencv_imgproc.so 0x000E7D7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF78654D)), // libopencv_imgproc.so 0x000E7D80
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF7746EA)), // libopencv_imgproc.so 0x000E7D84
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF76153F)), // libopencv_imgproc.so 0x000E7D88
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF74D064)), // libopencv_imgproc.so 0x000E7D8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF737870)), // libopencv_imgproc.so 0x000E7D90
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF720D82)), // libopencv_imgproc.so 0x000E7D94
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF708FB2)), // libopencv_imgproc.so 0x000E7D98
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6EFF20)), // libopencv_imgproc.so 0x000E7D9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6D5BED)), // libopencv_imgproc.so 0x000E7DA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6BA636)), // libopencv_imgproc.so 0x000E7DA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF69DE1E)), // libopencv_imgproc.so 0x000E7DA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6803CA)), // libopencv_imgproc.so 0x000E7DAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF66175D)), // libopencv_imgproc.so 0x000E7DB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF641901)), // libopencv_imgproc.so 0x000E7DB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF6208DB)), // libopencv_imgproc.so 0x000E7DB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5FE714)), // libopencv_imgproc.so 0x000E7DBC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5DB3D7)), // libopencv_imgproc.so 0x000E7DC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5B6F51)), // libopencv_imgproc.so 0x000E7DC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF5919AE)), // libopencv_imgproc.so 0x000E7DC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF56B31E)), // libopencv_imgproc.so 0x000E7DCC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF543BCF)), // libopencv_imgproc.so 0x000E7DD0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF51B3F2)), // libopencv_imgproc.so 0x000E7DD4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4F1BBD)), // libopencv_imgproc.so 0x000E7DD8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4C7360)), // libopencv_imgproc.so 0x000E7DDC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF49BB13)), // libopencv_imgproc.so 0x000E7DE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF46F30A)), // libopencv_imgproc.so 0x000E7DE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF441B7C)), // libopencv_imgproc.so 0x000E7DE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF4134A6)), // libopencv_imgproc.so 0x000E7DEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3E3EBD)), // libopencv_imgproc.so 0x000E7DF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3B39FF)), // libopencv_imgproc.so 0x000E7DF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3826A7)), // libopencv_imgproc.so 0x000E7DF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF3504F4)), // libopencv_imgproc.so 0x000E7DFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF31D522)), // libopencv_imgproc.so 0x000E7E00
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF2E9772)), // libopencv_imgproc.so 0x000E7E04
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF2B4C25)), // libopencv_imgproc.so 0x000E7E08
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF27F37C)), // libopencv_imgproc.so 0x000E7E0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF248DBA)), // libopencv_imgproc.so 0x000E7E10
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF211B24)), // libopencv_imgproc.so 0x000E7E14
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF1D9BFE)), // libopencv_imgproc.so 0x000E7E18
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF1A108C)), // libopencv_imgproc.so 0x000E7E1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF167919)), // libopencv_imgproc.so 0x000E7E20
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF12D5E7)), // libopencv_imgproc.so 0x000E7E24
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF0F2744)), // libopencv_imgproc.so 0x000E7E28
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF0B6D76)), // libopencv_imgproc.so 0x000E7E2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF07A8CB)), // libopencv_imgproc.so 0x000E7E30
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF03D989)), // libopencv_imgproc.so 0x000E7E34
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBF000000)), // libopencv_imgproc.so 0x000E7E38
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEF838F7)), // libopencv_imgproc.so 0x000E7E3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEF05E95)), // libopencv_imgproc.so 0x000E7E40
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEE87171)), // libopencv_imgproc.so 0x000E7E44
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEE0722D)), // libopencv_imgproc.so 0x000E7E48
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBED8616D)), // libopencv_imgproc.so 0x000E7E4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBED03FC8)), // libopencv_imgproc.so 0x000E7E50
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEC80DE8)), // libopencv_imgproc.so 0x000E7E54
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEBFCC70)), // libopencv_imgproc.so 0x000E7E58
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEB77BFF)), // libopencv_imgproc.so 0x000E7E5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEAF1D42)), // libopencv_imgproc.so 0x000E7E60
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBEA6B0E0)), // libopencv_imgproc.so 0x000E7E64
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE9E377A)), // libopencv_imgproc.so 0x000E7E68
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE95B1BE)), // libopencv_imgproc.so 0x000E7E6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE8D2058)), // libopencv_imgproc.so 0x000E7E70
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE8483ED)), // libopencv_imgproc.so 0x000E7E74
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE77BA60)), // libopencv_imgproc.so 0x000E7E78
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE665995)), // libopencv_imgproc.so 0x000E7E7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE54E6CE)), // libopencv_imgproc.so 0x000E7E80
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE43636F)), // libopencv_imgproc.so 0x000E7E84
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE31D0D5)), // libopencv_imgproc.so 0x000E7E88
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE20305E)), // libopencv_imgproc.so 0x000E7E8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBE0E8365)), // libopencv_imgproc.so 0x000E7E90
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDF9969D)), // libopencv_imgproc.so 0x000E7E94
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDD6130A)), // libopencv_imgproc.so 0x000E7E98
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBDB27EB0)), // libopencv_imgproc.so 0x000E7E9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD8EDC7F)), // libopencv_imgproc.so 0x000E7EA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD565E46)), // libopencv_imgproc.so 0x000E7EA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBD0EF2C7)), // libopencv_imgproc.so 0x000E7EA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0xBC8EF856)), // libopencv_imgproc.so 0x000E7EAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x80000000)), // libopencv_imgproc.so 0x000E7EB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3C8EF856)), // libopencv_imgproc.so 0x000E7EB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D0EF2C7)), // libopencv_imgproc.so 0x000E7EB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D565E46)), // libopencv_imgproc.so 0x000E7EBC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3D8EDC7F)), // libopencv_imgproc.so 0x000E7EC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DB27EB0)), // libopencv_imgproc.so 0x000E7EC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DD6130A)), // libopencv_imgproc.so 0x000E7EC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3DF9969D)), // libopencv_imgproc.so 0x000E7ECC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E0E8365)), // libopencv_imgproc.so 0x000E7ED0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E20305E)), // libopencv_imgproc.so 0x000E7ED4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E31D0D5)), // libopencv_imgproc.so 0x000E7ED8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E43636F)), // libopencv_imgproc.so 0x000E7EDC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E54E6CE)), // libopencv_imgproc.so 0x000E7EE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E665995)), // libopencv_imgproc.so 0x000E7EE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E77BA60)), // libopencv_imgproc.so 0x000E7EE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8483ED)), // libopencv_imgproc.so 0x000E7EEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E8D2058)), // libopencv_imgproc.so 0x000E7EF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E95B1BE)), // libopencv_imgproc.so 0x000E7EF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3E9E377A)), // libopencv_imgproc.so 0x000E7EF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EA6B0E0)), // libopencv_imgproc.so 0x000E7EFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EAF1D42)), // libopencv_imgproc.so 0x000E7F00
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EB77BFF)), // libopencv_imgproc.so 0x000E7F04
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EBFCC70)), // libopencv_imgproc.so 0x000E7F08
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EC80DE8)), // libopencv_imgproc.so 0x000E7F0C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED03FC8)), // libopencv_imgproc.so 0x000E7F10
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3ED8616D)), // libopencv_imgproc.so 0x000E7F14
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE0722D)), // libopencv_imgproc.so 0x000E7F18
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EE87171)), // libopencv_imgproc.so 0x000E7F1C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF05E95)), // libopencv_imgproc.so 0x000E7F20
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3EF838F7)), // libopencv_imgproc.so 0x000E7F24
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F000000)), // libopencv_imgproc.so 0x000E7F28
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F03D989)), // libopencv_imgproc.so 0x000E7F2C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F07A8CB)), // libopencv_imgproc.so 0x000E7F30
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0B6D76)), // libopencv_imgproc.so 0x000E7F34
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F0F2744)), // libopencv_imgproc.so 0x000E7F38
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F12D5E7)), // libopencv_imgproc.so 0x000E7F3C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F167919)), // libopencv_imgproc.so 0x000E7F40
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1A108C)), // libopencv_imgproc.so 0x000E7F44
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F1D9BFE)), // libopencv_imgproc.so 0x000E7F48
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F211B24)), // libopencv_imgproc.so 0x000E7F4C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F248DBA)), // libopencv_imgproc.so 0x000E7F50
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F27F37C)), // libopencv_imgproc.so 0x000E7F54
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2B4C25)), // libopencv_imgproc.so 0x000E7F58
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F2E9772)), // libopencv_imgproc.so 0x000E7F5C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F31D522)), // libopencv_imgproc.so 0x000E7F60
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3504F4)), // libopencv_imgproc.so 0x000E7F64
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3826A7)), // libopencv_imgproc.so 0x000E7F68
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3B39FF)), // libopencv_imgproc.so 0x000E7F6C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F3E3EBD)), // libopencv_imgproc.so 0x000E7F70
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4134A6)), // libopencv_imgproc.so 0x000E7F74
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F441B7C)), // libopencv_imgproc.so 0x000E7F78
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F46F30A)), // libopencv_imgproc.so 0x000E7F7C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F49BB13)), // libopencv_imgproc.so 0x000E7F80
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4C7360)), // libopencv_imgproc.so 0x000E7F84
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F4F1BBD)), // libopencv_imgproc.so 0x000E7F88
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F51B3F2)), // libopencv_imgproc.so 0x000E7F8C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F543BCF)), // libopencv_imgproc.so 0x000E7F90
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F56B31E)), // libopencv_imgproc.so 0x000E7F94
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5919AE)), // libopencv_imgproc.so 0x000E7F98
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5B6F51)), // libopencv_imgproc.so 0x000E7F9C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5DB3D7)), // libopencv_imgproc.so 0x000E7FA0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F5FE714)), // libopencv_imgproc.so 0x000E7FA4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6208DB)), // libopencv_imgproc.so 0x000E7FA8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F641901)), // libopencv_imgproc.so 0x000E7FAC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F66175D)), // libopencv_imgproc.so 0x000E7FB0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6803CA)), // libopencv_imgproc.so 0x000E7FB4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F69DE1E)), // libopencv_imgproc.so 0x000E7FB8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6BA636)), // libopencv_imgproc.so 0x000E7FBC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6D5BED)), // libopencv_imgproc.so 0x000E7FC0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F6EFF20)), // libopencv_imgproc.so 0x000E7FC4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F708FB2)), // libopencv_imgproc.so 0x000E7FC8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F720D82)), // libopencv_imgproc.so 0x000E7FCC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F737870)), // libopencv_imgproc.so 0x000E7FD0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F74D064)), // libopencv_imgproc.so 0x000E7FD4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F76153F)), // libopencv_imgproc.so 0x000E7FD8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7746EA)), // libopencv_imgproc.so 0x000E7FDC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F78654D)), // libopencv_imgproc.so 0x000E7FE0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F797052)), // libopencv_imgproc.so 0x000E7FE4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7A67E2)), // libopencv_imgproc.so 0x000E7FE8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7B4BEC)), // libopencv_imgproc.so 0x000E7FEC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7C1C5D)), // libopencv_imgproc.so 0x000E7FF0
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7CD924)), // libopencv_imgproc.so 0x000E7FF4
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7D8236)), // libopencv_imgproc.so 0x000E7FF8
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E1782)), // libopencv_imgproc.so 0x000E7FFC
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7E98FD)), // libopencv_imgproc.so 0x000E8000
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F069E)), // libopencv_imgproc.so 0x000E8004
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7F605C)), // libopencv_imgproc.so 0x000E8008
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FA62F)), // libopencv_imgproc.so 0x000E800C
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FD813)), // libopencv_imgproc.so 0x000E8010
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F7FF605)), // libopencv_imgproc.so 0x000E8014
+        BitConverter.Int32BitsToSingle(unchecked((int)0x3F800000)), // libopencv_imgproc.so 0x000E8018
     };
 
     /// <summary>
