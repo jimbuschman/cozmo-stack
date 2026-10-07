@@ -1,0 +1,189 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00514EF8..0x00514F1C exclusive; Thumb;
+00514EF8: push         {r7, lr}
+00514EFA: sub          sp, #8
+00514EFC: ldrd         r2, r3, [r1, #4]
+00514F00: ldrb.w       ip, [r1]
+00514F04: ands         r0, ip, #1
+00514F08: itt          eq
+00514F0A: addeq        r3, r1, #1
+00514F0C: lsreq.w      r2, ip, #1
+00514F10: add          r0, sp, #4
+00514F12: mov          r1, r3
+00514F14: bl           #0x5198e0 ; FUN_005198e0
+00514F18: add          sp, #8
+00514F1A: pop          {r7, pc}
+RANGE 0x005198E0..0x0051995A exclusive; Thumb;
+005198E0: movw         r0, #0xe995
+005198E4: cmp          r2, #4
+005198E6: movt         r0, #0x5bd1
+005198EA: blo          #0x519924
+005198EC: push         {r4, r5, r7, lr}
+005198EE: sub.w        lr, r2, #4
+005198F2: bic          r4, lr, #3
+005198F6: adds         r3, r1, r4
+005198F8: add.w        ip, r3, #4
+005198FC: mov          r3, r2
+005198FE: ldr          r5, [r1], #4
+00519902: muls         r3, r0, r3
+00519904: subs         r2, #4
+00519906: cmp          r2, #3
+00519908: mul          r5, r0, r5
+0051990C: eor.w        r5, r5, r5, lsr #24
+00519910: mul          r5, r0, r5
+00519914: eor.w        r3, r3, r5
+00519918: bhi          #0x5198fe
+0051991A: sub.w        r2, lr, r4
+0051991E: pop.w        {r4, r5, r7, lr}
+00519922: b            #0x519928
+00519924: mov          r3, r2
+00519926: mov          ip, r1
+00519928: cmp          r2, #1
+0051992A: beq          #0x519944
+0051992C: cmp          r2, #2
+0051992E: beq          #0x51993c
+00519930: cmp          r2, #3
+00519932: bne          #0x51994e
+00519934: ldrb.w       r1, [ip, #2]
+00519938: eor.w        r3, r3, r1, lsl #16
+0051993C: ldrb.w       r1, [ip, #1]
+00519940: eor.w        r3, r3, r1, lsl #8
+00519944: ldrb.w       r1, [ip]
+00519948: eors         r1, r3
+0051994A: mul          r3, r1, r0
+0051994E: eor.w        r1, r3, r3, lsr #13
+00519952: muls         r0, r1, r0
+00519954: eor.w        r0, r0, r0, lsr #15
+00519958: bx           lr
+RANGE 0x008D2C80..0x008D2CB4 exclusive; Thumb; _ZN4Anki11AudioEngine21AudioEngineController18RegisterAudioSceneEOKNS0_10AudioSceneE
+008D2C80: push         {r4, r5, r7, lr}
+008D2C82: adds         r0, #0x4c
+008D2C84: mov          r4, r1
+008D2C86: bl           #0x8d2cb4 ; FUN_008d2cb4
+008D2C8A: mov          r1, r4
+008D2C8C: mov          r5, r0
+008D2C8E: bl           #0x4e462a ; FUN_004e462a
+008D2C92: cmp          r5, r4
+008D2C94: it           eq
+008D2C96: popeq        {r4, r5, r7, pc}
+008D2C98: ldrd         r1, r2, [r4, #0xc]
+008D2C9C: add.w        r0, r5, #0xc
+008D2CA0: bl           #0x8d3a84 ; FUN_008d3a84
+008D2CA4: ldrd         r1, r2, [r4, #0x18]
+008D2CA8: add.w        r0, r5, #0x18
+008D2CAC: pop.w        {r4, r5, r7, lr}
+008D2CB0: b.w          #0x730682 ; FUN_00730682
+RANGE 0x008D4B88..0x008D4BC4 exclusive; Thumb;
+008D4B88: push         {r4, r5, r6, lr}
+008D4B8A: mov          r4, r0
+008D4B8C: movs         r0, #0
+008D4B8E: strd         r0, r0, [r4]
+008D4B92: mov          r5, r1
+008D4B94: str          r0, [r4, #8]
+008D4B96: ldrd         r0, r1, [r5]
+008D4B9A: subs         r0, r1, r0
+008D4B9C: beq          #0x8d4bc0
+008D4B9E: movw         r1, #0x8e39
+008D4BA2: asrs         r0, r0, #2
+008D4BA4: movt         r1, #0x38e3
+008D4BA8: mul          r6, r0, r1
+008D4BAC: mov          r0, r4
+008D4BAE: mov          r1, r6
+008D4BB0: bl           #0x8d3ca0 ; FUN_008d3ca0
+008D4BB4: ldrd         r1, r2, [r5]
+008D4BB8: mov          r0, r4
+008D4BBA: mov          r3, r6
+008D4BBC: bl           #0x8d3bc2 ; FUN_008d3bc2
+008D4BC0: mov          r0, r4
+008D4BC2: pop          {r4, r5, r6, pc}
+RANGE 0x00663772..0x006637AE exclusive; Thumb;
+00663772: push         {r4, r5, r6, lr}
+00663774: mov          r4, r0
+00663776: movs         r0, #0
+00663778: strd         r0, r0, [r4]
+0066377C: mov          r5, r1
+0066377E: str          r0, [r4, #8]
+00663780: ldrd         r0, r1, [r5]
+00663784: subs         r0, r1, r0
+00663786: beq          #0x6637aa
+00663788: movw         r1, #0xaaab
+0066378C: asrs         r0, r0, #2
+0066378E: movt         r1, #0xaaaa
+00663792: mul          r6, r0, r1
+00663796: mov          r0, r4
+00663798: mov          r1, r6
+0066379A: bl           #0x6637bc ; FUN_006637bc
+0066379E: ldrd         r1, r2, [r5]
+006637A2: mov          r0, r4
+006637A4: mov          r3, r6
+006637A6: bl           #0x663840 ; FUN_00663840
+006637AA: mov          r0, r4
+006637AC: pop          {r4, r5, r6, pc}
+RANGE 0x006637BC..0x00663822 exclusive; Thumb;
+006637BC: push         {r4, r5, r7, lr}
+006637BE: sub          sp, #8
+006637C0: mov          r4, r0
+006637C2: movw         r0, #0x5556
+006637C6: movt         r0, #0x1555
+006637CA: cmp          r1, r0
+006637CC: bhs          #0x6637e6
+006637CE: add.w        r5, r1, r1, lsl #1
+006637D2: lsls         r0, r5, #2
+006637D4: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+006637D8: add.w        r1, r0, r5, lsl #2
+006637DC: strd         r0, r0, [r4]
+006637E0: str          r1, [r4, #8]
+006637E2: add          sp, #8
+006637E4: pop          {r4, r5, r7, pc}
+006637E6: mov          r0, r4
+006637E8: bl           #0x4e0668 ; FUN_004e0668
+006637EC: ldr          r1, [pc, #0x40] ; word[00663830]=0058074D
+006637EE: mov          r4, sp
+006637F0: mov          r0, r4
+006637F2: add          r1, pc
+006637F4: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+006637F8: ldr          r0, [pc, #0x38] ; word[00663834]=009DAFA2
+006637FA: add          r0, pc
+006637FC: ldr          r0, [r0]
+006637FE: add.w        r5, r0, #8
+00663802: movs         r0, #8
+00663804: str          r5, [sp]
+00663806: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+0066380A: mov          r1, r4
+0066380C: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+00663810: ldr          r1, [pc, #0x24] ; word[00663838]=009DAF8C
+00663812: ldr          r2, [pc, #0x28] ; word[0066383C]=009DAF8C
+00663814: add          r1, pc
+00663816: str          r5, [r0]
+00663818: add          r2, pc
+0066381A: ldr          r1, [r1]
+0066381C: ldr          r2, [r2]
+0066381E: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x00663840..0x00663886 exclusive; Thumb;
+00663840: push.w       {r4, r5, r6, r7, r8, lr}
+00663844: mov          r8, r2
+00663846: mov          r5, r1
+00663848: mov          r6, r0
+0066384A: cmp          r5, r8
+0066384C: it           eq
+0066384E: popeq.w      {r4, r5, r6, r7, r8, pc}
+00663852: ldr          r0, [r6, #4]
+00663854: movs         r7, #0
+00663856: strd         r7, r7, [r0]
+0066385A: str          r7, [r0, #8]
+0066385C: ldrb         r1, [r5]
+0066385E: lsls         r1, r1, #0x1f
+00663860: bne          #0x66386c
+00663862: mov          r1, r5
+00663864: ldm.w        r1, {r2, r3, r4}
+00663868: stm          r0!, {r2, r3, r4}
+0066386A: b            #0x663874
+0066386C: ldrd         r2, r1, [r5, #4]
+00663870: bl           #0x4e02b2 ; FUN_004e02b2
+00663874: ldr          r0, [r6, #4]
+00663876: adds         r5, #0xc
+00663878: cmp          r8, r5
+0066387A: add.w        r0, r0, #0xc
+0066387E: str          r0, [r6, #4]
+00663880: bne          #0x663856
+00663882: pop.w        {r4, r5, r6, r7, r8, pc}
