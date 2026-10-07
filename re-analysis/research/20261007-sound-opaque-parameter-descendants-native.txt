@@ -1,0 +1,22 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009F4A64..0x009F4AB4 exclusive; ARM;
+009F4A64: push         {r4, lr}
+009F4A68: sub          sp, sp, #0x20
+009F4A6C: ldr          lr, [r0]
+009F4A70: mov          ip, #0
+009F4A74: ldr          r4, [sp, #0x28]
+009F4A78: str          r1, [sp, #4]
+009F4A7C: mov          r1, sp
+009F4A80: str          r3, [sp, #0xc]
+009F4A84: str          r2, [sp, #8]
+009F4A88: str          r4, [sp, #0x10]
+009F4A8C: ldr          r3, [lr, #0x4c]
+009F4A90: strb         ip, [sp, #0x14]
+009F4A94: strb         ip, [sp, #0x18]
+009F4A98: strb         ip, [sp, #0x19]
+009F4A9C: strb         ip, [sp, #0x1a]
+009F4AA0: str          ip, [sp, #0x1c]
+009F4AA4: str          ip, [sp]
+009F4AA8: blx          r3
+009F4AAC: add          sp, sp, #0x20
+009F4AB0: pop          {r4, pc}

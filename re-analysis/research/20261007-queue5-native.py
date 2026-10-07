@@ -58,6 +58,9 @@ if __name__=='__main__':
                         a=int(match[1],16);f=enclosing(a)
                         if f and f[0] not in seen:
                             seen.add(f[0]);dump(f[0],end(f),f[0]<0x95E540)
+        elif arg.startswith('ascii:'):
+            a,n=[int(x,16) for x in arg[6:].split(':')]
+            print(f'{a:08X}: bytes={read(a,n).split(bytes([0]),1)[0]!r}')
         elif arg.startswith('words:'):
             a,z=[int(x,16) for x in arg[6:].split(':')]
             for loc in range(a,z,4):

@@ -1,0 +1,62 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A43504..0x00A435F4 exclusive; ARM;
+00A43504: ldrb         r3, [r4, #0x1cc]
+00A43508: orr          r3, r3, #1
+00A4350C: strb         r3, [r4, #0x1cc]
+00A43510: ldr          r3, [sp, #0x48]
+00A43514: ldr          r3, [r3, #0x28]
+00A43518: cmp          r3, #0
+00A4351C: beq          #0xa43538
+00A43520: ldr          r2, [r3, #0x30]
+00A43524: cmp          r2, r4
+00A43528: beq          #0xa435e4
+00A4352C: ldr          r3, [r3, #0x28]
+00A43530: cmp          r3, #0
+00A43534: bne          #0xa43520
+00A43538: ldr          r3, [sp, #0x48]
+00A4353C: ldr          r3, [r3, #8]
+00A43540: cmp          r3, #0
+00A43544: beq          #0xa435ec
+00A43548: ldr          r0, [r3, #0xd4]
+00A4354C: ldr          r3, [r0]
+00A43550: ldr          r3, [r3, #0x88]
+00A43554: blx          r3
+00A43558: ldr          r3, [sp, #8]
+00A4355C: ldr          r1, [sp, #0xc]
+00A43560: ldrb         r3, [r3, #0xcc]
+00A43564: ldr          r1, [r1, #0x10]
+00A43568: ubfx         r3, r3, #6, #1
+00A4356C: cmp          r0, #0
+00A43570: ldrbne       r2, [r0, #0xcc]
+00A43574: moveq        r2, #1
+00A43578: ldr          r0, [sp, #0x48]
+00A4357C: ubfxne       r2, r2, #6, #1
+00A43580: cmp          r2, r3
+00A43584: mov          r2, r6
+00A43588: orrne        r1, r1, #4
+00A4358C: mov          r3, r7
+00A43590: str          r1, [sp]
+00A43594: mov          r1, r4
+00A43598: bl           #0xa4c280 ; FUN_00a4c280
+00A4359C: add          sp, sp, #0x24
+00A435A0: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A435A4: ldr          r1, [sp, #0x14]
+00A435A8: cmp          r1, #0
+00A435AC: bne          #0xa434b4
+00A435B0: ldrd         r0, r1, [sb, #0x28]
+00A435B4: cmp          r7, r1
+00A435B8: cmpeq        r6, r0
+00A435BC: bne          #0xa43488
+00A435C0: b            #0xa434ec
+00A435C4: mov          r3, #0
+00A435C8: add          r0, sp, #0x14
+00A435CC: str          r3, [sp]
+00A435D0: mov          r2, r6
+00A435D4: mov          r3, r7
+00A435D8: bl           #0xa429f0 ; FUN_00a429f0
+00A435DC: subs         r4, r0, #0
+00A435E0: bne          #0xa43504
+00A435E4: add          sp, sp, #0x24
+00A435E8: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A435EC: ldr          r3, [r3, #0xe0]
+00A435F0: udf          #0

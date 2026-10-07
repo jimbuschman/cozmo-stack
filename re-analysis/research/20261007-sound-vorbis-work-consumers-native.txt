@@ -1,0 +1,79 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00AB4E34..0x00AB4E70 exclusive; ARM;
+00AB4E34: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00AB4E38: vpush        {d8, d9, d10, d11, d12, d13, d14, d15}
+00AB4E3C: ldr          r3, [pc, #0x1a4] ; word[00AB4FE8]=0058B444
+00AB4E40: add          r3, pc, r3
+00AB4E44: sub          sp, sp, #0x94
+00AB4E48: mov          r2, r3
+00AB4E4C: str          r3, [sp, #0x28]
+00AB4E50: ldr          r3, [pc, #0x194] ; word[00AB4FEC]=FFFFFFDC
+00AB4E54: mov          ip, r3
+00AB4E58: ldr          r8, [r2, ip]
+00AB4E5C: ldr          r3, [r8]
+00AB4E60: cmp          r3, #0
+00AB4E64: beq          #0xab5a48
+00AB4E68: tst          r0, #0x10
+00AB4E6C: str          r1, [sp, #0x88]
+RANGE 0x00AB4FAC..0x00AB4FD8 exclusive; ARM;
+00AB4FAC: ldr          r1, [r8]
+00AB4FB0: ldr          r0, [sp, #0x1c]
+00AB4FB4: add          r1, r1, ip
+00AB4FB8: vld1.64      {d28, d29}, [r7:0x40]
+00AB4FBC: add          r0, r1, r0
+00AB4FC0: str          r0, [sp]
+00AB4FC4: ldr          r0, [sp, #0x18]
+00AB4FC8: add          r2, r1, r6
+00AB4FCC: add          r3, r1, r4
+00AB4FD0: vld1.32      {d2[], d3[]}, [sl]
+00AB4FD4: vld1.32      {d4[], d5[]}, [r0]
+RANGE 0x00AB526C..0x00AB5294 exclusive; ARM;
+00AB526C: ldr          r3, [r3]
+00AB5270: add          r3, r3, r2, lsl #2
+00AB5274: add          r2, r2, #0x80
+00AB5278: add          r1, r3, #0x110
+00AB527C: str          r2, [sp, #0x50]
+00AB5280: add          r2, r3, #0x100
+00AB5284: vldr         s7, [pc, #-0x288] ; word[00AB5004]=3F6C835E
+00AB5288: mov          lr, r1
+00AB528C: add          r1, r3, #0x120
+00AB5290: mov          r7, r2
+RANGE 0x00AB5A2C..0x00AB5A44 exclusive; ARM;
+00AB5A2C: ldr          r0, [r8]
+00AB5A30: ldr          r2, [sp, #0x8c]
+00AB5A34: ldr          r3, [sp, #0x88]
+00AB5A38: add          sp, sp, #0x94
+00AB5A3C: vpop         {d8, d9, d10, d11, d12, d13, d14, d15}
+00AB5A40: pop          {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+RANGE 0x00A7A894..0x00A7A910 exclusive; ARM;
+00A7A894: cmp          r1, #0
+00A7A898: beq          #0xa7a908
+00A7A89C: push         {r3, r4, r5, r6, r7, lr}
+00A7A8A0: mov          r6, r2
+00A7A8A4: ldr          r3, [pc, #0x64] ; word[00A7A910]=00613A9C
+00A7A8A8: add          r2, r0, r0, lsl #1
+00A7A8AC: mov          r4, r1
+00A7A8B0: add          r3, pc, r3
+00A7A8B4: add          r0, r0, r2, lsl #2
+00A7A8B8: ldr          r5, [r3]
+00A7A8BC: add          r5, r5, r0, lsl #2
+00A7A8C0: add          r7, r5, #0x20
+00A7A8C4: mov          r0, r7
+00A7A8C8: bl           #0x4d3064 ; <EXTERNAL>::pthread_mutex_lock
+00A7A8CC: mov          r2, r4
+00A7A8D0: mov          r1, r6
+00A7A8D4: ldr          r0, [r5, #0x24]
+00A7A8D8: bl           #0xa7bb58 ; FUN_00a7bb58
+00A7A8DC: subs         r4, r0, #0
+00A7A8E0: beq          #0xa7a8f8
+00A7A8E4: bl           #0xa7b6c4 ; FUN_00a7b6c4
+00A7A8E8: ldr          r3, [r5, #0x2c]
+00A7A8EC: add          r3, r3, #4
+00A7A8F0: add          r0, r3, r0
+00A7A8F4: str          r0, [r5, #0x2c]
+00A7A8F8: mov          r0, r7
+00A7A8FC: bl           #0x4d3070 ; <EXTERNAL>::pthread_mutex_unlock
+00A7A900: mov          r0, r4
+00A7A904: pop          {r3, r4, r5, r6, r7, pc}
+00A7A908: mov          r0, r1
+00A7A90C: bx           lr

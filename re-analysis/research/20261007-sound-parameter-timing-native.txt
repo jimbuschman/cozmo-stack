@@ -1,0 +1,18 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009FD8D0..0x009FD910 exclusive; ARM;
+009FD8D0: ldr          r2, [r0, #0x44]
+009FD8D4: mov          ip, #1
+009FD8D8: ldr          r3, [r0, #0x30]
+009FD8DC: rsb          r1, r2, r1
+009FD8E0: vldr         s14, [r0, #0x3c]
+009FD8E4: add          r3, r1, r3
+009FD8E8: ldr          r2, [r0, #0x34]
+009FD8EC: str          r3, [r0, #0x30]
+009FD8F0: vmov         s15, r3
+009FD8F4: add          r1, r2, r1
+009FD8F8: str          ip, [r0]
+009FD8FC: vcvt.f32.u32 s15, s15
+009FD900: str          r1, [r0, #0x34]
+009FD904: vnmul.f32    s15, s14, s15
+009FD908: vstr         s15, [r0, #0x40]
+009FD90C: bx           lr

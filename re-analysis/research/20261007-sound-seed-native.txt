@@ -1,0 +1,120 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0099DB58..0x0099DB80 exclusive; ARM;
+0099DB58: push         {r3, lr}
+0099DB5C: orrs         r3, r0, r1
+0099DB60: bne          #0x99db70
+0099DB64: mov          r0, #0
+0099DB68: bl           #0x4a4f9c ; <EXTERNAL>::time
+0099DB6C: asr          r1, r0, #0x1f
+0099DB70: ldr          r3, [pc, #8] ; word[0099DB80]=006EFCEC
+0099DB74: add          r3, pc, r3
+0099DB78: strd         r0, r1, [r3]
+0099DB7C: pop          {r3, pc}
+RANGE 0x009B0200..0x009B0348 exclusive; ARM;
+009B0200: push         {r4, r5, r6, lr}
+009B0204: mov          r1, #0
+009B0208: mov          r5, r0
+009B020C: mov          r0, #0
+009B0210: bl           #0x99db58 ; FUN_0099db58
+009B0214: ldr          r3, [pc, #0x12c] ; word[009B0348]=0068FEA4
+009B0218: mov          r1, #0x36
+009B021C: mov          r2, #0x10
+009B0220: add          r4, r5, #0x6c
+009B0224: ldr          r3, [pc, r3]
+009B0228: ldr          r0, [r3]
+009B022C: bl           #0x9af778 ; FUN_009af778
+009B0230: ldr          ip, [pc, #0x114] ; word[009B034C]=0068FE5C
+009B0234: ldr          ip, [pc, ip]
+009B0238: add          r3, ip, #0x2c
+009B023C: mov          r6, r0
+009B0240: ldm          r3!, {r0, r1, r2}
+009B0244: str          r0, [r6, #4]
+009B0248: str          r1, [r6, #8]
+009B024C: str          r2, [r6, #0xc]
+009B0250: dmb          sy
+009B0254: ldrex        r3, [r4]
+009B0258: sub          r3, r3, #1
+009B025C: strex        r2, r3, [r4]
+009B0260: cmp          r2, #0
+009B0264: bne          #0x9b0254
+009B0268: dmb          sy
+009B026C: ldrb         r3, [ip, #0x3d]
+009B0270: cmp          r3, #0
+009B0274: bne          #0x9b0298
+009B0278: bl           #0x9d4054 ; thunk_FUN_009eade8
+009B027C: ldr          r2, [r5]
+009B0280: ldr          r3, [r5, #4]
+009B0284: mov          r6, #1
+009B0288: cmp          r2, r3
+009B028C: bne          #0x9b02b4
+009B0290: mov          r0, r6
+009B0294: pop          {r4, r5, r6, pc}
+009B0298: add          r0, r5, #0x54
+009B029C: bl           #0xa40940 ; FUN_00a40940
+009B02A0: ldr          r2, [r5]
+009B02A4: ldr          r3, [r5, #4]
+009B02A8: cmp          r2, r3
+009B02AC: mov          r6, r0
+009B02B0: beq          #0x9b0290
+009B02B4: mov          r0, r5
+009B02B8: mov          r1, #0
+009B02BC: mov          r2, #4
+009B02C0: bl           #0x9af778 ; FUN_009af778
+009B02C4: dmb          sy
+009B02C8: ldrex        r3, [r4]
+009B02CC: sub          r3, r3, #1
+009B02D0: strex        r2, r3, [r4]
+009B02D4: cmp          r2, #0
+009B02D8: bne          #0x9b02c8
+009B02DC: dmb          sy
+009B02E0: ldr          r3, [r5, #0x6c]
+009B02E4: cmp          r3, #0
+009B02E8: movgt        r4, #0
+009B02EC: ble          #0x9b0314
+009B02F0: lsr          r0, r4, #7
+009B02F4: add          r4, r4, #1
+009B02F8: rsb          r3, r0, r0, lsl #5
+009B02FC: add          r0, r0, r3, lsl #2
+009B0300: lsl          r0, r0, #3
+009B0304: bl           #0x4bba84 ; <EXTERNAL>::usleep
+009B0308: ldr          r3, [r5, #0x6c]
+009B030C: cmp          r3, #0
+009B0310: bgt          #0x9b02f0
+009B0314: add          r3, r5, #0x50
+009B0318: dmb          sy
+009B031C: dmb          sy
+009B0320: ldrex        r2, [r3]
+009B0324: add          r2, r2, #1
+009B0328: strex        r1, r2, [r3]
+009B032C: cmp          r1, #0
+009B0330: bne          #0x9b0320
+009B0334: add          r0, r5, #0x54
+009B0338: dmb          sy
+009B033C: bl           #0xa40924 ; FUN_00a40924
+009B0340: mov          r0, r6
+009B0344: pop          {r4, r5, r6, pc}
+RANGE 0x00A08A7C..0x00A08AC8 exclusive; ARM;
+00A08A7C: ldr          r0, [pc, #0x6a0] ; word[00A09124]=006375F4
+00A08A80: movw         r3, #0xf42d
+00A08A84: movt         r3, #0x5851
+00A08A88: movw         r2, #0x7f2d
+00A08A8C: movt         r2, #0x4c95
+00A08A90: ldrh         r1, [r5, #0xc]
+00A08A94: ldr          r0, [pc, r0]
+00A08A98: mvn          sb, #0
+00A08A9C: ldr          lr, [r0]
+00A08AA0: ldr          ip, [r0, #4]
+00A08AA4: mul          r3, r3, lr
+00A08AA8: mla          ip, r2, ip, r3
+00A08AAC: umull        r2, r3, lr, r2
+00A08AB0: adds         r2, r2, #1
+00A08AB4: add          r3, ip, r3
+00A08AB8: adc          r3, r3, #0
+00A08ABC: strd         r2, r3, [r0]
+00A08AC0: lsr          r0, r3, #1
+00A08AC4: bl           #0x4cf578 ; <EXTERNAL>::__aeabi_idivmod
+RANGE 0x0099EF7C..0x0099EF8C exclusive; ARM;
+0099EF7C: ldr          r0, [r5, #8]
+0099EF80: bl           #0x9b0200 ; FUN_009b0200
+0099EF84: mov          r4, r0
+0099EF88: b            #0x99e684

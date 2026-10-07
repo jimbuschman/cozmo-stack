@@ -1,0 +1,26 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A019B8..0x00A01A18 exclusive; ARM;
+00A019B8: ldrb         ip, [r0, #0xe9]
+00A019BC: tst          ip, #4
+00A019C0: beq          #0xa019e8
+00A019C4: ldr          r0, [r2]
+00A019C8: mov          r3, r2
+00A019CC: mov          r2, #0
+00A019D0: str          r2, [r3]
+00A019D4: cmp          r0, r2
+00A019D8: bxeq         lr
+00A019DC: ldr          r3, [r0]
+00A019E0: ldr          r3, [r3, #0xc]
+00A019E4: bx           r3
+00A019E8: ldr          ip, [r0, #0xe0]
+00A019EC: str          lr, [sp, #-4]!
+00A019F0: ldr          lr, [ip]
+00A019F4: ldr          r3, [r0, #0x14]
+00A019F8: mov          r0, ip
+00A019FC: ldr          ip, [lr, #0xe8]
+00A01A00: pop          {lr}
+00A01A04: bx           ip
+00A01A08: vldr         s14, [r0, #0x1c0]
+00A01A0C: vmov         s15, r1
+00A01A10: vcmp.f32     s15, s14
+00A01A14: vmrs         apsr_nzcv, fpscr

@@ -10,8 +10,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Item | Triage source line | Status |
 | --- | --- | --- |
 | Q14-002 | 33 | PARTIAL |
-| Q14-003 | 34 | NOT DONE |
-| Q14-004 | 35 | NOT DONE |
+| Q14-003 | 34 | PARTIAL |
+| Q14-004 | 35 | PARTIAL |
 | Q14-005 | 36 | NOT DONE |
 | Q14-006 | 39 | CHECKED |
 | Q14-007 | 40 | NOT DONE |
@@ -30,8 +30,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-021 | 59 | NOT DONE |
 | Q14-022 | 60 | NOT DONE |
 | Q14-023 | 61 | NOT DONE |
-| Q14-024 | 62 | NOT DONE |
-| Q14-025 | 63 | NOT DONE |
+| Q14-024 | 62 | PARTIAL |
+| Q14-025 | 63 | PARTIAL |
 | Q14-026 | 64 | NOT DONE |
 | Q14-027 | 65 | NOT DONE |
 | Q14-028 | 66 | NOT DONE |
@@ -77,18 +77,18 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-068 | 117 | CHECKED |
 | Q14-069 | 118 | CHECKED |
 | Q14-070 | 119 | CHECKED |
-| Q14-071 | 120 | NOT DONE |
+| Q14-071 | 120 | CHECKED |
 | Q14-072 | 121 | CHECKED |
 | Q14-073 | 122 | NOT DONE |
 | Q14-074 | 123 | NOT DONE |
 | Q14-075 | 124 | NOT DONE |
 | Q14-076 | 125 | NOT DONE |
-| Q14-077 | 126 | NOT DONE |
+| Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | NOT DONE |
 | Q14-079 | 128 | NOT DONE |
 | Q14-080 | 129 | NOT DONE |
 | Q14-081 | 130 | NOT DONE |
-| Q14-082 | 131 | NOT DONE |
+| Q14-082 | 131 | CHECKED |
 | Q14-083 | 132 | PARTIAL |
 | Q14-084 | 133 | NOT DONE |
 | Q14-085 | 134 | NOT DONE |
@@ -99,9 +99,9 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-090 | 139 | NOT DONE |
 | Q14-091 | 140 | NOT DONE |
 | Q14-092 | 141 | NOT DONE |
-| Q14-093 | 140 | NOT DONE |
+| Q14-093 | 142 | NOT DONE |
 | Q14-094 | 143 | NOT DONE |
-| Q14-095 | 144 | NOT DONE |
+| Q14-095 | 144 | CHECKED |
 | Q14-096 | 145 | NOT DONE |
 | Q14-097 | 146 | NOT DONE |
 | Q14-098 | 147 | NOT DONE |
@@ -113,11 +113,11 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-104 | 153 | NOT DONE |
 | Q14-105 | 154 | NOT DONE |
 | Q14-106 | 155 | NOT DONE |
-| Q14-107 | 156 | NOT DONE |
-| Q14-108 | 157 | NOT DONE |
+| Q14-107 | 156 | PARTIAL |
+| Q14-108 | 157 | PARTIAL |
 | Q14-109 | 158 | NOT DONE |
 | Q14-110 | 159 | NOT DONE |
-| Q14-111 | 160 | NOT DONE |
+| Q14-111 | 160 | CHECKED |
 | Q14-112 | 161 | NOT DONE |
 | Q14-113 | 162 | NOT DONE |
 | Q14-114 | 163 | NOT DONE |
@@ -139,16 +139,16 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-130 | 186 | NOT DONE |
 | Q14-131 | 187 | NOT DONE |
 | Q14-132 | 188 | NOT DONE |
-| Q14-133 | 189 | NOT DONE |
+| Q14-133 | 189 | PARTIAL |
 | Q14-134 | 190 | NOT DONE |
 | Q14-135 | 191 | NOT DONE |
 | Q14-136 | 192 | NOT DONE |
-| Q14-137 | 200 | NOT DONE |
-| Q14-138 | 201 | NOT DONE |
+| Q14-137 | 200 | CHECKED |
+| Q14-138 | 201 | CHECKED |
 | Q14-139 | 204 | NOT DONE |
 | Q14-140 | 205 | NOT DONE |
-| Q14-141 | 206 | NOT DONE |
-| Q14-140 | 207 | NOT DONE |
+| Q14-141 | 206 | CHECKED |
+| Q14-142 | 207 | CHECKED |
 
 ## Q14-002 — triage line 33
 
@@ -160,13 +160,13 @@ PARTIAL; J1–J12, U1–U17, K1–K15 and X3 provide dispatcher/reader controls.
 
 > | M6-002 | **KEEP** | 0x00AB6380..0x00AB6780;0x00AB3780;0x00AB6B14;0x00AB7E40;0x00AB3520;0x00AB5A94;0x00AB4E34 | Live decoder integration, LFE channel reorder, reset/skip/trim, work-buffer lifetime, window-default reachability, and unshipped-size signed-zero residuals remain WEM decoding; ADP-1 explicitly excludes decoding from equivalence, including its IMDCT/NEON arithmetic. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. Remaining decoding bodies/integration, LFE reorder, window-default reachability and unshipped-size signed-zero residuals remain open.
 
 ## Q14-004 — triage line 35
 
 > | M6-003 | **KEEP** | 0x00A7A194..0x00A7A3C4;0x00A72618;0x00A73EA0;0x00A74100 | ADPCM channels/blockAlign, out-of-bounds/error behavior and zero-channel source handling remain decoding decisions; integer decoder arithmetic is not exempt DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. Source wrapper argument derivation/header/error contracts at A72618/A73EA0/A74100 remain open.
 
 ## Q14-005 — triage line 36
 
@@ -202,7 +202,7 @@ PARTIAL; TT1–TT22 close transition construction/evaluation controls; S/C rows 
 
 > | M6-009 | **KEEP** | 0x00A14E28..0x00A15244;0x00A17724;0x00A17878;0x00A17280;0x00A0F07C;0x00A0F594;0x00A137D8..0x00A13A60;0x00A0E5E4;0x00A1B5FC;0x00A0F678 | Curve search/shapes/scaling, RTPC values/precedence/accumulation, transition gates and value evolution, BuiltIn semantics and live delivery are parameters and state, including fast-log/pow arithmetic. |
 
-PARTIAL; R1–R27/U15–U17. Resolver, subscription and consumer closure remains pending.
+PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. Live recipient9F7390 tails, remaining transition/value producers, and full consumer closure remain pending.
 
 ## Q14-011 — triage line 44
 
@@ -280,13 +280,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-020 | **KEEP** | 0x009B0C9C..0x009B1410;0x00A27CA4..0x00A27DD0;0x00A325E0..0x00A32914;0x00A3B84C..0x00A3BB80 | STMG raw readers, dedup/refcounts and consumers remain exact; unavailable human-readable names can remain UNKNOWN, but are not pure-DSP DROP items. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pair ordering, ordinal curves/IDs, registry dedup/publication and raw property setters. Human names remain UNKNOWN because stripped names do not establish them. Remaining live state/switch recipient tails and trailing-object consumers remain recoverable open work; no sample-arithmetic exemption applies.
 
 ## Q14-025 — triage line 63
 
 > | M6-021 | **KEEP** | 0x0099DB58;0x0099EF80;0x00A08A7C..0x00A08AC0 | Review the test seed seam/live Unix-seconds seed separately; RNG and draw order are explicitly exact under ADP-1, even though the record is policy. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: N4/N5 and SE1–SE4 reopen the live default/input width, queued writer and test-seam boundary. Exhaustive SetupConfig/other seed writer closure remains open; test injection is not native all-zero setter semantics.
 
 ## Q14-026 — triage line 64
 
@@ -562,7 +562,7 @@ CHECKED; X3: primary versus secondary registration gates, separate sentinels and
 
 > | C30.6 / aux duplicate detection | M6-014,M6-025 | **KEEP** | 0x00A43504..0x00A43534 | Flag store before duplicate scan and connection reuse are routing/order. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: AD1 reopens the flag-before-duplicate-scan contract, pointer-identity traversal and duplicate return. AD2 identifies the continuation/creation boundary without claiming its virtual recipients.
 
 ## Q14-072 — triage line 121
 
@@ -598,7 +598,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C31.1 D2 cursor delta | M6-025 | **KEEP** | 0x00A0202C..0x00A02040 | The check's new-old pointer delta and subsequent release/store order are exact address/state operations. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: CD1–CD2 reopen new-minus-old byte delta, cursor store, old media/stream release gates, then new media/stream publication. CD3 identifies the next media-release recipient without claiming its full production path.
 
 ## Q14-078 — triage line 127
 
@@ -628,7 +628,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C31.2 D3 fetch release/store | M6-025 | **KEEP** | 0x00A019B8..0x00A019E4;0x009EEFC0..0x009EEFD8 | Null/replacement output store precedes old release; reentrancy-visible ownership order is exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: OR1–OR2 reopen both null/replacement publication-before-release tails. This narrow obligation concerns ownership order, not all preceding lookup or virtual-recipient behavior.
 
 ## Q14-083 — triage line 132
 
@@ -706,7 +706,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33.1 D4 error helper | M6-024 | **KEEP** | 0x008DE3E6..0x008DE408 | Non-EINTR pread error returns1; retain EINTR retry, zero-read failure, descriptor/size gates; imported OS results are inputs, shipped error mapping is exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gates, offset/progress updates, EINTR retry, non-EINTR return1 and zero-read return0. The imported syscall is a runtime input, not a missing shipped error mapper.
 
 ## Q14-096 — triage line 145
 
@@ -778,13 +778,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C34.3 S1–S8/S10 source duration/close/notification/free | M6-002,M6-003,M6-025,M6-026 | **KEEP** | 0x00A72F5C;0x009D4B20;0x00A72AF4;0x00A7427C;0x00A76178;0x00AB0FC0;0x00AB2958;0x00A38600;0x00A7A914;0x00A7A988 | Duration arithmetic is timing; ordered DSP teardown/free/reset, notification allocation fault and pool bookkeeping are lifetime/results, regardless of the word DSP in a destructor name. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: SC1–SC12 and NF1–NF6 re-open the duration, six close slots, decoder teardown, pool bookkeeping, allocator coalescing and deferred notification/flush bodies. Remaining: source vt+C/stream vt+8 descendants, PBI virtual lifecycle bodies and the S8 caller census. These are recoverable unread paths, not UNKNOWN.
 
 ## Q14-108 — triage line 157
 
 > | C34.3 still-unread internals and S8 callers | M6-002,M6-025,M6-026 | **KEEP** | 0x00AB3428;0x00A38420;0x00A38600;0x00A7A914;0x00A7A988 | Close codec-state teardown, allocator/free internals, flush and caller census as exact ownership/event ordering. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: SC8–SC12 and NF1–NF6 close the explicitly named teardown/free/flush bodies. S8 complete caller census and callback descendants remain open; naming their virtual slots does not establish their effects.
 
 ## Q14-109 — triage line 158
 
@@ -802,7 +802,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C34 mixer record / parameter helper residuals | M6-022,M6-025 | **VERIFY** | 0x009C0FC0;0x009FD8C0;0x009FD8D0 | Names alone do not establish DSP-only bodies; identify readers, masks, parameters and state consumers before any simplification. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED boundary: B14–B16 and B27. All three named bodies are override/priority or scheduling/control-state operations and remain KEEP; none contains pure sample arithmetic. Rebuild recipient virtual effects are separately open, not an arithmetic exemption.
 
 ## Q14-112 — triage line 161
 
@@ -934,7 +934,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C34.3 | M6-002,M6-025,M6-026 | KEEP | 0x00AB3428;0x00A38420;0x00A7A914;0x00A7A988;0x00A38600 | S1–S8/S10 slices held; codec teardown, flush, allocator internals and S8 caller closure remain lifetime work. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: same remaining S8 caller/callback closure as Q14-108; checked body rows SC8–SC12 and NF1–NF6.
 
 ## Q14-134 — triage line 190
 
@@ -958,13 +958,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | 0x00A14FD8..0x00A15030 (ARM) | VMLA, VMOV bits to integer, UBFX mantissa/exponent, VMOV back and VFP divide/multiply/add implement the curve scaling fast log inside A14E28. | KEEP: this numeric arithmetic computes RTPC values, not filtered PCM. Phone libm rounding permission does not exempt this shipped custom control-value function. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: CL1–CL3 reopen the fast-log instruction association and strict ordered gates; R12 supplies its curve context. The named numeric span produces a control value and remains exact, with no DSP arithmetic exemption.
 
 ## Q14-138 — triage line 201
 
 > | 0x00A49E40..0x00A49EAC (ARM) | Loads resampler phase/step offsets+2C/+30 and buffer positions+28; quotient helper and pointer geometry precede sample interpolation. | KEEP those fields/geometry; SIMPLIFY only interpolation value math. A whole resampler function is not DROP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: RK1–RK6 separate the entire A49E40 kernel geometry, count/phase progression, input consumption/output publication and results from interpolation PCM arithmetic. This narrow obligation does not close the outer resampler wrappers or writers in M6-004.
 
 ## Q14-139 — triage line 204
 
@@ -982,10 +982,10 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | 0x00A019C4..0x00A019E4 (ARM) | Loads old output, STR zero before testing old pointer, then tail virtual release. | KEEP D3 ownership order; no DSP ambiguity. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: OR1 reopens the E9bit2 gate and zero-store-before-release tail, including the distinct flag-clear node-vt+E8 path. This narrow D3 ordering obligation does not claim the recipient virtual bodies are checked.
 
 ## Q14-142 — triage line 207
 
 > | 0x008DE3E6..0x008DE408 (Thumb) | Error result<=-1 reads errno; BNE for errno!=4 jumps to result1; EINTR retries; zero read returns0. | KEEP D4 shipped error mapping; external syscall timing does not erase engine decisions. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gates, offset/progress updates, EINTR retry, non-EINTR return1 and zero-read return0. The imported syscall is a runtime input, not a missing shipped error mapper.

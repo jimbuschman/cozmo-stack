@@ -1,0 +1,31 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0099F148..0x0099F1BC exclusive; ARM;
+0099F148: push         {r3, r4, r5, lr}
+0099F14C: ldr          r4, [pc, #0x68] ; word[0099F1BC]=006EE710
+0099F150: add          r4, pc, r4
+0099F154: ldrb         r3, [r4, #0x64]
+0099F158: dmb          sy
+0099F15C: tst          r3, #1
+0099F160: beq          #0x99f174
+0099F164: ldr          r0, [pc, #0x54] ; word[0099F1C0]=006EE6F8
+0099F168: add          r0, pc, r0
+0099F16C: add          r0, r0, #0x68
+0099F170: pop          {r3, r4, r5, pc}
+0099F174: add          r5, r4, #0x64
+0099F178: mov          r0, r5
+0099F17C: bl           #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+0099F180: cmp          r0, #0
+0099F184: beq          #0x99f164
+0099F188: ldr          r3, [pc, #0x34] ; word[0099F1C4]=0067CE00
+0099F18C: mov          r0, r5
+0099F190: add          r3, pc, r3
+0099F194: add          r3, r3, #8
+0099F198: str          r3, [r4, #0x68]
+0099F19C: bl           #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+0099F1A0: ldr          r1, [pc, #0x20] ; word[0099F1C8]=00007AFC
+0099F1A4: ldr          r2, [pc, #0x20] ; word[0099F1CC]=006B1E48
+0099F1A8: add          r0, r4, #0x68
+0099F1AC: add          r1, pc, r1
+0099F1B0: add          r2, pc, r2
+0099F1B4: bl           #0x4d6688 ; <EXTERNAL>::__aeabi_atexit
+0099F1B8: b            #0x99f164

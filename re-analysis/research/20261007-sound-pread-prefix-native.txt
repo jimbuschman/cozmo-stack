@@ -1,0 +1,22 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DE3BC..0x008DE3E6 exclusive; Thumb;
+008DE3BC: push         {r4, r5, r6, r7, lr}
+008DE3BE: sub          sp, #4
+008DE3C0: mov          r6, r0
+008DE3C2: mov          r4, r3
+008DE3C4: ldr          r0, [r6]
+008DE3C6: mov          r5, r1
+008DE3C8: cmp          r0, #0
+008DE3CA: blt          #0x8de404
+008DE3CC: cbz          r4, #0x8de400
+008DE3CE: ldr          r1, [r6, #4]
+008DE3D0: adds         r7, r1, r2
+008DE3D2: b            #0x8de3da
+008DE3D4: add          r5, r1
+008DE3D6: ldr          r0, [r6]
+008DE3D8: add          r7, r1
+008DE3DA: mov          r1, r5
+008DE3DC: mov          r2, r4
+008DE3DE: mov          r3, r7
+008DE3E0: blx          #0x4d2590 ; <EXTERNAL>::pread
+008DE3E4: mov          r1, r0

@@ -1,0 +1,53 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A14F88..0x00A15038 exclusive; ARM;
+00A14F88: vcmpe.f32    s12, #0
+00A14F8C: vmrs         apsr_nzcv, fpscr
+00A14F90: bmi          #0xa15060
+00A14F94: vmov.f32     s10, #-1.000000e+00
+00A14F98: movw         r2, #0xa8c2
+00A14F9C: movw         r3, #0x2770
+00A14FA0: movt         r2, #0xc0c0
+00A14FA4: movt         r3, #0x443f
+00A14FA8: vmov.f32     s15, #-1.000000e+00
+00A14FAC: vcmpe.f32    s12, s15
+00A14FB0: vmrs         apsr_nzcv, fpscr
+00A14FB4: vmovmi       s12, r2
+00A14FB8: bmi          #0xa14eb8
+00A14FBC: vmov.f32     s14, #1.000000e+00
+00A14FC0: vcmpe.f32    s12, s14
+00A14FC4: vmrs         apsr_nzcv, fpscr
+00A14FC8: vmovgt       s12, r3
+00A14FCC: bgt          #0xa14eb8
+00A14FD0: vmov.f32     s15, s14
+00A14FD4: vldr         s6, [pc, #0x284] ; word[00A15260]=42FE0000
+00A14FD8: vmla.f32     s15, s10, s12
+00A14FDC: vldr         s7, [pc, #0x280] ; word[00A15264]=3EAAAAAB
+00A14FE0: vldr         s8, [pc, #0x280] ; word[00A15268]=3F317218
+00A14FE4: vldr         s9, [pc, #0x280] ; word[00A1526C]=3EDE5BD9
+00A14FE8: vmov         r3, s15
+00A14FEC: vmov.f32     s12, #2.000000e+01
+00A14FF0: ubfx         r2, r3, #0, #0x17
+00A14FF4: ubfx         r3, r3, #0x17, #8
+00A14FF8: vmov         s15, r3
+00A14FFC: add          r3, r2, #0x3f800000
+00A15000: vmov         s11, r3
+00A15004: vcvt.f32.s32 s15, s15
+00A15008: vsub.f32     s13, s11, s14
+00A1500C: vadd.f32     s11, s11, s14
+00A15010: vdiv.f32     s13, s13, s11
+00A15014: vmul.f32     s11, s13, s13
+00A15018: vsub.f32     s15, s15, s6
+00A1501C: vmla.f32     s14, s11, s7
+00A15020: vmul.f32     s15, s15, s8
+00A15024: vadd.f32     s13, s13, s13
+00A15028: vmla.f32     s15, s13, s14
+00A1502C: vmul.f32     s15, s15, s9
+00A15030: vmul.f32     s12, s15, s12
+00A15034: vmul.f32     s12, s10, s12
+RANGE 0x00A15060..0x00A15078 exclusive; ARM;
+00A15060: movw         r2, #0x2770
+00A15064: movw         r3, #0xa8c2
+00A15068: vmov.f32     s10, #1.000000e+00
+00A1506C: movt         r2, #0xc43f
+00A15070: movt         r3, #0x40c0
+00A15074: b            #0xa14fa8

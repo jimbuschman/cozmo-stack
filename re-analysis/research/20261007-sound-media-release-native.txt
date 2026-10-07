@@ -1,0 +1,10 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A1ECBC..0x00A1ECDC exclusive; ARM;
+00A1ECBC: ldr          r3, [r0, #0x10]
+00A1ECC0: cmp          r3, #0
+00A1ECC4: bxne         lr
+00A1ECC8: ldr          r3, [pc, #0xc] ; word[00A1ECDC]=006213A0
+00A1ECCC: ldr          r1, [r0]
+00A1ECD0: ldr          r3, [pc, r3]
+00A1ECD4: ldr          r0, [r3]
+00A1ECD8: b            #0x9b65a8 ; FUN_009b65a8

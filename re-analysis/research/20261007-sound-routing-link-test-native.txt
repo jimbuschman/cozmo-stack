@@ -1,0 +1,42 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009C54E8..0x009C5588 exclusive; ARM;
+009C54E8: ldr          r3, [r0, #0x28]
+009C54EC: push         {r4, lr}
+009C54F0: cmp          r3, #0
+009C54F4: beq          #0x9c5528
+009C54F8: ldr          r2, [r3, #4]
+009C54FC: cmp          r2, #0
+009C5500: bne          #0x9c5580
+009C5504: ldr          r2, [r3, #0xc]
+009C5508: cmp          r2, #0
+009C550C: bne          #0x9c5580
+009C5510: ldr          r2, [r3, #0x14]
+009C5514: cmp          r2, #0
+009C5518: bne          #0x9c5580
+009C551C: ldr          r3, [r3, #0x1c]
+009C5520: cmp          r3, #0
+009C5524: bne          #0x9c5580
+009C5528: ldr          r3, [r0]
+009C552C: mov          r4, r0
+009C5530: ldr          r3, [r3, #0x44]
+009C5534: blx          r3
+009C5538: cmp          r0, #0xc
+009C553C: beq          #0x9c5580
+009C5540: ldrb         r3, [r4, #0x68]
+009C5544: cmp          r3, #0
+009C5548: bne          #0x9c5580
+009C554C: ldrb         r3, [r4, #0x46]
+009C5550: tst          r3, #0x80
+009C5554: bne          #0x9c5580
+009C5558: ldr          r3, [r4, #0x38]
+009C555C: cmp          r3, #0
+009C5560: beq          #0x9c5580
+009C5564: ldr          r3, [r4, #0x40]
+009C5568: tst          r3, #0xe0000
+009C556C: bne          #0x9c5580
+009C5570: ldr          r0, [r4, #0x54]
+009C5574: adds         r0, r0, #0
+009C5578: movne        r0, #1
+009C557C: pop          {r4, pc}
+009C5580: mov          r0, #1
+009C5584: pop          {r4, pc}

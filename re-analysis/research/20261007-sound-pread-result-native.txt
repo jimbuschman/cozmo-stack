@@ -1,0 +1,18 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008DE3E6..0x008DE40A exclusive; Thumb;
+008DE3E6: cmp.w        r1, #-1
+008DE3EA: ble          #0x8de3f0
+008DE3EC: cbnz         r1, #0x8de3fc
+008DE3EE: b            #0x8de404
+008DE3F0: blx          #0x4a6e20 ; <EXTERNAL>::__errno
+008DE3F4: ldr          r0, [r0]
+008DE3F6: cmp          r0, #4
+008DE3F8: bne          #0x8de400
+008DE3FA: movs         r1, #0
+008DE3FC: subs         r4, r4, r1
+008DE3FE: bne          #0x8de3d4
+008DE400: movs         r0, #1
+008DE402: b            #0x8de406
+008DE404: movs         r0, #0
+008DE406: add          sp, #4
+008DE408: pop          {r4, r5, r6, r7, pc}

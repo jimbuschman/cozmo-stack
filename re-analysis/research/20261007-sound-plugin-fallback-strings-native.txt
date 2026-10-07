@@ -1,0 +1,53 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A5748C..0x00A57530 exclusive; ARM;
+00A5748C: blx          r3
+00A57490: subs         fp, r0, #0
+00A57494: beq          #0xa57530
+00A57498: ldr          r0, [sp]
+00A5749C: mov          r2, #0
+00A574A0: mov          r1, fp
+00A574A4: mov          sl, r2
+00A574A8: add          r5, sp, #0x10
+00A574AC: ldr          r3, [r0]
+00A574B0: ldr          r3, [r3, #0x2a4]
+00A574B4: blx          r3
+00A574B8: mov          sb, r0
+00A574BC: bl           #0x4a44e0 ; <EXTERNAL>::strlen
+00A574C0: movw         r3, #0x3ff
+00A574C4: mov          r1, sb
+00A574C8: add          r8, r0, #1
+00A574CC: mov          r0, r5
+00A574D0: cmp          r8, r3
+00A574D4: movhs        r8, r3
+00A574D8: mov          r2, r8
+00A574DC: bl           #0x4bb694 ; <EXTERNAL>::strncpy
+00A574E0: ldr          r3, [sp]
+00A574E4: add          r2, sp, #0x410
+00A574E8: mov          r1, fp
+00A574EC: add          r8, r2, r8
+00A574F0: mov          r2, sb
+00A574F4: mov          r0, r3
+00A574F8: strb         sl, [r8, #-0x400]
+00A574FC: ldr          r3, [r3]
+00A57500: ldr          r3, [r3, #0x2a8]
+00A57504: blx          r3
+00A57508: mov          r0, r5
+00A5750C: bl           #0x4a44e0 ; <EXTERNAL>::strlen
+00A57510: movw         r3, #0x3fd
+00A57514: cmp          r0, r3
+00A57518: bhi          #0xa575a0
+00A5751C: add          r3, sp, #0x410
+00A57520: add          r0, r3, r0
+00A57524: mov          r3, #0x2f
+00A57528: strb         sl, [r0, #-0x3ff]
+00A5752C: strb         r3, [r0, #-0x400]
+00FA7B80: bytes=b'lib'
+00FA7B84: bytes=b'.so'
+00FA7B88: bytes=b'g_pAKPluginList'
+00FA79DC: bytes=b'android/app/NativeActivity'
+00FA7AF8: bytes=b'getApplicationInfo'
+00FA7B0C: bytes=b'()Landroid/content/pm/ApplicationInfo;'
+00FA7B34: bytes=b'android/content/pm/ApplicationInfo'
+00FA7B58: bytes=b'nativeLibraryDir'
+00FA7B6C: bytes=b'Ljava/lang/String;'
+00FA7AE8: bytes=b'NativeThread'

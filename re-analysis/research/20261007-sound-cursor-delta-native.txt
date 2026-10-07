@@ -1,0 +1,32 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A0202C..0x00A020A4 exclusive; ARM;
+00A0202C: ldr          r1, [r5, #0x1dc]
+00A02030: ldr          r2, [sp, #4]
+00A02034: ldr          r3, [r4, #8]
+00A02038: rsb          r2, r1, r2
+00A0203C: add          r3, r3, r2
+00A02040: str          r3, [r4, #8]
+00A02044: ldr          r3, [r5, #0x1dc]
+00A02048: cmp          r3, #0
+00A0204C: beq          #0xa02058
+00A02050: ldr          r0, [r5, #0x150]
+00A02054: bl           #0xa1ecbc ; FUN_00a1ecbc
+00A02058: ldr          r0, [r5, #0x108]
+00A0205C: cmp          r0, #0
+00A02060: beq          #0xa02074
+00A02064: ldr          r3, [r0]
+00A02068: mov          r1, #0
+00A0206C: ldr          r3, [r3]
+00A02070: blx          r3
+00A02074: ldr          r2, [sp, #4]
+00A02078: ldr          r3, [sp, #0xc]
+00A0207C: str          r2, [r5, #0x1dc]
+00A02080: str          r3, [r5, #0x108]
+00A02084: b            #0xa01f3c
+00A02088: ldr          r0, [r5, #0x154]
+00A0208C: ldr          r1, [sp, #4]
+00A02090: ldr          r2, [r5, #0x1dc]
+00A02094: ldr          r3, [r0]
+00A02098: ldr          r3, [r3, #0x78]
+00A0209C: blx          r3
+00A020A0: b            #0xa02014
