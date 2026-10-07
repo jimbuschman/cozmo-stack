@@ -1,0 +1,267 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x008D47C8..0x008D4826 exclusive; Thumb;
+008D47C8: push.w       {r4, r5, r6, r7, r8, sb, lr}
+008D47CC: sub          sp, #4
+008D47CE: mov          r6, r0
+008D47D0: ldr          r4, [r6, #4]
+008D47D2: cbz          r4, #0x8d481c
+008D47D4: sub.w        r8, r4, #1
+008D47D8: ldr          r5, [r1]
+008D47DA: ands.w       sb, r8, r4
+008D47DE: beq          #0x8d47ec
+008D47E0: mov          r0, r5
+008D47E2: mov          r1, r4
+008D47E4: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D47E8: mov          r7, r1
+008D47EA: b            #0x8d47f0
+008D47EC: and.w        r7, r8, r5
+008D47F0: ldr          r0, [r6]
+008D47F2: ldr.w        r6, [r0, r7, lsl #2]
+008D47F6: cbz          r6, #0x8d481c
+008D47F8: ldr          r6, [r6]
+008D47FA: cbz          r6, #0x8d481c
+008D47FC: ldr          r0, [r6, #4]
+008D47FE: cmp.w        sb, #0
+008D4802: beq          #0x8d480c
+008D4804: mov          r1, r4
+008D4806: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D480A: b            #0x8d4810
+008D480C: and.w        r1, r0, r8
+008D4810: cmp          r1, r7
+008D4812: bne          #0x8d481c
+008D4814: ldr          r0, [r6, #8]
+008D4816: cmp          r0, r5
+008D4818: bne          #0x8d47f8
+008D481A: b            #0x8d481e
+008D481C: movs         r6, #0
+008D481E: mov          r0, r6
+008D4820: add          sp, #4
+008D4822: pop.w        {r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x008D4826..0x008D48D6 exclusive; Thumb;
+008D4826: push         {r4, r5, r6, r7, lr}
+008D4828: sub          sp, #0x14
+008D482A: mov          r4, r0
+008D482C: mov          r5, r1
+008D482E: ldrd         r0, r1, [r4]
+008D4832: movs         r2, #1
+008D4834: add.w        r6, r4, #8
+008D4838: subs         r1, r1, r0
+008D483A: add.w        r7, r2, r1, asr #2
+008D483E: cmp.w        r7, #0x40000000
+008D4842: blo          #0x8d484c
+008D4844: mov          r0, r4
+008D4846: bl           #0x4e0668 ; FUN_004e0668
+008D484A: ldr          r0, [r4]
+008D484C: ldr          r1, [r4, #8]
+008D484E: movw         r3, #0xfffe
+008D4852: movt         r3, #0x1fff
+008D4856: subs         r1, r1, r0
+008D4858: asrs         r2, r1, #2
+008D485A: cmp          r2, r3
+008D485C: bhi          #0x8d4868
+008D485E: asrs         r1, r1, #1
+008D4860: cmp          r1, r7
+008D4862: it           lo
+008D4864: movlo        r1, r7
+008D4866: b            #0x8d486c
+008D4868: mvn          r1, #0xc0000000
+008D486C: ldr          r2, [r4, #4]
+008D486E: mov          r3, r6
+008D4870: subs         r0, r2, r0
+008D4872: asrs         r2, r0, #2
+008D4874: mov          r0, sp
+008D4876: bl           #0x8d48d8 ; FUN_008d48d8
+008D487A: ldr          r0, [sp, #8]
+008D487C: ldr          r1, [r5]
+008D487E: str          r1, [r0]
+008D4880: ldrd         r0, r1, [sp, #4]
+008D4884: adds         r6, r1, #4
+008D4886: str          r6, [sp, #8]
+008D4888: ldrd         r1, r3, [r4]
+008D488C: subs         r2, r3, r1
+008D488E: subs         r0, r0, r2
+008D4890: cmp          r2, #0
+008D4892: str          r0, [sp, #4]
+008D4894: ble          #0x8d48a2
+008D4896: blx          #0x4a4354 ; <EXTERNAL>::__aeabi_memcpy4
+008D489A: ldrd         r1, r3, [r4]
+008D489E: ldrd         r0, r6, [sp, #4]
+008D48A2: str          r0, [r4]
+008D48A4: cmp          r3, r1
+008D48A6: str          r1, [sp, #4]
+008D48A8: str          r6, [r4, #4]
+008D48AA: ldr          r0, [sp, #0xc]
+008D48AC: str          r3, [sp, #8]
+008D48AE: ldr          r2, [r4, #8]
+008D48B0: str          r0, [r4, #8]
+008D48B2: str          r1, [sp]
+008D48B4: str          r2, [sp, #0xc]
+008D48B6: itttt        ne
+008D48B8: subne        r0, r3, #4
+008D48BA: subne        r0, r0, r1
+008D48BC: mvnne        r2, #3
+008D48C0: bicne.w      r0, r2, r0
+008D48C4: itt          ne
+008D48C6: addne        r0, r0, r3
+008D48C8: strne        r0, [sp, #8]
+008D48CA: cbz          r1, #0x8d48d2
+008D48CC: mov          r0, r1
+008D48CE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D48D2: add          sp, #0x14
+008D48D4: pop          {r4, r5, r6, r7, pc}
+RANGE 0x008D48D8..0x008D4944 exclusive; Thumb;
+008D48D8: push         {r4, r5, r6, lr}
+008D48DA: sub          sp, #8
+008D48DC: mov          r5, r1
+008D48DE: mov          r4, r0
+008D48E0: movs         r0, #0
+008D48E2: mov          r6, r2
+008D48E4: cmp          r5, #0
+008D48E6: strd         r0, r3, [r4, #0xc]
+008D48EA: beq          #0x8d48f8
+008D48EC: cmp.w        r5, #0x40000000
+008D48F0: bhs          #0x8d490e
+008D48F2: lsls         r0, r5, #2
+008D48F4: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+008D48F8: add.w        r1, r0, r6, lsl #2
+008D48FC: add.w        r2, r0, r5, lsl #2
+008D4900: strd         r0, r1, [r4]
+008D4904: mov          r0, r4
+008D4906: strd         r1, r2, [r4, #8]
+008D490A: add          sp, #8
+008D490C: pop          {r4, r5, r6, pc}
+008D490E: ldr          r1, [pc, #0x44] ; word[008D4954]=0030F62B
+008D4910: mov          r4, sp
+008D4912: mov          r0, r4
+008D4914: add          r1, pc
+008D4916: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+008D491A: ldr          r0, [pc, #0x3c] ; word[008D4958]=00769E80
+008D491C: add          r0, pc
+008D491E: ldr          r0, [r0]
+008D4920: add.w        r5, r0, #8
+008D4924: movs         r0, #8
+008D4926: str          r5, [sp]
+008D4928: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+008D492C: mov          r1, r4
+008D492E: blx          #0x4a42e8 ; <EXTERNAL>::std::logic_error::logic_error
+008D4932: ldr          r1, [pc, #0x28] ; word[008D495C]=00769E6A
+008D4934: ldr          r2, [pc, #0x28] ; word[008D4960]=00769E6A
+008D4936: add          r1, pc
+008D4938: str          r5, [r0]
+008D493A: add          r2, pc
+008D493C: ldr          r1, [r1]
+008D493E: ldr          r2, [r2]
+008D4940: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+RANGE 0x008D4964..0x008D4986 exclusive; Thumb;
+008D4964: push         {r4, lr}
+008D4966: sub          sp, #0x10
+008D4968: mov          r2, r1
+008D496A: mov          r1, r0
+008D496C: add          r0, sp, #4
+008D496E: ldr          r4, [r2]
+008D4970: bl           #0x8d4986 ; FUN_008d4986
+008D4974: ldr          r0, [sp, #4]
+008D4976: movs         r1, #0
+008D4978: str          r1, [sp, #4]
+008D497A: cbz          r0, #0x8d4980
+008D497C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+008D4980: mov          r0, r4
+008D4982: add          sp, #0x10
+008D4984: pop          {r4, pc}
+RANGE 0x008D4986..0x008D4A3C exclusive; Thumb;
+008D4986: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008D498A: sub          sp, #0xc
+008D498C: mov          r6, r1
+008D498E: mov          r4, r2
+008D4990: ldr          r7, [r6, #4]
+008D4992: mov          r8, r0
+008D4994: ldr          r0, [r4, #4]
+008D4996: subs         r1, r7, #1
+008D4998: ands.w       r2, r1, r7
+008D499C: strd         r1, r2, [sp, #4]
+008D49A0: beq          #0x8d49ac
+008D49A2: mov          r1, r7
+008D49A4: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D49A8: mov          fp, r1
+008D49AA: b            #0x8d49b0
+008D49AC: and.w        fp, r1, r0
+008D49B0: ldr.w        sb, [r6]
+008D49B4: ldr.w        r0, [sb, fp, lsl #2]
+008D49B8: mov          r5, r0
+008D49BA: ldr          r0, [r5]
+008D49BC: cmp          r0, r4
+008D49BE: bne          #0x8d49b8
+008D49C0: add.w        sl, r6, #8
+008D49C4: cmp          r5, sl
+008D49C6: beq          #0x8d49de
+008D49C8: ldr          r1, [sp, #8]
+008D49CA: ldr          r0, [r5, #4]
+008D49CC: cbz          r1, #0x8d49d6
+008D49CE: mov          r1, r7
+008D49D0: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D49D4: b            #0x8d49da
+008D49D6: ldr          r1, [sp, #4]
+008D49D8: ands         r1, r0
+008D49DA: cmp          r1, fp
+008D49DC: beq          #0x8d49fe
+008D49DE: ldr          r0, [r4]
+008D49E0: cbz          r0, #0x8d49f8
+008D49E2: ldr          r1, [sp, #8]
+008D49E4: ldr          r0, [r0, #4]
+008D49E6: cbz          r1, #0x8d49f0
+008D49E8: mov          r1, r7
+008D49EA: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D49EE: b            #0x8d49f4
+008D49F0: ldr          r1, [sp, #4]
+008D49F2: ands         r1, r0
+008D49F4: cmp          r1, fp
+008D49F6: beq          #0x8d49fe
+008D49F8: movs         r0, #0
+008D49FA: str.w        r0, [sb, fp, lsl #2]
+008D49FE: ldr          r0, [r4]
+008D4A00: cbz          r0, #0x8d4a1e
+008D4A02: ldr          r1, [sp, #8]
+008D4A04: ldr          r0, [r0, #4]
+008D4A06: cbz          r1, #0x8d4a10
+008D4A08: mov          r1, r7
+008D4A0A: blx          #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+008D4A0E: b            #0x8d4a14
+008D4A10: ldr          r1, [sp, #4]
+008D4A12: ands         r1, r0
+008D4A14: cmp          r1, fp
+008D4A16: itt          ne
+008D4A18: ldrne        r0, [r6]
+008D4A1A: strne.w      r5, [r0, r1, lsl #2]
+008D4A1E: ldr          r0, [r4]
+008D4A20: str          r0, [r5]
+008D4A22: movs         r0, #0
+008D4A24: str          r0, [r4]
+008D4A26: ldr          r0, [r6, #0xc]
+008D4A28: subs         r0, #1
+008D4A2A: str          r0, [r6, #0xc]
+008D4A2C: movs         r0, #1
+008D4A2E: strd         r4, sl, [r8]
+008D4A32: str.w        r0, [r8, #8]
+008D4A36: add          sp, #0xc
+008D4A38: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004E0668..0x004E0694 exclusive; Thumb;
+004E0668: push         {r4, r5, r7, lr}
+004E066A: movs         r0, #8
+004E066C: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+004E0670: mov          r4, r0
+004E0672: adr          r1, #0x30
+004E0674: blx          #0x4a42c4 ; <EXTERNAL>::std::logic_error::logic_error
+004E0678: ldr          r0, [pc, #0x30] ; word[004E06AC]=00B5E11E
+004E067A: ldr          r1, [pc, #0x34] ; word[004E06B0]=00B5E120
+004E067C: ldr          r2, [pc, #0x34] ; word[004E06B4]=00B5E122
+004E067E: add          r0, pc
+004E0680: add          r1, pc
+004E0682: add          r2, pc
+004E0684: ldr          r0, [r0]
+004E0686: ldr          r1, [r1]
+004E0688: ldr          r2, [r2]
+004E068A: adds         r0, #8
+004E068C: str          r0, [r4]
+004E068E: mov          r0, r4
+004E0690: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
