@@ -50,7 +50,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-041 | 79 | NOT DONE |
 | Q14-042 | 80 | NOT DONE |
 | Q14-043 | 81 | NOT DONE |
-| Q14-044 | 82 | NOT DONE |
+| Q14-044 | 82 | PARTIAL |
 | Q14-045 | 83 | NOT DONE |
 | Q14-046 | 84 | NOT DONE |
 | Q14-047 | 85 | NOT DONE |
@@ -400,7 +400,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-006 | **KEEP** | 0x009D7B6C..0x009D7C97;0x009D552C..0x009D55F0;0x009D7EA4 | Modulator payloads, trigger selector property15 and stop gate property1 are decisions/state. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope identity/normalization, factories/registry, authored trigger15/stop1 gates and complete default initializer words. Bank payload readers, class-specific trigger/voice setup and complete runtime selector/stop consumers remain open; no whole M9-006 completion claim.
 
 ## Q14-045 — triage line 83
 

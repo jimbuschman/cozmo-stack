@@ -1,0 +1,64 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009E61B4..0x009E62AC exclusive; ARM;
+009E61B4: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009E61B8: sub          sp, sp, #0x24
+009E61BC: ldr          r4, [r0, #4]
+009E61C0: ldr          r7, [r1]
+009E61C4: cmp          r4, #0
+009E61C8: beq          #0x9e61f8
+009E61CC: mov          r5, r0
+009E61D0: mov          r6, r1
+009E61D4: mov          r0, r7
+009E61D8: mov          r1, r4
+009E61DC: mov          sb, r3
+009E61E0: mov          r8, r2
+009E61E4: bl           #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+009E61E8: ldr          r3, [r5]
+009E61EC: ldr          r4, [r3, r1, lsl #2]
+009E61F0: cmp          r4, #0
+009E61F4: bne          #0x9e6214
+009E61F8: mov          r7, #1
+009E61FC: mov          r0, r7
+009E6200: add          sp, sp, #0x24
+009E6204: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009E6208: ldr          r4, [r4, #0x10]
+009E620C: cmp          r4, #0
+009E6210: beq          #0x9e61f8
+009E6214: ldr          r3, [r4, #0xc]
+009E6218: cmp          r7, r3
+009E621C: bne          #0x9e6208
+009E6220: ldm          r4, {r4, sl}
+009E6224: add          sl, r4, sl, lsl #2
+009E6228: cmp          r4, sl
+009E622C: addne        r3, sp, #0x10
+009E6230: strne        r3, [sp, #0xc]
+009E6234: movne        r7, #1
+009E6238: beq          #0x9e61f8
+009E623C: ldr          fp, [r4], #4
+009E6240: mov          r1, r6
+009E6244: ldr          r3, [r5, #0x10]
+009E6248: mov          r2, r8
+009E624C: str          sb, [sp]
+009E6250: mov          r0, fp
+009E6254: bl           #0x9dce44 ; FUN_009dce44
+009E6258: ldr          lr, [r6, #0xc]
+009E625C: ldr          r1, [sp, #0xc]
+009E6260: mov          r2, r8
+009E6264: mov          r3, sb
+009E6268: mov          ip, #0
+009E626C: str          fp, [sp, #0x10]
+009E6270: str          ip, [sp, #0x14]
+009E6274: mov          ip, #3
+009E6278: str          lr, [sp, #0x1c]
+009E627C: str          ip, [sp, #0x18]
+009E6280: cmp          r0, #1
+009E6284: cmpeq        r7, #1
+009E6288: mov          r0, r5
+009E628C: moveq        r7, #1
+009E6290: movne        r7, #2
+009E6294: bl           #0x9e61b4 ; FUN_009e61b4
+009E6298: cmp          sl, r4
+009E629C: bne          #0x9e623c
+009E62A0: mov          r0, r7
+009E62A4: add          sp, sp, #0x24
+009E62A8: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
