@@ -166,7 +166,7 @@ PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and varia
 
 > | M6-003 | **KEEP** | 0x00A7A194..0x00A7A3C4;0x00A72618;0x00A73EA0;0x00A74100 | ADPCM channels/blockAlign, out-of-bounds/error behavior and zero-channel source handling remain decoding decisions; integer decoder arithmetic is not exempt DSP. |
 
-PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. Source wrapper argument derivation/header/error contracts at A72618/A73EA0/A74100 remain open.
+PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. Earlier source header acceptance, constructor/format writers and stream virtual bodies remain open.
 
 ## Q14-005 — triage line 36
 
