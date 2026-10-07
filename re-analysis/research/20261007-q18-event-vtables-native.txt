@@ -1,0 +1,83 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01021E0C: raw=004F10D3 relocated=004F10D3
+01021E10: raw=0054DD4D relocated=0054DD4D
+01021E14: raw=0054DD51 relocated=0054DD51
+01021E18: raw=0054DD6D relocated=0054DD6D
+01021E1C: raw=0054DD81 relocated=0054DD81
+01021E20: raw=0054DD83 relocated=0054DD83
+01021E24: raw=0054DD89 relocated=0054DD89
+01021E28: raw=0054DEC5 relocated=0054DEC5
+01021E2C: raw=0054DEDD relocated=0054DEDD
+01021E30: raw=00000008 relocated=00000008
+01021E34: raw=00C54FC0 relocated=00C54FC0
+010232B4: raw=004F10D3 relocated=004F10D3
+010232B8: raw=005698F3 relocated=005698F3
+010232BC: raw=005698F9 relocated=005698F9
+010232C0: raw=00569915 relocated=00569915
+010232C4: raw=00569929 relocated=00569929
+010232C8: raw=0056992B relocated=0056992B
+010232CC: raw=0056992F relocated=0056992F
+010232D0: raw=00569955 relocated=00569955
+010232D4: raw=0056996D relocated=0056996D
+010232D8: raw=00000008 relocated=00000008
+010232DC: raw=00C57AE0 relocated=00C57AE0
+RANGE 0x00551EDC..0x00551F60 exclusive; Thumb;
+00551EDC: push         {r4, r5, r6, lr}
+00551EDE: sub          sp, #0x30
+00551EE0: ldr          r1, [pc, #0xac] ; word[00551F90]=00AEC962
+00551EE2: add          r6, sp, #0x10
+00551EE4: movs         r3, #0x4c
+00551EE6: add          r1, pc
+00551EE8: ldr          r1, [r1]
+00551EEA: ldr          r1, [r1]
+00551EEC: str          r1, [sp, #0x2c]
+00551EEE: ldm.w        r0, {r1, r2, r5}
+00551EF2: ldr          r0, [r1]
+00551EF4: ldr          r4, [r0, #0x28]
+00551EF6: ldr          r0, [pc, #0x9c] ; word[00551F94]=00AD0666
+00551EF8: str          r2, [sp, #0x14]
+00551EFA: add          r0, pc
+00551EFC: strh.w       r3, [sp, #6]
+00551F00: adds         r0, #8
+00551F02: str          r6, [sp, #0x20]
+00551F04: str          r0, [sp, #0x10]
+00551F06: add          r0, sp, #8
+00551F08: add.w        r2, sp, #6
+00551F0C: mov          r3, r6
+00551F0E: blx          r4
+00551F10: ldrd         r0, r1, [r5, #4]
+00551F14: cmp          r0, r1
+00551F16: bhs          #0x551f2e
+00551F18: ldr          r1, [sp, #8]
+00551F1A: str          r1, [r0]
+00551F1C: ldr          r1, [sp, #0xc]
+00551F1E: str          r1, [r0, #4]
+00551F20: movs         r0, #0
+00551F22: strd         r0, r0, [sp, #8]
+00551F26: ldr          r0, [r5, #4]
+00551F28: adds         r0, #8
+00551F2A: str          r0, [r5, #4]
+00551F2C: b            #0x551f36
+00551F2E: add          r1, sp, #8
+00551F30: mov          r0, r5
+00551F32: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+00551F36: ldr          r0, [sp, #0xc]
+00551F38: cbz          r0, #0x551f3e
+00551F3A: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+00551F3E: ldr          r0, [sp, #0x20]
+00551F40: cmp          r6, r0
+00551F42: beq          #0x551f4c
+00551F44: cbz          r0, #0x551f52
+00551F46: ldr          r1, [r0]
+00551F48: ldr          r1, [r1, #0x14]
+00551F4A: b            #0x551f50
+00551F4C: ldr          r1, [r0]
+00551F4E: ldr          r1, [r1, #0x10]
+00551F50: blx          r1
+00551F52: ldr          r0, [pc, #0x44] ; word[00551F98]=00AEC8F2
+00551F54: ldr          r1, [sp, #0x2c]
+00551F56: add          r0, pc
+00551F58: ldr          r0, [r0]
+00551F5A: ldr          r0, [r0]
+00551F5C: subs         r0, r0, r1
+00551F5E: itt          eq

@@ -1,0 +1,304 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01021D4C: raw=0051DB41 relocated=0051DB41
+01021D50: raw=0054D70D relocated=0054D70D
+01021D54: raw=0054D711 relocated=0054D711
+01021D58: raw=0054D72D relocated=0054D72D
+01021D5C: raw=0054D741 relocated=0054D741
+01021D60: raw=0054D743 relocated=0054D743
+01021D64: raw=0054D749 relocated=0054D749
+01021D68: raw=0054D80D relocated=0054D80D
+01021D6C: raw=0054D825 relocated=0054D825
+01021D70: raw=00000008 relocated=00000008
+01021D74: raw=00C54C90 relocated=00C54C90
+01021D78: raw=00000000 relocated=0101FE64 _ZTINSt6__ndk110__function6__baseIFvRKN4Anki5Cozmo9AnkiEventINS3_14RobotInterface13RobotToEngineEEEEEE
+RANGE 0x00545EC4..0x00545F1C exclusive; Thumb; _ZNK4Anki5Cozmo17TurnInPlaceAction21IsOffTreadsStateValidEv
+00545EC4: push         {r4, r5, r7, lr}
+00545EC6: sub          sp, #0x10
+00545EC8: ldr          r1, [r0, #4]
+00545ECA: ldrb.w       r5, [r1, #0x355]
+00545ECE: cbz          r5, #0x545f10
+00545ED0: movs         r1, #0
+00545ED2: strd         r1, r1, [sp, #4]
+00545ED6: str          r1, [sp, #0xc]
+00545ED8: ldr          r4, [r0, #0x60]
+00545EDA: sxtb         r0, r5
+00545EDC: blx          #0x4a7b70 ; Anki::Cozmo::EnumToString
+00545EE0: str          r0, [sp]
+00545EE2: adr          r0, #0x60
+00545EE4: add          r1, sp, #4
+00545EE6: adr          r2, #0x84
+00545EE8: mov          r3, r4
+00545EEA: blx          #0x4a4540 ; Anki::Util::sWarningF
+00545EEE: ldr          r0, [sp, #4]
+00545EF0: cbz          r0, #0x545f10
+00545EF2: ldr          r1, [sp, #8]
+00545EF4: cmp          r1, r0
+00545EF6: itttt        ne
+00545EF8: subne.w      r2, r1, #8
+00545EFC: subne        r2, r2, r0
+00545EFE: mvnne        r3, #7
+00545F02: bicne.w      r2, r3, r2
+00545F06: itt          ne
+00545F08: addne        r1, r1, r2
+00545F0A: strne        r1, [sp, #8]
+00545F0C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00545F10: movs         r0, #0
+00545F12: cmp          r5, #0
+00545F14: it           eq
+00545F16: moveq        r0, #1
+00545F18: add          sp, #0x10
+00545F1A: pop          {r4, r5, r7, pc}
+RANGE 0x00548FEA..0x0054903A exclusive; Thumb; _ZNK4Anki5Cozmo22MoveLiftToHeightAction16IsLiftInPositionEv
+00548FEA: push         {r4, lr}
+00548FEC: vpush        {d8}
+00548FF0: mov          r4, r0
+00548FF2: ldr          r0, [r4, #4]
+00548FF4: vldr         s16, [r4, #0x84]
+00548FF8: blx          #0x4ab200 ; Anki::Cozmo::Robot::GetLiftHeight
+00548FFC: vmov         s0, r0
+00549000: movs         r0, #0
+00549002: vsub.f32     s0, s16, s0
+00549006: vcmpe.f32    s0, #0
+0054900A: vmrs         apsr_nzcv, fpscr
+0054900E: vneg.f32     s2, s0
+00549012: it           mi
+00549014: vmovmi.f32   s0, s2
+00549018: vldr         s2, [r4, #0x7c]
+0054901C: vcmpe.f32    s0, s2
+00549020: vmrs         apsr_nzcv, fpscr
+00549024: bpl          #0x549034
+00549026: ldr          r1, [r4, #4]
+00549028: ldr.w        r1, [r1, #0x254]
+0054902C: ldrb         r1, [r1, #0xb]
+0054902E: cmp          r1, #0
+00549030: it           eq
+00549032: moveq        r0, #1
+00549034: vpop         {d8}
+00549038: pop          {r4, pc}
+RANGE 0x00546374..0x00546424 exclusive; Thumb; _ZNK4Anki5Cozmo17TurnInPlaceAction16IsBodyInPositionERNS_7RadiansE
+00546374: push         {r4, r5, r6, lr}
+00546376: vpush        {d8}
+0054637A: sub          sp, #8
+0054637C: mov          r4, r0
+0054637E: mov          r5, r1
+00546380: ldr          r0, [r4, #4]
+00546382: bl           #0x4ea398 ; FUN_004ea398
+00546386: blx          #0x4a4048 ; Anki::PoseBase<Anki::Pose3d,Anki::Transform3d>::GetTransform
+0054638A: mov          r6, sp
+0054638C: mov          r1, r0
+0054638E: mov          r0, r6
+00546390: blx          #0x4a4150 ; Anki::Rotation3d::GetAngleAroundZaxis
+00546394: mov          r0, r5
+00546396: mov          r1, r6
+00546398: blx          #0x4a4564 ; Anki::Radians::operator=
+0054639C: vldr         s0, [r4, #0xa4]
+005463A0: vldr         s2, [r4, #0xa8]
+005463A4: vsub.f32     s0, s0, s2
+005463A8: vabs.f32     s16, s0
+005463AC: vldr         s0, [pc, #0x74] ; word[00546424]=40490FDB
+005463B0: vcmpe.f32    s16, s0
+005463B4: vmrs         apsr_nzcv, fpscr
+005463B8: bpl          #0x54641a
+005463BA: vldr         s0, [pc, #0x6c] ; word[00546428]=3727C5AC
+005463BE: mov          r6, sp
+005463C0: vldr         s2, [r4, #0xb0]
+005463C4: mov          r0, r6
+005463C6: vadd.f32     s0, s2, s0
+005463CA: vmov         r1, s0
+005463CE: blx          #0x4a4294 ; Anki::Radians::Radians
+005463D2: add.w        r1, r4, #0x9c
+005463D6: mov          r0, r5
+005463D8: mov          r2, r6
+005463DA: blx          #0x4a586c ; Anki::Radians::IsNear
+005463DE: mov          r1, r0
+005463E0: ldr.w        r0, [r4, #0xd4]
+005463E4: cbz          r0, #0x546404
+005463E6: vldr         s0, [r4, #0xb0]
+005463EA: movs         r2, #0
+005463EC: movs         r0, #0
+005463EE: vabs.f32     s0, s0
+005463F2: vcmpe.f32    s16, s0
+005463F6: vmrs         apsr_nzcv, fpscr
+005463FA: it           mi
+005463FC: movmi        r2, #1
+005463FE: orrs         r1, r2
+00546400: bne          #0x546408
+00546402: b            #0x54641c
+00546404: cmp          r1, #1
+00546406: bne          #0x54641a
+00546408: ldr          r0, [r4, #4]
+0054640A: ldr.w        r0, [r0, #0x254]
+0054640E: ldrb         r1, [r0, #0xc]
+00546410: movs         r0, #0
+00546412: cmp          r1, #0
+00546414: it           eq
+00546416: moveq        r0, #1
+00546418: b            #0x54641c
+0054641A: movs         r0, #0
+0054641C: add          sp, #8
+0054641E: vpop         {d8}
+00546422: pop          {r4, r5, r6, pc}
+RANGE 0x0054E780..0x0054E7F4 exclusive; Thumb; _ZN4Anki5Cozmo23BackupOntoChargerActionC1ERNS0_5RobotEffb
+0054E780: push         {r7, lr}
+0054E782: sub          sp, #8
+0054E784: mov.w        ip, #0
+0054E788: str.w        ip, [sp]
+0054E78C: blx          #0x4ab0a4 ; Anki::Cozmo::DriveStraightAction::DriveStraightAction
+0054E790: ldr          r1, [pc, #0x10] ; word[0054E7A4]=00AF03EC
+0054E792: ldr          r2, [sp, #0x10]
+0054E794: add          r1, pc
+0054E796: strb.w       r2, [r0, #0x8b]
+0054E79A: ldr          r1, [r1]
+0054E79C: adds         r1, #8
+0054E79E: str          r1, [r0]
+0054E7A0: add          sp, #8
+0054E7A2: pop          {r7, pc}
+0054E7A4: lsls         r4, r5, #0xf
+0054E7A6: lsls         r7, r5, #2
+0054E7A8: push         {r4, r5, r7, lr}
+0054E7AA: sub          sp, #8
+0054E7AC: mov          r5, r0
+0054E7AE: ldr          r1, [r5, #4]
+0054E7B0: ldrb.w       r0, [r1, #0x338]
+0054E7B4: cbz          r0, #0x54e7c0
+0054E7B6: mov          r0, r1
+0054E7B8: blx          #0x4ab728 ; Anki::Cozmo::Robot::SetPoseOnCharger
+0054E7BC: movs         r4, #0
+0054E7BE: b            #0x54e7ee
+0054E7C0: mov          r0, sp
+0054E7C2: blx          #0x4ab734 ; Anki::Cozmo::Robot::GetPitchAngle
+0054E7C6: vldr         s0, [sp]
+0054E7CA: movs         r4, #6
+0054E7CC: vldr         s2, [pc, #0x24] ; word[0054E7F4]=BE860A92
+0054E7D0: movt         r4, #0x400
+0054E7D4: vcmpe.f32    s0, s2
+0054E7D8: vmrs         apsr_nzcv, fpscr
+0054E7DC: bpl          #0x54e7e2
+0054E7DE: adds         r4, #4
+0054E7E0: b            #0x54e7ee
+0054E7E2: mov          r0, r5
+0054E7E4: blx          #0x4ab590 ; Anki::Cozmo::DriveStraightAction::CheckIfDone
+0054E7E8: cmp          r0, #0
+0054E7EA: it           ne
+0054E7EC: movne        r4, r0
+0054E7EE: mov          r0, r4
+0054E7F0: add          sp, #8
+0054E7F2: pop          {r4, r5, r7, pc}
+RANGE 0x00558228..0x0055834E exclusive; Thumb; _ZN4Anki5Cozmo29DriveOffChargerContactsActionC2ERNS0_5RobotE
+00558228: push         {r4, r5, r7, lr}
+0055822A: sub          sp, #0x18
+0055822C: movs         r2, #0
+0055822E: movs         r3, #0
+00558230: movs         r5, #0
+00558232: movt         r2, #0x4120
+00558236: movt         r3, #0x41a0
+0055823A: mov          r4, r0
+0055823C: str          r5, [sp]
+0055823E: blx          #0x4ab0a4 ; Anki::Cozmo::DriveStraightAction::DriveStraightAction
+00558242: ldr          r0, [pc, #0x70] ; word[005582B4]=00AE6988
+00558244: add          r0, pc
+00558246: ldr          r0, [r0]
+00558248: adds         r0, #8
+0055824A: str          r0, [r4]
+0055824C: str          r5, [sp, #0x10]
+0055824E: strd         r5, r5, [sp, #8]
+00558252: add          r0, sp, #8
+00558254: adr          r1, #0x60
+00558256: movs         r2, #0x17
+00558258: bl           #0x4e02b2 ; FUN_004e02b2
+0055825C: add.w        r0, r4, #0x48
+00558260: add          r1, sp, #8
+00558262: bl           #0x4e462a ; FUN_004e462a
+00558266: ldrb.w       r0, [sp, #8]
+0055826A: lsls         r0, r0, #0x1f
+0055826C: itt          ne
+0055826E: ldrne        r0, [sp, #0x10]
+00558270: blxne        #0x4a40cc
+00558274: ldr          r0, [r4, #4]
+00558276: movs         r1, #7
+00558278: str          r1, [r4, #0x44]
+0055827A: ldr          r0, [r0]
+0055827C: blx          #0x4a88e4 ; Anki::Cozmo::CozmoContext::IsInSdkMode
+00558280: cmp          r0, #1
+00558282: bne          #0x55828c
+00558284: mov          r0, r4
+00558286: movs         r1, #0
+00558288: blx          #0x4ab314 ; Anki::Cozmo::IActionRunner::SetTracksToLock
+0055828C: mov          r0, r4
+0055828E: add          sp, #0x18
+00558290: pop          {r4, r5, r7, pc}
+00558292: mov          r5, r0
+00558294: ldrb.w       r0, [sp, #8]
+00558298: lsls         r0, r0, #0x1f
+0055829A: beq          #0x5582a8
+0055829C: ldr          r0, [sp, #0x10]
+0055829E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+005582A2: b            #0x5582a8
+005582A4: b            #0x5582a6
+005582A6: mov          r5, r0
+005582A8: mov          r0, r4
+005582AA: blx          #0x4ab0ec ; Anki::Cozmo::DriveStraightAction::~DriveStraightAction
+005582AE: mov          r0, r5
+005582B0: blx          #0x4a40a8 ; <EXTERNAL>::_Unwind_Resume
+005582B4: ldr          r0, [r1, #0x18]
+005582B6: lsls         r6, r5, #2
+005582B8: strb         r4, [r0, #9]
+005582BA: strb         r1, [r5, #0x19]
+005582BC: ldr          r7, [pc, #0x194] ; word[00558454]=74634168
+005582BE: str          r6, [r4, #0x64]
+005582C0: ldr          r3, [r0, #4]
+005582C2: strb         r1, [r4, #9]
+005582C4: str          r7, [r4, #0x54]
+005582C6: muls         r2, r6, r2
+005582C8: ldr          r7, [r5, #0x64]
+005582CA: str          r4, [r6, #0x14]
+005582CC: strb         r3, [r4, #0x11]
+005582CE: lsls         r3, r6, #1
+005582D0: ldr          r1, [r0, #4]
+005582D2: ldrb.w       r1, [r1, #0x338]
+005582D6: strb.w       r1, [r0, #0x8b]
+005582DA: cbz          r1, #0x5582e0
+005582DC: b.w          #0x8cb5ec
+005582E0: movs         r0, #0
+005582E2: bx           lr
+005582E4: push         {r4, lr}
+005582E6: sub          sp, #0x10
+005582E8: mov          r4, r0
+005582EA: ldrb.w       r0, [r4, #0x8b]
+005582EE: cbz          r0, #0x558302
+005582F0: mov          r0, r4
+005582F2: blx          #0x4ab590 ; Anki::Cozmo::DriveStraightAction::CheckIfDone
+005582F6: cmp.w        r0, #0x1000000
+005582FA: bne          #0x558306
+005582FC: mov.w        r0, #0x1000000
+00558300: b            #0x55834a
+00558302: movs         r0, #0
+00558304: b            #0x55834a
+00558306: ldr          r0, [r4, #4]
+00558308: ldrb.w       r1, [r0, #0x338]
+0055830C: movs         r0, #0
+0055830E: cbz          r1, #0x55834a
+00558310: ldr          r2, [pc, #0x64] ; word[00558378]=0068BBE6
+00558312: strd         r0, r0, [sp, #4]
+00558316: add          r2, pc
+00558318: str          r0, [sp, #0xc]
+0055831A: adr          r0, #0x60
+0055831C: add          r1, sp, #4
+0055831E: blx          #0x4a4540 ; Anki::Util::sWarningF
+00558322: ldr          r0, [sp, #4]
+00558324: cbz          r0, #0x558344
+00558326: ldr          r1, [sp, #8]
+00558328: cmp          r1, r0
+0055832A: itttt        ne
+0055832C: subne.w      r2, r1, #8
+00558330: subne        r2, r2, r0
+00558332: mvnne        r3, #7
+00558336: bicne.w      r2, r3, r2
+0055833A: itt          ne
+0055833C: addne        r1, r1, r2
+0055833E: strne        r1, [sp, #8]
+00558340: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+00558344: movs         r0, #9
+00558346: movt         r0, #0x400
+0055834A: add          sp, #0x10
+0055834C: pop          {r4, pc}

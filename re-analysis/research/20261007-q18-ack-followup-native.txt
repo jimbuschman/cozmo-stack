@@ -1,0 +1,147 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01021D08: raw=01021D30 relocated=01021D30
+01021D0C: raw=0051DB41 relocated=0051DB41
+01021D10: raw=0054D5E7 relocated=0054D5E7
+01021D14: raw=0054D5ED relocated=0054D5ED
+01021D18: raw=0054D609 relocated=0054D609
+01021D1C: raw=0054D61D relocated=0054D61D
+01021D20: raw=0054D61F relocated=0054D61F
+01021D24: raw=0054D625 relocated=0054D625
+01021D28: raw=0054D6E9 relocated=0054D6E9
+01021D2C: raw=0054D701 relocated=0054D701
+01021D30: raw=00000008 relocated=00000008
+RANGE 0x0054D3F8..0x0054D464 exclusive; Thumb;
+0054D3F8: push         {r4, r5, r7, lr}
+0054D3FA: sub          sp, #0x18
+0054D3FC: ldr          r4, [r0, #4]
+0054D3FE: ldrb.w       r0, [r4, #0xdb]
+0054D402: cbz          r0, #0x54d460
+0054D404: add.w        r0, r1, #0xc
+0054D408: ldrb.w       r5, [r4, #0xda]
+0054D40C: blx          #0x4ab44c ; Anki::Cozmo::RobotInterface::RobotToEngine::Get_motorActionAck
+0054D410: ldrb         r0, [r0]
+0054D412: cmp          r5, r0
+0054D414: bne          #0x54d460
+0054D416: movs         r0, #0
+0054D418: ldr          r3, [pc, #0x74] ; word[0054D490]=0069C9C4
+0054D41A: strd         r0, r0, [sp, #0xc]
+0054D41E: str          r0, [sp, #0x14]
+0054D420: add          r3, pc
+0054D422: ldr          r0, [pc, #0x68] ; word[0054D48C]=0069C5BA
+0054D424: ldr          r1, [r4, #0x60]
+0054D426: add          r0, pc
+0054D428: ldrb.w       r2, [r4, #0xda]
+0054D42C: strd         r1, r2, [sp]
+0054D430: adr          r1, #0x60
+0054D432: add          r2, sp, #0xc
+0054D434: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0054D438: ldr          r0, [sp, #0xc]
+0054D43A: cbz          r0, #0x54d45a
+0054D43C: ldr          r1, [sp, #0x10]
+0054D43E: cmp          r1, r0
+0054D440: itttt        ne
+0054D442: subne.w      r2, r1, #8
+0054D446: subne        r2, r2, r0
+0054D448: mvnne        r3, #7
+0054D44C: bicne.w      r2, r3, r2
+0054D450: itt          ne
+0054D452: addne        r1, r1, r2
+0054D454: strne        r1, [sp, #0x10]
+0054D456: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+0054D45A: movs         r0, #1
+0054D45C: strb.w       r0, [r4, #0xdc]
+0054D460: add          sp, #0x18
+0054D462: pop          {r4, r5, r7, pc}
+RANGE 0x008CB5F0..0x008CB5FC exclusive; ARM;
+008CB5F0: ldr          ip, [pc] ; word[008CB5F8]=FFBDFF88
+008CB5F4: add          pc, ip, pc
+RANGE 0x0054D608..0x0054D670 exclusive; Thumb;
+0054D608: ldr          r2, [pc, #0xc] ; word[0054D618]=00AD46F6
+0054D60A: add          r2, pc
+0054D60C: adds         r2, #8
+0054D60E: str          r2, [r1]
+0054D610: ldr          r0, [r0, #4]
+0054D612: str          r0, [r1, #4]
+0054D614: bx           lr
+0054D616: nop
+0054D618: mov          lr, lr
+0054D61A: lsls         r5, r5, #2
+0054D61C: bx           lr
+0054D61E: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+0054D622: movs         r0, r0
+0054D624: push         {r4, r5, r7, lr}
+0054D626: sub          sp, #0x18
+0054D628: ldr          r4, [r0, #4]
+0054D62A: ldrb.w       r0, [r4, #0xaa]
+0054D62E: cbz          r0, #0x54d68c
+0054D630: add.w        r0, r1, #0xc
+0054D634: ldrb.w       r5, [r4, #0xa9]
+0054D638: blx          #0x4ab44c ; Anki::Cozmo::RobotInterface::RobotToEngine::Get_motorActionAck
+0054D63C: ldrb         r0, [r0]
+0054D63E: cmp          r5, r0
+0054D640: bne          #0x54d68c
+0054D642: movs         r0, #0
+0054D644: ldr          r3, [pc, #0x74] ; word[0054D6BC]=0069C798
+0054D646: strd         r0, r0, [sp, #0xc]
+0054D64A: str          r0, [sp, #0x14]
+0054D64C: add          r3, pc
+0054D64E: ldr          r0, [pc, #0x68] ; word[0054D6B8]=0069C38E
+0054D650: ldr          r1, [r4, #0x60]
+0054D652: add          r0, pc
+0054D654: ldrb.w       r2, [r4, #0xa9]
+0054D658: strd         r1, r2, [sp]
+0054D65C: adr          r1, #0x60
+0054D65E: add          r2, sp, #0xc
+0054D660: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+0054D664: ldr          r0, [sp, #0xc]
+0054D666: cbz          r0, #0x54d686
+0054D668: ldr          r1, [sp, #0x10]
+0054D66A: cmp          r1, r0
+0054D66C: itttt        ne
+RANGE 0x0054CC54..0x0054CCD0 exclusive; Thumb;
+0054CC54: sub          sp, #0x18
+0054CC56: add          r7, sp, #8
+0054CC58: mov          r5, r1
+0054CC5A: adr          r1, #0xb8
+0054CC5C: mov          r8, r2
+0054CC5E: mov          r4, r0
+0054CC60: movs         r6, #0
+0054CC62: mov          r0, r7
+0054CC64: movs         r2, #0xc
+0054CC66: str          r6, [sp, #0x10]
+0054CC68: strd         r6, r6, [sp, #8]
+0054CC6C: bl           #0x4e02b2 ; FUN_004e02b2
+0054CC70: mov          r0, r4
+0054CC72: mov          r1, r5
+0054CC74: mov          r2, r7
+0054CC76: movs         r3, #0x1e
+0054CC78: str          r6, [sp]
+0054CC7A: blx          #0x4aadd4 ; Anki::Cozmo::IAction::IAction
+0054CC7E: ldrb.w       r0, [sp, #8]
+0054CC82: lsls         r0, r0, #0x1f
+0054CC84: itt          ne
+0054CC86: ldrne        r0, [sp, #0x10]
+0054CC88: blxne        #0x4a40cc
+0054CC8C: ldr          r0, [pc, #0x94] ; word[0054CD24]=00AF1EE2
+0054CC8E: movs         r1, #0
+0054CC90: mov          r7, r4
+0054CC92: strd         r1, r1, [r4, #0x7c]
+0054CC96: add          r0, pc
+0054CC98: ldr          r0, [r0]
+0054CC9A: adds         r0, #8
+0054CC9C: str          r0, [r4]
+0054CC9E: str          r1, [r7, #0x78]!
+0054CCA2: adr          r1, #0x70
+0054CCA4: mov          r0, r7
+0054CCA6: movs         r2, #0xc
+0054CCA8: bl           #0x4e02b2 ; FUN_004e02b2
+0054CCAC: movs         r0, #0
+0054CCAE: strb.w       r8, [r4, #0x84]
+0054CCB2: movt         r0, #0xbf80
+0054CCB6: strd         r0, r0, [r4, #0x88]
+0054CCBA: strd         r0, r0, [r4, #0x90]
+0054CCBE: strd         r0, r0, [r4, #0x98]
+0054CCC2: strd         r0, r0, [r4, #0xa0]
+0054CCC6: add.w        r0, r4, #0xac
+0054CCCA: mov          r1, r5
+0054CCCC: blx          #0x4a9178 ; Anki::Cozmo::CompoundActionParallel::CompoundActionParallel
