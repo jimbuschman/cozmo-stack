@@ -1459,3 +1459,7 @@ SW231A–F trace borrowedchoicecontext ownership, childrequestclone/repeatmetada
 ### Checkpoint 232 — Switch continuous context and continuation
 
 CC232A–D trace continuous context publication/reference/count order, allocation-failure counter release, one-child association transfer versus fresh-list append, and temporary cleanup/accepted-result ordering. Existing positive bodies reused; collections, association/cleanup recipients and input/lifetime closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 233 — Switch association and playing work counts
+
+AS233A/B, SC233A and PW233A trace association retain/count/result decisions, collection-allocation failure continuation and existing playing-record work increment under lock. CW7 destructor reused; storage bodies excluded. Input/lifetime/end-notification closure remains PARTIAL. No totals/Q15/fidelity/production changes.

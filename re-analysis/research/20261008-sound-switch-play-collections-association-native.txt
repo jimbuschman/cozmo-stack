@@ -22,7 +22,6 @@ RANGE 0x00A2D318..0x00A2D378 exclusive; ARM;
 00A2D360: str          r3, [r5, #0x600]
 00A2D364: ldr          r6, [r5, #0x608]
 00A2D368: b            #0xa2d048
-00A2D36C: rsbeq        r3, r1, r4, lsr #22
 RANGE 0x00A2D08C..0x00A2D234 exclusive; ARM;
 00A2D08C: ldr          r3, [pc, #0x2e4] ; word[00A2D378]=FFFFFDBC
 00A2D090: add          r1, r6, r6, lsl #1
@@ -290,5 +289,4 @@ RANGE 0x009E8B3C..0x009E8DC0 exclusive; ARM;
 009E8DAC: bhs          #0x9e8d1c
 009E8DB0: ldr          r7, [r8, #0x6c]
 009E8DB4: b            #0x9e8d04
-009E8DB8: rsbeq        r7, r5, ip, ror #7
-009E8DBC: rsbeq        r7, r5, r0, lsl r3
+LITERAL DATA: A2D36C; 9E8DB8=006573EC and 9E8DBC=00657310 are not instructions.
