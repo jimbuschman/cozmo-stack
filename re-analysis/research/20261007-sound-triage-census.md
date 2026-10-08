@@ -1185,3 +1185,7 @@ AE164A–C settle actionC4/C0 publication before owner retain, active action-lis
 ## Decision checkpoint165 — deferred-action retained-state transfer
 
 AV165A–D settle A63A64/9E771C prior-state release before source transfer, initial allocation pointer publication/null return, physical admission/count/state40/50 retain, and non-aborting growth failure. CX157/MF158/SN159 provide known cleanup/membership joins. Inline raw pointer-copy loop and allocator internals omitted under the guard. Broader producer/family closure remains; no totals, Q15, fidelity or production changes.
+
+## Decision checkpoint166 — note-state idle owner callback
+
+NO166A–D bind known internal/external manager0 to A70930, trace first note-state identity unlink/owner clear/event release, and join MAT10 note-off lifetime publication. Separate manager4 callbacks differ by family and are not mistaken for0. Shared MAT9/EMC evidence remains positive; no Q15 resumption. Further timed-dispatch/writer/recipient-family obligations remain, totals unchanged, no fidelity/production changes.
