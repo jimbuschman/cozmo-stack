@@ -1113,3 +1113,7 @@ NR146A–I positively bind DC4's node lookup, five known table slots, shared/Ran
 ## Decision checkpoint147 — last-reference transition and parent-removal joins
 
 LR147A–F identify concrete pre-cleanup/parent-removal dispatch, shared transition detach/count compensation, Sound no-op and ordered parent child-list removal. Layer nonempty blend-track prepass is excluded by the scope guard. Concrete node destructors, Switch/Layer pre-cleanup, Switch parent-removal, child1C and group owner9C remain decision gaps. Counts unchanged; Q14 and Q15 remain incomplete.
+
+## Decision checkpoint148 — Switch/Layer pre-cleanup prefixes
+
+CP148A–D trace head/count publication before completion and secondary-count callbacks, object low30 reference release, ordered event release and Layer attachment teardown. Existing A20/E14/DC3/DC4/OA15–17 are positive joins. Inline free-list/block returns are out of scope: storage infrastructure. Concrete secondary-count callbacks and remaining destructor/producer closure retain PARTIAL status; no total, Q15 or fidelity change.
