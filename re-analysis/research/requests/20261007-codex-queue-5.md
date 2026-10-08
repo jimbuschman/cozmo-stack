@@ -55,3 +55,19 @@ row easy to check. Give every row the exact instruction range, and keep each ans
 - **Answer:** `20261007-M11-M14-rows.md`
 
 Stop after Q19 and append a one-paragraph summary to the Q19 answer.
+
+## Amendment (manager, 2026-10-07): order and reachability
+
+- **The order:** sound has moved last in the plan. Do Q16, Q17, Q18 and Q19 first. Q14 is parked at its checkpoint
+  (21 CHECKED / 45 PARTIAL / 74 NOT DONE).
+- **Before resuming Q14 or Q15, do a reachability census first.** For each open obligation, decide whether any shipped
+  input can reach it:
+  - the shipped banks (Cozmo, SFX, UI and Music: their objects, properties, actions, RTPC bindings, switches and states);
+  - the engine's own call sites into Wwise (which events, switches, states and RTPCs the engine and the Unity app ever
+    post, with which values).
+
+  Mark each obligation REACHABLE, citing the bank object or the call site, or UNREACHABLE, citing the census evidence
+  that nothing shipped reaches it.
+- **Only REACHABLE obligations get rows.** An UNREACHABLE one is listed with its evidence and isn't extracted. That's
+  not a loosening of "Exact, always": a path no shipped input can reach can't change what Cozmo does. The manager
+  checks the census before it's used.
