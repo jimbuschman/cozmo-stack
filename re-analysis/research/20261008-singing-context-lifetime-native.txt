@@ -1,0 +1,113 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0103BFF0: raw=00A3CA38 relocated=00A3CA38
+0103BFF4: raw=00A3CBB4 relocated=00A3CBB4
+0103BFF8: raw=00A3CBE0 relocated=00A3CBE0
+0103BFFC: raw=00A3BCE8 relocated=00A3BCE8
+0103C000: raw=00A3CE78 relocated=00A3CE78
+0103C004: raw=00A3BDFC relocated=00A3BDFC
+0103C008: raw=00A3BCE0 relocated=00A3BCE0
+0103C00C: raw=00A3CE30 relocated=00A3CE30
+0103C010: raw=00A3CE3C relocated=00A3CE3C
+0103C014: raw=00A3CE48 relocated=00A3CE48
+0103C018: raw=00A3CE60 relocated=00A3CE60
+0103C01C: raw=00A3BD68 relocated=00A3BD68
+0103C020: raw=00A3CE6C relocated=00A3CE6C
+0103C024: raw=00A3BCF8 relocated=00A3BCF8
+0103C028: raw=00A3BD18 relocated=00A3BD18
+0103C02C: raw=00A3BD40 relocated=00A3BD40
+00A3CE20: raw=00000000 relocated=00000000
+00A3CE24: raw=408F4000 relocated=408F4000
+00A3CE28: raw=006032B0 relocated=006032B0
+RANGE 0x00A3ECB0..0x00A3ED34 exclusive; ARM;
+00A3ECB0: bx           lr
+00A3ECB4: push         {r4, lr}
+00A3ECB8: mov          r4, r0
+00A3ECBC: bl           #0x4a40cc
+00A3ECC0: mov          r0, r4
+00A3ECC4: pop          {r4, pc}
+00A3ECC8: vmov.i32     q8, #0
+00A3ECCC: ldr          r1, [pc, #0x5c] ; word[00A3ED30]=005DD730
+00A3ECD0: str          lr, [sp, #-4]!
+00A3ECD4: add          lr, r0, #8
+00A3ECD8: add          r1, pc, r1
+00A3ECDC: mov          r2, #0
+00A3ECE0: add          r1, r1, #8
+00A3ECE4: stm          r0, {r1, r2}
+00A3ECE8: vst1.32      {d16, d17}, [lr]
+00A3ECEC: mov          ip, #0
+00A3ECF0: ldrb         r1, [r0, #0x50]
+00A3ECF4: strb         r2, [r0, #0x18]
+00A3ECF8: and          r1, r1, #0xfc
+00A3ECFC: str          r2, [r0, #0x1c]
+00A3ED00: orr          r1, r1, #4
+00A3ED04: str          r2, [r0, #0x20]
+00A3ED08: str          r2, [r0, #0x24]
+00A3ED0C: str          r2, [r0, #0x28]
+00A3ED10: strb         r2, [r0, #0x32]
+00A3ED14: str          r2, [r0, #0x40]
+00A3ED18: str          r2, [r0, #0x44]
+00A3ED1C: str          r2, [r0, #0x48]
+00A3ED20: strb         r1, [r0, #0x50]
+00A3ED24: str          ip, [r0, #0x34]
+00A3ED28: str          ip, [r0, #0x4c]
+00A3ED2C: pop          {pc}
+00A3ED30: subseq       sp, sp, r0, lsr r7
+RANGE 0x00A70B58..0x00A70BAC exclusive; ARM;
+00A70B58: ldr          r2, [r0, #4]
+00A70B5C: cmp          r2, #0
+00A70B60: bxeq         lr
+00A70B64: cmp          r1, r2
+00A70B68: bne          #0xa70b7c
+00A70B6C: b            #0xa70b98
+00A70B70: cmp          r1, r3
+00A70B74: beq          #0xa70b8c
+00A70B78: mov          r2, r3
+00A70B7C: ldr          r3, [r2, #4]
+00A70B80: cmp          r3, #0
+00A70B84: bne          #0xa70b70
+00A70B88: bx           lr
+00A70B8C: ldr          r3, [r1, #4]
+00A70B90: str          r3, [r2, #4]
+00A70B94: bx           lr
+00A70B98: ldr          r3, [r1, #4]
+00A70B9C: str          r3, [r0, #4]
+00A70BA0: bx           lr
+00A70BA4: push         {r3, r4, r5, lr}
+00A70BA8: ldr          r4, [r1, #4]
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A3CE30..0x00A3CEB4 exclusive; ARM;
+00A3CE30: bx           lr
+00A3CE34: sub          r0, r0, #0x50
+00A3CE38: b            #0xa3ce30
+00A3CE3C: bx           lr
+00A3CE40: sub          r0, r0, #0x50
+00A3CE44: b            #0xa3ce3c
+00A3CE48: mov          r2, #0x2000
+00A3CE4C: mov          r3, #0
+00A3CE50: strd         r2, r3, [r0]
+00A3CE54: bx           lr
+00A3CE58: sub          r1, r1, #0x50
+00A3CE5C: b            #0xa3ce48
+00A3CE60: bx           lr
+00A3CE64: sub          r0, r0, #0x44
+00A3CE68: b            #0xa3ce60
+00A3CE6C: bx           lr
+00A3CE70: sub          r0, r0, #0x44
+00A3CE74: b            #0xa3ce6c
+00A3CE78: ldrb         r0, [r0, #0xfc]
+00A3CE7C: ubfx         r0, r0, #4, #1
+00A3CE80: bx           lr
+00A3CE84: bx           lr
+00A3CE88: sub          r0, r0, #0x44
+00A3CE8C: b            #0xa3ce84
+00A3CE90: bx           lr
+00A3CE94: sub          r0, r0, #0x44
+00A3CE98: b            #0xa3ce90
+00A3CE9C: b            #0xa708c0
+00A3CEA0: sub          r0, r0, #0x44
+00A3CEA4: b            #0xa3ce9c
+00A3CEA8: b            #0xa708d4
+00A3CEAC: sub          r0, r0, #0x44
+00A3CEB0: b            #0xa3cea8
