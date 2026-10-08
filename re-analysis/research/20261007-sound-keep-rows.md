@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 240 — collaborator release and owner membership failure boundary
+
+Primary: `20261008-sound-state-group-release-native.txt`, `20261008-sound-state-group-release-slots.txt`, expanded GR238 outcomes capture; same engine hash. H=shared collaborator, P=owner. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| HR240A | 0103BDA0;00A2BBA8..00A2BBEC | H.vt10 binds A2BBA8: decrement HC wrapping32 and publish first. New nonzero returns that count. New0 snapshots pool value and H, invokes live H.vt0, then pool-frees saved H and returns0. No entry count-zero guard: old0 becomesFFFFFFFF and skips destruction. | Known H0=GC239D A2BBF4 unsubscribe cleanup. Caller uses nondeleting0 then own poolfree, not deleting4. | Count publication → zero gate → optional live destructor → saved-object pool release → raw new count. | Registry erase/release caller and other count producers remain separate. out of scope: poolfree internals. No implicit removal from global registry inside this body. |
+| HR240B | 00A2992C..00A299D4;00A29AF4..00A29B10;00A29CAC..00A29CC8;00A29DE4..00A29DFC | After collaborator creation/reuse, local exact groupID lookup found returns without adding membership. Missing inserts/appends; owner count published before key store. Both local backing-allocation null outcomes returnvoid after collaborator acquisition. Successful growth publishes base/capacity before testing saved count versus new capacity; failed capacity gate returns without compensating release. Accepted capacity reloads owner count and publishes membership. | No H.vt10 in these failure endpoints. Native acquisition-before-membership remains even if membership allocation fails. | Collaborator acquisition → local membership lookup → publication/failure → void return. | out of scope: owner backing storage copies/shifts/allocator internals. Registry publication alternatives and callers enforcing lifetime still PARTIAL; no fabricated recovery/rollback. |
+
+Known retain/release/destructor family is joined. Concrete manager20/24, active registry/owner lifetime/input producers and remaining registration endpoints prevent full path closure. Totals unchanged; Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 239 — group change callback and collaborator unsubscribe
 
 Primary: `20261008-sound-state-group-change-retirement-native.txt`, GR238 table bindings; same engine hash. H=collaborator, U=incoming arg1/r1, K=incoming arg2/r2 key pointer, F=incoming arg3/r3 optional filter. Native registry/mutex base A2B1A0+8+662CA8=108DE50; active 12-byte records {key,event,owner} at base4/count8. Endpoints inclusive.

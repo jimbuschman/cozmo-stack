@@ -1487,3 +1487,7 @@ GR238A–D trace group-ID-only reuse, count callback versus node release, new co
 ### Checkpoint 239 — group change and unsubscribe
 
 GC239A–D trace active-record selection/live-key gates, optional filter raw-result stop rule, recomputation under lock and nondeleting/deleting unsubscribe order. Known owner callbacks reused; active registry/input/count retirement and descriptor-manager consumers retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 240 — collaborator release and membership outcomes
+
+HR240A/B bind release10, wrapping count/zero-destructor/pool order and local membership-publication failures without compensation. Known destructor reused; remaining registry/owner/callback/input writer closure retained. No totals/Q15/fidelity/production changes.
