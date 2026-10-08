@@ -1225,3 +1225,7 @@ DT174A–C settle144/148 selection, selector-exact0/1 targetbits, existing-handl
 ## Decision checkpoint175 — concrete transition callback/control publication
 
 TN175A–C bind main14 and embeddedowner0 to shared9FF41C and main50 toBX LR, then settle completion handleclear, selector-specific stop/pause calls before168/16C raw publication and liveE9bit0. PS2–4 are positive stop joins; concretepause48 and value/flag/family/writer closure remain. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint176 — concrete PBI pause decisions
+
+PA176A–D settle1D4 increment before duration/mask/handle gates, existing retarget versus new transition/fallback, known48 pause flag/gain/context/attachment order with queue2 only forarg0, and transition1→2/4→3. TN/TT/RC/OA rows are positive recipients. Type2 consumer and complete writer/count/family closure remain; no totals, Q15, fidelity or production changes.
