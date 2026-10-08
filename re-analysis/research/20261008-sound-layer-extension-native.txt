@@ -706,3 +706,62 @@ RANGE 0x009E8728..0x009E874C exclusive; ARM;
 009E8740: ldr          r4, [r0]
 009E8744: cmp          r4, #0
 009E8748: beq          #0x9e8788
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D1760..0x009D1774 exclusive; ARM;
+009D1760: ldm          sl, {r1, r2}
+009D1764: mov          r5, #0
+009D1768: ldr          r3, [sl, #0x10]
+009D176C: mov          r6, #0
+009D1770: ldr          r0, [sl, #0x18]
+RANGE 0x009D1AD0..0x009D1B98 exclusive; ARM;
+009D1AD0: ldr          r4, [r2, #0x40]
+009D1AD4: cmp          r6, r4
+009D1AD8: bhs          #0x9d1d68
+009D1ADC: add          r7, r3, r6, lsl #3
+009D1AE0: ldr          r3, [sp, #0xc]
+009D1AE4: add          r6, r6, #1
+009D1AE8: str          r6, [r3, #0x3c]
+009D1AEC: b            #0x9d1310
+009D1AF0: ldr          r7, [sp, #0x198]
+009D1AF4: cmp          r5, r7
+009D1AF8: blo          #0x9d1d4c
+009D1AFC: ldr          r3, [sp, #0x19c]
+009D1B00: cmp          r5, r3
+009D1B04: bhi          #0x9d1ecc
+009D1B08: ldr          ip, [sp, #0x194]
+009D1B0C: cmp          r5, r7
+009D1B10: bls          #0x9d1b50
+009D1B14: add          r7, r7, r7, lsl #2
+009D1B18: add          r3, r5, r5, lsl #2
+009D1B1C: mov          r1, #1
+009D1B20: add          r2, ip, r7, lsl #2
+009D1B24: add          r3, ip, r3, lsl #2
+009D1B28: cmp          r2, #0
+009D1B2C: movne        r0, #0
+009D1B30: strne        r0, [r2]
+009D1B34: stmibne      r2, {r0, r1}
+009D1B38: add          r2, r2, #0x14
+009D1B3C: strne        r0, [r2, #-8]
+009D1B40: strne        r0, [r2, #-4]
+009D1B44: cmp          r2, r3
+009D1B48: bne          #0x9d1b28
+009D1B4C: ldr          ip, [sp, #0x194]
+009D1B50: str          r5, [sp, #0x198]
+009D1B54: mov          r4, #0
+009D1B58: mov          lr, ip
+009D1B5C: mov          r6, r4
+009D1B60: b            #0x9d1b68
+009D1B64: ldr          lr, [sp, #0x194]
+009D1B68: ldr          ip, [sl, #0x108]
+009D1B6C: add          lr, lr, r4
+009D1B70: add          r6, r6, #1
+009D1B74: add          ip, ip, r4
+009D1B78: cmp          r6, r5
+009D1B7C: add          r4, r4, #0x14
+009D1B80: ldm          ip!, {r0, r1, r2, r3}
+009D1B84: stm          lr!, {r0, r1, r2, r3}
+009D1B88: ldr          r3, [ip]
+009D1B8C: str          r3, [lr]
+009D1B90: bne          #0x9d1b64
+009D1B94: b            #0x9d1878
