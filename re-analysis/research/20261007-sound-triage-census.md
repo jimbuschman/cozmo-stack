@@ -1347,3 +1347,7 @@ SA203A–E tracefactory versusretainedsource publication, exactpolicyquery/bitwi
 ### Checkpoint 204 — sourcefactory input producer
 
 SS204A/B traceauthoredPBI150mode/pluginoutputs andsupplied-media RIFFprobe/uncheckedparserresult/full-payloadmode3selection. PCMformatrewrite scopedout; parser/media/descriptorwriter/fullclosure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 205 — RIFFselection/parser controls
+
+RI205A–F traceinput/header/chunkgates, firstfmt/data/cue, truncation-compatibledata return1, loop/optionalmetadataoverwrite andcue/label matching. Storagehelperdescents scopedout. ExactjoinSS204probe/full-payloadmodegate andcodecstartup; fullasset/metadata/decoder/controlwriter closure retained. No totals/Q15/fidelity/production changes.
