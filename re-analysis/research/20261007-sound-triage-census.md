@@ -43,7 +43,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-034 | 72 | NOT DONE |
 | Q14-035 | 73 | PARTIAL |
 | Q14-036 | 74 | PARTIAL |
-| Q14-037 | 75 | NOT DONE |
+| Q14-037 | 75 | PARTIAL |
 | Q14-038 | 76 | PARTIAL |
 | Q14-039 | 77 | NOT DONE |
 | Q14-040 | 78 | NOT DONE |
@@ -184,7 +184,7 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 > | M6-006 | **KEEP** | 0x009A6704;0x009A0EF8;0x009AE0B0;0x009AA3DC;0x009AA0FC;0x009A9F88;0x009AF8A8;0x00A62A1C;0x00A663C8;0x00A645C8;0x00A04F54 | Queued event/action timing, play counts, callbacks/flags, switch resolution and start/stop/seek behavior remain exact, including unresolved drain internals. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9 and LS1–16 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check and count/undo contracts. Remaining: subscription recipients, concrete destruction/idle teardown, complete production wiring and writer/consumer closure. Native row presence does not settle those descendants.
 
 ## Q14-008 — triage line 41
 

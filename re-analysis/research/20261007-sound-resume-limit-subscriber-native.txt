@@ -1,0 +1,52 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009FAD40..0x009FAD48 exclusive; ARM;
+009FAD40: bxne         lr
+009FAD44: b            #0x9f4d40
+RANGE 0x00A19CDC..0x00A19D3C exclusive; ARM;
+00A19CDC: ldr          r3, [pc, #0x58] ; word[00A19D3C]=00621CC0
+00A19CE0: mov          ip, r0
+00A19CE4: push         {r4, r5, r6, r7, lr}
+00A19CE8: add          r3, pc, r3
+00A19CEC: mov          lr, r1
+00A19CF0: mov          r4, r0
+00A19CF4: add          r3, r3, #8
+00A19CF8: str          r3, [ip], #8
+00A19CFC: ldm          lr!, {r0, r1, r2, r3}
+00A19D00: mov          r7, #0
+00A19D04: ldr          r5, [pc, #0x34] ; word[00A19D40]=00673F34
+00A19D08: add          r5, pc, r5
+00A19D0C: stm          ip!, {r0, r1, r2, r3}
+00A19D10: ldr          r6, [r5]
+00A19D14: ldm          lr, {r0, r1}
+00A19D18: cmp          r6, r7
+00A19D1C: streq        r4, [r5]
+00A19D20: strne        r4, [r5]
+00A19D24: stm          ip, {r0, r1}
+00A19D28: mov          r0, r4
+00A19D2C: str          r7, [r4, #0x20]
+00A19D30: streq        r6, [r4, #4]
+00A19D34: strne        r6, [r4, #4]
+00A19D38: pop          {r4, r5, r6, r7, pc}
+RANGE 0x00A19ECC..0x00A19EFC exclusive; ARM;
+00A19ECC: cmp          r1, #0
+00A19ED0: bxeq         lr
+00A19ED4: push         {r3, r4, r5, lr}
+00A19ED8: mov          r4, r0
+00A19EDC: mov          r5, r1
+00A19EE0: mov          r0, r1
+00A19EE4: mov          r1, r4
+00A19EE8: bl           #0x9f7390
+00A19EEC: ldr          r3, [r4, #0x20]
+00A19EF0: cmp          r3, #0
+00A19EF4: streq        r5, [r4, #0x20]
+00A19EF8: pop          {r3, r4, r5, pc}
+0101C230: raw=00000000 relocated=00000000 
+0101C234: raw=00000000 relocated=00000000 
+0101C238: raw=009FD2C0 relocated=009FD2C0 
+0101C23C: raw=009FD2E8 relocated=009FD2E8 
+0101C240: raw=009FD294 relocated=009FD294 
+0101C244: raw=009FD288 relocated=009FD288 
+0101C248: raw=009FD2AC relocated=009FD2AC 
+0101C24C: raw=009FD28C relocated=009FD28C 
+0101C250: raw=00000000 relocated=00000000 
