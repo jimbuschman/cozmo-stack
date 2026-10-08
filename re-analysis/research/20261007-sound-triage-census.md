@@ -65,8 +65,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-056 | 95 | NOT DONE |
 | Q14-057 | 96 | NOT DONE |
 | Q14-058 | 97 | CHECKED |
-| Q14-059 | 98 | NOT DONE |
-| Q14-060 | 99 | NOT DONE |
+| Q14-059 | 98 | PARTIAL |
+| Q14-060 | 99 | PARTIAL |
 | Q14-061 | 100 | NOT DONE |
 | Q14-062 | 102 | NOT DONE |
 | Q14-063 | 104 | NOT DONE |
@@ -412,7 +412,7 @@ PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve compani
 
 > | M9-008 | **KEEP** | 0x009D671C..0x009D7727;0x005EF184..0x005EF18C | Posted shake RTPC and per-voice depth initialization cadence must match; rereading once per block changes parameters/state. |
 
-PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. Final LFO mode/phase and per-voice value-delivery/cadence recipients remain exact open work.
+PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. LP8–12 additionally close local mode/phase initialization and establish its KEEP control-stream boundary. Per-voice value-delivery/cadence recipients remain exact open work.
 
 ## Q14-047 — triage line 85
 
@@ -490,13 +490,13 @@ CHECKED research boundary: RB3 preserves UNKNOWN final audible output and the ab
 
 > | M9-024 | **KEEP** | 0x009D552C..0x009D55F3;0x009D5934..0x009D6598;0x009D7FC0..0x009D8137 | Envelope stop/trigger selector consumers determine voice lifetime; do not simplify a stop decision as envelope DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 MG/MI/EP establish envelope selector/stop gates, initialization and parameter timing. Remaining attached-voice stop notification/evaluator recipients are recoverable exact work.
 
 ## Q14-060 — triage line 99
 
 > | M9-025 | **KEEP** | 0x009D671C..0x009D7727;0x009D7FC0..0x009D8137;0x009E266C..0x009E2813 | LFO waveform is a modulation parameter stream feeding singing/pitch, not one of the allowed PCM filter/mixer operations; retain exact wave shape, phase, extrema and timing. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 MG/MI/LP1–12 establish LFO choice, mode/phase, raw constants and state publication; this control-stream initializer is KEEP, with only imported libm rounding exempt. Remaining evaluator/output delivery and cadence are exact work.
 
 ## Q14-061 — triage line 100
 
