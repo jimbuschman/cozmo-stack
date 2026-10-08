@@ -1229,3 +1229,7 @@ TN175A–C bind main14 and embeddedowner0 to shared9FF41C and main50 toBX LR, th
 ## Decision checkpoint176 — concrete PBI pause decisions
 
 PA176A–D settle1D4 increment before duration/mask/handle gates, existing retarget versus new transition/fallback, known48 pause flag/gain/context/attachment order with queue2 only forarg0, and transition1→2/4→3. TN/TT/RC/OA rows are positive recipients. Type2 consumer and complete writer/count/family closure remain; no totals, Q15, fidelity or production changes.
+
+### Checkpoint 177 — type2 queue voice/source pause
+
+PN177A–C positively join PA176 queue2 through shared preflight/lookup gates and standard4C binding: DC1 publishes PBI flag1 and zero metadata beforeDC3; otherDC uses known VR173D fallback toDC2. Metadata miss does not block voice transition. Flag/metadata consumers, other families and full producer closure remain retained. No totals, Q15, fidelity or production changes.

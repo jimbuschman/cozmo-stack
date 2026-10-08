@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 177 — queued type2 pause and source metadata publication
+
+Primary: `20261008-sound-type2-notification-native.txt`, `20261008-sound-type2-voice-slot.txt`, `20261008-sound-source-pause-flag-native.txt`; same engine SHA256. PA176C supplies producer; shared HP4/5/6/9 and QN172 supply positive queue gates, standard voice construction and removal ordering. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PN177A | 009D3B88..009D3B98;0103C7DC;HP4/HP5/QN172A | Type2 dispatch invokes voice.vt4C(voice), whose standard table slot bindsA53558. Shared type>1 path has no own preparation: prepared entry usesPBI154, otherwise A41854 resolves primary match; null removes, resolved/bitclear retains, prepared dispatches. Same-clock group may defer behind type0/1. | HP5 type2 does not admit listed secondary-only match; fallback accepts primary match but does not itself set preparedbit. | Group readiness → lookup/prepared gate → virtual4C → HP9 callback-before-removal. Return ignored. | Existing queue rows own admission/lookup/unlink. No unconditional pause dispatch inferred from enqueue. Complete producer/voice-family closure remains. |
+| PN177B | 00A53558..00A53588 | IfvoiceDC==1, savevoice, callA565D8(primaryD4), thenDC=3. Otherwise tailvoice.vt48, which standard table bindsA533FC. | DC1 branch has no primary-null guard. Otherstates use VR173D: optional primary clearPBI flag, alwaysDC2. | DC1 gate → source callback →DC3; otherwise known fallback callback. | PN177C supplies direct source recipient; VR173D positive fallback. No secondary-source callback or stream syscall claimed. |
+| PN177C | 00A565D8..00A56608;00A01850..00A01860 | LoadsourceC PBI; A01850 replaces1BA bits3..6 with1 preserving others. Reload live sourceC after helper, read140 playingID, tailA052F4(globalMetadata,ID,savedsource,rawbits0). | No direct stream stop/pause call. Metadata missing match does not prevent callerDC3. | PBI flag1 → live PBI/ID reload → metadata first composite-match update → callerDC3. | VR173C positively supplies lookup/lock/value14-before-clock8/C/no insertion on miss. Flag/metadata consumers and broader writer closure remain retained. |
+
+Known queue2 voice/source endpoints now have local exact decision rows. Source flags and metadata consumers, other voice families and complete queue producer closure remain PARTIAL. Totals unchanged; Q15 parked; no production or fidelity changes.
+
 ## Checkpoint 176 — PBI pause counter, transition and concrete callback
 
 Primary: `20261008-sound-pbi-pause-native.txt`, `20261008-sound-pbi-pause-slots.txt`; same engine SHA256. Shared PZR2 note-pause caller passes{0,4,byte8=0}; TN175 completion invokes48(1). PB170 ctor and TT/TN/RC rows positively join known recipients. Endpoints inclusive.
