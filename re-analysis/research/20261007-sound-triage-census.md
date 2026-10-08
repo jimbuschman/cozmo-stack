@@ -1169,3 +1169,7 @@ PN160A–D settle9AB1F4's operation2/3 gate, asymmetric first/second-list A63B24
 ## Decision checkpoint161 — pending-action choice refresh
 
 PR161A–G settleA63B24's local choice-list unwind/replacement/selection/return contract and exact parent-plus-first-bus ancestry. Return0 publishes new target/index and keeps pending action; return1 can preserve a nonempty list after null selection or clear/release an empty one. CW8/9/CO155/CP156/S7 are positive native recipients. Action mask/depth/list producers and dynamic callback/destructor/resolver closure remain; no totals, Q15, fidelity or production changes.
+
+## Decision checkpoint162 — deferred-action and pending-item release bindings
+
+DR162A–E bind known0503 table30/C/0 and pending4 from positive DA/DQ constructors: raw44-byte descriptor copy, action reference gate/registry detach before destruction, and packed object release before event release in pending cleanup. DC3/DC4 supply positive recipient joins. A63350 and other action families/producers remain retained; hash/copy/pool infrastructure excluded. No coverage promotion, Q15, fidelity or production changes.
