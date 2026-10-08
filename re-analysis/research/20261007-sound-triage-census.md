@@ -1379,3 +1379,7 @@ LK211A–E trace word4/word8/byteC/byte10/word14 exact/wildcard lookup, key suff
 ### Checkpoint 212 — layer child dispatch
 
 LC212A–E trace selected clone/control fields, special gate/context reader, normal3→1 scheduling conversion versuslive128 call, and ordered collections/reference cleanup beforecontinued childiteration. Collection publication,9EE454 anddynamic child/lifecycle/writer closure remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 213 — special child preparation
+
+SC213A–F trace entirelocal9EE454 mask/parent recursion, tag-specific scope, authored/RTPC integer adjustments, distinct0..127/1..127 clamps, inclusive ranges anddelayed two-byte publication versus52/rawparent failure. LC212B reconciled; production/default/property/parent/subscription writers and child/source closure remain retained. No totals/Q15/fidelity/production changes.

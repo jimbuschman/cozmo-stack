@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EE454..0x009EE554 exclusive; ARM;
+009EE454: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009EE458: sub          sp, sp, #0x3c
+009EE45C: ldr          r7, [pc, #0x4e0] ; word[009EE944]=00651E20
+009EE460: ldr          ip, [pc, #0x4e0] ; word[009EE948]=FFFFFE88
+009EE464: add          r7, pc, r7
+009EE468: ldr          sb, [r0, #0x3c]
+009EE46C: ldr          r8, [r7, ip]
+009EE470: cmp          sb, #0
+009EE474: ldr          ip, [r8, #0xd4]
+009EE478: str          ip, [sp, #0x10]
+009EE47C: beq          #0x9ee4e0
+009EE480: ldrb         r6, [sb]
+009EE484: mov          lr, sb
+009EE488: mov          ip, #0
+009EE48C: b            #0x9ee49c
+009EE490: cmp          r6, r5
+009EE494: mov          ip, r5
+009EE498: bls          #0x9ee4e0
+009EE49C: ldrb         r4, [lr, #1]!
+009EE4A0: add          r5, ip, #1
+009EE4A4: cmp          r4, #0x35
+009EE4A8: bne          #0x9ee490
+009EE4AC: add          r6, r6, #4
+009EE4B0: bic          r6, r6, #3
+009EE4B4: add          ip, r6, ip, lsl #2
+009EE4B8: adds         ip, sb, ip
+009EE4BC: beq          #0x9ee4e0
+009EE4C0: ldr          ip, [ip]
+009EE4C4: ldrb         lr, [r1, #1]
+009EE4C8: asr          ip, ip, lr
+009EE4CC: tst          ip, #1
+009EE4D0: bne          #0x9ee4e8
+009EE4D4: mov          r0, #0x52
+009EE4D8: add          sp, sp, #0x3c
+009EE4DC: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009EE4E0: add          ip, sp, #0x10
+009EE4E4: b            #0x9ee4c0
+009EE4E8: mov          r5, r3
+009EE4EC: ldrb         r3, [r3]
+009EE4F0: mov          r6, r2
+009EE4F4: mov          r4, r1
+009EE4F8: cmp          r3, #0
+009EE4FC: mov          sl, r0
+009EE500: beq          #0x9ee540
+009EE504: ldr          r0, [r0, #0x34]
+009EE508: cmp          r0, #0
+009EE50C: beq          #0x9ee534
+009EE510: ldr          r3, [sp, #0x60]
+009EE514: str          r3, [sp]
+009EE518: ldr          r3, [sp, #0x64]
+009EE51C: str          r3, [sp, #4]
+009EE520: mov          r3, r5
+009EE524: bl           #0x9ee454
+009EE528: cmp          r0, #1
+009EE52C: bne          #0x9ee4d8
+009EE530: ldr          sb, [sl, #0x3c]
+009EE534: mov          r3, #0
+009EE538: strb         r3, [r5]
+009EE53C: ldrb         lr, [r4, #1]
+009EE540: ldrb         r3, [r4]
+009EE544: and          r2, r3, #0xef
+009EE548: cmp          r3, #0xa0
+009EE54C: cmpne        r2, #0x80
+009EE550: beq          #0x9ee704

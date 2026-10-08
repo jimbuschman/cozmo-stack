@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EE554..0x009EE654 exclusive; ARM;
+009EE554: mov          r3, #0xff
+009EE558: ldr          r2, [sp, #0x60]
+009EE55C: cmp          sb, #0
+009EE560: mov          ip, #0
+009EE564: str          r6, [sp, #0x28]
+009EE568: strb         lr, [sp, #0x2c]
+009EE56C: str          r2, [sp, #0x20]
+009EE570: ldr          r2, [sp, #0x64]
+009EE574: strb         r3, [sp, #0x30]
+009EE578: str          ip, [sp, #0x34]
+009EE57C: str          r2, [sp, #0x24]
+009EE580: str          ip, [sp, #0x18]
+009EE584: beq          #0x9ee93c
+009EE588: ldrb         r0, [sb]
+009EE58C: mov          r3, sb
+009EE590: b            #0x9ee5a0
+009EE594: cmp          r0, r1
+009EE598: mov          ip, r1
+009EE59C: bls          #0x9ee8e4
+009EE5A0: ldrb         r2, [r3, #1]!
+009EE5A4: add          r1, ip, #1
+009EE5A8: cmp          r2, #0x2f
+009EE5AC: bne          #0x9ee594
+009EE5B0: add          r0, r0, #4
+009EE5B4: bic          r3, r0, #3
+009EE5B8: add          ip, r3, ip, lsl #2
+009EE5BC: adds         r5, sb, ip
+009EE5C0: ldrne        r5, [sb, ip]
+009EE5C4: ldr          r3, [pc, #0x380] ; word[009EE94C]=FFFFFDF8
+009EE5C8: ldr          r1, [sl, #0x14]
+009EE5CC: ldr          r6, [r7, r3]
+009EE5D0: cmp          r1, #0
+009EE5D4: ldr          r2, [r6, #0xbc]
+009EE5D8: beq          #0x9ee644
+009EE5DC: ldrd         r0, r1, [r1]
+009EE5E0: rsb          r3, r2, #0x20
+009EE5E4: sub          ip, r2, #0x20
+009EE5E8: lsr          r0, r0, r2
+009EE5EC: orr          r0, r0, r1, lsl r3
+009EE5F0: orr          r0, r0, r1, lsr ip
+009EE5F4: mov          r1, #0
+009EE5F8: and          r0, r0, #1
+009EE5FC: orrs         r3, r0, r1
+009EE600: beq          #0x9ee644
+009EE604: ldr          r0, [pc, #0x344] ; word[009EE950]=FFFFFDFC
+009EE608: add          r1, sl, #0x10
+009EE60C: add          r3, sp, #0x20
+009EE610: ldr          r0, [r7, r0]
+009EE614: ldr          r0, [r0]
+009EE618: bl           #0xa11590
+009EE61C: vmov         s15, r0
+009EE620: vcmpe.f32    s15, #0
+009EE624: vmrs         apsr_nzcv, fpscr
+009EE628: ble          #0x9ee8ec
+009EE62C: vmov.f32     s14, #5.000000e-01
+009EE630: vadd.f32     s15, s15, s14
+009EE634: vcvt.s32.f32 s15, s15
+009EE638: vmov         r3, s15
+009EE63C: ldr          sb, [sl, #0x3c]
+009EE640: add          r5, r5, r3
+009EE644: ldrb         ip, [r4, #2]
+009EE648: cmp          sb, #0
+009EE64C: ldr          r3, [r8, #0xc4]
+009EE650: add          r5, ip, r5

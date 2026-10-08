@@ -1,0 +1,66 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EE654..0x009EE750 exclusive; ARM;
+009EE654: usat         r5, #7, r5
+009EE658: str          r3, [sp, #0xc]
+009EE65C: beq          #0x9ee70c
+009EE660: ldrb         r2, [sb]
+009EE664: mov          r1, sb
+009EE668: mov          r3, #0
+009EE66C: b            #0x9ee67c
+009EE670: cmp          r2, ip
+009EE674: mov          r3, ip
+009EE678: bls          #0x9ee8d8
+009EE67C: ldrb         r0, [r1, #1]!
+009EE680: add          ip, r3, #1
+009EE684: cmp          r0, #0x31
+009EE688: bne          #0x9ee670
+009EE68C: add          r1, r2, #4
+009EE690: bic          r1, r1, #3
+009EE694: add          r3, r1, r3, lsl #2
+009EE698: cmn          sb, r3
+009EE69C: beq          #0x9ee8d8
+009EE6A0: ldr          lr, [sb, r3]
+009EE6A4: ldr          fp, [r8, #0xc8]
+009EE6A8: mov          r1, sb
+009EE6AC: mov          r3, #0
+009EE6B0: b            #0x9ee6c0
+009EE6B4: cmp          r2, ip
+009EE6B8: mov          r3, ip
+009EE6BC: bls          #0x9ee714
+009EE6C0: ldrb         r0, [r1, #1]!
+009EE6C4: add          ip, r3, #1
+009EE6C8: cmp          r0, #0x32
+009EE6CC: bne          #0x9ee6b4
+009EE6D0: add          r1, r2, #4
+009EE6D4: bic          r1, r1, #3
+009EE6D8: add          r3, r1, r3, lsl #2
+009EE6DC: cmn          sb, r3
+009EE6E0: beq          #0x9ee714
+009EE6E4: ldr          r3, [sb, r3]
+009EE6E8: cmp          r5, lr
+009EE6EC: cmpge        r3, r5
+009EE6F0: movlt        r3, #1
+009EE6F4: movge        r3, #0
+009EE6F8: blt          #0x9ee4d4
+009EE6FC: str          r3, [sp, #0x1c]
+009EE700: b            #0x9ee738
+009EE704: ldrb         r3, [r4, #2]
+009EE708: b            #0x9ee558
+009EE70C: ldr          fp, [r8, #0xc8]
+009EE710: mov          lr, r3
+009EE714: cmp          fp, r5
+009EE718: cmpge        r5, lr
+009EE71C: movlt        lr, #1
+009EE720: movge        lr, #0
+009EE724: blt          #0x9ee4d4
+009EE728: cmp          sb, #0
+009EE72C: str          lr, [sp, #0x1c]
+009EE730: ldrbne       r2, [sb]
+009EE734: beq          #0x9ee900
+009EE738: mov          r1, sb
+009EE73C: mov          r3, #0
+009EE740: b            #0x9ee750
+009EE744: cmp          ip, r2
+009EE748: mov          r3, ip
+009EE74C: bhs          #0x9ee900
