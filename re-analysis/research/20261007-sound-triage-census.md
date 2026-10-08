@@ -989,3 +989,6 @@ CHECKED: OR1 reopens the E9bit2 gate and zero-store-before-release tail, includi
 > | 0x008DE3E6..0x008DE408 (Thumb) | Error result<=-1 reads errno; BNE for errno!=4 jumps to result1; EINTR retries; zero read returns0. | KEEP D4 shipped error mapping; external syscall timing does not erase engine decisions. |
 
 CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gates, offset/progress updates, EINTR retry, non-EINTR return1 and zero-read return0. The imported syscall is a runtime input, not a missing shipped error mapper.
+
+
+Registry checkpoint: PR6–PR10 and VC6–VC10 close the registered-source query, parameter-factory result distinction, explicit registry release, and Vorbis source creator/constructor selection. Q14-090/Q14-091 remain PARTIAL; their start/render/stream and decoder descendants remain exact work. No coverage promotion from creator selection alone.
