@@ -1,0 +1,469 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009E36D4..0x009E3784 exclusive; ARM;
+009E36D4: cmp          r8, sl
+009E36D8: vmovhi.f32   s25, #1.000000e+00
+009E36DC: movhi        sb, sl
+009E36E0: bls          #0x9e3784
+009E36E4: vsub.f32     s15, s25, s17
+009E36E8: vdiv.f32     s15, s15, s19
+009E36EC: vmov         r0, s15
+009E36F0: bl           #0x4a83f8
+009E36F4: vmov         s15, r0
+009E36F8: vcvt.s32.f32 s15, s15
+009E36FC: vmov         r0, s15
+009E3700: cmp          r0, #0
+009E3704: mvnlt        r0, #3
+009E3708: blt          #0x9e3718
+009E370C: cmp          r0, fp
+009E3710: movge        r0, fp
+009E3714: lsl          r0, r0, #2
+009E3718: add          r0, sb, r0
+009E371C: cmp          r8, r0
+009E3720: movlo        r2, r8
+009E3724: movhs        r2, r0
+009E3728: cmp          r2, sb
+009E372C: bls          #0x9e3770
+009E3730: mov          r3, sb
+009E3734: vadd.f32     s17, s17, s19
+009E3738: vadd.f32     s16, s16, s20
+009E373C: vsub.f32     s15, s25, s17
+009E3740: vmul.f32     s15, s16, s15
+009E3744: vmul.f32     s15, s15, s24
+009E3748: vmls.f32     s15, s18, s21
+009E374C: vstmia       r3!, {s15}
+009E3750: vmov.f32     s18, s15
+009E3754: cmp          r2, r3
+009E3758: bhi          #0x9e3734
+009E375C: mvn          r3, sb
+009E3760: add          r2, r2, r3
+009E3764: bic          r2, r2, #3
+009E3768: add          r2, r2, #4
+009E376C: add          sb, sb, r2
+009E3770: vcmpe.f32    s17, s25
+009E3774: vmrs         apsr_nzcv, fpscr
+009E3778: vsubge.f32   s17, s17, s25
+009E377C: cmp          r8, sb
+009E3780: bhi          #0x9e36e4
+RANGE 0x009E3E1C..0x009E41DC exclusive; ARM;
+009E3E1C: cmp          r8, sl
+009E3E20: vmovhi.f32   s25, #1.000000e+00
+009E3E24: movhi        sb, sl
+009E3E28: bls          #0x9e3784
+009E3E2C: vsub.f32     s15, s25, s17
+009E3E30: vdiv.f32     s15, s15, s19
+009E3E34: vmov         r0, s15
+009E3E38: bl           #0x4a83f8
+009E3E3C: vmov         s15, r0
+009E3E40: vcvt.s32.f32 s15, s15
+009E3E44: vmov         r0, s15
+009E3E48: cmp          r0, #0
+009E3E4C: mvnlt        r0, #3
+009E3E50: blt          #0x9e3e60
+009E3E54: cmp          r0, fp
+009E3E58: movge        r0, fp
+009E3E5C: lsl          r0, r0, #2
+009E3E60: add          r0, sb, r0
+009E3E64: cmp          r8, r0
+009E3E68: movlo        r2, r8
+009E3E6C: movhs        r2, r0
+009E3E70: cmp          r2, sb
+009E3E74: bls          #0x9e3eb4
+009E3E78: mov          r3, sb
+009E3E7C: vadd.f32     s16, s16, s20
+009E3E80: vadd.f32     s17, s17, s19
+009E3E84: vmul.f32     s15, s16, s17
+009E3E88: vmul.f32     s15, s15, s24
+009E3E8C: vmls.f32     s15, s18, s21
+009E3E90: vstmia       r3!, {s15}
+009E3E94: vmov.f32     s18, s15
+009E3E98: cmp          r2, r3
+009E3E9C: bhi          #0x9e3e7c
+009E3EA0: mvn          r3, sb
+009E3EA4: add          r2, r2, r3
+009E3EA8: bic          r2, r2, #3
+009E3EAC: add          r2, r2, #4
+009E3EB0: add          sb, sb, r2
+009E3EB4: vcmpe.f32    s17, s25
+009E3EB8: vmrs         apsr_nzcv, fpscr
+009E3EBC: vsubge.f32   s17, s17, s25
+009E3EC0: cmp          r8, sb
+009E3EC4: bhi          #0x9e3e2c
+009E3EC8: b            #0x9e3784
+009E3ECC: cmp          r8, sl
+009E3ED0: bls          #0x9e3784
+009E3ED4: vmov.f32     s25, #1.000000e+00
+009E3ED8: mov          sb, sl
+009E3EDC: vldr         s29, [pc, #0x124] ; word[009E4008]=00000000
+009E3EE0: vsub.f32     s15, s28, s17
+009E3EE4: vdiv.f32     s15, s15, s19
+009E3EE8: vmov         r0, s15
+009E3EEC: bl           #0x4a83f8
+009E3EF0: vmov         s15, r0
+009E3EF4: vcvt.s32.f32 s15, s15
+009E3EF8: vmov         r0, s15
+009E3EFC: cmp          r0, #0
+009E3F00: mvnlt        r0, #3
+009E3F04: blt          #0x9e3f14
+009E3F08: cmp          r0, fp
+009E3F0C: movge        r0, fp
+009E3F10: lsl          r0, r0, #2
+009E3F14: add          r0, sb, r0
+009E3F18: cmp          r8, r0
+009E3F1C: movlo        r2, r8
+009E3F20: movhs        r2, r0
+009E3F24: cmp          r2, sb
+009E3F28: bls          #0x9e3f64
+009E3F2C: mov          r3, sb
+009E3F30: vadd.f32     s16, s16, s20
+009E3F34: vmul.f32     s15, s16, s24
+009E3F38: vmls.f32     s15, s18, s21
+009E3F3C: vstmia       r3!, {s15}
+009E3F40: vmov.f32     s18, s15
+009E3F44: cmp          r2, r3
+009E3F48: vadd.f32     s17, s17, s19
+009E3F4C: bhi          #0x9e3f30
+009E3F50: mvn          r3, sb
+009E3F54: add          r2, r2, r3
+009E3F58: bic          r2, r2, #3
+009E3F5C: add          r2, r2, #4
+009E3F60: add          sb, sb, r2
+009E3F64: vsub.f32     s15, s25, s17
+009E3F68: vdiv.f32     s15, s15, s19
+009E3F6C: vmov         r0, s15
+009E3F70: bl           #0x4a83f8
+009E3F74: vmov         s15, r0
+009E3F78: vcvt.s32.f32 s15, s15
+009E3F7C: vmov         r0, s15
+009E3F80: cmp          r0, #0
+009E3F84: mvnlt        r0, #3
+009E3F88: blt          #0x9e3f98
+009E3F8C: cmp          r0, fp
+009E3F90: movge        r0, fp
+009E3F94: lsl          r0, r0, #2
+009E3F98: add          r0, sb, r0
+009E3F9C: cmp          r8, r0
+009E3FA0: movlo        r2, r8
+009E3FA4: movhs        r2, r0
+009E3FA8: cmp          r2, sb
+009E3FAC: bls          #0x9e3fec
+009E3FB0: vmul.f32     s15, s24, s29
+009E3FB4: mov          r3, sb
+009E3FB8: vmov.f32     s14, s15
+009E3FBC: vmls.f32     s14, s18, s21
+009E3FC0: vstmia       r3!, {s14}
+009E3FC4: vmov.f32     s18, s14
+009E3FC8: cmp          r2, r3
+009E3FCC: vadd.f32     s16, s16, s20
+009E3FD0: vadd.f32     s17, s17, s19
+009E3FD4: bhi          #0x9e3fb8
+009E3FD8: mvn          r3, sb
+009E3FDC: add          r2, r2, r3
+009E3FE0: bic          r2, r2, #3
+009E3FE4: add          r2, r2, #4
+009E3FE8: add          sb, sb, r2
+009E3FEC: vcmpe.f32    s17, s25
+009E3FF0: vmrs         apsr_nzcv, fpscr
+009E3FF4: vsubge.f32   s17, s17, s25
+009E3FF8: cmp          r8, sb
+009E3FFC: bhi          #0x9e3ee0
+009E4000: b            #0x9e3784
+009E4004: andhi        r0, r0, r0
+009E4008: andeq        r0, r0, r0
+009E400C: svclo        #0xc90fdb
+009E4010: mcrlo        p5, #1, sl, c10, c9, #6
+009E4014: svclo        #0x7fffc7
+009E4018: addsmi       ip, r6, r4, ror #23
+009E401C: ldrdmi       r0, r1, [sb], #-0xfb
+009E4020: ldrdmi       r0, r1, [sb], #0xfb
+009E4024: cmp          r8, sl
+009E4028: vmovhi.f32   s28, #5.000000e-01
+009E402C: movhi        sb, sl
+009E4030: vmovhi.f32   s25, #1.000000e+00
+009E4034: bls          #0x9e3784
+009E4038: vsub.f32     s15, s28, s17
+009E403C: vdiv.f32     s15, s15, s19
+009E4040: vmov         r0, s15
+009E4044: bl           #0x4a83f8
+009E4048: vmov         s15, r0
+009E404C: vcvt.s32.f32 s15, s15
+009E4050: vmov         r0, s15
+009E4054: cmp          r0, #0
+009E4058: mvnlt        r0, #3
+009E405C: blt          #0x9e406c
+009E4060: cmp          r0, fp
+009E4064: movge        r0, fp
+009E4068: lsl          r0, r0, #2
+009E406C: add          r0, sb, r0
+009E4070: cmp          r8, r0
+009E4074: movlo        r2, r8
+009E4078: movhs        r2, r0
+009E407C: cmp          r2, sb
+009E4080: bls          #0x9e40c4
+009E4084: mov          r3, sb
+009E4088: vadd.f32     s17, s17, s19
+009E408C: vadd.f32     s16, s16, s20
+009E4090: vadd.f32     s15, s17, s17
+009E4094: vmul.f32     s15, s16, s15
+009E4098: vmul.f32     s15, s15, s24
+009E409C: vmls.f32     s15, s18, s21
+009E40A0: vstmia       r3!, {s15}
+009E40A4: vmov.f32     s18, s15
+009E40A8: cmp          r2, r3
+009E40AC: bhi          #0x9e4088
+009E40B0: mvn          r3, sb
+009E40B4: add          r2, r2, r3
+009E40B8: bic          r2, r2, #3
+009E40BC: add          r2, r2, #4
+009E40C0: add          sb, sb, r2
+009E40C4: vsub.f32     s15, s25, s17
+009E40C8: vdiv.f32     s15, s15, s19
+009E40CC: vmov         r0, s15
+009E40D0: bl           #0x4a83f8
+009E40D4: vmov         s15, r0
+009E40D8: vcvt.s32.f32 s15, s15
+009E40DC: vmov         r0, s15
+009E40E0: cmp          r0, #0
+009E40E4: mvnlt        r0, #3
+009E40E8: blt          #0x9e40f8
+009E40EC: cmp          r0, fp
+009E40F0: movge        r0, fp
+009E40F4: lsl          r0, r0, #2
+009E40F8: add          r0, sb, r0
+009E40FC: cmp          r8, r0
+009E4100: movlo        r2, r8
+009E4104: movhs        r2, r0
+009E4108: cmp          r2, sb
+009E410C: bls          #0x9e4154
+009E4110: mov          r3, sb
+009E4114: vadd.f32     s17, s17, s19
+009E4118: vsub.f32     s15, s25, s17
+009E411C: vadd.f32     s16, s16, s20
+009E4120: vadd.f32     s15, s15, s15
+009E4124: vmul.f32     s15, s16, s15
+009E4128: vmul.f32     s15, s15, s24
+009E412C: vmls.f32     s15, s18, s21
+009E4130: vstmia       r3!, {s15}
+009E4134: vmov.f32     s18, s15
+009E4138: cmp          r2, r3
+009E413C: bhi          #0x9e4114
+009E4140: mvn          r3, sb
+009E4144: add          r2, r2, r3
+009E4148: bic          r2, r2, #3
+009E414C: add          r2, r2, #4
+009E4150: add          sb, sb, r2
+009E4154: vcmpe.f32    s17, s25
+009E4158: vmrs         apsr_nzcv, fpscr
+009E415C: vsubge.f32   s17, s17, s25
+009E4160: cmp          r8, sb
+009E4164: bhi          #0x9e4038
+009E4168: b            #0x9e3784
+009E416C: cmp          r8, sl
+009E4170: bls          #0x9e3784
+009E4174: vldr         s29, [pc, #-0x170] ; word[009E400C]=3FC90FDB
+009E4178: mov          sb, sl
+009E417C: vldr         s28, [pc, #-0x174] ; word[009E4010]=3E2AA5D9
+009E4180: vldr         s25, [pc, #-0x174] ; word[009E4014]=3F7FFFC7
+009E4184: vsub.f32     s15, s29, s17
+009E4188: vdiv.f32     s15, s15, s19
+009E418C: vmov         r0, s15
+009E4190: bl           #0x4a83f8
+009E4194: vmov         s15, r0
+009E4198: vcvt.s32.f32 s15, s15
+009E419C: vmov         r0, s15
+009E41A0: cmp          r0, #0
+009E41A4: mvnlt        r0, #3
+009E41A8: blt          #0x9e41b8
+009E41AC: cmp          r0, fp
+009E41B0: movge        r0, fp
+009E41B4: lsl          r0, r0, #2
+009E41B8: add          r0, sb, r0
+009E41BC: cmp          r8, r0
+009E41C0: movlo        r2, r8
+009E41C4: movhs        r2, r0
+009E41C8: cmp          r2, sb
+009E41CC: bls          #0x9e4234
+009E41D0: vmov.f32     s12, #1.000000e+00
+009E41D4: mov          r3, sb
+009E41D8: vmov.f32     s13, #5.000000e-01
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009E41DC..0x009E4484 exclusive; ARM;
+009E41DC: vadd.f32     s17, s17, s19
+009E41E0: vmul.f32     s15, s17, s17
+009E41E4: vmov.f32     s14, s22
+009E41E8: vmla.f32     s14, s15, s23
+009E41EC: vmov.f32     s11, s28
+009E41F0: vnmls.f32    s11, s15, s14
+009E41F4: vmov.f32     s14, s11
+009E41F8: vmov.f32     s11, s25
+009E41FC: vmla.f32     s11, s15, s14
+009E4200: vmov.f32     s14, s12
+009E4204: vmla.f32     s14, s17, s11
+009E4208: vmul.f32     s15, s14, s13
+009E420C: vadd.f32     s16, s16, s20
+009E4210: vmul.f32     s15, s16, s15
+009E4214: vstmia       r3!, {s15}
+009E4218: cmp          r2, r3
+009E421C: bhi          #0x9e41dc
+009E4220: mvn          r3, sb
+009E4224: add          r2, r2, r3
+009E4228: bic          r2, r2, #3
+009E422C: add          r2, r2, #4
+009E4230: add          sb, sb, r2
+009E4234: vldr         s15, [pc, #-0x220] ; word[009E401C]=40490FDB
+009E4238: vsub.f32     s15, s15, s17
+009E423C: vdiv.f32     s15, s15, s19
+009E4240: vmov         r0, s15
+009E4244: bl           #0x4a83f8
+009E4248: vmov         s15, r0
+009E424C: vcvt.s32.f32 s15, s15
+009E4250: vmov         r0, s15
+009E4254: cmp          r0, #0
+009E4258: mvnlt        r0, #3
+009E425C: blt          #0x9e426c
+009E4260: cmp          r0, fp
+009E4264: movge        r0, fp
+009E4268: lsl          r0, r0, #2
+009E426C: add          r0, sb, r0
+009E4270: cmp          r8, r0
+009E4274: movlo        r2, r8
+009E4278: movhs        r2, r0
+009E427C: cmp          sb, r2
+009E4280: bhs          #0x9e42f0
+009E4284: vmov.f32     s10, #1.000000e+00
+009E4288: mov          r3, sb
+009E428C: vldr         s11, [pc, #-0x278] ; word[009E401C]=40490FDB
+009E4290: vmov.f32     s12, #5.000000e-01
+009E4294: vadd.f32     s17, s17, s19
+009E4298: vsub.f32     s15, s11, s17
+009E429C: vmul.f32     s14, s15, s15
+009E42A0: vmov.f32     s13, s22
+009E42A4: vmla.f32     s13, s14, s23
+009E42A8: vmov.f32     s9, s28
+009E42AC: vnmls.f32    s9, s14, s13
+009E42B0: vmov.f32     s13, s9
+009E42B4: vmov.f32     s9, s25
+009E42B8: vmla.f32     s9, s14, s13
+009E42BC: vmov.f32     s13, s10
+009E42C0: vmla.f32     s13, s15, s9
+009E42C4: vmul.f32     s15, s13, s12
+009E42C8: vadd.f32     s16, s16, s20
+009E42CC: vmul.f32     s15, s16, s15
+009E42D0: vstmia       r3!, {s15}
+009E42D4: cmp          r2, r3
+009E42D8: bhi          #0x9e4294
+009E42DC: mvn          r3, sb
+009E42E0: add          r2, r2, r3
+009E42E4: bic          r2, r2, #3
+009E42E8: add          r2, r2, #4
+009E42EC: add          sb, sb, r2
+009E42F0: vldr         s15, [pc, #-0x2e0] ; word[009E4018]=4096CBE4
+009E42F4: vsub.f32     s15, s15, s17
+009E42F8: vdiv.f32     s15, s15, s19
+009E42FC: vmov         r0, s15
+009E4300: bl           #0x4a83f8
+009E4304: vmov         s15, r0
+009E4308: vcvt.s32.f32 s15, s15
+009E430C: vmov         r0, s15
+009E4310: cmp          r0, #0
+009E4314: mvnlt        r0, #3
+009E4318: blt          #0x9e4328
+009E431C: cmp          r0, fp
+009E4320: movge        r0, fp
+009E4324: lsl          r0, r0, #2
+009E4328: add          r0, sb, r0
+009E432C: cmp          r8, r0
+009E4330: movlo        r2, r8
+009E4334: movhs        r2, r0
+009E4338: cmp          sb, r2
+009E433C: bhs          #0x9e43ac
+009E4340: vmov.f32     s10, #1.000000e+00
+009E4344: mov          r3, sb
+009E4348: vldr         s11, [pc, #-0x334] ; word[009E401C]=40490FDB
+009E434C: vmov.f32     s12, #5.000000e-01
+009E4350: vadd.f32     s17, s17, s19
+009E4354: vsub.f32     s15, s17, s11
+009E4358: vmul.f32     s14, s15, s15
+009E435C: vmov.f32     s13, s22
+009E4360: vmla.f32     s13, s14, s23
+009E4364: vmov.f32     s9, s28
+009E4368: vnmls.f32    s9, s14, s13
+009E436C: vmov.f32     s13, s9
+009E4370: vmov.f32     s9, s25
+009E4374: vmla.f32     s9, s14, s13
+009E4378: vmov.f32     s13, s10
+009E437C: vmls.f32     s13, s15, s9
+009E4380: vmul.f32     s15, s13, s12
+009E4384: vadd.f32     s16, s16, s20
+009E4388: vmul.f32     s15, s16, s15
+009E438C: vstmia       r3!, {s15}
+009E4390: cmp          r2, r3
+009E4394: bhi          #0x9e4350
+009E4398: mvn          r3, sb
+009E439C: add          r2, r2, r3
+009E43A0: bic          r2, r2, #3
+009E43A4: add          r2, r2, #4
+009E43A8: add          sb, sb, r2
+009E43AC: vldr         s15, [pc, #-0x394] ; word[009E4020]=40C90FDB
+009E43B0: vsub.f32     s15, s15, s17
+009E43B4: vdiv.f32     s15, s15, s19
+009E43B8: vmov         r0, s15
+009E43BC: bl           #0x4a83f8
+009E43C0: vmov         s15, r0
+009E43C4: vcvt.s32.f32 s15, s15
+009E43C8: vmov         r0, s15
+009E43CC: cmp          r0, #0
+009E43D0: mvnlt        r0, #3
+009E43D4: blt          #0x9e43e4
+009E43D8: cmp          r0, fp
+009E43DC: movge        r0, fp
+009E43E0: lsl          r0, r0, #2
+009E43E4: add          r0, sb, r0
+009E43E8: cmp          r8, r0
+009E43EC: movlo        r2, r8
+009E43F0: movhs        r2, r0
+009E43F4: cmp          r2, sb
+009E43F8: bls          #0x9e4468
+009E43FC: vmov.f32     s10, #1.000000e+00
+009E4400: mov          r3, sb
+009E4404: vldr         s11, [pc, #-0x3ec] ; word[009E4020]=40C90FDB
+009E4408: vmov.f32     s12, #5.000000e-01
+009E440C: vadd.f32     s17, s17, s19
+009E4410: vsub.f32     s15, s11, s17
+009E4414: vmul.f32     s14, s15, s15
+009E4418: vmov.f32     s13, s22
+009E441C: vmla.f32     s13, s14, s23
+009E4420: vmov.f32     s9, s28
+009E4424: vnmls.f32    s9, s14, s13
+009E4428: vmov.f32     s13, s9
+009E442C: vmov.f32     s9, s25
+009E4430: vmla.f32     s9, s14, s13
+009E4434: vmov.f32     s13, s10
+009E4438: vmls.f32     s13, s15, s9
+009E443C: vmul.f32     s15, s13, s12
+009E4440: vadd.f32     s16, s16, s20
+009E4444: vmul.f32     s15, s16, s15
+009E4448: vstmia       r3!, {s15}
+009E444C: cmp          r2, r3
+009E4450: bhi          #0x9e440c
+009E4454: mvn          r3, sb
+009E4458: add          r2, r2, r3
+009E445C: bic          r2, r2, #3
+009E4460: add          r2, r2, #4
+009E4464: add          sb, sb, r2
+009E4468: vldr         s15, [pc, #0x3dc] ; word[009E484C]=40C90FDB
+009E446C: vcmpe.f32    s17, s15
+009E4470: vmrs         apsr_nzcv, fpscr
+009E4474: vsubge.f32   s17, s17, s15
+009E4478: cmp          r8, sb
+009E447C: bhi          #0x9e4184
+009E4480: b            #0x9e3784
+009E4004: raw=80000000 relocated=80000000 
+009E4008: raw=00000000 relocated=00000000 
+009E400C: raw=3FC90FDB relocated=3FC90FDB 
+009E4010: raw=3E2AA5D9 relocated=3E2AA5D9 
+009E4014: raw=3F7FFFC7 relocated=3F7FFFC7 
+009E4018: raw=4096CBE4 relocated=4096CBE4 
+009E401C: raw=40490FDB relocated=40490FDB 
+009E4020: raw=40C90FDB relocated=40C90FDB 
