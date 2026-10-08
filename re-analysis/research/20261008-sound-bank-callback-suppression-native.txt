@@ -1,0 +1,62 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A68330..0x00A6841C exclusive; ARM;
+00A68330: push         {r4, r5, r6, lr}
+00A68334: add          r6, r0, #0xc
+00A68338: mov          r5, r0
+00A6833C: mov          r4, r1
+00A68340: mov          r0, r6
+00A68344: bl           #0x4d3064
+00A68348: ldm          r5, {r0, ip}
+00A6834C: add          ip, ip, ip, lsl #1
+00A68350: add          ip, r0, ip, lsl #2
+00A68354: cmp          r0, ip
+00A68358: beq          #0xa68388
+00A6835C: ldr          r3, [r0]
+00A68360: cmp          r4, r3
+00A68364: beq          #0xa683cc
+00A68368: add          r3, r0, #0xc
+00A6836C: b            #0xa6837c
+00A68370: ldr          r2, [r3], #0xc
+00A68374: cmp          r4, r2
+00A68378: beq          #0xa683cc
+00A6837C: cmp          ip, r3
+00A68380: mov          r0, r3
+00A68384: bne          #0xa68370
+00A68388: mov          r0, r6
+00A6838C: bl           #0x4d3070
+00A68390: ldr          r3, [pc, #0x5c] ; word[00A683F4]=005D7DFC
+00A68394: ldr          r3, [pc, r3]
+00A68398: ldr          r4, [r3]
+00A6839C: bl           #0x4a4edc
+00A683A0: cmp          r4, r0
+00A683A4: popeq        {r4, r5, r6, pc}
+00A683A8: add          r4, r5, #0x10
+00A683AC: mov          r0, r4
+00A683B0: bl           #0x4d3064
+00A683B4: ldrb         r3, [r5, #0x18]
+00A683B8: cmp          r3, #0
+00A683BC: beq          #0xa683dc
+00A683C0: mov          r0, r4
+00A683C4: pop          {r4, r5, r6, lr}
+00A683C8: b            #0x4d3070
+00A683CC: cmn          r0, #4
+00A683D0: ldrne        r3, [r0, #4]
+00A683D4: strne        r3, [r0, #8]
+00A683D8: b            #0xa68388
+00A683DC: add          r0, r5, #0x14
+00A683E0: mov          r1, r4
+00A683E4: bl           #0x4d66d0
+00A683E8: mov          r0, r4
+00A683EC: pop          {r4, r5, r6, lr}
+00A683F0: b            #0x4d3070
+00A683F4: ldrsheq      r7, [sp], #-0xdc
+00A683F8: ldr          r2, [r0, #4]
+00A683FC: push         {r3, r4, r5, r6, r7, lr}
+00A68400: cmp          r2, #0xb
+00A68404: mov          r3, #0
+00A68408: mov          r4, r0
+00A6840C: str          r3, [r0, #0xc]
+00A68410: bhi          #0xa68420
+00A68414: ldr          r6, [r0, #8]
+00A68418: cmp          r6, #0xa
