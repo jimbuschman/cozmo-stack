@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+BOUNDED DESCRIPTOR INPUT/PUBLICATION/CALL SLICES; A8/A9 already own RNG/value arithmetic, omitted here.
+RANGE 0x00A645C8..0x00A646BC exclusive; ARM;
+00A645C8: push         {r4, r5, r6, r7, lr}
+00A645CC: sub          sp, sp, #0x34
+00A645D0: mov          r7, r1
+00A645D4: mov          r6, r2
+00A645D8: mov          r4, r0
+00A645DC: bl           #0xa6168c
+00A645E0: subs         r5, r0, #0
+00A645E4: moveq        r0, #0xf
+00A645E8: beq          #0xa646fc
+00A645EC: ldrb         r0, [sp, #0x2c]
+00A645F0: mov          r3, #0
+00A645F4: ldrb         r1, [r4, #0x3c]
+00A645F8: mov          r2, #4
+00A645FC: str          r7, [sp, #8]
+00A64600: bfi          r0, r1, #0, #1
+00A64604: str          r6, [sp, #0xc]
+00A64608: tst          r0, #1
+00A6460C: strb         r0, [sp, #0x2c]
+00A64610: str          r3, [sp, #0x10]
+00A64614: strb         r3, [sp, #0x18]
+00A64618: strb         r3, [sp, #0x1c]
+00A6461C: strb         r3, [sp, #0x1d]
+00A64620: strb         r3, [sp, #0x1e]
+00A64624: str          r3, [sp, #0x20]
+00A64628: str          r3, [sp, #0x24]
+00A6462C: str          r2, [sp, #0x14]
+00A64630: bne          #0xa64704
+00A646B8: vstr         s15, [sp, #0x28]
+RANGE 0x00A646BC..0x00A64704 exclusive; ARM;
+00A646BC: ldr          r2, [r5]
+00A646C0: add          r1, sp, #0x30
+00A646C4: ldrb         ip, [r4, #0x3d]
+00A646C8: mov          lr, #4
+00A646CC: ldrb         r3, [sp, #0x2c]
+00A646D0: mov          r0, r5
+00A646D4: str          lr, [r1, #-0x2c]!
+00A646D8: bfi          r3, ip, #1, #1
+00A646DC: ldr          r2, [r2, #0x4c]
+00A646E0: strb         r3, [sp, #0x2c]
+00A646E4: blx          r2
+00A646E8: ldr          r3, [r5]
+00A646EC: mov          r0, r5
+00A646F0: ldr          r3, [r3, #0xc]
+00A646F4: blx          r3
+00A646F8: mov          r0, #1
+00A646FC: add          sp, sp, #0x34
+00A64700: pop          {r4, r5, r6, r7, pc}
+RANGE 0x00A64770..0x00A6479C exclusive; ARM;
+00A64784: vstr         s15, [sp, #0x28]
+00A64788: b            #0xa646bc
+00A6478C: vldr         s15, [pc, #0x14] ; word[00A647A8]=00000000
+00A64790: b            #0xa646ac
+00A64794: vldr         s15, [pc, #0xc] ; word[00A647A8]=00000000
+00A64798: b            #0xa6477c

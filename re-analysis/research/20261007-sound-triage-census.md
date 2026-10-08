@@ -1335,3 +1335,7 @@ CS200A–C close knowncontinuous20/24 ancestor/type/mode/specialflag suppression
 ### Checkpoint 201 — seeknode type/mode joins
 
 NT201A–C bindRanSeqtype2/constructorinitialmode0 andexistingauthoredreader tocontinuousseekpredicate, distinguishingotherfourknownnode44types frommodevalues. Additionalfamily/ancestry/mode/flag writers/fullclosure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 202 — action descriptor/soundseek caller
+
+SD202A–C correct A8/A9 descriptorvalueoffset from28 to24 (SP+28 minusdescriptorbase4), bindflags28, andtraceexactcallerpercent/absoluteclamp, PBIrecipientfilters andliveiteration→20/24. Remaininghighercaller/list/dynamic-source closure retained; no totals/Q15/fidelity/production changes.

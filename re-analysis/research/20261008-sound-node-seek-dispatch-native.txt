@@ -1,0 +1,78 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A1D8B0..0x00A1D9DC exclusive; ARM;
+00A1D8B0: ldrb         r3, [r1, #0x28]
+00A1D8B4: push         {r4, r5, r6, lr}
+00A1D8B8: tst          r3, #1
+00A1D8BC: vpush        {d8}
+00A1D8C0: mov          r5, r1
+00A1D8C4: beq          #0xa1d958
+00A1D8C8: vldr         s16, [r1, #0x24]
+00A1D8CC: vcmpe.f32    s16, #0
+00A1D8D0: vmrs         apsr_nzcv, fpscr
+00A1D8D4: bmi          #0xa1d9d0
+00A1D8D8: vmov.f32     s15, #1.000000e+00
+00A1D8DC: vcmp.f32     s16, s15
+00A1D8E0: vmrs         apsr_nzcv, fpscr
+00A1D8E4: vmovgt.f32   s16, s15
+00A1D8E8: ldr          r3, [r0, #0x30]
+00A1D8EC: cmp          r3, #0
+00A1D8F0: beq          #0xa1d950
+00A1D8F4: ldr          r4, [r3, #0xc]
+00A1D8F8: cmp          r4, #0
+00A1D8FC: beq          #0xa1d950
+00A1D900: ldr          r3, [r5, #4]
+00A1D904: ldr          r1, [r4, #8]
+00A1D908: ldr          r2, [r5, #8]
+00A1D90C: cmp          r3, #0
+00A1D910: cmpne        r3, r1
+00A1D914: ldr          r3, [r4, #0x134]
+00A1D918: bne          #0xa1d944
+00A1D91C: cmp          r2, #0
+00A1D920: cmpne        r2, r3
+00A1D924: sub          r0, r4, #0xc
+00A1D928: vmov         r1, s16
+00A1D92C: bne          #0xa1d944
+00A1D930: ldr          r3, [r4, #-0xc]
+00A1D934: ldrb         r2, [r5, #0x28]
+00A1D938: ldr          r3, [r3, #0x24]
+00A1D93C: ubfx         r2, r2, #1, #1
+00A1D940: blx          r3
+00A1D944: ldr          r4, [r4, #0x24]
+00A1D948: cmp          r4, #0
+00A1D94C: bne          #0xa1d900
+00A1D950: vpop         {d8}
+00A1D954: pop          {r4, r5, r6, pc}
+00A1D958: ldr          r3, [r0, #0x30]
+00A1D95C: ldr          r6, [r1, #0x24]
+00A1D960: cmp          r3, #0
+00A1D964: bic          r6, r6, r6, asr #31
+00A1D968: beq          #0xa1d950
+00A1D96C: ldr          r4, [r3, #0xc]
+00A1D970: cmp          r4, #0
+00A1D974: beq          #0xa1d950
+00A1D978: ldr          r3, [r5, #4]
+00A1D97C: ldr          r1, [r4, #8]
+00A1D980: ldr          r2, [r5, #8]
+00A1D984: cmp          r3, #0
+00A1D988: cmpne        r3, r1
+00A1D98C: ldr          r3, [r4, #0x134]
+00A1D990: bne          #0xa1d9bc
+00A1D994: cmp          r2, #0
+00A1D998: cmpne        r2, r3
+00A1D99C: sub          r0, r4, #0xc
+00A1D9A0: mov          r1, r6
+00A1D9A4: bne          #0xa1d9bc
+00A1D9A8: ldr          r3, [r4, #-0xc]
+00A1D9AC: ldrb         r2, [r5, #0x28]
+00A1D9B0: ldr          r3, [r3, #0x20]
+00A1D9B4: ubfx         r2, r2, #1, #1
+00A1D9B8: blx          r3
+00A1D9BC: ldr          r4, [r4, #0x24]
+00A1D9C0: cmp          r4, #0
+00A1D9C4: bne          #0xa1d978
+00A1D9C8: vpop         {d8}
+00A1D9CC: pop          {r4, r5, r6, pc}
+00A1D9D0: vldr         s16, [pc] ; word[00A1D9D8]=00000000
+00A1D9D4: b            #0xa1d8e8
+00A1D9D8: literal word 00000000 (not an instruction)
