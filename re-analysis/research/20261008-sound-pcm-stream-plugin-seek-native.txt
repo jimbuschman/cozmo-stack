@@ -1,0 +1,34 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A72C14..0x00A72D04 exclusive; ARM;
+00A72C14: push         {r4, lr}
+00A72C18: mov          r4, r0
+00A72C1C: bl           #0xa736d4
+00A72C20: ldr          r3, [r4, #0xc]
+00A72C24: mov          r1, #0
+00A72C28: str          r0, [r4, #0x18]
+00A72C2C: ldrb         r2, [r3, #0x1be]
+00A72C30: ldrb         r0, [r3, #0x1bd]
+00A72C34: and          r2, r2, #0xfe
+00A72C38: str          r1, [r3, #0x1b4]
+00A72C3C: bfi          r0, r1, #7, #1
+00A72C40: bfi          r2, r1, #1, #1
+00A72C44: strb         r0, [r3, #0x1bd]
+00A72C48: strb         r2, [r3, #0x1be]
+00A72C4C: ldr          r0, [r4, #0x18]
+00A72C50: ldr          r3, [r4, #0x14]
+00A72C54: cmp          r0, r3
+00A72C58: movlo        r0, #1
+00A72C5C: movhs        r0, #2
+00A72C60: pop          {r4, pc}
+RANGE 0x00A742BC..0x00A74354 exclusive; ARM;
+00A742BC: mov          r2, #0
+00A742C0: strh         r2, [r0, #0x6c]
+00A742C4: b            #0xa75680
+RANGE 0x00A782FC..0x00A78314 exclusive; ARM;
+00A782FC: push         {r4, r5, r6, lr}
+00A78300: mov          r5, r0
+00A78304: ldr          r4, [r0, #0xc]
+00A78308: ldrb         r3, [r4, #0x1be]
+00A7830C: ldr          r6, [r4, #0x158]
+00A78310: ands         r3, r3, #1

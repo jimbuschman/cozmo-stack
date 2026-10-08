@@ -1309,3 +1309,7 @@ HC195A–D bind holder4 to the last accepted effect/source-wrapper, trace concre
 ### Checkpoint 196 — source release/seek gate and monitor publication
 
 SR196A–C bind six eligible source release/reset families, pendingflag→source64/result dispatch, and codec post-result monitoring payload with explicit source identity. Remaining concrete seek recipients/writers/frame closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 197 — source seek target decisions
+
+SC197A–E tracePCM endpoint/flag consumption, ADPCM carryclear/genericstream seek-and-spanreset, Vorbis success/failure trim distinctions, direct table boundary selection and mode2 exact integer/F32 seek computations/plug-in callbacks. Dynamic plug-ins/converters/decoder/parameter writers/fullproduction closure retained; no totals/Q15/fidelity/production changes.
