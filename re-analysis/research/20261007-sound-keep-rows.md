@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 158 — retained-state factory/destructor dispatch joins
+
+Primary: `20261008-sound-modulator-state-factory-join-native.txt`, `20261008-sound-modulator-state-destructor-slots.txt`; same shipped engine SHA256. Positive SA1/CX157D/OA16 state-lifetime path. Existing MG6–8 in the singing answer supply the shared factory controls; existing Q14 MTK6 supplies destructor bodies. These are joins to shared native code, not Q15 resumption. Relocated GOT loads, not Ghidra's external-symbol guesses, identify the actual tables.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| MF158A | 009D8058..009D809C;009D80BC..009D8134;01040120/01040124;0103B268/0103B288 | Factory9D7FC0 reads modulator10: type0 allocatesAC, calls9E2144, loads GOT1040124=103B260, installs table103B268; type1 allocates8C, calls9E2144, loads GOT1040120=103B280, installs103B288. Other type/allocation0 returns0. Type0 also zeroes90/94/98/9C/A0/A4 andbyteA8. Both invoke9E266C before created byte1. | GOTbase from9D7FF0 PC+8+668294=104028C; indexed−168/−16C, then loaded table+8. No binding to PLT placeholders104B268/104B288. | Type/allocate gate → base ctor → actual relocated derived table → subtype fields → initializer → created flag. | Known type0 table0=9E2880; type1 table0=9E2828. Existing MG6–8 provide trigger/reuse/property gates; initializer/destructor decisions remain their own shared rows. |
+| MF158B | 0103B268/0103B26C;0103B288/0103B28C;MTK6 | Known retained-state0 callbacks exactly bind MTK6: type0=9E2880, type1=9E2828. Each resets base table103B248 and calls9E21FC before returning; CX157D/OA16 then perform their own poolfree. Deleting4 callbacks instead9E28A8/9E2850, so no accidental operator-delete substitution. | CX157D's state40 zero gate selects0; attachment count50 alone does not choose destruction. MTK5/RH4/IC1 can independently release the same family via0. | Caller refcount gate → known state0 cleanup → caller poolfree. | This closes CX157D's known two-family dispatch. Full reachable family/attachment producers and common9E21FC stop/notification recipients remain separate decision obligations; no blanket all-state claim. |
+
+Factory tables and known destructor dispatch are now positively joined; the common cleanup remains exact decision work, with its existing Q15 rows available as shared-code leads. No new fidelity/production changes or coverage promotion. Q14 stays23 native CHECKED /8 scope CHECKED /109 PARTIAL /0 NOT DONE; Q15 follows Q14 completion.
+
 ## Checkpoint 157 — temporary-context references and retained state teardown
 
 Primary: `20261008-sound-context-reference-cleanup-native.txt`; same shipped engine SHA256. Positive S1/S4/DA6/DA10/CW7/TC10/CT1 callers. Endpoints inclusive; counters' differing widths are preserved. Names such as 'position' in historical navigation do not establish a payload's identity or justify a new scope exclusion.

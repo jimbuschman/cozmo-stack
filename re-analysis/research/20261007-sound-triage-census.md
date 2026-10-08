@@ -1153,3 +1153,7 @@ CP156A/B bind known Switch/Layer extended virtual13C: live Switch47 bit5 gates C
 ## Decision checkpoint157 — temporary-context reference helpers
 
 CX157A–D close local9FEFD4/9FEFE4/9E765C bodies: low-byte retain/decrement versus full-halfword destruction gate, first object swap removal and ordered retained-state40/50 counter decrement/destructor dispatch. Storage-only recipients excluded; concrete state0 and counter/family producers remain explicit. No coverage, Q15, fidelity or production change.
+
+## Decision checkpoint158 — retained-state factory/destructor joins
+
+MF158A/B resolve the factory's GOT-indexed type0/type1 table publication and bind CX157D/OA16's known state0 callbacks to existing MTK6 cleanup bodies. Actual tables103B268/103B288 differ from Ghidra's PLT-placeholder labels; primary relocation/callsite evidence governs. Common stop/notification cleanup and additional attachment/family producers remain retained; no Q15, coverage, fidelity or production change.
