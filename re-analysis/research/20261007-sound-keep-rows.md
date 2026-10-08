@@ -3262,3 +3262,16 @@ Primary: `20261008-sound-modulator-owner-attachment-native.txt`. W=attachment ow
 | OA6 | 009E805C..009E808C;009E21D0..009E21FC | Walk attached links in order; each S=link4 calls9E21D0(S,incoming deadline). MU6 deadline setter changes S38 only if current7FFFFFFF, setting incoming+S3C and S44=2 unless already3. Follow next link after callback. | Empty list no-op; existing finite deadline preserved. Not each state's envelope property12 setter (SV12), which overwrites unconditionally. | Owner list order →per-state sentinel gate →deadline/status →next. |
 
 OA1–6 close owner creation, attachment and deadline propagation local bodies. Downstream parameter route recipients and removal/destruction of the owner remain retained, alongside9DCE44's hierarchy/new-state tail. Q14-027 remains PARTIAL; both Q14/Q15 still require their remaining reachable obligations.
+
+
+### Resumption checkpoint 50: attachment parameter routes
+
+Primary: `20261008-sound-modulator-parameter-route-native.txt`. V=link8 three-word parameter vector. This closes OA5's two immediate route bodies, without treating their evaluation callees as already complete.
+
+| Step | Address | Behaviour | Gates / failure | Order / bits |
+|---|---|---|---|---|
+| OA7 | 009F4C90..009F4D28 | PBI-relative route: nullable P14 points to64-bit mask. Bit0 callsA1B3D8(P+10,V,0,modulatorID,scope0). Reload mask pointer and words afterward; pointer disappearance returns1. Bit7 calls same helper withselector7. Alwaysreturn1. | No bit7 query before bit0 callback; live mask mutation affects secondcall. Other maskbits ignored by this body. | Mask0 →optional first evaluation →live mask reload →mask7 evaluation →1. |
+| OA8 | 00A6CCC4..00A6CD3C | Alternate route first tests lowbit0 of receiver20/24 mask; clearreturns1. Construct temporary triple{0,3F800000,2F}; invoke9E6810(global,receiver,selector0,modulatorID,scope0,&triple). Return0 fromhelper skipsappend; nonzeroappend. | No requirement returned value==1. Parameterevaluation9E6810 remains retained; no saved default substituted for returnedtriple. | Maskgate →defaulttriple →evaluation →appendgate. |
+| OA9 | 00A6CD3C..00A6CE34 | Vector V hasbase0/count4/cap8, elementsC. Spare slot incrementscount before initializing{0,1,2F} then overwriteswithtemporarytriple. Full vector allocates(cap8+1)*C; failure silentlyreturns1. Success copiesexistingtriples ascending,freeoldbase,publishcapacity/base,thenappendonlyif savedindex<newcapacity. | Null computedslot aftercount incrementreturns1 withoutwrite. Allocationfailuredoesnotpropagate to9E7EA8 orstate acquisition. No dedup inthisappendbody. | Evaluate →count/slotorallocate →copy/free →publish →append →1. |
+
+OA7–9 row mask/callback/append order and failure results. Exact curve/value evaluatorsA1B3D8/9E6810 and later vector consumers remain reachable dependencies; no whole-record or coverage completion claimed.
