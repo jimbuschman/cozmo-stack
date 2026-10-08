@@ -120,7 +120,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-111 | 160 | CHECKED |
 | Q14-112 | 161 | CHECKED |
 | Q14-113 | 162 | NOT DONE |
-| Q14-114 | 163 | NOT DONE |
+| Q14-114 | 163 | PARTIAL |
 | Q14-115 | 164 | NOT DONE |
 | Q14-116 | 172 | NOT DONE |
 | Q14-117 | 173 | NOT DONE |
@@ -820,7 +820,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C35.3 accumulators / hints | M6-009 | **KEEP** | 0x00A17724;0x00A17878;0x00A14E28 | Sum/product, curve hints and twelve caller census affect control values/order. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: AC1–AC12 re-open both accumulators and all twelve direct evaluator callers, with zero/discarded hint ownership. The reproducible .text direct-link scan and containing bodies are in 20261007-sound-curve-callers-native.txt. Indirect/address-taken reachability and behaviour-changing recipients/virtual receiver/filter bodies remain unread exact dependencies; no UNKNOWN or completed closure claim.
 
 ## Q14-115 — triage line 164
 
