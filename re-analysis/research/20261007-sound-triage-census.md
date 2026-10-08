@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item complete native rows | NOT DONE | Pending manual reconciliation |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED / 116 PARTIAL / 0 NOT DONE; checkpoints100-123 add local stream/scheduler bodies, without settling remaining joins |
 
 # Q14 per-item work census
 
@@ -1027,3 +1027,5 @@ Checkpoint97 reconciliation: {'CHECKED': 24, 'PARTIAL': 110, 'NOT DONE': 6}. Eac
 Checkpoint98: fourstreambuffer/completionitemsnowPARTIAL,24 CHECKED/114 PARTIAL/2 NOT DONE. Unread100(memory/scheduler) and101(decoder/cache/emit)remainNOT DONE; nofinishclaim.
 
 Checkpoint99:24 CHECKED/116 PARTIAL/0 NOT DONE. Allitemsnowhavebodyrows/boundarycitations, but116itemsstillhaveexplicitunreadproductionjoins; nofinishclaimandnoconversionofreadablecode toUNKNOWN.
+
+Checkpoint123: Q14-100 now has CINIT/CLOOK/CREQ/IOSEL/MBUD/SENT exact local rows and stream lifecycle/score/target/cancellation recipients. Still PARTIAL: 96FEF0..9713B4 coalescing,9716F0 request suffix,979B98/97A1E8 allocator/coalescer, actual file/backend/producers and writer closure. Q14-101 codec setup/header descendants remain distinct. Total24 CHECKED/116 PARTIAL/0 NOT DONE; no finish claim.
