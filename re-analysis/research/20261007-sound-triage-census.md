@@ -1125,3 +1125,7 @@ NJ149A binds five known node families to existing LI1/LC6 parent-setter and coun
 ## Decision checkpoint150 — node destructors and playlist retirement
 
 ND150A–I trace all five known concrete node0 parent bodies, Switch's ordered manager unsubscribe, RanSeq's conditional playlist-count/weight-flag/state retirement and common property/owner cleanup. TR14/TR15/NR146D/F/TT8/LC5 supply positive existing joins. ActorMixer resets to a shared container vtable during destruction; its earlier playback binding is unchanged. Nonempty Layer tracks and storage/allocator internals are excluded under the guard. Concrete state-owner0, idle teardown and broader producer/family/writer closure remain; no coverage promotion, Q15, production or fidelity change.
+
+## Decision checkpoint151 — idle teardown and positioning boundary
+
+ID151A/B finish the local9F4D40 decision tail: visible buffer/list clears, embedded subscriber destructor/list unlink, then normal node30 clear after excluded storage return. LT3/LT4/LT5 positively supply existing recipient behavior. ID151C reconciles ND150I's node2C with NB10/NB21 positioning ownership; concrete3D owner0 descent is excluded by the guard, superseding checkpoint150's retained request. Broader caller/count/family closure and other decision obligations remain PARTIAL; totals unchanged, no Q15 or fidelity change.
