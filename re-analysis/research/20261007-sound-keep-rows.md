@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, fifty PARTIAL,69 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, fifty-two PARTIAL,67 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 9: limiter construction, per-object decisions and undo
 

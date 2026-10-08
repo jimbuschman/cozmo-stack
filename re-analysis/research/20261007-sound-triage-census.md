@@ -47,7 +47,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-038 | 76 | PARTIAL |
 | Q14-039 | 77 | NOT DONE |
 | Q14-040 | 78 | NOT DONE |
-| Q14-041 | 79 | NOT DONE |
+| Q14-041 | 79 | PARTIAL |
 | Q14-042 | 80 | PARTIAL |
 | Q14-043 | 81 | PARTIAL |
 | Q14-044 | 82 | PARTIAL |
@@ -55,7 +55,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-046 | 84 | NOT DONE |
 | Q14-047 | 85 | NOT DONE |
 | Q14-048 | 86 | NOT DONE |
-| Q14-049 | 87 | NOT DONE |
+| Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | NOT DONE |
 | Q14-051 | 90 | NOT DONE |
 | Q14-052 | 91 | NOT DONE |
@@ -382,7 +382,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-003 | **KEEP** | 0x005EF0C8..0x005EF30F;0x005EF490..0x005EF4DF;0x005EF2C6 | Running means, posted vibrato values, duration log, acting-tag return and stop preserving smoothing state are parameter/lifecycle behavior. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. Remaining: constructor defaults and concrete M6 virtual18 binding; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
 
 ## Q14-042 — triage line 80
 
@@ -430,7 +430,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-010 | **KEEP** | 0x00A3E688..0x00A3E9F4;0x00A3E6A8..0x00A3E728 | Held-note lifetime via PBI vt+1C, recorded-node replay and fades are MIDI/selection/timing decisions; no fresh note-off RNG draw. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node replay, release gates, concrete PBI notification, queued dispatch and Vorbis loop callbacks. Remaining: node128 selection/eligibility, stream descriptor recipient and scheduler/attachment last-sample closure.
 
 ## Q14-050 — triage line 88
 
