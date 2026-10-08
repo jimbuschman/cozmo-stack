@@ -1,0 +1,74 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A68150..0x00A681D4 exclusive; ARM;
+00A68150: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A68154: cmp          r1, #0
+00A68158: sub          sp, sp, #0x1c
+00A6815C: ldr          r8, [sp, #0x40]
+00A68160: ldr          sb, [sp, #0x44]
+00A68164: ldr          r4, [sp, #0x48]
+00A68168: beq          #0xa68288
+00A6816C: add          r7, r0, #0xc
+00A68170: mov          r5, r0
+00A68174: str          r2, [sp, #0x10]
+00A68178: mov          r0, r7
+00A6817C: str          r1, [sp, #0xc]
+00A68180: str          r3, [sp, #0x14]
+00A68184: bl           #0x4d3064
+00A68188: ldm          r5, {r1, r6}
+00A6818C: add          ip, r6, r6, lsl #1
+00A68190: lsl          ip, ip, #2
+00A68194: add          r2, r1, ip
+00A68198: cmp          r1, r2
+00A6819C: beq          #0xa681cc
+00A681A0: ldr          fp, [r1]
+00A681A4: mov          r3, r1
+00A681A8: cmp          r4, fp
+00A681AC: bne          #0xa681c0
+00A681B0: b            #0xa681d4
+00A681B4: ldr          r0, [r3]
+00A681B8: cmp          r4, r0
+00A681BC: beq          #0xa681d4
+00A681C0: add          r3, r3, #0xc
+00A681C4: cmp          r2, r3
+00A681C8: bne          #0xa681b4
+00A681CC: mov          r0, r7
+00A681D0: b            #0xa68250
+RANGE 0x00A01EF4..0x00A01F88 exclusive; ARM;
+00A01EF4: ldr          r3, [r0, #0x154]
+00A01EF8: push         {r4, r5, r6, lr}
+00A01EFC: cmp          r3, #0
+00A01F00: sub          sp, sp, #0x10
+00A01F04: beq          #0xa01f38
+00A01F08: ldr          r4, [r3, #0xd4]
+00A01F0C: cmp          r4, #0
+00A01F10: beq          #0xa01f20
+00A01F14: ldr          r2, [r4, #0xc]
+00A01F18: cmp          r0, r2
+00A01F1C: beq          #0xa01f48
+00A01F20: ldr          r4, [r3, #0xd8]
+00A01F24: cmp          r4, #0
+00A01F28: beq          #0xa01f38
+00A01F2C: ldr          r3, [r4, #0xc]
+00A01F30: cmp          r0, r3
+00A01F34: beq          #0xa01f60
+00A01F38: mov          r6, #0
+00A01F3C: mov          r0, r6
+00A01F40: add          sp, sp, #0x10
+00A01F44: pop          {r4, r5, r6, pc}
+00A01F48: ldr          r3, [r3, #0xd8]
+00A01F4C: cmp          r3, #0
+00A01F50: beq          #0xa01f60
+00A01F54: ldr          r2, [r3, #0xc]
+00A01F58: cmp          r0, r2
+00A01F5C: moveq        r4, r3
+00A01F60: ldr          r3, [r4]
+00A01F64: mov          r5, r0
+00A01F68: mov          r0, r4
+00A01F6C: ldr          r3, [r3, #0x54]
+00A01F70: blx          r3
+00A01F74: subs         r6, r0, #0
+00A01F78: beq          #0xa01f38
+00A01F7C: add          r1, sp, #4
+00A01F80: ldr          r0, [r5, #0x150]
+00A01F84: add          r2, sp, #8

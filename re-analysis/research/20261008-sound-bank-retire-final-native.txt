@@ -1,0 +1,54 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099D8E8..0x0099D90C exclusive; ARM;
+0099D8E8: ldr          r1, [sp]
+0099D8EC: add          r0, r1, #4
+0099D8F0: str          r2, [r1]
+0099D8F4: str          r3, [r1, #8]
+0099D8F8: b            #0x4d676c
+0099D8FC: push         {r4, r5, r6, r7, lr}
+0099D900: sub          sp, sp, #0x20c
+0099D904: mov          r4, r0
+0099D908: bl           #0x4a44e0
+RANGE 0x00A020EC..0x00A020F4 exclusive; ARM;
+00A020EC: mov          r0, #1
+00A020F0: pop          {r4, r5, r6, pc}
+RANGE 0x00A411B8..0x00A41250 exclusive; ARM;
+00A411B8: mov          r0, r8
+00A411BC: mov          r1, sb
+00A411C0: mov          r3, #0
+00A411C4: str          r3, [sp]
+00A411C8: bl           #0xa68b60
+00A411CC: ldr          r3, [r5, #0x1a8]
+00A411D0: mov          r0, sl
+00A411D4: sub          r1, r4, #0x10
+00A411D8: ldr          r2, [r3, #0xc]
+00A411DC: bl           #0xa6c03c
+00A411E0: cmp          r0, #0
+00A411E4: beq          #0xa41214
+00A411E8: ldr          r3, [sp]
+00A411EC: cmp          r3, #0
+00A411F0: mov          r0, r3
+00A411F4: beq          #0xa41204
+00A411F8: ldr          r3, [r3]
+00A411FC: ldr          r3, [r3, #0xc]
+00A41200: blx          r3
+00A41204: ldr          r2, [r5, #0x1b0]
+00A41208: ldr          r1, [r5, #0x1ac]
+00A4120C: lsl          r0, r2, #2
+00A41210: b            #0xa41194
+00A41214: ldr          r0, [sp]
+00A41218: cmp          r0, #0
+00A4121C: beq          #0xa4122c
+00A41220: ldr          r3, [r0]
+00A41224: ldr          r3, [r3, #0xc]
+00A41228: blx          r3
+00A4122C: mov          r0, r5
+00A41230: bl           #0xa4e64c
+00A41234: ldr          r2, [r7, #4]
+00A41238: ldr          r3, [r7]
+00A4123C: add          r3, r3, r2, lsl #2
+00A41240: cmp          r6, r3
+00A41244: bne          #0xa41124
+00A41248: add          sp, sp, #0xc
+00A4124C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}

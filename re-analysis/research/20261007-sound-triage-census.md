@@ -680,7 +680,7 @@ PARTIAL: existing primary-backed rows PC1,A2,V1–V14,TR/LI/PB rows in `20261007
 
 > | C32.2 M1–M9 media table/assets | M6-001,M6-024,M6-025 | **KEEP** | 0x009B49A4;0x009B7A34;0x00A1EC54 | DIDX/DATA writer/lookup closure, streamed prefixes, media aliases and no-DIDX plugin cases are parsing/loading, not DSP. |
 
-PARTIAL: existing primary-backed rows K8,MR2 in `20261007-sound-keep-rows.md`. DATA handler positively calls9B49A4 and media-rebind caller positively invokesA1EC54. Remaining9B49A4/9B7A34/A1EC54 actual table population/alias/prefix writer and lookup closure. A caller citation is only PARTIAL here. Reconciliation records actual body coverage without claiming complete transitive closure.
+PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Concrete media-ID selection, alias publication/removal and rollback, DATA population caller, pointer/ID descriptor setters, owner eligibility initialization/retirement, queue tag18 and surviving-media rebind are rowed. The old MR2 citation was a mixer row, not this path. Remaining owner/descriptor all-writer census, chunk selector/index production, object release families and FX-bank-stop recipients. No complete loading-path claim from local selection bodies.
 
 ## Q14-090 — triage line 139
 
@@ -898,7 +898,7 @@ PARTIAL: existing primary-backed rows A2,PC1,Play/container rows in `20261007-so
 
 > | C32.2 | M6-024,M6-025 | KEEP | 0x009B49A4;0x009B7A34;0x00A1EC54 | Asset census slice held; native table writer/population closure remains loading proof. |
 
-PARTIAL: existing primary-backed rows K8,MR2 in `20261007-sound-keep-rows.md`. DATA population call and exact media rebind output/readiness/format consumer are rowed. Remaining concrete9B49A4/9B7A34/A1EC54 writer/table/prefix/alias closure. Reconciliation records actual body coverage without claiming complete transitive closure.
+PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Native media lookup, alias ordering/removal/rollback, DATA population caller, descriptor setters, bank eligibility/retirement and source rebind now have concrete rows. The stale MR2 reference named a mixer row. Remaining owner/descriptor all-writer census, chunk selector/index production, object release and FX-bank-stop recipients; no bulk settlement.
 
 ## Q14-123 — triage line 179
 
@@ -1085,3 +1085,9 @@ Remaining decision dependencies include media-ID/prefix producers, complete sour
 ## Decision checkpoint141 (2026-10-08)
 
 MS141A–I add descriptor direct-pointer/ID lookup, media direct-pointer preference, signed-largest eligible alias selection with first-physical ties, atomic owner retention, DATA alias update/prepend, reverse-progress unload with swap-last removal and publication-failure rollback. Primary companions:20261008-sound-media-selection-native.txt,20261008-sound-media-lookup-native.txt,20261008-sound-media-choice-native.txt,20261008-sound-media-removal-native.txt. Storage hash resizing and allocator bodies are out of scope; lookup identity, ordering and failure decisions are retained. Q14-089/116 and duplicates remain PARTIAL pending descriptor/owner flag writers and no-DIDX source branches. No broad coverage promotion or fidelity change.
+
+## Decision checkpoint142 (2026-10-08)
+
+BR142A–S add pointer-bearing/ID-only setters, native bank eligibility flags, DATA progress gating, retirement order and queued tag18, active-PBI association/rebind-before-stop, concrete streamedADPCM/Vorbis rebind capabilities, signed bank-reference release, completion-callback suppression, FX-bank association and four-slot cleanup. Corrected stale Q14-089/116 MR2 mapping to concrete MS141/BR142 rows; no status promotion. Remaining chunk/index producers, owner/descriptor all-writer census, object release families, context registration and concrete FX rebind/termination recipients are decision dependencies. Counts unchanged:23 native-row CHECKED,8 scope-exclusion CHECKED,109 PARTIAL,0 NOT DONE. Q14 incomplete; Q15 remains next after Q14.
+
+Verification: all instruction/data range endpoints for the28 MS141/BR142 rows exist in the native captures; ledger140 IDs are unique; ELF PLT bindings independently confirm sem_init/post/wait/destroy and pthread_cond_broadcast targets used in the retirement rows. `git diff --check` passes. These are evidence/format checks, not source-fidelity settlement or hardware validation. Research files only; no production, manifest or inventory changes.
