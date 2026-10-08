@@ -346,6 +346,8 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 Resumption CW1–10 plus independently reopened S1–4/W1–8 settle local continuation/depth mask, failure cleanup, timing conversion and choice-entry/list ownership. Special Sound9EE2D8, pool9D0F3C, A09C40 choices, pending-object init/scheduling and virtual recipients remain open.
 
+POL1–3 additionally close9EE2D8 special tag/policy and9FAEC4 inherited bit4 query.9D0F3C is a Layer Play extension beyond the abbreviated navigation extent, captured through9D1747 but not yet rowed; remaining pending/selection joins persist.
+
 ## Q14-035 — triage line 73
 
 > | M6-025 | **KEEP** | 0x00A01768;0x009BCA68;0x00A0228C;0x00A72760..0x00AB138C;0x00A56414..0x00A56468;0x009EEDA4;0x00A4C3D8..0x00A4C504;0x009EA23C | Source format writers, inaudibility/limiter decisions, source close/init ordering, route caches and device-table checks remain exact; later correction evidence does not eliminate their independent verification obligation. |
