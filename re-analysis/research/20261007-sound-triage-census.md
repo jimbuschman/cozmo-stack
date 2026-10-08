@@ -1367,3 +1367,7 @@ RC208A records 45 bounded ARM PC-relative candidates and already-positive SetRat
 ### Checkpoint 209 — source registry list identity
 
 PL209A binds final-init list reader to engine g_pAKPluginList BSS through relocated GOT, distinct from PF3 loaded-library export. Bounded ARM/Thumb candidates do not establish writer absence; selected source callbacks remain unresolved. Loader infrastructure scoped out. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 210 — layer threshold parameter root
+
+LP210A–D establish32-byte child-record stride, mutable24-byte key, root/missing-modulator/default ordering and first scope/zero fallback plus scalar reader. Deeper scopes and child request/play remain retained. No totals/Q15/fidelity/production changes.

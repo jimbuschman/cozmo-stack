@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D1188..0x009D1264 exclusive; ARM;
+009D1188: ldr          r2, [fp, #0x60]
+009D118C: ldr          r3, [fp, #0x5c]
+009D1190: lsls         r2, r2, #2
+009D1194: moveq        r0, #1
+009D1198: beq          #0x9d07c4
+009D119C: mov          sl, r8
+009D11A0: add          r2, sp, #0x8c
+009D11A4: str          r3, [sp, #0x1c]
+009D11A8: mov          r3, #1
+009D11AC: str          r2, [sp, #0x28]
+009D11B0: str          r3, [sp, #0x30]
+009D11B4: str          fp, [sp, #0x20]
+009D11B8: ldr          r3, [sp, #0x20]
+009D11BC: ldr          ip, [r3, #0x74]
+009D11C0: ldr          r2, [r3, #0x78]
+009D11C4: ldr          r3, [sp, #0x1c]
+009D11C8: add          fp, ip, r2, lsl #2
+009D11CC: ldr          r1, [r3], #4
+009D11D0: cmp          ip, fp
+009D11D4: str          r3, [sp, #0x1c]
+009D11D8: mov          r3, r1
+009D11DC: str          r1, [sp, #0x14]
+009D11E0: moveq        r3, #0
+009D11E4: ldr          r8, [r1, #8]
+009D11E8: streq        r3, [sp, #0x10]
+009D11EC: beq          #0x9d1264
+009D11F0: str          sl, [sp, #0x24]
+009D11F4: mov          sb, ip
+009D11F8: ldr          r6, [sp, #0x34]
+009D11FC: mov          r3, #0
+009D1200: ldr          sl, [sp, #0x28]
+009D1204: str          r3, [sp, #0x10]
+009D1208: ldr          r3, [sb], #4
+009D120C: ldr          r5, [r3, #0x2c]
+009D1210: cmp          r5, #0
+009D1214: beq          #0x9d1258
+009D1218: ldr          r1, [r3, #0x14]
+009D121C: ldr          r4, [r3, #0x10]
+009D1220: add          r1, r4, r1, lsl #5
+009D1224: cmp          r4, r1
+009D1228: beq          #0x9d1258
+009D122C: ldr          r3, [r4]
+009D1230: cmp          r3, r8
+009D1234: beq          #0x9d1354
+009D1238: add          r3, r4, #0x20
+009D123C: b            #0x9d124c
+009D1240: ldr          r2, [r3], #0x20
+009D1244: cmp          r2, r8
+009D1248: beq          #0x9d1354
+009D124C: cmp          r1, r3
+009D1250: mov          r4, r3
+009D1254: bne          #0x9d1240
+009D1258: cmp          fp, sb
+009D125C: bne          #0x9d1208
+009D1260: ldr          sl, [sp, #0x24]
