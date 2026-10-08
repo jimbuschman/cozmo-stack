@@ -11,6 +11,10 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 198 — coverage reconciliation for creation, controls and source lifecycle
+
+The Q14 census entries Q14-032/033/035 now explicitly map the positive checkpoint170–197 creation/initial-state/preparation/control/seek joins. Four named standard voice callbacks are locally covered; complete production/writer and dynamic source/plug-in recipient obligations remain open. This corrects stale unread-body boundaries without promoting broad records. Totals remain23 native CHECKED +8 scope exclusions /109 PARTIAL /0 NOT DONE; Q15 parked. No production/fidelity changes.
+
 ## Checkpoint 197 — concrete source seek controls and result/trim boundaries
 
 Primary: `20261008-sound-pcm-stream-plugin-seek-native.txt`, `20261008-sound-plugin-seek-decision-native.txt`, `20261008-sound-vorbis-stream-seek-control-native.txt`, `20261008-sound-stream-seek-rebind-native.txt`; same engine SHA256. SR196 supplies exact caller/bindings; SK1–4 value/cue conversion, HS6 frame converter, HS8 settings, AH4 directADPCM and VM6 decoder trim helper already positive. Only decision ranges, no decoder sample arithmetic or stream backend descent. Endpoints inclusive.

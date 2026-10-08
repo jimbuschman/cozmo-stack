@@ -332,11 +332,15 @@ PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, 
 
 PARTIAL: VF1–VF9 re-open complete voice FX initialization parent, mutable-format and slot ordering, concrete wrapper choice/Init/Reset, failure cleanup and reverse chain connection. Existing PB/FC/P rows cover bounded Play/source/start-list pieces. Remaining: complete Play/PBI/effective-parameter/source/route construction and ownership recipients plus production caller closure.
 
+Checkpoint198 reconciliation: VC184/QC189/PP190 settle bounded creation/reuse/not-ready retention, cancellation/removal and later preparation results; PI188/VI191/CI192 settle initial control/rate input joins. N5194/HC195 settle the known predecessor connection and release/reset recipients. Remaining: complete Play/effective-parameter/source/route construction, dynamic plug-in selection/callbacks, ownership and production caller/writer closure. These joins replace an unread-local-body assumption without promoting the whole item.
+
 ## Q14-033 — triage line 71
 
 > | M6-025 | **KEEP** | 0x009EB4C8;0x00A0CA04;0x00A40940;0x009EBE38..0x009EC0F0;0x00A42210;0x00A0428C;0x00A054D8;0x00A53558;0x00A5358C;0x00A535D8;0x00A53698;0x00A22304;0x00A22684 | Indirect-caller census, initialization barrier, re-init triggers, null-parent remainder, pending-state/device-build bodies and absent field writers are state/lifetime gaps. |
 
 PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; VS4/VS14–VS17 trace all three direct VoiceInit callers and re-init/error gates from primary code. Remaining: indirect-caller census, null-parent and pending-state/field writer/remaining collaborator bodies.
+
+Checkpoint198 reconciliation: PN177/QN172/VF180/N5194 trace all four named standard voice control callbacks A53558/A5358C/A535D8/A53698 with their gates, concrete slots and source/wrapper recipients; PF193 settles grouped preparation/start dispatch. Remaining: indirect caller/producer census, E0/E4 and other field writers, null-parent/pending-state/device collaborator closure; the four named callback bodies are no longer unread.
 
 ## Q14-034 — triage line 72
 
@@ -357,6 +361,8 @@ LPAR1–4 add child/layer order, outside-range threshold counts (including nativ
 > | M6-025 | **KEEP** | 0x00A01768;0x009BCA68;0x00A0228C;0x00A72760..0x00AB138C;0x00A56414..0x00A56468;0x009EEDA4;0x00A4C3D8..0x00A4C504;0x009EA23C | Source format writers, inaudibility/limiter decisions, source close/init ordering, route caches and device-table checks remain exact; later correction evidence does not eliminate their independent verification obligation. |
 
 PARTIAL: VS6–VS15 trace counter/source-start gates and pointer/size forwarding, PBI virtualization transition calls and voice lazy init; DF adds device format/route invalidation. Remaining: format/route-cache writers, concrete source close/init and audibility/limiter recipients and device table traversal.
+
+Checkpoint198 reconciliation: NS3/VF180/VD186 bind close/stop/delete ordering; SR196/SC197 settle eligible source release, pending-seek gate, seek result/cursor/trim publication and composite position identity. Source mode2 plug-in20/2C, converters and additional writer/decoder state consumers stay retained. Remaining: format/route-cache writers, audibility/limiter recipients, device table traversal and full producer/lifecycle closure. out of scope: pool/stream storage and I/O infrastructure; PCM file sources remain excluded.
 
 ## Q14-036 — triage line 74
 
@@ -1313,3 +1319,7 @@ SR196A–C bind six eligible source release/reset families, pendingflag→source
 ### Checkpoint 197 — source seek target decisions
 
 SC197A–E tracePCM endpoint/flag consumption, ADPCM carryclear/genericstream seek-and-spanreset, Vorbis success/failure trim distinctions, direct table boundary selection and mode2 exact integer/F32 seek computations/plug-in callbacks. Dynamic plug-ins/converters/decoder/parameter writers/fullproduction closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 198 — per-item coverage reconciliation
+
+Q14-032/033/035 now explicitly map checkpoints170–197 positive creation/control/seek joins and distinguish them from the remaining production/writer/dynamic-recipient obligations. No item was promoted: 23 native CHECKED / 8 scope exclusions / 109 PARTIAL / 0 NOT DONE remains correct. Q15 stays parked. No primary body recaptured, no production/fidelity changes.
