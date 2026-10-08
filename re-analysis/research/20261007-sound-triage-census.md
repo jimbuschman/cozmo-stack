@@ -1157,3 +1157,7 @@ CX157A–D close local9FEFD4/9FEFE4/9E765C bodies: low-byte retain/decrement ver
 ## Decision checkpoint158 — retained-state factory/destructor joins
 
 MF158A/B resolve the factory's GOT-indexed type0/type1 table publication and bind CX157D/OA16's known state0 callbacks to existing MTK6 cleanup bodies. Actual tables103B268/103B288 differ from Ghidra's PLT-placeholder labels; primary relocation/callsite evidence governs. Common stop/notification cleanup and additional attachment/family producers remain retained; no Q15, coverage, fidelity or production change.
+
+## Decision checkpoint159 — common retained-state stop/cleanup
+
+SN159A–E trace policy/scope gates, association-specific PBI stops before action notifications, independent pending cancellation/direct stop on event-null path, and reverse recipient release/ordered state clears. Shared MI7/MU rows corroborated by primary capture; RR8/A15/A16/RR4/TD5/TD6 are positive sound recipients. PS8/9 already close CX157C's storage-only parent cleanup. Concrete9AB1F4 and wider stop/family/writer closure remain PARTIAL; no totals, Q15, fidelity or production changes.
