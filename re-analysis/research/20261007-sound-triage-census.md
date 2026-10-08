@@ -1507,3 +1507,7 @@ OG243A–C trace physical group lookup/release10, zero-result unsubscribe-before
 ### Checkpoint 244 — descriptor-manager family binding
 
 MB244A binds factory/table/global and known20/24/28 addresses for prior caller rows. No callback-role/readiness/storage classification inferred from binding alone; pool infrastructure excluded. Remaining role/decision/input/writer closure PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 245 — tag23 native producers
+
+OP245A–C recover four ARM producers absent from navigation index: ID/name lookup/retain, register versus retire flag/mode writes and atomic publication; join sentinel object and signed modes to consumer. Positive event-ID hashing/queue controls reused. EventC/public input/family/writer closure retained. No totals/Q15/fidelity/production changes.
