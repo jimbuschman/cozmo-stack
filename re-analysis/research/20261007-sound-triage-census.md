@@ -1499,3 +1499,7 @@ OW241A–C trace exact object/event lookup, signed-byte versus full-mode compari
 ### Checkpoint 242 — queued owner operation and retirement
 
 OC242A/B and OR242A/B trace tag23 object sentinel/lookup, full-U16 registration flag, signed modes, event-before-object release and descriptor/group/object/owner/registry retirement order. Existing object/queue bodies reused; producer/event family/group-release/media-manager/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 243 — owner group retirement
+
+OG243A–C trace physical group lookup/release10, zero-result unsubscribe-before-registry removal, live re-search/loop ends and final owner/global count publication. Known release/destructor reused; storage bodies excluded. Media-manager/command/event/input/writer closure retained. No totals/Q15/fidelity/production changes.
