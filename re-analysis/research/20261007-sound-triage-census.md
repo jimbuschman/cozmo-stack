@@ -602,7 +602,7 @@ PARTIAL: TH8, NF1–NF5 and VS1–VS17 establish Perform/render voice order, thr
 
 > | C31.1 R1.1–R1.14 / media-table writer and manager census | M6-025,M6-024 | **KEEP** | 0x00A1EC54;0x009BB320;0x009BB1F8;0x00A01EF4;0x00A028F0..0x00A02938;0x00A04D48;0x009B49A4 | Pointers/size/bank ownership, table population and caller gates are loading/lifetime; C32 closes extraction claims, independent verification remains. |
 
-PARTIAL: MR1–6 in `20261007-sound-keep-rows.md` reopen the complete caller-local A01EF4 media-rebinding contract, including source identity, callbacks, failure cleanup and cursor-before-release/publication. Media-table population/caller census and the other named manager bodies remain open. The narrow D2 obligation is Q14-077, already CHECKED; these caller rows do not settle full M6-025.
+PARTIAL: checkpoint87 media-rebind MR1–6 (distinct from the earlier mixer MR rows), MS141A–I and BR142A–S establish caller-local A01EF4, media-table selection/population/removal, descriptor setters, owner eligibility/retirement and rebind gates. SD140H closes A04D48. Remaining all-writer/caller census and concrete plug-in/release recipients keep the production obligation open. The narrow D2 obligation is Q14-077, already CHECKED; these caller rows do not settle full M6-025.
 
 ## Q14-077 — triage line 126
 
@@ -620,7 +620,7 @@ PARTIAL: VF1–VF9 expose wrapper type/flag raw gates, concrete construction/Ini
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
 
-PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. WV11–WV15 close concrete virtual38/3C Execute/bypass dispatch, allocation/null failures, padding and output-state gates. Remaining: selected plug-in target closure, bypass writers and A0EDB0 detach recipients; no wholesale DSP exemption.
+PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. WV11–WV15 close concrete virtual38/3C Execute/bypass dispatch, allocation/null failures, padding and output-state gates. Remaining: selected plug-in target closure and bypass writers. Checkpoint144 positively joins A0EDB0 to U27, R34/R35, R37 and SU1–6, so those local detach bodies are not unread; concrete state/destructor and producer closure remain separate. No wholesale DSP exemption.
 
 ## Q14-080 — triage line 129
 
@@ -668,7 +668,7 @@ PARTIAL: existing primary-backed rows NS1–NS2,VS1,Z4–Z15 in `20261007-sound-
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: existing primary-backed rows PB3,QC3,E14 in `20261007-sound-keep-rows.md`. Parameter-list detach order, retained object lookup/release and completion gate are rowed. Remaining concrete A0B600/A05934/A1C65C/9A6988 effects and item48 writer. NSINK covers a distinct music notification registry, not a substitute for these recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
+PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. Remaining concrete node/state virtual recipients, A0B490 local-list payloads, A0C238 decision joins and item48 writer; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
 
 ## Q14-088 — triage line 137
 
@@ -1097,3 +1097,7 @@ Verification: all instruction/data range endpoints for the28 MS141/BR142 rows ex
 CR143A–E add bank callback registration, cancellation counts, suppression-count publication and single-wait/thread-exemption gates, common-FX context query and teardown subscription/instance/node order. Source companions:20261008-sound-bank-callback-registration-native.txt,20261008-sound-bank-callback-registration-tail-native.txt,20261008-sound-bank-callback-suppression-native.txt. Concrete RTPC unsubscribe, FX callbacks, context query and thread/caller census remain retained. Counts unchanged; Q14 remains PARTIAL and Q15 remains queued afterward.
 
 All five CR143 native range endpoints checked; ELF import bindings confirm4A4EDC=pthread_self and4D66D0=pthread_cond_wait. Formatting check passes. Across checkpoints141–143,33 new local decision rows; no claimed complete production path, fidelity-status promotion, implementation change or hardware run.
+
+## Decision checkpoint144 — modulation teardown and current-row reconciliation
+
+KT144A–J row the remaining 9DA77C caller, including wildcard parent-release order, exact leaf matching, same-iterator stable deletion and bottom-up inactive/empty pruning. Existing HBIND2, U27/R34/R35/R37/SU1–6 and A15/A16/A20 are positive joins for checkpoint143/142 rather than new unread bodies. Q14-076/079/087 retain their remaining decision recipients/producers; counts stay23 native CHECKED /8 scope CHECKED /109 PARTIAL /0 NOT DONE. No Q15 resumption or fidelity change.
