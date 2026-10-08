@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 174 — PBI duration-transition creation, retarget and fallback
+
+Primary: `20261008-sound-pbi-duration-transition-native.txt`; same engine SHA256. Positive RR8 stop and NR169 resume helperA010E0; other callerA01480 remains separate. TT1–3/TT9–22 supply positive transition-manager decisions. Offsets/endpoints hexadecimal/inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| DT174A | 00A010E0..00A01164 | Arg2nonzero choosesPBI144, zero chooses148. Targetbits0 iff selector exactly02000000 or04000000, otherwise3F800000. Existing chosenhandle retargetsA366F4(manager,handle,selector,target,duration,curve,mode0), thenreturns. | No local duration positivity/finite gate or fall-through callback after existing-handle retarget. Incoming selector/range kept raw. | Handle selection → target selection → retarget →return. | TT9–22 positive retarget/timing/notification rows; full consumers still separate. |
+| DT174B | 00A01168..00A011C4;00A01208..00A01270 | Missinghandle builds descriptor owner=PBI+8,selector,current=PBI16C forarg2zero or168 fornonzero,targetDT174A,durationincomingarg4,curveincomingarg5, bytes18/19/1A=0/1/0; byte1B unspecified. CallsA36268(manager,&descriptor,1,0), storesreturnedhandle148/144 respectively. Nonzeroarg2 additionally replaces1BEbit6 with(selector==01000000), before commoncallback. | Current captured before creator. Nullhandle still published; no guessed rollback. Sixth argument is not read by this body. | Descriptor → creator → handle publication → optional1BEbit6 → commoncallback. | TT1–3 provide creator/fallback contract, owner callback throughPBI+8 remains a concrete interface. No whole descriptor memset. |
+| DT174C | 00A011C8..00A01204 | After either creation branch, invokePBI.vt50(PBI,propertyE,duration), ignoringresult. Then test **saved** creatorhandle: nonnullreturns; null invokesPBI.vt14(PBI,descriptorselector,descriptortarget,1), returns. | Live handle changes duringvirtual50 do not replace saved null/non-null decision. Virtual50 runs even on failed creator. | Handle publication/optionalflag → parameter callback → saved creation-result gate → optional direct transition notification. | Concrete PBI50/14 and creatorowner callback binding remain exact decision work. Existing-handleDT174A does not perform this parameter callback. |
+
+Named duration helper now has its complete local control body. Parameter/transition callback recipients, additional caller/producer/family closure remain; Q14 totals unchanged, Q15 parked. No fidelity or production changes.
+
 ## Checkpoint 173 — voice/source resume metadata and fallback state
 
 Primary: `20261008-sound-voice-resume-position-native.txt`, `20261008-sound-source-resume-metadata-native.txt`, updated `20261008-sound-type3-voice-slot.txt`; same engine SHA256. Positive QN172C source query/A56610/voice48. Existing RS4/G11 positively cover pitch-step query; local join preserves raw bits. Endpoints inclusive.

@@ -1217,3 +1217,7 @@ QN172A–C positively join type3 queue eligibility and exact voice50 dispatch, s
 ## Decision checkpoint173 — voice/source resume metadata
 
 VR173A–D settle raw fixedpoint pitch-step ratio, PBI1BA bits3..6 publication, first playingID/source metadata match with locked value/clock update, and standardvoice48 optional primary flag clear followed byDC2. RS4/G11 are positive query joins; no direct stream-start operation invented. Metadata/flag/state consumers and full incoming/preflight/family closure remain; no totals, Q15, fidelity or production changes.
+
+## Decision checkpoint174 — PBI duration-transition helper
+
+DT174A–C settle144/148 selection, selector-exact0/1 targetbits, existing-handle retarget versus descriptor create, handle/flag publication beforevirtual50 and saved creation-result null fallbackvirtual14. TT1–3/TT9–22 are positive transition-manager joins. Concrete parameter/notification callback recipients and full caller/writer/family closure remain, no totals/Q15/fidelity/production changes.
