@@ -1289,3 +1289,7 @@ PP190A/B joinHP4 preparationtoSWIN1–5 andVS16/17/VD186: raw3F retainslist/retu
 ### Checkpoint 191 — standardvoice initial controls
 
 VI191A–C proveconstructorincomingr1unused, standardtablepublication, initialDC/source0/CDarm/E8clear/F0format0 andfourprocessor0. Initialresourcehelpers/defaults/remainingwriter/familyclosure remainsseparate; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 192 — initial rate/embedded control joins
+
+CI192A–C bindcreationrateinputto105243C andDG6voiceEC, positiveRS1 tovoicequeryinitial0/1, andboundedfiltertable/94/format190=0 followedbyRS8liveInitformat. Coefficient/historydefaults notclaimed; fullrate/pitch/filterstatewriters/familiesremainPARTIAL. No totals/Q15/fidelity/production changes.

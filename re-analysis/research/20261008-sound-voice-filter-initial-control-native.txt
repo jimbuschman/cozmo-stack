@@ -1,0 +1,30 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A76280..0x00A762F0 exclusive; ARM;
+BOUNDED ctor identity/94/190-format stores only; interleaved coefficient/history stores omitted, not classified or claimed by these control rows.
+00A76280: vmov.f32     s15, #1.000000e+00
+00A76284: mov          ip, r0
+00A76288: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A7628C: sub          sp, sp, #0x1c
+00A76290: add          lr, sp, #8
+00A76294: mov          r4, #0
+00A76298: add          sl, r0, #0x20
+00A762BC: mov          fp, #0x80000000
+00A762C0: ldr          r6, [pc, #0x208] ; word[00A764D0]=005A6300
+00A762C8: str          r4, [ip, #0x94]
+00A762D0: add          r6, pc, r6
+00A762DC: add          r6, r6, #8
+00A762E8: str          r6, [ip]
+RANGE 0x00A76450..0x00A764D0 exclusive; ARM;
+00A76498: ldrb         r3, [ip, #0x191]
+00A7649C: str          r2, [ip, #0x138]
+00A764A0: mov          r2, #0
+00A764A4: strb         r2, [ip, #0x190]
+00A764A8: bfi          r3, r2, #0, #4
+00A764AC: strb         r3, [ip, #0x191]
+00A764B0: ldr          r3, [ip, #0x190]
+00A764B8: mov          r0, ip
+00A764BC: bfi          r3, r2, #0xc, #0x14
+00A764C4: str          r3, [ip, #0x190]
+00A764C8: add          sp, sp, #0x1c
+00A764CC: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}

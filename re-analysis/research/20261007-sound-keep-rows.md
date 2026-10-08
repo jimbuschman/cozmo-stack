@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 192 — creation rate input and embedded control default joins
+
+Primary: `20261008-sound-voice-rate-input-slot.txt`, `20261008-sound-voice-filter-initial-control-native.txt`; same engine SHA256. VC184 nativecallsite, DG6setter, RS1 resamplerconstructor, RS8 filterInit, VI191 construction arepositive earlierrows. Capturedfilterdefaults deliberatelybounded; no samplearithmeticanalysis. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| CI192A | 01040068;VC184/DG6 | A4309C/A430A0 literal005FCFC0 resolvesGOT1040068→global105243C; A430A4 readsrawglobalword andpassesittoA548B8(newvoice,word). DG6 setsvoiceEC unconditionally. | Valueisreadafterconstructor, beforeA558AC. No fixed48000 substitute orJNI query inthiscallsite. | Liveglobalrate read → voiceECpublication → sourcebind/start. | Full105243C writers alreadyremain separate ratecensus; thisclosesdirectrateinputidentity forVC184. |
+| CI192B | VI191B/RS1/VR173A | VI191 A46D70(voice+108) invokespositiveRS1 constructor: fixedphase2C=10000,ratio4C=1bits,steps30/34=0,ramp38=0,pitch50=0,mode48=0,byte57=1. ConsequentlyVR173A's voice138fixedstep/154ratio startas0/1 beforelaterInit/pitchwriters. | Embeddedhistory0..1F notinitializedbyRS1; no fabricatedformat54/channel55/width56 defaults. | Source/state0 → resamplerconstructor → laterquery/init. | ExistingRS1 bodypositive; queryinitialratio nowboundtothecreatedvoice. CompleteInit/pitchwriterclosure separate, no DSPexemptionforstep/timing. |
+| CI192C | 00A76280..00A76298;00A762BC..00A762E8;00A76498..00A764CC | VI191's twoA76280 embeddedobjects saveonlyselfip, publishtable101C5E0 (PC/literal/+8), word94=0, packedformat190=0 throughbyte/bitfieldstores; returnself. No callback/gate inthesecontrol slices. RS8 laterInit overwritesformat190 withincomingpackedformat. | Scalar94 meaningnotassertedfromoffsetalone. Interleavedcoefficient/historydefaults omitted; notwholeconstructorrecovery. | Identity/default94 → laterformat0 → return; Initformatproducer separate. | Thisclosesnamedtable/formatdefaultcontract, notallfiltercoefficient/stateconsumers. Remainingparameter/control versusper-sampleboundary staysretained underADP1. |
+
+Rateinput/resamplerquery/filterformatdefault joins nowpositive. Fullglobalrate/pitch/filterstatewriters andotherproductionfamilyclosure remainPARTIAL; totalsunchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 191 — new standard voice initial control and constructor ABI
 
 Primary: `20261008-sound-voice-initial-control-native.txt`; same engine SHA256. VC184 constructorcall; QN/HP knownstandardtable andVD186 teardown supplyconsumerjoins. Selectedcontrol slices only; no fullconstructor/defaults claim. Endpoints inclusive.
