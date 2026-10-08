@@ -1,0 +1,16 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Static immediate-branch candidates in executable ELF LOADs; ARM every aligned word and Thumb every halfword. Candidates must be reopened as instructions; this is not an indirect-call census.
+009C0BF8 ARM word=EB00956D target=009E61B4
+009CEA04 ARM word=EB005DEA target=009E61B4
+009CF488 ARM word=EB005B49 target=009E61B4
+009D117C ARM word=EB00540C target=009E61B4
+009E6254 ARM word=EBFFDAFA target=009DCE44
+009E6294 ARM word=EBFFFFC6 target=009E61B4
+009E631C ARM word=EBFFDAC8 target=009DCE44
+009E6364 ARM word=EBFFFF92 target=009E61B4
+009F1D50 ARM word=EBFFD117 target=009E61B4
+009FFF98 ARM word=EBFF98C3 target=009E62AC
+00A0199C ARM word=EBFF9242 target=009E62AC
+00A31C58 ARM word=EBFED155 target=009E61B4
+00A446F4 ARM word=EB0049C1 target=00A56E00
+00A6CCB4 ARM word=EBFDE53E target=009E61B4
