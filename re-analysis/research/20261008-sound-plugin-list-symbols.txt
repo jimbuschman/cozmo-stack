@@ -1,0 +1,2 @@
+SYMBOL 0108D9F4 size=4 section=21 g_pAKPluginList
+RELOC 0103FF7C ARM_GLOB_DAT g_pAKPluginList value=0108D9F4

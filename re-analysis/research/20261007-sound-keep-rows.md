@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 209 — plug-in registration list identity and bounded reference limits
+
+Primary: `20261008-sound-plugin-list-head-native.txt`, `20261008-sound-plugin-list-head-slot.txt`, `20261008-sound-plugin-list-symbols.txt`; bounded candidate aids `20261008-sound-plugin-list-reference-census.py` / `.txt`, `20261008-sound-plugin-list-thumb-census.py` / `.txt`. Same engine hash. Existing PF3/registration PR1–PR5 establish loaded-list registration separately; HG3 is the Anki callable-exchange body and is not a source plug-in registry creator.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PL209A | 009CBECC..009CBED8;0103FF7C;0108D9F4 | Final init registration loads literal6740A4, LDR PC+literal at9CBED0 resolves GOT103FF7C; its ARM_GLOB_DAT symbol is g_pAKPluginList, value108D9F4,size4,BSS. Dereference current list once, tail9CBAE0(list). Registry traversal/selection/callback order remains the already-positive registration PR rows. | ARM candidate scan finds this reference under its pattern; Thumb16 literal/same-register ADD-PC scan finds no candidate. Neither excludes other GOT bases, aliases, different instructions or external writers. | Current list pointer → registration recipient; not a copied/frozen static list. | Concrete source creator/duration/loop/seek bodies still depend on list/registry writers and bank source key. PF3 separately reads a loaded library's exported g_pAKPluginList and registers it; do not conflate that symbol instance with the engine BSS address. No negative reachability or missing-library classification from these scans. |
+
+out of scope: further file-open/directory/loader infrastructure; existing PF result and registration selection boundaries retained. The source callback gap stays explicit; no substitution of Anki wrapper registration for a recovered source creator. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 208 — seek-rate reference census and obligation reconciliation
 
 Primary candidate scan: `20261008-sound-seek-rate-reference-census.py` / `.txt`, same engine hash. Existing positive Z4–Z8/Z15/Z16, CI192A, NP199B and SC197E remain their native body evidence; no duplicate body promoted. The census filters register overwrites and calls between the literal load and PC join; arithmetic coincidences across overwritten registers are rejected.

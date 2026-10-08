@@ -1,0 +1,5 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Targets: plug-in-list GOT103FF7C / global108D9F4
+candidate literal-load 009CBECC reg3 word[009CBEDC]=006740A4; join009CBED0 raw=E79F3003 -> 0103FF7C
+  local-memory 009CBED4: ldr r0, [r3]
+LIMIT: ARM candidate pattern only, 64-byte join window and register-kill filtering; no indirect/Thumb/MOVW/MOVT/other-base absence claim.

@@ -1363,3 +1363,7 @@ AC207A–C trace acatts signed/unsigned denominator-high0 quotient controls and 
 ### Checkpoint 208 — seek-rate references/reconciliation
 
 RC208A records 45 bounded ARM PC-relative candidates and already-positive SetRate/SetFrame stores; explicitly retains Z5 other-base/default producer and alias/Thumb/indirect gaps. NP199B/SC197E now point to shipped candidate division bodies, retaining process-binding uncertainty. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 209 — source registry list identity
+
+PL209A binds final-init list reader to engine g_pAKPluginList BSS through relocated GOT, distinct from PF3 loaded-library export. Bounded ARM/Thumb candidates do not establish writer absence; selected source callbacks remain unresolved. Loader infrastructure scoped out. No totals/Q15/fidelity/production changes.
