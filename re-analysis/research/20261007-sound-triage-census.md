@@ -1117,3 +1117,7 @@ LR147A–F identify concrete pre-cleanup/parent-removal dispatch, shared transit
 ## Decision checkpoint148 — Switch/Layer pre-cleanup prefixes
 
 CP148A–D trace head/count publication before completion and secondary-count callbacks, object low30 reference release, ordered event release and Layer attachment teardown. Existing A20/E14/DC3/DC4/OA15–17 are positive joins. Inline free-list/block returns are out of scope: storage infrastructure. Concrete secondary-count callbacks and remaining destructor/producer closure retain PARTIAL status; no total, Q15 or fidelity change.
+
+## Decision checkpoint149 — parent/counter joins and Switch child retirement
+
+NJ149A binds five known node families to existing LI1/LC6 parent-setter and counter rows, with LC4 bus joins. SW149A–C close Switch30's saved child-ID ordering, ordered child-list removal, first association unlink and parent-origin reference release even on a missing association. Concrete node destructors, idle-teardown remainder and additional producer/family census still prevent full Q14 closure. No Q15, production or fidelity change; totals unchanged.
