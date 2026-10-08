@@ -1233,3 +1233,7 @@ PA176A–D settle1D4 increment before duration/mask/handle gates, existing retar
 ### Checkpoint 177 — type2 queue voice/source pause
 
 PN177A–C positively join PA176 queue2 through shared preflight/lookup gates and standard4C binding: DC1 publishes PBI flag1 and zero metadata beforeDC3; otherDC uses known VR173D fallback toDC2. Metadata miss does not block voice transition. Flag/metadata consumers, other families and full producer closure remain retained. No totals, Q15, fidelity or production changes.
+
+### Checkpoint 178 — shared action dispatcher
+
+PD178A–E settle identity/type gates, pause increment and resume override-byte/nested-count behavior, base1C halfword/queue4 publication versus continuous override, and type5 attached-deadline/nullPBI38 branch. Positive earlier rows supply stop/resume/pause/transition/deadline recipients. Continuous override, type4 consumer and full writer/producer/family closure remain. No totals/Q15/fidelity/production changes.
