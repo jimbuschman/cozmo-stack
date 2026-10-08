@@ -1237,3 +1237,7 @@ PN177A–C positively join PA176 queue2 through shared preflight/lookup gates an
 ### Checkpoint 178 — shared action dispatcher
 
 PD178A–E settle identity/type gates, pause increment and resume override-byte/nested-count behavior, base1C halfword/queue4 publication versus continuous override, and type5 attached-deadline/nullPBI38 branch. Positive earlier rows supply stop/resume/pause/transition/deadline recipients. Continuous override, type4 consumer and full writer/producer/family closure remain. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 179 — continuous action3 choice-list decisions
+
+CA179A–D trace250/254 lookup/gates, last-entry list walk and ancestry break, exact200/244 candidate test/store order, CW8 state-owner removal and retained list replacement, saved lookuprelease beforebasequeue4. Known PR161/CW8/CW9/CO155 local recipients stay positive. State-owner virtual13C, full writers/families and queue4 consumer remain; no totals/Q15/fidelity/production changes.
