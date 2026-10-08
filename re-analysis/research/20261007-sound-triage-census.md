@@ -184,7 +184,7 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 > | M6-006 | **KEEP** | 0x009A6704;0x009A0EF8;0x009AE0B0;0x009AA3DC;0x009AA0FC;0x009A9F88;0x009AF8A8;0x00A62A1C;0x00A663C8;0x00A645C8;0x00A04F54 | Queued event/action timing, play counts, callbacks/flags, switch resolution and start/stop/seek behavior remain exact, including unresolved drain internals. |
 
-PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9 and LS1–16 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check and count/undo contracts. Remaining: subscription recipients, concrete destruction/idle teardown, complete production wiring and writer/consumer closure. Native row presence does not settle those descendants.
+PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16 and LT1–9 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including active/virtual-counter producers and voice/notification pass. Native row presence does not settle those descendants.
 
 ## Q14-008 — triage line 41
 
