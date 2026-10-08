@@ -5,8 +5,8 @@
 | Transitions, switch and meter state | PARTIAL | TP1–3 close local property55/header-or-parent-tempo selection; Switch139286641/group3759662965 transition rules remain pending. |
 | MIDI dispatch and target inheritance | PARTIAL | MT1–7, MD1–6, MR1–8, RI1–5; target lookup, raw header, accumulator and local frame gates checked; full decoder/caller closure pending. |
 | Note-on/off and held-note timing | PARTIAL | MH1–7, HS1–4, FC1–6; replay, release gates and frame offset conversion checked; concrete PBI virtual1C and clip readers pending. |
-| Envelope parameters and trigger state | NOT DONE | Positive witness381606890/property15=2; native construction/trigger/release recipients pending. |
-| Vibrato/LFO parameters and state | NOT DONE | Positive witness528935089 and engine005EF184; native value delivery/trigger recipients pending. |
+| Envelope parameters and trigger state | PARTIAL | MG1–8 close local trigger/factory/reuse gates; positive witness381606890/property15=2; parameter initialization, defaults and release delivery remain pending. |
+| Vibrato/LFO parameters and state | PARTIAL | MG1/4/6–8 distinguish LFO trigger and allocation; witness528935089 and engine005EF184; parameter initialization and value delivery pending. |
 | Approved branch exclusions | CHECKED | Five exclusions listed below with census evidence; retained adjacent controls remain in scope. |
 
 # Q15 — singing decision rows, checkpoint 1
@@ -126,6 +126,45 @@ Primary companions: `20261007-singing-reader-init-native.txt`, `20261007-singing
 | FC6 | 00A3C67C..00A3C740 | F8==FFFFFFFF path: status90/nonzerovelocityskipsrecipientonlywhensnapshotFCbit2set. Otherentriesdispatchsameargsandclearbit3aftercallback. Allentriesfree; emptylistA708D4. |UsesFPsnapshotcapturedbeforethereader,notlivebit2forthisskipgate. |Reader→snapshot-gatednoteon→liveflagsforwarded→free→finalcallback. |A70738/postingrecipientandclipwritersremainrequired. |
 
 This closes the local header-tempo/property55 questions that were explicitly unread in M9-005; it does not settle the whole M9-005 path, because full normal decoding, seeking and caller closure remain. The exact distinctions between binary32 accumulation and binary64 event-offset rounding are recorded, including zero/negative/NaN branches.
+
+## Checkpoint 4 — modulator trigger and allocation controls
+
+> M9-006 — HIRC LFO and Envelope payloads and their runtime classes
+> Status: IMPLEMENTATION_GAP
+> Evidence: ["0x009D7B6C..0x009D7C97", "vtable 0x0103B1E8 and 0x0103B218", "re-analysis/research/20260928-I-M9-gap1-extraction.md"]
+> Unresolved: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. property 15 is the trigger selector (0x009D552C..0x009D55F0), not stop-playback; the stop gate is property 1 (0x009D7EA4, default 1), unmodelled; the test keeps the wrong name.
+
+> M9-008 — The vibrato LFO binding depth is driven by the posted cube-shake parameter
+> Status: IMPLEMENTATION_GAP
+> Evidence: ["0x009D671C..0x009D7727", "0x005EF184..0x005EF18C", "Cozmo.bnk objects 528935089 and 110896138"]
+> Unresolved: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the depth RTPC is evaluated by the per-voice initializer only; the stack re-reads it every block, an uncited behaviour its test asserts.
+
+> M9-024 — Whether the note-off envelope stops the voice it is attached to
+> Status: RECOVERABLE_GAP
+> Evidence: ["0x009D552C..0x009D55F3", "0x009D5934..0x009D6598", "0x009D7FC0..0x009D8137"]
+> Unresolved: Trace the type-22 property-15 boolean from virtual method 0x009D552C through the per-voice object and identify whether it stops the attached note-off voice.
+
+> M9-025 — The exact waveform produced by the Wwise LFO between its extrema
+> Status: RECOVERABLE_GAP
+> Evidence: ["0x009D671C..0x009D7727", "0x009D7FC0..0x009D8137", "0x009E266C..0x009E2813"]
+> Unresolved: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
+
+Primary companions: `20261007-singing-modulator-gates-native.txt` and `20261007-singing-modulator-defaults-native.txt`. Default-property table0108DAA8 is runtime storage outside file-backed LOAD bytes; this capture does not establish its post-constructor values. This is not a phone-runtime classification: its shipped initialization still needs tracing. M9-024's property15 wording is contradicted locally by MG2/3; the whole attached-voice stop path remains open.
+
+Positive retained witnesses: envelope381606890 bound462443456 (property15=2, property9=00000000,10=41C00000,11=00000000,12=41180000,14=00000000); LFO528935089 bound110896138, external RTPC C20F49DF (properties0=1,2=42C80000,3=3E4CCCCD,4=40B00000,7=42480000), from the reachability census. These are bank values, not yet a claim that every runtime parameter equals the serialized base after RTPC/random processing.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| MG1 | 009D7B6C..009D7C94;0103B1E8..0103B23C | Factory selector0/1 allocates48hex bytes via A7A7F4. Null allocation or other selector returnsnull. Invoke9D0418(object,incomingID); selector0 installs vtable103B1E8, typeword10=0; selector1 vtable103B218,typeword10=1. Both zero words14/18/1C/24/2C/30/34/38/3C/40 and bytes28/44, install secondary vtable20; call9D790C before returning pointer. | Does not blanket-zero all48 bytes. | Allocate→base constructor→concrete fields→9D790C→return. | Secondary vtables/base constructor and payload reader9D790C remain readable dependencies. |
+| MG2 | 009D552C..009D5588;0103B23C | Envelope vt24 reads raw propertyF(decimal15) from blob14, or defaultword0108DAA8+3C if absent. Same count/id/aligned-values blob search as MT2. | Property15 is a selector value, not normalized boolean. | Property/default query before event gate. | Actual runtime default writer remains pending. |
+| MG3 | 009D5588..009D55F0 | Incoming eventbyte4==0 returns1 iff selector==1. Eventbyte4nonzero: selector1 returns1 iff eventword18!=3; selector2 returns1 for status80, or status90 with byte7zero; all other selectors/statuses return0. | Selector1 does not require a particular nonzero MIDI status. | Event gate→selector branch→word/status/velocity tests. | Exact trigger decisions; no stop callback here. |
+| MG4 | 0103B20C;009D5070..009D50A0;0103B208/0103B238;009DE688..009DE694 | LFO vt24 ignores property15: eventbyte4==0 returns1; status90 returns normalized(byte7!=0); otherstatuses0. LFO vt20 returns0; envelope vt20 returns1. | LFO accepts nonzero-velocity note-on, envelope selector2 accepts note-off/zero-velocity note-on. | Separate concrete bindings before common factory consumer MG6. | No oscillator/sample arithmetic read. |
+| MG5 | 009D7EA4..009D7F34 | Typeword10==0 returns0 immediately. Other types query property1 in blob14 or default0108DAA8+4; return normalized(rawvalue!=0). | Type0 LFO bypasses property1 entirely. | Type gate→property/default→boolean. | Confirms separate stop gate; default1 is existing record claim still awaiting constructor check here. Caller9E21FC remains required. |
+| MG6 | 009D7FC0..009D8034;009D80A0..009D80B8 | Set caller's created-output byte0 before invoking object's vt24(object,event). False returns0, even with existing state. True/existingstate: invoke vt20. If nonzero and `(eventword18 & ~2)==1`, call9E266C(existing,object,event,arg3); otherwise return existing unchanged. | Bit-clear test accepts word1 or3 only. | Created=false→trigger→existing gate→optional reinitialization→return existing. | Reinitialization recipient remains exact parameter/state work, not presumed DSP. |
+| MG7 | 009D8038..009D8084;009D80BC..009D80DC;009D7F3C..009D7FB8 | True/noexistingstate queries property0 (or default0108DAA8). Nonzero property0 and eventword18==0 returnsnull. Otherwise type0 allocatesAC, type1 allocates8C; othertype or allocationnull returnsnull. | Absence of existing state does not guarantee creation after accepted trigger. | Property gate→type→allocation. | Defaults/shipped property0 writer, scope meaning and allocator recipient pending. |
+| MG8 | 009D8088..009D809C;009D80E0..009D8134 | New state invokes9E2144, installs concrete per-voice vtable. Type0 additionally zeroeswords90/94/98/9C/A0/A4 and byteA8. Then9E266C(new,object,event,arg3), ignore result; set created-output byte1 after call and returnnew. | Created flag is after parameter initialization, not after allocation. | Base state→concrete state→initializer→created flag. | Concrete per-voice vtables, parameter initializer and downstream stop/value delivery remain pending. |
+
+No sample equation was extracted. The trigger, reuse, scope and allocation gates remain exact, while parameter randomization/RTPC application and lifetime recipients are still readable work. Q15 remains incomplete, with segment/playlist coverage still NOT DONE.
 
 ## Approved excluded branches
 
