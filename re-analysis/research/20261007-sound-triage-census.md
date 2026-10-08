@@ -1439,3 +1439,7 @@ MF226A–D trace parent-before-child/selected-or-all scope fan-out, exact select
 ### Checkpoint 227 — selected selector delivery
 
 SS227A–C trace complete9D9CD8 parent-before-selector/leaf delivery, exact/all keys, live callback loops andvoid return. MF226 recipient boundary reconciled; top-levelwildcards andinput/state/tree/lifetime writerclosure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 228 — top-level modulator parameter fan-out
+
+TW228A–D trace remaining9DBF78 exact/all hierarchy, parent-own-before-descendant delivery, leaf/current loopends andconcrete9D5058 genericcallback bindings. Positive search/setter bodies reused;9D849C andtree/state/input/lifetime writerclosure retained. No totals/Q15/fidelity/production changes.
