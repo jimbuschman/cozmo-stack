@@ -698,3 +698,16 @@ Companion: `20261008-singing-envelope-state-setter-native.txt`. MU6 binds envelo
 | SV12 | 009E1ED4..009E1F48 | Index12: ordered input<0 (BLT) writes S38=7FFFFFFF. Otherwise convert input with SV10's F64rate/half/S32 sequence, then add wrapping(S84+S78+converted) and publish S38. | Positive and zero input overwrite existing deadline; not MU5's sentinel-only assignment. Unordered does not take BLT and reaches conversion. | Sign gate →sentinel OR rate conversion →length sum →deadline store →1. | No state44 assignment in this setter; no extra release length S88 included. |
 
 SV9–12 close the envelope state setter, including the independent deadline writer and its units. Both concrete state parameter setters and MI5's callbacks are rowed. Runtime evaluator and recipient-delivery bodies remain Q14-027; M9 trigger/payload/init rows must still join their caller/reader/lifetime paths before whole-category closure.
+
+
+### Resumption checkpoint 35: authoring to evaluator and retirement interfaces
+
+The shared M6 tick and evaluator rows are MP1–13, ML1–3 and RH1–5 in `20261007-sound-keep-rows.md`; their primary captures are named there. These interfaces connect the M9 per-voice MU/SV rows to their consumers without claiming the unread M6 waveforms or sampler descendants complete.
+
+| Step | Address | Behaviour | Gates / failure | Order / bits |
+|---|---|---|---|---|
+| SV13 | 009E2D18..009E2D90;009E3DF0..009E3E1C | Envelope state SV9–12 fields74/78/7C/80/84/88 copy raw to input18/1C/20/24/28/2C. State54 (SV3 geometry) selects vector evaluator9E52F8 when nonzero and inline scalar branch9E387C whenzero. Both publish through state30 output descriptor. | No authoring-time clamp inserted between setter and input. Vector path reads delay34/deadline38/cursor3C/status44/value4C too. | Setter state →tick input snapshot →geometry-selected evaluation →next tick carryback MP2. |
+| SV14 | 009E2E44..009E2F3C;009E35C0..009E36B8 | LFO SV5–8 authoring values populate evaluator input; previous output refreshes S90..A7 before dirty parameter calculation. Dirty byte cleared only after mode/phase/step/coefficient update ML1–3. | Null prior output bypasses dirty calculation, retaining byte for a later tick; no independent immediate calculation in the property setter. | Property store/dirty →previous-output carryback →phase modulo →dirty setup →input copy. |
+| SV15 | 009D7738..009D788C;009E2AE4..009E2BCC | Registry update notifies recipients with previous state value and newly evaluated output value, then may decrement a retired state's reference. Later MTK4 detaches eligible active states, reverses removal order into cleanup list, and MTK5 invokes MU cleanup before its reference decrement/destruction. | Registry updates run under mutex; active-list retirement runs after unlock. Do not collapse two reference owners into one disposal. | Evaluation →registry notifications/reference release →unlock →active-list retirement →MU cleanup/reference release. |
+
+Concrete per-voice setter/publication and stop interfaces now join the shared evaluator. Q15 modulation coverage remains PARTIAL until all retained trigger/setup/consumer steps are reconciled; no whole-path status upgrade is made.
