@@ -82,7 +82,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-073 | 122 | PARTIAL |
 | Q14-074 | 123 | NOT DONE |
 | Q14-075 | 124 | PARTIAL |
-| Q14-076 | 125 | NOT DONE |
+| Q14-076 | 125 | PARTIAL |
 | Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | PARTIAL |
 | Q14-079 | 128 | PARTIAL |
@@ -602,7 +602,7 @@ PARTIAL: TH8, NF1–NF5 and VS1–VS17 establish Perform/render voice order, thr
 
 > | C31.1 R1.1–R1.14 / media-table writer and manager census | M6-025,M6-024 | **KEEP** | 0x00A1EC54;0x009BB320;0x009BB1F8;0x00A01EF4;0x00A028F0..0x00A02938;0x00A04D48;0x009B49A4 | Pointers/size/bank ownership, table population and caller gates are loading/lifetime; C32 closes extraction claims, independent verification remains. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MR1–6 in `20261007-sound-keep-rows.md` reopen the complete caller-local A01EF4 media-rebinding contract, including source identity, callbacks, failure cleanup and cursor-before-release/publication. Media-table population/caller census and the other named manager bodies remain open. The narrow D2 obligation is Q14-077, already CHECKED; these caller rows do not settle full M6-025.
 
 ## Q14-077 — triage line 126
 
