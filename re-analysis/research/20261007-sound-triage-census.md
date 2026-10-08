@@ -1241,3 +1241,7 @@ PD178A–E settle identity/type gates, pause increment and resume override-byte/
 ### Checkpoint 179 — continuous action3 choice-list decisions
 
 CA179A–D trace250/254 lookup/gates, last-entry list walk and ancestry break, exact200/244 candidate test/store order, CW8 state-owner removal and retained list replacement, saved lookuprelease beforebasequeue4. Known PR161/CW8/CW9/CO155 local recipients stay positive. State-owner virtual13C, full writers/families and queue4 consumer remain; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 180 — type4 primary/secondary source control
+
+VF180A–D positively join HP6–9 queue4 and NS3 secondaryclose; bind streamedADPCM/Vorbis38, trace looplimit u16publication and zero streamsettings endword withreturn1, and Vorbisfirst-iteration CE→9E. VR173D closesknownvoice48 fallback. Otherfamilies/close/destructors/controlwriters remain; no totals/Q15/fidelity/production changes.
