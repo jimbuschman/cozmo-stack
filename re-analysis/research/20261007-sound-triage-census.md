@@ -85,7 +85,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-076 | 125 | NOT DONE |
 | Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | PARTIAL |
-| Q14-079 | 128 | NOT DONE |
+| Q14-079 | 128 | PARTIAL |
 | Q14-080 | 129 | NOT DONE |
 | Q14-081 | 130 | NOT DONE |
 | Q14-082 | 131 | CHECKED |
@@ -610,7 +610,7 @@ PARTIAL: VF1–VF9 expose wrapper type/flag raw gates, concrete construction/Ini
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VF6–VF9 and WV1–WV10 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. Remaining: wrapper virtual38/3C Execute routing, selected plug-in target closure, bypass writers and A0EDB0 detach recipients; no wholesale DSP exemption.
 
 ## Q14-080 — triage line 129
 
