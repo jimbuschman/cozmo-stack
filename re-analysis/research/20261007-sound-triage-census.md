@@ -1359,3 +1359,7 @@ DV206A–D identify two shipped AEABI provider candidates, exact wrapper/zero-ha
 ### Checkpoint 207 — second shipped seek quotient candidate
 
 AC207A–C trace acatts signed/unsigned denominator-high0 quotient controls and local uidiv/mod helpers, with exact engine call-site reachability. Nonzero-high generic branches not claimed. Process binding/full parameter-writer/source closure remains; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 208 — seek-rate references/reconciliation
+
+RC208A records 45 bounded ARM PC-relative candidates and already-positive SetRate/SetFrame stores; explicitly retains Z5 other-base/default producer and alias/Thumb/indirect gaps. NP199B/SC197E now point to shipped candidate division bodies, retaining process-binding uncertainty. No totals/Q15/fidelity/production changes.

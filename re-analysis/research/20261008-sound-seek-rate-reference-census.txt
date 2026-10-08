@@ -1,0 +1,97 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Targets: rate GOT1040068; shared rate/frame/timing block105243C..105244C
+candidate literal-load 009825B4 reg14 word[009826A0]=006BDA98; join009825C8 raw=E79FE00E -> 01040068
+  local-memory 009825D4: ldr ip, [lr]
+candidate literal-load 009826E0 reg7 word[009828C0]=006BD970; join009826F0 raw=E79F7007 -> 01040068
+  local-memory 009826F8: vldr s15, [r7]
+candidate literal-load 00982AAC reg4 word[00982B20]=006BD5A8; join00982AB8 raw=E79F4004 -> 01040068
+  local-memory 00982AC0: ldr ip, [r4]
+candidate literal-load 00982BD8 reg12 word[00982D30]=006BD474; join00982BEC raw=E79FC00C -> 01040068
+  local-memory 00982BFC: ldr r3, [ip]
+candidate literal-load 00982D64 reg12 word[00982DD8]=006BD2E4; join00982D7C raw=E79FC00C -> 01040068
+  local-memory 00982D84: ldr ip, [ip]
+candidate literal-load 0098389C reg1 word[00983A14]=006BC7B4; join009838AC raw=E79F1001 -> 01040068
+  local-memory 009838B8: ldr ip, [r1]
+candidate literal-load 00987444 reg3 word[00987538]=006B8C0C; join00987454 raw=E79F3003 -> 01040068
+  local-memory 00987464: ldr r3, [r3]
+candidate literal-load 00989F8C reg1 word[00989FE0]=006B60C8; join00989F98 raw=E79F1001 -> 01040068
+  local-memory 00989FA0: ldr r1, [r1]
+candidate literal-load 0098A190 reg12 word[0098A320]=006B5EC0; join0098A1A0 raw=E79FC00C -> 01040068
+  local-memory 0098A1B0: ldr ip, [ip]
+candidate literal-load 0098C308 reg3 word[0098C3A0]=006B3D44; join0098C31C raw=E79F3003 -> 01040068
+  local-memory 0098C330: ldr r3, [r3]
+candidate literal-load 0098CB10 reg3 word[0098CB98]=006B3548; join0098CB18 raw=E79F3003 -> 01040068
+  local-memory 0098CB20: ldr r3, [r3]
+candidate literal-load 0098CB74 reg3 word[0098CB9C]=006B34E0; join0098CB80 raw=E79F3003 -> 01040068
+candidate literal-load 0098D7EC reg12 word[0098D850]=006B2864; join0098D7FC raw=E79FC00C -> 01040068
+  local-memory 0098D814: ldr ip, [ip]
+candidate literal-load 0098D890 reg1 word[0098D948]=006B27C0; join0098D8A0 raw=E79F1001 -> 01040068
+  local-memory 0098D8A8: ldr r8, [r1]
+candidate literal-load 0098FA58 reg12 word[0098FAF0]=006B05F8; join0098FA68 raw=E79FC00C -> 01040068
+  local-memory 0098FA7C: ldr ip, [ip]
+candidate literal-load 00990FFC reg12 word[009910AC]=006AF04C; join00991014 raw=E79FC00C -> 01040068
+  local-memory 00991024: ldr r8, [ip]
+candidate literal-load 0099110C reg3 word[009912C8]=006AEF48; join00991118 raw=E79F3003 -> 01040068
+  local-memory 00991128: ldr r3, [r3]
+candidate literal-load 009920C4 reg3 word[00992174]=006ADF8C; join009920D4 raw=E79F3003 -> 01040068
+  local-memory 009920E0: ldr r3, [r3]
+candidate literal-load 009927E8 reg12 word[00992878]=006AD860; join00992800 raw=E79FC00C -> 01040068
+  local-memory 00992814: ldr r6, [ip]
+candidate literal-load 00992B1C reg12 word[00992BCC]=006AD52C; join00992B34 raw=E79FC00C -> 01040068
+  local-memory 00992B44: ldr r8, [ip]
+candidate literal-load 00993550 reg12 word[009935E8]=006ACAF4; join0099356C raw=E79FC00C -> 01040068
+  local-memory 00993584: ldr r6, [ip]
+candidate literal-load 00999554 reg1 word[009996F0]=006A6AF4; join0099956C raw=E79F1001 -> 01040068
+  local-memory 0099957C: ldr lr, [r1]
+candidate literal-load 00999E38 reg4 word[00999F28]=006A6210; join00999E50 raw=E79F4004 -> 01040068
+  local-memory 00999E5C: ldr ip, [r4]
+candidate literal-load 0099A1C4 reg1 word[0099A470]=006A5E88; join0099A1D8 raw=E79F1001 -> 01040068
+  local-memory 0099A1E8: ldr r5, [r1]
+candidate literal-load 0099F104 reg2 word[0099F12C]=006A0F54; join0099F10C raw=E79F2002 -> 01040068
+  local-memory 0099F114: ldr r2, [r2]
+candidate literal-load 009A6C34 reg3 word[009A6C44]=00699428; join009A6C38 raw=E79F3003 -> 01040068
+  local-memory 009A6C3C: ldr r0, [r3]
+candidate literal-load 009C4094 reg1 word[009C4344]=0067BFBC; join009C40A4 raw=E79F1001 -> 01040068
+  local-memory 009C40AC: ldr ip, [r1]
+candidate literal-load 009E2098 reg3 word[009E2140]=0065DFBC; join009E20A4 raw=E79F3003 -> 01040068
+  local-memory 009E20A8: ldr r3, [r3]
+candidate literal-load 009E9528 reg2 word[009E9560]=00656B28; join009E9538 raw=E79F2002 -> 01040068
+  local-memory 009E953C: ldr r2, [r2]
+candidate literal-load 009E9D80 reg2 word[009E9DB4]=006562D0; join009E9D90 raw=E79F2002 -> 01040068
+  local-memory 009E9D94: ldr r2, [r2]
+candidate literal-load 009EE004 reg2 word[009EE0CC]=00652048; join009EE018 raw=E79F2002 -> 01040068
+  local-memory 009EE01C: ldr r2, [r2]
+candidate literal-load 009EECDC reg3 word[009EED88]=00651378; join009EECE8 raw=E79F3003 -> 01040068
+  local-memory 009EECEC: ldr r3, [r3]
+candidate literal-load 009FF5E8 reg12 word[009FF648]=00640A6C; join009FF5F4 raw=E79FC00C -> 01040068
+  local-memory 009FF608: ldr ip, [ip]
+candidate literal-load 00A0A168 reg3 word[00A0A360]=00635EE8; join00A0A178 raw=E79F3003 -> 01040068
+  local-memory 00A0A184: ldr r3, [r3]
+candidate literal-load 00A1C75C reg3 word[00A1C7D0]=00635CC8; join00A1C76C raw=E08F3003 -> 0105243C
+  local-memory 00A1C778: vldr s15, [r3, #4]
+  local-memory 00A1C784: str r0, [r3]
+  local-memory 00A1C794: str r2, [r3, #0x10]
+candidate literal-load 00A1C7D4 reg3 word[00A1C828]=00635C54; join00A1C7E0 raw=E08F3003 -> 0105243C
+  local-memory 00A1C7E4: vldr s13, [r3]
+  local-memory 00A1C7E8: str r0, [r3, #4]
+  local-memory 00A1C818: vstr s13, [r3, #8]
+  local-memory 00A1C81C: vstr s14, [r3, #0xc]
+candidate literal-load 00A1CDA0 reg1 word[00A1CF7C]=006232AC; join00A1CDB4 raw=E79F1001 -> 01040068
+  local-memory 00A1CDC8: ldr lr, [r1]
+candidate literal-load 00A3CDA4 reg3 word[00A3CE28]=006032B0; join00A3CDB0 raw=E79F3003 -> 01040068
+  local-memory 00A3CDB8: ldr r3, [r3]
+candidate literal-load 00A43098 reg3 word[00A431A0]=005FCFC0; join00A430A0 raw=E79F3003 -> 01040068
+  local-memory 00A430A4: ldr r1, [r3]
+candidate literal-load 00A4F7B4 reg3 word[00A4F9AC]=005F0894; join00A4F7CC raw=E79F3003 -> 01040068
+  local-memory 00A4F7D8: ldr lr, [r3]
+candidate literal-load 00A73860 reg2 word[00A73918]=005CC7F0; join00A73870 raw=E79F2002 -> 01040068
+  local-memory 00A73878: ldr r2, [r2]
+candidate literal-load 00A78318 reg2 word[00A783B0]=005C7D40; join00A78320 raw=E79F2002 -> 01040068
+  local-memory 00A78328: ldr r2, [r2]
+candidate literal-load 00A78AC8 reg9 word[00A78BAC]=005C757C; join00A78AE4 raw=E79F9009 -> 01040068
+  local-memory 00A78AF8: ldr sb, [sb]
+candidate literal-load 00A7A3FC reg3 word[00A7A4A8]=005C5C5C; join00A7A404 raw=E79F3003 -> 01040068
+  local-memory 00A7A408: vldr s14, [r3]
+candidate literal-load 00A7A4D8 reg3 word[00A7A580]=005C5B80; join00A7A4E0 raw=E79F3003 -> 01040068
+  local-memory 00A7A4E4: vldr s14, [r3]
+LIMIT: ARM candidate pattern only, 64-byte join window and register-kill filtering; no indirect/Thumb/MOVW/MOVT/other-base absence claim.
