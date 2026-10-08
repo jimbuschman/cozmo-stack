@@ -1297,3 +1297,7 @@ CI192A–C bindcreationrateinputto105243C andDG6voiceEC, positiveRS1 tovoicequer
 ### Checkpoint 193 — grouped preparation/start transitions
 
 PF193A–C tracefailureentryremoval/restartfromlivehead, sticky3F-groupdeferwithpreparedflagretention, andtype0start/type1start-thenstandard4Cpause. NS7/VR173D/PN177/SN183 localrecipientspositive. Fullclock/flag/frame/producer/familyclosure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 194 — type5 notification/holder binding
+
+N5194A–D trace index5→standard58, E0/E4 special context clearing versus primary/readiness gates, linked flag propagation between holder callbacks, exact result fallback, and constructor/GOT/wrapper bindings. Underlying holder4 and writer/producer/frame closure remain PARTIAL; no totals/Q15/fidelity/production changes.
