@@ -172,7 +172,7 @@ PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel 
 
 > | M6-004 | **KEEP** | 0x00A46D80..0x00A46D88;0x00A47038;0x00A47384;0x00A47178;0x00A52D4C | Format/rate/channel writers, initial phase, pitch/ramp scheduling, input consumed/output produced, zero-input results and live wiring stay exact. |
 
-PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. Integer/multi-channel ramp bodies, complete format writers and next-source wiring remain open; not a completed M6-004 port.
+PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. Integer/multi-channel ramp geometry, complete format writers and next-source wiring remain open; not a completed M6-004 port.
 
 ## Q14-006 — triage line 39
 
@@ -616,7 +616,7 @@ PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset 
 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
-PARTIAL: B7–B12/B19–B20 and CP1–CP9 cover compressor creation/parameters/Init/Reset/Term and identified Execute partition. VF1–VF5 cover voice Init anchor. Remaining production initial-format stage A47038 and metadata/bypass producer closure; no automatic settling of the records.
+PARTIAL: B7–B12/B19–B20 and CP1–CP9 cover compressor creation/parameters/Init/Reset/Term and identified Execute partition. VF1–VF5 cover voice Init anchor. RS1–RS8 additionally close A47038 and late-stage initialization recipients. Remaining metadata registry/bypass producer and full source-path closure; no automatic settling of the records.
 
 ## Q14-081 — triage line 130
 
