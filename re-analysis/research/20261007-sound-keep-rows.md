@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 170 — concrete PBI resume callbacks and control gain
+
+Primary: `20261008-sound-pbi-resume-binding-native.txt`, `20261008-sound-pbi-resume-slots.txt`, `20261008-sound-pbi-resume-callback-native.txt`; same engine SHA256. Positive NR169 virtual4C/30. Constructor stores and relocated slots govern bindings; no generic destructor assumption. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PB170A | 00A000E8..00A00120;00A00150..00A00184;00A6A880..00A6A8D0;0103B798/0103B7B4/0103D3E0/0103D3FC | Base ctorA000E8 first installs temporary10398E8, then atA00174 installs103B768; continuous ctorA6A880 calls it then installs103D3B0. Both tables30=9FF368,4C=9FF6B8. Derived constructor also publishes choice list1FC fromrequest78.C before optional CO155 retain. | This closes NR169 callbacks for these two concrete families only. Other derived families require constructor evidence. | Base → derived table → matching known callbacks → NR169 dispatch. | Larger ctor fields/count writers remain separate; local binding is not entire ctor recovery. |
+| PB170B | 009FF6B8..009FF724 | Virtual4C returns if PBI1BCbit5 set; else returns if bit7 clear. Otherwise9BDA28(PBI+C), optional34 owner9E80E8, reload1BC clearbit7/store,9D3558(type3,PBI). Then live144nonnull tailA366D0(manager,handle), nullreturns. | Flag gate before all notifications. Queue result ignored. 144 is reloaded after queue callback. | Context resume → attachment resume → flag clear → queue type3 → optional transition recipient. | Shared singing HP2 supplies queue publication semantics; concrete9BDA28/9E80E8/A366D0 and queue consumer remain retained Q14 decisions. |
+| PB170C | 009FF368..009FF40C | Virtual30 multiplies retained parameter entries'8 F32 values in physicalC-byte order, seed3F800000. Native wrappedcount110*12 zero uses seed1; computed endpoint arithmetic is preserved in primary capture. Then product*=PBI168; clearE9bit0; product*=PBI16C; storeF32(PBI98+PBI118)→3C; nativeLE(product,0) replaces withpositive0, unordered retains product; store40. | No finite/product clamp beyond nativeLE. Count/endpoint are raw32; no inferred length guard or per-sample loop. | Ordered parameter product → two gain factors with intervening flag clear → summed parameter publication → gain lower clamp →40. | Exact parameter/control arithmetic under ADP-1; not PCM mixing. NR169 direct path writes16C before this callback. Complete parameter/count writers and other families remain retained. |
+
+Known resume callbacks now have concrete local rows. Their context/attachment/transition recipients and queue consumption remain the next bounded decision gaps. Q14 totals unchanged; Q15 parked. No fidelity or production changes.
+
 ## Checkpoint 169 — note resume ordering and PBI resume gates
 
 Primary: `20261008-sound-note-resume-pbi-native.txt`; same engine SHA256. Shared singing PZR1/2 positively identify note resume caller; native body joins AT167's manager path. Endpoints inclusive, offsets hexadecimal.

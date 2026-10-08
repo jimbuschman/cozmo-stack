@@ -1201,3 +1201,7 @@ RS168A–C settle deadline recomputation before admission, unsigned sorted inser
 ## Decision checkpoint169 — note/PBI resume decisions
 
 NR169A–C positively join shared PZR note resume to AT167/RS168: all PBI callbacks before live note-state/action pass, nested1D4 count gate, virtual4C before descriptor branch and exact existing-transition/direct-value/duration-helper routing. Concrete PBI30/4C, count writers and broader incoming/family closure remain explicit. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint170 — concrete PBI resume callbacks
+
+PB170A–C bind base/continuous PBI30/4C through constructor stores and relocated slots, trace context/attachment resume before flag clear/type3 queue/transition callback, and exact retained-parameter product/position sum/gain lower clamp. Shared HP2 supplies queue producer, not consumer. Context/attachment/transition recipients, queue consumer and complete writers/families remain retained. No totals, Q15, fidelity or production changes.
