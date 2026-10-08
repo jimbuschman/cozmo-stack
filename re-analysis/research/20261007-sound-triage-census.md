@@ -1305,3 +1305,7 @@ N5194A–D trace index5→standard58, E0/E4 special context clearing versus prim
 ### Checkpoint 195 — predecessor release/reset chain
 
 HC195A–D bind holder4 to the last accepted effect/source-wrapper, trace concrete release/reset state and offsets, endflag result forwarding and differing small/large cache gates. Existing WV4 supplies reset chain. Source/plug-in callback/writer/frame closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 196 — source release/seek gate and monitor publication
+
+SR196A–C bind six eligible source release/reset families, pendingflag→source64/result dispatch, and codec post-result monitoring payload with explicit source identity. Remaining concrete seek recipients/writers/frame closure retained; no totals/Q15/fidelity/production changes.
