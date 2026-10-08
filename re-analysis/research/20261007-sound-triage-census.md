@@ -119,7 +119,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-110 | 159 | NOT DONE |
 | Q14-111 | 160 | CHECKED |
 | Q14-112 | 161 | CHECKED |
-| Q14-113 | 162 | NOT DONE |
+| Q14-113 | 162 | PARTIAL |
 | Q14-114 | 163 | PARTIAL |
 | Q14-115 | 164 | NOT DONE |
 | Q14-116 | 172 | NOT DONE |
@@ -814,7 +814,7 @@ CHECKED (named evaluator body): R1–R12/CL1–CL3/QE1–QE5 re-open the entire 
 
 > | C35.2 L5-01–L5-08 loader | M6-001,M6-009 | **KEEP** | 0x009F1DE0;0x00A1A338;0x00A11F98;0x00A117C8;0x00A1A160;0x00A0F990;0x00A0F07C;0x009E6EDC;0x00A11624;0x00A10C98;0x00A12244 | Key selection, point order, duplicate replace-and-append, error0x1F/allocation0x34 and unread loader/subscription bodies remain exact parsing/parameter work. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: R28–R44/AC11–AC12/LW1–LW7 cover registration/replacement, initial delivery and the newly re-opened A1A338/A11F98 wrappers and A1A160 mask-intersection tail. Full point loader/order census and source/modulator/recipient descendants still need reconciliation. Primary companion 20261007-sound-rtpc-subscription-wrapper-native.txt; no completed closure claim.
 
 ## Q14-114 — triage line 163
 
