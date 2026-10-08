@@ -1,0 +1,82 @@
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+000291FC: cbnz       r3, #0x2921c ; __aeabi_ldivmod
+000291FE: cbnz       r2, #0x2921c
+00029200: cmp        r1, #0
+00029202: it         eq
+00029204: cmpeq      r0, #0
+00029206: itt        lt
+00029208: movlt      r0, #0
+0002920A: movlt.w    r1, #-0x80000000
+0002920E: itt        gt
+00029210: mvngt      r1, #0x80000000
+00029214: movgt.w    r0, #-1
+00029218: b.w        #0x2a98c
+0002921C: sub        sp, #8
+0002921E: mov        ip, sp
+00029220: push.w     {ip, lr}
+00029224: blx        #0x5db4
+00029228: ldr.w      lr, [sp, #4]
+0002922C: add        sp, #8
+0002922E: pop        {r2, r3}
+00029230: bx         lr
+00029232: nop
+00029234: cbnz       r3, #0x2924a ; __aeabi_uldivmod
+00029236: cbnz       r2, #0x2924a
+00029238: cmp        r1, #0
+0002923A: it         eq
+0002923C: cmpeq      r0, #0
+0002923E: beq        #0x29246
+00029240: mov.w      r1, #-1
+00029244: mov        r0, r1
+00029246: b.w        #0x2a98c
+0002924A: sub        sp, #8
+0002924C: mov        ip, sp
+0002924E: push.w     {ip, lr}
+00029252: blx        #0x5dcc
+00029256: ldr.w      lr, [sp, #4]
+0002925A: add        sp, #8
+0002925C: pop        {r2, r3}
+0002925E: bx         lr
+00029260: push       {r1, lr} ; __aeabi_ldiv0
+00029262: mov.w      r0, #8
+00029266: blx        #0x5dd8
+0002926A: pop        {r1, pc}
+libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+000F44E8: cbnz       r3, #0xf4508 ; __aeabi_ldivmod
+000F44EA: cbnz       r2, #0xf4508
+000F44EC: cmp        r1, #0
+000F44EE: it         eq
+000F44F0: cmpeq      r0, #0
+000F44F2: itt        lt
+000F44F4: movlt      r0, #0
+000F44F6: movlt.w    r1, #-0x80000000
+000F44FA: itt        gt
+000F44FC: mvngt      r1, #0x80000000
+000F4500: movgt.w    r0, #-1
+000F4504: b.w        #0x3ff90
+000F4508: sub        sp, #8
+000F450A: mov        ip, sp
+000F450C: push.w     {ip, lr}
+000F4510: bl         #0xf454c
+000F4514: ldr.w      lr, [sp, #4]
+000F4518: add        sp, #8
+000F451A: pop        {r2, r3}
+000F451C: bx         lr
+000F451E: nop
+000F4520: cbnz       r3, #0xf4536 ; __aeabi_uldivmod
+000F4522: cbnz       r2, #0xf4536
+000F4524: cmp        r1, #0
+000F4526: it         eq
+000F4528: cmpeq      r0, #0
+000F452A: beq        #0xf4532
+000F452C: mov.w      r1, #-1
+000F4530: mov        r0, r1
+000F4532: b.w        #0x3ff90
+000F4536: sub        sp, #8
+000F4538: mov        ip, sp
+000F453A: push.w     {ip, lr}
+000F453E: bl         #0xf4576
+000F4542: ldr.w      lr, [sp, #4]
+000F4546: add        sp, #8
+000F4548: pop        {r2, r3}
+000F454A: bx         lr

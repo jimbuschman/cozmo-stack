@@ -1,0 +1,95 @@
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+PLT relocation 00036D8C __aeabi_ldivmod definition=000291FD
+PLT relocation 00036EC0 __aeabi_uldivmod definition=00029235
+PLT relocation 00036F5C __gnu_ldivmod_helper definition=000292E9
+PLT relocation 00036F60 __aeabi_ldiv0 definition=00029261
+PLT relocation 00036F64 __gnu_uldivmod_helper definition=00029313
+PLT relocation 00036F68 raise definition=00000000
+RANGE 000292E8:0002933A exclusive Thumb
+000292E8: push       {r3, r4, r5, r6, r7, lr}
+000292EA: mov        r4, r2
+000292EC: mov        r6, r0
+000292EE: mov        r7, r1
+000292F0: mov        r5, r3
+000292F2: blx        #0x5e20
+000292F6: mul        r3, r4, r1
+000292FA: mla        r5, r0, r5, r3
+000292FE: umull      r2, r3, r4, r0
+00029302: ldr        r4, [sp, #0x18]
+00029304: subs       r2, r6, r2
+00029306: add        r3, r5
+00029308: sbc.w      r3, r7, r3
+0002930C: strd       r2, r3, [r4]
+00029310: pop        {r3, r4, r5, r6, r7, pc}
+00029312: push       {r3, r4, r5, r6, r7, lr}
+00029314: mov        r7, r2
+00029316: mov        r4, r0
+00029318: mov        r5, r1
+0002931A: mov        r6, r3
+0002931C: blx        #0x5e2c
+00029320: umull      r2, r3, r0, r7
+00029324: muls       r6, r0, r6
+00029326: subs       r2, r4, r2
+00029328: mla        r6, r7, r1, r6
+0002932C: ldr        r4, [sp, #0x18]
+0002932E: add        r3, r6
+00029330: sbc.w      r3, r5, r3
+00029334: strd       r2, r3, [r4]
+00029338: pop        {r3, r4, r5, r6, r7, pc}
+RANGE 00005DB4:00005DE4 exclusive ARM
+00005DB4: add        ip, pc, #0, #12
+00005DB8: add        ip, ip, #0x31000
+00005DBC: ldr        pc, [ip, #0x1a0]!
+00005DC0: add        ip, pc, #0, #12
+00005DC4: add        ip, ip, #0x31000
+00005DC8: ldr        pc, [ip, #0x198]!
+00005DCC: add        ip, pc, #0, #12
+00005DD0: add        ip, ip, #0x31000
+00005DD4: ldr        pc, [ip, #0x190]!
+00005DD8: add        ip, pc, #0, #12
+00005DDC: add        ip, ip, #0x31000
+00005DE0: ldr        pc, [ip, #0x188]!
+RANGE 0002A98C:0002A990 exclusive Thumb
+0002A98C: bx         pc
+0002A98E: mov        r8, r8
+RANGE 0002A990:0002A998 exclusive ARM
+0002A990: ldr        ip, [pc]
+0002A994: add        pc, ip, pc
+libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+PLT relocation 001E4FDC raise definition=00000000
+RANGE 000F454C:000F459E exclusive Thumb
+000F454C: push       {r3, r4, r5, r6, r7, lr}
+000F454E: mov        r6, r2
+000F4550: mov        r4, r0
+000F4552: mov        r5, r1
+000F4554: mov        r7, r3
+000F4556: bl         #0xf459e
+000F455A: mul        r3, r6, r1
+000F455E: mla        r7, r0, r7, r3
+000F4562: umull      r2, r3, r6, r0
+000F4566: add        r3, r7
+000F4568: subs       r2, r4, r2
+000F456A: sbc.w      r3, r5, r3
+000F456E: ldr        r4, [sp, #0x18]
+000F4570: strd       r2, r3, [r4]
+000F4574: pop        {r3, r4, r5, r6, r7, pc}
+000F4576: push       {r3, r4, r5, r6, r7, lr}
+000F4578: mov        r6, r2
+000F457A: mov        r4, r0
+000F457C: mov        r5, r1
+000F457E: mov        r7, r3
+000F4580: bl         #0xf48d0
+000F4584: muls       r7, r0, r7
+000F4586: umull      r2, r3, r0, r6
+000F458A: mla        r7, r6, r1, r7
+000F458E: add        r3, r7
+000F4590: subs       r2, r4, r2
+000F4592: sbc.w      r3, r5, r3
+000F4596: ldr        r4, [sp, #0x18]
+000F4598: strd       r2, r3, [r4]
+000F459C: pop        {r3, r4, r5, r6, r7, pc}
+RANGE 0003FF90:0003FF9C exclusive Thumb
+0003FF90: push       {r1, lr}
+0003FF92: mov.w      r0, #8
+0003FF96: blx        #0x1fca4
+0003FF9A: pop        {r1, pc}

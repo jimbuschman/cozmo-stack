@@ -1,0 +1,15 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+DT_NEEDED libc.so, libm.so, libc++_shared.so, libGLESv2.so, liblog.so, libz.so, libDAS.so, libacattsandroid.so, libtbb.so, libopencv_calib3d.so, libopencv_core.so, libopencv_features2d.so, libopencv_flann.so, libopencv_highgui.so, libopencv_imgcodecs.so, libopencv_imgproc.so, libopencv_java3.so, libopencv_ml.so, libopencv_objdetect.so, libopencv_photo.so, libopencv_shape.so, libopencv_stitching.so, libopencv_superres.so, libopencv_video.so, libopencv_videoio.so, libopencv_videostab.so, libOpenSLES.so, libandroid.so, libstdc++.so, libdl.so
+libcozmoEngine.so __aeabi_ldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libcozmoEngine.so __aeabi_uldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libDAS.so __aeabi_ldivmod value=000291FD size=0 section=10 type=TYPE.FUNC binding=BINDING.GLOBAL
+libDAS.so __aeabi_uldivmod value=00029235 size=0 section=10 type=TYPE.FUNC binding=BINDING.GLOBAL
+libacattsandroid.so __aeabi_uldivmod value=000F4521 size=0 section=8 type=TYPE.FUNC binding=BINDING.GLOBAL
+libacattsandroid.so __aeabi_ldivmod value=000F44E9 size=0 section=8 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_core.so __aeabi_uldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_imgcodecs.so __aeabi_ldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_imgcodecs.so __aeabi_uldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_imgproc.so __aeabi_ldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_ml.so __aeabi_ldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_photo.so __aeabi_ldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL
+libopencv_photo.so __aeabi_uldivmod value=00000000 size=0 section=0 type=TYPE.FUNC binding=BINDING.GLOBAL

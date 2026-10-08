@@ -1,0 +1,189 @@
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+PLT relocation 00036F80 __divdi3 definition=0002A699
+PLT relocation 00036F84 __udivdi3 definition=0002A7A7
+RANGE 0002A698:0002A7A6 exclusive Thumb
+0002A698: cmp        r1, #0
+0002A69A: mov        ip, r1
+0002A69C: push.w     {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0002A6A0: mov        r8, r0
+0002A6A2: mov        lr, r2
+0002A6A4: mov        r6, r3
+0002A6A6: bge        #0x2a6b8
+0002A6A8: rsbs       r0, r0, #0
+0002A6AA: mov.w      r7, #-1
+0002A6AE: sbc.w      r1, r1, r1, lsl #1
+0002A6B2: mov        r8, r0
+0002A6B4: mov        ip, r1
+0002A6B6: b          #0x2a6ba
+0002A6B8: movs       r7, #0
+0002A6BA: cmp        r3, #0
+0002A6BC: bge        #0x2a6cc
+0002A6BE: rsbs       r2, r2, #0
+0002A6C0: mvn.w      r7, r7
+0002A6C4: sbc.w      r3, r3, r3, lsl #1
+0002A6C8: mov        lr, r2
+0002A6CA: mov        r6, r3
+0002A6CC: cmp        ip, r6
+0002A6CE: mov        r4, r8
+0002A6D0: it         eq
+0002A6D2: cmpeq      r8, lr
+0002A6D4: mov        r5, ip
+0002A6D6: mov        r0, lr
+0002A6D8: mov        r1, r6
+0002A6DA: blo        #0x2a782
+0002A6DC: cbz        r6, #0x2a6e4
+0002A6DE: clz        r6, r6
+0002A6E2: b          #0x2a6ea
+0002A6E4: clz        r6, lr
+0002A6E8: adds       r6, #0x20
+0002A6EA: cbz        r5, #0x2a6f2
+0002A6EC: clz        r3, r5
+0002A6F0: b          #0x2a6f8
+0002A6F2: clz        r3, r4
+0002A6F6: adds       r3, #0x20
+0002A6F8: subs       r6, r6, r3
+0002A6FA: str        r6, [sp, #4]
+0002A6FC: mov        r2, r6
+0002A6FE: blx        #0x5f88
+0002A702: cmp        r5, r1
+0002A704: mov        sl, r0
+0002A706: it         eq
+0002A708: cmpeq      r4, r0
+0002A70A: mov        fp, r1
+0002A70C: blo        #0x2a724
+0002A70E: subs       r4, r4, r0
+0002A710: mov        r2, r6
+0002A712: sbc.w      r5, r5, r1
+0002A716: movs       r0, #1
+0002A718: movs       r1, #0
+0002A71A: blx        #0x5f88
+0002A71E: mov        r2, r0
+0002A720: mov        r3, r1
+0002A722: b          #0x2a728
+0002A724: movs       r2, #0
+0002A726: movs       r3, #0
+0002A728: cbz        r6, #0x2a786
+0002A72A: lsrs.w     fp, fp, #1
+0002A72E: rrx        sl, sl
+0002A732: subs.w     r8, r4, sl
+0002A736: sbc.w      sb, r5, fp
+0002A73A: adds.w     r8, r8, r8
+0002A73E: adc.w      sb, sb, sb
+0002A742: adds.w     r8, r8, #1
+0002A746: adc        sb, sb, #0
+0002A74A: adds       r0, r4, r4
+0002A74C: adc.w      r1, r5, r5
+0002A750: cmp        r5, fp
+0002A752: it         eq
+0002A754: cmpeq      r4, sl
+0002A756: itt        hs
+0002A758: movhs      r0, r8
+0002A75A: movhs      r1, sb
+0002A75C: subs       r6, #1
+0002A75E: mov        r4, r0
+0002A760: mov        r5, r1
+0002A762: bne        #0x2a732
+0002A764: adds.w     r8, r0, r2
+0002A768: ldr        r2, [sp, #4]
+0002A76A: adc.w      sb, r1, r3
+0002A76E: blx        #0x5f94
+0002A772: ldr        r2, [sp, #4]
+0002A774: blx        #0x5f88
+0002A778: subs.w     r2, r8, r0
+0002A77C: sbc.w      r3, sb, r1
+0002A780: b          #0x2a786
+0002A782: movs       r2, #0
+0002A784: movs       r3, #0
+0002A786: adds       r0, r7, #0
+0002A788: mov.w      r1, #0
+0002A78C: it         ne
+0002A78E: movne      r0, #1
+0002A790: rsbs       r4, r0, #0
+0002A792: sbc.w      r5, r1, r1, lsl #1
+0002A796: eors       r2, r4
+0002A798: adds       r0, r0, r2
+0002A79A: eor.w      r3, r3, r5
+0002A79E: adcs       r1, r3
+0002A7A0: add        sp, #0xc
+0002A7A2: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0002A7A6:0002A86A exclusive Thumb
+0002A7A6: cmp        r1, r3
+0002A7A8: it         eq
+0002A7AA: cmpeq      r0, r2
+0002A7AC: push.w     {r3, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0002A7B0: mov        r6, r0
+0002A7B2: mov        r7, r1
+0002A7B4: blo        #0x2a862
+0002A7B6: cbz        r3, #0x2a7be
+0002A7B8: clz        r4, r3
+0002A7BC: b          #0x2a7c4
+0002A7BE: clz        r4, r2
+0002A7C2: adds       r4, #0x20
+0002A7C4: cbz        r7, #0x2a7cc
+0002A7C6: clz        r1, r7
+0002A7CA: b          #0x2a7d2
+0002A7CC: clz        r1, r6
+0002A7D0: adds       r1, #0x20
+0002A7D2: subs       r4, r4, r1
+0002A7D4: mov        r0, r2
+0002A7D6: mov        r1, r3
+0002A7D8: mov        r2, r4
+0002A7DA: mov        r5, r4
+0002A7DC: blx        #0x5f88
+0002A7E0: cmp        r7, r1
+0002A7E2: mov        sl, r0
+0002A7E4: it         eq
+0002A7E6: cmpeq      r6, r0
+0002A7E8: mov        fp, r1
+0002A7EA: blo        #0x2a7fe
+0002A7EC: subs       r6, r6, r0
+0002A7EE: mov        r2, r4
+0002A7F0: sbc.w      r7, r7, r1
+0002A7F4: movs       r0, #1
+0002A7F6: movs       r1, #0
+0002A7F8: blx        #0x5f88
+0002A7FC: b          #0x2a802
+0002A7FE: movs       r0, #0
+0002A800: movs       r1, #0
+0002A802: cbz        r4, #0x2a866
+0002A804: lsrs.w     fp, fp, #1
+0002A808: rrx        sl, sl
+0002A80C: subs.w     r8, r6, sl
+0002A810: sbc.w      sb, r7, fp
+0002A814: adds.w     r8, r8, r8
+0002A818: adc.w      sb, sb, sb
+0002A81C: adds.w     r8, r8, #1
+0002A820: adc        sb, sb, #0
+0002A824: adds       r2, r6, r6
+0002A826: adc.w      r3, r7, r7
+0002A82A: cmp        r7, fp
+0002A82C: it         eq
+0002A82E: cmpeq      r6, sl
+0002A830: itt        lo
+0002A832: movlo      r8, r2
+0002A834: movlo      sb, r3
+0002A836: subs       r4, #1
+0002A838: mov        r6, r8
+0002A83A: mov        r7, sb
+0002A83C: bne        #0x2a80c
+0002A83E: adds.w     sl, r8, r0
+0002A842: mov        r2, r5
+0002A844: adc.w      fp, sb, r1
+0002A848: mov        r0, r8
+0002A84A: mov        r1, sb
+0002A84C: blx        #0x5f94
+0002A850: mov        r2, r5
+0002A852: blx        #0x5f88
+0002A856: subs.w     r0, sl, r0
+0002A85A: sbc.w      r1, fp, r1
+0002A85E: pop.w      {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0002A862: movs       r0, #0
+0002A864: movs       r1, #0
+0002A866: pop.w      {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 00005E20:00005E38 exclusive ARM
+00005E20: add        ip, pc, #0, #12
+00005E24: add        ip, ip, #0x31000
+00005E28: ldr        pc, [ip, #0x158]!
+00005E2C: add        ip, pc, #0, #12
+00005E30: add        ip, ip, #0x31000
+00005E34: ldr        pc, [ip, #0x150]!

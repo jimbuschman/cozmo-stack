@@ -1351,3 +1351,7 @@ SS204A/B traceauthoredPBI150mode/pluginoutputs andsupplied-media RIFFprobe/unche
 ### Checkpoint 205 — RIFFselection/parser controls
 
 RI205A–F traceinput/header/chunkgates, firstfmt/data/cue, truncation-compatibledata return1, loop/optionalmetadataoverwrite andcue/label matching. Storagehelperdescents scopedout. ExactjoinSS204probe/full-payloadmodegate andcodecstartup; fullasset/metadata/decoder/controlwriter closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 206 — shipped seek division
+
+DV206A–D identify two shipped AEABI provider candidates, exact wrapper/zero-handler/helper boundaries and DAS quotient/shift control arithmetic. Process symbol binding and acatts core bodies remain unresolved; no phone-only equivalence or completed production claim. No totals/Q15/fidelity/production changes.
