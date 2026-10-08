@@ -1001,3 +1001,6 @@ Stream-source checkpoint: ST1–ST9 add FC open/prefetch/streamstart/result3F ga
 
 
 Setup-assembly checkpoint: PA1–PA8 close AB1C04 caller-local table/prefix/payload/refill/cache/ownership state machine, including distinct allocation-failure publication and2/3F mapping. Q14-091 stays PARTIAL pending FC render, seek and stream/cache/decoder recipient closure.
+
+
+Stream-render checkpoint: SR1–SR12 close FC readiness/render/prefix/payload/ownership/framer argument/result/emit andclosecaller rows; AB2BFC isreadiness,notseek. Q14-090/Q14-091 stillPARTIAL: headerAB12B4,pendingseekA74BA0,dynamicstream/cache/decoder/emit recipientsremain.
