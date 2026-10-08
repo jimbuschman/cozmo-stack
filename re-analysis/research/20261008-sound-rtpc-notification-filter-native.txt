@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A187F8..0x00A188F8 exclusive; ARM;
+00A187F8: ldr          r3, [r1, #0x14]
+00A187FC: push         {r4, r5, r6, r7, r8, lr}
+00A18800: cmp          r3, #0
+00A18804: sub          sp, sp, #8
+00A18808: mov          r5, r1
+00A1880C: ldr          r2, [r0, #8]
+00A18810: ldr          r6, [r0, #4]
+00A18814: beq          #0xa18824
+00A18818: ldr          r3, [r6, #0x14]
+00A1881C: cmp          r3, #0
+00A18820: beq          #0xa188a8
+00A18824: ldrb         r3, [r5, #0x10]
+00A18828: cmp          r3, #0xff
+00A1882C: beq          #0xa1883c
+00A18830: ldrb         r3, [r6, #0x10]
+00A18834: cmp          r3, #0xff
+00A18838: beq          #0xa188a8
+00A1883C: ldrb         r3, [r5, #0xc]
+00A18840: cmp          r3, #0xff
+00A18844: beq          #0xa18854
+00A18848: ldrb         r3, [r6, #0xc]
+00A1884C: cmp          r3, #0xff
+00A18850: beq          #0xa188a8
+00A18854: ldr          r3, [r5, #8]
+00A18858: cmp          r3, #0
+00A1885C: beq          #0xa1886c
+00A18860: ldr          r3, [r6, #8]
+00A18864: cmp          r3, #0
+00A18868: beq          #0xa188a8
+00A1886C: ldr          r3, [r5, #4]
+00A18870: cmp          r3, #0
+00A18874: beq          #0xa18884
+00A18878: ldr          r3, [r6, #4]
+00A1887C: cmp          r3, #0
+00A18880: beq          #0xa188a8
+00A18884: ldr          r4, [r5]
+00A18888: cmp          r4, #0
+00A1888C: beq          #0xa1889c
+00A18890: ldr          r7, [r6]
+00A18894: cmp          r7, #0
+00A18898: beq          #0xa189e0
+00A1889C: mov          r0, #0
+00A188A0: add          sp, sp, #8
+00A188A4: pop          {r4, r5, r6, r7, r8, pc}
+00A188A8: ldr          r4, [r5]
+00A188AC: cmp          r4, #0
+00A188B0: beq          #0xa1889c
+00A188B4: ldr          r8, [r2, #0x10]
+00A188B8: ldr          r7, [r6]
+00A188BC: subs         r8, r8, #1
+00A188C0: bmi          #0xa1892c
+00A188C4: ldr          lr, [r2, #0xc]
+00A188C8: mov          ip, r8
+00A188CC: mov          r1, #0
+00A188D0: rsb          r3, r1, ip
+00A188D4: add          r3, r3, r3, lsr #31
+00A188D8: add          r3, r1, r3, asr #1
+00A188DC: rsb          r2, r3, r3, lsl #3
+00A188E0: add          r2, lr, r2, lsl #2
+00A188E4: ldr          r0, [r2, #0x18]
+00A188E8: cmp          r0, r4
+00A188EC: subhi        ip, r3, #1
+00A188F0: bhi          #0xa188fc
+00A188F4: bhs          #0xa18938

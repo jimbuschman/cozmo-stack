@@ -1423,3 +1423,7 @@ DP222A–D trace exact word8/byteC/byte10/word14 scope selection, initial scalar
 ### Checkpoint 223 — root scope/notification snapshot
 
 NS223A–C recover root exact search andpost-store subscriber snapshot/ordered dispatcher withsaved scalar values andoptional scope descriptor. A10C84 filtering/dynamic recipient/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 224 — concrete notification filter
+
+NF224A–F bind optional stackfilter toexact scope specificity/descendant existence decisions andjoin dispatcher toalready-positive AC5–AC10. Dynamic recipients/forwarded filters/input/tree/subscription writers remain retained. No totals/Q15/fidelity/production changes.
