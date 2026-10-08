@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-six PARTIAL,52 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-three narrow obligations CHECKED, sixty-nine PARTIAL,48 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -3785,3 +3785,30 @@ Primary: `20261008-sound-node-parameter-pull-native.txt`; liveGOT1040084→read-
 | NPS3 | 009EF2A4..009EF2C4;009F04F4..009F0508;009F05C8..009F05D8;009F069C..009F06C4;009F07A8..009F07CC | Firststageproperty0continuesadditionalproperty6/flagsat9F07A8 beforereturningproperty2gate. Property2stagejoinsrequested4gate9EF2B4;3joinsrequested8gate9EF2BC;4joinsrequested20gate9EF2C4. | Do notclaimrequested1completefromNPS1–2alone: property6 andA1Cflag/N59bit5/root gatesremainitsretainedcontinuation. | Native stagejoinpreserves0/additional6 →2→3→4→20 order. | Nativebitmask/codebodiesstillreadable; missingrowsnotUNKNOWN. |
 
 NPS1–3 settleauthored/RTPCorderingandfieldassociationforthefourdirectscalarstages. Requested1'sadditionalproperty6,20branch andremainingaux/overrideparametergroupsremainretained9EF258work. No productionimplementationorfidelitysettlement.
+
+
+### EQ coefficient design VERIFY boundary and type1 association (checkpoint82)
+
+Primary: `20261008-sound-eq-coefficient-boundary-native.txt`. Thisspanwritespersistentcoefficients, notPCM; thereforeKEEP. Phoneimporttanf roundingalone isoutsidepackage/ADP-1 allowance. Currentrecords beforecomparison:
+
+> id: M9-026
+> title: The shipped parametric EQ and peak-limiter arithmetic
+> status: IMPLEMENTATION_GAP
+> evidence: ["0x00AA257C", "0x00AA2A84", "0x00AA18F4", "0x00AA0EB4", "re-analysis/inventory/M6-wwise-bank.md"]
+> unresolved: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. HP/LP coefficient association differs from the engine (0x00AA2870..0x00AA2898), one ulp at the shipped 333 Hz high-pass; the polynomials are self-declared untranscribed; the limiter release is unchecked.
+
+> id: M9-027
+> title: Robot_Bus_Eq_HiLowPass behavior at 14298 Hz and the robot output rate
+> status: IMPLEMENTATION_GAP
+> evidence: ["re-analysis/inventory/M6-wwise-bank.md", "0x00AA25E0", "Init.bnk Robot_Bus_Eq_HiLowPass settings"]
+> unresolved: The recovered EQ path caps the shipped 14298 Hz low-pass only at the stack's current 22320 Hz render rate; the engine runs the Robot_Bus_1 EQ/limiter at the 48000 Hz Wwise mix rate where the band is in-band, with the Hijack resampling to 22320 (M6-018 / gapC 4.6/4.8). The record settles when M6-017/M6-018 move the mix to 48000 and the Hijack resamples.
+
+
+| Step | Address | Behaviour | Gates | Order / failure results | Widths / boundary |
+|---|---|---|---|---|---|
+| EQB1 | 00AA25E0..00AA2628 | Rate=F32.U32(plugin48),cap=F32(F32(rate*3F000000)*3F666666). Rawfrequencytuple8 nativeGEcap replacesfrequencywithcap;unorderedpreservesincomingfrequency. Typeu32tuple0>6 joinsstorewithlivecoeffregisters,0..6usesexactjump tableF9. Bandincomingr1unchecked. | Gaintuple4/QtupleC aren'tusedbeforetypedispatch. Capcomputedatruntime'sstoredrate, no22320substitution. | Rateconversion → twoF32multiplies → nativecap → type. | Exactconfiguration/design math; noPCMsamples. |
+| EQB2 | 00AA2848..00AA286C;004AB038..004AB040;GOT010427F4 | Type1 computesF32(cappedfrequency*40490FDB), dividesbyF32rate, sendsrawbitsr0 totanfimport4AB038→GOT10427F4 external symboltanf. Save t=resultF32. Setone3F800000,negativeTwoC0000000,denominatorregisters11/12=one. | No rate0orfinitegate; type1doesnotreadgain/Q. Importundefinedsymbolvalue0establishesphone-librarybody ratherthanshippedcoefficientloop. | Frequency*pi → dividebyrate → externaltan → rawresult/constants. | Onlyphonelibmroundingallowance; subsequent shippedassociationexact. |
+| EQB3 | 00AA2870..00AA289C | q=F32(t*t); h=F32(t*3FB504F3); u=F32(q+one); denom=F32(h+u); n=F32(one/denom); b=F32(n*negativeTwo); z=F32(q-one); a=VNMUL.F32(b,z); c=F32(u-h); c=F32(c*n); register14=n,13=b,16=a,15=c,10=n,11=one; branchstore. | **q andh calculatedseparately before(q+1), thenh+u**. No expressionreassociation to(t*t+sqrt2*t)+1 orF64denominator. | Square/product → q+one → h+u → reciprocal → b/z/a/c → store. | Exactbitconstants/association; retainedone-ulp designwork isKEEP, notper-sampleDROP. |
+| EQB4 | 00AA272C..00AA2770 | B=plugin+20*band. Compute14/11 andstoreB4; negate16then16/11; compute13/11 andstoreB8; negate15then15/11; storeB10=16; restorecallee-savedFPregisters; compute10/11,storeB14=15thenBC=result. | Dividesbyone stilloccurin type1path. Storeorder4,8,10,14,C, **notascendingcoefficientorder**. Out-of-rangetypeusesliveinputsnotinitializedhere. | Address → normalizedfeedforward/feedbackops → orderedpersistentstores →return. | These areconfigurationstate, notPCMbuffer; no equivalentfilterdesignclaim. |
+
+Q14-062 CHECKED foritsnarrowVERIFYobligation: theidentifiedAA2870..AA2898spanisKEEP persistentcoefficientdesign, withtype1rowsandactualtanfimport/storeboundary. ItdoesnotsettlewholeM9-026. Q14-061/063/064 PARTIAL: F1–15/EQB1–4 supplyselection/settings/cap anddesignboundary, butwholeFXchainliveparameterwriters, remainingtype-specificformulas/callergeometry andhandoffclosure remainindependentwork. No whole-recordDROP, equivalencetestclaimorproductionchange.

@@ -1,0 +1,84 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00AA2848..0x00AA28A0 exclusive; ARM;
+00AA2848: vldr         s15, [pc, #0xf8] ; word[00AA2948]=40490FDB
+00AA284C: vldr         s17, [pc, #0xf8] ; word[00AA294C]=3FB504F3
+00AA2850: vmul.f32     s18, s18, s15
+00AA2854: vdiv.f32     s15, s18, s12
+00AA2858: vmov         r0, s15
+00AA285C: bl           #0x4ab038
+00AA2860: vmov.f32     s12, #1.000000e+00
+00AA2864: vmov.f32     s13, #-2.000000e+00
+00AA2868: vmov.f32     s11, s12
+00AA286C: vmov         s15, r0
+00AA2870: vmul.f32     s16, s15, s15
+00AA2874: vmul.f32     s17, s15, s17
+00AA2878: vadd.f32     s15, s16, s12
+00AA287C: vadd.f32     s14, s17, s15
+00AA2880: vdiv.f32     s14, s12, s14
+00AA2884: vmul.f32     s13, s14, s13
+00AA2888: vsub.f32     s16, s16, s12
+00AA288C: vsub.f32     s15, s15, s17
+00AA2890: vmov.f32     s10, s14
+00AA2894: vnmul.f32    s16, s13, s16
+00AA2898: vmul.f32     s15, s15, s14
+00AA289C: b            #0xaa272c
+RANGE 0x00AA25E0..0x00AA2648 exclusive; ARM;
+00AA25E0: vldr         s12, [r0, #0x48]
+00AA25E4: push         {r4, r5, r6, lr}
+00AA25E8: mov          r4, r0
+00AA25EC: vpush        {d8, d9, d10}
+00AA25F0: mov          r6, r2
+00AA25F4: ldr          r3, [r2]
+00AA25F8: mov          r5, r1
+00AA25FC: vmov.f32     s17, #5.000000e-01
+00AA2600: vldr         s9, [pc, #0x33c] ; word[00AA2944]=3F666666
+00AA2604: vldr         s18, [r2, #8]
+00AA2608: vcvt.f32.u32 s12, s12
+00AA260C: vmul.f32     s17, s12, s17
+00AA2610: vmul.f32     s17, s17, s9
+00AA2614: vcmp.f32     s18, s17
+00AA2618: vmrs         apsr_nzcv, fpscr
+00AA261C: vmovge.f32   s18, s17
+00AA2620: cmp          r3, #6
+00AA2624: addls        pc, pc, r3, lsl #2
+00AA2628: b            #0xaa272c
+00AA262C: b            #0xaa27f0
+00AA2630: b            #0xaa2848
+00AA2634: b            #0xaa28a0
+00AA2638: b            #0xaa28f0
+00AA263C: b            #0xaa2648
+00AA2640: b            #0xaa295c
+00AA2644: b            #0xaa2774
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00AA272C..0x00AA2774 exclusive; ARM;
+00AA272C: add          r5, r5, r5, lsl #2
+00AA2730: add          r3, r4, r5, lsl #2
+00AA2734: mov          r2, r3
+00AA2738: vdiv.f32     s14, s14, s11
+00AA273C: vneg.f32     s16, s16
+00AA2740: vmov         r1, s14
+00AA2744: vdiv.f32     s16, s16, s11
+00AA2748: str          r1, [r2, #4]!
+00AA274C: vdiv.f32     s13, s13, s11
+00AA2750: vneg.f32     s15, s15
+00AA2754: vstr         s13, [r2, #4]
+00AA2758: vdiv.f32     s15, s15, s11
+00AA275C: vstr         s16, [r3, #0x10]
+00AA2760: vpop         {d8, d9, d10}
+00AA2764: vdiv.f32     s11, s10, s11
+00AA2768: vstr         s15, [r3, #0x14]
+00AA276C: vstr         s11, [r3, #0xc]
+00AA2770: pop          {r4, r5, r6, pc}
+00AA2944: raw=3F666666 relocated=3F666666
+00AA2948: raw=40490FDB relocated=40490FDB
+00AA294C: raw=3FB504F3 relocated=3FB504F3
+00AA2950: raw=3CCCCCCD relocated=3CCCCCCD
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004AB038..0x004AB044 exclusive; ARM;
+004AB038: add          ip, pc, #0xb00000
+004AB03C: add          ip, ip, #0x97000
+004AB040: ldr          pc, [ip, #0x7b4]!
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+010427F4: raw=004A4010 relocated=00000000 tanf

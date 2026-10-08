@@ -67,10 +67,10 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-058 | 97 | CHECKED |
 | Q14-059 | 98 | PARTIAL |
 | Q14-060 | 99 | PARTIAL |
-| Q14-061 | 100 | NOT DONE |
-| Q14-062 | 102 | NOT DONE |
-| Q14-063 | 104 | NOT DONE |
-| Q14-064 | 106 | NOT DONE |
+| Q14-061 | 100 | PARTIAL |
+| Q14-062 | 102 | CHECKED |
+| Q14-063 | 104 | PARTIAL |
+| Q14-064 | 106 | PARTIAL |
 | Q14-065 | 107 | PARTIAL |
 | Q14-066 | 115 | PARTIAL |
 | Q14-067 | 116 | NOT DONE |
@@ -512,25 +512,25 @@ PARTIAL: Q15 MG/MI/LP1–12 establish LFO choice, mode/phase, raw constants and 
 
 > | M9-026 | **KEEP** | 0x00AA257C;0x00AA18F4;0x00AA19CC | EQ/limiter selection, frequency/Q/gain and attack/release/channel settings remain exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
 
 ## Q14-062 — triage line 102
 
 > | M9-026 | **VERIFY** | 0x00AA2870..0x00AA2898 | Establish the coefficient-design boundary before changing the reported one-ulp association: this is not certified pure per-sample math, and parameter/state decisions remain KEEP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: EQB1–4 independently reopen AA2870..AA2898 in its type1caller/storecontext. KEEP persistentcoefficientdesign; onlytanfphonelibmroundingexternal. NoPCMloop/samplegeometryorwhole-recordDROP.
 
 ## Q14-063 — triage line 104
 
 > | M9-027 | **KEEP** | 0x00AA25E0;0x00A57724;0x008DBFE8 | 14298-Hz band, 48000 mix format and 22320 Hijack handoff are parameters/routing, so a 22320-Hz upstream clamp remains wrong under ADP-1. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
 
 ## Q14-064 — triage line 106
 
 > | M9-027 | **VERIFY** | 0x00AA25E0 | Establish coefficient-design arithmetic versus parameter/type/state writes before granting equivalence; the sample-loop exception alone does not settle this initializer. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
 
 ## Q14-065 — triage line 107
 
