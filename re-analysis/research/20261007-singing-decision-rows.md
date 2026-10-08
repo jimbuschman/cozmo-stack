@@ -353,6 +353,22 @@ Primary companion: `20261007-singing-playlist-selector-native.txt`. These are th
 
 The chooser now exposes the exact weighted/unweighted RNG and bitmap precedence. The selected-state updater994EB8 and state construction still must be joined; returning a selected child without those effects would omit avoid-repeat/shuffle state.
 
+## Checkpoint 16 — playlist selected-state update
+
+Companion: `20261007-singing-playlist-choice-state-native.txt`. PR5's state updater994EB8 is reopened, including growth/failure paths. I=iterator,N=node,S=selected state,k=selected index; widths as above.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PU1 | 00994EB8..00994EE8;00995040..00995048 | If I2Cbit0 and N28==S call994C48(I,N,S) before subsequent eligibility/state updates. Otherwise skip. | Exact pointer equality, not node ID. | Optional refresh→N2D branch. | Refresh recipient remains required. |
+| PU2 | 00994EE8..00994F18;00995258..00995270;00A06A84..00A06AA0 | N2Dzero: if S1C bitmap bitk clear, setbit then decrementS.Eu16; alreadyset leavesE. If N30zero return; nonzero continuesPU5. | Duplicate bitmap eligibility affects E once. | Bitmap→remaining count→optional exclusion update. | No randomdraw or float. |
+| PU3 | 00994F1C..00994F60;00994F90..00994FB8 | N2Dnonzero: limit=N30u16, substituting1 for0. Read childweight=N18[k].14. DecrementS.C andS.Eu16, subtractweight fromS8; set S1Cbitk. Append k to exclusion arrayPU4, setS20bitk. Effective limit=min(limit,low16(N1C−1)); if exclusioncount<=limit return. | State/count/weight changes occur before append allocation can fail. | Counters→weight→playedbitmap→append→excludedbitmap→limitgate. | No failure rollback inferred. |
+| PU4 | 00994F64..00994F8C;0099504C..00995254;00995290..009952A8;00995380..0099558C;00995368..00995374 | Exclusion array S10/count14/capacity18. Spare capacity incrementscount before writing u16k. Full capacity allocates(capacity+1)*2, copies old u16 entries, frees old array, publishes base/capacity, then appends if newcapacity>oldcount. Nullallocation or native null append-address gate setsS.E=0 andreturns. | No propagation of error result toPR5; failed append leaves earlier PU3/PU5 changes. | Allocation→copy→free→publish→count→entry, orEzero. | NEON/scalar copy variants carry the same array entries; allocation/lifetime remains exact. |
+| PU5 | 00995274..009952F0 | N2Dzero,N30nonzero: decrementS.Cu16 before append. Appendk, setS20bitk, subtractchildweight fromS8. Limit=min(N30,low16(N1C−1)); count<=limit returns. | Different bitmap/count order fromPU3; don't merge branches into one unordered update. | Count→append→excludedbitmap→weight→limit. | All integer widths; no per-sampleDSP. |
+| PU6 | 00994FBC..00995034 | N2Dnonnull over-limit: saveoldestindex, shift remaining u16 entries left via memmove, decrementcount, clearS20bitoldest. If S1Cbitoldestset return; otherwise incrementS.Cu16 and addoldestchildweight toS8. | Eviction makes only a never-played entry eligible again. | Arrayremove→count→excludedbitmap clear→playedbitmap test→conditionalweight/count restore. | Playedbitmap is not cleared on eviction. |
+| PU7 | 009952F4..00995364 | N2Dzero over-limit: saveoldestindex, clearS20bitoldest; restoreS.C andweight unconditionally; shiftremaining entriesleft, decrementcount. | UnlikePU6, no S1C test. | Bitmapclear→eligibility/weightrestore→arraymove→count. | Preserves avoid-repeat state for next choice; no RNG here. |
+
+The selector's post-choice changes and allocation-failure behavior are now local rows. State initialization/refresh and tree construction remain needed before the complete playlist production path is checked.
+
 ## Approved excluded branches
 
 | Branch not extracted | Census evidence | Retained work |
