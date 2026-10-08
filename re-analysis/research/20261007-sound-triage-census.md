@@ -1265,3 +1265,7 @@ VC184A–C tracefirstreusekey match/resultignored/controlflag3/return5, newvoice
 ### Checkpoint 185 — pending-start cancellation/timing
 
 PC185A–C tracecontextflag/sentinel cancelgate, exactF32frameproduct/halfround/signedcountdown update, allmatchingnotification removals beforependingvoiceunlink/deletearg0, andsavednext iteration. Thisconsumer hasnostartretry. Retirementstorage omitted perguard; fullcontextwriters/frameordering/delete remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 186 — voice deletion concrete recipients
+
+VD186A–D bindstandard44/0 andtraceTerm→livedestructor→outerfree, primary/fourprocessor/secondary close-reload-dtor-clear, exacteffect/filter/flag order, plainresource/basearray/list teardown. Incomingdeletearg hasnoeffectinsideknown44. Helper/source/processor/listfamilydescendants stayretained; no totals/Q15/fidelity/production changes.
