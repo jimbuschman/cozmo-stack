@@ -1323,3 +1323,7 @@ SC197A–E tracePCM endpoint/flag consumption, ADPCM carryclear/genericstream se
 ### Checkpoint 198 — per-item coverage reconciliation
 
 Q14-032/033/035 now explicitly map checkpoints170–197 positive creation/control/seek joins and distinguish them from the remaining production/writer/dynamic-recipient obligations. No item was promoted: 23 native CHECKED / 8 scope exclusions / 109 PARTIAL / 0 NOT DONE remains correct. Q15 stays parked. No primary body recaptured, no production/fidelity changes.
+
+### Checkpoint 199 — queue producer census/base seek
+
+NP199A–C provide seven positive direct producer sites, input-dependent0/1 publication andbase PBI20/24 exactseek value/mode/pending/markerflags beforequeue5. Continuousoverrides andfullhighercaller/writer/frameclosure retained; no totals/Q15/fidelity/production changes.

@@ -1,0 +1,12 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Direct branch targets 009D3558
+ARM candidate 009FF5E4 -> 009D3558 raw=EAFF4FDB
+ARM candidate 009FF644 -> 009D3558 raw=EAFF4FC3
+ARM candidate 009FF680 -> 009D3558 raw=EAFF4FB4
+ARM candidate 009FF704 -> 009D3558 raw=EBFF4F93
+ARM candidate 009FF7A0 -> 009D3558 raw=EBFF4F6C
+ARM candidate 00A006C4 -> 009D3558 raw=EBFF4BA3
+ARM candidate 00A006F4 -> 009D3558 raw=EBFF4B97
+Raw aligned address-valued words across file-backed LOADs (relocations/PC-relative references not excluded):
+Dynamic symbol records at target addresses:
+LIMIT: candidates require reopening; no claim excluding indirect/computed/exported calls.
