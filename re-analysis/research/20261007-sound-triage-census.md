@@ -102,9 +102,9 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-093 | 142 | PARTIAL |
 | Q14-094 | 143 | PARTIAL |
 | Q14-095 | 144 | CHECKED |
-| Q14-096 | 145 | NOT DONE |
+| Q14-096 | 145 | PARTIAL |
 | Q14-097 | 146 | PARTIAL |
-| Q14-098 | 147 | NOT DONE |
+| Q14-098 | 147 | PARTIAL |
 | Q14-099 | 148 | PARTIAL |
 | Q14-100 | 149 | NOT DONE |
 | Q14-101 | 150 | NOT DONE |
@@ -133,9 +133,9 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-124 | 180 | PARTIAL |
 | Q14-125 | 181 | PARTIAL |
 | Q14-126 | 182 | PARTIAL |
-| Q14-127 | 183 | NOT DONE |
+| Q14-127 | 183 | PARTIAL |
 | Q14-128 | 184 | PARTIAL |
-| Q14-129 | 185 | NOT DONE |
+| Q14-129 | 185 | PARTIAL |
 | Q14-130 | 186 | PARTIAL |
 | Q14-131 | 187 | PARTIAL |
 | Q14-132 | 188 | PARTIAL |
@@ -722,7 +722,7 @@ CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gate
 
 > | C33.2 stream manager/device/GetBuffer | M6-024,M6-025,M6-022 | **KEEP** | 0x009654E4;0x00961664;0x00964E4C;0x00965244;0x00961C1C;0x00961AD8;0x00964CB8;0x009657E0;0x00965B1C;0x00964D64;0x009656AC | Vtable identities, buffers, state/result codes and ownership remain exact despite external I/O completion-time inputs. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
 ## Q14-097 — triage line 146
 
@@ -734,7 +734,7 @@ PARTIAL: existing primary-backed rows VM/ST/SB/PA/SR/HS rows,NS1–NS2,SWIN1–S
 
 > | C33.4 external completion-time boundary | M6-024,M6-025; NEW external-timing record pending | **KEEP** | 0x00965B1C;0x009656AC;0x00961800;0x009713B4;0x0096FE70;0x00961C58..0x00961C70 | ADP-1 adds no timing exemption: retain the existing operator-directed OS boundary, but extract/check every shipped checkpoint/retry/cache/stale-out operation exactly. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
 ## Q14-099 — triage line 148
 
@@ -908,7 +908,7 @@ PARTIAL: existing primary-backed rows SL8–SL25,IO1–IO3 in `20261007-sound-ke
 
 > | C33.2 | M6-024,M6-025 | KEEP | 0x009656AC;0x00965B1C;0x00961C1C | Stream-manager table and GetBuffer transitive closure remain state/results. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
 ## Q14-128 — triage line 184
 
@@ -920,7 +920,7 @@ PARTIAL: existing primary-backed rows ST/SB/PA/SR/HS rows,NS2,SWIN1–SWIN5 in `
 
 > | C33.4 | M6-024,M6-025 | KEEP | 0x00965B1C;0x009656AC;0x00961C58..0x00961C70 | Existing OS timing ruling is not an instruction claim; preserve shipped checks/retry around that external input. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
 ## Q14-130 — triage line 186
 
@@ -1023,3 +1023,5 @@ Q14-066 update: SWIN1–5 independently reopen C30.1 start/readiness/window/faul
 Q14-065 update: GOR1–4 independently reopen singing wrappers and exactobject6/7 selection; M6-016 common animation/controller dispatch remains retained. Currenttotal22 CHECKED/64 PARTIAL/54 NOT DONE.
 
 Checkpoint97 reconciliation: {'CHECKED': 24, 'PARTIAL': 110, 'NOT DONE': 6}. Each promoted PARTIAL item names existing body rows and specific remaining producers/recipients. OnlyQ14-140 movesCHECKED as a positively cited higher-layer boundary. Sixitems stillNOT DONE: streammanager/device/GetBuffer096/127, externalcompletioncheckpoint098/129, I/O memory/scheduler100 and decoder/cache/emit residual101. These are explicit unread shippedcode, not UNKNOWN.
+
+Checkpoint98: fourstreambuffer/completionitemsnowPARTIAL,24 CHECKED/114 PARTIAL/2 NOT DONE. Unread100(memory/scheduler) and101(decoder/cache/emit)remainNOT DONE; nofinishclaim.
