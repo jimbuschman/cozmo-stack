@@ -1463,3 +1463,7 @@ CC232A–D trace continuous context publication/reference/count order, allocatio
 ### Checkpoint 233 — Switch association and playing work counts
 
 AS233A/B, SC233A and PW233A trace association retain/count/result decisions, collection-allocation failure continuation and existing playing-record work increment under lock. CW7 destructor reused; storage bodies excluded. Input/lifetime/end-notification closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 234 — Switch state child notification
+
+NS234A–E bind known40 slots and trace A4/type gates, all-group propagation, optional pair append with failure continuation, supplied/query/default selection and per-group flag forwarding before child release. Earlier positive selection/timing/cleanup/retirement bodies reconciled without retracing. Sound/shared40 and input/writer closure remain PARTIAL; no totals/Q15/fidelity/production changes.
