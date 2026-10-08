@@ -1447,3 +1447,7 @@ TW228A–D trace remaining9DBF78 exact/all hierarchy, parent-own-before-descenda
 ### Checkpoint 229 — generic selector parameter traversal
 
 GT229A–D trace complete9D849C selected/all selectors/leaves,parent-own-before-childcallbacks, liveend loops andnoactiveclear/prune/statusgate. TW228 concretecallbackjoin closeslocaltype3delivery; tree/active/state/subscription/input/lifetime writerclosure remains. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 230 — Switch play scope/group/history
+
+SP230A–D trace type-specificswitch/statequery, physicalexact/authoreddefault groupselection, historypair publication-before-childgate andempty/continuous admission/cleanup. Positivequery/cache/contextrecipients reused; remainingcontinuous/child/lifetime/input closure retained. No totals/Q15/fidelity/production changes.
