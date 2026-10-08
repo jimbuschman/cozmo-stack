@@ -1431,3 +1431,7 @@ NF224A–F bind optional stackfilter toexact scope specificity/descendant existe
 ### Checkpoint 225 — fixed RTPC scalar/scope recipients
 
 FR225A–C establish type0 exact three-slot write/no-op contract andtype3 scope property/key normalization/selected firstscope notification order. Reuse positive getter/lookup helpers; type3 fan-out/dispatch/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 226 — modulator child parameter fan-out
+
+MF226A–D trace parent-before-child/selected-or-all scope fan-out, exact selector/leaf gates, live loop ends anddispatch toknown LFO/envelope setters (sharedpositive SV5–SV12). Top-levelwildcards/9D9CD8/tree/input/lifetime writers remain retained. No totals/Q15/fidelity/production changes.

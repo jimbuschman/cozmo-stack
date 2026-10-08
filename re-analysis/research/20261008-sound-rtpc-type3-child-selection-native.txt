@@ -1,0 +1,129 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009DB910..0x009DBA04 exclusive; ARM;
+009DB910: beq          #0x9db9b4
+009DB914: add          sl, sl, #0x1c
+009DB918: ldrb         r3, [sl, #-4]
+009DB91C: mov          r7, sl
+009DB920: strb         r3, [r5, #8]
+009DB924: ldrb         r3, [sl, #-0x14]
+009DB928: cmp          r3, #0
+009DB92C: beq          #0x9db948
+009DB930: ldr          r0, [sl, #-0x18]
+009DB934: ldr          r1, [r4]
+009DB938: ldr          r2, [r4, #4]
+009DB93C: ldr          r3, [r0]
+009DB940: ldr          r3, [r3, #8]
+009DB944: blx          r3
+009DB948: ldr          ip, [r8, #0xc]
+009DB94C: cmp          ip, #0
+009DB950: beq          #0x9dba2c
+009DB954: ldr          r1, [sl, #-0xc]
+009DB958: subs         r1, r1, #1
+009DB95C: bmi          #0x9db998
+009DB960: ldr          lr, [sl, #-0x10]
+009DB964: mov          r2, #0
+009DB968: rsb          r3, r2, r1
+009DB96C: add          r3, r3, r3, lsr #31
+009DB970: add          r3, r2, r3, asr #1
+009DB974: add          r0, lr, r3, lsl #3
+009DB978: ldr          sb, [r0, #4]
+009DB97C: cmp          ip, sb
+009DB980: sublo        r1, r3, #1
+009DB984: blo          #0x9db990
+009DB988: bls          #0x9dba0c
+009DB98C: add          r2, r3, #1
+009DB990: cmp          r1, r2
+009DB994: bge          #0x9db968
+009DB998: ldr          r3, [r6, #-0xc]
+009DB99C: add          sl, sl, #0x1c
+009DB9A0: ldr          r2, [r6, #-0x10]
+009DB9A4: rsb          r3, r3, r3, lsl #3
+009DB9A8: add          r3, r2, r3, lsl #2
+009DB9AC: cmp          r7, r3
+009DB9B0: bne          #0x9db918
+009DB9B4: ldr          r2, [sp, #0x10]
+009DB9B8: add          r6, r6, #0x1c
+009DB9BC: ldr          r3, [r2, #-0xc]
+009DB9C0: ldr          r2, [r2, #-0x10]
+009DB9C4: rsb          r3, r3, r3, lsl #3
+009DB9C8: add          r3, r2, r3, lsl #2
+009DB9CC: ldr          r2, [sp, #0xc]
+009DB9D0: cmp          r2, r3
+009DB9D4: bne          #0x9db8cc
+009DB9D8: ldr          r2, [sp, #0x18]
+009DB9DC: ldr          r1, [sp, #0x10]
+009DB9E0: ldr          r3, [r2, #0x10]
+009DB9E4: add          r1, r1, #0x1c
+009DB9E8: ldr          r2, [r2, #0xc]
+009DB9EC: str          r1, [sp, #0x10]
+009DB9F0: rsb          r3, r3, r3, lsl #3
+009DB9F4: add          r3, r2, r3, lsl #2
+009DB9F8: ldr          r2, [sp, #0x1c]
+009DB9FC: cmp          r2, r3
+009DBA00: bne          #0x9db874
+RANGE 0x009DBC10..0x009DBD10 exclusive; ARM;
+009DBC10: add          r3, sp, #0x27
+009DBC14: ldr          r2, [sp, #0x18]
+009DBC18: str          r3, [sp, #0x1c]
+009DBC1C: add          r0, r2, #0xc
+009DBC20: mov          r2, r3
+009DBC24: bl           #0x9df04c
+009DBC28: ldrb         r3, [sp, #0x27]
+009DBC2C: cmp          r3, #0
+009DBC30: str          r0, [sp, #0xc]
+009DBC34: beq          #0x9dba04
+009DBC38: cmp          r0, #0
+009DBC3C: beq          #0x9dba04
+009DBC40: ldrb         r2, [r0, #8]
+009DBC44: ldr          r3, [r8]
+009DBC48: cmp          r2, #0
+009DBC4C: str          r3, [r5]
+009DBC50: beq          #0x9dbc64
+009DBC54: add          r0, r0, #4
+009DBC58: ldr          r1, [sp, #0x14]
+009DBC5C: mov          r2, r4
+009DBC60: bl           #0x9d5058
+009DBC64: ldrb         r1, [r8, #4]
+009DBC68: cmp          r1, #0xff
+009DBC6C: beq          #0x9dbce4
+009DBC70: ldr          r3, [sp, #0xc]
+009DBC74: ldr          r2, [r3, #0x10]
+009DBC78: subs         r2, r2, #1
+009DBC7C: bmi          #0x9dba04
+009DBC80: ldr          lr, [r3, #0xc]
+009DBC84: mov          ip, #0
+009DBC88: b            #0x9dbc98
+009DBC8C: add          ip, r3, #1
+009DBC90: cmp          r2, ip
+009DBC94: blt          #0x9dba04
+009DBC98: rsb          r3, ip, r2
+009DBC9C: add          r3, r3, r3, lsr #31
+009DBCA0: add          r3, ip, r3, asr #1
+009DBCA4: rsb          r0, r3, r3, lsl #3
+009DBCA8: add          r0, lr, r0, lsl #2
+009DBCAC: ldrb         r6, [r0, #0x18]
+009DBCB0: cmp          r1, r6
+009DBCB4: sublo        r2, r3, #1
+009DBCB8: blo          #0x9dbc90
+009DBCBC: bhi          #0x9dbc8c
+009DBCC0: mov          r3, r5
+009DBCC4: str          r4, [sp]
+009DBCC8: ldr          r2, [sp, #0x14]
+009DBCCC: strb         r1, [r3, #4]!
+009DBCD0: add          r1, r8, #8
+009DBCD4: add          r3, r3, #4
+009DBCD8: bl           #0x9d9cd8
+009DBCDC: add          sp, sp, #0x2c
+009DBCE0: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009DBCE4: ldr          r2, [sp, #0xc]
+009DBCE8: ldr          r3, [r2, #0x10]
+009DBCEC: ldr          r6, [r2, #0xc]
+009DBCF0: rsb          r3, r3, r3, lsl #3
+009DBCF4: lsls         r3, r3, #2
+009DBCF8: beq          #0x9dba04
+009DBCFC: add          r6, r6, #0x1c
+009DBD00: ldrb         r3, [r6, #-4]
+009DBD04: str          r6, [sp, #0x10]
+009DBD08: strb         r3, [r5, #4]
+009DBD0C: ldrb         r3, [r6, #-0x14]
