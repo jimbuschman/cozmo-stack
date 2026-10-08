@@ -1173,3 +1173,7 @@ PR161A–G settleA63B24's local choice-list unwind/replacement/selection/return 
 ## Decision checkpoint162 — deferred-action and pending-item release bindings
 
 DR162A–E bind known0503 table30/C/0 and pending4 from positive DA/DQ constructors: raw44-byte descriptor copy, action reference gate/registry detach before destruction, and packed object release before event release in pending cleanup. DC3/DC4 supply positive recipient joins. A63350 and other action families/producers remain retained; hash/copy/pool infrastructure excluded. No coverage promotion, Q15, fidelity or production changes.
+
+## Decision checkpoint163 — deferred-action destructor and base chain
+
+DD163A–E settle known0503 action0's ordered transition detach/clear, context/recipient release, event association detach/count gate/callback/release, retained state then choice-list cleanup, and base cleanup ending in a no-op. TT8/CX157/MF158/SN159/CO155/TD5 are positive joins. Remaining event owner0/destructor remainder and producer/family closure remain; storage-only tails excluded. No coverage promotion, Q15, fidelity or production changes.
