@@ -1269,3 +1269,7 @@ PC185A–C tracecontextflag/sentinel cancelgate, exactF32frameproduct/halfround/
 ### Checkpoint 186 — voice deletion concrete recipients
 
 VD186A–D bindstandard44/0 andtraceTerm→livedestructor→outerfree, primary/fourprocessor/secondary close-reload-dtor-clear, exacteffect/filter/flag order, plainresource/basearray/list teardown. Incomingdeletearg hasnoeffectinsideknown44. Helper/source/processor/listfamilydescendants stayretained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 187 — deletionhelper boundaries
+
+DH187A establishesA76268/A56710/A46DBC BXLR no-ops. Deletedvoice buffer/workspace reclamationA53244/A47360/A76608 is outofscope storageunderguard, no allocator/bufferfree descent. Decisioncallback/familyclosure stays PARTIAL; no totals/Q15/fidelity/production changes.

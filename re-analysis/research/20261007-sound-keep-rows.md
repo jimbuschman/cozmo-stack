@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 187 — deletion helper no-ops and storage stop boundaries
+
+Primary: `20261008-sound-voice-delete-local-helpers-native.txt`, `20261008-sound-voice-cleanup-scope-boundary-native.txt`; same engine SHA256. VD186 invokes these during known Term/plain destructor. Endpoints inclusive. Boundary reads establish local purpose; no allocator/cache descendant recovery follows.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| DH187A | 00A76268;00A56710;00A46DBC | Each named direct destructorhelper is exactlyBXLR, withno fieldwrite orcallback. VD186D's resource slots therefore do nottrigger a hidden filter/processor/resampler stop throughthese helpers. | No pointer/null/rate gate inthese threebodies. | Listedcaller order preserved; eachreturnsimmediately. | This closes threeexactlocalcallee obligations. Other source/processor/listvirtualdestructors remain separate, withno inference fromthese no-ops. |
+
+out of scope: A53244's buffer/metadata reclamation and terminal A47360 memory release during deletedvoice teardown; no allocator/bufferfree descendants traced.
+
+out of scope: A76608's two nullableworkspace-pointer releases throughglobalstorageinterfaceC followedbypointerclears; no storageinterface/allocator descendants traced.
+
+VD186's three plain-helper recipients are settled locally and memory-only cleanup descendants stop atguard. Source/processor/list decisioncallbacks andcompletefamilyclosure remain PARTIAL; totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 186 — concrete voice deletion and source/processor lifetime order
 
 Primary: `20261008-sound-delete-voice-native.txt`, `20261008-sound-delete-voice-slots.txt`, `20261008-sound-voice-delete-callbacks-native.txt`; same engine SHA256. HP6/VC184 known standardvoice table103C790; NS3 supplies A56414. PC185/VC184 positively supplydeletecaller arguments. Endpoints inclusive.
