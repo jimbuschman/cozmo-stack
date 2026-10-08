@@ -54,7 +54,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | PARTIAL |
 | Q14-047 | 85 | NOT DONE |
-| Q14-048 | 86 | NOT DONE |
+| Q14-048 | 86 | PARTIAL |
 | Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | NOT DONE |
 | Q14-051 | 90 | PARTIAL |

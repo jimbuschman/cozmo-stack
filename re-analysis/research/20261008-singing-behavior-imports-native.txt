@@ -1,0 +1,27 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004AC2F8..0x004AC304 exclusive; ARM;
+004AC2F8: add          ip, pc, #0xb00000
+004AC2FC: add          ip, ip, #0x96000
+004AC300: ldr          pc, [ip, #0xb34]!
+RANGE 0x004AC2EC..0x004AC2F8 exclusive; ARM;
+004AC2EC: add          ip, pc, #0xb00000
+004AC2F0: add          ip, ip, #0x96000
+004AC2F4: ldr          pc, [ip, #0xb3c]!
+RANGE 0x004A4F6C..0x004A4F78 exclusive; ARM;
+004A4F6C: add          ip, pc, #0xb00000
+004A4F70: add          ip, ip, #0x9b000
+004A4F74: ldr          pc, [ip, #0x83c]!
+RANGE 0x004A7B58..0x004A7B64 exclusive; ARM;
+004A7B58: add          ip, pc, #0xb00000
+004A7B5C: add          ip, ip, #0x99000
+004A7B60: ldr          pc, [ip, #0xaf4]!
+RANGE 0x004A92C8..0x004A92D4 exclusive; ARM;
+004A92C8: add          ip, pc, #0xb00000
+004A92CC: add          ip, ip, #152, #20
+004A92D0: ldr          pc, [ip, #0xb54]!
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01042E30: raw=004A4010 relocated=00599F95 _ZN4Anki5Cozmo5Audio16RobotAudioClient20PostRobotSwitchStateENS_13AudioMetaData11SwitchState15SwitchGroupTypeENS4_13GenericSwitchE
+01042E34: raw=004A4010 relocated=00599F63 _ZNK4Anki5Cozmo5Audio16RobotAudioClient18PostRobotParameterENS_13AudioMetaData13GameParameter13ParameterTypeEf
+010407B0: raw=004A4010 relocated=0084BB9D _ZN4Anki16BaseStationTimer11getInstanceEv
+01041654: raw=004A4010 relocated=0084BCC1 _ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv
+01041E24: raw=004A4010 relocated=006356AD _ZN4Anki5Cozmo18CubeAccelComponent14RemoveListenerERKNS_8ObjectIDERKNSt6__ndk110shared_ptrINS0_18CubeAccelListeners18ICubeAccelListenerEEE
