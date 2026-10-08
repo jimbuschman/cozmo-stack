@@ -1427,3 +1427,7 @@ NS223A–C recover root exact search andpost-store subscriber snapshot/ordered d
 ### Checkpoint 224 — concrete notification filter
 
 NF224A–F bind optional stackfilter toexact scope specificity/descendant existence decisions andjoin dispatcher toalready-positive AC5–AC10. Dynamic recipients/forwarded filters/input/tree/subscription writers remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 225 — fixed RTPC scalar/scope recipients
+
+FR225A–C establish type0 exact three-slot write/no-op contract andtype3 scope property/key normalization/selected firstscope notification order. Reuse positive getter/lookup helpers; type3 fan-out/dispatch/input/writer closure retained. No totals/Q15/fidelity/production changes.
