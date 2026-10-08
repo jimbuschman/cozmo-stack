@@ -1141,3 +1141,7 @@ CA153A binds five known node48 callbacks: Sound requires descriptor word5C nonze
 ## Decision checkpoint154 — choice-entry snapshot joins
 
 CJ154A settles CW10's nullable selector-count query; CJ154B/C bind both known state10 snapshots with primary captures and positive existing PK1–4 joins. Sequence ignores passed count and copies direction/index; random preserves weight/counter/bitmap/history state with exact failure publication. NR146F supplies retirement. Storage internals excluded; virtual13C/list ownership and broader decision closure retained. No coverage, Q15, production or fidelity change.
+
+## Decision checkpoint155 — choice-list and nested association retirement
+
+CO155A–D settle choice-list retain/release, association detach across all entries before per-entry state/child/node release, visible array-clear ordering and nested association decrement/stable erase. CW9/NR146/ND150 supply positive known-family recipient joins; allocator/copy internals excluded. CW8 virtual13C and producer/family closure remain; totals unchanged, no Q15 or fidelity/production changes.
