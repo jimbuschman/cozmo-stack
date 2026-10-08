@@ -1375,3 +1375,7 @@ LP210A–D establish32-byte child-record stride, mutable24-byte key, root/missin
 ### Checkpoint 211 — layer threshold nested scopes
 
 LK211A–E trace word4/word8/byteC/byte10/word14 exact/wildcard lookup, key suffix mutation and active-value fallback chain. Local scoped lookup now positive; request/play and writer/recipient closure remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 212 — layer child dispatch
+
+LC212A–E trace selected clone/control fields, special gate/context reader, normal3→1 scheduling conversion versuslive128 call, and ordered collections/reference cleanup beforecontinued childiteration. Collection publication,9EE454 anddynamic child/lifecycle/writer closure remain retained. No totals/Q15/fidelity/production changes.
