@@ -39,12 +39,12 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-030 | 68 | PARTIAL |
 | Q14-031 | 69 | PARTIAL |
 | Q14-032 | 70 | PARTIAL |
-| Q14-033 | 71 | NOT DONE |
+| Q14-033 | 71 | PARTIAL |
 | Q14-034 | 72 | NOT DONE |
-| Q14-035 | 73 | NOT DONE |
+| Q14-035 | 73 | PARTIAL |
 | Q14-036 | 74 | PARTIAL |
 | Q14-037 | 75 | NOT DONE |
-| Q14-038 | 76 | NOT DONE |
+| Q14-038 | 76 | PARTIAL |
 | Q14-039 | 77 | NOT DONE |
 | Q14-040 | 78 | NOT DONE |
 | Q14-041 | 79 | NOT DONE |
@@ -81,7 +81,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-072 | 121 | CHECKED |
 | Q14-073 | 122 | PARTIAL |
 | Q14-074 | 123 | NOT DONE |
-| Q14-075 | 124 | NOT DONE |
+| Q14-075 | 124 | PARTIAL |
 | Q14-076 | 125 | NOT DONE |
 | Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | PARTIAL |
@@ -334,7 +334,7 @@ PARTIAL: VF1–VF9 re-open complete voice FX initialization parent, mutable-form
 
 > | M6-025 | **KEEP** | 0x009EB4C8;0x00A0CA04;0x00A40940;0x009EBE38..0x009EC0F0;0x00A42210;0x00A0428C;0x00A054D8;0x00A53558;0x00A5358C;0x00A535D8;0x00A53698;0x00A22304;0x00A22684 | Indirect-caller census, initialization barrier, re-init triggers, null-parent remainder, pending-state/device-build bodies and absent field writers are state/lifetime gaps. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; VS4/VS14–VS17 trace all three direct VoiceInit callers and re-init/error gates from primary code. Remaining: indirect-caller census, null-parent and pending-state/field writer/remaining collaborator bodies.
 
 ## Q14-034 — triage line 72
 
@@ -346,7 +346,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-025 | **KEEP** | 0x00A01768;0x009BCA68;0x00A0228C;0x00A72760..0x00AB138C;0x00A56414..0x00A56468;0x009EEDA4;0x00A4C3D8..0x00A4C504;0x009EA23C | Source format writers, inaudibility/limiter decisions, source close/init ordering, route caches and device-table checks remain exact; later correction evidence does not eliminate their independent verification obligation. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VS6–VS15 trace counter/source-start gates and pointer/size forwarding, PBI virtualization transition calls and voice lazy init; DF adds device format/route invalidation. Remaining: format/route-cache writers, concrete source close/init and audibility/limiter recipients and device table traversal.
 
 ## Q14-036 — triage line 74
 
@@ -364,7 +364,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-026 | **KEEP** | 0x00A54F50..0x00A5531C;0x00A548C0;0x009C5154;0x009BC66C;0x009BE898;0x00A11F98;0x00A1E8F4;0x00A1C660;0x00A1ECBC;0x00A3E27C;0x009BDC8C;0x00A366AC;0x009BDA28;0x009E808C;0x00A0054C;0x00A3EE9C..0x00A407B0 | Remaining voice/parameter/callback/MIDI-registration stores, missing collaborators, zero-playing-id event path and choices remain decision/state/timing work; no ADP-1 release. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. Remaining: metadata/parameter/callback/MIDI/zero-playing-id collaborators and writer census in the other cited bodies.
 
 ## Q14-039 — triage line 77
 
@@ -586,7 +586,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C30 voice collaborators / C30.W | M6-016,M6-017,M6-022,M6-025,M6-026 | **KEEP** | 0x009D3CC0;0x00A43D24;0x00A39564;0x00A62A1C;0x00A4304C;0x00A44D4C;0x00A38420 | Live composition and ordered collaborators remain necessary; exact standalone components do not prove the production path. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: TH8, NF1–NF5 and VS1–VS17 establish Perform/render voice order, three prepass calls, per-voice dispatch, state-driven stop/replacement/removal and source-key insertion ordering. Remaining: complete pending/ducking/node-cleanup/Play/voice render/PBI flush recipient and production writer closure.
 
 ## Q14-076 — triage line 125
 
