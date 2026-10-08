@@ -992,3 +992,6 @@ CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gate
 
 
 Registry checkpoint: PR6–PR10 and VC6–VC10 close the registered-source query, parameter-factory result distinction, explicit registry release, and Vorbis source creator/constructor selection. Q14-090/Q14-091 remain PARTIAL; their start/render/stream and decoder descendants remain exact work. No coverage promotion from creator selection alone.
+
+
+Vorbis checkpoint: VM1–VM10 add direct-buffer source start/header/packed-format/endpoint gates, setup ownership/cursor order, pending seek consumption, bounded render/emit and close. VM1 quotes the current M6-002/M6-022 evidence before flagging reversed source-class labels. Q14-090/Q14-091 remain PARTIAL pending FC streaming and decoder descendants.
