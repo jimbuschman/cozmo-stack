@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 190 — pending-start preparation result gate and list repair
+
+Primary: `20261008-sound-pending-start-prepare-native.txt`; same engine SHA256. HP4 positively supplies same-clock preparationcaller; SWIN1–5 ownA544BC start/window/rawresult decisions; VS16/17 supplyA42DEC andVD186 supplies9D40C4. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PP190A | 00A431A8..00A431C4 | SaveincomingPBIr0/voicer1, invokeA544BC(voice,PBI). Raw3F returnimmediately, preservingpendinglist. SWIN helper startsprimaryD4 withsource-ownPBI media pointer/size, thenexactsource/start/window/offset gates; callerPBI suppliesotherwindow/controlinputs. | Preparation doesn'tnormalize3F to1 (unlikeVC184 creationadmission). No listrepair ordeleteon3F. | Exactstart/windowrecipient →3Fretainedreturn ORPP190B. | SWIN1–5 positive fulllocalcallee; sourcefamilies/globalwindowwriterclosure staysseparate. HP4 groupedready gate remainspositive. |
+| PP190B | 00A431C8..00A43258 | Non3F scanspendinghead108DA30 throughD0 byvoicepointeridentity. Foundfirst removeshead/previous andrepairs tail108DA2C; missing/empty makesnolinkchange. Then result!=1 calls9D40C4(voice,1) andreturns2; result1 tailA42DEC(voice,savedPBI),returnsrawattachresult. | Missingmembershipdoesnotskipdelete/attach. Removal occursbeforebothcallbacks. DoesnotclearvoiceD0 locally; noqueuebyte9publicationhere. | Non3F → optionalpendingunlink/tailrepair → non1delete/2 ORreadyattach/rawresult. | VD186 known44 ignoresarg1 andexactdeleteordering; VS16/17 route/init/insertionpositive. Othervoicefamilies/producer/frameorderingclosure staysPARTIAL. |
+
+Pendingpreparation nowhasexact3F retention versusnon3F unlink/attach/delete semantics, positivelyjoinedtotheexistingwindow/sourcecontracts. Fullnotificationprepareloop/callerorder/fieldwriters remainPARTIAL; totalsunchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 189 — queued type0/1 voice-creation pass and reuse-result removal
 
 Primary: `20261008-sound-queued-start-create-native.txt`; same engine SHA256. VC184 suppliesA4304C concrete resultbranches; SF10 suppliesA01800 endnotification. HP2 queueproducer andHP4/HP9 laterpreflight/dispatch remainpositive. Endpoints inclusive.

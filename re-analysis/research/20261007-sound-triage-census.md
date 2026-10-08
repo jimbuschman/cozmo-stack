@@ -1281,3 +1281,7 @@ PI188A–C tracegain/handle defaults, nested1D4=0, countdownrequest74, exactpack
 ### Checkpoint 189 — notification creation pass
 
 QC189A–C tracePBI154/type0/1 eligibility, stop/sentinel cancellationbeforecreation, exactresult1 retentionincluding3Fconversion versusreuse5/non1 removal, queuecount-beforeendnotification andfinaldirtybyteclear. Laterpreparation/producer/frameorderingclosure staysPARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 190 — pending preparation
+
+PP190A/B joinHP4 preparationtoSWIN1–5 andVS16/17/VD186: raw3F retainslist/returns3F; otherresults optionallyunlinkbeforeattachrawresult ordelete/2, evenmissingmembership. Fullproducer/frameorder/windowwriters remainPARTIAL; no totals/Q15/fidelity/production changes.
