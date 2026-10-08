@@ -96,8 +96,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-087 | 136 | NOT DONE |
 | Q14-088 | 137 | NOT DONE |
 | Q14-089 | 138 | NOT DONE |
-| Q14-090 | 139 | NOT DONE |
-| Q14-091 | 140 | NOT DONE |
+| Q14-090 | 139 | PARTIAL |
+| Q14-091 | 140 | PARTIAL |
 | Q14-092 | 141 | NOT DONE |
 | Q14-093 | 142 | NOT DONE |
 | Q14-094 | 143 | NOT DONE |
@@ -109,7 +109,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-100 | 149 | NOT DONE |
 | Q14-101 | 150 | NOT DONE |
 | Q14-102 | 151 | NOT DONE |
-| Q14-103 | 152 | NOT DONE |
+| Q14-103 | 152 | PARTIAL |
 | Q14-104 | 153 | NOT DONE |
 | Q14-105 | 154 | NOT DONE |
 | Q14-106 | 155 | CHECKED |
@@ -676,13 +676,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C32.3 S1–S7 source contracts | M6-002,M6-003,M6-022,M6-025 | **KEEP** | 0x00A562B8;0x009CC3EC;0x00AB0B20;0x00AB22D4;0x00AB12B4;0x00A7270C;0x00A73B40;0x00A72E00 | Source type writer, relocated slots, first-call/header branches, packed format fields, raw results and S4/S6 streaming behavior stay exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 construction/registration/GetInfo/type-version/Init/Reset and PBI format publication. ADPCM/Vorbis source-specific rows AH/AS/AT/AR/VI remain independently covered. Remaining registered factory9CC3EC and full codec start/header target closure.
 
 ## Q14-091 — triage line 140
 
 > | C32.3 render/stream residuals | M6-002,M6-022,M6-025 | **KEEP** | 0x00AB1C04;0x00AB2088;0x00AB2BFC;0x00AB3244;0x00AB0448;0x00AB1550;0x00A74E00;0x00A746A8;0x00A75BC4;0x00A78D10 | Data collection/decode/stream lifecycle and plug-in-source selection remain exact; C33/C36 later evidence can reduce unread work only after checking, not through ADP-1. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/destruction, duration and control virtual forwarding. Existing ADPCM render/carry rows remain mapped separately. Remaining Vorbis render/stream bodies and selected plug-in generation/seek/duration/cache recipients.
 
 ## Q14-092 — triage line 141
 
@@ -754,7 +754,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33 remaining opaque helpers / plug-in source | M6-025,M6-024; M9-005 | **VERIFY** | 0x00A059D8;0x008DA938;0x00A78D10 | Establish helper/source descendants first; keep any source generation, MIDI, callback, timing and routing contract; no pure per-sample DROP is established here. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL boundary: B17/B18 already establish notification registry/archive removal controls; SF1–SF9 now identify mode2 plug-in source construction/start/render/close as ownership/format/registration and virtual generation control. Selected plug-in descendants remain unread: no PCM-only exemption for whole source. Remaining registry writers/dynamic generation and codec recipients.
 
 ## Q14-104 — triage line 153
 
