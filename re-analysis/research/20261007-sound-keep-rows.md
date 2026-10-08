@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 182 — mode2 source type4 plug-in dispatch
+
+Primary: `20261008-sound-plugin-source-type4-slot.txt`, `20261008-sound-plugin-source-type4-native.txt`; same engine SHA256. SF1/SF2 bind mode2 source103DA28; SF3–5 positively supply source6C creation/publication/Init and SF8 close clears it. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PF182A | 0103DA60;00A782DC..00A782F8 | Mode2 source38=A782DC. Source6Cnull returnsraw2; nonnull tailplug-in.vt28(plugin), preservingrawresult. No PBI flag, looplimit orsource status write here. | VF180A calls this only under source10bit0. Return2 oranyothernon1 causesknownvoice48; exactly1 preventsfallback. | Plug-in presence → concreteinterface28 OR2 → voice result gate. | SF4 proves selected creator publishes6C, not its virtual28 behavior. Exact selectedplug-in family/28 body remains retained; no DSP or external-runtime exemption asserted fordecision callback. |
+
+This closes local mode2 type4 dispatch and null/result behavior, with concrete sourcefamily binding. The selected plug-in28 and fullregistry/source10 writer closure remain PARTIAL. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 181 — direct-buffer source type4 callbacks
 
 Primary: `20261008-sound-other-source-type4-slots.txt`, `20261008-sound-other-source-type4-native.txt`, `20261008-sound-direct-source-type4-binding-native.txt`; same engine SHA256. SF1 positively selects mode3 ADPCM A72A2C and PCM A72D04; VC10/VM1 establish direct-buffer Vorbis table103E0B8. Endpoints inclusive.
