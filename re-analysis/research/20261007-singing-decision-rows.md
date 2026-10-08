@@ -369,6 +369,20 @@ Companion: `20261007-singing-playlist-choice-state-native.txt`. PR5's state upda
 
 The selector's post-choice changes and allocation-failure behavior are now local rows. State initialization/refresh and tree construction remain needed before the complete playlist production path is checked.
 
+## Checkpoint 17 — shared playlist state allocation and snapshot refresh
+
+Companion: `20261007-singing-playlist-state-refresh-native.txt`. This extends PR1/PU1. The capture beyond994DCC is a separate sequence-selector entry, not part of994C48's return path.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PI1 | 00993AF8..00993BA8 | N28nonnull returns it immediately. N1Czero returnsnull. ModeN24==1 allocates8, initializesA06BB4, storesN28. Mode3 allocates24hex, initializesA06994(low16(N1C)), storesN28 beforeA069DC(N30). Non1 init result invokes state.vt8 then clearsN28. Other modes returnnull. | No allocation when state already exists. | Allocation→constructor→publication→random-state init→possible destruction/clear. | No RNG at these entries; concrete virtual8 cleanup remains dependency. |
+| PI2 | 00A06994..00A069D4;00A069DC..00A06A7C | Random constructor C/E=u16childcount; S4/S8=wrap32(50000*count); array10/count14/capacity18/bitmap1C/20zero. Init allocates2*ceil(E/8) bytes for both bitmaps; stores1C even on failure. Null→2; success20=base+ceil(E/8), zeroallbytes. Requested exclusioncapacity0 returns1;1..3 allocates2*requested;>3 clamps4/allocates8. Null exclusion allocation returns34hex; success storescapacity,returns1. | Bitmap allocation precedes exclusion allocation. | Constructor→bitmapallocation/publication/zero→optional exclusionarray. | Init failure cleanup is PI1 caller's virtual8; do not silently replace failure34 with2 in leaf. |
+| PI3 | 00993BAC..00993BF8 | If allocated state and N2Cbyte nonzero, sum childrenN18 array in physical order, wrapping32 child14 values; publish toS8 thenS4. Otherwise retain constructor50000*count. | Weighted total computed only on new validstate, not every retrieval. | Successful init→weightedgate→sum→currenttotal→basetotal. | No normalization or float weights. |
+| PI4 | 00994C48..00994CAC;00994D14..00994D1C | Refresh first searches I20/count24 array of8-byte node/state entries by node identity. Existing usable entry returns without cloning. Missing entry invokes source-state.vt10(source,low16(N1C)); null clone returns. | Virtual10 is a clone/snapshot boundary, not an automatic reset of shared state. | Lookup→optionalclone→nullgate→insert. | Random vtable103? binding must be derived from constructor: base101C268,slot10rawA06540; clone body remains readable dependency. |
+| PI5 | 00994CB0..00994DC4 | Recheck node map after clone. Found entry storesclone pointer atentry4. Otherwise append with countincrement beforepairwrite. Fullmap grows(capacity+1)*8, copies node/state pairs, frees oldarray, publishesI20/I28 then appends. Failure/nullappendaddress callsclone.vt8. | No local deletion of an existing state pointer beforereplacement. | Recheck→replace or grow/copy/free→publish/count/pair, orclonecleanup. | Map lifetime later remains required; no presumed global thread-safe dictionary. |
+
+These rows establish shared-state allocation and when local snapshot refresh is attempted. The clone's concrete deep-copy/bitmap behavior remains the next source dependency; no whole-playlist closure is claimed yet.
+
 ## Approved excluded branches
 
 | Branch not extracted | Census evidence | Retained work |
