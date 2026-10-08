@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 153 — concrete child admission and weight-update caller
+
+Primary: `20261008-sound-child-admission-slots.txt`, `20261008-sound-child-admission-weight-update-native.txt`; same shipped engine SHA256. C18 is a positive child virtual48 caller; PW152 supplies weight/index interfaces. Weight-update is a local writer contract; its incoming dispatch/caller census remains open, with no new shipped-input reachability claim. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| CA153A | 0103BB18/0103B8A8/0103BE10/0103CFD0/0103B098;00A1DB58..00A1DB64;00980EE0..00980EE4 | Known Sound virtual48=A1DB58 reads Sound5C and returns1 iff nonzero, else0. Known RanSeq/Switch/ActorMixer/Layer48=980EE0 returns1 immediately. No source-open, load-readiness or recursive child test. | Sound tests first source-descriptor word5C only; not pointer68 or stream-ready state. C17's one-child route bypasses this admission test. | Child resolve → C18 admission callback → accepted retained node OR rejection release/retry. | NR146G–I/ND150 supply rejection release for these families. Additional child families or resolver production census remain separate; no all-node claim. |
+| CA153B | 00A08024..00A08094 | Weight-update initializes output indexu16=0, requires node91 low3==0. Then selector68.vt28(selector,incomingID,&index). Raw0 returns; nonzero loads saved index and live selector68. Incoming weight0 returns without getter; otherwise selector.vt2C(index), equal weight returns. | No selector68 null guard. Nonzero lookup result is raw truth, not exactly1. | Mode gate → first ID-index lookup → nonzero weight gate → existing weight query → change gate. | PW152E/B bind random lookup/getter for TR14's mode0 table. Method caller/dispatch and inputs remain retained; local behavior does not establish engine use. |
+| CA153C | 00A08098..00A080C8 | Changed nonzero weight invokes selector.vt30(selector,index,weight) on saved selector pointer, then reloads node91 and sets bit3, thenA07DDC(node). No callback-result gate. Returnvoid; TR18 resets selection states and propagates reset actions. | Getter can mutate selector68; this method still uses saved selector for store, then original node for flag/reset. | Weight write → weighted flag set → ordered state reset/action recipients → return. | PW152B/TR18/RR1–8 positive joins. No immediate cached-total adjustment, RNG draw or automatic zero-weight removal invented. |
+
+CA153 closes C18's known-family child48 callbacks and rows the concrete weight-update method. Q14-008 remains PARTIAL for complete incoming caller/writer/resolver closure; totals unchanged. No Q15, production or fidelity change.
+
 ## Checkpoint 152 — playlist IDs, weights and physical index lookup
 
 Primary: `20261008-sound-playlist-values-native.txt`, `20261008-sound-playlist-value-slots.txt`; same engine SHA256. Positive TR14 constructor tables101C570/103D5E0, C5/C13/C23/C24 weight consumers and ND150 playlist lifetime. Integer NEON reduction produces a selection parameter; ADP-1 does not exclude it. Endpoints inclusive.

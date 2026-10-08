@@ -1133,3 +1133,7 @@ ID151A/B finish the local9F4D40 decision tail: visible buffer/list clears, embed
 ## Decision checkpoint152 — concrete playlist values
 
 PW152A–F positively bind raw count/ID/weight readers, random weight setter versus sequence fixed50000/no-op, integer vector/scalar total-weight reduction and first physical ID-index lookup. Existing TR14–18/ND150 supply constructor, append, reset and retirement joins. Q14-008's stale unread-playlist request is narrowed to full caller/writer/child-admission closure. No total, Q15, production or fidelity change.
+
+## Decision checkpoint153 — known child admission and local weight mutation
+
+CA153A binds five known node48 callbacks: Sound requires descriptor word5C nonzero; four containers return1. CA153B/C trace mode0/nonzero/changed weight gating, indexed store, weighted flag and reset order. PW152/TR18 are positive recipients; full incoming weight-method dispatch/writer/resolver census remains retained. Local method recovery does not assert a new engine call. Totals unchanged; Q15 remains after Q14 completion, no fidelity/production change.
