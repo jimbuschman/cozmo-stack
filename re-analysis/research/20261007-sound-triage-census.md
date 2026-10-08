@@ -38,11 +38,11 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-029 | 67 | NOT DONE |
 | Q14-030 | 68 | PARTIAL |
 | Q14-031 | 69 | PARTIAL |
-| Q14-032 | 70 | NOT DONE |
+| Q14-032 | 70 | PARTIAL |
 | Q14-033 | 71 | NOT DONE |
 | Q14-034 | 72 | NOT DONE |
 | Q14-035 | 73 | NOT DONE |
-| Q14-036 | 74 | NOT DONE |
+| Q14-036 | 74 | PARTIAL |
 | Q14-037 | 75 | NOT DONE |
 | Q14-038 | 76 | NOT DONE |
 | Q14-039 | 77 | NOT DONE |
@@ -79,12 +79,12 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-070 | 119 | CHECKED |
 | Q14-071 | 120 | CHECKED |
 | Q14-072 | 121 | CHECKED |
-| Q14-073 | 122 | NOT DONE |
+| Q14-073 | 122 | PARTIAL |
 | Q14-074 | 123 | NOT DONE |
 | Q14-075 | 124 | NOT DONE |
 | Q14-076 | 125 | NOT DONE |
 | Q14-077 | 126 | CHECKED |
-| Q14-078 | 127 | NOT DONE |
+| Q14-078 | 127 | PARTIAL |
 | Q14-079 | 128 | NOT DONE |
 | Q14-080 | 129 | NOT DONE |
 | Q14-081 | 130 | NOT DONE |
@@ -328,7 +328,7 @@ PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, 
 
 > | M6-025 | **KEEP** | 0x00A379D8;0x00A000E8;0x009FFAD4;0x00A4304C;0x00A558AC;0x00A562B8;0x00A54A30;0x009D3558;0x009D3644 | All Play/PBI/source creation, arguments, ownership, results, device/listener setup, failure cleanup and production wiring remain exact; FX sample bodies are separately split below. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VF1–VF9 re-open complete voice FX initialization parent, mutable-format and slot ordering, concrete wrapper choice/Init/Reset, failure cleanup and reverse chain connection. Existing PB/FC/P rows cover bounded Play/source/start-list pieces. Remaining: complete Play/PBI/effective-parameter/source/route construction and ownership recipients plus production caller closure.
 
 ## Q14-033 — triage line 71
 
@@ -352,7 +352,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-025 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C;0x00A54A30 | Unknown FX helper/wrapper descendants must be separated into ownership/format/buffer/control KEEP and any demonstrated pure sample math SIMPLIFY. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format, allocation, registry/RTPC ownership and Init/Reset control; no per-sample loop in those bodies. Wrapper Execute, selected plugin virtuals and subscription/binding recipients remain readable; their boundaries need separate checking, not a bulk DSP exemption.
 
 ## Q14-037 — triage line 75
 
@@ -574,7 +574,7 @@ CHECKED; X5–X6: reset gates and native field widths/order. Downstream virtual 
 
 > | C30.8 / voice init seam | M6-025,M6-013 | **KEEP** | 0x00A54A30 | Caller/return/failure/FX-selection proof remains required; C31 improves evidence but not authority/settlement automatically. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VF1–VF5/VF8–VF9 reopen voice Init ordered slots, gate/results, allocation/null failure, accepted wrapper cleanup and format/chain output. Remaining: three production caller gates and selected plugin/initial-stage/late-stage/cleanup recipient closure; no automatic acceptance of the prior correction.
 
 ## Q14-074 — triage line 123
 
@@ -604,7 +604,7 @@ CHECKED: CD1–CD2 reopen new-minus-old byte delta, cursor store, old media/stre
 
 > | C31.2 R2.1–R2.15 caller, registry, wrapper setup | M6-025,M6-013 | **KEEP** | 0x00A54A30;0x009CC2AC;0x009CC4D8;0x00A47038;0x00A764D4;0x00A5676C;0x00A5335C | Plugin selection/type/version, bypass/async/in-place flags, format changes, wrapper construction, allocation and chain connection/cleanup order remain exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: VF1–VF9 expose wrapper type/flag raw gates, concrete construction/Init/Reset/format publication, registry attach and cleanup order. IC rows separately cover bus-slot initialization. Remaining: plugin metadata registry/version producers, A47038/A764D4/A5676C and reset/execute/cleanup target closure plus bypass writers.
 
 ## Q14-079 — triage line 128
 
