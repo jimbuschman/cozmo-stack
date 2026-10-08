@@ -1,0 +1,64 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x009F6D94..0x009F6DB4 exclusive; ARM;
+009F6D94: ldr          r3, [r0, #0x40]
+009F6D98: cmp          r1, #0
+009F6D9C: orrne        r3, r3, #0xff0
+009F6DA0: biceq        r3, r3, #0xff0
+009F6DA4: orrne        r3, r3, #0xe
+009F6DA8: biceq        r3, r3, #0xe
+009F6DAC: str          r3, [r0, #0x40]
+009F6DB0: bx           lr
+RANGE 0x00A69AF8..0x00A69BCC exclusive; ARM;
+00A69AF8: ldr          r3, [r1]
+00A69AFC: push         {r4, r5, r6, lr}
+00A69B00: mov          r5, r0
+00A69B04: ldr          r3, [r3, #0x44]
+00A69B08: mov          r0, r1
+00A69B0C: mov          r4, r1
+00A69B10: blx          r3
+00A69B14: ldr          r3, [r5]
+00A69B18: ldr          r3, [r3, #0x134]
+00A69B1C: mov          r6, r0
+00A69B20: mov          r0, r5
+00A69B24: blx          r3
+00A69B28: movw         r3, #0xffff
+00A69B2C: cmp          r0, r3
+00A69B30: beq          #0xa69b64
+00A69B34: cmp          r6, #0xb
+00A69B38: beq          #0xa69b50
+00A69B3C: sub          r6, r6, #2
+00A69B40: cmp          r6, #3
+00A69B44: bls          #0xa69b50
+00A69B48: mov          r0, #4
+00A69B4C: pop          {r4, r5, r6, pc}
+00A69B50: ldr          r2, [r4, #0x34]
+00A69B54: cmp          r2, #0
+00A69B58: beq          #0xa69b6c
+00A69B5C: mov          r0, #0x15
+00A69B60: pop          {r4, r5, r6, pc}
+00A69B64: mov          r0, #9
+00A69B68: pop          {r4, r5, r6, pc}
+00A69B6C: ldr          r1, [r5, #0x60]
+00A69B70: ldr          r4, [r4, #8]
+00A69B74: subs         r1, r1, #1
+00A69B78: bmi          #0xa69bb0
+00A69B7C: ldr          ip, [r5, #0x5c]
+00A69B80: rsb          r3, r2, r1
+00A69B84: add          r3, r3, r3, lsr #31
+00A69B88: add          r3, r2, r3, asr #1
+00A69B8C: ldr          r0, [ip, r3, lsl #2]
+00A69B90: ldr          r0, [r0, #8]
+00A69B94: cmp          r4, r0
+00A69B98: sublo        r1, r3, #1
+00A69B9C: blo          #0xa69ba8
+00A69BA0: add          r2, r3, #1
+00A69BA4: bls          #0xa69bc4
+00A69BA8: cmp          r1, r2
+00A69BAC: bge          #0xa69b80
+00A69BB0: ldr          r0, [r5, #8]
+00A69BB4: cmp          r4, r0
+00A69BB8: movne        r0, #1
+00A69BBC: moveq        r0, #0x17
+00A69BC0: pop          {r4, r5, r6, pc}
+00A69BC4: mov          r0, #5
+00A69BC8: pop          {r4, r5, r6, pc}

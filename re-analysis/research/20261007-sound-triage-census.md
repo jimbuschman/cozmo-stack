@@ -154,7 +154,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 
 > | M6-001 | **KEEP** | 0x009B338C;0x009F6EF8;0x009ECF44;0x009C3FFC;0x009D24D4;0x009B0B14 | All readers, conditional positioning/bus/layer branches and object-graph comparisons remain exact parsing work. |
 
-PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/reader controls. Resumption RB1–RB18 adds bus duck-entry updates/registration, group creation/state linking/default lookup, pair-vector replacement/ownership and the LayerCntr zero-track path. The operator adopted the census exclusions for 3D bank payloads and nonempty blend-track bodies; those bodies are not resumed. Derived reader slots, child-attachment virtual and downstream invalidation/ownership recipients remain unread.
+PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/reader controls. Resumption RB1–RB18 adds bus duck-entry updates/registration, group creation/state linking/default lookup, pair-vector replacement/ownership and the LayerCntr zero-track path. The operator adopted the census exclusions for 3D bank payloads and nonempty blend-track bodies; those bodies are not resumed. Resumption CF1–CF18 adds the common property/FX/positioning-prefix/aux/advanced reader slots, rendered/reference/bypass setters, Layer child attachment and its validation gates. The parent setter, downstream live invalidation/ownership callbacks and other type-reader recipients remain unread.
 
 ## Q14-003 — triage line 34
 
