@@ -71,3 +71,21 @@ Stop after Q19 and append a one-paragraph summary to the Q19 answer.
 - **Only REACHABLE obligations get rows.** An UNREACHABLE one is listed with its evidence and isn't extracted. That's
   not a loosening of "Exact, always": a path no shipped input can reach can't change what Cozmo does. The manager
   checks the census before it's used.
+
+## Scope guard for Q14/Q15 (manager, 2026-10-08): re-read this before each step
+
+**In scope:** decisions only. Container RNG and shuffle, event and action order, switches, states and RTPC propagation,
+voice limits and ducking decisions, routing, and the source lifecycle's decisions: start, stop, seek, end-of-stream,
+and the 0x3F not-ready result as a state.
+
+**Out of scope.** Record each in one line as "out of scope: <reason>", and don't trace it:
+- **Storage and I/O infrastructure:** the ZIP archive lookup, hash and rehash; the stream cache (block splitting,
+  eviction, trimming); the I/O memory manager (buddy allocator, free lists, coalescing, extent release); file-resolver
+  open paths; I/O scheduler targets. Their only observable effect is timing and memory, which is phone-runtime
+  behaviour (EQUIVALENT_IMPLEMENTATION, M6 C33.5).
+- **Per-sample DSP arithmetic:** ADP-1.
+- **The census's branch exclusions:** 3D positioning payloads, nonempty blend tracks, bit5 ping-pong, zero-channel or
+  multichannel sources, PCM file sources.
+
+**The stop rule.** Before you descend into a callee, ask whether it can change *which* sound plays, *when*, at what
+*parameter value*, or *where* it's routed. If not, record it in one line and stop there.
