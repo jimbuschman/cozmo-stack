@@ -1443,3 +1443,7 @@ SS227A–C trace complete9D9CD8 parent-before-selector/leaf delivery, exact/all 
 ### Checkpoint 228 — top-level modulator parameter fan-out
 
 TW228A–D trace remaining9DBF78 exact/all hierarchy, parent-own-before-descendant delivery, leaf/current loopends andconcrete9D5058 genericcallback bindings. Positive search/setter bodies reused;9D849C andtree/state/input/lifetime writerclosure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 229 — generic selector parameter traversal
+
+GT229A–D trace complete9D849C selected/all selectors/leaves,parent-own-before-childcallbacks, liveend loops andnoactiveclear/prune/statusgate. TW228 concretecallbackjoin closeslocaltype3delivery; tree/active/state/subscription/input/lifetime writerclosure remains. No totals/Q15/fidelity/production changes.
