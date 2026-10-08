@@ -298,7 +298,7 @@ PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL
 
 > | M6-022 | **KEEP** | 0x009E52F8..0x009E5E8B;0x009E2BD0..0x009E52F3 | Modulator segment boundaries/slopes, first-sample convention, evaluator population/delivery and LFO/control-signal evolution affect parameter values and timing; no wholesale modulator DSP exemption. |
 
-PARTIAL: EV1–EV6 establish exact entry geometry, delayed zeros, first two ramp boundaries/slopes, first-value recurrence and endpoint publication. Remaining decay/sustain/release/final results, evaluator population/delivery and LFO evolution are readable exact work; no DSP exclusion.
+PARTIAL: EV1–EV14 close the complete local envelope evaluator including entry geometry, grouped recurrence, decay/sustain/early release and completion. Remaining evaluator population/delivery9E2BD0 and LFO evolution are readable exact work; no DSP exclusion.
 
 ## Q14-028 — triage line 66
 
