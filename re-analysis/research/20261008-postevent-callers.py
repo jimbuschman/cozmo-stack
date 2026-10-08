@@ -40,6 +40,13 @@ print('Dynamic symbol records at target addresses:')
 shoff=struct.unpack_from('<I',n.raw,32)[0]
 shsize,shcount=struct.unpack_from('<HH',n.raw,46)
 sections=[struct.unpack_from('<10I',n.raw,shoff+i*shsize) for i in range(shcount)]
+shnames_index=struct.unpack_from('<H',n.raw,50)[0]
+shnames_section=sections[shnames_index]
+shnames=n.raw[shnames_section[4]:shnames_section[4]+shnames_section[5]]
+for sh in sections:
+    if sh[3]<=0xCC1580<sh[3]+sh[5]:
+        end=shnames.find(b'\0',sh[0])
+        print(f'CC1580 section={shnames[sh[0]:end].decode()} flags={sh[2]:X} range={sh[3]:08X}..{sh[3]+sh[5]:08X}')
 for sh in sections:
     if sh[1]!=11:continue
     strings=sections[sh[6]]; names=n.raw[strings[4]:strings[4]+strings[5]]
