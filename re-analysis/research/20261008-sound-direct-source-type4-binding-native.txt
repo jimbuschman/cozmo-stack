@@ -1,0 +1,25 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A72A2C..0x00A72A5C exclusive; ARM;
+00A72A2C: push         {r4, lr}
+00A72A30: mov          r4, r0
+00A72A34: bl           #0xa7329c
+00A72A38: ldr          r3, [pc, #0x1c] ; word[00A72A5C]=005CAC68
+00A72A3C: mov          r2, #0
+00A72A40: mov          r0, r4
+00A72A44: str          r2, [r4, #0x3c]
+00A72A48: add          r3, pc, r3
+00A72A4C: str          r2, [r4, #0x44]
+00A72A50: add          r3, r3, #8
+00A72A54: str          r3, [r4]
+00A72A58: pop          {r4, pc}
+RANGE 0x00A72D04..0x00A72D28 exclusive; ARM;
+00A72D04: push         {r4, lr}
+00A72D08: mov          r4, r0
+00A72D0C: bl           #0xa7329c
+00A72D10: ldr          r3, [pc, #0x10] ; word[00A72D28]=005CAA18
+00A72D14: mov          r0, r4
+00A72D18: add          r3, pc, r3
+00A72D1C: add          r3, r3, #8
+00A72D20: str          r3, [r4]
+00A72D24: pop          {r4, pc}

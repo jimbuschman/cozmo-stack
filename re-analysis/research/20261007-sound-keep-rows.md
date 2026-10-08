@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 181 — direct-buffer source type4 callbacks
+
+Primary: `20261008-sound-other-source-type4-slots.txt`, `20261008-sound-other-source-type4-native.txt`, `20261008-sound-direct-source-type4-binding-native.txt`; same engine SHA256. SF1 positively selects mode3 ADPCM A72A2C and PCM A72D04; VC10/VM1 establish direct-buffer Vorbis table103E0B8. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| DF181A | 00A72A2C..00A72A58;00A72D04..00A72D24;0103D6F8/0103D778 | ADPCM ctor callsA7329C,zeros3C/44, installs103D6C0; PCM ctor callsA7329C, installs103D740. Both38 slots=A72F40. Table addresses computed from captured PC/literal/+8, not only labels. | These are mode3 direct-buffer families underSF1. | Baseinit → localdefaults/table → concrete38. | Sharedbase initialization remains separate; no PCM file family descent. |
+| DF181B | 00A72F40..00A72F4C | Shared direct-buffer38 storesu16 1→source38 andreturns1. No other gate, streamcallback ormetadata publication. | Called only afterVF180A's own source10bit0 gate; no local repetition. | Limit publication → result1. | VF180A therefore doesnotinvokevoice48 afterthis normalreturn. Looplimit consumer/fullwriters remain retained. |
+| DF181C | 0103E0F0;00AB1014..00AB101C | Direct-buffer Vorbis38=AB1014: copyu16sourceAA→7A unconditionally, then tailA72F40 (limit1/result1). | Unlike streamed VF180D, no source5C==0 gate. | Codeccontrolcopy → sharedlimit →1. | VC10/VM1 concrete family; codec7A/AA consumers/producers remain separate. No decoding arithmetic. |
+
+out of scope: PCM file-source family under the census exclusion; no callback body descent.
+
+The five eligible direct/stream codec38 recipients now have positive constructor/factory/table joins and exact local controls. Registered/plugin mode2 and other source/codec-control writer closure remain PARTIAL. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 180 — type4 primary-source callback and secondary lifetime join
 
 Primary: `20261008-sound-voice-type4-native.txt`, `20261008-sound-source-type4-slots.txt`, `20261008-sound-source-type4-native.txt`; same engine SHA256. Shared HP5–9 positively own queue lookup/dispatch, standardvoice54 and local primary/secondary gates; VR173D now closes HP7's known voice48. NS3 positively supplies A56414. Existing BR142L/VC10 supply constructed ADPCM103D840 and Vorbis103E138 families. Endpoints inclusive.

@@ -1245,3 +1245,7 @@ CA179A–D trace250/254 lookup/gates, last-entry list walk and ancestry break, e
 ### Checkpoint 180 — type4 primary/secondary source control
 
 VF180A–D positively join HP6–9 queue4 and NS3 secondaryclose; bind streamedADPCM/Vorbis38, trace looplimit u16publication and zero streamsettings endword withreturn1, and Vorbisfirst-iteration CE→9E. VR173D closesknownvoice48 fallback. Otherfamilies/close/destructors/controlwriters remain; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 181 — direct-buffer type4 source recipients
+
+DF181A–C bindSF1 mode3 constructors to103D6C0/103D740 and common38 limit1/result1; directVorbis copiesAA→7A unconditionally beforecommoncallback. PCMfile is outofscope undercensus exclusion. Registered/plugin mode2 and fullcontrolwriters remain; no totals/Q15/fidelity/production changes.
