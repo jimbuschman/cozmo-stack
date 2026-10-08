@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 167 — secondary-transition detachment and action-identity caller
+
+Primary: `20261008-sound-action-secondary-transition-detach-native.txt`, `20261008-sound-action-secondary-transition-caller-native.txt`; same engine SHA256. Primary callsite9AC6D0 establishes known0503 helper reachability; other incoming manager paths remain separate. PS1/TT8 are positive existing query/detach bodies. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| AT167A | 00A63AC8..00A63B1C;00A35980..00A35994 | Null action2C returns. Nonnull A35980 queryzero returns preserving2C. Querytrue reloads2C andA4; bothnonnull invokesA36618(manager,transition,pendingA4), then clear2C. Missing reloaded transition orpending still clears2C. | PS1 query accepts only selector02000000/04000000. No unconditional unsubscribe or clear on rejected selector. | Binding gate → selector → live binding/pending gate → optional unsubscribe → clear. | TT8 establishes swap removal/count/state6; DA5 establishes binding. Remaining callers/producers retained. |
+| AT167B | 009AC6DC..009AC7B8 | Manager9AC6DC visits30 list first. For every pending, resolve action viaA6168C before exact pending4==incomingAction check. Matching pending2Cnonzero decrements/stores2C and preserves membership; matching2Czero calls9AB048(manager,pending) while linked, then repairs head30/pred/tail34, decrements44 and removes membership. Saved next, then nullable resolved-nodeC, then next. Misses retain membership. | This is pending2C counter, distinct from action2C transition pointer. Resolver is called even for nonmatching actions. | Resolver → action identity → counter decrement OR completion/remove → resolved-node release → next. | Concrete9AB048 and resolver/family closure remain decision work. out of scope: removed-link free-list reuse. No merged PN160 semantics inferred. |
+| AT167C | 009AC760..009AC76C;009AC668..009AC6D8 | After30 list exhausts tailcall9AC668, which walks manager14 list. Resolve each action first; exact action==incoming and incomingu16code0503 invokesAT167A. Load live next before nullable resolved-nodeC. No first-list pending removal/count decrement here. | Helper code gate is0503 only; no0403 callback. Node release after next load differs from PN160 callback/remove path. | Entire30-list pass →14 action resolution/identity/type → optional transition detach → next snapshot → resolved-node release → next. | Known nodeC NR146/ND150 joins. Full incoming9AC6DC dispatch and9AB048 remain retained; local two-list contract now explicit. |
+
+Local transition-detach helper and exact action-identity manager body are now decision rows. Q14 remains23 native CHECKED /8 scope CHECKED /109 PARTIAL /0 NOT DONE; Q15 follows completed Q14. No production/fidelity changes.
+
 ## Checkpoint 166 — note-state idle owner notification
 
 Primary: `20261008-sound-note-owner-binding-native.txt`, `20261008-sound-note-owner-callback-slots.txt`, `20261008-sound-note-owner-idle-native.txt`; same engine SHA256. DD163C calls ownerC.vt0 with note-state as second argument. Existing singing MAT10/MAT9/EMC1 are shared native evidence joins, not Q15 resumption. Endpoints inclusive.

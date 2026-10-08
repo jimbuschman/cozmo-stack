@@ -190,13 +190,13 @@ PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event pu
 
 > | M6-007 | **KEEP** | 0x00A08A7C..0x00A08AC0;0x0099DB58;0x00A09698;0x00A099BC;0x00A0A3B4;0x00A08A44;0x00A08694;0x00A0A524..0x00A0A6E8 | RNG state/seed, draw cadence, eligibility, shuffle/avoid-repeat, weights and sequence behavior stay exact even where they use floating arithmetic. |
 
-PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. Complete live caller/writer and child-admission closure remain open; no completed M6-007 claim.
+PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. CA153 positively binds known five-family child admission and local weight/reset gates; CJ154/CO155/CP156/PR161 close known snapshot/list/policy/refresh recipients. Complete live incoming caller/writer/resolver and additional-family closure remain open; no completed M6-007 claim.
 
 ## Q14-009 — triage line 42
 
 > | M6-008 | **KEEP** | 0x00A0AFDC;0x00A091CC;0x00A09C40;0x00A6A07C;0x00A6A580;0x00A62ED4;0x00A35998;0x00A6A2DC;0x00A4304C;0x00A52B90;0x00A549A0;0x00A09F04;0x00A6ACC0;0x00A03618 | Shared/per-object state, mode-4 chaining, lookahead/delay split, zero-frame fade handling, next-choice/start notification and Term/EndOfEvent latency remain exact scheduling/state work. |
 
-PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. Base-end/completion recipients, source lifecycle, alternate updates and writer closure remain pending.
+PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. Remaining concrete9AB048, other action families, source lifecycle, alternate updates, incoming dispatch and writer closure remain pending; known local cleanup is not a full scheduling claim.
 
 ## Q14-010 — triage line 43
 
@@ -1189,3 +1189,7 @@ AV165A–D settle A63A64/9E771C prior-state release before source transfer, init
 ## Decision checkpoint166 — note-state idle owner callback
 
 NO166A–D bind known internal/external manager0 to A70930, trace first note-state identity unlink/owner clear/event release, and join MAT10 note-off lifetime publication. Separate manager4 callbacks differ by family and are not mistaken for0. Shared MAT9/EMC evidence remains positive; no Q15 resumption. Further timed-dispatch/writer/recipient-family obligations remain, totals unchanged, no fidelity/production changes.
+
+## Decision checkpoint167 — secondary-transition/action-identity manager path
+
+AT167A–C settle selector-gated action2C unsubscribe/clear and9AC6DC's second-list pending counter/completion/removal before first-list0503 detachment. Distinct pending2C/action2C meanings preserved; PS1/TT8/nodeC are positive joins. Q14-008/009 per-item notes narrowed to reflect current known child/list/cleanup coverage. Concrete9AB048 and incoming/writer/family closure remain; no totals, Q15, fidelity or production changes.
