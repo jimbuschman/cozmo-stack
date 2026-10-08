@@ -80,6 +80,21 @@ Companion: `20261007-sound-app-loading-pop-native.txt`. M6-016 quotation above a
 
 Loading and callback state decisions are now concrete. The output frame producer, mu-law exact conversion and audio-buffer stream lifetime still require joining, so this does not settle M6-016 or M6-017 as a complete path.
 
+### Resumption checkpoint 22: frame queries and exact wire sample encoding
+
+Companion: `20261007-sound-app-frame-encode-native.txt`. Mu-law wire encoding is retained framing/codec work; ADP-1 does not authorize replacing it with an arbitrary acoustically equivalent output encoding. Offsets hexadecimal.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| AF1 | 0059889A..005988B8 | HasAudioBufferStream locks buffer18 recursive mutex, reads14 queuecount, unlocks, returnsnormalized count!=0. | Predicate iscount-based, notstream pointer. | Lock→snapshot→unlock→normalize. | Bufferdequepublication/lifetime remainsrequired. |
+| AF2 | 005988BA..0059893A;0059893C..005989C2 | Under samemutex, currentstream is buffer4[index10/102]+(index10%102)*40bytes. HasData normalizesstream20!=0; IsComplete returnsstream8rawbyte; CreatedTime returnsstream0F64; FrameCount returnsstream20rawword. | No localemptyqueuegate inthesequeries; caller AL3 HasStreamgateprotects pathbutquerycallslockseparately. | Lock→currentstreamaddress→fieldcopy→unlock→return. | Snapshotisnotheld across AL3's multiplequeries; don'tintroduce atomicaggregate state withoutsourcebasis. |
+| AF3 | 005989C4..00598A04;0059B21A..0059B252 | Bufferpop lock18, resolvecurrentstream asAF2, call PopRobotAudioFrame, unlock18. Stream pop lock24; count20zero returnsnull. Otherwise fetch pointer from blocktable10[index1C>>10][index1C&3FF], invoke deque-pop helper onstream+C, unlock24, returnpointer. | No frameclone inpop; returnedframeownership passes toAL6. | Outerlock→innerlock→pointer→dequepop→innerunlock→outerunlock. | Frameproduction/push anddeque-pop4AF88C stillrequired; chunkgeometrynotestablished bypop alone. |
+| AF4 | 00597AD8..00597B1A | encodeMuLaw callsisnanf oninputF32bits; NaNlogs warning andreturnsbyte0. | AnyNaN payloadtakesliteral0; notconverted throughVCVT. | NaNgate→log→0, orAF5. | Phoneisnanpredicatecodeexternal; finite/inf conversionsbelowshipped. |
+| AF5 | 00597B1C..00597B62 | Finite/non-NaNinputx: y=x, replacey=3F800000 whenx>=1. n=VCVT.S32.F32(F32(y*46FFFE00)). SelectedintegerinitialFFFF8001; replacewithn only whencomparison x:BF800000 hasHI. | x<=−1 uses−32767; x>=1 uses32767. No rounded-to-nearest integerstep. | Upperclamp→F32scale→signedtruncate→lowergate. | Binary32 constants3F800000/BF800000/46FFFE00. |
+| AF6 | 00597B62..00597B8E;00C5C3F0..00C5C470 | m=n XOR(n ASR15); e=table[m ASR8]. Tablebyte0=0,1=1,2..3=2,4..7=3,8..15=4,16..31=5,32..63=6,64..127=7. If m>>8==0 mantissa=m>>4; elsemantissa=(m ASR(e+3))&F. Resultlow8=(e<<4)|mantissa|80when signed16(n)<0. | Return doesnotcomplementpackedbyte; silenceencodes0. | Signmagnitude transform→table→mantissa→signbit→u8. | Exacttableandintegeroperations; standardlibrarymu-law routine mustnotbe substitutedwithoutbitcomparison. |
+
+The local frame getters/pop ownership and wire sample encoder are checked. The reachable frame producer remains the outstanding source of the744-sample invariant, format/rate and end/chunk positions.
+
 ### Resumption checkpoint 9: limiter construction, per-object decisions and undo
 
 Coverage: constructor and local per-object check/entry/undo contracts CHECKED; complete M6-026 production path PARTIAL. Current M6-026 title/status/evidence is quoted below before L1. This extension does not change that record or settle its path. Primary companions: `20261007-sound-resume-limit-state-native.txt` and `20261007-sound-resume-limit-subscriber-native.txt`. All offsets in the following rows are hexadecimal. The capture includes literal islands at 9FA6F0/9FAC4C; they are data, not additional executed instructions.
