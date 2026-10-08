@@ -116,6 +116,20 @@ Coverage: A01768 cache fill/read, inherited packed values and all cited node120 
 
 This closes L10/GL4's previously named inherited-policy and node120 recipients. It does not close the additional cache writer entry points or assume cache refresh after a live setting change.
 
+### Resumption checkpoint 15: additional virtual-policy cache writers
+
+Coverage: three named alternative cache writer bodies CHECKED locally; callers, processing-chain creation and full writer census PARTIAL. Companion `20261007-sound-resume-policy-writers-native.txt`. M6-026 quotation before L1 applies. These are state/stop/parameter decisions; none is exempt DSP arithmetic.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PW1 | 00A020F4..00A02138;00A02210..00A0226C | Use existing PBI1BB cache or fill by PC1/PC2 rules: validbit before lookup, policy3 maps node120 result0→1/nonzero→2, packed mode/policy fields after lookup. Policy2 sets PBI1BE bit2 and returns; policy other than1/2 returns unchanged. Policy1 proceeds PW2. | Caller second argument saved for stop-reason field, not discarded as a boolean. | Cache→policy gate→virtual flag or stop-state work. | No policy2 immediate stop in this body. |
+| PW2 | 00A0213C..00A02178;00A021F0..00A0220C | Policy1: if PBI1BDbit1clear insert caller arg low3 into1BDbits2..4 then setbit1. If PBI1BCbit7set, invoke stop vt0(PBI,0,0). Otherwise if transition148nonnull and A35980(transition)!=0, same stop call. Else PW3. | Alreadyset1BDbit1 preserves stored reason; does not suppress later stop. | Flag/reason publication precedes transition test/stop. | Concrete vt0 is PS2; A35980 is PS1. |
+| PW3 | 00A02178..00A021EC;00A02270..00A02284 | Set1BCbit6 before testing1BA mask78. Mask0 immediately invokes stop vt0(PBI,0,1). Nonzero mask and transition144nonnull calls A366F4(manager,transition,02000000,target0,duration0,curve4,0), returns without local direct stop. Nonzero mask and transition144null writes PBI168=00000000 and40=00000000; if1BDbit1clear then set it and reasonbits0; invokes stop vt0(PBI,0,0). | Zero mask bypasses transition144 lookup. | Bit6→mask gate→transition update or zero targets→stop. | Raw binary32 positive-zero targets, no duration ramp synthesized. A366F4 control recipient remains independently required. |
+| PW4 | 00A0266C..00A02748 | Always set PBI1BEbit4 before policy-cache lookup. Existing cache or PC2-style fill; only policy0 forces cached policy2 and mode1. Then if PBI154nonnull and its28 chainnonnull, walk next28 and OR each node6C bit2. Other policies leave cache/chain unchanged beyond any first fill and1BEbit4. | Cache-valid state before fill; chain may be empty. | 1BEbit4→lookup/fill→policy0 rewrite→processing-chain flags. | No per-sample DSP here; creation and readers of processing-chain6C remain exact dependencies. |
+| PW5 | 00A0275C..00A027F8 | Predicate with cachevalid returns normalized(policybits3..6==0). Cachemiss fills PC1 fields; policy!=3 returns normalized(raw policy==0), stores low4 policy. Policy3 calls node120, stores1 if result0 else2; returns0 for either result (saved r4 was0 on miss). | It is not a direct normalized return of node120. | Validbit publication→lookup/optional virtual→cache store→predicate return. | Output mode low3 preserved from PC1. Concrete caller A55750 remains a decision dependency. |
+
+The policy cache can be filled by selection, stop, force-virtual and processing predicates. PW4 can deliberately replace a cached policy0 with2/mode1. The remaining caller/creation dependencies are readable controls, not unknown behavior to fill by inference.
+
 # Q14 — sound decisions under ADP-1
 
 ## Resumption scope (operator instruction after census commit 8613d8f)
