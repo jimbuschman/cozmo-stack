@@ -1,0 +1,111 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x004DDFF0..0x004DE178 exclusive; ARM;
+004DDFF0: ldr          r3, [pc, #0x190] ; word[004DE188]=00BAFB1C
+004DDFF4: mov          ip, #0
+004DDFF8: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+004DDFFC: add          r3, pc, r3
+004DE000: sub          sp, sp, #0xc
+004DE004: mov          sb, #0
+004DE008: add          r2, r3, #0xdc
+004DE00C: mov          r0, r3
+004DE010: str          r2, [sp, #4]
+004DE014: movt         sb, #0x42c0
+004DE018: mov          fp, #0
+004DE01C: str          sb, [r3, #0x6c]
+004DE020: mov          sl, #0
+004DE024: mov          r8, #0
+004DE028: mov          r2, #0
+004DE02C: mov          sb, #0
+004DE030: mov          lr, #0
+004DE034: mov          r4, #1
+004DE038: mov          r5, #0x3f800000
+004DE03C: str          lr, [r3, #0x3c]
+004DE040: str          lr, [r3, #0x40]
+004DE044: mov          r6, #0x7f
+004DE048: str          lr, [r3, #0x48]
+004DE04C: movt         ip, #0xc120
+004DE050: str          lr, [r3, #0x78]
+004DE054: movt         fp, #0x4248
+004DE058: str          ip, [r3, #0x20]
+004DE05C: mov          r7, #7
+004DE060: mov          ip, #0
+004DE064: str          fp, [r3, #0x1c]
+004DE068: str          ip, [r3]
+004DE06C: movt         sl, #0x42c8
+004DE070: str          ip, [r3, #4]
+004DE074: movt         r8, #0x4180
+004DE078: str          sl, [r3, #0x44]
+004DE07C: movt         r2, #0x4348
+004DE080: str          r8, [r3, #0x70]
+004DE084: movt         sb, #0x4140
+004DE088: str          r2, [r3, #0x80]
+004DE08C: str          ip, [r3, #8]
+004DE090: str          ip, [r3, #0xc]
+004DE094: str          ip, [r3, #0x10]
+004DE098: str          ip, [r3, #0x14]
+004DE09C: str          ip, [r3, #0x18]
+004DE0A0: str          ip, [r3, #0x24]
+004DE0A4: str          ip, [r3, #0x28]
+004DE0A8: str          ip, [r3, #0x30]
+004DE0AC: str          ip, [r3, #0x34]
+004DE0B0: str          ip, [r3, #0x38]
+004DE0B4: str          ip, [r3, #0x4c]
+004DE0B8: str          ip, [r3, #0x50]
+004DE0BC: str          ip, [r3, #0x54]
+004DE0C0: str          ip, [r3, #0x58]
+004DE0C4: str          ip, [r3, #0x5c]
+004DE0C8: str          ip, [r3, #0x60]
+004DE0CC: str          ip, [r3, #0x64]
+004DE0D0: str          ip, [r3, #0x68]
+004DE0D4: str          ip, [r3, #0x7c]
+004DE0D8: str          r5, [r3, #0x2c]
+004DE0DC: str          lr, [r3, #0xbc]
+004DE0E0: str          lr, [r3, #0xc0]
+004DE0E4: str          lr, [r3, #0xc4]
+004DE0E8: str          lr, [r3, #0xcc]
+004DE0EC: str          r5, [r3, #0x74]
+004DE0F0: str          sb, [r3, #0x84]
+004DE0F4: str          lr, [r0, #0xf0]!
+004DE0F8: mov          lr, #0x3c
+004DE0FC: str          ip, [r3, #0x88]
+004DE100: str          lr, [r3, #0xb4]
+004DE104: movw         lr, #0xffff
+004DE108: str          ip, [r3, #0x8c]
+004DE10C: str          r7, [r3, #0xb0]
+004DE110: str          ip, [r3, #0x90]
+004DE114: str          lr, [r3, #0xd4]
+004DE118: str          ip, [r3, #0x94]
+004DE11C: str          r4, [r3, #0xa0]
+004DE120: str          r4, [r3, #0xa4]
+004DE124: str          ip, [r3, #0x98]
+004DE128: str          r4, [r3, #0xac]
+004DE12C: str          r4, [r3, #0xb8]
+004DE130: str          ip, [r3, #0x9c]
+004DE134: str          r6, [r3, #0xc8]
+004DE138: str          r6, [r3, #0xd0]
+004DE13C: str          ip, [r3, #0xa8]
+004DE140: str          r5, [r3, #0xd8]
+004DE144: str          ip, [r3, #0xec]
+004DE148: ldr          r3, [sp, #4]
+004DE14C: vldr         d16, [pc, #0x24] ; word[004DE178]=00000000
+004DE150: vldr         d17, [pc, #0x28] ; word[004DE180]=FFFFFFFF
+004DE154: ldr          r1, [pc, #0x30] ; word[004DE18C]=0051F158
+004DE158: ldr          r2, [pc, #0x30] ; word[004DE190]=00B72E94
+004DE15C: add          r1, pc, r1
+004DE160: vst1.32      {d16, d17}, [r3]
+004DE164: add          r2, pc, r2
+004DE168: add          sp, sp, #0xc
+004DE16C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+004DE170: b            #0x4d6688
+004DE174: nop
+004DE178: raw=00000000 relocated=00000000
+004DE17C: raw=00000000 relocated=00000000
+004DE180: raw=FFFFFFFF relocated=FFFFFFFF
+004DE184: raw=00000001 relocated=00000001
+004DE188: raw=00BAFB1C relocated=00BAFB1C
+004DE18C: raw=0051F158 relocated=0051F158
+004DE190: raw=00B72E94 relocated=00B72E94
+0103E518: raw=004DDF9C relocated=004DDF9C
+0103E51C: raw=004DDFF0 relocated=004DDFF0
+0103E520: raw=004DE198 relocated=004DE198
