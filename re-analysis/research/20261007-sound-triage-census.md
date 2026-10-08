@@ -52,7 +52,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-043 | 81 | PARTIAL |
 | Q14-044 | 82 | PARTIAL |
 | Q14-045 | 83 | PARTIAL |
-| Q14-046 | 84 | NOT DONE |
+| Q14-046 | 84 | PARTIAL |
 | Q14-047 | 85 | NOT DONE |
 | Q14-048 | 86 | NOT DONE |
 | Q14-049 | 87 | PARTIAL |
@@ -412,7 +412,7 @@ PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve compani
 
 > | M9-008 | **KEEP** | 0x009D671C..0x009D7727;0x005EF184..0x005EF18C | Posted shake RTPC and per-voice depth initialization cadence must match; rereading once per block changes parameters/state. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. Final LFO mode/phase and per-voice value-delivery/cadence recipients remain exact open work.
 
 ## Q14-047 — triage line 85
 
