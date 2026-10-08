@@ -1277,3 +1277,7 @@ DH187A establishesA76268/A56710/A46DBC BXLR no-ops. Deletedvoice buffer/workspac
 ### Checkpoint 188 — initial PBI control producers
 
 PI188A–C tracegain/handle defaults, nested1D4=0, countdownrequest74, exactpackedflagpreservation andinitialkeycopy overriddenbyrequest7C/globalwrappingkeyproducer. VC184/PC185/PA176/NR169 positiveconsumerjoins; otherwriters/wholeconstructor/familiesremain. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 189 — notification creation pass
+
+QC189A–C tracePBI154/type0/1 eligibility, stop/sentinel cancellationbeforecreation, exactresult1 retentionincluding3Fconversion versusreuse5/non1 removal, queuecount-beforeendnotification andfinaldirtybyteclear. Laterpreparation/producer/frameorderingclosure staysPARTIAL; no totals/Q15/fidelity/production changes.

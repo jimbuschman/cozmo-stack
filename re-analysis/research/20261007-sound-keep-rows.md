@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 189 — queued type0/1 voice-creation pass and reuse-result removal
+
+Primary: `20261008-sound-queued-start-create-native.txt`; same engine SHA256. VC184 suppliesA4304C concrete resultbranches; SF10 suppliesA01800 endnotification. HP2 queueproducer andHP4/HP9 laterpreflight/dispatch remainpositive. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| QC189A | 009D3644..009D36F0;009D36A0..009D36C8 | Walknotificationqueuehead108DA10 withprevious0. EntryPBI4. PBI154nonnull skipscreation; entrytypebyteC>1 skipscreation. Eligibletype0/1 checksPBI1BCbit5 and1F8==FFFFFFFF forQC189C cancellation. OtherwiseA4304C(entry+4); exactlyresult1 keepsentry/advancesprevious usingliveentry.next aftercallback. | No PBI-nullgate. PreparedentryDbit0 isn'tcreationeligibilitygate; PBI154 is. VC184 raw3F conversionto1 keepsnotificationwhileadmittingpendingvoice, while reuse5 entersQC189B. | Physicalentry → voice/typegates → stop/sentinel → create/reuse → result1retain ORnon1remove. | Laterpreparation/dispatch isHP4/QN/PN/VF; direct9AF8A8/9D3C98 callers andfullPBI154/entryproducerclosureremain. |
+| QC189B | 009D36F4..009D3724;009D374C..009D3778 | Create rawresultnon1 includingreuse5 removescurrententry: savelivenext, repairhead/previous, repairtail ifsameentry, retireentry, queue18--, continuewithsavednext/sameprevious. Passend/emptyhead clearsglobalqueuebyte28 (108DA34), returnvoid. | No extraA01800 inthisnon1 branch; VC184 mayalreadyhavenotifiedfailedallocation. Resultdoesnotmaptoanotherstatus. | Callback → nextsnapshot/unlink/tail → retirement/count →next → dirtybyte0. | out of scope: retirementpool/slab/free-list machinery; omitted. Logicalnotification removal andlivecallbackordering exact. |
+| QC189C | 009D379C..009D37C0;009D37F4..009D3818;009D382C..009D3830 | EligiblePBI1BCbit5set/1F8FFFFFFFF: savenext, unlinknotificationhead/previous andtail, retireentry, decrementqueue18, callA01800(savedPBI,1), continuewithsavednext/sameprevious. Nativeentryheadrepairhasseparate382Cbranch beforetail check. | Notificationretired/countupdated beforeendnotification. DoesnotinvokeA4304C orDeleteVoice forthisentry. | Stop/sentinel gate → unlink/retire/count → PBI154clear/deferredtype4reason1 →next. | SF10 exactA01800 producer; NF3/4 consumerreasonflag/lifetimerowspositive. Fullstop/1F8writersremainseparate. out of scope: retirementstorage. |
+
+Queue-creation pass now explainsreuse5 removal andraw3F-success retention, distinctfromlaterpreflight andPC185 pendingvoice cancellation. Fullproducer/frameordering/preparationclosure remainsPARTIAL; totalsunchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 188 — PBI initial pause flags, gains, countdown and reuse key
 
 Primary: `20261008-sound-pbi-initial-control-native.txt`, `20261008-sound-pbi-initial-control-inputs-native.txt`; same engine SHA256. PB170 positively suppliesconstructor argument preservation/finaltable andcontinuousbasecall; PA176/NR169/PD178,VC184,PC185 supply consumers. Endpoints inclusive.
