@@ -1,0 +1,8 @@
+File-backed LOAD raw pointer-word census; little endian aligned words.
+This checks direct stored function addresses (ARM entry or Thumb-tagged entry); not synthesized addresses, indirect reachability or absence of dynamic callers.
+009DCE44: no aligned raw word
+009E61B4: no aligned raw word
+009E62AC: no aligned raw word
+009E6EDC: no aligned raw word
+009E63A0: no aligned raw word
+00A56E00: no aligned raw word

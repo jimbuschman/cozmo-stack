@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, sixty-two PARTIAL,57 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-one PARTIAL,57 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -3496,3 +3496,33 @@ Primary: `20261008-sound-modulator-source-registration-native.txt`. R32 reaches9
 | SRG10 | 009D55F8..009D56F8;0103B1F0/0103B1F4;0103B220/0103B224 | Release locks global+8C, decrements N.C. Nonzero unlocks/returns remainingcount. Zero takes a second lock of current global+8C, hashes N8 into global90/94, removes matching ID at head or interior next4 and decrements global9C only iffound. Unlock inner lock, invoke N.virtual0, poolfree N, unlock outer lock, return0. | Preserve nested native lock order; do not infer recursive-mutex initialization from this body. Missing registry still destroys zero-ref N. Concrete virtual0 destruction remains its existing modulator-class cleanup interface. | Outer lock/decrement → inner lock/unlink → inner unlock → destructor → free → outer unlock. |
 
 SRG1–10 close the full source-subscription body and concrete retain/release callbacks. Table growth, failures and reverse association are exact; no new ADP-1 exclusion. Remaining source unsubscription and the pointer-reference/lifecycle reconciliation are retained before Q14-027 or the C35 loader obligation can close.
+
+
+### Resumption checkpoint 64: modulator-source unsubscription
+
+Primary: `20261008-sound-modulator-source-unsubscription-native.txt`; R33/source binding cleanup reaches this routine. M=manager, B=binding, filterID=third argument; reverse node V and modulator N use SRG layouts. No sample arithmetic appears.
+
+| Step | Address | Behaviour | Gates / failure | Order |
+|---|---|---|---|---|
+| SU1 | 009E63A0..009E6448 | CapacityM4zero returns void. Hash B0 unsigned modulo M4, follow reverse chain next10 until keyC==B0; missing returns. Snapshot V0/count4, walk its N pointers in physical order. filterIDzero selects all, otherwise selects only N8==filterID. | No temporary lookup retain or manager mutex here. Unselected advances pointer4. | Reverse lookup → vector snapshot → filter. |
+| SU2 | 009E6508..009E6550 | For selected N, scan B2C/count30 stride14 entries. If any entry word4==N8, preserve the subscription and advance to next reverse pointer. | This body tests raw entry ID without checking source-kind/type; empty/missing list reaches removal. | Remaining binding entries → preserve or remove. |
+| SU3 | 009E6550..009E6618;009E66C0..009E66DC;009E66F0..009E66F8;009E6724..009E6734 | Search N38/count3C for exact B pair sorted by signed B24 then unsigned pointer. On found, shift following pointers left if needed, then publish count−1. On missing leave N binding vector unchanged. Reload reverse base/count after memmove branch. | No free/shrink of N38 and no reset of sticky N44 flag. Empty uses current base. | Exact pair search → optional left shift → count → reverse reload. |
+| SU4 | 009E6618..009E6660;009E66E0..009E66F0 | Scan remaining N38 pointers. If any pointed binding word0 equals current B0, preserve reverse association even when this exact B was just removed. Otherwise remove it. | Reverse association represents recipient key shared by multiple bindings; not one reverse retain per binding. | Exact binding removal → same-recipient scan → preserve/release. |
+| SU5 | 009E6660..009E66C0 | Shift later reverse N pointers left, decrement V4 before calling N.virtualC (SRG10). Reload V0/V4 after callback, retry same traversal pointer against live end. | No advance after removal, so shifted next N is examined. No cleanup callback before reverse count publication. | Reverse shift → count → persistent release → live base/count → retry. |
+| SU6 | 009E645C..009E6508;009E66FC..009E6724;009E6734..009E6740 | Nonzero final reverse count returns. Zero with nonnull V0: count0 before free, then base/cap0. Reload B0/M4 and re-search reverse chain; unlink head/interior matching key and decrement M.C only if found. Finally free original V even if re-search misses or M4zero. | Bucket storage is retained; no resize. Null V0 skips vector free but still unlinks/frees V. No numeric return status. | Empty vector free → live-key re-search → optional unlink/node-count decrement → original reverse-node free. |
+
+SU1–6 plus SRG1–10 establish subscription retention/removal and distinct failure publication. This closes these local bodies only. No upper-layer destructor is extracted; manager tick and bank binding cleanup consume the cited shared interfaces.
+
+
+### Resumption checkpoint 65: Q14-027 lifecycle reconciliation
+
+| Q14-027 required piece | Status | Exact row joins |
+|---|---|---|
+| Envelope segments, first-sample convention and completion | CHECKED | EV1–14 full9E52F8..9E5E8B, ES1–10 scalar path within9E2BD0. |
+| Evaluator population, storage/failure gates, output binding and work-block lifetime | CHECKED | MP1–13, full9E2BD0 preparation and completion; SA/HI/IC/PR acquire/invalidate state; SRG/SU reverse subscriber population/retention. |
+| LFO/control-signal evolution and parameter timing | CHECKED | ML1–3, LS1–7, LB1–5, Q15 MU/SV/EP/LP parameter/default/trigger rows. No control-waveform arithmetic dropped. |
+| Production tick, delivery and retirement order | CHECKED | TH8→MTK1–6→RH1–5 with reopened cleanup helpers; CTM1–7→OA1–17; RG/RC callers→SA/HI state creation→active append→evaluator→recipient values/attachment outputs→retirement. |
+| Concrete audio control consumer and ADP-1 boundary | CHECKED | MC1–6 direct voice call A446F4→A56E00→A56A7C, masks/value endpoints/descriptors and spans exact; only resulting PCM gain arithmetic equivalent. |
+| Registration caller cross-check | CHECKED | RC8 immediate-branch census confirms14 sites. Raw pointer census companion finds no aligned file-backed word equal to inspected function entries (or entry|1). This is a bounded stored-address check, not proof that synthesized/indirect calls cannot exist. Closure rests on checked positive production joins and complete scoped bodies, not an absence claim. |
+
+Q14-027 is now CHECKED for its specific triage obligation: both evaluator bodies, state population, parameter delivery, evolution and lifecycle. The wider M6-022 production voice/source/route/registry obligation Q14-026 stays PARTIAL; this does not settle a fidelity record or claim complete M6/M9 production wiring. Remaining task count:22 CHECKED /61 PARTIAL /57 NOT DONE. The negative raw-pointer result adds no reachability exclusion.

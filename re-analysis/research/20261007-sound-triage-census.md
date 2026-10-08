@@ -33,7 +33,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-024 | 62 | PARTIAL |
 | Q14-025 | 63 | PARTIAL |
 | Q14-026 | 64 | PARTIAL |
-| Q14-027 | 65 | PARTIAL |
+| Q14-027 | 65 | CHECKED |
 | Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | PARTIAL |
 | Q14-030 | 68 | PARTIAL |
@@ -298,7 +298,7 @@ PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL
 
 > | M6-022 | **KEEP** | 0x009E52F8..0x009E5E8B;0x009E2BD0..0x009E52F3 | Modulator segment boundaries/slopes, first-sample convention, evaluator population/delivery and LFO/control-signal evolution affect parameter values and timing; no wholesale modulator DSP exemption. |
 
-PARTIAL: EV1–EV14 and MP1–13/ML1–3/ES1–10/LS1–7/LB1–5 close both complete local evaluator bodies9E2BD0..9E52F3 and9E52F8..9E5E8B: input population/output binding, storage/failure gates, scalar/vector envelopes, all LFO modes and state publication. MTK1–6 and RH1–5 add tick/recipient/retirement parents. Resumption checkpoints46–61 additionally close hierarchy cleanup/acquisition/invalidation, recipient ID publication, control-transform/query, attachment count/delivery/expiration/teardown, and the direct production gain consumer. Remaining: registration writer/caller census and lifecycle reconciliation; neighboring voice stages remain Q14-026. Only per-sample gain application arithmetic is ADP-1 equivalent; descriptor/control values, gates and sample spans stay exact.
+CHECKED: EV1–14, MP1–13/ML1–3/ES1–10/LS1–7/LB1–5 close the complete evaluator bodies. Checkpoints46–65 close scoped state acquisition/cleanup/invalidation, ID publication, registered reverse subscriber population/removal, tick notification/retirement, control transforms and attachment delivery/lifetime, plus direct production gain application with narrow ADP-1 arithmetic boundary. RC8 checks immediate production callers; raw-pointer census is bounded and introduces no absence/reachability claim. Checkpoint65 maps each required piece to rows. Neighboring voice/source/route pipeline remains separate Q14-026 PARTIAL; no whole-record promotion.
 
 ## Q14-028 — triage line 66
 
