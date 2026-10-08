@@ -256,13 +256,13 @@ PARTIAL: FX1–FX6, BO1–BO6, BW1–BW4 and HG1–HG8 establish render ordering
 
 > | M6-015 | **KEEP** | 0x008DBD74;0x008DBFE8..0x008DC034;0x008DBF76..0x008DBFB6;0x005942C6..0x00594354 | Hijack registration, persistent validFrames, DataReady/NoMoreData callbacks, reset/flush and exact 22320-Hz/744-byte output framing remain exact; only its delegated resampler math is SIMPLIFY under M6-004. |
 
-PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity writers, global callback replacement, per-instance relays and app buffer recipients. Frame-stream consumers and complete source/resampler geometry remain exact obligations; no completed whole-stream claim.
+PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity writers, global callback replacement, per-instance relays and app buffer recipients. AF1–6/FR1–6 add frame-stream getters, wire encoding, callback count handoff, reset and destruction. Complete source/resampler geometry remains an exact obligation; no completed whole-stream claim.
 
 ## Q14-021 — triage line 59
 
 > | M6-016 | **KEEP** | 0x0059687E..0x00596914;0x00597F12..0x00597F8E;0x0059818C..0x005982A0;0x00596DC8;0x0059962A..0x005999A4;0x00599E6A..0x00599EB8;0x008D88CC;0x00597DB4..0x00597E8E;0x0059678E..0x005967B8 | Production composition, event_volume/robot_volume delivery, OnDevice object6 route, alternative draw/order, callbacks, abort and scheduling remain exact. |
 
-Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. Remaining: routing/robot_volume, callback/drain thread timing, exact alternative chooser/sort/concrete virtual14 and complete stream/pop closure.
+Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Remaining: robot_volume, concrete post-map/lifetime, exact alternative chooser/sort/concrete virtual14, Dispatch thread/cancellation and source geometry closure.
 
 ## Q14-022 — triage line 60
 
