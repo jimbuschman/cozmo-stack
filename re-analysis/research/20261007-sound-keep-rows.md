@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, forty-seven PARTIAL,72 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, fifty PARTIAL,69 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 9: limiter construction, per-object decisions and undo
 
@@ -145,6 +145,21 @@ Coverage: A55750 local control flow and two direct predicates CHECKED; source vi
 | VC7 | 00A01C58..00A01CA0 | E8maskC==4 branch proceeds when P.DC.3C bit3set OR P.E8 bit7clear. Query A36D34(P.14+1C), reinterpret return as binary32, divide by binary32 P.14.64, then tail-call P.vt54(P,result). | Neither divisor-zero nor finite-value gate. | Query→reload game-object pointer/vtable→F32 division→virtual. | Exact parameter arithmetic under ADP-1; A36D34 and vt54 remain dependencies. |
 
 PW5's immediate consumer is now explicit, including state-store and callback order. A43D24's enclosing production prepass, source bindings and reset body remain unread here; Q14 is not finished.
+
+### Resumption checkpoint 17: enclosing voice/bus prepass order
+
+Coverage: A43D24 local pass order and scalar-state writers CHECKED; list writers and three called recipients remain PARTIAL. Companion `20261007-sound-prepass-resume-native.txt`; M6-026 current quotation before L1 applies. The shared structure is0108DF54, derived from the independent PC-relative bases in this body: array0/count4/voice-head14. Scalar conversion below is a stored per-bus parameter, not a per-sample loop; its consumer boundary must be checked before claiming an ADP-1 exemption.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PP1 | 00A43D24..00A43D80;00A43F00..00A43F18 | First traverse head14 via voiceD0. Only voiceDC==1 invokes VC1–7's A55750. Reload next after callback. Then reload global count4 and head14 for subsequent passes. Initially empty head with count0 returns immediately. | First pass skipped for empty head; bus work can still run with no voices. | Policy consumer pass before gain/state pass. | Voice-list construction and DC-state writers remain open. |
+| PP2 | 00A43D84..00A43DD4 | If countnonzero snapshot array0/end=array+count*4. In physical forward order, each entry computes binary32 value=entry90 + (entry1C8nonnull ? parent88 :00000000), stores entry88. Then scaleF32(value*3D4CCCCD). | Parent88 is read during traversal, so array order affects inherited values. | Read parent→add→store88→scale. | Scalar propagation, not a host recursive topological sort. |
+| PP3 | 00A43DD8..00A43E28 | If scaled<C2140000 viaBMI, result00000000. Otherwise t=VCVT.U32.F32(VMLA.F32(4E7E0000,scaled,4BD49A78)); m=bitcastF32((t&007FFFFF)+3F800000), exponent=bitcastF32(t&FF800000); a=VMLA.F32(3CAA70DE,m,3EA67F46); b=VMLA.F32(3F272DDB,m,a); result=F32(b*exponent). Store entry8C. | NaN does not take BMI and enters conversion branch. | Exact opcode association→stored gain word. | This parameter calculation is retained pending8C consumer proof; no math.Pow substitution asserted. |
+| PP4 | 00A43E2C..00A43E64;00A43F10..00A43F18 | Using reloaded head fromPP1, traverse voiceD0 forward; only DC==1 callsA4AF50. Loadnextaftercallback. | Empty head skips toPP5; zero buscount does not suppress this voice pass. | Bus scalar state before A4AF50 voice callbacks. | RecipientA4AF50 remains required. |
+| PP5 | 00A43E64..00A43EB8;00A43F1C..00A43F24 | Reload globalcount4, subtract1; signednegative skips. Otherwise process indices count−1 down0. Reload array0 before each element. Only entry1CCbit1set callsA437E0(entry). | Reverse physical order; not forward. Count and index held across callbacks, array pointer reloaded. | A4AF50 pass→reverse entry callbacks. | A437E0/list mutation contracts remain required. |
+| PP6 | 00A43EB8..00A43F28 | Reload globalhead14 once again; forward voiceD0 traversal, only DC==1 callsA4B4B0. Loadnextaftercallback. Returnvoid. | Empty list returns. | Policy→bus scalar→voiceA4AF50→reverseA437E0→voiceA4B4B0. | No callback-error aggregation/rollback here; all recipients must retain their own failure behavior. |
+
+This establishes where A55750 is called and the order in which its state becomes visible to later passes. It does not close the outer audio tick or its list/parameter producers.
 
 # Q14 — sound decisions under ADP-1
 

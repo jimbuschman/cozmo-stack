@@ -48,8 +48,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-039 | 77 | NOT DONE |
 | Q14-040 | 78 | NOT DONE |
 | Q14-041 | 79 | NOT DONE |
-| Q14-042 | 80 | NOT DONE |
-| Q14-043 | 81 | NOT DONE |
+| Q14-042 | 80 | PARTIAL |
+| Q14-043 | 81 | PARTIAL |
 | Q14-044 | 82 | PARTIAL |
 | Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | NOT DONE |
@@ -59,7 +59,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-050 | 88 | NOT DONE |
 | Q14-051 | 90 | NOT DONE |
 | Q14-052 | 91 | NOT DONE |
-| Q14-053 | 92 | NOT DONE |
+| Q14-053 | 92 | PARTIAL |
 | Q14-054 | 93 | CHECKED |
 | Q14-055 | 94 | NOT DONE |
 | Q14-056 | 95 | NOT DONE |
@@ -358,7 +358,7 @@ PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format,
 
 > | M6-026 | **KEEP** | 0x009ED2CC..0x009ED3D0;0x009C4F30;0x009F29E8..0x009F2BC4;0x009FA01C;0x009FA6F8;0x00A37100;0x00A01CA4;0x00A029DC;0x009ED428 | Playback limits, virtual/kill choice, counters, priority/tie order, remove/reposition, stop/Term/flush and production wiring remain exact; this limiter is a voice-count decision, not a peak-limiter DSP body. |
 
-PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1–7, GL1–5, PC1–5, PW1–5 and VC1–7 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including full counter-writer census, default-limiter creation, global threshold/limit writers, remaining policy-cache callers/writers and voice/notification pass (the local A55750 consumer is VC1–7); active/virtual embedded-offset relationships, registration and state callbacks and secondary64/66 recursion are now explicit. Native row presence does not settle those descendants.
+PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1–7, GL1–5, PC1–5, PW1–5, VC1–7 and PP1–6 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including full counter-writer census, default-limiter creation, global threshold/limit writers, remaining policy-cache callers/writers and voice/notification pass (the local A55750 consumer is VC1–7); active/virtual embedded-offset relationships, registration and state callbacks and secondary64/66 recursion are now explicit. Native row presence does not settle those descendants.
 
 ## Q14-038 — triage line 76
 
@@ -388,13 +388,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-004 | **KEEP** | 0x00A3BDFC..0x00A3BEE4;0x00A3CC48 | Music hierarchy, table-select flag, nearest overridden MIDI target and target0 failure are routing decisions; bank-only evidence must be expanded with these runtime consumers. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, target0 failure, table selection, retain and unlock; source initialization and table population remain open.
 
 ## Q14-043 — triage line 81
 
 > | M9-005 | **KEEP** | 0x00A3F76C..0x00A3FBC0 | MIDI tick-to-time, division9600, effective tempo and property55 are exact scheduling; header tempo cannot be discarded as a data-fit approximation. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/division/tempo, property55, clock arithmetic and frame offset conversion. Normal/system decoder completion, seek and production recipient closure remain open.
 
 ## Q14-044 — triage line 82
 
@@ -454,7 +454,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-015 | **KEEP** | 0x0098A6D4..0x0098A7B8;0x00A3EA3C;0x00A3DDF0 | Container draws occur when each note fires, not prewarm; exact RNG cadence is explicitly required. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 MD1–6/MH1–2 checks per-event submission versus recorded-node replay; concrete node128 and selection/RNG descendants remain required.
 
 ## Q14-054 — triage line 93
 
