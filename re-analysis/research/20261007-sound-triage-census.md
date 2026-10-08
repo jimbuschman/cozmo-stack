@@ -1455,3 +1455,7 @@ SP230A–D trace type-specificswitch/statequery, physicalexact/authoreddefault g
 ### Checkpoint 231 — Switch child control
 
 SW231A–F trace borrowedchoicecontext ownership, childrequestclone/repeatmetadata/successsuppression, specialprepare/3conversion/livePlay, orderedrelease/cleanup andpostloopreturn overwrite. Positivechild/query/choice bodies reused; collection/continuation/continuous/association/inputwriterclosure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 232 — Switch continuous context and continuation
+
+CC232A–D trace continuous context publication/reference/count order, allocation-failure counter release, one-child association transfer versus fresh-list append, and temporary cleanup/accepted-result ordering. Existing positive bodies reused; collections, association/cleanup recipients and input/lifetime closure retained. No totals/Q15/fidelity/production changes.
