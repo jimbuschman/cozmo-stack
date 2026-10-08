@@ -1479,3 +1479,7 @@ EC236A/B trace event action403 filtering/target resolve/flag1 notification/relea
 ### Checkpoint 237 — descriptor consumer order
 
 OD237A–E trace selected/unselected ID suppression, publication-failure continuation, raw descriptor packet/modes, new20-before-all-old24 order and subsequent group-pair registration/local cleanup. Concrete current manager global bound; live20/24 and pair registration/input/writer closure retained. Storage bodies excluded. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 238 — group collaborator registration
+
+GR238A–D trace group-ID-only reuse, count callback versus node release, new collaborator/subscription/publication order and observed allocation-failure branches. Existing SWR2 reused; storage internals excluded. Remaining endpoints/state-change/retirement/manager consumers and input/writer closure retained. No totals/Q15/fidelity/production changes.
