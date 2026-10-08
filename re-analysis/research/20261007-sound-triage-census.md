@@ -54,7 +54,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | PARTIAL |
 | Q14-047 | 85 | NOT DONE |
-| Q14-048 | 86 | PARTIAL |
+| Q14-048 | 86 | NOT DONE |
 | Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | NOT DONE |
 | Q14-051 | 90 | PARTIAL |
@@ -392,7 +392,7 @@ PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behav
 
 > | M9-003 | **KEEP** | 0x005EF0C8..0x005EF30F;0x005EF490..0x005EF4DF;0x005EF2C6 | Running means, posted vibrato values, duration log, acting-tag return and stop preserving smoothing state are parameter/lifecycle behavior. |
 
-Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. Remaining: constructor defaults and concrete M6 virtual18 binding; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
+Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. SGB1–6 independently reopen the local controlbody throughactualStopreturn5EF340; imports1042E34/1041E24 identifyparameterpost599F62 andRemoveListener6356AC. Remaining: constructor defaults and concrete M6 virtual18 binding; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
 
 ## Q14-042 — triage line 80
 
