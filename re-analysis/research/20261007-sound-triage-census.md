@@ -53,8 +53,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-044 | 82 | PARTIAL |
 | Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | PARTIAL |
-| Q14-047 | 85 | NOT DONE |
-| Q14-048 | 86 | NOT DONE |
+| Q14-047 | 85 | PARTIAL |
+| Q14-048 | 86 | PARTIAL |
 | Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | NOT DONE |
 | Q14-051 | 90 | PARTIAL |
@@ -428,13 +428,13 @@ PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, eng
 
 > | M9-009 | **KEEP** | 0x00A6E848..0x00A6F133 | Curve/property accumulation, buffer delivery and consumer update cadence remain exact parameter work; arbitrary per-sample application remains unsupported. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. Inlinedcurve-shape rows andlivewriter/consumerclosure remain; anyfinalPCMdescendantmustbeisolatedindependentlybeforeequivalence. No whole-recordDROP.
 
 ## Q14-048 — triage line 86
 
 > | M9-009 | **VERIFY** | 0x00A6E848..0x00A6F133 | If a descendant merely multiplies final PCM by an already-exact parameter stream, isolate that sample loop first; current evidence does not settle the boundary. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. Inlinedcurve-shape rows andlivewriter/consumerclosure remain; anyfinalPCMdescendantmustbeisolatedindependentlybeforeequivalence. No whole-recordDROP.
 
 ## Q14-049 — triage line 87
 
