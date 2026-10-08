@@ -1181,3 +1181,7 @@ DD163A–E settle known0503 action0's ordered transition detach/clear, context/r
 ## Decision checkpoint164 — deferred-action event association
 
 AE164A–C settle actionC4/C0 publication before owner retain, active action-list admission/append and retained reference on capacity/allocation failure. TC9/VE6/DA8 establish callers; SN159C/DD163C establish enumeration/removal. Existing TD7 closes destructor remainder and is storage-only under the guard; no new descent. OwnerC callback and recipient/producer families remain retained. Totals unchanged; no Q15, fidelity or production changes.
+
+## Decision checkpoint165 — deferred-action retained-state transfer
+
+AV165A–D settle A63A64/9E771C prior-state release before source transfer, initial allocation pointer publication/null return, physical admission/count/state40/50 retain, and non-aborting growth failure. CX157/MF158/SN159 provide known cleanup/membership joins. Inline raw pointer-copy loop and allocator internals omitted under the guard. Broader producer/family closure remains; no totals, Q15, fidelity or production changes.

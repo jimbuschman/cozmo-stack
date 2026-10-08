@@ -1,0 +1,110 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A63A64..0x00A63A6C exclusive; ARM;
+00A63A64: add          r0, r0, #0xc8
+00A63A68: b            #0x9e771c
+RANGE 0x009E771C..0x009E78D8 exclusive; ARM;
+009E771C: push         {r3, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009E7720: mov          r7, r1
+009E7724: ldr          r3, [r0, #4]
+009E7728: mov          r6, r0
+009E772C: ldr          r5, [r0]
+009E7730: lsls         r3, r3, #2
+009E7734: movne        r1, r5
+009E7738: bne          #0x9e7750
+009E773C: b            #0x9e77b0
+009E7740: ldr          r3, [r6, #4]
+009E7744: add          r3, r1, r3, lsl #2
+009E7748: cmp          r5, r3
+009E774C: beq          #0x9e77b0
+009E7750: ldr          r4, [r5], #4
+009E7754: ldr          r3, [r4, #0x40]
+009E7758: ldr          r2, [r4, #0x50]
+009E775C: sub          r3, r3, #1
+009E7760: str          r3, [r4, #0x40]
+009E7764: cmp          r3, #0
+009E7768: sub          r2, r2, #1
+009E776C: str          r2, [r4, #0x50]
+009E7770: bne          #0x9e7740
+009E7774: ldr          r3, [pc, #0x15c] ; word[009E78D8]=006588C0
+009E7778: mov          r0, r4
+009E777C: ldr          r2, [r4]
+009E7780: ldr          r3, [pc, r3]
+009E7784: ldr          r2, [r2]
+009E7788: ldr          r8, [r3]
+009E778C: blx          r2
+009E7790: mov          r1, r4
+009E7794: mov          r0, r8
+009E7798: bl           #0xa7a988
+009E779C: ldr          r3, [r6, #4]
+009E77A0: ldr          r1, [r6]
+009E77A4: add          r3, r1, r3, lsl #2
+009E77A8: cmp          r5, r3
+009E77AC: bne          #0x9e7750
+009E77B0: mov          r3, #0
+009E77B4: str          r3, [r6, #4]
+009E77B8: ldr          r5, [r7, #4]
+009E77BC: cmp          r5, r3
+009E77C0: bne          #0x9e77cc
+009E77C4: mov          r0, r6
+009E77C8: pop          {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009E77CC: ldr          r8, [pc, #0x108] ; word[009E78DC]=0065886C
+009E77D0: lsl          r1, r5, #2
+009E77D4: ldr          r8, [pc, r8]
+009E77D8: ldr          r0, [r8]
+009E77DC: bl           #0xa7a7f4
+009E77E0: cmp          r0, #0
+009E77E4: str          r0, [r6]
+009E77E8: beq          #0x9e77c4
+009E77EC: str          r5, [r6, #8]
+009E77F0: ldr          r3, [r7, #4]
+009E77F4: ldr          sl, [r7]
+009E77F8: lsls         r3, r3, #2
+009E77FC: beq          #0x9e77c4
+009E7800: mov          r2, r5
+009E7804: b            #0x9e7858
+009E7808: ldr          r5, [r6]
+009E780C: mov          r2, r4
+009E7810: add          r3, r5, r2, lsl #2
+009E7814: add          r1, r2, #1
+009E7818: cmp          r3, #0
+009E781C: str          r1, [r6, #4]
+009E7820: beq          #0x9e7840
+009E7824: ldr          r1, [sb, #0x40]
+009E7828: ldr          r3, [sb, #0x50]
+009E782C: add          r1, r1, #1
+009E7830: str          sb, [r5, r2, lsl #2]
+009E7834: add          r3, r3, #1
+009E7838: str          r1, [sb, #0x40]
+009E783C: str          r3, [sb, #0x50]
+009E7840: ldr          r2, [r7, #4]
+009E7844: ldr          r3, [r7]
+009E7848: add          r3, r3, r2, lsl #2
+009E784C: cmp          sl, r3
+009E7850: beq          #0x9e77c4
+009E7854: ldr          r2, [r6, #8]
+009E7858: ldr          r4, [r6, #4]
+009E785C: ldr          sb, [sl], #4
+009E7860: cmp          r4, r2
+009E7864: blo          #0x9e7808
+009E7868: add          fp, r2, #1
+009E786C: ldr          r0, [r8]
+009E7870: lsl          r1, fp, #2
+009E7874: bl           #0xa7a7f4
+009E7878: subs         r5, r0, #0
+009E787C: beq          #0x9e7840
+009E7880: ldr          r1, [r6]
+009E7884: ldr          r0, [r6, #4]
+009E7888: cmp          r1, #0
+009E788C: beq          #0x9e78c0
+009E7890: cmp          r0, #0
+009E7894: beq          #0x9e78b8
+SKIPPED 009E7898..009E78B8: out of scope: raw pointer-array storage copy loop.
+009E78B8: ldr          r0, [r8]
+009E78BC: bl           #0xa7a988
+009E78C0: cmp          r4, fp
+009E78C4: str          r5, [r6]
+009E78C8: str          fp, [r6, #8]
+009E78CC: bhs          #0x9e7840
+009E78D0: ldr          r2, [r6, #4]
+009E78D4: b            #0x9e7810
