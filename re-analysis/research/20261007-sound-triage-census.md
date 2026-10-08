@@ -1327,3 +1327,7 @@ Q14-032/033/035 now explicitly map checkpoints170–197 positive creation/contro
 ### Checkpoint 199 — queue producer census/base seek
 
 NP199A–C provide seven positive direct producer sites, input-dependent0/1 publication andbase PBI20/24 exactseek value/mode/pending/markerflags beforequeue5. Continuousoverrides andfullhighercaller/writer/frameclosure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 200 — continuousseek gating
+
+CS200A–C close knowncontinuous20/24 ancestor/type/mode/specialflag suppression beforebase seekpublication, andsharedmodegetter withrepeatedread cadence. Dynamictype/ancestry/mode/flag writers/fullproduction closure retained; no totals/Q15/fidelity/production changes.
