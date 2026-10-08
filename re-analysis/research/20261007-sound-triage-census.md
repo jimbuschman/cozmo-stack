@@ -106,8 +106,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-097 | 146 | PARTIAL |
 | Q14-098 | 147 | PARTIAL |
 | Q14-099 | 148 | PARTIAL |
-| Q14-100 | 149 | NOT DONE |
-| Q14-101 | 150 | NOT DONE |
+| Q14-100 | 149 | PARTIAL |
+| Q14-101 | 150 | PARTIAL |
 | Q14-102 | 151 | PARTIAL |
 | Q14-103 | 152 | PARTIAL |
 | Q14-104 | 153 | PARTIAL |
@@ -746,13 +746,13 @@ PARTIAL: existing primary-backed rows Z1–Z15 in `20261007-sound-keep-rows.md`.
 
 > | C33 I/O memory manager / scheduler ties | M6-024,M6-025 | **KEEP** | 0x00969E8C;0x009713B4;0x009716F0;0x0096FE70;0x0097161C;0x00979B98;0x00962EA8;0x00962C24 | Allocation/cache availability, scheduling priority and tie-breaking are decisions/state/timing. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: MEMREL1–2/MEMIDX positively reopen96FE70 cached-release prefix and97161C sortedindex invalidation. Remaining96FEF0..9713B4 coalescing,9716F0 request/allocation,969E8C,9713B4,979B98 and962EA8/962C24 scheduling/ties; no whole-memorymanager closure.
 
 ## Q14-101 — triage line 150
 
 > | C33 decoder/cache/emit/header residuals | M6-002,M6-003,M6-025 | **KEEP** | 0x00AB2D74;0x00AB7E40;0x00A73490;0x009CD340 | WEM decoding and frame handoff remain exact; later C36 rows are verification leads, not ADP-1 waivers. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: AEMIT1–2/VPACK1–4 reopenA73490 sourceframe publication/loop/endresult andAB7E40 packetbound/framing/allocation/terminaldrain. RemainingAB2D74 setupcache,9CD340 RIFF/header andAB3780/AB3520/AB3978 codec recipients; decoding staysexact.
 
 ## Q14-102 — triage line 151
 
@@ -1025,3 +1025,5 @@ Q14-065 update: GOR1–4 independently reopen singing wrappers and exactobject6/
 Checkpoint97 reconciliation: {'CHECKED': 24, 'PARTIAL': 110, 'NOT DONE': 6}. Each promoted PARTIAL item names existing body rows and specific remaining producers/recipients. OnlyQ14-140 movesCHECKED as a positively cited higher-layer boundary. Sixitems stillNOT DONE: streammanager/device/GetBuffer096/127, externalcompletioncheckpoint098/129, I/O memory/scheduler100 and decoder/cache/emit residual101. These are explicit unread shippedcode, not UNKNOWN.
 
 Checkpoint98: fourstreambuffer/completionitemsnowPARTIAL,24 CHECKED/114 PARTIAL/2 NOT DONE. Unread100(memory/scheduler) and101(decoder/cache/emit)remainNOT DONE; nofinishclaim.
+
+Checkpoint99:24 CHECKED/116 PARTIAL/0 NOT DONE. Allitemsnowhavebodyrows/boundarycitations, but116itemsstillhaveexplicitunreadproductionjoins; nofinishclaimandnoconversionofreadablecode toUNKNOWN.
