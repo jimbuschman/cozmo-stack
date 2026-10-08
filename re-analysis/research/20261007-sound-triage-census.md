@@ -1121,3 +1121,7 @@ CP148A–D trace head/count publication before completion and secondary-count ca
 ## Decision checkpoint149 — parent/counter joins and Switch child retirement
 
 NJ149A binds five known node families to existing LI1/LC6 parent-setter and counter rows, with LC4 bus joins. SW149A–C close Switch30's saved child-ID ordering, ordered child-list removal, first association unlink and parent-origin reference release even on a missing association. Concrete node destructors, idle-teardown remainder and additional producer/family census still prevent full Q14 closure. No Q15, production or fidelity change; totals unchanged.
+
+## Decision checkpoint150 — node destructors and playlist retirement
+
+ND150A–I trace all five known concrete node0 parent bodies, Switch's ordered manager unsubscribe, RanSeq's conditional playlist-count/weight-flag/state retirement and common property/owner cleanup. TR14/TR15/NR146D/F/TT8/LC5 supply positive existing joins. ActorMixer resets to a shared container vtable during destruction; its earlier playback binding is unchanged. Nonempty Layer tracks and storage/allocator internals are excluded under the guard. Concrete state-owner0, idle teardown and broader producer/family/writer closure remain; no coverage promotion, Q15, production or fidelity change.
