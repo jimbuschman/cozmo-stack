@@ -1407,3 +1407,7 @@ SS218A–E trace root creation caller outcomes, ordered exact scope selection/an
 ### Checkpoint 219 — Sound setter ramp join
 
 SJ219A/B join concrete Sound duration/shape/byte inputs to already-positive ramp/cancellation/transition bodies, distinguishing equal-current return from nonpositive-duration immediate notification. SS218 boundary reconciled; preflight/resolver/notification/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 220 — scoped search helpers/root resolver
+
+SH220A–D establish byte/word search found-versus-insertion-pointer contracts, exact root resolver ancestor/children outputs andfresh-root no-value fallback. SS218 helper/resolver boundaries reconciled; update/notification/tree/input/state writer closure retained. No totals/Q15/fidelity/production changes.

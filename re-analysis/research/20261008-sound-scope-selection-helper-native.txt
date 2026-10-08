@@ -1,0 +1,123 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A18540..0x00A185B0 exclusive; ARM;
+00A18540: push         {r4, r5, lr}
+00A18544: mov          ip, #0
+00A18548: ldm          r0, {r5, lr}
+00A1854C: subs         lr, lr, #1
+00A18550: bmi          #0xa18588
+00A18554: rsb          r3, ip, lr
+00A18558: add          r3, r3, r3, lsr #31
+00A1855C: add          r3, ip, r3, asr #1
+00A18560: rsb          r0, r3, r3, lsl #3
+00A18564: add          r0, r5, r0, lsl #2
+00A18568: ldrb         r4, [r0, #0x18]
+00A1856C: cmp          r4, r1
+00A18570: subhi        lr, r3, #1
+00A18574: bhi          #0xa18580
+00A18578: bhs          #0xa185a4
+00A1857C: add          ip, r3, #1
+00A18580: cmp          ip, lr
+00A18584: ble          #0xa18554
+00A18588: cmp          r5, #0
+00A1858C: mov          r3, #0
+00A18590: rsbne        ip, ip, ip, lsl #3
+00A18594: strb         r3, [r2]
+00A18598: addne        r0, r5, ip, lsl #2
+00A1859C: moveq        r0, r5
+00A185A0: pop          {r4, r5, pc}
+00A185A4: mov          r3, #1
+00A185A8: strb         r3, [r2]
+00A185AC: pop          {r4, r5, pc}
+RANGE 0x00A18790..0x00A187F8 exclusive; ARM;
+00A18790: push         {r4, r5, lr}
+00A18794: mov          ip, #0
+00A18798: ldm          r0, {r5, lr}
+00A1879C: subs         lr, lr, #1
+00A187A0: bmi          #0xa187d4
+00A187A4: rsb          r3, ip, lr
+00A187A8: add          r3, r3, r3, lsr #31
+00A187AC: add          r3, ip, r3, asr #1
+00A187B0: add          r0, r5, r3, lsl #3
+00A187B4: ldr          r4, [r0, #4]
+00A187B8: cmp          r4, r1
+00A187BC: subhi        lr, r3, #1
+00A187C0: bhi          #0xa187cc
+00A187C4: bhs          #0xa187ec
+00A187C8: add          ip, r3, #1
+00A187CC: cmp          ip, lr
+00A187D0: ble          #0xa187a4
+00A187D4: cmp          r5, #0
+00A187D8: mov          r3, #0
+00A187DC: addne        r0, r5, ip, lsl #3
+00A187E0: strb         r3, [r2]
+00A187E4: moveq        r0, r5
+00A187E8: pop          {r4, r5, pc}
+00A187EC: mov          r3, #1
+00A187F0: strb         r3, [r2]
+00A187F4: pop          {r4, r5, pc}
+RANGE 0x00A152C4..0x00A153C4 exclusive; ARM;
+00A152C4: push         {r4, r5, r6, r7, lr}
+00A152C8: ldr          r7, [r1]
+00A152CC: cmp          r7, #0
+00A152D0: beq          #0xa1548c
+00A152D4: cmp          r2, #0
+00A152D8: beq          #0xa152f0
+00A152DC: ldrb         ip, [r0, #8]
+00A152E0: cmp          ip, #0
+00A152E4: addne        ip, r0, #4
+00A152E8: strne        ip, [r2]
+00A152EC: ldrne        r7, [r1]
+00A152F0: ldr          r4, [r0, #0x10]
+00A152F4: subs         r4, r4, #1
+00A152F8: ldrpl        r6, [r0, #0xc]
+00A152FC: movpl        lr, #0
+00A15300: bmi          #0xa15338
+00A15304: rsb          r0, lr, r4
+00A15308: add          r0, r0, r0, lsr #31
+00A1530C: add          r0, lr, r0, asr #1
+00A15310: rsb          ip, r0, r0, lsl #3
+00A15314: add          ip, r6, ip, lsl #2
+00A15318: ldr          r5, [ip, #0x18]
+00A1531C: cmp          r5, r7
+00A15320: subhi        r4, r0, #1
+00A15324: bhi          #0xa15330
+00A15328: bhs          #0xa15340
+00A1532C: add          lr, r0, #1
+00A15330: cmp          r4, lr
+00A15334: bge          #0xa15304
+00A15338: mov          r0, #0
+00A1533C: pop          {r4, r5, r6, r7, pc}
+00A15340: ldr          r6, [r1, #4]
+00A15344: cmp          r6, #0
+00A15348: beq          #0xa153b4
+00A1534C: cmp          r2, #0
+00A15350: beq          #0xa15364
+00A15354: ldrb         r0, [ip, #8]
+00A15358: cmp          r0, #0
+00A1535C: addne        r0, ip, #4
+00A15360: strne        r0, [r2]
+00A15364: ldr          r4, [ip, #0x10]
+00A15368: subs         r4, r4, #1
+00A1536C: bmi          #0xa15338
+00A15370: ldr          r7, [ip, #0xc]
+00A15374: mov          lr, #0
+00A15378: rsb          ip, lr, r4
+00A1537C: add          ip, ip, ip, lsr #31
+00A15380: add          ip, lr, ip, asr #1
+00A15384: rsb          r0, ip, ip, lsl #3
+00A15388: add          r0, r7, r0, lsl #2
+00A1538C: ldr          r5, [r0, #0x18]
+00A15390: cmp          r6, r5
+00A15394: sublo        r4, ip, #1
+00A15398: blo          #0xa153a4
+00A1539C: bls          #0xa15410
+00A153A0: add          lr, ip, #1
+00A153A4: cmp          r4, lr
+00A153A8: bge          #0xa15378
+00A153AC: mov          r0, #0
+00A153B0: pop          {r4, r5, r6, r7, pc}
+00A153B4: ldr          r0, [r1, #8]
+00A153B8: cmp          r0, #0
+00A153BC: bne          #0xa1534c
+00A153C0: ldrb         r0, [r1, #0xc]
