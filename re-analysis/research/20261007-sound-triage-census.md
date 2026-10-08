@@ -1109,3 +1109,7 @@ OR145A–C establish default-versus-keyed switch recipient removal, active/empty
 ## Decision checkpoint146 — object-node and random/sequence lifetime
 
 NR146A–I positively bind DC4's node lookup, five known table slots, shared/RanSeq virtual24 retirement and common referenceC release. Packed property transitions detach through TT8 before storage release; RanSeq state destruction precedes live-key re-search and stable removal. Remaining node18/0, parent/bus30 and additional producer/family census remain explicit; these parent bodies do not settle Q14-087 or whole container/RTPC/lifetime obligations. Counts unchanged; no Q15 or fidelity changes.
+
+## Decision checkpoint147 — last-reference transition and parent-removal joins
+
+LR147A–F identify concrete pre-cleanup/parent-removal dispatch, shared transition detach/count compensation, Sound no-op and ordered parent child-list removal. Layer nonempty blend-track prepass is excluded by the scope guard. Concrete node destructors, Switch/Layer pre-cleanup, Switch parent-removal, child1C and group owner9C remain decision gaps. Counts unchanged; Q14 and Q15 remain incomplete.
