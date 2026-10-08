@@ -1257,3 +1257,7 @@ PF182A bindsSF2 source38 toA782DC: plugin6Cnull returns2, nonnull tailvirtual28 
 ### Checkpoint 183 — start-notification PBI bindings
 
 SN183A/B joinSF10/NF3 toknownbase no-op38/18 andcontinuousVE5–15 callbacks, preservingflag/enqueue/flush/38/livetable18 order. OldNF3 unread-boundary prose doesnotreopenpositiveVE bodies. Fullflag/mode/250writer/familyclosure stays PARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 184 — voice reuse/new raw-status decision
+
+VC184A–C tracefirstreusekey match/resultignored/controlflag3/return5, newvoice sourcebind rawresult gates, attach-result successbyte, and3F separatepending-start admission returning1. Native A54650 callABI keptunsettled ratherthan guessed. Fullconstruction/rate/delete/producer/pending-consumer closure retained; no totals/Q15/fidelity/production changes.
