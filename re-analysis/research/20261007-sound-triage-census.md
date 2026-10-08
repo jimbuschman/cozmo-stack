@@ -118,7 +118,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-109 | 158 | NOT DONE |
 | Q14-110 | 159 | NOT DONE |
 | Q14-111 | 160 | CHECKED |
-| Q14-112 | 161 | NOT DONE |
+| Q14-112 | 161 | CHECKED |
 | Q14-113 | 162 | NOT DONE |
 | Q14-114 | 163 | NOT DONE |
 | Q14-115 | 164 | NOT DONE |
@@ -808,7 +808,7 @@ CHECKED boundary: B14–B16 and B27. All three named bodies are override/priorit
 
 > | C35.1 L5-22–L5-30 curve evaluator | M6-009,M9-007 | **KEEP** | 0x00A14E28..0x00A15244; table0x00A14F64..0x00A14F84; literals0x00A15248..0x00A152C0 | Segment search/interpolation/scaling fast-log/pow produce exact RTPC values; retain binary32 association/bit reinterpretation even though this is numeric math. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED (named evaluator body): R1–R12/CL1–CL3/QE1–QE5 re-open the entire A14E28..A15244 control-value evaluator, instruction jump table/literals, search/hint/shape/scaling/default gates and opcode association. QE3 corrects this report's own VNMLS sign formulas. Loader, accumulator and shipped-data reachability are separately Q14-113/Q14-114/Q14-115, not settled here.
 
 ## Q14-113 — triage line 162
 
