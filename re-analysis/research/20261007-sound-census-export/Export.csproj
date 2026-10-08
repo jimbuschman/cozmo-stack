@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBank.cs" Link="WwiseBank.cs" />
+    <Compile Include="../../../cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseHierarchy.cs" Link="WwiseHierarchy.cs" />
+    <Compile Include="../../../cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseStmg.cs" Link="WwiseStmg.cs" />
+    <Compile Include="../../../cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseBus.cs" Link="WwiseBus.cs" />
+    <Compile Include="../../../cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs" Link="WwiseModulator.cs" />
+  </ItemGroup>
+</Project>
