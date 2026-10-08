@@ -268,7 +268,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M6-017 | **KEEP** | 0x009AF9F4..0x009AFAB8;0x00A4087C;0x00A40940;0x009AFD10;0x00A38420;0x00A03618;0x009EC418;0x009EBE6C | Thread lifecycle, group/voice/bus order, gate writers, pending-action drain, EndOfEvent and post-Term latency remain exact; external pacing uncertainty is not an ADP-1 arithmetic exemption. |
 
-PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit group and callback order, clock/fraction/groupcount and idle gates; E30–32 cover drain/synchronous Perform and NF1–5 notification flush. DF1–DF55 add device initialization/termination, pacing worker, mode/gate publications, command35 producer handshake, rebuild/reset/factory/holder cleanup and format invalidation/reconnect parents. Remaining: complete writer census, OpenSL sink/plug-in/RTPC/route recipient closure, pending action/queue bodies, group consumers and complete EndOfEvent/post-Term recipients. All readable, not UNKNOWN.
+PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit group and callback order, clock/fraction/groupcount and idle gates; E30–32 cover drain/synchronous Perform and NF1–5 notification flush. DF1–DF56 add device initialization/termination, pacing worker, mode/gate publications, command35 producer/consumer handshake, rebuild/reset/factory/holder cleanup and format invalidation/reconnect parents. Remaining: complete writer census, OpenSL sink/plug-in/RTPC/route recipient closure, pending action/queue bodies, group consumers and complete EndOfEvent/post-Term recipients. All readable, not UNKNOWN.
 
 ## Q14-023 — triage line 61
 
@@ -310,7 +310,7 @@ PARTIAL: BO4–BO6 and B13 prove metric pointer/results are passed to an observe
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP8 close A4BC58 parent control/parameter outputs and matrix ownership, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. Remaining: A4D994, full A25FF8 routing/coefficient boundary, A5975C/A5B9D0/A5993C/A5D70C recipients and flag writers. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. Remaining: full A25FF8 routing/coefficient boundary, A5B9D0/A5993C recipients, registration paths and flag writers. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
