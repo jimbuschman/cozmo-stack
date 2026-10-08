@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 188 — PBI initial pause flags, gains, countdown and reuse key
+
+Primary: `20261008-sound-pbi-initial-control-native.txt`, `20261008-sound-pbi-initial-control-inputs-native.txt`; same engine SHA256. PB170 positively suppliesconstructor argument preservation/finaltable andcontinuousbasecall; PA176/NR169/PD178,VC184,PC185 supply consumers. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PI188A | 00A00130..00A00184;00A001D8..00A00238;00A002D4..00A00318 | Constructor r6=sixtharg,r5=request,r4=PBI; ip=0 andsb=3F800000 beforecontrolstores. Initializes144/148/154/170=0 and164/168/16C=1bits;1B4=sixtharg,150=fourtharg,14C=request4. Copyfive rawfifthargwords→1C0..1D0;1D4=0;1D8=request74;1DC/1E0/1E8/1EC/1F0/1F4=0,1F8=FFFFFFFF,1E4=request84. | Raw five-wordcopy includesinitial priority/reuse-key fieldsbefore laterkeyoverride. No duration/finite/positivity gate. | Inputassociation/gains → rawparameterbundle → nestedcounter0/countdown → list/owner/sentinel defaults. | PairsPA176increment/NR169resume andPC185 context1CC(=PBI1D8) countdowninput. Fullwriters remainseparate; this isnotwholeconstructorclosure. |
+| PI188B | 00A0023C..00A002D0 | Initialu16loop1B8=1. Byte1BA=oldbit7 only (clear0..6);1BB=0;1BC=0;1BD=44hex OR((sixtharg!=0)<<7). Byte1BE ultimatelyrequest128bit4→bit6, otherbits0;byte1BF clearslow2, copiesrequest128bit2 tobit2, preservesoriginalbits3..7. Laterexplicitreusekey PI188C mayset1BEbit3. | Preserve1BAbit7; no blanketzero-memoryassumption. Intermediatebyte/halfwordstores matter: halfwordat1BE clearsbits7..9 afterbit6packing. | Loopcount → packedflags/requests → lateroptionalkeyflag. | ConsumersPA/NR/QN/PN/SN positive; fullflagbit7/requestwriter/familyclosure remains. No uninitialized preservedbit upgradedtosettledvalue. |
+| PI188C | 00A00308..00A00334;00A0040C..00A0041C | Request7Cnonnull writesrawvalue→PBI1C8 andOR1BEbit3, thenjoincommoncontinuation. Request7Czero readsrawglobalword1052434 (PC/literal00652108), storesglobal+1 wrapping32, publishesoldvalue→PBI1C8. Bothoverridefiftharg's earlierthirdwordcopy. | Request7C=0 meansautokeygeneration, not retain earliercopied1C8. Counterwrapnotclamped. | Initialkeycopy → explicit ORglobalincrement/oldkey → sharedcontinuation. | VC184reuse comparesPBI1C8 withvoice8context1BC (=oldPBI1C8), nowpositiveconstructorproducerjoin. Otherglobal/keywriters/collision/preconditionsremainseparate. |
+
+NamedPBI initial pause counter/gains/flags/countdown/reuse-key now have exact localproducer values, includingpreserved1BAbit7 andrawkeywrap. Wholeconstructor remainder/otherwriters/families remain PARTIAL; totalsunchanged, Q15parked; no production/fidelity changes.
+
 ## Checkpoint 187 — deletion helper no-ops and storage stop boundaries
 
 Primary: `20261008-sound-voice-delete-local-helpers-native.txt`, `20261008-sound-voice-cleanup-scope-boundary-native.txt`; same engine SHA256. VD186 invokes these during known Term/plain destructor. Endpoints inclusive. Boundary reads establish local purpose; no allocator/cache descendant recovery follows.

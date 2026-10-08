@@ -1273,3 +1273,7 @@ VD186A–D bindstandard44/0 andtraceTerm→livedestructor→outerfree, primary/f
 ### Checkpoint 187 — deletionhelper boundaries
 
 DH187A establishesA76268/A56710/A46DBC BXLR no-ops. Deletedvoice buffer/workspace reclamationA53244/A47360/A76608 is outofscope storageunderguard, no allocator/bufferfree descent. Decisioncallback/familyclosure stays PARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 188 — initial PBI control producers
+
+PI188A–C tracegain/handle defaults, nested1D4=0, countdownrequest74, exactpackedflagpreservation andinitialkeycopy overriddenbyrequest7C/globalwrappingkeyproducer. VC184/PC185/PA176/NR169 positiveconsumerjoins; otherwriters/wholeconstructor/familiesremain. No totals/Q15/fidelity/production changes.
