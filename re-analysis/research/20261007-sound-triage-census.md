@@ -1451,3 +1451,7 @@ GT229A–D trace complete9D849C selected/all selectors/leaves,parent-own-before-
 ### Checkpoint 230 — Switch play scope/group/history
 
 SP230A–D trace type-specificswitch/statequery, physicalexact/authoreddefault groupselection, historypair publication-before-childgate andempty/continuous admission/cleanup. Positivequery/cache/contextrecipients reused; remainingcontinuous/child/lifetime/input closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 231 — Switch child control
+
+SW231A–F trace borrowedchoicecontext ownership, childrequestclone/repeatmetadata/successsuppression, specialprepare/3conversion/livePlay, orderedrelease/cleanup andpostloopreturn overwrite. Positivechild/query/choice bodies reused; collection/continuation/continuous/association/inputwriterclosure retained. No totals/Q15/fidelity/production changes.
