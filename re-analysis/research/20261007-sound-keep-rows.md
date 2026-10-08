@@ -102,6 +102,20 @@ Coverage: local global-limit decisions and allocation-statistics reader CHECKED;
 
 The global memory-pressure selector and global voice selector are separate checks with different candidate gates, count handling, stop reasons and returns. Both remain exact under ADP-1. Their configuration and policy producers remain open; no replacement using host memory/voice heuristics is authorized.
 
+### Resumption checkpoint 14: virtual-policy inheritance and concrete overrides
+
+Coverage: A01768 cache fill/read, inherited packed values and all cited node120 recipient bodies CHECKED locally. Other cache writers and configuration/RNG producers PARTIAL. Companion `20261007-sound-resume-virtual-policy-native.txt`; M6-026 quotation before L1 applies. The wider capture contains adjacent helpers, but only the instruction ranges cited below are claimed here.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PC1 | 009EEDA4..009EEDF4 | If node45 bit4set use that node. Otherwise follow parent34 until first ancestor with45 bit4set; if no override use last ancestor, or original node when no parent. Write selected node58 bits3..5 zero-extended to caller output; return node59 low4. | No bus38 inheritance in this lookup, no null-parent default constant beyond selected root's actual values. | Select inherited owner→output queue-mode bits→return policy bits. | No float or sample math. Source configuration readers LI11/advanced reader are distinct writers. |
+| PC2 | 00A01768..00A017EC | Cached bit80 in PBI1BB returns bits3..6 and writes low3 to caller output. On cachemiss set bit80 before calling PC1(nodeE0,callerOutput). Policy!=3 returns original raw policy and caches low4. Policy3 queries node120(node,PBI14C), maps result0→policy1/nonzero→policy2; pack output low3 and policy low4 while preserving bit80. | No force refresh after settings change in this body. Cache validity published before nested lookup/virtual call. | Owner selection/out publication→optional override query→cache fields→return. | No normalization of a policy value other than3. Alternative cache writers A020F4/A0266C/A0275C remain separate obligations. |
+| PC3 | 009F1C94..009F1CB8;0103D0A8/0103B170/0103AE00/0103D220 | Shared120 returns0 if node==incoming pointer or node34null. Otherwise tail-call parent's120(parent,incoming pointer), preserving pointer. ActorMixer/Layer/bus120 vtable entries select this helper. | Equality avoids recursing above selected pointer. | Self equality→parent presence→parent virtual dispatch. | No generic true/false based merely on parent existence. |
+| PC4 | 00A0B208..00A0B228;00A30768..00A3077C;0103B980/0103BEE8 | RanSeq120 returns1 only if node91 bit6set and signed16(node88)==0; otherwise PC3. Switch120 returns1 if node47 bit5set, otherwise PC3. | Neither function dereferences incoming pointer on its true branch. | Local class gate before inherited parent query. | Packed flags and signed count are exact state. Other node-family flag/counter writers remain required. |
+| PC5 | 00A1E840..00A1E86C;0103BBF0;00A1E280..00A1E3B8 (X2) | Sound120 calls X2's property3A/random-range query. Signed low16 return0 yields1 immediately; nonzero tail-calls PC3(sound,original incoming pointer). X2 can consume shared LCG draw: this decision query is not a constant test of the bank base. | Null property blobs use X2 default1; zero random range consumes no draw. | Parameter/random query before pointer/parent gate. | X2's binary64 half3FE0000000000000/divisor41DFFFFFFFC00000 and wrapping additions remain exact choice arithmetic under ADP-1. |
+
+This closes L10/GL4's previously named inherited-policy and node120 recipients. It does not close the additional cache writer entry points or assume cache refresh after a live setting change.
+
 # Q14 — sound decisions under ADP-1
 
 ## Resumption scope (operator instruction after census commit 8613d8f)
