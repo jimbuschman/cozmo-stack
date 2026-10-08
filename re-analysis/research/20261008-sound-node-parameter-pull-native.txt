@@ -1910,3 +1910,18 @@ LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words 
 00FFA6D4: raw=00000005 relocated=00000005
 00FFA6D8: raw=00000007 relocated=00000007
 00FFA6DC: raw=00000011 relocated=00000011
+
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+00FFA70C: raw=00000027 relocated=00000027
+00FFA710: raw=00000028 relocated=00000028
+00FFA714: raw=00000029 relocated=00000029
+00FFA718: raw=0000002A relocated=0000002A
+00FFA71C: raw=00000026 relocated=00000026
+00FFA720: raw=0000002B relocated=0000002B
+00FFA724: raw=0000002C relocated=0000002C
+00FFA728: raw=0000002D relocated=0000002D
+00FFA740: raw=0000002F relocated=0000002F
+00FFA744: raw=00000025 relocated=00000025
+00FFA748: raw=0000002F relocated=0000002F
+00FFA74C: raw=0000002F relocated=0000002F
