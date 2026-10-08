@@ -1,0 +1,213 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Scope: direct ARM B/BL and Thumb B.W/BL/BLX encodings over .text; indirect calls/data pointers not enumerated.
+00A0E89C -> 00A14E28 ARM BL
+RANGE 0x00A0E88C..0x00A0E8A8 exclusive; ARM;
+00A0E88C: sub          r0, r4, #0xc
+00A0E890: mov          r1, r7
+00A0E894: mov          r3, sb
+00A0E898: str          r8, [sp, #4]
+00A0E89C: bl           #0xa14e28 ; FUN_00a14e28
+00A0E8A0: ldr          ip, [sl, #0x30]
+00A0E8A4: ldr          r2, [sl, #0x2c]
+00A10D60 -> 00A14E28 ARM BL
+RANGE 0x00A10D50..0x00A10D6C exclusive; ARM;
+00A10D50: mov          r3, fp
+00A10D54: mov          r0, ip
+00A10D58: mov          sb, ip
+00A10D5C: str          r2, [sp, #0x28]
+00A10D60: bl           #0xa14e28 ; FUN_00a14e28
+00A10D64: mov          r2, #0
+00A10D68: mov          r1, r8
+00A10D80 -> 00A14E28 ARM BL
+RANGE 0x00A10D70..0x00A10D8C exclusive; ARM;
+00A10D70: str          r2, [sp, #0x28]
+00A10D74: vmov         s15, r0
+00A10D78: mov          r0, sb
+00A10D7C: vadd.f32     s16, s16, s15
+00A10D80: bl           #0xa14e28 ; FUN_00a14e28
+00A10D84: ldr          r2, [r5, #0x30]
+00A10D88: ldr          r1, [r5, #0x2c]
+00A10FD8 -> 00A14E28 ARM BL
+RANGE 0x00A10FC8..0x00A10FE4 exclusive; ARM;
+00A10FC8: mov          r1, r8
+00A10FCC: sub          r0, r7, #0xc
+00A10FD0: mov          r3, fp
+00A10FD4: str          r2, [sp, #0x28]
+00A10FD8: bl           #0xa14e28 ; FUN_00a14e28
+00A10FDC: ldr          r2, [r5, #0x30]
+00A10FE0: ldr          r4, [r5, #0x2c]
+00A1110C -> 00A14E28 ARM BL
+RANGE 0x00A110FC..0x00A11118 exclusive; ARM;
+00A110FC: str          r6, [r4, #-0x18]!
+00A11100: mov          r2, r6
+00A11104: mov          r3, r4
+00A11108: mov          r0, r7
+00A1110C: bl           #0xa14e28 ; FUN_00a14e28
+00A11110: mov          r2, r6
+00A11114: mov          r1, sl
+00A11128 -> 00A14E28 ARM BL
+RANGE 0x00A11118..0x00A11134 exclusive; ARM;
+00A11118: mov          r3, r4
+00A1111C: str          r6, [sp, #0x28]
+00A11120: vmov         s16, r0
+00A11124: mov          r0, r7
+00A11128: bl           #0xa14e28 ; FUN_00a14e28
+00A1112C: vmov         s15, r0
+00A11130: vcmp.f32     s16, s15
+00A11298 -> 00A14E28 ARM BL
+RANGE 0x00A11288..0x00A112A4 exclusive; ARM;
+00A11288: add          r3, sp, #0x40
+00A1128C: ldr          r1, [sp, #0x20]
+00A11290: add          r0, r4, #8
+00A11294: str          r2, [r3, #-0x1c]!
+00A11298: bl           #0xa14e28 ; FUN_00a14e28
+00A1129C: vmov         s15, r0
+00A112A0: vmul.f32     s16, s16, s15
+00A11318 -> 00A14E28 ARM BL
+RANGE 0x00A11308..0x00A11324 exclusive; ARM;
+00A11308: mov          r2, r3
+00A1130C: str          r3, [r4, #-0x18]!
+00A11310: add          r0, r0, #8
+00A11314: mov          r3, r4
+00A11318: bl           #0xa14e28 ; FUN_00a14e28
+00A1131C: ldr          ip, [sb]
+00A11320: mov          r2, r4
+00A11494 -> 00A14E28 ARM BL
+RANGE 0x00A11484..0x00A114A0 exclusive; ARM;
+00A11484: add          r3, sp, #0x40
+00A11488: ldr          r1, [sp, #0x20]
+00A1148C: sub          r0, sl, #0xc
+00A11490: str          r2, [r3, #-0x1c]!
+00A11494: bl           #0xa14e28 ; FUN_00a14e28
+00A11498: vmov         s15, r0
+00A1149C: vadd.f32     s16, s16, s15
+00A11608 -> 00A17878 ARM B
+RANGE 0x00A115F8..0x00A11614 exclusive; ARM;
+00A115F8: beq          #0xa1160c
+00A115FC: mov          r0, r5
+00A11600: mov          r2, r7
+00A11604: pop          {r3, r4, r5, r6, r7, lr}
+00A11608: b            #0xa17878 ; FUN_00a17878
+00A1160C: mov          r0, r5
+00A11610: mov          r2, r7
+00A11618 -> 00A17724 ARM B
+RANGE 0x00A11608..0x00A11624 exclusive; ARM;
+00A11608: b            #0xa17878 ; FUN_00a17878
+00A1160C: mov          r0, r5
+00A11610: mov          r2, r7
+00A11614: pop          {r3, r4, r5, r6, r7, lr}
+00A11618: b            #0xa17724 ; FUN_00a17724
+00A1161C: mov          r0, #0
+00A11620: pop          {r3, r4, r5, r6, r7, pc}
+00A1168C -> 00A17878 ARM BL
+RANGE 0x00A1167C..0x00A11698 exclusive; ARM;
+00A1167C: add          r2, r1, #0xc
+00A11680: ldr          r5, [r1]
+00A11684: cmp          r3, #2
+00A11688: beq          #0xa116f4
+00A1168C: bl           #0xa17878 ; FUN_00a17878
+00A11690: mov          r2, r0
+00A11694: ldr          r3, [r5]
+00A116F4 -> 00A17724 ARM BL
+RANGE 0x00A116E4..0x00A11700 exclusive; ARM;
+00A116E4: blx          ip
+00A116E8: add          sp, sp, #8
+00A116EC: vpop         {d8}
+00A116F0: pop          {r4, r5, r6, pc}
+00A116F4: bl           #0xa17724 ; FUN_00a17724
+00A116F8: mov          r2, r0
+00A116FC: b            #0xa11694
+00A11704 -> 00A17878 ARM BL
+RANGE 0x00A116F4..0x00A11710 exclusive; ARM;
+00A116F4: bl           #0xa17724 ; FUN_00a17724
+00A116F8: mov          r2, r0
+00A116FC: b            #0xa11694
+00A11700: add          r2, r1, #0xc
+00A11704: bl           #0xa17878 ; FUN_00a17878
+00A11708: ldr          r1, [r4, #4]
+00A1170C: add          r2, sp, #8
+00A1173C -> 00A17878 ARM BL
+RANGE 0x00A1172C..0x00A11748 exclusive; ARM;
+00A1172C: pop          {r4, r5, r6, pc}
+00A11730: add          r6, r1, #0xc
+00A11734: add          r5, sp, #4
+00A11738: mov          r2, r6
+00A1173C: bl           #0xa17878 ; FUN_00a17878
+00A11740: ldr          r4, [r4]
+00A11744: vmov         s16, r0
+00A117B0 -> 00A17878 ARM BL
+RANGE 0x00A117A0..0x00A117BC exclusive; ARM;
+00A117A0: vstr         s15, [sp, #4]
+00A117A4: b            #0xa116cc
+00A117A8: add          r5, r1, #0xc
+00A117AC: mov          r2, r5
+00A117B0: bl           #0xa17878 ; FUN_00a17878
+00A117B4: mov          r3, r5
+00A117B8: mov          r2, r0
+00A1232C -> 00A14E28 ARM BL
+RANGE 0x00A1231C..0x00A12338 exclusive; ARM;
+00A1231C: add          r3, sp, #0x38
+00A12320: ldr          r1, [sp, #0x18]
+00A12324: add          r0, r5, #8
+00A12328: str          r2, [r3, #-0x1c]!
+00A1232C: bl           #0xa14e28 ; FUN_00a14e28
+00A12330: b            #0xa12314
+00A12334: ldr          r1, [r7, #4]
+00A1784C -> 00A14E28 ARM BL
+RANGE 0x00A1783C..0x00A17858 exclusive; ARM;
+00A1783C: add          r3, sp, #0x40
+00A17840: ldr          r1, [sp, #0x20]
+00A17844: sub          r0, r4, #0xc
+00A17848: str          r2, [r3, #-0x1c]!
+00A1784C: bl           #0xa14e28 ; FUN_00a14e28
+00A17850: vmov         s15, r0
+00A17854: vmul.f32     s16, s16, s15
+00A179A0 -> 00A14E28 ARM BL
+RANGE 0x00A17990..0x00A179AC exclusive; ARM;
+00A17990: add          r3, sp, #0x40
+00A17994: ldr          r1, [sp, #0x20]
+00A17998: sub          r0, r4, #0xc
+00A1799C: str          r2, [r3, #-0x1c]!
+00A179A0: bl           #0xa14e28 ; FUN_00a14e28
+00A179A4: vmov         s15, r0
+00A179A8: vadd.f32     s16, s16, s15
+COUNTS {'00A14E28': 12, '00A17724': 2, '00A17878': 5}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A11590..0x00A11624 exclusive; ARM;
+00A11590: push         {r3, r4, r5, r6, r7, lr}
+00A11594: mov          r4, r1
+00A11598: ldr          r1, [r0, #0x14]
+00A1159C: cmp          r1, #0
+00A115A0: beq          #0xa1161c
+00A115A4: mov          r5, r0
+00A115A8: add          r0, r4, r2
+00A115AC: mov          r7, r3
+00A115B0: mov          r6, r2
+00A115B4: bl           #0x4a6694 ; <EXTERNAL>::__aeabi_uidivmod
+00A115B8: ldr          r3, [r5, #0x10]
+00A115BC: ldr          r1, [r3, r1, lsl #2]
+00A115C0: cmp          r1, #0
+00A115C4: bne          #0xa115d8
+00A115C8: b            #0xa1161c
+00A115CC: ldr          r1, [r1, #8]
+00A115D0: cmp          r1, #0
+00A115D4: beq          #0xa1161c
+00A115D8: ldr          ip, [r1]
+00A115DC: cmp          r4, ip
+00A115E0: bne          #0xa115cc
+00A115E4: ldr          r3, [r1, #4]
+00A115E8: cmp          r6, r3
+00A115EC: bne          #0xa115cc
+00A115F0: ldr          r3, [r1, #0x28]
+00A115F4: cmp          r3, #2
+00A115F8: beq          #0xa1160c
+00A115FC: mov          r0, r5
+00A11600: mov          r2, r7
+00A11604: pop          {r3, r4, r5, r6, r7, lr}
+00A11608: b            #0xa17878 ; FUN_00a17878
+00A1160C: mov          r0, r5
+00A11610: mov          r2, r7
+00A11614: pop          {r3, r4, r5, r6, r7, lr}
+00A11618: b            #0xa17724 ; FUN_00a17724
+00A1161C: mov          r0, #0
+00A11620: pop          {r3, r4, r5, r6, r7, pc}
