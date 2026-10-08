@@ -1471,3 +1471,7 @@ NS234A–E bind known40 slots and trace A4/type gates, all-group propagation, op
 ### Checkpoint 235 — known state collection terminals
 
 NT235A–C trace Sound descriptor gate/flag-selected pointer append/failure gates and shared container borrowed-child recursion. Known40 families joined; root caller/list consumers/input/writer/family closure retained. Storage machinery excluded. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 236 — event-root state collection
+
+EC236A/B trace event action403 filtering/target resolve/flag1 notification/release and owner clear-before-collection/empty local vectors. Known target40 hierarchy joined; owner descriptor/group consumers and production/input/writer closure retained. No totals/Q15/fidelity/production changes.

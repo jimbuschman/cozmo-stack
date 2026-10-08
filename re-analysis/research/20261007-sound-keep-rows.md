@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 236 — event-root state collection and owner publication
+
+Primary: `20261008-sound-event-state-collection-native.txt`, `20261008-sound-state-collection-owner-prefix-native.txt`; same engine hash. P=A29F40 owner, E=event; B/C/V are collection vectors supplied to native40. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| EC236A | 009CD260..009CD30C | Walk event10 linked actions, next10. Only action u16 type20==403 calls A6168C(action). Null resolved node skips notification/release. Nonnull calls node.vt40(node,B,C,V,1,K,G,S) with literal flag1, ignores result, then node.vtC. Read action.next10 after callbacks. Empty/exhausted list returns1 unconditionally. | No action execute, RNG, stop, seek or Play invocation in this body. A6168C/A11 source-backed resolver reused; incoming r1 is not deliberately republished before resolver because its body does not use it. | Action-type filter → retained target resolve → collection notification → target release → live next →1. | Known target40 hierarchy NS234/NT235 is joined. Event action list/type/target and exhaustive family/input writers remain separate; return1 does not certify collection allocation success. |
+| EC236B | 00A29F40..00A29FD0 | Owner snapshots old baseC/count10 and base18/count1C, then clears owner C/10/14/18/1C/20 before collecting. Initializes three local vectors B=SP40,C=SP4C,V=SP58, each base/count/capacity0. Calls EC236A(E,B,C,V,incoming arg3,arg4,arg5), ignores result; later selected-list pass tests wrapping B.count<<2. | Clear-before-collection order; old vectors remain saved for later comparison/retirement. Zero defaults ensure Sound/Switch append gates operate on empty locals. | Save old collections → publish owner empties → initialize locals → event collection → selected descriptor processing. | A29F40 remaining descriptor/group comparison and exact downstream decision publication remain bounded work. out of scope: backing-vector storage copying/allocator mechanics. No complete owner or source preparation claim from prefix. |
+
+Root collection now explains literal flag1 at entry, selected/unselected Sound descriptor lists and Switch group-pair accumulation. Their later owner consumers remain PARTIAL; totals unchanged, Q15 parked. No production/fidelity changes.
+
 ## Checkpoint 235 — known child state collection terminals
 
 Primary: `20261008-sound-state-child-terminal-native.txt`, NS234 slot bindings; same engine hash. B/C/V/F/K/G/S are NS234 argument labels. Endpoints inclusive.

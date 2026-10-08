@@ -1,0 +1,47 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009CD260..0x009CD310 exclusive; ARM;
+009CD260: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+009CD264: sub          sp, sp, #0x10
+009CD268: ldr          r4, [r0, #0x10]
+009CD26C: cmp          r4, #0
+009CD270: beq          #0x9cd304
+009CD274: mov          sb, r3
+009CD278: mov          r8, r2
+009CD27C: mov          r7, r1
+009CD280: movw         r5, #0x403
+009CD284: mov          sl, #1
+009CD288: b            #0x9cd298
+009CD28C: ldr          r4, [r4, #0x10]
+009CD290: cmp          r4, #0
+009CD294: beq          #0x9cd304
+009CD298: ldrh         r0, [r4, #0x20]
+009CD29C: cmp          r0, r5
+009CD2A0: bne          #0x9cd28c
+009CD2A4: mov          r0, r4
+009CD2A8: bl           #0xa6168c
+009CD2AC: mov          r1, r7
+009CD2B0: mov          r2, r8
+009CD2B4: mov          r3, sb
+009CD2B8: subs         r6, r0, #0
+009CD2BC: beq          #0x9cd28c
+009CD2C0: ldr          lr, [sp, #0x30]
+009CD2C4: ldr          ip, [r6]
+009CD2C8: str          sl, [sp]
+009CD2CC: str          lr, [sp, #4]
+009CD2D0: ldr          lr, [sp, #0x34]
+009CD2D4: str          lr, [sp, #8]
+009CD2D8: ldr          lr, [sp, #0x38]
+009CD2DC: str          lr, [sp, #0xc]
+009CD2E0: ldr          ip, [ip, #0x40]
+009CD2E4: blx          ip
+009CD2E8: ldr          r3, [r6]
+009CD2EC: mov          r0, r6
+009CD2F0: ldr          r3, [r3, #0xc]
+009CD2F4: blx          r3
+009CD2F8: ldr          r4, [r4, #0x10]
+009CD2FC: cmp          r4, #0
+009CD300: bne          #0x9cd298
+009CD304: mov          r0, #1
+009CD308: add          sp, sp, #0x10
+009CD30C: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
