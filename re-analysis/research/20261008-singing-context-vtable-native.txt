@@ -1,0 +1,65 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0103A750: raw=00982034 relocated=00982034
+0103A754: raw=0099761C relocated=0099761C
+0103A758: raw=00997B60 relocated=00997B60
+0103A75C: raw=00997810 relocated=00997810
+0103A808: raw=0099A070 relocated=0099A070
+0103A80C: raw=0099761C relocated=0099761C
+0103A810: raw=00997B60 relocated=00997B60
+0103A814: raw=00997810 relocated=00997810
+00982B18: raw=00000000 relocated=00000000
+00982B1C: raw=408F4000 relocated=408F4000
+RANGE 0x00999A3C..0x00999A98 exclusive; ARM;
+00999A3C: push         {r3, r4, r5, lr}
+00999A40: mov          r5, r1
+00999A44: mov          r1, r2
+00999A48: mov          r4, r0
+00999A4C: bl           #0x997f28
+00999A50: ldr          r3, [pc, #0x3c] ; word[00999A94]=006A0CA4
+00999A54: cmp          r5, #0
+00999A58: str          r5, [r4, #0x58]
+00999A5C: add          r3, pc, r3
+00999A60: add          r1, r3, #8
+00999A64: add          r2, r3, #0xa0
+00999A68: str          r1, [r4]
+00999A6C: add          r3, r3, #0xb4
+00999A70: str          r2, [r4, #0xc]
+00999A74: str          r3, [r4, #0x14]
+00999A78: beq          #0x999a8c
+00999A7C: ldr          r3, [r5]
+00999A80: mov          r0, r5
+00999A84: ldr          r3, [r3, #8]
+00999A88: blx          r3
+00999A8C: mov          r0, r4
+00999A90: pop          {r3, r4, r5, pc}
+00999A94: rsbeq        r0, sl, r4, lsr #25
+RANGE 0x0099A0F0..0x0099A160 exclusive; ARM;
+0099A0F0: push         {r3, r4, r5, lr}
+0099A0F4: mov          r5, r1
+0099A0F8: mov          r1, r2
+0099A0FC: mov          r4, r0
+0099A100: bl           #0x997f28
+0099A104: ldr          r3, [pc, #0x50] ; word[0099A15C]=006A06A8
+0099A108: mov          r1, r5
+0099A10C: str          r5, [r4, #0x58]
+0099A110: add          r3, pc, r3
+0099A114: add          r0, r4, #0x5c
+0099A118: add          ip, r3, #8
+0099A11C: add          r2, r3, #0xa0
+0099A120: str          ip, [r4]
+0099A124: add          r3, r3, #0xb4
+0099A128: str          r2, [r4, #0xc]
+0099A12C: str          r3, [r4, #0x14]
+0099A130: bl           #0x993ea0
+0099A134: ldr          r0, [r4, #0x58]
+0099A138: mov          r3, #1
+0099A13C: strb         r3, [r4, #0x8c]
+0099A140: cmp          r0, #0
+0099A144: beq          #0x99a154
+0099A148: ldr          r3, [r0]
+0099A14C: ldr          r3, [r3, #8]
+0099A150: blx          r3
+0099A154: mov          r0, r4
+0099A158: pop          {r3, r4, r5, pc}
+0099A15C: rsbeq        r0, sl, r8, lsr #13
