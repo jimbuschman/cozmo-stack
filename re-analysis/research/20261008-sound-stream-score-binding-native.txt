@@ -553,3 +553,56 @@ RANGE 0x00963D98..0x00963FE8 exclusive; ARM;
 00963FDC: bls          #0x963d14
 00963FE0: rsb          r3, r6, r2
 00963FE4: b            #0x963d14
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00963D84..0x00963DBC exclusive; ARM;
+00963D84: mov          r0, r6
+00963D88: str          r3, [sp, #4]
+00963D8C: bl           #0x4d3070
+00963D90: ldr          r0, [r4, #0x20]
+00963D94: mov          r1, r4
+00963D98: bl           #0x97d0b4
+00963D9C: ldrb         r2, [r4, #0x60]
+00963DA0: ldr          r3, [sp, #4]
+00963DA4: and          r2, r2, #0xf
+00963DA8: cmp          r2, #1
+00963DAC: moveq        r0, #1
+00963DB0: movne        r0, #2
+00963DB4: str          r3, [r5]
+00963DB8: b            #0x963cb0
+RANGE 0x0097CB9C..0x0097CBB0 exclusive; ARM;
+0097CB9C: push         {r4, lr}
+0097CBA0: mov          r4, r0
+0097CBA4: bl           #0x4a4edc
+0097CBA8: str          r0, [r4, #4]
+0097CBAC: pop          {r4, pc}
+RANGE 0x0097CF2C..0x0097CFA0 exclusive; ARM;
+0097CF2C: push         {r3, r4, r5, lr}
+0097CF30: add          r5, r0, #0xc
+0097CF34: mov          r4, r0
+0097CF38: mov          r0, r5
+0097CF3C: bl           #0x4d3064
+0097CF40: ldr          r3, [r4, #0x14]
+0097CF44: add          r3, r3, #1
+0097CF48: str          r3, [r4, #0x14]
+0097CF4C: cmp          r3, #1
+0097CF50: beq          #0x97cf60
+0097CF54: mov          r0, r5
+0097CF58: pop          {r3, r4, r5, lr}
+0097CF5C: b            #0x4d3070
+0097CF60: add          r0, r4, #0x10
+0097CF64: bl           #0x4d6730
+0097CF68: mov          r0, r5
+0097CF6C: pop          {r3, r4, r5, lr}
+0097CF70: b            #0x4d3070
+0097CF74: push         {r3, r4, r5, lr}
+0097CF78: add          r5, r0, #0xc
+0097CF7C: mov          r4, r0
+0097CF80: mov          r0, r5
+0097CF84: bl           #0x4d3064
+0097CF88: ldr          r3, [r4, #0x14]
+0097CF8C: mov          r0, r5
+0097CF90: sub          r3, r3, #1
+0097CF94: str          r3, [r4, #0x14]
+0097CF98: pop          {r3, r4, r5, lr}
+0097CF9C: b            #0x4d3070
