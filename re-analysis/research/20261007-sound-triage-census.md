@@ -1491,3 +1491,7 @@ GC239A–D trace active-record selection/live-key gates, optional filter raw-res
 ### Checkpoint 240 — collaborator release and membership outcomes
 
 HR240A/B bind release10, wrapping count/zero-destructor/pool order and local membership-publication failures without compensation. Known destructor reused; remaining registry/owner/callback/input writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 241 — owner mode writer
+
+OW241A–C trace exact object/event lookup, signed-byte versus full-mode comparison, either-change/both-list28 dispatch before lowbyte stores and successful owner defaults/object count/initial collection. Concrete media-manager28 and remaining failure/retirement/input/writer closure retained. No totals/Q15/fidelity/production changes.
