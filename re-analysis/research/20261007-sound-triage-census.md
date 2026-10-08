@@ -1197,3 +1197,7 @@ AT167A–C settle selector-gated action2C unsubscribe/clear and9AC6DC's second-l
 ## Decision checkpoint168 — pending-action reschedule/admission failure
 
 RS168A–C settle deadline recomputation before admission, unsigned sorted insertion after equal deadlines and count publication, plus callback/completion/action/pending release only on capacity/allocation failure. Corrects provisional AT167 completion label; RR1/A11 positively settle the local resolver interface. Deadline producers/incoming dispatch/action families remain retained. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint169 — note/PBI resume decisions
+
+NR169A–C positively join shared PZR note resume to AT167/RS168: all PBI callbacks before live note-state/action pass, nested1D4 count gate, virtual4C before descriptor branch and exact existing-transition/direct-value/duration-helper routing. Concrete PBI30/4C, count writers and broader incoming/family closure remain explicit. No totals, Q15, fidelity or production changes.

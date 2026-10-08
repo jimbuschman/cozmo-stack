@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 169 — note resume ordering and PBI resume gates
+
+Primary: `20261008-sound-note-resume-pbi-native.txt`; same engine SHA256. Shared singing PZR1/2 positively identify note resume caller; native body joins AT167's manager path. Endpoints inclusive, offsets hexadecimal.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| NR169A | 00A3EC28..00A3ECA8 | Note event8 state2C PBI links first: each entry8 receivesA013AC(PBI,{word0=0,word4=4,byte8=0},arg3=0); next reloaded after callback. If pass ran, reload event8 note-state, then walkstate48 action links invoking9AC6DC(global,entry8), next after each call. Null initial PBIhead still enters action pass. | No note-state null guard or PBI playing-ID sentinel write. Descriptor bytes9..B uninitialized. | Entire PBI resume pass → live note-state → ordered action resume pass. | AT167/RS168 close named manager decisions; AE164 supplies action association. This is a positive incoming resume join, not whole incoming census. |
+| NR169B | 00A013AC..00A013FC | Arg3zero and unsignedPBI1D4>1 decrements/stores1D4 andreturns without callback. Otherwise set1D4=0 beforePBI.vt4C, then inspect live descriptorword0. | Arg3nonzero bypasses count gate. Zero counter also invokescallback, not an underflow decrement. | Nested-count gate → decrement/return OR count0 → virtual4C → descriptor gate. | Concrete4C and1D4 other writers remain retained. No immediate source start assumed solely from count0. |
+| NR169C | 00A01400..00A01478 | Descriptorword0zero: PBI148nonnull callsA366F4(manager,handle,selector08000000,target3F800000,duration0,curve4,flags0), returns. Null148 setsPBI16C=3F800000 then tailcallsPBI.vt30. Descriptorword0nonzero callsA010E0(PBI,0,08000000,word0,word4,word8). | Virtual4C precedes all three branches. Nonzero word0 uses rawword8, not a guessed normalized byte. | Resume callback → existing transition update OR direct value/write/callback OR duration helper. | Existing transition-update rows apply; concrete30/4C and duration helper/family closure remain explicit. No per-sample arithmetic descended into. |
+
+This joins known note resume to the pending reschedule and secondary-detach decisions while retaining exact PBI virtual recipients/count writers as gaps. Q14 totals unchanged, Q15 remains parked; no fidelity/production changes.
+
 ## Checkpoint 168 — pending-action reschedule and admission failure
 
 Primary: `20261008-sound-pending-action-reschedule-native.txt`; same engine SHA256. Positive AT167B caller invokes9AB048 while the old second-list link remains active. Known0503 release/callback recipients DR162/DD163 apply on failure only. Endpoints inclusive.
