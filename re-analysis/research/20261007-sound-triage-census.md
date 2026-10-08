@@ -1475,3 +1475,7 @@ NT235A–C trace Sound descriptor gate/flag-selected pointer append/failure gate
 ### Checkpoint 236 — event-root state collection
 
 EC236A/B trace event action403 filtering/target resolve/flag1 notification/release and owner clear-before-collection/empty local vectors. Known target40 hierarchy joined; owner descriptor/group consumers and production/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 237 — descriptor consumer order
+
+OD237A–E trace selected/unselected ID suppression, publication-failure continuation, raw descriptor packet/modes, new20-before-all-old24 order and subsequent group-pair registration/local cleanup. Concrete current manager global bound; live20/24 and pair registration/input/writer closure retained. Storage bodies excluded. No totals/Q15/fidelity/production changes.
