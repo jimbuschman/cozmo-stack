@@ -1,0 +1,14 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00636578..0x00636598 exclusive; Thumb;
+00636578: ldr          r1, [r5, #0x14]
+0063657A: cbz          r1, #0x63658e
+0063657C: add.w        r2, r5, #0x1c
+00636580: ldm.w        r6, {r3, r4, r5}
+00636584: stm          r2!, {r3, r4, r5}
+00636586: movs         r2, #0
+00636588: strd         r2, r2, [r1]
+0063658C: str          r2, [r1, #8]
+0063658E: pop.w        {r4, r5, r6, lr}
+00636592: b.w          #0x8cb60c
+00636596: pop          {r4, r5, r6, pc}

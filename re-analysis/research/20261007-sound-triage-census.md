@@ -90,63 +90,63 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-081 | 130 | CHECKED |
 | Q14-082 | 131 | CHECKED |
 | Q14-083 | 132 | PARTIAL |
-| Q14-084 | 133 | NOT DONE |
-| Q14-085 | 134 | NOT DONE |
-| Q14-086 | 135 | NOT DONE |
-| Q14-087 | 136 | NOT DONE |
-| Q14-088 | 137 | NOT DONE |
-| Q14-089 | 138 | NOT DONE |
+| Q14-084 | 133 | PARTIAL |
+| Q14-085 | 134 | PARTIAL |
+| Q14-086 | 135 | PARTIAL |
+| Q14-087 | 136 | PARTIAL |
+| Q14-088 | 137 | PARTIAL |
+| Q14-089 | 138 | PARTIAL |
 | Q14-090 | 139 | PARTIAL |
 | Q14-091 | 140 | PARTIAL |
-| Q14-092 | 141 | NOT DONE |
-| Q14-093 | 142 | NOT DONE |
-| Q14-094 | 143 | NOT DONE |
+| Q14-092 | 141 | PARTIAL |
+| Q14-093 | 142 | PARTIAL |
+| Q14-094 | 143 | PARTIAL |
 | Q14-095 | 144 | CHECKED |
 | Q14-096 | 145 | NOT DONE |
-| Q14-097 | 146 | NOT DONE |
+| Q14-097 | 146 | PARTIAL |
 | Q14-098 | 147 | NOT DONE |
-| Q14-099 | 148 | NOT DONE |
+| Q14-099 | 148 | PARTIAL |
 | Q14-100 | 149 | NOT DONE |
 | Q14-101 | 150 | NOT DONE |
-| Q14-102 | 151 | NOT DONE |
+| Q14-102 | 151 | PARTIAL |
 | Q14-103 | 152 | PARTIAL |
-| Q14-104 | 153 | NOT DONE |
-| Q14-105 | 154 | NOT DONE |
+| Q14-104 | 153 | PARTIAL |
+| Q14-105 | 154 | PARTIAL |
 | Q14-106 | 155 | CHECKED |
 | Q14-107 | 156 | PARTIAL |
 | Q14-108 | 157 | PARTIAL |
-| Q14-109 | 158 | NOT DONE |
-| Q14-110 | 159 | NOT DONE |
+| Q14-109 | 158 | PARTIAL |
+| Q14-110 | 159 | PARTIAL |
 | Q14-111 | 160 | CHECKED |
 | Q14-112 | 161 | CHECKED |
 | Q14-113 | 162 | PARTIAL |
 | Q14-114 | 163 | PARTIAL |
-| Q14-115 | 164 | NOT DONE |
-| Q14-116 | 172 | NOT DONE |
-| Q14-117 | 173 | NOT DONE |
-| Q14-118 | 174 | NOT DONE |
-| Q14-119 | 175 | NOT DONE |
-| Q14-120 | 176 | NOT DONE |
-| Q14-121 | 177 | NOT DONE |
-| Q14-122 | 178 | NOT DONE |
-| Q14-123 | 179 | NOT DONE |
-| Q14-124 | 180 | NOT DONE |
-| Q14-125 | 181 | NOT DONE |
-| Q14-126 | 182 | NOT DONE |
+| Q14-115 | 164 | PARTIAL |
+| Q14-116 | 172 | PARTIAL |
+| Q14-117 | 173 | PARTIAL |
+| Q14-118 | 174 | PARTIAL |
+| Q14-119 | 175 | PARTIAL |
+| Q14-120 | 176 | PARTIAL |
+| Q14-121 | 177 | PARTIAL |
+| Q14-122 | 178 | PARTIAL |
+| Q14-123 | 179 | PARTIAL |
+| Q14-124 | 180 | PARTIAL |
+| Q14-125 | 181 | PARTIAL |
+| Q14-126 | 182 | PARTIAL |
 | Q14-127 | 183 | NOT DONE |
-| Q14-128 | 184 | NOT DONE |
+| Q14-128 | 184 | PARTIAL |
 | Q14-129 | 185 | NOT DONE |
-| Q14-130 | 186 | NOT DONE |
-| Q14-131 | 187 | NOT DONE |
-| Q14-132 | 188 | NOT DONE |
+| Q14-130 | 186 | PARTIAL |
+| Q14-131 | 187 | PARTIAL |
+| Q14-132 | 188 | PARTIAL |
 | Q14-133 | 189 | PARTIAL |
-| Q14-134 | 190 | NOT DONE |
-| Q14-135 | 191 | NOT DONE |
-| Q14-136 | 192 | NOT DONE |
+| Q14-134 | 190 | PARTIAL |
+| Q14-135 | 191 | PARTIAL |
+| Q14-136 | 192 | PARTIAL |
 | Q14-137 | 200 | CHECKED |
 | Q14-138 | 201 | CHECKED |
 | Q14-139 | 204 | CHECKED |
-| Q14-140 | 205 | NOT DONE |
+| Q14-140 | 205 | CHECKED |
 | Q14-141 | 206 | CHECKED |
 | Q14-142 | 207 | CHECKED |
 
@@ -650,37 +650,37 @@ PARTIAL; V1–V14 and I1–I6 close the recompute caller and positioning inputs.
 
 > | C31.3 R3.3–R3.8 / undo / source sibling | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0228C;0x00A022E8;0x00A370E4;0x00A55A84;0x00A55D04;0x00A53244;0x00A76608;0x00A69A38;0x00A69AC8;0x00A47360 | Limiter counters, source destroy path and ordered buffer cleanup are ownership/results; caller/absence census and global decrement remain exact checks. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows LV5–LV6,G4–G5,NS3 in `20261007-sound-keep-rows.md`. Limiter entry/exit and global undo, source close/destruct ordering and distinct metadata/sample/history cleanup are rowed. Remaining A55A84/A55D04/A53244/A76608 sibling bodies and complete caller/absence census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-085 — triage line 134
 
 > | C31.4 R4 clock/callback/duration/stop offset | M6-026,M6-022,M9-010 | **KEEP** | 0x00A03618;0x00A05574;0x00A05370;0x00A054D8;0x00A56414;0x00A55CC4;0x00A5495C;0x00A56478;0x009CBACC;0x009886C0;0x0098822C | Clock sign extension, callback/game-object release, duration/pitch divisor, one-shot offset getter and writer census all alter timing/state; keep101f0x42CA0000 and Â±half bits exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows E14,CB1–CB3,NS3/NS7,GL3 in `20261007-sound-keep-rows.md`. Completion count gate, position registration/detach and duration/pitch/position notification are rowed. Remaining A05574 clock recipient, music clock/stop-offset producers9886C0/98822C and callback/gameobject writer/consumer census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-086 — triage line 135
 
 > | C31.5 R5 frame writer and seven callers | M6-018,M6-022,M6-025 | **KEEP** | 0x00A56650;0x00A52B90;0x00A44948;0x00A44BD0;0x00A1C7D4;0x00A57724 | Exhaustive callers and frame/rate-setting branch determine cadence; no arithmetic relief for clock or frame count. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows NS1–NS2,VS1,Z4–Z15 in `20261007-sound-keep-rows.md`. StartStream wrapper, secondary start result/format gate, per-pass frame use and rate/frame setters are rowed. Remaining exhaustive seven-caller/setting writer census and interface recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-087 — triage line 136
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows PB3,QC3,E14 in `20261007-sound-keep-rows.md`. Parameter-list detach order, retained object lookup/release and completion gate are rowed. Remaining concrete A0B600/A05934/A1C65C/9A6988 effects and item48 writer. NSINK covers a distinct music notification registry, not a substitute for these recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-088 — triage line 137
 
 > | C32.1 P1–P12 shipped-path census | M6-025,M6-026 | **KEEP** | 0x009EEDA4;0x009F1F80;0x00A37A18;0x00A37C90;0x009BEB30;0x00A00618;0x00A0067C;0x00A1D448 | Bank reachability, positioning/virtual branches, fade-in and MIDI gate must be checked as exact decisions; later C34.5 narrows one builder route only. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows PC1,A2,V1–V14,TR/LI/PB rows in `20261007-sound-keep-rows.md`. Inherited policy and Play target lookup plus effective parameter/fade/lifecycle local bodies are rowed. Remaining independently bound bank/Play census,9F1F80/9BEB30 and called concrete positioning/virtual descendants. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-089 — triage line 138
 
 > | C32.2 M1–M9 media table/assets | M6-001,M6-024,M6-025 | **KEEP** | 0x009B49A4;0x009B7A34;0x00A1EC54 | DIDX/DATA writer/lookup closure, streamed prefixes, media aliases and no-DIDX plugin cases are parsing/loading, not DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows K8,MR2 in `20261007-sound-keep-rows.md`. DATA handler positively calls9B49A4 and media-rebind caller positively invokesA1EC54. Remaining9B49A4/9B7A34/A1EC54 actual table population/alias/prefix writer and lookup closure. A caller citation is only PARTIAL here. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-090 — triage line 139
 
@@ -698,19 +698,19 @@ PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/
 
 > | C32.4 F1–F5 rate/frame closure | M6-018,M6-022,M6-025 | **KEEP** | 0x0099DC68..0x0099DCE4;0x008D8158..0x008D81FC;0x00A57724..0x00A57930;0x00A548B8;0x00A35938..0x00A35964 | Defaults, complete writer census, JNI gates, rate-to-voice link and transition math are scheduling/parameters; imported exp used for transition timing is not a pure PCM loop. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows Z1–Z20 in `20261007-sound-keep-rows.md`. Default settings, app/platform copies, JNI queries/gates, rate/frame conversions and final init recipients are rowed. Remaining unrestricted writer census, A548B8 rate-to-voice link and A35938 transition arithmetic recipient. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-093 — triage line 142
 
 > | C32.5 V1/V2/V5/evaluators | M6-022,M9-008,M9-009,M9-025 | **KEEP** | 0x009E6D2C..0x009E6E10;0x009E2BD0..0x009E52F3;0x009E2AE4;0x009D8A24 | Prove list population/reachability and exact control-signal evaluator output; the verified empty-list case does not prove production silence. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `20261007-sound-keep-rows.md`. Active state population/block geometry, envelope/LFO evaluation and retirement traversal are rowed. Remaining registry/state population reachability, evaluator consumer and9D8A24 recursive update closure. Empty-list output never proves production silence. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-094 — triage line 143
 
 > | C33.1 resolver A1–A11/B/C / index | M6-024 | **KEEP** | 0x00592CDC..0x00592D78;0x00593BF6..0x00593C44;0x008D824A..0x008D82B4;0x008D843C;0x008D6FFC;0x008DDECC..0x008DE324 | Directory binding, APK-before-OBB registration, loose-file/stat gate, index population/duplicates and binary read fields remain exact I/O/loading. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows SL1–SL25,IO1–IO3 in `20261007-sound-keep-rows.md`. Resolver/archive insertion/order, APK/OBB local binding and zip/index/open/read gate bodies are rowed. Remaining AddZipFiles full caller census, map/index duplicate semantics and independently checked directory/app writers. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-095 — triage line 144
 
@@ -728,7 +728,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33.3 F/G stream retry / prefix proof | M6-002,M6-003,M6-022,M6-025 | **KEEP** | 0x00A74564;0x00A7482C;0x00A74970;0x00A746A8;0x00A74E00;0x00A7538C;0x00AB22D4;0x00AB1C04;0x00AB2088;0x00AB2BFC;0x00AB1550;0x00A56650;0x00A544BC | 0x3F producers, raw non-1 results, voice-pass retry latch, frame window and setup/seek prefix coverage are timing/error/loading behavior. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows VM/ST/SB/PA/SR/HS rows,NS1–NS2,SWIN1–SWIN5 in `20261007-sound-keep-rows.md`. Both Vorbis starts and FC setup/header/render/seek callers plus StartStream/voice window result gates are rowed. Remaining selected stream virtual buffer/cache/framer/decoder recipients and media-prefix source/writer proof. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-098 — triage line 147
 
@@ -740,7 +740,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33.5 P1–P8 / no-JNI / format link | M6-018,M6-015,M6-004 | **KEEP** | 0x0099DC68;0x008D8158;0x0099E458;0x00A570A4;0x00A57724;0x00A56E20..0x00A57060;0x00A1C75C;0x00A1C7D4;0x005942CE..0x005942E6 | Default/writer absence, copies, unsigned min, JNI branch, derived timing and PS+38-to-Hijack format remain exact; separate phone-system policy is not DSP DROP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows Z1–Z15 in `20261007-sound-keep-rows.md`. Defaults/app copies, JNI/rate/frame branches, shared setters and integer JNI trampoline are rowed. Remaining exhaustive shared-setting writer absence, rate-to-Hijack format link and imported runtime outcomes; no DSP timing exemption. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-100 — triage line 149
 
@@ -758,7 +758,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33 ADPCM/PCM class residuals | M6-003,M6-025 | **KEEP** | 0x00A73ABC;0x00A73D34;0x00A739E8;0x00A75E34;0x00A75B1C;0x00A736D4 | Codec/format/stream/channel/seek behavior stays exact, including PCM data representation and start positions. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows AH5,AT1–AT8,AR/SK rows in `20261007-sound-keep-rows.md`. Streamed ADPCM header raw results, format publication, render/carry and seek caller arithmetic are rowed. Approved PCM-file and zero/multichannel-file branches excluded by20261007-sound-reachability.md; remaining retained stream/codec recipients and exact concrete class binding. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-103 — triage line 152
 
@@ -770,13 +770,13 @@ PARTIAL boundary: B17/B18 already establish notification registry/archive remova
 
 > | C34.1 B1–B18 bus walk / parameter census | M6-025,M6-022,M6-014 | **KEEP** | 0x009F4BB8;0x00981940;0x009F1C40;0x009F1EE8;0x009C54E8;0x009C39DC;0x009FFEE4..0x00A00000;0x00A37FE8..0x00A38130 | Ancestor links, output-bus reachability, effective-parameter composition and cached path gates remain exact even when a branch is unused by shipped assets. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows CF15–CF18,D1–D5,V1–V14 in `20261007-sound-keep-rows.md`. Generic attachment validation/insertion, bus short-circuit predicate/inherited gain composition and effective parameter caller are rowed. Remaining complete bus ancestor/reachability census,9F4BB8/9F1C40/9F1EE8 and concrete virtual node/writer closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-105 — triage line 154
 
 > | C34.2 R1–R11 modulator/RTPC | M6-009,M6-025,M9-009 | **KEEP** | 0x00A11590;0x00A17280;0x009E6748;0x009E8224;0x009E61B4;0x009E62AC;0x00A01918;0x009DCE44;0x00A6E848 | Store fallback, accumulation, subscription/list consumption and modulator consumers set values/state; full descendants and shipped binding census remain required. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows NP/RV/OA/MT/RG/RC/MPA rows in `20261007-sound-keep-rows.md`. RTPC pull/fallback/accumulation, modulator registration, receiver/context and effective-parameter apply bodies are rowed. Remaining full source/list/subscription writers,9E6748/9E8224/9DCE44 recipients and shipped bindings. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-106 — triage line 155
 
@@ -800,13 +800,13 @@ PARTIAL: SC8–SC12 and NF1–NF6 close the explicitly named teardown/free/flush
 
 > | C34.4 K1–K19 bank/chunks | M6-001,M6-024,M6-025 | **KEEP** | 0x009B74D8;0x009B3260;0x00A68150;0x009B2B08;0x009A6518; XOR key0x0108D9A0 writer UNKNOWN | Header XOR/key writer, INIT/ENVS/PLAT/STID, per-type creators, hook results, mode args, unload/media-pool and stream bounds are all exact parsing/state. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows K1–K19,J1–J rows in `20261007-sound-keep-rows.md`. Bank header/chunk dispatch, INIT/HIRC creator association and registry/media callers are rowed. Remaining XORkey108D9A0 writer, per-type creators/handler results, unload/media pool and bounded stream recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-110 — triage line 159
 
 > | C34.5 G1–G3 / other MIDI posters | M6-025,M9-004,M9-005,M9-013 | **KEEP** | 0x00A62A1C;0x00A1D448;0x009EE230 | Play builder0/FF and action census narrow the normal route only; locate other0x90 posters as MIDI/routing work. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows A2,Play/container rows in `20261007-sound-keep-rows.md`. Normal Play builder target resolution and ordered action/container dispatch are rowed. Remaining other0x90 message posters and concrete9EE230 MIDI route/caller census. Normalbuilder coverage cannot close alternate message provenance. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-111 — triage line 160
 
@@ -836,73 +836,73 @@ PARTIAL: AC1–AC12 re-open both accumulators and all twelve direct evaluator ca
 
 > | C35.4 shipped-data census / C# D1–D9 | M6-009,M6-001 | **KEEP** | 0x009F7254..0x009F72EC;0x00A14E28..0x00A15244 | 64 entries, scaling/shape/accumulate census and binary32-vs-double defects must be verified; no ADP-1 control-value equivalence. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows R1–R12,CL1–CL3,QE1–QE5,R28–R44,LW/AC rows in `20261007-sound-keep-rows.md`. Evaluator/scaling/shape/default and registration/accumulator bodies are rowed. Remaining independently checked64 shipped-entry census and D1–D9 comparison against current C#; code is not native evidence. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-116 — triage line 172
 
 > | C31.1 | M6-025 | KEEP | 0x00A028F0..0x00A02938;0x00A1EA68;0x00A01EF4;0x009B49A4 | R1.1–R1.14: pre-limiter, playing-manager population, HIRC-to-setter dispatch, writer census and full Term/9B65A8 remain exact; D2 survives. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows TR9,K8,MR2 in `20261007-sound-keep-rows.md`. Descriptor setter and DATA/media-rebind caller joins are rowed. Remaining pre-limiter028F0,playingmanager population,full9B49A4/9B65A8/Term and complete setter writer census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-117 — triage line 173
 
 > | C31.2 | M6-025,M6-013 | KEEP / VERIFY | 0x00A54A30;0x00A019B8;0x00A793D4;0x009CF644;0x00A6C22C | Unclosed transitive R2 slots are VERIFY only for possible PCM math; caller/ownership/format/bypass and D3 stay KEEP. R2.15 is a gap declaration, not a verified DSP implementation. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows VF1–VF9,OR1–OR2,WV1–WV15,CP1–CP9 in `20261007-sound-keep-rows.md`. Init/effect lookup/null store-before-release, wrapper controls/Execute/bypass and compressor DSP boundary are rowed. Remaining selected plug-in metadata registry/parameter/bypass producers and concrete target lifetime/format recipients; whole wrapper notDSP. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-118 — triage line 174
 
 > | C31.3 | M6-022,M6-025,M6-026 | KEEP | 0x009BCA68;0x009FFAD4;0x00A370E4;0x00A55A84 | Full recompute, sibling called operations, global undo and R3.5/R3.8 caller/absence census remain exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows V1–V14,LV5–LV6,NS3 in `20261007-sound-keep-rows.md`. Effective parameter caller and limiter/global undo plus source swap lifecycle are rowed. Remaining9BCA68/full siblingA55A84 called effects, and independentR3.5/R3.8 absence/caller census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-119 — triage line 175
 
 > | C31.4 | M6-026,M6-022,M9-010 | KEEP | 0x00A05574;0x00A56478;0x00A0393C;0x0098822C;0x009CBACC | Position clock, callback registration/emit and complete stop-offset writer census remain exact even though inspected direct slices held. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows CB/NS7,E14 rows in `20261007-sound-keep-rows.md`. Position registration/detach, source duration/pitch and notification caller are rowed. RemainingA05574 clock,98822C music clock/offset path,9CBACC and exhaustive stop-offset writers. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-120 — triage line 176
 
 > | C31.5 | M6-025,M6-018 | KEEP | 0x00A56650;0x00A44948;0x00A1C7D4;0x00A57724 | Exhaustive caller/writer census and frame-setting branch are cadence/geometry. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows NS2,VS1,Z4–Z15 in `20261007-sound-keep-rows.md`. StartStream and voice-pass frame consumption plus rate/frame writer local branches are rowed. Remaining complete caller/writer census and downstream frame-setting cadence association. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-121 — triage line 177
 
 > | C32.1 | M6-025 | KEEP | 0x00A379D8;0x00A1D448;0x009F1F80 | Repeat the independent bank/Play reachability census; preserve called-path uncertainty. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows A2,PC1,Play/container rows in `20261007-sound-keep-rows.md`. Play target/policy caller rows are present. Remaining independent bank/Play reachable branch census and9F1F80/PBI creator called-path closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-122 — triage line 178
 
 > | C32.2 | M6-024,M6-025 | KEEP | 0x009B49A4;0x009B7A34;0x00A1EC54 | Asset census slice held; native table writer/population closure remains loading proof. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows K8,MR2 in `20261007-sound-keep-rows.md`. DATA population call and exact media rebind output/readiness/format consumer are rowed. Remaining concrete9B49A4/9B7A34/A1EC54 writer/table/prefix/alias closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-123 — triage line 179
 
 > | C32.3 | M6-002,M6-003,M6-025 | KEEP | 0x00AB22D4;0x00AB1C04;0x00AB2088;0x00A1EA68;0x009CD340 | S4/S6, source-type writer and remaining header/caller branches are codec/stream lifecycle, not exempt math. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows TR9,VM/ST/SB/PA/SR/HS rows in `20261007-sound-keep-rows.md`. Packed source setter and both Vorbis start/setup/header/render/seek callers are rowed. Remaining source-format writer census,RIFF9CD340 and stream/cache/decoder recipient closure; PCM-file exclusions retained. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-124 — triage line 180
 
 > | C32.4 | M6-018,M6-025 | KEEP | 0x00A56E20..0x00A57060;0x00A57724;0x00A548B8;0x00A35938..0x00A35964 | F4 JNI/robot sink branch, F5 rate-to-voice and unrestricted setting writer absence need closure; defaults alone prove neither production rate nor cadence. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows Z4–Z20 in `20261007-sound-keep-rows.md`. Phone query/default/frame setting and final init recipient gates are rowed. RemainingA548B8 active rate-to-voice and transition35938 arithmetic plus unrestricted setting writer census; no default-only rate claim. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-125 — triage line 181
 
 > | C32.5 | M6-022,M9-009 | KEEP | 0x009E2BD0..0x009E52F3;0x009E2AE4;0x009E6D2C | V5 list-population and evaluator consumer gaps survive the verified empty-list branch. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `20261007-sound-keep-rows.md`. State population/geometry/evaluation and retirement/update caller are rowed. Remaining full state/list registry population and evaluator consumer census; verified empty list remains insufficient. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-126 — triage line 182
 
 > | C33.1 | M6-024 | KEEP | 0x008D8280;0x008D843C;0x008DDECC..0x008DE408 | Remaining resolver rows, complete index population, APK/OBB order and AddZipFiles caller absence remain exact; D4 survives. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows SL8–SL25,IO1–IO3 in `20261007-sound-keep-rows.md`. Archive physical insertion/open/index/read and non-EINTR mapping are rowed. Remaining AddZipFiles exhaustive caller absence and full index/duplicate population closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-127 — triage line 183
 
@@ -914,7 +914,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33.3 | M6-002,M6-025 | KEEP | 0x00AB22D4;0x00A56650;0x00A544BC | Retry and bank-prefix proof remain loading/timing, including conditional PBI prefix size. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows ST/SB/PA/SR/HS rows,NS2,SWIN1–SWIN5 in `20261007-sound-keep-rows.md`. Streamingstart/setup/prefix/render/seek caller and exact StartStream/window retry result gates are rowed. Remaining selected stream/codec/cache recipient and conditional PBI-prefix writer proof. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-129 — triage line 185
 
@@ -926,19 +926,19 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C33.5 | M6-018,M6-004,M6-015 | KEEP | 0x008D8158;0x00A57724;0x00A1C75C;0x00A1C7D4;0x005942CE..0x005942E6 | P2 exhaustive writer absence, imported zero-divisor outcome and Hijack format link remain explicit uncertainties; P1/P3–P8 body checks do not close them. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows Z3–Z15 in `20261007-sound-keep-rows.md`. App/platform defaults/copies/JNI/setter bodies and trampolines are rowed. Remaining unrestricted settings writer absence, runtime zero-divisor outcome and5942CE Hijack format link. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-131 — triage line 187
 
 > | C34.1 | M6-025,M6-014 | KEEP | 0x009F4BB8;0x009C54E8;0x009C39DC;0x009FFAD4 | Full bus census and parameter walk remain routing/value proof. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows D1–D5,V1–V14,CF15–CF18 in `20261007-sound-keep-rows.md`. Bus decision/gain query and effective parameter caller plus attachment caller are rowed. Remaining9F4BB8 complete resolver, ancestor/attachment writers and production bus census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-132 — triage line 188
 
 > | C34.2 | M6-009,M6-025,M9-009 | KEEP | 0x009BE898;0x009FB9B8;0x009DCE44;0x00A6E848 | D1 context reset/recompute gates and unread modulator callees remain exact; D0 alone is not a sufficient predicate. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows NG1–NG4,MT/RG/RC/MPA rows in `20261007-sound-keep-rows.md`. DD reset before null return,DC builder gate and modulator apply/registration callers are rowed. Remaining9FB9B8 positive-data builder,9DCE44 and subscriber/context writers; D0 alone remains insufficient. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-133 — triage line 189
 
@@ -950,19 +950,19 @@ PARTIAL: same remaining S8 caller/callback closure as Q14-108; checked body rows
 
 > | C34.4 | M6-001,M6-024 | KEEP | 0x009B74D8;0x009B3260;0x009B2B08;0x009A6518 | Chunk-loader/census closure and explicit K11/creator/XOR writer residuals remain parsing. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows K1–K19,J rows in `20261007-sound-keep-rows.md`. Header/chunk/HIRC/registry loader bodies are rowed. Remaining K11 concrete creators,9B2B08/9A6518 mode/unload recipients and XORkey writer census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-135 — triage line 191
 
 > | C34.5 | M6-025,M9-013 | KEEP | 0x00A62A1C;0x00A1D448;0x009EE230 | Normal Play builder and906-action census were checked; alternate MIDI posters remain UNKNOWN. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows A2,Play/container rows in `20261007-sound-keep-rows.md`. Normal target/builder dispatch is rowed. Remaining alternate MIDI0x90 producer and9EE230 call-site census; no unsupported absence claim. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-136 — triage line 192
 
 > | C35 (old availability row) | M6-009,M6-001 | KEEP | 0x00A14E28..0x00A15244;0x009F7254..0x009F72EC | Earlier report found no C35; it now exists, so check current C35.1–C35.4 rather than retaining the stale availability finding. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: existing primary-backed rows R/CL/QE/LW/AC rows in `20261007-sound-keep-rows.md`. Current evaluator/loader/accumulator extraction explicitly supersedes stale C35 availability prose. RemainingC35.4 shipped64-entry/scaling/shape/accumulate census and live loader/subscriber closure, same as115. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-137 — triage line 200
 
@@ -986,7 +986,7 @@ CHECKED: FB1–FB3 establish the same persistent coefficient/matrix boundary for
 
 > | 0x00636578..0x0063658C (Thumb) | Initial sample copies input vector to previous state and zeroes the three output words. | KEEP: reaction classifier first-sample behavior must remain exact despite its HPF name. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED layer boundary: HB2 identifies the classifier as HIGHER-LAYER M10, with M7 installation/callback ownership. Reopened636578..636592 in `20261008-sound-classifier-boundary-native.txt`: output14null skips firstsample stores; nonnull copies three inputwords toprevious1C, then clears outputwords0/4/8 beforetail8CB60C. This is reaction classification, not audioDSP; it is listed with its citation and not ported/extracted into M6. No arithmetic equivalence claimed.
 
 ## Q14-141 — triage line 206
 
@@ -1021,3 +1021,5 @@ Header/seek checkpoint: HS1–HS8 close FC header, packedformatpublication, loop
 Q14-066 update: SWIN1–5 independently reopen C30.1 start/readiness/window/fault body and StartStream wrapper; virtual startup and observer recipients remain retained. Current total22 CHECKED/63 PARTIAL/55 NOT DONE.
 
 Q14-065 update: GOR1–4 independently reopen singing wrappers and exactobject6/7 selection; M6-016 common animation/controller dispatch remains retained. Currenttotal22 CHECKED/64 PARTIAL/54 NOT DONE.
+
+Checkpoint97 reconciliation: {'CHECKED': 24, 'PARTIAL': 110, 'NOT DONE': 6}. Each promoted PARTIAL item names existing body rows and specific remaining producers/recipients. OnlyQ14-140 movesCHECKED as a positively cited higher-layer boundary. Sixitems stillNOT DONE: streammanager/device/GetBuffer096/127, externalcompletioncheckpoint098/129, I/O memory/scheduler100 and decoder/cache/emit residual101. These are explicit unread shippedcode, not UNKNOWN.

@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. 23 narrow obligations CHECKED, 75 PARTIAL, 42 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. 24 narrow obligations CHECKED, 110 PARTIAL, 6 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -4041,3 +4041,7 @@ Primary: `20261008-sound-routing-coefficient-cache-native.txt`, `20261008-sound-
 | TOPO6 | 00A397D0..00A398A8;00A398B0 | Eachnonvertexpoint runs straight-lineF32 incircletest397D8..39860 (VMUL/VMLA/VNMLS programincapture). Compare result to3C23D70A: nativeGT setsreturn1,LE setsreturn0. Ifmorepoints andreturn0 continue; otherwise return. Allpointsvisited/noothers→0. | Unordered usesnativeLE at39870 (sets0); no additionalNaNgate. Firstpointoverthresholdshortcircuits rejection. | Physicalpoint → exactarithmeticpredicate → threshold → reject ORnextpoint. | Thresholdparameterbitsexact; arithmeticaffectsselection andthereforeKEEP, neverper-sampleDROP. |
 
 These rows settle the cache producer boundary as retained routing geometry/topology decisions. TOPO4/6's arithmetic is recorded at exact instruction ranges; it still needs a register-to-port transcription/oracle if the manager wants standalone semantic expressions instead of instruction-program build rows. Device/channelmask reachability and downstream consumption/writers remain open; Q14-074 stays PARTIAL. This checkpoint does not promote every locally read non-main-channelbranch toREACHABLE or expand the approved bank3Dpayload exclusion.
+
+### Independent-obligation coverage reconciliation (checkpoint97)
+
+The quoted per-item ledger in `20261007-sound-triage-census.md` now maps35 overlapping C31–C35 obligations to already extracted primary-backed bodies and lists their specific remaining joins. These move NOT DONE→PARTIAL only. Q14-140 is CHECKED as the HIGHER-LAYER M10 classifier boundary, HB2, independently reopened in `20261008-sound-classifier-boundary-native.txt`; output14null skips first-sample stores, nonnull copies input toprevious1C thenzerosoutput0/4/8 beforetail8CB60C. No upper-layer port orDSPexemption. Current totals24 CHECKED /110 PARTIAL /6 NOT DONE. Remaining six entirely unread stream/I/O/decoder obligations are named in the census. Both Q14 and Q15 remain incomplete.
