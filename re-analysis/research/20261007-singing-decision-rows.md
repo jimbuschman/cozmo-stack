@@ -225,6 +225,18 @@ Primary companion: `20261007-singing-transition-iterator-native.txt`. M9-004/015
 
 The initial playlist and transition-rule paths now have local branch and ordering rows. The actual random/sequence collaborators, switch decision-tree path and transition request builders remain open; no complete-Q15 claim follows from these local checks.
 
+## Checkpoint 8 — concrete held-note PBI notification
+
+Companion `20261007-singing-held-pbi-slot-native.txt`. M9-010 quotation above names the unread PBI virtual1C; the standard PBI vtable binding is now checked. It does not establish every alternate PBI class or the queued type4 consumer.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| HP1 | 0103B784;009FF5D0..009FF5E4 | Standard PBI vtable103B768 slot1C binds9FF5D0. This writes PBI1B8u16=1, then tail-calls9D3558(type4,PBI,1,PBI+1B8). Incoming event10 argument fromMH5 is replaced byPBI inr1. | No locally immediate stop or fade callback. | Loopcount halfword before queue submission. | Concrete instance uses standardvtable only where constructor establishes it; alternate classes remain separate. |
+| HP2 | 009D3558..009D35E0;009D35FC..009D3600 | Queue at0108DA0C: reuse freelistC entry before allocation. Append via oldtail8.next orhead4; pop freehead, setnewtail8, nullnext, incrementcount18. Then entry4=PBI, entryC=low8(type), entryDbit0clear, entry8=snapshotglobalword0. Types<=1 setglobalbyte28=1; type4 doesnot. Return1. Incomingr2/r3 are overwritten, not serialized as payload. | No lock or dedup gate shown. | Link/publication→count→payload/type/flags/clock→success. | This queue is distinct from flushA38420's notification queue; do not wire that dispatcher as a substitute. |
+| HP3 | 009D35E4..009D35F8;009D3604..009D3630 | Emptyfreehead: ifcount18>=capacity14 unsigned return2. Otherwiseallocate10hex; null returns2. Nonnullprependtofreehead thenordinaryappendHP2. PBI1B8 remains1 even if enqueuefails. | Queuecapacity gate applies only when no freeentry exists. | HP1 statewrite→reuse/capacity/allocation→submissionresult. | CallerMH5 ignoresresult andcontinues nextentry; type4 consumer/reuse/lifetime still required. |
+
+The code-2 held-note branch now has a concrete action: update a u16 source-loop count and enqueue a type4 notification, rather than a locally guessed fade duration. The source/voice handling of that queue remains a retained M6 boundary and must be checked before claiming the note's end time settled.
+
 ## Approved excluded branches
 
 | Branch not extracted | Census evidence | Retained work |

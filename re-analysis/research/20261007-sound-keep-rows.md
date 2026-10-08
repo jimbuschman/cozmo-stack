@@ -148,6 +148,12 @@ PW5's immediate consumer is now explicit, including state-store and callback ord
 
 ### Resumption checkpoint 17: enclosing voice/bus prepass order
 
+> M6-022 — The live voice and bus engine: the 0xA57FF8 wrapper and 0xA44D4C render body, the voice pass, the bus pass, idle removal, the per-voice DSP chain, the four Perform group members, the PBI flush, the 0x108DAE8 output-device state and its three gate bytes, and the JNI audio-route poll
+> Status: IMPLEMENTATION_GAP
+> Current evidence entry C12: C12 voice callees (report 20260928-B-M6b-voice-callees.md): device node vt+0x2c=0x9E935C / vt+0x30=0x9E9420, node vtable 0x103B498 (0xA44D4C pre-loop); 0xA43D24 ducking/volume pre-pass (0xA43D24..0xA43EFC; 0xA55750 -> bus +0x88/+0x8C -> 0xA4AF50 -> 0xA437E0 -> 0xA4B4B0; container 0x108DF50, bus count 0x108DF54, voice count 0x108DF5C, voice head 0x108DF64); 0xA39564 node cleanup (0xA39564..0xA395FC); 0xA54F1C full state machine (0xA54F1C..0xA5574C) with 0xA4B4B0 and 0xA4BC58 (0xA4BC58..0xA4C000); 0xA44630 full order (0xA44630..0xA44938); 0xA548C0 and bus vt+0x58 = 0x9C07C4 (0x103ACE0); 0xA52D4C / 0xA5268C / 0xA4721C / 0xA47224 (0xA52D4C..0xA53134); 0xA55D04 / 0xA55A84 / 0xA54A30 and the state-0x11 tail (0xA44A94..0xA44BFC); 0xA01BD8 (0xA01BD8..0xA01CA0); 0x9E84C8 (0x9E84C8..0x9E859C)
+
+Comparison: the reopened PC-relative base is0108DF54, so its count4 is0108DF58 and head14 is0108DF68. C12’s quoted count/head addresses0108DF54/0108DF64 disagree with these instructions; the main voice-pass evidence elsewhere in the same record already names base0108DF54. The rows below use the actual prepass loads.
+
 Coverage: A43D24 local pass order and scalar-state writers CHECKED; list writers and three called recipients remain PARTIAL. Companion `20261007-sound-prepass-resume-native.txt`; M6-026 current quotation before L1 applies. The shared structure is0108DF54, derived from the independent PC-relative bases in this body: array0/count4/voice-head14. Scalar conversion below is a stored per-bus parameter, not a per-sample loop; its consumer boundary must be checked before claiming an ADP-1 exemption.
 
 | Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
