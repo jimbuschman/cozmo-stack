@@ -3008,3 +3008,15 @@ Companion: `20261007-sound-switch-subscription-defer-native.txt`. Joins QC6 defe
 | SD4 | 00A30B80..00A30BC0;00A30C60..00A30C78;00A30C88..00A30C98 | Nonnested found node: unlink hash head or predecessor, decrement M1C, call A309CC(M,node) to detach group binding, then pool-free node. Return through nesting check; no deferred entry when M2C<=0. | A309CC exact group-detachment recipient remains open. Node memory freed after detachment, not before. | Hash unlink → count decrement → group detach → pool free. |
 
 SD1–SD4 close deferred wrappers and their allocation/failure policy. Immediate A31074 registration and A309CC group-vector detachment remain exact readable descendants; captures or these wrapper rows do not settle them. Both Q14 and Q15 remain open, with coverage unchanged.
+
+
+### Resumption checkpoint 34: switch group detachment
+
+Companion: `20261007-sound-switch-immediate-registration-native.txt`. SD4's A309CC is now reopened and rowed. The companion also preserves A31074 registration for the next extraction; that capture alone is not a closure claim.
+
+| Step | Address | Behaviour | Gates / failure | Order / widths |
+|---|---|---|---|---|
+| SD5 | 00A309CC..00A30A28 | Detach(M,node): group ID node8; bucketcount M4 zero returns. Otherwise unsigned remainder selects M0 bucket, group records next4/key0. Missing group returns. | Does not create group, change stored switch, notify observers or free node. | Group lookup before vector mutation. Node lifetime remains caller-owned. |
+| SD6 | 00A30A28..00A30AB0 | Binary-search group1C pointer vector, count20, unsigned compare to node address. Match removes one pointer: shift later entries left with memmove when selected entry precedes last; publish count−1 afterward. Missing node leaves vector/count unchanged. | Signed count−1 negative returns. No capacity shrink or group destruction; one match only. | Search → optional overlapping copy → count publication → caller hash-node free. Vector ordering is native address order, not subscription order; this explains SX3's pointer-vector iteration. No PCM arithmetic involved. |
+
+A309CC is closed locally by SD5–SD6; A31074 registration, its hash reallocation, vector insertion/allocation failure and concrete group lifetime remain exact work. Coverage remains unchanged until the entire obligation is reconciled.
