@@ -610,7 +610,7 @@ PARTIAL: VF1–VF9 expose wrapper type/flag raw gates, concrete construction/Ini
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
 
-PARTIAL: VF6–VF9 and WV1–WV10 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. Remaining: wrapper virtual38/3C Execute routing, selected plug-in target closure, bypass writers and A0EDB0 detach recipients; no wholesale DSP exemption.
+PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. WV11–WV15 close concrete virtual38/3C Execute/bypass dispatch, allocation/null failures, padding and output-state gates. Remaining: selected plug-in target closure, bypass writers and A0EDB0 detach recipients; no wholesale DSP exemption.
 
 ## Q14-080 — triage line 129
 
