@@ -995,3 +995,6 @@ Registry checkpoint: PR6–PR10 and VC6–VC10 close the registered-source query
 
 
 Vorbis checkpoint: VM1–VM10 add direct-buffer source start/header/packed-format/endpoint gates, setup ownership/cursor order, pending seek consumption, bounded render/emit and close. VM1 quotes the current M6-002/M6-022 evidence before flagging reversed source-class labels. Q14-090/Q14-091 remain PARTIAL pending FC streaming and decoder descendants.
+
+
+Stream-source checkpoint: ST1–ST9 add FC open/prefetch/streamstart/result3F gates, initial header/setup caller, pending-seek consumption, monitor payload float widths and refill order. Q14-090/Q14-091 remain PARTIAL; A746A8, AB1C04, stream virtual recipients and packet decoder/cache still need independent closure.
