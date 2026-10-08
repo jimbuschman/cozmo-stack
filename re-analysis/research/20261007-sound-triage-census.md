@@ -590,7 +590,7 @@ PARTIAL: VF1–VF5/VF8–VF9 reopen voice Init ordered slots, gate/results, allo
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
 
-PARTIAL: LINIT1–6/KCACHE1–3/KSEL reopen A4F0EC initialization, 9EA23C keyed cache search/growth/removal and A22A3C exact producer-selection ABI. Remaining: A4C280 routing caller, selected producers A22304/A22684, getters, bus retain/reservation/setup and complete caller/writer closure. No boundary exemption is assigned to an unread producer.
+PARTIAL: LINIT1–6/KCACHE1–3/KSEL reopen A4F0EC initialization, 9EA23C keyed cache search/growth/removal and A22A3C exact producer-selection ABI. RCON1–6 close A4C280 routing/cache-result publication and failure removal. Remaining: constructed connection/packed-format and device-list bindings, selected producers A22304/A22684, getters, bus retain/reservation/setup and complete caller/writer closure. No boundary exemption is assigned to an unread producer.
 
 ## Q14-075 — triage line 124
 
