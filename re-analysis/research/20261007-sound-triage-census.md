@@ -1205,3 +1205,7 @@ NR169A–C positively join shared PZR note resume to AT167/RS168: all PBI callba
 ## Decision checkpoint170 — concrete PBI resume callbacks
 
 PB170A–C bind base/continuous PBI30/4C through constructor stores and relocated slots, trace context/attachment resume before flag clear/type3 queue/transition callback, and exact retained-parameter product/position sum/gain lower clamp. Shared HP2 supplies queue producer, not consumer. Context/attachment/transition recipients, queue consumer and complete writers/families remain retained. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint171 — concrete PBI resume recipients
+
+RC171A–C close contextA0 timing-state gate via existing B15/B16, attachment58 wrapping decrement via OA11's paired consumer, and transition30 exact3→4/2→1 update. PB170B passes0 explicitly to the context selector. Null context collaborator has no normalized success return; caller ignores result. Queue consumer and full clock/count/value/family closure remain; no totals, Q15, fidelity or production changes.

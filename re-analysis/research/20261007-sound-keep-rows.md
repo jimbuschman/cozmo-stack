@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 171 — PBI resume recipients: timing, attachments and transition state
+
+Primary: `20261008-sound-pbi-resume-recipients-native.txt`; same engine SHA256. Positive PB170B resume path. B15/B16/OA11 are existing native timing/attachment joins. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| RC171A | 009BDA28..009BDA60;009FF290..009FF2C4;009FF2CC..009FF300 | ContextA0null returns incoming context pointer without new result assignment. Arg2zero tails9FF2CC: collaboratorstateword0 must2, else27; accepted calls9FD8D0(collaborator,live globalmanager4C clock), returns1. Arg2nonzero tails9FF290: state must1, else26; accepted9FD8C0(clock), returns saved1. PB170B explicitly passes0 via its preceding maskedbit5clear registerr1. | State mismatches do not mutate collaborator. No inferred success for nullA0. | Context gate → pause/resume selector → required state → live clock → known timing control → raw result. | B15 stores clock44 thenstate2; B16 adds clockdelta to30/34, publishesstate1 and exact F32 timing coefficient40. Caller ignores results and proceeds. Other clock/state writers remain retained. |
+| RC171B | 009E80E8..009E8110 | Attachment ownerhead0null returns. Otherwise for each link: save state=link4, load next0 **before** state callback-free decrement, storestate58−1 wrapping32, continue saved next. No state40/50 mutation, destructor, count clamp or target-output rebinding. | Underflow0→FFFFFFFF preserved. No null state guard. | Physical link state/next → decrement58 → next →return. | OA11 supplies paired increment/expiration consumer, including scope3 exception. No inverse restoration of OA11's clearedstate30 output pointer is invented here. Complete attachment58 producers remain retained. |
+| RC171C | 00A366D0..00A366F0 | Transition30==3 sets4 andreturns; otherwise30==2 sets1; allotherstates untouched. Managerarg unused. | No callback, time update, subscription or resource release. | State read →3→4 OR2→1 ORunchanged. | PB170B chooses this on144nonnull after queue submission; other state writers/processor remain separate. Local transition recipient closed. |
+
+PB170B's three direct named recipients now have local decision joins. Queue type3 consumption, clock/count/value producers, wider PBI families and duration-helper paths remain PARTIAL; no coverage promotion, Q15, fidelity or production changes.
+
 ## Checkpoint 170 — concrete PBI resume callbacks and control gain
 
 Primary: `20261008-sound-pbi-resume-binding-native.txt`, `20261008-sound-pbi-resume-slots.txt`, `20261008-sound-pbi-resume-callback-native.txt`; same engine SHA256. Positive NR169 virtual4C/30. Constructor stores and relocated slots govern bindings; no generic destructor assumption. Endpoints inclusive.
