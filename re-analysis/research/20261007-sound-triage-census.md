@@ -1137,3 +1137,7 @@ PW152A–F positively bind raw count/ID/weight readers, random weight setter ver
 ## Decision checkpoint153 — known child admission and local weight mutation
 
 CA153A binds five known node48 callbacks: Sound requires descriptor word5C nonzero; four containers return1. CA153B/C trace mode0/nonzero/changed weight gating, indexed store, weighted flag and reset order. PW152/TR18 are positive recipients; full incoming weight-method dispatch/writer/resolver census remains retained. Local method recovery does not assert a new engine call. Totals unchanged; Q15 remains after Q14 completion, no fidelity/production change.
+
+## Decision checkpoint154 — choice-entry snapshot joins
+
+CJ154A settles CW10's nullable selector-count query; CJ154B/C bind both known state10 snapshots with primary captures and positive existing PK1–4 joins. Sequence ignores passed count and copies direction/index; random preserves weight/counter/bitmap/history state with exact failure publication. NR146F supplies retirement. Storage internals excluded; virtual13C/list ownership and broader decision closure retained. No coverage, Q15, production or fidelity change.
