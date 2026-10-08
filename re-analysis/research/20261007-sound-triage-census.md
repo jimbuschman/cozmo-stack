@@ -57,12 +57,12 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-048 | 86 | NOT DONE |
 | Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | NOT DONE |
-| Q14-051 | 90 | NOT DONE |
-| Q14-052 | 91 | NOT DONE |
+| Q14-051 | 90 | PARTIAL |
+| Q14-052 | 91 | PARTIAL |
 | Q14-053 | 92 | PARTIAL |
 | Q14-054 | 93 | CHECKED |
 | Q14-055 | 94 | PARTIAL |
-| Q14-056 | 95 | NOT DONE |
+| Q14-056 | 95 | PARTIAL |
 | Q14-057 | 96 | NOT DONE |
 | Q14-058 | 97 | CHECKED |
 | Q14-059 | 98 | PARTIAL |
@@ -442,13 +442,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-013 | **KEEP** | 0x009B3260..0x009B4033;0x009BBF9C..0x009BC17B;0x00A78D10..0x00A78DE3 | Whether target110896138 routes notes to get-in branch403781184 is MIDI routing, not a waveform approximation. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 NS1–3/NE1–6 locate the actual per-note submission/preparation helper and channel/pitch/velocity gates; cited9BBF9C is a byte-stream consumer, not child MIDI filtering. Actual target110896138 node128 child/get-in membership remains open.
 
 ## Q14-052 — triage line 91
 
 > | M9-014 | **KEEP** | 0x00A78D10..0x00A78DE3;0x009B3260..0x009B4033 | Trace velocity to every gain/RTPC input and any implicit binding; velocity-to-level decisions stay exact, though the final PCM multiply can share M6-010 equivalence. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 NS1–3/NE1–6 trace the packed velocity byte through property30/RTPCselector0C offset, clamp1..127, range and final mutation. This does not yet settle downstream implicit gain/RTPC recipients.
 
 ## Q14-053 — triage line 92
 
@@ -472,7 +472,7 @@ PARTIAL: HB2/HB4 and Q15 SP1–8 join reachable listener values to runningmean/s
 
 > | M9-020 | **KEEP** | 0x00A3CEB4;0x00A3F76C..0x00A3FBC0 | BeginTrim/clip-window filtering and held-note release at clip end require runtime timing/lifetime proof; circular tests remain defects. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 FC/RI/PD1–8 close local clip note-window gates and complete packed reader throughA3FC40; F8 trim/end writers, post-list/stream attachment and final held-note release remain exact open work.
 
 ## Q14-057 — triage line 96
 
