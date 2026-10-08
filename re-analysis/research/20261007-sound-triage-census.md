@@ -1495,3 +1495,7 @@ HR240A/B bind release10, wrapping count/zero-destructor/pool order and local mem
 ### Checkpoint 241 — owner mode writer
 
 OW241A–C trace exact object/event lookup, signed-byte versus full-mode comparison, either-change/both-list28 dispatch before lowbyte stores and successful owner defaults/object count/initial collection. Concrete media-manager28 and remaining failure/retirement/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 242 — queued owner operation and retirement
+
+OC242A/B and OR242A/B trace tag23 object sentinel/lookup, full-U16 registration flag, signed modes, event-before-object release and descriptor/group/object/owner/registry retirement order. Existing object/queue bodies reused; producer/event family/group-release/media-manager/input/writer closure retained. No totals/Q15/fidelity/production changes.

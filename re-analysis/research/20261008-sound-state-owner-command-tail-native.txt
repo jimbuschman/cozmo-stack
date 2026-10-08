@@ -1,0 +1,31 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009AF390..0x009AF3A8 exclusive; ARM;
+009AF390: mov          r8, #0
+009AF394: b            #0x9ae8b4
+009AF398: bl           #0xa2b504
+009AF39C: b            #0x9ae8d4
+009AF3A0: ldr          r0, [r5, #4]
+009AF3A4: bl           #0x9cb0f0
+RANGE 0x009AE8D4..0x009AE928 exclusive; ARM;
+009AE8D4: ldr          r0, [r5, #0xc]
+009AE8D8: ldr          r3, [r0]
+009AE8DC: ldr          r3, [r3, #0xc]
+009AE8E0: blx          r3
+009AE8E4: cmp          r8, #0
+009AE8E8: beq          #0x9ae30c
+009AE8EC: ldr          r3, [r8, #0x7c]
+009AE8F0: sub          sb, r3, #0xc0000001
+009AE8F4: bic          sb, sb, #0xc0000000
+009AE8F8: cmp          sb, #0
+009AE8FC: bfi          r3, sb, #0, #0x1e
+009AE900: str          r3, [r8, #0x7c]
+009AE904: bne          #0x9ae30c
+009AE908: ldr          r3, [pc, #0x6b0] ; word[009AEFC0]=FFFFFDBC
+009AE90C: mov          r0, r8
+009AE910: ldr          r3, [r6, r3]
+009AE914: ldr          sl, [r3]
+009AE918: bl           #0xa0b600
+009AE91C: mov          r1, r8
+009AE920: mov          r0, sl
+009AE924: bl           #0xa7a988
