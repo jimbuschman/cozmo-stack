@@ -668,7 +668,7 @@ PARTIAL: existing primary-backed rows NS1–NS2,VS1,Z4–Z15 in `20261007-sound-
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. Remaining concrete node/state virtual recipients, A0B490 local-list payloads, A0C238 decision joins and item48 writer; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
+PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. OR145A–C add object-specific switch-key retirement; PC145A/B add playing-ID callback cancellation. E29 already identifies item48 registration flags; its UNKNOWN wording is historical triage provenance, not a current writer absence. A0C238 is QC3; A0B490 is out of scope: local storage destruction with no payload callbacks. Remaining concrete object-node/state virtual recipients, switch-key producer/destructor binding and complete registration/flag writer census; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
 
 ## Q14-088 — triage line 137
 
@@ -1101,3 +1101,7 @@ All five CR143 native range endpoints checked; ELF import bindings confirm4A4EDC
 ## Decision checkpoint144 — modulation teardown and current-row reconciliation
 
 KT144A–J row the remaining 9DA77C caller, including wildcard parent-release order, exact leaf matching, same-iterator stable deletion and bottom-up inactive/empty pruning. Existing HBIND2, U27/R34/R35/R37/SU1–6 and A15/A16/A20 are positive joins for checkpoint143/142 rather than new unread bodies. Q14-076/079/087 retain their remaining decision recipients/producers; counts stay23 native CHECKED /8 scope CHECKED /109 PARTIAL /0 NOT DONE. No Q15 resumption or fidelity change.
+
+## Decision checkpoint145 — switch retirement and callback flags
+
+OR145A–C establish default-versus-keyed switch recipient removal, active/empty gates and ordered ownership movement. PC145A/B establish first-playing-ID callback disabling, retained high12 flag bits, audio-thread exemption and single condition wait. E29 positively supplies the registration item48 writer; the quoted historical UNKNOWN is superseded. QC3 and HI5/HI12/HI15/HI18 are existing positive joins; A0B490 storage mechanics are out of scope. Broader Q14 obligations retain concrete callbacks and producer/census gaps; totals unchanged, no fidelity changes.
