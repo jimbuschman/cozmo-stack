@@ -1403,3 +1403,7 @@ RT217A binds Sound8 toselector/currentmanager mutex andwrapping nodeC increment 
 ### Checkpoint 218 — scoped RTPC setter selection
 
 SS218A–E trace root creation caller outcomes, ordered exact scope selection/ancestor cache, suffix predicate, descriptor mask mutation andraw update handoff. Hash/allocator bodies scopedout; resolver/helper/update/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 219 — Sound setter ramp join
+
+SJ219A/B join concrete Sound duration/shape/byte inputs to already-positive ramp/cancellation/transition bodies, distinguishing equal-current return from nonpositive-duration immediate notification. SS218 boundary reconciled; preflight/resolver/notification/writer closure retained. No totals/Q15/fidelity/production changes.
