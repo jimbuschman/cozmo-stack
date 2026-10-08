@@ -130,6 +130,22 @@ Coverage: three named alternative cache writer bodies CHECKED locally; callers, 
 
 The policy cache can be filled by selection, stop, force-virtual and processing predicates. PW4 can deliberately replace a cached policy0 with2/mode1. The remaining caller/creation dependencies are readable controls, not unknown behavior to fill by inference.
 
+### Resumption checkpoint 16: cached-policy consumer and its activity gate
+
+Coverage: A55750 local control flow and two direct predicates CHECKED; source virtual callbacks, reset recipient and production prepass remain PARTIAL. Primary captures: `20261007-sound-resume-policy-consumer-native.txt` and `20261007-singing-dispatch-resume-native.txt`. Current M6-026 quotation before L1 applies. This extends PW5; it does not claim complete voice-policy closure. Offsets hexadecimal; V is the voice, P=[V.D4].C and C=P+C.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| VC1 | 00A55750..00A55784;00A5585C..00A55874;00A55888..00A55898 | No source-null guard. If P.E8 bit5clear invoke C.vt24(C). Otherwise invoke C.vt28(C) only when P.E9 bit0set. Then read P.1BE mask14. | Neither callback on bit5set/bit0clear. Callback results ignored. | Optional source callback before live policy-state read; do not snapshot the flag across callback. | Concrete vt24/28 bindings remain open. |
+| VC2 | 00A55784..00A557AC;00A55878..00A55884;00A5589C..00A558A8 | Mask14 zero calls A4B93C(V), then returns. Nonzero calls PW5 predicate A0275C(P). Predicate true, or false with old V.E4 zero, stores V.E4=2 then V.E0=1. False with old E4nonzero preserves both. | Cached policy alone does not unconditionally overwrite state. | Predicate→old-state gate→ordered state stores. | A4B93C is VP1–14; callers/writers remain separate obligations. |
+| VC3 | 00A557B0..00A557EC | Set V.1C=0; compute end of V.10 array with countV.14 and stride4C; pointer-only traversal performs no element access or destructor. Set V.14=0; call A01BD8(P). | Count0 skips traversal but still clears count and calls recipient. | Word1C→traversal→count14→recipient. | No fabricated route-object cleanup. |
+| VC4 | 00A557F0..00A55808;009BDA88..009BDAD0 | V.CC zero returns; otherwise query C activity. Query returns raw nonzero byteC.88 immediately; if zero, returns1 for first nonzero word74/78/7C/80, else0. False returns. | Activity return is not always normalized when88 nonzero. | CC gate→activity gate→reset preparation. | All state/ownership controls, not DSP. |
+| VC5 | 00A5580C..00A55858 | Call9D4228(scratch,V+2C,old V.CD bit1,&V.CC,V). Scratch zeros only words0/C/18/24/30/3C/48/54. Ignore result; reloadCD and OR bit1 after call. | Both preceding gates must pass. | Scratch setup→reset recipient→live flag update. | Other scratch bytes UNKNOWN at this caller;9D4228 remains readable recipient. |
+| VC6 | 00A01BD8..00A01C54 | P.E8 low2bits0 sets P.C4=42CA0000 and returns. Otherwise if E8maskC!=4, absentP.AC returns; presentAC calls9FE794(AC,P.DC.3C bit5). Bit5clear returns; bit5set reloadsAC and requires AC.18bit1 and9FDD80(AC)!=0, then tail-calls9BCED4(C). | Callback can change AC; reload is explicit. | Flags→optional callback→fresh AC checks→context callback. | These three recipients remain separately required; no inferred behavior names. |
+| VC7 | 00A01C58..00A01CA0 | E8maskC==4 branch proceeds when P.DC.3C bit3set OR P.E8 bit7clear. Query A36D34(P.14+1C), reinterpret return as binary32, divide by binary32 P.14.64, then tail-call P.vt54(P,result). | Neither divisor-zero nor finite-value gate. | Query→reload game-object pointer/vtable→F32 division→virtual. | Exact parameter arithmetic under ADP-1; A36D34 and vt54 remain dependencies. |
+
+PW5's immediate consumer is now explicit, including state-store and callback order. A43D24's enclosing production prepass, source bindings and reset body remain unread here; Q14 is not finished.
+
 # Q14 — sound decisions under ADP-1
 
 ## Resumption scope (operator instruction after census commit 8613d8f)
