@@ -631,3 +631,28 @@ Companion: `20261007-singing-sound-note-policy-native.txt`. M9-010/013/014/015 q
 | SN6 | 00A1D5CC..00A1D5DC;00A1D464..00A1D478 | Savedplay-now==1 callsA379D8(sound,sound5C,R), returnsitsrawresult. Otherpredicatevaluesreturn52 afterallparameterpostsandpossiblechoicepublication. | Publicationcanoccurforrejected/deferredSoundstart. Preserveabsenceofrollbackhere. | Soundretain/recordpublication →savedpolicygate →PBIcallor52. | Do not infer no note-off replay fromcurrentreturn52; MHwalkusesrecordtype. |
 
 These instructions post note number85 and derived frequency84. They do not post velocity as either value; that is a local fact, not proof that no downstream gain/RTPC binding reads R87. The final implicit-velocity question therefore remains open at PBI parameter composition and source-context binding. Recorded Sound publication supplies the concrete identity replayed in MH2, so substituting a fresh container draw at note-off contradicts this local production path.
+
+
+## Checkpoint 31 — modulator stop notifications and concrete state vtables
+
+Primary companion: `20261008-singing-modulator-stop-native.txt`. Completes MI7's previously named local notification branches. S is the per-voice state. Shared sound/PBI/pending-action recipients are M6 interfaces, not further M9 extraction.
+
+Current record quoted before the vtable correction:
+
+> M9-025 — The exact waveform produced by the Wwise LFO between its extrema
+> Status: RECOVERABLE_GAP
+> Evidence: 0x009D671C..0x009D7727;0x009D7FC0..0x009D8137;0x009E266C..0x009E2813.
+> Unresolved: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.
+
+The current record's vtable address is contradicted by MU6 below: the actual LFO table is **0103B268**, not0104B268. Earlier navigation output used the wrong address; no corrected waveform equation is inferred merely from this binding.
+
+| Step | Address | Behaviour | Gates | Order / failure | Bits / boundary |
+|---|---|---|---|---|---|
+| MU1 | 009E21FC..009E2230;009E22E4..009E2324 | Set S44=3 first. S8null skips stop-policy query; otherwise9D7EA4(S8), with MG5's type/property1 gates. Policyfalse skips notifications. Policytrue scope S48=0: S Cnonnull invokes A01280(PBI,&{duration0,curve4,byte8=0},1). Scope1 uses MU2/3; other scopes skip notifications. | Stop selector is property1, not property15 trigger selector. | State3 → stop policy → scope → notification → MI7 common clearing/release. | Zero fade request is integer duration0; no gain parameter substituted. |
+| MU2 | 009E2324..009E239C;009E8028..009E805C | Scope1 requires S14 recipient countnonzero. S20 eventnonnull: walk event2C linked entries next0/PBI8. PBI34nonnull and membership9E8028(PBI34,S) true invokes A01280(PBI,zero request,1). Membership searches linked nodes starting *(PBI34), next0, identity4==S. | Null or missing membership suppresses stop. Continue using next read after call; do not snapshot list. | Scope/count → event → linked PBI membership → immediate stop requests. | PBI stop recipient is M6; exact call arguments and identity gate extracted here. |
+| MU3 | 009E239C..009E2438;00A63A6C..00A63A74;009E79B0..009E7A00 | Then walk event48 linked entries next0/action8. For each action, iterate S10 recipients physical order; A63A6C tailbranches9E79B0, which tests membership S in actionC8 pointer array/countCC. True calls9AB1F4(global,action,recipient,3). | Null event48 skips. Membership initial wrapping(countCC<<2)==0 returns0; exact pointer match1, exhaustion0. Recipient base/count reloaded after each iteration; no copied snapshot. | PBI stops first → pending-action/recipient notifications → common cleanup. | Action cancellation recipient is M6. Operation3 raw integer, not a guessed enum label. |
+| MU4 | 009E2438..009E24AC | Scope1/eventnull: iterate each recipient. If global pending-action ownernonnull,9AB8AC(owner,recipient,S1C,S2C). Always afterward9F4A64(recipient,S1C,S2C,duration0,curve4). Reload live base/count each iteration. | No pending-owner gate around9F4A64. An earlier callback can mutate recipient vector. | Optional pending removal → recipient stop dispatch → next recipient → MI7 clearing/reverse release. | Preserves independent calls and order; no fresh RNG or target selection. |
+| MU5 | 009E2144..009E21CC;009E21D0..009E21FC | Base-state ctor sets words4,8,C,10,14,18,1C,20,28,2C,30,34,3C,40,44,4C,50,54,58zero;38=7FFFFFFF,48=1, selectorbytes24/25=FF; installs basevtable. Common deadline helper changes38 only if currently7FFFFFFF:38=wrapping(incoming+S3C); if44!=3 then44=2, otherwise preserve3. | Already assigned38 is unchanged. No float conversion or clock query. | Constructor fields → later deadline sentinel gate → store → state gate. | Deadline sentinel7FFFFFFF, not−1. |
+| MU6 | 009D7FE4..009D7FF4;009D808C..009D809C;009D80E4..009D80FC;GOT01040120/124;0103B268..0103B29C | Native PC/GOT base104028C. Type1 uses GOT1040120 raw103B280 plus8 →statevtable103B288: virtualC=9E2820,10=9E1FB8,14=9E2000. Type0 uses GOT1040124 raw103B260 plus8 →103B268: virtualC=9E2818,10=9E1F5C,14=9E2814. | Raw104B268 addresses are unrelated CLAD imports; neither concrete state uses them. | Base constructor → concrete table publication → MI5 parameter init/callbacks. | Concrete bindings establish next local bodies; they do not alone establish evaluation or value delivery. |
+
+MU1–MU4 close 9E21FC's local stop-policy notifications and membership gates alongside MI7 common cleanup. M6 interfaces A01280/9AB1F4/9AB8AC/9F4A64 retain their sound/action effects in Q14. MU5/6 establish constructor/deadline/concrete bindings; next retained M9 work is concrete virtualC/10/14 and evaluator delivery. Both tasks remain open.
