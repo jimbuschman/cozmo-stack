@@ -1209,3 +1209,7 @@ PB170A–C bind base/continuous PBI30/4C through constructor stores and relocate
 ## Decision checkpoint171 — concrete PBI resume recipients
 
 RC171A–C close contextA0 timing-state gate via existing B15/B16, attachment58 wrapping decrement via OA11's paired consumer, and transition30 exact3→4/2→1 update. PB170B passes0 explicitly to the context selector. Null context collaborator has no normalized success return; caller ignores result. Queue consumer and full clock/count/value/family closure remain; no totals, Q15, fidelity or production changes.
+
+## Decision checkpoint172 — type3 queue/voice resume
+
+QN172A–C positively join type3 queue eligibility and exact voice50 dispatch, standard-family slotA5358C and DC1/DC3/other resume decisions. Existing HP4/5/6/9 supply same-clock preflight/lookup/constructor/unlink joins; no new storage descent. A46E30/A56610/voice48 and complete incoming/producer/family closure remain. No totals, Q15, fidelity or production changes.

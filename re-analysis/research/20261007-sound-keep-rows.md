@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 172 — queued type3 resume notification to voice
+
+Primary: `20261008-sound-type3-notification-native.txt`, `20261008-sound-type3-voice-slot.txt`; same engine SHA256. PB170B posts type3 through HP2's shared queue. Singing HP4/5/6/9 supply positive same-clock preflight, voice lookup/construction and unlink order; type3 dispatch is newly explicit here. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| QN172A | 009D38E0..009D392C;HP4/HP5 | After same-clock group preflight, entryDbit0set usesPBI154. Clearbit/type3 (>1) invokesA41854(&entry4). Null voice enters ordinary notification removal; nonnull voice whose callback has setbit0 proceeds toQN172B; nonnull/bitstillclear keeps entry and advances. | Type3 does not itself callA431A8 preparation, but a deferred type0/1 in its same-clock group can postpone it under HP4. A41854 type3 accepts listed primary-source match, not listed secondary-only match. | Group readiness → prepared PBIvoice OR primary lookup → bitgate → dispatch OR retain/remove. | Existing HP5 full lookup supplies fallback/nonzeroDC gate; accepted fallback does not setbit0 by itself. No unconditional resume dispatch from queue insertion. |
+| QN172B | 009D3A94..009D3AD0;0103C7E0 | Prepared path loads PBI154; newly accepted lookup preserves returned voice. Read typebyteC; native table index3 goes9D3AC4→voice.vt50(voice), returnignored. Then ordinary HP9 callback-before-unlink/count removal. Known standard voice table103C790+50=103C7E0 bindsA5358C; HP6 constructor positively installs this table. | No PBI argument passed as second argument for type3 (unlike type4). No type3 seek/duration arithmetic in queue body. | Exact type → standard voice50 → queue detach/recycle/count → next. | QN172C supplies recipient; other voice families/queue preflight inputs and higher caller closure remain retained. out of scope: recycled-link/slab/pool cleanup. |
+| QN172C | 00A5358C..00A535D4 | Standardvoice50: DC==1 returns. DC==3 saves primaryD4, callsA46E30(voice+108), passes its raw result toA56610(savedprimary,result), then setsDC=1 andreturns. OtherDC values tailvoice.vt48. | No null primary guard on DC3. Savedprimary is used even if helper changes D4. DC1 suppresses all recipients. | DC gate → resume query → primary-source callback → DC1 OR fallbackvirtual48. | A46E30/A56610/voice48 remain concrete decision recipients; no assumed generic stream resume or no-op. Source/result controls affect lifecycle, so in scope. |
+
+Type3 queue dispatch now joins the standard voice with exact ready/retention and callback order. Voice/source resume recipients and complete queue/family/producer closure remain; Q14 totals unchanged, Q15 parked, no fidelity or production changes.
+
 ## Checkpoint 171 — PBI resume recipients: timing, attachments and transition state
 
 Primary: `20261008-sound-pbi-resume-recipients-native.txt`; same engine SHA256. Positive PB170B resume path. B15/B16/OA11 are existing native timing/attachment joins. Endpoints inclusive.
