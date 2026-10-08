@@ -1149,3 +1149,7 @@ CO155A–D settle choice-list retain/release, association detach across all entr
 ## Decision checkpoint156 — choice-list output replacement policy
 
 CP156A/B bind known Switch/Layer extended virtual13C: live Switch47 bit5 gates CW8 output replacement, Layer/shared intermediate returns0. Shorter RanSeq/ActorMixer table offsets hold ABI metadata, so no extended callback is inferred there. SWR1 supplies the Switch flag bank writer; additional extended-family/association producers and other flag writers remain open. No coverage, Q15, fidelity or production change.
+
+## Decision checkpoint157 — temporary-context reference helpers
+
+CX157A–D close local9FEFD4/9FEFE4/9E765C bodies: low-byte retain/decrement versus full-halfword destruction gate, first object swap removal and ordered retained-state40/50 counter decrement/destructor dispatch. Storage-only recipients excluded; concrete state0 and counter/family producers remain explicit. No coverage, Q15, fidelity or production change.
