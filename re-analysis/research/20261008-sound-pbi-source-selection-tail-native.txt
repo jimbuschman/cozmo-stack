@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A01E78..0x00A01EDC exclusive; ARM;
+00A01E78: add          r2, sp, #0x18
+00A01E7C: str          r2, [sp]
+00A01E80: add          r2, sp, #0x1c
+00A01E84: str          r2, [sp, #4]
+00A01E88: add          r2, sp, #0x20
+00A01E8C: str          r2, [sp, #8]
+00A01E90: add          r2, sp, #0x24
+00A01E94: str          r2, [sp, #0xc]
+00A01E98: add          r2, sp, #0x28
+00A01E9C: bl           #0x9cd340
+00A01EA0: ldr          r2, [sp, #0x2c]
+00A01EA4: movw         r3, #0xfffe
+00A01EA8: ldrh         r2, [r2]
+00A01EAC: cmp          r2, r3
+00A01EB0: ldr          r2, [sp, #0x24]
+00A01EB4: moveq        r3, #1
+00A01EB8: bfieq        r3, r3, #0x10, #0x10
+00A01EBC: streq        r3, [r5]
+00A01EC0: ldr          r3, [sp, #0x20]
+00A01EC4: add          r3, r3, r2
+00A01EC8: cmp          r6, r3
+00A01ECC: movhs        r3, #3
+00A01ED0: strhs        r3, [r4]
+00A01ED4: add          sp, sp, #0x30
+00A01ED8: pop          {r4, r5, r6, pc}

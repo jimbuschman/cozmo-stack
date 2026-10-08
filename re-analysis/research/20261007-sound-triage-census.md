@@ -1343,3 +1343,7 @@ SD202A–C correct A8/A9 descriptorvalueoffset from28 to24 (SP+28 minusdescripto
 ### Checkpoint 203 — new/retainedsource attachment
 
 SA203A–E tracefactory versusretainedsource publication, exactpolicyquery/bitwisegate androutecapacity, audibility/no-start admission,1/3Fpointerpublication versusend/close/dtor/free, andinitialroute/list0. E0/E4 producerjoinedtoPC2; fulldynamicfactory/context/writer/caller closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 204 — sourcefactory input producer
+
+SS204A/B traceauthoredPBI150mode/pluginoutputs andsupplied-media RIFFprobe/uncheckedparserresult/full-payloadmode3selection. PCMformatrewrite scopedout; parser/media/descriptorwriter/fullclosure retained. No totals/Q15/fidelity/production changes.

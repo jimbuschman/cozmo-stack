@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 204 — PBI source mode/plugin selection and supplied-media probe
+
+Primary: `20261008-sound-pbi-source-selection-native.txt`, `20261008-sound-pbi-source-selection-tail-native.txt`; same engine SHA256. SA203 supplies caller; PI188 suppliesPBI150/rawmedia initialassociation; BR142 descriptorfieldwriters andSF1 sourcefactorypositive. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| SS204A | 00A01E24..00A01E54 | A01E24 initiallywritesmodeout=(byte[PBI150+C]>>2)&1F, pluginout=word[PBI150+14]. Thenloadmedia=PBI1DC,size=PBI1E0; media0 ORsize0 returnswithauthoreddescriptoroutputs. Bothnonnull/nonzero enterprobeSS204B. | No PBI150nullguard, numericcodecvalidation orlookup beforepublishingoutputs. Mode/pluginselectedbeforemediafieldgate. | Descriptor → outputpublication → media/sizegate → returnORprobe. | BR142 descriptorreader/bank-inputwriterspositive; completePBI150/1DC/1E0 writers stillretained. This suppliesSA203'sactualfactoryinputs instead ofdefault guesses. |
+| SS204B | 00A01E58..00A01ED8 | Probe initializesoptionalstackwords10/14=0; calls9CD340(media,size,&formatPair,0,&loopstart,&loopend,&dataLength,&dataOffset,0,0). Returnstatusnotchecked; code immediatelyreadsformatPair.pointer andtag, thenloadsparseddataOffset/dataLength. If unsignedsize>=wrap(dataOffset+dataLength), storesmodeout3; otherwisepreservesauthoredmode. Pluginout staysauthored forreachableADPCM/Vorbis tags2/FFFF. | Formatpointer dereference andlengthcomparison occur evenafterparsernon1; no added validation, successgate orrollback. Equalityselectsmode3, so completepayload canselectdirectsource independentofpriorauthoredmode. | Rawparser → formatread → endpointsum/unsignedcomparison → possiblemode3 →return. | Parsercontrolcontractrecoverable9CD340; no syntheticsafeerrorreturn. out of scope: FFFE-format rewrite toPCMplugin00010001 isPCMfile-source excludedbranch; do notdescend. No decode/DSPsample arithmetic. |
+
+Sourcefactoryselection nowhasexplicitauthoredandmedia-dependent producer controls. RIFFparser/descriptor/mediawriter/fullcallerclosure remainsPARTIAL; totalsunchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 203 — new/retained source attachment and policy/result state joins
 
 Primary: `20261008-sound-new-source-attachment-control-native.txt`, `20261008-sound-source-attachment-control-native.txt`, `20261008-sound-voice-seek-state-initial-native.txt`; same engine SHA256. VC184 supplies create/reuse callers; VS4 retained-source caller; PC2 exactA01768 inheritance/cache/mode-output, DG1+otherDG audibility body, NS2/3 start/close, PW transition and PB end already positive. Only local decision ranges; allocator internals omitted. Endpoints inclusive.
