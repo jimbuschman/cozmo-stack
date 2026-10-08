@@ -1176,4 +1176,8 @@ DR162A–E bind known0503 table30/C/0 and pending4 from positive DA/DQ construct
 
 ## Decision checkpoint163 — deferred-action destructor and base chain
 
-DD163A–E settle known0503 action0's ordered transition detach/clear, context/recipient release, event association detach/count gate/callback/release, retained state then choice-list cleanup, and base cleanup ending in a no-op. TT8/CX157/MF158/SN159/CO155/TD5 are positive joins. Remaining event owner0/destructor remainder and producer/family closure remain; storage-only tails excluded. No coverage promotion, Q15, fidelity or production changes.
+DD163A–E settle known0503 action0's ordered transition detach/clear, context/recipient release, event association detach/count gate/callback/release, retained state then choice-list cleanup, and base cleanup ending in a no-op. TT8/CX157/MF158/SN159/CO155/TD5 are positive joins. Remaining event owner0/TD6 recipient families and producer/family closure remain; AE164C reconciles existing TD7 storage remainder. No coverage promotion, Q15, fidelity or production changes.
+
+## Decision checkpoint164 — deferred-action event association
+
+AE164A–C settle actionC4/C0 publication before owner retain, active action-list admission/append and retained reference on capacity/allocation failure. TC9/VE6/DA8 establish callers; SN159C/DD163C establish enumeration/removal. Existing TD7 closes destructor remainder and is storage-only under the guard; no new descent. OwnerC callback and recipient/producer families remain retained. Totals unchanged; no Q15, fidelity or production changes.
