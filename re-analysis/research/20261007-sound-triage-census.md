@@ -112,7 +112,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-103 | 152 | NOT DONE |
 | Q14-104 | 153 | NOT DONE |
 | Q14-105 | 154 | NOT DONE |
-| Q14-106 | 155 | NOT DONE |
+| Q14-106 | 155 | CHECKED |
 | Q14-107 | 156 | PARTIAL |
 | Q14-108 | 157 | PARTIAL |
 | Q14-109 | 158 | NOT DONE |
@@ -772,7 +772,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C34.2 D1 null-D0 gates | M6-025,M6-026 | **KEEP** | 0x009BE8A0..0x009BE9E0;0x009FB9B8 | DD reset and DC recompute precede ordinary null return; exact writes/gates must survive, not be waved away as DSP. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED (narrow null-D0 gates): NG1–NG4 reopen actual entry9BE898, DDbit2 reset before null return, DC low2==1 builder before final null test, raw2 and unchanged caller output on null branches. NG3 identifies mode/type writes and allocation continuation. Positive-data subscribers and query recipients remain separately open in positioning obligations.
 
 ## Q14-107 — triage line 156
 
