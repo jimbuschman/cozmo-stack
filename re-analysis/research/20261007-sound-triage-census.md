@@ -1483,3 +1483,7 @@ OD237A–E trace selected/unselected ID suppression, publication-failure continu
 ### Checkpoint 238 — group collaborator registration
 
 GR238A–D trace group-ID-only reuse, count callback versus node release, new collaborator/subscription/publication order and observed allocation-failure branches. Existing SWR2 reused; storage internals excluded. Remaining endpoints/state-change/retirement/manager consumers and input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 239 — group change and unsubscribe
+
+GC239A–D trace active-record selection/live-key gates, optional filter raw-result stop rule, recomputation under lock and nondeleting/deleting unsubscribe order. Known owner callbacks reused; active registry/input/count retirement and descriptor-manager consumers retained. No totals/Q15/fidelity/production changes.
