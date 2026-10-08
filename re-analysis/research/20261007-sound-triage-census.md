@@ -1395,3 +1395,7 @@ CP215A/B bind five known class128 callbacks, distinguishing RanSeq dispatch entr
 ### Checkpoint 216 — Sound special play entry
 
 SP216A–F trace direct versus90/87 specialpath, scoped RTPC85/84 order/livebytepowf calculation, context entry/retain beforeadmission,52 versusrawSourcePlay, concretepolicyhelpers andRTPCsetterwrapper. SourcePlay/setter notifications/retain-context lifecycle andwriterclosure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 217 — Sound context retain
+
+RT217A binds Sound8 toselector/currentmanager mutex andwrapping nodeC increment beforeunlock. SP216C reconciled; context release/reference/list writers/full production closure remain. No totals/Q15/fidelity/production changes.
