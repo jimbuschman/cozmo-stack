@@ -1,0 +1,118 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009E1D8C..0x009E1F5C exclusive; ARM;
+009E1D8C: push         {r3, lr}
+009E1D90: sub          r1, r1, #8
+009E1D94: ldr          r3, [pc, #0x1b8] ; word[009E1F54]=0065E4E4
+009E1D98: mov          ip, r0
+009E1D9C: vmov         s15, r2
+009E1DA0: add          r3, pc, r3
+009E1DA4: cmp          r1, #5
+009E1DA8: addls        pc, pc, r1, lsl #2
+009E1DAC: b            #0x9e1f48
+009E1DB0: b            #0x9e1e0c
+009E1DB4: b            #0x9e1e5c
+009E1DB8: b            #0x9e1e70
+009E1DBC: b            #0x9e1ec0
+009E1DC0: b            #0x9e1ed4
+009E1DC4: b            #0x9e1dc8
+009E1DC8: ldr          r2, [pc, #0x188] ; word[009E1F58]=FFFFFDDC
+009E1DCC: vcvt.f64.f32 d16, s15
+009E1DD0: mov          r0, #1
+009E1DD4: ldr          r3, [r3, r2]
+009E1DD8: ldr          r3, [r3]
+009E1DDC: vmov.f64     d17, #5.000000e-01
+009E1DE0: vmov         s15, r3
+009E1DE4: vcvt.f64.u32 d18, s15
+009E1DE8: vmul.f64     d16, d16, d18
+009E1DEC: vmov.f64     d18, #-5.000000e-01
+009E1DF0: vcmpe.f64    d16, #0
+009E1DF4: vmrs         apsr_nzcv, fpscr
+009E1DF8: vmovle.f64   d17, d18
+009E1DFC: vadd.f64     d16, d16, d17
+009E1E00: vcvt.s32.f64 s15, d16
+009E1E04: vstr         s15, [ip, #0x88]
+009E1E08: pop          {r3, pc}
+009E1E0C: ldr          r2, [pc, #0x144] ; word[009E1F58]=FFFFFDDC
+009E1E10: vcvt.f64.f32 d16, s15
+009E1E14: ldr          r1, [r0]
+009E1E18: ldr          r3, [r3, r2]
+009E1E1C: ldr          r2, [r1, #0x10]
+009E1E20: ldr          r3, [r3]
+009E1E24: vmov.f64     d17, #5.000000e-01
+009E1E28: vmov         s15, r3
+009E1E2C: vcvt.f64.u32 d18, s15
+009E1E30: vmul.f64     d16, d16, d18
+009E1E34: vmov.f64     d18, #-5.000000e-01
+009E1E38: vcmpe.f64    d16, #0
+009E1E3C: vmrs         apsr_nzcv, fpscr
+009E1E40: vmovle.f64   d17, d18
+009E1E44: vadd.f64     d16, d16, d17
+009E1E48: vcvt.s32.f64 s15, d16
+009E1E4C: vstr         s15, [ip, #0x78]
+009E1E50: blx          r2
+009E1E54: mov          r0, #1
+009E1E58: pop          {r3, pc}
+009E1E5C: vldr         s14, [pc, #0xec] ; word[009E1F50]=42C80000
+009E1E60: mov          r0, #1
+009E1E64: vdiv.f32     s15, s15, s14
+009E1E68: vstr         s15, [ip, #0x7c]
+009E1E6C: pop          {r3, pc}
+009E1E70: ldr          r2, [pc, #0xe0] ; word[009E1F58]=FFFFFDDC
+009E1E74: vcvt.f64.f32 d16, s15
+009E1E78: ldr          r1, [r0]
+009E1E7C: ldr          r3, [r3, r2]
+009E1E80: ldr          r2, [r1, #0x10]
+009E1E84: ldr          r3, [r3]
+009E1E88: vmov.f64     d17, #5.000000e-01
+009E1E8C: vmov         s15, r3
+009E1E90: vcvt.f64.u32 d18, s15
+009E1E94: vmul.f64     d16, d16, d18
+009E1E98: vmov.f64     d18, #-5.000000e-01
+009E1E9C: vcmpe.f64    d16, #0
+009E1EA0: vmrs         apsr_nzcv, fpscr
+009E1EA4: vmovle.f64   d17, d18
+009E1EA8: vadd.f64     d16, d16, d17
+009E1EAC: vcvt.s32.f64 s15, d16
+009E1EB0: vstr         s15, [ip, #0x84]
+009E1EB4: blx          r2
+009E1EB8: mov          r0, #1
+009E1EBC: pop          {r3, pc}
+009E1EC0: vldr         s14, [pc, #0x88] ; word[009E1F50]=42C80000
+009E1EC4: mov          r0, #1
+009E1EC8: vdiv.f32     s15, s15, s14
+009E1ECC: vstr         s15, [ip, #0x80]
+009E1ED0: pop          {r3, pc}
+009E1ED4: vcmpe.f32    s15, #0
+009E1ED8: vmrs         apsr_nzcv, fpscr
+009E1EDC: blt          #0x9e1f38
+009E1EE0: ldr          r1, [pc, #0x70] ; word[009E1F58]=FFFFFDDC
+009E1EE4: vcvt.f64.f32 d16, s15
+009E1EE8: ldr          r2, [r0, #0x84]
+009E1EEC: mov          r0, #1
+009E1EF0: ldr          lr, [ip, #0x78]
+009E1EF4: ldr          r3, [r3, r1]
+009E1EF8: add          r2, r2, lr
+009E1EFC: ldr          r3, [r3]
+009E1F00: vmov.f64     d17, #5.000000e-01
+009E1F04: vmov         s15, r3
+009E1F08: vcvt.f64.u32 d18, s15
+009E1F0C: vmul.f64     d16, d16, d18
+009E1F10: vmov.f64     d18, #-5.000000e-01
+009E1F14: vcmpe.f64    d16, #0
+009E1F18: vmrs         apsr_nzcv, fpscr
+009E1F1C: vmovle.f64   d17, d18
+009E1F20: vadd.f64     d16, d16, d17
+009E1F24: vcvt.s32.f64 s15, d16
+009E1F28: vmov         r3, s15
+009E1F2C: add          r3, r2, r3
+009E1F30: str          r3, [ip, #0x38]
+009E1F34: pop          {r3, pc}
+009E1F38: mvn          r3, #0x80000000
+009E1F3C: mov          r0, #1
+009E1F40: str          r3, [ip, #0x38]
+009E1F44: pop          {r3, pc}
+009E1F48: mov          r0, #0
+009E1F4C: pop          {r3, pc}
+009E1F50: sbcmi        r0, r8, #0
+009E1F54: rsbeq        lr, r5, r4, ror #9

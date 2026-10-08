@@ -684,3 +684,17 @@ Primary companion: `20261008-sound-modulator-tick-native.txt`,9E203C..9E2138. MU
 | SV8 | 009E2100..009E2134;009E2068..009E2084 | Index3 convertsVCVT.U32.F32 toS80, dirtyA8=1; index4 storesF32(value/42C80000) toS88 and dirty1; index5 same toS8C and dirty1. Each returns1. | No virtual10 calls in these branches. Dirty publication order differs: indexes4/5 setdirty before divide/store, index3 beforeconverted store. | Dispatch →conversion/dirty order →targetfield →1. | Dirty flag gates later coefficient/phase rebuilding; exact writer, not an assumed per-block reset. |
 
 SV5–8 close the LFO state parameter setter. Shared render evaluation/value delivery remains Q14-027; envelope setter and its units still require rows. Both overall tasks remain open.
+
+
+## Checkpoint 34 — concrete envelope parameter updates and deadline writer
+
+Companion: `20261008-singing-envelope-state-setter-native.txt`. MU6 binds envelope virtual8 to9E1D8C. Input property index is rawr1, F32bits r2. Global rate resolved atGOT1040068→105243C; base calculated by9E1DA0 PC-relative addition. M9-024 current quotation above applies.
+
+| Step | Address | Behaviour | Gates | Order / failure | Bits |
+|---|---|---|---|---|---|
+| SV9 | 009E1D8C..009E1DC8;009E1F48..009E1F50 | Dispatch by wrapping(index−8), unsigned<=5. Outside indexes8..13 return0 with no value store. Valid branches return1. | Raw values not clamped to a declared bank range. | Index gate →case-specific update. | No blanket dirty flag on envelope setter. |
+| SV10 | 009E1E0C..009E1E5C;009E1E70..009E1EC0;009E1DC8..009E1E0C | Index8 writes S78, index10 writes S84, index13 writes S88: f64product=F64(inputF32)*F64(U32 rate), add−.5 for ordered<=0 else+.5, VCVT.S32.F64, store raw integer. Index8/10 thenstate.virtual10 (SV3) recomputes buffer gate; index13 does not. | Conversion signed32, without local saturation policy. Unordered selects+.5. | Input widening →rate/product →half adjustment →conversion/store →optional buffer callback →1. | HalfbitsBFE0000000000000/3FE0000000000000; exact native conversion association. |
+| SV11 | 009E1E5C..009E1E70;009E1EC0..009E1ED4 | Index9 storesF32(input/42C80000) toS7C; index11 same toS80; return1. | No virtual10/14, no A8 flag or deadline update here. | F32 division →parameter store →1. | Percentage divisor42C80000. |
+| SV12 | 009E1ED4..009E1F48 | Index12: ordered input<0 (BLT) writes S38=7FFFFFFF. Otherwise convert input with SV10's F64rate/half/S32 sequence, then add wrapping(S84+S78+converted) and publish S38. | Positive and zero input overwrite existing deadline; not MU5's sentinel-only assignment. Unordered does not take BLT and reaches conversion. | Sign gate →sentinel OR rate conversion →length sum →deadline store →1. | No state44 assignment in this setter; no extra release length S88 included. |
+
+SV9–12 close the envelope state setter, including the independent deadline writer and its units. Both concrete state parameter setters and MI5's callbacks are rowed. Runtime evaluator and recipient-delivery bodies remain Q14-027; M9 trigger/payload/init rows must still join their caller/reader/lifetime paths before whole-category closure.
