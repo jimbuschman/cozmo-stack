@@ -196,7 +196,7 @@ PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, 
 
 > | M6-008 | **KEEP** | 0x00A0AFDC;0x00A091CC;0x00A09C40;0x00A6A07C;0x00A6A580;0x00A62ED4;0x00A35998;0x00A6A2DC;0x00A4304C;0x00A52B90;0x00A549A0;0x00A09F04;0x00A6ACC0;0x00A03618 | Shared/per-object state, mode-4 chaining, lookahead/delay split, zero-frame fade handling, next-choice/start notification and Term/EndOfEvent latency remain exact scheduling/state work. |
 
-PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. Remaining concrete9AB048, other action families, source lifecycle, alternate updates, incoming dispatch and writer closure remain pending; known local cleanup is not a full scheduling claim.
+PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. RS168 closes concrete9AB048 deadline/insertion/failure behavior. Other action families, source lifecycle, alternate updates, incoming dispatch and writer closure remain pending; known local cleanup is not a full scheduling claim.
 
 ## Q14-010 — triage line 43
 
@@ -1192,4 +1192,8 @@ NO166A–D bind known internal/external manager0 to A70930, trace first note-sta
 
 ## Decision checkpoint167 — secondary-transition/action-identity manager path
 
-AT167A–C settle selector-gated action2C unsubscribe/clear and9AC6DC's second-list pending counter/completion/removal before first-list0503 detachment. Distinct pending2C/action2C meanings preserved; PS1/TT8/nodeC are positive joins. Q14-008/009 per-item notes narrowed to reflect current known child/list/cleanup coverage. Concrete9AB048 and incoming/writer/family closure remain; no totals, Q15, fidelity or production changes.
+AT167A–C settle selector-gated action2C unsubscribe/clear and9AC6DC's second-list pending counter/helper/removal before first-list0503 detachment. Distinct pending2C/action2C meanings preserved; PS1/TT8/nodeC are positive joins. Q14-008/009 per-item notes narrowed to reflect current known child/list/cleanup coverage. RS168 closes9AB048 as normal rescheduling with failure cleanup; incoming/writer/family closure remains. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint168 — pending-action reschedule/admission failure
+
+RS168A–C settle deadline recomputation before admission, unsigned sorted insertion after equal deadlines and count publication, plus callback/completion/action/pending release only on capacity/allocation failure. Corrects provisional AT167 completion label; RR1/A11 positively settle the local resolver interface. Deadline producers/incoming dispatch/action families remain retained. No totals, Q15, fidelity or production changes.
