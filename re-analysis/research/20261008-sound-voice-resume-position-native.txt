@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A56610..0x00A56648 exclusive; ARM;
+00A56610: push         {r4, r5, r6, lr}
+00A56614: mov          r4, r0
+00A56618: ldr          r0, [r0, #0xc]
+00A5661C: mov          r5, r1
+00A56620: bl           #0xa01864
+00A56624: ldr          r0, [pc, #0x1c] ; word[00A56648]=005E9B14
+00A56628: ldr          ip, [r4, #0xc]
+00A5662C: mov          r2, r4
+00A56630: mov          r3, r5
+00A56634: ldr          r0, [pc, r0]
+00A56638: ldr          r1, [ip, #0x140]
+00A5663C: pop          {r4, r5, r6, lr}
+00A56640: ldr          r0, [r0]
+00A56644: b            #0xa052f4
+RANGE 0x00A46E30..0x00A46E48 exclusive; ARM;
+00A46E30: vldr         s15, [r0, #0x30]
+00A46E34: vldr         s14, [r0, #0x4c]
+00A46E38: vcvt.f32.u32 s15, s15, #0x10
+00A46E3C: vdiv.f32     s15, s15, s14
+00A46E40: vmov         r0, s15
+00A46E44: bx           lr
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A01864..0x00A01878 exclusive; ARM;
+00A01864: ldrb         r3, [r0, #0x1ba]
+00A01868: mov          r2, #3
+00A0186C: bfi          r3, r2, #3, #4
+00A01870: strb         r3, [r0, #0x1ba]
+00A01874: bx           lr
+RANGE 0x00A533FC..0x00A53420 exclusive; ARM;
+00A533FC: push         {r4, lr}
+00A53400: mov          r4, r0
+00A53404: ldr          r0, [r0, #0xd4]
+00A53408: cmp          r0, #0
+00A5340C: beq          #0xa53414
+00A53410: bl           #0xa565d0
+00A53414: mov          r3, #2
+00A53418: str          r3, [r4, #0xdc]
+00A5341C: pop          {r4, pc}
+RANGE 0x00A565D0..0x00A565D8 exclusive; ARM;
+00A565D0: ldr          r0, [r0, #0xc]
+00A565D4: b            #0xa01840
+RANGE 0x00A01840..0x00A01850 exclusive; ARM;
+00A01840: ldrb         r3, [r0, #0x1ba]
+00A01844: bfc          r3, #3, #4
+00A01848: strb         r3, [r0, #0x1ba]
+00A0184C: bx           lr

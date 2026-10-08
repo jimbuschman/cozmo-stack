@@ -1213,3 +1213,7 @@ RC171A–C close contextA0 timing-state gate via existing B15/B16, attachment58 
 ## Decision checkpoint172 — type3 queue/voice resume
 
 QN172A–C positively join type3 queue eligibility and exact voice50 dispatch, standard-family slotA5358C and DC1/DC3/other resume decisions. Existing HP4/5/6/9 supply same-clock preflight/lookup/constructor/unlink joins; no new storage descent. A46E30/A56610/voice48 and complete incoming/producer/family closure remain. No totals, Q15, fidelity or production changes.
+
+## Decision checkpoint173 — voice/source resume metadata
+
+VR173A–D settle raw fixedpoint pitch-step ratio, PBI1BA bits3..6 publication, first playingID/source metadata match with locked value/clock update, and standardvoice48 optional primary flag clear followed byDC2. RS4/G11 are positive query joins; no direct stream-start operation invented. Metadata/flag/state consumers and full incoming/preflight/family closure remain; no totals, Q15, fidelity or production changes.

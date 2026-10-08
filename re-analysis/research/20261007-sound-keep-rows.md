@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 173 — voice/source resume metadata and fallback state
+
+Primary: `20261008-sound-voice-resume-position-native.txt`, `20261008-sound-source-resume-metadata-native.txt`, updated `20261008-sound-type3-voice-slot.txt`; same engine SHA256. Positive QN172C source query/A56610/voice48. Existing RS4/G11 positively cover pitch-step query; local join preserves raw bits. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| VR173A | 00A46E30..00A46E44 | Query owner30 unsigned fixedpoint16 converted toF32, divide by owner4C rawF32, returnbits inr0. QN172C uses voice+108 owner, so reads voice138/154. | No divisorzero/finite clamp or status normalization. | Fixed-point conversion → F32divide → rawbits →A56610 secondarg. | RS4/G11 positive query/clock joins; ratio/step producers remain separate. Exact control arithmetic, not sample resampling. |
+| VR173B | 00A56610..00A56644;00A01864..00A01874 | Save source andincoming querybits. Load sourceC PBI, A01864 replaces PBI1BA bits3..6 with3 preserving others. Reload live sourceC, use its140 playingID, savedsource identity andsaved querybits toA052F4(globalMetadata,ID,source,bits), tailreturn. | PBI pointer reloaded after flag helper. No direct stream start/pause callback, allocation or new metadata record. | PBI flag publication → live PBI/ID → metadata lookup/update. | VR173C supplies recipient. Flag/metadata consumers and full producer closure remain retained. |
+| VR173C | 00A052F4..00A0536C | Scan global raw32-byte records inphysical order for first word0==ID andword4==source pointer. Empty/missing returns. Matched sentineladdressFFFFFFF8 returns. Otherwise lockmanager18, readmanager20/24 clockpair, write incoming bits torecord14 beforeclockpair→record8/C, unlocktailreturn. | Search occurs before lock; no revalidation, ID-only match or insertion on miss. | First composite identity → address gate → lock → clock read → value14 → clock8/C →unlock. | Observable metadata values/timing, not storage hash. No allocator/hash descent. Manager clock/record consumer and synchronization preconditions remain retained. |
+| VR173D | 0103C7D8;00A533FC..00A5341C;00A565D0..00A565D4;00A01840..00A0184C | Known standardvoice48 bindsA533FC. PrimaryD4nonnull→A565D0→sourceC PBI→clear1BA bits3..6. Then voiceDC=2 regardless primary presence; return. No secondary-source pass or free. | QN172C otherDC values use this fallback. Nullable primary skips flag clear only, notDC2. | Optional primary flag clear → voiceDC2 →return. | This closes known fallback callback; additional voice families/flag consumers remain separate. No whole-source end or destructor inferred fromDC2. |
+
+QN172C direct query/source/fallback recipients now have local decision rows. Metadata consumers, voice state/flag writers, queue incoming/preflight and full family closure remain PARTIAL; Q14 totals unchanged, Q15 parked. No fidelity or production changes.
+
 ## Checkpoint 172 — queued type3 resume notification to voice
 
 Primary: `20261008-sound-type3-notification-native.txt`, `20261008-sound-type3-voice-slot.txt`; same engine SHA256. PB170B posts type3 through HP2's shared queue. Singing HP4/5/6/9 supply positive same-clock preflight, voice lookup/construction and unlink order; type3 dispatch is newly explicit here. Endpoints inclusive.
