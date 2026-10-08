@@ -14,7 +14,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-004 | 35 | PARTIAL |
 | Q14-005 | 36 | PARTIAL |
 | Q14-006 | 39 | CHECKED |
-| Q14-007 | 40 | NOT DONE |
+| Q14-007 | 40 | PARTIAL |
 | Q14-008 | 41 | PARTIAL |
 | Q14-009 | 42 | PARTIAL |
 | Q14-010 | 43 | PARTIAL |
@@ -184,7 +184,7 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 > | M6-006 | **KEEP** | 0x009A6704;0x009A0EF8;0x009AE0B0;0x009AA3DC;0x009AA0FC;0x009A9F88;0x009AF8A8;0x00A62A1C;0x00A663C8;0x00A645C8;0x00A04F54 | Queued event/action timing, play counts, callbacks/flags, switch resolution and start/stop/seek behavior remain exact, including unresolved drain internals. |
 
-PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16 and LT1–9 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including active/virtual-counter producers and voice/notification pass. Native row presence does not settle those descendants.
+PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Remaining: individual action/handler descendants, object/reference producers, full registration failures, callbacks and production writer/consumer closure. No whole queued-control-path completion claim.
 
 ## Q14-008 — triage line 41
 
@@ -358,7 +358,7 @@ PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format,
 
 > | M6-026 | **KEEP** | 0x009ED2CC..0x009ED3D0;0x009C4F30;0x009F29E8..0x009F2BC4;0x009FA01C;0x009FA6F8;0x00A37100;0x00A01CA4;0x00A029DC;0x009ED428 | Playback limits, virtual/kill choice, counters, priority/tie order, remove/reposition, stop/Term/flush and production wiring remain exact; this limiter is a voice-count decision, not a peak-limiter DSP body. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16 and LT1–9 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including active/virtual-counter producers and voice/notification pass. Native row presence does not settle those descendants.
 
 ## Q14-038 — triage line 76
 
