@@ -676,13 +676,13 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C32.3 S1–S7 source contracts | M6-002,M6-003,M6-022,M6-025 | **KEEP** | 0x00A562B8;0x009CC3EC;0x00AB0B20;0x00AB22D4;0x00AB12B4;0x00A7270C;0x00A73B40;0x00A72E00 | Source type writer, relocated slots, first-call/header branches, packed format fields, raw results and S4/S6 streaming behavior stay exact. |
 
-PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 construction/registration/GetInfo/type-version/Init/Reset and PBI format publication. ADPCM/Vorbis source-specific rows AH/AS/AT/AR/VI remain independently covered. Remaining registered factory9CC3EC and full codec start/header target closure.
+PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 construction/registration/GetInfo/type-version/Init/Reset and PBI format publication. ADPCM/Vorbis source-specific rows AH/AS/AT/AR/VI remain independently covered. PR6–PR10/VC6–VC10 close registeredfactory9CC3EC andVorbiscreators. VM/ST/SB/PA addbothstartcallers, directbuffercontracts, streamingbind/loopandsetupassembly. RemainingheaderAB12B4, stream/cache/decoderrecipients andfullsource-specificclosure.
 
 ## Q14-091 — triage line 140
 
 > | C32.3 render/stream residuals | M6-002,M6-022,M6-025 | **KEEP** | 0x00AB1C04;0x00AB2088;0x00AB2BFC;0x00AB3244;0x00AB0448;0x00AB1550;0x00A74E00;0x00A746A8;0x00A75BC4;0x00A78D10 | Data collection/decode/stream lifecycle and plug-in-source selection remain exact; C33/C36 later evidence can reduce unread work only after checking, not through ADP-1. |
 
-PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/destruction, duration and control virtual forwarding. Existing ADPCM render/carry rows remain mapped separately. Remaining Vorbis render/stream bodies and selected plug-in generation/seek/duration/cache recipients.
+PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/destruction, duration and control virtual forwarding. Existing ADPCM render/carry rows remain mapped separately. VM7 closesdirectbufferVorbisrender; ST/SB/PA closestart/readiness/bind/setupassemblycallercontracts. RemainingFCrenderAB1550,pendingseekAB2BFC, selectedstream/cache/decoder andplug-in generation/seek/duration/cache recipients.
 
 ## Q14-092 — triage line 141
 
@@ -998,3 +998,6 @@ Vorbis checkpoint: VM1–VM10 add direct-buffer source start/header/packed-forma
 
 
 Stream-source checkpoint: ST1–ST9 add FC open/prefetch/streamstart/result3F gates, initial header/setup caller, pending-seek consumption, monitor payload float widths and refill order. Q14-090/Q14-091 remain PARTIAL; A746A8, AB1C04, stream virtual recipients and packet decoder/cache still need independent closure.
+
+
+Setup-assembly checkpoint: PA1–PA8 close AB1C04 caller-local table/prefix/payload/refill/cache/ownership state machine, including distinct allocation-failure publication and2/3F mapping. Q14-091 stays PARTIAL pending FC render, seek and stream/cache/decoder recipient closure.
