@@ -1105,3 +1105,7 @@ KT144A–J row the remaining 9DA77C caller, including wildcard parent-release or
 ## Decision checkpoint145 — switch retirement and callback flags
 
 OR145A–C establish default-versus-keyed switch recipient removal, active/empty gates and ordered ownership movement. PC145A/B establish first-playing-ID callback disabling, retained high12 flag bits, audio-thread exemption and single condition wait. E29 positively supplies the registration item48 writer; the quoted historical UNKNOWN is superseded. QC3 and HI5/HI12/HI15/HI18 are existing positive joins; A0B490 storage mechanics are out of scope. Broader Q14 obligations retain concrete callbacks and producer/census gaps; totals unchanged, no fidelity changes.
+
+## Decision checkpoint146 — object-node and random/sequence lifetime
+
+NR146A–I positively bind DC4's node lookup, five known table slots, shared/RanSeq virtual24 retirement and common referenceC release. Packed property transitions detach through TT8 before storage release; RanSeq state destruction precedes live-key re-search and stable removal. Remaining node18/0, parent/bus30 and additional producer/family census remain explicit; these parent bodies do not settle Q14-087 or whole container/RTPC/lifetime obligations. Counts unchanged; no Q15 or fidelity changes.

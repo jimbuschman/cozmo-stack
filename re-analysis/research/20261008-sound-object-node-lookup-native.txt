@@ -1,0 +1,114 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009A7FAC..0x009A80AC exclusive; ARM;
+009A7FAC: push         {r3, r4, r5, r6, r7, lr}
+009A7FB0: mov          r6, r0
+009A7FB4: ldrb         r3, [r1, #4]
+009A7FB8: ldr          r4, [r1]
+009A7FBC: cmp          r3, #0
+009A7FC0: bne          #0x9a802c
+009A7FC4: bl           #0x4d3064
+009A7FC8: ldr          r1, [r6, #8]
+009A7FCC: cmp          r1, #0
+009A7FD0: moveq        r5, r1
+009A7FD4: beq          #0x9a801c
+009A7FD8: mov          r0, r4
+009A7FDC: bl           #0x4a6694
+009A7FE0: ldr          r3, [r6, #4]
+009A7FE4: ldr          r3, [r3, r1, lsl #2]
+009A7FE8: cmp          r3, #0
+009A7FEC: bne          #0x9a8000
+009A7FF0: b            #0x9a80a4
+009A7FF4: ldr          r3, [r3, #4]
+009A7FF8: cmp          r3, #0
+009A7FFC: beq          #0x9a80a4
+009A8000: ldr          r2, [r3, #8]
+009A8004: cmp          r4, r2
+009A8008: bne          #0x9a7ff4
+009A800C: ldr          r2, [r3, #0xc]
+009A8010: mov          r5, r3
+009A8014: add          r2, r2, #1
+009A8018: str          r2, [r3, #0xc]
+009A801C: mov          r0, r6
+009A8020: bl           #0x4d3070
+009A8024: mov          r0, r5
+009A8028: pop          {r3, r4, r5, r6, r7, pc}
+009A802C: add          r7, r0, #0x14
+009A8030: mov          r0, r7
+009A8034: bl           #0x4d3064
+009A8038: ldr          r1, [r6, #0x1c]
+009A803C: cmp          r1, #0
+009A8040: moveq        r5, r1
+009A8044: beq          #0x9a808c
+009A8048: mov          r0, r4
+009A804C: bl           #0x4a6694
+009A8050: ldr          r3, [r6, #0x18]
+009A8054: ldr          r3, [r3, r1, lsl #2]
+009A8058: cmp          r3, #0
+009A805C: bne          #0x9a8070
+009A8060: b            #0x9a809c
+009A8064: ldr          r3, [r3, #4]
+009A8068: cmp          r3, #0
+009A806C: beq          #0x9a809c
+009A8070: ldr          r2, [r3, #8]
+009A8074: cmp          r4, r2
+009A8078: bne          #0x9a8064
+009A807C: ldr          r2, [r3, #0xc]
+009A8080: mov          r5, r3
+009A8084: add          r2, r2, #1
+009A8088: str          r2, [r3, #0xc]
+009A808C: mov          r0, r7
+009A8090: bl           #0x4d3070
+009A8094: mov          r0, r5
+009A8098: pop          {r3, r4, r5, r6, r7, pc}
+009A809C: mov          r5, r3
+009A80A0: b            #0x9a808c
+009A80A4: mov          r5, r3
+009A80A8: b            #0x9a801c
+RANGE 0x00A1D814..0x00A1D8A8 exclusive; ARM;
+00A1D814: push         {r3, r4, r5, lr}
+00A1D818: mov          r1, #0x74
+00A1D81C: ldr          r3, [pc, #0x84] ; word[00A1D8A8]=0062281C
+00A1D820: mov          r5, r0
+00A1D824: ldr          r3, [pc, r3]
+00A1D828: ldr          r0, [r3]
+00A1D82C: bl           #0xa7a7f4
+00A1D830: subs         r4, r0, #0
+00A1D834: beq          #0xa1d8a0
+00A1D838: mov          r1, r5
+00A1D83C: bl           #0xa1e1b4
+00A1D840: ldr          r3, [pc, #0x64] ; word[00A1D8AC]=0061E278
+00A1D844: add          r0, r4, #0x5c
+00A1D848: add          r3, pc, r3
+00A1D84C: add          r2, r3, #8
+00A1D850: add          r3, r3, #0x144
+00A1D854: str          r2, [r4]
+00A1D858: str          r3, [r4, #0x10]
+00A1D85C: bl           #0xa1e870
+00A1D860: ldr          r3, [r4]
+00A1D864: mov          r0, r4
+00A1D868: ldr          r3, [r3, #0x44]
+00A1D86C: blx          r3
+00A1D870: ldrb         r2, [r4, #0x46]
+00A1D874: sub          r3, r0, #0xa
+00A1D878: mov          r1, r0
+00A1D87C: bics         r3, r3, #2
+00A1D880: mov          r0, r4
+00A1D884: moveq        r3, #1
+00A1D888: movne        r3, #0
+00A1D88C: cmp          r1, #0
+00A1D890: orreq        r3, r3, #1
+00A1D894: bfi          r2, r3, #2, #1
+00A1D898: strb         r2, [r4, #0x46]
+00A1D89C: bl           #0x9f40f4
+00A1D8A0: mov          r0, r4
+00A1D8A4: pop          {r3, r4, r5, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009A80AC..0x009A80C4 exclusive; ARM;
+009A80AC: cmp          r1, #0
+009A80B0: addne        r0, r0, #0x14
+009A80B4: bx           lr
+009A80B8: cmp          r1, #0
+009A80BC: addne        r0, r0, #0x14
+009A80C0: bx           lr
