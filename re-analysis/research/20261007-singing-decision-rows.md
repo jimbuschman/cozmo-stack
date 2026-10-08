@@ -1426,3 +1426,14 @@ Primary: `20261008-singing-playlist-terminal-refill-native.txt`. C=context; oldT
 | PREF5 | 0099AC3C..0099ACBC | Free scratch R44 nonnull first. R0 nonnull: clearR4 before free thenR0/R8=0. R.Cnonnull: clearR10 then free; R.C/R14 not explicitly cleared in this cleanup. Final result1 iff selectedPointer nonnull and selectedPointer!=oldTail; otherwise0. | Cleanup executes after null intermediate and vt80 fallback as well. Selected pointer remains first-item result even if second builder returned failure. | Optional three buffers → oldTail identity/nonzero → bool result. | No scene/upper-layer cleanup; scratch ownership only. |
 
 PREF closes the concrete playlist78 refill locally and joins already-rowed selection/TB recipients. The unusual first-item return and second-result omission are retained, not replaced by a plausible all-or-nothing transition. Other context-family bindings, registry/graph/writer census and modulation/target production obligations remain open. Q15 remains PARTIAL.
+
+### Music notification registry origin and cancellation boundary (checkpoint77)
+
+Primary: `20261008-singing-notification-registration-native.txt`; sharedplaying-IDregistrybelongsM6, exactrowsNREG1–6/NCANCEL1–2 in `20261007-sound-keep-rows.md`. Q15NSINKuses thesamefieldlayout andplaying-IDlookup; no duplicatedupper/lower-layerimplementationinvented.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Widths / boundary |
+|---|---|---|---|---|---|
+| MNREG1 | 00A03164..00A031E8;00A0326C..00A03298 | **M6 boundary**: eventregistrationstoresrecord3C=descriptor8playingID,40=callback,44=cookie,48=mask,24=descriptor0;hashesplayingIDandprependsrecord. NSINK1–2 pulls exactlythese to constructmusiccallbacks. | Initialrecordallocfailure2; tableallocfailuremayraw1withoutpublication,NREG4. No substitutedmusic-onlyregistry. | PostEventregistration →recordfields →bucketpublication →musicmask/notificationlookup. | MusicpayloadfieldsremainMINF; callbackprefix/cookieoriginnowbound. |
+| MNREG2 | 00A03450..00A03468;00A03498..00A03538 | **M6 boundary**: cancellationbycookieclearscallback40andlow20maskbits48forallmatchingrecords;don'tunlink/free. Non-audiothreadwaitsoneconditionwaitonlyifbusybyte1C0; audiothreadidentity108DF4Cskipwait. NSINK'sclear0/set1broadcastispairedcontract. | Nativeonewaitnotpredicate-loop; concretecallbackpointerproducerandthreadidentitywriterstillrequired. | Registrydisable/unlock →thread/busywait →return; notificationcallbackrunsoutsidebothlocks. | Neitherelapsedwaitnorcaughtcallbacksubstituteintroduced. |
+
+This resolves the previously unnamed registrationfield/busywait join for musicnotifications while keeping M6 ownership. Nextremainingjoinsare concretecallback/cookie/mask productionarguments andthreadwriter, musiccontext/state/authoredgraph writers andtarget/modulatorrecipient closure. Q15'ssevenretainedcategoriesremainPARTIAL; nofinishclaim.
