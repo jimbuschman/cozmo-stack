@@ -1437,3 +1437,14 @@ Primary: `20261008-singing-notification-registration-native.txt`; sharedplaying-
 | MNREG2 | 00A03450..00A03468;00A03498..00A03538 | **M6 boundary**: cancellationbycookieclearscallback40andlow20maskbits48forallmatchingrecords;don'tunlink/free. Non-audiothreadwaitsoneconditionwaitonlyifbusybyte1C0; audiothreadidentity108DF4Cskipwait. NSINK'sclear0/set1broadcastispairedcontract. | Nativeonewaitnotpredicate-loop; concretecallbackpointerproducerandthreadidentitywriterstillrequired. | Registrydisable/unlock →thread/busywait →return; notificationcallbackrunsoutsidebothlocks. | Neitherelapsedwaitnorcaughtcallbacksubstituteintroduced. |
 
 This resolves the previously unnamed registrationfield/busywait join for musicnotifications while keeping M6 ownership. Nextremainingjoinsare concretecallback/cookie/mask productionarguments andthreadwriter, musiccontext/state/authoredgraph writers andtarget/modulatorrecipient closure. Q15'ssevenretainedcategoriesremainPARTIAL; nofinishclaim.
+
+### Concrete app callback mask and thread identity boundary (checkpoint78)
+
+Primary: `20261008-sound-postevent-production-mask-native.txt`; M6-owned rows NTHREAD1/PMASK1–3/REGALT1/PCENSUS1 in `20261007-sound-keep-rows.md`.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Widths / boundary |
+|---|---|---|---|---|---|
+| MNREG3 | 00A408A4..00A408B4 | **M6 boundary:** the processing thread publishes pthread_self to108DF4C before9D4054 and its first processing call. This is the concrete identity compared by cancellation before its one-shot callback wait. | No guessed current-thread identity substitute; use the published identity. | Store precedes processing/notifications. | Closes MNREG2's identity-writer dependency. |
+| MNREG4 | 008D8CE4..008D8D56;009A257C..009A2630 | **M6 boundary:** the known engine app wrapper registers callback8D8D41 with context cookie and mask0/1/5/9/D, never a7F00 music mask. Its callback handles only1/4/8. A second registration producer passes its incoming mask/callback/cookie unchanged, so it must be bound before excluding any music notification path. | Retain NSINK/MNOTE contracts; do not infer global unreachability from one wrapper. The direct-branch census has an unbound candidate for the second producer and does not exclude computed calls. | Caller arguments → shared registry → notification eligibility; music payload/count order remains MINF/MCOUNT/MMARK. | No additional branch exclusion or record settlement. |
+
+The known callback arguments and shared thread writer are closed. The alternate producer's caller and any computed registration entry remain specific readable-source obligations. Q15 retains seven PARTIAL categories rather than claiming notification production closure from local payload bodies.

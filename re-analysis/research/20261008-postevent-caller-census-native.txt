@@ -1,0 +1,12 @@
+Direct branch targets 009A0EF8,009A257C,009A6704,009A6840,00A03108
+ARM candidate 009A103C -> 00A03108 raw=EB018831
+ARM candidate 009A2630 -> 00A03108 raw=EB0182B4
+ARM candidate 009A6778 -> 009A0EF8 raw=EBFFE9DE
+ARM candidate 009A67C0 -> 009A0EF8 raw=EBFFE9CC
+ARM candidate 009A68B8 -> 009A0EF8 raw=EBFFE98E
+ARM candidate 009A6908 -> 009A0EF8 raw=EBFFE97A
+Thumb candidate 008D8D32: blx #0x9a6704
+Thumb candidate 00CC1580: bl #0x9a257c
+Raw aligned address-valued words across file-backed LOADs (relocations/PC-relative references not excluded):
+Dynamic symbol records at target addresses:
+LIMIT: candidates require reopening; no claim excluding indirect/computed/exported calls.
