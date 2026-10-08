@@ -1145,3 +1145,7 @@ CJ154A settles CW10's nullable selector-count query; CJ154B/C bind both known st
 ## Decision checkpoint155 — choice-list and nested association retirement
 
 CO155A–D settle choice-list retain/release, association detach across all entries before per-entry state/child/node release, visible array-clear ordering and nested association decrement/stable erase. CW9/NR146/ND150 supply positive known-family recipient joins; allocator/copy internals excluded. CW8 virtual13C and producer/family closure remain; totals unchanged, no Q15 or fidelity/production changes.
+
+## Decision checkpoint156 — choice-list output replacement policy
+
+CP156A/B bind known Switch/Layer extended virtual13C: live Switch47 bit5 gates CW8 output replacement, Layer/shared intermediate returns0. Shorter RanSeq/ActorMixer table offsets hold ABI metadata, so no extended callback is inferred there. SWR1 supplies the Switch flag bank writer; additional extended-family/association producers and other flag writers remain open. No coverage, Q15, fidelity or production change.

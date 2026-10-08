@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 156 — concrete choice-list replacement policy
+
+Primary: `20261008-sound-choice-policy-slots.txt`, `20261008-sound-choice-policy-native.txt`; same shipped engine SHA256. Positive CW8 virtual13C caller. Offsets/endpoints hexadecimal/inclusive. Do not extrapolate this extended interface to every node table.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| CP156A | 0103BF04;00A2BD98..00A2BDA0 | Known Switch13C=A2BD98 reads node47 bit5 and returns normalized0/1. In CW8, bitclear permits retained-list output replacement before matched-list release/erase; bitset skips output replacement but still releases/removes matching association. | Tested at retirement time, not cached at association creation. Count4>1 in CW8 bypasses this policy call entirely. | Association count gate → live Switch policy → optional retain/publish/old-release → matched release/erase. | SWR1 positively supplies bank continuous-byte normalization into47 bit5. Other-writer census remains retained. CO155 supplies choice-list retain/release; no propagation of this policy into9E8F10. |
+| CP156B | 0103B18C/0103B3E4;009E8938..009E893C | Known Layer and shared intermediate container13C=9E8938 returns0, so CW8 permits output replacement whenever the last-association branch reaches it. No flags, allocation or callbacks in this policy body. | Caller CW8 still owns refcount/missing gates. Layer's zero-track exclusion does not suppress this generic ownership policy. | Constant0 → CW8 retained-list replacement order. | ND150E positively publishes intermediate table103B2A8. Captured raw words103B99C/103D0C4 areFFFFFFF0 ABI metadata, not RanSeq/ActorMixer13C functions; those shorter tables do not justify an extended-interface binding. |
+
+Known Switch/Layer policy recipients now have exact local rows; additional extended-family/association producers and Switch47 bit5 other-writer census remain retained. Q14 totals unchanged; no Q15, fidelity or production changes.
+
 ## Checkpoint 155 — choice-list reference and nested association retirement
 
 Primary: `20261008-sound-choice-list-retirement-native.txt`; same engine SHA256. Positive CW6/CW7/CW8 choice-list recipients. Reference counts and nested association release order affect which retained selection state survives; allocator bodies are excluded. Endpoints inclusive.
