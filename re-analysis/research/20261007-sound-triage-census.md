@@ -1415,3 +1415,7 @@ SH220A–D establish byte/word search found-versus-insertion-pointer contracts, 
 ### Checkpoint 221 — missing-value immediate publication
 
 IP221A–E trace preflight failure-to-silent1, exact wildcard/suffix selection, initial valid/value publication anddeep helper/null gates beforetarget/notification. Scope-owner priority positive; storage growth scopedout. Tree helpers/notification/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 222 — deepest RTPC scalar publication
+
+DP222A–D trace exact word8/byteC/byte10/word14 scope selection, initial scalar/valid/leaf publication, pointer/null outcomes andsilent caller failure. Storage mechanics scopedout; root helper/notification/input/writer closure retained. No totals/Q15/fidelity/production changes.
