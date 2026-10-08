@@ -1383,3 +1383,7 @@ LC212A–E trace selected clone/control fields, special gate/context reader, nor
 ### Checkpoint 213 — special child preparation
 
 SC213A–F trace entirelocal9EE454 mask/parent recursion, tag-specific scope, authored/RTPC integer adjustments, distinct0..127/1..127 clamps, inclusive ranges anddelayed two-byte publication versus52/rawparent failure. LC212B reconciled; production/default/property/parent/subscription writers and child/source closure remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 214 — fresh child metadata collections
+
+CL214A/B trace zero-count preservation, allocation-null empty continuation, pointer/count/cap publication andraw ordered metadata clone forfresh child descriptor collections. Allocator internals scopedout; input/writer anddynamic child/source/lifecycle closure remain. No totals/Q15/fidelity/production changes.
