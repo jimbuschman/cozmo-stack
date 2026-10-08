@@ -1,0 +1,7 @@
+PRIMARY raw bank tail check; AudioAssets.zip SHA256 d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145
+English(US)/Cozmo.bnk id=462443456 payload=6026489 length=135 tail_offset=6026619 tail5=0000000000 payload_sha256=b060f0b04e7551c7acb38a49ec9201410d843cf4129b57cb37c534e6ee7ba8b0
+English(US)/Cozmo.bnk id=774902407 payload=6030388 length=107 tail_offset=6030490 tail5=0000000000 payload_sha256=60e49bcf920cc30d85a33d98fffcf66beaa39de7b215d49f0dfe49efa8bfa832
+English(US)/Cozmo.bnk id=110896138 payload=6030500 length=91 tail_offset=6030586 tail5=0000000000 payload_sha256=594eb2ed6950f81919fda547d3d5992919b18127abca41703513c946d36899a1
+English(US)/Cozmo.bnk id=678614659 payload=6189246 length=54 tail_offset=6189295 tail5=0000000000 payload_sha256=05f79c700a612c24e9436bb3df5797ee33353d6ac380841a79eddc49a46ebd99
+English(US)/Cozmo.bnk id=186798366 payload=6201350 length=49 tail_offset=6201394 tail5=0000000000 payload_sha256=c3f75082584eade802cce1bfaffbbe8eec4bafd2cc78d0bd646f36bcabfd1631
+SFX.bnk id=307257541 payload=86897 length=79 tail_offset=86971 tail5=0000000000 payload_sha256=61c60ebdb044c2ed3c00f5412de80392739c91fbb04eae41bccca2667fef8464
