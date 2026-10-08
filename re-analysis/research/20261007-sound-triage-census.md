@@ -46,7 +46,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-037 | 75 | PARTIAL |
 | Q14-038 | 76 | PARTIAL |
 | Q14-039 | 77 | NOT DONE |
-| Q14-040 | 78 | NOT DONE |
+| Q14-040 | 78 | PARTIAL |
 | Q14-041 | 79 | PARTIAL |
 | Q14-042 | 80 | PARTIAL |
 | Q14-043 | 81 | PARTIAL |
@@ -61,7 +61,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-052 | 91 | NOT DONE |
 | Q14-053 | 92 | PARTIAL |
 | Q14-054 | 93 | CHECKED |
-| Q14-055 | 94 | NOT DONE |
+| Q14-055 | 94 | PARTIAL |
 | Q14-056 | 95 | NOT DONE |
 | Q14-057 | 96 | NOT DONE |
 | Q14-058 | 97 | CHECKED |
@@ -376,7 +376,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | M9-002 | **KEEP** | 0x005EEB30..0x005EEE9F;0x00544444..0x0054445E;0x00540D1C;0x0054F70C | Trigger resolution failure, compound propagation, per-step timeout and render wait are singing/action decisions. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behavior activation/lock/assembly and M12 TriggerAnimationAction, timeout and compound propagation are HIGHER-LAYER with5EEB46..5EEB60,5EEDBC..5EEE8C,544444..54445E,540D1C,54F70C citations. Retained M6 concrete switchpost599F94 remains exact recipient work.
 
 ## Q14-041 — triage line 79
 
@@ -466,7 +466,7 @@ CHECKED: RB1–RB2 reopen the bounded budget consumer, signed gates, modular ari
 
 > | M9-017 | **KEEP** | 0x005EECB0..0x005EED6F;0x00635474..0x006355BF;0x00636578..0x0063682F | Cube acceleration HPF is a reaction classifier, not audio PCM DSP; first-sample initialization, smoothing, hysteresis/count thresholds and posted vibrato remain exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: HB2/HB4 and Q15 SP1–8 join reachable listener values to runningmean/smoothing and RTPC posting. M10 cube streaming/firstsample/HPF/hysteresis and M7 listener ownership are HIGHER-LAYER with635474,636620,636578..63682F and5EECDC..5EED56 citations; no ADP-1 release. Retained M6 concrete parameterpost599F62 remains recipient work.
 
 ## Q14-056 — triage line 95
 

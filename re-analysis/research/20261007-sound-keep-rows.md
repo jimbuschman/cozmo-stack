@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, fifty-four PARTIAL,65 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-one narrow obligations CHECKED, fifty-six PARTIAL,63 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -2873,3 +2873,26 @@ Primary capture: `20261007-sound-curve-tail-branch-census-native.txt`; revised s
 | NP2 | .text branch census;0x00A11608;0x00A11618 | Expanded whole-section immediate-branch census finds the same twelve evaluator BL sites, plus seven links to accumulators: five BL sites from AC11/AC12 and two B tail links from NP1. Product count2; sum count5. No Thumb B.W/conditional B.W/BL/BLX target hits. | Direct instruction-encoding census does not establish absence of indirect calls, address-taken references or JIT/runtime patching. Each positive site checked in its containing native body. | Twelve evaluator direct sites remain unchanged. Tail branches now explicitly counted rather than omitted from accumulator reachability. |
 
 NP1 closes the node-pull body previously pending in V13/I2/I3/TC7/ID2. Q14-114 remains PARTIAL because binding producers, resolver/modulator descendants and dynamic recipients still need reconciliation. The direct-link census alone never settles those paths.
+
+## Cross-layer singing actions and cube classifier ownership
+
+Primary companion: `20261007-sound-action-classifier-boundary-native.txt`. These are reachable witnesses, not exclusions: the manager's census marks Q14-040/SING and Q14-055/CLASS REACHABLE. Sound owns the switch/parameter API recipient; behavior/action/cube classifier bodies belong their respective higher layers and are named here without extending this sound extraction into them.
+
+> M9-002 — Singing initialization posts the switch, locks reactions, then runs get-in/tempo/get-out as three TriggerAnimationActions with 60-second per-step timeouts in one sequential compound
+> Status: IMPLEMENTATION_GAP
+> Evidence: 0x005EEB30..0x005EEE9F;0x005EEDCA (movt r8,#0x4270, per-step60.0f);0x00540D1C (IAction timeout, failure0x3000018);0x0054F70C (compound fails on a child failure);X4 S5-S6/S17-S18;CorrectionC1a.
+> Unresolved: Audit2026-09-29: TriggerAnimationAction::Init fails0x0300000C when a trigger resolves to no clip, failing the compound(0x00544444..0x0054445E); the stack skips to the next step; an unrecorded wait holds the tempo step until the render finishes.
+
+> M9-017 — Cube acceleration stream, high-pass filter and shake hysteresis drive singing vibrato
+> Status: IMPLEMENTATION_GAP
+> Evidence:0x005EECB0..0x005EED6F;0x00635474..0x006355BF;0x00636598..0x0063682F.
+> Unresolved: Audit2026-09-29: the first sample only initialises the HPF(prev=x,output0,0x00636578..0x0063658C) and is not tested; the stack filters from zero state and can fire on sample1; the test expects64 where the engine gives25.
+
+| Step | Address | Interface / ownership | Gate / order | Values / remaining work |
+|---|---|---|---|---|
+| HB1 | 005EEB46..005EEB60 | BehaviorSinging loads configured switch/state11C/120, obtains robot58 audio client, callsPostRobotSwitchState; thenSmartDisableReactionsWithLock. **HIGHER-LAYER M7** owns behavior activation/configuration/lock. **M6** owns concrete switch post599F94. | Switchpost precedes reactionlock and listener/action construction. | No local switchpostresult test. Full switch API recipient still must join M6 rows; this is not a completion claim. |
+| HB2 | 005EECDC..005EED08;005EED48..005EED56 | Construct40hex ShakeListener with rawbinary32 arguments3F000000,40200000,4079999A and callback; register viaCubeAccelComponent::AddListener(robot278,objectID,sharedlistener). **HIGHER-LAYER M10** cubeclassifier/stream owns636620ctor,635474AddListener,636578firstsample and636598..63682Fupdate. **M7** owns installation/removal frombehavior. | Listenerconstruction before registration; sound receivescallback throughSProws. | These are classifier parameters, notper-sampleaudioDSP; ADP-1 never dropsHPF/hysteresis. Layer-boundarylisting doesnot callclassifierarithmetic equivalent. |
+| HB3 | 005EEDBC..005EEDE0;005EEE06..005EEE1A;005EEE42..005EEE54 | Reachable behavior creates threeTriggerAnimationActions, includingtrigger0202,configuredtrigger124 and0203,passes timeoutbits42700000. **HIGHER-LAYER M12 actions** ownsTriggerAnimationAction Init,timeout andcompoundfailure; **M7** ownssequenceassembly/StartActing at5EEE8C. | Nativecreation/appendorder hasget-in→configuredtempo→get-out; do notreplacefailurewithskip. | 544444..54445E,540D1C,54F70C are cited higher-layer descendants, notextractedassoundcode. Source capture suppliesthis interface evidence; actionrows needmanager'shigher-layerinventory. |
+| HB4 | Q15 SP1–8;005EF184..005EF18C;005EF2C6..005EF2E0 | M9 owns runningmean/max/smoothing and postedRTPC value; M6 ownsPostRobotParameter599F62 sink. BehaviorStop posts0 beforeCubeAccelComponentRemoveListener(robot278,...). | Parameterpost precedeslistenerremoval; retains smoothing140/logstate144 perSP8. | **HIGHER-LAYER M7/M10** listener/behavior lifetime; remove6356ACnavigationrecipientmustbecheckedinthoselayers ratherthanguessedhere. ConcreteparameterdispatchremainsM6work. |
+
+Q14-040/055 now have explicit sound-side row mappings and cited higher-layer ownership, but stay PARTIAL until the retained M6 API recipient closure is reconciled. Nothing reachable was reclassified UNREACHABLE. No inventory split or fidelity status was changed by this research.
