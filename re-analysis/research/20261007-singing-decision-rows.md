@@ -1183,3 +1183,8 @@ Primary: `20261008-singing-automation-frame-native.txt` plus entry99C6C8..99C784
 | AF5 | 0099C7A8..0099C83C;0099C89C..0099C94C;0099C96C..0099C988 | Transform3/4 exactSX16 orderedoperations/constants, with4firstmultiply3D4CCCCD; BMIbelowC2140000→zero. Transform2 exactSX17 sign/gates/polynomial/constants. Otherkinds forwardrawvalue. | Thirdbodyliteralblock99CB10..99CB38 independentlyreopened. No genericpow/log implementation adopted. | Kind → optionalscale/signbranch → nativegates → orderedparameterarithmetic → AF1delivery. |
 
 AF1–5 settle local per-frame automation cadence, retention and control math. Remaining uncertainty is at concrete virtualparameter recipient and automationproducer/interface applicability, not thisreadbody. No productionchange ormanifestsettlement ismade.
+
+
+### Retained command/registry navigation lead
+
+`20261008-singing-midi-manager-command-lead-native.txt` preserves reopenedA3BA44/A3B84C command/registry bodies encountered duringthecontext-factorysearch. Theyare**not** theclipcontextfactory (CCF'sfactoryisA3D234), andthiscaptureisnotcountedasclosedrowsorareachabilitywitness. Itsmanagerhash/counter/command-allocationcallersandproductionregistrationrelationshipremainretainedleadstocheckbeforeincludinganynewclaim.
