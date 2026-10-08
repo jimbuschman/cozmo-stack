@@ -1301,3 +1301,7 @@ PF193A–C tracefailureentryremoval/restartfromlivehead, sticky3F-groupdeferwith
 ### Checkpoint 194 — type5 notification/holder binding
 
 N5194A–D trace index5→standard58, E0/E4 special context clearing versus primary/readiness gates, linked flag propagation between holder callbacks, exact result fallback, and constructor/GOT/wrapper bindings. Underlying holder4 and writer/producer/frame closure remain PARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 195 — predecessor release/reset chain
+
+HC195A–D bind holder4 to the last accepted effect/source-wrapper, trace concrete release/reset state and offsets, endflag result forwarding and differing small/large cache gates. Existing WV4 supplies reset chain. Source/plug-in callback/writer/frame closure retained; no totals/Q15/fidelity/production changes.

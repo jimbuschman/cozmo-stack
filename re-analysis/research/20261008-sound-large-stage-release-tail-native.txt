@@ -1,0 +1,9 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A797F8..0x00A79810 exclusive; ARM;
+00A797F8: str          ip, [r4, #0x60]
+00A797FC: str          r2, [r4, #0x70]
+00A79800: str          r2, [r4, #0x78]
+00A79804: str          r0, [r4, #0x74]
+00A79808: str          r1, [r4, #0x7c]
+00A7980C: pop          {r4, pc}
