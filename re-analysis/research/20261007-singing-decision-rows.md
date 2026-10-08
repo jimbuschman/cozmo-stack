@@ -5,8 +5,8 @@
 | Transitions, switch and meter state | PARTIAL | TP1–5 and TR1–4 close local tempo and reverse rule matching; Switch139286641/group3759662965 switch/tree and TB1–12 add transition builder and schedule publication; marker/switch/context recipients remain pending. |
 | MIDI dispatch and target inheritance | PARTIAL | MT1–7, MD1–6, MR1–8, RI1–5, PD1–8; packed header and complete reader advance checked through A3FC40; NS/NE/DG and LN1–7 add per-note gates and concrete sampler child submission; target descendants and attachment/caller recipients remain pending. |
 | Note-on/off and held-note timing | PARTIAL | MH1–7, HS1–4, FC1–6, HP1–13; concrete PBI/queue/voice release and Vorbis virtual38 checked; clip readers, stream recipient and attachment lifetime pending. |
-| Envelope parameters and trigger state | PARTIAL | MG/MI/EP close local trigger, scope/reset, defaults and parameter choice/timing; witness381606890/property15=2; RTPC evaluation and release delivery remain pending. |
-| Vibrato/LFO parameters and state | PARTIAL | MG/MI/LP/SP cover trigger, defaults, parameter RNG/RTPC gates and engine vibrato posting; witness528935089 and engine005EF184; LP8–12 settle local mode/phase initialization and its KEEP boundary; evaluator/value delivery remain pending. |
+| Envelope parameters and trigger state | PARTIAL | MG/MI/EP close local trigger, scope/reset, defaults and parameter choice/timing; witness381606890/property15=2; MU1–6/SV1–15 add concrete state callbacks/setters, stop notifications and evaluator joins; registration/RTPC consumer joins remain pending. |
+| Vibrato/LFO parameters and state | PARTIAL | MG/MI/LP/SP cover trigger, defaults, parameter RNG/RTPC gates and engine vibrato posting; witness528935089 and engine005EF184; LP8–12 settle local mode/phase initialization and its KEEP boundary; MU/SV plus shared MP/ML/ES/LS/LB close local evaluator and publication; registration and downstream value consumers remain pending. |
 | Approved branch exclusions | CHECKED | Five exclusions listed below with census evidence; retained adjacent controls remain in scope. |
 
 # Q15 — singing decision rows, checkpoint 1
