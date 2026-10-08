@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 175 — concrete PBI transition notification and no-op parameter callback
+
+Primary: `20261008-sound-pbi-transition-callback-slots.txt`, `20261008-sound-pbi-transition-callback-native.txt`; same engine SHA256. PB170 ctor bindings positively supply base/continuous families. DT174 direct14 and descriptorownerPBI+8 callback0 converge here. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| TN175A | 0103B77C/0103D3C4/0103B7B8/0103D400/0103B7D0/0103D41C;009FF4C8..009FF4D0 | Both known main tables14=9FF41C,50=9FF4D0 (BX LR, no parameter mutation). Both embedded+8 tables0=9FF4C8, which subtracts8 fromowner andtails9FF41C. Descriptor creation therefore targets same notification body as DT174's direct fallback. | No-op50 ignores propertyE/duration. Creator can still notify through embeddedowner; no inference that duration callback changes stored properties. | Main14 ORembedded0→sharednotification; main50→return. | TN175B/C supply local notification; additional PBI families need their own stores/slots. |
+| TN175B | 009FF41C..009FF46C;009FF470..009FF4AC | Selector01000000/02000000 uses168. Completionargnonzero clears144 first; selector02000000 additionally invokesPBI.vt0(PBI,0,1) before storing incomingvalue→168. Incomplete or01000000 completion writes168 without stop. Every path finally reloadsE9, setsbit0 andreturns. Unsupportedselectors also only setE9bit0. | Unknownselector is not rejected without observable dirtyflag. Selectorbranch uses native signed comparisons before exact equality tests. | Optional handleclear → optional stop → raw168 publication → dirtyflag. | PS2–4 positively supply known stop callback/body. Full dirtyflag/value consumers and producer closure remain separate. |
+| TN175C | 009FF434..009FF46C;009FF4B0..009FF4C4 | Selector04000000/08000000 uses16C. Completionargnonzero clears148 first; selector04000000 additionally invokesPBI.vt48(PBI,1) before storing incomingvalue→16C. Incomplete or08000000 completion writes16C withoutpause. Then same liveE9bit0 publication. | Existing transition completion differs from NR169 direct resume callback. No extra virtual4C resume invoked for08000000 here. | Optional handleclear → optional pausecallback → raw16C publication → dirtyflag. | Concrete48 pause recipient remains decision work;08000000 local publication closes NR169/DT174 transition endpoint. No per-sample arithmetic. |
+
+Duration creator/direct-fallback notification now has concrete known-family callbacks, including the actual no-op50. Pause48/value/dirtyflag consumers and complete family/writer closure remain; Q14 totals unchanged, Q15 parked, no fidelity or production changes.
+
 ## Checkpoint 174 — PBI duration-transition creation, retarget and fallback
 
 Primary: `20261008-sound-pbi-duration-transition-native.txt`; same engine SHA256. Positive RR8 stop and NR169 resume helperA010E0; other callerA01480 remains separate. TT1–3/TT9–22 supply positive transition-manager decisions. Offsets/endpoints hexadecimal/inclusive.

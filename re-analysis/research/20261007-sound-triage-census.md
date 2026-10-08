@@ -1221,3 +1221,7 @@ VR173A–D settle raw fixedpoint pitch-step ratio, PBI1BA bits3..6 publication, 
 ## Decision checkpoint174 — PBI duration-transition helper
 
 DT174A–C settle144/148 selection, selector-exact0/1 targetbits, existing-handle retarget versus descriptor create, handle/flag publication beforevirtual50 and saved creation-result null fallbackvirtual14. TT1–3/TT9–22 are positive transition-manager joins. Concrete parameter/notification callback recipients and full caller/writer/family closure remain, no totals/Q15/fidelity/production changes.
+
+## Decision checkpoint175 — concrete transition callback/control publication
+
+TN175A–C bind main14 and embeddedowner0 to shared9FF41C and main50 toBX LR, then settle completion handleclear, selector-specific stop/pause calls before168/16C raw publication and liveE9bit0. PS2–4 are positive stop joins; concretepause48 and value/flag/family/writer closure remain. No totals, Q15, fidelity or production changes.
