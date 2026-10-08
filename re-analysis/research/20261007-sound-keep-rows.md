@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-three narrow obligations CHECKED, sixty-nine PARTIAL,48 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. 23 narrow obligations CHECKED, 74 PARTIAL, 43 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -3910,3 +3910,8 @@ Primary: `20261008-singing-external-midi-callback-native.txt` (shared capture wi
 | MREG5 | 0099DA54..0099DB44 | Compute bucket index by incrementing from0 until signed incoming mask<=1<<index; no single-bit validation. Snapshot count−1; negative returns. Walk records in **reverse registration order**. Snapshot callback, initialize shared context if needed, reload current bucket base, read cookie at current index, callback(context,incomingMask,cookie), then decrement to0. | No lock acquired in this local dispatcher. Count snapshot fixes loop length; bucket base is reloaded across callbacks. No callback-null or cookie-retain gate. Caller TH5 holds registry mutex during Perform; other callers own their separate contracts. | Mask/index → count snapshot → last-to-first callback/cookie → return. | Exact callback order and reentrancy-visible base reload; not FIFO. |
 
 MREG closes the local registry append and shared reverse dispatcher bodies, and EMC maps the concrete MIDI callback's frame quota. Live registration/removal writer census and callback-recipient closure remain retained; a single decoded callback table does not settle the render subsystem.
+
+
+### Current ledger reconciliation (checkpoint89)
+
+The per-item census now maps previously present native rows to Q14-039 (accumulation/max-instance subscription), Q14-050 (robot FX/rate chain), Q14-057 (selector and recorded-note replay), and Q14-067 (music PBI callers). Each becomes PARTIAL, with its exact remaining production joins named; none becomes CHECKED merely from overlapping addresses. Q14-076's MR rows separately changed it to PARTIAL. Latest counts:23 CHECKED /74 PARTIAL /43 NOT DONE, over140 obligations. Q15 remains PARTIAL in all seven retained categories. Both tasks remain incomplete; no NOT DONE item has been converted to UNKNOWN or dropped.

@@ -45,7 +45,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-036 | 74 | PARTIAL |
 | Q14-037 | 75 | PARTIAL |
 | Q14-038 | 76 | PARTIAL |
-| Q14-039 | 77 | NOT DONE |
+| Q14-039 | 77 | PARTIAL |
 | Q14-040 | 78 | PARTIAL |
 | Q14-041 | 79 | PARTIAL |
 | Q14-042 | 80 | PARTIAL |
@@ -56,14 +56,14 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-047 | 85 | PARTIAL |
 | Q14-048 | 86 | PARTIAL |
 | Q14-049 | 87 | PARTIAL |
-| Q14-050 | 88 | NOT DONE |
+| Q14-050 | 88 | PARTIAL |
 | Q14-051 | 90 | PARTIAL |
 | Q14-052 | 91 | PARTIAL |
 | Q14-053 | 92 | PARTIAL |
 | Q14-054 | 93 | CHECKED |
 | Q14-055 | 94 | PARTIAL |
 | Q14-056 | 95 | PARTIAL |
-| Q14-057 | 96 | NOT DONE |
+| Q14-057 | 96 | PARTIAL |
 | Q14-058 | 97 | CHECKED |
 | Q14-059 | 98 | PARTIAL |
 | Q14-060 | 99 | PARTIAL |
@@ -73,7 +73,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-064 | 106 | PARTIAL |
 | Q14-065 | 107 | PARTIAL |
 | Q14-066 | 115 | PARTIAL |
-| Q14-067 | 116 | NOT DONE |
+| Q14-067 | 116 | PARTIAL |
 | Q14-068 | 117 | CHECKED |
 | Q14-069 | 118 | CHECKED |
 | Q14-070 | 119 | CHECKED |
@@ -380,7 +380,7 @@ PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, 
 
 > | M6-026 | **KEEP** | 0x00A17724;0x00A17878;0x009F7390..0x009F82EC;0x00A44D4C;0x00A023D4;0x00A01918;0x009E85C8;0x009FFC28 | RTPC max-instance subscription, device loop, Play success tail, parameter args/producers and early-return gates remain exact, including branch signedness and bus-count choices. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical order, defaults and sum/product selection. RW1–10 and R48 establish node max-instance subscription traversal; RC7 covers the parameter helper. The remaining named device/Play/early-return collaborators and their writer/caller census are not closed by these local bodies.
 
 ## Q14-040 — triage line 78
 
@@ -446,7 +446,7 @@ Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node repla
 
 > | M9-011 | **KEEP** | 0x00A4FD84..0x00A4FEF4;0x00AA257C;0x00AA18F4;0x008DBFE8;0x00A57724 | Robot_Bus_1 two-EQ/limiter/Hijack order, 48000 mix side, 22320 output and wiring stay exact; share the M6-013 arithmetic boundary only. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: FX1–6, F1–21, B1–12/B19–26, EQB1–4 and H/FR/Z rows establish ordered FX selection/setup, persistent coefficient KEEP boundary, Hijack callback and mix/output rate controls. Whole live slot creation/bypass/teardown and exact 48000-to22320 geometry still need production closure. Approved sample arithmetic exclusions do not erase those controls.
 
 ## Q14-051 — triage line 90
 
@@ -488,7 +488,7 @@ PARTIAL: Q15 FC/RI/PD1–8 close local clip note-window gates and complete packe
 
 > | M9-022 | **KEEP** | 0x00A08A44;0x00A0A524;0x00A3E6A8..0x00A3E728 | Eligibility/blocked-list/random/sequence state and replaying recorded note-on selection stay exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: C1–25 and TC/CT/DA/VE rows establish eligibility, random/sequence choice and blocked-list updates locally; Q15 MH1–7/IST/MAT establish recorded-note replay without a fresh note-off RNG draw. Selector state writers/caller closure remain retained; no whole M9-022 settlement.
 
 ## Q14-058 — triage line 97
 
@@ -548,7 +548,7 @@ Complete row mapping: pending. Native descendants and writer/consumer closure mu
 
 > | C30.2 / music PBI / prior A9 | M9-010,M9-020,M9-022; NEW M9 obligation | **KEEP** | 0x00A3E688..0x00A3E82C;0x00A3E920..0x00A3E9F4;0x00A381F4 | Recorded-node note-off replay, code2/3 lifetime and priority/voice-limit branch belong to music and remain exact; do not absorb into M6-026. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: Q15 MH1–7/HS/HP/MAT/IST rows explicitly cover recorded Sound replay, code2/3 gates, PBI held-note/stop calls and callback cleanup. The A381F4 priority/limit recipient is a shared M6 boundary with its own retained rows/caller census; these M9 caller contracts are not proof of that recipient.
 
 ## Q14-068 — triage line 117
 
