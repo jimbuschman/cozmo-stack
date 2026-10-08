@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 185 — pending-start cancellation and retained timing update
+
+Primary: `20261008-sound-pending-start-consumer-native.txt`; same engine SHA256. VC184C admission; A44948 directcaller remains frame-order producer. Nativefield addresses keptrelative tovoice8 context, without substituting PBI offsets. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| PC185A | 009D3CC0..009D3D2C;009D3D6C..009D3D8C | Loadpendinghead108DA30, previous0; traversevoiceD0. Eachvoice8 context requirednonnull else native null-load/UDF. Cancellation iffcontext1B0bit5set andcontext1EC==FFFFFFFF; otherwise keepvoice. Context1B0bit7set skipsPC185B timing update. | Emptyheadreturns. This pass doesnotcall sourceStartStream orretry3F. | Pendingvoice → contextgate → cancel OR optionaltiming →next. | PC185C cancellation; contextflag/sentinel writers andfullframeconsumer closure remain. No generic notready timeout synthesized. |
+| PC185B | 009D3D30..009D3D68 | Bit7clear converts incomingframeargU32→F32, multipliesrawcontext158. NativeLE(product,0) chooses−0.5, otherwise+0.5 (unorderedLE followsARMflags). Ifcontext1CC signed>=0, F32add chosenhalf, VCVT.S32.F32, subtractwrapping fromold1CC/store. Negative1CC leavesfieldunchanged. | Product calculated before old1CC signgate, roundingaddition/conversion conditional onnonnegativefield. No saturation atzero. | Frame/rate product → halfchoice → signedfieldgate → roundedticks/subtraction. | Exact timing arithmetic, notper-sampleDSP. Inputframe/context158/1CC producers remain; no guessed units beyondnativefloat/int conversion. |
+| PC185C | 009D3D90..009D3E50;009D3E80..009D3E8C | Cancellation firstwalksnotificationqueuehead108DA10. Everyentry4nonnull compares(entry4+C) withlivevoice8, null compares0. Match unlinkshead/previous andtail thenretiresentry, decrementsqueue18; continueallmatches using savednext andsameprevious, reloadvoice8 fornextentry. Afterqueuepass, savependingvoiceD0, unlinkpendinghead/previous, repairtail108DA2C ifsamevoice, invoke9D40C4(voice,0), continuewithsavednext/sameprevious. | Removesallmatchingnotifications beforevoicedelete; nonmatchingentry advancesprevious. No earlybreak afterfirstnotification. Deletioncallback followsbothlistrepairs. | Matchingqueuednotifications removed → pendingvoiceunlink/tailrepair → deletearg0 →next. | 9D40C4 body remainsconcretedeletionwork; queueentrypool/free-list machinery outofscope andomitted fromcapture. Fullhead/tail/flagwriter closure remains. |
+
+Pending-start pass now has complete local cancellation and retained countdown decisions. Raw3F admission is not equivalent to a start retry inthispass; other start/prepare phases remain separate. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 184 — voice create/reuse and raw3F pending-start admission
 
 Primary: `20261008-sound-voice-create-decision-native.txt`; same engine SHA256. Direct caller9D3644 is a separate producer; VS16/17 positively supply A42DEC attachment/list insertion, SF10/NF supply A01800 notification, known StartStream/source rows supply A558AC descendants without assuming full closure. Endpoints inclusive.

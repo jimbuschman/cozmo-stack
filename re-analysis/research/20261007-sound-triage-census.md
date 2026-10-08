@@ -1261,3 +1261,7 @@ SN183A/B joinSF10/NF3 toknownbase no-op38/18 andcontinuousVE5–15 callbacks, pr
 ### Checkpoint 184 — voice reuse/new raw-status decision
 
 VC184A–C tracefirstreusekey match/resultignored/controlflag3/return5, newvoice sourcebind rawresult gates, attach-result successbyte, and3F separatepending-start admission returning1. Native A54650 callABI keptunsettled ratherthan guessed. Fullconstruction/rate/delete/producer/pending-consumer closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 185 — pending-start cancellation/timing
+
+PC185A–C tracecontextflag/sentinel cancelgate, exactF32frameproduct/halfround/signedcountdown update, allmatchingnotification removals beforependingvoiceunlink/deletearg0, andsavednext iteration. Thisconsumer hasnostartretry. Retirementstorage omitted perguard; fullcontextwriters/frameordering/delete remain retained. No totals/Q15/fidelity/production changes.
