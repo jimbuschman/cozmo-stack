@@ -1391,3 +1391,7 @@ CL214A/B trace zero-count preservation, allocation-null empty continuation, poin
 ### Checkpoint 215 — known child play recipients
 
 CP215A/B bind five known class128 callbacks, distinguishing RanSeq dispatch entry, Switch entry andActorMixer raw0 no-op. Dynamic input/family andSound/Switch/source/lifecycle closure remains. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 216 — Sound special play entry
+
+SP216A–F trace direct versus90/87 specialpath, scoped RTPC85/84 order/livebytepowf calculation, context entry/retain beforeadmission,52 versusrawSourcePlay, concretepolicyhelpers andRTPCsetterwrapper. SourcePlay/setter notifications/retain-context lifecycle andwriterclosure retained. No totals/Q15/fidelity/production changes.
