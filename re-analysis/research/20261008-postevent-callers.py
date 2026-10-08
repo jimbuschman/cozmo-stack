@@ -5,6 +5,7 @@ sys.argv.append('--light')
 spec=importlib.util.spec_from_file_location('native',Path(__file__).with_name('20261007-queue5-native.py'))
 n=importlib.util.module_from_spec(spec); spec.loader.exec_module(n)
 targets={0x9A6704,0x9A6840,0x9A0EF8,0xA03108,0x9A257C}
+targets.update(int(arg,16) for arg in sys.argv[1:] if arg.startswith('0x'))
 print('Direct branch targets',','.join(f'{x:08X}' for x in sorted(targets)))
 for va,size,off in n.loads:
     # Read p_flags independently; scan only executable LOAD segments.
