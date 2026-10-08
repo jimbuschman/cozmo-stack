@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A06BE0..0x00A06BE8 exclusive; ARM;
+00A06BE0: mov          r0, #2
+00A06BE4: bx           lr
+RANGE 0x00A0712C..0x00A07184 exclusive; ARM;
+00A0712C: ldr          r0, [r5]
+00A07130: bl           #0xa7a7f4
+00A07134: subs         r4, r0, #0
+00A07138: beq          #0xa07254
+00A0713C: mov          r1, r7
+00A07140: mov          r7, #1
+00A07144: bl           #0xa69bcc
+00A07148: ldrb         r2, [r4, #0x91]
+00A0714C: ldrb         r0, [r4, #0x90]
+00A07150: mov          r3, #0
+00A07154: and          r2, r2, #7
+00A07158: ldr          r1, [pc, #0x138] ; word[00A07298]=006346E4
+00A0715C: ldrb         lr, [r4, #0x92]
+00A07160: and          r0, r0, #0xcf
+00A07164: mvn          r2, r2
+00A07168: and          r2, r2, #0x6f
+00A0716C: add          r1, pc, r1
+00A07170: mov          ip, #0
+00A07174: bfi          r0, r3, #0, #4
+00A07178: bfi          lr, r3, #0, #1
+00A0717C: str          r3, [r4, #0x68]
+00A07180: mvn          r2, r2

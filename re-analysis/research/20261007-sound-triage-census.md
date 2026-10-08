@@ -1331,3 +1331,7 @@ NP199A–C provide seven positive direct producer sites, input-dependent0/1 publ
 ### Checkpoint 200 — continuousseek gating
 
 CS200A–C close knowncontinuous20/24 ancestor/type/mode/specialflag suppression beforebase seekpublication, andsharedmodegetter withrepeatedread cadence. Dynamictype/ancestry/mode/flag writers/fullproduction closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 201 — seeknode type/mode joins
+
+NT201A–C bindRanSeqtype2/constructorinitialmode0 andexistingauthoredreader tocontinuousseekpredicate, distinguishingotherfourknownnode44types frommodevalues. Additionalfamily/ancestry/mode/flag writers/fullclosure retained; no totals/Q15/fidelity/production changes.
