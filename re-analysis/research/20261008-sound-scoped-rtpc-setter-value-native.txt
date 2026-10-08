@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A14594..0x00A14694 exclusive; ARM;
+00A14594: mov          ip, #0
+00A14598: str          r6, [sp]
+00A1459C: mov          r0, r4
+00A145A0: str          r5, [sp, #4]
+00A145A4: str          lr, [sp, #0xc]
+00A145A8: vmov         r3, s16
+00A145AC: str          ip, [sp, #8]
+00A145B0: bl           #0xa137d8
+00A145B4: add          sp, sp, #0x1c
+00A145B8: vpop         {d8}
+00A145BC: pop          {r4, r5, r6, r7, r8, sb, pc}
+00A145C0: ldr          r4, [r4, #4]
+00A145C4: cmp          r4, #0
+00A145C8: beq          #0xa144e8
+00A145CC: ldr          r3, [r4]
+00A145D0: cmp          r8, r3
+00A145D4: bne          #0xa145c0
+00A145D8: ldr          lr, [r6]
+00A145DC: cmp          lr, #0
+00A145E0: beq          #0xa14788
+00A145E4: ldrb         r3, [r4, #0x20]
+00A145E8: ldr          r0, [r4, #0x28]
+00A145EC: cmp          r3, #0
+00A145F0: addne        r3, r4, #0x1c
+00A145F4: strne        r3, [sp, #0x14]
+00A145F8: subs         r0, r0, #1
+00A145FC: bmi          #0xa1463c
+00A14600: ldr          r8, [r4, #0x24]
+00A14604: mov          r1, #0
+00A14608: rsb          r3, r1, r0
+00A1460C: add          r3, r3, r3, lsr #31
+00A14610: add          r3, r1, r3, asr #1
+00A14614: rsb          r2, r3, r3, lsl #3
+00A14618: add          r2, r8, r2, lsl #2
+00A1461C: ldr          ip, [r2, #0x18]
+00A14620: cmp          lr, ip
+00A14624: sublo        r0, r3, #1
+00A14628: blo          #0xa14634
+00A1462C: bls          #0xa14660
+00A14630: add          r1, r3, #1
+00A14634: cmp          r1, r0
+00A14638: ble          #0xa14608
+00A1463C: mov          r8, #1
+00A14640: mov          r1, #0
+00A14644: tst          r8, r7
+00A14648: ldrb         lr, [sp, #0x12]
+00A1464C: movne        r3, #1
+00A14650: ldreq        r2, [sp, #0x14]
+00A14654: ldrne        r2, [sp, #0x14]
+00A14658: strbne       r3, [r5, #8]
+00A1465C: b            #0xa14594
+00A14660: ldr          lr, [r6, #4]
+00A14664: cmp          lr, #0
+00A14668: beq          #0xa146c8
+00A1466C: ldrb         r3, [r2, #8]
+00A14670: ldr          ip, [r2, #0x10]
+00A14674: cmp          r3, #0
+00A14678: addne        r3, r2, #4
+00A1467C: strne        r3, [sp, #0x14]
+00A14680: subs         ip, ip, #1
+00A14684: bmi          #0xa1463c
+00A14688: ldr          r8, [r2, #0xc]
+00A1468C: mov          r1, #0
+00A14690: rsb          r3, r1, ip

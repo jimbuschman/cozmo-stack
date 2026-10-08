@@ -1399,3 +1399,7 @@ SP216A–F trace direct versus90/87 specialpath, scoped RTPC85/84 order/livebyte
 ### Checkpoint 217 — Sound context retain
 
 RT217A binds Sound8 toselector/currentmanager mutex andwrapping nodeC increment beforeunlock. SP216C reconciled; context release/reference/list writers/full production closure remain. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 218 — scoped RTPC setter selection
+
+SS218A–E trace root creation caller outcomes, ordered exact scope selection/ancestor cache, suffix predicate, descriptor mask mutation andraw update handoff. Hash/allocator bodies scopedout; resolver/helper/update/writer closure retained. No totals/Q15/fidelity/production changes.
