@@ -86,8 +86,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | PARTIAL |
 | Q14-079 | 128 | PARTIAL |
-| Q14-080 | 129 | NOT DONE |
-| Q14-081 | 130 | NOT DONE |
+| Q14-080 | 129 | PARTIAL |
+| Q14-081 | 130 | CHECKED |
 | Q14-082 | 131 | CHECKED |
 | Q14-083 | 132 | PARTIAL |
 | Q14-084 | 133 | NOT DONE |
@@ -616,13 +616,13 @@ PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset 
 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: B7–B12/B19–B20 and CP1–CP9 cover compressor creation/parameters/Init/Reset/Term and identified Execute partition. VF1–VF5 cover voice Init anchor. Remaining production initial-format stage A47038 and metadata/bypass producer closure; no automatic settling of the records.
 
 ## Q14-081 — triage line 130
 
 > | C31.2 Compressor sample execute | M6-013,M6-025 | **VERIFY** | 0x00AA0538 registry create anchor; execute virtual target UNKNOWN | Compressor is an allowed DSP type, but its unread execute body may contain timing/channel/control decisions; isolate the PCM loop before SIMPLIFY. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED (narrow boundary): CP7–CP9 resolve Execute vtable103DF48→A9FC70 and selected kernels A9FEEC/AA0298. Parameter refresh, count/channel/LFE/history/reset/cache controls stay exact; detector/sample/gain loops are PCM-only ADP-1 arithmetic. No equivalence test or whole-record settlement claimed.
 
 ## Q14-082 — triage line 131
 
