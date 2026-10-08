@@ -32,7 +32,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-023 | 61 | PARTIAL |
 | Q14-024 | 62 | PARTIAL |
 | Q14-025 | 63 | PARTIAL |
-| Q14-026 | 64 | NOT DONE |
+| Q14-026 | 64 | PARTIAL |
 | Q14-027 | 65 | NOT DONE |
 | Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | NOT DONE |
@@ -292,7 +292,7 @@ PARTIAL: N4/N5 and SE1–SE4 reopen the live default/input width, queued writer 
 
 > | M6-022 | **KEEP** | 0x00A44D4C;0x00A44948;0x00A44C18;0x00A54F1C..0x00A5574C;0x00A4B93C;0x009BE28C;0x009BDA88;0x009BD368;0x009BF8E4;0x00A5E694;0x009EEDA4 | Production wiring, voice state machine, effective-parameter inputs, route identities/virtual bodies, device/sample-scale writers and callback registry remain exact; anonymous class names need no invented semantics. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: DF18–DF44 now trace device factory/reset/build, borrowed/owned OpenSL objects, sink buffer and queue geometry, pacing wake, Android music-active mute control, and voice-connection/bus-line invalidation and reconnect parents. Existing AD1–AD2 cover duplicate routing. Remaining: production voice/effective-parameter state machine, concrete route/destructor/RTPC subscribers, sink render/writer census and callback registry; no wholesale DSP exemption.
 
 ## Q14-027 — triage line 65
 
