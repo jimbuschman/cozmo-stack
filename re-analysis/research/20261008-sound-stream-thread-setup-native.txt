@@ -1,0 +1,213 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0097CC80..0x0097CE70 exclusive; ARM;
+0097CC80: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+0097CC84: sub          sp, sp, #0x20
+0097CC88: add          r4, sp, #4
+0097CC8C: add          r5, sp, #8
+0097CC90: mov          r6, r0
+0097CC94: mov          r7, r1
+0097CC98: mov          r0, r4
+0097CC9C: bl           #0x4d6694
+0097CCA0: mov          r0, r5
+0097CCA4: bl           #0x4d66dc
+0097CCA8: add          r0, r6, #0x24
+0097CCAC: mov          r1, r4
+0097CCB0: bl           #0x4d66ac
+0097CCB4: cmp          r0, #0
+0097CCB8: beq          #0x97ccc8
+0097CCBC: mov          r0, #2
+0097CCC0: add          sp, sp, #0x20
+0097CCC4: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+0097CCC8: add          r0, r6, #0x28
+0097CCCC: mov          r1, r5
+0097CCD0: bl           #0x4d66e8
+0097CCD4: cmp          r0, #0
+0097CCD8: bne          #0x97ccbc
+0097CCDC: mov          r0, r4
+0097CCE0: bl           #0x4d66b8
+0097CCE4: mov          r0, r5
+0097CCE8: bl           #0x4d66f4
+0097CCEC: mov          r0, r4
+0097CCF0: bl           #0x4d6694
+0097CCF4: mov          r1, #1
+0097CCF8: mov          r0, r4
+0097CCFC: bl           #0x4d66a0
+0097CD00: mov          r0, r5
+0097CD04: bl           #0x4d66dc
+0097CD08: add          r0, r6, #0xc
+0097CD0C: mov          r1, r4
+0097CD10: bl           #0x4d66ac
+0097CD14: cmp          r0, #0
+0097CD18: bne          #0x97ccbc
+0097CD1C: add          r0, r6, #0x10
+0097CD20: mov          r1, r5
+0097CD24: bl           #0x4d66e8
+0097CD28: subs         r8, r0, #0
+0097CD2C: bne          #0x97ccbc
+0097CD30: mov          r0, r4
+0097CD34: mov          sb, #1
+0097CD38: bl           #0x4d66b8
+0097CD3C: mov          r0, r5
+0097CD40: bl           #0x4d66f4
+0097CD44: ldm          r7, {r0, r1, r2, r3}
+0097CD48: add          ip, r6, #0x2c
+0097CD4C: str          r8, [r6, #0x14]
+0097CD50: str          r8, [r6, #0x18]
+0097CD54: str          r8, [r6, #0x20]
+0097CD58: stm          ip, {r0, r1, r2, r3}
+0097CD5C: mov          r0, r5
+0097CD60: strb         sb, [r6, #0x3c]
+0097CD64: bl           #0x4d6700
+0097CD68: ldr          r1, [r7, #4]
+0097CD6C: mov          r0, r5
+0097CD70: bl           #0x4d670c
+0097CD74: mov          r1, r8
+0097CD78: mov          r0, r5
+0097CD7C: bl           #0x4d6718
+0097CD80: ldr          r2, [pc, #0xe8] ; word[0097CE70]=FFFFFCFC
+0097CD84: mov          r1, r5
+0097CD88: mov          r3, r6
+0097CD8C: add          r2, pc, r2
+0097CD90: add          r0, r6, #8
+0097CD94: bl           #0x4a6934
+0097CD98: mov          r8, r0
+0097CD9C: mov          r0, r5
+0097CDA0: bl           #0x4d6724
+0097CDA4: cmp          r8, #0
+0097CDA8: bne          #0x97cdb8
+0097CDAC: ldr          r3, [r6, #8]
+0097CDB0: cmp          r3, #0
+0097CDB4: bne          #0x97cdd4
+0097CDB8: mov          r3, #0
+0097CDBC: str          r3, [r6, #8]
+0097CDC0: ldr          r3, [r6, #8]
+0097CDC4: cmp          r3, #0
+0097CDC8: movne        r0, #1
+0097CDCC: moveq        r0, #2
+0097CDD0: b            #0x97ccc0
+0097CDD4: ldr          r5, [r7, #8]
+0097CDD8: mov          r0, r5
+0097CDDC: bl           #0x4cd118
+0097CDE0: mov          r0, r5
+0097CDE4: bl           #0x4cd124
+0097CDE8: ldr          r3, [r7]
+0097CDEC: mov          r1, r5
+0097CDF0: ldr          r0, [r6, #8]
+0097CDF4: mov          r2, r4
+0097CDF8: str          r3, [sp, #4]
+0097CDFC: bl           #0x4cd130
+0097CE00: cmp          r0, #0
+0097CE04: beq          #0x97cdc0
+0097CE08: mov          r0, r8
+0097CE0C: bl           #0x4cd118
+0097CE10: mov          r5, r0
+0097CE14: mov          r0, r8
+0097CE18: bl           #0x4cd124
+0097CE1C: ldr          sl, [r7]
+0097CE20: mov          r8, r0
+0097CE24: mov          r0, sb
+0097CE28: bl           #0x4cd124
+0097CE2C: cmp          sl, r0
+0097CE30: streq        r8, [sp, #4]
+0097CE34: beq          #0x97ce5c
+0097CE38: mov          r0, sb
+0097CE3C: ldr          r7, [r7]
+0097CE40: bl           #0x4cd118
+0097CE44: cmp          r7, r0
+0097CE48: streq        r5, [sp, #4]
+0097CE4C: addne        r5, r5, r8
+0097CE50: addne        r5, r5, r5, lsr #31
+0097CE54: asrne        r3, r5, #1
+0097CE58: strne        r3, [sp, #4]
+0097CE5C: mov          r2, r4
+0097CE60: ldr          r0, [r6, #8]
+0097CE64: mov          r1, #0
+0097CE68: bl           #0x4cd130
+0097CE6C: b            #0x97cdc0
+0097CE70: raw=FFFFFCFC relocated=FFFFFCFC 
+0097CE74: raw=E92D40F8 relocated=E92D40F8 
+0097CE78: raw=E280500C relocated=E280500C 
+0097CE7C: raw=E2806010 relocated=E2806010 
+0097CE80: raw=E1A04000 relocated=E1A04000 
+004D6694: words=E28FC60B,E28CCA7A,E5BCF8CC slot=01050F68 raw=004A4010 relocation=(22, 'pthread_mutexattr_init', 0)
+004D66DC: words=E28FC60B,E28CCA7A,E5BCF89C slot=01050F80 raw=004A4010 relocation=(22, 'pthread_condattr_init', 0)
+004D66AC: words=E28FC60B,E28CCA7A,E5BCF8BC slot=01050F70 raw=004A4010 relocation=(22, 'pthread_mutex_init', 0)
+004D66E8: words=E28FC60B,E28CCA7A,E5BCF894 slot=01050F84 raw=004A4010 relocation=(22, 'pthread_cond_init', 0)
+004D66B8: words=E28FC60B,E28CCA7A,E5BCF8B4 slot=01050F74 raw=004A4010 relocation=(22, 'pthread_mutexattr_destroy', 0)
+004D66F4: words=E28FC60B,E28CCA7A,E5BCF88C slot=01050F88 raw=004A4010 relocation=(22, 'pthread_condattr_destroy', 0)
+004D66A0: words=E28FC60B,E28CCA7A,E5BCF8C4 slot=01050F6C raw=004A4010 relocation=(22, 'pthread_mutexattr_settype', 0)
+004D6700: words=E28FC60B,E28CCA7A,E5BCF884 slot=01050F8C raw=004A4010 relocation=(22, 'pthread_attr_init', 0)
+004D670C: words=E28FC60B,E28CCA7A,E5BCF87C slot=01050F90 raw=004A4010 relocation=(22, 'pthread_attr_setstacksize', 0)
+004D6718: words=E28FC60B,E28CCA7A,E5BCF874 slot=01050F94 raw=004A4010 relocation=(22, 'pthread_attr_setdetachstate', 0)
+004A6934: words=E28FC60B,E28CCA9A,E5BCF70C slot=01041048 raw=004A4010 relocation=(22, 'pthread_create', 0)
+004D6724: words=E28FC60B,E28CCA7A,E5BCF86C slot=01050F98 raw=004A4010 relocation=(22, 'pthread_attr_destroy', 0)
+004CD118: words=E28FC60B,E28CCA80,E5BCFC74 slot=0104DD94 raw=004A4010 relocation=(22, 'sched_get_priority_min', 0)
+004CD124: words=E28FC60B,E28CCA80,E5BCFC6C slot=0104DD98 raw=004A4010 relocation=(22, 'sched_get_priority_max', 0)
+004CD130: words=E28FC60B,E28CCA80,E5BCFC64 slot=0104DD9C raw=004A4010 relocation=(22, 'pthread_setschedparam', 0)
+004D6730: words=E28FC60B,E28CCA7A,E5BCF864 slot=01050F9C raw=004A4010 relocation=(22, 'pthread_cond_signal', 0)
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0097CA90..0x0097CB7C exclusive; ARM;
+0097CA90: push         {r3, r4, r5, r6, r7, lr}
+0097CA94: mov          r1, #0
+0097CA98: mov          r4, r0
+0097CA9C: add          r3, r0, #0x38
+0097CAA0: mov          r2, #4
+0097CAA4: mov          r0, #0xf1
+0097CAA8: bl           #0x4d616c
+0097CAAC: ldr          r3, [r4]
+0097CAB0: mov          r0, r4
+0097CAB4: add          r5, r4, #0xc
+0097CAB8: add          r6, r4, #0x10
+0097CABC: ldr          r3, [r3, #0x10]
+0097CAC0: blx          r3
+0097CAC4: b            #0x97cb10
+0097CAC8: ldr          r3, [r4, #0x14]
+0097CACC: cmp          r3, #0
+0097CAD0: bne          #0x97caec
+0097CAD4: ldr          r3, [r4, #0x18]
+0097CAD8: cmp          r3, #0
+0097CADC: beq          #0x97cb28
+0097CAE0: ldrb         r3, [r4, #0x1c]
+0097CAE4: cmp          r3, #0
+0097CAE8: bne          #0x97cb28
+0097CAEC: ldrb         r7, [r4, #0x3c]
+0097CAF0: mov          r0, r5
+0097CAF4: bl           #0x4d3070
+0097CAF8: cmp          r7, #0
+0097CAFC: beq          #0x97cb44
+0097CB00: ldr          r3, [r4]
+0097CB04: mov          r0, r4
+0097CB08: ldr          r3, [r3, #8]
+0097CB0C: blx          r3
+0097CB10: mov          r0, r5
+0097CB14: bl           #0x4d3064
+0097CB18: ldr          r2, [r4, #0x20]
+0097CB1C: ldr          r3, [r4, #4]
+0097CB20: cmp          r2, r3
+0097CB24: blo          #0x97cac8
+0097CB28: ldrb         r3, [r4, #0x3c]
+0097CB2C: mov          r0, r6
+0097CB30: mov          r1, r5
+0097CB34: cmp          r3, #0
+0097CB38: bne          #0x97cb6c
+0097CB3C: mov          r0, r5
+0097CB40: bl           #0x4d3070
+0097CB44: ldr          r3, [r4]
+0097CB48: mov          r0, r4
+0097CB4C: ldr          r3, [r3, #0xc]
+0097CB50: blx          r3
+0097CB54: cmp          r0, #0
+0097CB58: bne          #0x97cb74
+0097CB5C: movw         r0, #0x86a0
+0097CB60: movt         r0, #1
+0097CB64: bl           #0x4bba84
+0097CB68: b            #0x97cb00
+0097CB6C: bl           #0x4d66d0
+0097CB70: b            #0x97cb18
+0097CB74: mov          r0, #0
+0097CB78: pop          {r3, r4, r5, r6, r7, pc}
+004D616C: words=E28FC60B,E28CCA7A,E5BCFC3C slot=01050DB0 raw=004A4010 relocation=(22, 'syscall', 0)
+004BBA84: words=E28FC60B,E28CCA8C,E5BCF62C slot=010480B8 raw=004A4010 relocation=(22, 'usleep', 0)
+004D66D0: words=E28FC60B,E28CCA7A,E5BCF8A4 slot=01050F7C raw=004A4010 relocation=(22, 'pthread_cond_wait', 0)
