@@ -1,0 +1,207 @@
+libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+RANGE 000F46A8:000F47C2 exclusive Thumb
+000F46A8: mov        r0, r2
+000F46AA: mov        r1, r8
+000F46AC: lsls       r7, r3
+000F46AE: lsl.w      sb, r5, r3
+000F46B2: str        r2, [sp, #4]
+000F46B4: bl         #0x3fee4
+000F46B8: orr.w      sl, sl, r7
+000F46BC: uxth       r7, r6
+000F46BE: ldr        r2, [sp, #4]
+000F46C0: mov        r1, r8
+000F46C2: mul        ip, r7, r0
+000F46C6: mov        fp, r0
+000F46C8: mov        r0, r2
+000F46CA: str.w      ip, [sp, #0xc]
+000F46CE: bl         #0x3ff74
+000F46D2: lsr.w      r3, sl, #0x10
+000F46D6: ldr.w      ip, [sp, #0xc]
+000F46DA: orr.w      r1, r3, r1, lsl #16
+000F46DE: cmp        r1, ip
+000F46E0: bhs        #0xf46f6
+000F46E2: adds       r1, r1, r6
+000F46E4: add.w      r5, fp, #-1
+000F46E8: bhs        #0xf46f8
+000F46EA: cmp        r1, ip
+000F46EC: bhs        #0xf46f8
+000F46EE: sub.w      r5, fp, #2
+000F46F2: add        r1, r6
+000F46F4: b          #0xf46f8
+000F46F6: mov        r5, fp
+000F46F8: rsb        r3, ip, r1
+000F46FC: mov        r1, r8
+000F46FE: mov        r0, r3
+000F4700: str        r3, [sp, #8]
+000F4702: bl         #0x3fee4
+000F4706: ldr        r3, [sp, #8]
+000F4708: mov        r1, r8
+000F470A: uxth.w     sl, sl
+000F470E: muls       r7, r0, r7
+000F4710: mov        fp, r0
+000F4712: mov        r0, r3
+000F4714: bl         #0x3ff74
+000F4718: orr.w      r1, sl, r1, lsl #16
+000F471C: cmp        r1, r7
+000F471E: bhs        #0xf4734
+000F4720: adds       r1, r1, r6
+000F4722: add.w      r2, fp, #-1
+000F4726: bhs        #0xf4736
+000F4728: cmp        r1, r7
+000F472A: bhs        #0xf4736
+000F472C: sub.w      r2, fp, #2
+000F4730: add        r1, r6
+000F4732: b          #0xf4736
+000F4734: mov        r2, fp
+000F4736: subs       r3, r1, r7
+000F4738: orr.w      r5, r2, r5, lsl #16
+000F473C: lsr.w      r8, r6, #0x10
+000F4740: mov        r0, r3
+000F4742: mov        r1, r8
+000F4744: str        r3, [sp, #8]
+000F4746: bl         #0x3fee4
+000F474A: uxth.w     sl, r6
+000F474E: ldr        r3, [sp, #8]
+000F4750: mov        r1, r8
+000F4752: mul        r7, sl, r0
+000F4756: mov        fp, r0
+000F4758: mov        r0, r3
+000F475A: bl         #0x3ff74
+000F475E: lsr.w      r3, sb, #0x10
+000F4762: orr.w      r1, r3, r1, lsl #16
+000F4766: cmp        r1, r7
+000F4768: bhs        #0xf477e
+000F476A: adds       r1, r1, r6
+000F476C: add.w      r2, fp, #-1
+000F4770: bhs        #0xf4780
+000F4772: cmp        r1, r7
+000F4774: bhs        #0xf4780
+000F4776: sub.w      r2, fp, #2
+000F477A: add        r1, r6
+000F477C: b          #0xf4780
+000F477E: mov        r2, fp
+000F4780: rsb        fp, r7, r1
+000F4784: mov        r1, r8
+000F4786: mov        r0, fp
+000F4788: str        r2, [sp, #4]
+000F478A: bl         #0x3fee4
+000F478E: mov        r1, r8
+000F4790: uxth.w     sb, sb
+000F4794: mul        sl, sl, r0
+000F4798: mov        r7, r0
+000F479A: mov        r0, fp
+000F479C: bl         #0x3ff74
+000F47A0: ldr        r2, [sp, #4]
+000F47A2: orr.w      r1, sb, r1, lsl #16
+000F47A6: cmp        r1, sl
+000F47A8: bhs        #0xf47ba
+000F47AA: adds       r6, r1, r6
+000F47AC: add.w      r3, r7, #-1
+000F47B0: bhs        #0xf47bc
+000F47B2: cmp        r6, sl
+000F47B4: bhs        #0xf47bc
+000F47B6: subs       r3, r7, #2
+000F47B8: b          #0xf47bc
+000F47BA: mov        r3, r7
+000F47BC: orr.w      r6, r3, r2, lsl #16
+000F47C0: b          #0xf48be
+RANGE 000F48BC:000F48D0 exclusive Thumb
+000F48BC: movs       r5, #0
+000F48BE: mov        r0, r6
+000F48C0: mov        r1, r5
+000F48C2: cbz        r4, #0xf48ca
+000F48C4: rsbs       r0, r0, #0
+000F48C6: sbc.w      r1, r1, r1, lsl #1
+000F48CA: add        sp, #0x14
+000F48CC: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 000F49C8:000F4AAE exclusive Thumb
+000F49C8: mov        r0, r5
+000F49CA: bl         #0x3ff74
+000F49CE: lsr.w      r3, sl, #0x10
+000F49D2: orr.w      r1, r3, r1, lsl #16
+000F49D6: cmp        r1, r6
+000F49D8: bhs        #0xf49ee
+000F49DA: adds       r1, r1, r4
+000F49DC: add.w      r5, sb, #-1
+000F49E0: bhs        #0xf49f0
+000F49E2: cmp        r1, r6
+000F49E4: bhs        #0xf49f0
+000F49E6: sub.w      r5, sb, #2
+000F49EA: add        r1, r4
+000F49EC: b          #0xf49f0
+000F49EE: mov        r5, sb
+000F49F0: subs       r6, r1, r6
+000F49F2: mov        r1, r7
+000F49F4: mov        r0, r6
+000F49F6: uxth.w     sl, sl
+000F49FA: bl         #0x3fee4
+000F49FE: mov        r1, r7
+000F4A00: mul        fp, fp, r0
+000F4A04: mov        sb, r0
+000F4A06: mov        r0, r6
+000F4A08: bl         #0x3ff74
+000F4A0C: orr.w      r1, sl, r1, lsl #16
+000F4A10: cmp        r1, fp
+000F4A12: bhs        #0xf4a28
+000F4A14: adds       r1, r1, r4
+000F4A16: add.w      r3, sb, #-1
+000F4A1A: bhs        #0xf4a2a
+000F4A1C: cmp        r1, fp
+000F4A1E: bhs        #0xf4a2a
+000F4A20: sub.w      r3, sb, #2
+000F4A24: add        r1, r4
+000F4A26: b          #0xf4a2a
+000F4A28: mov        r3, sb
+000F4A2A: rsb        fp, fp, r1
+000F4A2E: orr.w      r5, r3, r5, lsl #16
+000F4A32: lsrs       r7, r4, #0x10
+000F4A34: mov        r0, fp
+000F4A36: mov        r1, r7
+000F4A38: uxth.w     sl, r4
+000F4A3C: bl         #0x3fee4
+000F4A40: mov        r1, r7
+000F4A42: mul        r6, sl, r0
+000F4A46: mov        sb, r0
+000F4A48: mov        r0, fp
+000F4A4A: bl         #0x3ff74
+000F4A4E: lsr.w      r3, r8, #0x10
+000F4A52: orr.w      r1, r3, r1, lsl #16
+000F4A56: cmp        r1, r6
+000F4A58: bhs        #0xf4a6e
+000F4A5A: adds       r1, r1, r4
+000F4A5C: add.w      fp, sb, #-1
+000F4A60: bhs        #0xf4a70
+000F4A62: cmp        r1, r6
+000F4A64: bhs        #0xf4a70
+000F4A66: sub.w      fp, sb, #2
+000F4A6A: add        r1, r4
+000F4A6C: b          #0xf4a70
+000F4A6E: mov        fp, sb
+000F4A70: rsb        sb, r6, r1
+000F4A74: mov        r1, r7
+000F4A76: mov        r0, sb
+000F4A78: uxth.w     r8, r8
+000F4A7C: bl         #0x3fee4
+000F4A80: mov        r1, r7
+000F4A82: mul        sl, sl, r0
+000F4A86: mov        r6, r0
+000F4A88: mov        r0, sb
+000F4A8A: bl         #0x3ff74
+000F4A8E: orr.w      r1, r8, r1, lsl #16
+000F4A92: cmp        r1, sl
+000F4A94: bhs        #0xf4aa6
+000F4A96: adds       r4, r1, r4
+000F4A98: add.w      r0, r6, #-1
+000F4A9C: bhs        #0xf4aa8
+000F4A9E: cmp        r4, sl
+000F4AA0: bhs        #0xf4aa8
+000F4AA2: subs       r0, r6, #2
+000F4AA4: b          #0xf4aa8
+000F4AA6: mov        r0, r6
+000F4AA8: orr.w      r0, r0, fp, lsl #16
+000F4AAC: b          #0xf4b9c
+RANGE 000F4B9A:000F4BA4 exclusive Thumb
+000F4B9A: movs       r5, #0
+000F4B9C: mov        r1, r5
+000F4B9E: add        sp, #0xc
+000F4BA0: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}

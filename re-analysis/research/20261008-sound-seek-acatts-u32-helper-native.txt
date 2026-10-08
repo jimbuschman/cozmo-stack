@@ -1,0 +1,60 @@
+libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+RANGE 0003FEE4:0003FF72 exclusive Thumb
+0003FEE4: subs       r2, r1, #1
+0003FEE6: it         eq
+0003FEE8: bxeq       lr
+0003FEEA: blo        #0x3ff68
+0003FEEC: cmp        r0, r1
+0003FEEE: bls        #0x3ff52
+0003FEF0: tst        r1, r2
+0003FEF2: beq        #0x3ff5a
+0003FEF4: clz        r3, r1
+0003FEF8: clz        r2, r0
+0003FEFC: sub.w      r2, r3, r2
+0003FF00: mov.w      r3, #1
+0003FF04: lsl.w      r1, r1, r2
+0003FF08: lsl.w      r3, r3, r2
+0003FF0C: mov.w      r2, #0
+0003FF10: cmp        r0, r1
+0003FF12: itt        hs
+0003FF14: subhs      r0, r0, r1
+0003FF16: orrhs      r2, r3
+0003FF18: cmp.w      r0, r1, lsr #1
+0003FF1C: itt        hs
+0003FF1E: subhs.w    r0, r0, r1, lsr #1
+0003FF22: orrhs.w    r2, r2, r3, lsr #1
+0003FF26: cmp.w      r0, r1, lsr #2
+0003FF2A: itt        hs
+0003FF2C: subhs.w    r0, r0, r1, lsr #2
+0003FF30: orrhs.w    r2, r2, r3, lsr #2
+0003FF34: cmp.w      r0, r1, lsr #3
+0003FF38: itt        hs
+0003FF3A: subhs.w    r0, r0, r1, lsr #3
+0003FF3E: orrhs.w    r2, r2, r3, lsr #3
+0003FF42: cmp        r0, #0
+0003FF44: itt        ne
+0003FF46: lsrsne.w   r3, r3, #4
+0003FF4A: lsrne      r1, r1, #4
+0003FF4C: bne        #0x3ff10
+0003FF4E: mov        r0, r2
+0003FF50: bx         lr
+0003FF52: ite        eq
+0003FF54: moveq      r0, #1
+0003FF56: movne      r0, #0
+0003FF58: bx         lr
+0003FF5A: clz        r2, r1
+0003FF5E: rsb.w      r2, r2, #0x1f
+0003FF62: lsr.w      r0, r0, r2
+0003FF66: bx         lr
+0003FF68: cbz        r0, #0x3ff6e
+0003FF6A: mov.w      r0, #-1
+0003FF6E: b.w        #0x3ff90
+RANGE 0003FF74:0003FF8E exclusive Thumb
+0003FF74: cmp        r1, #0
+0003FF76: beq        #0x3ff68
+0003FF78: push.w     {r0, r1, lr}
+0003FF7C: bl         #0x3fee4
+0003FF80: pop.w      {r1, r2, lr}
+0003FF84: mul        r3, r2, r0
+0003FF88: sub.w      r1, r1, r3
+0003FF8C: bx         lr
