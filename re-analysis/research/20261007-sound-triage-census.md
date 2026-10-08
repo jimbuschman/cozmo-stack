@@ -27,7 +27,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-017 | 55 | PARTIAL |
 | Q14-019 | 57 | PARTIAL |
 | Q14-020 | 58 | PARTIAL |
-| Q14-021 | 59 | NOT DONE |
+| Q14-021 | 59 | PARTIAL |
 | Q14-022 | 60 | PARTIAL |
 | Q14-023 | 61 | PARTIAL |
 | Q14-024 | 62 | PARTIAL |
@@ -262,7 +262,7 @@ PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity write
 
 > | M6-016 | **KEEP** | 0x0059687E..0x00596914;0x00597F12..0x00597F8E;0x0059818C..0x005982A0;0x00596DC8;0x0059962A..0x005999A4;0x00599E6A..0x00599EB8;0x008D88CC;0x00597DB4..0x00597E8E;0x0059678E..0x005967B8 | Production composition, event_volume/robot_volume delivery, OnDevice object6 route, alternative draw/order, callbacks, abort and scheduling remain exact. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. Remaining: routing/robot_volume, callback/drain thread timing, exact alternative chooser/sort/concrete virtual14 and complete stream/pop closure.
 
 ## Q14-022 — triage line 60
 
