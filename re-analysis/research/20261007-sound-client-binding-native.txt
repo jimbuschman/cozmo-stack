@@ -1,0 +1,85 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005994A0..0x00599520 exclusive; Thumb;
+005994A0: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+005994A4: sub          sp, #0x48
+005994A6: mov          r4, r0
+005994A8: ldr          r0, [pc, #0x254] ; word[00599700]=00AA539C
+005994AA: mov          r5, r1
+005994AC: add          r0, pc
+005994AE: ldr          r0, [r0]
+005994B0: ldr          r0, [r0]
+005994B2: str          r0, [sp, #0x44]
+005994B4: mov          r0, r4
+005994B6: blx          #0x4af6ac
+005994BA: ldr          r0, [pc, #0x248] ; word[00599704]=00AA591E
+005994BC: movs         r6, #0
+005994BE: add          r0, pc
+005994C0: ldr          r0, [r0]
+005994C2: adds         r0, #8
+005994C4: str          r0, [r4]
+005994C6: strd         r5, r6, [r4, #0x2c]
+005994CA: adr          r0, #0x23c
+005994CC: movs         r1, #2
+005994CE: blx          #0x4af454
+005994D2: mov          r5, r4
+005994D4: movs         r1, #0x1c
+005994D6: str          r6, [r5, #0x40]!
+005994DA: add.w        sb, r5, #0x14
+005994DE: strd         r0, r6, [r5, #-0xc]
+005994E2: mov.w        r0, #0x3f800000
+005994E6: strb         r6, [r5, #-0x4]
+005994EA: strd         r6, r6, [r5, #4]
+005994EE: strd         r6, r0, [r5, #0xc]
+005994F2: mov          r0, sb
+005994F4: blx          #0x4a403c
+005994F8: ldr          r0, [r5, #-0x14]
+005994FC: cmp          r0, #0
+005994FE: ittt         ne
+00599500: ldrne        r0, [r0]
+00599502: ldrne        r1, [r0, #0xc]
+00599504: cmpne        r1, #0
+00599506: beq.w        #0x59966e
+0059950A: ldr          r1, [r1, #4]
+0059950C: str          r1, [r4, #0x30]
+0059950E: ldr          r7, [r0, #4]
+00599510: cmp          r7, #0
+00599512: beq.w        #0x59962a
+00599516: ldr          r0, [pc, #0x204] ; word[0059971C]=00AA5886
+00599518: movs         r1, #0
+0059951A: add          r0, pc
+0059951C: ldr          r0, [r0]
+0059951E: ldr          r0, [r0]
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0103EEE0: raw=00000000 relocated=00000000 
+RANGE 0x00590F40..0x00590F72 exclusive; Thumb;
+00590F40: cmp          r5, #0
+00590F42: str          r0, [sp, #0x14]
+00590F44: beq          #0x590f5a
+00590F46: ldrb.w       r0, [sp, #0x1c]
+00590F4A: cbz          r0, #0x590f54
+00590F4C: add.w        r0, r5, #0xc
+00590F50: bl           #0x4ee5f8
+00590F54: mov          r0, r5
+00590F56: blx          #0x4a40cc
+00590F5A: mov          r0, r4
+00590F5C: blx          #0x4a40a8
+00590F60: adr          r2, #0x218
+00590F62: lsls         r4, r5, #1
+00590F64: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+00590F68: mov          r5, r1
+00590F6A: mov          r8, r0
+00590F6C: mov          r0, r5
+00590F6E: mov          r6, r2
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0103EDE0: raw=00000000 relocated=01024154 _ZTVN4Anki5Cozmo5Audio16RobotAudioClientE
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+0102415C: raw=00000000 relocated=00599A6D _ZN4Anki5Cozmo5Audio16RobotAudioClientD1Ev
+01024160: raw=00000000 relocated=00599E3D _ZN4Anki5Cozmo5Audio16RobotAudioClientD0Ev
+01024164: raw=00000000 relocated=0058FBB5 _ZN4Anki5Cozmo5Audio17AudioEngineClient9PostEventENS_13AudioMetaData9GameEvent12GenericEventENS3_14GameObjectTypeERKNSt6__ndk18functionIFvRKNS_11AudioEngine11Multiplexer13AudioCallbackEEEE
+01024168: raw=00000000 relocated=0058FE59 _ZN4Anki5Cozmo5Audio17AudioEngineClient13StopAllEventsENS_13AudioMetaData14GameObjectTypeE
+0102416C: raw=00000000 relocated=0058FF41 _ZN4Anki5Cozmo5Audio17AudioEngineClient13PostGameStateENS_13AudioMetaData9GameState14StateGroupTypeENS4_12GenericStateE
+01024170: raw=00000000 relocated=0059002D _ZN4Anki5Cozmo5Audio17AudioEngineClient15PostSwitchStateENS_13AudioMetaData11SwitchState15SwitchGroupTypeENS4_13GenericSwitchENS3_14GameObjectTypeE
+01024174: raw=00000000 relocated=00590121 _ZNK4Anki5Cozmo5Audio17AudioEngineClient13PostParameterENS_13AudioMetaData13GameParameter13ParameterTypeEfNS3_14GameObjectTypeEiNS_11AudioEngine11Multiplexer9CurveTypeE
+01024178: raw=00000000 relocated=0059022D _ZN4Anki5Cozmo5Audio17AudioEngineClient14PostMusicStateENS_13AudioMetaData9GameState12GenericStateEbj

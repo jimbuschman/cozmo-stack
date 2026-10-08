@@ -1,0 +1,253 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0103EDE0: raw=00000000 relocated=00000000 
+RANGE 0x0059002C..0x0059008C exclusive; Thumb;
+0059002C: push         {r4, r5, r7, lr}
+0059002E: sub          sp, #0x30
+00590030: mov          r4, r0
+00590032: ldr          r0, [r4, #0x1c]
+00590034: cbz          r0, #0x590054
+00590036: add          r0, sp, #4
+00590038: add          r5, sp, #0x10
+0059003A: stm          r0!, {r1, r2, r3}
+0059003C: add          r1, sp, #4
+0059003E: mov          r0, r5
+00590040: blx          #0x4aec44
+00590044: ldr          r0, [r4, #0x1c]
+00590046: mov          r1, r5
+00590048: blx          #0x4aec14
+0059004C: add          r0, sp, #0x10
+0059004E: blx          #0x4aec20
+00590052: b            #0x590088
+00590054: movs         r0, #0
+00590056: strd         r0, r0, [sp, #0x10]
+0059005A: str          r0, [sp, #0x18]
+0059005C: adr          r0, #0x68
+0059005E: add          r1, sp, #0x10
+00590060: adr          r2, #0x88
+00590062: blx          #0x4a4540
+00590066: ldr          r0, [sp, #0x10]
+00590068: cbz          r0, #0x590088
+0059006A: ldr          r1, [sp, #0x14]
+0059006C: cmp          r1, r0
+0059006E: itttt        ne
+00590070: subne.w      r2, r1, #8
+00590074: subne        r2, r2, r0
+00590076: mvnne        r3, #7
+0059007A: bicne.w      r2, r3, r2
+0059007E: itt          ne
+00590080: addne        r1, r1, r2
+00590082: strne        r1, [sp, #0x14]
+00590084: blx          #0x4a40cc
+00590088: add          sp, #0x30
+0059008A: pop          {r4, r5, r7, pc}
+RANGE 0x00590120..0x00590192 exclusive; Thumb;
+00590120: push         {r4, r5, r7, lr}
+00590122: sub          sp, #0x38
+00590124: mov          r4, r0
+00590126: ldr          r0, [r4, #0x1c]
+00590128: cbz          r0, #0x59015a
+0059012A: ldrd         r5, r0, [sp, #0x48]
+0059012E: vmov         s0, r2
+00590132: vstr         s0, [sp, #8]
+00590136: str          r1, [sp, #4]
+00590138: add          r1, sp, #4
+0059013A: strd         r3, r5, [sp, #0xc]
+0059013E: add          r5, sp, #0x18
+00590140: strb.w       r0, [sp, #0x14]
+00590144: mov          r0, r5
+00590146: blx          #0x4aec50
+0059014A: ldr          r0, [r4, #0x1c]
+0059014C: mov          r1, r5
+0059014E: blx          #0x4aec14
+00590152: add          r0, sp, #0x18
+00590154: blx          #0x4aec20
+00590158: b            #0x59018e
+0059015A: movs         r0, #0
+0059015C: strd         r0, r0, [sp, #0x18]
+00590160: str          r0, [sp, #0x20]
+00590162: adr          r0, #0x68
+00590164: add          r1, sp, #0x18
+00590166: adr          r2, #0x84
+00590168: blx          #0x4a4540
+0059016C: ldr          r0, [sp, #0x18]
+0059016E: cbz          r0, #0x59018e
+00590170: ldr          r1, [sp, #0x1c]
+00590172: cmp          r1, r0
+00590174: itttt        ne
+00590176: subne.w      r2, r1, #8
+0059017A: subne        r2, r2, r0
+0059017C: mvnne        r3, #7
+00590180: bicne.w      r2, r3, r2
+00590184: itt          ne
+00590186: addne        r1, r1, r2
+00590188: strne        r1, [sp, #0x1c]
+0059018A: blx          #0x4a40cc
+0059018E: add          sp, #0x38
+00590190: pop          {r4, r5, r7, pc}
+RANGE 0x0059022C..0x00590290 exclusive; Thumb;
+0059022C: push         {r4, r5, r7, lr}
+0059022E: sub          sp, #0x30
+00590230: mov          r4, r0
+00590232: ldr          r0, [r4, #0x1c]
+00590234: cbz          r0, #0x590258
+00590236: add          r5, sp, #0x10
+00590238: strb.w       r2, [sp, #8]
+0059023C: str          r1, [sp, #4]
+0059023E: add          r1, sp, #4
+00590240: mov          r0, r5
+00590242: str          r3, [sp, #0xc]
+00590244: blx          #0x4aec5c
+00590248: ldr          r0, [r4, #0x1c]
+0059024A: mov          r1, r5
+0059024C: blx          #0x4aec14
+00590250: add          r0, sp, #0x10
+00590252: blx          #0x4aec20
+00590256: b            #0x59028c
+00590258: movs         r0, #0
+0059025A: strd         r0, r0, [sp, #0x10]
+0059025E: str          r0, [sp, #0x18]
+00590260: adr          r0, #0x68
+00590262: add          r1, sp, #0x10
+00590264: adr          r2, #0x88
+00590266: blx          #0x4a4540
+0059026A: ldr          r0, [sp, #0x10]
+0059026C: cbz          r0, #0x59028c
+0059026E: ldr          r1, [sp, #0x14]
+00590270: cmp          r1, r0
+00590272: itttt        ne
+00590274: subne.w      r2, r1, #8
+00590278: subne        r2, r2, r0
+0059027A: mvnne        r3, #7
+0059027E: bicne.w      r2, r3, r2
+00590282: itt          ne
+00590284: addne        r1, r1, r2
+00590286: strne        r1, [sp, #0x14]
+00590288: blx          #0x4a40cc
+0059028C: add          sp, #0x30
+0059028E: pop          {r4, r5, r7, pc}
+RANGE 0x008D243C..0x008D24CC exclusive; Thumb;
+008D243C: push.w       {r4, r5, r6, r7, r8, sb, sl, lr}
+008D2440: sub          sp, #0x20
+008D2442: mov          r4, r0
+008D2444: mov          sb, r3
+008D2446: ldrb         r0, [r4, #4]
+008D2448: mov          r6, r2
+008D244A: mov          r7, r1
+008D244C: mov.w        sl, #0
+008D2450: movs         r5, #0x4e
+008D2452: cbz          r0, #0x8d246e
+008D2454: ldr          r0, [r4, #8]
+008D2456: mov          r1, r7
+008D2458: mov          r2, r6
+008D245A: mov          r3, sb
+008D245C: bl           #0x8d9108
+008D2460: mov          r8, r0
+008D2462: ldrb         r0, [r4, #4]
+008D2464: movs         r1, #0x4e
+008D2466: cmp          r0, #0
+008D2468: it           ne
+008D246A: movne        r1, #0x59
+008D246C: b            #0x8d2474
+008D246E: movs         r1, #0x4e
+008D2470: mov.w        r8, #0
+008D2474: ldr          r0, [pc, #0x7c] ; word[008D24F4]=0076C934
+008D2476: ldr          r3, [pc, #0x80] ; word[008D24F8]=0037075E
+008D2478: add          r0, pc
+008D247A: add          r3, pc
+008D247C: ldr          r0, [r0]
+008D247E: ldr          r0, [r0]
+008D2480: strd         sl, sl, [sp, #0x14]
+008D2484: str.w        sl, [sp, #0x1c]
+008D2488: cmp.w        r8, #0
+008D248C: it           ne
+008D248E: movne        r5, #0x59
+008D2490: strd         r7, r6, [sp]
+008D2494: add          r2, sp, #0x14
+008D2496: strd         sb, r5, [sp, #8]
+008D249A: str          r1, [sp, #0x10]
+008D249C: adr          r1, #0x5c
+008D249E: blx          #0x4a5b84
+008D24A2: ldr          r0, [sp, #0x14]
+008D24A4: cbz          r0, #0x8d24c4
+008D24A6: ldr          r1, [sp, #0x18]
+008D24A8: cmp          r1, r0
+008D24AA: itttt        ne
+008D24AC: subne.w      r2, r1, #8
+008D24B0: subne        r2, r2, r0
+008D24B2: mvnne        r3, #7
+008D24B6: bicne.w      r2, r3, r2
+008D24BA: itt          ne
+008D24BC: addne        r1, r1, r2
+008D24BE: strne        r1, [sp, #0x18]
+008D24C0: blx          #0x4a40cc
+008D24C4: mov          r0, r8
+008D24C6: add          sp, #0x20
+008D24C8: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+RANGE 0x008D2524..0x008D25D4 exclusive; Thumb;
+008D2524: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+008D2528: sub          sp, #4
+008D252A: vpush        {d8}
+008D252E: sub          sp, #0x30
+008D2530: mov          r7, r0
+008D2532: ldr.w        r8, [sp, #0x64]
+008D2536: ldrb         r0, [r7, #4]
+008D2538: vmov         s16, r2
+008D253C: ldr.w        sb, [sp, #0x60]
+008D2540: mov          r6, r3
+008D2542: mov          sl, r1
+008D2544: mov.w        fp, #0
+008D2548: movs         r5, #0x4e
+008D254A: cbz          r0, #0x8d2568
+008D254C: ldr          r0, [r7, #8]
+008D254E: mov          r1, sl
+008D2550: mov          r3, r6
+008D2552: strd         sb, r8, [sp]
+008D2556: bl           #0x8d9070
+008D255A: mov          r4, r0
+008D255C: ldrb         r0, [r7, #4]
+008D255E: movs         r1, #0x4e
+008D2560: cmp          r0, #0
+008D2562: it           ne
+008D2564: movne        r1, #0x59
+008D2566: b            #0x8d256c
+008D2568: movs         r1, #0x4e
+008D256A: movs         r4, #0
+008D256C: ldr          r0, [pc, #0x8c] ; word[008D25FC]=0076C838
+008D256E: vcvt.f64.f32 d0, s16
+008D2572: ldr          r3, [pc, #0x8c] ; word[008D2600]=003706AE
+008D2574: add          r0, pc
+008D2576: add          r3, pc
+008D2578: ldr          r0, [r0]
+008D257A: ldr          r0, [r0]
+008D257C: strd         fp, fp, [sp, #0x24]
+008D2580: str.w        fp, [sp, #0x2c]
+008D2584: cmp          r4, #0
+008D2586: it           ne
+008D2588: movne        r5, #0x59
+008D258A: strd         r6, sb, [sp, #0x10]
+008D258E: add          r2, sp, #0x24
+008D2590: strd         r8, r5, [sp, #0x18]
+008D2594: str          r1, [sp, #0x20]
+008D2596: adr          r1, #0x6c
+008D2598: vstr         d0, [sp, #8]
+008D259C: str.w        sl, [sp]
+008D25A0: blx          #0x4a5b84
+008D25A4: ldr          r0, [sp, #0x24]
+008D25A6: cbz          r0, #0x8d25c6
+008D25A8: ldr          r1, [sp, #0x28]
+008D25AA: cmp          r1, r0
+008D25AC: itttt        ne
+008D25AE: subne.w      r2, r1, #8
+008D25B2: subne        r2, r2, r0
+008D25B4: mvnne        r3, #7
+008D25B8: bicne.w      r2, r3, r2
+008D25BC: itt          ne
+008D25BE: addne        r1, r1, r2
+008D25C0: strne        r1, [sp, #0x28]
+008D25C2: blx          #0x4a40cc
+008D25C6: mov          r0, r4
+008D25C8: add          sp, #0x30
+008D25CA: vpop         {d8}
+008D25CE: add          sp, #4
+008D25D0: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
