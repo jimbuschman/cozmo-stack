@@ -172,7 +172,7 @@ PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel 
 
 > | M6-004 | **KEEP** | 0x00A46D80..0x00A46D88;0x00A47038;0x00A47384;0x00A47178;0x00A52D4C | Format/rate/channel writers, initial phase, pitch/ramp scheduling, input consumed/output produced, zero-input results and live wiring stay exact. |
 
-PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. Integer/multi-channel ramp geometry, complete format writers and next-source wiring remain open; not a completed M6-004 port.
+PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. NS1–NS6 add the same-voice format transition, offset/3F/raw2 gates, pointer handoff and pitch/format change. Integer/multi-channel ramp geometry, full format writer census and codec/observer recipient closure remain open; not a completed M6-004 port.
 
 ## Q14-006 — triage line 39
 
