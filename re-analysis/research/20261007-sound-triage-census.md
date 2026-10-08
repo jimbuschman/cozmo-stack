@@ -1411,3 +1411,7 @@ SJ219A/B join concrete Sound duration/shape/byte inputs to already-positive ramp
 ### Checkpoint 220 — scoped search helpers/root resolver
 
 SH220A–D establish byte/word search found-versus-insertion-pointer contracts, exact root resolver ancestor/children outputs andfresh-root no-value fallback. SS218 helper/resolver boundaries reconciled; update/notification/tree/input/state writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 221 — missing-value immediate publication
+
+IP221A–E trace preflight failure-to-silent1, exact wildcard/suffix selection, initial valid/value publication anddeep helper/null gates beforetarget/notification. Scope-owner priority positive; storage growth scopedout. Tree helpers/notification/input/writer closure retained. No totals/Q15/fidelity/production changes.
