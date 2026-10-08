@@ -1371,3 +1371,7 @@ PL209A binds final-init list reader to engine g_pAKPluginList BSS through reloca
 ### Checkpoint 210 — layer threshold parameter root
 
 LP210A–D establish32-byte child-record stride, mutable24-byte key, root/missing-modulator/default ordering and first scope/zero fallback plus scalar reader. Deeper scopes and child request/play remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 211 — layer threshold nested scopes
+
+LK211A–E trace word4/word8/byteC/byte10/word14 exact/wildcard lookup, key suffix mutation and active-value fallback chain. Local scoped lookup now positive; request/play and writer/recipient closure remain retained. No totals/Q15/fidelity/production changes.
