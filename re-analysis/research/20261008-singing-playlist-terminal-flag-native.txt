@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099A0F0..0x0099A15C exclusive; ARM;
+0099A0F0: push         {r3, r4, r5, lr}
+0099A0F4: mov          r5, r1
+0099A0F8: mov          r1, r2
+0099A0FC: mov          r4, r0
+0099A100: bl           #0x997f28
+0099A104: ldr          r3, [pc, #0x50] ; word[0099A15C]=006A06A8
+0099A108: mov          r1, r5
+0099A10C: str          r5, [r4, #0x58]
+0099A110: add          r3, pc, r3
+0099A114: add          r0, r4, #0x5c
+0099A118: add          ip, r3, #8
+0099A11C: add          r2, r3, #0xa0
+0099A120: str          ip, [r4]
+0099A124: add          r3, r3, #0xb4
+0099A128: str          r2, [r4, #0xc]
+0099A12C: str          r3, [r4, #0x14]
+0099A130: bl           #0x993ea0
+0099A134: ldr          r0, [r4, #0x58]
+0099A138: mov          r3, #1
+0099A13C: strb         r3, [r4, #0x8c]
+0099A140: cmp          r0, #0
+0099A144: beq          #0x99a154
+0099A148: ldr          r3, [r0]
+0099A14C: ldr          r3, [r3, #8]
+0099A150: blx          r3
+0099A154: mov          r0, r4
+0099A158: pop          {r3, r4, r5, pc}
+0099A15C: raw=006A06A8 relocated=006A06A8 
+RANGE 0x00999FF8..0x0099A000 exclusive; ARM;
+00999FF8: ldrb         r0, [r0, #0x8c]
+00999FFC: bx           lr
+RANGE 0x0099A000..0x0099A064 exclusive; ARM;
+0099A000: push         {r3, r4, r5, lr}
+0099A004: add          r5, r0, #0x5c
+0099A008: ldr          r3, [pc, #0x54] ; word[0099A064]=006A07A8
+0099A00C: mov          r4, r0
+0099A010: add          r3, pc, r3
+0099A014: add          r1, r3, #8
+0099A018: add          r2, r3, #0xa0
+0099A01C: str          r1, [r0]
+0099A020: add          r3, r3, #0xb4
+0099A024: str          r2, [r0, #0xc]
+0099A028: mov          r0, r5
+0099A02C: str          r3, [r4, #0x14]
+0099A030: bl           #0x993f40
+0099A034: ldr          r0, [r4, #0x58]
+0099A038: cmp          r0, #0
+0099A03C: beq          #0x99a04c
+0099A040: ldr          r3, [r0]
+0099A044: ldr          r3, [r3, #0xc]
+0099A048: blx          r3
+0099A04C: mov          r0, r5
+0099A050: bl           #0x993edc
+0099A054: mov          r0, r4
+0099A058: bl           #0x997f70
+0099A05C: mov          r0, r4
+0099A060: pop          {r3, r4, r5, pc}

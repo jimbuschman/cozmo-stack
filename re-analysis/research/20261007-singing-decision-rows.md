@@ -1448,3 +1448,14 @@ Primary: `20261008-sound-postevent-production-mask-native.txt`; M6-owned rows NT
 | MNREG4 | 008D8CE4..008D8D56;009A257C..009A2630 | **M6 boundary:** the known engine app wrapper registers callback8D8D41 with context cookie and mask0/1/5/9/D, never a7F00 music mask. Its callback handles only1/4/8. A second registration producer passes its incoming mask/callback/cookie unchanged, so it must be bound before excluding any music notification path. | Retain NSINK/MNOTE contracts; do not infer global unreachability from one wrapper. PCENSUS1 identifies the apparent CC1580 caller as .rodata, leaving no proved direct caller for the second producer; computed calls remain unexcluded. | Caller arguments → shared registry → notification eligibility; music payload/count order remains MINF/MCOUNT/MMARK. | No additional branch exclusion or record settlement. |
 
 The known callback arguments and shared thread writer are closed. The alternate producer's caller and any computed registration entry remain specific readable-source obligations. Q15 retains seven PARTIAL categories rather than claiming notification production closure from local payload bodies.
+
+### Playlist terminal-query flag construction (checkpoint79)
+
+Primary: `20261008-singing-playlist-terminal-flag-native.txt`. This follows the exact playlist instance already bound by MVT1/MADV7; no equivalence exception.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Widths / boundary |
+|---|---|---|---|---|---|
+| PFLAG1 | 0099A0F0..0099A13C;literal0099A15C | Constructor calls base997F28, stores supplied playlist node at C58, installs vtable103A7C8 and secondary interface pointers103A860/103A874, initializes selector C5C via993EA0(C5C,node), then writes **byte1** at C8C. | Flag write follows selector initialization, not zero-fill or a inferred field default. No gate on selector return in this constructor. | Base → node association/vtables → selector construction → C8C=1. | The prior MADV7 reader now has a concrete writer on its positively constructed context. |
+| PFLAG2 | 0099A134..0099A158;00999FF8..00999FFC | After flag write, node C58nonnull invokes node.vt8 to retain. Null skips retain. Constructor returns C. Playlist vt74 returns raw C8C byte, which997310 XORs1 to iterator99. | Initial C8C1 therefore produces iterator99=0 at publication, unless another writer intervenes. Do not assert a whole-life constant from initialization. | Flag → optional node retain → instance return → later terminal query/publication. | No semantic bool normalization at the getter. Existing selector/state mutation rows remain exact. |
+
+This closes the positive C8C initializer-to-reader association. A complete all-writer census and remaining context families remain separate retained work; Q15 remains incomplete.
