@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-two PARTIAL,56 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-three PARTIAL,55 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -3606,3 +3606,31 @@ Primary: Layer extension companion, including the explicitly reopened code at9D1
 | LPAR4 | 009D131C..009D1354;009D1760..009D1774 | Stored thresholdcountnonzero skips this child's play request and proceeds next child. Zero enters9D1760 clone/build of child request. Cache failure also enters this request path. End returns last rawresult saved at stack30 (initialized1), not an aggregate sum/error fold. | A positive outside-range count gates playback; NaN's unchangedcount canpermit it. | Cache result/value gate → childrequest ORnext → lastresult. | Child request cloning/play and inline scoped parameter lookup remain retained until complete rows. |
 
 LPAR1–4 settle threshold selection/counting, raw F32 comparison behavior and sorted per-context cache mutation/failure. They do not close the inline multi-field RTPC fallback or child request ownership/play. Q14-034 remains PARTIAL. No new branch is excluded, and nonempty authored blend-track exclusions do not remove these child thresholds or request-local arrays.
+
+
+### Resumption checkpoint71: source start and signed readiness window
+
+Primary: `20261008-sound-source-start-window-native.txt`. Current M6-025 quotation above applies. This reopens C30.1 independently, including raw media arguments, numerical association, status preservation and the deliberate fault. V=voice, P=incomingPBI, S=V.D4 primarysource. All source StartStream descendants retain their separately scoped decoding/format obligations.
+
+| Step | Address | Behaviour | Gates / failure | Order / widths / boundary |
+|---|---|---|---|---|
+| SWIN1 | 00A544BC..00A54514;00A56650..00A56688 | CallStartStream(S,[S.C]+1DC,[S.C]+1E0), unchanged raw media pointer/size from source's ownPBI. Source10bit0set returns1 withoutvirtualcall. Otherwise invokeS.vt28 withsamearguments; result1 alone reloads byte10 andORsbit0. Helper result3F branchesSWIN3;1 branchesSWIN2;allothersnormalized2. | CallerP andsourcePBI are distinct accesses; do not substitute caller media. No bit0latch onfailure/defer. | Source gate → optional virtualstart → conditional latch → resultclassification. |
+| SWIN2 | 00A54514..00A5457C;01040058/98 | Ready result1: w=wrapping(U32(global108D90C+1C)+1)*U16(global1052440), thenF32(w)*F32(P164). NativeLE selectsBF000000 negativehalf; otherwise3F000000 positivehalf; VCVT.S32.F32 afterbinary32addition. SignedP1D8>=roundedwindow returns3F; less andnonnegative returnsoriginal1; less andnegative entersSWIN4. | No F64 promotion, finitecheck, saturatinginteger multiply, or unsignedoffsetcomparison. Equality isnotready. | Globalframe/window → F32pitchscale → ±half → truncateS32 → signedoffsetgate. |
+| SWIN3 | 00A54500..00A54510 | Originalstartresult3F: signedP1D8>=0 returns3F directly; negative entersSWIN4. | No window computation onthisbranch. | Defer result → offset sign → return ORnegative handling. |
+| SWIN4 | 00A54580..00A545D4 | Negative handling: S10bit1set returns originalstartresult. Otherwise setV.E8bit0 before ownerV8nullgate. Nonnullowner: saveowner134, query9BD138(owner), callA0428C(global[*108D8F4],saved134,queryresult), returnoriginalstartresult (1or3F). | Notification recipients retainexact M6 ownership; no normalizationoforiginalstatushere. Sourcebytebit1 andvoiceflagE8 aredifferentobjects. | Source bit gate → voiceflag publication → owner gate → savedword/query → notification →rawresult. |
+| SWIN5 | 00A545D8..00A545DC | Nullowner path readsaddress00000140 thenUDF0, afterV.E8bit0publication. | Do not return2 or silentlyskip notification. Nativefault retained asinstruction behavior. | Flag alreadyset → null-derivedload → deliberatefault. |
+
+SWIN1–5 complete the local start/readiness helper and reopen the StartStream wrapper already rowed inNS2. Q14-066 is PARTIAL: exact virtual-source startup and notification recipients remain independently retained rather than being inferred from this helper. No PCM arithmetic is waived and no approved exclusion changes.
+
+
+### Resumption checkpoint72: negative-offset start notification
+
+Primary: `20261008-sound-start-notification-native.txt`. M6-025 quotation applies. SWIN4 calls this manager recipient; its third argument is not retained or used by this body. Callback registration and final callback consumers retain their own exact obligations.
+
+| Step | Address | Behaviour | Gates / failure | Order / boundary |
+|---|---|---|---|---|
+| SNT1 | 009BD138..009BD140;00A0428C..00A042F0 | Query returns [ownerD4]+8 with no null gates. Notification takes manager10mutex, hashes incoming owner134 ID modulo manager4bucketcount, walks manager0 bucket next4C comparing entry3C. Count0/missingentry skipscallback. | Incoming third argument fromquery is not saved and doesnotcontribute to callbackpayload. It is still queried bySWIN4. | Query first → managerlock → unsignedhash → exactID lookup. |
+| SNT2 | 00A042F0..00A04358 | Matched entry requires entry40callbacknonnull and entry48mask20set. Snapshot callback and stackpayload16bytes={entry44,entry24,incomingID,entry20}. Lockmanager14, clear manager1Cbyte, unlock14; unlocklookupmutex10; invokecallback(type20,&payload). | No callback with disabledmask ornullfunction. No callback under lookupmutex. Payload containsonlythese fourrawfields. | Snapshot → synchronizationflag0 → unlockboth → callback. |
+| SNT3 | 00A0435C..00A04380 | Aftercallback, lockmanager14, set1Cbyte1, broadcastcondmanager18, unlock14, return. Missing/disabledentryonlyunlockslookupmutex10. | No callback-result gate or exceptionisolation inthisbody. Callbackreturn precedes completionflag/broadcast. | Callback → synchronizationflag1 → conditionbroadcast →unlock. |
+
+SNT1–3 close the local SWIN4 notification and query recipients, retaining registry producers/callback destination as independent work. Source virtual startup remains Q14-066's remaining exact join.
