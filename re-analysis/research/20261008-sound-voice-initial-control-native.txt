@@ -1,0 +1,73 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A54650..0x00A548A8 exclusive; ARM;
+BOUNDED CONTROL SLICES 00A54650..00A54668/00A546FC..00A547A8/00A54860..00A548A4; constructor aggregate defaults between slices are not claimed recovered here.
+00A54650: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00A54654: mov          r2, #0
+00A54658: mov          r4, r0
+00A5465C: ldr          r1, [pc, #0x244] ; word[00A548A8]=005EBA44
+00A54660: mov          r5, #0
+00A54664: mov          r3, #0
+00A54668: str          r5, [r0, #8]
+00A546FC: ldrb         lr, [r4, #0xf1]
+00A54700: ldrb         r2, [r4, #0xcd]
+00A54704: ldr          ip, [pc, #0x1a0] ; word[00A548AC]=005E7FE0
+00A54708: bfi          lr, r5, #0, #4
+00A5470C: strb         r5, [r4, #0xf0]
+00A54710: orr          r2, r2, r7
+00A54714: strb         lr, [r4, #0xf1]
+00A54718: add          ip, pc, ip
+00A5471C: ldrb         r8, [r4, #0xe8]
+00A54720: and          r2, r2, #0xfd
+00A54724: ldr          lr, [r4, #0xf0]
+00A54728: bfi          r2, r5, #3, #1
+00A5472C: ldr          r1, [pc, r1]
+00A54730: add          ip, ip, #0x90
+00A54734: bfi          lr, r5, #0xc, #0x14
+00A54738: bfi          r8, r5, #0, #1
+00A5473C: str          r3, [r4, #0x90]
+00A54740: add          r1, r1, #8
+00A54744: str          r3, [r4, #0x94]
+00A54748: str          r3, [r4, #0xa4]
+00A5474C: str          r3, [r4, #0xa8]
+00A54750: str          r3, [r4, #0xb8]
+00A54754: str          r3, [r4, #0xbc]
+00A54758: strb         r2, [r4, #0xcd]
+00A5475C: strb         r8, [r4, #0xe8]
+00A54760: str          ip, [r4]
+00A54764: str          lr, [r4, #0xf0]
+00A54768: str          r1, [r4, #0x100]
+00A5476C: str          r7, [r4, #0x8c]
+00A54770: str          r6, [r4, #0x98]
+00A54774: str          r5, [r4, #0x9c]
+00A54778: str          r7, [r4, #0xa0]
+00A5477C: str          r6, [r4, #0xac]
+00A54780: str          r5, [r4, #0xb0]
+00A54784: str          r7, [r4, #0xb4]
+00A54788: str          r6, [r4, #0xc0]
+00A5478C: str          r5, [r4, #0xc4]
+00A54790: str          r7, [r4, #0xc8]
+00A54794: strb         r5, [r4, #0xcc]
+00A54798: str          r5, [r4, #0xdc]
+00A5479C: str          r5, [r4, #0xd4]
+00A547A0: str          r5, [r4, #0xd8]
+00A547A4: str          r5, [r4, #0x104]
+00A547A8: bl           #0xa46d70
+00A54860: str          r8, [r4, #0x1c0]
+00A54864: bl           #0xa76280
+00A54868: ldr          r3, [pc, #0x44] ; word[00A548B4]=005EB900
+00A5486C: str          r8, [r4, #0x390]
+00A54870: add          r0, r4, #0x3a0
+00A54874: str          r5, [r4, #0x384]
+00A54878: ldr          r3, [pc, r3]
+00A5487C: str          r5, [r4, #0x388]
+00A54880: add          r3, r3, #8
+00A54884: str          r5, [r4, #0x370]
+00A54888: str          r5, [r4, #0x374]
+00A5488C: str          r5, [r4, #0x378]
+00A54890: str          r5, [r4, #0x37c]
+00A54894: str          r5, [r4, #0x394]
+00A54898: str          r3, [r4, #0x380]
+00A5489C: bl           #0xa76280
+00A548A0: mov          r0, r4
+00A548A4: pop          {r3, r4, r5, r6, r7, r8, sb, pc}

@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 191 — new standard voice initial control and constructor ABI
+
+Primary: `20261008-sound-voice-initial-control-native.txt`; same engine SHA256. VC184 constructorcall; QN/HP knownstandardtable andVD186 teardown supplyconsumerjoins. Selectedcontrol slices only; no fullconstructor/defaults claim. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| VI191A | 00A54650..00A54668;00A54704..00A54760 | A54650 savesonlyselfr0, overwritesincomingr2/r3 andr1 beforetheirfirst use; no incomingPBIargument read. Standardtable103C790 computedat54718 thenstored54760. This settlesVC184's ABI uncertainty: allocator-leftoverr1 isnot a constructorPBI. | PBI association occurslaterexplicitA558AC, notinthisentryprefix. | Selfsave → localregisterdefaults → tablepublication. | Onlyincomingargumentbinding isclosedhere; wholeconstructor/resourcehelper/defaultfieldclosure remains separate. |
+| VI191B | 00A546FC..00A547A8 | InitializesCD=(oldCD&F5)|1, E8bit0clearpreservingothers, CC=0, DC=0,D4=0,D8=0,104=0; initializespackedF0 wordto0 viaexplicitbyte/bitfieldstores. CallsA46D70(voice+108) aftersource/state defaults. | Knownnewvoice startsDC0, notstate1; downstreamPN/QN transitions dependonlaterwriters. CD bit0 armsVS16 optionalFXInitgate. No localD0store inthisconstructor slice. | Format/flags → standardtable → state/source/defaults → resampler/controlconstructor. | VS16/PN/QN positiveconsumers;A46D70 controldefaults andalllaterDC/CD/sourcewriters remain retained. No blanketinitialized-allocationclaim. |
+| VI191C | 00A54860..00A548A4 | Holder1C0 and390 shareconstructedtablevalue; A76280(+1D0) precedes390publication. Zero384/388 andfourprocessor370..37C/394; publish380holdertable, thenA76280(+3A0), returnself. | Exactlyfourprocessor slots, matchingVD186 loop. No pointertoexternalPBI copiedhere. | Firstfilterctor → secondaryholder/defaults → fourprocessor0 →holdertable → secondfilterctor →selfreturn. | Filterparameterconstructor andholdertable/source/processorwriters stayseparate; no per-sample arithmetic traced. Knownprocessor-nullinitialproducer nowpositive. |
+
+Concretecreatedvoice nowhasinitialsource/state/FXgate bindings andconstructorargumentcontract, joiningqueue/notready/delete controls. Otherdefaultfields/helperwriters/families remainPARTIAL; totalsunchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 190 — pending-start preparation result gate and list repair
 
 Primary: `20261008-sound-pending-start-prepare-native.txt`; same engine SHA256. HP4 positively supplies same-clock preparationcaller; SWIN1–5 ownA544BC start/window/rawresult decisions; VS16/17 supplyA42DEC andVD186 supplies9D40C4. Endpoints inclusive.

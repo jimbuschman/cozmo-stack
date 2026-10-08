@@ -1285,3 +1285,7 @@ QC189A–C tracePBI154/type0/1 eligibility, stop/sentinel cancellationbeforecrea
 ### Checkpoint 190 — pending preparation
 
 PP190A/B joinHP4 preparationtoSWIN1–5 andVS16/17/VD186: raw3F retainslist/returns3F; otherresults optionallyunlinkbeforeattachrawresult ordelete/2, evenmissingmembership. Fullproducer/frameorder/windowwriters remainPARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 191 — standardvoice initial controls
+
+VI191A–C proveconstructorincomingr1unused, standardtablepublication, initialDC/source0/CDarm/E8clear/F0format0 andfourprocessor0. Initialresourcehelpers/defaults/remainingwriter/familyclosure remainsseparate; no totals/Q15/fidelity/production changes.
