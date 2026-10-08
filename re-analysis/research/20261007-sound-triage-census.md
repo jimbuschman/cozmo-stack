@@ -1435,3 +1435,7 @@ FR225A–C establish type0 exact three-slot write/no-op contract andtype3 scope 
 ### Checkpoint 226 — modulator child parameter fan-out
 
 MF226A–D trace parent-before-child/selected-or-all scope fan-out, exact selector/leaf gates, live loop ends anddispatch toknown LFO/envelope setters (sharedpositive SV5–SV12). Top-levelwildcards/9D9CD8/tree/input/lifetime writers remain retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 227 — selected selector delivery
+
+SS227A–C trace complete9D9CD8 parent-before-selector/leaf delivery, exact/all keys, live callback loops andvoid return. MF226 recipient boundary reconciled; top-levelwildcards andinput/state/tree/lifetime writerclosure retained. No totals/Q15/fidelity/production changes.
