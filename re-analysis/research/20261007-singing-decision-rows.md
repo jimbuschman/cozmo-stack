@@ -670,3 +670,17 @@ Primary companion: `20261008-singing-state-callbacks-native.txt`. MU6 resolves M
 | SV4 | 009E2000..009E203C | Envelope virtual14: if S74F32 !=+0 (including unordered), clear S34. If S78!=0 return. With S78=0 set S74=3F800000; if S84=0 overwrite S74 with raw S80. |−0 compares equal0, so initial S34 clear skipped; NaN is NE and clears. Later assignments are raw bits. | F32 zero gate/S34 →integer duration gate →unity default →zero-duration authored-value override. | No evaluation samples or stop callback here. Concrete post-initialization publication settled. |
 
 SV1–SV4 close the concrete initialization callbacks and their frame-count gate. Evaluator population/control-stream delivery, envelope/LFO evolution and final trigger/stop timing remain exact open work. The corrected vtable means those evaluators can now be traced from primary bindings rather than the unrelated address in M9-025. Coverage remains PARTIAL.
+
+
+## Checkpoint 33 — LFO parameter updates on the concrete state
+
+Primary companion: `20261008-sound-modulator-tick-native.txt`,9E203C..9E2138. MU6 binds LFO virtual8 to this setter; input value is raw r2 F32 bits, property index=r1. These are state values/dirty flags, not PCM oscillator arithmetic. M9-025 current quotation at checkpoint31 applies.
+
+| Step | Address | Behaviour | Gates | Order / failure | Bits |
+|---|---|---|---|---|---|
+| SV5 | 009E203C..009E2068;009E2084..009E2098;009E2134..009E2138 | Index unsigned>5 returns0. Index0 sets S74=f(value/42C80000), returns1, does not set A8 dirtybyte or call virtual10. | No input clamp or finite gate. | Dispatch →F32 divide →store →1. | Percentage divisor42C80000. |
+| SV6 | 009E2098..009E20DC;GOT01040068=0105243C | Index1 widens inputF32 toF64, multiplies by F64(U32 globalRate). Ordered<=0 selects F64BFE0000000000000(−.5); otherwiseF643FE0000000000000(+.5). Add, VCVT.S32.F64, store raw integer S78; return1. | Unordered doesn't selectLE; no conversion via F32 or unsigned integer. | Value width →rate width →F64 product →sign-half →integer →store. | Half constants BFE0000000000000/3FE0000000000000. No dirty A8 store. |
+| SV7 | 009E20DC..009E2100 | Index2 stores valuebits S84, sets byteA8=1, calls state virtual10 (SV2), returns1. | Buffer eligibility recalculated immediately after value publication. | Value →dirty →buffer gate →1. | Raw value unchanged. |
+| SV8 | 009E2100..009E2134;009E2068..009E2084 | Index3 convertsVCVT.U32.F32 toS80, dirtyA8=1; index4 storesF32(value/42C80000) toS88 and dirty1; index5 same toS8C and dirty1. Each returns1. | No virtual10 calls in these branches. Dirty publication order differs: indexes4/5 setdirty before divide/store, index3 beforeconverted store. | Dispatch →conversion/dirty order →targetfield →1. | Dirty flag gates later coefficient/phase rebuilding; exact writer, not an assumed per-block reset. |
+
+SV5–8 close the LFO state parameter setter. Shared render evaluation/value delivery remains Q14-027; envelope setter and its units still require rows. Both overall tasks remain open.
