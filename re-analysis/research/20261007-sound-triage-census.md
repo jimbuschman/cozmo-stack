@@ -1503,3 +1503,7 @@ OC242A/B and OR242A/B trace tag23 object sentinel/lookup, full-U16 registration 
 ### Checkpoint 243 — owner group retirement
 
 OG243A–C trace physical group lookup/release10, zero-result unsubscribe-before-registry removal, live re-search/loop ends and final owner/global count publication. Known release/destructor reused; storage bodies excluded. Media-manager/command/event/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 244 — descriptor-manager family binding
+
+MB244A binds factory/table/global and known20/24/28 addresses for prior caller rows. No callback-role/readiness/storage classification inferred from binding alone; pool infrastructure excluded. Remaining role/decision/input/writer closure PARTIAL. No totals/Q15/fidelity/production changes.

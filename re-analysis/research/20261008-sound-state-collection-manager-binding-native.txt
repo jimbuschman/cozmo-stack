@@ -1,0 +1,65 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009604FC..0x009605EC exclusive; ARM;
+009604FC: push         {r4, r5, lr}
+00960500: sub          sp, sp, #0xc
+00960504: mov          r4, r0
+00960508: bl           #0xa7a6dc
+0096050C: cmp          r0, #0
+00960510: beq          #0x9605bc
+00960514: ldr          r2, [pc, #0xcc] ; word[009605E8]=0072D278
+00960518: add          r2, pc, r2
+0096051C: ldr          r3, [r2, #0x10]
+00960520: cmp          r3, #0
+00960524: beq          #0x960534
+00960528: mov          r0, r3
+0096052C: add          sp, sp, #0xc
+00960530: pop          {r4, r5, pc}
+00960534: ldr          r5, [pc, #0xb0] ; word[009605EC]=006F1ED0
+00960538: strb         r3, [r2, #0x20]
+0096053C: add          r5, pc, r5
+00960540: ldr          r0, [r5]
+00960544: cmn          r0, #1
+00960548: beq          #0x960598
+0096054C: mov          r1, #0x10
+00960550: bl           #0xa7a7f4
+00960554: cmp          r0, #0
+00960558: beq          #0x9605cc
+0096055C: ldr          r1, [pc, #0x8c] ; word[009605F0]=0072D224
+00960560: mov          r3, r0
+00960564: ldr          r2, [pc, #0x88] ; word[009605F4]=006BB894
+00960568: mov          ip, #0
+0096056C: add          r1, pc, r1
+00960570: str          ip, [r0, #4]
+00960574: add          r2, pc, r2
+00960578: str          ip, [r0, #8]
+0096057C: add          r2, r2, #8
+00960580: str          ip, [r0, #0xc]
+00960584: str          r2, [r0]
+00960588: str          r0, [r1, #0x10]
+0096058C: mov          r0, r3
+00960590: add          sp, sp, #0xc
+00960594: pop          {r4, r5, pc}
+00960598: ldr          r1, [r4]
+0096059C: mov          r0, r3
+009605A0: str          r3, [sp]
+009605A4: mov          r2, #0x20
+009605A8: mov          r3, #1
+009605AC: bl           #0xa7ac98
+009605B0: cmn          r0, #1
+009605B4: str          r0, [r5]
+009605B8: bne          #0x96054c
+009605BC: mov          r3, #0
+009605C0: mov          r0, r3
+009605C4: add          sp, sp, #0xc
+009605C8: pop          {r4, r5, pc}
+009605CC: ldr          r3, [pc, #0x24] ; word[009605F8]=006F1E3C
+009605D0: ldr          r0, [pc, r3]
+009605D4: bl           #0xa7aec4
+009605D8: ldr          r3, [pc, #0x1c] ; word[009605FC]=0072D1B4
+009605DC: add          r3, pc, r3
+009605E0: ldr          r3, [r3, #0x10]
+009605E4: b            #0x960528
+0101BE38: raw=0095FBB8 relocated=0095FBB8
+0101BE3C: raw=0095F6A0 relocated=0095F6A0
+0101BE40: raw=0095ED14 relocated=0095ED14

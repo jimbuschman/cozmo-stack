@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 244 — concrete descriptor-manager dispatch binding
+
+Primary: `20261008-sound-state-collection-manager-binding-native.txt`; same engine hash. Current global slot108D7A8 already established OD237. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| MB244A | 00960514..00960594;0101BE38/0101BE3C/0101BE40 | Factory9604FC returns existing global instance when nonnull. Successful fresh10hex-byte instance zeroes4/8/C, publishes table101BE18, then publishes global108D7A8. Native table calculation960574+8+6BB894+8=101BE18; global96056C+8+72D224+10=108D7A8. Known table20=95FBB8,24=95F6A0,28=95ED14. These bind OD237/OR242/OW241 descriptor callbacks to concrete bodies. | Known factory family only; do not assume no other global writer. Binding alone does not establish media readiness, source start, cache-only classification or callback semantics. | Instance defaults → table → global → caller live20/24/28. | Recipient role/control boundary remains PARTIAL until primary evidence distinguishes decision work from excluded storage/I/O. out of scope: pool creation/allocation/destruction bodies. No descent into those helpers. |
+
+This closes the concrete known callback addresses without inventing behavior from interface slots or decompiler names. Q14 scope remains decisions only; storage/I/O bodies are not reopened. Coverage unchanged; Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 243 — owner group membership retirement caller
 
 Primary: `20261008-sound-state-owner-group-retirement-native.txt`; same engine hash. P=owner, global registry at108DE60/64/68; HR240 supplies known collaborator release10. Endpoints inclusive.
