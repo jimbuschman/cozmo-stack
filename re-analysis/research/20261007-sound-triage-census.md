@@ -33,7 +33,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-024 | 62 | PARTIAL |
 | Q14-025 | 63 | PARTIAL |
 | Q14-026 | 64 | PARTIAL |
-| Q14-027 | 65 | NOT DONE |
+| Q14-027 | 65 | PARTIAL |
 | Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | PARTIAL |
 | Q14-030 | 68 | PARTIAL |
@@ -298,7 +298,7 @@ PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL
 
 > | M6-022 | **KEEP** | 0x009E52F8..0x009E5E8B;0x009E2BD0..0x009E52F3 | Modulator segment boundaries/slopes, first-sample convention, evaluator population/delivery and LFO/control-signal evolution affect parameter values and timing; no wholesale modulator DSP exemption. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+PARTIAL: EV1–EV6 establish exact entry geometry, delayed zeros, first two ramp boundaries/slopes, first-value recurrence and endpoint publication. Remaining decay/sustain/release/final results, evaluator population/delivery and LFO evolution are readable exact work; no DSP exclusion.
 
 ## Q14-028 — triage line 66
 
