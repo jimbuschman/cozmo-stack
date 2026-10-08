@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 223 — root-scope lookup and RTPC notification snapshot
+
+Primary: `20261008-sound-rtpc-root-scope-search-native.txt`, `20261008-sound-rtpc-notification-dispatch-native.txt`; same engine hash. IP221/R25 provides value store before this dispatch. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| NS223A | 00A1596C..00A159D8 | Root scope lookup reads array/count0/4, unsigned exact fullword key18 over28-byte records. Found writes byte1/returns record; miss writes0/returns insertion position base+lowerBound*28 or0 ifbase0. | Signed count-minus-one bounds; no first duplicate rule or value load. Found byte must gate interpretation of nonnull pointer. | Exact match →found marker →record/insertion pointer. | IP221 root lookup nowpositive; word4 lookup reuses RV8. Backing insertion/append bodies out of scope: storage allocation/migration; caller scalar/key publication retained. |
+| NS223B | 00A114D8..00A11554;00A11584..00A11588 | Save root.ID androot+18 scope object. Final byte0 passes optional descriptor pointer0; nonzero builds stack object with vtable PC11504+8+60ADD4+8, key pointer androot+18. Snapshot root38 subscriber count; zero returns. Positive count copies root34 pointer array to stack before first callback, fixed end uses original count*4. | No live-array reread per iteration or deduplication. Changed subscription count during callback does not extend/shorten this snapshot traversal. Captures no subscriber retain operation. | Value store →ID/scope/count capture →physical pointer snapshot →callbacks. | out of scope: memcpy/stack backing mechanics; exact snapshot/order is in scope. Concrete subscription lifetime/input/writer closure remains retained. |
+| NS223C | 00A1155C..00A11580 | For each snapshotted pointer inphysical order, call A10C84(subscriber,root.ID,old rawvalue,new rawvalue; stack K,optionaldescriptor,root+18), ignore result. Key/descriptor/root pointers passed identically each iteration; advance by4 until saved end. | Uses saved old/new values even after preceding callback changes store. Sound children flag fromSS218 determines optional descriptor0/nonnull, not callback presence. No same-value gate here. | Fixed snapshot order →recipient withsaved scalar pair/live referenced key/context →next →return. | A10C84 notification filtering/recipient decisions retained next; no claim all snapshotted subscribers necessarily receive production callback. |
+
+Root scope selection andnotification dispatcher positive; recipient filtering/dynamic callback andinput/writer closure remain PARTIAL. Totals unchanged,Q15parked; no production/fidelity changes.
+
 ## Checkpoint 222 — deepest RTPC scope value-pointer publication
 
 Primary: `20261008-sound-rtpc-deep-scope-prefix-native.txt`, `20261008-sound-rtpc-deep-scope-selection-native.txt`, `20261008-sound-rtpc-leaf-growth-outcome-native.txt`; same engine hash. H=selected word4 scope, Q=K+8: word0=K.word8,byte4=K.byteC,byte8=K.byte10,wordC=K.word14. Endpoints inclusive. Storage/copy slices explicitly omitted from captures.

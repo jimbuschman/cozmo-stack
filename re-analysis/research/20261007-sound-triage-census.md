@@ -1419,3 +1419,7 @@ IP221A–E trace preflight failure-to-silent1, exact wildcard/suffix selection, 
 ### Checkpoint 222 — deepest RTPC scalar publication
 
 DP222A–D trace exact word8/byteC/byte10/word14 scope selection, initial scalar/valid/leaf publication, pointer/null outcomes andsilent caller failure. Storage mechanics scopedout; root helper/notification/input/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 223 — root scope/notification snapshot
+
+NS223A–C recover root exact search andpost-store subscriber snapshot/ordered dispatcher withsaved scalar values andoptional scope descriptor. A10C84 filtering/dynamic recipient/writer closure retained. No totals/Q15/fidelity/production changes.
