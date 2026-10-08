@@ -1293,3 +1293,7 @@ VI191A–C proveconstructorincomingr1unused, standardtablepublication, initialDC
 ### Checkpoint 192 — initial rate/embedded control joins
 
 CI192A–C bindcreationrateinputto105243C andDG6voiceEC, positiveRS1 tovoicequeryinitial0/1, andboundedfiltertable/94/format190=0 followedbyRS8liveInitformat. Coefficient/historydefaults notclaimed; fullrate/pitch/filterstatewriters/familiesremainPARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 193 — grouped preparation/start transitions
+
+PF193A–C tracefailureentryremoval/restartfromlivehead, sticky3F-groupdeferwithpreparedflagretention, andtype0start/type1start-thenstandard4Cpause. NS7/VR173D/PN177/SN183 localrecipientspositive. Fullclock/flag/frame/producer/familyclosure retained; no totals/Q15/fidelity/production changes.
