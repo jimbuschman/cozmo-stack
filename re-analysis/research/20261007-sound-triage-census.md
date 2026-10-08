@@ -1253,3 +1253,7 @@ DF181A–C bindSF1 mode3 constructors to103D6C0/103D740 and common38 limit1/resu
 ### Checkpoint 182 — mode2 type4 callback dispatch
 
 PF182A bindsSF2 source38 toA782DC: plugin6Cnull returns2, nonnull tailvirtual28 rawresult. VF180A fallback occurs fornon1. Selectedplugin28/fullregistry/sourceflagwriter closure stays explicit; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 183 — start-notification PBI bindings
+
+SN183A/B joinSF10/NF3 toknownbase no-op38/18 andcontinuousVE5–15 callbacks, preservingflag/enqueue/flush/38/livetable18 order. OldNF3 unread-boundary prose doesnotreopenpositiveVE bodies. Fullflag/mode/250writer/familyclosure stays PARTIAL; no totals/Q15/fidelity/production changes.

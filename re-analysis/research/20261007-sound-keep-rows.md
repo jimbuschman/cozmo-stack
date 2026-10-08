@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 183 — deferred start notification to base/continuous PBI callbacks
+
+Primary: `20261008-sound-pbi-notification-slots.txt`, `20261008-sound-base-pbi-start-notification-native.txt`, `20261008-sound-continuous-next-choice-slot.txt`; same engine SHA256. PB170 constructors positively supply final base103B768 and continuous103D3B0 tables. SF10/NF3/NF1–6 and VE5–15 are positive earlier producer/consumer/scheduling rows. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| SN183A | 0103B780/0103B7A0;009FF4D8..009FF4DC;SF10/NF3 | Base18=9FF4D8 and38=9FF4DC, bothBXLR no-op. A01818 sets1BA bits3..6=3 beforeenqueue(type3,PBI,0,rawDuration); atflush type3 sets1BCbit1 before38, thenreloadsvtable andcalls18 withoriginalduration. Known base therefore hasno additional callback mutation. | Type3 flag/publication still occurs evenwithno-opcallbacks. No direct or synchronous duration scheduling atenqueue. | Flag/enqueue → flushflag → no-op38 → live table/no-op18. | NF rows own queue/fullfailure contracts; additional PBI families and1BC consumers remain retained. |
+| SN183B | 0103D3C8/0103D3E8/0103D410;VE1–15/NF3 | Continuous38=A6A2DC (VE5–7 mode4 next-child scheduling),18=A6A580 (VE8–15 mode1/2 duration-based scheduling). NF3 sets1BCbit1 then38 runsfirst;18 targetcomesfromlivevtable after38 andgetsrawduration. Continuous60 slot103D410=A6A07C, so both callbacks invokeVE1–4 next-choice body witharg1; do not call these UNKNOWN solely fromNF3's older boundary text. | VE5 stopbit5 gate andmode4/250 gates; VE8 mask60 gate,mode1/2, nativeMI duration50 gate and250 check stay exact. | Deferred notification → next-child callback → live-table duration callback. | VE local scheduling/choice joins positive, completefield250/mode/flagwriter/familyclosure remains PARTIAL. No change tooriginalVE rows/manifest claims. |
+
+Deferred start notification now has concrete base/continuous callback binding toalreadypositive bodies. Queue control, fieldwriters and complete family closure remain retained; Q14 totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 182 — mode2 source type4 plug-in dispatch
 
 Primary: `20261008-sound-plugin-source-type4-slot.txt`, `20261008-sound-plugin-source-type4-native.txt`; same engine SHA256. SF1/SF2 bind mode2 source103DA28; SF3–5 positively supply source6C creation/publication/Init and SF8 close clears it. Endpoints inclusive.
