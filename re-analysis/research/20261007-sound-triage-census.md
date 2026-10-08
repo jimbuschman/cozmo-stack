@@ -1339,3 +1339,7 @@ NT201A–C bindRanSeqtype2/constructorinitialmode0 andexistingauthoredreader toc
 ### Checkpoint 202 — action descriptor/soundseek caller
 
 SD202A–C correct A8/A9 descriptorvalueoffset from28 to24 (SP+28 minusdescriptorbase4), bindflags28, andtraceexactcallerpercent/absoluteclamp, PBIrecipientfilters andliveiteration→20/24. Remaininghighercaller/list/dynamic-source closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 203 — new/retainedsource attachment
+
+SA203A–E tracefactory versusretainedsource publication, exactpolicyquery/bitwisegate androutecapacity, audibility/no-start admission,1/3Fpointerpublication versusend/close/dtor/free, andinitialroute/list0. E0/E4 producerjoinedtoPC2; fulldynamicfactory/context/writer/caller closure retained. No totals/Q15/fidelity/production changes.
