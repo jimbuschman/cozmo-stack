@@ -3,22 +3,37 @@ from pathlib import Path
 import sys, struct, re, json, hashlib, bisect
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'re-analysis/research/_m5013_dependencies'))
-import lief, capstone
+import capstone
 from capstone.arm import ARM_OP_MEM, ARM_REG_PC
 path=ROOT/'resources/lib/armeabi-v7a/libcozmoEngine.so'
-elf=lief.parse(str(path)); raw=path.read_bytes()
-loads=[s for s in elf.segments if s.type==lief.ELF.Segment.TYPE.LOAD]
+light='--light' in sys.argv
+if light:
+    import mmap
+    sys.argv.remove('--light')
+    source=path.open('rb')
+    raw=mmap.mmap(source.fileno(),0,access=mmap.ACCESS_READ)
+    assert raw[:7]==b'\x7fELF\x01\x01\x01', 'Expected ELF32 little endian'
+    phoff=struct.unpack_from('<I',raw,28)[0]
+    phsize,phcount=struct.unpack_from('<HH',raw,42)
+    loads=[]
+    for n in range(phcount):
+        kind,offset,va,pa,filesize,memsize,flags,align=struct.unpack_from('<8I',raw,phoff+n*phsize)
+        if kind==1: loads.append((va,filesize,offset))
+else:
+    import lief
+    elf=lief.parse(str(path)); raw=path.read_bytes()
+    loads=[(s.virtual_address,s.physical_size,s.file_offset) for s in elf.segments if s.type==lief.ELF.Segment.TYPE.LOAD]
 def read(a,n):
-    for s in loads:
-        if s.virtual_address<=a and a+n<=s.virtual_address+s.physical_size:
-            o=a-s.virtual_address+s.file_offset
+    for va,size,offset in loads:
+        if va<=a and a+n<=va+size:
+            o=a-va+offset
             return raw[o:o+n]
     raise ValueError(f'unmapped {a:08X}+{n:X}')
 def word(a): return struct.unpack('<I',read(a,4))[0]
-symbols={s.value&~1:s.name for s in elf.symbols if s.value}
-rel={r.address:r for r in elf.relocations}
+symbols={} if light else {s.value&~1:s.name for s in elf.symbols if s.value}
+rel={} if light else {r.address:r for r in elf.relocations}
 index=[]
-for line in (ROOT/'re-analysis/decomp/libcozmoEngine/index.tsv').read_text(encoding='utf-8').splitlines()[1:]:
+for line in (() if light else (ROOT/'re-analysis/decomp/libcozmoEngine/index.tsv').open(encoding='utf-8')):
     p=line.split('\t')
     try:index.append((int(p[0],16),int(p[1]),p[3],p[4]))
     except (ValueError,IndexError):pass
@@ -48,6 +63,7 @@ def dump(a,z,thumb=False):
         print(f'{i.address:08X}: {i.mnemonic:12} {i.op_str}'+(' ; '+'; '.join(x for x in notes if x) if any(notes) else ''))
 if __name__=='__main__':
     print('ENGINE SHA256',hashlib.sha256(raw).hexdigest())
+    if light: print('LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values')
     for arg in sys.argv[1:]:
         if arg=='--triage':
             for line in (ROOT/'re-analysis/research/20261005-adp1-triage.md').read_text(encoding='utf-8').splitlines():
