@@ -1161,3 +1161,7 @@ MF158A/B resolve the factory's GOT-indexed type0/type1 table publication and bin
 ## Decision checkpoint159 — common retained-state stop/cleanup
 
 SN159A–E trace policy/scope gates, association-specific PBI stops before action notifications, independent pending cancellation/direct stop on event-null path, and reverse recipient release/ordered state clears. Shared MI7/MU rows corroborated by primary capture; RR8/A15/A16/RR4/TD5/TD6 are positive sound recipients. PS8/9 already close CX157C's storage-only parent cleanup. Concrete9AB1F4 and wider stop/family/writer closure remain PARTIAL; no totals, Q15, fidelity or production changes.
+
+## Decision checkpoint160 — pending-action notification manager
+
+PN160A–D settle9AB1F4's operation2/3 gate, asymmetric first/second-list A63B24 predicate use, exact action identity, callback/completion before unlink, count/reference/destructor order and unconditional result1. SN159C operation3 bypasses the first-list predicate but invokes it for second-list matches. A63B24 and dynamic action/pending recipients remain retained; no totals, Q15, fidelity or production changes.
