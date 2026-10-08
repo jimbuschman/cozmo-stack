@@ -1,0 +1,110 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009BB1F8..0x009BB320 exclusive; ARM;
+009BB1F8: ldr          r3, [r0]
+009BB1FC: mov          ip, r0
+009BB200: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+009BB204: cmp          r3, #0
+009BB208: ldr          r6, [r0, #0x14]
+009BB20C: mov          r4, r1
+009BB210: add          r1, r6, #1
+009BB214: str          r1, [r0, #0x14]
+009BB218: beq          #0x9bb228
+009BB21C: ldm          r0, {r0, r1}
+009BB220: stm          r4, {r0, r1}
+009BB224: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB228: ldr          r8, [r0, #0xc]
+009BB22C: cmp          r8, #0
+009BB230: beq          #0x9bb2d8
+009BB234: ldr          r1, [r0, #8]
+009BB238: mov          r7, r3
+009BB23C: mov          lr, r3
+009BB240: mvn          sl, #0
+009BB244: ldr          r0, [r1, r3]
+009BB248: add          sb, r1, r3
+009BB24C: ldrb         r5, [r0, #4]
+009BB250: tst          r5, #1
+009BB254: bne          #0x9bb28c
+009BB258: ldr          r5, [sb, #8]
+009BB25C: cmp          r5, sl
+009BB260: ble          #0x9bb28c
+009BB264: str          r0, [r2]
+009BB268: mov          r7, #1
+009BB26C: ldr          r1, [ip, #8]
+009BB270: add          r1, r1, r3
+009BB274: ldmib        r1, {r0, r1}
+009BB278: stm          r4, {r0, r1}
+009BB27C: ldr          r1, [ip, #8]
+009BB280: ldr          r8, [ip, #0xc]
+009BB284: add          r0, r1, r3
+009BB288: ldr          sl, [r0, #8]
+009BB28C: add          lr, lr, #1
+009BB290: add          r3, r3, #0xc
+009BB294: cmp          lr, r8
+009BB298: blo          #0x9bb244
+009BB29C: cmp          r7, #0
+009BB2A0: beq          #0x9bb2d8
+009BB2A4: ldr          r3, [r2]
+009BB2A8: ldrb         r2, [r3, #4]
+009BB2AC: tst          r2, #2
+009BB2B0: popeq        {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB2B4: add          r3, r3, #0x48
+009BB2B8: dmb          sy
+009BB2BC: ldrex        r2, [r3]
+009BB2C0: add          r2, r2, #1
+009BB2C4: strex        r1, r2, [r3]
+009BB2C8: cmp          r1, #0
+009BB2CC: bne          #0x9bb2bc
+009BB2D0: dmb          sy
+009BB2D4: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB2D8: cmp          r6, #0
+009BB2DC: mov          r3, #0
+009BB2E0: str          r3, [r4]
+009BB2E4: str          r3, [r4, #4]
+009BB2E8: str          r6, [ip, #0x14]
+009BB2EC: popne        {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB2F0: ldr          r1, [ip]
+009BB2F4: cmp          r1, r3
+009BB2F8: popeq        {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB2FC: ldr          r3, [pc, #0x18] ; word[009BB31C]=00684D8C
+009BB300: mov          r4, ip
+009BB304: ldr          r3, [pc, r3]
+009BB308: ldr          r0, [r3, #0x14]
+009BB30C: bl           #0xa7a914
+009BB310: str          r6, [r4]
+009BB314: str          r6, [r4, #4]
+009BB318: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+009BB31C: rsbeq        r4, r8, ip, lsl #27
+RANGE 0x009B503C..0x009B50BC exclusive; ARM;
+009B503C: mov          r4, r3
+009B5040: ldr          r3, [r3]
+009B5044: str          r3, [r2]
+009B5048: ldr          r1, [r4, #0x10]
+009B504C: ldr          r3, [pc, #-0x354] ; word[009B4D00]=FFFFFDBC
+009B5050: cmp          r1, #0
+009B5054: beq          #0x9b5094
+009B5058: mov          r2, #0
+009B505C: str          r2, [r4, #0x14]
+009B5060: ldr          r2, [sp, #0x14]
+009B5064: ldr          r5, [r2, r3]
+009B5068: ldr          r0, [r5]
+009B506C: bl           #0xa7a988
+009B5070: ldr          r0, [r5]
+009B5074: mov          r1, r4
+009B5078: bl           #0xa7a988
+009B507C: ldr          r3, [fp, #0x40]
+009B5080: mov          r2, #0x34
+009B5084: str          r2, [sp, #8]
+009B5088: sub          r3, r3, #1
+009B508C: str          r3, [fp, #0x40]
+009B5090: b            #0x9b4c70
+009B5094: ldr          r2, [sp, #0x14]
+009B5098: ldr          r5, [r2, r3]
+009B509C: b            #0x9b5070
+009B50A0: mov          r4, r2
+009B50A4: ldr          r2, [r2]
+009B50A8: str          r2, [r3, r1, lsl #2]
+009B50AC: b            #0x9b5048
+009B50B0: ldr          ip, [r2, #0x2c]
+009B50B4: cmp          ip, #0
+009B50B8: bne          #0x9b50cc
