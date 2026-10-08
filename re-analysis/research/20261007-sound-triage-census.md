@@ -1074,3 +1074,10 @@ DC1–10 add event completion removal, game-object retirement, subscription deta
 DG1–7 add9BCA68's complete local flag/recompute and audibility calculation/compare,9F1F80's owner walk and last-state-value lookup, A548B8's actual raw-word setter and A358EC's gated transition coefficient/expf publication. These reduce local unread bodies in083/088/092/118/121 and duplicate obligations, but do not settle their concrete virtual receivers, producers or all-writer claims.
 
 Primary captures:20261008-sound-decision-cleanup-native.txt,20261008-sound-decision-value-gates-native.txt,20261008-sound-decision-imports.txt.17 row endpoint ranges checked against the direct native captures;140 unique ledger IDs and counts checked. No production code, inventory, fidelity record, PROJECT_STATE or hardware test changed. Q14 remains incomplete; Q15 has not been resumed in this checkpoint.
+
+
+## Decision checkpoint140 (2026-10-08)
+
+SD140A–L add the positively bound streamedADPCM start table103D840 (start28=A7538C,header78=A73ABC,seek7C=A739E8), startup3F/readiness/header-requery and prefetched/nonprefetched state gates, pendingseek cleanup order, exact64-frame seek conversion, playing-count populationA04D48 and media-release9B65A8. The source's three similar readiness/monitor callers are rowed separately; no common-result assumption replaces them. Stream storage/cache/file/scheduler implementations stop at the guard boundary.
+
+Remaining decision dependencies include media-ID/prefix producers, complete source factory binding/writers, source header parsing and monitor publication/consumer. The additions reduce unread local bodies in004/090/097/102/116/128 and duplicates, without a broad settlement.12 instruction-range rows checked against raw captures. Counts remain23 native-row CHECKED,8 scope-exclusion CHECKED,109 PARTIAL,0 NOT DONE. Q14 is still incomplete; Q15 has not been resumed.
