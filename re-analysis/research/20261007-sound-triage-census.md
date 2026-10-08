@@ -40,7 +40,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-031 | 69 | PARTIAL |
 | Q14-032 | 70 | PARTIAL |
 | Q14-033 | 71 | PARTIAL |
-| Q14-034 | 72 | NOT DONE |
+| Q14-034 | 72 | PARTIAL |
 | Q14-035 | 73 | PARTIAL |
 | Q14-036 | 74 | PARTIAL |
 | Q14-037 | 75 | PARTIAL |
@@ -343,6 +343,8 @@ PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; 
 > | M6-025 | **KEEP** | 0x009EE9C4..0x009EEA5C;0x009E8940;0x009E8FCC;0x009E8F10;0x009E91F8;0x00A347A8;0x00A0CCF8;0x00A0CD78;0x009D0F3C;0x009EE2D8 | Continuous validation, switch precedence/last-switch state and special Sound dispatch remain exact even on unexercised branches. |
 
 Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+
+Resumption CW1–10 plus independently reopened S1–4/W1–8 settle local continuation/depth mask, failure cleanup, timing conversion and choice-entry/list ownership. Special Sound9EE2D8, pool9D0F3C, A09C40 choices, pending-object init/scheduling and virtual recipients remain open.
 
 ## Q14-035 — triage line 73
 
