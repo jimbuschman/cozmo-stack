@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED / 116 PARTIAL / 0 NOT DONE; checkpoints100-123 add local stream/scheduler bodies, without settling remaining joins |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoint138 adds local cleanup and position bodies without settling unread decision joins |
 
 # Q14 per-item work census
 
@@ -100,13 +100,13 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-091 | 140 | PARTIAL |
 | Q14-092 | 141 | PARTIAL |
 | Q14-093 | 142 | PARTIAL |
-| Q14-094 | 143 | PARTIAL |
-| Q14-095 | 144 | CHECKED |
-| Q14-096 | 145 | PARTIAL |
+| Q14-094 | 143 | CHECKED (scope exclusion) |
+| Q14-095 | 144 | CHECKED (scope exclusion) |
+| Q14-096 | 145 | CHECKED (scope exclusion) |
 | Q14-097 | 146 | PARTIAL |
-| Q14-098 | 147 | PARTIAL |
+| Q14-098 | 147 | CHECKED (scope exclusion) |
 | Q14-099 | 148 | PARTIAL |
-| Q14-100 | 149 | PARTIAL |
+| Q14-100 | 149 | CHECKED (scope exclusion) |
 | Q14-101 | 150 | PARTIAL |
 | Q14-102 | 151 | PARTIAL |
 | Q14-103 | 152 | PARTIAL |
@@ -132,10 +132,10 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-123 | 179 | PARTIAL |
 | Q14-124 | 180 | PARTIAL |
 | Q14-125 | 181 | PARTIAL |
-| Q14-126 | 182 | PARTIAL |
-| Q14-127 | 183 | PARTIAL |
+| Q14-126 | 182 | CHECKED (scope exclusion) |
+| Q14-127 | 183 | CHECKED (scope exclusion) |
 | Q14-128 | 184 | PARTIAL |
-| Q14-129 | 185 | PARTIAL |
+| Q14-129 | 185 | CHECKED (scope exclusion) |
 | Q14-130 | 186 | PARTIAL |
 | Q14-131 | 187 | PARTIAL |
 | Q14-132 | 188 | PARTIAL |
@@ -710,17 +710,29 @@ PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `202
 
 > | C33.1 resolver A1–A11/B/C / index | M6-024 | **KEEP** | 0x00592CDC..0x00592D78;0x00593BF6..0x00593C44;0x008D824A..0x008D82B4;0x008D843C;0x008D6FFC;0x008DDECC..0x008DE324 | Directory binding, APK-before-OBB registration, loose-file/stat gate, index population/duplicates and binary read fields remain exact I/O/loading. |
 
+out of scope: file-resolver, archive lookup/index and open infrastructure — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
+
 PARTIAL: existing primary-backed rows SL1–SL25,IO1–IO3 in `20261007-sound-keep-rows.md`. Resolver/archive insertion/order, APK/OBB local binding and zip/index/open/read gate bodies are rowed. Remaining AddZipFiles full caller census, map/index duplicate semantics and independently checked directory/app writers. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-095 — triage line 144
 
 > | C33.1 D4 error helper | M6-024 | **KEEP** | 0x008DE3E6..0x008DE408 | Non-EINTR pread error returns1; retain EINTR retry, zero-read failure, descriptor/size gates; imported OS results are inputs, shipped error mapping is exact. |
 
+out of scope: archive pread and OS error-mapping infrastructure — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
+
 CHECKED: IO1–IO3 reopen the complete 8DE3BC pread helper: descriptor/size gates, offset/progress updates, EINTR retry, non-EINTR return1 and zero-read return0. The imported syscall is a runtime input, not a missing shipped error mapper.
 
 ## Q14-096 — triage line 145
 
 > | C33.2 stream manager/device/GetBuffer | M6-024,M6-025,M6-022 | **KEEP** | 0x009654E4;0x00961664;0x00964E4C;0x00965244;0x00961C1C;0x00961AD8;0x00964CB8;0x009657E0;0x00965B1C;0x00964D64;0x009656AC | Vtable identities, buffers, state/result codes and ownership remain exact despite external I/O completion-time inputs. |
+
+out of scope: stream-manager buffer storage and I/O device infrastructure; source-level3F state remains in097 — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
 
 PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
@@ -734,6 +746,10 @@ PARTIAL: existing primary-backed rows VM/ST/SB/PA/SR/HS rows,NS1–NS2,SWIN1–S
 
 > | C33.4 external completion-time boundary | M6-024,M6-025; NEW external-timing record pending | **KEEP** | 0x00965B1C;0x009656AC;0x00961800;0x009713B4;0x0096FE70;0x00961C58..0x00961C70 | ADP-1 adds no timing exemption: retain the existing operator-directed OS boundary, but extract/check every shipped checkpoint/retry/cache/stale-out operation exactly. |
 
+out of scope: I/O completion/cache/stale-buffer infrastructure; source-level retry remains in097 — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
+
 PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
 ## Q14-099 — triage line 148
@@ -745,6 +761,10 @@ PARTIAL: existing primary-backed rows Z1–Z15 in `20261007-sound-keep-rows.md`.
 ## Q14-100 — triage line 149
 
 > | C33 I/O memory manager / scheduler ties | M6-024,M6-025 | **KEEP** | 0x00969E8C;0x009713B4;0x009716F0;0x0096FE70;0x0097161C;0x00979B98;0x00962EA8;0x00962C24 | Allocation/cache availability, scheduling priority and tie-breaking are decisions/state/timing. |
+
+out of scope: I/O memory manager, cache allocator/coalescer and scheduler targets — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
 
 PARTIAL: MEMREL1–2/MEMIDX positively reopen96FE70 cached-release prefix and97161C sortedindex invalidation. Remaining96FEF0..9713B4 coalescing,9716F0 request/allocation,969E8C,9713B4,979B98 and962EA8/962C24 scheduling/ties; no whole-memorymanager closure.
 
@@ -902,11 +922,19 @@ PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `202
 
 > | C33.1 | M6-024 | KEEP | 0x008D8280;0x008D843C;0x008DDECC..0x008DE408 | Remaining resolver rows, complete index population, APK/OBB order and AddZipFiles caller absence remain exact; D4 survives. |
 
+out of scope: file-resolver/archive index/open infrastructure — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
+
 PARTIAL: existing primary-backed rows SL8–SL25,IO1–IO3 in `20261007-sound-keep-rows.md`. Archive physical insertion/open/index/read and non-EINTR mapping are rowed. Remaining AddZipFiles exhaustive caller absence and full index/duplicate population closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
 ## Q14-127 — triage line 183
 
 > | C33.2 | M6-024,M6-025 | KEEP | 0x009656AC;0x00965B1C;0x00961C1C | Stream-manager table and GetBuffer transitive closure remain state/results. |
+
+out of scope: stream-manager storage/GetBuffer infrastructure; source-level3F state remains in128 — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
 
 PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
@@ -919,6 +947,10 @@ PARTIAL: existing primary-backed rows ST/SB/PA/SR/HS rows,NS2,SWIN1–SWIN5 in `
 ## Q14-129 — triage line 185
 
 > | C33.4 | M6-024,M6-025 | KEEP | 0x00965B1C;0x009656AC;0x00961C58..0x00961C70 | Existing OS timing ruling is not an instruction claim; preserve shipped checks/retry around that external input. |
+
+out of scope: I/O completion/checkpoint infrastructure; source-level retry remains in128 — queue-5 Scope guard,2026-10-08 (M6 C33.5). This is a task-scope disposition, not recovered behaviour or a fidelity-status change.
+
+Historical checkpoint, superseded for this task:
 
 PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965B1C/9656AC/961C1C and their local completion/wait/cleanup recipients. Remaining concrete vtable factory binding, device completion/signal callers, state writers and memory/scheduler recipients (96FE70/97CFA0/97CFF4 etc.). OS completion timing remains an input; every shipped check/retry is retained.
 
@@ -1031,3 +1063,14 @@ Checkpoint99:24 CHECKED/116 PARTIAL/0 NOT DONE. Allitemsnowhavebodyrows/boundary
 Checkpoint123: Q14-100 now has CINIT/CLOOK/CREQ/IOSEL/MBUD/SENT exact local rows and stream lifecycle/score/target/cancellation recipients. Still PARTIAL: 96FEF0..9713B4 coalescing,9716F0 request suffix,979B98/97A1E8 allocator/coalescer, actual file/backend/producers and writer closure. Q14-101 codec setup/header descendants remain distinct. Total24 CHECKED/116 PARTIAL/0 NOT DONE; no finish claim.
 
 Checkpoint137: Q14-100's97A1E8 extent-release helper is now locally closed by EXTSUF/EXTRIGHT/EXTPUB, preserving successor-only carry stages separately from terminal predecessor-first aligned buddy publication. BACKBIND closes installed resolverO+4→D21C→synchronous read/write; FNAME/FPATH/FOPEN/FZIPOPEN/FASSETOPEN and ZIP lookup/read/directory/map rows close additional caller-local source decisions. Still PARTIAL:96FE70 release and9716F0 request inlined coalescing copies; other production/writer joins and shipped prime/string recipient boundaries. No obligation promoted from body closure alone. Total24 CHECKED/116 PARTIAL/0 NOT DONE; Q14 and Q15 remain unfinished.
+
+
+## Decision checkpoints138–139 (2026-10-08)
+
+The active queue-5 scope guard replaces the old infrastructure continuation requests. Eight obligations are scope exclusions (094/095/096/098/100/126/127/129), with one-line reasons at their entries. Counts:23 native-row CHECKED,8 scope-exclusion CHECKED,109 PARTIAL,0 NOT DONE. Exclusion is not extraction completion or a manifest change.
+
+DC1–10 add event completion removal, game-object retirement, subscription detach, object-list removal and position publication. Q14-087's named A0B600/A05934/A1C65C/9A6988 local bodies are now rowed; its concrete callbacks/subscribers and item48 writer remain open. Q14-085/120's A05574 body is now rowed, including its two-word key, stable data order and sign-extended imported clock timestamp; caller r3 and matching reader remain open.
+
+DG1–7 add9BCA68's complete local flag/recompute and audibility calculation/compare,9F1F80's owner walk and last-state-value lookup, A548B8's actual raw-word setter and A358EC's gated transition coefficient/expf publication. These reduce local unread bodies in083/088/092/118/121 and duplicate obligations, but do not settle their concrete virtual receivers, producers or all-writer claims.
+
+Primary captures:20261008-sound-decision-cleanup-native.txt,20261008-sound-decision-value-gates-native.txt,20261008-sound-decision-imports.txt.17 row endpoint ranges checked against the direct native captures;140 unique ledger IDs and counts checked. No production code, inventory, fidelity record, PROJECT_STATE or hardware test changed. Q14 remains incomplete; Q15 has not been resumed in this checkpoint.
