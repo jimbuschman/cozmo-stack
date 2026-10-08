@@ -190,7 +190,7 @@ PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event pu
 
 > | M6-007 | **KEEP** | 0x00A08A7C..0x00A08AC0;0x0099DB58;0x00A09698;0x00A099BC;0x00A0A3B4;0x00A08A44;0x00A08694;0x00A0A524..0x00A0A6E8 | RNG state/seed, draw cadence, eligibility, shuffle/avoid-repeat, weights and sequence behavior stay exact even where they use floating arithmetic. |
 
-PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. Playlist vtable data writers and complete constructor/lifetime consumer closure remain open; no completed M6-007 claim.
+PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. Complete live caller/writer and child-admission closure remain open; no completed M6-007 claim.
 
 ## Q14-009 — triage line 42
 
@@ -1129,3 +1129,7 @@ ND150A–I trace all five known concrete node0 parent bodies, Switch's ordered m
 ## Decision checkpoint151 — idle teardown and positioning boundary
 
 ID151A/B finish the local9F4D40 decision tail: visible buffer/list clears, embedded subscriber destructor/list unlink, then normal node30 clear after excluded storage return. LT3/LT4/LT5 positively supply existing recipient behavior. ID151C reconciles ND150I's node2C with NB10/NB21 positioning ownership; concrete3D owner0 descent is excluded by the guard, superseding checkpoint150's retained request. Broader caller/count/family closure and other decision obligations remain PARTIAL; totals unchanged, no Q15 or fidelity change.
+
+## Decision checkpoint152 — concrete playlist values
+
+PW152A–F positively bind raw count/ID/weight readers, random weight setter versus sequence fixed50000/no-op, integer vector/scalar total-weight reduction and first physical ID-index lookup. Existing TR14–18/ND150 supply constructor, append, reset and retirement joins. Q14-008's stale unread-playlist request is narrowed to full caller/writer/child-admission closure. No total, Q15, production or fidelity change.
