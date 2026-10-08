@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. Remaining live recipients, writer census and unload remain pending. |
 | Scheduling, timing and stream contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; I/O and complete source/kernel geometry pending. |
-| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-three PARTIAL,55 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | NOT DONE | 140 actual KEEP/VERIFY obligations (excluding a coverage-table mention and a DROP line whose reason says KEEP); per-item mapping is in `20261007-sound-triage-census.md`. Twenty-two narrow obligations CHECKED, sixty-four PARTIAL,54 NOT DONE; no completed-Q14 claim. |
 
 ### Resumption checkpoint 23: frame-stream retirement and chunk handoff
 
@@ -3634,3 +3634,22 @@ Primary: `20261008-sound-start-notification-native.txt`. M6-025 quotation applie
 | SNT3 | 00A0435C..00A04380 | Aftercallback, lockmanager14, set1Cbyte1, broadcastcondmanager18, unlock14, return. Missing/disabledentryonlyunlockslookupmutex10. | No callback-result gate or exceptionisolation inthisbody. Callbackreturn precedes completionflag/broadcast. | Callback → synchronizationflag1 → conditionbroadcast →unlock. |
 
 SNT1–3 close the local SWIN4 notification and query recipients, retaining registry producers/callback destination as independent work. Source virtual startup remains Q14-066's remaining exact join.
+
+
+### Resumption checkpoint73: singing game-object routing boundary
+
+> M9-028 — RobotAudioClient dispatches singing parameters and switches to game object 7 on-robot or 6 off-robot
+> Status: IMPLEMENTATION_GAP
+> Evidence: ["0x00599F60..0x00599FBF", "X4 S20-S21"]
+> Unresolved: The on-robot dispatch (game object 7, vtable +0x18/+0x14, zero transition) is built and wired into the live singing path. The off-robot dispatch (game object 6) is not built: M6-016's OnDevice routing refuses game object 6 (WwiseRobotAudioPath.InitAnimation throws). This record settles when M6-016 builds the game-object-6 route.
+
+Primary: `20261008-sound-game-object-routing-native.txt`, reopened in Thumb mode. This independently confirms P8–9 and identifies the M6 handoff; it does not settle the record from a local wrapper.
+
+| Step | Address | Behaviour | Gates / failure | Order / boundary |
+|---|---|---|---|---|
+| GOR1 | 00599F62..00599F84 | Event wrapper selects object7 iff client3Cbyte==2, otherwise6. Invokes client.vt18 with original r1/r2, selected object r3 and two zero stackwords. Returns raw callee result. | No null client/callee, event-ID validation, fallback, retry or exception isolation here. Exact comparison==2, not nonzero/on-robot enum assumption. | Read mode/vtable → zero trailingarguments → object select → virtual dispatch. |
+| GOR2 | 00599F86..00599F92 | Object getter returns7 iff mode==2, otherwise6. | All other byte values choose6. | Exact mode test → selectedobject. |
+| GOR3 | 00599F94..00599FB0 | Parameter/switch wrapper chooses same object and tail-dispatches client.vt14, preserving original r1/r2. No trailing stackword initialization in this body. | Do not copy GOR1's stack setup into this tailcall or infer a fresh transition here. | Mode/select → tail virtualdispatch. |
+| GOR4 | 00599FB2..00599FCC | Playing-ID parameter wrapper forwards controllerclient30 to004AF76C with r1=oldr2(parameter),r2=oldr3(rawvalue),r3=oldr1(playingID), and two zero stackwords. | No playingID nonzero gate locally; P4's caller gate is separate. | Rearrange arguments/zeros → shared M6 controllercall → rawresult. |
+
+Q14-065 is PARTIAL: the local object-selection/wrapper contract is checked; M6-016 owns object6 animation construction and native controller dispatch. AP1–3/P1–6 retain the common event sort, asynchronous posting, gain and callback joins. The entire Thumb sort body596DC8 was captured as navigation for further M6 rows; capture alone is not closure. No additional reachability exclusion is introduced.

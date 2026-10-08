@@ -71,7 +71,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-062 | 102 | NOT DONE |
 | Q14-063 | 104 | NOT DONE |
 | Q14-064 | 106 | NOT DONE |
-| Q14-065 | 107 | NOT DONE |
+| Q14-065 | 107 | PARTIAL |
 | Q14-066 | 115 | PARTIAL |
 | Q14-067 | 116 | NOT DONE |
 | Q14-068 | 117 | CHECKED |
@@ -1019,3 +1019,5 @@ Stream-render checkpoint: SR1–SR12 close FC readiness/render/prefix/payload/ow
 Header/seek checkpoint: HS1–HS8 close FC header, packedformatpublication, loop/monitorstreamsettings, tableallocation, frame-to-byterounding andpendingseekcaller. Q14-090/Q14-091 remainPARTIAL: selectedstream/cache/framer/emit/parser recipients, their creation andwriters stillreadable.
 
 Q14-066 update: SWIN1–5 independently reopen C30.1 start/readiness/window/fault body and StartStream wrapper; virtual startup and observer recipients remain retained. Current total22 CHECKED/63 PARTIAL/55 NOT DONE.
+
+Q14-065 update: GOR1–4 independently reopen singing wrappers and exactobject6/7 selection; M6-016 common animation/controller dispatch remains retained. Currenttotal22 CHECKED/64 PARTIAL/54 NOT DONE.
