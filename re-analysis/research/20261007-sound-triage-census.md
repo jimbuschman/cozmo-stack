@@ -1004,3 +1004,6 @@ Setup-assembly checkpoint: PA1–PA8 close AB1C04 caller-local table/prefix/payl
 
 
 Stream-render checkpoint: SR1–SR12 close FC readiness/render/prefix/payload/ownership/framer argument/result/emit andclosecaller rows; AB2BFC isreadiness,notseek. Q14-090/Q14-091 stillPARTIAL: headerAB12B4,pendingseekA74BA0,dynamicstream/cache/decoder/emit recipientsremain.
+
+
+Header/seek checkpoint: HS1–HS8 close FC header, packedformatpublication, loop/monitorstreamsettings, tableallocation, frame-to-byterounding andpendingseekcaller. Q14-090/Q14-091 remainPARTIAL: selectedstream/cache/framer/emit/parser recipients, their creation andwriters stillreadable.
