@@ -338,6 +338,21 @@ Primary companion: `20261007-singing-lfo-parameters-native.txt`. Split captures 
 
 This recovers the concrete LFO parameter choice, integer-mode conversion and RNG cadence. The final coefficient/phase region remains VERIFY because it also changes mode state; per-sample policy cannot erase that control logic.
 
+## Checkpoint 15 — playlist random selector and ancestor traversal
+
+Primary companion: `20261007-singing-playlist-selector-native.txt`. These are the IT2/3 collaborators, not a precomputed whole-song random draw. Existing M9-015 quotation applies. All fields hexadecimal; S is selected random state, N=frame.node.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Float bits / remaining dependency |
+|---|---|---|---|---|---|
+| PR1 | 00995608..0099565C;00995778..009957B8 | Clear outputcontinue byte. If(N24&~2)==1 use993AF8(N), otherwise frame8. NullS setscontinue1 and returns0. S.Eu16zero: frame6bit0clear ends likewise; bit1set restarts; otherwise decrementframe4u16 and restart only nonzero. | Count decrement wraps16. Zero remaining picks does not itself mean failure. | State selection→remaining gate→loop flags/count→restart orcontinue1. | State factory993AF8 remains readable dependency. |
+| PR2 | 009957BC..00995814;00A06ADC..00A06B00 | Restart: S.E=low16(N1C); clear bitmapS1C forceil(N1C/8)bytes; setS.C=low16(N1C). S8=S4 then subtract each child14 weight indexed by S10 u16 exclusions, decrementS.C by exclusioncount14, then select. | Exclusion array retained across bitmap clear. | Remaining reset→bitmapclear/countreset→weightreset→excludeweights/count. | Exact ordered integer arithmetic; no float or RNG on restart alone. |
+| PR3 | 00995660..00995718;00A06AC4..00A06AD8;00A06B44..00A06B58 | N2Cbyte0 selects unweighted path. S.C==0 setsS.E=0, returns0. Otherwise one shared LCG draw, signed remainder of(high>>1)/S.C. Scan indices from0, accepted counter starts−1; N2Dnonnull rejects marked S1C bits; otherwise N30u16nonnull rejects markedS20 bits. Accepted counter increments for each eligible child until>=draw; selected=low16(index−1). | N2D takes bitmap precedence over N30. No redraw on rejected entries. | Draw→ordered eligibility scan→index. | No local child-count bound in this loop; do not add repair/retry policy. |
+| PR4 | 00995744..0099574C;00995818..009958B4;00A06B5C..00A06BAC | N2Cnonzero selects weighted path. S8==0 takes same S.Ezero/return0. Else helperA06B5C makes one LCG draw and unsigned remainder byS8. Negative signed returned draw selectsFFFF. Nonnegative scans eligible children with accumulator−1, adding child14 weight; first accumulator>=draw selectslow16(index−1). Eligibility order/bitmap precedence matchesPR3. | Signed negative sentinel branch after unsigned remainder is explicit. | Weighted draw→scan orFFFF→common callback. | Remainder widths/sign differ fromPR3; no float weights or normalized cumulative array. |
+| PR5 | 00995720..00995740 | Invoke994EB8(iterator,N,selectedIndex,N+18,S), then return selectedIndex unchanged. | IncludesFFFF selectedIndex; no local result test or repair. | Selection→state update recipient→return. |994EB8's no-repeat/exclusion/weight updates remain exact and unread; selector alone isn't a closed playlist record. |
+| PR6 | 009947D8..009948D0 | Ancestor navigation: null candidate returnsnull. Modes whose24&~2==0 return candidate. Others inspect last-frame4 repeat: signed16>1 decrements andreturns currentcandidate; nonzero<=1 followscandidate4, popsframes while required; zero returnscurrentcandidate. Before popping a mode0/2 frame, frame8nonnull callsframe8.vt8. Stackcount decrement precedes next ancestor tests. | No local nonempty-stack guard before initial last-frame load. | Mode/repeat→optionalcallback→pop→ancestor→return. | Tree field4 producer/iterator construction remain readable dependencies; no inferred traversal repair. |
+
+The chooser now exposes the exact weighted/unweighted RNG and bitmap precedence. The selected-state updater994EB8 and state construction still must be joined; returning a selected child without those effects would omit avoid-repeat/shuffle state.
+
 ## Approved excluded branches
 
 | Branch not extracted | Census evidence | Retained work |
