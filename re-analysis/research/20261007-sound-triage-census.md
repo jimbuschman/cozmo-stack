@@ -1387,3 +1387,7 @@ SC213A–F trace entirelocal9EE454 mask/parent recursion, tag-specific scope, au
 ### Checkpoint 214 — fresh child metadata collections
 
 CL214A/B trace zero-count preservation, allocation-null empty continuation, pointer/count/cap publication andraw ordered metadata clone forfresh child descriptor collections. Allocator internals scopedout; input/writer anddynamic child/source/lifecycle closure remain. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 215 — known child play recipients
+
+CP215A/B bind five known class128 callbacks, distinguishing RanSeq dispatch entry, Switch entry andActorMixer raw0 no-op. Dynamic input/family andSound/Switch/source/lifecycle closure remains. No totals/Q15/fidelity/production changes.

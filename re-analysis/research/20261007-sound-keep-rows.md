@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 215 — concrete known child play slots
+
+Primary: `20261008-sound-layer-child-play-slots.txt`, `20261008-sound-actormixer-play-slot-native.txt`; same engine hash. NT201 supplies final known class table/type identities; LC212C supplies live child.vt128 dispatch. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| CP215A | 0103BBF8/0103B988/0103BEF0/0103D0B0/0103B178 | Final known Sound/RanSeq/Switch/ActorMixer/Layer vt128 slots relocate respectively to A1D448/A0AFDC/A2C730/A667D0/9D0758. RanSeq entry is CT1 A0AFDC, not its downstream mode-specific play routine; Switch entry is A2C730. Layer returns to bounded parent9D0758 path. | Live vtable is loaded only after9F12E0 result1; result3 skips all these. Known table bindings do not establish an exhaustive class family set or input membership. | LC212 delay gate →live table128 →known selected entry →savedrawresult/cleanup. | CT1+mode-specific rows alreadypositive; Layer current rowspositive. Sound/Switch whole entry-body recovery and additional dynamic-family/input closure remain retained. No invented ActorMixer fan-out. |
+| CP215B | 00A667D0..00A667D4;0103D0B0 | Known ActorMixer play slot returns raw0 immediately (MOV r0,0;BX LR). Does not iterate children, change descriptor, call preparer or schedule in this body. | LC212 saves0 andcontinuesordered cleanup/nextchild; no universal0-as-success mapping. | Selected ActorMixer128 →0 →LC212 cleanup/lastresult. | This local no-op recipient ispositive, independent of ActorMixer hierarchy/child input writers andother slots. Adjacent destructor excluded fromcapture. |
+
+Known child recipient bindings nowexplicit; dynamic node input/family, Sound/Switch and source/lifecycle production closure remain PARTIAL. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 214 — fresh layer child collection publication/failure decisions
 
 Primary: existing `20261008-sound-layer-extension-native.txt` selected decision slices; same engine hash. LC212 establishes fresh C collection fields zero before these branches. Only allocation outcome, metadata counts/order and continuation traced; no pool allocator or storage-copy implementation descent. Endpoints inclusive.
