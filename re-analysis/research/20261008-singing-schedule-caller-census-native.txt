@@ -1,0 +1,4 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Aligned ARM direct BL census only; indirect and Thumb paths not excluded.
+009836F4: word=EB02E709 BL 00A3D320
+0099C710: word=EBFFFCBE BL 0099BA10
