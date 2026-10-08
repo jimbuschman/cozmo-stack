@@ -911,3 +911,18 @@ Primary: `20261008-singing-track-payload-native.txt`. T=track; cursor points int
 | CLP5 | 00991458..00991488 | Signed idivmod004CF578(rounded e,rounded c); negativeremainder adds rounded c, store runtime14. No divisor0gate here. Then next authoredentry; return1afterall. | No unsigned remainder substitution or sampletime clamp. Native divmodexception/runtime behavior is a separatelynamed recipient, not fabricated zero. | Roundedvalues → signedmodulo → negativeadjustment → clip14 →next. |
 
 TPL1–7/CLP1–5 close the local track payload and clip population bodies, including timing widths, preserved/normalized failures, zero-count retention and native unordered gates. Source991AB8/991CF8, source-descriptor9B9C90 and mode3 readers99288C/992B1C remain exact joins; schedule execution and voice ownership remain PARTIAL. No change to the five approved exclusions.
+
+
+### Track switch table and transition payload (checkpoint49)
+
+Primary: `20261008-singing-track-switch-payload-native.txt`. S=track90 mode3 storage fromTPL6. This is the concrete table SO2 consumes, and the transition values SC1–9 use. All reader offsets are hexadecimal; size pointer is not consulted by these two bodies.
+
+| Step | Address | Behaviour | Gates / failure | Order / widths |
+|---|---|---|---|---|
+| TSW1 | 0099288C..0099290C | Readtypebyte→S8,rawgroupID atinput+1→S0,rawdefaultvalue+5→S4; advancecursor9. Existing S.Carraynonnull: S10count0 beforefree, thenS.C/S14capacity0. Nullbase skips count/capclear. ReadtablecountU32,advance4; zero returns1. | Group/default/type writes precede oldtable release andpersistonfailure. No normalizationoftypebyte. | Header/cursor → oldcount/free/fields → tablecount/cursor. |
+| TSW2 | 0099290C..00992974;00992AE8..00992AF4 | Nonzerocount allocatescount*4,storesS.C evennull. Nullreturns2;successS14=count. Eachappend incrementsS10 beforeload/store. ReadrawU32value,advancecursor4,storeatphysicalindex; countentries completed→1. | No dedup/sort: duplicate values map to multiple authored trackindices through SO2. | Allocation/pub/capacity → count → input/cursor → rawvalue →next. |
+| TSW3 | 00992974..00992AC8;00992AE0..00992B14 | Fulltable reservescapacity+1, allocnewcap*4. Copylivewordentries scalar/NEON withidenticalpointer mapping,freeoldbase,publishbase/cap,recheck savedappendindex<newcap,reloadcount. Missingallocation/recheckfailure fallsTSW4. No callback/retain duringrawtablecopy. | Copy vectorization is integer table storage, not an ADP-1 DSP exemption. No inferred growthfailure return2 here. | Reserve → copy → free → publish → capacity/count → append. |
+| TSW4 | 00992AC8..00992AE0 | Growthfailure advancesinputcursor4, then stores0 throughaddress0 andUDF0. | This deliberate fault differs from initialtable-allocationfailure2. No silent omitted tableentry or rollback. | Cursoradvance → nullstore → UDF. |
+| TSW5 | 00992B1C..00992BCC | SnapshotU32rate105243C. Readfixed20-byte block: words0/4→S20/24; S28=low32(S64(S32(word8))*U32(rate)/1000) via signed64 idivmod004A685C. Words10/14/18→S1C/2C/30. Set S18byte low5 fromwordC, preserving upper3. Store firstconvertedS28, advancecursor20 **before** seconddivision. S34=low32(S64(S32(word1C))*U32(rate)/1000),return1. | Both divisionstruncate toward0; no F32/F64 or ±half rounding. Rate capturedonce forboth. No range/bounds check or per-word enumvalidation. | First fields/division → remaining fields/flags → firstdurationstore/cursor → seconddurationstore →1. |
+
+TSW1–5 close mode3 payload readers99288C/992B1C and link their physical table/transition fields to SO/SC consumers. All exact timing and table-choice behavior remains within M9. Source creation and subsequent schedule/voice recipients are still retained; Q15 is not finished.
