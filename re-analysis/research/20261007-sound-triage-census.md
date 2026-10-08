@@ -306,6 +306,8 @@ CHECKED: EV1–14, MP1–13/ML1–3/ES1–10/LS1–7/LB1–5 close the complete 
 
 PARTIAL: BO4–BO6 and B13 prove metric pointer/results are passed to an observer and optional external completion callback; empty-frame values/order are exact. Full metric/filter identity, lane mapping, concrete live registrations and downstream consumers remain open. No whole metering-stage arithmetic exemption established.
 
+Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array clearing, F32 gain gates, callback-visible metrics, weighted channel masks/history snapshots, power publication and history restoration. The boundary is KEEP because9C806C receives M, not certified pure PCM arithmetic. Interpolation/filter recurrence, coefficient writers and callback registration/consumer census remain open.
+
 ## Q14-029 — triage line 67
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
