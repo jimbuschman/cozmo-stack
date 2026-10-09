@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through500 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through501 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -375,6 +375,8 @@ POL1–3 additionally close9EE2D8 special tag/policy and9FAEC4 inherited bit4 qu
 LCP1–5 close Layer pool acquisition/slab setup/pop/publication and request/refcount fields. Live modulator submission, child parameter loops and pool/release consumers remain retained. Native Layer extension checked through9D2203, not just the abbreviated index extent.
 
 LPAR1–4 add child/layer order, outside-range threshold counts (including native NaN gates), sorted child cache and allocation-failure continuation. RC5 already closes local modulator submission. Inline scoped parameter lookup and child request/play remain open.
+
+Checkpoint501 reconciliation: original continuous validation9EE9C4..9EEA5C is CW1/2/6/8/9 with CT6/CO155/CP156 concrete ownership/policy joins. S1–4/CC232/SW231 settle listed context/association/continuation recipients. W1–8/SP230 establish exact state-versus-scoped-switch precedence, authored fallback and actual last-selected-ID/repetition-count producer before child Play. POL/SC213/SP216 supply special policy/preparation. Extended Layer pool/child path is positive LCP/LPAR/LP210/LK211/LC212/SC213/CL214/RC5; those named local bodies are not unread. Remaining: specific runtime context/depth/group/default/flag/parameter/child-product and lifetime writer/provider closure at current rows; no global cache semantic rename or whole-family claim. out of scope: nonempty blend tracks, coordinate payload and pool/backing infrastructure. Broad item stays PARTIAL.
 
 ## Q14-035 — triage line 73
 
@@ -2445,3 +2447,5 @@ Checkpoint498 — DA498 exact device pair admission/constructor defaults/build-r
 Checkpoint499 — DT499 actual device0 holder/sink termination then format/selected/global clear, flag-based108DAA0 clear without identity compare and distinct failure versus unlink caller ownership;32 complete ARM instructions. Owned coordinate/recorder/storage tails excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint500 — original033 device/barrier/frame/route/notification/pending-state and selected E0/E4 producer joins reconciled against current positive rows, with geometry/storage exclusions applied. Reuse only; no duplicate capture/descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint501 — original034 continuous context/association/switch precedence/last-switch pair/special policy/extended Layer joins reconciled; reuse only, no repeated native capture or excluded infrastructure descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
