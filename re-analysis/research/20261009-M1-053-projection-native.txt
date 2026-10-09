@@ -135,7 +135,7 @@ FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 005180D8..00518252 _ZNK4A
 0051824E: add        sp, #0x24
 00518250: pop        {r4, r5, r6, r7, pc}
 
-FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EA398..004EA472 
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EA398..004EA472
 004EA398: push.w     {r4, r5, r6, r7, r8, sb, lr}
 004EA39C: sub        sp, #0x24
 004EA39E: mov        r5, r0
@@ -218,7 +218,7 @@ FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EA398..004EA472
 004EA46C: add        sp, #0x24
 004EA46E: pop.w      {r4, r5, r6, r7, r8, sb, pc}
 
-FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EF772..004EF776 
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EF772..004EF776
 004EF772: ldr        r0, [r0, #4]
 004EF774: bx         lr
 
@@ -365,7 +365,7 @@ FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 006527A2..006527A8 _ZNK4A
 006527A2: ldr.w      r0, [r0, #0xe8]
 006527A6: bx         lr
 
-FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0050FD3C..0050FD50 
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0050FD3C..0050FD50
 0050FD3C: movs       r0, #0xd8
 0050FD3E: blx        #0x4a42a0 ; ARM PLT GOT 0104036C: _Znwj target 00000000
 0050FD42: mov        r4, r0
@@ -601,7 +601,7 @@ FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0052F6C0..0052F7B0 _ZN4An
 0052F7A8: popeq.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}
 0052F7AC: blx        #0x4a4fe4 ; ARM PLT GOT 010407D8: __stack_chk_fail target 00000000
 
-FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004DF628..004DF72C 
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004DF628..004DF72C
 004DF628: push       {r4, r5, r6, lr}
 004DF62A: sub        sp, #0x10
 004DF62C: mov        r5, r1

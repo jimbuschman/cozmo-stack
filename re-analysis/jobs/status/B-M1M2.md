@@ -171,3 +171,12 @@ M1-048 U1-U7 is present in the existing live UDP path and was assigned to its ow
 
 - Publication checks: initial pre-commit suite passed 3,960. First push gate failed the unchanged NavigationTests.PopAWheelieRetriesWithTheRetryAnimationWhenTheDockFails (retry count 0 instead of 1); isolated recheck passed. A four-processor gate retry failed unchanged RFixBatch2Tests.M4_019_M13_017_TheBehaviourStopsRedrivingOnceTheEngineTickClearsThePlatformFlag. Full gate is retried using DOTNET_PROCESSOR_COUNT=4 and SDK test-host ThreadPoolMinThreads=32; no test/assertion changes or hook bypass.
 - The worker-minimum gate retry failed unchanged M12RFix2StreamATests.M12_007_AStillMovingObjectKeepsVerifyRunningUntilTheAllowanceThenFails with its existing 8-second condition timeout. The implementation commit remains locally committed; publication has not yet succeeded. Extraction reports and packet are prepared; do not bypass the push gate.
+
+- Published M1-050 `75bb3df` and extraction handoff `4aaf1ab` to main. Final pre-push gate passed fidelity and all 3,960 tests, zero failed/skipped, with DOTNET_PROCESSOR_COUNT=4 and SDK ThreadPoolMinThreads=32. Earlier test failures above are retained.
+
+## M1 verification packet (2026-10-09)
+
+- Prepared `research/20261009-M1-verify-packet/` from implementation snapshot `75bb3df`: 48 current record files, five explicit exclusions (M1-029/-033/-046/-047/-053), verbatim manifests and checked rows, exact implementation histories, native instruction/byte transcripts and recorded full-suite TRX. No verdict or settlement.
+- Packet transcription checks: 48 manifests, 1,333 source lines, 131 exact Git histories, 248,105 native instruction/data rows, 1,953 cited intervals; zero errors or unmatched declared test names.
+- M1-046/-047 final rows and M1-053 detailed rows/supplier ownership await manager check. M1-053 was not built from unchecked new extraction. Existing M1-029 MISSING remains visible. No hardware run.
+- Non-behavioral extraction transcript trailing whitespace cleaned; native instruction text and bytes are unchanged. Packet Git patch transcripts preserve historical whitespace, including blank context lines; stripping it would invalidate the exact-history requirement. Packet transcription validation checks those histories verbatim. Whitespace checks apply to the non-packet edits.

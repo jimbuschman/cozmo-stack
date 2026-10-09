@@ -1,0 +1,547 @@
+{
+  "source_commit": "75bb3df7a3c43cba882dd831b3a2a8c26d61d0eb",
+  "manifest_sha256": "9879732b844b236027ddedd19416f913e5ef777cfa12aca16f73b8f311412e6d",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "included": [
+    {
+      "id": "M1-001",
+      "file": "M1-001.md",
+      "rows": 5,
+      "cited_intervals": 9,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Conformance/Anim.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Control.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Devices.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Probe.cs",
+        "cozmo-stack/src/Cozmo.Conformance/SmokeTest.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-002",
+      "file": "M1-002.md",
+      "rows": 36,
+      "cited_intervals": 55,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-003",
+      "file": "M1-003.md",
+      "rows": 6,
+      "cited_intervals": 19,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
+        "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-004",
+      "file": "M1-004.md",
+      "rows": 3,
+      "cited_intervals": 5,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-005",
+      "file": "M1-005.md",
+      "rows": 30,
+      "cited_intervals": 40,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-006",
+      "file": "M1-006.md",
+      "rows": 48,
+      "cited_intervals": 66,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-007",
+      "file": "M1-007.md",
+      "rows": 8,
+      "cited_intervals": 30,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-008",
+      "file": "M1-008.md",
+      "rows": 39,
+      "cited_intervals": 27,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-009",
+      "file": "M1-009.md",
+      "rows": 18,
+      "cited_intervals": 28,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-010",
+      "file": "M1-010.md",
+      "rows": 10,
+      "cited_intervals": 34,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-011",
+      "file": "M1-011.md",
+      "rows": 2,
+      "cited_intervals": 1,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-012",
+      "file": "M1-012.md",
+      "rows": 6,
+      "cited_intervals": 26,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-013",
+      "file": "M1-013.md",
+      "rows": 1,
+      "cited_intervals": 0,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Transport/HighResolutionTimer.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-014",
+      "file": "M1-014.md",
+      "rows": 25,
+      "cited_intervals": 12,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-015",
+      "file": "M1-015.md",
+      "rows": 151,
+      "cited_intervals": 155,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/ActiveObjectTable.cs",
+        "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+        "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+        "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+        "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
+        "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
+        "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+        "cozmo-stack/src/Cozmo.Robot/Display.cs",
+        "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+        "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+        "cozmo-stack/src/Cozmo.Robot/OffTreads.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+        "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/RobotStateHistory.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-016",
+      "file": "M1-016.md",
+      "rows": 3,
+      "cited_intervals": 7,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-017",
+      "file": "M1-017.md",
+      "rows": 3,
+      "cited_intervals": 2,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-018",
+      "file": "M1-018.md",
+      "rows": 8,
+      "cited_intervals": 19,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-019",
+      "file": "M1-019.md",
+      "rows": 14,
+      "cited_intervals": 61,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-020",
+      "file": "M1-020.md",
+      "rows": 4,
+      "cited_intervals": 10,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-021",
+      "file": "M1-021.md",
+      "rows": 13,
+      "cited_intervals": 60,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-022",
+      "file": "M1-022.md",
+      "rows": 45,
+      "cited_intervals": 79,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-023",
+      "file": "M1-023.md",
+      "rows": 10,
+      "cited_intervals": 44,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-024",
+      "file": "M1-024.md",
+      "rows": 17,
+      "cited_intervals": 58,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplayStack.cs",
+        "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-025",
+      "file": "M1-025.md",
+      "rows": 51,
+      "cited_intervals": 119,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/ActiveObjectTable.cs",
+        "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+        "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+        "cozmo-stack/src/Cozmo.Robot/Audio.cs",
+        "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
+        "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
+        "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
+        "cozmo-stack/src/Cozmo.Robot/Display.cs",
+        "cozmo-stack/src/Cozmo.Robot/Lights.cs",
+        "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+        "cozmo-stack/src/Cozmo.Robot/OffTreads.cs",
+        "cozmo-stack/src/Cozmo.Robot/SdkExit.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+        "cozmo-stack/src/Cozmo.Robot/UnexpectedMovement.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/RobotStateHistory.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs"
+      ]
+    },
+    {
+      "id": "M1-026",
+      "file": "M1-026.md",
+      "rows": 9,
+      "cited_intervals": 25,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-027",
+      "file": "M1-027.md",
+      "rows": 14,
+      "cited_intervals": 23,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-028",
+      "file": "M1-028.md",
+      "rows": 159,
+      "cited_intervals": 192,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-030",
+      "file": "M1-030.md",
+      "rows": 13,
+      "cited_intervals": 25,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-031",
+      "file": "M1-031.md",
+      "rows": 138,
+      "cited_intervals": 135,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-032",
+      "file": "M1-032.md",
+      "rows": 11,
+      "cited_intervals": 42,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-034",
+      "file": "M1-034.md",
+      "rows": 25,
+      "cited_intervals": 97,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-035",
+      "file": "M1-035.md",
+      "rows": 6,
+      "cited_intervals": 21,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-036",
+      "file": "M1-036.md",
+      "rows": 3,
+      "cited_intervals": 5,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-037",
+      "file": "M1-037.md",
+      "rows": 2,
+      "cited_intervals": 0,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-038",
+      "file": "M1-038.md",
+      "rows": 25,
+      "cited_intervals": 29,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-039",
+      "file": "M1-039.md",
+      "rows": 25,
+      "cited_intervals": 12,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-040",
+      "file": "M1-040.md",
+      "rows": 24,
+      "cited_intervals": 13,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-041",
+      "file": "M1-041.md",
+      "rows": 14,
+      "cited_intervals": 38,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/RobotStateHistory.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs"
+      ]
+    },
+    {
+      "id": "M1-042",
+      "file": "M1-042.md",
+      "rows": 26,
+      "cited_intervals": 13,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-043",
+      "file": "M1-043.md",
+      "rows": 3,
+      "cited_intervals": 5,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-044",
+      "file": "M1-044.md",
+      "rows": 125,
+      "cited_intervals": 123,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs"
+      ]
+    },
+    {
+      "id": "M1-045",
+      "file": "M1-045.md",
+      "rows": 125,
+      "cited_intervals": 116,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M1-048",
+      "file": "M1-048.md",
+      "rows": 10,
+      "cited_intervals": 32,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-049",
+      "file": "M1-049.md",
+      "rows": 14,
+      "cited_intervals": 20,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-050",
+      "file": "M1-050.md",
+      "rows": 1,
+      "cited_intervals": 3,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs"
+      ]
+    },
+    {
+      "id": "M1-051",
+      "file": "M1-051.md",
+      "rows": 3,
+      "cited_intervals": 11,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M1-052",
+      "file": "M1-052.md",
+      "rows": 2,
+      "cited_intervals": 7,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    }
+  ],
+  "excluded": {
+    "M1-029": "Open MISSING in current unresolved: built, awaiting strong verification: J1 finite-real Json::Value::asString now enters the live asString accessor and ports the checked wrapper: precision-17 general format under the approved phone snprintf assumption, append .0 only when neither dot nor lowercase e exists, then comma-to-period rewrite (0x008E48B8..0x008E4902; 0x008EBFAA..0x008EC04C). J7 retains the checked u16 byte count and exercises the maximum reachable 65535-byte Reader input; no fixed token cap was found in the checked Reader/converter slices (0x007B9088..0x007B9092; 0x008E078C..0x008E07F8; 0x008E190A..0x008E19A6; 0x008E2258..0x008E23D6; 0x0007E824..0x0007F202). MISSING: non-finite asString mapping in the useSpecialFloats=0 branch; the formatter body remains the J2 phone-runtime assumption. Also MISSING: allocation failure/extreme-length effects and the final escaping exception destination under M1-034. No settlement; J1/J7 checked subset only.",
+    "M1-033": "HARDWARE_ONLY; no completed built record to package. Settled by the operator's robot run (2026-10-09, firmware 2457, bundle re-analysis/acceptance/hardware/20261009-112625-M1-PACKED-ZERO): the robot accepts packed frames of types 7 (two reliable IMURequests: ACK 3), 8 (two unreliable pings: both timestamps echoed) and 9 (mixed: ACK 3 and the echo), each with a working single-frame control. Observed for these small frames on this firmware; maximum-size frames, other orders and sequence wraparound were not exercised. Before: whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none)",
+    "M1-046": "RECOVERABLE_GAP; no completed built record to package. RECOVERABLE_GAP: build the confirmed owner/member retirement order for RobotIdleTimeoutComponent (+0x51C) and RobotToEngineImplMessaging (+0x518), including its member/shared-handle vector order. The concrete ScopedHandleContainer virtual +8 unsubscribe target and any behavior-changing descendants remain UNKNOWN; do not invent their effects. Source: 20261006-M1M2-missing-triage.md Q1-Q3.",
+    "M1-047": "Waiting on manager check of final extraction rows; not built.",
+    "M1-053": "Waiting on manager check of final extraction rows; not built."
+  },
+  "test_counters": {
+    "total": "3960",
+    "executed": "3960",
+    "passed": "3960",
+    "failed": "0",
+    "error": "0",
+    "timeout": "0",
+    "aborted": "0",
+    "inconclusive": "0",
+    "passedButRunAborted": "0",
+    "notRunnable": "0",
+    "notExecuted": "0",
+    "disconnected": "0",
+    "warning": "0",
+    "completed": "0",
+    "inProgress": "0",
+    "pending": "0"
+  }
+}
