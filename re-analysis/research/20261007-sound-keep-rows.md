@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 392 — streamed Vorbis converter and loop/end product
+
+Primary: `20261009-sound-streamed-vorbis-converter-end-native.txt`, same engine hash; 89 instruction words plus slots. C=codec; offsets hex. Corrected checkpoint391 slot label from raw vtable bytes: table103E138+7C (103E1B4)=AB1020; +74 (103E1AC)=AB1138. No behavior or record classification changed by the correction.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SV392A converter zero/absence | AB1020..AB1060;AB10BC..AB10D8;raw103E1B4 | Own7C takes requested frames, rounded-frame pointer and byteoffset pointer. Request0 stores rounded0 and byteoffset=wrap(C20+C8),returns1. Positive request requires E4 seektable nonnull and C4>>2 paircount nonzero; absence writes both outputwords0 and returns2, without adding C20. No request>=total gate or context mutation in this converter. |
+| SV392B converter table order | AB1064..AB10B8;AB10DC..AB10FC | Physicalu16(frameDelta,byteDelta) pairs; include while request>=wrapping cumulative frames. None included writes rounded0,byteoffset=C8+C20. Included prefix/exhaustion writes rounded cumulativeFrames and byteoffset=sumIncludedBytes+C4, then reloads byteoffset and adds C20 modulo32. Equality includes pair; no clamp or proportional byte estimate. Source18 changes only through the supplied output pointer. HS7/RS391 use this exact converter; backend streamseek remains excluded. |
+| SV392C loop/end argument binding | raw103E1AC;AB1138..AB1174;AB119C..AB11B0 | Own74 reads incoming second argument. Nonzero: if unsigned loopcount38>1 decrement low16, return11; otherwise keep count and return11. Zero: decrement loopcount38 only if>1; decrement loopcounter5C modulo16 regardless old0; load skipU16 C0. Select endTrim CE if newloopcount==1, elseC2. No generated0/1 argument substituted for an incompletely recovered caller ABI. |
+| SV392D loop reset/status | AB1178..AB1198;AB11B4..AB11B8;VM6 | Zero-argument branch callsAB3244(C70,skip,endTrim), ignores result, publishes source64=2D thenstate68=3,returns2D. VM6 helper writes decoder skip/endTrim and both frame sentinelsFFFFFFFF. Nonzero branch does not reset decoder, change64/68 or decrement5C. This is source loop/end state, not per-sample arithmetic. |
+
+out of scope: seek-table backing storage, backend I/O and sample arithmetic; no descent.
+
+Known streamed own7C converter joins HS7/RS391/VR390; local own74 loop/end recipient joins the existing AEMIT2 callback boundary, while actual end-call second-argument ABI remains explicitly retained rather than guessed. Broader source/input/provider/writer/family closure remains PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 391 — restart seek recipients and generic status
 
 Primary: `20261009-sound-codec-restart-seek-recipients-native.txt`, same engine hash; 172 instruction words. C=codec, P=C.C; offsets hex. SK1–5 seek value/loop/cue conversion and HS7/HS8 pending seek/settings are already positive and reused.
@@ -26,7 +41,7 @@ Primary: `20261009-sound-codec-restart-seek-recipients-native.txt`, same engine 
 
 out of scope: backend stream seek/execution I/O infrastructure; exact requested offsets, call order and raw-result gates are retained without descent.
 
-VR390's named A75794/AB04F0 recipients now locally positive. Streamed Vorbis own7C=AB1138 frame/byte conversion remains a concrete retained dependency; broader input/provider/writer joins remain PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+VR390's named A75794/AB04F0 recipients now locally positive. Streamed Vorbis own7C=AB1020 frame/byte conversion is settled by SV392; the prior AB1138 label was corrected from raw slot103E1B4 (AB1138 is own74); broader input/provider/writer joins remain PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
 
 ## Checkpoint 390 — known Vorbis restart decisions
 

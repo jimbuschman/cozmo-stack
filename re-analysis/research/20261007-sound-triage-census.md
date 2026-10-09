@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through391 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through392 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2094,4 +2094,8 @@ VR390 closes known direct/streamed slot18 mode gates, decoder reset, table-based
 
 ## Checkpoint 391 — restart recipients
 
-RS391 closes direct pending-position/table/PBI publication and generic restart mode/current-position fallback/raw-result controls, reusing SK and HS recipients. Concrete streamed converter AB1138 retained; counts unchanged, Q15 pending Q14.
+RS391 closes direct pending-position/table/PBI publication and generic restart mode/current-position fallback/raw-result controls, reusing SK and HS recipients. Known streamed converter AB1020 now SV392; checkpoint391 AB1138 label corrected from raw own7C slot; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 392 — streamed converter and loop/end
+
+SV392 settles own7C frame/byte conversion and own74 loop/end reset/status. Corrects checkpoint391’s AB1138 converter label to AB1020 using raw slot evidence. Actual end-call argument/input/writer joins retained; counts unchanged, Q15 pending Q14.
