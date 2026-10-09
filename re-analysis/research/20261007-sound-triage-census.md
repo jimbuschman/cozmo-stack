@@ -2155,3 +2155,7 @@ IB402 establishes state0 mono/stereo width16 count, conversion cadence, interlea
 ## Checkpoint 403 — integer-source constant-step controls
 
 IC403 establishes retained mono/stereo state1 width16 division counts, vector/tail frame cadence, phase, interleaved/planar geometry and refreshed-count publication. All retained G2 kernel recipients now locally positive; Q14-005 integration reconciliation remains PARTIAL. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 404 — resampler pitch input/lifecycle
+
+PS404 supplies actualA53134 source pitch query, current PBI flag/immediate-ramp decision, quota and empty-input/end joins, plus stage release/reset/teardown/pointer-delta publication. Q14-005 integration reconciliation retained; counts unchanged; Q15 pending Q14.

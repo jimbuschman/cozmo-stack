@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 404 — resampler pitch input and stage lifecycle
+
+Primary: `20261009-sound-resampler-pitch-input-lifecycle-native.txt`, same engine hash;91 instruction words. S=initial stage,B=caller buffer,P=S.B4; offsets hex. FC9 calls actualA53134 before requesting more source data; VF1 initial stage Init and G4/G5 cleanup recipients reused.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| PS404A live pitch/quotas | A53134..A53180 | Load source=S4;clear byteB9,store wordS48=U16BC BEFORE source.vt20(source) pitch query. Reload P=S.B4 after query;readU16(P+1BE). Native setter thirdarg=1 when (flags AND380)==0,else0. CallA47384(S+8,rawPitch,thirdarg),ignore return. Known retained source20 rawP44 recipient CB395; no new voice pitch approximation. Source callback may change P/flags before they are read. |
+| PS404B retained-input/end decisions | A53184..A531B0 | Read U16S6E after pitchsetter. Nonzero tailsA52D4C(S,B). Zero andbyteS.B8nonnull publishes B28=11;zero andB8zero returns with B28 unchanged. No source-data request or descriptor copy in this function. Pitch update occurs even on empty input/end paths. FC9 separately owns subsequent source30/2E/readiness loop. |
+| PS404C release/reset | A531B4..A53218 | Unconditionally call source=S4.vtC(source),ignore result;cleanup metadataA69A38(S60);publish S68=2B,S84=1,S60=0,S6E/S6C=0,S78/S80=FFFFFFFF,S7C=3F800000;then B0=0,B10u16=0,B14=0. Does not clear resamplerphase/pitch/ramp or stageendB8. Native publication order preserved. |
+| PS404D Init/teardown | A5321C..A53284 | Init already VF1:store S.B4=incomingP,clearB8,setBA1,tailA47038(S8,format,outputRate). Teardown outputS88nonnull firstA69A38(S88),thenA69AC8(S88);alwaysA69A38(S60),clearS.B4,tailA47360(S8). Owned history gate G5 reused;no phase/reset helper invoked here. |
+| PS404E pointer replacement | A53288..A5329C | S60==0 no-op;nonnull S60+=wrap(incomingNewPointer−incomingOldPointer). No capacity,valid count,metadata,phase orhistory update. No allocation/reopen or result claim. |
+
+out of scope: underlying allocator/free/storage mechanics; exact publication, ownership gates and metadata timing remain retained in existing rows.
+
+Q14-005 named kernel and stage controls now locally positive; integration reconciliation remains to finish. Counts unchanged26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 403 — integer-source constant-step counts
 
 Primary: `20261009-sound-integer-resampler-constant-decisions-native.txt`, same engine hash;815 instruction words plus literals/slots. State1/width16 slots103C0D8=A4913C mono,103C0DC=A49634 stereo. I/O/M/Q and hex offsets as SR400. DSP values are excluded, not frame/phase decisions.
