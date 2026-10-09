@@ -1611,3 +1611,7 @@ EU269A–C trace single/bulk event references/E14 release, first-missing partial
 ### Checkpoint 270 — event preparation command
 
 EP270A–D recover first/repeat event14 counter and retained8 producer, deferred mode, reverse early-failure prefix versus forward consumer-failure unwind, single helper and clearing-before-completion. Action/deferred/input/provider/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 271 — event action preparation
+
+EA271A–C trace0403 bank-before-target admission,2103 recursion with shared mutable packet, and forward prior-action release/unwind. Name/storage helper internals excluded; bank admission/release/deferred/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
