@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 381 — state-object individual parameter writer
+
+Primary: `20261009-sound-state-object-parameter-writer-native.txt`, same engine hash; 91 instruction words plus literal. SO376 state parameterblock and member14 owner attachment, SG8 detach and SA377 ownerCC consumer reused. O=stateobject,V=rawF32value,K=incomingIDlowbyte; offsets hex. This settles localwriter behavior, not an unestablished publiccaller.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SP381A first-key/equality decision | A270D4..A27148 | TruncateincomingID toU8. O10nonnull: searchphysicalIDbytes forfirstK, readingfirstevenblock.count0. Computevalue atblock+align4(count+4)+index*4; computednull→missing. AcceptedorderedF32 equality withincomingV returnswithoutwrite/notification;NaNunordered doesnot equalityskip. Unequal storesrawV beforeSP381D. No key sort, all-duplicates update, finiteclamp or scalarconversion. |
+| SP381B missing zero/nonzero | A2717C..A271A8;A27220..A2723C | Missingexistingkey OR O10null: orderedV==0 returnswithoutmutation/notification; bothpositive/negativezero skip,NaNproceeds. Nullblock selectsoneentry size8/offset4/count1. Nonnullmissing choosesoldcount+1,offsetalign4(oldcount+5),sizeoffset+(oldcount+1)*4. A missingzero isnot appended andexistingzero-key entryisnotremovedbySP381A. |
+| SP381C append/failure publication | A271AC..A2721C | Allocationnull goesSP381D despite no valuewrite. SuccessreloadsO10;nonnullcopies savedoldcount IDbytes andsavedoldcount*4 values, thenfreecurrentoldblock. AppendK atnew+oldcount+1;bytecount=(oldcount+1) modulo256;publishO10 beforecomputednewvalueaddressgate. AcceptedaddressstoresrawV thenSP381D;computednullstillpublishesandnotifies. No rollback orreturnedallocationcode; storagehelper internals excluded. |
+| SP381D exact owner notification | A2714C..A27178 | LoadliveO14;nullreturns. Nonnulltailowner.liveCC(owner),includingallocationfailure/computednullappend. Existingunchanged andmissingorderedzero returnbeforethisownerload. SG/SO attachments andSA377 knownCC decisions reused;no retainedoldowner, callbackresultgate, ownerparameterIDargument orstate-IDrewrite. DetachO14zero preventsthislocalnotification. |
+
+Concrete individual valuewriter nowpositive. Publicinput/caller andtable/member/state/parameter/owner/provider/writer/family joins remain PARTIAL; no absence-of-caller completionproof. Totals unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 380 — state-group batch reconciliation writer
 
 Primary: `20261009-sound-state-group-batch-writer-native.txt`, same engine hash; 577 instruction words plus raw literals. SG group factory, SO376 small-registry member product, GR375 unlink/member removal and SA377 CC application reused. N=node,G=group,H=incoming12-byte header {groupID,memberCount,flagByte},P=incoming8-byte pair {objectID,stateKey}; offsets hex. Hash/allocator descendants not traced.

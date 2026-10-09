@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through380 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through381 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2051,3 +2051,7 @@ BL379 binds base/derived44 constants and closes A4F4A4 rawgainpublication, posit
 ## Checkpoint 380 — batch state-group writer
 
 SB380A–K establish9FC8AC header/pair ordering, snapshot identity shortcuts, actual small-registry member selection, replacement/append failures, leftover cleanup and final CC/status. Native leftover objectID-to-key removal ABI remains explicit; no plausible correction substituted. Q14-030/074 stale named-recipient wording reconciled with existing PC362/LC4 and selected construction rows. Totals unchanged; Q15 pending Q14.
+
+## Checkpoint 381 — individual state parameter writer
+
+SP381 closesA270D4 first-key/equality/missing-zero decisions, value/block publication and live-owner CC notification includingallocationfailure. Caller/input/provider/writer/family joins retained; totals unchanged, Q15 pending Q14.
