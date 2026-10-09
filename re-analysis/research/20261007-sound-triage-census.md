@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through486 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through487 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2413,3 +2413,5 @@ Checkpoint484 — TM484 exact config thread-stop branch and early/late modulator
 Checkpoint485 — VL485 active/pending voice unlink and native mismatch faults, reverse bus-line detach/destructor, PBI membership/count and slot0→auxiliary→10→4 retirement order;144 complete ARM instructions. Positive lifecycle recipients reused, remaining product bindings explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint486 — GB486 pending/active render-global clear and registry phase order;37 complete ARM instructions. Q14 original external note Term/callback joins reuse existing Q15 EXMEND/EXSTOP/IST/EXMB without new music descent. Owned Java/listener/parameter/backing/pool cleanup excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint487 — SC487 scene event/bank replacement overlap, self-member gate, shrink/append/end-publication and SJ487 original startup/bank worker joins;198 complete Thumb instructions. Archive/resolver/hash/storage descendants excluded. Nested event/member and concrete object/locale/bank inputs remain explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
