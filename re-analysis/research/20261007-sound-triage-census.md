@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 68 CHECKED native-row obligations / 8 CHECKED scope exclusions / 64 PARTIAL / 0 NOT DONE; checkpoint558 audit retained, checkpoint560 closes023 query/renderer transfer |
+| Per-item native rows and production joins | PARTIAL | 69 CHECKED native-row obligations / 8 CHECKED scope exclusions / 63 PARTIAL / 0 NOT DONE; checkpoint558 audit retained,560/561 close023 transfer and038 detach |
 
 # Q14 per-item work census
 
@@ -49,7 +49,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-035 | 73 | PARTIAL | AUDIBLE | Inaudibility/limit decisions and source close/init order suppress, replace or cut off audio. |
 | Q14-036 | 74 | CHECKED | AUDIBLE | Wrapper Init/format/control/failure decisions affect whether and how its sound reaches output. |
 | Q14-037 | 75 | PARTIAL | AUDIBLE | Voice limits, priority/victim order and virtual/kill choices determine what gets cut off. |
-| Q14-038 | 76 | PARTIAL | AUDIBLE | Voice parameters, delayed event and MIDI stores change timing, level and selection. |
+| Q14-038 | 76 | CHECKED | AUDIBLE | Voice parameters, delayed event and MIDI stores change timing, level and selection. |
 | Q14-039 | 77 | PARTIAL | AUDIBLE | Max-instance subscription and Play/parameter admission gates can reject or suppress sounds. |
 | Q14-040 | 78 | PARTIAL | AUDIBLE | Trigger failure, compound results and timeout/render waits change robot action and singing timing. |
 | Q14-041 | 79 | PARTIAL | AUDIBLE | Rolling means, vibrato posts and preserved smoothing alter singing parameters and behaviour. |
@@ -467,7 +467,7 @@ PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1�
 
 PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. BP508 now supplies9C5240 bus-removal admission,9C5154 full delayed action1820/playingID0 producer, exact first property-F setter, target/pending/creator reference order and actual Execute gate. BD509 closes local9C4CD0 state/order/value/transition dispatch; DC510 supplies9C464C admission/application,9C4A6C held update and actual9C9770 callback/value order; DG511 recovers9C5374 exact aggregate,9C52E4 read-only scan (no sweep/retirement),A1AB5C fixed subscriber/mask/value-delta dispatch and actual PBI context join; ME512 maps all ten named packed-event byte stores and five conditional word copies to existing RI/PD/SK/CRS control rows, including positive A4010C index-gap restart. NM513A–C reconcile the other named voice/preparation, registration/ownership/pause/attachment and A0054C local controls to current primary rows. Remaining input/subscriber products, PB8 auxiliary-property/counter recipients and additional dynamic provider/callback families stay specific; no generic unread9C5154, A0054C or MIDI-store-range claim.
 
-**Current disposition, checkpoint558:** PARTIAL: Resolve PB8's9FEEB8 object-reference/counter detach recipient and its auxiliary-property input; bind any observed subscriber product at that call. Listed MIDI stores, voice state, delayed action and duck-control recipients are already positive. Evidence: VS/BP508/BD509/DC510/DG511/ME512/NM513; out of scope: storage and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint561:** CHECKED: RD561A–F actual selector/auxiliary ownership/swap detach/counters and existing caller continuation close the specific PB8 remainder; VS/BP508/BD509/DC510/DG511/ME512/NM513 retain other original named decisions. out of scope: backing/I/O,3D payloads and per-sample DSP. See `20261009-sound-reference-detach.md`; old generic families do not reopen the bounded original.
 
 ## Q14-039 — triage line 77
 
@@ -2686,3 +2686,7 @@ OriginalQ14-097/101/102 reconcile to checked Vorbis/ADPCM source decision maps, 
 ## Decision checkpoint560 — Q14 resumed, bounded query transfer closed
 
 QT560A–G correct actual query/renderer addresses and env-present zero fallback, positively bind ordered timing setters and existing voice/bus/robot interfaces. Q14-023 CHECKED. Counts68native+8scope/64PARTIAL; impact140AUDIBLE/0INTERNAL. Wider writer/alias/zero-divisor proofs remain separate. No Q15/production/fidelity/hardware changes.
+
+## Decision checkpoint561 — original038 detach residual
+
+RD561 positively joins actual9FB994 selector and9FEEB8 caller/result/counter path to PS5–9/CX157/RR474 storage-stop interfaces and known subscriber/object/modulator/node continuation. Q14-038 CHECKED:69native+8scope/63PARTIAL;140AUDIBLE/0INTERNAL. No whole-source/absence/fidelity/production/hardware/Q15 change.
