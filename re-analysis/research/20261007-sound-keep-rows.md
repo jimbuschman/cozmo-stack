@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 445 — all seven EQ persistent coefficient graphs
+
+Primary: `20261009-sound-eq-parameter-graphs-native.txt`,269 complete ARM instructions/literals; reused type1 `20261008-sound-eq-coefficient-boundary-native.txt`22 instructions. `20261009-sound-eq-parameter-graphs.py` validates range coverage and emits `20261009-sound-eq-parameter-graphs.md`,180 native operation/call/merge nodes and35 ordered stores across seven types. Engine hash unchanged. F9–11/F18–21, EQB1–4 and LP434 supply existing parameter/consumer/input joins.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| EQ445A entry/type | AA25E0..2648;F9 | Convert unsigned P48 rate; native half-rate then raw3F666666 product; ordered frequency>=cap selects cap, unordered keeps frequency. Tuple kind unsigned0..6 selects0AA27F0/1AA2848/2AA28A0/3AA28F0/4AA2648/5AA295C/6AA2774. Other kind goes directly to normalized stores with incoming live coefficient registers. No band-index gate or identity fallback. |
+| EQ445B seven durable graphs | graph companion;AA2648..272C/2774..2944/295C..2A44;existingAA2848..28A0 | Every native scalar operation, raw literal, imported tanf/cosf/sinf/powf argument and return dependency retained without simplification. Gain exponent raw3CCCCCCD, pi40490FDB,2pi40C90FDB,sqrt2 3FB504F3. Type0/1 use tanf; type2/3 cosf then sinf; type4/5 powf then sinf then optional sqrtf then cosf then optional sqrtf; type6 cosf then powf then sinf. Types4/5 reload unsigned P48 after powf; other types retain entry-rate value. VMLA includes multiplication by rawzero, preserving exceptional-value behavior. No PCM inputs. |
+| EQ445C conditional square roots | AA26A0..26B0/26B8..26D8;AA29B4..29C4/29CC..29EC;AA2A44..2A84 | Native square-root result compared with itself; unordered calls imported sqrtf with original radicand and replaces that result. Four fallback sites2A48/2A58/2A68/2A78 return to26B0/29EC/29C4/26D8. Second comparisons interleave gain+1/gain-1 operations before the conditional branch; graph preserves those dependencies. No unconditional libm replacement or extra finite guard. |
+| EQ445D publication | AA272C..2774;each graph final rows | Base=P+20(decimal)*band. Divide s14/s11 then negate/divide s16/s11; store+4. Divide s13/s11, negate s15;store+8. Divide negated s15/s11;store+10. VPOP restores s16..21 but not s9..15;divide s10/s11;store+14 then+C. Each branch graph retains exact operand association and35 aggregate stores. These are persistent filter design values, not per-sample DSP. |
+| EQ445E existing control joins | F18..21;LP434;EQB1..4 | Init selects channels/rate and dirty bytes; nonempty Execute recomputes dirty bands0/1/2 independently of enable, clears each flag after design, applies enabled bands0/1/2 then output gain, caches target afterward. Concrete raw bank parameter recipients and defaults are LP434. No re-extraction of those positive bodies, no whole live-writer closure inferred from serialized settings. |
+
+out of scope: per-sample biquad/gain arithmetic under ADP-1; storage/allocator infrastructure and excluded source families under scope guard. Phone math bodies external; exact argument/call/order retained. No equivalence measurement or manifest promotion.
+
+This settles the remaining local seven-type coefficient values in F10. Q14-017/063/064 broader input/writer and chain closure stays PARTIAL; stale remaining-type-formula prose is superseded by EQ445. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 follows completed Q14. Next bounded step reconciles other remaining coverage against positive rows before descending.
+
 ## Checkpoint 444 — WavePortal public setup/query/callback controls
 
 Primary: `20261009-sound-waveportal-public-controls-native.txt`, 507 complete Thumb instructions plusliterals/tables; enginehashunchanged. WP442/443,PP439,UC45 andH/HG/FR reused. A=parentAnkiPluginInterface,I=childWavePortalinterface,P=sourceproduct. Offsetshex.

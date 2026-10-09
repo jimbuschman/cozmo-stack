@@ -258,6 +258,8 @@ PARTIAL: FX1–FX6, B1–B12/B19–B26 and F1–F21 establish slot execution/ret
 
 PARTIAL; F1–F21 separate externally authored settings, coefficient stores, kernel selection and PCM dispatch. Full coefficient calculation and consumer closure remain pending.
 
+EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
+
 ## Q14-019 — triage line 57
 
 > | M6-014 | **KEEP** | 0x00A42210;0x00A4FEF8;0x00A4F754;0x00A4F36C;0x00A43F64;0x00A4ECE4;0x005985FC;0x009CC2AC;0x009CC4D8 | Reuse keys/eState, aux-connect policy, device gates, FX factory/bypass, idle-frame lifetime, tail and zero-length chunks are routing/state/timing, not DSP. |
@@ -544,11 +546,15 @@ CHECKED: EQB1–4 independently reopen AA2870..AA2898 in its type1caller/storeco
 
 PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
 
+EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
+
 ## Q14-064 — triage line 106
 
 > | M9-027 | **VERIFY** | 0x00AA25E0 | Establish coefficient-design arithmetic versus parameter/type/state writes before granting equivalence; the sample-loop exception alone does not settle this initializer. |
 
 PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
+
+EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
 
 ## Q14-065 — triage line 107
 
@@ -2319,3 +2325,5 @@ WP443 bindsdatacontainer->pendingprovider metadata/duration, Set/Clearownership,
 ## Checkpoint 444 — WavePortal public controls
 
 WP444 suppliesparentnewchildpublication/replacement, pendingversusactivequeries, clear, callbackassignmentbeforechildrelayupdate, actualparentrelayargument/callbackownership. Sourceproductlocalprovider/lifecycleframing joinedWP442/443; callerinputfamiliesnotinferredabsent. BroaderQ14 remainsPARTIAL/countsunchanged; nextremainingFXInit/controlconsumerselectors;Q15followsQ14. No production/fidelity/hardwarechanges.
+
+Checkpoint445 — EQ445 seven-type persistent parameter graphs; primary269 ARM instructions plus reused22-instruction type1. Research generator validates full selected ranges and raw operation dependencies. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 parked until Q14 closure.
