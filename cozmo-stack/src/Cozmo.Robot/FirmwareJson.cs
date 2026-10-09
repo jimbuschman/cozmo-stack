@@ -85,7 +85,10 @@ internal static class Json
         // commas to periods. C's formatter body is phone runtime (approved J2 assumption); use its "g" shape
         // with invariant culture as this host's equivalent, then preserve the shipped wrapper decisions.
         if (!double.IsFinite(value))
-            throw new JsonMissingSource("MISSING: Json::Value::asString non-finite mapping follows useSpecialFloats=0 at 0x008EC002..0x008EC018");
+            // Manager checked readToken 0x008E16A4..0x008E16AE / error 0x008E174C:
+            // N/I cannot create a real value; overflow also fails conversion. This
+            // guard diagnoses an invalid internal fixture, not a recovered output mapping.
+            throw new JsonMissingSource("UNREACHABLE: non-finite value on the firmware JSON Reader path");
 
         string formatted = value.ToString("G17", CultureInfo.InvariantCulture).Replace('E', 'e');
         if (!formatted.Contains('.') && !formatted.Contains('e')) formatted += ".0";

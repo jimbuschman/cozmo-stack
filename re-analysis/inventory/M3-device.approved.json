@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "45b0c8c0d8204c92c893fcb5f746a4e8cf27ea88635f4cfe7ef8559df3e21c49",
+  "inventory_sha256": "4c9780a19faad26f5d54f98f7d510db8c6d3029685f97417bb3bbde0984190d6",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -454,6 +454,17 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.",
       "evidence": [
         "Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-041": {
+      "status": "RECOVERABLE_GAP",
+      "title": "IMU diagnostic chunk reception, file logging and stream close on robot removal",
+      "authority": "libcozmoEngine.so 3.4.0-1204 Messaging IMU handlers and filebuf destructor.",
+      "evidence": [
+        "Unconditional Messaging construction/init 0x0051020A..0x00510218,0x00510334..0x00510348 and tagBF/C7 registration 0x00532BC8..0x00532BE8; processed sequence change 0x00535C64..0x00535C76 -> open0x00535E76, raw order0 0x00536128..0x0053612C -> open0x0053649C. No app-debug/SDK gate on these normal receive paths. Newly extracted I1-I8: re-analysis/research/20261009-M1-046-imu-reachability.md, companion 20261009-M1-046-imu-native.txt.",
+        "Final processed chunk closes at0x00535F5C; raw order2 closes at0x005361F4. Messaging destructor 0x00532A48 vector release precedes filebuf destructor0x00532A64 ->0x005010B4 ->close0x0050111C; virtual sync slot+18 relocation0x0101F2DC ->0x00501398 ->fwrite0x00501416/fflush0x00501428, then fclose0x00501130. M1-046 owns retirement entry/order, this record owns file recipient effects. I9/I10 in the same report; phone stdio implementation is external runtime."
       ],
       "live_path": true,
       "hardware_required": false

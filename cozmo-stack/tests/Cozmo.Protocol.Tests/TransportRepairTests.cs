@@ -257,7 +257,7 @@ public class TransportRepairTests
     public void T_d1_AReliableFrameFromTheRightIpButAnotherPortIsDroppedBeforeAcks()
     {
         var (t, clk, delivered) = Offline();
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         Connect(t);
         clk.NowMs = 1040; t.Send(new SyncTime(0));          // our seq 2, sent, waiting for an ack
         var c = t.Connection!;
@@ -1060,7 +1060,7 @@ public class TransportRepairTests
     {
         var (t, clk, net) = Connected(59984);
         using var _t = t;                                   // disposed even if an assertion fails: frees 47817
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         clk.NowMs = 1040; t.Send(new SyncTime(0));
         var c = t.Connection!;
@@ -1091,7 +1091,7 @@ public class TransportRepairTests
         Assert.Equal(pending, c.PendingCount);
         var w = Assert.Single(warnings);
         Assert.Contains("ReadFailed", w);
-        Assert.Contains("NotConnected", w);
+        Assert.Contains($"errno = {new SocketException((int)SocketError.NotConnected).NativeErrorCode}", w);
         t.Dispose();
     }
 
@@ -1106,7 +1106,7 @@ public class TransportRepairTests
     public void T_k2_AnyOtherReceiveErrorIsOnlyAWarning()
     {
         var (t, clk, net) = Connected(59985);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         clk.NowMs = 1040; t.Send(new SyncTime(0));
         var c = t.Connection!;
         ushort next = c.NextOutSeq, lastIn = c.LastInAcked; int pending = c.PendingCount;
@@ -1117,6 +1117,8 @@ public class TransportRepairTests
         net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
         clk.NowMs = 1041; t.Pump();
         Assert.Contains("ReadFailed", Assert.Single(warnings));
+        var readError = new SocketException((int)SocketError.NetworkDown);
+        Assert.Equal($"UDPTransport.ReadFailed: recvmsg(_socketId = {sock!.Handle.ToInt64()} _port = {t.StoredLocalPort}) returned -1, errno = {readError.NativeErrorCode} '{readError.Message}'", Assert.Single(warnings));
         Assert.Empty(delivered);                            // B16: the loop stopped at the error
         clk.NowMs = 1043; t.Pump();
         Assert.Equal(Data, Assert.Single(delivered));       // read by the next update
@@ -1134,7 +1136,7 @@ public class TransportRepairTests
     public void T_k3_WouldBlockIsSilent()
     {
         var (t, clk, net) = Connected(59986);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var reasons = new List<string>(); t.Disconnected += reasons.Add;
         net.Error(SocketError.WouldBlock);
         clk.NowMs = 1041; t.Pump();
@@ -1157,7 +1159,7 @@ public class TransportRepairTests
     {
         var (t, clk, net) = Connected(59979);
         using var _t = t;
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         var sock = t.CurrentSocket;
         var c = t.Connection!;
@@ -1200,7 +1202,7 @@ public class TransportRepairTests
     public void B17_ADatagramLargerThan1472BytesIsDroppedAsTruncatedAndTheDrainGoesOn()
     {
         var (t, clk, net) = Connected(59987);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         Assert.Equal(1472, ReliableTransport.ReceiveBufferBytes);
 
@@ -1229,7 +1231,7 @@ public class TransportRepairTests
     public void B17_AnOversizeDatagramWithABadPrefixFailsThePrefixCheckFirst()
     {
         var (t, clk, net) = Connected(59988);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         var bad = new byte[1500]; bad[0] = (byte)'X';
         net.Datagram(bad, t.Peer!);
@@ -1445,7 +1447,7 @@ public class TransportRepairTests
     {
         var (t, clk, _) = Connected(59967);
         var events = Receiver(t);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var peer = t.Peer!;
         clk.NowMs = t.Connection!.LatestRecvMs + 5000.1;
         Assert.False(t.Pump());
@@ -1471,7 +1473,7 @@ public class TransportRepairTests
         var clk = new ManualClock { NowMs = 2000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         var events = Receiver(t);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var from = new IPEndPoint(IPAddress.Parse("10.1.2.3"), 5551);
 
         t.ProcessIncoming(Raw(ReliableMessageType.ConnectionRequest, 1, 1, 0, Array.Empty<byte>()), from);
@@ -1526,7 +1528,7 @@ public class TransportRepairTests
         var clk = new ManualClock { NowMs = 2000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         var events = Receiver(t);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var from = new IPEndPoint(IPAddress.Parse("10.1.2.5"), 5551);
 
         t.ProcessIncoming(Raw(ReliableMessageType.SingleReliableMessage, 1, 1, 0, Data), from);
@@ -1607,7 +1609,7 @@ public class TransportRepairTests
     {
         var clk = new ManualClock { NowMs = 1000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var frames = new List<FrameEvent>(); t.FrameTrace += frames.Add;
         var to = new IPEndPoint(IPAddress.Loopback, 59964);
         t.FinishConnection(to);
@@ -1873,14 +1875,14 @@ public class TransportRepairTests
         using var holder = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         holder.Bind(new IPEndPoint(IPAddress.Any, 47817));
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // ephemeral: no conflict
         Assert.Empty(warnings);
         t.Stop(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));   // 47817: held
         var inUse = Assert.Single(warnings);
-        Assert.StartsWith("UDPTransport.BindInUse", inUse);   // CA29: a warning, not an error
-        Assert.Contains("AddressAlreadyInUse", inUse);
+        Assert.StartsWith("UDPTransport.OpenSocket.BindInUse", inUse);   // CA29: a warning, not an error
+        Assert.Equal("UDPTransport.OpenSocket.BindInUse: Warning: Unable to bind to in-use socket, continuing as this is OK in case of running multiple instances on one machine.", inUse);
         Assert.NotNull(t.CurrentSocket);                    // kept
         Assert.Null(t.LocalEndPoint);                       // not bound
     }
@@ -1897,14 +1899,14 @@ public class TransportRepairTests
     public void M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed()
     {
         var (t, clk, net) = Connected(59961);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         t.CloseHook = s => { s.Close(); throw new SocketException((int)SocketError.NotSocket); };
         net.Error(SocketError.NotConnected);
         clk.NowMs = 1041; t.Pump();
         Assert.Null(t.CurrentSocket);                       // fd -1, not reopened
         Assert.Equal(47817, t.StoredLocalPort);             // set on the failure path too
         Assert.Contains(warnings, w => w.Contains("ReadFailed"));
-        Assert.Contains(warnings, w => w.Contains("CloseSocket: close failed"));
+        Assert.Contains(warnings, w => w.Contains("UDPTransport.CloseSocket.Failed"));
         Assert.NotNull(t.Connection);                       // nothing torn down
 
         int reads = net.SocketsSeen.Count;
@@ -1912,6 +1914,77 @@ public class TransportRepairTests
         clk.NowMs = 1043; t.Pump();
         Assert.Equal(reads, net.SocketsSeen.Count);         // no socket: no read
         t.Dispose();
+    }
+
+    // M1-048: checked U4/U6 and reopened 00839656/0083ABB6 error targets.
+    [Fact]
+    public void M1_048_CloseFailureLogsFreshErrnoThenStoresTheErrorFlagTwice()
+    {
+        var (t, clk, net) = Connected(59839);
+        using (t)
+        {
+            long fd = t.CurrentSocket!.Handle.ToInt64();
+            var failure = new SocketException((int)SocketError.NotSocket);
+            var calls = new List<string>();
+            t.Warning += line => { if (!line.StartsWith("UDPTransport.SendFailed", StringComparison.Ordinal)) calls.Add(line); };
+            t.ErrorFlagStored = () => { Assert.True(EngineErrorState.ErrorFlagSet); calls.Add("flag"); };
+            t.CloseHook = socket => { socket.Close(); throw failure; };
+            net.Error(SocketError.NotConnected);
+            clk.NowMs = 1041; t.Pump();
+            Assert.Equal(5, calls.Count);
+            Assert.StartsWith("UDPTransport.ReadFailed:", calls[0]);
+            Assert.Equal($"[error] UDPTransport.CloseSocket.Failed: Unable to close socket {fd} (res = -1), errno = {failure.NativeErrorCode} '{failure.Message}'", calls[1]);
+            Assert.Equal("flag", calls[2]);
+            Assert.Equal($"[error] UDPTransport.ReadFailed.CloseSocketFailed: Error: Closing unconnected socket failed. errno = {failure.NativeErrorCode} '{failure.Message}'", calls[3]);
+            Assert.Equal("flag", calls[4]);
+            Assert.Null(t.CurrentSocket);
+            Assert.Equal(47817, t.StoredLocalPort);
+        }
+    }
+
+    // 008395F6 info uses the old descriptor; 0083AB64 uses errno after OpenSocket.
+    [Fact]
+    public void M1_048_ReopenFailureLogsCloseSuccessAndFreshOpenErrno()
+    {
+        var (t, clk, net) = Connected(59838);
+        using (t)
+        {
+            long fd = t.CurrentSocket!.Handle.ToInt64();
+            var failure = new SocketException((int)SocketError.AccessDenied);
+            var calls = new List<string>();
+            t.Warning += line => { if (!line.StartsWith("UDPTransport.SendFailed", StringComparison.Ordinal)) calls.Add(line); };
+            t.ErrorFlagStored = () => { Assert.True(EngineErrorState.ErrorFlagSet); calls.Add("flag"); };
+            t.OpenSocketFault = step => { if (step == "socket") throw failure; };
+            net.Error(SocketError.NotConnected);
+            clk.NowMs = 1041; t.Pump();
+            Assert.Equal(6, calls.Count);
+            Assert.StartsWith("UDPTransport.ReadFailed:", calls[0]);
+            Assert.Equal($"[info] Network: UDPTransport.CloseSocket.Success: Socket {fd} closed successfully", calls[1]);
+            Assert.StartsWith("[error] UDPTransport.OpenSocketFailed:", calls[2]);
+            Assert.Equal("flag", calls[3]);
+            Assert.Equal($"[error] UDPTransport.ReadFailed.ReopenSocketFailed: Error: Reopening closed socket failed. errno = {failure.NativeErrorCode} '{failure.Message}'", calls[4]);
+            Assert.Equal("flag", calls[5]);
+            Assert.Null(t.CurrentSocket);
+        }
+    }
+
+    [Fact]
+    public void M1_048_CloseSuccessLogsOnceAndAnAbsentDescriptorLogsNothing()
+    {
+        var (t, _, _) = Connected(59837);
+        using (t)
+        {
+            long fd = t.CurrentSocket!.Handle.ToInt64();
+            var logs = new List<string>();
+            t.Warning += logs.Add;
+            t.Stop();
+            Assert.True(t.Flush(TimeSpan.FromMinutes(2)));
+            Assert.Contains($"[info] Network: UDPTransport.CloseSocket.Success: Socket {fd} closed successfully", logs);
+            int count = logs.Count;
+            t.Stop();
+            Assert.True(t.Flush(TimeSpan.FromMinutes(2)));
+            Assert.Equal(count, logs.Count);
+        }
     }
 
     /// <summary>
@@ -1924,7 +1997,7 @@ public class TransportRepairTests
     public void M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate()
     {
         var (t, clk, net) = Connected(59960);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         net.Datagram(Array.Empty<byte>(), t.Peer!);
         net.Datagram(Raw(ReliableMessageType.SingleUnreliableMessage, 0, 0, 1, Data), t.Peer!);
@@ -1949,7 +2022,7 @@ public class TransportRepairTests
         robot.Bind(new IPEndPoint(IPAddress.Loopback, 0));
         var clk = new ManualClock { NowMs = 1000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
@@ -1984,11 +2057,13 @@ public class TransportRepairTests
     {
         var clk = new ManualClock { NowMs = 1000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
-        t.SendHook = (_, datagram, _) => datagram.Length - 1;
+        int requested = 0;
+        t.SendHook = (_, datagram, _) => { requested = datagram.Length; return requested - 1; };
         t.Connect(IPAddress.Loopback, 59959);
         Assert.Contains(warnings, w => w.StartsWith(ReliableTransport.ErrorLevel + "UDPTransport.SentWrongNumBytes"));
+        Assert.Equal($"[error] UDPTransport.SentWrongNumBytes: Bytes {requested - 1} != bufferSize {requested}", Assert.Single(warnings));
         Assert.Equal(0, t.UdpSendErrors[6]);
     }
 
@@ -2044,7 +2119,7 @@ public class TransportRepairTests
     public void M1_023_G4_4_TheBindSignalSetsTheResetFlagOnlyWhenASocketIsOpen()
     {
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         t.NetworkBindSignal();                              // fd -1: nothing
         Assert.False(t.ResetRequested);
         Assert.Empty(warnings);
@@ -2196,7 +2271,7 @@ public class TransportRepairTests
     {
         var (t, clk, net) = Connected(59972);
         using var _t = t;
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         var delivered = new List<byte[]>(); t.DataReceived += delivered.Add;
         long msgs0 = t.UdpMessagesReceived, bytes0 = t.UdpBytesReceived;
         var tooSmall = new byte[] { (byte)'C', (byte)'O', (byte)'Z' };              // 3 < 4
@@ -2262,16 +2337,24 @@ public class TransportRepairTests
     [Theory]
     [InlineData("socket", "UDPTransport.OpenSocketFailed", 0)]
     [InlineData("broadcast", "UDPTransport.SetBroadcastFailed", 47817)]
-    [InlineData("bind", "UDPTransport.BindFailed", 47817)]
+    [InlineData("bind", "UDPTransport.OpenSocket.BindFailed", 47817)]
     public void M1_022_CA24_CA26_CA27_CA28_AFailedOpenSocketStepLeavesNoSocket(string step, string error, int storedPort)
     {
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
-        t.OpenSocketFault = at => { if (at == step) throw new SocketException((int)SocketError.AccessDenied); };
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
+        var failure = new SocketException((int)SocketError.AccessDenied);
+        t.OpenSocketFault = at => { if (at == step) throw failure; };
         t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         Assert.Null(t.CurrentSocket);
         Assert.Equal(storedPort, t.StoredLocalPort);
-        Assert.StartsWith(ReliableTransport.ErrorLevel + error, Assert.Single(warnings));
+        // Fixed engine formats reopened in U1/U2; only errno/text are host inputs.
+        string body = step switch
+        {
+            "socket" => $"Error: Unable to open socket - res = -1, errno = {failure.NativeErrorCode} '{failure.Message}'",
+            "broadcast" => $"Unable to setsockopt SO_BROADCAST - res = -1, errno = {failure.NativeErrorCode} '{failure.Message}'",
+            _ => $"Error: Unable to bind socket (res = -1), errno = {failure.NativeErrorCode} '{failure.Message}'",
+        };
+        Assert.Equal(ReliableTransport.ErrorLevel + error + ": " + body, Assert.Single(warnings));
     }
 
     /// <summary>
@@ -2286,12 +2369,14 @@ public class TransportRepairTests
     {
         var clk = new ManualClock { NowMs = 1000 };
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
-        var warnings = new List<string>(); t.Warning += warnings.Add;
+        var warnings = new List<string>(); t.Warning += line => { if (!line.StartsWith(ReliableTransport.InfoLevel, StringComparison.Ordinal)) warnings.Add(line); };
         Assert.Equal(0.0, t.LastSendErrorMs);               // CA34 / CA36
         t.Connect(IPAddress.Loopback, 59973);               // the ConnectionRequest's one send fails
         Assert.Equal(1, t.UdpSendErrors[6]);
         Assert.Equal(1000, t.LastSendErrorMs);              // +0x88 was 0.0: warn and store
         Assert.StartsWith("UDPTransport.SendFailed", Assert.Single(warnings));
+        var noDescriptor = new SocketException((int)SocketError.NotSocket);
+        Assert.Equal($"UDPTransport.SendFailed: sendto '127.0.0.1:59973' returned -1, errno = {noDescriptor.NativeErrorCode} '{noDescriptor.Message}' (1 sends failed), now = 1000.0", Assert.Single(warnings));
         var c = t.Connection!;
 
         clk.NowMs = 2000; Assert.Equal(1, c.SendOptimalUnAckedPackets(1));
@@ -2309,6 +2394,7 @@ public class TransportRepairTests
         Assert.Equal(31040, t.LastSendErrorMs);
         Assert.Equal(2, warnings.Count);
         Assert.StartsWith("UDPTransport.SendFailed", warnings[1]);
+        Assert.Equal($"UDPTransport.SendFailed: sendto '127.0.0.1:59973' returned -1, errno = {noDescriptor.NativeErrorCode} '{noDescriptor.Message}' (4 sends failed), now = 31040.0", warnings[1]);
         Assert.Equal(4, t.UdpMessagesSent);                 // CA31: AddSentMessage before each sendto
     }
 

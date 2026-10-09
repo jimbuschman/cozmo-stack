@@ -23,6 +23,74 @@ public class EngineAppLayerTests
         Assert.Equal(0, calls);
     }
 
+    // 0052F728..0052F774: process u16 increments, >=11 info, then zero store.
+    [Fact]
+    public void M1_053_MissingStateCounterLogsAtElevenAndWrapsAtUshortWidth()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var counter = new RobotStatePublicationCounter();
+        rig.Engine.PublicationCounter = counter;
+        const string message = "info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).";
+        for (int i = 0; i < 10; ++i) rig.Tick(0);
+        Assert.Equal((ushort)10, counter.Count);
+        Assert.DoesNotContain(message, rig.Log);
+        rig.Tick(0);
+        Assert.Equal((ushort)0, counter.Count);
+        Assert.Equal(1, rig.Log.Count(l => l == message));
+        for (int i = 0; i < 11; ++i) rig.Tick(0);
+        Assert.Equal(2, rig.Log.Count(l => l == message));
+        counter.Count = ushort.MaxValue;
+        rig.Tick(0);
+        Assert.Equal((ushort)0, counter.Count);
+        Assert.Equal(2, rig.Log.Count(l => l == message));
+        rig.SendFirstFullState();
+        counter.Count = 10;
+        rig.Tick(0);
+        Assert.Equal((ushort)10, counter.Count); // a stored full state never enters this counter path
+    }
+
+    [Fact]
+    public void M1_053_CounterPersistsAcrossRobotRemoval()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var counter = new RobotStatePublicationCounter { Count = 8 };
+        rig.Engine.PublicationCounter = counter;
+        rig.Engine.DisconnectCurrent();
+        rig.Tick(0);
+        Assert.Equal((ushort)8, counter.Count);
+        rig.Connect(); // exactly two updates of the replacement robot
+        Assert.Equal((ushort)10, counter.Count);
+        rig.Tick(0);
+        Assert.Equal((ushort)0, counter.Count);
+        Assert.Contains("info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).", rig.Log);
+    }
+
+    // 0051810C..00518122, UnknownOriginID=0 at00C97B20; warning's native format is empty.
+    [Fact]
+    public void M1_053_BadOriginWarningFollowsRootPoseAndDoesNotSuppressPublication()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState();
+        var calls = new List<string>();
+        rig.Engine.LogLine += line => { if (line == "warning: Robot.GetRobotState.BadOriginID") calls.Add("warning"); };
+        rig.Engine.PublicationPose = () => { calls.Add("pose"); return new(10, 20, 30, 1, 0, 0, 0, 0); };
+        rig.Engine.PublicationHeadAngle = () => { calls.Add("head"); return 0; };
+        EngineRobotState? output = null;
+        rig.Engine.RobotStatePublished += state => { calls.Add("publish"); output = state; };
+        rig.Tick(0);
+        Assert.Equal(new[] { "pose", "warning", "head", "publish" }, calls);
+        Assert.Equal(0u, output!.Pose.OriginId);
+        Assert.Equal(10f, output.Pose.X);
+        Assert.Contains("warning: Robot.GetRobotState.BadOriginID", rig.Log);
+        calls.Clear();
+        rig.Engine.PublicationPose = () => { calls.Add("pose"); return new(10, 20, 30, 1, 0, 0, 0, 1); };
+        rig.Tick(0);
+        Assert.Equal(new[] { "pose", "head", "publish" }, calls);
+    }
+
     // M1-053 P2a/e/g/k/m: native gate and component getters, not packet forwarding.
     [Fact]
     public void M1_053_PublicationGateAndOwningComponents()
@@ -303,6 +371,7 @@ public class EngineAppLayerTests
         public Rig(CozmoEngineOptions? options = null)
         {
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, options ?? new CozmoEngineOptions { BlockPoolPath = "" });
+            Engine.PublicationCounter = new RobotStatePublicationCounter();
             Engine.LogLine += l => { lock (Log) Log.Add(l); };
             Engine.ConnectionResponse += Responses.Add;
             Engine.RobotDisconnected += Disconnects.Add;
@@ -1475,7 +1544,7 @@ public class EngineAppLayerTests
 
     /// <summary>
     /// M1-029 row 11n as the firmware reader uses it: a non-number "version" is a Json::LogicError out of
-    /// ParseFirmwareHeader (row 11q, GetValue&lt;uint&gt; is asUInt), not a 0. Final exception destination is MISSING.
+    /// ParseFirmwareHeader (row 11q, GetValue&lt;uint&gt; is asUInt), not a 0. Escaping exceptions are owned by the approved M1-034 departure; J4/J5 allocation and length are phone-runtime effects.
     /// </summary>
     [Fact]
     public void M1_029_11q_ANonNumberVersionThrows()
@@ -1549,7 +1618,7 @@ public class EngineAppLayerTests
     /// M1-029 J1: asString selects the real branch at 0x008E48B8..0x008E4902 with precision 17 and
     /// useSpecialFloats=0. The wrapper at 0x008EBFAA..0x008EC04C adds .0 only without a dot or lowercase e.
     /// Expected finite strings follow the checked %.17g format shape; imported snprintf is the approved
-    /// phone-runtime assumption. Non-finite mapping remains MISSING.
+    /// phone-runtime assumption. Non-finite values are UNREACHABLE through the firmware Reader: N/I token errors (008E16A4..008E174C), and overflow is a converter failure.
     /// </summary>
     [Theory]
     [InlineData("0.1", "0.10000000000000001")]
@@ -2401,28 +2470,23 @@ public class EngineAppLayerTests
     }
 
     [Fact]
-    public void M1_050_DisconnectReportIsolatesSubscribersAndAllowsNoSubscribers()
+    public void M1_050_UnsupportedSdkDisconnectSlotHasNoPublicEvent()
     {
-        // S13: report id precedes the +0x1C notification (0052F2AC, 0052F2CC).
-        // Handler exceptions survive under the approved M1-034 departure.
+        // Live +0x30 resolves to UiMessageHandler::OnRobotDisconnected (0066331A).
+        // Both effects require SDK mode, which this stack does not support.
+        Assert.Null(typeof(CozmoEngine).GetEvent("RobotDisconnectReported"));
         using var rig = new Rig();
         rig.ToSuccess();
-        var calls = new List<string>();
-        Action<uint> failing = _ => throw new InvalidOperationException("report subscriber");
-        Action<uint> receiving = id => calls.Add($"external:{id}");
-        rig.Engine.RobotDisconnectReported += failing;
-        rig.Engine.RobotDisconnectReported += receiving;
-        rig.Engine.RobotDisconnected += _ => calls.Add("report");
+        int reports = 0;
+        rig.Engine.RobotDisconnected += _ => ++reports;
         rig.Engine.DisconnectCurrent();
         rig.Tick();
-        Assert.Equal(new[] { "external:1", "report" }, calls);
+        Assert.Equal(1, reports);
         Assert.Null(rig.Engine.Robot);
-        rig.Engine.RobotDisconnectReported -= failing;
-        rig.Engine.RobotDisconnectReported -= receiving;
         rig.ToSuccess();
         rig.Engine.DisconnectCurrent();
         rig.Tick();
-        Assert.Equal(new[] { "external:1", "report", "report" }, calls);
+        Assert.Equal(2, reports);
         Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: IExternalInterface.OnRobotDisconnected"));
     }
 
@@ -2433,7 +2497,7 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         var robot = rig.Engine.Robot!;
         var calls = new List<string>();
-        rig.Engine.RobotDisconnectReported += id => { Assert.Same(robot, rig.Engine.Robot); calls.Add($"external:{id}"); };
+        rig.Engine.ExternalRobotDisconnectCallObserved = id => { Assert.Same(robot, rig.Engine.Robot); calls.Add($"external:{id}"); };
         rig.Engine.RobotDisconnected += _ => calls.Add("report");
         rig.Engine.ClearDasGlobal = name =>
         {
@@ -2494,7 +2558,7 @@ public class EngineAppLayerTests
         rig.Connect();
         var calls = new List<string>();
         rig.Engine.ConnectionResponse += response => calls.Add($"response:{(byte)response.Result}");
-        rig.Engine.RobotDisconnectReported += _ => calls.Add("external");
+        rig.Engine.ExternalRobotDisconnectCallObserved = _ => calls.Add("external");
         rig.Engine.RobotDisconnected += _ => calls.Add("report");
         rig.Engine.ClearDasGlobal = calls.Add;
         rig.Engine.NeedsRobotDisconnected = () => calls.Add("needs");

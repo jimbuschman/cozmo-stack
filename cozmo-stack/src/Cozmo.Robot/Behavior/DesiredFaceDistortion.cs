@@ -36,7 +36,11 @@ public sealed class DesiredFaceDistortionComponent
     /// The engine's global error flag at <c>0x0105DD34</c> (D05, D06; the live-update error P05 writes it too).
     /// The reader is not recovered, so this is visibility only. One process-wide flag, as the engine's is.
     /// </summary>
-    public static bool ErrorFlagSet { get; set; }
+    public static bool ErrorFlagSet
+    {
+        get => Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        set => Cozmo.Transport.EngineErrorState.ErrorFlagSet = value;
+    }
 
     private readonly NeedsManager _manager;
 

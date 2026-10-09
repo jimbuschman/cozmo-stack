@@ -87,6 +87,9 @@ public sealed partial class EngineRobot
         AddMessage(RobotMessageId.AnimState, m => HandleAnimationState((AnimationState)m));
         AddMessage(RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
         Lifetime.Bind(0x51C, _ => _idleHandles.Retire());
+        // fidelity: M3-041
+        // Native 0x00532A64 closes the IMU stream after this vector retires.
+        // The actual logging/file recipient is a recoverable M3 gap, not storage-only disposal.
         Lifetime.Bind(0x518, _ => _messagingHandles.Retire());
     }
     private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback)

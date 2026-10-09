@@ -58,8 +58,10 @@ public sealed class TransportPriorityTests
     public void DefaultPrioritySkipsBothRangeQueriesAndRequest()
     {
         var host = new Host();
-        TransportThreadPriority.Request(Thread.CurrentThread, 2, host);
+        var logs = new List<TransportPriorityDiagnostic>();
+        TransportThreadPriority.Request(Thread.CurrentThread, 2, host, logs.Add);
         Assert.Empty(host.Calls);
+        Assert.Empty(logs);
     }
 
     /// <summary>0x0083352E..32: 0 succeeds; EPERM1 takes the non-error branch; other results fail.</summary>
@@ -72,5 +74,42 @@ public sealed class TransportPriorityTests
         var host = new Host { Result = result };
         Assert.Equal(failed, TransportThreadPriority.Request(Thread.CurrentThread, 3, host).Failed);
         Assert.Single(host.Requests);
+    }
+
+    /// <summary>0x00833596..B2: old policy/priority are -1; exact success channel/tag/body, including final ')'.</summary>
+    [Fact]
+    public void SuccessfulRequestLogsExactSourceInfoAfterTheHostRequest()
+    {
+        var host = new Host();
+        var logs = new List<TransportPriorityDiagnostic>();
+        TransportThreadPriority.Request(Thread.CurrentThread, 3, host, entry =>
+        {
+            Assert.Equal(new[] { "min:2", "max:2", "set:2:74" }, host.Calls);
+            logs.Add(entry);
+        });
+        Assert.Equal(new TransportPriorityDiagnostic("info", "Unnamed", "SetThreadPriority.Success",
+            "Changed thread policy:priority from -1:-1 to 2:74)"), Assert.Single(logs));
+    }
+
+    /// <summary>0x00833530..32: EPERM1 jumps past success and failure diagnostics.</summary>
+    [Fact]
+    public void PermissionDeniedProducesNoSuccessOrFailureLog()
+    {
+        var host = new Host { Result = 1 };
+        var logs = new List<TransportPriorityDiagnostic>();
+        TransportThreadPriority.Request(Thread.CurrentThread, 3, host, logs.Add);
+        Assert.Empty(logs);
+        Assert.Single(host.Requests);
+    }
+
+    /// <summary>0x0083354A..56: source failure tag/format, with host-owned strerror text.</summary>
+    [Fact]
+    public void FailedRequestKeepsSourceErrorFormatAndArguments()
+    {
+        var host = new Host { Result = 3 };
+        var logs = new List<TransportPriorityDiagnostic>();
+        TransportThreadPriority.Request(Thread.CurrentThread, 3, host, logs.Add);
+        Assert.Equal(new TransportPriorityDiagnostic("error", "", "SetThreadPriority.Failed",
+            "Error: host result 3 (res=3) setting thread policy:priority 2:74"), Assert.Single(logs));
     }
 }

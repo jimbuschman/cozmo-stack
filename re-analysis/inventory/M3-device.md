@@ -370,3 +370,14 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M3-038 owns S1 NV lifetime/delete boundary (0x005112D6..0x005112E4; recipient 0x0050FD8C..0x0050FD90); M3-035 remains pending-read callback discard. M3-039 covers SDK cube-sleep dispatch (0x0065DEA2). M3-040 owns NV idle callback scheduling and invocation predicate/order (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); M1-041 retains the callback's ready-byte store/log at 0x0052C3A6..0x0052C3B6. Source: 20261006-M1M2-missing-triage.md S1/E3/N1.
+
+
+## Correction: final M1 Opus findings (2026-10-09)
+
+Operator requested these corrections after the manager final Opus pass. This section supersedes the older contradictory event, non-finite blocker and filebuf-storage claims above. No record is settled; M3-041 is a new recoverable owner, not checked implementation authority.
+
+| Record | Current boundary | Primary evidence |
+| --- | --- | --- |
+| M3-041 | RECOVERABLE_GAP: Recover/check and build the complete diagnostic IMU logging path: exact file names/directories/collision handling, CSV/sample formatting, info/error/stream-state decisions, shared processed/raw stream interactions, final-chunk and destructor sync/close ordering. Engine handlers are reachable on received BF/C7 packets without app debug or SDK mode; no claim that firmware emits them spontaneously. No logger currently exists, so this is a visible recoverable production-path gap. Check the new I1-I11 rows before implementation. Request producer/ordinary firmware emission conditions remain unknown; no unreachable disposition or settlement. | Final processed chunk closes at0x00535F5C; raw order2 closes at0x005361F4. Messaging destructor 0x00532A48 vector release precedes filebuf destructor0x00532A64 ->0x005010B4 ->close0x0050111C; virtual sync slot+18 relocation0x0101F2DC ->0x00501398 ->fwrite0x00501416/fflush0x00501428, then fclose0x00501130. M1-046 owns retirement entry/order, this record owns file recipient effects. I9/I10 in the same report; phone stdio implementation is external runtime. |
+
+M1-022 continues to own host syscall/resolver/descriptor/errno representations. The missing source success diagnostic has been built under M1-048. M1-053 assumes host sinf/atan2f arithmetic only for undefined external phone-libm imports, under the ordinary non-shipped system-library exception; ADP-1 does not apply. M1-046 now names the actual IMU stream recipient M3-041; no debug/SDK unreachability is inferred from missing app producers. The new I1-I11 extraction must be manager-checked before building the M3 logger.

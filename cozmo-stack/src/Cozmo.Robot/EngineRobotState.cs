@@ -43,6 +43,24 @@ internal readonly record struct EngineLocalizationPose(float X, float Y, float Z
     }
 }
 
+// RobotManager::UpdateAllRobots uses process-static u16 0x0105101C. Tests supply
+// a private counter instance rather than resetting the production static state.
+internal sealed class RobotStatePublicationCounter
+{
+    private readonly object _gate = new();
+    internal ushort Count;
+    internal void MissingState(Action log)
+    {
+        lock (_gate)
+        {
+            Count = unchecked((ushort)(Count + 1));
+            if (Count < 11) return;
+            log();
+            Count = 0;
+        }
+    }
+}
+
 public sealed partial class CozmoEngine
 {
     /// <summary>Published after Robot::Update on every tick after the first time-synced RobotState.</summary>
@@ -55,20 +73,32 @@ public sealed partial class CozmoEngine
     internal Func<int>? PublicationLocalizedTo;
     internal Func<uint>? PublicationImageTimestamp;
     internal Func<(byte Localized, sbyte OffTreads)>? PublicationGameStatus;
+    private static readonly RobotStatePublicationCounter ProcessPublicationCounter = new();
+    internal RobotStatePublicationCounter PublicationCounter = ProcessPublicationCounter;
 
     // fidelity: M1-053
     // P2a-P2m: all supplied fields come from their owning components. No incoming packet forwarding.
     private void PublishRobotState(EngineRobot robot)
     {
-        if (!robot.FirstFullStateHandled) return;
+        if (!robot.FirstFullStateHandled)
+        {
+            // 0x0052F728..0x0052F774: wrapping u16 increment, >=11 info, then reset.
+            PublicationCounter.MissingState(() => Log($"info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot {RobotId} state (none available)."));
+            return;
+        }
         // The offline harness opens the update gate before supplying its first packet.
         if (robot.StoredState is not { } state) return;
         var p = PublicationPose!();
+        // GOT 0x0103E978 -> PoseOriginList::UnknownOriginID at 0x00C97B20 is 0.
+        // 0x0051810C..0x00518122 warns with the empty format at 0x00BE3F00, then continues.
+        if (p.OriginId == 0) Log("warning: Robot.GetRobotState.BadOriginID");
         var carry = PublicationCarrying!();
         uint status = state.Status;
         if (robot.AnimationStateTag != 0) status |= robot.AnimationStateTag == 0xFF ? 0x840u : 0x40u;
         if (carry.Carried != -1) status |= 2u;
         var game = PublicationGameStatus!();
+        // sinf is an undefined phone-libm import (PLT 0x004A4168), not shipped engine code.
+        // MathF.Sin supplies that external arithmetic; the engine's f32 operations stay ordered.
         float lift = 66f * MathF.Sin(state.LiftAngle); // 0x42840000, 0x0051818E
         lift = lift + 45f;                            // 0x42340000, 0x00518196
         lift = lift + 0f;                             // 0x00000000, 0x0051819E
@@ -95,6 +125,8 @@ public sealed partial class CozmoEngine
         float c = (float)(plus + plus), d = (float)(1.0 - twiceYz);
         float n1 = a * a + b * b, n2 = c * c + d * d;
         var operands = PublicationAngleOperands(a, b, c, d, n1, n2);
+        // atan2f is also an undefined phone-libm import. MathF.Atan2 assumes the external
+        // library's result; the shipped operand selection and Radians rescale remain exact.
         float angle = MathF.Atan2(operands.Y, operands.X);
         return CozmoMotion.RescaleRadians(angle);
     }

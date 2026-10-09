@@ -19,7 +19,9 @@ manifest = json.loads(read(manifest_path))
 records = [r for r in manifest['records'] if r['id'].startswith('M1-')]
 excluded = {}
 for r in records:
-    if 'MISSING' in (r.get('unresolved') or ''):
+    # A settled record can quote a queued diagnostic label containing MISSING;
+    # that is not an open implementation blocker (current M1-044).
+    if r['status']=='IMPLEMENTATION_GAP' and 'MISSING' in (r.get('unresolved') or ''):
         excluded[r['id']] = 'Open MISSING in current unresolved: ' + r['unresolved']
     elif r['status'] in ('RECOVERABLE_GAP', 'HARDWARE_ONLY'):
         excluded[r['id']] = r['status'] + '; no completed built record to package. ' + (r.get('unresolved') or '')
@@ -217,6 +219,13 @@ def test_evidence(r):
         quotes=[l for l in read(report).splitlines() if ('M2-003' in l or 'light packing' in l)]
         out.append('\nSource: `'+report+'`\n'+'\n'.join('> '+l for l in quotes))
         out.append('\nOracle generator source: `'+f['generator']+'`, SHA256 '+sha(ROOT/f['generator'])+'\n```python\n'+read(f['generator'])+'\n```')
+    elif r['id']=='M1-029':
+        fixture='cozmo-stack/tests/Cozmo.Protocol.Tests/Fixtures/m1-029-shipped-double.jsonl.gz'
+        out.append('\nStored shipped-converter emulator corpus: `'+fixture+'`, SHA256 `'+sha(ROOT/fixture)+'`. '
+                   'The quoted ShippedEmulatorCorpusMatchesBitsAndFailureGates test checks every row against the live '
+                   'FirmwareJsonDouble port; FirmwareReaderUsesShippedConversion and FirmwareReaderRejectsConverterFailure '
+                   'drive the Reader entry. No emulator was newly run in this packaging step. Historical corpus limits '
+                   'and source model/build rows are quoted above; allocation-failure coverage is not invented.')
     elif not any('Native' in n or 'Emulator' in n for n in names):
         out.append('\nNo separate native-emulator/oracle artifact is identified by this record or the M1/M2 numeric-oracle coverage report. The listed source-regression tests and their actual results are included; no absence-of-coverage verdict is made.')
     return '\n'.join(out)
@@ -226,6 +235,22 @@ for r in included:
     id=r['id']; rows=source_rows(r); inv='re-analysis/inventory/'+r['subsystem']+'.md'
     rowtext='\n'.join(l for _,l in rows)
     extra=[]
+    if id in ('M1-029','M1-046','M1-047','M1-048','M1-050','M1-053'):
+        for p in ('re-analysis/research/20261009-M1-final-opus-pass.md',
+                  're-analysis/research/20261009-M1-final-correction-calls.md'):
+            extra.append((p,read(p)))
+    if id=='M1-046':
+        p='re-analysis/research/20261009-M1-046-imu-reachability.md'
+        extra.append((p,read(p)))
+        extra.append(('re-analysis/fidelity_manifest.json',
+            'Current recipient owner (not settled):\n'+json.dumps(next(x for x in manifest['records'] if x['id']=='M3-041'),indent=2)))
+    if id=='M1-029':
+        for p,start,end in (
+            ('re-analysis/research/20260930-bcore-extractions.md','## 6. M1-029','## 7.'),
+            ('re-analysis/research/20261005-B-M1M2-rows-check.md','## Item 6','## Item 7.1')):
+            text=read(p); extra.append((p,text[text.index(start):text.index(end,text.index(start))]))
+        p='re-analysis/research/20261005-M1-029-converter-build-rows.md'
+        extra.append((p,read(p)))
     if id in ('M1-046','M1-047','M1-053'):
         p='re-analysis/jobs/B-M1M2.md'
         text=read(p)
@@ -255,7 +280,7 @@ for r in included:
             else: quoted=read(p)
             extra.append((p,quoted))
     citationtext=json.dumps(r,ensure_ascii=False)+'\n'+rowtext+'\n'+'\n'.join(t for _,t in extra)
-    if id in ('M1-046','M1-047','M1-053'):
+    if id in ('M1-029','M1-046','M1-047','M1-053'):
         # Adopted extraction tables also use bare eight-digit VAs and named PLTs.
         # Normalize only the address scan; the original quoted text stays verbatim.
         citationtext=re.sub(r'(?<![0-9A-Fa-f])([0-9A-Fa-f]{8})(?![0-9A-Fa-f])',r'0x\1',citationtext)
@@ -263,15 +288,21 @@ for r in included:
     else: ranges=addresses(citationtext)
     native_text=native(ranges)
     library_info=''
-    if r['id']=='M1-034':
+    if r['id'] in ('M1-029','M1-034'):
         cpp=engine.parent/'libc++_shared.so'
         load_library(cpp)
-        cpptext='\n'.join(r['evidence'])+'\n'+'\n'.join(l for _,l in rows if re.match(r'^\| G3\.(?:11|12|13|14|15|16)\b',l))
+        cpptext=('\n'.join(r['evidence'])+'\n'+'\n'.join(t for _,t in extra) if id=='M1-029' else
+                 '\n'.join(r['evidence'])+'\n'+'\n'.join(l for _,l in rows if re.match(r'^\| G3\.(?:11|12|13|14|15|16)\b',l)))
+        if id=='M1-029':
+            cpptext=re.sub(r'(?<![0-9A-Fa-f])([0-9A-Fa-f]{8})(?![0-9A-Fa-f])',r'0x\1',cpptext)
         cpp_ranges=[(a,b) for a,b in addresses(cpptext,minimum=0x10000) if b<0x100000]
         native_text+='\n\n'+native(cpp_ranges)
         library_info=f' Shipped libc++_shared.so is also read locally, SHA256 `{sha(cpp)}`; its cited VA intervals: '+', '.join(f'0x{a:08X}..0x{b:08X}' for a,b in cpp_ranges)+'.'
         load_library(engine)
     paths=sorted(tags[id]|{r['location']})
+    if id=='M1-029':
+        paths=sorted(set(paths)|{'cozmo-stack/src/Cozmo.Robot/FirmwareJson.cs',
+                                'cozmo-stack/src/Cozmo.Robot/FirmwareJsonDouble.cs'})
     if id=='M1-053':
         # Preserve exact supplier-adapter hunks, including those tagged to their owning layers.
         paths=sorted(set(paths)|{'cozmo-stack/src/Cozmo.Robot/'+p for p in (
@@ -302,7 +333,7 @@ index += ['## Excluded records and reasons','Each current excluded record is rep
 for r in records:
     if r['id'] in excluded: index += [f'### {r["id"]}',excluded[r['id']], '```json\n'+json.dumps(r,ensure_ascii=False,indent=2)+'\n```']
 index += ['## Reproduction and artifact boundaries','`python re-analysis/research/20261009-M1-verify-packet/build_packet.py` packages the checked-out snapshot after the offline test TRX exists. It only writes in this directory. The native ELF is read locally and is not uploaded. Per-record files are self-contained for manifest, rows, diff text, native transcripts, and relevant test/result text. Complete shared-file histories intentionally contain unrelated hunks; they are explicitly labeled as supersets rather than assigned invented record-level causal ownership.',
- 'Test command: `dotnet test cozmo-stack/Cozmo.sln --logger "trx;LogFileName=packet-tests.trx" --results-directory .scratch/m1-final-tests`, with DOTNET_PROCESSOR_COUNT=4 and ThreadPoolMinThreads=32. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.']
+ 'Test command: `dotnet test cozmo-stack/Cozmo.sln --logger "console;verbosity=normal" --logger "trx;LogFileName=packet-tests.trx" --results-directory .scratch/m1-final-correction-tests --blame-hang-timeout 5m --blame-hang-dump-type mini`, with normal parallel settings and no processor-count or worker-minimum overrides. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.']
 index += ['## Adopted rows and supplier boundaries',
  'M1-046/-047: [final extraction rows](../20261009-M1-final-extraction.md). M1-053: [projection rows](../20261009-M1-053-projection-rows.md). Manager adoption is quoted in the three record files. Root pose, tracking writers, image-result commit and other suppliers remain owned by their named higher-layer records, including their lifetime gaps. Native member allocation bookkeeping is represented by engine-thread-confined managed handle storage. No supplier or M1 record is settled by this packet.',
  '## Offline run and packet validation',f'Offline run: {counters["passed"]} passed, {counters["failed"]} failed, {counters["notExecuted"]} not executed. The full solution suite is recorded without result substitution.']

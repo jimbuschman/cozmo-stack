@@ -9,6 +9,8 @@ internal interface ITransportThreadScheduler
     int GetPriorityMin(int enginePolicy);
     int GetPriorityMax(int enginePolicy);
     int SetPriority(Thread thread, int enginePolicy, int priority);
+    // The host supplies its error text in place of the phone's errno/strerror primitive.
+    string GetErrorText(int result) => $"host result {result}";
 }
 
 // fidelity: M1-014
@@ -37,11 +39,14 @@ internal readonly record struct TransportPriorityRequest(int ThreadId, int Engin
     internal bool Failed => Result != 0 && Result != 1;
 }
 
+internal readonly record struct TransportPriorityDiagnostic(string Level, string Channel, string Tag, string Body);
+
 // fidelity: M1-047
 internal static class TransportThreadPriority
 {
     /// <summary>P3/P4: default2 skips the request; transport3 requests policy2 at f32 75% of the host range.</summary>
-    internal static TransportPriorityRequest Request(Thread thread, int priority, ITransportThreadScheduler host)
+    internal static TransportPriorityRequest Request(Thread thread, int priority, ITransportThreadScheduler host,
+        Action<TransportPriorityDiagnostic>? diagnostic = null)
     {
         // TaskExecutor's constructor skips both setters at 0x007FBE02..06 for priority2.
         if (priority == 2) return new(thread.ManagedThreadId, priority, 0, 0, 0);
@@ -56,9 +61,24 @@ internal static class TransportThreadPriority
         int requested = unchecked(min + (int)scaled);
         int result = host.SetPriority(thread, policy, requested);
         var request = new TransportPriorityRequest(thread.ManagedThreadId, priority, policy, requested, result);
-        // 0x0083352E..32: success0 and EPERM1 do not enter the error path. The host owns error text.
-        if (request.Failed) Trace.TraceError("SetThreadPriority.Failed: host result {0}, policy:priority {1}:{2}",
-            result, policy, requested);
+        // 0x00833596..B2: result0 logs channel/tag/format; the old policy and priority are literal -1.
+        if (result == 0)
+            Emit(new("info", "Unnamed", "SetThreadPriority.Success",
+                FormattableString.Invariant($"Changed thread policy:priority from -1:-1 to {policy}:{requested})")), diagnostic);
+        // 0x00833530..32: EPERM1 skips both success and failure. Other errors log before errG/break gate.
+        else if (request.Failed)
+        {
+            Emit(new("error", "", "SetThreadPriority.Failed",
+                FormattableString.Invariant($"Error: {host.GetErrorText(result)} (res={result}) setting thread policy:priority {policy}:{requested}")), diagnostic);
+            EngineErrorState.StoreAndMaybeBreak();
+        }
         return request;
+    }
+
+    private static void Emit(TransportPriorityDiagnostic entry, Action<TransportPriorityDiagnostic>? diagnostic)
+    {
+        if (diagnostic is not null) { diagnostic(entry); return; }
+        if (entry.Level == "info") Trace.TraceInformation("{0}/{1}: {2}", entry.Channel, entry.Tag, entry.Body);
+        else Trace.TraceError("{0}: {1}", entry.Tag, entry.Body);
     }
 }

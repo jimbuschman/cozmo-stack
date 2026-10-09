@@ -118,12 +118,10 @@ public sealed partial class CozmoEngine
     // The M1 interface calls are ordered; recipient semantics belong to the split
     // higher-layer records. Missing recipients are visible instead of silent no-ops.
     // fidelity: M1-050
-    /// <summary>
-    /// Engine-to-game disconnect report, carrying the robot id (RemoveRobot, 0x0052F29E..0x0052F2AC).
-    /// Raised before RobotDisconnected and the session clear, only when the connection handshake
-    /// did not answer the disconnect. The host API replaces the app consumer.
-    /// </summary>
-    public event Action<uint>? RobotDisconnectReported;
+    // The live slot +0x30 is UiMessageHandler::OnRobotDisconnected (ARM_ABS32
+    // 0x0102FE4C). It only exits active SDK mode, which this stack does not support.
+    // This nullable internal observer records the call position in tests; it is not an API event.
+    internal Action<uint>? ExternalRobotDisconnectCallObserved;
     internal Action? NeedsRobotDisconnected, PerfRobotDisconnected;
     internal Action<bool>? DasPauseUploading;
     internal Action<string>? ClearDasGlobal;
@@ -135,7 +133,7 @@ public sealed partial class CozmoEngine
         else action();
     }
     // fidelity: M1-050
-    internal void NotifyExternalRobotDisconnected(uint id) => FanOut(RobotDisconnectReported, id);
+    internal void NotifyExternalRobotDisconnected(uint id) => ExternalRobotDisconnectCallObserved?.Invoke(id);
     internal void ClearGlobal(string name) => Required(
         ClearDasGlobal is { } callback ? () => callback(name) : null, $"DAS clear {name}");
     internal void NotifyDisconnectServices()

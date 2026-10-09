@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "81eb7d19f2e97809d2f6708e4a4addaaf15b53b2dc6dd75026cd3283c610e0f2",
+  "inventory_sha256": "2a2aaa148649bb396ff8bc505a25305e5901e1c88a16ea6d59c628f71186ef08",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -182,7 +182,7 @@
       "hardware_required": false
     },
     "M1-015": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Connection timeout 5 s, and how a lost or failed connection is reported",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -299,7 +299,7 @@
       "hardware_required": false
     },
     "M1-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Engine tick 60 ms: arrivals drained FIFO and handed up once per tick",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -388,7 +388,8 @@
         "G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28)",
         "G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7",
         "J1 retained real asString dispatch 0x008E48B8..0x008E4902 and formatting wrapper 0x008EBF7C..0x008EC038; J7 reachable input bound and Reader/converter 0x008E07A4..0x008E1ECA, 0x0007E824..0x0007F202 (20261006-M1M2-missing-triage.md J1/J7).",
-        "J1: Json::Value::asString dispatches real type 3 with precision 17/useSpecialFloats=0 (0x008E48B8..0x008E4902); formatter wrapper uses imported snprintf, capacity 0x24, adds .0 after checking dot/lowercase e, then rewrites commas (0x008EBFAA..0x008EC04C). J7: FirmwareVersion JSON length is a u16 (0x007B9088..0x007B9092; 0x0071A908..0x0071A914); bounded Reader number scan and decodeDouble path have no fixed token-size cap in cited routines (0x008E078C..0x008E07F8; 0x008E190A..0x008E19A6; 0x008E1E42..0x008E1E4C; 0x008E2258..0x008E23D6; libc++ converter 0x0007E824..0x0007F202). Final exceptions/allocation-failure effects remain UNKNOWN."
+        "J1: Json::Value::asString dispatches real type 3 with precision 17/useSpecialFloats=0 (0x008E48B8..0x008E4902); formatter wrapper uses imported snprintf, capacity 0x24, adds .0 after checking dot/lowercase e, then rewrites commas (0x008EBFAA..0x008EC04C). J7: FirmwareVersion JSON length is a u16 (0x007B9088..0x007B9092; 0x0071A908..0x0071A914); bounded Reader number scan and decodeDouble path have no fixed token-size cap in cited routines (0x008E078C..0x008E07F8; 0x008E190A..0x008E19A6; 0x008E1E42..0x008E1E4C; 0x008E2258..0x008E23D6; libc++ converter 0x0007E824..0x0007F202). Final exceptions/allocation-failure effects remain UNKNOWN.",
+        "Correction: manager/Final Opus checked firmware Reader non-finite unreachability: readToken 0x008E16A4..0x008E16AE dispatch only 0x22..0x3A and bytes >0x5A; N/I reach 0x008E174C error, overflow 1e309 fails converter (FirmwareJsonDoubleTests.cs:64). J4/J5 allocation/length phone-runtime and M1-034 exception containment supersede the previous final-exceptions UNKNOWN/MISSING wording. Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
       ],
       "live_path": true,
       "hardware_required": false
@@ -549,7 +550,7 @@
       "hardware_required": false
     },
     "M1-044": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "RemoveRobot ordered lifetime interfaces, owner nulling and post-destruction membership cleanup",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -579,7 +580,7 @@
       "evidence": [
         "Manager adopted U1-U8: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Robot destruction 0x005112E6..0x00511308 -> InitSubscriptions/RobotLifetime.Destroy, idle owner +0x51C before messaging +0x518.",
         "Reverse shared-handle release 0x004EAE94..0x004EAEBA; last-owner virtual slots 0x004EF184..0x004EF1CC; vtable 0x0101FE28 -> Thumb 0x0051D8F8, deleting slot 0x0101FE24 -> Thumb 0x0051D8D4. Messaging unsubscribe 0x0051D8F8..0x0051D906 -> 0x0051D338 callback-clear and unlink; idle target 0x00664EB8 -> 0x0066365C. RobotSubscriptions.cs RetainedSubscription/SubscriptionSignal/SubscriptionOwners implement these checked recipients.",
-        "Messaging member retirement 0x00532A10..0x00532A74: +0x144/+0x138/+0x110/+0x104, +0xF8 vector, filebuf/ios, base. Native storage containers and stream/base subobjects have no separately retained managed resources; managed endpoint retires the owned vector in reverse order without invoking callbacks."
+        "Correction to earlier storage-only claim: Messaging destruction 0x00532A44..0x00532A6A releases the retained vector before basic_filebuf destructor 0x00532A64 -> PLT0x004A6760 -> 0x005010B4; its close call 0x005010C4 -> 0x0050111C synchronizes/fcloses an open stream. IMU handlers registered without debug/SDK gates at 0x00532BC8..0x00532BE8 can open at 0x00535E76/0x0053649C and close at 0x00535F5C/0x005361F4. M3-041 owns this actual file resource and descendant logging/close effects. Source: re-analysis/research/20261009-M1-046-imu-reachability.md I1-I11 and companion native transcript."
       ],
       "live_path": true,
       "hardware_required": false
@@ -592,7 +593,8 @@
         "H1 creates two threads and calls SetThreadPriority on both only for priority !=2 (0x007FBDBA,0x007FBDEC,0x007FBE02..0x007FBE14).",
         "H2 priority3 selects policy2/SCHED_RR and requests min+trunc_f32((max-min)*0.75), bits0x3F400000; EPERM/result1 skips error path (0x008334CC..0x00833532).",
         "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024.",
-        "Manager adopted P1-P4: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Transport constructor priority integer 3 at 0x008367C0 -> Dispatch::Create 0x007FB878 -> TaskExecutor 0x007FBC4C; both workers start before requests at 0x007FBE02..0x007FBE14. ReliableTransport constructor -> TransportThreadPriority.Request preserves the request and result gates."
+        "Manager adopted P1-P4: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Transport constructor priority integer 3 at 0x008367C0 -> Dispatch::Create 0x007FB878 -> TaskExecutor 0x007FBC4C; both workers start before requests at 0x007FBE02..0x007FBE14. ReliableTransport constructor -> TransportThreadPriority.Request preserves the request and result gates.",
+        "Correction: result0 info call 0x00833596..0x008335B2, channel Unnamed/tag SetThreadPriority.Success/format Changed thread policy:priority from %d:%d to %d:%d), args -1,-1,policy,priority. Failure sErrorF 0x00833556 -> 0x0080D13C, _errG store 0x0083358C then conditional helper 0x00833590 -> 0x004A4114 -> 0x0080DAB4 bx lr. Info target 0x004A505C -> 0x0080D42C. Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
       ],
       "live_path": true,
       "hardware_required": false
@@ -608,7 +610,10 @@
         "U4 CloseSocket fd<0 return and closed port47817 stores (0x008395CA..0x008396AA).",
         "U5 send count/error/rate-limit branches (0x0083A374..0x0083A3A4;0x0083A54E..0x0083A666).",
         "U6 receive buffer/MSG_DONTWAIT, errno11, warnings, errno107 reopen and drain stop (0x0083AA66..0x0083AAC6;0x0083AAF6;0x0083AB22..0x0083AB38;0x0083ABF4..0x0083AC0C;0x0083AD16..0x0083AD18).",
-        "U7 reset consumer: Update tests +0x9D, closes, reopens stored port only when CloseSocket returns 1, clears flag either way, then reads while fd>=0 and TryToReadMessage returns nonzero (0x0083ACE8..0x0083AD18). M1-023 owns the signal/handler/flag writer."
+        "U7 reset consumer: Update tests +0x9D, closes, reopens stored port only when CloseSocket returns 1, clears flag either way, then reads while fd>=0 and TryToReadMessage returns nonzero (0x0083ACE8..0x0083AD18). M1-023 owns the signal/handler/flag writer.",
+        "Correction: CloseSocket success info 0x008395F6..0x008395FC, Network/UDPTransport.CloseSocket.Success/Socket %d closed successfully; own failure 0x00839656 stores _errG at 0x0083968C. ENOTCONN close-failure sErrorF 0x0083ABB6 and reopen-failure sErrorF 0x0083AB64 use errno/strerror after the failed operation; both join _errG store 0x0083ABEA then gate 0x0083ABEC..0x0083ABF0. _errG at 0x0105DD34 is shared with higher-layer errors; _errBreakOnError at 0x01051E78 initially1; helper 0x004A4114 -> 0x0080DAB4 bx lr. Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt",
+        "Rule10 correction, independently reopened checked U1/U2/U5/U6: OpenSocketFailed literal0x00C289FE/0x00C28A1C, SetBroadcastFailed0x00C28A7E/0x00C28A9E, OpenSocket.BindInUse0x00C28BEC/0x00C28C0E, OpenSocket.BindFailed0x00C28C87/0x00C28CAA. Fixed engine formats are preserved; only errno/text/descriptor/syscall result representations are M1-022. Receive warning format at0x00C28E84 names pre-close fd/port, result and fresh errno. Accounting: re-analysis/research/20261009-M1-final-correction-calls.md.",
+        "Rule10 independently reopened U5 send diagnostics: SentWrongNumBytes format Bytes %zd != bufferSize %u at0x0083A42C/0x0083A450, sErrorF0x0083A3A4 then flag0x0083A3DA; SendData.NonIpAddress/Error: UDP can only send to IP addresses! at0x0083A6D4/0x0083A6F8, error0x0083A608 thenflag0x0083A63E; SendFailed warning0x0083A5C0, format0x00C28D72 includes address/result/errno/error6count/now%.1f. ReadFailed tag is UDPTransport.ReadFailed at0x0083AC48 (ADR0x0083AAF2 uses aligned PC0x0083AAF4+0x154). M1-022 supplies only host arguments."
       ],
       "live_path": true,
       "hardware_required": false
@@ -630,7 +635,8 @@
       "title": "External-interface disconnect/report delivery",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
       "evidence": [
-        "S13: RobotManager::RemoveRobot calls the external interface virtual slot +0x30 with robot id at 0x0052F29E..0x0052F2AC. SimpleExternalInterface's vtable has __cxa_pure_virtual in this slot; no concrete runtime override was found in shipped .so files. Concrete sink/payload UNKNOWN. The later RobotDisconnected slot +0x1C dispatch/session clear are outside this record (0x0052F2B6..0x0052F2D8). Source: 20261006-M1M2-missing-triage.md S13; binary vtable scan."
+        "S13: RobotManager::RemoveRobot calls the external interface virtual slot +0x30 with robot id at 0x0052F29E..0x0052F2AC. SimpleExternalInterface's vtable has __cxa_pure_virtual in this slot; no concrete runtime override was found in shipped .so files. Concrete sink/payload UNKNOWN. The later RobotDisconnected slot +0x1C dispatch/session clear are outside this record (0x0052F2B6..0x0052F2D8). Source: 20261006-M1M2-missing-triage.md S13; binary vtable scan.",
+        "Correction: live UiMessageHandler vtable 0x0102FE14, ARM_ABS32 slot relocation 0x0102FE4C -> OnRobotDisconnected 0x0066331A. SDK bytes +0xE1/+0xE2 gate ExitMode/UpdateIsSdkCommunicationEnabled; unsupported SDK mode M1-051/-052 leaves both false. RemoveRobot call 0x0052F29E..0x0052F2AC -> NotifyExternalRobotDisconnected is a no-op at the same call position. Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
       ],
       "live_path": true,
       "hardware_required": false
@@ -663,7 +669,8 @@
         "UpdateAllRobots enters from engine tick 0x004ED648; Robot::Update then HasReceivedRobotState, GetRobotState and external slot +0x1C at 0x0052F6C0..0x0052F7B0; counterpart CozmoEngine.TickAt -> PublishRobotState -> public RobotStatePublished API under the approved app boundary.",
         "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.",
         "Manager adopted P2a-P2m: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-053-projection-rows.md. GetRobotState 0x005180D8..0x00518252; pose struct 0x00846D38..0x00846DEE; quaternion angle 0x0084AA1C..0x0084AAB8; Radians 0x0084C832..0x0084C87C; packed 109-byte layout 0x00711970..0x00711A62. EngineRobotState.cs uses binary64 products followed by binary32 norms and native unordered branch.",
-        "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2."
+        "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2.",
+        "Correction: static wrapping u16 no-state counter at 0x0105101C increments before >=11 info/reset at 0x0052F720..0x0052F774, Unnamed/RobotManager.UpdateAllRobots/Not sending robot %d state (none available). UnknownOriginID GOT 0x0103E978 -> 0x00C97B20 uint0; warning Robot.GetRobotState.BadOriginID with empty format 0x00BE3F00 at 0x0051810C..0x00518122 precedes angle/head/lift reads. sinf/atan2f are undefined ELF imports (external phone libm). Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
       ],
       "live_path": true,
       "hardware_required": false

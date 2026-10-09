@@ -229,6 +229,29 @@ public sealed class ReliableTransport : IDisposable
     /// carry none.
     /// </summary>
     internal const string ErrorLevel = "[error] ";
+    internal const string InfoLevel = "[info] ";
+    private int _socketErrno;
+    private string _socketErrorText = "";
+    internal Action? ErrorFlagStored;
+
+    // Host errno/strerror representation is M1-022; read after the failed operation,
+    // rather than reusing the earlier recvmsg ENOTCONN exception.
+    private void RememberSocketError(Exception error)
+    {
+        _socketErrno = error is SocketException socket ? socket.NativeErrorCode : (int)SocketError.SocketError;
+        _socketErrorText = error.Message;
+    }
+
+    // fidelity: M1-048
+    private void QueueSocketError(List<Action> effects, string line)
+    {
+        effects.Add(() =>
+        {
+            Fan(Warning, ErrorLevel + line);
+            EngineErrorState.StoreAndMaybeBreak();
+            ErrorFlagStored?.Invoke();
+        });
+    }
 
     /// <summary>How long a worker thread is given to finish during shutdown before it is abandoned.</summary>
     private static readonly TimeSpan JoinTimeout = TimeSpan.FromSeconds(2);
@@ -865,8 +888,8 @@ public sealed class ReliableTransport : IDisposable
         {
             // CA26 (0x00839B8A..0x00839B96; 0x00839C80..0x00839CF2): fd −1, error, CloseSocket (a no-op), return 0.
             _sock = null;
-            var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.OpenSocketFailed: socket() failed: {code} ({msg})"));
+            RememberSocketError(e);
+            QueueSocketError(effects, $"UDPTransport.OpenSocketFailed: Error: Unable to open socket - res = -1, errno = {_socketErrno} '{_socketErrorText}'");
             CloseSocketLocked(effects);
             return false;
         }
@@ -879,8 +902,8 @@ public sealed class ReliableTransport : IDisposable
         catch (SocketException e)
         {
             // CA27 (0x00839D00..0x00839D24; 0x00839F48..0x00839FA0 → 0x00839CE0): error, CloseSocket, return 0.
-            var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.SetBroadcastFailed: SO_BROADCAST failed: {code} ({msg})"));
+            RememberSocketError(e);
+            QueueSocketError(effects, $"UDPTransport.SetBroadcastFailed: Unable to setsockopt SO_BROADCAST - res = -1, errno = {_socketErrno} '{_socketErrorText}'");
             CloseSocketLocked(effects);
             return false;
         }
@@ -892,16 +915,16 @@ public sealed class ReliableTransport : IDisposable
         catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
         {
             // CA29 (0x00839E76..0x00839EB6; 0x00839E14..0x00839E66): a warning; the socket stays open but unbound.
-            var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"UDPTransport.BindInUse: bind to port {port} failed: AddressAlreadyInUse ({msg}); socket kept, unbound"));
+            RememberSocketError(e);
+            effects.Add(() => Fan(Warning, "UDPTransport.OpenSocket.BindInUse: Warning: Unable to bind to in-use socket, continuing as this is OK in case of running multiple instances on one machine."));
             return true;
         }
         catch (SocketException e)
         {
             // CA28 (0x00839D3A..0x00839D42; 0x00839E6A..0x00839E72; 0x00839FA2..0x0083A026): error, CloseSocket
             // (port 47817), return 0.
-            var code = e.SocketErrorCode; var msg = e.Message;
-            effects.Add(() => Fan(Warning, $"{ErrorLevel}UDPTransport.BindFailed: bind to port {port} failed: {code} ({msg})"));
+            RememberSocketError(e);
+            QueueSocketError(effects, $"UDPTransport.OpenSocket.BindFailed: Error: Unable to bind socket (res = -1), errno = {_socketErrno} '{_socketErrorText}'");
             CloseSocketLocked(effects);
             return false;
         }
@@ -914,8 +937,7 @@ public sealed class ReliableTransport : IDisposable
     /// Otherwise close(fd), a failure logged as an error, and on both paths fd −1 and the stored port 0xBAC9 =
     /// 47817 (0x00839694..0x008396A8). It returns whether the close succeeded (the callers reopen only then:
     /// 0x0083AB2C cbz r0, 0x0083ACF4 cmp r0,#1).
-    /// The success log CA30 names is not given: this stack's one log channel, <see cref="Warning"/>, carries
-    /// warnings and errors only.
+    /// The shared diagnostic channel marks the source's info/error levels with explicit prefixes.
     /// Host mapping: .NET does not report a failed closesocket; a close is taken as failed only when
     /// <see cref="Socket.Close()"/> (or the <see cref="CloseHook"/> test seam) throws.
     /// </summary>
@@ -923,14 +945,17 @@ public sealed class ReliableTransport : IDisposable
     {
         var s = _sock;
         if (s is null) return false;                        // CA30: fd < 0
+        long fd = s.Handle.ToInt64(); // host descriptor representation, M1-022
         bool ok = true;
         try { if (CloseHook is { } hook) hook(s); else s.Close(); }
         catch (Exception e)
         {
             ok = false;
-            var msg = $"{e.GetType().Name}: {e.Message}";
-            effects.Add(() => Fan(Warning, $"{ErrorLevel}CloseSocket: close failed: {msg}"));
+            RememberSocketError(e);
+            QueueSocketError(effects, $"UDPTransport.CloseSocket.Failed: Unable to close socket {fd} (res = -1), errno = {_socketErrno} '{_socketErrorText}'");
         }
+        if (ok) effects.Add(() => Fan(Warning,
+            $"{InfoLevel}Network: UDPTransport.CloseSocket.Success: Socket {fd} closed successfully"));
         _sock = null;
         _localPort = PortAfterClose;
         return ok;
@@ -1162,7 +1187,12 @@ public sealed class ReliableTransport : IDisposable
         //    retry and no disconnect (B10).
         if (address.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
         {
-            Raise(() => Fan(Warning, $"{ErrorLevel}UDP can only send to IP addresses!"));
+            Raise(() =>
+            {
+                Fan(Warning, $"{ErrorLevel}UDPTransport.SendData.NonIpAddress: Error: UDP can only send to IP addresses!");
+                EngineErrorState.StoreAndMaybeBreak();
+                ErrorFlagStored?.Invoke();
+            });
             return;
         }
         UdpMessagesSent++; UdpBytesSent += raw.Length;       // CA31: AddSentMessage, before the sendto
@@ -1171,7 +1201,8 @@ public sealed class ReliableTransport : IDisposable
         {
             // CA31: fd −1 (a send before Start or after Stop): there is no fd guard, and sendto(−1) fails and
             // takes the AddSendError(6) path. Nothing is sent.
-            SendFailedLocked("no socket (fd -1)");
+            // M1-022: a failed host send on a missing descriptor maps to NotSocket.
+            SendFailedLocked(address, -1, new SocketException((int)SocketError.NotSocket));
         }
         else
         {
@@ -1181,11 +1212,16 @@ public sealed class ReliableTransport : IDisposable
                 if (sent != raw.Length)
                 {
                     int want = raw.Length;
-                    Raise(() => Fan(Warning, $"{ErrorLevel}UDPTransport.SentWrongNumBytes: sent {sent} of {want} bytes to {address}"));
+                    Raise(() =>
+                    {
+                        Fan(Warning, $"{ErrorLevel}UDPTransport.SentWrongNumBytes: Bytes {sent} != bufferSize {unchecked((uint)want)}");
+                        EngineErrorState.StoreAndMaybeBreak();
+                        ErrorFlagStored?.Invoke();
+                    });
                 }
             }
             catch (ObjectDisposedException) { return; }                   // closed under us during shutdown
-            catch (SocketException e) { SendFailedLocked($"{e.SocketErrorCode} ({e.Message})"); }
+            catch (SocketException e) { SendFailedLocked(address, -1, e); }
         }
         if (FrameTrace is not null)
         {
@@ -1203,15 +1239,17 @@ public sealed class ReliableTransport : IDisposable
     /// kEnableVerboseNetworkLogging is a const 0 (0x00C934A4), so verbose is false. CA34: the clock is
     /// GetCurrentNetTimeStamp and +0x88 starts at 0.0.
     /// </summary>
-    private void SendFailedLocked(string why)
+    private void SendFailedLocked(IPEndPoint address, long result, SocketException error)
     {
         const bool verbose = false;                         // CA33
         const double warnIntervalMs = 30000.0;              // CA32: literal 0x0083A6C8
         UdpSendErrors.Add(6);
         double now = _clock.NowMs;
         if (!(verbose || LastSendErrorMs == 0.0 || now > LastSendErrorMs + warnIntervalMs)) return;
+        uint errors = unchecked((uint)UdpSendErrors[6]);
+        string line = FormattableString.Invariant($"UDPTransport.SendFailed: sendto '{address}' returned {result}, errno = {error.NativeErrorCode} '{error.Message}' ({errors} sends failed), now = {now:F1}");
         LastSendErrorMs = now;
-        Raise(() => Fan(Warning, $"UDPTransport.SendFailed: sendto failed: {why}"));
+        Raise(() => Fan(Warning, line));
     }
 
     // fidelity: M1-010, M1-021
@@ -1315,9 +1353,19 @@ public sealed class ReliableTransport : IDisposable
             }
             catch (SocketException e)
             {
-                var code = e.SocketErrorCode; var msg = e.Message;
-                effects.Add(() => Fan(Warning, $"ReadFailed: {code} ({msg})"));
-                if (code == SocketError.NotConnected && CloseSocketLocked(effects)) OpenSocketLocked(_localPort, effects);
+                RememberSocketError(e);
+                var code = e.SocketErrorCode;
+                long fd = sock.Handle.ToInt64();
+                int port = _localPort, errno = _socketErrno;
+                string errorText = _socketErrorText;
+                effects.Add(() => Fan(Warning, $"UDPTransport.ReadFailed: recvmsg(_socketId = {fd} _port = {port}) returned -1, errno = {errno} '{errorText}'"));
+                if (code == SocketError.NotConnected)
+                {
+                    if (!CloseSocketLocked(effects))
+                        QueueSocketError(effects, $"UDPTransport.ReadFailed.CloseSocketFailed: Error: Closing unconnected socket failed. errno = {_socketErrno} '{_socketErrorText}'");
+                    else if (!OpenSocketLocked(_localPort, effects))
+                        QueueSocketError(effects, $"UDPTransport.ReadFailed.ReopenSocketFailed: Error: Reopening closed socket failed. errno = {_socketErrno} '{_socketErrorText}'");
+                }
                 return;
             }
             catch (ObjectDisposedException) { return; }
@@ -1649,7 +1697,7 @@ internal sealed class TransportAddressOrder : IComparer<IPEndPoint>
 
 /// <summary>
 /// Counts of AddRecvError (or, for <see cref="ReliableTransport.UdpSendErrors"/>, AddSendError) calls by error
-/// code, for diagnostics only: nothing in the transport reads them.
+/// code, for diagnostics only: SendFailed reads error6 for its warning arguments.
 /// </summary>
 public sealed class ReceiveErrorCounts
 {
