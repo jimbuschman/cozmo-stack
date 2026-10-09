@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through542 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 43 CHECKED native-row obligations / 8 CHECKED scope exclusions / 89 PARTIAL / 0 NOT DONE; decision checkpoints through543 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -91,7 +91,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-082 | 131 | CHECKED |
 | Q14-083 | 132 | CHECKED |
 | Q14-084 | 133 | PARTIAL |
-| Q14-085 | 134 | PARTIAL |
+| Q14-085 | 134 | CHECKED |
 | Q14-086 | 135 | PARTIAL |
 | Q14-087 | 136 | PARTIAL |
 | Q14-088 | 137 | PARTIAL |
@@ -694,7 +694,7 @@ PARTIAL at checkpoint540. LV5–6/PB1/LI10 establish guarded limiter/global undo
 
 > | C31.4 R4 clock/callback/duration/stop offset | M6-026,M6-022,M9-010 | **KEEP** | 0x00A03618;0x00A05574;0x00A05370;0x00A054D8;0x00A56414;0x00A55CC4;0x00A5495C;0x00A56478;0x009CBACC;0x009886C0;0x0098822C | Clock sign extension, callback/game-object release, duration/pitch divisor, one-shot offset getter and writer census all alter timing/state; keep101f0x42CA0000 and Â±half bits exact. |
 
-PARTIAL through checkpoint542. SO541 captures ordinary/derived one-shot getters, exact setter, constructor/table binding and position registration. SJ542 proves liveCR6 r3 is the primary source pointer; actual embedded0 binds stopoffset through988180/live68, embedded18 binds raw parameter36/P164 update, constructor raw164 input is creator entry stack18, and existing SX5 supplies the bit1 local producer. DC7/imports already establish A05574 composite identity/sign-extended clock; PB10/CK419/CB1–3/NS3/NS7/VR478 cover known completion, lifetime, duration, detach and result callbacks. Remaining concrete ordinary-interface factory/input applicability, parameter36 sender/value and requested wider writer/callback census. Native U32/F32 divide, ±half LE including unordered, S32 conversion and strict unsigned minimum stay exact; no whole music-PBI acceptance.
+CHECKED at checkpoint543 for the quoted bounded clock/callback/duration/stop-offset decisions. SO541/SJ542/SF543 bind both one-shot getters, native setter conversion/minimum/flags, actual ordinary clip interface factory, constructor scalar continuity, registered receiver population and parameter36 notification/value delivery. LiveCR6 source identity, complete unsigned trim/endflag and source sentinel inputs are concrete. DC7/imports supply composite position identity and sign-extended clock; PB10/CK419/CB1–3/NS3/NS7/VR478 supply known completion/gameobject release, duration/pitch divisor, detach and result callbacks. Exact native NaN/F32/±half/S32/unsigned operations remain control behavior. Higher-layer music selection/operation population and other source-family lifecycle obligations remain separately scoped, not a generic missing seam in this completed bounded output path; no production-fidelity acceptance.
 
 ## Q14-086 — triage line 135
 
