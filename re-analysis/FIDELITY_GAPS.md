@@ -53,7 +53,7 @@ status.
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1-transport | INVENTORY_APPROVED | 31 | 0 | 0 | 3 |
-| M2-protocol | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
+| M2-protocol | ACCEPTED | 16 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |

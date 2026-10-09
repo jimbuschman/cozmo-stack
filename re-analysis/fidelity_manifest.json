@@ -78,10 +78,12 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "INVENTORY_APPROVED",
+        "state": "ACCEPTED",
         "inventory": "re-analysis/inventory/M2-protocol.md",
         "approved": "2026-09-29",
-        "snapshot": "re-analysis/inventory/M2-protocol.approved.json"
+        "snapshot": "re-analysis/inventory/M2-protocol.approved.json",
+        "accepted_commit": "8c78d4f",
+        "accepted": "2026-10-09"
       }
     },
     {

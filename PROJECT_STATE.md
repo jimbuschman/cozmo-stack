@@ -36,6 +36,16 @@ stands. Nothing new starts outside the current layer.
 
 **Audio (operator, 2026-10-05):** ADP-1 in AGENTS.md. Exact decisions, equivalent per-sample DSP, with thresholds measured against the emulator (`jobs/B-ADP-HARNESS.md`). No bulk reclassification.
 
+**2026-10-09: M2 ACCEPTED,** the first finished layer.
+
+**The Codex builder trial passed.** The Opus pass (`research/20261009-M1M2-opus-pass.md`) settled 5 of 8 records (M1-025, 031, 041, 045, M2-002). The defects were few: one came from a misnamed row the manager had approved (M1-024), and one is a log level (M1-044/015). Codex stays the builder.
+
+**M1's remaining work:**
+- fix M1-024 (the SetPrevNeedsBrackets snapshot) and the M1-044/015 warning level;
+- apply the MISSING and policy dispositions (`jobs/B-M1M2.md`);
+- build M1-029's J1/J7, M1-046 and the four new M1 records;
+- the operator's packed-frame robot run for M1-033. M1-043 is now EQUIVALENT_IMPLEMENTATION.
+
 **Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 22 records:
 - 9 built, with the defects in their `unresolved`;
 - 10 policy records to confirm;
