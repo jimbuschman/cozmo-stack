@@ -1583,3 +1583,7 @@ PR262A–C trace kind5 event traversal, E14 clear/release ordering, 0403 target/
 ### Checkpoint 263 — prepared bank/media retirement
 
 PB263A/B and PM263C recover preparation/ordinary counter gates, unlink-before-event cleanup, forward media-ID decrements/direct-pointer clearing/recheck and bank flag clear. Storage bodies excluded; targetA4 and wider writer/input/provider closure remain PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 264 — known preparation hook families
+
+NR264A–D bind five known A4 families and trace generic child forwarding, Switch shared-list/counter/group filtering and Sound descriptor/manager suppression gates. Shared registry/media descendants and writer/input/provider closure remain PARTIAL; no totals/Q15/fidelity/production changes.
