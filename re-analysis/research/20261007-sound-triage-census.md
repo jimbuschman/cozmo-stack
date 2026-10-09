@@ -1511,3 +1511,7 @@ MB244A binds factory/table/global and known20/24/28 addresses for prior caller r
 ### Checkpoint 245 — tag23 native producers
 
 OP245A–C recover four ARM producers absent from navigation index: ID/name lookup/retain, register versus retire flag/mode writes and atomic publication; join sentinel object and signed modes to consumer. Positive event-ID hashing/queue controls reused. EventC/public input/family/writer closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 246 — event reference/destruction binding
+
+ER246A–C bind the known factory table, mutex-protected retain/release, zero-count ID unlink and owner-before-action destructor order. Queued event release family locally joined; mutex setup/index/action/provider closure retained. Storage internals excluded. No totals/Q15/fidelity/production changes.
