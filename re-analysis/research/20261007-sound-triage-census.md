@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through518 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 28 CHECKED native-row obligations / 8 CHECKED scope exclusions / 104 PARTIAL / 0 NOT DONE; decision checkpoints through519 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -56,7 +56,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-047 | 85 | PARTIAL |
 | Q14-048 | 86 | PARTIAL |
 | Q14-049 | 87 | PARTIAL |
-| Q14-050 | 88 | PARTIAL |
+| Q14-050 | 88 | CHECKED |
 | Q14-051 | 90 | PARTIAL |
 | Q14-052 | 91 | PARTIAL |
 | Q14-053 | 92 | PARTIAL |
@@ -476,7 +476,7 @@ Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node repla
 
 > | M9-011 | **KEEP** | 0x00A4FD84..0x00A4FEF4;0x00AA257C;0x00AA18F4;0x008DBFE8;0x00A57724 | Robot_Bus_1 two-EQ/limiter/Hijack order, 48000 mix side, 22320 output and wiring stay exact; share the M6-013 arithmetic boundary only. |
 
-PARTIAL: FX1–6, F1–21, B1–12/B19–26, EQB1–4 and H/FR/Z rows establish ordered FX selection/setup, persistent coefficient KEEP boundary, Hijack callback and mix/output rate controls. Whole live slot creation/bypass/teardown and exact 48000-to22320 geometry still need production closure. Approved sample arithmetic exclusions do not erase those controls.
+CHECKED: RB519 maps the specified shipped Robot_Bus_1 four-slot route through FQ431/FS432/SL433/LP434/IC/VF/WV actual creation/parameter/lifecycle, FX1–6/F/EQ445 execution/bypass/reset, H/HG/FR/Z/RG465 geometry/callback/framing, every retained G/RK/RR/SF399–IC403 count/phase contract and AL/AG453/LF454 bounded robot frame delivery. Only per-sample EQ/limiter/resampler arithmetic and approved branch/higher-layer exclusions stop at their explicit boundaries. Mix48000 default and robot22320/744 remain distinct, with native provider/format gates retained. No whole M9-011 manifest promotion or unrelated route/provider claim.
 
 ## Q14-051 — triage line 90
 
