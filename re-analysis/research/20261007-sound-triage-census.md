@@ -1979,3 +1979,7 @@ CC361A–F settle operation4/5 state/correlation reset and target order, operati
 ### Checkpoint 362 — playing-ID pending collaborators
 
 PC362A–H settle exact-ID two-list cancellation, paused-duplicate native fault, code1820 first-list exemption, target-ID sorted paused admission/failure cleanup, and counter-gated resume via existing RS168. CC361 named pending collaborator gaps superseded; known callback/lifetime rows reused. Wider pending/counter/deadline/limit/input/product closure remains PARTIAL, counts unchanged, Q15 pending Q14.
+
+### Checkpoint 363 — known node command-slot recipients
+
+NC363A–D bind known five-node4C/58 slots, reuse RR5/6 for known controls, and settle container forward58 and Sound58 linked-PBI filtering/argument forwarding. PBI1C, Switch/Layer4C and broader child/list/writer/input/family closure remain PARTIAL; counts unchanged, Q15 pending Q14.

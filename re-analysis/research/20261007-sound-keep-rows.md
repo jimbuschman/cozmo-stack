@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 363 — known node control slots and operation5 recipient
+
+Primary: `20261008-sound-node-control-command-bindings-native.txt`, same engine hash. NR146/CP215 known five-node table association, CC361 operation5 and pause/resume descriptors, RR5/RR6 control bodies reused. No new global node-family census from these selected tables.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| NC363A known slot bindings | raw103BB28/B8B8/BE20/CFE0/B0A8;raw103BB1C/B8AC/BE14/CFD4/B09C | Sound58=A1DB68; RanSeq/Switch/ActorMixer/Layer58=98109C. Their4C respectivelyA1D9DC/988074/A2DCD8/988074/9D2AA0. RR5 common reverse active-child control now positively joins known ActorMixer as well as RanSeq; RR6 Sound4C stays positive. Switch/Layer4C bodies remain separately retained, not assumed common forwarding. |
+| NC363B container58 | 98109C..9810F0 | Read node60/count, node5C/base; wrapping count<<2==0 returns. Otherwise visit forward pointers, invoke each child.live58(child,originalarg1,originalarg2,originalarg3), ignore results. After callback reload current node60/base, compare saved next pointer with wrap(base+count*4) by equality; continue at saved pointer. No null-child check, activecontext30 gate, parent-pointer filter, first-match exit or child retain/release here. Contrary order/filters must not be borrowed from RR5 slot4C. |
+| NC363C Sound58 entry/filter | A1DB68..A1DBC8;A1DC14..A1DC50 | Sound30null returns. Otherwise contextC headnull returns, without signed context60 admission check. Linked entry pointer L=PBI+C. Incoming arg1 nonzero requires L8 (PBI14)==arg1; arg3 nonzero requires L134 (PBI140)==arg3. Zero argument independently disables its equality predicate. Four native branches correspond to both/object-only/playing-only/neither filter. No ID conversion, ancestry traversal or wildcard for nonzero input. |
+| NC363D Sound58 dispatch | A1DBD0..A1DBF0;A1DBF4..A1DC10;A1DC54..A1DC90 | For each accepted L, load primary table atL−C, call PBI.live1C(PBI,originalarg2). Reload L24 next only after callback; continue linked physical order, calling every matching PBI. No local PBI refcount/flag/playing-count change, no callback-result gate. CC361 operation5 supplies originalarg2=resolved targetV, so it is forwarded as a pointer to1C, not ignored or replaced with owner/playingID. Concrete PBI1C family remains the next decision dependency. |
+
+Known operation5 node58 dispatch/child propagation/filtering now positive. Dynamic child/parent/list writers, concrete PBI1C and remaining Switch/Layer4C production joins stay PARTIAL; totals unchanged, Q15 pending Q14. Research only; no production/fidelity/hardware changes.
+
 ## Checkpoint 362 — playing-ID pending cancellation, pause and resume
 
 Primary: `20261008-sound-playing-id-pending-controls-native.txt`, same engine hash. CC361 direct callers, PN160 callback/removal framework, DR162/DD163/AP249 known0403/0503/pending lifetime, A20/E13–16 playing-ID completion and RS168 deadline reschedule reused. M=pending manager,N=pending object,L=three-word link. Offsets hex. Exact playing-ID comparisons never treated as wildcard.
