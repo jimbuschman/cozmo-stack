@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 382 — known bus58 command recursion
+
+Primary: `20261009-sound-bus-command58-native.txt`, same engine hash; 40 instruction words plus raw slots. NC363 knownfive node58 andSL364 PBI1C bindings reused; no adjacent bus78 descent from mere proximity. N=bus; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| BC382A known binding/first vector | raw103AD38/103D158;9C07C4..9C0808 | Both knownbus tables58=9C07C4. Preserveoriginalthree incomingarguments. First N58/base,N5C/count; wrappingcount<<2zero selectssecondvector. NoownN30 orsignedactivecontextgate, opcode/playingID/object/38 filter. Empty firstvector doesnotreturnwithoutcheckingsecond. |
+| BC382B every-child dispatch/live endpoint | 9C080C..9C0844 | Each physicalpointerforward invokeschild.live58(child,originalarg1,arg2,arg3),ignore result. Nochildnull/active/ancestry/refgate. Pointeradvancesbeforecallback. Reloadcurrentselectedbase/count aftereachcall; compare savednextpointerwithreloadedwrappingend byequality. Firstvector endselectssecond; secondvector endreturns. No stable snapshot, reverse/clamp orvisitedchildretain. |
+| BC382C second vector and reused descendants | 9C0848..9C0860;NC363/SL364 | Second N48/base,N4C/count forward, sameeverychilddispatch/end handling. Zero secondcount reachesendpointreturn. NC363 alreadyownsselectedcontainer/Sound58 filters/forwarding;SL364 positivelyjoinsknownSound'sPBI1C toPD178D/CA179. No unopenedPBI1C body inferred fromhistoricalpendingwording. Fullchild/input/provider/writer/productclosure retained. |
+
+Known bus58 localbody andselecteddownstreamrecipients positive. Thisrecordspossibleknownbusproduct behavior withoutclaimingeveryCC361 targetresolverreturnsabus. Actualtarget/vector/table/argument/input/provider/writer/familyclosure remainsPARTIAL. Totals unchanged;Q15 pendingQ14. No production/fidelity/hardware changes.
+
 ## Checkpoint 381 — state-object individual parameter writer
 
 Primary: `20261009-sound-state-object-parameter-writer-native.txt`, same engine hash; 91 instruction words plus literal. SO376 state parameterblock and member14 owner attachment, SG8 detach and SA377 ownerCC consumer reused. O=stateobject,V=rawF32value,K=incomingIDlowbyte; offsets hex. This settles localwriter behavior, not an unestablished publiccaller.
