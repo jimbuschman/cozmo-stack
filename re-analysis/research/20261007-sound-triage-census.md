@@ -278,6 +278,8 @@ PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity write
 
 Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Positive joins now include alternative chooser ASEL304/M5 R1–R7, complete local sort ASORT305 (tie example corrected315), derived Prepare/BeginBuffering slot AENTRY306 and robot_volume producer RVOL306 to AS4. Remaining: other volume inputs/subscriber/routing products, creator/provider, other callable/input and source geometry closure. RCTX316 joins selected robot wrapper/context/native drain and post-map collector ownership from positive UC/UE rows; no broader caller-family closure. DPOST307/DCB308/DQUEUE309–DSORT314 positively join selected scheduling, callback functors, queue binding/admission, workers/waits, stop versus detached batch and complete deferred sort; historical Dispatch-thread/cancellation/sort pending wording is superseded for these concrete bodies.
 
+CM446: concrete tag69 captured-client output-source callback publishes rawC3C; allnext-animation mode0/1/2/other branches, oldabort/clear-before-mode and terminal4/5 admission nowpositive. Reuses GOR/AS/SH/UC/QC/SX, AENTRY306/AP/ASORT305 joins. Modechange itselfdoesnotrebuildexistinganimation. Concrete deleting lifecycle/higher-layer gameinput and widerwriter/callback/scheduling closure remainPARTIAL.
+
 ## Q14-022 — triage line 60
 
 > | M6-017 | **KEEP** | 0x009AF9F4..0x009AFAB8;0x00A4087C;0x00A40940;0x009AFD10;0x00A38420;0x00A03618;0x009EC418;0x009EBE6C | Thread lifecycle, group/voice/bus order, gate writers, pending-action drain, EndOfEvent and post-Term latency remain exact; external pacing uncertainty is not an ADP-1 arithmetic exemption. |
@@ -561,6 +563,8 @@ EQ445: all seven local persistent coefficient graphs now positive (180 native op
 > | M9-028 | **KEEP** | 0x00599F60..0x00599FBF;0x00596DC8 | Game object7 on-robot/object6 off-robot, zero transition and dispatch order remain exact live routing work. |
 
 Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+
+CM446: concrete tag69 captured-client output-source callback publishes rawC3C; allnext-animation mode0/1/2/other branches, oldabort/clear-before-mode and terminal4/5 admission nowpositive. Reuses GOR/AS/SH/UC/QC/SX, AENTRY306/AP/ASORT305 joins. Modechange itselfdoesnotrebuildexistinganimation. Concrete deleting lifecycle/higher-layer gameinput and widerwriter/callback/scheduling closure remainPARTIAL.
 
 ## Q14-066 — triage line 115
 
@@ -2327,3 +2331,5 @@ WP443 bindsdatacontainer->pendingprovider metadata/duration, Set/Clearownership,
 WP444 suppliesparentnewchildpublication/replacement, pendingversusactivequeries, clear, callbackassignmentbeforechildrelayupdate, actualparentrelayargument/callbackownership. Sourceproductlocalprovider/lifecycleframing joinedWP442/443; callerinputfamiliesnotinferredabsent. BroaderQ14 remainsPARTIAL/countsunchanged; nextremainingFXInit/controlconsumerselectors;Q15followsQ14. No production/fidelity/hardwarechanges.
 
 Checkpoint445 — EQ445 seven-type persistent parameter graphs; primary269 ARM instructions plus reused22-instruction type1. Research generator validates full selected ranges and raw operation dependencies. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 parked until Q14 closure.
+
+Checkpoint446 — CM446 output-mode writer/next-animation choices;332 complete native instructions andactualcallable tables/getterrelocation. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; no promotion/Q15/productionchange.

@@ -1,0 +1,389 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0059950A..0x0059962A exclusive; Thumb;
+0059950A: ldr          r1, [r1, #4]
+0059950C: str          r1, [r4, #0x30]
+0059950E: ldr          r7, [r0, #4]
+00599510: cmp          r7, #0
+00599512: beq.w        #0x59962a
+00599516: ldr          r0, [pc, #0x204] ; word[0059971C]=00AA5886
+00599518: movs         r1, #0
+0059951A: add          r0, pc
+0059951C: ldr          r0, [r0]
+0059951E: ldr          r0, [r0]
+00599520: strd         r1, r1, [sp, #4]
+00599524: str          r1, [sp, #0xc]
+00599526: adr          r1, #0x1f8
+00599528: add          r2, sp, #4
+0059952A: adr          r3, #0x218
+0059952C: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+
+00599530: ldr          r0, [sp, #4]
+00599532: cbz          r0, #0x599552
+00599534: ldr          r1, [sp, #8]
+00599536: cmp          r1, r0
+00599538: itttt        ne
+0059953A: subne.w      r2, r1, #8
+0059953E: subne        r2, r2, r0
+00599540: mvnne        r3, #7
+00599544: bicne.w      r2, r3, r2
+00599548: itt          ne
+0059954A: addne        r1, r1, r2
+0059954C: strne        r1, [sp, #8]
+0059954E: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00599552: ldr          r0, [r7]
+00599554: add.w        sl, sp, #0x28
+00599558: movs         r1, #0x68
+0059955A: ldr          r6, [r0, #0x2c]
+0059955C: ldr          r0, [pc, #0x204] ; word[00599764]=00A8AC28
+0059955E: str          r4, [sp, #0x2c]
+00599560: add          r0, pc
+00599562: strh.w       r1, [sp, #2]
+00599566: adds         r0, #8
+00599568: str.w        sl, [sp, #0x38]
+0059956C: str          r0, [sp, #0x28]
+0059956E: add          r0, sp, #4
+00599570: add.w        r2, sp, #2
+00599574: mov          r1, r7
+00599576: mov          r3, sl
+00599578: blx          r6
+0059957A: ldrd         r0, r1, [r4, #0x24]
+0059957E: add.w        r8, r4, #0x20
+00599582: cmp          r0, r1
+00599584: bhs          #0x59959c
+00599586: ldr          r1, [sp, #4]
+00599588: str          r1, [r0]
+0059958A: ldr          r1, [sp, #8]
+0059958C: str          r1, [r0, #4]
+0059958E: movs         r0, #0
+00599590: strd         r0, r0, [sp, #4]
+00599594: ldr          r0, [r4, #0x24]
+00599596: adds         r0, #8
+00599598: str          r0, [r4, #0x24]
+0059959A: b            #0x5995ac
+0059959C: add          r1, sp, #4
+0059959E: mov          r0, r8
+005995A0: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+
+005995A4: ldr          r0, [sp, #8]
+005995A6: cbz          r0, #0x5995ac
+005995A8: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+
+005995AC: ldr          r0, [sp, #0x38]
+005995AE: cmp          sl, r0
+005995B0: beq          #0x5995ba
+005995B2: cbz          r0, #0x5995c0
+005995B4: ldr          r1, [r0]
+005995B6: ldr          r1, [r1, #0x14]
+005995B8: b            #0x5995be
+005995BA: ldr          r1, [r0]
+005995BC: ldr          r1, [r1, #0x10]
+005995BE: blx          r1
+005995C0: ldr          r0, [r7]
+005995C2: add.w        sl, sp, #0x10
+005995C6: movs         r1, #0x69
+005995C8: ldr          r6, [r0, #0x2c]
+005995CA: ldr          r0, [pc, #0x19c] ; word[00599768]=00A8ABFA
+005995CC: str          r4, [sp, #0x14]
+005995CE: add          r0, pc
+005995D0: strh.w       r1, [sp, #2]
+005995D4: adds         r0, #8
+005995D6: str.w        sl, [sp, #0x20]
+005995DA: str          r0, [sp, #0x10]
+005995DC: add          r0, sp, #4
+005995DE: add.w        r2, sp, #2
+005995E2: mov          r1, r7
+005995E4: mov          r3, sl
+005995E6: blx          r6
+005995E8: ldrd         r0, r1, [r4, #0x24]
+005995EC: cmp          r0, r1
+005995EE: bhs          #0x599606
+005995F0: ldr          r1, [sp, #4]
+005995F2: str          r1, [r0]
+005995F4: ldr          r1, [sp, #8]
+005995F6: str          r1, [r0, #4]
+005995F8: movs         r0, #0
+005995FA: strd         r0, r0, [sp, #4]
+005995FE: ldr          r0, [r4, #0x24]
+00599600: adds         r0, #8
+00599602: str          r0, [r4, #0x24]
+00599604: b            #0x599616
+00599606: add          r1, sp, #4
+00599608: mov          r0, r8
+0059960A: blx          #0x4a5008 ; std::__ndk1::vector<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>,std::__ndk1::allocator<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>>::__push_back_slow_path<std::__ndk1::shared_ptr<Signal::Lib::ScopedHandleContainer>>
+
+0059960E: ldr          r0, [sp, #8]
+00599610: cbz          r0, #0x599616
+00599612: blx          #0x4a4ef4 ; <EXTERNAL>::std::__ndk1::__shared_weak_count::__release_shared
+
+00599616: ldr          r0, [sp, #0x20]
+00599618: cmp          sl, r0
+0059961A: beq          #0x599624
+0059961C: cbz          r0, #0x59962a
+0059961E: ldr          r1, [r0]
+00599620: ldr          r1, [r1, #0x14]
+00599622: b            #0x599628
+00599624: ldr          r1, [r0]
+00599626: ldr          r1, [r1, #0x10]
+00599628: blx          r1
+RANGE 0x0059A5BC..0x0059A624 exclusive; Thumb;
+0059A5BC: push         {r4, lr}
+0059A5BE: sub          sp, #0x10
+0059A5C0: ldr          r4, [r0, #4]
+0059A5C2: add.w        r0, r1, #0x10
+0059A5C6: blx          #0x4af7f0 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_SetRobotAudioOutputSource
+
+0059A5CA: ldrb         r1, [r0]
+0059A5CC: ldrb.w       r2, [r4, #0x3c]
+0059A5D0: cmp          r2, r1
+0059A5D2: it           ne
+0059A5D4: strbne.w     r1, [r4, #0x3c]
+0059A5D8: ldr          r1, [pc, #0x70] ; word[0059A64C]=00AA47C6
+0059A5DA: add          r1, pc
+0059A5DC: ldr          r1, [r1]
+0059A5DE: ldr          r4, [r1]
+0059A5E0: movs         r1, #0
+0059A5E2: strd         r1, r1, [sp, #4]
+0059A5E6: str          r1, [sp, #0xc]
+0059A5E8: ldrb         r0, [r0]
+0059A5EA: blx          #0x4af7fc ; Anki::Cozmo::ExternalInterface::EnumToString
+
+0059A5EE: ldr          r1, [pc, #0x60] ; word[0059A650]=006560CB
+0059A5F0: add          r1, pc
+0059A5F2: add          r2, sp, #4
+0059A5F4: adr          r3, #0x5c
+0059A5F6: str          r0, [sp]
+0059A5F8: mov          r0, r4
+0059A5FA: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+
+0059A5FE: ldr          r0, [sp, #4]
+0059A600: cbz          r0, #0x59a620
+0059A602: ldr          r1, [sp, #8]
+0059A604: cmp          r1, r0
+0059A606: itttt        ne
+0059A608: subne.w      r2, r1, #8
+0059A60C: subne        r2, r2, r0
+0059A60E: mvnne        r3, #7
+0059A612: bicne.w      r2, r3, r2
+0059A616: itt          ne
+0059A618: addne        r1, r1, r2
+0059A61A: strne        r1, [sp, #8]
+0059A61C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0059A620: add          sp, #0x10
+0059A622: pop          {r4, pc}
+RANGE 0x0074BD72..0x0074BD76 exclusive; Thumb; _ZNK4Anki5Cozmo17ExternalInterface19MessageGameToEngine29Get_SetRobotAudioOutputSourceEv
+0074BD72: adds         r0, #8
+0074BD74: bx           lr
+RANGE 0x004AF7F0..0x004AF7FC exclusive; ARM;
+004AF7F0: add          ip, pc, #0xb00000
+004AF7F4: add          ip, ip, #148, #20
+004AF7F8: ldr          pc, [ip, #0x7e4]!
+01043FDC: raw=004A4010 relocated=0074BD73 _ZNK4Anki5Cozmo17ExternalInterface19MessageGameToEngine29Get_SetRobotAudioOutputSourceEv
+01024194: raw=004EEB61 relocated=004EEB61 
+01024198: raw=0059A509 relocated=0059A509 
+0102419C: raw=0059A50D relocated=0059A50D 
+010241A0: raw=0059A529 relocated=0059A529 
+010241A4: raw=0059A53D relocated=0059A53D 
+010241A8: raw=0059A53F relocated=0059A53F 
+010241AC: raw=0059A543 relocated=0059A543 
+010241D4: raw=004EEB61 relocated=004EEB61 
+010241D8: raw=0059A581 relocated=0059A581 
+010241DC: raw=0059A585 relocated=0059A585 
+010241E0: raw=0059A5A1 relocated=0059A5A1 
+010241E4: raw=0059A5B5 relocated=0059A5B5 
+010241E8: raw=0059A5B7 relocated=0059A5B7 
+010241EC: raw=0059A5BD relocated=0059A5BD 
+00599764: raw=00A8AC28 relocated=00A8AC28 
+00599768: raw=00A8ABFA relocated=00A8ABFA 
+RANGE 0x0059A584..0x0059A59C exclusive; Thumb;
+0059A584: push         {r4, lr}
+0059A586: mov          r4, r0
+0059A588: movs         r0, #8
+0059A58A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0059A58E: ldr          r1, [pc, #0xc] ; word[0059A59C]=00A89C36
+0059A590: ldr          r2, [r4, #4]
+0059A592: add          r1, pc
+0059A594: adds         r1, #8
+0059A596: strd         r1, r2, [r0]
+0059A59A: pop          {r4, pc}
+RANGE 0x0059A5A0..0x0059A5B0 exclusive; Thumb;
+0059A5A0: ldr          r2, [pc, #0xc] ; word[0059A5B0]=00A89C26
+0059A5A2: add          r2, pc
+0059A5A4: adds         r2, #8
+0059A5A6: str          r2, [r1]
+0059A5A8: ldr          r0, [r0, #4]
+0059A5AA: str          r0, [r1, #4]
+0059A5AC: bx           lr
+0059A5AE: nop          
+0059A59C: raw=00A89C36 relocated=00A89C36 
+0059A5B0: raw=00A89C26 relocated=00A89C26 
+RANGE 0x0059A5B4..0x0059A5BC exclusive; Thumb;
+0059A5B4: bx           lr
+0059A5B6: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+
+0059A5BA: movs         r0, r0
+RANGE 0x00599FF0..0x0059A090 exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient20CreateAudioAnimationEPNS0_9AnimationE
+00599FF0: push         {r4, r5, r6, r7, lr}
+00599FF2: sub          sp, #0x14
+00599FF4: mov          r4, r0
+00599FF6: mov          r5, r1
+00599FF8: ldr          r0, [r4, #0x38]
+00599FFA: cbz          r0, #0x59a070
+00599FFC: ldr          r1, [pc, #0x168] ; word[0059A168]=00AA4DA2
+00599FFE: add          r1, pc
+0059A000: ldr          r1, [r1]
+0059A002: ldr          r6, [r1]
+0059A004: movs         r1, #0
+0059A006: strd         r1, r1, [sp, #8]
+0059A00A: str          r1, [sp, #0x10]
+0059A00C: mov          r1, r0
+0059A00E: ldrb         r2, [r1, #0xc]!
+0059A012: tst.w        r2, #1
+0059A016: ite          eq
+0059A018: addeq        r7, r1, #1
+0059A01A: ldrne        r7, [r0, #0x14]
+0059A01C: ldrb.w       r0, [r0, #0x3c]
+0059A020: blx          #0x4af3d0 ; Anki::Cozmo::Audio::RobotAudioAnimation::GetStringForAnimationState
+
+0059A024: ldrb         r2, [r0]
+0059A026: ldr          r1, [r0, #8]
+0059A028: ldr          r3, [pc, #0x140] ; word[0059A16C]=006565F6
+0059A02A: tst.w        r2, #1
+0059A02E: it           eq
+0059A030: addeq        r1, r0, #1
+0059A032: add          r3, pc
+0059A034: strd         r7, r1, [sp]
+0059A038: adr          r1, #0x134
+0059A03A: add          r2, sp, #8
+0059A03C: mov          r0, r6
+0059A03E: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+
+0059A042: ldr          r0, [sp, #8]
+0059A044: cbz          r0, #0x59a064
+0059A046: ldr          r1, [sp, #0xc]
+0059A048: cmp          r1, r0
+0059A04A: itttt        ne
+0059A04C: subne.w      r2, r1, #8
+0059A050: subne        r2, r2, r0
+0059A052: mvnne        r3, #7
+0059A056: bicne.w      r2, r3, r2
+0059A05A: itt          ne
+0059A05C: addne        r1, r1, r2
+0059A05E: strne        r1, [sp, #0xc]
+0059A060: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0059A064: ldr          r0, [r4, #0x38]
+0059A066: blx          #0x4adbb8 ; Anki::Cozmo::Audio::RobotAudioAnimation::AbortAnimation
+
+0059A06A: mov          r0, r4
+0059A06C: blx          #0x4adbc4 ; Anki::Cozmo::Audio::RobotAudioClient::ClearCurrentAnimation
+
+0059A070: ldrb.w       r0, [r4, #0x3c]
+0059A074: cmp          r0, #0
+0059A076: beq          #0x59a11c
+0059A078: cmp          r0, #2
+0059A07A: beq          #0x59a09e
+0059A07C: cmp          r0, #1
+0059A07E: bne          #0x59a130
+0059A080: movs         r0, #0x4c
+0059A082: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0059A086: mov          r6, r0
+0059A088: ldr          r0, [r4, #0x2c]
+0059A08A: blx          #0x4aa6a8 ; Anki::Cozmo::Robot::GetRNG
+
+0059A08E: str          r0, [sp]
+RANGE 0x0059A090..0x0059A134 exclusive; Thumb;
+0059A090: mov          r0, r6
+0059A092: mov          r1, r5
+0059A094: mov          r2, r4
+0059A096: movs         r3, #6
+0059A098: blx          #0x4af79c ; Anki::Cozmo::Audio::RobotAudioAnimationOnDevice::RobotAudioAnimationOnDevice
+
+0059A09C: b            #0x59a0ba
+0059A09E: movs         r0, #0x60
+0059A0A0: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0059A0A4: mov          r6, r0
+0059A0A6: ldr          r0, [r4, #0x2c]
+0059A0A8: blx          #0x4aa6a8 ; Anki::Cozmo::Robot::GetRNG
+
+0059A0AC: str          r0, [sp]
+0059A0AE: mov          r0, r6
+0059A0B0: mov          r1, r5
+0059A0B2: mov          r2, r4
+0059A0B4: movs         r3, #7
+0059A0B6: blx          #0x4af7a8 ; Anki::Cozmo::Audio::RobotAudioAnimationOnRobot::RobotAudioAnimationOnRobot
+
+0059A0BA: ldrb.w       r0, [r6, #0x3c]
+0059A0BE: and          r0, r0, #0xfe
+0059A0C2: cmp          r0, #4
+0059A0C4: bne          #0x59a118
+0059A0C6: ldr          r0, [r6]
+0059A0C8: ldr          r1, [r0, #4]
+0059A0CA: mov          r0, r6
+0059A0CC: blx          r1
+0059A0CE: ldr          r0, [pc, #0xc8] ; word[0059A198]=00AA4CCE
+0059A0D0: movs         r1, #0
+0059A0D2: add          r0, pc
+0059A0D4: ldr          r0, [r0]
+0059A0D6: ldr          r0, [r0]
+0059A0D8: strd         r1, r1, [sp, #8]
+0059A0DC: str          r1, [sp, #0x10]
+0059A0DE: ldrb         r1, [r5]
+0059A0E0: lsls         r1, r1, #0x1f
+0059A0E2: ite          eq
+0059A0E4: addeq        r1, r5, #1
+0059A0E6: ldrne        r1, [r5, #8]
+0059A0E8: str          r1, [sp]
+0059A0EA: adr          r1, #0x84
+0059A0EC: add          r2, sp, #8
+0059A0EE: adr          r3, #0xac
+0059A0F0: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+
+0059A0F4: ldr          r0, [sp, #8]
+0059A0F6: cbz          r0, #0x59a116
+0059A0F8: ldr          r1, [sp, #0xc]
+0059A0FA: cmp          r1, r0
+0059A0FC: itttt        ne
+0059A0FE: subne.w      r2, r1, #8
+0059A102: subne        r2, r2, r0
+0059A104: mvnne        r3, #7
+0059A108: bicne.w      r2, r3, r2
+0059A10C: itt          ne
+0059A10E: addne        r1, r1, r2
+0059A110: strne        r1, [sp, #0xc]
+0059A112: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0059A116: movs         r6, #0
+0059A118: str          r6, [r4, #0x38]
+0059A11A: b            #0x59a130
+0059A11C: mov          r0, r5
+0059A11E: blx          #0x4ac310 ; Anki::Cozmo::Animation::GetTrack<Anki::Cozmo::RobotAudioKeyFrame>
+
+0059A122: mov          r4, r0
+0059A124: ldrb         r0, [r4, #0x10]
+0059A126: cbz          r0, #0x59a12e
+0059A128: mov          r0, r4
+0059A12A: blx          #0x4a8ae8 ; std::__ndk1::__list_imp<Anki::Cozmo::RobotAudioKeyFrame,std::__ndk1::allocator<Anki::Cozmo::RobotAudioKeyFrame>>::clear
+
+0059A12E: str          r4, [r4, #0xc]
+0059A130: add          sp, #0x14
+0059A132: pop          {r4, r5, r6, r7, pc}
+RANGE 0x00599C32..0x00599C58 exclusive; Thumb;
+00599C32: ldr.w        r0, [sl, #0x38]
+00599C36: cbz          r0, #0x599c3e
+00599C38: ldr          r1, [r0]
+00599C3A: ldr          r1, [r1, #4]
+00599C3C: blx          r1
+00599C3E: movs         r0, #0
+00599C40: str.w        r0, [sl, #0x38]
+00599C44: ldrb.w       r0, [sp, #0x28]
+00599C48: lsls         r0, r0, #0x1f
+00599C4A: itt          ne
+00599C4C: ldrne        r0, [sp, #0x30]
+00599C4E: blxne        #0x4a40cc
+00599C52: add          sp, #0x38
+00599C54: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
