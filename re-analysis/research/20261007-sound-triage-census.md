@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through471 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through472 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -308,7 +308,7 @@ PARTIAL: N4/N5/SE1–4 establish live time fallback/width, queued setter and tes
 
 > | M6-022 | **KEEP** | 0x00A44D4C;0x00A44948;0x00A44C18;0x00A54F1C..0x00A5574C;0x00A4B93C;0x009BE28C;0x009BDA88;0x009BD368;0x009BF8E4;0x00A5E694;0x009EEDA4 | Production wiring, voice state machine, effective-parameter inputs, route identities/virtual bodies, device/sample-scale writers and callback registry remain exact; anonymous class names need no invented semantics. |
 
-PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL objects, sink buffer and queue geometry, pacing wake, Android music-active mute control, and voice-connection/bus-line invalidation and reconnect parents. Existing AD1–AD2 cover duplicate routing. VS1–VS17, EP1–EP12, BP1–BP6, VP1–VP14, AV1–AV6 and DU1–DU7 add voice/effective-parameter state parents, bus/voice gain publication, matrix ownership, callback gates, cached PBI query and cleanup ordering. CV1–CV8 establish sink converter routing/geometry versus sample arithmetic. Remaining: concrete route/destructor/RTPC subscribers, full voice/source recipients, sink writer census and callback registry; no wholesale DSP exemption.
+PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL objects, sink buffer and queue geometry, pacing wake, Android music-active mute control, and voice-connection/bus-line invalidation and reconnect parents. Existing AD1–AD2 cover duplicate routing. VS1–VS17, EP1–EP12, BP1–BP6, VP1–VP14, AV1–AV6 and DU1–DU7 add voice/effective-parameter state parents, bus/voice gain publication, matrix ownership, callback gates, cached PBI query and cleanup ordering. CV1–CV8 establish sink converter routing/geometry versus sample arithmetic. RM472 adds the actually called9BE28C cached mode/dirty/override/provider/definition identity/reference and RTPC-binding sequence, reusing NG3/TD/LW/R. Known route/lifetime/rate/frame callback joins now also have AR/RJ/RG/MREG rows. Remaining: witnessed9BC66C preparation decision split, retained downstream mode families and broader concrete route/source/callback/input/writer closure; no wholesale DSP exemption.
 
 ## Q14-027 — triage line 65
 
@@ -2383,3 +2383,5 @@ Checkpoint469 — OC469 known state owner98/C4 table bindings and exact counter/
 Checkpoint470 — OD470 existing switch RTPC ordinal/initial/later equality/ID-vector/deferred mutation production joins reconciled; no duplicate native artifact or music-observer descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint471 — SD471 native initial/config/queued seed and shared control-RNG cadence joins reconciled; test literal0/host-width seam and direct-call census limits retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint472 — RM472 concrete voice route-mode cache/dirty/override/definition/reference/subscription parent;159 complete ARM instructions and actual GOT joins. Payload exclusions retained;9BC66C decision split next. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
