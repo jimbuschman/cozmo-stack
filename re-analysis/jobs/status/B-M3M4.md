@@ -74,3 +74,30 @@ Eligibility is captured at claim time; the built records' leading unresolved tex
 - Built/annotated records: M3-026/030/031/032, M4-001/010/020. Added live M4-011 coverage without changing its settled record. No record settled and no hardware run.
 
 BLOCKED 2026-10-06: all independent checked corrections in this batch are published. Remaining MISSINGs are enumerated above: NEEDS EXTRACTION records, absent complete checked codec/format/unit/connection rows, and other-layer production dependencies. The layer is not complete or accepted. Requires manager-checked rows/integration or disposition before further building; stop here under the operator's scope.
+
+## Operator slice — checked M3/M4 lower paths, 2026-10-09
+
+Pulled main (4534941, already current). Operator authorizes only the build-plan checked slices: M4-016 defect, M4-009/017/018/019 and M3-010. October6 research and IMU candidate rows are not adopted or built.
+
+- M4-016: the requested first-update stamp was already repaired by ActionRunner/ActionList integration. Retained it and added a live regression delaying the first tick31 s, then checking the inclusive30 s timeout/result03000018. Restored all reachable head/lift CheckIfDone diagnostics and four static u16 eleven-count counters. Dead eye-shift block remains absent.
+- M4-009: confirmed the existing real Docking target writer/retention and translated activeID exclusion; existing live dock/abort test retained. No duplicate dock field or carried-ID substitution.
+- M4-017: SetHeadlight queues mode14 on the actual installed VisionSystem before reliable/not-hot send. Absent recipient prints the empty-format error, stores process _errG and evaluates the shipped no-op debug-break. Image update drains enable-before-pop, logs before mask mutation, preserves idempotence and Idle fallback. New queue is cleared by the existing retained-owner removal reset, and an in-progress image pops only the same request it applied, never a later owner's entry. This is not a settlement of the M4-027 whole-component teardown candidate.
+- M4-018: when vision exists, refresh now reads actual BlockWorld.Robot2C4 (SetLocalizedTo/publication owner). Existing fallback, held refresh, all/single gates and static off payload retained. Corrected all-objects disable to clear/repick each object then store comp+22 last, from reopened00639AFA..00639B32.
+- M4-019: confirmed existing match/101 resets, treads-change zero-counter/unconditional stats and3000 ms retention. Corrected mismatch sErrorF level, unsigned frame fields, _errG/debug-break, then reset0 before Delocalize trigger.
+- M3-010: scheduler retains actual float vector input and reaches Encode(float), including fractional/clamped/NaN warning/zero-tail behavior. Readiness, stop, replacement and completion include floats. No guessed short normalization or volume multiplication. M6 producer remains missing.
+
+[Call accounting](../../research/20261009-M3M4-checked-build-census.md) lists counterparts, dead branches and every missing recipient. [Native reopening](../../research/20261009-M3M4-checked-build-native.txt) lists104 call instructions and43 resolved/reopened targets, names and literals. No file open/close in this bounded slice. The native complete VisionSystem destructor was also reopened while diagnosing queue lifetime; its other descendants remain outside approved build authority.
+
+MISSING retained:
+- M3-010: actual M6 Wwise f32 buffer producer; short seam is a candidate.
+- M4-009: complete ObjectID/slot ownership and Cubes.Handle slot admission, M11.
+- M4-016: phone diagnostic float formatter exceptional spelling/rounding/locale; normal invariant text is tested, not complete runtime equivalence.
+- M4-017: E9 LimitedExposure reader/effect and other mode producers/special recipients, M11.
+- M4-018: full default carried/visible selection and ObjectID traversal, M11; missing ObjectInfo single-object API branch needs checked disposition, not an app-unreachability assumption.
+- M4-019: actual M11 history add/frame lookup failure results, Delocalize/origin/charger geometry; M7 behavior end/M8 Cancel(-1); DetectGyroDrift00512FBA and DetectBias00512FC4 have no live counterpart and need manager allocation/checked owning-layer rows.
+
+CHECKLIST self-review: live entries and checked boundaries named in call accounting. f32 widths/getDegrees bits, literal log fields/levels and order reviewed against reopened targets. Queue synchronization does not acquire the image-processing lock from SetHeadlight, and does not invoke callbacks under its queue lock; removal invalidates queued entries without popping a new owner's request. Counters are process static and wrap u16, not reset on robot removal. Source-derived tests cover real entries, no generated expectations. No hardware run. Six records remain IMPLEMENTATION_GAP with built/awaiting-strong-verification unresolved; only unresolved fields and generated gap report changed, no frozen title/evidence/inventory or status approval.
+
+Focused run75 passed, zero failed/skipped. Initial full run exposed queued-request retention on removal; stopped that failed run, repaired the queue lifetime, and the focused removal regression now passes. Final full run and publication follow below. Rule9 whole-layer packet is not due: this bounded slice leaves same-layer unchecked rows/gaps; no whole-layer completion claim.
+
+Final checks: second full run passed3995 and exposed only the stale RFixBatch3 log assertion (missing native error level). Corrected that expectation from00512F40/00BE697E; final focused run76 passed, zero failed/skipped. Final full suite3996 passed, zero failed/skipped (3m07s). Fidelity --check and diff --check pass. Commit/push publication follows.

@@ -1,0 +1,4659 @@
+Checked build range reopening; engine SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+CALL CENSUS (not new build authority)
+M4-016 first update | 00540D4A | 004A4F6C | _ZN4Anki16BaseStationTimer11getInstanceEv
+M4-016 first update | 00540D4E | 004A50B0 | _ZNK4Anki16BaseStationTimer23GetCurrentTimeInSecondsEv
+M4-016 first update | 00540D72 | r1 | virtual (see checked row / native text)
+M4-016 first update | 00540D82 | r1 | virtual (see checked row / native text)
+M4-016 first update | 00540D98 | r1 | virtual (see checked row / native text)
+M4-016 head | 005485F0 | 004AB17C | _ZNK4Anki5Cozmo21MoveHeadToAngleAction16IsHeadInPositionEv
+M4-016 head | 00548644 | 004A5B84 | _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 head | 00548666 | 004A40CC | _ZdlPv
+M4-016 head | 0054867E | 004A4294 | _ZN4Anki7RadiansC1Ef
+M4-016 head | 0054868E | 004A586C | _ZNK4Anki7Radians6IsNearERKS0_S2_
+M4-016 head | 005486A8 | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 005486B2 | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 005486EC | 004A5B84 | _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 head | 0054870E | 004A40CC | _ZdlPv
+M4-016 head | 0054871E | 004AAFD8 | _ZN4Anki5Cozmo19TrackLayerComponent14RemoveEyeShiftEhi
+M4-016 head | 0054874E | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 00548784 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 head | 005487A6 | 004A40CC | _ZdlPv
+M4-016 head | 005487D8 | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 005487E2 | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 005487EC | 004A44EC | _ZNK4Anki7Radians10getDegreesEv
+M4-016 head | 00548836 | 004A5B84 | _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 head | 00548858 | 004A40CC | _ZdlPv
+M4-016 head | 00548884 | 004A4540 | _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 head | 005488A6 | 004A40CC | _ZdlPv
+M4-016 lift | 00549412 | 004AB218 | _ZNK4Anki5Cozmo22MoveLiftToHeightAction16IsLiftInPositionEv
+M4-016 lift | 00549454 | 004AB200 | _ZNK4Anki5Cozmo5Robot13GetLiftHeightEv
+M4-016 lift | 0054948A | 004A5B84 | _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 lift | 005494AC | 004A40CC | _ZdlPv
+M4-016 lift | 005494DC | 004A4540 | _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 lift | 005494FE | 004A40CC | _ZdlPv
+M4-016 lift | 00549538 | 004A5B84 | _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-016 lift | 0054955A | 004A40CC | _ZdlPv
+M4-009 moved exclusion | 0053417C | 004A6FAC | _ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE
+M4-009 stopped exclusion | 0053498C | 004A6FAC | _ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE
+M4-018 refresh | 0063791A | 004A4F6C | _ZN4Anki16BaseStationTimer11getInstanceEv
+M4-018 refresh | 0063791E | 004A7B58 | _ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv
+M4-018 game layer | 006399CE | 004B92AC | _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE4findIS3_EENS_15__tree_iteratorIS7_PNS_11__tree_nodeIS7_PvEEiEERKT_
+M4-018 game layer | 006399F2 | 004B9264 | _ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE
+M4-018 game layer | 00639A00 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639A0E | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639A2E | 004B9264 | _ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE
+M4-018 game layer | 00639A80 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639A92 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639AA2 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639AB0 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639AC6 | 004B9240 | _ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE
+M4-018 game layer | 00639AE6 | 004B930C | _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+M4-018 game layer | 00639B0E | 004B9240 | _ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE
+M4-019 treads | 00512BA6 | 004A7804 | _ZN4Anki5Cozmo5Robot10DelocalizeEb
+M4-019 mismatch/statistics | 00512F40 | 004A4108 | _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-019 mismatch/statistics | 00512F62 | 004A40CC | _ZdlPv
+M4-019 mismatch/statistics | 00512F7E | 004A4114 | _ZN4Anki4Util18sDebugBreakOnErrorEv
+M4-019 mismatch/statistics | 00512F96 | 004A7804 | _ZN4Anki5Cozmo5Robot10DelocalizeEb
+M4-019 mismatch/statistics | 00512FA6 | 004A406C | _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+M4-019 mismatch/statistics | 00512FAC | 004A406C | _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+M4-019 mismatch/statistics | 00512FBA | 004A7C6C | _ZN4Anki5Cozmo22RobotGyroDriftDetector15DetectGyroDriftERKNS0_10RobotStateE
+M4-019 mismatch/statistics | 00512FC4 | 004A7C78 | _ZN4Anki5Cozmo22RobotGyroDriftDetector10DetectBiasERKNS0_10RobotStateE
+M4-019 mismatch/statistics | 00512FCE | 004A7C84 | _ZN4Anki5Cozmo20CliffSensorComponent23UpdateCliffRunningStatsERKNS0_10RobotStateE
+M4-019 mismatch/statistics | 00512FD6 | 004A7C90 | _ZN4Anki5Cozmo20CliffSensorComponent26UpdateCliffDetectThresholdEv
+M4-017 headlight | 00632364 | 004A91CC | _ZN4Anki5Cozmo15VisionComponent10EnableModeENS0_10VisionModeEb
+M4-017 headlight | 00632374 | 004B8E38 | _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS1_12SetHeadlightE
+M4-017 headlight | 00632380 | 004A5368 | _ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb
+M4-017 headlight | 00632386 | 004A5200 | _ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv
+M4-017 recipient | 006527CA | 004A4108 | _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 recipient | 006527EC | 004A40CC | _ZdlPv
+M4-017 recipient | 00652804 | 004A4114 | _ZN4Anki4Util18sDebugBreakOnErrorEv
+M4-017 queue | 006B2290 | 004BEF88 | _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9push_backEOS5_
+M4-017 drain | 006B4FDA | 004BEEA4 | _ZN4Anki5Cozmo12VisionSystem10EnableModeENS0_10VisionModeEb
+M4-017 drain | 006B4FE0 | 004BF198 | _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9pop_frontEv
+M4-017 bit14 branch | 006B1A9A | 004AB4E8 | _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+M4-017 bit14 branch | 006B1AAA | 004BEF28 | _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE
+M4-017 bit14 branch | 006B1AD0 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1ADE | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1B00 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1B30 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1B52 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1B5C | 004BEF34 | _ZN4Anki6Vision11FaceTracker20EnableSmileDetectionEb
+M4-017 bit14 branch | 006B1B80 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1BA2 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1BAC | 004BEF40 | _ZN4Anki6Vision11FaceTracker19EnableGazeDetectionEb
+M4-017 bit14 branch | 006B1BD0 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1BF2 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1BFC | 004BEF4C | _ZN4Anki6Vision11FaceTracker20EnableBlinkDetectionEb
+M4-017 bit14 branch | 006B1C14 | 004A4540 | _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1C38 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1C4C | 004AB4E8 | _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+M4-017 bit14 branch | 006B1C5C | 004BEF28 | _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE
+M4-017 bit14 branch | 006B1C82 | 004A505C | _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M4-017 bit14 branch | 006B1C90 | 004A40CC | _ZdlPv
+M4-017 bit14 branch | 006B1CB2 | 004A40CC | _ZdlPv
+M4-017 mode names | 006B239C | 004E02B2 | local 004E02B2
+M4-017 mode names | 006B23C6 | 004E8048 | local 004E8048
+M4-017 mode names | 006B23CE | 004AB4E8 | _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+M4-017 mode names | 006B23D6 | 004A44E0 | strlen
+M4-017 mode names | 006B23E0 | 004E8048 | local 004E8048
+M4-017 mode names | 006B23E6 | 004BA4F4 | _ZN4Anki5CozmoppERNS0_10VisionModeE
+M3-010 encode | 00597ADE | 004AE3A4 | isnanf
+M3-010 encode | 00597AF2 | 004A4540 | _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+M3-010 encode | 00597B14 | 004A40CC | _ZdlPv
+M3-010 pop | 00597DFE | 004AF5BC | _ZN4Anki5Cozmo5Audio11encodeMuLawEf
+M3-010 pop | 00597E34 | 004AE1E8 | __aeabi_memclr
+M3-010 pop | 00597E3A | 004A82A8 | _ZNSt6__ndk113__vector_baseIfNS_9allocatorIfEEED2Ev
+M3-010 pop | 00597E3E | 004A40CC | _ZdlPv
+
+M4-016 first update
+
+RANGE 00540D4A..00540DC4
+00540D4A: blx        #0x4a4f6c ; _ZN4Anki16BaseStationTimer11getInstanceEv -> 0084BB9C size=48
+00540D4E: blx        #0x4a50b0 ; _ZNK4Anki16BaseStationTimer23GetCurrentTimeInSecondsEv -> 0084BCA8 size=4
+00540D52: vldr       s18, [r6, #0x2c]
+00540D56: vmov       s16, r0
+00540D5A: vcmpe.f32  s18, #0
+00540D5E: vmrs       apsr_nzcv, fpscr
+00540D62: itt        mi
+00540D64: vstrmi     s16, [r4, #0x74]
+00540D68: vmovmi.f32 s18, s16
+00540D6C: ldr        r0, [r4]
+00540D6E: ldr        r1, [r0, #0x24]
+00540D70: mov        r0, r4
+00540D72: blx        r1
+00540D74: mov        r5, r0
+00540D76: ldrb.w     r0, [r4, #0x70]
+00540D7A: cbz        r0, #0x540d8a
+00540D7C: ldr        r0, [r4]
+00540D7E: ldr        r1, [r0, #0x28]
+00540D80: mov        r0, r4
+00540D82: blx        r1
+00540D84: vmov       s20, r0
+00540D88: b          #0x540d8e
+00540D8A: vldr       s20, [pc, #0x250] ; literal[00540FDC]=00000000
+00540D8E: ldr        r0, [r4]
+00540D90: vldr       s22, [r4, #0x74]
+00540D94: ldr        r1, [r0, #0x2c]
+00540D96: mov        r0, r4
+00540D98: blx        r1
+00540D9A: vmov       s0, r0
+00540D9E: vadd.f32   s0, s22, s0
+00540DA2: vcmpe.f32  s16, s0
+00540DA6: vmrs       apsr_nzcv, fpscr
+00540DAA: bge        #0x540e7c
+00540DAC: vmov       s0, r5
+00540DB0: vadd.f32   s0, s18, s0
+00540DB4: vadd.f32   s0, s0, s20
+00540DB8: vcmpe.f32  s16, s0
+00540DBC: vmrs       apsr_nzcv, fpscr
+00540DC0: blt.w      #0x540ee4
+
+M4-016 head
+
+RANGE 005485D8..005488B8
+005485D8: ldrb.w     r0, [r4, #0xaa]
+005485DC: cbz        r0, #0x5485e4
+005485DE: ldrb.w     r0, [r4, #0xab]
+005485E2: cbz        r0, #0x548614
+005485E4: ldrb.w     r0, [r4, #0xac]
+005485E8: cbz        r0, #0x5485ee
+005485EA: movs       r0, #1
+005485EC: b          #0x5485f8
+005485EE: mov        r0, r4
+005485F0: blx        #0x4ab17c ; _ZNK4Anki5Cozmo21MoveHeadToAngleAction16IsHeadInPositionEv -> 005484F4 size=40
+005485F4: strb.w     r0, [r4, #0xac]
+005485F8: ldrb.w     r1, [r4, #0x9d]
+005485FC: cmp        r1, #0
+005485FE: bne.w      #0x548728
+00548602: ldrb.w     r1, [r4, #0xa8]
+00548606: cmp        r1, #0
+00548608: beq.w      #0x548728
+0054860C: cbz        r0, #0x548674
+0054860E: add.w      r5, r4, #0x78
+00548612: b          #0x548696
+00548614: ldr        r0, [pc, #0x2dc] ; literal[005488F4]=00B08A0E
+00548616: add        r0, pc
+00548618: ldrh       r1, [r0]
+0054861A: adds       r1, #1
+0054861C: strh       r1, [r0]
+0054861E: uxth       r0, r1
+00548620: cmp        r0, #0xb
+00548622: blo.w      #0x5488b2
+00548626: movs       r0, #0
+00548628: ldr        r3, [pc, #0x2d0] ; literal[005488FC]=006A17B4
+0054862A: strd       r0, r0, [sp, #0x2c]
+0054862E: str        r0, [sp, #0x34]
+00548630: add        r3, pc
+00548632: ldr        r0, [pc, #0x2c4] ; literal[005488F8]=006A13AA
+00548634: ldr        r1, [r4, #0x60]
+00548636: add        r0, pc
+00548638: ldrb.w     r2, [r4, #0xa9]
+0054863C: strd       r1, r2, [sp]
+00548640: adr        r1, #0x2bc ; ADR[00548900]=b'MoveHeadToAngleAction.CheckIfDone.WaitingForAck'
+00548642: add        r2, sp, #0x2c
+00548644: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+00548648: ldr        r0, [sp, #0x2c]
+0054864A: cbz        r0, #0x54866a
+0054864C: ldr        r1, [sp, #0x30]
+0054864E: cmp        r1, r0
+00548650: itttt      ne
+00548652: subne.w    r2, r1, #8
+00548656: subne      r2, r2, r0
+00548658: mvnne      r3, #7
+0054865C: bicne.w    r2, r3, r2
+00548660: itt        ne
+00548662: addne      r1, r1, r2
+00548664: strne      r1, [sp, #0x30]
+00548666: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0054866A: ldr        r0, [pc, #0x2c4] ; literal[00548930]=00B089B6
+0054866C: movs       r1, #0
+0054866E: add        r0, pc
+00548670: strh       r1, [r0]
+00548672: b          #0x5488b2
+00548674: ldr        r0, [r4, #4]
+00548676: add        r6, sp, #0x2c
+00548678: ldr.w      r1, [r0, #0x2fc]
+0054867C: mov        r0, r6
+0054867E: blx        #0x4a4294 ; _ZN4Anki7RadiansC1Ef -> 0084C832 size=14
+00548682: add.w      r5, r4, #0x78
+00548686: add.w      r2, r4, #0xa0
+0054868A: mov        r1, r6
+0054868C: mov        r0, r5
+0054868E: blx        #0x4a586c ; _ZNK4Anki7Radians6IsNearERKS0_S2_ -> 0084CC0A size=54
+00548692: cmp        r0, #1
+00548694: bne        #0x548728
+00548696: movs       r0, #0
+00548698: strd       r0, r0, [sp, #0x2c]
+0054869C: str        r0, [sp, #0x34]
+0054869E: ldr        r0, [r4, #4]
+005486A0: ldr        r6, [r4, #0x60]
+005486A2: vldr       s16, [r0, #0x2fc]
+005486A6: mov        r0, r5
+005486A8: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+005486AC: mov        r5, r0
+005486AE: add.w      r0, r4, #0xa0
+005486B2: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+005486B6: vldr       s0, [pc, #0x27c] ; literal[00548934]=42652EE1
+005486BA: vmov       s4, r0
+005486BE: ldr        r0, [pc, #0x278] ; literal[00548938]=006A1316
+005486C0: vmov       s2, r5
+005486C4: vmul.f32   s0, s16, s0
+005486C8: ldr        r3, [pc, #0x270] ; literal[0054893C]=006A1B22
+005486CA: add        r0, pc
+005486CC: vcvt.f64.f32 d2, s4
+005486D0: add        r3, pc
+005486D2: vcvt.f64.f32 d1, s2
+005486D6: vcvt.f64.f32 d0, s0
+005486DA: adr        r1, #0x264 ; ADR[00548940]=b'MoveHeadToAngleAction.CheckIfDone.RemovingEyeShift'
+005486DC: add        r2, sp, #0x2c
+005486DE: vstr       d0, [sp, #8]
+005486E2: str        r6, [sp]
+005486E4: vstr       d2, [sp, #0x18]
+005486E8: vstr       d1, [sp, #0x10]
+005486EC: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+005486F0: ldr        r0, [sp, #0x2c]
+005486F2: cbz        r0, #0x548712
+005486F4: ldr        r1, [sp, #0x30]
+005486F6: cmp        r1, r0
+005486F8: itttt      ne
+005486FA: subne.w    r2, r1, #8
+005486FE: subne      r2, r2, r0
+00548700: mvnne      r3, #7
+00548704: bicne.w    r2, r3, r2
+00548708: itt        ne
+0054870A: addne      r1, r1, r2
+0054870C: strne      r1, [sp, #0x30]
+0054870E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00548712: ldr        r0, [r4, #4]
+00548714: movs       r2, #0x63
+00548716: ldrb.w     r1, [r4, #0xa8]
+0054871A: ldr.w      r0, [r0, #0xc0]
+0054871E: blx        #0x4aafd8 ; _ZN4Anki5Cozmo19TrackLayerComponent14RemoveEyeShiftEhi -> 0064F4F4 size=6
+00548722: movs       r0, #0
+00548724: strb.w     r0, [r4, #0xa8]
+00548728: ldr        r0, [r4, #4]
+0054872A: ldr.w      r1, [r0, #0x254]
+0054872E: ldrb       r5, [r1, #0xa]
+00548730: cbz        r5, #0x548738
+00548732: movs       r1, #1
+00548734: strb.w     r1, [r4, #0xad]
+00548738: ldrb.w     r1, [r4, #0xac]
+0054873C: cbz        r1, #0x5487b4
+0054873E: cbz        r5, #0x5487aa
+00548740: movs       r0, #0
+00548742: strd       r0, r0, [sp, #0x2c]
+00548746: str        r0, [sp, #0x34]
+00548748: ldr        r6, [r4, #0x60]
+0054874A: add.w      r0, r4, #0x78
+0054874E: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+00548752: vmov       s0, r0
+00548756: ldr        r0, [r4, #4]
+00548758: vldr       s2, [pc, #0x1d8] ; literal[00548934]=42652EE1
+0054875C: ldr        r1, [pc, #0x218] ; literal[00548978]=006A1ADD
+0054875E: vcvt.f64.f32 d0, s0
+00548762: ldr        r3, [pc, #0x218] ; literal[0054897C]=006A1B12
+00548764: add        r1, pc
+00548766: add        r3, pc
+00548768: vldr       s4, [r0, #0x2fc]
+0054876C: ldr        r0, [pc, #0x204] ; literal[00548974]=006A126E
+0054876E: vmul.f32   s2, s4, s2
+00548772: add        r0, pc
+00548774: vcvt.f64.f32 d1, s2
+00548778: add        r2, sp, #0x2c
+0054877A: vstr       d0, [sp, #8]
+0054877E: str        r6, [sp]
+00548780: vstr       d1, [sp, #0x10]
+00548784: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00548788: ldr        r0, [sp, #0x2c]
+0054878A: cbz        r0, #0x5487aa
+0054878C: ldr        r1, [sp, #0x30]
+0054878E: cmp        r1, r0
+00548790: itttt      ne
+00548792: subne.w    r2, r1, #8
+00548796: subne      r2, r2, r0
+00548798: mvnne      r3, #7
+0054879C: bicne.w    r2, r3, r2
+005487A0: itt        ne
+005487A2: addne      r1, r1, r2
+005487A4: strne      r1, [sp, #0x30]
+005487A6: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005487AA: cmp        r5, #0
+005487AC: it         ne
+005487AE: movne.w    r5, #0x1000000
+005487B2: b          #0x5488b6
+005487B4: ldr        r1, [pc, #0x1c8] ; literal[00548980]=00B08870
+005487B6: add        r1, pc
+005487B8: ldrh       r2, [r1]
+005487BA: adds       r2, #1
+005487BC: strh       r2, [r1]
+005487BE: uxth       r1, r2
+005487C0: cmp        r1, #0xb
+005487C2: blo        #0x548864
+005487C4: movs       r1, #0
+005487C6: strd       r1, r1, [sp, #0x2c]
+005487CA: str        r1, [sp, #0x34]
+005487CC: ldr.w      r8, [r4, #0x60]
+005487D0: vldr       s16, [r0, #0x2fc]
+005487D4: add.w      r0, r4, #0x78
+005487D8: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+005487DC: mov        r6, r0
+005487DE: add.w      r0, r4, #0x88
+005487E2: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+005487E6: mov        r7, r0
+005487E8: add.w      r0, r4, #0x80
+005487EC: blx        #0x4a44ec ; _ZNK4Anki7Radians10getDegreesEv -> 0084CD40 size=18
+005487F0: vldr       s0, [pc, #0x140] ; literal[00548934]=42652EE1
+005487F4: vmov       s6, r0
+005487F8: ldr        r0, [pc, #0x188] ; literal[00548984]=006A11D6
+005487FA: vmov       s2, r6
+005487FE: vmul.f32   s0, s16, s0
+00548802: ldr        r1, [pc, #0x184] ; literal[00548988]=006A1AB4
+00548804: vmov       s4, r7
+00548808: ldr        r3, [pc, #0x180] ; literal[0054898C]=006A1ADE
+0054880A: add        r0, pc
+0054880C: add        r1, pc
+0054880E: vcvt.f64.f32 d1, s2
+00548812: add        r3, pc
+00548814: vcvt.f64.f32 d0, s0
+00548818: vcvt.f64.f32 d2, s4
+0054881C: vcvt.f64.f32 d3, s6
+00548820: add        r2, sp, #0x2c
+00548822: vstr       d1, [sp, #0x10]
+00548826: vstr       d0, [sp, #8]
+0054882A: str.w      r8, [sp]
+0054882E: vstr       d3, [sp, #0x20]
+00548832: vstr       d2, [sp, #0x18]
+00548836: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+0054883A: ldr        r0, [sp, #0x2c]
+0054883C: cbz        r0, #0x54885c
+0054883E: ldr        r1, [sp, #0x30]
+00548840: cmp        r1, r0
+00548842: itttt      ne
+00548844: subne.w    r2, r1, #8
+00548848: subne      r2, r2, r0
+0054884A: mvnne      r3, #7
+0054884E: bicne.w    r2, r3, r2
+00548852: itt        ne
+00548854: addne      r1, r1, r2
+00548856: strne      r1, [sp, #0x30]
+00548858: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0054885C: ldr        r0, [pc, #0x130] ; literal[00548990]=00B087C6
+0054885E: movs       r1, #0
+00548860: add        r0, pc
+00548862: strh       r1, [r0]
+00548864: cbnz       r5, #0x5488b2
+00548866: ldrb.w     r0, [r4, #0xad]
+0054886A: mov.w      r5, #0x1000000
+0054886E: cbz        r0, #0x5488b6
+00548870: movs       r0, #0
+00548872: ldr        r2, [pc, #0x124] ; literal[00548998]=006A1B01
+00548874: strd       r0, r0, [sp, #0x2c]
+00548878: str        r0, [sp, #0x34]
+0054887A: add        r2, pc
+0054887C: ldr        r0, [pc, #0x114] ; literal[00548994]=006A1AC3
+0054887E: ldr        r3, [r4, #0x60]
+00548880: add        r0, pc
+00548882: add        r1, sp, #0x2c
+00548884: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00548888: ldr        r0, [sp, #0x2c]
+0054888A: cbz        r0, #0x5488aa
+0054888C: ldr        r1, [sp, #0x30]
+0054888E: cmp        r1, r0
+00548890: itttt      ne
+00548892: subne.w    r2, r1, #8
+00548896: subne      r2, r2, r0
+00548898: mvnne      r3, #7
+0054889C: bicne.w    r2, r3, r2
+005488A0: itt        ne
+005488A2: addne      r1, r1, r2
+005488A4: strne      r1, [sp, #0x30]
+005488A6: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005488AA: movs       r5, #4
+005488AC: movt       r5, #0x400
+005488B0: b          #0x5488b6
+005488B2: mov.w      r5, #0x1000000
+005488B6: mov        r0, r5
+
+M4-016 lift
+
+RANGE 005493F6..00549570
+005493F6: ldrb.w     r0, [r4, #0x95]
+005493FA: cbz        r0, #0x549406
+005493FC: ldrb.w     r0, [r4, #0x96]
+00549400: cmp        r0, #0
+00549402: beq.w      #0x54950a
+00549406: ldrb.w     r0, [r4, #0x97]
+0054940A: cbz        r0, #0x549410
+0054940C: movs       r1, #1
+0054940E: b          #0x54941c
+00549410: mov        r0, r4
+00549412: blx        #0x4ab218 ; _ZNK4Anki5Cozmo22MoveLiftToHeightAction16IsLiftInPositionEv -> 00548FEA size=50
+00549416: mov        r1, r0
+00549418: strb.w     r1, [r4, #0x97]
+0054941C: ldr        r0, [r4, #4]
+0054941E: ldr.w      r2, [r0, #0x254]
+00549422: ldrb       r5, [r2, #0xb]
+00549424: cbz        r5, #0x54942c
+00549426: movs       r2, #1
+00549428: strb.w     r2, [r4, #0x98]
+0054942C: cbz        r1, #0x54943a
+0054942E: cmp        r5, #0
+00549430: it         ne
+00549432: movne.w    r5, #0x1000000
+00549436: mov        r0, r5
+00549438: b          #0x54956a
+0054943A: ldr        r1, [pc, #0x1a4] ; literal[005495E0]=00B07BEE
+0054943C: add        r1, pc
+0054943E: ldrh       r2, [r1]
+00549440: adds       r2, #1
+00549442: strh       r2, [r1]
+00549444: uxth       r1, r2
+00549446: cmp        r1, #0xb
+00549448: blo        #0x5494b8
+0054944A: movs       r1, #0
+0054944C: strd       r1, r1, [sp, #0x24]
+00549450: str        r1, [sp, #0x2c]
+00549452: ldr        r6, [r4, #0x60]
+00549454: blx        #0x4ab200 ; _ZNK4Anki5Cozmo5Robot13GetLiftHeightEv -> 00516F64 size=38
+00549458: vmov       s0, r0
+0054945C: ldr        r0, [pc, #0x184] ; literal[005495E4]=006A057A
+0054945E: vldr       s2, [r4, #0x7c]
+00549462: vldr       s4, [r4, #0x84]
+00549466: add        r0, pc
+00549468: ldr        r3, [pc, #0x17c] ; literal[005495E8]=006A0F8E
+0054946A: vcvt.f64.f32 d0, s0
+0054946E: add        r3, pc
+00549470: vcvt.f64.f32 d2, s4
+00549474: vcvt.f64.f32 d1, s2
+00549478: adr        r1, #0x170 ; ADR[005495EC]=b'MoveLiftToHeightAction.CheckIfDone.NotInPosition'
+0054947A: add        r2, sp, #0x24
+0054947C: str        r6, [sp]
+0054947E: vstr       d0, [sp, #8]
+00549482: vstr       d2, [sp, #0x10]
+00549486: vstr       d1, [sp, #0x18]
+0054948A: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+0054948E: ldr        r0, [sp, #0x24]
+00549490: cbz        r0, #0x5494b0
+00549492: ldr        r1, [sp, #0x28]
+00549494: cmp        r1, r0
+00549496: itttt      ne
+00549498: subne.w    r2, r1, #8
+0054949C: subne      r2, r2, r0
+0054949E: mvnne      r3, #7
+005494A2: bicne.w    r2, r3, r2
+005494A6: itt        ne
+005494A8: addne      r1, r1, r2
+005494AA: strne      r1, [sp, #0x28]
+005494AC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005494B0: ldr        r0, [pc, #0x16c] ; literal[00549620]=00B07B76
+005494B2: movs       r1, #0
+005494B4: add        r0, pc
+005494B6: strh       r1, [r0]
+005494B8: mov.w      r0, #0x1000000
+005494BC: cmp        r5, #0
+005494BE: bne        #0x54956a
+005494C0: ldrb.w     r1, [r4, #0x98]
+005494C4: cmp        r1, #0
+005494C6: beq        #0x54956a
+005494C8: movs       r0, #0
+005494CA: ldr        r2, [pc, #0x15c] ; literal[00549628]=006A0EA9
+005494CC: strd       r0, r0, [sp, #0x24]
+005494D0: str        r0, [sp, #0x2c]
+005494D2: add        r2, pc
+005494D4: ldr        r0, [pc, #0x14c] ; literal[00549624]=006A0F6A
+005494D6: ldr        r3, [r4, #0x60]
+005494D8: add        r0, pc
+005494DA: add        r1, sp, #0x24
+005494DC: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+005494E0: ldr        r0, [sp, #0x24]
+005494E2: cbz        r0, #0x549502
+005494E4: ldr        r1, [sp, #0x28]
+005494E6: cmp        r1, r0
+005494E8: itttt      ne
+005494EA: subne.w    r2, r1, #8
+005494EE: subne      r2, r2, r0
+005494F0: mvnne      r3, #7
+005494F4: bicne.w    r2, r3, r2
+005494F8: itt        ne
+005494FA: addne      r1, r1, r2
+005494FC: strne      r1, [sp, #0x28]
+005494FE: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00549502: movs       r0, #4
+00549504: movt       r0, #0x400
+00549508: b          #0x54956a
+0054950A: ldr        r0, [pc, #0x90] ; literal[0054959C]=00B07B1C
+0054950C: add        r0, pc
+0054950E: ldrh       r1, [r0]
+00549510: adds       r1, #1
+00549512: strh       r1, [r0]
+00549514: uxth       r0, r1
+00549516: cmp        r0, #0xb
+00549518: blo        #0x549566
+0054951A: movs       r0, #0
+0054951C: ldr        r3, [pc, #0x84] ; literal[005495A4]=006A08C0
+0054951E: strd       r0, r0, [sp, #0x24]
+00549522: str        r0, [sp, #0x2c]
+00549524: add        r3, pc
+00549526: ldr        r0, [pc, #0x78] ; literal[005495A0]=006A04B6
+00549528: ldr        r1, [r4, #0x60]
+0054952A: add        r0, pc
+0054952C: ldrb.w     r2, [r4, #0x94]
+00549530: strd       r1, r2, [sp]
+00549534: adr        r1, #0x70 ; ADR[005495A8]=b'MoveLiftToHeightAction.CheckIfDone.WaitingForAck'
+00549536: add        r2, sp, #0x24
+00549538: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+0054953C: ldr        r0, [sp, #0x24]
+0054953E: cbz        r0, #0x54955e
+00549540: ldr        r1, [sp, #0x28]
+00549542: cmp        r1, r0
+00549544: itttt      ne
+00549546: subne.w    r2, r1, #8
+0054954A: subne      r2, r2, r0
+0054954C: mvnne      r3, #7
+00549550: bicne.w    r2, r3, r2
+00549554: itt        ne
+00549556: addne      r1, r1, r2
+00549558: strne      r1, [sp, #0x28]
+0054955A: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0054955E: ldr        r0, [pc, #0x7c] ; literal[005495DC]=00B07AC6
+00549560: movs       r1, #0
+00549562: add        r0, pc
+00549564: strh       r1, [r0]
+00549566: mov.w      r0, #0x1000000
+0054956A: add        sp, #0x30
+0054956C: pop        {r4, r5, r6, pc}
+0054956E: b          #0x549572
+
+M4-009 moved exclusion
+
+RANGE 00534160..00534186
+00534160: lsrs       r4, r0, #8
+00534162: cmp        r7, sl
+00534164: bne.w      #0x534036
+00534168: adds       r0, r6, #1
+0053416A: beq.w      #0x5342e8
+0053416E: ldrd       r1, r0, [r5, #0x280]
+00534172: ldr        r2, [sp, #0x3c]
+00534174: ldr        r7, [r1, #0xc]
+00534176: ldr        r4, [r2, #0x18]
+00534178: add.w      r1, r2, #0x14
+0053417C: blx        #0x4a6fac ; _ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE -> 00633F88 size=18
+00534180: movs       r1, #0
+00534182: cmp        r4, r7
+00534184: it         eq
+
+M4-009 stopped exclusion
+
+RANGE 00534970..00534994
+00534970: bne.w      #0x534844
+00534974: adds.w     r0, sb, #1
+00534978: beq.w      #0x534aa6
+0053497C: ldrd       r1, r0, [fp, #0x280]
+00534980: mov        r5, r4
+00534982: ldr        r2, [sp, #0x2c]
+00534984: ldr        r4, [r1, #0xc]
+00534986: ldr        r7, [r2, #0x18]
+00534988: add.w      r1, r2, #0x14
+0053498C: blx        #0x4a6fac ; _ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE -> 00633F88 size=18
+00534990: movs       r1, #0
+00534992: cmp        r7, r4
+
+M4-009 ctor
+
+RANGE 0063BA00..0063BA44
+0063BA00: movs       r0, #0x64
+0063BA02: str        r5, [r4, #0x60]
+0063BA04: movs       r0, #0x2c
+0063BA06: str        r2, [r6, #0x14]
+0063BA08: str        r6, [r5, #0x74]
+0063BA0A: cmp        r0, #0x65
+0063BA0C: str        r5, [r4, #0x60]
+0063BA0E: movs       r5, #0x2d
+0063BA10: cmp        r1, #0x66
+0063BA12: movs       r1, r5
+
+M4-009 target store
+
+RANGE 0063BAAC..0063BAB8
+0063BAAC: ldr        r0, [r6, #4]
+0063BAAE: add.w      r1, sp, #0x2e
+0063BAB2: strh.w     r8, [sb, #0x10]
+
+M4-018 refresh
+
+RANGE 00637900..0063795A
+00637900: ldr        r4, [r1, #0x78]
+00637902: lsls       r0, r4, #2
+00637904: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00637908: sub        sp, #0x3c
+0063790A: mov        fp, r0
+0063790C: ldr.w      r0, [pc, #0x388] ; literal[00637C98]=00A06F36
+00637910: str        r1, [sp, #0xc]
+00637912: add        r0, pc
+00637914: ldr        r0, [r0]
+00637916: ldr        r0, [r0]
+00637918: str        r0, [sp, #0x38]
+0063791A: blx        #0x4a4f6c ; _ZN4Anki16BaseStationTimer11getInstanceEv -> 0084BB9C size=48
+0063791E: blx        #0x4a7b58 ; _ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv -> 0084BCC0 size=20
+00637922: mov        sl, r0
+00637924: ldrb.w     r0, [fp, #0x21]
+00637928: cbz        r0, #0x63793e
+0063792A: ldr.w      r0, [fp]
+0063792E: movs       r4, #0
+00637930: ldrb.w     r0, [r0, #0x2c4]
+00637934: cbz        r0, #0x637940
+00637936: strb.w     r4, [fp, #0x21]
+0063793A: movs       r4, #1
+0063793C: b          #0x637940
+0063793E: movs       r4, #0
+00637940: ldr.w      r6, [fp, #8]
+00637944: add.w      r0, fp, #0xc
+00637948: str        r0, [sp, #0x1c]
+0063794A: cmp        r6, r0
+0063794C: beq.w      #0x637c30
+00637950: add        r5, sp, #0x20
+00637952: mov        sb, r6
+00637954: str.w      sl, [sp, #0x18]
+
+M4-018 game layer
+
+RANGE 006399C0..00639B36
+006399C0: ldr.w      r0, [sl, #4]
+006399C4: adds       r0, #1
+006399C6: beq        #0x639a16
+006399C8: add.w      r0, sb, #8
+006399CC: mov        r1, sl
+006399CE: blx        #0x4b92ac ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE4findIS3_EENS_15__tree_iteratorIS7_PNS_11__tree_nodeIS7_PvEEiEERKT_ -> 0063B08C size=46
+006399D2: mov        r7, r0
+006399D4: add.w      r0, sb, #0xc
+006399D8: cmp        r7, r0
+006399DA: itt        ne
+006399DC: ldrbne     r0, [r7, #0x1c]
+006399DE: cmpne      r8, r0
+006399E0: beq.w      #0x639b36
+006399E4: cmp.w      r8, #1
+006399E8: bne        #0x639a98
+006399EA: ldr        r2, [pc, #0x204] ; literal[00639BF0]=00A21AAC
+006399EC: mov        r0, sb
+006399EE: mov        r1, sl
+006399F0: add        r2, pc
+006399F2: blx        #0x4b9264 ; _ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE -> 00637E6C size=170
+006399F6: add        r1, sp, #0x24
+006399F8: movs       r4, #1
+006399FA: mov        r0, sb
+006399FC: mov        r2, sl
+006399FE: str        r4, [sp, #0x24]
+00639A00: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639A04: movs       r0, #2
+00639A06: add        r1, sp, #0x24
+00639A08: str        r0, [sp, #0x24]
+00639A0A: mov        r0, sb
+00639A0C: mov        r2, sl
+00639A0E: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639A12: strb       r4, [r7, #0x1c]
+00639A14: b          #0x639b36
+00639A16: ldrb.w     r0, [sb, #0x22]
+00639A1A: cmp        r0, r8
+00639A1C: beq.w      #0x639b36
+00639A20: cmp.w      r8, #1
+00639A24: bne        #0x639acc
+00639A26: ldr        r2, [pc, #0x1d0] ; literal[00639BF8]=00A21A70
+00639A28: mov        r0, sb
+00639A2A: mov        r1, sl
+00639A2C: add        r2, pc
+00639A2E: blx        #0x4b9264 ; _ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE -> 00637E6C size=170
+00639A32: ldr.w      r7, [sb, #8]
+00639A36: add.w      r0, sb, #0xc
+00639A3A: cmp        r7, r0
+00639A3C: beq        #0x639a64
+00639A3E: movs       r1, #1
+00639A40: mov        r3, r7
+00639A42: strb       r1, [r7, #0x1c]
+00639A44: ldr        r2, [r3, #4]
+00639A46: cmp        r2, #0
+00639A48: beq        #0x639a54
+00639A4A: mov        r7, r2
+00639A4C: ldr        r2, [r7]
+00639A4E: cmp        r2, #0
+00639A50: bne        #0x639a4a
+00639A52: b          #0x639a5e
+00639A54: ldr        r7, [r3, #8]
+00639A56: ldr        r2, [r7]
+00639A58: cmp        r2, r3
+00639A5A: mov        r3, r7
+00639A5C: bne        #0x639a54
+00639A5E: cmp        r7, r0
+00639A60: mov        r3, r7
+00639A62: bne        #0x639a42
+00639A64: ldr        r0, [pc, #0x194] ; literal[00639BFC]=00A04E34
+00639A66: movs       r1, #1
+00639A68: str        r1, [sp, #8]
+00639A6A: add        r1, sp, #8
+00639A6C: add        r0, pc
+00639A6E: add        r2, sp, #0x24
+00639A70: mov.w      r4, #-1
+00639A74: ldr        r0, [r0]
+00639A76: str        r4, [sp, #0x28]
+00639A78: add.w      r5, r0, #8
+00639A7C: mov        r0, sb
+00639A7E: str        r5, [sp, #0x24]
+00639A80: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639A84: movs       r0, #2
+00639A86: add        r1, sp, #8
+00639A88: add        r2, sp, #0x24
+00639A8A: str        r0, [sp, #8]
+00639A8C: mov        r0, sb
+00639A8E: strd       r5, r4, [sp, #0x24]
+00639A92: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639A96: b          #0x639b32
+00639A98: add        r1, sp, #0x24
+00639A9A: movs       r4, #0
+00639A9C: mov        r0, sb
+00639A9E: mov        r2, sl
+00639AA0: str        r4, [sp, #0x24]
+00639AA2: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639AA6: movs       r0, #2
+00639AA8: add        r1, sp, #0x24
+00639AAA: str        r0, [sp, #0x24]
+00639AAC: mov        r0, sb
+00639AAE: mov        r2, sl
+00639AB0: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639AB4: ldr        r0, [r7, #0x34]
+00639AB6: movs       r1, #1
+00639AB8: strb       r4, [r7, #0x1c]
+00639ABA: cmp        r0, #0
+00639ABC: it         eq
+00639ABE: moveq      r1, #2
+00639AC0: str        r1, [r7, #0x18]
+00639AC2: mov        r0, sb
+00639AC4: mov        r1, sl
+00639AC6: blx        #0x4b9240 ; _ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE -> 00637D4C size=110
+00639ACA: b          #0x639b36
+00639ACC: ldr        r0, [pc, #0x124] ; literal[00639BF4]=00A04DCA
+00639ACE: mov.w      r1, #-1
+00639AD2: str        r1, [sp, #0x28]
+00639AD4: add        r1, sp, #8
+00639AD6: add        r0, pc
+00639AD8: add        r2, sp, #0x24
+00639ADA: movs       r6, #0
+00639ADC: ldr        r0, [r0]
+00639ADE: str        r6, [sp, #8]
+00639AE0: adds       r0, #8
+00639AE2: str        r0, [sp, #0x24]
+00639AE4: mov        r0, sb
+00639AE6: blx        #0x4b930c ; _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE -> 00638D80 size=1C0
+00639AEA: ldr.w      r0, [sb, #8]
+00639AEE: add.w      r7, sb, #0xc
+00639AF2: cmp        r0, r7
+00639AF4: beq        #0x639b32
+00639AF6: mov        r5, r0
+00639AF8: ldr        r1, [r0, #0x34]
+00639AFA: strb       r6, [r0, #0x1c]
+00639AFC: cmp        r1, #0
+00639AFE: mov.w      r1, #1
+00639B02: it         eq
+00639B04: moveq      r1, #2
+00639B06: str        r1, [r0, #0x18]
+00639B08: add.w      r1, r0, #0x10
+00639B0C: mov        r0, sb
+00639B0E: blx        #0x4b9240 ; _ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE -> 00637D4C size=110
+00639B12: ldr        r1, [r5, #4]
+00639B14: cmp        r1, #0
+00639B16: beq        #0x639b22
+00639B18: mov        r0, r1
+00639B1A: ldr        r1, [r0]
+00639B1C: cmp        r1, #0
+00639B1E: bne        #0x639b18
+00639B20: b          #0x639b2c
+00639B22: ldr        r0, [r5, #8]
+00639B24: ldr        r1, [r0]
+00639B26: cmp        r1, r5
+00639B28: mov        r5, r0
+00639B2A: bne        #0x639b22
+00639B2C: cmp        r0, r7
+00639B2E: mov        r5, r0
+00639B30: bne        #0x639af8
+00639B32: strb.w     r8, [sb, #0x22]
+
+M4-018 game caller
+
+RANGE 0063AFF8..0063B008
+0063AFF8: ldrb       r0, [r0]
+0063AFFA: movs       r2, #0
+0063AFFC: mov        r1, sp
+0063AFFE: cmp        r0, #0
+0063B000: it         eq
+0063B002: moveq      r2, #1
+0063B004: mov        r0, r4
+
+M4-019 treads
+
+RANGE 00512B88..00512BAC
+00512B88: cmp        r7, #0
+00512B8A: orr.w      r0, r0, r1
+00512B8E: strb.w     r0, [r4, #0x2bc]
+00512B92: beq        #0x512bac
+00512B94: mov.w      sb, #0
+00512B98: ands       r1, r6, #2
+00512B9C: str.w      sb, [r4, #0x2c0]
+00512BA0: it         ne
+00512BA2: movne      r1, #1
+00512BA4: mov        r0, r4
+00512BA6: blx        #0x4a7804 ; _ZN4Anki5Cozmo5Robot10DelocalizeEb -> 00510A24 size=4BC
+00512BAA: b          #0x512fb4
+
+M4-019 match
+
+RANGE 00512EA8..00512EB4
+00512EA8: lsls       r4, r5, #0x14
+00512EAA: add        r0, sp, #0x28
+00512EAC: movs       r6, #0
+00512EAE: str.w      r6, [r4, #0x2c0]
+
+M4-019 mismatch/statistics
+
+RANGE 00512F14..00512FDA
+00512F14: ldr.w      r0, [r4, #0x2c0]
+00512F18: movs       r6, #0
+00512F1A: adds       r0, #1
+00512F1C: str.w      r0, [r4, #0x2c0]
+00512F20: cmp        r0, #0x65
+00512F22: blo        #0x512fa0
+00512F24: ldr.w      r0, [pc, #0x410] ; literal[00513338]=006D3A1E
+00512F28: strd       r6, r6, [sp, #0x50]
+00512F2C: str        r6, [sp, #0x58]
+00512F2E: add        r0, pc
+00512F30: ldr.w      r1, [r4, #0x2b0]
+00512F34: ldr.w      r2, [pc, #0x404] ; literal[0051333C]=006D3A40
+00512F38: ldr        r3, [r5, #4]
+00512F3A: add        r2, pc
+00512F3C: str        r1, [sp]
+00512F3E: add        r1, sp, #0x50
+00512F40: blx        #0x4a4108 ; _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D13C size=80
+00512F44: ldr        r0, [sp, #0x50]
+00512F46: cbz        r0, #0x512f66
+00512F48: ldr        r1, [sp, #0x54]
+00512F4A: cmp        r1, r0
+00512F4C: itttt      ne
+00512F4E: subne.w    r2, r1, #8
+00512F52: subne      r2, r2, r0
+00512F54: mvnne      r3, #7
+00512F58: bicne.w    r2, r3, r2
+00512F5C: itt        ne
+00512F5E: addne      r1, r1, r2
+00512F60: strne      r1, [sp, #0x54]
+00512F62: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00512F66: ldr.w      r0, [pc, #0x3d8] ; literal[00513340]=00B2B818
+00512F6A: movs       r2, #1
+00512F6C: ldr.w      r1, [pc, #0x3d4] ; literal[00513344]=00B2B81A
+00512F70: add        r0, pc
+00512F72: add        r1, pc
+00512F74: ldr        r0, [r0]
+00512F76: ldr        r1, [r1]
+00512F78: ldrb       r0, [r0]
+00512F7A: strb       r2, [r1]
+00512F7C: cbz        r0, #0x512f82
+00512F7E: blx        #0x4a4114 ; _ZN4Anki4Util18sDebugBreakOnErrorEv -> 0080DAB4 size=2
+00512F82: ldr.w      r0, [r4, #0x284]
+00512F86: movs       r1, #0
+00512F88: str.w      r1, [r4, #0x2c0]
+00512F8C: ldr        r0, [r0, #8]
+00512F8E: adds       r0, #1
+00512F90: it         ne
+00512F92: movne      r1, #1
+00512F94: mov        r0, r4
+00512F96: blx        #0x4a7804 ; _ZN4Anki5Cozmo5Robot10DelocalizeEb -> 00510A24 size=4BC
+00512F9A: movs       r6, #1
+00512F9C: mov.w      fp, #1
+00512FA0: add        r0, sp, #0x38
+00512FA2: eor        sb, r8, #1
+00512FA6: blx        #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev -> 008450F4 size=98
+00512FAA: add        r0, sp, #0x44
+00512FAC: blx        #0x4a406c ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev -> 008450F4 size=98
+00512FB0: cmp        r6, #0
+00512FB2: bne        #0x513054
+00512FB4: ldr.w      r0, [r4, #0x27c]
+00512FB8: mov        r1, r5
+00512FBA: blx        #0x4a7c6c ; _ZN4Anki5Cozmo22RobotGyroDriftDetector15DetectGyroDriftERKNS0_10RobotStateE -> 0052C568 size=29C
+00512FBE: ldr.w      r0, [r4, #0x27c]
+00512FC2: mov        r1, r5
+00512FC4: blx        #0x4a7c78 ; _ZN4Anki5Cozmo22RobotGyroDriftDetector10DetectBiasERKNS0_10RobotStateE -> 0052C804 size=41C
+00512FC8: ldr.w      r0, [r4, #0x288]
+00512FCC: mov        r1, r5
+00512FCE: blx        #0x4a7c84 ; _ZN4Anki5Cozmo20CliffSensorComponent23UpdateCliffRunningStatsERKNS0_10RobotStateE -> 00634630 size=FC
+00512FD2: ldr.w      r0, [r4, #0x288]
+00512FD6: blx        #0x4a7c90 ; _ZN4Anki5Cozmo20CliffSensorComponent26UpdateCliffDetectThresholdEv -> 006343B8 size=140
+
+M4-017 headlight
+
+RANGE 00632344..0063238A _ZN4Anki5Cozmo18BodyLightComponent12SetHeadlightEb
+00632344: push       {r4, r5, r7, lr}
+00632346: sub.w      sp, sp, #0x410
+0063234A: mov        r5, r0
+0063234C: ldr        r0, [pc, #0x6c] ; literal[006323BC]=00A0C4F6
+0063234E: mov        r4, r1
+00632350: movs       r1, #0xe
+00632352: add        r0, pc
+00632354: mov        r2, r4
+00632356: ldr        r0, [r0]
+00632358: ldr        r0, [r0]
+0063235A: str.w      r0, [sp, #0x40c]
+0063235E: ldr        r0, [r5]
+00632360: ldr.w      r0, [r0, #0x258]
+00632364: blx        #0x4a91cc ; _ZN4Anki5Cozmo15VisionComponent10EnableModeENS0_10VisionModeEb -> 006527A8 size=C8
+00632368: ldr        r5, [r5]
+0063236A: mov        r1, sp
+0063236C: strb.w     r4, [sp]
+00632370: add        r4, sp, #4
+00632372: mov        r0, r4
+00632374: blx        #0x4b8e38 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS1_12SetHeadlightE -> 007A7B34 size=A
+00632378: mov        r0, r5
+0063237A: mov        r1, r4
+0063237C: movs       r2, #1
+0063237E: movs       r3, #0
+00632380: blx        #0x4a5368 ; _ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb -> 0051349C size=FC
+00632384: add        r0, sp, #4
+00632386: blx        #0x4a5200 ; _ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv -> 007A6F04 size=4C
+
+M4-017 recipient
+
+RANGE 006527A8..0065280E _ZN4Anki5Cozmo15VisionComponent10EnableModeENS0_10VisionModeEb
+006527A8: push       {r4, lr}
+006527AA: sub        sp, #0x10
+006527AC: ldr        r0, [r0, #0x1c]
+006527AE: cbz        r0, #0x6527ba
+006527B0: add        sp, #0x10
+006527B2: pop.w      {r4, lr}
+006527B6: b.w        #0x8cd05c
+006527BA: ldr        r2, [pc, #0x7c] ; literal[00652838]=0059173A
+006527BC: movs       r0, #0
+006527BE: strd       r0, r0, [sp, #4]
+006527C2: add        r2, pc
+006527C4: str        r0, [sp, #0xc]
+006527C6: adr        r0, #0x74 ; ADR[0065283C]=b'VisionComponent.EnableMode.NullVisionSystem'
+006527C8: add        r1, sp, #4
+006527CA: blx        #0x4a4108 ; _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D13C size=80
+006527CE: ldr        r0, [sp, #4]
+006527D0: cbz        r0, #0x6527f0
+006527D2: ldr        r1, [sp, #8]
+006527D4: cmp        r1, r0
+006527D6: itttt      ne
+006527D8: subne.w    r2, r1, #8
+006527DC: subne      r2, r2, r0
+006527DE: mvnne      r3, #7
+006527E2: bicne.w    r2, r3, r2
+006527E6: itt        ne
+006527E8: addne      r1, r1, r2
+006527EA: strne      r1, [sp, #8]
+006527EC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006527F0: ldr        r0, [pc, #0x74] ; literal[00652868]=009EBF92
+006527F2: movs       r2, #1
+006527F4: ldr        r1, [pc, #0x74] ; literal[0065286C]=009EBF94
+006527F6: add        r0, pc
+006527F8: add        r1, pc
+006527FA: ldr        r0, [r0]
+006527FC: ldr        r1, [r1]
+006527FE: ldrb       r0, [r0]
+00652800: strb       r2, [r1]
+00652802: cbz        r0, #0x652808
+00652804: blx        #0x4a4114 ; _ZN4Anki4Util18sDebugBreakOnErrorEv -> 0080DAB4 size=2
+00652808: movs       r0, #1
+0065280A: add        sp, #0x10
+0065280C: pop        {r4, pc}
+
+M4-017 queue
+
+RANGE 006B2282..006B229A _ZN4Anki5Cozmo12VisionSystem11SetNextModeENS0_10VisionModeEb
+006B2282: push       {r7, lr}
+006B2284: sub        sp, #8
+006B2286: adds       r0, #0xb0
+006B2288: strb.w     r2, [sp, #4]
+006B228C: str        r1, [sp]
+006B228E: mov        r1, sp
+006B2290: blx        #0x4bef88 ; _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9push_backEOS5_ -> 006BADA2 size=4E
+006B2294: movs       r0, #0
+006B2296: add        sp, #8
+006B2298: pop        {r7, pc}
+
+M4-017 drain
+
+RANGE 006B4FB6..006B4FE6
+006B4FB6: ldr.w      r0, [fp, #0xc4]
+006B4FBA: cbz        r0, #0x6b502c
+006B4FBC: ldr.w      r2, [fp, #0xc0]
+006B4FC0: ldr.w      r0, [fp, #0xb4]
+006B4FC4: lsrs       r1, r2, #9
+006B4FC6: bfc        r2, #9, #0x17
+006B4FCA: ldr.w      r0, [r0, r1, lsl #2]
+006B4FCE: ldr.w      r1, [r0, r2, lsl #3]
+006B4FD2: add.w      r0, r0, r2, lsl #3
+006B4FD6: ldrb       r2, [r0, #4]
+006B4FD8: mov        r0, fp
+006B4FDA: blx        #0x4beea4 ; _ZN4Anki5Cozmo12VisionSystem10EnableModeENS0_10VisionModeEb -> 006B19C0 size=424
+006B4FDE: mov        r0, r4
+006B4FE0: blx        #0x4bf198 ; _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9pop_frontEv -> 006BC1C4 size=30
+006B4FE4: b          #0x6b4fb6
+
+M4-017 bit14 branch
+
+RANGE 006B1A76..006B1CC8
+006B1A76: ldr.w      r0, [r4, #0xac]
+006B1A7A: movs       r2, #1
+006B1A7C: lsl.w      r7, r2, r1
+006B1A80: cmp        r5, #1
+006B1A82: and.w      r0, r0, r7
+006B1A86: bne.w      #0x6b1c3e
+006B1A8A: cmp        r0, r7
+006B1A8C: beq.w      #0x6b1cc6
+006B1A90: movs       r0, #0
+006B1A92: strd       r0, r0, [sp, #0x14]
+006B1A96: str        r0, [sp, #0x1c]
+006B1A98: mov        r0, r1
+006B1A9A: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B1A9E: mov        r5, r0
+006B1AA0: ldr.w      r2, [r4, #0xac]
+006B1AA4: add.w      r8, sp, #8
+006B1AA8: mov        r0, r8
+006B1AAA: blx        #0x4bef28 ; _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE -> 006B2384 size=90
+006B1AAE: ldr        r0, [pc, #0x328] ; literal[006B1DD8]=0054F706
+006B1AB0: ldr        r1, [pc, #0x328] ; literal[006B1DDC]=0054FA1A
+006B1AB2: ldr        r3, [pc, #0x32c] ; literal[006B1DE0]=0054FA2C
+006B1AB4: add        r0, pc
+006B1AB6: add        r1, pc
+006B1AB8: ldrb.w     r6, [sp, #8]
+006B1ABC: ldr        r2, [sp, #0x10]
+006B1ABE: add        r3, pc
+006B1AC0: tst.w      r6, #1
+006B1AC4: it         eq
+006B1AC6: orreq      r2, r8, #1
+006B1ACA: strd       r5, r2, [sp]
+006B1ACE: add        r2, sp, #0x14
+006B1AD0: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1AD4: ldrb.w     r0, [sp, #8]
+006B1AD8: lsls       r0, r0, #0x1f
+006B1ADA: itt        ne
+006B1ADC: ldrne      r0, [sp, #0x10]
+006B1ADE: blxne      #0x4a40cc
+006B1AE2: ldr        r0, [sp, #0x14]
+006B1AE4: cbz        r0, #0x6b1b04
+006B1AE6: ldr        r1, [sp, #0x18]
+006B1AE8: cmp        r1, r0
+006B1AEA: itttt      ne
+006B1AEC: subne.w    r2, r1, #8
+006B1AF0: subne      r2, r2, r0
+006B1AF2: mvnne      r3, #7
+006B1AF6: bicne.w    r2, r3, r2
+006B1AFA: itt        ne
+006B1AFC: addne      r1, r1, r2
+006B1AFE: strne      r1, [sp, #0x18]
+006B1B00: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1B04: ldr.w      r0, [r4, #0xac]
+006B1B08: bic        r0, r0, #1
+006B1B0C: orrs       r0, r7
+006B1B0E: b          #0x6b1cc2
+006B1B10: ldr        r0, [pc, #0x27c] ; literal[006B1D90]=0054F6A2
+006B1B12: movs       r2, #0
+006B1B14: ldr        r1, [pc, #0x27c] ; literal[006B1D94]=0054F97F
+006B1B16: cmp        r5, #0
+006B1B18: add        r0, pc
+006B1B1A: strd       r2, r2, [sp, #0x14]
+006B1B1E: add        r1, pc
+006B1B20: str        r2, [sp, #0x1c]
+006B1B22: mov.w      r2, #0x4e
+006B1B26: it         ne
+006B1B28: movne      r2, #0x59
+006B1B2A: str        r2, [sp]
+006B1B2C: add        r2, sp, #0x14
+006B1B2E: adr        r3, #0x224 ; ADR[006B1D54]=b'Enabled=%c'
+006B1B30: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1B34: ldr        r0, [sp, #0x14]
+006B1B36: cbz        r0, #0x6b1b56
+006B1B38: ldr        r1, [sp, #0x18]
+006B1B3A: cmp        r1, r0
+006B1B3C: itttt      ne
+006B1B3E: subne.w    r2, r1, #8
+006B1B42: subne      r2, r2, r0
+006B1B44: mvnne      r3, #7
+006B1B48: bicne.w    r2, r3, r2
+006B1B4C: itt        ne
+006B1B4E: addne      r1, r1, r2
+006B1B50: strne      r1, [sp, #0x18]
+006B1B52: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1B56: ldr.w      r0, [r4, #0x2fc]
+006B1B5A: mov        r1, r5
+006B1B5C: blx        #0x4bef34 ; _ZN4Anki6Vision11FaceTracker20EnableSmileDetectionEb -> 0086B284 size=8
+006B1B60: b          #0x6b1cc6
+006B1B62: ldr        r0, [pc, #0x1fc] ; literal[006B1D60]=0054F648
+006B1B64: movs       r1, #0
+006B1B66: strd       r1, r1, [sp, #0x14]
+006B1B6A: cmp        r5, #0
+006B1B6C: str        r1, [sp, #0x1c]
+006B1B6E: mov.w      r1, #0x4e
+006B1B72: add        r0, pc
+006B1B74: it         ne
+006B1B76: movne      r1, #0x59
+006B1B78: str        r1, [sp]
+006B1B7A: adr        r1, #0x1e8 ; ADR[006B1D64]=b'VisionSystem.EnableMode.EnableDetectingGaze'
+006B1B7C: add        r2, sp, #0x14
+006B1B7E: adr        r3, #0x1d4 ; ADR[006B1D54]=b'Enabled=%c'
+006B1B80: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1B84: ldr        r0, [sp, #0x14]
+006B1B86: cbz        r0, #0x6b1ba6
+006B1B88: ldr        r1, [sp, #0x18]
+006B1B8A: cmp        r1, r0
+006B1B8C: itttt      ne
+006B1B8E: subne.w    r2, r1, #8
+006B1B92: subne      r2, r2, r0
+006B1B94: mvnne      r3, #7
+006B1B98: bicne.w    r2, r3, r2
+006B1B9C: itt        ne
+006B1B9E: addne      r1, r1, r2
+006B1BA0: strne      r1, [sp, #0x18]
+006B1BA2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1BA6: ldr.w      r0, [r4, #0x2fc]
+006B1BAA: mov        r1, r5
+006B1BAC: blx        #0x4bef40 ; _ZN4Anki6Vision11FaceTracker19EnableGazeDetectionEb -> 0086B28C size=8
+006B1BB0: b          #0x6b1cc6
+006B1BB2: ldr        r0, [pc, #0x16c] ; literal[006B1D20]=0054F5F8
+006B1BB4: movs       r1, #0
+006B1BB6: strd       r1, r1, [sp, #0x14]
+006B1BBA: cmp        r5, #0
+006B1BBC: str        r1, [sp, #0x1c]
+006B1BBE: mov.w      r1, #0x4e
+006B1BC2: add        r0, pc
+006B1BC4: it         ne
+006B1BC6: movne      r1, #0x59
+006B1BC8: str        r1, [sp]
+006B1BCA: adr        r1, #0x158 ; ADR[006B1D24]=b'VisionSystem.EnableMode.DetectingBlinkAmount'
+006B1BCC: add        r2, sp, #0x14
+006B1BCE: adr        r3, #0x184 ; ADR[006B1D54]=b'Enabled=%c'
+006B1BD0: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1BD4: ldr        r0, [sp, #0x14]
+006B1BD6: cbz        r0, #0x6b1bf6
+006B1BD8: ldr        r1, [sp, #0x18]
+006B1BDA: cmp        r1, r0
+006B1BDC: itttt      ne
+006B1BDE: subne.w    r2, r1, #8
+006B1BE2: subne      r2, r2, r0
+006B1BE4: mvnne      r3, #7
+006B1BE8: bicne.w    r2, r3, r2
+006B1BEC: itt        ne
+006B1BEE: addne      r1, r1, r2
+006B1BF0: strne      r1, [sp, #0x18]
+006B1BF2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1BF6: ldr.w      r0, [r4, #0x2fc]
+006B1BFA: mov        r1, r5
+006B1BFC: blx        #0x4bef4c ; _ZN4Anki6Vision11FaceTracker20EnableBlinkDetectionEb -> 0086B294 size=8
+006B1C00: b          #0x6b1cc6
+006B1C02: ldr        r0, [pc, #0x19c] ; literal[006B1DA0]=0054F812
+006B1C04: movs       r1, #0
+006B1C06: ldr        r2, [pc, #0x19c] ; literal[006B1DA4]=0054F833
+006B1C08: add        r0, pc
+006B1C0A: strd       r1, r1, [sp, #0x14]
+006B1C0E: add        r2, pc
+006B1C10: str        r1, [sp, #0x1c]
+006B1C12: add        r1, sp, #0x14
+006B1C14: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+006B1C18: ldr        r0, [sp, #0x14]
+006B1C1A: cmp        r0, #0
+006B1C1C: beq        #0x6b1cc6
+006B1C1E: ldr        r1, [sp, #0x18]
+006B1C20: cmp        r1, r0
+006B1C22: itttt      ne
+006B1C24: subne.w    r2, r1, #8
+006B1C28: subne      r2, r2, r0
+006B1C2A: mvnne      r3, #7
+006B1C2E: bicne.w    r2, r3, r2
+006B1C32: itt        ne
+006B1C34: addne      r1, r1, r2
+006B1C36: strne      r1, [sp, #0x18]
+006B1C38: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1C3C: b          #0x6b1cc6
+006B1C3E: cmp        r0, r7
+006B1C40: bne        #0x6b1cc6
+006B1C42: movs       r0, #0
+006B1C44: strd       r0, r0, [sp, #0x14]
+006B1C48: str        r0, [sp, #0x1c]
+006B1C4A: mov        r0, r1
+006B1C4C: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B1C50: mov        r5, r0
+006B1C52: ldr.w      r2, [r4, #0xac]
+006B1C56: add.w      r8, sp, #8
+006B1C5A: mov        r0, r8
+006B1C5C: blx        #0x4bef28 ; _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE -> 006B2384 size=90
+006B1C60: ldr        r0, [pc, #0x168] ; literal[006B1DCC]=0054F554
+006B1C62: ldr        r1, [pc, #0x16c] ; literal[006B1DD0]=0054F8A5
+006B1C64: ldr        r3, [pc, #0x16c] ; literal[006B1DD4]=0054F8B8
+006B1C66: add        r0, pc
+006B1C68: add        r1, pc
+006B1C6A: ldrb.w     r6, [sp, #8]
+006B1C6E: ldr        r2, [sp, #0x10]
+006B1C70: add        r3, pc
+006B1C72: tst.w      r6, #1
+006B1C76: it         eq
+006B1C78: orreq      r2, r8, #1
+006B1C7C: strd       r5, r2, [sp]
+006B1C80: add        r2, sp, #0x14
+006B1C82: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1C86: ldrb.w     r0, [sp, #8]
+006B1C8A: lsls       r0, r0, #0x1f
+006B1C8C: itt        ne
+006B1C8E: ldrne      r0, [sp, #0x10]
+006B1C90: blxne      #0x4a40cc
+006B1C94: ldr        r0, [sp, #0x14]
+006B1C96: cbz        r0, #0x6b1cb6
+006B1C98: ldr        r1, [sp, #0x18]
+006B1C9A: cmp        r1, r0
+006B1C9C: itttt      ne
+006B1C9E: subne.w    r2, r1, #8
+006B1CA2: subne      r2, r2, r0
+006B1CA4: mvnne      r3, #7
+006B1CA8: bicne.w    r2, r3, r2
+006B1CAC: itt        ne
+006B1CAE: addne      r1, r1, r2
+006B1CB0: strne      r1, [sp, #0x18]
+006B1CB2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1CB6: ldr.w      r0, [r4, #0xac]
+006B1CBA: bics       r0, r7
+006B1CBC: cmp        r0, #0
+006B1CBE: it         eq
+006B1CC0: moveq      r0, #1
+006B1CC2: str.w      r0, [r4, #0xac]
+006B1CC6: movs       r0, #0
+
+M4-017 mode names
+
+RANGE 006B2384..006B23F6 _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE
+006B2384: push.w     {r4, r5, r6, r7, r8, sb, lr}
+006B2388: sub        sp, #4
+006B238A: ldr        r1, [pc, #0x80] ; literal[006B240C]=00531B6A
+006B238C: mov        r5, r2
+006B238E: mov        r4, r0
+006B2390: movs       r6, #0
+006B2392: add        r1, pc
+006B2394: movs       r2, #0
+006B2396: strd       r6, r6, [r4]
+006B239A: str        r6, [r4, #8]
+006B239C: bl         #0x4e02b2
+006B23A0: str        r6, [sp]
+006B23A2: movs       r7, #1
+006B23A4: addw       r8, pc, #0x68 ; ADDW[006B2410]=b'+'
+006B23A8: mov        sb, sp
+006B23AA: lsl.w      r0, r7, r6
+006B23AE: tst        r0, r5
+006B23B0: beq        #0x6b23e4
+006B23B2: ldrb       r0, [r4]
+006B23B4: tst.w      r0, #1
+006B23B8: ite        eq
+006B23BA: lsreq      r0, r0, #1
+006B23BC: ldrne      r0, [r4, #4]
+006B23BE: cbz        r0, #0x6b23cc
+006B23C0: mov        r0, r4
+006B23C2: mov        r1, r8
+006B23C4: movs       r2, #1
+006B23C6: bl         #0x4e8048
+006B23CA: ldr        r6, [sp]
+006B23CC: mov        r0, r6
+006B23CE: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B23D2: mov        r6, r0
+006B23D4: mov        r0, r6
+006B23D6: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+006B23DA: mov        r2, r0
+006B23DC: mov        r0, r4
+006B23DE: mov        r1, r6
+006B23E0: bl         #0x4e8048
+006B23E4: mov        r0, sb
+006B23E6: blx        #0x4ba4f4 ; _ZN4Anki5CozmoppERNS0_10VisionModeE -> 006AF31E size=8
+006B23EA: ldr        r6, [sp]
+006B23EC: cmp        r6, #0x10
+006B23EE: blo        #0x6b23aa
+006B23F0: add        sp, #4
+006B23F2: pop.w      {r4, r5, r6, r7, r8, sb, pc}
+
+M3-010 encode
+
+RANGE 00597AD8..00597B8E _ZN4Anki5Cozmo5Audio11encodeMuLawEf
+00597AD8: push       {r4, lr}
+00597ADA: sub        sp, #0x10
+00597ADC: mov        r4, r0
+00597ADE: blx        #0x4ae3a4 ; isnanf IMPORT (resolve packaged dependencies before calling external)
+00597AE2: cbz        r0, #0x597b1c
+00597AE4: movs       r0, #0
+00597AE6: strd       r0, r0, [sp, #4]
+00597AEA: str        r0, [sp, #0xc]
+00597AEC: adr        r0, #0xcc ; ADR[00597BBC]=b'RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN'
+00597AEE: add        r1, sp, #4
+00597AF0: adr        r2, #0xfc ; ADR[00597BF0]=b'Audio sample from current stream is NaN'
+00597AF2: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00597AF6: ldr        r0, [sp, #4]
+00597AF8: cbz        r0, #0x597b18
+00597AFA: ldr        r1, [sp, #8]
+00597AFC: cmp        r1, r0
+00597AFE: itttt      ne
+00597B00: subne.w    r2, r1, #8
+00597B04: subne      r2, r2, r0
+00597B06: mvnne      r3, #7
+00597B0A: bicne.w    r2, r3, r2
+00597B0E: itt        ne
+00597B10: addne      r1, r1, r2
+00597B12: strne      r1, [sp, #8]
+00597B14: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00597B18: movs       r0, #0
+00597B1A: b          #0x597b8e
+00597B1C: vmov.f32   s2, #1.000000e+00
+00597B20: movw       r0, #0x8001
+00597B24: vmov       s0, r4
+00597B28: movt       r0, #0xffff
+00597B2C: ldr        r1, [pc, #0xec] ; literal[00597C1C]=006C48BA
+00597B2E: vmov.f32   s4, s0
+00597B32: add        r1, pc
+00597B34: vcmpe.f32  s0, s2
+00597B38: vmrs       apsr_nzcv, fpscr
+00597B3C: it         ge
+00597B3E: vmovge.f32 s4, s2
+00597B42: vldr       s2, [pc, #0xd4] ; literal[00597C18]=46FFFE00
+00597B46: vmul.f32   s2, s4, s2
+00597B4A: vmov.f32   s4, #-1.000000e+00
+00597B4E: vcvt.s32.f32 s2, s2
+00597B52: vcmpe.f32  s0, s4
+00597B56: vmrs       apsr_nzcv, fpscr
+00597B5A: vmov       r2, s2
+00597B5E: it         hi
+00597B60: movhi      r0, r2
+00597B62: eor.w      r2, r0, r0, asr #15
+00597B66: sxth       r0, r0
+00597B68: asrs       r3, r2, #8
+00597B6A: ldrb       r1, [r1, r3]
+00597B6C: movs       r3, #0
+00597B6E: cmp.w      r3, r2, asr #8
+00597B72: iteee      eq
+00597B74: lsreq      r2, r2, #4
+00597B76: addne      r3, r1, #3
+00597B78: asrne      r2, r3
+00597B7A: andne      r2, r2, #0xf
+00597B7E: lsls       r4, r1, #4
+00597B80: movs       r3, #0x80
+00597B82: cmp        r0, #0
+00597B84: it         lt
+00597B86: orrlt.w    r4, r3, r1, lsl #4
+00597B8A: orr.w      r0, r4, r2
+
+M3-010 pop
+
+RANGE 00597DFC..00597E42
+00597DFC: ldr        r0, [r0, r6]
+00597DFE: blx        #0x4af5bc ; _ZN4Anki5Cozmo5Audio11encodeMuLawEf -> 00597AD8 size=148
+00597E02: strb       r0, [r7, r4]
+00597E04: adds       r6, #4
+00597E06: adds       r4, #1
+00597E08: ldrd       r0, r1, [r5]
+00597E0C: subs       r1, r1, r0
+00597E0E: cmp.w      r4, r1, asr #2
+00597E12: blo        #0x597dfc
+00597E14: asrs       r1, r1, #2
+00597E16: cmp.w      r1, #0x2e8
+00597E1A: bhs        #0x597e38
+00597E1C: subw       r2, r1, #0x2e9
+00597E20: mov        r0, sp
+00597E22: cmp.w      r2, #-1
+00597E26: it         lt
+00597E28: mvnlt      r2, #1
+00597E2C: addw       r2, r2, #0x2ea
+00597E30: add        r0, r1
+00597E32: subs       r1, r2, r1
+00597E34: blx        #0x4ae1e8 ; __aeabi_memclr IMPORT (resolve packaged dependencies before calling external)
+00597E38: mov        r0, r5
+00597E3A: blx        #0x4a82a8 ; _ZNSt6__ndk113__vector_baseIfNS_9allocatorIfEEED2Ev -> 00519A32 size=28
+00597E3E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+
+REOPENED CALL TARGETS
+local 004E02B2 (first 32 bytes, unnamed local)
+
+RANGE 004E02B2..004E02D2
+004E02B2: push       {r4, r5, r6, r7, lr}
+004E02B4: sub        sp, #4
+004E02B6: mov        r4, r2
+004E02B8: mov        r6, r1
+004E02BA: mov        r5, r0
+004E02BC: cmn.w      r4, #0x10
+004E02C0: blo        #0x4e02ca
+004E02C2: mov        r0, r5
+004E02C4: bl         #0x4e0308
+004E02C8: b          #0x4e02dc
+004E02CA: cmp        r4, #0xb
+004E02CC: bhs        #0x4e02dc
+004E02CE: lsls       r0, r4, #1
+004E02D0: cmp        r4, #0
+local 004E8048 (first 32 bytes, unnamed local)
+
+RANGE 004E8048..004E8068
+004E8048: push       {r4, r5, r6, r7, lr}
+004E804A: sub        sp, #0x14
+004E804C: mov        r4, r0
+004E804E: mov        r5, r2
+004E8050: ldrb       r0, [r4]
+004E8052: tst.w      r0, #1
+004E8056: bne        #0x4e805c
+004E8058: movs       r3, #0xa
+004E805A: b          #0x4e8064
+004E805C: ldr        r0, [r4]
+004E805E: bic        r2, r0, #1
+004E8062: subs       r3, r2, #1
+004E8064: lsls       r2, r0, #0x1f
+004E8066: ite        eq
+_ZN4Anki5Cozmo5Robot10DelocalizeEb
+
+RANGE 00510A24..00510EE0 _ZN4Anki5Cozmo5Robot10DelocalizeEb
+00510A24: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00510A28: sub        sp, #0x13c
+00510A2A: mov        r4, r0
+00510A2C: ldr.w      r0, [pc, #0x3f8] ; literal[00510E28]=00B2DE14
+00510A30: movs       r5, #0
+00510A32: mov        sl, r1
+00510A34: add        r0, pc
+00510A36: movs       r1, #0
+00510A38: movt       r1, #0xbf80
+00510A3C: ldr        r0, [r0]
+00510A3E: ldr        r0, [r0]
+00510A40: str        r0, [sp, #0x138]
+00510A42: mov.w      r0, #-1
+00510A46: str.w      r0, [r4, #0x2b8]
+00510A4A: strb.w     r5, [r4, #0x2c4]
+00510A4E: ldr.w      r0, [r4, #0x288]
+00510A52: str.w      r1, [r4, #0x2c8]
+00510A56: strb.w     r5, [r4, #0x2c5]
+00510A5A: blx        #0x4a7990 ; _ZN4Anki5Cozmo20CliffSensorComponent22ClearCliffRunningStatsEv -> 006347A4 size=9C
+00510A5E: ldr.w      r0, [r4, #0x294]
+00510A62: ldr        r1, [r0, #0x10]
+00510A64: str        r1, [sp, #0x10]
+00510A66: blx        #0x4a799c ; _ZN4Anki14PoseOriginList12AddNewOriginEv -> 00847A84 size=58
+00510A6A: mov        sb, r0
+00510A6C: ldr.w      r0, [r4, #0x294]
+00510A70: ldr.w      fp, [r0, #0x14]
+00510A74: strd       r5, r5, [sp, #0x30]
+00510A78: str        r5, [sp, #0x38]
+00510A7A: ldr        r7, [r4, #0x10]
+00510A7C: mov        r0, fp
+00510A7E: blx        #0x4a4c60 ; _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE7GetNameEv -> 00844956 size=6
+00510A82: ldr.w      r1, [r4, #0x294]
+00510A86: ldr        r2, [r0, #8]
+00510A88: ldrb       r3, [r0]
+00510A8A: ldr        r1, [r1, #0xc]
+00510A8C: tst.w      r3, #1
+00510A90: it         eq
+00510A92: addeq      r2, r0, #1
+00510A94: add        r6, sp, #0x30
+00510A96: strd       r2, r1, [sp]
+00510A9A: adr        r0, #0x390 ; ADR[00510E2C]=b'Robot.Delocalize'
+00510A9C: addw       r2, pc, #0x3a0 ; ADDW[00510E40]=b'Delocalizing robot %d. New origin: %s. NumOrigins=%zu'
+00510AA0: mov        r1, r6
+00510AA2: mov        r3, r7
+00510AA4: blx        #0x4a4f90 ; _ZN4Anki4Util7sEventFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D004 size=8C
+00510AA8: ldr        r0, [sp, #0x30]
+00510AAA: cbz        r0, #0x510aca
+00510AAC: ldr        r1, [sp, #0x34]
+00510AAE: cmp        r1, r0
+00510AB0: itttt      ne
+00510AB2: subne.w    r2, r1, #8
+00510AB6: subne      r2, r2, r0
+00510AB8: mvnne      r3, #7
+00510ABC: bicne.w    r2, r3, r2
+00510AC0: itt        ne
+00510AC2: addne      r1, r1, r2
+00510AC4: strne      r1, [sp, #0x34]
+00510AC6: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510ACA: add        r5, sp, #0x28
+00510ACC: movs       r1, #0
+00510ACE: str.w      sb, [sp, #0xc]
+00510AD2: mov.w      sb, #0
+00510AD6: mov        r0, r5
+00510AD8: blx        #0x4a4294 ; _ZN4Anki7RadiansC1Ef -> 0084C832 size=14
+00510ADC: blx        #0x4a4780 ; _ZN4Anki9Z_AXIS_3DEv -> 00842CD8 size=50
+00510AE0: add.w      r7, r4, #0x298
+00510AE4: mov        r2, r0
+00510AE6: mov        r1, r5
+00510AE8: mov        r0, r7
+00510AEA: bl         #0x5126bc
+00510AEE: mov        r0, r7
+00510AF0: strd       sb, sb, [sp, #0x30]
+00510AF4: str.w      sb, [sp, #0x38]
+00510AF8: blx        #0x4a4060 ; _ZNR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv -> 008449A0 size=4
+00510AFC: mov        r1, r6
+00510AFE: adds       r0, #0x20
+00510B00: ldm.w      r1, {r2, r3, r5}
+00510B04: mov        r1, fp
+00510B06: stm        r0!, {r2, r3, r5}
+00510B08: mov        r0, r7
+00510B0A: blx        #0x4a5b78 ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9SetParentERKS1_ -> 00844A14 size=7C
+00510B0E: add        r5, sp, #0x20
+00510B10: movs       r1, #0
+00510B12: mov        r0, r5
+00510B14: blx        #0x4a4294 ; _ZN4Anki7RadiansC1Ef -> 0084C832 size=14
+00510B18: blx        #0x4a4780 ; _ZN4Anki9Z_AXIS_3DEv -> 00842CD8 size=50
+00510B1C: add.w      r8, r4, #0x2a4
+00510B20: mov        r2, r0
+00510B22: mov        r1, r5
+00510B24: mov        r0, r8
+00510B26: bl         #0x5126bc
+00510B2A: mov        r0, r8
+00510B2C: strd       sb, sb, [sp, #0x30]
+00510B30: str.w      sb, [sp, #0x38]
+00510B34: blx        #0x4a4060 ; _ZNR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv -> 008449A0 size=4
+00510B38: adds       r0, #0x20
+00510B3A: ldm.w      r6, {r1, r2, r3}
+00510B3E: stm        r0!, {r1, r2, r3}
+00510B40: mov        r0, r8
+00510B42: mov        r1, fp
+00510B44: blx        #0x4a5b78 ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9SetParentERKS1_ -> 00844A14 size=7C
+00510B48: mov        r0, r4
+00510B4A: mov        r1, r7
+00510B4C: blx        #0x4a79a8 ; _ZN4Anki5Cozmo5Robot10SetNewPoseERKNS_6Pose3dE -> 005126EC size=46
+00510B50: cbz        r0, #0x510b86
+00510B52: strd       sb, sb, [sp, #0x30]
+00510B56: str.w      sb, [sp, #0x38]
+00510B5A: adr        r0, #0x31c ; ADR[00510E78]=b'Robot.Delocalize.SetNewPose'
+00510B5C: add        r1, sp, #0x30
+00510B5E: adr        r2, #0x334 ; ADR[00510E94]=b'Failed to set new pose'
+00510B60: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00510B64: ldr        r0, [sp, #0x30]
+00510B66: cbz        r0, #0x510b86
+00510B68: ldr        r1, [sp, #0x34]
+00510B6A: cmp        r1, r0
+00510B6C: itttt      ne
+00510B6E: subne.w    r2, r1, #8
+00510B72: subne      r2, r2, r0
+00510B74: mvnne      r3, #7
+00510B78: bicne.w    r2, r3, r2
+00510B7C: itt        ne
+00510B7E: addne      r1, r1, r2
+00510B80: strne      r1, [sp, #0x34]
+00510B82: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510B86: ldrb.w     r0, [r4, #0x29]
+00510B8A: ldr.w      sb, [sp, #0xc]
+00510B8E: cbz        r0, #0x510bf8
+00510B90: movs       r0, #0
+00510B92: strd       r0, r0, [sp, #0x30]
+00510B96: str        r0, [sp, #0x38]
+00510B98: ldr.w      r5, [r4, #0x2b0]
+00510B9C: ldr        r6, [r4, #0x2c]
+00510B9E: mov        r0, fp
+00510BA0: blx        #0x4a79b4 ; _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE5GetIDEv -> 00844950 size=6
+00510BA4: ldr        r1, [pc, #0x308] ; literal[00510EB0]=006D5B36
+00510BA6: ldr.w      ip, [pc, #0x304] ; literal[00510EAC]=006D343A
+00510BAA: ldr        r3, [pc, #0x308] ; literal[00510EB4]=006D5B56
+00510BAC: add        r1, pc
+00510BAE: add        ip, pc
+00510BB0: add        r3, pc
+00510BB2: add        r2, sp, #0x30
+00510BB4: strd       r6, r5, [sp]
+00510BB8: str        r0, [sp, #8]
+00510BBA: mov        r0, ip
+00510BBC: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00510BC0: ldr        r0, [sp, #0x30]
+00510BC2: cbz        r0, #0x510be2
+00510BC4: ldr        r1, [sp, #0x34]
+00510BC6: cmp        r1, r0
+00510BC8: itttt      ne
+00510BCA: subne.w    r2, r1, #8
+00510BCE: subne      r2, r2, r0
+00510BD0: mvnne      r3, #7
+00510BD4: bicne.w    r2, r3, r2
+00510BD8: itt        ne
+00510BDA: addne      r1, r1, r2
+00510BDC: strne      r1, [sp, #0x34]
+00510BDE: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510BE2: ldr        r0, [r4, #0x2c]
+00510BE4: add        r2, sp, #0x30
+00510BE6: str        r0, [sp, #0x30]
+00510BE8: add        r3, sp, #0x14
+00510BEA: ldr.w      r0, [r4, #0x2b0]
+00510BEE: mov        r1, r7
+00510BF0: str        r0, [sp, #0x14]
+00510BF2: mov        r0, r4
+00510BF4: blx        #0x4a79c0 ; _ZNK4Anki5Cozmo5Robot25SendAbsLocalizationUpdateERKNS_6Pose3dERKjS6_ -> 00512734 size=1C8
+00510BF8: ldr        r1, [pc, #0x2bc] ; literal[00510EB8]=00B2DBDC
+00510BFA: ldr        r0, [r4]
+00510BFC: add        r1, pc
+00510BFE: ldr        r3, [pc, #0x2bc] ; literal[00510EBC]=006D5B4D
+00510C00: ldr        r6, [r1]
+00510C02: movs       r1, #2
+00510C04: ldr        r0, [r0, #0x24]
+00510C06: add        r3, pc
+00510C08: strb.w     r1, [sp, #0x30]
+00510C0C: add        r1, sp, #0x30
+00510C0E: mov        r2, r6
+00510C10: blx        #0x4a79cc ; _ZN4Anki5Cozmo10VizManager7SetTextERKNS1_13TextLabelTypeERKNS_9ColorRGBAEPKcz -> 006C0314 size=EC
+00510C14: ldr        r0, [r4]
+00510C16: ldr        r7, [r0, #0x24]
+00510C18: movs       r0, #3
+00510C1A: strb.w     r0, [sp, #0x30]
+00510C1E: ldr.w      r0, [r4, #0x294]
+00510C22: ldr        r5, [r0, #0xc]
+00510C24: mov        r0, fp
+00510C26: blx        #0x4a4c60 ; _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE7GetNameEv -> 00844956 size=6
+00510C2A: ldrb       r2, [r0]
+00510C2C: ldr        r1, [r0, #8]
+00510C2E: ldr        r3, [pc, #0x290] ; literal[00510EC0]=006D5B2A
+00510C30: tst.w      r2, #1
+00510C34: it         eq
+00510C36: addeq      r1, r0, #1
+00510C38: mov        r0, r7
+00510C3A: strd       r5, r1, [sp]
+00510C3E: add        r5, sp, #0x30
+00510C40: add        r3, pc
+00510C42: mov        r2, r6
+00510C44: mov        r1, r5
+00510C46: blx        #0x4a79cc ; _ZN4Anki5Cozmo10VizManager7SetTextERKNS1_13TextLabelTypeERKNS_9ColorRGBAEPKcz -> 006C0314 size=EC
+00510C4A: ldr        r0, [r4]
+00510C4C: ldr        r0, [r0, #0x24]
+00510C4E: blx        #0x4a79d8 ; _ZN4Anki5Cozmo10VizManager18EraseAllVizObjectsEv -> 006BFAE8 size=24
+00510C52: ldr.w      r0, [r4, #0x26c]
+00510C56: blx        #0x4a79e4 ; _ZN4Anki5Cozmo19ObjectPoseConfirmer5ClearEv -> 005077EC size=1A
+00510C5A: ldr.w      r1, [r4, #0x284]
+00510C5E: movs       r3, #0
+00510C60: ldr        r0, [r1, #8]
+00510C62: adds       r2, r0, #1
+00510C64: it         ne
+00510C66: movne      r3, #1
+00510C68: movs       r2, #0
+00510C6A: teq.w      r3, sl
+00510C6E: beq        #0x510cc4
+00510C70: strd       r2, r2, [sp, #0x30]
+00510C74: movs       r3, #0x4e
+00510C76: str        r2, [sp, #0x38]
+00510C78: ldr        r1, [r1, #8]
+00510C7A: ldr        r0, [pc, #0x248] ; literal[00510EC4]=006D5AFB
+00510C7C: adds       r1, #1
+00510C7E: ldr        r2, [pc, #0x248] ; literal[00510EC8]=006D5B1F
+00510C80: mov.w      r1, #0x4e
+00510C84: add        r0, pc
+00510C86: it         ne
+00510C88: movne      r1, #0x59
+00510C8A: add        r2, pc
+00510C8C: str        r1, [sp]
+00510C8E: add        r1, sp, #0x30
+00510C90: cmp.w      sl, #0
+00510C94: it         ne
+00510C96: movne      r3, #0x59
+00510C98: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00510C9C: ldr        r0, [sp, #0x30]
+00510C9E: cbz        r0, #0x510cbe
+00510CA0: ldr        r1, [sp, #0x34]
+00510CA2: cmp        r1, r0
+00510CA4: itttt      ne
+00510CA6: subne.w    r2, r1, #8
+00510CAA: subne      r2, r2, r0
+00510CAC: mvnne      r3, #7
+00510CB0: bicne.w    r2, r3, r2
+00510CB4: itt        ne
+00510CB6: addne      r1, r1, r2
+00510CB8: strne      r1, [sp, #0x34]
+00510CBA: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510CBE: ldr.w      r1, [r4, #0x284]
+00510CC2: ldr        r0, [r1, #8]
+00510CC4: adds       r0, #1
+00510CC6: beq        #0x510d5e
+00510CC8: mov        r0, r5
+00510CCA: blx        #0x4a79f0 ; _ZNK4Anki5Cozmo17CarryingComponent18GetCarryingObjectsEv -> 00633BB0 size=4E
+00510CCE: ldr.w      sl, [sp, #0x30]
+00510CD2: adds       r5, #4
+00510CD4: cmp        sl, r5
+00510CD6: beq        #0x510d52
+00510CD8: ldr.w      r8, [pc, #0x1f0] ; literal[00510ECC]=006D5AFA
+00510CDC: add.w      sb, sp, #0x14
+00510CE0: adr        r7, #0x1ec ; ADR[00510ED0]=b'Object %d'
+00510CE2: movs       r6, #0
+00510CE4: add        r8, pc
+00510CE6: mov        fp, sl
+00510CE8: ldr        r0, [r4, #0x34]
+00510CEA: ldr        r2, [sp, #0x10]
+00510CEC: add.w      r1, sl, #0x10
+00510CF0: blx        #0x4a79fc ; _ZN4Anki5Cozmo10BlockWorld18UpdateObjectOriginERKNS_8ObjectIDEj -> 0062013C size=3F8
+00510CF4: cbz        r0, #0x510d2c
+00510CF6: strd       r6, r6, [sp, #0x14]
+00510CFA: str        r6, [sp, #0x1c]
+00510CFC: ldr.w      r3, [sl, #0x14]
+00510D00: mov        r0, r8
+00510D02: mov        r1, sb
+00510D04: mov        r2, r7
+00510D06: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00510D0A: ldr        r0, [sp, #0x14]
+00510D0C: cbz        r0, #0x510d2c
+00510D0E: ldr        r1, [sp, #0x18]
+00510D10: cmp        r1, r0
+00510D12: itttt      ne
+00510D14: subne.w    r2, r1, #8
+00510D18: subne      r2, r2, r0
+00510D1A: mvnne      r3, #7
+00510D1E: bicne.w    r2, r3, r2
+00510D22: itt        ne
+00510D24: addne      r1, r1, r2
+00510D26: strne      r1, [sp, #0x18]
+00510D28: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510D2C: ldr.w      r0, [fp, #4]
+00510D30: cbz        r0, #0x510d3e
+00510D32: mov        sl, r0
+00510D34: ldr.w      r0, [sl]
+00510D38: cmp        r0, #0
+00510D3A: bne        #0x510d32
+00510D3C: b          #0x510d4c
+00510D3E: ldr.w      sl, [fp, #8]
+00510D42: ldr.w      r0, [sl]
+00510D46: cmp        r0, fp
+00510D48: mov        fp, sl
+00510D4A: bne        #0x510d3e
+00510D4C: cmp        sl, r5
+00510D4E: mov        fp, sl
+00510D50: bne        #0x510ce8
+00510D52: ldr        r1, [sp, #0x34]
+00510D54: add        r0, sp, #0x30
+00510D56: blx        #0x4a5890 ; _ZNSt6__ndk16__treeIN4Anki8ObjectIDENS_4lessIS2_EENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE -> 004F1A12 size=24
+00510D5A: ldr.w      sb, [sp, #0xc]
+00510D5E: ldr        r0, [r4, #0x34]
+00510D60: mov        r1, sb
+00510D62: blx        #0x4a7a08 ; _ZN4Anki5Cozmo10BlockWorld18OnRobotDelocalizedEj -> 006249C4 size=2C
+00510D66: ldr        r0, [r4, #0x38]
+00510D68: mov        r1, sb
+00510D6A: blx        #0x4a7a14 ; _ZN4Anki5Cozmo9FaceWorld18OnRobotDelocalizedEj -> 004F55E4 size=60
+00510D6E: ldr.w      r0, [r4, #0x264]
+00510D72: blx        #0x4a7a20 ; _ZN4Anki5Cozmo11AIComponent18OnRobotDelocalizedEv -> 00569F4E size=6
+00510D76: ldr        r0, [r4, #0x44]
+00510D78: blx        #0x4a7a2c ; _ZN4Anki5Cozmo15BehaviorManager18OnRobotDelocalizedEv -> 005A470C size=2
+00510D7C: ldr.w      r0, [r4, #0x254]
+00510D80: blx        #0x4a7a38 ; _ZN4Anki5Cozmo17MovementComponent18OnRobotDelocalizedEv -> 0063E2E4 size=10
+00510D84: add        r0, sp, #0x30
+00510D86: add        r1, sp, #0x14
+00510D88: blx        #0x4a7a44 ; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGameC1EONS1_16RobotDelocalizedE -> 00723D1C size=6
+00510D8C: ldr        r0, [r4]
+00510D8E: ldr        r0, [r0, #4]
+00510D90: cbz        r0, #0x510d9a
+00510D92: ldr        r1, [r0]
+00510D94: ldr        r2, [r1, #0x18]
+00510D96: add        r1, sp, #0x30
+00510D98: blx        r2
+00510D9A: add        r0, sp, #0x30
+00510D9C: blx        #0x4a5158 ; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGame12ClearCurrentEv -> 00720228 size=332
+00510DA0: ldr        r0, [pc, #0x138] ; literal[00510EDC]=00B2DAA4
+00510DA2: ldr        r1, [sp, #0x138]
+00510DA4: add        r0, pc
+00510DA6: ldr        r0, [r0]
+00510DA8: ldr        r0, [r0]
+00510DAA: subs       r0, r0, r1
+00510DAC: itt        eq
+00510DAE: addeq      sp, #0x13c
+00510DB0: popeq.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00510DB4: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+00510DB8: mov        r4, r0
+00510DBA: add        r0, sp, #0x30
+00510DBC: blx        #0x4a5158 ; _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGame12ClearCurrentEv -> 00720228 size=332
+00510DC0: b          #0x510e22
+00510DC2: bl         #0x4e39f8
+00510DC6: b          #0x510dd0
+00510DC8: b          #0x510dd0
+00510DCA: bl         #0x4e39f8
+00510DCE: b          #0x510dd0
+00510DD0: mov        r4, r0
+00510DD2: ldr        r0, [sp, #0x30]
+00510DD4: cbz        r0, #0x510e22
+00510DD6: ldr        r1, [sp, #0x34]
+00510DD8: cmp        r1, r0
+00510DDA: beq        #0x510dee
+00510DDC: sub.w      r2, r1, #8
+00510DE0: mvn        r3, #7
+00510DE4: subs       r2, r2, r0
+00510DE6: bic.w      r2, r3, r2
+00510DEA: add        r1, r2
+00510DEC: str        r1, [sp, #0x34]
+00510DEE: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510DF2: b          #0x510e22
+00510DF4: mov        r4, r0
+00510DF6: ldr        r0, [sp, #0x14]
+00510DF8: cbz        r0, #0x510e1a
+00510DFA: ldr        r1, [sp, #0x18]
+00510DFC: cmp        r1, r0
+00510DFE: beq        #0x510e12
+00510E00: sub.w      r2, r1, #8
+00510E04: mvn        r3, #7
+00510E08: subs       r2, r2, r0
+00510E0A: bic.w      r2, r3, r2
+00510E0E: add        r1, r2
+00510E10: str        r1, [sp, #0x18]
+00510E12: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00510E16: b          #0x510e1a
+00510E18: mov        r4, r0
+00510E1A: ldr        r1, [sp, #0x34]
+00510E1C: add        r0, sp, #0x30
+00510E1E: blx        #0x4a5890 ; _ZNSt6__ndk16__treeIN4Anki8ObjectIDENS_4lessIS2_EENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE -> 004F1A12 size=24
+00510E22: mov        r0, r4
+00510E24: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00510E28: udf        #0x14
+00510E2A: lsls       r2, r6, #2
+00510E2C: ldr        r2, [r2, #0x74]
+00510E2E: ldr        r2, [r4, #0x74]
+00510E30: cmp        r6, #0x74
+00510E32: str        r4, [r0, #0x54]
+00510E34: ldr        r4, [r5, #0x74]
+00510E36: str        r3, [r4, #0x14]
+00510E38: ldr        r4, [r5, #0x14]
+00510E3A: str        r2, [r7, #0x54]
+00510E3C: movs       r0, r0
+00510E3E: movs       r0, r0
+00510E40: str        r4, [r0, #0x54]
+00510E42: ldr        r4, [r5, #0x74]
+00510E44: str        r3, [r4, #0x14]
+00510E46: ldr        r4, [r5, #0x14]
+00510E48: ldr        r2, [r7, #0x14]
+00510E4A: str        r6, [r5, #0x74]
+00510E4C: strb       r0, [r4, #8]
+00510E4E: str        r7, [r5, #0x24]
+00510E50: strb       r7, [r5, #0x11]
+00510E52: movs       r5, #0x20
+00510E54: cmp        r6, #0x64
+00510E56: ldr        r6, [pc, #0x80] ; literal[00510ED8]=00000064
+00510E58: strb       r5, [r4, #0x1d]
+00510E5A: ldr        r0, [r4, #0x70]
+00510E5C: ldr        r2, [r6, #0x14]
+00510E5E: ldr        r7, [r4, #0x14]
+00510E60: subs       r2, #0x6e
+00510E62: movs       r5, #0x20
+00510E64: cmp        r6, #0x73
+00510E66: ldr        r6, [pc, #0x80] ; literal[00510EE8]=69C06820
+00510E68: ldr        r5, [r6, #0x54]
+00510E6A: strb       r7, [r1, #9]
+00510E6C: str        r1, [r5, #0x74]
+00510E6E: ldr        r1, [r5, #0x64]
+00510E70: subs       r5, #0x73
+00510E72: ldrb       r5, [r4, #8]
+00510E74: lsls       r5, r6, #1
+00510E76: movs       r0, r0
+00510E78: ldr        r2, [r2, #0x74]
+00510E7A: ldr        r2, [r4, #0x74]
+00510E7C: cmp        r6, #0x74
+00510E7E: str        r4, [r0, #0x54]
+00510E80: ldr        r4, [r5, #0x74]
+00510E82: str        r3, [r4, #0x14]
+00510E84: ldr        r4, [r5, #0x14]
+00510E86: str        r2, [r7, #0x54]
+00510E88: strh       r6, [r5, r4]
+00510E8A: strb       r5, [r4, #0x11]
+00510E8C: str        r6, [r1, #0x54]
+00510E8E: str        r7, [r6, r1]
+00510E90: strb       r7, [r5, #0xd]
+00510E92: lsls       r5, r4, #1
+00510E94: str        r6, [r0, #0x14]
+00510E96: ldr        r1, [r5, #0x44]
+00510E98: str        r5, [r4, #0x44]
+00510E9A: strb       r0, [r4, #0x10]
+00510E9C: movs       r0, #0x6f
+00510E9E: str        r3, [r6, #0x54]
+00510EA0: movs       r0, #0x74
+00510EA2: str        r6, [r5, #0x54]
+00510EA4: movs       r0, #0x77
+00510EA6: ldr        r0, [r6, #0x74]
+00510EA8: str        r3, [r6, #0x54]
+00510EAA: movs       r0, r0
+00510EAC: adds       r4, #0x3a
+00510EAE: lsls       r5, r5, #1
+00510EB0: ldrh       r6, [r6, r4]
+00510EB2: lsls       r5, r5, #1
+00510EB4: ldrh       r6, [r2, r5]
+00510EB6: lsls       r5, r5, #1
+00510EB8: blt        #0x510e74
+00510EBA: lsls       r2, r6, #2
+00510EBC: ldrh       r5, [r1, r5]
+00510EBE: lsls       r5, r5, #1
+00510EC0: ldrh       r2, [r5, r4]
+00510EC2: lsls       r5, r5, #1
+00510EC4: ldrh       r3, [r7, r3]
+00510EC6: lsls       r5, r5, #1
+00510EC8: ldrh       r7, [r3, r4]
+00510ECA: lsls       r5, r5, #1
+00510ECC: ldrh       r2, [r7, r3]
+00510ECE: lsls       r5, r5, #1
+00510ED0: str        r7, [r1, #0x24]
+00510ED2: str        r2, [r5, #0x54]
+00510ED4: strb       r3, [r4, #0x11]
+00510ED6: movs       r5, #0x20
+00510ED8: lsls       r4, r4, #1
+00510EDA: movs       r0, r0
+00510EDC: bge        #0x510e28
+00510EDE: lsls       r2, r6, #2
+_ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb
+
+RANGE 0051349C..00513598 _ZNK4Anki5Cozmo5Robot11SendMessageERKNS0_14RobotInterface13EngineToRobotEbb
+0051349C: push       {r4, r5, r6, r7, lr}
+0051349E: sub        sp, #0x1c
+005134A0: mov        r7, r0
+005134A2: mov        r4, r2
+005134A4: ldr        r0, [r7]
+005134A6: mov        r6, r1
+005134A8: ldr        r1, [r7, #0x10]
+005134AA: ldr        r0, [r0, #0x20]
+005134AC: ldr        r0, [r0, #0x60]
+005134AE: ldr        r2, [r0]
+005134B0: ldr        r5, [r2, #0x10]
+005134B2: mov        r2, r6
+005134B4: str        r3, [sp]
+005134B6: mov        r3, r4
+005134B8: blx        r5
+005134BA: mov        r4, r0
+005134BC: cbz        r4, #0x513522
+005134BE: ldrb       r0, [r6]
+005134C0: blx        #0x4a7cc0 ; _ZN4Anki5Cozmo14RobotInterface24EngineToRobotTagToStringENS1_16EngineToRobotTagE -> 007AF8D0 size=24
+005134C4: mov        r6, r0
+005134C6: adr        r0, #0x88 ; ADR[00513550]=b'$data'
+005134C8: str        r6, [sp, #0xc]
+005134CA: str        r0, [sp, #8]
+005134CC: movs       r0, #0
+005134CE: str        r0, [sp, #0x18]
+005134D0: strd       r0, r0, [sp, #0x10]
+005134D4: movs       r0, #8
+005134D6: blx        #0x4a42a0 ; _Znwj IMPORT (resolve packaged dependencies before calling external)
+005134DA: ldr        r2, [sp, #0xc]
+005134DC: add.w      r3, r0, #8
+005134E0: ldr        r1, [sp, #8]
+005134E2: str        r0, [sp, #0x10]
+005134E4: str        r0, [sp, #0x14]
+005134E6: str        r3, [sp, #0x18]
+005134E8: strd       r1, r2, [r0]
+005134EC: ldr        r0, [sp, #0x14]
+005134EE: adds       r0, #8
+005134F0: str        r0, [sp, #0x14]
+005134F2: ldr        r3, [r7, #0x10]
+005134F4: adr        r0, #0x60 ; ADR[00513558]=b'Robot.SendMessage'
+005134F6: add        r1, sp, #0x10
+005134F8: adr        r2, #0x70 ; ADR[0051356C]=b'Robot %d failed to send a message type %s'
+005134FA: str        r6, [sp]
+005134FC: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00513500: ldr        r0, [sp, #0x10]
+00513502: cbz        r0, #0x513522
+00513504: ldr        r1, [sp, #0x14]
+00513506: cmp        r1, r0
+00513508: itttt      ne
+0051350A: subne.w    r2, r1, #8
+0051350E: subne      r2, r2, r0
+00513510: mvnne      r3, #7
+00513514: bicne.w    r2, r3, r2
+00513518: itt        ne
+0051351A: addne      r1, r1, r2
+0051351C: strne      r1, [sp, #0x14]
+0051351E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00513522: mov        r0, r4
+00513524: add        sp, #0x1c
+00513526: pop        {r4, r5, r6, r7, pc}
+00513528: mov        r4, r0
+0051352A: ldr        r0, [sp, #0x10]
+0051352C: cbz        r0, #0x51354a
+0051352E: ldr        r1, [sp, #0x14]
+00513530: cmp        r1, r0
+00513532: beq        #0x513546
+00513534: sub.w      r2, r1, #8
+00513538: mvn        r3, #7
+0051353C: subs       r2, r2, r0
+0051353E: bic.w      r2, r3, r2
+00513542: add        r1, r2
+00513544: str        r1, [sp, #0x14]
+00513546: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0051354A: mov        r0, r4
+0051354C: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00513550: str        r4, [r4, #0x40]
+00513552: strb       r1, [r4, #0x11]
+00513554: lsls       r1, r4, #1
+00513556: movs       r0, r0
+00513558: ldr        r2, [r2, #0x74]
+0051355A: ldr        r2, [r4, #0x74]
+0051355C: cmp        r6, #0x74
+0051355E: str        r3, [r2, #0x54]
+00513560: str        r6, [r5, #0x44]
+00513562: str        r5, [r1, #0x54]
+00513564: strb       r3, [r6, #0xd]
+00513566: str        r1, [r4, #0x74]
+00513568: lsls       r5, r4, #1
+0051356A: movs       r0, r0
+0051356C: ldr        r2, [r2, #0x74]
+0051356E: ldr        r2, [r4, #0x74]
+00513570: movs       r0, #0x74
+00513572: str        r5, [r4, #0x40]
+00513574: str        r0, [r4, #0x60]
+00513576: ldr        r1, [r4, #0x14]
+00513578: str        r4, [r5, #0x54]
+0051357A: movs       r0, #0x64
+0051357C: ldr        r4, [r6, #0x74]
+0051357E: strb       r0, [r4, #0xc]
+00513580: ldr        r5, [r4, #0x64]
+00513582: movs       r0, #0x64
+00513584: movs       r0, #0x61
+00513586: str        r5, [r5, #0x54]
+00513588: strb       r3, [r6, #0xd]
+0051358A: str        r1, [r4, #0x74]
+0051358C: movs       r0, #0x65
+0051358E: ldrb       r4, [r6, #5]
+00513590: str        r0, [r6, #0x54]
+00513592: movs       r5, #0x20
+00513594: lsls       r3, r6, #1
+00513596: movs       r0, r0
+_ZNK4Anki5Cozmo5Robot13GetLiftHeightEv
+
+RANGE 00516F64..00516F9C _ZNK4Anki5Cozmo5Robot13GetLiftHeightEv
+00516F64: push       {r7, lr}
+00516F66: ldr.w      r0, [r0, #0x300]
+00516F6A: blx        #0x4a4168 ; sinf IMPORT (resolve packaged dependencies before calling external)
+00516F6E: vldr       s0, [pc, #0x20] ; literal[00516F90]=42840000
+00516F72: vmov       s2, r0
+00516F76: vmul.f32   s0, s2, s0
+00516F7A: vldr       s2, [pc, #0x18] ; literal[00516F94]=42340000
+00516F7E: vadd.f32   s0, s0, s2
+00516F82: vldr       s2, [pc, #0x14] ; literal[00516F98]=00000000
+00516F86: vadd.f32   s0, s0, s2
+00516F8A: vmov       r0, s0
+00516F8E: pop        {r7, pc}
+00516F90: movs       r0, r0
+00516F92: cmp        r4, r0
+00516F94: movs       r0, r0
+00516F96: tst        r4, r6
+00516F98: movs       r0, r0
+00516F9A: movs       r0, r0
+_ZNSt6__ndk113__vector_baseIfNS_9allocatorIfEEED2Ev
+
+RANGE 00519A32..00519A5A _ZNSt6__ndk113__vector_baseIfNS_9allocatorIfEEED2Ev
+00519A32: push       {r4, lr}
+00519A34: mov        r4, r0
+00519A36: ldr        r0, [r4]
+00519A38: cbz        r0, #0x519a56
+00519A3A: ldr        r1, [r4, #4]
+00519A3C: cmp        r1, r0
+00519A3E: itttt      ne
+00519A40: subne      r2, r1, #4
+00519A42: subne      r2, r2, r0
+00519A44: mvnne      r3, #3
+00519A48: bicne.w    r2, r3, r2
+00519A4C: itt        ne
+00519A4E: addne      r1, r1, r2
+00519A50: strne      r1, [r4, #4]
+00519A52: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00519A56: mov        r0, r4
+00519A58: pop        {r4, pc}
+_ZN4Anki5Cozmo22RobotGyroDriftDetector15DetectGyroDriftERKNS0_10RobotStateE
+
+RANGE 0052C568..0052C804 _ZN4Anki5Cozmo22RobotGyroDriftDetector15DetectGyroDriftERKNS0_10RobotStateE
+0052C568: push       {r4, r5, r6, lr}
+0052C56A: vpush      {d8}
+0052C56E: sub        sp, #0x40
+0052C570: mov        r4, r0
+0052C572: mov        r5, r1
+0052C574: ldrb       r0, [r4, #4]
+0052C576: cmp        r0, #0
+0052C578: bne.w      #0x52c6f2
+0052C57C: vldr       s16, [r5, #0x44]
+0052C580: vldr       s2, [pc, #0x228] ; literal[0052C7AC]=3E32B8C2
+0052C584: vabs.f32   s0, s16
+0052C588: vcmpe.f32  s0, s2
+0052C58C: vmrs       apsr_nzcv, fpscr
+0052C590: bgt.w      #0x52c6ee
+0052C594: ldr        r0, [r4]
+0052C596: ldr.w      r1, [r0, #0x254]
+0052C59A: ldrb       r1, [r1, #9]
+0052C59C: cmp        r1, #0
+0052C59E: bne.w      #0x52c6ee
+0052C5A2: ldr.w      r1, [r0, #0x288]
+0052C5A6: ldrb       r1, [r1, #5]
+0052C5A8: cmp        r1, #0
+0052C5AA: bne.w      #0x52c6ee
+0052C5AE: blx        #0x4a9a18 ; _ZNK4Anki5Cozmo5Robot16IsHeadCalibratedEv -> 00512378 size=6
+0052C5B2: cmp        r0, #1
+0052C5B4: bne.w      #0x52c6ee
+0052C5B8: ldr        r1, [r4, #0x18]
+0052C5BA: cmp        r1, #0
+0052C5BC: beq.w      #0x52c6fa
+0052C5C0: vldr       s0, [r4, #0x14]
+0052C5C4: vldr       s2, [pc, #0x1e8] ; literal[0052C7B0]=3C8EFA35
+0052C5C8: vsub.f32   s0, s0, s16
+0052C5CC: vabs.f32   s0, s0
+0052C5D0: vcmpe.f32  s0, s2
+0052C5D4: vmrs       apsr_nzcv, fpscr
+0052C5D8: bgt.w      #0x52c6ee
+0052C5DC: ldr        r0, [r4]
+0052C5DE: ldr        r2, [r4, #8]
+0052C5E0: ldr.w      r3, [r0, #0x2b0]
+0052C5E4: cmp        r2, r3
+0052C5E6: bne.w      #0x52c6ee
+0052C5EA: ldr        r2, [r5]
+0052C5EC: subs       r1, r2, r1
+0052C5EE: movw       r2, #0x1389
+0052C5F2: cmp        r1, r2
+0052C5F4: blo.w      #0x52c738
+0052C5F8: bl         #0x4ea398
+0052C5FC: blx        #0x4a4048 ; _ZNKR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv -> 0084499A size=4
+0052C600: add        r5, sp, #0x1c
+0052C602: mov        r1, r0
+0052C604: mov        r0, r5
+0052C606: blx        #0x4a4150 ; _ZNK4Anki10Rotation3d19GetAngleAroundZaxisEv -> 0084AA1C size=9E
+0052C60A: add.w      r1, r4, #0xc
+0052C60E: add        r0, sp, #0x34
+0052C610: mov        r2, r5
+0052C612: blx        #0x4a454c ; _ZN4AnkimiERKNS_7RadiansES2_ -> 0084CA18 size=1C
+0052C616: vldr       s0, [sp, #0x34]
+0052C61A: vldr       s2, [pc, #0x198] ; literal[0052C7B4]=3C0EFA35
+0052C61E: vabs.f32   s0, s0
+0052C622: vcmpe.f32  s0, s2
+0052C626: vmrs       apsr_nzcv, fpscr
+0052C62A: ble        #0x52c6ee
+0052C62C: vldr       s16, [pc, #0x188] ; literal[0052C7B8]=42652EE1
+0052C630: mov        r0, r5
+0052C632: vmul.f32   s0, s0, s16
+0052C636: vmov       r1, s0
+0052C63A: blx        #0x4a48e8 ; _ZNSt6__ndk19to_stringEf IMPORT (resolve packaged dependencies before calling external)
+0052C63E: ldr        r0, [pc, #0x17c] ; literal[0052C7BC]=006B7E77
+0052C640: ldrb.w     r2, [sp, #0x1c]
+0052C644: ldr        r1, [sp, #0x24]
+0052C646: add        r0, pc
+0052C648: str        r0, [sp, #0x28]
+0052C64A: tst.w      r2, #1
+0052C64E: it         eq
+0052C650: orreq      r1, r5, #1
+0052C654: movs       r0, #0
+0052C656: str        r1, [sp, #0x2c]
+0052C658: str        r0, [sp, #0x3c]
+0052C65A: strd       r0, r0, [sp, #0x34]
+0052C65E: movs       r0, #8
+0052C660: blx        #0x4a42a0 ; _Znwj IMPORT (resolve packaged dependencies before calling external)
+0052C664: ldr        r2, [sp, #0x2c]
+0052C666: add.w      r3, r0, #8
+0052C66A: ldr        r1, [sp, #0x28]
+0052C66C: str        r0, [sp, #0x34]
+0052C66E: str        r0, [sp, #0x38]
+0052C670: str        r3, [sp, #0x3c]
+0052C672: strd       r1, r2, [r0]
+0052C676: ldr        r0, [sp, #0x38]
+0052C678: adds       r0, #8
+0052C67A: str        r0, [sp, #0x38]
+0052C67C: vldr       s6, [r4, #0x28]
+0052C680: vldr       s2, [r4, #0x20]
+0052C684: vldr       s4, [r4, #0x24]
+0052C688: vldr       s0, [r4, #0x1c]
+0052C68C: vcvt.f32.u32 s6, s6
+0052C690: vmul.f32   s4, s4, s16
+0052C694: vmul.f32   s2, s2, s16
+0052C698: vdiv.f32   s0, s0, s6
+0052C69C: vmul.f32   s0, s0, s16
+0052C6A0: vcvt.f64.f32 d2, s4
+0052C6A4: vcvt.f64.f32 d1, s2
+0052C6A8: vcvt.f64.f32 d0, s0
+0052C6AC: adr        r0, #0x110 ; ADR[0052C7C0]=b'robot.detect_gyro_drift.drift_detected'
+0052C6AE: add        r1, sp, #0x34
+0052C6B0: adr        r2, #0x134 ; ADR[0052C7E8]=b'mean: %f, min: %f, max: %f'
+0052C6B2: vstmia     sp, {d0, d1, d2}
+0052C6B6: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+0052C6BA: ldr        r0, [sp, #0x34]
+0052C6BC: cbz        r0, #0x52c6dc
+0052C6BE: ldr        r1, [sp, #0x38]
+0052C6C0: cmp        r1, r0
+0052C6C2: itttt      ne
+0052C6C4: subne.w    r2, r1, #8
+0052C6C8: subne      r2, r2, r0
+0052C6CA: mvnne      r3, #7
+0052C6CE: bicne.w    r2, r3, r2
+0052C6D2: itt        ne
+0052C6D4: addne      r1, r1, r2
+0052C6D6: strne      r1, [sp, #0x38]
+0052C6D8: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052C6DC: ldrb.w     r0, [sp, #0x1c]
+0052C6E0: lsls       r0, r0, #0x1f
+0052C6E2: itt        ne
+0052C6E4: ldrne      r0, [sp, #0x24]
+0052C6E6: blxne      #0x4a40cc
+0052C6EA: movs       r0, #1
+0052C6EC: strb       r0, [r4, #4]
+0052C6EE: movs       r0, #0
+0052C6F0: str        r0, [r4, #0x18]
+0052C6F2: add        sp, #0x40
+0052C6F4: vpop       {d8}
+0052C6F8: pop        {r4, r5, r6, pc}
+0052C6FA: ldr        r0, [r4]
+0052C6FC: ldr.w      r1, [r0, #0x2b0]
+0052C700: str        r1, [r4, #8]
+0052C702: bl         #0x4ea398
+0052C706: blx        #0x4a4048 ; _ZNKR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv -> 0084499A size=4
+0052C70A: add        r6, sp, #0x34
+0052C70C: mov        r1, r0
+0052C70E: mov        r0, r6
+0052C710: blx        #0x4a4150 ; _ZNK4Anki10Rotation3d19GetAngleAroundZaxisEv -> 0084AA1C size=9E
+0052C714: add.w      r0, r4, #0xc
+0052C718: mov        r1, r6
+0052C71A: blx        #0x4a4564 ; _ZN4Anki7RadiansaSERKS0_ -> 0084C856 size=A
+0052C71E: vstr       s16, [r4, #0x14]
+0052C722: ldr        r0, [r5]
+0052C724: str        r0, [r4, #0x18]
+0052C726: movs       r0, #1
+0052C728: vstr       s16, [r4, #0x1c]
+0052C72C: vstr       s16, [r4, #0x20]
+0052C730: vstr       s16, [r4, #0x24]
+0052C734: str        r0, [r4, #0x28]
+0052C736: b          #0x52c6f2
+0052C738: vldr       s0, [r4, #0x24]
+0052C73C: vcmpe.f32  s16, s0
+0052C740: vmrs       apsr_nzcv, fpscr
+0052C744: it         gt
+0052C746: vstrgt     s16, [r4, #0x24]
+0052C74A: vldr       s0, [r4, #0x20]
+0052C74E: vcmpe.f32  s16, s0
+0052C752: vmrs       apsr_nzcv, fpscr
+0052C756: it         mi
+0052C758: vstrmi     s16, [r4, #0x20]
+0052C75C: vldr       s0, [r4, #0x1c]
+0052C760: ldr        r0, [r4, #0x28]
+0052C762: vadd.f32   s0, s16, s0
+0052C766: adds       r0, #1
+0052C768: str        r0, [r4, #0x28]
+0052C76A: vstr       s0, [r4, #0x1c]
+0052C76E: b          #0x52c6f2
+0052C770: mov        r4, r0
+0052C772: ldr        r0, [sp, #0x34]
+0052C774: cbz        r0, #0x52c796
+0052C776: ldr        r1, [sp, #0x38]
+0052C778: cmp        r1, r0
+0052C77A: beq        #0x52c78e
+0052C77C: sub.w      r2, r1, #8
+0052C780: mvn        r3, #7
+0052C784: subs       r2, r2, r0
+0052C786: bic.w      r2, r3, r2
+0052C78A: add        r1, r2
+0052C78C: str        r1, [sp, #0x38]
+0052C78E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052C792: b          #0x52c796
+0052C794: mov        r4, r0
+0052C796: ldrb.w     r0, [sp, #0x1c]
+0052C79A: lsls       r0, r0, #0x1f
+0052C79C: itt        ne
+0052C79E: ldrne      r0, [sp, #0x24]
+0052C7A0: blxne      #0x4a40cc
+0052C7A4: mov        r0, r4
+0052C7A6: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+0052C7AA: nop
+_ZN4Anki5Cozmo22RobotGyroDriftDetector10DetectBiasERKNS0_10RobotStateE
+
+RANGE 0052C804..0052CC20 _ZN4Anki5Cozmo22RobotGyroDriftDetector10DetectBiasERKNS0_10RobotStateE
+0052C804: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0052C808: sub        sp, #4
+0052C80A: vpush      {d8, d9, d10, d11, d12, d13, d14}
+0052C80E: sub        sp, #0x60
+0052C810: mov        r4, r0
+0052C812: mov        r5, r1
+0052C814: ldrb.w     r0, [r4, #0x2c]
+0052C818: cmp        r0, #0
+0052C81A: bne.w      #0x52cb1c
+0052C81E: ldr        r0, [r4]
+0052C820: vldr       s2, [r4, #0x34]
+0052C824: vldr       s0, [r4, #0x30]
+0052C828: vldr       s4, [r0, #0x378]
+0052C82C: ldr        r1, [r5, #0x4c]
+0052C82E: vsub.f32   s2, s4, s2
+0052C832: ldr        r0, [r4, #0x5c]
+0052C834: tst.w      r1, #1
+0052C838: vadd.f32   s0, s2, s0
+0052C83C: vldr       s2, [pc, #0x35c] ; literal[0052CB9C]=3F4CCCCD
+0052C840: vmul.f32   s0, s0, s2
+0052C844: vstr       s0, [r4, #0x30]
+0052C848: vstr       s4, [r4, #0x34]
+0052C84C: bne.w      #0x52ca8e
+0052C850: vabs.f32   s0, s0
+0052C854: vldr       s2, [pc, #0x348] ; literal[0052CBA0]=42480000
+0052C858: vcmpe.f32  s0, s2
+0052C85C: vmrs       apsr_nzcv, fpscr
+0052C860: bgt.w      #0x52ca8e
+0052C864: ldr        r1, [r5]
+0052C866: cmp        r0, #0
+0052C868: beq.w      #0x52caaa
+0052C86C: subs       r0, r1, r0
+0052C86E: movw       r1, #0x1389
+0052C872: cmp        r0, r1
+0052C874: blo.w      #0x52caac
+0052C878: ldr        r0, [r4, #0x60]
+0052C87A: cmp        r0, #0x32
+0052C87C: blt.w      #0x52ca76
+0052C880: add.w      fp, r4, #0x44
+0052C884: add.w      sb, sp, #0x48
+0052C888: vldr       s16, [pc, #0x318] ; literal[0052CBA4]=3AE4C388
+0052C88C: add        r7, sp, #0x54
+0052C88E: vldr       s18, [pc, #0x318] ; literal[0052CBA8]=3A64C388
+0052C892: mov.w      r8, #-1
+0052C896: vldr       s20, [pc, #0x314] ; literal[0052CBAC]=42652EE1
+0052C89A: vldr       s22, [pc, #0x314] ; literal[0052CBB0]=447A0000
+0052C89E: vldr       s24, [fp]
+0052C8A2: vldr       s26, [fp, #0xc]
+0052C8A6: vmov       r0, s24
+0052C8AA: blx        #0x4a9a24 ; __signbitf IMPORT (resolve packaged dependencies before calling external)
+0052C8AE: mov        r6, r0
+0052C8B0: vmov       r0, s26
+0052C8B4: cmp        r6, #0
+0052C8B6: vabs.f32   s28, s24
+0052C8BA: it         ne
+0052C8BC: movne      r6, #1
+0052C8BE: blx        #0x4a9a24 ; __signbitf IMPORT (resolve packaged dependencies before calling external)
+0052C8C2: cmp        r0, #0
+0052C8C4: vcmpe.f32  s28, s16
+0052C8C8: it         ne
+0052C8CA: movne      r0, #1
+0052C8CC: vmrs       apsr_nzcv, fpscr
+0052C8D0: ble.w      #0x52ca66
+0052C8D4: eors       r0, r6
+0052C8D6: bne.w      #0x52ca66
+0052C8DA: vabs.f32   s0, s26
+0052C8DE: vcmpe.f32  s0, s16
+0052C8E2: vmrs       apsr_nzcv, fpscr
+0052C8E6: ble.w      #0x52ca66
+0052C8EA: vsub.f32   s0, s26, s24
+0052C8EE: vcmpe.f32  s0, s18
+0052C8F2: vmrs       apsr_nzcv, fpscr
+0052C8F6: bpl.w      #0x52ca66
+0052C8FA: vmul.f32   s24, s24, s20
+0052C8FE: vmul.f32   s0, s24, s22
+0052C902: vmov       r0, s0
+0052C906: blx        #0x4a6688 ; roundf IMPORT (resolve packaged dependencies before calling external)
+0052C90A: mov        r1, r0
+0052C90C: mov        r0, r7
+0052C90E: blx        #0x4a48e8 ; _ZNSt6__ndk19to_stringEf IMPORT (resolve packaged dependencies before calling external)
+0052C912: vmul.f32   s26, s26, s20
+0052C916: vmul.f32   s0, s26, s22
+0052C91A: vmov       r0, s0
+0052C91E: blx        #0x4a6688 ; roundf IMPORT (resolve packaged dependencies before calling external)
+0052C922: mov        r1, r0
+0052C924: mov        r0, sb
+0052C926: blx        #0x4a48e8 ; _ZNSt6__ndk19to_stringEf IMPORT (resolve packaged dependencies before calling external)
+0052C92A: ldr        r0, [pc, #0x2ec] ; literal[0052CC18]=006B7B89
+0052C92C: cmp.w      r8, #0
+0052C930: addw       sl, pc, #0x280 ; ADDW[0052CBB4]=b'z'
+0052C934: add        r0, pc
+0052C936: str        r0, [sp, #0x30]
+0052C938: adr        r0, #0x27c ; ADR[0052CBB8]=b'y'
+0052C93A: it         eq
+0052C93C: moveq      sl, r0
+0052C93E: adds.w     r0, r8, #1
+0052C942: adr        r0, #0x278 ; ADR[0052CBBC]=b'x'
+0052C944: it         eq
+0052C946: moveq      sl, r0
+0052C948: movs       r0, #0
+0052C94A: str.w      sl, [sp, #0x34]
+0052C94E: str        r0, [sp, #0x44]
+0052C950: strd       r0, r0, [sp, #0x3c]
+0052C954: movs       r0, #8
+0052C956: blx        #0x4a42a0 ; _Znwj IMPORT (resolve packaged dependencies before calling external)
+0052C95A: ldr        r1, [sp, #0x34]
+0052C95C: add.w      r3, r0, #8
+0052C960: ldr        r2, [sp, #0x30]
+0052C962: str        r0, [sp, #0x3c]
+0052C964: str        r3, [sp, #0x44]
+0052C966: strd       r2, r1, [r0]
+0052C96A: str        r3, [sp, #0x40]
+0052C96C: add        r6, sp, #0x14
+0052C96E: adr        r2, #0x250 ; ADR[0052CBC0]=b','
+0052C970: mov        r1, r7
+0052C972: mov        r0, r6
+0052C974: blx        #0x4a7318 ; _ZNSt6__ndk1plIcNS_11char_traitsIcEENS_9allocatorIcEEEENS_12basic_stringIT_T0_T1_EERKS9_PKS6_ -> 0050B134 size=5C
+0052C978: ldrd       r2, r1, [sp, #0x4c]
+0052C97C: ldrb.w     r0, [sp, #0x48]
+0052C980: ands       r3, r0, #1
+0052C984: itt        eq
+0052C986: orreq      r1, sb, #1
+0052C98A: lsreq      r2, r0, #1
+0052C98C: mov        r0, r6
+0052C98E: bl         #0x4e8048
+0052C992: mov        r1, r0
+0052C994: add        r2, sp, #0x20
+0052C996: ldm.w      r1, {r3, r6, r7}
+0052C99A: movs       r1, #0
+0052C99C: mov        ip, r2
+0052C99E: stm        r2!, {r3, r6, r7}
+0052C9A0: strd       r1, r1, [r0]
+0052C9A4: str        r1, [r0, #8]
+0052C9A6: ldrb.w     r0, [sp, #0x20]
+0052C9AA: ldr        r2, [sp, #0x28]
+0052C9AC: tst.w      r0, #1
+0052C9B0: it         eq
+0052C9B2: orreq      r2, ip, #1
+0052C9B6: add        r6, sp, #0x3c
+0052C9B8: adr        r0, #0x208 ; ADR[0052CBC4]=b'robot.detect_gyro_bias.bias_detected'
+0052C9BA: mov        r1, r6
+0052C9BC: blx        #0x4a50e0 ; _ZN4Anki4Util6sEventEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_ -> 0080D114 size=28
+0052C9C0: ldrb.w     r0, [sp, #0x20]
+0052C9C4: lsls       r0, r0, #0x1f
+0052C9C6: itt        ne
+0052C9C8: ldrne      r0, [sp, #0x28]
+0052C9CA: blxne      #0x4a40cc
+0052C9CE: ldrb.w     r0, [sp, #0x14]
+0052C9D2: lsls       r0, r0, #0x1f
+0052C9D4: itt        ne
+0052C9D6: ldrne      r0, [sp, #0x1c]
+0052C9D8: blxne      #0x4a40cc
+0052C9DC: ldr        r0, [sp, #0x3c]
+0052C9DE: add        r7, sp, #0x54
+0052C9E0: cbz        r0, #0x52ca00
+0052C9E2: ldr        r1, [sp, #0x40]
+0052C9E4: cmp        r1, r0
+0052C9E6: itttt      ne
+0052C9E8: subne.w    r2, r1, #8
+0052C9EC: subne      r2, r2, r0
+0052C9EE: mvnne      r3, #7
+0052C9F2: bicne.w    r2, r3, r2
+0052C9F6: itt        ne
+0052C9F8: addne      r1, r1, r2
+0052C9FA: strne      r1, [sp, #0x40]
+0052C9FC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052CA00: movs       r0, #0
+0052CA02: vcvt.f64.f32 d0, s24
+0052CA06: strd       r0, r0, [sp, #0x3c]
+0052CA0A: str        r0, [sp, #0x44]
+0052CA0C: vcvt.f64.f32 d1, s26
+0052CA10: ldr        r2, [pc, #0x208] ; literal[0052CC1C]=006BBE23
+0052CA12: adr        r0, #0x1d8 ; ADR[0052CBEC]=b'RobotGyroDriftDetector.BiasDetected'
+0052CA14: mov        r1, r6
+0052CA16: mov        r3, sl
+0052CA18: add        r2, pc
+0052CA1A: vstmia     sp, {d0, d1}
+0052CA1E: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+0052CA22: ldr        r0, [sp, #0x3c]
+0052CA24: cbz        r0, #0x52ca44
+0052CA26: ldr        r1, [sp, #0x40]
+0052CA28: cmp        r1, r0
+0052CA2A: itttt      ne
+0052CA2C: subne.w    r2, r1, #8
+0052CA30: subne      r2, r2, r0
+0052CA32: mvnne      r3, #7
+0052CA36: bicne.w    r2, r3, r2
+0052CA3A: itt        ne
+0052CA3C: addne      r1, r1, r2
+0052CA3E: strne      r1, [sp, #0x40]
+0052CA40: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052CA44: movs       r0, #1
+0052CA46: strb.w     r0, [r4, #0x2c]
+0052CA4A: ldrb.w     r0, [sp, #0x48]
+0052CA4E: lsls       r0, r0, #0x1f
+0052CA50: itt        ne
+0052CA52: ldrne      r0, [sp, #0x50]
+0052CA54: blxne      #0x4a40cc
+0052CA58: ldrb.w     r0, [sp, #0x54]
+0052CA5C: lsls       r0, r0, #0x1f
+0052CA5E: itt        ne
+0052CA60: ldrne      r0, [sp, #0x5c]
+0052CA62: blxne      #0x4a40cc
+0052CA66: add.w      r8, r8, #1
+0052CA6A: add.w      fp, fp, #4
+0052CA6E: cmp.w      r8, #2
+0052CA72: blt.w      #0x52c89e
+0052CA76: mov.w      r1, #0x7f800000
+0052CA7A: movs       r0, #0
+0052CA7C: strd       r1, r1, [r4, #0x44]
+0052CA80: strd       r1, r0, [r4, #0x4c]
+0052CA84: strd       r0, r0, [r4, #0x54]
+0052CA88: strd       r0, r0, [r4, #0x5c]
+0052CA8C: b          #0x52caac
+0052CA8E: cmp        r0, #0
+0052CA90: beq        #0x52cb1c
+0052CA92: mov.w      r1, #0x7f800000
+0052CA96: movs       r0, #0
+0052CA98: strd       r1, r1, [r4, #0x44]
+0052CA9C: strd       r1, r0, [r4, #0x4c]
+0052CAA0: strd       r0, r0, [r4, #0x54]
+0052CAA4: strd       r0, r0, [r4, #0x5c]
+0052CAA8: b          #0x52cb1c
+0052CAAA: str        r1, [r4, #0x5c]
+0052CAAC: ldr        r0, [r4, #0x60]
+0052CAAE: add.w      r2, r5, #0x3c
+0052CAB2: add        r3, sp, #0x54
+0052CAB4: vldr       s0, [pc, #0x158] ; literal[0052CC10]=3F733333
+0052CAB8: adds       r0, #1
+0052CABA: str        r0, [r4, #0x60]
+0052CABC: ldm        r2, {r0, r1, r2}
+0052CABE: stm        r3!, {r0, r1, r2}
+0052CAC0: add        r1, sp, #0x54
+0052CAC2: movs       r0, #0
+0052CAC4: vldr       s2, [pc, #0x14c] ; literal[0052CC14]=3D4CCCD0
+0052CAC8: adds       r2, r1, r0
+0052CACA: vldr       s4, [r2]
+0052CACE: adds       r2, r4, r0
+0052CAD0: add.w      r7, r2, #0x38
+0052CAD4: adds       r0, #4
+0052CAD6: vldr       s6, [r2, #0x38]
+0052CADA: vmul.f32   s4, s4, s2
+0052CADE: vldr       s8, [r2, #0x44]
+0052CAE2: mov        r3, r7
+0052CAE4: vmul.f32   s6, s6, s0
+0052CAE8: vldr       s10, [r2, #0x50]
+0052CAEC: vadd.f32   s4, s6, s4
+0052CAF0: vcmpe.f32  s4, s8
+0052CAF4: vstr       s4, [r2, #0x38]
+0052CAF8: vmrs       apsr_nzcv, fpscr
+0052CAFC: vcmpe.f32  s10, s4
+0052CB00: it         pl
+0052CB02: addpl.w    r3, r2, #0x44
+0052CB06: vmrs       apsr_nzcv, fpscr
+0052CB0A: ldr        r3, [r3]
+0052CB0C: str        r3, [r2, #0x44]
+0052CB0E: it         pl
+0052CB10: addpl.w    r7, r2, #0x50
+0052CB14: cmp        r0, #0xc
+0052CB16: ldr        r3, [r7]
+0052CB18: str        r3, [r2, #0x50]
+0052CB1A: bne        #0x52cac8
+0052CB1C: add        sp, #0x60
+0052CB1E: vpop       {d8, d9, d10, d11, d12, d13, d14}
+0052CB22: add        sp, #4
+0052CB24: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0052CB28: b          #0x52cb4e
+0052CB2A: mov        r4, r0
+0052CB2C: ldrb.w     r0, [sp, #0x20]
+0052CB30: lsls       r0, r0, #0x1f
+0052CB32: itt        ne
+0052CB34: ldrne      r0, [sp, #0x28]
+0052CB36: blxne      #0x4a40cc
+0052CB3A: b          #0x52cb3e
+0052CB3C: mov        r4, r0
+0052CB3E: ldrb.w     r0, [sp, #0x14]
+0052CB42: lsls       r0, r0, #0x1f
+0052CB44: beq        #0x52cb50
+0052CB46: ldr        r0, [sp, #0x1c]
+0052CB48: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052CB4C: b          #0x52cb50
+0052CB4E: mov        r4, r0
+0052CB50: ldr        r0, [sp, #0x3c]
+0052CB52: cbz        r0, #0x52cb74
+0052CB54: ldr        r1, [sp, #0x40]
+0052CB56: cmp        r1, r0
+0052CB58: beq        #0x52cb6c
+0052CB5A: sub.w      r2, r1, #8
+0052CB5E: mvn        r3, #7
+0052CB62: subs       r2, r2, r0
+0052CB64: bic.w      r2, r3, r2
+0052CB68: add        r1, r2
+0052CB6A: str        r1, [sp, #0x40]
+0052CB6C: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0052CB70: b          #0x52cb74
+0052CB72: mov        r4, r0
+0052CB74: ldrb.w     r0, [sp, #0x48]
+0052CB78: lsls       r0, r0, #0x1f
+0052CB7A: itt        ne
+0052CB7C: ldrne      r0, [sp, #0x50]
+0052CB7E: blxne      #0x4a40cc
+0052CB82: ldrb.w     r0, [sp, #0x54]
+0052CB86: lsls       r0, r0, #0x1f
+0052CB88: itt        ne
+0052CB8A: ldrne      r0, [sp, #0x5c]
+0052CB8C: blxne      #0x4a40cc
+0052CB90: mov        r0, r4
+0052CB92: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+0052CB96: mov        r4, r0
+0052CB98: b          #0x52cb82
+0052CB9A: nop
+0052CB9C: ldm        r4!, {r0, r2, r3, r6, r7}
+0052CB9E: subs       r7, #0x4c
+0052CBA0: movs       r0, r0
+0052CBA2: rsbs       r0, r1, #0
+0052CBA4: stm        r3!, {r3, r7}
+0052CBA6: subs       r2, #0xe4
+0052CBA8: stm        r3!, {r3, r7}
+0052CBAA: subs       r2, #0x64
+0052CBAC: cmp        r6, #0xe1
+0052CBAE: rsbs       r5, r4, #0
+0052CBB0: movs       r0, r0
+0052CBB2: add        r2, pc
+0052CBB4: lsls       r2, r7, #1
+0052CBB6: movs       r0, r0
+0052CBB8: lsls       r1, r7, #1
+0052CBBA: movs       r0, r0
+0052CBBC: lsls       r0, r7, #1
+0052CBBE: movs       r0, r0
+0052CBC0: movs       r4, r5
+0052CBC2: movs       r0, r0
+0052CBC4: ldr        r2, [r6, #0x74]
+0052CBC6: ldr        r2, [r4, #0x74]
+0052CBC8: cmp        r6, #0x74
+0052CBCA: str        r4, [r4, #0x54]
+0052CBCC: str        r4, [r6, #0x54]
+0052CBCE: strb       r3, [r4, #0x11]
+0052CBD0: str        r7, [r3, #0x74]
+0052CBD2: strb       r1, [r7, #9]
+0052CBD4: ldrsh      r7, [r5, r5]
+0052CBD6: ldr        r2, [r4, #0x14]
+0052CBD8: strb       r1, [r4, #0xd]
+0052CBDA: str        r6, [r5, #0x20]
+0052CBDC: str        r1, [r5, #0x14]
+0052CBDE: ldrsh      r3, [r6, r5]
+0052CBE0: str        r4, [r4, #0x54]
+0052CBE2: str        r4, [r6, #0x54]
+0052CBE4: strb       r3, [r4, #0x11]
+0052CBE6: str        r5, [r4, #0x44]
+0052CBE8: movs       r0, r0
+0052CBEA: movs       r0, r0
+0052CBEC: ldr        r2, [r2, #0x74]
+0052CBEE: ldr        r2, [r4, #0x74]
+0052CBF0: bxns       lr
+0052CBF2: strb       r1, [r7, #9]
+0052CBF4: add        r7, sp, r7
+0052CBF6: ldr        r2, [r6, #0x14]
+0052CBF8: strb       r6, [r4, #0x11]
+0052CBFA: str        r4, [r0, #0x54]
+0052CBFC: str        r4, [r6, #0x54]
+0052CBFE: strb       r3, [r4, #0x11]
+0052CC00: strb       r7, [r5, #9]
+0052CC02: tst        r6, r5
+0052CC04: str        r1, [r5, #0x14]
+0052CC06: add        r3, lr
+0052CC08: strb       r5, [r4, #0x11]
+0052CC0A: str        r5, [r4, #0x34]
+0052CC0C: str        r4, [r6, #0x54]
+0052CC0E: lsls       r4, r4, #1
+0052CC10: adds       r3, #0x33
+0052CC12: subs       r7, #0x73
+0052CC14: ldm        r4, {r4, r6, r7}
+0052CC16: subs       r5, #0x4c
+0052CC18: ldrb       r1, [r1, #0xe]
+0052CC1A: lsls       r3, r5, #1
+0052CC1C: bkpt       #0x23
+0052CC1E: lsls       r3, r5, #1
+_ZNK4Anki5Cozmo21MoveHeadToAngleAction16IsHeadInPositionEv
+
+RANGE 005484F4..00548534 _ZNK4Anki5Cozmo21MoveHeadToAngleAction16IsHeadInPositionEv
+005484F4: push       {r4, r5, r6, lr}
+005484F6: sub        sp, #0x10
+005484F8: mov        r4, r0
+005484FA: add        r5, sp, #8
+005484FC: ldr        r0, [r4, #4]
+005484FE: ldr.w      r1, [r0, #0x2fc]
+00548502: mov        r0, r5
+00548504: blx        #0x4a4294 ; _ZN4Anki7RadiansC1Ef -> 0084C832 size=14
+00548508: vldr       s0, [pc, #0x24] ; literal[00548530]=3727C5AC
+0054850C: mov        r6, sp
+0054850E: vldr       s2, [r4, #0x80]
+00548512: mov        r0, r6
+00548514: vadd.f32   s0, s2, s0
+00548518: vmov       r1, s0
+0054851C: blx        #0x4a4294 ; _ZN4Anki7RadiansC1Ef -> 0084C832 size=14
+00548520: add.w      r0, r4, #0x78
+00548524: mov        r1, r5
+00548526: mov        r2, r6
+00548528: blx        #0x4a586c ; _ZNK4Anki7Radians6IsNearERKS0_S2_ -> 0084CC0A size=54
+0054852C: add        sp, #0x10
+0054852E: pop        {r4, r5, r6, pc}
+00548530: stm        r5!, {r2, r3, r5, r7}
+00548532: adds       r7, #0x27
+_ZNK4Anki5Cozmo22MoveLiftToHeightAction16IsLiftInPositionEv
+
+RANGE 00548FEA..0054903A _ZNK4Anki5Cozmo22MoveLiftToHeightAction16IsLiftInPositionEv
+00548FEA: push       {r4, lr}
+00548FEC: vpush      {d8}
+00548FF0: mov        r4, r0
+00548FF2: ldr        r0, [r4, #4]
+00548FF4: vldr       s16, [r4, #0x84]
+00548FF8: blx        #0x4ab200 ; _ZNK4Anki5Cozmo5Robot13GetLiftHeightEv -> 00516F64 size=38
+00548FFC: vmov       s0, r0
+00549000: movs       r0, #0
+00549002: vsub.f32   s0, s16, s0
+00549006: vcmpe.f32  s0, #0
+0054900A: vmrs       apsr_nzcv, fpscr
+0054900E: vneg.f32   s2, s0
+00549012: it         mi
+00549014: vmovmi.f32 s0, s2
+00549018: vldr       s2, [r4, #0x7c]
+0054901C: vcmpe.f32  s0, s2
+00549020: vmrs       apsr_nzcv, fpscr
+00549024: bpl        #0x549034
+00549026: ldr        r1, [r4, #4]
+00549028: ldr.w      r1, [r1, #0x254]
+0054902C: ldrb       r1, [r1, #0xb]
+0054902E: cmp        r1, #0
+00549030: it         eq
+00549032: moveq      r0, #1
+00549034: vpop       {d8}
+00549038: pop        {r4, pc}
+_ZN4Anki5Cozmo5Audio11encodeMuLawEf
+
+RANGE 00597AD8..00597C20 _ZN4Anki5Cozmo5Audio11encodeMuLawEf
+00597AD8: push       {r4, lr}
+00597ADA: sub        sp, #0x10
+00597ADC: mov        r4, r0
+00597ADE: blx        #0x4ae3a4 ; isnanf IMPORT (resolve packaged dependencies before calling external)
+00597AE2: cbz        r0, #0x597b1c
+00597AE4: movs       r0, #0
+00597AE6: strd       r0, r0, [sp, #4]
+00597AEA: str        r0, [sp, #0xc]
+00597AEC: adr        r0, #0xcc ; ADR[00597BBC]=b'RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN'
+00597AEE: add        r1, sp, #4
+00597AF0: adr        r2, #0xfc ; ADR[00597BF0]=b'Audio sample from current stream is NaN'
+00597AF2: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+00597AF6: ldr        r0, [sp, #4]
+00597AF8: cbz        r0, #0x597b18
+00597AFA: ldr        r1, [sp, #8]
+00597AFC: cmp        r1, r0
+00597AFE: itttt      ne
+00597B00: subne.w    r2, r1, #8
+00597B04: subne      r2, r2, r0
+00597B06: mvnne      r3, #7
+00597B0A: bicne.w    r2, r3, r2
+00597B0E: itt        ne
+00597B10: addne      r1, r1, r2
+00597B12: strne      r1, [sp, #8]
+00597B14: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00597B18: movs       r0, #0
+00597B1A: b          #0x597b8e
+00597B1C: vmov.f32   s2, #1.000000e+00
+00597B20: movw       r0, #0x8001
+00597B24: vmov       s0, r4
+00597B28: movt       r0, #0xffff
+00597B2C: ldr        r1, [pc, #0xec] ; literal[00597C1C]=006C48BA
+00597B2E: vmov.f32   s4, s0
+00597B32: add        r1, pc
+00597B34: vcmpe.f32  s0, s2
+00597B38: vmrs       apsr_nzcv, fpscr
+00597B3C: it         ge
+00597B3E: vmovge.f32 s4, s2
+00597B42: vldr       s2, [pc, #0xd4] ; literal[00597C18]=46FFFE00
+00597B46: vmul.f32   s2, s4, s2
+00597B4A: vmov.f32   s4, #-1.000000e+00
+00597B4E: vcvt.s32.f32 s2, s2
+00597B52: vcmpe.f32  s0, s4
+00597B56: vmrs       apsr_nzcv, fpscr
+00597B5A: vmov       r2, s2
+00597B5E: it         hi
+00597B60: movhi      r0, r2
+00597B62: eor.w      r2, r0, r0, asr #15
+00597B66: sxth       r0, r0
+00597B68: asrs       r3, r2, #8
+00597B6A: ldrb       r1, [r1, r3]
+00597B6C: movs       r3, #0
+00597B6E: cmp.w      r3, r2, asr #8
+00597B72: iteee      eq
+00597B74: lsreq      r2, r2, #4
+00597B76: addne      r3, r1, #3
+00597B78: asrne      r2, r3
+00597B7A: andne      r2, r2, #0xf
+00597B7E: lsls       r4, r1, #4
+00597B80: movs       r3, #0x80
+00597B82: cmp        r0, #0
+00597B84: it         lt
+00597B86: orrlt.w    r4, r3, r1, lsl #4
+00597B8A: orr.w      r0, r4, r2
+00597B8E: uxtb       r0, r0
+00597B90: add        sp, #0x10
+00597B92: pop        {r4, pc}
+00597B94: mov        r4, r0
+00597B96: ldr        r0, [sp, #4]
+00597B98: cbz        r0, #0x597bb6
+00597B9A: ldr        r1, [sp, #8]
+00597B9C: cmp        r1, r0
+00597B9E: beq        #0x597bb2
+00597BA0: sub.w      r2, r1, #8
+00597BA4: mvn        r3, #7
+00597BA8: subs       r2, r2, r0
+00597BAA: bic.w      r2, r3, r2
+00597BAE: add        r1, r2
+00597BB0: str        r1, [sp, #8]
+00597BB2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00597BB6: mov        r0, r4
+00597BB8: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00597BBC: ldr        r2, [r2, #0x74]
+00597BBE: ldr        r2, [r4, #0x74]
+00597BC0: adcs       r4, r6
+00597BC2: str        r5, [r6, #0x44]
+00597BC4: ldr        r1, [r5, #0x74]
+00597BC6: ldr        r1, [r0, #0x64]
+00597BC8: ldr        r1, [r5, #0x54]
+00597BCA: strb       r1, [r4, #0x11]
+00597BCC: ldr        r1, [r5, #0x74]
+00597BCE: ldr        r7, [pc, #0x1b8] ; literal[00597D88]=EBF4F717
+00597BD0: strh       r6, [r5, r1]
+00597BD2: str        r7, [r5, #0x24]
+00597BD4: strb       r7, [r5, #0x11]
+00597BD6: str        r6, [r5, #0x50]
+00597BD8: str        r6, [r5, #0x34]
+00597BDA: str        r7, [r5, #0x44]
+00597BDC: ldr        r5, [pc, #0x194] ; literal[00597D74]=46200B14
+00597BDE: ldr        r4, [pc, #0x1d4] ; literal[00597DB4]=4FF0E92D
+00597BE0: strb       r1, [r4, #0x1d]
+00597BE2: strb       r6, [r5, #0xc]
+00597BE4: ldr        r1, [r4, #0x54]
+00597BE6: ldr        r0, [r6, #0x44]
+00597BE8: ldr        r6, [pc, #0x194] ; literal[00597D80]=B510BF0D
+00597BEA: ldr        r6, [pc, #0x184] ; literal[00597D70]=ED840B40
+00597BEC: movs       r0, r0
+00597BEE: movs       r0, r0
+00597BF0: strb       r1, [r0, #0x15]
+00597BF2: ldr        r4, [r4, #0x14]
+00597BF4: movs       r0, #0x6f
+00597BF6: str        r3, [r6, #0x14]
+00597BF8: strb       r5, [r5, #1]
+00597BFA: str        r4, [r5, #0x54]
+00597BFC: str        r0, [r4, #0x60]
+00597BFE: ldr        r2, [r6, #0x74]
+00597C00: movs       r0, #0x6d
+00597C02: strb       r3, [r4, #0x15]
+00597C04: strb       r2, [r6, #9]
+00597C06: ldr        r5, [r4, #0x64]
+00597C08: movs       r0, #0x74
+00597C0A: strb       r3, [r6, #0x11]
+00597C0C: str        r2, [r6, #0x54]
+00597C0E: ldr        r1, [r4, #0x54]
+00597C10: ldr        r0, [r4, #0x10]
+00597C12: movs       r0, #0x73
+00597C14: str        r6, [r1, #0x14]
+00597C16: lsls       r6, r1, #1
+00597C18: mcr2       p6, #0, r4, c0, c15, #7
+00597C1C: ldr        r0, [pc, #0x2e8] ; literal[00597F08]=4478484A
+00597C1E: lsls       r4, r5, #1
+_ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE
+
+RANGE 00633F88..00633FA0 _ZNK4Anki5Cozmo17CarryingComponent16IsCarryingObjectERKNS_8ObjectIDE
+00633F88: ldr        r1, [r1, #4]
+00633F8A: ldr        r2, [r0, #8]
+00633F8C: cmp        r2, r1
+00633F8E: itt        eq
+00633F90: moveq      r0, #1
+00633F92: bxeq       lr
+00633F94: ldr        r2, [r0, #0x14]
+00633F96: movs       r0, #0
+00633F98: cmp        r2, r1
+00633F9A: it         eq
+00633F9C: moveq      r0, #1
+00633F9E: bx         lr
+_ZN4Anki5Cozmo20CliffSensorComponent26UpdateCliffDetectThresholdEv
+
+RANGE 006343B8..006344F8 _ZN4Anki5Cozmo20CliffSensorComponent26UpdateCliffDetectThresholdEv
+006343B8: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+006343BC: sub        sp, #4
+006343BE: vpush      {d8}
+006343C2: sub        sp, #0x18
+006343C4: mov        r4, r0
+006343C6: ldr        r0, [r4, #0x1c]
+006343C8: cmp        r0, #0
+006343CA: beq        #0x6344b0
+006343CC: ldr        r1, [r4]
+006343CE: ldr.w      r2, [r1, #0x254]
+006343D2: ldrb       r2, [r2, #0xc]
+006343D4: cmp        r2, #0
+006343D6: bne        #0x6344b0
+006343D8: ldr.w      r7, [r1, #0x390]
+006343DC: ldr        r2, [r7, #4]!
+006343E0: cmp        r2, #0
+006343E2: beq        #0x6344ac
+006343E4: mov        r1, r7
+006343E6: mov        r5, r2
+006343E8: ldr        r2, [r5, #0x10]
+006343EA: cmp        r2, r0
+006343EC: bhs        #0x6343f6
+006343EE: ldr        r5, [r5, #4]
+006343F0: cmp        r5, #0
+006343F2: bne        #0x6343e8
+006343F4: b          #0x634400
+006343F6: ldr        r2, [r5]
+006343F8: mov        r1, r5
+006343FA: cmp        r2, #0
+006343FC: bne        #0x6343e6
+006343FE: b          #0x634402
+00634400: mov        r5, r1
+00634402: cmp        r5, r7
+00634404: beq        #0x6344ac
+00634406: add.w      sl, sp, #0xc
+0063440A: addw       fp, pc, #0xd8 ; ADDW[006344E4]=b'%d - %d'
+0063440E: vldr       s16, [pc, #0xdc] ; literal[006344EC]=461C4000
+00634412: movw       r8, #0xffff
+00634416: mov.w      sb, #0
+0063441A: add.w      r0, r5, #0x14
+0063441E: movs       r1, #0
+00634420: blx        #0x4b8f4c ; _ZNK4Anki5Cozmo14HistRobotState12GetCliffDataEj -> 00530566 size=A
+00634424: strd       sb, sb, [sp, #0xc]
+00634428: mov        r6, r0
+0063442A: str.w      sb, [sp, #0x14]
+0063442E: ldr        r0, [r5, #0x10]
+00634430: ldr        r1, [pc, #0xc0] ; literal[006344F4]=005C5FF7
+00634432: mov        r2, sl
+00634434: strd       r0, r6, [sp]
+00634438: mov        r3, fp
+0063443A: ldr        r0, [pc, #0xb4] ; literal[006344F0]=005AFBAA
+0063443C: add        r1, pc
+0063443E: add        r0, pc
+00634440: blx        #0x4a5b84 ; _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D818 size=7C
+00634444: ldr        r0, [sp, #0xc]
+00634446: cbz        r0, #0x634466
+00634448: ldr        r1, [sp, #0x10]
+0063444A: cmp        r1, r0
+0063444C: itttt      ne
+0063444E: subne.w    r2, r1, #8
+00634452: subne      r2, r2, r0
+00634454: mvnne      r3, #7
+00634458: bicne.w    r2, r3, r2
+0063445C: itt        ne
+0063445E: addne      r1, r1, r2
+00634460: strne      r1, [sp, #0x10]
+00634462: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00634466: vldr       s0, [r4, #0x3c]
+0063446A: uxth.w     r0, r8
+0063446E: cmp        r0, r6
+00634470: it         hi
+00634472: movhi      r8, r6
+00634474: vcmpe.f32  s0, s16
+00634478: vmrs       apsr_nzcv, fpscr
+0063447C: ble        #0x63448e
+0063447E: movs       r0, #0xf
+00634480: uxtah      r0, r0, r8
+00634484: cmp        r0, r6
+00634486: itt        lo
+00634488: movlo      r0, r4
+0063448A: blxlo      #0x4b8f58
+0063448E: ldr        r0, [r5, #4]
+00634490: cbz        r0, #0x63449c
+00634492: mov        r5, r0
+00634494: ldr        r0, [r5]
+00634496: cmp        r0, #0
+00634498: bne        #0x634492
+0063449A: b          #0x6344a8
+0063449C: mov        r0, r5
+0063449E: ldr        r5, [r0, #8]
+006344A0: ldr        r1, [r5]
+006344A2: cmp        r1, r0
+006344A4: mov        r0, r5
+006344A6: bne        #0x63449e
+006344A8: cmp        r5, r7
+006344AA: bne        #0x63441a
+006344AC: movs       r0, #0
+006344AE: str        r0, [r4, #0x1c]
+006344B0: add        sp, #0x18
+006344B2: vpop       {d8}
+006344B6: add        sp, #4
+006344B8: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+006344BC: mov        r4, r0
+006344BE: ldr        r0, [sp, #0xc]
+006344C0: cbz        r0, #0x6344de
+006344C2: ldr        r1, [sp, #0x10]
+006344C4: cmp        r1, r0
+006344C6: beq        #0x6344da
+006344C8: sub.w      r2, r1, #8
+006344CC: mvn        r3, #7
+006344D0: subs       r2, r2, r0
+006344D2: bic.w      r2, r3, r2
+006344D6: add        r1, r2
+006344D8: str        r1, [sp, #0x10]
+006344DA: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006344DE: mov        r0, r4
+006344E0: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+006344E4: str        r5, [r4, #0x40]
+006344E6: cmp        r5, #0x20
+006344E8: movs       r5, #0x20
+006344EA: lsls       r4, r4, #1
+006344EC: ands       r0, r0
+006344EE: mov        r4, r3
+_ZN4Anki5Cozmo20CliffSensorComponent23UpdateCliffRunningStatsERKNS0_10RobotStateE
+
+RANGE 00634630..0063472C _ZN4Anki5Cozmo20CliffSensorComponent23UpdateCliffRunningStatsERKNS0_10RobotStateE
+00634630: push       {r4, r5, r6, lr}
+00634632: sub        sp, #8
+00634634: mov        r4, r0
+00634636: ldrh.w     r0, [r1, #0x50]
+0063463A: strh.w     r0, [sp, #6]
+0063463E: ldr        r1, [r4]
+00634640: ldr.w      r2, [r1, #0x254]
+00634644: ldrb       r2, [r2, #0xc]
+00634646: cmp        r2, #0
+00634648: beq        #0x634722
+0063464A: ldrb.w     r1, [r1, #0x355]
+0063464E: cmp        r1, #0
+00634650: bne        #0x634722
+00634652: ldrh       r1, [r4, #0xc]
+00634654: cmp        r0, r1
+00634656: bls        #0x634722
+00634658: add.w      r5, r4, #0x20
+0063465C: add.w      r1, sp, #6
+00634660: mov        r0, r5
+00634662: blx        #0x4b8f64 ; _ZNSt6__ndk15dequeItNS_9allocatorItEEE9push_backERKt -> 0063472C size=46
+00634666: ldr        r0, [r4, #0x34]
+00634668: cmp        r0, #0x65
+0063466A: blo        #0x6346d0
+0063466C: ldr        r1, [r4, #0x30]
+0063466E: ldr        r0, [r4, #0x24]
+00634670: lsrs       r2, r1, #0xb
+00634672: bfc        r1, #0xb, #0x15
+00634676: ldr.w      r0, [r0, r2, lsl #2]
+0063467A: ldrh.w     r6, [r0, r1, lsl #1]
+0063467E: mov        r0, r5
+00634680: blx        #0x4b8f70 ; _ZNSt6__ndk15dequeItNS_9allocatorItEEE9pop_frontEv -> 00634772 size=30
+00634684: ldrh.w     r0, [sp, #6]
+00634688: vmov       s0, r6
+0063468C: vldr       s6, [pc, #0x98] ; literal[00634728]=42C80000
+00634690: vcvt.f32.u32 s0, s0
+00634694: vmov       s2, r0
+00634698: vcvt.f32.u32 s2, s2
+0063469C: ldr        r0, [r4, #0x34]
+0063469E: vsub.f32   s4, s2, s0
+006346A2: vdiv.f32   s4, s4, s6
+006346A6: vldr       s6, [r4, #0x38]
+006346AA: vadd.f32   s4, s6, s4
+006346AE: vsub.f32   s8, s0, s6
+006346B2: vsub.f32   s6, s2, s6
+006346B6: vsub.f32   s0, s0, s4
+006346BA: vstr       s4, [r4, #0x38]
+006346BE: vsub.f32   s2, s2, s4
+006346C2: vmul.f32   s0, s8, s0
+006346C6: vmul.f32   s2, s6, s2
+006346CA: vsub.f32   s0, s2, s0
+006346CE: b          #0x634700
+006346D0: ldrh.w     r1, [sp, #6]
+006346D4: vmov       s4, r0
+006346D8: vmov       s0, r1
+006346DC: vcvt.f32.u32 s0, s0
+006346E0: vldr       s2, [r4, #0x38]
+006346E4: vcvt.f32.u32 s4, s4
+006346E8: vsub.f32   s6, s0, s2
+006346EC: vdiv.f32   s4, s6, s4
+006346F0: vadd.f32   s2, s2, s4
+006346F4: vsub.f32   s0, s0, s2
+006346F8: vstr       s2, [r4, #0x38]
+006346FC: vmul.f32   s0, s6, s0
+00634700: vldr       s2, [r4, #0x40]
+00634704: cmp        r0, #2
+00634706: vadd.f32   s0, s0, s2
+0063470A: vstr       s0, [r4, #0x40]
+0063470E: blo        #0x634722
+00634710: subs       r0, #1
+00634712: vmov       s2, r0
+00634716: vcvt.f32.u32 s2, s2
+0063471A: vdiv.f32   s0, s0, s2
+0063471E: vstr       s0, [r4, #0x3c]
+00634722: add        sp, #8
+00634724: pop        {r4, r5, r6, pc}
+00634726: nop
+00634728: movs       r0, r0
+0063472A: cmn        r0, r1
+_ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE
+
+RANGE 00637D4C..00637E5C _ZN4Anki5Cozmo18CubeLightComponent27PickNextAnimForDefaultLayerERKNS_8ObjectIDE
+00637D4C: push.w     {r4, r5, r6, r7, r8, lr}
+00637D50: sub        sp, #0xd0
+00637D52: mov        r5, r0
+00637D54: ldr        r0, [pc, #0xfc] ; literal[00637E54]=00A06AF0
+00637D56: mov        r4, r1
+00637D58: add        r0, pc
+00637D5A: ldr        r0, [r0]
+00637D5C: ldr        r0, [r0]
+00637D5E: str        r0, [sp, #0xcc]
+00637D60: ldrb.w     r0, [r5, #0x23]
+00637D64: cbz        r0, #0x637da6
+00637D66: ldrb.w     r0, [r5, #0x24]
+00637D6A: movs       r1, #0x21
+00637D6C: add        r6, sp, #0x10
+00637D6E: movs       r7, #0
+00637D70: cmp        r0, #0
+00637D72: it         ne
+00637D74: movne      r1, #0x22
+00637D76: movs       r0, #2
+00637D78: str        r1, [sp, #0x94]
+00637D7A: str        r0, [sp, #0x90]
+00637D7C: mov        r0, r6
+00637D7E: movs       r1, #0x75
+00637D80: str        r7, [sp, #0xc0]
+00637D82: strd       r7, r7, [sp, #0x88]
+00637D86: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+00637D8A: add        r2, sp, #0x94
+00637D8C: add        r3, sp, #0x90
+00637D8E: mov        r0, r5
+00637D90: mov        r1, r4
+00637D92: add.w      r8, sp, #0xb0
+00637D96: strd       r8, r7, [sp]
+00637D9A: strd       r6, r7, [sp, #8]
+00637D9E: blx        #0x4b9270 ; _ZN4Anki5Cozmo18CubeLightComponent13PlayLightAnimERKNS_8ObjectIDERKNS0_20CubeAnimationTriggerERKNS1_13AnimLayerEnumENSt6__ndk18functionIFvvEEEbRKNS0_12ObjectLightsEi -> 006382D0 size=72C
+00637DA2: ldr        r0, [sp, #0xc0]
+00637DA4: b          #0x637e08
+00637DA6: movs       r0, #1
+00637DA8: mov        r1, r4
+00637DAA: str        r0, [sp, #0x94]
+00637DAC: mov.w      r2, #-1
+00637DB0: ldr        r0, [r5]
+00637DB2: ldr        r0, [r0, #0x34]
+00637DB4: blx        #0x4a7114 ; _ZNK4Anki5Cozmo10BlockWorld26GetLocatedObjectByIdHelperERKNS_8ObjectIDENS0_12ObjectFamilyE -> 0061F3E0 size=1AC
+00637DB8: cbz        r0, #0x637dc6
+00637DBA: ldrb.w     r0, [r0, #0x24]
+00637DBE: cmp        r0, #1
+00637DC0: itt        eq
+00637DC2: moveq      r0, #0x25
+00637DC4: streq      r0, [sp, #0x94]
+00637DC6: ldr        r0, [r5]
+00637DC8: add        r6, sp, #0x10
+00637DCA: ldr        r1, [r4, #4]
+00637DCC: movs       r7, #0
+00637DCE: ldr.w      r0, [r0, #0x284]
+00637DD2: ldr        r0, [r0, #8]
+00637DD4: cmp        r0, r1
+00637DD6: itt        eq
+00637DD8: moveq      r0, #0
+00637DDA: streq      r0, [sp, #0x94]
+00637DDC: movs       r0, #2
+00637DDE: movs       r1, #0x75
+00637DE0: str        r0, [sp, #0x90]
+00637DE2: mov        r0, r6
+00637DE4: str        r7, [sp, #0xa8]
+00637DE6: strd       r7, r7, [sp, #0x88]
+00637DEA: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+00637DEE: add        r2, sp, #0x94
+00637DF0: add        r3, sp, #0x90
+00637DF2: mov        r0, r5
+00637DF4: mov        r1, r4
+00637DF6: add.w      r8, sp, #0x98
+00637DFA: strd       r8, r7, [sp]
+00637DFE: strd       r6, r7, [sp, #8]
+00637E02: blx        #0x4b9270 ; _ZN4Anki5Cozmo18CubeLightComponent13PlayLightAnimERKNS_8ObjectIDERKNS0_20CubeAnimationTriggerERKNS1_13AnimLayerEnumENSt6__ndk18functionIFvvEEEbRKNS0_12ObjectLightsEi -> 006382D0 size=72C
+00637E06: ldr        r0, [sp, #0xa8]
+00637E08: cmp        r8, r0
+00637E0A: beq        #0x637e14
+00637E0C: cbz        r0, #0x637e1a
+00637E0E: ldr        r1, [r0]
+00637E10: ldr        r1, [r1, #0x14]
+00637E12: b          #0x637e18
+00637E14: ldr        r1, [r0]
+00637E16: ldr        r1, [r1, #0x10]
+00637E18: blx        r1
+00637E1A: ldr        r0, [pc, #0x3c] ; literal[00637E58]=00A06A2A
+00637E1C: ldr        r1, [sp, #0xcc]
+00637E1E: add        r0, pc
+00637E20: ldr        r0, [r0]
+00637E22: ldr        r0, [r0]
+00637E24: subs       r0, r0, r1
+00637E26: itt        eq
+00637E28: addeq      sp, #0xd0
+00637E2A: popeq.w    {r4, r5, r6, r7, r8, pc}
+00637E2E: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+00637E32: mov        r4, r0
+00637E34: ldr        r0, [sp, #0xa8]
+00637E36: b          #0x637e3c
+00637E38: mov        r4, r0
+00637E3A: ldr        r0, [sp, #0xc0]
+00637E3C: cmp        r8, r0
+00637E3E: bne        #0x637e46
+00637E40: ldr        r1, [r0]
+00637E42: ldr        r1, [r1, #0x10]
+00637E44: b          #0x637e4c
+00637E46: cbz        r0, #0x637e4e
+00637E48: ldr        r1, [r0]
+00637E4A: ldr        r1, [r1, #0x14]
+00637E4C: blx        r1
+00637E4E: mov        r0, r4
+00637E50: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00637E54: ldr        r0, [r6, #0x2c]
+00637E56: lsls       r0, r4, #2
+00637E58: ldr        r2, [r5, #0x20]
+00637E5A: lsls       r0, r4, #2
+_ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE
+
+RANGE 00637E6C..00637FDC _ZN4Anki5Cozmo18CubeLightComponent15SetObjectLightsERKNS_8ObjectIDERKNS0_12ObjectLightsE
+00637E6C: push       {r4, r5, r6, r7, lr}
+00637E6E: sub        sp, #0x1c
+00637E70: mov        r5, r0
+00637E72: mov        r4, r2
+00637E74: ldr        r0, [r5]
+00637E76: ldrb.w     r2, [r4, #0x74]
+00637E7A: ldr        r0, [r0, #0x34]
+00637E7C: cbz        r2, #0x637e96
+00637E7E: mov.w      r2, #-1
+00637E82: blx        #0x4a7114 ; _ZNK4Anki5Cozmo10BlockWorld26GetLocatedObjectByIdHelperERKNS_8ObjectIDENS0_12ObjectFamilyE -> 0061F3E0 size=1AC
+00637E86: cbz        r0, #0x637efc
+00637E88: ldr        r1, [pc, #0xd8] ; literal[00637F64]=00A06AD8
+00637E8A: mov.w      r3, #-1
+00637E8E: ldr        r2, [pc, #0xd8] ; literal[00637F68]=00A078F2
+00637E90: add        r1, pc
+00637E92: add        r2, pc
+00637E94: b          #0x637ea6
+00637E96: blx        #0x4a6fb8 ; _ZNK4Anki5Cozmo10BlockWorld34GetConnectedActiveObjectByIdHelperERKNS_8ObjectIDE -> 0061F58C size=194
+00637E9A: cbz        r0, #0x637efc
+00637E9C: ldr        r1, [pc, #0xcc] ; literal[00637F6C]=00A078F6
+00637E9E: movs       r3, #0xa4
+00637EA0: ldr        r2, [pc, #0xcc] ; literal[00637F70]=00A078E0
+00637EA2: add        r1, pc
+00637EA4: add        r2, pc
+00637EA6: ldr        r1, [r1]
+00637EA8: ldr        r2, [r2]
+00637EAA: blx        #0x4a4ec4 ; __dynamic_cast IMPORT (resolve packaged dependencies before calling external)
+00637EAE: mov        r6, r0
+00637EB0: cbz        r6, #0x637efc
+00637EB2: add.w      r2, r4, #0x40
+00637EB6: add.w      r3, r4, #0x30
+00637EBA: add.w      r0, r4, #0x60
+00637EBE: add.w      r7, r6, #0xa4
+00637EC2: strd       r3, r2, [sp]
+00637EC6: add.w      r1, r4, #0x50
+00637ECA: add.w      r2, r4, #0x10
+00637ECE: add.w      r3, r4, #0x20
+00637ED2: strd       r1, r0, [sp, #8]
+00637ED6: mov        r0, r7
+00637ED8: mov        r1, r4
+00637EDA: blx        #0x4b927c ; _ZN4Anki5Cozmo12ActiveObject7SetLEDsERKNSt6__ndk15arrayIjLj4EEES6_S6_S6_S6_S6_RKNS3_IiLj4EEE -> 004E48B0 size=FC
+00637EDE: ldrb.w     r2, [r4, #0x74]
+00637EE2: add.w      r1, r4, #0x78
+00637EE6: mov        r0, r6
+00637EE8: blx        #0x4b9288 ; _ZN4Anki5Cozmo10ActiveCube21MakeStateRelativeToXYERKNS_5PointILj2EfEENS0_16MakeRelativeModeE -> 004E0DEC size=364
+00637EEC: ldr        r2, [r4, #0x70]
+00637EEE: mov        r0, r5
+00637EF0: mov        r1, r7
+00637EF2: add        sp, #0x1c
+00637EF4: pop.w      {r4, r5, r6, r7, lr}
+00637EF8: b.w        #0x8cccdc
+00637EFC: movs       r0, #0
+00637EFE: strd       r0, r0, [sp, #0x10]
+00637F02: str        r0, [sp, #0x18]
+00637F04: adr        r0, #0x6c ; ADR[00637F74]=b'CubeLightController'
+00637F06: adr        r1, #0x80 ; ADR[00637F88]=b'CubeLightController.SetObjectLights.NullActiveObject'
+00637F08: add        r2, sp, #0x10
+00637F0A: adr        r3, #0xb4 ; ADR[00637FC0]=b'Null active object pointer'
+00637F0C: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00637F10: ldr        r0, [sp, #0x10]
+00637F12: cbz        r0, #0x637f32
+00637F14: ldr        r1, [sp, #0x14]
+00637F16: cmp        r1, r0
+00637F18: itttt      ne
+00637F1A: subne.w    r2, r1, #8
+00637F1E: subne      r2, r2, r0
+00637F20: mvnne      r3, #7
+00637F24: bicne.w    r2, r3, r2
+00637F28: itt        ne
+00637F2A: addne      r1, r1, r2
+00637F2C: strne      r1, [sp, #0x14]
+00637F2E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00637F32: mov.w      r0, #0x4000000
+00637F36: add        sp, #0x1c
+00637F38: pop        {r4, r5, r6, r7, pc}
+00637F3A: mov        r4, r0
+00637F3C: ldr        r0, [sp, #0x10]
+00637F3E: cbz        r0, #0x637f5c
+00637F40: ldr        r1, [sp, #0x14]
+00637F42: cmp        r1, r0
+00637F44: beq        #0x637f58
+00637F46: sub.w      r2, r1, #8
+00637F4A: mvn        r3, #7
+00637F4E: subs       r2, r2, r0
+00637F50: bic.w      r2, r3, r2
+00637F54: add        r1, r2
+00637F56: str        r1, [sp, #0x14]
+00637F58: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00637F5C: mov        r0, r4
+00637F5E: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00637F62: nop
+00637F64: ldr        r0, [r3, #0x2c]
+00637F66: lsls       r0, r4, #2
+00637F68: ldrb       r2, [r6, #3]
+00637F6A: lsls       r0, r4, #2
+00637F6C: ldrb       r6, [r6, #3]
+00637F6E: lsls       r0, r4, #2
+00637F70: ldrb       r0, [r4, #3]
+00637F72: lsls       r0, r4, #2
+00637F74: strb       r3, [r0, #0x15]
+00637F76: str        r2, [r4, #0x54]
+00637F78: ldr        r4, [r1, #0x14]
+00637F7A: ldr        r7, [r4, #4]
+00637F7C: muls       r4, r6, r4
+00637F7E: ldr        r7, [r5, #0x64]
+00637F80: strb       r4, [r6, #9]
+00637F82: ldr        r7, [r5, #0x44]
+00637F84: str        r4, [r5, #0x54]
+00637F86: lsls       r2, r6, #1
+00637F88: strb       r3, [r0, #0x15]
+00637F8A: str        r2, [r4, #0x54]
+00637F8C: ldr        r4, [r1, #0x14]
+00637F8E: ldr        r7, [r4, #4]
+00637F90: muls       r4, r6, r4
+00637F92: ldr        r7, [r5, #0x64]
+00637F94: strb       r4, [r6, #9]
+00637F96: ldr        r7, [r5, #0x44]
+00637F98: str        r4, [r5, #0x54]
+00637F9A: cmp        r6, #0x72
+00637F9C: str        r3, [r2, #0x54]
+00637F9E: ldr        r7, [pc, #0x1d0] ; literal[00638170]=F66B910F
+00637FA0: ldr        r2, [r4, #0x24]
+00637FA2: str        r5, [r4, #0x34]
+00637FA4: ldr        r4, [pc, #0x1d0] ; literal[00638178]=44789951
+00637FA6: str        r1, [r5, #0x74]
+00637FA8: strb       r0, [r5, #0x11]
+00637FAA: cmp        r6, #0x73
+00637FAC: strb       r6, [r1, #0x15]
+00637FAE: ldr        r4, [r5, #0x44]
+00637FB0: str        r1, [r0, #0x34]
+00637FB2: ldr        r4, [r6, #0x14]
+00637FB4: str        r6, [r6, #0x54]
+00637FB6: str        r7, [r1, #0x24]
+00637FB8: str        r2, [r5, #0x54]
+00637FBA: strb       r3, [r4, #0x11]
+00637FBC: movs       r0, r0
+00637FBE: movs       r0, r0
+00637FC0: strb       r6, [r1, #0x15]
+00637FC2: ldr        r4, [r5, #0x44]
+00637FC4: str        r0, [r4, #0x10]
+00637FC6: strb       r3, [r4, #0x11]
+00637FC8: strb       r1, [r5, #0x19]
+00637FCA: movs       r0, #0x65
+00637FCC: str        r7, [r5, #0x24]
+00637FCE: str        r2, [r5, #0x54]
+00637FD0: strb       r3, [r4, #0x11]
+00637FD2: strb       r0, [r4]
+00637FD4: ldr        r7, [r5, #0x14]
+00637FD6: strb       r6, [r5, #0x11]
+00637FD8: strb       r5, [r4, #9]
+00637FDA: movs       r0, r0
+_ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+
+RANGE 00638D80..00638F40 _ZN4Anki5Cozmo18CubeLightComponent19StopAllAnimsOnLayerERKNS1_13AnimLayerEnumERKNS_8ObjectIDE
+00638D80: push       {r4, r5, r6, lr}
+00638D82: sub        sp, #0x10
+00638D84: mov        r6, r2
+00638D86: mov        r4, r0
+00638D88: ldr        r0, [r6, #4]
+00638D8A: mov        r5, r1
+00638D8C: adds       r0, #1
+00638D8E: beq        #0x638dc2
+00638D90: add.w      r0, r4, #8
+00638D94: mov        r1, r6
+00638D96: blx        #0x4b92ac ; _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE4findIS3_EENS_15__tree_iteratorIS7_PNS_11__tree_nodeIS7_PvEEiEERKT_ -> 0063B08C size=46
+00638D9A: add.w      r1, r4, #0xc
+00638D9E: cmp        r0, r1
+00638DA0: beq        #0x638e5a
+00638DA2: ldr        r1, [r5]
+00638DA4: add.w      r1, r1, r1, lsl #1
+00638DA8: add.w      r1, r0, r1, lsl #2
+00638DAC: ldr        r0, [r1, #0x24]
+00638DAE: adds       r1, #0x20
+00638DB0: cmp        r1, r0
+00638DB2: beq        #0x638e4e
+00638DB4: movs       r2, #1
+00638DB6: strb.w     r2, [r0, #0x41]
+00638DBA: ldr        r0, [r0, #4]
+00638DBC: cmp        r1, r0
+00638DBE: bne        #0x638db6
+00638DC0: b          #0x638e4e
+00638DC2: movs       r0, #0
+00638DC4: ldr        r1, [pc, #0x144] ; literal[00638F0C]=005C1BC0
+00638DC6: strd       r0, r0, [sp, #4]
+00638DCA: str        r0, [sp, #0xc]
+00638DCC: add        r1, pc
+00638DCE: ldr        r0, [pc, #0x138] ; literal[00638F08]=005C1859
+00638DD0: ldr        r2, [pc, #0x130] ; literal[00638F04]=009F608A
+00638DD2: add        r0, pc
+00638DD4: ldr        r3, [r5]
+00638DD6: add        r2, pc
+00638DD8: ldr.w      r2, [r2, r3, lsl #2]
+00638DDC: adr        r3, #0x130 ; ADR[00638F10]=b'Stopping all anims for all objects on layer %s'
+00638DDE: str        r2, [sp]
+00638DE0: add        r2, sp, #4
+00638DE2: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00638DE6: ldr        r0, [sp, #4]
+00638DE8: cbz        r0, #0x638e08
+00638DEA: ldr        r1, [sp, #8]
+00638DEC: cmp        r1, r0
+00638DEE: itttt      ne
+00638DF0: subne.w    r2, r1, #8
+00638DF4: subne      r2, r2, r0
+00638DF6: mvnne      r3, #7
+00638DFA: bicne.w    r2, r3, r2
+00638DFE: itt        ne
+00638E00: addne      r1, r1, r2
+00638E02: strne      r1, [sp, #8]
+00638E04: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00638E08: ldr        r6, [r4, #8]
+00638E0A: add.w      r0, r4, #0xc
+00638E0E: cmp        r6, r0
+00638E10: beq        #0x638e4e
+00638E12: movs       r1, #1
+00638E14: mov        r2, r6
+00638E16: ldr        r3, [r5]
+00638E18: add.w      r3, r3, r3, lsl #1
+00638E1C: add.w      r6, r6, r3, lsl #2
+00638E20: ldr        r3, [r6, #0x24]
+00638E22: adds       r6, #0x20
+00638E24: b          #0x638e2c
+00638E26: strb.w     r1, [r3, #0x41]
+00638E2A: ldr        r3, [r3, #4]
+00638E2C: cmp        r6, r3
+00638E2E: bne        #0x638e26
+00638E30: ldr        r3, [r2, #4]
+00638E32: cbz        r3, #0x638e3e
+00638E34: mov        r6, r3
+00638E36: ldr        r3, [r6]
+00638E38: cmp        r3, #0
+00638E3A: bne        #0x638e34
+00638E3C: b          #0x638e48
+00638E3E: ldr        r6, [r2, #8]
+00638E40: ldr        r3, [r6]
+00638E42: cmp        r3, r2
+00638E44: mov        r2, r6
+00638E46: bne        #0x638e3e
+00638E48: cmp        r6, r0
+00638E4A: mov        r2, r6
+00638E4C: bne        #0x638e16
+00638E4E: mov        r0, r4
+00638E50: movs       r1, #1
+00638E52: blx        #0x4a7f54 ; _ZN4Anki5Cozmo18CubeLightComponent6UpdateEb -> 00637904 size=448
+00638E56: add        sp, #0x10
+00638E58: pop        {r4, r5, r6, pc}
+00638E5A: movs       r0, #0
+00638E5C: ldr        r3, [pc, #0x6c] ; literal[00638ECC]=005C1B5A
+00638E5E: strd       r0, r0, [sp, #4]
+00638E62: str        r0, [sp, #0xc]
+00638E64: add        r3, pc
+00638E66: ldr        r0, [pc, #0x60] ; literal[00638EC8]=005C17C1
+00638E68: ldr        r1, [r6, #4]
+00638E6A: add        r0, pc
+00638E6C: str        r1, [sp]
+00638E6E: adr        r1, #0x60 ; ADR[00638ED0]=b'CubeLightComponent.StopAllAnimsOnLayer.BadObject'
+00638E70: add        r2, sp, #4
+00638E72: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00638E76: ldr        r0, [sp, #4]
+00638E78: cmp        r0, #0
+00638E7A: beq        #0x638e56
+00638E7C: ldr        r1, [sp, #8]
+00638E7E: cmp        r1, r0
+00638E80: itttt      ne
+00638E82: subne.w    r2, r1, #8
+00638E86: subne      r2, r2, r0
+00638E88: mvnne      r3, #7
+00638E8C: bicne.w    r2, r3, r2
+00638E90: itt        ne
+00638E92: addne      r1, r1, r2
+00638E94: strne      r1, [sp, #8]
+00638E96: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00638E9A: b          #0x638e56
+00638E9C: b          #0x638e9e
+00638E9E: mov        r4, r0
+00638EA0: ldr        r0, [sp, #4]
+00638EA2: cbz        r0, #0x638ec0
+00638EA4: ldr        r1, [sp, #8]
+00638EA6: cmp        r1, r0
+00638EA8: beq        #0x638ebc
+00638EAA: sub.w      r2, r1, #8
+00638EAE: mvn        r3, #7
+00638EB2: subs       r2, r2, r0
+00638EB4: bic.w      r2, r3, r2
+00638EB8: add        r1, r2
+00638EBA: str        r1, [sp, #8]
+00638EBC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00638EC0: mov        r0, r4
+00638EC2: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00638EC6: nop
+00638EC8: asrs       r1, r0, #0x1f
+00638ECA: lsls       r4, r3, #1
+00638ECC: subs       r2, r3, r5
+00638ECE: lsls       r4, r3, #1
+00638ED0: strb       r3, [r0, #0x15]
+00638ED2: str        r2, [r4, #0x54]
+00638ED4: ldr        r4, [r1, #0x14]
+00638ED6: ldr        r7, [r4, #4]
+00638ED8: muls       r4, r6, r4
+00638EDA: ldr        r7, [r5, #0x54]
+00638EDC: ldr        r0, [r6, #0x74]
+00638EDE: str        r6, [r5, #0x54]
+00638EE0: strb       r6, [r5, #0x11]
+00638EE2: strh       r6, [r5, r4]
+00638EE4: ldr        r4, [r6, #0x74]
+00638EE6: adcs       r0, r6
+00638EE8: ldr        r4, [r5, #0x44]
+00638EEA: ldr        r1, [r0, #0x64]
+00638EEC: ldr        r1, [r5, #0x54]
+00638EEE: ldr        r7, [pc, #0x1cc] ; literal[006390BC]=993C9018
+00638EF0: ldr        r4, [pc, #0x1b8] ; literal[006390AC]=42BAD1F9
+00638EF2: ldrb       r1, [r4, #5]
+00638EF4: strb       r5, [r4, #9]
+00638EF6: tst        r6, r5
+00638EF8: str        r1, [r4, #0x44]
+00638EFA: str        r7, [r1, #0x24]
+00638EFC: str        r2, [r5, #0x54]
+00638EFE: strb       r3, [r4, #0x11]
+00638F00: movs       r0, r0
+00638F02: movs       r0, r0
+00638F04: str        r2, [r1, #8]
+00638F06: lsls       r7, r3, #2
+00638F08: adds       r1, r3, r1
+00638F0A: lsls       r4, r3, #1
+00638F0C: subs       r0, r0, r7
+00638F0E: lsls       r4, r3, #1
+00638F10: strb       r3, [r2, #0x11]
+00638F12: strb       r7, [r5, #1]
+00638F14: ldr        r0, [r6, #0x14]
+00638F16: str        r6, [r5, #0x74]
+00638F18: str        r0, [r4, #0x10]
+00638F1A: ldr        r4, [r5, #0x44]
+00638F1C: str        r0, [r4, #0x10]
+00638F1E: ldr        r6, [r5, #0x14]
+00638F20: strb       r5, [r5, #0xd]
+00638F22: str        r0, [r4, #0x60]
+00638F24: strb       r7, [r5, #9]
+00638F26: str        r0, [r4, #0x10]
+00638F28: ldr        r4, [r5, #0x44]
+00638F2A: ldr        r0, [r4, #0x70]
+00638F2C: ldr        r2, [r4, #0x24]
+00638F2E: str        r5, [r4, #0x34]
+00638F30: strb       r4, [r6, #0xd]
+00638F32: ldr        r0, [r4, #0x70]
+00638F34: movs       r0, #0x6e
+00638F36: str        r4, [r5, #0x14]
+00638F38: str        r1, [r7, #0x54]
+00638F3A: movs       r0, #0x72
+00638F3C: strb       r5, [r4, #0xc]
+00638F3E: movs       r0, r0
+_ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE4findIS3_EENS_15__tree_iteratorIS7_PNS_11__tree_nodeIS7_PvEEiEERKT_
+
+RANGE 0063B08C..0063B0D2 _ZNSt6__ndk16__treeINS_12__value_typeIN4Anki8ObjectIDENS2_5Cozmo18CubeLightComponent10ObjectInfoEEENS_19__map_value_compareIS3_S7_NS_4lessIS3_EELb1EEENS_9allocatorIS7_EEE4findIS3_EENS_15__tree_iteratorIS7_PNS_11__tree_nodeIS7_PvEEiEERKT_
+0063B08C: push       {r4, lr}
+0063B08E: ldr        lr, [r0, #4]!
+0063B092: cmp.w      lr, #0
+0063B096: beq        #0x63b0cc
+0063B098: ldr        r4, [r1, #4]
+0063B09A: mov        ip, r0
+0063B09C: mov        r2, lr
+0063B09E: ldr        r3, [r2, #0x14]
+0063B0A0: cmp        r3, r4
+0063B0A2: bge        #0x63b0ac
+0063B0A4: ldr        r2, [r2, #4]
+0063B0A6: cmp        r2, #0
+0063B0A8: bne        #0x63b09e
+0063B0AA: b          #0x63b0ba
+0063B0AC: ldr.w      lr, [r2]
+0063B0B0: mov        ip, r2
+0063B0B2: cmp.w      lr, #0
+0063B0B6: bne        #0x63b09c
+0063B0B8: b          #0x63b0bc
+0063B0BA: mov        r2, ip
+0063B0BC: cmp        r2, r0
+0063B0BE: beq        #0x63b0cc
+0063B0C0: ldr        r3, [r2, #0x14]
+0063B0C2: ldr        r1, [r1, #4]
+0063B0C4: cmp        r1, r3
+0063B0C6: it         lt
+0063B0C8: movlt      r2, r0
+0063B0CA: b          #0x63b0ce
+0063B0CC: mov        r2, r0
+0063B0CE: mov        r0, r2
+0063B0D0: pop        {r4, pc}
+_ZN4Anki5Cozmo19TrackLayerComponent14RemoveEyeShiftEhi
+
+RANGE 0064F4F4..0064F4FA _ZN4Anki5Cozmo19TrackLayerComponent14RemoveEyeShiftEhi
+0064F4F4: ldr        r0, [r0, #0xc]
+0064F4F6: b.w        #0x8cd01c
+_ZN4Anki5Cozmo15VisionComponent10EnableModeENS0_10VisionModeEb
+
+RANGE 006527A8..00652870 _ZN4Anki5Cozmo15VisionComponent10EnableModeENS0_10VisionModeEb
+006527A8: push       {r4, lr}
+006527AA: sub        sp, #0x10
+006527AC: ldr        r0, [r0, #0x1c]
+006527AE: cbz        r0, #0x6527ba
+006527B0: add        sp, #0x10
+006527B2: pop.w      {r4, lr}
+006527B6: b.w        #0x8cd05c
+006527BA: ldr        r2, [pc, #0x7c] ; literal[00652838]=0059173A
+006527BC: movs       r0, #0
+006527BE: strd       r0, r0, [sp, #4]
+006527C2: add        r2, pc
+006527C4: str        r0, [sp, #0xc]
+006527C6: adr        r0, #0x74 ; ADR[0065283C]=b'VisionComponent.EnableMode.NullVisionSystem'
+006527C8: add        r1, sp, #4
+006527CA: blx        #0x4a4108 ; _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D13C size=80
+006527CE: ldr        r0, [sp, #4]
+006527D0: cbz        r0, #0x6527f0
+006527D2: ldr        r1, [sp, #8]
+006527D4: cmp        r1, r0
+006527D6: itttt      ne
+006527D8: subne.w    r2, r1, #8
+006527DC: subne      r2, r2, r0
+006527DE: mvnne      r3, #7
+006527E2: bicne.w    r2, r3, r2
+006527E6: itt        ne
+006527E8: addne      r1, r1, r2
+006527EA: strne      r1, [sp, #8]
+006527EC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006527F0: ldr        r0, [pc, #0x74] ; literal[00652868]=009EBF92
+006527F2: movs       r2, #1
+006527F4: ldr        r1, [pc, #0x74] ; literal[0065286C]=009EBF94
+006527F6: add        r0, pc
+006527F8: add        r1, pc
+006527FA: ldr        r0, [r0]
+006527FC: ldr        r1, [r1]
+006527FE: ldrb       r0, [r0]
+00652800: strb       r2, [r1]
+00652802: cbz        r0, #0x652808
+00652804: blx        #0x4a4114 ; _ZN4Anki4Util18sDebugBreakOnErrorEv -> 0080DAB4 size=2
+00652808: movs       r0, #1
+0065280A: add        sp, #0x10
+0065280C: pop        {r4, pc}
+0065280E: mov        r4, r0
+00652810: ldr        r0, [sp, #4]
+00652812: cbz        r0, #0x652830
+00652814: ldr        r1, [sp, #8]
+00652816: cmp        r1, r0
+00652818: beq        #0x65282c
+0065281A: sub.w      r2, r1, #8
+0065281E: mvn        r3, #7
+00652822: subs       r2, r2, r0
+00652824: bic.w      r2, r3, r2
+00652828: add        r1, r2
+0065282A: str        r1, [sp, #8]
+0065282C: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00652830: mov        r0, r4
+00652832: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00652836: nop
+00652838: asrs       r2, r7, #0x1c
+0065283A: lsls       r1, r3, #1
+0065283C: ldr        r6, [r2, #0x14]
+0065283E: ldr        r3, [r6, #0x14]
+00652840: ldr        r7, [r5, #0x64]
+00652842: ldr        r3, [r0, #0x74]
+00652844: strb       r5, [r5, #1]
+00652846: ldr        r7, [r5, #0x64]
+00652848: ldr        r5, [r4, #0x64]
+0065284A: cmp        r6, #0x74
+0065284C: ldr        r5, [r0, #0x64]
+0065284E: str        r1, [r4, #0x24]
+00652850: str        r4, [r5, #0x54]
+00652852: ldr        r5, [r1, #0x74]
+00652854: str        r4, [r4, #0x54]
+00652856: ldr        r6, [pc, #0xb8] ; literal[00652910]=2E746E65
+00652858: ldr        r5, [r6, #0x44]
+0065285A: ldrsb      r4, [r5, r1]
+0065285C: strb       r1, [r5, #0xd]
+0065285E: ldr        r1, [r5, #0x74]
+00652860: strh       r6, [r5, r5]
+00652862: strb       r1, [r7, #0xd]
+00652864: str        r4, [r6, #0x54]
+00652866: lsls       r5, r5, #1
+00652868: itee       ls
+0065286A: lslls      r6, r3, #2
+0065286C: ite        ls
+0065286E: lslhi      r6, r3, #2
+_ZN4Anki5CozmoppERNS0_10VisionModeE
+
+RANGE 006AF31E..006AF326 _ZN4Anki5CozmoppERNS0_10VisionModeE
+006AF31E: ldr        r1, [r0]
+006AF320: adds       r1, #1
+006AF322: str        r1, [r0]
+006AF324: bx         lr
+_ZN4Anki5Cozmo12VisionSystem10EnableModeENS0_10VisionModeEb
+
+RANGE 006B19C0..006B1DE4 _ZN4Anki5Cozmo12VisionSystem10EnableModeENS0_10VisionModeEb
+006B19C0: push.w     {r4, r5, r6, r7, r8, lr}
+006B19C4: sub        sp, #0x20
+006B19C6: mov        r4, r0
+006B19C8: sub.w      r0, r1, #0xa
+006B19CC: mov        r5, r2
+006B19CE: cmp        r0, #3
+006B19D0: bhi        #0x6b1a30
+006B19D2: tbb        [pc, r0] ; literal[006B19D4]=9D02F000
+006B19D6: ldr        r5, [sp, #8]
+006B19D8: mcr        p8, #6, pc, c6, c15, #6
+006B19DC: lsls       r4, r7, #0xe
+006B19DE: movs       r2, #0
+006B19E0: ldr.w      r1, [pc, #0x3b8] ; literal[006B1D9C]=0054FA7E
+006B19E4: cmp        r5, #0
+006B19E6: add        r0, pc
+006B19E8: strd       r2, r2, [sp, #0x14]
+006B19EC: add        r1, pc
+006B19EE: str        r2, [sp, #0x1c]
+006B19F0: mov.w      r2, #0x4e
+006B19F4: it         ne
+006B19F6: movne      r2, #0x59
+006B19F8: str        r2, [sp]
+006B19FA: add        r2, sp, #0x14
+006B19FC: adr        r3, #0x354 ; ADR[006B1D54]=b'Enabled=%c'
+006B19FE: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1A02: ldr        r0, [sp, #0x14]
+006B1A04: cbz        r0, #0x6b1a24
+006B1A06: ldr        r1, [sp, #0x18]
+006B1A08: cmp        r1, r0
+006B1A0A: itttt      ne
+006B1A0C: subne.w    r2, r1, #8
+006B1A10: subne      r2, r2, r0
+006B1A12: mvnne      r3, #7
+006B1A16: bicne.w    r2, r3, r2
+006B1A1A: itt        ne
+006B1A1C: addne      r1, r1, r2
+006B1A1E: strne      r1, [sp, #0x18]
+006B1A20: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1A24: ldr.w      r0, [r4, #0x2fc]
+006B1A28: mov        r1, r5
+006B1A2A: blx        #0x4bef1c ; _ZN4Anki6Vision11FaceTracker22EnableEmotionDetectionEb -> 0086B27C size=8
+006B1A2E: b          #0x6b1cc6
+006B1A30: cbnz       r1, #0x6b1a76
+006B1A32: cmp        r5, #1
+006B1A34: bne.w      #0x6b1c02
+006B1A38: ldr        r0, [pc, #0x36c] ; literal[006B1DA8]=0054F77C
+006B1A3A: movs       r2, #0
+006B1A3C: ldr        r1, [pc, #0x36c] ; literal[006B1DAC]=0054F9B9
+006B1A3E: add        r0, pc
+006B1A40: strd       r2, r2, [sp, #0x14]
+006B1A44: add        r1, pc
+006B1A46: str        r2, [sp, #0x1c]
+006B1A48: add        r2, sp, #0x14
+006B1A4A: adr        r3, #0x364 ; ADR[006B1DB0]=b'Disabling all vision modes'
+006B1A4C: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1A50: ldr        r0, [sp, #0x14]
+006B1A52: cbz        r0, #0x6b1a72
+006B1A54: ldr        r1, [sp, #0x18]
+006B1A56: cmp        r1, r0
+006B1A58: itttt      ne
+006B1A5A: subne.w    r2, r1, #8
+006B1A5E: subne      r2, r2, r0
+006B1A60: mvnne      r3, #7
+006B1A64: bicne.w    r2, r3, r2
+006B1A68: itt        ne
+006B1A6A: addne      r1, r1, r2
+006B1A6C: strne      r1, [sp, #0x18]
+006B1A6E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1A72: movs       r0, #1
+006B1A74: b          #0x6b1cc2
+006B1A76: ldr.w      r0, [r4, #0xac]
+006B1A7A: movs       r2, #1
+006B1A7C: lsl.w      r7, r2, r1
+006B1A80: cmp        r5, #1
+006B1A82: and.w      r0, r0, r7
+006B1A86: bne.w      #0x6b1c3e
+006B1A8A: cmp        r0, r7
+006B1A8C: beq.w      #0x6b1cc6
+006B1A90: movs       r0, #0
+006B1A92: strd       r0, r0, [sp, #0x14]
+006B1A96: str        r0, [sp, #0x1c]
+006B1A98: mov        r0, r1
+006B1A9A: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B1A9E: mov        r5, r0
+006B1AA0: ldr.w      r2, [r4, #0xac]
+006B1AA4: add.w      r8, sp, #8
+006B1AA8: mov        r0, r8
+006B1AAA: blx        #0x4bef28 ; _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE -> 006B2384 size=90
+006B1AAE: ldr        r0, [pc, #0x328] ; literal[006B1DD8]=0054F706
+006B1AB0: ldr        r1, [pc, #0x328] ; literal[006B1DDC]=0054FA1A
+006B1AB2: ldr        r3, [pc, #0x32c] ; literal[006B1DE0]=0054FA2C
+006B1AB4: add        r0, pc
+006B1AB6: add        r1, pc
+006B1AB8: ldrb.w     r6, [sp, #8]
+006B1ABC: ldr        r2, [sp, #0x10]
+006B1ABE: add        r3, pc
+006B1AC0: tst.w      r6, #1
+006B1AC4: it         eq
+006B1AC6: orreq      r2, r8, #1
+006B1ACA: strd       r5, r2, [sp]
+006B1ACE: add        r2, sp, #0x14
+006B1AD0: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1AD4: ldrb.w     r0, [sp, #8]
+006B1AD8: lsls       r0, r0, #0x1f
+006B1ADA: itt        ne
+006B1ADC: ldrne      r0, [sp, #0x10]
+006B1ADE: blxne      #0x4a40cc
+006B1AE2: ldr        r0, [sp, #0x14]
+006B1AE4: cbz        r0, #0x6b1b04
+006B1AE6: ldr        r1, [sp, #0x18]
+006B1AE8: cmp        r1, r0
+006B1AEA: itttt      ne
+006B1AEC: subne.w    r2, r1, #8
+006B1AF0: subne      r2, r2, r0
+006B1AF2: mvnne      r3, #7
+006B1AF6: bicne.w    r2, r3, r2
+006B1AFA: itt        ne
+006B1AFC: addne      r1, r1, r2
+006B1AFE: strne      r1, [sp, #0x18]
+006B1B00: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1B04: ldr.w      r0, [r4, #0xac]
+006B1B08: bic        r0, r0, #1
+006B1B0C: orrs       r0, r7
+006B1B0E: b          #0x6b1cc2
+006B1B10: ldr        r0, [pc, #0x27c] ; literal[006B1D90]=0054F6A2
+006B1B12: movs       r2, #0
+006B1B14: ldr        r1, [pc, #0x27c] ; literal[006B1D94]=0054F97F
+006B1B16: cmp        r5, #0
+006B1B18: add        r0, pc
+006B1B1A: strd       r2, r2, [sp, #0x14]
+006B1B1E: add        r1, pc
+006B1B20: str        r2, [sp, #0x1c]
+006B1B22: mov.w      r2, #0x4e
+006B1B26: it         ne
+006B1B28: movne      r2, #0x59
+006B1B2A: str        r2, [sp]
+006B1B2C: add        r2, sp, #0x14
+006B1B2E: adr        r3, #0x224 ; ADR[006B1D54]=b'Enabled=%c'
+006B1B30: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1B34: ldr        r0, [sp, #0x14]
+006B1B36: cbz        r0, #0x6b1b56
+006B1B38: ldr        r1, [sp, #0x18]
+006B1B3A: cmp        r1, r0
+006B1B3C: itttt      ne
+006B1B3E: subne.w    r2, r1, #8
+006B1B42: subne      r2, r2, r0
+006B1B44: mvnne      r3, #7
+006B1B48: bicne.w    r2, r3, r2
+006B1B4C: itt        ne
+006B1B4E: addne      r1, r1, r2
+006B1B50: strne      r1, [sp, #0x18]
+006B1B52: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1B56: ldr.w      r0, [r4, #0x2fc]
+006B1B5A: mov        r1, r5
+006B1B5C: blx        #0x4bef34 ; _ZN4Anki6Vision11FaceTracker20EnableSmileDetectionEb -> 0086B284 size=8
+006B1B60: b          #0x6b1cc6
+006B1B62: ldr        r0, [pc, #0x1fc] ; literal[006B1D60]=0054F648
+006B1B64: movs       r1, #0
+006B1B66: strd       r1, r1, [sp, #0x14]
+006B1B6A: cmp        r5, #0
+006B1B6C: str        r1, [sp, #0x1c]
+006B1B6E: mov.w      r1, #0x4e
+006B1B72: add        r0, pc
+006B1B74: it         ne
+006B1B76: movne      r1, #0x59
+006B1B78: str        r1, [sp]
+006B1B7A: adr        r1, #0x1e8 ; ADR[006B1D64]=b'VisionSystem.EnableMode.EnableDetectingGaze'
+006B1B7C: add        r2, sp, #0x14
+006B1B7E: adr        r3, #0x1d4 ; ADR[006B1D54]=b'Enabled=%c'
+006B1B80: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1B84: ldr        r0, [sp, #0x14]
+006B1B86: cbz        r0, #0x6b1ba6
+006B1B88: ldr        r1, [sp, #0x18]
+006B1B8A: cmp        r1, r0
+006B1B8C: itttt      ne
+006B1B8E: subne.w    r2, r1, #8
+006B1B92: subne      r2, r2, r0
+006B1B94: mvnne      r3, #7
+006B1B98: bicne.w    r2, r3, r2
+006B1B9C: itt        ne
+006B1B9E: addne      r1, r1, r2
+006B1BA0: strne      r1, [sp, #0x18]
+006B1BA2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1BA6: ldr.w      r0, [r4, #0x2fc]
+006B1BAA: mov        r1, r5
+006B1BAC: blx        #0x4bef40 ; _ZN4Anki6Vision11FaceTracker19EnableGazeDetectionEb -> 0086B28C size=8
+006B1BB0: b          #0x6b1cc6
+006B1BB2: ldr        r0, [pc, #0x16c] ; literal[006B1D20]=0054F5F8
+006B1BB4: movs       r1, #0
+006B1BB6: strd       r1, r1, [sp, #0x14]
+006B1BBA: cmp        r5, #0
+006B1BBC: str        r1, [sp, #0x1c]
+006B1BBE: mov.w      r1, #0x4e
+006B1BC2: add        r0, pc
+006B1BC4: it         ne
+006B1BC6: movne      r1, #0x59
+006B1BC8: str        r1, [sp]
+006B1BCA: adr        r1, #0x158 ; ADR[006B1D24]=b'VisionSystem.EnableMode.DetectingBlinkAmount'
+006B1BCC: add        r2, sp, #0x14
+006B1BCE: adr        r3, #0x184 ; ADR[006B1D54]=b'Enabled=%c'
+006B1BD0: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1BD4: ldr        r0, [sp, #0x14]
+006B1BD6: cbz        r0, #0x6b1bf6
+006B1BD8: ldr        r1, [sp, #0x18]
+006B1BDA: cmp        r1, r0
+006B1BDC: itttt      ne
+006B1BDE: subne.w    r2, r1, #8
+006B1BE2: subne      r2, r2, r0
+006B1BE4: mvnne      r3, #7
+006B1BE8: bicne.w    r2, r3, r2
+006B1BEC: itt        ne
+006B1BEE: addne      r1, r1, r2
+006B1BF0: strne      r1, [sp, #0x18]
+006B1BF2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1BF6: ldr.w      r0, [r4, #0x2fc]
+006B1BFA: mov        r1, r5
+006B1BFC: blx        #0x4bef4c ; _ZN4Anki6Vision11FaceTracker20EnableBlinkDetectionEb -> 0086B294 size=8
+006B1C00: b          #0x6b1cc6
+006B1C02: ldr        r0, [pc, #0x19c] ; literal[006B1DA0]=0054F812
+006B1C04: movs       r1, #0
+006B1C06: ldr        r2, [pc, #0x19c] ; literal[006B1DA4]=0054F833
+006B1C08: add        r0, pc
+006B1C0A: strd       r1, r1, [sp, #0x14]
+006B1C0E: add        r2, pc
+006B1C10: str        r1, [sp, #0x1c]
+006B1C12: add        r1, sp, #0x14
+006B1C14: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+006B1C18: ldr        r0, [sp, #0x14]
+006B1C1A: cmp        r0, #0
+006B1C1C: beq        #0x6b1cc6
+006B1C1E: ldr        r1, [sp, #0x18]
+006B1C20: cmp        r1, r0
+006B1C22: itttt      ne
+006B1C24: subne.w    r2, r1, #8
+006B1C28: subne      r2, r2, r0
+006B1C2A: mvnne      r3, #7
+006B1C2E: bicne.w    r2, r3, r2
+006B1C32: itt        ne
+006B1C34: addne      r1, r1, r2
+006B1C36: strne      r1, [sp, #0x18]
+006B1C38: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1C3C: b          #0x6b1cc6
+006B1C3E: cmp        r0, r7
+006B1C40: bne        #0x6b1cc6
+006B1C42: movs       r0, #0
+006B1C44: strd       r0, r0, [sp, #0x14]
+006B1C48: str        r0, [sp, #0x1c]
+006B1C4A: mov        r0, r1
+006B1C4C: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B1C50: mov        r5, r0
+006B1C52: ldr.w      r2, [r4, #0xac]
+006B1C56: add.w      r8, sp, #8
+006B1C5A: mov        r0, r8
+006B1C5C: blx        #0x4bef28 ; _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE -> 006B2384 size=90
+006B1C60: ldr        r0, [pc, #0x168] ; literal[006B1DCC]=0054F554
+006B1C62: ldr        r1, [pc, #0x16c] ; literal[006B1DD0]=0054F8A5
+006B1C64: ldr        r3, [pc, #0x16c] ; literal[006B1DD4]=0054F8B8
+006B1C66: add        r0, pc
+006B1C68: add        r1, pc
+006B1C6A: ldrb.w     r6, [sp, #8]
+006B1C6E: ldr        r2, [sp, #0x10]
+006B1C70: add        r3, pc
+006B1C72: tst.w      r6, #1
+006B1C76: it         eq
+006B1C78: orreq      r2, r8, #1
+006B1C7C: strd       r5, r2, [sp]
+006B1C80: add        r2, sp, #0x14
+006B1C82: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+006B1C86: ldrb.w     r0, [sp, #8]
+006B1C8A: lsls       r0, r0, #0x1f
+006B1C8C: itt        ne
+006B1C8E: ldrne      r0, [sp, #0x10]
+006B1C90: blxne      #0x4a40cc
+006B1C94: ldr        r0, [sp, #0x14]
+006B1C96: cbz        r0, #0x6b1cb6
+006B1C98: ldr        r1, [sp, #0x18]
+006B1C9A: cmp        r1, r0
+006B1C9C: itttt      ne
+006B1C9E: subne.w    r2, r1, #8
+006B1CA2: subne      r2, r2, r0
+006B1CA4: mvnne      r3, #7
+006B1CA8: bicne.w    r2, r3, r2
+006B1CAC: itt        ne
+006B1CAE: addne      r1, r1, r2
+006B1CB0: strne      r1, [sp, #0x18]
+006B1CB2: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1CB6: ldr.w      r0, [r4, #0xac]
+006B1CBA: bics       r0, r7
+006B1CBC: cmp        r0, #0
+006B1CBE: it         eq
+006B1CC0: moveq      r0, #1
+006B1CC2: str.w      r0, [r4, #0xac]
+006B1CC6: movs       r0, #0
+006B1CC8: add        sp, #0x20
+006B1CCA: pop.w      {r4, r5, r6, r7, r8, pc}
+006B1CCE: b          #0x6b1cd6
+006B1CD0: b          #0x6b1cf8
+006B1CD2: mov        r4, r0
+006B1CD4: b          #0x6b1d1a
+006B1CD6: mov        r4, r0
+006B1CD8: ldrb.w     r0, [sp, #8]
+006B1CDC: lsls       r0, r0, #0x1f
+006B1CDE: itt        ne
+006B1CE0: ldrne      r0, [sp, #0x10]
+006B1CE2: blxne      #0x4a40cc
+006B1CE6: b          #0x6b1cfa
+006B1CE8: b          #0x6b1cf8
+006B1CEA: mov        r4, r0
+006B1CEC: b          #0x6b1d1a
+006B1CEE: b          #0x6b1cf8
+006B1CF0: b          #0x6b1cf8
+006B1CF2: b          #0x6b1cf8
+006B1CF4: b          #0x6b1cf8
+006B1CF6: b          #0x6b1cf8
+006B1CF8: mov        r4, r0
+006B1CFA: ldr        r0, [sp, #0x14]
+006B1CFC: cbz        r0, #0x6b1d1a
+006B1CFE: ldr        r1, [sp, #0x18]
+006B1D00: cmp        r1, r0
+006B1D02: beq        #0x6b1d16
+006B1D04: sub.w      r2, r1, #8
+006B1D08: mvn        r3, #7
+006B1D0C: subs       r2, r2, r0
+006B1D0E: bic.w      r2, r3, r2
+006B1D12: add        r1, r2
+006B1D14: str        r1, [sp, #0x18]
+006B1D16: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006B1D1A: mov        r0, r4
+006B1D1C: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+_ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE
+
+RANGE 006B2384..006B2414 _ZNK4Anki5Cozmo12VisionSystem11GetModeNameENS_4Util8BitFlagsIjNS0_10VisionModeEEE
+006B2384: push.w     {r4, r5, r6, r7, r8, sb, lr}
+006B2388: sub        sp, #4
+006B238A: ldr        r1, [pc, #0x80] ; literal[006B240C]=00531B6A
+006B238C: mov        r5, r2
+006B238E: mov        r4, r0
+006B2390: movs       r6, #0
+006B2392: add        r1, pc
+006B2394: movs       r2, #0
+006B2396: strd       r6, r6, [r4]
+006B239A: str        r6, [r4, #8]
+006B239C: bl         #0x4e02b2
+006B23A0: str        r6, [sp]
+006B23A2: movs       r7, #1
+006B23A4: addw       r8, pc, #0x68 ; ADDW[006B2410]=b'+'
+006B23A8: mov        sb, sp
+006B23AA: lsl.w      r0, r7, r6
+006B23AE: tst        r0, r5
+006B23B0: beq        #0x6b23e4
+006B23B2: ldrb       r0, [r4]
+006B23B4: tst.w      r0, #1
+006B23B8: ite        eq
+006B23BA: lsreq      r0, r0, #1
+006B23BC: ldrne      r0, [r4, #4]
+006B23BE: cbz        r0, #0x6b23cc
+006B23C0: mov        r0, r4
+006B23C2: mov        r1, r8
+006B23C4: movs       r2, #1
+006B23C6: bl         #0x4e8048
+006B23CA: ldr        r6, [sp]
+006B23CC: mov        r0, r6
+006B23CE: blx        #0x4ab4e8 ; _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE -> 00796BBC size=18
+006B23D2: mov        r6, r0
+006B23D4: mov        r0, r6
+006B23D6: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+006B23DA: mov        r2, r0
+006B23DC: mov        r0, r4
+006B23DE: mov        r1, r6
+006B23E0: bl         #0x4e8048
+006B23E4: mov        r0, sb
+006B23E6: blx        #0x4ba4f4 ; _ZN4Anki5CozmoppERNS0_10VisionModeE -> 006AF31E size=8
+006B23EA: ldr        r6, [sp]
+006B23EC: cmp        r6, #0x10
+006B23EE: blo        #0x6b23aa
+006B23F0: add        sp, #4
+006B23F2: pop.w      {r4, r5, r6, r7, r8, sb, pc}
+006B23F6: mov        r5, r0
+006B23F8: ldrb       r0, [r4]
+006B23FA: lsls       r0, r0, #0x1f
+006B23FC: itt        ne
+006B23FE: ldrne      r0, [r4, #8]
+006B2400: blxne      #0x4a40cc
+006B2404: mov        r0, r5
+006B2406: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+006B240A: nop
+006B240C: subs       r2, r5, r5
+006B240E: lsls       r3, r2, #1
+006B2410: movs       r3, r5
+006B2412: movs       r0, r0
+_ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9push_backEOS5_
+
+RANGE 006BADA2..006BADF0 _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9push_backEOS5_
+006BADA2: push       {r4, r5, r6, lr}
+006BADA4: mov        r4, r0
+006BADA6: mov        r6, r1
+006BADA8: ldrd       r0, r3, [r4, #4]
+006BADAC: mov.w      r5, #-1
+006BADB0: ldrd       r1, r2, [r4, #0x10]
+006BADB4: subs       r3, r3, r0
+006BADB6: it         ne
+006BADB8: addne.w    r3, r5, r3, lsl #7
+006BADBC: adds       r5, r2, r1
+006BADBE: cmp        r3, r5
+006BADC0: bne        #0x6badce
+006BADC2: mov        r0, r4
+006BADC4: blx        #0x4bf54c ; _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE19__add_back_capacityEv -> 006BADF0 size=22E
+006BADC8: ldr        r0, [r4, #4]
+006BADCA: ldrd       r1, r2, [r4, #0x10]
+006BADCE: add        r1, r2
+006BADD0: lsrs       r2, r1, #9
+006BADD2: bfc        r1, #9, #0x17
+006BADD6: ldr.w      r0, [r0, r2, lsl #2]
+006BADDA: ldrd       r2, r3, [r6]
+006BADDE: str.w      r2, [r0, r1, lsl #3]
+006BADE2: add.w      r0, r0, r1, lsl #3
+006BADE6: str        r3, [r0, #4]
+006BADE8: ldr        r0, [r4, #0x14]
+006BADEA: adds       r0, #1
+006BADEC: str        r0, [r4, #0x14]
+006BADEE: pop        {r4, r5, r6, pc}
+_ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9pop_frontEv
+
+RANGE 006BC1C4..006BC1F4 _ZNSt6__ndk15dequeINS_4pairIN4Anki5Cozmo10VisionModeEbEENS_9allocatorIS5_EEE9pop_frontEv
+006BC1C4: push       {r4, lr}
+006BC1C6: mov        r4, r0
+006BC1C8: ldrd       r0, r1, [r4, #0x10]
+006BC1CC: subs       r1, #1
+006BC1CE: adds       r0, #1
+006BC1D0: cmp.w      r0, #0x400
+006BC1D4: strd       r0, r1, [r4, #0x10]
+006BC1D8: it         lo
+006BC1DA: poplo      {r4, pc}
+006BC1DC: ldr        r0, [r4, #4]
+006BC1DE: ldr        r0, [r0]
+006BC1E0: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+006BC1E4: ldr        r0, [r4, #4]
+006BC1E6: ldr        r1, [r4, #0x10]
+006BC1E8: adds       r0, #4
+006BC1EA: str        r0, [r4, #4]
+006BC1EC: sub.w      r0, r1, #0x200
+006BC1F0: str        r0, [r4, #0x10]
+006BC1F2: pop        {r4, pc}
+_ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+
+RANGE 00796BBC..00796BD4 _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+00796BBC: cmp        r0, #0x10
+00796BBE: itt        hi
+00796BC0: movhi      r0, #0
+00796BC2: bxhi       lr
+00796BC4: ldr        r1, [pc, #8] ; literal[00796BD0]=0089D666
+00796BC6: add        r1, pc
+00796BC8: ldr.w      r0, [r1, r0, lsl #2]
+00796BCC: bx         lr
+00796BCE: nop
+00796BD0: bvs        #0x796ca0
+00796BD2: lsls       r1, r1, #2
+_ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv
+
+RANGE 007A6F04..007A6F50 _ZN4Anki5Cozmo14RobotInterface13EngineToRobot12ClearCurrentEv
+007A6F04: push       {r4, lr}
+007A6F06: mov        r4, r0
+007A6F08: ldrb       r0, [r4]
+007A6F0A: cmp        r0, #0x96
+007A6F0C: bgt        #0x7a6f24
+007A6F0E: cmp        r0, #0xf
+007A6F10: beq        #0x7a6f2c
+007A6F12: cmp        r0, #0x81
+007A6F14: bne        #0x7a6f4a
+007A6F16: ldr        r0, [r4, #0x10]
+007A6F18: cbz        r0, #0x7a6f4a
+007A6F1A: ldr        r1, [r4, #0x14]
+007A6F1C: cmp        r1, r0
+007A6F1E: it         ne
+007A6F20: strne      r0, [r4, #0x14]
+007A6F22: b          #0x7a6f46
+007A6F24: cmp        r0, #0x97
+007A6F26: beq        #0x7a6f3a
+007A6F28: cmp        r0, #0xa4
+007A6F2A: bne        #0x7a6f4a
+007A6F2C: ldr        r0, [r4, #8]
+007A6F2E: cbz        r0, #0x7a6f4a
+007A6F30: ldr        r1, [r4, #0xc]
+007A6F32: cmp        r1, r0
+007A6F34: it         ne
+007A6F36: strne      r0, [r4, #0xc]
+007A6F38: b          #0x7a6f46
+007A6F3A: ldr        r0, [r4, #4]
+007A6F3C: cbz        r0, #0x7a6f4a
+007A6F3E: ldr        r1, [r4, #8]
+007A6F40: cmp        r1, r0
+007A6F42: it         ne
+007A6F44: strne      r0, [r4, #8]
+007A6F46: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+007A6F4A: movs       r0, #0xff
+007A6F4C: strb       r0, [r4]
+007A6F4E: pop        {r4, pc}
+_ZN4Anki5Cozmo14RobotInterface13EngineToRobotC1EONS1_12SetHeadlightE
+
+RANGE 007A7B34..007A7B3E _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC2EONS1_12SetHeadlightE
+007A7B34: movs       r2, #0xb
+007A7B36: ldrb       r1, [r1]
+007A7B38: strb       r2, [r0]
+007A7B3A: strb       r1, [r0, #4]
+007A7B3C: bx         lr
+_ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+
+RANGE 0080D13C..0080D1BC _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D13C: sub        sp, #4
+0080D13E: push       {r4, r5, r6, r7, lr}
+0080D140: sub.w      sp, sp, #0x410
+0080D144: mov        r5, r0
+0080D146: ldr        r0, [pc, #0x68] ; literal[0080D1B0]=0083281C
+0080D148: mov        r4, r1
+0080D14A: ldr        r1, [pc, #0x68] ; literal[0080D1B4]=008316F8
+0080D14C: add        r0, pc
+0080D14E: mov        r6, r2
+0080D150: add        r1, pc
+0080D152: ldr        r0, [r0]
+0080D154: ldr        r1, [r1]
+0080D156: ldr        r0, [r0]
+0080D158: ldr        r1, [r1]
+0080D15A: cmp        r0, #0
+0080D15C: str.w      r3, [sp, #0x424]
+0080D160: str.w      r1, [sp, #0x40c]
+0080D164: beq        #0x80d18e
+0080D166: add        r7, sp, #8
+0080D168: mov.w      r1, #0x400
+0080D16C: mov        r0, r7
+0080D16E: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+0080D172: addw       r3, sp, #0x424
+0080D176: mov        r0, r7
+0080D178: mov.w      r1, #0x400
+0080D17C: mov        r2, r6
+0080D17E: str        r3, [sp, #4]
+0080D180: blx        #0x4a7fc0 ; vsnprintf IMPORT (resolve packaged dependencies before calling external)
+0080D184: mov        r0, r5
+0080D186: mov        r1, r4
+0080D188: mov        r2, r7
+0080D18A: bl         #0x80d1bc
+0080D18E: ldr        r0, [pc, #0x28] ; literal[0080D1B8]=008316B4
+0080D190: ldr.w      r1, [sp, #0x40c]
+0080D194: add        r0, pc
+0080D196: ldr        r0, [r0]
+0080D198: ldr        r0, [r0]
+0080D19A: subs       r0, r0, r1
+0080D19C: itttt      eq
+0080D19E: addeq.w    sp, sp, #0x410
+0080D1A2: popeq.w    {r4, r5, r6, r7, lr}
+0080D1A6: addeq      sp, #4
+0080D1A8: bxeq       lr
+0080D1AA: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+0080D1AE: nop
+0080D1B0: cmp        r0, #0x1c
+0080D1B2: lsls       r3, r0, #2
+0080D1B4: asrs       r0, r7, #0x1b
+0080D1B6: lsls       r3, r0, #2
+0080D1B8: asrs       r4, r6, #0x1a
+0080D1BA: lsls       r3, r0, #2
+_ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+
+RANGE 0080D2B4..0080D334 _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D2B4: sub        sp, #4
+0080D2B6: push       {r4, r5, r6, r7, lr}
+0080D2B8: sub.w      sp, sp, #0x410
+0080D2BC: mov        r5, r0
+0080D2BE: ldr        r0, [pc, #0x68] ; literal[0080D328]=008326A4
+0080D2C0: mov        r4, r1
+0080D2C2: ldr        r1, [pc, #0x68] ; literal[0080D32C]=00831580
+0080D2C4: add        r0, pc
+0080D2C6: mov        r6, r2
+0080D2C8: add        r1, pc
+0080D2CA: ldr        r0, [r0]
+0080D2CC: ldr        r1, [r1]
+0080D2CE: ldr        r0, [r0]
+0080D2D0: ldr        r1, [r1]
+0080D2D2: cmp        r0, #0
+0080D2D4: str.w      r3, [sp, #0x424]
+0080D2D8: str.w      r1, [sp, #0x40c]
+0080D2DC: beq        #0x80d306
+0080D2DE: add        r7, sp, #8
+0080D2E0: mov.w      r1, #0x400
+0080D2E4: mov        r0, r7
+0080D2E6: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+0080D2EA: addw       r3, sp, #0x424
+0080D2EE: mov        r0, r7
+0080D2F0: mov.w      r1, #0x400
+0080D2F4: mov        r2, r6
+0080D2F6: str        r3, [sp, #4]
+0080D2F8: blx        #0x4a7fc0 ; vsnprintf IMPORT (resolve packaged dependencies before calling external)
+0080D2FC: mov        r0, r5
+0080D2FE: mov        r1, r4
+0080D300: mov        r2, r7
+0080D302: bl         #0x80d334
+0080D306: ldr        r0, [pc, #0x28] ; literal[0080D330]=0083153C
+0080D308: ldr.w      r1, [sp, #0x40c]
+0080D30C: add        r0, pc
+0080D30E: ldr        r0, [r0]
+0080D310: ldr        r0, [r0]
+0080D312: subs       r0, r0, r1
+0080D314: itttt      eq
+0080D316: addeq.w    sp, sp, #0x410
+0080D31A: popeq.w    {r4, r5, r6, r7, lr}
+0080D31E: addeq      sp, #4
+0080D320: bxeq       lr
+0080D322: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+0080D326: nop
+0080D328: movs       r6, #0xa4
+0080D32A: lsls       r3, r0, #2
+0080D32C: asrs       r0, r0, #0x16
+0080D32E: lsls       r3, r0, #2
+0080D330: asrs       r4, r7, #0x14
+0080D332: lsls       r3, r0, #2
+_ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+
+RANGE 0080D42C..0080D440 _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D42C: push       {r7, lr}
+0080D42E: sub        sp, #8
+0080D430: add.w      ip, sp, #0x10
+0080D434: strd       ip, ip, [sp]
+0080D438: blx        #0x4cb7e0 ; _ZN4Anki4Util15sChanneledInfoVEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_St9__va_list -> 0080D440 size=80
+0080D43C: add        sp, #8
+0080D43E: pop        {r7, pc}
+_ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+
+RANGE 0080D818..0080D894 _ZN4Anki4Util16sChanneledDebugFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D818: push.w     {r4, r5, r6, r7, r8, lr}
+0080D81C: sub.w      sp, sp, #0x410
+0080D820: mov        r6, r0
+0080D822: ldr        r0, [pc, #0x64] ; literal[0080D888]=00832140
+0080D824: mov        r5, r1
+0080D826: ldr        r1, [pc, #0x64] ; literal[0080D88C]=0083101C
+0080D828: add        r0, pc
+0080D82A: mov        r7, r3
+0080D82C: add        r1, pc
+0080D82E: mov        r8, r2
+0080D830: ldr        r0, [r0]
+0080D832: ldr        r1, [r1]
+0080D834: ldr        r0, [r0]
+0080D836: ldr        r1, [r1]
+0080D838: cmp        r0, #0
+0080D83A: str.w      r1, [sp, #0x40c]
+0080D83E: beq        #0x80d86a
+0080D840: add        r4, sp, #8
+0080D842: mov.w      r1, #0x400
+0080D846: mov        r0, r4
+0080D848: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+0080D84C: add.w      r3, sp, #0x428
+0080D850: mov        r0, r4
+0080D852: mov.w      r1, #0x400
+0080D856: mov        r2, r7
+0080D858: str        r3, [sp, #4]
+0080D85A: blx        #0x4a7fc0 ; vsnprintf IMPORT (resolve packaged dependencies before calling external)
+0080D85E: mov        r0, r6
+0080D860: mov        r1, r5
+0080D862: mov        r2, r8
+0080D864: mov        r3, r4
+0080D866: bl         #0x80d894
+0080D86A: ldr        r0, [pc, #0x24] ; literal[0080D890]=00830FD8
+0080D86C: ldr.w      r1, [sp, #0x40c]
+0080D870: add        r0, pc
+0080D872: ldr        r0, [r0]
+0080D874: ldr        r0, [r0]
+0080D876: subs       r0, r0, r1
+0080D878: itt        eq
+0080D87A: addeq.w    sp, sp, #0x410
+0080D87E: popeq.w    {r4, r5, r6, r7, r8, pc}
+0080D882: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+0080D886: nop
+0080D888: movs       r1, #0x40
+0080D88A: lsls       r3, r0, #2
+0080D88C: asrs       r4, r3, #0x20
+0080D88E: lsls       r3, r0, #2
+0080D890: lsrs       r0, r3, #0x1f
+0080D892: lsls       r3, r0, #2
+_ZN4Anki4Util18sDebugBreakOnErrorEv
+
+RANGE 0080DAB4..0080DAB6 _ZN4Anki4Util18sDebugBreakOnErrorEv
+0080DAB4: bx         lr
+_ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev
+
+RANGE 008450F4..0084518C _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED1Ev
+008450F4: push       {r4, r5, r6, lr}
+008450F6: sub        sp, #8
+008450F8: mov        r4, r0
+008450FA: ldr        r0, [pc, #0x7c] ; literal[00845178]=007FAD5C
+008450FC: add        r0, pc
+008450FE: ldr        r1, [r0]
+00845100: ldr        r0, [r4, #4]
+00845102: adds       r1, #8
+00845104: str        r1, [r4]
+00845106: cbz        r0, #0x84515a
+00845108: adds       r6, r4, #4
+0084510A: blx        #0x4ce114 ; _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12PoseTreeNode11RemoveOwnerEv -> 008448B4 size=80
+0084510E: ldr        r0, [r6]
+00845110: ldr        r1, [r0, #0x48]
+00845112: cbnz       r1, #0x84515a
+00845114: ldr        r1, [pc, #0x64] ; literal[0084517C]=007FAD3E
+00845116: add        r1, pc
+00845118: ldr        r1, [r1]
+0084511A: ldrb       r1, [r1]
+0084511C: cbnz       r1, #0x84515a
+0084511E: ldr        r1, [r4, #8]
+00845120: cbz        r1, #0x845126
+00845122: ldr        r2, [r1, #4]
+00845124: cbz        r2, #0x84515a
+00845126: mov        r2, r0
+00845128: ldrb       r5, [r2, #0x38]!
+0084512C: tst.w      r5, #1
+00845130: ldr        r3, [r2, #0xc]
+00845132: ite        eq
+00845134: addeq.w    ip, r2, #1
+00845138: ldrne.w    ip, [r0, #0x40]
+0084513C: cmp        r1, #0
+0084513E: itte       ne
+00845140: ldrne      r0, [r1, #4]
+00845142: addne      r5, r0, #1
+00845144: moveq      r5, #0
+00845146: ldr        r1, [pc, #0x3c] ; literal[00845184]=003E4110
+00845148: ldr        r0, [pc, #0x34] ; literal[00845180]=003E40ED
+0084514A: ldr        r2, [pc, #0x3c] ; literal[00845188]=003E4166
+0084514C: add        r1, pc
+0084514E: add        r0, pc
+00845150: add        r2, pc
+00845152: strd       ip, r5, [sp]
+00845156: blx        #0x4a4c6c ; _ZN4Anki4Util24sVerifyFailedReturnFalseEPKcS2_z -> 0080D9A4 size=D8
+0084515A: ldr        r0, [r4, #8]
+0084515C: cbz        r0, #0x845162
+0084515E: blx        #0x4a4ef4 ; _ZNSt6__ndk119__shared_weak_count16__release_sharedEv IMPORT (resolve packaged dependencies before calling external)
+00845162: mov        r0, r4
+00845164: add        sp, #8
+00845166: pop        {r4, r5, r6, pc}
+00845168: mov        r4, r0
+0084516A: mov        r0, r6
+0084516C: blx        #0x4ce120 ; _ZNSt6__ndk110shared_ptrIN4Anki8PoseBaseINS1_6Pose3dENS1_11Transform3dEE12PoseTreeNodeEED2Ev -> 0084495C size=10
+00845170: mov        r0, r4
+00845172: bl         #0x4e39f8
+00845176: nop
+00845178: add        r5, sp, #0x170
+0084517A: lsls       r7, r7, #1
+0084517C: add        r5, sp, #0xf8
+0084517E: lsls       r7, r7, #1
+00845180: lsrs       r5, r5
+00845182: movs       r6, r7
+00845184: asrs       r0, r2
+00845186: movs       r6, r7
+00845188: adcs       r6, r4
+0084518A: movs       r6, r7
+_ZN4Anki16BaseStationTimer11getInstanceEv
+
+RANGE 0084BB9C..0084BBE4 _ZN4Anki16BaseStationTimer11getInstanceEv
+0084BB9C: ldr        r0, [pc, #0x38] ; literal[0084BBD8]=007F42DA
+0084BB9E: add        r0, pc
+0084BBA0: ldr        r0, [r0]
+0084BBA2: ldr        r0, [r0]
+0084BBA4: cbz        r0, #0x84bba8
+0084BBA6: bx         lr
+0084BBA8: push       {r7, lr}
+0084BBAA: movs       r0, #0x28
+0084BBAC: blx        #0x4a42a0 ; _Znwj IMPORT (resolve packaged dependencies before calling external)
+0084BBB0: ldr        r1, [pc, #0x28] ; literal[0084BBDC]=007F42C2
+0084BBB2: movs       r3, #0
+0084BBB4: ldr        r2, [pc, #0x28] ; literal[0084BBE0]=007F42C0
+0084BBB6: add        r1, pc
+0084BBB8: strd       r3, r3, [r0, #0x18]
+0084BBBC: add        r2, pc
+0084BBBE: strd       r3, r3, [r0, #0x20]
+0084BBC2: ldr        r1, [r1]
+0084BBC4: ldr        r2, [r2]
+0084BBC6: strd       r3, r3, [r0, #8]
+0084BBCA: str        r3, [r0, #0x10]
+0084BBCC: adds       r2, #8
+0084BBCE: str        r2, [r0]
+0084BBD0: str        r0, [r1]
+0084BBD2: pop.w      {r7, lr}
+0084BBD6: bx         lr
+0084BBD8: cmn        r2, r3
+0084BBDA: lsls       r7, r7, #1
+0084BBDC: cmn        r2, r0
+0084BBDE: lsls       r7, r7, #1
+0084BBE0: cmn        r0, r0
+0084BBE2: lsls       r7, r7, #1
+_ZNK4Anki16BaseStationTimer23GetCurrentTimeInSecondsEv
+
+RANGE 0084BCA8..0084BCAC _ZNK4Anki16BaseStationTimer23GetCurrentTimeInSecondsEv
+0084BCA8: ldr        r0, [r0, #0x10]
+0084BCAA: bx         lr
+_ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv
+
+RANGE 0084BCC0..0084BCE0 _ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv
+0084BCC0: vldr       d0, [pc, #0x14] ; literal[0084BCD8]=00000000
+0084BCC4: vldr       d1, [r0, #8]
+0084BCC8: vmul.f64   d0, d1, d0
+0084BCCC: vcvt.u32.f64 s0, d0
+0084BCD0: vmov       r0, s0
+0084BCD4: bx         lr
+0084BCD6: nop
+0084BCD8: movs       r0, r0
+0084BCDA: movs       r0, r0
+0084BCDC: ands       r0, r0
+0084BCDE: lsls       r7, r1
+_ZN4Anki7RadiansC1Ef
+
+RANGE 0084C832..0084C846 _ZN4Anki7RadiansC2Ef
+0084C832: push       {r4, lr}
+0084C834: mov        r4, r0
+0084C836: movs       r0, #1
+0084C838: str        r1, [r4]
+0084C83A: strb       r0, [r4, #4]
+0084C83C: mov        r0, r4
+0084C83E: blx        #0x4ce528 ; _ZN4Anki7Radians7rescaleEv -> 0084C87C size=CC
+0084C842: mov        r0, r4
+0084C844: pop        {r4, pc}
+_ZNK4Anki7Radians6IsNearERKS0_S2_
+
+RANGE 0084CC0A..0084CC5E _ZNK4Anki7Radians6IsNearERKS0_S2_
+0084CC0A: push       {r4, r5, r6, lr}
+0084CC0C: sub        sp, #0x10
+0084CC0E: ldr        r0, [r0]
+0084CC10: movs       r6, #1
+0084CC12: str        r0, [sp, #8]
+0084CC14: add        r0, sp, #8
+0084CC16: mov        r4, r2
+0084CC18: mov        r5, r1
+0084CC1A: strb.w     r6, [sp, #0xc]
+0084CC1E: blx        #0x4ce528 ; _ZN4Anki7Radians7rescaleEv -> 0084C87C size=CC
+0084CC22: strb.w     r6, [sp, #4]
+0084CC26: mov        r0, sp
+0084CC28: vldr       s0, [sp, #8]
+0084CC2C: vldr       s2, [r5]
+0084CC30: vsub.f32   s0, s0, s2
+0084CC34: vstr       s0, [sp]
+0084CC38: blx        #0x4ce528 ; _ZN4Anki7Radians7rescaleEv -> 0084C87C size=CC
+0084CC3C: vldr       s0, [r4]
+0084CC40: movs       r0, #0
+0084CC42: vldr       s2, [sp]
+0084CC46: vabs.f32   s0, s0
+0084CC4A: vabs.f32   s2, s2
+0084CC4E: vcmpe.f32  s2, s0
+0084CC52: vmrs       apsr_nzcv, fpscr
+0084CC56: it         mi
+0084CC58: movmi      r0, #1
+0084CC5A: add        sp, #0x10
+0084CC5C: pop        {r4, r5, r6, pc}
+_ZNK4Anki7Radians10getDegreesEv
+
+RANGE 0084CD40..0084CD58 _ZNK4Anki7Radians10getDegreesEv
+0084CD40: vldr       s0, [pc, #0x10] ; literal[0084CD54]=42652EE1
+0084CD44: vldr       s2, [r0]
+0084CD48: vmul.f32   s0, s2, s0
+0084CD4C: vmov       r0, s0
+0084CD50: bx         lr
+0084CD52: nop
+0084CD54: cmp        r6, #0xe1
+0084CD56: rsbs       r5, r4, #0
+_ZN4Anki6Vision11FaceTracker20EnableSmileDetectionEb
+
+RANGE 0086B284..0086B28C _ZN4Anki6Vision11FaceTracker20EnableSmileDetectionEb
+0086B284: ldr        r0, [r0]
+0086B286: strb.w     r1, [r0, #0x42]
+0086B28A: bx         lr
+_ZN4Anki6Vision11FaceTracker19EnableGazeDetectionEb
+
+RANGE 0086B28C..0086B294 _ZN4Anki6Vision11FaceTracker19EnableGazeDetectionEb
+0086B28C: ldr        r0, [r0]
+0086B28E: strb.w     r1, [r0, #0x43]
+0086B292: bx         lr
+_ZN4Anki6Vision11FaceTracker20EnableBlinkDetectionEb
+
+RANGE 0086B294..0086B29C _ZN4Anki6Vision11FaceTracker20EnableBlinkDetectionEb
+0086B294: ldr        r0, [r0]
+0086B296: strb.w     r1, [r0, #0x44]
+0086B29A: bx         lr
+
+Virtual slots 24/28/2C for the move first update: zero, zero, 30f; timer getters; getDegrees; enum names; shipped debug break
+
+RANGE 0052B0BA..0052B0D0
+0052B0BA: movs       r0, #0
+0052B0BC: bx         lr
+0052B0BE: movs       r0, #0
+0052B0C0: bx         lr
+0052B0C2: movs       r0, #0
+0052B0C4: movt       r0, #0x41f0
+0052B0C8: bx         lr
+0052B0CA: movs       r0, r0
+0052B0CC: push       {r4, r5, r6, r7, lr}
+0052B0CE: sub        sp, #0x24
+
+RANGE 0084BB9C..0084BBCC _ZN4Anki16BaseStationTimer11getInstanceEv
+0084BB9C: ldr        r0, [pc, #0x38] ; literal[0084BBD8]=007F42DA
+0084BB9E: add        r0, pc
+0084BBA0: ldr        r0, [r0]
+0084BBA2: ldr        r0, [r0]
+0084BBA4: cbz        r0, #0x84bba8
+0084BBA6: bx         lr
+0084BBA8: push       {r7, lr}
+0084BBAA: movs       r0, #0x28
+0084BBAC: blx        #0x4a42a0 ; _Znwj IMPORT (resolve packaged dependencies before calling external)
+0084BBB0: ldr        r1, [pc, #0x28] ; literal[0084BBDC]=007F42C2
+0084BBB2: movs       r3, #0
+0084BBB4: ldr        r2, [pc, #0x28] ; literal[0084BBE0]=007F42C0
+0084BBB6: add        r1, pc
+0084BBB8: strd       r3, r3, [r0, #0x18]
+0084BBBC: add        r2, pc
+0084BBBE: strd       r3, r3, [r0, #0x20]
+0084BBC2: ldr        r1, [r1]
+0084BBC4: ldr        r2, [r2]
+0084BBC6: strd       r3, r3, [r0, #8]
+0084BBCA: str        r3, [r0, #0x10]
+
+RANGE 0084BCA8..0084BCAC _ZNK4Anki16BaseStationTimer23GetCurrentTimeInSecondsEv
+0084BCA8: ldr        r0, [r0, #0x10]
+0084BCAA: bx         lr
+
+RANGE 0084CD40..0084CD58 _ZNK4Anki7Radians10getDegreesEv
+0084CD40: vldr       s0, [pc, #0x10] ; literal[0084CD54]=42652EE1
+0084CD44: vldr       s2, [r0]
+0084CD48: vmul.f32   s0, s2, s0
+0084CD4C: vmov       r0, s0
+0084CD50: bx         lr
+0084CD52: nop
+0084CD54: cmp        r6, #0xe1
+0084CD56: rsbs       r5, r4, #0
+
+RANGE 0080DAB4..0080DAB6 _ZN4Anki4Util18sDebugBreakOnErrorEv
+0080DAB4: bx         lr
+
+RANGE 00796BBC..00796BD4 _ZN4Anki5Cozmo12EnumToStringENS0_10VisionModeE
+00796BBC: cmp        r0, #0x10
+00796BBE: itt        hi
+00796BC0: movhi      r0, #0
+00796BC2: bxhi       lr
+00796BC4: ldr        r1, [pc, #8] ; literal[00796BD0]=0089D666
+00796BC6: add        r1, pc
+00796BC8: ldr.w      r0, [r1, r0, lsl #2]
+00796BCC: bx         lr
+00796BCE: nop
+00796BD0: bvs        #0x796ca0
+00796BD2: lsls       r1, r1, #2
+
+Native strings: empty null-recipient format; mode logs; motion logs and names
+00BE3F00 b''
+00C014D4 b'VisionSystem.EnablingMode'
+00C014EE b'Adding mode %s to current mode %s.'
+00C01511 b'VisionSystem.DisablingMode'
+00C0152C b'Removing mode %s from current mode %s.'
+00BE9DE8 b'[%d] ActionID: %d'
+00BEA245 b'MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition'
+00BEA27C b'[%d] Head considered in position at %.1fdeg but still moving at %.1fdeg'
+00BEA2C4 b'MoveHeadToAngleAction.CheckIfDone.NotInPosition'
+00BEA2F4 b'[%d] Waiting for head to get in position: %.1fdeg vs. %.1fdeg(+/-%.1f) tol:%.1fdeg'
+00BEA347 b'MoveHeadToAngleAction.CheckIfDone.StoppedMakingProgress'
+00BEA37F b'[%d] giving up since we stopped moving'
+00BEA400 b'[%d] Waiting for lift to get in position: %.1fmm vs. %.1fmm (tol: %f)'
+00BEA446 b'MoveLiftToHeightAction.CheckIfDone.StoppedMakingProgress'
+00BE6950 b'Robot.UpdateFullRobotState.MismatchedFrameIDs'
+00BE697E b'Robot[%u] and engine[%u] frameIDs are mismatched, delocalizing'
+VisionMode 0: 00C1DB6E b'Idle'
+VisionMode 1: 00C1DB73 b'DetectingMarkers'
+VisionMode 2: 00C1DB84 b'DetectingFaces'
+VisionMode 3: 00C1DB93 b'DetectingMotion'
+VisionMode 4: 00C1DBA3 b'DetectingOverheadEdges'
+VisionMode 5: 00C1DBBA b'ReadingToolCode'
+VisionMode 6: 00C1DBCA b'ComputingCalibration'
+VisionMode 7: 00C1DBDF b'CheckingQuality'
+VisionMode 8: 00C1DBEF b'ComputingStatistics'
+VisionMode 9: 00C1DC03 b'DetectingPets'
+VisionMode 10: 00C1DC11 b'EstimatingFacialExpression'
+VisionMode 11: 00C1DC2C b'DetectingSmileAmount'
+VisionMode 12: 00C1DC41 b'DetectingGaze'
+VisionMode 13: 00C1DC4F b'DetectingBlinkAmount'
+VisionMode 14: 00C1DC64 b'LimitedExposure'
+VisionMode 15: 00C1DC74 b'DetectingLaserPoints'
+
+E4 tail-call veneer reopened (Thumb entry, then ARM):
+Primary resources\lib\armeabi-v7a\libcozmoEngine.so SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Arguments ['resources/lib/armeabi-v7a/libcozmoEngine.so', '8CD05C:8CD060', 'A8CD060:8CD068']
+
+RANGE 008CD05C..008CD060
+008CD05C: bx         pc
+008CD05E: mov        r8, r8
+
+RANGE 008CD060..008CD068
+008CD060: ldr        ip, [pc] ; ARM PC+8 literal[008CD068]=FFBED2F0
+008CD064: add        pc, ip, pc
+
+008CD06C + FFBED2F0 mod2^32 = 004BA35C, resolved SetNextMode target006B2282 already reopened above.
+
+Queue lifetime lead, not new descendant build authority: VisionSystem destructor006B1E92..006B2152 includes add r0,r4,#B0 at006B20FA, deque-base destructor006B20FE ->006BA20E. Whole-owner removal is checked CB33/CC26/CC27; retained host reset remains the existing M4-027 candidate.

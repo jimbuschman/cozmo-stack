@@ -922,10 +922,11 @@ public sealed class CozmoSensors
                             statsAllowed = _frameMismatchCount < 0x65;
                             if (_frameMismatchCount >= 0x65)
                             {
-                                _frameMismatchCount = 0;
                                 // fidelity: M11-019
                                 // 0x00512F24..0x00512F96: sErrorF "Robot.UpdateFullRobotState.MismatchedFrameIDs" (state frame id, then robot+0x2B0), +0x2C0 = 0, Robot::Delocalize.
-                                _robot.Engine.Log($"Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing");
+                                _robot.Engine.Log(FormattableString.Invariant($"error: Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing"));
+                                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 00512F7A, 00512F7C..7E
+                                _frameMismatchCount = 0; // 00512F88: after log/error flag, before Delocalize.
                                 FrameMismatchDelocalizeTrigger = s;
                             }
                         }

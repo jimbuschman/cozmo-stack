@@ -806,6 +806,67 @@ public class M4ControlTests
         Assert.Equal(TimeSpan.FromSeconds(30), CozmoMotion.DefaultActionTimeout);
     }
 
+    [Fact]
+    public async Task M4_016_CheckedStartStampUsesFirstUpdateRatherThanTheEnqueueClock()
+    {
+        // 00540D52..64 stamps +74 on first UpdateInternal. Enqueue while the timer still holds an old tick.
+        using var rig = new Rig();
+        rig.ToSynced(); rig.Calibrate(); rig.State();
+        var move = rig.Robot.Motion.SetHeadAngleAsync(0.5f);
+        rig.Tick(31_000); // the first action update: a pre-stamped action would already have timed out.
+        Assert.False(move.IsCompleted);
+        rig.Tick(29_000);
+        Assert.False(move.IsCompleted);
+        rig.Tick(1000); // inclusive start+30f comparison at 00540DA2..AA.
+        Assert.True(move.IsCompleted);
+        var outcome = await move;
+        Assert.Equal(MotionResult.Failed, outcome.Result);
+        Assert.Equal(0x03000018u, outcome.EngineResult);
+    }
+
+    [Fact]
+    public void M4_017_CheckedNullVisionErrorStillSendsHeadlight()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        EngineErrorState.ErrorFlagSet = false;
+        int mark = rig.Mark();
+        rig.Robot.Lights.SetHeadlight(true);
+        Assert.Contains("error: VisionComponent.EnableMode.NullVisionSystem: ", rig.Log);
+        Assert.True(EngineErrorState.ErrorFlagSet);
+        Assert.Single(rig.SentSince(mark).OfType<SetHeadlight>());
+    }
+
+    [Fact]
+    public void M4_017_CheckedHeadlightQueuesModeUntilVisionUpdate()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        using var vision = new VisionSystem(rig.Robot, new CameraCalibration
+        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+        var logs = new List<string>();
+        vision.Log += logs.Add;
+        vision.ModeEnableMask = 1; // Idle; no markers or opaque face recipients involved.
+        var image = new GrayImage(16, 16);
+        var pd = new VisionPoseData(100, Pose3d.Identity, 0, 0, false, false);
+        int mark = rig.Mark();
+        rig.Robot.Lights.SetHeadlight(true);
+        Assert.Equal(1, vision.ModeEnableMask);
+        Assert.Single(rig.SentSince(mark).OfType<SetHeadlight>());
+        vision.ProcessImage(image, 1, 100, pd);
+        Assert.Equal(0x4000, vision.ModeEnableMask); // clear Idle, set LimitedExposure.
+        Assert.Contains("info: VisionSystem.EnablingMode: Adding mode LimitedExposure to current mode Idle.", logs);
+        int before = logs.Count(l => l.Contains("VisionSystem.EnablingMode"));
+        rig.Robot.Lights.SetHeadlight(true);
+        vision.ProcessImage(image, 2, 133, pd);
+        Assert.Equal(before, logs.Count(l => l.Contains("VisionSystem.EnablingMode")));
+        rig.Robot.Lights.SetHeadlight(false);
+        Assert.Equal(0x4000, vision.ModeEnableMask);
+        vision.ProcessImage(image, 3, 166, pd);
+        Assert.Equal(1, vision.ModeEnableMask); // empty mask becomes Idle.
+        Assert.Contains("info: VisionSystem.DisablingMode: Removing mode LimitedExposure from current mode LimitedExposure.", logs);
+    }
+
     /// <summary>
     /// IActionRunner::Interrupt 0x00540250 calls virtual +0x14 and acts only on a 1. MoveLiftToHeightAction's
     /// vtable `_ZTVN4Anki5Cozmo22MoveLiftToHeightActionE` = 0x10219B4 (object vptr 0x10219BC, +0x14 = 0x10219D0)
@@ -906,6 +967,8 @@ public class M4ControlTests
         var r = await pending.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.Equal(MotionResult.Failed, r.Result);
         Assert.Equal(0x04000004u, r.EngineResult);
+        Assert.Contains(rig.Log, l => l.StartsWith("warning: MoveHeadToAngleAction.CheckIfDone.StoppedMakingProgress: [")
+            && l.EndsWith("] giving up since we stopped moving"));
     }
 
     /// <summary>
@@ -927,6 +990,8 @@ public class M4ControlTests
         rig.Data(new MotorActionAck { ActionId = sent.ActionId }); rig.Tick();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode, head: 0.5f);                               // at the target, moving
         Assert.False(pending.IsCompleted);
+        Assert.Contains(rig.Log, l => l.StartsWith("info: MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition: [")
+            && l.EndsWith("Head considered in position at 28.6deg but still moving at 28.6deg"));
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos, head: 0.4f);   // stopped outside 2 deg
         var r = await pending.WaitAsync(TimeSpan.FromSeconds(2));
         Assert.True(r.Ok, r.Detail);
@@ -1889,6 +1954,30 @@ public class M4ControlTests
             Assert.Equal(1, off.Robot2C4);
             cubes.Update();                                            // first Update after it returns to 1: applied
             Assert.Equal("carrying", cubes.TopPatternName(type));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    [Fact]
+    public void M4_018_CheckedRefreshReadsTheSetLocalizedToOwner()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced(); rig.State();
+            using var vision = new VisionSystem(rig.Robot);
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var lights = rig.Robot.Lights.Cubes;
+            vision.World.OnRobotDelocalized();
+            lights.OnRobotDelocalized();
+            Assert.False(lights.IsLocalized!());
+            lights.Update(); // C11.2: request remains pending while the owner's flag is zero.
+            vision.World.SetLocalizedTo(new ObservableObject(42, type, CubeGeometry.MarkersFor(type)));
+            Assert.True(lights.IsLocalized!()); // OffTreads' separate retained flag cannot answer this writer.
+            lights.Update();
+            Assert.Equal(vision.World.Robot2C4 != 0, lights.IsLocalized());
         }
         finally { Directory.Delete(res, true); }
     }

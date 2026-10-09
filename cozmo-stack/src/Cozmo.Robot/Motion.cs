@@ -879,6 +879,14 @@ bool requireCalibration = true)
     /// </summary>
     private sealed class MoveAction : ActionRunner
     {
+        // fidelity: M4-016 — process-lifetime u16 debug counters, head 01051028/2A, lift 0105102C/2E.
+        private static readonly object DebugCounterGate = new();
+        private static ushort _headWaitingAck, _headNotInPosition, _liftWaitingAck, _liftNotInPosition;
+        private static bool Eleventh(ref ushort counter)
+        {
+            counter = unchecked((ushort)(counter + 1));
+            return counter >= 11;
+        }
         public readonly CozmoMotion Owner;
         public readonly bool IsHead;
         public readonly float Target, Tolerance;
@@ -960,12 +968,53 @@ bool requireCalibration = true)
         {
             lock (Owner._gate)
             {
-                if (Sent && !Acked) return EngineActionResult.Running;
+                string name = IsHead ? "MoveHeadToAngleAction" : "MoveLiftToHeightAction";
+                int tag = unchecked((int)Tag); // native %d, not unsigned formatting.
+                if (Sent && !Acked)
+                {
+                    lock (DebugCounterGate)
+                    {
+                        ref ushort count = ref (IsHead ? ref _headWaitingAck : ref _liftWaitingAck);
+                        if (Eleventh(ref count))
+                        {
+                            Owner.Log(FormattableString.Invariant($"debug: {name}.CheckIfDone.WaitingForAck: [{tag}] ActionID: {Id}"));
+                            count = 0; // native reset follows the log.
+                        }
+                    }
+                    return EngineActionResult.Running;
+                }
                 if (Owner.InPositionLocked(this)) InPositionLatched = true;
                 bool moving = Owner.MovingLocked(this);
                 if (moving) HasMoved = true;
-                if (InPositionLatched) return moving ? EngineActionResult.Running : EngineActionResult.Success;
-                if (!moving && HasMoved) return ResultStoppedMakingProgress;
+                if (InPositionLatched)
+                {
+                    if (IsHead && moving)
+                    {
+                        float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+                        Owner.Log(FormattableString.Invariant($"info: MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition: [{tag}] Head considered in position at {Target * degrees:F1}deg but still moving at {Owner._headAngle * degrees:F1}deg"));
+                    }
+                    return moving ? EngineActionResult.Running : EngineActionResult.Success;
+                }
+                lock (DebugCounterGate)
+                {
+                    ref ushort count = ref (IsHead ? ref _headNotInPosition : ref _liftNotInPosition);
+                    if (Eleventh(ref count))
+                    {
+                        if (IsHead)
+                        {
+                            float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+                            // Game/compound construction uses variability 0 (MA10), tolerance at +80, variability +88.
+                            Owner.Log(FormattableString.Invariant($"debug: MoveHeadToAngleAction.CheckIfDone.NotInPosition: [{tag}] Waiting for head to get in position: {Owner._headAngle * degrees:F1}deg vs. {Target * degrees:F1}deg(+/-{0f:F1}) tol:{Tolerance * degrees:F1}deg"));
+                        }
+                        else Owner.Log(FormattableString.Invariant($"debug: MoveLiftToHeightAction.CheckIfDone.NotInPosition: [{tag}] Waiting for lift to get in position: {Owner.CurrentLiftHeightMm():F1}mm vs. {Target:F1}mm (tol: {Tolerance:F6})"));
+                        count = 0;
+                    }
+                }
+                if (!moving && HasMoved)
+                {
+                    Owner.Log(FormattableString.Invariant($"warning: {name}.CheckIfDone.StoppedMakingProgress: [{tag}] giving up since we stopped moving"));
+                    return ResultStoppedMakingProgress;
+                }
                 return EngineActionResult.Running;
             }
         }

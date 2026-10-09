@@ -202,6 +202,8 @@ public sealed class CozmoRobot : IDisposable
     /// <summary>The robot's carrying component, shared by docking and outgoing engine state.</summary>
     public Manipulation.CarryingComponent Carrying { get; internal set; } = new();
     internal Vision.BlockWorld LocalizationWorld { get; set; } = new();
+    // fidelity: M4-017
+    internal Vision.VisionSystem? VisionModeRecipient { get; set; }
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
     public CozmoLights Lights { get; }
     /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>

@@ -362,12 +362,17 @@ public sealed class CozmoLights
     /// E2..E7: the engine first calls <c>VisionComponent::EnableMode(14)</c> (LimitedExposure) on robot+0x258, which
     /// queues (mode, bool) on <c>VisionSystem::SetNextMode</c> (the deque at VisionSystem+0xB0); the mask bit is
     /// applied when <c>VisionSystem::Update</c> drains the queue.
-    /// MISSING: this stack's VisionSystem has no mode queue (only the direct <c>ModeEnableMask</c>), so the queued
-    /// EnableMode(14) cannot be reproduced here. It needs the M11 VisionSystem mode queue
-    /// (SetNextMode/Update-drain). The wire send itself is exact.
+    /// The queue lives on the actual VisionSystem. Its absent-recipient error still proceeds to the wire send.
     /// </summary>
     public void SetHeadlight(bool on)
     {
+        if (_robot.VisionModeRecipient is { } vision) vision.QueueLimitedExposure(on);
+        else
+        {
+            // E4: 006527CA empty format at 00BE3F00; 00652800 _errG store, then the debug-break gate.
+            _robot.Engine.Log("error: VisionComponent.EnableMode.NullVisionSystem: ");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
         _robot.SendMessage(new SetHeadlight(on));
         HeadlightOn = on;
     }
@@ -834,16 +839,20 @@ public sealed class CubeLightComponent
         var defaults = new List<ObjectType>();
         lock (_gate)
         {
-            if (type is null) _gameLayerOnlyDefault = false;   // comp+0x22 (id −1 only)
-            foreach (var (t, info) in _infos)
+            defaults.AddRange(_infos.Keys.Where(t => type is null || t == type));
+        }
+        foreach (var t in defaults)
+        {
+            lock (_gate)
             {
-                if (type is not null && t != type) continue;
+                if (!_infos.TryGetValue(t, out var info)) continue;
                 info.GameLayerOnly = false;
                 info.CurrentLayer = info.Layers[EngineLayer].Count > 0 ? EngineLayer : StateLayer;
-                defaults.Add(t);
             }
+            // 00639AFA..00639B0E: clear and repick each object before advancing to the next.
+            PickNextAnimForDefaultLayer(t);
         }
-        foreach (var t in defaults) PickNextAnimForDefaultLayer(t);
+        if (type is null) lock (_gate) _gameLayerOnlyDefault = false; // 00639B32, after the per-object calls.
     }
 
     // fidelity: M4-018

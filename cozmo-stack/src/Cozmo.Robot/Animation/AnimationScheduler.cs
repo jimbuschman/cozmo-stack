@@ -1627,6 +1627,8 @@ public sealed class AnimationScheduler
         private readonly AnimationScheduler _s;
         private readonly StreamTrack<StreamKeyframe> _track;
         private short[]? _pcm;
+        private float[]? _floatPcm;
+        private IAnimationFloatAudioSource? _floatSource;
         private long? _eventId;
         private int _pos;
 
@@ -1637,10 +1639,10 @@ public sealed class AnimationScheduler
         }
 
         public bool IsReady => true;
-        public bool IsComplete => _track.AtEnd && _pcm is null;
-        public bool Streaming => _pcm is not null;
+        public bool IsComplete => _track.AtEnd && !Streaming;
+        public bool Streaming => _pcm is not null || _floatPcm is not null;
 
-        public void Abort() { _pcm = null; _eventId = null; _pos = 0; }
+        public void Abort() { _pcm = null; _floatPcm = null; _floatSource = null; _eventId = null; _pos = 0; }
 
         public void Update(long start, long streamTime)
         {
@@ -1665,16 +1667,25 @@ public sealed class AnimationScheduler
             long id = k.EventIds[chosen];
             if (source.IsStopEvent(id))
             {
-                if (_pcm is not null && (_eventId is not { } playing || source.StopAffects(id, playing)))
+                if (Streaming && (_eventId is not { } playing || source.StopAffects(id, playing)))
                 {
-                    _pcm = null; _pos = 0; _eventId = null;
+                    Abort();
                     _s.AudioStops++;
                 }
                 return;
             }
+            // fidelity: M3-010
+            // C5–C7: retain the actual f32 vector. MISSING: the M6 Wwise renderer still supplies shorts.
+            if (source is IAnimationFloatAudioSource floats)
+            {
+                var rendered = floats.GetFloatPcm(id, k.Volume);
+                if (rendered is null || rendered.Length == 0) return;
+                _floatPcm = rendered; _floatSource = floats; _pcm = null; _pos = 0; _eventId = id;
+                return;
+            }
             var pcm = source.GetPcm(id, k.Volume);
             if (pcm is null || pcm.Length == 0) return;
-            _pcm = pcm; _pos = 0; _eventId = id;
+            _pcm = pcm; _floatPcm = null; _floatSource = null; _pos = 0; _eventId = id;
         }
 
         /// <summary>
@@ -1683,6 +1694,19 @@ public sealed class AnimationScheduler
         /// </summary>
         public byte[]? PopFrame()
         {
+            // fidelity: M3-010
+            // 00597DFC..00597E34: f32 encoder, no volume multiply, 744 bytes including zero-filled tail.
+            if (_floatPcm is { } floats)
+            {
+                int count = Math.Min(CozmoAudio.SamplesPerFrame, floats.Length - _pos);
+                int readyCount = _floatSource!.ReadySamples(floats, _pos);
+                if (Math.Max(0, readyCount - _pos) < count) return null;
+                var frame = new byte[CozmoAudio.SamplesPerFrame];
+                for (int i = 0; i < count; i++) frame[i] = AnkiMuLaw.Encode(floats[_pos + i], _s.Log);
+                _pos += count;
+                if (_pos >= floats.Length) Abort();
+                return frame;
+            }
             if (_pcm is not { } pcm || _pos >= pcm.Length) return null;
             int want = Math.Min(CozmoAudio.SamplesPerFrame, pcm.Length - _pos);
             int ready = _s.AudioSource is { } src ? src.ReadySamples(pcm, _pos) : pcm.Length;

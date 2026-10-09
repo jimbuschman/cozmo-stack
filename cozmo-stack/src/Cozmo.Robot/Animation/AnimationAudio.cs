@@ -3,6 +3,14 @@ using System.Text;
 
 namespace Cozmo.Robot.Animation;
 
+/// <summary>M3-010 C5–C7: the rendered vector of normalized f32 samples consumed by the engine encoder.
+/// M6 supplies these samples; this interface performs no short conversion or volume scaling.</summary>
+public interface IAnimationFloatAudioSource : IAnimationAudioSource
+{
+    float[]? GetFloatPcm(long eventId, float volume);
+    int ReadySamples(float[] pcm, int consumed) => pcm.Length;
+}
+
 /// <summary>
 /// Supplies the sound an audio keyframe asks for.
 ///

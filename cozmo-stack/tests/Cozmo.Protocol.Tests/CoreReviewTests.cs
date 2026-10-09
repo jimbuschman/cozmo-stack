@@ -562,6 +562,44 @@ public class CoreReviewTests
         }
     }
 
+    private sealed class FloatSource : IAnimationFloatAudioSource
+    {
+        public readonly float[] Samples = { 0.5f, -0.5f, float.NaN, 1f, -1f };
+        public int ReadyCount;
+        public short[]? GetPcm(long eventId, float volume) => throw new InvalidOperationException("float source was quantized");
+        public float[]? GetFloatPcm(long eventId, float volume) => Samples;
+        public int ReadySamples(float[] pcm, int consumed) => ReadyCount;
+        public string? NameOf(long eventId) => "float";
+    }
+
+    [Fact]
+    public void M3_010_CheckedFloatInputReachesTheWireEncoderWithoutScaling()
+    {
+        // C6: trunc(.5*32767)=16383 => segment 6, mantissa 15 (6F); sign adds 80.
+        // Full scale => 7F/FF; NaN warning + zero; C5 remainder is raw zero bytes.
+        var source = new FloatSource();
+        var emitted = new List<byte[]?>();
+        var logs = new List<string>();
+        var scheduler = new AnimationScheduler(new RecordingSink(emitted)) { AudioSource = source, Log = logs.Add };
+        scheduler.Play(new AnimationClip
+        {
+            Name = "float", Tracks = AnimationTrack.Audio, DurationMs = 1000,
+            Keyframes = new Keyframe[] { new AudioKeyframe(0, new long[] { 7 }, 0.25f, Array.Empty<float>(), false) },
+        }, 0);
+        scheduler.Advance(0);
+        Assert.All(emitted, Assert.Null); // nothing rendered yet: do not consume.
+        source.ReadyCount = 5;
+        scheduler.Advance(33);
+        scheduler.Advance(66);
+        scheduler.Advance(99);
+        var frame = Assert.Single(emitted.Where(f => f is not null))!;
+        Assert.Equal(744, frame.Length);
+        Assert.Equal(new byte[] { 0x6F, 0xEF, 0, 0x7F, 0xFF }, frame[..5]);
+        Assert.All(frame[5..], b => Assert.Equal(0, b));
+        Assert.Contains("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN", logs);
+        Assert.False(scheduler.AudioStreaming);
+    }
+
     /// <summary>
     /// CORE-006, the readiness half. The scheduler was handed the whole buffer of a song that renders as
     /// it plays and read it regardless of how much had been committed, so anything the renderer had not

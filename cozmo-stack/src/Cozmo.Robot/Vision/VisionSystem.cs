@@ -60,6 +60,10 @@ public sealed class VisionSystem : IDisposable
         // reads the carrying and treads state from the components that own them.
         World = new BlockWorld();
         robot.LocalizationWorld = World;
+        // fidelity: M4-018, M4-017
+        // C11.2: read the same localization owner as SetLocalizedTo and the published game status.
+        robot.Lights.Cubes.IsLocalized = () => World.Robot2C4 != 0;
+        robot.VisionModeRecipient = this;
         World.IsCarryingObject = id => Carrying(id);
         World.OnTreads = () => robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         // fidelity: M11-037
@@ -187,6 +191,10 @@ public sealed class VisionSystem : IDisposable
     internal void ResetToConstructed()
     {
         Interlocked.Increment(ref _removals);
+        // fidelity: M4-017, M1-025, M4-027
+        // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
+        // The retained-host reset remains the M4-027 candidate; do not replay requests on a later robot.
+        lock (_modeGate) _limitedExposureRequests.Clear();
         RemovalInvalidated?.Invoke();
         bool locked = Monitor.TryEnter(_busy, RemovalWait);
         try
@@ -291,6 +299,50 @@ public sealed class VisionSystem : IDisposable
 
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
     public int ModeEnableMask { get; set; } = ShippedModeEnableMask;
+
+    // fidelity: M4-017
+    // E5: VisionSystem+0xB0. This bounded caller only queues mode 14; other mode recipients remain M11.
+    private sealed record LimitedExposureRequest(bool Enable);
+    private readonly Queue<LimitedExposureRequest> _limitedExposureRequests = new();
+    private readonly object _modeGate = new();
+    internal void QueueLimitedExposure(bool enable)
+    {
+        lock (_modeGate) _limitedExposureRequests.Enqueue(new LimitedExposureRequest(enable));
+    }
+
+    private void ApplyQueuedLimitedExposure()
+    {
+        // E6: EnableMode before pop_front; E7: log before writing +0xAC, and no log for an unchanged bit.
+        while (true)
+        {
+            LimitedExposureRequest request;
+            lock (_modeGate) if (!_limitedExposureRequests.TryPeek(out request!)) return;
+            bool enable = request.Enable;
+            const int bit = 1 << 14;
+            if (((ModeEnableMask & bit) != 0) != enable)
+            {
+                string current = string.Join("+", Enumerable.Range(0, 16)
+                    .Where(i => (ModeEnableMask & (1 << i)) != 0).Select(i => ((VisionMode)i).ToString()));
+                Log?.Invoke(enable
+                    ? $"info: VisionSystem.EnablingMode: Adding mode LimitedExposure to current mode {current}."
+                    : $"info: VisionSystem.DisablingMode: Removing mode LimitedExposure from current mode {current}.");
+                if (enable) ModeEnableMask = (ModeEnableMask & ~1) | bit;
+                else
+                {
+                    ModeEnableMask &= ~bit;
+                    if (ModeEnableMask == 0) ModeEnableMask = 1;
+                }
+            }
+            lock (_modeGate)
+            {
+                // ResetToConstructed can invalidate this owner while its image update is in progress.
+                // Pop only the entry just applied; never a new owner's request after a removal cleared it.
+                if (_limitedExposureRequests.TryPeek(out var head) && ReferenceEquals(head, request))
+                    _limitedExposureRequests.Dequeue();
+                else return;
+            }
+        }
+    }
 
     /// <summary>
     /// <c>VisionSystem::ShouldProcessVisionMode(mode)</c> 0x006B5AA4: the mode's enable bit in the
@@ -877,6 +929,8 @@ public sealed class VisionSystem : IDisposable
         {
             if (RemovedSince(removal)) return null;
             Volatile.Write(ref _frameTimestamp, timestamp);
+            // fidelity: M4-017 — E6, before ShouldProcessVisionMode dispatch in this image update.
+            ApplyQueuedLimitedExposure();
             // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the
             // marker-mode gate; DetectMarkersWithCLAHE picks the original or the CLAHE image from the
             // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
@@ -1036,6 +1090,11 @@ public sealed class VisionSystem : IDisposable
 
     public void Dispose()
     {
+        if (ReferenceEquals(_robot.VisionModeRecipient, this))
+        {
+            _robot.VisionModeRecipient = null;
+            _robot.Lights.Cubes.IsLocalized = () => _robot.Sensors.OffTreads.Robot2C4 != 0;
+        }
         _robot.Message -= OnMessage;
         _robot.Camera.FrameForVision -= OnFrame;
         _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
