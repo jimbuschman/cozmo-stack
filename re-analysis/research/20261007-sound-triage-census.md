@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through390 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through391 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2091,3 +2091,7 @@ PC389 joins selected mapping/floor/residue handoff order and final overlap flag/
 ## Checkpoint 390 — Vorbis restart products
 
 VR390 closes known direct/streamed slot18 mode gates, decoder reset, table-based current-position recovery, pending/residual consumption and raw-result publication. Concrete A75794/AB04F0 decision recipients retained; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 391 — restart recipients
+
+RS391 closes direct pending-position/table/PBI publication and generic restart mode/current-position fallback/raw-result controls, reusing SK and HS recipients. Concrete streamed converter AB1138 retained; counts unchanged, Q15 pending Q14.

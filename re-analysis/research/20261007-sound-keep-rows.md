@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 391 — restart seek recipients and generic status
+
+Primary: `20261009-sound-codec-restart-seek-recipients-native.txt`, same engine hash; 172 instruction words. C=codec, P=C.C; offsets hex. SK1–5 seek value/loop/cue conversion and HS7/HS8 pending seek/settings are already positive and reused.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| RS391A direct requested-position admission | AB04F0..AB054C;SK1–5 | CallA736D4(C) first; preserve its loop/cue mutations. Require unsigned desired<C14 total frames, else2. Desired0 chooses byteoffsetA4,rounded0. Positive desired requires C0 table and A0>>2 count nonzero; absence returns2 without cursor/residual publication. No synthetic0-frame fallback on explicit pending seek. |
+| RS391B direct table rounding/publication | AB0550..AB05E0 | Physicalu16(frameDelta,byteDelta) pairs; include when desired>=wrapping cumulativeFrames. No included pair: rounded0,byteoffsetA4. Included prefix: rounded prior cumulativeFrames,byteoffset=sumIncludedBytes+A0 (also on exhaustion). Write C18 rounded, C8=CC+byteoffset, P1B4=desired−rounded wrapping32; clear P1BD bit7 and P1BE bits0/1; return1. Desired conversion and table failures return before these stores, but may retain SK mutations. VR390 consumes the residual later; no decoder trim here. |
+| RS391C generic mode0 | A75794..A75800;A7584C..A758BC | A75794 mode0 publishes C18=0,C38=u16(P1B8) or1 ifPnull; C14==0 returns2. Otherwise own7C(C,0,&C18,&byteoffset) must return1; non1 maps2. Success clears C5C before stream3C(C3C,requestedOffset,0,0,0,&actual); non1 maps2. Success C50=requested−actual,C4C=actual,HS8 settings helper, then stream30 rawresult returned. Prior position/counter/loop stores persist on failure. |
+| RS391D generic mode1 pending | A75804..A75848;A757B8..A757CC;HS7/HS8 | Thirdarg nonzero callsA74BA0; non1 is immediately returned raw, without stream30. Result1 calls stream30 and returns rawresult. Already-positive HS7/8 own desired gate, converter, stream seek, settings and pending-residual publication. VR390 still initializes/resets decoder for mode<=1 even when this generic helper returns non1. |
+| RS391E generic mode1 current position | A75810..A75838;A758DC..A7594C | Thirdarg0 and unsigned C18<C14: callown7C(C,current,&C18,&offset). Result1 clears C5C thenstream3C requestedOffset,0,0,0,&actual; result1 publishes C50/C4C, callsHS8,thenstream30. Converter orstreamseek non1 reloads C14 and attempts mode0's position0 conversion/seek when totalnonnull. Total0 returns2. Current>=total similarly selects position0 fallback, not clamp-to-last-frame. No rollback of failed current-position mutations before fallback. |
+| RS391F other modes/final recipient | A757A8..A757CC;A758C0..A758D8 | Mode2 copies P1BD bit6 to C10 bit1 preserving others, then callsstream30; P has no nullguard there. Every other mode except0/1 callsstream30 without that flag store. Final stream30 rawresult is returned, not normalized to1 or3F. Stream3C byte positioning and backend stream30 execution infrastructure are excluded below; own7C remains a retained codec frame/byte decision. |
+
+out of scope: backend stream seek/execution I/O infrastructure; exact requested offsets, call order and raw-result gates are retained without descent.
+
+VR390's named A75794/AB04F0 recipients now locally positive. Streamed Vorbis own7C=AB1138 frame/byte conversion remains a concrete retained dependency; broader input/provider/writer joins remain PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 390 — known Vorbis restart decisions
 
 Primary: `20261009-sound-vorbis-restart-decisions-native.txt`, same engine hash; 165 instruction words plus slots. C=codec source, P=C.C context; offsets hex. VI1–VI4 initializer and VM6/AB3244 trim/reset stores reused. Restart admission is separate from an inferred successful restart.
