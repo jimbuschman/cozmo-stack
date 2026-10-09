@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through496 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through497 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -349,6 +349,8 @@ PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, 
 PARTIAL: VF1–VF9 re-open complete voice FX initialization parent, mutable-format and slot ordering, concrete wrapper choice/Init/Reset, failure cleanup and reverse chain connection. Existing PB/FC/P rows cover bounded Play/source/start-list pieces. Remaining: complete Play/PBI/effective-parameter/source/route construction and ownership recipients plus production caller closure.
 
 Checkpoint198 reconciliation: VC184/QC189/PP190 settle bounded creation/reuse/not-ready retention, cancellation/removal and later preparation results; PI188/VI191/CI192 settle initial control/rate input joins. N5194/HC195 settle the known predecessor connection and release/reset recipients. Remaining: complete Play/effective-parameter/source/route construction, dynamic plug-in selection/callbacks, ownership and production caller/writer closure. These joins replace an unread-local-body assumption without promoting the whole item.
+
+Checkpoint497 reconciliation: PA491/DP492/IP493/ES494/AU495/CA496 settle ordinary/external Play caller admission, descriptor choices, audibility, initialization/context/attachment/loop/publication/failure decisions. PC424/BI425/VD490/SA203/SS204/SF1/VC184/QC189/PP190/PF193 reuse original PBI/voice/source/start recipients. V1–14/FC1/SL288F/D1–5/RC7/RG/Y1 and EB497 settle local effective-state and known optional voice bypass joins. Remaining: concrete node/FX/source/route production input/provider/writer closure and additional product families at their specific retained rows; no generic unread Play/constructor/source/start callback assumption. out of scope: coordinate payload/calculations, per-sample DSP and storage/I/O infrastructure. The broad original obligation stays PARTIAL.
 
 ## Q14-033 — triage line 71
 
@@ -2433,3 +2435,5 @@ Checkpoint494 — ES494 external-source clone/raw identity, ordered usable-match
 Checkpoint495 — AU495 Play scalar/mode/selected query, RTPC ordering/raw failure, exact native scalar conversion and live threshold/output-byte/detail29 rejection;237 complete ARM instructions. Coordinate payload/storage excluded, threshold writers remain explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint496 — CA496 shared owner/mode association, ordered selector1 attachments/two reference increments, capacity failure continuation and loop RNG-before-once-flag/selected update interface;136 complete ARM instructions. Backing/positioning payloads excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint497 — EB497 concrete effective-state voice6C/four live70/nodeE8 bypass-before-settings-release and EJ497 original032 body/recipient reconciliation;88 complete ARM instructions. Specific broader inputs/writers retained; generic unread creation wording narrowed. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
