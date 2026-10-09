@@ -1643,3 +1643,7 @@ SN277A–C bind N78 member0 through103BF3C/A2C728 to A2C64C. Prepared-count/firs
 ### Checkpoint 278 — all-bank unload and coverage reconciliation
 
 AU278A–C establish flag-selected unlink/count publication under lock, reverse retirement after unlock and unconditional final result1 despite per-bank failures. Known BR142 retirement reused. Ledger/coverage now reuse261–278; other in-scope families/providers/inputs/writers and totals/Q15/fidelity/production remain unchanged.
+
+### Checkpoint 279 — load command decisions
+
+BL279A–C establish eligibility-before-publication, retained-object/bank failure cleanup and distinction between raw45 completion/storage and function return1. Known loader/registry/event/bank bodies reused; broader input/provider/writer closure remains PARTIAL, totals/Q15/fidelity/production unchanged.
