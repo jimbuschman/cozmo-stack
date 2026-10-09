@@ -1967,3 +1967,7 @@ IR358A–G join known STMG trailing tables to common release and live114 removal
 ### Checkpoint 359 — completion-registry selection and resume
 
 CS359A–G settle ordered leading-zero removal, selected result/event publication and reference changes, callback mask/payload/lock order, and queued operation6/known retain joins. A22/A23/A26 and union evidence reused. Attempt9C9A44 and wider input/provider/vector/state/product closure remain PARTIAL. Counts unchanged, Q15 pending Q14.
+
+### Checkpoint 360 — selected completion-registry attempt
+
+CA360A–G settle selected target/context failure, request/control publication, signed time conversion, correlation-ID generation, local initialized-byte special-branch exclusion, delay/preflight/Play result mapping and ordered cleanup. A26/CS359 local attempt gap superseded, known child/validator/lifetime rows reused. Wider input/vector/state/rate/correlation/provider/product closure remains PARTIAL; counts unchanged, Q15 pending Q14.
