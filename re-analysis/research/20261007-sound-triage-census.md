@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through527 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through528 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -624,6 +624,8 @@ P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch a
 
 P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
 
+P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
+
 ## Q14-074 — triage line 123
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
@@ -662,6 +664,8 @@ P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch a
 
 P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
 
+P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
+
 ## Q14-079 — triage line 128
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
@@ -673,6 +677,8 @@ P138525: actual138 creator/table/context snapshot/format selector/Init admission
 P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
 
 P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
+
+P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
 
 ## Q14-080 — triage line 129
 
