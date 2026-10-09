@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through309 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through310 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1767,3 +1767,7 @@ DCB308A–D bind the created callback table, distinguish heap clone/in-place clo
 ### Checkpoint 309 — Dispatch deadline/stop binding
 
 DQUEUE309A–E bind selected Create/After/Stop, raw64 millisecond scaling plus saved steady-clock deadline, stopflag publication before two separate reverse queued-task clear/notify phases, and sequential joins. Selected workers and admissions still required for in-flight/cancellation guarantees. Counts unchanged, Q14 PARTIAL, Q15 parked.
+
+### Checkpoint 310 — deadline admission
+
+DADMIT310A–E add atomic rawtaskID allocation before clock, signed64 due/future split (equality immediate), holder ownership publication to two queue fields, notify-underlock and deferredsort-before-notify. No runflag gates inthese producers. Deferredsort and worker/constructor remain in scope; counts unchanged, Q14 PARTIAL, Q15 parked.
