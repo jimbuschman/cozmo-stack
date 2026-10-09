@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through323 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through324 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -232,7 +232,7 @@ PARTIAL: CR/MR establish dispatch, gain pairs, channel layout/count and mixer co
 
 > | M6-012 | **VERIFY** | 0x00A25FF8;0x00A1F79C;0x00A209BC | Separate pure matrix-weight calculation from channel selection, speaker-mask routing and parameter/state writes before permitting any equivalent arithmetic. |
 
-PARTIAL: MX1–MX5 establish format/count/mode gates, exact matrix geometry, table-selected routing and primary evidence that A209BC is an interior branch of A1F79C. Remaining: later standard-format routing/mask cases, A234FC and coefficient-to-consumer boundary. No bulk DSP exemption.
+PARTIAL: MX1–MX5 establish format/count/mode gates and A209BC interior identity; CMAT318–320/CGEOM321/CGMAKE322 positively bind A234FC and all its selected local coefficient producers/recipients; MX323 closes standard-to-type2 coefficients; SMAT324 closes standard shortcut/default/table3/high-mask/common-tail branches. Remaining: specialized standard-format routing/mask cases, general pan family, concrete inputs/providers and coefficient-to-consumer boundary. No bulk DSP exemption.
 
 ## Q14-016 — triage line 53
 
@@ -1823,3 +1823,7 @@ CGMAKE322A–G retain authored-angle conversion/store order, transformed coordin
 ### Checkpoint 323 — standard-to-type2 coefficients
 
 MX323A–F record popcount-selected angle tables, contiguous two-family row order, coefficient width gates and exact F32 instruction associations. Supersedes MX3 later source-type1/destination-type2 pending wording; equaltype1 routes/consumers and provider/writer closure remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 324 — standard matrix shortcuts
+
+SMAT324A–G retain raw mode shortcut, default mono-source square-root selection, table3 and generic upper-mask routing, distinct sourcebit3 tail clear/store order. Reconciles Q14-015 local A234FC closure through322 and type2 coefficients323 without settling remaining standard branches/consumer/provider work. Counts unchanged, Q15 parked.
