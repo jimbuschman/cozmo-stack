@@ -1,0 +1,256 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0058D958..0x0058DA96 exclusive; Thumb; _ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE18ApplyLayersToFrameERS3_NSt6__ndk18functionIFbRNS0_10Animations5TrackIS3_EEjjS5_EEE
+0058D958: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0058D95C: sub          sp, #0x24
+0058D95E: add          r6, sp, #0x18
+0058D960: mov          r7, r0
+0058D962: movs         r0, #0
+0058D964: mov          r5, r1
+0058D966: strd         r6, r6, [sp, #0x18]
+0058D96A: str          r0, [sp, #0x20]
+0058D96C: ldr          r8, [r7, #4]!
+0058D970: add.w        sl, r7, #4
+0058D974: cmp          r8, sl
+0058D976: beq          #0x58da66
+0058D978: mov.w        sb, #0
+0058D97C: mov          fp, r8
+0058D97E: mov          r6, r2
+0058D980: str          r7, [sp, #8]
+0058D982: b            #0x58da0c
+0058D984: ldrb.w       r2, [r8, #0x30]
+0058D988: cbz          r2, #0x58d9aa
+0058D98A: ldr.w        r2, [r8, #0x1c]
+0058D98E: cbz          r2, #0x58d9ca
+0058D990: ldr.w        r2, [r8, #0x18]
+0058D994: cmp          r1, r2
+0058D996: itt          ne
+0058D998: ldrne        r1, [r1]
+0058D99A: strne.w      r1, [r8, #0x20]
+0058D99E: str.w        r0, [r8, #0x2c]
+0058D9A2: mov          r0, r4
+0058D9A4: blx          #0x4aea10 ; Anki::Cozmo::Animations::Track<Anki::Cozmo::AnimKeyFrame::AudioSample>::ClearUpToCurrent
+
+0058D9A8: b            #0x58da34
+0058D9AA: movs         r0, #0xc
+0058D9AC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0058D9B0: ldrb.w       r1, [r8, #0x10]
+0058D9B4: add          r2, sp, #0x18
+0058D9B6: strb         r1, [r0, #8]
+0058D9B8: ldr          r1, [sp, #0x18]
+0058D9BA: str          r1, [r0]
+0058D9BC: str          r2, [r0, #4]
+0058D9BE: str          r0, [r1, #4]
+0058D9C0: ldr          r1, [sp, #0x20]
+0058D9C2: str          r0, [sp, #0x18]
+0058D9C4: adds         r0, r1, #1
+0058D9C6: str          r0, [sp, #0x20]
+0058D9C8: b            #0x58da34
+0058D9CA: movs         r4, #0
+0058D9CC: strd         r4, r4, [sp, #0xc]
+0058D9D0: str          r4, [sp, #0x14]
+0058D9D2: ldrb.w       r3, [r8, #0x31]
+0058D9D6: ldr          r0, [pc, #0xf4] ; word[0058DACC]=00662558
+0058D9D8: add          r1, sp, #0xc
+0058D9DA: ldr          r2, [pc, #0xf4] ; word[0058DAD0]=00662588
+0058D9DC: add          r0, pc
+0058D9DE: add          r2, pc
+0058D9E0: blx          #0x4a4540 ; Anki::Util::sWarningF
+
+0058D9E4: ldr          r0, [sp, #0xc]
+0058D9E6: cbz          r0, #0x58da06
+0058D9E8: ldr          r1, [sp, #0x10]
+0058D9EA: cmp          r1, r0
+0058D9EC: itttt        ne
+0058D9EE: subne.w      r2, r1, #8
+0058D9F2: subne        r2, r2, r0
+0058D9F4: mvnne        r3, #7
+0058D9F8: bicne.w      r2, r3, r2
+0058D9FC: itt          ne
+0058D9FE: addne        r1, r1, r2
+0058DA00: strne        r1, [sp, #0x10]
+0058DA02: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0058DA06: strb.w       r4, [r8, #0x30]
+0058DA0A: b            #0x58da34
+0058DA0C: add.w        r4, r8, #0x14
+0058DA10: ldrd         r2, r3, [r8, #0x28]
+0058DA14: mov          r0, r6
+0058DA16: mov          r1, r4
+0058DA18: str          r5, [sp]
+0058DA1A: blx          #0x4aea1c ; std::__ndk1::function<bool(Anki::Cozmo::Animations::Track<Anki::Cozmo::AnimKeyFrame::AudioSample>&,unsigned_int,unsigned_int,Anki::Cozmo::AnimKeyFrame::AudioSample&)>::operator()
+
+0058DA1E: mov          r7, r0
+0058DA20: ldr.w        r1, [r8, #0x20]
+0058DA24: ldr.w        r0, [r8, #0x2c]
+0058DA28: cmp          r1, r4
+0058DA2A: add.w        r2, r0, #0x21
+0058DA2E: str.w        r2, [r8, #0x2c]
+0058DA32: beq          #0x58d984
+0058DA34: ldr.w        r0, [fp, #4]
+0058DA38: orr.w        sb, sb, r7
+0058DA3C: cbz          r0, #0x58da4a
+0058DA3E: mov          r8, r0
+0058DA40: ldr.w        r0, [r8]
+0058DA44: cmp          r0, #0
+0058DA46: bne          #0x58da3e
+0058DA48: b            #0x58da58
+0058DA4A: ldr.w        r8, [fp, #8]
+0058DA4E: ldr.w        r0, [r8]
+0058DA52: cmp          r0, fp
+0058DA54: mov          fp, r8
+0058DA56: bne          #0x58da4a
+0058DA58: cmp          r8, sl
+0058DA5A: mov          fp, r8
+0058DA5C: bne          #0x58da0c
+0058DA5E: ldr          r5, [sp, #0x1c]
+0058DA60: add          r6, sp, #0x18
+0058DA62: ldr          r7, [sp, #8]
+0058DA64: b            #0x58da6c
+0058DA66: mov.w        sb, #0
+0058DA6A: add          r5, sp, #0x18
+0058DA6C: cmp          r6, r5
+0058DA6E: beq          #0x58da86
+0058DA70: add          r4, sp, #0xc
+0058DA72: ldrb         r0, [r5, #8]
+0058DA74: strb.w       r0, [sp, #0xc]
+0058DA78: mov          r0, r7
+0058DA7A: mov          r1, r4
+0058DA7C: blx          #0x4aea28 ; std::__ndk1::__tree<std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>,std::__ndk1::__map_value_compare<unsigned_char,std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>,std::__ndk1::less<unsigned_char>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>>>::__erase_unique<unsigned_char>
+
+0058DA80: ldr          r5, [r5, #4]
+0058DA82: cmp          r6, r5
+0058DA84: bne          #0x58da72
+0058DA86: add          r0, sp, #0x18
+0058DA88: blx          #0x4aea34 ; std::__ndk1::__list_imp<unsigned_char,std::__ndk1::allocator<unsigned_char>>::clear
+
+0058DA8C: and          r0, sb, #1
+0058DA90: add          sp, #0x24
+0058DA92: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x0058DDE0..0x0058DDEA exclusive; Thumb; _ZNK4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE16HaveLayersToSendEv
+0058DDE0: ldr          r0, [r0, #0xc]
+0058DDE2: cmp          r0, #0
+0058DDE4: it           ne
+0058DDE6: movne        r0, #1
+0058DDE8: bx           lr
+RANGE 0x0058DAD4..0x0058DB18 exclusive; Thumb; _ZNKSt6__ndk18functionIFbRN4Anki5Cozmo10Animations5TrackINS2_12AnimKeyFrame11AudioSampleEEEjjRS6_EEclES8_jjS9_
+0058DAD4: push         {r7, lr}
+0058DAD6: sub          sp, #0x10
+0058DAD8: strd         r3, r2, [sp, #8]
+0058DADC: ldr          r0, [r0, #0x10]
+0058DADE: cbz          r0, #0x58daf4
+0058DAE0: ldr          r3, [r0]
+0058DAE2: ldr          r2, [sp, #0x18]
+0058DAE4: ldr.w        ip, [r3, #0x18]
+0058DAE8: add          r3, sp, #8
+0058DAEA: str          r2, [sp]
+0058DAEC: add          r2, sp, #0xc
+0058DAEE: blx          ip
+0058DAF0: add          sp, #0x10
+0058DAF2: pop          {r7, pc}
+0058DAF4: movs         r0, #4
+0058DAF6: blx          #0x4a42b8 ; <EXTERNAL>::__cxa_allocate_exception
+
+0058DAFA: ldr          r1, [pc, #0x1c] ; word[0058DB18]=00AB0EB6
+0058DAFC: ldr          r2, [pc, #0x1c] ; word[0058DB1C]=00AB0EB8
+0058DAFE: ldr.w        ip, [pc, #0x20] ; word[0058DB20]=00AB0EBA
+0058DB02: add          r1, pc
+0058DB04: add          r2, pc
+0058DB06: add          ip, pc
+0058DB08: ldr          r3, [r1]
+0058DB0A: ldr          r1, [r2]
+0058DB0C: ldr.w        r2, [ip]
+0058DB10: adds         r3, #8
+0058DB12: str          r3, [r0]
+0058DB14: blx          #0x4a42d0 ; <EXTERNAL>::__cxa_throw
+
+RANGE 0x0058DB24..0x0058DB52 exclusive; Thumb; _ZN4Anki5Cozmo10Animations5TrackINS0_12AnimKeyFrame11AudioSampleEE16ClearUpToCurrentEv
+0058DB24: push         {r4, r5, r7, lr}
+0058DB26: mov          r4, r0
+0058DB28: ldr          r0, [r4, #4]
+0058DB2A: ldr          r1, [r4, #0xc]
+0058DB2C: cmp          r1, r0
+0058DB2E: it           eq
+0058DB30: popeq        {r4, r5, r7, pc}
+0058DB32: ldrd         r1, r5, [r0]
+0058DB36: str          r5, [r1, #4]
+0058DB38: ldrd         r2, r1, [r0]
+0058DB3C: str          r2, [r1]
+0058DB3E: ldr          r1, [r4, #8]
+0058DB40: subs         r1, #1
+0058DB42: str          r1, [r4, #8]
+0058DB44: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0058DB48: ldr          r0, [r4, #0xc]
+0058DB4A: cmp          r0, r5
+0058DB4C: mov          r0, r5
+0058DB4E: bne          #0x58db32
+0058DB50: pop          {r4, r5, r7, pc}
+RANGE 0x0064F606..0x0064F622 exclusive; Thumb;
+0064F606: push         {r4, lr}
+0064F608: mov          r0, r1
+0064F60A: ldr          r4, [r1, #0xc]
+0064F60C: blx          #0x4ba188 ; Anki::Cozmo::Animations::Track<Anki::Cozmo::AnimKeyFrame::AudioSample>::MoveToNextKeyFrame
+
+0064F610: ldr          r0, [sp, #8]
+0064F612: add.w        r1, r4, #8
+0064F616: mov.w        r2, #0x2e8
+0064F61A: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+
+0064F61E: movs         r0, #1
+0064F620: pop          {r4, pc}
+RANGE 0x0064F648..0x0064F678 exclusive; Thumb; _ZN4Anki5Cozmo10Animations5TrackINS0_12AnimKeyFrame11AudioSampleEE18MoveToNextKeyFrameEv
+0064F648: push         {r4, r5, r7, lr}
+0064F64A: mov          r4, r0
+0064F64C: ldrb         r0, [r4, #0x10]
+0064F64E: cbz          r0, #0x64f66c
+0064F650: ldr          r0, [r4, #0xc]
+0064F652: ldrd         r1, r5, [r0]
+0064F656: str          r5, [r1, #4]
+0064F658: ldrd         r1, r2, [r0]
+0064F65C: str          r1, [r2]
+0064F65E: ldr          r1, [r4, #8]
+0064F660: subs         r1, #1
+0064F662: str          r1, [r4, #8]
+0064F664: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0064F668: str          r5, [r4, #0xc]
+0064F66A: pop          {r4, r5, r7, pc}
+0064F66C: ldr          r0, [r4, #0xc]
+0064F66E: cmp          r0, r4
+0064F670: itt          ne
+0064F672: ldrne        r0, [r0, #4]
+0064F674: strne        r0, [r4, #0xc]
+0064F676: pop          {r4, r5, r7, pc}
+RANGE 0x0064F600..0x0064F606 exclusive; Thumb;
+0064F600: bx           lr
+0064F602: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+
+0102F768: raw=0064F5D9 relocated=0064F5D9 
+0102F76C: raw=0064F5F1 relocated=0064F5F1 
+0102F770: raw=0064F601 relocated=0064F601 
+0102F774: raw=0064F603 relocated=0064F603 
+0102F778: raw=0064F607 relocated=0064F607 
+RANGE 0x004BA0D4..0x004BA0EC exclusive; ARM;
+004BA0D4: add          ip, pc, #0xb00000
+004BA0D8: add          ip, ip, #0x8d000
+004BA0DC: ldr          pc, [ip, #0x74c]!
+004BA0E0: add          ip, pc, #0xb00000
+004BA0E4: add          ip, ip, #0x8d000
+004BA0E8: ldr          pc, [ip, #0x744]!
+01047828: raw=004A4010 relocated=0058DDE1 _ZNK4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE16HaveLayersToSendEv
+0104782C: raw=004A4010 relocated=0058D959 _ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE18ApplyLayersToFrameERS3_NSt6__ndk18functionIFbRNS0_10Animations5TrackIS3_EEjjS5_EEE
+RANGE 0x004AEA10..0x004AEA28 exclusive; ARM;
+004AEA10: add          ip, pc, #0xb00000
+004AEA14: add          ip, ip, #0x95000
+004AEA18: ldr          pc, [ip, #0x124]!
+004AEA1C: add          ip, pc, #0xb00000
+004AEA20: add          ip, ip, #0x95000
+004AEA24: ldr          pc, [ip, #0x11c]!
+01043B3C: raw=004A4010 relocated=0058DB25 _ZN4Anki5Cozmo10Animations5TrackINS0_12AnimKeyFrame11AudioSampleEE16ClearUpToCurrentEv
+01043B40: raw=004A4010 relocated=0058DAD5 _ZNKSt6__ndk18functionIFbRN4Anki5Cozmo10Animations5TrackINS2_12AnimKeyFrame11AudioSampleEEEjjRS6_EEclES8_jjS9_
+RANGE 0x004BA188..0x004BA194 exclusive; ARM;
+004BA188: add          ip, pc, #0xb00000
+004BA18C: add          ip, ip, #0x8d000
+004BA190: ldr          pc, [ip, #0x6d4]!
+01047864: raw=004A4010 relocated=0064F649 _ZN4Anki5Cozmo10Animations5TrackINS0_12AnimKeyFrame11AudioSampleEE18MoveToNextKeyFrameEv
