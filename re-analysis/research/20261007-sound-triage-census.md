@@ -1607,3 +1607,7 @@ IR268A/B and AV268C trace interior counter raw returns/key-based registry retire
 ### Checkpoint 269 — event unprepare command
 
 EU269A–C trace single/bulk event references/E14 release, first-missing partial result and owned-array release, plus distinct count/data/key completion shaping. Known descendants reused; preparation/deferred/public caller/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 270 — event preparation command
+
+EP270A–D recover first/repeat event14 counter and retained8 producer, deferred mode, reverse early-failure prefix versus forward consumer-failure unwind, single helper and clearing-before-completion. Action/deferred/input/provider/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
