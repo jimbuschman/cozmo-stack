@@ -214,7 +214,7 @@ PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover
 
 > | M6-009 | **KEEP** | 0x00A14E28..0x00A15244;0x00A17724;0x00A17878;0x00A17280;0x00A0F07C;0x00A0F594;0x00A137D8..0x00A13A60;0x00A0E5E4;0x00A1B5FC;0x00A0F678 | Curve search/shapes/scaling, RTPC values/precedence/accumulation, transition gates and value evolution, BuiltIn semantics and live delivery are parameters and state, including fast-log/pow arithmetic. |
 
-PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. RW1–RW10 now supply known9F7390 routing tails; R49–R52 membership, AC accumulation, SJ219/IP221 immediate/ramp/preflight, MT12/RG7 scope defaults and HI/SA/OA context selection/expiration are positive local joins. PF284 adds initial fade/queue/attachment caller ordering. MJ285 reuses MU/MI/SV/EP/LP shared initialization and Q14-027 MTK/MP/ML/LS/LB/EV/ES/RH/OA/MC output, advancement, fallback and delivery joins. These known bodies are positive; historical next-work descriptions do not reopen them. Remaining: other reachable live recipients/families and exhaustive incoming input/provider/writer closure; no whole RTPC production-path claim.
+PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. RW1–RW10 now supply known9F7390 routing tails; R49–R52 membership, AC accumulation, SJ219/IP221 immediate/ramp/preflight, MT12/RG7 scope defaults and HI/SA/OA context selection/expiration are positive local joins. PF284 adds initial fade/queue/attachment caller ordering. MJ285 reuses MU/MI/SV/EP/LP shared initialization and Q14-027 MTK/MP/ML/LS/LB/EV/ES/RH/OA/MC output, advancement, fallback and delivery joins. These known bodies are positive; historical next-work descriptions do not reopen them. LD428 adds exact active receiver predicate, five-family5C/F8 fan-out, Sound scope/filter gate, actual base/continuous context8 override, priority/clamp/reposition, bypass dispatch and additive value stores. Known C4 reused. Next bounded recipient is actual V154 processing68; other runtime receiver/packet/input families and incoming provider/writer boundaries remain; no whole RTPC production-path claim.
 
 ## Q14-011 — triage line 44
 
@@ -2251,3 +2251,7 @@ DP426 completes9B00B4/A63AA8 disown and9B03D4 exact pointer selection, scheduled
 ## Checkpoint 427 — continuous next-choice/input reconciliation
 
 NC427 corrects VE1 index address to202+2*depth modulo32, joins PC424/BI425 defaults to VE/CW/CO/CP and actual serialized mode4 fields, and reuses positive source/completion recipients. Particular mode4 app/direct-action entry remains UNKNOWN, not declared unreachable. Q14-009 PARTIAL; next Q14-010 bounded RTPC input/recipient work. Counts unchanged; Q15 follows Q14.
+
+## Checkpoint 428 — live RTPC node/PBI recipients
+
+LD428 joins RD5/6 to concrete node5C/F8 and initialized PBI context8, exact Sound key/filter/active gates, priority updates and bypass/value publication. Positioning payload descendants scoped out in one line. Processing68 remains next bounded recipient. Q14-010/114 PARTIAL; counts unchanged; Q15 follows Q14.
