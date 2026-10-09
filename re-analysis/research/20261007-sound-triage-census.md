@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through337 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through338 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1879,3 +1879,7 @@ SC336A–L settle six local converter/default paths, raw exponent/mantissa polyn
 ### Checkpoint 337 — selected spatial routing gates
 
 SR337A–G bind A5993C format/count/scratch, cached curve slots, listener/device admission and accepted count, single-listener coefficient/gain publication and grouping query. Remaining coefficient/aggregation/mode1/LFE and provider/writer work stays PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 338 — multiple-listener coefficient aggregation
+
+SR338A–E bind grouped sum then magnitude reduction versus per-listener magnitude reduction, exact equality/NaN candidate selection, processed-index cadence, live gain selectors and final rawgain1 publication. Selected center panner join reuses332. Generated/mode1/LFE and provider/writer/registration gaps remain PARTIAL. Counts unchanged, Q15 parked.
