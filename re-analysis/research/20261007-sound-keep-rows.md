@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 451 — client unregister gates and destruction order
+
+Primary: `20261009-sound-client-buffer-unregister-native.txt`,104 complete native instructions plus concrete import/veneer joins; enginehashunchanged. AS1/SH8, AR1–2, OP449/BR450, CM446/AD447/AP7/ASTATE317 andDQUEUE309/DWORK311 reused. C=client;offsetshex.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| CU451A actual caller/key/index | 4AF718..724;GOT1043F94→599D2D;599D2C..D5A | FindincomingobjectID inclientconfigurationC40. Missing→log/errorflag/optionaldebugbreak thenvoidreturn, nocontrollercall. Found: saveentry10 bufferindex BEFOREeraseentry; eraseclientconfiguration BEFOREanycontrollerremoval. Savedindex0 returnswithoutcontrollercall;nonzero reloadC30 andcallsBR450 actualUnregister(controller,originalsavedobjectID,index). No bus-valuegate,enabled/nullcontrollergate,StopCozmoEvent/bufferreset orpooldeque removal. |
+| CU451B destruction/current gate | 599A6C..A9C;AS1;DQUEUE309/ASTATE317 | PublishactualRobotAudioClienttable beforeDispatch.Stop(C34),thenDispatch.Release(&C34). OnlyAFTERclientqueuecleanuptestC30. C30null skipscurrentanimationabort/clear andallfiveunregistercalls. C30nonnull/C38nonnull callsAP7Abort thenCM446D Clear→AD447actualdelete/base. No readinessquery/statefilterorretry. Queue Stop/Release nativeordered/secondStop contractsalreadypositive; phonejoin/runtime remainsboundary. |
+| CU451C unregister sequence/base transition | 599A9C..ADE;8CBBEC..BF0/ARM8CBBF0..BF8/rawBF8;4AEC98..CA4;GOT1043C14→58FA9D | AcceptedC30 branchunregisters7,8,9,10,6 inthatorder regardlessofpercallmissing/errorresult. ThenbothC30branchesdestroyC54 deque andC40 configmap,tailactualAudioEngineClientbase58FA9C. SH8 alreadyownsbasehandle-vectorrelease andborrowedhandler1C lifetime; no newdeletionofinputhandler. No mode3C clear,controller30 clear orpoolreturn addedhere. |
+| CU451D selected default/route lifetime joins | AR1–2/BR450/OP449/HG;CM446/CR448/AD447/ASTATE317 | Constructorregisters7..10 withindices1..4 and6index0; destructionattemptsallfive. Selectedobject6cliententry iserasedbutcontrollerbufferregistration/removal isbypassedbecauseindex0. NonzeroindexmapsBR450 pluginID, whichdisposesbufferbeforeobjectmapping. OP449get/return doesnotreserve/removeIDs orrequirebufferpointer; unregisterdoesnotrepairpool54. Nativecurrent/queuedcallback/weakownership orderingreused, notinventedfromsuccessfulhardware. Widerinput/provider/writer andotherproducts remainseparate. |
+
+out of scope: hashfind/erase/dequebacking andallocator/free internals under scopeguard; log/string infrastructure andphonejoin/mutex bodies; per-sample DSP under ADP-1. Selectedqueue/routing/lifetime gates retained. No production/fidelity/hardware changes.
+
+Selectedclient/controllerbuffer creation/removal andcurrentanimation/queue/destruction are nowpositivelyjoined. Q14-021/065 widerinput/writer/update/routing remainsPARTIAL; no absence-based closure. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 followscompletedQ14. Nextboundedstep reconciles remainingknownappupdate/animation invocation inputs andother still-open decision coverageagainstpositive rows.
+
 ## Checkpoint 450 — controller buffer registration/duplicate and removal decisions
 
 Primary: `20261009-sound-controller-buffer-registration-native.txt`,198 complete native instructions plus two actual import joins. Hash bucket traversal/rehash geometry excluded; selected fresh-value publication, duplicate decisions and API key/order remainin scope. Enginehashunchanged. AR1–2/OP449/HG6–8 reused. D=controller,objectID=arg1,pluginID=arg2.

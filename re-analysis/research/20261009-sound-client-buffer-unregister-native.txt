@@ -1,0 +1,131 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00599D2C..0x00599DAC exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient26UnregisterRobotAudioBufferENS_13AudioMetaData14GameObjectTypeE
+00599D2C: push         {r4, r5, r6, lr}
+00599D2E: sub          sp, #0x10
+00599D30: mov          r4, r0
+00599D32: add.w        r6, r4, #0x40
+00599D36: str          r1, [sp, #0xc]
+00599D38: add          r1, sp, #0xc
+00599D3A: mov          r0, r6
+00599D3C: blx          #0x4af724 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::__unordered_map_hasher<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,Anki::Util::EnumHasher,true>,std::__ndk1::__unordered_map_equal<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::equal_to<Anki::AudioMetaData::GameObjectType>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>>>::find<Anki::AudioMetaData::GameObjectType>
+
+00599D40: mov          r1, r0
+00599D42: cbz          r1, #0x599d5a
+00599D44: mov          r0, r6
+00599D46: ldr          r5, [r1, #0x10]
+00599D48: blx          #0x4af730 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::__unordered_map_hasher<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,Anki::Util::EnumHasher,true>,std::__ndk1::__unordered_map_equal<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::equal_to<Anki::AudioMetaData::GameObjectType>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>>>::erase
+
+00599D4C: cbz          r5, #0x599da8
+00599D4E: ldr          r1, [sp, #0xc]
+00599D50: mov          r2, r5
+00599D52: ldr          r0, [r4, #0x30]
+00599D54: blx          #0x4af73c ; Anki::Cozmo::Audio::CozmoAudioController::UnregisterRobotAudioBuffer
+
+00599D58: b            #0x599da8
+00599D5A: movs         r0, #0
+00599D5C: ldr          r3, [sp, #0xc]
+00599D5E: str          r0, [sp]
+00599D60: strd         r0, r0, [sp, #4]
+00599D64: adr          r0, #0x6c
+00599D66: adr          r2, #0x98
+00599D68: mov          r1, sp
+00599D6A: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+00599D6E: ldr          r0, [sp]
+00599D70: cbz          r0, #0x599d90
+00599D72: ldr          r1, [sp, #4]
+00599D74: cmp          r1, r0
+00599D76: itttt        ne
+00599D78: subne.w      r2, r1, #8
+00599D7C: subne        r2, r2, r0
+00599D7E: mvnne        r3, #7
+00599D82: bicne.w      r2, r3, r2
+00599D86: itt          ne
+00599D88: addne        r1, r1, r2
+00599D8A: strne        r1, [sp, #4]
+00599D8C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00599D90: ldr          r0, [pc, #0xa0] ; word[00599E34]=00AA49F2
+00599D92: movs         r2, #1
+00599D94: ldr          r1, [pc, #0xa0] ; word[00599E38]=00AA49F4
+00599D96: add          r0, pc
+00599D98: add          r1, pc
+00599D9A: ldr          r0, [r0]
+00599D9C: ldr          r1, [r1]
+00599D9E: ldrb         r0, [r0]
+00599DA0: strb         r2, [r1]
+00599DA2: cbz          r0, #0x599da8
+00599DA4: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+00599DA8: add          sp, #0x10
+00599DAA: pop          {r4, r5, r6, pc}
+RANGE 0x00599A6C..0x00599ADE exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClientD1Ev
+00599A6C: push         {r4, r5, r7, lr}
+00599A6E: mov          r4, r0
+00599A70: ldr          r0, [pc, #0x88] ; word[00599AFC]=00AA5368
+00599A72: mov          r5, r4
+00599A74: add          r0, pc
+00599A76: ldr          r1, [r0]
+00599A78: ldr          r0, [r5, #0x34]!
+00599A7C: adds         r1, #8
+00599A7E: str          r1, [r4]
+00599A80: blx          #0x4af3dc ; Anki::Util::Dispatch::Stop
+
+00599A84: mov          r0, r5
+00599A86: blx          #0x4af3e8 ; Anki::Util::Dispatch::Release
+
+00599A8A: ldr          r0, [r4, #0x30]
+00599A8C: cbz          r0, #0x599ac4
+00599A8E: ldr          r0, [r4, #0x38]
+00599A90: cbz          r0, #0x599a9c
+00599A92: blx          #0x4adbb8 ; Anki::Cozmo::Audio::RobotAudioAnimation::AbortAnimation
+
+00599A96: mov          r0, r4
+00599A98: blx          #0x4adbc4 ; Anki::Cozmo::Audio::RobotAudioClient::ClearCurrentAnimation
+
+00599A9C: mov          r0, r4
+00599A9E: movs         r1, #7
+00599AA0: blx          #0x4af718 ; Anki::Cozmo::Audio::RobotAudioClient::UnregisterRobotAudioBuffer
+
+00599AA4: mov          r0, r4
+00599AA6: movs         r1, #8
+00599AA8: blx          #0x4af718 ; Anki::Cozmo::Audio::RobotAudioClient::UnregisterRobotAudioBuffer
+
+00599AAC: mov          r0, r4
+00599AAE: movs         r1, #9
+00599AB0: blx          #0x4af718 ; Anki::Cozmo::Audio::RobotAudioClient::UnregisterRobotAudioBuffer
+
+00599AB4: mov          r0, r4
+00599AB6: movs         r1, #0xa
+00599AB8: blx          #0x4af718 ; Anki::Cozmo::Audio::RobotAudioClient::UnregisterRobotAudioBuffer
+
+00599ABC: mov          r0, r4
+00599ABE: movs         r1, #6
+00599AC0: blx          #0x4af718 ; Anki::Cozmo::Audio::RobotAudioClient::UnregisterRobotAudioBuffer
+
+00599AC4: add.w        r0, r4, #0x54
+00599AC8: blx          #0x4af6c4 ; std::__ndk1::__deque_base<Anki::AudioMetaData::GameObjectType,std::__ndk1::allocator<Anki::AudioMetaData::GameObjectType>>::~__deque_base
+
+00599ACC: add.w        r0, r4, #0x40
+00599AD0: blx          #0x4af6d0 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::__unordered_map_hasher<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,Anki::Util::EnumHasher,true>,std::__ndk1::__unordered_map_equal<Anki::AudioMetaData::GameObjectType,std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>,std::__ndk1::equal_to<Anki::AudioMetaData::GameObjectType>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<Anki::AudioMetaData::GameObjectType,Anki::Cozmo::Audio::RobotAudioClient::RobotBusConfiguration>>>::~__hash_table
+
+00599AD4: mov          r0, r4
+00599AD6: pop.w        {r4, r5, r7, lr}
+00599ADA: b.w          #0x8cbbec
+RANGE 0x004AF718..0x004AF724 exclusive; ARM;
+004AF718: add          ip, pc, #0xb00000
+004AF71C: add          ip, ip, #148, #20
+004AF720: ldr          pc, [ip, #0x874]!
+01043F94: raw=004A4010 relocated=00599D2D _ZN4Anki5Cozmo5Audio16RobotAudioClient26UnregisterRobotAudioBufferENS_13AudioMetaData14GameObjectTypeE
+RANGE 0x008CBBEC..0x008CBBF0 exclusive; Thumb;
+008CBBEC: bx           pc
+008CBBEE: mov          r8, r8
+RANGE 0x008CBBF0..0x008CBBF8 exclusive; ARM;
+008CBBF0: ldr          ip, [pc] ; word[008CBBF8]=FFBE309C
+008CBBF4: add          pc, ip, pc
+008CBBF8: raw=FFBE309C relocated=FFBE309C 
+RANGE 0x004AEC98..0x004AECA4 exclusive; ARM;
+004AEC98: add          ip, pc, #0xb00000
+004AEC9C: add          ip, ip, #148, #20
+004AECA0: ldr          pc, [ip, #0xf74]!
+01043C14: raw=004A4010 relocated=0058FA9D _ZN4Anki5Cozmo5Audio17AudioEngineClientD1Ev

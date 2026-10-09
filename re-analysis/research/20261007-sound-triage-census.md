@@ -2341,3 +2341,5 @@ Checkpoint448 — CR448 directmode setter/firmwarecaller/actualJsonnulltest andc
 Checkpoint449 — OP449 selectedclientpool mode/peek/return andactualtwo-stagebufferIDlookup;103 complete native instructions. Exactsuccess-with-nullbuffer andother-modeoutputpreservation retained. Inlinehash/dequebackingexcluded;registration/poolwriterclosure remainsPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint450 — BR450 controllerfreshbuffer publication/duplicatecandidate disposal/objectmapping publication/removal order;198 complete native instructions+actualimport joins;inlinehash/rehash/dequebackingexcluded. KnownAR/OP/HGrecipientsbound;clientunregister/otherinputs/writers remainPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint451 — CU451 clientunregister index/erase/order andderiveddestruction queue/current/controller/known-ID/base joins;104 complete native instructions andactualimport joins. Selectedroute/default/lifetime closurepositive;broaderinput/writer/update remainsPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
