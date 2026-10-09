@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 389 — Vorbis packet continuation lifecycle boundary
+
+Primary: `20261009-sound-vorbis-packet-continuation-boundary-native.txt`, same engine hash; 264 instruction words. D=decoder, S=D10 setup, M=selected mapping; offsets hex. This records only the packet continuation's frame/state boundary. Sample-dependent decode bodies are not descended.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| PC389A selected block/planes | AB6B14..AB6B98;AB6B98..AB6C20 | Snapshot current block word S[D28*4] and setup base. For retained channels forward choose submap0 when signed M0<=1, otherwise byte M4[channel]; select floor descriptor S24+24*M8[2*submap]. CallAB8E60(D,floor,scratch). Raw return is saved as floor result and normalized to a per-channel nonzero flag, not converted to a source error. Clear the selected D14 plane for ((block<<2) logical>>1) bytes; reload live D.C for loop. No D1C/D20 publication or consumed-frame increment at this stage. |
+| PC389B mapping control handoffs | AB6C24..AB6DC0 | Coupling pairs forward propagate nonzero flags to both associated channels when either is nonzero. Submaps forward collect each matching channel's current plane and flag in original channel order; null mux base takes all channels. Selected residue descriptor S28+1C*M8[2*submap+1]; callAB73F8(D,residue,planes,flags,count), ignore return. Reload live submap/channel counts as shown. These are local decoder associations; no source/router channel object changes or error conversion claimed. |
+| PC389C arithmetic boundary/order | AB6DC4..AB6EE0 | Reverse coupling traversal is per-sample decode arithmetic, excluded below. Then channels forward callAB915C(D,selectedFloor,savedFloorResult,currentPlane); ignore return, reload live channel count. Selected floor uses the same M0/M4/M8 choice as the first phase. No source-state or frame-interval publication between those calls. |
+| PC389D terminal flag/result | AB6EE4..AB6F20 | Channels forward callAB4E34(snapshotBlock,currentD14[channel]); ignore return, reload live D.C. After all calls set D.byte30=0 and return0, restoring stack. No D1C/D20, skip2C/endTrim2E, packet pointer/byte count, EOF or source-result change in this final boundary. VF383 already owns packet interval decisions; VF384 consumes that interval and sets byte30=1 after preserving overlap. This0 flag enables next packet's overlap preservation, not an inferred source stop/error. |
+
+out of scope: sample-dependent floor/residue/coupling/IMDCT arithmetic and its scratch tables; AB8E60/AB73F8/AB915C/AB4E34 are not descended here. WEM decoding remains exact-required; the guard only bounds this decisions task.
+
+out of scope: zero/multichannel source branches and stack scratch storage mechanics.
+
+Selected packet continuation's final overlap flag and result now join VF383→PC389→VF384 without a guessed flush/error path. Existing VC2/VS385/MA386/RA387/FA388 setup admission and VM6 trim writers are reused. Actual source-family/input/provider/writer joins remain PARTIAL; totals unchanged, Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 388 — Vorbis floor setup admission
 
 Primary: `20261009-sound-vorbis-floor-admission-native.txt`, same engine hash; 354 instruction words. F=floor descriptor, S=setup, R=reader; offsets hex. This records setup rejection and source admission, not floor sample arithmetic or full decoding.

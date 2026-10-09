@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through388 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through389 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -160,7 +160,7 @@ PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/read
 
 > | M6-002 | **KEEP** | 0x00AB6380..0x00AB6780;0x00AB3780;0x00AB6B14;0x00AB7E40;0x00AB3520;0x00AB5A94;0x00AB4E34 | Live decoder integration, LFE channel reorder, reset/skip/trim, work-buffer lifetime, window-default reachability, and unshipped-size signed-zero residuals remain WEM decoding; ADP-1 explicitly excludes decoding from equivalence, including its IMDCT/NEON arithmetic. |
 
-PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions; VF384 closes VPACK pending-frame query/consumption, independent window selection and no-packet overlap preservation. Remaining in-scope packet/framing consumers and setup/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
+PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions; VF384 closes VPACK pending-frame query/consumption, independent window selection and no-packet overlap preservation. VS385/MA386/RA387/FA388 close the named setup mode/mapping and admission decisions; PC389 joins the selected continuation’s final overlap flag/result, stopping before sample-dependent decode arithmetic. VM6 already owns trim/reset writers. Remaining actual source-family/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
 
 ## Q14-004 — triage line 35
 
@@ -2083,3 +2083,7 @@ RA387 settles header publication, classbook/cascade/selected-book rejection, pas
 ## Checkpoint 388 — Vorbis floor admission
 
 FA388 records partition/class/masterbook/subclass-book admission, coordinate and reader-exhaustion rejection and endpoint/result publication. Reuses VS385 rejection join; arithmetic table preparation stops at the scope boundary. Other source/control joins remain PARTIAL; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 389 — Vorbis packet continuation boundary
+
+PC389 joins selected mapping/floor/residue handoff order and final overlap flag/result to VF383/VF384. Sample-dependent decoder bodies explicitly stop at the scope boundary; Q14-003 named setup/trim/continuation wording reconciled. Actual source/control joins remain PARTIAL; counts unchanged, Q15 pending Q14.
