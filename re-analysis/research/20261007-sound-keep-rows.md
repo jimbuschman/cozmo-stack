@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 411 — witnessed stop/pause/resume products and readers
+
+Primary: `20261009-sound-stop-pause-resume-products-native.txt`, same engine hash;114 instruction words plus literals/tables. AF406 positively binds shipped102/103/108 toA6651C,202 toA62910,302 toA643AC. A=action; offsets/sizes hex. No descent into unwitnessed action families.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SP411A shared construction | A79E80..A79EA8;rawA79EAC;RT408A/AB250 | A621BC initializes originaltype/ID/commonheader and list24/28/2C0. Then byteA30=0,intermediate table103DC88 (PC A79E9C+8+5C3DDC+8),returnA. No blanket clear of derivedpadding/byte31. |
+| SP411B stop product | A6651C..A6656C;rawA66570/74;raw103CED0..CF14 | Allocate34,nullreturnsnull;nonnullSP411A,table103CED0 (PC A66558+8+5D6968+8),A60DEC registration,returnA. Actual24=A663C8 (A10),28=A79E30,2C=A60284,C=A60650. No opcode-specific replacement for102/103/108. |
+| SP411C pause product | A62910..A62968;rawA6296C/70;raw103CB20..CB64 | Allocate34,nullreturnsnull;nonnullSP411A,byteA31=1,table103CB20 (PC A62950+8+5DA1C0+8),registration,returnA. Actual24=A62788,28=A79E30,2C=A62710,C=A60650. Pause's extra flag31 has explicitdefault1; descriptor flag30 remains0. |
+| SP411D resume product | A643AC..A643FC;rawA64400/04;raw103CCB0..CCF4 | Allocate34,nullreturnsnull;nonnullSP411A,table103CCB0 (PC A643E8+8+5D88B8+8),registration,returnA. Actual24=A6422C,28=A79E30,2C=A641B4,C=A60650. ByteA30 default0 inherited;no extra byte31 initialization. |
+| SP411E shared bank reader | A79E30..A79E7C;RT408C | Readfirstbyte,publishcursor+1;replaceonlyA22 low5 curvebits preservingupper3. Invoke current2C(A,cursor,lengthptr). Non1 rawresult returns;1 tailsA622A4,whose exact trailinglist/cursor/admission contracts RT408C already establishes. No blanket success,curve clamp or paddingzero. |
+| SP411F concrete derived readers | A60284..88;A62710..2C;A641B4..D0 | Stop2C returns1 without reading/advancingcursor. Pause2C consumesonebyte,publishesadvancedcursor,normalizeszero/nonzero→A31=0/1,returns1. Resume2C same order→A30=0/1. Shared curvebyte therefore precedes pause/resume flagbyte and trailinglist. Stopdoesnot consumea separateflagbyte. |
+
+out of scope: action/list/registry backing storage and allocator mechanics; admission,parameter flags,publication,reader results and lifecycle selection retained.
+
+A10 supplies selectedstop execution; existingA12–26/RR/PC/CC/NC/SL controls remain positive. Concrete202/302 executor bindings now known; own selectedbranch execution reconciliation next. Q14-007 remains PARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 410 — authored1E03 seek action concrete binding
 
 Primary: `20261009-sound-authored-seek-action-binding-native.txt`, same engine hash;87 instruction words plus literals/table. Shipped witness:1 raw1E03 action in reachability census. AF406 family1E00→A64500;A7–9 already ownA645C8 sought-value/RNG/descriptor decisions. A=action,P=pending wrapper; offsets hex.
