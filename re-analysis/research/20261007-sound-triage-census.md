@@ -1975,3 +1975,7 @@ CA360A–G settle selected target/context failure, request/control publication, 
 ### Checkpoint 361 — completion-registry commands
 
 CC361A–F settle operation4/5 state/correlation reset and target order, operation1/2 depth/tick/first-last-transition gates, argument-preserving resume, and exact control descriptors. Q14-030 now reuses356–361 local termination/registry joins instead of generic unread wording. Pending9ADD94/9AAF58/9AC1D8 and other target/input/provider/writer closure remain PARTIAL; totals unchanged, Q15 pending Q14.
+
+### Checkpoint 362 — playing-ID pending collaborators
+
+PC362A–H settle exact-ID two-list cancellation, paused-duplicate native fault, code1820 first-list exemption, target-ID sorted paused admission/failure cleanup, and counter-gated resume via existing RS168. CC361 named pending collaborator gaps superseded; known callback/lifetime rows reused. Wider pending/counter/deadline/limit/input/product closure remains PARTIAL, counts unchanged, Q15 pending Q14.
