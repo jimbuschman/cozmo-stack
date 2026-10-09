@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through382 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through383 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -160,13 +160,13 @@ PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/read
 
 > | M6-002 | **KEEP** | 0x00AB6380..0x00AB6780;0x00AB3780;0x00AB6B14;0x00AB7E40;0x00AB3520;0x00AB5A94;0x00AB4E34 | Live decoder integration, LFE channel reorder, reset/skip/trim, work-buffer lifetime, window-default reachability, and unshipped-size signed-zero residuals remain WEM decoding; ADP-1 explicitly excludes decoding from equivalence, including its IMDCT/NEON arithmetic. |
 
-PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. Remaining decoding bodies/integration, LFE reorder, window-default reachability and unshipped-size signed-zero residuals remain open.
+PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions. Remaining in-scope packet/framing consumers and setup/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
 
 ## Q14-004 — triage line 35
 
 > | M6-003 | **KEEP** | 0x00A7A194..0x00A7A3C4;0x00A72618;0x00A73EA0;0x00A74100 | ADPCM channels/blockAlign, out-of-bounds/error behavior and zero-channel source handling remain decoding decisions; integer decoder arithmetic is not exempt DSP. |
 
-PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. AH1–AH10 and SK1–SK7 add header rejection, format/endpoint writers, pending seek/cue choice and ownership teardown. The RIFF optional-chunk helpers, factory/constructor closure and stream virtual bodies remain open.
+PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. AH1–AH10 and SK1–SK7 add header rejection, format/endpoint writers, pending seek/cue choice and ownership teardown. RI205 already owns complete local RIFF chunk/cue/label decisions; optional cue allocation and label storage are excluded, not unread decision descendants. SK6 already closes AH6 table-binding endpoint. Remaining in-scope factory/constructor/source lifecycle and relevant format/input/provider/writer closure stay PARTIAL; stream storage/I/O backend descendants are excluded while raw source-state/result handling remains exact.
 
 ## Q14-005 — triage line 36
 
@@ -2059,3 +2059,7 @@ SP381 closesA270D4 first-key/equality/missing-zero decisions, value/block public
 ## Checkpoint 382 — known bus58 forwarding
 
 BC382 bindsbothknownbus58 tables andestablishes first58 then48 everychildforwarding, originalarguments andliveendpointreload; NC363/SL364 descendants reused. No target-familyabsence proof; actualinput/provider/writerclosure retained. Totals unchanged; Q15 pendingQ14.
+
+## Checkpoint 383 — Vorbis packet frame producer
+
+VF383 settlesAB3780 one-bit block selection, overlap-copyflag, normal/firstpacket interval, persistent skip and end-trim decisions before the arithmetic continuation. RI205/SK6 already-positive parser/table recipients reused in Q14-004; storage descendants excluded. Frame/control consumer and input/provider/writer joins retained; totals unchanged, Q15 pendingQ14.

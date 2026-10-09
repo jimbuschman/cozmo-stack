@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 383 — Vorbis packet block, skip and end-frame decisions
+
+Primary: `20261009-sound-vorbis-packet-frame-decisions-native.txt`, same engine hash; 139 instruction words plus literals. VI7 outputplane pointer/geometry prefix and VM6 trim/reset writers reused. D=decoder,P=packet,S=D10 setup; offsets hex. Retained source channels1/2; excludedzero/multichannel notdescended. This records source frame/timing controls without a WEM arithmetic equivalence claim.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| VF383A packet selector | AB37E4..AB382C;AB62E0..AB6378;raw1005364 | PublishD0=P.word0 pointer,D8=P.word4 byteextent,D4=0,thenAB62E0(D,1). Selectedwidth1/freshbitoffset0 readsfirstbytebit0 usingmasktable1005364=1, leavesbytepointer/remainingextentunchanged,writesD4=1. No byteextent/nullgate beforebyteaccess. SaveoldD28→D24;oldblockword=S[oldD28*4];newD28=U8[S1C+bit*2]. No clamporforcedsameblockmode. Otherbitreaderwidth paths notneededforthisfreshonebitcaller. |
+| VF383B overlap preservation flag | AB3830..AB3874 | D.byte30nonzero skipscopy. Zero computes bytecount=(oldblock+(signedoldblock<0?3:0))&FFFFFFFC; foreachretainedchannel forwardcopythatmanybytes fromD14[channel]+bytecount toD18[channel],thenD.byte30=1. LiveD.channelCountC reloadsaftereachcopy. No newalloc/refcount/resultgate. Pointer/length/flag order exact; samplebytecopy implementation notdescended. |
+| VF383C normal output interval | AB3878..AB38C0 | D1C!=FFFFFFFF choosesnormalpacket. ReadU16skipD2C; newblock=S[newD28*4]. Signedquarter sizes useadd3iffnegative thenASR2; B=wrap(oldquarter+newquarter). PublishD1C=0,D20=B before skip/endtrim choices. No normalizationtounsignedsize, maxsize substitution, block-equalityshortcut or sample-rate conversion. |
+| VF383D skip application/exhaustion | AB38C4..AB38F0;AB395C..AB3970 | Nonzeroskip firstD1C=skip. SignedB>=skip: clearD2C=0 andcontinueendtrimwithappliedskip. SignedB<skip: D1C=B,remaining=low16(skip−B),publishD2C. Ifremaining>=signedtrunc(S4/2) returnwithoutsample-arithmeticcontinuation;otherwisecontinueendtrimwithappliedskip=B. D20 remainsB unlessendtrim changesit. No failed-seekerrorcode orforceddecodejusttoconsumeallskip. |
+| VF383E packet end trim | AB38F4..AB3910;AB3960..AB396C | Packetbyte8zero skips. Nonzero candidate=wrap(B−U16D2E); signedcandidate<appliedskip clampscandidate toappliedskip; storeD20. No end-trim consumption/reset here, no clamp to0 separately, no PBI flagread or sourcepositionadvance inthiswrapper. Effectivependingframeinterval remainsD1C..D20; itsconsumer is separate. |
+| VF383F first-packet sentinel | AB3938..AB3958 | D1C==FFFFFFFF setsD1C=0 andD20=0. CompareU16skipD2C againstsignedtrunc(S4/2); skip>=half returns,leavingD2Cunchanged. Smaller enterscontinuation withzero interval. Doesnotusenormalold/newquarter sum or endtrimflag. Old/new selectorpublication andoptionaloverlapcopy alreadyoccurredbeforethissentinelgate. |
+| VF383G selected continuation boundary | AB3914..AB3934 | Selectmappingbyte1 fromS1C+bit*2; addressS20+20*byte; tailAB6B14(D,mapping). No returnvalue conversion or error callback inthiswrapper. out of scope: per-sample arithmetic descendants afterthisselected control boundary; source framing/skip/end positions stayexact and WEM decoding isnot reclassifiedEQUIVALENT_IMPLEMENTATION. Additional control decisions inside the continuation remain separately retained wherever they affectframe/state results. |
+
+Named packet block/skip/end-frame producer nowpositive; remaining packet/framing consumers, setup/selector/skip/end/control input/provider/writer joins remain PARTIAL. Q14-003 doesnotclaimcompleteWEMdecoding/integration. Totals unchanged;Q15 pendingQ14. No production/fidelity/hardware changes.
+
 ## Checkpoint 382 — known bus58 command recursion
 
 Primary: `20261009-sound-bus-command58-native.txt`, same engine hash; 40 instruction words plus raw slots. NC363 knownfive node58 andSL364 PBI1C bindings reused; no adjacent bus78 descent from mere proximity. N=bus; offsets hex.
