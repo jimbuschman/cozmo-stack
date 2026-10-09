@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through313 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through314 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1783,3 +1783,7 @@ DDEFER312A–H add cached-count waitpredicate, rawdeadline comparisons/freshcloc
 ### Checkpoint 313 — deferred small sorts
 
 DSORT313A–D record signed64 descending deadlines, exact count0–3 branches and whole-holder exchange, no ID tie-break and positively demonstrated unstable equal-key order. Larger sort paths remain pending; counts unchanged, Q14 PARTIAL, Q15 parked.
+
+### Checkpoint 314 — complete selected deferred sort
+
+DSORT314A–H bind all selected sort recipients, signed deadline comparisons, six-entry insertion threshold, sample/duplicate/ordinary partitions, eight-moved-holder fallback, recursion and resulting earliest-deadline last-entry consumption. Supersedes DSORT313 larger-sort pending wording. Other creator/input/context/lifetime joins remain PARTIAL; counts unchanged, Q15 parked.
