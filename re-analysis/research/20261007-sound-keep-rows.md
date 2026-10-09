@@ -11,6 +11,14 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 248 — descriptor-manager scope boundary
+
+Primary: `20261008-sound-descriptor-manager-scope-boundary-native.txt`; same engine hash. Scope assessment for MB244's known101BE18 family only, not an exhaustive global writer/family claim. Native20 new-entry path calls its live30 at95FC8C/95FC90, bound by101BE48 to95EAF0. That body reaches the already identified application file resolver108D798 via slotC and selected device from108D79C/count108D7A0 via slot1C. Existing20,24,28 endpoints96006C,95FA5C,95F0C0 call962BC4, the device stream-priority update. These joins distinguish descriptor stream management from a recovered sound Play or source-start callback. Existing file-resolver/device/scheduler rows are reused only to identify the scope boundary.
+
+out of scope: MB244 known descriptor-manager20/24/28 stream reference/priority management, its30 file-resolver/device stream creation, and962BC4 scheduler priority propagation are storage/I/O infrastructure under the guard; stop here without tracing maximum scans, stream backing storage, open callbacks or scheduling descendants.
+
+OD237/OW241/OR242/EO247 still preserve the caller's exact descriptor, mode and retirement order. Their requests for this known recipient's role are reconciled by this exclusion; they do not require a new source-readiness or sound-start body. Other provider/global writers and in-scope caller/input/family closure remain PARTIAL. Census totals unchanged, Q15 parked, no production/fidelity changes.
+
 ## Checkpoint 247 — event-wide owner retirement
 
 Primary: `20261008-sound-event-owner-retirement-native.txt`; same engine hash. E=incoming event pointer, P=record owner. Registry108DE50/54/58/5C; concrete manager family MB244 and group cleanup OG243 reused. Endpoints inclusive.

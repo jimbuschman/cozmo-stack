@@ -1519,3 +1519,7 @@ ER246A–C bind the known factory table, mutex-protected retain/release, zero-co
 ### Checkpoint 247 — event-wide owner retirement
 
 EO247A–C trace all event-pointer matches, descriptor/group/object release order, owner retirement and shifted-successor erase traversal. Existing group/object families reused; manager role/action/mutex/provider/writer closure retained. Storage internals excluded. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 248 — descriptor-manager scope boundary
+
+Known MB244 callbacks join file-resolver/device stream creation and stream-priority infrastructure: out of scope under the guard, with no further descent. Caller descriptor/mode/retirement rows remain positive; other provider/writer and in-scope caller closure retained. No totals/Q15/fidelity/production changes.
