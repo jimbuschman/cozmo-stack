@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through297 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through298 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1719,3 +1719,7 @@ LFRAME296A–H recover exact last-eligible-slot state overwrite, reverse idle ga
 ### Checkpoint 297 — parent/device output callers
 
 OUT297A–F recover parent valid-frame/padding/state and custom/fallback routing, exact gain endpoint publication, capture silence/submission/count order and device callback/history order. MR geometry reused and per-sample arithmetic stopped. Concrete A1C9CC/custom/device/capture products and writers remain separate; counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 298 — selected sink bindings and capture conversion
+
+SOUT298A–F bind default/OpenSL sink callbacks to native no-ops or positive DF45/49 bodies, and recover capture type/scratch-fallback/remap/gain-stage/count controls, reusing MR/CV sample geometry. Device node table is not confused with sink table. Registered/custom products and wider inputs/providers/writers remain PARTIAL; no counts/Q15/fidelity/production changes.
