@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through307 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through308 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1759,3 +1759,7 @@ AENTRY306A–D bind base/OnDevice/OnRobot constructor tables to exact Prepare sl
 ### Checkpoint 307 — OnDevice due/delay/post
 
 DPOST307A–E add selected OnDevice Update/done, due-time <= gate, raw64 globaldelay693 initialization, per-event reload/index advance, weak scheduled gate, publication before post and event_volume/ProcessEvents even after failure. Callback and Dispatch lifetime/thread/cancellation/providers remain open. Counts unchanged, Q14 PARTIAL, Q15 parked.
+
+### Checkpoint 308 — concrete OnDevice callback products
+
+DCB308A–D bind the created callback table, distinguish heap clone/in-place clone from move assignment, retain/release selected captured weak ownership, and join weak-gated mutex-protected completion to AL1 and DPOST307 donecount. Other context/post-map/Dispatch/input closure stays PARTIAL; counts unchanged, Q15 parked.
