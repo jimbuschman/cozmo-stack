@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through513 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through514 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -416,13 +416,13 @@ PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical o
 
 > | M9-002 | **KEEP** | 0x005EEB30..0x005EEE9F;0x00544444..0x0054445E;0x00540D1C;0x0054F70C | Trigger resolution failure, compound propagation, per-step timeout and render wait are singing/action decisions. |
 
-PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behavior activation/lock/assembly and M12 TriggerAnimationAction, timeout and compound propagation are HIGHER-LAYER with5EEB46..5EEB60,5EEDBC..5EEE8C,544444..54445E,540D1C,54F70C citations. Retained M6 concrete switchpost599F94 remains exact recipient work.
+PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behavior activation/lock/assembly and M12 TriggerAnimationAction, timeout and compound propagation are HIGHER-LAYER with5EEB46..5EEB60,5EEDBC..5EEE8C,544444..54445E,540D1C,54F70C citations. SI514C reconciles concrete599F94 actual client14→tag3 signal/controller/native tag8→QC/SX scoped switch consumer joins. Remaining producer/binding/input families stay explicit; higher-layer action/behavior scope is not silently accepted.
 
 ## Q14-041 — triage line 79
 
 > | M9-003 | **KEEP** | 0x005EF0C8..0x005EF30F;0x005EF490..0x005EF4DF;0x005EF2C6 | Running means, posted vibrato values, duration log, acting-tag return and stop preserving smoothing state are parameter/lifecycle behavior. |
 
-Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. SGB1–6 independently reopen the local controlbody throughactualStopreturn5EF340; imports1042E34/1041E24 identifyparameterpost599F62 andRemoveListener6356AC. Remaining: constructor defaults and concrete M6 virtual18 binding; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
+Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. SGB1–6 independently reopen the local controlbody throughactualStopreturn5EF340; imports1042E34/1041E24 identifyparameterpost599F62 andRemoveListener6356AC. SI514A/B supplies initial smoothing140/log144+0 and empty tree/vector, known mean0/count1 seed; SI514D joins actual M6 client18→tag4→controller/native RTPC consumers. Additional map/input/producer/binding families remain distinct; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
 
 ## Q14-042 — triage line 80
 
