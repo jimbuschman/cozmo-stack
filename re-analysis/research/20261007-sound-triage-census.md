@@ -1991,3 +1991,7 @@ SL364A–F settle operation selection, independent zero-wildcard local state upd
 ### Checkpoint 365 — Switch/Layer selected stop removal
 
 SR365A–G settle independent wildcard removal, unlink/count-before-completion, ordered known cleanup and Switch-only association first-match erasure. Known HP4–13 queue/type4 voice/source controls reused from existing Q15 evidence. Generic local unread-helper/consumer labels superseded for those families; actual writer/input/family/timing closure remains PARTIAL. Counts unchanged; Q15 pending Q14.
+
+### Checkpoint 366 — known root-bus commands
+
+BR366A–F join A21/NB16 roots to known bus4C/50/54, settle ordinary signed active-context admission and exclusion pre-transition, and preserve two reverse vectors with callback-time unsigned shrink clamping. Five known nonbus54=9ED4CC is positively bound, not assumed identical to4C. Its body/filter/scoped transition and wider writer/input/product closure remain PARTIAL; totals unchanged, Q15 pending Q14.
