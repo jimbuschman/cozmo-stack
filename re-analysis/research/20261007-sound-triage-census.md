@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through478 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through479 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -322,7 +322,7 @@ CHECKED: EV1–14, MP1–13/ML1–3/ES1–10/LS1–7/LB1–5 close the complete 
 
 PARTIAL: BO4–BO6 and B13 prove metric pointer/results are passed to an observer and optional external completion callback; empty-frame values/order are exact. Full metric/filter identity, lane mapping, concrete live registrations and downstream consumers remain open. No whole metering-stage arithmetic exemption established.
 
-Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array clearing, F32 gain gates, callback-visible metrics, weighted channel masks/history snapshots, power publication and history restoration. The boundary is KEEP because9C806C receives M, not certified pure PCM arithmetic. Interpolation/filter recurrence, coefficient writers and callback registration/consumer census remain open.
+Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array clearing, F32 gain gates, callback-visible metrics, weighted channel masks/history snapshots, power publication and history restoration. The boundary is KEEP because9C806C receives M, not certified pure PCM arithmetic. ME479 adds concrete empty-registry initialization/current registry publication and LINIT/LGET/MET observer joins. out of scope:per-sample filter/interpolation recurrence and NEON sample arithmetic under ADP-1; do not reopen it. Retained filter/parameter product and positively witnessed observer registration/consumer inputs remain open; no absence-based reachability conclusion.
 
 ## Q14-029 — triage line 67
 
@@ -2397,3 +2397,5 @@ Checkpoint476 — RB476 segmented route builder mode/update/listener-mask identi
 Checkpoint477 — RF477 selected dry scalar input/native conversion, cached definition/exact ID retain/publication and numeric mode boundary;72 complete ARM instructions. Spatial attenuation/coordinate payload and registry backing excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint478 — VR478 concrete post-render result recipients/holder invocation/live connection bit2<-bit1/contextB8 store and VJ478 original voice/route range reconciliation;22 complete ARM instructions plus positive recipient reuse. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint479 — ME479 metric decision/interface scope reconciliation and concrete registry empty-state/current publication→line flag/query/notification joins;49 complete ARM instructions. Per-sample filter/interpolation and storage excluded; parameter/live observer inputs remain explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

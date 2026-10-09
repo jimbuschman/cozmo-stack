@@ -1,0 +1,56 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009C7A94..0x009C7AF4 exclusive; ARM;
+009C7A94: push         {r4, r5, lr}
+009C7A98: sub          sp, sp, #0xc
+009C7A9C: add          r5, sp, #4
+009C7AA0: mov          r4, r0
+009C7AA4: mov          r3, #0
+009C7AA8: str          r3, [r0]
+009C7AAC: str          r3, [r0, #4]
+009C7AB0: mov          r0, r5
+009C7AB4: str          r3, [r4, #8]
+009C7AB8: str          r3, [r4, #0xc]
+009C7ABC: str          r3, [r4, #0x10]
+009C7AC0: str          r3, [r4, #0x14]
+009C7AC4: bl           #0x4d6694
+009C7AC8: mov          r0, r5
+009C7ACC: mov          r1, #1
+009C7AD0: bl           #0x4d66a0
+009C7AD4: mov          r1, r5
+009C7AD8: add          r0, r4, #0x18
+009C7ADC: bl           #0x4d66ac
+009C7AE0: mov          r0, r5
+009C7AE4: bl           #0x4d66b8
+009C7AE8: mov          r0, r4
+009C7AEC: add          sp, sp, #0xc
+009C7AF0: pop          {r4, r5, pc}
+RANGE 0x0099EDAC..0x0099EDC0 exclusive; ARM;
+0099EDAC: add          r0, r6, #0x20
+0099EDB0: bl           #0x9c7a94
+0099EDB4: mov          r0, r6
+0099EDB8: str          r6, [r7, #0x8c]
+0099EDBC: bl           #0xa02f80
+RANGE 0x00A02F80..0x00A02FD0 exclusive; ARM;
+00A02F80: push         {r3, r4, r5, r6, r7, lr}
+00A02F84: add          r6, r0, #0x14
+00A02F88: mov          r4, r0
+00A02F8C: mov          r5, #0
+00A02F90: strb         r5, [r0, #0x1c]
+00A02F94: mov          r0, r6
+00A02F98: bl           #0x4d3064
+00A02F9C: mov          r3, #1
+00A02FA0: add          r0, r4, #0x18
+00A02FA4: strb         r3, [r4, #0x1c]
+00A02FA8: bl           #0x4d6754
+00A02FAC: mov          r0, r6
+00A02FB0: bl           #0x4d3070
+00A02FB4: ldr          r3, [pc, #0x108] ; word[00A030C4]=0063D17C
+00A02FB8: ldr          r2, [r4, #4]
+00A02FBC: add          r1, r4, #0x20
+00A02FC0: str          r5, [r4, #0xc]
+00A02FC4: ldr          r3, [pc, r3]
+00A02FC8: cmp          r2, #0xb
+00A02FCC: str          r1, [r3]
+00A030C4: raw=0063D17C relocated=0063D17C 
+01040148: raw=0108D95C relocated=0108D95C 
