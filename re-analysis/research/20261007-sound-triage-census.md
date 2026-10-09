@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 34 CHECKED native-row obligations / 8 CHECKED scope exclusions / 98 PARTIAL / 0 NOT DONE; decision checkpoints through521 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through522 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -71,8 +71,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-062 | 102 | CHECKED |
 | Q14-063 | 104 | CHECKED |
 | Q14-064 | 106 | CHECKED |
-| Q14-065 | 107 | PARTIAL |
-| Q14-066 | 115 | PARTIAL |
+| Q14-065 | 107 | CHECKED |
+| Q14-066 | 115 | CHECKED |
 | Q14-067 | 116 | PARTIAL |
 | Q14-068 | 117 | CHECKED |
 | Q14-069 | 118 | CHECKED |
@@ -566,15 +566,13 @@ CHECKED: EQ521 maps F1–21/EQB/EQ445 allseven persistent coefficient graphs, ac
 
 > | M9-028 | **KEEP** | 0x00599F60..0x00599FBF;0x00596DC8 | Game object7 on-robot/object6 off-robot, zero transition and dispatch order remain exact live routing work. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
-
-CM446: concrete tag69 captured-client output-source callback publishes rawC3C; allnext-animation mode0/1/2/other branches, oldabort/clear-before-mode and terminal4/5 admission nowpositive. Reuses GOR/AS/SH/UC/QC/SX, AENTRY306/AP/ASORT305 joins. Modechange itselfdoesnotrebuildexistinganimation. Concrete deleting lifecycle/higher-layer gameinput and widerwriter/callback/scheduling closure remainPARTIAL.
+CHECKED: OR522A–C reconcile GOR1–4 actual object6/7/scalar dispatch, CM446 raw mode writer and selected animation branches, AD447/CU451/MQ458 concrete deleting/abort/unregister lifetime, and ASORT305/DSORT315 exact unsigned-timestamp sort. Actual AS/SH/UC/QC/SX binding and native recipients are positive. The selected three-entry helper tie correction315 supersedes the stale ASORT305D sentence; larger sorts do not promise stability. Higher-layer game input stops at its bounded mode/tag interface; unrelated input/provider families are not claimed.
 
 ## Q14-066 — triage line 115
 
 > | C30.1 / N1 / StartStream arguments | M6-025 | **KEEP** | 0x00A544C4..0x00A545DC;0x00A56650 | Raw results, media-pointer/size arguments, Â±0.5f/trunc_s32 window, source bit gates and deliberate fault are timing/error behavior, not PCM math. |
 
-Complete row mapping: pending. Native descendants and writer/consumer closure must be checked before marking this item CHECKED.
+CHECKED: SR522A–C reconcile SWIN1–5 exact own-PBI media arguments, actual retained source28/bit0 latch, raw1/3F/other classification, wrapping/F32/±half/S32 window and signed offset gates, with SNT1–3 actual lookup/mask/payload/unlock/callback/completion notification. Source bit1 and voiceE8 bit0 are distinct; original raw status survives negative-offset handling. Null owner still loads address140 then faults. Callback is an explicit installed-observer interface, not invented default behavior. Storage/I/O and approved branch exclusions stop at their stated boundaries; no decoder exemption.
 
 ## Q14-067 — triage line 116
 
