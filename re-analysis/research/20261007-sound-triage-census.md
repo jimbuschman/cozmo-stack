@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through325 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through326 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1831,3 +1831,7 @@ SMAT324A–G retain raw mode shortcut, default mono-source square-root selection
 ### Checkpoint 325 — fixed standard routing tables
 
 STABLE325A–C bind five further non-pan destination-mask tables and common physical-bit/compact-row write/clear order; all seven local fixed table families now positive with MX5/324F. Remaining specialized mono/general pan/provider/consumer work stays PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 326 — specialized mono coefficients
+
+MONO326A–G bind all selected local mono-source pan/non-pan routes, raw split/clamp predicates, product/sqrt fallback parameters and forward stores into sourcebit3 tail. Supersedes mono-specialized pending wording; general pan/provider/consumer closure remains PARTIAL. Counts unchanged, Q15 parked.
