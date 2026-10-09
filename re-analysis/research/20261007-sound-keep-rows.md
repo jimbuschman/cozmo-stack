@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 249 — authored Play-action release and output binding
+
+Primary: `20261008-sound-authored-play-release-binding-native.txt`; same engine hash. A=known authored Play action. Common release DR162C and base cleanup DD163E reused. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| AP249A | 00A60C1C..00A60C30;00A60C98..00A60CAC;00A60D0C..00A60D24;00A62E54..00A62EAC;0103CB68/0103CB74/0103CB98 | Factory dispatch masks incoming typeFF00; 0400 family branches toA62E54, preserving original type/ID args. Allocate28hex; null returnsnull. Nonnull baseA60ADC(A,type,ID), A24=FFFFFFFF, publish103CB68, callA60DEC, return A. Native table calculationA62E94+8+5D9CC4+8=103CB68. Known0=A629C4,C=A60650,30=A62978. | This includes incoming0403; no deferred0503 factory substitution. C binds the existing DR162C count/registry/destructor/pool-release body; its known0 now binds DD163E local base cleanup. | Base → target default → table → property setup → return; caller release → common count gate → base destructor. | Base initialization/property setup and other authored action families remain separate. ER246 action.liveC is joined when its action came from this factory; exhaustive event action providers still PARTIAL. out of scope: action allocation/pool internals. |
+| AP249B | 00A62978..00A62980;0103CB98 | Known authored Play30 writes0 to incoming output word0, then returns. No additional descriptor bytes, action state stores or callback. | Unlike deferred0503 DR162B's44-byte copy, this leaves the rest of caller output untouched. Return register has no authored result publication. | Word0 zero → return → caller's existing completion/retirement sequence. | PN160/RR2/RS168 0403 branches now have this known concrete output callback. Wider writer/family/input closure remains PARTIAL; no fabricated zeroed whole descriptor. |
+
+Authored0403 output/release/destructor joins are positive for this factory. This reconciles earlier pending0403 family requests without promoting all action/provider paths. Coverage unchanged, Q15 parked, no production/fidelity changes.
+
 ## Checkpoint 248 — descriptor-manager scope boundary
 
 Primary: `20261008-sound-descriptor-manager-scope-boundary-native.txt`; same engine hash. Scope assessment for MB244's known101BE18 family only, not an exhaustive global writer/family claim. Native20 new-entry path calls its live30 at95FC8C/95FC90, bound by101BE48 to95EAF0. That body reaches the already identified application file resolver108D798 via slotC and selected device from108D79C/count108D7A0 via slot1C. Existing20,24,28 endpoints96006C,95FA5C,95F0C0 call962BC4, the device stream-priority update. These joins distinguish descriptor stream management from a recovered sound Play or source-start callback. Existing file-resolver/device/scheduler rows are reused only to identify the scope boundary.

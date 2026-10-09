@@ -1,0 +1,65 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A60C1C..0x00A60C34 exclusive; ARM;
+00A60C1C: and          r3, r0, #0xff00
+00A60C20: mov          r2, r0
+00A60C24: cmp          r3, #0x1000
+00A60C28: mov          ip, r1
+00A60C2C: beq          #0xa60c8c
+00A60C30: ble          #0xa60c98
+RANGE 0x00A60C98..0x00A60CB0 exclusive; ARM;
+00A60C98: cmp          r3, #0x800
+00A60C9C: beq          #0xa60ddc
+00A60CA0: bgt          #0xa60ce0
+00A60CA4: cmp          r3, #0x300
+00A60CA8: beq          #0xa60d6c
+00A60CAC: bgt          #0xa60d0c
+RANGE 0x00A60D0C..0x00A60D28 exclusive; ARM;
+00A60D0C: cmp          r3, #0x600
+00A60D10: beq          #0xa60db0
+00A60D14: cmp          r3, #0x700
+00A60D18: beq          #0xa60db0
+00A60D1C: cmp          r3, #0x400
+00A60D20: bne          #0xa60d04
+00A60D24: b            #0xa62e54
+RANGE 0x00A62E54..0x00A62EB0 exclusive; ARM;
+00A62E54: ldr          r3, [pc, #0x54] ; word[00A62EB0]=005DD1E0
+00A62E58: push         {r4, r5, r6, lr}
+00A62E5C: mov          r6, r0
+00A62E60: ldr          r3, [pc, r3]
+00A62E64: mov          r5, r1
+00A62E68: mov          r1, #0x28
+00A62E6C: ldr          r0, [r3]
+00A62E70: bl           #0xa7a7f4
+00A62E74: subs         r4, r0, #0
+00A62E78: beq          #0xa62ea8
+00A62E7C: mov          r2, r5
+00A62E80: mov          r1, r6
+00A62E84: bl           #0xa60adc
+00A62E88: ldr          r3, [pc, #0x24] ; word[00A62EB4]=005D9CC4
+00A62E8C: mvn          r2, #0
+00A62E90: mov          r0, r4
+00A62E94: add          r3, pc, r3
+00A62E98: str          r2, [r4, #0x24]
+00A62E9C: add          r3, r3, #8
+00A62EA0: str          r3, [r4]
+00A62EA4: bl           #0xa60dec
+00A62EA8: mov          r0, r4
+00A62EAC: pop          {r4, r5, r6, pc}
+RANGE 0x00A62978..0x00A62984 exclusive; ARM;
+00A62978: mov          r3, #0
+00A6297C: str          r3, [r1]
+00A62980: bx           lr
+0103CB68: raw=00A629C4 relocated=00A629C4
+0103CB6C: raw=00A629EC relocated=00A629EC
+0103CB70: raw=00A6028C relocated=00A6028C
+0103CB74: raw=00A60650 relocated=00A60650
+0103CB78: raw=009D0410 relocated=009D0410
+0103CB7C: raw=00A60248 relocated=00A60248
+0103CB80: raw=00A60250 relocated=00A60250
+0103CB84: raw=00A6076C relocated=00A6076C
+0103CB88: raw=00A602CC relocated=00A602CC
+0103CB8C: raw=00A62D38 relocated=00A62D38
+0103CB90: raw=00A62984 relocated=00A62984
+0103CB94: raw=00A60284 relocated=00A60284
+0103CB98: raw=00A62978 relocated=00A62978

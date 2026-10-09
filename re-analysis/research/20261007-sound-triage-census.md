@@ -1523,3 +1523,7 @@ EO247A–C trace all event-pointer matches, descriptor/group/object release orde
 ### Checkpoint 248 — descriptor-manager scope boundary
 
 Known MB244 callbacks join file-resolver/device stream creation and stream-priority infrastructure: out of scope under the guard, with no further descent. Caller descriptor/mode/retirement rows remain positive; other provider/writer and in-scope caller closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 249 — authored Play release/output binding
+
+AP249A/B bind the0400 factory's table, commonC/base0 cleanup and30 word0-only output. Existing release/base bodies reused; prior0403 requests locally reconciled, wider action/provider/initialization closure retained. No totals/Q15/fidelity/production changes.
