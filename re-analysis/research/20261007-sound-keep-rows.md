@@ -11,6 +11,39 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 335 — all six local control interpolation dispatches
+
+Primary: `20261008-sound-spatial-control-layout-native.txt`, executable A5B9D0..A5D70C with raw literal islands BE48..BEC8,C5E4..C624,CDC0..CE40,D614..D668 separated. Same engine hash; positive333/334 admission/scan/aggregation/publication reused. These are scalar control curves, not sample planes or positioning payloads.
+
+For every interior segment, raw selector word8==4 takes its explicit linear fast path, ==9 takes current record value directly. Otherwise compute binary32 t=(x-firstX)/(secondX-firstX), with the site's exact VSUB/VDIV association; unsigned selector<=8 dispatches the following executable branch table, >8 routes the site's invalid-selector conversion/default path. No t clamp or denominator-zero guard. Addresses below are native branch entries, not symbol-only citations.
+
+| Step / curve site | Interior gate / indexed table | Targets for selectors0,1,2,3,4,5,6,7,8 | Selector9 / linear4 / >8 / result continuation |
+|---|---|---|---|
+| SC335A selected r7, listener word0 | A5C00C..A5C064 | C108,C0D0,C0B0,C064,C0A4,C194,C174,C13C,C128 | BDC8 / C3CC / C320 / BBE0 |
+| SC335B selected r5, same input | A5BDD0..A5BE28 | BF6C,BF34,BF14,BEC8,BE3C,BFD8,BE28,BFA0,BF8C | BDC0 / C3AC / C344 / BC78 |
+| SC335C mode1 global pointer38 | A5C9FC..A5CA54 | D5F4,D68C,D5D4,D588,D5C8,D550,D530,D1F0,D1DC | CA54 / CAA0 / D668 / C49C |
+| SC335D mode1 global pointer44 | A5C9A4..A5C9FC | D334,D378,D314,D2C8,D308,D294,D274,D23C,D228 | C99C / CAC0 / D354 / C66C |
+| SC335E terminal global pointer14 | A5CCA4..A5CCFC | D168,D130,D4FC,D4B0,D4F0,D47C,D45C,D424,D410 | CCFC / D1AC / D188 / C82C |
+| SC335F terminal global pointer20 | A5CD68..A5CDC0 | D064,D048,CFF8,CFAC,CFEC,CF78,CF58,CF20,CEF4 | CD48 / D0A8 / D084 / C8C8 |
+
+All targets are in the native companion. SC335G establishes their exact local arithmetic families below; high-level expressions identify operands only, and the companion's individual VMUL/VMLA/VMLS/VNMLS sequence remains the arithmetic authority (no reassociation, binary64 substitution or mathematical-library replacement).
+
+| Selector | SC335G arithmetic / control boundary |
+|---|---|
+| 0 | q=F32(1-t), q2=F32(q*q), q3=F32(q*q2); b+q3*(a-b), with destination register moved into site's result after VMLA. |
+| 1 | z=F32(t*raw3FC90FDB), q=F32(z*z); polynomial chain rawB9408E8F,3C081741,3E2AA5D9,3F7FFFC7 via VMLA then VNMLS then VMLA, multiply z by polynomial, then a+weight*(b-a). |
+| 2 | F32(F32(t*F32(t-3))*.5), then a+weight*(a-b). Preserve reversed endpoint difference, not a rewritten equivalent formula. |
+| 3 | VCMPE(t,.5), BLS takes lower branch also for unordered. Lower z=t*raw40490FDB; upper z=raw40490FDB-t*raw40490FDB via VMLS. Both use q=z*z and rawB8C08E8F,3B881741,3DAAA5D9,3EFFFFC7 VMLA/VNMLS/VMLA chain. Lower weight=z*polynomial; upper weight=1-z*polynomial via VMLS. Apply a+weight*(b-a). Each site's explicit lower-branch cross-join retained. |
+| 4 | Explicit fast path uses native endpoint differences, VDIV then VMLA a+t*(b-a), goes straight to result continuation. Indexed4 entry also applies existing t, although earlier equality gate normally bypasses it. |
+| 5 | z=t*raw40490FDB,q=z*z; start raw3CA0AD34, VNMLS with q*raw39FE3151; then raw3E7D9E76+q*previous; then raw3A36A2E4+q*previous; a+weight*(b-a). |
+| 6 | F32(F32(t*F32(t+1))*.5), then a+weight*(b-a). |
+| 7 | z=t*raw3FC90FDB,q=z*z; rawBAA69EB6,3D29EF0F,3EFFF486,3F7FFF90 VMLA/VNMLS/VMLA chain, then b+weight*(a-b), move to site's result. |
+| 8 | t2=t*t,t3=t*t2; a+t3*(b-a). |
+| 9 | Current record value; no interpolation, next-endpoint value or conversion bypass. Result still enters its site's conversion/default stage. |
+| Other unsigned values | Site-specific >8 branch above, after normalization t has already been calculated. Positive dispatch only; conversion/default values remain the next bounded work, not guessed interpolation. |
+
+SC335A–G replace unread interpolation-body wording for these six local sites; remaining conversion selectors/defaults, concrete providers/writers and A5993C selected decisions retain Q14-029 PARTIAL. Exact control arithmetic has no ADP-1 waiver. Counts unchanged; Q15 parked. No production/fidelity changes.
+
 ## Checkpoint 334 — listener mask recipient and accepted control accumulation
 
 Primary: `20261008-sound-spatial-control-curves-native.txt`; same engine hash. RCC1 binds standard connection vtable101C4A8; raw slot101C4F4 positively selects A6F1F8. No positioning payload producer or per-sample descent.
