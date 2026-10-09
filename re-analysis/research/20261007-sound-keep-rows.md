@@ -11,6 +11,24 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 385 — Vorbis setup mode publication and rejection order
+
+Primary: `20261009-sound-vorbis-setup-mode-publication-native.txt`, same engine hash; 272 instruction words plus literals. Setup S, bit reader R and arena A; offsets hex. VC2 block-size initialization, VC3 parser-result acceptance and VF383 packet selector are reused. This closes the local producer of the selected block/mapping bytes, not the entire setup or decoder path.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| VS385A bit-field consumption | AB62E0..AB6378; rawAB637C,1005360..1005388 | For retained widths 0/1/2/4/6/8/10, read starting byte even for width0; combine following bytes when signed(bitOffset+width)>8, then >16, then >24. Mask selected by width from1005360; masks0/1/3/F/3F/FF/3FF respectively. Result is assembled value AND mask. Advance pointer by ASR3(bitOffset+width), subtract that byte count from remaining extent modulo2^32, and store new bitOffset AND7. No remaining-extent or pointer admission check. Ordinary setup offsets0..7 and widths<=10 need at most three bytes; no speculative wider-width contract claimed. |
+| VS385B codebook order and lookup | AB63E0..AB64BC; rawAB6784,104026C | Read8+1 and publish S18 count, then S2C descriptor base. Physical order: read10-bit index, load word from1058290+4*index, form local words(selectedPointer,0,36A), callABA188(local,S2C+3C*i,A). Ignore result; reload live S18 after each call. Native PC/GOT load resolves1058290, not the decompiler navigation address1068290. No index clamp or helper rejection test here. Selected codebook decoding is a separate boundary. |
+| VS385C staged rejection | AB64C0..AB6680;AB6764..AB6778 | After all codebooks, read6+1/publish floor count S10 and base S24; callAB88D8 in physical24-byte order. Then read6+1/publish residue count S14/baseS28, callAB6F34 in physical1C-byte order. Then read6+1/publish mapping count SC/baseS20, callAB6788 in physical14-byte order with original channel argument. Each stage reloads live count/base on successful iterations; any nonzero helper return immediately becomes FFFFFF7B atAB656C, without parsing later stages. No partial rollback or helper-error propagation. Exact helper rejection predicates remain separate retained dependencies. |
+| VS385D mode producer | AB66B0..AB675C | Read6+1, publish S8 mode count (ordinary1..64) then S1C base. Each physical2-byte mode: read1 and store byte0 block selector; reload S1C, read8 and store byte1 mapping selector; reload S1C and SC, then require unsigned-byte selector < signed SC. Invalid selector returns FFFFFF7B after both bytes were published. Valid selector reloads live S8 and continues. No power-of-two mode-count requirement, forced single mode, rollback or deferred publication. |
+| VS385E successful acceptance/consumer | AB677C..AB6780; VC3/VF383 | Return0 only after all local stages and mode checks succeed. Existing VC3 accepts parser0 and rejects nonzero. Existing VF383 packet path reads one bit and uses S1C+2*bit for both block byte0 and mapping byte1, then selects S20+14*byte1. Preserve that one-bit packet contract even though setup stores up to64 modes; no invented logarithmic packet selector. S0/S4 block words are already owned by VC2. |
+
+out of scope: arena reservation, zeroing and descriptor storage infrastructure; no allocator descent. The parser itself has no reservation-null rejection before the subsequent descriptor writes/calls.
+
+out of scope: per-sample arithmetic inside selected decode helpers; no WEM decoding equivalence claim. Floor/residue/mapping admission and any frame/state controls remain retained separately.
+
+Local setup-to-packet mode/block/mapping publication now positive. Parser-helper admission and actual input/provider/writer/family joins remain PARTIAL. Totals unchanged; Q15 pending Q14. No production, fidelity-manifest or hardware changes.
+
 ## Checkpoint 384 — Vorbis pending-frame consumption and overlap preservation
 
 Primary: `20261009-sound-vorbis-frame-consumption-native.txt`, same engine hash; 165 instruction words plus window-selector literals. VF383 interval producer and VPACK1–4 frameralreadypositive; reuseitsraw2/2D/2E/11 gates, no re-extraction. D=decoder,S=D10 setup,O=output,Q=requestedframes,K=associationargument; offsets hex. Retained sourcechannels1/2; no multichannel source descent or WEM arithmetic equivalence claim.

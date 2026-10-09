@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through384 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through385 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2067,3 +2067,7 @@ VF383 settlesAB3780 one-bit block selection, overlap-copyflag, normal/firstpacke
 ## Checkpoint 384 — Vorbis interval consumer
 
 VF384 closesAB3520 availability/query/minframe/association/window/consumption controls andAB3978 overlap-preservation flag/path, joining already-positive VPACK terminalstatus gates toVF383. Kernel sample arithmeticexcludedwithoutWEM equivalence claim. Other source/setup/input/provider/writer joins retained; totals unchanged, Q15 pendingQ14.
+
+## Checkpoint 385 — Vorbis setup mode producer
+
+VS385 records bit-field consumption, actual codebook-table load, staged parser rejection and block/mapping byte publication, joining VC2/VC3 to VF383. Parser-helper admission and actual input/provider/writer/family joins remain PARTIAL. Counts unchanged; Q15 pending Q14.
