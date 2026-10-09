@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through331 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through332 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -22,7 +22,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-012 | 46 | PARTIAL |
 | Q14-013 | 48 | CHECKED |
 | Q14-014 | 49 | PARTIAL |
-| Q14-015 | 50 | PARTIAL |
+| Q14-015 | 50 | CHECKED |
 | Q14-016 | 53 | PARTIAL |
 | Q14-017 | 55 | PARTIAL |
 | Q14-019 | 57 | PARTIAL |
@@ -232,7 +232,7 @@ PARTIAL: CR/MR establish dispatch, gain pairs, channel layout/count and mixer co
 
 > | M6-012 | **VERIFY** | 0x00A25FF8;0x00A1F79C;0x00A209BC | Separate pure matrix-weight calculation from channel selection, speaker-mask routing and parameter/state writes before permitting any equivalent arithmetic. |
 
-PARTIAL: MX1–MX5 establish format/count/mode gates and A209BC interior identity; CMAT318–320/CGEOM321/CGMAKE322 positively bind A234FC and all its selected local coefficient producers/recipients; MX323 closes standard-to-type2 coefficients; SMAT324 closes standard shortcut/default/table3/high-mask/common-tail branches. Remaining: specialized standard-format routing/mask cases, general pan family, concrete inputs/providers and coefficient-to-consumer boundary. No bulk DSP exemption.
+CHECKED research boundary: MBOUND332 reconciles all selected local matrix branches (MX/CMAT/CGEOM/CGMAKE/SMAT/STABLE/MONO/GPAN/GPROJ/GSRC through331) with positive EP/BP/CR/OUT callers and mixer MR1–5 atA45E9C/A46668. Matrix weights are exact control-parameter values; only actual per-sample PCM arithmetic is out of scope under ADP-1. No complete M6-012 implementation/live wiring claim, no manifest change. Wider callback/input/writer work remains in the relevant separate obligations.
 
 ## Q14-016 — triage line 53
 
@@ -1855,3 +1855,7 @@ GSRC330A–D bind four/six-row scratch writes and all selected union/center/weig
 ### Checkpoint 331 — source607/source637 generators
 
 GSRC331A–E complete selected local general-pan source generators, retaining exact live633 comparison, asymmetric source637 scratch placement and square-root products/fallback order. All local A25FF8/A1F79C/A234FC decision/parameter families now positive; concrete provider/consumer joins remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 332 — settled matrix VERIFY boundary
+
+MBOUND332A–E reconcile complete selected local matrix/control bodies with existing positive caller ownership/callback and mixer endpoint/PCM boundaries. Q14-015 moves CHECKED for this research split; M6-012 remains IMPLEMENTATION_GAP and unchanged. Counts24 nativeCHECKED+8 scopeCHECKED/108 PARTIAL/0 NOTDONE/140; Q14 stillPARTIAL, Q15 parked.
