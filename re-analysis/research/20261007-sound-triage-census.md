@@ -226,13 +226,13 @@ PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positi
 
 > | M6-011 | **KEEP** | 0x009FFD14..0x009FFD74;0x00A550D8..0x00A551EC;0x00A44630;0x00A766F0;0x00A77480;0x00A769EC..0x00A76A2C | Target writers/attenuation, cutoff map parameters, eight-step ramp cadence, finish countdown and immediate bypass predicates remain exact; do not invent default-zero inputs. |
 
-PARTIAL: FB/FC establish target stores, clamp/opcode gates, cutoff maps, coefficient cadence and stable/bypass history. FLIVE303 joins actual buffer-pointer gate, LPF-before-HPF dispatch and primary/secondary control offsets to FC2 targets and RS8 initialization; those selected filter/default bodies are positive. Remaining persistent-matrix/numerical parameter boundary, other relevant target/format/state/input writers and products; no whole M6-011 completion claim.
+PARTIAL: FB/FC establish target stores, clamp/opcode gates, cutoff maps, coefficient cadence and stable/bypass history. FLIVE303 joins actual buffer-pointer gate, LPF-before-HPF dispatch and primary/secondary control offsets to FC2 targets and RS8 initialization; those selected filter/default bodies are positive. FP430 supplies exact scalar seeds and190 native-operation dependencies/all28 snapshots across LPF/HPF immediate/ramp persistent parameter graphs. Remaining other relevant target/format/state/input writers and products; no whole M6-011 completion claim.
 
 ## Q14-013 — triage line 48
 
 > | M6-011 | **VERIFY** | 0x00A767BC..0x00A769C4 | Establish the pure PCM matrix/association subset before dropping its reconstruction: the reopened prefix contains persistent coefficient stores, so parameter/update work remains KEEP and this mixed span is not certified per-sample-only. |
 
-CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficient/matrix output with no PCM access. KEEP, not a pure per-sample DROP. Scalar values and publication order are rows; remaining matrix expression/consumer port belongs to broad M6-011, not claimed closed by this boundary check.
+CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficient/matrix output with no PCM access. KEEP, not a pure per-sample DROP. Scalar values and publication order are rows; FP430 now explicitly supplies the four persistent parameter graphs and all matrix snapshots. Broader M6-011 products/writers remain separate, not claimed closed by this boundary check.
 
 ## Q14-014 — triage line 49
 
@@ -2259,3 +2259,7 @@ LD428 joins RD5/6 to concrete node5C/F8 and initialized PBI context8, exact Soun
 ## Checkpoint 429 — layer mute live recipient
 
 LM429 joins LN6 to known five-family78, exact scope eligibility, shared curve mapping/cache and PE372 mode1 factor policy/PB170 consumer. FB256 processing68 reused and stale next-recipient description corrected. Q14-010/011 PARTIAL; counts unchanged; Q15 follows Q14. No production/fidelity/hardware changes.
+
+## Checkpoint 430 — persistent filter parameter graphs
+
+FP430 resolves FB3 matrix-value uncertainty with190 native-operation dependencies and28 snapshot values for LPF/HPF immediate/ramp. Existing source/dry-route gates, initialization and cadence reused. Per-sample recurrences scoped out. Q14-012 PARTIAL, Q14-013 already-CHECKED boundary unchanged; counts unchanged; Q15 follows Q14. No production/fidelity/hardware changes.

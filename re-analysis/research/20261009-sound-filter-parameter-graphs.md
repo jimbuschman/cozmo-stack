@@ -1,0 +1,270 @@
+# Filter persistent parameter dependency graphs
+
+Primary: existing `20261007-sound-filter-boundary-detail-native.txt` and `20261009-sound-filter-persistent-parameter-native.txt`, engine SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. These graphs retain each scalar native operation and every scratch snapshot; they are control-parameter descriptions, not implementations or PCM recurrence. `T` is the raw float returned by the preceding tanf call. `F32(hex)` is a raw binary32 literal. Each vmla expression names the prior destination first, preserving native arithmetic association and operand order; no algebraic simplification or phone-libm assumption. All offsets hex.
+
+## LPF immediate
+
+Each `vADDRESS` is the result of the operation at that exact native address. Copies are aliases; only arithmetic generates a new node.
+
+| Address | Result | Native operation and dependency |
+|---|---|---|
+| 00A767F0 | v00A767F0 | vdiv.f32(F32(3F800000), T) |
+| 00A767F4 | v00A767F4 | vmul.f32(v00A767F0, F32(3FB504F3)) |
+| 00A767F8 | v00A767F8 | vmul.f32(v00A767F0, v00A767F0) |
+| 00A767FC | v00A767FC | vadd.f32(v00A767F4, F32(3F800000)) |
+| 00A76800 | v00A76800 | vadd.f32(v00A767F8, v00A767FC) |
+| 00A76804 | v00A76804 | vdiv.f32(F32(3F800000), v00A76800) |
+| 00A76808 | v00A76808 | vsub.f32(F32(3F800000), v00A767F8) |
+| 00A7681C | v00A7681C | vadd.f32(v00A76808, v00A76808) |
+| 00A76820 | v00A76820 | vnmul.f32(v00A7681C, v00A76804) |
+| 00A76824 | v00A76824 | vsub.f32(F32(3F800000), v00A767F4) |
+| 00A7682C | v00A7682C | vmul.f32(v00A76804, v00A76820) |
+| 00A76830 | v00A76830 | vadd.f32(v00A767F8, v00A76824) |
+| 00A76834 | v00A76834 | vadd.f32(v00A76804, v00A76804) |
+| 00A76838 | v00A76838 | vmul.f32(v00A76804, v00A76830) |
+| 00A76840 | v00A76840 | vadd.f32(v00A76834, v00A7682C) |
+| 00A76858 | v00A76858 | vmla.f32(v00A76804, v00A76834, v00A76820) |
+| 00A7686C | v00A7686C | vneg.f32(v00A76838) |
+| 00A76870 | v00A76870 | vmla.f32(v00A76804, v00A76820, v00A76840) |
+| 00A76878 | v00A76878 | vmul.f32(v00A76834, v00A7686C) |
+| 00A7687C | v00A7687C | vmul.f32(v00A76820, v00A7686C) |
+| 00A76880 | v00A76880 | vmul.f32(v00A76804, v00A7686C) |
+| 00A76888 | v00A76888 | vmul.f32(v00A7686C, F32(40400000)) |
+| 00A7688C | v00A7688C | vmul.f32(v00A76804, v00A7687C) |
+| 00A76890 | v00A76890 | vmla.f32(v00A76878, v00A76820, v00A76858) |
+| 00A76894 | v00A76894 | vadd.f32(v00A76870, v00A76880) |
+| 00A76898 | v00A76898 | vmul.f32(v00A76820, v00A76820) |
+| 00A768B4 | v00A768B4 | vmla.f32(v00A7688C, v00A76820, v00A76894) |
+| 00A768C0 | v00A768C0 | vmul.f32(v00A76820, v00A76888) |
+| 00A768C4 | v00A768C4 | vadd.f32(v00A7686C, v00A7686C) |
+| 00A768CC | v00A768CC | vmul.f32(v00A76820, v00A76878) |
+| 00A768D0 | v00A768D0 | vmla.f32(v00A76880, v00A76820, v00A76890) |
+| 00A768D4 | v00A768D4 | vmul.f32(v00A76820, v00A76898) |
+| 00A768D8 | v00A768D8 | vmul.f32(v00A76820, v00A768C0) |
+| 00A768DC | v00A768DC | vmul.f32(v00A76820, v00A7682C) |
+| 00A768E0 | v00A768E0 | vmul.f32(v00A7686C, v00A768C4) |
+| 00A768E8 | v00A768E8 | vadd.f32(v00A768B4, v00A76878) |
+| 00A768EC | v00A768EC | vmla.f32(v00A768D8, v00A76820, v00A768D4) |
+| 00A76914 | v00A76914 | vmla.f32(v00A768CC, v00A76820, v00A768DC) |
+| 00A76918 | v00A76918 | vmul.f32(v00A76820, v00A7687C) |
+| 00A7691C | v00A7691C | vmul.f32(v00A76820, v00A768E0) |
+| 00A76920 | v00A76920 | vadd.f32(v00A768D0, v00A768CC) |
+| 00A76924 | v00A76924 | vmul.f32(v00A7686C, v00A7686C) |
+| 00A76940 | v00A76940 | vmla.f32(v00A768D4, v00A76820, v00A768C4) |
+| 00A76950 | v00A76950 | vadd.f32(v00A76880, v00A768DC) |
+| 00A76954 | v00A76954 | vmla.f32(v00A7691C, v00A76820, v00A76918) |
+| 00A76974 | v00A76974 | vadd.f32(v00A768EC, v00A76924) |
+| 00A76978 | v00A76978 | vsub.f32(v00A76898, v00A76838) |
+| 00A7697C | v00A7697C | vadd.f32(v00A76924, v00A76918) |
+
+| Snapshot instruction | Persistent block | Four words in physical order |
+|---|---|---|
+| 00A76850 | 10..1C | F32(00000000), F32(00000000), F32(00000000), v00A76840 |
+| 00A768A0 | 20..2C | F32(00000000), F32(00000000), v00A76840, v00A76894 |
+| 00A768F4 | 30..3C | F32(00000000), v00A76840, v00A76894, v00A768E8 |
+| 00A7692C | 40..4C | v00A76834, v00A76858, v00A76890, v00A76920 |
+| 00A7695C | 50..5C | v00A76804, v00A7682C, v00A76950, v00A76914 |
+| 00A7698C | 60..6C | v00A76820, v00A76978, v00A76940, v00A76974 |
+| 00A769B0 | 70..7C | v00A7686C, v00A7687C, v00A7697C, v00A76954 |
+
+The vector block0..F receives four copies of the computed coefficient at80/88 before these snapshots. Scalar84/8C/90 stores remain interleaved in the primary instructions. Later scratch stores never retroactively change an earlier snapshot.
+
+## HPF immediate
+
+Each `vADDRESS` is the result of the operation at that exact native address. Copies are aliases; only arithmetic generates a new node.
+
+| Address | Result | Native operation and dependency |
+|---|---|---|
+| 00A7757C | v00A7757C | vmul.f32(T, T) |
+| 00A77580 | v00A77580 | vmul.f32(T, F32(3FB504F3)) |
+| 00A77584 | v00A77584 | vadd.f32(v00A7757C, F32(3F800000)) |
+| 00A77588 | v00A77588 | vadd.f32(v00A77580, v00A77584) |
+| 00A7758C | v00A7758C | vdiv.f32(F32(3F800000), v00A77588) |
+| 00A77590 | v00A77590 | vmul.f32(v00A7758C, F32(C0000000)) |
+| 00A775A4 | v00A775A4 | vsub.f32(v00A7757C, F32(3F800000)) |
+| 00A775AC | v00A775AC | vsub.f32(v00A77584, v00A77580) |
+| 00A775B0 | v00A775B0 | vmul.f32(v00A77590, v00A775A4) |
+| 00A775B4 | v00A775B4 | vmul.f32(v00A7758C, v00A775AC) |
+| 00A775C0 | v00A775C0 | vmul.f32(v00A7758C, v00A775B0) |
+| 00A775C4 | v00A775C4 | vmla.f32(v00A7758C, v00A77590, v00A775B0) |
+| 00A775C8 | v00A775C8 | vneg.f32(v00A775B4) |
+| 00A775CC | v00A775CC | vmul.f32(v00A77590, v00A775C8) |
+| 00A775D4 | v00A775D4 | vadd.f32(v00A77590, v00A775C0) |
+| 00A775EC | v00A775EC | vmla.f32(v00A7758C, v00A775B0, v00A775D4) |
+| 00A77600 | v00A77600 | vmla.f32(v00A775CC, v00A775B0, v00A775C4) |
+| 00A77608 | v00A77608 | vmul.f32(v00A7758C, v00A775C8) |
+| 00A7760C | v00A7760C | vmul.f32(v00A775B0, v00A775C8) |
+| 00A77610 | v00A77610 | vmul.f32(v00A775C8, F32(40400000)) |
+| 00A77614 | v00A77614 | vadd.f32(v00A7758C, v00A7758C) |
+| 00A7761C | v00A7761C | vmul.f32(v00A7758C, v00A7760C) |
+| 00A77620 | v00A77620 | vadd.f32(v00A775EC, v00A77608) |
+| 00A77624 | v00A77624 | vmla.f32(v00A77608, v00A775B0, v00A77600) |
+| 00A7764C | v00A7764C | vmul.f32(v00A775B0, v00A775B0) |
+| 00A77650 | v00A77650 | vmul.f32(v00A775B0, v00A77610) |
+| 00A77654 | v00A77654 | vmul.f32(v00A775C8, v00A77614) |
+| 00A77658 | v00A77658 | vadd.f32(v00A775C8, v00A775C8) |
+| 00A7765C | v00A7765C | vmla.f32(v00A7761C, v00A775B0, v00A77620) |
+| 00A77660 | v00A77660 | vmul.f32(v00A775B0, v00A7764C) |
+| 00A77664 | v00A77664 | vmul.f32(v00A775B0, v00A77650) |
+| 00A77668 | v00A77668 | vmul.f32(v00A775B0, v00A775C0) |
+| 00A7766C | v00A7766C | vmul.f32(v00A775B0, v00A77654) |
+| 00A77670 | v00A77670 | vmul.f32(v00A775C8, v00A77658) |
+| 00A77674 | v00A77674 | vmla.f32(v00A77624, v00A775B0, v00A775CC) |
+| 00A77678 | v00A77678 | vmla.f32(v00A77664, v00A775B0, v00A77660) |
+| 00A7767C | v00A7767C | vmla.f32(v00A7766C, v00A775B0, v00A77668) |
+| 00A77680 | v00A77680 | vmul.f32(v00A775B0, v00A7760C) |
+| 00A77684 | v00A77684 | vmul.f32(v00A775B0, v00A77670) |
+| 00A77688 | v00A77688 | vadd.f32(v00A7765C, v00A775CC) |
+| 00A7768C | v00A7768C | vmul.f32(v00A775C8, v00A775C8) |
+| 00A776B8 | v00A776B8 | vmla.f32(v00A77660, v00A775B0, v00A77658) |
+| 00A776E0 | v00A776E0 | vadd.f32(v00A77608, v00A77668) |
+| 00A776E4 | v00A776E4 | vmla.f32(v00A77684, v00A775B0, v00A77680) |
+| 00A77704 | v00A77704 | vadd.f32(v00A77678, v00A7768C) |
+| 00A77708 | v00A77708 | vsub.f32(v00A7764C, v00A775B4) |
+| 00A7770C | v00A7770C | vadd.f32(v00A7768C, v00A77680) |
+
+| Snapshot instruction | Persistent block | Four words in physical order |
+|---|---|---|
+| 00A775E4 | 10..1C | F32(00000000), F32(00000000), F32(00000000), v00A775D4 |
+| 00A7762C | 20..2C | F32(00000000), F32(00000000), v00A775D4, v00A77620 |
+| 00A77694 | 30..3C | F32(00000000), v00A775D4, v00A77620, v00A77688 |
+| 00A776C0 | 40..4C | v00A77590, v00A775C4, v00A77600, v00A77674 |
+| 00A776EC | 50..5C | v00A7758C, v00A775C0, v00A776E0, v00A7767C |
+| 00A7771C | 60..6C | v00A775B0, v00A77708, v00A776B8, v00A77704 |
+| 00A77740 | 70..7C | v00A775C8, v00A7760C, v00A7770C, v00A776E4 |
+
+The vector block0..F receives four copies of the computed coefficient at80/88 before these snapshots. Scalar84/8C/90 stores remain interleaved in the primary instructions. Later scratch stores never retroactively change an earlier snapshot.
+
+## LPF ramp
+
+Each `vADDRESS` is the result of the operation at that exact native address. Copies are aliases; only arithmetic generates a new node.
+
+| Address | Result | Native operation and dependency |
+|---|---|---|
+| 00A77220 | v00A77220 | vdiv.f32(F32(3F800000), T) |
+| 00A77224 | v00A77224 | vmul.f32(v00A77220, F32(3FB504F3)) |
+| 00A77228 | v00A77228 | vmul.f32(v00A77220, v00A77220) |
+| 00A7722C | v00A7722C | vadd.f32(v00A77224, F32(3F800000)) |
+| 00A77230 | v00A77230 | vadd.f32(v00A77228, v00A7722C) |
+| 00A77234 | v00A77234 | vdiv.f32(F32(3F800000), v00A77230) |
+| 00A77238 | v00A77238 | vsub.f32(F32(3F800000), v00A77228) |
+| 00A7724C | v00A7724C | vadd.f32(v00A77238, v00A77238) |
+| 00A77250 | v00A77250 | vsub.f32(F32(3F800000), v00A77224) |
+| 00A77254 | v00A77254 | vnmul.f32(v00A7724C, v00A77234) |
+| 00A77258 | v00A77258 | vadd.f32(v00A77228, v00A77250) |
+| 00A77260 | v00A77260 | vmul.f32(v00A77254, v00A77234) |
+| 00A77264 | v00A77264 | vadd.f32(v00A77234, v00A77234) |
+| 00A77268 | v00A77268 | vmul.f32(v00A77234, v00A77258) |
+| 00A77270 | v00A77270 | vadd.f32(v00A77264, v00A77260) |
+| 00A7727C | v00A7727C | vneg.f32(v00A77268) |
+| 00A77288 | v00A77288 | vmla.f32(v00A77234, v00A77254, v00A77264) |
+| 00A772A4 | v00A772A4 | vmul.f32(v00A7727C, F32(40400000)) |
+| 00A772A8 | v00A772A8 | vmul.f32(v00A77264, v00A7727C) |
+| 00A772AC | v00A772AC | vmla.f32(v00A77234, v00A77254, v00A77270) |
+| 00A772B0 | v00A772B0 | vmul.f32(v00A77254, v00A7727C) |
+| 00A772B4 | v00A772B4 | vmul.f32(v00A77254, v00A77254) |
+| 00A772B8 | v00A772B8 | vmul.f32(v00A77254, v00A772A4) |
+| 00A772BC | v00A772BC | vmul.f32(v00A77234, v00A7727C) |
+| 00A772C4 | v00A772C4 | vmla.f32(v00A772A8, v00A77254, v00A77288) |
+| 00A772C8 | v00A772C8 | vmul.f32(v00A77234, v00A772B0) |
+| 00A772CC | v00A772CC | vmul.f32(v00A77254, v00A772B4) |
+| 00A772D0 | v00A772D0 | vmul.f32(v00A77254, v00A772B8) |
+| 00A772D4 | v00A772D4 | vadd.f32(v00A772AC, v00A772BC) |
+| 00A772D8 | v00A772D8 | vadd.f32(v00A7727C, v00A7727C) |
+| 00A772E8 | v00A772E8 | vmla.f32(v00A772C8, v00A77254, v00A772D4) |
+| 00A77300 | v00A77300 | vmla.f32(v00A772D0, v00A77254, v00A772CC) |
+| 00A77308 | v00A77308 | vmul.f32(v00A77254, v00A772A8) |
+| 00A7730C | v00A7730C | vmla.f32(v00A772BC, v00A77254, v00A772C4) |
+| 00A77310 | v00A77310 | vmul.f32(v00A77254, v00A77260) |
+| 00A77314 | v00A77314 | vmul.f32(v00A7727C, v00A772D8) |
+| 00A7731C | v00A7731C | vmla.f32(v00A77308, v00A77254, v00A77310) |
+| 00A77320 | v00A77320 | vadd.f32(v00A772E8, v00A772A8) |
+| 00A77330 | v00A77330 | vmul.f32(v00A77254, v00A772B0) |
+| 00A77350 | v00A77350 | vmul.f32(v00A77254, v00A77314) |
+| 00A77354 | v00A77354 | vadd.f32(v00A7730C, v00A77308) |
+| 00A77358 | v00A77358 | vmul.f32(v00A7727C, v00A7727C) |
+| 00A77374 | v00A77374 | vmla.f32(v00A772CC, v00A77254, v00A772D8) |
+| 00A77384 | v00A77384 | vadd.f32(v00A772BC, v00A77310) |
+| 00A77388 | v00A77388 | vmla.f32(v00A77350, v00A77254, v00A77330) |
+| 00A773A8 | v00A773A8 | vsub.f32(v00A772B4, v00A77268) |
+| 00A773AC | v00A773AC | vadd.f32(v00A77300, v00A77358) |
+| 00A773B8 | v00A773B8 | vadd.f32(v00A77358, v00A77330) |
+
+| Snapshot instruction | Persistent block | Four words in physical order |
+|---|---|---|
+| 00A77280 | 10..1C | F32(00000000), F32(00000000), F32(00000000), v00A77270 |
+| 00A772E0 | 20..2C | F32(00000000), F32(00000000), v00A77270, v00A772D4 |
+| 00A7732C | 30..3C | F32(00000000), v00A77270, v00A772D4, v00A77320 |
+| 00A77360 | 40..4C | v00A77264, v00A77288, v00A772C4, v00A77354 |
+| 00A77390 | 50..5C | v00A77234, v00A77260, v00A77384, v00A7731C |
+| 00A773C0 | 60..6C | v00A77254, v00A773A8, v00A77374, v00A773AC |
+| 00A773E4 | 70..7C | v00A7727C, v00A772B0, v00A773B8, v00A77388 |
+
+The vector block0..F receives four copies of the computed coefficient at80/88 before these snapshots. Scalar84/8C/90 stores remain interleaved in the primary instructions. Later scratch stores never retroactively change an earlier snapshot.
+
+## HPF ramp
+
+Each `vADDRESS` is the result of the operation at that exact native address. Copies are aliases; only arithmetic generates a new node.
+
+| Address | Result | Native operation and dependency |
+|---|---|---|
+| 00A77F98 | v00A77F98 | vmul.f32(T, T) |
+| 00A77F9C | v00A77F9C | vmul.f32(T, F32(3FB504F3)) |
+| 00A77FA0 | v00A77FA0 | vadd.f32(v00A77F98, F32(3F800000)) |
+| 00A77FA4 | v00A77FA4 | vadd.f32(v00A77F9C, v00A77FA0) |
+| 00A77FA8 | v00A77FA8 | vdiv.f32(F32(3F800000), v00A77FA4) |
+| 00A77FAC | v00A77FAC | vmul.f32(v00A77FA8, F32(C0000000)) |
+| 00A77FC0 | v00A77FC0 | vsub.f32(v00A77F98, F32(3F800000)) |
+| 00A77FC8 | v00A77FC8 | vsub.f32(v00A77FA0, v00A77F9C) |
+| 00A77FCC | v00A77FCC | vmul.f32(v00A77FAC, v00A77FC0) |
+| 00A77FD0 | v00A77FD0 | vmul.f32(v00A77FCC, v00A77FA8) |
+| 00A77FD8 | v00A77FD8 | vadd.f32(v00A77FAC, v00A77FD0) |
+| 00A77FDC | v00A77FDC | vmul.f32(v00A77FA8, v00A77FC8) |
+| 00A78004 | v00A78004 | vmla.f32(v00A77FA8, v00A77FCC, v00A77FD8) |
+| 00A78008 | v00A78008 | vneg.f32(v00A77FDC) |
+| 00A78014 | v00A78014 | vmul.f32(v00A77FA8, v00A78008) |
+| 00A78018 | v00A78018 | vmla.f32(v00A77FA8, v00A77FCC, v00A77FAC) |
+| 00A7801C | v00A7801C | vmul.f32(v00A77FAC, v00A78008) |
+| 00A78020 | v00A78020 | vadd.f32(v00A78004, v00A78014) |
+| 00A78024 | v00A78024 | vmul.f32(v00A78008, F32(40400000)) |
+| 00A78050 | v00A78050 | vmla.f32(v00A7801C, v00A77FCC, v00A78018) |
+| 00A78054 | v00A78054 | vmul.f32(v00A77FCC, v00A78008) |
+| 00A78058 | v00A78058 | vmul.f32(v00A77FCC, v00A77FCC) |
+| 00A7805C | v00A7805C | vmul.f32(v00A77FCC, v00A78024) |
+| 00A78060 | v00A78060 | vadd.f32(v00A77FA8, v00A77FA8) |
+| 00A78064 | v00A78064 | vmul.f32(v00A77FA8, v00A78054) |
+| 00A78068 | v00A78068 | vmul.f32(v00A77FCC, v00A78058) |
+| 00A7806C | v00A7806C | vmul.f32(v00A77FCC, v00A7805C) |
+| 00A78074 | v00A78074 | vmla.f32(v00A78014, v00A77FCC, v00A78050) |
+| 00A78078 | v00A78078 | vmul.f32(v00A78008, v00A78060) |
+| 00A7807C | v00A7807C | vadd.f32(v00A78008, v00A78008) |
+| 00A78080 | v00A78080 | vmla.f32(v00A78064, v00A77FCC, v00A78020) |
+| 00A78084 | v00A78084 | vmla.f32(v00A7806C, v00A77FCC, v00A78068) |
+| 00A78088 | v00A78088 | vmul.f32(v00A78008, v00A7807C) |
+| 00A7808C | v00A7808C | vmul.f32(v00A77FCC, v00A77FD0) |
+| 00A78090 | v00A78090 | vmul.f32(v00A77FCC, v00A78078) |
+| 00A78094 | v00A78094 | vmla.f32(v00A78074, v00A77FCC, v00A7801C) |
+| 00A78098 | v00A78098 | vmul.f32(v00A77FCC, v00A78088) |
+| 00A7809C | v00A7809C | vmla.f32(v00A78090, v00A77FCC, v00A7808C) |
+| 00A780A0 | v00A780A0 | vadd.f32(v00A78080, v00A7801C) |
+| 00A780B4 | v00A780B4 | vmul.f32(v00A77FCC, v00A78054) |
+| 00A780D8 | v00A780D8 | vmul.f32(v00A78008, v00A78008) |
+| 00A78100 | v00A78100 | vmla.f32(v00A78068, v00A77FCC, v00A7807C) |
+| 00A78108 | v00A78108 | vadd.f32(v00A78014, v00A7808C) |
+| 00A7810C | v00A7810C | vmla.f32(v00A78098, v00A77FCC, v00A780B4) |
+| 00A78130 | v00A78130 | vsub.f32(v00A78058, v00A77FDC) |
+| 00A78134 | v00A78134 | vadd.f32(v00A78084, v00A780D8) |
+| 00A78140 | v00A78140 | vadd.f32(v00A780D8, v00A780B4) |
+
+| Snapshot instruction | Persistent block | Four words in physical order |
+|---|---|---|
+| 00A77FE4 | 10..1C | F32(00000000), F32(00000000), F32(00000000), v00A77FD8 |
+| 00A7802C | 20..2C | F32(00000000), F32(00000000), v00A77FD8, v00A78020 |
+| 00A780AC | 30..3C | F32(00000000), v00A77FD8, v00A78020, v00A780A0 |
+| 00A780DC | 40..4C | v00A77FAC, v00A78018, v00A78050, v00A78094 |
+| 00A78114 | 50..5C | v00A77FA8, v00A77FD0, v00A78108, v00A7809C |
+| 00A78148 | 60..6C | v00A77FCC, v00A78130, v00A78100, v00A78134 |
+| 00A7816C | 70..7C | v00A78008, v00A78054, v00A78140, v00A7810C |
+
+The vector block0..F receives four copies of the computed coefficient at80/88 before these snapshots. Scalar84/8C/90 stores remain interleaved in the primary instructions. Later scratch stores never retroactively change an earlier snapshot.
+
