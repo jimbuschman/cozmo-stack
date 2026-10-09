@@ -119,3 +119,11 @@ CLAIMED Codex after Q13: confirm E3 stored f32 time and nonzero deadline gate, c
 ## Manager row check (2026-10-09)
 
 The manager reopened the native call targets and extracted APK sources for M1-029 J1/J7, M1-046 Q1-Q3, M1-050 S13, M1-051 E6, M1-052 E7, M1-053 P2, and the narrowed policy records before any new implementation. Detailed checked boundaries and UNKNOWNs are in `jobs/B-M1M2.md` and the M1/M7 inventory appendices. M1-052's concrete callback target is unknown and cannot be implemented generically; M1-050's external sink, M1-051's +0xE1 writers/callbacks, M1-046's unsubscribe descendants, and M1-053's publication sink remain gaps. The ownership split between M1-023 reset-flag setter, M1-048 consumer, and M1-049 Android/JNI source is corrected and both affected subsystems re-approved. Full suite and publication follow.
+
+## Batch 7: M1-029 checked J1/J7 subset
+
+- Implemented finite-real `Json::Value::asString` through the existing live accessor: precision-17 general formatting under the approved phone `snprintf` runtime assumption, then the checked `.0` gate and comma rewrite. Added source-shaped finite formatting cases.
+- Added a maximum reachable u16-length Reader case (65,535 bytes) using leading zeroes, with expected integer value from the checked integer parse behavior.
+- Reopened wrapper and Reader/converter call targets from the shipped engine before the change. M1-029 remains IMPLEMENTATION_GAP; non-finite `useSpecialFloats=0` mapping, allocator failure/extreme-input effects, and final escaping exception destination remain MISSING. No status settlement.
+- Focused tests: 5 passed. `fidelity.py --check` was refreshed after regenerating `FIDELITY_GAPS.md`; full-suite and publication results follow.
+- `fidelity.py --check` and `git diff --check`: passed. Full suite: 3,959 passed, zero failed/skipped. M1-029 remains IMPLEMENTATION_GAP with the above MISSING boundaries.

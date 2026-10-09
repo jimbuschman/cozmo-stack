@@ -1363,6 +1363,37 @@ public class EngineAppLayerTests
         }
     }
 
+    /// <summary>
+    /// M1-029 J1: asString selects the real branch at 0x008E48B8..0x008E4902 with precision 17 and
+    /// useSpecialFloats=0. The wrapper at 0x008EBFAA..0x008EC04C adds .0 only without a dot or lowercase e.
+    /// Expected finite strings follow the checked %.17g format shape; imported snprintf is the approved
+    /// phone-runtime assumption. Non-finite mapping remains MISSING.
+    /// </summary>
+    [Theory]
+    [InlineData("0.1", "0.10000000000000001")]
+    [InlineData("1.0", "1.0")]
+    [InlineData("1e20", "1e+20")]
+    [InlineData("1e-5", "1.0000000000000001e-05")]
+    public void M1_029_J1_FiniteRealAsStringUsesTheCheckedWrapper(string input, string expected)
+    {
+        Assert.True(Parses(input, out var document));
+        using (document)
+            Assert.Equal(Encoding.ASCII.GetBytes(expected), Json.AsStringBytes(document.RootElement));
+    }
+
+    /// <summary>
+    /// M1-029 J7: FirmwareVersion carries its JSON byte count as u16 (0x007B9088..0x007B9092), so
+    /// 65535 bytes is the largest reachable Reader input. No fixed token cap appears in the checked Reader path.
+    /// </summary>
+    [Fact]
+    public void M1_029_J7_ReaderAcceptsTheMaximumReachableU16Length()
+    {
+        string json = new string('0', ushort.MaxValue - 1) + "1";
+        Assert.Equal(ushort.MaxValue, json.Length);
+        Assert.True(Parses(json, out var document));
+        using (document) Assert.Equal(1u, Json.AsUInt(document.RootElement));
+    }
+
     [Theory]
     [InlineData("\"\\uDC00\"", "EDB080")]
     [InlineData("\"\\uD800\\u0041\"", "F0908181")]

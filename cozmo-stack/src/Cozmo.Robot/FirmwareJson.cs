@@ -5,7 +5,8 @@ namespace Cozmo.Robot;
 
 // fidelity: M1-029
 // Manager-adopted item 6, with 20261005-B-M1M2-rows-check.md Item 6 corrections.
-// Real conversion follows the adopted shipped-converter rows; formatting stays MISSING.
+// Real conversion follows the adopted shipped-converter rows. Real string formatting ports the checked wrapper;
+// its imported phone snprintf body remains the approved runtime assumption.
 internal enum FirmwareJsonKind : byte { Null, Int, UInt, Real, String, Boolean, Array, Object }
 
 internal sealed class FirmwareJsonValue
@@ -72,9 +73,24 @@ internal static class Json
         FirmwareJsonKind.Boolean => value.Boolean ? "true"u8.ToArray() : "false"u8.ToArray(),
         FirmwareJsonKind.Int => Encoding.ASCII.GetBytes(value.Signed.ToString(CultureInfo.InvariantCulture)),
         FirmwareJsonKind.UInt => Encoding.ASCII.GetBytes(value.Unsigned.ToString(CultureInfo.InvariantCulture)),
-        FirmwareJsonKind.Real => throw new JsonMissingSource("MISSING: Json::Value::asString real formatting; checked item 6 does not establish it"),
+        FirmwareJsonKind.Real => Encoding.ASCII.GetBytes(FormatReal(value.Real)),
         _ => throw new JsonLogicError("Value is not convertible to String."),
     };
+
+    private static string FormatReal(double value)
+    {
+        // Json::Value::asString -> valueToString (0x008E48B8..0x008E4902) passes precision 17 and
+        // useSpecialFloats=0 to the wrapper at 0x008EBFAA..0x008EC04C. The wrapper calls snprintf with a
+        // 0x24-byte destination, appends ".0" only when neither '.' nor lowercase 'e' occurs, then rewrites
+        // commas to periods. C's formatter body is phone runtime (approved J2 assumption); use its "g" shape
+        // with invariant culture as this host's equivalent, then preserve the shipped wrapper decisions.
+        if (!double.IsFinite(value))
+            throw new JsonMissingSource("MISSING: Json::Value::asString non-finite mapping follows useSpecialFloats=0 at 0x008EC002..0x008EC018");
+
+        string formatted = value.ToString("G17", CultureInfo.InvariantCulture).Replace('E', 'e');
+        if (!formatted.Contains('.') && !formatted.Contains('e')) formatted += ".0";
+        return formatted.Replace(',', '.');
+    }
 
     public static uint AsUInt(FirmwareJsonValue value)
     {
