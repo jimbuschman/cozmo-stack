@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 390 — known Vorbis restart decisions
+
+Primary: `20261009-sound-vorbis-restart-decisions-native.txt`, same engine hash; 165 instruction words plus slots. C=codec source, P=C.C context; offsets hex. VI1–VI4 initializer and VM6/AB3244 trim/reset stores reused. Restart admission is separate from an inferred successful restart.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| VR390A known slot/gate | raw103E0D0/103E150;AB0750..AB0784 | Direct-buffer table103E0B8 slot18=AB0750: unsigned mode>1 returns1 with no initialization; modes0/1 enterAB0760 preserving third argument. EntryAB0760 callsAB3264(C4C,C58) before mode decisions. Only resultFFFFFFFF rejects2 immediately. Stream table103E138 slot18=AB2A70. No widening of accepted modes from the internal AB0760 branch. |
+| VR390B direct mode0 | AB08E4..AB092C;AB0804..AB0824 | Mode0 sets position18=0,cursorC8=CC+A4; captures P1B8 halfword when Pnonnull else1 into loopcount38. Pass skip0 and endTrim=(loopcount==1?AA:9E) toAB3244(C4C,...), ignore result; thenstate44=3,return1. No PBI pending/residual flags consumed on this mode0 branch. |
+| VR390C direct mode1 selection | AB0788..AB07B0;AB0828..AB088C | Thirdarg nonzero: C0null selects savedresult2; C0nonnull callsAB04F0 and saves rawresult. Thirdarg0: position0 choosescursorCC+A4/result1. Positiveposition with C0null or A0>>2zero resetsposition0/cursorCC+A4 but keeps result1. No decoder or pending-flag rollback on the explicit-seek failure path. |
+| VR390D direct current-position table | AB0890..AB08E0 | Positiveposition/table available: physicalu16(frameDelta,byteDelta) pairs; include while requested>=wrapping cumulativeFrames. First uncovered pair chooses prior included frame boundary; none included usesposition0/cursorCC+A4. Included prefix choosesposition=cumulativeFrames,cursor=CC+sumIncludedBytes+A0, including when table exhausted. Equality includes pair; no total-frame clamp here. Then savedresult1 and common pending consumption. |
+| VR390E common pending consumption | AB07B4..AB0824 | Mode1 dereferences P without null guard. Snapshot P1BD bit7; clear live bit7, zero1B4,clear1BE bits0/1. Old bit7set chooses extra0; clear chooses saved1B4. Add full extra modulo32 to position18, while skip is low16(extra). EndTrim halfwordAA ifloopcount38==1 else9E. AB3244(C4C,skip,endTrim) ignored; state44=3 and return savedresult. Explicit-seek result2 still takes this path. |
+| VR390F streamed wrapper | AB2A70..AB2B20 | First A75794(C,originalmode,originalthirdarg), save rawresult. Unsigned mode>1 returns that result without decoderinit. Modes0/1 callAB3264(C70,C7C); FFFFFFFF returns2, overriding helper result. Any other initresult consumes pending/residual exactly as above, adds full extra toposition18, selects endTrim CE ifloopcount38==1 elseC2, callsAB3244(C70,low16(extra),endTrim), thenstate68=3 and returns saved A75794 result. No success1 gate before decoder reset/position mutation. |
+
+out of scope: allocator, seek-table backing storage and sample arithmetic bodies; no descent.
+
+Concrete remaining dependencies from these known restart products are A75794's generic mode/readiness/seek decisions and AB04F0's requested-position/PBI mutations. VI6's earlier restart entry/tail residual is now locally positive; broader public source-input/dispatch writer joins remain separate PARTIAL obligations. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 389 — Vorbis packet continuation lifecycle boundary
 
 Primary: `20261009-sound-vorbis-packet-continuation-boundary-native.txt`, same engine hash; 264 instruction words. D=decoder, S=D10 setup, M=selected mapping; offsets hex. This records only the packet continuation's frame/state boundary. Sample-dependent decode bodies are not descended.
