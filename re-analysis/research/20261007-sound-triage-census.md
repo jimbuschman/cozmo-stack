@@ -1579,3 +1579,7 @@ UD261A–E trace composite-key eligibility/failure shaping, unlink-before-retire
 ### Checkpoint 262 — event preparation release
 
 PR262A–C trace kind5 event traversal, E14 clear/release ordering, 0403 target/bank and2103 nested-event branches, and targetA4 followed by twoC releases. Known resolver/event helpers reused. A4/bank release/provider/input/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 263 — prepared bank/media retirement
+
+PB263A/B and PM263C recover preparation/ordinary counter gates, unlink-before-event cleanup, forward media-ID decrements/direct-pointer clearing/recheck and bank flag clear. Storage bodies excluded; targetA4 and wider writer/input/provider closure remain PARTIAL. No totals/Q15/fidelity/production changes.
