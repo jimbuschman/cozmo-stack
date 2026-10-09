@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through474 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through475 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2389,3 +2389,5 @@ Checkpoint472 — RM472 concrete voice route-mode cache/dirty/override/definitio
 Checkpoint473 — RP473 route preparation retained DC/ancestor/lifecycle/manager limit/publication/listener/input/result/callback order;231 complete ARM instructions. Initial tag0 producer positive; tag1 activation remains separate, payload bodies excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint474 — RR474 concrete context pointer duplicate/admission/count/byte publication, manager swap-retirement and raw result/cleanup/parent notification order;108 complete ARM instructions. Storage and positioning payload bodies excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint475 — RA475 retained start admission/raw results/mode/refcount/pair handoff, concrete context2C identity recipients and segmented tag1 writer→frame admission;152 complete ARM instructions. Intervening positioning payload/calculation bodies excluded and unclaimed. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
