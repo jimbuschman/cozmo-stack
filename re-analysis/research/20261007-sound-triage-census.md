@@ -1559,3 +1559,7 @@ FB256A/B bind known PBI154 voice64/68 and recover four slot-order bypass-byte wr
 ### Checkpoint 257 — live FX rebuild prefix
 
 FR257A–D trace known-slot neighbor order, raw format shaping, old output/34 scan/retirement and replacement FX query/failure reconnect. Exact FX decisions retained; construction/format reconciliation/helper/provider/input closure PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 258 — live FX construction/publication
+
+FC258A–C reuse known plug-in validation/wrapper defaults/Init/Reset bodies while tracing this caller's rejection, allocationnull reconnect without plugin release, raw bypass publication and predecessor connection. Downstream format/routing/helper/provider/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
