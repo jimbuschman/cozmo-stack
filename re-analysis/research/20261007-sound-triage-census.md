@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through541 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through542 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -694,7 +694,7 @@ PARTIAL at checkpoint540. LV5–6/PB1/LI10 establish guarded limiter/global undo
 
 > | C31.4 R4 clock/callback/duration/stop offset | M6-026,M6-022,M9-010 | **KEEP** | 0x00A03618;0x00A05574;0x00A05370;0x00A054D8;0x00A56414;0x00A55CC4;0x00A5495C;0x00A56478;0x009CBACC;0x009886C0;0x0098822C | Clock sign extension, callback/game-object release, duration/pitch divisor, one-shot offset getter and writer census all alter timing/state; keep101f0x42CA0000 and Â±half bits exact. |
 
-PARTIAL at checkpoint541. SO541 captures ordinary and derived one-shot getters, derived exact stop-offset setter, constructor/table binding and position observer registration. DC7/imports already positively establish A05574 composite identity/publication and sign-extended32-bit clock; PB10/CK419/CB1–3/NS3/NS7/VR478 establish completion/gameobject release, duration/pitch divisor, detach and result2E/non2E callbacks. Remaining full callback/input/writer census is specific: liveCR6 r3 provenance, derived setter invocation inputs/raw164 producer and20Cbit1 writers. Native U32/F32 divide, ±half LE including unordered, S32 conversion and strict unsigned minimum update are retained; no host rounding or whole music-PBI acceptance.
+PARTIAL through checkpoint542. SO541 captures ordinary/derived one-shot getters, exact setter, constructor/table binding and position registration. SJ542 proves liveCR6 r3 is the primary source pointer; actual embedded0 binds stopoffset through988180/live68, embedded18 binds raw parameter36/P164 update, constructor raw164 input is creator entry stack18, and existing SX5 supplies the bit1 local producer. DC7/imports already establish A05574 composite identity/sign-extended clock; PB10/CK419/CB1–3/NS3/NS7/VR478 cover known completion, lifetime, duration, detach and result callbacks. Remaining concrete ordinary-interface factory/input applicability, parameter36 sender/value and requested wider writer/callback census. Native U32/F32 divide, ±half LE including unordered, S32 conversion and strict unsigned minimum stay exact; no whole music-PBI acceptance.
 
 ## Q14-086 — triage line 135
 
