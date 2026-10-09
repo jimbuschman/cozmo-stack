@@ -79,3 +79,55 @@ three corrected rows in the binary:
 
 **What to build:** M1-029 as an exact port of the shipped jsoncpp reader for the firmware JSON. It replaces
 System.Text.Json on that path. The exception destination stays UNVERIFIABLE: record it as MISSING; don't invent it.
+
+## Manager disposition of the MISSING triage (2026-10-09)
+
+This decides `research/20261006-M1M2-missing-triage.md` row by row. These are decisions, not new rows. Codex applies
+them as described under "To do" below.
+
+1. **HIGHER-LAYER: accepted.** Each one leaves its M1/M2 record and is owned by the named higher-layer record. The
+   M1/M2 record's `unresolved` keeps only a pointer: "transferred to <id>: <row>".
+   - **Shared residuals:** S1–S12 and S14.
+   - **M1-024:** D1, D3.
+   - **M1-025:** E1–E5, E8, E9.
+   - **M1-041:** N1, N2.
+   - **M2-002:** P1, P3, P4.
+
+   Where the triage proposes a NEW higher-layer record, it is created now as RECOVERABLE_GAP in that layer, with the
+   triage's citation. The proposed new records are: the M15 repair-mutation and NaN contracts; the M8 SDK reset dispatch
+   and the M7/M15/M3/M4/M11 SDK reset recipients; M15's SDK telemetry; M4's track-lock diagnostic; M3's NV idle
+   scheduling; M5's ready-to-stream lifecycle; and the M8 ActionList/IAction lifecycle. Where an existing record
+   already covers it, that record is amended instead (M11-053, the M8 queue records). It is built when its layer comes
+   up.
+2. **PHONE-RUNTIME: accepted as EQUIVALENT_IMPLEMENTATION assumptions,** written into the record's `unresolved`. None
+   of this code ships.
+   - **D2:** the initial FPSCR state is round-to-nearest, with default NaN and flush-to-zero as the phone's ARM process
+     sets them.
+   - **J2:** formatting through the phone's `snprintf`.
+   - **J4:** allocation availability.
+   - **J5, allocation failure, also goes here.** Its branch runs only when the phone's allocator fails, which is
+     phone-runtime state. The stack doesn't simulate allocator failure.
+3. **UNREACHABLE: accepted** with the triage's evidence, and no record: J3 and J6.
+4. **D4 and J8, the escaping exceptions:** decided by the operator's approved departure **M1-034** (catch, log,
+   continue). Nothing more to extract; the record points to M1-034.
+5. **M1-EXTRACT: what remains of M1's work.**
+   - **New M1 records,** RECOVERABLE_GAP, with the triage's citations:
+     - S13: external-interface disconnect/report delivery;
+     - E6: SDK mode entry and the lifecycle state writers;
+     - E7: the SDK connection callback targets;
+     - P2: outgoing RobotState publication.
+   - **M1-029 keeps** J1 (the real-number `asString` dispatch and its formatting wrapper, from the checked rows F1–F8) and
+     J7 (extreme lengths within the reachable bound).
+   - **M1-046 keeps** Q1–Q3.
+
+**After this, these records have no open MISSING left in M1:**
+- M1-015, M1-024, M1-025, M1-031, M1-041, M1-044, M1-045 and M2-002 go to the Opus pass;
+- M1-029, M1-046 and the four new M1 records are M1's remaining extraction and build work.
+
+**To do (Codex):**
+1. Apply items 1–5 as one inventory correction with citations. Create the new records, amend the existing ones and
+   rewrite the `unresolved` texts.
+2. Run `fidelity.py --approve` for every subsystem touched, under the operator's standing authorisation for cited
+   corrections. Then `--check`, commit and push.
+3. Then extract and build the M1-EXTRACT items under CODEX-BUILDER: S13, E6, E7, P2, M1-029's J1/J7 and M1-046's Q1–Q3.
+   Extraction rows go to the manager first.
