@@ -2015,3 +2015,7 @@ BU370A–H settle locked flag/vector unregister, default/property0B raw value, d
 ### Checkpoint 371 — known node64 propagation
 
 VP371A–D settle forward container active-child admission, zero/nonzero bus-scope modes, callback-time base/end reload and Sound all-PBI forwarding withmode0. A00A3C cache update and wider destructor/value/list/input/writer/product closure stay PARTIAL. Counts unchanged, Q15 pending Q14.
+
+### Checkpoint 372 — PBI parameter entry update
+
+PE372A–G settle identity/kind matching, ordered unity removal, opposite-kind nonzero-mode policy, raw value update, append/admission/failure publication and unconditional known PB170C callback. VP371D local recipient superseded; actual cache/value/input/writer/family and full bus lifetime closure stay PARTIAL. Totals unchanged; Q15 pending Q14.
