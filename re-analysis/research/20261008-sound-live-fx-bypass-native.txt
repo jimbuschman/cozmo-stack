@@ -1,0 +1,30 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A532F8..0x00A5335C exclusive; ARM;
+00A532F8: ldr          r3, [r0, #0x370]
+00A532FC: cmp          r3, #0
+00A53300: beq          #0xa53310
+00A53304: tst          r2, #1
+00A53308: andne        ip, r1, #1
+00A5330C: strbne       ip, [r3, #0x21]
+00A53310: ldr          r3, [r0, #0x374]
+00A53314: cmp          r3, #0
+00A53318: beq          #0xa53328
+00A5331C: tst          r2, #2
+00A53320: ubfxne       ip, r1, #1, #1
+00A53324: strbne       ip, [r3, #0x21]
+00A53328: ldr          r3, [r0, #0x378]
+00A5332C: cmp          r3, #0
+00A53330: beq          #0xa53340
+00A53334: tst          r2, #4
+00A53338: ubfxne       ip, r1, #2, #1
+00A5333C: strbne       ip, [r3, #0x21]
+00A53340: ldr          r3, [r0, #0x37c]
+00A53344: cmp          r3, #0
+00A53348: bxeq         lr
+00A5334C: tst          r2, #8
+00A53350: ubfxne       r1, r1, #3, #1
+00A53354: strbne       r1, [r3, #0x21]
+00A53358: bx           lr
+0103C7F4: raw=00A53770 relocated=00A53770
+0103C7F8: raw=00A532F8 relocated=00A532F8

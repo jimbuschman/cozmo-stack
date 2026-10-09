@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 256 — known live processing-object FX bindings and bypass writes
+
+Primary: `20261008-sound-live-fx-bypass-native.txt`; same engine hash. Known voice factory VI191A installs103C790; SA203A/B publish this voice into PBI154. LI6/LI8 callers reused. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| FB256A | 0103C7F4/0103C7F8;VI191A;SA203A/B | For the known A54650 voice family, PBI154.live64 bindsA53770 and live68 bindsA532F8. LI6 forwards slot to64 only when PBI E9bit2 clear and154nonnull; LI8 sends value/mask to68 only when154nonnull and mask has a bit other than10hex, then independently publishes PBI97 for bit4. | This corrects LI6/LI8's loose “voice154” naming: the caller object is PBI, its154 points to voice. Known family binding only, no exhaustive154 writer assertion. | Factory/table → PBI154 publication → caller gate → concrete FX callback. |64 is exact FX selection/order/lifecycle work, not automatically DSP-exempt; body remains separate.68 positive FB256B. Other providers/writers remain PARTIAL. |
+| FB256B | 00A532F8..00A53358 | Known68 visits voice370/374/378/37C pointers in slot order0..3. Nonnull slot and corresponding mask bit set writes U8(value bit i) to effect21. Missing slot or clear bit skips store. Last slotnull returns immediately after earlier slots; otherwise finishes mask gate then returns. No calls or other state stores. | Only low4 mask/value bits affect effect bytes. No processor creation, replay, dirty callback or sample operation. LI8's bit4 PBI97 publication remains outside this body. | Slot0 optional bypass byte →1 →2 →3 → return. | Exact enable/bypass selection values under ADP-1. Readers/FX pointer and bypass writers remain PARTIAL; no proven audible result from publication alone. |
+
+Known live bypass callback is now positive and no longer wholly unread. Live64 remains exact FX rebuilding work for the next bounded step; coverage totals unchanged, Q15 parked, no production/fidelity changes.
+
 ## Checkpoint 255 — RanSeq reset recipient reuse
 
 Primary rows reused: C11/C14/C15/C21, TR18 and NR146F. No newly unread destructor or storage body is introduced.
