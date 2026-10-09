@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through539 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through540 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -688,7 +688,7 @@ CHECKED at checkpoint539 for the quoted bounded decisions. DG1–3/CR502 positiv
 
 > | C31.3 R3.3–R3.8 / undo / source sibling | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0228C;0x00A022E8;0x00A370E4;0x00A55A84;0x00A55D04;0x00A53244;0x00A76608;0x00A69A38;0x00A69AC8;0x00A47360 | Limiter counters, source destroy path and ordered buffer cleanup are ownership/results; caller/absence census and global decrement remain exact checks. |
 
-PARTIAL: existing primary-backed rows LV5–LV6,G4–G5,NS3 in `20261007-sound-keep-rows.md`. Limiter entry/exit and global undo, source close/destruct ordering and distinct metadata/sample/history cleanup are rowed. Remaining A55A84/A55D04/A53244/A76608 sibling bodies and complete caller/absence census. Reconciliation records actual body coverage without claiming complete transitive closure.
+PARTIAL at checkpoint540. LV5–6/PB1/LI10 establish guarded limiter/global undo; NS3 and SA203 establish source close and retained attach. PT540A–B capture the complete primary teardown, actual four ascending FX callbacks/reloads/releases and final stage/flag order. PT540C–E add complete handoff/raw state transition recipients and twelve confirmed direct ARM caller slices, including both global decrement callers; no absence inference from that scan. Out of scope: A53244 metadata/buffer reclamation, A76608 workspace releases, A69A38/A69AC8/A47360 backing release internals, with their distinct ownership gates/caller positions preserved. Remaining requested full caller/absence coverage and actual source-family destructor contracts stay explicit; no whole-source acceptance.
 
 ## Q14-085 — triage line 134
 
