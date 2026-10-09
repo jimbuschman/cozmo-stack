@@ -2003,3 +2003,7 @@ EX367A–E settle ID/category exclusion, common54 parent-chain gate, known five-
 ### Checkpoint 368 — concrete node exclusion handlers
 
 NE368A–G settle all five known50 recipient bodies: fixed reverse child50 with bus/exclusion gates, Sound forwarding, Switch object-only local controls and stop playingID0, Layer independent object/playingID controls, and opcode0 versus3 distinctions. Local slot joins363–368 supersede generic unread-node-command wording, while actual input/writer/product/PBI/source closure stays PARTIAL. Counts unchanged, Q15 pending Q14.
+
+### Checkpoint 369 — selected root retirement writers
+
+RT369A–G settle locked root reset, destructor identity/marker order, first-root singleton flag/sweep and zero-live-reference tree retirement. Bus prefix9C666C/9C9808 and remaining destructor/input/writer/product closure remain PARTIAL; no complete-bus lifetime claim. Counts unchanged; Q15 pending Q14.
