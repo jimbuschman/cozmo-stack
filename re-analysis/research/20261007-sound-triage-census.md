@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through298 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through299 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1723,3 +1723,7 @@ OUT297A–F recover parent valid-frame/padding/state and custom/fallback routing
 ### Checkpoint 298 — selected sink bindings and capture conversion
 
 SOUT298A–F bind default/OpenSL sink callbacks to native no-ops or positive DF45/49 bodies, and recover capture type/scratch-fallback/remap/gain-stage/count controls, reusing MR/CV sample geometry. Device node table is not confused with sink table. Registered/custom products and wider inputs/providers/writers remain PARTIAL; no counts/Q15/fidelity/production changes.
+
+### Checkpoint 299 — recorder scope correction
+
+Optional recorder conversion/write/count descendants have no live sound-selection/timing/parameter/route effect and stop out of scope. SOUT298C–F details/companion withdrawn; selected live sink bindings and OUT297 gain/callback/history order retained. Recorder-only products/writers are not remaining Q14 decisions. No counts/Q15/fidelity/production changes.
