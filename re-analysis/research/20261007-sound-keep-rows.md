@@ -9,7 +9,15 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 49 native-row obligations CHECKED, 8 CHECKED scope exclusions, 83 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 67 native-row obligations CHECKED, 8 CHECKED scope exclusions, 65 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 558 — operator-requested close-out of all83 PARTIAL obligations
+
+`20261009-q14-partial-closeout.md` lists each of the83 baseline PARTIAL items exactly once, with its unpaid decision step or one-line excluded remainder and positive evidence joins. Original census quotations remain unchanged. Each per-item current disposition explicitly supersedes stale remaining-work prose. 18 bounded original obligations move to CHECKED; 65 retain concrete decisions or explicitly requested caller/writer/corpus proofs. No closure relies on a missing caller or assumed runtime unreachability.
+
+Counts: 67 native CHECKED+8 scope CHECKED/65 PARTIAL/0 NOT DONE; all140 original obligations retained. Open work includes actual admitted generator controls, note-selection/velocity/RNG/end consumers, concrete modulator/meter recipients, optional producer UNKNOWNs, original explicit census requirements and cited higher-layer decisions. Per-sample/storage/excluded branches receive stop dispositions. This is research decisions-only coverage, not whole-source or fidelity/manager acceptance. No production/fidelity/hardware/Q15 edit.
+
+After this table is pushed, resume smallest distinct open boundary: Q14-023 actual Android query/fallback block to renderer setter transfer, then PB8 detach, STMG trailing object, dynamic weight setter and trailing association input/consumer. No global family census is introduced to prolong an already closed original contract.
 
 ## Checkpoint 557 — original retained stream/decoder decision residuals
 

@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 49 CHECKED native-row obligations / 8 CHECKED scope exclusions / 83 PARTIAL / 0 NOT DONE; decision checkpoints through557 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 67 CHECKED native-row obligations / 8 CHECKED scope exclusions / 65 PARTIAL / 0 NOT DONE; checkpoint558 audits every former PARTIAL item with its exact remaining boundary/disposition |
 
 # Q14 per-item work census
 
@@ -9,40 +9,40 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 
 | Item | Triage source line | Status |
 | --- | --- | --- |
-| Q14-002 | 33 | PARTIAL |
+| Q14-002 | 33 | CHECKED |
 | Q14-003 | 34 | CHECKED |
 | Q14-004 | 35 | CHECKED |
 | Q14-005 | 36 | CHECKED |
 | Q14-006 | 39 | CHECKED |
-| Q14-007 | 40 | PARTIAL |
+| Q14-007 | 40 | CHECKED |
 | Q14-008 | 41 | PARTIAL |
 | Q14-009 | 42 | PARTIAL |
-| Q14-010 | 43 | PARTIAL |
-| Q14-011 | 44 | PARTIAL |
-| Q14-012 | 46 | PARTIAL |
+| Q14-010 | 43 | CHECKED |
+| Q14-011 | 44 | CHECKED |
+| Q14-012 | 46 | CHECKED |
 | Q14-013 | 48 | CHECKED |
-| Q14-014 | 49 | PARTIAL |
+| Q14-014 | 49 | CHECKED |
 | Q14-015 | 50 | CHECKED |
 | Q14-016 | 53 | PARTIAL |
-| Q14-017 | 55 | PARTIAL |
-| Q14-019 | 57 | PARTIAL |
-| Q14-020 | 58 | PARTIAL |
+| Q14-017 | 55 | CHECKED |
+| Q14-019 | 57 | CHECKED |
+| Q14-020 | 58 | CHECKED |
 | Q14-021 | 59 | PARTIAL |
 | Q14-022 | 60 | PARTIAL |
 | Q14-023 | 61 | PARTIAL |
 | Q14-024 | 62 | PARTIAL |
-| Q14-025 | 63 | PARTIAL |
+| Q14-025 | 63 | CHECKED |
 | Q14-026 | 64 | PARTIAL |
 | Q14-027 | 65 | CHECKED |
 | Q14-028 | 66 | PARTIAL |
 | Q14-029 | 67 | PARTIAL |
-| Q14-030 | 68 | PARTIAL |
-| Q14-031 | 69 | PARTIAL |
+| Q14-030 | 68 | CHECKED |
+| Q14-031 | 69 | CHECKED |
 | Q14-032 | 70 | PARTIAL |
 | Q14-033 | 71 | PARTIAL |
 | Q14-034 | 72 | PARTIAL |
 | Q14-035 | 73 | PARTIAL |
-| Q14-036 | 74 | PARTIAL |
+| Q14-036 | 74 | CHECKED |
 | Q14-037 | 75 | PARTIAL |
 | Q14-038 | 76 | PARTIAL |
 | Q14-039 | 77 | PARTIAL |
@@ -53,8 +53,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-044 | 82 | PARTIAL |
 | Q14-045 | 83 | PARTIAL |
 | Q14-046 | 84 | PARTIAL |
-| Q14-047 | 85 | PARTIAL |
-| Q14-048 | 86 | PARTIAL |
+| Q14-047 | 85 | CHECKED |
+| Q14-048 | 86 | CHECKED |
 | Q14-049 | 87 | PARTIAL |
 | Q14-050 | 88 | CHECKED |
 | Q14-051 | 90 | PARTIAL |
@@ -123,7 +123,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-114 | 163 | PARTIAL |
 | Q14-115 | 164 | PARTIAL |
 | Q14-116 | 172 | PARTIAL |
-| Q14-117 | 173 | PARTIAL |
+| Q14-117 | 173 | CHECKED |
 | Q14-118 | 174 | PARTIAL |
 | Q14-119 | 175 | PARTIAL |
 | Q14-120 | 176 | PARTIAL |
@@ -131,10 +131,10 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-122 | 178 | PARTIAL |
 | Q14-123 | 179 | PARTIAL |
 | Q14-124 | 180 | PARTIAL |
-| Q14-125 | 181 | PARTIAL |
+| Q14-125 | 181 | CHECKED |
 | Q14-126 | 182 | CHECKED (scope exclusion) |
 | Q14-127 | 183 | CHECKED (scope exclusion) |
-| Q14-128 | 184 | PARTIAL |
+| Q14-128 | 184 | CHECKED |
 | Q14-129 | 185 | CHECKED (scope exclusion) |
 | Q14-130 | 186 | PARTIAL |
 | Q14-131 | 187 | PARTIAL |
@@ -155,6 +155,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 > | M6-001 | **KEEP** | 0x009B338C;0x009F6EF8;0x009ECF44;0x009C3FFC;0x009D24D4;0x009B0B14 | All readers, conditional positioning/bus/layer branches and object-graph comparisons remain exact parsing work. |
 
 PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/reader controls. Resumption RB1–RB18 adds bus duck-entry updates/registration, group creation/state linking/default lookup, pair-vector replacement/ownership and the LayerCntr zero-track path. The operator adopted the census exclusions for 3D bank payloads and nonempty blend-track bodies; those bodies are not resumed. Resumption CF1–CF18 adds the common property/FX/positioning-prefix/aux/advanced reader slots, rendered/reference/bypass setters, Layer child attachment and its validation gates. LI1–LI11/LR1–LR7 add the parent setter, container/sound invalidation and bypass notification, packed state setters, priority/tie reranking and limit unlink. TR1–TR18 add ActorMixer, Sound and RanSeq readers, source descriptors, child validation and selection-object/playlist setup. SWR1–SWR8 add the Switch reader, list storage/ownership, duplicate/update gates and local failures. SUB1–SUB13 add immediate/deferred subscription mutation and group storage. RR1–RR8/PS1–PS9 add reset's pending-list/live-stop dispatch and immediate PBI/context teardown. Checkpoints246–253 add ER246/EO247 event reference and destruction, AP249 authored0403 output/release, AB250 action defaults/registration role, EL251 event/action-list reader, EP252 event publication and IM253 explicit event/action mutex setup. DR162/DD163 already bind the deferred0503 action and known pending object; AP249 supplies the authored0403 output family. These known callbacks are not newly unread. Remaining: other reachable action/pending/provider families, exhaustive processing-object pointer/input writers (known64/68 voice/wrapper controls are joined in FB256–FQ260); RanSeq context8 for known C factories already joins NR146F via RJ255A. Other context writers/providers and exhaustive runtime state writers/notification consumers remain open. UD261–AU278 now supply known single/all-bank unload, event prepare/unprepare, target/action hooks, bank admission/registry, deferred media consumer, shared group mutation/command and concrete Switch member joins; wider public input/alias/state/reference/flag/list/global/provider/writer closure remains PARTIAL. The known descriptor-manager stream recipients are excluded by checkpoint248, not another source-start recovery requirement.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the six named reader contracts; out of scope: 3D positioning payloads, nonempty blend tracks and reader-owned backing storage. Evidence: J/U/K/NB/RB/CF/LI/TR/SWR/SUB; known action/processing64/68/context8 products are AF406–SR422, FB256–FQ260 and NR146F/RJ255, rather than unread reader descendants. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-003 — triage line 34
 
@@ -198,11 +200,15 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Checkpoints245–253 add native tag23 register/retire producers, signed-byte mode/flag joins, known event factory/reference/owner-before-action destruction, authored0403 output/release, event reader/list publication and mutex setup. Known deferred0503 and pending-reference callbacks are already DR162/DD163. Descriptor-manager stream/I/O recipients are out of scope per checkpoint248. UD261–AU278 join known unload/preparation completion shapes, event/action/target lifetimes, deferred media and shared group/Switch member notifications. Remaining: other reachable action/handler/provider descendants, exhaustive object/reference/global/list/state writers and in-scope public registration/callback/input closure. No whole queued-control-path completion claim. AF406 adds shipped1901 concrete factory/table/reader/execute and existing nesting/group/scoped-switch publication joins;AS407 joins shipped1204 concrete constructor/table/reader/state-manager execute;RT408 joins shipped1303 constructor/reader/selected execution/duration-before-value RNG and scoped RTPC publication;2103 product/execute and1E03 concrete binding remain named next work. NE409 supplies shipped2103 actual nested-event lookup/retain/external-descriptor/scheduling/release joins; remaining witnessed action bindings/integration stay open. SE410 binds shipped1E03 factory/reader/setters/fulltype execute toA7–9;remaining102/103/108/202/302 product integration remains next work. SP411/PR412 supplies witnessedstop/pause/resume product/default/readers andselected202/302 executor,pauseddepth/transfer/reschedule andscheduled0503 transition recipients;broaderqueue/publicinput/concretehandlerintegration remains named next work. AH413 supplies commontarget/propertyreader,delayunitsconversion onbothsuccess/failure andexactproperty0F delaydraw;concretebankcaller/derived28 andbroaderqueue integration remain. BA414 joins type3 bankreader lookup/reuse/newfactory/common/derivedreader/ownerpublication for11 witnessedfulltypes;broadernativequeue/publicinput andotherconcretehandler obligations requirebounded reconciliation. QS415 joins positivelywitnessedappStopAll tag19toactual104/105 construction,stackpending/execute andobject/actioncleanup;otherretainedeventcontrolqueueproducts/inputreconciliation remain. PE416 joinsactualappzeroexternalPostEventwrapper/nativepublication andconstant34commandsize;3Dpayloadpreparation excludedbyguard,nonzerowrapperoutercontractdoesnotprove9A65C0descendant. AR417 joinsallwitnessedactiontable8/C/0retain/retirement andownedlist/base boundary;remainingevent/object/callback andqueueinputreconciliation retained. EP418 provesbothactualeventpendingpathstable101C000,objectpublication/externalcopy and4cleanupjoins;E23distinctvtablewordingcorrected. CK419 suppliesactualcompletionkey{resolvedobjectpointeror0,playingID,0,FF,FF,0} andobject-before-subscription/callbackorder;DC10A1238Cscopedinvalidation namednextrecipient. RK420 supplies scoped retirement and transition matching; VR421 completes the actual completion-key value invalidation/pruning and scope0 bindings. SR422 joins collected subscription retirement to existing SU1–6 modulation detach and fixes reverse collection order. The completion-key retirement join is positive; other selective suffix inputs remain their separate RTPC obligations. Remaining Q14-007 work is bounded queued-control reconciliation; stale generic all-writer/provider prose is not itself a new gap.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the eleven named queued-control contracts; out of scope: descriptor-manager I/O and queue/reference backing storage. Evidence: E/A/TH/RR/PB10; AF406–SR422 bind the shipped action products, pending construction, callbacks and completion retirement; checkpoint556 supplies the residual scoped cleanup. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-008 — triage line 41
 
 > | M6-007 | **KEEP** | 0x00A08A7C..0x00A08AC0;0x0099DB58;0x00A09698;0x00A099BC;0x00A0A3B4;0x00A08A44;0x00A08694;0x00A0A524..0x00A0A6E8 | RNG state/seed, draw cadence, eligibility, shuffle/avoid-repeat, weights and sequence behavior stay exact even where they use floating arithmetic. |
 
 PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. CA153 positively binds known five-family child admission and local weight/reset gates; CJ154/CO155/CP156/PR161 close known snapshot/list/policy/refresh recipients. RJ423 validates all468 serialized RanSeq control/child/playlist inputs, concrete Sound/RanSeq admission joins and direct weighted/multi-entry-sequence event witnesses. Storage/cache backing is scoped out. Native dynamic weight-setter dispatch and alternate seed/writer inputs retain explicit boundaries; no completed M6-007 claim or absence-based whole-writer proof.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind the runtime weight-setter dispatch to RanSeq playlist weight/total/reset publication; determine its actual incoming weight and child-ID producers. Alternate seed-body uncertainty is superseded by SD471; no fresh global seed census is added. Evidence: C/N4/N5/SE/TR/NR/PW/CA/CJ/CO/CP/PR; RJ423 supplies all468 serialized selectors and populated weighted/sequence witnesses. out of scope: bitmap/playlist backing storage and bit5 ping-pong. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-009 — triage line 42
 
@@ -210,11 +216,15 @@ PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, 
 
 PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. RS168 closes concrete9AB048 deadline/insertion/failure behavior. SP411–SR422 now supply witnessed action/lifetime and completion cleanup joins. PC424 binds actual request-owner PBI factory, exact continuous gate, derived defaults, context/transition transfer and mask/depth snapshot to VE callbacks. BI425 supplies A000E8/9BC90C base/context defaults, references, source/loop flags, runtime counter identities, request snapshot and exact conditional parameter81 scope. DP426 closes concrete VE11/12/14 disown and post-enqueue pause recipients, including admission failure cleanup and already-paused raw count differences. NC427 corrects the selected-index address from primary instructions, binds initialized state to actual chooser/callback/source/Term recipients, and joins serialized mode4 controls. App/direct-action entry into the particular outer mode4 node remains UNKNOWN. The bounded joins are positive; broader source/control-input boundaries remain. Other source/alternate input uncertainties remain explicit; known local cleanup is not a full scheduling claim.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish a shipped app/direct-action input to the particular outer mode4 node identified by NC427; preserve UNKNOWN if no input can be established. Its local chooser, callbacks, start and retirement are already recovered. Evidence: TT/S/TC/CT/DA/VE/CX–RS168; PC424–NC427; no caller absence proves unreachability. out of scope: bit5 ping-pong and state backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-010 — triage line 43
 
 > | M6-009 | **KEEP** | 0x00A14E28..0x00A15244;0x00A17724;0x00A17878;0x00A17280;0x00A0F07C;0x00A0F594;0x00A137D8..0x00A13A60;0x00A0E5E4;0x00A1B5FC;0x00A0F678 | Curve search/shapes/scaling, RTPC values/precedence/accumulation, transition gates and value evolution, BuiltIn semantics and live delivery are parameters and state, including fast-log/pow arithmetic. |
 
 PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. RW1–RW10 now supply known9F7390 routing tails; R49–R52 membership, AC accumulation, SJ219/IP221 immediate/ramp/preflight, MT12/RG7 scope defaults and HI/SA/OA context selection/expiration are positive local joins. PF284 adds initial fade/queue/attachment caller ordering. MJ285 reuses MU/MI/SV/EP/LP shared initialization and Q14-027 MTK/MP/ML/LS/LB/EV/ES/RH/OA/MC output, advancement, fallback and delivery joins. These known bodies are positive; historical next-work descriptions do not reopen them. LD428 adds exact active receiver predicate, five-family5C/F8 fan-out, Sound scope/filter gate, actual base/continuous context8 override, priority/clamp/reposition, bypass dispatch and additive value stores. Known C4 reused. LM429 reuses already-positive FB256 actual processing68, binds LN6 to known node78 and shared curve cache, and supplies exact control mapping/mode1 factor policy via PE372/PB170. Other runtime receiver/packet/input families and incoming provider/writer boundaries remain; no whole RTPC production-path claim.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the named curve/value/transition/live-delivery contracts; out of scope: registry backing storage and final PCM application. Evidence: R/RV/MV/CL/U/RW/AC/SJ/IP/MT/RG/HI/SA/OA/PF/MJ; LD428/LM429 concrete receiver/control bindings; ER538 positive populated evaluator delivery. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-011 — triage line 44
 
@@ -222,11 +232,15 @@ PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluatio
 
 PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positioning inputs and threshold controls. SEND286 supplies the full9BD368 send scratch selector, exact gain conversion/thresholds, ordered kinds and ID-only termination; VP11 supplies its live routing caller. D1/RW10 collapsed-bus predicate, DU1–7 reduction/publication and PDI1–3 default table initializer are already positive. RN/NPR/PDI and V6/V11 already supply root default/inheritance, range draw cadence and one-time latch; SR287–OUT297/SOUT298 add selected route/lifecycle joins, LCTX302 adds constructor-bound lazy parameter lookup/latch/clone association. LM429 supplies the ordinary layer mute-key caller, actual node78 scope gate, curve cache/value and mode1 PE372/PB170 consumer. Other reachable mute-key/recipient/input/provider/writer joins remain; those positive local bodies are not reopened.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the named gain/mute/root/duck/threshold contracts; out of scope: 3D positioning payloads and per-sample gain application. Evidence: V/I/D/U/SEND286/VP11/DU/PDI/RN/NPR/SR–OUT/LCTX302/LM429; CR502 and AT539 close recompute/audibility/threshold values. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-012 — triage line 46
 
 > | M6-011 | **KEEP** | 0x009FFD14..0x009FFD74;0x00A550D8..0x00A551EC;0x00A44630;0x00A766F0;0x00A77480;0x00A769EC..0x00A76A2C | Target writers/attenuation, cutoff map parameters, eight-step ramp cadence, finish countdown and immediate bypass predicates remain exact; do not invent default-zero inputs. |
 
 PARTIAL: FB/FC establish target stores, clamp/opcode gates, cutoff maps, coefficient cadence and stable/bypass history. FLIVE303 joins actual buffer-pointer gate, LPF-before-HPF dispatch and primary/secondary control offsets to FC2 targets and RS8 initialization; those selected filter/default bodies are positive. FP430 supplies exact scalar seeds and190 native-operation dependencies/all28 snapshots across LPF/HPF immediate/ramp persistent parameter graphs. Remaining other relevant target/format/state/input writers and products; no whole M6-011 completion claim.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid target, map, ramp or bypass decision in the named filters; out of scope: per-sample LPF/HPF arithmetic and history backing allocation. Evidence: FB/FC/FLIVE303/RS8; FP430 all28 persistent graphs,190 native operations; target defaults and primary/secondary bindings are explicit, not inferred zero. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-013 — triage line 48
 
@@ -240,6 +254,8 @@ CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficie
 
 PARTIAL: CR/MR establish dispatch, gain pairs, channel layout/count and mixer control/PCM boundary. EP1–12/VP8/AV4/BP5 already supply parameter/matrix copies, panner-input selection, audibility flags, observer pointer exposure and bus first-update snapshot; RCC1/2 constructor flags and CFLAG300 live restart-bit publication are positive joins. Remaining relevant connection-flag writers, format/matrix routing cases, dynamic products and input/provider closure; no completed M6-012 claim.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the named channel/matrix/first-update/fade contracts; out of scope: 3D panning payloads and per-sample matrix mixing/conversion. Evidence: CR/MR/EP/VP/AV/BP/RCC/CFLAG300; CV/MBOUND332/PJ480; routing inputs and conn flags retained. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-015 — triage line 50
 
 > | M6-012 | **VERIFY** | 0x00A25FF8;0x00A1F79C;0x00A209BC | Separate pure matrix-weight calculation from channel selection, speaker-mask routing and parameter/state writes before permitting any equivalent arithmetic. |
@@ -252,6 +268,8 @@ CHECKED research boundary: MBOUND332 reconciles all selected local matrix branch
 
 PARTIAL: FX1–FX6, B1–B12/B19–B26 and F1–F21 establish slot execution/return order, bypass reset/update gates, registry factories, parameter setup and kernel/control boundaries. FQ431 binds known bus/five-node E8 authored queries, exact inheritance/registry references and node-object versus bus-empty-key bypass values, reusing IC/FX/FC/FB downstream decisions. FS432 supplies concrete type18/19 parameter/control reader, compact first-key updates, varint binding/scaling/point geometry, replacement-before-admission and trailing raw-association parse/failure publication. SL433 supplies actual type18/19 constructors/fresh defaults, tables8/C/0, registry retirement and common owned-metadata/parameter release order. LP434 binds concrete authored limiter/EQ parameter factories/Init/readers/setters/clone/release, and validates all89 serialized settings with2 bindings/zero trailing associations. PP435 binds witnessed008A0003 registry, defaults/Init, rawreader/powf values, liveID map/dirty behavior including unknownIDs, clone/release and actualparam4 binding. PP436 binds authored00650002 registry/defaults/reader/live-setters/clone/release and11concretepayloads. PP437 binds authored00640002 registry/Init/value reader, live dirtypublication, clone/release and9rawpayloads. PP438 binds authored00660002 parameterreader/liveparam1 andremainingserializedRTPCbinding, plusInit/clonerelease. PP439 binds006412C2 registry/factory, Init/reader/ID0setter/unknownIDsuccess, clone/release and17rawpayloads. PP440 binds000112C3 company300/plugin1 factory/parametercontrols andfourrawpayloads. PP441 binds006D0003 andcompressorrawinputs; all89serializedsettings/tenparameterfamilies nowpositive. Dynamic trailing-association consumers/writers and additional input/writer/live product closure remain open; no whole M6-013 completion claim.
 
+**Current disposition, checkpoint558:** PARTIAL: Resolve FS432's nonempty trailing-association consumer and any runtime publication into that association list; establish a shipped input before descending. All89 serialized settings have zero trailing associations, which alone is not runtime-unreachability proof. Evidence: FQ431–PP441; PM536 positive selected FX/source metadata and cleanup, HS551 actual helper rejection. out of scope: per-sample FX and settings backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-017 — triage line 55
 
 > | M6-013 | **VERIFY** | 0x00AA25E0;0x00AA19CC;0x00AA18F4 | Separate coefficient/design computation and detector sample state from externally supplied settings, threshold/release control and enable choices; equivalence cannot legalize different filter types or parameters. |
@@ -260,17 +278,23 @@ PARTIAL; F1–F21 separate externally authored settings, coefficient stores, ker
 
 EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid coefficient-design, detector-selection or settings decision in the three named bodies; out of scope: per-sample detector/filter/limiter arithmetic. Evidence: F/LP434/EQ445 allseven coefficient graphs; PM536 and checkpoint537 selected metadata/settings/Init/Reset/bypass joins. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-019 — triage line 57
 
 > | M6-014 | **KEEP** | 0x00A42210;0x00A4FEF8;0x00A4F754;0x00A4F36C;0x00A43F64;0x00A4ECE4;0x005985FC;0x009CC2AC;0x009CC4D8 | Reuse keys/eState, aux-connect policy, device gates, FX factory/bypass, idle-frame lifetime, tail and zero-length chunks are routing/state/timing, not DSP. |
 
 PARTIAL: FX/BO/BW/IC/HG/HBIND already establish selected factory, bypass/format and Hijack joins. SR287–LREL295 add route replacement/reuse, base/derived creation, recursion/root handling and teardown; LFRAME296 adds buffer-release state overwrite, reverse idle selection/deletion and live frame invocation/gates. Those known local bodies are positive and are not reopened by old unread notes. Remaining concrete output route/device finalization, dynamic product families and relevant state/input/provider/writer/tail closure; no whole M6-014 completion claim.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid reuse/state/device/FX/idle/tail decision in the nine named routing contracts; out of scope: per-sample bus/FX processing and route/device backing storage. Evidence: SR287–LFRAME296/FX/BO/BW/IC/HG/HBIND; DA498/DT499; PM536,555–556 actual connection/helper/lifetime interfaces. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-020 — triage line 58
 
 > | M6-015 | **KEEP** | 0x008DBD74;0x008DBFE8..0x008DC034;0x008DBF76..0x008DBFB6;0x005942C6..0x00594354 | Hijack registration, persistent validFrames, DataReady/NoMoreData callbacks, reset/flush and exact 22320-Hz/744-byte output framing remain exact; only its delegated resampler math is SIMPLIFY under M6-004. |
 
 PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity writers, global callback replacement, per-instance relays and app buffer recipients. AF1–6/FR1–6 add frame-stream getters, wire encoding, callback count handoff, reset and destruction. Complete source/resampler geometry remains an exact obligation; no completed whole-stream claim.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid Hijack registration, callback or robot framing decision; out of scope: per-sample resampling/mixing arithmetic. Evidence: H/HG/AF/FR; checked005 geometry, RB519 full robot four-slot route, SJ542 stop-offset and RF544 encoded start/frame interfaces. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-021 — triage line 59
 
@@ -280,11 +304,15 @@ Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event compositio
 
 CM446: concrete tag69 captured-client output-source callback publishes rawC3C; allnext-animation mode0/1/2/other branches, oldabort/clear-before-mode and terminal4/5 admission nowpositive. Reuses GOR/AS/SH/UC/QC/SX, AENTRY306/AP/ASORT305 joins. Modechange itselfdoesnotrebuildexistinganimation. AD447/CU451/AI457/MQ458 settle selected deletion/destruction/start/pending retirement/abort callers. Higher-layer game inputs remain explicit interfaces; optional-layer input and additional witnessed input/provider/source closure remain PARTIAL, not the already-positive local deleting/scheduling bodies.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish a shipped producer for LI455D optional AddLayer/AddPersistentLayer/AddToPersistentLayer/RemovePersistentLayer/GenerateGlitchAudio input. Preserve UNKNOWN without a producer; the compositor's existing conditional dispatch is recovered. Evidence: AP/AR/CD/AL/AF/FR/ASEL/M5R/ASORT/AENTRY/RVOL/VI/PV/RJ/RCTX/DPOST–DSORT/CM/AD/CU/AI/MQ/AG/LF/LI455. out of scope: audio storage and final PCM mixing. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-022 — triage line 60
 
 > | M6-017 | **KEEP** | 0x009AF9F4..0x009AFAB8;0x00A4087C;0x00A40940;0x009AFD10;0x00A38420;0x00A03618;0x009EC418;0x009EBE6C | Thread lifecycle, group/voice/bus order, gate writers, pending-action drain, EndOfEvent and post-Term latency remain exact; external pacing uncertainty is not an ADP-1 arithmetic exemption. |
 
 PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit group and callback order, clock/fraction/groupcount and idle gates; E30–32 cover drain/synchronous Perform and NF1–5 notification flush. DF1–DF56 add device initialization/termination, pacing worker, mode/gate publications, command35 producer/consumer handshake, rebuild/reset/factory/holder cleanup and format invalidation/reconnect parents. RC463 joins native clock-scale447A0000 publication and the per-frame manager tag1/physical-order parent; reuses MREG callback registry/reverse dispatch, NF/SN183 actual base/continuous notification slots and PB10/CK419 concrete EndOfEvent cleanup/callback. LC464 joins post-command listener mask/clear and registered-object flag/preparation gates; A0BDC0 3D payload body is explicitly excluded. Remaining: specifically witnessed wider writer/input/provider/source/route/callback-family joins; optional tag1 manager-entry shipped producer UNKNOWN rather than unreachable. The existing selected queue/device/notification/completion bodies are not wholly unread.
+
+**Current disposition, checkpoint558:** PARTIAL: Establish the shipped producer/publication of RC463C tag1 manager entries and bind its selected9FDD90 recipient inputs. Known frame registry/clock/group order is already positive. Evidence: TH/E/NF/DF/RC463/MREG/PB10/CK419/LC464. out of scope: A0BDC0 3D positioning and queue/backing infrastructure. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-023 — triage line 61
 
@@ -292,11 +320,15 @@ PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit gr
 
 PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. RG465 reconciles actual live-rate→new voiceEC→source/stage geometry, bus/retained-plug-in/sink mutable-format recipients, frame scheduling and22320/744 robot handoff to existing CI192/VF1/BW2/HBIND5/DF22/TH/H/HG/FR/G rows. These selected consumers are positive; wider specifically witnessed input/writer/family closure remains open. RC208 bounded ARM pattern is not a full global writer census. A40BC0 is setup/pool/listener/registration/table initialization, not a rate setter.
 
+**Current disposition, checkpoint558:** PARTIAL: Reconcile actual Android query block108DF90/94 with renderer block105243C/40 in A57724's selected query/fallback-to-SetRate/SetFrame transfer; correct older “shared” address wording. No global writer-absence requirement is added to this bounded original. Evidence: Z/RG465/CI192/VF/BW/HBIND/DF/TH/H/HG/FR/G; live voice setter DG6 and transition TT6 already positive. out of scope: phone query primitive bodies and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-024 — triage line 62
 
 > | M6-020 | **KEEP** | 0x009B0C9C..0x009B1410;0x00A27CA4..0x00A27DD0;0x00A325E0..0x00A32914;0x00A3B84C..0x00A3BB80 | STMG raw readers, dedup/refcounts and consumers remain exact; unavailable human-readable names can remain UNKNOWN, but are not pure-DSP DROP items. |
 
 PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pair ordering, ordinal curves/IDs, registry dedup/publication and raw property setters. Human names remain UNKNOWN because stripped names do not establish them. DS466 adds the actually called first-ID target-definition lookup and publication-before-lookup order, reusing ST7–12/TT transition controls. SM467 resolves actual GOT1040154→FFA7B0 slot bytes1/1/0/0/0/1/1 and definition-object→table10 live dereference; mapped-slot relocation is no longer unread. SS468 adds constructor101C258→9F20A8 subscriber.slot0, raw cache value publication/completion/reference/notification order and reconciles NB/SG/SO376/SB380 definition-array/object.table10 producers. Selected state/switch publication bodies and these authored products are positive; OC469 resolves known five-node owner98 and selected node/bus C4 joins using LC3/4/LI2/5/BI378. OD470 reconciles existing U/R/AC/RD/SUB exact ordinal binding, initial/later equality-filtered delivery, authored-ID selection and deferred mutation joins. Alternate subscriber/input/writer families plus trailing-object consumers remain recoverable open work. No sample-arithmetic exemption applies.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind the parsed STMG trailing-object consumer to its actual table/definition/subscriber product and input; human-readable stripped names remain UNKNOWN, not a decision gap. Evidence: U/R/ST/DS466/SM467/SS468/OC469/OD470 close readers, mapped slots, known publication and recipients. out of scope: map/hash/backing mechanics. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-025 — triage line 63
 
@@ -304,11 +336,15 @@ PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pai
 
 PARTIAL: N4/N5/SE1–4 establish live time fallback/width, queued setter and test-seam distinction. SEED301 joins config74 U16 admission, stock SL34 zero/default preservation, tag32 producer and consumer, plus bounded direct-ARM setter-call census. SD471 reconciles original native seed bodies, stock zero config input, consumption-time zero fallback and selected shared RNG cadence/value consumers to existing SE/C/S/TC/A/X/ID/NPR rows. These known SetupConfig/queue bodies are positive; remaining wider specifically witnessed indirect/global-state/input writer closure is not claimed. Test injection literal0/host-width is not native all-zero setter semantics.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the three named seed/seam contracts; out of scope: phone time primitive body. Evidence: N4/N5/SE/SEED301/SD471 preserve width, queued consumption-time zero fallback, native RNG and draw order; generic alternate writers are not an additional original requirement. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-026 — triage line 64
 
 > | M6-022 | **KEEP** | 0x00A44D4C;0x00A44948;0x00A44C18;0x00A54F1C..0x00A5574C;0x00A4B93C;0x009BE28C;0x009BDA88;0x009BD368;0x009BF8E4;0x00A5E694;0x009EEDA4 | Production wiring, voice state machine, effective-parameter inputs, route identities/virtual bodies, device/sample-scale writers and callback registry remain exact; anonymous class names need no invented semantics. |
 
 PARTIAL: DF18–DF55 now trace device factory/reset/build, borrowed/owned OpenSL objects, sink buffer and queue geometry, pacing wake, Android music-active mute control, and voice-connection/bus-line invalidation and reconnect parents. Existing AD1–AD2 cover duplicate routing. VS1–VS17, EP1–EP12, BP1–BP6, VP1–VP14, AV1–AV6 and DU1–DU7 add voice/effective-parameter state parents, bus/voice gain publication, matrix ownership, callback gates, cached PBI query and cleanup ordering. CV1–CV8 establish sink converter routing/geometry versus sample arithmetic. RM472 adds the actually called9BE28C cached mode/dirty/override/provider/definition identity/reference and RTPC-binding sequence, reusing NG3/TD/LW/R. Known route/lifetime/rate/frame callback joins now also have AR/RJ/RG/MREG rows. RP473 splits9BC66C DC/ancestor admission, initial tag0 manager creation/publication/limit, listener-mask input, setup result and context notification/start invocation from excluded positioning bodies. RR474 supplies exact context registration/swap-retirement; RA475 supplies concrete context2C identities/start boundary/tag1 publication, with excluded positioning calculations explicitly unclaimed. RB476 supplies9BF8E4 mode/update/listener identity/count/result admission. RF477 supplies A5E694 initial parameter/definition/reference/cache/mode boundary; spatial attenuation/coordinate descendants are explicitly out of scope. VR478 adds concrete non2E holder/list-bit propagation and exact2E contextB8 publication after the live pipeline. VJ478 reconciles all original named ranges to positive retained boundaries. Remaining: broader specifically witnessed source/FX/callback/input/writer family controls; these require concrete positive witnesses, not generic unread-body claims. No wholesale DSP exemption.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind actually admitted mode2 source100/101/102 Init/render/seek/duration/stop products to the voice state machine; these generator controls remain unpaid in Q14-103. Known device, route, parameter and callback contracts are positive. Evidence: DF/VS/EP/BP/VP/AV/DU/CV/RM472–VR478/PM536; out of scope: 3D coordinate/attenuation payloads, storage/I/O and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-027 — triage line 65
 
@@ -324,11 +360,15 @@ PARTIAL: BO4–BO6 and B13 prove metric pointer/results are passed to an observe
 
 Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array clearing, F32 gain gates, callback-visible metrics, weighted channel masks/history snapshots, power publication and history restoration. The boundary is KEEP because9C806C receives M, not certified pure PCM arithmetic. ME479 adds concrete empty-registry initialization/current registry publication and LINIT/LGET/MET observer joins. out of scope:per-sample filter/interpolation recurrence and NEON sample arithmetic under ADP-1; do not reopen it. Retained filter/parameter product and positively witnessed observer registration/consumer inputs remain open; no absence-based reachability conclusion.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish the live meter filter/parameter construction and positive observer registration/consumer behind MET5/ME479D; retain callback-visible peak/RMS/power quantity, channel and timing contracts. Empty initialized registry is not absence proof. Evidence: BO/B13/MET/WM/ME479. out of scope: per-sample filter/interpolation recurrence and NEON sample arithmetic. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-029 — triage line 67
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
 PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, other owner.vt24/connection families, queued input/registration paths and flag writers. LM348 closes standard103C790 owner.vt24 and selected object22 default/setter/live propagation; LA349/LQ350 bind addition/native queued mask update, OR351 stock mask1 registration, OU352/OA353 removal, and RG356 reserved maskFF/singleton creation/Term order. LREC289–LREL295 already own selected route creator/default/getter/teardown; OB354/SK355 bind known object/switch cleanup. PJ480 reconciles selected local A25FF8/A4D994/A4BC58 boundaries with later exact registration mask1/reservedFF, queued propagation-before-setter, registry initialization/query, rate and route-mode/identity/start/retirement joins. Remaining specific alternate owner/connection/callback/input/writer products need positive witnesses; no generic unread-body or absence-based claim. No whole-function equivalence.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind positively populated BP6 parameter-observer and MET5 meter-observer records to their registration and consumer inputs before accepting their exposed matrix/gain quantities; no arbitrary alternate owner family is added. Evidence: EP/CV/BP/MBOUND/SC/SR/GM/HC/BT/LM/LA/LQ/OR/OU/OA/RG/OB/SK/PJ480. out of scope: 3D panning payloads and per-sample conversion/mixing. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-030 — triage line 68
 
@@ -336,11 +376,15 @@ PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix owners
 
 PARTIAL: UE1–UE7 and UC1–UC50 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates, flush ordering, lambda recipients, garbage sweep and playing-manager callback suppression. Marker string and subscription move/release lifetime are UC27–UC29; callback/core map helpers are instruction-closed. UC36–UC43 close parameter curve-map construction/rehash and controller/mux parent ownership plus member cleanup. UC44–UC50 and UT1–UT9 establish helper defaults, plugin release order, unregister compaction, file/pool cleanup gates and termination parent order. RG356/IT357/IR358 now settle the reserved-object/index-manager local termination choices and selected registry release/destruction families; CS359/CA360/CC361 add selected completion-owner selection/attempt/command joins. BC363 through GR375 settle known node commands, value propagation and base/derived bus/common-node retirement locals; SO376 binds the shipped type-1 state-member release product. PC362 closes the three named pending cancel/pause/resume recipients; SB380 adds batchstate reconciliation, while SO/SA/BI/BL376–379 join known member and node notification products. AJ481 reconciles every original app-dispatch range (5919B8 is inside UE1) with existing UC/CD/PE recipients and M2/Q15 interfaces. RT481 supplies selected RTPC termination all-wildcard transition unsubscribe/publication/recheck/default invalidation, retaining the native unequal-pointer UDF branch without a safe-loop guess. SW482 adds switch group default-key0/RTPC detach and observer membership retirement endpoints; state-manager owned storage and mutex destruction remain scope-excluded interfaces. Remaining before this entire item is CHECKED: other specifically witnessed termination decision descendants and actual input/provider/writer/family census; out of scope: pool/registry backing allocation internals; keep external interface/CLAD boundaries explicit. UC30–UC35 add all remaining mux message recipients and state/switch/parameter/stop queue publication. Music conductor recipient remains M9/Q15 scope. Generated callback unions/message constructors are outside audio scope in M2; those shipped bodies are readable dependencies, not UNKNOWN.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid decision in the six named Unity/app dispatch contracts; out of scope: registry/pool/file/backing infrastructure. Evidence: UE/UC/UT/AJ481/RT481/SW482, actual shared node retirement556/552/553; M2 serialized-message and Q15 conductor interfaces remain named layer boundaries, not asserted end-to-end audio acceptance. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-031 — triage line 69
 
 > | M6-024 | **KEEP** | 0x00592BB0;0x005935E2;0x005935EA;0x008D2EE8;0x008D2FE4;0x008D8280;0x008D8320 | Six-bank order, scene construction, unconditional load path, zip registration and live wiring are exact graph/loading work; the stale AddZipFiles claim must be checked against C33, not waived. |
 
 PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, duplicate-bank false result, scene early-abort and preparation-result handling, and archive validation/prepend/removal and configuration parent wiring. SC487/NM488 now add selected scene/event/bank replacement, ordered overlap/self-member/shrink/append decisions; SI489 adds concrete startup IDs1..10/name arguments and four-pair locale-to-state input/default/state-interface join. SL33–49/CW281/CV282 already supply constructor/config/base-threaded bank dispatch and synchronization; BR142/CR143/UD261 and event/action product rows supply selected retirement/graph joins. out of scope:app path/JNI file resolver, ZIP/archive/hash/rehash/stream-library and backing/allocator/free/string growth/owned unwind; no further infrastructure descent under the guard. Remaining:specifically witnessed bank graph/source/preparation/callback/product inputs and nonempty scene inputs at their existing rows, without claiming their whole paths from wrapper evidence.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid order/scene/load/registration decision in the six named app startup contracts; out of scope: ZIP/archive/hash, file-resolver/JNI path and backing allocation/unwind. Evidence: SL1–49/CW281/CV282/SC487/NM488/SI489; BR/CR/UD and concrete event/action retirement joins; C33 archive evidence supersedes stale AddZipFiles claim. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-032 — triage line 70
 
@@ -352,6 +396,8 @@ Checkpoint198 reconciliation: VC184/QC189/PP190 settle bounded creation/reuse/no
 
 Checkpoint497 reconciliation: PA491/DP492/IP493/ES494/AU495/CA496 settle ordinary/external Play caller admission, descriptor choices, audibility, initialization/context/attachment/loop/publication/failure decisions. PC424/BI425/VD490/SA203/SS204/SF1/VC184/QC189/PP190/PF193 reuse original PBI/voice/source/start recipients. V1–14/FC1/SL288F/D1–5/RC7/RG/Y1 and EB497 settle local effective-state and known optional voice bypass joins. Remaining: concrete node/FX/source/route production input/provider/writer closure and additional product families at their specific retained rows; no generic unread Play/constructor/source/start callback assumption. out of scope: coordinate payload/calculations, per-sample DSP and storage/I/O infrastructure. The broad original obligation stays PARTIAL.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind mode2 generator source100/101/102 initialization/render/seek/duration/termination recipients selected by Play; remaining generation-control gap is Q14-103, not unread Play or effective-parameter code. Evidence: VF/VC/QC/PP/PI/VI/CI/N5/HC/PA491–EB497/PM536/555. out of scope: positioning payloads, backing/I/O and per-sample FX. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-033 — triage line 71
 
 > | M6-025 | **KEEP** | 0x009EB4C8;0x00A0CA04;0x00A40940;0x009EBE38..0x009EC0F0;0x00A42210;0x00A0428C;0x00A054D8;0x00A53558;0x00A5358C;0x00A535D8;0x00A53698;0x00A22304;0x00A22684 | Indirect-caller census, initialization barrier, re-init triggers, null-parent remainder, pending-state/device-build bodies and absent field writers are state/lifetime gaps. |
@@ -361,6 +407,8 @@ PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; 
 Checkpoint198 reconciliation: PN177/QN172/VF180/N5194 trace all four named standard voice control callbacks A53558/A5358C/A535D8/A53698 with their gates, concrete slots and source/wrapper recipients; PF193 settles grouped preparation/start dispatch. Remaining: indirect caller/producer census, E0/E4 and other field writers, null-parent/pending-state/device collaborator closure; the four named callback bodies are no longer unread.
 
 Checkpoint500 reconciliation: DA498/DT499 now establish original9EB4C8 admission/listener identity and9EBE38 retry producer with actual device0. LM348/LQ350 settle A0CA04; TH/DF/TM484 settle initialization/worker/frame/rebuild/stop boundaries. LREC/ROOT/LF/LDEF/LDRV/LINIT/RSRC and LQ350E supply named A42210/null-parent construction/teardown; SWIN/SNT/CB3/NS cover A0428C/A054D8. PN177/QN172/VF180/N5194/PS404 settle the four callbacks and known recipients; SA203/PC2/VP3 supply selected E0/E4 writers while constructor leaves both unwritten. Remaining: concrete indirect product/input/provider census and live state/config/route/metadata writer closure at their specific retained rows; no generic unread original body obligation. out of scope: 3D coordinate/coefficient payload calculations, per-sample DSP and owned storage/I/O/recording. Broad original item remains PARTIAL.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete the explicitly requested indirect VoiceInit/re-init caller census and positive E0/E4 live-state writer census; test candidates against actual callback tables rather than assuming the three direct callers are exhaustive. Evidence: TH/DF/VS/PN/QN/VF/N5/PF/DA498/DT499/TM484/LREC–RSRC/SWIN/SNT/CB/NS/SA/PC/VP. out of scope: positioning, PCM and backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-034 — triage line 72
 
@@ -378,6 +426,8 @@ LPAR1–4 add child/layer order, outside-range threshold counts (including nativ
 
 Checkpoint501 reconciliation: original continuous validation9EE9C4..9EEA5C is CW1/2/6/8/9 with CT6/CO155/CP156 concrete ownership/policy joins. S1–4/CC232/SW231 settle listed context/association/continuation recipients. W1–8/SP230 establish exact state-versus-scoped-switch precedence, authored fallback and actual last-selected-ID/repetition-count producer before child Play. POL/SC213/SP216 supply special policy/preparation. Extended Layer pool/child path is positive LCP/LPAR/LP210/LK211/LC212/SC213/CL214/RC5; those named local bodies are not unread. Remaining: specific runtime context/depth/group/default/flag/parameter/child-product and lifetime writer/provider closure at current rows; no global cache semantic rename or whole-family claim. out of scope: nonempty blend tracks, coordinate payload and pool/backing infrastructure. Broad item stays PARTIAL.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish runtime input into NC427's mode4 continuation context and its child request/depth/default values; mode4 local selection and Layer child/pool/parameter decisions are recovered. Evidence: CW/S/W/CC/SW/POL/LCP/LPAR/LP/LK/LC/SC/CL/RC/SP; out of scope: nonempty blend tracks, 3D payloads and pool backing. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-035 — triage line 73
 
 > | M6-025 | **KEEP** | 0x00A01768;0x009BCA68;0x00A0228C;0x00A72760..0x00AB138C;0x00A56414..0x00A56468;0x009EEDA4;0x00A4C3D8..0x00A4C504;0x009EA23C | Source format writers, inaudibility/limiter decisions, source close/init ordering, route caches and device-table checks remain exact; later correction evidence does not eliminate their independent verification obligation. |
@@ -388,11 +438,15 @@ Checkpoint198 reconciliation: NS3/VF180/VD186 bind close/stop/delete ordering; S
 
 Checkpoint503 reconciliation: PC/X/PA/SA supply actual cached/inherited policy; DG/CR502/AU495 bind full/smaller scalar refresh to known base/continuous audibility. LV/VS/SA/GL retain exact virtualization/limit changes. Q14-003/004 decoder maps and PI/SS/SA/SF/RG465 establish known source format/rate/control publications, with WEM decoding still exact. NS/SA/VF180/SWIN/SC/EL/HP provide selected source close/init/end/retirement; RCON/KCACHE/KSEL/CSPEC/CGEN and DA498/DT499 settle original device/route cache parent gates and failure ownership. Remaining: concrete additional source/plug-in/context/connection products and live input/format/config/threshold/route writer/provider closure at specific rows; no generic unread original audibility/close/cache helper. out of scope: coordinate/coefficient payload, per-sample DSP and stream/I/O/storage infrastructure, PCM file sources. Broad item remains PARTIAL.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind admitted source100/101/102 format, close/Init and duration/render-state recipients; retain raw failure and publication order. Device/cache/audibility/limiter local remainders are superseded. Evidence: PC/X/PA/SA/DG/CR502/AU/LV/VS/GL/NS/VF/SWIN/SC/EL/HP/RCON/KCACHE/KSEL/DA/DT/PM536. out of scope: PCM file sources, positioning, I/O/backing and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-036 — triage line 74
 
 > | M6-025 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C;0x00A54A30 | Unknown FX helper/wrapper descendants must be separated into ownership/format/buffer/control KEEP and any demonstrated pure sample math SIMPLIFY. |
 
 PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format, allocation, registry/RTPC ownership and Init/Reset control; no per-sample loop in those bodies. Checkpoint504 reconciles full small/large WV1–15 wrapper control, IC/RG initial delivery and U27/R detach/ownership recipients with actual caller joins. Known compressor/limiter/EQ products and dynamic slot/format/bypass controls have their own B/F/CP/LP434/PP441/FX/FC/FM/FB/EB rows. Remaining: additional positively selected plugin/parameter products and their input/writer closure; no generic unread wrapper/helper claim and no bulk DSP exemption.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid control/ownership/format decision in the four named wrapper/helpers; out of scope: separately isolated per-sample FX kernels. Evidence: VF/WV/IC/RG/U/R/CP/LP/PP/FX/FC/FM/FB/EB; PM536–537 concrete selected metadata and wrapper lifetimes. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-037 — triage line 75
 
@@ -400,11 +454,15 @@ PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format,
 
 PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1–7, GL1–5, PC1–5, PW1–5, VC1–7 and PP1–6 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including full counter/input/provider writer census (LR507 now joins runtime global-counter/default-key reset and Term membership publication; DL506 now establishes actual.init_array default-limiter creation, initial quota/flags/zero sort key and no-op registered callbacks), additional global threshold/limit writers (GU505 now positively binds U9–11 bank setters and priority-zero quota method to actual globals and consumers), remaining policy-cache callers/writers and voice/notification pass (the local A55750 consumer is VC1–7); active/virtual embedded-offset relationships, registration and state callbacks and secondary64/66 recursion are now explicit. Native row presence does not settle those descendants.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish the public/exported or indirect producer of quota setter9A0938 and close requested limiter input/counter wiring at its actual consumers; GU505B has no selected direct caller, which is UNKNOWN rather than unreachable. Evidence: L/LR/PB/PS/LS/LT/LC/LV/GL/PC/PW/VC/PP/RW/ND; GU505/DL506/LR507 quota defaults and bank writers positive. out of scope: limiter membership backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-038 — triage line 76
 
 > | M6-026 | **KEEP** | 0x00A54F50..0x00A5531C;0x00A548C0;0x009C5154;0x009BC66C;0x009BE898;0x00A11F98;0x00A1E8F4;0x00A1C660;0x00A1ECBC;0x00A3E27C;0x009BDC8C;0x00A366AC;0x009BDA28;0x009E808C;0x00A0054C;0x00A3EE9C..0x00A407B0 | Remaining voice/parameter/callback/MIDI-registration stores, missing collaborators, zero-playing-id event path and choices remain decision/state/timing work; no ADP-1 release. |
 
 PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. BP508 now supplies9C5240 bus-removal admission,9C5154 full delayed action1820/playingID0 producer, exact first property-F setter, target/pending/creator reference order and actual Execute gate. BD509 closes local9C4CD0 state/order/value/transition dispatch; DC510 supplies9C464C admission/application,9C4A6C held update and actual9C9770 callback/value order; DG511 recovers9C5374 exact aggregate,9C52E4 read-only scan (no sweep/retirement),A1AB5C fixed subscriber/mask/value-delta dispatch and actual PBI context join; ME512 maps all ten named packed-event byte stores and five conditional word copies to existing RI/PD/SK/CRS control rows, including positive A4010C index-gap restart. NM513A–C reconcile the other named voice/preparation, registration/ownership/pause/attachment and A0054C local controls to current primary rows. Remaining input/subscriber products, PB8 auxiliary-property/counter recipients and additional dynamic provider/callback families stay specific; no generic unread9C5154, A0054C or MIDI-store-range claim.
+
+**Current disposition, checkpoint558:** PARTIAL: Resolve PB8's9FEEB8 object-reference/counter detach recipient and its auxiliary-property input; bind any observed subscriber product at that call. Listed MIDI stores, voice state, delayed action and duck-control recipients are already positive. Evidence: VS/BP508/BD509/DC510/DG511/ME512/NM513; out of scope: storage and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-039 — triage line 77
 
@@ -412,11 +470,15 @@ PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, 
 
 PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical order, defaults and sum/product selection. RW1–10 and R48 establish node max-instance subscription traversal; RC7 covers the parameter helper. NM513D–F reconcile named controls: LFRAME/DF/DA498/DT499 device controls, CA496 Play/attachment success, RC7 helper, CR502 actual24/28 bindings and V5/V11 E9bit2 early return are positive. Remaining params78/88/8C/108 caller producers, live key/default/curve/subscriber/input writers and additional reachable device/context/provider callback families stay specific; no generic unread device/Play/early-return claim.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind RC7 incoming params78/88/8C/108 to actual caller producers and scoped/default keys, preserving widths/order and the selected virtual receiver; named early-return/Play/device bodies are already positive. Evidence: R/AC/RV/NP/RW/RC7/NM513D–F/CR502; out of scope: positioning payloads and backing infrastructure. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-040 — triage line 78
 
 > | M9-002 | **KEEP** | 0x005EEB30..0x005EEE9F;0x00544444..0x0054445E;0x00540D1C;0x0054F70C | Trigger resolution failure, compound propagation, per-step timeout and render wait are singing/action decisions. |
 
 PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behavior activation/lock/assembly and M12 TriggerAnimationAction, timeout and compound propagation are HIGHER-LAYER with5EEB46..5EEB60,5EEDBC..5EEE8C,544444..54445E,540D1C,54F70C citations. SI514C reconciles concrete599F94 actual client14→tag3 signal/controller/native tag8→QC/SX scoped switch consumer joins. Remaining producer/binding/input families stay explicit; higher-layer action/behavior scope is not silently accepted.
+
+**Current disposition, checkpoint558:** PARTIAL: Retain explicit M7/M12 trigger-resolution failure, compound result, per-step timeout and render-wait proof at5EEB46..60/5EEDBC..EEE8C/544444..45E/540D1C/54F70C. These are higher-layer decisions, not one of the guard's exclusions. Evidence: HB/SI514C audio switch-before-action interface is positive; no invented additional sound-post binding remainder. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-041 — triage line 79
 
@@ -424,11 +486,15 @@ PARTIAL: HB1/HB3 establish reachable switchpost/action interface order. M7 behav
 
 Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 smoothing, RTPC post, logging and stop. SGB1–6 independently reopen the local controlbody throughactualStopreturn5EF340; imports1042E34/1041E24 identifyparameterpost599F62 andRemoveListener6356AC. SI514A/B supplies initial smoothing140/log144+0 and empty tree/vector, known mean0/count1 seed; SI514D joins actual M6 client18→tag4→controller/native RTPC consumers. Additional map/input/producer/binding families remain distinct; M7/M10 listener ownership is HIGHER-LAYER with005EF2D6..005EF33C citation.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind rolling-entry insertion and cube-sample/listener input at5EF0C8/5EF490 to the running-mean update; M7/M10 listener ownership5EF2D6..33C stays an explicit higher-layer decision boundary, not a guard exclusion. Evidence: SP/SGB/SI514A/B/D exact seed/count/smoothing/post/Stop values and native RTPC client binding positive. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-042 — triage line 80
 
 > | M9-004 | **KEEP** | 0x00A3BDFC..0x00A3BEE4;0x00A3CC48 | Music hierarchy, table-select flag, nearest overridden MIDI target and target0 failure are routing decisions; bank-only evidence must be expanded with these runtime consumers. |
 
 PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, target0 failure, table selection, retain and unlock; MJ515A reuses positive CX1–5/CD1–3 actual target/init/media/seek/link/product and destruction joins; actual registry population and alternate property/override writers remain shared M6 dependencies, not a generic unread source-init claim.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind runtime node registry table0/1 population and track56/parent56 override writers to A3BDFC target selection; preserve target0 failure and nearest-override order. Evidence: MT/CX/CD/MJ515A; no unread source Init label. out of scope: registry hash/backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-043 — triage line 81
 
@@ -436,11 +502,15 @@ PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, targ
 
 PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/division/tempo, property55, clock arithmetic and frame offset conversion. MJ515B–E reconcile positive PD1–7 normal/system decoder completion, SK1–6 seek/advance, CRS1–7 restore/query, CX/CD context and NQ/CWT post/lifecycle writers. Remaining concrete registry/property/meter/rate/provider input closure and queued event/target/lifetime recipients stay distinct; no generic unread decoder/seek claim.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind effective property55/meter/rate inputs to MIDI scheduling, then the queued note event's actual target/held-state consumer; packed decoder, seek and restoration are already positive. Evidence: RI/TP/MR/FC/PD/SK/CRS/CX/CD/NQ/CWT/MJ515; unpaid note-selection consumer is concretely Q14-051/053. out of scope: stream backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-044 — triage line 82
 
 > | M9-006 | **KEEP** | 0x009D7B6C..0x009D7C97;0x009D552C..0x009D55F0;0x009D7EA4 | Modulator payloads, trigger selector property15 and stop gate property1 are decisions/state. |
 
 PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope identity/normalization, factories/registry, authored trigger15/stop1 gates and complete default initializer words. MR517 now supplies full shared authored-control reader9D5700 with actual class14 binding, property/range publication, packed subscriptions/mask-before-register and failure order; distinct class18 EP/LP initialization joins MI/SV and existing Q14-027 delivery. Remaining trigger/scope/stop recipient and input-provider families stay specific; no whole M9-006 completion claim.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete actual9DCE44 trigger's state acquisition/scope/stop recipients beyond the MT5 mode/key prefix, with concrete LFO/envelope products; retain9E61B4 direct-before-recursive trigger order. Evidence: MT1–12/MR517/MI/SV/Q14-027; authored property15/1/defaults and class18 initialization are positive. out of scope: registry/state backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-045 — triage line 83
 
@@ -448,11 +518,15 @@ PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope 
 
 PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve companions establish scalar curve/scaling2 values, strict saturation gates and exact float association; MT7 establishes property15 event gates. MR517F reconciles actual class18 EP initializer and MI5/SV callback/deadline/buffer/dirty/evaluator/attachment delivery cadence. Remaining concrete trigger/scope/stop recipient and input-provider families stay specific. No change to the production path or the cited circular test in this research task.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind9DCE44 acquired state and envelope trigger/stop recipients to note-on/off gate and exact A14F88 curve value; same concrete trigger remainder as044, without changing the cited production test. Evidence: R/CL/MT7/MR517F/MI/SV; no ADP-1 permission for control scaling. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-046 — triage line 84
 
 > | M9-008 | **KEEP** | 0x009D671C..0x009D7727;0x005EF184..0x005EF18C | Posted shake RTPC and per-voice depth initialization cadence must match; rereading once per block changes parameters/state. |
 
 PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. LP8–12 additionally close local mode/phase initialization and establish its KEEP control-stream boundary. MR517F reconciles actual class18 LP initializer and MI/SV setter/carryback/dirty/buffer and Q14-027 evaluator/attachment/MC production cadence; SI514 supplies shake-post default and actual M6 parameter sink. Remaining concrete trigger/scope/stop recipient and input-provider families stay exact open work.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind9DCE44 acquired state and LFO trigger/stop recipients to the per-voice LP initialization, preserving interleaved draws and depth cadence; same concrete trigger remainder as044. Evidence: LP/SP/MI/MR517F/SI514/Q14-027; neither a per-block re-read nor fresh RNG is inferred. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-047 — triage line 85
 
@@ -460,17 +534,23 @@ PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, eng
 
 PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. CS516 closes inlined shape0..9/out-of-range dispatch and exactrawcoefficient/F32 opcode blocks; known MC1–6 production buffered/scalar control delivery and isolated PCM boundary are positive. Remaining live curve/key/factor/attachment writer and additional consumer families stay specific; only MC sample arithmetic is out of scope under ADP-1. No whole-recordDROP.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid curve/factor/delivery/cadence decision in the named accumulation body; out of scope: final PCM multiplication/interpolation. Evidence: MPA/CS516 allshape branches; MC buffered-before-scalar production delivery; Q14-027 and ER538 actual population/output/attachment joins. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-048 — triage line 86
 
 > | M9-009 | **VERIFY** | 0x00A6E848..0x00A6F133 | If a descendant merely multiplies final PCM by an already-exact parameter stream, isolate that sample loop first; current evidence does not settle the boundary. |
 
 PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. CS516 closes inlined shape0..9/out-of-range dispatch and exactrawcoefficient/F32 opcode blocks; known MC1–6 production buffered/scalar control delivery and isolated PCM boundary are positive. Remaining live curve/key/factor/attachment writer and additional consumer families stay specific; only MC sample arithmetic is out of scope under ADP-1. No whole-recordDROP.
 
+**Current disposition, checkpoint558:** CHECKED: Boundary now established; out of scope: the isolated MC final per-sample PCM multiply/interpolation, after exact parameter-stream generation and delivery. Evidence: Same MPA/CS516/MC/ER538 proof as047; A6E848 itself is control arithmetic and is not waived. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-049 — triage line 87
 
 > | M9-010 | **KEEP** | 0x00A3E688..0x00A3E9F4;0x00A3E6A8..0x00A3E728 | Held-note lifetime via PBI vt+1C, recorded-node replay and fades are MIDI/selection/timing decisions; no fresh note-off RNG draw. |
 
 Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node replay, release gates, concrete PBI notification, queued dispatch and Vorbis loop callbacks. HN518 reconciles current MH/MD/NS/NE, actual base/continuous1C CA179/SL364, type4 HP/SR365 consumer, action notification PN160–DR162/AP249 and MAT/IST held queue/forced-stop joins. Remaining concrete node128/ownerA8 selection/eligibility, stream descriptor/source-last-sample and scheduler/attachment/input-provider closure stays specific.
+
+**Current disposition, checkpoint558:** PARTIAL: Resolve recorded-node node128/ownerA8 selection/eligibility and bind the selected source last-sample/stream endpoint to held-note release; replay/PBI1C/type4/forced-stop/order are already positive. Evidence: MH/HS/HP/MAT/IST/HN518; shared generator endpoint gap103 and note-selection gap051 remain unpaid concrete consumers. out of scope: stream backing/I/O and PCM arithmetic. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-050 — triage line 88
 
@@ -484,17 +564,23 @@ CHECKED: RB519 maps the specified shipped Robot_Bus_1 four-slot route through FQ
 
 PARTIAL: Q15 NS1–3/NE1–6 locate the actual per-note submission/preparation helper and channel/pitch/velocity gates; cited9BBF9C is a byte-stream consumer, not child MIDI filtering. Actual target110896138 node128 child/get-in membership remains open.
 
+**Current disposition, checkpoint558:** PARTIAL: Resolve actual target110896138 node128 child/get-in403781184 membership and per-note routing;9BBF9C byte-stream reading is not evidence for this selector. Evidence: NS/NE and serialized graph target witness; no missing-caller exclusion. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-052 — triage line 91
 
 > | M9-014 | **KEEP** | 0x00A78D10..0x00A78DE3;0x009B3260..0x009B4033 | Trace velocity to every gain/RTPC input and any implicit binding; velocity-to-level decisions stay exact, though the final PCM multiply can share M6-010 equivalence. |
 
 PARTIAL: Q15 NS1–3/NE1–6 trace the packed velocity byte through property30/RTPCselector0C offset, clamp1..127, range and final mutation. This does not yet settle downstream implicit gain/RTPC recipients.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind mutated velocity/property30/RTPCselector0C value from NE1–6 to every selected node128 gain/RTPC recipient, including implicit binding. Evidence: NS/NE clamp1..127, range and final mutation are positive; out of scope: only final PCM gain multiplication. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-053 — triage line 92
 
 > | M9-015 | **KEEP** | 0x0098A6D4..0x0098A7B8;0x00A3EA3C;0x00A3DDF0 | Container draws occur when each note fires, not prewarm; exact RNG cadence is explicitly required. |
 
 PARTIAL: Q15 MD1–6/MH1–2 checks per-event submission versus recorded-node replay; concrete node128 and selection/RNG descendants remain required.
+
+**Current disposition, checkpoint558:** PARTIAL: Resolve node128 note-on selection/RNG descendant and its actual firing versus replay invocation; establish draw cadence at the selector, not from submission alone. Evidence: MD/MH; note-off recorded replay alone does not prove all note-on draws. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-054 — triage line 93
 
@@ -514,11 +600,15 @@ CHECKED bounded audio interface: MC520A/SI514 joins exact listener arguments, sa
 
 PARTIAL: Q15 FC/RI/PD1–8 close local clip note-window gates and complete packed reader throughA3FC40; F8 trim/end writers, post-list/stream attachment and final held-note release remain exact open work.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind clip BeginTrim/end F8 writer and stream/post attachment to final held-note/source release; CWT cutoff writers and local packed note-window gates are positive but do not settle release. Evidence: FC/RI/PD/NQ/CWT/MJ515/HN518; out of scope: stream backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-057 — triage line 96
 
 > | M9-022 | **KEEP** | 0x00A08A44;0x00A0A524;0x00A3E6A8..0x00A3E728 | Eligibility/blocked-list/random/sequence state and replaying recorded note-on selection stay exact. |
 
 PARTIAL: C1–25 and TC/CT/DA/VE rows establish eligibility, random/sequence choice and blocked-list updates locally; Q15 MH1–7/IST/MAT establish recorded-note replay without a fresh note-off RNG draw. Selector state writers/caller closure remain retained; no whole M9-022 settlement.
+
+**Current disposition, checkpoint558:** PARTIAL: Bind note-on node128/ownerA8 to actual RanSeq eligibility/shared-or-private state and blocked-list updates; replay itself is positive and must not draw afresh. Evidence: C/TC/CT/DA/VE/MH/IST/MAT; selection descendant same051/053. out of scope: bit5 ping-pong and state backing storage. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-058 — triage line 97
 
@@ -580,6 +670,8 @@ CHECKED: SR522A–C reconcile SWIN1–5 exact own-PBI media arguments, actual re
 
 PARTIAL: Q15 MH1–7/HS/HP/MAT/IST rows explicitly cover recorded Sound replay, code2/3 gates, PBI held-note/stop calls and callback cleanup. The A381F4 priority/limit recipient is a shared M6 boundary with its own retained rows/caller census; these M9 caller contracts are not proof of that recipient.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind music A381F4 caller's priority/limit inputs to its selected concrete PBI/limiter recipient, preserving code2/3 and recorded replay lifetime. Evidence: MH/HS/HP/MAT/IST; M6 limiter locals L/LR/LS/LT/LC/LV are not the missing music caller arguments. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-068 — triage line 117
 
 > | C30.3 / threshold setter | M6-010,M6-026 | **KEEP** | 0x009A080C..0x009A0908;0x009B0B20..0x009B0B4C | Range validation, level-store-before-pow, raw dB and max(powf,fastterm) determine audibility decisions; phone libm permission cannot drop this control path. |
@@ -630,11 +722,15 @@ CHECKED (bounded decisions-only), checkpoint555: LINIT/LGET/LDEF/LDRV and SL/LRE
 
 PARTIAL: TH8, NF1–NF5 and VS1–VS17 establish Perform/render voice order, three prepass calls, per-voice dispatch, state-driven stop/replacement/removal and source-key insertion ordering. Remaining: complete pending/ducking/node-cleanup/Play/voice render/PBI flush recipient and production writer closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Reconcile named live composition9D3CC0/A43D24/A39564/A62A1C/A4304C/A44D4C/A38420: resolve actual flush callback/PBI products from NF and mode2 generator render endpoint from103; preserve prepass→voice→notification/flush order. Evidence: TH/NF/VS/QC/PA/DU/DC/DG, known callback/Play joins; out of scope: storage/I/O and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-076 — triage line 125
 
 > | C31.1 R1.1–R1.14 / media-table writer and manager census | M6-025,M6-024 | **KEEP** | 0x00A1EC54;0x009BB320;0x009BB1F8;0x00A01EF4;0x00A028F0..0x00A02938;0x00A04D48;0x009B49A4 | Pointers/size/bank ownership, table population and caller gates are loading/lifetime; C32 closes extraction claims, independent verification remains. |
 
 PARTIAL: checkpoint87 media-rebind MR1–6 (distinct from the earlier mixer MR rows), MS141A–I and BR142A–S establish caller-local A01EF4, media-table selection/population/removal, descriptor setters, owner eligibility/retirement and rebind gates. SD140H closes A04D48. Remaining all-writer/caller census and concrete plug-in/release recipients keep the production obligation open. The narrow D2 obligation is Q14-077, already CHECKED; these caller rows do not settle full M6-025.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete explicitly requested media descriptor/table writer census for pointer,size,bank ownership at A1EC54/9BB320/9BB1F8/A01EF4/A028F0/A04D48/9B49A4; bind actual media-release/FX-bank-stop products. Evidence: MR1–6 media-rebind/MS141/BR142/SD140; old mixer MR2 is not media evidence. out of scope: cache/hash/backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-077 — triage line 126
 
@@ -690,6 +786,8 @@ CHECKED at checkpoint539 for the quoted bounded decisions. DG1–3/CR502 positiv
 
 PARTIAL at checkpoint540. LV5–6/PB1/LI10 establish guarded limiter/global undo; NS3 and SA203 establish source close and retained attach. PT540A–B capture the complete primary teardown, actual four ascending FX callbacks/reloads/releases and final stage/flag order. PT540C–E add complete handoff/raw state transition recipients and twelve confirmed direct ARM caller slices, including both global decrement callers; no absence inference from that scan. Out of scope: A53244 metadata/buffer reclamation, A76608 workspace releases, A69A38/A69AC8/A47360 backing release internals, with their distinct ownership gates/caller positions preserved. Remaining requested full caller/absence coverage and actual source-family destructor contracts stay explicit; no whole-source acceptance.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete requested A0228C/A022E8/A370E4/A55A84/A55D04 caller/absence proof, and bind admitted source-family destruction callbacks (including mode2 generators) rather than only outer teardown. Evidence: LV/PB/NS/SA/PT540 twelve direct caller slices and fourFX order; out of scope: A53244 metadata/buffers,A76608 workspace,A69A38/A69AC8/A47360 backing release internals. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-085 — triage line 134
 
 > | C31.4 R4 clock/callback/duration/stop offset | M6-026,M6-022,M9-010 | **KEEP** | 0x00A03618;0x00A05574;0x00A05370;0x00A054D8;0x00A56414;0x00A55CC4;0x00A5495C;0x00A56478;0x009CBACC;0x009886C0;0x0098822C | Clock sign extension, callback/game-object release, duration/pitch divisor, one-shot offset getter and writer census all alter timing/state; keep101f0x42CA0000 and Â±half bits exact. |
@@ -714,11 +812,15 @@ CHECKED (bounded decisions-only), checkpoint556: DC/KT/OR/PC/SR/SU/SRG settle th
 
 PARTIAL: existing primary-backed rows PC1,A2,V1–V14,TR/LI/PB rows in `20261007-sound-keep-rows.md`. Inherited policy and Play target lookup plus effective parameter/fade/lifecycle local bodies are rowed. Remaining independently bound bank/Play census,9F1F80/9BEB30 and called concrete positioning/virtual descendants. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Reconcile9F1F80/9BEB30 concrete PBI/virtual-branch products against independent shipped bank/Play reachability, retaining fade-in/MIDI admission. Excluded coordinate bodies do not waive virtual/lifecycle decisions. Evidence: PC/A/V/TR/LI/PB/PA/DP/CA/RP/RF; out of scope: 3D positioning payloads. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-089 — triage line 138
 
 > | C32.2 M1–M9 media table/assets | M6-001,M6-024,M6-025 | **KEEP** | 0x009B49A4;0x009B7A34;0x00A1EC54 | DIDX/DATA writer/lookup closure, streamed prefixes, media aliases and no-DIDX plugin cases are parsing/loading, not DSP. |
 
 PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Concrete media-ID selection, alias publication/removal and rollback, DATA population caller, pointer/ID descriptor setters, owner eligibility initialization/retirement, queue tag18 and surviving-media rebind are rowed. The old MR2 citation was a mixer row, not this path. Remaining owner/descriptor all-writer census, chunk selector/index production, object release families and FX-bank-stop recipients. No complete loading-path claim from local selection bodies.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete requested DIDX/DATA pointer/size/alias/source-owner writer proof and bind object/media-release/FX-bank-stop recipients; distinguish no-DIDX plug-in source cases from cache implementation. Evidence: K/TR/MS141/BR142; same concrete writers as076/122. out of scope: cache/hash/backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-090 — triage line 139
 
@@ -726,17 +828,23 @@ PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Conc
 
 PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 construction/registration/GetInfo/type-version/Init/Reset and PBI format publication. ADPCM/Vorbis source-specific rows AH/AS/AT/AR/VI remain independently covered. PR6–PR10/VC6–VC10 close registeredfactory9CC3EC andVorbiscreators. VM/ST/SB/PA addbothstartcallers, directbuffercontracts, streamingbind/loopandsetupassembly. RemainingheaderAB12B4, stream/cache/decoderrecipients andfullsource-specificclosure.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind admitted mode2 generator100/101/102 source Init/reset/format-result products; AB12B4 header and Vorbis/ADPCM retained controls are superseded by checked003/004/097/101/102, not additional unread labels. Evidence: SF/PR/VC/VM/ST/SB/PA/RI205/PM536; same source gap103. out of scope: I/O/cache/backing, PCM file sources and excluded source-channel branches. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-091 — triage line 140
 
 > | C32.3 render/stream residuals | M6-002,M6-022,M6-025 | **KEEP** | 0x00AB1C04;0x00AB2088;0x00AB2BFC;0x00AB3244;0x00AB0448;0x00AB1550;0x00A74E00;0x00A746A8;0x00A75BC4;0x00A78D10 | Data collection/decode/stream lifecycle and plug-in-source selection remain exact; C33/C36 later evidence can reduce unread work only after checking, not through ADP-1. |
 
 PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/destruction, duration and control virtual forwarding. Existing ADPCM render/carry rows remain mapped separately. VM7 closesdirectbufferVorbisrender; ST/SB/PA closestart/readiness/bind/setupassemblycallercontracts. RemainingFCrenderAB1550,pendingseekAB2BFC, selectedstream/cache/decoder andplug-in generation/seek/duration/cache recipients.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind mode2 generator100/101/102 generation/seek/duration/stop virtual recipients and exact EOS/not-ready outcomes. AB1550/AB2BFC Vorbis and selected stream controls are already positive. Evidence: SF6–9/VM/ST/SB/PA/HS/SC197/VPACK/NS/SWIN/RF544/checked097/101/102; out of scope: stream/cache/I/O and PCM-file sources. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-092 — triage line 141
 
 > | C32.4 F1–F5 rate/frame closure | M6-018,M6-022,M6-025 | **KEEP** | 0x0099DC68..0x0099DCE4;0x008D8158..0x008D81FC;0x00A57724..0x00A57930;0x00A548B8;0x00A35938..0x00A35964 | Defaults, complete writer census, JNI gates, rate-to-voice link and transition math are scheduling/parameters; imported exp used for transition timing is not a pure PCM loop. |
 
 PARTIAL: existing primary-backed rows Z1–Z20 in `20261007-sound-keep-rows.md`. Default settings, app/platform copies, JNI queries/gates, rate/frame conversions and final init recipients are rowed. Remaining unrestricted writer census, A548B8 rate-to-voice link and A35938 transition arithmetic recipient. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete original unrestricted writer/alias proof for renderer105243C/40/timing fields and Android108DF90/94/98; reconcile query-to-renderer transfer. A548B8 DG6 and A35938 TT6 are already exact. Evidence: Z/RG465/CI192/RC208; bounded pattern scan is not an absence proof. out of scope: phone primitives and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-093 — triage line 142
 
@@ -798,6 +906,8 @@ PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965
 
 PARTIAL: existing primary-backed rows Z1–Z15 in `20261007-sound-keep-rows.md`. Defaults/app copies, JNI/rate/frame branches, shared setters and integer JNI trampoline are rowed. Remaining exhaustive shared-setting writer absence, rate-to-Hijack format link and imported runtime outcomes; no DSP timing exemption. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Same explicit settings writer-absence/alias proof as092; establish imported zero-divisor result at the actual admitted input boundary. Hijack22320/744 format and rate-to-voice are positive. Evidence: Z/RG465/H/HG/FR/RB519/RF544; no default-only production-rate claim. out of scope: phone API primitive implementation. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-100 — triage line 149
 
 > | C33 I/O memory manager / scheduler ties | M6-024,M6-025 | **KEEP** | 0x00969E8C;0x009713B4;0x009716F0;0x0096FE70;0x0097161C;0x00979B98;0x00962EA8;0x00962C24 | Allocation/cache availability, scheduling priority and tie-breaking are decisions/state/timing. |
@@ -826,17 +936,23 @@ CHECKED (bounded decisions-only), checkpoint557: checkedQ14-004 plus AH5/RI205/A
 
 PARTIAL boundary: B17/B18 already establish notification registry/archive removal controls; SF1–SF9 now identify mode2 plug-in source construction/start/render/close as ownership/format/registration and virtual generation control. Selected plug-in descendants remain unread: no PCM-only exemption for whole source. Remaining registry writers/dynamic generation and codec recipients.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind actual factory-selected source100/101/102 Init/Reset/render/seek/duration/Term and MIDI/source endpoint decisions reached from A78D10. Parameter settings and Info/rejected-FX cleanup do not prove accepted source generation. Evidence: B17/B18/SF/PP436–438/PM536; WavePortal WP442–444 is already positive. out of scope: backing/I/O and isolated per-sample generator arithmetic only. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-104 — triage line 153
 
 > | C34.1 B1–B18 bus walk / parameter census | M6-025,M6-022,M6-014 | **KEEP** | 0x009F4BB8;0x00981940;0x009F1C40;0x009F1EE8;0x009C54E8;0x009C39DC;0x009FFEE4..0x00A00000;0x00A37FE8..0x00A38130 | Ancestor links, output-bus reachability, effective-parameter composition and cached path gates remain exact even when a branch is unused by shipped assets. |
 
 PARTIAL: existing primary-backed rows CF15–CF18,D1–D5,V1–V14 in `20261007-sound-keep-rows.md`. Generic attachment validation/insertion, bus short-circuit predicate/inherited gain composition and effective parameter caller are rowed. Remaining complete bus ancestor/reachability census,9F4BB8/9F1C40/9F1EE8 and concrete virtual node/writer closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete requested shipped bus/ancestor reachability census and concrete9F4BB8 resolver products/attachment34/38 writers; retain selected9F1C40/9F1EE8 audio-node interfaces from552/553 without asserting every production registry product. Evidence: CF/D/V/LREC/ROOT/LF/NR/552/553/555/556; out of scope: positioning payloads and graph backing/hash. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-105 — triage line 154
 
 > | C34.2 R1–R11 modulator/RTPC | M6-009,M6-025,M9-009 | **KEEP** | 0x00A11590;0x00A17280;0x009E6748;0x009E8224;0x009E61B4;0x009E62AC;0x00A01918;0x009DCE44;0x00A6E848 | Store fallback, accumulation, subscription/list consumption and modulator consumers set values/state; full descendants and shipped binding census remain required. |
 
 PARTIAL: existing primary-backed rows NP/RV/OA/MT/RG/RC/MPA rows in `20261007-sound-keep-rows.md`. RTPC pull/fallback/accumulation, modulator registration, receiver/context and effective-parameter apply bodies are rowed. Remaining full source/list/subscription writers,9E6748/9E8224/9DCE44 recipients and shipped bindings. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Reconcile9E6748/9E8224 registration/list producers with actual9DCE44 trigger recipients and shipped RTPC/modulator bindings; unresolved trigger is044, not unread accumulator or MPA arithmetic. Evidence: NP/RV/OA/MT/RG/RC/MPA/MR517/ER538; out of scope: registry backing/hash and final PCM application. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-106 — triage line 155
 
@@ -850,11 +966,15 @@ CHECKED (narrow null-D0 gates): NG1–NG4 reopen actual entry9BE898, DDbit2 rese
 
 PARTIAL: SC1–SC12 and NF1–NF6 re-open the duration, six close slots, decoder teardown, pool bookkeeping, allocator coalescing and deferred notification/flush bodies. Remaining: source vt+C/stream vt+8 descendants, PBI virtual lifecycle bodies and the S8 caller census. These are recoverable unread paths, not UNKNOWN.
 
+**Current disposition, checkpoint558:** PARTIAL: Bind source vt+C/stream vt+8 close/duration recipients and PBI virtual lifecycle callbacks; complete explicitly requested S8 flush/notification caller coverage. Concrete named SC/NF bodies are already positive. Evidence: SC1–12/NF1–6/PT540/552/553/checked097/101/102; out of scope: codec workspace/allocator/free/coalescing and stream backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-108 — triage line 157
 
 > | C34.3 still-unread internals and S8 callers | M6-002,M6-025,M6-026 | **KEEP** | 0x00AB3428;0x00A38420;0x00A38600;0x00A7A914;0x00A7A988 | Close codec-state teardown, allocator/free internals, flush and caller census as exact ownership/event ordering. |
 
 PARTIAL: SC8–SC12 and NF1–NF6 close the explicitly named teardown/free/flush bodies. S8 complete caller census and callback descendants remain open; naming their virtual slots does not establish their effects.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete S8 A38600 notification/flush caller census and bind actual PBI virtual callback products selected by A38420; AB3428/allocator/free bodies do not require further descent. Evidence: SC8–12/NF1–6; out of scope: codec workspace and allocator/free internals. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-109 — triage line 158
 
@@ -862,11 +982,15 @@ PARTIAL: SC8–SC12 and NF1–NF6 close the explicitly named teardown/free/flush
 
 PARTIAL: existing primary-backed rows K1–K19,J1–J rows in `20261007-sound-keep-rows.md`. Bank header/chunk dispatch, INIT/HIRC creator association and registry/media callers are rowed. Remaining XORkey108D9A0 writer, per-type creators/handler results, unload/media pool and bounded stream recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish header XOR key108D9A0 writer and admitted encrypted input; reconcile concrete K11 per-type creator/hook raw results,9B2B08 mode arguments and9A6518 unload callback products. Evidence: K/J/UD261–AU278/BA414/FS432; known ordinary readers are positive. out of scope: media-pool/cache/I/O/backing internals. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-110 — triage line 159
 
 > | C34.5 G1–G3 / other MIDI posters | M6-025,M9-004,M9-005,M9-013 | **KEEP** | 0x00A62A1C;0x00A1D448;0x009EE230 | Play builder0/FF and action census narrow the normal route only; locate other0x90 posters as MIDI/routing work. |
 
 PARTIAL: existing primary-backed rows A2,Play/container rows in `20261007-sound-keep-rows.md`. Normal Play builder target resolution and ordered action/container dispatch are rowed. Remaining other0x90 message posters and concrete9EE230 MIDI route/caller census. Normalbuilder coverage cannot close alternate message provenance. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Locate positively bound alternate0x90 MIDI message producers and actual9EE230 route/callers; preserve UNKNOWN if none is established. Normal builder0/FF does not prove absence. Evidence: A2/Play/action census, NS/NE/MD; no arbitrary new route assumption. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-111 — triage line 160
 
@@ -886,11 +1010,15 @@ CHECKED (named evaluator body): R1–R12/CL1–CL3/QE1–QE5 re-open the entire 
 
 PARTIAL: R28–R44/AC11–AC12/LW1–LW7 cover registration/replacement, initial delivery and the newly re-opened A1A338/A11F98 wrappers and A1A160 mask-intersection tail. Full point loader/order census and source/modulator/recipient descendants still need reconciliation. Primary companion 20261007-sound-rtpc-subscription-wrapper-native.txt; no completed closure claim.
 
+**Current disposition, checkpoint558:** PARTIAL: Reconcile complete point-loader physical order/duplicate replacement/error1F/34 and actual source/modulator subscription recipients for the eleven quoted entry points; bind loader's point/scaling/key producer to its consumer, not just wrapper calls. Evidence: R28–44/AC11–12/LW1–7/MR517/ST/OD470; out of scope: curve/subscription backing allocation. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-114 — triage line 163
 
 > | C35.3 accumulators / hints | M6-009 | **KEEP** | 0x00A17724;0x00A17878;0x00A14E28 | Sum/product, curve hints and twelve caller census affect control values/order. |
 
 PARTIAL: AC1–AC12 re-open both accumulators and all twelve direct evaluator callers, with zero/discarded hint ownership. The reproducible .text direct-link scan and containing bodies are in 20261007-sound-curve-callers-native.txt. Indirect/address-taken reachability and behaviour-changing recipients/virtual receiver/filter bodies remain unread exact dependencies; no UNKNOWN or completed closure claim.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete requested address-taken/indirect A14E28 evaluator caller proof and bind actual virtual receiver/filter products for the twelve already positive direct callers. Evidence: AC1–12/curve-callers-native/R/LD428/LM429; no absence inference from direct-link scan. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-115 — triage line 164
 
@@ -898,11 +1026,15 @@ PARTIAL: AC1–AC12 re-open both accumulators and all twelve direct evaluator ca
 
 PARTIAL: existing primary-backed rows R1–R12,CL1–CL3,QE1–QE5,R28–R44,LW/AC rows in `20261007-sound-keep-rows.md`. Evaluator/scaling/shape/default and registration/accumulator bodies are rowed. Remaining independently checked64 shipped-entry census and D1–D9 comparison against current C#; code is not native evidence. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Independently verify all64 shipped curve entries' scaling/shape/accumulate fields and compare original D1–D9 claims with current C# using binary32 semantics; retain any actual decision discrepancy as research finding. Evidence: R/CL/QE/LW/AC; code comparison is not native evidence or authorization to implement. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-116 — triage line 172
 
 > | C31.1 | M6-025 | KEEP | 0x00A028F0..0x00A02938;0x00A1EA68;0x00A01EF4;0x009B49A4 | R1.1–R1.14: pre-limiter, playing-manager population, HIRC-to-setter dispatch, writer census and full Term/9B65A8 remain exact; D2 survives. |
 
 PARTIAL: existing primary-backed rows TR9,K8,MR2 in `20261007-sound-keep-rows.md`. Descriptor setter and DATA/media-rebind caller joins are rowed. Remaining pre-limiter028F0,playingmanager population,full9B49A4/9B65A8/Term and complete setter writer census. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete original descriptor/source-type setter writer and playing-manager population proof; bind full9B49A4/9B65A8/Term media-release/FX-bank-stop decisions. A028F0 pre-limiter local gates have existing MS/BR/PB joins. Evidence: TR9/K8/MS141/BR142/MR media-rebind/PB; out of scope: media-pool/backing/cache/hash/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-117 — triage line 173
 
@@ -910,11 +1042,15 @@ PARTIAL: existing primary-backed rows TR9,K8,MR2 in `20261007-sound-keep-rows.md
 
 PARTIAL: existing primary-backed rows VF1–VF9,OR1–OR2,WV1–WV15,CP1–CP9 in `20261007-sound-keep-rows.md`. Init/effect lookup/null store-before-release, wrapper controls/Execute/bypass and compressor DSP boundary are rowed. Remaining selected plug-in metadata registry/parameter/bypass producers and concrete target lifetime/format recipients; whole wrapper notDSP. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid selected metadata/parameter/bypass/lifetime/format decision in the five named FX/helper contracts; out of scope: isolated per-sample FX arithmetic. Evidence: VF/OR/WV/CP/PM536/537 and checked073/078/079/080; D3 remains a production-comparison finding, not native DSP acceptance. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-118 — triage line 174
 
 > | C31.3 | M6-022,M6-025,M6-026 | KEEP | 0x009BCA68;0x009FFAD4;0x00A370E4;0x00A55A84 | Full recompute, sibling called operations, global undo and R3.5/R3.8 caller/absence census remain exact. |
 
 PARTIAL: existing primary-backed rows V1–V14,LV5–LV6,NS3 in `20261007-sound-keep-rows.md`. Effective parameter caller and limiter/global undo plus source swap lifecycle are rowed. Remaining9BCA68/full siblingA55A84 called effects, and independentR3.5/R3.8 absence/caller census. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete original R3.5/R3.8 A370E4/A55A84 caller/absence proof and selected source destruction callback products, same concrete census as084. Full recompute9BCA68/9FFAD4 and sibling teardown are positive. Evidence: V/DG/CR502/AT539/LV/NS/PT540; out of scope: metadata/buffer/workspace/backing release internals. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-119 — triage line 175
 
@@ -922,11 +1058,15 @@ PARTIAL: existing primary-backed rows V1–V14,LV5–LV6,NS3 in `20261007-sound-
 
 PARTIAL: existing primary-backed rows CB/NS7,E14 rows in `20261007-sound-keep-rows.md`. Position registration/detach, source duration/pitch and notification caller are rowed. RemainingA05574 clock,98822C music clock/offset path,9CBACC and exhaustive stop-offset writers. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete requested exhaustive stop-offset writer and callback/emit proof for A05574/A56478/A0393C/98822C/9CBACC, including actual music clock/offset caller binding. Known source clocks and stop setters are positive. Evidence: CB/NS/E14/RF543/SJ542/checked085; do not re-label recovered clock arithmetic unread. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-120 — triage line 176
 
 > | C31.5 | M6-025,M6-018 | KEEP | 0x00A56650;0x00A44948;0x00A1C7D4;0x00A57724 | Exhaustive caller/writer census and frame-setting branch are cadence/geometry. |
 
 PARTIAL: existing primary-backed rows NS2,VS1,Z4–Z15 in `20261007-sound-keep-rows.md`. StartStream and voice-pass frame consumption plus rate/frame writer local branches are rowed. Remaining complete caller/writer census and downstream frame-setting cadence association. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete original unrestricted frame-setting writer/caller proof at A44948/A1C7D4/A57724; seven actual encoded A56650 callers and downstream frame cadence are already RF544, not unpaid StartStream code. Evidence: NS/VS/Z/RF544/checked086; same settings census092. out of scope: I/O/backing and PCM. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-121 — triage line 177
 
@@ -934,11 +1074,15 @@ PARTIAL: existing primary-backed rows NS2,VS1,Z4–Z15 in `20261007-sound-keep-r
 
 PARTIAL: existing primary-backed rows A2,PC1,Play/container rows in `20261007-sound-keep-rows.md`. Play target/policy caller rows are present. Remaining independent bank/Play reachable branch census and9F1F80/PBI creator called-path closure. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Independently reconcile shipped bank/Play branch reachability and9F1F80 actual PBI product, preserving called-path uncertainty; same concrete reachability requirement as088. Evidence: A/PC/PA/DP/CA/TR; out of scope: adopted positioning/blend/ping-pong/source-channel/PCM-file branches only. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-122 — triage line 178
 
 > | C32.2 | M6-024,M6-025 | KEEP | 0x009B49A4;0x009B7A34;0x00A1EC54 | Asset census slice held; native table writer/population closure remains loading proof. |
 
 PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Native media lookup, alias ordering/removal/rollback, DATA population caller, descriptor setters, bank eligibility/retirement and source rebind now have concrete rows. The stale MR2 reference named a mixer row. Remaining owner/descriptor all-writer census, chunk selector/index production, object release and FX-bank-stop recipients; no bulk settlement.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete media owner/descriptor pointer/size/source-type writer proof and actual object/FX-bank-stop release recipients; same concrete requirement as076/089/116. Evidence: K/TR/MS141/BR142; stale mixer MR2 citation is superseded. out of scope: media cache/hash/backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-123 — triage line 179
 
@@ -946,17 +1090,23 @@ PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Nati
 
 PARTIAL: existing primary-backed rows TR9,VM/ST/SB/PA/SR/HS rows in `20261007-sound-keep-rows.md`. Packed source setter and both Vorbis start/setup/header/render/seek callers are rowed. Remaining source-format writer census,RIFF9CD340 and stream/cache/decoder recipient closure; PCM-file exclusions retained. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete explicitly requested A1EA68 source-format/type writer/caller census; bind accepted mode2 generator format/result recipients. RIFF9CD340 and Vorbis S4/S6/start/render/seek controls are positive. Evidence: TR9/VM/ST/SB/PA/SR/HS/RI205/checked097/101/102/PM536; out of scope: PCM-file/source-channel exclusions and cache/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-124 — triage line 180
 
 > | C32.4 | M6-018,M6-025 | KEEP | 0x00A56E20..0x00A57060;0x00A57724;0x00A548B8;0x00A35938..0x00A35964 | F4 JNI/robot sink branch, F5 rate-to-voice and unrestricted setting writer absence need closure; defaults alone prove neither production rate nor cadence. |
 
 PARTIAL: existing primary-backed rows Z4–Z20 in `20261007-sound-keep-rows.md`. Phone query/default/frame setting and final init recipient gates are rowed. RemainingA548B8 active rate-to-voice and transition35938 arithmetic plus unrestricted setting writer census; no default-only rate claim. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete unrestricted rate/frame setting writer-absence/alias proof and query-to-renderer transfer, same092; DG6 rate-to-voice and TT6 transition math are positive. Evidence: Z/RG465/CI192; out of scope: phone primitive bodies and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-125 — triage line 181
 
 > | C32.5 | M6-022,M9-009 | KEEP | 0x009E2BD0..0x009E52F3;0x009E2AE4;0x009E6D2C | V5 list-population and evaluator consumer gaps survive the verified empty-list branch. |
 
 PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `20261007-sound-keep-rows.md`. State population/geometry/evaluation and retirement/update caller are rowed. Remaining full state/list registry population and evaluator consumer census; verified empty list remains insufficient. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** CHECKED: No unpaid list-population/evaluator/consumer decision in the three named contracts; out of scope: state/list backing storage and final PCM application. Evidence: Checked027 and ER538 positively bind populated state acquisition, scoped registry, active evaluation, tick, notification, retirement and attachment consumer; no empty-list inference. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-126 — triage line 182
 
@@ -984,6 +1134,8 @@ PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965
 
 PARTIAL: existing primary-backed rows ST/SB/PA/SR/HS rows,NS2,SWIN1–SWIN5 in `20261007-sound-keep-rows.md`. Streamingstart/setup/prefix/render/seek caller and exact StartStream/window retry result gates are rowed. Remaining selected stream/codec/cache recipient and conditional PBI-prefix writer proof. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** CHECKED: No unpaid startup/retry/prefetched-prefix decision in the three named contracts; out of scope: cache/block/resolver/I/O/backing implementation. Evidence: Checked097 map ST/SB/PA/HS/NS/SWIN/RF544/RI205 exact prefix pointers/sizes and3F decisions; no uniform-prefix claim across assets. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-129 — triage line 185
 
 > | C33.4 | M6-024,M6-025 | KEEP | 0x00965B1C;0x009656AC;0x00961C58..0x00961C70 | Existing OS timing ruling is not an instruction claim; preserve shipped checks/retry around that external input. |
@@ -1000,11 +1152,15 @@ PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965
 
 PARTIAL: existing primary-backed rows Z3–Z15 in `20261007-sound-keep-rows.md`. App/platform defaults/copies/JNI/setter bodies and trampolines are rowed. Remaining unrestricted settings writer absence, runtime zero-divisor outcome and5942CE Hijack format link. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Complete explicit settings writer-absence proof and admitted imported zero-divisor result, same092/099;5942CE integer callback and Hijack format/framing are positive. Evidence: Z/H/HG/FR/RB519/RF544; phone primitive outcome stays an external input boundary, not a guessed successful divisor result. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-131 — triage line 187
 
 > | C34.1 | M6-025,M6-014 | KEEP | 0x009F4BB8;0x009C54E8;0x009C39DC;0x009FFAD4 | Full bus census and parameter walk remain routing/value proof. |
 
 PARTIAL: existing primary-backed rows D1–D5,V1–V14,CF15–CF18 in `20261007-sound-keep-rows.md`. Bus decision/gain query and effective parameter caller plus attachment caller are rowed. Remaining9F4BB8 complete resolver, ancestor/attachment writers and production bus census. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete actual9F4BB8 resolver product and shipped bus ancestor/attachment writer census, same104; effective parameter walk is already positive. Evidence: D/V/CF/NPA/NHIER/CR502/AT539/LREC/ROOT/552/553/555/556; out of scope: graph backing/hash and positioning payloads. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-132 — triage line 188
 
@@ -1012,11 +1168,15 @@ PARTIAL: existing primary-backed rows D1–D5,V1–V14,CF15–CF18 in `20261007-
 
 PARTIAL: existing primary-backed rows NG1–NG4,MT/RG/RC/MPA rows in `20261007-sound-keep-rows.md`. DD reset before null return,DC builder gate and modulator apply/registration callers are rowed. Remaining9FB9B8 positive-data builder,9DCE44 and subscriber/context writers; D0 alone remains insufficient. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Reconcile actual9FB9B8 positive-data builder output to scoped subscriber/context writers and the9DCE44 state/trigger recipients beyond its prefix; null/reset/D0 gates alone are insufficient. Evidence: NG/MT/RG/RC/MPA/MR517/ER538; trigger remainder044. out of scope: map/backing allocation. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-133 — triage line 189
 
 > | C34.3 | M6-002,M6-025,M6-026 | KEEP | 0x00AB3428;0x00A38420;0x00A7A914;0x00A7A988;0x00A38600 | S1–S8/S10 slices held; codec teardown, flush, allocator internals and S8 caller closure remain lifetime work. |
 
 PARTIAL: same remaining S8 caller/callback closure as Q14-108; checked body rows SC8–SC12 and NF1–NF6.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete S8 A38600 caller coverage and actual A38420 PBI callback products, same108; named codec teardown/flush/free bodies are already positive. Evidence: SC/NF/PT540; out of scope: allocator/free/coalescing and codec workspace backing. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-134 — triage line 190
 
@@ -1024,17 +1184,23 @@ PARTIAL: same remaining S8 caller/callback closure as Q14-108; checked body rows
 
 PARTIAL: existing primary-backed rows K1–K19,J rows in `20261007-sound-keep-rows.md`. Header/chunk/HIRC/registry loader bodies are rowed. Remaining K11 concrete creators,9B2B08/9A6518 mode/unload recipients and XORkey writer census. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish XORkey108D9A0 writer/admitted input and K11 concrete creator/hook/mode/unload callback results, same109. Evidence: K/J/UD–AU/BA/FS; out of scope: media-pool/cache/hash/backing/I/O. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-135 — triage line 191
 
 > | C34.5 | M6-025,M9-013 | KEEP | 0x00A62A1C;0x00A1D448;0x009EE230 | Normal Play builder and906-action census were checked; alternate MIDI posters remain UNKNOWN. |
 
 PARTIAL: existing primary-backed rows A2,Play/container rows in `20261007-sound-keep-rows.md`. Normal target/builder dispatch is rowed. Remaining alternate MIDI0x90 producer and9EE230 call-site census; no unsupported absence claim. Reconciliation records actual body coverage without claiming complete transitive closure.
 
+**Current disposition, checkpoint558:** PARTIAL: Establish alternate0x90 MIDI poster and9EE230 call-site route, same110; preserve UNKNOWN without a positive producer. Evidence: A2/normal builder/906-action census; normal route does not prove no alternate MIDI. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+
 ## Q14-136 — triage line 192
 
 > | C35 (old availability row) | M6-009,M6-001 | KEEP | 0x00A14E28..0x00A15244;0x009F7254..0x009F72EC | Earlier report found no C35; it now exists, so check current C35.1–C35.4 rather than retaining the stale availability finding. |
 
 PARTIAL: existing primary-backed rows R/CL/QE/LW/AC rows in `20261007-sound-keep-rows.md`. Current evaluator/loader/accumulator extraction explicitly supersedes stale C35 availability prose. RemainingC35.4 shipped64-entry/scaling/shape/accumulate census and live loader/subscriber closure, same as115. Reconciliation records actual body coverage without claiming complete transitive closure.
+
+**Current disposition, checkpoint558:** PARTIAL: Complete C35.4 independently checked64-entry/scaling/shape/accumulate census and current D1–D9 comparison, plus concrete loader/subscription reconciliation113; stale “C35 unavailable” is removed. Evidence: R/CL/QE/LW/AC/current C35; no new whole-RTPC writer census. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-137 — triage line 200
 
