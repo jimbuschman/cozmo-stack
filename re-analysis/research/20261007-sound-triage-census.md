@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through327 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through328 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1839,3 +1839,7 @@ MONO326A–G bind all selected local mono-source pan/non-pan routes, raw split/c
 ### Checkpoint 327 — general-pan setup
 
 GPAN327A–F retain source remap/zero-sourcebase decision, scratch geometry, source/destination dispatchers, exact control-weight multiplication and destination3 projection. Remaining concrete scratch/weight/projection recipients are named positive-readable obligations, not filled by assumed pan laws. Counts unchanged, Q15 parked.
+
+### Checkpoint 328 — general-pan projections
+
+GPROJ328A–C bind all seven selected destination projection recipients to raw table bases, exact union-bit/scratch/output geometry and VMLA/store order. Supersedes327 projection-recipient pending wording; source scratch/weight and concrete provider/consumer closure remain PARTIAL. Counts unchanged, Q15 parked.
