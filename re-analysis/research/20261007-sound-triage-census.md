@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through320 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through321 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1811,3 +1811,7 @@ CMAT319A–E retain format-kind/basis/table selection, direct coefficient copy a
 ### Checkpoint 320 — standard destination coefficients
 
 CMAT320A–G reuse known coefficient producers, retain scratch geometry/normalization instructions, bind complete A23224 index and sqrt fallback selection, capacity/exclusion/dot-product order and creator cleanup before publication. General geometry and downstream A3AD04 recipient closure remain PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 321 — general coefficient recipients
+
+CGEOM321A–F bind runtime angle/triangle selection, exact transformed-angle inputs and ordered matches, sentinel vertex selection, coefficient rejection gates and ordered normalized-square accumulation. Supersedes320 local A3AD04/A39F20/A3AAF4 pending wording; geometry producer and later routes remain PARTIAL. Counts unchanged, Q15 parked.
