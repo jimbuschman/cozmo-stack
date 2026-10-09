@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 393 — exact Vorbis end/loop caller join
+
+Primary: `20261009-sound-vorbis-end-loop-caller-join-native.txt`, same engine hash; 88 instruction words plus direct-buffer slot. Existing AEMIT1–3 marker/output publication and SV392 streamed own74 reused. C=codec; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| EL393A emitted-frame boundary ABI | A734E0..A73564;AEMIT2 | After marker callback reload position18, add emitted frames modulo32 and publish position/output metadata. Read loopcount38 into r1. If exactly1 and newposition>=unsigned total14, call own74 with r1 still1. Otherwise return2D. Loopcount!=1 requires newposition>unsigned loopend28; equality stays2D. Crossing publishes position18=loopstart24, explicitly sets r1=0, then callsown74. Raw callback result goes to output28. Thus AEMIT2's omitted second argument is exactly1 for file completion and0 for looping; no undefined argument remains at this call. |
+| EL393B non-emitting boundary query | A73568..A735BC | Read C38 into r1. Count1 and unsigned position18>=total14 tailown74 with r1=1. Count!=1 and position18>loopend28 writes loopstart24 toposition18, setsr1=0,tailown74. Other cases return2D. No frame increment, output publication or marker callback in this query. Same retained end/loop ABI. |
+| EL393C direct-buffer own74 | raw103E12C;AB0374..AB03F0 | Table103E0B8+74=AB0374. Readloopcount38; unsigned>1 decrements low16 before argument test. Argumentnonzero returns11 without cursor/trim/state changes. Argument0 cursorC8=wrap(CC+A0+word94), skipU16 9C; endTrimAA when newcount1 else9E. AB3244(C4C,skip,endTrim) ignored; source40=2D thenstate44=3,return2D. Native usesword94, not A4 or a guessed loop byte offset. |
+| EL393D streamed/direct recipient closure | SV392C/D;VR390;VM6 | Known stream own74=AB1138 receives caller1/0 above. File completion returns11; loop resets exact skip/endTrim/sentinel state and returns2D. Direct-buffer loop also resets compressed cursor; stream loop decrements5C modulo16 and leaves backend byte positioning to its separately recorded controls. No extra source stop/free, end callback, decoder drain or0-frame emission invented here. |
+
+out of scope: marker payload/storage infrastructure and per-sample decode arithmetic; no descent.
+
+AEMIT2 and SV392 end-call ABI residual is now positive for these known callers/products. Actual source dispatch/input/writer and alternate-family joins remain PARTIAL; counts unchanged, Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 392 — streamed Vorbis converter and loop/end product
 
 Primary: `20261009-sound-streamed-vorbis-converter-end-native.txt`, same engine hash; 89 instruction words plus slots. C=codec; offsets hex. Corrected checkpoint391 slot label from raw vtable bytes: table103E138+7C (103E1B4)=AB1020; +74 (103E1AC)=AB1138. No behavior or record classification changed by the correction.
@@ -24,7 +39,7 @@ Primary: `20261009-sound-streamed-vorbis-converter-end-native.txt`, same engine 
 
 out of scope: seek-table backing storage, backend I/O and sample arithmetic; no descent.
 
-Known streamed own7C converter joins HS7/RS391/VR390; local own74 loop/end recipient joins the existing AEMIT2 callback boundary, while actual end-call second-argument ABI remains explicitly retained rather than guessed. Broader source/input/provider/writer/family closure remains PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+Known streamed own7C converter joins HS7/RS391/VR390; local own74 loop/end recipient joins the existing AEMIT2 callback boundary, with the actual end-call second-argument ABI now settled by EL393 (file1/loop0). Broader source/input/provider/writer/family closure remains PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
 
 ## Checkpoint 391 — restart seek recipients and generic status
 

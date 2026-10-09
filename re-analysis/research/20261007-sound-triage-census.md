@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through392 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through393 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2098,4 +2098,8 @@ RS391 closes direct pending-position/table/PBI publication and generic restart m
 
 ## Checkpoint 392 — streamed converter and loop/end
 
-SV392 settles own7C frame/byte conversion and own74 loop/end reset/status. Corrects checkpoint391’s AB1138 converter label to AB1020 using raw slot evidence. Actual end-call argument/input/writer joins retained; counts unchanged, Q15 pending Q14.
+SV392 settles own7C frame/byte conversion and own74 loop/end reset/status. Corrects checkpoint391’s AB1138 converter label to AB1020 using raw slot evidence. End-call argument now EL393; actual input/writer joins retained; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 393 — Vorbis end/loop call join
+
+EL393 establishes emitted/non-emitting end calls use1 and loop calls0, adds direct-buffer own74 cursor/trim/status and joins streamed SV392. Remaining source-input/dispatch/writer/family closure stays PARTIAL; counts unchanged, Q15 pending Q14.
