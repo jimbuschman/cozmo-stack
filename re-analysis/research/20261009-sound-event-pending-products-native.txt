@@ -1,0 +1,109 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009AA3DC..0x009AA568 exclusive; ARM;
+009AA3DC: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009AA3E0: sub          sp, sp, #0xc
+009AA3E4: ldr          r5, [r0, #0x10]
+009AA3E8: ldr          r7, [pc, #0x178] ; word[009AA568]=00695E90
+009AA3EC: cmp          r5, #0
+009AA3F0: ldr          fp, [sp, #0x30]
+009AA3F4: add          r7, pc, r7
+009AA3F8: beq          #0x9aa560
+009AA3FC: mov          sb, r3
+009AA400: ldr          r3, [pc, #0x164] ; word[009AA56C]=00671BE4
+009AA404: mov          r8, r2
+009AA408: ldr          r2, [pc, #0x160] ; word[009AA570]=00671BDC
+009AA40C: add          r3, pc, r3
+009AA410: mov          r6, r1
+009AA414: add          r2, pc, r2
+009AA418: add          r3, r3, #8
+009AA41C: str          r2, [sp]
+009AA420: str          r3, [sp, #4]
+009AA424: b            #0x9aa4f4
+009AA428: cmp          r6, #0
+009AA42C: beq          #0x9aa4e8
+009AA430: ldr          r3, [pc, #0x13c] ; word[009AA574]=FFFFFDBC
+009AA434: mov          r1, #0x38
+009AA438: ldr          r3, [r7, r3]
+009AA43C: ldr          r0, [r3]
+009AA440: bl           #0xa7a7f4
+009AA444: subs         r4, r0, #0
+009AA448: beq          #0x9aa4e8
+009AA44C: ldr          r3, [sp]
+009AA450: str          r6, [r4, #0x34]
+009AA454: add          r2, r3, #8
+009AA458: mov          r3, #0
+009AA45C: str          r2, [r4]
+009AA460: str          r3, [r4, #0x24]
+009AA464: str          r3, [r4, #0x14]
+009AA468: str          r3, [r4, #0x28]
+009AA46C: str          r3, [r4, #0x1c]
+009AA470: str          r3, [r4, #0x20]
+009AA474: str          r3, [r4, #0x30]
+009AA478: ldr          r3, [r6, #0x7c]
+009AA47C: add          r2, r3, #1
+009AA480: bfi          r3, r2, #0, #0x1e
+009AA484: str          r3, [r6, #0x7c]
+009AA488: str          r5, [r4, #4]
+009AA48C: str          sb, [r4, #0x30]
+009AA490: str          r8, [r4, #0x28]
+009AA494: ldr          r0, [r4, #0x14]
+009AA498: ldr          r1, [fp, #0x10]
+009AA49C: ldr          r2, [fp, #8]
+009AA4A0: cmp          r0, #0
+009AA4A4: ldr          r3, [fp, #0xc]
+009AA4A8: ldr          sl, [fp]
+009AA4AC: str          r1, [r4, #0x24]
+009AA4B0: str          r2, [r4, #0x1c]
+009AA4B4: str          r3, [r4, #0x20]
+009AA4B8: beq          #0x9aa4c0
+009AA4BC: bl           #0x9a6988
+009AA4C0: cmp          sl, #0
+009AA4C4: mov          r1, r4
+009AA4C8: ldrne        r3, [sl]
+009AA4CC: addne        r3, r3, #1
+009AA4D0: strne        r3, [sl]
+009AA4D4: ldr          r3, [pc, #0x9c] ; word[009AA578]=FFFFFE44
+009AA4D8: str          sl, [r4, #0x14]
+009AA4DC: ldr          r3, [r7, r3]
+009AA4E0: ldr          r0, [r3]
+009AA4E4: bl           #0x9aa0fc
+009AA4E8: ldr          r5, [r5, #0x10]
+009AA4EC: cmp          r5, #0
+009AA4F0: beq          #0x9aa560
+009AA4F4: ldrh         r3, [r5, #0x20]
+009AA4F8: ands         sl, r3, #1
+009AA4FC: bne          #0x9aa428
+009AA500: ldr          r2, [pc, #0x6c] ; word[009AA574]=FFFFFDBC
+009AA504: mov          r1, #0x38
+009AA508: ldr          r2, [r7, r2]
+009AA50C: ldr          r0, [r2]
+009AA510: bl           #0xa7a7f4
+009AA514: subs         r4, r0, #0
+009AA518: beq          #0x9aa4e8
+009AA51C: ldr          r3, [sp, #4]
+009AA520: add          r0, fp, #8
+009AA524: str          sl, [r4, #0x1c]
+009AA528: str          sl, [r4, #0x20]
+009AA52C: str          sl, [r4, #0x24]
+009AA530: str          r3, [r4]
+009AA534: str          sl, [r4, #0x14]
+009AA538: str          sl, [r4, #0x34]
+009AA53C: str          r5, [r4, #4]
+009AA540: str          sb, [r4, #0x30]
+009AA544: str          r8, [r4, #0x28]
+009AA548: ldm          r0, {r0, r1, r3}
+009AA54C: ldr          sl, [fp]
+009AA550: str          r0, [r4, #0x1c]
+009AA554: str          r1, [r4, #0x20]
+009AA558: str          r3, [r4, #0x24]
+009AA55C: b            #0x9aa4c0
+009AA560: add          sp, sp, #0xc
+009AA564: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009AA568: raw=00695E90 relocated=00695E90
+009AA56C: raw=00671BE4 relocated=00671BE4
+009AA570: raw=00671BDC relocated=00671BDC
+009AA574: raw=FFFFFDBC relocated=FFFFFDBC
+009AA578: raw=FFFFFE44 relocated=FFFFFE44
+0101C000: raw=009B0748 relocated=009B0748
+0101C004: raw=009A9288 relocated=009A9288
