@@ -174,3 +174,36 @@ From AGENTS.md, "Scope: the app boundary":
   to the manager.
 
 After those, M1 goes to the final Opus pass. Prepare the verification packet first (CODEX-BUILDER rule 9).
+
+## Rows checked (manager, 2026-10-09): M1-046, M1-047, M1-053
+
+**M1-046 (rows U1–U8) and M1-047 (rows P1–P4)** in `research/20261009-M1-final-extraction.md` are adopted. The manager
+re-read in the binary:
+- the priority 3 at `0x008367C0`;
+- the reverse-order handle release (`0x004EAE94..0x004EAEBA`: end −= 8, then release);
+- the vtable slots `0x0101FE28` → `0x0051D8F9` (unsubscribe, Thumb `0x0051D8F8`) and `0x0101FE24` → `0x0051D8D5`.
+
+**M1-053 (rows P2a–P2m)** in `research/20261009-M1-053-projection-rows.md` are adopted, with this ownership rule.
+- **M1-053 owns the publication:**
+  - the HasReceivedRobotState gate and the slot +0x1C call (P2a);
+  - the 109-byte field layout;
+  - the projection arithmetic: the pose struct and angle conversions (P2c, P2d), the lift height with its trailing
+    +0.0 (P2f);
+  - the status bits (P2h);
+  - the carried and top IDs (P2i);
+  - gameStatus (P2j).
+- **Each supplied field is read from the stack component that owns it.** That supplier's exactness belongs to its
+  layer:
+  - **the root pose** (P2b): the stack's localization (M11, under M11-053/055);
+  - **the head-tracking object** (P2k): `MovementComponent+0x1C`/`+0x20`, which the constructor initialises to −1
+    (`0x0063DA86`; manager-checked). With no tracking action it is −1, as in the engine. Its writers belong to the
+    M4/M13 tracking records;
+  - **the last processed image timestamp** (P2m): `VisionComponent+0xE8`. Read the stack's vision component; the
+    supplier's exactness is M11's. Name it in an M11 record if none covers it.
+
+  Record each supplier boundary in M1-053's `unresolved` as "supplier owned by <record>".
+- **The manager re-read P2h** (`0x005181BA..0x005181E8`): start from +0x350; animation tag ≠ 0 adds 0x40; tag 0xFF
+  gives original | 0x840; carried ≠ −1 adds 0x2.
+
+**Codex:** build M1-046's retirement (U1–U8), M1-047's priority request (P1–P4; host permission stays M1-014 policy)
+and M1-053's publication. Then update the M1 verification packet and stop.
