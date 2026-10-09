@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 28 CHECKED native-row obligations / 8 CHECKED scope exclusions / 104 PARTIAL / 0 NOT DONE; decision checkpoints through519 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 31 CHECKED native-row obligations / 8 CHECKED scope exclusions / 101 PARTIAL / 0 NOT DONE; decision checkpoints through520 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -61,12 +61,12 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-052 | 91 | PARTIAL |
 | Q14-053 | 92 | PARTIAL |
 | Q14-054 | 93 | CHECKED |
-| Q14-055 | 94 | PARTIAL |
+| Q14-055 | 94 | CHECKED |
 | Q14-056 | 95 | PARTIAL |
 | Q14-057 | 96 | PARTIAL |
 | Q14-058 | 97 | CHECKED |
-| Q14-059 | 98 | PARTIAL |
-| Q14-060 | 99 | PARTIAL |
+| Q14-059 | 98 | CHECKED |
+| Q14-060 | 99 | CHECKED |
 | Q14-061 | 100 | PARTIAL |
 | Q14-062 | 102 | CHECKED |
 | Q14-063 | 104 | PARTIAL |
@@ -506,7 +506,7 @@ CHECKED: RB1–RB2 reopen the bounded budget consumer, signed gates, modular ari
 
 > | M9-017 | **KEEP** | 0x005EECB0..0x005EED6F;0x00635474..0x006355BF;0x00636578..0x0063682F | Cube acceleration HPF is a reaction classifier, not audio PCM DSP; first-sample initialization, smoothing, hysteresis/count thresholds and posted vibrato remain exact. |
 
-PARTIAL: HB2/HB4 and Q15 SP1–8 join reachable listener values to runningmean/smoothing and RTPC posting. M10 cube streaming/firstsample/HPF/hysteresis and M7 listener ownership are HIGHER-LAYER with635474,636620,636578..63682F and5EECDC..5EED56 citations; no ADP-1 release. Retained M6 concrete parameterpost599F62 remains recipient work.
+CHECKED bounded audio interface: MC520A/SI514 joins exact listener arguments, sample/mean/max/smoothing/default/stop state and actual M6 parameter18→native RTPC consumer. M10 cube streaming/firstsample/HPF/hysteresis and M7 listener ownership remain HIGHER-LAYER at the original cited interfaces; stop there under scope guard, without classifier arithmetic equivalence or acceptance. No generic pending599F62 recipient.
 
 ## Q14-056 — triage line 95
 
@@ -530,13 +530,13 @@ CHECKED research boundary: RB3 preserves UNKNOWN final audible output and the ab
 
 > | M9-024 | **KEEP** | 0x009D552C..0x009D55F3;0x009D5934..0x009D6598;0x009D7FC0..0x009D8137 | Envelope stop/trigger selector consumers determine voice lifetime; do not simplify a stop decision as envelope DSP. |
 
-PARTIAL: Q15 MG/MI/EP establish envelope selector/stop gates, initialization and parameter timing. Remaining attached-voice stop notification/evaluator recipients are recoverable exact work.
+CHECKED: MC520B/C/E maps actual MG/MT/RG7 selector/default/created-state gates, EP/MI/SV/MR517 exact parameter/timing initialization, complete SN159/PN160–DR162/AP249/RR/PS/TT stop recipients and Q14-027 MP/EV/MTK/RH/OA/MC production delivery. Named local envelope controls are complete; independent scope hierarchy/implicit MIDI target selection and higher-layer behavior are not claimed. No manifest or DSP equivalence promotion.
 
 ## Q14-060 — triage line 99
 
 > | M9-025 | **KEEP** | 0x009D671C..0x009D7727;0x009D7FC0..0x009D8137;0x009E266C..0x009E2813 | LFO waveform is a modulation parameter stream feeding singing/pitch, not one of the allowed PCM filter/mixer operations; retain exact wave shape, phase, extrema and timing. |
 
-PARTIAL: Q15 MG/MI/LP1–12 establish LFO choice, mode/phase, raw constants and state publication; this control-stream initializer is KEEP, with only imported libm rounding exempt. Remaining evaluator/output delivery and cadence are exact work.
+CHECKED: MC520D/E maps actual MG/MI/LP/SV/MR517 initializer, RNG/RTPC/mode/phase/setter/dirty/carryback cadence to complete MP/ML/LS/LB scalar/buffer waveform/filter/history/extrema publication and RH/OA/MC production control delivery. Control-stream evolution remains exact, including native libm arguments; only phone bodies and isolated final per-sample gain arithmetic stop at their explicit boundary. Independent MIDI target/provider claims are not added.
 
 ## Q14-061 — triage line 100
 
