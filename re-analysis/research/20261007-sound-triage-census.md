@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 43 CHECKED native-row obligations / 8 CHECKED scope exclusions / 89 PARTIAL / 0 NOT DONE; decision checkpoints through543 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through544 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -92,7 +92,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-083 | 132 | CHECKED |
 | Q14-084 | 133 | PARTIAL |
 | Q14-085 | 134 | CHECKED |
-| Q14-086 | 135 | PARTIAL |
+| Q14-086 | 135 | CHECKED |
 | Q14-087 | 136 | PARTIAL |
 | Q14-088 | 137 | PARTIAL |
 | Q14-089 | 138 | PARTIAL |
@@ -700,7 +700,7 @@ CHECKED at checkpoint543 for the quoted bounded clock/callback/duration/stop-off
 
 > | C31.5 R5 frame writer and seven callers | M6-018,M6-022,M6-025 | **KEEP** | 0x00A56650;0x00A52B90;0x00A44948;0x00A44BD0;0x00A1C7D4;0x00A57724 | Exhaustive callers and frame/rate-setting branch determine cadence; no arithmetic relief for clock or frame count. |
 
-PARTIAL: existing primary-backed rows NS1–NS2,VS1,Z4–Z15 in `20261007-sound-keep-rows.md`. StartStream wrapper, secondary start result/format gate, per-pass frame use and rate/frame setters are rowed. Remaining exhaustive seven-caller/setting writer census and interface recipients. Reconciliation records actual body coverage without claiming complete transitive closure.
+CHECKED at checkpoint544 for the bounded seven encoded StartStream callers and frame/rate-setting decisions. RF544 confirms all seven actual call sites and input/result handling, including bank conversion caller9B4354 and retryA554F8; NS/SWIN/PP190/CR6/SA203 retain native1/2/3F differences and publication/cleanup. Static executable ARM/Thumb, literal word and ELF symbol-value checks add no further encoded references, without asserting global runtime unreachability. Z1–16/DF/PC185/VS/LFRAME/RG/MC520 join configured/default/JNI frame/rate choice, rounding/ties, ordered setters, exact derived timing and frame readers. Codec/render internals stay separate, WEM decoding is not exempted, and no whole-source/fidelity acceptance follows.
 
 ## Q14-087 — triage line 136
 
