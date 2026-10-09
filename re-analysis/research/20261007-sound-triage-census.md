@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through306 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through307 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1755,3 +1755,7 @@ ASORT305A–H row596DC8 and all four local sort recipients: unsignedtime compari
 ### Checkpoint 306 — derived Prepare and robot_volume producer
 
 AENTRY306A–D bind base/OnDevice/OnRobot constructor tables to exact Prepare slots, byte-only state3 and reset-wait gate before positive BeginBuffering. RVOL306A/B show raw-volume publication, exact scale/unsigned conversion/low16 robot-message value, then reloaded raw robot_volume RTPC on object0 to known parameter submit. Other inputs, subscriber/routes and scheduling/lifetime remain PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 307 — OnDevice due/delay/post
+
+DPOST307A–E add selected OnDevice Update/done, due-time <= gate, raw64 globaldelay693 initialization, per-event reload/index advance, weak scheduled gate, publication before post and event_volume/ProcessEvents even after failure. Callback and Dispatch lifetime/thread/cancellation/providers remain open. Counts unchanged, Q14 PARTIAL, Q15 parked.
