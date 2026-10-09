@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through288 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through289 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1683,3 +1683,7 @@ SR287A–F recover old positive-gain capture, mode-dependent previous value, raw
 ### Checkpoint 288 — line selection and bus getter joins
 
 SL288A–F supply complete A43434 line-search prefix joined to existing AD1/2 and RCON tails, known node/bus88 bindings, ordered collapsed-bus pointer selection and direct9F4BB8 first-link resolver. A429F0 line construction remains the next bounded recipient; wider route/source/input/writer closure remains PARTIAL. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 289 — parent descriptor and recursive chooser
+
+LREC289A–C recover descriptor defaults/linked-bus query/conditional key inheritance, parent line lookup/recursive failure and descriptor-byte special-root versus line-construction selection. Incoming r1 is overwritten, so SL288B callsite residue supplies no semantic input. A42210/A42754 remain bounded next recipients; wider uncertainty/counts/Q15/fidelity/production unchanged.
