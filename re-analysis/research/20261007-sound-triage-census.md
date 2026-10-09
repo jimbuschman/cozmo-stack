@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through312 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through313 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1779,3 +1779,7 @@ DWORK311A–G bind constructor to two methods, selectedpriority2 skip, mainworke
 ### Checkpoint 312 — deferredworker
 
 DDEFER312A–H add cached-count waitpredicate, rawdeadline comparisons/freshclock futurewake, lastphysicalentry transferbefore removal, optionalrepeat usingdue-checkclock andpreservedID, per-iterationstopflag andshipped wait_until/wait_for decisions. Deferredsort/ties andremainingcreator/input/context/lifetime joins stayopen. Countsunchanged, Q14 PARTIAL, Q15 parked.
+
+### Checkpoint 313 — deferred small sorts
+
+DSORT313A–D record signed64 descending deadlines, exact count0–3 branches and whole-holder exchange, no ID tie-break and positively demonstrated unstable equal-key order. Larger sort paths remain pending; counts unchanged, Q14 PARTIAL, Q15 parked.
