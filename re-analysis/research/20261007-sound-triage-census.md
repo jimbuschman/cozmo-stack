@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 73 CHECKED native-row obligations / 8 CHECKED scope exclusions / 59 PARTIAL / 0 NOT DONE; checkpoint568 closes026/032/035 admitted generator lifecycle |
+| Per-item native rows and production joins | PARTIAL | 74 CHECKED native-row obligations / 8 CHECKED scope exclusions / 58 PARTIAL / 0 NOT DONE; checkpoint570 closes103 admitted source-context endpoint remainder |
 
 # Q14 per-item work census
 
@@ -114,7 +114,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-100 | 149 | CHECKED (scope exclusion) | AUDIBLE | Memory/cache availability and I/O scheduler order can delay media readiness and hence sound onset. |
 | Q14-101 | 150 | CHECKED | AUDIBLE | Decoder setup/packet/frame/header decisions determine emitted audio and its endpoint. |
 | Q14-102 | 151 | CHECKED | AUDIBLE | Codec/channel/seek decisions determine played content and starting/ending position. |
-| Q14-103 | 152 | PARTIAL | AUDIBLE | Admitted generator/MIDI source lifecycle and endpoint decisions determine what plays and when it stops. |
+| Q14-103 | 152 | CHECKED | AUDIBLE | Admitted generator/MIDI source lifecycle and endpoint decisions determine what plays and when it stops. |
 | Q14-104 | 153 | PARTIAL | AUDIBLE | Bus ancestors, reachability and cached parameter paths change route and loudness. |
 | Q14-105 | 154 | PARTIAL | AUDIBLE | RTPC fallback/subscriptions and modulator triggers change sound-control values and cadence. |
 | Q14-106 | 155 | CHECKED | AUDIBLE | Reset/recompute before the null gate changes subsequent effective sound state. |
@@ -953,7 +953,7 @@ CHECKED (bounded decisions-only), checkpoint557: checkedQ14-004 plus AH5/RI205/A
 
 PARTIAL boundary: B17/B18 already establish notification registry/archive removal controls; SF1–SF9 now identify mode2 plug-in source construction/start/render/close as ownership/format/registration and virtual generation control. Selected plug-in descendants remain unread: no PCM-only exemption for whole source. Remaining registry writers/dynamic generation and codec recipients.
 
-**Current disposition, checkpoint569:** PARTIAL: Admitted100/101/102 lifecycle and actual queued stop-loop/source38/plugin28 endpoints are G100566/G101565/G102567–568/END569. Remaining precisely the five concrete source18 selector/value suppliers A0BBD8/9BD2A8/9BD1B0/9BD204/A01A64 and any positively admitted source14 media-ID request; bind their shipped input/consumer decision joins before claiming closure. Packed event/parameter and envelope query interfaces are now exact. Missing callers do not prove unreachability. out of scope: backing/hash/I/O and isolated per-sample arithmetic. See `20261009-sound-generator-endpoints.md`; older remaining-work prose is superseded.
+**Current disposition, checkpoint570:** CHECKED: SF/PP/WP/G100566/G101565/G102567–568/END569 settle admitted generation, parameter, raw-state, stop-loop and lifecycle endpoints. ADM570 binds all46 primary type2 Sound inputs to complete four product context paths and proves the six unpaid source14/18 supplier requests unreachable from this admitted path; STOP without backing/helper descent. This is a positive value/call-edge proof, not missing-caller absence or whole-MIDI acceptance. out of scope: backing/hash/I/O, excluded source branches and isolated per-sample arithmetic. See `20261009-sound-source-context-admission.md`; older remaining-work prose is superseded.
 
 ## Q14-104 — triage line 153
 
