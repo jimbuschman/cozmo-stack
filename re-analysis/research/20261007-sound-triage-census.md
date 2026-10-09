@@ -2311,3 +2311,7 @@ PP441 closeslocal109parameters andjoins12compressorobjects toexistingCP1–5. Al
 ## Checkpoint 442 — company300 source local lifecycle/framing
 
 WP442 bindsactualsourcefactory/table/Init, parameterdynamiccast/providerpresencegates, callbackorder, Reset/info/queries, rawcopy/count/terminalpadding decisions andTerm-ownedproviderrelease. ExistingHijackH/HG/FRreused. Sourcecallback/providerPCpublication remainsnext; broaderwriter/liveclosure remains. Q14-016 PARTIAL;countsunchanged;Q15followsQ14. No production/fidelity/hardwarechanges.
+
+## Checkpoint 443 — WavePortal provider transfer and relays
+
+WP443 bindsdatacontainer->pendingprovider metadata/duration, Set/Clearownership, registeredglobalfactorytarget, P.Ctransferbeforependingclear andInit/Termrelayinstall, usercallbackpresence/statepublication andcallablecopy/exchangeownership. File/cache/I/O omitted. Publiccallbacksetters/read-state/parent/appinputclosure remainnext. Q14partial/countsunchanged;Q15followsQ14. No production/fidelity/hardwarechanges.
