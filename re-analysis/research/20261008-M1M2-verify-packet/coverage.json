@@ -1,0 +1,563 @@
+{
+  "source_commit": "264c61f0bc52399d2cccf0bf0edc1c4f9b68112b",
+  "manifest_sha256": "4e829da27f8f2481e24a33dc609528ce504781004838ee0fa1b4344ee96c81c0",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "included": [
+    {
+      "id": "M1-001",
+      "file": "M1-001.md",
+      "rows": 5,
+      "cited_intervals": 9,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Conformance/Anim.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Control.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Devices.cs",
+        "cozmo-stack/src/Cozmo.Conformance/Probe.cs",
+        "cozmo-stack/src/Cozmo.Conformance/SmokeTest.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-002",
+      "file": "M1-002.md",
+      "rows": 36,
+      "cited_intervals": 55,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-003",
+      "file": "M1-003.md",
+      "rows": 6,
+      "cited_intervals": 19,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/Frame.cs",
+        "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-004",
+      "file": "M1-004.md",
+      "rows": 3,
+      "cited_intervals": 5,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/ReliableMessageType.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-005",
+      "file": "M1-005.md",
+      "rows": 30,
+      "cited_intervals": 40,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-006",
+      "file": "M1-006.md",
+      "rows": 48,
+      "cited_intervals": 66,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-007",
+      "file": "M1-007.md",
+      "rows": 8,
+      "cited_intervals": 30,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-008",
+      "file": "M1-008.md",
+      "rows": 39,
+      "cited_intervals": 27,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Wire/PingPayload.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-009",
+      "file": "M1-009.md",
+      "rows": 18,
+      "cited_intervals": 28,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-010",
+      "file": "M1-010.md",
+      "rows": 10,
+      "cited_intervals": 34,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-011",
+      "file": "M1-011.md",
+      "rows": 2,
+      "cited_intervals": 1,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-012",
+      "file": "M1-012.md",
+      "rows": 6,
+      "cited_intervals": 26,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/TransportConstants.cs"
+      ]
+    },
+    {
+      "id": "M1-013",
+      "file": "M1-013.md",
+      "rows": 1,
+      "cited_intervals": 0,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Transport/HighResolutionTimer.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-014",
+      "file": "M1-014.md",
+      "rows": 25,
+      "cited_intervals": 15,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-016",
+      "file": "M1-016.md",
+      "rows": 3,
+      "cited_intervals": 7,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-017",
+      "file": "M1-017.md",
+      "rows": 3,
+      "cited_intervals": 2,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs"
+      ]
+    },
+    {
+      "id": "M1-018",
+      "file": "M1-018.md",
+      "rows": 8,
+      "cited_intervals": 19,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-019",
+      "file": "M1-019.md",
+      "rows": 14,
+      "cited_intervals": 61,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-020",
+      "file": "M1-020.md",
+      "rows": 4,
+      "cited_intervals": 10,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-021",
+      "file": "M1-021.md",
+      "rows": 13,
+      "cited_intervals": 60,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-022",
+      "file": "M1-022.md",
+      "rows": 44,
+      "cited_intervals": 82,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-023",
+      "file": "M1-023.md",
+      "rows": 16,
+      "cited_intervals": 56,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-026",
+      "file": "M1-026.md",
+      "rows": 8,
+      "cited_intervals": 25,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-027",
+      "file": "M1-027.md",
+      "rows": 14,
+      "cited_intervals": 23,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-028",
+      "file": "M1-028.md",
+      "rows": 158,
+      "cited_intervals": 192,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-030",
+      "file": "M1-030.md",
+      "rows": 13,
+      "cited_intervals": 25,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-032",
+      "file": "M1-032.md",
+      "rows": 11,
+      "cited_intervals": 42,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-034",
+      "file": "M1-034.md",
+      "rows": 25,
+      "cited_intervals": 97,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-035",
+      "file": "M1-035.md",
+      "rows": 6,
+      "cited_intervals": 21,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableConnection.cs",
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-036",
+      "file": "M1-036.md",
+      "rows": 3,
+      "cited_intervals": 3,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+      ]
+    },
+    {
+      "id": "M1-037",
+      "file": "M1-037.md",
+      "rows": 3,
+      "cited_intervals": 8,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-038",
+      "file": "M1-038.md",
+      "rows": 25,
+      "cited_intervals": 28,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-039",
+      "file": "M1-039.md",
+      "rows": 26,
+      "cited_intervals": 31,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
+      ]
+    },
+    {
+      "id": "M1-040",
+      "file": "M1-040.md",
+      "rows": 24,
+      "cited_intervals": 12,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M1-041",
+      "file": "M1-041.md",
+      "rows": 14,
+      "cited_intervals": 47,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/RobotStateHistory.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs"
+      ]
+    },
+    {
+      "id": "M1-042",
+      "file": "M1-042.md",
+      "rows": 27,
+      "cited_intervals": 13,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M2-001",
+      "file": "M2-001.md",
+      "rows": 73,
+      "cited_intervals": 97,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs"
+      ]
+    },
+    {
+      "id": "M2-002",
+      "file": "M2-002.md",
+      "rows": 99,
+      "cited_intervals": 94,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+        "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs"
+      ]
+    },
+    {
+      "id": "M2-003",
+      "file": "M2-003.md",
+      "rows": 75,
+      "cited_intervals": 55,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs"
+      ]
+    },
+    {
+      "id": "M2-004",
+      "file": "M2-004.md",
+      "rows": 105,
+      "cited_intervals": 236,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M2-005",
+      "file": "M2-005.md",
+      "rows": 112,
+      "cited_intervals": 240,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs"
+      ]
+    },
+    {
+      "id": "M2-006",
+      "file": "M2-006.md",
+      "rows": 96,
+      "cited_intervals": 76,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs",
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs"
+      ]
+    },
+    {
+      "id": "M2-007",
+      "file": "M2-007.md",
+      "rows": 105,
+      "cited_intervals": 246,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs"
+      ]
+    },
+    {
+      "id": "M2-008",
+      "file": "M2-008.md",
+      "rows": 19,
+      "cited_intervals": 39,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageBase.cs"
+      ]
+    },
+    {
+      "id": "M2-009",
+      "file": "M2-009.md",
+      "rows": 66,
+      "cited_intervals": 136,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs"
+      ]
+    },
+    {
+      "id": "M2-010",
+      "file": "M2-010.md",
+      "rows": 34,
+      "cited_intervals": 39,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M2-011",
+      "file": "M2-011.md",
+      "rows": 55,
+      "cited_intervals": 60,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M2-012",
+      "file": "M2-012.md",
+      "rows": 98,
+      "cited_intervals": 70,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs"
+      ]
+    },
+    {
+      "id": "M2-013",
+      "file": "M2-013.md",
+      "rows": 87,
+      "cited_intervals": 73,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs"
+      ]
+    },
+    {
+      "id": "M2-014",
+      "file": "M2-014.md",
+      "rows": 26,
+      "cited_intervals": 24,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs",
+        "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs"
+      ]
+    },
+    {
+      "id": "M2-015",
+      "file": "M2-015.md",
+      "rows": 68,
+      "cited_intervals": 117,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/MessageExtras.cs"
+      ]
+    },
+    {
+      "id": "M2-016",
+      "file": "M2-016.md",
+      "rows": 78,
+      "cited_intervals": 40,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Generated/RobotMessages.g.cs"
+      ]
+    },
+    {
+      "id": "M2-017",
+      "file": "M2-017.md",
+      "rows": 55,
+      "cited_intervals": 60,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Protocol/Clad/Clad.cs"
+      ]
+    }
+  ],
+  "excluded": {
+    "M1-015": "Open MISSING in current unresolved: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.",
+    "M1-024": "Open MISSING in current unresolved: built, awaiting strong verification: B-M1M2 checked D1\u2013D18 (manager adoption in jobs/B-M1M2.md, 2026-10-05): live NeedsManager.ApplyDecayAllNeeds now snapshots f32 multipliers in need order, refreshes brackets before the pass, uses the checked piecewise NeedsState.ApplyDecay with inclusive/ordered threshold walk, elapsed/0x42700000 before rate*multiplier, current-floor crossing, separate f32 multiply/subtract, and min-only clamp; no caller elapsed>0 gate. Deadline zero/unordered conditions and last-decay store retained. D17 repair callback is exposed with visible MISSING logging when absent; its mutation/RNG body remains MISSING, as do global FP environment/NaN payload and outer exception disposition. No settlement. Previous verification: Opus verification of B-CORE2 (2026-10-02, re-analysis/research/20261002-B-CORE2-verify.md): NOT YET. The tick order (0x004ED626..0x004ED648), the f32 argument (0x0084BC72..0x0084BC8C) and the +0x3AC store (0x00695CA8) hold. The decay does not: NeedsState::ApplyDecay (0x0069C3C0, levels in map<NeedId,float>) computes minutes = elapsed/60 first (0x0069C48A), integrates piecewise across the rate thresholds (0x0069C4AC..0x0069C4EE) with level -= minutes*rate (0x0069C544) and a min-only clamp (0x0069C512), and is called with no elapsed>0 gate (0x00695DA4); Needs.cs:782-788 uses one rate at the current level, rate*elapsed/60f, double levels clamped at both ends, and skips elapsed <= 0. The fidelity: M1-024 tag on Needs.cs:762 claims the contradicted decay. Before: built, awaiting strong verification: B-CORE2 batch 5 (width and smaller items). The Needs tick is f32: CozmoEngine.NeedsUpdate is Action<float> and TickAt passes Timer.SecondsF (BaseStationTimer::GetCurrentTimeInSeconds 0x0084BCA8, the float at +0x10 stored after vcvt.f32.f64 0x0084BC80), and NeedsManager.Update(float) stores now at +0x3AC before the pause test (0x00695CA8) and compares and adds in f32 (0x00695CBE, 0x00695CD6). ApplyDecayAllNeeds(connected) reads +0x3AC (0x00695D4C, 0x00695D8A, 0x00695DA8) and the decay is computed in f32 (NeedsState::ApplyDecay 0x0069C48A, 0x0069C4A8..0x0069C4B0); the explicit-now overload is the test seam. NeedsManager.NowSec exposes +0x3AC. EngineAppLayerTests.M1_024_CD10... now expects Timer.SecondsF, and FreeplayTests.TheNeedsManagerUpdatesOnTheEngineTickNotTheFreeplayTick no longer returns early without the OBB. CozmoEngine.cs, Behavior/Needs.cs.",
+    "M1-025": "Open MISSING in current unresolved: built, awaiting strong verification: manager-checked E1\u2013E14 in research/20261005-B-M1M2-blockers-extraction.md: live ExitSdkMode game-drain entry, UI edu/unpause and SDK status handoffs, independent communication byte/virtual interface, external-only RCM disconnect before charger-only Movement unlock. Track trees preserve duplicates and erase one owner; existing MA3 outgoing empty-tree mask retained including missing owner. MISSING: nested SDK message recipients, EnterSdkMode/state writers, concrete SDK connection callbacks, telemetry fields and PrintLockState. Teardown lower interfaces are built under correction A2; higher effects are explicit new lifetime gap records; this does not settle the complete path. Previous Opus verification: M1-044 dependency unbuilt.",
+    "M1-029": "Open MISSING in current unresolved: built, awaiting strong verification: checked firmware byte Reader replaces System.Text.Json on FirmwareHeader.Parse and both live HandleFirmwareVersion paths. Manager-adopted research/20260930-bcore-extractions.md item 6 with research/20261005-B-M1M2-rows-check.md Item 6 corrections winning: whitespace 09/0A/0D/20 (0x008E166E..168C); saved root success ignores suffix errors (0x008E0886..0912); empty last decoded key close (0x008E0FA6..0FBA); comments/byte literals and container order; leading zeros/bare minus/-0; positive int cutoff INT32_MAX and sign-specific 64-bit limits (0x008E1CF2..1ECA); raw bytes, escapes and surrogate low10-bit combination (0x008E1B34..1C9E, 0x008E262A..2896); root counts toward >1000 runtime throw (0x008E09AA..0D92); duplicate replacement and partial mutation. Firmware build/version comparisons preserve byte strings. Built real-number conversion from manager-adopted research/20261005-M1-029-converter-build-rows.md S1-S21/W1: FirmwareJson.Reader.DecodeNumber calls FirmwareJsonDouble.TryConvert, preserving shipped binary64 initial scaling, integer correction and the unadjusted normalized ratio at libc++ 0x0007EE9E. EQUIVALENT_IMPLEMENTATION runtime assumptions (manager/operator 2026-10-05): fix round-to-nearest and C locale decimal point dot; no writer changing either was established on this loader path. These assumptions are limited to external runtime state; shipped numerical behavior remains exact. Regression expectations are shipped-converter emulator fixtures, not values generated by C#. MISSING: real asString formatting, allocation-failure and extreme-length behavior; retained explicit JsonMissingSource for formatting. Exception handling: original firmware-JSON escaping exception destination remains UNKNOWN; retained Isolated/LoadAsync catch-and-log containment is the deliberate operator-approved departure under M1-034 (AGENTS.md Other approved departures, 2026-10-07), not recovered engine behavior. Parse itself propagates typed depth/access errors, not parse-false. Record remains IMPLEMENTATION_GAP and incomplete; Conversion rows adopted and built; remaining MISSINGs still prevent completion. Prior Opus contradictions are repaired only for the checked subset; no claim of complete reader fidelity.",
+    "M1-031": "Open MISSING in current unresolved: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.",
+    "M1-033": "HARDWARE_ONLY; no completed built record to package. whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none)",
+    "M1-043": "HARDWARE_ONLY; no completed built record to package. the errno value after a 0-byte recvmsg on the phone",
+    "M1-044": "Open MISSING in current unresolved: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.",
+    "M1-045": "Open MISSING in current unresolved: built, awaiting strong verification: checked lower M1 interfaces and gates, with recipient effects explicitly split by inventory correction A2 (2026-10-05). MISSING: higher-layer lifetime bindings/recursive recipient effects, external notification/telemetry services, go-to-sleep factory implementation. Retained host ResetDevices remains a higher-layer candidate, not native destructor proof. No record settled.",
+    "M1-046": "Open MISSING in current unresolved: MISSING: Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement."
+  },
+  "test_counters": {
+    "total": "526",
+    "executed": "526",
+    "passed": "525",
+    "failed": "1",
+    "error": "0",
+    "timeout": "0",
+    "aborted": "0",
+    "inconclusive": "0",
+    "passedButRunAborted": "0",
+    "notRunnable": "0",
+    "notExecuted": "0",
+    "disconnected": "0",
+    "warning": "0",
+    "completed": "0",
+    "inProgress": "0",
+    "pending": "0"
+  }
+}
