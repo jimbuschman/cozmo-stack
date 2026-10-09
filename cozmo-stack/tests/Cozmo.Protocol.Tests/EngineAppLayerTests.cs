@@ -2153,6 +2153,31 @@ public class EngineAppLayerTests
     }
 
     [Fact]
+    public void M1_025_E17_ExternalExitQueuesDisconnectBeforeChargerUnlockSend()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1, PoseOriginId = 1, Status = 0x1000u }); // charger gate
+        rig.Tick();
+        rig.Port.Sent.Clear();
+        rig.Port.Calls.Clear();
+        rig.Engine.NeedsSetPaused = _ => { };
+        rig.Engine.SdkExitExternalInterface = _ => { };
+        rig.Engine.SdkTelemetry = _ => { };
+        rig.Engine.ExitSdkMode(true, true);
+
+        rig.Tick();
+
+        // FakePort records the synchronous adapter calls. The production ReliableTransport queues these
+        // operations on its FIFO executor; its disconnect action removes the connection before the queued send.
+        int disconnect = rig.Port.Calls.FindIndex(call => call.StartsWith("disconnect ", StringComparison.Ordinal));
+        int unlockAttempt = rig.Port.Calls.FindIndex(call => call == "send 0x9E");
+        Assert.True(disconnect >= 0 && unlockAttempt > disconnect,
+            $"expected the disconnect to be posted before EnableAnimTracks; calls were [{string.Join(", ", rig.Port.Calls)}]");
+    }
+
+    [Fact]
     public void CheckedRemoval_ReportsServicesLifetimeAndBookkeepingOrder()
     {
         using var rig = new Rig();
@@ -2209,6 +2234,7 @@ public class EngineAppLayerTests
         Assert.Equal(new[] { "external:1", "report", "$session_id", "needs", "perf", "das:0",
             "dtor-event", "force-update", "abort-all", "behavior", "actions", "mood", "progression", "base", "free", "$phys", "$group" }, calls);
         Assert.Null(rig.Engine.Robot);
+        Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: Robot operator delete", StringComparison.Ordinal));
         Assert.Contains(rig.Log, line => line.Contains("MISSING: Robot lifetime owner +0x258"));
     }
 
@@ -2254,7 +2280,7 @@ public class EngineAppLayerTests
         calls.Clear();
         rig.Engine.Robots.RemoveRobot(1, false);
         Assert.Empty(calls);
-        Assert.Contains(rig.Log, line => line.Contains("Robot 1 does not exist. Ignoring."));
+        Assert.Contains(rig.Log, line => line.Contains("warning: RobotManager.RemoveRobot: Robot 1 does not exist. Ignoring."));
     }
 
     private sealed class SleepProbe : ActionRunner

@@ -881,7 +881,7 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            State.UpdateCurNeedsBrackets();                                      // D1, 0x00695D0E
+            SetPrevNeedsBrackets();                                               // D1, 0x00695D0E -> 0x0069CEA4
             var multipliers = Decay.DecayMultipliers(n => State.GetNeedLevel(n));
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
@@ -903,6 +903,19 @@ public sealed class NeedsManager
             }
             DetectBracketChanges(nowOverride: now);
         }
+    }
+
+    /// <summary>
+    /// <c>NeedsManager::SetPrevNeedsBrackets</c> (0x0069CEA4), the first call from
+    /// <c>ApplyDecayAllNeeds</c> (0x00695D0E): refresh the current bracket cache (+0x70), then copy it into
+    /// the previous-bracket map (+0x7C) that <c>DetectBracketChangeForDas</c> compares after decay.
+    /// </summary>
+    // fidelity: M1-024
+    private void SetPrevNeedsBrackets()
+    {
+        State.UpdateCurNeedsBrackets();
+        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
+            _prevBrackets[n] = State.GetNeedBracket(n);
     }
 
     /// <summary>

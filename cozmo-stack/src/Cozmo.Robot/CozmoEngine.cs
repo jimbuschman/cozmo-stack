@@ -1501,7 +1501,7 @@ internal sealed class RobotManager
         {
             if (!RobotEntries.TryGetValue(id, out robot))
             {
-                _engine.Log($"RobotManager.RemoveRobot: Robot {id} does not exist. Ignoring.");
+                _engine.Log($"warning: RobotManager.RemoveRobot: Robot {id} does not exist. Ignoring.");
                 return;
             }
             ric = _rics.GetValueOrDefault(id);
@@ -1536,7 +1536,7 @@ internal sealed class RobotManager
     }
 }
 
-// fidelity: M1-024, M1-025, M1-041, M1-042, M1-034
+// fidelity: M1-024, M1-025, M1-041, M1-042, M1-034, M15-014
 /// <summary>
 /// The engine for one robot: the game-message queue and the per-tick order (CD6..CD11), the connection manager,
 /// MessageHandler, RobotManager and the firmware header load. Game messages are the calls on this class; they are

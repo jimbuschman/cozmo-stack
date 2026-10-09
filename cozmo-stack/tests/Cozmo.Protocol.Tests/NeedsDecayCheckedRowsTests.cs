@@ -60,6 +60,20 @@ public sealed class NeedsDecayCheckedRowsTests
         Assert.Equal(0, calls); // Repair has no rate vector
     }
 
+    [Fact]
+    public void D1_SnapshotsCurrentBracketsBeforeApplyingDecay()
+    {
+        var manager = new NeedsManager(() => 0, NeedsConfig.Default, Rates((0, .3)));
+        manager.State.SetNeedLevel(NeedId.Play, .4); // Warning before this decay pass.
+        var changes = new List<(NeedId Need, NeedBracketId Previous, NeedBracketId Current)>();
+        manager.BracketChanged += (need, previous, current, _) => changes.Add((need, previous, current));
+
+        manager.ApplyDecayAllNeeds(true, 60f); // .4 -> .1, crossing Warning -> Critical.
+
+        Assert.Contains((NeedId.Play, NeedBracketId.Warning, NeedBracketId.Critical), changes);
+        Assert.DoesNotContain(changes, change => change.Need == NeedId.Play && change.Previous == NeedBracketId.Full);
+    }
+
     [Theory]
     [InlineData(0u, 0x3F800000u)]
     [InlineData(0xBF800000u, 0x3F800000u)]

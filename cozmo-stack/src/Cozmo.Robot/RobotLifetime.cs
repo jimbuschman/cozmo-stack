@@ -141,6 +141,6 @@ public sealed partial class CozmoEngine
     internal void DestroyRobot(EngineRobot robot)
     {
         robot.Lifetime.Destroy();
-        Required(RobotStorageFreed is { } freed ? () => freed(RobotId) : null, "Robot operator delete 0x0052F2FA");
+        RobotStorageFreed?.Invoke(RobotId); // managed object lifetime replaces native operator delete storage release.
     }
 }
