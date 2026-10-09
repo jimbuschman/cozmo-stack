@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 509 — bus state to authored duck-recipient dispatch
+
+Primary: `20261009-sound-bus-duck-state-dispatch-native.txt`,142 complete ARM instructions with separate literal island/GOT; same engine SHA256. BP508 and L3 supply actual bus-removal/delayed-idle and first-active callers; TT transition creation/retarget decisions and node resolver ownership reused. N=bus,L=authored linked record,R=resolved recipient,D=selected contribution record; offsets hex.
+
+| Row | Primary evidence | Exact retained decision |
+| --- | --- | --- |
+| BD509A recipient/state selection | 9C4CD0..9C4D80;9C4D18..40;GOT104006C | Iterate N70 list viaL0, physical order; null returns. For each9A7EB0(live manager108D8E0,L4,1); null skips this record. FoundR then read liveNCC.low3:1 invokes9C464C(R,N8,L8,LC,L14,L18);2 invokes9C4A6C(R,N8);0 enters restore branch;3..7 perform neither. Release foundR through reloadedC after branch, then load L.next0 AFTER callbacks. No callback results folded or list snapshot substituted. The two nonzero-state callees are concrete remaining decision recipients. |
+| BD509B state0 matching contribution | 9C4D80..9C4DD4/9C4E50..70 | Capturekind=L18,duration=L10,curve=L14. Kind0 selectsR8C list;kind5 selectsRA8;every otherkind deliberatelyload[address0] thenUDF. Walk links0 for firstD4==N8. Missing skips directly to recipient release. First match only, no broadcast/dedup; current handleD10 determines retarget versus new/direct delivery. Kindvalidation occurs before head lookup, not only on a found record. |
+| BD509C retarget existing transition | 9C4DD8..9C4DF8;TT | NonnullD10: A366F4(current manager108D8EC,handle,kind,+0,duration,curve,0), ignore result. No new handle, reference, count or local direct callback; native parameter kind0/5 retained. TT owns exact target/curve/time conversion and callback behavior rather than a generic fade. |
+| BD509D no-handle direct-or-new gate | 9C4E70..9C4EE8 | Read rawF32 D14. Exact==0 OR duration==0 selects direct callback. NaN!=0, so nonzero duration still attempts transition. Otherwise descriptor{D+8,kind,start=D14,target=+0,duration,curve;bytes1,1,0}, A36268(currentmanager,&descriptor,1,0); store raw returnedpointerD10, includingnull. No local failure fallback or inferred immediate target publication. Unwritten descriptor padding not normalized. |
+| BD509E direct restoration callback | 9C4EE8..9C4F08 | Direct recipient is D+8; load callable pointer[D8]. Invoke callback(D+8,kind,+0,1). Return ignored. Callback precedes R release and next authored record reload. Its concrete callable producer/value publication remains a bounded decision obligation; slot address is not whole-path evidence. |
+| BD509F post-delivery read-only walk | 9C4DF8..9C4E50;raw9C4F08 | After either restore update, inspect R8C thenRA8 linked contribution values14 against rawBC23D70A. Ordered less-than stops at release; equality/greater/unordered advances. No value/count/flag write or additional recipient dispatch follows this local walk; all endpoints join same R release. Do not invent a duck-active flag from the comparisons. No further descent needed for this read-only continuation. |
+
+Q14-0389C4CD0 now has full local state/order/value/transition dispatch, with9C464C creation/application,9C4A6C held-state update and concrete D8 callback producer remaining explicit. These are ducking decisions, not ADP-1 sample kernels. No geometry/storage/sample descent, no production/fidelity/hardware change. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows Q14.
+
+
 ## Checkpoint 508 — bus idle delayed action and zero-playing-ID producer
 
 Primary: `20261009-sound-bus-idle-pending-action-native.txt`; same engine SHA256. Original Q14-0389C5154 has an actual bus removal caller9C5240. AB250/U19 base action, DR162C/D pending/action lifetime, E24–32 scheduler, A2 target resolver and PC362/PR412 type1820 selection rules reused. N=bus,A=action,P=pending. This is a concrete zero-playing-ID producer, without generalizing all zero-ID events.
