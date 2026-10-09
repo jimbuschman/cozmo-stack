@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through393 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through394 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2103,3 +2103,7 @@ SV392 settles own7C frame/byte conversion and own74 loop/end reset/status. Corre
 ## Checkpoint 393 — Vorbis end/loop call join
 
 EL393 establishes emitted/non-emitting end calls use1 and loop calls0, adds direct-buffer own74 cursor/trim/status and joins streamed SV392. Remaining source-input/dispatch/writer/family closure stays PARTIAL; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 394 — mode-gated Vorbis teardown
+
+MT394 closes known slot14 direct/streamed gates, decoder/owned-packet publication order and generic stream cleanup/monitor payload boundary. SR12/VM10/SC8/9 reused; source input/notification joins retained. Counts unchanged; Q15 pending Q14.
