@@ -2027,3 +2027,7 @@ BT373A–F join known derived-to-base retirement, post-root property/common-node
 ### Checkpoint 374 — common-node retirement collaborators
 
 CN374A–F settle head-before-callback group retirement, caller-gated native initial-null fault, live first-member reselection, known CC binding and global subscriber-owner detach withall-onesmask. A27BF8/9FC354/9F2E34 and wider writer/input/state/product closure stay PARTIAL. Totals unchanged; Q15 pending Q14.
+
+### Checkpoint 375 — state-group removal recipients
+
+GR375A–E settle first exact group/member unlink, member14 clear-before-liveC, callback-time member-vector re-search/stableerase andknown emptyCC-to-no-opC4 continuation. Actual memberC products/nonemptyCC/registry/list/state/input/writer closure remains PARTIAL. Counts unchanged, Q15 pending Q14.

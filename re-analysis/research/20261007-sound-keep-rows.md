@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 375 — selected state-group unlink and member retirement
+
+Primary: `20261008-sound-state-group-removal-native.txt`, same engine hash. CN374 livegroup/head/member loop and initialLC5 table bindings reused. T=group registry,G=retiringgroup,V=G14 membervector; offsets hex. Hash/allocator infrastructure not descended into.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| GR375A group identity | A27BF8..A27C4C | T0/base,T4/count physical8-byte records; scan first keyword0==incomingG20, exactU32 including0. Empty/missing orrecordpointerFFFFFFFC returns14hex. Acceptedrecordword4 isowner;noowner-nullguard. No sorted/binary/hash lookup, defaultgroup orall-duplicate scan here. |
+| GR375B member-chain unlink | A27C50..A27CA0 | Selectedowner8 head;firstexactpointerG match replacesheadwithG4. Otherwisewalkphysicalnext4,firstexactpointermatch writespredecessor4=G4. Empty/missingmember stillreturns1 afteracceptedgroup;successdoesnotfreeG,clearG4,decrementrecordcount,deletegroup,releaseowner orcallcallback. CN374 ignoresrawresult andcontinuesretirement. |
+| GR375C selected member callbacks | 9FC354..9FC3C4;A270B0..A270B8 | G14/count18 holdsC-byte records,keyword0. Firstexactincomingkeymatch selected;empty/missing/recordpointerFFFFFFFCreturnsvoid. Acceptedrecord4 loaded→A270B0(member),whichwritesmember14=0 unconditionally. Thenreloadrecord4 aftercallback,invokeitsliveC withoutnullguard. Originalmemberpointer/table isnotretainedacrosstheclear. ConcreteC products remainboundedfamilydependencies,notno-opassumptions. |
+| GR375D live vector erase | 9FC3C8..9FC460 | AftermemberC reloadG14/count18 andrescanbyoriginalkeyfromcurrentfirstrecord. Empty/missingreturnswithoutcountmutation. Firstfound stablememmoveslatercompleteC-byte records ifbeforeunsignedlast,thenpublishesreloadedcount−1. Noall-duplicatescan orforcedcountdecrementoncallback-side removal. Thus CN374'sreselect-firstloop relies onthisrecipient/callbackprogress;localcallback resultsarenotused. |
+| GR375E selected empty CC continuation | 9F2E34..9F2E58;9F2F70..9F2F88;raw103B6EC;987E1C | CN374 finalCC occursafterobservedN18null. KnownCC9F2E34 reloadsN18;conditionalemptybranch tailcallsN.liveC4(N,0). InitialLC5 main103B628 C4=987E1C,exactBX LR,noadditionalcontrolstores/callbacks. out of scope: further descentfromthisprovenno-op. NonemptyCCbranches andcallback-time/newexternalN18/tablewritersareseparate;thisconditionalendpointdoesnotclaimthefull812-byteCCbody or all products. |
+
+CN374 groupunlink/member-retirement locals and selectedemptyCC continuation nowpositive. Concrete memberC creation/lifetime bindings,nonemptyCC decisions andactual registry/group/member/table/state/input/provider/writer/family closure remain PARTIAL. Counts unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 374 — common-node group retirement and subscriber-owner detachment
 
 Primary: `20261008-sound-common-node-retirement-controls-native.txt`, same engine hash. BT373/LC5 common-node callers, ND1–6/R48 exact9F9064 and LT3/ID151 subscriber/idle cleanup reused. N=node,G=state-group record,S=global subscriber; offsets hex. No hardware or sample-arithmetic work.
