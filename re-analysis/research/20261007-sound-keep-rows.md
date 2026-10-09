@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 410 — authored1E03 seek action concrete binding
+
+Primary: `20261009-sound-authored-seek-action-binding-native.txt`, same engine hash;87 instruction words plus literals/table. Shipped witness:1 raw1E03 action in reachability census. AF406 family1E00→A64500;A7–9 already ownA645C8 sought-value/RNG/descriptor decisions. A=action,P=pending wrapper; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SE410A construction/table | A64500..A6456C;rawA64570/74;raw103CCF8..CD2C;RT408A/AB250 | Allocate40,nullreturnsnull;nonnullA621BC initializescommonbase and list24/28/2C0;then bytesA3C/A3D0,wordsA30/34/380,table103CCF8 (PC A64540+8+5D87A8+8),A60DEC registration,returnA. Known24=A64B14,28=A64460,C=A60650;no fallbackto unrelated opcode's table. |
+| SE410B authored seek reader | A64460..A644B8;RT408C | Capturebyte0 normalize→A3C;rawunalignedwords1/5/9→A30/34/38 with no float conversion. Publishcursor+D beforewordstores;thenbyteD normalize→A3D,advancecursor+E,tailA622A4. Trailinglist parse/admission/cursor contracts already RT408C. FieldA3C selects percent-vs-absolute throughlowbit inA7;A3D lowbit selectsnearest-marker flag. No numeric percent/range clamp. |
+| SE410C direct value setters | A64578..A645C4 | A64578 storeslowbyteincoming toA3D without normalization. A64580 setsA3C0,VCVT.F32.S32 each incomingr1/r2/r3 andstoresA30/34/38 respectively;conversion/stores nativeorder30,34,38. A645B0 storesincomingrawr1/r2/r3 toA30/34/38 BEFOREA3C1. Constructor/reader/setter publication orders distinct. These timing/value conversions are decisions,not PCM arithmetic. |
+| SE410D actual1E03 execution | A64B14..A64B40;A64C78..A64C84;A7–9 | Compute unsigned U16type−1E02;actual1E03 index1 selectsA64C78. LoadP34 intoarg1 before branchtable,thenP30 intoarg2,callA645C8(A,P34,P30);return its rawresult. Unlike other selectedaction wrappers,thisdoesnot normalize1. A7–9 own targetadmission0F,absolute/percentdraw andseekdescriptor,target4C/release. Actualfulltype branch andconcrete table now jointhat localhelper. |
+
+out of scope: action/list/registry backing storage and allocator mechanics; flags,raw parameters,source seek timing and publication retained.
+
+Known shipped1E03 localfactory/reader/setter/execution joins now positive. Q14-007 stop/pause/resume102/103/108/202/302 product integration remains next work alongside existingA10–26/RR/PC/CC/NC/SL controls. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 409 — authored2103 nested-event action
 
 Primary: `20261009-sound-authored-nested-event-action-native.txt`, same engine hash;75 instruction words plus literals/GOT/table. Shipped witness:1 raw2103 action in reachability census;AF406 family2100→A63EB0. A=action,P=pending wrapper,E=resolvedevent; offsets hex. EA271/PR262 bank preparation/release for2103 remain separate from this actual execution.

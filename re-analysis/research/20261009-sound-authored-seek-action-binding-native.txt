@@ -1,0 +1,110 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A64500..0x00A64570 exclusive; ARM;
+00A64500: ldr          r3, [pc, #0x68] ; word[00A64570]=005DBB34
+00A64504: push         {r4, r5, r6, lr}
+00A64508: mov          r6, r0
+00A6450C: ldr          r3, [pc, r3]
+00A64510: mov          r5, r1
+00A64514: mov          r1, #0x40
+00A64518: ldr          r0, [r3]
+00A6451C: bl           #0xa7a7f4
+00A64520: subs         r4, r0, #0
+00A64524: beq          #0xa64568
+00A64528: mov          r1, r6
+00A6452C: mov          r2, r5
+00A64530: bl           #0xa621bc
+00A64534: ldr          r3, [pc, #0x38] ; word[00A64574]=005D87A8
+00A64538: mov          r2, #0
+00A6453C: mov          r1, #0
+00A64540: add          r3, pc, r3
+00A64544: mov          r0, r4
+00A64548: add          r3, r3, #8
+00A6454C: strb         r1, [r4, #0x3c]
+00A64550: strb         r1, [r4, #0x3d]
+00A64554: str          r3, [r4]
+00A64558: str          r2, [r4, #0x30]
+00A6455C: str          r2, [r4, #0x34]
+00A64560: str          r2, [r4, #0x38]
+00A64564: bl           #0xa60dec
+00A64568: mov          r0, r4
+00A6456C: pop          {r4, r5, r6, pc}
+00A64570: raw=005DBB34 relocated=005DBB34
+00A64574: raw=005D87A8 relocated=005D87A8
+RANGE 0x00A64578..0x00A645C8 exclusive; ARM;
+00A64578: strb         r1, [r0, #0x3d]
+00A6457C: bx           lr
+00A64580: vmov         s15, r1
+00A64584: mov          r1, #0
+00A64588: vmov         s14, r2
+00A6458C: strb         r1, [r0, #0x3c]
+00A64590: vcvt.f32.s32 s15, s15
+00A64594: vstr         s15, [r0, #0x30]
+00A64598: vmov         s15, r3
+00A6459C: vcvt.f32.s32 s14, s14
+00A645A0: vcvt.f32.s32 s15, s15
+00A645A4: vstr         s14, [r0, #0x34]
+00A645A8: vstr         s15, [r0, #0x38]
+00A645AC: bx           lr
+00A645B0: mov          ip, #1
+00A645B4: str          r1, [r0, #0x30]
+00A645B8: str          r2, [r0, #0x34]
+00A645BC: str          r3, [r0, #0x38]
+00A645C0: strb         ip, [r0, #0x3c]
+00A645C4: bx           lr
+RANGE 0x00A64460..0x00A644BC exclusive; ARM;
+00A64460: ldr          r3, [r1]
+00A64464: push         {r4, r5, r6, r7, r8, sb, lr}
+00A64468: add          sb, r3, #0xd
+00A6446C: mov          r4, r3
+00A64470: ldr          r8, [r3, #5]
+00A64474: ldrb         r5, [r4], #1
+00A64478: add          r6, r3, #0xe
+00A6447C: ldr          r7, [r3, #9]
+00A64480: adds         r5, r5, #0
+00A64484: ldr          r4, [r4]
+00A64488: movne        r5, #1
+00A6448C: strb         r5, [r0, #0x3c]
+00A64490: str          sb, [r1]
+00A64494: str          r8, [r0, #0x34]
+00A64498: str          r4, [r0, #0x30]
+00A6449C: str          r7, [r0, #0x38]
+00A644A0: ldrb         r3, [r3, #0xd]
+00A644A4: str          r6, [r1]
+00A644A8: adds         r3, r3, #0
+00A644AC: pop          {r4, r5, r6, r7, r8, sb, lr}
+00A644B0: movne        r3, #1
+00A644B4: strb         r3, [r0, #0x3d]
+00A644B8: b            #0xa622a4
+RANGE 0x00A64B14..0x00A64B44 exclusive; ARM;
+00A64B14: ldrh         r3, [r0, #0x20]
+00A64B18: mov          r2, r1
+00A64B1C: push         {r4, lr}
+00A64B20: sub          r3, r3, #0x1e00
+00A64B24: sub          r3, r3, #2
+00A64B28: sub          sp, sp, #0x30
+00A64B2C: ldr          r1, [r1, #0x34]
+00A64B30: cmp          r3, #7
+00A64B34: addls        pc, pc, r3, lsl #2
+00A64B38: b            #0xa64c88
+00A64B3C: b            #0xa64c78
+00A64B40: b            #0xa64c78
+RANGE 0x00A64C78..0x00A64C88 exclusive; ARM;
+00A64C78: ldr          r2, [r2, #0x30]
+00A64C7C: bl           #0xa645c8
+00A64C80: add          sp, sp, #0x30
+00A64C84: pop          {r4, pc}
+0103CCF8: raw=00A64408 relocated=00A64408
+0103CCFC: raw=00A64430 relocated=00A64430
+0103CD00: raw=00A6028C relocated=00A6028C
+0103CD04: raw=00A60650 relocated=00A60650
+0103CD08: raw=009D0410 relocated=009D0410
+0103CD0C: raw=00A60248 relocated=00A60248
+0103CD10: raw=00A60250 relocated=00A60250
+0103CD14: raw=00A6076C relocated=00A6076C
+0103CD18: raw=00A602CC relocated=00A602CC
+0103CD1C: raw=00A64B14 relocated=00A64B14
+0103CD20: raw=00A64460 relocated=00A64460
+0103CD24: raw=00A60284 relocated=00A60284
+0103CD28: raw=00A62098 relocated=00A62098
+0103CD2C: raw=00A61FF4 relocated=00A61FF4
