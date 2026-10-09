@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through346 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through347 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -312,7 +312,7 @@ Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions, including all four generated curves and exact arithmetic association; A2428C downstream coefficient recipient remains open. Remaining: concrete listener/curve/global/field inputs and writers, owner.vt24 and other connection families, A2428C/collaborators, registration paths and flag writers. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, owner.vt24 and other connection families, registration paths and flag writers. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
@@ -1915,3 +1915,7 @@ GM345A–G settle selected type1-source horizontal/expanded geometry lookups, gr
 ### Checkpoint 346 — selected basis transforms and fixed control tables
 
 BT346A–G settle selected A22CEC/A22A60 argument binding, matrix composition, fixed32-call cadence, raw normalization/direction/weight tables, compact row selection and additive coefficient order. Retained source counts1/2 are distinct from the recipient's coefficient count; excluded higher source-count branches are not traced. Remaining parent coefficient branches and writers/providers/families retain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 347 — selected generated matrix recipient reconciled
+
+GM347A–G settle retained basis bridge/ordered coefficient composition and destination-type2 generation/trig/higher destination coefficient gates. Selected A2428C/collaborators now positive for source counts1/2; historical unread local wording superseded. Concrete inputs/writers, table creation/registration/lifetime and connection families remain visible in Q14-029, still PARTIAL. Counts unchanged, Q15 parked.
