@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 484 — thread stop dispatch and modulator termination notifications
+
+Primary: `20261009-sound-thread-stop-modulator-retirement-native.txt`,92 complete ARM instructions and actual GOT; same engine SHA256. UT1/UT8 positively call9B0350/9E5FE4/9E5F6C. Reuse TH3/4/NTHREAD1/DF4/5/SN159/MF158/MTK6 instead of duplicate descendant recovery. M=modulator owner, T=state-list owner, S=state; offsets hex.
+
+| Row | Primary / reuse | Exact decision/value/order |
+| --- | --- | --- |
+| TM484A stop-mode dispatch | 9B0350..9B0370;raw9B0370/GOT1040098→108D90C | Read current config byte3D (=108D949). Zero tail9D4058 device termination; nonzero add incoming queue54 and tailA40B18 semaphore/thread stop. No incoming queue dereference in mode0 and no queued-command drain in this wrapper. TH4 exact quit/wake/join/handle-clear/destroy/reinit body applies in threaded mode; TH3/NTHREAD1 calls deviceTerm before worker returns, hence before join completion. DF4/5 own device/module/pacing shutdown. Navigation's fragmented extent throughA40BB3 is not this wrapper's local body. |
+| TM484B early modulator owner detach | 9E5FE4..9E6024;UT1 | Capture M10; null returns. Snapshot current pool BEFORE9E28D8(T), then free captured T using that pool; M10=0 only after cleanup/free. No result gate or pointer reload before free. Termination notifications see old M10 during recipient calls. |
+| TM484C late modulator owner detach | 9E5F6C..9E5FDC;UT8 | out of scope:leading owned M0/M4/M8 vector/free cleanup. After that boundary reread live M10; ifnonnull same T cleanup→saved-pool free→M10clear, otherwise return. UT1's early detach normally makes this later phase empty; retain live reread, not a guaranteed absence assumption. |
+| TM484D active-state termination | 9E28D8..9E2978;SN159/MF158/MTK6 | Read live T8 head; null reaches final tail/count clears. For each S, publish S4 next into T8; matching T4 tail clears; decrement T0 active count BEFORE9E21FC(S). Existing SN159 owns state44=3, policy/scope/membership-gated stop and action notifications, then field/reference cleanup. After callback reload S40, decrement wrapping32 and publish. Nonzero reloads live head; zero snapshots current pool BEFORE live S.slot0, calls it then frees original S, reloads live head. End reached with r4=0 clears T4/T0. No cached refcount/head, notification result gate or unconditional stop. |
+| TM484E concrete zero-reference recipient | MF158B/MTK6/SN159 | Known envelope/LFO state.slot0 reinstalls base table then9E21FC again; it does not free state itself. Caller supplies poolfree. The second cleanup is native, even after first cleanup cleared state8; do not replace it with a second unconditional user-visible stop. Other changed-table products remain separate, not certified by generic slot0 invocation. |
+| TM484F storage boundary | UT3/UT6/UT7;TM484D | out of scope:9E28D8 remaining owned table/vector/free backing after active-state controls;9C7AF4 metric registry owned vectors/mutex destruction;9A99DC no-op. Lifecycle callbacks above remain retained and are not reclassified as storage. |
+
+out of scope:phone thread/semaphore primitive bodies, owned array/hash/free backing and per-sample DSP. Native config branch, quit/wake/join ordering, active membership/reference publication and policy-controlled notifications remain decisions.
+
+Q14-030 now joins UT1 thread stop and early/late modulator detach to their concrete lifecycle recipients. Remaining UT1 A40D44 voice/line retirement, UT2 A38890 PBI retirement and external notification singleton cleanup need bounded decision extraction/reuse. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows completed Q14.
+
 ## Checkpoint 483 — queued discard and pending retirement during termination
 
 Primary: `20261009-sound-queue-termination-retirement-native.txt`,249 complete ARM instructions, inline branch table and actual GOT words; same engine SHA256. UT3 positively calls9AD064. Existing E13–16/A20/DR162/AP249/AR417/EP418/DC3 provide concrete completion/action/pending recipients; do not descend into their already-positive bodies again. Q=queue manager, C=current command, W=list wrapper, P=pending action; offsets hex.

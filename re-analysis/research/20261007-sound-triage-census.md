@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through483 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through484 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2407,3 +2407,5 @@ Checkpoint481 — RT481 selected RTPC termination scope/transition unlink-before
 Checkpoint482 — SW482 switch termination group default-key0/binding gate/unsubscribe-before-clear and group/observer retirement publication/order;97 complete ARM instructions and positive recipient reuse. State/storage/mutex cleanup excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint483 — QT483 native discard tags/live command advance, mode3 tag17 two release calls, pending notification/completion-before-unlink and live counter/action/pending destructor order;249 complete ARM instructions. Storage-only UT7/destructors excluded; concrete command receivers remain explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint484 — TM484 exact config thread-stop branch and early/late modulator detach, active unlink/count-before-stop/reference/destructor order;92 complete ARM instructions. Positive SN159/MF158/MTK6 reused; remaining owned storage excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
