@@ -11,6 +11,12 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 69 native-row obligations CHECKED, 8 CHECKED scope exclusions, 63 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 563 — FX association writer and bounded callback
+
+`20261009-sound-fx-association-update.md` FA563A–D supplies49 contiguous ARM instructions for9CDFE4 and actual9CD8A0 callback. Parameter.slot8 executes first; exact size4 writes the raw association through FS432H; both results are ignored before notification. Request ID truncates toU16 then callback sign-extendsS16. The actual S30 reader and shipped producer remain UNKNOWN; no notification-family descent without admitted input.008 weight setter likewise has no source-backed incoming child-ID/weight producer; local CA153/PW152/TR18 facts remain positive.
+
+Q14-016/008 stay PARTIAL with these concrete inputs, rather than generic additional-writer requests. Counts69native+8scope/63PARTIAL/0NOTDONE;140AUDIBLE/0INTERNAL unchanged. out of scope: association/playlist backing storage. Next smallest recoverable boundary:039 parameter request producers.
+
 ## Checkpoint 562 — trailing STMG descriptor interface narrowed
 
 `20261009-sound-stmg-descriptor-interface.md` SI562A–F binds340 contiguous primary ARM instructions and raw vtables to U6–8 trailing descriptors. Both concrete classes share ID-only registry lookup, duplicate retention and interior descriptor getters; actual shared frame-context slots4C/50 expose those getters. Concrete zero-ref destructors contain no sound callback. No descriptor semantic name or modulator/MIDI/generator join is inferred.

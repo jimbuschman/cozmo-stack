@@ -1,0 +1,54 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009CDFE4..0x009CE064 exclusive; ARM;
+009CDFE4: push         {r4, r5, r6, r7, lr}
+009CDFE8: mov          r4, r0
+009CDFEC: ldr          r0, [r0, #0x14]
+009CDFF0: sub          sp, sp, #0x14
+009CDFF4: cmp          r2, #0
+009CDFF8: cmpne        r0, #0
+009CDFFC: beq          #0x9ce048
+009CE000: ldr          ip, [r0]
+009CE004: mov          r5, r3
+009CE008: mov          r7, r1
+009CE00C: mov          r6, r2
+009CE010: ldr          ip, [ip, #8]
+009CE014: blx          ip
+009CE018: cmp          r5, #4
+009CE01C: beq          #0x9ce050
+009CE020: ldr          r3, [r4, #0x10]
+009CE024: mov          r0, r4
+009CE028: ldr          r1, [pc, #0x34] ; word[009CE064]=FFFFF864
+009CE02C: mov          r2, sp
+009CE030: strh         r7, [sp, #4]
+009CE034: add          r1, pc, r1
+009CE038: str          r6, [sp, #8]
+009CE03C: str          r5, [sp, #0xc]
+009CE040: str          r3, [sp]
+009CE044: bl           #0xa413b0
+009CE048: add          sp, sp, #0x14
+009CE04C: pop          {r4, r5, r6, r7, pc}
+009CE050: mov          r0, r4
+009CE054: mov          r1, r7
+009CE058: ldr          r2, [r6]
+009CE05C: bl           #0x9cdec4
+009CE060: b            #0x9ce020
+009CE064: raw=FFFFF864 relocated=FFFFF864 
+RANGE 0x009CD8A0..0x009CD8E4 exclusive; ARM;
+009CD8A0: ldr          r3, [r0]
+009CD8A4: push         {r4, r5, r6, lr}
+009CD8A8: mov          r5, r0
+009CD8AC: ldr          r3, [r3, #0x10]
+009CD8B0: mov          r4, r2
+009CD8B4: ldr          r6, [r2]
+009CD8B8: blx          r3
+009CD8BC: cmp          r6, r0
+009CD8C0: popne        {r4, r5, r6, pc}
+009CD8C4: ldr          r3, [r5]
+009CD8C8: mov          r0, r5
+009CD8CC: ldrsh        r1, [r4, #4]
+009CD8D0: ldr          r2, [r4, #8]
+009CD8D4: ldr          ip, [r3, #0x14]
+009CD8D8: ldr          r3, [r4, #0xc]
+009CD8DC: pop          {r4, r5, r6, lr}
+009CD8E0: bx           ip
