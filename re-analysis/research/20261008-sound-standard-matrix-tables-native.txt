@@ -1,0 +1,854 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A20030..0x00A20244 exclusive; ARM;
+00A20030: cmp          r7, #0
+00A20034: beq          #0xa204b8
+00A20038: ldr          r3, [fp, #-0x48]
+00A2003C: mov          sl, #0
+00A20040: ldr          r5, [pc, #0x204] ; word[00A2024C]=005DA918
+00A20044: mov          r4, #1
+00A20048: add          sb, r3, #3
+00A2004C: sub          r2, r3, #0xc0000003
+00A20050: add          r5, pc, r5
+00A20054: lsl          r1, r3, #2
+00A20058: lsr          sb, sb, #2
+00A2005C: lsl          r2, r2, #2
+00A20060: str          r8, [fp, #-0x68]
+00A20064: add          r5, r5, #0xd8
+00A20068: str          r1, [fp, #-0x64]
+00A2006C: lsl          sb, sb, #4
+00A20070: str          r2, [fp, #-0x60]
+00A20074: mov          r8, r3
+00A20078: b            #0xa200a8
+00A2007C: ldr          r2, [r5]
+00A20080: str          r2, [r6]
+00A20084: ldr          r2, [r5, #4]
+00A20088: str          r2, [r6, #4]
+00A2008C: ldr          r2, [r5, #8]
+00A20090: str          r2, [r6, #8]
+00A20094: add          sl, sl, #1
+00A20098: lsl          r4, r4, #1
+00A2009C: add          r5, r5, #0xc
+00A200A0: cmp          r7, r4
+00A200A4: blo          #0xa20514
+00A200A8: tst          r4, r7
+00A200AC: mul          ip, sb, sl
+00A200B0: beq          #0xa20098
+00A200B4: ldr          r3, [fp, #-0x4c]
+00A200B8: cmp          r8, #0
+00A200BC: add          r6, r3, ip
+00A200C0: beq          #0xa2007c
+00A200C4: mov          r1, #0
+00A200C8: ldr          r2, [fp, #-0x64]
+00A200CC: mov          r0, r6
+00A200D0: str          ip, [fp, #-0x5c]
+00A200D4: bl           #0x4d36dc
+00A200D8: ldr          ip, [fp, #-0x5c]
+00A200DC: ldr          r3, [fp, #-0x4c]
+00A200E0: cmp          r8, #3
+00A200E4: add          r0, ip, #0xc
+00A200E8: ldr          ip, [r5]
+00A200EC: add          r0, r3, r0
+00A200F0: mov          r1, #0
+00A200F4: ldr          r2, [fp, #-0x60]
+00A200F8: str          ip, [r6]
+00A200FC: ldr          ip, [r5, #4]
+00A20100: str          ip, [r6, #4]
+00A20104: ldr          ip, [r5, #8]
+00A20108: str          ip, [r6, #8]
+00A2010C: bls          #0xa20094
+00A20110: bl           #0x4d36dc
+00A20114: b            #0xa20094
+00A20118: cmp          r7, #0
+00A2011C: beq          #0xa204b8
+00A20120: ldr          r3, [fp, #-0x48]
+00A20124: mov          sl, #0
+00A20128: ldr          r4, [pc, #0x120] ; word[00A20250]=005DA830
+00A2012C: mov          r6, #1
+00A20130: add          sb, r3, #3
+00A20134: sub          r2, r3, #0xc0000007
+00A20138: add          r4, pc, r4
+00A2013C: lsl          r1, r3, #2
+00A20140: lsr          sb, sb, #2
+00A20144: add          r4, r4, #0x5e0
+00A20148: lsl          r2, r2, #2
+00A2014C: str          r8, [fp, #-0x68]
+00A20150: str          r1, [fp, #-0x64]
+00A20154: add          r4, r4, #8
+00A20158: str          r2, [fp, #-0x60]
+00A2015C: lsl          sb, sb, #4
+00A20160: mov          r8, r3
+00A20164: b            #0xa201b4
+00A20168: ldr          r2, [r4]
+00A2016C: str          r2, [r5]
+00A20170: ldr          r2, [r4, #4]
+00A20174: str          r2, [r5, #4]
+00A20178: ldr          r2, [r4, #8]
+00A2017C: str          r2, [r5, #8]
+00A20180: ldr          r2, [r4, #0xc]
+00A20184: str          r2, [r5, #0xc]
+00A20188: ldr          r2, [r4, #0x10]
+00A2018C: str          r2, [r5, #0x10]
+00A20190: ldr          r2, [r4, #0x14]
+00A20194: str          r2, [r5, #0x14]
+00A20198: ldr          r2, [r4, #0x18]
+00A2019C: str          r2, [r5, #0x18]
+00A201A0: add          sl, sl, #1
+00A201A4: lsl          r6, r6, #1
+00A201A8: add          r4, r4, #0x1c
+00A201AC: cmp          r7, r6
+00A201B0: blo          #0xa20514
+00A201B4: tst          r6, r7
+00A201B8: mul          ip, sb, sl
+00A201BC: beq          #0xa201a4
+00A201C0: ldr          r3, [fp, #-0x4c]
+00A201C4: cmp          r8, #0
+00A201C8: add          r5, r3, ip
+00A201CC: beq          #0xa20168
+00A201D0: mov          r1, #0
+00A201D4: ldr          r2, [fp, #-0x64]
+00A201D8: mov          r0, r5
+00A201DC: str          ip, [fp, #-0x5c]
+00A201E0: bl           #0x4d36dc
+00A201E4: ldr          lr, [r4]
+00A201E8: ldr          ip, [fp, #-0x5c]
+00A201EC: cmp          r8, #7
+00A201F0: ldr          r3, [fp, #-0x4c]
+00A201F4: mov          r1, #0
+00A201F8: str          lr, [r5]
+00A201FC: add          r0, ip, #0x1c
+00A20200: ldr          ip, [r4, #4]
+00A20204: add          r0, r3, r0
+00A20208: ldr          r2, [fp, #-0x60]
+00A2020C: str          ip, [r5, #4]
+00A20210: ldr          ip, [r4, #8]
+00A20214: str          ip, [r5, #8]
+00A20218: ldr          ip, [r4, #0xc]
+00A2021C: str          ip, [r5, #0xc]
+00A20220: ldr          ip, [r4, #0x10]
+00A20224: str          ip, [r5, #0x10]
+00A20228: ldr          ip, [r4, #0x14]
+00A2022C: str          ip, [r5, #0x14]
+00A20230: ldr          ip, [r4, #0x18]
+00A20234: str          ip, [r5, #0x18]
+00A20238: bls          #0xa201a0
+00A2023C: bl           #0x4d36dc
+00A20240: b            #0xa201a0
+00A20244: raw=005DAFB4 relocated=005DAFB4
+00A20248: raw=005DAC1C relocated=005DAC1C
+00A2024C: raw=005DA918 relocated=005DA918
+00A20250: raw=005DA830 relocated=005DA830
+00A20254: raw=005DA3FC relocated=005DA3FC
+00A20258: raw=005DA29C relocated=005DA29C
+00A2025C: raw=005DA190 relocated=005DA190
+00A20260: raw=005DA070 relocated=005DA070
+RANGE 0x00A206AC..0x00A208C0 exclusive; ARM;
+00A206AC: cmp          r7, #0
+00A206B0: beq          #0xa204b8
+00A206B4: ldr          r3, [fp, #-0x48]
+00A206B8: mov          sl, #0
+00A206BC: ldr          r4, [pc, #-0x46c] ; word[00A20258]=005DA29C
+00A206C0: mov          r5, #1
+00A206C4: add          sb, r3, #3
+00A206C8: sub          r2, r3, #0xc0000006
+00A206CC: add          r4, pc, r4
+00A206D0: lsl          r1, r3, #2
+00A206D4: lsr          sb, sb, #2
+00A206D8: add          r4, r4, #0x430
+00A206DC: lsl          r2, r2, #2
+00A206E0: str          r8, [fp, #-0x68]
+00A206E4: str          r1, [fp, #-0x64]
+00A206E8: add          r4, r4, #8
+00A206EC: str          r2, [fp, #-0x60]
+00A206F0: lsl          sb, sb, #4
+00A206F4: mov          r8, r3
+00A206F8: b            #0xa20728
+00A206FC: vld1.64      {d18}, [r4:0x40]
+00A20700: vldr         d17, [r4, #8]
+00A20704: vldr         d16, [r4, #0x10]
+00A20708: vst1.32      {d18}, [r2]!
+00A2070C: vst1.32      {d17}, [r2]
+00A20710: vst1.32      {d16}, [r1]
+00A20714: add          sl, sl, #1
+00A20718: lsl          r5, r5, #1
+00A2071C: add          r4, r4, #0x18
+00A20720: cmp          r7, r5
+00A20724: blo          #0xa20514
+00A20728: tst          r5, r7
+00A2072C: mul          ip, sb, sl
+00A20730: beq          #0xa20718
+00A20734: ldr          r3, [fp, #-0x4c]
+00A20738: cmp          r8, #0
+00A2073C: add          r6, r3, ip
+00A20740: add          r1, r6, #0x10
+00A20744: mov          r2, r6
+00A20748: beq          #0xa206fc
+00A2074C: mov          r1, #0
+00A20750: ldr          r2, [fp, #-0x64]
+00A20754: mov          r0, r6
+00A20758: str          ip, [fp, #-0x5c]
+00A2075C: bl           #0x4d36dc
+00A20760: ldr          lr, [r4]
+00A20764: ldr          ip, [fp, #-0x5c]
+00A20768: cmp          r8, #6
+00A2076C: ldr          r3, [fp, #-0x4c]
+00A20770: mov          r1, #0
+00A20774: str          lr, [r6]
+00A20778: add          r0, ip, #0x18
+00A2077C: ldr          ip, [r4, #4]
+00A20780: add          r0, r3, r0
+00A20784: ldr          r2, [fp, #-0x60]
+00A20788: str          ip, [r6, #4]
+00A2078C: ldr          ip, [r4, #8]
+00A20790: str          ip, [r6, #8]
+00A20794: ldr          ip, [r4, #0xc]
+00A20798: str          ip, [r6, #0xc]
+00A2079C: ldr          ip, [r4, #0x10]
+00A207A0: str          ip, [r6, #0x10]
+00A207A4: ldr          ip, [r4, #0x14]
+00A207A8: str          ip, [r6, #0x14]
+00A207AC: bls          #0xa20714
+00A207B0: bl           #0x4d36dc
+00A207B4: b            #0xa20714
+00A207B8: cmp          r7, #0
+00A207BC: beq          #0xa204b8
+00A207C0: ldr          r3, [fp, #-0x48]
+00A207C4: mov          sl, #0
+00A207C8: ldr          r4, [pc, #-0x574] ; word[00A2025C]=005DA190
+00A207CC: mov          r5, #1
+00A207D0: add          sb, r3, #3
+00A207D4: sub          r2, r3, #0xc0000005
+00A207D8: add          r4, pc, r4
+00A207DC: lsl          r1, r3, #2
+00A207E0: lsr          sb, sb, #2
+00A207E4: lsl          r2, r2, #2
+00A207E8: str          r8, [fp, #-0x68]
+00A207EC: add          r4, r4, #0x2d0
+00A207F0: str          r1, [fp, #-0x64]
+00A207F4: lsl          sb, sb, #4
+00A207F8: str          r2, [fp, #-0x60]
+00A207FC: mov          r8, r3
+00A20800: b            #0xa20840
+00A20804: ldr          r2, [r4]
+00A20808: str          r2, [r6]
+00A2080C: ldr          r2, [r4, #4]
+00A20810: str          r2, [r6, #4]
+00A20814: ldr          r2, [r4, #8]
+00A20818: str          r2, [r6, #8]
+00A2081C: ldr          r2, [r4, #0xc]
+00A20820: str          r2, [r6, #0xc]
+00A20824: ldr          r2, [r4, #0x10]
+00A20828: str          r2, [r6, #0x10]
+00A2082C: add          sl, sl, #1
+00A20830: lsl          r5, r5, #1
+00A20834: add          r4, r4, #0x14
+00A20838: cmp          r7, r5
+00A2083C: blo          #0xa20514
+00A20840: tst          r5, r7
+00A20844: mul          ip, sb, sl
+00A20848: beq          #0xa20830
+00A2084C: ldr          r3, [fp, #-0x4c]
+00A20850: cmp          r8, #0
+00A20854: add          r6, r3, ip
+00A20858: beq          #0xa20804
+00A2085C: mov          r1, #0
+00A20860: ldr          r2, [fp, #-0x64]
+00A20864: mov          r0, r6
+00A20868: str          ip, [fp, #-0x5c]
+00A2086C: bl           #0x4d36dc
+00A20870: ldr          lr, [r4]
+00A20874: ldr          ip, [fp, #-0x5c]
+00A20878: cmp          r8, #5
+00A2087C: ldr          r3, [fp, #-0x4c]
+00A20880: mov          r1, #0
+00A20884: str          lr, [r6]
+00A20888: add          r0, ip, #0x14
+00A2088C: ldr          ip, [r4, #4]
+00A20890: add          r0, r3, r0
+00A20894: ldr          r2, [fp, #-0x60]
+00A20898: str          ip, [r6, #4]
+00A2089C: ldr          ip, [r4, #8]
+00A208A0: str          ip, [r6, #8]
+00A208A4: ldr          ip, [r4, #0xc]
+00A208A8: str          ip, [r6, #0xc]
+00A208AC: ldr          ip, [r4, #0x10]
+00A208B0: str          ip, [r6, #0x10]
+00A208B4: bls          #0xa2082c
+00A208B8: bl           #0x4d36dc
+00A208BC: b            #0xa2082c
+RANGE 0x00A208D8..0x00A209BC exclusive; ARM;
+00A208D8: cmp          r7, #0
+00A208DC: beq          #0xa204b8
+00A208E0: ldr          r3, [fp, #-0x48]
+00A208E4: mov          r6, #0
+00A208E8: ldr          r5, [pc, #-0x690] ; word[00A20260]=005DA070
+00A208EC: mov          r4, #1
+00A208F0: add          sb, r3, #3
+00A208F4: sub          r2, r3, #0xc0000004
+00A208F8: add          r5, pc, r5
+00A208FC: lsl          r1, r3, #2
+00A20900: lsr          sb, sb, #2
+00A20904: lsl          r2, r2, #2
+00A20908: str          r8, [fp, #-0x6c]
+00A2090C: add          r5, r5, #0x1b0
+00A20910: str          r1, [fp, #-0x68]
+00A20914: lsl          sb, sb, #4
+00A20918: str          r2, [fp, #-0x64]
+00A2091C: mov          r8, r3
+00A20920: ldr          sl, [fp, #-0x4c]
+00A20924: b            #0xa20944
+00A20928: vld1.64      {d16, d17}, [r5:0x40]
+00A2092C: vst1.32      {d16, d17}, [ip]
+00A20930: add          r6, r6, #1
+00A20934: lsl          r4, r4, #1
+00A20938: add          r5, r5, #0x10
+00A2093C: cmp          r7, r4
+00A20940: blo          #0xa2051c
+00A20944: tst          r4, r7
+00A20948: mul          r3, sb, r6
+00A2094C: beq          #0xa20934
+00A20950: cmp          r8, #0
+00A20954: add          ip, sl, r3
+00A20958: beq          #0xa20928
+00A2095C: mov          r0, ip
+00A20960: mov          r1, #0
+00A20964: ldr          r2, [fp, #-0x68]
+00A20968: str          r3, [fp, #-0x60]
+00A2096C: str          ip, [fp, #-0x5c]
+00A20970: bl           #0x4d36dc
+00A20974: ldr          r3, [fp, #-0x60]
+00A20978: cmp          r8, #4
+00A2097C: ldr          ip, [fp, #-0x5c]
+00A20980: mov          r1, #0
+00A20984: add          r0, r3, #0x10
+00A20988: ldr          r3, [r5]
+00A2098C: add          r0, sl, r0
+00A20990: ldr          r2, [fp, #-0x64]
+00A20994: str          r3, [ip]
+00A20998: ldr          r3, [r5, #4]
+00A2099C: str          r3, [ip, #4]
+00A209A0: ldr          r3, [r5, #8]
+00A209A4: str          r3, [ip, #8]
+00A209A8: ldr          r3, [r5, #0xc]
+00A209AC: str          r3, [ip, #0xc]
+00A209B0: bls          #0xa20930
+00A209B4: bl           #0x4d36dc
+00A209B8: b            #0xa20930
+00FFA970: raw=3F3504F3 relocated=3F3504F3
+00FFA974: raw=3F3504F3 relocated=3F3504F3
+00FFA978: raw=3F800000 relocated=3F800000
+00FFA97C: raw=00000000 relocated=00000000
+00FFA980: raw=3F000000 relocated=3F000000
+00FFA984: raw=3F000000 relocated=3F000000
+00FFA988: raw=00000000 relocated=00000000
+00FFA98C: raw=00000000 relocated=00000000
+00FFA990: raw=3F000000 relocated=3F000000
+00FFA994: raw=3F000000 relocated=3F000000
+00FFA998: raw=3F000000 relocated=3F000000
+00FFA99C: raw=3F800000 relocated=3F800000
+00FFA9A0: raw=3F000000 relocated=3F000000
+00FFA9A4: raw=3F3504F3 relocated=3F3504F3
+00FFA9A8: raw=3F000000 relocated=3F000000
+00FFA9AC: raw=3EB504F3 relocated=3EB504F3
+00FFA9B0: raw=00000000 relocated=00000000
+00FFA9B4: raw=3EB504F3 relocated=3EB504F3
+00FFA9B8: raw=3F800000 relocated=3F800000
+00FFA9BC: raw=00000000 relocated=00000000
+00FFA9C0: raw=00000000 relocated=00000000
+00FFA9C4: raw=3F800000 relocated=3F800000
+00FFA9C8: raw=3F3504F3 relocated=3F3504F3
+00FFA9CC: raw=3F3504F3 relocated=3F3504F3
+00FFA9D0: raw=00000000 relocated=00000000
+00FFA9D4: raw=00000000 relocated=00000000
+00FFA9D8: raw=3F3504F3 relocated=3F3504F3
+00FFA9DC: raw=00000000 relocated=00000000
+00FFA9E0: raw=00000000 relocated=00000000
+00FFA9E4: raw=3F3504F3 relocated=3F3504F3
+00FFA9E8: raw=00000000 relocated=00000000
+00FFA9EC: raw=00000000 relocated=00000000
+00FFA9F0: raw=00000000 relocated=00000000
+00FFA9F4: raw=00000000 relocated=00000000
+00FFA9F8: raw=3F3504F3 relocated=3F3504F3
+00FFA9FC: raw=3F3504F3 relocated=3F3504F3
+00FFAA00: raw=3F3504F3 relocated=3F3504F3
+00FFAA04: raw=00000000 relocated=00000000
+00FFAA08: raw=00000000 relocated=00000000
+00FFAA0C: raw=3F3504F3 relocated=3F3504F3
+00FFAA10: raw=3F3504F3 relocated=3F3504F3
+00FFAA14: raw=3F3504F3 relocated=3F3504F3
+00FFAA18: raw=3F3504F3 relocated=3F3504F3
+00FFAA1C: raw=00000000 relocated=00000000
+00FFAA20: raw=3F000000 relocated=3F000000
+00FFAA24: raw=3F000000 relocated=3F000000
+00FFAA28: raw=00000000 relocated=00000000
+00FFAA2C: raw=3F3504F3 relocated=3F3504F3
+00FFAA30: raw=3F000000 relocated=3F000000
+00FFAA34: raw=00000000 relocated=00000000
+00FFAA38: raw=00000000 relocated=00000000
+00FFAA3C: raw=00000000 relocated=00000000
+00FFAA40: raw=00000000 relocated=00000000
+00FFAA44: raw=3F000000 relocated=3F000000
+00FFAA48: raw=3F800000 relocated=3F800000
+00FFAA4C: raw=00000000 relocated=00000000
+00FFAA50: raw=00000000 relocated=00000000
+00FFAA54: raw=00000000 relocated=00000000
+00FFAA58: raw=3F800000 relocated=3F800000
+00FFAA5C: raw=00000000 relocated=00000000
+00FFAA60: raw=00000000 relocated=00000000
+00FFAA64: raw=00000000 relocated=00000000
+00FFAA68: raw=3F800000 relocated=3F800000
+00FFAA6C: raw=00000000 relocated=00000000
+00FFAA70: raw=00000000 relocated=00000000
+00FFAA74: raw=00000000 relocated=00000000
+00FFAA78: raw=3F3504F3 relocated=3F3504F3
+00FFAA7C: raw=00000000 relocated=00000000
+00FFAA80: raw=00000000 relocated=00000000
+00FFAA84: raw=00000000 relocated=00000000
+00FFAA88: raw=3F3504F3 relocated=3F3504F3
+00FFAA8C: raw=00000000 relocated=00000000
+00FFAA90: raw=00000000 relocated=00000000
+00FFAA94: raw=00000000 relocated=00000000
+00FFAA98: raw=00000000 relocated=00000000
+00FFAA9C: raw=00000000 relocated=00000000
+00FFAAA0: raw=00000000 relocated=00000000
+00FFAAA4: raw=00000000 relocated=00000000
+00FFAAA8: raw=00000000 relocated=00000000
+00FFAAAC: raw=00000000 relocated=00000000
+00FFAAB0: raw=3F3504F3 relocated=3F3504F3
+00FFAAB4: raw=3F3504F3 relocated=3F3504F3
+00FFAAB8: raw=00000000 relocated=00000000
+00FFAABC: raw=00000000 relocated=00000000
+00FFAAC0: raw=00000000 relocated=00000000
+00FFAAC4: raw=3F3504F3 relocated=3F3504F3
+00FFAAC8: raw=00000000 relocated=00000000
+00FFAACC: raw=3F13CD3A relocated=3F13CD3A
+00FFAAD0: raw=3F13CD3A relocated=3F13CD3A
+00FFAAD4: raw=3F13CD3A relocated=3F13CD3A
+00FFAAD8: raw=3F3504F3 relocated=3F3504F3
+00FFAADC: raw=00000000 relocated=00000000
+00FFAAE0: raw=00000000 relocated=00000000
+00FFAAE4: raw=00000000 relocated=00000000
+00FFAAE8: raw=00000000 relocated=00000000
+00FFAAEC: raw=3F3504F3 relocated=3F3504F3
+00FFAAF0: raw=00000000 relocated=00000000
+00FFAAF4: raw=3F3504F3 relocated=3F3504F3
+00FFAAF8: raw=00000000 relocated=00000000
+00FFAAFC: raw=3F000000 relocated=3F000000
+00FFAB00: raw=00000000 relocated=00000000
+00FFAB04: raw=00000000 relocated=00000000
+00FFAB08: raw=00000000 relocated=00000000
+00FFAB0C: raw=00000000 relocated=00000000
+00FFAB10: raw=00000000 relocated=00000000
+00FFAB14: raw=00000000 relocated=00000000
+00FFAB18: raw=3F000000 relocated=3F000000
+00FFAB1C: raw=00000000 relocated=00000000
+00FFAB20: raw=3F800000 relocated=3F800000
+00FFAB24: raw=00000000 relocated=00000000
+00FFAB28: raw=00000000 relocated=00000000
+00FFAB2C: raw=00000000 relocated=00000000
+00FFAB30: raw=00000000 relocated=00000000
+00FFAB34: raw=3F800000 relocated=3F800000
+00FFAB38: raw=00000000 relocated=00000000
+00FFAB3C: raw=00000000 relocated=00000000
+00FFAB40: raw=3F3504F3 relocated=3F3504F3
+00FFAB44: raw=3F3504F3 relocated=3F3504F3
+00FFAB48: raw=00000000 relocated=00000000
+00FFAB4C: raw=00000000 relocated=00000000
+00FFAB50: raw=00000000 relocated=00000000
+00FFAB54: raw=00000000 relocated=00000000
+00FFAB58: raw=00000000 relocated=00000000
+00FFAB5C: raw=00000000 relocated=00000000
+00FFAB60: raw=00000000 relocated=00000000
+00FFAB64: raw=00000000 relocated=00000000
+00FFAB68: raw=3F800000 relocated=3F800000
+00FFAB6C: raw=00000000 relocated=00000000
+00FFAB70: raw=00000000 relocated=00000000
+00FFAB74: raw=00000000 relocated=00000000
+00FFAB78: raw=00000000 relocated=00000000
+00FFAB7C: raw=3F800000 relocated=3F800000
+00FFAB80: raw=00000000 relocated=00000000
+00FFAB84: raw=00000000 relocated=00000000
+00FFAB88: raw=00000000 relocated=00000000
+00FFAB8C: raw=00000000 relocated=00000000
+00FFAB90: raw=00000000 relocated=00000000
+00FFAB94: raw=00000000 relocated=00000000
+00FFAB98: raw=00000000 relocated=00000000
+00FFAB9C: raw=00000000 relocated=00000000
+00FFABA0: raw=3F3504F3 relocated=3F3504F3
+00FFABA4: raw=3F3504F3 relocated=3F3504F3
+00FFABA8: raw=00000000 relocated=00000000
+00FFABAC: raw=00000000 relocated=00000000
+00FFABB0: raw=00000000 relocated=00000000
+00FFABB4: raw=00000000 relocated=00000000
+00FFABB8: raw=3F800000 relocated=3F800000
+00FFABBC: raw=00000000 relocated=00000000
+00FFABC0: raw=00000000 relocated=00000000
+00FFABC4: raw=00000000 relocated=00000000
+00FFABC8: raw=00000000 relocated=00000000
+00FFABCC: raw=3F800000 relocated=3F800000
+00FFABD0: raw=3F000000 relocated=3F000000
+00FFABD4: raw=3F000000 relocated=3F000000
+00FFABD8: raw=3F000000 relocated=3F000000
+00FFABDC: raw=3F000000 relocated=3F000000
+00FFABE0: raw=3F3504F3 relocated=3F3504F3
+00FFABE4: raw=00000000 relocated=00000000
+00FFABE8: raw=00000000 relocated=00000000
+00FFABEC: raw=00000000 relocated=00000000
+00FFABF0: raw=3F000000 relocated=3F000000
+00FFABF4: raw=3F000000 relocated=3F000000
+00FFABF8: raw=00000000 relocated=00000000
+00FFABFC: raw=00000000 relocated=00000000
+00FFAC00: raw=00000000 relocated=00000000
+00FFAC04: raw=3F3504F3 relocated=3F3504F3
+00FFAC08: raw=00000000 relocated=00000000
+00FFAC0C: raw=00000000 relocated=00000000
+00FFAC10: raw=00000000 relocated=00000000
+00FFAC14: raw=00000000 relocated=00000000
+00FFAC18: raw=3F3504F3 relocated=3F3504F3
+00FFAC1C: raw=00000000 relocated=00000000
+00FFAC20: raw=00000000 relocated=00000000
+00FFAC24: raw=00000000 relocated=00000000
+00FFAC28: raw=00000000 relocated=00000000
+00FFAC2C: raw=00000000 relocated=00000000
+00FFAC30: raw=00000000 relocated=00000000
+00FFAC34: raw=00000000 relocated=00000000
+00FFAC38: raw=00000000 relocated=00000000
+00FFAC3C: raw=3F3504F3 relocated=3F3504F3
+00FFAC40: raw=3F800000 relocated=3F800000
+00FFAC44: raw=00000000 relocated=00000000
+00FFAC48: raw=00000000 relocated=00000000
+00FFAC4C: raw=00000000 relocated=00000000
+00FFAC50: raw=00000000 relocated=00000000
+00FFAC54: raw=00000000 relocated=00000000
+00FFAC58: raw=3F800000 relocated=3F800000
+00FFAC5C: raw=00000000 relocated=00000000
+00FFAC60: raw=00000000 relocated=00000000
+00FFAC64: raw=00000000 relocated=00000000
+00FFAC68: raw=00000000 relocated=00000000
+00FFAC6C: raw=00000000 relocated=00000000
+00FFAC70: raw=3F800000 relocated=3F800000
+00FFAC74: raw=00000000 relocated=00000000
+00FFAC78: raw=00000000 relocated=00000000
+00FFAC7C: raw=00000000 relocated=00000000
+00FFAC80: raw=00000000 relocated=00000000
+00FFAC84: raw=00000000 relocated=00000000
+00FFAC88: raw=00000000 relocated=00000000
+00FFAC8C: raw=00000000 relocated=00000000
+00FFAC90: raw=00000000 relocated=00000000
+00FFAC94: raw=00000000 relocated=00000000
+00FFAC98: raw=00000000 relocated=00000000
+00FFAC9C: raw=3F800000 relocated=3F800000
+00FFACA0: raw=00000000 relocated=00000000
+00FFACA4: raw=00000000 relocated=00000000
+00FFACA8: raw=00000000 relocated=00000000
+00FFACAC: raw=00000000 relocated=00000000
+00FFACB0: raw=00000000 relocated=00000000
+00FFACB4: raw=3F800000 relocated=3F800000
+00FFACB8: raw=00000000 relocated=00000000
+00FFACBC: raw=00000000 relocated=00000000
+00FFACC0: raw=00000000 relocated=00000000
+00FFACC4: raw=00000000 relocated=00000000
+00FFACC8: raw=00000000 relocated=00000000
+00FFACCC: raw=00000000 relocated=00000000
+00FFACD0: raw=00000000 relocated=00000000
+00FFACD4: raw=00000000 relocated=00000000
+00FFACD8: raw=00000000 relocated=00000000
+00FFACDC: raw=00000000 relocated=00000000
+00FFACE0: raw=00000000 relocated=00000000
+00FFACE4: raw=00000000 relocated=00000000
+00FFACE8: raw=3F3504F3 relocated=3F3504F3
+00FFACEC: raw=3F800000 relocated=3F800000
+00FFACF0: raw=00000000 relocated=00000000
+00FFACF4: raw=00000000 relocated=00000000
+00FFACF8: raw=00000000 relocated=00000000
+00FFACFC: raw=00000000 relocated=00000000
+00FFAD00: raw=3F800000 relocated=3F800000
+00FFAD04: raw=00000000 relocated=00000000
+00FFAD08: raw=00000000 relocated=00000000
+00FFAD0C: raw=00000000 relocated=00000000
+00FFAD10: raw=00000000 relocated=00000000
+00FFAD14: raw=00000000 relocated=00000000
+00FFAD18: raw=3F800000 relocated=3F800000
+00FFAD1C: raw=3EE4F92E relocated=3EE4F92E
+00FFAD20: raw=3EE4F92E relocated=3EE4F92E
+00FFAD24: raw=3EE4F92E relocated=3EE4F92E
+00FFAD28: raw=3EE4F92E relocated=3EE4F92E
+00FFAD2C: raw=3EE4F92E relocated=3EE4F92E
+00FFAD30: raw=3F3504F3 relocated=3F3504F3
+00FFAD34: raw=00000000 relocated=00000000
+00FFAD38: raw=00000000 relocated=00000000
+00FFAD3C: raw=00000000 relocated=00000000
+00FFAD40: raw=00000000 relocated=00000000
+00FFAD44: raw=00000000 relocated=00000000
+00FFAD48: raw=00000000 relocated=00000000
+00FFAD4C: raw=3F3504F3 relocated=3F3504F3
+00FFAD50: raw=00000000 relocated=00000000
+00FFAD54: raw=00000000 relocated=00000000
+00FFAD58: raw=00000000 relocated=00000000
+00FFAD5C: raw=3F3504F3 relocated=3F3504F3
+00FFAD60: raw=00000000 relocated=00000000
+00FFAD64: raw=00000000 relocated=00000000
+00FFAD68: raw=00000000 relocated=00000000
+00FFAD6C: raw=00000000 relocated=00000000
+00FFAD70: raw=00000000 relocated=00000000
+00FFAD74: raw=00000000 relocated=00000000
+00FFAD78: raw=3F3504F3 relocated=3F3504F3
+00FFAD7C: raw=00000000 relocated=00000000
+00FFAD80: raw=00000000 relocated=00000000
+00FFAD84: raw=00000000 relocated=00000000
+00FFAD88: raw=00000000 relocated=00000000
+00FFAD8C: raw=00000000 relocated=00000000
+00FFAD90: raw=00000000 relocated=00000000
+00FFAD94: raw=00000000 relocated=00000000
+00FFAD98: raw=00000000 relocated=00000000
+00FFAD9C: raw=00000000 relocated=00000000
+00FFADA0: raw=00000000 relocated=00000000
+00FFADA4: raw=3F3504F3 relocated=3F3504F3
+00FFADA8: raw=3F800000 relocated=3F800000
+00FFADAC: raw=00000000 relocated=00000000
+00FFADB0: raw=00000000 relocated=00000000
+00FFADB4: raw=00000000 relocated=00000000
+00FFADB8: raw=00000000 relocated=00000000
+00FFADBC: raw=00000000 relocated=00000000
+00FFADC0: raw=00000000 relocated=00000000
+00FFADC4: raw=3F800000 relocated=3F800000
+00FFADC8: raw=00000000 relocated=00000000
+00FFADCC: raw=00000000 relocated=00000000
+00FFADD0: raw=00000000 relocated=00000000
+00FFADD4: raw=00000000 relocated=00000000
+00FFADD8: raw=3F3504F3 relocated=3F3504F3
+00FFADDC: raw=3F3504F3 relocated=3F3504F3
+00FFADE0: raw=00000000 relocated=00000000
+00FFADE4: raw=00000000 relocated=00000000
+00FFADE8: raw=00000000 relocated=00000000
+00FFADEC: raw=00000000 relocated=00000000
+00FFADF0: raw=00000000 relocated=00000000
+00FFADF4: raw=00000000 relocated=00000000
+00FFADF8: raw=00000000 relocated=00000000
+00FFADFC: raw=00000000 relocated=00000000
+00FFAE00: raw=00000000 relocated=00000000
+00FFAE04: raw=00000000 relocated=00000000
+00FFAE08: raw=00000000 relocated=00000000
+00FFAE0C: raw=00000000 relocated=00000000
+00FFAE10: raw=3F800000 relocated=3F800000
+00FFAE14: raw=00000000 relocated=00000000
+00FFAE18: raw=00000000 relocated=00000000
+00FFAE1C: raw=00000000 relocated=00000000
+00FFAE20: raw=00000000 relocated=00000000
+00FFAE24: raw=00000000 relocated=00000000
+00FFAE28: raw=00000000 relocated=00000000
+00FFAE2C: raw=3F800000 relocated=3F800000
+00FFAE30: raw=00000000 relocated=00000000
+00FFAE34: raw=00000000 relocated=00000000
+00FFAE38: raw=00000000 relocated=00000000
+00FFAE3C: raw=00000000 relocated=00000000
+00FFAE40: raw=00000000 relocated=00000000
+00FFAE44: raw=00000000 relocated=00000000
+00FFAE48: raw=00000000 relocated=00000000
+00FFAE4C: raw=00000000 relocated=00000000
+00FFAE50: raw=00000000 relocated=00000000
+00FFAE54: raw=00000000 relocated=00000000
+00FFAE58: raw=00000000 relocated=00000000
+00FFAE5C: raw=00000000 relocated=00000000
+00FFAE60: raw=00000000 relocated=00000000
+00FFAE64: raw=00000000 relocated=00000000
+00FFAE68: raw=3F3504F3 relocated=3F3504F3
+00FFAE6C: raw=3F3504F3 relocated=3F3504F3
+00FFAE70: raw=00000000 relocated=00000000
+00FFAE74: raw=00000000 relocated=00000000
+00FFAE78: raw=00000000 relocated=00000000
+00FFAE7C: raw=00000000 relocated=00000000
+00FFAE80: raw=00000000 relocated=00000000
+00FFAE84: raw=00000000 relocated=00000000
+00FFAE88: raw=00000000 relocated=00000000
+00FFAE8C: raw=00000000 relocated=00000000
+00FFAE90: raw=3F800000 relocated=3F800000
+00FFAE94: raw=00000000 relocated=00000000
+00FFAE98: raw=00000000 relocated=00000000
+00FFAE9C: raw=00000000 relocated=00000000
+00FFAEA0: raw=00000000 relocated=00000000
+00FFAEA4: raw=00000000 relocated=00000000
+00FFAEA8: raw=00000000 relocated=00000000
+00FFAEAC: raw=3F800000 relocated=3F800000
+00FFAEB0: raw=3ED105EC relocated=3ED105EC
+00FFAEB4: raw=3ED105EC relocated=3ED105EC
+00FFAEB8: raw=3ED105EC relocated=3ED105EC
+00FFAEBC: raw=3ED105EC relocated=3ED105EC
+00FFAEC0: raw=3ED105EC relocated=3ED105EC
+00FFAEC4: raw=3ED105EC relocated=3ED105EC
+00FFAEC8: raw=3F3504F3 relocated=3F3504F3
+00FFAECC: raw=00000000 relocated=00000000
+00FFAED0: raw=00000000 relocated=00000000
+00FFAED4: raw=00000000 relocated=00000000
+00FFAED8: raw=00000000 relocated=00000000
+00FFAEDC: raw=00000000 relocated=00000000
+00FFAEE0: raw=3F000000 relocated=3F000000
+00FFAEE4: raw=3F000000 relocated=3F000000
+00FFAEE8: raw=00000000 relocated=00000000
+00FFAEEC: raw=00000000 relocated=00000000
+00FFAEF0: raw=00000000 relocated=00000000
+00FFAEF4: raw=00000000 relocated=00000000
+00FFAEF8: raw=00000000 relocated=00000000
+00FFAEFC: raw=3F3504F3 relocated=3F3504F3
+00FFAF00: raw=00000000 relocated=00000000
+00FFAF04: raw=00000000 relocated=00000000
+00FFAF08: raw=00000000 relocated=00000000
+00FFAF0C: raw=00000000 relocated=00000000
+00FFAF10: raw=00000000 relocated=00000000
+00FFAF14: raw=00000000 relocated=00000000
+00FFAF18: raw=00000000 relocated=00000000
+00FFAF1C: raw=3F3504F3 relocated=3F3504F3
+00FFAF20: raw=00000000 relocated=00000000
+00FFAF24: raw=00000000 relocated=00000000
+00FFAF28: raw=00000000 relocated=00000000
+00FFAF2C: raw=00000000 relocated=00000000
+00FFAF30: raw=00000000 relocated=00000000
+00FFAF34: raw=00000000 relocated=00000000
+00FFAF38: raw=00000000 relocated=00000000
+00FFAF3C: raw=00000000 relocated=00000000
+00FFAF40: raw=00000000 relocated=00000000
+00FFAF44: raw=00000000 relocated=00000000
+00FFAF48: raw=00000000 relocated=00000000
+00FFAF4C: raw=00000000 relocated=00000000
+00FFAF50: raw=3F3504F3 relocated=3F3504F3
+00FFAF54: raw=00000000 relocated=00000000
+00FFAF58: raw=3F800000 relocated=3F800000
+00FFAF5C: raw=00000000 relocated=00000000
+00FFAF60: raw=00000000 relocated=00000000
+00FFAF64: raw=00000000 relocated=00000000
+00FFAF68: raw=00000000 relocated=00000000
+00FFAF6C: raw=00000000 relocated=00000000
+00FFAF70: raw=00000000 relocated=00000000
+00FFAF74: raw=00000000 relocated=00000000
+00FFAF78: raw=3F800000 relocated=3F800000
+00FFAF7C: raw=00000000 relocated=00000000
+00FFAF80: raw=00000000 relocated=00000000
+00FFAF84: raw=00000000 relocated=00000000
+00FFAF88: raw=00000000 relocated=00000000
+00FFAF8C: raw=00000000 relocated=00000000
+00FFAF90: raw=00000000 relocated=00000000
+00FFAF94: raw=00000000 relocated=00000000
+00FFAF98: raw=3F800000 relocated=3F800000
+00FFAF9C: raw=00000000 relocated=00000000
+00FFAFA0: raw=00000000 relocated=00000000
+00FFAFA4: raw=00000000 relocated=00000000
+00FFAFA8: raw=00000000 relocated=00000000
+00FFAFAC: raw=00000000 relocated=00000000
+00FFAFB0: raw=00000000 relocated=00000000
+00FFAFB4: raw=00000000 relocated=00000000
+00FFAFB8: raw=00000000 relocated=00000000
+00FFAFBC: raw=00000000 relocated=00000000
+00FFAFC0: raw=00000000 relocated=00000000
+00FFAFC4: raw=00000000 relocated=00000000
+00FFAFC8: raw=00000000 relocated=00000000
+00FFAFCC: raw=00000000 relocated=00000000
+00FFAFD0: raw=00000000 relocated=00000000
+00FFAFD4: raw=3F800000 relocated=3F800000
+00FFAFD8: raw=00000000 relocated=00000000
+00FFAFDC: raw=00000000 relocated=00000000
+00FFAFE0: raw=00000000 relocated=00000000
+00FFAFE4: raw=00000000 relocated=00000000
+00FFAFE8: raw=00000000 relocated=00000000
+00FFAFEC: raw=00000000 relocated=00000000
+00FFAFF0: raw=00000000 relocated=00000000
+00FFAFF4: raw=3F800000 relocated=3F800000
+00FFAFF8: raw=00000000 relocated=00000000
+00FFAFFC: raw=00000000 relocated=00000000
+00FFB000: raw=00000000 relocated=00000000
+00FFB004: raw=00000000 relocated=00000000
+00FFB008: raw=00000000 relocated=00000000
+00FFB00C: raw=00000000 relocated=00000000
+00FFB010: raw=00000000 relocated=00000000
+00FFB014: raw=00000000 relocated=00000000
+00FFB018: raw=00000000 relocated=00000000
+00FFB01C: raw=00000000 relocated=00000000
+00FFB020: raw=00000000 relocated=00000000
+00FFB024: raw=00000000 relocated=00000000
+00FFB028: raw=00000000 relocated=00000000
+00FFB02C: raw=00000000 relocated=00000000
+00FFB030: raw=00000000 relocated=00000000
+00FFB034: raw=00000000 relocated=00000000
+00FFB038: raw=00000000 relocated=00000000
+00FFB03C: raw=00000000 relocated=00000000
+00FFB040: raw=3F3504F3 relocated=3F3504F3
+00FFB044: raw=00000000 relocated=00000000
+00FFB048: raw=00000000 relocated=00000000
+00FFB04C: raw=00000000 relocated=00000000
+00FFB050: raw=00000000 relocated=00000000
+00FFB054: raw=00000000 relocated=00000000
+00FFB058: raw=00000000 relocated=00000000
+00FFB05C: raw=00000000 relocated=00000000
+00FFB060: raw=00000000 relocated=00000000
+00FFB064: raw=00000000 relocated=00000000
+00FFB068: raw=3F800000 relocated=3F800000
+00FFB06C: raw=00000000 relocated=00000000
+00FFB070: raw=00000000 relocated=00000000
+00FFB074: raw=00000000 relocated=00000000
+00FFB078: raw=00000000 relocated=00000000
+00FFB07C: raw=00000000 relocated=00000000
+00FFB080: raw=00000000 relocated=00000000
+00FFB084: raw=00000000 relocated=00000000
+00FFB088: raw=3F800000 relocated=3F800000
+00FFB08C: raw=3EC1848F relocated=3EC1848F
+00FFB090: raw=3EC1848F relocated=3EC1848F
+00FFB094: raw=3EC1848F relocated=3EC1848F
+00FFB098: raw=3EC1848F relocated=3EC1848F
+00FFB09C: raw=3EC1848F relocated=3EC1848F
+00FFB0A0: raw=3EC1848F relocated=3EC1848F
+00FFB0A4: raw=3EC1848F relocated=3EC1848F
+00FFB0A8: raw=3F3504F3 relocated=3F3504F3
+00FFB0AC: raw=00000000 relocated=00000000
+00FFB0B0: raw=00000000 relocated=00000000
+00FFB0B4: raw=00000000 relocated=00000000
+00FFB0B8: raw=00000000 relocated=00000000
+00FFB0BC: raw=00000000 relocated=00000000
+00FFB0C0: raw=00000000 relocated=00000000
+00FFB0C4: raw=00000000 relocated=00000000
+00FFB0C8: raw=00000000 relocated=00000000
+00FFB0CC: raw=3F3504F3 relocated=3F3504F3
+00FFB0D0: raw=00000000 relocated=00000000
+00FFB0D4: raw=00000000 relocated=00000000
+00FFB0D8: raw=00000000 relocated=00000000
+00FFB0DC: raw=00000000 relocated=00000000
+00FFB0E0: raw=00000000 relocated=00000000
+00FFB0E4: raw=3F3504F3 relocated=3F3504F3
+00FFB0E8: raw=00000000 relocated=00000000
+00FFB0EC: raw=00000000 relocated=00000000
+00FFB0F0: raw=00000000 relocated=00000000
+00FFB0F4: raw=00000000 relocated=00000000
+00FFB0F8: raw=00000000 relocated=00000000
+00FFB0FC: raw=00000000 relocated=00000000
+00FFB100: raw=00000000 relocated=00000000
+00FFB104: raw=00000000 relocated=00000000
+00FFB108: raw=3F3504F3 relocated=3F3504F3
+00FFB10C: raw=00000000 relocated=00000000
+00FFB110: raw=00000000 relocated=00000000
+00FFB114: raw=00000000 relocated=00000000
+00FFB118: raw=00000000 relocated=00000000
+00FFB11C: raw=00000000 relocated=00000000
+00FFB120: raw=00000000 relocated=00000000
+00FFB124: raw=00000000 relocated=00000000
+00FFB128: raw=00000000 relocated=00000000
+00FFB12C: raw=00000000 relocated=00000000
+00FFB130: raw=00000000 relocated=00000000
+00FFB134: raw=00000000 relocated=00000000
+00FFB138: raw=00000000 relocated=00000000
+00FFB13C: raw=00000000 relocated=00000000
+00FFB140: raw=00000000 relocated=00000000
+00FFB144: raw=3F3504F3 relocated=3F3504F3
+00FFB148: raw=00000000 relocated=00000000
+00FFB14C: raw=00000000 relocated=00000000
+00FFB150: raw=3F800000 relocated=3F800000
+00FFB154: raw=3FDDB3D7 relocated=3FDDB3D7
+00FFB158: raw=400F1BBD relocated=400F1BBD
+00FFB15C: raw=402953FD relocated=402953FD
+00FFB160: raw=BEB77C01 relocated=BEB77C01
+00FFB164: raw=3F6EFF21 relocated=3F6EFF21
+00FFB168: raw=00000000 relocated=00000000
+00FFB16C: raw=BEB77C01 relocated=BEB77C01
+00FFB170: raw=BF6EFF21 relocated=BF6EFF21
+00FFB174: raw=00000000 relocated=00000000
+00FFB178: raw=3EB77C01 relocated=3EB77C01
+00FFB17C: raw=3F6EFF21 relocated=3F6EFF21
+00FFB180: raw=00000000 relocated=00000000
+00FFB184: raw=3EB77C01 relocated=3EB77C01
