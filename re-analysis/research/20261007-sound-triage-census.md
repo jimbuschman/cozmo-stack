@@ -1599,3 +1599,7 @@ PA266A–E recover direct-child admission failure prefixes, retained ID admissio
 ### Checkpoint 267 — Sound descriptor admission
 
 DP267A–D trace descriptor gates, immediate/deferred manager mode, descriptor publication endpoint, existing-media retain/direct-pointer success and raw availability failure/publication endpoints. Growth/storage/file/I/O internals excluded; deferred/alias/lifetime/input/provider/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 268 — interior media release and alias choice
+
+IR268A/B and AV268C trace interior counter raw returns/key-based registry retirement and first-alias availability with size-before-pointer publication. DP267 wording corrected; storage internals excluded. Deferred/public input/provider/alias/reference writers remain PARTIAL; totals/Q15/fidelity/production unchanged.
