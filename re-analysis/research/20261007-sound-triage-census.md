@@ -1527,3 +1527,7 @@ Known MB244 callbacks join file-resolver/device stream creation and stream-prior
 ### Checkpoint 249 — authored Play release/output binding
 
 AP249A/B bind the0400 factory's table, commonC/base0 cleanup and30 word0-only output. Existing release/base bodies reused; prior0403 requests locally reconciled, wider action/provider/initialization closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 250 — action base defaults/registration role
+
+AB250A/B join exact base type/flag/default fields and identify A60DEC as registry publication rather than property setup. Earlier factory label corrected; backing infrastructure excluded and conditional insertion kept bounded. No totals/Q15/fidelity/production changes.
