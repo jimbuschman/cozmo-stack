@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through340 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through341 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1891,3 +1891,7 @@ SR339A–E bind mode-dependent admission/skip/LFE publication and source-type1 l
 ### Checkpoint 340 — uniform/center route coefficient alternatives
 
 SR340A–C bind exact root/reciprocal coefficient, alignment-prefix/bulk/tail logical fills, padded-row logical copies and mode1 center-panner join before LFE/channel factors. Remaining generated geometry/control and provider/writer/registration work stays PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 341 — generated route inputs and recipient ABI
+
+SR341A–D bind four generated control-curve admissions, exact independent cosine calls/null results, ordinary versus center source-count distinction and native A2428C argument/format gates. Remaining local curve/geometry bodies and provider/writer/registration dependencies stay PARTIAL. Counts unchanged, Q15 parked.
