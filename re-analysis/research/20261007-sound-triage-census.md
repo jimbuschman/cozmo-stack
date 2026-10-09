@@ -1963,3 +1963,7 @@ IT357A–E settle signed-negative selection in the first two registries, playing
 ### Checkpoint 358 — registry retirement recipient bindings
 
 IR358A–G join known STMG trailing tables to common release and live114 removal, their local no-op-base destructors, and the distinct completion-bearing registry release/table/constructor/destructor/direct-publication endpoint. IT357C wording corrected to avoid inferring authored action identity from a completion callback; AB250 authored registry50 is distinct. Known event/object cleanup reused. Additional products/callers/providers/writers remain PARTIAL; counts unchanged, Q15 pending Q14.
+
+### Checkpoint 359 — completion-registry selection and resume
+
+CS359A–G settle ordered leading-zero removal, selected result/event publication and reference changes, callback mask/payload/lock order, and queued operation6/known retain joins. A22/A23/A26 and union evidence reused. Attempt9C9A44 and wider input/provider/vector/state/product closure remain PARTIAL. Counts unchanged, Q15 pending Q14.
