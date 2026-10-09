@@ -1615,3 +1615,7 @@ EP270A–D recover first/repeat event14 counter and retained8 producer, deferred
 ### Checkpoint 271 — event action preparation
 
 EA271A–C trace0403 bank-before-target admission,2103 recursion with shared mutable packet, and forward prior-action release/unwind. Name/storage helper internals excluded; bank admission/release/deferred/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 272 — action bank admission/release
+
+BA272A/B and BR272C trace existing4C/54 retain and mode/bit admission, loader result45/output/publication handling, and ID release optional54 plus cleanup reuse. Registry/deferred/loader/input/provider/writer closure stays PARTIAL; totals/Q15/fidelity/production unchanged.

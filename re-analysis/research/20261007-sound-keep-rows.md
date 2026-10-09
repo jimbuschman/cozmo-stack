@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 272 — action bank admission and ID release joins
+
+Primary: `20261008-sound-action-bank-admission-release-native.txt`; same engine hash. EA271 callers, UD261 registry and PB263/PM263 cleanup reused. Admission inputs14/15/16 are raw mode and two bytes; EA271 supplies2/0/0.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| BA272A | 009B7F0C..009B7FB8;009B8054..009B806C | Lock108E330, resolve M44 bank key arg3/second key0 via nested-lock helper. Existing bank atomically increments4C and wrapping54; mode14==2 OR bank50 bit2 set unlocks/returns1. Otherwise replace local mode14 with3 before unlock/loading. Missing skips increments and preserves incoming mode. | Mode2 existing-bank path does not test bit2 or flag50bit0. Increments precede admission gate. | Lookup → retain4C/54 → gate →1 OR loader. | Bank/provider/reference/flag writers remain PARTIAL; preparation admission is not Play or raw3F handling. |
+| BA272B | 009B7FBC..009B8050;009B8070..009B8098;K4/BR142C | Initialize output bank0, forward packet/output/mode/bytes to9B74D8. Raw1 callsA68544(M44,key,0,outputBank), ignores its return and returns1. Non1 raw45hex OR outputBanknull returns directly. Other failures erase key/0 then9B5290(outputBank,0), return original failure. | No output-nonnull gate on result1;45 skips caller cleanup. Existing K4/BR142 loader gates reused. | Loader → publication OR special failure/no-output return OR erase/release → raw result. | Publication and remaining loader/media/provider/input joins PARTIAL. out of scope: loader storage/read/open and allocator internals. |
+| BR272C | 009B6324..009B6428;009B642C..009B658C;PB263/PM263 | Resolve M44(key,0); missing returnsvoid. Third flagnon0 and bank54non0 decrements54 before outer108E330 lock; EA271 passes0 so leaves54. Fourth flag0 atomically decrements4C, signed positive unlocks/returns; nonzero forces4C0. Then9B50D4(current global M,bank), signed48 gate, key/0 erase and unlock. Event-vector and DATA/pool/table/index/bank teardown follow PB263B order. | Lookup lock released before54/outer lock. Counter0 underflow enters cleanup. No completion or tag18 stop/rebind. | Resolve → optional54 →4C → media →48 → unlink/unlock → retained-event/storage retirement. | Logical cleanup reused. out of scope: DATA/pool/vector/index/bank storage release internals. Other ID/reference/global/provider/writers PARTIAL. |
+
+Known action bank recipients now join local admission and existing cleanup. Registry publication, deferred descriptor consumption and wider loader/input/provider/writer closure remain open; totals unchanged, Q15 parked. No production/fidelity changes.
+
 ## Checkpoint 271 — event action preparation and prior-action unwind
 
 Primary: `20261008-sound-event-action-preparation-native.txt`; same engine hash. EP270, PA266 ID target admission and PR262 recursive release reused. P=twelve-word mutable command packet; E=event; A=current action. Name/storage helper implementations excluded.
