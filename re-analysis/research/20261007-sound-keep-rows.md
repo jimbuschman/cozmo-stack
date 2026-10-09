@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 260 — known wrapper format/scan callbacks and stage-init reuse
+
+Primary: `20261008-sound-live-fx-format-query-native.txt`; same engine hash. Existing WV1/WV4/WV7/WV8 and RS8 bodies reused. No per-sample execution or storage helper descent.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| FQ260A | 0103DBDC/0103DC7C;00A7904C..00A79050;00A79518..00A7951C | Known small wrapper44 returns raw word30; large44 returns raw word5C. No stores, validation or callback. VF9 sets small30 before plug-in Init; VF8 sets large5C from mutable output format after accepted Init. FR257 preceding/current queries and FC258 new output therefore use these distinct existing publication points. | Small format is not re-read from plug-in on query; large format is not synthesized from voiceF0. | Known Init format publication → raw getter → old/new format comparison. | Remaining format writers and dynamic plug-in Init output remain separate. No inferred channel/type normalization. |
+| FQ260B | 0103DBCC/0103DC6C;00A7935C..00A79360;WV4 | Small34 returns0 with no side effects. Large34=A7959C is already WV4: optional predecessorC, input metadata cleanup and descriptor defaults, return1. FR257 calls current34 but suppresses its result for scan control; later small continues, later large resets its input and ends scan. | Current large does not itself stop traversal. Missing slot skips callback. No duplicate reset or whole-chain flush invented. | Current callback → subsequent small callbacks → first later large reset/stop OR slot exhaustion. | WV4/WV5 own descriptor/metadata control. Wider predecessor/source/provider/writer families remain PARTIAL; storage free internals excluded. |
+| FQ260C | WV1;WV7/WV8;RS8;FM259 | Known wrapper24 already WV1 writes predecessor4. Known2C teardown already WV7/WV8. FM259's A764D4 is already RS8: exact packedformat190/byte194 and two control-block defaults, per-channel history sizes and raw1/2 outcomes. Live caller ignores statuses, whereas VF5 initial builder gates them. | No newly unread constructor, Init or cleanup body from these known joins. A76608 buffer release remains excluded; no sample arithmetic is traced. | Existing helper contracts → live caller's distinct result handling/publication order. | Reconciles FR257/FC258/FM259 known recipient requests. Other input/pointer/global/provider census remains open; no whole FX/Q14 promotion. |
+
+Known live64/68 control paths are locally joined through selection, bypass, lifecycle, format and routing for the established voice/wrapper families. Q14-002 now records remaining provider/writer/unload questions without calling these bodies wholly unread. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 259 — live FX format reconciliation and routing
 
 Primary: rebuild capture257 and `20261008-sound-live-fx-disconnect-native.txt`; same engine hash. Old=FR257's saved output, new=preceding-stage format if no replacement or FC258 wrapper44 output. Neighbor/input family scope remains FR257.
