@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through354 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through355 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -674,7 +674,7 @@ PARTIAL: existing primary-backed rows NS1–NS2,VS1,Z4–Z15 in `20261007-sound-
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. OR145A–C add object-specific switch-key retirement; PC145A/B add playing-ID callback cancellation. E29 already identifies item48 registration flags; its UNKNOWN wording is historical triage provenance, not a current writer absence. A0C238 is QC3; A0B490 is out of scope: local storage destruction with no payload callbacks. Remaining concrete object-node/state virtual recipients, switch-key producer/destructor binding and complete registration/flag writer census; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
+PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. OR145A–C add object-specific switch-key retirement; PC145A/B add playing-ID callback cancellation. E29 already identifies item48 registration flags; its UNKNOWN wording is historical triage provenance, not a current writer absence. A0C238 is QC3; A0B490 is out of scope: local storage destruction with no payload callbacks. NR146 and OB354 positively bind/recover the known five ordinary node/state callbacks and two bus callback/release families; OR351/OU352/OA353 join native registry registration/update/removal inputs, with selected switch-key defaults/no-op bindings and acquisition outcomes OB354/SK355. Remaining additional concrete products/deeper state recipients and complete registration/flag/input writer census; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
 
 ## Q14-088 — triage line 137
 
@@ -1947,3 +1947,7 @@ OA353A–E settle reserved-ID0 retention, physical enumeration, retired-list/ref
 ### Checkpoint 354 — known node/bus retirement and switch-key slots
 
 OB354A–E reuse NR146 known five-node callback/release bodies, bind the two known bus24 no-ops/release slots and selected first/nested switch-key producer tables to their own no-op destructor recipients. No blanket modulation-table substitution or nested-path reachability inference. Other products/producers, insertion outcomes and writer/input closure remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 355 — selected switch scope acquisition endpoints
+
+SK355A–F settle ordinary object-scope insertion/append choice, growth-result/capacity/count/null-slot gates, selected key/default publication and failure-with-observer delivery. Q14-087 mapping now distinguishes known NR146/OB354 callback/state products and OR351/OU352/OA353 registry inputs from actual remaining families/writer closure. Counts unchanged, Q15 parked.
