@@ -2143,3 +2143,7 @@ SF399 closes known state1/stereo/float kernel frame-count/phase/history/plane/re
 ## Checkpoint 400 — stereo-float ramp decisions
 
 SR400 establishes the retained state2/stereo/float kernel budget, progress, phase, frame geometry and ordered publication/result. Q14-005 integer mono/stereo and integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 401 — integer-source ramp controls
+
+IR401 establishes mono/stereo state2 width16 frame, phase, progress, interleaved-input/planar-output and refreshed-input-count publication decisions. Q14-005 constant/bypass and integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.
