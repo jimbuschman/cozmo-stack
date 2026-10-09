@@ -9,7 +9,29 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 25 native-row obligations CHECKED, 8 CHECKED scope exclusions, 107 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 396 — Q14-003 bounded decision closure
+
+Q14-003 is CHECKED for this decisions-only task. Reachability remains VORBIS in `20261007-sound-reachability.md`: shipped Cozmo Sound265437, source plugin00040001 and WEM formatFFFF; directAB0B20 and streamedAB22D4 enter the named framer/decoder. The table below enumerates the retained integration path and reuses positive rows. This is not an implementation approval or an EXACT_SOURCE classification of the complete WEM decoder.
+
+| Retained boundary | Primary-backed rows / addresses | Closure within Q14-003 |
+|---|---|---|
+| Codec/media selection and entry | SS204 A01E24;SF1/PR6 A562B8/9CC3EC;VC6–10;SA203 A558AC;NS2/SWIN1 A56650 | Authored/probed mode/plugin selection, known creator choice, source/context association and actual virtual28 entry/latch/raw1/3F are already positive. Do not reopen A01E24 as an unread factory-input recipient. |
+| Media pair/format inputs | PI188 constructor defaults;SD140H A028F0;MS141 A1EC54/9BB320/9BB1F8;BR142;MR1–6 A01EF4;VM2–5;HS1–6 | Exact selected pointer/size, descriptor/direct/alias priority and rebind publication are positive, followed by retained header/packed format/total/block/packet/seek-table fields. Hash/cache storage mechanics are excluded below. No generic missing media provider is inserted between these named source callers and decoder inputs. |
+| Start/readiness/refill | VM1–7;ST1–9/PA setup rows AB22D4/AB1C04/AB2088;SR1–9 AB1550;SD140/HS7–8 | Known direct and stream-interface families, first/header/setup and prefetch branches, raw2/34/3F gates, prefix/packet assembly, EOF/ownership controls and consumed-byte publication are already positive. Dynamic backend I/O bodies excluded; their source-side arguments/result gates retained. |
+| Setup acceptance/block/mapping | VC2/3 AB6380/AB2D74;VS385 AB63E0/AB62E0;MA386 AB6788;RA387 AB6F34;FA388 AB88D8 | Block admission, bit consumption, setup stage rejection and mode byte publication join actual packet selection. Selected arithmetic-table construction is excluded, without replacing decoder fidelity requirements. |
+| Packet/frame handoff | VI1–7 AB3264/AB3780;VPACK1–4 AB7E40;VF383/384 AB3780/AB3520/AB3978;PC389 AB6B14 | Shared/output planes, exact packet-size and terminal gates, skip/end-trim intervals, no-packet overlap preservation, window/default selection, retained-channel association, query/consume and final flags/results are positive. No unexplained behavior-changing join remains between these named frame producer/consumer boundaries. |
+| Seek/restart/end/loop | SK1–5 A736D4;SC197;VM6/8/9;HS6–8;VR390/RS391/SV392/EL393;AB3244/A73490/A73568 | Exact seek values/rounding, residual/pending consumption, mode/result gates, trim sentinels and end1/loop0 ABI with both known recipient families are positive. Default-window branch remains its actual null choice; no manufactured size admission or safe substitute. |
+| Close/rebind/monitor | VM10/SR12/SC7–9;MR1–6/BR142L;MT394/CB395;RP1–4 A059D8 | Decoder/shared/output ownership order, mode teardown, pointer rebind, inherited known slots and report publication are locally positive. RP1–4 and HS6 are existing recipient evidence, not pending work. |
+
+out of scope: storage/I/O infrastructure, arena/allocator/hash/cache/file/backend scheduling mechanics under the guard.
+
+out of scope: per-sample WEM decode/window/coupling/IMDCT arithmetic under this decisions task; WEM decoding is not reclassified EQUIVALENT_IMPLEMENTATION and its separate exact-required arithmetic remains unresolved outside this task boundary.
+
+out of scope: zero/multichannel/LFE-source branches; retained mono/stereo destination association and frame/skip/end positions remain exact controls above.
+
+The earlier generic input/provider/writer residual is replaced by this concrete integration map, not deferred as an unverified link inside the claimed decision path. Other Q14 obligations retain their own open scope and are not promoted. Current census:25 native CHECKED+8 CHECKED scope exclusions/107 PARTIAL/0 NOT DONE/140. Q15 stays pending until Q14 completes. No production, fidelity-manifest or hardware changes.
 
 ## Checkpoint 395 — known codec inherited slot boundary
 

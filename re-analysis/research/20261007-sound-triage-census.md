@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through395 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 25 CHECKED native-row obligations / 8 CHECKED scope exclusions / 107 PARTIAL / 0 NOT DONE; decision checkpoints through396 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -10,7 +10,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Item | Triage source line | Status |
 | --- | --- | --- |
 | Q14-002 | 33 | PARTIAL |
-| Q14-003 | 34 | PARTIAL |
+| Q14-003 | 34 | CHECKED |
 | Q14-004 | 35 | PARTIAL |
 | Q14-005 | 36 | PARTIAL |
 | Q14-006 | 39 | CHECKED |
@@ -160,7 +160,13 @@ PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/read
 
 > | M6-002 | **KEEP** | 0x00AB6380..0x00AB6780;0x00AB3780;0x00AB6B14;0x00AB7E40;0x00AB3520;0x00AB5A94;0x00AB4E34 | Live decoder integration, LFE channel reorder, reset/skip/trim, work-buffer lifetime, window-default reachability, and unshipped-size signed-zero residuals remain WEM decoding; ADP-1 explicitly excludes decoding from equivalence, including its IMDCT/NEON arithmetic. |
 
-PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions; VF384 closes VPACK pending-frame query/consumption, independent window selection and no-packet overlap preservation. VS385/MA386/RA387/FA388 close the named setup mode/mapping and admission decisions; PC389 joins the selected continuation’s final overlap flag/result, stopping before sample-dependent decode arithmetic. VM6 already owns trim/reset writers. Remaining actual source-family/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
+CHECKED (decisions-only scope): checkpoint396 enumerates the retained named Vorbis integration boundaries and their primary-backed rows: SS204/SF1/PR6/VC/SA203/NS2 source entry, PI188/SD140H/MS141/BR142/MR media inputs/rebind, VM/ST/PA/SR source readiness and framing, VC2/3 plus VS385/MA386/RA387/FA388 setup admission, VI/VPACK/VF383–384/PC389 packet/frame controls, SK/SC197/VM/HS/VR390/RS391/SV392/EL393 seek/restart/end/loop, and SC/SR12/VM10/MT394/CB395/RP close/monitor. No remaining generic input/provider/writer placeholder inside that bounded decision path. The current C9 writer-absence contradiction remains its existing quoted manifest evidence and AB3400 store; no manifest edit or whole-decoder fidelity promotion.
+
+out of scope: storage/I/O infrastructure and backing allocation/cache/hash mechanics under the guard.
+
+out of scope: per-sample WEM decoding arithmetic, including window/coupling/IMDCT and unshipped-size sample residuals; this task exclusion is not ADP-1 equivalence for decoding.
+
+out of scope: zero/multichannel/LFE-source branches; retained mono/stereo association and exact block/window-default/frame/timing choices are covered above.
 
 ## Q14-004 — triage line 35
 
@@ -2111,3 +2117,7 @@ MT394 closes known slot14 direct/streamed gates, decoder/owned-packet publicatio
 ## Checkpoint 395 — inherited codec slots and recipient reuse
 
 CB395 establishes known Vorbis inherited20/24/3C/40/44/48/50/5C/6C local contracts and reconciles RP1–4/HS6 existing positives. Q14-003 named restart/end/teardown residual wording updated through395; actual source command writer/family joins retained. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 396 — Q14-003 decision closure
+
+Concrete integration map reconciles retained named Vorbis entry/media/header/setup/framing/seek/restart/end/loop/close/report controls and scope boundaries. Q14-003 becomes CHECKED for decisions only, with no WEM decoder or manifest fidelity promotion. Counts now25 native CHECKED+8 scope CHECKED/107 PARTIAL/0 NOT DONE/140. Q15 pending Q14.
