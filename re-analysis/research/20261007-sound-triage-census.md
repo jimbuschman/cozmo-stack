@@ -2147,3 +2147,7 @@ SR400 establishes the retained state2/stereo/float kernel budget, progress, phas
 ## Checkpoint 401 — integer-source ramp controls
 
 IR401 establishes mono/stereo state2 width16 frame, phase, progress, interleaved-input/planar-output and refreshed-input-count publication decisions. Q14-005 constant/bypass and integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 402 — integer-source bypass controls
+
+IB402 establishes state0 mono/stereo width16 count, conversion cadence, interleaved/planar geometry, predecessor history at n0 and live input-count publication decisions. Q14-005 constant-step/integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.

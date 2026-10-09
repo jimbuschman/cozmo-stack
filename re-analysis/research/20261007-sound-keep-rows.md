@@ -11,9 +11,27 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 402 — integer-source bypass counts and publication
+
+Primary: `20261009-sound-integer-resampler-bypass-decisions-native.txt`, same engine hash;287 instruction words plus literals/slots. Actual state0/width16 slots103C0B8=A48F5C mono,103C0BC=A48C98 stereo. I/O/M/Q and hex offsets as SR400.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| IB402A mono count/pointers | A48F5C..A48FC0 | oldOut=M28,originalValid=U16IE,remaining=wrap(Q−oldOut),n=min_unsigned(remaining,originalValid),channels=U8I4. Input=I0+2*channels*M24;output=O0+4*channels*oldOut;scalarCount=wrap(channels*n). VectorEnd=input+32*(scalarCount logical>>4),tail=scalarCount−16*(scalarCount>>4). For retained mono channels1. |
+| IB402B mono cadence/history | A48FC4..A490C8 | Unsigned input<VectorEnd admits vector loop; each iteration reads32 input bytes and writes64 output bytes, advanceinput32/output64, continue if VectorEnd>updatedInput. After vector region recompute byte advancement from ((VectorEnd+~initialInput) logical>>5)+1, reload M28; tail!=0 emits tail scalar values,input+2/output+4 each. Channels!=0 copies raw U16 last frame's channels from finalInput−2*channels, history offsets0,2,..., with M20 reload each store; n0 still reads predecessor history, no n guard. |
+| IB402C mono ordered result | A490CC..A49124 | Reload liveU16IE,subtract low16(n),publish IE then OE=low16(low16(n)+oldOut),M2C=10000,M24=originalValid==n?0:liveM24+n. n==remaining returns2D without M28 write; otherwise M28=oldOut+n,return2B. oldOut is refreshed only if vector path executed. Count admission/equality retain originalValid while subtraction uses live count. |
+| IB402D stereo count/history/layout | A48C98..A48D54 | Same unsigned n;input=I0+4*M24 for interleaved stereo,outputleft=O0+4*oldOut,right stride4*U16OC. BEFORE output conversion, copy rawleft at input+4*(n−1) to M20[0],then rawright+2 to reloadedM20[2]. n0 still copies predecessor frame. VectorEnd=input+64*(n logical>>4),tail=n−16*(n>>4). |
+| IB402E stereo cadence/result | A48D58..A48F44 | Unsigned input<VectorEnd admits vector path; each iteration advancesinput64 and left/rightoutput64 (16 frames),continues VectorEnd>updatedInput. Recompute advancement=(wrap(VectorEnd+~initialInput) AND FFFFFFC0)+40; reload M28 after vector path. Tail emits tail pairedframes,input4,left/rightoutput4 each. Reload liveIE,subtract low16(n),publish IE/OE then M2C=10000,M24 originalValid==n?0:liveM24+n. n==remaining→2D without M28 write,otherwise M28=oldOut+n→2B. No ramp progress or current/target step mutation. |
+
+out of scope: per-sample integer-to-float conversion/scaling and NEON arithmetic/lane order under ADP-1; native pointer gates, count/cadence, layouts and publication remain exact.
+
+out of scope: zero/multichannel source branches and backing storage mechanics.
+
+Q14-005 integer constant-step controls and integration reconciliation remain PARTIAL. Checkpoint401 companion has414 instruction words (corrected count label). Counts unchanged26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 401 — retained integer-source ramp geometry
 
-Primary: `20261009-sound-integer-resampler-ramp-decisions-native.txt`, same engine hash;413 instruction words plus literals/slots. I/O/M/Q and hex offsets as SR400. Actual state2/width16 slots103C0F8=A4A2D8 mono,103C0FC=A4A59C stereo. Float ramp rows provide navigation only.
+Primary: `20261009-sound-integer-resampler-ramp-decisions-native.txt`, same engine hash;414 instruction words plus literals/slots. I/O/M/Q and hex offsets as SR400. Actual state2/width16 slots103C0F8=A4A2D8 mono,103C0FC=A4A59C stereo. Float ramp rows provide navigation only.
 
 | Step | Address / evidence | Exact selected contract / order |
 |---|---|---|
