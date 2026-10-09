@@ -11,6 +11,12 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 69 native-row obligations CHECKED, 8 CHECKED scope exclusions, 63 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 562 — trailing STMG descriptor interface narrowed
+
+`20261009-sound-stmg-descriptor-interface.md` SI562A–F binds340 contiguous primary ARM instructions and raw vtables to U6–8 trailing descriptors. Both concrete classes share ID-only registry lookup, duplicate retention and interior descriptor getters; actual shared frame-context slots4C/50 expose those getters. Concrete zero-ref destructors contain no sound callback. No descriptor semantic name or modulator/MIDI/generator join is inferred.
+
+Q14-024 remains PARTIAL specifically for an actual4C/50 caller's descriptor-field reads and decision recipient, with shipped ID input. Counts69native+8scope/63PARTIAL/0NOTDONE;140AUDIBLE/0INTERNAL unchanged. out of scope: map/hash/backing/free infrastructure. Next smallest:008 live weight-setter dispatch/input.
+
 ## Checkpoint 561 — PB8 concrete detach residual closed
 
 `20261009-sound-reference-detach.md` RD561A–F reopens161 contiguous primary ARM instructions and binds actual9FB994 selector,9FEEB8 swap/counter/zero-gate/removal to existing PS5–9/CX157/RR474. PB8's wrong RD4 reference is corrected;9FD3F0/9FD378 are positive storage-only cleanup stop boundaries, not fresh callback gaps. Return29/24 does not roll back local mutations or prevent caller pointer clear. Known unsubscribe/object/modulator/node continuation and VS/BP508/BD509/DC510/DG511/ME512/NM513 close original038.
