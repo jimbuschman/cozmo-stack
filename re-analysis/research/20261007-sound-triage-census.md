@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through502 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through503 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -385,6 +385,8 @@ Checkpoint501 reconciliation: original continuous validation9EE9C4..9EEA5C is CW
 PARTIAL: VS6–VS15 trace counter/source-start gates and pointer/size forwarding, PBI virtualization transition calls and voice lazy init; DF adds device format/route invalidation. Remaining: format/route-cache writers, concrete source close/init and audibility/limiter recipients and device table traversal.
 
 Checkpoint198 reconciliation: NS3/VF180/VD186 bind close/stop/delete ordering; SR196/SC197 settle eligible source release, pending-seek gate, seek result/cursor/trim publication and composite position identity. Source mode2 plug-in20/2C, converters and additional writer/decoder state consumers stay retained. Remaining: format/route-cache writers, audibility/limiter recipients, device table traversal and full producer/lifecycle closure. out of scope: pool/stream storage and I/O infrastructure; PCM file sources remain excluded.
+
+Checkpoint503 reconciliation: PC/X/PA/SA supply actual cached/inherited policy; DG/CR502/AU495 bind full/smaller scalar refresh to known base/continuous audibility. LV/VS/SA/GL retain exact virtualization/limit changes. Q14-003/004 decoder maps and PI/SS/SA/SF/RG465 establish known source format/rate/control publications, with WEM decoding still exact. NS/SA/VF180/SWIN/SC/EL/HP provide selected source close/init/end/retirement; RCON/KCACHE/KSEL/CSPEC/CGEN and DA498/DT499 settle original device/route cache parent gates and failure ownership. Remaining: concrete additional source/plug-in/context/connection products and live input/format/config/threshold/route writer/provider closure at specific rows; no generic unread original audibility/close/cache helper. out of scope: coordinate/coefficient payload, per-sample DSP and stream/I/O/storage infrastructure, PCM file sources. Broad item remains PARTIAL.
 
 ## Q14-036 — triage line 74
 
@@ -2451,3 +2453,5 @@ Checkpoint500 — original033 device/barrier/frame/route/notification/pending-st
 Checkpoint501 — original034 continuous context/association/switch precedence/last-switch pair/special policy/extended Layer joins reconciled; reuse only, no repeated native capture or excluded infrastructure descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint502 — CR502 actual base/continuous context24/full and28/parameter refresh, physical factor/order/publication and primary correction PB170C unordered gain->+0;56 complete ARM instructions. No production/status change, broader writer/product closure remains explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint503 — original035 cached policy/audibility/virtual counts/source-format/close-init/route-key-cache joins reconciled against current positive rows; reuse only. Specific broader inputs/products/writers remain, excluded geometry/storage not reopened. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
