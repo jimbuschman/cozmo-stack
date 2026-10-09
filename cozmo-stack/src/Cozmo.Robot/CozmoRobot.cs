@@ -199,6 +199,9 @@ public sealed class CozmoRobot : IDisposable
     public RobotStateTracker State { get; } = new();
     /// <summary>Wheels, head and lift.</summary>
     public CozmoMotion Motion { get; }
+    /// <summary>The robot's carrying component, shared by docking and outgoing engine state.</summary>
+    public Manipulation.CarryingComponent Carrying { get; internal set; } = new();
+    internal Vision.BlockWorld LocalizationWorld { get; set; } = new();
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
     public CozmoLights Lights { get; }
     /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>
@@ -270,6 +273,15 @@ public sealed class CozmoRobot : IDisposable
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;
         // fidelity: M4-010, M4-017, M4-018, M4-020, M4-023, M1-041
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
+        // fidelity: M1-053
+        Engine.PublicationPose = Sensors.PublicationPose;
+        Engine.PublicationCarrying = () => (unchecked((int)(Carrying.CarriedObjectId ?? uint.MaxValue)),
+            unchecked((int)(Carrying.CarriedOnTopId ?? uint.MaxValue)));
+        Engine.PublicationHeadTracking = () => Motion.HeadTrackingObjectId;
+        Engine.PublicationHeadAngle = () => Motion.HeadAngleRad;
+        Engine.PublicationImageTimestamp = () => CameraSettings.LastProcessedImageTimestamp;
+        Engine.PublicationLocalizedTo = () => unchecked((int)(LocalizationWorld.LocalizedToObjectId ?? uint.MaxValue));
+        Engine.PublicationGameStatus = () => (LocalizationWorld.Robot2C4, (sbyte)Sensors.OffTreadsState);
         Engine.RobotComponentsUpdate = UpdateComponents;
         // fidelity: M4-019
         Engine.ChargerPlatformUpdate = ChargerPlatformStepWithoutWorld;

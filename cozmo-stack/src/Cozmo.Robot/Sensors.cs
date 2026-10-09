@@ -309,6 +309,14 @@ public sealed class CozmoSensors
     /// Delocalize puts it at the identity (SetNewPose, 0x00510B4C).
     /// </summary>
     private float _poseX, _poseY, _poseAngle;
+    private float _poseZ;
+    // fidelity: M11-055
+    // Current flat localization supplier. Pose-tree/vision-only updates remain M11's gaps.
+    internal EngineLocalizationPose PublicationPose()
+    {
+        lock (_gate) return EngineLocalizationPose.FromPlanar(_poseX, _poseY, _poseZ, _poseAngle,
+            _robot.Engine.Robot?.CurrentOriginId ?? 1u);
+    }
     /// <summary>C7 D2: MoveRobotPoseForward's distance when not carrying (the drive-centre offset); 0.0 when carrying.</summary>
     internal const float DriveCenterOffsetMm = -20.0f;
 
@@ -569,6 +577,7 @@ public sealed class CozmoSensors
             float d = _robot.Motion.IsCarryingObject?.Invoke() == true ? 0f : DriveCenterOffsetMm;
             var before = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
             _poseX = s.Pose.X; _poseY = s.Pose.Y; _poseAngle = s.Pose.Angle;
+            _poseZ = s.Pose.Z;
             var after = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
             if (!FrameMatches(s)) return;
             if (_cliffDistanceMm < 0f)
@@ -732,7 +741,7 @@ public sealed class CozmoSensors
             _cliffRaw = new ushort[] { 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF };
             _cliffDistanceMm = -1.0f;
             _cliffDistanceDone = false;
-            _poseX = _poseY = _poseAngle = 0f;
+            _poseX = _poseY = _poseZ = _poseAngle = 0f;
             _onChargerContacts = false;
             _onChargerPlatform = false;
             _cliffSamples.Clear();

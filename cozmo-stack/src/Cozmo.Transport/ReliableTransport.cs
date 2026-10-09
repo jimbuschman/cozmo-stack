@@ -157,6 +157,10 @@ public sealed class ReliableTransport : IDisposable
     private readonly SerialExecutor _exec;
     /// <summary>The deferred scheduler holding the one repeating 2 ms entry (G1.1..G1.8); null in sync mode.</summary>
     private readonly TransportScheduler? _sched;
+    // fidelity: M1-047
+    // TaskExecutor always has its deferred worker, even with no repeating callback in sync mode.
+    private readonly TransportScheduler _deferred;
+    internal IReadOnlyList<TransportPriorityRequest> PriorityRequests { get; }
     /// <summary>G1.10: once the scheduled callback's handle has gone, posted copies of it are skipped.</summary>
     private volatile bool _tickHandleExpired;
     // fidelity: M1-002
@@ -269,7 +273,8 @@ public sealed class ReliableTransport : IDisposable
     /// QueueMessage calls SendMessage on the caller's thread. The RelTransport executor still exists and still
     /// runs what QueueAction posts (Disconnect, Dispose); <see cref="Flush"/> waits for it.
     /// </summary>
-    internal ReliableTransport(TransportOptions? options, INetClock? clock, bool manualPump, HostNetworkChange? networkChange = null)
+    internal ReliableTransport(TransportOptions? options, INetClock? clock, bool manualPump, HostNetworkChange? networkChange = null,
+        ITransportThreadScheduler? threadScheduler = null)
     {
         _o = options ?? TransportOptions.EngineDefaults; _clock = clock ?? new StopwatchClock();
         ManualPump = manualPump;
@@ -291,12 +296,21 @@ public sealed class ReliableTransport : IDisposable
         // R35/B14: the ctor creates the RelTransport queue and ChangeSyncMode(false) schedules the update
         // every 2 ms (ScheduleCallback 0x0083689E); it is requested once, here, not per connection. Sync mode
         // (R36) has no timer; the queue itself exists in both modes.
-        // CA8/CA9: "priority 3" is SetThreadPriority on both executor threads, SCHED_RR at 75% of the OS range
-        // with EPERM ignored. The thread priority is host mechanism under policy M1-014 (manager call under the
-        // operator's standing authorisation, 2026-09-24; inventory "Decisions"), so both host threads keep the
-        // default priority.
+        // fidelity: M1-047
+        // P1/P3: 0x008367C0 selects 3; 0x007FBDBA/DEC create the immediate/deferred workers,
+        // then 0x007FBE0C/14 request priority on each in that order. The managed host adapter is M1-014.
         _exec = new SerialExecutor("cozmo-transport");
         _exec.Start();
+        _deferred = new TransportScheduler(TransportScheduler.HostNowNs, _o.UpdateIntervalMs, PostTick,
+            hasCallback: false);
+        _deferred.Start();
+        var hostScheduler = threadScheduler ?? ManagedTransportThreadScheduler.Instance;
+        PriorityRequests = new[]
+        {
+            TransportThreadPriority.Request(_exec.WorkerThread, 3, hostScheduler),
+            TransportThreadPriority.Request(_deferred.WorkerThread, 3, hostScheduler)
+        };
+        if (!manualPump) _sched = _deferred;
         if (manualPump) return;
         // fidelity: M1-014
         // Host structure: the dispatch thread lives as long as the transport, since connection events can
@@ -305,8 +319,7 @@ public sealed class ReliableTransport : IDisposable
         _events = q;
         _dispatch = new Thread(() => DispatchLoop(q)) { IsBackground = true, Name = "cozmo-dispatch" };
         _dispatch.Start();
-        _sched = new TransportScheduler(TransportScheduler.HostNowNs, _o.UpdateIntervalMs, PostTick);
-        _sched.Start();
+        _deferred.EnableCallback();
     }
 
     /// <summary>The current peer's connection, or null when there is none.</summary>
@@ -1088,7 +1101,7 @@ public sealed class ReliableTransport : IDisposable
         }
 
         // fidelity: M1-014
-        _sched?.Stop();
+        _deferred.Stop();
         _exec.Complete();
         // The self-join skip: on this transport's dispatch thread the dispose closure is joining this very
         // thread, and in a handler raised inline under _lock (sync mode) the dispose closure needs the lock this
@@ -1683,10 +1696,13 @@ internal sealed class TransportScheduler
     private long _posted;
     private volatile bool _stop;
     private Thread? _thread;
+    private volatile bool _hasCallback;
+    private readonly ManualResetEventSlim _activated = new(false);
 
-    internal TransportScheduler(Func<long> nowNs, double periodMs, Action post)
+    internal TransportScheduler(Func<long> nowNs, double periodMs, Action post, bool hasCallback = true)
     {
         _nowNs = nowNs; _post = post;
+        _hasCallback = hasCallback;
         _periodNs = (long)(periodMs * 1_000_000);   // G1.2: period × 1e6 ns (0x007FCEBE..0x007FCECA)
         _dueNs = nowNs() + _periodNs;               // G1.2: first time = now + period (0x007FCED2..0x007FCED6)
     }
@@ -1698,6 +1714,7 @@ internal sealed class TransportScheduler
     internal long Posted => Interlocked.Read(ref _posted);
 
     internal int? ThreadId => _thread?.ManagedThreadId;
+    internal Thread WorkerThread => _thread!;
 
     /// <summary>One pass of ProcessDeferredQueue over the entry. True if a copy was posted.</summary>
     internal bool Pass()
@@ -1716,16 +1733,27 @@ internal sealed class TransportScheduler
         _thread.Start();
     }
 
+    internal void EnableCallback()
+    {
+        _dueNs = _nowNs() + _periodNs;
+        _hasCallback = true;
+        _activated.Set();
+    }
+
     /// <summary>Host teardown: the thread ends and posts nothing more.</summary>
     internal void Stop()
     {
         _stop = true;
+        _activated.Set();
         var t = _thread;
         if (t is not null && t != Thread.CurrentThread && t.IsAlive) t.Join(TimeSpan.FromSeconds(2));
     }
 
     private void Loop()
     {
+        // A sync-mode executor still owns a deferred worker, but has no repeating callback (R36).
+        if (!_hasCallback) _activated.Wait();
+        if (_stop) return;
         using var _ = new HighResolutionTimer();
         while (!_stop)
         {
@@ -1760,6 +1788,7 @@ internal sealed class SerialExecutor
     internal SerialExecutor(string name) => _thread = new Thread(Run) { IsBackground = true, Name = name };
 
     internal int ThreadId => _thread.ManagedThreadId;
+    internal Thread WorkerThread => _thread;
 
     internal void Start() => _thread.Start();
 

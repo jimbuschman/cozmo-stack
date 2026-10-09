@@ -207,6 +207,20 @@ public sealed class RobotStateHistory
     }
 
     public VisionPoseData? Latest { get { lock (_gate) return _entries.Count == 0 ? null : At(_entries[^1].Timestamp); } }
+    // fidelity: M11-055
+    // Adapter for the current flat localization candidate; does not claim recovered pose-tree transforms.
+    internal EngineLocalizationPose? PublicationPose
+    {
+        get
+        {
+            lock (_gate)
+            {
+                if (_entries.Count == 0) return null;
+                var e = _entries[^1];
+                return EngineLocalizationPose.FromPlanar(e.Pose.X, e.Pose.Y, e.Pose.Z, e.Pose.Angle, e.OriginId);
+            }
+        }
+    }
 }
 
 /// <summary>

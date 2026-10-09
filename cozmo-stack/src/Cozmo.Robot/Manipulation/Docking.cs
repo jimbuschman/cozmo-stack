@@ -163,6 +163,9 @@ public sealed class DockingSystem : IDisposable
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
     {
         _robot = robot; _vision = vision;
+        // fidelity: M1-053
+        // Publication reads this active supplier. Its replacement/lifetime semantics remain M12's.
+        robot.Carrying = Carrying;
         robot.Message += OnMessage;
         vision.FrameProcessed += OnFrame;
         // Everything this instance installs on the vision system is remembered, so Dispose can take back

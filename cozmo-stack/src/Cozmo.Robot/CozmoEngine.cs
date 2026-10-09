@@ -1814,7 +1814,7 @@ public sealed partial class CozmoEngine : IDisposable
     ///  3. UpdateRobotConnection → MessageHandler::ProcessMessages: every robot-message handler runs here (CD10);
     ///  4. NeedsManager::Update on this tick's BaseStationTimer seconds (CD10/CC10, 0x004ED632..0x004ED640);
     ///  5. UpdateAllRobots → Robot::Update (CD11).
-    /// UpdateLatencyInfo, the audio controller and the RobotState broadcast to the game are
+    /// UpdateLatencyInfo and the audio controller are
     /// outside this stack. Engine states 0, 1, 2 and 4 (data loading, firmware update) are not modelled.
     /// </summary>
     private int TickAt(long elapsedNs)
@@ -1831,7 +1831,12 @@ public sealed partial class CozmoEngine : IDisposable
                 // CozmoEngine::Update state 3 calls NeedsManager::Update between ProcessMessages and
                 // UpdateAllRobots, on BaseStationTimer::GetCurrentTimeInSeconds (0x004ED632..0x004ED640).
                 if (NeedsUpdate is { } needs) Isolated(() => needs(Timer.SecondsF));
-                if (Robots.Get(RobotId) is { } r) r.Update();
+                if (Robots.Get(RobotId) is { } r)
+                {
+                    r.Update();
+                    // fidelity: M1-053
+                    PublishRobotState(r); // UpdateAllRobots, 0x0052F6E4..0x0052F716.
+                }
             }
             finally { _inTick = false; }
         }
@@ -1883,7 +1888,7 @@ public sealed partial class CozmoEngine : IDisposable
 
     // fidelity: M1-031
     /// <summary>CancelIdleTimeout (game tag 84, CC5).</summary>
-    public void CancelIdleTimeout() => Post(() => Robots.Get(RobotId)?.Idle.Cancel());
+    public void CancelIdleTimeout() => Post(() => Robots.Get(RobotId)?.DeliverCancelIdleTimeout());
 
     // fidelity: M1-025
     /// <summary>SetRobotDisconnectReason (game tag 88, B35, CC19): writes the reason byte (DAS only, CC20).</summary>
@@ -1946,17 +1951,8 @@ public sealed partial class CozmoEngine : IDisposable
     internal void Broadcast(RobotMessage m)
     {
         var robot = Robots.Get(RobotId);
-        bool stateHandled = true;
-        switch (m)
-        {
-            case SyncTimeAck: if (robot is not null) Isolated(robot.HandleSyncTimeAck); break;
-            case RobotState s: stateHandled = robot?.UpdateFullRobotState(s) ?? false; break;
-            case CrashReport: if (robot is not null) Isolated(robot.TracePrinterOnCrashReport); break;
-            // fidelity: M3-012
-            case AnimationState a: if (robot is not null) Isolated(() => robot.HandleAnimationState(a)); break;
-            // fidelity: M3-024
-            case FirmwareVersion f: if (robot is not null) Isolated(() => robot.HandleFirmwareVersion(f)); break;
-        }
+        // fidelity: M1-046
+        bool stateHandled = robot?.DeliverMessage(m) ?? m is not RobotState;
         if (DeviceRoute is { } d) Isolated(() => d(m, stateHandled));
         if (Robots.Ric is { } ric) Isolated(() => ric.OnMessage(m));
         if (PublicRoute is { } p) Isolated(() => p(m));

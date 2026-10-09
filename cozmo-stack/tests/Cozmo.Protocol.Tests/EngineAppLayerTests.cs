@@ -13,6 +13,187 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class EngineAppLayerTests
 {
+    [Fact]
+    public void M1_053_OfflineSeamWithoutPacketDoesNotPublish()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        int calls = 0;
+        robot.Engine.RobotStatePublished += _ => ++calls;
+        robot.Engine.Tick();
+        Assert.Equal(0, calls);
+    }
+
+    // M1-053 P2a/e/g/k/m: native gate and component getters, not packet forwarding.
+    [Fact]
+    public void M1_053_PublicationGateAndOwningComponents()
+    {
+        using var rig = new Rig();
+        var outputs = new List<EngineRobotState>();
+        rig.Engine.RobotStatePublished += outputs.Add;
+        rig.ToSuccess();
+        rig.Data(new RobotState { Timestamp = 1, PoseOriginId = 1, HeadAngle = 12 });
+        rig.Tick();
+        Assert.Empty(outputs);
+        rig.Robot.CameraSettings.LastProcessedImageTimestamp = 123;
+        rig.Robot.Motion.HeadTrackingObjectId = 47;
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1, HeadAngle = 12, Accel = new() { X = 3, Y = 4, Z = 5 }, Gyro = new() { X = 6, Y = 7, Z = 8 } });
+        rig.Tick();
+        var p = Assert.Single(outputs);
+        Assert.Equal(unchecked((int)0xBEDF66F3), BitConverter.SingleToInt32Bits(p.HeadAngleRad)); // constructor +2FC, uncalibrated
+        Assert.Equal(47, p.HeadTrackingObjectId);
+        Assert.Equal(123u, p.LastImageTimestamp);
+        Assert.Equal(-1, p.LocalizedToObjectId);
+        Assert.Equal(-1, p.CarryingObjectId);
+        Assert.Equal(-1, p.CarryingObjectOnTopId);
+        Assert.Equal(3f, p.AccelX);
+        Assert.Equal(8f, p.GyroZ);
+        rig.Tick();
+        Assert.Equal(2, outputs.Count); // publishes each update, even without another incoming state
+        Assert.Equal(p, outputs[1]);
+        rig.Robot.Carrying.SetCarrying(83);
+        rig.Tick();
+        Assert.Equal(83, outputs[2].CarryingObjectId);
+        Assert.Equal(-1, outputs[2].CarryingObjectOnTopId);
+        Assert.Equal(2u, outputs[2].Status & 2u);
+    }
+
+    // P2c/d/f/h/i/j and Pack 00711970: literal native layout and branches.
+    [Theory]
+    [InlineData(0, -1, 0x1000u)]
+    [InlineData(1, 42, 0x1042u)]
+    [InlineData(255, 42, 0x1842u)]
+    public void M1_053_ProjectionAndPackedPayload(byte tag, int carried, uint expectedStatus)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState();
+        rig.Data(new AnimationState { Tag = tag });
+        rig.Engine.PublicationPose = () => new(10, 20, 30, 1, 0, 0, 0, 9);
+        rig.Engine.PublicationCarrying = () => (carried, 43);
+        rig.Engine.PublicationLocalizedTo = () => 51;
+        rig.Engine.PublicationGameStatus = () => (1, 0);
+        rig.Engine.PublicationHeadTracking = () => 52;
+        rig.Engine.PublicationImageTimestamp = () => 53;
+        EngineRobotState? published = null;
+        rig.Engine.RobotStatePublished += p => published = p;
+        rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1, LiftAngle = 0, Status = 0x1000 });
+        rig.Tick();
+        var p = Assert.IsType<EngineRobotState>(published);
+        Assert.Equal(45f, p.LiftHeightMm);
+        Assert.Equal(0f, p.PoseAngleRad);
+        Assert.Equal(expectedStatus, p.Status);
+        Assert.Equal(carried == -1 ? -1 : 43, p.CarryingObjectOnTopId);
+        Assert.Equal(1, p.GameStatus);
+        byte[] bytes = p.ToPackedBytes();
+        Assert.Equal(109, bytes.Length);
+        Assert.Equal(10f, BitConverter.ToSingle(bytes, 0));
+        Assert.Equal(1f, BitConverter.ToSingle(bytes, 12));
+        Assert.Equal(9u, BitConverter.ToUInt32(bytes, 28));
+        Assert.Equal(45f, BitConverter.ToSingle(bytes, 52));
+        Assert.Equal(carried, BitConverter.ToInt32(bytes, 84));
+        Assert.Equal(52, BitConverter.ToInt32(bytes, 92));
+        Assert.Equal(51, BitConverter.ToInt32(bytes, 96));
+        Assert.Equal(53u, BitConverter.ToUInt32(bytes, 100));
+        Assert.Equal(expectedStatus, BitConverter.ToUInt32(bytes, 104));
+        Assert.Equal(1, bytes[108]);
+    }
+
+    // 0084AA92 vcmpe/ble: equal and unordered take the sign-XOR a,b pair.
+    [Fact]
+    public void M1_053_AngleSelectsNativeOperandsForEqualGreaterAndUnordered()
+    {
+        Assert.Equal((-2f, 3f), CozmoEngine.PublicationAngleOperands(2, 3, 4, 5, 6, 6));
+        Assert.Equal((4f, 5f), CozmoEngine.PublicationAngleOperands(2, 3, 4, 5, 6, 7));
+        Assert.Equal((-2f, 3f), CozmoEngine.PublicationAngleOperands(2, 3, 4, 5, float.NaN, 7));
+        Assert.Equal((-2f, 3f), CozmoEngine.PublicationAngleOperands(2, 3, 4, 5, 6, float.NaN));
+        Assert.Equal(MathF.PI / 2, CozmoEngine.PublicationAngle(new(0, 0, 0, Math.Sqrt(0.5), 0, 0, Math.Sqrt(0.5), 1)), 6);
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(1, 1, 0)]
+    [InlineData(1, 0, 1)]
+    public void M1_053_GameStatusRequiresLocalizedAndOnTreads(byte localized, sbyte offTreads, byte expected)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState();
+        rig.Engine.PublicationGameStatus = () => (localized, offTreads);
+        EngineRobotState? output = null;
+        rig.Engine.RobotStatePublished += p => output = p;
+        rig.Tick();
+        Assert.Equal(expected, output!.GameStatus);
+    }
+
+    // M1-046 U1/U2: 004EAEA2 decrements end before release; 004EF1C2
+    // unsubscribes only on last shared owner. Destroying does not invoke callbacks.
+    [Fact]
+    public void M1_046_ReverseRetirementAndLastOwnerUnsubscribe()
+    {
+        var calls = new List<int>();
+        var owners = new SubscriptionOwners();
+        var first = new RetainedSubscription(() => calls.Add(1));
+        var second = new RetainedSubscription(() => calls.Add(2));
+        var shared = new RetainedSubscription(() => calls.Add(3));
+        shared.Retain();
+        owners.Add(first);
+        owners.Add(second);
+        owners.Add(shared);
+        owners.Retire();
+        Assert.Equal(new[] { 2, 1 }, calls);
+        shared.Dispose();
+        shared.Dispose();
+        Assert.Equal(new[] { 2, 1, 3 }, calls);
+        owners.Retire();
+        Assert.Equal(new[] { 2, 1, 3 }, calls);
+    }
+
+    // U5/U7: clear callback before unlink; a retained node cannot invoke the
+    // retired callback, and a second unsubscribe has no effect.
+    [Fact]
+    public void M1_046_UnsubscribeClearsCallbacksWithoutInvokingThem()
+    {
+        var signal = new SubscriptionSignal<int>();
+        var calls = new List<int>();
+        RetainedSubscription? later = null;
+        var earlier = signal.Subscribe(7, value => { calls.Add(value); later!.Dispose(); });
+        later = signal.Subscribe(7, value => calls.Add(value + 100));
+        signal.Deliver(7, 4);
+        Assert.Equal(new[] { 4 }, calls);
+        earlier.Dispose();
+        earlier.Dispose();
+        signal.Deliver(7, 8);
+        Assert.Equal(new[] { 4 }, calls);
+    }
+
+    // U6/U7 and checked Q1-Q3: Robot removal retires Idle (+51C) before
+    // Messaging (+518); neither endpoint can invoke the removed component.
+    [Fact]
+    public void M1_046_LiveRemovalRetiresIdleAndMessagingEndpoints()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var removed = rig.Engine.Robot!;
+        rig.Engine.StartIdleTimeout(-1, 100);
+        rig.Tick();
+        Assert.True(removed.Idle.DisconnectDeadline > 0);
+        rig.Engine.CancelIdleTimeout();
+        rig.Tick();
+        Assert.Equal(-1.0f, removed.Idle.DisconnectDeadline);
+        rig.Engine.StartIdleTimeout(-1, 100);
+        rig.Tick();
+        float deadline = removed.Idle.DisconnectDeadline;
+        rig.Disconnected();
+        rig.Tick(); // full live RemoveRobot -> RobotLifetime.Destroy path
+        removed.TimeSynced = false;
+        removed.DeliverMessage(new SyncTimeAck());
+        removed.DeliverCancelIdleTimeout();
+        Assert.False(removed.TimeSynced);
+        Assert.Equal(deadline, removed.Idle.DisconnectDeadline);
+        Assert.DoesNotContain(rig.Log, l => l.Contains("lifetime owner +0x51C") || l.Contains("lifetime owner +0x518"));
+    }
+
     // Checked M4-011 Load 0061A2DC..0061A58E; Init through SetPhysicalRobot 00513954.
     [Fact]
     public void M4_011_CheckedPoolGrammarAndFiveEntryBoundThroughFirmwareEntry()

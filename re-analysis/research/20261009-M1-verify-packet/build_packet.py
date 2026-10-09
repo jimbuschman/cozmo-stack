@@ -15,9 +15,7 @@ manifest = json.loads(read(manifest_path))
 records = [r for r in manifest['records'] if r['id'].startswith('M1-')]
 excluded = {}
 for r in records:
-    if r['id'] in ('M1-047','M1-053'):
-        excluded[r['id']] = 'Waiting on manager check of final extraction rows; not built.'
-    elif 'MISSING' in (r.get('unresolved') or ''):
+    if 'MISSING' in (r.get('unresolved') or ''):
         excluded[r['id']] = 'Open MISSING in current unresolved: ' + r['unresolved']
     elif r['status'] in ('RECOVERABLE_GAP', 'HARDWARE_ONLY'):
         excluded[r['id']] = r['status'] + '; no completed built record to package. ' + (r.get('unresolved') or '')
@@ -168,6 +166,7 @@ test_sources={p:read(p) for p in testfiles if p.endswith('.cs')}
 def test_evidence(r):
     declared=str(r.get('test',''))
     names=list(dict.fromkeys(re.findall(r'\b[A-Za-z0-9_]+Tests\.[A-Za-z0-9_]+',declared)))
+    if re.fullmatch(r'[A-Za-z0-9_]+Tests', declared.strip()): names.append(declared.strip())
     if 'NeedsDecayCheckedRowsTests' in declared: names.append('NeedsDecayCheckedRowsTests')
     if r['id']=='M2-005': names.append('NativeNumericOracleTests.ProductionNumericHelpersMatchShippedArmInstructions')
     out=[]; matched=[]
@@ -218,6 +217,12 @@ for r in included:
     id=r['id']; rows=source_rows(r); inv='re-analysis/inventory/'+r['subsystem']+'.md'
     rowtext='\n'.join(l for _,l in rows)
     extra=[]
+    if id in ('M1-046','M1-047','M1-053'):
+        p='re-analysis/jobs/B-M1M2.md'
+        text=read(p)
+        extra.append((p,text[text.index('## Rows checked (manager, 2026-10-09):'):]))
+        p='re-analysis/research/'+('20261009-M1-053-projection-rows.md' if id=='M1-053' else '20261009-M1-final-extraction.md')
+        extra.append((p,read(p)))
     if r['id'] in ('M1-041','M2-002'):
         p='re-analysis/research/20261002-B-CORE2-verify.md'
         # Retain the checked repair inputs, with their historical date and wording.
@@ -241,7 +246,12 @@ for r in included:
             else: quoted=read(p)
             extra.append((p,quoted))
     citationtext=json.dumps(r,ensure_ascii=False)+'\n'+rowtext+'\n'+'\n'.join(t for _,t in extra)
-    ranges=addresses(citationtext)
+    if id in ('M1-046','M1-047','M1-053'):
+        # Adopted extraction tables also use bare eight-digit VAs and named PLTs.
+        # Normalize only the address scan; the original quoted text stays verbatim.
+        citationtext=re.sub(r'(?<![0-9A-Fa-f])([0-9A-Fa-f]{8})(?![0-9A-Fa-f])',r'0x\1',citationtext)
+        ranges=addresses(citationtext,minimum=0x4A0000)
+    else: ranges=addresses(citationtext)
     native_text=native(ranges)
     library_info=''
     if r['id']=='M1-034':
@@ -253,6 +263,11 @@ for r in included:
         library_info=f' Shipped libc++_shared.so is also read locally, SHA256 `{sha(cpp)}`; its cited VA intervals: '+', '.join(f'0x{a:08X}..0x{b:08X}' for a,b in cpp_ranges)+'.'
         load_library(engine)
     paths=sorted(tags[id]|{r['location']})
+    if id=='M1-053':
+        # Preserve exact supplier-adapter hunks, including those tagged to their owning layers.
+        paths=sorted(set(paths)|{'cozmo-stack/src/Cozmo.Robot/'+p for p in (
+            'Camera.cs','Motion.cs','Sensors.cs','Manipulation/Docking.cs',
+            'Vision/RobotStateHistory.cs','Vision/VisionSystem.cs')})
     parts=[f'# {id} — verification evidence packet',f'Snapshot: `{BASE}`. Current record is reproduced verbatim as JSON. No new verdict, status change, approval, or settlement is supplied.',
       '## Current manifest text',f'Source: `{manifest_path}`; file SHA256 `{sha(ROOT/manifest_path)}`.\n```json\n'+json.dumps(r,ensure_ascii=False,indent=2)+'\n```',
       '## Build rows quoted from their source',f'Source: `{inv}`; SHA256 `{sha(ROOT/inv)}`. Line numbers refer to the snapshot above. Original classifications/wording belong to the quoted source, not this packet. Section/table supersets are retained where row ownership was NEW or a correction crosses records.']
@@ -271,16 +286,16 @@ for r in included:
     (OUT/(id+'.md')).write_text('\n\n'.join(parts)+'\n',encoding='utf-8')
     summary.append({'id':id,'file':id+'.md','rows':len(rows),'cited_intervals':len(ranges),'history_paths':paths})
 index=['# M1 verification packet — 2026-10-09',f'Prepared for the operator’s request in this chat. Source snapshot `{BASE}` on main. No new verdicts. Explicit operator authorization to commit/push overrides the ordinary research-lane no-commit rule.',
- '## Coverage',f'{len(records)} current M1 records; {len(included)} included, {len(excluded)} excluded. Built records and policy/equivalence records with no explicit open MISSING are included. Current non-MISSING verification uncertainty is retained verbatim; inclusion does not mean complete fidelity. Hardware-only, unbuilt recoverable records and records awaiting final row approval are excluded. M1-053 detailed payload/supplier rows and M1-046/-047 final extraction are supplied separately for manager check; their builds are not claimed here.',
+ '## Coverage',f'{len(records)} current M1 records; {len(included)} included, {len(excluded)} excluded. Built records and policy/equivalence records with no explicit open MISSING are included. Current non-MISSING verification uncertainty is retained verbatim; inclusion does not mean complete fidelity. Hardware-only and unbuilt recoverable records are excluded. The manager adopted M1-046 U1-U8, M1-047 P1-P4 and M1-053 P2a-P2m in B-M1M2.md; their builds and supplier boundaries are now included.',
  '| Record | Packet | Quoted lines | Native cited intervals |\n|---|---|---:|---:|']
 index += [f'| {s["id"]} | [{s["file"]}]({s["file"]}) | {s["rows"]} | {s["cited_intervals"]} |' for s in summary]
 index += ['## Excluded records and reasons','Each current excluded record is reproduced in full below so exclusions do not depend on an older report.']
 for r in records:
     if r['id'] in excluded: index += [f'### {r["id"]}',excluded[r['id']], '```json\n'+json.dumps(r,ensure_ascii=False,indent=2)+'\n```']
-index += ['## Reproduction and artifact boundaries','`python re-analysis/research/20261008-M1M2-verify-packet/build_packet.py` packages the checked-out snapshot after the offline test TRX exists. It only writes in this directory. The native ELF is read locally and is not uploaded. Per-record files are self-contained for manifest, rows, diff text, native transcripts, and relevant test/result text. Complete shared-file histories intentionally contain unrelated hunks; they are explicitly labeled as supersets rather than assigned invented record-level causal ownership.',
- 'Test command: `dotnet test cozmo-stack/Cozmo.sln --logger trx --results-directory .scratch/m1-api-events`. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.']
-index += ['## Rows awaiting manager check',
- 'M1-046/-047: [final extraction rows](../20261009-M1-final-extraction.md) and [native instructions](../20261009-M1-final-extraction-native.txt). M1-053: [detailed projection rows and supplier boundaries](../20261009-M1-053-projection-rows.md) and [native instructions](../20261009-M1-053-projection-native.txt). These are unchecked extraction reports and are not built records in this packet.',
+index += ['## Reproduction and artifact boundaries','`python re-analysis/research/20261009-M1-verify-packet/build_packet.py` packages the checked-out snapshot after the offline test TRX exists. It only writes in this directory. The native ELF is read locally and is not uploaded. Per-record files are self-contained for manifest, rows, diff text, native transcripts, and relevant test/result text. Complete shared-file histories intentionally contain unrelated hunks; they are explicitly labeled as supersets rather than assigned invented record-level causal ownership.',
+ 'Test command: `dotnet test cozmo-stack/Cozmo.sln --logger "trx;LogFileName=packet-tests.trx" --results-directory .scratch/m1-final-tests`, with DOTNET_PROCESSOR_COUNT=4 and ThreadPoolMinThreads=32. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.']
+index += ['## Adopted rows and supplier boundaries',
+ 'M1-046/-047: [final extraction rows](../20261009-M1-final-extraction.md). M1-053: [projection rows](../20261009-M1-053-projection-rows.md). Manager adoption is quoted in the three record files. Root pose, tracking writers, image-result commit and other suppliers remain owned by their named higher-layer records, including their lifetime gaps. Native member allocation bookkeeping is represented by engine-thread-confined managed handle storage. No supplier or M1 record is settled by this packet.',
  '## Offline run and packet validation',f'Offline run: {counters["passed"]} passed, {counters["failed"]} failed, {counters["notExecuted"]} not executed. The full solution suite is recorded without result substitution.']
 for result in results:
     if result.attrib['outcome']!='Passed':

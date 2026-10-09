@@ -109,6 +109,7 @@ public sealed partial class EngineRobot
         Lifetime = new(this);
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
+        InitSubscriptions();
     }
 }
 

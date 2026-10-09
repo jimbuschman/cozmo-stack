@@ -59,6 +59,7 @@ public sealed class VisionSystem : IDisposable
         // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
         // reads the carrying and treads state from the components that own them.
         World = new BlockWorld();
+        robot.LocalizationWorld = World;
         World.IsCarryingObject = id => Carrying(id);
         World.OnTreads = () => robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         // fidelity: M11-037
@@ -71,6 +72,11 @@ public sealed class VisionSystem : IDisposable
         // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
         // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
         World.CurrentRobotPose = () => History.Latest?.RobotPose;
+        // fidelity: M1-053
+        // Supplied by localization/vision (M11-053/055/035), not the incoming packet or camera receipt time.
+        robot.Engine.PublicationPose = () => History.PublicationPose ?? robot.Sensors.PublicationPose();
+        robot.Engine.PublicationLocalizedTo = () => unchecked((int)(World.LocalizedToObjectId ?? uint.MaxValue));
+        robot.Engine.PublicationGameStatus = () => (World.Robot2C4, (sbyte)robot.Sensors.OffTreadsState);
         World.ComputedRobotPoseAt = ts => History.GetComputedStateAt(ts);
         World.MovementBytes = () => robot.State.Latest is { } st
             ? ((st.Status & (uint)RobotStatusFlag.HeadInPos) == 0, (st.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0)
@@ -195,6 +201,7 @@ public sealed class VisionSystem : IDisposable
             FramesProcessed = 0;
             FramesDropped = 0;
             LastResult = null;
+            _robot.CameraSettings.LastProcessedImageTimestamp = 0;
             LastRawFrameTimestamp = null;
             _warnedNoCalibration = false;
         }
@@ -981,6 +988,8 @@ public sealed class VisionSystem : IDisposable
             if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
             FramesProcessed++;
             LastResult = result;
+            // fidelity: M11-035
+            _robot.CameraSettings.LastProcessedImageTimestamp = result.Timestamp;
             // Raised under the lock a removal waits on, so a frame the removal discarded never raises it afterwards.
             FrameProcessed?.Invoke(result);
         }

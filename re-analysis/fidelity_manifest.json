@@ -62,7 +62,7 @@
       "id": "M1-transport",
       "name": "UDP transport and reliability",
       "milestone": "M1",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -5015,7 +5015,7 @@
         "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5, open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md objections 2 and 6"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "R-FIX2 (2026-10-04): GetAbsoluteHeadAngleToLookAtPose (0x0054B428) and Robot::ComputeHeadAngleToSeePose (0x00518344..0x00518620: the failure results, the 25-pass loop and its unassigned-angle quirk) are now built (a Unicorn run of the shipped instructions reproduces the fallback's expected bits; the converge cases' bits come from a Unicorn run of the real function, with the pose algebra double against the engine's binary32); TurnTowardsPoseAction::Init uses the fallback only on a non-zero result with the engine's warning. Still open: the pose algebra (neck composition, GetCameraPose's pre-multiply, GetInverse) is the stack's double Pose3d narrowed to f32 (reported MISSING); the vision model's head-cam z differs from the engine's -8.0 (M11-054); the no-parent branch (PoseHasParent = false) is test-only; the MovementComponent wire bodies, the eye-shift arguments and the remainder of TurnInPlaceAction::CheckIfDone remain unread. | earlier: read the listed bodies (MovementComponent wire bodies, the eye-shift arguments, the remainder of TurnInPlaceAction::CheckIfDone).",
+      "unresolved": "R-FIX2 (2026-10-04): GetAbsoluteHeadAngleToLookAtPose (0x0054B428) and Robot::ComputeHeadAngleToSeePose (0x00518344..0x00518620: the failure results, the 25-pass loop and its unassigned-angle quirk) are now built (a Unicorn run of the shipped instructions reproduces the fallback's expected bits; the converge cases' bits come from a Unicorn run of the real function, with the pose algebra double against the engine's binary32); TurnTowardsPoseAction::Init uses the fallback only on a non-zero result with the engine's warning. Still open: the pose algebra (neck composition, GetCameraPose's pre-multiply, GetInverse) is the stack's double Pose3d narrowed to f32 (reported MISSING); the vision model's head-cam z differs from the engine's -8.0 (M11-054); the no-parent branch (PoseHasParent = false) is test-only; the MovementComponent wire bodies, the eye-shift arguments and the remainder of TurnInPlaceAction::CheckIfDone remain unread. | earlier: read the listed bodies (MovementComponent wire bodies, the eye-shift arguments, the remainder of TurnInPlaceAction::CheckIfDone). M1-053 reads MovementComponent+0x1C/+0x20 head-tracking ObjectID; manager checked constructor -1 at 0x0063DA86. Motion owns this field, with writers still part of the tracking paths here and in M4.",
       "hardware_required": false,
       "live_path": true,
       "test": "M13RVisBuildTests.M13_021_*"
@@ -7919,7 +7919,7 @@
       "hardware_required": false,
       "effect": "the engine-to-game vision results and their order",
       "provenance": "the stack's vision result dispatch is to be compared against the engine's handler order",
-      "unresolved": "build the M11-owned dispatch order and the VisionProcessingResult field mapping. Still unread and M11-owned: the loop head 0x006542EC..0x00654486 and the bodies of UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795 and UpdateOverheadMap 0x00655909 (M11-048 lists them); the face/pet handlers are M14, motion M10, and the message layouts are M2/M10.",
+      "unresolved": "build the M11-owned dispatch order and the VisionProcessingResult field mapping. Still unread and M11-owned: the loop head 0x006542EC..0x00654486 and the bodies of UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795 and UpdateOverheadMap 0x00655909 (M11-048 lists them); the face/pet handlers are M14, motion M10, and the message layouts are M2/M10. M1-053 reads the owned +0xE8 last processed image timestamp (getter 0x006527A2); its result timestamp commit is a candidate in VisionSystem, and its exactness remains this record.",
       "evidence": [
         "VisionComponent::UpdateAllResults 0x006542EC runs markers 0x006544A2, faces 0x00654510, pets 0x0065457E, motion 0x006545E8, overhead edges 0x00654652, tool code 0x006546BC, computed calibration 0x00654726, image quality 0x00654790, laser points 0x006547FA",
         "then CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C"
@@ -8755,18 +8755,19 @@
       "subsystem": "M1-transport",
       "title": "Channel/member subscription retirement recipients",
       "location": "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Robot constructs RobotIdleTimeoutComponent at +0x51C and RobotToEngineImplMessaging at +0x518 (0x0051020A..0x0051022E). Robot dtor clears +0x51C, releases its shared-handle vector, then clears +0x518 and calls RobotToEngineImplMessaging::~ (0x005112E6..0x00511308).",
-        "RobotToEngineImplMessaging dtor releases members +0x144/+0x138/+0x110/+0x104, handle vector +0xF8, filebuf/ios, then its base (0x00532A10..0x00532A74). Last shared-handle release invokes virtual slot +8 then deleting-dtor slot +4 (0x004EF184..0x004EF1CC); concrete target and behavior-changing descendants UNKNOWN. (MISSING triage Q1-Q3.)"
+        "Manager adopted U1-U8: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Robot destruction 0x005112E6..0x00511308 -> InitSubscriptions/RobotLifetime.Destroy, idle owner +0x51C before messaging +0x518.",
+        "Reverse shared-handle release 0x004EAE94..0x004EAEBA; last-owner virtual slots 0x004EF184..0x004EF1CC; vtable 0x0101FE28 -> Thumb 0x0051D8F8, deleting slot 0x0101FE24 -> Thumb 0x0051D8D4. Messaging unsubscribe 0x0051D8F8..0x0051D906 -> 0x0051D338 callback-clear and unlink; idle target 0x00664EB8 -> 0x0066365C. RobotSubscriptions.cs RetainedSubscription/SubscriptionSignal/SubscriptionOwners implement these checked recipients.",
+        "Messaging member retirement 0x00532A10..0x00532A74: +0x144/+0x138/+0x110/+0x104, +0xF8 vector, filebuf/ios, base. Native storage containers and stream/base subobjects have no separately retained managed resources; managed endpoint retires the owned vector in reverse order without invoking callbacks."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
-      "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "RECOVERABLE_GAP: build the confirmed owner/member retirement order for RobotIdleTimeoutComponent (+0x51C) and RobotToEngineImplMessaging (+0x518), including its member/shared-handle vector order. The concrete ScopedHandleContainer virtual +8 unsubscribe target and any behavior-changing descendants remain UNKNOWN; do not invent their effects. Source: 20261006-M1M2-missing-triage.md Q1-Q3.",
+      "provenance": "Built from manager-adopted U1-U8 on the live robot removal and subscription paths.",
+      "unresolved": "built, awaiting strong verification: U1-U8 last-owner unsubscribe, callback-clear/unlink, reverse vector release and idle-before-messaging retirement. Native member containers/filebuf/ios/base are managed storage with no separate destructor effects; this representation correspondence needs strong review. Higher-layer recipients remain with their own records; no settlement.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "EngineAppLayerTests.M1_046_ReverseRetirementAndLastOwnerUnsubscribe; EngineAppLayerTests.M1_046_UnsubscribeClearsCallbacksWithoutInvokingThem; EngineAppLayerTests.M1_046_LiveRemovalRetiresIdleAndMessagingEndpoints"
     },
     {
       "id": "M3-038",
@@ -9083,17 +9084,18 @@
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
       "status": "IMPLEMENTATION_GAP",
       "effect": "Wrong executor thread count/order or omitted priority changes message timing.",
-      "provenance": "C# uses host executor threads and currently does not request native SCHED_RR priority.",
+      "provenance": "Built checked engine priority request with the managed scheduler primitive supplied under M1-014.",
       "authority": "libcozmoEngine.so 3.4.0-1204 executor constructors/priority helper.",
       "evidence": [
         "H1 creates two threads and calls SetThreadPriority on both only for priority !=2 (0x007FBDBA,0x007FBDEC,0x007FBE02..0x007FBE14).",
         "H2 priority3 selects policy2/SCHED_RR and requests min+trunc_f32((max-min)*0.75), bits0x3F400000; EPERM/result1 skips error path (0x008334CC..0x00833532).",
-        "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024."
+        "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024.",
+        "Manager adopted P1-P4: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Transport constructor priority integer 3 at 0x008367C0 -> Dispatch::Create 0x007FB878 -> TaskExecutor 0x007FBC4C; both workers start before requests at 0x007FBE02..0x007FBE14. ReliableTransport constructor -> TransportThreadPriority.Request preserves the request and result gates."
       ],
-      "unresolved": "Compare/build exact thread count/work split and priority gates. Actual host limits/permissions/effect remain M1-014 host policy; dispatch/timing stay M1-010/-021/-024.",
+      "unresolved": "built, awaiting strong verification: P1-P4 two executor threads in start/request order, priority3/policy2 request, binary32 interpolation and result0/EPERM1 gates. Actual host limits/permissions/effect remain M1-014 COMPATIBILITY_POLICY; dispatch/timing stay M1-010/-021/-024. Manual seam keeps the deferred worker dormant.",
       "hardware_required": false,
       "live_path": true,
-      "test": "TransportRepairTests executor topology/priority source-derived cases to add."
+      "test": "TransportPriorityTests"
     },
     {
       "id": "M1-048",
@@ -9195,16 +9197,18 @@
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "status": "IMPLEMENTATION_GAP",
       "effect": "Game can receive RobotState at the wrong tick, before its source gate or from an unproven caller.",
-      "provenance": "UpdateAllRobots candidate exists; bounded caller known, exhaustive callers/sink not closed.",
+      "provenance": "Built checked engine publication from current component suppliers; suppliers retain their existing fidelity classifications.",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
       "evidence": [
-        "UpdateAllRobots enters from engine tick 0x004ED648; iterates robots, calls Robot::Update then HasReceivedRobotState, and only when true calls GetRobotState, constructs MessageEngineToGame::RobotState and invokes external slot +0x1C (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). External sink remains UNKNOWN.",
-        "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
+        "UpdateAllRobots enters from engine tick 0x004ED648; Robot::Update then HasReceivedRobotState, GetRobotState and external slot +0x1C at 0x0052F6C0..0x0052F7B0; counterpart CozmoEngine.TickAt -> PublishRobotState -> public RobotStatePublished API under the approved app boundary.",
+        "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.",
+        "Manager adopted P2a-P2m: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-053-projection-rows.md. GetRobotState 0x005180D8..0x00518252; pose struct 0x00846D38..0x00846DEE; quaternion angle 0x0084AA1C..0x0084AAB8; Radians 0x0084C832..0x0084C87C; packed 109-byte layout 0x00711970..0x00711A62. EngineRobotState.cs uses binary64 products followed by binary32 norms and native unordered branch.",
+        "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2."
       ],
-      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the engine's UpdateAllRobots gate, projection and publication call stay exact; the game sink is the stack's C# API (a RobotState API event), which replaces the Unity consumer. Buildable now. Before: RECOVERABLE_GAP: build only the checked UpdateAllRobots publication gate/order/projection. The external-interface +0x1C sink and any additional callers remain UNKNOWN; M7-022 owns the non-live BehaviorDockingTestSimple state copy.",
+      "unresolved": "built, awaiting strong verification: P2a-P2m API publication gate/order, 109-byte payload, root pose/angle narrowing, lift arithmetic, status and ID/gameStatus gates. Supplier owned by M11-053/M11-055: localization root pose, currently a planar candidate with pose-tree/vision-transform uncertainty. Supplier owned by M13-021: MovementComponent tracking ID initialized -1, tracking writers remain M4/M13. Supplier owned by M11-035: VisionComponent last processed result timestamp (+0xE8), dispatch/commit exactness remains M11. Supplier owned by M12-008: carried/top object IDs. Supplier owned by M11-044/M10-001: localized object/game flag and off-treads. Supplier owned by M4-001: calibrated/clamped head angle. Raw synchronized sensor/pitch/lift fields remain stored Robot state, M2-002/M4-008/M4-020. M7-022 owns the non-live developer getter caller. No higher-layer settlement. Supplier lifecycle remains open in those layers: Carrying has no RobotRemoved reset, and disposed Vision publication still references its history candidate; this M1 projection does not close those recipient/lifetime gaps.",
       "hardware_required": false,
       "live_path": true,
-      "test": "EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt plus projection cases after extraction."
+      "test": "EngineAppLayerTests.M1_053_PublicationGateAndOwningComponents; EngineAppLayerTests.M1_053_ProjectionAndPackedPayload; EngineAppLayerTests.M1_053_AngleSelectsNativeOperandsForEqualGreaterAndUnordered; EngineAppLayerTests.M1_053_GameStatusRequiresLocalizedAndOnTreads; EngineAppLayerTests.M1_053_OfflineSeamWithoutPacketDoesNotPublish"
     },
     {
       "id": "M3-039",

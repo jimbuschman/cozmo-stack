@@ -733,3 +733,16 @@ The manager reopened the cited targets in the shipped `resources/lib/armeabi-v7a
 Q1/Q2: Robot +0x51C/+0x518 construction and destructor order, Messaging member/handle-vector disposal, and shared-handle last-release virtual slots were reopened. Concrete unsubscribe target and descendants remain UNKNOWN (M1-046). S13: RemoveRobot calls external slot +0x30 with robot id; SimpleExternalInterface's slot is pure virtual and no runtime override was identified (M1-050). E6: local SDK fields and Enter/Exit/Disconnect/ConnectionSuccess branches were reopened; +0xE1 writers and callback descendants remain UNKNOWN (M1-051). E7: SDK connection selector and +0x24 callback invocation were reopened; concrete target/body UNKNOWN (M1-052). P2: UpdateAllRobots performs Robot::Update, HasReceivedRobotState gate, state projection and +0x1C publication; a second GetRobotState caller in non-live M7-022 copies the state to +0x270; remaining callers/sink UNKNOWN (M1-053).
 
 Policy rows reopened: M1-014 H1/H2 executor and priority gates (M1-047; host scheduler effects remain policy); M1-022 U1-U7 including EADDRINUSE and U7 consumer (M1-048); M1-037 N1/N2 plus JNI bridge (M1-049; native subscriber/fd gate/flag setter M1-023); M1-039 I2/I3 receive errors (M1-048; host errno mapping remains policy); M1-042 A1/A3/A4 Unity producers/order and !FirstTimeUserFlow gate (M1-042; engine volume conversion M1-026). Sources: `20261005-M1M2-policy-check.md`, `20261006-M1M2-missing-triage.md`, and primary files/ranges named above.
+
+
+## Correction: manager adopted final M1 rows (2026-10-09)
+
+The new "Rows checked (manager, 2026-10-09): M1-046, M1-047, M1-053" section of `re-analysis/jobs/B-M1M2.md` supersedes the earlier UNKNOWN unsubscribe/priority/projection blockers above. The manager adopted `research/20261009-M1-final-extraction.md` U1-U8/P1-P4 and `research/20261009-M1-053-projection-rows.md` P2a-P2m. These are build authority, not settlement.
+
+| record | adopted rows and current implementation scope | primary citation |
+| --- | --- | --- |
+| M1-046 | IMPLEMENTATION_GAP: reverse retained-handle retirement, last-owner callback-clear/unlink, idle before messaging; native member storage has no separate managed destructor resource | 0x004EAE94..0x004EAEBA; 0x0101FE28 -> 0x0051D8F8; 0x0051D338; 0x00664EB8 -> 0x0066365C; 0x00532A10..0x00532A74 |
+| M1-047 | IMPLEMENTATION_GAP: priority3 passed through executor creation, two workers/request order, f32 interpolation, success/EPERM gates; actual scheduling remains M1-014 policy | 0x008367C0; 0x007FB878; 0x007FBC4C; 0x007FBE02..0x007FBE14; 0x008334C8..0x00833598 |
+| M1-053 | IMPLEMENTATION_GAP: after-update first-state gate, API event, 109-byte layout, projection and status/ID/gameStatus gates; supplied fields read owning components | 0x0052F6C0..0x0052F7B0; 0x005180D8..0x00518252; 0x00846D38..0x00846DEE; 0x0084AA1C..0x0084AAB8; 0x00711970..0x00711A62 |
+
+M1-053 supplier boundaries: root localization pose M11-053/055; tracking ID M13-021 (constructor -1 at 0x0063DA86, writers M4/M13); processed-image timestamp M11-035 (VisionComponent+0xE8, getter 0x006527A2); carrying M12-008; localized/game/off-treads M11-044/M10-001; calibrated head M4-001; synchronized raw sensors M2-002/M4-008/M4-020. Their existing gaps remain. This correction builds M1's projection without claiming supplier settlement.

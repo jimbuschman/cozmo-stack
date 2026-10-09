@@ -61,6 +61,10 @@ public sealed class CozmoMotion
     // fidelity: M4-005
     /// <summary>MC+8: 0 at construction (0x0063DA7C).</summary>
     private byte _actionIdCounter;
+    // fidelity: M13-021
+    /// <summary>MovementComponent's ObjectID (+0x1C, value +0x20), initialized to -1 at 0x0063DA86.
+    /// The tracking-action writers remain owned by M4/M13; with no tracking action this stays -1.</summary>
+    internal int HeadTrackingObjectId { get; set; } = -1;
 
     /// <summary>Track bits (M4-014): HEAD 1, LIFT 2, BODY 4.</summary>
     public const byte HeadTrack = 1, LiftTrack = 2, BodyTrack = 4;
@@ -103,6 +107,7 @@ public sealed class CozmoMotion
             _ddBody = _ddHead = _ddLift = false;
             _directDriveDisabled = false;
             _headAngle = MinHeadAngleRad;
+            HeadTrackingObjectId = -1;
             _headMoving = _liftMoving = _bodyMoving = false;
             _liftAngle = null;
             ending = _actions.ToArray();

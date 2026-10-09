@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "6bbecc9cff50abfd878450c99267897651a3a1daf2d78cd514b3078c29d65508",
+  "inventory_sha256": "81eb7d19f2e97809d2f6708e4a4addaaf15b53b2dc6dd75026cd3283c610e0f2",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -573,12 +573,13 @@
       "hardware_required": false
     },
     "M1-046": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Channel/member subscription retirement recipients",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Robot constructs RobotIdleTimeoutComponent at +0x51C and RobotToEngineImplMessaging at +0x518 (0x0051020A..0x0051022E). Robot dtor clears +0x51C, releases its shared-handle vector, then clears +0x518 and calls RobotToEngineImplMessaging::~ (0x005112E6..0x00511308).",
-        "RobotToEngineImplMessaging dtor releases members +0x144/+0x138/+0x110/+0x104, handle vector +0xF8, filebuf/ios, then its base (0x00532A10..0x00532A74). Last shared-handle release invokes virtual slot +8 then deleting-dtor slot +4 (0x004EF184..0x004EF1CC); concrete target and behavior-changing descendants UNKNOWN. (MISSING triage Q1-Q3.)"
+        "Manager adopted U1-U8: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Robot destruction 0x005112E6..0x00511308 -> InitSubscriptions/RobotLifetime.Destroy, idle owner +0x51C before messaging +0x518.",
+        "Reverse shared-handle release 0x004EAE94..0x004EAEBA; last-owner virtual slots 0x004EF184..0x004EF1CC; vtable 0x0101FE28 -> Thumb 0x0051D8F8, deleting slot 0x0101FE24 -> Thumb 0x0051D8D4. Messaging unsubscribe 0x0051D8F8..0x0051D906 -> 0x0051D338 callback-clear and unlink; idle target 0x00664EB8 -> 0x0066365C. RobotSubscriptions.cs RetainedSubscription/SubscriptionSignal/SubscriptionOwners implement these checked recipients.",
+        "Messaging member retirement 0x00532A10..0x00532A74: +0x144/+0x138/+0x110/+0x104, +0xF8 vector, filebuf/ios, base. Native storage containers and stream/base subobjects have no separately retained managed resources; managed endpoint retires the owned vector in reverse order without invoking callbacks."
       ],
       "live_path": true,
       "hardware_required": false
@@ -590,7 +591,8 @@
       "evidence": [
         "H1 creates two threads and calls SetThreadPriority on both only for priority !=2 (0x007FBDBA,0x007FBDEC,0x007FBE02..0x007FBE14).",
         "H2 priority3 selects policy2/SCHED_RR and requests min+trunc_f32((max-min)*0.75), bits0x3F400000; EPERM/result1 skips error path (0x008334CC..0x00833532).",
-        "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024."
+        "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024.",
+        "Manager adopted P1-P4: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-final-extraction.md. Transport constructor priority integer 3 at 0x008367C0 -> Dispatch::Create 0x007FB878 -> TaskExecutor 0x007FBC4C; both workers start before requests at 0x007FBE02..0x007FBE14. ReliableTransport constructor -> TransportThreadPriority.Request preserves the request and result gates."
       ],
       "live_path": true,
       "hardware_required": false
@@ -658,8 +660,10 @@
       "title": "Outgoing RobotState publication from the engine tick",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
       "evidence": [
-        "UpdateAllRobots enters from engine tick 0x004ED648; iterates robots, calls Robot::Update then HasReceivedRobotState, and only when true calls GetRobotState, constructs MessageEngineToGame::RobotState and invokes external slot +0x1C (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). External sink remains UNKNOWN.",
-        "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
+        "UpdateAllRobots enters from engine tick 0x004ED648; Robot::Update then HasReceivedRobotState, GetRobotState and external slot +0x1C at 0x0052F6C0..0x0052F7B0; counterpart CozmoEngine.TickAt -> PublishRobotState -> public RobotStatePublished API under the approved app boundary.",
+        "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.",
+        "Manager adopted P2a-P2m: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-053-projection-rows.md. GetRobotState 0x005180D8..0x00518252; pose struct 0x00846D38..0x00846DEE; quaternion angle 0x0084AA1C..0x0084AAB8; Radians 0x0084C832..0x0084C87C; packed 109-byte layout 0x00711970..0x00711A62. EngineRobotState.cs uses binary64 products followed by binary32 norms and native unordered branch.",
+        "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2."
       ],
       "live_path": true,
       "hardware_required": false
