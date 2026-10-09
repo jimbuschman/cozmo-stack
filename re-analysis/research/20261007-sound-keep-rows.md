@@ -9,7 +9,28 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 405 — Q14-005 bounded decision closure
+
+This closes triage line36's resampler decisions for retained mono/stereo sources and known voice/Hijack wiring. It does not claim a completed M6-004 implementation, PCM equivalence result, or changed manifest fidelity. Existing positive rows are joined below rather than opening their old pending wording again.
+
+| Production segment | Primary-backed retained rows | Exact closure / boundary |
+|---|---|---|
+| Voice constructor and source format input | VI191B;SA203;Q14-003/004 closure maps;VF1 | Voice constructor callsA46D70 for embedded resampler; attached sourcePBI158 format is copied throughVF1/A5321C intoA47038,outputRate=voiceEC. Known Vorbis/ADPCM format publications are in their checked decision maps. Source association/raw1/3F paths remain explicit; no new format synthesized. |
+| Init/phase/format/rate/pitch/ramp | H9–14;RS1–7;PS404A/B | Exact initial10000 phase,embedded history,ratio/48000 cadence,selector bytes,target/current step,NaN/zero-step behavior,prior-ramp fold and immediate/ramp input flags. A53134 publishes current requested quota before actualsource20 rawP44 query,reads currentPBI flags afterward. Rate/pitch scheduling math retained; no per-sample exemption for decisions. |
+| All retained actual dispatch recipients | G1/G2;RK1–6;RR1–6;SF399;SR400;IR401;IB402;IC403 | Width16/32,channels1/2,state0/1/2 each has its actual slot and native count/phase/history/input-consumption/output-production/result contract. Emptyinput11 is tested before dispatch; nonempty firstdispatch precedes output-quota gate. G1 owns ramp completion state change after each kernel. No unexamined retained kernel between these controls. |
+| Voice persistent buffer/metadata/silent timing | G3–13;RS9–12;WV5;PS404B–E | Descriptor adoption,retained-input priority,allocation result,skip flags/counts,exact padding,metadata window/position/divisor,input release,output11/2D descriptor publication and reset/teardown order have named local contracts. G6/A4721C0 supplies positive reason its conversion branch is not selected. |
+| Same-voice next-source transition | NS1–6;SA203;CB395;SN183/SF10/NF;CB1–2 | Offset scheduling,StartStream3F→11/non1→2,format compatibility,pointer handoff,new pitch/format selection and rawresult retained. NS7 duration publication joins existingA01818 deferred notification andA0393C observer; stale 'unread duration observer' wording is settled by these rows. Control queue/observer order retained; excluded 3D positioning payload stops below. |
+| Hijack format/rate/quota/render/reset | H1–8;HG1–5;FR6;G1/G2 plus retained float kernels | Shipped app22320/744 arguments→interface48/4C→pluginC/10→renderer4/8→Init/outputdescriptor and Execute quota54. Format comes from plug-in Init; pitch0/immediate initial setup is H4. Callback presence/result11/2D gates,persistent accumulated-count reset and retry-on-input behavior exact. No guessed default rate/capacity,unconditional flush or nonempty-only callback gate. |
+
+out of scope: per-sample resampler/interpolation/history representation arithmetic and NEON lane order under ADP-1; measured arithmetic equivalence is not claimed here.
+
+out of scope: backing storage/I/O/allocator mechanics; selected publication/failure gates remain covered above.
+
+out of scope: zero/multichannel sources,PCM file sources and 3D positioning payloads under the scope guard; no descent or absence-based reachability proof.
+
+Q14-005 becomes CHECKED for the bounded decisions-only obligation. Census27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE/140. Q14 remains incomplete; Q15 still waits for Q14. No production,manifest,inventory orhardware change.
 
 ## Checkpoint 404 — resampler pitch input and stage lifecycle
 

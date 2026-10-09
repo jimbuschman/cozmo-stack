@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 26 CHECKED native-row obligations / 8 CHECKED scope exclusions / 106 PARTIAL / 0 NOT DONE; decision checkpoints through399 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through405 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -12,7 +12,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-002 | 33 | PARTIAL |
 | Q14-003 | 34 | CHECKED |
 | Q14-004 | 35 | CHECKED |
-| Q14-005 | 36 | PARTIAL |
+| Q14-005 | 36 | CHECKED |
 | Q14-006 | 39 | CHECKED |
 | Q14-007 | 40 | PARTIAL |
 | Q14-008 | 41 | PARTIAL |
@@ -184,7 +184,7 @@ out of scope: zero/multichannel sources and PCM file families; retained mono/ste
 
 > | M6-004 | **KEEP** | 0x00A46D80..0x00A46D88;0x00A47038;0x00A47384;0x00A47178;0x00A52D4C | Format/rate/channel writers, initial phase, pitch/ramp scheduling, input consumed/output produced, zero-input results and live wiring stay exact. |
 
-PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. NS1–NS6 add the same-voice format transition, offset/3F/raw2 gates, pointer handoff and pitch/format change. SF399 adds retained stereo-float constant-step first/second counts, phase/plane/history and consumed/produced/raw-result controls. Integer mono/stereo and retained stereo ramp geometry, format and observer joins remain open; excluded multichannel sources do not reopen arithmetic work; not a completed M6-004 port.
+CHECKED (bounded decisions-only): checkpoint405 joins actual voice/Hijack format/rate/quota inputs,constructor/Init/pitch/ramp/phase,all retained width16/32 mono/stereo state0/1/2 kernel frame/count/phase/history controls,empty-input/results,persistent-buffer metadata/padding,source transition/readiness and reset/teardown. Primary rows H1–14/HG1–5/FR6,RS1–12/NS1–7,PS404,G1–13/RK1–6/RR1–6/SF399/SR400/IR401/IB402/IC403,VF1/SA203 and Q14-003/004 maps; known duration observer/notification joins reuseCB1–2/SN183/SF10/NF. Sample arithmetic,backing infrastructure and guard exclusions stop explicitly; no completed M6-004 port,manifest promotion or measured DSP equivalence asserted.
 
 ## Q14-006 — triage line 39
 
@@ -2159,3 +2159,7 @@ IC403 establishes retained mono/stereo state1 width16 division counts, vector/ta
 ## Checkpoint 404 — resampler pitch input/lifecycle
 
 PS404 supplies actualA53134 source pitch query, current PBI flag/immediate-ramp decision, quota and empty-input/end joins, plus stage release/reset/teardown/pointer-delta publication. Q14-005 integration reconciliation retained; counts unchanged; Q15 pending Q14.
+
+## Checkpoint 405 — Q14-005 decision closure
+
+The concrete voice/Hijack integration map reuses known geometry/input/lifecycle/observer rows and checkpoints399–404 to settle the bounded resampler decision obligation. Q14-005 CHECKED; totals27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE/140. Other Q14 obligations remain open; Q15 pending Q14.
