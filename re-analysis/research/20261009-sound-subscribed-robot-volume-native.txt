@@ -1,0 +1,62 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01024194: raw=004EEB61 relocated=004EEB61 
+01024198: raw=0059A509 relocated=0059A509 
+0102419C: raw=0059A50D relocated=0059A50D 
+010241A0: raw=0059A529 relocated=0059A529 
+010241A4: raw=0059A53D relocated=0059A53D 
+010241A8: raw=0059A53F relocated=0059A53F 
+010241AC: raw=0059A543 relocated=0059A543 
+RANGE 0x0059A50C..0x0059A524 exclusive; Thumb;
+0059A50C: push         {r4, lr}
+0059A50E: mov          r4, r0
+0059A510: movs         r0, #8
+0059A512: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0059A516: ldr          r1, [pc, #0xc] ; word[0059A524]=00A89C6E
+0059A518: ldr          r2, [r4, #4]
+0059A51A: add          r1, pc
+0059A51C: adds         r1, #8
+0059A51E: strd         r1, r2, [r0]
+0059A522: pop          {r4, pc}
+RANGE 0x0059A528..0x0059A536 exclusive; Thumb;
+0059A528: ldr          r2, [pc, #0xc] ; word[0059A538]=00A89C5E
+0059A52A: add          r2, pc
+0059A52C: adds         r2, #8
+0059A52E: str          r2, [r1]
+0059A530: ldr          r0, [r0, #4]
+0059A532: str          r0, [r1, #4]
+0059A534: bx           lr
+0059A524: raw=00A89C6E relocated=00A89C6E 
+0059A538: raw=00A89C5E relocated=00A89C5E 
+RANGE 0x0059A53C..0x0059A55A exclusive; Thumb;
+0059A53C: bx           lr
+0059A53E: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+
+0059A542: push         {r4, lr}
+0059A544: ldr          r4, [r0, #4]
+0059A546: add.w        r0, r1, #0x10
+0059A54A: blx          #0x4af7d8 ; Anki::Cozmo::ExternalInterface::MessageGameToEngine::Get_SetRobotVolume
+
+0059A54E: ldr          r1, [r0, #4]
+0059A550: mov          r0, r4
+0059A552: pop.w        {r4, lr}
+0059A556: b.w          #0x8cbc3c
+RANGE 0x0074BCDA..0x0074BCDE exclusive; Thumb; _ZNK4Anki5Cozmo17ExternalInterface19MessageGameToEngine18Get_SetRobotVolumeEv
+0074BCDA: adds         r0, #8
+0074BCDC: bx           lr
+RANGE 0x004AF7D8..0x004AF7F0 exclusive; ARM;
+004AF7D8: add          ip, pc, #0xb00000
+004AF7DC: add          ip, ip, #148, #20
+004AF7E0: ldr          pc, [ip, #0x7f4]!
+004AF7E4: add          ip, pc, #0xb00000
+004AF7E8: add          ip, ip, #148, #20
+004AF7EC: ldr          pc, [ip, #0x7ec]!
+01043FD4: raw=004A4010 relocated=0074BCDB _ZNK4Anki5Cozmo17ExternalInterface19MessageGameToEngine18Get_SetRobotVolumeEv
+01043FD8: raw=004A4010 relocated=0059A215 _ZN4Anki5Cozmo5Audio16RobotAudioClient14SetRobotVolumeEf
+RANGE 0x008CBC3C..0x008CBC40 exclusive; Thumb;
+008CBC3C: bx           pc
+008CBC3E: mov          r8, r8
+RANGE 0x008CBC40..0x008CBC48 exclusive; ARM;
+008CBC40: ldr          ip, [pc] ; word[008CBC48]=FFBE3B98
+008CBC44: add          pc, ip, pc
+008CBC48: raw=FFBE3B98 relocated=FFBE3B98 
