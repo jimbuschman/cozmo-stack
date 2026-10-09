@@ -1,0 +1,164 @@
+Selected queued helper shared1 registry inputs: all24 witnessed serialized type18 settings. Actual Info type3 is PM536D, not inferred from pluginID lowbits.
+{"bank":"English(US)/Cozmo.bnk","id":775075376,"objectOffset":6206283,"payloadOffset":6206288,"payloadSha256":"eae2bbda462d91b9e379a1f6b3f1d9dfa5a0aad6ee4967ccbbb7de920da1b99b","pluginID":9043971}
+{"bank":"English(US)/Cozmo.bnk","id":871429944,"objectOffset":6206529,"payloadOffset":6206534,"payloadSha256":"16327ee4d4800109bb48563dec91689ef399d2eb6c07ceee12b5219dd958fe91","pluginID":7077891}
+{"bank":"English(US)/Cozmo.bnk","id":1133333215,"objectOffset":6213126,"payloadOffset":6213131,"payloadSha256":"ff27bf9b606b99c73649b300cd1cfd9c47011990a86ae5ea02ebe9b7bbb70233","pluginID":9043971}
+{"bank":"English(US)/Cozmo.bnk","id":1814121665,"objectOffset":6213216,"payloadOffset":6213221,"payloadSha256":"c256c53fdbb198d98e7f8c42ef5a06e4842f6449cbc1c69bdb6f7bbed2500c44","pluginID":9043971}
+{"bank":"English(US)/Cozmo.bnk","id":1868673011,"objectOffset":6213306,"payloadOffset":6213311,"payloadSha256":"c2c0e2d28b07d3b693d518ae792e133e59b916ae515c46c377d0a08e97439da7","pluginID":7077891}
+{"bank":"English(US)/Cozmo.bnk","id":1905427213,"objectOffset":6213350,"payloadOffset":6213355,"payloadSha256":"f1ed79ddbf6feef5823fcab5935c8b4a8d41ed6bdd64bd8a01b9b70574db3297","pluginID":7143427}
+{"bank":"English(US)/Cozmo.bnk","id":2157284052,"objectOffset":6213394,"payloadOffset":6213399,"payloadSha256":"9c54ee7b8929bcd28c283d4990522f80ac714f2327da302f3761883d1682ace3","pluginID":7143427}
+{"bank":"English(US)/Cozmo.bnk","id":2196628262,"objectOffset":6213438,"payloadOffset":6213443,"payloadSha256":"14ab19d9759d6ef43c8ac3e6b5ee5d076b8c541947fb3c5b3fccfbeb104e877f","pluginID":9043971}
+{"bank":"English(US)/Cozmo.bnk","id":2313011259,"objectOffset":6213566,"payloadOffset":6213571,"payloadSha256":"fa27acec6968d312d1c75ffd80b966735b492aab04d43089cb90db48f19f921d","pluginID":7077891}
+{"bank":"English(US)/Cozmo.bnk","id":2814082681,"objectOffset":6213610,"payloadOffset":6213615,"payloadSha256":"945188093661f9f54257f721b5e4c70fcea692b517ff9fac12eeacc2356c0e77","pluginID":7077891}
+{"bank":"English(US)/Cozmo.bnk","id":3184602036,"objectOffset":6213654,"payloadOffset":6213659,"payloadSha256":"085e5b9e8e12e528ca91b9c412a816a81e2861925e54f2cfb860038a3ef2c425","pluginID":7143427}
+{"bank":"English(US)/Cozmo.bnk","id":3514404594,"objectOffset":6213698,"payloadOffset":6213703,"payloadSha256":"7120e087aa73bd9700c9e7b1712510e62075dcbe740bfa67e1b3fd111c0588f7","pluginID":7143427}
+{"bank":"English(US)/Cozmo.bnk","id":3538378849,"objectOffset":6213742,"payloadOffset":6213747,"payloadSha256":"0155ce7d430b7ffd151834e952e3796a7ad7ee1f363ffedc47fed0514f9f74ca","pluginID":9043971}
+{"bank":"English(US)/Cozmo.bnk","id":3818899289,"objectOffset":6213832,"payloadOffset":6213837,"payloadSha256":"8fb687b0728e7ee619b9618c9802396e10ea53b11fd6330a81431ff3fb192ed2","pluginID":7077891}
+{"bank":"English(US)/Cozmo.bnk","id":3832251591,"objectOffset":6213876,"payloadOffset":6213881,"payloadSha256":"783a8868032ec2367fe73f9a1e4f3999746f14e6354ceeeee134d97d1ea7e1c5","pluginID":6881283}
+{"bank":"English(US)/Cozmo.bnk","id":4014558717,"objectOffset":6213954,"payloadOffset":6213959,"payloadSha256":"9e0ef443504f97a6deeeb1a140f199974d429e8a742d55a4a2e37e79ce032926","pluginID":6881283}
+{"bank":"English(US)/Cozmo.bnk","id":4065554388,"objectOffset":6214032,"payloadOffset":6214037,"payloadSha256":"a39ae9d80571868884507f5f6c18a89573fb060e36cffec7b1d723596725a394","pluginID":6881283}
+{"bank":"English(US)/Cozmo.bnk","id":4066938653,"objectOffset":6214110,"payloadOffset":6214115,"payloadSha256":"8554416789ba3f80d279be7a106d2b553dc0142957998895388df965720ca4c7","pluginID":6881283}
+{"bank":"Init.bnk","id":390660550,"objectOffset":2937,"payloadOffset":2942,"payloadSha256":"32d32a5238f98593f8a73d9322858fac783ac6e56dc0365f7f748bb42dd39274","pluginID":6881283}
+{"bank":"Init.bnk","id":985559041,"objectOffset":3067,"payloadOffset":3072,"payloadSha256":"109b0c9bd24c1822ad766274c838ed68b5397e0c1270a0853f37d03bedc000bd","pluginID":7208963}
+{"bank":"Init.bnk","id":1734867999,"objectOffset":3111,"payloadOffset":3116,"payloadSha256":"3caea4fce60ba5500ff558144081229e47e562a44d5d84424a2875089dcf4b34","pluginID":6881283}
+{"bank":"Init.bnk","id":2313011259,"objectOffset":3189,"payloadOffset":3194,"payloadSha256":"fa27acec6968d312d1c75ffd80b966735b492aab04d43089cb90db48f19f921d","pluginID":7077891}
+{"bank":"Init.bnk","id":3743559935,"objectOffset":3233,"payloadOffset":3238,"payloadSha256":"63e63758b38bdde0fb22f55951ea529b894ed918c2dc04ae7694e9b04a984002","pluginID":7208963}
+{"bank":"SFX.bnk","id":2755291684,"objectOffset":93101,"payloadOffset":93106,"payloadSha256":"1dfdb2b591252065cb576a5f0d80251e5fc3cfe730d42b278582e72bdbe3addb","pluginID":7077891}
+
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009C5A24..0x009C5B78 exclusive; ARM;
+009C5A24: push         {r4, r5, r6, r7, r8, lr}
+009C5A28: mov          r5, r0
+009C5A2C: ldr          r0, [r1]
+009C5A30: mov          r3, #0
+009C5A34: mov          r4, r1
+009C5A38: str          r3, [r1]
+009C5A3C: cmp          r0, r3
+009C5A40: beq          #0x9c5a50
+009C5A44: ldr          r3, [r0]
+009C5A48: ldr          r3, [r3, #0xc]
+009C5A4C: blx          r3
+009C5A50: ldr          r3, [r5, #0x54]
+009C5A54: mov          r2, #0
+009C5A58: strb         r2, [r4, #4]
+009C5A5C: cmp          r3, r2
+009C5A60: popeq        {r4, r5, r6, r7, r8, pc}
+009C5A64: ldr          r5, [r3, #4]
+009C5A68: cmp          r5, r2
+009C5A6C: popeq        {r4, r5, r6, r7, r8, pc}
+009C5A70: ldrb         r3, [r3, #9]
+009C5A74: cmp          r3, r2
+009C5A78: bne          #0x9c5ae8
+009C5A7C: ldr          r3, [pc, #0xf4] ; word[009C5B78]=0067A5E4
+009C5A80: ldr          r3, [pc, r3]
+009C5A84: ldr          r6, [r3]
+009C5A88: add          r7, r6, #0xdc
+009C5A8C: mov          r0, r7
+009C5A90: bl           #0x4d3064
+009C5A94: ldr          r1, [r6, #0xe4]
+009C5A98: cmp          r1, #0
+009C5A9C: beq          #0x9c5b44
+009C5AA0: mov          r0, r5
+009C5AA4: bl           #0x4a6694
+009C5AA8: ldr          r3, [r6, #0xe0]
+009C5AAC: ldr          r3, [r3, r1, lsl #2]
+009C5AB0: cmp          r3, #0
+009C5AB4: bne          #0x9c5ac8
+009C5AB8: b            #0x9c5b70
+009C5ABC: ldr          r3, [r3, #4]
+009C5AC0: cmp          r3, #0
+009C5AC4: beq          #0x9c5b70
+009C5AC8: ldr          r2, [r3, #8]
+009C5ACC: cmp          r5, r2
+009C5AD0: bne          #0x9c5abc
+009C5AD4: ldr          r2, [r3, #0xc]
+009C5AD8: mov          r6, r3
+009C5ADC: add          r2, r2, #1
+009C5AE0: str          r2, [r3, #0xc]
+009C5AE4: b            #0x9c5b48
+009C5AE8: ldr          r3, [pc, #0x8c] ; word[009C5B7C]=0067A578
+009C5AEC: ldr          r3, [pc, r3]
+009C5AF0: ldr          r6, [r3]
+009C5AF4: add          r7, r6, #0xc8
+009C5AF8: mov          r0, r7
+009C5AFC: bl           #0x4d3064
+009C5B00: ldr          r1, [r6, #0xd0]
+009C5B04: cmp          r1, #0
+009C5B08: beq          #0x9c5b44
+009C5B0C: mov          r0, r5
+009C5B10: bl           #0x4a6694
+009C5B14: ldr          r3, [r6, #0xcc]
+009C5B18: ldr          r3, [r3, r1, lsl #2]
+009C5B1C: cmp          r3, #0
+009C5B20: bne          #0x9c5b34
+009C5B24: b            #0x9c5b70
+009C5B28: ldr          r3, [r3, #4]
+009C5B2C: cmp          r3, #0
+009C5B30: beq          #0x9c5b70
+009C5B34: ldr          r2, [r3, #8]
+009C5B38: cmp          r5, r2
+009C5B3C: bne          #0x9c5b28
+009C5B40: b            #0x9c5ad4
+009C5B44: mov          r6, r1
+009C5B48: mov          r0, r7
+009C5B4C: bl           #0x4d3070
+009C5B50: ldr          r0, [r4]
+009C5B54: str          r6, [r4]
+009C5B58: cmp          r0, #0
+009C5B5C: popeq        {r4, r5, r6, r7, r8, pc}
+009C5B60: ldr          r3, [r0]
+009C5B64: pop          {r4, r5, r6, r7, r8, lr}
+009C5B68: ldr          r3, [r3, #0xc]
+009C5B6C: bx           r3
+009C5B70: mov          r6, r3
+009C5B74: b            #0x9c5b48
+RANGE 0x00A4E49C..0x00A4E4B8 exclusive; ARM;
+00A4E49C: ldr          r3, [r4, #0x1a8]
+00A4E4A0: mov          r2, r5
+00A4E4A4: mov          r1, #6
+00A4E4A8: ldr          r0, [r3, #0x10]
+00A4E4AC: bl           #0x9cc4d8
+00A4E4B0: cmp          r0, #0
+00A4E4B4: bne          #0xa4e414
+RANGE 0x00A4E414..0x00A4E484 exclusive; ARM;
+00A4E414: ldr          r0, [r4, #0x1a8]
+00A4E418: cmp          r0, #0
+00A4E41C: beq          #0xa4e464
+00A4E420: ldr          r3, [r0, #0xc]
+00A4E424: cmp          r3, #0
+00A4E428: beq          #0xa4e454
+00A4E42C: ldr          r2, [pc, #0x130] ; word[00A4E564]=FFFFFE90
+00A4E430: mov          r0, r3
+00A4E434: ldr          r3, [r3]
+00A4E438: ldr          r1, [r6, r2]
+00A4E43C: ldr          r3, [r3, #8]
+00A4E440: blx          r3
+00A4E444: ldr          r3, [r4, #0x1a8]
+00A4E448: mov          r2, #0
+00A4E44C: mov          r0, r3
+00A4E450: str          r2, [r3, #0xc]
+00A4E454: bl           #0x9cf820
+00A4E458: ldr          r3, [r4, #0x1a8]
+00A4E45C: mvn          r2, #0
+00A4E460: str          r2, [r3, #0x10]
+00A4E464: ldr          r0, [sp, #8]
+00A4E468: cmp          r0, #0
+00A4E46C: beq          #0xa4e47c
+00A4E470: ldr          r3, [r0]
+00A4E474: ldr          r3, [r3, #0xc]
+00A4E478: blx          r3
+00A4E47C: add          sp, sp, #0x28
+00A4E480: pop          {r4, r5, r6, r7, r8, pc}
+RANGE 0x009CC4D8..0x009CC508 exclusive; ARM;
+009CC4D8: ldr          r3, [r2, #4]
+009CC4DC: sub          r3, r3, #0x7e000
+009CC4E0: sub          r3, r3, #1
+009CC4E4: cmp          r3, #1
+009CC4E8: bls          #0x9cc4f4
+009CC4EC: mov          r0, #0x2e
+009CC4F0: bx           lr
+009CC4F4: ldr          r3, [r2]
+009CC4F8: cmp          r3, r1
+009CC4FC: movne        r0, #0xa
+009CC500: moveq        r0, #0
+009CC504: bx           lr
