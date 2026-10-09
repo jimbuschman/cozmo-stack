@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 41 CHECKED native-row obligations / 8 CHECKED scope exclusions / 91 PARTIAL / 0 NOT DONE; decision checkpoints through538 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 42 CHECKED native-row obligations / 8 CHECKED scope exclusions / 90 PARTIAL / 0 NOT DONE; decision checkpoints through539 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -89,7 +89,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-080 | 129 | CHECKED |
 | Q14-081 | 130 | CHECKED |
 | Q14-082 | 131 | CHECKED |
-| Q14-083 | 132 | PARTIAL |
+| Q14-083 | 132 | CHECKED |
 | Q14-084 | 133 | PARTIAL |
 | Q14-085 | 134 | PARTIAL |
 | Q14-086 | 135 | PARTIAL |
@@ -682,7 +682,7 @@ CHECKED: OR1–OR2 reopen both null/replacement publication-before-release tails
 
 > | C31.3 effective parameter recompute / R3.1–R3.2 | M6-022,M6-025,M6-026 | **KEEP** | 0x009BCA68;0x009FFAD4;0x009FFD14..0x009FFE18 | Full recompute, bit reinterpretation/polynomial and threshold compare determine whether a voice is runnable/audible, so no fast-math drop. |
 
-PARTIAL; V1–V14 and I1–I6 close the recompute caller and positioning inputs. 9BCA68 gating and remaining virtual recipients still need closure.
+CHECKED at checkpoint539 for the quoted bounded decisions. DG1–3/CR502 positively bind actual base/continuous context24 and28 to full9FFAD4 and smaller9FF368. V1–14/FC1/EJ497A with NPA/NPS/NHIER/AUX/MPA/RV/AC/RC7/RG/Y1/EB497 supply reset/cache/filter/order, parameter queries/composition, priority, attachment and readiness decisions. AT539A–B independently capture both exact threshold setters and publication; AU495/SA203/IP493/VC/VS join the live audibility/admission/start consumers. Native conversion/bit reinterpretation/polynomial/F32 association and unordered gates stay exact. Out of scope: coordinate payloads and imported phone libm bodies. Other source/input/writer obligations stay independently scoped; no global writer or production-fidelity acceptance.
 
 ## Q14-084 — triage line 133
 
