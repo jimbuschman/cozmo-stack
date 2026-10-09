@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through501 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through502 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2449,3 +2449,5 @@ Checkpoint499 — DT499 actual device0 holder/sink termination then format/selec
 Checkpoint500 — original033 device/barrier/frame/route/notification/pending-state and selected E0/E4 producer joins reconciled against current positive rows, with geometry/storage exclusions applied. Reuse only; no duplicate capture/descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint501 — original034 continuous context/association/switch precedence/last-switch pair/special policy/extended Layer joins reconciled; reuse only, no repeated native capture or excluded infrastructure descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint502 — CR502 actual base/continuous context24/full and28/parameter refresh, physical factor/order/publication and primary correction PB170C unordered gain->+0;56 complete ARM instructions. No production/status change, broader writer/product closure remains explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
