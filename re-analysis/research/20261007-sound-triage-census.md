@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through535 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 39 CHECKED native-row obligations / 8 CHECKED scope exclusions / 93 PARTIAL / 0 NOT DONE; decision checkpoints through536 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -79,13 +79,13 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-070 | 119 | CHECKED |
 | Q14-071 | 120 | CHECKED |
 | Q14-072 | 121 | CHECKED |
-| Q14-073 | 122 | PARTIAL |
+| Q14-073 | 122 | CHECKED |
 | Q14-074 | 123 | PARTIAL |
 | Q14-075 | 124 | PARTIAL |
 | Q14-076 | 125 | PARTIAL |
 | Q14-077 | 126 | CHECKED |
-| Q14-078 | 127 | PARTIAL |
-| Q14-079 | 128 | PARTIAL |
+| Q14-078 | 127 | CHECKED |
+| Q14-079 | 128 | CHECKED |
 | Q14-080 | 129 | PARTIAL |
 | Q14-081 | 130 | CHECKED |
 | Q14-082 | 131 | CHECKED |
@@ -614,29 +614,9 @@ CHECKED; X5–X6: reset gates and native field widths/order. Downstream virtual 
 
 > | C30.8 / voice init seam | M6-025,M6-013 | **KEEP** | 0x00A54A30 | Caller/return/failure/FX-selection proof remains required; C31 improves evidence but not authority/settlement automatically. |
 
-PARTIAL: VI523A positively binds all three actual A54A30 production callers (A44BE8 secondary replacement, A555C0 lazy render, A42FF0 attach) and their raw1/failure/Stop/delete gates. VF1–9/WV/RS/PS404/EB497/IC/FQ/FS/SL/LP/PP rows close named stages, wrappers, registry settings, bypass writer and known lifecycle controls. P109523 adds selected authored109 creator/table/Info/Init/history/kernel choice/failure/Reset/Term. Remaining specific109 Execute/kernel refresh/count/channel controls and138 live product controls are not established by their parameter-reader rows alone; selected additional source/FX products must retain their own proved interfaces. No automatic whole-record acceptance.
+CHECKED (decisions-only scope), checkpoint536: VI523A allthree native callers; VF1–9 ordered source-format/stage/four-slot factory/metadata/wrapper/Init/Reset/chain/final-stage joins; RS/PS404 and EB497 actual stages/bypass; PM536A–E all89 witnessed settings, actual type2 source rejection/cleanup and six concrete accepted FX families. CP/F/EQ521/H/P109523–524/P138525–535 and PP/LP/FS432/SL433/IC supply the selected lifecycle, parameter and render decisions. No unverified product link inserted between source-backed pieces. No manifest/fidelity acceptance or whole source-subsystem completion claim. Other source/media/device/public writer obligations remain their own rows, not hidden remainders of this bounded item.
 
-P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
-
-P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
-
-P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
-
-P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
-
-P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
-
-P138530: actual auxiliary ring swap/cursor and selected group100-iteration budget, phase/ready/count/last-channel publication, preview/discard/output/terminal predicates are positive. Remaining named transform/overlap/window internals plus persistent graph/setup remain retained.
-
-P138531: concrete transform/window gain selection, full-block overlap admission versus caller-count publication, representation flags and postfilter/mix order now have retained control boundaries. Per-sample numeric callees stop under the guard. Persistent setup/design values and live dirty coefficient association remain separate P138527/P138526C obligations. No generic unread overlap/transform boundary remains.
-
-P138532: actual query/allocate/query/allocate/init/init order and ignored initialization returns, workspace admission/size publication and selected kind2 byte1/0 persistent window values are positive. Numeric FFT sample-transform table generation stops at the guard boundary. Remaining specific seven-type persistent filter design/live dirty association is P138527/P138526C, not generic unread workspace/window setup.
-
-P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
-
-P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
-
-P138535: all seven type graphs transcribed independently for Init/live0/live1, all six common inputs match exactly for every type. Together P138534 publication and P138531 consumption close the specific persistent design obligation. Selected138 local contract now has no generic unread setup/design/window/overlap/cleanup remainder; bounded product-population/wrapper/caller census reconciliation precedes item promotion.
+out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics and the approved source branch exclusions; retained parameters, selection, route, counts and lifecycle remain exact.
 
 ## Q14-074 — triage line 123
 
@@ -666,55 +646,17 @@ CHECKED: CD1–CD2 reopen new-minus-old byte delta, cursor store, old media/stre
 
 > | C31.2 R2.1–R2.15 caller, registry, wrapper setup | M6-025,M6-013 | **KEEP** | 0x00A54A30;0x009CC2AC;0x009CC4D8;0x00A47038;0x00A764D4;0x00A5676C;0x00A5335C | Plugin selection/type/version, bypass/async/in-place flags, format changes, wrapper construction, allocation and chain connection/cleanup order remain exact. |
 
-PARTIAL: VI523A binds all three Init caller gates; VF/WV/PR/IC/FQ/FS/SL/LP/PP actual registry/version/settings/reader/clone/subscription paths are positive. RS1–8/PS404 close A47038/A764D4/A5676C; EB497/FQ supplies actual live four-slot bypass writer. P109523 adds actual109 product creation/metadata/Init/history/Reset/Term. Remaining specific109 Execute/kernel control boundary and138 live product control paths, rather than generic unread stage or bypass claims.
+CHECKED (decisions-only scope), checkpoint536: VF/WV/IC/PR actual first-match registry/type/version/flags/allocation/format/init/reset/drop controls; RS/PS404 stages; EB497/FQ431 bypass input; FS432/SL433/PP/LP clone/subscription/reader/release. PM536 binds all89 actual settings to six type3 FX metadata/lifecycle families and four type2 source rejection/cleanup families, with109/138 local contracts now positive. Forward slot creation/reverse chain connection and no rollback on latefailure are retained. No manifest/fidelity acceptance or whole source-subsystem completion claim. Other source/media/device/public writer obligations remain their own rows, not hidden remainders of this bounded item.
 
-P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
-
-P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
-
-P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
-
-P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
-
-P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
-
-P138530: actual auxiliary ring swap/cursor and selected group100-iteration budget, phase/ready/count/last-channel publication, preview/discard/output/terminal predicates are positive. Remaining named transform/overlap/window internals plus persistent graph/setup remain retained.
-
-P138531: concrete transform/window gain selection, full-block overlap admission versus caller-count publication, representation flags and postfilter/mix order now have retained control boundaries. Per-sample numeric callees stop under the guard. Persistent setup/design values and live dirty coefficient association remain separate P138527/P138526C obligations. No generic unread overlap/transform boundary remains.
-
-P138532: actual query/allocate/query/allocate/init/init order and ignored initialization returns, workspace admission/size publication and selected kind2 byte1/0 persistent window values are positive. Numeric FFT sample-transform table generation stops at the guard boundary. Remaining specific seven-type persistent filter design/live dirty association is P138527/P138526C, not generic unread workspace/window setup.
-
-P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
-
-P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
-
-P138535: all seven type graphs transcribed independently for Init/live0/live1, all six common inputs match exactly for every type. Together P138534 publication and P138531 consumption close the specific persistent design obligation. Selected138 local contract now has no generic unread setup/design/window/overlap/cleanup remainder; bounded product-population/wrapper/caller census reconciliation precedes item promotion.
+out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics and the approved source branch exclusions; retained parameters, selection, route, counts and lifecycle remain exact.
 
 ## Q14-079 — triage line 128
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
 
-PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. WV11–WV15 close concrete virtual38/3C Execute/bypass dispatch, allocation/null failures, padding and output-state gates. Remaining: selected plug-in target closure and bypass writers. Checkpoint144 positively joins A0EDB0 to U27, R34/R35, R37 and SU1–6, so those local detach bodies are not unread; concrete state/destructor and producer closure remain separate. No wholesale DSP exemption.
+CHECKED (decisions-only scope), checkpoint536: WV1–15/VF6–9 actual virtual+24/+28/+2C contracts, output/input ownership, metadata, capacities, frame/count/end/bypass states; EB497 concrete bypass writer; SL/PP/IC concrete subscription/parameter/settings cleanup; PM536 actual selected product metadata/cleanup/context and CP/F/EQ/H/P109/P138 render controls. Numerical bodies stop only after their concrete count/parameter/lifecycle boundaries. No generic unread helper or product remainder remains in the quoted bounded wrapper obligation. No manifest/fidelity acceptance or whole source-subsystem completion claim. Other source/media/device/public writer obligations remain their own rows, not hidden remainders of this bounded item.
 
-P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
-
-P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
-
-P138527: selected two-group setup, enable/type/channel, allocation/publication/rawfailure and persistent-design boundary are positive. Specific FFT workspace/window setup, per-type persistent graph/live dirty association and AA8CCC frame/state consumer remain retained. A disassembly capture alone does not close those dependencies.
-
-P138528: actual138 frame31 threshold, terminal3*request quota, padding/valid/state publication and live format/channel/group/auxiliary/gain/cache ordering are positive. Remaining selected AA6BAC/A811CC frame-history controls, persistent application/design and setup interfaces remain retained; no entire AA8CCC sample-only exemption.
-
-P138530: actual auxiliary ring swap/cursor and selected group100-iteration budget, phase/ready/count/last-channel publication, preview/discard/output/terminal predicates are positive. Remaining named transform/overlap/window internals plus persistent graph/setup remain retained.
-
-P138531: concrete transform/window gain selection, full-block overlap admission versus caller-count publication, representation flags and postfilter/mix order now have retained control boundaries. Per-sample numeric callees stop under the guard. Persistent setup/design values and live dirty coefficient association remain separate P138527/P138526C obligations. No generic unread overlap/transform boundary remains.
-
-P138532: actual query/allocate/query/allocate/init/init order and ignored initialization returns, workspace admission/size publication and selected kind2 byte1/0 persistent window values are positive. Numeric FFT sample-transform table generation stops at the guard boundary. Remaining specific seven-type persistent filter design/live dirty association is P138527/P138526C, not generic unread workspace/window setup.
-
-P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
-
-P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
-
-P138535: all seven type graphs transcribed independently for Init/live0/live1, all six common inputs match exactly for every type. Together P138534 publication and P138531 consumption close the specific persistent design obligation. Selected138 local contract now has no generic unread setup/design/window/overlap/cleanup remainder; bounded product-population/wrapper/caller census reconciliation precedes item promotion.
+out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics and the approved source branch exclusions; retained parameters, selection, route, counts and lifecycle remain exact.
 
 ## Q14-080 — triage line 129
 
