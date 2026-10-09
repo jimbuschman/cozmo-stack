@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through308 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through309 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1763,3 +1763,7 @@ DPOST307A–E add selected OnDevice Update/done, due-time <= gate, raw64 globald
 ### Checkpoint 308 — concrete OnDevice callback products
 
 DCB308A–D bind the created callback table, distinguish heap clone/in-place clone from move assignment, retain/release selected captured weak ownership, and join weak-gated mutex-protected completion to AL1 and DPOST307 donecount. Other context/post-map/Dispatch/input closure stays PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 309 — Dispatch deadline/stop binding
+
+DQUEUE309A–E bind selected Create/After/Stop, raw64 millisecond scaling plus saved steady-clock deadline, stopflag publication before two separate reverse queued-task clear/notify phases, and sequential joins. Selected workers and admissions still required for in-flight/cancellation guarantees. Counts unchanged, Q14 PARTIAL, Q15 parked.
