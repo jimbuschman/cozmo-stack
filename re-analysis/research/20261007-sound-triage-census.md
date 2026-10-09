@@ -290,7 +290,7 @@ PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit gr
 
 > | M6-018 | **KEEP** | 0x00A57724..0x00A5792C;0x00A1C75C;0x00A1C7D4;0x00A56E20..0x00A5705C | No-JNI 48000/1024 branch, rate-to-bus/voice link, frame rounding and exact robot-rate handoff are timing/geometry; Android system query is an existing separate external boundary, not new DSP permission. |
 
-PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. Remaining: active bus/voice rate consumers and device writer census; A40BC0 is now traced as setup/pool/listener/registration/table initialization rather than assumed a rate setter; robot-rate handoff is separately scoped in H/G rows.
+PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. RG465 reconciles actual live-rate→new voiceEC→source/stage geometry, bus/retained-plug-in/sink mutable-format recipients, frame scheduling and22320/744 robot handoff to existing CI192/VF1/BW2/HBIND5/DF22/TH/H/HG/FR/G rows. These selected consumers are positive; wider specifically witnessed input/writer/family closure remains open. RC208 bounded ARM pattern is not a full global writer census. A40BC0 is setup/pool/listener/registration/table initialization, not a rate setter.
 
 ## Q14-024 — triage line 62
 
@@ -2369,3 +2369,5 @@ Checkpoint462 — reconciled original Q14-021 ranges and existing SR287/LA349 dr
 Checkpoint463 — native init clock-scale447A0000 writer→TH timing consumers, exact 9FF308 frame-stage tag1/order/live-array gates, and Q14-022 existing MREG/device/NF/SN183/PB10/CK419 joins;33 complete ARM instructions. Optional stage entry producer remains UNKNOWN, listener/control recipients next. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint464 — LC464 post-command listener-change mask, clear-after-propagation, concrete object7F flag6 preserve/set and two preparation-stage admission paths;188 complete ARM instructions. 3D payload body excluded, original Q14-022 known joins updated. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint465 — RG465 reconciled original Q14-023 rates/frame/JNI ranges and existing voiceEC/source/bus/sink/scheduling/22320-and744 geometry joins; bounded RC208 writer limitation retained. No duplicate native capture or fixed-rate claim. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
