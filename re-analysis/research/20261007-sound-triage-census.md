@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through339 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through340 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1887,3 +1887,7 @@ SR338A–E bind grouped sum then magnitude reduction versus per-listener magnitu
 ### Checkpoint 339 — mode1 route and LFE/factor tails
 
 SR339A–E bind mode-dependent admission/skip/LFE publication and source-type1 listener factor construction/application. Missing device and disabled generation differ between ordinary/mode1 tails; subsequent scaling can change unity. Remaining local coefficients/collaborators and providers/writers/registration retain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 340 — uniform/center route coefficient alternatives
+
+SR340A–C bind exact root/reciprocal coefficient, alignment-prefix/bulk/tail logical fills, padded-row logical copies and mode1 center-panner join before LFE/channel factors. Remaining generated geometry/control and provider/writer/registration work stays PARTIAL. Counts unchanged, Q15 parked.

@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 340 — mode1 uniform and center coefficient choices
+
+Primary: `20261008-sound-spatial-route-uniform-native.txt`; same engine hash. SR339C positively selects these runtime coefficient alternatives, SR339D/E supplies following LFE/factor/publication order. No PCM or positioning payload producer descent.
+
+| Step | Address | Decision / order | Boundary |
+|---|---|---|---|
+| SR340A uniform scalar | 00A5A7E4..00A5A828;00A5B960..00A5B978 | Convert effective ordinary source count to F32 using VCVT.F32.U32, VSQRT; VCMP(root,root) unordered calls sqrtf with original converted count, then joins A7FC. Compute coefficient=F32(1/root) with VDIV. Refresh destination packed count/mask before fill. | Scalar coefficient is exact control arithmetic, no ADP-1 waiver. Phone sqrt implementation external; its invocation/input/order are exact. No approximate reciprocal or altered count. |
+| SR340B uniform fill/copies | 00A5A828..00A5A998;00A5AB48..00A5AB5C;00A5AFA4..00A5AFAC | Fill first row's u8(NB-bit3(MB)) words with same scalar. Zero skips first-row stores. Native initial scalar extent is all words for <=6, otherwise min(count,alignment prefix from scratch pointer bit2); zero prefix goes straight to four-word VST1 bulk, then up to3 scalar tail stores. Ordinary source count<=1 or NBzero skips row copies; otherwise copy NB*4 logical bytes from preceding row to next with padded W stride for each remaining ordinary source row. Then commonA6BC LFE/factors. | Padding remains initial scratch0; no write of first-row final LFE column by fill. Row copies include logical LFE column's prior0 before common final-row unity. Original n and effective count remain distinct; no NB/count clamp after low-byte subtraction. Native copied extent/order exact; storage memcpy internals out of scope. |
+| SR340C mode1 center alternative | 00A5AC68..00A5ACC0;MBOUND332 | Call selected A25FF8 with raw center floats3F000000 twice, exact F32(XB0*.01),mode1,normalized source type/mask with original n lowbyte, destination type/mask/count,current mode1 scratch,found device. Return commonA6BC rather than ordinaryD5C; LFE then optional channel factors339D/E precede accepted-count publication. | Positive selected A25FF8 bodies reused; no duplicate matrix extraction. Global-mask-unset339C bypasses coefficient generation, not this center call. |
+
+Uniform/center local alternatives now positive; remaining generated curve/geometry coefficient branch and concrete input/provider/writer/family/registration obligations keep Q14-029 PARTIAL. Counts unchanged, Q15 parked; no production/fidelity/hardware changes.
+
 ## Checkpoint 339 — mode1 route admission, LFE tails and listener channel factors
 
 Primary: `20261008-sound-spatial-route-mode-native.txt`; same engine hash. SR337/338 selected listener mask, cached curves, caller and aggregation paths reused. n/NB original channel counts,W=16*ceil(NB/4),MA/MB original masks. out of scope: adopted 3D positioning payloads; no producer descent. Runtime coefficient/channel-factor decisions below remain in scope.
