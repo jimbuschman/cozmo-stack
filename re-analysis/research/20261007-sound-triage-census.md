@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through506 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through507 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -398,7 +398,7 @@ PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format,
 
 > | M6-026 | **KEEP** | 0x009ED2CC..0x009ED3D0;0x009C4F30;0x009F29E8..0x009F2BC4;0x009FA01C;0x009FA6F8;0x00A37100;0x00A01CA4;0x00A029DC;0x009ED428 | Playback limits, virtual/kill choice, counters, priority/tie order, remove/reposition, stop/Term/flush and production wiring remain exact; this limiter is a voice-count decision, not a peak-limiter DSP body. |
 
-PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1–7, GL1–5, PC1–5, PW1–5, VC1–7 and PP1–6 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including full counter-writer census and runtime reset/provider joins (DL506 now establishes actual.init_array default-limiter creation, initial quota/flags/zero sort key and no-op registered callbacks), additional global threshold/limit writers (GU505 now positively binds U9–11 bank setters and priority-zero quota method to actual globals and consumers), remaining policy-cache callers/writers and voice/notification pass (the local A55750 consumer is VC1–7); active/virtual embedded-offset relationships, registration and state callbacks and secondary64/66 recursion are now explicit. Native row presence does not settle those descendants.
+PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1–7, GL1–5, PC1–5, PW1–5, VC1–7 and PP1–6 cover local walker, limit/victim choice, ordering/removal, stop/Term, constructor, per-object entry/check, count/undo, concrete limit RTPC vtable/destructor, ancestor cleanup and pool return. RW1–10/R48 and ND1–6 cover subscription/deregistration collaborators. Remaining: complete production wiring and writer/consumer closure, including full counter/input/provider writer census (LR507 now joins runtime global-counter/default-key reset and Term membership publication; DL506 now establishes actual.init_array default-limiter creation, initial quota/flags/zero sort key and no-op registered callbacks), additional global threshold/limit writers (GU505 now positively binds U9–11 bank setters and priority-zero quota method to actual globals and consumers), remaining policy-cache callers/writers and voice/notification pass (the local A55750 consumer is VC1–7); active/virtual embedded-offset relationships, registration and state callbacks and secondary64/66 recursion are now explicit. Native row presence does not settle those descendants.
 
 ## Q14-038 — triage line 76
 

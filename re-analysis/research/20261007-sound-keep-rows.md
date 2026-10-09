@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 507 — limiter runtime Init/Term field boundaries
+
+Primary: `20261009-sound-limiter-runtime-reset-boundaries-native.txt`; same engine SHA256. Positive99E668 Init call from existing init-completion capture, UT2 Term call, VL485/GB486 lifecycle recipients and Z4–8/15 rate completion reused. G=108DE78,D=G+20. Captures stop at selected decisions; notification backing allocator/free-list traversal is not a new work item.
+
+| Row | Primary evidence | Exact retained decision |
+| --- | --- | --- |
+| LR507A Init pre-admission stores | 99E668 existing capture;A36B00..A36B44/rawA36BA8 | ComputeG=A36B24+657354. Before backing admission, G14=FFFFFFFF, global virtual counterG0=0, G18(notification count)=0 andGC(free head)=0. Allocate500hex, then publish returnedpointerG1C evennull. Null returns34 after G4/G8=0; no default quota/key reset on this failure path. This global counter reset is distinct from LV5/6 incremental virtual-entry/exit changes. |
+| LR507B successful default-key reset | A36B48..A36B90/rawA36BAC | Success publishes backing/free head, capacityG10=40hex and terminal free link0; backing-link construction itself is storage infrastructure. Then r3=A36B84+6572F4=G: store64-bit0 atG38=D18/1C, clear G4/G8, tailA57724. Thus initial static zero key DL506C has a positively witnessed runtime reset, only after backing admission. No write to default quotaD.C, flagsD.E/F or active/virtual countersD20/22 in this selected prefix. Z4–8/15 own existing rate/frame completion decisions; no fresh JNI descent. |
+| LR507C Term precedes local list clear | A38890..A388C8;VL485/GB486/TM484 | A57960 render-global teardown first, thenA387DC PBI retirement, before stores G50=0,G4C=0,G48=0. These are the PBI head/tail/count family, not default limiter counters. Read G14 before selecting notification backing cleanup; no new notification callback inferred from that backing branch. Actual PBI callback/destructor/list order is already VL485E, rather than a generic storage free. |
+| LR507D default membership teardown | A388C8..A38930/rawA38A78/80;DL506/GU505 | After notification backing branch rejoins, default D0nonnull: clear D4 count BEFORE backing release, then D0=0,D8 capacity=0. NullD0 skips these stores. Registered-limiter arrayG54nonnull likewise countG58=0 before release, then G54/G5C=0; null skips. No per-limiter virtual destructor loop or Reset call in these selected field slices. No fresh default constructor, quota256 write or key regeneration. Runtime callback effects retain their own evidence. |
+
+out of scope: notification backing free-list traversal, owned backing allocation/free bodies and phone storage infrastructure; selected failure34, counter/list/key stores and source/render lifecycle callbacks remain exact. Q14-037 now has positive static/default and runtime reset joins; the remaining full counter/input/provider census is not promoted by these local stores. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 follows Q14; no production/fidelity/hardware change.
+
+
 ## Checkpoint 506 — actual default limiter construction and initial key
 
 Primary: `20261009-sound-default-limiter-construction-native.txt`; same engine SHA256. Actual ELF.init_array slot103E52C selects4DE2B8, not a navigation no-caller inference. G=108DE78, default limiterD=G+20=108DE98. LV3–7/VP13/GU505 and GL4–5 consumers reused.
