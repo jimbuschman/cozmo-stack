@@ -44,6 +44,19 @@ in the Wwise runtime inside `libcozmoEngine.so`. Nothing else may.
 3. **External tools** (wwiser, vgmstream, PyCozmo) are authority 6: cross-checks only. They run locally; the shipped
    banks are not uploaded anywhere.
 
+### Scope: the app boundary (operator, 2026-10-09)
+
+The stack reproduces the **engine** (`libcozmoEngine.so` and the assets it reads) and replaces the **app** around it:
+the Unity screens and flows, user profiles, the Android Java layer and the app's SDK mode. In practice:
+- **Engine-to-game messages and reports** (the external interface) are delivered to the stack's C# API. The engine's
+  side (when, what, the order, the payload) stays exact.
+- **Where the engine needs an input the app supplied** (stored volume, a profile, Android network callbacks), the stack
+  supplies it from its own settings or host events. Each one is recorded as a COMPATIBILITY_POLICY naming the input.
+- **SDK mode is not supported.** Its engine paths are unreachable and are recorded as such.
+
+App-layer code is still evidence of what the engine receives, and stays authority 2. It isn't reproduced unless the
+stack implements that feature.
+
 ### Other approved departures
 
 - **M1-034, handler isolation** (operator, 2026-10-07): a handler exception is caught, logged and survived; the original aborts.

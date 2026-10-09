@@ -527,7 +527,7 @@
       "hardware_required": false
     },
     "M1-042": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "Unity post-connect volume and block-pool producers and gates",
       "authority": "Unity ConnectionFlowController.cs:682-686,764-780; GameAudioClient.cs:53-108; Robot.cs:1461-1465; RobotEngineManager.cs:373-380,223-231; BlockPoolTracker.cs:86-104; engine conversion 0x0059A21E..0x0059A256.",
       "evidence": [
@@ -612,7 +612,7 @@
       "hardware_required": false
     },
     "M1-049": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "Android bind/unbind trigger gates and native signal bridge",
       "authority": "Unity/Java app and libcozmoEngine.so native network callback.",
       "evidence": [
@@ -624,7 +624,7 @@
       "hardware_required": false
     },
     "M1-050": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "External-interface disconnect/report delivery",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
       "evidence": [
@@ -634,27 +634,27 @@
       "hardware_required": false
     },
     "M1-051": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "SDK mode entry and lifecycle state writers",
       "authority": "libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle.",
       "evidence": [
         "EnterMode 0x0065E104..0x0065E224 writes +0x79 or +0x78/+0x7A on distinct branches and may ResetRobot; ExitMode 0x0065E2A4..0x0065E43E clears +0x79/+0x7B and dispatches OnDisconnect; OnDisconnect 0x0065E4D8..0x0065E620 gates reset and clears +0x78; OnConnectionSuccess 0x0065E6E0..0x0065E940 writes +0x74/+0x78/+0x70/+0x7B/+0x58/+0x7C and may send communication callback. UiMessageHandler OnEnter calls EnterMode then UpdateIsSdkCommunicationEnabled (0x0066150C..0x00661538). +0xE1 writer census and full callback descendants remain UNKNOWN. Source: 20261006-M1M2-missing-triage.md E6; reopened libcozmoEngine.so."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M1-052": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "SDK connection callback virtual targets",
       "authority": "libcozmoEngine.so 3.4.0-1204 communication-change callback.",
       "evidence": [
         "UpdateIsSdkCommunicationEnabled iterates connection kinds 0..2, checks IsExternalSdkConnection and non-null communication object, stores independent +0x88 byte, then invokes its vtable slot +0x24 with old/new values (0x00663298..0x006632C6). Selector helper 0x0065FE16..0x0065FE24 tests the connection-kind bit via mask 6. No concrete shipped ISocketComms target/body was found; target UNKNOWN. Source: 20261006-M1M2-missing-triage.md E7; reopened libcozmoEngine.so."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M1-053": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Outgoing RobotState publication from the engine tick",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
       "evidence": [

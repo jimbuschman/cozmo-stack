@@ -1106,8 +1106,8 @@
         "A3: on !connected && Success, ProcessRobotConnectionResponse adds Robot, then AddRobot calls BlockPoolTracker.InitBlockPool when nonnull; that registers five callbacks, assigns GetBlockPoolMessage, and sends (RobotEngineManager.cs:223-232,373-381; BlockPoolTracker.cs:86-95). This runs before ConnectionFlow's response callback (RobotEngineManager.cs:309-341).",
         "A4: after response success bookkeeping, enable auto block pool only when !DefaultProfile.FirstTimeUserFlow; EnableAutoBlockPool(true) defaults discovery time to 0 and sends (ConnectionFlowController.cs:764-780; BlockPoolTracker.cs:97-104). A5 idle timeout remains M1-031 (PauseManager.cs:219,289,350-374)."
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "IMPLEMENTATION_GAP: compare/build the Unity A1/A3/A4 order and gates: initial engine Robot/GetBlockPool request before the game callback; volume persistence on every response with CurrentRobot gate; success-only block-pool enablement behind !DefaultProfile.FirstTimeUserFlow. Robot.SetRobotVolume conversion/send remains M1-026. Do not enable the pool on every Success without the education-flow gate. A5 is M1-031; config values remain unknown.",
+      "status": "COMPATIBILITY_POLICY",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the Unity app's post-connect producers (stored volume, profile, the !FirstTimeUserFlow gate) are app-layer; the stack supplies those inputs from its own settings. The engine's conversion and send stay exact under M1-026. Before: IMPLEMENTATION_GAP: compare/build the Unity A1/A3/A4 order and gates: initial engine Robot/GetBlockPool request before the game callback; volume persistence on every response with CurrentRobot gate; success-only block-pool enablement behind !DefaultProfile.FirstTimeUserFlow. Robot.SetRobotVolume conversion/send remains M1-026. Do not enable the pool on every Success without the education-flow gate. A5 is M1-031; config values remain unknown.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_042_CD27_TheVolumeConversionIsTheEngines, EngineAppLayerTests.M1_042_NoIdleTimeoutIsArmedAutomatically, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder"
@@ -9123,7 +9123,7 @@
       "subsystem": "M1-transport",
       "title": "Android bind/unbind trigger gates and native signal bridge",
       "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "Socket reset can run on an unsuccessful Android bind or miss an emitted bind/unbind callback.",
       "provenance": "Current stack maps host address changes; Android bind gates and native callback predicate need comparison.",
       "authority": "Unity/Java app and libcozmoEngine.so native network callback.",
@@ -9132,7 +9132,7 @@
         "N2 bind: API>=23 calls bindProcessToNetwork and emits NativeBindNetworkCallback(networkHandle) only on true; API21-22 calls setProcessDefaultNetwork and emits NativeBindLollipopCallback only on true; below API21 marks bound and returns without native callback (WifiUtil.java:381-404).",
         "N3 JNI entry thunks replace/ignore the incoming network handle, load the shared signal and branch to the common dispatcher (0x0083BC3C..0x0083BC40; 0x0083BC84..0x0083BC88). Shared subscriber dispatch and the UDP fd predicate/ResetSocket writer are M1-023; reset execution is M1-048 U7."
       ],
-      "unresolved": "Compare/build the N1/N2 Java gates and N3 handle-agnostic JNI signal bridge. Host address-change mapping remains M1-037; transport subscription/dispatch and fd>=0/flag writer remain M1-023; U7 consumer remains M1-048. Source: policy-check N1-N3 and WifiUtil.java.",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the Android Java bind/unbind trigger (WifiUtil and its JNI gates) is app/platform-layer; the stack's host network-change event drives the engine's reset-flag writer, which stays exact under M1-023. Before: Compare/build the N1/N2 Java gates and N3 handle-agnostic JNI signal bridge. Host address-change mapping remains M1-037; transport subscription/dispatch and fd>=0/flag writer remain M1-023; U7 consumer remains M1-048. Source: policy-check N1-N3 and WifiUtil.java.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_023_G4_4_TheBindSignalSetsTheResetFlagOnlyWhenASocketIsOpen."
@@ -9142,14 +9142,14 @@
       "subsystem": "M1-transport",
       "title": "External-interface disconnect/report delivery",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "RemoveRobot can notify the wrong external recipient or construct different report/session context.",
       "provenance": "Managed service delegates exist; concrete shipped virtual target/subscriber remains unidentified.",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
       "evidence": [
         "S13: RobotManager::RemoveRobot calls the external interface virtual slot +0x30 with robot id at 0x0052F29E..0x0052F2AC. SimpleExternalInterface's vtable has __cxa_pure_virtual in this slot; no concrete runtime override was found in shipped .so files. Concrete sink/payload UNKNOWN. The later RobotDisconnected slot +0x1C dispatch/session clear are outside this record (0x0052F2B6..0x0052F2D8). Source: 20261006-M1M2-missing-triage.md S13; binary vtable scan."
       ],
-      "unresolved": "RECOVERABLE_GAP: concrete external-interface +0x30 target and notification/report payload effects are UNKNOWN; implement no guessed sink. Keep the later +0x1C RobotDisconnected/session-clear path with its existing owner.",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the external interface's slot +0x30 is where the engine hands a disconnect report to the game; in this stack the game is the stack's own C# API, so the report is delivered as an API event. The engine side (when, which report, the payload, the order relative to RobotDisconnected and $session_id) stays exact. Buildable now. Before: RECOVERABLE_GAP: concrete external-interface +0x30 target and notification/report payload effects are UNKNOWN; implement no guessed sink. Keep the later +0x1C RobotDisconnected/session-clear path with its existing owner.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.CheckedRemoval_ReportsServicesLifetimeAndBookkeepingOrder plus target-specific cases after extraction."
@@ -9159,16 +9159,16 @@
       "subsystem": "M1-transport",
       "title": "SDK mode entry and lifecycle state writers",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "SDK entry/exit/disconnect can leave UI and communication state out of sync.",
       "provenance": "Current handoff is a candidate; complete state-writer/caller census remains open.",
       "authority": "libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle.",
       "evidence": [
         "EnterMode 0x0065E104..0x0065E224 writes +0x79 or +0x78/+0x7A on distinct branches and may ResetRobot; ExitMode 0x0065E2A4..0x0065E43E clears +0x79/+0x7B and dispatches OnDisconnect; OnDisconnect 0x0065E4D8..0x0065E620 gates reset and clears +0x78; OnConnectionSuccess 0x0065E6E0..0x0065E940 writes +0x74/+0x78/+0x70/+0x7B/+0x58/+0x7C and may send communication callback. UiMessageHandler OnEnter calls EnterMode then UpdateIsSdkCommunicationEnabled (0x0066150C..0x00661538). +0xE1 writer census and full callback descendants remain UNKNOWN. Source: 20261006-M1M2-missing-triage.md E6; reopened libcozmoEngine.so."
       ],
-      "unresolved": "RECOVERABLE_GAP: build confirmed local SDK state transitions and gates. Keep UI byte +0xE1 writers and untraced callers UNKNOWN; OnConnectionSuccess callback tail requires the checked E7 target records.",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): SDK mode (the bridge for third-party SDK programs) is not supported by the stack; SDK mode is never entered, so its entry and state writers are unreachable here. The robot-side exit path (M1-025) stays exact. Before: RECOVERABLE_GAP: build confirmed local SDK state transitions and gates. Keep UI byte +0xE1 writers and untraced callers UNKNOWN; OnConnectionSuccess callback tail requires the checked E7 target records.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": "EngineAppLayerTests.CheckedSdkExit_*; source-derived entry/disconnect cases after extraction."
     },
     {
@@ -9176,16 +9176,16 @@
       "subsystem": "M1-transport",
       "title": "SDK connection callback virtual targets",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "SDK communication changes can choose the wrong transport callback or channel.",
       "provenance": "Routing candidate exists; concrete shipped virtual targets remain UNKNOWN.",
       "authority": "libcozmoEngine.so 3.4.0-1204 communication-change callback.",
       "evidence": [
         "UpdateIsSdkCommunicationEnabled iterates connection kinds 0..2, checks IsExternalSdkConnection and non-null communication object, stores independent +0x88 byte, then invokes its vtable slot +0x24 with old/new values (0x00663298..0x006632C6). Selector helper 0x0065FE16..0x0065FE24 tests the connection-kind bit via mask 6. No concrete shipped ISocketComms target/body was found; target UNKNOWN. Source: 20261006-M1M2-missing-triage.md E7; reopened libcozmoEngine.so."
       ],
-      "unresolved": "RECOVERABLE_GAP: actual +0x24 virtual callback targets and their bodies remain UNKNOWN. Do not substitute a generic UDP/TCP callback; only build once a concrete shipped target is found.",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): SDK mode is not supported by the stack, so the SDK connection callbacks are never registered or invoked here. Before: RECOVERABLE_GAP: actual +0x24 virtual callback targets and their bodies remain UNKNOWN. Do not substitute a generic UDP/TCP callback; only build once a concrete shipped target is found.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": "EngineAppLayerTests.CheckedSdkExit_IndependentEduAndExternalGates plus source-derived callback cases."
     },
     {
@@ -9193,7 +9193,7 @@
       "subsystem": "M1-transport",
       "title": "Outgoing RobotState publication from the engine tick",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "Game can receive RobotState at the wrong tick, before its source gate or from an unproven caller.",
       "provenance": "UpdateAllRobots candidate exists; bounded caller known, exhaustive callers/sink not closed.",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
@@ -9201,7 +9201,7 @@
         "UpdateAllRobots enters from engine tick 0x004ED648; iterates robots, calls Robot::Update then HasReceivedRobotState, and only when true calls GetRobotState, constructs MessageEngineToGame::RobotState and invokes external slot +0x1C (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). External sink remains UNKNOWN.",
         "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
       ],
-      "unresolved": "RECOVERABLE_GAP: build only the checked UpdateAllRobots publication gate/order/projection. The external-interface +0x1C sink and any additional callers remain UNKNOWN; M7-022 owns the non-live BehaviorDockingTestSimple state copy.",
+      "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the engine's UpdateAllRobots gate, projection and publication call stay exact; the game sink is the stack's C# API (a RobotState API event), which replaces the Unity consumer. Buildable now. Before: RECOVERABLE_GAP: build only the checked UpdateAllRobots publication gate/order/projection. The external-interface +0x1C sink and any additional callers remain UNKNOWN; M7-022 owns the non-live BehaviorDockingTestSimple state copy.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt plus projection cases after extraction."

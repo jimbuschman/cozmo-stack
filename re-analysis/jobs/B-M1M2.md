@@ -161,3 +161,16 @@ Before building the remaining M1 records, the manager reopened the call targets 
 - **Policy rows:** M1-047 owns engine executor/priority choices while host scheduling stays policy; M1-048 owns UDPTransport decisions while host socket calls/errno mapping stay policy; M1-049 owns Android bind/unbind gates and JNI signal bridge while M1-023 owns the native subscriber/fd gate/reset-flag setter; M1-042 owns Unity producers and the profile gate while engine volume conversion remains M1-026.
 
 The primary citations and detailed row mapping are preserved in the two inventories. No implementation has been started from an unchecked extraction row.
+
+## The app-boundary decision (operator, 2026-10-09): M1's last items
+
+From AGENTS.md, "Scope: the app boundary":
+- **M1-042 and M1-049** are now COMPATIBILITY_POLICY: the app's inputs are supplied by the stack.
+- **M1-051 and M1-052** are COMPATIBILITY_POLICY: SDK mode isn't supported.
+- **M1-050 and M1-053** are IMPLEMENTATION_GAP, buildable now. Deliver the disconnect report and the RobotState
+  publication as C# API events, with the engine side exact from the checked rows.
+- **M1-046 and M1-047** are the remaining extractions. M1-046 needs the shared-handle unsubscribe target. M1-047 needs
+  the constructor's thread-priority value at its call site; give it as an integer constant with its address. Rows go
+  to the manager.
+
+After those, M1 goes to the final Opus pass. Prepare the verification packet first (CODEX-BUILDER rule 9).
