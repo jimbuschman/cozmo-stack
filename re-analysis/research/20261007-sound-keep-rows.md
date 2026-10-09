@@ -11,6 +11,27 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 342 — all four generated-route interpolation/conversion paths
+
+Primary: `20261008-sound-spatial-route-curves-native.txt`, complete A5993C:A5B9D0 instruction/raw-word coverage (2085 words), same engine hash. SR337–341 own admission, alternatives, matrix ABI and publication. These loops consume scalar control inputs, not PCM; their arithmetic remains exact. SC335G/336G/H are reused only where native instruction order agrees.
+
+| Site | Interpolation dispatch / linear / constant / invalid | Conversion3 /4 /2 | Continuation |
+|---|---|---|---|
+| SR342A ordinary primary R7D | A5AD18..AD70 tableAD44; B7F8 / A998 / B900 | A99C→A59CB8 / AE6C / A9BC..AA70 plus B7B8 | First converted control then R7E gate59FC8 |
+| SR342B ordinary secondary R7E | A5ACC0..AD18 tableACEC; B7D8 / AA70 / B8D8 | AA74→A05C / AE84 / AA94..AB48 plus B7A0 | Second converted control then matrix call59D10 |
+| SR342C mode1 primary R7D | A5AF4C..AFA4 tableAF78; B848 / AEEC / B8B0 | A5AC→AE18 / AE10 / B060..B114 plus B818 | First converted control then R7E gateA5CC |
+| SR342D mode1 secondary R7E | A5AEF4..AF4C tableAF20; B868 / AEE4 / B888 | A650→AD78 / AD70 / AFAC..B060 plus B830 | Second converted control then matrix callA670 |
+
+SR342E interpolation: all four sites select9 as current endpoint,4 as explicit VSUB→VDIV→VMLA linear fast path; remaining unsigned selector<=8 dispatches table, >8 goes site-specific invalid path after normalized t is computed. Modes0/1/2/3/5/6/7/8 use SC335G's exact raw coefficients and operation sequence, confirmed at every table target. Mode3 VCMPE(t,.5), BLS takes lower half including unordered; lower-half entries B98C→B67C, B978→B740, B94C→B370, B928→B5A8 respectively. No t clamp, denominator guard, NaN repair or shared evaluation.
+
+SR342F exponent conversion: selector3 raw value; selector4 first VMUL raw3D4CCCCD. Ordered value<-37 returns raw0; unordered executes converter. All four use SC336G's VMLA(raw4E7E0000,value*raw4BD49A78), VCVT.U32.F32, low23/high-bit decomposition and raw polynomial3CAA70DE/3EA67F46/3F272DDB. No pow replacement. Zero below threshold still continues to secondary/matrix, not an admission rejection.
+
+SR342G log conversion: selector2 uses SC336H's sign/limit tests, mantissa/exponent extraction, q=(m-1)/(m+1) and raw constants. Three sites retain its exponent-term-first VMLA association. **Ordinary secondary differs:** A5AB18..AB38 computes q², p=1+q²*raw3EAAAAAB, doubles q, then VMUL term=(q+q)*p; only afterward computes exponent-minus127 and VMLA term+=(exponent-minus127)*raw3F317218. Final multiplication raw3EDE5BD9,20,sign remains ordered. This association is part of the exact control value; do not substitute the other sites' mathematically equivalent sequence. Other conversion selectors forward current value.
+
+SR342H invalid interpolation: at B900/B8D8/B8B0/B888 respectively, conversion3 sends raw0 through exponent converter; conversion4 sends raw3F7FC105 directly to continuation; conversion2 sends raw0 through nonnegative log branch; other selectors supply raw0 directly. Null curve instead bypasses conversion and supplies raw0 as341. Thus invalid interpolation is not uniformly zero. All four converted controls feed r2/r3 of A2428C as341C; no field publication or new callback occurs in the curve loops.
+
+SR342I reconciliation: selected local A5993C own decisions are now positive across337–342, superseding historical unread interpolation/conversion/alternative/tail wording. This does **not** settle its whole live path: A2428C and selected collaborators' remaining coefficient decisions, concrete inputs/providers/writers, connection families and registration remain open. Q14-029 stays PARTIAL; 24 native CHECKED /8 scope CHECKED /108 PARTIAL unchanged, Q15 parked. out of scope: scratch storage and adopted positioning payload producers. No production/fidelity/hardware changes.
+
 ## Checkpoint 341 — generated-route curve inputs and matrix recipient ABI
 
 Primary: `20261008-sound-spatial-route-generated-native.txt`; same engine hash. SR337–340 own admission/alternative/tail/publication. Native ABI/call sites correct the navigation aid's misleading mixed float/integer signature; no production signature inferred from decompilation.
