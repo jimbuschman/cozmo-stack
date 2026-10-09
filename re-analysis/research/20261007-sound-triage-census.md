@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through315 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through316 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -262,7 +262,7 @@ PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity write
 
 > | M6-016 | **KEEP** | 0x0059687E..0x00596914;0x00597F12..0x00597F8E;0x0059818C..0x005982A0;0x00596DC8;0x0059962A..0x005999A4;0x00599E6A..0x00599EB8;0x008D88CC;0x00597DB4..0x00597E8E;0x0059678E..0x005967B8 | Production composition, event_volume/robot_volume delivery, OnDevice object6 route, alternative draw/order, callbacks, abort and scheduling remain exact. |
 
-Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Positive joins now include alternative chooser ASEL304/M5 R1–R7, complete local sort ASORT305 (tie example corrected315), derived Prepare/BeginBuffering slot AENTRY306 and robot_volume producer RVOL306 to AS4. Remaining: other volume inputs/subscriber/routing products, concrete post-map/lifetime, creator/provider and source geometry closure. DPOST307/DCB308/DQUEUE309–DSORT314 positively join selected scheduling, callback functors, queue binding/admission, workers/waits, stop versus detached batch and complete deferred sort; historical Dispatch-thread/cancellation/sort pending wording is superseded for these concrete bodies.
+Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Positive joins now include alternative chooser ASEL304/M5 R1–R7, complete local sort ASORT305 (tie example corrected315), derived Prepare/BeginBuffering slot AENTRY306 and robot_volume producer RVOL306 to AS4. Remaining: other volume inputs/subscriber/routing products, creator/provider, other callable/input and source geometry closure. RCTX316 joins selected robot wrapper/context/native drain and post-map collector ownership from positive UC/UE rows; no broader caller-family closure. DPOST307/DCB308/DQUEUE309–DSORT314 positively join selected scheduling, callback functors, queue binding/admission, workers/waits, stop versus detached batch and complete deferred sort; historical Dispatch-thread/cancellation/sort pending wording is superseded for these concrete bodies.
 
 ## Q14-022 — triage line 60
 
@@ -1791,3 +1791,7 @@ DSORT314A–H bind all selected sort recipients, signed deadline comparisons, si
 ### Checkpoint 315 — tie correction and scheduling reconciliation
 
 Corrected ASORT305B and DSORT313D: small-helper equal keys are preserved, so the former three-entry instability examples were false. Whole larger sorts still follow their sampled/partition exchange decisions without ID/ordinal tie-break. Reconciled Q14-021 concrete scheduling joins through314; other creator/provider/volume/routing/context/geometry work stays PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 316 — robot callback context join
+
+RCTX316A–F positively distinguish caller moves from wrapper clones, bind actual wrapper slots/invocation and nested weak lifetime, and reuse UC/UE context post/map/queue/drain/collector ownership. Disabled-controller created-context disposal is not invented. Hash/rehash/vector storage out of scope. Other inputs/providers/volume/routing/geometry remain PARTIAL; counts unchanged, Q15 parked.
