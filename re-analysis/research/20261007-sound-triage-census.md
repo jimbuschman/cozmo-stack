@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through499 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through500 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -359,6 +359,8 @@ Checkpoint497 reconciliation: PA491/DP492/IP493/ES494/AU495/CA496 settle ordinar
 PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; VS4/VS14–VS17 trace all three direct VoiceInit callers and re-init/error gates from primary code. Remaining: indirect-caller census, null-parent and pending-state/field writer/remaining collaborator bodies.
 
 Checkpoint198 reconciliation: PN177/QN172/VF180/N5194 trace all four named standard voice control callbacks A53558/A5358C/A535D8/A53698 with their gates, concrete slots and source/wrapper recipients; PF193 settles grouped preparation/start dispatch. Remaining: indirect caller/producer census, E0/E4 and other field writers, null-parent/pending-state/device collaborator closure; the four named callback bodies are no longer unread.
+
+Checkpoint500 reconciliation: DA498/DT499 now establish original9EB4C8 admission/listener identity and9EBE38 retry producer with actual device0. LM348/LQ350 settle A0CA04; TH/DF/TM484 settle initialization/worker/frame/rebuild/stop boundaries. LREC/ROOT/LF/LDEF/LDRV/LINIT/RSRC and LQ350E supply named A42210/null-parent construction/teardown; SWIN/SNT/CB3/NS cover A0428C/A054D8. PN177/QN172/VF180/N5194/PS404 settle the four callbacks and known recipients; SA203/PC2/VP3 supply selected E0/E4 writers while constructor leaves both unwritten. Remaining: concrete indirect product/input/provider census and live state/config/route/metadata writer closure at their specific retained rows; no generic unread original body obligation. out of scope: 3D coordinate/coefficient payload calculations, per-sample DSP and owned storage/I/O/recording. Broad original item remains PARTIAL.
 
 ## Q14-034 — triage line 72
 
@@ -2441,3 +2443,5 @@ Checkpoint497 — EB497 concrete effective-state voice6C/four live70/nodeE8 bypa
 Checkpoint498 — DA498 exact device pair admission/constructor defaults/build-reset-layout gates/list publication, original-head route comparison/listener pair writer and retry-before-wake producer;307 complete ARM instructions. Geometry/PCM-file/storage excluded; concrete device destructor remains retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint499 — DT499 actual device0 holder/sink termination then format/selected/global clear, flag-based108DAA0 clear without identity compare and distinct failure versus unlink caller ownership;32 complete ARM instructions. Owned coordinate/recorder/storage tails excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint500 — original033 device/barrier/frame/route/notification/pending-state and selected E0/E4 producer joins reconciled against current positive rows, with geometry/storage exclusions applied. Reuse only; no duplicate capture/descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
