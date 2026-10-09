@@ -1,0 +1,126 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009C5374..0x009C53D8 exclusive; ARM;
+009C5374: cmp          r1, #0
+009C5378: beq          #0x9c53d0
+009C537C: cmp          r1, #5
+009C5380: bne          #0x9c53c4
+009C5384: add          r3, r0, #0xa8
+009C5388: ldr          r3, [r3]
+009C538C: vldr         s15, [pc, #0x44] ; word[009C53D8]=00000000
+009C5390: cmp          r3, #0
+009C5394: beq          #0x9c53ac
+009C5398: vldr         s14, [r3, #0x14]
+009C539C: ldr          r3, [r3]
+009C53A0: cmp          r3, #0
+009C53A4: vadd.f32     s15, s15, s14
+009C53A8: bne          #0x9c5398
+009C53AC: vldr         s14, [r0, #0x6c]
+009C53B0: vcmp.f32     s14, s15
+009C53B4: vmrs         apsr_nzcv, fpscr
+009C53B8: vmovgt.f32   s15, s14
+009C53BC: vmov         r0, s15
+009C53C0: bx           lr
+009C53C4: mov          r3, #0
+009C53C8: ldr          r3, [r3]
+009C53CC: udf          #0
+009C53D0: add          r3, r0, #0x8c
+009C53D4: b            #0x9c5388
+009C53D8: raw=00000000 relocated=00000000 
+RANGE 0x009C52E4..0x009C5370 exclusive; ARM;
+009C52E4: ldr          r3, [r0, #0x8c]
+009C52E8: cmp          r3, #0
+009C52EC: beq          #0x9c5324
+009C52F0: vldr         s14, [pc, #0x78] ; word[009C5370]=BC23D70A
+009C52F4: vldr         s15, [r3, #0x14]
+009C52F8: vcmpe.f32    s15, s14
+009C52FC: vmrs         apsr_nzcv, fpscr
+009C5300: bpl          #0x9c5318
+009C5304: b            #0x9c5368
+009C5308: vldr         s15, [r3, #0x14]
+009C530C: vcmpe.f32    s15, s14
+009C5310: vmrs         apsr_nzcv, fpscr
+009C5314: bxmi         lr
+009C5318: ldr          r3, [r3]
+009C531C: cmp          r3, #0
+009C5320: bne          #0x9c5308
+009C5324: ldr          r3, [r0, #0xa8]
+009C5328: cmp          r3, #0
+009C532C: bxeq         lr
+009C5330: vldr         s14, [pc, #0x38] ; word[009C5370]=BC23D70A
+009C5334: vldr         s15, [r3, #0x14]
+009C5338: vcmpe.f32    s15, s14
+009C533C: vmrs         apsr_nzcv, fpscr
+009C5340: bpl          #0x9c5358
+009C5344: b            #0x9c536c
+009C5348: vldr         s15, [r3, #0x14]
+009C534C: vcmpe.f32    s15, s14
+009C5350: vmrs         apsr_nzcv, fpscr
+009C5354: bxmi         lr
+009C5358: ldr          r3, [r3]
+009C535C: cmp          r3, #0
+009C5360: bne          #0x9c5348
+009C5364: bx           lr
+009C5368: bx           lr
+009C536C: bx           lr
+009C5370: raw=BC23D70A relocated=BC23D70A 
+RANGE 0x00A1AB5C..0x00A1AC38 exclusive; ARM;
+00A1AB5C: vldr         d16, [pc, #0xd4] ; word[00A1AC38]=00000001
+00A1AB60: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+00A1AB64: mov          sb, r2
+00A1AB68: vmov.32      d17[0], r1
+00A1AB6C: ldr          r0, [r0, #4]
+00A1AB70: mov          sl, r3
+00A1AB74: mov          r8, r1
+00A1AB78: vshl.u64     d16, d16, d17
+00A1AB7C: ldrd         r2, r3, [r0, #8]
+00A1AB80: ldr          r5, [r0, #0x14]
+00A1AB84: vmov         r6, r7, d16
+00A1AB88: ldr          r4, [r0, #0x10]
+00A1AB8C: add          r5, r5, r5, lsl #2
+00A1AB90: add          r5, r4, r5, lsl #3
+00A1AB94: and          r2, r2, r6
+00A1AB98: and          r3, r3, r7
+00A1AB9C: orrs         r3, r2, r3
+00A1ABA0: bne          #0xa1ac00
+00A1ABA4: cmp          r4, r5
+00A1ABA8: beq          #0xa1ac34
+00A1ABAC: add          r4, r4, #0x28
+00A1ABB0: b            #0xa1abc0
+00A1ABB4: cmp          r5, r4
+00A1ABB8: add          r4, r4, #0x28
+00A1ABBC: beq          #0xa1abfc
+00A1ABC0: ldrd         r2, r3, [r4, #-0x10]
+00A1ABC4: and          r2, r2, r6
+00A1ABC8: and          r3, r3, r7
+00A1ABCC: orrs         r3, r2, r3
+00A1ABD0: beq          #0xa1abb4
+00A1ABD4: ldr          r0, [r4, #-8]
+00A1ABD8: mov          r1, r8
+00A1ABDC: mov          r2, sb
+00A1ABE0: mov          r3, sl
+00A1ABE4: ldr          ip, [r0]
+00A1ABE8: ldr          ip, [ip, #8]
+00A1ABEC: blx          ip
+00A1ABF0: cmp          r5, r4
+00A1ABF4: add          r4, r4, #0x28
+00A1ABF8: bne          #0xa1abc0
+00A1ABFC: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+00A1AC00: cmp          r4, r5
+00A1AC04: popeq        {r4, r5, r6, r7, r8, sb, sl, pc}
+00A1AC08: ldr          r0, [r4, #0x20]
+00A1AC0C: mov          r1, r8
+00A1AC10: add          r4, r4, #0x28
+00A1AC14: mov          r2, sb
+00A1AC18: mov          r3, sl
+00A1AC1C: ldr          ip, [r0]
+00A1AC20: ldr          ip, [ip, #8]
+00A1AC24: blx          ip
+00A1AC28: cmp          r5, r4
+00A1AC2C: bne          #0xa1ac08
+00A1AC30: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+00A1AC34: pop          {r4, r5, r6, r7, r8, sb, sl, pc}
+00A1AC38: raw=00000001 relocated=00000001 
+00A1AC3C: raw=00000000 relocated=00000000 
+0103B7E4: raw=00A02EC0 relocated=00A02EC0 
+0103D430: raw=00A02EC0 relocated=00A02EC0 
