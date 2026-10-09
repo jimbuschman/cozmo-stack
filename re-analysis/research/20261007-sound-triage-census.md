@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through554 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 45 CHECKED native-row obligations / 8 CHECKED scope exclusions / 87 PARTIAL / 0 NOT DONE; decision checkpoints through555 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -80,7 +80,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-071 | 120 | CHECKED |
 | Q14-072 | 121 | CHECKED |
 | Q14-073 | 122 | CHECKED |
-| Q14-074 | 123 | PARTIAL |
+| Q14-074 | 123 | CHECKED |
 | Q14-075 | 124 | PARTIAL |
 | Q14-076 | 125 | PARTIAL |
 | Q14-077 | 126 | CHECKED |
@@ -622,7 +622,7 @@ out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics 
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
 
-PARTIAL: LINIT1–6/KCACHE1–3/KSEL reopen A4F0EC initialization, 9EA23C keyed cache search/growth/removal and A22A3C exact producer-selection ABI. RCON1–6 close A4C280 routing/cache-result publication and failure removal. RCC/RSRC/LGET/RCD/HBIND close selected constructor/destructor, source/count/getter and helper-creation locals; LC4 already binds known bus98 reservation and NJ/LS own retain/setup wrappers. Those positive bodies are reused. Remaining: other constructed/device/format/setting/plugin products, selected producer families and complete caller/input/provider/writer closure. No boundary exemption is assigned to an unread producer.
+CHECKED (bounded decisions-only), checkpoint555: LINIT/LGET/LDEF/LDRV and SL/LREC/ROOT/LF supply actual descriptor/default/registry/inherited parameter/format/frame/reservation/reference/subscription/init inputs and raw result paths. KCACHE/KSEL/CSPEC/CGEN join device identity, masked first/second key selection, producer ABI and cache clear/rebuild/failure removal; coordinate/coefficient payload and storage stop under the guard. RCON/RCC/RCD/RSRC/CJ547 bind exact constructor, source counter/callback before head publication, cache-result failure and actual destructor. BH548–HS551 bind finite authored/live helper inputs, selected shared registry, actual Info rejection and cleanup. No generic other-product/provider/writer placeholder remains inside these four original named contracts. New work requires a concrete unpaid witness; no global indirect-call absence, whole M6 reproduction or fidelity promotion.
 
 ## Q14-075 — triage line 124
 
@@ -2499,3 +2499,7 @@ MT553 binds actual recursive group/leaf constructor tables to group9937C4 and le
 ## Decision checkpoint554 — bus routing flag propagation
 
 BF554 closes actual9C5598 changed-parent recipient, exact pre-order recursive flag publication and live vector-end comparisons, and reconciles positive DF/RCON line routing parents. Specific unpaid line interfaces still need reconciliation; counts unchanged; no Q15/fidelity/production changes.
+
+## Decision checkpoint555 — bounded original linker obligation closure
+
+OriginalQ14-074 four named contracts now reconcile to actual creator/default/input/result/lifetime rows, including finite helper rejection. Storage/coordinate payload exclusions stop; generic unsupported extra family/writer remainder superseded. Q14-074 CHECKED:45native+8scope/87PARTIAL/0NOTDONE. No Q15/fidelity/production changes.
