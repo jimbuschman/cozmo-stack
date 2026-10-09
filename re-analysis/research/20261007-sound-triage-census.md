@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through347 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through348 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -312,7 +312,7 @@ Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, owner.vt24 and other connection families, registration paths and flag writers. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, other owner.vt24/connection families, queued input/registration paths and flag writers. LM348 closes standard103C790 owner.vt24 and selected object22 default/setter/live propagation. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
@@ -1919,3 +1919,7 @@ BT346A–G settle selected A22CEC/A22A60 argument binding, matrix composition, f
 ### Checkpoint 347 — selected generated matrix recipient reconciled
 
 GM347A–G settle retained basis bridge/ordered coefficient composition and destination-type2 generation/trig/higher destination coefficient gates. Selected A2428C/collaborators now positive for source counts1/2; historical unread local wording superseded. Concrete inputs/writers, table creation/registration/lifetime and connection families remain visible in Q14-029, still PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 348 — standard owner mask callback and live propagation
+
+LM348A–F close known standard voice owner.vt24, object22 default/setter, registry first-ID selection, old/full-new mask comparison, connection removal and gated addition before final byte publication. Other owner families, queued inputs/registry writers and selected addition recipient remain open. Q14-029 PARTIAL, counts unchanged, Q15 parked.
