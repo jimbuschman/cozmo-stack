@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through350 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through351 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1931,3 +1931,7 @@ LA349A–E settle A42C60 descriptor/query/first-line match/creation-and-connecti
 ### Checkpoint 350 — queued mask producer/consumer and existing creator reuse
 
 LQ350A–E settle native tagE producer size/field stores/exclusive publication, selected consumer and full-word mask propagation to final byte publication. Existing LREC289/ROOT290/LF291/LDEF292/LDRV293/LTERM294/LREL295 positively resolve local creator/getter/default/teardown obligations and unused r1; stale next-recipient labels superseded. Actual app binding and wider input/writer/registry/device/family closure remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 351 — stock registration mask and existing-object behavior
+
+OR351A–G bind the controller/wrapper mask1, native ID/mask validation, tagB command fields/publication, ignored consumer result and existing-object setter without live route propagation. New-object initialization/publication/failure endpoints retained around excluded registry storage and positioning payload setup. Teardown and broader input/writer/family closure remain PARTIAL. Counts unchanged, Q15 parked.
