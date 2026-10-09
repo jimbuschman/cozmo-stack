@@ -1591,3 +1591,7 @@ NR264A–D bind five known A4 families and trace generic child forwarding, Switc
 ### Checkpoint 265 — shared group registry and media release
 
 SR265A/B recover query-side empty-record creation and identity membership unlink/tail repair; MR265C joins Sound media availability release with its distinct lock/suppression boundary. State/membership/counter/admission/provider/input writers remain PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 266 — node preparation admission
+
+PA266A–E recover direct-child admission failure prefixes, retained ID admission, Switch counter/shared-group selection and current-prefix-before-earlier-groups unwind, plus embedded membership insertion. Sound admission/active-list/counter/provider/input/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
