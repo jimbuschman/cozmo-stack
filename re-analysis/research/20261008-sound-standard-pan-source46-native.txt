@@ -1,0 +1,169 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A20A84..0x00A20CD8 exclusive; ARM;
+00A20A84: vmov.f32     s15, #4.000000e+00
+00A20A88: add          lr, lr, #2
+00A20A8C: vldr         s12, [pc, #0x3e4] ; word[00A20E78]=00000000
+00A20A90: add          r2, r5, ip
+00A20A94: lsl          r8, lr, #2
+00A20A98: add          r0, sl, sl, lsl #1
+00A20A9C: add          r1, r8, sl, lsl #3
+00A20AA0: add          r1, r5, r1
+00A20AA4: add          r0, r5, r0, lsl #2
+00A20AA8: add          r0, r0, r8
+00A20AAC: vmul.f32     s17, s17, s15
+00A20AB0: vmov.f32     s15, #1.000000e+00
+00A20AB4: vmov.f32     s14, #3.000000e+00
+00A20AB8: vstr         s15, [r5]
+00A20ABC: vstr         s15, [r2, #4]
+00A20AC0: add          r2, sl, sl, lsl #2
+00A20AC4: add          r2, r5, r2, lsl #2
+00A20AC8: vstr         s15, [r1]
+00A20ACC: add          r1, r5, ip, lsl #2
+00A20AD0: add          r2, r2, r8
+00A20AD4: add          r1, r1, r8
+00A20AD8: vsub.f32     s19, s17, s15
+00A20ADC: vstr         s15, [r0, #4]
+00A20AE0: vstr         s15, [r1, #8]
+00A20AE4: vstr         s15, [r2, #0xc]
+00A20AE8: vdiv.f32     s19, s19, s14
+00A20AEC: vsub.f32     s17, s14, s17
+00A20AF0: vsub.f32     s20, s15, s16
+00A20AF4: vcmp.f32     s19, s12
+00A20AF8: vmrs         apsr_nzcv, fpscr
+00A20AFC: vmovmi.f32   s19, s12
+00A20B00: vdiv.f32     s17, s17, s14
+00A20B04: vmul.f32     s13, s20, s19
+00A20B08: vsqrt.f32    s14, s13
+00A20B0C: vcmp.f32     s17, s12
+00A20B10: vmrs         apsr_nzcv, fpscr
+00A20B14: vmovmi.f32   s17, s12
+00A20B18: vadd.f32     s18, s19, s17
+00A20B1C: vcmp.f32     s14, s14
+00A20B20: vsub.f32     s18, s15, s18
+00A20B24: vmrs         apsr_nzcv, fpscr
+00A20B28: bne          #0xa21f7c
+00A20B2C: vstr         s14, [sb]
+00A20B30: vmul.f32     s19, s16, s19
+00A20B34: vsqrt.f32    s15, s19
+00A20B38: vcmp.f32     s15, s15
+00A20B3C: vmrs         apsr_nzcv, fpscr
+00A20B40: bne          #0xa21f5c
+00A20B44: cmp          r3, #0
+00A20B48: vstr         s15, [sb, #4]
+00A20B4C: beq          #0xa2180c
+00A20B50: mov          r3, #0x18
+00A20B54: mov          sl, #0x14
+00A20B58: str          r3, [fp, #-0x60]
+00A20B5C: mov          r8, #0x10
+00A20B60: mov          r3, #0xc
+00A20B64: mov          r2, #0
+00A20B68: str          r2, [sb, #8]
+00A20B6C: vmul.f32     s14, s20, s17
+00A20B70: vsqrt.f32    s15, s14
+00A20B74: vcmp.f32     s15, s15
+00A20B78: vmrs         apsr_nzcv, fpscr
+00A20B7C: bne          #0xa21fc4
+00A20B80: vmul.f32     s17, s16, s17
+00A20B84: add          r3, sb, r3
+00A20B88: vstr         s15, [r3]
+00A20B8C: vsqrt.f32    s15, s17
+00A20B90: vcmp.f32     s15, s15
+00A20B94: vmrs         apsr_nzcv, fpscr
+00A20B98: bne          #0xa21bf8
+00A20B9C: vmul.f32     s14, s20, s18
+00A20BA0: add          r8, sb, r8
+00A20BA4: vstr         s15, [r8]
+00A20BA8: vsqrt.f32    s15, s14
+00A20BAC: vcmp.f32     s15, s15
+00A20BB0: vmrs         apsr_nzcv, fpscr
+00A20BB4: bne          #0xa21be0
+00A20BB8: vmul.f32     s16, s16, s18
+00A20BBC: add          sl, sb, sl
+00A20BC0: vstr         s15, [sl]
+00A20BC4: vsqrt.f32    s15, s16
+00A20BC8: vcmp.f32     s15, s15
+00A20BCC: vmrs         apsr_nzcv, fpscr
+00A20BD0: bne          #0xa21bc8
+00A20BD4: ldr          r3, [fp, #-0x60]
+00A20BD8: add          r3, sb, r3
+00A20BDC: vstr         s15, [r3]
+00A20BE0: b            #0xa1f914
+00A20BE4: vmov.f32     s15, #1.000000e+00
+00A20BE8: add          r1, lr, #2
+00A20BEC: add          r8, r5, ip
+00A20BF0: bic          lr, r4, #4
+00A20BF4: add          r0, r8, ip
+00A20BF8: lsl          r1, r1, #2
+00A20BFC: add          r2, r0, ip
+00A20C00: add          r0, r0, r1
+00A20C04: add          r2, r2, r1
+00A20C08: movw         r1, #0x633
+00A20C0C: cmp          lr, r1
+00A20C10: vstr         s15, [r5]
+00A20C14: vstr         s15, [r8, #4]
+00A20C18: vstr         s15, [r0]
+00A20C1C: vstr         s15, [r2, #4]
+00A20C20: bne          #0xa21804
+00A20C24: vmov.f32     s14, #4.000000e+00
+00A20C28: vldr         s12, [pc, #0x248] ; word[00A20E78]=00000000
+00A20C2C: vstr         s15, [r0, #8]
+00A20C30: vstr         s15, [r2, #0xc]
+00A20C34: vmul.f32     s17, s17, s14
+00A20C38: vmov.f32     s18, #3.000000e+00
+00A20C3C: vsub.f32     s19, s17, s15
+00A20C40: vdiv.f32     s19, s19, s18
+00A20C44: vsub.f32     s14, s18, s17
+00A20C48: vsub.f32     s20, s15, s16
+00A20C4C: vcmp.f32     s19, s12
+00A20C50: vmrs         apsr_nzcv, fpscr
+00A20C54: vmovmi.f32   s19, s12
+00A20C58: vdiv.f32     s18, s14, s18
+00A20C5C: vmul.f32     s13, s20, s19
+00A20C60: vsqrt.f32    s14, s13
+00A20C64: vcmp.f32     s18, s12
+00A20C68: vmrs         apsr_nzcv, fpscr
+00A20C6C: vmovmi.f32   s18, s12
+00A20C70: vadd.f32     s17, s19, s18
+00A20C74: vcmp.f32     s14, s14
+00A20C78: vsub.f32     s17, s15, s17
+00A20C7C: vmrs         apsr_nzcv, fpscr
+00A20C80: bne          #0xa22108
+00A20C84: vstr         s14, [sb]
+00A20C88: vmul.f32     s19, s16, s19
+00A20C8C: vsqrt.f32    s15, s19
+00A20C90: vcmp.f32     s15, s15
+00A20C94: vmrs         apsr_nzcv, fpscr
+00A20C98: bne          #0xa21ce0
+00A20C9C: cmp          r3, #0
+00A20CA0: vstr         s15, [sb, #4]
+00A20CA4: beq          #0xa21b74
+00A20CA8: mov          r3, #0x18
+00A20CAC: mov          sl, #0x14
+00A20CB0: str          r3, [fp, #-0x60]
+00A20CB4: mov          r8, #0x10
+00A20CB8: mov          r3, #0xc
+00A20CBC: mov          r2, #0
+00A20CC0: str          r2, [sb, #8]
+00A20CC4: vmul.f32     s14, s20, s18
+00A20CC8: vsqrt.f32    s15, s14
+00A20CCC: vcmp.f32     s15, s15
+00A20CD0: vmrs         apsr_nzcv, fpscr
+00A20CD4: bne          #0xa22170
+RANGE 0x00A21B74..0x00A21B8C exclusive; ARM;
+00A21B74: mov          r3, #0x14
+00A21B78: mov          sl, #0x10
+00A21B7C: str          r3, [fp, #-0x60]
+00A21B80: mov          r8, #0xc
+00A21B84: mov          r3, #8
+00A21B88: b            #0xa20cc4
+RANGE 0x00A2180C..0x00A21824 exclusive; ARM;
+00A2180C: mov          r3, #0x14
+00A21810: mov          sl, #0x10
+00A21814: str          r3, [fp, #-0x60]
+00A21818: mov          r8, #0xc
+00A2181C: mov          r3, #8
+00A21820: b            #0xa20b6c
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+00A20E78: raw=00000000 relocated=00000000
