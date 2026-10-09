@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through498 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through499 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2439,3 +2439,5 @@ Checkpoint496 — CA496 shared owner/mode association, ordered selector1 attachm
 Checkpoint497 — EB497 concrete effective-state voice6C/four live70/nodeE8 bypass-before-settings-release and EJ497 original032 body/recipient reconciliation;88 complete ARM instructions. Specific broader inputs/writers retained; generic unread creation wording narrowed. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint498 — DA498 exact device pair admission/constructor defaults/build-reset-layout gates/list publication, original-head route comparison/listener pair writer and retry-before-wake producer;307 complete ARM instructions. Geometry/PCM-file/storage excluded; concrete device destructor remains retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint499 — DT499 actual device0 holder/sink termination then format/selected/global clear, flag-based108DAA0 clear without identity compare and distinct failure versus unlink caller ownership;32 complete ARM instructions. Owned coordinate/recorder/storage tails excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

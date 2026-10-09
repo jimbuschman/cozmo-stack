@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 499 — concrete device destructor control boundary
+
+Primary: `20261009-sound-device-termination-control-boundary-native.txt`,32 complete ARM instructions, separate literals and actual GOT binding; same engine SHA256. DA498 constructor publishes table103B498 whose0=9E96CC. DF4 device unlink/destructor and DA498 failurecleanup now have this concrete recipient. Reuse DF24 holder cleanup/unregister order, DF29 default sink Term and DF39 OpenSL player/outputmix/borrowed-engine termination; other sink products retain their explicit factory rows. No new per-sample or excluded file-output body descent.
+
+| Row | Primary / reuse | Exact decision/value/order |
+| --- | --- | --- |
+| DT499A table and selected sink termination | raw103B498/9E96CC..9E9704/9E9778..9E9780 | Republish same103B498 table before optional excluded recorder cleanup. After excluded D7C/D80 cleanup, invoke9CF8F4(D+64). DF24 performs sinkC.live8 before clearingC, then ordered RTPC unregister, parameter14/release and settingsC before pointer clears; known DF29/39 sink recipients reused. No call to sink Stop invented from destructor name, and no assumption holder is empty during admission failure. |
+| DT499B format/selected/global clear ordering | 9E9780..9E97B8;raw9E98BC/C4/GOT1040130 | After holder callback, reload D1D and D84. Zero D1Cbyte, clear D1D low4, zero D70, clear format upper20: final format1C=0. Then D84nonzero unconditionally writes0 to current global108DAA0 via actualGOT1040130. D84zero skips global clear. No pointer equality with former sink, table/class/main-ID recheck or D84clear in this boundary. Thus admitted constructor failure can execute this same flag-based clear after earlier build publication. |
+| DT499C caller ownership and tail | DA498C/DF4;9E98A0..9E98A8 | Destructor returns original D; it does not itself unlink device-list membership or free D. DA498 failure snapshots pool before live0/free; DF4 unlinks/count-decrements before the same live0/free. Callers determine membership/ownership order, not this callback. out of scope:remaining owned D20 and coordinate table arrays D58/4C, backing/free/destructor infrastructure, recorder/buffer cleanup D7C/D80. |
+
+out of scope:recording/file output, owned coordinate table/storage and allocator/free. Selected sink lifecycle, RTPC unregister and format/published-output clearing remain exact decisions; no global route/voice destruction inferred from these stores.
+
+Q14-033 original device creation/failure/retirement now joins concrete device0 and known selected sink products. Next bounded step: reconcile original pending callbacks and E0/E4 writer evidence, then remaining original device producer/barrier/route interfaces. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows completed Q14.
+
 ## Checkpoint 498 — device admission, listener route identity and retry producer
 
 Primary: `20261009-sound-device-admission-listener-routing-native.txt`,307 complete ARM instructions, separate literal islands and actual root identity GOT; same engine SHA256. Wrapper9EB4C8 inputs descriptor D,upperIdentity H,listenerMask L,aux A. Key={D10,H OR ASR(D10,31)}; constructor9EB10C receives keylo/keyhi,D,H and stack={L,A,108D9B4,0}. D0..10 is a five-word descriptor copied before allocation. Reuse DF17 reset/DF18–25 build/DF26–28 route invalidation, TH3 wake and existing listener registry boundaries. All offsets hex; native integer arithmetic wraps32.
