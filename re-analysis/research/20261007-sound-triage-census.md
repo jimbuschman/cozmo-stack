@@ -2345,3 +2345,5 @@ Checkpoint450 — BR450 controllerfreshbuffer publication/duplicatecandidate dis
 Checkpoint451 — CU451 clientunregister index/erase/order andderiveddestruction queue/current/controller/known-ID/base joins;104 complete native instructions andactualimport joins. Selectedroute/default/lifetime closurepositive;broaderinput/writer/update remainsPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint452 — AH452 nativecurrentanimation/selectedPop/non-null-message/744bytecopy/cleanup handoff;34 native instructions andactualpayloadgetter+4. ExistingDPOST/AL/FRproductcontrolsreused;M5actuatorsoutsideanswer. Broaderinput/writer/streamerscheduling remainsPARTIAL;counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint453 — AG453 native frame admission/actual Update/readiness, optional-sample/layer presence, buffered-send timing and silence/start/end/completion gates;357 complete native instructions and actual joins. Audio-layer manager control recipients next; per-sample mixing excluded under ADP-1. Q14-021 remains PARTIAL; counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

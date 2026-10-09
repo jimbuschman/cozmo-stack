@@ -1,0 +1,420 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0057C84C..0x0057C880 exclusive; Thumb; _ZN4Anki5Cozmo17AnimationStreamer12UpdateStreamERNS0_5RobotEPNS0_9AnimationEb
+0057C84C: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0057C850: sub.w        sp, sp, #0x700
+0057C854: sub          sp, #4
+0057C856: mov          r5, r0
+0057C858: ldr.w        r0, [pc, #0x3bc] ; word[0057CC18]=00AC1FE8
+0057C85C: str          r3, [sp, #0x44]
+0057C85E: mov          sl, r2
+0057C860: add          r0, pc
+0057C862: mov          r4, r1
+0057C864: ldr          r0, [r0]
+0057C866: ldr          r0, [r0]
+0057C868: str.w        r0, [sp, #0x700]
+0057C86C: ldrb.w       r0, [sl, #0xc]
+0057C870: cmp          r0, #0
+0057C872: beq.w        #0x57cac4
+0057C876: blx          #0x4a4f6c ; Anki::BaseStationTimer::getInstance
+
+0057C87A: blx          #0x4a7b58 ; Anki::BaseStationTimer::GetCurrentTimeStamp
+
+0057C87E: mov          r8, r0
+RANGE 0x0057C8E4..0x0057C9C8 exclusive; Thumb;
+0057C8E4: mov          r0, r5
+0057C8E6: mov          r1, r4
+0057C8E8: blx          #0x4adc78 ; Anki::Cozmo::AnimationStreamer::UpdateAmountToSend
+
+0057C8EC: mov          r0, r5
+0057C8EE: mov          r1, r4
+0057C8F0: str          r4, [sp, #0x24]
+0057C8F2: blx          #0x4adc84 ; Anki::Cozmo::AnimationStreamer::SendBufferedMessages
+
+0057C8F6: mov          r7, r0
+0057C8F8: cmp          r7, #0
+0057C8FA: bne.w        #0x57cb24
+0057C8FE: add          r1, sp, #0x4c
+0057C900: movs         r6, #0
+0057C902: orr          r0, r1, #1
+0057C906: str          r0, [sp, #0x14]
+0057C908: add.w        r0, r1, #0x318
+0057C90C: str          r0, [sp, #0x20]
+0057C90E: ldr          r0, [pc, #0x30c] ; word[0057CC1C]=00AC23D4
+0057C910: add.w        fp, r1, #0x2ec
+0057C914: add.w        sb, r1, #0x30c
+0057C918: mov.w        r8, #0
+0057C91C: add          r0, pc
+0057C91E: ldr          r0, [r0]
+0057C920: adds         r0, #8
+0057C922: str          r0, [sp, #0x1c]
+0057C924: ldr          r0, [pc, #0x2fc] ; word[0057CC24]=00AC20AA
+0057C926: add          r0, pc
+0057C928: ldr          r0, [r0]
+0057C92A: adds         r0, #8
+0057C92C: str          r0, [sp, #0x10]
+0057C92E: ldrd         r2, r3, [r5, #0x80]
+0057C932: mov          r0, r5
+0057C934: mov          r1, sl
+0057C936: blx          #0x4add5c ; Anki::Cozmo::AnimationStreamer::ShouldProcessAnimationFrame
+
+0057C93A: cmp          r0, #1
+0057C93C: bne.w        #0x57cb44
+0057C940: str          r7, [sp, #0x18]
+0057C942: mov          r0, r5
+0057C944: ldrd         r2, r3, [r5, #0x80]
+0057C948: add.w        r7, sp, #0x418
+0057C94C: str          r7, [sp]
+0057C94E: blx          #0x4add68 ; Anki::Cozmo::AnimationStreamer::GetAudioToSend
+
+0057C952: mov          r4, r0
+0057C954: mov          r0, fp
+0057C956: strb.w       r6, [sp, #0x335]
+0057C95A: strb.w       r6, [sp, #0x4c]
+0057C95E: blx          #0x4ac4b4 ; Anki::Cozmo::IKeyFrame::IKeyFrame
+
+0057C962: ldr          r0, [sp, #0x1c]
+0057C964: strb.w       r6, [sp, #0x354]
+0057C968: str          r0, [sp, #0x338]
+0057C96A: mov          r0, sb
+0057C96C: bl           #0x578fe4 ; FUN_00578fe4
+
+0057C970: ldr          r0, [r5, #0x60]
+0057C972: cmp          r4, #0
+0057C974: ldrd         r2, r3, [r5, #0x80]
+0057C978: it           ne
+0057C97A: movne        r4, r7
+0057C97C: add          r1, sp, #0x4c
+0057C97E: str          r1, [sp]
+0057C980: ldr          r1, [sp, #0x44]
+0057C982: strd         r1, r4, [sp, #4]
+0057C986: mov          r1, sl
+0057C988: blx          #0x4adca8 ; Anki::Cozmo::TrackLayerComponent::ApplyLayersToAnim
+
+0057C98C: ldrb.w       r0, [sp, #0x4c]
+0057C990: cbz          r0, #0x57c9ae
+0057C992: mov.w        r0, #0x408
+0057C996: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0057C99A: mov          r7, r0
+0057C99C: ldr          r1, [sp, #0x14]
+0057C99E: mov          r0, r7
+0057C9A0: blx          #0x4adcb4 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot
+
+0057C9A4: mov          r0, r5
+0057C9A6: mov          r1, r7
+0057C9A8: blx          #0x4adc54 ; Anki::Cozmo::AnimationStreamer::BufferMessageToSend
+
+0057C9AC: b            #0x57c9c8
+0057C9AE: mov.w        r0, #0x408
+0057C9B2: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0057C9B6: mov          r7, r0
+0057C9B8: add          r1, sp, #0x48
+0057C9BA: mov          r0, r7
+0057C9BC: blx          #0x4adcc0 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot
+
+0057C9C0: mov          r0, r5
+0057C9C2: mov          r1, r7
+0057C9C4: blx          #0x4adc54 ; Anki::Cozmo::AnimationStreamer::BufferMessageToSend
+
+RANGE 0x0057CA7E..0x0057CAA2 exclusive; Thumb;
+0057CA7E: ldr          r1, [sp, #0x24]
+0057CA80: mov          r0, r5
+0057CA82: blx          #0x4adc84 ; Anki::Cozmo::AnimationStreamer::SendBufferedMessages
+
+0057CA86: mov          r8, r0
+0057CA88: cmp.w        r8, #0
+0057CA8C: beq          #0x57ca94
+0057CA8E: movs         r4, #0
+0057CA90: mov          r7, r8
+0057CA92: b            #0x57caa2
+0057CA94: ldr.w        r0, [r5, #0x84]
+0057CA98: movs         r4, #1
+0057CA9A: adds         r0, #0x21
+0057CA9C: str.w        r0, [r5, #0x84]
+0057CAA0: ldr          r7, [sp, #0x18]
+RANGE 0x0057CB24..0x0057CBB2 exclusive; Thumb;
+0057CB24: ldr          r0, [pc, #0x120] ; word[0057CC48]=00AC1D1E
+0057CB26: ldr.w        r1, [sp, #0x700]
+0057CB2A: add          r0, pc
+0057CB2C: ldr          r0, [r0]
+0057CB2E: ldr          r0, [r0]
+0057CB30: subs         r0, r0, r1
+0057CB32: itttt        eq
+0057CB34: moveq        r0, r7
+0057CB36: addeq.w      sp, sp, #0x700
+0057CB3A: addeq        sp, #4
+0057CB3C: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0057CB40: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+
+0057CB44: mov          r0, sl
+0057CB46: blx          #0x4adb94 ; Anki::Cozmo::Animation::HasFramesLeft
+
+0057CB4A: cbnz         r0, #0x57cb60
+0057CB4C: ldr.w        r0, [r5, #0x1b0]
+0057CB50: blx          #0x4adba0 ; Anki::Cozmo::Audio::RobotAudioClient::AnimationIsComplete
+
+0057CB54: cmp          r0, #1
+0057CB56: itt          eq
+0057CB58: ldreq.w      r0, [r5, #0x94]
+0057CB5C: cmpeq        r0, #0
+0057CB5E: beq          #0x57cb64
+0057CB60: mov          r7, r8
+0057CB62: b            #0x57cb24
+0057CB64: ldrb.w       r0, [r5, #0x72]
+0057CB68: mov          r7, r8
+0057CB6A: cmp          r0, #0
+0057CB6C: bne          #0x57cb24
+0057CB6E: ldrb.w       r0, [r5, #0x71]
+0057CB72: cbz          r0, #0x57cb86
+0057CB74: ldr.w        r0, [r5, #0x1b0]
+0057CB78: blx          #0x4adbc4 ; Anki::Cozmo::Audio::RobotAudioClient::ClearCurrentAnimation
+
+0057CB7C: ldr          r1, [sp, #0x24]
+0057CB7E: mov          r0, r5
+0057CB80: blx          #0x4adc9c ; Anki::Cozmo::AnimationStreamer::SendEndOfAnimation
+
+0057CB84: b            #0x57cbae
+0057CB86: mov.w        r0, #0x408
+0057CB8A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0057CB8E: mov          r6, r0
+0057CB90: add          r1, sp, #0x4c
+0057CB92: blx          #0x4adcc0 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot
+
+0057CB96: ldr          r4, [sp, #0x24]
+0057CB98: mov          r0, r5
+0057CB9A: mov          r1, r6
+0057CB9C: blx          #0x4adc54 ; Anki::Cozmo::AnimationStreamer::BufferMessageToSend
+
+0057CBA0: mov          r0, r5
+0057CBA2: blx          #0x4adccc ; Anki::Cozmo::AnimationStreamer::SendStartOfAnimation
+
+0057CBA6: mov          r0, r5
+0057CBA8: mov          r1, r4
+0057CBAA: blx          #0x4adc84 ; Anki::Cozmo::AnimationStreamer::SendBufferedMessages
+
+0057CBAE: mov          r7, r0
+0057CBB0: b            #0x57cb24
+RANGE 0x0057C400..0x0057C434 exclusive; Thumb; _ZN4Anki5Cozmo17AnimationStreamer20SendStartOfAnimationEv
+0057C400: push         {r4, r5, r7, lr}
+0057C402: sub          sp, #8
+0057C404: mov          r4, r0
+0057C406: mov.w        r0, #0x408
+0057C40A: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0057C40E: mov          r5, r0
+0057C410: ldrb.w       r0, [r4, #0xa0]
+0057C414: strb.w       r0, [sp, #4]
+0057C418: add          r1, sp, #4
+0057C41A: mov          r0, r5
+0057C41C: blx          #0x4adc60 ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot
+
+0057C420: mov          r0, r4
+0057C422: mov          r1, r5
+0057C424: blx          #0x4adc54 ; Anki::Cozmo::AnimationStreamer::BufferMessageToSend
+
+0057C428: movs         r0, #1
+0057C42A: strh.w       r0, [r4, #0x71]
+0057C42E: movs         r0, #0
+0057C430: add          sp, #8
+0057C432: pop          {r4, r5, r7, pc}
+RANGE 0x0057C448..0x0057C4BE exclusive; Thumb; _ZN4Anki5Cozmo17AnimationStreamer18SendEndOfAnimationERNS0_5RobotE
+0057C448: push         {r4, r5, r6, r7, lr}
+0057C44A: sub.w        sp, sp, #0x410
+0057C44E: sub          sp, #4
+0057C450: mov          r5, r0
+0057C452: ldr          r0, [pc, #0x84] ; word[0057C4D8]=00AC23F0
+0057C454: mov          r4, r1
+0057C456: add          r1, sp, #4
+0057C458: add          r0, pc
+0057C45A: ldr          r0, [r0]
+0057C45C: ldr          r0, [r0]
+0057C45E: str.w        r0, [sp, #0x410]
+0057C462: add          r0, sp, #8
+0057C464: blx          #0x4adc6c ; Anki::Cozmo::RobotInterface::EngineToRobot::EngineToRobot
+
+0057C468: blx          #0x4adc00 ; Anki::Cozmo::RobotInterface::EngineToRobot::Size
+
+0057C46C: mov          r7, r0
+0057C46E: add          r1, sp, #8
+0057C470: mov          r0, r4
+0057C472: movs         r2, #1
+0057C474: movs         r3, #0
+0057C476: blx          #0x4a5368 ; Anki::Cozmo::Robot::SendMessage
+
+0057C47A: mov          r6, r0
+0057C47C: cbnz         r6, #0x57c49a
+0057C47E: mov.w        r0, #0x100
+0057C482: strh.w       r0, [r5, #0x71]
+0057C486: ldr.w        r0, [r4, #0x23c]
+0057C48A: ldr.w        r1, [r4, #0x244]
+0057C48E: add          r0, r7
+0057C490: str.w        r0, [r4, #0x23c]
+0057C494: adds         r0, r1, #1
+0057C496: str.w        r0, [r4, #0x244]
+0057C49A: add          r0, sp, #8
+0057C49C: blx          #0x4a5200 ; Anki::Cozmo::RobotInterface::EngineToRobot::ClearCurrent
+
+0057C4A0: ldr          r0, [pc, #0x38] ; word[0057C4DC]=00AC23A2
+0057C4A2: ldr.w        r1, [sp, #0x410]
+0057C4A6: add          r0, pc
+0057C4A8: ldr          r0, [r0]
+0057C4AA: ldr          r0, [r0]
+0057C4AC: subs         r0, r0, r1
+0057C4AE: itttt        eq
+0057C4B0: moveq        r0, r6
+0057C4B2: addeq.w      sp, sp, #0x410
+0057C4B6: addeq        sp, #4
+0057C4B8: popeq        {r4, r5, r6, r7, pc}
+0057C4BA: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+
+RANGE 0x0057CC6C..0x0057CCAA exclusive; Thumb; _ZN4Anki5Cozmo17AnimationStreamer27ShouldProcessAnimationFrameEPNS0_9AnimationEjj
+0057CC6C: push         {r4, r5, r6, lr}
+0057CC6E: mov          r6, r0
+0057CC70: mov          r4, r3
+0057CC72: ldr.w        r0, [r6, #0x94]
+0057CC76: mov          r5, r2
+0057CC78: cbz          r0, #0x57cc7e
+0057CC7A: movs         r0, #0
+0057CC7C: pop          {r4, r5, r6, pc}
+0057CC7E: mov          r0, r1
+0057CC80: blx          #0x4adb94 ; Anki::Cozmo::Animation::HasFramesLeft
+
+0057CC84: ldr.w        r1, [r6, #0x1b0]
+0057CC88: ldr          r1, [r1, #0x38]
+0057CC8A: cmp          r1, #0
+0057CC8C: beq          #0x57cc7c
+0057CC8E: ldr          r0, [r1]
+0057CC90: mov          r2, r4
+0057CC92: ldr          r3, [r0, #8]
+0057CC94: mov          r0, r1
+0057CC96: mov          r1, r5
+0057CC98: blx          r3
+0057CC9A: ldr.w        r0, [r6, #0x1b0]
+0057CC9E: mov          r1, r5
+0057CCA0: mov          r2, r4
+0057CCA2: pop.w        {r4, r5, r6, lr}
+0057CCA6: b.w          #0x8cb8ac
+RANGE 0x0064EFA8..0x0064EFEE exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponent17ApplyLayersToAnimEPNS0_9AnimationEjjRNS1_16LayeredKeyFramesEbPKNS0_12AnimKeyFrame11AudioSampleE
+0064EFA8: push.w       {r4, r5, r6, r7, r8, lr}
+0064EFAC: sub          sp, #8
+0064EFAE: mov          r7, r0
+0064EFB0: ldr          r0, [sp, #0x28]
+0064EFB2: ldr.w        r8, [sp, #0x20]
+0064EFB6: mov          r4, r3
+0064EFB8: mov          r5, r2
+0064EFBA: mov          r6, r1
+0064EFBC: strd         r8, r0, [sp]
+0064EFC0: mov          r0, r7
+0064EFC2: blx          #0x4ba0b0 ; Anki::Cozmo::TrackLayerComponent::ApplyAudioLayersToAnim
+
+0064EFC6: mov          r0, r7
+0064EFC8: mov          r1, r6
+0064EFCA: mov          r2, r5
+0064EFCC: mov          r3, r4
+0064EFCE: str.w        r8, [sp]
+0064EFD2: blx          #0x4ba0bc ; Anki::Cozmo::TrackLayerComponent::ApplyBackpackLayersToAnim
+
+0064EFD6: ldr          r0, [sp, #0x24]
+0064EFD8: mov          r1, r6
+0064EFDA: mov          r2, r5
+0064EFDC: mov          r3, r4
+0064EFDE: strd         r8, r0, [sp]
+0064EFE2: mov          r0, r7
+0064EFE4: blx          #0x4ba0c8 ; Anki::Cozmo::TrackLayerComponent::ApplyFaceLayersToAnim
+
+0064EFE8: add          sp, #8
+0064EFEA: pop.w        {r4, r5, r6, r7, r8, pc}
+RANGE 0x0064EFF0..0x0064F068 exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponent22ApplyAudioLayersToAnimEPNS0_9AnimationEjjRNS1_16LayeredKeyFramesEPKNS0_12AnimKeyFrame11AudioSampleE
+0064EFF0: push         {r4, r5, r6, lr}
+0064EFF2: sub          sp, #0x20
+0064EFF4: mov          r4, r0
+0064EFF6: ldr          r0, [pc, #0x8c] ; word[0064F084]=009EF84A
+0064EFF8: ldrd         r6, r1, [sp, #0x30]
+0064EFFC: cmp          r1, #0
+0064EFFE: add          r0, pc
+0064F000: ldr          r0, [r0]
+0064F002: ldr          r0, [r0]
+0064F004: str          r0, [sp, #0x1c]
+0064F006: mov          r0, r1
+0064F008: it           ne
+0064F00A: movne        r0, #1
+0064F00C: strb         r0, [r6]
+0064F00E: ittt         ne
+0064F010: addne        r0, r6, #1
+0064F012: movne.w      r2, #0x2e8
+0064F016: blxne        #0x4a42ac
+0064F01A: ldr          r0, [r4, #4]
+0064F01C: blx          #0x4ba0d4 ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::HaveLayersToSend
+
+0064F020: cmp          r0, #1
+0064F022: bne          #0x64f052
+0064F024: ldr          r1, [pc, #0x60] ; word[0064F088]=009E072A
+0064F026: mov          r5, sp
+0064F028: ldr          r0, [r4, #4]
+0064F02A: add          r1, pc
+0064F02C: str          r5, [sp, #0x10]
+0064F02E: adds         r1, #8
+0064F030: str          r1, [sp]
+0064F032: adds         r1, r6, #1
+0064F034: mov          r2, r5
+0064F036: blx          #0x4ba0e0 ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::ApplyLayersToFrame
+
+0064F03A: ldr          r0, [sp, #0x10]
+0064F03C: cmp          r5, r0
+0064F03E: beq          #0x64f048
+0064F040: cbz          r0, #0x64f04e
+0064F042: ldr          r1, [r0]
+0064F044: ldr          r1, [r1, #0x14]
+0064F046: b            #0x64f04c
+0064F048: ldr          r1, [r0]
+0064F04A: ldr          r1, [r1, #0x10]
+0064F04C: blx          r1
+0064F04E: movs         r0, #1
+0064F050: strb         r0, [r6]
+0064F052: ldr          r0, [pc, #0x38] ; word[0064F08C]=009EF7F2
+0064F054: ldr          r1, [sp, #0x1c]
+0064F056: add          r0, pc
+0064F058: ldr          r0, [r0]
+0064F05A: ldr          r0, [r0]
+0064F05C: subs         r0, r0, r1
+0064F05E: itt          eq
+0064F060: addeq        sp, #0x20
+0064F062: popeq        {r4, r5, r6, pc}
+0064F064: blx          #0x4a4fe4 ; <EXTERNAL>::__stack_chk_fail
+
+RANGE 0x008CB8AC..0x008CB8B0 exclusive; Thumb;
+008CB8AC: bx           pc
+008CB8AE: mov          r8, r8
+RANGE 0x008CB8B0..0x008CB8B8 exclusive; ARM;
+008CB8B0: ldr          ip, [pc] ; word[008CB8B8]=FFBE250C
+008CB8B4: add          pc, ip, pc
+008CB8B8: raw=FFBE250C relocated=FFBE250C 
+RANGE 0x004ADDC8..0x004ADDD4 exclusive; ARM;
+004ADDC8: add          ip, pc, #0xb00000
+004ADDCC: add          ip, ip, #0x95000
+004ADDD0: ldr          pc, [ip, #0x954]!
+01043724: raw=004A4010 relocated=0059A1CD _ZN4Anki5Cozmo5Audio16RobotAudioClient22UpdateAnimationIsReadyEjj
+RANGE 0x004ADCA8..0x004ADCD8 exclusive; ARM;
+004ADCA8: add          ip, pc, #0xb00000
+004ADCAC: add          ip, ip, #0x95000
+004ADCB0: ldr          pc, [ip, #0xa14]!
+004ADCB4: add          ip, pc, #0xb00000
+004ADCB8: add          ip, ip, #0x95000
+004ADCBC: ldr          pc, [ip, #0xa0c]!
+004ADCC0: add          ip, pc, #0xb00000
+004ADCC4: add          ip, ip, #0x95000
+004ADCC8: ldr          pc, [ip, #0xa04]!
+004ADCCC: add          ip, pc, #0xb00000
+004ADCD0: add          ip, ip, #0x95000
+004ADCD4: ldr          pc, [ip, #0x9fc]!
+010436C4: raw=004A4010 relocated=0064EFA9 _ZN4Anki5Cozmo19TrackLayerComponent17ApplyLayersToAnimEPNS0_9AnimationEjjRNS1_16LayeredKeyFramesEbPKNS0_12AnimKeyFrame11AudioSampleE
+010436C8: raw=004A4010 relocated=007AA427 _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC2EONS0_12AnimKeyFrame11AudioSampleE
+010436CC: raw=004A4010 relocated=007AA4CB _ZN4Anki5Cozmo14RobotInterface13EngineToRobotC2EONS0_12AnimKeyFrame12AudioSilenceE
+010436D0: raw=004A4010 relocated=0057C401 _ZN4Anki5Cozmo17AnimationStreamer20SendStartOfAnimationEv
+RANGE 0x004BA0B0..0x004BA0BC exclusive; ARM;
+004BA0B0: add          ip, pc, #0xb00000
+004BA0B4: add          ip, ip, #0x8d000
+004BA0B8: ldr          pc, [ip, #0x764]!
+0104781C: raw=004A4010 relocated=0064EFF1 _ZN4Anki5Cozmo19TrackLayerComponent22ApplyAudioLayersToAnimEPNS0_9AnimationEjjRNS1_16LayeredKeyFramesEPKNS0_12AnimKeyFrame11AudioSampleE
