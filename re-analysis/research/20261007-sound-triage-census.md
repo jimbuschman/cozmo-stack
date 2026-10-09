@@ -1627,3 +1627,7 @@ BP273A recovers duplicate-key no-replacement, key-before-backing and next/head/c
 ### Checkpoint 274 — deferred descriptor availability
 
 DV274A–C trace physical length-gated descriptors, existing-media retain/first alias pointer-size order and failure-prefix release including earlier zero-length IDs. Storage/rehash/file/I/O internals excluded; remaining availability/input/provider/writer closure stays PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 275 — prepared group state writer
+
+GS275A–D recover shared group/state ID mutation, no-op gates, raw member notification/inverse-prefix and saved-address/count failure rules. Storage backing excluded; concrete member/caller/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
