@@ -1631,3 +1631,7 @@ DV274A–C trace physical length-gated descriptors, existing-media retain/first 
 ### Checkpoint 275 — prepared group state writer
 
 GS275A–D recover shared group/state ID mutation, no-op gates, raw member notification/inverse-prefix and saved-address/count failure rules. Storage backing excluded; concrete member/caller/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 276 — group preparation command
+
+GP276A–C join single/bulk state mutation, deferred consumption, forward failure compensation and type/group completion shaping. Single add normalizes its byte; bulk forwards it. Concrete member and public input/provider/writer closure remain PARTIAL; totals/Q15/fidelity/production unchanged.
