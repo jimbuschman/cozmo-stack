@@ -208,7 +208,7 @@ PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, 
 
 > | M6-008 | **KEEP** | 0x00A0AFDC;0x00A091CC;0x00A09C40;0x00A6A07C;0x00A6A580;0x00A62ED4;0x00A35998;0x00A6A2DC;0x00A4304C;0x00A52B90;0x00A549A0;0x00A09F04;0x00A6ACC0;0x00A03618 | Shared/per-object state, mode-4 chaining, lookahead/delay split, zero-frame fade handling, next-choice/start notification and Term/EndOfEvent latency remain exact scheduling/state work. |
 
-PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. RS168 closes concrete9AB048 deadline/insertion/failure behavior. Other action families, source lifecycle, alternate updates, incoming dispatch and writer closure remain pending; known local cleanup is not a full scheduling claim.
+PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover transition controls, continuous lookahead, terminal selection, deferred execution and voice-end scheduling. CX157/MF158/SN159/PN160/PR161/DR162/DD163/AE164/AV165/NO166/AT167 add exact retained-state cleanup, asymmetric pending notification, choice refresh, known0503 descriptor/destructor dispatch, event/state association and idle callback/secondary-transition detach. RS168 closes concrete9AB048 deadline/insertion/failure behavior. SP411–SR422 now supply witnessed action/lifetime and completion cleanup joins. PC424 binds actual request-owner PBI factory, exact continuous gate, derived defaults, context/transition transfer and mask/depth snapshot to VE callbacks. A000E8 base initialization/context is the concrete next recipient. Other source/alternate input uncertainties remain explicit; known local cleanup is not a full scheduling claim.
 
 ## Q14-010 — triage line 43
 
@@ -2235,3 +2235,7 @@ SR422 fixes collected retirement order, association visibility before detach, ac
 ## Checkpoint 423 — RanSeq raw input joins
 
 RJ423 verifies468 serialized selector headers and2,191 concrete child references against raw bank bytes and native reader layouts. It joins unequal weights and multi-entry sequence to direct shipped event actions and distinguishes playlist count from child count. Q14-008 PARTIAL pending the bounded dynamic setter/seed input boundary; counts unchanged; Q15 follows Q14.
+
+## Checkpoint 424 — continuous PBI construction
+
+PC424 supplies the actual RanSeq slot14 factory and exact request0==1 family gate, derived field defaults, table/list/owner retain, transition transfer and depth/mask snapshot. A000E8 base state is the bounded next recipient. Q14-009 PARTIAL; counts unchanged; Q15 follows Q14.
