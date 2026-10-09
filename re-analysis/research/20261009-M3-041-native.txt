@@ -1,0 +1,3005 @@
+Primary resources\lib\armeabi-v7a\libcozmoEngine.so SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+Arguments []
+
+RANGE 00535C50..00536114 _ZN4Anki5Cozmo26RobotToEngineImplMessaging13HandleImuDataERKNS0_9AnkiEventINS0_14RobotInterface13RobotToEngineEEEPNS0_5RobotE
+00535C50: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00535C54: sub        sp, #0x5c
+00535C56: mov        r8, r0
+00535C58: add.w      r0, r1, #0xc
+00535C5C: mov        r4, r2
+00535C5E: blx        #0x4aa288 ; _ZNK4Anki5Cozmo14RobotInterface13RobotToEngine16Get_imuDataChunkEv -> 007B35E6 size=4
+00535C62: mov        sl, r0
+00535C64: ldr.w      r1, [r8, #0x3c]
+00535C68: ldrb.w     r0, [sl, #0xc0]
+00535C6C: cmp        r1, r0
+00535C6E: bne        #0x535c76
+00535C70: add.w      r6, r8, #0x40
+00535C74: b          #0x535ea2
+00535C76: str.w      r0, [r8, #0x3c]
+00535C7A: mov        r0, r4
+00535C7C: blx        #0x4a82cc ; _ZN4Anki5Cozmo5Robot22GetContextDataPlatformEv -> 00516BD2 size=6
+00535C80: mov        r4, r0
+00535C82: ldr.w      r0, [pc, #0x3dc] ; literal[00536060]=00B08E4C
+00535C86: movs       r1, #2
+00535C88: add        r0, pc
+00535C8A: str        r1, [sp, #0x30]
+00535C8C: ldr        r0, [r0]
+00535C8E: ldr        r7, [r0]
+00535C90: movs       r0, #0
+00535C92: str        r0, [sp, #0x48]
+00535C94: strd       r0, r0, [sp, #0x40]
+00535C98: mov        r0, r7
+00535C9A: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+00535C9E: add.w      fp, sp, #0x40
+00535CA2: mov        r2, r0
+00535CA4: mov        r1, r7
+00535CA6: mov        r0, fp
+00535CA8: bl         #0x4e02b2
+00535CAC: add        r7, sp, #0x30
+00535CAE: add        r0, sp, #0x50
+00535CB0: mov        r1, r4
+00535CB2: mov        r3, fp
+00535CB4: mov        r2, r7
+00535CB6: blx        #0x4a64fc ; _ZNK4Anki4Util4Data12DataPlatform14pathToResourceERKNS1_5ScopeERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE -> 0084BDBC size=1FC
+00535CBA: ldrb.w     r0, [sp, #0x40]
+00535CBE: lsls       r0, r0, #0x1f
+00535CC0: itt        ne
+00535CC2: ldrne      r0, [sp, #0x48]
+00535CC4: blxne      #0x4a40cc
+00535CC8: add        r4, sp, #0x50
+00535CCA: movs       r1, #0
+00535CCC: movs       r2, #1
+00535CCE: mov        r0, r4
+00535CD0: blx        #0x4a6508 ; _ZN4Anki4Util9FileUtils15CreateDirectoryERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEbb -> 00802874 size=176
+00535CD4: cmp        r0, #1
+00535CD6: bne        #0x535ce2
+00535CD8: orr        r5, r4, #1
+00535CDC: add.w      sb, r4, #8
+00535CE0: b          #0x535d44
+00535CE2: movs       r0, #0
+00535CE4: orr        r5, r4, #1
+00535CE8: str        r0, [sp, #0x48]
+00535CEA: strd       r0, r0, [sp, #0x40]
+00535CEE: ldrb.w     r0, [sp, #0x50]
+00535CF2: ldr        r3, [sp, #0x58]
+00535CF4: tst.w      r0, #1
+00535CF8: it         eq
+00535CFA: moveq      r3, r5
+00535CFC: adr        r0, #0x364 ; ADR[00536064]=b'Robot.HandleImuData.CreateDirFailed'
+00535CFE: add        r1, sp, #0x40
+00535D00: adr        r2, #0x384 ; ADR[00536088]=b'%s'
+00535D02: blx        #0x4a4108 ; _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D13C size=80
+00535D06: ldr        r0, [sp, #0x40]
+00535D08: add.w      sb, r4, #8
+00535D0C: cbz        r0, #0x535d2c
+00535D0E: ldr        r1, [sp, #0x44]
+00535D10: cmp        r1, r0
+00535D12: itttt      ne
+00535D14: subne.w    r2, r1, #8
+00535D18: subne      r2, r2, r0
+00535D1A: mvnne      r3, #7
+00535D1E: bicne.w    r2, r3, r2
+00535D22: itt        ne
+00535D24: addne      r1, r1, r2
+00535D26: strne      r1, [sp, #0x44]
+00535D28: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00535D2C: ldr        r0, [pc, #0x35c] ; literal[0053608C]=00B08A56
+00535D2E: movs       r2, #1
+00535D30: ldr        r1, [pc, #0x35c] ; literal[00536090]=00B08A58
+00535D32: add        r0, pc
+00535D34: add        r1, pc
+00535D36: ldr        r0, [r0]
+00535D38: ldr        r1, [r1]
+00535D3A: ldrb       r0, [r0]
+00535D3C: strb       r2, [r1]
+00535D3E: cbz        r0, #0x535d44
+00535D40: blx        #0x4a4114 ; _ZN4Anki4Util18sDebugBreakOnErrorEv -> 0080DAB4 size=2
+00535D44: ldrb.w     r0, [sp, #0x50]
+00535D48: movs       r1, #0
+00535D4A: ldr.w      r4, [sb]
+00535D4E: str        r1, [sp, #0x18]
+00535D50: tst.w      r0, #1
+00535D54: strd       r1, r1, [sp, #0x10]
+00535D58: it         eq
+00535D5A: moveq      r4, r5
+00535D5C: mov        r0, r4
+00535D5E: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+00535D62: mov        r2, r0
+00535D64: add        r0, sp, #0x10
+00535D66: mov        r1, r4
+00535D68: bl         #0x4e02b2
+00535D6C: add        r0, sp, #0x10
+00535D6E: adr        r1, #0x324 ; ADR[00536094]=b'/imuLog_'
+00535D70: movs       r2, #8
+00535D72: bl         #0x4e8048
+00535D76: mov        r2, r0
+00535D78: add        r1, sp, #0x20
+00535D7A: ldm.w      r2, {r3, r4, r5}
+00535D7E: stm        r1!, {r3, r4, r5}
+00535D80: movs       r1, #0
+00535D82: strd       r1, r1, [r0]
+00535D86: str        r1, [r0, #8]
+00535D88: ldr.w      r1, [r8, #0x3c]
+00535D8C: add        r4, sp, #4
+00535D8E: mov        r0, r4
+00535D90: blx        #0x4a5c74 ; _ZNSt6__ndk19to_stringEj IMPORT (resolve packaged dependencies before calling external)
+00535D94: ldrd       r2, r1, [sp, #8]
+00535D98: ldrb.w     r0, [sp, #4]
+00535D9C: ands       r3, r0, #1
+00535DA0: itt        eq
+00535DA2: orreq      r1, r4, #1
+00535DA6: lsreq      r2, r0, #1
+00535DA8: add        r0, sp, #0x20
+00535DAA: bl         #0x4e8048
+00535DAE: ldr        r1, [pc, #0x2f0] ; literal[005360A0]=006B3652
+00535DB0: mov        r3, r0
+00535DB2: mov        r2, r7
+00535DB4: ldm.w      r3, {r4, r5, r6}
+00535DB8: add        r1, pc
+00535DBA: stm        r2!, {r4, r5, r6}
+00535DBC: movs       r4, #0
+00535DBE: strd       r4, r4, [r0]
+00535DC2: str        r4, [r0, #8]
+00535DC4: mov        r0, r7
+00535DC6: movs       r2, #4
+00535DC8: bl         #0x4e8048
+00535DCC: mov        r2, r0
+00535DCE: mov        r1, fp
+00535DD0: ldm.w      r2, {r3, r6, r7}
+00535DD4: stm        r1!, {r3, r6, r7}
+00535DD6: strd       r4, r4, [r0]
+00535DDA: str        r4, [r0, #8]
+00535DDC: ldrb.w     r0, [sp, #0x30]
+00535DE0: lsls       r0, r0, #0x1f
+00535DE2: itt        ne
+00535DE4: ldrne      r0, [sp, #0x38]
+00535DE6: blxne      #0x4a40cc
+00535DEA: ldrb.w     r0, [sp, #4]
+00535DEE: lsls       r0, r0, #0x1f
+00535DF0: itt        ne
+00535DF2: ldrne      r0, [sp, #0xc]
+00535DF4: blxne      #0x4a40cc
+00535DF8: ldrb.w     r0, [sp, #0x20]
+00535DFC: lsls       r0, r0, #0x1f
+00535DFE: itt        ne
+00535E00: ldrne      r0, [sp, #0x28]
+00535E02: blxne      #0x4a40cc
+00535E06: ldrb.w     r0, [sp, #0x10]
+00535E0A: lsls       r0, r0, #0x1f
+00535E0C: itt        ne
+00535E0E: ldrne      r0, [sp, #0x18]
+00535E10: blxne      #0x4a40cc
+00535E14: movs       r1, #0
+00535E16: ldr        r0, [pc, #0x28c] ; literal[005360A4]=006AE1C6
+00535E18: str        r1, [sp, #0x38]
+00535E1A: orr        r4, fp, #1
+00535E1E: strd       r1, r1, [sp, #0x30]
+00535E22: add        r0, pc
+00535E24: ldrb.w     r2, [sp, #0x40]
+00535E28: ldr        r1, [sp, #0x48]
+00535E2A: tst.w      r2, #1
+00535E2E: it         eq
+00535E30: moveq      r1, r4
+00535E32: str        r1, [sp]
+00535E34: adr        r1, #0x270 ; ADR[005360A8]=b'Robot.HandleImuData.OpeningLogFile'
+00535E36: add        r2, sp, #0x30
+00535E38: adr        r3, #0x24c ; ADR[00536088]=b'%s'
+00535E3A: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00535E3E: ldr        r0, [sp, #0x30]
+00535E40: cbz        r0, #0x535e60
+00535E42: ldr        r1, [sp, #0x34]
+00535E44: cmp        r1, r0
+00535E46: itttt      ne
+00535E48: subne.w    r2, r1, #8
+00535E4C: subne      r2, r2, r0
+00535E4E: mvnne      r3, #7
+00535E52: bicne.w    r2, r3, r2
+00535E56: itt        ne
+00535E58: addne      r1, r1, r2
+00535E5A: strne      r1, [sp, #0x34]
+00535E5C: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00535E60: ldrb.w     r0, [sp, #0x40]
+00535E64: add.w      r6, r8, #0x40
+00535E68: ldr        r1, [sp, #0x48]
+00535E6A: tst.w      r0, #1
+00535E6E: it         eq
+00535E70: moveq      r1, r4
+00535E72: mov        r0, r6
+00535E74: movs       r2, #0x10
+00535E76: blx        #0x4aa294 ; _ZNSt6__ndk114basic_ofstreamIcNS_11char_traitsIcEEE4openEPKcj -> 0053779E size=2C
+00535E7A: adr        r1, #0x250 ; ADR[005360CC]=b'aX aY aZ gX gY gZ\n'
+00535E7C: mov        r0, r6
+00535E7E: movs       r2, #0x12
+00535E80: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535E84: ldrb.w     r0, [sp, #0x40]
+00535E88: lsls       r0, r0, #0x1f
+00535E8A: itt        ne
+00535E8C: ldrne      r0, [sp, #0x48]
+00535E8E: blxne      #0x4a40cc
+00535E92: ldrb.w     r0, [sp, #0x50]
+00535E96: lsls       r0, r0, #0x1f
+00535E98: beq        #0x535ea2
+00535E9A: ldr.w      r0, [sb]
+00535E9E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00535EA2: adr        r7, #0x23c ; ADR[005360E0]=b' '
+00535EA4: addw       sb, pc, #0x23c ; ADDW[005360E4]=b'\n'
+00535EA8: mvn        r5, #0x1f
+00535EAC: add.w      r4, sl, r5
+00535EB0: mov        r0, r6
+00535EB2: ldr        r1, [r4, #0x20]
+00535EB4: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535EB8: mov        r1, r7
+00535EBA: movs       r2, #1
+00535EBC: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535EC0: ldr        r1, [r4, #0x40]
+00535EC2: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535EC6: mov        r1, r7
+00535EC8: movs       r2, #1
+00535ECA: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535ECE: ldr        r1, [r4, #0x60]
+00535ED0: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535ED4: mov        r1, r7
+00535ED6: movs       r2, #1
+00535ED8: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535EDC: ldr.w      r1, [r4, #0x80]
+00535EE0: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535EE4: mov        r1, r7
+00535EE6: movs       r2, #1
+00535EE8: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535EEC: ldr.w      r1, [r4, #0xa0]
+00535EF0: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535EF4: mov        r1, r7
+00535EF6: movs       r2, #1
+00535EF8: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535EFC: ldr.w      r1, [r4, #0xc0]
+00535F00: blx        #0x4a44f8 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf -> 004E3718 size=114
+00535F04: mov        r1, sb
+00535F06: movs       r2, #1
+00535F08: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00535F0C: adds       r5, #4
+00535F0E: bne        #0x535eac
+00535F10: ldrb.w     r1, [sl, #0xc2]
+00535F14: ldrb.w     r0, [sl, #0xc1]
+00535F18: subs       r1, #1
+00535F1A: cmp        r1, r0
+00535F1C: bne        #0x535f74
+00535F1E: ldr        r0, [pc, #0x1c8] ; literal[005360E8]=006AE0C4
+00535F20: movs       r1, #0
+00535F22: ldr        r3, [pc, #0x1c8] ; literal[005360EC]=006ADFD2
+00535F24: add        r0, pc
+00535F26: strd       r1, r1, [sp, #0x50]
+00535F2A: add        r3, pc
+00535F2C: str        r1, [sp, #0x58]
+00535F2E: adr        r1, #0x1c0 ; ADR[005360F0]=b'Robot.HandleImuData.ClosingLogFile'
+00535F30: add        r2, sp, #0x50
+00535F32: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00535F36: ldr        r0, [sp, #0x50]
+00535F38: cbz        r0, #0x535f58
+00535F3A: ldr        r1, [sp, #0x54]
+00535F3C: cmp        r1, r0
+00535F3E: itttt      ne
+00535F40: subne.w    r2, r1, #8
+00535F44: subne      r2, r2, r0
+00535F46: mvnne      r3, #7
+00535F4A: bicne.w    r2, r3, r2
+00535F4E: itt        ne
+00535F50: addne      r1, r1, r2
+00535F52: strne      r1, [sp, #0x54]
+00535F54: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00535F58: add.w      r0, r8, #0x44
+00535F5C: blx        #0x4a69c4 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE5closeEv -> 0050111C size=3C
+00535F60: cbnz       r0, #0x535f74
+00535F62: ldr        r0, [r6]
+00535F64: ldr        r0, [r0, #-0xc]
+00535F68: add        r0, r6
+00535F6A: ldr        r1, [r0, #0x10]
+00535F6C: orr        r1, r1, #4
+00535F70: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+00535F74: add        sp, #0x5c
+00535F76: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00535F7A: mov        r4, r0
+00535F7C: ldr        r0, [sp, #0x40]
+00535F7E: cmp        r0, #0
+00535F80: beq        #0x53604c
+00535F82: ldr        r1, [sp, #0x44]
+00535F84: cmp        r1, r0
+00535F86: beq        #0x536048
+00535F88: sub.w      r2, r1, #8
+00535F8C: mvn        r3, #7
+00535F90: subs       r2, r2, r0
+00535F92: bic.w      r2, r3, r2
+00535F96: add        r1, r2
+00535F98: str        r1, [sp, #0x44]
+00535F9A: b          #0x536048
+00535F9C: mov        r4, r0
+00535F9E: ldr        r0, [sp, #0x50]
+00535FA0: cmp        r0, #0
+00535FA2: beq        #0x53605a
+00535FA4: ldr        r1, [sp, #0x54]
+00535FA6: cmp        r1, r0
+00535FA8: beq        #0x536056
+00535FAA: sub.w      r2, r1, #8
+00535FAE: mvn        r3, #7
+00535FB2: subs       r2, r2, r0
+00535FB4: bic.w      r2, r3, r2
+00535FB8: add        r1, r2
+00535FBA: str        r1, [sp, #0x54]
+00535FBC: b          #0x536056
+00535FBE: mov        r4, r0
+00535FC0: ldr        r0, [sp, #0x30]
+00535FC2: cbz        r0, #0x53603e
+00535FC4: ldr        r1, [sp, #0x34]
+00535FC6: cmp        r1, r0
+00535FC8: beq        #0x535fdc
+00535FCA: sub.w      r2, r1, #8
+00535FCE: mvn        r3, #7
+00535FD2: subs       r2, r2, r0
+00535FD4: bic.w      r2, r3, r2
+00535FD8: add        r1, r2
+00535FDA: str        r1, [sp, #0x34]
+00535FDC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00535FE0: b          #0x53603e
+00535FE2: mov        r4, r0
+00535FE4: ldrb.w     r0, [sp, #0x30]
+00535FE8: lsls       r0, r0, #0x1f
+00535FEA: itt        ne
+00535FEC: ldrne      r0, [sp, #0x38]
+00535FEE: blxne      #0x4a40cc
+00535FF2: b          #0x535ff6
+00535FF4: mov        r4, r0
+00535FF6: ldrb.w     r0, [sp, #4]
+00535FFA: lsls       r0, r0, #0x1f
+00535FFC: itt        ne
+00535FFE: ldrne      r0, [sp, #0xc]
+00536000: blxne      #0x4a40cc
+00536004: b          #0x536008
+00536006: mov        r4, r0
+00536008: ldrb.w     r0, [sp, #0x20]
+0053600C: lsls       r0, r0, #0x1f
+0053600E: itt        ne
+00536010: ldrne      r0, [sp, #0x28]
+00536012: blxne      #0x4a40cc
+00536016: b          #0x53601a
+00536018: mov        r4, r0
+0053601A: ldrb.w     r0, [sp, #0x10]
+0053601E: lsls       r0, r0, #0x1f
+00536020: beq        #0x53604c
+00536022: ldr        r0, [sp, #0x18]
+00536024: b          #0x536048
+00536026: mov        r4, r0
+00536028: b          #0x53604c
+0053602A: mov        r4, r0
+0053602C: ldrb.w     r0, [sp, #0x40]
+00536030: lsls       r0, r0, #0x1f
+00536032: beq        #0x53605a
+00536034: ldr        r0, [sp, #0x48]
+00536036: b          #0x536056
+00536038: mov        r4, r0
+0053603A: b          #0x53604c
+0053603C: mov        r4, r0
+0053603E: ldrb.w     r0, [sp, #0x40]
+00536042: lsls       r0, r0, #0x1f
+00536044: beq        #0x53604c
+00536046: ldr        r0, [sp, #0x48]
+00536048: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0053604C: ldrb.w     r0, [sp, #0x50]
+00536050: lsls       r0, r0, #0x1f
+00536052: beq        #0x53605a
+00536054: ldr        r0, [sp, #0x58]
+00536056: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0053605A: mov        r0, r4
+0053605C: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00536060: ldrh       r4, [r1, #0x32]
+00536062: lsls       r0, r6, #2
+00536064: ldr        r2, [r2, #0x74]
+00536066: ldr        r2, [r4, #0x74]
+00536068: cmp        r6, #0x74
+0053606A: str        r0, [r1, #0x14]
+0053606C: str        r6, [r5, #0x44]
+0053606E: str        r4, [r5, #0x54]
+00536070: ldr        r1, [r1, #0x54]
+00536072: add        r5, lr
+00536074: strb       r1, [r4, #0x11]
+00536076: cmp        r6, #0x61
+00536078: strb       r3, [r0, #9]
+0053607A: str        r5, [r4, #0x14]
+0053607C: str        r4, [r6, #0x54]
+0053607E: ldr        r4, [r0, #0x14]
+00536080: mov        r2, lr
+00536082: ldr        r1, [r4, #0x14]
+00536084: str        r4, [r5, #0x54]
+00536086: lsls       r4, r4, #1
+00536088: strb       r5, [r4, #0xc]
+0053608A: movs       r0, r0
+0053608C: ldrh       r6, [r2, #0x12]
+0053608E: lsls       r0, r6, #2
+00536090: ldrh       r0, [r3, #0x12]
+00536092: lsls       r0, r6, #2
+00536094: ldr        r7, [r5, #0x10]
+00536096: strb       r5, [r5, #0x15]
+00536098: ldr        r4, [r1, #0x74]
+0053609A: ldrsh      r7, [r4, r5]
+0053609C: movs       r0, r0
+0053609E: movs       r0, r0
+005360A0: adds       r6, #0x52
+005360A2: lsls       r3, r5, #1
+005360A4: b          #0x536434
+005360A6: lsls       r2, r5, #1
+005360A8: ldr        r2, [r2, #0x74]
+005360AA: ldr        r2, [r4, #0x74]
+005360AC: cmp        r6, #0x74
+005360AE: str        r0, [r1, #0x14]
+005360B0: str        r6, [r5, #0x44]
+005360B2: str        r4, [r5, #0x54]
+005360B4: ldr        r1, [r1, #0x54]
+005360B6: add        r5, lr
+005360B8: strb       r1, [r4, #0x11]
+005360BA: cmp        r6, #0x61
+005360BC: strb       r7, [r1, #1]
+005360BE: ldr        r5, [r4, #0x64]
+005360C0: ldr        r1, [r5, #0x64]
+005360C2: ldr        r4, [pc, #0x19c] ; literal[00536260]=F7702201
+005360C4: str        r7, [r5, #0x74]
+005360C6: ldr        r6, [r0, #0x14]
+005360C8: str        r4, [r5, #0x54]
+005360CA: movs       r0, r0
+005360CC: ldr        r1, [r4, r1]
+005360CE: str        r0, [r4, #0x10]
+005360D0: movs       r0, #0x59
+005360D2: ldrh       r1, [r4, r1]
+005360D4: str        r0, [r4, #0x70]
+005360D6: movs       r0, #0x58
+005360D8: ldr        r7, [r4, r5]
+005360DA: str        r0, [r4, #0x70]
+005360DC: lsrs       r2, r3, #9
+005360DE: movs       r0, r0
+005360E0: movs       r0, r4
+005360E2: movs       r0, r0
+005360E4: movs       r2, r1
+005360E6: movs       r0, r0
+005360E8: b          #0x536274
+005360EA: lsls       r2, r5, #1
+005360EC: svc        #0xd2
+005360EE: lsls       r2, r5, #1
+005360F0: ldr        r2, [r2, #0x74]
+005360F2: ldr        r2, [r4, #0x74]
+005360F4: cmp        r6, #0x74
+005360F6: str        r0, [r1, #0x14]
+005360F8: str        r6, [r5, #0x44]
+005360FA: str        r4, [r5, #0x54]
+005360FC: ldr        r1, [r1, #0x54]
+005360FE: add        r5, lr
+00536100: strb       r1, [r4, #0x11]
+00536102: cmp        r6, #0x61
+00536104: ldr        r3, [r0, #0x44]
+00536106: strb       r7, [r5, #0xd]
+00536108: ldr        r1, [r5, #0x64]
+0053610A: ldr        r4, [pc, #0x19c] ; literal[005362A8]=F76D9117
+0053610C: str        r7, [r5, #0x74]
+0053610E: ldr        r6, [r0, #0x14]
+00536110: str        r4, [r5, #0x54]
+00536112: movs       r0, r0
+
+RANGE 00536114..00536678 _ZN4Anki5Cozmo26RobotToEngineImplMessaging16HandleImuRawDataERKNS0_9AnkiEventINS0_14RobotInterface13RobotToEngineEEEPNS0_5RobotE
+00536114: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00536118: sub        sp, #0x74
+0053611A: mov        r8, r0
+0053611C: add.w      r0, r1, #0xc
+00536120: mov        r6, r2
+00536122: blx        #0x4aa2a0 ; _ZNK4Anki5Cozmo14RobotInterface13RobotToEngine19Get_imuRawDataChunkEv -> 007B3A1E size=4
+00536126: mov        r4, r0
+00536128: ldrb       r0, [r4, #0xc]
+0053612A: cmp        r0, #0
+0053612C: beq        #0x536212
+0053612E: add.w      r6, r8, #0x40
+00536132: ldrb       r1, [r4, #0xd]
+00536134: mov        r0, r6
+00536136: blx        #0x4a4480 ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEi -> 004E3154 size=10C
+0053613A: addw       r7, pc, #0x510 ; ADDW[0053664C]=b' '
+0053613E: movs       r2, #1
+00536140: mov        r1, r7
+00536142: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536146: ldrsh.w    r1, [r4, #6]
+0053614A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053614E: mov        r1, r7
+00536150: movs       r2, #1
+00536152: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536156: ldrsh.w    r1, [r4, #8]
+0053615A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053615E: mov        r1, r7
+00536160: movs       r2, #1
+00536162: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536166: ldrsh.w    r1, [r4, #0xa]
+0053616A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053616E: mov        r1, r7
+00536170: movs       r2, #1
+00536172: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536176: ldrsh.w    r1, [r4]
+0053617A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053617E: mov        r1, r7
+00536180: movs       r2, #1
+00536182: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536186: ldrsh.w    r1, [r4, #2]
+0053618A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053618E: mov        r1, r7
+00536190: movs       r2, #1
+00536192: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+00536196: ldrsh.w    r1, [r4, #4]
+0053619A: blx        #0x4aa2ac ; _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs -> 005377CC size=124
+0053619E: addw       r1, pc, #0x4b0 ; ADDW[00536650]=b'\n'
+005361A2: movs       r2, #1
+005361A4: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+005361A8: ldrb       r0, [r4, #0xc]
+005361AA: cmp        r0, #2
+005361AC: bne        #0x53620c
+005361AE: ldr.w      r0, [pc, #0x4a4] ; literal[00536654]=006ADE2C
+005361B2: movs       r2, #0
+005361B4: ldr.w      r1, [pc, #0x4a0] ; literal[00536658]=006B3251
+005361B8: ldr.w      r3, [pc, #0x4a0] ; literal[0053665C]=006ADD38
+005361BC: add        r0, pc
+005361BE: add        r1, pc
+005361C0: strd       r2, r2, [sp, #0x68]
+005361C4: add        r3, pc
+005361C6: str        r2, [sp, #0x70]
+005361C8: add        r2, sp, #0x68
+005361CA: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+005361CE: ldr        r0, [sp, #0x68]
+005361D0: cbz        r0, #0x5361f0
+005361D2: ldr        r1, [sp, #0x6c]
+005361D4: cmp        r1, r0
+005361D6: itttt      ne
+005361D8: subne.w    r2, r1, #8
+005361DC: subne      r2, r2, r0
+005361DE: mvnne      r3, #7
+005361E2: bicne.w    r2, r3, r2
+005361E6: itt        ne
+005361E8: addne      r1, r1, r2
+005361EA: strne      r1, [sp, #0x6c]
+005361EC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005361F0: add.w      r0, r8, #0x44
+005361F4: blx        #0x4a69c4 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE5closeEv -> 0050111C size=3C
+005361F8: cbnz       r0, #0x53620c
+005361FA: ldr        r0, [r6]
+005361FC: ldr        r0, [r0, #-0xc]
+00536200: add        r0, r6
+00536202: ldr        r1, [r0, #0x10]
+00536204: orr        r1, r1, #4
+00536208: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+0053620C: add        sp, #0x74
+0053620E: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00536212: mov        r0, r6
+00536214: blx        #0x4a82cc ; _ZN4Anki5Cozmo5Robot22GetContextDataPlatformEv -> 00516BD2 size=6
+00536218: mov        r5, r0
+0053621A: ldr        r0, [pc, #0x39c] ; literal[005365B8]=00B088B6
+0053621C: movs       r1, #2
+0053621E: add        r0, pc
+00536220: str        r1, [sp, #0x40]
+00536222: movs       r1, #0
+00536224: ldr        r0, [r0]
+00536226: str        r1, [sp, #0x60]
+00536228: strd       r1, r1, [sp, #0x58]
+0053622C: ldr        r7, [r0]
+0053622E: mov        r0, r7
+00536230: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+00536234: add        r6, sp, #0x58
+00536236: mov        r2, r0
+00536238: mov        r1, r7
+0053623A: mov        r0, r6
+0053623C: bl         #0x4e02b2
+00536240: add        r0, sp, #0x68
+00536242: add        r2, sp, #0x40
+00536244: mov        r1, r5
+00536246: mov        r3, r6
+00536248: blx        #0x4a64fc ; _ZNK4Anki4Util4Data12DataPlatform14pathToResourceERKNS1_5ScopeERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE -> 0084BDBC size=1FC
+0053624C: ldrb.w     r0, [sp, #0x58]
+00536250: str        r4, [sp, #8]
+00536252: lsls       r0, r0, #0x1f
+00536254: itt        ne
+00536256: ldrne      r0, [sp, #0x60]
+00536258: blxne      #0x4a40cc
+0053625C: add        r0, sp, #0x68
+0053625E: movs       r1, #0
+00536260: movs       r2, #1
+00536262: blx        #0x4a6508 ; _ZN4Anki4Util9FileUtils15CreateDirectoryERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEbb -> 00802874 size=176
+00536266: cbnz       r0, #0x5362c6
+00536268: movs       r0, #0
+0053626A: str        r0, [sp, #0x60]
+0053626C: strd       r0, r0, [sp, #0x58]
+00536270: ldrb.w     r0, [sp, #0x68]
+00536274: ldr        r3, [sp, #0x70]
+00536276: tst.w      r0, #1
+0053627A: add        r0, sp, #0x68
+0053627C: it         eq
+0053627E: orreq      r3, r0, #1
+00536282: adr        r0, #0x338 ; ADR[005365BC]=b'Robot.HandleImuRawData.CreateDirFailed'
+00536284: add        r1, sp, #0x58
+00536286: adr        r2, #0x35c ; ADR[005365E4]=b'%s'
+00536288: blx        #0x4a4108 ; _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D13C size=80
+0053628C: ldr        r0, [sp, #0x58]
+0053628E: cbz        r0, #0x5362ae
+00536290: ldr        r1, [sp, #0x5c]
+00536292: cmp        r1, r0
+00536294: itttt      ne
+00536296: subne.w    r2, r1, #8
+0053629A: subne      r2, r2, r0
+0053629C: mvnne      r3, #7
+005362A0: bicne.w    r2, r3, r2
+005362A4: itt        ne
+005362A6: addne      r1, r1, r2
+005362A8: strne      r1, [sp, #0x5c]
+005362AA: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005362AE: ldr        r0, [pc, #0x338] ; literal[005365E8]=00B084D4
+005362B0: movs       r2, #1
+005362B2: ldr        r1, [pc, #0x338] ; literal[005365EC]=00B084D6
+005362B4: add        r0, pc
+005362B6: add        r1, pc
+005362B8: ldr        r0, [r0]
+005362BA: ldr        r1, [r1]
+005362BC: ldrb       r0, [r0]
+005362BE: strb       r2, [r1]
+005362C0: cbz        r0, #0x5362c6
+005362C2: blx        #0x4a4114 ; _ZN4Anki4Util18sDebugBreakOnErrorEv -> 0080DAB4 size=2
+005362C6: ldr        r1, [pc, #0x328] ; literal[005365F0]=006ADC30
+005362C8: movs       r6, #0
+005362CA: str        r6, [sp, #0x60]
+005362CC: add        r1, pc
+005362CE: strd       r6, r6, [sp, #0x58]
+005362D2: add.w      fp, sp, #0x58
+005362D6: movs       r2, #0
+005362D8: mov        r0, fp
+005362DA: bl         #0x4e02b2
+005362DE: add        r5, sp, #0x14
+005362E0: add.w      sb, sp, #0x20
+005362E4: add.w      sl, sp, #0x30
+005362E8: orr        r0, fp, #1
+005362EC: str        r0, [sp, #0x10]
+005362EE: str.w      r8, [sp, #0xc]
+005362F2: ldr.w      r0, [r8, #0x3c]
+005362F6: adds       r0, #1
+005362F8: str.w      r0, [r8, #0x3c]
+005362FC: ldrb.w     r0, [sp, #0x68]
+00536300: ldr        r4, [sp, #0x70]
+00536302: tst.w      r0, #1
+00536306: add        r0, sp, #0x68
+00536308: str        r6, [sp, #0x28]
+0053630A: strd       r6, r6, [sp, #0x20]
+0053630E: it         eq
+00536310: orreq      r4, r0, #1
+00536314: mov        r0, r4
+00536316: blx        #0x4a44e0 ; strlen IMPORT (resolve packaged dependencies before calling external)
+0053631A: mov        r2, r0
+0053631C: mov        r0, sb
+0053631E: mov        r1, r4
+00536320: bl         #0x4e02b2
+00536324: adr        r1, #0x2cc ; ADR[005365F4]=b'/imuRawLog_'
+00536326: mov        r0, sb
+00536328: movs       r2, #0xb
+0053632A: bl         #0x4e8048
+0053632E: mov        r2, r0
+00536330: mov        r1, sl
+00536332: ldm.w      r2, {r3, r4, r7}
+00536336: stm        r1!, {r3, r4, r7}
+00536338: strd       r6, r6, [r0]
+0053633C: str        r6, [r0, #8]
+0053633E: ldr.w      r1, [r8, #0x3c]
+00536342: mov        r0, r5
+00536344: blx        #0x4a5c74 ; _ZNSt6__ndk19to_stringEj IMPORT (resolve packaged dependencies before calling external)
+00536348: ldrd       r2, r1, [sp, #0x18]
+0053634C: ldrb.w     r0, [sp, #0x14]
+00536350: ands       r3, r0, #1
+00536354: itt        eq
+00536356: orreq      r1, r5, #1
+0053635A: lsreq      r2, r0, #1
+0053635C: mov        r0, sl
+0053635E: bl         #0x4e8048
+00536362: add        r6, sp, #0x40
+00536364: mov        r1, fp
+00536366: mov        r5, sb
+00536368: mov        sb, r1
+0053636A: mov        r1, r0
+0053636C: mov.w      fp, #0
+00536370: mov        r2, r6
+00536372: ldm.w      r1, {r3, r4, r7}
+00536376: stm        r2!, {r3, r4, r7}
+00536378: strd       fp, fp, [r0]
+0053637C: str.w      fp, [r0, #8]
+00536380: ldr        r1, [pc, #0x2dc] ; literal[00536660]=006B3084
+00536382: mov        r0, r6
+00536384: movs       r2, #4
+00536386: add        r1, pc
+00536388: bl         #0x4e8048
+0053638C: mov        sl, r0
+0053638E: add.w      r1, sl, #1
+00536392: add        r0, sp, #0x50
+00536394: movs       r2, #7
+00536396: ldrb.w     r7, [sl]
+0053639A: blx        #0x4a42ac ; __aeabi_memcpy IMPORT (resolve packaged dependencies before calling external)
+0053639E: ldr.w      r4, [sl, #8]
+005363A2: strd       fp, fp, [sl]
+005363A6: str.w      fp, [sl, #8]
+005363AA: ldrb.w     r0, [sp, #0x58]
+005363AE: lsls       r0, r0, #0x1f
+005363B0: bne        #0x5363b8
+005363B2: strh.w     fp, [sp, #0x58]
+005363B6: b          #0x5363c2
+005363B8: ldr        r0, [sp, #0x60]
+005363BA: strb.w     fp, [r0]
+005363BE: str.w      fp, [sp, #0x5c]
+005363C2: add.w      sl, sp, #0x30
+005363C6: mov        fp, sb
+005363C8: mov        sb, r5
+005363CA: mov        r0, fp
+005363CC: movs       r1, #0
+005363CE: bl         #0x4e75ec
+005363D2: ldr        r0, [sp, #0x10]
+005363D4: add        r1, sp, #0x50
+005363D6: movs       r2, #7
+005363D8: strb.w     r7, [sp, #0x58]
+005363DC: blx        #0x4a42ac ; __aeabi_memcpy IMPORT (resolve packaged dependencies before calling external)
+005363E0: ldrb.w     r0, [sp, #0x40]
+005363E4: movs       r6, #0
+005363E6: str        r6, [sp, #0x50]
+005363E8: strb.w     r6, [sp, #0x56]
+005363EC: lsls       r0, r0, #0x1f
+005363EE: str        r4, [sp, #0x60]
+005363F0: strh.w     r6, [sp, #0x54]
+005363F4: itt        ne
+005363F6: ldrne      r0, [sp, #0x48]
+005363F8: blxne      #0x4a40cc
+005363FC: ldrb.w     r0, [sp, #0x14]
+00536400: add        r5, sp, #0x14
+00536402: ldr.w      r8, [sp, #0xc]
+00536406: lsls       r0, r0, #0x1f
+00536408: itt        ne
+0053640A: ldrne      r0, [sp, #0x1c]
+0053640C: blxne      #0x4a40cc
+00536410: ldrb.w     r0, [sp, #0x30]
+00536414: lsls       r0, r0, #0x1f
+00536416: itt        ne
+00536418: ldrne      r0, [sp, #0x38]
+0053641A: blxne      #0x4a40cc
+0053641E: ldrb.w     r0, [sp, #0x20]
+00536422: lsls       r0, r0, #0x1f
+00536424: itt        ne
+00536426: ldrne      r0, [sp, #0x28]
+00536428: blxne      #0x4a40cc
+0053642C: mov        r0, fp
+0053642E: blx        #0x4a82e4 ; _ZN4Anki4Util9FileUtils10FileExistsERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE -> 0080342A size=28
+00536432: cmp        r0, #0
+00536434: bne.w      #0x5362f2
+00536438: ldr        r0, [pc, #0x1c4] ; literal[00536600]=006ADBA8
+0053643A: movs       r1, #0
+0053643C: str        r1, [sp, #0x48]
+0053643E: str        r1, [sp, #0x40]
+00536440: add        r0, pc
+00536442: str        r1, [sp, #0x44]
+00536444: ldr        r1, [sp, #0x10]
+00536446: ldrb.w     r3, [sp, #0x58]
+0053644A: ldr        r2, [sp, #0x60]
+0053644C: tst.w      r3, #1
+00536450: it         eq
+00536452: moveq      r2, r1
+00536454: str        r2, [sp]
+00536456: adr        r1, #0x1ac ; ADR[00536604]=b'Robot.HandleImuRawData.OpeningLogFile'
+00536458: add        r2, sp, #0x40
+0053645A: adr        r3, #0x188 ; ADR[005365E4]=b'%s'
+0053645C: blx        #0x4a505c ; _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D42C size=14
+00536460: ldr        r0, [sp, #0x40]
+00536462: ldr        r4, [sp, #8]
+00536464: cbz        r0, #0x536484
+00536466: ldr        r1, [sp, #0x44]
+00536468: cmp        r1, r0
+0053646A: itttt      ne
+0053646C: subne.w    r2, r1, #8
+00536470: subne      r2, r2, r0
+00536472: mvnne      r3, #7
+00536476: bicne.w    r2, r3, r2
+0053647A: itt        ne
+0053647C: addne      r1, r1, r2
+0053647E: strne      r1, [sp, #0x44]
+00536480: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00536484: ldrb.w     r0, [sp, #0x58]
+00536488: add.w      r6, r8, #0x40
+0053648C: ldr        r1, [sp, #0x60]
+0053648E: tst.w      r0, #1
+00536492: ldr        r0, [sp, #0x10]
+00536494: it         eq
+00536496: moveq      r1, r0
+00536498: mov        r0, r6
+0053649A: movs       r2, #0x10
+0053649C: blx        #0x4aa294 ; _ZNSt6__ndk114basic_ofstreamIcNS_11char_traitsIcEEE4openEPKcj -> 0053779E size=2C
+005364A0: adr        r1, #0x188 ; ADR[0053662C]=b'timestamp aX aY aZ gX gY gZ\n'
+005364A2: mov        r0, r6
+005364A4: movs       r2, #0x1c
+005364A6: blx        #0x4a4474 ; _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j -> 004E428C size=F0
+005364AA: ldrb.w     r0, [sp, #0x58]
+005364AE: lsls       r0, r0, #0x1f
+005364B0: itt        ne
+005364B2: ldrne      r0, [sp, #0x60]
+005364B4: blxne      #0x4a40cc
+005364B8: ldrb.w     r0, [sp, #0x68]
+005364BC: lsls       r0, r0, #0x1f
+005364BE: beq.w      #0x536132
+005364C2: ldr        r0, [sp, #0x70]
+005364C4: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005364C8: b          #0x536132
+005364CA: mov        r4, r0
+005364CC: ldr        r0, [sp, #0x40]
+005364CE: cmp        r0, #0
+005364D0: beq        #0x536594
+005364D2: ldr        r1, [sp, #0x44]
+005364D4: cmp        r1, r0
+005364D6: beq        #0x53658c
+005364D8: sub.w      r2, r1, #8
+005364DC: mvn        r3, #7
+005364E0: subs       r2, r2, r0
+005364E2: bic.w      r2, r3, r2
+005364E6: add        r1, r2
+005364E8: str        r1, [sp, #0x44]
+005364EA: b          #0x53658c
+005364EC: b          #0x536592
+005364EE: mov        r4, r0
+005364F0: ldr        r0, [sp, #0x58]
+005364F2: cmp        r0, #0
+005364F4: beq        #0x5365a2
+005364F6: ldr        r1, [sp, #0x5c]
+005364F8: cmp        r1, r0
+005364FA: beq        #0x53659e
+005364FC: sub.w      r2, r1, #8
+00536500: mvn        r3, #7
+00536504: subs       r2, r2, r0
+00536506: bic.w      r2, r3, r2
+0053650A: add        r1, r2
+0053650C: str        r1, [sp, #0x5c]
+0053650E: b          #0x53659e
+00536510: mov        r4, r0
+00536512: ldr        r0, [sp, #0x68]
+00536514: cmp        r0, #0
+00536516: beq        #0x5365b0
+00536518: ldr        r1, [sp, #0x6c]
+0053651A: cmp        r1, r0
+0053651C: beq        #0x5365ac
+0053651E: sub.w      r2, r1, #8
+00536522: mvn        r3, #7
+00536526: subs       r2, r2, r0
+00536528: bic.w      r2, r3, r2
+0053652C: add        r1, r2
+0053652E: str        r1, [sp, #0x6c]
+00536530: b          #0x5365ac
+00536532: mov        r4, r0
+00536534: ldrb.w     r0, [sp, #0x58]
+00536538: lsls       r0, r0, #0x1f
+0053653A: beq        #0x5365b0
+0053653C: ldr        r0, [sp, #0x60]
+0053653E: b          #0x5365ac
+00536540: mov        r4, r0
+00536542: b          #0x5365a2
+00536544: b          #0x536592
+00536546: bl         #0x4e39f8
+0053654A: mov        r4, r0
+0053654C: ldrb.w     r0, [sp, #0x40]
+00536550: lsls       r0, r0, #0x1f
+00536552: itt        ne
+00536554: ldrne      r0, [sp, #0x48]
+00536556: blxne      #0x4a40cc
+0053655A: b          #0x53655e
+0053655C: mov        r4, r0
+0053655E: ldrb.w     r0, [sp, #0x14]
+00536562: lsls       r0, r0, #0x1f
+00536564: itt        ne
+00536566: ldrne      r0, [sp, #0x1c]
+00536568: blxne      #0x4a40cc
+0053656C: b          #0x536570
+0053656E: mov        r4, r0
+00536570: ldrb.w     r0, [sp, #0x30]
+00536574: lsls       r0, r0, #0x1f
+00536576: itt        ne
+00536578: ldrne      r0, [sp, #0x38]
+0053657A: blxne      #0x4a40cc
+0053657E: b          #0x536582
+00536580: mov        r4, r0
+00536582: ldrb.w     r0, [sp, #0x20]
+00536586: lsls       r0, r0, #0x1f
+00536588: beq        #0x536594
+0053658A: ldr        r0, [sp, #0x28]
+0053658C: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+00536590: b          #0x536594
+00536592: mov        r4, r0
+00536594: ldrb.w     r0, [sp, #0x58]
+00536598: lsls       r0, r0, #0x1f
+0053659A: beq        #0x5365a2
+0053659C: ldr        r0, [sp, #0x60]
+0053659E: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005365A2: ldrb.w     r0, [sp, #0x68]
+005365A6: lsls       r0, r0, #0x1f
+005365A8: beq        #0x5365b0
+005365AA: ldr        r0, [sp, #0x70]
+005365AC: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+005365B0: mov        r0, r4
+005365B2: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+005365B6: nop
+005365B8: ldrh       r6, [r6, #4]
+005365BA: lsls       r0, r6, #2
+005365BC: ldr        r2, [r2, #0x74]
+005365BE: ldr        r2, [r4, #0x74]
+005365C0: cmp        r6, #0x74
+005365C2: str        r0, [r1, #0x14]
+005365C4: str        r6, [r5, #0x44]
+005365C6: str        r4, [r5, #0x54]
+005365C8: ldr        r1, [r1, #0x54]
+005365CA: strh       r5, [r6, r1]
+005365CC: strb       r1, [r4, #0x1d]
+005365CE: str        r4, [r0, #0x14]
+005365D0: str        r4, [r6, #0x14]
+005365D2: orrs       r6, r5
+005365D4: str        r2, [r6, #0x54]
+005365D6: strb       r1, [r4, #0x11]
+005365D8: add        r5, ip
+005365DA: strb       r1, [r5, #9]
+005365DC: str        r6, [r0, #0x14]
+005365DE: ldr        r1, [r5, #0x44]
+005365E0: str        r5, [r4, #0x44]
+005365E2: movs       r0, r0
+005365E4: strb       r5, [r4, #0xc]
+005365E6: movs       r0, r0
+005365E8: strh       r4, [r2, #0x26]
+005365EA: lsls       r0, r6, #2
+005365EC: strh       r6, [r2, #0x26]
+005365EE: lsls       r0, r6, #2
+005365F0: bgt        #0x536654
+005365F2: lsls       r2, r5, #1
+005365F4: ldr        r7, [r5, #0x10]
+005365F6: strb       r5, [r5, #0x15]
+005365F8: str        r2, [r2, #0x14]
+005365FA: ldr        r4, [pc, #0x1dc] ; literal[005367D8]=B091B5F0
+005365FC: str        r7, [r5, #0x74]
+005365FE: lsls       r7, r3, #1
+00536600: blt        #0x536554
+00536602: lsls       r2, r5, #1
+00536604: ldr        r2, [r2, #0x74]
+00536606: ldr        r2, [r4, #0x74]
+00536608: cmp        r6, #0x74
+0053660A: str        r0, [r1, #0x14]
+0053660C: str        r6, [r5, #0x44]
+0053660E: str        r4, [r5, #0x54]
+00536610: ldr        r1, [r1, #0x54]
+00536612: strh       r5, [r6, r1]
+00536614: strb       r1, [r4, #0x1d]
+00536616: str        r4, [r0, #0x14]
+00536618: str        r4, [r6, #0x14]
+0053661A: ldr        r7, [pc, #0xb8] ; literal[005366D4]=4620ECFC
+0053661C: str        r0, [r6, #0x54]
+0053661E: ldr        r6, [r5, #0x14]
+00536620: str        r6, [r5, #0x74]
+00536622: ldr        r4, [r1, #0x74]
+00536624: mov        r7, ip
+00536626: ldr        r1, [r5, #0x44]
+00536628: lsls       r5, r4, #1
+0053662A: movs       r0, r0
+0053662C: ldr        r4, [r6, #0x14]
+0053662E: str        r5, [r5, #0x54]
+00536630: strb       r3, [r6, #0x11]
+00536632: ldr        r1, [r4, #0x54]
+00536634: movs       r0, #0x70
+00536636: ldr        r1, [r4, r1]
+00536638: str        r0, [r4, #0x10]
+0053663A: movs       r0, #0x59
+0053663C: ldrh       r1, [r4, r1]
+0053663E: str        r0, [r4, #0x70]
+00536640: movs       r0, #0x58
+00536642: ldr        r7, [r4, r5]
+00536644: str        r0, [r4, #0x70]
+00536646: lsrs       r2, r3, #9
+00536648: movs       r0, r0
+0053664A: movs       r0, r0
+0053664C: movs       r0, r4
+0053664E: movs       r0, r0
+00536650: movs       r2, r1
+00536652: movs       r0, r0
+00536654: udf        #0x2c
+00536656: lsls       r2, r5, #1
+00536658: adds       r2, #0x51
+0053665A: lsls       r3, r5, #1
+0053665C: ble        #0x5366d0
+0053665E: lsls       r2, r5, #1
+00536660: adds       r0, #0x84
+00536662: lsls       r3, r5, #1
+00536664: push       {r4, lr}
+00536666: sub        sp, #0x10
+00536668: ldr        r0, [pc, #0x70] ; literal[005366DC]=006AD978
+0053666A: movs       r1, #0
+0053666C: ldr        r3, [pc, #0x70] ; literal[005366E0]=006AD886
+0053666E: mov        r4, r2
+00536670: add        r0, pc
+00536672: strd       r1, r1, [sp, #4]
+00536676: add        r3, pc
+
+RANGE 00532944..00532A7C _ZN4Anki5Cozmo26RobotToEngineImplMessagingC2EPNS0_5RobotE
+00532944: push.w     {r4, r5, r6, r7, r8, lr}
+00532948: mov        r8, r1
+0053294A: movs       r1, #0x18
+0053294C: mov        r4, r0
+0053294E: movs       r6, #0
+00532950: str        r6, [r4, #0x3c]
+00532952: strh       r6, [r4, #0x38]
+00532954: blx        #0x4a403c ; __aeabi_memclr4 IMPORT (resolve packaged dependencies before calling external)
+00532958: ldr        r0, [pc, #0xa8] ; literal[00532A04]=00B0C0FC
+0053295A: mov        r5, r4
+0053295C: add        r0, pc
+0053295E: ldr        r0, [r0]
+00532960: add.w      r1, r0, #0x20
+00532964: str        r1, [r5, #0xa8]!
+00532968: adds       r0, #0xc
+0053296A: sub.w      r7, r5, #0x64
+0053296E: str        r0, [r5, #-0x68]
+00532972: mov        r0, r5
+00532974: mov        r1, r7
+00532976: blx        #0x4a445c ; _ZNSt6__ndk18ios_base4initEPv IMPORT (resolve packaged dependencies before calling external)
+0053297A: ldr        r0, [pc, #0x8c] ; literal[00532A08]=00B0BF78
+0053297C: mov.w      r1, #-1
+00532980: str.w      r1, [r4, #0xf4]
+00532984: add        r0, pc
+00532986: str.w      r6, [r4, #0xf0]
+0053298A: ldr        r0, [r0]
+0053298C: add.w      r1, r0, #0x20
+00532990: adds       r0, #0xc
+00532992: str.w      r1, [r4, #0xa8]
+00532996: str        r0, [r4, #0x40]
+00532998: mov        r0, r7
+0053299A: blx        #0x4a9ff4 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEEC2Ev -> 00537E48 size=D0
+0053299E: add.w      r0, r4, #0xf8
+005329A2: mov        r1, r8
+005329A4: blx        #0x4aa000 ; _ZN4Anki5Cozmo12TracePrinterC1EPNS0_5RobotE -> 0053BC20 size=524
+005329A8: movs       r0, #0
+005329AA: movs       r1, #0
+005329AC: movt       r0, #0xbff0
+005329B0: add.w      r2, r4, #0x148
+005329B4: str.w      r1, [r4, #0x128]
+005329B8: add.w      r3, r4, #0x13c
+005329BC: strd       r1, r0, [r4, #0x130]
+005329C0: mov        r0, r4
+005329C2: strd       r3, r1, [r4, #0x138]
+005329C6: strd       r1, r2, [r4, #0x140]
+005329CA: strd       r1, r1, [r4, #0x148]
+005329CE: pop.w      {r4, r5, r6, r7, r8, pc}
+005329D2: mov        r6, r0
+005329D4: ldr        r0, [pc, #0x34] ; literal[00532A0C]=00B0BF26
+005329D6: add        r0, pc
+005329D8: ldr        r0, [r0]
+005329DA: add.w      r1, r0, #0x20
+005329DE: adds       r0, #0xc
+005329E0: str.w      r1, [r4, #0xa8]
+005329E4: str        r0, [r4, #0x40]
+005329E6: mov        r0, r7
+005329E8: blx        #0x4a6760 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEED2Ev -> 005010B4 size=68
+005329EC: b          #0x5329f2
+005329EE: b          #0x5329f0
+005329F0: mov        r6, r0
+005329F2: mov        r0, r5
+005329F4: blx        #0x4a44b0 ; _ZNSt6__ndk18ios_baseD2Ev IMPORT (resolve packaged dependencies before calling external)
+005329F8: mov        r0, r4
+005329FA: blx        #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev -> 004EAE94 size=34
+005329FE: mov        r0, r6
+00532A00: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00532A04: stm        r0!, {r2, r3, r4, r5, r6, r7}
+00532A06: lsls       r0, r6, #2
+00532A08: it         vc
+00532A0A: lslvc      r0, r6, #2
+00532A0C: itte       hs
+00532A0E: lslhs      r0, r6, #2
+00532A10: pushhs     {r4, r5, r7, lr}
+00532A12: movlo      r4, r0
+00532A14: add.w      r0, r4, #0x144
+00532A18: ldr.w      r1, [r4, #0x148]
+00532A1C: blx        #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE -> 00519640 size=24
+00532A20: ldr.w      r1, [r4, #0x13c]
+00532A24: add.w      r0, r4, #0x138
+00532A28: blx        #0x4a78c4 ; _ZNSt6__ndk16__treeINS_12__value_typeIjjEENS_19__map_value_compareIjS2_NS_4lessIjEELb1EEENS_9allocatorIS2_EEE7destroyEPNS_11__tree_nodeIS2_PvEE -> 00519640 size=24
+00532A2C: ldr.w      r1, [r4, #0x114]
+00532A30: add.w      r0, r4, #0x110
+00532A34: blx        #0x4aa00c ; _ZNSt6__ndk16__treeINS_12__value_typeIKiKNS_4pairIKNS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEES2_EEEENS_19__map_value_compareIS2_SD_NS_4lessIS2_EELb1EEENS7_ISD_EEE7destroyEPNS_11__tree_nodeISD_PvEE -> 00537940 size=30
+00532A38: ldr.w      r1, [r4, #0x108]
+00532A3C: add.w      r0, r4, #0x104
+00532A40: blx        #0x4aa018 ; _ZNSt6__ndk16__treeINS_12__value_typeIKiKNS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEEEENS_19__map_value_compareIS2_SA_NS_4lessIS2_EELb1EEENS6_ISA_EEE7destroyEPNS_11__tree_nodeISA_PvEE -> 00537970 size=30
+00532A44: add.w      r0, r4, #0xf8
+00532A48: blx        #0x4a4e4c ; _ZNSt6__ndk113__vector_baseINS_10shared_ptrIN6Signal3Lib21ScopedHandleContainerEEENS_9allocatorIS5_EEED2Ev -> 004EAE94 size=34
+00532A4C: ldr        r0, [pc, #0x28] ; literal[00532A78]=00B0BEAC
+00532A4E: mov        r5, r4
+00532A50: add        r0, pc
+00532A52: ldr        r0, [r0]
+00532A54: add.w      r1, r0, #0xc
+00532A58: adds       r0, #0x20
+00532A5A: str        r1, [r4, #0x40]
+00532A5C: str        r0, [r5, #0xa8]!
+00532A60: add.w      r0, r4, #0x44
+00532A64: blx        #0x4a6760 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEED2Ev -> 005010B4 size=68
+00532A68: mov        r0, r5
+00532A6A: blx        #0x4a44b0 ; _ZNSt6__ndk18ios_baseD2Ev IMPORT (resolve packaged dependencies before calling external)
+00532A6E: mov        r0, r4
+00532A70: pop.w      {r4, r5, r7, lr}
+00532A74: b.w        #0x8cb3ac
+00532A78: bkpt       #0xac
+00532A7A: lsls       r0, r6, #2
+
+RANGE 0053779E..005377D0 _ZNSt6__ndk114basic_ofstreamIcNS_11char_traitsIcEEE4openEPKcj
+0053779E: push       {r4, lr}
+005377A0: mov        r4, r0
+005377A2: adds       r0, r4, #4
+005377A4: orr        r2, r2, #0x10
+005377A8: blx        #0x4aa390 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE4openEPKcj -> 00538A3C size=E8
+005377AC: mov        r1, r0
+005377AE: ldr        r0, [r4]
+005377B0: cmp        r1, #0
+005377B2: ldr        r0, [r0, #-0xc]
+005377B6: add        r0, r4
+005377B8: itee       ne
+005377BA: movne      r1, #0
+005377BC: ldreq      r1, [r0, #0x10]
+005377BE: orreq      r1, r1, #4
+005377C2: pop.w      {r4, lr}
+005377C6: b.w        #0x8cb3dc
+005377CA: movs       r0, r0
+005377CC: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+
+RANGE 00538A3C..00538B22 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE4openEPKcj
+00538A3C: push       {r4, r5, r6, lr}
+00538A3E: mov        r4, r0
+00538A40: mov        r5, r2
+00538A42: ldr        r0, [r4, #0x40]
+00538A44: cbz        r0, #0x538a4c
+00538A46: movs       r6, #0
+00538A48: mov        r0, r6
+00538A4A: pop        {r4, r5, r6, pc}
+00538A4C: bic        r0, r5, #2
+00538A50: adr        r2, #0xa0 ; ADR[00538AF4]=b'w'
+00538A52: movs       r6, #0
+00538A54: cmp        r0, #0x2f
+00538A56: bgt        #0x538a86
+00538A58: subs       r0, #1
+00538A5A: cmp        r0, #0x1c
+00538A5C: bhi        #0x538a48
+00538A5E: tbb        [pc, r0] ; literal[00538A60]=0F10F000
+00538A62: lsrs       r0, r2, #0x1c
+00538A64: lsrs       r7, r1, #0x1c
+00538A66: lsrs       r0, r4, #0x1c
+00538A68: movs       r6, #0xf
+00538A6A: lsrs       r2, r4, #0x1c
+00538A6C: cmp        r0, #0xf
+00538A6E: lsrs       r4, r4, #0x1c
+00538A70: cmp        r7, #0xf
+00538A72: lsrs       r0, r2, #0x1c
+00538A74: adds       r7, r1, r0
+00538A76: lsrs       r0, r4, #0x1c
+00538A78: cmp        r2, #0xf
+00538A7A: lsrs       r2, r4, #0x1c
+00538A7C: cmp        r4, #0xf
+00538A7E: movs       r4, r4
+00538A80: b          #0x538a48
+00538A82: adr        r2, #0x9c ; ADR[00538B20]=b'a'
+00538A84: b          #0x538ac0
+00538A86: cmp        r0, #0x37
+00538A88: bgt        #0x538a96
+00538A8A: cmp        r0, #0x30
+00538A8C: beq        #0x538ac0
+00538A8E: cmp        r0, #0x34
+00538A90: bne        #0x538a48
+00538A92: adr        r2, #0x78 ; ADR[00538B0C]=b'wb'
+00538A94: b          #0x538ac0
+00538A96: cmp        r0, #0x38
+00538A98: beq        #0x538abe
+00538A9A: cmp        r0, #0x3c
+00538A9C: bne        #0x538a48
+00538A9E: adr        r2, #0x5c ; ADR[00538AFC]=b'w+b'
+00538AA0: b          #0x538ac0
+00538AA2: adr        r2, #0x64 ; ADR[00538B08]=b'ab'
+00538AA4: b          #0x538ac0
+00538AA6: adr        r2, #0x68 ; ADR[00538B10]=b'a+'
+00538AA8: b          #0x538ac0
+00538AAA: adr        r2, #0x4c ; ADR[00538AF8]=b'a+b'
+00538AAC: b          #0x538ac0
+00538AAE: adr        r2, #0x6c ; ADR[00538B1C]=b'r'
+00538AB0: b          #0x538ac0
+00538AB2: adr        r2, #0x50 ; ADR[00538B04]=b'rb'
+00538AB4: b          #0x538ac0
+00538AB6: adr        r2, #0x60 ; ADR[00538B18]=b'r+'
+00538AB8: b          #0x538ac0
+00538ABA: adr        r2, #0x44 ; ADR[00538B00]=b'r+b'
+00538ABC: b          #0x538ac0
+00538ABE: adr        r2, #0x54 ; ADR[00538B14]=b'w+'
+00538AC0: mov        r0, r1
+00538AC2: mov        r1, r2
+00538AC4: blx        #0x4a7300 ; fopen IMPORT (resolve packaged dependencies before calling external)
+00538AC8: cmp        r0, #0
+00538ACA: str        r0, [r4, #0x40]
+00538ACC: beq.w      #0x538a46
+00538AD0: tst.w      r5, #2
+00538AD4: str        r5, [r4, #0x58]
+00538AD6: beq        #0x538aee
+00538AD8: movs       r1, #0
+00538ADA: movs       r2, #2
+00538ADC: movs       r6, #0
+00538ADE: blx        #0x4aa480 ; fseek IMPORT (resolve packaged dependencies before calling external)
+00538AE2: cbz        r0, #0x538aee
+00538AE4: ldr        r0, [r4, #0x40]
+00538AE6: blx        #0x4a69dc ; fclose IMPORT (resolve packaged dependencies before calling external)
+00538AEA: str        r6, [r4, #0x40]
+00538AEC: b          #0x538a48
+00538AEE: mov        r6, r4
+00538AF0: b          #0x538a48
+00538AF2: nop
+00538AF4: lsls       r7, r6, #1
+00538AF6: movs       r0, r0
+00538AF8: cmp        r3, #0x61
+00538AFA: lsls       r2, r4, #1
+00538AFC: cmp        r3, #0x77
+00538AFE: lsls       r2, r4, #1
+00538B00: cmp        r3, #0x72
+00538B02: lsls       r2, r4, #1
+00538B04: str        r2, [r6, #0x24]
+00538B06: movs       r0, r0
+00538B08: str        r1, [r4, #0x24]
+00538B0A: movs       r0, r0
+00538B0C: str        r7, [r6, #0x24]
+00538B0E: movs       r0, r0
+00538B10: cmp        r3, #0x61
+00538B12: movs       r0, r0
+00538B14: cmp        r3, #0x77
+00538B16: movs       r0, r0
+00538B18: cmp        r3, #0x72
+00538B1A: movs       r0, r0
+00538B1C: lsls       r2, r6, #1
+00538B1E: movs       r0, r0
+00538B20: lsls       r1, r4, #1
+
+RANGE 005010B4..00501156 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEED2Ev
+005010B4: push       {r4, r5, r7, lr}
+005010B6: mov        r4, r0
+005010B8: ldr        r0, [pc, #0x58] ; literal[00501114]=00B3D84A
+005010BA: add        r0, pc
+005010BC: ldr        r0, [r0]
+005010BE: adds       r0, #8
+005010C0: str        r0, [r4]
+005010C2: mov        r0, r4
+005010C4: blx        #0x4a69c4 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE5closeEv -> 0050111C size=3C
+005010C8: ldrb.w     r0, [r4, #0x60]
+005010CC: cbz        r0, #0x5010d6
+005010CE: ldr        r0, [r4, #0x20]
+005010D0: cbz        r0, #0x5010d6
+005010D2: blx        #0x4a69d0 ; _ZdaPv IMPORT (resolve packaged dependencies before calling external)
+005010D6: ldrb.w     r0, [r4, #0x61]
+005010DA: cbz        r0, #0x5010e4
+005010DC: ldr        r0, [r4, #0x38]
+005010DE: cbz        r0, #0x5010e4
+005010E0: blx        #0x4a69d0 ; _ZdaPv IMPORT (resolve packaged dependencies before calling external)
+005010E4: ldr        r0, [pc, #0x30] ; literal[00501118]=00B3D6DA
+005010E6: add        r0, pc
+005010E8: ldr        r0, [r0]
+005010EA: add.w      r1, r0, #8
+005010EE: mov        r0, r4
+005010F0: str        r1, [r0], #4
+005010F4: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+005010F8: mov        r0, r4
+005010FA: pop        {r4, r5, r7, pc}
+005010FC: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+00501100: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+00501104: b          #0x5010c8
+00501106: mov        r5, r0
+00501108: mov        r0, r4
+0050110A: bl         #0x4e405c
+0050110E: mov        r0, r5
+00501110: bl         #0x4e39f8
+00501114: bhi        #0x5011ac
+00501116: lsls       r3, r6, #2
+00501118: bvs        #0x5010d0
+0050111A: lsls       r3, r6, #2
+0050111C: push       {r4, r5, r6, lr}
+0050111E: mov        r4, r0
+00501120: ldr        r5, [r4, #0x40]
+00501122: cbz        r5, #0x50113c
+00501124: ldr        r0, [r4]
+00501126: ldr        r1, [r0, #0x18]
+00501128: mov        r0, r4
+0050112A: blx        r1
+0050112C: mov        r6, r0
+0050112E: mov        r0, r5
+00501130: blx        #0x4a69dc ; fclose IMPORT (resolve packaged dependencies before calling external)
+00501134: mov        r1, r0
+00501136: movs       r0, #0
+00501138: cbz        r1, #0x501140
+0050113A: pop        {r4, r5, r6, pc}
+0050113C: movs       r0, #0
+0050113E: pop        {r4, r5, r6, pc}
+00501140: str        r0, [r4, #0x40]
+00501142: cmp        r6, #0
+00501144: it         eq
+00501146: moveq      r0, r4
+00501148: pop        {r4, r5, r6, pc}
+0050114A: mov        r4, r0
+0050114C: mov        r0, r5
+0050114E: blx        #0x4a69dc ; fclose IMPORT (resolve packaged dependencies before calling external)
+00501152: mov        r0, r4
+
+RANGE 00501398..00501568 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE4syncEv
+00501398: push.w     {r4, r5, r6, r7, r8, lr}
+0050139C: sub        sp, #0x18
+0050139E: mov        r4, r0
+005013A0: ldr        r0, [r4, #0x40]
+005013A2: cmp        r0, #0
+005013A4: beq        #0x50147c
+005013A6: ldr        r0, [r4, #0x44]
+005013A8: cmp        r0, #0
+005013AA: beq.w      #0x5014ae
+005013AE: ldr        r1, [r4, #0x5c]
+005013B0: tst.w      r1, #0x10
+005013B4: bne        #0x5013d0
+005013B6: lsls       r1, r1, #0x1c
+005013B8: bpl        #0x50147c
+005013BA: ldrd       r1, r2, [r4, #0x50]
+005013BE: strd       r1, r2, [sp, #8]
+005013C2: ldrb.w     r1, [r4, #0x62]
+005013C6: cbz        r1, #0x501430
+005013C8: ldrd       r0, r1, [r4, #0xc]
+005013CC: subs       r5, r1, r0
+005013CE: b          #0x50144c
+005013D0: ldrd       r0, r1, [r4, #0x14]
+005013D4: cmp        r1, r0
+005013D6: beq        #0x5013ec
+005013D8: ldr        r0, [r4]
+005013DA: mov.w      r1, #-1
+005013DE: mov.w      r5, #-1
+005013E2: ldr        r2, [r0, #0x34]
+005013E4: mov        r0, r4
+005013E6: blx        r2
+005013E8: adds       r0, #1
+005013EA: beq        #0x50147e
+005013EC: add.w      r5, r4, #0x48
+005013F0: add.w      r8, sp, #0x14
+005013F4: ldr        r0, [r4, #0x44]
+005013F6: ldr        r2, [r4, #0x20]
+005013F8: ldr        r1, [r4, #0x34]
+005013FA: ldr        r3, [r0]
+005013FC: ldr        r7, [r3, #0x14]
+005013FE: adds       r3, r2, r1
+00501400: mov        r1, r5
+00501402: str.w      r8, [sp]
+00501406: blx        r7
+00501408: mov        r6, r0
+0050140A: ldr        r0, [r4, #0x20]
+0050140C: ldr        r1, [sp, #0x14]
+0050140E: ldr        r3, [r4, #0x40]
+00501410: subs       r7, r1, r0
+00501412: movs       r1, #1
+00501414: mov        r2, r7
+00501416: blx        #0x4a6a18 ; fwrite IMPORT (resolve packaged dependencies before calling external)
+0050141A: cmp        r0, r7
+0050141C: bne        #0x50145a
+0050141E: cmp        r6, #1
+00501420: beq        #0x5013f4
+00501422: cmp        r6, #2
+00501424: beq        #0x50145a
+00501426: ldr        r0, [r4, #0x40]
+00501428: blx        #0x4a6a24 ; fflush IMPORT (resolve packaged dependencies before calling external)
+0050142C: cbnz       r0, #0x50145a
+0050142E: b          #0x50147c
+00501430: ldr        r1, [r0]
+00501432: ldr        r1, [r1, #0x18]
+00501434: blx        r1
+00501436: ldrd       r3, r1, [r4, #0x24]
+0050143A: cmp        r0, #1
+0050143C: sub.w      r5, r1, r3
+00501440: blt        #0x501486
+00501442: ldrd       r1, r2, [r4, #0xc]
+00501446: subs       r1, r2, r1
+00501448: mla        r5, r1, r0, r5
+0050144C: movs       r6, #0
+0050144E: ldr        r0, [r4, #0x40]
+00501450: rsbs       r1, r5, #0
+00501452: movs       r2, #1
+00501454: blx        #0x4a69f4 ; fseeko IMPORT (resolve packaged dependencies before calling external)
+00501458: cbz        r0, #0x501460
+0050145A: mov.w      r5, #-1
+0050145E: b          #0x50147e
+00501460: cmp        r6, #1
+00501462: itt        eq
+00501464: ldrdeq     r0, r1, [sp, #8]
+00501468: strdeq     r0, r1, [r4, #0x48]
+0050146C: ldr        r0, [r4, #0x20]
+0050146E: movs       r1, #0
+00501470: strd       r1, r1, [r4, #8]
+00501474: str        r1, [r4, #0x10]
+00501476: str        r1, [r4, #0x5c]
+00501478: strd       r0, r0, [r4, #0x24]
+0050147C: movs       r5, #0
+0050147E: mov        r0, r5
+00501480: add        sp, #0x18
+00501482: pop.w      {r4, r5, r6, r7, r8, pc}
+00501486: ldrd       r1, r0, [r4, #0xc]
+0050148A: cmp        r1, r0
+0050148C: beq        #0x50144c
+0050148E: ldr        r0, [r4, #0x44]
+00501490: ldr        r7, [r4, #8]
+00501492: ldr        r2, [r4, #0x20]
+00501494: ldr        r6, [r0]
+00501496: subs       r1, r1, r7
+00501498: ldr        r6, [r6, #0x20]
+0050149A: str        r1, [sp]
+0050149C: add        r1, sp, #8
+0050149E: blx        r6
+005014A0: ldrd       r1, r2, [r4, #0x20]
+005014A4: subs       r0, r5, r0
+005014A6: add        r0, r2
+005014A8: movs       r6, #1
+005014AA: subs       r5, r0, r1
+005014AC: b          #0x50144e
+005014AE: movs       r0, #4
+005014B0: blx        #0x4a42b8 ; __cxa_allocate_exception IMPORT (resolve packaged dependencies before calling external)
+005014B4: blx        #0x4a6a0c ; _ZNSt8bad_castC1Ev IMPORT (resolve packaged dependencies before calling external)
+005014B8: ldr        r1, [pc, #0xc] ; literal[005014C8]=00B3D450
+005014BA: ldr        r2, [pc, #0x10] ; literal[005014CC]=00B3D452
+005014BC: add        r1, pc
+005014BE: add        r2, pc
+005014C0: ldr        r1, [r1]
+005014C2: ldr        r2, [r2]
+005014C4: blx        #0x4a42d0 ; __cxa_throw IMPORT (resolve packaged dependencies before calling external)
+005014C8: bmi        #0x50156c
+005014CA: lsls       r3, r6, #2
+005014CC: bmi        #0x501574
+005014CE: lsls       r3, r6, #2
+005014D0: push.w     {r4, r5, r6, r7, r8, sb, lr}
+005014D4: sub        sp, #0x1c
+005014D6: mov        r4, r0
+005014D8: ldr        r0, [r4, #0x40]
+005014DA: cbz        r0, #0x5014fc
+005014DC: mov        r0, r4
+005014DE: blx        #0x4a6a30 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE11__read_modeEv -> 005017B0 size=48
+005014E2: ldr        r1, [r4, #0xc]
+005014E4: cbnz       r1, #0x5014f2
+005014E6: add.w      r2, sp, #0x1b
+005014EA: adds       r1, r2, #1
+005014EC: strd       r2, r1, [r4, #8]
+005014F0: str        r1, [r4, #0x10]
+005014F2: cmp        r0, #1
+005014F4: bne        #0x501502
+005014F6: ldr        r0, [r4, #0x10]
+005014F8: movs       r5, #0
+005014FA: b          #0x501516
+005014FC: mov.w      r0, #-1
+00501500: b          #0x50161e
+00501502: ldr        r2, [r4, #8]
+00501504: movs       r5, #4
+00501506: ldr        r0, [r4, #0x10]
+00501508: subs       r2, r0, r2
+0050150A: add.w      r2, r2, r2, lsr #31
+0050150E: asrs       r3, r2, #1
+00501510: cmp        r3, #4
+00501512: it         lo
+00501514: asrlo      r5, r2, #1
+00501516: cmp        r1, r0
+00501518: beq        #0x501522
+0050151A: ldrb       r0, [r1]
+0050151C: add.w      r7, r4, #8
+00501520: b          #0x50160c
+00501522: mov        r7, r4
+00501524: subs       r1, r1, r5
+00501526: ldr        r0, [r7, #8]!
+0050152A: mov        r2, r5
+0050152C: blx        #0x4a4600 ; __aeabi_memmove IMPORT (resolve packaged dependencies before calling external)
+00501530: ldrb.w     r0, [r7, #0x5a]
+00501534: cbz        r0, #0x50155a
+00501536: ldr        r2, [r4, #0x10]
+00501538: ldr        r1, [r4, #8]
+0050153A: subs       r2, r2, r5
+0050153C: ldr        r3, [r4, #0x40]
+0050153E: adds       r0, r1, r5
+00501540: subs       r2, r2, r1
+00501542: movs       r1, #1
+00501544: blx        #0x4a6a3c ; fread IMPORT (resolve packaged dependencies before calling external)
+00501548: cmp        r0, #0
+0050154A: beq        #0x501608
+0050154C: ldr        r1, [r4, #8]
+0050154E: adds       r2, r1, r5
+00501550: add        r0, r2
+00501552: strd       r2, r0, [r4, #0xc]
+00501556: ldrb       r0, [r1, r5]
+00501558: b          #0x50160c
+0050155A: mov        r8, r4
+0050155C: ldr        r1, [r8, #0x24]!
+00501560: ldr.w      r2, [r8, #4]
+00501564: ldr        r0, [r8, #-0x4]
+
+RANGE 00802824..0080284E _ZN4Anki4Util9FileUtils15DirectoryExistsERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+00802824: push       {r7, lr}
+00802826: sub        sp, #0x68
+00802828: ldrb       r1, [r0]
+0080282A: ldr        r2, [r0, #8]
+0080282C: tst.w      r1, #1
+00802830: mov        r1, sp
+00802832: it         eq
+00802834: addeq      r2, r0, #1
+00802836: mov        r0, r2
+00802838: blx        #0x4a8998 ; stat IMPORT (resolve packaged dependencies before calling external)
+0080283C: cmp        r0, #0
+0080283E: itte       eq
+00802840: ldrbeq.w   r0, [sp, #0x11]
+00802844: ubfxeq     r0, r0, #6, #1
+00802848: movne      r0, #0
+0080284A: add        sp, #0x68
+0080284C: pop        {r7, pc}
+
+RANGE 00537E48..00537F18 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEEC2Ev
+00537E48: push       {r4, r5, r6, lr}
+00537E4A: sub        sp, #8
+00537E4C: mov        r4, r0
+00537E4E: ldr        r0, [pc, #0xb4] ; literal[00537F04]=00B0696E
+00537E50: adds       r5, r4, #4
+00537E52: add        r0, pc
+00537E54: ldr        r0, [r0]
+00537E56: adds       r0, #8
+00537E58: str        r0, [r4]
+00537E5A: mov        r0, r5
+00537E5C: blx        #0x4a4468 ; _ZNSt6__ndk16localeC1Ev IMPORT (resolve packaged dependencies before calling external)
+00537E60: add.w      r0, r4, #8
+00537E64: movs       r1, #0x18
+00537E66: blx        #0x4a403c ; __aeabi_memclr4 IMPORT (resolve packaged dependencies before calling external)
+00537E6A: ldr        r0, [pc, #0x9c] ; literal[00537F08]=00B06A96
+00537E6C: movs       r1, #0
+00537E6E: add        r0, pc
+00537E70: ldr        r0, [r0]
+00537E72: adds       r0, #8
+00537E74: str        r0, [r4]
+00537E76: add.w      r0, r4, #0x34
+00537E7A: strd       r1, r1, [r4, #0x20]
+00537E7E: str        r1, [r4, #0x28]
+00537E80: movs       r1, #0x2f
+00537E82: blx        #0x4a403c ; __aeabi_memclr4 IMPORT (resolve packaged dependencies before calling external)
+00537E86: add        r0, sp, #4
+00537E88: mov        r1, r5
+00537E8A: blx        #0x4aa3cc ; _ZNSt6__ndk16localeC1ERKS0_ IMPORT (resolve packaged dependencies before calling external)
+00537E8E: ldr        r1, [pc, #0x7c] ; literal[00537F0C]=00B06A78
+00537E90: add        r1, pc
+00537E92: ldr        r1, [r1]
+00537E94: blx        #0x4aa3d8 ; _ZNKSt6__ndk16locale9has_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+00537E98: mov        r6, r0
+00537E9A: add        r0, sp, #4
+00537E9C: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+00537EA0: cmp        r6, #1
+00537EA2: bne        #0x537eca
+00537EA4: mov        r0, sp
+00537EA6: mov        r1, r5
+00537EA8: blx        #0x4aa3cc ; _ZNSt6__ndk16localeC1ERKS0_ IMPORT (resolve packaged dependencies before calling external)
+00537EAC: ldr        r1, [pc, #0x60] ; literal[00537F10]=00B06A5A
+00537EAE: add        r1, pc
+00537EB0: ldr        r1, [r1]
+00537EB2: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+00537EB6: str        r0, [r4, #0x44]
+00537EB8: mov        r0, sp
+00537EBA: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+00537EBE: ldr        r0, [r4, #0x44]
+00537EC0: ldr        r1, [r0]
+00537EC2: ldr        r1, [r1, #0x1c]
+00537EC4: blx        r1
+00537EC6: strb.w     r0, [r4, #0x62]
+00537ECA: ldr        r0, [r4]
+00537ECC: ldr        r3, [r0, #0xc]
+00537ECE: mov        r0, r4
+00537ED0: movs       r1, #0
+00537ED2: mov.w      r2, #0x1000
+00537ED6: blx        r3
+00537ED8: mov        r0, r4
+00537EDA: add        sp, #8
+00537EDC: pop        {r4, r5, r6, pc}
+00537EDE: mov        r6, r0
+00537EE0: mov        r0, sp
+00537EE2: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+00537EE6: b          #0x537eea
+00537EE8: mov        r6, r0
+00537EEA: ldr        r0, [pc, #0x28] ; literal[00537F14]=00B068D4
+00537EEC: add        r0, pc
+00537EEE: ldr        r0, [r0]
+00537EF0: adds       r0, #8
+00537EF2: str        r0, [r4]
+00537EF4: mov        r0, r5
+00537EF6: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+00537EFA: mov        r0, r6
+00537EFC: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+00537F00: bl         #0x4e39f8
+00537F04: ldr        r6, [r5, #0x14]
+00537F06: lsls       r0, r6, #2
+00537F08: ldr        r6, [r2, #0x28]
+00537F0A: lsls       r0, r6, #2
+00537F0C: ldr        r0, [r7, #0x24]
+00537F0E: lsls       r0, r6, #2
+00537F10: ldr        r2, [r3, #0x24]
+00537F12: lsls       r0, r6, #2
+00537F14: ldr        r4, [r2, #0xc]
+00537F16: lsls       r0, r6, #2
+
+RANGE 004E437C..004E44BE
+004E437C: push       {r4, lr}
+004E437E: mov        r4, r0
+004E4380: movs       r0, #0
+004E4382: str        r1, [r4, #4]
+004E4384: strb       r0, [r4]
+004E4386: ldr        r0, [r1]
+004E4388: ldr        r0, [r0, #-0xc]
+004E438C: add        r0, r1
+004E438E: ldr        r1, [r0, #0x10]
+004E4390: cbnz       r1, #0x4e439e
+004E4392: ldr        r0, [r0, #0x48]
+004E4394: cbz        r0, #0x4e439a
+004E4396: bl         #0x4e44be
+004E439A: movs       r0, #1
+004E439C: strb       r0, [r4]
+004E439E: mov        r0, r4
+004E43A0: pop        {r4, pc}
+004E43A2: push.w     {r4, r5, r6, r7, r8, sb, lr}
+004E43A6: sub        sp, #0xc
+004E43A8: mov        r4, r0
+004E43AA: mov        r8, r3
+004E43AC: mov        r5, r2
+004E43AE: movs       r7, #0
+004E43B0: cmp        r4, #0
+004E43B2: beq        #0x4e4440
+004E43B4: ldr.w      sb, [sp, #0x28]
+004E43B8: sub.w      r2, r8, r1
+004E43BC: subs       r6, r5, r1
+004E43BE: ldr.w      r0, [sb, #0xc]
+004E43C2: subs       r0, r0, r2
+004E43C4: it         gt
+004E43C6: movgt      r7, r0
+004E43C8: cmp        r6, #1
+004E43CA: blt        #0x4e43da
+004E43CC: ldr        r0, [r4]
+004E43CE: mov        r2, r6
+004E43D0: ldr        r3, [r0, #0x30]
+004E43D2: mov        r0, r4
+004E43D4: blx        r3
+004E43D6: cmp        r0, r6
+004E43D8: bne        #0x4e4440
+004E43DA: cmp        r7, #1
+004E43DC: blt        #0x4e4420
+004E43DE: ldr        r2, [sp, #0x2c]
+004E43E0: movs       r0, #0
+004E43E2: mov        r6, sp
+004E43E4: str        r0, [sp, #8]
+004E43E6: strd       r0, r0, [sp]
+004E43EA: mov        r0, r6
+004E43EC: mov        r1, r7
+004E43EE: blx        #0x4a45e8 ; _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEjc -> 004E4544 size=54
+004E43F2: ldr        r0, [r4]
+004E43F4: ldrb.w     r2, [sp]
+004E43F8: ldr        r1, [sp, #8]
+004E43FA: ldr        r3, [r0, #0x30]
+004E43FC: tst.w      r2, #1
+004E4400: it         eq
+004E4402: orreq      r1, r6, #1
+004E4406: mov        r0, r4
+004E4408: mov        r2, r7
+004E440A: blx        r3
+004E440C: mov        r6, r0
+004E440E: ldrb.w     r0, [sp]
+004E4412: lsls       r0, r0, #0x1f
+004E4414: itt        ne
+004E4416: ldrne      r0, [sp, #8]
+004E4418: blxne      #0x4a40cc
+004E441C: cmp        r6, r7
+004E441E: bne        #0x4e4440
+004E4420: sub.w      r6, r8, r5
+004E4424: cmp        r6, #1
+004E4426: blt        #0x4e4438
+004E4428: ldr        r0, [r4]
+004E442A: mov        r1, r5
+004E442C: mov        r2, r6
+004E442E: ldr        r3, [r0, #0x30]
+004E4430: mov        r0, r4
+004E4432: blx        r3
+004E4434: cmp        r0, r6
+004E4436: bne        #0x4e4440
+004E4438: movs       r0, #0
+004E443A: str.w      r0, [sb, #0xc]
+004E443E: b          #0x4e4442
+004E4440: movs       r4, #0
+004E4442: mov        r0, r4
+004E4444: add        sp, #0xc
+004E4446: pop.w      {r4, r5, r6, r7, r8, sb, pc}
+004E444A: mov        r4, r0
+004E444C: ldrb.w     r0, [sp]
+004E4450: lsls       r0, r0, #0x1f
+004E4452: itt        ne
+004E4454: ldrne      r0, [sp, #8]
+004E4456: blxne      #0x4a40cc
+004E445A: mov        r0, r4
+004E445C: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+004E4460: push       {r4, lr}
+004E4462: mov        r4, r0
+004E4464: ldr        r0, [r4, #4]
+004E4466: ldr        r1, [r0]
+004E4468: ldr        r1, [r1, #-0xc]
+004E446C: add        r0, r1
+004E446E: ldr        r1, [r0, #0x18]
+004E4470: cbz        r1, #0x4e44ac
+004E4472: ldr        r1, [r0, #0x10]
+004E4474: cbnz       r1, #0x4e44ac
+004E4476: ldrb       r0, [r0, #5]
+004E4478: lsls       r0, r0, #0x1a
+004E447A: bpl        #0x4e44ac
+004E447C: blx        #0x4a45f4 ; _ZSt18uncaught_exceptionv IMPORT (resolve packaged dependencies before calling external)
+004E4480: cbnz       r0, #0x4e44ac
+004E4482: ldr        r0, [r4, #4]
+004E4484: ldr        r1, [r0]
+004E4486: ldr        r1, [r1, #-0xc]
+004E448A: add        r0, r1
+004E448C: ldr        r0, [r0, #0x18]
+004E448E: ldr        r1, [r0]
+004E4490: ldr        r1, [r1, #0x18]
+004E4492: blx        r1
+004E4494: adds       r0, #1
+004E4496: bne        #0x4e44ac
+004E4498: ldr        r0, [r4, #4]
+004E449A: ldr        r1, [r0]
+004E449C: ldr        r1, [r1, #-0xc]
+004E44A0: add        r0, r1
+004E44A2: ldr        r1, [r0, #0x10]
+004E44A4: orr        r1, r1, #1
+004E44A8: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+004E44AC: mov        r0, r4
+004E44AE: pop        {r4, pc}
+004E44B0: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+004E44B4: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E44B8: b          #0x4e44ac
+004E44BA: bl         #0x4e39f8
+
+RANGE 00501684..005017B0 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE8overflowEi
+00501684: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00501688: sub        sp, #0x24
+0050168A: mov        r5, r0
+0050168C: mov        fp, r1
+0050168E: ldr        r0, [r5, #0x40]
+00501690: cmp        r0, #0
+00501692: beq        #0x50176c
+00501694: mov        r0, r5
+00501696: blx        #0x4a6a48 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE12__write_modeEv -> 005017F8 size=38
+0050169A: ldrd       sb, r3, [r5, #0x14]
+0050169E: adds.w     sl, fp, #1
+005016A2: ldr        r4, [r5, #0x1c]
+005016A4: beq        #0x5016c2
+005016A6: cbnz       r3, #0x5016b4
+005016A8: add.w      r3, sp, #0x23
+005016AC: adds       r0, r3, #1
+005016AE: strd       r3, r3, [r5, #0x14]
+005016B2: str        r0, [r5, #0x1c]
+005016B4: strb.w     fp, [r3]
+005016B8: ldrd       r2, r0, [r5, #0x14]
+005016BC: adds       r3, r0, #1
+005016BE: str        r3, [r5, #0x18]
+005016C0: b          #0x5016c4
+005016C2: mov        r2, sb
+005016C4: cmp        r3, r2
+005016C6: beq        #0x5016e6
+005016C8: ldrb.w     r0, [r5, #0x62]
+005016CC: cbz        r0, #0x5016f2
+005016CE: subs       r6, r3, r2
+005016D0: ldr        r3, [r5, #0x40]
+005016D2: mov        r0, r2
+005016D4: movs       r1, #1
+005016D6: mov        r2, r6
+005016D8: blx        #0x4a6a18 ; fwrite IMPORT (resolve packaged dependencies before calling external)
+005016DC: cmp        r0, r6
+005016DE: bne        #0x50176c
+005016E0: strd       sb, sb, [r5, #0x14]
+005016E4: str        r4, [r5, #0x1c]
+005016E6: cmp.w      sl, #0
+005016EA: it         eq
+005016EC: moveq.w    fp, #0
+005016F0: b          #0x501770
+005016F2: str        r4, [sp, #0x14]
+005016F4: ldr        r1, [r5, #0x20]
+005016F6: str        r1, [sp, #0x1c]
+005016F8: ldr        r0, [r5, #0x44]
+005016FA: cmp        r0, #0
+005016FC: beq        #0x50178e
+005016FE: ldr        r7, [r0]
+00501700: add.w      ip, sp, #0x1c
+00501704: ldr        r6, [r5, #0x34]
+00501706: add.w      r8, r5, #0x48
+0050170A: add        r4, sp, #0x18
+0050170C: ldr        r7, [r7, #0xc]
+0050170E: add        r6, r1
+00501710: strd       r4, r1, [sp]
+00501714: strd       r6, ip, [sp, #8]
+00501718: b          #0x50175e
+0050171A: cmp        r7, #3
+0050171C: beq        #0x501778
+0050171E: cmp        r7, #1
+00501720: bhi        #0x50176c
+00501722: ldr        r1, [sp, #0x1c]
+00501724: ldr        r0, [r5, #0x20]
+00501726: ldr        r3, [r5, #0x40]
+00501728: subs       r6, r1, r0
+0050172A: movs       r1, #1
+0050172C: mov        r2, r6
+0050172E: blx        #0x4a6a18 ; fwrite IMPORT (resolve packaged dependencies before calling external)
+00501732: cmp        r0, r6
+00501734: bne        #0x50176c
+00501736: cmp        r7, #1
+00501738: bne        #0x50178a
+0050173A: ldr        r2, [sp, #0x18]
+0050173C: ldr        r3, [r5, #0x18]
+0050173E: str        r2, [r5, #0x14]
+00501740: str        r3, [r5, #0x1c]
+00501742: ldr        r0, [r5, #0x44]
+00501744: cmp        r0, #0
+00501746: beq        #0x50178e
+00501748: ldr        r7, [r0]
+0050174A: add        r4, sp, #0x18
+0050174C: ldr        r1, [r5, #0x20]
+0050174E: ldr        r6, [r5, #0x34]
+00501750: ldr        r7, [r7, #0xc]
+00501752: add        r6, r1
+00501754: strd       r4, r1, [sp]
+00501758: str        r6, [sp, #8]
+0050175A: add        r1, sp, #0x1c
+0050175C: str        r1, [sp, #0xc]
+0050175E: mov        r1, r8
+00501760: blx        r7
+00501762: mov        r7, r0
+00501764: ldr        r0, [r5, #0x14]
+00501766: ldr        r1, [sp, #0x18]
+00501768: cmp        r1, r0
+0050176A: bne        #0x50171a
+0050176C: mov.w      fp, #-1
+00501770: mov        r0, fp
+00501772: add        sp, #0x24
+00501774: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00501778: ldr        r1, [r5, #0x18]
+0050177A: ldr        r3, [r5, #0x40]
+0050177C: subs       r6, r1, r0
+0050177E: movs       r1, #1
+00501780: mov        r2, r6
+00501782: blx        #0x4a6a18 ; fwrite IMPORT (resolve packaged dependencies before calling external)
+00501786: cmp        r0, r6
+00501788: bne        #0x50176c
+0050178A: ldr        r4, [sp, #0x14]
+0050178C: b          #0x5016e0
+0050178E: movs       r0, #4
+00501790: blx        #0x4a42b8 ; __cxa_allocate_exception IMPORT (resolve packaged dependencies before calling external)
+00501794: blx        #0x4a6a0c ; _ZNSt8bad_castC1Ev IMPORT (resolve packaged dependencies before calling external)
+00501798: ldr        r1, [pc, #0xc] ; literal[005017A8]=00B3D170
+0050179A: ldr        r2, [pc, #0x10] ; literal[005017AC]=00B3D172
+0050179C: add        r1, pc
+0050179E: add        r2, pc
+005017A0: ldr        r1, [r1]
+005017A2: ldr        r2, [r2]
+005017A4: blx        #0x4a42d0 ; __cxa_throw IMPORT (resolve packaged dependencies before calling external)
+005017A8: bne        #0x50188c
+005017AA: lsls       r3, r6, #2
+005017AC: bne        #0x501894
+005017AE: lsls       r3, r6, #2
+
+RANGE 00501210..005012A8 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE6setbufEPci
+00501210: push       {r4, r5, r6, r7, lr}
+00501212: sub        sp, #4
+00501214: mov        r4, r0
+00501216: add.w      r0, r4, #8
+0050121A: mov        r5, r1
+0050121C: movs       r1, #0x18
+0050121E: mov        r6, r2
+00501220: blx        #0x4a403c ; __aeabi_memclr4 IMPORT (resolve packaged dependencies before calling external)
+00501224: ldrb.w     r0, [r4, #0x60]
+00501228: cbz        r0, #0x501232
+0050122A: ldr        r0, [r4, #0x20]
+0050122C: cbz        r0, #0x501232
+0050122E: blx        #0x4a69d0 ; _ZdaPv IMPORT (resolve packaged dependencies before calling external)
+00501232: ldrb.w     r0, [r4, #0x61]
+00501236: cbz        r0, #0x501240
+00501238: ldr        r0, [r4, #0x38]
+0050123A: cbz        r0, #0x501240
+0050123C: blx        #0x4a69d0 ; _ZdaPv IMPORT (resolve packaged dependencies before calling external)
+00501240: cmp        r6, #9
+00501242: str        r6, [r4, #0x34]
+00501244: blo        #0x501254
+00501246: ldrb.w     r7, [r4, #0x62]
+0050124A: cbz        r5, #0x501266
+0050124C: cbz        r7, #0x501266
+0050124E: movs       r1, #0
+00501250: mov        r0, r5
+00501252: b          #0x50126e
+00501254: movs       r0, #8
+00501256: movs       r1, #0
+00501258: str        r0, [r4, #0x34]
+0050125A: add.w      r0, r4, #0x2c
+0050125E: str        r0, [r4, #0x20]
+00501260: ldrb.w     r7, [r4, #0x62]
+00501264: b          #0x501270
+00501266: mov        r0, r6
+00501268: blx        #0x4a69e8 ; _Znaj IMPORT (resolve packaged dependencies before calling external)
+0050126C: movs       r1, #1
+0050126E: str        r0, [r4, #0x20]
+00501270: cmp        r7, #0
+00501272: strb.w     r1, [r4, #0x60]
+00501276: beq        #0x50127e
+00501278: movs       r5, #0
+0050127A: str        r5, [r4, #0x3c]
+0050127C: b          #0x50128e
+0050127E: cmp        r6, #8
+00501280: it         le
+00501282: movle      r6, #8
+00501284: cmp        r5, #0
+00501286: str        r6, [r4, #0x3c]
+00501288: beq        #0x501292
+0050128A: cmp        r6, #7
+0050128C: bls        #0x501292
+0050128E: movs       r0, #0
+00501290: b          #0x50129c
+00501292: mov        r0, r6
+00501294: blx        #0x4a69e8 ; _Znaj IMPORT (resolve packaged dependencies before calling external)
+00501298: mov        r5, r0
+0050129A: movs       r0, #1
+0050129C: strb.w     r0, [r4, #0x61]
+005012A0: mov        r0, r4
+005012A2: str        r5, [r4, #0x38]
+005012A4: add        sp, #4
+005012A6: pop        {r4, r5, r6, r7, pc}
+
+RANGE 004E3F06..004E4020
+004E3F06: push.w     {r4, r5, r6, r7, r8, lr}
+004E3F0A: mov        r8, r2
+004E3F0C: mov        r6, r1
+004E3F0E: mov        r7, r0
+004E3F10: movs       r4, #0
+004E3F12: cmp.w      r8, #1
+004E3F16: blt        #0x4e3f58
+004E3F18: ldrd       r0, r1, [r7, #0x18]
+004E3F1C: cmp        r0, r1
+004E3F1E: bhs        #0x4e3f42
+004E3F20: subs       r5, r1, r0
+004E3F22: sub.w      r1, r8, r4
+004E3F26: cmp        r1, r5
+004E3F28: it         lt
+004E3F2A: movlt      r5, r1
+004E3F2C: cbz        r5, #0x4e3f38
+004E3F2E: mov        r1, r6
+004E3F30: mov        r2, r5
+004E3F32: blx        #0x4a42ac ; __aeabi_memcpy IMPORT (resolve packaged dependencies before calling external)
+004E3F36: ldr        r0, [r7, #0x18]
+004E3F38: add        r4, r5
+004E3F3A: add        r6, r5
+004E3F3C: add        r0, r5
+004E3F3E: str        r0, [r7, #0x18]
+004E3F40: b          #0x4e3f54
+004E3F42: ldr        r0, [r7]
+004E3F44: ldrb       r1, [r6]
+004E3F46: ldr        r2, [r0, #0x34]
+004E3F48: mov        r0, r7
+004E3F4A: blx        r2
+004E3F4C: adds       r0, #1
+004E3F4E: beq        #0x4e3f58
+004E3F50: adds       r4, #1
+004E3F52: adds       r6, #1
+004E3F54: cmp        r4, r8
+004E3F56: blt        #0x4e3f18
+004E3F58: mov        r0, r4
+004E3F5A: pop.w      {r4, r5, r6, r7, r8, pc}
+004E3F5E: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+004E3F62: sub        sp, #0xc
+004E3F64: mov        r4, r1
+004E3F66: mov        r5, r0
+004E3F68: adds       r0, r4, #1
+004E3F6A: beq        #0x4e3f84
+004E3F6C: ldrd       r8, sb, [r5, #8]
+004E3F70: ldrd       r7, r0, [r5, #0x18]
+004E3F74: cmp        r7, r0
+004E3F76: beq        #0x4e3f88
+004E3F78: mov        r6, r5
+004E3F7A: ldr        r2, [r6, #0x2c]!
+004E3F7E: add.w      fp, r6, #4
+004E3F82: b          #0x4e3ffc
+004E3F84: movs       r0, #0
+004E3F86: b          #0x4e403c
+004E3F88: mov        fp, r5
+004E3F8A: ldrb       r0, [fp, #0x30]!
+004E3F8E: tst.w      r0, #0x10
+004E3F92: bne        #0x4e3f9a
+004E3F94: mov.w      r0, #-1
+004E3F98: b          #0x4e403c
+004E3F9A: mov        r6, r5
+004E3F9C: ldr        r0, [r6, #0x2c]!
+004E3FA0: str        r0, [sp, #4]
+004E3FA2: sub.w      sl, r6, #0xc
+004E3FA6: ldr        r0, [r6, #-0x18]
+004E3FAA: str        r0, [sp]
+004E3FAC: mov        r0, sl
+004E3FAE: movs       r1, #0
+004E3FB0: bl         #0x4e40d6
+004E3FB4: ldrb.w     r0, [sl]
+004E3FB8: lsls       r0, r0, #0x1f
+004E3FBA: bne        #0x4e3fc0
+004E3FBC: movs       r1, #0xa
+004E3FBE: b          #0x4e3fca
+004E3FC0: ldr.w      r0, [sl]
+004E3FC4: bic        r0, r0, #1
+004E3FC8: subs       r1, r0, #1
+004E3FCA: mov        r0, sl
+004E3FCC: movs       r2, #0
+004E3FCE: bl         #0x4e41de
+004E3FD2: ldrd       r2, r0, [sp]
+004E3FD6: subs       r1, r0, r2
+004E3FD8: ldrb.w     r0, [sl]
+004E3FDC: subs       r2, r7, r2
+004E3FDE: tst.w      r0, #1
+004E3FE2: itte       eq
+004E3FE4: lsreq      r0, r0, #1
+004E3FE6: addeq.w    r3, sl, #1
+004E3FEA: ldrdne     r0, r3, [r5, #0x24]
+004E3FEE: adds       r7, r3, r2
+004E3FF0: add        r0, r3
+004E3FF2: adds       r2, r3, r1
+004E3FF4: strd       r3, r7, [r5, #0x14]
+004E3FF8: str        r0, [r5, #0x1c]
+004E3FFA: str        r2, [r5, #0x2c]
+004E3FFC: adds       r1, r7, #1
+004E3FFE: add        r3, sp, #8
+004E4000: str        r1, [sp, #8]
+004E4002: cmp        r1, r2
+004E4004: it         lo
+004E4006: movlo      r3, r6
+004E4008: ldr        r2, [r3]
+004E400A: str        r2, [r6]
+004E400C: ldrb.w     r3, [fp]
+004E4010: lsls       r3, r3, #0x1c
+004E4012: bpl        #0x4e4032
+004E4014: mov        r6, r5
+004E4016: sub.w      ip, sb, r8
+004E401A: ldrb       r3, [r6, #0x20]!
+
+REOPENED CALLEE CENSUS
+
+RANGE 007B35E6..007B35EA _ZNK4Anki5Cozmo14RobotInterface13RobotToEngine16Get_imuDataChunkEv
+007B35E6: adds       r0, #4
+007B35E8: bx         lr
+
+RANGE 00516BD2..00516BD8 _ZN4Anki5Cozmo5Robot22GetContextDataPlatformEv
+00516BD2: ldr        r0, [r0]
+00516BD4: ldr        r0, [r0, #8]
+00516BD6: bx         lr
+
+RANGE 0084BDBC..0084BFB8 _ZNK4Anki4Util4Data12DataPlatform14pathToResourceERKNS1_5ScopeERKNSt6__ndk112basic_stringIcNS6_11char_traitsIcEENS6_9allocatorIcEEEE
+0084BDBC: push       {r4, r5, r6, r7, lr}
+0084BDBE: sub        sp, #0xc
+0084BDC0: mov        r6, r1
+0084BDC2: ldr        r1, [pc, #0x194] ; literal[0084BF58]=00398134
+0084BDC4: mov        r4, r0
+0084BDC6: movs       r0, #0
+0084BDC8: add        r1, pc
+0084BDCA: mov        r7, r2
+0084BDCC: strd       r0, r0, [r4]
+0084BDD0: movs       r2, #0
+0084BDD2: str        r0, [r4, #8]
+0084BDD4: mov        r0, r4
+0084BDD6: mov        r5, r3
+0084BDD8: bl         #0x4e02b2
+0084BDDC: ldr        r0, [r7]
+0084BDDE: cmp        r0, #1
+0084BDE0: bne        #0x84be24
+0084BDE2: ldrb       r1, [r5]
+0084BDE4: ldr        r0, [r5, #4]
+0084BDE6: tst.w      r1, #1
+0084BDEA: it         eq
+0084BDEC: lsreq      r0, r1, #1
+0084BDEE: cbnz       r0, #0x84be24
+0084BDF0: movs       r0, #0
+0084BDF2: strd       r0, r0, [sp]
+0084BDF6: str        r0, [sp, #8]
+0084BDF8: adr        r0, #0x160 ; ADR[0084BF5C]=b'Platform.pathToResource'
+0084BDFA: adr        r2, #0x178 ; ADR[0084BF74]=b'Request for top level resource directory'
+0084BDFC: mov        r1, sp
+0084BDFE: blx        #0x4a4540 ; _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z -> 0080D2B4 size=80
+0084BE02: ldr        r0, [sp]
+0084BE04: cbz        r0, #0x84be24
+0084BE06: ldr        r1, [sp, #4]
+0084BE08: cmp        r1, r0
+0084BE0A: itttt      ne
+0084BE0C: subne.w    r2, r1, #8
+0084BE10: subne      r2, r2, r0
+0084BE12: mvnne      r3, #7
+0084BE16: bicne.w    r2, r3, r2
+0084BE1A: itt        ne
+0084BE1C: addne      r1, r1, r2
+0084BE1E: strne      r1, [sp, #4]
+0084BE20: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0084BE24: ldrb       r0, [r4]
+0084BE26: tst.w      r0, #1
+0084BE2A: ite        eq
+0084BE2C: lsreq      r0, r0, #1
+0084BE2E: ldrne      r0, [r4, #4]
+0084BE30: cmp        r0, #0
+0084BE32: bne        #0x84bf1a
+0084BE34: ldr        r0, [r7]
+0084BE36: cmp        r0, #4
+0084BE38: bhi        #0x84bed8
+0084BE3A: tbb        [pc, r0] ; literal[0084BE3C]=1403F000
+0084BE3E: asrs       r3, r0, #0x10
+0084BE40: cmp        r7, #0x22
+0084BE42: lsls       r1, r0, #1
+0084BE44: ldrd       r2, r1, [r6, #4]
+0084BE48: ldrb       r0, [r6]
+0084BE4A: ands       r3, r0, #1
+0084BE4E: itt        eq
+0084BE50: addeq      r1, r6, #1
+0084BE52: lsreq      r2, r0, #1
+0084BE54: mov        r0, r4
+0084BE56: bl         #0x4e8048
+0084BE5A: adr        r1, #0x150 ; ADR[0084BFAC]=b'/output'
+0084BE5C: mov        r0, r4
+0084BE5E: movs       r2, #7
+0084BE60: bl         #0x4e8048
+0084BE64: b          #0x84bed8
+0084BE66: ldrd       r2, r1, [r6, #0x28]
+0084BE6A: ldrb.w     r0, [r6, #0x24]
+0084BE6E: ands       r3, r0, #1
+0084BE72: itt        eq
+0084BE74: addeq.w    r1, r6, #0x25
+0084BE78: lsreq      r2, r0, #1
+0084BE7A: mov        r0, r4
+0084BE7C: bl         #0x4e8048
+0084BE80: b          #0x84bed8
+0084BE82: ldrd       r2, r1, [r6, #0x10]
+0084BE86: ldrb       r0, [r6, #0xc]
+0084BE88: ands       r3, r0, #1
+0084BE8C: itt        eq
+0084BE8E: addeq.w    r1, r6, #0xd
+0084BE92: lsreq      r2, r0, #1
+0084BE94: mov        r0, r4
+0084BE96: bl         #0x4e8048
+0084BE9A: b          #0x84bed8
+0084BE9C: ldrd       r2, r1, [r6, #0x10]
+0084BEA0: ldrb       r0, [r6, #0xc]
+0084BEA2: ands       r3, r0, #1
+0084BEA6: itt        eq
+0084BEA8: addeq.w    r1, r6, #0xd
+0084BEAC: lsreq      r2, r0, #1
+0084BEAE: mov        r0, r4
+0084BEB0: bl         #0x4e8048
+0084BEB4: adr        r1, #0xe8 ; ADR[0084BFA0]=b'/gameLogs'
+0084BEB6: mov        r0, r4
+0084BEB8: movs       r2, #9
+0084BEBA: bl         #0x4e8048
+0084BEBE: b          #0x84bed8
+0084BEC0: ldrd       r2, r1, [r6, #0x1c]
+0084BEC4: ldrb       r0, [r6, #0x18]
+0084BEC6: ands       r3, r0, #1
+0084BECA: itt        eq
+0084BECC: addeq.w    r1, r6, #0x19
+0084BED0: lsreq      r2, r0, #1
+0084BED2: mov        r0, r4
+0084BED4: bl         #0x4e8048
+0084BED8: ldr        r2, [r5, #4]
+0084BEDA: ldrb       r0, [r5]
+0084BEDC: mov        r1, r2
+0084BEDE: ands       r3, r0, #1
+0084BEE2: it         eq
+0084BEE4: lsreq      r1, r0, #1
+0084BEE6: cbz        r1, #0x84bf1a
+0084BEE8: ldr        r1, [r5, #8]
+0084BEEA: adds       r6, r5, #1
+0084BEEC: cmp        r3, #0
+0084BEEE: mov        r3, r1
+0084BEF0: it         eq
+0084BEF2: moveq      r3, r6
+0084BEF4: ldrb       r3, [r3]
+0084BEF6: cmp        r3, #0x2f
+0084BEF8: beq        #0x84bf0a
+0084BEFA: adr        r1, #0xb8 ; ADR[0084BFB4]=b'/'
+0084BEFC: mov        r0, r4
+0084BEFE: movs       r2, #1
+0084BF00: bl         #0x4e8048
+0084BF04: ldrd       r2, r1, [r5, #4]
+0084BF08: ldrb       r0, [r5]
+0084BF0A: ands       r3, r0, #1
+0084BF0E: itt        eq
+0084BF10: moveq      r1, r6
+0084BF12: lsreq      r2, r0, #1
+0084BF14: mov        r0, r4
+0084BF16: bl         #0x4e8048
+0084BF1A: add        sp, #0xc
+0084BF1C: pop        {r4, r5, r6, r7, pc}
+0084BF1E: mov        r5, r0
+0084BF20: ldr        r0, [sp]
+0084BF22: cbz        r0, #0x84bf44
+0084BF24: ldr        r1, [sp, #4]
+0084BF26: cmp        r1, r0
+0084BF28: beq        #0x84bf3c
+0084BF2A: sub.w      r2, r1, #8
+0084BF2E: mvn        r3, #7
+0084BF32: subs       r2, r2, r0
+0084BF34: bic.w      r2, r3, r2
+0084BF38: add        r1, r2
+0084BF3A: str        r1, [sp, #4]
+0084BF3C: blx        #0x4a40cc ; _ZdlPv IMPORT (resolve packaged dependencies before calling external)
+0084BF40: b          #0x84bf44
+0084BF42: mov        r5, r0
+0084BF44: ldrb       r0, [r4]
+0084BF46: lsls       r0, r0, #0x1f
+0084BF48: itt        ne
+0084BF4A: ldrne      r0, [r4, #8]
+0084BF4C: blxne      #0x4a40cc
+0084BF50: mov        r0, r5
+0084BF52: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+0084BF56: nop
+0084BF58: strh       r4, [r6, #8]
+0084BF5A: movs       r1, r7
+0084BF5C: ldr        r0, [r2, #0x44]
+0084BF5E: strb       r1, [r4, #0x11]
+0084BF60: ldr        r6, [r4, #0x74]
+0084BF62: ldr        r2, [r6, #0x54]
+0084BF64: strb       r6, [r5]
+0084BF66: strb       r1, [r4, #0x11]
+0084BF68: strb       r0, [r5, r1]
+0084BF6A: strh       r7, [r5, r1]
+0084BF6C: strb       r5, [r4, #0xd]
+0084BF6E: strb       r7, [r5, #0x15]
+0084BF70: str        r2, [r6, #0x34]
+0084BF72: lsls       r5, r4, #1
+0084BF74: str        r2, [r2, #0x54]
+0084BF76: strb       r1, [r6, #0x15]
+0084BF78: strb       r5, [r4, #0xd]
+0084BF7A: movs       r0, #0x74
+0084BF7C: ldr        r6, [r4, #0x74]
+0084BF7E: movs       r0, #0x72
+0084BF80: ldr        r4, [r6, #0x74]
+0084BF82: movs       r0, #0x70
+0084BF84: str        r4, [r5, #0x54]
+0084BF86: str        r6, [r6, #0x54]
+0084BF88: movs       r0, #0x6c
+0084BF8A: str        r2, [r6, #0x54]
+0084BF8C: ldr        r3, [r6, #0x74]
+0084BF8E: strb       r5, [r6, #9]
+0084BF90: str        r3, [r4, #0x54]
+0084BF92: str        r0, [r4, #0x40]
+0084BF94: strb       r1, [r5, #9]
+0084BF96: str        r5, [r4, #0x34]
+0084BF98: ldr        r4, [r6, #0x74]
+0084BF9A: ldrb       r2, [r6, #5]
+0084BF9C: movs       r0, r0
+0084BF9E: movs       r0, r0
+0084BFA0: str        r7, [r5, #0x70]
+0084BFA2: ldr        r1, [r4, #0x54]
+0084BFA4: ldr        r4, [pc, #0x194] ; literal[0084C13C]=4870B31A
+0084BFA6: str        r7, [r5, #0x74]
+0084BFA8: lsls       r3, r6, #1
+0084BFAA: movs       r0, r0
+0084BFAC: ldr        r7, [r5, #0x70]
+0084BFAE: strb       r5, [r6, #0x11]
+0084BFB0: strb       r0, [r6, #0x15]
+0084BFB2: lsls       r4, r6, #1
+0084BFB4: movs       r7, r5
+0084BFB6: movs       r0, r0
+
+RANGE 00802874..008029EA _ZN4Anki4Util9FileUtils15CreateDirectoryERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEEbb
+00802874: push.w     {r4, r5, r6, r7, r8, lr}
+00802878: sub        sp, #0x28
+0080287A: mov        r4, r2
+0080287C: mov        r2, r0
+0080287E: movs       r0, #0
+00802880: cmp        r1, #0
+00802882: str        r0, [sp, #0x20]
+00802884: strd       r0, r0, [sp, #0x18]
+00802888: beq        #0x8028ac
+0080288A: ldrd       r3, r0, [r2, #4]
+0080288E: ldrb       r1, [r2]
+00802890: ands       r7, r1, #1
+00802894: itt        eq
+00802896: lsreq      r3, r1, #1
+00802898: addeq      r0, r2, #1
+0080289A: cbz        r3, #0x8028b6
+0080289C: cbz        r3, #0x8028b6
+0080289E: adds       r1, r0, r3
+008028A0: subs       r3, #1
+008028A2: ldrb       r1, [r1, #-0x1]
+008028A6: cmp        r1, #0x2f
+008028A8: bne        #0x80289c
+008028AA: b          #0x8028ba
+008028AC: add        r0, sp, #0x18
+008028AE: mov        r1, r2
+008028B0: bl         #0x4e462a
+008028B4: b          #0x8028f0
+008028B6: mov.w      r3, #-1
+008028BA: add        r5, sp, #8
+008028BC: str        r2, [sp]
+008028BE: mov        r1, r2
+008028C0: movs       r2, #0
+008028C2: mov        r0, r5
+008028C4: blx        #0x4a601c ; _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC2ERKS5_jjRKS4_ -> 004FC6AA size=4E
+008028C8: ldrb.w     r0, [sp, #0x18]
+008028CC: lsls       r0, r0, #0x1f
+008028CE: bne        #0x8028d8
+008028D0: movs       r0, #0
+008028D2: strh.w     r0, [sp, #0x18]
+008028D6: b          #0x8028e0
+008028D8: ldr        r0, [sp, #0x20]
+008028DA: movs       r1, #0
+008028DC: strb       r1, [r0]
+008028DE: str        r1, [sp, #0x1c]
+008028E0: add        r6, sp, #0x18
+008028E2: movs       r1, #0
+008028E4: mov        r0, r6
+008028E6: bl         #0x4e75ec
+008028EA: ldm.w      r5, {r0, r1, r2}
+008028EE: stm        r6!, {r0, r1, r2}
+008028F0: cmp        r4, #1
+008028F2: bne        #0x80297e
+008028F4: ldrb.w     r1, [sp, #0x18]
+008028F8: ldr        r0, [sp, #0x1c]
+008028FA: tst.w      r1, #1
+008028FE: it         eq
+00802900: lsreq      r0, r1, #1
+00802902: cmp        r0, #0
+00802904: beq        #0x8029a2
+00802906: add.w      r8, sp, #8
+0080290A: add        r5, sp, #0x18
+0080290C: movs       r6, #0
+0080290E: movs       r4, #1
+00802910: adds       r2, r6, #1
+00802912: mov        r0, r5
+00802914: movs       r1, #0x2f
+00802916: blx        #0x4cac10 ; _ZNKSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE4findEcj -> 007F31A4 size=3C
+0080291A: mov        r6, r0
+0080291C: mov        r0, r8
+0080291E: mov        r1, r5
+00802920: movs       r2, #0
+00802922: mov        r3, r6
+00802924: str        r5, [sp]
+00802926: blx        #0x4a601c ; _ZNSt6__ndk112basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEC2ERKS5_jjRKS4_ -> 004FC6AA size=4E
+0080292A: mov        r0, r8
+0080292C: blx        #0x4ae0d4 ; _ZN4Anki4Util9FileUtils15DirectoryExistsERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE -> 00802824 size=2A
+00802930: cbnz       r0, #0x80294c
+00802932: ldrb.w     r1, [sp, #8]
+00802936: ldr        r0, [sp, #0x10]
+00802938: tst.w      r1, #1
+0080293C: mov.w      r1, #0x1c0
+00802940: it         eq
+00802942: orreq      r0, r8, #1
+00802946: blx        #0x4cb378 ; mkdir IMPORT (resolve packaged dependencies before calling external)
+0080294A: cbnz       r0, #0x8029a6
+0080294C: ldrb.w     r0, [sp, #8]
+00802950: lsls       r0, r0, #0x1f
+00802952: itt        ne
+00802954: ldrne      r0, [sp, #0x10]
+00802956: blxne      #0x4a40cc
+0080295A: ldrb.w     r1, [sp, #0x18]
+0080295E: cmp        r4, #0xc8
+00802960: mov.w      r7, #0
+00802964: ldr        r0, [sp, #0x1c]
+00802966: it         lo
+00802968: movlo      r7, #1
+0080296A: tst.w      r1, #1
+0080296E: it         eq
+00802970: lsreq      r0, r1, #1
+00802972: cmp        r4, #0xc7
+00802974: bhi        #0x8029b6
+00802976: adds       r4, #1
+00802978: cmp        r6, r0
+0080297A: blo        #0x802910
+0080297C: b          #0x8029b6
+0080297E: add        r4, sp, #0x18
+00802980: mov        r0, r4
+00802982: blx        #0x4ae0d4 ; _ZN4Anki4Util9FileUtils15DirectoryExistsERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE -> 00802824 size=2A
+00802986: cbnz       r0, #0x8029a2
+00802988: ldrb.w     r1, [sp, #0x18]
+0080298C: ldr        r0, [sp, #0x20]
+0080298E: tst.w      r1, #1
+00802992: mov.w      r1, #0x1c0
+00802996: it         eq
+00802998: orreq      r0, r4, #1
+0080299C: blx        #0x4cb378 ; mkdir IMPORT (resolve packaged dependencies before calling external)
+008029A0: cbnz       r0, #0x8029b4
+008029A2: movs       r7, #1
+008029A4: b          #0x8029b6
+008029A6: ldrb.w     r0, [sp, #8]
+008029AA: lsls       r0, r0, #0x1f
+008029AC: itt        ne
+008029AE: ldrne      r0, [sp, #0x10]
+008029B0: blxne      #0x4a40cc
+008029B4: movs       r7, #0
+008029B6: ldrb.w     r0, [sp, #0x18]
+008029BA: lsls       r0, r0, #0x1f
+008029BC: itt        ne
+008029BE: ldrne      r0, [sp, #0x20]
+008029C0: blxne      #0x4a40cc
+008029C4: mov        r0, r7
+008029C6: add        sp, #0x28
+008029C8: pop.w      {r4, r5, r6, r7, r8, pc}
+008029CC: bl         #0x4e39f8
+008029D0: b          #0x8029d4
+008029D2: b          #0x8029d4
+008029D4: mov        r4, r0
+008029D6: ldrb.w     r0, [sp, #0x18]
+008029DA: lsls       r0, r0, #0x1f
+008029DC: itt        ne
+008029DE: ldrne      r0, [sp, #0x20]
+008029E0: blxne      #0x4a40cc
+008029E4: mov        r0, r4
+008029E6: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+
+RANGE 0080D13C..0080D1BC _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D13C: sub        sp, #4
+0080D13E: push       {r4, r5, r6, r7, lr}
+0080D140: sub.w      sp, sp, #0x410
+0080D144: mov        r5, r0
+0080D146: ldr        r0, [pc, #0x68] ; literal[0080D1B0]=0083281C
+0080D148: mov        r4, r1
+0080D14A: ldr        r1, [pc, #0x68] ; literal[0080D1B4]=008316F8
+0080D14C: add        r0, pc
+0080D14E: mov        r6, r2
+0080D150: add        r1, pc
+0080D152: ldr        r0, [r0]
+0080D154: ldr        r1, [r1]
+0080D156: ldr        r0, [r0]
+0080D158: ldr        r1, [r1]
+0080D15A: cmp        r0, #0
+0080D15C: str.w      r3, [sp, #0x424]
+0080D160: str.w      r1, [sp, #0x40c]
+0080D164: beq        #0x80d18e
+0080D166: add        r7, sp, #8
+0080D168: mov.w      r1, #0x400
+0080D16C: mov        r0, r7
+0080D16E: blx        #0x4a48ac ; __aeabi_memclr8 IMPORT (resolve packaged dependencies before calling external)
+0080D172: addw       r3, sp, #0x424
+0080D176: mov        r0, r7
+0080D178: mov.w      r1, #0x400
+0080D17C: mov        r2, r6
+0080D17E: str        r3, [sp, #4]
+0080D180: blx        #0x4a7fc0 ; vsnprintf IMPORT (resolve packaged dependencies before calling external)
+0080D184: mov        r0, r5
+0080D186: mov        r1, r4
+0080D188: mov        r2, r7
+0080D18A: bl         #0x80d1bc
+0080D18E: ldr        r0, [pc, #0x28] ; literal[0080D1B8]=008316B4
+0080D190: ldr.w      r1, [sp, #0x40c]
+0080D194: add        r0, pc
+0080D196: ldr        r0, [r0]
+0080D198: ldr        r0, [r0]
+0080D19A: subs       r0, r0, r1
+0080D19C: itttt      eq
+0080D19E: addeq.w    sp, sp, #0x410
+0080D1A2: popeq.w    {r4, r5, r6, r7, lr}
+0080D1A6: addeq      sp, #4
+0080D1A8: bxeq       lr
+0080D1AA: blx        #0x4a4fe4 ; __stack_chk_fail IMPORT (resolve packaged dependencies before calling external)
+0080D1AE: nop
+0080D1B0: cmp        r0, #0x1c
+0080D1B2: lsls       r3, r0, #2
+0080D1B4: asrs       r0, r7, #0x1b
+0080D1B6: lsls       r3, r0, #2
+0080D1B8: asrs       r4, r6, #0x1a
+0080D1BA: lsls       r3, r0, #2
+
+RANGE 0080DAB4..0080DAB6 _ZN4Anki4Util18sDebugBreakOnErrorEv
+0080DAB4: bx         lr
+
+RANGE 0080D42C..0080D440 _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z
+0080D42C: push       {r7, lr}
+0080D42E: sub        sp, #8
+0080D430: add.w      ip, sp, #0x10
+0080D434: strd       ip, ip, [sp]
+0080D438: blx        #0x4cb7e0 ; _ZN4Anki4Util15sChanneledInfoVEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_St9__va_list -> 0080D440 size=80
+0080D43C: add        sp, #8
+0080D43E: pop        {r7, pc}
+
+RANGE 0053779E..005377CA _ZNSt6__ndk114basic_ofstreamIcNS_11char_traitsIcEEE4openEPKcj
+0053779E: push       {r4, lr}
+005377A0: mov        r4, r0
+005377A2: adds       r0, r4, #4
+005377A4: orr        r2, r2, #0x10
+005377A8: blx        #0x4aa390 ; _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE4openEPKcj -> 00538A3C size=E8
+005377AC: mov        r1, r0
+005377AE: ldr        r0, [r4]
+005377B0: cmp        r1, #0
+005377B2: ldr        r0, [r0, #-0xc]
+005377B6: add        r0, r4
+005377B8: itee       ne
+005377BA: movne      r1, #0
+005377BC: ldreq      r1, [r0, #0x10]
+005377BE: orreq      r1, r1, #4
+005377C2: pop.w      {r4, lr}
+005377C6: b.w        #0x8cb3dc
+
+RANGE 004E428C..004E437C _ZNSt6__ndk124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_j
+004E428C: push.w     {r4, r5, r6, r7, r8, sb, sl, lr}
+004E4290: sub        sp, #0x18
+004E4292: mov        r4, r0
+004E4294: movs       r0, #0
+004E4296: str        r4, [sp, #0x10]
+004E4298: mov        r5, r1
+004E429A: strb.w     r0, [sp, #0xc]
+004E429E: mov        sb, r2
+004E42A0: ldr        r1, [r4]
+004E42A2: ldr        r0, [r1, #-0xc]
+004E42A6: add        r0, r4
+004E42A8: ldr        r2, [r0, #0x10]
+004E42AA: cbnz       r2, #0x4e4328
+004E42AC: ldr        r0, [r0, #0x48]
+004E42AE: cbz        r0, #0x4e42b6
+004E42B0: bl         #0x4e44be
+004E42B4: ldr        r1, [r4]
+004E42B6: movs       r0, #1
+004E42B8: strb.w     r0, [sp, #0xc]
+004E42BC: ldr        r0, [r1, #-0xc]
+004E42C0: adds       r7, r4, r0
+004E42C2: ldr        r6, [r7, #0x4c]
+004E42C4: ldr.w      sl, [r7, #4]
+004E42C8: ldr.w      r8, [r7, #0x18]
+004E42CC: adds       r0, r6, #1
+004E42CE: bne        #0x4e42f6
+004E42D0: add        r0, sp, #0x14
+004E42D2: mov        r1, r7
+004E42D4: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+004E42D8: ldr        r0, [pc, #0x9c] ; literal[004E4378]=00B5A4F2
+004E42DA: add        r0, pc
+004E42DC: ldr        r1, [r0]
+004E42DE: add        r0, sp, #0x14
+004E42E0: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+004E42E4: ldr        r1, [r0]
+004E42E6: ldr        r2, [r1, #0x1c]
+004E42E8: movs       r1, #0x20
+004E42EA: blx        r2
+004E42EC: mov        r6, r0
+004E42EE: add        r0, sp, #0x14
+004E42F0: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E42F4: str        r6, [r7, #0x4c]
+004E42F6: and        r0, sl, #0xb0
+004E42FA: add.w      r3, r5, sb
+004E42FE: sxtb       r1, r6
+004E4300: mov        r2, r3
+004E4302: strd       r7, r1, [sp]
+004E4306: cmp        r0, #0x20
+004E4308: it         ne
+004E430A: movne      r2, r5
+004E430C: mov        r0, r8
+004E430E: mov        r1, r5
+004E4310: bl         #0x4e43a2
+004E4314: cbnz       r0, #0x4e4328
+004E4316: ldr        r0, [r4]
+004E4318: ldr        r0, [r0, #-0xc]
+004E431C: add        r0, r4
+004E431E: ldr        r1, [r0, #0x10]
+004E4320: orr        r1, r1, #5
+004E4324: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+004E4328: add        r0, sp, #0xc
+004E432A: bl         #0x4e4460
+004E432E: mov        r0, r4
+004E4330: add        sp, #0x18
+004E4332: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc}
+004E4336: b          #0x4e4346
+004E4338: mov        r5, r0
+004E433A: b          #0x4e434e
+004E433C: mov        r5, r0
+004E433E: add        r0, sp, #0x14
+004E4340: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E4344: b          #0x4e4348
+004E4346: mov        r5, r0
+004E4348: add        r0, sp, #0xc
+004E434A: bl         #0x4e4460
+004E434E: mov        r0, r5
+004E4350: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+004E4354: ldr        r0, [r4]
+004E4356: ldr        r0, [r0, #-0xc]
+004E435A: add        r0, r4
+004E435C: blx        #0x4a45ac ; _ZNSt6__ndk18ios_base33__set_badbit_and_consider_rethrowEv IMPORT (resolve packaged dependencies before calling external)
+004E4360: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E4364: b          #0x4e432e
+004E4366: mov        r4, r0
+004E4368: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E436C: mov        r0, r4
+004E436E: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+004E4372: bl         #0x4e39f8
+004E4376: nop
+004E4378: adr        r4, #0x3c8 ; ADR[004E4744]=b'\xbf\xf7\xb2\xed\xa7\xeb\t\x07\xb7\xeb\n\x02\x07\xd0'
+004E437A: lsls       r5, r6, #2
+
+RANGE 004E3718..004E382C _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEf
+004E3718: push.w     {r4, r5, r6, r7, r8, sb, sl, lr}
+004E371C: sub        sp, #0x18
+004E371E: mov        r4, r0
+004E3720: movs       r0, #0
+004E3722: str        r4, [sp, #0x10]
+004E3724: mov        sb, r1
+004E3726: strb.w     r0, [sp, #0xc]
+004E372A: ldr        r1, [r4]
+004E372C: ldr        r0, [r1, #-0xc]
+004E3730: add        r0, r4
+004E3732: ldr        r2, [r0, #0x10]
+004E3734: cmp        r2, #0
+004E3736: bne        #0x4e37d0
+004E3738: ldr        r0, [r0, #0x48]
+004E373A: cbz        r0, #0x4e3742
+004E373C: bl         #0x4e44be
+004E3740: ldr        r1, [r4]
+004E3742: movs       r0, #1
+004E3744: strb.w     r0, [sp, #0xc]
+004E3748: ldr        r0, [r1, #-0xc]
+004E374C: adds       r1, r4, r0
+004E374E: add        r0, sp, #0x14
+004E3750: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+004E3754: ldr        r0, [pc, #0xcc] ; literal[004E3824]=00B5B072
+004E3756: add        r0, pc
+004E3758: ldr        r1, [r0]
+004E375A: add        r0, sp, #0x14
+004E375C: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+004E3760: mov        sl, r0
+004E3762: add        r0, sp, #0x14
+004E3764: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E3768: ldr        r0, [r4]
+004E376A: ldr        r0, [r0, #-0xc]
+004E376E: adds       r7, r4, r0
+004E3770: ldr        r5, [r7, #0x4c]
+004E3772: ldr.w      r8, [r7, #0x18]
+004E3776: adds       r0, r5, #1
+004E3778: bne        #0x4e37a0
+004E377A: add        r0, sp, #0x14
+004E377C: mov        r1, r7
+004E377E: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+004E3782: ldr        r0, [pc, #0xa4] ; literal[004E3828]=00B5B048
+004E3784: add        r0, pc
+004E3786: ldr        r1, [r0]
+004E3788: add        r0, sp, #0x14
+004E378A: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+004E378E: ldr        r1, [r0]
+004E3790: ldr        r2, [r1, #0x1c]
+004E3792: movs       r1, #0x20
+004E3794: blx        r2
+004E3796: mov        r5, r0
+004E3798: add        r0, sp, #0x14
+004E379A: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E379E: str        r5, [r7, #0x4c]
+004E37A0: ldr.w      r0, [sl]
+004E37A4: vmov       s0, sb
+004E37A8: vcvt.f64.f32 d0, s0
+004E37AC: ldr        r6, [r0, #0x20]
+004E37AE: sxtb       r3, r5
+004E37B0: mov        r0, sl
+004E37B2: mov        r1, r8
+004E37B4: mov        r2, r7
+004E37B6: vstr       d0, [sp]
+004E37BA: blx        r6
+004E37BC: cbnz       r0, #0x4e37d0
+004E37BE: ldr        r0, [r4]
+004E37C0: ldr        r0, [r0, #-0xc]
+004E37C4: add        r0, r4
+004E37C6: ldr        r1, [r0, #0x10]
+004E37C8: orr        r1, r1, #5
+004E37CC: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+004E37D0: add        r0, sp, #0xc
+004E37D2: bl         #0x4e4460
+004E37D6: mov        r0, r4
+004E37D8: add        sp, #0x18
+004E37DA: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc}
+004E37DE: b          #0x4e37f2
+004E37E0: mov        r5, r0
+004E37E2: b          #0x4e37fa
+004E37E4: b          #0x4e37e6
+004E37E6: mov        r5, r0
+004E37E8: add        r0, sp, #0x14
+004E37EA: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E37EE: b          #0x4e37f4
+004E37F0: b          #0x4e37f2
+004E37F2: mov        r5, r0
+004E37F4: add        r0, sp, #0xc
+004E37F6: bl         #0x4e4460
+004E37FA: mov        r0, r5
+004E37FC: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+004E3800: ldr        r0, [r4]
+004E3802: ldr        r0, [r0, #-0xc]
+004E3806: add        r0, r4
+004E3808: blx        #0x4a45ac ; _ZNSt6__ndk18ios_base33__set_badbit_and_consider_rethrowEv IMPORT (resolve packaged dependencies before calling external)
+004E380C: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E3810: b          #0x4e37d6
+004E3812: mov        r4, r0
+004E3814: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E3818: mov        r0, r4
+004E381A: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+004E381E: bl         #0x4e39f8
+004E3822: nop
+004E3824: add        sp, #0x1c8
+004E3826: lsls       r5, r6, #2
+004E3828: add        sp, #0x120
+004E382A: lsls       r5, r6, #2
+
+RANGE 0050111C..00501158 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE5closeEv
+0050111C: push       {r4, r5, r6, lr}
+0050111E: mov        r4, r0
+00501120: ldr        r5, [r4, #0x40]
+00501122: cbz        r5, #0x50113c
+00501124: ldr        r0, [r4]
+00501126: ldr        r1, [r0, #0x18]
+00501128: mov        r0, r4
+0050112A: blx        r1
+0050112C: mov        r6, r0
+0050112E: mov        r0, r5
+00501130: blx        #0x4a69dc ; fclose IMPORT (resolve packaged dependencies before calling external)
+00501134: mov        r1, r0
+00501136: movs       r0, #0
+00501138: cbz        r1, #0x501140
+0050113A: pop        {r4, r5, r6, pc}
+0050113C: movs       r0, #0
+0050113E: pop        {r4, r5, r6, pc}
+00501140: str        r0, [r4, #0x40]
+00501142: cmp        r6, #0
+00501144: it         eq
+00501146: moveq      r0, r4
+00501148: pop        {r4, r5, r6, pc}
+0050114A: mov        r4, r0
+0050114C: mov        r0, r5
+0050114E: blx        #0x4a69dc ; fclose IMPORT (resolve packaged dependencies before calling external)
+00501152: mov        r0, r4
+00501154: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+
+RANGE 007B3A1E..007B3A22 _ZNK4Anki5Cozmo14RobotInterface13RobotToEngine19Get_imuRawDataChunkEv
+007B3A1E: adds       r0, #4
+007B3A20: bx         lr
+
+RANGE 004E3154..004E3260 _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEi
+004E3154: push.w     {r4, r5, r6, r7, r8, sb, sl, lr}
+004E3158: sub        sp, #0x10
+004E315A: mov        r4, r0
+004E315C: movs       r0, #0
+004E315E: str        r4, [sp, #8]
+004E3160: mov        sb, r1
+004E3162: strb.w     r0, [sp, #4]
+004E3166: ldr        r1, [r4]
+004E3168: ldr        r0, [r1, #-0xc]
+004E316C: add        r0, r4
+004E316E: ldr        r2, [r0, #0x10]
+004E3170: cmp        r2, #0
+004E3172: bne        #0x4e3204
+004E3174: ldr        r0, [r0, #0x48]
+004E3176: cbz        r0, #0x4e317e
+004E3178: bl         #0x4e44be
+004E317C: ldr        r1, [r4]
+004E317E: movs       r0, #1
+004E3180: strb.w     r0, [sp, #4]
+004E3184: ldr        r0, [r1, #-0xc]
+004E3188: adds       r1, r4, r0
+004E318A: add        r0, sp, #0xc
+004E318C: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+004E3190: ldr        r0, [pc, #0xc4] ; literal[004E3258]=00B5B636
+004E3192: add        r0, pc
+004E3194: ldr        r1, [r0]
+004E3196: add        r0, sp, #0xc
+004E3198: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+004E319C: mov        sl, r0
+004E319E: add        r0, sp, #0xc
+004E31A0: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E31A4: ldr        r0, [r4]
+004E31A6: ldr        r0, [r0, #-0xc]
+004E31AA: adds       r7, r4, r0
+004E31AC: ldr        r5, [r7, #0x4c]
+004E31AE: ldr.w      r8, [r7, #0x18]
+004E31B2: adds       r0, r5, #1
+004E31B4: bne        #0x4e31dc
+004E31B6: add        r0, sp, #0xc
+004E31B8: mov        r1, r7
+004E31BA: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+004E31BE: ldr        r0, [pc, #0x9c] ; literal[004E325C]=00B5B60C
+004E31C0: add        r0, pc
+004E31C2: ldr        r1, [r0]
+004E31C4: add        r0, sp, #0xc
+004E31C6: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+004E31CA: ldr        r1, [r0]
+004E31CC: ldr        r2, [r1, #0x1c]
+004E31CE: movs       r1, #0x20
+004E31D0: blx        r2
+004E31D2: mov        r5, r0
+004E31D4: add        r0, sp, #0xc
+004E31D6: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E31DA: str        r5, [r7, #0x4c]
+004E31DC: ldr.w      r0, [sl]
+004E31E0: ldr        r6, [r0, #0x10]
+004E31E2: sxtb       r3, r5
+004E31E4: mov        r0, sl
+004E31E6: mov        r1, r8
+004E31E8: mov        r2, r7
+004E31EA: str.w      sb, [sp]
+004E31EE: blx        r6
+004E31F0: cbnz       r0, #0x4e3204
+004E31F2: ldr        r0, [r4]
+004E31F4: ldr        r0, [r0, #-0xc]
+004E31F8: add        r0, r4
+004E31FA: ldr        r1, [r0, #0x10]
+004E31FC: orr        r1, r1, #5
+004E3200: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+004E3204: add        r0, sp, #4
+004E3206: bl         #0x4e4460
+004E320A: mov        r0, r4
+004E320C: add        sp, #0x10
+004E320E: pop.w      {r4, r5, r6, r7, r8, sb, sl, pc}
+004E3212: b          #0x4e3226
+004E3214: mov        r5, r0
+004E3216: b          #0x4e322e
+004E3218: b          #0x4e321a
+004E321A: mov        r5, r0
+004E321C: add        r0, sp, #0xc
+004E321E: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+004E3222: b          #0x4e3228
+004E3224: b          #0x4e3226
+004E3226: mov        r5, r0
+004E3228: add        r0, sp, #4
+004E322A: bl         #0x4e4460
+004E322E: mov        r0, r5
+004E3230: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+004E3234: ldr        r0, [r4]
+004E3236: ldr        r0, [r0, #-0xc]
+004E323A: add        r0, r4
+004E323C: blx        #0x4a45ac ; _ZNSt6__ndk18ios_base33__set_badbit_and_consider_rethrowEv IMPORT (resolve packaged dependencies before calling external)
+004E3240: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E3244: b          #0x4e320a
+004E3246: mov        r4, r0
+004E3248: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+004E324C: mov        r0, r4
+004E324E: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+004E3252: bl         #0x4e39f8
+004E3256: nop
+
+RANGE 005377CC..005378F0 _ZNSt6__ndk113basic_ostreamIcNS_11char_traitsIcEEElsEs
+005377CC: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005377D0: sub        sp, #0x14
+005377D2: mov        r4, r0
+005377D4: movs       r0, #0
+005377D6: str        r4, [sp, #0xc]
+005377D8: mov        r5, r1
+005377DA: strb.w     r0, [sp, #8]
+005377DE: ldr        r1, [r4]
+005377E0: ldr        r0, [r1, #-0xc]
+005377E4: add        r0, r4
+005377E6: ldr        r2, [r0, #0x10]
+005377E8: cmp        r2, #0
+005377EA: bne        #0x537896
+005377EC: ldr        r0, [r0, #0x48]
+005377EE: cbz        r0, #0x5377f6
+005377F0: bl         #0x4e44be
+005377F4: ldr        r1, [r4]
+005377F6: movs       r0, #1
+005377F8: strb.w     r0, [sp, #8]
+005377FC: ldr        r0, [r1, #-0xc]
+00537800: adds       r1, r4, r0
+00537802: ldr.w      sl, [r1, #4]
+00537806: add        r0, sp, #0x10
+00537808: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+0053780C: ldr        r0, [pc, #0xd8] ; literal[005378E8]=00B06FBA
+0053780E: add        r0, pc
+00537810: ldr        r1, [r0]
+00537812: add        r0, sp, #0x10
+00537814: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+00537818: mov        sb, r0
+0053781A: add        r0, sp, #0x10
+0053781C: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+00537820: ldr        r0, [r4]
+00537822: ldr        r0, [r0, #-0xc]
+00537826: add.w      fp, r4, r0
+0053782A: ldr.w      r6, [fp, #0x4c]
+0053782E: ldr.w      r8, [fp, #0x18]
+00537832: adds       r0, r6, #1
+00537834: bne        #0x53785e
+00537836: add        r0, sp, #0x10
+00537838: mov        r1, fp
+0053783A: blx        #0x4a457c ; _ZNKSt6__ndk18ios_base6getlocEv IMPORT (resolve packaged dependencies before calling external)
+0053783E: ldr        r0, [pc, #0xac] ; literal[005378EC]=00B06F8C
+00537840: add        r0, pc
+00537842: ldr        r1, [r0]
+00537844: add        r0, sp, #0x10
+00537846: blx        #0x4a4588 ; _ZNKSt6__ndk16locale9use_facetERNS0_2idE IMPORT (resolve packaged dependencies before calling external)
+0053784A: ldr        r1, [r0]
+0053784C: ldr        r2, [r1, #0x1c]
+0053784E: movs       r1, #0x20
+00537850: blx        r2
+00537852: mov        r6, r0
+00537854: add        r0, sp, #0x10
+00537856: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+0053785A: str.w      r6, [fp, #0x4c]
+0053785E: ldr.w      r1, [sb]
+00537862: and        r0, sl, #0x4a
+00537866: uxth       r2, r5
+00537868: cmp        r0, #8
+0053786A: ldr        r7, [r1, #0x10]
+0053786C: it         eq
+0053786E: moveq      r5, r2
+00537870: cmp        r0, #0x40
+00537872: it         eq
+00537874: moveq      r5, r2
+00537876: sxtb       r3, r6
+00537878: mov        r0, sb
+0053787A: mov        r1, r8
+0053787C: mov        r2, fp
+0053787E: str        r5, [sp]
+00537880: blx        r7
+00537882: cbnz       r0, #0x537896
+00537884: ldr        r0, [r4]
+00537886: ldr        r0, [r0, #-0xc]
+0053788A: add        r0, r4
+0053788C: ldr        r1, [r0, #0x10]
+0053788E: orr        r1, r1, #5
+00537892: blx        #0x4a4594 ; _ZNSt6__ndk18ios_base5clearEj IMPORT (resolve packaged dependencies before calling external)
+00537896: add        r0, sp, #8
+00537898: bl         #0x4e4460
+0053789C: mov        r0, r4
+0053789E: add        sp, #0x14
+005378A0: pop.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+005378A4: b          #0x5378b8
+005378A6: mov        r5, r0
+005378A8: b          #0x5378c0
+005378AA: b          #0x5378ac
+005378AC: mov        r5, r0
+005378AE: add        r0, sp, #0x10
+005378B0: blx        #0x4a44a4 ; _ZNSt6__ndk16localeD1Ev IMPORT (resolve packaged dependencies before calling external)
+005378B4: b          #0x5378ba
+005378B6: b          #0x5378b8
+005378B8: mov        r5, r0
+005378BA: add        r0, sp, #8
+005378BC: bl         #0x4e4460
+005378C0: mov        r0, r5
+005378C2: blx        #0x4a45a0 ; __cxa_begin_catch IMPORT (resolve packaged dependencies before calling external)
+005378C6: ldr        r0, [r4]
+005378C8: ldr        r0, [r0, #-0xc]
+005378CC: add        r0, r4
+005378CE: blx        #0x4a45ac ; _ZNSt6__ndk18ios_base33__set_badbit_and_consider_rethrowEv IMPORT (resolve packaged dependencies before calling external)
+005378D2: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+005378D6: b          #0x53789c
+005378D8: mov        r4, r0
+005378DA: blx        #0x4a45b8 ; __cxa_end_catch IMPORT (resolve packaged dependencies before calling external)
+005378DE: mov        r0, r4
+005378E0: blx        #0x4a40a8 ; _Unwind_Resume IMPORT (resolve packaged dependencies before calling external)
+005378E4: bl         #0x4e39f8
+005378E8: ldr        r2, [r7, #0x78]
+005378EA: lsls       r0, r6, #2
+005378EC: ldr        r4, [r1, #0x78]
+005378EE: lsls       r0, r6, #2
+
+RANGE 0080342A..00803452 _ZN4Anki4Util9FileUtils10FileExistsERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+0080342A: push       {r7, lr}
+0080342C: sub        sp, #0x68
+0080342E: ldrb       r1, [r0]
+00803430: ldr        r2, [r0, #8]
+00803432: tst.w      r1, #1
+00803436: mov        r1, sp
+00803438: it         eq
+0080343A: addeq      r2, r0, #1
+0080343C: mov        r0, r2
+0080343E: blx        #0x4a8998 ; stat IMPORT (resolve packaged dependencies before calling external)
+00803442: cmp        r0, #0
+00803444: itte       eq
+00803446: ldrbeq.w   r0, [sp, #0x11]
+0080344A: lsreq      r0, r0, #7
+0080344C: movne      r0, #0
+0080344E: add        sp, #0x68
+00803450: pop        {r7, pc}
+
+VTABLE BINDINGS
+0101F2BC -> 00000000 relative/local
+0101F2C0 -> 0101F2FC _ZTINSt6__ndk113basic_filebufIcNS_11char_traitsIcEEEE
+0101F2C4 -> 005010B4 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEED2Ev
+0101F2C8 -> 00501158 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEED0Ev
+0101F2CC -> 00501168 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE5imbueERKNS_6localeE
+0101F2D0 -> 00501210 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE6setbufEPci
+0101F2D4 -> 005012A8 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE7seekoffExNS_8ios_base7seekdirEj
+0101F2D8 -> 00501344 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE7seekposENS_4fposI9mbstate_tEEj
+0101F2DC -> 00501398 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE4syncEv
+0101F2E0 -> 004E3E2C
+0101F2E4 -> 004E3E30
+0101F2E8 -> 005014D0 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE9underflowEv
+0101F2EC -> 004E3E98
+0101F2F0 -> 00501648 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE9pbackfailEi
+0101F2F4 -> 004E3F06
+0101F2F8 -> 00501684 _ZNSt6__ndk113basic_filebufIcNS_11char_traitsIcEEE8overflowEi
+
+LITERAL BYTES
+00536094 2f696d754c6f675f b'/imuLog_'
+005360CC 615820615920615a20675820675920675a0a b'aX aY aZ gX gY gZ\n'
+005360E0 20 b' '
+005360E4 0a b'\n'
+005365F4 2f696d755261774c6f675f b'/imuRawLog_'
+0053662C 74696d657374616d7020615820615920615a20675820675920675a0a b'timestamp aX aY aZ gX gY gZ\n'
+0053664C 20 b' '
+00536650 0a b'\n'
+00BE3F00 00 b'\x00'
+00BE940E 2e64617400 b'.dat\x00'
+00C00D9E 696d755f6c6f677300 b'imu_logs\x00'
