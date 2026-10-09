@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through488 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through489 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -340,7 +340,7 @@ PARTIAL: UE1–UE7 and UC1–UC50 establish union dispatch, post flags/context, 
 
 > | M6-024 | **KEEP** | 0x00592BB0;0x005935E2;0x005935EA;0x008D2EE8;0x008D2FE4;0x008D8280;0x008D8320 | Six-bank order, scene construction, unconditional load path, zip registration and live wiring are exact graph/loading work; the stale AddZipFiles claim must be checked against C33, not waived. |
 
-PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, duplicate-bank false result, scene early-abort and preparation-result handling, and archive validation/prepend/removal and configuration parent wiring. Remaining: app path/JNI resolver descendants, scene assignment/unwind and vector-growth/assignment descendants, bank load/unload/event-preparation descendants, registry cookie state and bank manager termination descendants and archive stream-library/append and pointer/string vector growth descendants. Those shipped bodies are readable, not UNKNOWN.
+PARTIAL: SL1–SL32 establish six-bank order, unconditional register/load tail, duplicate-bank false result, scene early-abort and preparation-result handling, and archive validation/prepend/removal and configuration parent wiring. SC487/NM488 now add selected scene/event/bank replacement, ordered overlap/self-member/shrink/append decisions; SI489 adds concrete startup IDs1..10/name arguments and four-pair locale-to-state input/default/state-interface join. SL33–49/CW281/CV282 already supply constructor/config/base-threaded bank dispatch and synchronization; BR142/CR143/UD261 and event/action product rows supply selected retirement/graph joins. out of scope:app path/JNI file resolver, ZIP/archive/hash/rehash/stream-library and backing/allocator/free/string growth/owned unwind; no further infrastructure descent under the guard. Remaining:specifically witnessed bank graph/source/preparation/callback/product inputs and nonempty scene inputs at their existing rows, without claiming their whole paths from wrapper evidence.
 
 ## Q14-032 — triage line 70
 
@@ -2417,3 +2417,5 @@ Checkpoint486 — GB486 pending/active render-global clear and registry phase or
 Checkpoint487 — SC487 scene event/bank replacement overlap, self-member gate, shrink/append/end-publication and SJ487 original startup/bank worker joins;198 complete Thumb instructions. Archive/resolver/hash/storage descendants excluded. Nested event/member and concrete object/locale/bank inputs remain explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint488 — NM488 nested scene replacement physical order/per-entry identity/shrink and remaining construction joins;93 complete Thumb instructions. Owned string/vector infrastructure excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint489 — SI489 concrete startup1..10 object/name/failure-continuation and four-pair locale/default/group state inputs with actual PLT bindings;170 complete native instructions. Existing command/state/object recipients reused; census031 infrastructure remaining-work wording narrowed under guard. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

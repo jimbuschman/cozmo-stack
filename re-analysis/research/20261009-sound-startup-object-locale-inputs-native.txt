@@ -1,0 +1,242 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00594410..0x005944C2 exclusive; Thumb; _ZN4Anki5Cozmo5Audio20CozmoAudioController42RegisterCladGameObjectsWithAudioControllerEv
+00594410: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00594414: sub          sp, #0x14
+00594416: ldr          r1, [pc, #0x158] ; word[00594570]=00AAA36E
+00594418: mov          fp, r0
+0059441A: ldr          r0, [pc, #0x150] ; word[0059456C]=00AAA364
+0059441C: add          r5, sp, #8
+0059441E: add          r1, pc
+00594420: addw         sb, pc, #0x114
+00594424: add          r0, pc
+00594426: movs         r4, #0
+00594428: ldr.w        r8, [r1]
+0059442C: movs         r6, #1
+0059442E: ldr.w        sl, [r0]
+00594432: mov          r0, r6
+00594434: blx          #0x4aae88 ; Anki::AudioMetaData::EnumToString
+
+00594438: str          r4, [sp, #0x10]
+0059443A: mov          r7, r0
+0059443C: strd         r4, r4, [sp, #8]
+00594440: blx          #0x4a44e0 ; <EXTERNAL>::strlen
+
+00594444: mov          r2, r0
+00594446: mov          r0, r5
+00594448: mov          r1, r7
+0059444A: bl           #0x4e02b2 ; FUN_004e02b2
+
+0059444E: mov          r0, fp
+00594450: mov          r1, r6
+00594452: mov          r2, r5
+00594454: blx          #0x4af1cc ; Anki::AudioEngine::AudioEngineController::RegisterGameObject
+
+00594458: mov          r7, r0
+0059445A: ldrb.w       r0, [sp, #8]
+0059445E: lsls         r0, r0, #0x1f
+00594460: itt          ne
+00594462: ldrne        r0, [sp, #0x10]
+00594464: blxne        #0x4a40cc
+00594468: cbnz         r7, #0x5944b6
+0059446A: strd         r4, r4, [sp, #8]
+0059446E: str          r4, [sp, #0x10]
+00594470: mov          r0, r6
+00594472: blx          #0x4aae88 ; Anki::AudioMetaData::EnumToString
+
+00594476: str          r0, [sp]
+00594478: adr          r0, #0x7c
+0059447A: mov          r1, r5
+0059447C: mov          r2, sb
+0059447E: mov          r3, r6
+00594480: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+00594484: ldr          r0, [sp, #8]
+00594486: cbz          r0, #0x5944a6
+00594488: ldr          r1, [sp, #0xc]
+0059448A: cmp          r1, r0
+0059448C: itttt        ne
+0059448E: subne.w      r2, r1, #8
+00594492: subne        r2, r2, r0
+00594494: mvnne        r3, #7
+00594498: bicne.w      r2, r3, r2
+0059449C: itt          ne
+0059449E: addne        r1, r1, r2
+005944A0: strne        r1, [sp, #0xc]
+005944A2: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+005944A6: ldrb.w       r0, [sl]
+005944AA: movs         r1, #1
+005944AC: strb.w       r1, [r8]
+005944B0: cbz          r0, #0x5944b6
+005944B2: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+005944B6: adds         r6, #1
+005944B8: cmp          r6, #0xb
+005944BA: blo          #0x594432
+005944BC: add          sp, #0x14
+005944BE: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x00594574..0x00594650 exclusive; Thumb; _ZN4Anki5Cozmo5Audio20CozmoAudioController9SetLocaleERKNS_4Util6LocaleE
+00594574: push         {r4, r5, r6, r7, lr}
+00594576: sub          sp, #0x1c
+00594578: mov          r4, r0
+0059457A: ldr          r0, [pc, #0x11c] ; word[00594698]=00AAA82E
+0059457C: mov          r5, r1
+0059457E: add          r0, pc
+00594580: ldr          r0, [r0]
+00594582: ldr          r6, [r0]
+00594584: movs         r0, #0
+00594586: strd         r0, r0, [sp, #0x10]
+0059458A: str          r0, [sp, #0x18]
+0059458C: add          r7, sp, #4
+0059458E: mov          r0, r7
+00594590: blx          #0x4a4f84 ; Anki::Util::Locale::GetLocaleString
+
+00594594: ldrb.w       r1, [sp, #4]
+00594598: ldr          r0, [sp, #0xc]
+0059459A: tst.w        r1, #1
+0059459E: it           eq
+005945A0: orreq        r0, r7, #1
+005945A4: adr          r1, #0xf4
+005945A6: add          r2, sp, #0x10
+005945A8: adr          r3, #0x110
+005945AA: str          r0, [sp]
+005945AC: mov          r0, r6
+005945AE: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+
+005945B2: ldrb.w       r0, [sp, #4]
+005945B6: lsls         r0, r0, #0x1f
+005945B8: itt          ne
+005945BA: ldrne        r0, [sp, #0xc]
+005945BC: blxne        #0x4a40cc
+005945C0: ldr          r0, [sp, #0x10]
+005945C2: cbz          r0, #0x5945e2
+005945C4: ldr          r1, [sp, #0x14]
+005945C6: cmp          r1, r0
+005945C8: itttt        ne
+005945CA: subne.w      r2, r1, #8
+005945CE: subne        r2, r2, r0
+005945D0: mvnne        r3, #7
+005945D4: bicne.w      r2, r3, r2
+005945D8: itt          ne
+005945DA: addne        r1, r1, r2
+005945DC: strne        r1, [sp, #0x14]
+005945DE: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+005945E2: ldr          r0, [pc, #0xe4] ; word[005946C8]=00AC6692
+005945E4: ldr          r1, [r5]
+005945E6: add          r0, pc
+005945E8: str          r1, [sp, #0x10]
+005945EA: ldrb         r0, [r0]
+005945EC: dmb          ish
+005945F0: tst.w        r0, #1
+005945F4: bne          #0x594626
+005945F6: ldr          r0, [pc, #0xd4] ; word[005946CC]=00AC6680
+005945F8: add          r0, pc
+005945FA: blx          #0x4a472c ; <EXTERNAL>::__cxa_guard_acquire
+
+005945FE: cbz          r0, #0x594626
+00594600: ldr          r0, [pc, #0xcc] ; word[005946D0]=00AC6660
+00594602: ldr          r1, [pc, #0xd0] ; word[005946D4]=006C72F2
+00594604: add          r0, pc
+00594606: add          r1, pc
+00594608: movs         r2, #4
+0059460A: blx          #0x4af1d8 ; std::__ndk1::unordered_map<Anki::Util::Locale::Language,Anki::AudioMetaData::GameState::External_Language,std::__ndk1::hash<Anki::Util::Locale::Language>,std::__ndk1::equal_to<Anki::Util::Locale::Language>,std::__ndk1::allocator<std::__ndk1::pair<Anki::Util::Locale::Language_const,Anki::AudioMetaData::GameState::External_Language>>>::unordered_map
+
+0059460E: ldr          r0, [pc, #0xcc] ; word[005946DC]=00000B0D
+00594610: ldr          r1, [pc, #0xcc] ; word[005946E0]=00AC664E
+00594612: ldr          r2, [pc, #0xd0] ; word[005946E4]=00ABC9E4
+00594614: add          r0, pc
+00594616: add          r1, pc
+00594618: add          r2, pc
+0059461A: blx          #0x4a4024 ; <EXTERNAL>::__cxa_atexit
+
+0059461E: ldr          r0, [pc, #0xc8] ; word[005946E8]=00AC6658
+00594620: add          r0, pc
+00594622: blx          #0x4a475c ; <EXTERNAL>::__cxa_guard_release
+
+00594626: ldr          r0, [pc, #0xc4] ; word[005946EC]=00AC663A
+00594628: add          r1, sp, #0x10
+0059462A: add          r0, pc
+0059462C: blx          #0x4af1e4 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<Anki::Util::Locale::Language,Anki::AudioMetaData::GameState::External_Language>,std::__ndk1::__unordered_map_hasher<Anki::Util::Locale::Language,std::__ndk1::__hash_value_type<Anki::Util::Locale::Language,Anki::AudioMetaData::GameState::External_Language>,std::__ndk1::hash<Anki::Util::Locale::Language>,true>,std::__ndk1::__unordered_map_equal<Anki::Util::Locale::Language,std::__ndk1::__hash_value_type<Anki::Util::Locale::Language,Anki::AudioMetaData::GameState::External_Language>,std::__ndk1::equal_to<Anki::Util::Locale::Language>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<Anki::Util::Locale::Language,Anki::AudioMetaData::GameState::External_Language>>>::find<Anki::Util::Locale::Language>
+
+00594630: cmp          r0, #0
+00594632: itee         ne
+00594634: ldrne        r2, [r0, #0xc]
+00594636: movweq       r2, #0x1c07
+0059463A: movteq       r2, #0xc9a8
+0059463E: movw         r1, #0x9c0d
+00594642: mov          r0, r4
+00594644: movt         r1, #0x384a
+00594648: blx          #0x4af1f0 ; Anki::AudioEngine::AudioEngineController::SetState
+
+0059464C: add          sp, #0x1c
+0059464E: pop          {r4, r5, r6, r7, pc}
+RANGE 0x006EC30C..0x006EC31E exclusive; Thumb; _ZN4Anki13AudioMetaData12EnumToStringENS0_14GameObjectTypeE
+006EC30C: cmp          r0, #0xb
+006EC30E: itt          hi
+006EC310: movhi        r0, #0
+006EC312: bxhi         lr
+006EC314: ldr          r1, [pc, #8] ; word[006EC320]=00945966
+006EC316: add          r1, pc
+006EC318: ldr.w        r0, [r1, r0, lsl #2]
+006EC31C: bx           lr
+RANGE 0x004AAE88..0x004AAE94 exclusive; ARM;
+004AAE88: add          ip, pc, #0xb00000
+004AAE8C: add          ip, ip, #0x97000
+004AAE90: ldr          pc, [ip, #0x8d4]!
+RANGE 0x004AF1CC..0x004AF1D8 exclusive; ARM;
+004AF1CC: add          ip, pc, #0xb00000
+004AF1D0: add          ip, ip, #148, #20
+004AF1D4: ldr          pc, [ip, #0xbfc]!
+RANGE 0x004AF1F0..0x004AF1FC exclusive; ARM;
+004AF1F0: add          ip, pc, #0xb00000
+004AF1F4: add          ip, ip, #148, #20
+004AF1F8: ldr          pc, [ip, #0xbe4]!
+0059456C: raw=00AAA364 relocated=00AAA364 
+00594570: raw=00AAA36E relocated=00AAA36E 
+00594698: raw=00AAA82E relocated=00AAA82E 
+005946C8: raw=00AC6692 relocated=00AC6692 
+005946CC: raw=00AC6680 relocated=00AC6680 
+005946D0: raw=00AC6660 relocated=00AC6660 
+005946D4: raw=006C72F2 relocated=006C72F2 
+005946D8: raw=00AC6624 relocated=00AC6624 
+005946DC: raw=00000B0D relocated=00000B0D 
+005946E0: raw=00AC664E relocated=00AC664E 
+005946E4: raw=00ABC9E4 relocated=00ABC9E4 
+005946E8: raw=00AC6658 relocated=00AC6658 
+005946EC: raw=00AC663A relocated=00AC663A 
+006EC320: raw=00945966 relocated=00945966 
+01031C80: raw=00BF5876 relocated=00BF5876 
+01031C84: raw=00C0E90C relocated=00C0E90C 
+01031C88: raw=00C0E914 relocated=00C0E914 
+01031C8C: raw=00C0E917 relocated=00C0E917 
+01031C90: raw=00C0E91B relocated=00C0E91B 
+01031C94: raw=00C0E923 relocated=00C0E923 
+01031C98: raw=00C0E928 relocated=00C0E928 
+01031C9C: raw=00C0E937 relocated=00C0E937 
+01031CA0: raw=00C0E942 relocated=00C0E942 
+01031CA4: raw=00C0E94D relocated=00C0E94D 
+01031CA8: raw=00C0E958 relocated=00C0E958 
+01031CAC: raw=00C0E963 relocated=00C0E963 
+00C5B8FC: raw=00000025 relocated=00000025 
+00C5B900: raw=C9A81C07 relocated=C9A81C07 
+00C5B904: raw=0000002F relocated=0000002F 
+00C5B908: raw=BABF3B35 relocated=BABF3B35 
+00C5B90C: raw=00000020 relocated=00000020 
+00C5B910: raw=FFB9E71B relocated=FFB9E71B 
+00C5B914: raw=0000004A relocated=0000004A 
+00C5B918: raw=77BA6750 relocated=77BA6750 
+01042764: raw=004A4010 relocated=006EC30D _ZN4Anki13AudioMetaData12EnumToStringENS0_14GameObjectTypeE
+01043DD0: raw=004A4010 relocated=008D2739 _ZN4Anki11AudioEngine21AudioEngineController18RegisterGameObjectEjRKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE
+00C0E90C: bytes=b'Default'
+00C0E914: bytes=b'UI'
+00C0E917: bytes=b'SFX'
+00C0E91B: bytes=b'CodeLab'
+00C0E923: bytes=b'Aria'
+00C0E928: bytes=b'Cozmo_OnDevice'
+00C0E937: bytes=b'CozmoBus_1'
+00C0E942: bytes=b'CozmoBus_2'
+00C0E94D: bytes=b'CozmoBus_3'
+00C0E958: bytes=b'CozmoBus_4'
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01043DDC: raw=004A4010 relocated=008D232D _ZNK4Anki11AudioEngine21AudioEngineController8SetStateEjj
