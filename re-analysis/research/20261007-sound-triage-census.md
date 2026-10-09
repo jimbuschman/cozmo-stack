@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through516 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through517 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -440,19 +440,19 @@ PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/d
 
 > | M9-006 | **KEEP** | 0x009D7B6C..0x009D7C97;0x009D552C..0x009D55F0;0x009D7EA4 | Modulator payloads, trigger selector property15 and stop gate property1 are decisions/state. |
 
-PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope identity/normalization, factories/registry, authored trigger15/stop1 gates and complete default initializer words. Bank payload readers, class-specific trigger/voice setup and complete runtime selector/stop consumers remain open; no whole M9-006 completion claim.
+PARTIAL: MT1–MT12 establish trigger recursion/result aggregation, event scope identity/normalization, factories/registry, authored trigger15/stop1 gates and complete default initializer words. MR517 now supplies full shared authored-control reader9D5700 with actual class14 binding, property/range publication, packed subscriptions/mask-before-register and failure order; distinct class18 EP/LP initialization joins MI/SV and existing Q14-027 delivery. Remaining trigger/scope/stop recipient and input-provider families stay specific; no whole M9-006 completion claim.
 
 ## Q14-045 — triage line 83
 
 > | M9-007 | **KEEP** | 0x00A14F88..0x00A15038;0x009D552C | Note-on/off gate, curve scaling2 fast-log and envelope trigger timing determine RTPC/control values; ADP-1 does not exempt them or the circular test. |
 
-PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve companions establish scalar curve/scaling2 values, strict saturation gates and exact float association; MT7 establishes property15 event gates. Class-specific envelope trigger/timing and complete parameter recipient wiring remain open. No change to the production path or the cited circular test in this research task.
+PARTIAL: R1–R12 and CL1–CL3 rechecked against the new envelope curve companions establish scalar curve/scaling2 values, strict saturation gates and exact float association; MT7 establishes property15 event gates. MR517F reconciles actual class18 EP initializer and MI5/SV callback/deadline/buffer/dirty/evaluator/attachment delivery cadence. Remaining concrete trigger/scope/stop recipient and input-provider families stay specific. No change to the production path or the cited circular test in this research task.
 
 ## Q14-046 — triage line 84
 
 > | M9-008 | **KEEP** | 0x009D671C..0x009D7727;0x005EF184..0x005EF18C | Posted shake RTPC and per-voice depth initialization cadence must match; rereading once per block changes parameters/state. |
 
-PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. LP8–12 additionally close local mode/phase initialization and establish its KEEP control-stream boundary. Per-voice value-delivery/cadence recipients remain exact open work.
+PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, engine smoothing and posting, and trigger initialization. LP8–12 additionally close local mode/phase initialization and establish its KEEP control-stream boundary. MR517F reconciles actual class18 LP initializer and MI/SV setter/carryback/dirty/buffer and Q14-027 evaluator/attachment/MC production cadence; SI514 supplies shake-post default and actual M6 parameter sink. Remaining concrete trigger/scope/stop recipient and input-provider families stay exact open work.
 
 ## Q14-047 — triage line 85
 
