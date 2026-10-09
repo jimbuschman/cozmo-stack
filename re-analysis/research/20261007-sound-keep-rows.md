@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 437 — authored plug-in100 parameter decisions
+
+Primary: `20261009-sound-plugin100-parameters-native.txt`, 171 complete ARM control words plus registry/table/literals, sameenginehash. PR7/FS432/SL433/IC and LP434validated89rawobjects reused. P=parameterobject,B=payload;offsets hex.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP437A registry/factory | 4DEFA0..4DF004;literal4DF004..14;ABB974..ABB99C;ABBE08..24;101CB10..2C | Staticnode108E680 type2/company0/plugin100/createABB7C0/paramsABB974;nextoldhead,18/1C/20/24zero;nativepublishinterleavingretained. Factoryalloc18hex throughallocator8,nullreturnsnull;nonnullABBE08 setsdirtybyte14=0 beforetable101CB10;nootherparameterdefaults. Table0=ABBBE4 BXLR,8=ABBCE8,C=ABBDB0,10=ABBC90,14=ABBBE8,18=ABBC34. |
+| PP437B Init/defaults | ABBC90..ABBCE8 | Nonzerolength tailcalls live18(P,B,length),no16bytegate. Zero setsdirtybyte14=FF,word10=4,word4=43DC0000,wordC=3F800000,word8=3E809BCC(nativeorder),returns1. Factorydefaults andInitdefaults distinguished. |
+| PP437C bank reader | ABBC34..ABBC8C;literalABBC8C | LoadB0/B4, publishrawwordB0->P4 beforepowf(10,B4float*raw3D4CCCCD). ThenloadB8/BClater, dirtybyte14=FF beforeP C=B8/P10=BC/P8=powfresult;return1. Lengthnotconsulted,no clamp. Importedpowfbodyexternal;controlcall/inputs exact. |
+| PP437D live setter | ABBCE8..ABBDAC;literalABBDAC | unsignedIDs0..3 accepted,other31hex withoutmutation. AcceptedIDs0/2/3 loadrawinputword,loadcurrentdirty14,storeP4/C/10 thenORdirtybits1/4/8 andpublishdirty,return1. ID1 calls powf(10,valuefloat*raw3D4CCCCD),load/ORdirtybit2,publishdirty BEFORE P8=powfresult;return1. No nullpointer/sizegate foracceptedIDs; no inventedgenericguard. |
+| PP437E clone/release | ABBDB0..ABBE04;ABBBE4..ABBC20 | Clonealloc18;nullreturnsnull. Nonnullbyte14=0, loadoldfourwords4/8/C/10,thenbyte14=FF beforeactualtable andfourwordpublication;returnnewP. No Init/reader/conversion. Release14 nullskip;nonnullactual0BXLR thenallocatorC(originalP),always1. |
+| PP437F concrete serialized values | LP434 rawJSONL;PP437A..E | Nine16-byte type18settings acrossDev_Debug/Cozmo/SFX/UI, allB4=C1400000(-12),BC=4,zeroRTPCbindings/associations. ThereforeP8=powf(10,F32(-12*raw3D4CCCCD)),P10=4,dirtyFF. B0/B8 remainexactrawwords perinputJSONL: Dev_Debug718051090=43DC0000/40A00000,85475093=44250000/3F800000,783788587=445C0000/3EAA7EFA;Cozmo520020109=44340000/3E4CCCCD;SFX972092061=43960000/3E4CCCCD,585389397=445C0000/3DCCCCCD,520249559=445C0000/3E99999A,406093676=43DC0000/3DCCCCCD;UI481526941=43DC0000/3E4CCCCD. RawreaderB0->P4/B8->PC, noapproximatePCMclaim. |
+
+out of scope: plug-in source per-sample DSP arithmetic under ADP-1; allocator/storage internals under scope guard.
+
+Q14-016 remains PARTIAL forotherauthoredproducts/input/writer/liveclosure. Nextwitnessed00660002 nineobjects includingremainingparam1RTPCbinding; existingCP1–5 reused. Counts unchanged27 native CHECKED+8scope CHECKED/105PARTIAL/0NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 436 — authored plug-in101 parameter decisions
 
 Primary: `20261009-sound-plugin101-parameters-native.txt`, 132 complete ARM control words plus literals/table (engine hash unchanged). FS432/SL433/PR7/IC and LP434 raw89settings census reused. P=parameter object,B=payload; offsets hex. Parameter reader only; no source sample generator traced.
