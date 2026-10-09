@@ -2023,3 +2023,7 @@ PE372A–G settle identity/kind matching, ordered unity removal, opposite-kind n
 ### Checkpoint 373 — bus retirement tail and property unsubscribe
 
 BT373A–F join known derived-to-base retirement, post-root property/common-node order and exact property-mask unsubscribe/ownership; U27/R34/35/37/R42/SU/SN reused for known binding cleanup. LC5 selected descendants and actual root/value/list/state/input/writer/family closure stay PARTIAL; counts unchanged, Q15 pending Q14.
+
+### Checkpoint 374 — common-node retirement collaborators
+
+CN374A–F settle head-before-callback group retirement, caller-gated native initial-null fault, live first-member reselection, known CC binding and global subscriber-owner detach withall-onesmask. A27BF8/9FC354/9F2E34 and wider writer/input/state/product closure stay PARTIAL. Totals unchanged; Q15 pending Q14.

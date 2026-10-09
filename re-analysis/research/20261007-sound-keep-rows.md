@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 374 — common-node group retirement and subscriber-owner detachment
+
+Primary: `20261008-sound-common-node-retirement-controls-native.txt`, same engine hash. BT373/LC5 common-node callers, ND1–6/R48 exact9F9064 and LT3/ID151 subscriber/idle cleanup reused. N=node,G=state-group record,S=global subscriber; offsets hex. No hardware or sample-arithmetic work.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| CN374A selected group admission/unlink | 9FC590..9FC5CC;9FC648..9FC65C;LC5 | ReadN18 head. Nonnull publishesN18=G8 beforeA27BF8(current108D904,G20,G). After eachgroup cleanup/free, reloadliveN18 andrepeat ifnonnull. Initialnullhead does **not** take a safeemptyreturn: nativefalls through9FC5C0 andloadswordG20 withG0. LC5 callshelper onlyafter itsnon-nullN18 gate;retainboth exactcallerprecondition andrawhelper behavior. No savedwholelist, detach-after-callback or syntheticnullsuccess. |
+| CN374B per-group member loop | 9FC5D0..9FC5F4 | ReloadG18 membercount;nonnullcount repeatedlyreadsfirstword ofliveG14 array andcalls9FC354(G,thatkey), thenreloadscount. Alwaysreselectfirstcurrententry;not anindex loop orsavedcount. No locallyforceddecrement orfailurebreak: progressdepends onrecipient. A27BF8 and9FC354 remainconcrete decision dependencies. |
+| CN374C group-owned cleanup | 9FC5F8..9FC644 | Publishtable101C258 beforefree. G14nonnull setsG18=0 beforearrayfree;null skipsstore/free. NextG10nonnullfree withoutpointerclear. FinallyfreeG usingpoolsnapshot capturedbeforefirstarrayfree;G10 free insteadreads currentpool. No event/object reference ortransitioncallback here beyondCN374A/B. out of scope: group/buffer allocator internals. |
+| CN374D final node callback binding | 9FC660..9FC678;9FC69C..9FC6C4;raw9FC82C,103B6F4 | Once liveN18 becomesnull, originalarg1zero returns;nonnulltailN.liveCC(N). LC5 supplies1. Itsinitialmain table103B628 hasCC=9F2E34 (raw103B6F4);table loadedlive aftergroup callbacks. Body9F2E34 and dynamictable/fieldwriter closure retained;do notcallitno-op orborrowanotherfamilyCC. No headclearafterthetailcall inthishelper. |
+| CN374E global owner-match detach | A1A0B4..A1A13C;LT3/ND1–6/R48 | Snapshotglobalhead108DC44. Nonzeroincomingpointer walksS.next4 physicalorder;acceptS20 ownernonnull AND owner+10==incomingpointer. For eachmatch call9F9064(owner,S,&U64FFFFFFFFFFFFFFFF,1),thenS20=0 evenwhenrecipientdoesnotremoveallmemberships. ReloadS4 aftercallback andcontinue. No global-list unlink, subscriberdestructor/free,firstmatchstop,resultgate orcacheownerpointerclear here. LC5 passesN+10. |
+| CN374F null-input branch | A1A140..A1A158 | Incomingpointer0 performsnocallback orstore;follows two next4 links periteration, withnullcheck aftereach,thenreturns. Itmustnotbe silentlyreplaced byall-owner detach ornullglobal-list removal. Thisbranch isnotrequired byordinaryLC5 nonnullN+10 input, butispartofthelocalbody. |
+
+LC5 named group-retirement and subscriber-detachment parent decisions now positive;known9F9064 recipient reused. A27BF8/9FC354/knownCC9F2E34 and actual group/subscriber/input/state/list/provider/writer/family closure remain PARTIAL. Counts unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 373 — bus retirement tail and property unsubscribe joins
 
 Primary: `20261008-sound-bus-property-retirement-native.txt`, same engine hash. RT369/BU370 root/prefix order, LC5 common node destructor, U27 binding unregister, R34/35/37 ordinary membership detach and R42/SU/SN modulator cleanup reused. No allocator/hash/rehash descent. N=bus,S=property-owner subscriber,P=liveS4 owner; offsets hex.
