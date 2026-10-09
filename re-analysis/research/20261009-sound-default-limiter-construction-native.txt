@@ -1,0 +1,72 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x004DE2B8..0x004DE360 exclusive; ARM;
+004DE2B8: push         {r3, r4, r5, r6, r7, lr}
+004DE2BC: mov          r5, #0
+004DE2C0: ldr          r6, [pc, #0x98] ; word[004DE360]=00B72D30
+004DE2C4: ldr          r4, [pc, #0x98] ; word[004DE364]=00BAFBA0
+004DE2C8: add          r6, pc, r6
+004DE2CC: ldr          r1, [pc, #0x94] ; word[004DE368]=0055B38C
+004DE2D0: add          r4, pc, r4
+004DE2D4: mov          r2, r6
+004DE2D8: add          r1, pc, r1
+004DE2DC: add          r0, r4, #0x48
+004DE2E0: str          r5, [r4, #0x48]
+004DE2E4: str          r5, [r4, #0x4c]
+004DE2E8: add          r7, r4, #0x20
+004DE2EC: str          r5, [r4, #0x50]
+004DE2F0: bl           #0x4d6688
+004DE2F4: ldr          r1, [pc, #0x70] ; word[004DE36C]=0055B364
+004DE2F8: mov          r2, r6
+004DE2FC: add          r0, r4, #4
+004DE300: str          r5, [r4, #0x10]
+004DE304: add          r1, pc, r1
+004DE308: str          r5, [r4, #0x14]
+004DE30C: str          r5, [r4, #0x18]
+004DE310: bl           #0x4d6688
+004DE314: ldr          r1, [pc, #0x54] ; word[004DE370]=0055B33C
+004DE318: mov          r2, r6
+004DE31C: add          r0, r4, #0x54
+004DE320: str          r5, [r4, #0x54]
+004DE324: add          r1, pc, r1
+004DE328: str          r5, [r4, #0x58]
+004DE32C: str          r5, [r4, #0x5c]
+004DE330: bl           #0x4d6688
+004DE334: mov          r2, #1
+004DE338: mov          r3, r2
+004DE33C: mov          r0, r7
+004DE340: mov          r1, #0x100
+004DE344: bl           #0x9f3170
+004DE348: ldr          r1, [pc, #0x24] ; word[004DE374]=0055B308
+004DE34C: mov          r0, r7
+004DE350: mov          r2, r6
+004DE354: add          r1, pc, r1
+004DE358: pop          {r3, r4, r5, r6, r7, lr}
+004DE35C: b            #0x4d6688
+004DE360: raw=00B72D30 relocated=00B72D30 
+004DE364: raw=00BAFBA0 relocated=00BAFBA0 
+004DE368: raw=0055B38C relocated=0055B38C 
+004DE36C: raw=0055B364 relocated=0055B364 
+004DE370: raw=0055B33C relocated=0055B33C 
+004DE374: raw=0055B308 relocated=0055B308 
+RANGE 0x009F3170..0x009F319C exclusive; ARM;
+009F3170: str          lr, [sp, #-4]!
+009F3174: mov          lr, #0
+009F3178: strh         r1, [r0, #0xc]
+009F317C: strb         r2, [r0, #0xe]
+009F3180: strb         r3, [r0, #0xf]
+009F3184: str          lr, [r0]
+009F3188: str          lr, [r0, #4]
+009F318C: str          lr, [r0, #8]
+009F3190: strh         lr, [r0, #0x20]
+009F3194: strh         lr, [r0, #0x22]
+009F3198: pop          {pc}
+RANGE 0x00A39664..0x00A39674 exclusive; ARM;
+00A39664: bx           lr
+00A39668: bx           lr
+00A3966C: bx           lr
+00A39670: bx           lr
+
+Selected ELF initialization and zero-storage evidence:
+.init_array slot0103E52C raw=004DE2B8 selects native ARM4DE2B8.
+108DE78..108DED8 containing section .bss type=TYPE.NOBITS VA=01059030 size=00036F84; zero initialized for NOBITS before init_array.

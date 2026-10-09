@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 506 — actual default limiter construction and initial key
+
+Primary: `20261009-sound-default-limiter-construction-native.txt`; same engine SHA256. Actual ELF.init_array slot103E52C selects4DE2B8, not a navigation no-caller inference. G=108DE78, default limiterD=G+20=108DE98. LV3–7/VP13/GU505 and GL4–5 consumers reused.
+
+| Row | Primary evidence | Exact retained decision |
+| --- | --- | --- |
+| DL506A selected initial publication | ELF.init_array103E52C;4DE2B8..4DE360/raw4DE360..374 | r4=4DE2D8+BAFBA0=108DE78; r7=G+20. Clear G48/4C/50 (PBI list), register atexit(G48,A3966C,1051000); clear G10/14/18 (notification storage), register atexit(G4,A39670,1051000); clear G54/58/5C (registered limiter array), register atexit(G54,A39668,1051000). Only then9F3170(D,100hex,1,1), followed by atexit(D,A39664,1051000). Imported registration results are ignored; no constructor error branch. |
+| DL506B exact default limiter fields | 9F3170..9F319C;DL506A | Store U16D.C=100hex before bytesD.E=1 andD.F=1. Then D0/4/8=0, U16D20/22=0. No vtable, subscription, allocation, key generation or priority query. This supplies the actual default quota256, two raw policy flags and empty membership/counters for LV7/VP13; later GU505 quota setter targetsD.C. Not a peak limiter plug-in. |
+| DL506C initial sort-key provenance | ELF.bss NOBITS VA1059030,size36F84;DL506A/B;LV4 | Entire G..G60 lies in zero-initialized.bss before init_array. D18/1C, read as unsigned64 registration key by LV4, have no writes in selected ctor, hence their initial pair is{0,0}. D10/14 likewise initially0, not generated wildcard/subscriber key bytes. This is positive initial-storage evidence, not a claim no later writers or repeat reset path can change them. |
+| DL506D registered teardown callbacks | A39664..A39674 | All four actual callbacksA39664/68/6C/70 are BX LR. No vector destruction, limiter unsubscribe, counter reset or source Stop follows from imported atexit registration. Runtime manager Term owns separate explicit teardown. Out of scope: phone atexit bookkeeping; concrete callback behavior retained. |
+
+Default-limiter creation and initial key are now positive; no allocation/registration collaborator remains in that constructor. Q14-037 still retains the full counter/input writer census and runtime manager/reset/provider joins, which are not established by a static constructor. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; no production/fidelity/hardware change. Q15 follows Q14.
+
+
 ## Checkpoint 505 — global quota and audibility input bindings
 
 Primary: `20261009-sound-global-quota-threshold-input-native.txt`; same engine SHA256. U1/U9–11/GL4–5/LV7/VP13 and exact audibility consumers reused. Reopened native bytes and actual GOT values establish the distinct bases; input setters are decision work, not peak-limiter DSP.
