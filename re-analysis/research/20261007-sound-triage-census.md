@@ -202,7 +202,7 @@ PARTIAL; TT1–TT22, S/C, TC1–TC10, CT1–CT6, DA1–DA10 and VE1–VE15 cover
 
 > | M6-009 | **KEEP** | 0x00A14E28..0x00A15244;0x00A17724;0x00A17878;0x00A17280;0x00A0F07C;0x00A0F594;0x00A137D8..0x00A13A60;0x00A0E5E4;0x00A1B5FC;0x00A0F678 | Curve search/shapes/scaling, RTPC values/precedence/accumulation, transition gates and value evolution, BuiltIn semantics and live delivery are parameters and state, including fast-log/pow arithmetic. |
 
-PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. Live recipient9F7390 tails, remaining transition/value producers, and full consumer closure remain pending.
+PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluation, subscription replacement, hierarchy lookup, accumulation and fallback. RW1–RW10 now supply known9F7390 routing tails; R49–R52 membership, AC accumulation, SJ219/IP221 immediate/ramp/preflight, MT12/RG7 scope defaults and HI/SA/OA context selection/expiration are positive local joins. PF284 adds initial fade/queue/attachment caller ordering. Remaining: modulator output/context/value advancement, other live recipients and exhaustive incoming input/provider/writer closure; no whole RTPC production-path claim.
 
 ## Q14-011 — triage line 44
 
@@ -1663,3 +1663,7 @@ CV282A/B reuse SL34 halfword0101 override and CW281 settings copy to establish s
 ### Checkpoint 283 — Switch defaults and node publication
 
 SI283A–C join known type6 factory/member tables to initial next/count/type/group values and selector-based registry head publication. Registration precedes group-head defaults; init returns1 regardless of no-publication backing endpoint. Storage/hash internals excluded; broader inputs/providers/writers and totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 284 — initial PBI fade and RTPC reconciliation
+
+PF284A–C supply duration/create/retarget/fallback, raw type0/1 queue gate, post-failure pause/attachment work and type2 stop/global counter order. Known transition/notification/stop/context bodies reused. Q14-010 boundary now reuses recovered routing/default/value joins; broader advancement/input/provider/writer closure and totals/Q15/fidelity/production remain unchanged.
