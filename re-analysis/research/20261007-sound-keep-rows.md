@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 415 — queued app StopAll consumer
+
+Primary: `20261009-sound-queued-stopall-consumer-native.txt`, same engine hash;164 instruction words plus literals/GOT. Positiveapp input UE1/UC30/UC31/UC33/UC35 suppliesStopAll→9A6064 tag19,size8,objectword4;not inferred from bankopcode absence. T=command,A=temporaryaction,P=stackpending atsp70; offsets hex. SP411factory/A10execution andA13/A15–18/A21/bus/rootrecipient positives reused.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| QS415A dispatch/construction | 9AE0A8..B4;9AE11C;9AECD0..9AED08;9AF514..9AF524 | Actualtag19→9AECD0. T4==FFFFFFFF constructsA6651C(0104,0),otherrawIDs constructs(0105,0). Nullactionconsumeswithoutobjectlookup/stop. ID0 skipsregistrationAB250;selectedfactory defaultsSP411,actual24=A663C8. Non-sentinel thenQC3 lookupcurrentobjectmanager108D8F0 (GOT10400DC);missingreleasesA.C beforeconsume. No conversionobject0→sentinel,no fallbackwildcard onmissingobject. |
+| QS415B stackpending/execution | 9AED0C..9AED58;9AF528..9AF55C;raw9AEF88/8C/90 | PublishP0=101C000,P14/1C/20/24/28/30=0;P34=resolvedobject or0 forsentinel. Otherpendingfields remainunwritten. Non-sentinel increments resolvedobject7C low30 preservingupper2 AFTERpendingpublication/beforeexecute. InvokeactualA24(A,P);ignoredrawresult. A10 fulltype104/105 selectsA79FA4(A,0,P34,P30),then9AB8AC(currentqueue,0,P34,P30),returns1. Nativeglobal/all-target dispatch pluspendingcancellation preserveP34 pointerfilter andplayingID0wildcard;no targetlookup/delay-scheduler/newplayingregistration. A3durationdraw/defaultstillapplies insideA79FA4. |
+| QS415C object/descriptor cleanup | 9AED5C..9AEDB8;9AF560..9AF570;9AF730..9AF774;QC3objectrelease | Afterexecute nonsentinel releasesits extraobjectretain via low30 decrement/preservingupper2,zero→A0B600 thenpoolrelease;thenreloadP34,installP0=101C000,releaseP34 separately (lookupretain),againzero→destructor/poolrelease. Sentinel beginsatthispendingcleanup,reloadingP34 afterexecute. P14nonnullthen9A6988;initialize0 doesnot justifyskippingliveread. FinallyA.C at9AE508..514;localresult0→sharedconsumeE19. Cleanupvtable101C000 computedfromcapturedPC literals; no synthesized EndOfEvent,cancelresult or exceptionisolation. |
+
+out of scope: action/object/pool allocation/free andqueuedbacking mechanics; nulladmission,recipientfilter,duration/order/refcount/destructor controls retained.
+
+Known appStopAll input nowjoinedtoactualnativeconsumer andpositiveall-targetstop/pendingcancellation recipients. Q14-007 other retainedeventcontrol queueproducts/input reconciliation remainsPARTIAL; counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 414 — concrete bank action publication/reuse
 
 Primary: `20261009-sound-bank-action-publication-native.txt`, same engine hash;116 instruction words plus literals/GOT/table slots. J3 type3HIRC dispatcher→9B2F64; shipped906 actions positively witnessed. B=materializedactionpayload,A=action,I=index,O=bankowner; offsets hex. AH413 commonreader/AF406factory/products reused.
