@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 282 — shipped startup preparation-mode value
+
+Primary: `20261008-sound-shipped-preparation-mode-native.txt`; same engine hash. Reuses SL34 constructor defaults/override and CW281 complete local app settings copy; no archive/resolver/storage reopening. U=SetupConfig stack block at constructor SP+198hex.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| CV282A | 005933A2..005933CC;004AF0F4..004AF0FC;relocation01043D88→008D1D1F;CW281 | Constructor sets halfword at SP208hex to0101, hence U70 byte1 and U71 byte1 on ELF little-endian target. Pass U pointer SP198hex through4AF0F4; PLT GOT1043D88 relocation selects Thumb8D1D1E. Known wrapper/settings builder copies U70 raw into engine settings18, then99E3EC copies that nonnull block into global108D90C. Thus global mode18=1 on this concrete initialization path. | Shared constructor override follows its JNI/no-JNI archive branches. Does not rely on engine null/default mode0. Relocation binding is not proof of initialization success. | Shipped override1 → public wrapper → app settings18 → global mode18 publication → known Switch preparation consumers. | SL34/CW281 reused. Other initialization/configuration mutation paths and group-command reachability stay PARTIAL; no claim all preparation requests or all future reads use this one value. |
+| CV282B | SL34;CW281B/C;NR264C;PA266C;SN277A | This startup path reaches nonzero-mode Switch admission/release predicates when those hooks are invoked: shared-list selection and N80 membership-count logic, rather than generic all-child mode0 traversal. Embedded member callback independently gates N80 and first group match without re-testing global mode. | Input join settles this producer's byte value, not every preparation caller, callback family or later mode writer. Settings1C remains default1 in this app builder, supplying the known SWIN2 window operand for this initialization path. | Initialization publication → hook-time mode test → established nonzero branch; member callback uses its own count gate. | Wider writer/provider/list/ID/reference and scheduling/source closure remain PARTIAL. No fabricated preparation invocation from mode value alone. |
+
+Known Cozmo startup supplies a concrete nonzero preparation-mode value and joins existing local consumers. CW281's U70 source is now SL34/CV282 for this path; broader settings mutation, public preparation input and family closure remain open. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 281 — preparation-mode initialization and app input join
 
 Primary: `20261008-sound-preparation-config-writer-native.txt`; same engine hash. NR264/PA266 mode consumers, GL1 pressure threshold and SWIN2 scheduling-window consumers reused. C=engine settings at108D90C; U=app initialization input.

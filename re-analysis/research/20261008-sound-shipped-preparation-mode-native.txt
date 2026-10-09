@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005933A2..0x005933CE exclusive; Thumb;
+005933A2: mov.w        r0, #0x200000
+005933A6: str          r0, [sp, #0x1f0]
+005933A8: movs         r0, #0
+005933AA: strb.w       r0, [sp, #0x20a]
+005933AE: mov.w        r0, #0x100000
+005933B2: str          r0, [sp, #0x1f4]
+005933B4: mov.w        r0, #0x180000
+005933B8: str          r0, [sp, #0x1fc]
+005933BA: movs         r0, #0x1e
+005933BC: str          r0, [sp, #0x204]
+005933BE: movw         r0, #0x101
+005933C2: strh.w       r0, [sp, #0x208]
+005933C6: add          r5, sp, #0x198
+005933C8: mov          r0, sb
+005933CA: mov          r1, r5
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005933CC..0x005933D0 exclusive; Thumb;
+005933CC: blx          #0x4af0f4
+RANGE 0x004AF0F4..0x004AF100 exclusive; ARM;
+004AF0F4: add          ip, pc, #0xb00000
+004AF0F8: add          ip, ip, #148, #20
+004AF0FC: ldr          pc, [ip, #0xc8c]!
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01043D88: raw=004A4010 relocated=008D1D1F _ZN4Anki11AudioEngine21AudioEngineController21InitializeAudioEngineERKNS0_11SetupConfigE

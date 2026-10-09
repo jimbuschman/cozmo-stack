@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through278 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through282 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1655,3 +1655,7 @@ BM280A–D record physical DIDX IDs/progress, direct and first-alias reference/p
 ### Checkpoint 281 — preparation-mode writer
 
 CW281A–C join global settings copy/defaults to the concrete app stack block and raw inputU70 override. Built-in/default helper mode0 does not establish live app mode; repeat-init settings publication precedes existing-init rejection. Input/settings mutation/reachability closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 282 — shipped preparation-mode value
+
+CV282A/B reuse SL34 halfword0101 override and CW281 settings copy to establish startup global mode18=1 through concrete relocated public wrapper. This supplies known nonzero Switch preparation consumers when invoked; it does not prove every public request/future mode writer. Other in-scope family/input/provider/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
