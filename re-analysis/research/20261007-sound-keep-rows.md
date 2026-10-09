@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 469 — state owner98/C4 concrete-family reconciliation
+
+Primary: `20261009-sound-state-owner-callback-bindings-native.txt`,12 actual relocated vtable words; same engine SHA256. Reuse constructor-bound Sound/RanSeq/Switch/ActorMixer/Layer families from NR146B/CP215, two bus products from LC4/SL288, and exact LC3/4/LI2/5/BI378 bodies. No duplicate native function-body artifact.
+
+| Row | Primary / reuse | Exact decision and join |
+| --- | --- | --- |
+| OC469A five selected owner98 bindings | raw103BB68/B8F8/BE60/D020/B0E8;LC3 | All five known node families bind slot98=9F2D7C. ST10/SS468B's argument3 enters existing LC3: own context counters64/66 increment when context exists; missing context calls9F29E8 and reloads it. Bit0 causes optional bus38.live98(bus,3), clears bit0 and truncates parent flags toU16 only when bus exists. Parent34.live98 gets current flags; returned results combine by bitwise AND then U8. No predicate-only replacement, no counter rollback or boolean-short-circuit recursion. Thus this owner gate can mutate counters before deciding whether to keep the state transition attached. |
+| OC469B bus recursion already positive | raw103AD78/D198;LC4 | Both known bus98 slots=9C0C90, already LC4: own LC1(1) before optional upstreambus38.live98(3), aggregate by AND/U8. Parent34 is not used by bus98. The node and bus family recursive policies stay distinct even with the same incoming3. No new body extraction or invented successful-null response. |
+| OC469C actual zero-argument C4 recipients | raw103BB94/B924/BE8C/D04C/B114;BI378A/LI2/LI5 | Known SoundC4=A1DFE0; four container productsC4=98154C. SS468/SA377 supplies argument0. Sound requires context30 and walks live context links, always clearingDCbit5; zero preservesbit6. Containers require context30 and nonzero child count geometry, accept only child.context30nonnull and signed child.context60>0, forward0 to child.liveC4, reload live array/count after callbacks. No generic no-op or notification to every inactive child. |
+| OC469D bus C4 and selected notification chain | BI378A–E;SS468D/E;NJ149;NSREF/NR146 | Both known buses C4=9C3D04: existing gain-admission gates, dirty publication/busline scalar propagation and two live child-vector traversals apply. SS468 completion order remains owner8→saved handle clear→owner9C(3)→ownerC4(0)→ownerC, reloading owner each time; skip/ordinary path only C4(0). These known slot bindings resolve local collaborators, not every mutation-time replacement or external registration family. |
+
+out of scope: vtable/array backing and per-sample DSP arithmetic. Counter mutations, exact gate result, recursive family choice and cache/gain notification decisions remain exact.
+
+The selected state owner98/C4 gap is now positive using current LC/LI/BI coverage. Q14-024 still has alternate input/writer/subscriber and trailing STMG consumer boundaries; no all-family or full-record promotion. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 follows completed Q14. Next bounded step: original Q14-024 switch-to-RTPC subscription and ordinal delivery joins, reusing U22–27/R/SUB before any new descent; trailing modulator parameters stop at their Q15 interface.
+
 ## Checkpoint 468 — concrete state subscriber delivery and existing definition producers
 
 Primary: `20261009-sound-state-subscriber-delivery-native.txt`,86 complete ARM instructions plus actual constructor/table literal. Same engine SHA256. Reuse SG/NB/SO376/SA377/GR375 and DS466/SM467; these supply concrete authored group/member inputs instead of an assumed generic state subscriber.
