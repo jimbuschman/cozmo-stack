@@ -11,6 +11,24 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 386 — retained-channel Vorbis mapping admission
+
+Primary: `20261009-sound-vorbis-mapping-admission-native.txt`, same engine hash; 227 instruction words. M=mapping descriptor, S=setup, R=reader, n=original source channel count; offsets hex. VS385 staged rejection and bit reader reused. Retained n=1/2 only; zero/multichannel branches excluded.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| MA386A submap count | AB6788..AB67C4;AB6AB4..AB6AC8 | Zero M's14 bytes before parsing. Read1-bit flag: zero writes M0=1; nonzero reads4+1 and writes M0 (ordinary1..16). Then read coupling-present bit. No mapping-type tag read or generic default submap expansion at this boundary. |
+| MA386B coupling pair count/selection | AB67C8..AB685C;AB6860..AB68BC;AB6AE8..AB6B10 | Absent coupling leaves MC/M10 zero. Present reads8+1, publishes MC count and M10 pair base. Physical2-byte order, with source width=bit-length(n−1): mono width0, stereo width1 for each pair byte. Store first byte, reload base, read/store second byte. Width0 still reads the reader's starting byte but returns0 without consuming bits (VS385A). Reload live MC/base after accepted pair. No pair deduplication or sorting. |
+| MA386C coupling rejection/reserved field | AB68C0..AB68F0;AB692C..AB6948 | Reject pair when first==second, signed n<=second, or first>=signed n; returnFFFFFFFF. For retained mono all presented pairs reject; stereo admits exactly(0,1) and(1,0). Rejection follows both byte stores. After all accepted pairs, read2 reserved bits; positive returnsFFFFFFFF. Otherwise continue to mux/submap parsing. No rejection for repeated valid pairs. VS385 converts this helper's nonzero return toFFFFFF7B. |
+| MA386D channel-to-submap mux | AB6940..AB69D0;AB6ACC..AB6AD8 | M0<=1 leaves M4 zero and consumes no mux bits. For M0>1 publish mux base M4, iterate original n channels forward, read4/store one byte then reload M0/M4. Byte>=signed M0 rejectsFFFFFFFF; equality channel-loop termination after accepted byte. Mono/stereo consume exactly n mux selections, not M0 selections. No implicit channel remapping when one submap. |
+| MA386E floor/residue selection | AB69E0..AB6AB0;AB6ADC..AB6AE4 | Publish M8 pair base, iterate submaps forward using live M0. Each consumes8 bits and discards the result (no zero requirement), reloads pair base, reads8 and stores floor byte0. Reload base/S10 floor count: byte>=signed count rejects before reading residue. Otherwise read8/store residue byte1; reload base/S14 residue count, byte>=signed count rejects. Accepted last pair returns0; earlier pairs continue in physical order. No rewrite of invalid indices or delayed batch validation. |
+
+out of scope: arena storage reservation/zeroing internals; no allocator descent. There is no separate reservation-null rejection in this mapping parser before writes.
+
+out of scope: zero-channel and multichannel source branches; per-sample coupling arithmetic is not traced and WEM decoding is not reclassified equivalent.
+
+AB6788's retained-channel admission and mapping publication are locally positive, joining VS385 acceptance and VF383 selection. Floor/residue admission and selected continuation frame/state controls remain separate dependencies. Other input/provider/writer/family closure remains PARTIAL; counts unchanged, Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 385 — Vorbis setup mode publication and rejection order
 
 Primary: `20261009-sound-vorbis-setup-mode-publication-native.txt`, same engine hash; 272 instruction words plus literals. Setup S, bit reader R and arena A; offsets hex. VC2 block-size initialization, VC3 parser-result acceptance and VF383 packet selector are reused. This closes the local producer of the selected block/mapping bytes, not the entire setup or decoder path.
