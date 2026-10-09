@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 39 CHECKED native-row obligations / 8 CHECKED scope exclusions / 93 PARTIAL / 0 NOT DONE; decision checkpoints through536 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 40 CHECKED native-row obligations / 8 CHECKED scope exclusions / 92 PARTIAL / 0 NOT DONE; decision checkpoints through537 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -86,7 +86,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-077 | 126 | CHECKED |
 | Q14-078 | 127 | CHECKED |
 | Q14-079 | 128 | CHECKED |
-| Q14-080 | 129 | PARTIAL |
+| Q14-080 | 129 | CHECKED |
 | Q14-081 | 130 | CHECKED |
 | Q14-082 | 131 | CHECKED |
 | Q14-083 | 132 | PARTIAL |
@@ -662,9 +662,9 @@ out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics 
 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
-PARTIAL: B7–12/B19–20/CP1–9 and PP441F actual108 registry/readers/metadata resolve compressor creation/Init/Reset/Term/Execute parameter/count/channel/history boundary. VI523A/RS1–8/PS404/EB497 close known voice Init callers/stages/bypass; VF/WV retain wrappers and cleanup. Broader selected voice product control closure still remains073/078/079, including109 Execute and138 live product; parameter-only evidence does not accept the full enclosing voice path.
+CHECKED (decisions-only scope), checkpoint537: B7–12/B19–20/CP1–9/PP441F actual compressor108 creation/readers/Init/Reset/Term/Execute boundaries, PM536D actual Info and selected population, VI523A allthree Init callers, VF/WV/RS/PS404 stages/wrapper lifecycle and EB497/FQ431 bypass. The previously named enclosing109/138 product remainder is positive P109523–524/P138525–535 and Q14-073/078/079 CHECKED at536. No generic extra-family placeholder or automatic fidelity acceptance.
 
-P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
+out of scope: isolated per-sample detector/filter/compressor/gain recurrence under ADP-1; exact parameters, channel/history/count/cadence/cache/failure/bypass/lifetime retained.
 
 ## Q14-081 — triage line 130
 

@@ -9,7 +9,14 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 39 native-row obligations CHECKED, 8 CHECKED scope exclusions, 93 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 40 native-row obligations CHECKED, 8 CHECKED scope exclusions, 92 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 537 — bounded compressor Init/settings reconciliation
+
+Q14-080's original C31.2 Compressor creation/parameter/format/Init-failure/Reset/bypass and formerly UNKNOWN Execute boundary now have complete retained joins. No new native descent is needed: the concrete compressor108 path is B7–12/B19–20/CP1–9/PP441F; actual Info is PM536D, allthree enclosing Init callers VI523A, stages RS/PS404, wrapper VF/WV, bypass EB497/FQ431 and parameter settings FS432/SL433/PP/IC. PM536F reconciles the enclosing selected product population rather than treating parameter-only proof as the whole voice path. The earlier109/138 remainder is positive P109523–524/P138525–535 and Q14-073/078/079 CHECKED at536.
+
+Q14-080 is CHECKED for the quoted bounded decisions-only obligation. Empty versus nonempty Execute, selected linked/unlinked kernel, attack/release cache-before-expf refresh, LFE/channel/history/count geometry, outputgain comparison/ramp/cache publication and lifecycle failures are retained. Out of scope: only the isolated per-sample detector/filter/compressor/gain arithmetic; no equivalence measurement or manifest acceptance. Counts40 native CHECKED+8 scope CHECKED/92 PARTIAL/0 NOT DONE. No production/fidelity/hardware/Q15 changes; Q15 follows Q14.
+
 
 ## Checkpoint 536 — selected product metadata and bounded Init/wrapper census closure
 
