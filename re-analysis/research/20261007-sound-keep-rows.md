@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 44 native-row obligations CHECKED, 8 CHECKED scope exclusions, 88 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 554 — bus routing flag propagation
+
+Primary `20261009-sound-bus-route-flag-propagation-native.txt`, same engine SHA256. This closes the specific changed-bit recipient left by OR545C, rather than introducing another global writer census.
+
+| Row | Primary / retained joins | Exact retained decision |
+| --- | --- | --- |
+| BF554A exact changed-bit propagation | 9C5598..9C581C;OR545C | Store lowbit incomingarg1 into node.byteCCbit6, preserving otherbits. Each level then walks ONLY node58 child-vector/count5C in forward physical order; initial wrapped(count<<2)0 skips. Every encounteredchild receives same bit before its descendants. Native unroll handles root plus eight descendant levels, then calls same9C5598 for deeper children. Null child has no guard. After descendant traversal each level reloads its live base58/count5C for equality end comparison, retaining advanced cursor; no snapshot, shrink clamp or >= substitution. |
+| BF554B actual effects and caller timing | BF554A;9C581C..9C5858;DF27/28 | OR545's shared child20 setter and its dirty-route/notification work finish BEFORE this propagation tail. Only original incomingparentnonnull and originalparent.CCbit6!=node.CCbit6 invoke it, passingparentbit. Body invokes no external observer, limit counter, route rebuild or renderer; only recursive selfcalls and exact flagstores. DF27 is an already positive consumer: owner-returnedbus.CCbit6 (or1 on nullbus) selects main/nonmain reconnect by equality with(type2&&ID0). No positioning/pure-PCM assumption used to drop this routing flag. |
+| BF554C prior concrete route parents | DF27/28/43/44;RC546/CJ547;RCON/LF291/LDEF292/LINIT/LTERM294/LREL295/HBIND/HS551 | Original dirty-route parent already has exact remove-all, invalidation-all, optional reconnect-all order. Actual reconnect walks voices, resolves owner88/context identity, performs forward line identity/state search, reuse/create thenRCON connection publication/cache/failure retirement. Invalidation uses exact reverse stable removal plus separate lone-context finalbranch, parent count/callback before line destructor/free. These known bodies and concrete constructor/default/helper input/result rows are retained; a remaining obligation must identify an actually unpaid recipient/input, not call the entire reconnect parent unread. |
+
+Q14-087 remains PARTIAL while its retained line query/lifetime interfaces are reconciled against existing positive rows. OR545C's9C5598 body is closed; no new all-writer/family census. Counts unchanged44 native CHECKED+8 scope CHECKED/88 PARTIAL/0 NOT DONE. No production/fidelity/hardware/Q15 edits.
+
+
 ## Checkpoint 553 — concrete owned playlist retirement products
 
 Primary `20261009-sound-music-owned-retirement-products-native.txt`, same engine SHA256. This closes MN552's two concrete owned-object callbacks at the shared audio retirement interface; it does not recover new music selection algorithms.
