@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through335 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through336 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -312,7 +312,7 @@ Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333 adds A5B9D0 cache/curve admission, listener filtering and conditional parameter publication. Remaining: A5B9D0 conversion/default bodies and concrete inputs (accepted-record/interpolation bodies now SC334/335), A5993C selected decisions, registration paths and flag writers. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333 adds A5B9D0 cache/curve admission, listener filtering and conditional parameter publication. SC333–336 now settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. Remaining: concrete listener/curve/global/field inputs and writers, owner.vt24 and other connection families, A5993C selected decisions, registration paths and flag writers. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
@@ -1871,3 +1871,7 @@ SC334 binds standard connection mask callback, accepted-record curve endpoint ga
 ### Checkpoint 335 — six control interpolation sites
 
 SC335A–G bind every local interpolation selector and arithmetic family, retaining explicit linear/constant fast paths, unsigned invalid-selector routes, raw polynomial constants and native operation association. Remaining conversion/default and provider/writer/recipient work stays PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 336 — control conversions/defaults
+
+SC336A–L settle six local converter/default paths, raw exponent/mantissa polynomial and sign/limit log arithmetic, plus invalid-selector versus disabled-curve field semantics. Selected local A5B9D0 now positive; wider inputs/writers/families and A5993C remain PARTIAL. Counts unchanged, Q15 parked.

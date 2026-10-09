@@ -11,6 +11,32 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 336 — control conversion/default completion
+
+Primary: reuse full `20261008-sound-spatial-control-layout-native.txt`; six interpolation/admission sites333–335. No new sample/payload extraction. Each curve descriptor's conversion word is selected independently; raw selectors3/4/2 have distinct exact arithmetic, other selectors forward the current value. Native instructions and raw constants govern association.
+
+| Step / site | Selector3 /4 /2 positive entries | Normal continuation |
+|---|---|---|
+| SC336A r7 selected local curve | A5BD74 / A5BD6C / A5C274..A5C320 plus C394 sign branch | BBFC lower-control clamp → second curve |
+| SC336B r5 selected local curve | A5BD20 / A5BD18 / A5C1C8..A5C274 plus C37C sign branch | BC94 lower-control clamp →334C aggregation |
+| SC336C mode1 global38 | A5C5A4→CA5C..CAA0 / C59C / C4B8..C574 plus CAE0 sign branch | C5B4 second-global-curve gate |
+| SC336D mode1 global44 | A5C944..C994 / C93C / C688..C73C plus CD50 sign branch | C578 lowers s21, then local curve pass334B |
+| SC336E terminal global14 | A5CD0C→D0E8..D130 / D0D0 / CE40..CEF4 plus CF08 sign branch | C848 writes C54 before second-global-curve gate |
+| SC336F terminal global20 | A5CB5C→CB10..CB58 / CAF8 / CB74..CC28 plus D3F8 sign branch | C8E4 writes C5C before C50/C58 |
+
+SC336G selector3/4 exact scalar converter: selector4 first multiplies value by raw3D4CCCCD; selector3 uses raw value. VCMPE against rawC2140000 (-37); ordered MI gives raw0, unordered follows arithmetic. Otherwise VMLA raw4E7E0000 + value*raw4BD49A78, VCVT.U32.F32, extract low23 bits and add3F800000 to create mantissa float, preserve high bits shifted23 as separate float. Polynomial uses raw3CAA70DE + mantissa*raw3EA67F46, then raw3F272DDB + mantissa*previous via VMLA, multiply by high-bit float. All sites preserve this raw bit-conversion and binary32 instruction sequence; no pow/exp substitution or NaN clamp.
+
+SC336H selector2 exact scalar converter: VCMPE(value,0); MI sets sign=+1, low-limit rawC43F2770,high-limit40C0A8C2; other including unordered sets sign=-1,low-limitC0C0A8C2,high-limit443F2770. Compare raw value against -1 then +1; MI below -1 returns selected low-limit, GT above +1 returns selected high-limit. Others compute u=1+sign*value via VMLA. From raw u bits take low23+3F800000 mantissa m and unsigned8 exponent e, convert e with VCVT.F32.S32. q=(m-1)/(m+1); q2=q*q; p=1+q2*raw3EAAAAAB via VMLA; h=(F32(e)-raw42FE0000)*raw3F317218; h+=(q+q)*p via VMLA; multiply raw3EDE5BD9 then20 then sign in that order. No special +/-1, subnormal or NaN repair. Exact conversion32 values, not per-sample DSP.
+
+| Step | Invalid interpolation selector (>8 after selector9 fast path) | Missing/disabled distinction |
+|---|---|---|
+| SC336I r7/r5 (C320/C344) | Conversion3: raw0 enters selector3 converter; conversion4: raw3F7FC105 straight to control clamp; conversion2: raw0 enters nonnegative log branch; allother: raw0 straight to control clamp. | Null selected curve skips conversion and supplies raw0. |
+| SC336J mode1 global38/44 (D668/D354) | Same conversion3 raw0, conversion4 raw3F7FC105, conversion2 raw0→nonnegative log; allother raw0. | Disabled byte or null pointer supplies raw0 before next gate/ratio update. No terminal field store at these two sites. |
+| SC336K terminal global14/20 (D188/D084) | Conversion3 raw0→converter; conversion4 raw3F7FC105 straight to respective C54/C5C publication; conversion2 raw0→nonnegative log; allother raw0→publication. | Disabled byte or null pointer leaves corresponding C54/C5C untouched as333E. Invalid selector therefore differs from disabled curve. |
+| SC336L full local recipient reconciliation | SC333–336 now row all selected A5B9D0 cache/descriptor/offset gates, rejected/accepted listener grouping, mode1 globals, all interpolation/conversion/default branches, float comparisons and ordered field publication. Known EP5/6 invocation/observer joins retained. | Whole selected local body is positive; concrete curve/list/global/field writers, owner.vt24 and other connection families remain separate dependencies. A5993C remains next local recipient; Q14-029 stays PARTIAL. No absence-based provider closure. |
+
+Earlier unread conversion/default and local-A5B9D0 body wording is superseded for the selected path by SC333–336. Counts unchanged; Q15 parked; no production, manifest or hardware changes.
+
 ## Checkpoint 335 — all six local control interpolation dispatches
 
 Primary: `20261008-sound-spatial-control-layout-native.txt`, executable A5B9D0..A5D70C with raw literal islands BE48..BEC8,C5E4..C624,CDC0..CE40,D614..D668 separated. Same engine hash; positive333/334 admission/scan/aggregation/publication reused. These are scalar control curves, not sample planes or positioning payloads.
