@@ -1983,3 +1983,7 @@ PC362A–H settle exact-ID two-list cancellation, paused-duplicate native fault,
 ### Checkpoint 363 — known node command-slot recipients
 
 NC363A–D bind known five-node4C/58 slots, reuse RR5/6 for known controls, and settle container forward58 and Sound58 linked-PBI filtering/argument forwarding. PBI1C, Switch/Layer4C and broader child/list/writer/input/family closure remain PARTIAL; counts unchanged, Q15 pending Q14.
+
+### Checkpoint 364 — Switch/Layer control prepass and PBI reuse
+
+SL364A–F settle operation selection, independent zero-wildcard local state updates, signed active-context admission and reverse fixed-count child control. NC363 Sound58 known PBI1C joins reuse PD178D/CA179 rather than repeat recovered bodies. Stop/removal helpers and remaining families/inputs/writers remain PARTIAL; counts unchanged, Q15 pending Q14.
