@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 295 — slot reset and logical media release
+
+Primary: `20261008-sound-line-media-release-native.txt`, `20261008-sound-line-slot-release-native.txt`, `20261008-sound-line-release-slots.txt`; same engine SHA256. Reuse the **insert-FX IC9** at00A4E7CC (distinct from the hierarchy IC9), WV9/IC10 registry cleanup and SD140I media-ID release. No duplicate descent into those bodies.
+
+| Step | Address | Behaviour | Gates / ordering | Boundary |
+|---|---|---|---|---|
+| LREL295A | 00A4E8C8..00A4E934 | Following existing insert-FX IC9, S=L+slot*1C: output pointerS138nonnull invokes alignedfree then clearsS138, clears U16S146 thenS144, setsS140=2B. Clear formatS13C lowbyte, nextbyte low4, then upper20bits; whole format becomes0. | Null output skips **all** these reset stores, retaining state/count/format. No unconditional reset inferred from destructor intent. | Slot deletion order reuses IC9: plug-in Term/clear, context destructor/free/clear, sentinel/reset subscriptions, auxiliary destructor/free/clear, then this output branch. Out of scope: allocator/free internals. |
+| LREL295B | 0101C428;00A515F0 | LDEF292's embedded slot table101C428 live0= A515F0, a bare return. LTERM294 reverse slot destructor calls therefore add no callback or stores for this constructor-bound table. | Adjacent slot4=A515F4 is a different deleting destructor and is not selected by these live0 calls. | No whole dynamic-family claim: other products/table writers remain separate. |
+| LREL295C | 00A6BA28..00A6BAAC | V={base0,count4,capacity8}, entries20 bytes. Initial wrapped count*20==0 skips iteration. For each physical E, require E4nonnull AND EC!=FFFFFFFF. On admission call9B65A8(*108D8D8,EC), then reload E10; nonnull invokesowner.live0(owner,0). Only after this admitted branch reload Vbase/count. | Missing pointer or invalid ID skips **both** release and owner callback; nonnull owner alone does not admit. No clearing entry pointer/ID/owner. Saved current E+20 survives callback, while comparison endpoint uses reloaded base+wrapped count*20. No stable snapshot or callback-safe redesign substituted. | SD140I supplies logical reference decrement, disposal recheck and unlink order; do not re-extract it. Dynamic owner.live0 family still requires concrete binding where not already covered. |
+| LREL295D | 00A6BAB0..00A6BAD8 | Final current/reloaded base nonnull: store Vcount=0 before poolfree(*1052418,base). Null base skips count clear/free. Return V; base and capacity left unchanged locally. | Empty count with nonnull base still clears count and frees. No base/capacity nulling invented. | This closes localA6BA28 for LTERM294 and SF8 callers; construction/writers and dynamic owners remain separate. Out of scope: collection storage allocator/free internals. |
+
+The known line teardown now joins the slot drop and logical media-release bodies; SF8's old unreadA6BA28 note is superseded by LREL295C/D. Existing IC9/WV9/SD140I bodies are reused. Wider reachable families, inputs/providers and writer closure remain PARTIAL; counts unchanged and Q15 parked. No production/fidelity changes.
+
 ## Checkpoint 294 — line destructor and base teardown order
 
 Primary: `20261008-sound-line-destructor-native.txt`, `20261008-sound-line-base-teardown-native.txt`; same engine hash. LT3/4 unsubscribe/global unlink, LC4 bus-counter callbacks, WV9/IC10 embedded cleanup, RCD3 buffer cleanup and HBIND plug-in Term pattern reused. L=line.

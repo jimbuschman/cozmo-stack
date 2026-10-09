@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through294 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through295 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1707,3 +1707,7 @@ LDRV293A–D recover supplied parent/default fields, selectors22/24/23 and autho
 ### Checkpoint 294 — line release and teardown
 
 LTERM294A–D recover masked unsubscribe/counter/reference order, buffer release, ascending slot removal, plug-in/helper cleanup, reverse embedded destruction and final subscriber unlink. Known LT/LC4/WV9/RCD/HBIND bodies reused; A4E7CC and A6BA28 retained next recipients. No missing pointer clear invented; broader counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 295 — slot reset and logical media release
+
+LREL295A–D reuse insert-FX IC9/WV9/SD140I, recover output-dependent reset, bind the constructor-selected embedded live0 to a no-op, and recover A6BA28 pointer/ID admission, media-before-owner order, callback-bound reloads and count-before-free. LTERM294 and SF8 now join this local body; owner families and collection writers remain PARTIAL. Counts/Q15/fidelity/production unchanged.
