@@ -127,3 +127,10 @@ The manager reopened the native call targets and extracted APK sources for M1-02
 - Reopened wrapper and Reader/converter call targets from the shipped engine before the change. M1-029 remains IMPLEMENTATION_GAP; non-finite `useSpecialFloats=0` mapping, allocator failure/extreme-input effects, and final escaping exception destination remain MISSING. No status settlement.
 - Focused tests: 5 passed. `fidelity.py --check` was refreshed after regenerating `FIDELITY_GAPS.md`; full-suite and publication results follow.
 - `fidelity.py --check` and `git diff --check`: passed. Full suite: 3,959 passed, zero failed/skipped. M1-029 remains IMPLEMENTATION_GAP with the above MISSING boundaries.
+
+## Batch 8: M1-048 UDP decision ownership
+
+- Rechecked the current UDP production path against reopened U1-U7 targets. Its existing code implements the manager-checked ordering and gates: open/close bookkeeping, bind-in-use handling, send accounting/rate limit, receive drain/error choices, and pending-reset consumer. Host syscall/resolver and Windows errno mappings remain M1-022/M1-039 policy; reset signal remains M1-023.
+- Added M1-048 fidelity ownership to those existing production methods and listed their source-shaped regression cases in the record. No socket behavior changed. M1-048 remains IMPLEMENTATION_GAP, built awaiting strong verification.
+- `fidelity.py --check` and `git diff --check` passed; full-suite and publication results follow.
+- Full suite: 3,959 passed, zero failed/skipped. M1-048 remains IMPLEMENTATION_GAP; no records settled.

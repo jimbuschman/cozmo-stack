@@ -92,7 +92,7 @@ public sealed class ReliableTransport : IDisposable
     private readonly object _life = new();
     /// <summary>Written under <see cref="_life"/> before the dispose closure is posted; read under <see cref="_lock"/> by a sync-mode Connect.</summary>
     private volatile bool _disposed;
-    // fidelity: M1-022
+    // fidelity: M1-022, M1-048
     /// <summary>
     /// UDPTransport's socket, the fd at +0x94; null is fd −1. Written under <see cref="_lock"/> on the executor;
     /// read without it only by the network-bind handler's fd test (G4.4).
@@ -274,7 +274,7 @@ public sealed class ReliableTransport : IDisposable
         _o = options ?? TransportOptions.EngineDefaults; _clock = clock ?? new StopwatchClock();
         ManualPump = manualPump;
 
-        // fidelity: M1-022
+        // fidelity: M1-022, M1-048
         // B12: the UDP ctor stores 0xBAC9 at +0x98 (0x00839546) and RobotConnectionManager::Init stores 0 over
         // it (0x0062EFEA) before its StartClient, so the first open binds an ephemeral port.
         _localPort = PortAfterClose;
@@ -612,7 +612,7 @@ public sealed class ReliableTransport : IDisposable
 
     private void StopLocked(string reason, List<Action> effects)
     {
-        // fidelity: M1-022, M1-019
+        // fidelity: M1-022, M1-019, M1-048
         // CA21: UDP StopClient, if fd >= 0, CloseSocket (0x0083AD66..0x0083AD70), which sets fd −1 and port 47817
         // (CA30), so a Start after Stop binds 47817. CloseSocketLocked with fd −1 does nothing (CA30), which is
         // the fd >= 0 test.
@@ -810,7 +810,7 @@ public sealed class ReliableTransport : IDisposable
 
     // ------------------------------------------------------------------ the UDP socket
 
-    // fidelity: M1-022
+    // fidelity: M1-022, M1-048
     /// <summary>
     /// UDPTransport::OpenSocket (B11, CA24..CA29), returning whether it succeeded:
     ///  - CA24: CloseSocket first (0x00839A3A), then the port argument is stored at +0x98 (0x00839A46);
@@ -886,7 +886,7 @@ public sealed class ReliableTransport : IDisposable
         return true;
     }
 
-    // fidelity: M1-022
+    // fidelity: M1-022, M1-048
     /// <summary>
     /// UDPTransport::CloseSocket (CA30, B38): with fd &lt; 0 it returns 0 and stores nothing (0x008395CA..0x00839626).
     /// Otherwise close(fd), a failure logged as an error, and on both paths fd −1 and the stored port 0xBAC9 =
@@ -914,7 +914,7 @@ public sealed class ReliableTransport : IDisposable
         return ok;
     }
 
-    // fidelity: M1-022
+    // fidelity: M1-022, M1-048
     /// <summary>
     /// B16: recvmsg(fd, msg, MSG_DONTWAIT) (0x0083AA76 movs r3,#0x40) on the blocking socket B11 opens.
     /// Host mapping: Windows has no MSG_DONTWAIT; the socket is left blocking, and a read is made only when a
@@ -1126,7 +1126,7 @@ public sealed class ReliableTransport : IDisposable
             Raise(() => Fan(FrameTrace, new FrameEvent(true, DateTime.UtcNow, raw, f, null)));
             return;
         }
-        // fidelity: M1-022
+        // fidelity: M1-022, M1-048
         // B10 / CA31..CA34, the UDP send:
         //  - CA32: a non-IP address is an error with no count (0x0083A5FA..0x0083A642). Unreachable here, since an
         //    IPEndPoint is always IPv4 or IPv6; where this check falls against AddSentMessage is not stated.
@@ -1170,7 +1170,7 @@ public sealed class ReliableTransport : IDisposable
         }
     }
 
-    // fidelity: M1-022
+    // fidelity: M1-022, M1-048
     /// <summary>
     /// CA32 (0x0083A546..0x0083A56C; 0x0083A648..0x0083A666, literal 0x0083A6C8): a send failure always counts
     /// AddSendError(6) and reads now. It warns "UDPTransport.SendFailed" only if verbose logging is on, or +0x88
@@ -1241,7 +1241,7 @@ public sealed class ReliableTransport : IDisposable
         return ok;
     }
 
-    // fidelity: M1-022, M1-023, M1-039, M1-043
+    // fidelity: M1-022, M1-023, M1-039, M1-043, M1-048
     /// <summary>
     /// UDPTransport::Update. First the reset (G4.5, B18): with the flag set, CloseSocket (0x0083ACF0) and, only if
     /// that returned 1 (0x0083ACF4), OpenSocket on the stored port (0x0083ACF8..0x0083ACFE), which the close has
@@ -1297,7 +1297,7 @@ public sealed class ReliableTransport : IDisposable
             }
             catch (ObjectDisposedException) { return; }
 
-            // fidelity: M1-022, M1-043
+            // fidelity: M1-022, M1-043, M1-048
             // B16 / CA35: a read of ≤ 0 ends the drain for this update, a 0-byte datagram too (0x0083AA98). The
             // source then takes the errno path with a stale errno (0x0083AABE..0x0083AB24): whether that warns, or
             // reopens on errno 107, is HARDWARE_ONLY (M1-043) and not reproduced; this stack only stops the loop,
