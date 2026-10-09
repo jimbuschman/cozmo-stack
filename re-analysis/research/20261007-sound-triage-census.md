@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through503 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through504 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -392,7 +392,7 @@ Checkpoint503 reconciliation: PC/X/PA/SA supply actual cached/inherited policy; 
 
 > | M6-025 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C;0x00A54A30 | Unknown FX helper/wrapper descendants must be separated into ownership/format/buffer/control KEEP and any demonstrated pure sample math SIMPLIFY. |
 
-PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format, allocation, registry/RTPC ownership and Init/Reset control; no per-sample loop in those bodies. Wrapper Execute, selected plugin virtuals and subscription/binding recipients remain readable; their boundaries need separate checking, not a bulk DSP exemption.
+PARTIAL: VF1–VF9 establish all four named helper/initializer bodies as format, allocation, registry/RTPC ownership and Init/Reset control; no per-sample loop in those bodies. Checkpoint504 reconciles full small/large WV1–15 wrapper control, IC/RG initial delivery and U27/R detach/ownership recipients with actual caller joins. Known compressor/limiter/EQ products and dynamic slot/format/bypass controls have their own B/F/CP/LP434/PP441/FX/FC/FM/FB/EB rows. Remaining: additional positively selected plugin/parameter products and their input/writer closure; no generic unread wrapper/helper claim and no bulk DSP exemption.
 
 ## Q14-037 — triage line 75
 

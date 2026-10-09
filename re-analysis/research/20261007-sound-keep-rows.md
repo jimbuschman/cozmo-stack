@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 504 — original FX helper/wrapper boundary reconciliation
+
+Primary reuse only: VF1–9/WV1–15/IC1–11/FS432/SL433/LP434/PP441/CP1–5/FQ431/PR6–10/RG1–3/U27/R34–35/37/42/SU/SN/CI192/PS404/FC258/FM259/FB256/EB497. The four named Q14-036 helpers contain ownership, format and control work; their callers do not turn them into sample arithmetic.
+
+| Original boundary | Positive decision and caller joins | Retained boundary |
+| --- | --- | --- |
+| A793D4/A6C22C common Init/context | VF6/B1–3 | Scope value C becomes0; clone-null and context-allocation failure preserve already-attached state; context publication follows construction. No invented rollback, plug-in ownership or context defaults. |
+| 9CF644 attachment | VF7/IC2–3/11/RG1–3/LW/R folds/FS432/SL433/LP434/CP/PP441 | Clone publication precedes owner retain; physical subscription registration precedes initial delivery. Missing parameter retains prior clone. The initial delivery's actual9E61B4 recipient is RG1–3, including recursion and direct-only result fold; it is no longer a generic unread trigger. Unsubscribe's U27/R34–35/37/42/SU/SN decisions likewise replace the historical unread-detach description. Other factory-selected parameter products and input writers remain specific. |
+| A54A30 chain and wrapper selection | VF1–5/CI192/PS404/PR/FQ431/EB497 | Mutable format/source stage, registry result/type flags, ordered four slots, init/reset admission and failure cleanup, reverse chain connection and final6C callback are positive. EB497 binds known voice6C/70 to ordered authored bypass refresh. No sample-math exemption for Init or late failure. |
+| Small wrapper execution/lifecycle | WV1–4/7/9/11–12 | Exact predecessor forwarding, end flag, once-per-bypass Reset, allocation failure and descriptor-state publication. Execute result is read from descriptor8, not the virtual return. Subscription/clone/owner/context cleanup precedes free with native publication order. |
+| Large wrapper execution/lifecycle | WV1/3–6/8–11/13–15 | Requested-count negotiation, live frame quota, retained input, silence/padding, output allocation before bypass, metadata interval and timing-average publication remain exact. No zero-progress guard or whole Execute DSP release. Buffer-state and frame-count gates remain retained even where selected arithmetic is equivalent under ADP-1. |
+| Selected products and dynamic reconfiguration | B/F/CP/LP434/PP441/FX/IC/FC258/FM259/FB256 | Known compressor/limiter/EQ parameter clone, authored Init and live setter products are positive; dirty/enable/slot/ramp/tail decisions remain exact. Plugin Reset/Init/Execute/Term products outside those concretely bound families still require their own positive registration and decision evidence. Existing rows for parameter selection or wrappers do not prove every product. |
+| Sample and excluded payload boundary | WV14–15/MBOUND332/FP430 | out of scope: per-sample ADP-1 mixing/filter/compressor/limiter arithmetic and excluded 3D coefficient payloads; no new descent into these bodies. Scalar parameters, routing selection, geometry, silent regions, frame counts and lifecycle states are retained. WEM decoding is not exempted. |
+
+Q14-036 remains PARTIAL for additional selected product and input/writer closure, not because its four named helpers or wrapper control bodies are unread. This reconciliation makes no fidelity-manifest or production change. Counts remain27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows Q14.
+
+
 ## Checkpoint 503 — original source/audibility/route-cache obligation reconciliation
 
 Primary reuse only: PC1–2/VP12/SA203/SS204/SF1/PI188/SD140/BR142/MR/MS/NS/SWIN/DG/CR502/AU495/LV/VS/RCON/KCACHE/KSEL/CSPEC/CGEN/RG465. No new capture or excluded coefficient/sample/stream-storage descent. Q14-035 named original decisions are mapped to current positive rows rather than earlier missing-seam descriptions.
