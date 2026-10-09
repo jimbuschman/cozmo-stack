@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 294 — line destructor and base teardown order
+
+Primary: `20261008-sound-line-destructor-native.txt`, `20261008-sound-line-base-teardown-native.txt`; same engine hash. LT3/4 unsubscribe/global unlink, LC4 bus-counter callbacks, WV9/IC10 embedded cleanup, RCD3 buffer cleanup and HBIND plug-in Term pattern reused. L=line.
+
+| Step | Address | Behaviour | Gates / ordering | Boundary |
+|---|---|---|---|---|
+| LTERM294A | 00A4EED8..00A4EF4C | Test L4C captured before installing derived tables103C468/103C52C/103C580. Nonnull invokesA19F60(L,mask64=0000000FE10C4020,1), existingLT4; reload L4C and calllive9C with3, then reloadL4C again and liveC. Neither callback result gates later work. | No post-unsubscribe/callback null check before reloaded pointer dereference. Logical unsubscribe/counter undo precede reference release. L4C not cleared by these local stores. | Known bus9C/release families reused; broader mutation/provider/reference writers remain PARTIAL. |
+| LTERM294B | 00A4EF50..00A4EF84;00A4ECE4..00A4ED60 | Nonnull L60 buffer freed thenL60=0; null skips both. Invoke baseA4ECE4 and returnL. Base installs103C2F0/103C3B4/103C408. If L34 buffernonnull callRCD3(&L34), then remove slots viaA4E7CC(L,0),1,2,3 unconditionally in ascending order. ClearL1B8bits2/3 after all slot removals. | PCM storage release has no DSP arithmetic; allocator internals out of scope. No base teardown before bus/reference/buffer sequence. | Slot removalA4E7CC is next readable control/plug-in lifecycle recipient. Other constructors/destructor callers retain separate closure. |
+| LTERM294C | 00A4ED60..00A4EE0C;00A4EE64..00A4EE84 | H=L1A8nonnull: H.Cnonnull callsP.live8(P,allocator108DA00), reloadH,clearH.C; thenWV9(H). ReloadH,storeH10FFFFFFFF, invokeH.live0, pool-freeH. No local L1A8 clear after free. AlwaysWV9(L+B4). Then L78nonnull: savedpointer.live0, pool-freepointer, L78=0. | H.Cclear occurs after plug-in Term; registry cleanup afterclear. H10 sentinel precedes destructor. L78 clear after callback/free. No resetting dangling H slot by invention. | Existing registry/Term pattern reused. Concrete dynamic products and settings/recipient writers remain PARTIAL. |
+| LTERM294D | 00A4EE0C..00A4EE60 | CallA6BA28(L1AC), then embedded objects at11C,100,E4,C8 invoke their live0 in **reverse slot order**. Reinstall lower tables103C228/103C298, unconditionallyRCD3(&L34), finallyA19D44(L) subscriber destructor/global unlink, returnL. | Buffer descriptor cleanup may run twice; preserve the native calls. No line-free inside base body; callerLF291/DF43 performs finalfree. | A6BA28 retained logical media-release callback recipient, not presumed storage-only. Embedded concrete destructor family and A4E7CC remain next joins; no whole-line lifecycle claim. |
+
+Line release and base teardown callers are locally positive, with exact callback/reload/clear ordering and absent pointer clears retained. Deeper slot/media/product decisions and wider lifetime/route/input/writer closure remain PARTIAL. Counts unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 293 — derived line reduction values and release timing
 
 Primary: `20261008-sound-line-derived-defaults-native.txt`, `20261008-sound-line-derived-selector-slots.txt`; same engine hash. LDEF292 base constructor, PDI defaults, DU reduction consumers and RV parameter resolver reused. L=line,N=incoming node,parent supplied word,extra supplied byte.
