@@ -11,6 +11,12 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 70 native-row obligations CHECKED, 8 CHECKED scope exclusions, 62 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 566 — source100 lifecycle, terminal equality and dirty controls
+
+`20261009-sound-generator100-lifecycle.md` G100566A–J binds238 contiguous ARM+2 Thumb instructions and4 complete hashed Event/action/Sound/type19 settings payloads. Actual PP437 creatorABB7C0/table103E220 identifies100; PP438 creatorAADDE4 is the larger102, correcting proposed continuation order. Finite equality marks the last block11, unlike101. Both budget and Execute mutate framecursor, dirty-duration and gain caches; Reset preserves phase. Persistent frequency/rate coefficient, format and exact count/state/gain arguments stay exact; per-sample ABBE68 stops under ADP-1. PP437F type18 is corrected to actual type19.
+
+Q14-103 stays PARTIAL for102 lifecycle and endpoint/held-note joins;026/032/035 keep102 only. Counts70native+8scope/62PARTIAL/0NOTDONE;140AUDIBLE/0INTERNAL unchanged. Next102 actualAADDE4; no production/fidelity/hardware/Q15 changes.
+
 ## Checkpoint 565 — accepted source101 lifecycle and RNG
 
 `20261009-sound-generator101-lifecycle.md` G101565A–J supplies261 contiguous ARM+2 complete Thumb instructions and6 hashed primary Event/action/Sound/type19 settings payloads. Source101 draws shared LCG exactly once in Init even at zero duration range; fixed31/F32 scaling differs from container F64 scaling. Cached duration query differs from live-parameter render/seek boundaries. Exact full-last-block/state11 timing, signed loop factor, byte cursor, strict seek endpoint and silent valid extent are positive. PP436E's type18 label is corrected to actual type19.
