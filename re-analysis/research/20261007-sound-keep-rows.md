@@ -11,6 +11,12 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 70 native-row obligations CHECKED, 8 CHECKED scope exclusions, 62 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 565 — accepted source101 lifecycle and RNG
+
+`20261009-sound-generator101-lifecycle.md` G101565A–J supplies261 contiguous ARM+2 complete Thumb instructions and6 hashed primary Event/action/Sound/type19 settings payloads. Source101 draws shared LCG exactly once in Init even at zero duration range; fixed31/F32 scaling differs from container F64 scaling. Cached duration query differs from live-parameter render/seek boundaries. Exact full-last-block/state11 timing, signed loop factor, byte cursor, strict seek endpoint and silent valid extent are positive. PP436E's type18 label is corrected to actual type19.
+
+Q14-103 stays PARTIAL for100/102 controls and held-note endpoint join. Related026/032/035 no longer have unpaid101 lifecycle; explicit original format/caller/writer censuses remain open. Counts70native+8scope/62PARTIAL/0NOTDONE;140AUDIBLE/0INTERNAL unchanged. out of scope: backing/free and sample fill implementation. Next smallest generator102; no production/fidelity/hardware/Q15 changes.
+
 ## Checkpoint 564 — Play parameter request producers reconciled
 
 `20261009-sound-play-parameter-producers.md` PP564A–G supplies311 contiguous primary ARM instructions and the actual five nodeAC products. Ordinary action initializes78/88/8C/108 explicitly; continuous/deferred/clone paths have positive context/owner/copy joins. A024B8 supplies exact scope/output arguments; AUX5/MATM supplies positive populated108 descriptors. Existing BI425/RC7/CR502/CA496 closes object/tag/owner keys, actual24/28 callback and ordered association/attachment recipients.
