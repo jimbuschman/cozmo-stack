@@ -2209,13 +2209,39 @@ public class EngineAppLayerTests
     }
 
     [Fact]
+    public void M1_050_DisconnectReportIsolatesSubscribersAndAllowsNoSubscribers()
+    {
+        // S13: report id precedes the +0x1C notification (0052F2AC, 0052F2CC).
+        // Handler exceptions survive under the approved M1-034 departure.
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var calls = new List<string>();
+        Action<uint> failing = _ => throw new InvalidOperationException("report subscriber");
+        Action<uint> receiving = id => calls.Add($"external:{id}");
+        rig.Engine.RobotDisconnectReported += failing;
+        rig.Engine.RobotDisconnectReported += receiving;
+        rig.Engine.RobotDisconnected += _ => calls.Add("report");
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Equal(new[] { "external:1", "report" }, calls);
+        Assert.Null(rig.Engine.Robot);
+        rig.Engine.RobotDisconnectReported -= failing;
+        rig.Engine.RobotDisconnectReported -= receiving;
+        rig.ToSuccess();
+        rig.Engine.DisconnectCurrent();
+        rig.Tick();
+        Assert.Equal(new[] { "external:1", "report", "report" }, calls);
+        Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: IExternalInterface.OnRobotDisconnected"));
+    }
+
+    [Fact]
     public void CheckedRemoval_ReportsServicesLifetimeAndBookkeepingOrder()
     {
         using var rig = new Rig();
         rig.ToSuccess();
         var robot = rig.Engine.Robot!;
         var calls = new List<string>();
-        rig.Engine.ExternalRobotDisconnected = id => { Assert.Same(robot, rig.Engine.Robot); calls.Add($"external:{id}"); };
+        rig.Engine.RobotDisconnectReported += id => { Assert.Same(robot, rig.Engine.Robot); calls.Add($"external:{id}"); };
         rig.Engine.RobotDisconnected += _ => calls.Add("report");
         rig.Engine.ClearDasGlobal = name =>
         {
@@ -2276,7 +2302,7 @@ public class EngineAppLayerTests
         rig.Connect();
         var calls = new List<string>();
         rig.Engine.ConnectionResponse += response => calls.Add($"response:{(byte)response.Result}");
-        rig.Engine.ExternalRobotDisconnected = _ => calls.Add("external");
+        rig.Engine.RobotDisconnectReported += _ => calls.Add("external");
         rig.Engine.RobotDisconnected += _ => calls.Add("report");
         rig.Engine.ClearDasGlobal = calls.Add;
         rig.Engine.NeedsRobotDisconnected = () => calls.Add("needs");

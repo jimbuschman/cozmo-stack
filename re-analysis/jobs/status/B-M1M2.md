@@ -114,7 +114,7 @@ CLAIMED Codex after Q13: confirm E3 stored f32 time and nonzero deadline gate, c
 - Applied the manager and policy dispositions from `jobs/B-M1M2.md` as one cited inventory correction. Added the four M1 records (S13, E6, E7, P2), created/updated higher-layer recipients for transfers, rewrote transferred residuals, and narrowed the five policy records to their engine-owned decisions.
 - Re-approved all 13 touched subsystems. Follow-up source-boundary review narrowed M3-040 to NV idle callback scheduling/predicate/invocation (M1-041 retains the ready-byte writer) and M1-042 to Unity A1/A3/A4 producers/gates (M1-026 retains A2 engine conversion/send).
 - `fidelity.py --check`: passed, 465 records. `git diff --check`: passed. Full suite: 3,954 passed, zero failed/skipped. No records settled.
-- Commit: c8af57e. Push: pending.
+- Published inventory correction: `3d2018c`; manager row/ownership correction: `5456b3f`.
 
 ## Manager row check (2026-10-09)
 
@@ -151,3 +151,12 @@ The requested CODEX-BUILDER remainder is not complete. The checked buildable sli
 
 M1-048 U1-U7 is present in the existing live UDP path and was assigned to its own record in `d42130f`, awaiting strong verification. M1-023/M1-048/M1-049 ownership boundaries are documented in the approved inventory. No additional record is settled. No hardware run was started.
 - Stop-point check: full suite passed, 3,959 passed, zero failed/skipped; fidelity check passed. No code changed in this status-only checkpoint.
+
+## App-boundary build: M1-050 (2026-10-09)
+
+- Pulled the operator's app-boundary decision (`2f2d6e1`). The previous Unity/Android/SDK blockers above are superseded by that decision; M1-042/-049/-051/-052 are now policy records.
+- Reopened RemoveRobot's external call at `0x0052F29E..0x0052F2AC`: the argument is the robot id; the call precedes the separate RobotDisconnected notification and session clear. Built public `CozmoEngine.RobotDisconnectReported` on this existing live path. The membership and pending-handshake gates are unchanged. API subscriber exceptions use the approved M1-034 isolation.
+- Updated existing live removal order and handshake tests to use the public event; added subscriber isolation, unsubscribe and no-subscriber coverage. M1-050 stays IMPLEMENTATION_GAP, built awaiting strong verification. No hardware run.
+- CHECKLIST review: source entry/gates/order and uint payload match S13; no copied removal path or guessed app recipient. Fidelity and whitespace checks passed. Full-suite result and publication are recorded in the next status checkpoint.
+- **MISSING M1-053:** checked P2 describes the getter/publication order but does not enumerate the outgoing payload's component-derived fields or resolve the getter's direct/virtual targets. Reopening exposes a distinct ExternalInterface.RobotState; forwarding the incoming Protocol.RobotState would be unsupported. Detailed projection rows are being prepared for the manager check required by CODEX-BUILDER rule 2. No partial outgoing event path was installed.
+- Full solution suite: 3,960 passed, zero failed/skipped (TRX: .scratch/m1-api-events/m1-api-events.trx). Fidelity and whitespace checks passed.

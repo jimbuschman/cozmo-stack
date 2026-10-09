@@ -1511,6 +1511,7 @@ internal sealed class RobotManager
         bool answered = ric?.HandleDisconnect(result) ?? false;
         if (!answered)
         {
+            // fidelity: M1-050
             _engine.NotifyExternalRobotDisconnected(id);
             _engine.RaiseRobotDisconnected(new RobotDisconnectedMessage(BitConverter.Int32BitsToSingle(0x00000000)));
             _engine.ClearGlobal("$session_id");
