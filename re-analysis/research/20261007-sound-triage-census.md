@@ -1595,3 +1595,7 @@ SR265A/B recover query-side empty-record creation and identity membership unlink
 ### Checkpoint 266 — node preparation admission
 
 PA266A–E recover direct-child admission failure prefixes, retained ID admission, Switch counter/shared-group selection and current-prefix-before-earlier-groups unwind, plus embedded membership insertion. Sound admission/active-list/counter/provider/input/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 267 — Sound descriptor admission
+
+DP267A–D trace descriptor gates, immediate/deferred manager mode, descriptor publication endpoint, existing-media retain/direct-pointer success and raw availability failure/publication endpoints. Growth/storage/file/I/O internals excluded; deferred/alias/lifetime/input/provider/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
