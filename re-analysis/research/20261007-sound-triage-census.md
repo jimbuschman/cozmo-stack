@@ -50,7 +50,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-036 | 74 | CHECKED | AUDIBLE | Wrapper Init/format/control/failure decisions affect whether and how its sound reaches output. |
 | Q14-037 | 75 | PARTIAL | AUDIBLE | Voice limits, priority/victim order and virtual/kill choices determine what gets cut off. |
 | Q14-038 | 76 | CHECKED | AUDIBLE | Voice parameters, delayed event and MIDI stores change timing, level and selection. |
-| Q14-039 | 77 | PARTIAL | AUDIBLE | Max-instance subscription and Play/parameter admission gates can reject or suppress sounds. |
+| Q14-039 | 77 | CHECKED | AUDIBLE | Max-instance subscription and Play/parameter admission gates can reject or suppress sounds. |
 | Q14-040 | 78 | PARTIAL | AUDIBLE | Trigger failure, compound results and timeout/render waits change robot action and singing timing. |
 | Q14-041 | 79 | PARTIAL | AUDIBLE | Rolling means, vibrato posts and preserved smoothing alter singing parameters and behaviour. |
 | Q14-042 | 80 | PARTIAL | AUDIBLE | Nearest overridden MIDI target and table choice determine the sound receiving notes. |
@@ -475,7 +475,7 @@ PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, 
 
 PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical order, defaults and sum/product selection. RW1–10 and R48 establish node max-instance subscription traversal; RC7 covers the parameter helper. NM513D–F reconcile named controls: LFRAME/DF/DA498/DT499 device controls, CA496 Play/attachment success, RC7 helper, CR502 actual24/28 bindings and V5/V11 E9bit2 early return are positive. Remaining params78/88/8C/108 caller producers, live key/default/curve/subscriber/input writers and additional reachable device/context/provider callback families stay specific; no generic unread device/Play/early-return claim.
 
-**Current disposition, checkpoint558:** PARTIAL: Bind RC7 incoming params78/88/8C/108 to actual caller producers and scoped/default keys, preserving widths/order and the selected virtual receiver; named early-return/Play/device bodies are already positive. Evidence: R/AC/RV/NP/RW/RC7/NM513D–F/CR502; out of scope: positioning payloads and backing infrastructure. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint564:** CHECKED: PP564A–G binds explicit request78/88/8C/108 origins, continuous/deferred/clone contracts, actual nodeAC output products, populated descriptor builder, scoped keys and ordered24/28/association/attachment consumers. Other original named decisions are already RW/AC/NP/DF/DA/DT/PA/IP/CA/V/CR502/NM513. out of scope: 3D positioning, backing/free and per-sample application. No unrestricted writer or optional-input reachability claim. See `20261009-sound-play-parameter-producers.md`; older remaining-work prose is historical and superseded.
 
 ## Q14-040 — triage line 78
 

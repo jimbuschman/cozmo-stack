@@ -9,7 +9,13 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 69 native-row obligations CHECKED, 8 CHECKED scope exclusions, 63 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 70 native-row obligations CHECKED, 8 CHECKED scope exclusions, 62 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+
+## Checkpoint 564 — Play parameter request producers reconciled
+
+`20261009-sound-play-parameter-producers.md` PP564A–G supplies311 contiguous primary ARM instructions and the actual five nodeAC products. Ordinary action initializes78/88/8C/108 explicitly; continuous/deferred/clone paths have positive context/owner/copy joins. A024B8 supplies exact scope/output arguments; AUX5/MATM supplies positive populated108 descriptors. Existing BI425/RC7/CR502/CA496 closes object/tag/owner keys, actual24/28 callback and ordered association/attachment recipients.
+
+Q14-039 CHECKED for its bounded original contracts, without a new global writer or optional-input reachability claim. Counts70native+8scope/62PARTIAL/0NOTDONE;140AUDIBLE/0INTERNAL unchanged. out of scope: 3D positioning, per-sample application and backing/free infrastructure. Generator source controls remain the next shared concrete boundary; no production/fidelity/hardware/Q15 changes.
 
 ## Checkpoint 563 — FX association writer and bounded callback
 
