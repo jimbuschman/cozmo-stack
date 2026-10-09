@@ -1563,3 +1563,7 @@ FR257A–D trace known-slot neighbor order, raw format shaping, old output/34 sc
 ### Checkpoint 258 — live FX construction/publication
 
 FC258A–C reuse known plug-in validation/wrapper defaults/Init/Reset bodies while tracing this caller's rejection, allocationnull reconnect without plugin release, raw bypass publication and predecessor connection. Downstream format/routing/helper/provider/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 259 — FX format/routing reconciliation
+
+FM259A–C trace packed format equality, i+1 recursion, final two-stage reinit with ignored statuses, format publication and exact downstream node4 clear. Local64 controls joined; stage init/provider/writer families remain PARTIAL, storage free internals excluded. No totals/Q15/fidelity/production changes.
