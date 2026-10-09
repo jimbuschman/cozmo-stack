@@ -1,0 +1,65 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A12A78..0x00A12B60 exclusive; ARM;
+00A12A78: mov          r0, r7
+00A12A7C: mov          r1, fp
+00A12A80: bl           #0xa1238c
+00A12A84: cmp          sl, #0
+00A12A88: popeq        {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A12A8C: ldr          r7, [pc, #0x204] ; word[00A12C98]=0062D648
+00A12A90: mov          r8, #0
+00A12A94: ldr          r6, [pc, #0x200] ; word[00A12C9C]=0062D5A4
+00A12A98: ldr          r7, [pc, r7]
+00A12A9C: ldr          r6, [pc, r6]
+00A12AA0: ldr          r1, [r4, #0x14]
+00A12AA4: ldr          r5, [sl, #8]
+00A12AA8: cmp          r1, #0
+00A12AAC: beq          #0xa12b1c
+00A12AB0: ldm          sl, {sb, fp}
+00A12AB4: add          r0, sb, fp
+00A12AB8: bl           #0x4a6694
+00A12ABC: ldr          ip, [r4, #0x10]
+00A12AC0: ldr          r3, [ip, r1, lsl #2]
+00A12AC4: cmp          r3, #0
+00A12AC8: beq          #0xa12b1c
+00A12ACC: mov          r0, #0
+00A12AD0: b            #0xa12ae8
+00A12AD4: ldr          r2, [r3, #8]
+00A12AD8: mov          r0, r3
+00A12ADC: cmp          r2, #0
+00A12AE0: mov          r3, r2
+00A12AE4: beq          #0xa12b1c
+00A12AE8: ldr          r2, [r3]
+00A12AEC: cmp          sb, r2
+00A12AF0: bne          #0xa12ad4
+00A12AF4: ldr          r2, [r3, #4]
+00A12AF8: cmp          fp, r2
+00A12AFC: bne          #0xa12ad4
+00A12B00: ldr          r3, [r3, #8]
+00A12B04: cmp          r0, #0
+00A12B08: strne        r3, [r0, #8]
+00A12B0C: streq        r3, [ip, r1, lsl #2]
+00A12B10: ldr          r3, [r4, #0x1c]
+00A12B14: sub          r3, r3, #1
+00A12B18: str          r3, [r4, #0x1c]
+00A12B1C: mov          r1, sl
+00A12B20: ldr          r0, [r7]
+00A12B24: mov          r2, #0
+00A12B28: bl           #0x9e63a0
+00A12B2C: ldr          r1, [sl, #0x2c]
+00A12B30: ldr          sb, [r6]
+00A12B34: cmp          r1, #0
+00A12B38: beq          #0xa12b48
+00A12B3C: str          r8, [sl, #0x30]
+00A12B40: mov          r0, sb
+00A12B44: bl           #0xa7a988
+00A12B48: mov          r1, sl
+00A12B4C: mov          r0, sb
+00A12B50: bl           #0xa7a988
+00A12B54: subs         sl, r5, #0
+00A12B58: bne          #0xa12aa0
+00A12B5C: pop          {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A12C98: raw=0062D648 relocated=0062D648
+00A12C9C: raw=0062D5A4 relocated=0062D5A4
+010400E8: raw=0108D8DC relocated=0108D8DC
+01040048: raw=01052418 relocated=01052418

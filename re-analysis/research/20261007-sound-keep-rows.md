@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 422 — RTPC subscription retirement order and existing modulation join
+
+Primary: `20261009-sound-subscription-retirement-order-native.txt` (58 instruction words plus literals/GOT), same engine hash. Existing DC10 matching/collection slices, SU1–6 detach and SRG10 reference release are reused. B=collected subscription, M=RTPC manager; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SR422A collection-to-retirement order | DC10;A12BE0..A12BF8;A12C78..A12C90;A12A78..A12A88 | Matching subscriptions are removed from array34/count38 first, then40/count44. Each prepend writes B8=prior collected head after count decrement; ordered shifts cause retry at the same slot. Thus retirement is reverse collection order: second-array matches before first-array matches, each reversed. A1238C scoped transition/value invalidation completes before any collected B retires. Empty collection returns after that invalidation. No caller-supplied list-order substitution. |
+| SR422B association visibility before detach | A12AA0..A12B28 | Capture B8 as next before calls. If association table capacity M14 is nonzero, exact pair B0/B4 lookup removes the matching association and decrements M1C before modulator detach. Missing pair/empty table does not suppress detach. Invoke 9E63A0(current manager108D8DC,B,filterID0). This table is RTPC association ownership, not the audio stream cache. |
+| SR422C concrete detach reuse | SU1–6;SRG10 | 9E63A0's exact remaining-curve gate, sorted binding removal, shared-recipient preservation, reverse-association count publication, concrete node release and live traversal are already positive. Zero filter selects all matching modulators; it does not mean modulator ID0. Reuse these rows for the DC10 caller rather than reopening their bodies because older R35/DC10 prose called them pending. Class-specific state retirement retains its separately documented modulation obligation. |
+| SR422D final publication/lifetime | A12B2C..A12B5C;raw1040048/10400E8 | After detach returns, B2C nonnull clears B30 count before owned curve-storage release; then release B itself and continue the previously captured next. No user callback, RTPC target store, unsubscribe result gate or newly synthesized work-count change. Global manager/pool pointers are actual GOT108D8DC/1052418, not decompiler-label guesses. |
+
+out of scope: association hash-chain mechanics and owned curve/subscription storage release; membership visibility, exact callback/parameter detach order and collected traversal are retained.
+
+Completion-key RTPC retirement now joins CK419→DC2/DC10→RK420/VR421→SU1–6. Other selective keys have their separate RTPC-input obligations; this selected completion caller does not prove them. Q14-007 remains PARTIAL pending bounded queued-control reconciliation; counts unchanged 27 native CHECKED +8 scope CHECKED /105 PARTIAL /0 NOT DONE. Q15 follows Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 421 — completion-key RTPC value invalidation and pruning
 
 Primary: `20261009-sound-scoped-value-removal-native.txt` (338 instruction words plus literals) and `20261009-sound-scoped-value-types-native.txt` (25 words plus literals/tables), same engine hash. RK420 supplies the caller; CK419 supplies K={object pointer or0, playing ID,0,FF,FF,0}. R=root scope, S=playing-ID scope, L=K+4, M=K+8; offsets hex.
