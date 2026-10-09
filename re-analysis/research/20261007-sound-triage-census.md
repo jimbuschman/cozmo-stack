@@ -2139,3 +2139,7 @@ A74244 constructor publication is captured and joined to SF1/VC8–9; the concre
 ## Checkpoint 399 — stereo-float resampler counts
 
 SF399 closes known state1/stereo/float kernel frame-count/phase/history/plane/result decisions from its own primary instructions; PCM arithmetic excluded. Q14-005 integer mono/stereo and retained stereo ramp controls remain PARTIAL. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 400 — stereo-float ramp decisions
+
+SR400 establishes the retained state2/stereo/float kernel budget, progress, phase, frame geometry and ordered publication/result. Q14-005 integer mono/stereo and integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.

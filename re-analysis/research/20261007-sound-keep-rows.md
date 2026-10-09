@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 400 — stereo-float ramp frame and phase decisions
+
+Primary: `20261009-sound-stereo-float-resampler-ramp-native.txt`, same engine hash;210 instruction words plus literal/slot. I=input,O=output,M=resampler,Q=quota; offsets hex. G1/G2 select state2,width32,channels2 via actual103C10C=A4AC04. RR mono ramp is navigation only; this recipient is independently checked.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SR400A ramp budget and geometry | A4AC04..A4ACD0 | Snapshot oldInput=M24,oldOut=M28,phase=M2C,base=wrap(M30<<10),delta=wrap(M34−M30),increment=M3C,progress=M38. Remaining=wrap(Q−oldOut),endOutput=wrap(O0+4*oldOut+4*remaining),predecessor=wrap(I0+4*(oldInput−1)); history M20 words0/4 read before count gates. Budget=uidiv(wrap(400−progress),increment), with native r1 explicitly increment and no zero guard. Read Icapacity/Ivalid/Ocapacity as U16IC/IE/OC after division. Initial index=phase logical>>16. |
+| SR400B history region | A4ACD4..A4AD88;A4AF04..A4AF48 | Initial index0: first=min_unsigned(ASR(wrap(remaining<<2),2),budget). Count0 skips history region but still enters second count without input-bound gate. Positive initializes accumulator=wrap(base+delta*(progress+increment)),accumulatorDelta=wrap(increment*delta). Each paired output frame sets progress=nextProgress, phase=wrap(phase+(accumulator logical>>10)),index=phase logical>>16,accumulator+=accumulatorDelta; both output pointers advance4. If index becomes nonzero, recompute budget from updated progress and enter second region only if index<=wrap(Ivalid−1), else finalize. If index remains0, decrement count, advance nextProgress by increment, continue while nonzero; exhausted count recomputes budget then enters second count with index0. |
+| SR400C indexed region | A4AD8C..A4AE60 | Initial nonzero index enters only if index<=wrap(Ivalid−1). Second count=min_unsigned(ASR(wrap(endOutput−currentOutput),2),budget). Count0 finalizes. Positive reinitializes accumulator from current progress+increment. For each paired frame, left predecessor+4*index/right predecessor+4*(index+Icapacity) choose adjacent source samples; output right uses Ocapacity. Update progress/phase/index/accumulator once per frame, advance both output pointers4. Updated index>wrap(Ivalid−1) finalizes immediately after frame, before decrementing remaining second count; otherwise decrement count and stop at0. No interpolation arithmetic claim. |
+| SR400D ordered publication/result | A4AE64..A4AF00 | Publish M38=progress first. consumed=min_unsigned(finalIndex,Ivalid); nonzero copies last-consumed raw left word then right word into M20 history0/4, reloading history pointer. Publish M2C=wrap(phase−(consumed<<16)),IE=low16(Ivalid−consumed),OE=low16(oldOut+produced),M24=consumed==Ivalid?0:wrap(oldInput+consumed), where produced=ASR(wrap(currentOutput−initialOutput),2). produced==remaining returns2D without M28 write; otherwise M28=wrap(oldOut+produced),return2B. Kernel does not itself convert ramp state2 to1: G1 outer caller owns that transition after M38>=400. |
+
+out of scope: per-sample stereo interpolation arithmetic under ADP-1; frame counts, progress, phase, cadence, planar geometry and history publications remain exact.
+
+out of scope: zero/multichannel source branches and backing storage mechanics.
+
+Retained stereo-float ramp locally positive. Q14-005 integer mono/stereo controls and integration reconciliation remain PARTIAL. Counts unchanged26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 399 — stereo-float constant-step frame counts
 
 Primary: `20261009-sound-stereo-float-resampler-counts-native.txt`, same engine hash;166 instruction words plus literals/slot. I=input,O=output,M=resampler,Q=quota; offsets hex. G1/G2 dispatch and RK1–6 mono contract reused for navigation only; this stereo recipient is checked from its own instructions. Retained source channels2,width32,state1 select actual table103C0EC=A4A03C.
