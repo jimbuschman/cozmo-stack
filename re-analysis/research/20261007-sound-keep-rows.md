@@ -9,7 +9,13 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 67 native-row obligations CHECKED, 8 CHECKED scope exclusions, 65 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 67 native-row obligations CHECKED, 8 CHECKED scope exclusions, 65 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+
+## Checkpoint 559 — all140 obligation impact tags; operator stop
+
+The census coverage table now tags every original obligation AUDIBLE or INTERNAL and gives an individual one-line reason. Counts: **140 AUDIBLE /0 INTERNAL**. These are whole-obligation impact tags: mixed storage/ownership/sample work does not make an obligation INTERNAL when its source readiness, routing, parameter, callback, timing or robot behaviour can change. Unresolved meter observers are conservatively AUDIBLE; no diagnostic-only consumer is proved. Guard-excluded I/O completion/cache readiness can affect onset but remains out of scope, as does per-sample DSP. No source-unreachability claim or fidelity-status change is inferred from a tag.
+
+Close-out counts remain **67 native CHECKED+8 scope CHECKED/65 PARTIAL/0 NOT DONE**, all140 original quotations preserved. The83-item audit remains `20261009-q14-partial-closeout.md`; its continuation order is superseded by the operator's latest instruction to stop after this push. Q14 extraction and Q15 were not resumed. No production/fidelity/hardware change.
 
 ## Checkpoint 558 — operator-requested close-out of all83 PARTIAL obligations
 

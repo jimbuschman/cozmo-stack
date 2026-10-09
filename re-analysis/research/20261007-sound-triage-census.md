@@ -1,154 +1,159 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
+| Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
 | Per-item native rows and production joins | PARTIAL | 67 CHECKED native-row obligations / 8 CHECKED scope exclusions / 65 PARTIAL / 0 NOT DONE; checkpoint558 audits every former PARTIAL item with its exact remaining boundary/disposition |
 
 # Q14 per-item work census
 
+Impact audit, checkpoint559: **140 AUDIBLE /0 INTERNAL**. AUDIBLE covers an obligation that can affect sound selection, timing, loudness, cutoff or robot behaviour, including a mixed obligation with internal bookkeeping. INTERNAL would require the whole obligation to have no such effect; no original KEEP/VERIFY obligation meets that stronger claim on the present evidence. Meter observers with unresolved downstream consumers are conservatively AUDIBLE, not proved harmless. Scope exclusion is independent: I/O/cache availability and completion can affect when media is ready, but this tag does not reopen the guard-excluded infrastructure. Likewise audible per-sample DSP remains excluded from this decisions-only task. This is an impact annotation, not a new source-fidelity or hardware claim.
+
+Operator's latest stop instruction supersedes the checkpoint558 continuation order: after pushing the impact audit, stop; do not resume Q14 extraction or Q15.
+
 Each quoted triage line is an independent obligation. Row presence, a disassembly capture, and a named callee do not establish closure. This is a work ledger, not an accepted answer.
 
-| Item | Triage source line | Status |
-| --- | --- | --- |
-| Q14-002 | 33 | CHECKED |
-| Q14-003 | 34 | CHECKED |
-| Q14-004 | 35 | CHECKED |
-| Q14-005 | 36 | CHECKED |
-| Q14-006 | 39 | CHECKED |
-| Q14-007 | 40 | CHECKED |
-| Q14-008 | 41 | PARTIAL |
-| Q14-009 | 42 | PARTIAL |
-| Q14-010 | 43 | CHECKED |
-| Q14-011 | 44 | CHECKED |
-| Q14-012 | 46 | CHECKED |
-| Q14-013 | 48 | CHECKED |
-| Q14-014 | 49 | CHECKED |
-| Q14-015 | 50 | CHECKED |
-| Q14-016 | 53 | PARTIAL |
-| Q14-017 | 55 | CHECKED |
-| Q14-019 | 57 | CHECKED |
-| Q14-020 | 58 | CHECKED |
-| Q14-021 | 59 | PARTIAL |
-| Q14-022 | 60 | PARTIAL |
-| Q14-023 | 61 | PARTIAL |
-| Q14-024 | 62 | PARTIAL |
-| Q14-025 | 63 | CHECKED |
-| Q14-026 | 64 | PARTIAL |
-| Q14-027 | 65 | CHECKED |
-| Q14-028 | 66 | PARTIAL |
-| Q14-029 | 67 | PARTIAL |
-| Q14-030 | 68 | CHECKED |
-| Q14-031 | 69 | CHECKED |
-| Q14-032 | 70 | PARTIAL |
-| Q14-033 | 71 | PARTIAL |
-| Q14-034 | 72 | PARTIAL |
-| Q14-035 | 73 | PARTIAL |
-| Q14-036 | 74 | CHECKED |
-| Q14-037 | 75 | PARTIAL |
-| Q14-038 | 76 | PARTIAL |
-| Q14-039 | 77 | PARTIAL |
-| Q14-040 | 78 | PARTIAL |
-| Q14-041 | 79 | PARTIAL |
-| Q14-042 | 80 | PARTIAL |
-| Q14-043 | 81 | PARTIAL |
-| Q14-044 | 82 | PARTIAL |
-| Q14-045 | 83 | PARTIAL |
-| Q14-046 | 84 | PARTIAL |
-| Q14-047 | 85 | CHECKED |
-| Q14-048 | 86 | CHECKED |
-| Q14-049 | 87 | PARTIAL |
-| Q14-050 | 88 | CHECKED |
-| Q14-051 | 90 | PARTIAL |
-| Q14-052 | 91 | PARTIAL |
-| Q14-053 | 92 | PARTIAL |
-| Q14-054 | 93 | CHECKED |
-| Q14-055 | 94 | CHECKED |
-| Q14-056 | 95 | PARTIAL |
-| Q14-057 | 96 | PARTIAL |
-| Q14-058 | 97 | CHECKED |
-| Q14-059 | 98 | CHECKED |
-| Q14-060 | 99 | CHECKED |
-| Q14-061 | 100 | CHECKED |
-| Q14-062 | 102 | CHECKED |
-| Q14-063 | 104 | CHECKED |
-| Q14-064 | 106 | CHECKED |
-| Q14-065 | 107 | CHECKED |
-| Q14-066 | 115 | CHECKED |
-| Q14-067 | 116 | PARTIAL |
-| Q14-068 | 117 | CHECKED |
-| Q14-069 | 118 | CHECKED |
-| Q14-070 | 119 | CHECKED |
-| Q14-071 | 120 | CHECKED |
-| Q14-072 | 121 | CHECKED |
-| Q14-073 | 122 | CHECKED |
-| Q14-074 | 123 | CHECKED |
-| Q14-075 | 124 | PARTIAL |
-| Q14-076 | 125 | PARTIAL |
-| Q14-077 | 126 | CHECKED |
-| Q14-078 | 127 | CHECKED |
-| Q14-079 | 128 | CHECKED |
-| Q14-080 | 129 | CHECKED |
-| Q14-081 | 130 | CHECKED |
-| Q14-082 | 131 | CHECKED |
-| Q14-083 | 132 | CHECKED |
-| Q14-084 | 133 | PARTIAL |
-| Q14-085 | 134 | CHECKED |
-| Q14-086 | 135 | CHECKED |
-| Q14-087 | 136 | CHECKED |
-| Q14-088 | 137 | PARTIAL |
-| Q14-089 | 138 | PARTIAL |
-| Q14-090 | 139 | PARTIAL |
-| Q14-091 | 140 | PARTIAL |
-| Q14-092 | 141 | PARTIAL |
-| Q14-093 | 142 | CHECKED |
-| Q14-094 | 143 | CHECKED (scope exclusion) |
-| Q14-095 | 144 | CHECKED (scope exclusion) |
-| Q14-096 | 145 | CHECKED (scope exclusion) |
-| Q14-097 | 146 | CHECKED |
-| Q14-098 | 147 | CHECKED (scope exclusion) |
-| Q14-099 | 148 | PARTIAL |
-| Q14-100 | 149 | CHECKED (scope exclusion) |
-| Q14-101 | 150 | CHECKED |
-| Q14-102 | 151 | CHECKED |
-| Q14-103 | 152 | PARTIAL |
-| Q14-104 | 153 | PARTIAL |
-| Q14-105 | 154 | PARTIAL |
-| Q14-106 | 155 | CHECKED |
-| Q14-107 | 156 | PARTIAL |
-| Q14-108 | 157 | PARTIAL |
-| Q14-109 | 158 | PARTIAL |
-| Q14-110 | 159 | PARTIAL |
-| Q14-111 | 160 | CHECKED |
-| Q14-112 | 161 | CHECKED |
-| Q14-113 | 162 | PARTIAL |
-| Q14-114 | 163 | PARTIAL |
-| Q14-115 | 164 | PARTIAL |
-| Q14-116 | 172 | PARTIAL |
-| Q14-117 | 173 | CHECKED |
-| Q14-118 | 174 | PARTIAL |
-| Q14-119 | 175 | PARTIAL |
-| Q14-120 | 176 | PARTIAL |
-| Q14-121 | 177 | PARTIAL |
-| Q14-122 | 178 | PARTIAL |
-| Q14-123 | 179 | PARTIAL |
-| Q14-124 | 180 | PARTIAL |
-| Q14-125 | 181 | CHECKED |
-| Q14-126 | 182 | CHECKED (scope exclusion) |
-| Q14-127 | 183 | CHECKED (scope exclusion) |
-| Q14-128 | 184 | CHECKED |
-| Q14-129 | 185 | CHECKED (scope exclusion) |
-| Q14-130 | 186 | PARTIAL |
-| Q14-131 | 187 | PARTIAL |
-| Q14-132 | 188 | PARTIAL |
-| Q14-133 | 189 | PARTIAL |
-| Q14-134 | 190 | PARTIAL |
-| Q14-135 | 191 | PARTIAL |
-| Q14-136 | 192 | PARTIAL |
-| Q14-137 | 200 | CHECKED |
-| Q14-138 | 201 | CHECKED |
-| Q14-139 | 204 | CHECKED |
-| Q14-140 | 205 | CHECKED |
-| Q14-141 | 206 | CHECKED |
-| Q14-142 | 207 | CHECKED |
+| Item | Triage source line | Status | Impact | One-line reason |
+| --- | --- | --- | --- | --- |
+| Q14-002 | 33 | CHECKED | AUDIBLE | Readers choose the sound graph, state, FX and routing used for playback. |
+| Q14-003 | 34 | CHECKED | AUDIBLE | Decoder block/window, skip/trim and channel decisions change played frames and endpoints. |
+| Q14-004 | 35 | CHECKED | AUDIBLE | ADPCM format, error and carry decisions change emitted audio and where it ends. |
+| Q14-005 | 36 | CHECKED | AUDIBLE | Rate, pitch, phase and frame consumption determine sound speed, timing and output. |
+| Q14-006 | 39 | CHECKED | AUDIBLE | Name normalization/hash chooses the event or sound found by lookup. |
+| Q14-007 | 40 | CHECKED | AUDIBLE | Queued action order and start/stop/seek/completion decisions determine which sound runs when. |
+| Q14-008 | 41 | PARTIAL | AUDIBLE | RNG, weights, eligibility and sequence state choose the next sound. |
+| Q14-009 | 42 | PARTIAL | AUDIBLE | Continuous selection, lookahead, delays and end callbacks determine sound succession and cutoff. |
+| Q14-010 | 43 | CHECKED | AUDIBLE | RTPC curves, precedence and transitions change live loudness, pitch and other sound controls. |
+| Q14-011 | 44 | CHECKED | AUDIBLE | Gain, mute, ducking and audibility thresholds determine loudness or suppress a voice. |
+| Q14-012 | 46 | CHECKED | AUDIBLE | Filter target, ramp and bypass decisions change the sound's spectral/loudness evolution. |
+| Q14-013 | 48 | CHECKED | AUDIBLE | Persistent filter coefficient/update stores can change the processed sound; the span is mixed. |
+| Q14-014 | 49 | CHECKED | AUDIBLE | Channel routing, matrix updates and fade arming change where/how loudly sound is delivered. |
+| Q14-015 | 50 | CHECKED | AUDIBLE | Speaker-mask/channel choices affect the robot output even though matrix arithmetic is excluded. |
+| Q14-016 | 53 | PARTIAL | AUDIBLE | Selected FX, slot order, bypass and detector settings change output loudness and sound treatment. |
+| Q14-017 | 55 | CHECKED | AUDIBLE | EQ coefficients and limiter threshold/release/enable choices change the audible output. |
+| Q14-019 | 57 | CHECKED | AUDIBLE | Connection reuse, device gates and bus tail lifetime determine routing and when audio stops. |
+| Q14-020 | 58 | CHECKED | AUDIBLE | Hijack readiness/end callbacks and22320-Hz/744-byte framing determine the robot's delivered audio. |
+| Q14-021 | 59 | PARTIAL | AUDIBLE | Animation sound selection, volume and object6/7 routing alter the sound or its timing. |
+| Q14-022 | 60 | PARTIAL | AUDIBLE | Voice/group/bus execution and pending/end callback order change scheduling and cutoff. |
+| Q14-023 | 61 | PARTIAL | AUDIBLE | Mix/frame rate and robot handoff determine cadence, sound speed and output framing. |
+| Q14-024 | 62 | PARTIAL | AUDIBLE | State-group readers and runtime consumers select parameter values and switch-driven sounds. |
+| Q14-025 | 63 | CHECKED | AUDIBLE | Live seed and draw order change random sound/parameter selection. |
+| Q14-026 | 64 | PARTIAL | AUDIBLE | Voice state, effective parameters and source/device routing determine rendered or suppressed sounds. |
+| Q14-027 | 65 | CHECKED | AUDIBLE | Envelope/LFO outputs and delivery cadence change live sound parameters over time. |
+| Q14-028 | 66 | PARTIAL | AUDIBLE | Meter values reach observers whose behavioural influence is unresolved; INTERNAL is not established. |
+| Q14-029 | 67 | PARTIAL | AUDIBLE | Panning/routing/control stores and exposed observer values can change robot audio delivery. |
+| Q14-030 | 68 | CHECKED | AUDIBLE | App event dispatch and completion callbacks can start/stop sounds or advance robot actions. |
+| Q14-031 | 69 | CHECKED | AUDIBLE | Bank/scene order and load admission determine which events and sounds are available. |
+| Q14-032 | 70 | PARTIAL | AUDIBLE | Play/source construction, audibility admission and cleanup determine playback or its rejection. |
+| Q14-033 | 71 | PARTIAL | AUDIBLE | Voice initialization, re-init and pending-state writers determine whether/when a voice runs. |
+| Q14-034 | 72 | PARTIAL | AUDIBLE | Switch precedence, repetition state and continuation validation select which child sound plays. |
+| Q14-035 | 73 | PARTIAL | AUDIBLE | Inaudibility/limit decisions and source close/init order suppress, replace or cut off audio. |
+| Q14-036 | 74 | CHECKED | AUDIBLE | Wrapper Init/format/control/failure decisions affect whether and how its sound reaches output. |
+| Q14-037 | 75 | PARTIAL | AUDIBLE | Voice limits, priority/victim order and virtual/kill choices determine what gets cut off. |
+| Q14-038 | 76 | PARTIAL | AUDIBLE | Voice parameters, delayed event and MIDI stores change timing, level and selection. |
+| Q14-039 | 77 | PARTIAL | AUDIBLE | Max-instance subscription and Play/parameter admission gates can reject or suppress sounds. |
+| Q14-040 | 78 | PARTIAL | AUDIBLE | Trigger failure, compound results and timeout/render waits change robot action and singing timing. |
+| Q14-041 | 79 | PARTIAL | AUDIBLE | Rolling means, vibrato posts and preserved smoothing alter singing parameters and behaviour. |
+| Q14-042 | 80 | PARTIAL | AUDIBLE | Nearest overridden MIDI target and table choice determine the sound receiving notes. |
+| Q14-043 | 81 | PARTIAL | AUDIBLE | Tempo, division and tick/frame conversion determine when notes are played. |
+| Q14-044 | 82 | PARTIAL | AUDIBLE | Modulator trigger and stop selectors determine which parameter state starts or stops. |
+| Q14-045 | 83 | PARTIAL | AUDIBLE | Note gates, control curves and envelope trigger timing change level and note lifetime. |
+| Q14-046 | 84 | PARTIAL | AUDIBLE | Shake RTPC and per-voice LFO depth cadence change singing modulation. |
+| Q14-047 | 85 | CHECKED | AUDIBLE | Curve/factor accumulation and delivery cadence change the sound's live parameters. |
+| Q14-048 | 86 | CHECKED | AUDIBLE | The isolated final PCM gain/interpolation still changes loudness despite its DSP exclusion. |
+| Q14-049 | 87 | PARTIAL | AUDIBLE | Recorded-node replay, fades and held-note lifetime determine selection and cutoff. |
+| Q14-050 | 88 | CHECKED | AUDIBLE | Robot bus FX order and mix-to-Hijack rate handoff determine the robot's heard output. |
+| Q14-051 | 90 | PARTIAL | AUDIBLE | MIDI target/get-in membership determines whether notes select the get-in sound branch. |
+| Q14-052 | 91 | PARTIAL | AUDIBLE | Velocity-to-gain/RTPC binding determines how loudly or with what parameters a note plays. |
+| Q14-053 | 92 | PARTIAL | AUDIBLE | Per-note draw cadence determines which randomized sound plays when a note fires. |
+| Q14-054 | 93 | CHECKED | AUDIBLE | Lead/buffering timing changes singing onset relative to the robot's animation/action. |
+| Q14-055 | 94 | CHECKED | AUDIBLE | Cube classifier thresholds and hysteresis drive robot reactions and posted vibrato. |
+| Q14-056 | 95 | PARTIAL | AUDIBLE | Clip trim/end and held-note release determine what is played or cut off at clip boundaries. |
+| Q14-057 | 96 | PARTIAL | AUDIBLE | Eligibility/blocked state and recorded selection determine note-on sound and note-off replay. |
+| Q14-058 | 97 | CHECKED | AUDIBLE | The stock audible-result acceptance item directly concerns what the robot sounds like. |
+| Q14-059 | 98 | CHECKED | AUDIBLE | Envelope trigger/stop consumer gates determine parameter and voice lifetime. |
+| Q14-060 | 99 | CHECKED | AUDIBLE | LFO phase, waveform and extrema alter singing/pitch modulation over time. |
+| Q14-061 | 100 | CHECKED | AUDIBLE | EQ/limiter type and frequency/gain/attack/release settings change the output sound and loudness. |
+| Q14-062 | 102 | CHECKED | AUDIBLE | Persistent coefficient-design association can alter the filter applied to the sound. |
+| Q14-063 | 104 | CHECKED | AUDIBLE | EQ band/rate clamp and Hijack format link change filtering and robot output. |
+| Q14-064 | 106 | CHECKED | AUDIBLE | EQ type/coefficient/state decisions change the filter used for playback. |
+| Q14-065 | 107 | CHECKED | AUDIBLE | Object6/7, transition and dispatch order change on-robot/off-robot sound routing and timing. |
+| Q14-066 | 115 | CHECKED | AUDIBLE | StartStream readiness/results and frame window determine whether/when a source starts. |
+| Q14-067 | 116 | PARTIAL | AUDIBLE | Music priority/limits and code2/3 held lifetime determine note replay and cutoff. |
+| Q14-068 | 117 | CHECKED | AUDIBLE | Threshold validation and stored gain value decide whether a voice is audible. |
+| Q14-069 | 118 | CHECKED | AUDIBLE | Conditional RNG and exact range conversion choose a live sound parameter. |
+| Q14-070 | 119 | CHECKED | AUDIBLE | Parentless-bus sentinel state controls bus registration/routing choices. |
+| Q14-071 | 120 | CHECKED | AUDIBLE | Connection flags and duplicate reuse determine the effective audio route. |
+| Q14-072 | 121 | CHECKED | AUDIBLE | Node reset and bus-change fields alter subsequent voice state and routing. |
+| Q14-073 | 122 | CHECKED | AUDIBLE | Voice Init/FX selection and failure results determine whether playback reaches rendering. |
+| Q14-074 | 123 | CHECKED | AUDIBLE | Line/device/cache selection and reservation failure can change routing or reject a voice. |
+| Q14-075 | 124 | PARTIAL | AUDIBLE | Composition/prepass/voice/flush ordering changes live sound scheduling and completion behaviour. |
+| Q14-076 | 125 | PARTIAL | AUDIBLE | Media pointer/size/bank ownership selects the bytes a source can play and whether it survives rebind. |
+| Q14-077 | 126 | CHECKED | AUDIBLE | Cursor delta and media publication alter the source position/bytes used after rebind. |
+| Q14-078 | 127 | CHECKED | AUDIBLE | FX metadata, format, bypass and chain cleanup determine applied processing or playback failure. |
+| Q14-079 | 128 | CHECKED | AUDIBLE | Wrapper render/result/count and lifecycle slots determine output and source progress/cutoff. |
+| Q14-080 | 129 | CHECKED | AUDIBLE | Compressor settings, Init failure and bypass determine output level or processing admission. |
+| Q14-081 | 130 | CHECKED | AUDIBLE | Compressor execution contains channel/control/count decisions as well as audible gain reduction. |
+| Q14-082 | 131 | CHECKED | AUDIBLE | Store-before-release is visible to callbacks and can change subsequent parameter/FX use. |
+| Q14-083 | 132 | CHECKED | AUDIBLE | Effective gain recomputation and threshold compare decide if a voice is runnable/audible. |
+| Q14-084 | 133 | PARTIAL | AUDIBLE | Limiter undo and source destruction can release capacity, stop sound and affect subsequent admission. |
+| Q14-085 | 134 | CHECKED | AUDIBLE | Position/duration clock and one-shot stop offset determine sound timing and cutoff. |
+| Q14-086 | 135 | CHECKED | AUDIBLE | Frame/rate setting and StartStream callers determine source scheduling cadence. |
+| Q14-087 | 136 | CHECKED | AUDIBLE | Completion/object/state callbacks alter event lifetime, switch selection and subsequent playback. |
+| Q14-088 | 137 | PARTIAL | AUDIBLE | Play reachability, virtualization, fade and MIDI gates determine which sound is actually heard. |
+| Q14-089 | 138 | PARTIAL | AUDIBLE | Media-ID/DIDX/DATA selection and aliases determine playable content and source availability. |
+| Q14-090 | 139 | PARTIAL | AUDIBLE | Source type/header/format/results determine which decoder or generator plays and when it is ready. |
+| Q14-091 | 140 | PARTIAL | AUDIBLE | Render/seek/stream and generator endpoints determine output progress and end-of-stream. |
+| Q14-092 | 141 | PARTIAL | AUDIBLE | Rate/frame writers and transition timing values change sound speed and scheduling. |
+| Q14-093 | 142 | CHECKED | AUDIBLE | Populated control-signal evaluators and notifications change live sound parameters. |
+| Q14-094 | 143 | CHECKED (scope exclusion) | AUDIBLE | Resolver/index/provider selection can change which media is found or whether sound is available. |
+| Q14-095 | 144 | CHECKED (scope exclusion) | AUDIBLE | Read retry/error mapping can change media readiness and delay or prevent sound; scope remains excluded. |
+| Q14-096 | 145 | CHECKED (scope exclusion) | AUDIBLE | GetBuffer state/results can delay source readiness and playback; storage implementation is excluded. |
+| Q14-097 | 146 | CHECKED | AUDIBLE | Raw3F retry, frame window and prefix/header decisions determine playback start/progress. |
+| Q14-098 | 147 | CHECKED (scope exclusion) | AUDIBLE | I/O completion/checkpoint timing can delay source readiness; its implementation remains excluded. |
+| Q14-099 | 148 | PARTIAL | AUDIBLE | Rate/frame/default branches and Hijack format link change output timing and sound speed. |
+| Q14-100 | 149 | CHECKED (scope exclusion) | AUDIBLE | Memory/cache availability and I/O scheduler order can delay media readiness and hence sound onset. |
+| Q14-101 | 150 | CHECKED | AUDIBLE | Decoder setup/packet/frame/header decisions determine emitted audio and its endpoint. |
+| Q14-102 | 151 | CHECKED | AUDIBLE | Codec/channel/seek decisions determine played content and starting/ending position. |
+| Q14-103 | 152 | PARTIAL | AUDIBLE | Admitted generator/MIDI source lifecycle and endpoint decisions determine what plays and when it stops. |
+| Q14-104 | 153 | PARTIAL | AUDIBLE | Bus ancestors, reachability and cached parameter paths change route and loudness. |
+| Q14-105 | 154 | PARTIAL | AUDIBLE | RTPC fallback/subscriptions and modulator triggers change sound-control values and cadence. |
+| Q14-106 | 155 | CHECKED | AUDIBLE | Reset/recompute before the null gate changes subsequent effective sound state. |
+| Q14-107 | 156 | PARTIAL | AUDIBLE | Duration/close/notification decisions determine cutoff and completion behaviour despite mixed free bookkeeping. |
+| Q14-108 | 157 | PARTIAL | AUDIBLE | Flush and PBI callbacks can complete/stop voices or advance behaviour; allocator internals alone are excluded. |
+| Q14-109 | 158 | PARTIAL | AUDIBLE | Header/key/chunk/creator decisions determine loaded sounds, states and playback availability. |
+| Q14-110 | 159 | PARTIAL | AUDIBLE | Alternate MIDI posters/target routes can change the sounds selected for notes. |
+| Q14-111 | 160 | CHECKED | AUDIBLE | Override/priority/scheduling-control helpers can affect voice admission and timing. |
+| Q14-112 | 161 | CHECKED | AUDIBLE | Curve interpolation/scaling produces RTPC values controlling the played sound. |
+| Q14-113 | 162 | PARTIAL | AUDIBLE | Curve key/point ordering/replacement and subscription failure change delivered sound parameters. |
+| Q14-114 | 163 | PARTIAL | AUDIBLE | Sum/product order and actual evaluator recipients change sound-control values. |
+| Q14-115 | 164 | PARTIAL | AUDIBLE | Shipped curve shape/scaling/accumulate values and numeric defects can change sound levels/parameters. |
+| Q14-116 | 172 | PARTIAL | AUDIBLE | Pre-limiter/media/playing-manager and source-type publication affect admission, content and lifetime. |
+| Q14-117 | 173 | CHECKED | AUDIBLE | FX wrapper format/bypass/lifetime controls affect audible processing; mixed PCM arithmetic is excluded. |
+| Q14-118 | 174 | PARTIAL | AUDIBLE | Recompute/global undo/source sibling effects alter audibility, capacity and cutoff. |
+| Q14-119 | 175 | PARTIAL | AUDIBLE | Clock/emit/stop-offset writers determine position, callback timing and cutoff. |
+| Q14-120 | 176 | PARTIAL | AUDIBLE | Frame-setting and StartStream caller/writer values determine sound cadence. |
+| Q14-121 | 177 | PARTIAL | AUDIBLE | Bank/Play branch reachability decides which actual sound path is taken. |
+| Q14-122 | 178 | PARTIAL | AUDIBLE | Native media table population determines which source bytes are available for playback. |
+| Q14-123 | 179 | PARTIAL | AUDIBLE | Source-format/header/start/seek decisions determine decoder, readiness and playback position. |
+| Q14-124 | 180 | PARTIAL | AUDIBLE | JNI rate/frame and rate-to-voice/transition values change timing and output speed. |
+| Q14-125 | 181 | CHECKED | AUDIBLE | State population/evaluation/retirement changes live modulator values delivered to sound. |
+| Q14-126 | 182 | CHECKED (scope exclusion) | AUDIBLE | Resolver/index/APK/OBB choice can affect found media and sound availability despite scope exclusion. |
+| Q14-127 | 183 | CHECKED (scope exclusion) | AUDIBLE | Stream GetBuffer state/result can delay playback readiness despite storage scope exclusion. |
+| Q14-128 | 184 | CHECKED | AUDIBLE | Retry and conditional source-prefix inputs determine whether/when streaming playback starts. |
+| Q14-129 | 185 | CHECKED (scope exclusion) | AUDIBLE | External completion checks/retry can alter when media becomes playable despite scope exclusion. |
+| Q14-130 | 186 | PARTIAL | AUDIBLE | Rate/frame writers, divisor outcome and Hijack format affect sound speed, timing or startup failure. |
+| Q14-131 | 187 | PARTIAL | AUDIBLE | Bus resolver and parameter walk determine route and effective loudness. |
+| Q14-132 | 188 | PARTIAL | AUDIBLE | Context builder and modulator trigger recipients alter parameter values and live state. |
+| Q14-133 | 189 | PARTIAL | AUDIBLE | Flush/callback lifetime can cut off/complete sounds; mixed allocator bookkeeping does not make the item internal. |
+| Q14-134 | 190 | PARTIAL | AUDIBLE | Chunk/creator/key/unload decisions determine available sounds and state products. |
+| Q14-135 | 191 | PARTIAL | AUDIBLE | Alternate MIDI posting/route can select additional sounds beyond the normal builder. |
+| Q14-136 | 192 | PARTIAL | AUDIBLE | Current curve/loading/accumulation claims govern parameter values used by playback. |
+| Q14-137 | 200 | CHECKED | AUDIBLE | Custom fast-log curve scaling computes RTPC values that change the sound. |
+| Q14-138 | 201 | CHECKED | AUDIBLE | Resampler phase/count/pointer geometry determines sound progress, speed and duration. |
+| Q14-139 | 204 | CHECKED | AUDIBLE | Persistent filter coefficient/state stores can alter the processed output sound. |
+| Q14-140 | 205 | CHECKED | AUDIBLE | Reaction classifier first-sample state changes subsequent cube/robot behaviour and singing modulation. |
+| Q14-141 | 206 | CHECKED | AUDIBLE | Zero-before-release is callback-visible and may change subsequent parameter/FX use. |
+| Q14-142 | 207 | CHECKED | AUDIBLE | EINTR/non-EINTR/zero-read mapping can alter media readiness and sound onset; it is excluded I/O work. |
 
 ## Q14-002 — triage line 33
 

@@ -90,8 +90,12 @@ Requested by the operator before further extraction. Baseline: checkpoint557, co
 | Q14-135 | PARTIAL | Establish alternate0x90 MIDI poster and9EE230 call-site route, same110; preserve UNKNOWN without a positive producer. | A2/normal builder/906-action census; normal route does not prove no alternate MIDI. |
 | Q14-136 | PARTIAL | Complete C35.4 independently checked64-entry/scaling/shape/accumulate census and current D1–D9 comparison, plus concrete loader/subscription reconciliation113; stale “C35 unavailable” is removed. | R/CL/QE/LW/AC/current C35; no new whole-RTPC writer census. |
 
-## Order after this table is pushed
+## Superseded continuation order — operator now requests stop
 
-Smallest first by distinct unpaid boundary, not ID count: (1) Q14-023 query-block→renderer transfer/address correction; (2) Q14-038 PB8 detach recipient; (3) Q14-024 trailing state-object consumer; (4) Q14-008 live weight setter; (5) Q14-016 trailing association input/consumer. Check each selected body/input against the guard again. Broader duplicate obligations are updated from a single recovered boundary only when their independent original requirements are satisfied. Optional producers stay UNKNOWN until positively bound; do not generate new families to keep them open.
+The operator's later instruction at checkpoint559 is to stop after the impact-tag push; the following order is retained only as a future handoff. Smallest first by distinct unpaid boundary, not ID count: (1) Q14-023 query-block→renderer transfer/address correction; (2) Q14-038 PB8 detach recipient; (3) Q14-024 trailing state-object consumer; (4) Q14-008 live weight setter; (5) Q14-016 trailing association input/consumer. Check each selected body/input against the guard again. Broader duplicate obligations are updated from a single recovered boundary only when their independent original requirements are satisfied. Optional producers stay UNKNOWN until positively bound; do not generate new families to keep them open.
 
 The explicit writer/caller/corpus proofs, accepted generator controls, actual MIDI selection/velocity/RNG/end consumers, meter observers, modulator trigger recipients and cited higher-layer decisions remain PARTIAL. No provably-unreachable disposition is used in this audit.
+
+## Impact-tag addition — checkpoint559
+
+All140 obligations have individual AUDIBLE tags and one-line reasons in the main census coverage table:140 AUDIBLE/0 INTERNAL. This labels the whole mixed obligation; excluded infrastructure that can delay media readiness is still AUDIBLE under the operator's “when” criterion, and remains excluded by the guard. No obligation is proved wholly effect-free; unresolved observers are conservatively AUDIBLE. Coverage remains67 native CHECKED+8 scope CHECKED/65 PARTIAL. Stop after the push; no new extraction or Q15 work.
