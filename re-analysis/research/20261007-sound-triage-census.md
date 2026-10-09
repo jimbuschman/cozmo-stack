@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through296 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through297 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1715,3 +1715,7 @@ LREL295A–D reuse insert-FX IC9/WV9/SD140I, recover output-dependent reset, bin
 ### Checkpoint 296 — buffer release, idle removal and frame joins
 
 LFRAME296A–H recover exact last-eligible-slot state overwrite, reverse idle gates/one-pass bit clear, detach/destruct/ordered erase, device clock/gate order and output/device/idle call joins. Q14-019 reconciles positive selected factory/creation/teardown bodies; remaining routing/finalization/dynamic families/writers stay PARTIAL. LREL295A reset identified as existing insert-FX IC10 reuse. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 297 — parent/device output callers
+
+OUT297A–F recover parent valid-frame/padding/state and custom/fallback routing, exact gain endpoint publication, capture silence/submission/count order and device callback/history order. MR geometry reused and per-sample arithmetic stopped. Concrete A1C9CC/custom/device/capture products and writers remain separate; counts/Q15/fidelity/production unchanged.
