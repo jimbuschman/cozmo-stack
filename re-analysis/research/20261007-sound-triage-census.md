@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through515 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through516 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -458,13 +458,13 @@ PARTIAL: Q15 LP1–7/SP1–8/MI1–7 establish LFO parameter RNG/RTPC gates, eng
 
 > | M9-009 | **KEEP** | 0x00A6E848..0x00A6F133 | Curve/property accumulation, buffer delivery and consumer update cadence remain exact parameter work; arbitrary per-sample application remains unsupported. |
 
-PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. Inlinedcurve-shape rows andlivewriter/consumerclosure remain; anyfinalPCMdescendantmustbeisolatedindependentlybeforeequivalence. No whole-recordDROP.
+PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. CS516 closes inlined shape0..9/out-of-range dispatch and exactrawcoefficient/F32 opcode blocks; known MC1–6 production buffered/scalar control delivery and isolated PCM boundary are positive. Remaining live curve/key/factor/attachment writer and additional consumer families stay specific; only MC sample arithmetic is out of scope under ADP-1. No whole-recordDROP.
 
 ## Q14-048 — triage line 86
 
 > | M9-009 | **VERIFY** | 0x00A6E848..0x00A6F133 | If a descendant merely multiplies final PCM by an already-exact parameter stream, isolate that sample loop first; current evidence does not settle the boundary. |
 
-PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. Inlinedcurve-shape rows andlivewriter/consumerclosure remain; anyfinalPCMdescendantmustbeisolatedindependentlybeforeequivalence. No whole-recordDROP.
+PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establish exactscalar/factor/attachmentcontrol andKEEPboundary. CS516 closes inlined shape0..9/out-of-range dispatch and exactrawcoefficient/F32 opcode blocks; known MC1–6 production buffered/scalar control delivery and isolated PCM boundary are positive. Remaining live curve/key/factor/attachment writer and additional consumer families stay specific; only MC sample arithmetic is out of scope under ADP-1. No whole-recordDROP.
 
 ## Q14-049 — triage line 87
 
