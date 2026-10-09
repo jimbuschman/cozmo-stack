@@ -40,3 +40,13 @@ rules.
 
    List the excluded records, and why. Give no verdicts. The packet keeps the Opus pass short: it compares, it doesn't
    rediscover.
+10. **Port every engine log and side effect inside the cited ranges.** The Opus passes found the same misses more
+    than once. Before committing, list every call inside each cited instruction range and account for each one in the
+    C#:
+    - the log calls (`sChanneledInfoF`, `sWarningF`, `sErrorF`, and the error-flag store and debug-break gate that follow
+      `sErrorF`), with their exact event name, format string and level;
+    - file and stream opens and closes;
+    - counters and static state.
+
+    A call with no C# counterpart is either built, or listed as MISSING with its address. Also **reopen the call target
+    of every row you build on.** A row can misname a function: M1-024's D1 did.
