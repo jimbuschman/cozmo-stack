@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 300 — live connection flag publication and mixer-row reconciliation
+
+Primary: `20261008-sound-connection-flag-publication-native.txt`; same engine hash. Reachability: existing VS13, primary `20261007-sound-voice-state-native.txt` atA554E8. No new full voice or matrix extraction.
+
+| Step | Address | Behaviour | Gates / ordering | Boundary |
+|---|---|---|---|---|
+| CFLAG300A | 00A4C584..00A4C5A8 | Owner28null returns. Otherwise forward connection28 traversal writes each byteC6C bit2 from incoming r1 **lowbit** byBFI; preserve all otherbits. Reloadnext28 after store; no callback or status result. | Incoming2 clearsbit; only1lowbit matters. No gain/matrix publication inside this helper. | VS13's restart-result1 invokes ownerlive58 first, then this helper with1; restart-requestbit clears afterwards as already rowed. Other callers/writers not asserted absent. |
+| CFLAG300B | RCC1/2;EP1–12;VP8/AV4;BP5;CR1–5;MR1–5 | Reuse positive constructor C6C defaults, audibilitybit1 writers, effective parameter bit2 publication, matrix/gain previous/current copy gates, matrix observer pointer exposure and bus first-update snapshot. EP9/10 already supply ordinary panner producer's forced/changed parameter selection. | First-update/arming labels cannot replace raw flag tests; each producer/consumer retains its own row. | Q14-014's old blanket unread first-update/connection-flag wording superseded only for these known bodies. Remaining relevant flag writers, format/matrix routing cases, live products and inputs remain PARTIAL. |
+
+This closes the selected helper's live restart join and reconciles existing mixer controls; no mono-pan law or whole matrix/path claim is invented. Counts unchanged, Q14 PARTIAL, Q15 parked. Out of scope: per-sample mixing arithmetic ADP-1 and adopted positioning/source branch exclusions. No production/fidelity changes.
+
 ## Checkpoint 299 — recorder stop-rule reconciliation
 
 SOUT298A/B retain the selected live sink bindings. OUT297D/E retain gains, live callback and gain-history ordering. Out of scope: separate optional output-recorder conversion, recording writer/counter and file capture lifecycle; no change to live sound selection, scheduling, parameter value or routing. Recorder-only SOUT298C–F detail is withdrawn and its companion removed; do not descend into recording interfaces/file storage. This is a scope correction, not an evidence/status promotion. Counts unchanged, Q14 PARTIAL, Q15 parked; research only.

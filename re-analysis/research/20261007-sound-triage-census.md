@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through299 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through300 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -226,7 +226,7 @@ CHECKED: FB1–FB3 reopen the full named span and establish persistent coefficie
 
 > | M6-012 | **KEEP** | 0x00A4FBEC;0x00A45E9C;0x00A25FF8;0x00A1F79C;0x00A209BC | Channel mapping/LFE route, matrix inputs and updates, first-update rule and conn+6C fade arming remain exact; panner decisions cannot be replaced by an arbitrary stereo average. |
 
-PARTIAL: CR1–CR6 and MR1–MR5 establish connection dispatch, supplied gain pairs, ordinary/LFE channel selection, padded matrix layout, frame publication and mixer control/PCM boundary. Panner/matrix producers, first-update and connection6C arming remain open; no completed M6-012 claim.
+PARTIAL: CR/MR establish dispatch, gain pairs, channel layout/count and mixer control/PCM boundary. EP1–12/VP8/AV4/BP5 already supply parameter/matrix copies, panner-input selection, audibility flags, observer pointer exposure and bus first-update snapshot; RCC1/2 constructor flags and CFLAG300 live restart-bit publication are positive joins. Remaining relevant connection-flag writers, format/matrix routing cases, dynamic products and input/provider closure; no completed M6-012 claim.
 
 ## Q14-015 — triage line 50
 
@@ -1727,3 +1727,7 @@ SOUT298A–F bind default/OpenSL sink callbacks to native no-ops or positive DF4
 ### Checkpoint 299 — recorder scope correction
 
 Optional recorder conversion/write/count descendants have no live sound-selection/timing/parameter/route effect and stop out of scope. SOUT298C–F details/companion withdrawn; selected live sink bindings and OUT297 gain/callback/history order retained. Recorder-only products/writers are not remaining Q14 decisions. No counts/Q15/fidelity/production changes.
+
+### Checkpoint 300 — connection restart flag and mixer reconciliation
+
+CFLAG300A closes A4C584 lowbit-to-bit2 forward publication and joins VS13 restart callback order. CFLAG300B/Q14-014 reuse existing RCC/EP/VP/AV/BP/CR/MR positive producers/consumers instead of broad unread labels; remaining matrix/flag/product/input scope stays PARTIAL. Counts/Q15/fidelity/production unchanged.
