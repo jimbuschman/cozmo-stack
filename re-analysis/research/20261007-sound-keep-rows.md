@@ -11,6 +11,24 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 388 — Vorbis floor setup admission
+
+Primary: `20261009-sound-vorbis-floor-admission-native.txt`, same engine hash; 354 instruction words. F=floor descriptor, S=setup, R=reader; offsets hex. This records setup rejection and source admission, not floor sample arithmetic or full decoding.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| FA388A partitions/classes | AB88D8..AB89D8;AB8C90..AB8C98 | Read5, publish F18 partition count (ordinary0..31) and F4 class-index base. Zero count writes F0=0 and skips class parsing. Positive count reads4/stores each index forward, reloads live F4/F18, tracks signed maximum startingFFFFFFFF. Publish F0 class descriptor base sized max+1 entries of B bytes; parse every class0..max, including indices unused by a partition. No gap compaction or requirement every class appear. |
+| FA388B class admission | AB89DC..AB8AC4;AB8C74..AB8C8C | Per class read3+1/store dimension byte0, read2/store subclass-width byte1. Immediately rejectFFFFFFFF if signed R8<0. Width0 stores masterbook byte2=0 without consuming8 bits; nonzero reads8/stores masterbook. In both cases require byte2<signed S18, so width0 still validates the synthetic0. No inferred skip of that check. |
+| FA388C subclass books | AB8A4C..AB8ADC | Iterate 1<<live unsigned subclass-width entries forward. Read8, subtract1 modulo32, store low byte at class+3+i; reload live F0 and S18. StoredFF is admitted as absent; every other byte must be <signed S18 or returnFFFFFFFF. Rejection follows publication. Live width controls iteration; class count uses saved maximum, not live partition membership. |
+| FA388D range and coordinate rejection | AB8AE0..AB8B48;AB8BFC..AB8C70;AB8CEC..AB8D24 | Read2+1/store F20 multiplier, read4/save range-bit width. Sum dimensions of partition-selected classes in authored order. For positive partition count read that many coordinates using saved width, store low16 at F8 starting index2, then require U16 coordinate <(1<<width); otherwiseFFFFFFFF. Each next partition reloads class/partition bases; accepted completion requires signed R8>=0. Then publish endpoints0 and low16(1<<width), F1C=coordinateCount+2. The initial partition count/coordinate topology is not replaced with a fixed block-size table. |
+| FA388E empty-partition admission/result | AB8BF0..AB8BF8;AB8E34..AB8E5C;AB8D28..AB8D64;AB8E14..AB8E18 | With nonpositive live partition count, require signed R8>=0; then endpoints0/low16(1<<width),F1C=2. Both accepted paths prepare the index/neighbor tables, ignore AB8018 return, and return0; no further explicit reader-extent or codebook rejection after endpoint publication. VS385 maps everyFFFFFFFF result toFFFFFF7B and stops later stages. |
+
+out of scope: arena reservation/backing storage; no allocator descent and no synthetic allocation-failure admission policy.
+
+out of scope: floor index sorting, neighbor-table preparation and sample arithmetic; these do not decide source admission, frame timing or routing here. AB8018 is not descended; no WEM equivalence claim.
+
+Named floor, residue and mapping parser rejection producers are now locally positive (FA388/RA387/MA386), joined to VS385 acceptance. Selected packet continuation and actual source/input/provider/writer/family closure remain separately PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 387 — Vorbis residue setup rejection
 
 Primary: `20261009-sound-vorbis-residue-admission-native.txt`, same engine hash; 305 instruction words and bit masks. T=residue descriptor, S=setup, R=reader; offsets hex. VS385 rejects any nonzero helper result; no sample decode descent.
