@@ -1,0 +1,68 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A43F64..0x00A44068 exclusive; ARM;
+00A43F64: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+00A43F68: ldr          r7, [pc, #0xf8] ; word[00A44068]=00649FE0
+00A43F6C: add          r7, pc, r7
+00A43F70: ldr          r2, [r7, #4]
+00A43F74: subs         r6, r2, #1
+00A43F78: popmi        {r4, r5, r6, r7, r8, sb, sl, pc}
+00A43F7C: sub          r5, r2, #0xc0000001
+00A43F80: ldr          r8, [pc, #0xe4] ; word[00A4406C]=00649FC4
+00A43F84: ldr          sb, [pc, #0xe4] ; word[00A44070]=00649FBC
+00A43F88: add          r8, pc, r8
+00A43F8C: lsl          r5, r5, #2
+00A43F90: add          sb, pc, sb
+00A43F94: b            #0xa44028
+00A43F98: ldrb         r3, [r4, #0x1cc]
+00A43F9C: tst          r3, #1
+00A43FA0: bne          #0xa44048
+00A43FA4: ldr          r3, [pc, #0xc8] ; word[00A44074]=005FC0F4
+00A43FA8: ldr          r0, [r4, #0x1c8]
+00A43FAC: ldr          r3, [pc, r3]
+00A43FB0: cmp          r0, #0
+00A43FB4: ldr          sl, [r3]
+00A43FB8: beq          #0xa43fc4
+00A43FBC: add          r1, r4, #0x24
+00A43FC0: bl           #0xa4f6f0
+00A43FC4: mov          r0, r4
+00A43FC8: bl           #0xa4eed8
+00A43FCC: mov          r1, r4
+00A43FD0: mov          r0, sl
+00A43FD4: bl           #0xa7a988
+00A43FD8: ldr          r4, [r8, #4]
+00A43FDC: ldr          ip, [r8]
+00A43FE0: sub          r2, r4, #0xc0000001
+00A43FE4: add          r0, ip, r5
+00A43FE8: add          r2, ip, r2, lsl #2
+00A43FEC: cmp          r2, r0
+00A43FF0: bls          #0xa44010
+00A43FF4: mvn          r3, r0
+00A43FF8: add          r2, r3, r2
+00A43FFC: bic          r2, r2, #3
+00A44000: add          r1, r5, #4
+00A44004: add          r2, r2, #4
+00A44008: add          r1, ip, r1
+00A4400C: bl           #0x4d667c
+00A44010: sub          r6, r6, #1
+00A44014: sub          r4, r4, #1
+00A44018: cmn          r6, #1
+00A4401C: str          r4, [sb, #4]
+00A44020: sub          r5, r5, #4
+00A44024: beq          #0xa44064
+00A44028: ldr          r3, [r7]
+00A4402C: ldr          r4, [r3, r5]
+00A44030: ldr          r3, [r4, #0x1bc]
+00A44034: cmp          r3, #1
+00A44038: beq          #0xa44048
+00A4403C: ldr          r3, [r4, #0x1c0]
+00A44040: cmp          r3, #0
+00A44044: beq          #0xa43f98
+00A44048: sub          r6, r6, #1
+00A4404C: ldrb         r3, [r4, #0x1cc]
+00A44050: cmn          r6, #1
+00A44054: sub          r5, r5, #4
+00A44058: bfc          r3, #0, #1
+00A4405C: strb         r3, [r4, #0x1cc]
+00A44060: bne          #0xa44028
+00A44064: pop          {r4, r5, r6, r7, r8, sb, sl, pc}

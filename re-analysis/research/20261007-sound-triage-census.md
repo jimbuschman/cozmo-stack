@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through295 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through296 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -250,7 +250,7 @@ PARTIAL; F1–F21 separate externally authored settings, coefficient stores, ker
 
 > | M6-014 | **KEEP** | 0x00A42210;0x00A4FEF8;0x00A4F754;0x00A4F36C;0x00A43F64;0x00A4ECE4;0x005985FC;0x009CC2AC;0x009CC4D8 | Reuse keys/eState, aux-connect policy, device gates, FX factory/bypass, idle-frame lifetime, tail and zero-length chunks are routing/state/timing, not DSP. |
 
-PARTIAL: FX1–FX6, BO1–BO6, BW1–BW4 and HG1–HG8 establish render ordering, bypass/format propagation, callback visibility and Hijack producer/consumer state. Bus creation/reuse, per-slot factory and idle-release/destruction remain open; no whole M6-014 completion claim.
+PARTIAL: FX/BO/BW/IC/HG/HBIND already establish selected factory, bypass/format and Hijack joins. SR287–LREL295 add route replacement/reuse, base/derived creation, recursion/root handling and teardown; LFRAME296 adds buffer-release state overwrite, reverse idle selection/deletion and live frame invocation/gates. Those known local bodies are positive and are not reopened by old unread notes. Remaining concrete output route/device finalization, dynamic product families and relevant state/input/provider/writer/tail closure; no whole M6-014 completion claim.
 
 ## Q14-020 — triage line 58
 
@@ -1711,3 +1711,7 @@ LTERM294A–D recover masked unsubscribe/counter/reference order, buffer release
 ### Checkpoint 295 — slot reset and logical media release
 
 LREL295A–D reuse insert-FX IC9/WV9/SD140I, recover output-dependent reset, bind the constructor-selected embedded live0 to a no-op, and recover A6BA28 pointer/ID admission, media-before-owner order, callback-bound reloads and count-before-free. LTERM294 and SF8 now join this local body; owner families and collection writers remain PARTIAL. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 296 — buffer release, idle removal and frame joins
+
+LFRAME296A–H recover exact last-eligible-slot state overwrite, reverse idle gates/one-pass bit clear, detach/destruct/ordered erase, device clock/gate order and output/device/idle call joins. Q14-019 reconciles positive selected factory/creation/teardown bodies; remaining routing/finalization/dynamic families/writers stay PARTIAL. LREL295A reset identified as existing insert-FX IC10 reuse. Counts/Q15/fidelity/production unchanged.
