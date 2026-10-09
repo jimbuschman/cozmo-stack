@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through301 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through302 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -208,7 +208,7 @@ PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluatio
 
 > | M6-010 | **KEEP** | 0x009EF258;0x009FFAD4;0x009FAE18;0x009A080C..0x009A0908;0x00A4B608..0x00A4B674;0x009BD368..0x009BD8B4;0x009C54E8 | Gain inputs/composition, randomizer/root note, mute keys, ducking maximum, audibility thresholds and gain values/routing stay exact; fastpow feeding those decisions is not blanket libm relief. |
 
-PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positioning inputs and threshold controls. SEND286 supplies the full9BD368 send scratch selector, exact gain conversion/thresholds, ordered kinds and ID-only termination; VP11 supplies its live routing caller. D1/RW10 collapsed-bus predicate, DU1–7 reduction/publication and PDI1–3 default table initializer are already positive. Remaining: other randomizer/mute-key and reachable duck/route recipient/input/provider/writer joins; those known local bodies are not reopened.
+PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positioning inputs and threshold controls. SEND286 supplies the full9BD368 send scratch selector, exact gain conversion/thresholds, ordered kinds and ID-only termination; VP11 supplies its live routing caller. D1/RW10 collapsed-bus predicate, DU1–7 reduction/publication and PDI1–3 default table initializer are already positive. RN/NPR/PDI and V6/V11 already supply root default/inheritance, range draw cadence and one-time latch; SR287–OUT297/SOUT298 add selected route/lifecycle joins, LCTX302 adds constructor-bound lazy parameter lookup/latch/clone association. Remaining mute-key and other reachable recipient/input/provider/writer joins; those positive local bodies are not reopened.
 
 ## Q14-012 — triage line 46
 
@@ -1735,3 +1735,7 @@ CFLAG300A closes A4C584 lowbit-to-bit2 forward publication and joins VS13 restar
 ### Checkpoint 301 — SetupConfig/queued seed join
 
 SEED301A–D recover U16 config74 admission, stock zero preservation (SL34/CV282 reuse), exact tag32/size8 enqueue/no-wake order and consumed lowword/highzero setter. Direct ARM scan confirms two known setter calls without asserting indirect/Thumb/writer absence. Q14-025 known SetupConfig branch reconciled; wider closure/counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 302 — lazy connection parameter lookup
+
+LCTX302A–E recover constructor-bound cache/latch-before-query behavior, node inheritance/property39/defaultFFFFFFFF, registry first-ID retain and output-replace-before-oldrelease; IC holder/subscription/scope helpers reused. Concrete consumer/writer families remain separate. UC46 removes SEED301 synthetic query-width uncertainty; RN/NPR/PDI/V one-time random/root joins reconciled. Counts/Q15/fidelity/production unchanged.
