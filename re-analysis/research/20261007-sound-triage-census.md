@@ -2151,3 +2151,7 @@ IR401 establishes mono/stereo state2 width16 frame, phase, progress, interleaved
 ## Checkpoint 402 — integer-source bypass controls
 
 IB402 establishes state0 mono/stereo width16 count, conversion cadence, interleaved/planar geometry, predecessor history at n0 and live input-count publication decisions. Q14-005 constant-step/integration reconciliation remain PARTIAL; PCM arithmetic excluded. Counts unchanged; Q15 pending Q14.
+
+## Checkpoint 403 — integer-source constant-step controls
+
+IC403 establishes retained mono/stereo state1 width16 division counts, vector/tail frame cadence, phase, interleaved/planar geometry and refreshed-count publication. All retained G2 kernel recipients now locally positive; Q14-005 integration reconciliation remains PARTIAL. Counts unchanged; Q15 pending Q14.
