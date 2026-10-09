@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "330d5959dc310124af2f81edf5188e6b2d1860cb07a0d125e7fcc2e784f1c825",
+  "inventory_sha256": "57133e4fe123ac0af7f153c7d8ce134687d4551d52fcf5689c285bc4254d53be",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -137,8 +137,8 @@
         "R35/B14 ctor: Dispatch::Create \"RelTransport\" priority 3 (0x008367C2); +0xA0=1, +0xA1=0 (0x008367DA); ChangeSyncMode(false) (0x008367E2) -> ScheduleCallback(2 ms) (0x00836896 movs r2,#2; 0x0083689E); lambda 0x008383CE",
         "R34 ReliableTransport::Update 0x00837B9A..0x00837C92: mutex +0x24; UDP Update (vtable +0x28, receive drain); ReliableConnection::Update per connection; false if any timed out",
         "the exact repeat semantics are M1-021",
-        "CA8/CA9: priority 3 asks for SCHED_RR at 75% of the OS range on both executor threads, with EPERM ignored silently (0x007FBE02..0x007FBE14; SetThreadPriority 0x008334CC..0x00833532); whether the phone granted it is HARDWARE_ONLY, and the host realisation is policy M1-014",
-        "CA18/CA19: Update visits connections in ascending TransportAddress::operator< order (0x00837B9A..0x00837C92; operator< 0x00838EDA..0x00838F62: type byte, then IPv4 u32 at +8 then port)"
+        "CA18/CA19: Update visits connections in ascending TransportAddress::operator< order (0x00837B9A..0x00837C92; operator< 0x00838EDA..0x00838F62: type byte, then IPv4 u32 at +8 then port)",
+        "Executor thread topology/priority is M1-047; M1-010 retains async start, 2 ms schedule and Update order."
       ],
       "live_path": true,
       "hardware_required": false
@@ -175,8 +175,8 @@
     },
     "M1-014": {
       "status": "COMPATIBILITY_POLICY",
-      "title": "Host thread structure that realises the engine threading",
-      "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy. That includes thread priority: the original asks for SCHED_RR at 75% of the OS range for the RelTransport threads (CA9), which the host does not reproduce; host threads keep the default priority",
+      "title": "Windows host thread primitives for the transport executor",
+      "authority": "Windows thread and scheduling APIs are host primitives. Shipped executor topology and priority decisions are M1-047; timing/dispatch remain M1-010, M1-021 and M1-024.",
       "evidence": [],
       "live_path": true,
       "hardware_required": false
@@ -277,35 +277,22 @@
       "hardware_required": false
     },
     "M1-022": {
-      "status": "EQUIVALENT_IMPLEMENTATION",
-      "title": "UDP socket: setup, ephemeral local port, send errors, receive loop, reopen",
-      "authority": "libcozmoEngine.so 3.4.0-1204",
-      "evidence": [
-        "B11 OpenSocket: getaddrinfo(NULL, port, AI_PASSIVE, SOCK_DGRAM, AF_INET) (0x00839ACA, 0x00839AD0, 0x00839AF2); socket (0x00839B8A); SO_BROADCAST=1 for AF_INET (0x00839D18); bind (0x00839D3A); EADDRINUSE only a warning (0x00839E70); no O_NONBLOCK, no buffer options",
-        "B12 local port: ctor 0xBAC9 (0x00839546) but Init stores 0 (0x0062EFEA str.w r5,[r6,#0x98]), so bind is ephemeral; RT->StartClient opens it (0x0062F07E, 0x0083808E, 0x0083AD58)",
-        "B10 sendto flags 0 (0x0083A37C); partial send logs SentWrongNumBytes (0x0083A39A); failure: AddSendError(6) (0x0083A552), time at +0x88 (0x0083A5F4), no retry, no disconnect; non-IP addresses refused (0x0083A606)",
-        "B16 receive loop while TryToReadMessage returns 1 (0x0083AD10..0x0083AD18); recvmsg MSG_DONTWAIT into 0x5C0 (0x0083AA66, 0x0083AA76 movs r3,#0x40); <= 0 stops (0x0083AA98); errno != EAGAIN warns (0x0083AAC4); ENOTCONN closes and, only if the close succeeded (0x0083AB2C cbz r0), reopens on +0x98, which CloseSocket has just set to 0xBAC9 = 47817 (0x0083AB22 cmp r0,#0x6b, 0x0083AB2E, 0x0083AB34; CloseSocket 0x00839694..0x0083969C on both paths); only the first open is ephemeral [corrected C1]",
-        "B38 close failures logged; CloseSocket resets fd to -1 and port to 0xBAC9 (0x00839694..0x0083969C)",
-        "CA24..CA30: OpenSocket calls CloseSocket then stores the port argument (0x00839A3A, 0x00839A46); getaddrinfo failure returns 0 with no close (0x00839B06..0x00839B7A); socket() failure stores fd -1 (0x00839B8A..0x00839CF2); SO_BROADCAST and non-EADDRINUSE bind failures close via CloseSocket, so the port becomes 47817 (0x00839D00..0x00839D24, 0x00839E6A..0x0083A026); EADDRINUSE keeps the socket unbound and returns 1 (0x00839E76..0x00839EB6); CloseSocket with fd < 0 returns 0 and stores nothing (0x008395CA..0x00839626)",
-        "CA31..CA34: sendto has no fd guard (0x0083A374..0x0083A386); SentWrongNumBytes is an error log (0x0083A38A..0x0083A3DA); a send failure always counts AddSendError(6), but warns and stores +0x88 only on the first failure or when now > +0x88 + 30000.0 (0x0083A648..0x0083A666, literal 0x0083A6C8), kEnableVerboseNetworkLogging being const false (0x00C934A4); +0x88 starts at 0.0 (0x0083953C) on GetCurrentNetTimeStamp",
-        "CA35: a 0-byte read ends the drain for the tick through the error path, which reads the stale errno (0x0083AA98 blt → 0x0083AAC4..0x0083AB24); whether it warns is M1-043",
-        "CA36/CA37: UDP ctor values (0x00839514..0x00839556); Init stores port 0 so the first open is ephemeral (0x0062EFEA)"
-      ],
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host resolver and socket primitives used by UDP transport",
+      "authority": "Host getaddrinfo/socket/setsockopt/bind/sendto/recvmsg behavior is an OS boundary. Shipped UDP binding, port, error, retry/reopen, logging and drain decisions are M1-048.",
+      "evidence": [],
       "live_path": true,
       "hardware_required": false
     },
     "M1-023": {
       "status": "EXACT_SOURCE",
-      "title": "Socket reset on every Android process network bind or unbind",
+      "title": "Native network-bind callback sets UDP reset flag; next update closes/reopens",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "G4.1/G4.2 the RCM ctor registers its UDP transport with WifiUtil (0x0062EDB4..0x0062EDC0); RegisterTransport binds handler 0x0083BAD1 to the static signal at 0x0105DF8C (0x0083B9AA..0x0083B9D4)",
-        "G4.3 that signal has exactly one subscriber (xref scan; static ctor 0x004DD62E, emitters 0x0083BC3E and 0x0083BC86)",
-        "G4.4 the handler acts only if fd (+0x94) >= 0 (0x0083BAD6..0x0083BADC), then ResetSocket (0x0083BAE0)",
-        "G4.5 ResetSocket sets +0x9D (0x0083A258); the next UDP Update closes, reopens only if the close returned 1, and clears +0x9D either way (0x0083ACE8..0x0083AD18)",
-        "G4.6/G4.7 emitted only by NativeBindNetworkCallback and NativeBindLollipopCallback (0x0083BC3C..0x0083BC88), never by NativeStatusCallback or NativeScanCallback (0x0083BB7C..0x0083BC08)",
-        "G4.8..G4.10 Java: attemptNetworkBind emits only on a successful bindProcessToNetwork / setProcessDefaultNetwork; unbindFromNetwork always emits; bindToNetwork retries every 100 ms up to 10 times (sources/com/anki/util/WifiUtil.java:270-332, :381-404)",
-        "G4.11/G4.12 the callers are the CozmoWifi receiver on Wi-Fi state changes (sources/com/anki/cozmo/CozmoWifi.java:28-85) and the Unity ping test on API >= 26 (unity/scripts/csharp/AndroidConnectionFlow.cs:95-153, :302, :310)"
+        "G4.1/G4.2 RCM registers UDP transport with WifiUtil; handler 0x0083BAD1 bound to signal 0x0105DF8C (0x0062EDB4..0x0062EDC0; 0x0083B9AA..0x0083B9D4).",
+        "G4.3 signal subscriber/emitters (0x004DD62E; 0x0083BC3E,0x0083BC86); G4.4 requires fd +0x94 >=0 then calls ResetSocket (0x0083BAD6..0x0083BAE0).",
+        "G4.5 ResetSocket sets +0x9D (0x0083A258); update closes and reopens only after close==1, then clears flag (0x0083ACE8..0x0083AD18). G4.6/G4.7 native emitters (0x0083BC3C..0x0083BC88).",
+        "Application bind/unbind gates G4.8-G4.12 transfer to M1-049; see 20261006-M1M2-missing-triage.md and 20261005-M1M2-policy-check.md."
       ],
       "live_path": true,
       "hardware_required": false
@@ -320,7 +307,8 @@
         "B20 RCD::ReceiveData drops the OnConnectRequest marker (0x0062E4BE); PushArrivedMessage maps OnConnected 2, OnDisconnected 3, else data, under the mutex (0x0062E274..0x0062E2C2)",
         "B26 HandleDataMessage: state != 2 drops \"Connection not yet valid\" (0x0062F728); source != robot address drops (0x0062F744)",
         "CD1..CD5: the tick is fixed rate on steady_clock: the first tick runs at once, the next target is the old target + 60 ms, it sleeps only if at least 1 us remains, overrun ticks run back to back, and when 240 ms or more behind it skips whole periods instead of running extra ticks (0x0065B3B8..0x0065B63E)",
-        "CD6..CD11: the per-tick order: counters zeroed, UiMessageHandler::Update (game messages dispatched synchronously), then in state 3 BaseStationTimer::UpdateTime, UpdateRobotConnection (all robot-message handlers), NeedsManager::Update, UpdateAllRobots (Robot::Update, then the RobotState broadcast), then the audio controller; every engine timestamp in a tick is the tick start (0x004ED4DE..0x004ED6C4; 0x0084BC38..0x0084BCD4)"
+        "CD6..CD11: the per-tick order: counters zeroed, UiMessageHandler::Update (game messages dispatched synchronously), then in state 3 BaseStationTimer::UpdateTime, UpdateRobotConnection (all robot-message handlers), NeedsManager::Update, UpdateAllRobots (Robot::Update, then the RobotState broadcast), then the audio controller; every engine timestamp in a tick is the tick start (0x004ED4DE..0x004ED6C4; 0x0084BC38..0x0084BCD4)",
+        "Opus D1 correction: ApplyDecayAllNeeds 0x00695D0E calls SetPrevNeedsBrackets 0x0069CEA4; refreshes current brackets +0x70 then copies to previous map +0x7C (0x0069CEB0..0x0069CEC2), compared at 0x00695DBA."
       ],
       "live_path": true,
       "hardware_required": false
@@ -397,7 +385,8 @@
         "G5.21/G5.32..G5.37 Scope 1 is DataPlatformResourcesPath = persistentDataPath/cozmo/cozmo_resources (pathToResource 0x0084BE34 table 03 14 22 2f 41; unity/scripts/csharp/PlatformUtil.cs:5-13), extracted from the shipped assets (re-analysis/obb/assets/resources.txt:2075); the shipped header has version 2381, time 1546972025 (re-analysis/obb/assets/cozmo_resources/config/engine/firmware/cozmo.safe offsets 0-445)",
         "G5.22..G5.30 nothing orders the header load before AddRobot: the loader starts in cozmo_startup before the engine thread (0x006661EA, 0x0065B14E), and neither the ConnectToRobot handler nor AddRobot checks the load (0x004ED026..0x004ED1EC; loaded flag +0x18 unread on that path)",
         "G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28)",
-        "G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7"
+        "G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7",
+        "J1 retained real asString dispatch 0x008E48B8..0x008E4902 and formatting wrapper 0x008EBF7C..0x008EC038; J7 reachable input bound and Reader/converter 0x008E07A4..0x008E1ECA, 0x0007E824..0x0007F202 (20261006-M1M2-missing-triage.md J1/J7)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -489,8 +478,8 @@
     },
     "M1-037": {
       "status": "COMPATIBILITY_POLICY",
-      "title": "Host trigger for the socket reset",
-      "authority": "the original resets on every Android process network bind or unbind (M1-023, rows G4.1..G4.13), which a Windows host does not have. This stack raises the same reset from the host notification that its network addresses changed (System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged), the host event nearest to the route to the robot changing. The reset mechanism itself is M1-023 and is reproduced from source",
+      "title": "Host address-change notification used to request socket reset",
+      "authority": "The host notification is a platform primitive. Android bind gates and native callback/fd predicate are M1-049; reset mechanism is M1-023.",
       "evidence": [],
       "live_path": true,
       "hardware_required": false
@@ -505,8 +494,8 @@
     },
     "M1-039": {
       "status": "COMPATIBILITY_POLICY",
-      "title": "Windows ICMP port-unreachable on UDP receive is no data",
-      "authority": "the original ran on Android/Linux, where an unconnected UDP socket does not surface ICMP port-unreachable (B11 sets no IP_RECVERR, 0x00839D18). On Windows, a UDP receive that fails with ConnectionReset is treated as no data for that receive attempt: no warning, and the drain continues. Other socket errors keep their source-backed handling (B16)",
+      "title": "Host mapping of UDP ICMP port-unreachable errors",
+      "authority": "The OS/kernel decides whether/how asynchronous UDP ICMP port-unreachable is surfaced. Engine receive-error handling is M1-048; the former Android/Linux no-error premise is contradicted by the policy check.",
       "evidence": [],
       "live_path": true,
       "hardware_required": false
@@ -536,19 +525,24 @@
       "hardware_required": false
     },
     "M1-042": {
-      "status": "COMPATIBILITY_POLICY",
-      "title": "The original app's post-connect defaults are sent by this stack",
-      "authority": "in the original, the phone app (Unity) sends these game messages, not the engine: SetRobotVolume with the stored value on any RobotConnectionResponse (ConnectionFlowController.cs:682-686; GameAudioClient.cs:53-121), which makes the engine send SetAudioVolume {u16 vol x 65535} (0x0059A21E..0x0059A256); and GetBlockPoolMessage plus BlockPoolEnabledMessage {true, 0} on Success (RobotEngineManager.cs:373-378; BlockPoolTracker.cs:86-104; ConnectionFlowController.cs:764-780). This stack replaces the app: after a Success response it sends the stored volume (default 1.0) and enables the block pool itself, and the controller can change either. The idle timeouts (StartIdleTimeout / CancelIdleTimeout) are app-backgrounding behaviour and are not sent automatically. Other Unity post-connect flows are replaced by this stack's API",
-      "evidence": [],
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Unity post-connect volume and block-pool producers and gates",
+      "authority": "Unity ConnectionFlowController.cs:682-686,764-780; GameAudioClient.cs:53-108; Robot.cs:1461-1465; RobotEngineManager.cs:373-380,223-231; BlockPoolTracker.cs:86-104; engine conversion 0x0059A21E..0x0059A256.",
+      "evidence": [
+        "A1: unity/scripts/csharp/ConnectionFlowController.cs:682-686; GameAudioClient.cs:53-108: stored/default volume on every response, CurrentRobot gate.",
+        "A3: unity/scripts/csharp/RobotEngineManager.cs:373-380,223-231; BlockPoolTracker.cs:86-94: disconnected-and-Success AddRobot; nonnull tracker subscribes then gets block pool.",
+        "A4: unity/scripts/csharp/ConnectionFlowController.cs:764-780; BlockPoolTracker.cs:97-104: enable only when !DefaultProfile.FirstTimeUserFlow; default discovery time 0.",
+        "A2 conversion/send remains owned by M1-026 (Robot.cs:1461-1465; 0x0059A21E..0x0059A256). A5 boundary: unity/scripts/csharp/Cozmo/PauseManager.cs:219,289,350-374 is idle-timeout producer; config values not extracted and remain M1-031."
+      ],
       "live_path": true,
       "hardware_required": false
     },
     "M1-043": {
       "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "Whether a 0-byte UDP read warns",
-      "authority": "a robot run with a 0-byte datagram, or an Android errno trace",
+      "authority": "libcozmoEngine.so establishes the exact zero-byte-read branch; only errno is phone OS runtime state, with the host value supplied by the PC socket.",
       "evidence": [
-        "CA35: a 0-byte read takes the error path and reads the stale errno; it warns iff errno != EAGAIN and reopens on ENOTCONN (0x0083AA98 → 0x0083AAC4..0x0083AB24)"
+        "0x0083AA98 -> 0x0083AAC4..0x0083AB24: zero-byte read follows error path, reads errno, warns unless 11, reopens on 107, ends drain; errno alone is runtime state."
       ],
       "live_path": true,
       "hardware_required": false
@@ -584,6 +578,86 @@
       "evidence": [
         "0x005112F2..0x00511308; Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-047": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Transport executor topology and shipped priority request",
+      "authority": "libcozmoEngine.so 3.4.0-1204 executor constructors/priority helper.",
+      "evidence": [
+        "H1 creates two threads and calls SetThreadPriority on both only for priority !=2 (0x007FBDBA,0x007FBDEC,0x007FBE02..0x007FBE14).",
+        "H2 priority3 selects policy2/SCHED_RR and requests min+trunc_f32((max-min)*0.75), bits0x3F400000; EPERM/result1 skips error path (0x008334CC..0x00833532).",
+        "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-048": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "UDPTransport shipped socket state machine and send/receive decisions",
+      "authority": "libcozmoEngine.so 3.4.0-1204 UDPTransport OpenSocket/CloseSocket/Send/Receive/Update.",
+      "evidence": [
+        "U1 OpenSocket close/store/resolver order (0x00839A30..0x00839AF2).",
+        "U2 initial port0, broadcast before bind (0x0062EFEA;0x00839D00..0x00839D3A).",
+        "U3 EADDRINUSE warning, retain fd and success-side branch (0x00839E6A..0x00839EB6).",
+        "U4 CloseSocket fd<0 return and closed port47817 stores (0x008395CA..0x008396AA).",
+        "U5 send count/error/rate-limit branches (0x0083A374..0x0083A3A4;0x0083A54E..0x0083A666).",
+        "U6 receive buffer/MSG_DONTWAIT, errno11, warnings, errno107 reopen and drain stop (0x0083AA66..0x0083AAC6;0x0083AAF6;0x0083AB22..0x0083AB38;0x0083ABF4..0x0083AC0C;0x0083AD16..0x0083AD18).",
+        "U7 reset close/reopen/flag/drain loop (0x0083ACE8..0x0083AD1A)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-049": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Android successful-bind trigger gates and native reset callback predicate",
+      "authority": "Unity/Java app and libcozmoEngine.so native network callback.",
+      "evidence": [
+        "N2 emits only after successful API>=21 process bind (WifiUtil.java:381-404).",
+        "N3 ignores network handle and requires fd>=0 before ResetSocket (0x0083BC3C..0x0083BC88;0x0083BAD6..0x0083BAE0).",
+        "N4 reset mechanism remains M1-023 (0x0083ACE8..0x0083AD04)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-050": {
+      "status": "RECOVERABLE_GAP",
+      "title": "External-interface disconnect/report delivery",
+      "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
+      "evidence": [
+        "S13 virtual slot +0x30 at 0x0052F2AC and notification/session path 0x0052F29E..0x0052F2EE; concrete sink UNKNOWN (20261006-M1M2-missing-triage.md S13)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-051": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK mode entry and lifecycle state writers",
+      "authority": "libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle.",
+      "evidence": [
+        "EnterMode 0x0065E104..0x0065E224; ExitMode 0x0065E2A4..0x0065E43E; OnDisconnect 0x0065E4D8..0x0065E620; OnConnectionSuccess 0x0065E6E0..0x0065E940; UI OnEnter 0x0066150C..0x00661538. UI +0xE1 and comm +0x88 are independent (triage E6)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-052": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK connection callback virtual targets",
+      "authority": "libcozmoEngine.so 3.4.0-1204 communication-change callback.",
+      "evidence": [
+        "Communication change invokes slot +0x24 with old/new values at 0x00663298..0x006632C4; helper selects UDP/TCP indices using mask6 at 0x0065FE16..0x0065FE24; vtable targets UNKNOWN (triage E7)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-053": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Outgoing RobotState publication from the engine tick",
+      "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
+      "evidence": [
+        "Caller 0x0052F6C0..0x0052F7B0 updates robots, gates HasReceivedRobotState, gets snapshot, constructs game message and invokes external slot +0x1C; tick entry 0x004ED648; getter 0x005180D8..0x00518252; other callers UNKNOWN (triage P2)."
       ],
       "live_path": true,
       "hardware_required": false

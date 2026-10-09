@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "b1d81e6adb4dc4621477c4e6962c2d96f7d0ac441515fb82ea86dd72f5707ba4",
+  "inventory_sha256": "1b3ddcbba13944d68523c0fd9c7a82b7165fb5f8c88208e9ad823dbae82b5bfa",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",

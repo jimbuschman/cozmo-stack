@@ -1304,3 +1304,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M7-023 — Mood destruction with already-null ActionList dependency | 0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. | MISSING: Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M7-023 owns S4 mood teardown/null-ActionList ordering (0x00511150; 0x005111B6; recipient 0x0067AE14). M7-024 owns SDK reaction-lock dispatch at 0x0065DD9A. Source: 20261006-M1M2-missing-triage.md S4/E2.

@@ -2494,3 +2494,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | Record | Boundary and citation | Remaining work |
 | --- | --- | --- |
 | M13-029 — Path/planner abort and destruction | 0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. | MISSING: Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+## Manager correction (2026-10-09): transferred recipients
+
+M13-029 owns S9 path/planner teardown (0x0051127E..0x00511288; recipients 0x00649100, 0x00649220); virtual descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md S9.

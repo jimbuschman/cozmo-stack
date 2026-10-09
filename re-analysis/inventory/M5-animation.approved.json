@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "cbe3e4114e09b8ad7e5d3fa6afd07b1c79a1be325cd0642c6702c97805caf587",
+  "inventory_sha256": "e76e79a3e73490a4146f5e413028a71a28ee22afcd48579ba1069bdc19dba6a2",
   "records": {
     "M5-001": {
       "status": "EXACT_SOURCE",
@@ -453,6 +453,16 @@
       "evidence": [
         "0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-039": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Ready-to-stream animation consumer lifecycle",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ready-byte writer and SyncTimeAck.",
+      "evidence": [
+        "Ready store 0x0052C3A6; SyncTimeAck 0x0053667E..0x005366AC; streaming gate 0x00513BF2..0x00514470; exact consumer span UNKNOWN (triage N2)."
       ],
       "live_path": true,
       "hardware_required": false

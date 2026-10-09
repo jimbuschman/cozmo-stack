@@ -52,7 +52,7 @@
 | M1-011 | EXACT_SOURCE | Ping receive: counters, and only a ping marked as a reply measures the round trip | R31 |
 | M1-012 | EXACT_SOURCE | Frame payload bound 1406 and the UDP send buffer | R24, B5, B7, B8, B9 |
 | M1-013 | COMPATIBILITY_POLICY | Windows high-resolution timer realising the 2 ms and 60 ms periods | policy |
-| M1-014 | COMPATIBILITY_POLICY | Host thread structure that realises the engine threading | policy |
+| M1-014 | COMPATIBILITY_POLICY | Windows host thread primitives for the transport executor | host primitives; H1/H2 -> M1-047 |
 | M1-015 | IMPLEMENTATION_GAP | Connection timeout 5 s, and how a lost or failed connection is reported | R19, R41, B22, B31, B32, B36 |
 | M1-016 | EXACT_SOURCE | Incoming ack processing | R18, R43 |
 | M1-017 | EXACT_SOURCE | Ping schedule and ReliableConnection::Update order | R32, R33 |
@@ -60,8 +60,8 @@
 | M1-019 | IMPLEMENTATION_GAP | Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop | R38, R39, R40, B21 |
 | M1-020 | EXACT_SOURCE | Production runs the transport asynchronously; sync mode is unused | R36, B15 |
 | M1-021 | EXACT_SOURCE | The 2 ms Dispatch callback: fixed delay, first run after one period, never overlapping | G1.1..G1.10, R35 |
-| M1-022 | EQUIVALENT_IMPLEMENTATION | UDP socket: setup, ephemeral local port, send errors, receive loop, reopen | B10, B11, B12, B16, B38 |
-| M1-023 | EXACT_SOURCE | Socket reset on every Android process network bind or unbind | G4.1..G4.13, B18 |
+| M1-022 | COMPATIBILITY_POLICY | Host resolver and socket primitives used by UDP transport | host APIs; U1-U7 -> M1-048 |
+| M1-023 | EXACT_SOURCE | Native network-bind callback sets UDP reset flag; next update closes/reopens | G4.1..G4.7, B18; app gates -> M1-049 |
 | M1-024 | IMPLEMENTATION_GAP | Engine tick 60 ms: arrivals drained FIFO and handed up once per tick | B20, B24, B25, B26 |
 | M1-025 | IMPLEMENTATION_GAP | Connect request from the game, the connected response, and DisconnectCurrent | B2, B23, B33, B35 |
 | M1-026 | IMPLEMENTATION_GAP | App send path: every robot message is sent reliable, no flush hint, only when connected | R42, B28 |
@@ -75,13 +75,13 @@
 | M1-034 | COMPATIBILITY_POLICY | Handler isolation, a deliberate departure: in the original a handler exception aborts the engine process | G3.1..G3.17 (policy, D6), B38 |
 | M1-035 | EXACT_SOURCE | Async hand-off: sends and ticks FIFO on one thread | R37 |
 | M1-036 | COMPATIBILITY_POLICY | Crash reporting after an engine-thread abort | G3.18..G3.22 (policy) |
-| M1-037 | COMPATIBILITY_POLICY | Host trigger for the socket reset | policy (D5) |
+| M1-037 | COMPATIBILITY_POLICY | Host address-change notification used to request socket reset | N2/N3 shipped gates -> M1-049 |
 | M1-038 | COMPATIBILITY_POLICY | Stop processing a frame after a handled DisconnectRequest sub-message | policy (D8), C5 |
-| M1-039 | COMPATIBILITY_POLICY | Windows ICMP port-unreachable on UDP receive is no data | policy |
+| M1-039 | COMPATIBILITY_POLICY | Host mapping of UDP ICMP port-unreachable errors | shipped receive handling -> M1-048 U6 |
 | M1-040 | COMPATIBILITY_POLICY | Accept every robot firmware, and log it | policy |
 | M1-041 | IMPLEMENTATION_GAP | Robot initialisation after a Success connection response, and the gates it opens | CB21..CB24, CD12, CD17..CD23, CD30 |
-| M1-042 | COMPATIBILITY_POLICY | The original app's post-connect defaults are sent by this stack | policy, CD27, CD28 |
-| M1-043 | HARDWARE_ONLY | Whether a 0-byte UDP read warns | CA35 |
+| M1-042 | IMPLEMENTATION_GAP | Unity post-connect volume and block-pool producers and gates | A1-A4 |
+| M1-043 | EQUIVALENT_IMPLEMENTATION | Exact zero-byte-read engine branch; phone errno is runtime state | CA35 |
 | M1-044 | IMPLEMENTATION_GAP | RemoveRobot's upper-layer teardown: Robot::~Robot aborts all actions and destroys behaviour, mood, AI/freeplay, path, map, docking, carrying and vision | X1 |
 | M1-045 | IMPLEMENTATION_GAP | The idle-timeout go-to-sleep action: CreateGoToSleepAnimSequence queued on the ActionList | X2 |
 
@@ -699,3 +699,26 @@ M1-015 owns timeout/marker/report selection and the lifetime handoff; M1-031 own
 | M15-028 | M15-freeplay | 0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): MISSING and policy dispositions
+
+M1-015/-031/-044/-045 shared S1-S12 and S14 transfer to the owners named in their manifest records; S13 remains M1-050 and S15/Q1-Q3 M1-046. M1-024's Opus D1 call correction is SetPrevNeedsBrackets (0x00695D0E -> 0x0069CEA4), refresh current +0x70 then copy previous +0x7C (0x0069CEB0..0x0069CEC2), compared at 0x00695DBA. Triage D1/D3 -> M15-029/-030; D2 phone FP mode; D4 -> M1-034. M1-025 E1-E5/E8/E9 -> M8-018/M7-024/M15-031/-032/M3-039/M4-029/-030/-031/M11-056; E6/E7 -> M1-051/-052. M1-041 N1/N2 -> M3-040/M5-039; M1-041 retains the ready-byte store/log body while M3-040 owns only NV idle scheduling/predicate/invocation. M1-042 A2 engine conversion/send stays M1-026; M1-042 owns Unity A1/A3/A4 producers/gates. M2-002 P1/P3/P4 -> M11-053/M8-015; P2 -> M1-053. M1-029 retains J1/J7, J2/J4/J5 phone runtime, J3/J6 unreachable, J8 M1-034; M1-046 keeps Q1-Q3. Sources: 20261006-M1M2-missing-triage.md; 20261005-M1M2-policy-check.md.
+
+| record | corrected status / scope |
+| --- | --- |
+| M1-014 | COMPATIBILITY_POLICY host thread primitives; H1/H2 -> M1-047 |
+| M1-022 | COMPATIBILITY_POLICY host resolver/socket calls; UDP U1-U7 -> M1-048 |
+| M1-037 | COMPATIBILITY_POLICY host notification; N2/N3 -> M1-049 |
+| M1-039 | COMPATIBILITY_POLICY host ICMP mapping; receive handler -> M1-048 |
+| M1-042 | IMPLEMENTATION_GAP Unity producers/gates A1/A3/A4; A2 engine conversion/send remains M1-026; A5 remains M1-031 |
+| M1-043 | EQUIVALENT_IMPLEMENTATION, exact zero-read branch; errno is external runtime state |
+
+| new record | status | primary citation |
+| --- | --- | --- |
+| M1-047 | IMPLEMENTATION_GAP | 0x007FBDBA, 0x007FBDEC, 0x007FBE02..0x007FBE14; 0x008334CC..0x00833532 |
+| M1-048 | IMPLEMENTATION_GAP | 0x00839A30..0x00839AF2; 0x00839E6A..0x00839EB6; 0x0083AA66..0x0083AD1A |
+| M1-049 | IMPLEMENTATION_GAP | WifiUtil.java:381-404; 0x0083BC3C..0x0083BC88; 0x0083BAD6..0x0083BAE0 |
+| M1-050 | RECOVERABLE_GAP | 0x0052F29E..0x0052F2EE |
+| M1-051 | RECOVERABLE_GAP | 0x0065E104..0x0065E224; 0x0065E2A4..0x0065E940 |
+| M1-052 | RECOVERABLE_GAP | 0x00663298..0x006632C4; 0x0065FE16..0x0065FE24 |
+| M1-053 | RECOVERABLE_GAP | 0x004ED648; 0x005180D8..0x00518252; 0x0052F6C0..0x0052F7B0 |

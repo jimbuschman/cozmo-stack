@@ -461,3 +461,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M10-014 — BlockFilter and gyro-drift lifetime effects | 0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. | MISSING: BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M10-014 owns S6 classifier/filter/gyro boundaries (0x0051121A..0x0051124C; 0x00511418..0x00511424; identity 0x0050FE1C..0x0050FE20); state effects remain UNKNOWN. Source: 20261006-M1M2-missing-triage.md S6.

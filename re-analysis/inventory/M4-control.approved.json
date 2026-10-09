@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "70ca403bd0084859edc5e5611d50886d600d05eb43e1ab82462ffa4753eb2fad",
+  "inventory_sha256": "dcd0f4e8a65a411f43d354c72fe6ae84cc57689cfdb948d8cb8aa72086ff6f0b",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -352,7 +352,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "S2 ResetDevices transfer: Robot::AbortAll 0x0051194C..0x0051198C and owned component boundaries 0x005111EA..0x0051121A, 0x005113E0..0x005113F6, 0x00511428..0x00511488, 0x00511500..0x00511510 (20261006-M1M2-missing-triage.md S2)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -364,6 +365,36 @@
       "evidence": [
         "0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK light-state and lift-power recipients",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "EnableLightStates(false,-1) at 0x0065DECA; EnableLiftPower(true) at 0x0065DF8C; +0x79 gate (triage E3)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-030": {
+      "status": "RECOVERABLE_GAP",
+      "title": "StopRobotForSdk action/control recipient",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "StopRobotForSdk dispatch at 0x0065DF6A; receiver effects UNKNOWN (triage E5)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-031": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Track-lock diagnostic enumeration",
+      "authority": "libcozmoEngine.so 3.4.0-1204 PrintLockState.",
+      "evidence": [
+        "PrintLockState 0x006410D8..0x006413CA; lock/unlock caller 0x0063FF02..0x0063FF24 (triage E9)."
       ],
       "live_path": true,
       "hardware_required": false

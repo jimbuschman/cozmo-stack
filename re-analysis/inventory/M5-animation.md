@@ -817,3 +817,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M5-038 — CreateGoToSleepAnimSequence animation factory boundary | 0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. | MISSING: Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M5-037 owns S3 animation teardown (0x00511524..0x0051154A; streamer 0x0057AF48..0x0057AFDA and 0x0057B044..0x0057B0C2). M5-038 owns S14 factory/triggers (0x0052CEA2..0x0052CFC0); M1-045 retains handoff/submission. M5-039 owns ready-to-stream consumer lifecycle (0x0052C3A6; 0x0053667E..0x005366AC). Source: 20261006-M1M2-missing-triage.md S3/S14/N2.

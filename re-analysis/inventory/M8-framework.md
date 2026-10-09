@@ -670,3 +670,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M8-017 — Go-to-sleep compound execution ordering and failure propagation | 0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission. | MISSING: Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M8-015 expands to the ActionList/ActionQueue/IAction lifecycle from P3/P4 and teardown cancellation (0x0053F580..0x0053F70C; 0x00540370..0x0054063E; 0x00540D4A..0x00540E80; 0x005549B8..0x005549F4; teardown 0x0053E6A8..0x0053E6E0). M8-016 remains behavior-container teardown; M8-017 owns S14 compound sleep execution; M8-018 owns ResetRobot dispatch (0x0065DCFC..0x0065DF98). Source: 20261006-M1M2-missing-triage.md S5/S14/E1/P3-P4.

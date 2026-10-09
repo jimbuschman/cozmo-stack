@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "f78bc9ca9e1d0609a0c03865748b471bd6780a9681c8ae9aeca1dbd966d8458d",
+  "inventory_sha256": "bfc31bac95c8a06f77d747a7b7d92dd80d52c32914a7607ded4b0c102d62ce82",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -302,6 +302,16 @@
       "evidence": [
         "0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-024": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK reaction-lock recipient",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "RemoveDisableReactionsLock(\"sdk\") dispatch at 0x0065DD9A; concrete body UNKNOWN (triage E2)."
       ],
       "live_path": true,
       "hardware_required": false

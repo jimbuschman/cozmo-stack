@@ -431,3 +431,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M14-013 — Pet/face-world and speech lifetime recipients | 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. | MISSING: World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M14-013 owns S10 pet/face/speech ownership (0x0051128C..0x005112C6; 0x005114A6..0x005114B4), including M14-006; recursive effects UNKNOWN. Source: 20261006-M1M2-missing-triage.md S10.

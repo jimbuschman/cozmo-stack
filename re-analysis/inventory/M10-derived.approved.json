@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "618c54249698511e04c6bcab35a7b573808f84ac76178ed1bc3de38dbb676b94",
+  "inventory_sha256": "d70aa30e849ea58dcc5f27138fb7f3532c320135bc9a1f8d9e7642c2d65e988d",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",

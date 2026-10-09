@@ -1,8 +1,8 @@
 {
   "subsystem": "M2-protocol",
-  "approved": "2026-09-29",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "edc4e9936bcc5e05082f41b035dadd3fd0ee17bc2232ddf55381a5eddf6c6e10",
+  "inventory_sha256": "6626a39d777ee50d4aedd3a75f96d9e2202786f56ed0ddaae3a1ca89bdd64635",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -21,7 +21,7 @@
       "hardware_required": false
     },
     "M2-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "RobotStatusFlag names and values, and where the engine stores each consumed bit",
       "authority": "decompiled Unity",
       "evidence": [
@@ -33,7 +33,7 @@
       "hardware_required": false
     },
     "M2-003": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "liftAngle is radians; height = 66 sin(angle) + 45 with no clamp on the angle-to-height path; 32..92 clamps only height-to-angle",
       "authority": "libcozmoEngine.so",
       "evidence": [

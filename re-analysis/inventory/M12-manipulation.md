@@ -924,3 +924,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | Record | Boundary and citation | Remaining work |
 | --- | --- | --- |
 | M12-040 — Carrying/docking lifetime after preceding control abort | 0x0063BE10..0x0063BE5C; 0x005113FA..0x00511414; Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. | MISSING: Dock Abort precedes carrying/docking raw owner deletes; do not add another destructor/send at the raw-delete sites. Remaining owned state/subscription effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+## Manager correction (2026-10-09): transferred recipients
+
+M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414; recipient 0x0063BE10); remaining state/subscription effects UNKNOWN. Source: 20261006-M1M2-missing-triage.md S8.

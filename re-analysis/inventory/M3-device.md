@@ -366,3 +366,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M3-038 — NV component destruction and pending callback lifetime | 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. | MISSING: Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M3-038 owns S1 NV lifetime/delete boundary (0x005112D6..0x005112E4; recipient 0x0050FD8C..0x0050FD90); M3-035 remains pending-read callback discard. M3-039 covers SDK cube-sleep dispatch (0x0065DEA2). M3-040 owns NV idle callback scheduling and invocation predicate/order (0x00528A5A..0x00528A6E; 0x00645C20..0x00645C32); M1-041 retains the callback's ready-byte store/log at 0x0052C3A6..0x0052C3B6. Source: 20261006-M1M2-missing-triage.md S1/E3/N1.

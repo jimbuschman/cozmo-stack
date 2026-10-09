@@ -1379,3 +1379,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | Record | Boundary and citation | Remaining work |
 | --- | --- | --- |
 | M11-055 — Vision/history/world/pose/map lifetime recipients | 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. | MISSING: Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
+
+## Manager correction (2026-10-09): transferred recipients
+
+M11-053 adds P1 tread-boundary Delocalize argument (0x00512B78..0x00512BA6; 0x00510A24..0x00510D98). M11-055 owns S7 vision/world/pose/map boundaries (0x0051115E..0x005111AC; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE). M11-056 owns SDK camera/custom-world messages (0x0065DEDE..0x0065DF4E). Source: 20261006-M1M2-missing-triage.md P1/S7/E4.

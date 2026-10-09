@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "cb2d70c00c0abc1bf8253f54f141a1aa91a8fa605080fbed832217b135c7c7bc",
+  "inventory_sha256": "ef08865c8def2fb54d9a4dfe8e80c56063a4cd807397b07c7288697bd76a2be3",
   "records": {
     "M14-001": {
       "status": "IMPLEMENTATION_GAP",

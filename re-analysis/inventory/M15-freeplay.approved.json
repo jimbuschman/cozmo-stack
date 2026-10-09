@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "87eb9964ff873c2f91d6e278eabe17c4e68e9c4e955e8a41b558badedae9da7f",
+  "inventory_sha256": "cc258bcdd354d1d787a83eefbf4aa38def95f4b6d44ba880acf6ff911a84874d",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -381,6 +381,46 @@
       "evidence": [
         "0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Repair need mutation and random part-damage contract",
+      "authority": "libcozmoEngine.so 3.4.0-1204 repair callback and PossiblyDamageParts.",
+      "evidence": [
+        "f32 store 0x0069C522; dirty +0x88 at 0x0069C528; repair id0 calls PossiblyDamageParts(1) at 0x0069C52E..0x0069C536; recipient 0x0069C5D8..0x0069C77A (triage D1)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-030": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Needs binary32 exceptional-value propagation",
+      "authority": "libcozmoEngine.so 3.4.0-1204 NeedsState::ApplyDecay.",
+      "evidence": [
+        "Compare/arithmetic 0x0069C48A, 0x0069C4A8..0x0069C4EE; clamp 0x0069C512; store 0x0069C544; M15-001/-004 own inputs (triage D3)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-031": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK high-level activity activation recipient",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "ActivateHighLevelActivity(1) at 0x0065DDBA; receiver body UNKNOWN (triage E2)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-032": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK transition telemetry fields and producers",
+      "authority": "libcozmoEngine.so 3.4.0-1204 SDK lifecycle.",
+      "evidence": [
+        "Enter 0x0065E104..0x0065E224; Exit 0x0065E2A4..0x0065E43E; UI exit 0x00661546..0x00661566; fields UNKNOWN (triage E8)."
       ],
       "live_path": true,
       "hardware_required": false

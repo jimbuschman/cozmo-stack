@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "2849885f7db6ef315306204d7d91ad8417203f0f3e2972bb6898065c17a0b96e",
+  "inventory_sha256": "02825a54fca3f63f9a84953e973c7c570290647f0cbac47644a165386ea400ab",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -212,11 +212,12 @@
     },
     "M8-015": {
       "status": "RECOVERABLE_GAP",
-      "title": "Queue/action cancellation and destruction during Robot teardown",
+      "title": "ActionList/ActionQueue/IAction lifecycle, cancellation and Robot teardown",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "P3/P4 full ActionList/ActionQueue/IAction lifecycle: ActionList 0x0053F580..0x0053F5F2, ActionQueue 0x0053F5F4..0x0053F70C, IActionRunner 0x00540370..0x0054063E, clock/timeout 0x00540D4A..0x00540E80, CheckIfDone 0x005549B8..0x005549F4 (20261006-M1M2-missing-triage.md P3/P4)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -239,6 +240,16 @@
       "evidence": [
         "0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-018": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK ResetRobot recipient dispatch",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "ResetRobot 0x0065DCFC..0x0065DF98 invokes external slot +0x0C repeatedly; child contracts E2-E5 remain separate (triage E1)."
       ],
       "live_path": true,
       "hardware_required": false

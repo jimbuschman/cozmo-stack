@@ -36,7 +36,7 @@ stands. Nothing new starts outside the current layer.
 
 **Audio (operator, 2026-10-05):** ADP-1 in AGENTS.md. Exact decisions, equivalent per-sample DSP, with thresholds measured against the emulator (`jobs/B-ADP-HARNESS.md`). No bulk reclassification.
 
-**2026-10-09: M2 ACCEPTED,** the first finished layer.
+**2026-10-09: M2's acceptance was reopened by the M1/M2 disposition correction.** The corrected inventories are now re-approved; both M1 and M2 are back at INVENTORY_APPROVED pending the remaining M1 builds and the layer's acceptance run.
 
 **The Codex builder trial passed.** The Opus pass (`research/20261009-M1M2-opus-pass.md`) settled 5 of 8 records (M1-025, 031, 041, 045, M2-002). The defects were few: one came from a misnamed row the manager had approved (M1-024), and one is a log level (M1-044/015). Codex stays the builder.
 
@@ -46,11 +46,7 @@ stands. Nothing new starts outside the current layer.
 - build M1-029's J1/J7, M1-046 and the four new M1 records;
 - the operator's packed-frame robot run for M1-033. M1-043 is now EQUIVALENT_IMPLEMENTATION.
 
-**Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 22 records:
-- 9 built, with the defects in their `unresolved`;
-- 10 policy records to confirm;
-- 2 HARDWARE_ONLY;
-- 3 to split under the cross-layer rule.
+**Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 70 records after the cited disposition correction: 53 M1 and 17 M2. The 2026-10-09 inventory reapproval moved M2 back from ACCEPTED to INVENTORY_APPROVED. The remaining M1 build list and the M1-033 hardware run are below.
 
 ## Now (2026-10-02)
 
@@ -526,8 +522,8 @@ Review state per subsystem is in `re-analysis/fidelity_manifest.json`, and FIDEL
 
 | order | subsystem | tier | review | notes |
 | ---: | --- | --- | --- | --- |
-| 1 | M1-transport | full | INVENTORY_APPROVED (closure complete) | batches 1-4(i) and 3 committed, settled; M1-LINK passed on the robot; residuals 027/029/041; next: control-check run |
-| 2 | M2-protocol | full | INVENTORY_APPROVED (2026-09-24, manager, standing authorisation) | 16 records; FallingStopped and BlockStatus contradictions found |
+| 1 | M1-transport | full | INVENTORY_APPROVED (2026-10-09 disposition correction) | MISSING/policy transfers cited and re-approved; finish remaining M1 build list and M1-033 hardware run |
+| 2 | M2-protocol | full | INVENTORY_APPROVED (2026-10-09 disposition correction) | 17 records; re-approved with transferred P1-P4 ownership |
 | 3 | M3-device (camera, display, audio device) | full | INVENTORY_APPROVED (repaired 2026-09-24) | colour camera format is HARDWARE_ONLY; FACE, AUDIO and CAMERA passed on hardware 2026-09-24 |
 | 4 | M4-control (motion, sensors, lights, cubes) | full | INVENTORY_APPROVED (repaired 2026-09-25) | second CONTROL run 12/12 PASS, cube telemetry arrives; NV calibration read defect found (fix pending) |
 | 5 | M5-animation | full | INVENTORY_APPROVED (2026-09-24, manager) | repaired 2026-09-25; 18 EXACT, 15 IMPL_GAP with residuals; keep-alive and neutral replay not yet on hardware |
@@ -577,6 +573,8 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 | 518b730, 67d4bc2 | M1-transport | batch 3 app layer; settle to 26 EXACT_SOURCE |
 | 4b89c79, abea3ce | tools | control-check self-judging hardware run, and its review fixes |
 | (this commit) | M1-transport | device reset on RemoveRobot; M1-025, M1-015 settled EXACT_SOURCE |
+| ce859bf | M1-transport | M1-024 decay bracket snapshot; M1-044/M1-015 warning log level; regression coverage |
+| c8af57e | M1/M2 and transferred recipients | Cited manager/policy disposition; four new M1 gap records; re-approved 13 affected inventories |
 
 ## Open decisions for the operator
 

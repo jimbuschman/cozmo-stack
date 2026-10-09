@@ -109,3 +109,9 @@ CLAIMED Codex after Q13: confirm E3 stored f32 time and nonzero deadline gate, c
 
 - Published a61d80dc16734e82622aaed58389a157bf9ea90f to main on 2026-10-07. Independent pre-push gate passed fidelity and all 3,952 tests, zero failed/skipped (4 m 35 s), with DOTNET_PROCESSOR_COUNT=4 and the SDK-supported ThreadPoolMinThreads=32 test-host setting. No test was disabled or assertion weakened. Earlier gate attempts hit unrelated navigation timeout (passed alone) and CORE006 under the single-processor setting; the unchanged commit passed after restoring concurrency and raising the worker minimum.
 - DONE and published for this manager follow-up. Q10-Q13 are already published; their documented PARTIAL coverage and MISSING items remain. Stop after logging; no later queue started.
+## Inventory correction (2026-10-09)
+
+- Applied the manager and policy dispositions from `jobs/B-M1M2.md` as one cited inventory correction. Added the four M1 records (S13, E6, E7, P2), created/updated higher-layer recipients for transfers, rewrote transferred residuals, and narrowed the five policy records to their engine-owned decisions.
+- Re-approved all 13 touched subsystems. Follow-up source-boundary review narrowed M3-040 to NV idle callback scheduling/predicate/invocation (M1-041 retains the ready-byte writer) and M1-042 to Unity A1/A3/A4 producers/gates (M1-026 retains A2 engine conversion/send).
+- `fidelity.py --check`: passed, 465 records. `git diff --check`: passed. Full suite: 3,954 passed, zero failed/skipped. No records settled.
+- Commit: c8af57e. Push: pending.

@@ -609,3 +609,7 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 | M4-028 — Go-to-sleep lift child construction and motor effects | 0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. | MISSING: MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. |
 
 Previous subsystem flag quoted before correction: `source_investigation_exhausted: true`. The manager-adopted PARTIAL recipient boundaries above require further source investigation, so this flag is now false. No existing record status changes.
+
+## Manager correction (2026-10-09): transferred recipients
+
+M4-027 adds the ResetDevices ownership candidate while retaining native component boundaries (0x0051194C..0x0051198C; 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510). M4-028 owns S14 lift child (0x0052CF8E..0x0052CFB0). M4-029 SDK light/lift power (0x0065DECA; 0x0065DF8C), M4-030 StopRobotForSdk (0x0065DF6A), M4-031 PrintLockState (0x006410D8..0x006413CA; caller 0x0063FF02..0x0063FF24). Source: 20261006-M1M2-missing-triage.md S2/S14/E3/E5/E9.

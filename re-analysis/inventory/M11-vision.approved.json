@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "977fddae62c7019611a66d1c9900e03a6916da9a15fb51df4fc316abced28d7b",
+  "inventory_sha256": "cce6f799fa069a23990c10fb1f491cc9032dc50fbd5f5f498b84d4ff553304bc",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -647,7 +647,8 @@
       "evidence": [
         "0x00512D7A..0x00512F96 UpdateFullRobotState mismatch counter",
         "0x00510A24..0x00510D98 Robot::Delocalize",
-        "re-analysis/research/20260929-R-VIS-verify-M11-batchA5.md"
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA5.md",
+        "P1 status-0x2 tread-boundary argument: UpdateFullRobotState 0x00512B78..0x00512BA6 calls Delocalize 0x00510A24..0x00510D98 with computed argument."
       ],
       "live_path": true,
       "hardware_required": false
@@ -669,6 +670,16 @@
       "evidence": [
         "0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-056": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SDK camera and custom-world reset recipients",
+      "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
+      "evidence": [
+        "Camera auto/exposure/gain settings 0x0065DEDE..0x0065DEFC; color false 0x0065DF14; undefine markers 0x0065DF32; delete custom objects 0x0065DF4E (triage E4)."
       ],
       "live_path": true,
       "hardware_required": false
