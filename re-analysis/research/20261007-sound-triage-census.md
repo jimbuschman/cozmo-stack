@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through525 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through526 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -620,6 +620,8 @@ P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release ref
 
 P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
 
+P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
+
 ## Q14-074 — triage line 123
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
@@ -654,6 +656,8 @@ P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release ref
 
 P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
 
+P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
+
 ## Q14-079 — triage line 128
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
@@ -661,6 +665,8 @@ P138525: actual138 creator/table/context snapshot/format selector/Init admission
 PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset controls, registry cleanup order, metadata transfer and failure, end-flag propagation and frame-count scheduling. WV11–WV15 close concrete virtual38/3C Execute/bypass dispatch, allocation/null failures, padding and output-state gates. Remaining: selected plug-in target closure and bypass writers. Checkpoint144 positively joins A0EDB0 to U27, R34/R35, R37 and SU1–6, so those local detach bodies are not unread; concrete state/destructor and producer closure remain separate. No wholesale DSP exemption.
 
 P138525: actual138 creator/table/context snapshot/format selector/Init admission/auxiliary-state allocation/failure/dirty clear and Reset/Term caller composition are positive. Remaining named AA3A08 setup, AA4674/AA57F8 Execute/count/dirty/timing and filter cleanup/reset descendants remain retained; PP435 alone was not their evidence.
+
+P138526: actual138 Execute snapshot/live dirty rebuild/auxiliary reset/scratch allocation-failure and complete named reset/Term cleanup descendants are positive. Remaining AA3A08 setup, persistent coefficient design branches and AA8CCC frame/state execution remain exact retained dependencies; not a generic unread cleanup label.
 
 ## Q14-080 — triage line 129
 
