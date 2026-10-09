@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through512 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through513 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -404,13 +404,13 @@ PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1�
 
 > | M6-026 | **KEEP** | 0x00A54F50..0x00A5531C;0x00A548C0;0x009C5154;0x009BC66C;0x009BE898;0x00A11F98;0x00A1E8F4;0x00A1C660;0x00A1ECBC;0x00A3E27C;0x009BDC8C;0x00A366AC;0x009BDA28;0x009E808C;0x00A0054C;0x00A3EE9C..0x00A407B0 | Remaining voice/parameter/callback/MIDI-registration stores, missing collaborators, zero-playing-id event path and choices remain decision/state/timing work; no ADP-1 release. |
 
-PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. BP508 now supplies9C5240 bus-removal admission,9C5154 full delayed action1820/playingID0 producer, exact first property-F setter, target/pending/creator reference order and actual Execute gate. BD509 closes local9C4CD0 state/order/value/transition dispatch; DC510 supplies9C464C admission/application,9C4A6C held update and actual9C9770 callback/value order; DG511 recovers9C5374 exact aggregate,9C52E4 read-only scan (no sweep/retirement),A1AB5C fixed subscriber/mask/value-delta dispatch and actual PBI context join; ME512 maps all ten named packed-event byte stores and five conditional word copies to existing RI/PD/SK/CRS control rows, including positive A4010C index-gap restart. Remaining input/subscriber products and other named metadata/parameter/callback/input-writer products stay specific; no generic unread9C5154 or MIDI-store-range claim.
+PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. BP508 now supplies9C5240 bus-removal admission,9C5154 full delayed action1820/playingID0 producer, exact first property-F setter, target/pending/creator reference order and actual Execute gate. BD509 closes local9C4CD0 state/order/value/transition dispatch; DC510 supplies9C464C admission/application,9C4A6C held update and actual9C9770 callback/value order; DG511 recovers9C5374 exact aggregate,9C52E4 read-only scan (no sweep/retirement),A1AB5C fixed subscriber/mask/value-delta dispatch and actual PBI context join; ME512 maps all ten named packed-event byte stores and five conditional word copies to existing RI/PD/SK/CRS control rows, including positive A4010C index-gap restart. NM513A–C reconcile the other named voice/preparation, registration/ownership/pause/attachment and A0054C local controls to current primary rows. Remaining input/subscriber products, PB8 auxiliary-property/counter recipients and additional dynamic provider/callback families stay specific; no generic unread9C5154, A0054C or MIDI-store-range claim.
 
 ## Q14-039 — triage line 77
 
 > | M6-026 | **KEEP** | 0x00A17724;0x00A17878;0x009F7390..0x009F82EC;0x00A44D4C;0x00A023D4;0x00A01918;0x009E85C8;0x009FFC28 | RTPC max-instance subscription, device loop, Play success tail, parameter args/producers and early-return gates remain exact, including branch signedness and bus-count choices. |
 
-PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical order, defaults and sum/product selection. RW1–10 and R48 establish node max-instance subscription traversal; RC7 covers the parameter helper. The remaining named device/Play/early-return collaborators and their writer/caller census are not closed by these local bodies.
+PARTIAL: R13/AC1–10/RV10 and NP1 establish accumulator/pull widths, physical order, defaults and sum/product selection. RW1–10 and R48 establish node max-instance subscription traversal; RC7 covers the parameter helper. NM513D–F reconcile named controls: LFRAME/DF/DA498/DT499 device controls, CA496 Play/attachment success, RC7 helper, CR502 actual24/28 bindings and V5/V11 E9bit2 early return are positive. Remaining params78/88/8C/108 caller producers, live key/default/curve/subscriber/input writers and additional reachable device/context/provider callback families stay specific; no generic unread device/Play/early-return claim.
 
 ## Q14-040 — triage line 78
 
