@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through545 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through546 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -706,7 +706,7 @@ CHECKED at checkpoint544 for the bounded seven encoded StartStream callers and f
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: DC1–10/KT144/OR145/PC145/SR422 close the quoted local callback, completion, event, subscription and selected switch-key contracts; E29 positively supplies item48 registration flags. OR351/OU352/OA353/OB354/SK355 bind known register/update/remove inputs and selected scope acquisition outcomes. OR545A reconciles NR146's five ordinary pre-cleanup/destructor/parent-removal and two bus pre-cleanup/destructor products with LR147/CP148/NJ149/SW149/ND150/ID151/RT369/BU370/BT373. OR545B–D bind both bus30 families and recover their child20 routing setter and concrete124 pre-hook. Remaining concrete live74, ancestor reservation9F43F4 and bus90/94, dirty-routeA443E0/liveC4 and reached destruction notification products remain decisions, not storage/DSP. A0B490 storage and adopted positioning/nonempty-blend branches are scope-excluded. NSINK is distinct; no generic extra family or obsolete missing48 writer is used to keep this item partial.
+PARTIAL: DC1–10/KT144/OR145/PC145/SR422 close the quoted local callback, completion, event, subscription and selected switch-key contracts; E29 positively supplies item48 registration flags. OR351/OU352/OA353/OB354/SK355 bind known register/update/remove inputs and selected scope acquisition outcomes. OR545A reconciles NR146's five ordinary pre-cleanup/destructor/parent-removal and two bus pre-cleanup/destructor products with LR147/CP148/NJ149/SW149/ND150/ID151/RT369/BU370/BT373. OR545B–D bind both bus30 families and recover their child20 routing setter and concrete124 pre-hook. RC546 closes concrete pre-hook74, ancestor reservation9F43F4 with actual bus98/9C/90/94 bindings, ordinary post-setC4 and dirty-routeA443E0 parent ordering. Remaining actual connection0 binding/lifetime, reached line invalidation/reconnect descendants and known bus notification products remain specific route/control decisions, not storage/DSP. A0B490 storage and adopted positioning/nonempty-blend branches are scope-excluded. NSINK is distinct; no generic extra family or obsolete missing48 writer is used to keep this item partial.
 
 ## Q14-088 — triage line 137
 
@@ -2463,3 +2463,7 @@ Checkpoint503 — original035 cached policy/audibility/virtual counts/source-for
 ## Decision checkpoint545 — concrete object-retirement bus joins
 
 OR545 reconciles already recovered ordinary/bus lifecycle products, then positively binds/reconstructs both bus30 removals, all five ordinary20 setters and their actual124 hook. Setter execution precedes list/ID selection; hook counter/ancestor/route descendants remain concrete decision obligations. Q14-087 staysPARTIAL; counts unchanged44native/8scope/88PARTIAL. No Q15 or fidelity/production changes.
+
+## Decision checkpoint546 — routing reservation and notification order
+
+RC546 rows9F43F4 low/high reservation gates and staged rollback, binds known bus98/9C/90/94 to existing LC4/L3/BP508, closes pre-hook74 and ordinary post-setC4 using LI/LR recipients, and traces A443E0 removal-all-before-invalidation-before-reconnect decisions. Q14-087 remainsPARTIAL for specifically reached connection/line/bus notification descendants. Counts unchanged; no Q15 or fidelity/production changes.
