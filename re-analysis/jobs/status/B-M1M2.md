@@ -134,3 +134,20 @@ The manager reopened the native call targets and extracted APK sources for M1-02
 - Added M1-048 fidelity ownership to those existing production methods and listed their source-shaped regression cases in the record. No socket behavior changed. M1-048 remains IMPLEMENTATION_GAP, built awaiting strong verification.
 - `fidelity.py --check` and `git diff --check` passed; full-suite and publication results follow.
 - Full suite: 3,959 passed, zero failed/skipped. M1-048 remains IMPLEMENTATION_GAP; no records settled.
+
+## Stop point (2026-10-09): remaining M1 items blocked on missing path details
+
+The requested CODEX-BUILDER remainder is not complete. The checked buildable slices were committed and pushed above. Do not fill these gaps with a generic callback, host substitute, or invented configuration:
+
+- **M1-029 J1:** finite-real wrapper and J7 maximum u16-length input are built in `21b8738`; non-finite `useSpecialFloats=0` output mapping, allocation-failure/extreme-input behavior, and final escaping exception destination remain MISSING. Record remains IMPLEMENTATION_GAP.
+- **M1-046 Q1-Q3:** owner/member retirement sequence is present in `RobotLifetime`, but the shared-handle vector's concrete unsubscribe target and descendant effects are UNKNOWN. No equivalent Messaging owner exists to safely bind; record remains RECOVERABLE_GAP.
+- **M1-047:** H1/H2 decisions were checked, but the selected constructor priority/call-site value is not in the checked rows. Actual scheduler range, permissions and effect are external M1-014 policy. Do not invent a default priority.
+- **M1-049:** WifiUtil bind/unbind and JNI gates are source-checked, but this checkout has no Android/JNI bridge to receive these callbacks. Its Windows address-change event remains the host policy seam; no fake Android gate was wired into the live path.
+- **M1-050 S13:** external slot +0x30 is pure virtual in the shipped base and no runtime target was found; sink and report payload remain UNKNOWN.
+- **M1-051 E6:** local SDK writers are identified, but +0xE1 writer census and callback descendants are UNKNOWN; do not substitute mode booleans or infer the callback tail.
+- **M1-052 E7:** the virtual +0x24 callback target/body is UNKNOWN; no generic transport callback can be built.
+- **M1-053 P2:** UpdateAllRobots gate/projection/publication call are checked, but the game sink and exhaustive caller set remain UNKNOWN. The non-live docking-test getter is M7-022.
+- **M1-042:** Unity producers and the `!FirstTimeUserFlow` gate are source-checked, but this checkout has no Unity connection-flow/profile producer; stored-volume and profile inputs cannot be assigned a live value here. M1-026 still owns engine conversion/send.
+
+M1-048 U1-U7 is present in the existing live UDP path and was assigned to its own record in `d42130f`, awaiting strong verification. M1-023/M1-048/M1-049 ownership boundaries are documented in the approved inventory. No additional record is settled. No hardware run was started.
+- Stop-point check: full suite passed, 3,959 passed, zero failed/skipped; fidelity check passed. No code changed in this status-only checkpoint.
