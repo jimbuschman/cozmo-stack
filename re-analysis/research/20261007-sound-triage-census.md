@@ -1955,3 +1955,7 @@ SK355A–F settle ordinary object-scope insertion/append choice, growth-result/c
 ### Checkpoint 356 — reserved registry object and stock lifecycle
 
 RG356A–F bind singleton publication before initializer, reserved ID0 maskFF, success1 despite missing reserved object and Term retired-array clear→ID0 removal→all-other removal. Known MF158/SN159/PN160/PR161/DR162/DD163/AP249 modulator cleanup recipients reused rather than re-extracted. Q14-029 mapping reconciled with349–356; remaining writer/input/product closure stays PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 357 — index-manager termination decisions
+
+IT357A–E settle signed-negative selection in the first two registries, playing-ID completion before third-registry entry release, and final-registry live-count/first-entry reselection. UT4/UT9 local recipients supersede generic unread termination-body wording. Known ordinary node release and playing-ID completion reuse positive rows; additional registry products and callback/count/binding writers remain PARTIAL. Counts unchanged, Q15 pending Q14.
