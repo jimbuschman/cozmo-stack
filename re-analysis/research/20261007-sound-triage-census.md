@@ -2007,3 +2007,7 @@ NE368A–G settle all five known50 recipient bodies: fixed reverse child50 with 
 ### Checkpoint 369 — selected root retirement writers
 
 RT369A–G settle locked root reset, destructor identity/marker order, first-root singleton flag/sweep and zero-live-reference tree retirement. Bus prefix9C666C/9C9808 and remaining destructor/input/writer/product closure remain PARTIAL; no complete-bus lifetime claim. Counts unchanged; Q15 pending Q14.
+
+### Checkpoint 370 — unregister value and transition-entry recipients
+
+BU370A–H settle locked flag/vector unregister, default/property0B raw value, descriptor byte mask, missing-entry callback, known bus64 traversal/zero override and TT8-backed entry detach. Downstream Sound/container64 and remaining complete destructor/value/input/writer/product closure stay PARTIAL. Counts unchanged; Q15 pending Q14.
