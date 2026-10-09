@@ -2565,7 +2565,7 @@ Each of these is a question already answered. The original's behaviour is establ
 
 | id | subsystem | status | what | why it cannot be settled here |
 | --- | --- | --- | --- | --- |
-| M1-033 | M1-transport | HARDWARE_ONLY | Robot-side transport behaviour | whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none) |
+| M1-033 | M1-transport | HARDWARE_ONLY | Robot-side transport behaviour | Settled by the operator's robot run (2026-10-09, firmware 2457, bundle re-analysis/acceptance/hardware/20261009-112625-M1-PACKED-ZERO): the robot accepts packed frames of types 7 (two reliable IMURequests: ACK 3), 8 (two unreliable pings: both timestamps echoed) and 9 (mixed: ACK 3 and the echo), each with a working single-frame control. Observed for these small frames on this firmware; maximum-size frames, other orders and sequence wraparound were not exercised. Before: whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none) |
 | M3-008 | M3-device | HARDWARE_ONLY | How the firmware maps pair bits to physical display rows, and the robot playback period | only the robot can answer it |
 | M3-016 | M3-device | HARDWARE_ONLY | Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages | only the robot can answer it |
 | M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app and robot sounded when singing | Only an original-app/robot recording can establish the final audible result; a hardware pass verifies sound but cannot raise source provenance. |
