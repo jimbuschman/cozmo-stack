@@ -2307,3 +2307,7 @@ PP440 bindsfourInit settings toactualregistry/factory, Init/reader/ID0setter/unk
 ## Checkpoint 441 — all89 serialized parameter recipients
 
 PP441 closeslocal109parameters andjoins12compressorobjects toexistingCP1–5. All89settings across10serializedpluginIDs nowbindactualparameterrecipients, bothRTPCtargetspositive. Thisfamilycompletiondoesnotclosebroaderinput/writer/liveFXproducts. Nextactualcompany300productInit/controlconsumers. Q14-016 PARTIAL;countsunchanged;Q15followsQ14. No production/fidelity/hardwarechanges.
+
+## Checkpoint 442 — company300 source local lifecycle/framing
+
+WP442 bindsactualsourcefactory/table/Init, parameterdynamiccast/providerpresencegates, callbackorder, Reset/info/queries, rawcopy/count/terminalpadding decisions andTerm-ownedproviderrelease. ExistingHijackH/HG/FRreused. Sourcecallback/providerPCpublication remainsnext; broaderwriter/liveclosure remains. Q14-016 PARTIAL;countsunchanged;Q15followsQ14. No production/fidelity/hardwarechanges.
