@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 46 CHECKED native-row obligations / 8 CHECKED scope exclusions / 86 PARTIAL / 0 NOT DONE; decision checkpoints through556 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 49 CHECKED native-row obligations / 8 CHECKED scope exclusions / 83 PARTIAL / 0 NOT DONE; decision checkpoints through557 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -103,12 +103,12 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-094 | 143 | CHECKED (scope exclusion) |
 | Q14-095 | 144 | CHECKED (scope exclusion) |
 | Q14-096 | 145 | CHECKED (scope exclusion) |
-| Q14-097 | 146 | PARTIAL |
+| Q14-097 | 146 | CHECKED |
 | Q14-098 | 147 | CHECKED (scope exclusion) |
 | Q14-099 | 148 | PARTIAL |
 | Q14-100 | 149 | CHECKED (scope exclusion) |
-| Q14-101 | 150 | PARTIAL |
-| Q14-102 | 151 | PARTIAL |
+| Q14-101 | 150 | CHECKED |
+| Q14-102 | 151 | CHECKED |
 | Q14-103 | 152 | PARTIAL |
 | Q14-104 | 153 | PARTIAL |
 | Q14-105 | 154 | PARTIAL |
@@ -780,7 +780,7 @@ PARTIAL: GBUF1–6/GAV1/GWAIT1/GSCHED1–2/GDISC1/GRESET independently reopen965
 
 > | C33.3 F/G stream retry / prefix proof | M6-002,M6-003,M6-022,M6-025 | **KEEP** | 0x00A74564;0x00A7482C;0x00A74970;0x00A746A8;0x00A74E00;0x00A7538C;0x00AB22D4;0x00AB1C04;0x00AB2088;0x00AB2BFC;0x00AB1550;0x00A56650;0x00A544BC | 0x3F producers, raw non-1 results, voice-pass retry latch, frame window and setup/seek prefix coverage are timing/error/loading behavior. |
 
-PARTIAL: existing primary-backed rows VM/ST/SB/PA/SR/HS rows,NS1–NS2,SWIN1–SWIN5 in `20261007-sound-keep-rows.md`. Both Vorbis starts and FC setup/header/render/seek callers plus StartStream/voice window result gates are rowed. Remaining selected stream virtual buffer/cache/framer/decoder recipients and media-prefix source/writer proof. Reconciliation records actual body coverage without claiming complete transitive closure.
+CHECKED (bounded decisions-only), checkpoint557: SD140/AR/VM/ST/SB/PA/SR/HS/SC197/NS/SWIN and checkedQ14-003/004 supply all named source table/start/prefetch/refill/setup/header/render/seek inputs, pointer/span/packet prefix bounds, exact raw non1/3F publication and voice retry/window decisions. RI205/AH/VI/VPACK and RF544/SJ542 join parse/geometry/source identity and actual seven encodedStartStream inputs/results. No uniform asset prefix or global provider/writer absence asserted. Stream cache/backing/resolver/I/O scheduler descendants stop under the guard; source-level3F and requested positions stay exact. No whole decoder/sample-fidelity promotion.
 
 ## Q14-098 — triage line 147
 
@@ -812,13 +812,13 @@ PARTIAL: MEMREL1–2/MEMIDX positively reopen96FE70 cached-release prefix and971
 
 > | C33 decoder/cache/emit/header residuals | M6-002,M6-003,M6-025 | **KEEP** | 0x00AB2D74;0x00AB7E40;0x00A73490;0x009CD340 | WEM decoding and frame handoff remain exact; later C36 rows are verification leads, not ADP-1 waivers. |
 
-PARTIAL: AEMIT1–2/VPACK1–4 reopenA73490 sourceframe publication/loop/endresult andAB7E40 packetbound/framing/allocation/terminaldrain. RemainingAB2D74 setupcache,9CD340 RIFF/header andAB3780/AB3520/AB3978 codec recipients; decoding staysexact.
+CHECKED (bounded decisions-only), checkpoint557: checkedQ14-003 plus VC/VM5/PA6/VPACK/AEMIT/EL393/RI205 join all named setup-outcome/init/failure, packet/framing/drain, emittedframe/loop/end and complete RIFF/header/chunk/loop result/geometry controls. Setup cache/hash/backing infrastructure stops under the guard; named parser/decoder control boundaries are already positive, not merely captured. Sample reconstruction is not granted WEM ADP-1 equivalence or whole-codec acceptance. No generic new writer/family placeholder.
 
 ## Q14-102 — triage line 151
 
 > | C33 ADPCM/PCM class residuals | M6-003,M6-025 | **KEEP** | 0x00A73ABC;0x00A73D34;0x00A739E8;0x00A75E34;0x00A75B1C;0x00A736D4 | Codec/format/stream/channel/seek behavior stays exact, including PCM data representation and start positions. |
 
-PARTIAL: existing primary-backed rows AH5,AT1–AT8,AR/SK rows in `20261007-sound-keep-rows.md`. Streamed ADPCM header raw results, format publication, render/carry and seek caller arithmetic are rowed. Approved PCM-file and zero/multichannel-file branches excluded by20261007-sound-reachability.md; remaining retained stream/codec recipients and exact concrete class binding. Reconciliation records actual body coverage without claiming complete transitive closure.
+CHECKED (bounded decisions-only), checkpoint557: checkedQ14-004 plus AH5/RI205/AT/AR/AD397/SK/HS/SC197 positively bind actual mono/stereo direct/stream products, raw header/refill/carry/output states, frame/byte converter, normalized/cue seek/rate/loop/rounding/pending/error and startup/restart/end/close interfaces. Named PCM fileA75E34/A75B1C and zero/>2-channel source branches stop under the guard; backing/I/O and sample reconstruction are outside this decision task, without WEM ADP-1 equivalence or whole-decoder acceptance. No generic missing class binding remains.
 
 ## Q14-103 — triage line 152
 
@@ -2507,3 +2507,7 @@ OriginalQ14-074 four named contracts now reconcile to actual creator/default/inp
 ## Decision checkpoint556 — original residual callback/state closure
 
 OriginalQ14-087 six named contracts and item48 writer reconcile to actual completion/event/subscription/switch/object node and routing input/result/lifetime rows. Scope/layer interfaces explicit; no generic extra product/writer remainder. Q14-087 CHECKED:46native+8scope/86PARTIAL/0NOTDONE. No Q15/fidelity/production changes.
+
+## Decision checkpoint557 — retained source residual closure
+
+OriginalQ14-097/101/102 reconcile to checked Vorbis/ADPCM source decision maps, actual raw3F/error/window/prefix/packet/header/seek/end interfaces, with storage/PCM/channel/sample boundaries explicit. Three items CHECKED:49native+8scope/83PARTIAL/0NOTDONE. Separate generator/teardown/writer obligations not promoted; no Q15/fidelity/production changes.
