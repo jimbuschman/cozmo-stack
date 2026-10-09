@@ -1,6 +1,6 @@
 {
-  "source_commit": "75bb3df7a3c43cba882dd831b3a2a8c26d61d0eb",
-  "manifest_sha256": "9879732b844b236027ddedd19416f913e5ef777cfa12aca16f73b8f311412e6d",
+  "source_commit": "835339a3c07ae5b53b3225c50825e95cbba4cf58",
+  "manifest_sha256": "6f14dc1638e919918958b34ccd4b0a0eef3092539929b1409a836b44ba72883a",
   "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
   "included": [
     {
@@ -140,18 +140,19 @@
     {
       "id": "M1-014",
       "file": "M1-014.md",
-      "rows": 25,
-      "cited_intervals": 12,
+      "rows": 36,
+      "cited_intervals": 31,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs"
+        "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+        "cozmo-stack/src/Cozmo.Transport/TransportThreadPriority.cs"
       ]
     },
     {
       "id": "M1-015",
       "file": "M1-015.md",
       "rows": 151,
-      "cited_intervals": 155,
+      "cited_intervals": 164,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/ActiveObjectTable.cs",
         "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
@@ -256,7 +257,7 @@
       "id": "M1-024",
       "file": "M1-024.md",
       "rows": 17,
-      "cited_intervals": 58,
+      "cited_intervals": 67,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/Behavior/FreeplayStack.cs",
         "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
@@ -457,7 +458,7 @@
       "id": "M1-044",
       "file": "M1-044.md",
       "rows": 125,
-      "cited_intervals": 123,
+      "cited_intervals": 132,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
         "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs"
@@ -467,16 +468,37 @@
       "id": "M1-045",
       "file": "M1-045.md",
       "rows": 125,
-      "cited_intervals": 116,
+      "cited_intervals": 125,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
+      ]
+    },
+    {
+      "id": "M1-046",
+      "file": "M1-046.md",
+      "rows": 134,
+      "cited_intervals": 286,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
+        "cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs"
+      ]
+    },
+    {
+      "id": "M1-047",
+      "file": "M1-047.md",
+      "rows": 14,
+      "cited_intervals": 121,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+        "cozmo-stack/src/Cozmo.Transport/TransportThreadPriority.cs"
       ]
     },
     {
       "id": "M1-048",
       "file": "M1-048.md",
       "rows": 10,
-      "cited_intervals": 32,
+      "cited_intervals": 41,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs"
       ]
@@ -494,7 +516,7 @@
       "id": "M1-050",
       "file": "M1-050.md",
       "rows": 1,
-      "cited_intervals": 3,
+      "cited_intervals": 12,
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
         "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs"
@@ -517,19 +539,33 @@
       "history_paths": [
         "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs"
       ]
+    },
+    {
+      "id": "M1-053",
+      "file": "M1-053.md",
+      "rows": 12,
+      "cited_intervals": 89,
+      "history_paths": [
+        "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+        "cozmo-stack/src/Cozmo.Robot/EngineRobotState.cs",
+        "cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs",
+        "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+        "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/RobotStateHistory.cs",
+        "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs"
+      ]
     }
   ],
   "excluded": {
     "M1-029": "Open MISSING in current unresolved: built, awaiting strong verification: J1 finite-real Json::Value::asString now enters the live asString accessor and ports the checked wrapper: precision-17 general format under the approved phone snprintf assumption, append .0 only when neither dot nor lowercase e exists, then comma-to-period rewrite (0x008E48B8..0x008E4902; 0x008EBFAA..0x008EC04C). J7 retains the checked u16 byte count and exercises the maximum reachable 65535-byte Reader input; no fixed token cap was found in the checked Reader/converter slices (0x007B9088..0x007B9092; 0x008E078C..0x008E07F8; 0x008E190A..0x008E19A6; 0x008E2258..0x008E23D6; 0x0007E824..0x0007F202). MISSING: non-finite asString mapping in the useSpecialFloats=0 branch; the formatter body remains the J2 phone-runtime assumption. Also MISSING: allocation failure/extreme-length effects and the final escaping exception destination under M1-034. No settlement; J1/J7 checked subset only.",
-    "M1-033": "HARDWARE_ONLY; no completed built record to package. Settled by the operator's robot run (2026-10-09, firmware 2457, bundle re-analysis/acceptance/hardware/20261009-112625-M1-PACKED-ZERO): the robot accepts packed frames of types 7 (two reliable IMURequests: ACK 3), 8 (two unreliable pings: both timestamps echoed) and 9 (mixed: ACK 3 and the echo), each with a working single-frame control. Observed for these small frames on this firmware; maximum-size frames, other orders and sequence wraparound were not exercised. Before: whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none)",
-    "M1-046": "RECOVERABLE_GAP; no completed built record to package. RECOVERABLE_GAP: build the confirmed owner/member retirement order for RobotIdleTimeoutComponent (+0x51C) and RobotToEngineImplMessaging (+0x518), including its member/shared-handle vector order. The concrete ScopedHandleContainer virtual +8 unsubscribe target and any behavior-changing descendants remain UNKNOWN; do not invent their effects. Source: 20261006-M1M2-missing-triage.md Q1-Q3.",
-    "M1-047": "Waiting on manager check of final extraction rows; not built.",
-    "M1-053": "Waiting on manager check of final extraction rows; not built."
+    "M1-033": "HARDWARE_ONLY; no completed built record to package. Settled by the operator's robot run (2026-10-09, firmware 2457, bundle re-analysis/acceptance/hardware/20261009-112625-M1-PACKED-ZERO): the robot accepts packed frames of types 7 (two reliable IMURequests: ACK 3), 8 (two unreliable pings: both timestamps echoed) and 9 (mixed: ACK 3 and the echo), each with a working single-frame control. Observed for these small frames on this firmware; maximum-size frames, other orders and sequence wraparound were not exercised. Before: whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none)"
   },
   "test_counters": {
-    "total": "3960",
-    "executed": "3960",
-    "passed": "3960",
+    "total": "3982",
+    "executed": "3982",
+    "passed": "3982",
     "failed": "0",
     "error": "0",
     "timeout": "0",

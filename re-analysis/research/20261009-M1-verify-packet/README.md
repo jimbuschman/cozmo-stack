@@ -1,10 +1,10 @@
 # M1 verification packet — 2026-10-09
 
-Prepared for the operator’s request in this chat. Source snapshot `75bb3df7a3c43cba882dd831b3a2a8c26d61d0eb` on main. No new verdicts. Explicit operator authorization to commit/push overrides the ordinary research-lane no-commit rule.
+Prepared for the operator’s request in this chat. Source snapshot `835339a3c07ae5b53b3225c50825e95cbba4cf58` on main. No new verdicts. Explicit operator authorization to commit/push overrides the ordinary research-lane no-commit rule.
 
 ## Coverage
 
-53 current M1 records; 48 included, 5 excluded. Built records and policy/equivalence records with no explicit open MISSING are included. Current non-MISSING verification uncertainty is retained verbatim; inclusion does not mean complete fidelity. Hardware-only, unbuilt recoverable records and records awaiting final row approval are excluded. M1-053 detailed payload/supplier rows and M1-046/-047 final extraction are supplied separately for manager check; their builds are not claimed here.
+53 current M1 records; 51 included, 2 excluded. Built records and policy/equivalence records with no explicit open MISSING are included. Current non-MISSING verification uncertainty is retained verbatim; inclusion does not mean complete fidelity. Hardware-only and unbuilt recoverable records are excluded. The manager adopted M1-046 U1-U8, M1-047 P1-P4 and M1-053 P2a-P2m in B-M1M2.md; their builds and supplier boundaries are now included.
 
 | Record | Packet | Quoted lines | Native cited intervals |
 |---|---|---:|---:|
@@ -35,9 +35,9 @@ Prepared for the operator’s request in this chat. Source snapshot `75bb3df7a3c
 
 | M1-013 | [M1-013.md](M1-013.md) | 1 | 0 |
 
-| M1-014 | [M1-014.md](M1-014.md) | 25 | 12 |
+| M1-014 | [M1-014.md](M1-014.md) | 36 | 31 |
 
-| M1-015 | [M1-015.md](M1-015.md) | 151 | 155 |
+| M1-015 | [M1-015.md](M1-015.md) | 151 | 164 |
 
 | M1-016 | [M1-016.md](M1-016.md) | 3 | 7 |
 
@@ -55,7 +55,7 @@ Prepared for the operator’s request in this chat. Source snapshot `75bb3df7a3c
 
 | M1-023 | [M1-023.md](M1-023.md) | 10 | 44 |
 
-| M1-024 | [M1-024.md](M1-024.md) | 17 | 58 |
+| M1-024 | [M1-024.md](M1-024.md) | 17 | 67 |
 
 | M1-025 | [M1-025.md](M1-025.md) | 51 | 119 |
 
@@ -91,19 +91,25 @@ Prepared for the operator’s request in this chat. Source snapshot `75bb3df7a3c
 
 | M1-043 | [M1-043.md](M1-043.md) | 3 | 5 |
 
-| M1-044 | [M1-044.md](M1-044.md) | 125 | 123 |
+| M1-044 | [M1-044.md](M1-044.md) | 125 | 132 |
 
-| M1-045 | [M1-045.md](M1-045.md) | 125 | 116 |
+| M1-045 | [M1-045.md](M1-045.md) | 125 | 125 |
 
-| M1-048 | [M1-048.md](M1-048.md) | 10 | 32 |
+| M1-046 | [M1-046.md](M1-046.md) | 134 | 286 |
+
+| M1-047 | [M1-047.md](M1-047.md) | 14 | 121 |
+
+| M1-048 | [M1-048.md](M1-048.md) | 10 | 41 |
 
 | M1-049 | [M1-049.md](M1-049.md) | 14 | 20 |
 
-| M1-050 | [M1-050.md](M1-050.md) | 1 | 3 |
+| M1-050 | [M1-050.md](M1-050.md) | 1 | 12 |
 
 | M1-051 | [M1-051.md](M1-051.md) | 3 | 11 |
 
 | M1-052 | [M1-052.md](M1-052.md) | 2 | 7 |
+
+| M1-053 | [M1-053.md](M1-053.md) | 12 | 89 |
 
 ## Excluded records and reasons
 
@@ -175,94 +181,18 @@ HARDWARE_ONLY; no completed built record to package. Settled by the operator's r
 }
 ```
 
-### M1-046
-
-RECOVERABLE_GAP; no completed built record to package. RECOVERABLE_GAP: build the confirmed owner/member retirement order for RobotIdleTimeoutComponent (+0x51C) and RobotToEngineImplMessaging (+0x518), including its member/shared-handle vector order. The concrete ScopedHandleContainer virtual +8 unsubscribe target and any behavior-changing descendants remain UNKNOWN; do not invent their effects. Source: 20261006-M1M2-missing-triage.md Q1-Q3.
-
-```json
-{
-  "id": "M1-046",
-  "subsystem": "M1-transport",
-  "title": "Channel/member subscription retirement recipients",
-  "location": "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
-  "status": "RECOVERABLE_GAP",
-  "authority": "libcozmoEngine.so 3.4.0-1204",
-  "evidence": [
-    "Robot constructs RobotIdleTimeoutComponent at +0x51C and RobotToEngineImplMessaging at +0x518 (0x0051020A..0x0051022E). Robot dtor clears +0x51C, releases its shared-handle vector, then clears +0x518 and calls RobotToEngineImplMessaging::~ (0x005112E6..0x00511308).",
-    "RobotToEngineImplMessaging dtor releases members +0x144/+0x138/+0x110/+0x104, handle vector +0xF8, filebuf/ios, then its base (0x00532A10..0x00532A74). Last shared-handle release invokes virtual slot +8 then deleting-dtor slot +4 (0x004EF184..0x004EF1CC); concrete target and behavior-changing descendants UNKNOWN. (MISSING triage Q1-Q3.)"
-  ],
-  "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
-  "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-  "unresolved": "RECOVERABLE_GAP: build the confirmed owner/member retirement order for RobotIdleTimeoutComponent (+0x51C) and RobotToEngineImplMessaging (+0x518), including its member/shared-handle vector order. The concrete ScopedHandleContainer virtual +8 unsubscribe target and any behavior-changing descendants remain UNKNOWN; do not invent their effects. Source: 20261006-M1M2-missing-triage.md Q1-Q3.",
-  "hardware_required": false,
-  "live_path": true,
-  "test": ""
-}
-```
-
-### M1-047
-
-Waiting on manager check of final extraction rows; not built.
-
-```json
-{
-  "id": "M1-047",
-  "subsystem": "M1-transport",
-  "title": "Transport executor topology and shipped priority request",
-  "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
-  "status": "IMPLEMENTATION_GAP",
-  "effect": "Wrong executor thread count/order or omitted priority changes message timing.",
-  "provenance": "C# uses host executor threads and currently does not request native SCHED_RR priority.",
-  "authority": "libcozmoEngine.so 3.4.0-1204 executor constructors/priority helper.",
-  "evidence": [
-    "H1 creates two threads and calls SetThreadPriority on both only for priority !=2 (0x007FBDBA,0x007FBDEC,0x007FBE02..0x007FBE14).",
-    "H2 priority3 selects policy2/SCHED_RR and requests min+trunc_f32((max-min)*0.75), bits0x3F400000; EPERM/result1 skips error path (0x008334CC..0x00833532).",
-    "H3 FIFO dispatch stays M1-024; T3 M1-021; T4 M1-024."
-  ],
-  "unresolved": "Compare/build exact thread count/work split and priority gates. Actual host limits/permissions/effect remain M1-014 host policy; dispatch/timing stay M1-010/-021/-024.",
-  "hardware_required": false,
-  "live_path": true,
-  "test": "TransportRepairTests executor topology/priority source-derived cases to add."
-}
-```
-
-### M1-053
-
-Waiting on manager check of final extraction rows; not built.
-
-```json
-{
-  "id": "M1-053",
-  "subsystem": "M1-transport",
-  "title": "Outgoing RobotState publication from the engine tick",
-  "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-  "status": "IMPLEMENTATION_GAP",
-  "effect": "Game can receive RobotState at the wrong tick, before its source gate or from an unproven caller.",
-  "provenance": "UpdateAllRobots candidate exists; bounded caller known, exhaustive callers/sink not closed.",
-  "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
-  "evidence": [
-    "UpdateAllRobots enters from engine tick 0x004ED648; iterates robots, calls Robot::Update then HasReceivedRobotState, and only when true calls GetRobotState, constructs MessageEngineToGame::RobotState and invokes external slot +0x1C (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). External sink remains UNKNOWN.",
-    "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
-  ],
-  "unresolved": "App-boundary scope rule (operator, 2026-10-09; AGENTS.md \"Scope: the app boundary\"): the engine's UpdateAllRobots gate, projection and publication call stay exact; the game sink is the stack's C# API (a RobotState API event), which replaces the Unity consumer. Buildable now. Before: RECOVERABLE_GAP: build only the checked UpdateAllRobots publication gate/order/projection. The external-interface +0x1C sink and any additional callers remain UNKNOWN; M7-022 owns the non-live BehaviorDockingTestSimple state copy.",
-  "hardware_required": false,
-  "live_path": true,
-  "test": "EngineAppLayerTests.M1_024_CD7_CD8_GameMessagesRunBeforeTheClockUpdateAndRobotUpdateAfterIt plus projection cases after extraction."
-}
-```
-
 ## Reproduction and artifact boundaries
 
-`python re-analysis/research/20261008-M1M2-verify-packet/build_packet.py` packages the checked-out snapshot after the offline test TRX exists. It only writes in this directory. The native ELF is read locally and is not uploaded. Per-record files are self-contained for manifest, rows, diff text, native transcripts, and relevant test/result text. Complete shared-file histories intentionally contain unrelated hunks; they are explicitly labeled as supersets rather than assigned invented record-level causal ownership.
+`python re-analysis/research/20261009-M1-verify-packet/build_packet.py` packages the checked-out snapshot after the offline test TRX exists. It only writes in this directory. The native ELF is read locally and is not uploaded. Per-record files are self-contained for manifest, rows, diff text, native transcripts, and relevant test/result text. Complete shared-file histories intentionally contain unrelated hunks; they are explicitly labeled as supersets rather than assigned invented record-level causal ownership.
 
-Test command: `dotnet test cozmo-stack/Cozmo.sln --logger trx --results-directory .scratch/m1-api-events`. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.
+Test command: `dotnet test cozmo-stack/Cozmo.sln --logger "trx;LogFileName=packet-tests.trx" --results-directory .scratch/m1-final-tests`, with DOTNET_PROCESSOR_COUNT=4 and ThreadPoolMinThreads=32. The supplied TRX records the actual result; existing oracle blocked imports remain blocked.
 
-## Rows awaiting manager check
+## Adopted rows and supplier boundaries
 
-M1-046/-047: [final extraction rows](../20261009-M1-final-extraction.md) and [native instructions](../20261009-M1-final-extraction-native.txt). M1-053: [detailed projection rows and supplier boundaries](../20261009-M1-053-projection-rows.md) and [native instructions](../20261009-M1-053-projection-native.txt). These are unchecked extraction reports and are not built records in this packet.
+M1-046/-047: [final extraction rows](../20261009-M1-final-extraction.md). M1-053: [projection rows](../20261009-M1-053-projection-rows.md). Manager adoption is quoted in the three record files. Root pose, tracking writers, image-result commit and other suppliers remain owned by their named higher-layer records, including their lifetime gaps. Native member allocation bookkeeping is represented by engine-thread-confined managed handle storage. No supplier or M1 record is settled by this packet.
 
 ## Offline run and packet validation
 
-Offline run: 3960 passed, 0 failed, 0 not executed. The full solution suite is recorded without result substitution.
+Offline run: 3982 passed, 0 failed, 0 not executed. The full solution suite is recorded without result substitution.
 
 `validate_packet.py` checks the included/excluded partition, verbatim manifest values and inventory lines, exact Git patch histories, native transcript bytes against the local ELF, citation byte coverage, and declared-test result matching. Machine-readable results are in `validation.json`. These are packaging checks, not an Opus/source-fidelity verdict.

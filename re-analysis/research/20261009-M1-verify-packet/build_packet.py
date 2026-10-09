@@ -110,7 +110,11 @@ def native(ranges):
             size,name,thumb=functions[start]; blocks.add((start,start+size,name,thumb))
         # Preserve explicit data/unlabelled ranges separately.
         if not o or not owner(b) or o[1]<=b:
-            blocks.add((a&~1,b+4,'explicit citation span (includes symbol gaps and data)',o[3] if o else True))
+            sec=section(a)
+            if not o and sec and sec.name=='.plt':
+                blocks.add((a&~3,max(b+4,a+12),'explicit ARM PLT stub citation',False))
+            else:
+                blocks.add((a&~1,b+4,'explicit citation span (includes symbol gaps and data)',o[3] if o else True))
     out=[]
     for a,b,name,thumb in sorted(blocks):
         key=(library_name,a,b,name,thumb)
