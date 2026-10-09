@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through286 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through287 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1675,3 +1675,7 @@ MJ285A–C reconcile factory/default/scope/parameter/buffer-demand initializatio
 ### Checkpoint 286 — send scratch decisions
 
 SEND286A–F recover nested kind1 ID gates, independent kind2 admission, linear versus scalar threshold bindings, exact fast-gain conversion, publication order and count8/ID-only sentinel behavior. Q14-011 reuses known D1/RW10, DU and PDI bodies; wider uncertainty stays PARTIAL. No counts, Q15, fidelity or production changes.
+
+### Checkpoint 287 — send replacement and device dispatch
+
+SR287A–F recover old positive-gain capture, mode-dependent previous value, raw-ID first-unmatched merge, unmatched-old fade records, count-before-mask dispatch and ordinary/special device filters with retain/release. Appended local match marker is unwritten; no value inferred. Route construction A43434 and wider inputs/writers remain PARTIAL. Counts/Q15/fidelity/production unchanged.
