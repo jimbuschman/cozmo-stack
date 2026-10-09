@@ -1,0 +1,105 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00599770..0x00599786 exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient24RegisterRobotAudioBufferENS_13AudioMetaData14GameObjectTypeEjNS3_3Bus7BusTypeE
+00599770: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00599774: sub          sp, #0x2c
+00599776: mov          sb, r2
+00599778: mov          r6, r1
+0059977A: mov          fp, r0
+0059977C: strd         r6, sb, [sp, #0x20]
+00599780: str          r3, [sp, #0x28]
+00599782: add.w        sl, fp, #0x40
+RANGE 0x005997DE..0x00599842 exclusive; Thumb;
+005997DE: ldr.w        r0, [sb, #8]
+005997E2: cmp          r0, r6
+005997E4: bne          #0x5997ba
+005997E6: movs         r0, #0
+005997E8: strd         r0, r0, [sp, #0x14]
+005997EC: str          r0, [sp, #0x1c]
+005997EE: adr          r0, #0x214
+005997F0: add          r1, sp, #0x14
+005997F2: adr          r2, #0x23c
+005997F4: mov          r3, r6
+005997F6: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+005997FA: ldr.w        sb, [sp]
+005997FE: ldr          r0, [sp, #0x14]
+00599800: cbz          r0, #0x599820
+00599802: ldr          r1, [sp, #0x18]
+00599804: cmp          r1, r0
+00599806: itttt        ne
+00599808: subne.w      r2, r1, #8
+0059980C: subne        r2, r2, r0
+0059980E: mvnne        r3, #7
+00599812: bicne.w      r2, r3, r2
+00599816: itt          ne
+00599818: addne        r1, r1, r2
+0059981A: strne        r1, [sp, #0x18]
+0059981C: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00599820: ldr          r0, [pc, #0x240] ; word[00599A64]=00AA4F62
+00599822: movs         r2, #1
+00599824: ldr          r1, [pc, #0x240] ; word[00599A68]=00AA4F64
+00599826: add          r0, pc
+00599828: add          r1, pc
+0059982A: ldr          r0, [r0]
+0059982C: ldr          r1, [r1]
+0059982E: ldrb         r0, [r0]
+00599830: strb         r2, [r1]
+00599832: cmp          r0, #0
+00599834: beq.w        #0x599938
+00599838: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+0059983C: b            #0x599938
+0059983E: ldr.w        sb, [sp]
+RANGE 0x00599842..0x00599854 exclusive; Thumb;
+00599842: movs         r0, #0x18
+00599844: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+00599848: vmov         s0, r4
+0059984C: mov          r8, r0
+0059984E: add          r1, sp, #0x20
+00599850: add.w        r0, r8, #0xc
+RANGE 0x00599858..0x00599864 exclusive; Thumb;
+00599858: str.w        r6, [r8, #8]
+0059985C: ldm.w        r1, {r2, r3, r7}
+00599860: cmp          r4, #0
+00599862: stm          r0!, {r2, r3, r7}
+RANGE 0x0059992A..0x00599952 exclusive; Thumb;
+0059992A: str.w        r8, [r0]
+0059992E: ldr.w        r0, [fp, #0x4c]
+00599932: adds         r0, #1
+00599934: str.w        r0, [fp, #0x4c]
+00599938: add.w        r0, fp, #0x54
+0059993C: add          r1, sp, #0x20
+0059993E: blx          #0x4af6e8 ; std::__ndk1::deque<Anki::AudioMetaData::GameObjectType,std::__ndk1::allocator<Anki::AudioMetaData::GameObjectType>>::push_back
+
+00599942: cmp.w        sb, #0
+00599946: mov.w        r4, #0
+0059994A: itt          ne
+0059994C: ldrne        r0, [sp, #4]
+0059994E: cmpne        r0, #0
+00599950: beq          #0x5999cc
+RANGE 0x005999A8..0x005999D4 exclusive; Thumb;
+005999A8: mov          r4, r0
+005999AA: ldr          r0, [sp, #0x14]
+005999AC: cbz          r0, #0x5999cc
+005999AE: ldr          r1, [sp, #0x18]
+005999B0: cmp          r1, r0
+005999B2: itttt        ne
+005999B4: subne.w      r2, r1, #8
+005999B8: subne        r2, r2, r0
+005999BA: mvnne        r3, #7
+005999BE: bicne.w      r2, r3, r2
+005999C2: itt          ne
+005999C4: addne        r1, r1, r2
+005999C6: strne        r1, [sp, #0x18]
+005999C8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+005999CC: mov          r0, r4
+005999CE: add          sp, #0x2c
+005999D0: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x004AF6B8..0x004AF6C4 exclusive; ARM;
+004AF6B8: add          ip, pc, #0xb00000
+004AF6BC: add          ip, ip, #148, #20
+004AF6C0: ldr          pc, [ip, #0x8b4]!
+01043F74: raw=004A4010 relocated=00599771 _ZN4Anki5Cozmo5Audio16RobotAudioClient24RegisterRobotAudioBufferENS_13AudioMetaData14GameObjectTypeEjNS3_3Bus7BusTypeE

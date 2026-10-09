@@ -11,6 +11,32 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 459 — client registration duplicate decisions and Q14-021 reconciliation
+
+Primary: `20261009-sound-client-registration-duplicates-native.txt`,90 complete native instructions plus actual client-registration import; same engine hash. Reuse AR1–2, BR450/CU451/OP449, AENTRY306/AP/ASEL304/ASORT305/DPOST/DCB/DQUEUE/DWORK/RCTX/AL/AF/FR/RS405 and CM446–MQ458. C=client,N=configuration node; offsets hexadecimal. Hash bucket/rehash geometry excluded; identity, duplicate decisions, count/pool and raw route inputs retained.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| RC459A actual entry/input snapshot | 4AF6B8..C4/GOT1043F74→599771;599770..786 | AR1 known constructor tuple calls enter599770 with C/objectID/bufferIndex/busID. Save incoming three raw words at SP20/24/28 before lookup. Client map C40 key is objectID. No enum normalization or controller enabled/mode predicate in these input slices; route gating remains AR2. |
+| RC459B duplicate keeps old configuration | 5997DE..842 | Selected existing node8 equals incoming objectID→duplicate branch. Log error, set global error flag1, optional debugbreak; branch directly599938. No overwrite of old nodeC/10/14 and no fresh node allocation; skip counter increment59992E..934. It does NOT return immediately, discard incoming tuple or return a duplicate-failure code. Continues RC459D with incoming bufferIndex restored from saved stack, not old configuration index. |
+| RC459C fresh configuration values/count | 599842..854;599858..864;59992A..938 | Fresh branch allocates18hex node, keyN8=objectID, then copies saved tuple into NC=objectID,N10=bufferIndex,N14=busID. Selected fresh node publication at59992A is followed by C4C=wrap32(C4C+1). Hash bucket/rehash/link mechanics excluded, including their float sizing math. CU451 later reads this stored N10 before erasing configuration; duplicate registration preserves that earlier index. No fresh-buffer reset is inferred from client-map insertion. |
+| RC459D shared pool/route/return tail | 599938..952;AR2 599952..9A8;5999A8..9D4;BR450 | Both fresh and duplicate paths append incoming objectID to poolC54. Only fresh increments C4C. Incoming bufferIndex==0 or busID==0 returns0 after append. Otherwise AR2 sends incoming busID/gain3F800000 aux pair, dry volume0 for incoming objectID, then BR450 controller registration with incoming bufferIndex. Save raw controller result through temporary cleanup and return it. No rollback of pool append/map/counter on that result and no duplicate pool suppression. Consequently duplicate client registration can retain old config index while attempting a new incoming controller route; this is the shipped decision, not a guessed repair. |
+
+| Original Q14-021 address obligation | Positive decision joins now available | Concrete boundary still to check |
+| --- | --- | --- |
+| 59687E..6914 composition/choice | AP1–3/ASEL304/AENTRY306; raw event value/order; base3D initial0 already AENTRY306A, set1 AP2 | Selected alternative/constructor/sort dependencies positive; flag's raw stores retained without inventing a semantic name. |
+| 597F12..F8E;59818C..82A0 scheduling/post | AP4–6/DPOST/DCB/DQUEUE/DWORK/DSORT; RCTX316 callbacks/weak lifetime; AL1 count/error | The per-playing-ID event-volume wrapper P9 is positive; its actual controller/native playing-ID RTPC recipient remains a concrete next join, distinct from VI456 object0 RTPC. |
+| 596DC8 sorting | ASORT305/315 native complete local sort and tie correction | No new sort or stable-ID policy to invent. |
+| 59962A..999A4 registration/routing | AR1–2/RC459;BR450/OP449/CU451; constructor tuples/pool/map/duplicates | Aux-send and dry-output helper recipients remain their separate routing obligations; no bulk all-routing closure claimed. |
+| 599E6A..EB8 post/context | AR3–6/RCTX316/UC/UE; move/copy/failure/cleanup paths | Selected nested callback positive; arbitrary other supplied callback families are inputs, not proven reachable by symbol existence. |
+| 8D88CC callbacks/tick | CD4/UC5/RCTX316/UC20; detach/unlock/forward callbacks/reverse info destruction | Native queued arrival/pass boundary positive; external numbered tick assignment remains unclaimed. |
+| 597DB4..E8E frames/lifecycle | AL3–6/ASTATE317/AF/FR/HG/RS405;AH452/AG453/AI457/MQ458 selected M5 interface | Underlying source/resampler obligation is broader Q14-020; these rows do not claim all source products. |
+| 59678E..7B8 abort | AP7/DQUEUE/DWORK;CM446/CU451/MQ458 known caller gates and actual deletion | Selected object-stop/flush/frame-reset consumers already positive. |
+
+out of scope: hash/rehash sizing/link/storage, deque backing and allocator/log implementation under the guard; per-sample DSP under ADP-1. Configuration identity/count/raw route and duplicate continuation are in scope.
+
+The prior vague client-map/creator/volume/abort pending phrases are superseded for the explicitly positive joins above. Q14-021 remains PARTIAL: the next concrete missing join is per-playing-ID event-volume submission, followed by routing recipient reconciliation; no all-products/input/writer closure from absence of navigation callers. Counts unchanged:27 native CHECKED +8 scope CHECKED /105 PARTIAL /0 NOT DONE. Q15 follows completed Q14.
+
 ## Checkpoint 458 — pending-message retirement and streamer audio abort gates
 
 Primary: `20261009-sound-pending-message-abort-gates-native.txt`,250 complete native instructions including both bounded caller bodies and actual list-count helper import; same engine hash. Reuse AI457, AG453, AP7/DQUEUE/DWORK, CM446D/AD447/ASTATE317. S=AnimationStreamer,C=RobotAudioClient,A=current audio animation; offsets hexadecimal. Audio-message retirement/count and abort admission are exact timing/lifecycle controls; logging/list backing is not descended into.
