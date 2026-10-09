@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 44 native-row obligations CHECKED, 8 CHECKED scope exclusions, 88 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 553 — concrete owned playlist retirement products
+
+Primary `20261009-sound-music-owned-retirement-products-native.txt`, same engine SHA256. This closes MN552's two concrete owned-object callbacks at the shared audio retirement interface; it does not recover new music selection algorithms.
+
+| Row | Primary / retained joins | Exact retained decision |
+| --- | --- | --- |
+| MT553A positive owned products | 989078..9893F4;raw9893F4/F8/FC;GOT104008C;raw103A5C0/101BEB0;989834..989838 | Native recursive constructor reads actual first serializedword: zero constructs34hex group and writes table(GOT104008C=103A5B8)+8=103A5C0; nonzero constructs1Chex leaf and installs101BEB0 from9890A0 PC-relative literal+8. Both append the same newly constructed pointer to parent18, incrementing1C before null-slot gate. Child count drives recursive same-constructor call for group. This positively binds the recipient population; no name-based guess or missing creator inference. Group.slot0=9937C4 alreadyMN552D; leaf.slot0=989834 is exactlyBX LR. |
+| MT553B recursive lifetime closure | MT553A;MN552B/D;PI1–3/PS8 | Group0 first releases ownnonnull28state through the known random/sequence8 contracts, then calls each nonnull child's actual0, freesoriginalchild and reloads livebase/count. Leaf0 makes no callback or state write. Therefore the finite tree has exact recursive owned-state retirement, with no RNG draw, external selection callback or invented generic destructor. Allocation/free backing remains out of scope. |
+| MT553C embedded member alias/order | 989400..9894FC;MN552B/D;MB4 | N.A8/AC/B0 are exactly (N+90).18/1C/20. They are not two independent owned vectors. Node destructor first destroys entries and publishesAC=0, then clears embedded sharedstate via993A18, then9937C4 normally skips child callbacks due to that SAME count0 and frees the retained vector. Replacement989400 uses identical entry callbacks/live-end reload/count0/sharedstate retirement before rebuilding through989078. This joins constructor, replacement and retirement for these actual owned recipients without asserting a second callback pass or retaining a duplicate missing-family obligation. |
+
+Q14-087's MN552 concrete owned entry/tree child.slot0 remainder is closed. Existing route reconnect/line inputs are the remaining named decision joins; no generic new music family census is added. Counts unchanged44 native CHECKED+8 scope CHECKED/88 PARTIAL/0 NOT DONE. No production/fidelity/hardware/Q15 edits.
+
+
 ## Checkpoint 552 — actual music-node retirement interfaces
 
 Primary `20261009-sound-music-node-retirement-interface-native.txt`, same engine SHA256. Existing Q15 MB4/MP1/MP3 constructor evidence is reused only to bind actual products at DC4's shared audio-node interface; no context table is substituted and no new music selection descent occurs.
