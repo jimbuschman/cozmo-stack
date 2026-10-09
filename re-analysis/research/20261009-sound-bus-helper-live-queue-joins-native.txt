@@ -1,0 +1,96 @@
+Static navigation: executable ELF32 LOAD aligned ARM branch scan found no direct branch to9C0FC0; immediate ARM LDR(+E0) scan found165 candidates. Reopened candidate slices yielded9AE56C and9C0D5C as concrete table0→slotE0→BLX sequences;A5554C is a plain voice E0 fieldload, not selected virtualE0. This encoded subset does not establish arbitrary indirect/Thumb/global absence. Tag2C producer scan of calls9AF778 with MOV r1,#2C in prior25 words found9A58F8/9A5960; full bodies below establish arguments, not window-only inference.
+
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009A58C4..0x009A5938 exclusive; ARM;
+009A58C4: push         {r4, r5, r6, lr}
+009A58C8: mov          r4, r1
+009A58CC: bl           #0x99db84
+009A58D0: subs         r5, r0, #0
+009A58D4: bne          #0x9a58e0
+009A58D8: mov          r0, #0xf
+009A58DC: pop          {r4, r5, r6, pc}
+009A58E0: bl           #0x9a976c
+009A58E4: ldr          r6, [pc, #0x4c] ; word[009A5938]=006E7F74
+009A58E8: mov          r1, #0x2c
+009A58EC: add          r6, pc, r6
+009A58F0: mov          r2, r0
+009A58F4: ldr          r0, [r6, #8]
+009A58F8: bl           #0x9af778
+009A58FC: ldr          r2, [r6, #8]
+009A5900: mov          r3, #1
+009A5904: add          r2, r2, #0x6c
+009A5908: str          r5, [r0, #4]
+009A590C: str          r4, [r0, #0xc]
+009A5910: str          r3, [r0, #0x10]
+009A5914: dmb          sy
+009A5918: ldrex        r1, [r2]
+009A591C: rsb          r1, r3, r1
+009A5920: strex        r0, r1, [r2]
+009A5924: cmp          r0, #0
+009A5928: bne          #0x9a5918
+009A592C: dmb          sy
+009A5930: mov          r0, r3
+009A5934: pop          {r4, r5, r6, pc}
+009A5938: raw=006E7F74 relocated=006E7F74 
+RANGE 0x009A593C..0x009A59A0 exclusive; ARM;
+009A593C: push         {r4, r5, r6, lr}
+009A5940: mov          r5, r1
+009A5944: mov          r6, r0
+009A5948: bl           #0x9a976c
+009A594C: ldr          r4, [pc, #0x4c] ; word[009A59A0]=006E7F0C
+009A5950: mov          r1, #0x2c
+009A5954: add          r4, pc, r4
+009A5958: mov          r2, r0
+009A595C: ldr          r0, [r4, #8]
+009A5960: bl           #0x9af778
+009A5964: ldr          r3, [r4, #8]
+009A5968: add          r3, r3, #0x6c
+009A596C: mov          r2, r0
+009A5970: mov          r0, #1
+009A5974: str          r6, [r2, #4]
+009A5978: str          r5, [r2, #0xc]
+009A597C: str          r0, [r2, #0x10]
+009A5980: dmb          sy
+009A5984: ldrex        r2, [r3]
+009A5988: rsb          r2, r0, r2
+009A598C: strex        r1, r2, [r3]
+009A5990: cmp          r1, #0
+009A5994: bne          #0x9a5984
+009A5998: dmb          sy
+009A599C: pop          {r4, r5, r6, pc}
+009A59A0: raw=006E7F0C relocated=006E7F0C 
+RANGE 0x009AE520..0x009AE578 exclusive; ARM;
+009AE520: ldr          r3, [pc, #0xa6c] ; word[009AEF94]=FFFFFDE0
+009AE524: ldr          r1, [r5, #4]
+009AE528: ldr          r2, [r5, #0x10]
+009AE52C: ldr          r3, [r6, r3]
+009AE530: ldr          r0, [r3]
+009AE534: bl           #0x9a7eb0
+009AE538: subs         r8, r0, #0
+009AE53C: beq          #0x9ae30c
+009AE540: ldr          r3, [r8]
+009AE544: ldr          r3, [r3, #0x44]
+009AE548: blx          r3
+009AE54C: cmp          r0, #0
+009AE550: cmpne        r0, #0xc
+009AE554: bne          #0x9ae508
+009AE558: ldr          ip, [r8]
+009AE55C: mov          r0, r8
+009AE560: ldr          r1, [r5, #0xc]
+009AE564: mov          r2, #1
+009AE568: mov          r3, #2
+009AE56C: ldr          ip, [ip, #0xe0]
+009AE570: blx          ip
+009AE574: b            #0x9ae508
+RANGE 0x009AE168..0x009AE16C exclusive; ARM;
+009AE168: b            #0x9ae520
+RANGE 0x009C0D44..0x009C0D64 exclusive; ARM;
+009C0D44: str          ip, [r4]
+009C0D48: ldrb         r2, [r2, #4]
+009C0D4C: str          lr, [r4]
+009C0D50: ldr          ip, [sb]
+009C0D54: subs         r2, r2, r3
+009C0D58: movne        r2, #1
+009C0D5C: ldr          ip, [ip, #0xe0]
+009C0D60: blx          ip

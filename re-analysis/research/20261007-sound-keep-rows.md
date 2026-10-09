@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 44 native-row obligations CHECKED, 8 CHECKED scope exclusions, 88 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 550 — live bus helper producer/queue/consumer inputs
+
+Primary `20261009-sound-bus-helper-live-queue-joins-native.txt`, same engine SHA256. Static encoded scans are navigation to positively reopened bodies, not global absence or runtime unreachability evidence.
+
+| Row | Primary / retained joins | Exact retained decision |
+| --- | --- | --- |
+| BQ550A name-input producer | 9A58C4..9A5938/raw9A5938;E3/E4/E17–19/TH | Save incominghelperID r1; call99DB84 on incoming name. Raw convertedID0 returnsF beforequeue. Nonzero query9A976C, pass its raw result as arg2 to9AF778(engine,tag2C,arg2). Publish command4=convertedID,C=savedhelperID,10=1, thenDMB/LDREX/STREX retry/DMB decrements engine6C exactly1. Return1 after publication, no queued-recipient outcome gate. Body does not reject helperID0 or request renderer immediately. E3 owns actual name hashing; E4/TH own backpressure/ordinary frame drain rather than a new timing assumption. |
+| BQ550B raw-ID producer | 9A593C..9A59A0/raw9A59A0 | Save raw incomingbusID r0/helperID r1;9A976C→9AF778 tag2C in same native order. Publish command4=rawbusID,C=rawhelperID,10=1; atomic6C decrement exactly1, return1. No busID0/hash-zero rejection in this overload, no normalization of helperID or callback. Distinct from name producer's F return. |
+| BQ550C actual selected consumer | 9AE168;9AE520..9AE578;A11/OB354/BH548;E18/19 | Branch table entry base9AE0B8+2C*4=9AE168 selects9AE520. Lookup9A7EB0(currentindex,command4,command10). Missing consumes atdefault without setter/release. Found querylive44; only raw0 ORC accepted. Other types go common referenceC release without setter. Accepted bus invokes liveE0 with r1=commandC,shared r2=1,priority r3=2. Ignore setter rawresult, then reload table/release foundbus.liveC; localresult0/shared consume tail. Both known bus tables E0=9C0FC0 and44=0/C; no source-family extrapolation. |
+| BQ550D priority versus authored input | BH548/BH549;BQ550A–C | Authored reader suppliespriority0/sharednormalizedbankbyte0. Live command suppliespriority2/shared1. Accepted live update storespriority2; later authoredpriority0 is rejected by signed oldpriority>incoming, preserving live state. This is a concrete counterexample to claiming authoredID0 proves all runtime descriptors staynull. LivehelperID0 can clear accepted descriptor; nonzero may select retained registry setting and requestedtype6 factory, whose accept/Init/lifetime decisions are HBIND. Actual acceptedtype6 metadata/method family still needs a positive selected-product witness. |
+| BQ550E encoded-census limits | capture header/confirmed bytes;BH548A | ARM immediate+E0 scan165candidates includes ordinaryfieldloads. The two confirmed actual dispatches are bank9C0D60 andqueue9AE570; nearbyA5554C is voicefieldE0, not tableE0. Tag2C direct allocator call inputs positively bind the two producers above. No global no-other-caller/Thumb/indirect assertion, no named-body absence upgrade. Remaining producer invocation/input population is the specific upper interface, not fabricated type6 reachability exclusion. |
+
+Q14-074/Q14-087 remain PARTIAL for actual live invocation/selectedtype6 product closure and retained route lifecycle joins. Both bank and live known setter inputs are positive, with distinct priorities and retained old-state behavior. Counts unchanged44 native CHECKED+8 scope CHECKED/88 PARTIAL/0 NOT DONE. No production/fidelity/hardware/Q15 changes.
+
+
 ## Checkpoint 549 — fresh bus helper default and command notification
 
 Primary `20261009-sound-bus-helper-default-notification-joins-native.txt`, same engine SHA256. Actual type8 factory dispatch and native defaults settle the specific initial descriptor question from BH548.
