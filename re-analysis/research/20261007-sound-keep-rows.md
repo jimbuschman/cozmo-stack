@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 350 — queued listener-mask input and known creator reconciliation
+
+Primary: `20261008-sound-listener-mask-queue-native.txt`, 35 instruction/raw words with complete selected range coverage; engine SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Existing E1–4/E17–19 queue reservation/forced-drain/consumption, LM348 mask recipient and LA349 route addition reused. No positioning payload or sample arithmetic.
+
+| Step | Address | Exact decision / order |
+|---|---|---|
+| LQ350A native producer | 99F67C..99F6D8;raw99F6D8;9A9674..9A967C | Preserve incoming r0 objectID and r1 raw mask. Size helper returns10hex. Call existing reservation9AF778(global108D870,tagE,size10hex). Returned command pointer is used without null/result gate; store saved objectID at4, raw mask atC. No bool conversion, byte truncation, object lookup or native pre-enqueue validation in this producer. Command word8 not assigned here. |
+| LQ350B publication/result | 99F6A4..99F6D8 | Reload global queue after reservation; derive queue+6C before payload stores. Publish objectID then raw mask, DMB, exclusive retry loop decrements word6C wrapping32, DMB, return raw1. Return1 describes enqueue completion, not registry lookup or route creation success. Existing producer-side forced-drain possibility retained; no dedicated-thread-only assumption. |
+| LQ350C selected consumer | 9AE0A8..9AE0F4 in existing union capture;9AEE88..9AEEA8 | U16 command2 tagE selects branch9AE0F0→9AEE88. Read command4 objectID and C full mask; invoke A0CA04 with registry global. Ignore result, set localresult0, enter E19 shared consume tail9AE310. Missing object still consumes command. No immediate stop or outrequest publication in this branch. |
+| LQ350D live control join | LQ350A–C;LM348C–F;LA349A–E | Enqueued full-word mask reaches registry first-ID match, old-byte/full-new-word route comparison, ordered removals/additions, then final low-byte object22/dirty publication. Neither producer nor consumer reports downstream line/connection failure. This is the known native queued join; actual application callers/indirect bindings are not established by navigation's empty callers list. |
+| LQ350E known creator reconciliation | LREC289A–C;ROOT290A–D;LF291A–F;LDEF292A–E;LDRV293A–D;LTERM294/LREL295 | LA349D's unassigned incoming r1 is already resolved by LREC289B: A429F0 overwrites it before use. Descriptor parent resolution/recursive creation, special root selection and A42210 allocation gates/format choice/init/attach/publication/failure cleanup are positive existing bodies, with concrete base/derived defaults, format getter and teardown. Reuse these rows; do not reopen A429F0/A42210/A68950 or their settled selected descendants because historical prose says next. |
+
+LQ350E supersedes LA349 and older LREC/ROOT/LF wording that treats these selected local creators/getter/constructors/destructor as unread. Wider descriptor/link/state/format/device/registry input and writer/family/lifetime closure stays explicit and PARTIAL. out of scope: queue backing storage, allocator/free internals and phone guard implementation. Q14-029 remains PARTIAL; counts24 native CHECKED /8 scope CHECKED /108 PARTIAL unchanged, Q15 parked; no production/fidelity/hardware changes.
+
 ## Checkpoint 349 — selected listener addition and descriptor selection
 
 Primary: `20261008-sound-listener-addition-native.txt`, same engine hash. LM348 propagation invokes A42C60(context,voice,device10,device14); RCON/RCC/HC344, LGET1 and SL288C–F node/bus88 families reused. These choose routing identity and publication, not samples/storage.

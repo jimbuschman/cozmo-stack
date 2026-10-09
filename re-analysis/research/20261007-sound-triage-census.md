@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through349 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through350 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1927,3 +1927,7 @@ LM348A–F close known standard voice owner.vt24, object22 default/setter, regis
 ### Checkpoint 349 — selected listener addition join
 
 LA349A–E settle A42C60 descriptor/query/first-line match/creation-and-connection choices, exact fallback descriptor defaults and native guard-call order. Existing selected node/bus88 families and RCON/RCC publication reused. Descriptor/input writers, line creator/registration/lifetime and other families retain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 350 — queued mask producer/consumer and existing creator reuse
+
+LQ350A–E settle native tagE producer size/field stores/exclusive publication, selected consumer and full-word mask propagation to final byte publication. Existing LREC289/ROOT290/LF291/LDEF292/LDRV293/LTERM294/LREL295 positively resolve local creator/getter/default/teardown obligations and unused r1; stale next-recipient labels superseded. Actual app binding and wider input/writer/registry/device/family closure remain PARTIAL. Counts unchanged, Q15 parked.
