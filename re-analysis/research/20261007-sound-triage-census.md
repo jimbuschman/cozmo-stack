@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through522 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through523 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -614,7 +614,7 @@ CHECKED; X5–X6: reset gates and native field widths/order. Downstream virtual 
 
 > | C30.8 / voice init seam | M6-025,M6-013 | **KEEP** | 0x00A54A30 | Caller/return/failure/FX-selection proof remains required; C31 improves evidence but not authority/settlement automatically. |
 
-PARTIAL: VF1–VF5/VF8–VF9 reopen voice Init ordered slots, gate/results, allocation/null failure, accepted wrapper cleanup and format/chain output. Remaining: three production caller gates and selected plugin/initial-stage/late-stage/cleanup recipient closure; no automatic acceptance of the prior correction.
+PARTIAL: VI523A positively binds all three actual A54A30 production callers (A44BE8 secondary replacement, A555C0 lazy render, A42FF0 attach) and their raw1/failure/Stop/delete gates. VF1–9/WV/RS/PS404/EB497/IC/FQ/FS/SL/LP/PP rows close named stages, wrappers, registry settings, bypass writer and known lifecycle controls. P109523 adds selected authored109 creator/table/Info/Init/history/kernel choice/failure/Reset/Term. Remaining specific109 Execute/kernel refresh/count/channel controls and138 live product controls are not established by their parameter-reader rows alone; selected additional source/FX products must retain their own proved interfaces. No automatic whole-record acceptance.
 
 ## Q14-074 — triage line 123
 
@@ -644,7 +644,7 @@ CHECKED: CD1–CD2 reopen new-minus-old byte delta, cursor store, old media/stre
 
 > | C31.2 R2.1–R2.15 caller, registry, wrapper setup | M6-025,M6-013 | **KEEP** | 0x00A54A30;0x009CC2AC;0x009CC4D8;0x00A47038;0x00A764D4;0x00A5676C;0x00A5335C | Plugin selection/type/version, bypass/async/in-place flags, format changes, wrapper construction, allocation and chain connection/cleanup order remain exact. |
 
-PARTIAL: VF1–VF9 expose wrapper type/flag raw gates, concrete construction/Init/Reset/format publication, registry attach and cleanup order. IC rows separately cover bus-slot initialization. Remaining: plugin metadata registry/version producers, A47038/A764D4/A5676C and reset/execute/cleanup target closure plus bypass writers.
+PARTIAL: VI523A binds all three Init caller gates; VF/WV/PR/IC/FQ/FS/SL/LP/PP actual registry/version/settings/reader/clone/subscription paths are positive. RS1–8/PS404 close A47038/A764D4/A5676C; EB497/FQ supplies actual live four-slot bypass writer. P109523 adds actual109 product creation/metadata/Init/history/Reset/Term. Remaining specific109 Execute/kernel control boundary and138 live product control paths, rather than generic unread stage or bypass claims.
 
 ## Q14-079 — triage line 128
 
@@ -656,7 +656,7 @@ PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset 
 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
-PARTIAL: B7–B12/B19–B20 and CP1–CP9 cover compressor creation/parameters/Init/Reset/Term and identified Execute partition. VF1–VF5 cover voice Init anchor. RS1–RS8 additionally close A47038 and late-stage initialization recipients. Remaining metadata registry/bypass producer and full source-path closure; no automatic settling of the records.
+PARTIAL: B7–12/B19–20/CP1–9 and PP441F actual108 registry/readers/metadata resolve compressor creation/Init/Reset/Term/Execute parameter/count/channel/history boundary. VI523A/RS1–8/PS404/EB497 close known voice Init callers/stages/bypass; VF/WV retain wrappers and cleanup. Broader selected voice product control closure still remains073/078/079, including109 Execute and138 live product; parameter-only evidence does not accept the full enclosing voice path.
 
 ## Q14-081 — triage line 130
 
