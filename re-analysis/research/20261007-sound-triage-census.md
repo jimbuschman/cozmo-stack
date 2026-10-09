@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through489 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through490 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2419,3 +2419,5 @@ Checkpoint487 — SC487 scene event/bank replacement overlap, self-member gate, 
 Checkpoint488 — NM488 nested scene replacement physical order/per-entry identity/shrink and remaining construction joins;93 complete Thumb instructions. Owned string/vector infrastructure excluded. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint489 — SI489 concrete startup1..10 object/name/failure-continuation and four-pair locale/default/group state inputs with actual PLT bindings;170 complete native instructions. Existing command/state/object recipients reused; census031 infrastructure remaining-work wording narrowed under guard. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint490 — VD490 standard voice explicit record/buffer/control/holder/FX default publication;150 complete ARM instructions. VJ490 original PBI/source/queue ranges reconcile PC424/BI425/SA203/SS204/SF/HP and known processing recipients. Original Play/effective parameter/input joins remain specific. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

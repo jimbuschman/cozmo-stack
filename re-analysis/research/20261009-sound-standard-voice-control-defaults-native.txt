@@ -1,0 +1,163 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A54650..0x00A548A8 exclusive; ARM;
+00A54650: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00A54654: mov          r2, #0
+00A54658: mov          r4, r0
+00A5465C: ldr          r1, [pc, #0x244] ; word[00A548A8]=005EBA44
+00A54660: mov          r5, #0
+00A54664: mov          r3, #0
+00A54668: str          r5, [r0, #8]
+00A5466C: mvn          r6, #0
+00A54670: str          r5, [r0, #0xc]
+00A54674: mov          r7, #1
+00A54678: str          r3, [r4, #0x1c]
+00A5467C: movt         r2, #0xc580
+00A54680: str          r3, [r4, #0x2c]
+00A54684: add          r0, r0, #0x108
+00A54688: str          r3, [r4, #0x30]
+00A5468C: str          r3, [r4, #0x40]
+00A54690: str          r3, [r4, #0x44]
+00A54694: str          r3, [r4, #0x54]
+00A54698: str          r3, [r4, #0x58]
+00A5469C: str          r3, [r4, #0x68]
+00A546A0: str          r3, [r4, #0x6c]
+00A546A4: str          r3, [r4, #0x7c]
+00A546A8: str          r2, [r4, #0x20]
+00A546AC: str          r5, [r4, #0x10]
+00A546B0: str          r5, [r4, #0x14]
+00A546B4: str          r5, [r4, #0x18]
+00A546B8: str          r5, [r4, #0x24]
+00A546BC: str          r5, [r4, #0x28]
+00A546C0: str          r5, [r4, #0x38]
+00A546C4: str          r5, [r4, #0x4c]
+00A546C8: str          r5, [r4, #0x60]
+00A546CC: str          r5, [r4, #0x74]
+00A546D0: str          r5, [r4, #0x88]
+00A546D4: str          r6, [r4, #0x34]
+00A546D8: str          r6, [r4, #0x48]
+00A546DC: str          r6, [r4, #0x5c]
+00A546E0: str          r6, [r4, #0x70]
+00A546E4: str          r6, [r4, #0x84]
+00A546E8: str          r7, [r4, #0x3c]
+00A546EC: str          r7, [r4, #0x50]
+00A546F0: str          r7, [r4, #0x64]
+00A546F4: str          r7, [r4, #0x78]
+00A546F8: str          r3, [r4, #0x80]
+00A546FC: ldrb         lr, [r4, #0xf1]
+00A54700: ldrb         r2, [r4, #0xcd]
+00A54704: ldr          ip, [pc, #0x1a0] ; word[00A548AC]=005E7FE0
+00A54708: bfi          lr, r5, #0, #4
+00A5470C: strb         r5, [r4, #0xf0]
+00A54710: orr          r2, r2, r7
+00A54714: strb         lr, [r4, #0xf1]
+00A54718: add          ip, pc, ip
+00A5471C: ldrb         r8, [r4, #0xe8]
+00A54720: and          r2, r2, #0xfd
+00A54724: ldr          lr, [r4, #0xf0]
+00A54728: bfi          r2, r5, #3, #1
+00A5472C: ldr          r1, [pc, r1]
+00A54730: add          ip, ip, #0x90
+00A54734: bfi          lr, r5, #0xc, #0x14
+00A54738: bfi          r8, r5, #0, #1
+00A5473C: str          r3, [r4, #0x90]
+00A54740: add          r1, r1, #8
+00A54744: str          r3, [r4, #0x94]
+00A54748: str          r3, [r4, #0xa4]
+00A5474C: str          r3, [r4, #0xa8]
+00A54750: str          r3, [r4, #0xb8]
+00A54754: str          r3, [r4, #0xbc]
+00A54758: strb         r2, [r4, #0xcd]
+00A5475C: strb         r8, [r4, #0xe8]
+00A54760: str          ip, [r4]
+00A54764: str          lr, [r4, #0xf0]
+00A54768: str          r1, [r4, #0x100]
+00A5476C: str          r7, [r4, #0x8c]
+00A54770: str          r6, [r4, #0x98]
+00A54774: str          r5, [r4, #0x9c]
+00A54778: str          r7, [r4, #0xa0]
+00A5477C: str          r6, [r4, #0xac]
+00A54780: str          r5, [r4, #0xb0]
+00A54784: str          r7, [r4, #0xb4]
+00A54788: str          r6, [r4, #0xc0]
+00A5478C: str          r5, [r4, #0xc4]
+00A54790: str          r7, [r4, #0xc8]
+00A54794: strb         r5, [r4, #0xcc]
+00A54798: str          r5, [r4, #0xdc]
+00A5479C: str          r5, [r4, #0xd4]
+00A547A0: str          r5, [r4, #0xd8]
+00A547A4: str          r5, [r4, #0x104]
+00A547A8: bl           #0xa46d70 ; FUN_00a46d70
+
+00A547AC: ldrb         r3, [r4, #0x165]
+00A547B0: ldrb         r8, [r4, #0x18d]
+00A547B4: mov          r1, r4
+00A547B8: strb         r5, [r4, #0x164]
+00A547BC: bfi          r3, r5, #0, #4
+00A547C0: strb         r3, [r4, #0x165]
+00A547C4: mov          lr, #0x2b
+00A547C8: ldr          sb, [r4, #0x164]
+00A547CC: bfi          r8, r5, #0, #4
+00A547D0: ldr          r3, [pc, #0xd8] ; word[00A548B0]=005EB91C
+00A547D4: mov          r2, r4
+00A547D8: bfi          sb, r5, #0xc, #0x14
+00A547DC: str          sb, [r4, #0x164]
+00A547E0: str          r5, [r1, #0x160]!
+00A547E4: mov          ip, #0x3f800000
+00A547E8: strh         r5, [r1, #0xe]
+00A547EC: add          r0, r4, #0x1d0
+00A547F0: strh         r5, [r1, #0xc]
+00A547F4: str          lr, [r4, #0x168]
+00A547F8: strh         r5, [r1, #0x10]
+00A547FC: strb         r8, [r4, #0x18d]
+00A54800: strb         r5, [r4, #0x18c]
+00A54804: ldr          r1, [r4, #0x18c]
+00A54808: str          r5, [r4, #0x174]
+00A5480C: bfi          r1, r5, #0xc, #0x14
+00A54810: str          r1, [r4, #0x18c]
+00A54814: str          r5, [r2, #0x188]!
+00A54818: strh         r5, [r2, #0xe]
+00A5481C: strh         r5, [r2, #0xc]
+00A54820: str          lr, [r4, #0x190]
+00A54824: strh         r5, [r2, #0x10]
+00A54828: str          ip, [r4, #0x17c]
+00A5482C: str          ip, [r4, #0x1a4]
+00A54830: str          r5, [r4, #0x19c]
+00A54834: str          r4, [r4, #0x1b0]
+00A54838: str          r5, [r4, #0x1b4]
+00A5483C: str          r6, [r4, #0x178]
+00A54840: str          r6, [r4, #0x180]
+00A54844: str          r7, [r4, #0x184]
+00A54848: str          r6, [r4, #0x1a0]
+00A5484C: str          r6, [r4, #0x1a8]
+00A54850: str          r7, [r4, #0x1ac]
+00A54854: str          r5, [r4, #0x1c4]
+00A54858: ldr          r3, [pc, r3]
+00A5485C: add          r8, r3, #8
+00A54860: str          r8, [r4, #0x1c0]
+00A54864: bl           #0xa76280 ; FUN_00a76280
+
+00A54868: ldr          r3, [pc, #0x44] ; word[00A548B4]=005EB900
+00A5486C: str          r8, [r4, #0x390]
+00A54870: add          r0, r4, #0x3a0
+00A54874: str          r5, [r4, #0x384]
+00A54878: ldr          r3, [pc, r3]
+00A5487C: str          r5, [r4, #0x388]
+00A54880: add          r3, r3, #8
+00A54884: str          r5, [r4, #0x370]
+00A54888: str          r5, [r4, #0x374]
+00A5488C: str          r5, [r4, #0x378]
+00A54890: str          r5, [r4, #0x37c]
+00A54894: str          r5, [r4, #0x394]
+00A54898: str          r3, [r4, #0x380]
+00A5489C: bl           #0xa76280 ; FUN_00a76280
+
+00A548A0: mov          r0, r4
+00A548A4: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+00A548A8: raw=005EBA44 relocated=005EBA44 
+00A548AC: raw=005E7FE0 relocated=005E7FE0 
+00A548B0: raw=005EB91C relocated=005EB91C 
+00A548B4: raw=005EB900 relocated=005EB900 
+0104017C: raw=0103C118 relocated=0103C118 
+01040180: raw=0103C8B8 relocated=0103C8B8 
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01040178: raw=0103C608 relocated=0103C608 
