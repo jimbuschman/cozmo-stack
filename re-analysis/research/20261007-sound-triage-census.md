@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through544 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 44 CHECKED native-row obligations / 8 CHECKED scope exclusions / 88 PARTIAL / 0 NOT DONE; decision checkpoints through545 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -706,7 +706,7 @@ CHECKED at checkpoint544 for the bounded seven encoded StartStream callers and f
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: PB3/QC3/E14 plus DC1–10 establish the named A0B600/A05934/A1C660/A1C65C/9A6988 bodies. KT144A–J close DC9's 9DA77C key-specific and wildcard modulation teardown with concrete9D54D4 callbacks and ordered pruning. OR145A–C add object-specific switch-key retirement; PC145A/B add playing-ID callback cancellation. E29 already identifies item48 registration flags; its UNKNOWN wording is historical triage provenance, not a current writer absence. A0C238 is QC3; A0B490 is out of scope: local storage destruction with no payload callbacks. NR146 and OB354 positively bind/recover the known five ordinary node/state callbacks and two bus callback/release families; OR351/OU352/OA353 join native registry registration/update/removal inputs, with selected switch-key defaults/no-op bindings and acquisition outcomes OB354/SK355. Remaining additional concrete products/deeper state recipients and complete registration/flag/input writer census; no complete transitive closure. NSINK is a distinct music notification registry and does not substitute for these paths.
+PARTIAL: DC1–10/KT144/OR145/PC145/SR422 close the quoted local callback, completion, event, subscription and selected switch-key contracts; E29 positively supplies item48 registration flags. OR351/OU352/OA353/OB354/SK355 bind known register/update/remove inputs and selected scope acquisition outcomes. OR545A reconciles NR146's five ordinary pre-cleanup/destructor/parent-removal and two bus pre-cleanup/destructor products with LR147/CP148/NJ149/SW149/ND150/ID151/RT369/BU370/BT373. OR545B–D bind both bus30 families and recover their child20 routing setter and concrete124 pre-hook. Remaining concrete live74, ancestor reservation9F43F4 and bus90/94, dirty-routeA443E0/liveC4 and reached destruction notification products remain decisions, not storage/DSP. A0B490 storage and adopted positioning/nonempty-blend branches are scope-excluded. NSINK is distinct; no generic extra family or obsolete missing48 writer is used to keep this item partial.
 
 ## Q14-088 — triage line 137
 
@@ -2459,3 +2459,7 @@ Checkpoint501 — original034 continuous context/association/switch precedence/l
 Checkpoint502 — CR502 actual base/continuous context24/full and28/parameter refresh, physical factor/order/publication and primary correction PB170C unordered gain->+0;56 complete ARM instructions. No production/status change, broader writer/product closure remains explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint503 — original035 cached policy/audibility/virtual counts/source-format/close-init/route-key-cache joins reconciled against current positive rows; reuse only. Specific broader inputs/products/writers remain, excluded geometry/storage not reopened. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+## Decision checkpoint545 — concrete object-retirement bus joins
+
+OR545 reconciles already recovered ordinary/bus lifecycle products, then positively binds/reconstructs both bus30 removals, all five ordinary20 setters and their actual124 hook. Setter execution precedes list/ID selection; hook counter/ancestor/route descendants remain concrete decision obligations. Q14-087 staysPARTIAL; counts unchanged44native/8scope/88PARTIAL. No Q15 or fidelity/production changes.
