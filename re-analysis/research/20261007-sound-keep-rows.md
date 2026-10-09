@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 439 — company300/plugin100 authored parameters
+
+Primary: `20261009-sound-anki-source-parameters-native.txt`, 98 complete Thumb instructions withrangecoverage checked plus literals/table; enginehashunchanged. FS432/SL433/PR7/IC andLP434raw89settings reused. P=parameterobject,B=payload;offsetshex. Actual functionpointers haveThumbbit1; bodies belowclearbit0.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP439A actual registry/factory | 4DD97C..4DD9CE;literal4DD9D0..EC;8DDB28..3E;8DDDE0..EE;1038A44..60 | Staticnode108D168(type2,company300,plugin100), nextoldhead,create8DDA8D/params8DDB29;18/1C/20/24zero,headpublishedafterfields. Separateglobalinitializer fieldzero andatexit registrationdo notsupplyparametervalues. Factoryalloc8viaallocator8;nullreturns0;nonnullconstructorwritesactualtable1038A44 andword4=0 together,returnsP. Actualslots0=8DC117,8=8DDE59,C=8DDDF5,10=8DDE21,14=8DDE33,18=8DDE51. |
+| PP439B Init/reader/setter | 8DDE20..32;8DDE50..62 | Initlength0 returns1withoutanyfieldwrite, retainingcurrentP4. Nonzero tailslive18(P,B,length),no4-bytegate. ReaderrawB0->P4,return1;lengthnotconsulted. SetterID0 rawvalueword->P4,return1;anyotherIDreturns1withoutmutation. No nullvaluepointer/sizegate forID0;no boolnormalize/conversion/dirtyflag. |
+| PP439C clone/release | 8DDDF4..8DDE16;8DDE32..50;8DC116..118 | Clonealloc8viaallocator8,nullreturns0;nonnullactualtablethenoldP4copiedtonewP4,returnnewP. NoInit/defaultreset. Release14nullskip;nonnullactual0BXLR thenallocatorC(originalP);always1. |
+| PP439D concrete inputfamily | LP434validatedJSONL;PP439A..C | Seventeen type18objects withfullID006412C2 (company300,plugin100,type2), allparameterLength4,payload00000000,zeroRTPCbindings/associations. Dev_Debug IDs451621803/972796553;Cozmo310709219/951052416/297985325/124724238/92431708/750342527/923281249/641373335/714188162/299294560/380603803/183079315/306639957/111076549/11464958. ReaderthereforeP4=0 forall17; rawoffsets/payloadhashesenvelopes retained. This parameterfactdoesnotestablishsampleprovider/streamlifecycledecision behavior. |
+
+out of scope: allocator andstaticatexit infrastructure under scopeguard; no samplekernel/provider-I/O descent.
+
+Q14-016 broaderotherauthoredproducts/input/writer/liveclosure PARTIAL. Next000112C3 fourauthoredobjects,006D0003 nineobjects andcompressor006C0003 rawinputjoin(CP1–5reuse). Countsunchanged27nativeCHECKED+8scopeCHECKED/105PARTIAL/0NOT DONE;Q15followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 438 — authored plug-in102 and remaining serialized RTPC target
 
 Primary: `20261009-sound-plugin102-parameters-native.txt`, 266 complete ARM controlwords plusregistry/table/literals; enginehash unchanged. LP434raw89settings/PR7/FS432/SL433/IC reused. P=parameterobject,B=payload; offsetshex. No per-samplegenerator traced.
