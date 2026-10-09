@@ -11,6 +11,24 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 441 — plug-in109 parameters and all89 serialized recipient joins
+
+Primary: `20261009-sound-plugin109-compressor-joins-native.txt`, 202 complete ARM controlwords plusregistry/GOT/table/literals; enginehashunchanged. PR7/FS432/SL433/IC, LP434raw89settings andexistingCP1–5 reused; no compressorparameterre-extraction. P=parameterobject,B=payload, offsetshex.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP441A actual109 registry/factory | 4DF014..4DF078;literal4DF078..88;GOT104027C/280;ABCF50..80;101CB38..54 | Staticnode108E6A8 type3/company0/plugin109,nextoldhead/createABCC84/paramsABCF50,18/1C/20/24zero;headpublication/nativeinterleavingretained. Factoryalloc1Chex viaallocator8,nullreturnsnull;nonnullonlytable101CB38,no defaults. Table0=ABCD00BXLR,8=ABCDA8,C=ABCD04,10=ABCEE8,14=ABCD5C,18=ABCE7C. |
+| PP441B109 Init/defaults | ABCEE8..ABCF50 | Zero-length Init setsPC=3DCCCCCD,P10=3C23D70A,bytes18/19=1,P4=C1F00000,P8=40800000,P14=3F800000 inthatorder;return1. Theseattack/release/thresholddefaults differfromCP2. Nonzero tailcalls live18(P,B,length),no22bytegate. |
+| PP441C109 reader | ABCE7C..ABCEE4;literalABCEE4 | B0/4/8/Crawwords->P4/8/C/10, publicationorder4/C/10/8. B10float*raw3D4CCCCD thenimportedpowf(base10);loadbytesB14/15later,publishrawP18/19beforeP14powfresult;return1. No length/null/clamp/boolnormalize. Nativepowfcall/input exact,bodyexternal. |
+| PP441D109 setter/ownership | ABCDA8..ABCE78;literalABCE78;ABCD04..58;ABCD5C..94 | Nullvaluepointer orunsignedID>6 returns31,no mutation. IDs0/1/2/3rawword->P4/8/C/10;4powf(10,valuefloat*raw3D4CCCCD)->P14;5/6rawbyte->18/19;return1, sizeignored/no dirtyflags. Clonealloc1C,nullreturnsnull;nonnulltableand24rawbytesold4..1B copiedtonew4..1B(includingpadding),noInit/reread/conversion. Release14nullskip;nonnullactual0BXLR thenallocatorC(originalP);always1. |
+| PP441E concrete109 inputs | LP434JSONL;PP441B..D | NineCozmo type18objects,all22parameterbytes/zeroRTPCbindings/associations. Five88383160/168670145/290696902/419442357/1024196089 sharecdcc54c26666d6406f12833ae17a943e000000000101. Three1905427213/2157284052/3184602036 share00003cc26666d6409eef273de17a943e000000000000. One3514404594 is00003cc20000d0409eef273de17a943e000000000000. ThusallB10=0→P14powf(10,0);bytes18/19=1/1forthefiveand0/0forthefour;rawvaluesretainedwithout inventedsemanticlabels. |
+| PP441F compressor actualregistry/rawjoin | 4DEAA4..4DEB08;literal4DEB08..18;GOT10401D4/D8;CP1–5;LP434JSONL | Staticnode108E4A4 type3/company0/plugin108,createAA0538/paramsAA0808,nextoldhead,18/1C/20/24zero. Full006C0003 twelve22-byteobjects bindexistingCP3. RawwordsB0/4/8/C->P4/8/C/10,B10powfconversion->P14,B14/15rawbytes->P18/19;nativeordering/Init/live setters/clonerelease alreadyCP1–5. SevendistinctparameterHex variants;all12rawIDs/offsets/hashes retainedJSONL,includingID2313011259 inbothInit/Cozmo. No new genericdefaultorenablepolicy inferred. |
+| PP441G complete serializedparameterfamily census | LP434I;PP435..441;CP1–5 | All89type18/19rawobjects nowbindactualselectedparameterproducts:006E0003(2)/00690003(11)=LP434;008A0003(5)=PP435;00650002(11)=PP436;00640002(9)=PP437;00660002(9)=PP438;006412C2(17)=PP439;000112C3(4)=PP440;006D0003(9)/006C0003(12)=PP441/CP. Countsadd89. BothserializedRTPCtargetsandzeroauthoredtrailingassociations alreadypositive. This establishes parameterInit/value/controlrecipient behavior for this inputfamily only; broader runtimeinput/provider/writer/liveFXproductclosure staysopen. |
+
+out of scope: per-sampleDSP arithmetic underADP-1; allocator/storage internals underscopeguard. No production/fidelitypromotion.
+
+Q14-016 PARTIAL forbroaderinput/writer/liveproductclosure. Nextboundedstep: resolveactualliveFXproductInit/control consumers fromknownregistrycreators, startingcompany300/plugin1 andsource100; reusepositiveFX/B/F/IC ratherthanrepeatparameterreaders. Countsunchanged27nativeCHECKED+8scopeCHECKED/105PARTIAL/0NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 440 — company300/plugin1 authored FX parameters
 
 Primary: `20261009-sound-anki-fx-parameters-native.txt`, 98 complete Thumb instructions plusregistry/table/literals; enginehashunchanged. LP43489rawsettings/PR7/FS432/SL433/IC reused. P=parameterobject,B=payload;offsetshex, tablepointers includeThumbbit1.
