@@ -16,9 +16,14 @@ for name in ['libcozmoEngine.so','libc++_shared.so']:
     elf=lief.parse(str(path))
     libs[name]=(path.read_bytes(),[s for s in elf.segments if s.type==lief.ELF.Segment.TYPE.LOAD])
 errors=[]; instructions=0; ranges=0; patches=0; quotedlines=0; unmatched=[]
+trx_data=(OUT/'test-results/packet-tests.trx').read_bytes()
+if b'\r\n' in trx_data: errors.append('TRX must use the repository LF representation')
+trx_sha=hashlib.sha256(trx_data).hexdigest()
 for r in coverage['included']:
     id=r['id']; text=(OUT/r['file']).read_text(encoding='utf-8')
     actual=json.loads(re.search(r'```json\n(.*?)\n```',text,re.S)[1])
+    recorded_trx=re.search(r'Packet-preparation TRX: `test-results/packet-tests.trx`, SHA256 `([0-9a-f]{64})`',text)
+    if recorded_trx is None or recorded_trx[1]!=trx_sha: errors.append(id+': test artifact hash differs')
     if actual!=byid[id]: errors.append(id+': manifest transcription differs')
     rowtext=text.split('## Build rows quoted from their source',1)[1].split('Additional historical checked repair input',1)[0].split('## Implementation commits',1)[0]
     lines=(ROOT/('re-analysis/inventory/'+byid[id]['subsystem']+'.md')).read_text(encoding='utf-8-sig').splitlines()

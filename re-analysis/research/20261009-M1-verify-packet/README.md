@@ -1,6 +1,6 @@
 # M1 verification packet — 2026-10-09
 
-Prepared for the operator’s request in this chat. Source snapshot `835339a3c07ae5b53b3225c50825e95cbba4cf58` on main. No new verdicts. Explicit operator authorization to commit/push overrides the ordinary research-lane no-commit rule.
+Prepared for the operator’s request in this chat. Source snapshot `b9ae6f4fddcd2ee838c5b3aba78ed99839cfa505` on main. No new verdicts. Explicit operator authorization to commit/push overrides the ordinary research-lane no-commit rule.
 
 ## Coverage
 

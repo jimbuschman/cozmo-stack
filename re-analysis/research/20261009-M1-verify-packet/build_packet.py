@@ -8,7 +8,11 @@ ROOT = OUT.parents[2]
 def git(*args):
     return subprocess.check_output(['git', *args], cwd=ROOT).decode('utf-8', 'replace')
 def read(p): return (ROOT/p).read_text(encoding='utf-8-sig')
-def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def sha(p):
+    data=Path(p).read_bytes()
+    # Repository text is stored as LF; hash the portable committed representation.
+    if Path(p).suffix in ('.py','.cs','.json','.md','.trx'): data=data.replace(b'\r\n',b'\n')
+    return hashlib.sha256(data).hexdigest()
 BASE = git('rev-parse', 'HEAD').strip()
 manifest_path = 're-analysis/fidelity_manifest.json'
 manifest = json.loads(read(manifest_path))
@@ -162,6 +166,7 @@ def line_origins(p):
     return '| Current lines | Origin commit |\n|---|---|\n'+blame_cache[p]
 
 trx_path=OUT/'test-results/packet-tests.trx'
+trx_path.write_bytes(trx_path.read_bytes().replace(b'\r\n',b'\n'))
 trx=ET.parse(trx_path); ns={'t':'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
 results=trx.findall('.//t:UnitTestResult',ns)
 counters=trx.find('.//t:Counters',ns).attrib
