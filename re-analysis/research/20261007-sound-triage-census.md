@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through356 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through376 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -318,7 +318,7 @@ PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix owners
 
 > | M6-023 | **KEEP** | 0x005919B8;0x008DFC4C;0x008DED14;0x008D1F20;0x008D8CE4;0x009A6704 | Unity/app dispatch, flags/cookie/callback propagation and live registration remain exact event behavior. |
 
-PARTIAL: UE1–UE7 and UC1–UC50 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates, flush ordering, lambda recipients, garbage sweep and playing-manager callback suppression. Marker string and subscription move/release lifetime are UC27–UC29; callback/core map helpers are instruction-closed. UC36–UC43 close parameter curve-map construction/rehash and controller/mux parent ownership plus member cleanup. UC44–UC50 and UT1–UT9 establish helper defaults, plugin release order, unregister compaction, file/pool cleanup gates and termination parent order. RG356/IT357/IR358 now settle the reserved-object/index-manager local termination choices and selected registry release/destruction families; CS359/CA360/CC361 add selected completion-owner selection/attempt/command joins. Remaining before this entire item is CHECKED: other termination decision descendants and binding/node dynamic recipient census; out of scope: pool/registry backing allocation internals; keep external interface/CLAD boundaries explicit. UC30–UC35 add all remaining mux message recipients and state/switch/parameter/stop queue publication. Music conductor recipient remains M9/Q15 scope. Generated callback unions/message constructors are outside audio scope in M2; those shipped bodies are readable dependencies, not UNKNOWN.
+PARTIAL: UE1–UE7 and UC1–UC50 establish union dispatch, post flags/context, callback payload conversion, immediate/deferred gates, flush ordering, lambda recipients, garbage sweep and playing-manager callback suppression. Marker string and subscription move/release lifetime are UC27–UC29; callback/core map helpers are instruction-closed. UC36–UC43 close parameter curve-map construction/rehash and controller/mux parent ownership plus member cleanup. UC44–UC50 and UT1–UT9 establish helper defaults, plugin release order, unregister compaction, file/pool cleanup gates and termination parent order. RG356/IT357/IR358 now settle the reserved-object/index-manager local termination choices and selected registry release/destruction families; CS359/CA360/CC361 add selected completion-owner selection/attempt/command joins. BC363 through GR375 settle known node commands, value propagation and base/derived bus/common-node retirement locals; SO376 binds the shipped type-1 state-member release product. Remaining before this entire item is CHECKED: other termination decision descendants and binding/node dynamic recipient census; out of scope: pool/registry backing allocation internals; keep external interface/CLAD boundaries explicit. UC30–UC35 add all remaining mux message recipients and state/switch/parameter/stop queue publication. Music conductor recipient remains M9/Q15 scope. Generated callback unions/message constructors are outside audio scope in M2; those shipped bodies are readable dependencies, not UNKNOWN.
 
 ## Q14-031 — triage line 69
 
@@ -2031,3 +2031,7 @@ CN374A–F settle head-before-callback group retirement, caller-gated native ini
 ### Checkpoint 375 — state-group removal recipients
 
 GR375A–E settle first exact group/member unlink, member14 clear-before-liveC, callback-time member-vector re-search/stableerase andknown emptyCC-to-no-opC4 continuation. Actual memberC products/nonemptyCC/registry/list/state/input/writer closure remains PARTIAL. Counts unchanged, Q15 pending Q14.
+
+## Checkpoint 376 — type-1 state-member product
+
+SO376A–F join the dedicated HIRC type-1 reader, authored parameter block, table103BD70 and reference/destructor endpoints to SG/RB small-registry members and GR375 release. Nonempty CC, other products and input/provider/writer closure remain PARTIAL. Top checkpoint summary and Q14-030 now reflect363–376 positives; totals remain24 native CHECKED +8 scope CHECKED /108 PARTIAL /0 NOT DONE. Q15 pending Q14.
