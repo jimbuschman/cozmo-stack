@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 438 — authored plug-in102 and remaining serialized RTPC target
+
+Primary: `20261009-sound-plugin102-parameters-native.txt`, 266 complete ARM controlwords plusregistry/table/literals; enginehash unchanged. LP434raw89settings/PR7/FS432/SL433/IC reused. P=parameterobject,B=payload; offsetshex. No per-samplegenerator traced.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP438A registry/factory | 4DEDD0..4DEE68;literal4DEE68..78;AAD694..AAD6BC;AB0130..44;101CAC0..DC | Staticnode108E5C0(type2/company0/plugin102)nextoldhead;node108E5E8(type5/company0/plugin403)next108E5C0/newhead, bothcreateAADDE4/paramsAAD694;18/1C/20/24zeroeach. Nativeinterleavingretained. Factoryalloc4Chex throughallocator8,nullreturnsnull;nonnullhelperAB0130 installs101CAC0 only,no defaults/flags. Table0=AAFDB8 BXLR,8=AAFEF4,C=AAFDBC,10=AB0094,14=AAFE0C,18=AAFE44. Authored00660002 selectsfirstnode; type5authorshipnotinferred. |
+| PP438B Init/defaults | AB0094..AB0124;rawAB0128..30 | Length0 setsP18byte0,P1Cword0,P4/C/10/14zero,P8=43DC0000;NEONpair storesP20/24zero,P28/2Czero,P30=3F800000/P34zero,P38/3Czero,P40/44zero;P48=4;return1. Nativeorderretained. Padding19..1Bunwritten. Nonzero tailslive18(P,B,length),no69-bytegate. |
+| PP438C packed rawreader | AAFE44..AAFEF4 | Seventeenrawwords plusonebyte: B0/4/8/C/10->P4/8/C/10/14;byteB14->P18;B15/19/1D/21/25/29/2D/31/35/39/3D/41->P1C/20/24/28/2C/30/34/38/3C/40/44/48. No powf/conversion/boolnormalization. Nativepublication order: P4,byte18,8,1C,C,10,28,14,2C,20,24,30,34,38,44,3C,40,48;thenreturn1. Payloadlengthnotconsulted. |
+| PP438D live setters and unknown ID | AAFEF4..AB0080 | Nullvaluepointer returns31hex evenforunknownID. NonnullIDs0..11hex accepted: 0/1/2/3 rawword->P4/8/10/14;4 rawbyte->P18;5/6/7/8/9/A/B/C/D/E/F/10/11 rawword->P1C/C/20/24/28/2C/30/34/38/3C/40/44/48. No conversion/dirtyflag/sizegate. OtherunsignedID returns1withoutmutation; do notaddrejection. |
+| PP438E clone/release | AAFDBC..AAFE08;AAFE0C..44 | Clonealloc4C,nullreturnsnull;nonnullinstallsactualtable thencopies48hexbytes oldP+4->newP+4,includingpadding;returnnewP. No Init/reader/defaults or newdirtyflags. Release14 nullskip;nonnullactual0BXLR thenallocatorC(originalP);always1. |
+| PP438F concrete input/binding | LP434rawJSONL;PP438C/D;FS432/IC2/3 | NineDev_Debug type18objects148751953,971115154,194053584,748458010,245431653,544394534,1006113785,675490650,290021808 eachcarry69bytes, allrawbytes/offsets/hashes alreadyretained. B14raw1for748458010/1006113785,other0;B41all4. Object290021808@1780 carriesRTPC2324555758,paramID1,curve1062641094,scale0,twopoints(raw20->20/20000->20000,shape4); nativeparam1 writesdeliveredrawword directlytoP8. No conversion/clamp inthisrecipient. Other8zerobindings. Bothserializedbindingrecipients nowpositive: thisone andPP435param4; upstreamkey/curve/publicationreuseIC/FS432 ratherthanassumingrawRTPCdirectdelivery. |
+
+out of scope: per-sample generator arithmetic under ADP-1; allocator/storageinternals under scopeguard.
+
+Q14-016 broaderinput/writer/live-pathclosure remainsPARTIAL; remainingauthoredfamilies006412C2/000112C3/006D0003 andcompressor006C0003 inputjoin (CP1–5reuse). Countsunchanged27nativeCHECKED+8scopeCHECKED/105PARTIAL/0NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 437 — authored plug-in100 parameter decisions
 
 Primary: `20261009-sound-plugin100-parameters-native.txt`, 171 complete ARM control words plus registry/table/literals, sameenginehash. PR7/FS432/SL433/IC and LP434validated89rawobjects reused. P=parameterobject,B=payload;offsets hex.
