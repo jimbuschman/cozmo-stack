@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 31 CHECKED native-row obligations / 8 CHECKED scope exclusions / 101 PARTIAL / 0 NOT DONE; decision checkpoints through520 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 34 CHECKED native-row obligations / 8 CHECKED scope exclusions / 98 PARTIAL / 0 NOT DONE; decision checkpoints through521 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -67,10 +67,10 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-058 | 97 | CHECKED |
 | Q14-059 | 98 | CHECKED |
 | Q14-060 | 99 | CHECKED |
-| Q14-061 | 100 | PARTIAL |
+| Q14-061 | 100 | CHECKED |
 | Q14-062 | 102 | CHECKED |
-| Q14-063 | 104 | PARTIAL |
-| Q14-064 | 106 | PARTIAL |
+| Q14-063 | 104 | CHECKED |
+| Q14-064 | 106 | CHECKED |
 | Q14-065 | 107 | PARTIAL |
 | Q14-066 | 115 | PARTIAL |
 | Q14-067 | 116 | PARTIAL |
@@ -542,7 +542,7 @@ CHECKED: MC520D/E maps actual MG/MI/LP/SV/MR517 initializer, RNG/RTPC/mode/phase
 
 > | M9-026 | **KEEP** | 0x00AA257C;0x00AA18F4;0x00AA19CC | EQ/limiter selection, frequency/Q/gain and attack/release/channel settings remain exact. |
 
-PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
+CHECKED: EQ521 maps F1–21/EQB/EQ445 allseven persistent coefficient graphs, actual LP434/FS432/SL433/IC settings/factory/live setter/clone/Init/lifecycle and RB519 selected robot FX/rate/geometry/framing joins. Exactfrequencycap uses actual Init input rate;22320 belongs to later Hijack output. Full coefficient design is KEEP, including native association/type/state/dirty/enable/channel/order; only isolated final per-sample arithmetic and phone libm bodies stop at their explicit boundaries. No production correction, whole-record settlement or general alternate-product/provider claim.
 
 ## Q14-062 — triage line 102
 
@@ -554,17 +554,13 @@ CHECKED: EQB1–4 independently reopen AA2870..AA2898 in its type1caller/storeco
 
 > | M9-027 | **KEEP** | 0x00AA25E0;0x00A57724;0x008DBFE8 | 14298-Hz band, 48000 mix format and 22320 Hijack handoff are parameters/routing, so a 22320-Hz upstream clamp remains wrong under ADP-1. |
 
-PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
-
-EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
+CHECKED: EQ521 maps F1–21/EQB/EQ445 allseven persistent coefficient graphs, actual LP434/FS432/SL433/IC settings/factory/live setter/clone/Init/lifecycle and RB519 selected robot FX/rate/geometry/framing joins. Exactfrequencycap uses actual Init input rate;22320 belongs to later Hijack output. Full coefficient design is KEEP, including native association/type/state/dirty/enable/channel/order; only isolated final per-sample arithmetic and phone libm bodies stop at their explicit boundaries. No production correction, whole-record settlement or general alternate-product/provider claim.
 
 ## Q14-064 — triage line 106
 
 > | M9-027 | **VERIFY** | 0x00AA25E0 | Establish coefficient-design arithmetic versus parameter/type/state writes before granting equivalence; the sample-loop exception alone does not settle this initializer. |
 
-PARTIAL: F1–15 and EQB1–4 supply factory/setup/settings, exactfrequencycap andpersistentcoefficientboundary. Remaining livewriters/remainingtypeformulas/chaingeometry/handoffclosure stayopen; no whole-recordDROP.
-
-EQ445: all seven local persistent coefficient graphs now positive (180 native operations/calls/merges,35 ordered stores), including exact type/cap/libm arguments/NaN square-root fallback/publication. F10 remaining-type formulas are settled; no sample-DSP exemption. Existing F/LP434 joins reused. Broader input/writer/chain closure remains PARTIAL; no whole-record promotion.
+CHECKED: EQ521 maps F1–21/EQB/EQ445 allseven persistent coefficient graphs, actual LP434/FS432/SL433/IC settings/factory/live setter/clone/Init/lifecycle and RB519 selected robot FX/rate/geometry/framing joins. Exactfrequencycap uses actual Init input rate;22320 belongs to later Hijack output. Full coefficient design is KEEP, including native association/type/state/dirty/enable/channel/order; only isolated final per-sample arithmetic and phone libm bodies stop at their explicit boundaries. No production correction, whole-record settlement or general alternate-product/provider claim.
 
 ## Q14-065 — triage line 107
 
