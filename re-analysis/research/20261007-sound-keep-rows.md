@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 378 — known state invalidation recipients and bus publication
+
+Primary: `20261009-sound-bus-state-invalidation-native.txt`, same engine hash; 128 instruction words plus raw table/literal words. SA377 finalC4, NR146 known node products, LI2/LI5 and D2–D5 gain query reused. N=bus,T=node context,L=global bus-line list; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| BI378A known C4 products | raw103B924/BB94/BE8C/D04C/B114/ADA4/D1C4;LI2/LI5 | Known RanSeq/Switch/ActorMixer/Layer C4=98154C; Sound=A1DFE0; both bus tables=9C3D04. LI2 already owns active child forward recursion/live-end reload; LI5 already owns Sound context-chain9BCFE0 clearingDCbit5 always andbit6 only withnonzeroarg. SA377 supplies0, so knownSound clearsbit5 only. No re-extraction or generic no-op across these products. |
+| BI378B bus update gate | 9C3D04..9C3D70;9C3E60..9C3E90 | N28nonnull and any property words4/C/14/1C nonzero admitsgainupdate. Otherwise live44(N)==C admits; elseN68nonzero admits; elsebyte46bit7set admits; elseN38null admits; elseN40maskE0000nonzero admits; elseN54nonnull admits. Only remaining conjunction skipsgainupdate and goeschildphase. Result of44 usedbeforelivefieldtests; no cachedpredicate/floattest. Concrete44 product and field writers remain explicit dependencies. |
+| BI378C gain publication order | 9C3D70..9C3DA0;D2–D5 | Admittedgainupdate calls9C39DC(N,0,5); thenN.byteCC OR10hex beforeA40E6C(N8,returnedrawvalue). No argument-dependentgainmode, result gate or callback rollback. Childphase follows regardless ofupdategate. OwnN30null returnsafter possiblegainpublication. D2–D5 exact scalar/query controls reused; no PCM body. |
+| BI378D bus child recursion | 9C3DA4..9C3E5C | Visit58/count5C then48/count4C, forward. Wrap count<<2 definesempty/end. Child30null skips; otherwise signed16context60>0 ORcontext64>0 acceptschild.liveC4(child,originalarg). Aftercallback reload selectedvectorbase/count, compare savednextpointer/end equality; skippedchildren retainpreviousend. At58end select48; at48end return. No38filter, retain, reverse/clamp, result aggregation or own signedactivecount gate. ContainerLI2 instead requireschildcontext60>0 alone; preservefamilydifference. |
+| BI378E bus-line matching | A40E6C..A40ED8;rawA40EDC/E0 | Globalbase108DF54/count108DF58; wrapcount<<2zero returns. Forwardeachpointer; firstloadline48, exactrawnodeIDcomparison withinput. Everymatchingline callsA4F4A4(line,savedrawvalue); mismatches skip. Afteracceptedcall reloadlivebase/count forendcomparison while continuingfromsavednextpointer; no reloadonskip, firstmatchstop, nullguard, refcount or value conversion. A4F4A4 remains retainedcontrolrecipient, not an assumed mixer operation. |
+
+Known state invalidation family joins and selected bus parent decisions now positive. Concrete bus44, matchedlineA4F4A4 and actual field/list/table/input/provider/writer closure remain PARTIAL. Counts unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 377 — nonempty state-group parameter application
 
 Primary: `20261009-sound-state-group-parameter-application-native.txt`, same engine hash; 203 instruction words plus literals. SO376 authored type-1 parameter layout, SG/RB member publication, TT8 unsubscribe/TT9–22 retarget and NJ149 node9C bindings reused. N=node,G=group,A=selected member's authored block,B=group cached block; offsets hex. No sample DSP.

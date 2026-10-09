@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through377 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through378 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2039,3 +2039,7 @@ SO376A–F join the dedicated HIRC type-1 reader, authored parameter block, tabl
 ## Checkpoint 377 — nonempty state-group application
 
 SA377A–F settle known CC9F2E34 first-current-state selection, authored-order parameter publication/retarget and unmatched-state transition/value cleanup. Existing TT and NJ recipients reused; current cache/member/state/input/provider/writer and alternate-family closure remains PARTIAL. Totals unchanged; Q15 pending Q14.
+
+## Checkpoint 378 — known C4 invalidation products
+
+BI378 reuses LI2/LI5 known container/Sound recipients and adds bus gain-update gates, active child recursion and all matching global-line publication. Bus44 and lineA4F4A4 remain retained decisions; actual input/provider/writer/family closure stays PARTIAL. Totals unchanged; Q15 pending Q14.
