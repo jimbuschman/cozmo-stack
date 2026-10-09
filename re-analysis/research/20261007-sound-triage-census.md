@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through332 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through333 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -312,7 +312,7 @@ Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. Remaining: full A25FF8 routing/coefficient boundary, A5B9D0/A5993C recipients, registration paths and flag writers. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333 adds A5B9D0 cache/curve admission, listener filtering and conditional parameter publication. Remaining: A5B9D0 accepted-record/interpolation/conversion bodies and concrete inputs, A5993C selected decisions, registration paths and flag writers. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
@@ -1859,3 +1859,7 @@ GSRC331A–E complete selected local general-pan source generators, retaining ex
 ### Checkpoint 332 — settled matrix VERIFY boundary
 
 MBOUND332A–E reconcile complete selected local matrix/control bodies with existing positive caller ownership/callback and mixer endpoint/PCM boundaries. Q14-015 moves CHECKED for this research split; M6-012 remains IMPLEMENTATION_GAP and unchanged. Counts24 nativeCHECKED+8 scopeCHECKED/108 PARTIAL/0 NOTDONE/140; Q14 stillPARTIAL, Q15 parked.
+
+### Checkpoint 333 — spatial control admission/publication
+
+SC333A–F bind the known EP5 recipient cache/curve and listener-mask gates plus terminal parameter publication, preserving skipped-field contents and positive observer joins. Q14-029 matrix-boundary pending wording superseded by332; remaining recipients/inputs/writers retain PARTIAL. Counts unchanged, Q15 parked.
