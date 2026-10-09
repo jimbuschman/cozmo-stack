@@ -1,0 +1,205 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A20270..0x00A203E4 exclusive; ARM;
+00A20270: vmov.f32     s14, #1.000000e+00
+00A20274: add          lr, lr, #2
+00A20278: vldr         s11, [pc, #-0x18] ; word[00A20268]=00000000
+00A2027C: add          r3, sl, sl, lsl #1
+00A20280: lsl          r8, lr, #2
+00A20284: add          sl, sl, sl, lsl #2
+00A20288: add          r1, r5, ip
+00A2028C: add          r2, r8, r3, lsl #2
+00A20290: vldr         s10, [pc, #-0x2c] ; word[00A2026C]=3EAAAAAB
+00A20294: add          r3, r5, r3, lsl #3
+00A20298: add          r0, r3, r8
+00A2029C: add          sl, r5, sl, lsl #2
+00A202A0: add          r3, r5, ip, lsl #2
+00A202A4: add          sl, sl, r8
+00A202A8: add          r2, r5, r2
+00A202AC: add          r3, r3, r8
+00A202B0: vmov.f32     s15, #8.000000e+00
+00A202B4: vstr         s14, [r5]
+00A202B8: vstr         s14, [r1, #4]
+00A202BC: add          r1, r1, ip
+00A202C0: vstr         s14, [r1, #8]
+00A202C4: vmov.f32     s19, s14
+00A202C8: vstr         s14, [r2]
+00A202CC: vnmls.f32    s19, s17, s15
+00A202D0: vstr         s14, [r3, #4]
+00A202D4: vstr         s14, [sl, #8]
+00A202D8: vstr         s14, [r0, #0xc]
+00A202DC: vadd.f32     s13, s16, s16
+00A202E0: vmov.f32     s15, #2.000000e+00
+00A202E4: vmov.f32     s18, #7.000000e+00
+00A202E8: vsub.f32     s15, s15, s13
+00A202EC: vmov.f32     s13, #3.000000e+00
+00A202F0: vdiv.f32     s19, s19, s18
+00A202F4: vdiv.f32     s15, s15, s13
+00A202F8: vmov.f32     s13, #1.000000e+01
+00A202FC: vmov.f32     s20, s18
+00A20300: vmls.f32     s20, s17, s13
+00A20304: vcmp.f32     s19, s11
+00A20308: vmrs         apsr_nzcv, fpscr
+00A2030C: vmovmi.f32   s19, s11
+00A20310: vdiv.f32     s20, s20, s18
+00A20314: vmul.f32     s12, s15, s19
+00A20318: vsqrt.f32    s13, s12
+00A2031C: vcmp.f32     s20, s11
+00A20320: vmrs         apsr_nzcv, fpscr
+00A20324: vmovmi.f32   s20, s11
+00A20328: vadd.f32     s15, s15, s10
+00A2032C: vadd.f32     s21, s19, s20
+00A20330: vcmp.f32     s13, s13
+00A20334: vsub.f32     s17, s14, s15
+00A20338: vmrs         apsr_nzcv, fpscr
+00A2033C: vsub.f32     s21, s14, s21
+00A20340: vsub.f32     s18, s14, s16
+00A20344: bne          #0xa21e30
+00A20348: vstr         s13, [sb]
+00A2034C: vmul.f32     s17, s17, s19
+00A20350: vsqrt.f32    s14, s17
+00A20354: vcmp.f32     s14, s14
+00A20358: vmrs         apsr_nzcv, fpscr
+00A2035C: bne          #0xa21e18
+00A20360: vldr         s15, [pc, #-0xfc] ; word[00A2026C]=3EAAAAAB
+00A20364: vstr         s14, [sb, #4]
+00A20368: vmul.f32     s15, s19, s15
+00A2036C: vsqrt.f32    s14, s15
+00A20370: vcmp.f32     s14, s14
+00A20374: vmrs         apsr_nzcv, fpscr
+00A20378: bne          #0xa21e00
+00A2037C: vmul.f32     s13, s18, s20
+00A20380: vstr         s14, [sb, #8]
+00A20384: vsqrt.f32    s15, s13
+00A20388: vcmp.f32     s15, s15
+00A2038C: vmrs         apsr_nzcv, fpscr
+00A20390: bne          #0xa21de8
+00A20394: vmul.f32     s13, s16, s20
+00A20398: vstr         s15, [sb, #0xc]
+00A2039C: vsqrt.f32    s15, s13
+00A203A0: vcmp.f32     s15, s15
+00A203A4: vmrs         apsr_nzcv, fpscr
+00A203A8: bne          #0xa21c48
+00A203AC: vmul.f32     s14, s18, s21
+00A203B0: vstr         s15, [sb, #0x10]
+00A203B4: vsqrt.f32    s15, s14
+00A203B8: vcmp.f32     s15, s15
+00A203BC: vmrs         apsr_nzcv, fpscr
+00A203C0: bne          #0xa21c30
+00A203C4: vmul.f32     s16, s16, s21
+00A203C8: vstr         s15, [sb, #0x14]
+00A203CC: vsqrt.f32    s15, s16
+00A203D0: vcmp.f32     s15, s15
+00A203D4: vmrs         apsr_nzcv, fpscr
+00A203D8: bne          #0xa22128
+00A203DC: vstr         s15, [sb, #0x18]
+00A203E0: b            #0xa1f914
+RANGE 0x00A20D18..0x00A20E78 exclusive; ARM;
+00A20D18: vmov.f32     s13, #1.000000e+00
+00A20D1C: add          r8, r5, ip
+00A20D20: add          r1, lr, #2
+00A20D24: add          lr, r8, ip
+00A20D28: add          r3, lr, ip
+00A20D2C: bic          r0, r4, #4
+00A20D30: lsl          r1, r1, #2
+00A20D34: cmp          r0, r2
+00A20D38: add          r2, r3, ip
+00A20D3C: add          r3, r3, r1
+00A20D40: add          r2, r2, r1
+00A20D44: vstr         s13, [r5]
+00A20D48: vstr         s13, [r8, #4]
+00A20D4C: vstr         s13, [lr, #8]
+00A20D50: vstr         s13, [r3]
+00A20D54: vstr         s13, [r2, #4]
+00A20D58: bne          #0xa21680
+00A20D5C: vmov.f32     s15, #8.000000e+00
+00A20D60: vldr         s11, [pc, #0x110] ; word[00A20E78]=00000000
+00A20D64: vldr         s10, [pc, #0x110] ; word[00A20E7C]=3EAAAAAB
+00A20D68: vstr         s13, [r3, #8]
+00A20D6C: vmov.f32     s18, s13
+00A20D70: vstr         s13, [r2, #0xc]
+00A20D74: vnmls.f32    s18, s17, s15
+00A20D78: vadd.f32     s14, s16, s16
+00A20D7C: vmov.f32     s15, #2.000000e+00
+00A20D80: vmov.f32     s19, #7.000000e+00
+00A20D84: vsub.f32     s15, s15, s14
+00A20D88: vmov.f32     s14, #3.000000e+00
+00A20D8C: vdiv.f32     s18, s18, s19
+00A20D90: vdiv.f32     s15, s15, s14
+00A20D94: vmov.f32     s14, #1.000000e+01
+00A20D98: vmov.f32     s20, s19
+00A20D9C: vmls.f32     s20, s17, s14
+00A20DA0: vcmp.f32     s18, s11
+00A20DA4: vmrs         apsr_nzcv, fpscr
+00A20DA8: vmovmi.f32   s18, s11
+00A20DAC: vdiv.f32     s20, s20, s19
+00A20DB0: vmul.f32     s12, s15, s18
+00A20DB4: vsqrt.f32    s14, s12
+00A20DB8: vcmp.f32     s20, s11
+00A20DBC: vmrs         apsr_nzcv, fpscr
+00A20DC0: vmovmi.f32   s20, s11
+00A20DC4: vadd.f32     s15, s15, s10
+00A20DC8: vadd.f32     s21, s18, s20
+00A20DCC: vcmp.f32     s14, s14
+00A20DD0: vsub.f32     s17, s13, s15
+00A20DD4: vmrs         apsr_nzcv, fpscr
+00A20DD8: vsub.f32     s21, s13, s21
+00A20DDC: vsub.f32     s19, s13, s16
+00A20DE0: bne          #0xa220f0
+00A20DE4: vstr         s14, [sb]
+00A20DE8: vmul.f32     s17, s17, s18
+00A20DEC: vsqrt.f32    s14, s17
+00A20DF0: vcmp.f32     s14, s14
+00A20DF4: vmrs         apsr_nzcv, fpscr
+00A20DF8: bne          #0xa221a8
+00A20DFC: vldr         s15, [pc, #0x78] ; word[00A20E7C]=3EAAAAAB
+00A20E00: vstr         s14, [sb, #4]
+00A20E04: vmul.f32     s15, s18, s15
+00A20E08: vsqrt.f32    s14, s15
+00A20E0C: vcmp.f32     s14, s14
+00A20E10: vmrs         apsr_nzcv, fpscr
+00A20E14: bne          #0xa22190
+00A20E18: vmul.f32     s13, s19, s20
+00A20E1C: vstr         s14, [sb, #8]
+00A20E20: vsqrt.f32    s15, s13
+00A20E24: vcmp.f32     s15, s15
+00A20E28: vmrs         apsr_nzcv, fpscr
+00A20E2C: bne          #0xa220b4
+00A20E30: vmul.f32     s14, s16, s20
+00A20E34: vstr         s15, [sb, #0xc]
+00A20E38: vsqrt.f32    s15, s14
+00A20E3C: vcmp.f32     s15, s15
+00A20E40: vmrs         apsr_nzcv, fpscr
+00A20E44: bne          #0xa2209c
+00A20E48: vmul.f32     s13, s19, s21
+00A20E4C: vstr         s15, [sb, #0x10]
+00A20E50: vsqrt.f32    s15, s13
+00A20E54: vcmp.f32     s15, s15
+00A20E58: vmrs         apsr_nzcv, fpscr
+00A20E5C: beq          #0xa203c4
+00A20E60: vmov         r0, s13
+00A20E64: str          ip, [fp, #-0x60]
+00A20E68: bl           #0x4a4078
+00A20E6C: ldr          ip, [fp, #-0x60]
+00A20E70: vmov         s15, r0
+00A20E74: b            #0xa203c4
+RANGE 0x00A21680..0x00A216C4 exclusive; ARM;
+00A21680: vadd.f32     s11, s16, s16
+00A21684: vmov.f32     s18, #2.000000e+00
+00A21688: vmov.f32     s14, #5.000000e-01
+00A2168C: vmov.f32     s12, #3.000000e+00
+00A21690: vsub.f32     s15, s18, s11
+00A21694: vcmpe.f32    s17, s14
+00A21698: vdiv.f32     s20, s11, s12
+00A2169C: vmrs         apsr_nzcv, fpscr
+00A216A0: vdiv.f32     s14, s15, s12
+00A216A4: vsub.f32     s19, s13, s16
+00A216A8: bge          #0xa21894
+00A216AC: vmov.f32     s15, #6.000000e+00
+00A216B0: vmul.f32     s17, s17, s15
+00A216B4: vmov.f32     s15, #5.000000e+00
+00A216B8: vdiv.f32     s17, s17, s15
+00A216BC: vsub.f32     s17, s13, s17
+00A216C0: b            #0xa1ff54
+00A20E78: raw=00000000 relocated=00000000
+00A20E7C: raw=3EAAAAAB relocated=3EAAAAAB

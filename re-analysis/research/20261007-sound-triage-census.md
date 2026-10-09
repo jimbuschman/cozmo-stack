@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through330 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through331 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1851,3 +1851,7 @@ GSRC329A–F bind scratch cell identities, union split/center-slot gates and exa
 ### Checkpoint 330 — source603/source633 generators
 
 GSRC330A–D bind four/six-row scratch writes and all selected union/center/weight continuations. Source633 actual pointer arithmetic places two entries inrow2 and noneinrow4; no plausible symmetric repair. Remaining source607/637/provider/consumer work stays PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 331 — source607/source637 generators
+
+GSRC331A–E complete selected local general-pan source generators, retaining exact live633 comparison, asymmetric source637 scratch placement and square-root products/fallback order. All local A25FF8/A1F79C/A234FC decision/parameter families now positive; concrete provider/consumer joins remain PARTIAL. Counts unchanged, Q15 parked.
