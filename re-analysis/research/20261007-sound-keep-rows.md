@@ -9,7 +9,20 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 40 native-row obligations CHECKED, 8 CHECKED scope exclusions, 92 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 41 native-row obligations CHECKED, 8 CHECKED scope exclusions, 91 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 538 — bounded active evaluator/tick reconciliation
+
+Q14-093 names evaluator population/output, tick9E6D2C, retirement9E2AE4 and hierarchical9D8A24. Its old generic pending labels are reconciled against the already CHECKED Q14-027 production flow, not against an empty-list witness. No new numerical/sample descent or Q15-only extraction.
+
+| Row | Existing primary joins | Exact retained coverage |
+| --- | --- | --- |
+| ER538A active population and outputs | MG/MT/MI/SV/MR517;MP1–13/ML1–3/ES1–10/LS1–7/LB1–5;Q14-027 checkpoint65/RC8 | Scoped state acquisition/initialization/reinitialization/ID/registered subscriber population and attachment supply actual states, not an assumed empty list. Tick first resets block counts then visits active states in order; scope3 bypass versus signed attachment gates, prior output/status, cursor advance, type selection, envelope/LFO input layouts, physical block growth/allocation-fault and dirty/phase refresh are positive. Evaluators preserve exact control-stream arithmetic, first output, segment/extrema/completion, count and scalar/buffer output publication. |
+| ER538B registry notification and retirement | MTK1–6/RH1–5/IC scoped collection cleanup;Q14-027 | Evaluate before registry lock; registered buckets/chains then depth-first parent-before-child scoped states, deepest live reload/removal, exact subscriber eligibility and old/new key/filter construction, A10C84 recipients then reference retirement. Later unlock precedes9E2AE4 active-state sweep. Previously named RH5 cleanup/prune helpers join the already extracted scoped removal/ownership interfaces; no generic unread recursive update remains. |
+| ER538C actual consumer | OA1–17/MC1–6/RC8/MC520E | Concrete attachment population/reference/lifetime; live output versus stored fallback and per-triple mask/capacity gates; exact base/difference/endpoints, buffered-before-scalar delivery, spans, geometry, unity/equality/unordered branches and production A56A7C application. Only final PCM multiplication/interpolation is ADP-1; envelope/LFO control-stream generation and values remain exact. |
+
+Q14-093 is CHECKED for its bounded named population/evaluator/tick/notification/retirement/consumer decision obligation. Zero-list paths remain their native behavior, not proof of production silence or whole M9 source acceptance. Other RTPC input/provider/voice/source/route obligations remain independently open, not generic remainders added to this completed bounded flow. Counts41 native CHECKED+8 scope CHECKED/91 PARTIAL/0 NOT DONE. No production/fidelity/hardware/Q15 changes; Q15 follows Q14.
+
 
 ## Checkpoint 537 — bounded compressor Init/settings reconciliation
 

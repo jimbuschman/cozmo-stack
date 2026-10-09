@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 40 CHECKED native-row obligations / 8 CHECKED scope exclusions / 92 PARTIAL / 0 NOT DONE; decision checkpoints through537 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 41 CHECKED native-row obligations / 8 CHECKED scope exclusions / 91 PARTIAL / 0 NOT DONE; decision checkpoints through538 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -99,7 +99,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-090 | 139 | PARTIAL |
 | Q14-091 | 140 | PARTIAL |
 | Q14-092 | 141 | PARTIAL |
-| Q14-093 | 142 | PARTIAL |
+| Q14-093 | 142 | CHECKED |
 | Q14-094 | 143 | CHECKED (scope exclusion) |
 | Q14-095 | 144 | CHECKED (scope exclusion) |
 | Q14-096 | 145 | CHECKED (scope exclusion) |
@@ -742,7 +742,9 @@ PARTIAL: existing primary-backed rows Z1–Z20 in `20261007-sound-keep-rows.md`.
 
 > | C32.5 V1/V2/V5/evaluators | M6-022,M9-008,M9-009,M9-025 | **KEEP** | 0x009E6D2C..0x009E6E10;0x009E2BD0..0x009E52F3;0x009E2AE4;0x009D8A24 | Prove list population/reachability and exact control-signal evaluator output; the verified empty-list case does not prove production silence. |
 
-PARTIAL: existing primary-backed rows MP1–MP13,MTK1–MTK6,EV/LFO rows in `20261007-sound-keep-rows.md`. Active state population/block geometry, envelope/LFO evaluation and retirement traversal are rowed. Remaining registry/state population reachability, evaluator consumer and9D8A24 recursive update closure. Empty-list output never proves production silence. Reconciliation records actual body coverage without claiming complete transitive closure.
+CHECKED (decisions-only scope), checkpoint538: actual scoped creation/initialization/registered population MG/MT/MI/SV/MR/IC and Q14-027; MP/ML/ES/LS/LB exact active input/evaluator/output geometry and control-signal evolution; MTK/RH full registered tick/recursive notifications/pruning/retirement joins; OA/MC/RC8 actual attachment/production consumer. These are the already checked Q14-027 bounded production contracts, not an empty-list test or a disassembly-presence promotion. Specific9D8A24 population/update/removal and live/fallback consumer remainders are positive; unrelated input/provider/voice/source obligations are separate rows.
+
+out of scope: only final per-sample PCM gain multiplication/interpolation under ADP-1, backing storage/free mechanics and approved source branches. Envelope/LFO parameter-stream math remains exact. No whole M9/fidelity acceptance.
 
 ## Q14-094 — triage line 143
 
