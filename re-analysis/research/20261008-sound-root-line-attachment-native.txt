@@ -1,0 +1,59 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A428B0..0x00A4292C exclusive; ARM;
+00A428B0: bhi          #0xa428a0
+00A428B4: ldr          r3, [pc, #0x120] ; word[00A429DC]=0064B68C
+00A428B8: add          r5, r5, #4
+00A428BC: str          r4, [r2]
+00A428C0: add          r3, pc, r3
+00A428C4: ldr          r3, [r3]
+00A428C8: add          ip, r3, r5
+00A428CC: add          r3, r3, #4
+00A428D0: cmp          r3, ip
+00A428D4: bne          #0xa428e4
+00A428D8: b            #0xa42804
+00A428DC: cmp          ip, r3
+00A428E0: beq          #0xa42804
+00A428E4: mov          lr, r3
+00A428E8: ldr          r2, [r3], #4
+00A428EC: ldrd         r0, r1, [r2, #0x28]
+00A428F0: cmp          r1, #0
+00A428F4: cmpeq        r0, #2
+00A428F8: bne          #0xa428dc
+00A428FC: ldr          r1, [r2, #0x1bc]
+00A42900: cmp          r1, #2
+00A42904: beq          #0xa428dc
+00A42908: ldr          r1, [r2, #0x1c8]
+00A4290C: cmp          r1, #0
+00A42910: bne          #0xa428dc
+00A42914: str          r4, [r2, #0x1c8]
+00A42918: mov          r0, r4
+00A4291C: ldr          r1, [lr]
+00A42920: add          r1, r1, #0x24
+00A42924: bl           #0xa4f664
+00A42928: b            #0xa42804
+RANGE 0x00A68950..0x00A689B0 exclusive; ARM;
+00A68950: push         {r3, r4, r5, lr}
+00A68954: ldr          r5, [pc, #0x54] ; word[00A689B0]=006259D4
+00A68958: add          r5, pc, r5
+00A6895C: ldrb         r3, [r5]
+00A68960: dmb          sy
+00A68964: ands         r4, r3, #1
+00A68968: beq          #0xa68984
+00A6896C: ldr          r3, [pc, #0x40] ; word[00A689B4]=006259B8
+00A68970: mov          r2, #1
+00A68974: add          r3, pc, r3
+00A68978: add          r0, r3, #4
+00A6897C: strb         r2, [r3, #0xc]
+00A68980: pop          {r3, r4, r5, pc}
+00A68984: mov          r0, r5
+00A68988: bl           #0x4a472c
+00A6898C: cmp          r0, #0
+00A68990: beq          #0xa6896c
+00A68994: mov          r0, r5
+00A68998: mvn          r3, #0
+00A6899C: str          r4, [r5, #4]
+00A689A0: strb         r4, [r5, #0xc]
+00A689A4: str          r3, [r5, #8]
+00A689A8: bl           #0x4a475c
+00A689AC: b            #0xa6896c
