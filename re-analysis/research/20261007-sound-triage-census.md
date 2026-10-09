@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through528 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through529 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
