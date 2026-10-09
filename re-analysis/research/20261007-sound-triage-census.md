@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through344 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through345 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1907,3 +1907,7 @@ GM343A–F bind destination normalization, source-intersection mono coefficients
 ### Checkpoint 344 — horizontal pair and center coefficient decisions
 
 HC344A–F settle selected local A22F68 angle/threshold/pair destinations, exact ordinary versus center blend/store order and special two-channel table join. Positive Z20 initializer reused; its old scalar-control ADP-1 waiver wording corrected. Remaining table producers/cache registrations, parent geometry and writer/family dependencies retain Q14-029 PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 345 — standard-source generated matrix callers
+
+GM345A–G settle selected type1-source horizontal/expanded geometry lookups, grid cadence, center weighted call order, row permutation, sum/NaN gate and exact coefficient estimates including padded lanes. Existing selected geometry recipients reused. Destination-type2 generation and retained type2-source collaborators, table/provider lifetime and broader writers/families remain open. Counts unchanged, Q15 parked.
