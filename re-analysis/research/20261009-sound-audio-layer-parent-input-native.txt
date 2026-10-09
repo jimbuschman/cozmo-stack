@@ -1,0 +1,157 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0064ECCC..0x0064ECE6 exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponentC2EPKNS0_12CozmoContextE
+0064ECCC: push         {r4, r5, r6, r7, lr}
+0064ECCE: sub          sp, #4
+0064ECD0: mov          r4, r0
+0064ECD2: mov          r5, r1
+0064ECD4: movs         r0, #0x14
+0064ECD6: str          r5, [r4]
+0064ECD8: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+0064ECDC: ldr          r1, [r5, #0x14]
+0064ECDE: mov          r6, r0
+0064ECE0: blx          #0x4ba02c ; Anki::Cozmo::AudioLayerManager::AudioLayerManager
+
+0064ECE4: str          r6, [r4, #4]
+RANGE 0x0058C960..0x0058C964 exclusive; Thumb; _ZN4Anki5Cozmo17AudioLayerManagerC1ERKNS_4Util15RandomGeneratorE
+0058C960: b.w          #0x8cba4c ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::ITrackLayerManager
+
+RANGE 0x0058D944..0x0058D956 exclusive; Thumb; _ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEEC1ERKNS_4Util15RandomGeneratorE
+0058D944: movs         r2, #0
+0058D946: mov          r3, r0
+0058D948: str          r2, [r0, #0xc]
+0058D94A: strb         r2, [r0, #0x10]
+0058D94C: str          r2, [r3, #8]!
+0058D950: strd         r1, r3, [r0]
+0058D954: bx           lr
+RANGE 0x008CBA4C..0x008CBA50 exclusive; Thumb;
+008CBA4C: bx           pc
+008CBA4E: mov          r8, r8
+RANGE 0x008CBA50..0x008CBA58 exclusive; ARM;
+008CBA50: ldr          ip, [pc] ; word[008CBA58]=FFBE2EDC
+008CBA54: add          pc, ip, pc
+008CBA58: raw=FFBE2EDC relocated=FFBE2EDC 
+RANGE 0x004AE938..0x004AE944 exclusive; ARM;
+004AE938: add          ip, pc, #0xb00000
+004AE93C: add          ip, ip, #0x95000
+004AE940: ldr          pc, [ip, #0x1b4]!
+01043AF4: raw=004A4010 relocated=0058D945 _ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEEC1ERKNS_4Util15RandomGeneratorE
+RANGE 0x004BA02C..0x004BA038 exclusive; ARM;
+004BA02C: add          ip, pc, #0xb00000
+004BA030: add          ip, ip, #0x8d000
+004BA034: ldr          pc, [ip, #0x7bc]!
+010477F0: raw=004A4010 relocated=0058C961 _ZN4Anki5Cozmo17AudioLayerManagerC1ERKNS_4Util15RandomGeneratorE
+RANGE 0x0064ED8C..0x0064ED92 exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponentD2Ev
+0064ED8C: push         {r4, r5, r6, lr}
+0064ED8E: mov          r4, r0
+0064ED90: movs         r6, #0
+RANGE 0x0064EDCA..0x0064EDE2 exclusive; Thumb;
+0064EDCA: ldr          r5, [r4, #4]
+0064EDCC: str          r6, [r4, #4]
+0064EDCE: cbz          r5, #0x64edde
+0064EDD0: ldr          r1, [r5, #8]
+0064EDD2: adds         r0, r5, #4
+0064EDD4: blx          #0x4ba068 ; std::__ndk1::__tree<std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>,std::__ndk1::__map_value_compare<unsigned_char,std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>,std::__ndk1::less<unsigned_char>,true>,std::__ndk1::allocator<std::__ndk1::__value_type<unsigned_char,Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::AnimKeyFrame::AudioSample>::Layer>>>::destroy
+
+0064EDD8: mov          r0, r5
+0064EDDA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0064EDDE: mov          r0, r4
+0064EDE0: pop          {r4, r5, r6, pc}
+RANGE 0x0064EE1C..0x0064EF00 exclusive; Thumb; _ZN4Anki5Cozmo19TrackLayerComponent9AddGlitchEf
+0064EE1C: push         {r4, r5, r6, r7, lr}
+0064EE1E: sub          sp, #0x44
+0064EE20: mov          r5, r1
+0064EE22: mov          r4, r0
+0064EE24: vmov         s0, r5
+0064EE28: movs         r0, #0
+0064EE2A: str          r0, [sp, #0x34]
+0064EE2C: str          r0, [sp, #0x30]
+0064EE2E: vcvt.f64.f32 d0, s0
+0064EE32: str          r0, [sp, #0x38]
+0064EE34: add          r6, sp, #0x30
+0064EE36: adr          r0, #0x130
+0064EE38: adr          r1, #0x138
+0064EE3A: adr          r3, #0x158
+0064EE3C: mov          r2, r6
+0064EE3E: vstr         d0, [sp]
+0064EE42: blx          #0x4a5b84 ; Anki::Util::sChanneledDebugF
+
+0064EE46: ldr          r0, [sp, #0x30]
+0064EE48: cbz          r0, #0x64ee68
+0064EE4A: ldr          r1, [sp, #0x34]
+0064EE4C: cmp          r1, r0
+0064EE4E: itttt        ne
+0064EE50: subne.w      r2, r1, #8
+0064EE54: subne        r2, r2, r0
+0064EE56: mvnne        r3, #7
+0064EE5A: bicne.w      r2, r3, r2
+0064EE5E: itt          ne
+0064EE60: addne        r1, r1, r2
+0064EE62: strne        r1, [sp, #0x34]
+0064EE64: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0064EE68: movs         r7, #0
+0064EE6A: strd         r6, r6, [sp, #0x30]
+0064EE6E: strd         r7, r6, [sp, #0x38]
+0064EE72: strb.w       r7, [sp, #0x40]
+0064EE76: ldr          r0, [r4, #0xc]
+0064EE78: mov          r1, r5
+0064EE7A: mov          r2, r6
+0064EE7C: blx          #0x4ba098 ; Anki::Cozmo::FaceLayerManager::GenerateFaceDistortion
+
+0064EE80: ldr          r6, [r4, #0xc]
+0064EE82: str          r7, [sp, #0x20]
+0064EE84: strd         r7, r7, [sp, #0x18]
+0064EE88: add          r0, sp, #0x18
+0064EE8A: adr          r1, #0x114
+0064EE8C: movs         r2, #6
+0064EE8E: bl           #0x4e02b2 ; FUN_004e02b2
+
+0064EE92: add          r5, sp, #0x18
+0064EE94: add          r2, sp, #0x30
+0064EE96: mov          r0, r6
+0064EE98: movs         r3, #0
+0064EE9A: mov          r1, r5
+0064EE9C: blx          #0x4ae9f8 ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::ProceduralFaceKeyFrame>::AddLayer
+
+0064EEA0: ldrb.w       r0, [sp, #0x18]
+0064EEA4: lsls         r0, r0, #0x1f
+0064EEA6: itt          ne
+0064EEA8: ldrne        r0, [sp, #0x20]
+0064EEAA: blxne        #0x4a40cc
+0064EEAE: movs         r6, #0
+0064EEB0: strd         r5, r5, [sp, #0x18]
+0064EEB4: strd         r6, r5, [sp, #0x20]
+0064EEB8: strb.w       r6, [sp, #0x28]
+0064EEBC: ldr          r0, [r4, #8]
+0064EEBE: mov          r1, r5
+0064EEC0: blx          #0x4ba0a4 ; Anki::Cozmo::BackpackLayerManager::GenerateGlitchLights
+
+0064EEC4: ldr          r4, [r4, #8]
+0064EEC6: str          r6, [sp, #0x10]
+0064EEC8: strd         r6, r6, [sp, #8]
+0064EECC: add          r0, sp, #8
+0064EECE: adr          r1, #0xd0
+0064EED0: movs         r2, #6
+0064EED2: bl           #0x4e02b2 ; FUN_004e02b2
+
+0064EED6: add          r1, sp, #8
+0064EED8: add          r2, sp, #0x18
+0064EEDA: mov          r0, r4
+0064EEDC: movs         r3, #0
+0064EEDE: blx          #0x4aeac4 ; Anki::Cozmo::ITrackLayerManager<Anki::Cozmo::BackpackLightsKeyFrame>::AddLayer
+
+0064EEE2: ldrb.w       r0, [sp, #8]
+0064EEE6: lsls         r0, r0, #0x1f
+0064EEE8: itt          ne
+0064EEEA: ldrne        r0, [sp, #0x10]
+0064EEEC: blxne        #0x4a40cc
+0064EEF0: add          r0, sp, #0x18
+0064EEF2: blx          #0x4a8b24 ; std::__ndk1::__list_imp<Anki::Cozmo::BackpackLightsKeyFrame,std::__ndk1::allocator<Anki::Cozmo::BackpackLightsKeyFrame>>::clear
+
+0064EEF6: add          r0, sp, #0x30
+0064EEF8: blx          #0x4a8b3c ; std::__ndk1::__list_imp<Anki::Cozmo::ProceduralFaceKeyFrame,std::__ndk1::allocator<Anki::Cozmo::ProceduralFaceKeyFrame>>::clear
+
+0064EEFC: add          sp, #0x44
+0064EEFE: pop          {r4, r5, r6, r7, pc}
