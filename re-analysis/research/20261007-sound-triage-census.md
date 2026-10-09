@@ -2223,3 +2223,7 @@ CK419 establishes exactscopedsubscriptionkey andobjectrelease-before-listcleanup
 ## Checkpoint 420 — scoped RTPC retirement
 
 RK420 establishes transitionmatching/removal andscopedtreeparent,includingexactallwildcardfaultbranch. A17E08 andscope-retirement recipients remain; Q14-007 PARTIAL, counts unchanged; Q15 pending Q14.
+
+## Checkpoint 421 — completion-key scoped value removal
+
+VR421 joins RK420 to the actual playing-ID invalidation, ordered root/child pruning and published no-op scope types. Storage cleanup is scoped out without descendant tracing. Other selective suffix inputs retain their own obligations. Q14-007 PARTIAL; counts unchanged; Q15 follows Q14.
