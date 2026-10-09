@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through285 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through286 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -208,7 +208,7 @@ PARTIAL; R1–R52/RV1–RV11/MV1–MV6/CL1–CL3/U15–U17 cover curve evaluatio
 
 > | M6-010 | **KEEP** | 0x009EF258;0x009FFAD4;0x009FAE18;0x009A080C..0x009A0908;0x00A4B608..0x00A4B674;0x009BD368..0x009BD8B4;0x009C54E8 | Gain inputs/composition, randomizer/root note, mute keys, ducking maximum, audibility thresholds and gain values/routing stay exact; fastpow feeding those decisions is not blanket libm relief. |
 
-PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positioning inputs and threshold controls. Full randomizer, mute-key and ducking writers/consumers remain pending.
+PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positioning inputs and threshold controls. SEND286 supplies the full9BD368 send scratch selector, exact gain conversion/thresholds, ordered kinds and ID-only termination; VP11 supplies its live routing caller. D1/RW10 collapsed-bus predicate, DU1–7 reduction/publication and PDI1–3 default table initializer are already positive. Remaining: other randomizer/mute-key and reachable duck/route recipient/input/provider/writer joins; those known local bodies are not reopened.
 
 ## Q14-012 — triage line 46
 
@@ -1671,3 +1671,7 @@ PF284A–C supply duration/create/retarget/fallback, raw type0/1 queue gate, pos
 ### Checkpoint 285 — shared modulator initialization and advancement reuse
 
 MJ285A–C reconcile factory/default/scope/parameter/buffer-demand initialization with already-positive tick/output binding/evolution/notification/fallback/delivery. Q14-010 retains wider family/recipient/input/provider/writer uncertainty, rather than calling the complete local Q14-027 bodies unread. Existing Q15 rows reused only; Q15 stays parked. Counts, fidelity and production unchanged.
+
+### Checkpoint 286 — send scratch decisions
+
+SEND286A–F recover nested kind1 ID gates, independent kind2 admission, linear versus scalar threshold bindings, exact fast-gain conversion, publication order and count8/ID-only sentinel behavior. Q14-011 reuses known D1/RW10, DU and PDI bodies; wider uncertainty stays PARTIAL. No counts, Q15, fidelity or production changes.
