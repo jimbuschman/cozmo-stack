@@ -202,7 +202,7 @@ PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event pu
 
 > | M6-007 | **KEEP** | 0x00A08A7C..0x00A08AC0;0x0099DB58;0x00A09698;0x00A099BC;0x00A0A3B4;0x00A08A44;0x00A08694;0x00A0A524..0x00A0A6E8 | RNG state/seed, draw cadence, eligibility, shuffle/avoid-repeat, weights and sequence behavior stay exact even where they use floating arithmetic. |
 
-PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. CA153 positively binds known five-family child admission and local weight/reset gates; CJ154/CO155/CP156/PR161 close known snapshot/list/policy/refresh recipients. Complete live incoming caller/writer/resolver and additional-family closure remain open; no completed M6-007 claim.
+PARTIAL: C1–C25 and N4/N5/SE1–SE4 establish draws, caches, bitmaps, refill, retries, sequential looping and seed-input rules. TR14–TR18, NR146F, ND150 and PW152 add playlist constructors/append/reset, concrete state/playlist retirement, raw IDs/counts/weights, integer total-weight reduction and first physical ID-index lookup. CA153 positively binds known five-family child admission and local weight/reset gates; CJ154/CO155/CP156/PR161 close known snapshot/list/policy/refresh recipients. RJ423 validates all468 serialized RanSeq control/child/playlist inputs, concrete Sound/RanSeq admission joins and direct weighted/multi-entry-sequence event witnesses. Storage/cache backing is scoped out. Native dynamic weight-setter dispatch and alternate seed/writer inputs retain explicit boundaries; no completed M6-007 claim or absence-based whole-writer proof.
 
 ## Q14-009 — triage line 42
 
@@ -2231,3 +2231,7 @@ VR421 joins RK420 to the actual playing-ID invalidation, ordered root/child prun
 ## Checkpoint 422 — subscription retirement integration
 
 SR422 fixes collected retirement order, association visibility before detach, actual GOT manager identity and the existing SU1–6 recipient join. Q14-007 completion-key retirement is positive; remaining queued-control reconciliation PARTIAL, counts unchanged; Q15 follows Q14.
+
+## Checkpoint 423 — RanSeq raw input joins
+
+RJ423 verifies468 serialized selector headers and2,191 concrete child references against raw bank bytes and native reader layouts. It joins unequal weights and multi-entry sequence to direct shipped event actions and distinguishes playlist count from child count. Q14-008 PARTIAL pending the bounded dynamic setter/seed input boundary; counts unchanged; Q15 follows Q14.
