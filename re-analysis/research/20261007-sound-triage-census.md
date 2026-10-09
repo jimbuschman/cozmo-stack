@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through351 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through352 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1935,3 +1935,7 @@ LQ350A–E settle native tagE producer size/field stores/exclusive publication, 
 ### Checkpoint 351 — stock registration mask and existing-object behavior
 
 OR351A–G bind the controller/wrapper mask1, native ID/mask validation, tagB command fields/publication, ignored consumer result and existing-object setter without live route propagation. New-object initialization/publication/failure endpoints retained around excluded registry storage and positioning payload setup. Teardown and broader input/writer/family closure remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 352 — queued unregister and retained-object controls
+
+OU352A–G settle selected native single/all tagC producers, FFFFFFFF consumer split, first-ID registry removal, retired-list publication/failure, unregistered-bit/refcount order and known DC4 teardown reuse. All-objects recipient and concrete callback/input/writer/family closure remain PARTIAL. Counts unchanged, Q15 parked.
