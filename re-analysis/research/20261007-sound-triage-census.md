@@ -1647,3 +1647,7 @@ AU278A–C establish flag-selected unlink/count publication under lock, reverse 
 ### Checkpoint 279 — load command decisions
 
 BL279A–C establish eligibility-before-publication, retained-object/bank failure cleanup and distinction between raw45 completion/storage and function return1. Known loader/registry/event/bank bodies reused; broader input/provider/writer closure remains PARTIAL, totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 280 — bank media preparation
+
+BM280A–D record physical DIDX IDs/progress, direct and first-alias reference/publication decisions, current failure release and reverse nonzero-ID prefix without resetting progress. Native acquisition/optional conversion caller gates retained; storage/hash/I/O/excluded descendants not traced. Wider input/provider/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
