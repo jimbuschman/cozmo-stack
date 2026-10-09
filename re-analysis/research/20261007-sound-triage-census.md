@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through533 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through534 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -634,6 +634,8 @@ P138532: actual query/allocate/query/allocate/init/init order and ignored initia
 
 P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
 
+P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
+
 ## Q14-074 — triage line 123
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
@@ -682,6 +684,8 @@ P138532: actual query/allocate/query/allocate/init/init order and ignored initia
 
 P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
 
+P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
+
 ## Q14-079 — triage line 128
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
@@ -703,6 +707,8 @@ P138531: concrete transform/window gain selection, full-block overlap admission 
 P138532: actual query/allocate/query/allocate/init/init order and ignored initialization returns, workspace admission/size publication and selected kind2 byte1/0 persistent window values are positive. Numeric FFT sample-transform table generation stops at the guard boundary. Remaining specific seven-type persistent filter design/live dirty association is P138527/P138526C, not generic unread workspace/window setup.
 
 P138533: separate live dirty masks, history reuse/null allocation/free gates, failure without rollback, raw type dispatch, persistent output regions and group0→group1→dirty-clear joins are positive. Seven-type Init/live operand graph reconciliation remains specifically retained; capture presence does not settle it.
+
+P138534: all three common persistent publication graphs transcribed, 111 ordered word stores validated and37 destination dependencies match exactly. Replicated vector is normalized leading coefficient, not raw gain; prior wording corrected. Remaining specific graph work is seven preceding numerator/denominator type branches, not common expansion or publication.
 
 ## Q14-080 — triage line 129
 
