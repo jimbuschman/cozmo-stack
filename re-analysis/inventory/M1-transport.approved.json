@@ -1,6 +1,6 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-10-05",
+  "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M1-transport.md",
   "inventory_sha256": "330d5959dc310124af2f81edf5188e6b2d1860cb07a0d125e7fcc2e784f1c825",
   "records": {
@@ -326,7 +326,7 @@
       "hardware_required": false
     },
     "M1-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Connect request from the game, the connected response, and DisconnectCurrent",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -415,7 +415,7 @@
       "hardware_required": false
     },
     "M1-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle-timeout disconnect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -520,7 +520,7 @@
       "hardware_required": false
     },
     "M1-041": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Robot initialisation after a Success connection response, and the gates it opens",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -544,14 +544,14 @@
       "hardware_required": false
     },
     "M1-043": {
-      "status": "HARDWARE_ONLY",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "Whether a 0-byte UDP read warns",
       "authority": "a robot run with a 0-byte datagram, or an Android errno trace",
       "evidence": [
         "CA35: a 0-byte read takes the error path and reads the stale errno; it warns iff errno != EAGAIN and reopens on ENOTCONN (0x0083AA98 → 0x0083AAC4..0x0083AB24)"
       ],
       "live_path": true,
-      "hardware_required": true
+      "hardware_required": false
     },
     "M1-044": {
       "status": "IMPLEMENTATION_GAP",
@@ -566,7 +566,7 @@
       "hardware_required": false
     },
     "M1-045": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle-timeout go-to-sleep factory handoff and queue submission",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
