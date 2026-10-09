@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through345 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through346 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1911,3 +1911,7 @@ HC344A–F settle selected local A22F68 angle/threshold/pair destinations, exact
 ### Checkpoint 345 — standard-source generated matrix callers
 
 GM345A–G settle selected type1-source horizontal/expanded geometry lookups, grid cadence, center weighted call order, row permutation, sum/NaN gate and exact coefficient estimates including padded lanes. Existing selected geometry recipients reused. Destination-type2 generation and retained type2-source collaborators, table/provider lifetime and broader writers/families remain open. Counts unchanged, Q15 parked.
+
+### Checkpoint 346 — selected basis transforms and fixed control tables
+
+BT346A–G settle selected A22CEC/A22A60 argument binding, matrix composition, fixed32-call cadence, raw normalization/direction/weight tables, compact row selection and additive coefficient order. Retained source counts1/2 are distinct from the recipient's coefficient count; excluded higher source-count branches are not traced. Remaining parent coefficient branches and writers/providers/families retain PARTIAL. Counts unchanged, Q15 parked.

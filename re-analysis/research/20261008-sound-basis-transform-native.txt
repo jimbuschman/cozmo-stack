@@ -1,0 +1,954 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A22A60..0x00A22CD8 exclusive; ARM;
+00A22A60: push         {r4, r5, r6, r7, lr}
+00A22A64: subs         r7, r3, #0
+00A22A68: vpush        {d8, d9, d10, d11, d12}
+00A22A6C: vmov         s16, r0
+00A22A70: sub          sp, sp, #0x14
+00A22A74: vmov         s17, r1
+00A22A78: vmov         s18, r2
+00A22A7C: ldr          r5, [sp, #0x50]
+00A22A80: bne          #0xa22cb4
+00A22A84: vmul.f32     s14, s18, s18
+00A22A88: vmla.f32     s14, s16, s16
+00A22A8C: vsqrt.f32    s15, s14
+00A22A90: vcmp.f32     s15, s15
+00A22A94: vmrs         apsr_nzcv, fpscr
+00A22A98: bne          #0xa22cc8
+00A22A9C: vneg.f32     s16, s16
+00A22AA0: cmp          r7, #4
+00A22AA4: vldr         s10, [r5, #4]
+00A22AA8: vdiv.f32     s14, s16, s15
+00A22AAC: vldr         s11, [r5]
+00A22AB0: vldr         s16, [r5, #0xc]
+00A22AB4: vldr         s12, [r5, #8]
+00A22AB8: vdiv.f32     s13, s18, s15
+00A22ABC: vmul.f32     s6, s15, s14
+00A22AC0: vmul.f32     s7, s15, s13
+00A22AC4: vmov.f32     s8, #1.000000e+00
+00A22AC8: vadd.f32     s10, s10, s6
+00A22ACC: vadd.f32     s16, s16, s7
+00A22AD0: vstr         s10, [r5, #4]
+00A22AD4: vadd.f32     s11, s11, s8
+00A22AD8: vstr         s16, [r5, #0xc]
+00A22ADC: vadd.f32     s12, s12, s17
+00A22AE0: vstr         s11, [r5]
+00A22AE4: vstr         s12, [r5, #8]
+00A22AE8: bls          #0xa22c54
+00A22AEC: cmp          r7, #9
+00A22AF0: vmul.f32     s23, s13, s13
+00A22AF4: vldr         s4, [pc, #0x1dc] ; word[00A22CD8]=3F5DB3D7
+00A22AF8: vldr         s0, [r5, #0x10]
+00A22AFC: vldr         s2, [r5, #0x1c]
+00A22B00: vldr         s3, [r5, #0x18]
+00A22B04: vmov.f32     s5, #3.000000e+00
+00A22B08: vldr         s18, [r5, #0x20]
+00A22B0C: vldr         s1, [r5, #0x14]
+00A22B10: vadd.f32     s12, s14, s14
+00A22B14: vadd.f32     s10, s23, s23
+00A22B18: vadd.f32     s11, s17, s17
+00A22B1C: vmul.f32     s16, s17, s5
+00A22B20: vmul.f32     s9, s15, s15
+00A22B24: vmul.f32     s12, s13, s12
+00A22B28: vsub.f32     s10, s10, s8
+00A22B2C: vmul.f32     s11, s15, s11
+00A22B30: vmov.f32     s19, s8
+00A22B34: vnmls.f32    s19, s17, s16
+00A22B38: vmul.f32     s21, s10, s9
+00A22B3C: vmul.f32     s9, s9, s12
+00A22B40: vmul.f32     s20, s14, s11
+00A22B44: vmul.f32     s11, s13, s11
+00A22B48: vmov.f32     s16, #5.000000e-01
+00A22B4C: vmla.f32     s0, s9, s4
+00A22B50: vmov.f32     s9, s2
+00A22B54: vstr         s0, [r5, #0x10]
+00A22B58: vmla.f32     s9, s11, s4
+00A22B5C: vmov.f32     s11, s3
+00A22B60: vstr         s9, [r5, #0x1c]
+00A22B64: vmla.f32     s18, s21, s4
+00A22B68: vmla.f32     s1, s20, s4
+00A22B6C: vstr         s18, [r5, #0x20]
+00A22B70: vmla.f32     s11, s19, s16
+00A22B74: vstr         s1, [r5, #0x14]
+00A22B78: vstr         s11, [r5, #0x18]
+00A22B7C: bls          #0xa22c54
+00A22B80: vmov.f32     s24, #-4.000000e+00
+00A22B84: vldr         s20, [pc, #0x150] ; word[00A22CDC]=3FF7DEF6
+00A22B88: vldr         s0, [r5, #0x28]
+00A22B8C: vldr         s1, [r5, #0x38]
+00A22B90: vmul.f32     s24, s14, s24
+00A22B94: vldr         s19, [pc, #0x144] ; word[00A22CE0]=3F4A62C2
+00A22B98: vldr         s2, [r5, #0x24]
+00A22B9C: vldr         s3, [r5, #0x3c]
+00A22BA0: vldr         s18, [pc, #0x13c] ; word[00A22CE4]=3F1CC471
+00A22BA4: vmov.f32     s22, #4.000000e+00
+00A22BA8: vldr         s4, [r5, #0x2c]
+00A22BAC: vldr         s9, [r5, #0x30]
+00A22BB0: vldr         s11, [r5, #0x34]
+00A22BB4: vmul.f32     s22, s23, s22
+00A22BB8: vmul.f32     s24, s14, s24
+00A22BBC: vmul.f32     s21, s14, s5
+00A22BC0: vmul.f32     s23, s13, s5
+00A22BC4: vmla.f32     s21, s14, s24
+00A22BC8: vnmls.f32    s23, s13, s22
+00A22BCC: vmov.f32     s22, #5.000000e+00
+00A22BD0: vmul.f32     s22, s17, s22
+00A22BD4: vmul.f32     s14, s17, s10
+00A22BD8: vmul.f32     s13, s17, s12
+00A22BDC: vmul.f32     s21, s15, s21
+00A22BE0: vmul.f32     s23, s15, s23
+00A22BE4: vmul.f32     s22, s17, s22
+00A22BE8: vmul.f32     s12, s15, s14
+00A22BEC: vmul.f32     s13, s15, s13
+00A22BF0: vmul.f32     s14, s15, s21
+00A22BF4: vmul.f32     s23, s15, s23
+00A22BF8: vsub.f32     s10, s22, s8
+00A22BFC: vsub.f32     s22, s22, s5
+00A22C00: vmul.f32     s8, s15, s14
+00A22C04: vmul.f32     s13, s15, s13
+00A22C08: vmul.f32     s12, s15, s12
+00A22C0C: vmul.f32     s6, s6, s10
+00A22C10: vmul.f32     s15, s15, s23
+00A22C14: vmul.f32     s10, s7, s10
+00A22C18: vmul.f32     s14, s17, s22
+00A22C1C: vmla.f32     s0, s13, s20
+00A22C20: vmla.f32     s1, s12, s20
+00A22C24: vstr         s0, [r5, #0x28]
+00A22C28: vmla.f32     s2, s8, s19
+00A22C2C: vstr         s1, [r5, #0x38]
+00A22C30: vmla.f32     s3, s15, s19
+00A22C34: vstr         s2, [r5, #0x24]
+00A22C38: vmla.f32     s4, s6, s18
+00A22C3C: vstr         s3, [r5, #0x3c]
+00A22C40: vmla.f32     s9, s14, s16
+00A22C44: vstr         s4, [r5, #0x2c]
+00A22C48: vmla.f32     s11, s10, s18
+00A22C4C: vstr         s9, [r5, #0x30]
+00A22C50: vstr         s11, [r5, #0x34]
+00A22C54: ldr          r3, [pc, #0x8c] ; word[00A22CE8]=005D7D04
+00A22C58: add          ip, sp, #0x10
+00A22C5C: mov          r6, #0
+00A22C60: mov          r4, #1
+00A22C64: add          r3, pc, r3
+00A22C68: add          r3, r3, #0x7e0
+00A22C6C: ldm          r3, {r0, r1, r2, r3}
+00A22C70: stmdb        ip, {r0, r1, r2, r3}
+00A22C74: add          r3, sp, #0x10
+00A22C78: add          r3, r3, r4, lsl #2
+00A22C7C: vldr         s15, [r5]
+00A22C80: add          r6, r6, #1
+00A22C84: mul          r1, r4, r4
+00A22C88: vldr         s14, [r3, #-0x14]
+00A22C8C: mov          r0, r6
+00A22C90: vmul.f32     s15, s15, s14
+00A22C94: vstmia       r5!, {s15}
+00A22C98: bl           #0x4be310
+00A22C9C: cmp          r7, r6
+00A22CA0: add          r4, r4, r0
+00A22CA4: bhi          #0xa22c74
+00A22CA8: add          sp, sp, #0x14
+00A22CAC: vpop         {d8, d9, d10, d11, d12}
+00A22CB0: pop          {r4, r5, r6, r7, pc}
+00A22CB4: mov          r0, r5
+00A22CB8: mov          r1, #0
+00A22CBC: lsl          r2, r7, #2
+00A22CC0: bl           #0x4d36dc
+00A22CC4: b            #0xa22a84
+00A22CC8: vmov         r0, s14
+00A22CCC: bl           #0x4a4078
+00A22CD0: vmov         s15, r0
+00A22CD4: b            #0xa22a9c
+00A22CD8: raw=3F5DB3D7 relocated=3F5DB3D7
+00A22CDC: raw=3FF7DEF6 relocated=3FF7DEF6
+00A22CE0: raw=3F4A62C2 relocated=3F4A62C2
+00A22CE4: raw=3F1CC471 relocated=3F1CC471
+00A22CE8: raw=005D7D04 relocated=005D7D04
+RANGE 0x00A22CEC..0x00A22F58 exclusive; ARM;
+00A22CEC: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A22CF0: vpush        {d8, d9, d10, d11, d12}
+00A22CF4: ldr          r8, [pc, #0x260] ; word[00A22F5C]=005D7C70
+00A22CF8: add          r8, pc, r8
+00A22CFC: add          fp, sp, #0x48
+00A22D00: sub          sp, sp, #0x24
+00A22D04: vldr         s14, [r0, #4]
+00A22D08: ldr          r7, [fp, #8]
+00A22D0C: add          r5, r8, #0x7f0
+00A22D10: str          r3, [fp, #-0x50]
+00A22D14: add          r8, r8, #0x970
+00A22D18: vldr         s20, [r1, #4]
+00A22D1C: add          r4, r7, #3
+00A22D20: ldrb         sl, [fp, #4]
+00A22D24: lsr          r4, r4, #2
+00A22D28: str          r2, [fp, #-0x60]
+00A22D2C: vldr         s15, [r1, #0x10]
+00A22D30: lsl          r3, r4, #9
+00A22D34: lsl          r4, r4, #4
+00A22D38: add          r3, r3, #8
+00A22D3C: vldr         s24, [r1, #0x1c]
+00A22D40: sub          sp, sp, r3
+00A22D44: add          sb, sp, #8
+00A22D48: vldr         s13, [r0, #0x1c]
+00A22D4C: mov          r6, sb
+00A22D50: vldr         s23, [r0, #0x10]
+00A22D54: vmul.f32     s22, s14, s24
+00A22D58: vldr         s25, [r0]
+00A22D5C: vldr         s0, [r1]
+00A22D60: vldr         s2, [r1, #0xc]
+00A22D64: vldr         s3, [r1, #0x18]
+00A22D68: vmul.f32     s19, s20, s13
+00A22D6C: vldr         s1, [r0, #0xc]
+00A22D70: vldr         s4, [r0, #0x18]
+00A22D74: vldr         s16, [r1, #0x20]
+00A22D78: vldr         s7, [r0, #8]
+00A22D7C: vmul.f32     s17, s15, s13
+00A22D80: vldr         s9, [r1, #8]
+00A22D84: vldr         s10, [r0, #0x14]
+00A22D88: vldr         s12, [r0, #0x20]
+00A22D8C: vldr         s11, [r1, #0x14]
+00A22D90: vmul.f32     s13, s24, s13
+00A22D94: vmul.f32     s5, s14, s20
+00A22D98: vmul.f32     s6, s14, s15
+00A22D9C: vmul.f32     s8, s20, s23
+00A22DA0: vmul.f32     s21, s15, s23
+00A22DA4: vmov.f32     s14, s22
+00A22DA8: vmov.f32     s15, s13
+00A22DAC: vmla.f32     s5, s25, s0
+00A22DB0: vmla.f32     s6, s25, s2
+00A22DB4: vmla.f32     s14, s25, s3
+00A22DB8: vmla.f32     s8, s0, s1
+00A22DBC: vmla.f32     s15, s3, s4
+00A22DC0: vmla.f32     s19, s0, s4
+00A22DC4: vmla.f32     s21, s2, s1
+00A22DC8: vmla.f32     s17, s2, s4
+00A22DCC: vmul.f32     s18, s24, s23
+00A22DD0: vmla.f32     s14, s7, s16
+00A22DD4: vmov.f32     s23, s6
+00A22DD8: vmla.f32     s18, s3, s1
+00A22DDC: vmla.f32     s5, s7, s9
+00A22DE0: vmla.f32     s8, s9, s10
+00A22DE4: vmla.f32     s15, s16, s12
+00A22DE8: vmla.f32     s23, s7, s11
+00A22DEC: vmla.f32     s19, s9, s12
+00A22DF0: vmla.f32     s21, s11, s10
+00A22DF4: vmla.f32     s17, s11, s12
+00A22DF8: vmla.f32     s18, s16, s10
+00A22DFC: vmov.f32     s24, s5
+00A22E00: vmov.f32     s20, s14
+00A22E04: vmov.f32     s22, s8
+00A22E08: vmov.f32     s16, s15
+00A22E0C: vldr         s15, [r5, #4]
+00A22E10: mov          r3, r7
+00A22E14: add          r5, r5, #0xc
+00A22E18: vldr         s11, [r5, #-0xc]
+00A22E1C: vmul.f32     s12, s23, s15
+00A22E20: vldr         s14, [r5, #-4]
+00A22E24: str          r6, [sp]
+00A22E28: add          r6, r6, r4
+00A22E2C: vmul.f32     s13, s21, s15
+00A22E30: vmul.f32     s15, s17, s15
+00A22E34: vmla.f32     s12, s24, s11
+00A22E38: vmla.f32     s13, s22, s11
+00A22E3C: vmla.f32     s15, s19, s11
+00A22E40: vmla.f32     s12, s20, s14
+00A22E44: vmla.f32     s13, s18, s14
+00A22E48: vmov         r0, s12
+00A22E4C: vmla.f32     s15, s16, s14
+00A22E50: vmov         r1, s13
+00A22E54: vmov         r2, s15
+00A22E58: bl           #0xa22a60
+00A22E5C: cmp          r5, r8
+00A22E60: bne          #0xa22e0c
+00A22E64: cmp          r7, #0
+00A22E68: beq          #0xa22f4c
+00A22E6C: ldr          r0, [fp, #-0x50]
+00A22E70: cmp          r0, #0
+00A22E74: beq          #0xa22f4c
+00A22E78: ldr          r2, [pc, #0xe0] ; word[00A22F60]=005D7AE0
+00A22E7C: add          r3, sl, #3
+00A22E80: vldr         s12, [pc, #0xd0] ; word[00A22F58]=3D000000
+00A22E84: mov          r6, #0
+00A22E88: add          r2, pc, r2
+00A22E8C: ldr          r1, [pc, #0xd0] ; word[00A22F64]=005D7ACC
+00A22E90: add          r2, r2, r0, lsl #2
+00A22E94: ldr          lr, [fp, #-0x60]
+00A22E98: lsr          r3, r3, #2
+00A22E9C: add          r1, pc, r1
+00A22EA0: ldr          r8, [r2, #0x96c]
+00A22EA4: mov          r5, r6
+00A22EA8: lsl          r3, r3, #4
+00A22EAC: add          r1, r1, #0x9b0
+00A22EB0: str          r3, [fp, #-0x54]
+00A22EB4: lsl          r3, r7, #2
+00A22EB8: str          r1, [fp, #-0x5c]
+00A22EBC: str          r3, [fp, #-0x58]
+00A22EC0: mov          r3, #1
+00A22EC4: ands         r3, r8, r3, lsl r5
+00A22EC8: bne          #0xa22f30
+00A22ECC: ldr          r3, [fp, #-0x54]
+00A22ED0: mul          r0, r3, r6
+00A22ED4: ldr          r3, [fp, #-0x5c]
+00A22ED8: add          r6, r6, #1
+00A22EDC: add          r1, r3, #0x800
+00A22EE0: ldr          r3, [fp, #-0x58]
+00A22EE4: add          ip, r0, r3
+00A22EE8: add          r0, lr, r0
+00A22EEC: add          ip, lr, ip
+00A22EF0: vldr         s14, [r0]
+00A22EF4: sub          r2, r1, #0x800
+00A22EF8: mov          r3, sb
+00A22EFC: mov          sl, r2
+00A22F00: add          r2, r2, #0x40
+00A22F04: vldr         s15, [r3]
+00A22F08: cmp          r1, r2
+00A22F0C: add          r3, r3, r4
+00A22F10: vldr         s13, [sl]
+00A22F14: vmul.f32     s15, s15, s12
+00A22F18: vmla.f32     s14, s15, s13
+00A22F1C: bne          #0xa22efc
+00A22F20: vstmia       r0!, {s14}
+00A22F24: add          r1, r1, #4
+00A22F28: cmp          r0, ip
+00A22F2C: bne          #0xa22ef0
+00A22F30: add          r5, r5, #1
+00A22F34: cmp          r5, r7
+00A22F38: beq          #0xa22f4c
+00A22F3C: ldr          r3, [fp, #-0x50]
+00A22F40: add          sb, sb, #4
+00A22F44: cmp          r6, r3
+00A22F48: blo          #0xa22ec0
+00A22F4C: sub          sp, fp, #0x48
+00A22F50: vpop         {d8, d9, d10, d11, d12}
+00A22F54: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A22F58: raw=3D000000 relocated=3D000000
+00A22F5C: raw=005D7C70 relocated=005D7C70
+00A22F60: raw=005D7AE0 relocated=005D7AE0
+00A22F64: raw=005D7ACC relocated=005D7ACC
+00FFB150: raw=3F800000 relocated=3F800000
+00FFB154: raw=3FDDB3D7 relocated=3FDDB3D7
+00FFB158: raw=400F1BBD relocated=400F1BBD
+00FFB15C: raw=402953FD relocated=402953FD
+00FFB160: raw=BEB77C01 relocated=BEB77C01
+00FFB164: raw=3F6EFF21 relocated=3F6EFF21
+00FFB168: raw=00000000 relocated=00000000
+00FFB16C: raw=BEB77C01 relocated=BEB77C01
+00FFB170: raw=BF6EFF21 relocated=BF6EFF21
+00FFB174: raw=00000000 relocated=00000000
+00FFB178: raw=3EB77C01 relocated=3EB77C01
+00FFB17C: raw=3F6EFF21 relocated=3F6EFF21
+00FFB180: raw=00000000 relocated=00000000
+00FFB184: raw=3EB77C01 relocated=3EB77C01
+00FFB188: raw=BF6EFF21 relocated=BF6EFF21
+00FFB18C: raw=00000000 relocated=00000000
+00FFB190: raw=80000000 relocated=80000000
+00FFB194: raw=3EB77C01 relocated=3EB77C01
+00FFB198: raw=3F6EFF21 relocated=3F6EFF21
+00FFB19C: raw=80000000 relocated=80000000
+00FFB1A0: raw=BEB77C01 relocated=BEB77C01
+00FFB1A4: raw=3F6EFF21 relocated=3F6EFF21
+00FFB1A8: raw=80000000 relocated=80000000
+00FFB1AC: raw=3EB77C01 relocated=3EB77C01
+00FFB1B0: raw=BF6EFF21 relocated=BF6EFF21
+00FFB1B4: raw=80000000 relocated=80000000
+00FFB1B8: raw=BEB77C01 relocated=BEB77C01
+00FFB1BC: raw=BF6EFF21 relocated=BF6EFF21
+00FFB1C0: raw=BF6EFF21 relocated=BF6EFF21
+00FFB1C4: raw=00000000 relocated=00000000
+00FFB1C8: raw=3EB77C01 relocated=3EB77C01
+00FFB1CC: raw=3F6EFF21 relocated=3F6EFF21
+00FFB1D0: raw=00000000 relocated=00000000
+00FFB1D4: raw=3EB77C01 relocated=3EB77C01
+00FFB1D8: raw=BF6EFF21 relocated=BF6EFF21
+00FFB1DC: raw=00000000 relocated=00000000
+00FFB1E0: raw=BEB77C01 relocated=BEB77C01
+00FFB1E4: raw=3F6EFF21 relocated=3F6EFF21
+00FFB1E8: raw=00000000 relocated=00000000
+00FFB1EC: raw=BEB77C01 relocated=BEB77C01
+00FFB1F0: raw=80000000 relocated=80000000
+00FFB1F4: raw=3F5919AE relocated=3F5919AE
+00FFB1F8: raw=3F07A8CA relocated=3F07A8CA
+00FFB1FC: raw=80000000 relocated=80000000
+00FFB200: raw=BF5919AE relocated=BF5919AE
+00FFB204: raw=3F07A8CA relocated=3F07A8CA
+00FFB208: raw=80000000 relocated=80000000
+00FFB20C: raw=3F5919AE relocated=3F5919AE
+00FFB210: raw=BF07A8CA relocated=BF07A8CA
+00FFB214: raw=80000000 relocated=80000000
+00FFB218: raw=BF5919AE relocated=BF5919AE
+00FFB21C: raw=BF07A8CA relocated=BF07A8CA
+00FFB220: raw=BF07A8CA relocated=BF07A8CA
+00FFB224: raw=00000000 relocated=00000000
+00FFB228: raw=3F5919AE relocated=3F5919AE
+00FFB22C: raw=3F07A8CA relocated=3F07A8CA
+00FFB230: raw=00000000 relocated=00000000
+00FFB234: raw=3F5919AE relocated=3F5919AE
+00FFB238: raw=BF07A8CA relocated=BF07A8CA
+00FFB23C: raw=00000000 relocated=00000000
+00FFB240: raw=BF5919AE relocated=BF5919AE
+00FFB244: raw=3F07A8CA relocated=3F07A8CA
+00FFB248: raw=00000000 relocated=00000000
+00FFB24C: raw=BF5919AE relocated=BF5919AE
+00FFB250: raw=BF5919AE relocated=BF5919AE
+00FFB254: raw=3F07A8CA relocated=3F07A8CA
+00FFB258: raw=00000000 relocated=00000000
+00FFB25C: raw=BF5919AE relocated=BF5919AE
+00FFB260: raw=BF07A8CA relocated=BF07A8CA
+00FFB264: raw=00000000 relocated=00000000
+00FFB268: raw=3F5919AE relocated=3F5919AE
+00FFB26C: raw=3F07A8CA relocated=3F07A8CA
+00FFB270: raw=00000000 relocated=00000000
+00FFB274: raw=3F5919AE relocated=3F5919AE
+00FFB278: raw=BF07A8CA relocated=BF07A8CA
+00FFB27C: raw=00000000 relocated=00000000
+00FFB280: raw=BF144849 relocated=BF144849
+00FFB284: raw=3F12D5E8 relocated=3F12D5E8
+00FFB288: raw=3F144849 relocated=3F144849
+00FFB28C: raw=BF144849 relocated=BF144849
+00FFB290: raw=BF12D5E8 relocated=BF12D5E8
+00FFB294: raw=3F144849 relocated=3F144849
+00FFB298: raw=3F144849 relocated=3F144849
+00FFB29C: raw=3F12D5E8 relocated=3F12D5E8
+00FFB2A0: raw=3F144849 relocated=3F144849
+00FFB2A4: raw=3F144849 relocated=3F144849
+00FFB2A8: raw=BF12D5E8 relocated=BF12D5E8
+00FFB2AC: raw=3F144849 relocated=3F144849
+00FFB2B0: raw=BF144849 relocated=BF144849
+00FFB2B4: raw=3F12D5E8 relocated=3F12D5E8
+00FFB2B8: raw=BF144849 relocated=BF144849
+00FFB2BC: raw=BF144849 relocated=BF144849
+00FFB2C0: raw=BF12D5E8 relocated=BF12D5E8
+00FFB2C4: raw=BF144849 relocated=BF144849
+00FFB2C8: raw=3F144849 relocated=3F144849
+00FFB2CC: raw=3F12D5E8 relocated=3F12D5E8
+00FFB2D0: raw=BF144849 relocated=BF144849
+00FFB2D4: raw=3F144849 relocated=3F144849
+00FFB2D8: raw=BF12D5E8 relocated=BF12D5E8
+00FFB2DC: raw=BF144849 relocated=BF144849
+00FFB2E0: raw=00000000 relocated=00000000
+00FFB2E4: raw=00000000 relocated=00000000
+00FFB2E8: raw=00000004 relocated=00000004
+00FFB2EC: raw=00000000 relocated=00000000
+00FFB2F0: raw=000000E4 relocated=000000E4
+00FFB2F4: raw=000000E0 relocated=000000E0
+00FFB2F8: raw=00007CE4 relocated=00007CE4
+00FFB2FC: raw=00007CE0 relocated=00007CE0
+00FFB300: raw=00000000 relocated=00000000
+00FFB304: raw=00000000 relocated=00000000
+00FFB308: raw=00007C00 relocated=00007C00
+00FFB30C: raw=00000000 relocated=00000000
+00FFB310: raw=00000000 relocated=00000000
+00FFB314: raw=00000000 relocated=00000000
+00FFB318: raw=00000000 relocated=00000000
+00FFB31C: raw=00000000 relocated=00000000
+00FFB320: raw=3F800000 relocated=3F800000
+00FFB324: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB328: raw=3FCEFA24 relocated=3FCEFA24
+00FFB32C: raw=00000000 relocated=00000000
+00FFB330: raw=00000000 relocated=00000000
+00FFB334: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB338: raw=3FE7145B relocated=3FE7145B
+00FFB33C: raw=00000000 relocated=00000000
+00FFB340: raw=BE7EAAF0 relocated=BE7EAAF0
+00FFB344: raw=BDC52787 relocated=BDC52787
+00FFB348: raw=00000000 relocated=00000000
+00FFB34C: raw=3FF98E22 relocated=3FF98E22
+00FFB350: raw=3FD6A718 relocated=3FD6A718
+00FFB354: raw=00000000 relocated=00000000
+00FFB358: raw=BF1D423A relocated=BF1D423A
+00FFB35C: raw=80000000 relocated=80000000
+00FFB360: raw=3F800000 relocated=3F800000
+00FFB364: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB368: raw=BFCEFA24 relocated=BFCEFA24
+00FFB36C: raw=00000000 relocated=00000000
+00FFB370: raw=00000000 relocated=00000000
+00FFB374: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB378: raw=3FE7145B relocated=3FE7145B
+00FFB37C: raw=80000000 relocated=80000000
+00FFB380: raw=BE7EAAF0 relocated=BE7EAAF0
+00FFB384: raw=BDC52787 relocated=BDC52787
+00FFB388: raw=80000000 relocated=80000000
+00FFB38C: raw=3FF98E22 relocated=3FF98E22
+00FFB390: raw=BFD6A718 relocated=BFD6A718
+00FFB394: raw=00000000 relocated=00000000
+00FFB398: raw=3F1D423A relocated=3F1D423A
+00FFB39C: raw=80000000 relocated=80000000
+00FFB3A0: raw=3F800000 relocated=3F800000
+00FFB3A4: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB3A8: raw=3FCEFA24 relocated=3FCEFA24
+00FFB3AC: raw=00000000 relocated=00000000
+00FFB3B0: raw=80000000 relocated=80000000
+00FFB3B4: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB3B8: raw=3FE7145B relocated=3FE7145B
+00FFB3BC: raw=00000000 relocated=00000000
+00FFB3C0: raw=BE7EAAF0 relocated=BE7EAAF0
+00FFB3C4: raw=3DC52787 relocated=3DC52787
+00FFB3C8: raw=80000000 relocated=80000000
+00FFB3CC: raw=BFF98E22 relocated=BFF98E22
+00FFB3D0: raw=3FD6A718 relocated=3FD6A718
+00FFB3D4: raw=00000000 relocated=00000000
+00FFB3D8: raw=BF1D423A relocated=BF1D423A
+00FFB3DC: raw=80000000 relocated=80000000
+00FFB3E0: raw=3F800000 relocated=3F800000
+00FFB3E4: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB3E8: raw=BFCEFA24 relocated=BFCEFA24
+00FFB3EC: raw=00000000 relocated=00000000
+00FFB3F0: raw=80000000 relocated=80000000
+00FFB3F4: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB3F8: raw=3FE7145B relocated=3FE7145B
+00FFB3FC: raw=80000000 relocated=80000000
+00FFB400: raw=BE7EAAF0 relocated=BE7EAAF0
+00FFB404: raw=3DC52787 relocated=3DC52787
+00FFB408: raw=00000000 relocated=00000000
+00FFB40C: raw=BFF98E22 relocated=BFF98E22
+00FFB410: raw=BFD6A718 relocated=BFD6A718
+00FFB414: raw=00000000 relocated=00000000
+00FFB418: raw=3F1D423A relocated=3F1D423A
+00FFB41C: raw=80000000 relocated=80000000
+00FFB420: raw=3F800000 relocated=3F800000
+00FFB424: raw=00000000 relocated=00000000
+00FFB428: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB42C: raw=3FCEFA24 relocated=3FCEFA24
+00FFB430: raw=00000000 relocated=00000000
+00FFB434: raw=00000000 relocated=00000000
+00FFB438: raw=BF2FF13D relocated=BF2FF13D
+00FFB43C: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB440: raw=3FD80998 relocated=3FD80998
+00FFB444: raw=00000000 relocated=00000000
+00FFB448: raw=00000000 relocated=00000000
+00FFB44C: raw=80000000 relocated=80000000
+00FFB450: raw=BF8F1447 relocated=BF8F1447
+00FFB454: raw=BF0A9226 relocated=BF0A9226
+00FFB458: raw=3FCCD622 relocated=3FCCD622
+00FFB45C: raw=3FD9D92B relocated=3FD9D92B
+00FFB460: raw=3F800000 relocated=3F800000
+00FFB464: raw=00000000 relocated=00000000
+00FFB468: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB46C: raw=3FCEFA24 relocated=3FCEFA24
+00FFB470: raw=00000000 relocated=00000000
+00FFB474: raw=80000000 relocated=80000000
+00FFB478: raw=BF2FF13D relocated=BF2FF13D
+00FFB47C: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB480: raw=3FD80998 relocated=3FD80998
+00FFB484: raw=00000000 relocated=00000000
+00FFB488: raw=80000000 relocated=80000000
+00FFB48C: raw=80000000 relocated=80000000
+00FFB490: raw=3F8F1447 relocated=3F8F1447
+00FFB494: raw=BF0A9226 relocated=BF0A9226
+00FFB498: raw=BFCCD622 relocated=BFCCD622
+00FFB49C: raw=3FD9D92B relocated=3FD9D92B
+00FFB4A0: raw=3F800000 relocated=3F800000
+00FFB4A4: raw=00000000 relocated=00000000
+00FFB4A8: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB4AC: raw=BFCEFA24 relocated=BFCEFA24
+00FFB4B0: raw=80000000 relocated=80000000
+00FFB4B4: raw=00000000 relocated=00000000
+00FFB4B8: raw=BF2FF13D relocated=BF2FF13D
+00FFB4BC: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB4C0: raw=3FD80998 relocated=3FD80998
+00FFB4C4: raw=00000000 relocated=00000000
+00FFB4C8: raw=80000000 relocated=80000000
+00FFB4CC: raw=80000000 relocated=80000000
+00FFB4D0: raw=BF8F1447 relocated=BF8F1447
+00FFB4D4: raw=3F0A9226 relocated=3F0A9226
+00FFB4D8: raw=3FCCD622 relocated=3FCCD622
+00FFB4DC: raw=BFD9D92B relocated=BFD9D92B
+00FFB4E0: raw=3F800000 relocated=3F800000
+00FFB4E4: raw=00000000 relocated=00000000
+00FFB4E8: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB4EC: raw=BFCEFA24 relocated=BFCEFA24
+00FFB4F0: raw=80000000 relocated=80000000
+00FFB4F4: raw=80000000 relocated=80000000
+00FFB4F8: raw=BF2FF13D relocated=BF2FF13D
+00FFB4FC: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB500: raw=3FD80998 relocated=3FD80998
+00FFB504: raw=00000000 relocated=00000000
+00FFB508: raw=00000000 relocated=00000000
+00FFB50C: raw=80000000 relocated=80000000
+00FFB510: raw=3F8F1447 relocated=3F8F1447
+00FFB514: raw=3F0A9226 relocated=3F0A9226
+00FFB518: raw=BFCCD622 relocated=BFCCD622
+00FFB51C: raw=BFD9D92B relocated=BFD9D92B
+00FFB520: raw=3F800000 relocated=3F800000
+00FFB524: raw=3FCEFA24 relocated=3FCEFA24
+00FFB528: raw=00000000 relocated=00000000
+00FFB52C: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB530: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB534: raw=00000000 relocated=00000000
+00FFB538: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB53C: raw=00000000 relocated=00000000
+00FFB540: raw=BFB83439 relocated=BFB83439
+00FFB544: raw=BF731848 relocated=BF731848
+00FFB548: raw=00000000 relocated=00000000
+00FFB54C: raw=BFC19BFF relocated=BFC19BFF
+00FFB550: raw=80000000 relocated=80000000
+00FFB554: raw=BF14A3AC relocated=BF14A3AC
+00FFB558: raw=80000000 relocated=80000000
+00FFB55C: raw=BFEE8CDD relocated=BFEE8CDD
+00FFB560: raw=3F800000 relocated=3F800000
+00FFB564: raw=BFCEFA24 relocated=BFCEFA24
+00FFB568: raw=00000000 relocated=00000000
+00FFB56C: raw=3F1EE6F3 relocated=3F1EE6F3
+00FFB570: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB574: raw=80000000 relocated=80000000
+00FFB578: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB57C: raw=00000000 relocated=00000000
+00FFB580: raw=BFB83439 relocated=BFB83439
+00FFB584: raw=3F731848 relocated=3F731848
+00FFB588: raw=80000000 relocated=80000000
+00FFB58C: raw=3FC19BFF relocated=3FC19BFF
+00FFB590: raw=80000000 relocated=80000000
+00FFB594: raw=BF14A3AC relocated=BF14A3AC
+00FFB598: raw=80000000 relocated=80000000
+00FFB59C: raw=BFEE8CDD relocated=BFEE8CDD
+00FFB5A0: raw=3F800000 relocated=3F800000
+00FFB5A4: raw=3FCEFA24 relocated=3FCEFA24
+00FFB5A8: raw=00000000 relocated=00000000
+00FFB5AC: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB5B0: raw=BFA5DBA8 relocated=BFA5DBA8
+00FFB5B4: raw=00000000 relocated=00000000
+00FFB5B8: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB5BC: raw=80000000 relocated=80000000
+00FFB5C0: raw=BFB83439 relocated=BFB83439
+00FFB5C4: raw=BF731848 relocated=BF731848
+00FFB5C8: raw=80000000 relocated=80000000
+00FFB5CC: raw=BFC19BFF relocated=BFC19BFF
+00FFB5D0: raw=80000000 relocated=80000000
+00FFB5D4: raw=3F14A3AC relocated=3F14A3AC
+00FFB5D8: raw=80000000 relocated=80000000
+00FFB5DC: raw=3FEE8CDD relocated=3FEE8CDD
+00FFB5E0: raw=3F800000 relocated=3F800000
+00FFB5E4: raw=BFCEFA24 relocated=BFCEFA24
+00FFB5E8: raw=00000000 relocated=00000000
+00FFB5EC: raw=BF1EE6F3 relocated=BF1EE6F3
+00FFB5F0: raw=3FA5DBA8 relocated=3FA5DBA8
+00FFB5F4: raw=80000000 relocated=80000000
+00FFB5F8: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB5FC: raw=80000000 relocated=80000000
+00FFB600: raw=BFB83439 relocated=BFB83439
+00FFB604: raw=3F731848 relocated=3F731848
+00FFB608: raw=00000000 relocated=00000000
+00FFB60C: raw=3FC19BFF relocated=3FC19BFF
+00FFB610: raw=80000000 relocated=80000000
+00FFB614: raw=3F14A3AC relocated=3F14A3AC
+00FFB618: raw=80000000 relocated=80000000
+00FFB61C: raw=3FEE8CDD relocated=3FEE8CDD
+00FFB620: raw=3F800000 relocated=3F800000
+00FFB624: raw=00000000 relocated=00000000
+00FFB628: raw=3FBC03AF relocated=3FBC03AF
+00FFB62C: raw=3F6AF807 relocated=3F6AF807
+00FFB630: raw=00000000 relocated=00000000
+00FFB634: raw=00000000 relocated=00000000
+00FFB638: raw=3FA5A7F2 relocated=3FA5A7F2
+00FFB63C: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB640: raw=3F0B3623 relocated=3F0B3623
+00FFB644: raw=00000000 relocated=00000000
+00FFB648: raw=00000000 relocated=00000000
+00FFB64C: raw=00000000 relocated=00000000
+00FFB650: raw=3F2B2606 relocated=3F2B2606
+00FFB654: raw=400EA450 relocated=400EA450
+00FFB658: raw=3F9C2D14 relocated=3F9C2D14
+00FFB65C: raw=3E9F5CFC relocated=3E9F5CFC
+00FFB660: raw=3F800000 relocated=3F800000
+00FFB664: raw=00000000 relocated=00000000
+00FFB668: raw=BFBC03AF relocated=BFBC03AF
+00FFB66C: raw=3F6AF807 relocated=3F6AF807
+00FFB670: raw=00000000 relocated=00000000
+00FFB674: raw=80000000 relocated=80000000
+00FFB678: raw=3FA5A7F2 relocated=3FA5A7F2
+00FFB67C: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB680: raw=3F0B3623 relocated=3F0B3623
+00FFB684: raw=00000000 relocated=00000000
+00FFB688: raw=80000000 relocated=80000000
+00FFB68C: raw=00000000 relocated=00000000
+00FFB690: raw=BF2B2606 relocated=BF2B2606
+00FFB694: raw=400EA450 relocated=400EA450
+00FFB698: raw=BF9C2D14 relocated=BF9C2D14
+00FFB69C: raw=3E9F5CFC relocated=3E9F5CFC
+00FFB6A0: raw=3F800000 relocated=3F800000
+00FFB6A4: raw=00000000 relocated=00000000
+00FFB6A8: raw=3FBC03AF relocated=3FBC03AF
+00FFB6AC: raw=BF6AF807 relocated=BF6AF807
+00FFB6B0: raw=80000000 relocated=80000000
+00FFB6B4: raw=00000000 relocated=00000000
+00FFB6B8: raw=3FA5A7F2 relocated=3FA5A7F2
+00FFB6BC: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB6C0: raw=3F0B3623 relocated=3F0B3623
+00FFB6C4: raw=00000000 relocated=00000000
+00FFB6C8: raw=80000000 relocated=80000000
+00FFB6CC: raw=00000000 relocated=00000000
+00FFB6D0: raw=3F2B2606 relocated=3F2B2606
+00FFB6D4: raw=C00EA450 relocated=C00EA450
+00FFB6D8: raw=3F9C2D14 relocated=3F9C2D14
+00FFB6DC: raw=BE9F5CFC relocated=BE9F5CFC
+00FFB6E0: raw=3F800000 relocated=3F800000
+00FFB6E4: raw=00000000 relocated=00000000
+00FFB6E8: raw=BFBC03AF relocated=BFBC03AF
+00FFB6EC: raw=BF6AF807 relocated=BF6AF807
+00FFB6F0: raw=80000000 relocated=80000000
+00FFB6F4: raw=80000000 relocated=80000000
+00FFB6F8: raw=3FA5A7F2 relocated=3FA5A7F2
+00FFB6FC: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB700: raw=3F0B3623 relocated=3F0B3623
+00FFB704: raw=00000000 relocated=00000000
+00FFB708: raw=00000000 relocated=00000000
+00FFB70C: raw=00000000 relocated=00000000
+00FFB710: raw=BF2B2606 relocated=BF2B2606
+00FFB714: raw=C00EA450 relocated=C00EA450
+00FFB718: raw=BF9C2D14 relocated=BF9C2D14
+00FFB71C: raw=BE9F5CFC relocated=BE9F5CFC
+00FFB720: raw=3F800000 relocated=3F800000
+00FFB724: raw=3F6AF807 relocated=3F6AF807
+00FFB728: raw=00000000 relocated=00000000
+00FFB72C: raw=3FBC03AF relocated=3FBC03AF
+00FFB730: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB734: raw=00000000 relocated=00000000
+00FFB738: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB73C: raw=00000000 relocated=00000000
+00FFB740: raw=3F5951A5 relocated=3F5951A5
+00FFB744: raw=400521DD relocated=400521DD
+00FFB748: raw=00000000 relocated=00000000
+00FFB74C: raw=BF5BCB12 relocated=BF5BCB12
+00FFB750: raw=80000000 relocated=80000000
+00FFB754: raw=BFAFDF11 relocated=BFAFDF11
+00FFB758: raw=00000000 relocated=00000000
+00FFB75C: raw=BE5FE25E relocated=BE5FE25E
+00FFB760: raw=3F800000 relocated=3F800000
+00FFB764: raw=BF6AF807 relocated=BF6AF807
+00FFB768: raw=00000000 relocated=00000000
+00FFB76C: raw=3FBC03AF relocated=3FBC03AF
+00FFB770: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB774: raw=80000000 relocated=80000000
+00FFB778: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB77C: raw=00000000 relocated=00000000
+00FFB780: raw=3F5951A5 relocated=3F5951A5
+00FFB784: raw=C00521DD relocated=C00521DD
+00FFB788: raw=80000000 relocated=80000000
+00FFB78C: raw=3F5BCB12 relocated=3F5BCB12
+00FFB790: raw=80000000 relocated=80000000
+00FFB794: raw=BFAFDF11 relocated=BFAFDF11
+00FFB798: raw=00000000 relocated=00000000
+00FFB79C: raw=BE5FE25E relocated=BE5FE25E
+00FFB7A0: raw=3F800000 relocated=3F800000
+00FFB7A4: raw=3F6AF807 relocated=3F6AF807
+00FFB7A8: raw=00000000 relocated=00000000
+00FFB7AC: raw=BFBC03AF relocated=BFBC03AF
+00FFB7B0: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB7B4: raw=00000000 relocated=00000000
+00FFB7B8: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB7BC: raw=80000000 relocated=80000000
+00FFB7C0: raw=3F5951A5 relocated=3F5951A5
+00FFB7C4: raw=400521DD relocated=400521DD
+00FFB7C8: raw=80000000 relocated=80000000
+00FFB7CC: raw=BF5BCB12 relocated=BF5BCB12
+00FFB7D0: raw=80000000 relocated=80000000
+00FFB7D4: raw=3FAFDF11 relocated=3FAFDF11
+00FFB7D8: raw=00000000 relocated=00000000
+00FFB7DC: raw=3E5FE25E relocated=3E5FE25E
+00FFB7E0: raw=3F800000 relocated=3F800000
+00FFB7E4: raw=BF6AF807 relocated=BF6AF807
+00FFB7E8: raw=00000000 relocated=00000000
+00FFB7EC: raw=BFBC03AF relocated=BFBC03AF
+00FFB7F0: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB7F4: raw=80000000 relocated=80000000
+00FFB7F8: raw=BF8F1BBD relocated=BF8F1BBD
+00FFB7FC: raw=80000000 relocated=80000000
+00FFB800: raw=3F5951A5 relocated=3F5951A5
+00FFB804: raw=C00521DD relocated=C00521DD
+00FFB808: raw=00000000 relocated=00000000
+00FFB80C: raw=3F5BCB12 relocated=3F5BCB12
+00FFB810: raw=80000000 relocated=80000000
+00FFB814: raw=3FAFDF11 relocated=3FAFDF11
+00FFB818: raw=00000000 relocated=00000000
+00FFB81C: raw=3E5FE25E relocated=3E5FE25E
+00FFB820: raw=3F800000 relocated=3F800000
+00FFB824: raw=3FBC03AF relocated=3FBC03AF
+00FFB828: raw=3F6AF807 relocated=3F6AF807
+00FFB82C: raw=00000000 relocated=00000000
+00FFB830: raw=00000000 relocated=00000000
+00FFB834: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB838: raw=BE3461A7 relocated=BE3461A7
+00FFB83C: raw=00000000 relocated=00000000
+00FFB840: raw=BFB243E4 relocated=BFB243E4
+00FFB844: raw=BFA34A53 relocated=BFA34A53
+00FFB848: raw=00000000 relocated=00000000
+00FFB84C: raw=3F0E2122 relocated=3F0E2122
+00FFB850: raw=BF8F33F4 relocated=BF8F33F4
+00FFB854: raw=00000000 relocated=00000000
+00FFB858: raw=BFF9EF19 relocated=BFF9EF19
+00FFB85C: raw=80000000 relocated=80000000
+00FFB860: raw=3F800000 relocated=3F800000
+00FFB864: raw=3FBC03AF relocated=3FBC03AF
+00FFB868: raw=BF6AF807 relocated=BF6AF807
+00FFB86C: raw=00000000 relocated=00000000
+00FFB870: raw=00000000 relocated=00000000
+00FFB874: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB878: raw=BE3461A7 relocated=BE3461A7
+00FFB87C: raw=80000000 relocated=80000000
+00FFB880: raw=BFB243E4 relocated=BFB243E4
+00FFB884: raw=BFA34A53 relocated=BFA34A53
+00FFB888: raw=80000000 relocated=80000000
+00FFB88C: raw=3F0E2122 relocated=3F0E2122
+00FFB890: raw=3F8F33F4 relocated=3F8F33F4
+00FFB894: raw=00000000 relocated=00000000
+00FFB898: raw=3FF9EF19 relocated=3FF9EF19
+00FFB89C: raw=80000000 relocated=80000000
+00FFB8A0: raw=3F800000 relocated=3F800000
+00FFB8A4: raw=BFBC03AF relocated=BFBC03AF
+00FFB8A8: raw=3F6AF807 relocated=3F6AF807
+00FFB8AC: raw=00000000 relocated=00000000
+00FFB8B0: raw=80000000 relocated=80000000
+00FFB8B4: raw=BFDEC8F1 relocated=BFDEC8F1
+00FFB8B8: raw=BE3461A7 relocated=BE3461A7
+00FFB8BC: raw=00000000 relocated=00000000
+00FFB8C0: raw=BFB243E4 relocated=BFB243E4
+00FFB8C4: raw=3FA34A53 relocated=3FA34A53
+00FFB8C8: raw=80000000 relocated=80000000
+00FFB8CC: raw=BF0E2122 relocated=BF0E2122
+00FFB8D0: raw=BF8F33F4 relocated=BF8F33F4
+00FFB8D4: raw=00000000 relocated=00000000
+00FFB8D8: raw=BFF9EF19 relocated=BFF9EF19
+00FFB8DC: raw=80000000 relocated=80000000
+00FFB8E0: raw=3F800000 relocated=3F800000
+00FFB8E4: raw=BFBC03AF relocated=BFBC03AF
+00FFB8E8: raw=BF6AF807 relocated=BF6AF807
+00FFB8EC: raw=00000000 relocated=00000000
+00FFB8F0: raw=80000000 relocated=80000000
+00FFB8F4: raw=3FDEC8F1 relocated=3FDEC8F1
+00FFB8F8: raw=BE3461A7 relocated=BE3461A7
+00FFB8FC: raw=80000000 relocated=80000000
+00FFB900: raw=BFB243E4 relocated=BFB243E4
+00FFB904: raw=3FA34A53 relocated=3FA34A53
+00FFB908: raw=00000000 relocated=00000000
+00FFB90C: raw=BF0E2122 relocated=BF0E2122
+00FFB910: raw=3F8F33F4 relocated=3F8F33F4
+00FFB914: raw=00000000 relocated=00000000
+00FFB918: raw=3FF9EF19 relocated=3FF9EF19
+00FFB91C: raw=80000000 relocated=80000000
+00FFB920: raw=3F800000 relocated=3F800000
+00FFB924: raw=3F806A92 relocated=3F806A92
+00FFB928: raw=3F7E53A0 relocated=3F7E53A0
+00FFB92C: raw=3F806A92 relocated=3F806A92
+00FFB930: raw=3FA652EB relocated=3FA652EB
+00FFB934: raw=3FA4B379 relocated=3FA4B379
+00FFB938: raw=BC6EAF8F relocated=BC6EAF8F
+00FFB93C: raw=3FA4B379 relocated=3FA4B379
+00FFB940: raw=00000000 relocated=00000000
+00FFB944: raw=3F501DF4 relocated=3F501DF4
+00FFB948: raw=3FFC673C relocated=3FFC673C
+00FFB94C: raw=3F1AF223 relocated=3F1AF223
+00FFB950: raw=BF839B24 relocated=BF839B24
+00FFB954: raw=3F1AF223 relocated=3F1AF223
+00FFB958: raw=00000000 relocated=00000000
+00FFB95C: raw=BF501DF4 relocated=BF501DF4
+00FFB960: raw=3F800000 relocated=3F800000
+00FFB964: raw=3F806A92 relocated=3F806A92
+00FFB968: raw=BF7E53A0 relocated=BF7E53A0
+00FFB96C: raw=3F806A92 relocated=3F806A92
+00FFB970: raw=3FA652EB relocated=3FA652EB
+00FFB974: raw=BFA4B379 relocated=BFA4B379
+00FFB978: raw=BC6EAF8F relocated=BC6EAF8F
+00FFB97C: raw=BFA4B379 relocated=BFA4B379
+00FFB980: raw=00000000 relocated=00000000
+00FFB984: raw=3F501DF4 relocated=3F501DF4
+00FFB988: raw=BFFC673C relocated=BFFC673C
+00FFB98C: raw=3F1AF223 relocated=3F1AF223
+00FFB990: raw=3F839B24 relocated=3F839B24
+00FFB994: raw=3F1AF223 relocated=3F1AF223
+00FFB998: raw=80000000 relocated=80000000
+00FFB99C: raw=BF501DF4 relocated=BF501DF4
+00FFB9A0: raw=3F800000 relocated=3F800000
+00FFB9A4: raw=BF806A92 relocated=BF806A92
+00FFB9A8: raw=3F7E53A0 relocated=3F7E53A0
+00FFB9AC: raw=3F806A92 relocated=3F806A92
+00FFB9B0: raw=BFA652EB relocated=BFA652EB
+00FFB9B4: raw=BFA4B379 relocated=BFA4B379
+00FFB9B8: raw=BC6EAF8F relocated=BC6EAF8F
+00FFB9BC: raw=3FA4B379 relocated=3FA4B379
+00FFB9C0: raw=00000000 relocated=00000000
+00FFB9C4: raw=BF501DF4 relocated=BF501DF4
+00FFB9C8: raw=BFFC673C relocated=BFFC673C
+00FFB9CC: raw=BF1AF223 relocated=BF1AF223
+00FFB9D0: raw=BF839B24 relocated=BF839B24
+00FFB9D4: raw=3F1AF223 relocated=3F1AF223
+00FFB9D8: raw=00000000 relocated=00000000
+00FFB9DC: raw=BF501DF4 relocated=BF501DF4
+00FFB9E0: raw=3F800000 relocated=3F800000
+00FFB9E4: raw=BF806A92 relocated=BF806A92
+00FFB9E8: raw=BF7E53A0 relocated=BF7E53A0
+00FFB9EC: raw=3F806A92 relocated=3F806A92
+00FFB9F0: raw=BFA652EB relocated=BFA652EB
+00FFB9F4: raw=3FA4B379 relocated=3FA4B379
+00FFB9F8: raw=BC6EAF8F relocated=BC6EAF8F
+00FFB9FC: raw=BFA4B379 relocated=BFA4B379
+00FFBA00: raw=00000000 relocated=00000000
+00FFBA04: raw=BF501DF4 relocated=BF501DF4
+00FFBA08: raw=3FFC673C relocated=3FFC673C
+00FFBA0C: raw=BF1AF223 relocated=BF1AF223
+00FFBA10: raw=3F839B24 relocated=3F839B24
+00FFBA14: raw=3F1AF223 relocated=3F1AF223
+00FFBA18: raw=80000000 relocated=80000000
+00FFBA1C: raw=BF501DF4 relocated=BF501DF4
+00FFBA20: raw=3F800000 relocated=3F800000
+00FFBA24: raw=3F806A92 relocated=3F806A92
+00FFBA28: raw=3F7E53A0 relocated=3F7E53A0
+00FFBA2C: raw=BF806A92 relocated=BF806A92
+00FFBA30: raw=BFA652EB relocated=BFA652EB
+00FFBA34: raw=3FA4B379 relocated=3FA4B379
+00FFBA38: raw=BC6EAF8F relocated=BC6EAF8F
+00FFBA3C: raw=BFA4B379 relocated=BFA4B379
+00FFBA40: raw=80000000 relocated=80000000
+00FFBA44: raw=3F501DF4 relocated=3F501DF4
+00FFBA48: raw=BFFC673C relocated=BFFC673C
+00FFBA4C: raw=3F1AF223 relocated=3F1AF223
+00FFBA50: raw=BF839B24 relocated=BF839B24
+00FFBA54: raw=BF1AF223 relocated=BF1AF223
+00FFBA58: raw=80000000 relocated=80000000
+00FFBA5C: raw=3F501DF4 relocated=3F501DF4
+00FFBA60: raw=3F800000 relocated=3F800000
+00FFBA64: raw=3F806A92 relocated=3F806A92
+00FFBA68: raw=BF7E53A0 relocated=BF7E53A0
+00FFBA6C: raw=BF806A92 relocated=BF806A92
+00FFBA70: raw=BFA652EB relocated=BFA652EB
+00FFBA74: raw=BFA4B379 relocated=BFA4B379
+00FFBA78: raw=BC6EAF8F relocated=BC6EAF8F
+00FFBA7C: raw=3FA4B379 relocated=3FA4B379
+00FFBA80: raw=80000000 relocated=80000000
+00FFBA84: raw=3F501DF4 relocated=3F501DF4
+00FFBA88: raw=3FFC673C relocated=3FFC673C
+00FFBA8C: raw=3F1AF223 relocated=3F1AF223
+00FFBA90: raw=3F839B24 relocated=3F839B24
+00FFBA94: raw=BF1AF223 relocated=BF1AF223
+00FFBA98: raw=00000000 relocated=00000000
+00FFBA9C: raw=3F501DF4 relocated=3F501DF4
+00FFBAA0: raw=3F800000 relocated=3F800000
+00FFBAA4: raw=BF806A92 relocated=BF806A92
+00FFBAA8: raw=3F7E53A0 relocated=3F7E53A0
+00FFBAAC: raw=BF806A92 relocated=BF806A92
+00FFBAB0: raw=3FA652EB relocated=3FA652EB
+00FFBAB4: raw=BFA4B379 relocated=BFA4B379
+00FFBAB8: raw=BC6EAF8F relocated=BC6EAF8F
+00FFBABC: raw=BFA4B379 relocated=BFA4B379
+00FFBAC0: raw=80000000 relocated=80000000
+00FFBAC4: raw=BF501DF4 relocated=BF501DF4
+00FFBAC8: raw=3FFC673C relocated=3FFC673C
+00FFBACC: raw=BF1AF223 relocated=BF1AF223
+00FFBAD0: raw=BF839B24 relocated=BF839B24
+00FFBAD4: raw=BF1AF223 relocated=BF1AF223
+00FFBAD8: raw=80000000 relocated=80000000
+00FFBADC: raw=3F501DF4 relocated=3F501DF4
+00FFBAE0: raw=3F800000 relocated=3F800000
+00FFBAE4: raw=BF806A92 relocated=BF806A92
+00FFBAE8: raw=BF7E53A0 relocated=BF7E53A0
+00FFBAEC: raw=BF806A92 relocated=BF806A92
+00FFBAF0: raw=3FA652EB relocated=3FA652EB
+00FFBAF4: raw=3FA4B379 relocated=3FA4B379
+00FFBAF8: raw=BC6EAF8F relocated=BC6EAF8F
+00FFBAFC: raw=3FA4B379 relocated=3FA4B379
+00FFBB00: raw=80000000 relocated=80000000
+00FFBB04: raw=BF501DF4 relocated=BF501DF4
+00FFBB08: raw=BFFC673C relocated=BFFC673C
+00FFBB0C: raw=BF1AF223 relocated=BF1AF223
+00FFBB10: raw=3F839B24 relocated=3F839B24
+00FFBB14: raw=BF1AF223 relocated=BF1AF223
+00FFBB18: raw=00000000 relocated=00000000
+00FFBB1C: raw=3F501DF4 relocated=3F501DF4
