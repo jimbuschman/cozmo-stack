@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 407 — authored1204 action product and state publication
+
+Primary: `20261009-sound-authored-state-action-binding-native.txt`, same engine hash;53 instruction words plus literals/GOT/table. Shipped witness:7 raw1204 actions in reachability census, Music event2748524418/action711128030. AF406 factory1200→A65844 reused. A=action; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| AS407A constructor/table | A65844..A658A0;rawA658A4/A8;raw103CE00..2C;AB250 | Allocate2C;null returnsnull;nonnullA60ADC(A,original fulltype,ID),A24=0,A28=0,table103CE00 (PC A65884+8+5D756C+8),A60DEC registration,returnA. Known execute24=A657D4,reader28=A65750,C=A60650 commonrelease reused. Action lowbyte04 does not change selected factory defaults. |
+| AS407B reader/direct setters | A65750..A65778;A658AC..A658B8 | Rawcursorword0→A24;cursor advances8 and publishes before rawword4→A28;return1. DirectA658AC writesA24,incomingword;A658B4 writesA28,incomingword,returnvoid. No lookup/float conversion/input validation here. |
+| AS407C state execution | A657D4..A65808;rawA6580C/1040074;ST1–12 | Load current state manager through verifiedGOT1040074; callA28AEC(manager,A24 groupID,A28 stateID,0,0). Fourth registerr3=0 and fifth stackarg=0 explicitly. Ignore manager return,return1. No object/P34,playingID,target lookup,duration draw or per-object switch scope used by this recipient. Existing ST rows own exact manager equality/group/transition/invalidation/publication decisions; state-object/control writer joins376–381 remain positive. |
+
+out of scope: action/registry backing storage and allocator mechanics; selected constructor/admission and state decisions retained.
+
+Known authored1204 local product/reader/execute joined. Q14-007 other witnessed action products remain PARTIAL,notably1303/2103 and selected1E03 concretebinding. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 406 — authored1901 action product and switch publication
 
 Primary: `20261009-sound-authored-switch-action-binding-native.txt`, same engine hash;180 instruction words plus literals/GOT/table. Shipped witness: reachability census's51 raw1901 actions. Only positively witnessed family joins are claimed; other factory branches are not invented reachable. A=action,P=pending wrapper; offsets hex.
