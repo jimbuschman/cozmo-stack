@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through348 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through349 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1923,3 +1923,7 @@ GM347A–G settle retained basis bridge/ordered coefficient composition and dest
 ### Checkpoint 348 — standard owner mask callback and live propagation
 
 LM348A–F close known standard voice owner.vt24, object22 default/setter, registry first-ID selection, old/full-new mask comparison, connection removal and gated addition before final byte publication. Other owner families, queued inputs/registry writers and selected addition recipient remain open. Q14-029 PARTIAL, counts unchanged, Q15 parked.
+
+### Checkpoint 349 — selected listener addition join
+
+LA349A–E settle A42C60 descriptor/query/first-line match/creation-and-connection choices, exact fallback descriptor defaults and native guard-call order. Existing selected node/bus88 families and RCON/RCC publication reused. Descriptor/input writers, line creator/registration/lifetime and other families retain PARTIAL. Counts unchanged, Q15 parked.

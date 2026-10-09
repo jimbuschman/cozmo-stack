@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 349 — selected listener addition and descriptor selection
+
+Primary: `20261008-sound-listener-addition-native.txt`, same engine hash. LM348 propagation invokes A42C60(context,voice,device10,device14); RCON/RCC/HC344, LGET1 and SL288C–F node/bus88 families reused. These choose routing identity and publication, not samples/storage.
+
+| Step | Address | Exact decision / order |
+|---|---|---|
+| LA349A descriptor policy query | A42C60..A42CA8;9BD144..9BD168 | Initialize local descriptor words0=0,4=FFFFFFFF,byte8=0; padding not explicitly cleared. 9BD144(context): DDbit2set returns0, else tail context.D4.vt88. Known PBI context node/bus family is positive SL288C–F, including bus-before-parent recursion and bus eligibility; no new descent. Nonzero result descriptor0=node,word4=context.word8.word78,byte8 remains0. Zero result copies words0/4 and byte8 from A68950. |
+| LA349B fallback descriptor | A68950..A689B0;rawA689B0/B4 | Guard at108E334: loadbyte,DMB,bit0; clear bit invokes external cxa_guard_acquire, result0 skips initialization. Acquired writes descriptor108E338 word0=0,word4=FFFFFFFF,byte8=0, releases guard. Every return path writes descriptor.byte8=1 then returns108E338. No descriptor word0/4 reset on later calls. Exact phone-guard calls/publication retained; external guard internals out of scope. |
+| LA349C existing line match | A42CA8..A42D94 | Physical global array108DF54/count108DF58, initial countlow30zero skips. If line4C and descriptor.node bothnull, compare full deviceID pair line28/2C; otherwise LGET1(line+4C) then LGET1(localDescriptor), compare raw IDs, then line50==descriptor4 and full pair. Candidate line1BC==2 rejects and continues. Other matching candidate reloads live array slot; nonnull selected, null proceeds creation. After mismatch reload live base/count/end. No retained line from stale pointer. |
+| LA349D create/connect | A42D94..A42DC0;A42D4C..A42D74 | Missing calls A429F0(&descriptor,raw r1 remaining from previous selected operation,device10,device14,stack0). Callsite does not separately assign r1; do not infer a fixed semantic argument. Returned0 returns0; nonzero or existing line calls A4C280(voice,line,device10,device14,extra0), ignores return, returns selected line. RCON/RCC known publication/cache-failure/removal joins reused. Creation recipient remains separately readable. |
+| LA349E known live join reconciliation | LM348F;RCON/RCC;SL288C–F;SC334A/LM348A | Known mask addition→descriptor choice→line selection→connection publication→standard mask callback is now connected positively. Constructor sets C2C to same voice whose103C790 slot24 reads object22. Missing/late-failed cache removal retains RCON first-source-match semantics. Does not prove every owner/format/device registration or writer. |
+
+LA349A–E supersede LM348's pending A42C60/known node88 local wording. Wider context/descriptor/array and object-mask inputs, line creator/registry/device-table lifetimes and alternate families remain explicit. out of scope: hash/array backing storage and cxa_guard runtime body; parameter descriptor choice/publication retained. Q14-029 PARTIAL, counts unchanged, Q15 parked; no production/fidelity/hardware changes.
+
 ## Checkpoint 348 — standard owner listener-mask callback and propagation
 
 Primary: `20261008-sound-listener-mask-input-native.txt`, `20261008-sound-listener-mask-propagation-native.txt`; same engine hash. Existing VI191A standard voice table publication, SA203D voice8 source-context binding, RCON/RCC constructor→owner and SC334A connection mask join reused. No generic owner-family assumption.
