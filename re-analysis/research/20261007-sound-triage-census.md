@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through311 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through312 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1775,3 +1775,7 @@ DADMIT310A–E add atomic rawtaskID allocation before clock, signed64 due/future
 ### Checkpoint 311 — concrete executor worker
 
 DWORK311A–G bind constructor to two methods, selectedpriority2 skip, mainworkerwait predicate, queue-triplet detach/clear beforeunlock, forwardbatch invocation withoutinter-entry stopflagcheck, selectedholderweak/sync gates and reversecleanup. Stopclears sharedqueues; detachedbatchruns throughselectedinvocations before workerloopflagcheck. Deferredsort/worker and widerinput/context joins remain PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 312 — deferredworker
+
+DDEFER312A–H add cached-count waitpredicate, rawdeadline comparisons/freshclock futurewake, lastphysicalentry transferbefore removal, optionalrepeat usingdue-checkclock andpreservedID, per-iterationstopflag andshipped wait_until/wait_for decisions. Deferredsort/ties andremainingcreator/input/context/lifetime joins stayopen. Countsunchanged, Q14 PARTIAL, Q15 parked.
