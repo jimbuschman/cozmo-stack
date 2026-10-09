@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 26 CHECKED native-row obligations / 8 CHECKED scope exclusions / 106 PARTIAL / 0 NOT DONE; decision checkpoints through398 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 26 CHECKED native-row obligations / 8 CHECKED scope exclusions / 106 PARTIAL / 0 NOT DONE; decision checkpoints through399 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -184,7 +184,7 @@ out of scope: zero/multichannel sources and PCM file families; retained mono/ste
 
 > | M6-004 | **KEEP** | 0x00A46D80..0x00A46D88;0x00A47038;0x00A47384;0x00A47178;0x00A52D4C | Format/rate/channel writers, initial phase, pitch/ramp scheduling, input consumed/output produced, zero-input results and live wiring stay exact. |
 
-PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. NS1–NS6 add the same-voice format transition, offset/3F/raw2 gates, pointer handoff and pitch/format change. Integer/multi-channel ramp geometry, full format writer census and codec/observer recipient closure remain open; not a completed M6-004 port.
+PARTIAL: H9–H14/G1–G13/RK1–RK6 and RR1–RR6 establish constructor/init/pitch and outer dispatch, selected mono-float constant/ramp kernels and shared float bypass. RS1–RS12 re-open the ctor/Init/pitch/outer dispatch and full initial-stage render, metadata, padding and allocation recipients. NS1–NS6 add the same-voice format transition, offset/3F/raw2 gates, pointer handoff and pitch/format change. SF399 adds retained stereo-float constant-step first/second counts, phase/plane/history and consumed/produced/raw-result controls. Integer mono/stereo and retained stereo ramp geometry, format and observer joins remain open; excluded multichannel sources do not reopen arithmetic work; not a completed M6-004 port.
 
 ## Q14-006 — triage line 39
 
@@ -2135,3 +2135,7 @@ AD397 closes known direct/streamed mode14/18/74/7C local contracts and joins gen
 ## Checkpoint 398 — Q14-004 decision closure
 
 A74244 constructor publication is captured and joined to SF1/VC8–9; the concrete ADPCM integration map reuses existing header/frame/carry/error/seek/start/close/report controls and AD397/EL393. Q14-004 becomes CHECKED for decisions only; no decoder fidelity promotion. Counts26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE/140; Q15 pending Q14.
+
+## Checkpoint 399 — stereo-float resampler counts
+
+SF399 closes known state1/stereo/float kernel frame-count/phase/history/plane/result decisions from its own primary instructions; PCM arithmetic excluded. Q14-005 integer mono/stereo and retained stereo ramp controls remain PARTIAL. Counts unchanged; Q15 pending Q14.

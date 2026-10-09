@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 399 — stereo-float constant-step frame counts
+
+Primary: `20261009-sound-stereo-float-resampler-counts-native.txt`, same engine hash;166 instruction words plus literals/slot. I=input,O=output,M=resampler,Q=quota; offsets hex. G1/G2 dispatch and RK1–6 mono contract reused for navigation only; this stereo recipient is checked from its own instructions. Retained source channels2,width32,state1 select actual table103C0EC=A4A03C.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| SF399A first count/geometry | A4A03C..A4A100;raw103C0EC | Capture phase=M2C,step=M30,oldOut=M28;remaining=wrap(Q−oldOut). FirstCount=min_unsigned(remaining,uidiv(wrap(step+FFFF−phase),step)); division before count gate,no step0 check. Snapshot oldInput=M24,Ivalid=U16IE,inputCapacity=U16IC,outputCapacity=U16OC. Input predecessor=wrap(I0+4*(oldInput−1)); outputleft=wrap(O0+4*oldOut),right=left+4*outputCapacity. History reads M20 words0/4 before count gates. No planar stride from validFrames or right-first reorder. |
+| SF399B history-to-first-frame count | A4A104..A4A184 | FirstCount0 skips loop/phase advance and takes phase>>16 as input index. Positive runs exactly FirstCount paired output frames, advancing both plane pointers by4 and phase bystep each iteration modulo32; right input starts predecessor+4*(inputCapacity+1),left predecessor+4. After loop phase=wrap(oldPhase+FirstCount*step),outputleft+=4*FirstCount,index=phase logical>>16. No inputvalid bound before this selected first region. |
+| SF399C second count/cadence | A4A188..A4A234 | SecondCount=min_unsigned(remaining−FirstCount,uidiv(wrap(step−1+(Ivalid<<16)−phase),step)); no signed numerator clamp. Count0 preserves index. Positive loop emits exactly SecondCount paired frames, reads adjacent left/right samples at predecessor+4*index and predecessor+4*(index+inputCapacity), advances phase bystep and index to updatedphase>>16 per frame. After loop phase increases SecondCount*step modulo32. Only PCM value arithmetic excluded below. |
+| SF399D history/publication | A4A238..A4A2C4 | consumed=min_unsigned(finalIndex,Ivalid); nonzero copies last-consumed rawleftword then rawrightword into liveM20 history0/4 (reload history pointer between stores). Produced=FirstCount+SecondCount. Publish M2C=wrap(phase−(consumed<<16)),IE=low16(Ivalid−consumed),OE=low16(oldOut+produced),M24=consumed==Ivalid?0:wrap(oldInput+consumed). produced==remaining returns2D without updatingM28; otherwiseM28=wrap(oldOut+produced),return2B. Input exhaustion and output completion remain independent. |
+
+out of scope: per-sample interpolation conversion/multiply/add in the paired output loops under ADP-1; exact phase/count/cadence/history/plane controls retained.
+
+out of scope: zero/multichannel source branches and backing storage mechanics.
+
+Named retained stereo constant-step recipient locally positive. Integer mono/stereo and retained stereo ramp frame/phase controls remain open for Q14-005; format/input/observer joins are reconciled separately. Counts unchanged26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 398 — ADPCM constructor and Q14-004 decision closure
 
 Primary for the remaining constructor: `20261009-sound-streamed-adpcm-constructor-native.txt`, same engine hash;13 instruction words plus literals. Q14-004 is CHECKED within the guard's decisions-only scope. Reachability remains ADPCM from `20261007-sound-reachability.md`; excluded source branches and decoding arithmetic are not new fidelity claims.
