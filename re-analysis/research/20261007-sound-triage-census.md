@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through517 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through518 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -470,7 +470,7 @@ PARTIAL: MPA1–8 in `20261007-sound-keep-rows.md` reopenA6E848..A6F133, establi
 
 > | M9-010 | **KEEP** | 0x00A3E688..0x00A3E9F4;0x00A3E6A8..0x00A3E728 | Held-note lifetime via PBI vt+1C, recorded-node replay and fades are MIDI/selection/timing decisions; no fresh note-off RNG draw. |
 
-Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node replay, release gates, concrete PBI notification, queued dispatch and Vorbis loop callbacks. Remaining: node128 selection/eligibility, stream descriptor recipient and scheduler/attachment last-sample closure.
+Partial row mapping: Q15 MH1–7, HS1–4 and HP1–13 cover recorded-node replay, release gates, concrete PBI notification, queued dispatch and Vorbis loop callbacks. HN518 reconciles current MH/MD/NS/NE, actual base/continuous1C CA179/SL364, type4 HP/SR365 consumer, action notification PN160–DR162/AP249 and MAT/IST held queue/forced-stop joins. Remaining concrete node128/ownerA8 selection/eligibility, stream descriptor/source-last-sample and scheduler/attachment/input-provider closure stays specific.
 
 ## Q14-050 — triage line 88
 
