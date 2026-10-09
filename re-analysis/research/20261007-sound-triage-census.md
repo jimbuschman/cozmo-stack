@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through386 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through387 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2075,3 +2075,7 @@ VS385 records bit-field consumption, actual codebook-table load, staged parser r
 ## Checkpoint 386 — Vorbis mapping admission
 
 MA386 settles retained mono/stereo submap count, coupling pair acceptance, reserved bits, channel mux and floor/residue selection order. Joins VS385 staged rejection and VF383 mapping selection; remaining admission/control dependencies stay PARTIAL. Totals unchanged; Q15 pending Q14.
+
+## Checkpoint 387 — Vorbis residue admission
+
+RA387 settles header publication, classbook/cascade/selected-book rejection, pass-count publication and remaining-extent status. VS385 rejection join reused; floor and packet control dependencies retained. Counts unchanged; Q15 pending Q14.

@@ -11,6 +11,24 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 387 — Vorbis residue setup rejection
+
+Primary: `20261009-sound-vorbis-residue-admission-native.txt`, same engine hash; 305 instruction words and bit masks. T=residue descriptor, S=setup, R=reader; offsets hex. VS385 rejects any nonzero helper result; no sample decode descent.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| RA387A header/index admission | AB6F34..AB6FC8;AB7044..AB7048 | Zero T1C bytes. Read2/store T0 type, read24/store TC begin, read24/store T10 end, read24+1/store T14 partition size; read6+1/store byte18 class count; read8/store byte19 classbook. Reject1 when classbook>=signed S18 codebook count. No type<=2, begin<=end or partition/block-size check here; preserve native admission rather than adding format-policy checks. |
+| RA387B bit consumption extension | VS385A/AB62E0..AB6378; raw1005360..10053C0 | Residue uses widths3/5/24 in addition to existing widths; masks7/1F/FFFFFF. Existing reader combines byte0 plus byte1 if signed(offset+width)>8, byte2 if>16 and byte3 if>24; offsets0..7,width24 need at most4 bytes. Same wrapping byte advance/extent subtraction and bitOffset AND7; no pre-read bounds check. These are setup admission controls, not PCM arithmetic. |
+| RA387C cascade publication | AB6FCC..AB7040;AB7384..AB73E8 | Publish T4 cascade base and T8 eight-book-per-class base; no reservation-null admission gate. For each live byte18 class in physical order, read3 low bits, read1 high-present; only present reads5 and ORs shifted3. Store one cascade byte, reload live class count. No book reads until all cascade bytes have been parsed. |
+| RA387D selected books/rejection | AB704C..AB7380 | Classes forward, within each class bit0 through bit7. Reload cascade/base between bits. Clear bit storesFF at T8+8*class+bit without consuming book bits. Set bit reads8, rejects1 if unsigned byte>=signed S18 before storing, else stores byte and raises byte1A to max(previous,bit+1). For bit0, only previous0 becomes1; other bits use previous<=bit. No fallback book, zero-fill, fixed eight-pass publication or rejection for all-clear cascades. Earlier stores persist on later rejection. |
+| RA387E remaining-extent result | AB7138..AB7148;AB73EC..AB73F4 | Once every selected book is admitted, return unsigned R8>>31:0 for nonnegative remaining extent,1 for negative. This check occurs after consumption/publication; it does not prevent an out-of-extent byte access. VS385 maps both classbook/book rejection1 and this exhaustion1 toFFFFFF7B and stops later setup stages. |
+
+out of scope: arena backing storage and zeroing implementation; no allocator descent.
+
+out of scope: selected residue sample-decoding arithmetic; no WEM equivalence claim or decoder implementation.
+
+Residue setup's local admission/status producer now positive. Floor admission and packet continuation frame/state controls remain separate retained dependencies; other source/input/provider/writer/family joins remain PARTIAL. Counts unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 386 — retained-channel Vorbis mapping admission
 
 Primary: `20261009-sound-vorbis-mapping-admission-native.txt`, same engine hash; 227 instruction words. M=mapping descriptor, S=setup, R=reader, n=original source channel count; offsets hex. VS385 staged rejection and bit reader reused. Retained n=1/2 only; zero/multichannel branches excluded.
