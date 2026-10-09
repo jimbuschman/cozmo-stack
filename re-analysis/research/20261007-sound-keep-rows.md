@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 444 — WavePortal public setup/query/callback controls
+
+Primary: `20261009-sound-waveportal-public-controls-native.txt`, 507 complete Thumb instructions plusliterals/tables; enginehashunchanged. WP442/443,PP439,UC45 andH/HG/FR reused. A=parentAnkiPluginInterface,I=childWavePortalinterface,P=sourceproduct. Offsetshex.
+
+| Row | Primary | Decision/order |
+| --- | --- | --- |
+| WP444A setup/publication | 8DC118..124;8DC17A..1A4;WP443/UC45 | Parentconstructorwords0/4=0,callbackpayload18/30=0. Setupalloc38hex,newchildWP443defaults, capturesoldA4,publishesnewA4BEFOREoldchilddestructor/free. IfoldnonnullreloadnewA4afterfree; registercurrentnewchildWP443lastcallerwins. No preservationofoldpendingprovider/callbackoractiveflagintochild. Existingparentcallbacksarenotinstalledhere;setterexplicitnextrow. |
+| WP444B clear/query | 8DC228..258;WP443A | Clear: A4nonnull tailschildClearAudioData;missingreturns. HasAudioDataInfo: A4nonnullthenI0nonnull→1,else0. IsActive:A4nonnullthenI.byte4nonzero→1,else0. Firstquerythereforependingproviderpresence, notcurrentP.Cnorformatavailability; transferredproviderI0=0maycoexistwithactive1. Nativebytequerynormalizesonlyreturnvalue. |
+| WP444C publiccallback setter | 8DC258..2CA;8DC34C..3BE;raw2EC..F8/3E0..EC | FirstassignincomingfunctiontoA8(Init)orA20(Term)via8DC2F8. OnlyAFTERassignmentreloadA4. Missingchildskipschildupdates. Presentchild: parentpayloadA18/A30nonzero buildsinlinecaptured-Arelaytable1038894/10388D4,assignsI8/I20through8DC430;parentpayload0assignsemptyfunction,clearingchildrelay. Destroytemporaryinlinevt10/heapnonnullvt14/nullskip. NoRegisterPlugInhere,noactive/pendinggate,nocallbackinvokeorsynchronization. Parentreplacementcompletesbeforechildbindingchange. |
+| WP444D actual parentrelay | table1038894/10388D4;8DC69E..6AE;8DC75A..76A;8DC6D8..712 | InitparentrelayloadsA18;presenttailsfunctionA8 withcapturedAargument;TermloadsA30,presenttailsA20 withcapturedA. OriginalsourcePargumentignoredbybothparentrelays. Userfunctionthereforeseesparentinterfaceaddress, enablingWP444Bqueries. Emptyuserpayloadreturnsvoid. Innerinvoke targetvt18(target,&localA);unexpectedemptyinnerpayloadthrowsbad-function-call. No ID/routing/PCMconversion. |
+| WP444E callableownership joins | 8DC2F8..342/574..59E/5A0..652;8DC430..47A/484..4AE/4B0..562;actualtables8/C/10 | Bothassignmentwrapperscloneincomingfunctiontofreshlocal thenexchange,thendestroytemporary. Actualclonehelpersnullpayload→0,heapvt8clone,inlinepublisheslocalpayloadbeforevtCcopy. ActualexchangesimplementWP443Ffourcaseswithsamefieldoffsets/order; instructionsequencesretainedincompanion. Concreteparentrelay8alloc8,installsownactualtable+capturedA4;Ccopiesownactualtable+capturedA4;10BXLR,14deletingownership. No borrowedstackcaptureorparentretentioninvented; parentlifetimecontrolledUC45. |
+| WP444F familyclosure boundary | WP442..444;PP439;H/HG/FR;UC45 | Sourceparambankreader/factory, actualpendingdatacontainerpublication→factoryconsumption→Initpresencegates→rawrenderframing→Termrelease, publicsetup/query/callbackcontrolsnowpositive. Usercallbacktarget/callerinputfamiliesremainUNKNOWNunlesspositivelybound; noneclaimedabsentfromnavigationcallerlist. Parentresetdoesnotautomaticallyreinstallcallbacks. ExistingHijackproductcontrolsreusedratherthannewblanketFXcompletion. |
+
+out of scope: PCMfile-source readers/archive/cache/I/O infrastructure andallocatorinternals under scopeguard; no samplemathdescent.
+
+Q14broaderinput/writer/liveFXproductsandother105PARTIALobligations remainopen. Nextboundedwork returnsremainingknownFXproductscontrolInit/consumerselectors (limiter/EQ and109), withactualparametervaluesnowboundtoall89objects. ReusepositiveB/F/CPandWProws; don'treopenstaticparameterreaders. Countsunchanged27nativeCHECKED+8scopeCHECKED/105PARTIAL/0NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 443 — WavePortal pending provider and concrete relays
 
 Primary: `20261009-sound-waveportal-provider-transfer-native.txt`, 493 complete nativeinstructions plusliterals/concretecallabletables; enginehashunchanged. WP442/PP439, H/HG/FR andUC45 reused. I=WavePortalinterface,P=sourceproduct,W=ownedprovider,C=incomingdatacontainer;offsetshex.

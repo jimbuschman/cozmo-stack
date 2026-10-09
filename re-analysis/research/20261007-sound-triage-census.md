@@ -2315,3 +2315,7 @@ WP442 bindsactualsourcefactory/table/Init, parameterdynamiccast/providerpresence
 ## Checkpoint 443 — WavePortal provider transfer and relays
 
 WP443 bindsdatacontainer->pendingprovider metadata/duration, Set/Clearownership, registeredglobalfactorytarget, P.Ctransferbeforependingclear andInit/Termrelayinstall, usercallbackpresence/statepublication andcallablecopy/exchangeownership. File/cache/I/O omitted. Publiccallbacksetters/read-state/parent/appinputclosure remainnext. Q14partial/countsunchanged;Q15followsQ14. No production/fidelity/hardwarechanges.
+
+## Checkpoint 444 — WavePortal public controls
+
+WP444 suppliesparentnewchildpublication/replacement, pendingversusactivequeries, clear, callbackassignmentbeforechildrelayupdate, actualparentrelayargument/callbackownership. Sourceproductlocalprovider/lifecycleframing joinedWP442/443; callerinputfamiliesnotinferredabsent. BroaderQ14 remainsPARTIAL/countsunchanged; nextremainingFXInit/controlconsumerselectors;Q15followsQ14. No production/fidelity/hardwarechanges.
