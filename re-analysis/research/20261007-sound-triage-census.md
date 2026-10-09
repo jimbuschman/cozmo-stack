@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through322 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through323 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1819,3 +1819,7 @@ CGEOM321A–F bind runtime angle/triangle selection, exact transformed-angle inp
 ### Checkpoint 322 — runtime geometry producer
 
 CGMAKE322A–G retain authored-angle conversion/store order, transformed coordinates, raw sentinel constants, ordered triangle enumeration/previous-list duplicate suppression, append/failure publication and exact rejection predicate thresholds. Supersedes local A3A750/A398B4/A3972C pending wording; later format routes and provider/writer census remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 323 — standard-to-type2 coefficients
+
+MX323A–F record popcount-selected angle tables, contiguous two-family row order, coefficient width gates and exact F32 instruction associations. Supersedes MX3 later source-type1/destination-type2 pending wording; equaltype1 routes/consumers and provider/writer closure remain PARTIAL. Counts unchanged, Q15 parked.
