@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 466 — state target definition selection
+
+Primary: `20261009-sound-state-definition-selection-native.txt`,36 complete ARM instructions; engine hash unchanged. ST7 provides a concrete state-setter caller and ST8–12 provides the selected parameter/transition recipients. This expands the actually called lookup, not an arbitrary registry family.
+
+| Row | Primary | Exact decision/value/order |
+| --- | --- | --- |
+| DS466A publication before lookup | A28C10..A28C44; ST7 | Load saved target, store it to subscriberS24, then call9FBF80(S,target). Current packed tableS10 is read after return. No validation of target against definition IDs before S24 publication and no restore on a missing definition. This is subscriber target publication; final group current-state publication remains later ST6/12. |
+| DS466B target identity and order | 9FBF80..9FBFCC | Read countS18 before baseS14. End=base+wrap32(count*12). Equality of base/end returns0 before entry read. Otherwise compare raw first word of each12-byte entry against full incoming target ID, physical forward order. First match wins; no sort, reverse-pair selection, property equality, reference increment, callbacks or secondary lookup. Iteration uses saved end and equality rather than unsigned less-than. No base-null guard for a nonempty logical range. |
+| DS466C match result and missing value | 9FBFCC..9FBFDC; ST7–12 | Matched entry+4 wrapping0 returns0; otherwise load and return entry.word4 verbatim, including null. Entry.word8 is not read by this lookup. Exhaustion returns0. Thus an ID match with null property pointer and a missing ID enter the same caller missing-target branch, without selecting another duplicate. ST7 missing target supplies raw+0 only where current slot exists; both missing skips. No invented global/default property table or successful-empty marker. |
+| DS466D retained transition decisions | ST2–12; TT1–22; AF406/QC1 | Existing state setter owns callback veto before duration/publication, exact first(old,target) transition duration/default, seven slots, active-handle retarget before equality, null-create immediate value fallback, new-handle owner gate and per-subscriber refresh before final group state. TT owns transition creation/retarget/removal/tick delivery. The target-definition lookup does not change these rules or prove every subscriber/table producer. Original STMG readers and ordinary public/action state inputs retain their separate U/ST/AF/QC joins. |
+
+out of scope: definition-array backing/reserve/hash/allocator implementation and per-sample DSP arithmetic. Target identity, first-match selection, missing value and publication timing remain exact controls.
+
+Q14-024's selected target-definition recipient is now positive. Definition table producer, concrete subscriber binding/virtual recipients and trailing STMG object consumers retain their own input/family obligations; UNKNOWN names are not invented. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows completed Q14. Next bounded step: reconcile actual subscriber definition-table publication and known state subscriber virtual families before further descent.
+
 ## Checkpoint 465 — rate and frame geometry production joins reconciled
 
 Primary reused: Z1–20 rate/setup captures, RC208 bounded rate-reference capture, CI192 actual GOT/voice setter, VF1/SA203 source attachment, BW2/HBIND5 bus format inputs, TH/DF frame scheduling and H/HG/FR robot output. Same engine SHA256. This is a bounded coverage reconciliation; no new optional source or global writer absence assertion.

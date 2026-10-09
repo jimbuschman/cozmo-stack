@@ -296,7 +296,7 @@ PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, p
 
 > | M6-020 | **KEEP** | 0x009B0C9C..0x009B1410;0x00A27CA4..0x00A27DD0;0x00A325E0..0x00A32914;0x00A3B84C..0x00A3BB80 | STMG raw readers, dedup/refcounts and consumers remain exact; unavailable human-readable names can remain UNKNOWN, but are not pure-DSP DROP items. |
 
-PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pair ordering, ordinal curves/IDs, registry dedup/publication and raw property setters. Human names remain UNKNOWN because stripped names do not establish them. Remaining live state/switch recipient tails and trailing-object consumers remain recoverable open work; no sample-arithmetic exemption applies.
+PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pair ordering, ordinal curves/IDs, registry dedup/publication and raw property setters. Human names remain UNKNOWN because stripped names do not establish them. DS466 adds the actually called first-ID target-definition lookup and publication-before-lookup order, reusing ST7–12/TT transition controls. Selected state/switch publication bodies are already positive; concrete definition-table producers/subscriber binding/virtual families and trailing-object consumers remain recoverable open work. No sample-arithmetic exemption applies.
 
 ## Q14-025 — triage line 63
 
@@ -2371,3 +2371,5 @@ Checkpoint463 — native init clock-scale447A0000 writer→TH timing consumers, 
 Checkpoint464 — LC464 post-command listener-change mask, clear-after-propagation, concrete object7F flag6 preserve/set and two preparation-stage admission paths;188 complete ARM instructions. 3D payload body excluded, original Q14-022 known joins updated. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint465 — RG465 reconciled original Q14-023 rates/frame/JNI ranges and existing voiceEC/source/bus/sink/scheduling/22320-and744 geometry joins; bounded RC208 writer limitation retained. No duplicate native capture or fixed-rate claim. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint466 — DS466 selected state target-definition lookup, first raw ID match/null result and subscriber target publication-before-lookup;36 complete ARM instructions, existing ST/TT recipients reused. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
