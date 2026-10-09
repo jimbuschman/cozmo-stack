@@ -1959,3 +1959,7 @@ RG356A–F bind singleton publication before initializer, reserved ID0 maskFF, s
 ### Checkpoint 357 — index-manager termination decisions
 
 IT357A–E settle signed-negative selection in the first two registries, playing-ID completion before third-registry entry release, and final-registry live-count/first-entry reselection. UT4/UT9 local recipients supersede generic unread termination-body wording. Known ordinary node release and playing-ID completion reuse positive rows; additional registry products and callback/count/binding writers remain PARTIAL. Counts unchanged, Q15 pending Q14.
+
+### Checkpoint 358 — registry retirement recipient bindings
+
+IR358A–G join known STMG trailing tables to common release and live114 removal, their local no-op-base destructors, and the distinct completion-bearing registry release/table/constructor/destructor/direct-publication endpoint. IT357C wording corrected to avoid inferring authored action identity from a completion callback; AB250 authored registry50 is distinct. Known event/object cleanup reused. Additional products/callers/providers/writers remain PARTIAL; counts unchanged, Q15 pending Q14.
