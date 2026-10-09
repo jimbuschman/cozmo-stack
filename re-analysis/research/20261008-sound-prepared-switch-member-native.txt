@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A2C64C..0x00A2C730 exclusive; ARM;
+00A2C64C: push         {r3, r4, r5, r6, r7, lr}
+00A2C650: ldr          r3, [r0, #0x80]
+00A2C654: cmp          r3, #0
+00A2C658: beq          #0xa2c6b8
+00A2C65C: ldr          r4, [r0, #0x90]
+00A2C660: cmp          r4, #0
+00A2C664: bne          #0xa2c678
+00A2C668: b            #0xa2c6b8
+00A2C66C: ldr          r4, [r4]
+00A2C670: cmp          r4, #0
+00A2C674: beq          #0xa2c6b8
+00A2C678: ldr          r3, [r4, #4]
+00A2C67C: cmp          r1, r3
+00A2C680: bne          #0xa2c66c
+00A2C684: cmp          r2, #0
+00A2C688: bne          #0xa2c6c4
+00A2C68C: ldr          r3, [r4, #0xc]
+00A2C690: ldr          r5, [r4, #8]
+00A2C694: lsls         r3, r3, #2
+00A2C698: beq          #0xa2c6b8
+00A2C69C: ldr          r0, [r5], #4
+00A2C6A0: bl           #0x9f4c38
+00A2C6A4: ldr          r2, [r4, #0xc]
+00A2C6A8: ldr          r3, [r4, #8]
+00A2C6AC: add          r3, r3, r2, lsl #2
+00A2C6B0: cmp          r5, r3
+00A2C6B4: bne          #0xa2c69c
+00A2C6B8: mov          r7, #1
+00A2C6BC: mov          r0, r7
+00A2C6C0: pop          {r3, r4, r5, r6, r7, pc}
+00A2C6C4: ldr          r3, [r4, #0xc]
+00A2C6C8: ldr          r6, [r4, #8]
+00A2C6CC: lsls         r3, r3, #2
+00A2C6D0: bne          #0xa2c6ec
+00A2C6D4: b            #0xa2c6b8
+00A2C6D8: ldr          r2, [r4, #0xc]
+00A2C6DC: ldr          r3, [r4, #8]
+00A2C6E0: add          r3, r3, r2, lsl #2
+00A2C6E4: cmp          r6, r3
+00A2C6E8: beq          #0xa2c6b8
+00A2C6EC: mov          r5, r6
+00A2C6F0: add          r6, r6, #4
+00A2C6F4: ldr          r0, [r5]
+00A2C6F8: bl           #0x9f4bdc
+00A2C6FC: cmp          r0, #1
+00A2C700: mov          r7, r0
+00A2C704: beq          #0xa2c6d8
+00A2C708: ldr          r4, [r4, #8]
+00A2C70C: cmp          r5, r4
+00A2C710: beq          #0xa2c6bc
+00A2C714: ldr          r0, [r4], #4
+00A2C718: bl           #0x9f4c38
+00A2C71C: cmp          r5, r4
+00A2C720: bne          #0xa2c714
+00A2C724: b            #0xa2c6bc
+00A2C728: sub          r0, r0, #0x78
+00A2C72C: b            #0xa2c64c

@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 277 — prepared Switch member notification
+
+Primary: `20261008-sound-prepared-group-member-slot.txt`, `20261008-sound-prepared-switch-member-native.txt`; same engine hash. ND150B secondary table installation, GS275 membership traversal and PA266/PR262 target helpers reused. P=N78 is the known Switch member.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| SN277A | word0103BF3C=00A2C728;00A2C728..00A2C72C;00A2C64C..00A2C688 | Member0 subtracts78hex from P and branches A2C64C(N,stateID,raw addByte). N80==0 returns1. Otherwise walks N90 group chain via0, selecting first group whose key4 equals stateID. No matching group returns1. | No global108D90C byte18 re-test or shared-list query in callback. Only first matching group, unlike PA266 admission's all-group scan. No N80 increment/decrement here. | Prepared-count gate → first group-ID match → add/remove branch. | Concrete known Switch recipient now bound; other possible membership families and count/group/ID/input writers remain PARTIAL. |
+| SN277B | 00A2C68C..00A2C6C0 | Remove byte0 walks selected group's physical U32 child IDs at8/countC, calling9F4C38. Reload base/count to compute end after each call. Empty wrapping countC*4 skips. Always returns1 after this release pass. | Release helper results do not gate continuation. No default N8C fallback or group-chain continuation after first match. | First selected group → child release order →1. | Target helper PR262/PA266 reused; live list/provider/reference closure remains PARTIAL. |
+| SN277C | 00A2C6C4..00A2C724 | Nonzero add walks selected group's child IDs through9F4BDC. Exactly1 continues using live base/count end. First non1 saves failing ID address and raw result; reloads group's current base, releases preceding IDs with9F4C38 in forward order until failing address. Failed ID excluded. Empty/all accepted returns1; failure returns original result. | Raw addByte is tested for nonzero, not interpreted further. No N80 change, membership edit or shared-list mutation in this receiver. Prefix release results ignored. | Child admission → live end OR first failure → forward accepted-prefix release → raw failure. | Local recipient closure supports GS275 notification/inverse-prefix order, not arbitrary provider/reentrancy safety or overall Q14 completion. |
+
+Known Switch preparation now joins shared state-list mutation, group command, embedded member binding and selected child admission/release. Broader member/provider/public input and state/count/list/reference writer closure remains PARTIAL. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 276 — group preparation command and completion
 
 Primary: `20261008-sound-prepare-group-command-native.txt`; same engine hash. GS275 mutation, DV274 deferred consumer and BR142N completion reused. Arguments are M,kind,key,unused4,unused5,callback,cookie,mode,type,groupID,raw addByte,count,data; count1 treats data as the state ID.

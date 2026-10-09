@@ -1635,3 +1635,7 @@ GS275A–D recover shared group/state ID mutation, no-op gates, raw member notif
 ### Checkpoint 276 — group preparation command
 
 GP276A–C join single/bulk state mutation, deferred consumption, forward failure compensation and type/group completion shaping. Single add normalizes its byte; bulk forwards it. Concrete member and public input/provider/writer closure remain PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 277 — prepared Switch member
+
+SN277A–C bind N78 member0 through103BF3C/A2C728 to A2C64C. Prepared-count/first-group gates, forward child add/remove and failed-add prefix release now join GS275/GP276. Other families and provider/input/writer closure remain PARTIAL; totals/Q15/fidelity/production unchanged.
