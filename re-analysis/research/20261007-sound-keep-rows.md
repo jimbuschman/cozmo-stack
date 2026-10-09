@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 416 — actual app PostEvent native-wrapper join
+
+Primary: `20261009-sound-postevent-wrapper-native.txt`, same engine hash;79 instruction words plus literals. Positive UE1/UE3–5/CD1 appforwarder passes external-sourcecount0,pointer0,requestedplayingID0 to9A6704;callbackmask/cookie exactexistingrows. This isselectedcallsite evidence,not a claimthatotherwrappercallers cannot supplyexternalsources.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| PE416A selected app wrapper | 9A6704..9A6714;9A67AC..9A67D0;UE5/E1–3 | Readincomingexternal-sourcecountstackarg6;actual0 branches9A67AC. PreserveeventID/objectID/flags/callbackr0..3,cookiearg5,requestedplayingIDarg8;externaldescriptorarg6=0. Direct9A0EF8,returnrawplayingID including0. No temporaryexternalbundle,extra retain,synthetic callback,tickread orenabledgate addedhere. Twoenabledgates alreadycontroller/helperUE4/5. E1–3 positiveeventlookup/queuepublication/registration/failure tail reused. |
+| PE416B selected event command size | 9A962C..9A9630;E2/E4 | Sizehelper returns34hex constant regardlessarguments. E2actualtag1 request usesit;rawmessageheader size is52bytes,aligned52. No externaldescriptor-dependent extension/overflow introducedbythis helper. E4oversize/allocation/backpressure decision retainedagainstthisactualrequestsize; queuecapacitywriter remainsseparate,not assumedlargeenough. |
+| PE416C conditional external wrapper boundary | 9A6718..9A67A8;9A67D4..9A6834 | Nonzerocount prepareslocaldescriptor withwords+8/C/100, calls9A65C0(count,sourcearray). Null→0,noqueuepost. Nonnull9A0EF8 withdescriptorpointer;nonzeroplayingIDreturnsit withoutlocalrelease. Zeroresult decrementsbundleword0;nonzero remainingcountreturns0. Zero visitsbundlecount4 entries stride18,nonnullownedword10 frees,thenbundlefree,returns0. Bundlecountreloadedafterfreecallback. Actual9A65C0 source-materialization decisions are not establishedbythisoutercontract; retainedseparateifpositivelywitnessedinput requiresit. No nonzerocount-unreachable assertion. |
+
+out of scope: eventqueue backing storage/allocator internals; logicalsize/admission/backpressure remainE2/E4.
+out of scope: A0BDC0's 3D-position/listener payload preparation invokedbeforeactionexecution (E27/E28), underapproved3Dpayload exclusion; nodescendanttrace.
+
+Known appPostEvent controller/helper→actualzeroexternalwrapper→nativeeventlookup/publication nowjoined. Q14-007 callback/object/family andretainedqueueinput integration stillneedsbounded reconciliation; counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 415 — queued app StopAll consumer
 
 Primary: `20261009-sound-queued-stopall-consumer-native.txt`, same engine hash;164 instruction words plus literals/GOT. Positiveapp input UE1/UC30/UC31/UC33/UC35 suppliesStopAll→9A6064 tag19,size8,objectword4;not inferred from bankopcode absence. T=command,A=temporaryaction,P=stackpending atsp70; offsets hex. SP411factory/A10execution andA13/A15–18/A21/bus/rootrecipient positives reused.
