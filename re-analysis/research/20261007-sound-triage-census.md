@@ -953,7 +953,7 @@ CHECKED (bounded decisions-only), checkpoint557: checkedQ14-004 plus AH5/RI205/A
 
 PARTIAL boundary: B17/B18 already establish notification registry/archive removal controls; SF1–SF9 now identify mode2 plug-in source construction/start/render/close as ownership/format/registration and virtual generation control. Selected plug-in descendants remain unread: no PCM-only exemption for whole source. Remaining registry writers/dynamic generation and codec recipients.
 
-**Current disposition, checkpoint566:** PARTIAL: Source100/101 Init/Reset/Execute/frame budget/duration/seek/Term and shipped source/settings/RNG joins are now G100566A–J/G101565A–J. Bind actual selected source102 lifecycle controls and MIDI/source endpoint decisions; preserve exact raw states, live versus cached values and draw cadence. WavePortal remains positive. out of scope: backing/I/O and isolated sample arithmetic. See `20261009-sound-generator101-lifecycle.md`; older remaining-work prose is historical and superseded.
+**Current disposition, checkpoint567:** PARTIAL: Source100/101 lifecycle/input is G100566/G101565. G102567A–H now binds source102 seek/frame-budget/duration/force-one-loop/Term, outer Execute state publication and all nine direct shipped joins selecting four actual routines. Finish source102 Init/Reset persistent coefficients/geometry/RNG and actual AAE000/AAE230/AAE4B0/AAFB70 cursor/loop/end/live-parameter controls, then MIDI/held-note endpoints. The paused draft dispatch discrepancy is resolved by correct signed offsets. out of scope: backing/I/O and isolated sample arithmetic. See `20261009-sound-generator102-controls.md`; older remaining-work prose is superseded.
 
 ## Q14-104 — triage line 153
 

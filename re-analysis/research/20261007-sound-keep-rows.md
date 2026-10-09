@@ -11,6 +11,10 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 70 native-row obligations CHECKED, 8 CHECKED scope exclusions, 62 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 567 — source102 small interfaces and positive dispatch
+
+`20261009-sound-generator102-controls.md` G102567A–H binds632 contiguous ARM+4 Thumb instructions and36 full primary payloads (nine direct Event/Play/Sound/settings joins). Seek is a success stub; frame budget returns0 without writing its output; force-one-loop uses unsigned remainder; outer Execute leaves valid frames unchanged on selected0 and reads the recipient's cursor to publish11/2D. Primary signed-offset arithmetic resolves the paused draft discrepancy and binds the four admitted routines AAE000/AAE230/AAE4B0/AAFB70. Type19 corrects PP438F. Counts remain70nativeCHECKED+8scopeCHECKED/62PARTIAL; impact140AUDIBLE/0INTERNAL. Next: source102 Init/Reset coefficients/geometry/RNG and those actual generation decision recipients; sample arithmetic and backing stop under the guard.
+
 ## Checkpoint 566 — source100 lifecycle, terminal equality and dirty controls
 
 `20261009-sound-generator100-lifecycle.md` G100566A–J binds238 contiguous ARM+2 Thumb instructions and4 complete hashed Event/action/Sound/type19 settings payloads. Actual PP437 creatorABB7C0/table103E220 identifies100; PP438 creatorAADDE4 is the larger102, correcting proposed continuation order. Finite equality marks the last block11, unlike101. Both budget and Execute mutate framecursor, dirty-duration and gain caches; Reset preserves phase. Persistent frequency/rate coefficient, format and exact count/state/gain arguments stay exact; per-sample ABBE68 stops under ADP-1. PP437F type18 is corrected to actual type19.
