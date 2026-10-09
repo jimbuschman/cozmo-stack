@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through304 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through305 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -262,7 +262,7 @@ PARTIAL: H1–H8 and HG1–HG8 establish renderer lifecycle, rate/capacity write
 
 > | M6-016 | **KEEP** | 0x0059687E..0x00596914;0x00597F12..0x00597F8E;0x0059818C..0x005982A0;0x00596DC8;0x0059962A..0x005999A4;0x00599E6A..0x00599EB8;0x008D88CC;0x00597DB4..0x00597E8E;0x0059678E..0x005967B8 | Production composition, event_volume/robot_volume delivery, OnDevice object6 route, alternative draw/order, callbacks, abort and scheduling remain exact. |
 
-Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Remaining: robot_volume, concrete post-map/lifetime, exact sort/concrete virtual14 (alternative chooser now joined by ASEL304/M5 R1–R7), Dispatch thread/cancellation and source geometry closure.
+Partial row mapping: AP1–7 in sound-keep-rows reopen up-front event composition, object/buffer gates, delayed posting, event_volume and abort. AR1–6/CD1–7/AL1–6/AF1–6/FR1–6 add routing caller, callback/drain tick, loading gates, wire encoding and stream retirement. Remaining: robot_volume, concrete post-map/lifetime, concrete virtual14 (alternative chooser joined by ASEL304/M5 R1–R7; exact sort now ASORT305), Dispatch thread/cancellation and source geometry closure.
 
 ## Q14-022 — triage line 60
 
@@ -1747,3 +1747,7 @@ FLIVE303A–C recover input-pointer gate, same-buffer LPF/HPF order, second byte
 ### Checkpoint 304 — animation alternative chooser/M5 join
 
 ASEL304A–D cross-check 4F9AEC/GetAudioRef against the existing M5 static RNG rows and AP1/2: probability-mode draw even for one reference, f32 cumulative inclusive selection and epsilon skip, signedbyte result rejection before lookup, event0 skip without redraw. Distinct from Wwise LCG. Q14-021 remains PARTIAL for sort/concrete entry, robot_volume and scheduling/other production joins; counts unchanged, Q15 parked.
+
+### Checkpoint 305 — event sort/order
+
+ASORT305A–H row596DC8 and all four local sort recipients: unsignedtime comparisons, complete-record exchanges, small sort/insertion, sampled pivot/duplicate partition, eight-insertion completion and smaller-side recursion. Native sort is not stable even for three entries; AP4/P2 consume physical sorted order. Q14-021 remains PARTIAL for concretevirtual14, robot_volume and scheduling/other production joins; counts unchanged, Q15 parked.
