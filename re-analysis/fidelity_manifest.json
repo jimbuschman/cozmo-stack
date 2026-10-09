@@ -535,7 +535,7 @@
       "authority": "the original: a RelTransport dispatch thread (M1-010, M1-035) and one engine thread draining arrivals every 60 ms (M1-024). Its socket reopen on ENOTCONN and its send-failure handling are M1-022, and handler isolation is M1-034. Only the host thread structure that reproduces those orders is policy. That includes thread priority: the original asks for SCHED_RR at 75% of the OS range for the RelTransport threads (CA9), which the host does not reproduce; host threads keep the default priority",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Policy check (research/20261005-M1M2-policy-check.md; manager decision 2026-10-09): this record is too broad. Only the host/OS primitive stays policy; the engine's own decisions around it ship and must be reproduced. Codex splits them into IMPLEMENTATION_GAP rows/records (jobs/B-M1M2.md, \"Policy disposition\").",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportHardeningTests"
@@ -716,7 +716,7 @@
       ],
       "effect": "the robot sees a different source port, or the link behaves differently after an error",
       "provenance": "reproduced with host socket mappings: MSG_DONTWAIT as Poll(0)+ReceiveFrom, ENOTCONN as SocketError.NotConnected, EADDRINUSE as AddressAlreadyInUse, MSG_TRUNC as MessageSize, a throwing Close as a failed close; getaddrinfo (CA25) has no host step; CloseSocket's success info log is not emitted; settled in batch 4(i)",
-      "unresolved": "",
+      "unresolved": "Policy check (research/20261005-M1M2-policy-check.md; manager decision 2026-10-09): this record is too broad. Only the host/OS primitive stays policy; the engine's own decisions around it ship and must be reproduced. Codex splits them into IMPLEMENTATION_GAP rows/records (jobs/B-M1M2.md, \"Policy disposition\").",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_022_B12_TheFirstOpenIsEphemeralAndAnOpenAfterACloseBinds47817, TransportRepairTests.M1_022_B11_TheSocketIsIpv4UdpOnInaddrAnyWithSoBroadcastAndBlocking, TransportRepairTests.M1_022_B11_AnAddressInUseBindIsOnlyAWarningAndTheSocketIsKept, TransportRepairTests.M1_022_B16_ANotConnectedReopenIsSkippedWhenTheCloseFailed, TransportRepairTests.M1_022_B16_AZeroByteDatagramStopsTheDrainForThisUpdate, TransportRepairTests.M1_022_B16_OnTheHostAZeroByteDatagramStopsTheDrainAndAnEmptyReadDoesNotBlock, TransportRepairTests.M1_022_B10_AShortSendLogsSentWrongNumBytes, TransportRepairTests.M1_022_B10_AFailedSendCountsAddSendError6AndDoesNotRetryOrDisconnect, TransportRepairTests.M1_022_B10_ASendWithNoSocketCountsAddSendError6, TransportRepairTests.T_k1_NotConnectedReopensTheSocketOnPort47817AndKeepsTheConnection, TransportRepairTests.T_k2_AnyOtherReceiveErrorIsOnlyAWarning, TransportRepairTests.T_k3_WouldBlockIsSilent, TransportRepairTests.M1_022_CA24_CA26_CA27_CA28_AFailedOpenSocketStepLeavesNoSocket, TransportRepairTests.M1_022_CA32_TheSendFailureWarningAndItsTimeAreRateLimitedTo30Seconds"
@@ -1013,7 +1013,7 @@
       "authority": "the original installs Google Breakpad from CozmoActivity.onCreate when HOCKEYAPP_APP_ID is set (sources/com/anki/cozmo/CozmoActivity.java:50-53, 105-114; resources/AndroidManifest.xml:120-122); on SIGABRT it writes <dumps>/<APP_RUN_ID>.dmp and re-raises (0x00667A34..0x00667A8C, 0x0095107C..0x00951BD0). A Windows host has its own crash handling, so this stack uses it. Not pursued because they touch only crash output: bionic __assert2/abort (not in the package) and whether libunity/libmono install a SIGABRT handler above Breakpad at run time",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Operator-approved departure (2026-10-09, AGENTS.md \"Other approved departures\"): the original reports crashes through Breakpad to Anki's servers (0x00667AF4.., 0x00951B88..); the stack has no crash reporter: the servers are gone and a PC crash reporter has no value.",
       "hardware_required": false,
       "live_path": false,
       "test": null
@@ -1028,7 +1028,7 @@
       "authority": "the original resets on every Android process network bind or unbind (M1-023, rows G4.1..G4.13), which a Windows host does not have. This stack raises the same reset from the host notification that its network addresses changed (System.Net.NetworkInformation.NetworkChange.NetworkAddressChanged), the host event nearest to the route to the robot changing. The reset mechanism itself is M1-023 and is reproduced from source",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Policy check (research/20261005-M1M2-policy-check.md; manager decision 2026-10-09): this record is too broad. Only the host/OS primitive stays policy; the engine's own decisions around it ship and must be reproduced. Codex splits them into IMPLEMENTATION_GAP rows/records (jobs/B-M1M2.md, \"Policy disposition\").",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_037_TheHostAddressChangeRaisesTheSocketResetForTheTransportsLifetime"
@@ -1043,7 +1043,7 @@
       "authority": "in the original, HandleSubMessage deletes the connection on a type-3 sub-message (0x008374A0, DeleteConnection veneer 0x008D123C; 0x008374C2) and ReceiveData then keeps walking the frame through the saved, now freed, connection pointer ([sp+0x18] at 0x008378FC, 0x00837958): undefined behaviour that cannot be reproduced. This stack stops processing the frame after such a handled DisconnectRequest instead. An out-of-sequence DisconnectRequest is dropped by R12 before dispatch (0x00837438 bne 0x00837456), frees nothing, and the original walks on with a valid pointer, so that case follows the source and the frame continues (operator decision, 2026-09-24)",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Operator-approved departure (2026-10-09, AGENTS.md \"Other approved departures\"): after a handled type-3 disconnect the original keeps walking the frame through the freed connection pointer (0x008378FC, 0x00837958..0x0083796C), a use-after-free whose effects are UNKNOWN; the stack stops processing the frame.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_038_NothingAfterAHandledDisconnectRequestInTheSameFrameIsProcessed, TransportRepairTests.AnOutOfSequenceDisconnectRequestDoesNotStopTheFrame"
@@ -1058,7 +1058,7 @@
       "authority": "the original ran on Android/Linux, where an unconnected UDP socket does not surface ICMP port-unreachable (B11 sets no IP_RECVERR, 0x00839D18). On Windows, a UDP receive that fails with ConnectionReset is treated as no data for that receive attempt: no warning, and the drain continues. Other socket errors keep their source-backed handling (B16)",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Policy check (research/20261005-M1M2-policy-check.md; manager decision 2026-10-09): this record is too broad. Only the host/OS primitive stays policy; the engine's own decisions around it ship and must be reproduced. Codex splits them into IMPLEMENTATION_GAP rows/records (jobs/B-M1M2.md, \"Policy disposition\").",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.M1_039_OnWindowsAConnectionResetReceiveIsNoDataAndTheDrainGoesOn"
@@ -1073,7 +1073,7 @@
       "authority": "the original compares the robot's firmware version with the shipped header (2381) and refuses a mismatch (M1-029). The operator's robot runs 2457. This stack never refuses on version or build: the handshake proceeds as for Success. It logs the robot's firmware version on every connection and in every hardware bundle, and warns whenever it is not 2381, so a firmware-specific problem is known together with its firmware",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Operator-approved departure (2026-10-09, AGENTS.md \"Other approved departures\"): the original rejects a robot whose firmware version differs from the app's (0x0052D7CE..0x0052D9AE: result 3 OutdatedFirmware or 4 OutdatedApp, against cozmo.safe 2381); the stack accepts every firmware and logs it, because the operator's robot runs 2457 and the original would refuse it.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_029_G5_11_G5_12_M1_040_TheVersionOutcomeIsComputedAndThenNotApplied, EngineAppLayerTests.M1_029_G5_2_G5_4_CB13_FactoryAndUnparsableFirmwareProceedUnderM1_040"
@@ -1111,7 +1111,7 @@
       "authority": "in the original, the phone app (Unity) sends these game messages, not the engine: SetRobotVolume with the stored value on any RobotConnectionResponse (ConnectionFlowController.cs:682-686; GameAudioClient.cs:53-121), which makes the engine send SetAudioVolume {u16 vol x 65535} (0x0059A21E..0x0059A256); and GetBlockPoolMessage plus BlockPoolEnabledMessage {true, 0} on Success (RobotEngineManager.cs:373-378; BlockPoolTracker.cs:86-104; ConnectionFlowController.cs:764-780). This stack replaces the app: after a Success response it sends the stored volume (default 1.0) and enables the block pool itself, and the controller can change either. The idle timeouts (StartIdleTimeout / CancelIdleTimeout) are app-backgrounding behaviour and are not sent automatically. Other Unity post-connect flows are replaced by this stack's API",
       "evidence": [],
       "status": "COMPATIBILITY_POLICY",
-      "unresolved": "",
+      "unresolved": "Policy check (research/20261005-M1M2-policy-check.md; manager decision 2026-10-09): this record is too broad. Only the host/OS primitive stays policy; the engine's own decisions around it ship and must be reproduced. Codex splits them into IMPLEMENTATION_GAP rows/records (jobs/B-M1M2.md, \"Policy disposition\").",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_042_CD27_TheVolumeConversionIsTheEngines, EngineAppLayerTests.M1_042_NoIdleTimeoutIsArmedAutomatically, EngineAppLayerTests.M1_041_CD17_CD18_CD22_M1_042_PostSuccessSendsInOrder"
@@ -6328,7 +6328,7 @@
       ],
       "effect": "a truncated robot message that the engine would read with stale bytes is read with zeros",
       "provenance": "forced policy (manager, 2026-09-24): undefined stack contents cannot be reproduced; a healthy robot does not send truncated messages",
-      "unresolved": "",
+      "unresolved": "Operator-approved departure (2026-10-09, AGENTS.md \"Other approved departures\"): the original leaves a field whose read failed holding uninitialised stack contents (UNKNOWN; e.g. the robotError fatal byte, 0x0069D906..0x0069D930); the stack uses 0/false.",
       "hardware_required": false,
       "live_path": true,
       "test": "M2ProtocolTests.M2_001_D8_AFailedReadDoesNotAdvanceAndIsNotSticky"

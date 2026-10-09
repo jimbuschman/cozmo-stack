@@ -46,7 +46,13 @@ in the Wwise runtime inside `libcozmoEngine.so`. Nothing else may.
 
 ### Other approved departures
 
-- **M1-034, handler isolation** (operator, 2026-10-07): a handler exception is caught, logged and survived; the original aborts. Apply no other departure without the operator.
+- **M1-034, handler isolation** (operator, 2026-10-07): a handler exception is caught, logged and survived; the original aborts.
+- **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
+- **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
+- **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.
+- **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
+
+Apply no other departure without the operator.
 
 ## Primary rule
 

@@ -131,3 +131,19 @@ them as described under "To do" below.
    corrections. Then `--check`, commit and push.
 3. Then extract and build the M1-EXTRACT items under CODEX-BUILDER: S13, E6, E7, P2, M1-029's J1/J7 and M1-046's Q1–Q3.
    Extraction rows go to the manager first.
+
+## Policy disposition (manager and operator, 2026-10-09)
+
+From `research/20261005-M1M2-policy-check.md`:
+- **M1-013 stays** COMPATIBILITY_POLICY: the Windows timer primitive.
+- **M1-034, 036, 038, 040 and M2-017** are operator-approved departures (AGENTS.md).
+- **M1-014, 022, 037, 039 and 042: narrow them.** The OS or host primitive stays policy. The engine's own decisions
+  around it become IMPLEMENTATION_GAP rows or records, built from the check's tables:
+  - M1-014: H1–H3 and T3–T4; the tick cadence and dispatch order;
+  - M1-022: UDPTransport's binding, port bookkeeping, retry/reopen, logging and drain, including U3;
+  - M1-037: the app's reset-trigger gates N2–N3;
+  - M1-039: the shipped receive handler;
+  - M1-042: the Unity default producers, including the pool-enable gate.
+
+  Do this in the same inventory correction as the MISSING disposition. Extraction rows that aren't checked yet go to
+  the manager before anything is built from them.
