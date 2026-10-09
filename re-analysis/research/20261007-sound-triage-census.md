@@ -1555,3 +1555,7 @@ RJ255A joins TR18 reset recipients from known random/sequence cache factories to
 ### Checkpoint 256 — live FX bypass
 
 FB256A/B bind known PBI154 voice64/68 and recover four slot-order bypass-byte writes. Known68 locally positive,64 FX selection/lifecycle and wider pointer/bypass writers remain exact work. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 257 — live FX rebuild prefix
+
+FR257A–D trace known-slot neighbor order, raw format shaping, old output/34 scan/retirement and replacement FX query/failure reconnect. Exact FX decisions retained; construction/format reconciliation/helper/provider/input closure PARTIAL. No totals/Q15/fidelity/production changes.
