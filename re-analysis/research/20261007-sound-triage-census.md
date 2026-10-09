@@ -1999,3 +1999,7 @@ BR366A–F join A21/NB16 roots to known bus4C/50/54, settle ordinary signed acti
 ### Checkpoint 367 — exclusion predicates and scoped transitions
 
 EX367A–E settle ID/category exclusion, common54 parent-chain gate, known five-node50 bindings and packed-property scoped state transitions. BR366 named local dependencies superseded; distinct node50 bodies and wider input/list/state/parent/product writers stay PARTIAL. Counts unchanged, Q15 pending Q14.
+
+### Checkpoint 368 — concrete node exclusion handlers
+
+NE368A–G settle all five known50 recipient bodies: fixed reverse child50 with bus/exclusion gates, Sound forwarding, Switch object-only local controls and stop playingID0, Layer independent object/playingID controls, and opcode0 versus3 distinctions. Local slot joins363–368 supersede generic unread-node-command wording, while actual input/writer/product/PBI/source closure stays PARTIAL. Counts unchanged, Q15 pending Q14.
