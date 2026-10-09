@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 452 — selected audio message handoff to the animation stream
+
+Primary: `20261009-sound-streamer-audio-handoff-native.txt`,34 complete native instructions plus actual getter relocation; enginehashunchanged. CM446/CR448/AD447, AENTRY306/DPOST307/AL5–6/FR/HG alreadyrowselectedproducer/virtual/lifecycle/framegeometry; no frame-encoder re-extraction. S=AnimationStreamer,C=client,A=currentanimation;offsetshex.
+
+| Row | Primary | Decision/framing/order |
+| --- | --- | --- |
+| AH452A selected current/pop | 57C016..C034;AENTRY306 tablesC=597514/597DB4 | GetAudioToSend loadsC=S1B0 withoutnullCgate,thenA=C38. A0returns0,nooutputwrite. Nonnullinitialize localmessagepointer0;invokeA.vtC(A,&localmessage) withoriginalr2/r3 timingwordsunchanged;originalRobotreference r1 unused/replaced. Ignorevirtualreturn;onlylive localmessagepointer gateshandoff. No A.Update/readiness/state/modegateaddedhere. |
+| AH452B concrete product joins | AENTRY306/DPOST307B/AL5–6;CM446E | SelectedOnDevice Pop597514 clearsoutput0andschedulesdueevents;no robotmessage→wrapperreturns0,leavesdestinationunchanged. SelectedOnRobot597DB4 clearsoutput0,state3/framepresencegates,frameencoding/padding/744geometry andmessagepublicationalreadyAL5/6/FR; wrappernonnullgateexact. ExistingnativeOnDeviceeventposts stilloccuronthiswrappercall evenwhenreturn0. Thus0doesnotmean no audio decision/work occurred. |
+| AH452C raw payload copy | 57C034..C046;4ADC0C..C018;GOT1043690→7AA43D;7AA43C..440 | Fornonnullmessage load originalstackoutputpointer,callactualGet_animAudioSample: returnsmessage+4,withouttag/lengthcheck. Copyexact2E8hex(744) rawbytes tocalleroutputusingphone memcpy. No resampling,scalarconversion,bufferlengthvalidator orroutechoiceinthishandoff. Originaltimingr2/r3 usedonlybyvirtualPop. Framingbytecount exact;copybodyphoneinterface. |
+| AH452D disposal/result | 57C046..C05E;AL6 | AFTERcopyreloadlocalmessagepointer. NonnullcallsEngineToRobot.ClearCurrent thenoperator.delete;nullskipsboth. Return1aftercopypathevenifthisreloadnull;missinginitialmessage returns0anddoesnotclearcalleroutput. OwnMessageAudioSampleconstruction/cleanupschema cross-layerM2 interface; noextraStop/event/callbackflush/unregister. Rawchunkcopiedbeforemessagecleanup. |
+
+out of scope: allocator/string/vector/hash backing under scopeguard; per-sample DSP under ADP-1. Rawbytecopy/sourcegeometry andproductionwhich/when gates retained. M5actuator/facekeyframe work outsideM6answer; upperstreamer's audiocompletion gating remainsnextboundedinterface check, notanentireM5port.
+
+Knowncurrentanimation→actualPop→native744-byte handoff/disposal nowpositive. Q14-021 andbroaderinput/writer/streamer scheduling/routing remainPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 followscompletedQ14. Nextboundedstep: audiocompletion/silence/start/end gates atupperstreamerinterface,reusingCR448/ASTATE317andRBbudget/send rows; no unrelatedactuator extraction.
+
 ## Checkpoint 451 — client unregister gates and destruction order
 
 Primary: `20261009-sound-client-buffer-unregister-native.txt`,104 complete native instructions plus concrete import/veneer joins; enginehashunchanged. AS1/SH8, AR1–2, OP449/BR450, CM446/AD447/AP7/ASTATE317 andDQUEUE309/DWORK311 reused. C=client;offsetshex.

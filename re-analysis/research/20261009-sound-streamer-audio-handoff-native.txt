@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0057C016..0x0057C05E exclusive; Thumb; _ZN4Anki5Cozmo17AnimationStreamer14GetAudioToSendERKNS0_5RobotEjjRNS0_12AnimKeyFrame11AudioSampleE
+0057C016: push         {r4, lr}
+0057C018: sub          sp, #8
+0057C01A: ldr.w        r0, [r0, #0x1b0]
+0057C01E: movs         r4, #0
+0057C020: ldr          r0, [r0, #0x38]
+0057C022: cbz          r0, #0x57c058
+0057C024: str          r4, [sp, #4]
+0057C026: ldr          r1, [r0]
+0057C028: ldr.w        ip, [r1, #0xc]
+0057C02C: add          r1, sp, #4
+0057C02E: blx          ip
+0057C030: ldr          r0, [sp, #4]
+0057C032: cbz          r0, #0x57c058
+0057C034: ldr          r4, [sp, #0x10]
+0057C036: blx          #0x4adc0c ; Anki::Cozmo::RobotInterface::EngineToRobot::Get_animAudioSample
+
+0057C03A: mov          r1, r0
+0057C03C: mov          r0, r4
+0057C03E: mov.w        r2, #0x2e8
+0057C042: blx          #0x4a42ac ; <EXTERNAL>::__aeabi_memcpy
+
+0057C046: ldr          r4, [sp, #4]
+0057C048: cbz          r4, #0x57c056
+0057C04A: mov          r0, r4
+0057C04C: blx          #0x4a5200 ; Anki::Cozmo::RobotInterface::EngineToRobot::ClearCurrent
+
+0057C050: mov          r0, r4
+0057C052: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0057C056: movs         r4, #1
+0057C058: mov          r0, r4
+0057C05A: add          sp, #8
+0057C05C: pop          {r4, pc}
+RANGE 0x004ADC0C..0x004ADC18 exclusive; ARM;
+004ADC0C: add          ip, pc, #0xb00000
+004ADC10: add          ip, ip, #0x95000
+004ADC14: ldr          pc, [ip, #0xa7c]!
+01043690: raw=004A4010 relocated=007AA43D _ZNK4Anki5Cozmo14RobotInterface13EngineToRobot19Get_animAudioSampleEv
+RANGE 0x007AA43C..0x007AA440 exclusive; Thumb; _ZNK4Anki5Cozmo14RobotInterface13EngineToRobot19Get_animAudioSampleEv
+007AA43C: adds         r0, #4
+007AA43E: bx           lr
