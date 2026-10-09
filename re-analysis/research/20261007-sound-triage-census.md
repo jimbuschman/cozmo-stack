@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through376 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through377 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2035,3 +2035,7 @@ GR375A–E settle first exact group/member unlink, member14 clear-before-liveC, 
 ## Checkpoint 376 — type-1 state-member product
 
 SO376A–F join the dedicated HIRC type-1 reader, authored parameter block, table103BD70 and reference/destructor endpoints to SG/RB small-registry members and GR375 release. Nonempty CC, other products and input/provider/writer closure remain PARTIAL. Top checkpoint summary and Q14-030 now reflect363–376 positives; totals remain24 native CHECKED +8 scope CHECKED /108 PARTIAL /0 NOT DONE. Q15 pending Q14.
+
+## Checkpoint 377 — nonempty state-group application
+
+SA377A–F settle known CC9F2E34 first-current-state selection, authored-order parameter publication/retarget and unmatched-state transition/value cleanup. Existing TT and NJ recipients reused; current cache/member/state/input/provider/writer and alternate-family closure remains PARTIAL. Totals unchanged; Q15 pending Q14.
