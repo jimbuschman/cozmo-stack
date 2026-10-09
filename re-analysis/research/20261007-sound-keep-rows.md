@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 449 — client game-object pool decisions and concrete buffer lookup
+
+Primary: `20261009-sound-client-object-pool-native.txt`,103 complete native instructions plus veneer/GOT; enginehashunchanged. CM446/CR448/AR1–2/P7/HG reused. C=client,D=controller; offsetshex. Poolidentity/order is routing control; deque/hash backing mechanics stop.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| OP449A mode2 pool selector | 59A2CC..2DC;59A326..34C | ReadC.byte3C. Mode2: countC68zero selectsfailureoutputs0/0/result0. Nonzero: logicalfront=C64; readwordfromblocktableC58[front>>10][front&3FF]. SaveID,invokeactualclientvt20(C,ID);returnedrawpointer becomesbufferoutput,return1 evennullpointer. No front/countmutation,pop,reservation,reset,duplicateadmissionor bufferavailabilitygate. Exact peek,notdequeueinthisbody. |
+| OP449B other modes and publication | 59A2DC..326;59A34C..362 | Mode1 writesID6/buffer0,return1. Mode0 logs thenwritesID0/buffer0,return0. Otherbytevalues return0withoutwritingeitheroutput. Mode2empty writes0/0. Successful/failurepublicationorder IDfirstthenbuffer. No blanketoutputclearonallfailures. |
+| OP449C pool return | 59A398..3B0;AR1–2 | Unsigned(ID−7)<=3 accepts7/8/9/10,appendrawIDtodequeC54;otherIDsreturnwithoutmutation. No duplicatecheck,modegate,bufferreset/callback orreturnvalue. AR1constructorappendorder7,8,9,10,6alreadypositive; OP449Ahasno removal,so repeatedselectedcallskeepthefrontunlessanotherwriterchangesit. Otherdeque writersremainopen,notdeclaredabsent. |
+| OP449D actual buffer recipient | actualclienttable102417C=599E4B(AS1);599E4A..E50;8CBBFC..C00/ARM8CBC00..08/raw08;4AF754..760;GOT1043FA8→594C9D | Clientvt20 loadscontrollerC30,retainsincomingID,tailveneer→4AF754→actual594C9C. No controllernull/enabledbytegate ormodeconversioninwrapper. Actualprimaryveneer8CBC04 PC+8+FFBE3B48=4AF754. Bufferreturn is separatefromOP449A successresult. |
+| OP449E two-stage identity lookup | 594C9C..CCA | FindincomingobjectID inD8C map. Missing→return0. FoundreadentryC rawbufferID;findthatID inD78 map. Missing→return0;foundreturnrawentryC bufferpointerevennull. No buffercreation,sourceadmission,reset,weakretain ordirectaudioqueue. Underlyinghashfind infrastructureexcluded; exactkeys/order/gates/rawresultsretained. D78 samebufferrecipientmapusedHG6 create/destroy/process callbacks; registrationwriters remainnextboundedwork. |
+
+out of scope: hash/rehash anddeque allocation/backing/free mechanics under scopeguard; allocatorinternals/per-sampleDSP under ADP-1. Routingidentity/appendorder/outputgates retained. No absentcallerreachability proof orhardware/productionchange.
+
+Selectedpool/getter/return controlsnowpositive,includingpeek-not-pop andsuccess-with-nullbuffer. Broaderpool/registrationinput/writer andproductionrouteclosure remainsPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 followscompletedQ14. Nextboundedstep: controllerbuffer-registration publication/duplicate/replacement choices,excludinginlinehash/rehashmechanics.
+
 ## Checkpoint 448 — direct mode input and current-animation readiness/completion
 
 Primary: `20261009-sound-client-mode-input-ready-native.txt`,135 complete native instructions plus key/import relocations; engine hash unchanged. CM446/AD447, ASTATE317/AP7/AENTRY306/GOR/AS/SH reused. C=client,A=currentanimation; offsetshex.
