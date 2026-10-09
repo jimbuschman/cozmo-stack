@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 436 — authored plug-in101 parameter decisions
+
+Primary: `20261009-sound-plugin101-parameters-native.txt`, 132 complete ARM control words plus literals/table (engine hash unchanged). FS432/SL433/PR7/IC and LP434 raw89settings census reused. P=parameter object,B=payload; offsets hex. Parameter reader only; no source sample generator traced.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP436A actual registry/factory | 4DE8A0..4DE938;literal4DE938..48;A93C70..A93CA0;101C908..24 | Constructor node108E3DC(type2/company0/plugin101), then108E404(type5/company0/plugin404), bothcreate=A93DB8/params=A93C70. next108E3DC=oldhead,next108E404=108E3DC;publishhead108E404. Remaining18/1C/20/24 inbothzero. Nativeinterleaving retained. Factoryalloc10hex viaallocator8,nullreturnsnull;nonnull onlytable101C908,no defaults. Table0=A93CA4 BXLR,8=A93D54,C=A93CA8,10=A9407C,14=A93CF4,18=A93D2C. Authored00650002 selectsfirstnode throughPR7; no type5 authoredclaim. |
+| PP436B Init/rawreader | A9407C..A940B4;A93D2C..A93D54 | Initlength0 setsP8=0,PC=0,thenP4=3F800000;return1. Nonzero tailslive18(P,B,length),no12-byte gate. ReaderloadsB0/B4/B8 thenpublishesP4/P8/PC inthatorder,return1;lengthnotconsulted,no conversion/clamp. |
+| PP436C live setters | A93D54..A93DB8 | Nullvaluepointer orIDsoutside0/1/2 returns31hex,no mutation. AcceptedIDs0/1/2 rawword->P4/P8/PC,return1. Sizeignored,no conversion/dirtyflags/callback. |
+| PP436D clone/release | A93CA4..A93CF0;A93CF4..A93D2C | Clonealloc10 viaallocator8,nullreturnsnull. NonnullloadsoldP4/8/C,installsactualtable,thenstores3rawwords;noInit/reader/defaults. Release14 nullskip;nonnullactual0BXLR thenallocatorC(originalP);always1. |
+| PP436E concrete inputs | LP434 validatedJSONL;PP436A..D | ElevenCozmo type18 objects, parameterLength12,zeroRTPCbindings/associations. IDs856034275,331350070,1017819013,328085143,305781033,980851149,282427846,791026153,1007299744,204654495 eachpayload0000803f0000000000000000 ->P4=1,P8/PC=0. ID847165143@6205782 payload000020410000000000000000 ->P4=10,P8/PC=0. Exactoffsets/hash/rawbytes retained inexistingJSONL. No source/render equivalence inferred. |
+
+out of scope: source per-sample DSP arithmetic under ADP-1; allocator/storage implementation under scope guard.
+
+Local authored101 parameterrecipient positive; Q14-016 broaderfamilies/writer/live-path closure PARTIAL. Next witnessed00640002 (9objects); existingcompression CP1–5 reused. Counts unchanged27 native CHECKED +8 scope CHECKED /105 PARTIAL /0 NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardware changes.
+
 ## Checkpoint 435 — witnessed plug-in138 parameter decisions
 
 Primary: `20261009-sound-plugin138-parameters-native.txt`, 355 complete ARM instruction words plus registry GOT/table/literals; same engine hash as LP434. Raw inputs reuse all89 validated FS432 input joins; FS432/SL433/PR7/IC2/3 downstream control ownership reused. P=parameter object,B=payload, offsets hex. Navigation constructor's AB addresses are not evidence: current ELF GOT values below establish actual AA addresses.
