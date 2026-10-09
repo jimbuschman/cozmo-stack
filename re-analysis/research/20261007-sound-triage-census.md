@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through492 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through493 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2425,3 +2425,5 @@ Checkpoint490 — VD490 standard voice explicit record/buffer/control/holder/FX 
 Checkpoint491 — PA491 Play inherited policy/class/owner query, priority/scope/scalar callback and two global admission endpoints;87 complete ARM instructions. Geometry and allocator backing excluded; downstream scalar/creator/publication decisions retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint492 — DP492 post-spatial raw sentinel/priority adjustment/clamp including NaN/publication-before-admission;27 complete ARM instructions. Geometry interface excluded, scalar decisions exact. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint493 — IP493 ordinary Play live creator/audibility arguments, limiter50 flag-before-policy, init/context/attachment gates, Play-before-active-list publication and distinct failure cleanup/detail/inert endpoint order;247 complete ARM instructions. Storage excluded; specific recipients remain retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
