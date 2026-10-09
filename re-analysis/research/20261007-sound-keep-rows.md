@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 379 — selected bus type and line control-value publication
+
+Primary: `20261009-sound-bus-line-value-publication-native.txt`, same engine hash; 44 instruction words plus slots. BI378 busC4 and global line match reused. B=bus line,N=known node; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| BL379A known bus44 | raw103AD24/103D144;9C07BC..9C07C0;A67C98..A67C9C | Base103ACE0 slot44 returns0; derived103D100 slot44 returnsC. No fieldread, callback or side effect in either constant body. Thus BI378B derivedfamily always admitsgainupdate at the44 result gate when it reaches that gate; base continueslivefieldtests. Retainearlier property-block admission rather than flattening thewholepredicate. |
+| BL379B gain-before-position gate | A4F4A4..A4F4C0 | ReadB4Cnode, publish incomingrawvalue toB90 beforetestingnode and itsbyte46bit7. Nullnode orclearbit→BL379D;nonnull/setbit→BL379C. No comparewitholdB90, numericconversion, NaNclamp, childwalk or samplegainmultiply. Exactcontrolvaluepublication occurs onbothbranches. |
+| BL379C positioning selection | A4F4C0..A4F50C | SetB.byteC0bit1 before9FAEE8(node,&scope,B+94). Stackscope words0/4/8/14=0, bytesC/10=FF; interveningpaddingunspecified. Returnaftercallwithnorestoreorcallbackresultgate. out of scope: 9FAEE8 positioning payload under the scope guard; selection/flag/order anddescriptorinput remainexact. No nestedpayload descent. |
+| BL379D local defaults | A4F510..A4F540 | ClearB.byteC0bit1, thenB.byteA0=0, rawB9C=42C80000,B94=3F000000,B98=3F800000,return. Otherflagbits/fields untouched. No descriptorallocation, callback, devicequery or fallbackancestorwalk onthisbranch. These rawcontrol/default stores are notsampleDSP. |
+
+BI378 namedbus44 andmatchedline controlrecipient nowpositive; positioningpayload explicitlyexcluded. Full bus/line/list/value/flag/input/provider/writer/family closure remains PARTIAL. Totals unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 378 — known state invalidation recipients and bus publication
 
 Primary: `20261009-sound-bus-state-invalidation-native.txt`, same engine hash; 128 instruction words plus raw table/literal words. SA377 finalC4, NR146 known node products, LI2/LI5 and D2–D5 gain query reused. N=bus,T=node context,L=global bus-line list; offsets hex.

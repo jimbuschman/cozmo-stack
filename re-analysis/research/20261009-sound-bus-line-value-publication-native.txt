@@ -1,0 +1,51 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A4F4A4..0x00A4F544 exclusive; ARM;
+00A4F4A4: ldr          r2, [r0, #0x4c]
+00A4F4A8: str          r1, [r0, #0x90]
+00A4F4AC: cmp          r2, #0
+00A4F4B0: beq          #0xa4f510
+00A4F4B4: ldrb         r3, [r2, #0x46]
+00A4F4B8: tst          r3, #0x80
+00A4F4BC: beq          #0xa4f510
+00A4F4C0: str          lr, [sp, #-4]!
+00A4F4C4: sub          sp, sp, #0x1c
+00A4F4C8: ldrb         ip, [r0, #0xc0]
+00A4F4CC: mov          r3, r0
+00A4F4D0: mov          r1, sp
+00A4F4D4: mov          r0, r2
+00A4F4D8: orr          ip, ip, #2
+00A4F4DC: add          r2, r3, #0x94
+00A4F4E0: strb         ip, [r3, #0xc0]
+00A4F4E4: mov          r3, #0
+00A4F4E8: mvn          ip, #0
+00A4F4EC: str          r3, [sp]
+00A4F4F0: str          r3, [sp, #4]
+00A4F4F4: str          r3, [sp, #8]
+00A4F4F8: str          r3, [sp, #0x14]
+00A4F4FC: strb         ip, [sp, #0xc]
+00A4F500: strb         ip, [sp, #0x10]
+00A4F504: bl           #0x9faee8
+00A4F508: add          sp, sp, #0x1c
+00A4F50C: pop          {pc}
+00A4F510: ldrb         r3, [r0, #0xc0]
+00A4F514: mov          r1, #0
+00A4F518: mov          r2, #0x3f000000
+00A4F51C: movt         r1, #0x42c8
+00A4F520: bfc          r3, #1, #1
+00A4F524: mov          ip, #0
+00A4F528: strb         r3, [r0, #0xc0]
+00A4F52C: mov          r3, #0x3f800000
+00A4F530: strb         ip, [r0, #0xa0]
+00A4F534: str          r1, [r0, #0x9c]
+00A4F538: str          r2, [r0, #0x94]
+00A4F53C: str          r3, [r0, #0x98]
+00A4F540: bx           lr
+RANGE 0x009C07BC..0x009C07C4 exclusive; ARM;
+009C07BC: mov          r0, #0
+009C07C0: bx           lr
+RANGE 0x00A67C98..0x00A67CA0 exclusive; ARM;
+00A67C98: mov          r0, #0xc
+00A67C9C: bx           lr
+0103AD24: raw=009C07BC relocated=009C07BC
+0103D144: raw=00A67C98 relocated=00A67C98

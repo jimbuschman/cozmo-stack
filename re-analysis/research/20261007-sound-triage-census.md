@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through378 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through379 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2043,3 +2043,7 @@ SA377A–F settle known CC9F2E34 first-current-state selection, authored-order p
 ## Checkpoint 378 — known C4 invalidation products
 
 BI378 reuses LI2/LI5 known container/Sound recipients and adds bus gain-update gates, active child recursion and all matching global-line publication. Bus44 and lineA4F4A4 remain retained decisions; actual input/provider/writer/family closure stays PARTIAL. Totals unchanged; Q15 pending Q14.
+
+## Checkpoint 379 — bus44 and matched-line controls
+
+BL379 binds base/derived44 constants and closes A4F4A4 rawgainpublication, positioning selection and default stores. Positioning payload excluded in one line without descent. Actual family/input/provider/writer closure remains PARTIAL; totals unchanged and Q15 pending Q14.
