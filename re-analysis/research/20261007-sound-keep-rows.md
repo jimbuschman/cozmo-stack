@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 367 — exclusion identity, ancestor gate and scoped transition values
+
+Primary: `20261008-sound-exclusion-filter-state-native.txt`, same engine hash. BR366 callers and known54 binding reused; A24 global transitions remain distinct. N=node,D=descriptor,B=packed property block; offsets hex. No arithmetic-equivalence boundary in these controls.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| EX367A exclusion predicate | 9F4B5C..9F4BB4 | List baseword0/countword4, physical8-byte records. Snapshot N8 identity and N.byte46 bit2 only. Find first record whoseword0==N8 AND unsignedbyte4==that0/1 bit; return1. Exhausted/end returns0. End address=base+(count<<3) modulo32, compared by pointer equality; no null-list/null-node check, ancestor search, ID hash, signed category or normalization of recordbyte4. Count0 still loads node identity/category before returning0. |
+| EX367B common54 ancestor gate | 9ED4CC..9ED518;BR366F | Begin at N34 parent, excluding N itself from this local ancestry scan. For each live ancestor callEX367A(ancestor,liveD20); true immediately returns without dispatch. False reload ancestor34 for next. Only parent-chain exhaustion tails N.live50(N,D). No bus38 ancestry or refcount here; BR366E already checked selected child itself before invoking54. Descriptor list pointer reloaded per ancestor. |
+| EX367C concrete50 join | raw103BB20/B8B0/BE18/CFD8/B0A0 | Known Sound50=A1D3F0;RanSeq/ActorMixer50=987FB4;Switch50=A2DF4C;Layer50=9D2CD0. These differ from NC3634C and require their own exclusion/local prepass contracts. EX367B is a forwarding gate, not evidence for their complete behavior. Known bus50 remainsBR366D/E. |
+| EX367D scoped-transition traversal | 9F5318..9F53DC;raw9F53E0/E4 and1040080=108D8EC | Walk node18 linked property owners through owner8 after each block pass. owner10null skips; blockbyte0 count0 skips. For n>0 inspect exactly n physical8-byte slots beginning at B+((n+4)&~3); load pointer atslot4, null skips. No property-key/value test. For every nonnull pointer callA366D0(currenttransitionmanager,pointer) when incoming mode0, otherwiseA366AC. Counter/end and slot progress update before callback; nextowner loaded after callbacks. No local lock, first-match return or distinction among nonzero modes. Current manager fetched per accepted pointer, though concrete local recipients use onlyr1. |
+| EX367E concrete transition values | A366AC..A366CC;A366D0..A366F0 | A366AC pointer30==1 writes2 andreturns; else==4 writes3;othersunchanged. A366D0 pointer30==3 writes4 andreturns;else==2 writes1;othersunchanged. These are raw state transitions, without a depth/time/refcount/result gate or callback. BR366D maps opcode1 toAC and0/2 toD0, only withdescriptor19nonnull; ordinaryA24 uses global vector traversal rather than this scoped property list. |
+
+BR366 named filter/ancestor/scoped-transition dependencies now locally positive. Concrete node50 exclusion bodies, property/list/parent/root/provider/family and state-writer closure remain PARTIAL. Totals unchanged; Q15 pending Q14. Research only; no production/fidelity/hardware changes.
+
 ## Checkpoint 366 — known root-bus command slots and traversal
 
 Primary: `20261008-sound-bus-root-command-native.txt`, same engine hash. A21/A24 ordinary/exclusion root dispatch, NB16 root publication and SL288E/OB354 known bus table association reused. Bus B; descriptorD; offsets hex. This resolves selected concrete command slots, not the whole dynamic child/input census.

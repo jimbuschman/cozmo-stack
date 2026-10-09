@@ -1995,3 +1995,7 @@ SR365A–G settle independent wildcard removal, unlink/count-before-completion, 
 ### Checkpoint 366 — known root-bus commands
 
 BR366A–F join A21/NB16 roots to known bus4C/50/54, settle ordinary signed active-context admission and exclusion pre-transition, and preserve two reverse vectors with callback-time unsigned shrink clamping. Five known nonbus54=9ED4CC is positively bound, not assumed identical to4C. Its body/filter/scoped transition and wider writer/input/product closure remain PARTIAL; totals unchanged, Q15 pending Q14.
+
+### Checkpoint 367 — exclusion predicates and scoped transitions
+
+EX367A–E settle ID/category exclusion, common54 parent-chain gate, known five-node50 bindings and packed-property scoped state transitions. BR366 named local dependencies superseded; distinct node50 bodies and wider input/list/state/parent/product writers stay PARTIAL. Counts unchanged, Q15 pending Q14.
