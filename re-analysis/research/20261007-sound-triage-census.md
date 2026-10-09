@@ -2335,3 +2335,5 @@ Checkpoint445 — EQ445 seven-type persistent parameter graphs; primary269 ARM i
 Checkpoint446 — CM446 output-mode writer/next-animation choices;332 complete native instructions andactualcallable tables/getterrelocation. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; no promotion/Q15/productionchange.
 
 Checkpoint447 — AD447 actual OnDevice/OnRobot deleting slots join alreadypositiveASTATE317/DQUEUE309/DWORK311/base/weakcallbackcontracts;11 native instructions/relocation. CM446 concrete destructor uncertainty settled; broaderinput/writer stillPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint448 — CR448 directmode setter/firmwarecaller/actualJsonnulltest andcurrentanimation readiness/completion/rawvolume queries;135 complete native instructions. Selectedmode/lifecyclejoinspositive;cross-layer firmware/JSON inputconstruction explicit. Broaderinput/writer/update/routing remainsPARTIAL;counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

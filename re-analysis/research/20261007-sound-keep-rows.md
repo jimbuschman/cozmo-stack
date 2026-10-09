@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 448 — direct mode input and current-animation readiness/completion
+
+Primary: `20261009-sound-client-mode-input-ready-native.txt`,135 complete native instructions plus key/import relocations; engine hash unchanged. CM446/AD447, ASTATE317/AP7/AENTRY306/GOR/AS/SH reused. C=client,A=currentanimation; offsetshex.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| CR448A direct output-mode setter | 59A2BC..2CA;4AA2D0..2DC;GOT104237C→59A2BD | ReadU8 C3C,comparewithfullincomingr1, unequalstorelowbyteC3C; returnvoid. Noenumvalidation, normalization, rebuild/abort/reset/queuecommand. Fullwordcomparison differsfromCM446B's byte-vs-bytecomparison: e.g.incoming102hex comparesunequaltoold2butstores2. Constructor0 andmessagecallbackwriter remainCM446. No claimtheseareallwritersfromnavigationabsence. |
+| CR448B actual firmware caller | 5368F4..5369D4;key536A4C="sim" | AcceptedRobotToEngine event: getter(event+C), use firmwarepayload.word4/8 asstring-range inputs; constructJsonReader/nullValue;parse(reader,string,&root,true). Return0 skipsphysical/modewrites. Nonzero usesroot["sim"] thenJson.isNull; savebooleanthroughlog/cleanup,callRobot.SetPhysicalRobot(robot,savedbool) BEFORE SetOutputSource(robot58,savedboolnonzero?2:1). No valuebooleanconversionor"sim"truthinesscheck. Firmware decode/JSON parser andRobotphysical semantics are namedcross-layer M1/M2 interfaces,notnewlyrecoveredhere; actualaudio modecaller/gate/value/order is primary. Cleanup aftermodepublication addsnoaudiofallback. |
+| CR448C concrete null test | 4A5F8C..598;GOT1040D10→8E9FD9;8E9FD8..FE4 | Json.isNull returns1iffvalue.byte8==0,else0,withoutreadingbooleanpayload. Thus routingcallerretainsparsedfieldtype/nulltest,notanassumedbooleanasBool. JSON operator[]/parse inputconstruction remainscross-layer, nofreshgenericJSONaudit. |
+| CR448D current readiness | 59A1CC..1F8;CM446D;AD447 | C38null→1. NonnullreadA.byte3C: unsigned(state−4)<2 (states4/5) callsClearCurrentAnimation thenreturns1. Otherstates1/3→1;allotherbytes→0. ThisbodydoesnotinvokeA.Updateorusetimingargs; actualvt4deletion→queue/basecleanup isAD447/ASTATE317. Noaudioeventstopaddedhere;AP7Abortisseparate. |
+| CR448E completion/volume queries | 59A1F8..212;59A2B8..2BC;RVOL306 | AnimationIsComplete: C38nullorstate4/5→1,else0; querydoesnotclearcurrentAorinvokevt10. Readinessandcompletionthereforedifferinstates1/3andinstate4/5mutation. GetRobotVolume returnsrawC6Cword,whichRVOL306writesbeforephysicalmessagesendandlaterRTPCsubmit; noF32conversion/clamp. |
+| CR448F selected routing/lifecycle joins | CM446/AD447/GOR/AS/SH/UC/QC/SX;AENTRY306/AP/ASTATE317 | Firmwaremode1/2andmessagebytewriter feed GORparameter/switchobjectselectionandfutureCreateAudioAnimation object6/7. ActualcurrentA.object34isretainedacrossmodewrite. Readiness/creationclearjoinsactualdeletingwrappers;completionquerydoesnotdelete. PositivepublicRTPC/switchsubmit/queuedconsumers reused,withoutre-openingcallerfamiliesorclaimingnoothers. |
+
+out of scope: storage/allocator/vector/logstring infrastructure andphone-runtimeconditions under scopeguard; per-sample DSP under ADP-1. Cross-layer firmware/JSON-message construction remains explicit; no hardwaretestorproductionchange.
+
+Directmode/knownfirmwareinput andclientquery controlsnowpositive. Q14-021/065 broaderinput/writer/update/event/routeclosure staysPARTIAL; no whole-recordpromotion. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 followscompletedQ14. Nextboundedstep: clientgame-object pool selection/return andactualbufferrecipient, retaining routing choices butstoppinghash/dequebacking internals.
+
 ## Checkpoint 447 — selected deleting-animation joins
 
 Primary: `20261009-sound-selected-animation-delete-native.txt`,11 complete native instructions plus relocation; actual constructor-selected table4 values reused from `20261008-sound-animation-entry-slots.txt`. ASTATE317D–G/DQUEUE309/DWORK311/DCB308/RCTX316/AP7 already supply base destruction, queue stop/release, weak expiry and abort effects. No re-extraction of those positive bodies.

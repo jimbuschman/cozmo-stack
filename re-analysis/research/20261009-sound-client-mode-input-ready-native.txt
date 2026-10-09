@@ -1,0 +1,162 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x0059A2BC..0x0059A2CA exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient15SetOutputSourceENS2_22RobotAudioOutputSourceE
+0059A2BC: ldrb.w       r2, [r0, #0x3c]
+0059A2C0: cmp          r2, r1
+0059A2C2: it           ne
+0059A2C4: strbne.w     r1, [r0, #0x3c]
+0059A2C8: bx           lr
+RANGE 0x0059A1CC..0x0059A1F8 exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient22UpdateAnimationIsReadyEjj
+0059A1CC: ldr          r1, [r0, #0x38]
+0059A1CE: cbz          r1, #0x59a1ea
+0059A1D0: ldrb.w       r1, [r1, #0x3c]
+0059A1D4: subs         r2, r1, #4
+0059A1D6: cmp          r2, #2
+0059A1D8: blo          #0x59a1ee
+0059A1DA: movs         r0, #1
+0059A1DC: cmp          r1, #1
+0059A1DE: it           eq
+0059A1E0: bxeq         lr
+0059A1E2: cmp          r1, #3
+0059A1E4: it           ne
+0059A1E6: movne        r0, #0
+0059A1E8: bx           lr
+0059A1EA: movs         r0, #1
+0059A1EC: bx           lr
+0059A1EE: push         {r7, lr}
+0059A1F0: blx          #0x4adbc4 ; Anki::Cozmo::Audio::RobotAudioClient::ClearCurrentAnimation
+
+0059A1F4: movs         r0, #1
+0059A1F6: pop          {r7, pc}
+RANGE 0x0059A1F8..0x0059A212 exclusive; Thumb; _ZN4Anki5Cozmo5Audio16RobotAudioClient19AnimationIsCompleteEv
+0059A1F8: ldr          r0, [r0, #0x38]
+0059A1FA: cbz          r0, #0x59a204
+0059A1FC: ldrb.w       r1, [r0, #0x3c]
+0059A200: cmp          r1, #4
+0059A202: bne          #0x59a208
+0059A204: movs         r0, #1
+0059A206: bx           lr
+0059A208: movs         r0, #0
+0059A20A: cmp          r1, #5
+0059A20C: it           eq
+0059A20E: moveq        r0, #1
+0059A210: bx           lr
+RANGE 0x0059A2B8..0x0059A2BC exclusive; Thumb; _ZNK4Anki5Cozmo5Audio16RobotAudioClient14GetRobotVolumeEv
+0059A2B8: ldr          r0, [r0, #0x6c]
+0059A2BA: bx           lr
+RANGE 0x005368F4..0x005369D4 exclusive; Thumb; _ZN4Anki5Cozmo26RobotToEngineImplMessaging21HandleFirmwareVersionERKNS0_9AnkiEventINS0_14RobotInterface13RobotToEngineEEEPNS0_5RobotE
+005368F4: push         {r4, r5, r6, r7, lr}
+005368F6: sub          sp, #0x9c
+005368F8: add.w        r0, r1, #0xc
+005368FC: mov          r6, r2
+005368FE: blx          #0x4a9a84 ; Anki::Cozmo::RobotInterface::RobotToEngine::Get_firmwareVersion
+
+00536902: ldrd         r1, r2, [r0, #4]
+00536906: movs         r0, #0
+00536908: str          r0, [sp, #0x98]
+0053690A: strd         r0, r0, [sp, #0x90]
+0053690E: add          r0, sp, #0x90
+00536910: blx          #0x4a9a90 ; std::__ndk1::basic_string<char,std::__ndk1::char_traits<char>,std::__ndk1::allocator<char>>::__init<std::__ndk1::__wrap_iter<unsigned_char_const*>>
+
+00536914: add          r4, sp, #0x2c
+00536916: mov          r0, r4
+00536918: blx          #0x4a9a9c ; Json::Reader::Reader
+
+0053691C: add          r0, sp, #0x10
+0053691E: movs         r1, #0
+00536920: blx          #0x4a4f30 ; Json::Value::Value
+
+00536924: add          r5, sp, #0x2c
+00536926: add          r1, sp, #0x90
+00536928: add          r2, sp, #0x10
+0053692A: movs         r3, #1
+0053692C: mov          r0, r5
+0053692E: blx          #0x4a9aa8 ; Json::Reader::parse
+
+00536932: cbz          r0, #0x536992
+00536934: add          r0, sp, #0x10
+00536936: adr          r1, #0x114
+00536938: blx          #0x4a82fc ; Json::Value::operator[]
+
+0053693C: blx          #0x4a5f8c ; Json::Value::isNull
+
+00536940: mov          r7, r0
+00536942: ldr          r0, [pc, #0x10c] ; word[00536A50]=006AD69E
+00536944: movs         r1, #0
+00536946: strd         r1, r1, [sp, #4]
+0053694A: add          r0, pc
+0053694C: str          r1, [sp, #0xc]
+0053694E: adr          r1, #0x104
+00536950: add          r2, sp, #4
+00536952: adr          r3, #0x110
+00536954: str          r7, [sp]
+00536956: blx          #0x4a505c ; Anki::Util::sChanneledInfoF
+
+0053695A: ldr          r0, [sp, #4]
+0053695C: cbz          r0, #0x53697c
+0053695E: ldr          r1, [sp, #8]
+00536960: cmp          r1, r0
+00536962: itttt        ne
+00536964: subne.w      r2, r1, #8
+00536968: subne        r2, r2, r0
+0053696A: mvnne        r3, #7
+0053696E: bicne.w      r2, r3, r2
+00536972: itt          ne
+00536974: addne        r1, r1, r2
+00536976: strne        r1, [sp, #8]
+00536978: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+0053697C: mov          r0, r6
+0053697E: mov          r1, r7
+00536980: blx          #0x4aa2c4 ; Anki::Cozmo::Robot::SetPhysicalRobot
+
+00536984: ldr          r0, [r6, #0x58]
+00536986: movs         r1, #1
+00536988: cmp          r7, #0
+0053698A: it           ne
+0053698C: movne        r1, #2
+0053698E: blx          #0x4aa2d0 ; Anki::Cozmo::Audio::RobotAudioClient::SetOutputSource
+
+00536992: add          r0, sp, #0x10
+00536994: blx          #0x4a4ff0 ; Json::Value::~Value
+
+00536998: ldrb.w       r0, [sp, #0x7c]
+0053699C: lsls         r0, r0, #0x1f
+0053699E: itt          ne
+005369A0: ldrne        r0, [sp, #0x84]
+005369A2: blxne        #0x4a40cc
+005369A6: ldrb.w       r0, [sp, #0x5c]
+005369AA: lsls         r0, r0, #0x1f
+005369AC: itt          ne
+005369AE: ldrne        r0, [sp, #0x64]
+005369B0: blxne        #0x4a40cc
+005369B4: add.w        r0, r5, #0x18
+005369B8: bl           #0x52dfca ; FUN_0052dfca
+
+005369BC: mov          r0, r5
+005369BE: bl           #0x52e0d6 ; FUN_0052e0d6
+
+005369C2: ldrb.w       r0, [sp, #0x90]
+005369C6: lsls         r0, r0, #0x1f
+005369C8: itt          ne
+005369CA: ldrne        r0, [sp, #0x98]
+005369CC: blxne        #0x4a40cc
+005369D0: add          sp, #0x9c
+005369D2: pop          {r4, r5, r6, r7, pc}
+00536A4C: bytes=b'sim'
+RANGE 0x004AA2D0..0x004AA2DC exclusive; ARM;
+004AA2D0: add          ip, pc, #0xb00000
+004AA2D4: add          ip, ip, #152, #20
+004AA2D8: ldr          pc, [ip, #0xa4]!
+0104237C: raw=004A4010 relocated=0059A2BD _ZN4Anki5Cozmo5Audio16RobotAudioClient15SetOutputSourceENS2_22RobotAudioOutputSourceE
+RANGE 0x008E9FD8..0x008E9FE4 exclusive; Thumb; _ZNK4Json5Value6isNullEv
+008E9FD8: ldrb         r1, [r0, #8]
+008E9FDA: movs         r0, #0
+008E9FDC: cmp          r1, #0
+008E9FDE: it           eq
+008E9FE0: moveq        r0, #1
+008E9FE2: bx           lr
+RANGE 0x004A5F8C..0x004A5F98 exclusive; ARM;
+004A5F8C: add          ip, pc, #0xb00000
+004A5F90: add          ip, ip, #0x9a000
+004A5F94: ldr          pc, [ip, #0xd7c]!
+01040D10: raw=004A4010 relocated=008E9FD9 _ZNK4Json5Value6isNullEv
