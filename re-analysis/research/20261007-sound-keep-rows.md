@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 440 — company300/plugin1 authored FX parameters
+
+Primary: `20261009-sound-anki-fx-parameters-native.txt`, 98 complete Thumb instructions plusregistry/table/literals; enginehashunchanged. LP43489rawsettings/PR7/FS432/SL433/IC reused. P=parameterobject,B=payload;offsetshex, tablepointers includeThumbbit1.
+
+| Row | Primary | Decision/value/order |
+| --- | --- | --- |
+| PP440A registry/factory | 4DD90C..4DD95E;literal4DD960..7C;8DBD10..26;8DC090..9E;1038850..6C | Staticnode108D128 type3/company300/plugin1,nextoldhead/create8DBC71/params8DBD11;18/1C/20/24zero;headpublishedafterfields. Factoryalloc8viaallocator8,nullreturns0;nonnull8DC090 writesactualtable1038850 andword4=0 together,returnsP. Table0=8DC117,8=8DC109,C=8DC0A5,10=8DC0D1,14=8DC0E3,18=8DC101. No substitutionofcompany300/plugin100parameterclass despiteparallelshape. |
+| PP440B Init/reader/setter | 8DC0D0..E2;8DC100..112 | Initlength0 returns1withoutmutation, retainscurrentP4. Nonzero tailslive18(P,B,length),no4bytegate. ReaderrawB0->P4,return1. SetterID0 rawvalueword->P4,return1;otherIDreturn1withoutmutation. No nullpointer/sizegate foracceptedID0, no boolnormalize/clamp/conversion/dirtyflag. |
+| PP440C clone/release | 8DC0A4..C6;8DC0E2..100;8DC116..118 | Clonealloc8,nullreturns0;nonnullinstallsactualtablethencopiesoldP4tonewP4,returnsP. NoInit/reader/defaultreset. Release14nullskip;nonnullactual0BXLR thenallocatorC(originalP);always1. |
+| PP440D authored inputs | LP434rawJSONL;PP440A..C | FourInit.bnk type18 fullID000112C3 objects:83628477@2885 payload04000000 ->P4=4;262326404@2911 02000000 ->2;412442143@3015 01000000 ->1;963865063@3041 03000000 ->3. AllparameterLength4,zeroRTPCbindings/associations. Source-factparameterselection exact; no channel/routing meaning inventedfromrawvalues. Otherliveproductconsumers remainseparate. |
+
+out of scope: allocator/staticatexit infrastructure under scopeguard; no per-sampleFXkernel descent.
+
+Q14-016 otherproducts/input/writer/liveclosure PARTIAL. Next006D0003 nineobjects andcompressor006C0003 twelveobjectinputjoin(CP1–5reuse). Countsunchanged27nativeCHECKED+8scopeCHECKED/105PARTIAL/0NOT DONE;Q15 followscompletedQ14. No production/fidelity/hardwarechanges.
+
 ## Checkpoint 439 — company300/plugin100 authored parameters
 
 Primary: `20261009-sound-anki-source-parameters-native.txt`, 98 complete Thumb instructions withrangecoverage checked plus literals/table; enginehashunchanged. FS432/SL433/PR7/IC andLP434raw89settings reused. P=parameterobject,B=payload;offsetshex. Actual functionpointers haveThumbbit1; bodies belowclearbit0.

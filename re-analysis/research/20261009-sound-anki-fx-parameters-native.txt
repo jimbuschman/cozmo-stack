@@ -1,0 +1,122 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x004DD90C..0x004DD95E exclusive; Thumb;
+004DD90C: push         {r4, r5, r6, r7, lr}
+004DD90E: ldr.w        ip, [pc, #0x54] ; word[004DD964]=00B62660
+004DD912: movs         r5, #3
+004DD914: ldr          r3, [pc, #0x48] ; word[004DD960]=00BAF806
+004DD916: movs         r6, #0
+004DD918: add          ip, pc
+004DD91A: ldr.w        lr, [pc, #0x4c] ; word[004DD968]=003FE3E7
+004DD91E: add          r3, pc
+004DD920: ldr          r1, [pc, #0x48] ; word[004DD96C]=00BAF7DC
+004DD922: ldr.w        r4, [ip]
+004DD926: add          lr, pc
+004DD928: str          r5, [r3, #4]
+004DD92A: mov.w        r5, #0x12c
+004DD92E: ldr          r0, [pc, #0x40] ; word[004DD970]=003FE3F1
+004DD930: add          r1, pc
+004DD932: ldr          r2, [pc, #0x40] ; word[004DD974]=00B736BE
+004DD934: ldr          r7, [pc, #0x40] ; word[004DD978]=003FE32B
+004DD936: add          r0, pc
+004DD938: str          r5, [r3, #8]
+004DD93A: movs         r5, #1
+004DD93C: str          r5, [r3, #0xc]
+004DD93E: add          r2, pc
+004DD940: ldr          r5, [r4]
+004DD942: add          r7, pc
+004DD944: strd         r7, lr, [r3, #0x10]
+004DD948: str          r5, [r3]
+004DD94A: strd         r6, r6, [r3, #0x20]
+004DD94E: strd         r6, r6, [r3, #0x18]
+004DD952: str          r6, [r1, #0x10]
+004DD954: str          r3, [r4]
+004DD956: pop.w        {r4, r5, r6, r7, lr}
+004DD95A: b.w          #0x8caddc
+004DD960: raw=00BAF806 relocated=00BAF806
+004DD964: raw=00B62660 relocated=00B62660
+004DD968: raw=003FE3E7 relocated=003FE3E7
+004DD96C: raw=00BAF7DC relocated=00BAF7DC
+004DD970: raw=003FE3F1 relocated=003FE3F1
+004DD974: raw=00B736BE relocated=00B736BE
+004DD978: raw=003FE32B relocated=003FE32B
+RANGE 0x008DBD10..0x008DBD26 exclusive; Thumb;
+008DBD10: push         {r7, lr}
+008DBD12: ldr          r1, [r0]
+008DBD14: ldr          r2, [r1, #8]
+008DBD16: movs         r1, #8
+008DBD18: blx          r2
+008DBD1A: cmp          r0, #0
+008DBD1C: ite          eq
+008DBD1E: moveq        r0, #0
+008DBD20: blne         #0x8dc090
+008DBD24: pop          {r7, pc}
+RANGE 0x008DC090..0x008DC09E exclusive; Thumb;
+008DC090: ldr          r1, [pc, #0xc] ; word[008DC0A0]=0075C7B0
+008DC092: movs         r2, #0
+008DC094: add          r1, pc
+008DC096: adds         r1, #8
+008DC098: strd         r1, r2, [r0]
+008DC09C: bx           lr
+008DC0A0: raw=0075C7B0 relocated=0075C7B0
+RANGE 0x008DC0A4..0x008DC0C6 exclusive; Thumb;
+008DC0A4: push         {r4, lr}
+008DC0A6: mov          r4, r0
+008DC0A8: ldr          r0, [r1]
+008DC0AA: ldr          r2, [r0, #8]
+008DC0AC: mov          r0, r1
+008DC0AE: movs         r1, #8
+008DC0B0: blx          r2
+008DC0B2: cbz          r0, #0x8dc0c2
+008DC0B4: ldr          r1, [pc, #0x14] ; word[008DC0CC]=0075C78E
+008DC0B6: add          r1, pc
+008DC0B8: adds         r1, #8
+008DC0BA: str          r1, [r0]
+008DC0BC: ldr          r1, [r4, #4]
+008DC0BE: str          r1, [r0, #4]
+008DC0C0: pop          {r4, pc}
+008DC0C2: movs         r0, #0
+008DC0C4: pop          {r4, pc}
+008DC0CC: raw=0075C78E relocated=0075C78E
+RANGE 0x008DC0D0..0x008DC112 exclusive; Thumb;
+008DC0D0: cbz          r3, #0x8dc0de
+008DC0D2: ldr          r1, [r0]
+008DC0D4: ldr.w        ip, [r1, #0x18]
+008DC0D8: mov          r1, r2
+008DC0DA: mov          r2, r3
+008DC0DC: bx           ip
+008DC0DE: movs         r0, #1
+008DC0E0: bx           lr
+008DC0E2: push         {r4, r5, r7, lr}
+008DC0E4: mov          r4, r0
+008DC0E6: mov          r5, r1
+008DC0E8: cbz          r4, #0x8dc0fc
+008DC0EA: ldr          r0, [r4]
+008DC0EC: ldr          r1, [r0]
+008DC0EE: mov          r0, r4
+008DC0F0: blx          r1
+008DC0F2: ldr          r0, [r5]
+008DC0F4: mov          r1, r4
+008DC0F6: ldr          r2, [r0, #0xc]
+008DC0F8: mov          r0, r5
+008DC0FA: blx          r2
+008DC0FC: movs         r0, #1
+008DC0FE: pop          {r4, r5, r7, pc}
+008DC100: ldr          r1, [r1]
+008DC102: str          r1, [r0, #4]
+008DC104: movs         r0, #1
+008DC106: bx           lr
+008DC108: cbnz         r1, #0x8dc10e
+008DC10A: ldr          r1, [r2]
+008DC10C: str          r1, [r0, #4]
+008DC10E: movs         r0, #1
+008DC110: bx           lr
+RANGE 0x008DC116..0x008DC118 exclusive; Thumb;
+008DC116: bx           lr
+01038850: raw=008DC117 relocated=008DC117
+01038854: raw=008DC113 relocated=008DC113
+01038858: raw=008DC109 relocated=008DC109
+0103885C: raw=008DC0A5 relocated=008DC0A5
+01038860: raw=008DC0D1 relocated=008DC0D1
+01038864: raw=008DC0E3 relocated=008DC0E3
+01038868: raw=008DC101 relocated=008DC101
