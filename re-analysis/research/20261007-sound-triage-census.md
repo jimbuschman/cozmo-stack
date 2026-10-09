@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through342 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through343 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1899,3 +1899,7 @@ SR341A–D bind four generated control-curve admissions, exact independent cosin
 ### Checkpoint 342 — generated route curves completed locally
 
 SR342A–I settle all four interpolation tables, scalar conversions, invalid/null distinctions and the ordinary-secondary log converter's distinct arithmetic association. Selected local A5993C own decisions now positive; downstream A2428C/collaborators and wider providers/writers/families/registration keep Q14-029 PARTIAL. Historical unread local-curve wording superseded. Counts unchanged, Q15 parked.
+
+### Checkpoint 343 — generated matrix channel and density gates
+
+GM343A–F bind destination normalization, source-intersection mono coefficients, exact horizontal/vertical control-grid density/conversion/parity and format dispatch. Explicit source-count exclusions retained; remaining selected mono/stereo geometry/cache/coefficient bodies and writer/family/registration dependencies keep Q14-029 PARTIAL. Counts unchanged, Q15 parked.
