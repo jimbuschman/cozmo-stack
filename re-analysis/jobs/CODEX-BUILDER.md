@@ -29,3 +29,14 @@ rules.
 7. **Log each batch in `status/<job>.md`:** the commit, the records touched, and every MISSING.
 8. **Stop** when the job is DONE, or BLOCKED on a decision the source can't settle. Don't start another job without
    the operator.
+9. **When a layer's build is finished** (DONE, or BLOCKED only on items outside the layer), prepare the Opus
+   verification packet before stopping. It goes in `re-analysis/research/<date>-<layer>-verify-packet/`, one file per
+   record that is built and has no open MISSING. Each file holds:
+   - the record's current manifest text;
+   - the commits and the exact diff hunks that implement it;
+   - the rows it was built from, quoted, with their source file;
+   - the native instruction text for every cited address range;
+   - any emulator or oracle test that covers it, with its result.
+
+   List the excluded records, and why. Give no verdicts. The packet keeps the Opus pass short: it compares, it doesn't
+   rediscover.
