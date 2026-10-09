@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through383 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through384 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -160,7 +160,7 @@ PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/read
 
 > | M6-002 | **KEEP** | 0x00AB6380..0x00AB6780;0x00AB3780;0x00AB6B14;0x00AB7E40;0x00AB3520;0x00AB5A94;0x00AB4E34 | Live decoder integration, LFE channel reorder, reset/skip/trim, work-buffer lifetime, window-default reachability, and unshipped-size signed-zero residuals remain WEM decoding; ADP-1 explicitly excludes decoding from equivalence, including its IMDCT/NEON arithmetic. |
 
-PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions. Remaining in-scope packet/framing consumers and setup/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
+PARTIAL: VI1–VI7 and SC8–SC9 establish shared fixed MDCT workspace and variable planar output allocation/consumer/teardown; VC1–VC5 check the setup-cache ownership and allocation controls. The retained manifest C9 writer-absence statement is contradicted with its current quotation and AB3400 store. VF383 now joins packet-bit block selection, old/new block interval, first-packet sentinel and exact skip/end-trim frame decisions; VF384 closes VPACK pending-frame query/consumption, independent window selection and no-packet overlap preservation. Remaining in-scope packet/framing consumers and setup/control input/provider/writer joins stay open; out of scope: excluded multichannel/LFE-source branches and per-sample arithmetic descent under the guard. WEM decoding fidelity is not waived or promoted; no completed decoder/integration claim.
 
 ## Q14-004 — triage line 35
 
@@ -2063,3 +2063,7 @@ BC382 bindsbothknownbus58 tables andestablishes first58 then48 everychildforward
 ## Checkpoint 383 — Vorbis packet frame producer
 
 VF383 settlesAB3780 one-bit block selection, overlap-copyflag, normal/firstpacket interval, persistent skip and end-trim decisions before the arithmetic continuation. RI205/SK6 already-positive parser/table recipients reused in Q14-004; storage descendants excluded. Frame/control consumer and input/provider/writer joins retained; totals unchanged, Q15 pendingQ14.
+
+## Checkpoint 384 — Vorbis interval consumer
+
+VF384 closesAB3520 availability/query/minframe/association/window/consumption controls andAB3978 overlap-preservation flag/path, joining already-positive VPACK terminalstatus gates toVF383. Kernel sample arithmeticexcludedwithoutWEM equivalence claim. Other source/setup/input/provider/writer joins retained; totals unchanged, Q15 pendingQ14.
