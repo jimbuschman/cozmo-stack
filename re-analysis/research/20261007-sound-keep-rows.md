@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 505 — global quota and audibility input bindings
+
+Primary: `20261009-sound-global-quota-threshold-input-native.txt`; same engine SHA256. U1/U9–11/GL4–5/LV7/VP13 and exact audibility consumers reused. Reopened native bytes and actual GOT values establish the distinct bases; input setters are decision work, not peak-limiter DSP.
+
+| Row | Primary evidence | Exact retained decision |
+| --- | --- | --- |
+| GU505A quota identity | 9A0EA4..9A0EE8;raw9A0EE8/EC;GOT10400B4->108DE98 | U11 priority state base=9A0EC0+6B1558=1052418; signed priority at1052420. Accepted priority publication precedes U16 quota write to108DE98+C=108DEA4. GL4 base108DE78+2C is the SAME quota; LV7/VP13 append address108DE98, not a second separately initialized limit object. Incoming word0 rejects1F before priority; signed greater priority returns1 without mutation; equal replaces; only low16 of accepted nonzero word is written. |
+| GU505B priority-zero setter | 9A0938..9A0980;raw9A0980/84 | Nonzero input required, else1F. Base9A0954+6B1AC4=1052418; read signed priority1052420. Negative stored priority returns1 without update. Otherwise write priority0 BEFORE same108DEA4 low16 quota, return1. No incoming priority argument is consumed. A nonzero word with low16zero is admitted; no clamp/default or notification call. Immediate caller census contains no selected9A0938 candidate; callers/indirect or exported bindings remain UNKNOWN, not unreachable proof. |
+| GU505C threshold identities/order | 9A080C..9A0908;raw9A092C/30/34;GOT10400AC->1052454;GOT10400B0->1052450 | Priority base9A0840+6B1BD8=1052418; threshold priority105241C, distinct from quota priority1052420. Accepted threshold priority stored before powf. Publish raw incoming bits to1052450 before comparing powf result with native approximation and publishing selected linear bits1052454. U9–10 own exact bounds, approximation and unordered selection. This concretely joins AU495/DG/SEND286/VP8/AV4 audibility reads; no per-sample gain exemption. |
+| GU505D witnessed bank input calls | executable-LOAD census;9B0B48/9B0B88;U1 | The selected direct ARM calls are9B0B48->9A080C and9B0B88->9A0EA4. U1 passes fixed priority2 and read raw32 threshold/zero-extended U16 quota; calls occur before validating saved read result. The scan records branch candidates and does not prove absence of indirect, exported or other value-writing paths. No global exhaustive-writer closure is claimed. |
+
+out of scope: storage/backing allocator statistics infrastructure; GL1–3 pressure-query inputs and victim/priority/result decisions remain retained in their existing rows. Default limiter object construction/key, full counter and input/provider writer closure remain concrete open obligations. Q14-037 remains PARTIAL; counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. No production/fidelity-manifest/hardware changes; Q15 follows Q14.
+
+
 ## Checkpoint 504 — original FX helper/wrapper boundary reconciliation
 
 Primary reuse only: VF1–9/WV1–15/IC1–11/FS432/SL433/LP434/PP441/CP1–5/FQ431/PR6–10/RG1–3/U27/R34–35/37/42/SU/SN/CI192/PS404/FC258/FM259/FB256/EB497. The four named Q14-036 helpers contain ownership, format and control work; their callers do not turn them into sample arithmetic.
