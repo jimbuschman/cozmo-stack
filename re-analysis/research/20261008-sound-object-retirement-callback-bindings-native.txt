@@ -1,0 +1,69 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0103AD04: raw=009F1C48 relocated=009F1C48
+0103D124: raw=009F1C48 relocated=009F1C48
+0103ACEC: raw=009F500C relocated=009F500C
+0103D10C: raw=009F500C relocated=009F500C
+RANGE 0x009F1C48..0x009F1C4C exclusive; ARM;
+009F1C48: bx           lr
+RANGE 0x00A32FA0..0x00A32FCC exclusive; ARM;
+00A32FA0: ldr          r1, [pc, #0xc1c] ; word[00A33BC4]=005E9358
+00A32FA4: cmp          r4, r0
+00A32FA8: mov          r2, #0
+00A32FAC: str          r2, [r4, #4]
+00A32FB0: add          r1, pc, r1
+00A32FB4: strb         r2, [r4, #8]
+00A32FB8: add          r1, r1, #8
+00A32FBC: str          r2, [r4, #0xc]
+00A32FC0: str          r2, [r4, #0x10]
+00A32FC4: str          r2, [r4, #0x14]
+00A32FC8: str          r1, [r7, r3]
+RANGE 0x00A33040..0x00A33070 exclusive; ARM;
+00A33040: ldr          r3, [pc, #0xb80] ; word[00A33BC8]=005E92BC
+00A33044: mov          r1, #0
+00A33048: str          r1, [sl, #4]
+00A3304C: add          r3, pc, r3
+00A33050: strb         r1, [sl, #8]
+00A33054: add          r3, r3, #8
+00A33058: str          r1, [sl, #0xc]
+00A3305C: str          r1, [sl, #0x10]
+00A33060: str          r1, [sl, #0x14]
+00A33064: str          r3, [r0, r2]
+00A33068: ldr          r3, [sp, #0x34]
+00A3306C: str          sb, [sl, #0x18]
+RANGE 0x00A33114..0x00A33140 exclusive; ARM;
+00A33114: ldr          r3, [pc, #0xab0] ; word[00A33BCC]=005E9214
+00A33118: cmp          r4, r6
+00A3311C: mov          r1, #0
+00A33120: str          r1, [r4, #4]
+00A33124: add          r3, pc, r3
+00A33128: strb         r1, [r4, #8]
+00A3312C: add          r3, r3, #8
+00A33130: str          r1, [r4, #0xc]
+00A33134: str          r1, [r4, #0x10]
+00A33138: str          r1, [r4, #0x14]
+00A3313C: str          r3, [r8, r0]
+RANGE 0x00A33568..0x00A33594 exclusive; ARM;
+00A33568: ldr          r1, [pc, #0x66c] ; word[00A33BDC]=005E8D94
+00A3356C: mov          r0, #0
+00A33570: str          r0, [sl, #4]
+00A33574: add          r1, pc, r1
+00A33578: strb         r0, [sl, #8]
+00A3357C: add          r1, r1, #8
+00A33580: str          r0, [sl, #0xc]
+00A33584: str          r0, [sl, #0x10]
+00A33588: str          r0, [sl, #0x14]
+00A3358C: str          r1, [r7, r3]
+00A33590: b            #0xa33068
+00A33BC4: raw=005E9358 relocated=005E9358
+00A33BC8: raw=005E92BC relocated=005E92BC
+00A33BCC: raw=005E9214 relocated=005E9214
+00A33BDC: raw=005E8D94 relocated=005E8D94
+0101C318: raw=00A14C7C relocated=00A14C7C
+0101C31C: raw=00A14D74 relocated=00A14D74
+0101C348: raw=00A14C84 relocated=00A14C84
+0101C34C: raw=00A14D9C relocated=00A14D9C
+RANGE 0x00A14C7C..0x00A14C80 exclusive; ARM;
+00A14C7C: bx           lr
+RANGE 0x00A14C84..0x00A14C88 exclusive; ARM;
+00A14C84: bx           lr
