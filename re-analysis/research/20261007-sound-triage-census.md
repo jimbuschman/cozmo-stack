@@ -1623,3 +1623,7 @@ BA272A/B and BR272C trace existing4C/54 retain and mode/bit admission, loader re
 ### Checkpoint 273 — bank registry and coverage reconciliation
 
 BP273A recovers duplicate-key no-replacement, key-before-backing and next/head/count publication endpoint. Storage backing excluded; current coverage reuses checkpoints261–272 without calling known unload/preparation bodies wholly unread. Deferred/provider/input/writer closure and totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 274 — deferred descriptor availability
+
+DV274A–C trace physical length-gated descriptors, existing-media retain/first alias pointer-size order and failure-prefix release including earlier zero-length IDs. Storage/rehash/file/I/O internals excluded; remaining availability/input/provider/writer closure stays PARTIAL. No totals/Q15/fidelity/production changes.
