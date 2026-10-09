@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through352 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through353 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1939,3 +1939,7 @@ OR351A–G bind the controller/wrapper mask1, native ID/mask validation, tagB co
 ### Checkpoint 352 — queued unregister and retained-object controls
 
 OU352A–G settle selected native single/all tagC producers, FFFFFFFF consumer split, first-ID registry removal, retired-list publication/failure, unregistered-bit/refcount order and known DC4 teardown reuse. All-objects recipient and concrete callback/input/writer/family closure remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 353 — all-object removal and callback-visible ordering
+
+OA353A–E settle reserved-ID0 retention, physical enumeration, retired-list/refcount gates and teardown before entry unlink/count publication, contrasting positively with single removal's earlier unlink and flag clear. Existing switch/local-list cleanup reused. Actual all-unregister app binding and concrete callbacks/subscriber/input/writer families remain PARTIAL. Counts unchanged, Q15 parked.
