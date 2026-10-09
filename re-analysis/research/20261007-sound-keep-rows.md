@@ -11,6 +11,18 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 303 — live two-filter dispatch and target association
+
+Primary: `20261008-sound-filter-live-dispatch-native.txt`; same engine hash. Reuse FC2–8 target/ramp/bypass, RS8 format/controls initialization, FC9/CR2/MC1 concrete live callers. No PCM recurrence or matrix arithmetic re-extraction.
+
+| Step | Address | Behaviour | Gates / ordering | Boundary |
+|---|---|---|---|---|
+| FLIVE303A | 00A4C60C..00A4C61C | InputB0bufferpointer0 returns immediately, with no state/target/history calls. Nonnull buffer forwardssameB and tailsA766B8 atincomingholder+10. | Pointer gate, not validframe count or buffer state. No result code synthesized. | Source-ready FC9/MC1 primary holdervoice1C0 and first accepted dry-route CR2 secondaryholdervoice390 are actual invocations. |
+| FLIVE303B | 00A766B8..00A766EC | K=holder+10. InvokeA766F0(B,K+170,K+10,U8K194), then tailA77480(B,K+180,K+C0,reloadedU8K194). Save B/K across first call. LPF controls before HPF; no status-result gate or descriptor copy between. | Byteargument reloaded for second filter; first filter may change PCM but same buffer metadata identity passed. | FC3–8 own exact update/cadence/bypass/history decisions. Out of scope: per-sample filter recurrence arithmeticADP-1. |
+| FLIVE303C | FC2;FLIVE303A/B;RS8 | Primary holder1C0→K1D0 maps control offsets170/180 tovoice340/350. Secondary holder390→K3A0 maps to510/520. Those are FC2's four target blocks (physical target-update order340,510,350,520); processing order within each pair remains LPF thenHPF. | Do not confuse target-update order with processing order. RS8 initializes format190/byte194 and both current/target words0, count8, dirty/immediate/bypass bytes1. | Reconciles positive live target/consumer/default links; broader target/input/format/state writers and coefficient-control boundary remain PARTIAL. |
+
+Q14-012's selected filter consumer/default associations now reuse positive FC/RS8 bodies with concrete live dispatch; historical broad unread filter recipient labels do not reopen these. Full numerical persistent-matrix/parameter boundary and other relevant writers remain explicit, no bulk ADP-1 reclassification. Counts unchanged, Q14 PARTIAL, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 302 — lazy connection parameter context and inheritance
 
 Primary: `20261008-sound-connection-lazy-context-native.txt`, `20261008-sound-connection-owner-context-query-native.txt`, `20261008-sound-connection-lazy-context-slots.txt`; same engine hash. RCC1 constructor table101C4A8 slot8 bindsA6F81C. Reuse IC2/3/11 settings clone/retain/registration/initial delivery and PDI defaults; this getter's actual dynamic consumer remains separately retained.

@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through302 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through303 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -214,7 +214,7 @@ PARTIAL; V1–V14, I1–I6, D1–D6 and U9 cover parameter recomputation, positi
 
 > | M6-011 | **KEEP** | 0x009FFD14..0x009FFD74;0x00A550D8..0x00A551EC;0x00A44630;0x00A766F0;0x00A77480;0x00A769EC..0x00A76A2C | Target writers/attenuation, cutoff map parameters, eight-step ramp cadence, finish countdown and immediate bypass predicates remain exact; do not invent default-zero inputs. |
 
-PARTIAL: FB1–FB3 and FC1–FC9 establish named target stores, clamp/opcode gates, cutoff maps, coefficient update cadence, stable/bypass history and dispatch order. Persistent matrix values, connection/filter recipients, and complete input writer closure remain open; no whole M6-011 completion claim.
+PARTIAL: FB/FC establish target stores, clamp/opcode gates, cutoff maps, coefficient cadence and stable/bypass history. FLIVE303 joins actual buffer-pointer gate, LPF-before-HPF dispatch and primary/secondary control offsets to FC2 targets and RS8 initialization; those selected filter/default bodies are positive. Remaining persistent-matrix/numerical parameter boundary, other relevant target/format/state/input writers and products; no whole M6-011 completion claim.
 
 ## Q14-013 — triage line 48
 
@@ -1739,3 +1739,7 @@ SEED301A–D recover U16 config74 admission, stock zero preservation (SL34/CV282
 ### Checkpoint 302 — lazy connection parameter lookup
 
 LCTX302A–E recover constructor-bound cache/latch-before-query behavior, node inheritance/property39/defaultFFFFFFFF, registry first-ID retain and output-replace-before-oldrelease; IC holder/subscription/scope helpers reused. Concrete consumer/writer families remain separate. UC46 removes SEED301 synthetic query-width uncertainty; RN/NPR/PDI/V one-time random/root joins reconciled. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 303 — live filter dispatch association
+
+FLIVE303A–C recover input-pointer gate, same-buffer LPF/HPF order, second byteargument reload and exact primary/secondary control offsets. FC/RS8 cadence/bypass/default/target bodies reused; numerical boundary and remaining writers/products stay PARTIAL. Counts/Q15/fidelity/production unchanged.
