@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through317 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through318 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1799,3 +1799,7 @@ RCTX316A–F positively distinguish caller moves from wrapper clones, bind actua
 ### Checkpoint 317 — animation state/lifetime joins
 
 ASTATE317A–G settle selected next-event helpers, robot Update raw-state dispatcher, data==1 failure skipping, destruction order, actual Queue.vt4 Release recipient and executor repeated Stop/cleanup, with shipped weak-zero hooks. Other creator/input/volume/routing/geometry joins remain PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 318 — channel matrix helper prefix
+
+CMAT318A–D record adjusted destination/count gates, exact special two-column route, first physical format-pair match and original-count padded matrix copy geometry. No PCM access in these branches; list/copy/allocation mechanics excluded. Other format-specific construction and consumer paths remain PARTIAL; counts unchanged, Q15 parked.
