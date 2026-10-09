@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 477 — route parameter and definition selection boundary
+
+Primary: `20261009-sound-route-parameter-definition-boundary-native.txt`,72 complete ARM instructions and separate literal pools; same engine SHA256. Concrete VP9 admits A5E694(mode,X,&routes) only after nonzero builder count. Existing VS7/RM472 supplies the scalar conversion and registry identity boundary. Stop before spatial curve/coordinate calculations.
+
+| Row | Primary / reuse | Exact decision/value/order |
+| --- | --- | --- |
+| RF477A dry parameter input/conversion | A5E694..A5E714/A5F02C..A5F034;VS7 | Read X58, multiply F32 by bits3D4CCCCD; capture F32([X8].60) before definition selection. Native MI comparison against C2140000 selects scalar+0. Other values use VMLA with4BD49A78/4E7E0000, VCVT.U32.F32, mantissa/exponent split, VMLA polynomial constants3EA67F46/3CAA70DE/3F272DDB and final VMUL. VS7 owns the already-positive scalar algorithm; these exact input/call/order/raw constants remain controls, not exempt sample arithmetic. NaN is not a new invalid-input return. This row does not certify later coordinate-derived factors. |
+| RF477B cached definition/input snapshot | A5E714..A5E72C | Snapshot A=X.D0, O=A40, F32 A.C and raw keyA8 before lookup. O nonnull skips registry/retain/publication; no live cache revalidation. Missing O invokes RF477C. No new A-null or key0 gate. Unlike RM472, this parent does not run preparation/RTPC binding first. |
+| RF477C missing definition/reference publication | A5FB90..A5FC08;rawA5FA80;RM472D/GOT104006C→108D8E0 | Current registry mutex78 lock; count80zero/missing exact key returns null O. Match first physical bucket-chain O8==saved key, increment O.C wrapping32 under lock. Unlock BEFORE publish captured A40=selected O (including0), then resume numeric mode branch. Registry hash/bucket mechanics out of scope; identity/retain/order exact. No fallback definition allocation, retry or O-null early return; mode selection still occurs on miss. |
+| RF477D numeric mode/payload boundary | A5E72C..A5E734;VP9/RB476 | Supplied mode==1 selects A5F070, all other modes A5E734. Caller supplies route mode from live XDC bits2..3, not a host default. out of scope:downstream spatial attenuation/coordinate curve and positioning payload calculations in these selected bodies. Definition identity and initial scalar inputs are retained; this row neither claims those excluded bodies nor descends into A5D774. |
+
+out of scope:registry hash/backing, spatial attenuation/coordinate curve and positioning payload calculations after the retained mode boundary; per-sample DSP arithmetic. Definition choice/reference/cache publication, dry scalar input/conversion and numeric mode remain exact decisions.
+
+Original Q14-026 named9BE28C/9BF8E4/A5E694 boundaries now join RM/RP/RR/RA/RB/RF without reopening coordinate payloads; existing VS/EP/BP/VP/AV/DU/SEND/SR/PC covers other named parents. No broad route/source/input/writer closure inferred. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 follows completed Q14. Next bounded step: reconcile the original Q14-026 address list and replace generic unread-body wording with explicit retained boundary/remaining controls before Q14-028.
+
 ## Checkpoint 476 — route-builder admission and selected listener identities
 
 Primary: `20261009-sound-route-builder-admission-native.txt`,157 complete ARM instructions and separate pools; same engine SHA256. Concrete VP9 calls9BF8E4(X,mode,&routes), with mode supplied by RM472/NG3. Segmented capture stops at coordinate generation and storage-copy interfaces; it does not claim the complete3D body.
