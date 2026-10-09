@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 409 — authored2103 nested-event action
+
+Primary: `20261009-sound-authored-nested-event-action-native.txt`, same engine hash;75 instruction words plus literals/GOT/table. Shipped witness:1 raw2103 action in reachability census;AF406 family2100→A63EB0. A=action,P=pending wrapper,E=resolvedevent; offsets hex. EA271/PR262 bank preparation/release for2103 remain separate from this actual execution.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| NE409A factory/product/reader | A63EB0..A63F00;rawA63F04/08;raw103CBE8..CC14;A63D54..58;AB250 | Allocate24,nullreturnsnull. NonnullA60ADC(originaltype,ID),installtable103CBE8 (PC A63EEC+8+5D8CEC+8),A60DEC registration,returnA. Known24=A63DB4,28=A63D54,C=A60650 commonrelease. Reader28 returns1 with no cursor/read/store. No derived target default beyond common A1C0; base header reader supplies targeteventID. |
+| NE409B event resolution/lifetime | A63DB4..A63E4C;rawA63E84/104006C | CaptureA1C eventID,current index fromglobal108D8E0;lockindex3C. Bucketcount44zero unlocks→0F. Otherwise unsignedID modulo currentcount;table40,chainnext4,firstID8 match. Missing unlocks→0F. Found rawE.C++ before unlocking;no playingcounter/E14 increment. Uses event-specific index40/44,not generalnode A11 selectorregistry. |
+| NE409C nested action dispatch | A63E50..A63E80;E22–32;ER246/AP249 | Call9AA3DC(E,P34 object,P28 playingID,0 requestedID,P+14 external descriptor). Parent pending descriptor is passed by address,not cloned/repostedthrough native tag1. Ignore voiddispatch result;reloadE table andcallC,thenreturn1. Thus child actions use same playingID/object/external fields and scheduler rules,requestedID0. Missingevent0F does not invoke nested scheduling. No cycle/depth/duplicate guard or eventwide rollback inthis selected recipient. |
+
+out of scope: event-index backing storage/hash infrastructure and allocation/free mechanics; logical lookup/retain/unlock/order and scheduler controls retained.
+
+Known authored2103 local product/reader/execute joined to existing event/scheduling rows. Q14-0071E03 concrete binding and remaining witnessed102/103/108/202/302 family integration still need reconciliation. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 408 — authored1303 RTPC action product and parameter decisions
 
 Primary: `20261009-sound-authored-rtpc-action-binding-native.txt`, same engine hash;277 instruction words plus literals/GOT/table. Shipped witness:3 raw1303 actions in reachability census. AF406 family1300→A656B4 reused. A=action,P=pending wrapper; offsets hex. No descent into unrelated opcodes of shared executor.
