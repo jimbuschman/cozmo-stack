@@ -1571,3 +1571,7 @@ FM259A–C trace packed format equality, i+1 recursion, final two-stage reinit w
 ### Checkpoint 260 — FX getters/scan/helper reconciliation
 
 FQ260A–C recover stored-format44 getters and small34 zero, join large34/WV routing/teardown and RS8 stage Init. Known live64/68 local bodies positive; remaining pointer/input/provider/writer/unload closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 261 — unload dispatch and completion families
+
+UD261A–E trace composite-key eligibility/failure shaping, unlink-before-retirement and base/threaded event-release/queue/wait differences. Known event, callback and tag18 consumer bodies reused. Bank/provider/input/flag writer closure remains PARTIAL; no totals/Q15/fidelity/production changes.
