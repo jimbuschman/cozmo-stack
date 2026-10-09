@@ -1,0 +1,36 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00A37C2C..0x00A37C74 exclusive; ARM;
+00A37C2C: vcmpe.f32    s16, s15
+00A37C30: vmrs         apsr_nzcv, fpscr
+00A37C34: vdivmi.f32   s16, s16, s15
+00A37C38: vmlami.f32   s17, s18, s16
+00A37C3C: vaddpl.f32   s17, s17, s18
+00A37C40: vcmpe.f32    s17, #0
+00A37C44: vmrs         apsr_nzcv, fpscr
+00A37C48: bmi          #0xa37e5c
+00A37C4C: vldr         s15, [pc, #0x298] ; word[00A37EEC]=42C80000
+00A37C50: vcmpe.f32    s17, s15
+00A37C54: vmrs         apsr_nzcv, fpscr
+00A37C58: ble          #0xa37ea8
+00A37C5C: vmov         fp, s15
+00A37C60: vstr         s15, [sp, #0x38]
+00A37C64: mov          r0, fp
+00A37C68: bl           #0xa376c0 ; FUN_00a376c0
+
+00A37C6C: cmp          r0, #0
+00A37C70: beq          #0xa37aa8
+RANGE 0x00A37E5C..0x00A37E64 exclusive; ARM;
+00A37E5C: vldr         s15, [pc, #0x8c] ; word[00A37EF0]=00000000
+00A37E60: b            #0xa37c5c
+RANGE 0x00A37EA8..0x00A37EBC exclusive; ARM;
+00A37EA8: vcmpe.f32    s17, #0
+00A37EAC: vldr         s15, [pc, #0x3c] ; word[00A37EF0]=00000000
+00A37EB0: vmrs         apsr_nzcv, fpscr
+00A37EB4: vmovpl.f32   s15, s17
+00A37EB8: b            #0xa37c5c
+RANGE 0x00A380FC..0x00A38104 exclusive; ARM;
+00A380FC: vldr         s16, [pc, #-0x1f8] ; word[00A37F0C]=501502F9
+00A38100: b            #0xa37c2c
+00A37EEC: raw=42C80000 relocated=42C80000 
+00A37EF0: raw=00000000 relocated=00000000 
+00A37F0C: raw=501502F9 relocated=501502F9 

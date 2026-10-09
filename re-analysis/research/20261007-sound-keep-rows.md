@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 492 — derived priority parameter arithmetic and admission
+
+Primary: `20261009-sound-play-derived-priority-controls-native.txt`,27 complete ARM instructions and separate scalar literals; same engine SHA256. PA491B supplies base=s17,offset=s18,scaled output=s15, and enters this branch only when node84 nonzero and offset NE0. Derived minimum=s16 is an excluded geometry interface input, not a host distance substitute. All scalar parameter arithmetic is exact control work, not ADP-1 sample arithmetic.
+
+| Row | Primary / reuse | Exact decision/value/order |
+| --- | --- | --- |
+| DP492A minimum interface | A380FC..A38104;rawA37F0C | Native listener-mask0 path loads raw501502F9 into minimums16, then enters adjustment; not0, infinity or a missing-result failure. out of scope:nonzero-mask coordinate/distance computation and9D4F0C body supplying minimum. This one sentinel input does not claim that excluded body. |
+| DP492B priority adjustment | A37C2C..A37C40;PA491B | Native VCMP minimum versus scaled output, then VMRS. MI executes VDIV(minimum,scaled) followed by fused/native VMLA(base,offset,ratio). PL executes VADD(base,offset). No denominator guard, separate double calculation, percentage normalization or per-sample exemption. Unordered comparison uses PL, because VFP unordered setsN0. Offset and base remain earlier snapshots across node84 callback. |
+| DP492C clamp/publication | A37C40..A37C64/A37E5C..A37E64/A37EA8..A37EBC;rawA37EEC/EF0 | Compare adjusted priority against+0; BMI chooses raw+0. Otherwise compare with42C80000 (100). BLE enters second compare with+0, initializes chosen+0 then VMOVPL adjusted priority; other case chooses100. Publish chosen rawbits bothfp andSP38. For unordered adjusted value, BMI false, BLE true, PL true: retain NaN; do not introduce finite rejection or ordinary host min/max with different unordered behavior. |
+| DP492D admission after publication | A37C64..A37C74;GL1–3/PA491C/D | Pass chosen raw priority toA376C0. Exact0 reaches same detail22/branchstate3/null-local failure as initial-priority path; every nonzero reachesPA491D global voice admission with detail21. Parameter publication precedes both checks. Geometry exclusion does not exempt victim selection, priority, result handling or later creator decisions. |
+
+out of scope:coordinate/distance payload calculation, allocator backing and per-sample DSP. Raw sentinel, scalar parameter arithmetic/conditions/publication and subsequent admission remain exact native decisions.
+
+Q14-032 Play initial and derived-priority admission boundaries are positive. Next bounded step:external-descriptor versus ordinary creator and PBI audibility/limiter/publication/cleanup sequence atA37CA0 and subsequent endpoints, reusing PC424/BI425/BR142/L/GL/PB. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows completed Q14.
+
 ## Checkpoint 491 — Play policy and initial priority admission
 
 Primary: `20261009-sound-play-policy-priority-admission-native.txt`,87 complete ARM instructions with separate PC literal; same engine SHA256. SP216's actual Sound128 recipient invokesA379D8. Reuse X1/V12–14/GL1–5/PC424 before any descendant descent. N=Sound,R=request,D=source descriptor; originalstack delta98hex after pushes, offsets hex.
