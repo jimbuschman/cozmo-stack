@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 255 — RanSeq reset recipient reuse
+
+Primary rows reused: C11/C14/C15/C21, TR18 and NR146F. No newly unread destructor or storage body is introduced.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| RJ255A | 00A07DDC..00A07E9C;00A06994..00A069D4;00A06BB4..00A06BD4;0101C270/0101C298;NR146F | TR18 node6C/count70 and node78 state recipients from the known C cache/factory paths use random table101C268 or sequence101C290. Their8 slots are already NR146F A05FE4/A0601C: state0 cleanup followed by state pool release. Known random destructor owns bitmap/exclusion storage; known sequence destructor is no-op. Reset caller still publishes count70=0 only after all per-object callbacks and null78 only after its callback. | Join applies to pointers established by these factories, not arbitrary other writes to6C/78. No RNG draw, sequence advance or EndOfEvent callback is inserted during state retirement. | Known cache publication → reset physical callback order → known state destructor/release → caller count/pointer clear. | Reconciles TR18's provisional context8 request for these known families. Other reachable writers/providers and reset's remaining action/notification closure stay PARTIAL. out of scope: NR146F bitmap/exclusion/pool release internals; stop there. |
+
+This is reuse of existing positive evidence, not new extraction of already recovered cleanup. Q14-002 no longer treats the known RanSeq context8 bodies as wholly unread. Coverage totals unchanged; Q15 parked, no production/fidelity changes.
+
 ## Checkpoint 254 — coverage reconciliation after event/action joins
 
 The current Q14-002 and Q14-007 ledger entries now explicitly reuse DR162/DD163 known deferred0503 and pending-object callbacks, AP249 authored0403 output/release, ER246/EO247 event lifetime, EL251/EP252 event/action-list publication and IM253 requested mutex type/global publication. Their old generic callback requests no longer describe these known bodies as wholly unread. Checkpoint248's concrete descriptor stream manager remains out of scope; no source-start recipient is invented in its place.
