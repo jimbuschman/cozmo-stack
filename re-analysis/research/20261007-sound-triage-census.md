@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through514 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through515 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -428,13 +428,13 @@ Partial row mapping: Q15 SP1–8 reopen running means, maximum/reset, binary32 s
 
 > | M9-004 | **KEEP** | 0x00A3BDFC..0x00A3BEE4;0x00A3CC48 | Music hierarchy, table-select flag, nearest overridden MIDI target and target0 failure are routing decisions; bank-only evidence must be expanded with these runtime consumers. |
 
-PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, target0 failure, table selection, retain and unlock; source initialization and table population remain open.
+PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, target0 failure, table selection, retain and unlock; MJ515A reuses positive CX1–5/CD1–3 actual target/init/media/seek/link/product and destruction joins; actual registry population and alternate property/override writers remain shared M6 dependencies, not a generic unread source-init claim.
 
 ## Q14-043 — triage line 81
 
 > | M9-005 | **KEEP** | 0x00A3F76C..0x00A3FBC0 | MIDI tick-to-time, division9600, effective tempo and property55 are exact scheduling; header tempo cannot be discarded as a data-fit approximation. |
 
-PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/division/tempo, property55, clock arithmetic and frame offset conversion. Normal/system decoder completion, seek and production recipient closure remain open.
+PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/division/tempo, property55, clock arithmetic and frame offset conversion. MJ515B–E reconcile positive PD1–7 normal/system decoder completion, SK1–6 seek/advance, CRS1–7 restore/query, CX/CD context and NQ/CWT post/lifecycle writers. Remaining concrete registry/property/meter/rate/provider input closure and queued event/target/lifetime recipients stay distinct; no generic unread decoder/seek claim.
 
 ## Q14-044 — triage line 82
 
