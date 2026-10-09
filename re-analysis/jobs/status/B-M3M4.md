@@ -101,3 +101,9 @@ CHECKLIST self-review: live entries and checked boundaries named in call account
 Focused run75 passed, zero failed/skipped. Initial full run exposed queued-request retention on removal; stopped that failed run, repaired the queue lifetime, and the focused removal regression now passes. Final full run and publication follow below. Rule9 whole-layer packet is not due: this bounded slice leaves same-layer unchecked rows/gaps; no whole-layer completion claim.
 
 Final checks: second full run passed3995 and exposed only the stale RFixBatch3 log assertion (missing native error level). Corrected that expectation from00512F40/00BE697E; final focused run76 passed, zero failed/skipped. Final full suite3996 passed, zero failed/skipped (3m07s). Fidelity --check and diff --check pass. Commit/push publication follows.
+
+### Checked-slice publication
+
+- Build commit: 4ae4d32f5f3253f60e704e8bd5f80ccadab5b6c4, pushed to main on 2026-10-09.
+- Push gate independently passed fidelity and all 3,996 tests, zero failed/skipped (3m27s). No hook bypass or force push.
+- DONE for the operator-authorized checked slice. M3-010 and M4-009/016/017/018/019 remain IMPLEMENTATION_GAP, built and awaiting strong verification, with the MISSING dependencies above retained. The whole M3/M4 layer is not complete or accepted. Stop here.
