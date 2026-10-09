@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through523 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 36 CHECKED native-row obligations / 8 CHECKED scope exclusions / 96 PARTIAL / 0 NOT DONE; decision checkpoints through524 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -616,6 +616,8 @@ CHECKED; X5–X6: reset gates and native field widths/order. Downstream virtual 
 
 PARTIAL: VI523A positively binds all three actual A54A30 production callers (A44BE8 secondary replacement, A555C0 lazy render, A42FF0 attach) and their raw1/failure/Stop/delete gates. VF1–9/WV/RS/PS404/EB497/IC/FQ/FS/SL/LP/PP rows close named stages, wrappers, registry settings, bypass writer and known lifecycle controls. P109523 adds selected authored109 creator/table/Info/Init/history/kernel choice/failure/Reset/Term. Remaining specific109 Execute/kernel refresh/count/channel controls and138 live product controls are not established by their parameter-reader rows alone; selected additional source/FX products must retain their own proved interfaces. No automatic whole-record acceptance.
 
+P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
+
 ## Q14-074 — triage line 123
 
 > | C30 linker Init / device table / Reserve | M6-025,M6-022 | **KEEP** | 0x00A4F0EC;0x009EA23C;0x00A22A3C;0x00A4C280 | Initialization stores, device ownership/scan/append/remove, bus vt+98 and allocation-failure result2 are lifetime/routing. |
@@ -646,6 +648,8 @@ CHECKED: CD1–CD2 reopen new-minus-old byte delta, cursor store, old media/stre
 
 PARTIAL: VI523A binds all three Init caller gates; VF/WV/PR/IC/FQ/FS/SL/LP/PP actual registry/version/settings/reader/clone/subscription paths are positive. RS1–8/PS404 close A47038/A764D4/A5676C; EB497/FQ supplies actual live four-slot bypass writer. P109523 adds actual109 product creation/metadata/Init/history/Reset/Term. Remaining specific109 Execute/kernel control boundary and138 live product control paths, rather than generic unread stage or bypass claims.
 
+P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
+
 ## Q14-079 — triage line 128
 
 > | C31.2 R2.15 wrapper render / unknown helpers | M6-025,M6-013 | **VERIFY** | 0x00A793D4;0x009CF644;0x00A6C22C; vtables0x0103DB98/0x0103DC38 | Close virtual+24/+28/+2C control contracts and identify render descendants before calling them DSP-only. |
@@ -657,6 +661,8 @@ PARTIAL: VF6–VF9 and WV1–WV15 establish concrete Init/connection/Term/reset 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
 PARTIAL: B7–12/B19–20/CP1–9 and PP441F actual108 registry/readers/metadata resolve compressor creation/Init/Reset/Term/Execute parameter/count/channel/history boundary. VI523A/RS1–8/PS404/EB497 close known voice Init callers/stages/bypass; VF/WV retain wrappers and cleanup. Broader selected voice product control closure still remains073/078/079, including109 Execute and138 live product; parameter-only evidence does not accept the full enclosing voice path.
+
+P109524: actual109 Execute snapshot/cadence, member dispatch, attack/release refresh, channel/LFE/history/count and outputgain/cache boundary are now positive. Its isolated per-sample detector/gain arithmetic is out of scope under ADP-1; the previous109 Execute pending label is superseded. Authored138 live product remains distinct retained work.
 
 ## Q14-081 — triage line 130
 
