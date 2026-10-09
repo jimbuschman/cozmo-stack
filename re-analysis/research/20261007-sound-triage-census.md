@@ -196,7 +196,7 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 > | M6-006 | **KEEP** | 0x009A6704;0x009A0EF8;0x009AE0B0;0x009AA3DC;0x009AA0FC;0x009A9F88;0x009AF8A8;0x00A62A1C;0x00A663C8;0x00A645C8;0x00A04F54 | Queued event/action timing, play counts, callbacks/flags, switch resolution and start/stop/seek behavior remain exact, including unresolved drain internals. |
 
-PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Checkpoints245–253 add native tag23 register/retire producers, signed-byte mode/flag joins, known event factory/reference/owner-before-action destruction, authored0403 output/release, event reader/list publication and mutex setup. Known deferred0503 and pending-reference callbacks are already DR162/DD163. Descriptor-manager stream/I/O recipients are out of scope per checkpoint248. UD261–AU278 join known unload/preparation completion shapes, event/action/target lifetimes, deferred media and shared group/Switch member notifications. Remaining: other reachable action/handler/provider descendants, exhaustive object/reference/global/list/state writers and in-scope public registration/callback/input closure. No whole queued-control-path completion claim.
+PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Checkpoints245–253 add native tag23 register/retire producers, signed-byte mode/flag joins, known event factory/reference/owner-before-action destruction, authored0403 output/release, event reader/list publication and mutex setup. Known deferred0503 and pending-reference callbacks are already DR162/DD163. Descriptor-manager stream/I/O recipients are out of scope per checkpoint248. UD261–AU278 join known unload/preparation completion shapes, event/action/target lifetimes, deferred media and shared group/Switch member notifications. Remaining: other reachable action/handler/provider descendants, exhaustive object/reference/global/list/state writers and in-scope public registration/callback/input closure. No whole queued-control-path completion claim. AF406 adds shipped1901 concrete factory/table/reader/execute and existing nesting/group/scoped-switch publication joins;1204/1303/2103 product/execute joins remain named next work.
 
 ## Q14-008 — triage line 41
 
@@ -2163,3 +2163,7 @@ PS404 supplies actualA53134 source pitch query, current PBI flag/immediate-ramp 
 ## Checkpoint 405 — Q14-005 decision closure
 
 The concrete voice/Hijack integration map reuses known geometry/input/lifecycle/observer rows and checkpoints399–404 to settle the bounded resampler decision obligation. Q14-005 CHECKED; totals27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE/140. Other Q14 obligations remain open; Q15 pending Q14.
+
+## Checkpoint 406 — authored1901 action binding
+
+AF406 maps positively witnessed shipped action families to factory recipients and closes1901 constructor/table/reader/execute/known switch manager joins. Q14-007 other witnessed action products remain PARTIAL; counts unchanged; Q15 pending Q14.

@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 406 — authored1901 action product and switch publication
+
+Primary: `20261009-sound-authored-switch-action-binding-native.txt`, same engine hash;180 instruction words plus literals/GOT/table. Shipped witness: reachability census's51 raw1901 actions. Only positively witnessed family joins are claimed; other factory branches are not invented reachable. A=action,P=pending wrapper; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| AF406A selected factory dispatch | A60C1C..A60DEC;AP249 | Mask typeFF00, preserve original fulltype/ID. Shipped families100→A6651C,200→A62910,300→A643AC,400→A62E54 (AP249),1200→A65844,1300→A656B4,1900→A659DC,1E00→A64500,2100→A63EB0. Lowbyte does not choose factory here; later fulltype gates are not dropped. Positive shipped types102/103/108/202/302/403/1204/1303/1901/1E03/2103 from reachability census, not absence-based branch exclusions. |
+| AF406B1900 constructor/product | A659DC..A65A38;rawA65A3C/40;raw103CE38..64;AB250 | Allocate2C;null returnsnull. NonnullA60ADC(A,originaltype,ID),then A24=0,A28=0,table103CE38 (PC A65A1C+8+5D740C+8),A60DEC registration,returnA. Known execute24=A65940,reader28=A658BC,C=A60650 reusecommonrelease; settersbelow do not reinitialize type. Allocator storage excluded,admission/publication order retained. |
+| AF406C authored reader/setters | A658BC..A658E4;A65A44..A65A50 | Reader cursor=*incomingpointer;rawword0→A24 then publishcursor+8 thenrawword4→A28;return1. No length validation,lookup,normalization or scalarfloat conversion. Direct A65A44 setsA24=incomingword;A65A4C setsA28=incomingword;bothreturnvoid. A24/28 are passed respectively as groupID/value below. |
+| AF406D execution/context order | A65940..A659A0;rawA659A4/1040094 | Snapshot A24→groupID,A28→value,P34→object;loadcurrent switch manager through verifiedGOT1040094. CallA32DE8(stackscope) BEFORE A30D98(manager,groupID). Missinggroup skips setter;nonnull callsA32ED0(group,value,object),ignoresrawresult. AlwaysA32E08(scope),thenreturn1. No use of A1C target lookup,playingID P28,action duration or immediate-vs-deferred success conversion. Group allocation failure still returns1 after nesting teardown. |
+| AF406E existing positive recipients | QC6;SUB12;SX1–4;OB354;SK355;SD1–13 | A32DE8/A32E08 are nesting/deferred-subscription controls,not a mutex; SUB12 group get/create, SX/OB/SK exact ordinary object scope acquisition/value/observer joins and SD deferred subscription operations reused. This new action does not reopen those bodies or assume synchronous snapshot delivery. |
+
+out of scope: action/group/registry backing storage and allocator mechanics; logical selection,publication and nesting/callback decisions retained.
+
+Known authored1901 local constructor/reader/execute joins now positive. Q14-007 other witnessed action product/execution joins remain open, notably1204/1303/2103;1E03 seek already has A7–9 decision bodies but concrete product binding is separate. No whole action subsystem closure. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 405 — Q14-005 bounded decision closure
 
 This closes triage line36's resampler decisions for retained mono/stereo sources and known voice/Hijack wiring. It does not claim a completed M6-004 implementation, PCM equivalence result, or changed manifest fidelity. Existing positive rows are joined below rather than opening their old pending wording again.
