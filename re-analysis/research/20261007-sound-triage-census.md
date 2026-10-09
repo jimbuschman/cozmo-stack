@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through405 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through471 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -302,7 +302,7 @@ PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pai
 
 > | M6-021 | **KEEP** | 0x0099DB58;0x0099EF80;0x00A08A7C..0x00A08AC0 | Review the test seed seam/live Unix-seconds seed separately; RNG and draw order are explicitly exact under ADP-1, even though the record is policy. |
 
-PARTIAL: N4/N5/SE1–4 establish live time fallback/width, queued setter and test-seam distinction. SEED301 joins config74 U16 admission, stock SL34 zero/default preservation, tag32 producer and consumer, plus bounded direct-ARM setter-call census. These known SetupConfig/queue bodies are positive; remaining wider indirect/global-state/input writer closure is not claimed. Test injection literal0/host-width is not native all-zero setter semantics.
+PARTIAL: N4/N5/SE1–4 establish live time fallback/width, queued setter and test-seam distinction. SEED301 joins config74 U16 admission, stock SL34 zero/default preservation, tag32 producer and consumer, plus bounded direct-ARM setter-call census. SD471 reconciles original native seed bodies, stock zero config input, consumption-time zero fallback and selected shared RNG cadence/value consumers to existing SE/C/S/TC/A/X/ID/NPR rows. These known SetupConfig/queue bodies are positive; remaining wider specifically witnessed indirect/global-state/input writer closure is not claimed. Test injection literal0/host-width is not native all-zero setter semantics.
 
 ## Q14-026 — triage line 64
 
@@ -2381,3 +2381,5 @@ Checkpoint468 — SS468 concrete state subscriber.slot0/value/completion/live-ow
 Checkpoint469 — OC469 known state owner98/C4 table bindings and exact counter/gain/cache/recursive recipient reuse;12 relocated words, no duplicate function artifact. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
 
 Checkpoint470 — OD470 existing switch RTPC ordinal/initial/later equality/ID-vector/deferred mutation production joins reconciled; no duplicate native artifact or music-observer descent. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
+
+Checkpoint471 — SD471 native initial/config/queued seed and shared control-RNG cadence joins reconciled; test literal0/host-width seam and direct-call census limits retained. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.
