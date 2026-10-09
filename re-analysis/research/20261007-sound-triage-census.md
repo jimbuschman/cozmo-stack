@@ -1575,3 +1575,7 @@ FQ260A–C recover stored-format44 getters and small34 zero, join large34/WV rou
 ### Checkpoint 261 — unload dispatch and completion families
 
 UD261A–E trace composite-key eligibility/failure shaping, unlink-before-retirement and base/threaded event-release/queue/wait differences. Known event, callback and tag18 consumer bodies reused. Bank/provider/input/flag writer closure remains PARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 262 — event preparation release
+
+PR262A–C trace kind5 event traversal, E14 clear/release ordering, 0403 target/bank and2103 nested-event branches, and targetA4 followed by twoC releases. Known resolver/event helpers reused. A4/bank release/provider/input/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
