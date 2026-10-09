@@ -1987,3 +1987,7 @@ NC363A–D bind known five-node4C/58 slots, reuse RR5/6 for known controls, and 
 ### Checkpoint 364 — Switch/Layer control prepass and PBI reuse
 
 SL364A–F settle operation selection, independent zero-wildcard local state updates, signed active-context admission and reverse fixed-count child control. NC363 Sound58 known PBI1C joins reuse PD178D/CA179 rather than repeat recovered bodies. Stop/removal helpers and remaining families/inputs/writers remain PARTIAL; counts unchanged, Q15 pending Q14.
+
+### Checkpoint 365 — Switch/Layer selected stop removal
+
+SR365A–G settle independent wildcard removal, unlink/count-before-completion, ordered known cleanup and Switch-only association first-match erasure. Known HP4–13 queue/type4 voice/source controls reused from existing Q15 evidence. Generic local unread-helper/consumer labels superseded for those families; actual writer/input/family/timing closure remains PARTIAL. Counts unchanged; Q15 pending Q14.
