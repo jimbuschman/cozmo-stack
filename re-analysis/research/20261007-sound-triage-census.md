@@ -2,13 +2,13 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 67 CHECKED native-row obligations / 8 CHECKED scope exclusions / 65 PARTIAL / 0 NOT DONE; checkpoint558 audits every former PARTIAL item with its exact remaining boundary/disposition |
+| Per-item native rows and production joins | PARTIAL | 68 CHECKED native-row obligations / 8 CHECKED scope exclusions / 64 PARTIAL / 0 NOT DONE; checkpoint558 audit retained, checkpoint560 closes023 query/renderer transfer |
 
 # Q14 per-item work census
 
 Impact audit, checkpoint559: **140 AUDIBLE /0 INTERNAL**. AUDIBLE covers an obligation that can affect sound selection, timing, loudness, cutoff or robot behaviour, including a mixed obligation with internal bookkeeping. INTERNAL would require the whole obligation to have no such effect; no original KEEP/VERIFY obligation meets that stronger claim on the present evidence. Meter observers with unresolved downstream consumers are conservatively AUDIBLE, not proved harmless. Scope exclusion is independent: I/O/cache availability and completion can affect when media is ready, but this tag does not reopen the guard-excluded infrastructure. Likewise audible per-sample DSP remains excluded from this decisions-only task. This is an impact annotation, not a new source-fidelity or hardware claim.
 
-Operator's latest stop instruction supersedes the checkpoint558 continuation order: after pushing the impact audit, stop; do not resume Q14 extraction or Q15.
+Checkpoint559 stop was honored. Operator now resumes Q14 smallest first; checkpoint560 closes023. Impact counts remain unchanged.
 
 Each quoted triage line is an independent obligation. Row presence, a disassembly capture, and a named callee do not establish closure. This is a work ledger, not an accepted answer.
 
@@ -34,7 +34,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-020 | 58 | CHECKED | AUDIBLE | Hijack readiness/end callbacks and22320-Hz/744-byte framing determine the robot's delivered audio. |
 | Q14-021 | 59 | PARTIAL | AUDIBLE | Animation sound selection, volume and object6/7 routing alter the sound or its timing. |
 | Q14-022 | 60 | PARTIAL | AUDIBLE | Voice/group/bus execution and pending/end callback order change scheduling and cutoff. |
-| Q14-023 | 61 | PARTIAL | AUDIBLE | Mix/frame rate and robot handoff determine cadence, sound speed and output framing. |
+| Q14-023 | 61 | CHECKED | AUDIBLE | Mix/frame rate and robot handoff determine cadence, sound speed and output framing. |
 | Q14-024 | 62 | PARTIAL | AUDIBLE | State-group readers and runtime consumers select parameter values and switch-driven sounds. |
 | Q14-025 | 63 | CHECKED | AUDIBLE | Live seed and draw order change random sound/parameter selection. |
 | Q14-026 | 64 | PARTIAL | AUDIBLE | Voice state, effective parameters and source/device routing determine rendered or suppressed sounds. |
@@ -325,7 +325,7 @@ PARTIAL: TH1–TH8 establish render worker initialization/wait/stop, explicit gr
 
 PARTIAL: Z1–Z20 establish engine/platform defaults, no-JNI 48000/frame path, phone-query caps, JNI integer/boolean forwarding, frame rounding and derived timing writers. RG465 reconciles actual live-rate→new voiceEC→source/stage geometry, bus/retained-plug-in/sink mutable-format recipients, frame scheduling and22320/744 robot handoff to existing CI192/VF1/BW2/HBIND5/DF22/TH/H/HG/FR/G rows. These selected consumers are positive; wider specifically witnessed input/writer/family closure remains open. RC208 bounded ARM pattern is not a full global writer census. A40BC0 is setup/pool/listener/registration/table initialization, not a rate setter.
 
-**Current disposition, checkpoint558:** PARTIAL: Reconcile actual Android query block108DF90/94 with renderer block105243C/40 in A57724's selected query/fallback-to-SetRate/SetFrame transfer; correct older “shared” address wording. No global writer-absence requirement is added to this bounded original. Evidence: Z/RG465/CI192/VF/BW/HBIND/DF/TH/H/HG/FR/G; live voice setter DG6 and transition TT6 already positive. out of scope: phone query primitive bodies and per-sample DSP. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint560:** CHECKED: QT560A–G positively bind distinct query108DF90/94 and renderer105243C/40, env/query/fallback/detach, frame rounding, ordered setters and existing downstream audio interfaces. out of scope: phone primitive bodies, storage/I/O and per-sample DSP. See `20261009-sound-query-renderer-transfer.md`. Wider explicit writer/alias proofs remain092/099/120/124/130; no global absence claim.
 
 ## Q14-024 — triage line 62
 
@@ -2682,3 +2682,7 @@ OriginalQ14-087 six named contracts and item48 writer reconcile to actual comple
 ## Decision checkpoint557 — retained source residual closure
 
 OriginalQ14-097/101/102 reconcile to checked Vorbis/ADPCM source decision maps, actual raw3F/error/window/prefix/packet/header/seek/end interfaces, with storage/PCM/channel/sample boundaries explicit. Three items CHECKED:49native+8scope/83PARTIAL/0NOTDONE. Separate generator/teardown/writer obligations not promoted; no Q15/fidelity/production changes.
+
+## Decision checkpoint560 — Q14 resumed, bounded query transfer closed
+
+QT560A–G correct actual query/renderer addresses and env-present zero fallback, positively bind ordered timing setters and existing voice/bus/robot interfaces. Q14-023 CHECKED. Counts68native+8scope/64PARTIAL; impact140AUDIBLE/0INTERNAL. Wider writer/alias/zero-divisor proofs remain separate. No Q15/production/fidelity/hardware changes.
