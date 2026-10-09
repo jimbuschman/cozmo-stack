@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through291 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through292 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1695,3 +1695,7 @@ ROOT290A–D recover global descriptor guard/default/query-time discriminator, f
 ### Checkpoint 291 — line factory decisions
 
 LF291A–F recover pre-allocation device gate/parent selection, mask-derived constructor family, late missing-device fault, repeated format-query choice, init1/parent-before-publication attachment, count-before-slot publication and cleanup. Existing LINIT/RSRC/RCD reused. Constructors/format getter/destructor remain next bounded bodies; broader counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 292 — line base controls and format getter
+
+LDEF292A–E recover full raw node68 format getter, subscriber-before-field publication, exact gain/flag/state/frame and slot defaults. Existing A19CDC/CV1 reused. Derived constructor A41E48 and teardown A4EED8 remain next; no bulk initialized-object claim. Wider counts/Q15/fidelity/production unchanged.
