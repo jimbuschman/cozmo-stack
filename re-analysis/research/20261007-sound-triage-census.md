@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through326 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through327 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1835,3 +1835,7 @@ STABLE325A–C bind five further non-pan destination-mask tables and common phys
 ### Checkpoint 326 — specialized mono coefficients
 
 MONO326A–G bind all selected local mono-source pan/non-pan routes, raw split/clamp predicates, product/sqrt fallback parameters and forward stores into sourcebit3 tail. Supersedes mono-specialized pending wording; general pan/provider/consumer closure remains PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 327 — general-pan setup
+
+GPAN327A–F retain source remap/zero-sourcebase decision, scratch geometry, source/destination dispatchers, exact control-weight multiplication and destination3 projection. Remaining concrete scratch/weight/projection recipients are named positive-readable obligations, not filled by assumed pan laws. Counts unchanged, Q15 parked.
