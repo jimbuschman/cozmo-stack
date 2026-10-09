@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoint138 adds local cleanup and position bodies without settling unread decision joins |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through254 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -154,7 +154,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 
 > | M6-001 | **KEEP** | 0x009B338C;0x009F6EF8;0x009ECF44;0x009C3FFC;0x009D24D4;0x009B0B14 | All readers, conditional positioning/bus/layer branches and object-graph comparisons remain exact parsing work. |
 
-PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/reader controls. Resumption RB1–RB18 adds bus duck-entry updates/registration, group creation/state linking/default lookup, pair-vector replacement/ownership and the LayerCntr zero-track path. The operator adopted the census exclusions for 3D bank payloads and nonempty blend-track bodies; those bodies are not resumed. Resumption CF1–CF18 adds the common property/FX/positioning-prefix/aux/advanced reader slots, rendered/reference/bypass setters, Layer child attachment and its validation gates. LI1–LI11/LR1–LR7 add the parent setter, container/sound invalidation and bypass notification, packed state setters, priority/tie reranking and limit unlink. TR1–TR18 add ActorMixer, Sound and RanSeq readers, source descriptors, child validation and selection-object/playlist setup. SWR1–SWR8 add the Switch reader, list storage/ownership, duplicate/update gates and local failures. SUB1–SUB13 add immediate/deferred subscription mutation and group storage. RR1–RR8/PS1–PS9 add reset's pending-list/live-stop dispatch and immediate PBI/context teardown. Remaining: concrete voice processing-object vt64/vt68, RanSeq context vt8, pending action vt30/object vt4, runtime state writers/notification consumers and reader/unload closure.
+PARTIAL; J1–J12, U1–U27, K1–K15, NB1–NB25 and X3 provide dispatcher/reader controls. Resumption RB1–RB18 adds bus duck-entry updates/registration, group creation/state linking/default lookup, pair-vector replacement/ownership and the LayerCntr zero-track path. The operator adopted the census exclusions for 3D bank payloads and nonempty blend-track bodies; those bodies are not resumed. Resumption CF1–CF18 adds the common property/FX/positioning-prefix/aux/advanced reader slots, rendered/reference/bypass setters, Layer child attachment and its validation gates. LI1–LI11/LR1–LR7 add the parent setter, container/sound invalidation and bypass notification, packed state setters, priority/tie reranking and limit unlink. TR1–TR18 add ActorMixer, Sound and RanSeq readers, source descriptors, child validation and selection-object/playlist setup. SWR1–SWR8 add the Switch reader, list storage/ownership, duplicate/update gates and local failures. SUB1–SUB13 add immediate/deferred subscription mutation and group storage. RR1–RR8/PS1–PS9 add reset's pending-list/live-stop dispatch and immediate PBI/context teardown. Checkpoints246–253 add ER246/EO247 event reference and destruction, AP249 authored0403 output/release, AB250 action defaults/registration role, EL251 event/action-list reader, EP252 event publication and IM253 explicit event/action mutex setup. DR162/DD163 already bind the deferred0503 action and known pending object; AP249 supplies the authored0403 output family. These known callbacks are not newly unread. Remaining: other reachable action/pending/provider families, concrete voice processing-object vt64/vt68 and RanSeq context vt8 where not already joined, exhaustive runtime state writers/notification consumers and reader/unload closure. The known descriptor-manager stream recipients are excluded by checkpoint248, not another source-start recovery requirement.
 
 ## Q14-003 — triage line 34
 
@@ -184,7 +184,7 @@ CHECKED; N1–N3: raw copy length, original-length ASCII lowercase/hash, and run
 
 > | M6-006 | **KEEP** | 0x009A6704;0x009A0EF8;0x009AE0B0;0x009AA3DC;0x009AA0FC;0x009A9F88;0x009AF8A8;0x00A62A1C;0x00A663C8;0x00A645C8;0x00A04F54 | Queued event/action timing, play counts, callbacks/flags, switch resolution and start/stop/seek behavior remain exact, including unresolved drain internals. |
 
-PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Remaining: individual action/handler descendants, object/reference producers, full registration failures, callbacks and production writer/consumer closure. No whole queued-control-path completion claim.
+PARTIAL: E1–E32, A1–A26, TH1–TH8, RR1–RR8 and PB10 cover queued event publication, union drain ordering, pending deadlines, action invocation/cancellation, Perform ordering and completion snapshots. Checkpoints245–253 add native tag23 register/retire producers, signed-byte mode/flag joins, known event factory/reference/owner-before-action destruction, authored0403 output/release, event reader/list publication and mutex setup. Known deferred0503 and pending-reference callbacks are already DR162/DD163. Descriptor-manager stream/I/O recipients are out of scope per checkpoint248. Remaining: other reachable action/handler/provider descendants, exhaustive object/reference/global writers and in-scope registration/callback/input closure. No whole queued-control-path completion claim.
 
 ## Q14-008 — triage line 41
 
@@ -1543,3 +1543,7 @@ EP252A joins known event insertion with ID lookup and zero-count removal; void z
 ### Checkpoint 253 — event/action index mutex publication
 
 IM253A/B identify imported primitives from ELF slots, explicit type1 for event/action mutexes, ignored init statuses and global publication before backing-init result. Known setup uncertainty reconciled; OS/storage implementations excluded and other writer/unwind closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 254 — current coverage reconciliation
+
+Updated Q14-002/Q14-007 ledger boundaries to reuse the known0403/0503/pending/event/mutex joins and exclude the concrete descriptor stream manager. No stale known callback is treated as wholly unread. Remaining in-scope families/providers/writers/inputs stay PARTIAL; counts unchanged, Q15 parked.

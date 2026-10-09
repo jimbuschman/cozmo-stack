@@ -11,6 +11,12 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 254 — coverage reconciliation after event/action joins
+
+The current Q14-002 and Q14-007 ledger entries now explicitly reuse DR162/DD163 known deferred0503 and pending-object callbacks, AP249 authored0403 output/release, ER246/EO247 event lifetime, EL251/EP252 event/action-list publication and IM253 requested mutex type/global publication. Their old generic callback requests no longer describe these known bodies as wholly unread. Checkpoint248's concrete descriptor stream manager remains out of scope; no source-start recipient is invented in its place.
+
+Remaining reachable families/providers, in-scope writers and input/registration/unload closure stay PARTIAL. This reconciliation changes no status:23 native CHECKED +8 scope-exclusion CHECKED /109 PARTIAL /0 NOT DONE /140 IDs. Q15 remains parked. No production, inventory, manifest or hardware changes.
+
 ## Checkpoint 253 — event/action index mutex configuration and publication
 
 Primary: `20261008-sound-event-action-index-mutex-native.txt`; same engine hash. I=new shared index. ELF relocation slots1050F68/6C/70/74 identify pthread mutex attribute-init/settype/init/destroy imports. Endpoints inclusive.
