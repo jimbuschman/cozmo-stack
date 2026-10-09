@@ -953,7 +953,7 @@ CHECKED (bounded decisions-only), checkpoint557: checkedQ14-004 plus AH5/RI205/A
 
 PARTIAL boundary: B17/B18 already establish notification registry/archive removal controls; SF1–SF9 now identify mode2 plug-in source construction/start/render/close as ownership/format/registration and virtual generation control. Selected plug-in descendants remain unread: no PCM-only exemption for whole source. Remaining registry writers/dynamic generation and codec recipients.
 
-**Current disposition, checkpoint568:** PARTIAL: G100566/G101565/G102567–568 close the admitted generator lifecycle/inputs/RNG/live-values/count/state decisions. Remaining exactly MIDI/held-note/source endpoint decisions reached through A78D10; establish the actual virtual recipient and shipped note/endpoint input before tracing its decision descendants. WavePortal remains positive. out of scope: backing/I/O and isolated per-sample arithmetic. See `20261009-sound-generator102-lifecycle.md`; older remaining-work prose is superseded.
+**Current disposition, checkpoint569:** PARTIAL: Admitted100/101/102 lifecycle and actual queued stop-loop/source38/plugin28 endpoints are G100566/G101565/G102567–568/END569. Remaining precisely the five concrete source18 selector/value suppliers A0BBD8/9BD2A8/9BD1B0/9BD204/A01A64 and any positively admitted source14 media-ID request; bind their shipped input/consumer decision joins before claiming closure. Packed event/parameter and envelope query interfaces are now exact. Missing callers do not prove unreachability. out of scope: backing/hash/I/O and isolated per-sample arithmetic. See `20261009-sound-generator-endpoints.md`; older remaining-work prose is superseded.
 
 ## Q14-104 — triage line 153
 
