@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through319 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through320 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1807,3 +1807,7 @@ CMAT318A–D record adjusted destination/count gates, exact special two-column r
 ### Checkpoint 319 — matrix table/publication decisions
 
 CMAT319A–E retain format-kind/basis/table selection, direct coefficient copy and original padded matrix geometry, live-list re-scan/replacement/append/growth failure/publication order. Clarifies318 cache key covers all32 formatbits. Standard type1 coefficient generation and later routing/consumer closure remain PARTIAL; counts unchanged, Q15 parked.
+
+### Checkpoint 320 — standard destination coefficients
+
+CMAT320A–G reuse known coefficient producers, retain scratch geometry/normalization instructions, bind complete A23224 index and sqrt fallback selection, capacity/exclusion/dot-product order and creator cleanup before publication. General geometry and downstream A3AD04 recipient closure remain PARTIAL; counts unchanged, Q15 parked.
