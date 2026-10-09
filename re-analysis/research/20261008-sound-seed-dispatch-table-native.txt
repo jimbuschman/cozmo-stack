@@ -1,0 +1,69 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009AE0A8..0x009AE198 exclusive; ARM;
+009AE0A8: ldrh         r3, [r5, #2]
+009AE0AC: cmp          r3, #0x37
+009AE0B0: addls        pc, pc, r3, lsl #2
+009AE0B4: b            #0x9ae30c
+009AE0B8: b            #0x9af2d8
+009AE0BC: b            #0x9af244
+009AE0C0: b            #0x9af1d0
+009AE0C4: b            #0x9af158
+009AE0C8: b            #0x9ae30c
+009AE0CC: b            #0x9af0bc
+009AE0D0: b            #0x9af070
+009AE0D4: b            #0x9af038
+009AE0D8: b            #0x9aefc4
+009AE0DC: b            #0x9ae30c
+009AE0E0: b            #0x9aef44
+009AE0E4: b            #0x9aef20
+009AE0E8: b            #0x9aeefc
+009AE0EC: b            #0x9aeea8
+009AE0F0: b            #0x9aee88
+009AE0F4: b            #0x9ae30c
+009AE0F8: b            #0x9aee74
+009AE0FC: b            #0x9aee04
+009AE100: b            #0x9aede0
+009AE104: b            #0x9aedbc
+009AE108: b            #0x9aec50
+009AE10C: b            #0x9aebec
+009AE110: b            #0x9aeb80
+009AE114: b            #0x9aeca4
+009AE118: b            #0x9aec7c
+009AE11C: b            #0x9aecd0
+009AE120: b            #0x9aeb58
+009AE124: b            #0x9aea84
+009AE128: b            #0x9ae30c
+009AE12C: b            #0x9ae30c
+009AE130: b            #0x9ae30c
+009AE134: b            #0x9aea30
+009AE138: b            #0x9ae9f8
+009AE13C: b            #0x9ae9a0
+009AE140: b            #0x9ae930
+009AE144: b            #0x9ae890
+009AE148: b            #0x9ae870
+009AE14C: b            #0x9ae844
+009AE150: b            #0x9ae830
+009AE154: b            #0x9ae6b8
+009AE158: b            #0x9ae60c
+009AE15C: b            #0x9ae5f4
+009AE160: b            #0x9ae5d0
+009AE164: b            #0x9ae578
+009AE168: b            #0x9ae520
+009AE16C: b            #0x9ae494
+009AE170: b            #0x9ae484
+009AE174: b            #0x9ae40c
+009AE178: b            #0x9ae30c
+009AE17C: b            #0x9ae30c
+009AE180: b            #0x9ae3f8
+009AE184: b            #0x9ae3e0
+009AE188: b            #0x9ae3cc
+009AE18C: b            #0x9ae394
+009AE190: b            #0x9ae378
+009AE194: b            #0x9ae1b0
+RANGE 0x009AE3F8..0x009AE40C exclusive; ARM;
+009AE3F8: ldr          r0, [r5, #4]
+009AE3FC: mov          r1, #0
+009AE400: bl           #0x99db58
+009AE404: mov          r0, #0
+009AE408: b            #0x9ae310

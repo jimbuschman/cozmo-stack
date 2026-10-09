@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through300 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through301 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -286,7 +286,7 @@ PARTIAL: U2–U8/U12–U14/U18–U27, R28–R44 and ST1–ST3 cover readers, pai
 
 > | M6-021 | **KEEP** | 0x0099DB58;0x0099EF80;0x00A08A7C..0x00A08AC0 | Review the test seed seam/live Unix-seconds seed separately; RNG and draw order are explicitly exact under ADP-1, even though the record is policy. |
 
-PARTIAL: N4/N5 and SE1–SE4 reopen the live default/input width, queued writer and test-seam boundary. Exhaustive SetupConfig/other seed writer closure remains open; test injection is not native all-zero setter semantics.
+PARTIAL: N4/N5/SE1–4 establish live time fallback/width, queued setter and test-seam distinction. SEED301 joins config74 U16 admission, stock SL34 zero/default preservation, tag32 producer and consumer, plus bounded direct-ARM setter-call census. These known SetupConfig/queue bodies are positive; remaining wider indirect/global-state/input writer closure is not claimed. Test injection literal0/host-width is not native all-zero setter semantics.
 
 ## Q14-026 — triage line 64
 
@@ -1731,3 +1731,7 @@ Optional recorder conversion/write/count descendants have no live sound-selectio
 ### Checkpoint 300 — connection restart flag and mixer reconciliation
 
 CFLAG300A closes A4C584 lowbit-to-bit2 forward publication and joins VS13 restart callback order. CFLAG300B/Q14-014 reuse existing RCC/EP/VP/AV/BP/CR/MR positive producers/consumers instead of broad unread labels; remaining matrix/flag/product/input scope stays PARTIAL. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 301 — SetupConfig/queued seed join
+
+SEED301A–D recover U16 config74 admission, stock zero preservation (SL34/CV282 reuse), exact tag32/size8 enqueue/no-wake order and consumed lowword/highzero setter. Direct ARM scan confirms two known setter calls without asserting indirect/Thumb/writer absence. Q14-025 known SetupConfig branch reconciled; wider closure/counts/Q15/fidelity/production unchanged.
