@@ -250,7 +250,7 @@ CHECKED research boundary: MBOUND332 reconciles all selected local matrix branch
 
 > | M6-013 | **KEEP** | 0x00A4FD84..0x00A4FEF4;0x004DEB18;0x004DEB8C;0x00AA19CC;0x00AA25E0 | Registry, ShareSet parameters, slot order, bypass/LFE/channelLink settings, live insert-FX wiring, detector choice and reset timing remain exact; do not default missing bank fields. |
 
-PARTIAL: FX1–FX6, B1–B12/B19–B26 and F1–F21 establish slot execution/return order, bypass reset/update gates, registry factories, parameter setup and kernel/control boundaries. FQ431 binds known bus/five-node E8 authored queries, exact inheritance/registry references and node-object versus bus-empty-key bypass values, reusing IC/FX/FC/FB downstream decisions. Concrete settings reader/release/parameter-input/writer and additional live product/factory/initialization closure remain open; no whole M6-013 completion claim.
+PARTIAL: FX1–FX6, B1–B12/B19–B26 and F1–F21 establish slot execution/return order, bypass reset/update gates, registry factories, parameter setup and kernel/control boundaries. FQ431 binds known bus/five-node E8 authored queries, exact inheritance/registry references and node-object versus bus-empty-key bypass values, reusing IC/FX/FC/FB downstream decisions. FS432 supplies concrete type18/19 parameter/control reader, compact first-key updates, varint binding/scaling/point geometry, replacement-before-admission and trailing raw-association parse/failure publication. Actual constructor/table/retain/release, concrete parameter factory/readers, trailing association consumers and additional input/writer/live product closure remain open; no whole M6-013 completion claim.
 
 ## Q14-017 — triage line 55
 
@@ -2267,3 +2267,7 @@ FP430 resolves FB3 matrix-value uncertainty with190 native-operation dependencie
 ## Checkpoint 431 — authored FX query and bypass
 
 FQ431 binds actual known bus/five-node E8, inheritance mask, settings registry selector/retain/replacement, node object override versus bus empty scope, RTPC boolean bypass and live reload/order differences. Existing IC/FX/FC/FB factory/slot controls reused. Q14-016 PARTIAL; counts unchanged; Q15 follows Q14. No production/fidelity/hardware changes.
+
+## Checkpoint 432 — FX settings control reader
+
+FS432 joins type18/19 creation branches to9CE3B8, PR7/parameter Init policy, compact key updates, varint binding/point/scaling reader and actual replacement/admission helpers, trailing raw association parse/partial-failure order. Concrete settings lifetime and parameter products are next; trailing consumers UNKNOWN. Q14-016 PARTIAL; counts unchanged; Q15 follows Q14. No production/fidelity/hardware changes.
