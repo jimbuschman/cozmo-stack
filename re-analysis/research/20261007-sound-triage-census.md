@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 25 CHECKED native-row obligations / 8 CHECKED scope exclusions / 107 PARTIAL / 0 NOT DONE; decision checkpoints through396 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 25 CHECKED native-row obligations / 8 CHECKED scope exclusions / 107 PARTIAL / 0 NOT DONE; decision checkpoints through397 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -2121,3 +2121,7 @@ CB395 establishes known Vorbis inherited20/24/3C/40/44/48/50/5C/6C local contrac
 ## Checkpoint 396 — Q14-003 decision closure
 
 Concrete integration map reconciles retained named Vorbis entry/media/header/setup/framing/seek/restart/end/loop/close/report controls and scope boundaries. Q14-003 becomes CHECKED for decisions only, with no WEM decoder or manifest fidelity promotion. Counts now25 native CHECKED+8 scope CHECKED/107 PARTIAL/0 NOT DONE/140. Q15 pending Q14.
+
+## Checkpoint 397 — ADPCM restart/end controls
+
+AD397 closes known direct/streamed mode14/18/74/7C local contracts and joins generic restart/seek and EL393 argument ABI. Q14-004 constructor/close/input integration reconciliation retained; counts unchanged, Q15 pending Q14.

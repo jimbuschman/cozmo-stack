@@ -11,6 +11,23 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 25 native-row obligations CHECKED, 8 CHECKED scope exclusions, 107 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 397 — known ADPCM restart/end controls
+
+Primary: `20261009-sound-adpcm-restart-end-decisions-native.txt`, same engine hash; 124 instruction words plus slots. C=source,P=C.C; offsets hex. Existing SK1–5,AH4/HS7–8,SC197,RS391/MT394 generic stream decisions and EL393 exact end1/loop0 caller ABI reused; no sample decoding descent.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| AD397A known mode bindings | raw103D6D4/6D8/734,103D854/858/8B4/8BC | Direct table103D6C0:14=A5669C exactBXLR,18=A72920,74=A72480. Stream table103D840:14=A7429C,18=A75794 alreadyRS391,74=A742C8,7C=A739E8. No source-family labels substituted for actual slots. |
+| AD397B direct restart modes | A72920..A72984;A729D8..A72A00 | Mode0 position18=0,cursor3C=P1DC+C20,loopcount38=u16(P1B8),return1; P has no nullguard. Mode otherthan0/1 returns1 unchanged. Mode1 thirdarg0 sets cursor3C=P1DC+C20+((C18 logical>>6)*U16 C40),return1 without changingposition/count/pendingflags. Mode1 thirdargnonnull andP1BDbit7clear returns1 without cursor update. |
+| AD397C direct pending restart | A72984..A729D4;A72A04..A72A28;SK1–5 | Only mode1/thirdargnonnull/pendingbitset callsA736D4, aligns desired down64 and stores C18; residual=desired−aligned→P1B4, clearP1BE bits0/1 thenP1BDbit7. Aligned>=unsignedtotal14 returns2 afterthese stores. Otherwise cursor3C=P1DC+C20+(aligned>>6)*U16C40,return1. No decoder init, partial-block seek or safe rollback. |
+| AD397D direct end/loop | A72480..A724C4;EL393 | Compute byteoffset=C20+(C18 logical>>6)*U16C40. Readloopcount38; unsigned>1 decrements low16. Always reloadP1DC and publishcursor3C=P1DC+byteoffset, includingsecondargumentnonzero file completion. Return argumentnonzero?11:2D. No EOF argument skip of cursor update, decoder trim or source position rewrite here. EL393 caller has already published loopstart18 before argument0. |
+| AD397E stream mode teardown/end | A7429C..A742B8;A742C8..A74310 | Mode14 firstMT394 A743BC(C,mode); afterward mode<=1 zeroscarry-count6C halfword,other modes preserve it. Stream74 arg0 decrements5C modulo16 then decrements loopcount38 only if>1,returns2D. Argnonnull only conditionally decrementsloopcount38,returns11; no5C/carry/position change. No decoder trim reset added from Vorbis family. |
+| AD397F stream converter | A739E8..A73A10 | Own7C requestedframe logical>>6, store rounded=(quotient<<6) tooutput r2, then byteoffset=wrap(C20+wordC60*quotient) tooutputr3;return1. No table lookup, total/size/alignment/error gate orcontext mutation. Generic RS391/HS7/SC197 use this exact frame/byte boundary with their own admission/failure policy. |
+
+out of scope: backing I/O/storage and per-sample ADPCM arithmetic; no decoder equivalence claim.
+
+Known ADPCM mode14/18/74/7C local decisions now positive, reusing generic restart/settings/seek/end recipients. Remaining source constructor/close/input/family joins are checked separately; Q14-004 remains PARTIAL until bounded integration reconciliation. Current totals unchanged25 native CHECKED+8 scope CHECKED/107 PARTIAL/0 NOT DONE. Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 396 — Q14-003 bounded decision closure
 
 Q14-003 is CHECKED for this decisions-only task. Reachability remains VORBIS in `20261007-sound-reachability.md`: shipped Cozmo Sound265437, source plugin00040001 and WEM formatFFFF; directAB0B20 and streamedAB22D4 enter the named framer/decoder. The table below enumerates the retained integration path and reuses positive rows. This is not an implementation approval or an EXACT_SOURCE classification of the complete WEM decoder.
