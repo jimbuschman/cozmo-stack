@@ -9,7 +9,24 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 45 native-row obligations CHECKED, 8 CHECKED scope exclusions, 87 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 46 native-row obligations CHECKED, 8 CHECKED scope exclusions, 86 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 556 — original residual callback/state obligation reconciliation
+
+Primary reused: DC1–10/NR146/LR147/CP148/NJ149/SW149/ND150/ID151,KT144/OR145/PC145/SR422/SU/SRG,OR351–SK355,RT369/BU370/BT373,OR545–BF554 and E29 captures. Same engine SHA256. This closes Q14-087's original six named M6 contracts and missing item48 writer within their audio interfaces; it does not accept the whole music engine or all future external input products.
+
+| Original named contract | Positive exact decision joins | Bounded disposition |
+| --- | --- | --- |
+| A05934 completion and9A6988 event release | DC1/DC3;ER246/EO247/EL251/EP252;E29;PC145 | Actual playing-key stable removal/count/unlock, wrapping event-reference decrement, zero-reference owned release, callback/record flags and authored event/action-list lifetime are retained. Release does not execute an action. No missing item48 writer: E29 constructs flags before publication, clears only FD000/FF0/0B when callbacknull and retains bundle before publishing record. |
+| A1C660 subscription cleanup/A1C65C inert hook | DC2;KT144/PC145/SR422/SU/SRG | Ordered9E6E1C thenA12998, key-specific/wildcard transition/modulator detach, livebase/count reloading, count0 before free and base/cap clear are positive; actual A1C65C isBX LR. Different NSINK registry is not substituted. These concrete callbacks are not generic unread destruction. |
+| A0B600 game-object retirement | DC4–6/DC8–10;NR146/OB354;LR/CP/NJ/SW/ND/ID;OR545/RC546/CJ547;MN552/MT553 | Exact lookup pair/node24 beforeC release/next-load-after-callback, ordered switch/local/subscription/global removal and storage gates are retained. Five ordinary and two bus callback/reference/lifetime products are positive, including exact state/transition/random/sequence cleanup. The actual shared playlist/segment audio-node interface is positively bound; its owned group/leaf callbacks/base tail were also checked, without context-table substitution. Q15's remaining music selection/schedule internals stay at named layer interfaces; this is not their acceptance or a claim every M9 node family is recovered. |
+| A0C238 selected switch state | W/SG/SX/SD/SUB/OD470;OB354/SK355 | Native scoped/default selection, lower-bound/first-match and object-key state creation, authored versus query propagation, observer mutation and retirement are positive. Known scope0 recipient isBX LR; insertion/append/allocation/null-slot failures preserve actual count/publication/observer behavior. No silent persistent-map or callback-success substitute. |
+| Retained routing consequences | BF554;SL288/LGET/LREC/ROOT/LF/LINIT/RCON;IC/LTERM/LREL;PM536/HS551 | Dirty sweep's remove-all/invalidate-all/optional reconnect-all, flag propagation, descriptor/default/query/line selection, known constructors/cache/failure/retirement and selected helper settings rejection are already positive. Q14-074 checkpoint555 joins those specific input/result contracts. Unrestricted producer invocation or hypothetical replacement product is not an unpaid original callback witness. Wider media/source/public input obligations retain their own original quotes and do not expand these six local contracts indefinitely. |
+
+out of scope: object/registry/vector/backing allocation/free and hash infrastructure; adopted 3D positioning and nonempty-blend payload bodies. No remaining generic family/writer census is used to hold this bounded original item open.
+
+Q14-087 is CHECKED (bounded decisions-only). Counts46 native CHECKED+8 scope CHECKED/86 PARTIAL/0 NOT DONE. No global runtime unreachability, whole M6/M9 reproduction, fidelity/manager approval or Q15 completion claim. No production/fidelity/hardware/Q15 edits.
+
 
 ## Checkpoint 555 — original linker/cache/connection obligation closure
 

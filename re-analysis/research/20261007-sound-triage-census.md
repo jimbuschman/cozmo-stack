@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 45 CHECKED native-row obligations / 8 CHECKED scope exclusions / 87 PARTIAL / 0 NOT DONE; decision checkpoints through555 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 46 CHECKED native-row obligations / 8 CHECKED scope exclusions / 86 PARTIAL / 0 NOT DONE; decision checkpoints through556 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -93,7 +93,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-084 | 133 | PARTIAL |
 | Q14-085 | 134 | CHECKED |
 | Q14-086 | 135 | CHECKED |
-| Q14-087 | 136 | PARTIAL |
+| Q14-087 | 136 | CHECKED |
 | Q14-088 | 137 | PARTIAL |
 | Q14-089 | 138 | PARTIAL |
 | Q14-090 | 139 | PARTIAL |
@@ -706,7 +706,7 @@ CHECKED at checkpoint544 for the bounded seven encoded StartStream callers and f
 
 > | C31 explicit residual callbacks/state | M6-022,M6-025,M6-026 | **KEEP** | 0x00A0B600;0x00A05934;0x00A1C660;0x00A1C65C;0x009A6988;0x00A0C238; item+48 writer UNKNOWN | Unread action/callback/state bodies and a missing item-field writer are not proven pure DSP. |
 
-PARTIAL: DC1–10/KT144/OR145/PC145/SR422 close the quoted local callback, completion, event, subscription and selected switch-key contracts; E29 positively supplies item48 registration flags. OR351/OU352/OA353/OB354/SK355 bind known register/update/remove inputs and selected scope acquisition outcomes. OR545A reconciles NR146's five ordinary pre-cleanup/destructor/parent-removal and two bus pre-cleanup/destructor products with LR147/CP148/NJ149/SW149/ND150/ID151/RT369/BU370/BT373. OR545B–D bind both bus30 families and recover their child20 routing setter and concrete124 pre-hook. RC546 closes concrete pre-hook74, ancestor reservation9F43F4 with actual bus98/9C/90/94 bindings, ordinary post-setC4 and dirty-routeA443E0 parent ordering. CJ547 binds actual RCC constructor table to RCD connection0/destruction order, source counter and specific acceptedtype6 helper interface, and reconciles known bus notification BI378/BL379/OC469/L3/BP508/LC4. BH548 positively binds bus104/108/E0, the exact signed-priority selector writer and all15 raw shipped helperID0/shared0 prefixes. Missing/accepted-zero descriptor bypasses helper factory; rejected priority can retain existing state. BH549 binds actual type8 factory/reader, explicit freshbus54null default and known9F4A64→bus4C ordinary command notification. BQ550 binds both known live tag2C producers and actual lookup/type-gated consumer: shared1/priority2 differs from bankpriority0; later bank0 can be rejected. HS551 binds the queued shared type18 registry and all24 shipped settings to actual five Info type3 families, requested6 rejection and cleanup beforeInit/helper20; this finite population is no longer an unknown acceptedtype6 family. MN552 additionally binds actual playlist/segment node24/C/18/20/30, shared state8 and destructor/base tails; MT553 binds their actual recursive group0/leaf0 products and the A8/AC embedded-root aliases, closing those concrete owned callbacks. BF554 closes original bus20 changed-parent bit6 propagation, preserving physical depth-first58 child order and live-end reloading. Remaining actual producer invocation/input/settings replacement joins and route reconnect/line lifecycle input/product closure stay concrete; no missing known connection destructor or generic additional family claim. A0B490 storage and adopted positioning/nonempty-blend branches are scope-excluded. NSINK is distinct; no generic extra family or obsolete missing48 writer is used to keep this item partial.
+CHECKED (bounded decisions-only), checkpoint556: DC/KT/OR/PC/SR/SU/SRG settle the six named completion/event/subscription/object/switch contracts; E29 supplies actual item48 registration flags before publication. OR351–SK355 settle known scope inputs/acquisition/failure/observer state. NR/LR/CP/NJ/SW/ND/ID/RT/BU/BT bind known node24/C/pre-cleanup/destructor/parent recipients; OR545–BF554 close bus removal/setter/prehook/reservation/dirty-sweep/flag routing and actual connection lifetime. BH548–HS551 join fresh/authored/live descriptor priority, notification, selected shared settings/Info rejection and cleanup; checkpoint555 reconciles known routing inputs. MN552/MT553 add concrete shared playlist/segment node and owned group/leaf retirement bindings, with Q15 selection/scheduling beyond named M6 interfaces not newly accepted. No specifically unpaid original M6 callback or missing48 writer remains, and no unsupported generic additional family/producer/writer census is retained. Storage/positioning/nonempty-blend payloads stop under the guard. No global indirect-call absence or whole M6/M9/fidelity acceptance claim.
 
 ## Q14-088 — triage line 137
 
@@ -2503,3 +2503,7 @@ BF554 closes actual9C5598 changed-parent recipient, exact pre-order recursive fl
 ## Decision checkpoint555 — bounded original linker obligation closure
 
 OriginalQ14-074 four named contracts now reconcile to actual creator/default/input/result/lifetime rows, including finite helper rejection. Storage/coordinate payload exclusions stop; generic unsupported extra family/writer remainder superseded. Q14-074 CHECKED:45native+8scope/87PARTIAL/0NOTDONE. No Q15/fidelity/production changes.
+
+## Decision checkpoint556 — original residual callback/state closure
+
+OriginalQ14-087 six named contracts and item48 writer reconcile to actual completion/event/subscription/switch/object node and routing input/result/lifetime rows. Scope/layer interfaces explicit; no generic extra product/writer remainder. Q14-087 CHECKED:46native+8scope/86PARTIAL/0NOTDONE. No Q15/fidelity/production changes.
