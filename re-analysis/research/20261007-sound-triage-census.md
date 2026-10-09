@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through507 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 27 CHECKED native-row obligations / 8 CHECKED scope exclusions / 105 PARTIAL / 0 NOT DONE; decision checkpoints through508 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -404,7 +404,7 @@ PARTIAL: L1–L14, LR1–7, PB1–10, PS1–9, LS1–16, LT1–9, LC1–6, LV1�
 
 > | M6-026 | **KEEP** | 0x00A54F50..0x00A5531C;0x00A548C0;0x009C5154;0x009BC66C;0x009BE898;0x00A11F98;0x00A1E8F4;0x00A1C660;0x00A1ECBC;0x00A3E27C;0x009BDC8C;0x00A366AC;0x009BDA28;0x009E808C;0x00A0054C;0x00A3EE9C..0x00A407B0 | Remaining voice/parameter/callback/MIDI-registration stores, missing collaborators, zero-playing-id event path and choices remain decision/state/timing work; no ADP-1 release. |
 
-PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. Remaining: metadata/parameter/callback/MIDI/zero-playing-id collaborators and writer census in the other cited bodies.
+PARTIAL: VS6–VS15 now extract voice parameter/state parent, scalar gain bits, timing rounding, all four filter-target state updates, Stop/restart/stream/lazy-init gates and flag/counter order. BP508 now supplies9C5240 bus-removal admission,9C5154 full delayed action1820/playingID0 producer, exact first property-F setter, target/pending/creator reference order and actual Execute gate. Remaining:9C4CD0 state/route notification recipient and other metadata/parameter/callback/MIDI/input-writer products in the cited bodies; no generic unread9C5154 claim.
 
 ## Q14-039 — triage line 77
 
