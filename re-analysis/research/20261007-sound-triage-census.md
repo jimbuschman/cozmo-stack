@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through336 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through337 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1875,3 +1875,7 @@ SC335A–G bind every local interpolation selector and arithmetic family, retain
 ### Checkpoint 336 — control conversions/defaults
 
 SC336A–L settle six local converter/default paths, raw exponent/mantissa polynomial and sign/limit log arithmetic, plus invalid-selector versus disabled-curve field semantics. Selected local A5B9D0 now positive; wider inputs/writers/families and A5993C remain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 337 — selected spatial routing gates
+
+SR337A–G bind A5993C format/count/scratch, cached curve slots, listener/device admission and accepted count, single-listener coefficient/gain publication and grouping query. Remaining coefficient/aggregation/mode1/LFE and provider/writer work stays PARTIAL. Counts unchanged, Q15 parked.
