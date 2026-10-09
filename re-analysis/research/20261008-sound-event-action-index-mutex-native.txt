@@ -1,0 +1,90 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099E4B8..0x0099E4E0 exclusive; ARM;
+0099E4B8: ldr          r6, [pc, #0xb78] ; word[0099F038]=006EF398
+0099E4BC: mov          r2, #0
+0099E4C0: ldr          r3, [pc, #0xb74] ; word[0099F03C]=006A1B74
+0099E4C4: movt         r2, #0x447a
+0099E4C8: add          r6, pc, r6
+0099E4CC: ldr          r4, [r6, #0x78]
+0099E4D0: ldr          r3, [pc, r3]
+0099E4D4: cmp          r4, #0
+0099E4D8: str          r2, [r3]
+0099E4DC: beq          #0x99e6ac
+RANGE 0x0099E6AC..0x0099E6F4 exclusive; ARM;
+0099E6AC: mov          r1, #0x118
+0099E6B0: bl           #0xa7a7f4
+0099E6B4: subs         r7, r0, #0
+0099E6B8: beq          #0x99efd0
+0099E6BC: add          r8, sp, #0xc
+0099E6C0: mov          r2, #0x118
+0099E6C4: mov          r1, r4
+0099E6C8: bl           #0x4d36dc
+0099E6CC: mov          r0, r8
+0099E6D0: bl           #0x4d6694
+0099E6D4: mov          r1, #1
+0099E6D8: mov          r0, r8
+0099E6DC: bl           #0x4d66a0
+0099E6E0: mov          r1, r8
+0099E6E4: mov          r0, r7
+0099E6E8: bl           #0x4d66ac
+0099E6EC: mov          r0, r8
+0099E6F0: bl           #0x4d66b8
+RANGE 0x0099E778..0x0099E7E8 exclusive; ARM;
+0099E778: bl           #0x4d6694
+0099E77C: mov          r1, #1
+0099E780: mov          r0, r8
+0099E784: bl           #0x4d66a0
+0099E788: mov          r1, r8
+0099E78C: add          r0, r7, #0x3c
+0099E790: bl           #0x4d66ac
+0099E794: mov          r0, r8
+0099E798: bl           #0x4d66b8
+0099E79C: str          r4, [r7, #0x40]
+0099E7A0: str          r4, [r7, #0x44]
+0099E7A4: mov          r0, r8
+0099E7A8: str          r4, [r7, #0x48]
+0099E7AC: str          r4, [r7, #0x4c]
+0099E7B0: bl           #0x4d6694
+0099E7B4: mov          r1, #1
+0099E7B8: mov          r0, r8
+0099E7BC: bl           #0x4d66a0
+0099E7C0: mov          r1, r8
+0099E7C4: add          r0, r7, #0x50
+0099E7C8: bl           #0x4d66ac
+0099E7CC: mov          r0, r8
+0099E7D0: bl           #0x4d66b8
+0099E7D4: str          r4, [r7, #0x54]
+0099E7D8: str          r4, [r7, #0x58]
+0099E7DC: mov          r0, r8
+0099E7E0: str          r4, [r7, #0x5c]
+0099E7E4: str          r4, [r7, #0x60]
+RANGE 0x0099E9CC..0x0099E9F4 exclusive; ARM;
+0099E9CC: str          r4, [r7, #0x108]
+0099E9D0: str          r4, [r7, #0x10c]
+0099E9D4: mov          r0, r7
+0099E9D8: str          r4, [r7, #0x110]
+0099E9DC: str          r4, [r7, #0x114]
+0099E9E0: str          r7, [r6, #0x78]
+0099E9E4: bl           #0x9a8904
+0099E9E8: cmp          r0, #0
+0099E9EC: bne          #0x99e4e0
+0099E9F0: mov          r4, #0x34
+RANGE 0x004D6694..0x004D66C4 exclusive; ARM;
+004D6694: add          ip, pc, #0xb00000
+004D6698: add          ip, ip, #0x7a000
+004D669C: ldr          pc, [ip, #0x8cc]!
+004D66A0: add          ip, pc, #0xb00000
+004D66A4: add          ip, ip, #0x7a000
+004D66A8: ldr          pc, [ip, #0x8c4]!
+004D66AC: add          ip, pc, #0xb00000
+004D66B0: add          ip, ip, #0x7a000
+004D66B4: ldr          pc, [ip, #0x8bc]!
+004D66B8: add          ip, pc, #0xb00000
+004D66BC: add          ip, ip, #0x7a000
+004D66C0: ldr          pc, [ip, #0x8b4]!
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+01050F68: raw=004A4010 relocated=00000000 pthread_mutexattr_init
+01050F6C: raw=004A4010 relocated=00000000 pthread_mutexattr_settype
+01050F70: raw=004A4010 relocated=00000000 pthread_mutex_init
+01050F74: raw=004A4010 relocated=00000000 pthread_mutexattr_destroy

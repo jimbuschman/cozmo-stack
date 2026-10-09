@@ -11,6 +11,17 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 253 — event/action index mutex configuration and publication
+
+Primary: `20261008-sound-event-action-index-mutex-native.txt`; same engine hash. I=new shared index. ELF relocation slots1050F68/6C/70/74 identify pthread mutex attribute-init/settype/init/destroy imports. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| IM253A | 0099E4B8..0099E4DC;0099E6AC..0099E6F0;0099E778..0099E7E4;004D6694..004D66C0;01050F68..01050F74 | Initializer reads global108D8E0; nonnull bypasses fresh construction. Null allocates118hex bytes; null takes existing failure branch99EFD0. Nonnull zeroes118 bytes. For I3C event mutex: attr init → settype1 → mutex init with same attr → attr destroy, then zero40/44/48/4C. Repeat independently for I50 action mutex, then zero54/58/5C/60. No status test between these imported calls. | Type argument is explicitly1; no inferred type from nested lock use. Attribute and mutex return codes are ignored locally. Pool backing and other registry initialization are not reopened by this bounded capture. | New allocation/zero → relevant mutex configuration → empty registry fields → later global publication. | Resolves ER246/DR162/EL251 known initializer's mutex-setup request. Phone primitive implementation and numeric type interpretation remain system-library behavior; no local deadlock or hardware success claim. out of scope: allocation/memset implementation internals. |
+| IM253B | 0099E9CC..0099E9F0;0099E4C8 | After preceding construction, publish saved I to global108D8E0, then invoke9A8904(I). Nonzero helper result continues99E4E0; zero sets raw failure34 before common failure handling. Native global calculation99E4C8+8+6EF398+78=108D8E0. | Global publication precedes backing-initialization result; no rollback/unpublication established by this endpoint. Existing nonnull global skipped these fresh mutex calls. | Global pointer → backing init → result gate. | out of scope:9A8904 registry backing initialization. Later common unwind and other global writers remain separate; exact same-instance persistence is not assumed across reloads in nested-release callers. |
+
+Known event/action index publication and requested mutex type are positive. Earlier nested lock rows remain exact; this does not alter their reload semantics or assert all global writers are exhausted. Coverage unchanged, Q15 parked, no production/fidelity changes.
+
 ## Checkpoint 252 — event registry publication boundary
 
 Primary: `20261008-sound-event-registry-publication-native.txt`; same engine hash. E=event, I=current index. Endpoints inclusive.

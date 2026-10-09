@@ -1539,3 +1539,7 @@ EL251A–C trace physical action IDs, retain-before-list publication, raw early 
 ### Checkpoint 252 — event registry publication
 
 EP252A joins known event insertion with ID lookup and zero-count removal; void zero-bucket outcome preserved. Backing infrastructure excluded. Wider writer/provider/mutex/input closure retained; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 253 — event/action index mutex publication
+
+IM253A/B identify imported primitives from ELF slots, explicit type1 for event/action mutexes, ignored init statuses and global publication before backing-init result. Known setup uncertainty reconciled; OS/storage implementations excluded and other writer/unwind closure retained. No totals/Q15/fidelity/production changes.
