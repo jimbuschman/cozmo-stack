@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through355 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through356 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -312,7 +312,7 @@ Resumption MET1–5/WM1–3 establish the processing-object order, enabled-array
 
 > | M6-022 | **VERIFY** | 0x00A25FF8;0x00A4D994;0x00A4BC58 | Panning/conversion calculations mix weight arithmetic with masks, routing and control-state updates; use the M6-012 boundary, not a whole-function DROP. |
 
-PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, other owner.vt24/connection families, queued input/registration paths and flag writers. LM348 closes standard103C790 owner.vt24 and selected object22 default/setter/live propagation. No whole-function equivalence.
+PARTIAL: EP1–EP12 close A4BC58 parent control/parameter outputs, matrix ownership, A5975C panner-update gate and synchronous callback descriptor/lookup, including connection-bit gates, count/format publication, failure skips, buffer-copy directions, observer order and NaN selection. CV1–CV8 close additional sink format/count/channel conversion choices and establish its PCM boundary. BP1–BP6 add the complete A4D994 parent gain/cache/first-update decisions and bus callback registry. MBOUND332 settles the selected local A25FF8 routing/coefficient-to-PCM boundary; SC333–336 settle selected local A5B9D0 decisions, all curve/conversion/default branches and publication. SR337–342 settle selected local A5993C own decisions; GM343–347/HC344/BT346 settle selected A2428C mono/stereo source decisions and coefficient collaborators, preserving destination-channel alternatives. Remaining: concrete listener/curve/global/format/field inputs and writers, table creation/registration/lifetime, other owner.vt24/connection families, queued input/registration paths and flag writers. LM348 closes standard103C790 owner.vt24 and selected object22 default/setter/live propagation; LA349/LQ350 bind addition/native queued mask update, OR351 stock mask1 registration, OU352/OA353 removal, and RG356 reserved maskFF/singleton creation/Term order. LREC289–LREL295 already own selected route creator/default/getter/teardown; OB354/SK355 bind known object/switch cleanup. Remaining input/writer/alternate product closure is not replaced by these selected joins. No whole-function equivalence.
 
 ## Q14-030 — triage line 68
 
@@ -1951,3 +1951,7 @@ OB354A–E reuse NR146 known five-node callback/release bodies, bind the two kno
 ### Checkpoint 355 — selected switch scope acquisition endpoints
 
 SK355A–F settle ordinary object-scope insertion/append choice, growth-result/capacity/count/null-slot gates, selected key/default publication and failure-with-observer delivery. Q14-087 mapping now distinguishes known NR146/OB354 callback/state products and OR351/OU352/OA353 registry inputs from actual remaining families/writer closure. Counts unchanged, Q15 parked.
+
+### Checkpoint 356 — reserved registry object and stock lifecycle
+
+RG356A–F bind singleton publication before initializer, reserved ID0 maskFF, success1 despite missing reserved object and Term retired-array clear→ID0 removal→all-other removal. Known MF158/SN159/PN160/PR161/DR162/DD163/AP249 modulator cleanup recipients reused rather than re-extracted. Q14-029 mapping reconciled with349–356; remaining writer/input/product closure stays PARTIAL. Counts unchanged, Q15 parked.
