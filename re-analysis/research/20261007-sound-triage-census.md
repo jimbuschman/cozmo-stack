@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through287 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through288 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1679,3 +1679,7 @@ SEND286A–F recover nested kind1 ID gates, independent kind2 admission, linear 
 ### Checkpoint 287 — send replacement and device dispatch
 
 SR287A–F recover old positive-gain capture, mode-dependent previous value, raw-ID first-unmatched merge, unmatched-old fade records, count-before-mask dispatch and ordinary/special device filters with retain/release. Appended local match marker is unwritten; no value inferred. Route construction A43434 and wider inputs/writers remain PARTIAL. Counts/Q15/fidelity/production unchanged.
+
+### Checkpoint 288 — line selection and bus getter joins
+
+SL288A–F supply complete A43434 line-search prefix joined to existing AD1/2 and RCON tails, known node/bus88 bindings, ordered collapsed-bus pointer selection and direct9F4BB8 first-link resolver. A429F0 line construction remains the next bounded recipient; wider route/source/input/writer closure remains PARTIAL. Counts/Q15/fidelity/production unchanged.

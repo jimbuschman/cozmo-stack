@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009F1E3C..0x009F1E70 exclusive; ARM;
+009F1E3C: ldr          r3, [r0, #0x38]
+009F1E40: cmp          r3, #0
+009F1E44: beq          #0x9f1e58
+009F1E48: ldr          r2, [r3]
+009F1E4C: mov          r0, r3
+009F1E50: ldr          r3, [r2, #0x88]
+009F1E54: bx           r3
+009F1E58: ldr          r0, [r0, #0x34]
+009F1E5C: cmp          r0, #0
+009F1E60: bxeq         lr
+009F1E64: ldr          r3, [r0]
+009F1E68: ldr          r3, [r3, #0x88]
+009F1E6C: bx           r3
+RANGE 0x009C2A30..0x009C2ADC exclusive; ARM;
+009C2A30: ldr          r3, [r0, #0x28]
+009C2A34: push         {r4, lr}
+009C2A38: cmp          r3, #0
+009C2A3C: mov          r4, r0
+009C2A40: beq          #0x9c2a74
+009C2A44: ldr          r2, [r3, #4]
+009C2A48: cmp          r2, #0
+009C2A4C: bne          #0x9c2ad4
+009C2A50: ldr          r2, [r3, #0xc]
+009C2A54: cmp          r2, #0
+009C2A58: bne          #0x9c2ad4
+009C2A5C: ldr          r2, [r3, #0x14]
+009C2A60: cmp          r2, #0
+009C2A64: bne          #0x9c2ad4
+009C2A68: ldr          r3, [r3, #0x1c]
+009C2A6C: cmp          r3, #0
+009C2A70: bne          #0x9c2ad4
+009C2A74: ldr          r3, [r4]
+009C2A78: mov          r0, r4
+009C2A7C: ldr          r3, [r3, #0x44]
+009C2A80: blx          r3
+009C2A84: cmp          r0, #0xc
+009C2A88: beq          #0x9c2ad4
+009C2A8C: ldrb         r3, [r4, #0x68]
+009C2A90: cmp          r3, #0
+009C2A94: bne          #0x9c2ad4
+009C2A98: ldrb         r3, [r4, #0x46]
+009C2A9C: tst          r3, #0x80
+009C2AA0: bne          #0x9c2ad4
+009C2AA4: ldr          r3, [r4, #0x38]
+009C2AA8: cmp          r3, #0
+009C2AAC: beq          #0x9c2ad4
+009C2AB0: ldr          r3, [r4, #0x40]
+009C2AB4: tst          r3, #0xe0000
+009C2AB8: bne          #0x9c2ad4
+009C2ABC: ldr          r3, [r4, #0x54]
+009C2AC0: cmp          r3, #0
+009C2AC4: bne          #0x9c2ad4
+009C2AC8: mov          r0, r4
+009C2ACC: pop          {r4, lr}
+009C2AD0: b            #0x9f1e3c
+009C2AD4: mov          r0, r4
+009C2AD8: pop          {r4, pc}
