@@ -1308,3 +1308,8 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M7-023 owns S4 mood teardown/null-ActionList ordering (0x00511150; 0x005111B6; recipient 0x0067AE14). M7-024 owns SDK reaction-lock dispatch at 0x0065DD9A. Source: 20261006-M1M2-missing-triage.md S4/E2.
+
+
+## Manager correction (2026-10-09): M1-053 caller ownership
+
+M7-022 owns the non-live `BehaviorDockingTestSimple::UpdateInternal` GetRobotState caller at 0x005CC31E and its state copy to +0x270/state 3 (0x005CC310..0x005CC32C). M1-053 owns only the UpdateAllRobots game publication path; this second caller is not a publication path. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.

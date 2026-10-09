@@ -115,3 +115,7 @@ CLAIMED Codex after Q13: confirm E3 stored f32 time and nonzero deadline gate, c
 - Re-approved all 13 touched subsystems. Follow-up source-boundary review narrowed M3-040 to NV idle callback scheduling/predicate/invocation (M1-041 retains the ready-byte writer) and M1-042 to Unity A1/A3/A4 producers/gates (M1-026 retains A2 engine conversion/send).
 - `fidelity.py --check`: passed, 465 records. `git diff --check`: passed. Full suite: 3,954 passed, zero failed/skipped. No records settled.
 - Commit: c8af57e. Push: pending.
+
+## Manager row check (2026-10-09)
+
+The manager reopened the native call targets and extracted APK sources for M1-029 J1/J7, M1-046 Q1-Q3, M1-050 S13, M1-051 E6, M1-052 E7, M1-053 P2, and the narrowed policy records before any new implementation. Detailed checked boundaries and UNKNOWNs are in `jobs/B-M1M2.md` and the M1/M7 inventory appendices. M1-052's concrete callback target is unknown and cannot be implemented generically; M1-050's external sink, M1-051's +0xE1 writers/callbacks, M1-046's unsubscribe descendants, and M1-053's publication sink remain gaps. The ownership split between M1-023 reset-flag setter, M1-048 consumer, and M1-049 Android/JNI source is corrected and both affected subsystems re-approved. Full suite and publication follow.

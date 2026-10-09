@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "bfc31bac95c8a06f77d747a7b7d92dd80d52c32914a7607ded4b0c102d62ce82",
+  "inventory_sha256": "3c69ca1099446ca15794cb114ea1a835f6ae4e0216ffa8bbd66cd60f8ac169cc",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -290,7 +290,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f",
-        "M7 gap1 G7"
+        "M7 gap1 G7",
+        "P2 second GetRobotState caller: BehaviorDockingTestSimple::UpdateInternal calls getter at 0x005CC31E, stores its projection at +0x270 and enters state 3 at 0x005CC326..0x005CC32C; not a game publication caller. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
       ],
       "live_path": false,
       "hardware_required": false

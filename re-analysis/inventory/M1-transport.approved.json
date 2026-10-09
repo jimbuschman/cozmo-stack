@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-09",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "57133e4fe123ac0af7f153c7d8ce134687d4551d52fcf5689c285bc4254d53be",
+  "inventory_sha256": "6bbecc9cff50abfd878450c99267897651a3a1daf2d78cd514b3078c29d65508",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -286,13 +286,14 @@
     },
     "M1-023": {
       "status": "EXACT_SOURCE",
-      "title": "Native network-bind callback sets UDP reset flag; next update closes/reopens",
+      "title": "Native network-bind signal subscription and reset-flag writer",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "G4.1/G4.2 RCM registers UDP transport with WifiUtil; handler 0x0083BAD1 bound to signal 0x0105DF8C (0x0062EDB4..0x0062EDC0; 0x0083B9AA..0x0083B9D4).",
-        "G4.3 signal subscriber/emitters (0x004DD62E; 0x0083BC3E,0x0083BC86); G4.4 requires fd +0x94 >=0 then calls ResetSocket (0x0083BAD6..0x0083BAE0).",
-        "G4.5 ResetSocket sets +0x9D (0x0083A258); update closes and reopens only after close==1, then clears flag (0x0083ACE8..0x0083AD18). G4.6/G4.7 native emitters (0x0083BC3C..0x0083BC88).",
-        "Application bind/unbind gates G4.8-G4.12 transfer to M1-049; see 20261006-M1M2-missing-triage.md and 20261005-M1M2-policy-check.md."
+        "G4.1/G4.2 RCM registers UDP transport and binds its callback into ProtoSignal<void()> (0x0062EDB4..0x0062EDC0; 0x0083B9A0..0x0083B9D4).",
+        "G4.3 shared signal dispatcher walks subscriber nodes and invokes each callback (0x0083BC48..0x0083BC7E).",
+        "G4.4 registered UDP callback checks fd +0x94 >= 0 before ResetSocket (0x0083BAD6..0x0083BAE0).",
+        "G4.5 ResetSocket only stores byte 1 at transport +0x9D (0x0083A256..0x0083A258); Update consumer belongs to M1-048 U7 (0x0083ACE8..0x0083AD18).",
+        "G4.7 status/scan callbacks do not emit this signal (0x0083BB7C..0x0083BC08)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -386,7 +387,8 @@
         "G5.22..G5.30 nothing orders the header load before AddRobot: the loader starts in cozmo_startup before the engine thread (0x006661EA, 0x0065B14E), and neither the ConnectToRobot handler nor AddRobot checks the load (0x004ED026..0x004ED1EC; loaded flag +0x18 unread on that path)",
         "G5.31 a missing, short or unparsable file leaves E_v = E_t = 0 for the session (0x006764E4, 0x00677C50..0x00677D28)",
         "G5.38..G5.40 no writer of RobotManager+0x84/+0x88 besides the ctor and ParseFirmwareHeader was found; the scan cannot prove absence (adjusted-base, register-offset, whole-object and untyped accesses are outside it); see decision D7",
-        "J1 retained real asString dispatch 0x008E48B8..0x008E4902 and formatting wrapper 0x008EBF7C..0x008EC038; J7 reachable input bound and Reader/converter 0x008E07A4..0x008E1ECA, 0x0007E824..0x0007F202 (20261006-M1M2-missing-triage.md J1/J7)."
+        "J1 retained real asString dispatch 0x008E48B8..0x008E4902 and formatting wrapper 0x008EBF7C..0x008EC038; J7 reachable input bound and Reader/converter 0x008E07A4..0x008E1ECA, 0x0007E824..0x0007F202 (20261006-M1M2-missing-triage.md J1/J7).",
+        "J1: Json::Value::asString dispatches real type 3 with precision 17/useSpecialFloats=0 (0x008E48B8..0x008E4902); formatter wrapper uses imported snprintf, capacity 0x24, adds .0 after checking dot/lowercase e, then rewrites commas (0x008EBFAA..0x008EC04C). J7: FirmwareVersion JSON length is a u16 (0x007B9088..0x007B9092; 0x0071A908..0x0071A914); bounded Reader number scan and decodeDouble path have no fixed token-size cap in cited routines (0x008E078C..0x008E07F8; 0x008E190A..0x008E19A6; 0x008E1E42..0x008E1E4C; 0x008E2258..0x008E23D6; libc++ converter 0x0007E824..0x0007F202). Final exceptions/allocation-failure effects remain UNKNOWN."
       ],
       "live_path": true,
       "hardware_required": false
@@ -529,10 +531,9 @@
       "title": "Unity post-connect volume and block-pool producers and gates",
       "authority": "Unity ConnectionFlowController.cs:682-686,764-780; GameAudioClient.cs:53-108; Robot.cs:1461-1465; RobotEngineManager.cs:373-380,223-231; BlockPoolTracker.cs:86-104; engine conversion 0x0059A21E..0x0059A256.",
       "evidence": [
-        "A1: unity/scripts/csharp/ConnectionFlowController.cs:682-686; GameAudioClient.cs:53-108: stored/default volume on every response, CurrentRobot gate.",
-        "A3: unity/scripts/csharp/RobotEngineManager.cs:373-380,223-231; BlockPoolTracker.cs:86-94: disconnected-and-Success AddRobot; nonnull tracker subscribes then gets block pool.",
-        "A4: unity/scripts/csharp/ConnectionFlowController.cs:764-780; BlockPoolTracker.cs:97-104: enable only when !DefaultProfile.FirstTimeUserFlow; default discovery time 0.",
-        "A2 conversion/send remains owned by M1-026 (Robot.cs:1461-1465; 0x0059A21E..0x0059A256). A5 boundary: unity/scripts/csharp/Cozmo/PauseManager.cs:219,289,350-374 is idle-timeout producer; config values not extracted and remain M1-031."
+        "A1 order: RobotEngineManager processes RobotConnectionResponse and creates Robot on first !connected+Success before its game callback dispatch (unity/scripts/csharp/RobotEngineManager.cs:309-341,373-381); ConnectionFlowController always calls SetPersistenceVolumeValues([Robot]) before handling the response (unity/scripts/csharp/ConnectionFlowController.cs:682-686). GameAudioClient selects stored or default Robot volume 1.0, then SetVolumeValue sends through CurrentRobot gate (unity/scripts/csharp/Anki.Cozmo.Audio/GameAudioClient.cs:53-65,87-99,112-122). Robot.SetRobotVolume conversion/send remains M1-026 (Robot.cs:1461-1465; 0x0059A21E..0x0059A256).",
+        "A3: on !connected && Success, ProcessRobotConnectionResponse adds Robot, then AddRobot calls BlockPoolTracker.InitBlockPool when nonnull; that registers five callbacks, assigns GetBlockPoolMessage, and sends (RobotEngineManager.cs:223-232,373-381; BlockPoolTracker.cs:86-95). This runs before ConnectionFlow's response callback (RobotEngineManager.cs:309-341).",
+        "A4: after response success bookkeeping, enable auto block pool only when !DefaultProfile.FirstTimeUserFlow; EnableAutoBlockPool(true) defaults discovery time to 0 and sends (ConnectionFlowController.cs:764-780; BlockPoolTracker.cs:97-104). A5 idle timeout remains M1-031 (PauseManager.cs:219,289,350-374)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -576,8 +577,8 @@
       "title": "Channel/member subscription retirement recipients",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "0x005112F2..0x00511308; Idle subscription vector and RobotToEngineImplMessaging recipient destruction; concrete unsubscribe/callback descendants UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Robot constructs RobotIdleTimeoutComponent at +0x51C and RobotToEngineImplMessaging at +0x518 (0x0051020A..0x0051022E). Robot dtor clears +0x51C, releases its shared-handle vector, then clears +0x518 and calls RobotToEngineImplMessaging::~ (0x005112E6..0x00511308).",
+        "RobotToEngineImplMessaging dtor releases members +0x144/+0x138/+0x110/+0x104, handle vector +0xF8, filebuf/ios, then its base (0x00532A10..0x00532A74). Last shared-handle release invokes virtual slot +8 then deleting-dtor slot +4 (0x004EF184..0x004EF1CC); concrete target and behavior-changing descendants UNKNOWN. (MISSING triage Q1-Q3.)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -605,19 +606,19 @@
         "U4 CloseSocket fd<0 return and closed port47817 stores (0x008395CA..0x008396AA).",
         "U5 send count/error/rate-limit branches (0x0083A374..0x0083A3A4;0x0083A54E..0x0083A666).",
         "U6 receive buffer/MSG_DONTWAIT, errno11, warnings, errno107 reopen and drain stop (0x0083AA66..0x0083AAC6;0x0083AAF6;0x0083AB22..0x0083AB38;0x0083ABF4..0x0083AC0C;0x0083AD16..0x0083AD18).",
-        "U7 reset close/reopen/flag/drain loop (0x0083ACE8..0x0083AD1A)."
+        "U7 reset consumer: Update tests +0x9D, closes, reopens stored port only when CloseSocket returns 1, clears flag either way, then reads while fd>=0 and TryToReadMessage returns nonzero (0x0083ACE8..0x0083AD18). M1-023 owns the signal/handler/flag writer."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M1-049": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Android successful-bind trigger gates and native reset callback predicate",
+      "title": "Android bind/unbind trigger gates and native signal bridge",
       "authority": "Unity/Java app and libcozmoEngine.so native network callback.",
       "evidence": [
-        "N2 emits only after successful API>=21 process bind (WifiUtil.java:381-404).",
-        "N3 ignores network handle and requires fd>=0 before ResetSocket (0x0083BC3C..0x0083BC88;0x0083BAD6..0x0083BAE0).",
-        "N4 reset mechanism remains M1-023 (0x0083ACE8..0x0083AD04)."
+        "N1 unbind: remove retries; API>=23 binds null then calls NativeBindNetworkCallback(0) regardless of bind return; API21-22 calls setProcessDefaultNetwork(null) then NativeBindLollipopCallback; below API21 no native callback (sources/com/anki/util/WifiUtil.java:321-331).",
+        "N2 bind: API>=23 calls bindProcessToNetwork and emits NativeBindNetworkCallback(networkHandle) only on true; API21-22 calls setProcessDefaultNetwork and emits NativeBindLollipopCallback only on true; below API21 marks bound and returns without native callback (WifiUtil.java:381-404).",
+        "N3 JNI entry thunks replace/ignore the incoming network handle, load the shared signal and branch to the common dispatcher (0x0083BC3C..0x0083BC40; 0x0083BC84..0x0083BC88). Shared subscriber dispatch and the UDP fd predicate/ResetSocket writer are M1-023; reset execution is M1-048 U7."
       ],
       "live_path": true,
       "hardware_required": false
@@ -627,7 +628,7 @@
       "title": "External-interface disconnect/report delivery",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
       "evidence": [
-        "S13 virtual slot +0x30 at 0x0052F2AC and notification/session path 0x0052F29E..0x0052F2EE; concrete sink UNKNOWN (20261006-M1M2-missing-triage.md S13)."
+        "S13: RobotManager::RemoveRobot calls the external interface virtual slot +0x30 with robot id at 0x0052F29E..0x0052F2AC. SimpleExternalInterface's vtable has __cxa_pure_virtual in this slot; no concrete runtime override was found in shipped .so files. Concrete sink/payload UNKNOWN. The later RobotDisconnected slot +0x1C dispatch/session clear are outside this record (0x0052F2B6..0x0052F2D8). Source: 20261006-M1M2-missing-triage.md S13; binary vtable scan."
       ],
       "live_path": true,
       "hardware_required": false
@@ -637,7 +638,7 @@
       "title": "SDK mode entry and lifecycle state writers",
       "authority": "libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle.",
       "evidence": [
-        "EnterMode 0x0065E104..0x0065E224; ExitMode 0x0065E2A4..0x0065E43E; OnDisconnect 0x0065E4D8..0x0065E620; OnConnectionSuccess 0x0065E6E0..0x0065E940; UI OnEnter 0x0066150C..0x00661538. UI +0xE1 and comm +0x88 are independent (triage E6)."
+        "EnterMode 0x0065E104..0x0065E224 writes +0x79 or +0x78/+0x7A on distinct branches and may ResetRobot; ExitMode 0x0065E2A4..0x0065E43E clears +0x79/+0x7B and dispatches OnDisconnect; OnDisconnect 0x0065E4D8..0x0065E620 gates reset and clears +0x78; OnConnectionSuccess 0x0065E6E0..0x0065E940 writes +0x74/+0x78/+0x70/+0x7B/+0x58/+0x7C and may send communication callback. UiMessageHandler OnEnter calls EnterMode then UpdateIsSdkCommunicationEnabled (0x0066150C..0x00661538). +0xE1 writer census and full callback descendants remain UNKNOWN. Source: 20261006-M1M2-missing-triage.md E6; reopened libcozmoEngine.so."
       ],
       "live_path": true,
       "hardware_required": false
@@ -647,7 +648,7 @@
       "title": "SDK connection callback virtual targets",
       "authority": "libcozmoEngine.so 3.4.0-1204 communication-change callback.",
       "evidence": [
-        "Communication change invokes slot +0x24 with old/new values at 0x00663298..0x006632C4; helper selects UDP/TCP indices using mask6 at 0x0065FE16..0x0065FE24; vtable targets UNKNOWN (triage E7)."
+        "UpdateIsSdkCommunicationEnabled iterates connection kinds 0..2, checks IsExternalSdkConnection and non-null communication object, stores independent +0x88 byte, then invokes its vtable slot +0x24 with old/new values (0x00663298..0x006632C6). Selector helper 0x0065FE16..0x0065FE24 tests the connection-kind bit via mask 6. No concrete shipped ISocketComms target/body was found; target UNKNOWN. Source: 20261006-M1M2-missing-triage.md E7; reopened libcozmoEngine.so."
       ],
       "live_path": true,
       "hardware_required": false
@@ -657,7 +658,8 @@
       "title": "Outgoing RobotState publication from the engine tick",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
       "evidence": [
-        "Caller 0x0052F6C0..0x0052F7B0 updates robots, gates HasReceivedRobotState, gets snapshot, constructs game message and invokes external slot +0x1C; tick entry 0x004ED648; getter 0x005180D8..0x00518252; other callers UNKNOWN (triage P2)."
+        "UpdateAllRobots enters from engine tick 0x004ED648; iterates robots, calls Robot::Update then HasReceivedRobotState, and only when true calls GetRobotState, constructs MessageEngineToGame::RobotState and invokes external slot +0x1C (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). External sink remains UNKNOWN.",
+        "A second caller exists: BehaviorDockingTestSimple::UpdateInternal calls GetRobotState at 0x005CC31E, copies state to +0x270 and enters state 3 (0x005CC310..0x005CC32C); this non-live developer behavior belongs to M7-022. Remaining callers are not proven exhaustive. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
       ],
       "live_path": true,
       "hardware_required": false

@@ -147,3 +147,17 @@ From `research/20261005-M1M2-policy-check.md`:
 
   Do this in the same inventory correction as the MISSING disposition. Extraction rows that aren't checked yet go to
   the manager before anything is built from them.
+
+## Manager-checked extraction rows (2026-10-09)
+
+Before building the remaining M1 records, the manager reopened the call targets in the shipped native library and official APK sources. The checked rows and boundaries are recorded in `inventory/M1-transport.md` and `inventory/M7-behaviour.md`:
+
+- **M1-029 J1/J7:** real `asString` dispatch/formatting wrapper and reachable-length JSON decoding. J1's 36-byte formatter buffer, `.0` condition, comma rewrite and nonfinite branch are source-backed; the imported formatter is phone runtime. J7 uses a u16 length; no fixed token bound was found in the reader/converter slices. Complete maximum transport delivery remains owned by transport. See `fidelity_manifest.json` M1-029 evidence.
+- **M1-046 Q1-Q3:** constructor/destructor member order and shared-handle last-release slots were checked. Concrete unsubscribe target and callback descendants remain UNKNOWN; build only the confirmed retirement sequence.
+- **M1-050 S13:** RemoveRobot calls external slot +0x30 with robot id; the shipped base slot is pure virtual and no runtime override was found. Delivery target/payload remain UNKNOWN.
+- **M1-051 E6:** local SDK state transitions in EnterMode, ExitMode, OnDisconnect and OnConnectionSuccess were reopened. The +0xE1 writer census and concrete callback descendants remain UNKNOWN.
+- **M1-052 E7:** selector and virtual +0x24 callback invocation were reopened; concrete callback target/body remain UNKNOWN, so there is no generic callback implementation to build.
+- **M1-053 P2:** UpdateAllRobots update/state gate/projection and +0x1C publication were checked. The second getter caller belongs to M7-022; publication sink and exhaustive caller list remain UNKNOWN.
+- **Policy rows:** M1-047 owns engine executor/priority choices while host scheduling stays policy; M1-048 owns UDPTransport decisions while host socket calls/errno mapping stay policy; M1-049 owns Android bind/unbind gates and JNI signal bridge while M1-023 owns the native subscriber/fd gate/reset-flag setter; M1-042 owns Unity producers and the profile gate while engine volume conversion remains M1-026.
+
+The primary citations and detailed row mapping are preserved in the two inventories. No implementation has been started from an unchecked extraction row.
