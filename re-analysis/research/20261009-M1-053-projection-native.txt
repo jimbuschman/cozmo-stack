@@ -1,0 +1,766 @@
+Primary binary resources/lib/armeabi-v7a/libcozmoEngine.so SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 005180D8..00518252 _ZNK4Anki5Cozmo5Robot13GetRobotStateEv
+005180D8: push       {r4, r5, r6, r7, lr}
+005180DA: sub        sp, #0x24
+005180DC: mov        r5, r1
+005180DE: mov        r7, r0
+005180E0: mov        r0, r5
+005180E2: bl         #0x4ea398
+005180E6: ldr.w      r2, [r5, #0x294]
+005180EA: mov        r6, sp
+005180EC: mov        r1, r0
+005180EE: mov        r0, r6
+005180F0: blx        #0x4a5bf0 ; ARM PLT GOT 01040BDC: _ZNK4Anki6Pose3d14ToPoseStruct3dERKNS_14PoseOriginListE target 00846D39
+005180F4: ldr        r0, [pc, #0x184]
+005180F6: mov        r1, r7
+005180F8: add        r0, pc
+005180FA: ldr.w      ip, [r0]
+005180FE: ldm        r6!, {r0, r2, r3, r4}
+00518100: stm        r1!, {r0, r2, r3, r4}
+00518102: ldm.w      r6, {r0, r2, r3, r4}
+00518106: stm        r1!, {r0, r2, r3, r4}
+00518108: ldr.w      ip, [ip]
+0051810C: ldr        r0, [r7, #0x1c]
+0051810E: cmp        r0, ip
+00518110: bne        #0x518148
+00518112: ldr        r2, [pc, #0x16c]
+00518114: movs       r0, #0
+00518116: strd       r0, r0, [sp]
+0051811A: add        r2, pc
+0051811C: str        r0, [sp, #8]
+0051811E: adr        r0, #0x164
+00518120: mov        r1, sp
+00518122: blx        #0x4a4540 ; ARM PLT GOT 0104044C: _ZN4Anki4Util9sWarningFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z target 0080D2B5
+00518126: ldr        r0, [sp]
+00518128: cbz        r0, #0x518148
+0051812A: ldr        r1, [sp, #4]
+0051812C: cmp        r1, r0
+0051812E: itttt      ne
+00518130: subne.w    r2, r1, #8
+00518134: subne      r2, r2, r0
+00518136: mvnne      r3, #7
+0051813A: bicne.w    r2, r3, r2
+0051813E: itt        ne
+00518140: addne      r1, r1, r2
+00518142: strne      r1, [sp, #4]
+00518144: blx        #0x4a40cc ; ARM PLT GOT 010402D0: _ZdlPv target 00000000
+00518148: mov        r0, r5
+0051814A: bl         #0x4ea398
+0051814E: blx        #0x4a4048 ; ARM PLT GOT 010402A4: _ZNKR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv target 0084499B
+00518152: mov        r1, r0
+00518154: mov        r0, sp
+00518156: blx        #0x4a4150 ; ARM PLT GOT 010402FC: _ZNK4Anki10Rotation3d19GetAngleAroundZaxisEv target 0084AA1D
+0051815A: ldr        r0, [sp]
+0051815C: add.w      r1, r5, #0x304
+00518160: str        r0, [r7, #0x20]
+00518162: mov        r0, sp
+00518164: blx        #0x4a5a64 ; ARM PLT GOT 01040B58: _ZN4Anki7RadiansC1ERKS0_ target 0084C84D
+00518168: ldr        r1, [sp]
+0051816A: add.w      ip, r7, #0x24
+0051816E: ldrd       r2, r3, [r5, #0x30c]
+00518172: ldrd       r6, r0, [r5, #0x2fc]
+00518176: stm.w      ip, {r1, r2, r3, r6}
+0051817A: blx        #0x4a4168 ; ARM PLT GOT 01040304: sinf target 00000000
+0051817E: vmov       s2, r0
+00518182: vldr       s0, [pc, #0x120]
+00518186: add.w      r0, r5, #0x360
+0051818A: add.w      r1, r7, #0x3c
+0051818E: vmul.f32   s0, s2, s0
+00518192: vldr       s2, [pc, #0x114]
+00518196: vadd.f32   s0, s0, s2
+0051819A: vldr       s2, [pc, #0x110]
+0051819E: vadd.f32   s0, s0, s2
+005181A2: vstr       s0, [r7, #0x34]
+005181A6: ldm.w      r0, {r2, r3, r6}
+005181AA: add.w      r0, r5, #0x36c
+005181AE: stm        r1!, {r2, r3, r6}
+005181B0: add.w      r1, r7, #0x48
+005181B4: ldm.w      r0, {r2, r3, r6}
+005181B8: stm        r1!, {r2, r3, r6}
+005181BA: ldr.w      r0, [r5, #0x350]
+005181BE: str        r0, [r7, #0x68]
+005181C0: ldrb.w     r2, [r5, #0x248]
+005181C4: cbz        r2, #0x5181d8
+005181C6: orr        r1, r0, #0x40
+005181CA: str        r1, [r7, #0x68]
+005181CC: cmp        r2, #0xff
+005181CE: itt        eq
+005181D0: orreq      r1, r0, #0x840
+005181D4: streq      r1, [r7, #0x68]
+005181D6: b          #0x5181da
+005181D8: mov        r1, r0
+005181DA: ldr.w      r0, [r5, #0x284]
+005181DE: ldr        r2, [r0, #8]
+005181E0: adds       r2, #1
+005181E2: beq        #0x518202
+005181E4: orr        r1, r1, #2
+005181E8: str        r1, [r7, #0x68]
+005181EA: ldr        r1, [r0, #4]!
+005181EE: ldr        r1, [r1]
+005181F0: blx        r1
+005181F2: str        r0, [r7, #0x54]
+005181F4: ldr.w      r0, [r5, #0x284]
+005181F8: ldr        r1, [r0, #0x10]!
+005181FC: ldr        r1, [r1]
+005181FE: blx        r1
+00518200: b          #0x518208
+00518202: mov.w      r0, #-1
+00518206: str        r0, [r7, #0x54]
+00518208: movs       r1, #0
+0051820A: strb.w     r1, [r7, #0x6c]
+0051820E: str        r0, [r7, #0x58]
+00518210: ldrb.w     r0, [r5, #0x2c4]
+00518214: cbz        r0, #0x518222
+00518216: ldrb.w     r0, [r5, #0x355]
+0051821A: cbnz       r0, #0x518222
+0051821C: movs       r0, #1
+0051821E: strb.w     r0, [r7, #0x6c]
+00518222: ldr.w      r0, [r5, #0x254]
+00518226: ldr        r1, [r0, #0x1c]!
+0051822A: ldr        r1, [r1]
+0051822C: blx        r1
+0051822E: str        r0, [r7, #0x5c]
+00518230: ldr.w      r0, [r5, #0x2b4]
+00518234: ldr        r1, [r0]
+00518236: add.w      r0, r5, #0x2b4
+0051823A: blx        r1
+0051823C: str        r0, [r7, #0x60]
+0051823E: ldr.w      r0, [r5, #0x33c]
+00518242: str        r0, [r7, #0x38]
+00518244: ldr.w      r0, [r5, #0x258]
+00518248: blx        #0x4a5c68 ; ARM PLT GOT 01040C04: _ZNK4Anki5Cozmo15VisionComponent30GetLastProcessedImageTimeStampEv target 006527A3
+0051824C: str        r0, [r7, #0x64]
+0051824E: add        sp, #0x24
+00518250: pop        {r4, r5, r6, r7, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EA398..004EA472 
+004EA398: push.w     {r4, r5, r6, r7, r8, sb, lr}
+004EA39C: sub        sp, #0x24
+004EA39E: mov        r5, r0
+004EA3A0: add.w      sb, r5, #0x298
+004EA3A4: mov        r0, sb
+004EA3A6: blx        #0x4a4c3c ; ARM PLT GOT 010406A0: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9GetRootIDEv target 00844B0B
+004EA3AA: mov        r6, r0
+004EA3AC: mov        r0, r5
+004EA3AE: blx        #0x4a4c48 ; ARM PLT GOT 010406A4: _ZNK4Anki5Cozmo5Robot16GetWorldOriginIDEv target 00512905
+004EA3B2: cmp        r6, r0
+004EA3B4: beq        #0x4ea3ec
+004EA3B6: mov        r0, r5
+004EA3B8: blx        #0x4a4c48 ; ARM PLT GOT 010406A4: _ZNK4Anki5Cozmo5Robot16GetWorldOriginIDEv target 00512905
+004EA3BC: mov        r8, r0
+004EA3BE: mov        r0, r5
+004EA3C0: blx        #0x4a4c54 ; ARM PLT GOT 010406A8: _ZNK4Anki5Cozmo5Robot14GetWorldOriginEv target 005128FD
+004EA3C4: blx        #0x4a4c60 ; ARM PLT GOT 010406AC: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE7GetNameEv target 00844957
+004EA3C8: mov        r7, r0
+004EA3CA: mov        r0, sb
+004EA3CC: ldr        r6, [r7, #8]
+004EA3CE: ldrb       r4, [r7]
+004EA3D0: blx        #0x4a4c3c ; ARM PLT GOT 010406A0: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9GetRootIDEv target 00844B0B
+004EA3D4: tst.w      r4, #1
+004EA3D8: it         eq
+004EA3DA: addeq      r6, r7, #1
+004EA3DC: strd       r6, r0, [sp]
+004EA3E0: adr        r0, #0xb8
+004EA3E2: adr        r1, #0xe4
+004EA3E4: adr        r2, #0x10c
+004EA3E6: mov        r3, r8
+004EA3E8: blx        #0x4a4c6c ; ARM PLT GOT 010406B0: _ZN4Anki4Util24sVerifyFailedReturnFalseEPKcS2_z target 0080D9A5
+004EA3EC: mov        r0, r5
+004EA3EE: blx        #0x4a4c54 ; ARM PLT GOT 010406A8: _ZNK4Anki5Cozmo5Robot14GetWorldOriginEv target 005128FD
+004EA3F2: mov        r1, r0
+004EA3F4: mov        r0, sb
+004EA3F6: blx        #0x4a4c78 ; ARM PLT GOT 010406B4: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE13HasSameRootAsERKS1_ target 00844BD5
+004EA3FA: cbnz       r0, #0x4ea46a
+004EA3FC: mov        r0, r5
+004EA3FE: blx        #0x4a4c54 ; ARM PLT GOT 010406A8: _ZNK4Anki5Cozmo5Robot14GetWorldOriginEv target 005128FD
+004EA402: add.w      r8, sp, #0x18
+004EA406: mov        r1, r0
+004EA408: movs       r2, #0
+004EA40A: mov        r0, r8
+004EA40C: blx        #0x4a4c84 ; ARM PLT GOT 010406B8: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE18GetNamedPathToRootEb target 00845525
+004EA410: ldr        r6, [sp, #0x20]
+004EA412: ldrb.w     r5, [sp, #0x18]
+004EA416: add        r7, sp, #0xc
+004EA418: mov        r1, sb
+004EA41A: movs       r2, #0
+004EA41C: mov        r0, r7
+004EA41E: blx        #0x4a4c84 ; ARM PLT GOT 010406B8: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE18GetNamedPathToRootEb target 00845525
+004EA422: ldr        r0, [pc, #0xf8]
+004EA424: ldr        r1, [pc, #0xf8]
+004EA426: ldr        r2, [pc, #0xfc]
+004EA428: add        r0, pc
+004EA42A: add        r1, pc
+004EA42C: ldrb.w     r4, [sp, #0xc]
+004EA430: ldr        r3, [sp, #0x14]
+004EA432: add        r2, pc
+004EA434: tst.w      r4, #1
+004EA438: it         eq
+004EA43A: orreq      r3, r7, #1
+004EA43E: str        r3, [sp]
+004EA440: lsls       r3, r5, #0x1f
+004EA442: it         eq
+004EA444: orreq      r6, r8, #1
+004EA448: mov        r3, r6
+004EA44A: blx        #0x4a4c6c ; ARM PLT GOT 010406B0: _ZN4Anki4Util24sVerifyFailedReturnFalseEPKcS2_z target 0080D9A5
+004EA44E: ldrb.w     r0, [sp, #0xc]
+004EA452: lsls       r0, r0, #0x1f
+004EA454: itt        ne
+004EA456: ldrne      r0, [sp, #0x14]
+004EA458: blxne      #0x4a40cc
+004EA45C: ldrb.w     r0, [sp, #0x18]
+004EA460: lsls       r0, r0, #0x1f
+004EA462: itt        ne
+004EA464: ldrne      r0, [sp, #0x20]
+004EA466: blxne      #0x4a40cc
+004EA46A: mov        r0, sb
+004EA46C: add        sp, #0x24
+004EA46E: pop.w      {r4, r5, r6, r7, r8, sb, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004EF772..004EF776 
+004EF772: ldr        r0, [r0, #4]
+004EF774: bx         lr
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0084499A..0084499E _ZNKR4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12GetTransformEv
+0084499A: ldr        r0, [r0, #4]
+0084499C: bx         lr
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 00846D38..00846DF0 _ZNK4Anki6Pose3d14ToPoseStruct3dERKNS_14PoseOriginListE
+00846D38: push       {r4, r5, r6, r7, lr}
+00846D3A: sub        sp, #0x2c
+00846D3C: mov        r4, r0
+00846D3E: add        r0, sp, #0x20
+00846D40: mov        r7, r2
+00846D42: mov        r6, r1
+00846D44: bl         #0x4df628
+00846D48: ldr        r0, [sp, #0x24]
+00846D4A: cbz        r0, #0x846d54
+00846D4C: blx        #0x4ce0d8 ; ARM PLT GOT 0104E2D4: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12PoseTreeNode9GetRootIDEv target 00844B19
+00846D50: mov        r5, r0
+00846D52: b          #0x846d56
+00846D54: movs       r5, #0
+00846D56: mov        r0, r7
+00846D58: mov        r1, r5
+00846D5A: blx        #0x4a7bc4 ; ARM PLT GOT 01041678: _ZNK4Anki14PoseOriginList16ContainsOriginIDEj target 00847A47
+00846D5E: cbnz       r0, #0x846d6c
+00846D60: adr        r0, #0xb4
+00846D62: adr        r1, #0xd8
+00846D64: adr        r2, #0xe8
+00846D66: mov        r3, r5
+00846D68: blx        #0x4a4c6c ; ARM PLT GOT 010406B0: _ZN4Anki4Util24sVerifyFailedReturnFalseEPKcS2_z target 0080D9A5
+00846D6C: ldr        r6, [r6, #4]
+00846D6E: ldr        r7, [sp, #0x24]
+00846D70: cbz        r6, #0x846db6
+00846D72: ldr        r0, [r6, #0x30]
+00846D74: mov        r1, r6
+00846D76: blx        #0x4ce0cc ; ARM PLT GOT 0104E2D0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE12PoseTreeNode30Dev_AssertIsValidParentPointerEPKS4_S6_ target 008460C9
+00846D7A: ldr        r0, [r6, #0x30]
+00846D7C: cbz        r0, #0x846db6
+00846D7E: add        r0, sp, #0x14
+00846D80: add        r1, sp, #0x20
+00846D82: blx        #0x4a74d4 ; ARM PLT GOT 01041428: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9GetParentEv target 008453D5
+00846D86: ldr        r0, [sp, #0x18]
+00846D88: ldr        r0, [r0, #0x44]
+00846D8A: cmp        r0, r5
+00846D8C: beq        #0x846db0
+00846D8E: add        r0, sp, #8
+00846D90: add        r1, sp, #0x20
+00846D92: blx        #0x4a74d4 ; ARM PLT GOT 01041428: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE9GetParentEv target 008453D5
+00846D96: ldr        r0, [sp, #0xc]
+00846D98: ldr        r2, [pc, #0xe0]
+00846D9A: ldr        r3, [r0, #0x44]
+00846D9C: add        r2, pc
+00846D9E: ldr        r0, [pc, #0xd8]
+00846DA0: add        r0, pc
+00846DA2: adr        r1, #0xdc
+00846DA4: str        r5, [sp]
+00846DA6: blx        #0x4a4c6c ; ARM PLT GOT 010406B0: _ZN4Anki4Util24sVerifyFailedReturnFalseEPKcS2_z target 0080D9A5
+00846DAA: add        r0, sp, #8
+00846DAC: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+00846DB0: add        r0, sp, #0x14
+00846DB2: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+00846DB6: vldmia     r7, {d0, d1, d2, d3}
+00846DBA: add.w      r2, r7, #0x20
+00846DBE: vcvt.f32.f64 s0, d0
+00846DC2: ldm        r2, {r0, r1, r2}
+00846DC4: stm.w      r4, {r0, r1, r2}
+00846DC8: add        r0, sp, #0x20
+00846DCA: str        r5, [r4, #0x1c]
+00846DCC: vcvt.f32.f64 s2, d1
+00846DD0: vcvt.f32.f64 s4, d2
+00846DD4: vcvt.f32.f64 s6, d3
+00846DD8: vstr       s0, [r4, #0xc]
+00846DDC: vstr       s2, [r4, #0x10]
+00846DE0: vstr       s4, [r4, #0x14]
+00846DE4: vstr       s6, [r4, #0x18]
+00846DE8: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+00846DEC: add        sp, #0x2c
+00846DEE: pop        {r4, r5, r6, r7, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0084AA1C..0084AABA _ZNK4Anki10Rotation3d19GetAngleAroundZaxisEv
+0084AA1C: push       {r4, lr}
+0084AA1E: vldmia     r1, {d0, d1, d2, d3}
+0084AA22: mov        r4, r0
+0084AA24: vmul.f64   d5, d1, d1
+0084AA28: vmul.f64   d4, d3, d3
+0084AA2C: vmul.f64   d6, d2, d2
+0084AA30: vmul.f64   d0, d3, d0
+0084AA34: vmul.f64   d1, d1, d2
+0084AA38: vadd.f64   d2, d5, d4
+0084AA3C: vadd.f64   d3, d6, d4
+0084AA40: vsub.f64   d4, d1, d0
+0084AA44: vadd.f64   d0, d1, d0
+0084AA48: vadd.f64   d1, d3, d3
+0084AA4C: vadd.f64   d2, d2, d2
+0084AA50: vmov.f64   d5, #1.000000e+00
+0084AA54: vadd.f64   d3, d4, d4
+0084AA58: vsub.f64   d2, d5, d2
+0084AA5C: vadd.f64   d4, d0, d0
+0084AA60: vsub.f64   d5, d5, d1
+0084AA64: vcvt.f32.f64 s0, d3
+0084AA68: vcvt.f32.f64 s2, d2
+0084AA6C: vcvt.f32.f64 s4, d4
+0084AA70: vcvt.f32.f64 s6, d5
+0084AA74: vmul.f32   s8, s0, s0
+0084AA78: vmul.f32   s10, s2, s2
+0084AA7C: vmul.f32   s12, s4, s4
+0084AA80: vmul.f32   s14, s6, s6
+0084AA84: vadd.f32   s8, s8, s10
+0084AA88: vadd.f32   s10, s12, s14
+0084AA8C: vcmpe.f32  s10, s8
+0084AA90: vmrs       apsr_nzcv, fpscr
+0084AA94: ble        #0x84aaa0
+0084AA96: vmov       r0, s4
+0084AA9A: vmov       r1, s6
+0084AA9E: b          #0x84aaac
+0084AAA0: vmov       r0, s0
+0084AAA4: vmov       r1, s2
+0084AAA8: eor        r0, r0, #0x80000000
+0084AAAC: blx        #0x4a4510 ; ARM PLT GOT 0104043C: atan2f target 00000000
+0084AAB0: mov        r1, r0
+0084AAB2: mov        r0, r4
+0084AAB4: blx        #0x4a4294 ; ARM PLT GOT 01040368: _ZN4Anki7RadiansC1Ef target 0084C833
+0084AAB8: pop        {r4, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0084C84C..0084C856 _ZN4Anki7RadiansC1ERKS0_ | _ZN4Anki7RadiansC2ERKS0_
+0084C84C: ldr        r2, [r1]
+0084C84E: str        r2, [r0]
+0084C850: ldrb       r1, [r1, #4]
+0084C852: strb       r1, [r0, #4]
+0084C854: bx         lr
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0084C832..0084C846 _ZN4Anki7RadiansC1Ef | _ZN4Anki7RadiansC2Ef
+0084C832: push       {r4, lr}
+0084C834: mov        r4, r0
+0084C836: movs       r0, #1
+0084C838: str        r1, [r4]
+0084C83A: strb       r0, [r4, #4]
+0084C83C: mov        r0, r4
+0084C83E: blx        #0x4ce528 ; ARM PLT GOT 0104E444: _ZN4Anki7Radians7rescaleEv target 0084C87D
+0084C842: mov        r0, r4
+0084C844: pop        {r4, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 006527A2..006527A8 _ZNK4Anki5Cozmo15VisionComponent30GetLastProcessedImageTimeStampEv
+006527A2: ldr.w      r0, [r0, #0xe8]
+006527A6: bx         lr
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0050FD3C..0050FD50 
+0050FD3C: movs       r0, #0xd8
+0050FD3E: blx        #0x4a42a0 ; ARM PLT GOT 0104036C: _Znwj target 00000000
+0050FD42: mov        r4, r0
+0050FD44: mov        r0, r4
+0050FD46: mov        r1, r5
+0050FD48: blx        #0x4a76cc ; ARM PLT GOT 010414D0: _ZN4Anki5Cozmo17MovementComponentC1ERNS0_5RobotE target 0063DA5D
+0050FD4C: str.w      r4, [r5, #0x254]
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0063DA5C..0063DA94 _ZN4Anki5Cozmo17MovementComponentC1ERNS0_5RobotE | _ZN4Anki5Cozmo17MovementComponentC2ERNS0_5RobotE
+0063DA5C: push.w     {r4, r5, r6, r7, r8, sb, lr}
+0063DA60: sub        sp, #4
+0063DA62: ldr        r2, [pc, #0x104]
+0063DA64: mov        r4, r0
+0063DA66: ldr        r3, [pc, #0x104]
+0063DA68: add.w      sb, r4, #0x10
+0063DA6C: add        r2, pc
+0063DA6E: str        r1, [r4, #4]
+0063DA70: add        r3, pc
+0063DA72: movs       r0, #0
+0063DA74: ldr        r1, [r2]
+0063DA76: mov.w      r2, #-1
+0063DA7A: strb       r0, [r4, #0xc]
+0063DA7C: str        r0, [r4, #8]
+0063DA7E: adds       r1, #8
+0063DA80: str        r0, [r4, #0x18]
+0063DA82: strd       sb, sb, [r4, #0x10]
+0063DA86: strd       r2, r0, [r4, #0x20]
+0063DA8A: ldr        r2, [r3]
+0063DA8C: str        r1, [r4]
+0063DA8E: add.w      r1, r2, #8
+0063DA92: str        r1, [r4, #0x1c]
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 00711970..00711A62 _ZNK4Anki5Cozmo17ExternalInterface10RobotState4PackERN4CLAD17SafeMessageBufferE
+00711970: push       {r4, r5, r7, lr}
+00711972: sub        sp, #8
+00711974: mov        r4, r1
+00711976: mov        r5, r0
+00711978: blx        #0x4c18ec ; ARM PLT GOT 0104A030: _ZNK4Anki12PoseStruct3d4PackERN4CLAD17SafeMessageBufferE target 00797EB7
+0071197C: ldr        r0, [r5, #0x20]
+0071197E: add        r1, sp, #4
+00711980: str        r0, [sp, #4]
+00711982: mov        r0, r4
+00711984: movs       r2, #4
+00711986: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+0071198A: ldr        r0, [r5, #0x24]
+0071198C: add        r1, sp, #4
+0071198E: str        r0, [sp, #4]
+00711990: mov        r0, r4
+00711992: movs       r2, #4
+00711994: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711998: ldr        r0, [r5, #0x28]
+0071199A: add        r1, sp, #4
+0071199C: str        r0, [sp, #4]
+0071199E: mov        r0, r4
+007119A0: movs       r2, #4
+007119A2: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+007119A6: ldr        r0, [r5, #0x2c]
+007119A8: add        r1, sp, #4
+007119AA: str        r0, [sp, #4]
+007119AC: mov        r0, r4
+007119AE: movs       r2, #4
+007119B0: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+007119B4: ldr        r0, [r5, #0x30]
+007119B6: add        r1, sp, #4
+007119B8: str        r0, [sp, #4]
+007119BA: mov        r0, r4
+007119BC: movs       r2, #4
+007119BE: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+007119C2: ldr        r0, [r5, #0x34]
+007119C4: add        r1, sp, #4
+007119C6: str        r0, [sp, #4]
+007119C8: mov        r0, r4
+007119CA: movs       r2, #4
+007119CC: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+007119D0: ldr        r0, [r5, #0x38]
+007119D2: add        r1, sp, #4
+007119D4: str        r0, [sp, #4]
+007119D6: mov        r0, r4
+007119D8: movs       r2, #4
+007119DA: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+007119DE: add.w      r0, r5, #0x3c
+007119E2: mov        r1, r4
+007119E4: blx        #0x4c18f8 ; ARM PLT GOT 0104A034: _ZNK4Anki5Cozmo9AccelData4PackERN4CLAD17SafeMessageBufferE target 007C8373
+007119E8: add.w      r0, r5, #0x48
+007119EC: mov        r1, r4
+007119EE: blx        #0x4c1904 ; ARM PLT GOT 0104A038: _ZNK4Anki5Cozmo8GyroData4PackERN4CLAD17SafeMessageBufferE target 007C8627
+007119F2: ldr        r0, [r5, #0x54]
+007119F4: add        r1, sp, #4
+007119F6: str        r0, [sp, #4]
+007119F8: mov        r0, r4
+007119FA: movs       r2, #4
+007119FC: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A00: ldr        r0, [r5, #0x58]
+00711A02: add        r1, sp, #4
+00711A04: str        r0, [sp, #4]
+00711A06: mov        r0, r4
+00711A08: movs       r2, #4
+00711A0A: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A0E: ldr        r0, [r5, #0x5c]
+00711A10: add        r1, sp, #4
+00711A12: str        r0, [sp, #4]
+00711A14: mov        r0, r4
+00711A16: movs       r2, #4
+00711A18: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A1C: ldr        r0, [r5, #0x60]
+00711A1E: add        r1, sp, #4
+00711A20: str        r0, [sp, #4]
+00711A22: mov        r0, r4
+00711A24: movs       r2, #4
+00711A26: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A2A: ldr        r0, [r5, #0x64]
+00711A2C: add        r1, sp, #4
+00711A2E: str        r0, [sp, #4]
+00711A30: mov        r0, r4
+00711A32: movs       r2, #4
+00711A34: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A38: ldr        r0, [r5, #0x68]
+00711A3A: add        r1, sp, #4
+00711A3C: str        r0, [sp, #4]
+00711A3E: mov        r0, r4
+00711A40: movs       r2, #4
+00711A42: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A46: ldrb.w     r0, [r5, #0x6c]
+00711A4A: add        r1, sp, #4
+00711A4C: strb.w     r0, [sp, #4]
+00711A50: mov        r0, r4
+00711A52: movs       r2, #1
+00711A54: blx        #0x4bfc0c ; ARM PLT GOT 01049690: _ZN4CLAD17SafeMessageBuffer10WriteBytesEPKvj target 0083C06D
+00711A58: mov        r0, r4
+00711A5A: blx        #0x4bfc24 ; ARM PLT GOT 01049698: _ZNK4CLAD17SafeMessageBuffer15GetBytesWrittenEv target 0083C02B
+00711A5E: add        sp, #8
+00711A60: pop        {r4, r5, r7, pc}
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0052F6C0..0052F7B0 _ZN4Anki5Cozmo12RobotManager15UpdateAllRobotsEv
+0052F6C0: push.w     {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0052F6C4: sub        sp, #0x184
+0052F6C6: mov        r8, r0
+0052F6C8: ldr        r0, [pc, #0x120]
+0052F6CA: mov        r4, r8
+0052F6CC: add        r0, pc
+0052F6CE: ldr        r0, [r0]
+0052F6D0: ldr        r0, [r0]
+0052F6D2: str        r0, [sp, #0x180]
+0052F6D4: ldr        r5, [r4], #4
+0052F6D8: cmp        r5, r4
+0052F6DA: beq        #0x52f798
+0052F6DC: add        r6, sp, #0x78
+0052F6DE: mov        fp, r5
+0052F6E0: ldr        r7, [r5, #0x14]
+0052F6E2: mov        r0, r7
+0052F6E4: blx        #0x4a9cd0 ; ARM PLT GOT 0104217C: _ZN4Anki5Cozmo5Robot6UpdateEv target 00513BC9
+0052F6E8: mov        r0, r7
+0052F6EA: blx        #0x4a9cdc ; ARM PLT GOT 01042180: _ZNK4Anki5Cozmo5Robot21HasReceivedRobotStateEv target 00513795
+0052F6EE: cmp        r0, #1
+0052F6F0: bne        #0x52f720
+0052F6F2: ldr.w      r0, [r8, #0x18]
+0052F6F6: add.w      sl, sp, #8
+0052F6FA: mov        r1, r7
+0052F6FC: ldr        r5, [r0, #4]
+0052F6FE: ldr        r0, [r5]
+0052F700: ldr.w      sb, [r0, #0x1c]
+0052F704: mov        r0, sl
+0052F706: blx        #0x4a9ce8 ; ARM PLT GOT 01042184: _ZNK4Anki5Cozmo5Robot13GetRobotStateEv target 005180D9
+0052F70A: mov        r0, r6
+0052F70C: mov        r1, sl
+0052F70E: blx        #0x4a9cf4 ; ARM PLT GOT 01042188: _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGameC1EONS1_10RobotStateE target 00723C79
+0052F712: mov        r0, r5
+0052F714: mov        r1, r6
+0052F716: blx        sb
+0052F718: mov        r0, r6
+0052F71A: blx        #0x4a5158 ; ARM PLT GOT 01040854: _ZN4Anki5Cozmo17ExternalInterface19MessageEngineToGame12ClearCurrentEv target 00720229
+0052F71E: b          #0x52f776
+0052F720: ldr        r0, [pc, #0x120]
+0052F722: add        r0, pc
+0052F724: mov        r2, r0
+0052F726: ldr        r0, [r5, #0x10]
+0052F728: ldrh       r1, [r2]
+0052F72A: adds       r1, #1
+0052F72C: strh       r1, [r2]
+0052F72E: uxth       r1, r1
+0052F730: cmp        r1, #0xb
+0052F732: blo        #0x52f776
+0052F734: movs       r1, #0
+0052F736: movs       r5, #0
+0052F738: strd       r1, r1, [sp, #0x78]
+0052F73C: str        r1, [sp, #0x80]
+0052F73E: str        r0, [sp]
+0052F740: adr        r1, #0xac
+0052F742: ldr        r0, [pc, #0x104]
+0052F744: adr        r3, #0xc8
+0052F746: mov        r2, r6
+0052F748: add        r0, pc
+0052F74A: blx        #0x4a505c ; ARM PLT GOT 01040800: _ZN4Anki4Util15sChanneledInfoFEPKcS2_RKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z target 0080D42D
+0052F74E: ldr        r0, [sp, #0x78]
+0052F750: cbz        r0, #0x52f770
+0052F752: ldr        r1, [sp, #0x7c]
+0052F754: cmp        r1, r0
+0052F756: itttt      ne
+0052F758: subne.w    r2, r1, #8
+0052F75C: subne      r2, r2, r0
+0052F75E: mvnne      r3, #7
+0052F762: bicne.w    r2, r3, r2
+0052F766: itt        ne
+0052F768: addne      r1, r1, r2
+0052F76A: strne      r1, [sp, #0x7c]
+0052F76C: blx        #0x4a40cc ; ARM PLT GOT 010402D0: _ZdlPv target 00000000
+0052F770: ldr        r0, [pc, #0xd8]
+0052F772: add        r0, pc
+0052F774: strh       r5, [r0]
+0052F776: ldr.w      r0, [fp, #4]
+0052F77A: cbz        r0, #0x52f786
+0052F77C: mov        r5, r0
+0052F77E: ldr        r0, [r5]
+0052F780: cmp        r0, #0
+0052F782: bne        #0x52f77c
+0052F784: b          #0x52f792
+0052F786: ldr.w      r5, [fp, #8]
+0052F78A: ldr        r0, [r5]
+0052F78C: cmp        r0, fp
+0052F78E: mov        fp, r5
+0052F790: bne        #0x52f786
+0052F792: cmp        r5, r4
+0052F794: mov        fp, r5
+0052F796: bne        #0x52f6e0
+0052F798: ldr        r0, [pc, #0xa4]
+0052F79A: ldr        r1, [sp, #0x180]
+0052F79C: add        r0, pc
+0052F79E: ldr        r0, [r0]
+0052F7A0: ldr        r0, [r0]
+0052F7A2: subs       r0, r0, r1
+0052F7A4: itt        eq
+0052F7A6: addeq      sp, #0x184
+0052F7A8: popeq.w    {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0052F7AC: blx        #0x4a4fe4 ; ARM PLT GOT 010407D8: __stack_chk_fail target 00000000
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 004DF628..004DF72C 
+004DF628: push       {r4, r5, r6, lr}
+004DF62A: sub        sp, #0x10
+004DF62C: mov        r5, r1
+004DF62E: ldr        r1, [pc, #0x100]
+004DF630: mov        r4, r0
+004DF632: movs       r0, #0
+004DF634: add        r1, pc
+004DF636: mov        r6, sp
+004DF638: str        r0, [sp, #8]
+004DF63A: movs       r2, #0
+004DF63C: strd       r0, r0, [sp]
+004DF640: mov        r0, r6
+004DF642: bl         #0x4e02b2
+004DF646: mov        r0, r4
+004DF648: mov        r1, r6
+004DF64A: blx        #0x4a40c0 ; ARM PLT GOT 010402CC: _ZN4Anki6Pose3dC1ERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE target 0084683D
+004DF64E: ldrb.w     r0, [sp]
+004DF652: lsls       r0, r0, #0x1f
+004DF654: itt        ne
+004DF656: ldrne      r0, [sp, #8]
+004DF658: blxne      #0x4a40cc
+004DF65C: mov        r0, r5
+004DF65E: blx        #0x4a40d8 ; ARM PLT GOT 010402D4: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE6IsRootEv target 00844AA3
+004DF662: cmp        r0, #1
+004DF664: bne        #0x4df670
+004DF666: mov        r0, r4
+004DF668: mov        r1, r5
+004DF66A: blx        #0x4a40e4 ; ARM PLT GOT 010402D8: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEEaSERKS3_ target 00845941
+004DF66E: b          #0x4df6da
+004DF670: mov        r0, sp
+004DF672: mov        r1, r5
+004DF674: blx        #0x4a40f0 ; ARM PLT GOT 010402DC: _ZNK4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE8FindRootEv target 0084520D
+004DF678: mov        r1, sp
+004DF67A: mov        r0, r5
+004DF67C: mov        r2, r4
+004DF67E: blx        #0x4a40fc ; ARM PLT GOT 010402E0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEE16GetWithRespectToERKS1_S5_RS1_ target 00845A35
+004DF682: mov        r5, r0
+004DF684: mov        r0, sp
+004DF686: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+004DF68A: cbnz       r5, #0x4df6da
+004DF68C: ldr        r2, [pc, #0xa4]
+004DF68E: movs       r0, #0
+004DF690: strd       r0, r0, [sp]
+004DF694: add        r2, pc
+004DF696: str        r0, [sp, #8]
+004DF698: adr        r0, #0x9c
+004DF69A: mov        r1, sp
+004DF69C: blx        #0x4a4108 ; ARM PLT GOT 010402E4: _ZN4Anki4Util7sErrorFEPKcRKNSt6__ndk16vectorINS3_4pairIS2_S2_EENS3_9allocatorIS6_EEEES2_z target 0080D13D
+004DF6A0: ldr        r0, [sp]
+004DF6A2: cbz        r0, #0x4df6c2
+004DF6A4: ldr        r1, [sp, #4]
+004DF6A6: cmp        r1, r0
+004DF6A8: itttt      ne
+004DF6AA: subne.w    r2, r1, #8
+004DF6AE: subne      r2, r2, r0
+004DF6B0: mvnne      r3, #7
+004DF6B4: bicne.w    r2, r3, r2
+004DF6B8: itt        ne
+004DF6BA: addne      r1, r1, r2
+004DF6BC: strne      r1, [sp, #4]
+004DF6BE: blx        #0x4a40cc ; ARM PLT GOT 010402D0: _ZdlPv target 00000000
+004DF6C2: ldr        r0, [pc, #0x98]
+004DF6C4: movs       r2, #1
+004DF6C6: ldr        r1, [pc, #0x98]
+004DF6C8: add        r0, pc
+004DF6CA: add        r1, pc
+004DF6CC: ldr        r0, [r0]
+004DF6CE: ldr        r1, [r1]
+004DF6D0: ldrb       r0, [r0]
+004DF6D2: strb       r2, [r1]
+004DF6D4: cbz        r0, #0x4df6da
+004DF6D6: blx        #0x4a4114 ; ARM PLT GOT 010402E8: _ZN4Anki4Util18sDebugBreakOnErrorEv target 0080DAB5
+004DF6DA: add        sp, #0x10
+004DF6DC: pop        {r4, r5, r6, pc}
+004DF6DE: mov        r5, r0
+004DF6E0: ldr        r0, [sp]
+004DF6E2: cbz        r0, #0x4df722
+004DF6E4: ldr        r1, [sp, #4]
+004DF6E6: cmp        r1, r0
+004DF6E8: beq        #0x4df6fc
+004DF6EA: sub.w      r2, r1, #8
+004DF6EE: mvn        r3, #7
+004DF6F2: subs       r2, r2, r0
+004DF6F4: bic.w      r2, r3, r2
+004DF6F8: add        r1, r2
+004DF6FA: str        r1, [sp, #4]
+004DF6FC: blx        #0x4a40cc ; ARM PLT GOT 010402D0: _ZdlPv target 00000000
+004DF700: b          #0x4df722
+004DF702: mov        r5, r0
+004DF704: mov        r0, sp
+004DF706: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+004DF70A: b          #0x4df722
+004DF70C: b          #0x4df720
+004DF70E: mov        r5, r0
+004DF710: ldrb.w     r0, [sp]
+004DF714: lsls       r0, r0, #0x1f
+004DF716: beq        #0x4df728
+004DF718: ldr        r0, [sp, #8]
+004DF71A: blx        #0x4a40cc ; ARM PLT GOT 010402D0: _ZdlPv target 00000000
+004DF71E: b          #0x4df728
+004DF720: mov        r5, r0
+004DF722: mov        r0, r4
+004DF724: blx        #0x4a406c ; ARM PLT GOT 010402B0: _ZN4Anki8PoseBaseINS_6Pose3dENS_11Transform3dEED2Ev target 008450F5
+004DF728: mov        r0, r5
+
+FILE resources/lib/armeabi-v7a/libcozmoEngine.so RANGE 0084C87C..0084C938 _ZN4Anki7Radians7rescaleEv
+0084C87C: push       {r4, lr}
+0084C87E: vpush      {d8, d9}
+0084C882: mov        r4, r0
+0084C884: ldrb       r0, [r4, #4]
+0084C886: cmp        r0, #0
+0084C888: beq        #0x84c932
+0084C88A: vldr       s0, [pc, #0xac]
+0084C88E: vldr       s16, [r4]
+0084C892: vcmpe.f32  s16, s0
+0084C896: vmrs       apsr_nzcv, fpscr
+0084C89A: ble        #0x84c8aa
+0084C89C: vldr       s2, [pc, #0x9c]
+0084C8A0: vcmpe.f32  s16, s2
+0084C8A4: vmrs       apsr_nzcv, fpscr
+0084C8A8: bls        #0x84c932
+0084C8AA: vmov.f32   s2, #1.000000e+01
+0084C8AE: vabs.f32   s4, s16
+0084C8B2: vcmpe.f32  s4, s2
+0084C8B6: vmrs       apsr_nzcv, fpscr
+0084C8BA: bpl        #0x84c902
+0084C8BC: vcmpe.f32  s16, s0
+0084C8C0: vmrs       apsr_nzcv, fpscr
+0084C8C4: bhi        #0x84c8dc
+0084C8C6: vldr       s2, [pc, #0x78]
+0084C8CA: vadd.f32   s16, s16, s2
+0084C8CE: vcmpe.f32  s16, s0
+0084C8D2: vmrs       apsr_nzcv, fpscr
+0084C8D6: bls        #0x84c8ca
+0084C8D8: vstr       s16, [r4]
+0084C8DC: vldr       s0, [pc, #0x5c]
+0084C8E0: vcmpe.f32  s16, s0
+0084C8E4: vmrs       apsr_nzcv, fpscr
+0084C8E8: ble        #0x84c932
+0084C8EA: vldr       s2, [pc, #0x58]
+0084C8EE: vadd.f32   s16, s16, s2
+0084C8F2: vcmpe.f32  s16, s0
+0084C8F6: vmrs       apsr_nzcv, fpscr
+0084C8FA: bgt        #0x84c8ee
+0084C8FC: vstr       s16, [r4]
+0084C900: b          #0x84c932
+0084C902: vldr       s18, [pc, #0x3c]
+0084C906: vmov.f32   s2, #-5.000000e-01
+0084C90A: vdiv.f32   s0, s16, s18
+0084C90E: vadd.f32   s0, s0, s2
+0084C912: vmov       r0, s0
+0084C916: blx        #0x4a83f8 ; ARM PLT GOT 01041934: ceilf target 00000000
+0084C91A: vmov       s0, r0
+0084C91E: vcvt.s32.f32 s0, s0
+0084C922: vcvt.f32.s32 s0, s0
+0084C926: vmul.f32   s0, s0, s18
+0084C92A: vsub.f32   s0, s16, s0
+0084C92E: vstr       s0, [r4]
+0084C932: vpop       {d8, d9}
+0084C936: pop        {r4, pc}
+
+ObjectID vtable address 0101E9B0, callable slot/address point 0101E9B8 contains 004EF773 (Thumb). This target reads ObjectID+4.
