@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through333 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 24 CHECKED native-row obligations / 8 CHECKED scope exclusions / 108 PARTIAL / 0 NOT DONE; decision checkpoints through334 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1863,3 +1863,7 @@ MBOUND332A–E reconcile complete selected local matrix/control bodies with exis
 ### Checkpoint 333 — spatial control admission/publication
 
 SC333A–F bind the known EP5 recipient cache/curve and listener-mask gates plus terminal parameter publication, preserving skipped-field contents and positive observer joins. Q14-029 matrix-boundary pending wording superseded by332; remaining recipients/inputs/writers retain PARTIAL. Counts unchanged, Q15 parked.
+
+### Checkpoint 334 — selected listener mask and control aggregation
+
+SC334 binds standard connection mask callback, accepted-record curve endpoint gates, exact GT/LE/PL value selection and contiguous same-index query bypass. Mode1 scalar byte inputs are positive; remaining interpolation/conversion/recipient/provider closure stays PARTIAL. Counts unchanged, Q15 parked.
