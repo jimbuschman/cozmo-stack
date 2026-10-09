@@ -11,6 +11,22 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 395 — known codec inherited slot boundary
+
+Primary: `20261009-sound-known-codec-base-slots-native.txt`, same engine hash; 17 instruction words plus both Vorbis tables' selected slots. C=source, P=C.C; offsets hex. No anonymous slot semantic names invented.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| CB395A query20 | raw103E0D8/103E158;A5668C..A56694 | Both known Vorbis source tables20=A5668C: read C.C then raw P44, return that word. No P-nullguard, normalization, cache or frame conversion. Exact existing context field boundary, not an inferred playing ID. |
+| CB395B empty24/50 | raw103E0DC/103E15C,103E108/103E188;A561BC,A56254 | Both tables24=A561BC and50=A56254, each exactly BXLR. No source stop, decoder teardown, state/flag notification or initialized-result constant added. Argument and result registers unchanged. These codec bindings are distinct from anonymous context-vtable recipients elsewhere in the voice path. |
+| CB395C zero queries | raw103E0F4..103E100,103E174..103E180;A566A8..A566C4 | Both tables3C/40/44/48 bind respective A566A8/A566B0/A566B8/A566C0: each r0=0 thenBXLR. No context, sample, source state or parameter read. No guessed bool/error interpretation beyond the raw0. |
+| CB395D other zero queries | raw103E114/103E194,103E124/103E1A4;A566E8..A566EC;A56708..A5670C | Both tables5C=A566E8 and6C=A56708 likewise raw0/BXLR. All selected slots have actual table binding; nearby stubs lacking a selected binding are not new obligations. |
+| CB395E existing recipient reuse | RP1–4 A059D8;HS6 AB1020;SR12/VM10/SC8–9 | MT394 monitor publication uses already-positive RP1–4; no outstanding local report-helper extraction. SV392 repeats an already-positive HS6 converter contract and does not establish a new gap. Full close, output and decoder ownership remain their existing rows; infrastructure descendants stay excluded. |
+
+out of scope: storage/I/O and sample arithmetic; no descendant work is opened by these local slot contracts.
+
+Known inherited codec slots and named monitoring/conversion recipients now locally reconciled. Public source command mode/parameter writers and alternate-family production joins remain PARTIAL; no closure based on empty stubs or a table capture alone. Totals unchanged; Q15 pending Q14. No production, manifest or hardware changes.
+
 ## Checkpoint 394 — Vorbis mode-gated teardown
 
 Primary: `20261009-sound-vorbis-mode-teardown-native.txt`, same engine hash; 109 instruction words plus literals/slots. C=source, P=C.C; offsets hex. SC8/9 decoder teardown, SR12/VM10 full close and HS/ST monitor boundaries already positive; no repeated output/cache teardown extraction.
@@ -21,11 +37,11 @@ Primary: `20261009-sound-vorbis-mode-teardown-native.txt`, same engine hash; 109
 | MT394B streamed order/owned packet | AB2A0C..AB2A68 | CallA743BC(C,originalmode) first, then unsigned mode>1 returns. Mode0/1 callsAB3428(C70), then liveF8==0 returns; F8nonzero butECnull returns. Only conjunctive owned/non-null branch freesEC and publishes EC0,F8byte0,F4word0,F0word0 in that order. No reset of64/68 or source38 here. Fullclose's E4/output/stream/marker release is separately SR12; do not substitute it for this mode slot. |
 | MT394C generic stream control | A743BC..A743F8;A744B4..A744FC | A743BC always first calls stream3C.live34, ignoring result. Mode<=1 and liveC44nonnull: C5Ebit1set clears that bit; otherwise call live stream44. Then C40=0,C44=0. Mode>1 orC44null skips that cleanup. Afterward P4bit22 decides monitor branch; P/stream have no nullguard. out of scope: backend stream34/44 I/O execution and buffer release bodies; exact order/gates/publications retained. |
 | MT394D monitor payload/status | A743FC..A74488;A744E4..A744E8 | Snapshot stream3C andC44; query stream28(&available). Payloadword0 initializes0. Raw2 sets payloadword1=2 withoutsettings/total query. Everyother reads stream14 settings: payloadword0=VCVT.U32.F32(F32.U32(wrap(snapshotC44+available))/rawF32(settings0)); no positive/finite denominator gate. Raw11 sets payloadstatus11 withouttotal query. Otherresults query stream2C total: wrappingbytes>=unsignedtotal gives11, else1. No fabricated3F payloadstatus here. |
-| MT394E monitor callback boundary | A7448C..A744B0;rawA74500,1040150 | Reload P andP140 ID after monitor queries; A059D8(current manager resolved through1040150,ID,C,&twoWordPayload). Ignore return, thenreturnvoid. Notification recipient remains a separate dependency; no inferred asynchronous scheduling or source failure propagation. |
+| MT394E monitor callback boundary | A7448C..A744B0;rawA74500,1040150 | Reload P andP140 ID after monitor queries; A059D8(current manager resolved through1040150,ID,C,&twoWordPayload). Ignore return, thenreturnvoid. Notification recipient is already positive RP1–4 (CB395 reuse); no inferred asynchronous scheduling or source failure propagation. |
 
 out of scope: allocator and owned packet storage internals; no descent.
 
-Known mode14 teardown products and their generic local source/monitor decision boundary are positive, reusing already-positive decoder/output/fullclose recipients. Actual source command inputs and A059D8 notification recipient remain separate retained dependencies; Q14 remains PARTIAL, counts unchanged, Q15 pending Q14. No production, manifest or hardware changes.
+Known mode14 teardown products and their generic local source/monitor decision boundary are positive, reusing already-positive decoder/output/fullclose recipients. A059D8 is already-positive RP1–4 (CB395 reuse); actual source command inputs remain retained dependencies; Q14 remains PARTIAL, counts unchanged, Q15 pending Q14. No production, manifest or hardware changes.
 
 ## Checkpoint 393 — exact Vorbis end/loop caller join
 
