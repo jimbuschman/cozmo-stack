@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 25 CHECKED native-row obligations / 8 CHECKED scope exclusions / 107 PARTIAL / 0 NOT DONE; decision checkpoints through397 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 26 CHECKED native-row obligations / 8 CHECKED scope exclusions / 106 PARTIAL / 0 NOT DONE; decision checkpoints through398 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -11,7 +11,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | --- | --- | --- |
 | Q14-002 | 33 | PARTIAL |
 | Q14-003 | 34 | CHECKED |
-| Q14-004 | 35 | PARTIAL |
+| Q14-004 | 35 | CHECKED |
 | Q14-005 | 36 | PARTIAL |
 | Q14-006 | 39 | CHECKED |
 | Q14-007 | 40 | PARTIAL |
@@ -172,7 +172,13 @@ out of scope: zero/multichannel/LFE-source branches; retained mono/stereo associ
 
 > | M6-003 | **KEEP** | 0x00A7A194..0x00A7A3C4;0x00A72618;0x00A73EA0;0x00A74100 | ADPCM channels/blockAlign, out-of-bounds/error behavior and zero-channel source handling remain decoding decisions; integer decoder arithmetic is not exempt DSP. |
 
-PARTIAL: AC1–AC6 reopen the complete ADPCM primitive, zero-count/zero-channel and unchecked initial-index behavior, integer tables/arithmetic and64-sample geometry. AS1–AS4, AT1–AT12 and AR1–AR5 now supply both source render argument derivations, zero-channel differences, carry/refill/rebind and failure publication. RP1–RP4 close the report manager. AH1–AH10 and SK1–SK7 add header rejection, format/endpoint writers, pending seek/cue choice and ownership teardown. RI205 already owns complete local RIFF chunk/cue/label decisions; optional cue allocation and label storage are excluded, not unread decision descendants. SK6 already closes AH6 table-binding endpoint. Remaining in-scope factory/constructor/source lifecycle and relevant format/input/provider/writer closure stay PARTIAL; stream storage/I/O backend descendants are excluded while raw source-state/result handling remains exact.
+CHECKED (decisions-only scope): checkpoint398 enumerates the retained ADPCM selection/media/header/render/carry/readiness/seek/restart/end/loop/close/rebind/report boundaries. Existing SS204/SF1/DF181/VC8–9/PI188/SD140H/MS141/BR142/MR source/media inputs, AH/RI205/SK header/table controls, AC/AS/AT/AR frame/carry/error controls and SK/HS/SC197/RS391 generic seek/restart recipients are joined by AD397 known mode/end/converter products and A74244 streamed constructor. EL393 establishes actual end1/loop0 arguments; SC3/4 and AH10 own close/output recipients, RP1–4 reports. No generic missing factory/constructor/input/lifecycle placeholder remains inside that bounded decision graph. No whole ADPCM decoder or manifest fidelity promotion.
+
+out of scope: allocator/stream/cache/seek-table storage and I/O infrastructure.
+
+out of scope: per-sample ADPCM decoding arithmetic; this task exclusion is not an ADP-1 equivalence classification for decoding.
+
+out of scope: zero/multichannel sources and PCM file families; retained mono/stereo frame/geometry/seek/error decisions are covered above.
 
 ## Q14-005 — triage line 36
 
@@ -2125,3 +2131,7 @@ Concrete integration map reconciles retained named Vorbis entry/media/header/set
 ## Checkpoint 397 — ADPCM restart/end controls
 
 AD397 closes known direct/streamed mode14/18/74/7C local contracts and joins generic restart/seek and EL393 argument ABI. Q14-004 constructor/close/input integration reconciliation retained; counts unchanged, Q15 pending Q14.
+
+## Checkpoint 398 — Q14-004 decision closure
+
+A74244 constructor publication is captured and joined to SF1/VC8–9; the concrete ADPCM integration map reuses existing header/frame/carry/error/seek/start/close/report controls and AD397/EL393. Q14-004 becomes CHECKED for decisions only; no decoder fidelity promotion. Counts26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE/140; Q15 pending Q14.

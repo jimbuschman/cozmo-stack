@@ -9,7 +9,28 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 25 native-row obligations CHECKED, 8 CHECKED scope exclusions, 107 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 26 native-row obligations CHECKED, 8 CHECKED scope exclusions, 106 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
+
+## Checkpoint 398 — ADPCM constructor and Q14-004 decision closure
+
+Primary for the remaining constructor: `20261009-sound-streamed-adpcm-constructor-native.txt`, same engine hash;13 instruction words plus literals. Q14-004 is CHECKED within the guard's decisions-only scope. Reachability remains ADPCM from `20261007-sound-reachability.md`; excluded source branches and decoding arithmetic are not new fidelity claims.
+
+| Retained boundary | Primary-backed rows / addresses | Exact closure |
+|---|---|---|
+| Streamed constructor | A74244..A74274;rawA74278;SF1/VC8/VC9 | SF1 mode1/type2 chooses70-byte allocation/A74244. First A74504(C,PBI) (VC9's already-positive shared stream base), then C64=0,C68=0,C6C halfword0 and table103D840. Native table expression=A74268+5C95D0+8. No carry allocation or decoder/sample setup in this constructor. Unknown bytes aren't filled with guessed whole-object zeroing. |
+| Direct constructor/selection | SS204/SF1/SA203;DF181 A72A2C;VC8;PI188/SD140H/MS141/BR142/MR | Known mode3/type2 direct48-byte family and mode1 stream70-byte family use actual tables/constructors. Existing authored/probed source selection, descriptor/media pointer/size and alias/rebind controls are reused. No generic missing source factory/input provider left in the bounded ADPCM decision path. |
+| Header/geometry/inputs | AH1–10 A7270C/A73ABC/A73B40;RI205 9CD340;SK6/7;SD140 | Format2 admission, exact channel/block alignment and total/loop endpoint arithmetic, packed output format, settings/priority, optional seek-table ownership and raw result gates are positive. Different direct/stream endpoint strictness is retained; no uniform safe validation substituted. |
+| Decode/render frame controls | AC1–6 A7A194;AS1–4 A72554/A72618;AT1–12 A73EA0/A74100;AR1–5 A74100 | Retained sourcechannels1/2, whole64-frame block geometry, output allocation/result gates, compressed/output stride, carry/refill/rebind, skip and emitted-frame publication already positive. Numeric predictor/nibble/sample arithmetic excluded below; its exact-required classification remains. |
+| Readiness/start/seek/restart | SD140 A7538C/A74E00;SK1–5 A736D4;HS7/8;SC197;RS391;AD397 | Direct/media and streaming/prefetch startup, raw failure/3F decisions, seek conversion, 64-frame rounding, residual/pending flags and restart mode choices are positive. Known stream7C=A739E8 joins actual generic restart/seek callers. |
+| End/loop/close/rebind | EL393 A73490/A73568;AD397 A72480/A742C8/A7429C;SC3/4 A72AF4/A7427C/A759D8;AH10 A72520/A73A14;BR142L/MR;RP1–4 | Exact end1/loop0 ABI reaches both ADPCM callbacks; direct always recomputes compressed pointer, stream loop counter/count changes preserved. Known closeC/output recipient and generic stream/marker sequence already positive. Mode teardown and source rebind/report selection do not inherit Vorbis decoder reset behavior. |
+
+out of scope: storage/I/O infrastructure, including allocator, stream backend and seek-table backing mechanics; source-side call order/offsets/raw results remain retained.
+
+out of scope: per-sample ADPCM predictor/nibble/PCM arithmetic under this decisions task; decoding is not reclassified EQUIVALENT_IMPLEMENTATION.
+
+out of scope: zero-channel and multichannel sources and PCM file families; retained mono/stereo source/channel/frame/error decisions are covered above.
+
+This replaces Q14-004's generic remaining factory/constructor/input/lifecycle wording with the enumerated bounded integration map. Other Q14 obligations are not promoted. Current census:26 native CHECKED+8 scope CHECKED/106 PARTIAL/0 NOT DONE/140; Q15 pending Q14. No production, fidelity-manifest or hardware changes.
 
 ## Checkpoint 397 — known ADPCM restart/end controls
 
