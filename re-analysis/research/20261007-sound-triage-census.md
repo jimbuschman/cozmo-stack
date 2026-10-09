@@ -1535,3 +1535,7 @@ AB250A/B join exact base type/flag/default fields and identify A60DEC as registr
 ### Checkpoint 251 — event reader/action-list writer
 
 EL251A–C trace physical action IDs, retain-before-list publication, raw early failures without local rollback and existing-event versus new-event bank behavior. Event release/traversal joins reused; registration/mutex/provider/input/sharing closure retained. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 252 — event registry publication
+
+EP252A joins known event insertion with ID lookup and zero-count removal; void zero-bucket outcome preserved. Backing infrastructure excluded. Wider writer/provider/mutex/input closure retained; no totals/Q15/fidelity/production changes.

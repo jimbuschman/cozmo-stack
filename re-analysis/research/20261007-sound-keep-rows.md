@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 252 — event registry publication boundary
+
+Primary: `20261008-sound-event-registry-publication-native.txt`; same engine hash. E=event, I=current index. Endpoints inclusive.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| EP252A | 009CC9C4..009CC9E8;009CCA4C..009CCA9C | Registration9CC9C4 loads current index, locksI3C. After backing availability path, bucket count0 unlocks/returnsvoid without event publication. Nonzero endpoint prepends E: E4=prior bucket head, I40[ID E8 modulo I44]=E, I4C increments, unlock. No eventC increment at this publication endpoint. EL251 success caller ignores a return value and continues bank attachment. | Unlike AB250 action registration, no initial E8==0 return gate in this event helper prefix. This does not assert every backing branch reaches nonzero endpoint or invent a registration failure result. | Index lock → backing availability → zero exit OR next/head/count publication → unlock → caller attachment. | OP245 exact ID lookup and ER246 zero-count ID unlink now have this known publication endpoint. out of scope: registry backing growth/rehash/hash-helper internals. Other providers/writers/mutex and duplicate-ID reachability remain PARTIAL. |
+
+Known bank-created event factory/reader/registry/queued-reference/retirement joins are positive locally. This remains a bounded path, not exhaustive event/action/source closure. Coverage unchanged; Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 251 — event reader and authored action-list publication
 
 Primary: `20261008-sound-event-reader-action-link-native.txt`; same engine hash. E=event, B=payload, I=current index. ER246 factory/release and AB250 action registry reused. Endpoints inclusive.
