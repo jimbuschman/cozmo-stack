@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 417 — witnessed action retain and retirement bindings
+
+Primary: `20261009-sound-witnessed-action-retirement-native.txt`, same engine hash;124 instruction words plus literals/tables/GOT. Positivelywitnessed11fulltypes have8 concreteproducttables (AF406/AP249/AS407/RT408/NE409/SE410/SP411);allbind8=A6028C,C=A60650. A=action; offsets hex. ExistingDR162C commonrelease andDD163E basecleanup reused.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| AR417A actualretain8 | A6028C..A602C4;rawA602C8/104006C;all8producttables | Capturecurrentindex108D8E0,lockits50;incrementA.C wrapping32,publish,unlockcapturedmutex,returnnewcount. No ID0 gate,registrylookup orbitmask. ConcreteE24/actionretain nowbound; subsequentC samefamilyusesDR162C whose zero gate/registryretirement occursbeforeactual0. No unlocked oratomic replacementinferred. |
+| AR417B stop/pause/resume0 | A66370..A66390;A62730..A62750;A641D4..A641F4;rawproducttables/literals | Actual0 reinstallsconcretetable103CED0/103CB20/103CCB0 respectively,thenA79EB0,returnoriginalA. A79EB0 reinstallsintermediatetable103DC88 thenA621F4,returnA. No retainedtargetcallback,extra stop/resume,cancelpending orreferenceincrement inthese destructorwrappers. |
+| AR417C otherwitnessed0 | A6577C..A6579C;A658E8..A65908;A63D5C..A63D7C;A652E8..A65308;A64408..A64428;A66238..A66258;rawtables/literals | 1204/1901/2103 reinstall103CE00/103CE38/103CBE8 thenA60B3C. 1303 reinstalls103CDA0 thenA66238 (intermediate103CE70) thenA621F4. 1E03 reinstalls103CCF8 thenA621F4. EverywrapperreturnsoriginalA. 0403zero recipientA629C4 alreadyDD163E. No inferredre-execution,state/switchreset,RTPC rollback orsource seek atzero-reference retirement. |
+| AR417D sharedlist/base tail | A621F4..A6223C;rawA62240/44;DD163E | SnapshotA24;reinstallintermediate103CA78. NonnullA24setsA28count0 BEFOREpoolrelease ofcapturedA24;nullskipsA28store. NeitherA24norcapacityA2Ccleared. ThenA60B3C installs103C988,optionalA18freebeforeA14free,no-op9D043C,returnsA. OriginalCcaller subsequentlypoolreleasesA beforeunlockDR162C. out of scope: ownedlist/property/poolstorage release bodies; publication andreference/destructor order retained. |
+
+Knownwitnessedaction8/C/0 path nowconcretefromeventretain throughzero-reference retirement. Q14-007 remainingevent/object/callback andqueueinput reconciliation staysPARTIAL; counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 416 — actual app PostEvent native-wrapper join
 
 Primary: `20261009-sound-postevent-wrapper-native.txt`, same engine hash;79 instruction words plus literals. Positive UE1/UE3–5/CD1 appforwarder passes external-sourcecount0,pointer0,requestedplayingID0 to9A6704;callbackmask/cookie exactexistingrows. This isselectedcallsite evidence,not a claimthatotherwrappercallers cannot supplyexternalsources.
