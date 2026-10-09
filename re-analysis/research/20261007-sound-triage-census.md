@@ -2019,3 +2019,7 @@ VP371A–D settle forward container active-child admission, zero/nonzero bus-sco
 ### Checkpoint 372 — PBI parameter entry update
 
 PE372A–G settle identity/kind matching, ordered unity removal, opposite-kind nonzero-mode policy, raw value update, append/admission/failure publication and unconditional known PB170C callback. VP371D local recipient superseded; actual cache/value/input/writer/family and full bus lifetime closure stay PARTIAL. Totals unchanged; Q15 pending Q14.
+
+### Checkpoint 373 — bus retirement tail and property unsubscribe
+
+BT373A–F join known derived-to-base retirement, post-root property/common-node order and exact property-mask unsubscribe/ownership; U27/R34/35/37/R42/SU/SN reused for known binding cleanup. LC5 selected descendants and actual root/value/list/state/input/writer/family closure stay PARTIAL; counts unchanged, Q15 pending Q14.
