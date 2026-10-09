@@ -1,0 +1,43 @@
+{
+  "M1-033": {
+    "id": "M1-033",
+    "subsystem": "M1-transport",
+    "title": "Robot-side transport behaviour",
+    "location": "cozmo-stack/src/Cozmo.Transport/RobotLink.cs",
+    "effect": "this stack assumes robot behaviour the app package cannot show",
+    "provenance": "nothing in the package: the robot firmware is not part of it",
+    "authority": "a robot, or a capture of the stock app talking to one",
+    "evidence": [
+      "part A open question 4: whether the robot sets isReply when it echoes a ping, its own resend timing, and whether it accepts packed frames of types 7, 8 and 9",
+      "hardware run re-analysis/acceptance/hardware/20260924-112412-M1-LINK (firmware 2457): the robot sent only type-9 frames (1026); it echoed all 1025 pings with isReply clear and our timestamps; it repeated unacked reliable messages after 24..34 ms (median 33.6 ms). Not observed: whether it accepts packed type 7/8/9 frames from the engine"
+    ],
+    "status": "HARDWARE_ONLY",
+    "unresolved": "whether the robot accepts packed frames of types 7, 8 and 9 from the engine (the link check sent none)",
+    "hardware_required": true,
+    "live_path": true,
+    "test": null,
+    "verification": {
+      "level": "HARDWARE_VERIFIED",
+      "bundles": [
+        "re-analysis/acceptance/hardware/20260924-112412-M1-LINK"
+      ]
+    }
+  },
+  "M1-043": {
+    "id": "M1-043",
+    "subsystem": "M1-transport",
+    "title": "Whether a 0-byte UDP read warns",
+    "location": "cozmo-stack/src/Cozmo.Transport/ReliableTransport.cs",
+    "effect": "a warning is or is not logged for a 0-byte datagram",
+    "provenance": "nothing in the package: it depends on the thread's errno at run time",
+    "authority": "a robot run with a 0-byte datagram, or an Android errno trace",
+    "evidence": [
+      "CA35: a 0-byte read takes the error path and reads the stale errno; it warns iff errno != EAGAIN and reopens on ENOTCONN (0x0083AA98 \u2192 0x0083AAC4..0x0083AB24)"
+    ],
+    "status": "EQUIVALENT_IMPLEMENTATION",
+    "unresolved": "Reclassified HARDWARE_ONLY -> EQUIVALENT_IMPLEMENTATION (manager, 2026-10-09): the engine's handling of a 0-byte read (0x0083AA98 -> 0x0083AAC4..0x0083AB24: warn unless errno 11, reopen on 107, end the drain) is shipped and reproduced exactly; only the errno value is the phone OS's runtime state, which doesn't ship. The stack takes it from the PC socket's error. Capturing the phone's value would need a rooted phone with a native tracer, for an OS value. No hardware run is needed. Before: the errno value after a 0-byte recvmsg on the phone",
+    "hardware_required": false,
+    "live_path": true,
+    "test": null
+  }
+}

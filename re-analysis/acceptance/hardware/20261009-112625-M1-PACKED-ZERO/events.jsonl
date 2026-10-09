@@ -1,0 +1,6 @@
+{"tMs": 215.9088000007614, "event": "socket", "phase": "type-7-single-control", "local": ["0.0.0.0", 54429], "remote": ["172.31.1.1", 5551]}
+{"tMs": 3020.677300000898, "event": "socket", "phase": "type-7-packed", "local": ["0.0.0.0", 64688], "remote": ["172.31.1.1", 5551]}
+{"tMs": 5791.375299999345, "event": "socket", "phase": "type-8-single-control", "local": ["0.0.0.0", 49976], "remote": ["172.31.1.1", 5551]}
+{"tMs": 8571.521899999425, "event": "socket", "phase": "type-8-packed", "local": ["0.0.0.0", 53673], "remote": ["172.31.1.1", 5551]}
+{"tMs": 11339.367599999605, "event": "socket", "phase": "type-9-single-control", "local": ["0.0.0.0", 53674], "remote": ["172.31.1.1", 5551]}
+{"tMs": 14120.891500000653, "event": "socket", "phase": "type-9-packed", "local": ["0.0.0.0", 49311], "remote": ["172.31.1.1", 5551]}
