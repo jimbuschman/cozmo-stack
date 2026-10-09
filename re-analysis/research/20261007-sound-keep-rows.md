@@ -11,6 +11,21 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 488 — nested scene member replacement
+
+Primary: `20261009-sound-nested-scene-assignment-native.txt`,93 complete Thumb instructions; same engine SHA256. SC487B positively invokes8D3D24 for each of the two event-member vectors, inC then18 order. Reuse SC487D/SL20 for its string-vector replacement and ordered nested construction. V={begin0,end4,capEnd8},B/E=incoming range; all32-bit arithmetic wraps, counts unsigned, offsets hex.
+
+| Row | Primary / reuse | Exact decision/value/order |
+| --- | --- | --- |
+| NM488A membership/capacity split | 8D3D24..8D3D9C | Incoming count=(ASR(E−B,3)*AAAAAAAB), capacity likewise(V8−V0); stride18hex. Incoming>capacity first8D3E88 clears existing entries, then incoming>0AAAAAAA takes native length-error call. Selected new capacity defaults0AAAAAAA; oldcapacity<=05555554 selects max(oldcap*2,incoming). Then8D3ECC and tail8D3E1A(V,B,E,incoming). No preserved-old-list rollback on allocation/error inferred. out of scope:backing allocation/free/length-error runtime bodies; logical selected list/order retained. |
+| NM488B ordered overlap and per-entry identity | 8D3D9C..8D3DD0;SC487D | Existing capacity: overlap end=E unless incoming>oldsize, thenB+(oldend−oldbegin). Visit stride18 in physical order: assign entry name through4E462A first; compare current source-entry pointer with current destination-entry pointer. Unequal→730682(destination+C,sourceC,source10), equal skips nested string-vector assignment. Advance both pointers after call. This is per-entry identity, distinct from SC487B's original begin comparison. Known730682 preserves selected ordered names and shrink/append publication; no move-clearing source. |
+| NM488C reverse shrink | 8D3DF0..8D3E1A | Incoming<=oldsize: reload live end; if not equal post-overlap destination, publish end−18 BEFORE4EAF98(oldend−C) owned nested-string cleanup, then optional heap-name delete (lowbit). Reload live end after cleanup; repeat reverse until retained end. No callback/new event execution or member refcount operation invented from storage cleanup. out of scope:owned string/vector/destructor/free internals. |
+| NM488D ordered remaining construction | 8D3DD0..8D3DF0;SL20 | Incoming>oldsize computes remaining count from live V0/V4, uses saved overlap endpoint/E and tails8D3E1A. SL20 already establishes entry name then nested string-vector copy, followed by end+=18 only after completed entry. Empty input selects shrink/empty boundary. Source range is borrowed; no source publication/clearing or scene-load rollback in this caller. |
+
+out of scope:owned string/vector/backing/free and unwind infrastructure. Retained scene member identities, ordered replacement, per-entry self gate and end-publication remain decisions; no nonempty scene reachability inferred from generic callable existence.
+
+Q14-031 selected scene/event/bank replacement bodies now join their positive nested construction/member recipients. Concrete startup InitScene events remain empty. Next bounded step: concrete post-load CLAD game-object IDs/names and locale-to-state input, stopping at M2 metadata and existing command/state interfaces. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 follows completed Q14.
+
 ## Checkpoint 487 — scene event/bank replacement and loading scope reconciliation
 
 Primary: `20261009-sound-scene-event-bank-assignment-native.txt`,198 complete Thumb instructions; same engine SHA256. SL14 positively invokes8D3A84(storedScene+C,eventbegin,eventend), then730682(storedScene+18,bankbegin,bankend). Reuse SL1–20/33–49/CW281/CV282/BR142/CR143/UD261/ER246 before further descendant tracing. V={begin0,end4,capEnd8}, B/E=incoming range; arithmetic32 wraps, counts unsigned, offsets hex.
