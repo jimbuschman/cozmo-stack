@@ -1587,3 +1587,7 @@ PB263A/B and PM263C recover preparation/ordinary counter gates, unlink-before-ev
 ### Checkpoint 264 — known preparation hook families
 
 NR264A–D bind five known A4 families and trace generic child forwarding, Switch shared-list/counter/group filtering and Sound descriptor/manager suppression gates. Shared registry/media descendants and writer/input/provider closure remain PARTIAL; no totals/Q15/fidelity/production changes.
+
+### Checkpoint 265 — shared group registry and media release
+
+SR265A/B recover query-side empty-record creation and identity membership unlink/tail repair; MR265C joins Sound media availability release with its distinct lock/suppression boundary. State/membership/counter/admission/provider/input writers remain PARTIAL; totals/Q15/fidelity/production unchanged.
