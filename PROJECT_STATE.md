@@ -48,6 +48,8 @@ stands. Nothing new starts outside the current layer.
 
 **Current layer: M1 + M2**, job `jobs/B-M1M2.md`. It has 70 records after the cited disposition correction: 53 M1 and 17 M2. The 2026-10-09 inventory reapproval moved M2 back from ACCEPTED to INVENTORY_APPROVED. The remaining M1 build list and the M1-033 hardware run are below.
 
+**2026-10-09 resumed M1/M2 build progress (pushed):** the Opus corrections and cited MISSING/policy disposition are applied. `ce859bf` fixes the M1-024 decay snapshot caller and the M1-044/M1-015 warning level. The one-batch cited inventory correction is `3d2018c`, and manager-reopened extraction rows/ownership corrections are `5456b3f`. The checked finite-real M1-029 J1 wrapper and maximum reachable J7 input are built in `21b8738`; J1 non-finite mapping and other listed MISSINGs remain open. M1-048's checked U1-U7 engine decisions are assigned to the existing live UDP implementation in `d42130f`, awaiting strong verification. `0ab7fd8` records the remaining MISSINGs and stop point. No records were settled; M1 and M2 remain INVENTORY_APPROVED, and no hardware acceptance was started. The itemized open boundaries are in `jobs/status/B-M1M2.md`.
+
 ## Now (2026-10-02)
 
 - **Codex's answers have been checked and applied.** Codex's DEFECT findings were spot-checked in the binary and held,
